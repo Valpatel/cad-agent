@@ -1,0 +1,6 @@
+.cache/
+__pycache__/
+*.pyc
+.venv/
+mining/raw/
+mining/out/private/

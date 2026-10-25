@@ -1,0 +1,8 @@
+# External tools under evaluation. status: candidate | trial | adopted | rejected
+# Licence and security fields are filled from verified sources (see research/landscape.md).
+- {name: text-to-cad, url: https://github.com/earthtojake/text-to-cad, license: MIT, kind: [skills, mcp, plugin], status: candidate}
+- {name: Seeed kicad-mcp-server, url: https://github.com/Seeed-Studio/kicad-mcp-server, license: MIT, kind: [mcp, pcb], status: candidate}
+- {name: KiCAD-MCP-Server, url: https://github.com/mixelpixx/KiCAD-MCP-Server, license: MIT, kind: [mcp, pcb], status: candidate}
+- {name: claude-build123d-starter, url: https://github.com/MikeSuiter/claude-build123d-starter, license: unverified, kind: [template], status: candidate}
+- {name: agentcad, url: https://github.com/jdilla1277/agentcad, license: unverified, kind: [cli, mcp], status: candidate}
+- {name: cad-skill, url: https://github.com/flowful-ai/cad-skill, license: unverified, kind: [skill], status: candidate}

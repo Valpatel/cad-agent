@@ -1,4 +1,4 @@
-# cad-agent (private)
+# cad-agent
 
 One agent setup for hardware design on frontier models (Claude Code first, plus Codex, Cursor and Gemini). It covers
 3D-printed parts, sheet metal, laser-cut parts, CNC, enclosures around real PCBs, and KiCad PCB design.

@@ -92,15 +92,18 @@
       "url": "https://github.com/gumyr/bd_warehouse",
       "license": "Apache-2.0",
       "exclude": [
-        ".github",
+        "*.glb",
         ".githooks",
+        ".github",
+        "docs/_static",
         "docs/assets"
       ],
       "notes": "Parametric fasteners, threads, bearings for build123d.",
       "previous_sha": "e6ae6e7bae74cb3a50cbde395930ba24a1051f88",
       "sha": "e6ae6e7bae74cb3a50cbde395930ba24a1051f88",
       "imported": "2026-10-24",
-      "report": "vendor/reports/bd_warehouse-e6ae6e7bae.md"
+      "report": "vendor/reports/bd_warehouse-e6ae6e7bae.md",
+      "exclude_reason": "documentation media (52 MB carousel.glb)"
     }
   ]
 }

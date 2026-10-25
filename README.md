@@ -32,8 +32,16 @@ Rather than build another CAD framework, this repo combines what already exists.
 - An evidence-first review site: renders, PDF check sheets, STL/3MF/Bambu links, live check tables, and a progress log.
 - Mechanical-PCB co-design: KiCad board to enclosure, and back again for the outline, holes and connectors.
 
+## Vendored tools
+Six upstreams are vendored under `vendor/`, pinned by commit, and updated weekly through a reviewed, scanned and
+sandboxed process (see `SECURITY.md` and `WEEKLY-UPDATE.md`): text-to-cad, kicad-happy and kicad-mcp-pro (MIT);
+build123d-mcp, agentcad and bd_warehouse (Apache-2.0). text-to-cad's telemetry, update check and outbound API are
+patched off. Licences and pins are listed in `THIRD_PARTY_NOTICES.md`.
+
 ## Layout
-- `upstreams/`: registry of external tools, plus the sync and check scripts
+- `vendor/`: vendored upstream code, with its manifest, patches, scan baselines and review reports
+- `tools/`: `vendor_sync.py` (safe import and update) and `security_scan.py` (red-flag scan)
+- `upstreams/`: registry of all surveyed tools, including those not vendored
 - `mining/`: the session-history miner (local only)
 - `lessons/`: rules mined from sessions, with provenance
 - `knowledge/`: sourced design rules, materials and costs, in a citable form

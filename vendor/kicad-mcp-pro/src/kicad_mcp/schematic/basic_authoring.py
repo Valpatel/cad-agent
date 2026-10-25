@@ -1,0 +1,463 @@
+"""Pure orchestration for basic schematic symbol, wire, and label authoring."""
+
+from __future__ import annotations
+
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Protocol
+
+from .references import power_reference_from_uuid
+
+
+class SchematicTarget(Protocol):
+    """Minimal resolved-target surface used by basic authoring."""
+
+    @property
+    def path(self) -> Path: ...
+
+    @property
+    def is_root(self) -> bool: ...
+
+
+class ResolveTarget(Protocol):
+    """Resolve an optional child-sheet selector."""
+
+    def __call__(
+        self,
+        sheet: str | None = None,
+        sheet_file: str | None = None,
+    ) -> SchematicTarget: ...
+
+
+class PlaceSymbolBlock(Protocol):
+    """Create a placed-symbol S-expression block."""
+
+    def __call__(
+        self,
+        *,
+        lib_id: str,
+        x: float,
+        y: float,
+        reference: str,
+        value: str,
+        footprint: str = "",
+        rotation: int = 0,
+        unit: int = 1,
+        project_name: str,
+        root_uuid: str,
+    ) -> str: ...
+
+
+@dataclass(frozen=True)
+class LabelBatchEntry:
+    """One resolved label placement handed to ``add_labels_batch``."""
+
+    name: str
+    x_mm: float
+    y_mm: float
+    rotation: int
+    kind: str
+    shape: str | None
+    justify: str | None
+    snap_to_grid: bool
+
+
+class LabelBlock(Protocol):
+    """Create a local/global/hierarchical label S-expression block."""
+
+    def __call__(
+        self,
+        name: str,
+        x: float,
+        y: float,
+        rotation: int = 0,
+        *,
+        kind: str | None = None,
+        shape: str | None = None,
+        justify: str | None = None,
+    ) -> str: ...
+
+
+type ParseSchematic = Callable[[Path], Mapping[str, Any]]
+type ProjectName = Callable[[], str]
+type LoadLibSymbol = Callable[[str, str], str | None]
+type SuggestSymbolNames = Callable[[str, str], list[str]]
+type SymbolAvailableUnits = Callable[[str, str], set[int]]
+type FormatAvailableUnits = Callable[[set[int]], str]
+type SnapPoint = Callable[[float, float, bool], tuple[float, float]]
+type SnapLine = Callable[
+    [float, float, float, float, bool],
+    tuple[float, float, float, float],
+]
+type SnapNotice = Callable[[tuple[float, ...], tuple[float, ...]], str]
+type PointNearExisting = Callable[[float, float, list[dict[str, Any]]], str | None]
+type ValidateFootprint = Callable[[str], str | None]
+
+
+class WireBlock(Protocol):
+    """Create a wire or bus S-expression block."""
+
+    def __call__(
+        self,
+        x1: float,
+        y1: float,
+        x2: float,
+        y2: float,
+        kind: str = "wire",
+    ) -> str: ...
+
+
+type BusEntryBlock = Callable[[float, float, str], str]
+type NoConnectBlock = Callable[[float, float], str]
+type AppendBeforeSheetInstances = Callable[[str, str], str]
+type TransactionalWrite = Callable[[Callable[[str], str], Path], str]
+type ReloadSchematic = Callable[[], str]
+type NewUuid = Callable[[], str]
+type FormatMm = Callable[[float], str]
+
+
+@dataclass(frozen=True)
+class SchematicBasicAuthoringService:
+    """Compose basic authoring operations from injected deterministic helpers."""
+
+    resolve_target: ResolveTarget
+    parse_schematic: ParseSchematic
+    project_name: ProjectName
+    load_lib_symbol: LoadLibSymbol
+    suggest_symbol_names: SuggestSymbolNames
+    symbol_available_units: SymbolAvailableUnits
+    format_available_units: FormatAvailableUnits
+    snap_point: SnapPoint
+    snap_line: SnapLine
+    snap_notice: SnapNotice
+    point_near_existing: PointNearExisting
+    validate_footprint: ValidateFootprint
+    place_symbol_block: PlaceSymbolBlock
+    wire_block: WireBlock
+    bus_entry_block: BusEntryBlock
+    no_connect_block: NoConnectBlock
+    label_block: LabelBlock
+    append_before_sheet_instances: AppendBeforeSheetInstances
+    transactional_write: TransactionalWrite
+    reload_schematic: ReloadSchematic
+    new_uuid: NewUuid
+    format_mm: FormatMm
+
+    @staticmethod
+    def _format_target_detail(target: SchematicTarget) -> str:
+        kind = "root" if target.is_root else "child"
+        return f"Target schematic ({kind}): {target.path}"
+
+    def add_symbol(
+        self,
+        library: str,
+        symbol_name: str,
+        x_mm: float,
+        y_mm: float,
+        reference: str,
+        value: str,
+        footprint: str,
+        rotation: int,
+        snap_to_grid: bool,
+        unit: int,
+        sheet: str | None,
+        sheet_file: str | None,
+    ) -> str:
+        """Add one placed symbol while preserving current warnings and ordering."""
+        symbol_x, symbol_y = self.snap_point(x_mm, y_mm, snap_to_grid)
+        snap_note = self.snap_notice((x_mm, y_mm), (symbol_x, symbol_y))
+        lib_definition = self.load_lib_symbol(library, symbol_name)
+        if lib_definition is None:
+            suggestions = self.suggest_symbol_names(library, symbol_name)
+            hint = f" Did you mean: {', '.join(suggestions)}?" if suggestions else ""
+            return f"Symbol '{library}:{symbol_name}' was not found.{hint}"
+
+        available_units = self.symbol_available_units(library, symbol_name)
+        if available_units and unit not in available_units:
+            return (
+                f"Symbol '{library}:{symbol_name}' does not support unit {unit}. "
+                f"Available units: {self.format_available_units(available_units)}."
+            )
+
+        target = self.resolve_target(sheet=sheet, sheet_file=sheet_file)
+        schematic_data = self.parse_schematic(target.path)
+        root_uuid = str(schematic_data["uuid"] or self.new_uuid())
+        lib_id = f"{library}:{symbol_name}"
+        existing = [
+            *schematic_data["symbols"],
+            *schematic_data["power_symbols"],
+        ]
+        overlap_warning = self.point_near_existing(symbol_x, symbol_y, existing)
+
+        def mutator(current: str) -> str:
+            updated = current
+            if f'(symbol "{lib_id}"' not in updated:
+                if "(lib_symbols)" in updated:
+                    updated = updated.replace(
+                        "(lib_symbols)",
+                        f"(lib_symbols\n\t{lib_definition}\n\t)",
+                        1,
+                    )
+                else:
+                    updated = updated.replace(
+                        "\t(lib_symbols\n",
+                        f"\t(lib_symbols\n\t{lib_definition}\n",
+                        1,
+                    )
+            block = self.place_symbol_block(
+                lib_id=lib_id,
+                x=symbol_x,
+                y=symbol_y,
+                reference=reference,
+                value=value,
+                footprint=footprint,
+                rotation=rotation,
+                unit=unit,
+                project_name=self.project_name(),
+                root_uuid=root_uuid,
+            )
+            return self.append_before_sheet_instances(updated, block)
+
+        self.transactional_write(mutator, target.path)
+        result = self.reload_schematic()
+        footprint_warning = self.validate_footprint(footprint or "")
+        return "\n".join(
+            part
+            for part in (
+                result,
+                self._format_target_detail(target),
+                snap_note,
+                overlap_warning,
+                footprint_warning,
+            )
+            if part
+        )
+
+    def add_wire(
+        self,
+        x1_mm: float,
+        y1_mm: float,
+        x2_mm: float,
+        y2_mm: float,
+        snap_to_grid: bool,
+        sheet: str | None,
+        sheet_file: str | None,
+    ) -> str:
+        """Add one wire to a resolved schematic target."""
+        target = self.resolve_target(sheet=sheet, sheet_file=sheet_file)
+        wire_coordinates = self.snap_line(
+            x1_mm,
+            y1_mm,
+            x2_mm,
+            y2_mm,
+            snap_to_grid,
+        )
+        snap_note = self.snap_notice(
+            (x1_mm, y1_mm, x2_mm, y2_mm),
+            wire_coordinates,
+        )
+        self.transactional_write(
+            lambda current: self.append_before_sheet_instances(
+                current,
+                self.wire_block(*wire_coordinates),
+            ),
+            target.path,
+        )
+        result = self.reload_schematic()
+        return "\n".join(
+            part for part in (result, self._format_target_detail(target), snap_note) if part
+        )
+
+    def add_bus(
+        self,
+        x1_mm: float,
+        y1_mm: float,
+        x2_mm: float,
+        y2_mm: float,
+        snap_to_grid: bool,
+        sheet: str | None,
+        sheet_file: str | None,
+    ) -> str:
+        """Add one bus segment to a resolved schematic target."""
+        target = self.resolve_target(sheet=sheet, sheet_file=sheet_file)
+        bus_coordinates = self.snap_line(
+            x1_mm,
+            y1_mm,
+            x2_mm,
+            y2_mm,
+            snap_to_grid,
+        )
+        snap_note = self.snap_notice(
+            (x1_mm, y1_mm, x2_mm, y2_mm),
+            bus_coordinates,
+        )
+        self.transactional_write(
+            lambda current: self.append_before_sheet_instances(
+                current,
+                self.wire_block(*bus_coordinates, "bus"),
+            ),
+            target.path,
+        )
+        result = self.reload_schematic()
+        return "\n".join(
+            part for part in (result, self._format_target_detail(target), snap_note) if part
+        )
+
+    def add_bus_wire_entry(
+        self,
+        x_mm: float,
+        y_mm: float,
+        direction: str,
+        snap_to_grid: bool,
+        sheet: str | None,
+        sheet_file: str | None,
+    ) -> str:
+        """Add one bus-entry marker to a resolved schematic target."""
+        target = self.resolve_target(sheet=sheet, sheet_file=sheet_file)
+        entry_x, entry_y = self.snap_point(x_mm, y_mm, snap_to_grid)
+        snap_note = self.snap_notice((x_mm, y_mm), (entry_x, entry_y))
+        self.transactional_write(
+            lambda current: self.append_before_sheet_instances(
+                current,
+                self.bus_entry_block(entry_x, entry_y, direction),
+            ),
+            target.path,
+        )
+        result = self.reload_schematic()
+        return "\n".join(
+            part for part in (result, self._format_target_detail(target), snap_note) if part
+        )
+
+    def add_no_connect(
+        self,
+        x_mm: float,
+        y_mm: float,
+        snap_to_grid: bool,
+        sheet: str | None,
+        sheet_file: str | None,
+    ) -> str:
+        """Add one no-connect marker to a resolved schematic target."""
+        target = self.resolve_target(sheet=sheet, sheet_file=sheet_file)
+        marker_x, marker_y = self.snap_point(x_mm, y_mm, snap_to_grid)
+        snap_note = self.snap_notice((x_mm, y_mm), (marker_x, marker_y))
+        self.transactional_write(
+            lambda current: self.append_before_sheet_instances(
+                current,
+                self.no_connect_block(marker_x, marker_y),
+            ),
+            target.path,
+        )
+        result = self.reload_schematic()
+        return "\n".join(
+            part for part in (result, self._format_target_detail(target), snap_note) if part
+        )
+
+    def add_label(
+        self,
+        name: str,
+        x_mm: float,
+        y_mm: float,
+        rotation: int,
+        snap_to_grid: bool,
+        justify: str | None,
+        sheet: str | None,
+        sheet_file: str | None,
+    ) -> str:
+        """Add one local label to a resolved schematic target."""
+        target = self.resolve_target(sheet=sheet, sheet_file=sheet_file)
+        label_x, label_y = self.snap_point(x_mm, y_mm, snap_to_grid)
+        snap_note = self.snap_notice((x_mm, y_mm), (label_x, label_y))
+        self.transactional_write(
+            lambda current: self.append_before_sheet_instances(
+                current,
+                self.label_block(
+                    name,
+                    label_x,
+                    label_y,
+                    rotation,
+                    justify=justify,
+                ),
+            ),
+            target.path,
+        )
+        result = self.reload_schematic()
+        return "\n".join(
+            part for part in (result, self._format_target_detail(target), snap_note) if part
+        )
+
+    def add_labels_batch(
+        self,
+        labels: list[LabelBatchEntry],
+        sheet: str | None,
+        sheet_file: str | None,
+    ) -> str:
+        """Place many labels (local/global/hierarchical) in one transactional write.
+
+        Every label block is snapped, rendered and appended together so a batch
+        either lands entirely or not at all — matching the single-label path.
+        """
+        target = self.resolve_target(sheet=sheet, sheet_file=sheet_file)
+        rendered: list[str] = []
+        snap_notes: list[str] = []
+        for entry in labels:
+            label_x, label_y = self.snap_point(entry.x_mm, entry.y_mm, entry.snap_to_grid)
+            note = self.snap_notice((entry.x_mm, entry.y_mm), (label_x, label_y))
+            if note:
+                snap_notes.append(note)
+            rendered.append(
+                self.label_block(
+                    entry.name,
+                    label_x,
+                    label_y,
+                    entry.rotation,
+                    kind=entry.kind,
+                    shape=entry.shape,
+                    justify=entry.justify,
+                )
+            )
+        combined = "\n".join(rendered)
+        self.transactional_write(
+            lambda current: self.append_before_sheet_instances(current, combined),
+            target.path,
+        )
+        result = self.reload_schematic()
+        summary = f"Placed {len(labels)} label(s)."
+        return "\n".join(
+            part
+            for part in (result, self._format_target_detail(target), summary, *snap_notes)
+            if part
+        )
+
+    def add_power_symbol(
+        self,
+        name: str,
+        x_mm: float,
+        y_mm: float,
+        rotation: int,
+        snap_to_grid: bool,
+        sheet: str | None,
+        sheet_file: str | None,
+    ) -> str:
+        """Add a generated-reference power symbol through the symbol path."""
+        placed_x, placed_y = self.snap_point(x_mm, y_mm, snap_to_grid)
+        result = self.add_symbol(
+            library="power",
+            symbol_name=name,
+            x_mm=x_mm,
+            y_mm=y_mm,
+            reference=power_reference_from_uuid(self.new_uuid()),
+            value=name,
+            footprint="",
+            rotation=rotation,
+            snap_to_grid=snap_to_grid,
+            unit=1,
+            sheet=sheet,
+            sheet_file=sheet_file,
+        )
+        if "was not found" in result:
+            return result
+        return (
+            f"{result}\nPower symbol {name} placed at "
+            f"({self.format_mm(placed_x)}, {self.format_mm(placed_y)})"
+        )

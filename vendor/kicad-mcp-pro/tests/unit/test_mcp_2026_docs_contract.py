@@ -1,0 +1,76 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+ADR = ROOT / "docs" / "adr" / "0006-mcp-2026-stateless-compatibility-lane.md"
+TRANSPORT = ROOT / "docs" / "mcp" / "transport.md"
+API_REFERENCE = ROOT / "docs" / "mcp" / "api-reference.md"
+MKDOCS = ROOT / "mkdocs.yml"
+
+
+def test_candidate_protocol_operator_documentation_is_explicitly_release_gated() -> None:
+    adr = ADR.read_text(encoding="utf-8")
+    transport = TRANSPORT.read_text(encoding="utf-8")
+    api_reference = API_REFERENCE.read_text(encoding="utf-8")
+    navigation = MKDOCS.read_text(encoding="utf-8")
+
+    assert "**Status:** Accepted" in adr
+    assert "## Component state inventory" in adr
+    for component in (
+        "Streamable HTTP",
+        "Tasks",
+        "Apps",
+        "Authorization",
+        "Caching",
+        "Telemetry and benchmarks",
+        "Registry metadata",
+    ):
+        assert component in adr
+
+    assert "KICAD_MCP_PROTOCOL_LANE=2026-07-28-rc" in transport
+    assert "strict stateless conformance lane" in transport
+    assert "primary public contract is MCP `2026-07-28`" in transport
+    assert "Mcp-Method" in transport
+    assert "Mcp-Name" in transport
+    assert "server/discover" in transport
+    assert "Mcp-Session-Id" in transport
+    assert "no longer rewrites requests" in transport
+    assert "Compatibility-bridge disposition (2026-10-02)" in adr
+    assert "bridge removed" in adr
+    assert "unset KICAD_MCP_PROTOCOL_LANE" in transport
+    assert "public discovery metadata remains primarily `2026-07-28`" in transport
+    assert "Native SDK v2 also answers `server/discover` directly" in transport
+    assert "Native SDK v2 may continue to answer `server/discover`" in adr
+    assert "Apps: explicitly excluded/fail-closed" in adr
+    assert "No `ui://` resources or UI-bound tools are registered" in adr
+    assert "All five release decision gates are complete" in adr
+    assert "## Public protocol promotion (2026-10-02)" in adr
+    assert "MCP_LEGACY_PROTOCOL_VERSION" in adr
+
+    assert "Current public contract" in api_reference
+    assert "`2026-07-28`" in api_reference
+    assert "`2025-11-25`" in api_reference
+    assert "Native MCP 2026 strict conformance lane" in api_reference
+    assert "`2026-07-28`" in api_reference
+    assert "Public metadata now advertises `2026-07-28` as primary" in api_reference
+
+    for gate in (
+        "final MCP 2026-07-28 specification",
+        "stable MCP Python SDK",
+        "supported host smoke tests",
+        "Tasks and Apps extension parity",
+        "tested rollback",
+    ):
+        assert gate in adr
+
+    assert "MCP 2026 Stateless Compatibility Lane" in navigation
+    assert "adr/0006-mcp-2026-stateless-compatibility-lane.md" in navigation
+
+
+def test_stable_streamable_http_docs_follow_negotiated_protocol_version() -> None:
+    transport = TRANSPORT.read_text(encoding="utf-8")
+
+    assert "negotiated protocol version" in transport
+    assert "Codex" in transport
+    assert "must include `MCP-Protocol-Version: 2025-11-25`" not in transport

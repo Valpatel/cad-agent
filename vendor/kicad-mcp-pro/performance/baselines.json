@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "tolerance": {
+    "warningRatio": 1.1,
+    "failureRatio": 1.2
+  },
+  "reference": {
+    "ciRunner": "GitHub-hosted ubuntu-24.04",
+    "methodology": "tests/unit/test_benchmark_latency.py"
+  },
+  "metrics": {
+    "mcp.tools_list.response_ms": {
+      "baseline": 120,
+      "unit": "ms",
+      "ciRequired": true,
+      "summary": "MCP tools/list steady-state p95 response latency.",
+      "source": "tests/unit/test_benchmark_latency.py"
+    }
+  }
+}

@@ -1,0 +1,36 @@
+# Packaging debris
+dist/
+*.egg-info/
+src/bd_warehouse/_version.py
+
+# Testing debris
+__pycache__/
+
+# Coverage debris
+.coverage
+htmlcov/
+
+# Docs debris
+docs/_build/
+
+# User generated debris
+*.swp
+*.log
+*.step
+*.STEP
+*.stl
+*.svg
+
+#mypy cache
+.mypy_cache
+build
+
+# Environments
+.env
+.envrc
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/

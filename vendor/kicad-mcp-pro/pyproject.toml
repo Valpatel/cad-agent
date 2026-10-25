@@ -1,0 +1,193 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "kicad-mcp-pro"
+version = "4.4.0"
+description = "Production-grade MCP server for KiCad EDA—PCB design, DRC, simulation, BOM, DFM, and manufacturing."
+readme = "README.md"
+license = { text = "MIT" }
+license-files = ["LICENSE"]
+authors = [{ name = "Osman Aslan" }]
+keywords = [
+  "kicad",
+  "mcp",
+  "pcb",
+  "eda",
+  "ai",
+  "llm",
+  "schematic",
+  "pcb-design",
+  "eda-automation",
+  "gerber-export",
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+  "Topic :: Software Development :: Code Generators",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires-python = ">=3.13"
+dependencies = [
+  "authlib>=1.7.1",
+  "anyio>=4.4.0",
+  "idna>=3.15",
+  "kicad-sch-api>=0.5.0,<0.6",
+  "kicad-python>=0.6,<0.8",
+  "mcp[cli]>=2.2.0,<3.0.0",
+  "opentelemetry-exporter-otlp>=1.45.1,<2.0.0",
+  "opentelemetry-sdk>=1.45.1,<2.0.0",
+  "packaging>=24.0,<27.0",
+  "pydantic>=2.7.0",
+  "pydantic-settings>=2.14.2",
+  "pyjwt>=2.15.0,<3.0.0",
+  "python-dotenv>=1.0.0",
+  "rich>=13.7.0",
+  "sexpdata>=1.0.2,<2.0.0",
+  "starlette>=1.0.1,<2.0.0",
+  "structlog>=24.2.0",
+  "typer>=0.12.0",
+  "urllib3>=2.8.0",
+]
+
+[project.optional-dependencies]
+components = ["httpx>=0.27.0"]
+dev = [
+  "actionlint-py==1.7.12.25",
+  "watchfiles>=1.0.0",
+  "bandit>=1.7.9",
+  "cairosvg>=2.9.1,<3.0.0",
+  "defusedxml>=0.7.1,<1",
+  "hypothesis>=6.100.0",
+  "httpx2>=2.12.0",
+  "mkdocs-material>=9.5.32",
+  "pymdown-extensions>=10.21.3",
+  "mkdocs-git-revision-date-localized-plugin>=1.2.9",
+  "mkdocs-glightbox>=0.4.0",
+  "mkdocs-redirects>=1.2.1",
+  "mkdocstrings[python]>=0.25.0",
+  "mutmut>=3.0.0",
+  "mypy>=1.10.0",
+  "Pillow>=13.0.0,<14.0.0",
+  "pypdf==6.21.2",
+  "properdocs>=1.6.7",
+  "pytest>=8.2.0",
+  "pytest-asyncio>=0.25.0",
+  "pytest-benchmark>=4.0.0",
+  "pytest-cov>=5.0.0",
+  "pytest-mock>=3.14.0",
+  "pytest-testmon>=2.1.1",
+  "pytest-xdist>=3.6.0",
+  "pyright>=1.1.390",
+  "types-PyYAML>=6.0.12.20250822",
+  "ruff!=0.15.10,>=0.15.0",
+  "shellcheck-py==0.11.0.1",
+  "vulture>=2.11",
+  "zizmor>=1.24.1",
+  "pytest-codspeed>=4.0.0",
+]
+freerouting = []
+http = ["httpx>=0.27.0", "uvicorn[standard]>=0.30.0"]
+tray = ["pystray>=0.19.5", "Pillow>=10.0.0"]
+simulation = ["numpy>=1.26.0"]
+vcs = [
+    "gitpython>=3.2.1,<4.0.0",
+]
+
+[project.scripts]
+kicad-mcp-pro = "kicad_mcp.server:main"
+
+[project.urls]
+Homepage = "https://github.com/oaslananka/kicad-mcp-pro"
+Documentation = "https://oaslananka.github.io/kicad-mcp-pro"
+Repository = "https://github.com/oaslananka/kicad-mcp-pro"
+"Bug Tracker" = "https://github.com/oaslananka/kicad-mcp-pro/issues"
+Changelog = "https://github.com/oaslananka/kicad-mcp-pro/blob/main/CHANGELOG.md"
+Funding = "https://github.com/sponsors/oaslananka"
+
+[tool.kicad-mcp.public-metadata]
+# Stable GitHub GraphQL node ID for repository-resurrection protection.
+repository-id = "R_kgDOStXTag"
+
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/kicad_mcp"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/kicad_mcp", "README.md", "LICENSE", "pyproject.toml"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+exclude = ["*.json", "*.md"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "S", "ANN"]
+ignore = ["S603"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["ANN001", "ANN202", "S101"]
+"benchmarks/**/*.py" = ["ANN001", "ANN202", "S101"]
+"src/kicad_mcp/web/dashboard.py" = ["E501"]
+# Generated file: long JSON lines live inside a raw string (regenerate via
+# scripts/build_parity_matrix.py); do not hand-edit.
+"src/kicad_mcp/parity_matrix_data.py" = ["E501"]
+"packages/kicad-plugin/__init__.py" = ["N999"]
+# Example generator scripts favour schematic-reference naming (U1, R1, C1) and a
+# compact block layout over library lint conventions; they are demos, not library
+# code.
+"examples/**/*.py" = ["N", "E702", "ANN"]
+"packages/kicad-plugin/kicad_mcp_companion.py" = ["N802"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+asyncio_mode = "auto"
+markers = [
+  "benchmark: lightweight performance regression checks with committed baselines",
+  "gui: real KiCad GUI smoke tests for scheduled/manual environments",
+  "mcp_mode(mode): run the test with an explicit KiCad MCP operating mode",
+  "slow: tests that are useful for scheduled/full validation but skipped by fast loops",
+]
+
+[tool.interrogate]
+ignore-init-method = true
+ignore-init-module = true
+ignore-magic = true
+ignore-module = false
+ignore-nested-functions = true
+ignore-private = true
+fail-under = 50.0
+verbose = 1
+
+[tool.coverage.run]
+source = ["src/kicad_mcp", "packages/kicad-plugin"]
+omit = ["tests/*", "packages/kicad-plugin/context.py"]
+
+[tool.coverage.report]
+fail_under = 83
+
+[dependency-groups]
+release = [
+    "pypi-attestations==0.0.30",
+]
+dev = [
+    # httpx2 keeps starlette.testclient from emitting its httpx deprecation
+    # warning (issue #187); it lives in the default group so bare `uv run`
+    # test invocations stay warning-free, not only `--all-extras` runs.
+    "httpx2>=2.12.0",
+    "pytest-asyncio>=0.25.0",
+    "pytest-playwright>=0.8.0",
+]

@@ -1,0 +1,970 @@
+# collect-on-default-profile
+import json
+
+import pytest
+import shlex
+
+from click.testing import CliRunner
+from agentcad.cli import cli
+
+
+# Issue #116: the default (build123d) docs surface must not teach CadQuery
+# API tokens. Prose pointers to compatibility mode are fine; code is not.
+CADQUERY_CODE_TOKENS = [
+    "cq.Workplane",
+    ".val().wrapped",
+    "importers.importStep",
+    "from cadquery import",
+    "cadquery.exporters",
+    "import cadquery",
+]
+
+
+def test_default_docs_contain_no_cadquery_code(runner, isolated_dir):
+    result = runner.invoke(cli, ["docs"])
+    data = json.loads(result.stdout)
+    assert data["runtime"] == "build123d"
+    for token in CADQUERY_CODE_TOKENS:
+        assert token not in data["content"], f"default docs teach {token!r}"
+
+
+def test_default_docs_sections_contain_no_cadquery_code(runner, isolated_dir):
+    """Every individually fetchable default section stays clean. Only the
+    `runtimes` comparison shows both APIs, and only on explicit request."""
+    sections = json.loads(runner.invoke(cli, ["docs"]).stdout)["sections"]
+    for section in sections:
+        if section == "runtimes":
+            continue
+        data = json.loads(runner.invoke(cli, ["docs", section]).stdout)
+        for token in CADQUERY_CODE_TOKENS:
+            assert token not in data["content"], f"{section} teaches {token!r}"
+
+
+def test_default_help_contains_no_cadquery_code(runner, isolated_dir):
+    result = runner.invoke(cli, ["--help"])
+    assert result.exit_code == 0
+    for token in CADQUERY_CODE_TOKENS:
+        assert token not in result.output, f"--help teaches {token!r}"
+
+
+def test_docs_cadquery_pointer_section(runner, isolated_dir):
+    """`docs cadquery` is discoverable, points at compatibility mode, and
+    contains no CadQuery code itself."""
+    result = runner.invoke(cli, ["docs", "cadquery"])
+    data = json.loads(result.stdout)
+    assert data["status"] == "success"
+    assert "--runtime cadquery" in data["content"]
+    for token in CADQUERY_CODE_TOKENS:
+        assert token not in data["content"], token
+
+
+def test_docs_full_rollup_excludes_cadquery_pointer(runner, isolated_dir):
+    data = json.loads(runner.invoke(cli, ["docs"]).stdout)
+    assert "cadquery" in data["sections"]
+    assert "CadQuery compatibility — overview pointer" not in data["content"]
+
+
+# Issue #118: the mirror-image guard — CadQuery compatibility docs must not
+# present build123d code as usable. Naming build123d-only helpers in a
+# "these are build123d-only" warning is fine; code snippets are not.
+def test_cadquery_editing_docs_lead_with_native_path(runner, isolated_dir):
+    result = runner.invoke(cli, ["docs", "editing", "--runtime", "cadquery"])
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "importers.importStep" in content
+    assert "from build123d import" not in content
+    assert "Plane.XY" not in content
+    assert "Sketch()" not in content
+    # the native selector path comes before the build123d-only pointer
+    assert content.index("importers.importStep") < content.index("build123d-only")
+    # One-command flow (#129). `import --init --runtime cadquery` now pins cq,
+    # so the docs no longer prescribe the two-step init-first dance nor warn
+    # against the --init shortcut. This previously required the
+    # `agentcad init --name legacy --runtime cadquery` line and forbade
+    # `import vendor.step --init`; both were workarounds for the missing flag.
+    assert "agentcad import vendor.step --init --runtime cadquery" in content
+    assert "Do not use the `import --init` shortcut" not in content
+
+
+def test_cadquery_full_docs_contain_no_build123d_imports(runner, isolated_dir):
+    result = runner.invoke(cli, ["docs", "--runtime", "cadquery"])
+    content = json.loads(result.stdout)["content"]
+    assert "from build123d import" not in content
+
+
+def test_docs_returns_full_documentation(runner):
+    result = runner.invoke(cli, ["docs"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    assert data["status"] == "success"
+    assert data["command"] == "docs"
+    assert len(data["content"]) > 100
+
+
+def test_docs_lists_sections(runner):
+    result = runner.invoke(cli, ["docs"])
+    data = json.loads(result.stdout)
+    sections = data["sections"]
+    assert "quickstart" in sections
+    assert "install" in sections
+    assert "commands" in sections
+    assert "render" in sections
+    assert "export" in sections
+    assert "schema" in sections
+    assert "helpers" in sections
+    assert "metrics" in sections
+    assert "measure" in sections
+    assert "check-spec" in sections
+    assert "preamble" in sections
+    assert "validation" in sections
+    assert "workflow" in sections
+    assert "daemon" in sections
+    assert "inspect" in sections
+    assert "parts" in sections
+    assert "review" in sections
+    assert "feedback" in sections
+    assert "recovery" in sections
+
+
+def test_docs_commands_section(runner):
+    result = runner.invoke(cli, ["docs", "commands"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    for cmd in [
+        "init", "run", "render", "measure", "check-spec", "parts",
+        "context", "recover", "review", "docs", "diff", "feedback",
+    ]:
+        assert cmd in content
+    assert "part review viewers" in content
+    assert "--spec spec.json" in content
+
+
+def test_docs_render_section(runner):
+    result = runner.invoke(cli, ["docs", "render"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "view" in content
+    assert "zoom" in content
+    assert "focus" in content
+
+
+def test_docs_recovery_section_is_explicit_and_non_destructive(runner):
+    result = runner.invoke(cli, ["docs", "recovery"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+    assert "agentcad context" in content
+    assert "agentcad recover v3_edit" in content
+    assert "--make-current" in content
+    assert "never deletes" in content
+    assert "source files" in content
+    assert "never repairs history by itself" in content
+    assert "atomic JSON" in content
+    assert "safely retryable" in content
+    assert "malformed/invalid STEP" in content
+    assert "pending by the interruption become unavailable" in content
+    assert "does not rerun" in content
+
+
+def test_mcp_docs_include_recovery_tool(runner):
+    content = json.loads(runner.invoke(cli, ["docs", "mcp"]).stdout)["content"]
+    assert "context" in content
+    assert "recover" in content
+    assert "interrupted version history" in content
+
+
+def test_docs_schema_section(runner):
+    result = runner.invoke(cli, ["docs", "schema"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    normalized = " ".join(content.split())
+    assert "success" in content
+    assert "failed" in content
+    assert "error" in content
+    assert "validation_error" in content
+    assert "invalid_geometry" in content
+    assert "unknown_format" in content
+    assert "recognized_deferred" in content
+    assert "viewer_glb" in content
+    assert "outputs.glb appears only when --export glb" in content
+    assert "artifacts" in content
+    assert "pending, success, unavailable, timeout, failed, or skipped" in normalized
+    assert "Keep and use that STEP" in normalized
+    assert "run core, artifacts" in normalized
+
+
+def test_docs_schema_documents_stdout_vs_stderr(runner):
+    """Agents learn the CLI contract from `docs schema`; it must spell out that
+    JSON goes to stdout and progress to stderr, and warn against merging the
+    streams with 2>&1 before a JSON parser (a real parse-corruption footgun)."""
+    result = runner.invoke(cli, ["docs", "schema"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+    assert "stdout" in content
+    assert "stderr" in content
+    assert "2>&1" in content
+
+
+def test_docs_schema_scopes_next_actions_contract(runner, isolated_dir):
+    schema = runner.invoke(cli, ["docs", "schema"])
+    assert schema.exit_code == 0, schema.output
+    content = " ".join(json.loads(schema.stdout)["content"].split())
+    assert (
+        "For these CLI input-error recoveries, next_actions contains "
+        "commands or SCRIPT/LABEL templates; prose belongs in suggestion."
+    ) in content
+    assert (
+        "Successful init/context guidance may include explanations "
+        "after ' — '; execute only the command before that separator."
+    ) in content
+
+    initialized = runner.invoke(cli, ["init", "--no-agent-setup"])
+    context = runner.invoke(cli, ["context"])
+    for result in (initialized, context):
+        assert result.exit_code == 0, result.output
+        for action in json.loads(result.stdout)["next_actions"]:
+            command, separator, explanation = action.partition(" — ")
+            assert separator and explanation
+            followed = runner.invoke(cli, shlex.split(command)[1:])
+            assert followed.exit_code == 0, followed.output
+
+    # With no scripts to recommend, input-error recovery is a literal docs command.
+    failed = runner.invoke(cli, ["run", "missing.py", "--label", "first", "--no-daemon"])
+    assert failed.exit_code == 1, failed.output
+    for action in json.loads(failed.stdout)["next_actions"]:
+        assert " — " not in action
+        followed = runner.invoke(cli, shlex.split(action)[1:])
+        assert followed.exit_code == 0, followed.output
+
+
+def test_docs_schema_lists_current_inspect_measure_fields(runner):
+    result = runner.invoke(cli, ["docs", "schema"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+
+    for field in (
+        "format_detected", "extension", "size_bytes", "next_actions",
+        "more_at", "solids?/faces?/edges?", "summary?", "truncation?",
+        "validity", "cylindrical_features", "feature_summary?", "features?",
+        "query?", "edit_risk?",
+    ):
+        assert field in content
+
+
+def test_docs_workflow_section(runner):
+    result = runner.invoke(cli, ["docs", "workflow"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "init" in content
+    assert "run" in content
+    assert "check-spec" in content
+    assert "A=previous and B=current" in content
+    assert "opens automatically" in content
+
+
+def test_default_docs_follow_required_workflow_order(runner):
+    result = runner.invoke(cli, ["docs"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+
+    headings = [
+        "=== Inspect ===",
+        "=== Specify ===",
+        "=== Build ===",
+        "=== Validate ===",
+        "=== Deliver ===",
+    ]
+    positions = [content.index(heading) for heading in headings]
+    assert positions == sorted(positions)
+
+    assert content.index("Inspecting shape topology") < content.index("Measurement workflow")
+    assert content.index("Spec checks") < content.index("Quickstart")
+    assert content.index("Geometry validation") < content.index("Exporting mesh formats")
+
+
+def test_docs_and_skill_present_viewer_as_default_review_path(runner):
+    commands = json.loads(runner.invoke(cli, ["docs", "commands"]).stdout)["content"]
+    parts = json.loads(runner.invoke(cli, ["docs", "parts"]).stdout)["content"]
+    skill_result = runner.invoke(cli, ["skill", "show"])
+    skill_content = json.loads(skill_result.stdout)["content"]
+
+    assert "--no-view" in commands
+    assert "A=previous and B=current" in commands
+    assert "What changed" in parts
+    assert "added, removed, renamed" in parts
+    assert "opens automatically" in skill_content
+    assert "A=previous and B=current" in skill_content
+
+
+def test_docs_check_spec_section(runner):
+    result = runner.invoke(cli, ["docs", "check-spec"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "spec.json" in content
+    assert "diameter_tolerance_mm" in content
+    assert "missing_features" in content
+    assert "Read passed" in content
+    assert "cylindrical_features[].axis" in content
+    assert "validity" in content
+    assert "metrics" in content
+
+
+def test_docs_export_section(runner):
+    result = runner.invoke(cli, ["docs", "export"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "stl" in content
+    assert "glb" in content
+    assert "export_glb" in content
+
+
+def test_docs_helpers_section(runner):
+    # Pinned cq — these helpers are listed in the cadquery preamble's
+    # helper section; the b3d preamble has a different curated list.
+    result = runner.invoke(cli, ["docs", "helpers", "--runtime", "cadquery"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "loft_sections" in content
+    assert "tapered_sweep" in content
+    assert "naca_wire" in content
+    assert "mirror_fuse" in content
+    assert "copy_shape" in content
+    assert "independent" in content
+    assert "safe_cut" in content
+    assert "safe_intersection" in content
+    assert "safe_fuse" in content
+
+
+def test_docs_install_section(runner):
+    result = runner.invoke(cli, ["docs", "install"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "Python 3.10-3.12" in content
+    assert "pip install" in content
+
+
+def test_docs_metrics_section(runner):
+    result = runner.invoke(cli, ["docs", "metrics"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "bounding_box" in content
+    assert "volume" in content
+    assert "surface_area" in content
+    assert "face_count" in content
+
+
+def test_docs_unknown_section_error(runner):
+    result = runner.invoke(cli, ["docs", "nonexistent"])
+    assert result.exit_code == 1
+    data = json.loads(result.stdout)
+    assert data["status"] == "error"
+    assert "nonexistent" in data["message"]
+
+
+def test_docs_parts_mentions_review_viewers(runner):
+    result = runner.invoke(cli, ["docs", "parts", "--runtime", "cadquery"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+
+    assert "agentcad parts view" in content
+    assert "--isolate main_deck" in content
+    assert "--isolate-group frame" in content
+    assert "--ghost-rest" in content
+    assert "viewer_glb" in content
+    assert "group_color" in content
+    assert "--label \"Frame check\"" in content
+    assert "--note \"Inspect the gussets\"" in content
+    assert "temporary=true" in content
+    assert "persisted=false" in content
+    assert "saved-views catalog" in content
+    assert "use agentcad viewer open for" in content.lower()
+
+
+def test_docs_runtimes_dispatch_precedence_matches_dispatcher(runner):
+    """`docs runtimes` must teach the same precedence order as dispatch.py.
+
+    Precedence per dispatch.py:14 (highest to lowest):
+      1. --runtime CLI flag
+      2. Project manifest
+      3. Legacy source detection for unpinned projects
+      4. Global default (build123d, post-#163)
+    """
+    result = runner.invoke(cli, ["docs", "runtimes"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+
+    assert "Beats the project manifest" not in content
+    # Must NOT still advertise cadquery as the global default (post-#163 it's build123d).
+    assert "will flip after Phase 6" not in content, (
+        "Phase 6 already shipped; the default is build123d"
+    )
+
+    # Must teach the correct precedence: override > manifest > legacy > default.
+    runtime_pos = content.find("--runtime")
+    manifest_pos = content.find("Project manifest")
+    legacy_pos = content.find("Legacy projects")
+    default_pos = content.find("Global default")
+    assert (
+        0 <= runtime_pos < manifest_pos < legacy_pos < default_pos
+    ), "dispatch precedence should be listed in order"
+    assert "Global default: build123d" in content
+
+
+def test_docs_runtimes_positions_build123d_before_cadquery(runner):
+    result = runner.invoke(cli, ["docs", "runtimes"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+
+    assert content.startswith(
+        "Choosing a runtime — build123d default, CadQuery compatibility:"
+    )
+    assert content.find("    build123d:") < content.find(
+        "    CadQuery compatibility:"
+    )
+    assert "geometry and metrics are identical" not in content
+    assert "agentcad init --runtime cadquery" in content
+    assert "--runtime cadquery" in content
+
+
+def test_docs_works_without_project(runner, isolated_dir):
+    # No agentcad.json in isolated_dir
+    result = runner.invoke(cli, ["docs"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    assert data["status"] == "success"
+
+
+# --- M17: Quickstart section (Fix 2) ---
+
+
+def test_docs_quickstart_section(runner):
+    # Explicit CQ compatibility docs show both the project flag and CQ idiom.
+    result = runner.invoke(cli, ["docs", "quickstart", "--runtime", "cadquery"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "show_object" in content
+    assert "cq.Workplane" in content
+    assert "agentcad init --name myproject --runtime cadquery" in content
+
+
+def test_docs_default_quickstart_uses_build123d_without_runtime_flag(runner):
+    result = runner.invoke(cli, ["docs", "quickstart"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+    assert "Quickstart (build123d)" in content
+    assert "agentcad init --name myproject" in content
+    assert "--runtime build123d" not in content
+    assert "Box(10, 20, 5)" in content
+
+
+def test_docs_default_workflow_does_not_require_build123d_flag(runner):
+    result = runner.invoke(cli, ["docs", "workflow"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+    assert "agentcad init --name myproject" in content
+    assert "--runtime build123d" not in content
+
+
+def test_docs_cadquery_workflow_pins_compatibility_mode(runner):
+    result = runner.invoke(cli, ["docs", "workflow", "--runtime", "cadquery"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+    assert "CadQuery compatibility project" in content
+    assert "agentcad init --name myproject --runtime cadquery" in content
+
+
+def test_docs_quickstart_shows_multi_show_object(runner):
+    result = runner.invoke(cli, ["docs", "quickstart"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "compound" in content.lower()
+
+
+# --- M17: Units note in metrics (Fix 3) ---
+
+
+def test_docs_metrics_mentions_units(runner):
+    result = runner.invoke(cli, ["docs", "metrics"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "unit-agnostic" in content
+
+
+# --- M17: tapered_sweep limitation (Fix 4) ---
+
+
+def test_docs_helpers_tapered_sweep_limitation(runner):
+    result = runner.invoke(cli, ["docs", "helpers", "--runtime", "cadquery"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "smooth spines" in content
+
+
+# --- M17: Helper type conversion (Fix 5) ---
+
+
+def test_docs_helpers_conversion_patterns(runner):
+    result = runner.invoke(cli, ["docs", "helpers", "--runtime", "cadquery"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "cq.Shape.cast" in content
+
+
+# --- M18: Preview in commands docs ---
+
+
+def test_docs_commands_mentions_preview(runner):
+    result = runner.invoke(cli, ["docs", "commands"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    # Preview is on by default; docs should advertise the --no-preview escape hatch
+    assert "--no-preview" in content
+    assert "preview" in content
+
+
+def test_docs_commands_mentions_no_diff_fast_path(runner):
+    result = runner.invoke(cli, ["docs", "commands"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+    assert "--no-diff" in content
+    assert "--no-preview --no-diff --no-view" in content
+    assert "agentcad diff" in content
+    assert "meta.json" in content
+
+
+def test_docs_schemas_explains_observable_comparison_phases(runner):
+    result = runner.invoke(cli, ["docs", "schema"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+    assert "comparison_phases" in content
+    for name in (
+        "source_loading",
+        "comparison_rendering",
+        "projection_comparison",
+        "exact_3d_comparison",
+        "approximate_3d_comparison",
+        "difference_artifact_export",
+        "viewer_generation",
+    ):
+        assert name in content
+    assert "duration_ms" in content
+    assert "most expensive" in content
+    assert "explanatory\n              message" in content
+    assert "omitted when no\n              comparison was attempted" in content
+    assert "Source panels are captured once" in content
+    assert "reuses those pixels" in content
+    assert "independent of display material and lighting" in content
+    assert "AGENTCAD_DIFF_TIMEOUT_S" in content
+    assert "terminable worker" in content
+    assert "method=approximate_voxel_volume" in content
+    assert "comparison_3d.exact_attempt" in content
+    assert "one non-destructive exact" in content
+    assert "comparison_3d.kernel" in content
+    assert "comparison_3d.exact_attempt.kernel" in content
+    assert "exact_partition_runs" in content
+    assert "counts instead of duplicate entries" in content
+    assert "Unavailable results include a suggestion" in content
+    assert "volume_semantics" in content
+    assert "only when an input" in content
+    assert "never published" in content
+    assert "create a duplicate version" in content
+
+
+def test_docs_commands_mentions_exact_comparison_budget(runner):
+    result = runner.invoke(cli, ["docs", "commands"])
+    content = json.loads(result.output)["content"]
+
+    assert "30s default worker budget" in content
+    assert "AGENTCAD_DIFF_TIMEOUT_S" in content
+
+
+# --- M19: Colored GLB in export docs ---
+
+
+def test_docs_export_mentions_colored_glb(runner):
+    result = runner.invoke(cli, ["docs", "export"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"].lower()
+    assert "color" in content or "per-solid" in content
+
+
+# --- M20: Patterns section ---
+
+
+def test_docs_patterns_section(runner):
+    result = runner.invoke(cli, ["docs", "patterns"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    assert "build" in data["content"].lower() and "origin" in data["content"].lower()
+
+
+def test_docs_patterns_mentions_compound_vs_union(runner):
+    # cq-specific: makeCompound is a cq.Workplane API, b3d uses Compound.
+    result = runner.invoke(cli, ["docs", "patterns", "--runtime", "cadquery"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "makeCompound" in content
+    assert "union" in content
+
+
+def test_docs_patterns_mentions_revolve(runner):
+    # cq docs cover .revolve() on a Workplane; b3d patterns docs mention
+    # revolve too but in a different context — pin cq to keep this test's
+    # original intent (cq patterns content).
+    result = runner.invoke(cli, ["docs", "patterns", "--runtime", "cadquery"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    assert "revolve" in data["content"].lower()
+
+
+# --- M21: Parametric docs ---
+
+
+def test_docs_parametric_section(runner):
+    result = runner.invoke(cli, ["docs", "parametric"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "--params" in content
+    assert "key=value" in content
+
+
+# --- M22: Rotate direction convention ---
+
+
+def test_docs_helpers_rotate_direction_convention(runner):
+    result = runner.invoke(cli, ["docs", "helpers", "--runtime", "cadquery"])
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "right-hand rule" in content.lower() or "counterclockwise" in content.lower()
+
+
+# --- M22: Angled positioning example ---
+
+
+def test_docs_patterns_angled_positioning_example(runner):
+    result = runner.invoke(cli, ["docs", "patterns"])
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "rotate(" in content and "translate(" in content
+    assert "arm" in content.lower() or "angle" in content.lower()
+
+
+def test_docs_preamble_requires_explicit_math_imports(runner):
+    result = runner.invoke(cli, ["docs", "preamble"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+    assert "math names are not pre-injected" in content
+    assert "from math import cos, sin, sqrt, pi" in content
+
+
+# --- Daemon docs (auto-managed: minimal surface area) ---
+
+
+def test_docs_daemon_section(runner):
+    """Daemon docs reflect the auto-managed reality: agents don't start the
+    daemon, while lifecycle commands remain available for diagnostics and
+    explicit recovery after a package upgrade."""
+    result = runner.invoke(cli, ["docs", "daemon"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    # The kept diagnostic commands.
+    assert "daemon stop" in content
+    assert "daemon status" in content
+    assert "daemon restart" in content
+    # Auto-managed framing: the daemon spawns itself.
+    assert "auto" in content.lower() or "automatic" in content.lower()
+    # Version drift is reported, not automatically healed. Keep the docs in
+    # sync with daemon.py's manual-restart contract.
+    lower_content = content.lower()
+    assert "self-heal" not in lower_content
+    assert "pip" in lower_content and "upgrade" in lower_content
+    assert "loaded at" in lower_content and "startup" in lower_content
+    assert "progress heartbeat" in lower_content
+    assert "30-second response-idle window" in lower_content
+    assert "never resubmitted" in lower_content
+    assert "stderr" in lower_content
+    assert "stdout" in lower_content
+    assert "via='daemon'" in lower_content
+    assert "exits 124" in lower_content
+    assert "daemon_response_timeout" in lower_content
+    assert "retry_safe=false" in lower_content
+    assert "agentcad context" in lower_content
+    assert "before retrying" in lower_content
+    assert "any daemon-routed" in lower_content
+
+
+def test_docs_commands_does_not_list_daemon(runner):
+    """`docs commands` is the agent-facing command listing. The daemon is
+    auto-managed and shouldn't appear there — agents who don't know about
+    the daemon should never need to learn."""
+    result = runner.invoke(cli, ["docs", "commands"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    assert "daemon" not in data["content"].lower()
+
+
+# --- M24: Inspect docs ---
+
+
+def test_docs_inspect_section(runner):
+    result = runner.invoke(cli, ["docs", "inspect"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "solid_count" in content
+    assert "shell" in content.lower()
+    assert "free_edge" in content
+    assert "format_detected" in content
+    assert "next_actions" in content
+    assert "--summary" in content
+    assert "solids / faces / edges" in content
+    assert "[--ids] [--summary]" in content
+    assert "face_clusters" in content
+    assert "ids_total?" in content
+    assert "truncation" in content
+
+
+def test_docs_commands_mentions_inspect(runner):
+    result = runner.invoke(cli, ["docs", "commands"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    assert "inspect" in data["content"]
+
+
+def test_docs_measure_section(runner):
+    result = runner.invoke(cli, ["docs", "measure"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "agentcad measure" in content
+    assert "diameter" in content
+    assert "cylindrical_features" in content
+    assert "not a manufacturing tolerance" in content
+    assert "--features" in content
+    assert "metrics.is_valid" in content
+    assert "validity         {is_valid}" not in content
+    assert "query" in content
+    assert "features" in content
+    assert "direction?" in content
+    assert "+x/+y/+z/other" in content
+    assert "face_clusters" in content
+    assert "diameter_tolerance_mm" in content
+    assert "Use reported axis labels" in content
+    assert "ids_total?" in content
+    assert "truncation" in content
+    assert "Omitted by --cylinders-only" in content
+
+
+# --- M26: twistExtrude performance warning ---
+
+
+def test_docs_patterns_mentions_twist_extrude(runner):
+    # cq-specific: twistExtrude is a cq.Workplane method.
+    result = runner.invoke(cli, ["docs", "patterns", "--runtime", "cadquery"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "twistExtrude" in content
+    assert "polyline" in content
+
+
+# --- M33: Parts docs ---
+
+
+def test_docs_parts_section(runner):
+    # Parts docs are runtime-aware (cq vs b3d show different examples);
+    # this asserts the cq-tagged content. b3d parts docs have a parallel
+    # test in tests_b3d/.
+    result = runner.invoke(cli, ["docs", "parts", "--runtime", "cadquery"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "show_object" in content
+    assert "name=" in content
+    assert "color" in content.lower()
+    assert "metrics" in content.lower()
+    assert "diff" in content.lower()
+
+
+# --- M35: Wire helpers + elliptical_sweep docs ---
+
+
+def test_docs_helpers_mentions_wire_helpers(runner):
+    result = runner.invoke(cli, ["docs", "helpers", "--runtime", "cadquery"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "ellipse_wire" in content
+    assert "spline_wire" in content
+    assert "polygon_wire" in content
+    assert "rounded_rect_wire" in content
+    assert "elliptical_sweep" in content
+
+
+def test_docs_preamble_mentions_wire_helpers(runner):
+    result = runner.invoke(cli, ["docs", "preamble"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    content = data["content"]
+    assert "ellipse_wire" in content
+    assert "elliptical_sweep" in content
+
+
+def test_docs_build123d_mentions_annular_edit_helpers(runner):
+    result = runner.invoke(cli, ["docs", "helpers", "--runtime", "build123d"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+    assert "annular_boss" in content
+    assert "raise_annulus" in content
+    assert "load_step_shape" in content
+    # Issue #194: the Compound(raw) idiom is gone; helpers keep the input kind.
+    assert "Compound(result)" not in content
+    assert "same kind" in content
+    assert "fragile boolean" in content
+    assert "loft_sections([lower, upper])" in content
+    assert "copy_shape" in content
+    assert "independent geometry copy" in content
+    assert "safe_cut" in content
+    assert "subtraction" in content
+    assert "safe_intersection" in content
+    assert "safe_fuse" in content
+
+
+def test_docs_preamble_mentions_annular_edit_helpers(runner):
+    result = runner.invoke(cli, ["docs", "preamble", "--runtime", "build123d"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+    assert "annular_boss" in content
+    assert "raise_annulus" in content
+
+
+def test_docs_cadquery_preamble_mentions_annular_edit_helpers(runner):
+    result = runner.invoke(cli, ["docs", "preamble", "--runtime", "cadquery"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+    assert "annular_boss" in content
+    assert "raise_annulus" in content
+
+
+def test_docs_editing_describes_runtime_neutral_annular_helpers(runner):
+    result = runner.invoke(cli, ["docs", "editing", "--runtime", "cadquery"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+    assert "Runtime-neutral edit helpers" in content
+    assert "annular_boss" in content
+    assert "raise_annulus" in content
+
+
+def test_docs_build123d_editing_starts_with_imported_part_contract(runner):
+    result = runner.invoke(cli, ["docs", "editing", "--runtime", "build123d"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+
+    assert "load_step('input.step')  # build123d Part" in content
+    assert "base.solids()" in content
+    assert "base.faces()" in content
+    assert "base.edges()" in content
+    assert "base.bounding_box()" in content
+    assert "xmin, ymin, zmin = bbox_point(base, 'min', 'min', 'min')" in content
+    assert "xc, yc, zc = bbox_point(base)" in content
+    assert "xmax, ymax, zmax = bbox_point(base, 'max', 'max', 'max')" in content
+    assert "xlen, ylen, zlen = bbox_size(base)" in content
+    assert "from agentcad.api import bbox_point, bbox_size" in content
+    assert "bounds.center().X" in content
+    assert content.index("Imported-part contract") < content.index("1. Import the file")
+    assert "CadQuery" not in content
+
+
+# --- M38: Complex profile patterns ---
+
+
+def test_docs_patterns_subtractive_construction(runner):
+    """Patterns should document cut-from-blank strategy."""
+    result = runner.invoke(cli, ["docs", "patterns", "--runtime", "cadquery"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"].lower()
+    assert "subtractive" in content or "cut from" in content
+    assert "boolean" in content or "brepalgoapiapi_cut" in content or "cut" in content
+
+
+def test_docs_patterns_wire_winding(runner):
+    """Patterns should document wire winding direction and normals."""
+    result = runner.invoke(cli, ["docs", "patterns", "--runtime", "cadquery"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"].lower()
+    assert "winding" in content
+    assert "ccw" in content or "counter-clockwise" in content
+    assert "normal" in content
+
+
+def test_docs_patterns_mixed_edge_wire(runner):
+    """Patterns should document building wires from mixed edge types."""
+    result = runner.invoke(cli, ["docs", "patterns", "--runtime", "cadquery"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+    assert "BRepBuilderAPI_MakeWire" in content
+    assert "BRepBuilderAPI_MakeEdge" in content
+
+
+def test_cadquery_editing_docs_teach_wrapper_preserving_helpers(runner):
+    """Issue #194 review: the CadQuery overlay must not send agents back to
+    the raw .val().wrapped bridge, which drops every object but the first on
+    a multi-object Workplane."""
+    result = runner.invoke(cli, ["docs", "editing", "--runtime", "cadquery"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+    assert "operate on raw shapes" not in content
+    assert "Workplane in, Workplane out" in content
+    assert "every\n  stack object preserved" in content or "stack object preserved" in content
+    assert "show_object(assemble(result))" not in content
+    assert "importers.importStep" in content
+
+
+@pytest.mark.parametrize("section", ["helpers", "patterns", "editing", "preamble"])
+def test_cadquery_overlays_do_not_teach_val_wrapped_bridge(runner, section):
+    """Issue #194 review: every CadQuery overlay must show Workplane-in /
+    Workplane-out helper use; `.val().wrapped` drops all but the first
+    object of a multi-object Workplane."""
+    result = runner.invoke(cli, ["docs", section, "--runtime", "cadquery"])
+    assert result.exit_code == 0
+    content = json.loads(result.stdout)["content"]
+    assert "= cq.Workplane('XY').box(10, 20, 5).val().wrapped" not in content
+    assert ".extrude(120).val().wrapped" not in content
+    assert ".box(5, 5, 80).val().wrapped" not in content
+
+
+def test_cadquery_helpers_docs_state_same_kind_contract(runner):
+    result = runner.invoke(cli, ["docs", "helpers", "--runtime", "cadquery"])
+    content = json.loads(result.stdout)["content"]
+    assert "cq.Workplane in, cq.Workplane out" in content
+    assert "every stack object preserved" in content
+    assert "combine=False" in content
+    assert "Combine cq.Workplane, cq.Shape, or raw TopoDS_Shape" in content
+    assert "STEP path, raw shape, cq.Shape, or" in content
+
+
+def test_cadquery_patterns_docs_use_workplanes_with_helpers(runner):
+    result = runner.invoke(cli, ["docs", "patterns", "--runtime", "cadquery"])
+    content = json.loads(result.stdout)["content"]
+    assert "placed = translate(part, 50, 0, 0)     # still a cq.Workplane" in content
+    assert "do\n    not pass .val().wrapped" in content
+    assert "base = cq.Workplane('XY').box(100, 100, 10)\n" in content

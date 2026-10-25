@@ -1,0 +1,333 @@
+"""
+
+Parametric Sprockets
+
+name: sprocket.py
+by:   Gumyr
+date: February 13th 2026
+
+desc:
+
+    This python/build123d code is a parameterized chain sprocket generator.
+    Given a chain pitch, a number of teeth and other optional parameters, a
+    sprocket centered on the origin is generated.
+
+license:
+
+    Copyright 2026 Gumyr
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+"""
+
+from math import cos, pi, radians, sqrt
+
+from build123d import (
+    IN,
+    Align,
+    Axis,
+    BasePartObject,
+    CenterArc,
+    Compound,
+    Cylinder,
+    Face,
+    GeomType,
+    Line,
+    Mode,
+    Plane,
+    PolarLine,
+    PolarLocations,
+    Pos,
+    RadiusArc,
+    RotationLike,
+    Sketch,
+    Solid,
+    Vector,
+    Wire,
+    chamfer,
+    extrude,
+)
+
+
+class Sprocket(BasePartObject):
+    """
+    Create a new sprocket object as defined by the given parameters. The input parameter
+    defaults are appropriate for a standard bicycle chain.
+
+    Args:
+        num_teeth (int): number of teeth on the perimeter of the sprocket
+        chain_pitch (float): distance between the centers of two adjacent rollers.
+            Defaults to 1/2 inch.
+        roller_diameter (float): size of the cylindrical rollers within the chain.
+            Defaults to 5/16 inch.
+        clearance (float): size of the gap between the chain's rollers and the sprocket's teeth.
+            Defaults to 0.
+        thickness (float): thickness of the sprocket.
+            Defaults to 0.084 inch.
+        bolt_circle_diameter (float): diameter of the mounting bolt hole pattern.
+            Defaults to 0.
+        num_mount_bolts (int): number of bolt holes (default 0) - if 0, no bolt holes
+            are added to the sprocket
+        mount_bolt_diameter (float): size of the bolt holes use to mount the sprocket.
+            Defaults to 0.
+        bore_diameter (float): size of the central hole in the sprocket (default 0) - if 0,
+            no bore hole is added to the sprocket
+        rotation (RotationLike, optional): angles to rotate about axes. Defaults to (0, 0, 0)
+        align (Align | tuple[Align, Align, Align] | None, optional): align MIN, CENTER,
+            or MAX of object. Defaults to Align.CENTER
+        mode (Mode, optional): combine mode. Defaults to Mode.ADD
+
+    **NOTE**: Default parameters are for standard single sprocket bicycle chains.
+
+    Attributes:
+        pitch_radius (float): radius of the circle formed by the center of the chain rollers
+        outer_radius (float): size of the sprocket from center to tip of the teeth
+        pitch_circumference (float): circumference of the sprocket at the pitch radius
+        plan (Face): 2D plan of the base sprocket without any cutouts
+
+    Example:
+
+        .. doctest::
+
+            >>> s = Sprocket(num_teeth=32)
+            >>> print(s.pitch_radius)
+            64.78458745735234
+            >>> s.rotate((0,0,0),(0,0,1),10)
+
+    """
+
+    @property
+    def pitch_radius(self):
+        """The radius of the circle formed by the center of the chain rollers"""
+        return Sprocket.sprocket_pitch_radius(self.num_teeth, self.chain_pitch)
+
+    @property
+    def outer_radius(self):
+        """The size of the sprocket from center to tip of the teeth"""
+        if self._flat_teeth:
+            o_radius = self.pitch_radius + self.roller_diameter / 4
+        else:
+            o_radius = sqrt(self.pitch_radius**2 - (self.chain_pitch / 2) ** 2) + sqrt(
+                (self.chain_pitch - self.roller_diameter / 2) ** 2
+                - (self.chain_pitch / 2) ** 2
+            )
+        return o_radius
+
+    @property
+    def pitch_circumference(self):
+        """The circumference of the sprocket at the pitch radius"""
+        return Sprocket.sprocket_circumference(self.num_teeth, self.chain_pitch)
+
+    def __init__(
+        self,
+        num_teeth: int,
+        chain_pitch: float = (1 / 2) * IN,
+        roller_diameter: float = (5 / 16) * IN,
+        clearance: float = 0.0,
+        thickness: float = 0.084 * IN,
+        bolt_circle_diameter: float = 0.0,
+        num_mount_bolts: int = 0,
+        mount_bolt_diameter: float = 0.0,
+        bore_diameter: float = 0.0,
+        rotation: RotationLike = (0, 0, 0),
+        align: None | Align | tuple[Align, Align, Align] = Align.CENTER,
+        mode: Mode = Mode.ADD,
+    ):
+        """Validate inputs and create the chain assembly object"""
+        self.num_teeth = num_teeth
+        self.chain_pitch = chain_pitch
+        self.roller_diameter = roller_diameter
+        self.clearance = clearance
+        self.thickness = thickness
+        self.bolt_circle_diameter = bolt_circle_diameter
+        self.num_mount_bolts = num_mount_bolts
+        self.mount_bolt_diameter = mount_bolt_diameter
+        self.bore_diameter = bore_diameter
+
+        # Validate inputs
+        """Ensure that the roller would fit in the chain"""
+        if self.roller_diameter >= self.chain_pitch:
+            raise ValueError(
+                f"roller_diameter {self.roller_diameter} is too large"
+                f" for chain_pitch {self.chain_pitch}"
+            )
+        if not isinstance(num_teeth, int) or num_teeth <= 2:
+            raise ValueError(
+                f"num_teeth must be an integer greater than 2 not {num_teeth}"
+            )
+        # Create the sprocket ()
+        sprocket = self._make_sprocket()
+
+        # Remove an extraneous Compound wrapper
+        if isinstance(sprocket, Compound):
+            sprocket = sprocket.unwrap()
+
+        super().__init__(sprocket, rotation, align, mode)
+
+    def _make_sprocket(self) -> Compound:
+        """Create a new sprocket object as defined by the class attributes"""
+        tooth_tip = Sprocket._make_tooth_outline(
+            self.num_teeth, self.chain_pitch, self.roller_diameter, self.clearance
+        )
+        tooth_face = Pos(Z=-self.thickness / 2) * Face(
+            Wire(
+                tooth_tip.edges()
+                + [Line((0, 0), tooth_tip @ 0), Line((0, 0), tooth_tip @ 1)]
+            )
+        )
+        tooth = extrude(tooth_face, self.thickness, (0, 0, 1))
+
+        # Chamfer the outside edges if the sprocket has "flat" teeth
+        self._flat_teeth = len(tooth_tip.edges()) == 5
+        if self._flat_teeth:
+            tip_face = (
+                tooth.faces().filter_by(GeomType.CYLINDER).sort_by_distance((0, 0))[-1]
+            )
+            to_chamfer = tip_face.edges().filter_by(GeomType.CIRCLE)
+            tooth = chamfer(
+                to_chamfer,
+                self.thickness * 0.25,
+                self.thickness * 0.5,
+                reference=tip_face,
+            )
+        sprocket = Solid() + PolarLocations(0, self.num_teeth) * tooth
+        sprocket.orientation += (0, 0, 90)
+
+        #
+        # Create bolt holes
+        if (
+            self.bolt_circle_diameter != 0
+            and self.num_mount_bolts != 0
+            and self.mount_bolt_diameter != 0
+        ):
+            sprocket -= PolarLocations(
+                self.bolt_circle_diameter / 2, self.num_mount_bolts
+            ) * Cylinder(self.mount_bolt_diameter / 2, self.thickness)
+
+        #
+        # Create a central bore
+        if self.bore_diameter != 0:
+            sprocket -= Cylinder(self.bore_diameter / 2, self.thickness)
+
+        return sprocket
+
+    @property
+    def plan(self) -> Face:
+        """2D plan of the base sprocket without any cutouts"""
+        tooth_tip = Sprocket._make_tooth_outline(
+            self.num_teeth, self.chain_pitch, self.roller_diameter, self.clearance
+        )
+        tooth_face = Face(
+            Wire(
+                tooth_tip.edges()
+                + [Line((0, 0), tooth_tip @ 0), Line((0, 0), tooth_tip @ 1)]
+            )
+        )
+        if tooth_face.normal_at().Z == -1:
+            tooth_face = -tooth_face
+        sprocket_plan = Sketch() + PolarLocations(0, self.num_teeth) * tooth_face
+        return sprocket_plan.face()
+
+    @staticmethod
+    def sprocket_pitch_radius(num_teeth: int, chain_pitch: float) -> float:
+        """
+        Calculate and return the pitch radius of a sprocket with the given number of teeth
+                                and chain pitch
+
+        Parameters
+        ----------
+        num_teeth : int
+            the number of teeth on the perimeter of the sprocket
+        chain_pitch : float
+            the distance between two adjacent pins in a single link (default 1/2 inch)
+        """
+        return sqrt(chain_pitch * chain_pitch / (2 * (1 - cos(2 * pi / num_teeth))))
+
+    @staticmethod
+    def sprocket_circumference(num_teeth: int, chain_pitch: float) -> float:
+        """
+        Calculate and return the pitch circumference of a sprocket with the given number of
+                                teeth and chain pitch
+
+        Parameters
+        ----------
+        num_teeth : int
+            the number of teeth on the perimeter of the sprocket
+        chain_pitch : float
+            the distance between two adjacent pins in a single link (default 1/2 inch)
+        """
+        return (
+            2
+            * pi
+            * sqrt(chain_pitch * chain_pitch / (2 * (1 - cos(2 * pi / num_teeth))))
+        )
+
+    @staticmethod
+    def _make_tooth_outline(
+        num_teeth: int,
+        chain_pitch: float,
+        roller_diameter: float,
+        clearance: float = 0.0,
+    ) -> Wire:
+        """
+        Create a Wire in the shape of a single tooth of the sprocket defined by the input parameters
+
+        There are two different shapes that the tooth could take:
+        1) "Spiky" teeth: given sufficiently large rollers, there is no circular top
+        2) "Flat" teeth: given smaller rollers, a circular "flat" section bridges the
+        space between roller slots
+        """
+
+        roller_rad = roller_diameter / 2 + clearance
+        tooth_a_degrees = 360 / num_teeth
+        pitch_rad = sqrt(chain_pitch**2 / (2 * (1 - cos(radians(tooth_a_degrees)))))
+        outer_rad = pitch_rad + roller_rad / 2
+
+        outer_circle = CenterArc((0, 0), outer_rad, 0, 360)
+        roller_circle = CenterArc(
+            Vector(pitch_rad, 0).rotate(Axis.Z, tooth_a_degrees / 2), roller_rad, 0, 360
+        )
+        link_circle = CenterArc(
+            Vector(pitch_rad, 0).rotate(Axis.Z, -tooth_a_degrees / 2),
+            chain_pitch - roller_rad,
+            0,
+            360,
+        )
+
+        roller_line_pnt = Line(roller_circle.arc_center, link_circle.arc_center) @ (
+            roller_rad / chain_pitch
+        )
+        outer_pnt = link_circle.find_intersection_points(outer_circle).sort_by(Axis.Y)[
+            -1
+        ]
+        roller_start_pnt = (
+            PolarLine((0, 0), pitch_rad - roller_rad, tooth_a_degrees / 2) @ 1
+        )
+        arc1 = roller_circle.trim(roller_start_pnt, roller_line_pnt)
+        if outer_pnt.Y > 0:  # "Flat" topped sprockets
+            arc2 = link_circle.trim(roller_line_pnt, outer_pnt)
+            arc3 = RadiusArc(outer_pnt, (outer_pnt.X, -outer_pnt.Y), outer_rad)
+            arc4 = arc2.mirror(Plane.XZ)
+            arc5 = arc1.mirror(Plane.XZ)
+            tooth_perimeter = Wire([arc1, arc2, arc3, arc4, arc5])
+        else:
+            axis_crossings = link_circle.intersect(Axis.X)
+            if not axis_crossings:
+                raise RuntimeError("link circle does not cross the X axis")
+            link_axis_pnt = axis_crossings.sort_by(Axis.X)[-1]
+            arc2 = link_circle.trim(roller_line_pnt, link_axis_pnt)
+            arc3 = arc2.mirror(Plane.XZ)
+            arc4 = arc1.mirror(Plane.XZ)
+            tooth_perimeter = Wire([arc1, arc2, arc3, arc4])
+
+        return tooth_perimeter

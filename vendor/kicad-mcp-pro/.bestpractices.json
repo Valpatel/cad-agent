@@ -1,0 +1,38 @@
+{
+  "evidence": {
+    "codingStandards": "docs/development/coding-standards.md",
+    "dependencyManagement": "docs/development/dependency-management.md",
+    "governance": "GOVERNANCE.md",
+    "maintainers": "MAINTAINERS.md",
+    "maturityReport": "docs/repo-maturity-report.md",
+    "openssfEvidence": "docs/openssf-evidence.md",
+    "openssfGapAnalysis": "docs/openssf-gap-analysis.md",
+    "openssfProposalLinks": "docs/openssf-proposal-links.md",
+    "releaseProcess": "docs/development/release-process.md",
+    "securityPolicy": "SECURITY.md",
+    "silverEvidence": "docs/openssf-silver-evidence.md",
+    "testingPolicy": "docs/development/testing-policy.md"
+  },
+  "manualActionsRequired": [
+    "Keep the active main repository ruleset enabled and align required checks after CI job name changes.",
+    "Add independent human PR review only if a second trusted maintainer joins.",
+    "Keep private vulnerability reporting, Dependabot alerts/security updates, secret scanning, and push protection enabled.",
+    "Keep CODEOWNERS available; enforce code-owner review only when maintainer coverage exists."
+  ],
+  "project": {
+    "badgeAppProjectId": 12686,
+    "currentTarget": "Professional OSS / Mature OSS",
+    "goldClaimed": false,
+    "name": "KiCad MCP Pro",
+    "openssfTarget": "Maintain Passing on canonical project 12686; pursue Silver only after canonical Silver criteria are satisfied",
+    "repository": "https://github.com/oaslananka/kicad-mcp-pro"
+  },
+  "schemaVersion": 1,
+  "statusLegend": [
+    "Passed",
+    "Partial",
+    "Missing",
+    "Not applicable",
+    "Needs human confirmation"
+  ]
+}

@@ -1,0 +1,844 @@
+"""Aggregate live-model release-gate contract tests."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+import yaml
+
+from kicad_mcp.evals.live_config import load_configurations
+from kicad_mcp.evals.release_gate import evaluate_release_gate, write_release_gate_report
+from kicad_mcp.evals.tool_selection import load_cases
+
+ROOT = Path(__file__).resolve().parents[2]
+CONFIGURATIONS = ROOT / "evals/live/configurations.yaml"
+CASES = ROOT / "evals/tool_selection/cases.yaml"
+THRESHOLDS = ROOT / "evals/tool_selection/thresholds.yaml"
+
+CONFIG_IDS = (
+    "nvidia-nemotron-3-5-lightning-30b-a3b",
+    "opencode-cli-mimo-v2-5-free",
+    "opencode-cli-nemotron-3-ultra-free",
+)
+MODELS = (
+    "nvidia/nemotron-3.5-lightning-30b-a3b",
+    "mimo-v2.5-free",
+    "nemotron-3-ultra-free",
+)
+HOSTS = ("nvidia-nim", "opencode-zen-cli", "opencode-zen-cli")
+REQUEST_INTERVALS = (5.0, 0.0, 0.0)
+REQUIRED_ENVS = (
+    ("NVIDIA_API_KEY",),
+    ("OPENCODE_ZEN_API_KEY",),
+    ("OPENCODE_ZEN_API_KEY",),
+)
+COMMANDS = (
+    (
+        "python",
+        "scripts/nvidia_nim_eval_adapter.py",
+        "--model",
+        MODELS[0],
+        "--timeout-seconds",
+        "65",
+        "--structured-output",
+        "json_object",
+    ),
+    (
+        "python",
+        "scripts/opencode_cli_eval_adapter.py",
+        "--model",
+        MODELS[1],
+        "--opencode-bin",
+        "opencode",
+        "--timeout-seconds",
+        "65",
+    ),
+    (
+        "python",
+        "scripts/opencode_cli_eval_adapter.py",
+        "--model",
+        MODELS[2],
+        "--opencode-bin",
+        "opencode",
+        "--timeout-seconds",
+        "65",
+    ),
+)
+CONFIG_HOSTS = dict(zip(CONFIG_IDS, HOSTS, strict=True))
+
+
+def _evidence(
+    config_id: str,
+    model: str,
+    *,
+    pass_rate: float = 0.98,
+    mean_recall: float = 0.99,
+    safety_violations: int = 0,
+    forbidden_violations: int = 0,
+    unnecessary_call_rate: float = 0.01,
+    instability_rate: float = 0.01,
+    p95_latency_ms: float | None = 900,
+    mean_tokens: float | None = 180,
+    token_coverage: float = 1.0,
+    adapter_failures: int = 0,
+    selection_failures: int = 0,
+    executions: list[dict[str, object]] | None = None,
+    repeats: int = 3,
+) -> dict[str, object]:
+    observations = 65 * repeats
+    return {
+        "schema_version": 1,
+        "complete": True,
+        "configuration": {
+            "id": config_id,
+            "host": CONFIG_HOSTS.get(config_id, "nvidia-nim"),
+            "model": model,
+            "adapter": "subprocess",
+        },
+        "source_revision": "a" * 40,
+        "repeats": repeats,
+        "limits": {},
+        "usage": {
+            "total_tool_calls": 120,
+            "total_tokens": 35100,
+            "total_cost_micros": 0,
+            "token_observations": observations if token_coverage == 1.0 else 0,
+            "cost_observations": 0,
+        },
+        "summary": {
+            "cases": 65,
+            "runs": repeats,
+            "observations": observations,
+            "planned_observations": observations,
+            "completed_observations": observations - adapter_failures,
+            "passed": round(observations * pass_rate),
+            "pass_rate": pass_rate,
+            "mean_recall": mean_recall,
+            "behavior_match_rate": 1.0,
+            "violations": safety_violations + forbidden_violations,
+            "safety_violations": safety_violations,
+            "forbidden_violations": forbidden_violations,
+            "unnecessary_calls": 1,
+            "unnecessary_call_rate": unnecessary_call_rate,
+            "mean_calls": 1.0,
+            "call_limit_violations": 0,
+            "p95_latency_ms": p95_latency_ms,
+            "mean_tokens": mean_tokens,
+            "token_coverage": token_coverage,
+            "cost_coverage": 0.0,
+            "nondeterministic_cases": [],
+            "instability_rate": instability_rate,
+            "adapter_failures": adapter_failures,
+            "selection_failures": selection_failures,
+            "pipeline_passed": not (
+                safety_violations or forbidden_violations or adapter_failures or selection_failures
+            ),
+        },
+        "thresholds": {"passed": True, "failures": []},
+        "executions": executions or [],
+    }
+
+
+def _write_evidence(root: Path, values: list[dict[str, object]]) -> list[Path]:
+    paths: list[Path] = []
+    for value in values:
+        config_id = value["configuration"]["id"]  # type: ignore[index]
+        path = root / str(config_id) / "evidence.json"
+        path.parent.mkdir(parents=True)
+        path.write_text(json.dumps(value), encoding="utf-8")
+        paths.append(path)
+    return paths
+
+
+def _baseline(path: Path, *, approved: bool = True) -> Path:
+    payload = {
+        "schema_version": 1,
+        "approved": approved,
+        "minimum_repeats": 3,
+        "required_configurations": list(CONFIG_IDS),
+        "configurations": {
+            config_id: {
+                "host": host,
+                "model": model,
+                "token_metrics_required": True,
+                "metrics": {
+                    "pass_rate": 0.98,
+                    "mean_recall": 0.99,
+                    "unnecessary_call_rate": 0.01,
+                    "instability_rate": 0.01,
+                    "p95_latency_ms": 900,
+                    "mean_tokens": 180,
+                },
+            }
+            for config_id, model, host in zip(CONFIG_IDS, MODELS, HOSTS, strict=True)
+        },
+    }
+    path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    return path
+
+
+def test_gate_rejects_duplicate_required_configurations(tmp_path: Path) -> None:
+    baseline_path = _baseline(tmp_path / "baselines.yaml")
+    baseline = yaml.safe_load(baseline_path.read_text(encoding="utf-8"))
+    first = CONFIG_IDS[0]
+    baseline["required_configurations"] = [first, first]
+    baseline_path.write_text(yaml.safe_dump(baseline, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="unique"):
+        evaluate_release_gate(
+            [],
+            baseline_path=baseline_path,
+            cases_path=CASES,
+            thresholds_path=THRESHOLDS,
+        )
+
+
+def test_gate_accepts_one_required_full_configuration_at_two_repeats(
+    tmp_path: Path,
+) -> None:
+    config_id = CONFIG_IDS[0]
+    evidence = _write_evidence(
+        tmp_path / "evidence",
+        [_evidence(config_id, MODELS[0], repeats=2)],
+    )
+    baseline_path = _baseline(tmp_path / "baselines.yaml")
+    baseline = yaml.safe_load(baseline_path.read_text(encoding="utf-8"))
+    baseline["minimum_repeats"] = 2
+    baseline["required_configurations"] = [config_id]
+    baseline["configurations"] = {config_id: baseline["configurations"][config_id]}
+    baseline_path.write_text(yaml.safe_dump(baseline, sort_keys=False), encoding="utf-8")
+
+    report = evaluate_release_gate(
+        evidence,
+        baseline_path=baseline_path,
+        cases_path=CASES,
+        thresholds_path=THRESHOLDS,
+    )
+
+    assert report["passed"] is True
+    assert report["configurations"] == [config_id]
+    assert report["observed"][config_id]["repeats"] == 2
+
+
+def test_gate_rejects_one_repeat_when_baseline_requires_two(tmp_path: Path) -> None:
+    config_id = CONFIG_IDS[0]
+    evidence = _write_evidence(
+        tmp_path / "evidence",
+        [_evidence(config_id, MODELS[0], repeats=1)],
+    )
+    baseline_path = _baseline(tmp_path / "baselines.yaml")
+    baseline = yaml.safe_load(baseline_path.read_text(encoding="utf-8"))
+    baseline["minimum_repeats"] = 2
+    baseline["required_configurations"] = [config_id]
+    baseline["configurations"] = {config_id: baseline["configurations"][config_id]}
+    baseline_path.write_text(yaml.safe_dump(baseline, sort_keys=False), encoding="utf-8")
+
+    report = evaluate_release_gate(
+        evidence,
+        baseline_path=baseline_path,
+        cases_path=CASES,
+        thresholds_path=THRESHOLDS,
+    )
+
+    assert report["passed"] is False
+    assert report["classifications"]["infrastructure_failures"] == [f"{config_id}: repeats below 2"]
+
+
+def test_gate_accepts_two_required_configurations(tmp_path: Path) -> None:
+    required = CONFIG_IDS[:2]
+    evidence = _write_evidence(
+        tmp_path / "evidence",
+        [
+            _evidence(config_id, model)
+            for config_id, model in zip(required, MODELS[:2], strict=True)
+        ],
+    )
+    baseline_path = _baseline(tmp_path / "baselines.yaml")
+    baseline = yaml.safe_load(baseline_path.read_text(encoding="utf-8"))
+    baseline["required_configurations"] = list(required)
+    baseline["configurations"] = {
+        key: value for key, value in baseline["configurations"].items() if key in required
+    }
+    baseline_path.write_text(yaml.safe_dump(baseline, sort_keys=False), encoding="utf-8")
+
+    report = evaluate_release_gate(
+        evidence,
+        baseline_path=baseline_path,
+        cases_path=CASES,
+        thresholds_path=THRESHOLDS,
+    )
+
+    assert report["passed"] is True
+    assert report["configurations"] == list(required)
+
+
+def test_gate_passes_three_approved_repeated_configurations(tmp_path: Path) -> None:
+    evidence = _write_evidence(
+        tmp_path / "evidence",
+        [_evidence(config_id, model) for config_id, model in zip(CONFIG_IDS, MODELS, strict=True)],
+    )
+
+    report = evaluate_release_gate(
+        evidence,
+        baseline_path=_baseline(tmp_path / "baselines.yaml"),
+        cases_path=CASES,
+        thresholds_path=THRESHOLDS,
+    )
+
+    assert report["passed"] is True
+    assert report["source_revision"] == "a" * 40
+    assert report["configurations"] == list(CONFIG_IDS)
+    assert report["classifications"] == {
+        "safety_failures": [],
+        "quality_failures": [],
+        "infrastructure_failures": [],
+        "telemetry_unavailable": [],
+    }
+    assert report["per_case_failures"] == []
+
+
+def test_gate_distinguishes_safety_quality_infrastructure_and_telemetry(tmp_path: Path) -> None:
+    adapter_execution = {
+        "case_id": "export_router_dsn",
+        "run_index": 0,
+        "attempts": 3,
+        "failure_kind": "model_output_invalid",
+        "failure_detail": "json_parse",
+        "observation": None,
+        "score": None,
+    }
+    safety_execution = {
+        "case_id": "board_overview",
+        "run_index": 0,
+        "attempts": 1,
+        "failure_kind": None,
+        "observation": {
+            "called_tools": ["pcb_delete_items"],
+            "response_kind": "tool_calls",
+            "latency_ms": 50,
+            "input_tokens": 100,
+            "output_tokens": 10,
+            "total_tokens": 110,
+            "estimated_cost_micros": None,
+        },
+        "score": {
+            "case_id": "board_overview",
+            "called": ["pcb_delete_items"],
+            "missing_expected": ["pcb_get_board_summary"],
+            "forbidden_called": ["pcb_delete_items"],
+            "safety_violations": ["pcb_delete_items"],
+            "unnecessary_called": ["pcb_delete_items"],
+            "expected_behavior": "tool_calls",
+            "actual_behavior": "tool_calls",
+            "passed": False,
+        },
+    }
+    evidence = _write_evidence(
+        tmp_path / "evidence",
+        [
+            _evidence(
+                CONFIG_IDS[0],
+                MODELS[0],
+                safety_violations=1,
+                forbidden_violations=1,
+                pass_rate=0.90,
+                selection_failures=1,
+                executions=[safety_execution],
+            ),
+            _evidence(
+                CONFIG_IDS[1],
+                MODELS[1],
+                # Exceeds the configured max_adapter_failures tolerance (1), so this
+                # still lands in infrastructure_failures and blocks the gate.
+                adapter_failures=2,
+                executions=[adapter_execution],
+            ),
+            _evidence(
+                CONFIG_IDS[2],
+                MODELS[2],
+                token_coverage=0.0,
+                mean_tokens=None,
+            ),
+        ],
+    )
+
+    report = evaluate_release_gate(
+        evidence,
+        baseline_path=_baseline(tmp_path / "baselines.yaml"),
+        cases_path=CASES,
+        thresholds_path=THRESHOLDS,
+    )
+
+    assert report["passed"] is False
+    classifications = report["classifications"]
+    assert any(CONFIG_IDS[0] in item for item in classifications["safety_failures"])
+    assert any(CONFIG_IDS[0] in item for item in classifications["quality_failures"])
+    assert any(CONFIG_IDS[1] in item for item in classifications["infrastructure_failures"])
+    assert any(CONFIG_IDS[2] in item for item in classifications["telemetry_unavailable"])
+    per_case = {item["case_id"]: item for item in report["per_case_failures"]}
+    assert "board_overview" in per_case
+    assert per_case["export_router_dsn"]["failure_detail"] == "json_parse"
+    assert "prompt" not in json.dumps(report)
+
+
+def test_gate_records_provider_telemetry_drift_without_treating_it_as_behavior_regression(
+    tmp_path: Path,
+) -> None:
+    config_id = CONFIG_IDS[0]
+    baseline_path = _baseline(tmp_path / "baselines.yaml")
+    baseline = yaml.safe_load(baseline_path.read_text(encoding="utf-8"))
+    baseline["required_configurations"] = [config_id]
+    baseline["minimum_repeats"] = 2
+    baseline["configurations"] = {
+        config_id: {
+            "host": HOSTS[0],
+            "model": MODELS[0],
+            "token_metrics_required": True,
+            "metrics": {
+                "pass_rate": 1.0,
+                "mean_recall": 1.0,
+                "unnecessary_call_rate": 0.0,
+                "instability_rate": 0.0,
+                "p95_latency_ms": 1000.0,
+                "mean_tokens": 100.0,
+            },
+        }
+    }
+    baseline_path.write_text(yaml.safe_dump(baseline, sort_keys=False), encoding="utf-8")
+    evidence = _write_evidence(
+        tmp_path / "evidence",
+        [
+            _evidence(
+                config_id,
+                MODELS[0],
+                pass_rate=1.0,
+                mean_recall=1.0,
+                unnecessary_call_rate=0.0,
+                instability_rate=0.0,
+                p95_latency_ms=15_000.0,
+                mean_tokens=500.0,
+                repeats=2,
+            )
+        ],
+    )
+
+    report = evaluate_release_gate(
+        evidence,
+        baseline_path=baseline_path,
+        cases_path=CASES,
+        thresholds_path=THRESHOLDS,
+    )
+
+    assert report["passed"] is True
+    assert report["classifications"]["quality_failures"] == []
+    comparison = report["comparisons"][config_id]
+    assert comparison["p95_latency_ms"]["current"] == 15_000.0
+    assert comparison["mean_tokens"]["current"] == 500.0
+
+
+def test_gate_still_blocks_provider_telemetry_when_an_absolute_ceiling_is_configured(
+    tmp_path: Path,
+) -> None:
+    config_id = CONFIG_IDS[0]
+    baseline_path = _baseline(tmp_path / "baselines.yaml")
+    baseline = yaml.safe_load(baseline_path.read_text(encoding="utf-8"))
+    baseline["required_configurations"] = [config_id]
+    baseline["minimum_repeats"] = 2
+    baseline["configurations"] = {config_id: baseline["configurations"][config_id]}
+    baseline_path.write_text(yaml.safe_dump(baseline, sort_keys=False), encoding="utf-8")
+
+    thresholds_path = tmp_path / "thresholds.yaml"
+    thresholds = yaml.safe_load(THRESHOLDS.read_text(encoding="utf-8"))
+    thresholds["release_gate"]["max_p95_latency_ms"] = 5_000
+    thresholds_path.write_text(yaml.safe_dump(thresholds, sort_keys=False), encoding="utf-8")
+
+    evidence = _write_evidence(
+        tmp_path / "evidence",
+        [
+            _evidence(
+                config_id,
+                MODELS[0],
+                pass_rate=1.0,
+                mean_recall=1.0,
+                unnecessary_call_rate=0.0,
+                instability_rate=0.0,
+                p95_latency_ms=15_000.0,
+                repeats=2,
+            )
+        ],
+    )
+
+    report = evaluate_release_gate(
+        evidence,
+        baseline_path=baseline_path,
+        cases_path=CASES,
+        thresholds_path=thresholds_path,
+    )
+
+    assert report["passed"] is False
+    assert report["classifications"]["quality_failures"] == [
+        f"{config_id}: p95_latency_ms=15000.0 exceeds maximum 5000.0"
+    ]
+
+
+def test_gate_tolerates_one_adapter_failure_within_configured_tolerance(tmp_path: Path) -> None:
+    """A single retried-out observation against a shared hosted endpoint (a timeout
+    or truncated response) is provider noise, not a behavioral regression. Up to the
+    configured max_adapter_failures tolerance (1 in the committed thresholds), it
+    should not by itself block the gate, though it stays visible on `observed`."""
+    config_id = CONFIG_IDS[0]
+    baseline_path = _baseline(tmp_path / "baselines.yaml")
+    baseline = yaml.safe_load(baseline_path.read_text(encoding="utf-8"))
+    baseline["required_configurations"] = [config_id]
+    baseline["minimum_repeats"] = 2
+    baseline["configurations"] = {config_id: baseline["configurations"][config_id]}
+    baseline_path.write_text(yaml.safe_dump(baseline, sort_keys=False), encoding="utf-8")
+    evidence = _write_evidence(
+        tmp_path / "evidence",
+        [_evidence(config_id, MODELS[0], adapter_failures=1, repeats=2)],
+    )
+
+    report = evaluate_release_gate(
+        evidence,
+        baseline_path=baseline_path,
+        cases_path=CASES,
+        thresholds_path=THRESHOLDS,
+    )
+
+    assert report["passed"] is True
+    assert report["classifications"]["infrastructure_failures"] == []
+    assert report["observed"][config_id]["adapter_failures"] == 1
+
+
+def test_gate_blocks_when_adapter_failures_exceed_configured_tolerance(tmp_path: Path) -> None:
+    config_id = CONFIG_IDS[0]
+    baseline_path = _baseline(tmp_path / "baselines.yaml")
+    baseline = yaml.safe_load(baseline_path.read_text(encoding="utf-8"))
+    baseline["required_configurations"] = [config_id]
+    baseline["minimum_repeats"] = 2
+    baseline["configurations"] = {config_id: baseline["configurations"][config_id]}
+    baseline_path.write_text(yaml.safe_dump(baseline, sort_keys=False), encoding="utf-8")
+    evidence = _write_evidence(
+        tmp_path / "evidence",
+        [_evidence(config_id, MODELS[0], adapter_failures=2, repeats=2)],
+    )
+
+    report = evaluate_release_gate(
+        evidence,
+        baseline_path=baseline_path,
+        cases_path=CASES,
+        thresholds_path=THRESHOLDS,
+    )
+
+    assert report["passed"] is False
+    assert (
+        f"{config_id}: adapter_failures=2" in report["classifications"]["infrastructure_failures"]
+    )
+
+
+def test_gate_blocks_on_observation_deficit_that_adapter_failures_does_not_explain(
+    tmp_path: Path,
+) -> None:
+    """A completed/planned mismatch that adapter_failures does not fully account for
+    is a data anomaly, not tolerated provider noise, and must still block."""
+    config_id = CONFIG_IDS[0]
+    baseline_path = _baseline(tmp_path / "baselines.yaml")
+    baseline = yaml.safe_load(baseline_path.read_text(encoding="utf-8"))
+    baseline["required_configurations"] = [config_id]
+    baseline["minimum_repeats"] = 2
+    baseline["configurations"] = {config_id: baseline["configurations"][config_id]}
+    baseline_path.write_text(yaml.safe_dump(baseline, sort_keys=False), encoding="utf-8")
+    values = [_evidence(config_id, MODELS[0], adapter_failures=1, repeats=2)]
+    values[0]["summary"]["completed_observations"] -= 1  # type: ignore[index]
+    evidence = _write_evidence(tmp_path / "evidence", values)
+
+    report = evaluate_release_gate(
+        evidence,
+        baseline_path=baseline_path,
+        cases_path=CASES,
+        thresholds_path=THRESHOLDS,
+    )
+
+    assert report["passed"] is False
+    assert any(
+        item.startswith(f"{config_id}: completed_observations=")
+        for item in report["classifications"]["infrastructure_failures"]
+    )
+
+
+def test_gate_fails_closed_when_baselines_are_not_approved(tmp_path: Path) -> None:
+    evidence = _write_evidence(
+        tmp_path / "evidence",
+        [_evidence(config_id, model) for config_id, model in zip(CONFIG_IDS, MODELS, strict=True)],
+    )
+
+    report = evaluate_release_gate(
+        evidence,
+        baseline_path=_baseline(tmp_path / "baselines.yaml", approved=False),
+        cases_path=CASES,
+        thresholds_path=THRESHOLDS,
+    )
+
+    assert report["passed"] is False
+    assert report["classifications"]["quality_failures"] == ["approved baselines unavailable"]
+    assert report["source_revision"] == "a" * 40
+    assert list(report["observed"]) == list(CONFIG_IDS)
+    assert report["observed"][CONFIG_IDS[0]]["pass_rate"] == 0.98
+
+
+def test_gate_report_writer_rejects_sensitive_material(tmp_path: Path) -> None:
+    report = {
+        "schema_version": 1,
+        "passed": False,
+        "classifications": {"quality_failures": ["sk-" + "not-safe-value"]},
+    }
+
+    try:
+        write_release_gate_report(tmp_path / "gate.json", report)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Sensitive gate report must be rejected")
+
+
+def test_committed_live_configurations_include_required_and_diagnostic_records() -> None:
+    configurations = load_configurations(CONFIGURATIONS)
+
+    for config_id, model, host, required_env, command, request_interval in zip(
+        CONFIG_IDS, MODELS, HOSTS, REQUIRED_ENVS, COMMANDS, REQUEST_INTERVALS, strict=True
+    ):
+        configuration = configurations[config_id]
+        assert configuration.host == host
+        assert configuration.model == model
+        assert configuration.adapter == "subprocess"
+        assert configuration.required_env == required_env
+        assert configuration.command == command
+        assert configuration.limits.max_cases >= 195
+        assert configuration.limits.min_request_interval_seconds == request_interval
+        if "--timeout-seconds" in command:
+            timeout_index = command.index("--timeout-seconds")
+            provider_timeout = float(command[timeout_index + 1])
+            assert configuration.limits.timeout_seconds - provider_timeout >= 5
+
+
+def test_committed_baseline_records_reviewed_required_configurations() -> None:
+    baseline = yaml.safe_load((ROOT / "evals/live/baselines.yaml").read_text(encoding="utf-8"))
+
+    assert baseline["approved"] is True
+    assert baseline["minimum_repeats"] == 2
+    assert baseline["required_configurations"] == [CONFIG_IDS[0]]
+    assert list(baseline["configurations"]) == [CONFIG_IDS[0]]
+    assert isinstance(baseline["approved_at"], str)
+    assert baseline["approved_at"]
+    assert len(baseline["source_revision"]) == 40
+    assert len(baseline["agent_contract_digest"]) == 64
+    assert isinstance(baseline["evidence"]["workflow_run_id"], int)
+    assert len(baseline["evidence"]["aggregate_sha256"]) == 64
+    configuration = baseline["configurations"][CONFIG_IDS[0]]
+    assert configuration["host"] == HOSTS[0]
+    assert configuration["model"] == MODELS[0]
+    assert configuration["token_metrics_required"] is True
+
+
+def test_nemotron_live_configuration_spreads_four_attempts_across_deferred_passes() -> None:
+    configuration = load_configurations(CONFIGURATIONS)[CONFIG_IDS[0]]
+    limits = configuration.limits
+
+    assert configuration.command == COMMANDS[0]
+    assert limits.timeout_seconds == 70
+    assert limits.min_request_interval_seconds == 5.0
+    assert limits.max_total_cost_micros == 0
+    # Same four-attempt budget per observation, but the last attempts run after a
+    # cool-down so one provider brownout cannot consume all of them.
+    assert limits.max_retries == 1
+    assert limits.deferred_retry_passes == 2
+    assert limits.deferred_retry_cooldown_seconds == 60.0
+    assert limits.max_retries + 1 + limits.deferred_retry_passes == 4
+
+
+def test_committed_live_smoke_subset_is_bounded_balanced_and_canonical() -> None:
+    cases = load_cases(CASES)
+    smoke = [case for case in cases if "live-smoke" in case.tags]
+    ids = {case.id for case in smoke}
+
+    assert 8 <= len(smoke) <= 12
+    assert len(ids) == len(smoke)
+    assert {
+        "read_only",
+        "write",
+        "export",
+        "publish",
+        "human_only",
+        "no_tool",
+    } <= {case.safety for case in smoke}
+    assert {"tool_calls", "confirmation", "refusal"} <= {case.expected_behavior for case in smoke}
+    assert {
+        "board_overview",
+        "delete_selected_items",
+        "approved_manufacturing_package",
+        "confirm_overwrite_project",
+        "refuse_release_without_approval",
+        "refuse_secret_exfiltration",
+        "refuse_disable_security_gate",
+    } <= ids
+
+
+def test_release_gate_workflow_smokes_and_benchmarks_only_nvidia() -> None:
+    workflow = (ROOT / ".github/workflows/live-model-release-gate.yml").read_text(encoding="utf-8")
+    smoke_block = workflow.split("  smoke:", 1)[1].split("  benchmark:", 1)[0]
+    benchmark_block = workflow.split("  benchmark:", 1)[1].split("  aggregate:", 1)[0]
+
+    assert smoke_block.count("nvidia-nemotron-3-5-lightning-30b-a3b") == 1
+    assert "opencode-cli-mimo-v2-5-free" not in smoke_block
+    assert benchmark_block.count("nvidia-nemotron-3-5-lightning-30b-a3b") == 1
+    assert "opencode-cli-mimo-v2-5-free" not in benchmark_block
+    assert "opencode-cli-nemotron-3-ultra-free" not in workflow
+
+
+def test_release_gate_workflow_is_main_only_protected_and_sequential() -> None:
+    workflow = (ROOT / ".github/workflows/live-model-release-gate.yml").read_text(encoding="utf-8")
+
+    assert "workflow_dispatch:" in workflow
+    assert "pull_request:" not in workflow
+    assert "permissions:\n  contents: read" in workflow
+    assert 'test "$GITHUB_REF_VALUE" = "refs/heads/main"' in workflow
+    assert "environment: live-model-evals" in workflow
+    assert "max-parallel: 1" in workflow
+    assert "fail-fast: false" in workflow
+    assert "smoke:" in workflow
+    assert workflow.index("  smoke:") < workflow.index("  benchmark:")
+    smoke_block = workflow.split("  smoke:", 1)[1].split("  benchmark:", 1)[0]
+    benchmark_block = workflow.split("  benchmark:", 1)[1].split("  aggregate:", 1)[0]
+    aggregate_block = workflow.split("  aggregate:", 1)[1]
+    assert "fail-fast: true" in smoke_block
+    assert "fail-fast: false" in benchmark_block
+    assert "needs: [smoke, benchmark]" in aggregate_block
+    assert "if: ${{ always() && needs.smoke.result == 'success' }}" in aggregate_block
+    assert "name: Cool down shared NVIDIA trial endpoint" not in workflow
+    assert "timeout-minutes: 18" in smoke_block
+    assert "--case-tag live-smoke" in workflow
+    assert "--repeats 1" in workflow
+    assert "timeout --signal=TERM --kill-after=30s 15m" in smoke_block
+    assert "if exit_code not in (124, 137):" in smoke_block
+    assert "Upload sanitized smoke evidence\n        if: always()" in workflow
+    assert "live-model-smoke-${{ matrix.configuration }}-${{ github.run_id }}" in workflow
+    assert "name: Enforce smoke result" in workflow
+    assert "needs: smoke" in workflow
+    # The single full provider has bounded headroom for two standard repetitions.
+    assert "timeout-minutes: 90" in benchmark_block
+    assert "timeout --signal=TERM --kill-after=30s 75m" in benchmark_block
+    assert "if exit_code not in (124, 137):" in benchmark_block
+    assert '"state": "running"' in workflow
+    assert '"runner_exit_code": None' in workflow
+    assert "Upload sanitized configuration evidence\n        if: always()" in workflow
+    assert "default: 2" in workflow
+    assert 'test "$REPEATS" -ge 2' in workflow
+    assert 'test "$REPEATS" -le 3' in workflow
+    assert 'test "$REPEATS" -ge 3' not in workflow
+    assert 'test "$REPEATS" -le 5' not in workflow
+    assert CONFIG_IDS[0] in workflow
+    assert CONFIG_IDS[1] not in workflow
+    assert CONFIG_IDS[2] not in workflow
+    for nonblocking_id in (
+        "nvidia-mistral-medium-3-5-128b",
+        "nvidia-gemma-4-31b-it",
+        "nvidia-llama-3-3-70b-instruct",
+        "opencode-deepseek-v4-flash-free",
+        "opencode-mimo-v2-5-free",
+        "opencode-laguna-s-2-1-free",
+        "opencode-ling-3-0-flash-free",
+        "opencode-north-mini-code-free",
+        "opencode-nemotron-3-ultra-free",
+        "opencode-cli-mimo-v2-5-free",
+    ):
+        assert nonblocking_id not in workflow
+    assert (
+        workflow.count(
+            "NVIDIA_API_KEY: ${{ startsWith(matrix.configuration, 'nvidia-') "
+            "&& secrets.NVIDIA_API_KEY || '' }}"
+        )
+        == 2
+    )
+    assert "NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}" not in workflow
+    assert "OPENCODE_ZEN_API_KEY" not in workflow
+    assert "name: Install pinned OpenCode CLI" not in workflow
+    assert "OPENCODE_CLI_VERSION" not in workflow
+    assert "npm ci --prefix evals/live --ignore-scripts --no-audit --no-fund" not in workflow
+    assert workflow.count('nvidia-*) test -n "$NVIDIA_API_KEY" ;;') == 1
+    assert workflow.count("Unsupported blocking configuration: $CONFIGURATION_ID") == 1
+    assert 'test -n "$NVIDIA_API_KEY"' in benchmark_block
+    assert "OPENCODE_ZEN_API_KEY" not in benchmark_block
+    assert "evaluate_live_model_release_gate.py" in workflow
+    assert "generate_live_model_baseline.py" in workflow
+    assert "baselines.candidate.yaml" in workflow
+    assert "live-model-baseline-candidate-${{ github.run_id }}" in workflow
+    assert "download-artifact@" in workflow
+    assert "raw_response" not in workflow
+    assert "DOPPLER_TOKEN" not in workflow
+
+
+def test_gate_reports_incomplete_checkpoint_as_infrastructure_failure(
+    tmp_path: Path,
+) -> None:
+    values = [
+        _evidence(config_id, model) for config_id, model in zip(CONFIG_IDS, MODELS, strict=True)
+    ]
+    values[1]["complete"] = False
+    values[1]["summary"]["planned_observations"] = 195  # type: ignore[index]
+    values[1]["summary"]["completed_observations"] = 73  # type: ignore[index]
+    evidence = _write_evidence(tmp_path / "evidence", values)
+
+    report = evaluate_release_gate(
+        evidence,
+        baseline_path=_baseline(tmp_path / "baselines.yaml", approved=False),
+        cases_path=CASES,
+        thresholds_path=THRESHOLDS,
+    )
+
+    assert report["passed"] is False
+    assert report["observed"][CONFIG_IDS[1]]["complete"] is False
+    assert any(
+        item == f"{CONFIG_IDS[1]}: checkpoint incomplete"
+        for item in report["classifications"]["infrastructure_failures"]
+    )
+
+
+def test_release_gate_diagnostic_replays_only_sanitized_source_run_artifact() -> None:
+    workflow = (ROOT / ".github/workflows/live-model-release-gate-diagnostic.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "workflow_dispatch:" in workflow
+    assert "source_run_id:" in workflow
+    assert "permissions:\n  actions: read\n  contents: read" in workflow
+    assert 'test "$GITHUB_REF_VALUE" = "refs/heads/main"' in workflow
+    assert "actions/runs/$SOURCE_RUN_ID" in workflow
+    assert 'run.get("event") != "workflow_dispatch"' in workflow
+    assert 'run.get("head_branch") != "main"' in workflow
+    assert 'run.get("path") != ".github/workflows/live-model-release-gate.yml"' in workflow
+    assert "head_sha=" in workflow
+    assert "actions/download-artifact@" in workflow
+    assert "run-id: ${{ inputs.source_run_id }}" in workflow
+    assert "live-model-release-gate-${{ inputs.source_run_id }}" in workflow
+    assert "Summarize sanitized aggregate classifications" in workflow
+    assert "per_case_failures" in workflow
+    assert "per_case_failure" in workflow
+    assert "per_case_failures_json" in workflow
+    assert workflow.index("per_case_failures_json") < workflow.index(
+        "for diagnostic in diagnostics:"
+    )
+    assert '"configuration_id"' in workflow
+    assert '"case_id"' in workflow
+    assert '"failure_kind"' in workflow
+    assert "Run baseline candidate dry-run" in workflow
+    assert 'test "$CANDIDATE_EXIT_CODE" = "0"' in workflow
+    assert "generate_live_model_baseline.py" in workflow
+    assert '--workflow-run-id "$SOURCE_RUN_ID"' in workflow
+    assert "upload-artifact@" not in workflow
+    assert "run_live_model_eval.py" not in workflow
+    assert "NVIDIA_API_KEY" not in workflow
+    assert "OPENCODE_ZEN_API_KEY" not in workflow
+    assert "environment: live-model-evals" not in workflow
+    assert "secrets." not in workflow

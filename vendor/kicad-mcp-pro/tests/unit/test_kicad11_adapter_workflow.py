@@ -1,0 +1,77 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+WORKFLOW = ROOT / ".github" / "workflows" / "kicad-live-e2e.yml"
+PACKAGE = ROOT / "package.json"
+
+
+def test_kicad11_workflow_reports_read_write_and_export_artifacts_separately() -> None:
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+
+    assert "scripts/kicad11_headless_canary.py" in workflow
+    for protected_path in (
+        "src/kicad_mcp/adapter_matrix.py",
+        "src/kicad_mcp/ipc/**",
+        "src/kicad_mcp/server_info.py",
+        "integrations/common/kicad-adapter-matrix.json",
+    ):
+        assert workflow.count(protected_path) == 2
+    for surface in ("read", "write", "export"):
+        assert f"kicad-11-headless-{surface}" in workflow
+        assert f"artifacts/kicad-11-preview/{surface}" in workflow
+
+
+def test_adapter_matrix_drift_check_is_part_of_metadata_gate() -> None:
+    package = PACKAGE.read_text(encoding="utf-8")
+
+    assert '"adapter-matrix:check"' in package
+    assert "adapter-matrix:check" in package.split('"check:meta"', 1)[1]
+
+
+def test_stable_kicad_workflow_pins_10_0_6_canary() -> None:
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+
+    assert "kicad-10-0-6-canary:" in workflow
+    assert "KiCad 10.0.6 canary" in workflow
+    assert "run: bash scripts/ci/install_kicad_10_0_6_appimage.sh" in workflow
+    installer = (ROOT / "scripts/ci/install_kicad_10_0_6_appimage.sh").read_text()
+    assert "if [[ \"$($cli version)\" != '10.0.6' ]]" in installer
+    assert "Device.kicad_symdir" in installer
+    assert "KICAD_MCP_SYMBOL_LIBRARY_DIR" in installer
+    assert "artifacts/kicad-10-0-6" in workflow
+    assert "kicad-10-0-5-canary:" not in workflow
+
+
+def test_kicad_live_e2e_tracks_shared_fixture_corpus() -> None:
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+
+    assert workflow.count("packages/kicad-fixtures/fixtures/**") == 2
+
+
+def test_kicad_live_e2e_tracks_semantic_differential_inputs() -> None:
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+
+    for protected_path in (
+        "src/kicad_mcp/evals/semantic_differential.py",
+        "src/kicad_mcp/evals/connectivity_differential.py",
+        "src/kicad_mcp/evals/geometry_differential.py",
+        "src/kicad_mcp/evals/drc_differential.py",
+        "src/kicad_mcp/evals/export_inventory_differential.py",
+        "src/kicad_mcp/evals/live_object_identity_differential.py",
+        "src/kicad_mcp/evals/roundtrip_differential.py",
+        "src/kicad_mcp/pcb/transaction_lifecycle.py",
+        "src/kicad_mcp/export/inventory.py",
+        "src/kicad_mcp/export/gerber.py",
+        "src/kicad_mcp/export/drill.py",
+        "src/kicad_mcp/export/pcb_manufacturing_outputs.py",
+        "src/kicad_mcp/validation/drc_report.py",
+        "src/kicad_mcp/tools/validation.py",
+        "src/kicad_mcp/tools/board_file.py",
+        "src/kicad_mcp/tools/pcb.py",
+        "src/kicad_mcp/tools/schematic.py",
+        "src/kicad_mcp/tools/schematic_transfer.py",
+        "examples/gallery/esp32-c3-wroom-02-breakout/**",
+    ):
+        assert workflow.count(protected_path) == 2

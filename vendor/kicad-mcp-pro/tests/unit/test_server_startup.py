@@ -1,0 +1,397 @@
+from __future__ import annotations
+
+import asyncio
+import sys
+import threading
+from pathlib import Path
+
+import pytest
+
+from kicad_mcp.config import get_config
+from kicad_mcp.connection import KiCadConnectionError
+from kicad_mcp.server import (
+    KiCadFastMCP,
+    _audit_capability_records,
+    _ensure_thread_aware_stdout,
+    _print_startup_diagnostics,
+    _tools_without_capability_record,
+    build_server,
+    main_callback,
+)
+
+
+def test_print_startup_diagnostics_logs_expected_fields(
+    sample_project: Path,
+    monkeypatch,
+) -> None:
+    _ = sample_project
+    captured: dict[str, object] = {}
+
+    def fake_info(event: str, **kwargs: object) -> None:
+        captured["event"] = event
+        captured["kwargs"] = kwargs
+
+    monkeypatch.setattr("kicad_mcp.server.find_kicad_version", lambda _cli: "10.0.1")
+    monkeypatch.setattr(
+        "kicad_mcp.server.get_board",
+        lambda: (_ for _ in ()).throw(KiCadConnectionError("IPC not reachable")),
+    )
+    monkeypatch.setattr("kicad_mcp.server.logger.info", fake_info)
+
+    _print_startup_diagnostics(get_config())
+
+    assert captured["event"] == "startup_diagnostics"
+    payload = captured["kwargs"]
+    assert payload["profile"] == "default"
+    assert payload["kicad_version"] == "10.0.1"
+    assert payload["gate_mode"] == "release-export-only"
+    assert str(payload["project_dir"]).endswith("project")
+    assert str(payload["ipc_status"]).startswith("unavailable")
+
+
+def test_all_registered_tools_have_capability_records() -> None:
+    # Regression guard: every routed tool must carry a capability record so it is
+    # never silently hidden from tools/list via the WRITE-tier fallback.
+    assert _tools_without_capability_record() == []
+
+
+def test_capability_audit_detects_missing_record(monkeypatch) -> None:
+    warnings: list[tuple[str, dict[str, object]]] = []
+
+    monkeypatch.setattr(
+        "kicad_mcp.server._tools_without_capability_record",
+        lambda: ["sch_add_hierarchical_label", "sch_create_sheet"],
+    )
+    monkeypatch.setattr(
+        "kicad_mcp.server.logger.warning",
+        lambda event, **kwargs: warnings.append((event, kwargs)),
+    )
+
+    missing = _audit_capability_records()
+
+    assert missing == ["sch_add_hierarchical_label", "sch_create_sheet"]
+    assert len(warnings) == 1
+    event, kwargs = warnings[0]
+    assert event == "capability_records_missing"
+    assert kwargs["count"] == 2
+    assert kwargs["tools"] == ["sch_add_hierarchical_label", "sch_create_sheet"]
+
+
+def test_capability_audit_stays_silent_when_records_complete(monkeypatch) -> None:
+    warnings: list[str] = []
+
+    monkeypatch.setattr("kicad_mcp.server._tools_without_capability_record", list)
+    monkeypatch.setattr(
+        "kicad_mcp.server.logger.warning",
+        lambda event, **_kwargs: warnings.append(event),
+    )
+
+    assert _audit_capability_records() == []
+    assert warnings == []
+
+
+def test_print_startup_diagnostics_warns_when_stdio_uses_auth_token(
+    sample_project: Path,
+    monkeypatch,
+) -> None:
+    _ = sample_project
+    cfg = get_config()
+    cfg.transport = "stdio"
+    cfg.auth_token = "secret-token"  # noqa: S105 - regression fixture
+    warnings: list[str] = []
+
+    monkeypatch.setattr("kicad_mcp.server.find_kicad_version", lambda _cli: "10.0.1")
+    monkeypatch.setattr(
+        "kicad_mcp.server.get_board",
+        lambda: (_ for _ in ()).throw(KiCadConnectionError("IPC not reachable")),
+    )
+    monkeypatch.setattr(
+        "kicad_mcp.server.logger.warning",
+        lambda event, **_kwargs: warnings.append(event),
+    )
+    monkeypatch.setattr("kicad_mcp.server.logger.info", lambda *_args, **_kwargs: None)
+
+    _print_startup_diagnostics(cfg)
+
+    assert warnings == ["stdio_auth_token_ignored"]
+
+
+def test_main_callback_runs_startup_diagnostics_before_server_run(
+    sample_project: Path,
+    monkeypatch,
+) -> None:
+    _ = sample_project
+    observed: dict[str, object] = {}
+
+    class FakeServer:
+        def start_lazy_registration_background(self) -> None:
+            raise AssertionError("stdio startup must not run lazy registration in the background")
+
+        def run(self, *, transport: str, mount_path: str | None = None) -> None:
+            observed["transport"] = transport
+            observed["mount_path"] = mount_path
+
+    monkeypatch.setattr("kicad_mcp.server.setup_logging", lambda *_args: None)
+
+    def fake_build_server(profile: str, *, defer_registration: bool = False) -> FakeServer:
+        observed["build_profile"] = profile
+        observed["defer_registration"] = defer_registration
+        return FakeServer()
+
+    monkeypatch.setattr("kicad_mcp.server.build_server", fake_build_server)
+
+    def fake_diagnostics(cfg, *, probe_runtime: bool = True) -> None:
+        observed["profile"] = cfg.profile
+        observed["project_dir"] = cfg.project_dir
+        observed["probe_runtime"] = probe_runtime
+
+    monkeypatch.setattr("kicad_mcp.server._print_startup_diagnostics", fake_diagnostics)
+
+    main_callback(
+        transport="stdio",
+        host="127.0.0.1",
+        port=3334,
+        project_dir=str(sample_project),
+        log_level="INFO",
+        log_format="console",
+        profile="full",
+        experimental=False,
+    )
+
+    assert observed["profile"] == "full"
+    assert observed["build_profile"] == "full"
+    assert str(observed["project_dir"]).endswith("project")
+    assert observed["defer_registration"] is True
+    assert observed["probe_runtime"] is False
+    assert observed["transport"] == "stdio"
+
+
+def test_stdio_startup_routes_pre_run_stdout_to_stderr(
+    sample_project: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    _ = sample_project
+    observed: dict[str, object] = {}
+
+    class FakeServer:
+        def start_lazy_registration_background(self) -> None:
+            raise AssertionError("stdio startup must not run lazy registration in the background")
+
+        def run(self, *, transport: str, mount_path: str | None = None) -> None:
+            observed["transport"] = transport
+            observed["mount_path"] = mount_path
+
+    monkeypatch.setattr("kicad_mcp.server.setup_logging", lambda *_args: None)
+    monkeypatch.setattr(
+        "kicad_mcp.server._print_startup_diagnostics",
+        lambda *_args, **_kwargs: None,
+    )
+    monkeypatch.setattr("kicad_mcp.server.logger.info", lambda *_args, **_kwargs: None)
+
+    def fake_build_server(profile: str, *, defer_registration: bool = False) -> FakeServer:
+        _ = profile, defer_registration
+        print("2026-stdout-before-json")
+        return FakeServer()
+
+    monkeypatch.setattr("kicad_mcp.server.build_server", fake_build_server)
+
+    main_callback(
+        transport="stdio",
+        host="127.0.0.1",
+        port=3334,
+        project_dir=str(sample_project),
+        log_level="INFO",
+        log_format="console",
+        profile="full",
+        experimental=False,
+    )
+
+    captured = capsys.readouterr()
+    assert "2026-stdout-before-json" not in captured.out
+    assert "2026-stdout-before-json" in captured.err
+    assert observed["transport"] == "stdio"
+
+
+def test_lazy_registration_routes_stdout_to_stderr(capsys) -> None:
+    server = KiCadFastMCP(name="kicad-mcp-pro-test")
+
+    def register() -> None:
+        print("2026-lazy-registration-before-json")
+
+    server.set_lazy_registration(register)
+    server.ensure_registered()
+
+    captured = capsys.readouterr()
+    assert "2026-lazy-registration-before-json" not in captured.out
+    assert "2026-lazy-registration-before-json" in captured.err
+    assert server._lazy_registration_complete is True
+
+
+def test_lazy_registration_thread_does_not_capture_protocol_stdout(
+    capsys, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    server = KiCadFastMCP(name="kicad-mcp-pro-test")
+    started = threading.Event()
+    release = threading.Event()
+
+    def register() -> None:
+        started.set()
+        assert release.wait(timeout=5)
+        print("2026-lazy-thread-before-json")
+
+    server.set_lazy_registration(register)
+    monkeypatch.setattr(sys, "stdout", sys.stdout)
+    _ensure_thread_aware_stdout()
+    thread = threading.Thread(target=server.ensure_registered)
+    thread.start()
+    assert started.wait(timeout=5)
+    print("2026-json-rpc-response")
+    release.set()
+    thread.join(timeout=5)
+
+    assert not thread.is_alive()
+    captured = capsys.readouterr()
+    assert "2026-json-rpc-response" in captured.out
+    assert "2026-json-rpc-response" not in captured.err
+    assert "2026-lazy-thread-before-json" not in captured.out
+    assert "2026-lazy-thread-before-json" in captured.err
+    assert server._lazy_registration_complete is True
+
+
+def test_sync_tool_decorator_preserves_direct_python_call_semantics() -> None:
+    server = KiCadFastMCP(name="kicad-mcp-pro-test")
+
+    @server.tool(name="kicad_get_version")
+    def sync_tool() -> str:
+        return "10.0.6"
+
+    assert sync_tool() == "10.0.6"
+
+
+@pytest.mark.anyio
+async def test_sync_tool_execution_does_not_block_event_loop() -> None:
+    server = KiCadFastMCP(name="kicad-mcp-pro-test")
+    server._lazy_registration_complete = True
+    events: list[str] = []
+    release = threading.Event()
+    started = asyncio.Event()
+    loop = asyncio.get_running_loop()
+
+    @server.tool(name="kicad_get_version")
+    def blocking_sync_tool() -> str:
+        events.append("tool-start")
+        # The sync tool executes in a worker thread; signal the async heartbeat.
+        loop.call_soon_threadsafe(started.set)
+        assert release.wait(timeout=5)
+        events.append("tool-end")
+        return "10.0.6"
+
+    async def heartbeat() -> None:
+        # Starting the heartbeat before the worker starts is valid scheduling,
+        # not evidence that the sync tool blocked the event loop.
+        await asyncio.wait_for(started.wait(), timeout=5)
+        events.append("heartbeat")
+        release.set()
+
+    try:
+        await asyncio.wait_for(
+            asyncio.gather(server.call_tool("kicad_get_version", {}), heartbeat()),
+            timeout=6,
+        )
+    finally:
+        release.set()
+
+    assert events == ["tool-start", "heartbeat", "tool-end"]
+
+
+async def test_ensure_registered_async_times_out_on_hung_registration() -> None:
+    # P5-T5: a registration that hangs must not block requests forever — the
+    # awaiting handler gets a retryable timeout error and the thread is abandoned.
+    from kicad_mcp.errors import ToolRegistrationTimeoutError
+
+    server = KiCadFastMCP(name="kicad-mcp-pro-test")
+    server._lazy_registration_timeout_s = 0.1
+    release = threading.Event()
+
+    def register() -> None:
+        release.wait(timeout=5)  # blocks well past the 0.1s budget
+
+    server.set_lazy_registration(register)
+    try:
+        with pytest.raises(ToolRegistrationTimeoutError) as exc_info:
+            await server._ensure_registered_async()
+        assert exc_info.value.code == "SERVER_INITIALIZING"
+        assert exc_info.value.retryable is True
+    finally:
+        release.set()  # let the abandoned worker thread finish cleanly
+
+
+def test_deferred_build_registers_tools_on_first_discovery(sample_project: Path) -> None:
+    _ = sample_project
+    server = build_server("minimal", defer_registration=True)
+
+    assert isinstance(server, KiCadFastMCP)
+    assert server._lazy_registration_complete is False
+
+    tool_names = {tool.name for tool in server.list_tools_sync()}
+
+    assert server._lazy_registration_complete is True
+    assert "kicad_get_version" in tool_names
+    assert "export_bom" in tool_names
+
+
+def test_run_with_watch_without_watchfiles(monkeypatch: pytest.MonkeyPatch) -> None:
+    import kicad_mcp.server as srv
+
+    monkeypatch.setattr(srv, "watchfiles", None)
+    srv._run_with_watch()
+
+
+def test_run_with_watch_restarting_flow(monkeypatch: pytest.MonkeyPatch) -> None:
+    from unittest.mock import MagicMock
+
+    import kicad_mcp.server as srv
+
+    mock_proc = MagicMock()
+    mock_proc.poll.return_value = None
+    monkeypatch.setattr("subprocess.Popen", lambda *args, **kwargs: mock_proc)
+
+    class FakeWatchfiles:
+        @staticmethod
+        def watch(path: str):  # noqa: ANN205
+            yield [(1, "changed_file.py")]
+            return
+
+    monkeypatch.setattr(srv, "watchfiles", FakeWatchfiles)
+    srv._run_with_watch()
+    mock_proc.terminate.assert_called()
+
+
+def test_import_server_without_optional_watchfiles_and_tray(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Missing optional integrations must not leave unbound module globals."""
+    import builtins
+    import runpy
+
+    original_import = builtins.__import__
+
+    def reject_optional(name, module_globals=None, module_locals=None, fromlist=(), level=0):
+        if name == "watchfiles" or (
+            name == "tray"
+            and level == 1
+            and module_globals is not None
+            and module_globals.get("__package__") == "kicad_mcp"
+        ):
+            raise ImportError("Optional module intentionally unavailable")
+        return original_import(name, module_globals, module_locals, fromlist, level)
+
+    with monkeypatch.context() as patcher:
+        patcher.setattr(builtins, "__import__", reject_optional)
+        namespace = runpy.run_module("kicad_mcp.server", run_name="kicad_mcp._optional_server_test")
+
+    assert namespace["HAS_WATCHFILES"] is False
+    assert namespace["watchfiles"] is None
+    assert namespace["HAS_TRAY"] is False
+    assert namespace["tray_main"] is None

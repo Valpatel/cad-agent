@@ -1,0 +1,3595 @@
+"""KiCad MCP Pro server entrypoint."""
+# mypy: disable-error-code=untyped-decorator
+
+from __future__ import annotations
+
+import asyncio
+import contextlib
+import functools
+import inspect
+import io
+import json
+import os
+import secrets
+import subprocess
+import sys
+import threading
+import time
+from collections import deque
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+from pathlib import Path
+from typing import Annotated, Any, Literal, TextIO, cast
+from urllib.parse import urlparse, urlunsplit
+
+import anyio
+import structlog
+import typer
+
+# Typer >= 0.26 vendors Click as ``typer._click`` and drives its commands through
+# it, so the active command context lives in that vendored Click's globals. Older
+# Typer (< 0.26) has no ``typer._click`` and uses the top-level ``click`` package
+# instead. Import from whichever the installed Typer actually uses so the CLI
+# loads on any supported Typer version (regression: a pip install that resolved
+# Typer 0.25 crashed with ModuleNotFoundError: No module named 'typer._click').
+try:
+    from typer._click.globals import get_current_context as _get_click_context
+except ModuleNotFoundError:  # Typer < 0.26 uses the top-level Click package
+    from click import get_current_context as _get_click_context  # type: ignore[no-redef]
+
+try:
+    import watchfiles
+
+    HAS_WATCHFILES = True
+except ImportError:
+    HAS_WATCHFILES = False
+    watchfiles = None  # type: ignore[assignment]
+from mcp import types as mcp_types
+from mcp.server.auth.provider import AccessToken, TokenVerifier
+from mcp.server.auth.settings import AuthSettings
+from mcp.server.caching import CacheableMethod, CacheHint
+from mcp.server.extension import Extension
+from mcp.server.lowlevel.helper_types import ReadResourceContents
+from mcp.server.mcpserver import Context
+from mcp.server.mcpserver import MCPServer as FastMCP
+from mcp.server.mcpserver.exceptions import ToolError
+from mcp.server.streamable_http import EventStore
+from mcp.server.transport_security import (
+    RequestBodyLimitMiddleware,
+    TransportSecuritySettings,
+)
+from mcp.types import (
+    Icon,
+    ToolAnnotations,
+)
+from mcp.types.version import SUPPORTED_PROTOCOL_VERSIONS
+from pydantic import AnyUrl
+from starlette.applications import Starlette
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.middleware.cors import CORSMiddleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse, PlainTextResponse, Response
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
+from typer.models import OptionInfo
+
+from . import __version__
+from .capabilities import AccessTier, RuntimeRequirement, all_protocol_metadata
+from .capabilities import get as get_capability_record
+from .compatibility import MCP_PROTOCOL_VERSION
+from .config import LOOPBACK_HOSTS, KiCadMCPConfig, get_config, reset_config
+from .connection import KiCadConnectionError, get_board
+from .diagnostics import (
+    DiagnosticReport,
+    build_doctor_report,
+    build_health_report,
+    diagnostic_report_json,
+    write_diagnostic_bundle,
+)
+from .discovery import ensure_studio_project_watcher, find_kicad_version
+from .errors import (
+    KiCadNotRunningError,
+    ToolRegistrationTimeoutError,
+)
+from .i18n import SERVER_DESCRIPTION, localize, option_help
+from .ipc.capabilities import KiCadIpcCapabilityState, get_ipc_capability_state
+from .operating_modes import (
+    OperatingMode,
+    active_operating_mode,
+    denial_message,
+    filter_tools_for_mode,
+    is_tool_allowed_in_mode,
+)
+from .tools import footprint as _footprint
+from .tools import jobset as _jobset
+from .tools import router
+from .tools import symbol as _symbol
+from .tools import upgrade as _upgrade
+from .tools.fixers import validate_callable_imports
+from .tools.metadata import get_tool_metadata, infer_tool_annotations
+from .tools.router import (
+    EXPERIMENTAL_TOOL_NAMES,
+    available_profiles,
+    categories_for_profile,
+    tool_count_for_profile,
+    tools_for_profile,
+)
+from .utils import telemetry as otel
+from .utils.logging import setup_logging
+from .web.state import (
+    _METRICS_LOCK,
+    _TOOL_CALL_COUNTS,
+    _TOOL_LATENCIES_MS,
+    set_server_handle,
+)
+from .wellknown import get_wellknown_metadata
+
+# Optional web dashboard support
+try:
+    from .web import router as web_routes
+
+    HAS_WEB = True
+except ImportError:
+    HAS_WEB = False
+    web_routes = []
+
+# Optional system tray support
+try:
+    from .tray import tray_main
+
+    HAS_TRAY = True
+except ImportError:
+    HAS_TRAY = False
+    tray_main = None  # type: ignore[assignment]
+
+# Shared user-facing values; preserve spelling and case across CLI and reports.
+_HELP_JSON_OUTPUT = "Emit machine-readable JSON."
+_HELP_TRANSPORT = "Transport: stdio, http, sse, streamable-http"
+_HELP_HOST = "HTTP bind host"
+_HELP_PORT = "HTTP bind port"
+_HELP_PROJECT_DIR = "Active KiCad project directory"
+_HELP_LOG_LEVEL = "Log level"
+_HELP_OPERATING_MODE = "Operating mode: readonly, write, manufacturing, experimental"
+_HELP_EXPERIMENTAL = "Enable experimental tools"
+
+# Reuse the same Typer metadata across the default and explicit serve entrypoints.
+_CliTransport = Annotated[str | None, typer.Option(help=option_help(_HELP_TRANSPORT))]
+_CliHost = Annotated[str | None, typer.Option(help=option_help(_HELP_HOST))]
+_CliPort = Annotated[int | None, typer.Option(help=option_help(_HELP_PORT))]
+_CliProjectDir = Annotated[str | None, typer.Option(help=option_help(_HELP_PROJECT_DIR))]
+_CliLogLevel = Annotated[str | None, typer.Option(help=option_help(_HELP_LOG_LEVEL))]
+_CliLogFormat = Annotated[str | None, typer.Option(help=option_help("Log format: text or json"))]
+_CliLogFile = Annotated[str | None, typer.Option(help=option_help("Rotating log file path"))]
+_CliProfile = Annotated[
+    str | None, typer.Option(help=f"Server profile: {', '.join(available_profiles())}")
+]
+_CliOperatingMode = Annotated[
+    str | None, typer.Option("--mode", help=option_help(_HELP_OPERATING_MODE))
+]
+_CliExperimental = Annotated[bool | None, typer.Option(help=option_help(_HELP_EXPERIMENTAL))]
+_CliTelemetry = Annotated[
+    bool | None,
+    typer.Option("--telemetry/--no-telemetry", help=option_help("Enable OpenTelemetry export")),
+]
+_CliWatch = Annotated[
+    bool, typer.Option("--watch", help=option_help("Watch source files and hot-reload on changes"))
+]
+_HTTP_RESPONSE_START = "http.response.start"
+_NOT_FOUND_LITERAL = "not found"
+_TOOL_ERROR_EVENT_NAME = "mcp.tool_error"
+
+logger = structlog.get_logger(__name__)
+app = typer.Typer(help=localize(SERVER_DESCRIPTION))
+tools_app = typer.Typer(help=localize("Inspect registered MCP tools."))
+mcp_config_app = typer.Typer(help=localize("Generate MCP client configuration snippets."))
+app.add_typer(tools_app, name="tools")
+app.add_typer(mcp_config_app, name="mcp-config")
+DOCTOR_BUNDLE_OPTION = cast(
+    Path | None,
+    typer.Option(
+        None,
+        "--bundle",
+        file_okay=True,
+        dir_okay=False,
+        writable=True,
+        resolve_path=True,
+        help=option_help("Write a redacted diagnostic zip bundle to this path."),
+    ),
+)
+AnyFunction = Callable[..., object]
+
+
+class _ThreadAwareStdout:
+    """Route stdout writes by thread while preserving protocol stdout for stdio."""
+
+    def __init__(self, default: TextIO) -> None:
+        """Store the default stream used by threads without an override."""
+        self._default = default
+        self._targets: dict[int, TextIO] = {}
+        self._lock = threading.Lock()
+
+    @contextlib.contextmanager
+    def redirected_current_thread(self, target: TextIO) -> Iterator[None]:
+        """Temporarily route only the current thread to a different stream."""
+        thread_id = threading.get_ident()
+        with self._lock:
+            self._targets[thread_id] = target
+        try:
+            yield
+        finally:
+            with self._lock:
+                self._targets.pop(thread_id, None)
+
+    def _target(self) -> TextIO:
+        """Return the active stream for the calling thread."""
+        with self._lock:
+            return self._targets.get(threading.get_ident(), self._default)
+
+    def write(self, text: str) -> int:
+        """Write text to the calling thread's active stream."""
+        return self._target().write(text)
+
+    def flush(self) -> None:
+        """Flush the calling thread's active stream."""
+        try:
+            self._target().flush()
+        except ValueError:
+            # Stream may be closed (e.g., during CliRunner teardown).
+            pass
+
+    def isatty(self) -> bool:
+        """Return whether the calling thread's active stream is a TTY."""
+        return self._target().isatty()
+
+    def fileno(self) -> int:
+        """Return the file descriptor for the calling thread's active stream."""
+        return self._target().fileno()
+
+    def __getattr__(self, name: str) -> object:
+        """Delegate stream attributes such as encoding to the default stream."""
+        return getattr(self._default, name)
+
+
+def _ensure_thread_aware_stdout() -> _ThreadAwareStdout:
+    """Install a thread-aware stdout proxy if one is not already active."""
+    if isinstance(sys.stdout, _ThreadAwareStdout):
+        return sys.stdout
+    proxy = _ThreadAwareStdout(sys.stdout)
+    sys.stdout = cast(TextIO, proxy)
+    return proxy
+
+
+@contextlib.contextmanager
+def _redirect_current_thread_stdout_to_stderr() -> Iterator[None]:
+    """Route stdout writes from the current thread to stderr."""
+    stdout = sys.stdout
+    if isinstance(stdout, _ThreadAwareStdout):
+        with stdout.redirected_current_thread(sys.stderr):
+            yield
+        return
+    with contextlib.redirect_stdout(sys.stderr):
+        yield
+
+
+HEAVY_TOOL_NAMES: frozenset[str] = frozenset(
+    {
+        "run_drc",
+        "run_erc",
+        "validate_design",
+        "schematic_quality_gate",
+        "schematic_connectivity_gate",
+        "pcb_quality_gate",
+        "pcb_placement_quality_gate",
+        "pcb_transfer_quality_gate",
+        "manufacturing_quality_gate",
+        "project_quality_gate",
+        "project_quality_gate_report",
+        "project_auto_fix_loop",
+        "project_full_validation_loop",
+        "check_design_for_manufacture",
+        "export_gerber",
+        "export_drill",
+        "export_bom",
+        "export_netlist",
+        "export_spice_netlist",
+        "export_pcb_pdf",
+        "export_sch_pdf",
+        "export_3d_step",
+        "export_step",
+        "export_stepz",
+        "export_xao",
+        "pcb_export_3d_pdf",
+        "export_3d_render",
+        "export_pick_and_place",
+        "export_ipc2581",
+        "export_odb",
+        "export_svg",
+        "export_dxf",
+        "get_board_stats",
+        "export_manufacturing_package",
+        "route_export_dsn",
+        "route_autoroute_freerouting",
+        "route_import_ses",
+        "route_tune_time_domain",
+    }
+)
+CLI_FAILURE_TOOL_NAMES: frozenset[str] = frozenset(
+    {
+        "run_drc",
+        "run_erc",
+        "export_gerber",
+        "export_drill",
+        "export_bom",
+        "export_netlist",
+        "export_spice_netlist",
+        "export_pcb_pdf",
+        "export_sch_pdf",
+        "export_3d_step",
+        "export_step",
+        "export_stepz",
+        "export_xao",
+        "pcb_export_3d_pdf",
+        "export_3d_render",
+        "export_pick_and_place",
+        "export_ipc2581",
+        "export_odb",
+        "export_svg",
+        "export_dxf",
+        "get_board_stats",
+    }
+)
+_TOOL_LIMITERS: dict[str, anyio.CapacityLimiter] = {}
+_TOOL_LIMITERS_LOCK = threading.Lock()
+IPC_CAPABILITY_CACHE_TTL_SEC = 1.0
+NATIVE_2026_PROTOCOL_LANE = "2026-07-28-rc"
+NATIVE_2026_CACHE_HINTS: Mapping[CacheableMethod, CacheHint] = {
+    "server/discover": CacheHint(ttl_ms=3_600_000, scope="private"),
+    "tools/list": CacheHint(ttl_ms=300_000, scope="private"),
+    "prompts/list": CacheHint(ttl_ms=300_000, scope="private"),
+    "resources/list": CacheHint(ttl_ms=300_000, scope="private"),
+    "resources/templates/list": CacheHint(ttl_ms=300_000, scope="private"),
+    "resources/read": CacheHint(ttl_ms=60_000, scope="private"),
+}
+
+
+def _tool_limiter(tool_name: str) -> anyio.CapacityLimiter | None:
+    if tool_name not in HEAVY_TOOL_NAMES:
+        return None
+    with _TOOL_LIMITERS_LOCK:
+        limiter = _TOOL_LIMITERS.get(tool_name)
+        if limiter is None:
+            limiter = anyio.CapacityLimiter(2)
+            _TOOL_LIMITERS[tool_name] = limiter
+        return limiter
+
+
+def _record_tool_metric(tool_name: str, status: str, elapsed_ms: float) -> None:
+    with _METRICS_LOCK:
+        key = (tool_name, status)
+        _TOOL_CALL_COUNTS[key] = _TOOL_CALL_COUNTS.get(key, 0) + 1
+        samples = _TOOL_LATENCIES_MS.setdefault(tool_name, deque(maxlen=256))
+        samples.append(elapsed_ms)
+
+
+def _percentile(samples: deque[float], percentile: float) -> float:
+    if not samples:
+        return 0.0
+    ordered = sorted(samples)
+    index = min(len(ordered) - 1, max(0, int(round((len(ordered) - 1) * percentile))))
+    return ordered[index]
+
+
+def _label_value(value: str) -> str:
+    return value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+
+
+def _clean_tool_error(exc: BaseException) -> str:
+    message = str(exc)
+    prefix = "Error executing tool "
+    if message.startswith(prefix):
+        if ": " in message:
+            return message.split(": ", 1)[1]
+        # MCP SDK v2 intentionally hides unexpected tool exceptions behind a
+        # generic wrapper. KiCad MCP Pro's existing public contract surfaced
+        # the original tool message through its structured error envelope, so
+        # retain that behavior while still applying our error-code/hint policy.
+        if exc.__cause__ is not None:
+            return _clean_tool_error(exc.__cause__)
+    return message
+
+
+def _classify_system_error_code(lowered: str, tool_name: str) -> str | None:
+    if "operating mode" in lowered and "requires" in lowered:
+        return "MODE_FORBIDDEN"
+    if "timed out" in lowered or "timeout" in lowered:
+        return "CLI_TIMEOUT"
+    if "kicad-cli" in lowered and (
+        "install" in lowered or "found" in lowered or "missing" in lowered
+    ):
+        return "CLI_UNAVAILABLE"
+    if "manufacturing export blocked" in lowered or "quality gate" in lowered:
+        return "VALIDATION_FAILED"
+    if (
+        "no pcb file" in lowered
+        or "no schematic file" in lowered
+        or "invalid output path" in lowered
+    ):
+        return "CONFIGURATION_ERROR"
+    if tool_name in CLI_FAILURE_TOOL_NAMES:
+        return "CLI_COMMAND_FAILED"
+    return None
+
+
+def _is_ipc_connection_error(lowered: str) -> bool:
+    return "connection" in lowered and ("refused" in lowered or "reset" in lowered)
+
+
+def _is_board_not_open_error(lowered: str) -> bool:
+    return any(p in lowered for p in ("no board", "no pcb", "board not open"))
+
+
+def _is_permission_error(lowered: str) -> bool:
+    return any(p in lowered for p in ("permission", "denied", "not allowed"))
+
+
+def _classify_not_found_code(lowered: str) -> str | None:
+    missing_or_not_found = _NOT_FOUND_LITERAL in lowered or "missing" in lowered
+    if _NOT_FOUND_LITERAL in lowered:
+        return "NOT_FOUND"
+    if "symbol" in lowered and missing_or_not_found:
+        return "SYMBOL_NOT_FOUND"
+    if "footprint" in lowered and missing_or_not_found:
+        return "FOOTPRINT_NOT_FOUND"
+    if "net" in lowered and missing_or_not_found:
+        return "NET_NOT_FOUND"
+    return None
+
+
+def _classify_domain_error_code(lowered: str) -> str | None:
+    if _is_ipc_connection_error(lowered):
+        return "IPC_CONNECTION_LOST"
+    if "not running" in lowered or "kicad not" in lowered:
+        return "KICAD_NOT_RUNNING"
+    if _is_board_not_open_error(lowered):
+        return "BOARD_NOT_OPEN"
+    if "validation" in lowered or "invalid" in lowered:
+        return "TOOL_VALIDATION_ERROR"
+    if _is_permission_error(lowered):
+        return "PERMISSION_DENIED"
+    return _classify_not_found_code(lowered)
+
+
+def _tool_error_code(message: str, *, tool_name: str = "") -> str:
+    lowered = message.casefold()
+    code = _classify_system_error_code(lowered, tool_name)
+    if code is not None:
+        return code
+    code = _classify_domain_error_code(lowered)
+    if code is not None:
+        return code
+    return "TOOL_EXECUTION_FAILED"
+
+
+def _classify_system_error_hint(lowered: str) -> str | None:
+    if "operating mode" in lowered and "requires" in lowered:
+        return (
+            "Start kicad-mcp-pro with --mode write, --mode manufacturing, "
+            "or --mode experimental as appropriate. "
+            "Example: kicad-mcp-pro --mode write"
+        )
+    if "no pcb file" in lowered or "no schematic file" in lowered:
+        return (
+            "Call kicad_set_project() or set the relevant KICAD_MCP_*_FILE variable. "
+            "Example: kicad-mcp-pro setup claude-code --write"
+        )
+    if "kicad-cli" in lowered:
+        return (
+            "Install KiCad (≥ 8.0) from https://www.kicad.org/download/ or "
+            "set KICAD_MCP_KICAD_CLI to the kicad-cli executable path."
+        )
+    if "quality gate" in lowered or "hard-blocked" in lowered:
+        return (
+            "Run kicad-mcp-pro doctor to see gate results, then fix "
+            "blocking issues and rerun the tool."
+        )
+    if "unknown tool" in lowered:
+        return (
+            "Run kicad-mcp-pro tools list to see available tools, or "
+            "check kicad_list_tool_categories() and kicad_get_tools_in_category()."
+        )
+    return None
+
+
+def _classify_not_found_hint(lowered: str) -> str | None:
+    missing_or_not_found = _NOT_FOUND_LITERAL in lowered or "missing" in lowered
+    if "symbol" in lowered and missing_or_not_found:
+        return (
+            "Symbol not found. Check the library name and symbol name,\n"
+            "or run 'kicad-mcp-pro tools list'."
+        )
+    if "footprint" in lowered and missing_or_not_found:
+        return (
+            "Footprint not found. Check the library name and footprint name,\n"
+            "or run 'kicad-mcp-pro tools list'."
+        )
+    if "net" in lowered and missing_or_not_found:
+        return (
+            "Net not found. Verify the net name exists in the schematic, or check kicad_get_nets()."
+        )
+    if _NOT_FOUND_LITERAL in lowered or ("symbol" in lowered and "missing" in lowered):
+        return "The requested resource was not found. Verify the name, identifier, or library path."
+    return None
+
+
+def _classify_domain_error_hint(lowered: str) -> str | None:
+    if _is_ipc_connection_error(lowered):
+        return (
+            "Start KiCad and enable the IPC API server:\n"
+            "  1. Open KiCad\n"
+            "  2. Preferences → IPC\n"
+            "  3. Enable 'Start IPC server on port 12345'\n"
+            "  4. Restart KiCad"
+        )
+    if "not running" in lowered or "kicad not" in lowered:
+        return (
+            "Ensure KiCad is running with the IPC API enabled.\n"
+            "Run 'kicad-mcp-pro status' to check KiCad availability."
+        )
+    if _is_board_not_open_error(lowered):
+        return (
+            "Open a PCB file in KiCad or set the project first:\n"
+            "  kicad-mcp-pro --project-dir /path/to/project\n"
+            "Or call kicad_set_project() from the client."
+        )
+    if "validation" in lowered or "invalid" in lowered:
+        return (
+            "Correct the tool arguments and retry.\n"
+            "Check the input schema with 'kicad-mcp-pro tools list'."
+        )
+    if _is_permission_error(lowered):
+        return (
+            "The current operating mode does not permit this tool.\n"
+            "Use --mode=write, --mode=manufacturing,\n"
+            "or --mode=experimental with appropriate access."
+        )
+    return _classify_not_found_hint(lowered)
+
+
+def _tool_error_hint(message: str) -> str:
+    lowered = message.casefold()
+    hint = _classify_system_error_hint(lowered)
+    if hint is not None:
+        return hint
+    hint = _classify_domain_error_hint(lowered)
+    if hint is not None:
+        return hint
+    return (
+        "Inspect the structured error and retry after correcting the request or project state. "
+        "Run 'kicad-mcp-pro doctor' for a full diagnostic."
+    )
+
+
+def _structured_tool_error_from_message(
+    message: str,
+    *,
+    tool_name: str = "",
+) -> mcp_types.CallToolResult:
+    code = _tool_error_code(message, tool_name=tool_name)
+    hint = _tool_error_hint(message)
+    return mcp_types.CallToolResult(
+        isError=True,
+        content=[
+            mcp_types.TextContent(
+                type="text",
+                text=f"{code}: {message}\nHint: {hint}",
+            )
+        ],
+    )
+
+
+def _structured_tool_error(exc: BaseException, *, tool_name: str = "") -> mcp_types.CallToolResult:
+    return _structured_tool_error_from_message(_clean_tool_error(exc), tool_name=tool_name)
+
+
+def _result_text(result: object) -> str:
+    if isinstance(result, mcp_types.CallToolResult):
+        return _result_text(result.content)
+    if isinstance(result, list):
+        return "\n".join(
+            str(getattr(item, "text", item))
+            for item in result
+            if getattr(item, "text", item) is not None
+        )
+    if isinstance(result, tuple) and result:
+        return _result_text(result[0])
+    return str(result)
+
+
+_FIRST_LINE_FAILURE_PREFIXES = (
+    "invalid output path:",
+    "could not ",
+    "failed to ",
+    "template tools require ",
+    "kikit panelization timed out",
+    "manufacturing evidence",
+    "manufacturing reference approval",
+)
+
+
+def _is_manufacturing_block_message(tool_name: str, lowered: str) -> bool:
+    if tool_name != "export_manufacturing_package":
+        return False
+    return (
+        lowered.startswith("manufacturing export blocked")
+        or "hard-blocked" in lowered
+        or "project quality gate: fail" in lowered
+    )
+
+
+def _is_cli_failure_message(tool_name: str, lowered: str) -> bool:
+    if tool_name not in CLI_FAILURE_TOOL_NAMES:
+        return False
+    return any(p in lowered for p in (" failed:", " failed.", " is unavailable:"))
+
+
+def _is_generic_first_line_failure(first_line: str) -> bool:
+    if not first_line:
+        return False
+    return (
+        " failed:" in first_line
+        or first_line.endswith(" failed.")
+        or " is unavailable:" in first_line
+        or first_line.startswith(_FIRST_LINE_FAILURE_PREFIXES)
+    )
+
+
+def _tool_failure_message(tool_name: str, result: object) -> str | None:
+    text = _result_text(result).strip()
+    lowered = text.casefold()
+    first_line = lowered.splitlines()[0] if lowered else ""
+    if (
+        _is_manufacturing_block_message(tool_name, lowered)
+        or _is_cli_failure_message(tool_name, lowered)
+        or _is_generic_first_line_failure(first_line)
+    ):
+        return text
+    return None
+
+
+def _status_from_result(result: object) -> tuple[str, str | None]:
+    if isinstance(result, mcp_types.CallToolResult):
+        if result.is_error:
+            structured = result.structured_content or {}
+            return "error", str(structured.get("error_code", "TOOL_ERROR"))
+        # ToolResult-returning tools embed ok=False inside structuredContent.result
+        # rather than setting isError; surface those as errors for metrics/audit.
+        structured = result.structured_content or {}
+        inner = structured.get("result")
+        if isinstance(inner, dict) and not inner.get("ok", True):
+            return "error", "TOOL_RESULT_FAILURE"
+    return "ok", None
+
+
+def _audit_tool_call(
+    *,
+    tool_name: str,
+    arguments: dict[str, object],
+    status: str,
+    elapsed_ms: float,
+    error_code: str | None,
+) -> None:
+    if get_config().transport == "stdio":
+        return
+    logger.info(
+        "tool_call_audit",
+        tool=tool_name,
+        status=status,
+        duration_ms=round(elapsed_ms, 3),
+        argument_keys=sorted(arguments),
+        error_code=error_code,
+    )
+
+
+def _log_tool_call_started(tool_name: str, arguments: dict[str, object]) -> None:
+    logger.info(
+        "tool_call_started",
+        tool=tool_name,
+        argument_keys=sorted(arguments),
+    )
+
+
+def _log_tool_call_finished(
+    tool_name: str,
+    *,
+    status: str,
+    elapsed_ms: float,
+    error_code: str | None,
+) -> None:
+    logger.info(
+        "tool_call_finished",
+        tool=tool_name,
+        status=status,
+        latency_ms=round(elapsed_ms, 3),
+        error_code=error_code,
+    )
+
+
+class _SyncServerHandle:
+    """Compatibility wrapper that exposes sync-friendly discovery helpers."""
+
+    def __init__(self, server: FastMCP) -> None:
+        self._server = server
+
+    def list_tools(self) -> object:
+        """Return tool metadata synchronously when called outside an event loop."""
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(self._server.list_tools())
+        sync_list = getattr(self._server, "list_tools_sync", None)
+        if callable(sync_list):
+            return sync_list()
+
+        result: list[object] = []
+        error: BaseException | None = None
+
+        def _runner() -> None:
+            nonlocal result, error
+            try:
+                result = list(asyncio.run(self._server.list_tools()))
+            except Exception as exc:  # pragma: no cover - defensive bridge
+                error = exc
+
+        thread = threading.Thread(target=_runner, name="kicad-mcp-list-tools", daemon=True)
+        thread.start()
+        thread.join()
+        if error is not None:
+            raise error
+        return result
+
+    def __getattr__(self, name: str) -> object:
+        return getattr(self._server, name)
+
+
+class _StaticTokenVerifier(TokenVerifier):
+    """Simple bearer-token verifier for local HTTP bridge deployments."""
+
+    def __init__(self, expected_token: str) -> None:
+        self._expected_token = expected_token
+
+    async def verify_token(self, token: str) -> AccessToken | None:
+        await asyncio.sleep(0)
+        if secrets.compare_digest(token, self._expected_token):
+            return AccessToken(token=token, client_id="kicad-studio", scopes=["mcp"])
+        return None
+
+    def rotate(self, token: str) -> None:
+        """Replace the accepted bearer token without restarting the server."""
+        self._expected_token = token
+
+
+def _tools_without_capability_record() -> list[str]:
+    """Return registered router tools that have no capability record.
+
+    A tool with no record falls back to ``AccessTier.WRITE`` in
+    :func:`_ipc_runtime_allows_tool`, which can silently hide it from
+    ``tools/list`` (for example, a ``sch_*`` tool may be treated as requiring
+    "live schematic write" capability at runtime). Surfacing the gap loudly at startup
+    keeps the omission discoverable instead of silent.
+    """
+    from .tools.router import TOOL_CATEGORIES
+
+    routed = {tool_name for info in TOOL_CATEGORIES.values() for tool_name in info["tools"]}
+    return sorted(name for name in routed if get_capability_record(name) is None)
+
+
+def _audit_capability_records() -> list[str]:
+    """Log a single WARNING when registered tools lack a capability record."""
+    missing = _tools_without_capability_record()
+    if missing:
+        logger.warning(
+            "capability_records_missing",
+            message=(
+                "Registered tools have no capability record and fall back to a "
+                "WRITE tier; they may be hidden from tools/list at runtime."
+            ),
+            count=len(missing),
+            tools=missing,
+        )
+    return missing
+
+
+def _tool_requires_ipc(tool_name: str) -> bool:
+    record = get_capability_record(tool_name)
+    if record is not None and record.runtime is RuntimeRequirement.KICAD_IPC:
+        return True
+    metadata = get_tool_metadata(tool_name)
+    return bool(metadata and metadata.requires_kicad_running)
+
+
+def _ipc_runtime_allows_tool(tool_name: str, state: KiCadIpcCapabilityState) -> bool:
+    if not _tool_requires_ipc(tool_name):
+        return True
+    if tool_name in state.operations:
+        return state.tool_available(tool_name)
+
+    record = get_capability_record(tool_name)
+    tier = record.tier if record is not None else AccessTier.WRITE
+    if tool_name.startswith("pcb_"):
+        return state.live_pcb_read if tier is AccessTier.READ else state.live_pcb_write
+    if tool_name.startswith("sch_"):
+        return state.live_schematic_read if tier is AccessTier.READ else state.live_schematic_write
+    return state.reachable
+
+
+def _filter_ipc_runtime_tools(
+    tools: list[mcp_types.Tool],
+    state: KiCadIpcCapabilityState | None = None,
+) -> list[mcp_types.Tool]:
+    if not any(_tool_requires_ipc(tool.name) for tool in tools):
+        return tools
+    state = state or get_ipc_capability_state()
+    return [tool for tool in tools if _ipc_runtime_allows_tool(tool.name, state)]
+
+
+class KiCadFastMCP(FastMCP):
+    """MCPServer extension that preserves KiCad MCP Pro transport defaults and hooks."""
+
+    def __init__(
+        self,
+        name: str | None = None,
+        **kwargs: object,
+    ) -> None:
+        extensions = cast(Sequence[Extension] | None, kwargs.get("extensions"))
+        if extensions:
+            identifiers = ", ".join(str(extension.identifier) for extension in extensions)
+            raise ValueError(
+                "MCP protocol extensions are not enabled in KiCad MCP Pro; "
+                f"unsupported extension(s): {identifiers}"
+            )
+        mount_path = cast(str | None, kwargs.get("mount_path"))
+        streamable_http_path = cast(str, kwargs.get("streamable_http_path", "/mcp"))
+        if mount_path is not None:
+            streamable_http_path = mount_path
+        super().__init__(
+            name=name,
+            instructions=cast(str | None, kwargs.get("instructions")),
+            website_url=cast(str | None, kwargs.get("website_url")),
+            version=cast(str, kwargs.get("version", "")),
+            auth=cast(AuthSettings | None, kwargs.get("auth")),
+            token_verifier=cast(TokenVerifier | None, kwargs.get("token_verifier")),
+            log_level=cast(
+                Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+                kwargs.get("log_level", "INFO"),
+            ),
+            cache_hints=cast(Mapping[CacheableMethod, CacheHint] | None, kwargs.get("cache_hints")),
+            extensions=(),
+        )
+        host = cast(str, kwargs.get("host", "127.0.0.1"))
+        port = cast(int, kwargs.get("port", 8000))
+        sse_path = cast(str, kwargs.get("sse_path", "/sse"))
+        message_path = cast(str, kwargs.get("message_path", "/messages/"))
+        json_response = cast(bool, kwargs.get("json_response", False))
+        stateless_http = cast(bool, kwargs.get("stateless_http", False))
+
+        self._transport_host = host
+        self._transport_port = port
+        self._streamable_http_path = streamable_http_path
+        self._sse_path = sse_path
+        self._message_path = message_path
+        self._json_response = json_response
+        self._stateless_http = stateless_http
+        # Preserve the v1 settings attributes for repository-local callers/tests
+        # while the v2 SDK itself keeps transport settings on app/run methods.
+        transport_settings = {
+            "host": host,
+            "port": port,
+            "streamable_http_path": streamable_http_path,
+            "mount_path": streamable_http_path,
+            "sse_path": sse_path,
+            "message_path": message_path,
+            "json_response": json_response,
+            "stateless_http": stateless_http,
+        }
+        for key, value in transport_settings.items():
+            object.__setattr__(self.settings, key, value)
+
+    @property
+    def _mcp_server(self) -> object:
+        """Compatibility alias for the SDK v1 low-level server attribute."""
+        return self._lowlevel_server
+
+    allow_experimental_tools: bool = False
+    allowed_tool_names: set[str] | None = None
+    execution_tool_names: set[str] | None = None
+    filter_runtime_tools: bool = True
+    operating_mode: OperatingMode = OperatingMode.READONLY
+    _lazy_registration: Callable[[], None] | None = None
+    _lazy_registration_complete: bool = False
+    _lazy_registration_error: BaseException | None = None
+    _lazy_registration_lock: threading.Lock
+    _lazy_registration_thread: threading.Thread | None = None
+    # Generous wall-clock budget for deferred registration. It normally finishes
+    # in well under a second; the timeout only guards a pathological hang so a
+    # request fails fast (retryable) instead of blocking forever.
+    _lazy_registration_timeout_s: float = 30.0
+    _telemetry_catalog_hash: str | None = None
+    _telemetry_kicad_version: str | None = None
+    _ipc_capability_state: KiCadIpcCapabilityState | None = None
+    _ipc_capability_checked_at: float = 0.0
+
+    def set_lazy_registration(self, register: Callable[[], None]) -> None:
+        """Defer heavy tool/resource registration until after stdio initialize can bind."""
+        self._lazy_registration = register
+        self._lazy_registration_complete = False
+        self._lazy_registration_error = None
+        self._lazy_registration_lock = threading.Lock()
+        self._lazy_registration_thread = None
+
+    def start_lazy_registration_background(self) -> None:
+        """Begin deferred registration without blocking process startup."""
+        if self._lazy_registration is None or self._lazy_registration_complete:
+            return
+        if getattr(self, "_lazy_registration_thread", None) is not None:
+            return
+
+        thread = threading.Thread(
+            target=self.ensure_registered,
+            name="kicad-mcp-register-tools",
+            daemon=True,
+        )
+        self._lazy_registration_thread = thread
+        thread.start()
+
+    def ensure_registered(self) -> None:
+        """Materialize deferred tools, resources, and prompts exactly once."""
+        register = self._lazy_registration
+        if register is None:
+            return
+        if self._lazy_registration_complete:
+            return
+        lock = getattr(self, "_lazy_registration_lock", None)
+        if lock is None:
+            lock = threading.Lock()
+            self._lazy_registration_lock = lock
+        with lock:
+            if self._lazy_registration_complete:
+                return
+            if self._lazy_registration_error is not None:
+                raise self._lazy_registration_error
+            try:
+                with _redirect_current_thread_stdout_to_stderr():
+                    register()
+            except Exception as exc:
+                self._lazy_registration_error = exc
+                raise
+            self._lazy_registration_complete = True
+
+    async def _ensure_registered_async(self) -> None:
+        if self._lazy_registration_complete:
+            return
+        try:
+            await asyncio.wait_for(
+                anyio.to_thread.run_sync(self.ensure_registered, abandon_on_cancel=True),
+                timeout=self._lazy_registration_timeout_s,
+            )
+        except TimeoutError as exc:
+            # Registration keeps running in the background thread; surface a
+            # retryable error rather than blocking this request indefinitely.
+            raise ToolRegistrationTimeoutError(
+                "Tool registration has not finished yet and exceeded its "
+                f"{self._lazy_registration_timeout_s:g}s budget. It continues in the "
+                "background — retry shortly."
+            ) from exc
+
+    def tool(  # type: ignore[override]
+        self,
+        name: str | None = None,
+        title: str | None = None,
+        description: str | None = None,
+        annotations: ToolAnnotations | None = None,
+        icons: list[Icon] | None = None,
+        meta: dict[str, object] | None = None,
+        structured_output: bool | None = None,
+    ) -> Callable[[AnyFunction], AnyFunction]:
+        def decorator(func: AnyFunction) -> AnyFunction:
+            merged = infer_tool_annotations(name or func.__name__, explicit=annotations)
+            published_description = description
+            if published_description is None:
+                published_description = inspect.getdoc(func) or None
+            if published_description is not None:
+                words = [word for word in published_description.replace("-", " ").split() if word]
+                if len(words) < 10:
+                    published_description = (
+                        f"{published_description.rstrip()} This KiCad MCP Pro tool "
+                        "supports production EDA automation workflows for MCP clients."
+                    )
+            registered_func = func
+            if not inspect.iscoroutinefunction(func):
+
+                @functools.wraps(func)
+                async def run_sync_tool_in_worker(*args: object, **kwargs: object) -> object:
+                    call = functools.partial(func, *args, **kwargs)
+                    return await anyio.to_thread.run_sync(call)
+
+                registered_func = run_sync_tool_in_worker
+
+            published_meta = dict(meta or {})
+            tool_metadata = get_tool_metadata(name or func.__name__)
+            if tool_metadata and tool_metadata.requires_kicad_running:
+                # MCP SDK v2 intentionally drops unknown protocol-model fields.
+                # Preserve the repository's custom runtime requirement metadata in
+                # the spec-supported _meta envelope instead of ToolAnnotations.
+                published_meta.setdefault("requiresKiCadRunning", True)
+
+            super(KiCadFastMCP, self).tool(
+                name=name,
+                title=title,
+                description=published_description,
+                annotations=merged or None,
+                icons=icons,
+                meta=published_meta or None,
+                structured_output=structured_output,
+            )(registered_func)
+            return func
+
+        return decorator
+
+    def _filter_tools(self, tools: list[mcp_types.Tool]) -> list[mcp_types.Tool]:
+        allowed_tool_names = getattr(self, "allowed_tool_names", None)
+        if allowed_tool_names is not None:
+            tools = [tool for tool in tools if tool.name in allowed_tool_names]
+        mode = getattr(self, "operating_mode", active_operating_mode())
+        tools = filter_tools_for_mode(tools, mode)
+        filter_enabled = get_config().filter_runtime_tools
+        if getattr(self, "filter_runtime_tools", True) and filter_enabled:
+            tools = _filter_ipc_runtime_tools(tools, self._runtime_ipc_capability_state())
+        if mode is OperatingMode.EXPERIMENTAL:
+            return tools
+        if (
+            getattr(self, "allow_experimental_tools", False)
+            or get_config().enable_experimental_tools
+        ):
+            return tools
+        return [
+            tool for tool in tools if getattr(tool, "name", None) not in EXPERIMENTAL_TOOL_NAMES
+        ]
+
+    def _runtime_ipc_capability_state(self) -> KiCadIpcCapabilityState:
+        """Return a short-lived KiCad IPC capability snapshot for discovery filtering."""
+        now = time.monotonic()
+        cached = getattr(self, "_ipc_capability_state", None)
+        checked_at = getattr(self, "_ipc_capability_checked_at", 0.0)
+        if cached is None or now - checked_at > IPC_CAPABILITY_CACHE_TTL_SEC:
+            cached = get_ipc_capability_state()
+            self._ipc_capability_state = cached
+            self._ipc_capability_checked_at = now
+        return cached
+
+    def list_tools_sync(self) -> list[mcp_types.Tool]:
+        """List filtered tools without needing to drive an asyncio event loop."""
+        self.ensure_registered()
+        tools = self._tool_manager.list_tools()
+        rendered = [
+            mcp_types.Tool(
+                name=info.name,
+                title=info.title,
+                description=info.description,
+                inputSchema=info.parameters,
+                outputSchema=info.output_schema,
+                annotations=info.annotations,
+                icons=info.icons,
+                _meta=info.meta,
+            )
+            for info in tools
+        ]
+        return self._filter_tools(rendered)
+
+    async def run_streamable_http_async(
+        self,
+        *,
+        host: str | None = None,
+        port: int | None = None,
+        streamable_http_path: str | None = None,
+        json_response: bool | None = None,
+        stateless_http: bool | None = None,
+        event_store: EventStore | None = None,
+        retry_interval: int | None = None,
+        max_request_body_size: int = 4_194_304,
+        session_idle_timeout: float | None = 1800,
+        max_sessions: int | None = 10_000,
+        transport_security: TransportSecuritySettings | None = None,
+    ) -> None:
+        """Run Streamable HTTP with optional direct TLS termination."""
+        import uvicorn
+
+        cfg = get_config()
+        resolved_host = self._transport_host if host is None else host
+        resolved_port = self._transport_port if port is None else port
+        resolved_path = (
+            self._streamable_http_path if streamable_http_path is None else streamable_http_path
+        )
+        resolved_json = self._json_response if json_response is None else json_response
+        resolved_stateless = self._stateless_http if stateless_http is None else stateless_http
+        uvicorn_config = uvicorn.Config(
+            self.streamable_http_app(
+                streamable_http_path=resolved_path,
+                json_response=resolved_json,
+                stateless_http=resolved_stateless,
+                event_store=event_store,
+                retry_interval=retry_interval,
+                max_request_body_size=max_request_body_size,
+                session_idle_timeout=session_idle_timeout,
+                max_sessions=max_sessions,
+                transport_security=transport_security,
+                host=resolved_host,
+            ),
+            host=resolved_host,
+            port=resolved_port,
+            log_level=self.settings.log_level.lower(),
+            ssl_certfile=str(cfg.tls_cert_file) if cfg.direct_tls_enabled else None,
+            ssl_keyfile=str(cfg.tls_key_file) if cfg.direct_tls_enabled else None,
+        )
+        await uvicorn.Server(uvicorn_config).serve()
+
+    async def run_sse_async(
+        self,
+        *,
+        host: str | None = None,
+        port: int | None = None,
+        sse_path: str | None = None,
+        message_path: str | None = None,
+        max_request_body_size: int = 4_194_304,
+        transport_security: TransportSecuritySettings | None = None,
+    ) -> None:
+        """Run legacy SSE with the same TLS policy as Streamable HTTP."""
+        import uvicorn
+
+        cfg = get_config()
+        resolved_host = self._transport_host if host is None else host
+        resolved_port = self._transport_port if port is None else port
+        resolved_sse_path = self._sse_path if sse_path is None else sse_path
+        resolved_message_path = self._message_path if message_path is None else message_path
+        uvicorn_config = uvicorn.Config(
+            super().sse_app(
+                sse_path=resolved_sse_path,
+                message_path=resolved_message_path,
+                max_request_body_size=max_request_body_size,
+                transport_security=transport_security,
+                host=resolved_host,
+            ),
+            host=resolved_host,
+            port=resolved_port,
+            log_level=self.settings.log_level.lower(),
+            ssl_certfile=str(cfg.tls_cert_file) if cfg.direct_tls_enabled else None,
+            ssl_keyfile=str(cfg.tls_key_file) if cfg.direct_tls_enabled else None,
+        )
+        await uvicorn.Server(uvicorn_config).serve()
+
+    def streamable_http_app(
+        self,
+        *,
+        streamable_http_path: str | None = None,
+        json_response: bool | None = None,
+        stateless_http: bool | None = None,
+        event_store: EventStore | None = None,
+        retry_interval: int | None = None,
+        max_request_body_size: int = 4_194_304,
+        session_idle_timeout: float | None = 1800,
+        max_sessions: int | None = 10_000,
+        transport_security: TransportSecuritySettings | None = None,
+        host: str | None = None,
+    ) -> Starlette:
+        resolved_host = self._transport_host if host is None else host
+        resolved_path = (
+            self._streamable_http_path if streamable_http_path is None else streamable_http_path
+        )
+        resolved_json = self._json_response if json_response is None else json_response
+        resolved_stateless = self._stateless_http if stateless_http is None else stateless_http
+        app = super().streamable_http_app(
+            streamable_http_path=resolved_path,
+            json_response=resolved_json,
+            stateless_http=resolved_stateless,
+            event_store=event_store,
+            retry_interval=retry_interval,
+            max_request_body_size=max_request_body_size,
+            session_idle_timeout=session_idle_timeout,
+            max_sessions=max_sessions,
+            transport_security=transport_security,
+            host=resolved_host,
+        )
+        cfg = get_config()
+        app.add_middleware(_DashboardAuthMiddleware)
+        app.add_middleware(_StreamableHttpContractMiddleware, max_sessions=max_sessions)
+        if cfg.legacy_sse:
+            sse_routes = (
+                super()
+                .sse_app(
+                    sse_path=self._sse_path,
+                    message_path=self._message_path,
+                    host=self._transport_host,
+                )
+                .routes
+            )
+            existing_paths = {getattr(route, "path", None) for route in app.routes}
+            for route in sse_routes:
+                route_path = getattr(route, "path", None)
+                if route_path in {"/sse", "/messages"} and route_path not in existing_paths:
+                    app.routes.append(route)
+                    existing_paths.add(route_path)
+        origins = cfg.cors_origin_list
+        if origins:
+            app.add_middleware(
+                CORSMiddleware,
+                allow_origins=origins,
+                allow_methods=["GET", "POST", "OPTIONS"],
+                allow_headers=[
+                    "Authorization",
+                    "Content-Type",
+                    "MCP-Protocol-Version",
+                    "MCP-Session-Id",
+                    "Mcp-Method",
+                    "Mcp-Name",
+                ],
+            )
+        app.add_middleware(_OriginValidationMiddleware)
+        # Enforce the SDK's size limit before the protocol shim reads the body.
+        app.add_middleware(
+            _McpPostBodyLimitMiddleware,
+            max_body_size=max_request_body_size,
+        )
+        return app
+
+    async def list_tools(self) -> list[mcp_types.Tool]:
+        """List visible tools, preserving reviewed ordering for the native 2026 lane."""
+        await self._ensure_registered_async()
+        tools = self._filter_tools(await super().list_tools())
+        if get_config().protocol_lane == NATIVE_2026_PROTOCOL_LANE:
+            tools.sort(key=lambda tool: tool.name)
+        return tools
+
+    async def list_resources(self) -> list[mcp_types.Resource]:
+        """Materialize resources before discovery when stdio startup was deferred."""
+        await self._ensure_registered_async()
+        return await super().list_resources()
+
+    async def list_resource_templates(self) -> list[mcp_types.ResourceTemplate]:
+        """Materialize resource templates before discovery when startup was deferred."""
+        await self._ensure_registered_async()
+        return await super().list_resource_templates()
+
+    async def read_resource(
+        self,
+        uri: AnyUrl | str,
+        context: Context[Any, Any] | None = None,
+    ) -> Iterable[ReadResourceContents] | mcp_types.InputRequiredResult:
+        """Materialize resources before reading them when startup was deferred."""
+        await self._ensure_registered_async()
+        return await super().read_resource(uri, context)
+
+    async def list_prompts(self) -> list[mcp_types.Prompt]:
+        """Materialize prompts before discovery when stdio startup was deferred."""
+        await self._ensure_registered_async()
+        return await super().list_prompts()
+
+    async def get_prompt(
+        self,
+        name: str,
+        arguments: dict[str, Any] | None = None,
+        context: Context[Any, Any] | None = None,
+    ) -> mcp_types.GetPromptResult | mcp_types.InputRequiredResult:
+        """Materialize prompts before rendering them when startup was deferred."""
+        await self._ensure_registered_async()
+        return await super().get_prompt(name, arguments, context)
+
+    def _telemetry_tool_catalog_hash(self) -> str:
+        if self._telemetry_catalog_hash is not None:
+            return self._telemetry_catalog_hash
+        catalog_hash = otel.tool_catalog_hash(tool.name for tool in self.list_tools_sync())
+        self._telemetry_catalog_hash = catalog_hash
+        return catalog_hash
+
+    def _telemetry_kicad_major_minor(self) -> str | None:
+        if self._telemetry_kicad_version is not None:
+            return self._telemetry_kicad_version or None
+        version = otel.kicad_cli_major_minor(find_kicad_version(get_config().kicad_cli))
+        self._telemetry_kicad_version = version or ""
+        return version
+
+    def _telemetry_context_attributes(self) -> dict[str, object]:
+        if not otel.telemetry_enabled():
+            return {}
+        return {
+            "protocol_version": MCP_PROTOCOL_VERSION,
+            "tool_catalog_hash": self._telemetry_tool_catalog_hash(),
+            "kicad_cli_version": self._telemetry_kicad_major_minor() or "unknown",
+        }
+
+    async def call_tool(  # type: ignore[override]
+        self,
+        name: str,
+        arguments: dict[str, Any],
+        context: Context[Any, Any] | None = None,
+    ) -> object:
+        """Call a tool with metrics, audit logging, rate limits, and structured errors."""
+        started = time.perf_counter()
+        status = "ok"
+        error_code: str | None = None
+        limiter = _tool_limiter(name)
+        result: object
+        _log_tool_call_started(name, arguments)
+        _error_detail: dict[str, object] = {"tool": name}
+        with otel.tool_span(name) as span:
+            try:
+                await self._ensure_registered_async()
+                execution_tool_names = getattr(self, "execution_tool_names", None)
+                if execution_tool_names is not None and name not in execution_tool_names:
+                    result = _structured_tool_error_from_message(
+                        f"Tool '{name}' is not available in this server execution surface.",
+                        tool_name=name,
+                    )
+                    status, error_code = _status_from_result(result)
+                    logger.warning("tool_denied_by_execution_surface", tool=name)
+                    return result
+                mode = getattr(self, "operating_mode", active_operating_mode())
+                if not is_tool_allowed_in_mode(name, mode):
+                    result = _structured_tool_error_from_message(
+                        denial_message(name, mode),
+                        tool_name=name,
+                    )
+                    status, error_code = _status_from_result(result)
+                    logger.warning("tool_denied_by_mode", tool=name, mode=mode.value)
+                    return result
+                if limiter is None:
+                    result = await super().call_tool(name, arguments, context)
+                else:
+                    async with limiter:
+                        result = await super().call_tool(name, arguments, context)
+                failure_message = _tool_failure_message(name, result)
+                if failure_message is not None:
+                    result = _structured_tool_error_from_message(failure_message, tool_name=name)
+                    logger.warning(
+                        "tool_result_failure",
+                        tool=name,
+                        failure=failure_message[:200],
+                        error_code=_tool_error_code(failure_message, tool_name=name),
+                    )
+                status, error_code = _status_from_result(result)
+                return result
+            except ToolError as exc:
+                exc_message = str(exc)
+                result = _structured_tool_error(exc, tool_name=name)
+                status, error_code = _status_from_result(result)
+                _error_detail["error_code"] = error_code or type(exc).__name__
+                _error_detail["message"] = exc_message[:300]
+                logger.error(
+                    "tool_tool_error",
+                    **_error_detail,
+                    _exc_info=True,
+                )
+                otel.record_error_event(
+                    _TOOL_ERROR_EVENT_NAME,
+                    exc,
+                    {
+                        "tool": name,
+                        "error_code": error_code or type(exc).__name__,
+                        **self._telemetry_context_attributes(),
+                    },
+                )
+                return result
+            except KiCadNotRunningError as exc:
+                status = "error"
+                error_code = exc.code
+                _error_detail["error_code"] = exc.code
+                _error_detail["message"] = str(exc)[:300]
+                _error_detail["hint"] = exc.hint
+                logger.error(
+                    "tool_ipc_error",
+                    **_error_detail,
+                )
+                otel.record_error_event(
+                    _TOOL_ERROR_EVENT_NAME,
+                    exc,
+                    {
+                        "tool": name,
+                        "error_code": exc.code,
+                        **self._telemetry_context_attributes(),
+                    },
+                )
+                return _structured_tool_error(exc, tool_name=name)
+            except Exception as exc:
+                status = "error"
+                error_code = type(exc).__name__
+                _error_detail["error_code"] = error_code
+                _error_detail["message"] = str(exc)[:300]
+                logger.error(
+                    "tool_unexpected_error",
+                    **_error_detail,
+                    _exc_info=True,
+                )
+                otel.record_error_event(
+                    _TOOL_ERROR_EVENT_NAME,
+                    exc,
+                    {
+                        "tool": name,
+                        "error_code": error_code,
+                        **self._telemetry_context_attributes(),
+                    },
+                )
+                raise
+            finally:
+                elapsed_ms = (time.perf_counter() - started) * 1000.0
+                _record_tool_metric(name, status, elapsed_ms)
+                otel.record_tool_invocation(name, status, elapsed_ms / 1000.0)
+                otel.record_runtime_event(
+                    "mcp.tool_call",
+                    {
+                        "tool": name,
+                        "status": status,
+                        "elapsed_ms": round(elapsed_ms, 2),
+                        "error_code": error_code or "",
+                        **self._telemetry_context_attributes(),
+                    },
+                )
+                otel.finish_tool_span(span, status=status, error_code=error_code)
+                _log_tool_call_finished(
+                    name,
+                    status=status,
+                    elapsed_ms=elapsed_ms,
+                    error_code=error_code,
+                )
+                _audit_tool_call(
+                    tool_name=name,
+                    arguments=arguments,
+                    status=status,
+                    elapsed_ms=elapsed_ms,
+                    error_code=error_code,
+                )
+
+
+class _McpPostBodyLimitMiddleware:
+    """Apply the SDK body limit only to MCP POSTs, not dashboard routes."""
+
+    def __init__(self, app: ASGIApp, max_body_size: int) -> None:
+        self.app = app
+        self.limited_app = RequestBodyLimitMiddleware(app, max_body_size)
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if (
+            scope["type"] == "http"
+            and scope.get("method") == "POST"
+            and scope.get("path") == get_config().mount_path
+        ):
+            await self.limited_app(scope, receive, send)
+        else:
+            await self.app(scope, receive, send)
+
+
+class _StreamableHttpContractMiddleware:
+    """Normalize the public Streamable HTTP contract before FastMCP handles it."""
+
+    def __init__(self, app: ASGIApp, max_sessions: int | None = 10_000) -> None:
+        if max_sessions is not None and max_sessions <= 0:
+            raise ValueError("max_sessions must be positive or None")
+        self.app = app
+        self._session_cache_limit = max_sessions
+        self._session_ids: set[str] = set()
+        self._session_order: deque[str] = deque()
+
+    async def _handle_delete(
+        self,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+        headers: Mapping[str, str],
+        cfg: KiCadMCPConfig,
+    ) -> None:
+        session_id = headers.get("mcp-session-id", "")
+        delete_response_status: int | None = None
+
+        async def delete_request_send(message: Message) -> None:
+            nonlocal delete_response_status
+            if message["type"] == _HTTP_RESPONSE_START:
+                status_value = message.get("status")
+                delete_response_status = status_value if isinstance(status_value, int) else None
+            await send(message)
+
+        with otel.mcp_request_span(
+            http_method="DELETE",
+            mount_path=cfg.mount_path,
+            session_present=bool(session_id),
+        ) as request_span:
+            with structlog.contextvars.bound_contextvars(mcp_session_id=session_id or None):
+                await self.app(scope, receive, delete_request_send)
+            otel.finish_mcp_request_span(request_span, status_code=delete_response_status)
+        if session_id:
+            self._forget_session(session_id)
+            logger.info("mcp_session_destroyed", mcp_session_id=session_id)
+
+    async def _validate_post_headers(
+        self,
+        headers: Mapping[str, str],
+        body: bytes,
+        rpc_id: object | None,
+        rpc_method: str | None,
+        cfg: KiCadMCPConfig,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+    ) -> bool:
+        if not _accept_header_includes(
+            headers.get("accept", ""), "application/json"
+        ) or not _accept_header_includes(headers.get("accept", ""), "text/event-stream"):
+            await _streamable_http_error_response(
+                code=-32003,
+                message=(
+                    "Bad Request: Accept header must include application/json and "
+                    "text/event-stream."
+                ),
+                rpc_id=rpc_id,
+                status_code=400,
+                scope=scope,
+                receive=receive,
+                send=send,
+            )
+            return False
+        if not _content_type_header_is(headers.get("content-type", ""), "application/json"):
+            await _streamable_http_error_response(
+                code=-32003,
+                message="Bad Request: Content-Type header must be application/json.",
+                rpc_id=rpc_id,
+                status_code=400,
+                scope=scope,
+                receive=receive,
+                send=send,
+            )
+            return False
+
+        protocol_version = headers.get("mcp-protocol-version")
+        if protocol_version and (
+            protocol_version not in SUPPORTED_PROTOCOL_VERSIONS
+            or (
+                cfg.protocol_lane == NATIVE_2026_PROTOCOL_LANE
+                and protocol_version != MCP_PROTOCOL_VERSION
+            )
+        ):
+            code, message, error_data = _unsupported_protocol_version_error(
+                protocol_version, body, cfg
+            )
+            await _streamable_http_error_response(
+                code=code,
+                message=message,
+                data=error_data,
+                rpc_id=rpc_id,
+                status_code=400,
+                scope=scope,
+                receive=receive,
+                send=send,
+            )
+            return False
+
+        session_id = headers.get("mcp-session-id", "")
+        if cfg.stateful_http and rpc_method and rpc_method != "initialize":
+            if not session_id:
+                await _streamable_http_error_response(
+                    code=-32000,
+                    message="Bad Request: Missing MCP-Session-Id header.",
+                    rpc_id=rpc_id,
+                    status_code=400,
+                    scope=scope,
+                    receive=receive,
+                    send=send,
+                )
+                return False
+            if not self._has_session(session_id):
+                await _streamable_http_error_response(
+                    code=-32001,
+                    message="Session not found for MCP-Session-Id.",
+                    rpc_id=rpc_id,
+                    status_code=404,
+                    scope=scope,
+                    receive=receive,
+                    send=send,
+                )
+                return False
+        return True
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        cfg = get_config()
+        method = scope.get("method")
+        if scope["type"] != "http" or scope.get("path") != cfg.mount_path:
+            await self.app(scope, receive, send)
+            return
+
+        headers = _scope_headers(scope)
+        if method == "DELETE":
+            await self._handle_delete(scope, receive, send, headers, cfg)
+            return
+        if method != "POST":
+            await self.app(scope, receive, send)
+            return
+
+        # Avoid reading unauthenticated request bodies before the SDK auth layer.
+        # Let FastMCP preserve its existing 401/403 error shape.
+        if cfg.auth_token and not secrets.compare_digest(
+            _scope_bearer_token(headers), cfg.auth_token
+        ):
+            await self.app(scope, receive, send)
+            return
+
+        await self._handle_post(scope, receive, send, headers, cfg)
+
+    async def _handle_post(
+        self,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+        headers: Mapping[str, str],
+        cfg: KiCadMCPConfig,
+    ) -> None:
+        body, replay_receive = await _buffer_request_body(receive)
+
+        rpc_id, rpc_method = _json_rpc_metadata(body)
+        post_response_status: int | None = None
+        original_send = send
+
+        async def post_request_send(message: Message) -> None:
+            nonlocal post_response_status
+            if message["type"] == _HTTP_RESPONSE_START:
+                status_value = message.get("status")
+                post_response_status = status_value if isinstance(status_value, int) else None
+            await original_send(message)
+
+        send_proc = post_request_send
+        if rpc_method == "initialize" and cfg.protocol_lane == "stable":
+            logger.info(
+                "mcp_transport_initialize",
+                request_id=rpc_id,
+                mcp_session_id=headers.get("mcp-session-id") or None,
+            )
+
+        if not await self._validate_post_headers(
+            headers, body, rpc_id, rpc_method, cfg, scope, replay_receive, send_proc
+        ):
+            return
+
+        session_id = headers.get("mcp-session-id", "")
+
+        async def send_wrapper(message: Message) -> None:
+            if message["type"] == _HTTP_RESPONSE_START:
+                response_session_id = _message_header(message, "mcp-session-id")
+                if response_session_id:
+                    self._remember_session(response_session_id)
+                    logger.info(
+                        "mcp_session_created",
+                        request_id=rpc_id,
+                        mcp_session_id=response_session_id,
+                    )
+            await send_proc(message)
+
+        with otel.mcp_request_span(
+            http_method="POST",
+            mount_path=cfg.mount_path,
+            session_present=bool(session_id),
+        ) as request_span:
+            otel.annotate_mcp_request(request_span, rpc_method=rpc_method)
+            with structlog.contextvars.bound_contextvars(
+                request_id=rpc_id,
+                mcp_session_id=session_id or None,
+            ):
+                await self.app(scope, replay_receive, send_wrapper)
+            otel.finish_mcp_request_span(request_span, status_code=post_response_status)
+
+    def _has_session(self, session_id: str) -> bool:
+        return session_id in self._session_ids
+
+    def _remember_session(self, session_id: str) -> None:
+        if session_id in self._session_ids:
+            return
+        if (
+            self._session_cache_limit is not None
+            and len(self._session_order) >= self._session_cache_limit
+        ):
+            self._session_ids.discard(self._session_order.popleft())
+            otel.record_session_delta(-1)
+        self._session_order.append(session_id)
+        self._session_ids.add(session_id)
+        otel.record_session_delta(1)
+
+    def _forget_session(self, session_id: str) -> None:
+        if session_id in self._session_ids:
+            self._session_ids.discard(session_id)
+            otel.record_session_delta(-1)
+        with contextlib.suppress(ValueError):
+            self._session_order.remove(session_id)
+
+
+async def _buffer_request_body(receive: Receive) -> tuple[bytes, Receive]:
+    messages: list[Message] = []
+    chunks: list[bytes] = []
+    more_body = True
+    while more_body:
+        message = await receive()
+        messages.append(message)
+        if message["type"] != "http.request":
+            break
+        body = message.get("body", b"")
+        if isinstance(body, bytes):
+            chunks.append(body)
+        more_body = bool(message.get("more_body", False))
+
+    iterator = iter(messages)
+
+    async def replay_receive() -> Message:
+        try:
+            return next(iterator)
+        except StopIteration:
+            # The body is already replayed. Streaming handlers must observe the
+            # original connection lifecycle, especially an HTTP disconnect.
+            return await receive()
+
+    return b"".join(chunks), replay_receive
+
+
+def _scope_headers(scope: Scope) -> dict[str, str]:
+    headers: dict[str, str] = {}
+    for key, value in scope.get("headers", []):
+        name = key.decode("latin-1").casefold()
+        decoded_value = value.decode("latin-1")
+        if name in headers:
+            headers[name] = f"{headers[name]}, {decoded_value}"
+        else:
+            headers[name] = decoded_value
+    return headers
+
+
+def _scope_bearer_token(headers: dict[str, str]) -> str:
+    authorization = headers.get("authorization", "")
+    prefix = "Bearer "
+    if not authorization.startswith(prefix):
+        return ""
+    return authorization[len(prefix) :].strip()
+
+
+def _accept_header_includes(value: str, media_type: str) -> bool:
+    media_main, media_subtype = media_type.casefold().split("/", 1)
+    for item in value.split(","):
+        item_type = item.split(";", 1)[0].strip().casefold()
+        if not item_type:
+            continue
+        if item_type == "*/*":
+            return True
+        if item_type == media_type:
+            return True
+        if item_type == f"{media_main}/*":
+            return True
+        if item_type == f"*/{media_subtype}":
+            return True
+    return False
+
+
+def _content_type_header_is(value: str, media_type: str) -> bool:
+    return value.split(";", 1)[0].strip().casefold() == media_type.casefold()
+
+
+def _json_rpc_metadata(body: bytes) -> tuple[object | None, str | None]:
+    try:
+        payload = json.loads(body.decode("utf-8"))
+    except Exception:
+        return None, None
+    if not isinstance(payload, dict):
+        return None, None
+    rpc_id = payload.get("id")
+    rpc_method = payload.get("method")
+    return rpc_id, rpc_method if isinstance(rpc_method, str) else None
+
+
+def _json_rpc_protocol_version(body: bytes) -> str | None:
+    """Read modern per-request metadata for version diagnostics only."""
+    try:
+        payload = json.loads(body.decode("utf-8"))
+    except ValueError:
+        return None
+    if not isinstance(payload, dict):
+        return None
+    params = payload.get("params")
+    if not isinstance(params, dict):
+        return None
+    meta = params.get("_meta")
+    if not isinstance(meta, dict):
+        return None
+    version = meta.get("io.modelcontextprotocol/protocolVersion")
+    return version if isinstance(version, str) else None
+
+
+def _unsupported_protocol_version_error(
+    requested: str, body: bytes, cfg: KiCadMCPConfig
+) -> tuple[int, str, dict[str, Any] | None]:
+    """Distinguish modern version negotiation from legacy HTTP diagnostics."""
+    body_version = _json_rpc_protocol_version(body)
+    if body_version is not None and body_version != requested:
+        # A proxy may route on headers, so a conflicting body is never acceptable.
+        return (
+            -32020,
+            "Header mismatch: MCP-Protocol-Version does not match request metadata.",
+            None,
+        )
+
+    if cfg.protocol_lane == NATIVE_2026_PROTOCOL_LANE or body_version is not None:
+        supported = (
+            [MCP_PROTOCOL_VERSION]
+            if cfg.protocol_lane == NATIVE_2026_PROTOCOL_LANE
+            else list(SUPPORTED_PROTOCOL_VERSIONS)
+        )
+        return (
+            -32022,
+            "Unsupported protocol version",
+            {
+                "requested": requested,
+                "supported": supported,
+            },
+        )
+
+    # No modern _meta: keep the diagnostic used by initialize-era clients.
+    message = (
+        f"Unsupported MCP-Protocol-Version: {requested}. "
+        f"Supported versions: {', '.join(SUPPORTED_PROTOCOL_VERSIONS)}."
+    )
+    return -32002, message, None
+
+
+def _message_header(message: Message, header_name: str) -> str:
+    expected = header_name.casefold().encode("latin-1")
+    headers = message.get("headers", [])
+    if not isinstance(headers, list):
+        return ""
+    for key, value in headers:
+        if not isinstance(key, bytes) or not isinstance(value, bytes):
+            continue
+        if key.lower() == expected:
+            return value.decode("latin-1")
+    return ""
+
+
+async def _streamable_http_error_response(
+    *,
+    code: int,
+    message: str,
+    rpc_id: object | None,
+    status_code: int,
+    data: dict[str, Any] | None = None,
+    scope: Scope,
+    receive: Receive,
+    send: Send,
+) -> None:
+    error: dict[str, Any] = {"code": code, "message": message}
+    if data is not None:
+        error["data"] = data
+    response = JSONResponse(
+        {"jsonrpc": "2.0", "error": error, "id": rpc_id},
+        status_code=status_code,
+    )
+    await response(scope, receive, send)
+
+
+class _OriginValidationMiddleware(BaseHTTPMiddleware):
+    """Reject cross-origin mutating requests that are not on the configured allowlist."""
+
+    _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+    _ROTATE_PATH = "/.well-known/mcp-server/token-rotate"
+
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
+    ) -> Response:
+        cfg = get_config()
+        if request.method.upper() in self._MUTATING_METHODS and request.url.path in {
+            cfg.mount_path,
+            self._ROTATE_PATH,
+        }:
+            origin = request.headers.get("origin")
+            if origin and not _is_origin_allowed(origin, cfg):
+                return PlainTextResponse("Origin not allowed for this MCP server.", status_code=403)
+        return await call_next(request)
+
+
+class _DashboardAuthMiddleware(BaseHTTPMiddleware):
+    """Enforce token verification on /api/* (except /api/health) and /ui* routes."""
+
+    @staticmethod
+    def _is_protected_route(path: str) -> bool:
+        is_api_or_ui = path.startswith("/api") or path.startswith("/ui") or path == "/"
+        is_health = path == "/api/health"
+        return is_api_or_ui and not is_health
+
+    @staticmethod
+    def _is_authorized(request: Request, expected_token: str, allow_query: bool) -> bool:
+        token = _bearer_token(request)
+        if token and secrets.compare_digest(token, expected_token):
+            return True
+        if allow_query:
+            query_token = request.query_params.get("token")
+            if query_token and secrets.compare_digest(query_token, expected_token):
+                return True
+        return False
+
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
+    ) -> Response:
+        cfg = get_config()
+        if cfg.auth_token and self._is_protected_route(request.url.path):
+            if not self._is_authorized(request, cfg.auth_token, cfg.allow_query_token_auth):
+                return JSONResponse(
+                    {"error": "Unauthorized. Invalid or missing auth token."},
+                    status_code=401,
+                )
+
+            origin = request.headers.get("origin")
+            if origin and not _is_origin_allowed(origin, cfg):
+                return JSONResponse(
+                    {"error": "Forbidden. Origin not allowed."},
+                    status_code=403,
+                )
+
+        return await call_next(request)
+
+
+def _server_base_url(cfg: KiCadMCPConfig) -> str:
+    return cfg.advertised_http_base_url
+
+
+def _http_origin(value: str) -> tuple[str, str, int] | None:
+    parsed = urlparse(value)
+    scheme = parsed.scheme.casefold()
+    if scheme not in {"http", "https"} or not parsed.hostname:
+        return None
+    try:
+        port = parsed.port
+    except ValueError:
+        return None
+    if parsed.netloc.endswith(":") and port is None:
+        return None
+    effective_port = port or (80 if scheme == "http" else 443)
+    return scheme, parsed.hostname.casefold(), effective_port
+
+
+def _is_origin_allowed(origin: str, cfg: KiCadMCPConfig) -> bool:
+    if origin in cfg.cors_origin_list:
+        return True
+
+    origin_parts = _http_origin(origin)
+    server_parts = _http_origin(cfg.advertised_http_base_url)
+    if origin_parts is None or server_parts is None:
+        return False
+
+    origin_scheme, origin_host, origin_port = origin_parts
+    server_scheme, server_host, server_port = server_parts
+    if origin_scheme != server_scheme or origin_port != server_port:
+        return False
+
+    server_hosts = {server_host}
+    if server_host in LOOPBACK_HOSTS:
+        server_hosts.update(LOOPBACK_HOSTS)
+    return origin_host in server_hosts
+
+
+def _bearer_token(request: Request) -> str:
+    authorization = request.headers.get("authorization", "")
+    prefix = "Bearer "
+    if not authorization.startswith(prefix):
+        return ""
+    return authorization[len(prefix) :].strip()
+
+
+def _is_loopback_host(host: str) -> bool:
+    return host.strip().casefold() in LOOPBACK_HOSTS
+
+
+def _validate_rotated_token(token: str) -> str | None:
+    if len(token) < 32:
+        return "new_token must be at least 32 characters."
+    if len(set(token)) < 12:
+        return "new_token must have higher entropy."
+    return None
+
+
+async def _request_is_authorized(
+    request: Request,
+    token_verifier: _StaticTokenVerifier | None,
+) -> bool:
+    if token_verifier is None:
+        return False
+    token = _bearer_token(request)
+    return await token_verifier.verify_token(token) is not None
+
+
+def _prometheus_metrics_payload() -> str:
+    lines = [
+        "# HELP kicad_mcp_tool_calls_total Total MCP tool calls observed by this process.",
+        "# TYPE kicad_mcp_tool_calls_total counter",
+    ]
+    with _METRICS_LOCK:
+        if not _TOOL_CALL_COUNTS:
+            lines.append('kicad_mcp_tool_calls_total{tool="none",status="none"} 0')
+        for (tool, status), count in sorted(_TOOL_CALL_COUNTS.items()):
+            lines.append(
+                "kicad_mcp_tool_calls_total"
+                f'{{tool="{_label_value(tool)}",status="{_label_value(status)}"}} {count}'
+            )
+
+        lines.extend(
+            [
+                "# HELP kicad_mcp_tool_latency_p50_ms Sliding-window p50 tool latency in ms.",
+                "# TYPE kicad_mcp_tool_latency_p50_ms gauge",
+            ]
+        )
+        for tool, samples in sorted(_TOOL_LATENCIES_MS.items()):
+            lines.append(
+                "kicad_mcp_tool_latency_p50_ms"
+                f'{{tool="{_label_value(tool)}"}} {_percentile(samples, 0.50):.3f}'
+            )
+        lines.extend(
+            [
+                "# HELP kicad_mcp_tool_latency_p95_ms Sliding-window p95 tool latency in ms.",
+                "# TYPE kicad_mcp_tool_latency_p95_ms gauge",
+            ]
+        )
+        for tool, samples in sorted(_TOOL_LATENCIES_MS.items()):
+            lines.append(
+                "kicad_mcp_tool_latency_p95_ms"
+                f'{{tool="{_label_value(tool)}"}} {_percentile(samples, 0.95):.3f}'
+            )
+    lines.extend(
+        [
+            "# HELP kicad_mcp_active_sessions Active Streamable HTTP sessions.",
+            "# TYPE kicad_mcp_active_sessions gauge",
+            "kicad_mcp_active_sessions 0",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _register_conditional_tools(server: KiCadFastMCP, enabled: set[str]) -> None:
+    from .tools import (
+        dfm,
+        emc_compliance,
+        export,
+        library,
+        manufacturing,
+        net_analysis,
+        pcb,
+        power_integrity,
+        routing,
+        sch_transaction,
+        schematic,
+        schematic_cosmetics,
+        signal_integrity,
+        simulation,
+        test_points,
+        three_d_models,
+        validation,
+        variants,
+        version_control,
+        visual_baseline,
+        visual_qa,
+    )
+
+    if "pcb_read" in enabled or "pcb_write" in enabled:
+        pcb.register(server)
+        net_analysis.register(server)
+        test_points.register(server)
+    if "schematic" in enabled:
+        schematic.register(server)
+        variants.register(server)
+        visual_qa.register(server)
+        schematic_cosmetics.register(server)
+        visual_baseline.register(server)
+        sch_transaction.register(server)
+    if "library" in enabled:
+        library.register(server)
+        three_d_models.register(server)
+    if "export" in enabled or "release_export" in enabled:
+        export.register(server, include_low_level_exports="export" in enabled)
+
+    simple_tool_map = (
+        ("validation", validation),
+        ("dfm", dfm),
+        ("routing", routing),
+        ("power_integrity", power_integrity),
+        ("emc", emc_compliance),
+        ("signal_integrity", signal_integrity),
+        ("simulation", simulation),
+        ("version_control", version_control),
+        ("manufacturing", manufacturing),
+    )
+    for category, module in simple_tool_map:
+        if category in enabled:
+            module.register(server)
+
+
+def _register_profile_components(
+    server: KiCadFastMCP,
+    enabled: set[str],
+    cfg: KiCadMCPConfig,
+) -> None:
+    """Register all profile-specific MCP surfaces on an already-created server."""
+    from .prompts import workflows
+    from .resources import analysis, board_state, server_info, studio_context
+    from .tools import (
+        capability_parity,
+        embedded_files,
+        project,
+    )
+
+    validate_callable_imports()
+
+    router.register(server)
+    project.register(server)
+    capability_parity.register(server)
+    embedded_files.register(server)
+
+    _register_conditional_tools(server, enabled)
+
+    _footprint.register(server)
+    _jobset.register(server)
+    _symbol.register(server)
+    _upgrade.register(server)
+
+    analysis.register(server)
+    board_state.register(server)
+    server_info.register(server)
+    studio_context.register(server)
+    workflows.register(server)
+
+    if cfg.studio_watch_dir is not None:
+        ensure_studio_project_watcher(cfg.studio_watch_dir)
+
+
+async def _handle_token_rotation(
+    request: Request,
+    cfg: KiCadMCPConfig,
+    token_verifier: _StaticTokenVerifier | None,
+) -> JSONResponse:
+    if token_verifier is None or not cfg.auth_token:
+        return JSONResponse({"error": "Bearer token auth is not enabled."}, status_code=404)
+    token = _bearer_token(request)
+    if await token_verifier.verify_token(token) is None:
+        return JSONResponse({"error": "Unauthorized."}, status_code=401)
+    try:
+        payload = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Request body must be JSON."}, status_code=400)
+    raw_token = payload.get("new_token") if isinstance(payload, dict) else None
+    new_token = raw_token.strip() if isinstance(raw_token, str) else ""
+    if not new_token:
+        return JSONResponse({"error": "new_token must be a non-empty string."}, status_code=400)
+    token_error = _validate_rotated_token(new_token)
+    if token_error is not None:
+        return JSONResponse({"error": token_error}, status_code=400)
+    cfg.auth_token = new_token
+    token_verifier.rotate(new_token)
+    logger.info("security_token_rotated", transport=cfg.transport, host=cfg.host)
+    return JSONResponse({"rotated": True})
+
+
+def _register_server_custom_routes(
+    server: KiCadFastMCP,
+    cfg: KiCadMCPConfig,
+    token_verifier: _StaticTokenVerifier | None,
+) -> None:
+    @server.custom_route("/.well-known/mcp-server", methods=["GET"], include_in_schema=False)
+    async def _well_known_mcp(_request: Request) -> JSONResponse:
+        return JSONResponse(get_wellknown_metadata())
+
+    @server.custom_route("/well-known/mcp-server", methods=["GET"], include_in_schema=False)
+    async def _well_known_mcp_compat(_request: Request) -> JSONResponse:
+        return JSONResponse(get_wellknown_metadata())
+
+    @server.custom_route(
+        "/.well-known/mcp-server/token-rotate",
+        methods=["POST"],
+        include_in_schema=False,
+    )
+    async def _rotate_token(request: Request) -> JSONResponse:
+        return await _handle_token_rotation(request, cfg, token_verifier)
+
+    if cfg.enable_metrics:
+
+        @server.custom_route("/metrics", methods=["GET"], include_in_schema=False)
+        async def _metrics(request: Request) -> PlainTextResponse | JSONResponse:
+            if not _is_loopback_host(cfg.host) and not await _request_is_authorized(
+                request, token_verifier
+            ):
+                return JSONResponse({"error": "Unauthorized."}, status_code=401)
+            return PlainTextResponse(
+                _prometheus_metrics_payload(),
+                media_type="text/plain; version=0.0.4",
+            )
+
+    if HAS_WEB:
+        for route in web_routes:
+            server.custom_route(
+                route.path,
+                methods=list(route.methods or ["GET"]),
+                include_in_schema=False,
+            )(route.endpoint)
+        logger.info("web_dashboard_routes_registered", count=len(web_routes))
+
+
+def build_server(profile: str | None = None, *, defer_registration: bool = False) -> FastMCP:
+    """Build a FastMCP server instance for the active profile."""
+    cfg = get_config()
+    otel.ensure_telemetry_configured(cfg)
+    cfg._validate_http_transport_security()
+    selected_profile = profile or cfg.profile
+    operating_mode = active_operating_mode(cfg)
+    enabled = set(categories_for_profile(selected_profile))
+    token_verifier = _StaticTokenVerifier(cfg.auth_token) if cfg.auth_token else None
+    auth = None
+    if cfg.auth_token:
+        base_url = _server_base_url(cfg)
+        auth = AuthSettings(
+            issuer_url=base_url,
+            resource_server_url=base_url,
+            required_scopes=["mcp"],
+            validate_token_resource=False,
+        )
+
+    server = KiCadFastMCP(
+        name="kicad-mcp-pro",
+        instructions=(
+            "KiCad MCP Pro Server for project setup, schematic capture, PCB editing, "
+            "validation, and manufacturing export. Start with kicad_get_version(), "
+            "kicad_set_project(), and project_get_next_action()."
+        ),
+        website_url="https://oaslananka.github.io/kicad-mcp-pro",
+        host=cfg.host,
+        port=cfg.port,
+        streamable_http_path=cfg.mount_path,
+        mount_path=cfg.mount_path,
+        log_level=cfg.log_level,
+        # Strict modern HTTP supports SSE progress; legacy mode keeps JSON replies.
+        json_response=cfg.protocol_lane != NATIVE_2026_PROTOCOL_LANE,
+        stateless_http=not cfg.stateful_http,
+        auth=auth,
+        token_verifier=token_verifier,
+        version=__version__,
+        cache_hints=(
+            NATIVE_2026_CACHE_HINTS if cfg.protocol_lane == NATIVE_2026_PROTOCOL_LANE else None
+        ),
+    )
+    server.operating_mode = operating_mode
+    server.allow_experimental_tools = operating_mode is OperatingMode.EXPERIMENTAL
+    server.allowed_tool_names = set(tools_for_profile(selected_profile))
+
+    # MCP SDK v2 removed the legacy experimental Tasks runtime. Configuration
+    # rejects that superseded draft fail-closed; no task handlers are registered.
+    _register_server_custom_routes(server, cfg, token_verifier)
+    # ------------------------------------------------------------------
+
+    def register() -> None:
+        _register_profile_components(server, enabled, cfg)
+
+    if defer_registration:
+        server.set_lazy_registration(register)
+    else:
+        register()
+
+    # Expose server handle for web dashboard API endpoints (tools listing, etc.)
+    set_server_handle(_SyncServerHandle(server))
+
+    return server
+
+
+def create_server(profile: str | None = None) -> _SyncServerHandle:
+    """Backward-compatible helper used by benchmark and verification scripts.
+
+    The production configuration defaults to the bounded ``default`` profile, but
+    this programmatic helper historically materialized the complete catalog. Keep
+    that behavior for tests, benchmarks, and advanced integrations unless a profile
+    is supplied explicitly.
+    """
+    cfg = get_config()
+    if "KICAD_MCP_OPERATING_MODE" not in os.environ and not cfg.enable_experimental_tools:
+        cfg.operating_mode = "experimental"
+    return _SyncServerHandle(build_server(profile or "full"))
+
+
+def _ipc_status_summary() -> str:
+    try:
+        get_board()
+    except KiCadConnectionError as exc:
+        return f"unavailable ({str(exc).splitlines()[0]})"
+    return "connected (PCB editor available)"
+
+
+_ONBOARDING_MESSAGES: dict[str, str] = {
+    "opencode": (
+        "OpenCode AI detected. Try these prompts:\n"
+        "  • 'show me the board' → pcb_get_board_summary()\n"
+        "  • 'run DRC' → run_drc()\n"
+        "  • 'export gerbers' → export_gerber()\n"
+        "  • 'add a mounting hole' → pcb_add_mounting_holes()"
+    ),
+    "claude-code": (
+        "Claude Code detected. Try these prompts:\n"
+        "  • 'Read the schematic' → sch_get_symbols + sch_get_wires\n"
+        "  • 'Check the PCB' → pcb_get_board_summary + run_drc\n"
+        "  • 'Export for manufacturing' → export_gerber + export_drill\n"
+        "  • 'What can you do?' → kicad_get_tools_in_category"
+    ),
+    "cursor": (
+        "Cursor detected. Chat tab commands shown in Quick Pick.\n"
+        "Type '/ask' or '/' to browse tools."
+    ),
+    "vscode": (
+        "VS Code with MCP extension detected.\nUse Ctrl+Shift+P → 'MCP: Call Tool' or agent chat."
+    ),
+    "codex": (
+        "Codex CLI detected. You can ask:\n"
+        "  • 'Create a new PCB project'\n"
+        "  • 'Add components to schematic'\n"
+        "  • 'Route power traces'"
+    ),
+    "gemini": "Gemini CLI detected.\nSee docs/agents/gemini-cli.md for usage.",
+}
+
+
+def _detect_client() -> str | None:
+    """Detect which AI client / agent is connecting based on environment."""
+    if "OPENCODE" in os.environ:
+        return "opencode"
+    if "CLAUDE_CODE" in os.environ:
+        return "claude-code"
+    if "CURSOR" in os.environ:
+        return "cursor"
+    if "VSCODE_MCP" in os.environ:
+        return "vscode"
+    if "CODEX" in os.environ:
+        return "codex"
+    if "GEMINI_CLI" in os.environ:
+        return "gemini"
+    return None
+
+
+def _print_startup_onboarding() -> None:
+    """Log an agent-specific onboarding message if the client env is detected."""
+    client = _detect_client()
+    if client and client in _ONBOARDING_MESSAGES:
+        logger.info("onboarding_hint", client=client, message=_ONBOARDING_MESSAGES[client])
+
+
+def _print_startup_diagnostics(cfg: KiCadMCPConfig, *, probe_runtime: bool = True) -> None:
+    """Emit a concise startup summary without writing directly to stdio transport."""
+    if cfg.transport == "stdio" and cfg.auth_token:
+        logger.warning(
+            "stdio_auth_token_ignored",
+            message="KICAD_MCP_AUTH_TOKEN has no effect when the server runs over stdio.",
+        )
+    kicad_version = "deferred" if not probe_runtime else find_kicad_version(cfg.kicad_cli)
+    ipc_status = "deferred" if not probe_runtime else _ipc_status_summary()
+    logger.info(
+        "startup_diagnostics",
+        profile=cfg.profile,
+        operating_mode=active_operating_mode(cfg).value,
+        kicad_cli=str(cfg.kicad_cli),
+        kicad_version=kicad_version or "unknown",
+        project_dir=str(cfg.project_dir) if cfg.project_dir else None,
+        gate_mode="release-export-only",
+        ipc_status=ipc_status,
+    )
+    _audit_capability_records()
+    _print_startup_onboarding()
+
+
+def _is_cli_provided(val: object) -> bool:
+    return val is not None and not isinstance(val, OptionInfo)
+
+
+def _apply_cli_env(
+    transport: str | None = None,
+    host: str | None = None,
+    port: int | None = None,
+    project_dir: str | None = None,
+    log_level: str | None = None,
+    log_format: str | None = None,
+    log_file: str | None = None,
+    profile: str | None = None,
+    operating_mode: str | None = None,
+    experimental: bool | None = None,
+    telemetry: bool | None = None,
+) -> None:
+    cli_env = {
+        "KICAD_MCP_TRANSPORT": transport,
+        "KICAD_MCP_HOST": host,
+        "KICAD_MCP_PORT": str(port) if _is_cli_provided(port) else None,
+        "KICAD_MCP_LOG_LEVEL": log_level,
+        "KICAD_MCP_LOG_FORMAT": log_format,
+        "KICAD_MCP_LOG_FILE": log_file,
+        "KICAD_MCP_PROFILE": profile,
+        "KICAD_MCP_OPERATING_MODE": operating_mode,
+        "KICAD_MCP_PROJECT_DIR": project_dir,
+    }
+    for key, value in cli_env.items():
+        if _is_cli_provided(value):
+            os.environ[key] = str(value)
+    if _is_cli_provided(experimental):
+        os.environ["KICAD_MCP_ENABLE_EXPERIMENTAL_TOOLS"] = "true" if experimental else "false"
+        if experimental and operating_mode is None:
+            os.environ["KICAD_MCP_OPERATING_MODE"] = "experimental"
+    if _is_cli_provided(telemetry):
+        os.environ["KICAD_MCP_TELEMETRY_ENABLED"] = "true" if telemetry else "false"
+
+
+def _run_server_from_options(
+    *,
+    transport: str | None = None,
+    host: str | None = None,
+    port: int | None = None,
+    project_dir: str | None = None,
+    log_level: str | None = None,
+    log_format: str | None = None,
+    log_file: str | None = None,
+    profile: str | None = None,
+    operating_mode: str | None = None,
+    experimental: bool | None = None,
+    telemetry: bool | None = None,
+) -> None:
+    """Apply CLI overrides and start the MCP server."""
+    _apply_cli_env(
+        transport=transport,
+        host=host,
+        port=port,
+        project_dir=project_dir,
+        log_level=log_level,
+        log_format=log_format,
+        log_file=log_file,
+        profile=profile,
+        operating_mode=operating_mode,
+        experimental=experimental,
+        telemetry=telemetry,
+    )
+    with contextlib.redirect_stdout(sys.stderr):
+        reset_config()
+        cfg = get_config()
+        otel.configure_telemetry(cfg)
+        setup_logging(
+            cfg.log_level,
+            cfg.log_format,
+            cfg.log_file,
+            cfg.log_max_bytes,
+            cfg.log_backup_count,
+        )
+
+        selected_transport = "stdio" if cfg.transport == "stdio" else "streamable-http"
+        if cfg.transport == "sse":
+            if cfg.legacy_sse:
+                selected_transport = "sse"
+                logger.warning(
+                    "legacy_sse_enabled",
+                    message="Legacy SSE transport is enabled for backward compatibility.",
+                )
+            else:
+                logger.warning(
+                    "legacy_sse_disabled",
+                    message=(
+                        "Ignoring KICAD_MCP_TRANSPORT=sse because KICAD_MCP_LEGACY_SSE is false."
+                    ),
+                )
+        defer_registration = selected_transport == "stdio"
+        server = build_server(cfg.profile, defer_registration=defer_registration)
+        _print_startup_diagnostics(cfg, probe_runtime=not defer_registration)
+        logger.info(
+            "starting_kicad_mcp_pro",
+            version=__version__,
+            transport=selected_transport,
+            profile=cfg.profile,
+            operating_mode=active_operating_mode(cfg).value,
+        )
+
+    if selected_transport == "stdio":
+        _ensure_thread_aware_stdout()
+        server.run(transport="stdio")
+        return
+
+    # For non-stdio transports stdout is not needed for the protocol. If the
+    # parent process (e.g. Tauri) closed its pipe end, sys.stdout operations
+    # like .fileno() or .isatty() raise ValueError. Replace it with stderr so
+    # uvicorn/typer don't crash during logging config or start-up echo.
+    try:
+        sys.stdout.fileno()
+    except (ValueError, OSError, AttributeError):
+        sys.stdout = sys.stderr
+
+    if selected_transport == "sse":
+        server.run(
+            transport="sse",
+            host=cfg.host,
+            port=cfg.port,
+        )
+        return
+
+    server.run(
+        transport="streamable-http",
+        host=cfg.host,
+        port=cfg.port,
+        streamable_http_path=cfg.mount_path,
+        json_response=cfg.protocol_lane != NATIVE_2026_PROTOCOL_LANE,
+        stateless_http=not cfg.stateful_http,
+    )
+
+
+@app.callback(invoke_without_command=True)
+def main_callback(
+    transport: _CliTransport = None,
+    host: _CliHost = None,
+    port: _CliPort = None,
+    project_dir: _CliProjectDir = None,
+    log_level: _CliLogLevel = None,
+    log_format: _CliLogFormat = None,
+    log_file: _CliLogFile = None,
+    profile: _CliProfile = None,
+    operating_mode: _CliOperatingMode = None,
+    experimental: _CliExperimental = None,
+    telemetry: _CliTelemetry = None,
+    watch: _CliWatch = False,
+) -> None:
+    """Start the KiCad MCP Pro server when no subcommand is supplied."""
+    _apply_cli_env(
+        transport=transport,
+        host=host,
+        port=port,
+        project_dir=project_dir,
+        log_level=log_level,
+        log_format=log_format,
+        log_file=log_file,
+        profile=profile,
+        operating_mode=operating_mode,
+        experimental=experimental,
+        telemetry=telemetry,
+    )
+    current_context = _get_click_context(silent=True)
+    if current_context is not None and current_context.invoked_subcommand is not None:
+        return
+    if watch and not isinstance(watch, OptionInfo):
+        _run_with_watch(
+            transport=transport,
+            host=host,
+            port=port,
+            project_dir=project_dir,
+            log_level=log_level,
+            log_format=log_format,
+            log_file=log_file,
+            profile=profile,
+            operating_mode=operating_mode,
+            experimental=experimental,
+            telemetry=telemetry,
+        )
+        return
+    _run_server_from_options()
+
+
+@app.command()
+def serve(
+    transport: _CliTransport = None,
+    host: _CliHost = None,
+    port: _CliPort = None,
+    project_dir: _CliProjectDir = None,
+    log_level: _CliLogLevel = None,
+    log_format: _CliLogFormat = None,
+    log_file: _CliLogFile = None,
+    profile: _CliProfile = None,
+    operating_mode: _CliOperatingMode = None,
+    experimental: _CliExperimental = None,
+    telemetry: _CliTelemetry = None,
+    watch: _CliWatch = False,
+) -> None:
+    """Start the MCP server explicitly."""
+    if watch:
+        _run_with_watch(
+            transport=transport,
+            host=host,
+            port=port,
+            project_dir=project_dir,
+            log_level=log_level,
+            log_format=log_format,
+            log_file=log_file,
+            profile=profile,
+            operating_mode=operating_mode,
+            experimental=experimental,
+            telemetry=telemetry,
+        )
+        return
+    _run_server_from_options(
+        transport=transport,
+        host=host,
+        port=port,
+        project_dir=project_dir,
+        log_level=log_level,
+        log_format=log_format,
+        log_file=log_file,
+        profile=profile,
+        operating_mode=operating_mode,
+        experimental=experimental,
+        telemetry=telemetry,
+    )
+
+
+def _echo_report(report: DiagnosticReport, *, as_json: bool) -> None:
+    if as_json:
+        typer.echo(diagnostic_report_json(report, indent=2))
+        return
+    typer.echo(f"Status: {report.status}")
+    for check in report.checks:
+        suffix = f" Hint: {check.hint}" if check.hint else ""
+        typer.echo(f"- {check.name}: {check.status} - {check.message}{suffix}")
+
+
+def _emit_diagnostic_report(
+    report: DiagnosticReport,
+    *,
+    as_json: bool,
+    bundle_path: Path | None = None,
+) -> None:
+    if bundle_path is not None:
+        write_diagnostic_bundle(report, bundle_path)
+    _echo_report(report, as_json=as_json)
+
+
+def _diagnostic_command(
+    builder: Callable[[], DiagnosticReport],
+    *,
+    as_json: bool,
+    bundle_path: Path | None = None,
+) -> None:
+    try:
+        if as_json:
+            with contextlib.redirect_stdout(io.StringIO()):
+                report = builder()
+        else:
+            report = builder()
+    except Exception as exc:
+        message = str(exc)
+        payload = {
+            "ok": False,
+            "status": "error",
+            "error": {
+                "code": "CONFIGURATION_ERROR",
+                "message": message,
+                "hint": "Fix malformed KiCad MCP configuration and retry.",
+                "retryable": False,
+            },
+        }
+        error = cast(dict[str, object], payload["error"])
+        typer.echo(json.dumps(payload, indent=2) if as_json else str(error["message"]))
+        raise typer.Exit(2) from exc
+    _emit_diagnostic_report(report, as_json=as_json, bundle_path=bundle_path)
+    if not report.ok:
+        raise typer.Exit(1)
+
+
+def _strict_diagnostic_exit_code(report: DiagnosticReport) -> int:
+    if any(check.status == "error" for check in report.checks):
+        return 2
+    if any(check.name == "kicad_cli" and check.status == "warn" for check in report.checks):
+        return 3
+    if report.status == "degraded":
+        return 1
+    return 0
+
+
+def _strict_diagnostic_command(
+    builder: Callable[[], DiagnosticReport],
+    *,
+    as_json: bool,
+    bundle_path: Path | None = None,
+) -> None:
+    try:
+        if as_json:
+            with contextlib.redirect_stdout(io.StringIO()):
+                report = builder()
+        else:
+            report = builder()
+    except Exception as exc:
+        payload = {
+            "ok": False,
+            "status": "error",
+            "error": {
+                "code": "CONFIGURATION_ERROR",
+                "message": str(exc),
+                "hint": "Fix malformed KiCad MCP configuration and retry.",
+                "retryable": False,
+            },
+        }
+        error = cast(dict[str, object], payload["error"])
+        typer.echo(json.dumps(payload, indent=2) if as_json else str(error["message"]))
+        raise typer.Exit(2) from exc
+    _emit_diagnostic_report(report, as_json=as_json, bundle_path=bundle_path)
+    exit_code = _strict_diagnostic_exit_code(report)
+    if exit_code:
+        raise typer.Exit(exit_code)
+
+
+@app.command()
+def health(
+    json_output: bool = typer.Option(False, "--json", help=option_help(_HELP_JSON_OUTPUT)),
+) -> None:
+    """Report fast package and configuration health without requiring KiCad IPC."""
+    _diagnostic_command(build_health_report, as_json=json_output)
+
+
+@app.command()
+def doctor(
+    json_output: bool = typer.Option(False, "--json", help=option_help(_HELP_JSON_OUTPUT)),
+    bundle: Path | None = DOCTOR_BUNDLE_OPTION,
+    strict: bool = typer.Option(
+        False,
+        "--strict",
+        help=option_help("Use stable non-zero exit codes for degraded runtime states."),
+    ),
+) -> None:
+    """Run deeper diagnostics without treating unavailable KiCad as fatal."""
+    if strict:
+        _strict_diagnostic_command(build_doctor_report, as_json=json_output, bundle_path=bundle)
+        return
+    _diagnostic_command(build_doctor_report, as_json=json_output, bundle_path=bundle)
+
+
+@app.command()
+def setup(
+    agent: str = typer.Argument(
+        ...,
+        help=option_help(
+            "Target agent: claude-code, codex, gemini, opencode, "
+            "cursor, vscode, claude-desktop, antigravity, chatgpt, claude-ai. "
+            "Use 'interactive' for simple help or 'wizard' for interactive wizard."
+        ),
+    ),
+    project_dir: str | None = typer.Option(
+        None,
+        "--project-dir",
+        help=option_help("KiCad project directory (default: $PWD or KICAD_MCP_PROJECT_DIR)."),
+    ),
+    mode: str = typer.Option(
+        "readonly", "--mode", help=option_help("Operating mode: readonly, write, manufacturing.")
+    ),
+    write_config: bool = typer.Option(
+        False, "--write", help=option_help("Write config file directly (instead of printing).")
+    ),
+    scope: str = typer.Option(
+        "project",
+        "--scope",
+        help=option_help("Config scope: project, user (if supported by agent)."),
+    ),
+    transport: str = typer.Option(
+        "stdio",
+        "--transport",
+        help=option_help("MCP transport: stdio or http."),
+    ),
+    url: str = typer.Option(
+        "",
+        "--url",
+        help=option_help("Remote MCP URL (for HTTP transport or remote agents)."),
+    ),
+) -> None:
+    """Generate or install KiCad MCP configuration for a supported agent.
+
+    Use 'kicad-mcp-pro setup wizard' for interactive setup.
+
+    \b
+    Examples:
+      kicad-mcp-pro setup claude-code
+      kicad-mcp-pro setup claude-code --write --scope project
+      kicad-mcp-pro setup codex --write --mode manufacturing
+      kicad-mcp-pro setup vscode --transport http --url http://127.0.0.1:8765/mcp
+      kicad-mcp-pro setup-restore claude-code
+      kicad-mcp-pro setup-backups claude-code
+    """
+    from .setup import setup_agent, setup_wizard
+
+    if agent == "interactive":
+        typer.echo(setup_wizard())
+        return
+    if agent == "wizard":
+        from .setup import run_wizard
+
+        typer.echo(run_wizard())
+        return
+    try:
+        result = setup_agent(
+            agent,
+            project_dir=project_dir,
+            mode=mode,
+            write=write_config,
+            scope=scope,
+            url=url,
+            transport=transport,
+        )
+    except Exception as exc:
+        raise typer.Exit(code=1) from exc
+    typer.echo(result)
+    if write_config and not result.startswith("✓ Config written to "):
+        # setup_agent historically returned human-readable failures instead of
+        # raising; do not report a failed write as CLI success.
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def bridge(
+    action: str = typer.Argument("start", help="Bridge action: start, stop, status."),
+    port: int = typer.Option(9090, "--port", "-p", help="Port for the TCP bridge listener."),
+    mcp_port: int = typer.Option(3334, "--mcp-port", help="Local MCP server port to proxy to."),
+    code: str = typer.Option(
+        "", "--code", "-c", help="Pairing code (auto-generated if not provided)."
+    ),
+    daemon: bool = typer.Option(False, "--daemon", "-d", help="Run as a background daemon."),
+) -> None:
+    """Start, stop, or check status of the local bridge daemon."""
+    from .bridge import bridge_start, bridge_status, bridge_stop
+
+    if action == "start":
+        bridge_start(port=port, code=code, daemon=daemon, mcp_port=mcp_port)
+    elif action == "status":
+        bridge_status()
+    elif action == "stop":
+        bridge_stop()
+    else:
+        typer.echo(f"Unknown bridge action: {action}. Use: start, stop, status.")
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def setup_restore(
+    agent: str = typer.Argument(..., help=option_help("Agent to restore config for.")),
+    scope: str = typer.Option("project", "--scope", help=option_help("Config scope to restore.")),
+    project_dir: str | None = typer.Option(
+        None,
+        "--project-dir",
+        help=option_help("Project directory for project-scoped config."),
+    ),
+) -> None:
+    """Restore the most recent backup of an agent configuration."""
+    from .setup import restore_config
+
+    result = restore_config(agent, scope, project_dir=project_dir)
+    typer.echo(result)
+
+
+@app.command()
+def setup_backups(
+    agent: str = typer.Argument(..., help=option_help("Agent to list backups for.")),
+    scope: str = typer.Option("project", "--scope", help=option_help("Config scope to list.")),
+    project_dir: str | None = typer.Option(
+        None,
+        "--project-dir",
+        help=option_help("Project directory for project-scoped config."),
+    ),
+) -> None:
+    """List available backups for an agent configuration."""
+    from .setup import list_config_backups
+
+    result = list_config_backups(agent, scope, project_dir=project_dir)
+    typer.echo(result)
+
+
+def _check_status_icon(status: str) -> str:
+    if status == "ok":
+        return "✅"
+    if status == "warn":
+        return "⚠️"
+    return "❌"
+
+
+def _init_detect_kicad() -> None:
+    typer.echo("🔍 KiCad MCP Pro Init")
+    typer.echo("─── PACKAGE ───")
+    typer.echo(f"  Version: {__version__}")
+    from .discovery import discover_kicad_cli
+
+    cli_path = discover_kicad_cli()
+    kicad_path = find_kicad_version(cli_path)
+    if kicad_path:
+        typer.echo(f"  KiCad:   {kicad_path}  ✅")
+    else:
+        typer.echo("  KiCad:   Not detected  ⚠️")
+        typer.echo("  Hint:    Install KiCad 8.0+ from https://www.kicad.org/download/")
+
+
+def _init_detect_project(project_dir: str | None) -> str:
+    resolved_project = project_dir or os.environ.get("KICAD_MCP_PROJECT_DIR", "")
+    if resolved_project:
+        pcb_files = list(Path(resolved_project).glob("*.kicad_pcb"))
+        sch_files = list(Path(resolved_project).glob("*.kicad_sch"))
+        typer.echo(f"  Project: {resolved_project}")
+        typer.echo(f"  PCB:     {len(pcb_files)} found  {'✅' if pcb_files else '⚠️'}")
+        typer.echo(f"  SCH:     {len(sch_files)} found  {'✅' if sch_files else '⚠️'}")
+    else:
+        typer.echo("  Project: Not set (optional)")
+    return resolved_project
+
+
+def _init_resolve_agent(agent: str | None) -> str:
+    from .setup import AGENTS
+
+    resolved_agent = agent or _detect_client() or "claude-code"
+    if resolved_agent not in AGENTS:
+        typer.echo(f"\n❌ Unsupported agent: {resolved_agent}")
+        typer.echo(f"   Supported: {', '.join(sorted(AGENTS))}")
+        raise typer.Exit(1)
+    typer.echo(f"\n  Agent:   {resolved_agent}")
+    return resolved_agent
+
+
+def _init_run_setup(
+    resolved_agent: str,
+    resolved_project: str,
+    mode: str,
+    write_config: bool,
+) -> None:
+    from .setup import setup_agent
+
+    try:
+        result = setup_agent(
+            resolved_agent,
+            project_dir=resolved_project or None,
+            mode=mode,
+            write=write_config,
+        )
+        if write_config and not result.startswith("✓ Config written to "):
+            typer.echo("\n  Config:  Failed — no confirmed config write", err=True)
+            raise typer.Exit(code=1)
+        typer.echo(f"\n  Config:  {'Written' if write_config else 'Generated'}")
+        typer.echo(f"  Result:  {result[:200]}")
+    except typer.Exit:
+        raise
+    except Exception as exc:
+        typer.echo(f"\n  Config:  Failed - {exc}  ❌")
+        raise typer.Exit(1) from exc
+
+
+def _init_verify_health() -> None:
+    try:
+        report = build_health_report()
+        status_icon = "✅" if report.ok else "⚠️"
+        typer.echo(f"\n  Health:  {report.status} {status_icon}")
+        for check in report.checks:
+            icon = _check_status_icon(check.status)
+            typer.echo(f"    {icon} {check.name}: {check.message}")
+    except Exception as exc:
+        typer.echo(f"\n  Health:  Check failed - {exc}")
+
+
+@app.command()
+def init(
+    interactive: bool = typer.Option(
+        False,
+        "--interactive",
+        "-i",
+        help=option_help("Launch the interactive setup wizard (rich TUI)."),
+    ),
+    project_dir: str | None = typer.Option(
+        None, "--project-dir", help=option_help("KiCad project directory (default: auto-detect).")
+    ),
+    agent: str | None = typer.Option(
+        None,
+        "--agent",
+        help=option_help(
+            "Target agent (default: auto-detect). Options: claude-code, codex, gemini,"
+            " opencode, cursor, vscode, claude-desktop, antigravity, chatgpt, claude-ai."
+        ),
+    ),
+    mode: str = typer.Option(
+        "write", "--mode", help=option_help("Operating mode: readonly, write, manufacturing.")
+    ),
+    write_config: bool = typer.Option(
+        False,
+        "--write/--print",
+        help=option_help("Write config file directly; default is preview-only."),
+    ),
+) -> None:
+    """One-shot setup: detect KiCad, configure an agent, and verify."""
+    # Interactive wizard mode
+    if interactive:
+        from .cli_init import run_wizard
+
+        run_wizard()
+        return
+
+    _init_detect_kicad()
+    resolved_project = _init_detect_project(project_dir)
+    resolved_agent = _init_resolve_agent(agent)
+    _init_run_setup(resolved_agent, resolved_project, mode, write_config)
+    _init_verify_health()
+
+    typer.echo("\n─── Done ───")
+    typer.echo("Run 'kicad-mcp-pro status' to see the current state.")
+    typer.echo("Run 'kicad-mcp-pro doctor' for full diagnostics.")
+
+
+def _overall_status_icon(report: DiagnosticReport) -> str:
+    if report.ok:
+        return "✅"
+    if report.status == "degraded":
+        return "⚠️"
+    return "❌"
+
+
+def _print_status_dashboard(report: DiagnosticReport, cfg: KiCadMCPConfig) -> None:
+    # ── Top section ──
+    typer.echo("╔══════════════════════════════════════════╗")
+    typer.echo("║       KiCad MCP Pro — Status            ║")
+    typer.echo("╚══════════════════════════════════════════╝")
+
+    # ── Server ──
+    typer.echo(f"\n📦  Package:   kicad-mcp-pro v{__version__}")
+    typer.echo(f"  Profile:   {cfg.profile or '(default)'}")
+    typer.echo(f"  Mode:      {active_operating_mode(cfg).value}")
+    typer.echo(f"  Transport: {cfg.transport}")
+
+    # ── KiCad ──
+    kicad_version = find_kicad_version(cfg.kicad_cli)
+    if kicad_version:
+        typer.echo(f"\n🔧  KiCad CLI:     {cfg.kicad_cli}")
+        typer.echo(f"  Version:        {kicad_version}")
+    else:
+        typer.echo("\n🔧  KiCad CLI:     Not found  ⚠️")
+        typer.echo(f"  Path tried:     {cfg.kicad_cli}")
+
+    # ── IPC ──
+    ipc_state = get_ipc_capability_state()
+    if ipc_state.reachable:
+        typer.echo("  IPC Status:     Connected  ✅")
+    else:
+        reason = ipc_state.diagnostics[0] if ipc_state.diagnostics else "disconnected"
+        typer.echo(f"  IPC Status:     {reason}  ⚠️")
+        typer.echo("  Hint:           Start KiCad with IPC enabled (Preferences → IPC)")
+
+    # ── Project ──
+    if cfg.project_dir:
+        typer.echo(f"\n📁  Project:  {cfg.project_dir}")
+        typer.echo(f"  PCB:      {cfg.pcb_file or '(not set)'}")
+        typer.echo(f"  SCH:      {cfg.sch_file or '(not set)'}")
+    else:
+        typer.echo("\n📁  Project:  Not set")
+
+    # ── Tools ──
+    tool_count = tool_count_for_profile(cfg.profile or "default")
+    typer.echo(
+        f"\n🛠️   Tools:     {tool_count} available across {len(available_profiles())} profiles"
+    )
+
+    # ── Checks ──
+    typer.echo(f"\n{'─── Health Checks ───'}")
+    for check in report.checks:
+        icon = _check_status_icon(check.status)
+        typer.echo(f"  {icon}  {check.name}: {check.message}")
+        if check.hint:
+            typer.echo(f"      Hint: {check.hint}")
+
+    typer.echo(f"\n  Overall: {report.status} {_overall_status_icon(report)}")
+
+
+@app.command()
+def status(
+    json_output: bool = typer.Option(False, "--json", help=option_help(_HELP_JSON_OUTPUT)),
+) -> None:
+    """Display a human-readable status dashboard."""
+    try:
+        report = build_health_report()
+    except Exception as exc:
+        typer.echo(f"Error building status: {exc}")
+        raise typer.Exit(1) from exc
+
+    if json_output:
+        typer.echo(diagnostic_report_json(report, indent=2))
+        return
+
+    _print_status_dashboard(report, get_config())
+
+
+def _tail_follow(log_path: Path, level: str) -> None:
+    try:
+        with open(log_path, encoding="utf-8") as f:
+            f.seek(0, 2)
+            while True:
+                line = f.readline()
+                if not line:
+                    time.sleep(0.1)
+                    continue
+                if not level or _log_level_match(line, level):
+                    typer.echo(line.rstrip())
+    except KeyboardInterrupt:
+        pass
+
+
+def _tail_lines(log_path: Path, lines: int, level: str) -> None:
+    with open(log_path, encoding="utf-8") as f:
+        all_lines = f.readlines()
+    tail = all_lines[-lines:] if lines < len(all_lines) else all_lines
+    for line in tail:
+        if not level or _log_level_match(line, level):
+            typer.echo(line.rstrip())
+
+
+@app.command()
+def log(
+    lines: int = typer.Option(50, "--lines", "-n", help=option_help("Number of lines to show.")),
+    follow: bool = typer.Option(
+        False, "--follow", "-f", help=option_help("Follow log output (tail -f).")
+    ),
+    level: str = typer.Option(
+        "",
+        "--level",
+        "-l",
+        help=option_help("Filter by level: info, warning, error (default: all)."),
+    ),
+) -> None:
+    """Tail the server log file if configured."""
+    cfg = get_config()
+    log_file = cfg.log_file
+
+    if not log_file:
+        typer.echo(
+            "No log file configured. Set KICAD_MCP_LOG_FILE or use --log-file "
+            "when starting the server.",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    log_path = Path(log_file)
+    if not log_path.is_file():
+        typer.echo(f"Log file not found: {log_file}", err=True)
+        raise typer.Exit(1)
+
+    if follow:
+        _tail_follow(log_path, level)
+    else:
+        _tail_lines(log_path, lines, level)
+
+
+@app.command()
+def dashboard(
+    host: str = typer.Option(
+        "127.0.0.1", "--host", help=option_help("HTTP bind host (default: 127.0.0.1).")
+    ),
+    port: int = typer.Option(
+        3334, "--port", "-p", help=option_help("HTTP bind port (default: 3334).")
+    ),
+    open_browser: bool = typer.Option(
+        False, "--open", "-o", help=option_help("Open the dashboard in the default browser.")
+    ),
+    operating_mode: str | None = typer.Option(
+        None,
+        "--mode",
+        help=option_help(_HELP_OPERATING_MODE),
+    ),
+) -> None:
+    """Start the server with the web dashboard enabled."""
+    if not HAS_WEB:
+        typer.echo(
+            "Web dashboard module is not available. Ensure the package is installed correctly.",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    if not _is_loopback_host(host):
+        raise typer.BadParameter(
+            "dashboard --host must be a loopback host; use the server HTTP mode behind TLS "
+            "or a protected public endpoint for remote access"
+        )
+    host = host.strip()
+
+    # Override settings for dashboard mode
+    os.environ["KICAD_MCP_TRANSPORT"] = "streamable-http"
+    os.environ["KICAD_MCP_HOST"] = host
+    os.environ["KICAD_MCP_PORT"] = str(port)
+
+    # Use safe echo that tolerates closed/non-available stdout (e.g. when
+    # spawned by Tauri with stdout=NUL on Windows).
+    def _safe_echo(msg: str) -> None:
+        try:
+            typer.echo(msg)
+        except (ValueError, OSError, AttributeError):
+            # stdout might be closed or not a valid file descriptor
+            pass
+
+    url_host = f"[{host}]" if ":" in host and not host.startswith("[") else host
+    authority = f"{url_host}:{port}"
+    dashboard_url = urlunsplit(("http", authority, "/ui", "", ""))
+    api_url = urlunsplit(("http", authority, "/api/status", "", ""))
+    logs_url = urlunsplit(("http", authority, "/api/logs/stream", "", ""))
+    _safe_echo(f"Starting KiCad MCP Pro dashboard on {dashboard_url}")
+    _safe_echo(f"  API: {api_url}")
+    _safe_echo(f"  Log stream: {logs_url}")
+
+    if open_browser:
+        import webbrowser
+
+        webbrowser.open(dashboard_url)
+
+    # Reset config and start with explicit transport, host, and port
+    from .config import reset_config
+
+    reset_config()
+    _run_server_from_options(
+        transport="streamable-http", host=host, port=port, operating_mode=operating_mode
+    )
+
+
+@app.command()
+def tray(
+    port: int = typer.Option(
+        3334,
+        "--port",
+        "-p",
+        help=option_help("Dashboard and server port (default: 3334)."),
+    ),
+) -> None:
+    """Launch the system tray application for KiCad MCP Pro."""
+    if not HAS_TRAY:
+        typer.echo(
+            "System tray is not available. Install it with: pip install kicad-mcp-pro[tray]",
+            err=True,
+        )
+        typer.echo("Requires: pystray and Pillow", err=True)
+        raise typer.Exit(1)
+
+    try:
+        tray_main(port=port)
+    except Exception as exc:
+        typer.echo(f"Tray application failed: {exc}", err=True)
+        raise typer.Exit(1) from exc
+
+
+def _log_level_match(line: str, level: str) -> bool:
+    """Check if a log line matches the requested level."""
+    lowered = level.casefold()
+    return lowered in line.casefold()
+
+
+def _tool_payload(tool: mcp_types.Tool) -> dict[str, object]:
+    dumped = tool.model_dump(mode="json", exclude_none=True)
+    return {
+        "name": dumped.get("name"),
+        "description": dumped.get("description", ""),
+        "inputSchema": dumped.get("inputSchema", {}),
+        "annotations": dumped.get("annotations", {}),
+    }
+
+
+@tools_app.command("list")
+def list_tools_command(
+    json_output: bool = typer.Option(False, "--json", help=_HELP_JSON_OUTPUT),
+    profile: str | None = typer.Option(
+        None, help=f"Server profile: {', '.join(available_profiles())}"
+    ),
+    operating_mode: str | None = typer.Option(
+        None,
+        "--mode",
+        help=option_help(_HELP_OPERATING_MODE),
+    ),
+) -> None:
+    """List MCP tools available for the selected profile."""
+    if profile is not None and profile not in available_profiles():
+        raise typer.BadParameter(f"Unsupported profile: {profile}")
+    previous_mode = os.environ.get("KICAD_MCP_OPERATING_MODE")
+    if operating_mode is not None:
+        os.environ["KICAD_MCP_OPERATING_MODE"] = operating_mode
+        reset_config()
+    with contextlib.redirect_stdout(io.StringIO()):
+        try:
+            server = build_server(profile, defer_registration=False)
+        finally:
+            if operating_mode is not None:
+                if previous_mode is None:
+                    os.environ.pop("KICAD_MCP_OPERATING_MODE", None)
+                else:
+                    os.environ["KICAD_MCP_OPERATING_MODE"] = previous_mode
+                reset_config()
+    sync_list = getattr(server, "list_tools_sync", None)
+    if not callable(sync_list):
+        raise typer.Exit(2)
+    with contextlib.redirect_stdout(io.StringIO()):
+        tools = sorted(
+            cast(Callable[[], list[mcp_types.Tool]], sync_list)(), key=lambda tool: tool.name
+        )
+    payload = [_tool_payload(tool) for tool in tools]
+    if json_output:
+        typer.echo(json.dumps(payload, indent=2))
+        return
+    for tool in payload:
+        typer.echo(str(tool["name"]))
+
+
+@app.command("capabilities")
+def capabilities_command(
+    json_output: bool = typer.Option(False, "--json", help=_HELP_JSON_OUTPUT),
+) -> None:
+    """List registered capability metadata."""
+    payload = all_protocol_metadata()
+    if json_output:
+        typer.echo(json.dumps(payload, indent=2))
+        return
+    for record in payload:
+        typer.echo(str(record["name"]))
+
+
+def _client_config_payload(client: str) -> str:
+    server_name = "kicad-mcp-pro"
+    stdio_server = {"command": "uvx", "args": ["kicad-mcp-pro"]}
+    if client in {"claude", "cursor"}:
+        return json.dumps({"mcpServers": {server_name: stdio_server}}, indent=2)
+    if client == "vscode":
+        payload = {
+            "servers": {
+                server_name: {
+                    "type": "stdio",
+                    **stdio_server,
+                }
+            }
+        }
+        return json.dumps(payload, indent=2)
+    if client == "codex":
+        return "\n".join(
+            [
+                "[mcp_servers.kicad-mcp-pro]",
+                'command = "uvx"',
+                'args = ["kicad-mcp-pro"]',
+            ]
+        )
+    raise typer.BadParameter(f"Unsupported client: {client}")
+
+
+@mcp_config_app.command("generate")
+def generate_mcp_config_command(
+    client: str = typer.Option(
+        ...,
+        "--client",
+        help="Client target: claude, cursor, vscode, or codex.",
+    ),
+) -> None:
+    """Generate a minimal stdio MCP client configuration."""
+    normalized = client.strip().casefold()
+    if normalized not in {"claude", "cursor", "vscode", "codex"}:
+        raise typer.BadParameter(f"Unsupported client: {client}")
+    typer.echo(_client_config_payload(normalized))
+
+
+@app.command("version")
+def version_command(
+    json_output: bool = typer.Option(False, "--json", help=_HELP_JSON_OUTPUT),
+) -> None:
+    """Print package version information."""
+    with contextlib.redirect_stdout(io.StringIO()):
+        cfg = get_config()
+    payload = {
+        "package": {"name": "kicad-mcp-pro", "version": __version__},
+        "mcp": {
+            "transport_default": cfg.transport,
+            "profile": cfg.profile,
+            "operating_mode": active_operating_mode(cfg).value,
+        },
+        "python": {"version": sys.version.split()[0]},
+    }
+    typer.echo(json.dumps(payload, indent=2) if json_output else __version__)
+
+
+def _build_watch_subprocess_cmd(
+    *,
+    transport: str | None = None,
+    host: str | None = None,
+    port: int | None = None,
+    project_dir: str | None = None,
+    log_level: str | None = None,
+    log_format: str | None = None,
+    log_file: str | None = None,
+    profile: str | None = None,
+    operating_mode: str | None = None,
+    experimental: bool | None = None,
+    telemetry: bool | None = None,
+) -> list[str]:
+    """Build command args for watch child subprocess."""
+    cmd = [sys.executable, "-m", "kicad_mcp.server"]
+    options: list[tuple[str, object]] = [
+        ("--transport", transport),
+        ("--host", host),
+        ("--port", port),
+        ("--project-dir", project_dir),
+        ("--log-level", log_level),
+        ("--log-format", log_format),
+        ("--log-file", log_file),
+        ("--profile", profile),
+        ("--mode", operating_mode),
+    ]
+    for flag, val in options:
+        if val and not isinstance(val, OptionInfo):
+            cmd.extend([flag, str(val)])
+    if experimental and not isinstance(experimental, OptionInfo):
+        cmd.append("--experimental")
+    if isinstance(telemetry, bool):
+        cmd.append("--telemetry" if telemetry else "--no-telemetry")
+    return cmd
+
+
+def _terminate_watch_process(proc: subprocess.Popen[bytes] | None, timeout: float = 5.0) -> None:
+    """Safely terminate a watch child process."""
+    if proc is None or proc.poll() is not None:
+        return
+    proc.terminate()
+    try:
+        proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
+
+
+def _extract_py_change(
+    change_set: Iterable[tuple[object, str]],
+) -> tuple[object, str] | None:
+    """Find the first .py file change in a watchfiles changeset."""
+    return next(
+        ((c_type, path) for c_type, path in change_set if path.endswith(".py")),
+        None,
+    )
+
+
+def _run_with_watch(
+    *,
+    transport: str | None = None,
+    host: str | None = None,
+    port: int | None = None,
+    project_dir: str | None = None,
+    log_level: str | None = None,
+    log_format: str | None = None,
+    log_file: str | None = None,
+    profile: str | None = None,
+    operating_mode: str | None = None,
+    experimental: bool | None = None,
+    telemetry: bool | None = None,
+) -> None:
+    """Start the server in a subprocess and hot-reload on .py source changes.
+
+    Uses ``watchfiles`` to monitor the ``kicad_mcp`` package directory.
+    When a ``.py`` file is modified, the subprocess is terminated and a new
+    one is spawned with the same CLI flags (minus ``--watch``).
+    """
+    if not HAS_WATCHFILES:
+        typer.echo(
+            "Error: --watch requires the 'watchfiles' package. Install it with:\n"
+            "  pip install kicad-mcp-pro[dev]\n"
+            "  pip install watchfiles",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+
+    pkg_dir = Path(__file__).resolve().parent
+    log = logger.bind(package_dir=str(pkg_dir))
+    log.info("hot_reload_started", path=str(pkg_dir))
+
+    cmd = _build_watch_subprocess_cmd(
+        transport=transport,
+        host=host,
+        port=port,
+        project_dir=project_dir,
+        log_level=log_level,
+        log_format=log_format,
+        log_file=log_file,
+        profile=profile,
+        operating_mode=operating_mode,
+        experimental=experimental,
+        telemetry=telemetry,
+    )
+
+    proc: subprocess.Popen[bytes] | None = None
+    try:
+        log.info("hot_reload_spawning", cmd=cmd)
+        proc = subprocess.Popen(
+            cmd,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+
+        if watchfiles is None:
+            return
+        changes = watchfiles.watch(str(pkg_dir))
+        for change_set in changes:
+            trigger = _extract_py_change(change_set)
+            if trigger is None:
+                continue
+            change_type, changed_path = trigger
+            log.info(
+                "hot_reload_restarting",
+                changed=changed_path,
+                change_type=change_type,
+            )
+            _terminate_watch_process(proc, timeout=5)
+            log.info("hot_reload_spawning", cmd=cmd)
+            proc = subprocess.Popen(
+                cmd,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+            )
+    finally:
+        _terminate_watch_process(proc, timeout=3)
+
+
+@app.command(name="inspect")
+def inspect_command(
+    transport: str | None = typer.Option(None, help=option_help(_HELP_TRANSPORT)),
+    host: str | None = typer.Option(None, help=option_help(_HELP_HOST)),
+    port: int | None = typer.Option(None, help=option_help(_HELP_PORT)),
+    project_dir: str | None = typer.Option(None, help=option_help(_HELP_PROJECT_DIR)),
+    log_level: str | None = typer.Option(None, help=option_help(_HELP_LOG_LEVEL)),
+    profile: str | None = typer.Option(
+        None, help=f"Server profile: {', '.join(available_profiles())}"
+    ),
+    operating_mode: str | None = typer.Option(
+        None,
+        "--mode",
+        help=option_help(_HELP_OPERATING_MODE),
+    ),
+    experimental: bool | None = typer.Option(None, help=option_help(_HELP_EXPERIMENTAL)),
+) -> None:
+    """Launch the MCP Inspector GUI for interactive tool debugging."""
+    # Start server on a random port for the inspector
+    import socket
+    import subprocess
+    import webbrowser
+
+    with contextlib.closing(socket.socket(socket.AF_INET, socket.AF_INET)) as s:
+        s.bind(("", 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server_port = s.getsockname()[1]
+
+    typer.echo(f"Starting kicad-mcp-pro on port {server_port} for MCP Inspector...", err=True)
+
+    # Start server process in the background
+    env = os.environ.copy()
+    env["KICAD_MCP_TRANSPORT"] = "streamable-http"
+    env["KICAD_MCP_HOST"] = "127.0.0.1"
+    env["KICAD_MCP_PORT"] = str(server_port)
+    if log_level:
+        env["KICAD_MCP_LOG_LEVEL"] = log_level
+    if project_dir:
+        env["KICAD_MCP_PROJECT_DIR"] = project_dir
+    if profile:
+        env["KICAD_MCP_PROFILE"] = profile
+    if operating_mode:
+        env["KICAD_MCP_OPERATING_MODE"] = operating_mode
+    if experimental:
+        env["KICAD_MCP_ENABLE_EXPERIMENTAL_TOOLS"] = "1"
+
+    server_proc = subprocess.Popen(
+        [sys.executable, "-m", "kicad_mcp.server"],
+        env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+    )
+
+    inspector_url = f"https://mcp.inspect.ai/?server=http://127.0.0.1:{server_port}/mcp"
+    typer.echo(f"Opening MCP Inspector at: {inspector_url}", err=True)
+    webbrowser.open(inspector_url)
+
+    try:
+        server_proc.wait()
+    except KeyboardInterrupt:
+        server_proc.terminate()
+        server_proc.wait()
+
+
+def main() -> None:
+    """CLI entrypoint used by the package script."""
+    # Load .env into os.environ at startup so unprefixed third-party credentials
+    # (e.g. NEXAR_CLIENT_ID, DIGIKEY_CLIENT_ID) read via os.getenv are available.
+    # Real environment variables take precedence (override=False). Done only on
+    # the CLI path, so unit tests stay hermetic.
+    from dotenv import load_dotenv
+
+    load_dotenv(override=False)
+    app()
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,214 @@
+{
+  "schemaVersion": "2.0.0",
+  "source": {
+    "repository": "oaslananka/kicad-mcp-pro",
+    "version": "4.4.0",
+    "reviewed_source_sha": "66c0cd2750b8d79d717ece5299ec8da995f775cd"
+  },
+  "tools": [
+    {
+      "name": "sch_get_symbols",
+      "arguments": [
+        "sheet",
+        "sheet_file"
+      ],
+      "effects": [
+        "read"
+      ],
+      "path_arguments": [
+        {
+          "argument": "sheet_file",
+          "effects": [
+            "read"
+          ],
+          "required": false
+        }
+      ],
+      "argument_shapes": [],
+      "destructive": false,
+      "idempotent": true,
+      "supports_dry_run": false,
+      "supports_rollback": false,
+      "transaction_support": "none",
+      "verification_requirements": [
+        "source_review",
+        "input_schema_match"
+      ],
+      "reviewed_source_paths": [
+        "src/kicad_mcp/tools/schematic_inspection.py"
+      ]
+    },
+    {
+      "name": "pcb_auto_place_by_schematic",
+      "arguments": [
+        "strategy",
+        "origin_x_mm",
+        "origin_y_mm",
+        "scale_x",
+        "scale_y",
+        "grid_mm",
+        "allow_open_board",
+        "sync_missing"
+      ],
+      "effects": [
+        "read",
+        "write",
+        "create"
+      ],
+      "path_arguments": [],
+      "argument_shapes": [],
+      "destructive": true,
+      "idempotent": false,
+      "supports_dry_run": false,
+      "supports_rollback": false,
+      "transaction_support": "none",
+      "verification_requirements": [
+        "source_review",
+        "input_schema_match"
+      ],
+      "reviewed_source_paths": [
+        "src/kicad_mcp/tools/pcb.py"
+      ]
+    },
+    {
+      "name": "kicad_create_new_project",
+      "arguments": [
+        "path",
+        "name",
+        "confirm_overwrite"
+      ],
+      "effects": [],
+      "path_arguments": [
+        {
+          "argument": "path",
+          "effects": [
+            "read",
+            "write",
+            "create"
+          ],
+          "required": true
+        },
+        {
+          "argument": "name",
+          "effects": [
+            "read",
+            "write",
+            "create"
+          ],
+          "required": true,
+          "base_argument": "path"
+        }
+      ],
+      "argument_shapes": [
+        {
+          "argument": "confirm_overwrite",
+          "value_kind": "boolean"
+        }
+      ],
+      "destructive": true,
+      "idempotent": false,
+      "supports_dry_run": false,
+      "supports_rollback": false,
+      "transaction_support": "none",
+      "verification_requirements": [
+        "source_review",
+        "input_schema_match"
+      ],
+      "reviewed_source_paths": [
+        "src/kicad_mcp/tools/project_creation.py"
+      ]
+    },
+    {
+      "name": "pcb_delete_items",
+      "arguments": [
+        "item_ids"
+      ],
+      "effects": [
+        "read",
+        "delete"
+      ],
+      "path_arguments": [],
+      "argument_shapes": [
+        {
+          "argument": "item_ids",
+          "value_kind": "collection",
+          "item_kind": "string",
+          "breadth_dimension": "item_count"
+        }
+      ],
+      "destructive": true,
+      "idempotent": false,
+      "supports_dry_run": true,
+      "supports_rollback": false,
+      "transaction_support": "internal_guarded",
+      "verification_requirements": [
+        "source_review",
+        "input_schema_match"
+      ],
+      "reviewed_source_paths": [
+        "src/kicad_mcp/tools/pcb.py"
+      ]
+    },
+    {
+      "name": "lib_create_custom_symbol",
+      "arguments": [
+        "name",
+        "pins"
+      ],
+      "effects": [
+        "read",
+        "write",
+        "create"
+      ],
+      "path_arguments": [],
+      "argument_shapes": [],
+      "destructive": true,
+      "idempotent": false,
+      "supports_dry_run": false,
+      "supports_rollback": false,
+      "transaction_support": "none",
+      "verification_requirements": [
+        "source_review",
+        "input_schema_match"
+      ],
+      "reviewed_source_paths": [
+        "src/kicad_mcp/tools/library_local_authoring.py"
+      ]
+    },
+    {
+      "name": "export_gerber",
+      "arguments": [
+        "output_subdir",
+        "layers"
+      ],
+      "effects": [
+        "read",
+        "write"
+      ],
+      "path_arguments": [
+        {
+          "argument": "output_subdir",
+          "effects": [
+            "create",
+            "write"
+          ],
+          "required": false,
+          "default": "gerber"
+        }
+      ],
+      "argument_shapes": [],
+      "destructive": true,
+      "idempotent": true,
+      "supports_dry_run": false,
+      "supports_rollback": false,
+      "transaction_support": "none",
+      "verification_requirements": [
+        "source_review",
+        "input_schema_match"
+      ],
+      "reviewed_source_paths": [
+        "src/kicad_mcp/tools/export_gerber.py"
+      ]
+    }
+  ]
+}

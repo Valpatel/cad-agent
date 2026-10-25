@@ -1,18 +1,106 @@
 {
   "policy": "Pinned by full commit SHA. Imports go to a vendor-update/* branch, are scanned against the reviewed baseline and are merged only after review. Upstream CI, git hooks and install scripts are never run.",
   "projects": [
-    {"name": "text-to-cad", "url": "https://github.com/earthtojake/text-to-cad", "license": "MIT",
-     "exclude": ["models", ".github", ".githooks", "*.surf", "package-lock.json"],
-     "notes": "CAD skills + cadgen runtime (build123d/OCP). Telemetry and update check to be removed by patch."},
-    {"name": "kicad-happy", "url": "https://github.com/aklofas/kicad-happy", "license": "MIT", "exclude": [".github", ".githooks"],
-     "notes": "KiCad design review skills."},
-    {"name": "kicad-mcp-pro", "url": "https://github.com/oaslananka/kicad-mcp-pro", "license": "MIT", "exclude": [".github", ".githooks"],
-     "notes": "KiCad 10 MCP server (read-only by default). Pin; never launch via 'latest'."},
-    {"name": "build123d-mcp", "url": "https://github.com/pzfreo/build123d-mcp", "license": "Apache-2.0", "exclude": [".github", ".githooks"],
-     "notes": "build123d inspection MCP server."},
-    {"name": "agentcad", "url": "https://github.com/jdilla1277/agentcad", "license": "Apache-2.0", "exclude": [".github", ".githooks"],
-     "notes": "CAD CLI + MCP for agents."},
-    {"name": "bd_warehouse", "url": "https://github.com/gumyr/bd_warehouse", "license": "Apache-2.0", "exclude": [".github", ".githooks", "docs/assets"],
-     "notes": "Parametric fasteners, threads, bearings for build123d."}
+    {
+      "name": "text-to-cad",
+      "url": "https://github.com/earthtojake/text-to-cad",
+      "license": "MIT",
+      "exclude": [
+        "*.surf",
+        ".githooks",
+        ".github",
+        "models",
+        "package-lock.json",
+        "scripts/github-workflows"
+      ],
+      "notes": "CAD skills + cadgen runtime (build123d/OCP). Telemetry and update check to be removed by patch.",
+      "previous_sha": "2f793659fb7bab537e2f00836e06448fc4087cb2",
+      "sha": "2f793659fb7bab537e2f00836e06448fc4087cb2",
+      "imported": "2026-10-24",
+      "report": "vendor/reports/text-to-cad-2f793659fb.md",
+      "exclude_reason": "release-CI script using GITHUB_TOKEN"
+    },
+    {
+      "name": "kicad-happy",
+      "url": "https://github.com/aklofas/kicad-happy",
+      "license": "MIT",
+      "exclude": [
+        ".githooks",
+        ".github",
+        "action",
+        "action.yml"
+      ],
+      "notes": "KiCad design review skills.",
+      "previous_sha": "2fd9aa0fe2d620f36627d9221e8b1393987ae38e",
+      "sha": "2fd9aa0fe2d620f36627d9221e8b1393987ae38e",
+      "imported": "2026-10-24",
+      "report": "vendor/reports/kicad-happy-2fd9aa0fe2.md",
+      "exclude_reason": "GitHub Action that posts PR comments with GITHUB_TOKEN"
+    },
+    {
+      "name": "kicad-mcp-pro",
+      "url": "https://github.com/oaslananka/kicad-mcp-pro",
+      "license": "MIT",
+      "exclude": [
+        ".githooks",
+        ".github",
+        "scripts/check-review-threads.mjs",
+        "scripts/check_github_repository_settings.py",
+        "src-tauri"
+      ],
+      "notes": "KiCad 10 MCP server (read-only by default). Pin; never launch via 'latest'.",
+      "previous_sha": "f03b478f597d4b3e8c6d99827a2152b73077a122",
+      "sha": "f03b478f597d4b3e8c6d99827a2152b73077a122",
+      "imported": "2026-10-24",
+      "report": "vendor/reports/kicad-mcp-pro-f03b478f59.md",
+      "exclude_reason": "maintainer scripts reading gh auth token; Tauri desktop wrapper"
+    },
+    {
+      "name": "build123d-mcp",
+      "url": "https://github.com/pzfreo/build123d-mcp",
+      "license": "Apache-2.0",
+      "exclude": [
+        ".githooks",
+        ".github",
+        "mcp-publisher"
+      ],
+      "notes": "build123d inspection MCP server.",
+      "previous_sha": "59b2561218864c15cde08f19dff97be3906b6938",
+      "sha": "59b2561218864c15cde08f19dff97be3906b6938",
+      "imported": "2026-10-24",
+      "report": "vendor/reports/build123d-mcp-59b2561218.md",
+      "exclude_reason": "committed ELF binary (unauditable)"
+    },
+    {
+      "name": "agentcad",
+      "url": "https://github.com/jdilla1277/agentcad",
+      "license": "Apache-2.0",
+      "exclude": [
+        ".githooks",
+        ".github",
+        "benchmarks"
+      ],
+      "notes": "CAD CLI + MCP for agents.",
+      "previous_sha": "52af472ddade4b26d8b0d47f304ac5f9f6183d53",
+      "sha": "52af472ddade4b26d8b0d47f304ac5f9f6183d53",
+      "imported": "2026-10-24",
+      "report": "vendor/reports/agentcad-52af472dda.md",
+      "exclude_reason": "benchmark harness passing model API keys"
+    },
+    {
+      "name": "bd_warehouse",
+      "url": "https://github.com/gumyr/bd_warehouse",
+      "license": "Apache-2.0",
+      "exclude": [
+        ".github",
+        ".githooks",
+        "docs/assets"
+      ],
+      "notes": "Parametric fasteners, threads, bearings for build123d.",
+      "previous_sha": "e6ae6e7bae74cb3a50cbde395930ba24a1051f88",
+      "sha": "e6ae6e7bae74cb3a50cbde395930ba24a1051f88",
+      "imported": "2026-10-24",
+      "report": "vendor/reports/bd_warehouse-e6ae6e7bae.md"
+    }
   ]
 }

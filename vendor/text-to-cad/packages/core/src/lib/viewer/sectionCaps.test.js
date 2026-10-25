@@ -1,0 +1,103 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as THREE from 'three';
+import { syncSectionCaps, disposeSectionCaps } from './sectionCaps.js';
+
+const stencils = caps => [...caps.cuts.values()].flatMap(cut => cut.stencils);
+const planeOf = caps => caps.cuts.values().next().value.plane;
+
+test('section caps borrow mesh geometry and track transforms without becoming pickable', () => {
+  const scene = new THREE.Scene(), modelGroup = new THREE.Group();
+  scene.add(modelGroup);
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(10,8,6),new THREE.MeshBasicMaterial());
+  modelGroup.add(mesh);
+  mesh.position.set(20,0,0);
+  const runtime = { THREE, scene, modelGroup, displayRecords:[{mesh}],modelRadius:15,modelBounds:{min:[15,-4,-3],max:[25,4,3]} };
+  const plane = new THREE.Plane(new THREE.Vector3(0,0,1),0);
+  syncSectionCaps(runtime,plane);
+  const caps = runtime.sectionCaps;
+  assert.equal(stencils(caps).length,2);
+  assert.equal(stencils(caps)[0].geometry,mesh.geometry);
+  assert.equal(stencils(caps)[0].parent,mesh);
+  assert.equal(planeOf(caps).position.x,20);
+  assert.equal(planeOf(caps).position.z,0);
+  const hits=[]; planeOf(caps).raycast(null,hits); assert.deepEqual(hits,[]);
+  syncSectionCaps(runtime,new THREE.Plane(new THREE.Vector3(0,0,1),-2));
+  assert.equal(runtime.sectionCaps,caps);
+  assert.equal(planeOf(caps).position.z,2);
+  let disposed=0; mesh.geometry.addEventListener('dispose',()=>disposed++);
+  syncSectionCaps(runtime,null);
+  assert.equal(runtime.sectionCaps,null);
+  assert.equal(mesh.children.length,0);
+  assert.equal(disposed,0,'removing clip must not dispose the model geometry');
+  disposeSectionCaps(runtime);
+});
+
+test('only intersected parts receive stencil passes and moving the plane releases them', () => {
+  const scene = new THREE.Scene(), modelGroup = new THREE.Group();
+  scene.add(modelGroup);
+  const near = new THREE.Mesh(new THREE.BoxGeometry(2,2,2),new THREE.MeshBasicMaterial());
+  const far = new THREE.Mesh(near.geometry,near.material);
+  far.position.z = 20;
+  modelGroup.add(near,far);
+  const runtime = { THREE, scene, modelGroup, displayRecords:[{mesh:near},{mesh:far}], modelRadius:22 };
+  syncSectionCaps(runtime,new THREE.Plane(new THREE.Vector3(0,0,1),0));
+  assert.deepEqual([...runtime.sectionCaps.cuts.keys()],[near]);
+  assert.equal(far.children.length,0);
+  syncSectionCaps(runtime,new THREE.Plane(new THREE.Vector3(0,0,1),-20));
+  assert.deepEqual([...runtime.sectionCaps.cuts.keys()],[far]);
+  assert.equal(near.children.length,0);
+  syncSectionCaps(runtime,new THREE.Plane(new THREE.Vector3(0,0,1),-50));
+  assert.equal(runtime.sectionCaps,null);
+  assert.equal(far.children.length,0);
+});
+
+test('entering another part retains stencil meshes and materials for existing cuts', () => {
+  const scene = new THREE.Scene();
+  const tall = new THREE.Mesh(new THREE.BoxGeometry(2,2,10),new THREE.MeshBasicMaterial());
+  const short = new THREE.Mesh(new THREE.BoxGeometry(2,2,2),new THREE.MeshBasicMaterial());
+  short.position.set(5,0,3);
+  scene.add(tall,short);
+  const runtime = { THREE, scene, displayRecords:[{mesh:tall},{mesh:short}], modelRadius:10 };
+  syncSectionCaps(runtime,new THREE.Plane(new THREE.Vector3(0,0,1),0));
+  const existing = [...stencils(runtime.sectionCaps)];
+  const plane = planeOf(runtime.sectionCaps);
+  syncSectionCaps(runtime,new THREE.Plane(new THREE.Vector3(0,0,1),-3));
+  assert.equal(stencils(runtime.sectionCaps).length,4);
+  assert.equal(planeOf(runtime.sectionCaps),plane);
+  assert.deepEqual(stencils(runtime.sectionCaps).slice(0,2),existing);
+  syncSectionCaps(runtime,new THREE.Plane(new THREE.Vector3(0,0,1),0));
+  assert.deepEqual(stencils(runtime.sectionCaps),existing);
+  assert.equal(short.children.length,0);
+  disposeSectionCaps(runtime);
+});
+
+test('cap colors use stable appearance and own only cap resources', () => {
+  const scene = new THREE.Scene();
+  const material = new THREE.MeshBasicMaterial({color: '#ffff00', opacity: .2, transparent: true});
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(2,2,2),material);
+  scene.add(mesh);
+  const record = {mesh, material, baseColor: new THREE.Color('#123456')};
+  const runtime = {THREE,scene,displayRecords:[record]};
+  const plane = new THREE.Plane(new THREE.Vector3(0,0,1),0);
+  syncSectionCaps(runtime,plane);
+  const cap = planeOf(runtime.sectionCaps);
+  assert.equal(cap.material.color.getHexString(),'123456');
+  assert.equal(cap.material.transparent,false);
+  assert.equal(cap.material.opacity,1);
+  record.effectStyle={color:'#abcdef'};
+  syncSectionCaps(runtime,plane);
+  assert.equal(cap.material.color.getHexString(),'abcdef');
+  syncSectionCaps(runtime,plane,{partColors:false});
+  assert.equal(cap.material.color.getHex(),0xe9a451);
+  let released=0, borrowed=0;
+  for (const object of [...stencils(runtime.sectionCaps),cap]) object.material.addEventListener('dispose',()=>released++);
+  cap.geometry.addEventListener('dispose',()=>released++);
+  mesh.geometry.addEventListener('dispose',()=>borrowed++);
+  syncSectionCaps(runtime,null);
+  assert.equal(runtime.sectionCaps,null);
+  assert.equal(released,4);
+  assert.equal(borrowed,0);
+  assert.equal(material.color.getHex(),0xffff00);
+  assert.equal(material.opacity,.2);
+});

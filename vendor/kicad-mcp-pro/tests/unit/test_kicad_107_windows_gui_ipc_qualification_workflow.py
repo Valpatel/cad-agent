@@ -1,0 +1,224 @@
+"""Manual-only isolated Windows 10.0.7 GUI/IPC qualification contract."""
+
+from pathlib import Path
+from typing import Any, cast
+
+import pytest
+import yaml
+
+ROOT = Path(__file__).resolve().parents[2]
+WORKFLOW = ROOT / ".github/workflows/kicad-10-0-7-windows-gui-ipc-qualification.yml"
+
+
+def _workflow() -> dict[str | bool, Any]:
+    return cast(dict[str | bool, Any], yaml.safe_load(WORKFLOW.read_text(encoding="utf-8")))
+
+
+def test_manual_only_with_disposable_windows_runner() -> None:
+    wf = _workflow()
+    assert wf[True] == {"workflow_dispatch": None}  # PyYAML YAML 1.1 treats 'on' as True.
+    assert wf["permissions"] == {"contents": "read"}
+    assert len(wf["jobs"]) == 1
+    job = wf["jobs"]["windows-107-gui-ipc"]
+    assert job["runs-on"] == "windows-2025"
+    assert job["timeout-minutes"] <= 60
+    assert wf["concurrency"]["cancel-in-progress"] is False
+
+
+def test_signed_official_installer_and_version_required_before_gui() -> None:
+    steps = _workflow()["jobs"]["windows-107-gui-ipc"]["steps"]
+    codes = [s.get("run", "") for s in steps]
+    assert any("kicad-downloads.s3.cern.ch" in c for c in codes)
+    signer = next(c for c in codes if "Get-AuthenticodeSignature" in c)
+    assert (
+        "$expectedSha256 = 'ce3881b6a9188eb34ac1ebaaec7651149e8a025206410addfb11a1a9656ecf95'"
+        in signer
+    )
+    assert (
+        "$actualSha256 = (Get-FileHash -LiteralPath $installer "
+        "-Algorithm SHA256).Hash.ToLowerInvariant()"
+    ) in signer
+    assert "if ($actualSha256 -ne $expectedSha256)" in signer
+    assert signer.index("if ($actualSha256 -ne $expectedSha256)") < signer.index(
+        "Get-AuthenticodeSignature"
+    )
+    assert "installerSha256 = $actualSha256" in signer
+    assert "$signature.Status -ne 'Valid'" in signer
+    assert "Unexpected KiCad Authenticode signer" in signer
+    install = next(c for c in codes if "Isolated CLI missing" in c)
+    assert "Wrong KiCad CLI version" in install
+    assert "Device.kicad_sym" in install
+    assert "kicad-107-native-install" in install
+
+
+def test_actual_gui_enabled_and_missing_ipc_never_passes() -> None:
+    steps = _workflow()["jobs"]["windows-107-gui-ipc"]["steps"]
+    prepare = next(s["run"] for s in steps if s["name"].startswith("Prepare isolated"))
+    smoke = next(s["run"] for s in steps if s["name"].startswith("Exercise real"))
+    cleanup = next(s["run"] for s in steps if s["name"].startswith("Remove installer"))
+    assert "KICAD_CONFIG_HOME" in prepare
+    assert "'10.0'" in prepare
+    assert "kicad_common.json" in prepare
+    assert "enable_server = $true" in prepare
+    assert "graphics = @{ canvas_type = 2 }" in prepare
+    assert "do_not_show_again = @{" in prepare
+    assert "update_check_prompt = $true" in prepare
+    assert "data_collection_prompt = $true" in prepare
+    assert "$settings.do_not_show_again.update_check_prompt -ne $true" in prepare
+    assert "$settings.do_not_show_again.data_collection_prompt -ne $true" in prepare
+    assert "if ($settings.graphics.canvas_type -ne 2)" in prepare
+    assert "KICAD_107_GUI_RENDERER=cairo" in prepare
+    assert "KICAD_107_GUI_RENDERER -ne 'cairo'" in smoke
+    assert "guiRenderer = $env:KICAD_107_GUI_RENDERER" in smoke
+    assert prepare.index("graphics = @{ canvas_type = 2 }") < prepare.index(
+        "KICAD_MCP_ENABLE_GUI_SMOKE=1"
+    )
+    assert "pcbnew.exe" in prepare
+    assert "KICAD_MCP_ENABLE_GUI_SMOKE=1" in prepare
+    assert "KICAD_MCP_GUI_SMOKE_REQUIRED=1" in prepare
+    assert "KICAD_107_FIRST_RUN_TABLES_READY=true" in prepare
+    assert "design-block-lib-table" in prepare
+    assert "KICAD_107_DESIGN_BLOCK_TABLE_READY=true" in prepare
+    assert "KICAD_107_DESIGN_BLOCK_TABLE_READY -ne 'true'" in smoke
+    assert "(design_block_lib_table" in prepare
+    assert "(version 7)" in prepare
+    assert "Test-Path -LiteralPath $designSource -PathType Leaf" in prepare
+    assert "Get-FileHash -LiteralPath $designDestination -Algorithm SHA256" in prepare
+    assert "Get-Content -LiteralPath $designDestination -Raw" in prepare
+    assert "KICAD_107_FIRST_RUN_TABLES_READY -ne 'true'" in smoke
+    assert "share/kicad/template" in prepare
+    assert "share/kicad/symbols" in prepare
+    assert "share/kicad/footprints" in prepare
+    assert "sym-lib-table" in prepare
+    assert "fp-lib-table" in prepare
+    assert "Copy-Item -LiteralPath $source -Destination $destination" in prepare
+    assert "Get-FileHash -LiteralPath $destination -Algorithm SHA256" in prepare
+    assert "KICAD10_TEMPLATE_DIR=$templateRoot" in prepare
+    assert "KICAD10_FOOTPRINT_DIR=$footprintRoot" in prepare
+    assert "KICAD10_SYMBOL_DIR=$symbolRoot" in prepare
+    assert "KICAD_GUI_SMOKE_ARTIFACTS" in smoke
+    assert "editor-readiness.json" in smoke
+    assert "editorReadiness = $editor" in smoke
+    assert "windowCount" in smoke
+    assert "standardDialogWindowCount" in smoke
+    assert "visibleStandardDialogWindowCount" in smoke
+    assert "enabledVisibleStandardDialogWindowCount" in smoke
+    assert "disabledVisibleStandardDialogWindowCount" in smoke
+    assert "visibleDialogPromptCategories" in smoke
+    for category in ("librarySetup", "fileRecovery", "boardLock", "warningOrError", "unrecognized"):
+        assert f"{category} = [int]$raw.visibleDialogPromptCategories.{category}" in smoke
+    assert "Get-Content -LiteralPath $diag" in smoke
+    assert "visibleDialogBodyCategories = [ordered]@{" in smoke
+    for category in (
+        "librarySetup",
+        "fileRecovery",
+        "boardLock",
+        "graphicsOrRendering",
+        "formatCompatibility",
+        "fileOpenFailure",
+        "warningOrError",
+        "unrecognized",
+    ):
+        assert f"{category} = [int]$raw.visibleDialogBodyCategories.{category}" in smoke
+    assert "visibleDialogStaticControlCount" in smoke
+    assert "visibleDialogMessageReadFailed" in smoke
+    assert 'throw "Signed isolated installation is missing standard $tableName"' in prepare
+    assert "KICAD_GUI_SMOKE_PCB_ONLY=1" in prepare
+    assert "Get-Process -Name explorer" in prepare
+    assert "[Environment]::UserInteractive" in prepare
+    assert "test_kicad_gui_live_context.py" in smoke
+    assert "$accepted = (" in smoke
+    assert "if (-not $accepted)" in smoke
+    assert "$skips.Count -eq 0" in smoke
+    assert "verdict = $verdict" in smoke
+    assert "sessionZero" in smoke
+    assert "explorerPresent" in smoke
+    assert "$cases.Count -eq 2" in smoke
+    assert "if ($accepted) { 'pass' } else { 'fail' }" in smoke
+    assert "kicad-107-config" in cleanup
+    assert "kicad-107-native-install" in cleanup
+    upload = next(s for s in steps if s.get("uses", "").startswith("actions/upload-artifact@"))
+    assert upload["if"] == "always()"
+    assert upload["with"]["retention-days"] == 7
+    assert upload["with"]["path"].endswith("/summary.json")
+    assert steps[-1]["if"] == "always()"
+
+
+def test_gui_single_pcb_editor_mode_is_explicit_and_opt_in(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from tests.gui import test_kicad_gui_live_context as smoke
+
+    monkeypatch.delenv("KICAD_GUI_SMOKE_PCB_ONLY", raising=False)
+    assert smoke._launch_auxiliary_editors() is True
+    monkeypatch.setenv("KICAD_GUI_SMOKE_PCB_ONLY", "1")
+    assert smoke._launch_auxiliary_editors() is False
+    monkeypatch.setenv("KICAD_GUI_SMOKE_PCB_ONLY", "0")
+    assert smoke._launch_auxiliary_editors() is True
+
+
+def test_editor_snapshot_on_non_windows_is_bounded(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from tests.gui import test_kicad_gui_live_context as smoke
+
+    class FakeProcess:
+        pid = 42
+
+        def poll(self) -> int | None:
+            return None
+
+    monkeypatch.setattr("platform.system", lambda: "Linux")
+    editor = smoke.ManagedProcess("pcb", cast(Any, FakeProcess()), ROOT)
+    result = smoke._editor_readiness_snapshot(editor)
+    assert result["processRunning"] is True
+    assert result["processExitCode"] is None
+    assert result["windowCount"] == 0
+    assert result["visibleStandardDialogWindowCount"] == 0
+    assert result["visibleDialogStaticControlCount"] == 0
+    assert result["visibleDialogMessageReadFailed"] is False
+    assert result["enabledVisibleStandardDialogWindowCount"] == 0
+    assert result["disabledVisibleStandardDialogWindowCount"] == 0
+    assert "pid" not in result
+    assert "title" not in result
+
+
+@pytest.mark.parametrize(
+    ("title", "expected"),
+    [
+        ("Configure Global Footprint Library Table", "librarySetup"),
+        ("Configure Global Symbol Library Table", "librarySetup"),
+        ("KiCad First Run", "librarySetup"),
+        ("Recover PCB data", "fileRecovery"),
+        ("File Locked", "boardLock"),
+        ("PCB Editor Warning", "warningOrError"),
+        ("Error loading board", "warningOrError"),
+        ("Temporary runner private path", "unrecognized"),
+        ("", "unrecognized"),
+    ],
+)
+def test_only_approved_dialog_categories_are_exposed(title: str, expected: str) -> None:
+    from tests.gui import test_kicad_gui_live_context as smoke
+
+    assert smoke._classify_visible_kicad_dialog(title) == expected
+
+
+@pytest.mark.parametrize(
+    ("body", "expected"),
+    [
+        ("Configure the global footprint library table", "librarySetup"),
+        ("Symbol library table must be initialized", "librarySetup"),
+        ("PCB file rescue required", "fileRecovery"),
+        ("Board already open in another process", "boardLock"),
+        ("OpenGL renderer unavailable", "graphicsOrRendering"),
+        ("Unsupported file version", "formatCompatibility"),
+        ("Could not open the selected board", "fileOpenFailure"),
+        ("Failed to initialize KiCad", "warningOrError"),
+        ("A temporary path with no known trigger", "unrecognized"),
+        ("", "unrecognized"),
+    ],
+)
+def test_modal_body_only_approved_diagnostic_categories(body: str, expected: str) -> None:
+    from tests.gui import test_kicad_gui_live_context as smoke
+
+    assert smoke._classify_kicad_dialog_message(body) == expected

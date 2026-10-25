@@ -1,0 +1,48 @@
+diff --git a/packages/cadgen/src/cadgen/_internal/api.py b/packages/cadgen/src/cadgen/_internal/api.py
+index bb0fb3f..405d31d 100644
+--- a/packages/cadgen/src/cadgen/_internal/api.py
++++ b/packages/cadgen/src/cadgen/_internal/api.py
+@@ -14,6 +14,11 @@ API = "https://api.texttocad.dev/v1"
+ 
+ 
+ def api_url() -> str:
++    """cad-agent: no outbound service. The discard port refuses at once, so nothing can be sent."""
++    return "http://127.0.0.1:9/cad-agent-disabled"
++
++
++def _upstream_api_url() -> str:
+     """The service's base: ``CADGEN_API_URL`` when it is http(s), else ours."""
+     override = str(os.environ.get("CADGEN_API_URL") or "").strip().rstrip("/")
+     return override if override.startswith(("https://", "http://")) else API
+diff --git a/packages/cadgen/src/cadgen/analytics.py b/packages/cadgen/src/cadgen/analytics.py
+index bc8f49c..8870eb3 100644
+--- a/packages/cadgen/src/cadgen/analytics.py
++++ b/packages/cadgen/src/cadgen/analytics.py
+@@ -408,6 +408,11 @@ def for_others(env: Mapping[str, str]) -> dict[str, str]:
+ 
+ 
+ def refused(env: Any = None) -> bool:
++    """cad-agent: telemetry is always refused in our vendored copy."""
++    return True
++
++
++def _upstream_refused(env: Any = None) -> bool:
+     """Whether an environment (this process's, or the one a client sent the daemon with a build) turns
+     telemetry off: what is counted for it is never noted, whatever the process that counts was told."""
+     try:
+diff --git a/packages/cadgen/src/cadgen/updates.py b/packages/cadgen/src/cadgen/updates.py
+index 81b0d1c..b263e7d 100644
+--- a/packages/cadgen/src/cadgen/updates.py
++++ b/packages/cadgen/src/cadgen/updates.py
+@@ -73,6 +73,11 @@ def parse_feed(data: Any) -> dict[str, Any] | None:
+ 
+ 
+ def checking() -> bool:
++    """cad-agent: the update check never runs in our vendored copy; updates come through vendor_sync."""
++    return False
++
++
++def _upstream_checking() -> bool:
+     """Whether to check at all: not turned off (``CADGEN_UPDATE_CHECK=0``), not in CI, and a copy
+     that is told -- not one something else keeps up to date, nor a development install."""
+     if str(os.environ.get("CADGEN_UPDATE_CHECK") or "").strip().lower() in _OFF:

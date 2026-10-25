@@ -1,0 +1,130 @@
+"""Windows 10.0.7 qualification remains manual, authentic and isolated."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import yaml
+
+ROOT = Path(__file__).resolve().parents[2]
+WORKFLOW = ROOT / ".github/workflows/kicad-10-0-7-windows-qualification.yml"
+
+
+def test_windows_stable_native_qualification_retains_manual_dispatch() -> None:
+    raw = WORKFLOW.read_text(encoding="utf-8")
+    workflow = yaml.safe_load(raw)
+    events = workflow.get("on", workflow.get(True))
+    assert set(events) == {"workflow_dispatch", "schedule", "push"}
+    assert workflow["permissions"] == {"contents": "read"}
+    job = workflow["jobs"]["native-windows-cli"]
+    assert job["runs-on"] == "windows-2025"
+    assert job["timeout-minutes"] == 65
+    steps = job["steps"]
+    assert steps[0]["with"]["persist-credentials"] is False
+    assert all(
+        "@" not in step.get("uses", "") or len(step["uses"].split("@", 1)[1]) == 40
+        for step in steps
+    )
+    verify = next(step for step in steps if step["name"].startswith("Download and verify"))
+    install = next(step for step in steps if step["name"].startswith("Install isolated"))
+    native = next(step for step in steps if step["name"].startswith("Run full native"))
+    assert "kicad-downloads.s3.cern.ch/windows/stable/kicad-10.0.7-x86_64.exe" in verify["run"]
+    assert "mirror.aarnet.edu.au/pub/kicad/windows/stable/kicad-10.0.7-x86_64.exe" in verify["run"]
+    assert "mirrors.mit.edu" not in verify["run"]
+    assert "--max-time 420" in verify["run"]
+    assert "--speed-limit 131072 --speed-time 60" in verify["run"]
+    assert "--retry 0" in verify["run"]
+    assert "Remove-Item -LiteralPath $installer -Force" in verify["run"]
+    assert "$null -eq $uri" in verify["run"]
+    assert verify["run"].index("if ($null -eq $uri)") < verify["run"].index(
+        "Get-AuthenticodeSignature"
+    )
+    assert "installerUrl = $uri" in verify["run"]
+    assert (
+        "$expectedSha256 = 'ce3881b6a9188eb34ac1ebaaec7651149e8a025206410addfb11a1a9656ecf95'"
+        in verify["run"]
+    )
+    assert (
+        "$actualSha256 = (Get-FileHash -LiteralPath $installer "
+        "-Algorithm SHA256).Hash.ToLowerInvariant()"
+    ) in verify["run"]
+    assert "if ($actualSha256 -ne $expectedSha256)" in verify["run"]
+    assert verify["run"].index("if ($actualSha256 -ne $expectedSha256)") < verify["run"].index(
+        "Get-AuthenticodeSignature"
+    )
+    assert "installerSha256 = $actualSha256" in verify["run"]
+    assert "Get-AuthenticodeSignature" in verify["run"]
+    assert "signature.Status -ne 'Valid'" in verify["run"]
+    assert "SignerCertificate.Subject -notmatch" in verify["run"]
+    assert "/S" in install["run"]
+    assert "/currentuser" in install["run"]
+    assert "RUNNER_TEMP" in install["run"]
+    assert "cannot fall back" in install["run"]
+    assert "version -ne '10.0.7'" in install["run"]
+    assert "share/kicad/symbols" in install["run"]
+    assert "Device.kicad_sym" in install["run"]
+    assert "KICAD_SYMBOL_DIR=$symbols" in install["run"]
+    assert "KICAD10_SYMBOL_DIR=$symbols" in install["run"]
+    assert "KICAD_MCP_KICAD_CLI=$cli" in install["run"]
+    assert "cannot compare connectivity" in install["run"]
+    assert install["run"].index("Test-Path -LiteralPath $deviceSymbols") < install["run"].index(
+        '"KICAD_SYMBOL_DIR=$symbols"'
+    )
+    assert "KICAD_SYMBOL_DIR=$symbols" not in verify["run"]
+    assert "$versionLines = @(& $cli version)" in install["run"]
+    assert "$versionExitCode = $LASTEXITCODE" in install["run"]
+    assert "$version = ($versionLines | Select-Object -First 1).Trim()" in install["run"]
+    assert "& $cli version |" not in install["run"]
+    assert install["run"].index("$versionExitCode = $LASTEXITCODE") < install["run"].index(
+        "Select-Object -First 1"
+    )
+    assert "if ($versionExitCode -ne 0)" in install["run"]
+    assert "--kicad-range 10.0.x" in native["run"]
+    assert "source_sha -ne $env:SOURCE_REVISION" in native["run"]
+    assert "match_count -ne 5" in native["run"]
+    assert "false_pass_count" in native["run"]
+    upload = next(
+        step for step in steps if step.get("uses", "").startswith("actions/upload-artifact@")
+    )
+    assert upload["if"] == "always()"
+    assert upload["with"]["retention-days"] == 7
+    assert steps[-1]["if"] == "always()"
+    assert "Remove-Item" in steps[-1]["run"]
+    assert "compatibility.yaml" not in raw
+
+
+def test_windows_native_automation_is_trusted_bounded_and_non_privileged() -> None:
+    workflow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
+    events = workflow.get("on", workflow.get(True))
+    assert set(events) == {"workflow_dispatch", "schedule", "push"}
+    assert events["workflow_dispatch"] is None
+    assert events["schedule"] == [{"cron": "17 5 * * 2"}]
+    assert events["push"]["branches"] == ["main"]
+    paths = set(events["push"]["paths"])
+    assert {
+        ".github/workflows/kicad-10-0-7-windows-qualification.yml",
+        "scripts/kicad_canary.py",
+        "scripts/runtime_path_safety.py",
+        "src/kicad_mcp/evals/**",
+        "src/kicad_mcp/tools/**",
+        "packages/kicad-fixtures/fixtures/**",
+        "examples/gallery/**",
+        "pyproject.toml",
+        "uv.lock",
+    } <= paths
+    assert all(not value.startswith("!") for value in paths)
+    assert "src/**" not in paths
+    assert "pull_request" not in events
+    assert "pull_request_target" not in events
+    assert "workflow_run" not in events
+    assert workflow["permissions"] == {"contents": "read"}
+    assert workflow["concurrency"]["cancel-in-progress"] is False
+    assert all(
+        "secrets." not in str(step) for step in workflow["jobs"]["native-windows-cli"]["steps"]
+    )
+
+
+def test_real_windows_gui_ipc_remains_strictly_manual() -> None:
+    gui_path = ROOT / ".github/workflows/kicad-10-0-7-windows-gui-ipc-qualification.yml"
+    gui = yaml.safe_load(gui_path.read_text(encoding="utf-8"))
+    assert gui.get("on", gui.get(True)) == {"workflow_dispatch": None}

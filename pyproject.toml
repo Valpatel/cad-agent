@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cad-agent"
+version = "0.1.0"
+description = "CAD design verification and review reports for 3D-printed parts"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = ["pyyaml"]
+
+[project.optional-dependencies]
+cad = [
+    "cadquery>=2.4",
+    "trimesh>=4.0",
+    "vtk>=9.2",
+    "matplotlib>=3.7",
+    "pillow>=10.0",
+    "numpy",
+]
+dev = ["pytest"]
+
+[project.scripts]
+cad-agent = "cadagent.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

@@ -32,6 +32,18 @@ Rather than build another CAD framework, this repo combines what already exists.
 - An evidence-first review site: renders, PDF check sheets, STL/3MF/Bambu links, live check tables, and a progress log.
 - Mechanical-PCB co-design: KiCad board to enclosure, and back again for the outline, holes and connectors.
 
+## Toolkit
+`cad-agent` (Python package `cadagent` in `src/`) runs a CAD project's build steps and checks, writes and verifies
+bed-centred 3MF files, and produces a standalone HTML review report and a review package. It never claims physical
+fit. Install it with the CAD dependencies:
+
+```bash
+pip install -e ".[cad]"
+cad-agent check --project path/to/cad-project
+```
+
+The project contract, the `cad-agent.yaml` format and every command are in [`docs/toolkit.md`](docs/toolkit.md).
+
 ## Vendored tools
 Six upstreams are vendored under `vendor/`, pinned by commit, and updated weekly through a reviewed, scanned and
 sandboxed process (see `SECURITY.md` and `WEEKLY-UPDATE.md`): text-to-cad, kicad-happy and kicad-mcp-pro (MIT);
@@ -39,6 +51,7 @@ build123d-mcp, agentcad and bd_warehouse (Apache-2.0). text-to-cad's telemetry, 
 patched off. Licences and pins are listed in `THIRD_PARTY_NOTICES.md`.
 
 ## Layout
+- `src/cadagent/`: the toolkit; `tests/` its tests; `docs/toolkit.md` its guide
 - `vendor/`: vendored upstream code, with its manifest, patches, scan baselines and review reports
 - `tools/`: `vendor_sync.py` (safe import and update) and `security_scan.py` (red-flag scan)
 - `upstreams/`: registry of all surveyed tools, including those not vendored

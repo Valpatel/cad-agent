@@ -4,3 +4,5 @@ __pycache__/
 .venv/
 mining/raw/
 mining/out/private/
+*.egg-info/
+build/

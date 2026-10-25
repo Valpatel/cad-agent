@@ -1,0 +1,755 @@
+{
+ "verified_on": "2026-10-24",
+ "method": "gh api repos/OWNER/REPO for stars, licence and push date; README/manifest/source for capabilities; 'unverified' marks claims not checked in source",
+ "projects": [
+  {
+   "name": "earthtojake/text-to-cad",
+   "url": "https://github.com/earthtojake/text-to-cad",
+   "license_spdx": "MIT",
+   "stars": 22951,
+   "last_push": "2026-10-25",
+   "clients": [
+    "claude-code-plugin",
+    "codex-plugin",
+    "cursor-plugin",
+    "gemini-extension",
+    "grok",
+    "skills.sh",
+    "mcp"
+   ],
+   "kernel": "build123d 0.11 / OCP 7.9 (cadgen)",
+   "processes": [
+    "FDM",
+    "SLA",
+    "SLS",
+    "MJF",
+    "metal-PBF",
+    "sheet-metal(review)",
+    "CNC(review)",
+    "injection-molding(measured draft/undercut)",
+    "laser(DXF)",
+    "URDF/SRDF/SDF"
+   ],
+   "dfm_rules_cited": "yes: Hubs, Protolabs, ISO/ASTM 52910",
+   "materials_cost": "no (SendCutSend specs fetched live)",
+   "render_feedback": "yes: headless snapshots + viewer",
+   "drawings": "yes: PDF engineering drawings",
+   "vendor_integration": "OrcaSlicer, Bambu Connect/Studio, SendCutSend, step.parts",
+   "evals": "none in repo",
+   "notes": "v0.7.26 2026-10-20; telemetry on by default; viewer loopback unauthenticated; PCB in open PR #518"
+  },
+  {
+   "name": "amagine-ai/Amagine3D",
+   "url": "https://github.com/amagine-ai/Amagine3D",
+   "license_spdx": "Apache-2.0",
+   "stars": 6259,
+   "last_push": "2026-10-22",
+   "clients": [
+    "standalone-app (OpenAI-compatible API, Codex SDK)"
+   ],
+   "kernel": "build123d, OCP, Manifold",
+   "processes": [
+    "FDM enclosures",
+    "multi-part"
+   ],
+   "dfm_rules_cited": "unverified",
+   "materials_cost": "unverified",
+   "render_feedback": "yes: five-view previews",
+   "drawings": "unverified",
+   "vendor_integration": "none seen",
+   "evals": "none",
+   "notes": "enclosure around internal components from requirements; does not read KiCad"
+  },
+  {
+   "name": "Adam-CAD/CADAM",
+   "url": "https://github.com/Adam-CAD/CADAM",
+   "license_spdx": "GPL-3.0",
+   "stars": 5328,
+   "last_push": "2026-10-15",
+   "clients": [
+    "web-app"
+   ],
+   "kernel": "OpenSCAD",
+   "processes": [
+    "general"
+   ],
+   "dfm_rules_cited": "no",
+   "materials_cost": "no",
+   "render_feedback": "yes",
+   "drawings": "no",
+   "vendor_integration": "none",
+   "evals": "showcase prompts only",
+   "notes": "GPL: external use only"
+  },
+  {
+   "name": "KittyCAD/modeling-app",
+   "url": "https://github.com/KittyCAD/modeling-app",
+   "license_spdx": "MIT",
+   "stars": 1321,
+   "last_push": "2026-10-25",
+   "clients": [
+    "desktop-app",
+    "mcp via KittyCAD/mcp (MIT, 10 stars, ZOO_API_TOKEN)"
+   ],
+   "kernel": "KCL on closed Zoo cloud engine",
+   "processes": [
+    "general"
+   ],
+   "dfm_rules_cited": "unverified",
+   "materials_cost": "unverified",
+   "render_feedback": "yes",
+   "drawings": "unverified",
+   "vendor_integration": "none",
+   "evals": "none",
+   "notes": "text-to-CAD is a paid cloud API"
+  },
+  {
+   "name": "Pan-Chera/Multi-Agent-CAD",
+   "url": "https://github.com/Pan-Chera/Multi-Agent-CAD",
+   "license_spdx": "MIT",
+   "stars": 1048,
+   "last_push": "2026-10-17",
+   "clients": [
+    "standalone + web UI"
+   ],
+   "kernel": "build123d",
+   "processes": [
+    "FDM parts",
+    "assemblies",
+    "URDF"
+   ],
+   "dfm_rules_cited": "no",
+   "materials_cost": "no",
+   "render_feedback": "yes + independent judge",
+   "drawings": "no",
+   "vendor_integration": "none",
+   "evals": "own 10-prompt/141-feature benchmark",
+   "notes": "assembly generation is a technology preview"
+  },
+  {
+   "name": "OzAILabs/Claude-To-Print",
+   "url": "https://github.com/OzAILabs/Claude-To-Print",
+   "license_spdx": "MIT",
+   "stars": 4,
+   "last_push": "2026-08-15",
+   "clients": [
+    "claude-code-skills"
+   ],
+   "kernel": "build123d",
+   "processes": [
+    "FDM",
+    "multicolour 3MF"
+   ],
+   "dfm_rules_cited": "no",
+   "materials_cost": "no",
+   "render_feedback": "yes",
+   "drawings": "no",
+   "vendor_integration": "Bambu",
+   "evals": "none",
+   "notes": "adapted from MAC; GitHub shows NOASSERTION, LICENSE is MIT"
+  },
+  {
+   "name": "jdilla1277/agentcad",
+   "url": "https://github.com/jdilla1277/agentcad",
+   "license_spdx": "Apache-2.0",
+   "stars": 173,
+   "last_push": "2026-10-23",
+   "clients": [
+    "cli",
+    "mcp",
+    "skills.sh"
+   ],
+   "kernel": "build123d (CadQuery compat)",
+   "processes": [
+    "general"
+   ],
+   "dfm_rules_cited": "no",
+   "materials_cost": "no",
+   "render_feedback": "yes: PNG, metrics, diffing",
+   "drawings": "no",
+   "vendor_integration": "none",
+   "evals": "CADGenBench runs reported",
+   "notes": "pip install agentcad"
+  },
+  {
+   "name": "pzfreo/build123d-mcp",
+   "url": "https://github.com/pzfreo/build123d-mcp",
+   "license_spdx": "Apache-2.0",
+   "stars": 130,
+   "last_push": "2026-10-15",
+   "clients": [
+    "mcp"
+   ],
+   "kernel": "build123d",
+   "processes": [
+    "general"
+   ],
+   "dfm_rules_cited": "no",
+   "materials_cost": "no",
+   "render_feedback": "yes",
+   "drawings": "SVG/DXF export",
+   "vendor_integration": "none",
+   "evals": "CADGenBench submissions (pzfreo/cadgenbench-build123d)",
+   "notes": ""
+  },
+  {
+   "name": "flowful-ai/cad-skill",
+   "url": "https://github.com/flowful-ai/cad-skill",
+   "license_spdx": "PolyForm-Noncommercial-1.0.0",
+   "stars": 692,
+   "last_push": "2026-07-14",
+   "clients": [
+    "claude-code-skill"
+   ],
+   "kernel": "CadQuery",
+   "processes": [
+    "FDM"
+   ],
+   "dfm_rules_cited": "no",
+   "materials_cost": "no",
+   "render_feedback": "yes",
+   "drawings": "no",
+   "vendor_integration": "Prusa/Bambu mentions",
+   "evals": "none",
+   "notes": "non-commercial licence: do not incorporate"
+  },
+  {
+   "name": "Svetlana-DAO-LLC/cad-agent",
+   "url": "https://github.com/Svetlana-DAO-LLC/cad-agent",
+   "license_spdx": "LicenseRef-CAD-Agent-License",
+   "stars": 53,
+   "last_push": "2026-02-17",
+   "clients": [
+    "mcp"
+   ],
+   "kernel": "build123d",
+   "processes": [
+    "FDM"
+   ],
+   "dfm_rules_cited": "no",
+   "materials_cost": "no",
+   "render_feedback": "yes",
+   "drawings": "no",
+   "vendor_integration": "none",
+   "evals": "none",
+   "notes": "formerly clawd-maf/cad-agent; custom licence"
+  },
+  {
+   "name": "MikeSuiter/claude-build123d-starter",
+   "url": "https://github.com/MikeSuiter/claude-build123d-starter",
+   "license_spdx": "MIT",
+   "stars": 1,
+   "last_push": "2026-06-08",
+   "clients": [
+    "claude-code-template"
+   ],
+   "kernel": "build123d",
+   "processes": [
+    "FDM",
+    "CNC (u)",
+    "laser (u)"
+   ],
+   "dfm_rules_cited": "no",
+   "materials_cost": "no",
+   "render_feedback": "live preview",
+   "drawings": "no",
+   "vendor_integration": "none",
+   "evals": "none",
+   "notes": "starter template"
+  },
+  {
+   "name": "neka-nat/freecad-mcp",
+   "url": "https://github.com/neka-nat/freecad-mcp",
+   "license_spdx": "MIT",
+   "stars": 3040,
+   "last_push": "2026-10-25",
+   "clients": [
+    "mcp"
+   ],
+   "kernel": "FreeCAD (LGPL, external)",
+   "processes": [
+    "general",
+    "FEM (u)"
+   ],
+   "dfm_rules_cited": "no",
+   "materials_cost": "no",
+   "render_feedback": "screenshots",
+   "drawings": "unverified",
+   "vendor_integration": "none",
+   "evals": "none",
+   "notes": "executes code inside FreeCAD"
+  },
+  {
+   "name": "jhacksman/OpenSCAD-MCP-Server",
+   "url": "https://github.com/jhacksman/OpenSCAD-MCP-Server",
+   "license_spdx": "MIT",
+   "stars": 208,
+   "last_push": "2026-09-07",
+   "clients": [
+    "mcp"
+   ],
+   "kernel": "OpenSCAD",
+   "processes": [
+    "FDM"
+   ],
+   "dfm_rules_cited": "no",
+   "materials_cost": "no",
+   "render_feedback": "preview images",
+   "drawings": "no",
+   "vendor_integration": "none",
+   "evals": "none",
+   "notes": ""
+  },
+  {
+   "name": "RobertCoop/openscad-mcp",
+   "url": "https://github.com/RobertCoop/openscad-mcp",
+   "license_spdx": "MIT",
+   "stars": 164,
+   "last_push": "2026-09-10",
+   "clients": [
+    "mcp"
+   ],
+   "kernel": "OpenSCAD",
+   "processes": [
+    "FDM"
+   ],
+   "dfm_rules_cited": "no",
+   "materials_cost": "no",
+   "render_feedback": "unverified",
+   "drawings": "no",
+   "vendor_integration": "none",
+   "evals": "none",
+   "notes": ""
+  },
+  {
+   "name": "altendky/onshape-mcp",
+   "url": "https://github.com/altendky/onshape-mcp",
+   "license_spdx": "Apache-2.0",
+   "stars": 20,
+   "last_push": "2026-10-24",
+   "clients": [
+    "mcp"
+   ],
+   "kernel": "Onshape (closed SaaS), FeatureScript",
+   "processes": [
+    "general"
+   ],
+   "dfm_rules_cited": "no",
+   "materials_cost": "no",
+   "render_feedback": "unverified",
+   "drawings": "unverified",
+   "vendor_integration": "none",
+   "evals": "none",
+   "notes": ""
+  },
+  {
+   "name": "faust-machines/fusion360-mcp-server",
+   "url": "https://github.com/faust-machines/fusion360-mcp-server",
+   "license_spdx": "MIT",
+   "stars": 131,
+   "last_push": "2026-10-06",
+   "clients": [
+    "mcp"
+   ],
+   "kernel": "Autodesk Fusion (closed)",
+   "processes": [
+    "general"
+   ],
+   "dfm_rules_cited": "no",
+   "materials_cost": "no",
+   "render_feedback": "unverified",
+   "drawings": "unverified",
+   "vendor_integration": "none",
+   "evals": "none",
+   "notes": ""
+  },
+  {
+   "name": "ahujasid/mcp-for-blender",
+   "url": "https://github.com/ahujasid/mcp-for-blender",
+   "license_spdx": "MIT",
+   "stars": 32261,
+   "last_push": "2026-10-24",
+   "clients": [
+    "mcp",
+    "codex-plugin"
+   ],
+   "kernel": "Blender (mesh)",
+   "processes": [
+    "visual only"
+   ],
+   "dfm_rules_cited": "no",
+   "materials_cost": "no",
+   "render_feedback": "yes",
+   "drawings": "no",
+   "vendor_integration": "Poly Haven, Sketchfab, paid generators",
+   "evals": "none",
+   "notes": "execute_blender_code; telemetry with disable tool"
+  },
+  {
+   "name": "mixelpixx/KiCAD-MCP-Server",
+   "url": "https://github.com/mixelpixx/KiCAD-MCP-Server",
+   "license_spdx": "MIT",
+   "stars": 2933,
+   "last_push": "2026-10-01",
+   "clients": [
+    "mcp"
+   ],
+   "kernel": "KiCad 9+ (kicad-python IPC + SWIG pcbnew)",
+   "processes": [
+    "PCB"
+   ],
+   "dfm_rules_cited": "KiCad DRC",
+   "materials_cost": "JLCPCB parts + pricing",
+   "render_feedback": "snapshots",
+   "drawings": "no",
+   "vendor_integration": "JLCPCB, DigiKey, Freerouting",
+   "evals": "none",
+   "notes": "244 tools registered; runtime dep pymupdf (AGPL); new work moved to Konnect"
+  },
+  {
+   "name": "mixelpixx/Konnect",
+   "url": "https://github.com/mixelpixx/Konnect",
+   "license_spdx": "AGPL-3.0",
+   "stars": 1399,
+   "last_push": "2026-10-25",
+   "clients": [
+    "kicad-plugin",
+    "mcp",
+    "claude-skills"
+   ],
+   "kernel": "KiCad 10 IPC (Rust)",
+   "processes": [
+    "PCB"
+   ],
+   "dfm_rules_cited": "unverified",
+   "materials_cost": "unverified",
+   "render_feedback": "unverified",
+   "drawings": "no",
+   "vendor_integration": "Freerouting",
+   "evals": "none",
+   "notes": "obhox/kicad-mcp is a fork (8 stars, AGPL-3.0); external use only"
+  },
+  {
+   "name": "oaslananka/kicad-mcp-pro",
+   "url": "https://github.com/oaslananka/kicad-mcp-pro",
+   "license_spdx": "MIT",
+   "stars": 149,
+   "last_push": "2026-10-25",
+   "clients": [
+    "mcp",
+    "claude-code-plugin-skills",
+    "codex-config",
+    "vscode"
+   ],
+   "kernel": "KiCad 10.0.x (kicad-cli/IPC, SWIG forbidden)",
+   "processes": [
+    "PCB"
+   ],
+   "dfm_rules_cited": "8 bundled fab profiles with source URLs",
+   "materials_cost": "fab pricing coefficients; dfm_calculate_manufacturing_cost",
+   "render_feedback": "export_3d_render PNG",
+   "drawings": "no",
+   "vendor_integration": "JLCPCB default; Nexar/DigiKey/Mouser with keys",
+   "evals": "evals/ and benchmarks/ dirs",
+   "notes": "387 tools; default profile 24 read-only; telemetry off by default; shipped .mcp.json unpinned"
+  },
+  {
+   "name": "Seeed-Studio/kicad-mcp-server",
+   "url": "https://github.com/Seeed-Studio/kicad-mcp-server",
+   "license_spdx": null,
+   "stars": 168,
+   "last_push": "2026-10-22",
+   "clients": [
+    "mcp"
+   ],
+   "kernel": "KiCad 8-10 (pcbnew)",
+   "processes": [
+    "PCB analysis",
+    "device tree codegen"
+   ],
+   "dfm_rules_cited": "KiCad ERC/DRC",
+   "materials_cost": "PartReel registry",
+   "render_feedback": "no",
+   "drawings": "no",
+   "vendor_integration": "PartReel",
+   "evals": "none",
+   "notes": "",
+   "license_note": "No LICENSE file; MIT declared only in pyproject.toml: treat as all-rights-reserved"
+  },
+  {
+   "name": "lamaalrajih/kicad-mcp",
+   "url": "https://github.com/lamaalrajih/kicad-mcp",
+   "license_spdx": "MIT",
+   "stars": 529,
+   "last_push": "2025-10-17",
+   "clients": [
+    "mcp"
+   ],
+   "kernel": "KiCad 9",
+   "processes": [
+    "PCB"
+   ],
+   "dfm_rules_cited": "DRC",
+   "materials_cost": "BOM",
+   "render_feedback": "unverified",
+   "drawings": "no",
+   "vendor_integration": "none",
+   "evals": "none",
+   "notes": "stale"
+  },
+  {
+   "name": "aklofas/kicad-happy",
+   "url": "https://github.com/aklofas/kicad-happy",
+   "license_spdx": "MIT",
+   "stars": 1499,
+   "last_push": "2026-10-25",
+   "clients": [
+    "claude-code-plugin",
+    "codex",
+    "copilot-cli",
+    "gemini/antigravity",
+    "github-action"
+   ],
+   "kernel": "KiCad file parsing, SPICE",
+   "processes": [
+    "PCB review",
+    "EMC",
+    "Gerber"
+   ],
+   "dfm_rules_cited": "EMC rules reference",
+   "materials_cost": "BOM, distributors",
+   "render_feedback": "no",
+   "drawings": "no",
+   "vendor_integration": "JLCPCB, PCBWay, DigiKey, Mouser, LCSC, element14",
+   "evals": "none",
+   "notes": "plugin.json has no hooks"
+  },
+  {
+   "name": "American-Embedded/kistack",
+   "url": "https://github.com/American-Embedded/kistack",
+   "license_spdx": "MIT",
+   "stars": 411,
+   "last_push": "2026-10-24",
+   "clients": [
+    "skills.sh"
+   ],
+   "kernel": "KiCad",
+   "processes": [
+    "schematic",
+    "layout",
+    "Gerber review"
+   ],
+   "dfm_rules_cited": "prose",
+   "materials_cost": "no",
+   "render_feedback": "no",
+   "drawings": "no",
+   "vendor_integration": "none",
+   "evals": "none",
+   "notes": "GitHub shows NOASSERTION; LICENSE text is MIT"
+  },
+  {
+   "name": "i2cjak/Backplane",
+   "url": "https://github.com/i2cjak/Backplane",
+   "license_spdx": "MIT",
+   "stars": 731,
+   "last_push": "2026-10-25",
+   "clients": [
+    "standalone workspace",
+    "multi-harness agents"
+   ],
+   "kernel": "KiCad fork + FreeCAD viewers",
+   "processes": [
+    "PCB",
+    "case assembly"
+   ],
+   "dfm_rules_cited": "no",
+   "materials_cost": "no",
+   "render_feedback": "yes",
+   "drawings": "no",
+   "vendor_integration": "none",
+   "evals": "none",
+   "notes": "install via curl | sh; ships a KiCad fork (GPL)"
+  },
+  {
+   "name": "copperheadhq/copperhead",
+   "url": "https://github.com/copperheadhq/copperhead",
+   "license_spdx": "Apache-2.0",
+   "stars": 627,
+   "last_push": "2026-10-24",
+   "clients": [
+    "cli",
+    "agent-install prompt"
+   ],
+   "kernel": "KiCad s-expr + kicad-cli",
+   "processes": [
+    "PCB"
+   ],
+   "dfm_rules_cited": "ERC/DRC",
+   "materials_cost": "unverified",
+   "render_feedback": "unverified",
+   "drawings": "no",
+   "vendor_integration": "none",
+   "evals": "none",
+   "notes": "early"
+  },
+  {
+   "name": "punkfab/circuit-skills",
+   "url": "https://github.com/punkfab/circuit-skills",
+   "license_spdx": null,
+   "stars": 10,
+   "last_push": "2026-10-06",
+   "clients": [
+    "claude-code-skills",
+    "codex-plugin"
+   ],
+   "kernel": "kipy, build123d, ngspice, Blender",
+   "processes": [
+    "PCB",
+    "pcb-enclosure-fit"
+   ],
+   "dfm_rules_cited": "no",
+   "materials_cost": "no",
+   "render_feedback": "Blender renders",
+   "drawings": "no",
+   "vendor_integration": "Freerouting",
+   "evals": "PCBWorld harness",
+   "notes": "",
+   "license_note": "No licence: ideas only"
+  }
+ ],
+ "libraries": [
+  {
+   "name": "gumyr/build123d",
+   "license_spdx": "Apache-2.0",
+   "stars": 3519,
+   "last_push": "2026-10-23"
+  },
+  {
+   "name": "CadQuery/cadquery",
+   "license_spdx": "Apache-2.0",
+   "stars": 5990,
+   "last_push": "2026-10-24",
+   "license_note": "GitHub shows NOASSERTION; LICENSE text is Apache 2.0"
+  },
+  {
+   "name": "gumyr/bd_warehouse",
+   "license_spdx": "Apache-2.0",
+   "stars": 112,
+   "last_push": "2026-10-18",
+   "use": "ISO fasteners, threads"
+  },
+  {
+   "name": "partcad/partcad",
+   "license_spdx": "Apache-2.0",
+   "stars": 509,
+   "last_push": "2026-10-24"
+  },
+  {
+   "name": "sargo-devel/Cables",
+   "license_spdx": "LGPL-3.0",
+   "stars": 103,
+   "last_push": "2026-10-23",
+   "use": "FreeCAD cable routing (external only)"
+  },
+  {
+   "name": "wireviz/WireViz",
+   "license_spdx": "GPL-3.0",
+   "stars": 5310,
+   "last_push": "2026-06-06",
+   "use": "2D harness documents (external only)"
+  },
+  {
+   "name": "easyw/kicadStepUpMod",
+   "license_spdx": "AGPL-3.0",
+   "stars": 699,
+   "last_push": "2026-09-04",
+   "license_note": "per README; no LICENSE detected by GitHub"
+  },
+  {
+   "name": "rjwalters/kicad-tools",
+   "license_spdx": "MIT",
+   "stars": 72,
+   "last_push": "2026-10-24",
+   "use": "licence-annotated KiCad tool survey in README"
+  },
+  {
+   "name": "kicad-python (PyPI)",
+   "license_spdx": "MIT",
+   "version": "0.8.0",
+   "released": "2026-08-30",
+   "url": "https://pypi.org/project/kicad-python/"
+  }
+ ],
+ "benchmarks": [
+  {
+   "name": "CADGenBench",
+   "url": "https://github.com/huggingface/cadgenbench",
+   "license_spdx": "Apache-2.0",
+   "stars": 146,
+   "tasks": "drawing->STEP generation; STEP editing; 81 fixtures (per pzfreo submission)",
+   "ground_truth": "private"
+  },
+  {
+   "name": "Text2CAD",
+   "url": "https://github.com/SadilKhan/Text2CAD",
+   "license": "CC-BY-NC-SA-4.0",
+   "venue": "NeurIPS 2024"
+  },
+  {
+   "name": "CADPrompt/CADCodeVerify",
+   "url": "https://github.com/Kamel773/CAD_Code_Generation",
+   "license": null,
+   "venue": "ICLR 2025",
+   "size": "200 prompts"
+  },
+  {
+   "name": "CAD-Recode",
+   "url": "https://github.com/filaPro/cad-recode",
+   "license": "CC-BY-NC-4.0",
+   "venue": "ICCV 2025"
+  },
+  {
+   "name": "cadrille",
+   "url": "https://github.com/col14m/cadrille",
+   "license_spdx": "Apache-2.0"
+  },
+  {
+   "name": "Text2CAD-Bench",
+   "url": "https://arxiv.org/abs/2605.18430",
+   "size": "600 examples, 4 levels",
+   "data_license": "unverified"
+  },
+  {
+   "name": "P3D-Bench",
+   "url": "https://arxiv.org/abs/2606.11152",
+   "status": "unverified"
+  },
+  {
+   "name": "CADBench",
+   "url": "https://arxiv.org/abs/2605.10873",
+   "status": "unverified"
+  },
+  {
+   "name": "BenchCAD",
+   "url": "https://arxiv.org/abs/2605.10865",
+   "status": "unverified"
+  },
+  {
+   "name": "RealCADBench",
+   "url": "https://arxiv.org/abs/2609.03773",
+   "status": "unverified"
+  },
+  {
+   "name": "CAD Arena",
+   "url": "https://cadarena.dev/",
+   "status": "unverified"
+  },
+  {
+   "name": "PCBWorld",
+   "url": "https://github.com/LGAI-Research/PCBWorld",
+   "license_spdx": "BSD-3-Clause",
+   "paper": "arXiv 2607.05915",
+   "size": "679 real KiCad boards, 8 metrics"
+  }
+ ]
+}

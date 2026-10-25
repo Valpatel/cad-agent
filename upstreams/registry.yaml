@@ -1,8 +1,192 @@
-# External tools under evaluation. status: candidate | trial | adopted | rejected
-# Licence and security fields are filled from verified sources (see research/landscape.md).
-- {name: text-to-cad, url: https://github.com/earthtojake/text-to-cad, license: MIT, kind: [skills, mcp, plugin], status: candidate}
-- {name: Seeed kicad-mcp-server, url: https://github.com/Seeed-Studio/kicad-mcp-server, license: MIT, kind: [mcp, pcb], status: candidate}
-- {name: KiCAD-MCP-Server, url: https://github.com/mixelpixx/KiCAD-MCP-Server, license: MIT, kind: [mcp, pcb], status: candidate}
-- {name: claude-build123d-starter, url: https://github.com/MikeSuiter/claude-build123d-starter, license: unverified, kind: [template], status: candidate}
-- {name: agentcad, url: https://github.com/jdilla1277/agentcad, license: unverified, kind: [cli, mcp], status: candidate}
-- {name: cad-skill, url: https://github.com/flowful-ai/cad-skill, license: unverified, kind: [skill], status: candidate}
+# External tools under evaluation, generated from research/landscape.json (verified 2026-10-24 with gh api).
+# status: candidate | trial | adopted | rejected. Licence policy: incorporate MIT/BSD/Apache-2.0 code with attribution;
+# GPL/AGPL tools run as external programs only; no-licence / non-commercial projects are ideas only.
+- name: earthtojake/text-to-cad
+  url: https://github.com/earthtojake/text-to-cad
+  license: MIT
+  stars: 22951
+  last_push: 2026-10-25
+  status: trial
+  policy: may incorporate with attribution
+- name: amagine-ai/Amagine3D
+  url: https://github.com/amagine-ai/Amagine3D
+  license: Apache-2.0
+  stars: 6259
+  last_push: 2026-10-22
+  status: candidate
+  policy: may incorporate with attribution
+- name: Adam-CAD/CADAM
+  url: https://github.com/Adam-CAD/CADAM
+  license: GPL-3.0
+  stars: 5328
+  last_push: 2026-10-15
+  status: candidate
+  policy: external program only (GPL-3.0)
+- name: KittyCAD/modeling-app
+  url: https://github.com/KittyCAD/modeling-app
+  license: MIT
+  stars: 1321
+  last_push: 2026-10-25
+  status: candidate
+  policy: may incorporate with attribution
+- name: Pan-Chera/Multi-Agent-CAD
+  url: https://github.com/Pan-Chera/Multi-Agent-CAD
+  license: MIT
+  stars: 1048
+  last_push: 2026-10-17
+  status: candidate
+  policy: may incorporate with attribution
+- name: OzAILabs/Claude-To-Print
+  url: https://github.com/OzAILabs/Claude-To-Print
+  license: MIT
+  stars: 4
+  last_push: 2026-08-15
+  status: candidate
+  policy: may incorporate with attribution
+- name: jdilla1277/agentcad
+  url: https://github.com/jdilla1277/agentcad
+  license: Apache-2.0
+  stars: 173
+  last_push: 2026-10-23
+  status: candidate
+  policy: may incorporate with attribution
+- name: pzfreo/build123d-mcp
+  url: https://github.com/pzfreo/build123d-mcp
+  license: Apache-2.0
+  stars: 130
+  last_push: 2026-10-15
+  status: candidate
+  policy: may incorporate with attribution
+- name: flowful-ai/cad-skill
+  url: https://github.com/flowful-ai/cad-skill
+  license: PolyForm-Noncommercial-1.0.0
+  stars: 692
+  last_push: 2026-07-14
+  status: candidate
+  policy: ideas only (PolyForm Noncommercial)
+- name: Svetlana-DAO-LLC/cad-agent
+  url: https://github.com/Svetlana-DAO-LLC/cad-agent
+  license: LicenseRef-CAD-Agent-License
+  stars: 53
+  last_push: 2026-02-17
+  status: candidate
+  policy: ideas only (custom licence)
+- name: MikeSuiter/claude-build123d-starter
+  url: https://github.com/MikeSuiter/claude-build123d-starter
+  license: MIT
+  stars: 1
+  last_push: 2026-06-08
+  status: candidate
+  policy: may incorporate with attribution
+- name: neka-nat/freecad-mcp
+  url: https://github.com/neka-nat/freecad-mcp
+  license: MIT
+  stars: 3040
+  last_push: 2026-10-25
+  status: candidate
+  policy: may incorporate with attribution
+- name: jhacksman/OpenSCAD-MCP-Server
+  url: https://github.com/jhacksman/OpenSCAD-MCP-Server
+  license: MIT
+  stars: 208
+  last_push: 2026-09-07
+  status: candidate
+  policy: may incorporate with attribution
+- name: RobertCoop/openscad-mcp
+  url: https://github.com/RobertCoop/openscad-mcp
+  license: MIT
+  stars: 164
+  last_push: 2026-09-10
+  status: candidate
+  policy: may incorporate with attribution
+- name: altendky/onshape-mcp
+  url: https://github.com/altendky/onshape-mcp
+  license: Apache-2.0
+  stars: 20
+  last_push: 2026-10-24
+  status: candidate
+  policy: may incorporate with attribution
+- name: faust-machines/fusion360-mcp-server
+  url: https://github.com/faust-machines/fusion360-mcp-server
+  license: MIT
+  stars: 131
+  last_push: 2026-10-06
+  status: candidate
+  policy: may incorporate with attribution
+- name: ahujasid/mcp-for-blender
+  url: https://github.com/ahujasid/mcp-for-blender
+  license: MIT
+  stars: 32261
+  last_push: 2026-10-24
+  status: candidate
+  policy: may incorporate with attribution
+- name: mixelpixx/KiCAD-MCP-Server
+  url: https://github.com/mixelpixx/KiCAD-MCP-Server
+  license: MIT
+  stars: 2933
+  last_push: 2026-10-01
+  status: candidate
+  policy: may incorporate with attribution
+- name: mixelpixx/Konnect
+  url: https://github.com/mixelpixx/Konnect
+  license: AGPL-3.0
+  stars: 1399
+  last_push: 2026-10-25
+  status: candidate
+  policy: external program only (AGPL-3.0)
+- name: oaslananka/kicad-mcp-pro
+  url: https://github.com/oaslananka/kicad-mcp-pro
+  license: MIT
+  stars: 149
+  last_push: 2026-10-25
+  status: trial
+  policy: may incorporate with attribution
+- name: Seeed-Studio/kicad-mcp-server
+  url: https://github.com/Seeed-Studio/kicad-mcp-server
+  license: None
+  stars: 168
+  last_push: 2026-10-22
+  status: candidate
+  policy: ideas only (no LICENSE file)
+- name: lamaalrajih/kicad-mcp
+  url: https://github.com/lamaalrajih/kicad-mcp
+  license: MIT
+  stars: 529
+  last_push: 2025-10-17
+  status: candidate
+  policy: may incorporate with attribution
+- name: aklofas/kicad-happy
+  url: https://github.com/aklofas/kicad-happy
+  license: MIT
+  stars: 1499
+  last_push: 2026-10-25
+  status: trial
+  policy: may incorporate with attribution
+- name: American-Embedded/kistack
+  url: https://github.com/American-Embedded/kistack
+  license: MIT
+  stars: 411
+  last_push: 2026-10-24
+  status: candidate
+  policy: may incorporate with attribution
+- name: i2cjak/Backplane
+  url: https://github.com/i2cjak/Backplane
+  license: MIT
+  stars: 731
+  last_push: 2026-10-25
+  status: candidate
+  policy: may incorporate with attribution
+- name: copperheadhq/copperhead
+  url: https://github.com/copperheadhq/copperhead
+  license: Apache-2.0
+  stars: 627
+  last_push: 2026-10-24
+  status: candidate
+  policy: may incorporate with attribution
+- name: punkfab/circuit-skills
+  url: https://github.com/punkfab/circuit-skills
+  license: None
+  stars: 10
+  last_push: 2026-10-06
+  status: candidate
+  policy: ideas only (no licence)

@@ -1,0 +1,296 @@
+version: "3"
+
+tasks:
+  dev:bootstrap:
+    desc: Install the exact repository-scoped development toolchain
+    cmds:
+      - ./scripts/bootstrap-dev.sh
+
+  dev:doctor:
+    desc: Report required, optional, and live-KiCad development capabilities
+    cmds:
+      - corepack pnpm run dev:doctor -- {{.CLI_ARGS}}
+
+  install:
+    desc: Install all development dependencies
+    cmds:
+      - corepack pnpm install --frozen-lockfile
+      - uv sync --all-extras --frozen
+
+  hooks:
+    desc: Install repository-pinned Lefthook git hooks
+    cmds:
+      - python3 scripts/install_git_hooks.py
+
+  format:
+    desc: Auto-format the codebase
+    cmds:
+      - corepack pnpm run format
+
+  lint:
+    desc: Run read-only lint and metadata checks
+    cmds:
+      - corepack pnpm run metadata:check
+      - corepack pnpm run lint
+      - corepack pnpm run format:check
+
+  typecheck:
+    desc: Run strict static type checking
+    cmds:
+      - corepack pnpm run typecheck
+
+  compat:check:
+    desc: Check KiCad API compatibility constraints
+    cmds:
+      - corepack pnpm run compat:check
+
+  test:
+    desc: Run unit tests
+    cmds:
+      - corepack pnpm run test:unit
+
+  test:fast:
+    desc: Run the full unit suite manually (not part of pre-push)
+    cmds:
+      - corepack pnpm run test:unit
+
+  test:cov:
+    desc: Run the full test suite with coverage
+    cmds:
+      - corepack pnpm run test
+
+  test:advanced:
+    desc: Run the full advanced testing suite (property, differential, concurrency, faults, mcp)
+    cmds:
+      - corepack pnpm run test:advanced
+
+  test:property:
+    desc: Run Hypothesis property-based invariants and stateful model tests
+    cmds:
+      - corepack pnpm run test:advanced:property
+
+  test:differential:
+    desc: Run native KiCad CLI differential tests
+    cmds:
+      - corepack pnpm run test:advanced:differential
+
+  test:concurrency:
+    desc: Run concurrency, race condition, and serialization tests
+    cmds:
+      - corepack pnpm run test:advanced:concurrency
+
+  test:faults:
+    desc: Run fault injection, chaos, and error resilience tests
+    cmds:
+      - corepack pnpm run test:advanced:faults
+
+  test:mcp:advanced:
+    desc: Run FastMCP protocol compliance and schema validation tests
+    cmds:
+      - corepack pnpm run test:advanced:mcp
+
+  test:mutation:
+    desc: Run targeted mutmut mutation testing on high-risk modules
+    cmds:
+      - corepack pnpm run test:advanced:mutation
+
+  test:fuzz:
+    desc: Run Atheris coverage-guided fuzz testing
+    cmds:
+      - corepack pnpm run test:advanced:fuzz
+
+  test:memory:
+    desc: Run memory consumption and leak detection profiling
+    cmds:
+      - corepack pnpm run test:advanced:memory
+
+  test:load:
+    desc: Run load, throughput, and latency distribution benchmark
+    cmds:
+      - corepack pnpm run test:advanced:load
+
+  test:advanced:all:
+    desc: Execute all advanced test layers and collect commit-indexed evidence
+    cmds:
+      - task: test:advanced
+      - task: test:memory
+      - task: test:load
+      - corepack pnpm run test:advanced:report
+
+  security:
+    desc: Run enforced security checks
+    cmds:
+      - corepack pnpm run security
+
+  security:local:
+    desc: Run local workstation security scanners with clear missing-tool failures
+    cmds:
+      - corepack pnpm run security:local
+
+  workflows:lint:
+    desc: Parse and lint GitHub Actions workflows
+    cmds:
+      - corepack pnpm run workflows:lint
+
+  workflows:policy:
+    desc: Validate least-privilege workflow permissions and Action allowlists
+    cmds:
+      - corepack pnpm run workflows:policy
+
+  workflows:security:
+    desc: Run workflow security checks
+    cmds:
+      - corepack pnpm run workflows:security
+
+  mcp:manifest:check:
+    desc: Validate MCP Registry metadata
+    cmds:
+      - corepack pnpm run mcp:manifest:check
+
+  docker:metadata:check:
+    desc: Validate Docker and OCI metadata
+    cmds:
+      - corepack pnpm run docker:metadata:check
+
+  build:
+    desc: Build release artifacts
+    cmds:
+      - corepack pnpm run build
+
+  release:dry-run:
+    desc: Run the release preflight without publishing
+    cmds:
+      - corepack pnpm run release:dry-run
+
+  package:check:
+    desc: Build and check package artifacts
+    cmds:
+      - corepack pnpm run package:check
+
+  verify:
+    desc: Local quality gate — lint, format, typecheck, test, build
+    cmds:
+      - task: lint
+      - task: typecheck
+      - task: test:fast
+      - task: build
+
+  pre-push:
+    desc: Run change-scoped checks for the commits being pushed
+    cmds:
+      - python3 scripts/run_uv.py run --all-extras python scripts/hook_pre_push.py
+
+  ci:
+    desc: Run the local equivalent of CI
+    cmds:
+      - task: install
+      - task: compat:check
+      - task: lint
+      - task: mcp:manifest:check
+      - task: docker:metadata:check
+      - task: typecheck
+      - task: test:cov
+      - task: security
+      - task: workflows:lint
+      - task: workflows:security
+      - task: package:check
+      - task: release:dry-run
+
+  ci:act:
+    desc: Run the GitHub Actions CI workflow locally with act
+    cmds:
+      - act -W .github/workflows/ci.yml --container-architecture linux/amd64
+
+  dev:
+    desc: Start Backend + web UI dev mode
+    cmds:
+      - uv run kicad-mcp-pro dashboard --host 127.0.0.1 --port 3334
+
+  dev:tray:
+    desc: Start the tray app in development mode
+    cmds:
+      - uv run kicad-mcp-pro tray --port 3334
+
+  inspect:
+    desc: Launch the MCP Inspector GUI for interactive tool debugging
+    cmds:
+      - uv run kicad-mcp-pro inspect
+
+  inspect:local:
+    desc: Connect MCP Inspector to a running local Streamable HTTP server
+    cmds:
+      - npx @modelcontextprotocol/inspector http://localhost:3334/mcp
+
+  dashboard:
+    desc: Start the server with the web dashboard enabled
+    cmds:
+      - uv run kicad-mcp-pro dashboard --open
+
+  tray:
+    desc: Launch the system tray application
+    cmds:
+      - uv run kicad-mcp-pro tray
+
+  dev:tauri:
+    desc: Run the Tauri v2 desktop app in development mode (starts Python server automatically)
+    cmds:
+      - cmd: cd src-tauri && cargo run
+        silent: false
+
+  test:web:
+    desc: Run web dashboard API and SSE route tests
+    cmds:
+      - uv run pytest tests/unit/test_web_routes.py tests/unit/test_web_routes_step3.py -v
+
+  test:playwright:
+    desc: Run Playwright-backed dashboard E2E tests
+    cmds:
+      - E2E=1 uv run pytest tests/e2e/test_web_dashboard.py -v
+    platforms: [linux, darwin]
+
+  test:playwright:windows:
+    desc: Run Playwright-backed dashboard E2E tests on Windows
+    cmds:
+      - powershell -NoProfile -Command "$env:E2E='1'; uv run pytest tests/e2e/test_web_dashboard.py -v"
+    platforms: [windows]
+
+  test:e2e:full:
+    desc: Run backend web tests and frontend E2E tests
+    cmds:
+      - task: test:web
+      - task: test:playwright
+
+  build:ui:
+    desc: Validate the embedded Starlette dashboard UI
+    cmds:
+      - uv run pytest tests/unit/test_web_routes.py::TestWebModule::test_dashboard_html_content -q
+
+  build:tauri:
+    desc: Build the Tauri v2 desktop app for production
+    cmds:
+      - cmd: cd src-tauri && cargo tauri build
+        silent: false
+
+  build:tauri:universal:
+    desc: Build macOS universal Tauri bundle
+    cmds:
+      - cmd: cd src-tauri && cargo tauri build -- --target universal-apple-darwin
+        silent: false
+
+  icons:tauri:
+    desc: Regenerate Tauri icons from the canonical SVG
+    cmds:
+      - task: icons:generate
+
+  icons:generate:
+    desc: Regenerate tray and Tauri icon assets
+    cmds:
+      - uv run python scripts/generate_icons.py --source assets/icon.svg
+
+  clean:
+    desc: Remove generated build and test artifacts
+    cmds:
+      - cmd: rm -rf dist build .pytest_cache .mypy_cache .ruff_cache htmlcov coverage.xml junit.xml python.junit.xml
+        platforms: [linux, darwin]
+      - cmd: powershell -NoProfile -Command "Remove-Item -Recurse -Force dist,build,.pytest_cache,.mypy_cache,.ruff_cache,htmlcov,coverage.xml,junit.xml,python.junit.xml -ErrorAction SilentlyContinue"
+        platforms: [windows]

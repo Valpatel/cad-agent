@@ -1,0 +1,112 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "include-component-in-tag": true,
+  "separate-pull-requests": false,
+  "group-pull-request-title-pattern": "chore${scope}: release${component} ${version}",
+  "plugins": [
+    {
+      "type": "linked-versions",
+      "groupName": "kicad-mcp-pro",
+      "components": [
+        "mcp-server",
+        "mcp-npm",
+        "kicad-mcp-gui"
+      ]
+    }
+  ],
+  "packages": {
+    ".": {
+      "package-name": "kicad-mcp-pro",
+      "tag-prefix": "mcp-server-v",
+      "release-type": "python",
+      "component": "mcp-server",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "CITATION.cff"
+        },
+        {
+          "type": "generic",
+          "path": "src/kicad_mcp/__init__.py"
+        },
+        {
+          "type": "json",
+          "path": "server.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "server.json",
+          "jsonpath": "$.packages[0].version"
+        },
+        {
+          "type": "json",
+          "path": "server.json",
+          "jsonpath": "$.packages[1].version"
+        },
+        {
+          "type": "json",
+          "path": "server.json",
+          "jsonpath": "$.packages[2].version"
+        },
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": ".claude-plugin/plugin.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "packaging/mcpb/manifest.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "yaml",
+          "path": "compatibility.yaml",
+          "jsonpath": "$.products.kicad-mcp-pro.version"
+        },
+        {
+          "type": "generic",
+          "path": "README.md"
+        },
+        {
+          "type": "generic",
+          "path": "sonar-project.properties"
+        }
+      ]
+    },
+    "packages/mcp-npm": {
+      "package-name": "kicad-mcp-pro",
+      "tag-prefix": "mcp-npm-v",
+      "release-type": "node",
+      "component": "mcp-npm",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/protocol-schemas": {
+      "package-name": "@oaslananka/kicad-protocol-schemas",
+      "tag-prefix": "protocol-schemas-v",
+      "release-type": "node",
+      "component": "protocol-schemas",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "src-tauri": {
+      "package-name": "kicad-mcp-gui",
+      "tag-prefix": "kicad-mcp-gui-v",
+      "release-type": "rust",
+      "component": "kicad-mcp-gui",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "tauri.conf.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    }
+  }
+}

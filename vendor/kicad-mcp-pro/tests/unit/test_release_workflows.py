@@ -1,0 +1,186 @@
+from __future__ import annotations
+
+import json
+import re
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def _read(path: str) -> str:
+    return (ROOT / path).read_text(encoding="utf-8")
+
+
+def _read_json(path: str) -> dict[str, object]:
+    return json.loads(_read(path))
+
+
+def _require(condition: bool, message: str) -> None:
+    if not condition:
+        raise AssertionError(message)
+
+
+def test_protocol_schema_release_contract_matches_existing_release_history() -> None:
+    package = _read_json("packages/protocol-schemas/package.json")
+    manifest = _read_json(".release-please-manifest.json")
+    config = _read_json("release-please-config.json")
+    workflow = _read(".github/workflows/publish-protocol-schemas.yml")
+
+    protocol_config = config["packages"]["packages/protocol-schemas"]
+    assert manifest["packages/protocol-schemas"] == package["version"]
+    assert protocol_config["component"] == "protocol-schemas"
+    assert protocol_config["tag-prefix"] == "protocol-schemas-v"
+    assert "startsWith(github.event.release.tag_name, 'protocol-schemas-v')" in workflow
+
+
+def test_python_trusted_publish_is_tag_gated_and_provenance_verified() -> None:
+    workflow = _read(".github/workflows/publish-python.yml")
+
+    assert 'tags:\n      - "mcp-server-v*"' in workflow
+    assert "\n  release:" not in workflow
+    assert "inputs.target == 'pypi'" not in workflow
+    assert "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'" in workflow
+    assert "startsWith(github.ref, 'refs/tags/mcp-server-v')" in workflow
+    assert workflow.count("verify-pypi-provenance") == 2
+    assert "pypi-attestations verify pypi" not in workflow
+    assert "--staging" not in workflow
+    assert "--publisher-environment testpypi \\\n            --artifacts dist" in workflow
+    assert "--publisher-environment pypi \\\n            --artifacts dist" in workflow
+    assert (
+        workflow.count(
+            "--group release python scripts/generate_release_evidence.py verify-pypi-provenance"
+        )
+        == 2
+    )
+    assert workflow.count("--publisher-repository oaslananka/kicad-mcp-pro") == 2
+    assert "--publisher-environment pypi" in workflow
+    assert "--publisher-environment testpypi" in workflow
+
+
+def test_manual_production_publish_requires_existing_release_tags() -> None:
+    npm_workflow = _read(".github/workflows/publish-npm.yml")
+    protocol_workflow = _read(".github/workflows/publish-protocol-schemas.yml")
+    registry_workflow = _read(".github/workflows/publish-mcp-registry.yml")
+
+    for workflow, prefix in (
+        (npm_workflow, "mcp-npm-v"),
+        (protocol_workflow, "protocol-schemas-v"),
+        (registry_workflow, "mcp-server-v"),
+    ):
+        _require("release_tag:" in workflow, "test contract failed")
+        _require(f"startsWith(inputs.release_tag, '{prefix}')" in workflow, "test contract failed")
+        _require("Verify immutable release source" in workflow, "test contract failed")
+        _require('gh release view "$RELEASE_TAG"' in workflow, "test contract failed")
+        _require(
+            'tag_sha="$(git rev-list -n1 "refs/tags/${RELEASE_TAG}")"' in workflow,
+            "test contract failed",
+        )
+        _require('head_sha="$(git rev-parse HEAD)"' in workflow, "test contract failed")
+        _require('test "$tag_sha" = "$head_sha"' in workflow, "test contract failed")
+
+
+def test_protocol_schema_manual_backfill_is_version_bound_to_release_tag() -> None:
+    workflow = _read(".github/workflows/publish-protocol-schemas.yml")
+
+    assert "Existing published protocol-schemas release tag to republish/backfill." in workflow
+    assert (
+        "ref: ${{ github.event_name == 'release' && "
+        "github.event.release.tag_name || inputs.release_tag }}"
+    ) in workflow
+    assert 'version="${RELEASE_TAG#protocol-schemas-v}"' in workflow
+    assert "packages/protocol-schemas/package.json" in workflow
+    assert 'test "$version" = "$package_version"' in workflow
+    attach_step = workflow.split("      - name: Attach evidence to GitHub Release", 1)[1].split(
+        "      - name: Verify checksums before publish", 1
+    )[0]
+    assert "if: github.event_name == 'release'" not in attach_step
+
+
+def test_publish_workflows_are_idempotent_for_existing_versions() -> None:
+    python_workflow = _read(".github/workflows/publish-python.yml")
+    npm_workflow = _read(".github/workflows/publish-npm.yml")
+
+    assert python_workflow.count("Check if version already published") == 2
+    assert python_workflow.count("steps.check-published.outputs.already_published != 'true'") == 2
+    assert "Check if version already published" in npm_workflow
+    assert "steps.check-published.outputs.already_published != 'true'" in npm_workflow
+
+
+def test_npm_publishers_use_oidc_without_long_lived_tokens() -> None:
+    for path in (
+        ".github/workflows/publish-npm.yml",
+        ".github/workflows/publish-protocol-schemas.yml",
+    ):
+        workflow = _read(path)
+        _require("id-token: write" in workflow, f"{path} must request OIDC")
+        _require("npm publish" in workflow, f"{path} must publish through npm CLI")
+        _require("NPM_TOKEN" not in workflow, f"{path} must not use NPM_TOKEN")
+        _require("NODE_AUTH_TOKEN" not in workflow, f"{path} must not inject NODE_AUTH_TOKEN")
+        _require("environment: npm" in workflow, f"{path} must bind the npm environment")
+
+
+def test_release_automation_uses_short_lived_github_app_token() -> None:
+    release = _read(".github/workflows/release-please.yml")
+    audit = _read(".github/workflows/repository-settings-audit.yml")
+    publish = _read(".github/workflows/publish-release.yml")
+    action_pattern = re.compile(
+        r"^\s*uses:\s*actions/create-github-app-token@([0-9a-f]{40})\s*$", re.M
+    )
+    pinned_shas = []
+
+    for workflow in (release, audit, publish):
+        pins = action_pattern.findall(workflow)
+        _require(len(pins) == 1, "GitHub App token action must use exactly one full SHA pin")
+        pinned_shas.extend(pins)
+
+    _require(
+        len(set(pinned_shas)) == 1,
+        "Release, audit, and publish workflows must use the same GitHub App action SHA",
+    )
+
+    for workflow in (release, audit):
+        _require(
+            "vars.OASLANANKA_OPS_APP_CLIENT_ID" in workflow,
+            "GitHub App client ID must come from a repository variable",
+        )
+        _require(
+            "secrets.OASLANANKA_OPS_APP_PRIVATE_KEY" in workflow,
+            "GitHub App private key must come from a repository secret",
+        )
+        _require("RELEASE_PLEASE_TOKEN" not in workflow, "long-lived release PAT must be removed")
+
+    _require(
+        "permission-contents: write" in release and "permission-pull-requests: write" in release,
+        "release installation token permissions must be explicit",
+    )
+    _require(
+        "permission-actions: read" in audit and "permission-administration: read" in audit,
+        "audit installation token permissions must be explicit",
+    )
+
+
+def test_container_publish_uses_immutable_release_tag_for_production() -> None:
+    workflow = _read(".github/workflows/publish-mcp-container.yml")
+
+    _require("Resolve image version" in workflow, "test contract failed")
+    _require("Verify immutable release source" in workflow, "test contract failed")
+    _require("startsWith(inputs.release_tag, 'mcp-server-v')" in workflow, "test contract failed")
+    checkout_release_ref = (
+        "ref: ${{ github.event_name == 'release' && "
+        "github.event.release.tag_name || inputs.release_tag }}"
+    )
+    _require(checkout_release_ref in workflow, "test contract failed")
+    _require('gh release view "$RELEASE_TAG"' in workflow, "test contract failed")
+    _require(
+        "type=raw,value=${{ steps.source.outputs.version }}" in workflow, "test contract failed"
+    )
+    _require(
+        "KICAD_MCP_VERSION=${{ steps.source.outputs.version }}" in workflow, "test contract failed"
+    )
+    _require("VCS_REF=${{ steps.source.outputs.sha }}" in workflow, "test contract failed")
+    _require("environment: ghcr" in workflow, "test contract failed")
+    stable_latest_rule = (
+        "type=raw,value=latest,enable=${{ github.event_name == 'release' && "
+        "github.event.release.prerelease == false }}"
+    )
+    _require(stable_latest_rule in workflow, "test contract failed")

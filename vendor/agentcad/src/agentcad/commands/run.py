@@ -1,0 +1,2540 @@
+import ast
+import json
+import os
+import re
+import shlex
+import signal
+import shutil
+import tempfile
+import sys
+import threading
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+import click
+from agentcad.project import ProjectError, get_project, project_options, validate_version_label
+
+from agentcad.commands._daemon_routing import (
+    maybe_route_through_daemon,
+    maybe_spawn_daemon_for_next_run,
+)
+from agentcad.commands.export_cmd import (
+    NO_FORMATS_MESSAGE,
+    parse_export_formats,
+    unsupported_export_formats,
+)
+from agentcad.comparison_phases import ComparisonPhaseRecorder
+from agentcad.manifest import load_manifest
+
+
+_DEFAULT_RUN_TIMEOUT_S = 115.0
+_RUN_TIMEOUT_ENV = "AGENTCAD_RUN_TIMEOUT_S"
+_ACTIVE_PHASE_TRACKER = None
+_PREVIOUS_ALARM_HANDLER = None
+_RUN_TIMEOUT_INSTALLED = False
+
+_OUTPUT_DEPRECATION = (
+    "--output is deprecated because it names a version, not a destination; "
+    "use --label LABEL instead. The generated STEP path is returned in "
+    "outputs.step."
+)
+
+_PHASE_ARTIFACTS = {
+    "export_mesh": "mesh_exports",
+    "render_views": "renders",
+    "preview": "preview",
+    "parts_preview": "parts_preview",
+    "export_viewer_glb": "viewer_glb",
+    "source_loading": "diff",
+    "comparison_rendering": "diff",
+    "projection_comparison": "diff",
+    "exact_3d_comparison": "diff",
+    "approximate_3d_comparison": "diff",
+    "difference_artifact_export": "diff",
+    "viewer_generation": "viewer",
+    # Backward-compatible names accepted by injected failure harnesses and
+    # older daemon payloads created before comparison phases were split.
+    "diff": "diff",
+    "viewer": "viewer",
+}
+
+
+def _run_contract_payload(payload: dict) -> dict:
+    """Apply the stable label/artifact contract to one run response."""
+    ctx = click.get_current_context(silent=True)
+    contract = ctx.meta if ctx is not None else {}
+    for key in ("runtime", "runtime_source"):
+        if f"run_{key}" in contract:
+            payload.setdefault(key, contract[f"run_{key}"])
+    label = contract.get("run_label")
+    payload.setdefault("label", label)
+    script_output = contract.get("run_script_output")
+    if script_output:
+        payload.setdefault("script_output", script_output)
+
+    outputs = payload.get("outputs")
+    if not isinstance(outputs, dict):
+        outputs = {}
+        payload["outputs"] = outputs
+    outputs.setdefault("step", None)
+    payload["artifact_created"] = outputs["step"] is not None
+
+    if (
+        not payload["artifact_created"]
+        and payload.get("status") in {
+            "validation_error",
+            "failed",
+            "invalid_geometry",
+        }
+    ):
+        script = contract.get("run_script")
+        if script:
+            recovery = (
+                f"agentcad run {shlex.quote(script)} --label "
+                f"{shlex.quote(str(label)) if label is not None else 'LABEL'}"
+            )
+            existing_message = payload.get("message")
+            inherited = (payload.get("validation") or {}).get("inherited_from_input")
+            if isinstance(inherited, dict) and inherited.get("path"):
+                # The loaded input already fails; rerunning the script cannot
+                # help, so the recovery points at the input instead.
+                input_path = str(inherited["path"])
+                no_artifact_message = (
+                    f"No STEP was created. The loaded input {input_path} already fails "
+                    "validation; repair or replace it, then rerun the command."
+                )
+                actions = [
+                    f"agentcad inspect {shlex.quote(input_path)} --ids",
+                    recovery,
+                ]
+            else:
+                no_artifact_message = (
+                    f"No STEP was created. Fix {script} and rerun the command."
+                )
+                actions = [recovery]
+            payload["message"] = (
+                f"{existing_message} {no_artifact_message}"
+                if existing_message
+                else no_artifact_message
+            )
+            payload.setdefault("next_actions", actions)
+
+    if contract.get("run_legacy_output"):
+        payload["deprecation"] = _OUTPUT_DEPRECATION
+    return payload
+
+
+_SCRIPT_OUTPUT_LIMIT = 4000
+
+
+def _bounded_script_output(text: str) -> str:
+    """Keep the tail of script prints; the lines before a failure matter most."""
+    if len(text) <= _SCRIPT_OUTPUT_LIMIT:
+        return text
+    tail = text[-_SCRIPT_OUTPUT_LIMIT:]
+    # Start at a whole line when one begins inside the kept tail.
+    newline = tail.find("\n")
+    if 0 <= newline < len(tail) - 1:
+        tail = tail[newline + 1:]
+    dropped = len(text) - len(tail)
+    return f"[{dropped} earlier characters omitted]\n" + tail
+
+
+def _emit_run(payload: dict) -> None:
+    click.echo(json.dumps(_run_contract_payload(payload)))
+
+
+def candidate_scripts(directory=None, limit=5):
+    """Python files in ``directory`` (default cwd) an agent probably meant to run."""
+    root = Path(directory) if directory is not None else Path.cwd()
+    try:
+        names = sorted(entry.name for entry in root.glob("*.py") if entry.is_file())
+    except OSError:
+        return []
+    return names[:limit]
+
+
+def _run_retry_command(ctx, *, script=None, omit=(), **overrides):
+    """Copy the invocation with only the rejected input removed/replaced."""
+    values = {**ctx.params, **overrides}
+    script = script if script is not None else values["script"]
+    if script.startswith("-"):
+        script = "./" + script
+    argv = ["agentcad", "run", script]
+    label = values.get("label") or values.get("legacy_output")
+    options = [
+        ("--label", label), ("--render", values.get("render")),
+        ("--export", values.get("export")),
+        ("--no-preview", values.get("preview") is False),
+        ("--no-diff", values.get("auto_diff") is False),
+        ("--no-view", values.get("open_view") is False),
+        ("--params", values.get("params")),
+        ("--dry-run", values.get("dry_run", False)),
+        ("--runtime", values.get("runtime")),
+        ("--validation-profile", values.get("validation_profile")
+         if values.get("validation_profile") != "deliverable" else None),
+        ("--no-daemon", values.get("no_daemon", False)),
+    ]
+    layout = get_project()
+    if layout.configured:
+        options.append(("--build-dir", str(layout.build_root)))
+    for option, value in options:
+        if option in omit or value is None or value is False:
+            continue
+        if value is True:
+            argv.append(option)
+        elif str(value).startswith("-"):
+            argv.append(f"{option}={value}")
+        else:
+            argv.extend([option, str(value)])
+    return shlex.join(argv)
+
+
+def _validate_run_input(ctx, script, *, cad_file):
+    """Reject missing/non-Python inputs without importing CAD or routing."""
+    path = Path(script)
+    if path.is_file() and (cad_file or path.suffix.lower() == ".py"):
+        return
+    if not path.exists():
+        kind, message = "script_not_found", f"Script file '{script}' not found."
+    elif not path.is_file():
+        kind, message = "invalid_script_path", f"Script path '{script}' is not a file."
+    else:
+        kind, message = "invalid_script_type", (
+            f"Expected a Python CAD script (.py), got '{script}'. "
+            "Shell scripts cannot be executed by agentcad run."
+        )
+    candidates = candidate_scripts() if not cad_file else []
+    if cad_file:
+        message += " Supply an existing CAD file to agentcad import."
+        actions = ["agentcad import --help"]
+    elif candidates:
+        message += f" Python scripts here: {', '.join(candidates)}."
+        actions = [_run_retry_command(ctx, script=name) for name in candidates[:3]]
+    else:
+        message += " No Python scripts in this directory; write one first."
+        actions = ["agentcad docs quickstart"]
+    _emit_run({
+        "command": "run", "status": "error", "error_kind": kind,
+        "message": message, "next_actions": actions,
+    })
+    sys.exit(1)
+
+
+class _RunTimeout(BaseException):
+    """Raised by the SIGALRM watchdog so broad script catches don't swallow it."""
+
+    def __init__(self, payload):
+        super().__init__(payload.get("message", "agentcad run timed out"))
+        self.payload = payload
+
+
+class _PhaseTracker:
+    def __init__(self, timings):
+        self.timings = timings
+        self.completed = []
+        self.active_phase = None
+        self.active_started_at = None
+        self.next_phase = None
+        self.lifecycle = None
+        self.reservation = None
+
+    def start(self, phase):
+        self.active_phase = phase
+        self.next_phase = phase
+        self.active_started_at = time.perf_counter()
+
+    def complete(self, phase):
+        if phase not in self.completed:
+            self.completed.append(phase)
+        if self.active_phase == phase:
+            self.active_phase = None
+            self.active_started_at = None
+        self.next_phase = None
+
+    def timeout_payload(self, timeout_s):
+        phase = self.active_phase or self.next_phase or "unknown"
+        payload = {
+            "command": "run",
+            "status": "failed",
+            "error_kind": "timeout",
+            "timeout_s": timeout_s,
+            "timeout_phase": phase,
+            "completed_phases": list(self.completed),
+            "phase_timings": dict(self.timings),
+            "timings": dict(self.timings),
+            "message": (
+                f"agentcad run timed out after {timeout_s:g}s"
+                f"{f' during {phase}' if phase != 'unknown' else ''}"
+            ),
+            "suggestion": _timeout_suggestion(phase, self.completed),
+        }
+        if self.active_started_at is not None:
+            payload["active_phase_elapsed_ms"] = round(
+                (time.perf_counter() - self.active_started_at) * 1000
+            )
+        if self.completed:
+            payload["last_completed_phase"] = self.completed[-1]
+        return payload
+
+
+def _timeout_suggestion(phase, completed):
+    suggestions = {
+        "validation": (
+            "Static validation or runtime detection timed out; check for very large "
+            "source files or slow imports during runtime selection."
+        ),
+        "script_exec": (
+            "The script timed out before producing exportable geometry; simplify "
+            "the algorithm, avoid expensive search loops, or avoid slow STEP import "
+            "inside the script."
+        ),
+        "metrics": (
+            "The script executed but geometry metrics timed out; inspect whether "
+            "the resulting shape is extremely complex or invalid."
+        ),
+        "export_step": (
+            "The script executed but STEP export timed out; avoid wrapping a large "
+            "or invalid imported STEP as a high-level part, or export a simpler "
+            "compound/assembly."
+        ),
+        "export_mesh": (
+            "Mesh export timed out; try skipping optional mesh exports or reducing "
+            "geometry complexity."
+        ),
+        "render_views": (
+            "Requested view rendering timed out; rerun without --render while "
+            "iterating on geometry."
+        ),
+        "preview": (
+            "Preview rendering timed out; rerun with --no-preview if metrics and "
+            "STEP output are enough for this iteration."
+        ),
+        "parts_preview": (
+            "Per-part preview rendering timed out; rerun with --no-preview or "
+            "reduce the number/complexity of shown parts."
+        ),
+        "export_viewer_glb": (
+            "Viewer GLB export timed out; inspect shape validity and consider "
+            "simplifying the model before generating viewer assets."
+        ),
+        "source_loading": (
+            "Loading the prior comparison source timed out; the current STEP is "
+            "already saved and can be compared explicitly later."
+        ),
+        "comparison_rendering": (
+            "Comparison rendering timed out; the current STEP is already saved."
+        ),
+        "projection_comparison": (
+            "The 2D projection comparison timed out; the current STEP is already saved."
+        ),
+        "exact_3d_comparison": (
+            "Exact 3D comparison timed out; the current STEP is already saved."
+        ),
+        "approximate_3d_comparison": (
+            "Approximate 3D comparison timed out; the current STEP is already saved."
+        ),
+        "difference_artifact_export": (
+            "Difference artifact export timed out; numeric results produced earlier "
+            "remain available."
+        ),
+        "viewer_generation": (
+            "The geometry exported, but viewer generation timed out; use the STEP "
+            "and metrics artifacts directly for this iteration."
+        ),
+        "diff": (
+            "Diff work timed out; continue from the saved STEP and compare it "
+            "explicitly later."
+        ),
+        "viewer": (
+            "The geometry exported, but viewer generation timed out; use the STEP "
+            "and metrics artifacts directly for this iteration."
+        ),
+    }
+    if phase in suggestions:
+        return suggestions[phase]
+    if completed:
+        return (
+            f"Timeout happened after {completed[-1]}; inspect the next artifact "
+            "phase or rerun with optional previews/renders disabled."
+        )
+    return "Timeout phase is unknown; rerun with --no-preview and fewer optional exports."
+
+
+def _run_timeout_seconds():
+    raw = os.environ.get(_RUN_TIMEOUT_ENV)
+    if raw in (None, ""):
+        return _DEFAULT_RUN_TIMEOUT_S
+    try:
+        timeout_s = float(raw)
+    except ValueError:
+        return _DEFAULT_RUN_TIMEOUT_S
+    if timeout_s <= 0:
+        return None
+    return timeout_s
+
+
+def _handle_run_timeout(_signum, _frame):
+    tracker = _ACTIVE_PHASE_TRACKER
+    timeout_s = _run_timeout_seconds() or 0
+    payload = (
+        tracker.timeout_payload(timeout_s)
+        if tracker is not None
+        else {
+            "command": "run",
+            "status": "failed",
+            "error_kind": "timeout",
+            "timeout_s": timeout_s,
+            "timeout_phase": "unknown",
+            "completed_phases": [],
+            "phase_timings": {},
+            "timings": {},
+            "message": f"agentcad run timed out after {timeout_s:g}s",
+            "suggestion": _timeout_suggestion("unknown", []),
+        }
+    )
+    raise _RunTimeout(payload)
+
+
+def _install_run_timeout(phase_tracker):
+    global _ACTIVE_PHASE_TRACKER, _PREVIOUS_ALARM_HANDLER, _RUN_TIMEOUT_INSTALLED
+    timeout_s = _run_timeout_seconds()
+    if timeout_s is None:
+        return
+    if threading.current_thread() is not threading.main_thread():
+        return
+    if not hasattr(signal, "SIGALRM") or not hasattr(signal, "setitimer"):
+        return
+    _ACTIVE_PHASE_TRACKER = phase_tracker
+    _PREVIOUS_ALARM_HANDLER = signal.getsignal(signal.SIGALRM)
+    signal.signal(signal.SIGALRM, _handle_run_timeout)
+    signal.setitimer(signal.ITIMER_REAL, timeout_s)
+    _RUN_TIMEOUT_INSTALLED = True
+
+
+def _clear_run_timeout():
+    global _ACTIVE_PHASE_TRACKER, _PREVIOUS_ALARM_HANDLER, _RUN_TIMEOUT_INSTALLED
+    if (
+        _RUN_TIMEOUT_INSTALLED
+        and threading.current_thread() is threading.main_thread()
+        and hasattr(signal, "SIGALRM")
+        and hasattr(signal, "setitimer")
+    ):
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        if _PREVIOUS_ALARM_HANDLER is not None:
+            signal.signal(signal.SIGALRM, _PREVIOUS_ALARM_HANDLER)
+    _ACTIVE_PHASE_TRACKER = None
+    _PREVIOUS_ALARM_HANDLER = None
+    _RUN_TIMEOUT_INSTALLED = False
+
+
+def _recover_committed_core(error, *, timeout_payload=None):
+    """Turn post-core failures into successful builds with artifact status."""
+    tracker = _ACTIVE_PHASE_TRACKER
+    if tracker is None or tracker.lifecycle is None:
+        return None
+
+    lifecycle = tracker.lifecycle
+    phase = (
+        (timeout_payload or {}).get("timeout_phase")
+        or tracker.active_phase
+        or tracker.next_phase
+        or "post_processing"
+    )
+    artifact = _PHASE_ARTIFACTS.get(phase)
+    status = "timeout" if timeout_payload is not None else "failed"
+    if timeout_payload is not None:
+        message = timeout_payload.get("message", str(error))
+    else:
+        message = f"{type(error).__name__}: {error}"
+    if artifact is not None:
+        lifecycle.set_artifact(artifact, status, message=message)
+    comparison_entries = lifecycle.meta.get("comparison_phases", {})
+    phase_entry = comparison_entries.get(phase)
+    if phase_entry is not None:
+        phase_entry.clear()
+        phase_entry["status"] = status
+        if timeout_payload is not None:
+            phase_entry["duration_ms"] = timeout_payload.get(
+                "active_phase_elapsed_ms", 0
+            )
+        phase_entry["message"] = message
+    for entry in comparison_entries.values():
+        if entry.get("status") == "pending":
+            entry["status"] = "skipped"
+            entry["message"] = f"Skipped after {phase} {status}."
+    lifecycle.finish_pending(
+        message=f"Skipped after {phase} {status}."
+    )
+    lifecycle.add_warning(
+        f"Optional {phase} work {status}; core STEP remains successful: {message}"
+    )
+    lifecycle.meta["completed_phases"] = list(tracker.completed)
+    lifecycle.meta["phase_timings"] = dict(tracker.timings)
+    lifecycle.persist()
+    return lifecycle.response()
+
+
+def _cleanup_uncommitted_reservation():
+    """Remove only this run's exact reserved directory before core commit."""
+    tracker = _ACTIVE_PHASE_TRACKER
+    if (
+        tracker is None
+        or tracker.lifecycle is not None
+        or tracker.reservation is None
+    ):
+        return
+    reservation = tracker.reservation
+    if not (reservation.path / "meta.json").exists():
+        shutil.rmtree(reservation.path, ignore_errors=True)
+
+
+def _parse_params(raw):
+    """Parse a --params string like 'length=60,width=20' into a dict."""
+    params = {}
+    for pair in raw.split(","):
+        pair = pair.strip()
+        if "=" not in pair:
+            raise ValueError(f"Invalid param format: '{pair}'. Expected key=value.")
+        key, val = pair.split("=", 1)
+        key, val = key.strip(), val.strip()
+        # Bool
+        if val.lower() in ("true", "false"):
+            params[key] = val.lower() == "true"
+        else:
+            # Int → Float → String
+            try:
+                params[key] = int(val)
+            except ValueError:
+                try:
+                    params[key] = float(val)
+                except ValueError:
+                    params[key] = val
+    return params
+
+
+def _enrich_error(msg):
+    """Add actionable context to common OCC error messages."""
+    if "BRep_API: command not done" in msg:
+        msg += (
+            " — this usually means a wire is not closed. "
+            "Check that all edge endpoints connect within tolerance (~1e-7mm). "
+            "Common cause: floating-point drift across many rotated/translated points."
+        )
+    return msg
+
+
+def _uncalled_part_topology_methods(source):
+    """Return Part collection attributes referenced without being called.
+
+    The runtime ``TypeError: 'method' object is not iterable`` is generic, so
+    only attach Part-specific guidance when the source itself contains one of
+    the imported-Part collection methods as a bare attribute.
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return []
+
+    called_attributes = {
+        id(node.func)
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+    }
+    return sorted({
+        node.attr
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Attribute)
+        and node.attr in {"solids", "faces", "edges"}
+        and id(node) not in called_attributes
+    })
+
+
+def _same_topo_shape(left, right) -> bool:
+    """True when two raw OCP shapes are the same TopoDS entity."""
+    if left is right:
+        return True
+    try:
+        return bool(left.IsSame(right))
+    except AttributeError:
+        return False
+
+
+def _apply_kernel_layer(part_metrics: dict, report: dict) -> dict:
+    """Fill a part's kernel-only verdict from a validation report's kernel layer."""
+    layer = (report.get("layers") or {}).get("brep_check") or {}
+    status = layer.get("status")
+    part_metrics["is_valid"] = True if status == "pass" else False if status == "fail" else None
+    errors = layer.get("errors") or []
+    if errors:
+        part_metrics["validity_errors"] = errors
+    else:
+        part_metrics.pop("validity_errors", None)
+    return part_metrics
+
+
+def _coordinate_error_suggestion(msg):
+    """Offer conditional advice: error text alone cannot establish the type."""
+    match = re.search(r"'(BoundBox|Vector)' object has no attribute '([^']+)'", msg)
+    if match is None:
+        return None
+    kind, attr = match.groups()
+    if kind == "Vector":
+        if attr in {"x", "y", "z"}:
+            return (
+                "If the receiver is a build123d Vector, coordinates are uppercase: "
+                f"use `vector.{attr.upper()}` "
+                f"instead of `vector.{attr}` (also for bbox.min, bbox.max, and bbox.size)."
+            )
+        return None
+
+    for axis in "xyz":
+        equivalents = {
+            f"{axis}min": f"bbox.min.{axis.upper()}",
+            f"lower_{axis}": f"bbox.min.{axis.upper()}",
+            f"{axis}max": f"bbox.max.{axis.upper()}",
+            f"upper_{axis}": f"bbox.max.{axis.upper()}",
+            f"{axis}center": f"bbox.center().{axis.upper()}",
+            f"{axis}len": f"bbox.size.{axis.upper()}",
+        }
+        if attr in equivalents:
+            return (
+                "If the receiver is a build123d BoundBox from "
+                f"`bbox = shape.bounding_box()`, replace `bbox.{attr}` with "
+                f"`{equivalents[attr]}`. For a Part or raw TopoDS shape, use "
+                "`bbox_point(shape, x='min', y='center', z='max')` for coordinates "
+                "or `bbox_size(shape)` for (xlen, ylen, zlen)."
+            )
+        if attr == axis:
+            return (
+                "If the receiver is a build123d BoundBox, "
+                f"`bbox.{axis}` is ambiguous. For `bbox = shape.bounding_box()`, "
+                f"choose `bbox.min.{axis.upper()}`, `bbox.center().{axis.upper()}`, "
+                f"`bbox.max.{axis.upper()}`, or `bbox.size.{axis.upper()}` "
+                "for the minimum, center, maximum, or length respectively. "
+                "For a Part or raw TopoDS shape, use `bbox_point(shape)` "
+                "(center by default) or `bbox_size(shape)` (lengths)."
+            )
+    return None
+
+
+_CAD_BASE_CLASSES = {
+    "build123d": ("Shape",),
+    "cadquery": ("Shape", "Workplane"),
+}
+
+
+def _is_cad_class(name, runtime, source):
+    """True when ``name`` is the runtime's own shape class, not a user class."""
+    import importlib
+
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        tree = None
+    if tree is not None and any(
+        isinstance(node, ast.ClassDef) and node.name == name
+        for node in ast.walk(tree)
+    ):
+        return False
+    try:
+        module = importlib.import_module(runtime)
+    except ImportError:
+        return False
+    cls = getattr(module, name, None)
+    bases = tuple(
+        getattr(module, base) for base in _CAD_BASE_CLASSES.get(runtime, ())
+        if isinstance(getattr(module, base, None), type)
+    )
+    return isinstance(cls, type) and bool(bases) and issubclass(cls, bases)
+
+
+def _transform_method_suggestion(msg, runtime, source):
+    """Point foreign translate method forms at the supported equivalents.
+
+    build123d and CadQuery shapes only offer ``.translate(vector)``;
+    ``.translated(...)`` and ``.translate(x, y, z)`` come from other CAD
+    libraries and fail with generic Python errors. ``Translate(...)`` is
+    covered by ``_undefined_name_guidance``. Method hints require the
+    receiver (or the method's owner) to be one of the runtime's own shape
+    classes, so user helpers and plain values that happen to use these
+    names are left alone. Native ``.translate`` returns a moved copy, so
+    the correction assigns it.
+    """
+    match = re.search(r"'(\w+)' object has no attribute 'translated'", msg)
+    if match and _is_cad_class(match.group(1), runtime, source):
+        return (
+            "`.translated(...)` is not a build123d or CadQuery method. Use "
+            "`moved = translate(shape, (x, y, z))`, or the native "
+            "`moved = shape.translate((x, y, z))`."
+        )
+    match = re.search(
+        r"\b(\w+)\.translate\(\) takes 2 positional arguments but \d+ were given",
+        msg,
+    )
+    if match and _is_cad_class(match.group(1), runtime, source):
+        return (
+            "Native `.translate()` takes one vector, not separate numbers, "
+            "and returns a moved copy: `moved = shape.translate((x, y, z))`, "
+            "or use `moved = translate(shape, (x, y, z))`."
+        )
+    return None
+
+
+def _helper_correction_suggestion(msg):
+    """Lift an injected helper's correction into the suggestion field.
+
+    Placement helpers end their errors with a copyable ``Use helper(...)``
+    sentence; agents that read only ``suggestion`` would otherwise miss it.
+    Only agentcad's exact sentences match, never arbitrary user errors.
+    """
+    from agentcad.helpers import HELPER_CORRECTIONS
+
+    return next((usage for usage in HELPER_CORRECTIONS if usage in msg), None)
+
+
+_COMMON_MATH_NAMES = {
+    "acos", "asin", "atan", "atan2", "ceil", "cos", "degrees", "e",
+    "exp", "floor", "hypot", "log", "log10", "pi", "radians", "sin",
+    "sqrt", "tan", "tau",
+}
+
+
+def _undefined_name(msg):
+    """Name from a genuine script NameError, or None for any other failure."""
+    match = re.fullmatch(
+        r"Script execution failed: NameError: name '([^']+)' is not defined",
+        msg,
+    )
+    return match.group(1) if match else None
+
+
+def _uses_unbound_name(source, name):
+    """True when the script reads ``name`` but never defines or imports it."""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return False
+    loaded = False
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name) and node.id == name:
+            if not isinstance(node.ctx, ast.Load):
+                return False
+            loaded = True
+        elif isinstance(
+            node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+        ) and node.name == name:
+            return False
+        elif isinstance(node, (ast.Import, ast.ImportFrom)) and any(
+            (alias.asname or alias.name.split(".")[0]) == name
+            for alias in node.names
+        ):
+            return False
+    return loaded
+
+
+def _cadquery_undefined_name_guidance(msg, source):
+    """CadQuery counterpart for the generated names both runtimes share.
+
+    The CadQuery runner reports ``Script execution failed: name 'X' is not
+    defined`` without the exception type, so require source evidence that
+    the script really reads an unbound ``Translate``.
+    """
+    match = re.fullmatch(
+        r"Script execution failed: (?:NameError: )?name '([^']+)' is not defined",
+        msg,
+    )
+    if match and match.group(1) == "Translate" and _uses_unbound_name(source, "Translate"):
+        return {
+            "suggestion": (
+                "The active CadQuery runtime has no `Translate` constructor. "
+                "Use the pre-injected `moved = translate(shape, (x, y, z))`, "
+                "or the native `moved = shape.translate((x, y, z))` (it "
+                "returns a moved copy)."
+            ),
+            "more_at": "agentcad docs helpers",
+        }
+    return None
+
+
+def _undefined_name_guidance(msg):
+    """Return build123d-specific recovery for common generated-code names.
+
+    These names come from adjacent CAD libraries or from Python's standard
+    math module.  Keep ambiguous modeling concepts as diagnostics instead of
+    aliases: silently choosing a Boolean or placement operation can produce a
+    valid but unintended model.
+    """
+    name = _undefined_name(msg)
+    if name is None:
+        return None
+
+    suggestions = {
+        "Vec": (
+            "The active build123d runtime has no `Vec` name. Use the "
+            "pre-injected `Vector(x, y, z)`, or explicitly import it with "
+            "`from build123d import Vector`."
+        ),
+        "V": (
+            "The active build123d runtime has no `V` name. If this value is a "
+            "3D vector, use `Vector(x, y, z)`; otherwise define or import the "
+            "intended name explicitly."
+        ),
+        "Pnt3D": (
+            "The active build123d runtime has no `Pnt3D` name. For a 3D point "
+            "or direction, use `Vector(x, y, z)` or an `(x, y, z)` tuple, "
+            "depending on the receiving API."
+        ),
+        "Translate": (
+            "The active build123d runtime has no `Translate` constructor. For "
+            "a build123d shape use `moved = shape.translate((x, y, z))` (it "
+            "returns a moved copy); for a raw or wrapped shape use the "
+            "pre-injected `moved = translate(shape, (x, y, z))`."
+        ),
+        "difference": (
+            "The active build123d runtime does not define a `difference()` "
+            "operation. For new build123d shapes use `left - right`; for raw "
+            "or imported shapes use the pre-injected `safe_cut(left, right)`."
+        ),
+        "cylinder": (
+            "The active build123d runtime is case-sensitive. Use "
+            "`Cylinder(radius=..., height=...)` instead of `cylinder(...)`."
+        ),
+        "Pocket": (
+            "The active build123d runtime has no `Pocket` constructor. For new "
+            "geometry subtract the tool shape with `base - tool`; for imported "
+            "geometry use the pre-injected `cut_pocket(...)` or `safe_cut(...)` "
+            "helper, depending on the intended edit."
+        ),
+        "Center": (
+            "The active build123d runtime has no standalone `Center` name. If "
+            "this is primitive alignment, use `Align.CENTER`; otherwise define "
+            "the intended point or operation explicitly."
+        ),
+        "Capsule": (
+            "The active build123d runtime has no `Capsule` primitive. Construct "
+            "the intended profile or solid explicitly from build123d primitives "
+            "so its dimensions and axis are unambiguous."
+        ),
+    }
+    if name in suggestions:
+        return {
+            "suggestion": suggestions[name],
+            "more_at": (
+                "agentcad docs quickstart"
+                if name == "difference"
+                else "agentcad docs preamble"
+            ),
+        }
+    if name in _COMMON_MATH_NAMES:
+        return {
+            "suggestion": (
+                f"The active build123d runtime does not pre-inject Python's "
+                f"`{name}` math name. Add `from math import {name}` to the script."
+            ),
+            "more_at": "agentcad docs preamble",
+        }
+    return None
+
+
+def _execution_error_guidance(msg, runtime, source):
+    """Return focused recovery fields for known script API mistakes."""
+    from agentcad.output_contract import step_export_guidance
+
+    export_guidance = step_export_guidance(msg, source)
+    if export_guidance:
+        return export_guidance
+    transform = (
+        _transform_method_suggestion(msg, runtime, source)
+        or _helper_correction_suggestion(msg)
+    )
+    if transform:
+        return {"suggestion": transform, "more_at": "agentcad docs helpers"}
+    if runtime != "build123d":
+        return _cadquery_undefined_name_guidance(msg, source) or {}
+
+    undefined_guidance = _undefined_name_guidance(msg)
+    if undefined_guidance is not None:
+        return undefined_guidance
+
+    suggestion = _coordinate_error_suggestion(msg)
+    if "'Part' object has no attribute 'BoundingBox'" in msg:
+        suggestion = (
+            "`load_step()` returns a build123d `Part`. Get its bounds with "
+            "`base.bounding_box()`."
+        )
+    elif "'Part' object has no attribute 'IsNull'" in msg:
+        suggestion = (
+            "`load_step()` returns a build123d `Part`. Use `agentcad inspect` "
+            "or run metrics for validity; use `load_step_shape()` only when "
+            "the edit requires a raw topology shape."
+        )
+    elif "'method' object is not iterable" in msg:
+        methods = _uncalled_part_topology_methods(source)
+        if methods:
+            calls = ", ".join(f"`base.{method}()`" for method in methods)
+            names = ", ".join(f"`{method}`" for method in methods)
+            suggestion = (
+                f"{names} {'is a method' if len(methods) == 1 else 'are methods'} "
+                f"on the Part returned by `load_step()`. Call "
+                f"{'it' if len(methods) == 1 else 'them'} as {calls}."
+            )
+
+    if suggestion is None:
+        return {}
+    return {
+        "suggestion": suggestion,
+        "more_at": "agentcad docs editing",
+    }
+
+
+def _find_prev_success(versions):
+    """Return the most recent successful version in the manifest, or None.
+
+    Skips failed runs. Used to pick the baseline for auto-diff on every run.
+    """
+    for entry in reversed(versions):
+        if entry.get("status") == "success":
+            return entry
+    return None
+
+
+def _normalized_part_value(value):
+    """Normalize nested metric values so harmless float noise is ignored."""
+    if isinstance(value, float):
+        return round(value, 6)
+    if isinstance(value, dict):
+        return {key: _normalized_part_value(value[key]) for key in sorted(value)}
+    if isinstance(value, list):
+        return [_normalized_part_value(item) for item in value]
+    return value
+
+
+def _part_change_summary(previous_parts, current_parts, previous_label):
+    """Build the compact stable-ID part delta embedded in viewer.html."""
+    previous_by_id = {
+        str(part["id"]): part
+        for part in (previous_parts or [])
+        if part.get("id") is not None
+    }
+    current_by_id = {
+        str(part["id"]): part
+        for part in (current_parts or [])
+        if part.get("id") is not None
+    }
+
+    def snapshot(part):
+        return {
+            "id": str(part["id"]),
+            **({"name": part["name"]} if part.get("name") else {}),
+        }
+
+    added = [
+        snapshot(current_by_id[part_id])
+        for part_id in sorted(current_by_id.keys() - previous_by_id.keys())
+    ]
+    removed = [
+        snapshot(previous_by_id[part_id])
+        for part_id in sorted(previous_by_id.keys() - current_by_id.keys())
+    ]
+    renamed = []
+    changed = []
+    for part_id in sorted(previous_by_id.keys() & current_by_id.keys()):
+        before = previous_by_id[part_id]
+        after = current_by_id[part_id]
+        if before.get("name") != after.get("name"):
+            renamed.append({
+                "id": part_id,
+                "from": before.get("name") or part_id,
+                "to": after.get("name") or part_id,
+            })
+
+        fields = []
+        if _normalized_part_value(before.get("metrics")) != _normalized_part_value(
+            after.get("metrics")
+        ):
+            fields.append("geometry")
+        if before.get("part_of") != after.get("part_of"):
+            fields.append("group")
+        if before.get("color") != after.get("color"):
+            fields.append("color")
+        if fields:
+            changed.append({
+                "id": part_id,
+                "name": after.get("name") or part_id,
+                "fields": fields,
+            })
+
+    counts = [
+        (len(added), "added"),
+        (len(removed), "removed"),
+        (len(renamed), "renamed"),
+        (len(changed), "changed"),
+    ]
+    changed_count = sum(count for count, _label in counts)
+    summary = (
+        "No named part changes"
+        if changed_count == 0
+        else " · ".join(f"{count} {label}" for count, label in counts if count)
+    )
+    return {
+        "against": previous_label,
+        "summary": summary,
+        "added": added,
+        "removed": removed,
+        "renamed": renamed,
+        "changed": changed,
+    }
+
+
+def _record_failure(
+    script_path,
+    label,
+    reservation,
+    error_msg,
+    runtime=None,
+    runtime_source=None,
+    guidance=None,
+):
+    """Record a script failure on disk and in the manifest."""
+    from agentcad.versioning import commit_version
+
+    version_num = reservation.number
+    dir_name = reservation.dir_name
+    version_dir = reservation.path
+
+    # Copy script into failed directory
+    shutil.copy2(str(script_path), str(version_dir / "script.py"))
+
+    # Write meta.json
+    created = datetime.now(timezone.utc).isoformat()
+    meta = {
+        "version": version_num,
+        "label": label,
+        "status": "failed",
+        "created": created,
+        "error": error_msg,
+        "script": f"{dir_name}/script.py",
+    }
+    if runtime is not None:
+        meta["runtime"] = runtime
+    if runtime_source is not None:
+        meta["runtime_source"] = runtime_source
+    if guidance:
+        meta.update(guidance)
+    commit_version(reservation, meta, {
+        "version": version_num,
+        "label": label,
+        "status": "failed",
+        "path": f"{dir_name}/",
+    }, advance_current=False)
+
+    # Output failure JSON
+    output_json = {
+        "command": "run",
+        "status": "failed",
+        "version": version_num,
+        "label": label,
+        "error": error_msg,
+        "path": f"{dir_name}/",
+    }
+    if runtime is not None:
+        output_json["runtime"] = runtime
+    if guidance:
+        output_json.update(guidance)
+    _emit_run(output_json)
+    sys.exit(1)
+
+
+def _record_invalid_geometry(
+    script_path,
+    label,
+    reservation,
+    runtime,
+    output_type,
+    metrics,
+    parts,
+    groups,
+    warnings,
+    response,
+):
+    """Preserve invalid-geometry diagnostics without advancing current."""
+    from agentcad.versioning import commit_version
+
+    version_num = reservation.number
+    dir_name = reservation.dir_name
+    version_dir = reservation.path
+    shutil.copy2(str(script_path), str(version_dir / "script.py"))
+
+    meta = {
+        **response,
+        "version_recorded": True,
+        "version": version_num,
+        "label": label,
+        "runtime": runtime,
+        "output_type": output_type,
+        "created": datetime.now(timezone.utc).isoformat(),
+        "script": f"{dir_name}/script.py",
+    }
+    if parts:
+        meta["parts"] = parts
+    if groups:
+        meta["groups"] = groups
+    if warnings:
+        meta["warnings"] = warnings
+    commit_version(reservation, meta, {
+        "version": version_num,
+        "label": label,
+        "status": "invalid_geometry",
+        "path": f"{dir_name}/",
+    }, advance_current=False)
+
+    output_json = {
+        **response,
+        "version_recorded": True,
+        "version": version_num,
+        "label": label,
+        "runtime": runtime,
+        "output_type": output_type,
+        "path": f"{dir_name}/",
+    }
+    if parts:
+        output_json["parts"] = parts
+    if groups:
+        output_json["groups"] = groups
+    if warnings:
+        output_json["warnings"] = warnings
+    _emit_run(output_json)
+    sys.exit(1)
+
+
+def _slugify_part_id(value):
+    """Return a lowercase, JSON/path-friendly part handle."""
+    slug = re.sub(r"[^a-z0-9]+", "_", str(value).strip().lower())
+    slug = re.sub(r"_+", "_", slug).strip("_")
+    return slug or None
+
+
+def _dedupe_part_id(base, used):
+    candidate = base
+    suffix = 2
+    while candidate in used:
+        candidate = f"{base}_{suffix}"
+        suffix += 1
+    used.add(candidate)
+    return candidate
+
+
+def _resolve_group_id(value):
+    if value is None:
+        return None, None
+    group_name = str(value).strip()
+    if not group_name:
+        return None, None
+    return _slugify_part_id(group_name), group_name
+
+
+def _assign_part_identity(raw_parts):
+    """Resolve public part IDs from author intent, name, then ordinal fallback."""
+    used: set[str] = set()
+    resolved = []
+    for idx, p in enumerate(raw_parts):
+        explicit = p.get("explicit_id")
+        if explicit is not None:
+            base = _slugify_part_id(explicit)
+            if base is None:
+                base = f"part_{idx}"
+            part_id = _dedupe_part_id(base, used)
+            source = "explicit"
+        elif p.get("name"):
+            base = _slugify_part_id(p["name"])
+            if base is None:
+                base = f"part_{idx}"
+                source = "generated"
+            else:
+                source = "name"
+            part_id = _dedupe_part_id(base, used)
+        else:
+            part_id = _dedupe_part_id(f"part_{idx}", used)
+            source = "generated"
+        resolved.append((part_id, source))
+    return resolved
+
+
+
+
+@click.command()
+@click.argument("script")
+@click.option(
+    "--label",
+    default=None,
+    help=(
+        "Label for this version. The STEP path is returned in outputs.step. "
+        "Required unless --dry-run."
+    ),
+)
+@click.option(
+    "--output",
+    "legacy_output",
+    default=None,
+    help="Deprecated compatibility alias for --label; never a destination path.",
+)
+@click.option(
+    "--render",
+    default=None,
+    help=(
+        "Comma-separated named views, 'all' (front,right,top,iso), custom "
+        "azimuth:elevation angles, or a mix such as front,45:30."
+    ),
+)
+@click.option("--export", default=None, help="Comma-separated mesh formats (stl, glb, obj). STEP is always produced; read outputs.step.")
+@click.option(
+    "--preview/--no-preview",
+    default=True,
+    help=(
+        "4-view composite PNG + per-part previews (default on, ~2-4s). "
+        "By itself, --no-preview skips only those PNGs; viewer.html, its GLB, "
+        "and automatic diff work remain enabled. Combine it with --no-diff "
+        "--no-view for the core-only fast path."
+    ),
+)
+@click.option(
+    "--diff/--no-diff",
+    "auto_diff",
+    default=True,
+    help=(
+        "Automatically compare against the previous successful version "
+        "(default on). --no-diff skips all automatic comparison work; "
+        "`agentcad diff` remains available for later review."
+    ),
+)
+@click.option("--view/--no-view", "open_view", default=True, help="Open or reuse the live project viewer after success (default on). Its stable URL follows completed builds; version snapshots retain previous/current A/B comparison.")
+@click.option("--params", default=None, help="Parameter overrides as key=value,key=value.")
+@click.option("--dry-run", is_flag=True, default=False, help="Compute metrics without creating a version or disk artifacts. --label is optional.")
+@click.option(
+    "--runtime",
+    default=None,
+    type=click.Choice(["cadquery", "build123d"]),
+    help=(
+        "One-off runtime override. Without it, the project runtime is "
+        "authoritative; legacy unpinned projects detect source syntax, then "
+        "fall back to build123d."
+    ),
+)
+@click.option(
+    "--validation-profile",
+    type=click.Choice(["deliverable", "kernel"]),
+    default="deliverable",
+    show_default=True,
+    help=(
+        "Which validation gates success. 'deliverable' requires the kernel check, "
+        "closed shells, and a manifold mesh; 'kernel' restores the kernel-only "
+        "check for intentional surfaces or sheet bodies."
+    ),
+)
+@click.option("--no-daemon", is_flag=True, default=False, help="Skip daemon routing for this run, even if a daemon is running. Useful for debugging.")
+@click.pass_context
+@project_options
+def run(
+    ctx, script, label, legacy_output, render, export, preview, auto_diff,
+    open_view, params, dry_run, runtime, validation_profile, no_daemon,
+):
+    """Execute the project's CAD script and produce a versioned STEP file.
+
+    New projects use build123d. CadQuery scripts remain supported in projects
+    explicitly pinned to the compatibility runtime or through
+    ``--runtime cadquery``.
+
+    If `script` is a CAD file (.step / .stp / .brep), dispatches to
+    `agentcad import` instead — agents who instinctively reach for `run`
+    when handed a CAD file get the right behavior automatically.
+    """
+    output = label or legacy_output
+    ctx.meta["run_script"] = script
+    ctx.meta["run_label"] = output
+    ctx.meta["run_legacy_output"] = legacy_output is not None
+    ctx.meta["viewer_dry_run"] = dry_run
+    if label is not None and legacy_output is not None:
+        raise click.UsageError(
+            "Use --label or the deprecated --output alias, not both.",
+            ctx=ctx,
+        )
+    # A dry run never allocates a version, so a label has nothing to name.
+    # Requiring one there only cost agents a retry (friction check on #207).
+    if output is None and not dry_run:
+        raise click.MissingParameter(
+            ctx=ctx,
+            param_hint="--label",
+            param_type="option",
+        )
+    if output is not None:
+        try:
+            validate_version_label(output)
+        except ProjectError as exc:
+            exc.next_actions = [_run_retry_command(ctx, label="first")]
+            raise
+
+    # Reject unsupported --export formats before anything else — before the
+    # CAD-file suffix dispatch below (which drops --export entirely), daemon
+    # routing, version allocation, or any disk artifacts — so `run --export`
+    # matches `agentcad export` instead of silently ignoring unknown formats.
+    if export is not None:
+        # An all-blank value (e.g. `--export ","`) parses to an empty list.
+        # Without this the run would execute the whole script and consume a
+        # version number, then export nothing and still report success.
+        if not parse_export_formats(export):
+            _emit_run({
+                "command": "run",
+                "status": "error",
+                "message": NO_FORMATS_MESSAGE,
+                "next_actions": [_run_retry_command(ctx, omit=("--export",))],
+            })
+            sys.exit(1)
+        invalid = unsupported_export_formats(export)
+        if invalid:
+            _emit_run({
+                "command": "run",
+                "status": "error",
+                "message": (
+                    f"Unsupported format(s): {', '.join(invalid)}. "
+                    "Supported: stl, glb, obj. STEP is always produced by a successful "
+                    "run; read outputs.step. --export is only for mesh formats."
+                ),
+                "next_actions": [_run_retry_command(
+                    ctx, export=",".join(
+                        fmt for fmt in parse_export_formats(export) if fmt not in invalid
+                    ) or None,
+                )],
+            })
+            sys.exit(1)
+
+    # M60 Phase 2 (slice 2b): suffix-dispatch CAD files to `agentcad import`.
+    # This closes a footgun where agents handed a STEP would write
+    # `agentcad run widget.step` and hit a confusing parse error. Tier 0
+    # files actually import; Tier 1+ files surface the polite-no responses
+    # via the same dispatch (better than a Python parse error).
+    from agentcad import file_detect as _fd
+    cad_file = _fd.is_recognized_cad_extension(script)
+    _validate_run_input(ctx, script, cad_file=cad_file)
+    if cad_file:
+        from agentcad.commands.import_cmd import import_cmd
+        ctx.invoke(
+            import_cmd,
+            file=script,
+            label=output,
+            init_flag=False,
+            auto_diff=auto_diff,
+            open_view=open_view,
+            no_daemon=no_daemon,
+        )
+        return
+
+    # Run the actual work inside a try/except so internal exceptions
+    # (e.g. `Bnd_Box is void` from compute_metrics on a degenerate
+    # shape) surface as JSON on stdout — preserving the docs' "All
+    # output is JSON" contract. Without this, daemon-routed runs emit
+    # only stderr heartbeats and exit non-zero with empty stdout, and
+    # the agent has no recovery signal.
+    try:
+        _run_impl(
+            ctx, script, output, render, export,
+            preview, auto_diff, open_view, params, dry_run, runtime, no_daemon,
+            validation_profile=validation_profile,
+        )
+    except SystemExit:
+        # Explicit sys.exit() calls inside _run_impl are intentional —
+        # they already emitted the proper JSON. Pass through.
+        raise
+    except ProjectError:
+        raise
+    except _RunTimeout as e:
+        recovered = _recover_committed_core(e, timeout_payload=e.payload)
+        if recovered is not None:
+            _emit_run(recovered)
+            return
+        _cleanup_uncommitted_reservation()
+        _emit_run(e.payload)
+        sys.exit(1)
+    except Exception as e:
+        recovered = _recover_committed_core(e)
+        if recovered is not None:
+            _emit_run(recovered)
+            return
+        _cleanup_uncommitted_reservation()
+        import traceback as _tb
+        _emit_run({
+            "command": "run",
+            "status": "error",
+            "message": f"Internal error: {type(e).__name__}: {e}",
+            "traceback": _tb.format_exc(),
+        })
+        sys.exit(1)
+    finally:
+        _clear_run_timeout()
+
+
+def _run_impl(
+    ctx, script, output, render, export, preview, auto_diff, open_view,
+    params, dry_run, runtime, no_daemon, validation_profile="deliverable",
+):
+    _t_total_start = time.perf_counter()
+    _timings = {}
+    _phase_tracker = _PhaseTracker(_timings)
+    _install_run_timeout(_phase_tracker)
+
+    def _mark(key, start):
+        _timings[key] = round((time.perf_counter() - start) * 1000)
+
+    def _start_phase(phase):
+        _phase_tracker.start(phase)
+        return time.perf_counter()
+
+    def _finish_phase(phase, start, key=None):
+        _mark(key or f"{phase}_ms", start)
+        _phase_tracker.complete(phase)
+        artifact = _PHASE_ARTIFACTS.get(phase)
+        lifecycle = _phase_tracker.lifecycle
+        if artifact and lifecycle is not None:
+            current = lifecycle.meta.get("artifacts", {}).get(artifact, {})
+            if current.get("status") == "pending":
+                lifecycle.set_artifact(artifact, "success")
+
+    def _heartbeat(message):
+        # Stderr progress line so callers can distinguish "still working"
+        # from "wedged" during long phases (preview render, GIF encode).
+        # One line per phase, always-on, lightweight. Stays on stderr so
+        # the JSON on stdout remains parseable. Issue #164. The elapsed
+        # suffix lets a watcher tell a slow phase from a stalled one.
+        elapsed = time.perf_counter() - _t_total_start
+        click.echo(f"[agentcad] {message} (+{elapsed:.1f}s)", err=True)
+
+
+    # Try routing through daemon. If reachable, this exits before returning.
+    label_option = "--output" if ctx.meta.get("run_legacy_output") else "--label"
+    argv = ["run", script]
+    if output is not None:
+        argv.extend([label_option, output])
+    if render:
+        argv.extend(["--render", render])
+    if export:
+        argv.extend(["--export", export])
+    if not preview:
+        argv.append("--no-preview")
+    if not auto_diff:
+        argv.append("--no-diff")
+    if not open_view:
+        argv.append("--no-view")
+    if params:
+        argv.extend(["--params", params])
+    if dry_run:
+        argv.append("--dry-run")
+    if runtime:
+        argv.extend(["--runtime", runtime])
+    if validation_profile != "deliverable":
+        argv.extend(["--validation-profile", validation_profile])
+    # Check syntax/capture locally before contacting a daemon or importing CAD.
+    _t = _start_phase("validation")
+
+    # An explicit --runtime naming an engine that is not installed is the
+    # real blocker regardless of project state; report it before the
+    # manifest check so a fresh folder does not hide it behind "run init".
+    if runtime:
+        from agentcad.runners import dispatch as _dispatch
+        ctx.meta["run_runtime"] = runtime
+        ctx.meta["run_runtime_source"] = "command"
+        try:
+            _dispatch.require_runtime_available(runtime)
+        except ValueError as e:
+            _emit_run({
+                "command": "run",
+                "status": "error",
+                "message": str(e),
+                "suggestion": _dispatch.PORT_TO_BUILD123D_HINT,
+            })
+            sys.exit(1)
+
+    manifest = load_manifest(command="run")
+
+    # Python version check (before CadQuery imports)
+    if sys.version_info >= (3, 13):
+        _emit_run({
+            "command": "run",
+            "status": "error",
+            "message": (
+                f"agentcad requires Python 3.10-3.12 "
+                f"(found {sys.version_info[0]}.{sys.version_info[1]}). "
+                f"CadQuery/OCP bindings are not available on newer Python versions."
+            ),
+        })
+        sys.exit(1)
+
+    script_path = Path(script)
+    # Dispatch to the right runner. Precedence:
+    #   --runtime flag > project mode > legacy source detection > default
+    from agentcad.runners import dispatch
+
+    try:
+        raw_source = script_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        _emit_run({
+            "command": "run", "status": "error", "error_kind": "script_unreadable",
+            "message": f"Cannot read Python script '{script}': {exc}",
+            "suggestion": f"Save {script} as a readable UTF-8 Python file, then rerun.",
+            "next_actions": [_run_retry_command(ctx)],
+        })
+        sys.exit(1)
+    project_default = dispatch.project_runtime()
+
+    try:
+        runtime_name, runtime_source = dispatch.select_runtime(
+            raw_source, override=runtime, project_default=project_default
+        )
+        ctx.meta["run_runtime"] = runtime_name
+        ctx.meta["run_runtime_source"] = runtime_source
+        if runtime_source == "project":
+            dispatch.validate_project_source(raw_source, runtime_name)
+        runner = dispatch.get_runner(runtime_name)
+    except ValueError as e:
+        # Ambiguous/mismatched source, unknown --runtime, or a runtime whose
+        # optional extra is not installed — surface cleanly.
+        payload = {
+            "command": "run",
+            "status": "error",
+            "message": str(e),
+            "runtime_source": ctx.meta.get("run_runtime_source", "detection"),
+        }
+        if dispatch.MISSING_CADQUERY_MESSAGE in str(e):
+            payload["suggestion"] = dispatch.PORT_TO_BUILD123D_HINT
+        _emit_run(payload)
+        sys.exit(1)
+
+    from agentcad.validate import validate_script
+
+    output_calls = (
+        ("show_object", "show_compound", "show_assembly")
+        if runtime_name == "build123d" else ("show_object",)
+    )
+    static_errors = validate_script(raw_source, output_calls, check_imports=False)
+    if static_errors:
+        _emit_run({
+            "command": "run",
+            "status": "validation_error",
+            "runtime": runtime_name,
+            "checks": static_errors,
+        })
+        sys.exit(1)
+
+    maybe_route_through_daemon(argv, no_daemon=no_daemon)
+
+    # Pre-execution import/helper validation (before version allocation)
+    validation_errors = runner.validate(raw_source)
+    if validation_errors:
+        _emit_run({
+            "command": "run",
+            "status": "validation_error",
+            "runtime": runtime_name,
+            "checks": validation_errors,
+        })
+        sys.exit(1)
+
+    # Parse --params before version allocation (errors should be cheap)
+    parsed_params = None
+    if params:
+        try:
+            parsed_params = _parse_params(params)
+        except ValueError as e:
+            _emit_run({
+                "command": "run",
+                "status": "error",
+                "message": str(e),
+            })
+            sys.exit(1)
+
+    # Validate --render spec before version allocation (errors should be cheap)
+    if render:
+        from agentcad.view_spec import parse_view_spec as _parse_view_spec
+        try:
+            _parse_view_spec(render)
+        except ValueError as e:
+            _emit_run({
+                "command": "run",
+                "status": "error",
+                "message": str(e),
+            })
+            sys.exit(1)
+    _finish_phase("validation", _t, "validation_ms")
+
+    # Spawn the daemon NOW — after the runner module is imported (so OCP is
+    # in memory) but BEFORE the script executes. The script may use boolean
+    # operations (cut/fuse/intersect) which initialize OCP's TBB thread
+    # pool; fork-after-TBB-init creates a child with TBB state but no
+    # actual worker threads, and the daemon would deadlock on its first
+    # parallel-OCP request.
+    maybe_spawn_daemon_for_next_run(no_daemon=no_daemon)
+
+    # Execute via the runner — returns a runtime-agnostic ExecutionResult.
+    _heartbeat(f"running script ({runtime_name})…")
+    _t = _start_phase("script_exec")
+    # stdout carries exactly one JSON document. Capture everything the script
+    # writes to stdout (print, raw fd 1, child processes, C extensions) and
+    # return it as script_output instead of letting it corrupt the JSON.
+    from agentcad.native_io import capture_stdout
+
+    with capture_stdout() as script_stdout:
+        result = runner.execute(raw_source, parsed_params)
+    if script_stdout.text:
+        ctx.meta["run_script_output"] = _bounded_script_output(script_stdout.text)
+
+    # Param validation errors (unknown names, CQGI InvalidParameterError) —
+    # surface them without consuming a version number.
+    if result.status == "validation_error":
+        _emit_run({
+            "command": "run",
+            "status": "error",
+            "runtime": runtime_name,
+            "message": result.exception,
+        })
+        sys.exit(1)
+
+    # Keep the current history snapshot for previous-version comparison. A
+    # directory reservation, not list length, allocates version numbers.
+    versions = manifest.get("versions", [])
+    label = output
+
+    if result.status == "execution_error":
+        from agentcad.versioning import reserve_version
+
+        error_msg = _enrich_error(result.exception)
+        guidance = _execution_error_guidance(
+            error_msg,
+            runtime=runtime_name,
+            source=raw_source,
+        )
+        if result.error_kind:
+            guidance["error_kind"] = result.error_kind
+        if dry_run:
+            _emit_run({
+                "command": "run", "status": "error", "runtime": runtime_name,
+                "message": error_msg, **guidance,
+            })
+            sys.exit(1)
+        reservation = reserve_version(get_project().build_root, label, suffix="_failed")
+        _record_failure(
+            script_path,
+            label,
+            reservation,
+            error_msg,
+            runtime=runtime_name,
+            runtime_source=runtime_source,
+            guidance=guidance,
+        )
+
+    # Success path
+    shape = result.native_shape
+    warnings = list(result.warnings)
+
+    _finish_phase("script_exec", _t, "script_exec_ms")
+
+    # Compute geometric metrics
+    _heartbeat("computing metrics…")
+    _t = _start_phase("metrics")
+    from agentcad.core_build import (
+        apply_validation,
+        reliability_warning,
+        validate_delivered_step,
+        validation_warning,
+    )
+    from agentcad.metrics import compute_metrics  # per-part metrics stay kernel-only
+
+    topo_shape_for_metrics = result.topo_shape
+    # The kernel check runs once, on the reloaded STEP (below); apply_validation
+    # folds that verdict in. Running BRepCheck here as well doubled the most
+    # expensive step of a run on imported parts.
+    metrics = compute_metrics(topo_shape_for_metrics, check_validity=False)
+
+    # Per-part breakdown (feedback #190): one entry per show_object() call.
+    # Metrics computed now so --dry-run also surfaces them; per-part previews
+    # are rendered later (below) only when the version directory is being
+    # materialized and --no-preview wasn't passed.
+    parts_output: list[dict] = []
+    groups_by_id: dict[str, dict] = {}
+    raw_parts = result.parts
+    output_type = result.output_type or (
+        "assembly" if len(raw_parts) > 1 else "single_part"
+    )
+    part_id_sources = _assign_part_identity(raw_parts)
+    part_groups: list[tuple[str | None, str | None]] = []
+    for p, (part_id, _id_source) in zip(raw_parts, part_id_sources):
+        group_id, group_name = _resolve_group_id(p.get("part_of"))
+        part_groups.append((group_id, group_name))
+        group_color = p.get("group_color")
+        if group_id is None:
+            if group_color is not None:
+                warnings.append(
+                    f"group_color ignored for ungrouped part {part_id!r}; "
+                    "set options.part_of to create a group."
+                )
+            continue
+
+        group = groups_by_id.setdefault(
+            group_id,
+            {"id": group_id, "name": group_name, "part_ids": []},
+        )
+        group["part_ids"].append(part_id)
+        if group_color is None:
+            continue
+        existing_color = group.get("color")
+        if existing_color is None:
+            group["color"] = group_color
+        elif existing_color != group_color:
+            warnings.append(
+                f"group {group_id!r} declares conflicting group_color values "
+                f"({existing_color!r} and {group_color!r}); using {existing_color!r}."
+            )
+
+    # A single show_object() result is the whole shape; its per-part kernel
+    # verdict is the delivered STEP's kernel layer, filled in after export.
+    single_part_is_whole = len(raw_parts) == 1 and _same_topo_shape(
+        raw_parts[0]["topo_shape"], topo_shape_for_metrics
+    )
+    for p, (part_id, id_source), (group_id, _group_name) in zip(
+        raw_parts, part_id_sources, part_groups,
+    ):
+        entry: dict = {"id": part_id, "id_source": id_source}
+        if p.get("name") is not None:
+            entry["name"] = p["name"]
+        group_color = groups_by_id.get(group_id, {}).get("color")
+        if group_id is not None:
+            entry["part_of"] = group_id
+        else:
+            entry["part_of"] = None
+        if p.get("color") is not None:
+            entry["color"] = p["color"]
+        elif group_id is not None and group_color is not None:
+            entry["color"] = group_color
+        if single_part_is_whole:
+            # Same shape as the whole: reuse the metrics computed above.
+            entry["metrics"] = dict(metrics)
+        else:
+            entry["metrics"] = compute_metrics(p["topo_shape"])
+        if p.get("validation_options"):
+            entry["validation_options"] = p["validation_options"]
+        parts_output.append(entry)
+    from agentcad.validation_guidance import part_connections, structure_checks, with_structure_checks
+    warnings.extend(part_connections(raw_parts, parts_output))
+    _finish_phase("metrics", _t, "metrics_ms")
+    groups_output = list(groups_by_id.values())
+
+    glb_parts = [
+        {**entry, "topo_shape": raw["topo_shape"]}
+        for entry, raw in zip(parts_output, raw_parts)
+    ]
+
+    if metrics.get("warnings"):
+        warnings.extend(metrics["warnings"])
+
+    # Export the deliverable to a staging file and validate what will ship.
+    # STEP export can change topology (a fused shared edge becomes two clean
+    # bodies), so the verdict is computed on the reloaded artifact, exactly
+    # as inspect, a slicer, or a grader will see it. On success the staged
+    # file is moved into the version directory instead of exported again.
+    _heartbeat("exporting and validating STEP…")
+    _t = _start_phase("export_step")
+    from agentcad.validation import (
+        ROUND_TRIP_SKIP_REASON,
+        round_trip_skip_layers,
+        validate_shape,
+    )
+    from agentcad.export_validation import compare_step_reports
+
+    # The in-memory source is validated only for the round-trip diagnostic.
+    # Above ROUND_TRIP_FULL_FACE_LIMIT faces the kernel check and the
+    # tessellation are left to the delivered STEP, which runs them anyway.
+    # export_step_ms stays the umbrella for this phase; the sub-timings
+    # below separate what the umbrella used to hide (source validation,
+    # the STEP write, the reload, and the delivered validation).
+    _sub = time.perf_counter()
+    source_validation = validate_shape(
+        topo_shape_for_metrics,
+        profile=validation_profile,
+        skip_layers=round_trip_skip_layers(topo_shape_for_metrics),
+        skip_reason=ROUND_TRIP_SKIP_REASON,
+    )
+    _timings["source_validation_ms"] = round((time.perf_counter() - _sub) * 1000)
+    staging_dir = Path(tempfile.mkdtemp(prefix="agentcad-stage-"))
+    staged_step = staging_dir / "output.step"
+    _heartbeat("writing STEP…")
+    _sub = time.perf_counter()
+    runner.export_step(shape, str(staged_step))
+    _timings["export_write_ms"] = round((time.perf_counter() - _sub) * 1000)
+    _heartbeat("validating the written STEP…")
+    validation = validate_delivered_step(
+        staged_step, profile=validation_profile, timings=_timings,
+        on_wait=lambda elapsed: _heartbeat(
+            f"validating the written STEP… worker still running ({elapsed:.0f}s)"
+        ),
+    )
+    step_round_trip = compare_step_reports(source_validation, validation)
+    if single_part_is_whole and parts_output:
+        _apply_kernel_layer(parts_output[0]["metrics"], validation)
+    # Expectations belong to each show_object result. Count the independently
+    # exported/reloaded part, since STEP serialization can change containers.
+    checks = []
+    for index, (raw, public) in enumerate(zip(raw_parts, parts_output)):
+        options = raw.get("validation_options", {})
+        if not any(key in options for key in ("expect_solids", "expect_shells")):
+            continue
+        if len(raw_parts) == 1:
+            structure = validation["layers"]["structure"]
+        else:
+            from agentcad.step_io import write_step_shape as export_topo_step
+            from agentcad.step_io import load_cad_shape
+            from agentcad.validation import _layer_structure
+            part_step = staging_dir / f"part_{index}.step"
+            try:
+                export_topo_step(raw["topo_shape"], part_step)
+                structure = _layer_structure(load_cad_shape(part_step))
+            except Exception as exc:
+                structure = {"status": "error", "message": f"Part structure could not be read: {exc}"}
+        part_checks = structure_checks(structure, options, part_id=public["id"])
+        part_status = ("fail" if any(c["passed"] is False for c in part_checks)
+                       else "error" if any(c["passed"] is None for c in part_checks) else "pass")
+        public["structure"] = {**structure, "status": part_status,
+                               "gates": True, "expectations": part_checks}
+        checks.extend(part_checks)
+    validation = with_structure_checks(validation, checks)
+    validation["step_round_trip"] = step_round_trip
+    if step_round_trip["matches"] is not True:
+        warnings.append(step_round_trip["message"])
+    # When the delivered file fails, say whether a loaded input already failed
+    # the same layer (inherited) or this run broke it (introduced), so the
+    # agent repairs the right thing. Only runs on a definite failure.
+    if validation.get("is_valid") is False and getattr(result, "loaded_files", None):
+        from agentcad.core_build import annotate_input_provenance
+
+        _sub = time.perf_counter()
+        annotate_input_provenance(
+            validation, result.loaded_files, profile=validation_profile,
+            # The injected loaders resolve relative paths from the process
+            # working directory, even when the script itself is elsewhere.
+            cwd=Path.cwd(),
+        )
+        _timings["input_validation_ms"] = round((time.perf_counter() - _sub) * 1000)
+    _finish_phase("export_step", _t, "export_step_ms")
+    apply_validation(metrics, validation)
+    undetermined = validation_warning(validation)
+    if undetermined:
+        warnings.append(undetermined)
+    unreliable = reliability_warning(metrics)
+    if unreliable:
+        warnings.append(unreliable)
+
+    def _discard_staged_step():
+        shutil.rmtree(staging_dir, ignore_errors=True)
+
+    # Final geometry validity is part of core CAD success. Stop before every
+    # visual/post-processing phase when it fails.
+    from agentcad.core_build import invalid_geometry_payload
+
+    invalid_response = invalid_geometry_payload("run", metrics, validation)
+    if invalid_response is not None:
+        invalid_response["runtime_source"] = runtime_source
+        _discard_staged_step()
+        if dry_run:
+            invalid_response.update({
+                "runtime": runtime_name,
+                "output_type": output_type,
+            })
+            if parts_output:
+                invalid_response["parts"] = parts_output
+            if groups_output:
+                invalid_response["groups"] = groups_output
+            if warnings:
+                invalid_response["warnings"] = warnings
+            _timings["total_ms"] = round(
+                (time.perf_counter() - _t_total_start) * 1000
+            )
+            invalid_response["timings"] = _timings
+            invalid_response["completed_phases"] = list(_phase_tracker.completed)
+            invalid_response["phase_timings"] = dict(_timings)
+            _emit_run(invalid_response)
+            sys.exit(1)
+        from agentcad.versioning import reserve_version
+
+        # The invalid response is the run's final word; carry the timings so
+        # a slow failure can still be attributed to a phase.
+        _timings["total_ms"] = round((time.perf_counter() - _t_total_start) * 1000)
+        invalid_response["timings"] = dict(_timings)
+        invalid_response["completed_phases"] = list(_phase_tracker.completed)
+        invalid_response["phase_timings"] = dict(_timings)
+        reservation = reserve_version(get_project().build_root, label, suffix="_invalid")
+        _record_invalid_geometry(
+            script_path,
+            label,
+            reservation,
+            runtime_name,
+            output_type,
+            metrics,
+            parts_output,
+            groups_output,
+            warnings,
+            invalid_response,
+        )
+
+    # Dry-run: return metrics only, no version/disk artifacts
+    if dry_run:
+        _discard_staged_step()
+        output_json = {
+            "command": "run",
+            "status": "success",
+            "runtime": runtime_name,
+            "output_type": output_type,
+            "metrics": metrics,
+            "validation": validation,
+            "validation_profile": validation_profile,
+        }
+        if parts_output:
+            output_json["parts"] = parts_output
+        if groups_output:
+            output_json["groups"] = groups_output
+        if warnings:
+            output_json["warnings"] = warnings
+        _timings["total_ms"] = round((time.perf_counter() - _t_total_start) * 1000)
+        output_json["timings"] = _timings
+        output_json["completed_phases"] = list(_phase_tracker.completed)
+        output_json["phase_timings"] = dict(_timings)
+        _emit_run(output_json)
+        return
+
+    # Atomically reserve a unique version directory before writing core files.
+    from agentcad.versioning import reserve_version
+
+    reservation = reserve_version(get_project().build_root, label)
+    _phase_tracker.reservation = reservation
+    version_num = reservation.number
+    dir_name = reservation.dir_name
+    version_dir = reservation.path
+
+    # Copy script into version directory
+    shutil.copy2(str(script_path), str(version_dir / "script.py"))
+
+    # Export STEP file via the runner (each engine has its own writer)
+    _heartbeat("exporting STEP…")
+    # The STEP was exported and validated before the version was reserved;
+    # move the staged artifact into place so the delivered bytes are the
+    # validated bytes.
+    shutil.move(str(staged_step), str(version_dir / "output.step"))
+    _discard_staged_step()
+    _phase_tracker.complete("export_step")
+
+    # Core build boundary: commit the valid STEP and its metadata before any
+    # optional export/render/diff/viewer work begins.
+    from agentcad.core_build import ArtifactLifecycle
+    from agentcad.versioning import commit_version
+
+    previous = _find_prev_success(versions)
+    has_previous_step = bool(
+        previous
+        and (get_project().version_dir(previous) / "output.step").exists()
+    )
+    comparison_enabled = auto_diff and has_previous_step
+    fast_path = not preview and not auto_diff and not open_view
+
+    def _artifact_state(enabled, skipped_message):
+        if enabled:
+            return {"status": "pending"}
+        return {"status": "skipped", "message": skipped_message}
+
+    created = datetime.now(timezone.utc).isoformat()
+    meta = {
+        "command": "run",
+        "status": "success",
+        "core": {
+            "status": "success",
+            "committed_at": created,
+        },
+        "version": version_num,
+        "label": label,
+        "runtime": runtime_name,
+        "runtime_source": runtime_source,
+        "output_type": output_type,
+        "created": created,
+        "script": f"{dir_name}/script.py",
+        "outputs": {
+            "step": f"{dir_name}/output.step",
+            "script": f"{dir_name}/script.py",
+        },
+        "metrics": metrics,
+        "validation": validation,
+        "validation_profile": validation_profile,
+        "artifacts": {
+            "mesh_exports": _artifact_state(
+                bool(export), "No optional mesh exports requested."
+            ),
+            "renders": _artifact_state(
+                bool(render), "No explicit renders requested."
+            ),
+            "preview": _artifact_state(
+                preview, "Preview disabled with --no-preview."
+            ),
+            "parts_preview": _artifact_state(
+                preview and bool(parts_output),
+                "No per-part preview work requested.",
+            ),
+            "viewer_glb": _artifact_state(
+                not fast_path,
+                "Viewer artifacts disabled on the core-only fast path.",
+            ),
+            "diff": _artifact_state(
+                auto_diff and has_previous_step,
+                (
+                    "Automatic comparison disabled with --no-diff."
+                    if not auto_diff
+                    else "No previous successful STEP to compare."
+                ),
+            ),
+            "viewer": _artifact_state(
+                not fast_path,
+                "Viewer artifacts disabled on the core-only fast path.",
+            ),
+            "browser": _artifact_state(
+                open_view, "Browser launch disabled with --no-view."
+            ),
+        },
+        "completed_phases": list(_phase_tracker.completed),
+        "phase_timings": dict(_timings),
+    }
+    if parts_output:
+        meta["parts"] = parts_output
+    if groups_output:
+        meta["groups"] = groups_output
+    if parsed_params:
+        meta["params"] = parsed_params
+    if warnings:
+        meta["warnings"] = warnings
+    if comparison_enabled:
+        meta["comparison_phases"] = ComparisonPhaseRecorder().entries
+
+    commit_version(reservation, meta, {
+        "version": version_num,
+        "label": label,
+        "status": "success",
+        "path": f"{dir_name}/",
+    }, advance_current=True)
+    lifecycle = ArtifactLifecycle(version_dir / "meta.json", meta)
+    _phase_tracker.lifecycle = lifecycle
+
+    comparison_recorder = None
+    if comparison_enabled:
+        def _comparison_phase_finished(name, entry):
+            duration_ms = entry.get("duration_ms")
+            if duration_ms is not None:
+                _timings[f"{name}_ms"] = duration_ms
+                # Leave a failed phase active until the caller either starts
+                # another comparison phase or the outer recovery boundary
+                # attributes an uncaught optional failure to this stage.
+                if entry.get("status") != "failed":
+                    _phase_tracker.complete(name)
+            lifecycle.meta["completed_phases"] = list(_phase_tracker.completed)
+            lifecycle.meta["phase_timings"] = dict(_timings)
+
+        comparison_recorder = ComparisonPhaseRecorder(
+            lifecycle.meta["comparison_phases"],
+            on_start=_phase_tracker.start,
+            on_finish=_comparison_phase_finished,
+            persist=lifecycle.persist,
+        )
+
+    # Export mesh formats if requested
+    exports_meta = {}
+    mesh_validation = {}
+    if export:
+        from agentcad.written_mesh import validate_written_mesh
+        from agentcad.export_validation import mesh_warnings
+        _heartbeat("exporting requested mesh formats…")
+        _t = _start_phase("export_mesh")
+        formats = parse_export_formats(export)
+        topo_shape = result.topo_shape
+        for fmt in formats:
+            if fmt == "stl":
+                stl_path = version_dir / "output.stl"
+                runner.export_stl(shape, str(stl_path))
+                exports_meta["stl"] = f"{dir_name}/output.stl"
+            elif fmt == "glb":
+                from agentcad.export import export_glb
+
+                glb_path = version_dir / "output.glb"
+                export_glb(topo_shape, str(glb_path), parts=glb_parts)
+                exports_meta["glb"] = f"{dir_name}/output.glb"
+            elif fmt == "obj":
+                from agentcad.export import export_obj
+
+                obj_path = version_dir / "output.obj"
+                export_obj(topo_shape, str(obj_path))
+                exports_meta["obj"] = f"{dir_name}/output.obj"
+            mesh_validation[fmt] = validate_written_mesh(version_dir / f"output.{fmt}")
+            warnings.extend(mesh_warnings({fmt: mesh_validation[fmt]}))
+            lifecycle.meta["outputs"].update(exports_meta)
+            lifecycle.meta["mesh_validation"] = mesh_validation
+            if warnings:
+                lifecycle.meta["warnings"] = warnings
+            lifecycle.persist()
+        lifecycle.meta["outputs"].update(exports_meta)
+        _finish_phase("export_mesh", _t, "export_mesh_ms")
+
+    # Render views if requested
+    renders_meta = {}
+    if render:
+        _heartbeat("rendering requested views…")
+        _t = _start_phase("render_views")
+        from agentcad.render import (
+            parse_view_spec, render_shape as render_shape_view,
+            render_shape_custom, render_views, ALL_VIEWS,
+        )
+
+        renders_dir = version_dir / "renders"
+        renders_dir.mkdir(parents=True, exist_ok=True)
+        topo_shape = result.topo_shape
+        view_specs = parse_view_spec(render)
+        for spec_type, spec_value in view_specs:
+            if spec_type == "named":
+                out_path = renders_dir / f"{spec_value}.png"
+                render_shape_view(topo_shape, spec_value, out_path, parts=glb_parts)
+                renders_meta[spec_value] = f"{dir_name}/renders/{spec_value}.png"
+            else:
+                az, el = spec_value
+                name = f"{int(az)}_{int(el)}"
+                out_path = renders_dir / f"{name}.png"
+                render_shape_custom(topo_shape, az, el, out_path, parts=glb_parts)
+                renders_meta[name] = f"{dir_name}/renders/{name}.png"
+        lifecycle.meta["renders"] = renders_meta
+        _finish_phase("render_views", _t, "render_views_ms")
+
+    # Visual feedback pipeline. Three tiers, decoupled by cost:
+    #   1. Default visual review (unless the core-only fast path is selected):
+    #      - GLB export
+    #      - diff PNGs against the most recent successful prior version
+    #      - unified viewer.html
+    #   2. --preview (default on, ~2-4s, agent reads these as image data):
+    #      - 4-view composite PNG
+    #      - per-part preview PNGs
+    #   3. On-demand only:
+    #      - turntable GIF — captured client-side via the viewer's Export
+    #        GIF button (three.js canvas + gif.js). Used for social posts,
+    #        not for agent iteration.
+    preview_meta = None
+    diff_meta = None
+    viewer_meta = None
+
+    # Tier 2: 4-view composite + per-part previews (gated by --preview)
+    if preview:
+        from agentcad.render import render_composite_4view
+
+        _heartbeat("rendering preview (4-view composite)…")
+        _t = _start_phase("preview")
+        preview_path = version_dir / "preview.png"
+        render_composite_4view(
+            topo_shape_for_metrics,
+            preview_path,
+            per_view_size=512,
+            parts=glb_parts,
+        )
+        preview_meta = f"{dir_name}/preview.png"
+        lifecycle.meta["preview"] = preview_meta
+        _finish_phase("preview", _t, "preview_ms")
+
+        # Per-part previews use the resolved part id, which is unique and
+        # path-safe even when display names are duplicated.
+        if parts_output:
+            from agentcad.render import render_shape as _render_part_iso
+
+            parts_dir = version_dir / "parts"
+            parts_dir.mkdir(exist_ok=True)
+            _n_parts = len(parts_output)
+            _heartbeat(
+                f"rendering per-part previews ({_n_parts} part"
+                f"{'s' if _n_parts != 1 else ''})…"
+            )
+            _t = _start_phase("parts_preview")
+            for entry, raw in zip(parts_output, raw_parts):
+                fname = f"{entry['id']}.png"
+                _render_part_iso(
+                    raw["topo_shape"],
+                    "iso",
+                    parts_dir / fname,
+                    parts=[{**entry, "topo_shape": raw["topo_shape"]}],
+                )
+                entry["preview"] = f"{dir_name}/parts/{fname}"
+            lifecycle.meta["parts"] = parts_output
+            _finish_phase("parts_preview", _t, "parts_preview_ms")
+
+    # Tier 1: GLB + diff + viewer.html normally run regardless of --preview.
+    # The explicit --no-preview --no-diff --no-view combination is the
+    # core-only fast path and bypasses this entire visual pipeline.
+    if not fast_path:
+        from agentcad.export import export_glb
+        from agentcad.commands.view import _render_unified
+
+    viewer_glb_path = version_dir / "output.glb"
+    if not fast_path and not viewer_glb_path.exists():
+        _heartbeat("exporting viewer GLB…")
+        _t = _start_phase("export_viewer_glb")
+        export_glb(topo_shape_for_metrics, str(viewer_glb_path), parts=glb_parts)
+        lifecycle.meta["viewer_glb"] = f"{dir_name}/output.glb"
+        _finish_phase("export_viewer_glb", _t, "export_viewer_glb_ms")
+    elif not fast_path:
+        lifecycle.meta["viewer_glb"] = f"{dir_name}/output.glb"
+        lifecycle.set_artifact("viewer_glb", "success")
+
+    prev = previous
+    previous_parts = []
+    part_changes = None
+    prev_shape = None
+    if comparison_recorder is not None:
+        from agentcad.render import (
+            render_comparison_source_views,
+            render_diff_side_by_side,
+            render_diff_overlay,
+        )
+        prev_step_path = get_project().version_dir(prev) / "output.step"
+        _heartbeat("loading prior comparison source…")
+        try:
+            with comparison_recorder.observe("source_loading"):
+                previous_meta_path = get_project().version_dir(prev) / "meta.json"
+                try:
+                    previous_parts = json.loads(
+                        previous_meta_path.read_text()
+                    ).get("parts", [])
+                except (OSError, json.JSONDecodeError):
+                    previous_parts = []
+                part_changes = _part_change_summary(
+                    previous_parts, parts_output, prev["label"]
+                )
+                from agentcad.step_io import load_cad_shape
+                prev_shape = load_cad_shape(prev_step_path)
+        except Exception as exc:
+            warnings.append(
+                "Could not load the prior comparison source: "
+                f"{type(exc).__name__}: {exc}"
+            )
+
+        if prev_shape is not None:
+            diff_meta = {"against": prev["label"]}
+            side_path = version_dir / "diff_side.png"
+            overlay_path = version_dir / "diff_overlay.png"
+            source_views = None
+
+            _heartbeat("rendering side-by-side comparison…")
+            try:
+                with comparison_recorder.observe("comparison_rendering"):
+                    source_views = render_comparison_source_views(
+                        prev_shape,
+                        topo_shape_for_metrics,
+                        per_view_size=512,
+                        parts_b=glb_parts,
+                    )
+                    render_diff_side_by_side(
+                        prev_shape, topo_shape_for_metrics,
+                        prev["label"], label, side_path,
+                        width=512, height=512,
+                        parts_b=glb_parts,
+                        source_views=source_views,
+                    )
+                diff_meta["side_by_side"] = f"{dir_name}/diff_side.png"
+            except Exception as exc:
+                warnings.append(
+                    "Could not render the side-by-side comparison: "
+                    f"{type(exc).__name__}: {exc}"
+                )
+
+            _heartbeat("computing 2D projection comparison…")
+            try:
+                if source_views is None:
+                    raise RuntimeError(
+                        "Comparison source views were unavailable."
+                    )
+                with comparison_recorder.observe("projection_comparison"):
+                    comparison = render_diff_overlay(
+                        prev_shape, topo_shape_for_metrics,
+                        prev["label"], label, overlay_path,
+                        width=1024, height=1024,
+                        parts_b=glb_parts,
+                        source_views=source_views,
+                    )
+                diff_meta["overlay"] = f"{dir_name}/diff_overlay.png"
+                diff_meta["projection_comparison"] = comparison
+            except Exception as exc:
+                warnings.append(
+                    "Could not compute the 2D projection comparison: "
+                    f"{type(exc).__name__}: {exc}"
+                )
+
+            solid_comparison = None
+            _heartbeat("computing exact 3D comparison…")
+            try:
+                from agentcad.solid_compare import (
+                    compare_solid_volumes_with_fallback,
+                )
+
+                solid_comparison = compare_solid_volumes_with_fallback(
+                    prev_shape,
+                    topo_shape_for_metrics,
+                    phase_recorder=comparison_recorder,
+                )
+                diff_meta["comparison_3d"] = solid_comparison.data
+            except Exception as exc:
+                warnings.append(
+                    "Could not compute the exact 3D comparison: "
+                    f"{type(exc).__name__}: {exc}"
+                )
+
+            if solid_comparison is not None and solid_comparison.available:
+                _heartbeat("exporting 3D difference artifacts…")
+                try:
+                    from agentcad.solid_compare import (
+                        write_solid_comparison_artifacts,
+                    )
+
+                    with comparison_recorder.observe(
+                        "difference_artifact_export"
+                    ) as phase:
+                        volume_glb_path = version_dir / "diff_volume.glb"
+                        volume_png_path = version_dir / "diff_volume.png"
+                        written = write_solid_comparison_artifacts(
+                            solid_comparison,
+                            volume_glb_path,
+                            volume_png_path,
+                        )
+                        if not written:
+                            phase.status = "unavailable"
+                            phase.message = (
+                                "3D difference artifacts were not available."
+                            )
+                    if written:
+                        diff_meta["volume_glb"] = (
+                            f"{dir_name}/diff_volume.glb"
+                        )
+                        diff_meta["volume_png"] = (
+                            f"{dir_name}/diff_volume.png"
+                        )
+                except Exception as exc:
+                    warnings.append(
+                        "Could not write 3D volume comparison artifacts: "
+                        f"{type(exc).__name__}: {exc}"
+                    )
+            else:
+                comparison_recorder.skip(
+                    "difference_artifact_export",
+                    "Exact 3D comparison produced no exportable geometry.",
+                )
+
+        comparison_recorder.finalize_pending(
+            "Skipped because an earlier comparison phase was unavailable."
+        )
+        useful_diff = bool(diff_meta and any(
+            key in diff_meta
+            for key in (
+                "side_by_side",
+                "overlay",
+                "projection_comparison",
+                "comparison_3d",
+            )
+        ))
+        if useful_diff:
+            lifecycle.meta["diff"] = diff_meta
+            lifecycle.set_artifact("diff", "success")
+        else:
+            lifecycle.set_artifact(
+                "diff",
+                "unavailable",
+                message="Comparison artifacts could not be generated.",
+            )
+
+    # Resolve the prior version's GLB for the viewer's side-by-side / overlay
+    # modes. Decoupled from diff_meta: even if the diff PNG render failed,
+    # we still want the 3D comparison to work in the viewer.
+    prev_glb_path = None
+    if auto_diff and prev is not None:
+        candidate = get_project().version_dir(prev) / "output.glb"
+        if candidate.exists():
+            prev_glb_path = candidate
+        else:
+            prev_step_path = get_project().version_dir(prev) / "output.step"
+            if prev_step_path.exists():
+                try:
+                    from agentcad.step_io import load_cad_shape as _load
+                    prev_shape = _load(prev_step_path)
+                    export_glb(prev_shape, str(candidate))
+                    prev_glb_path = candidate
+                except Exception:
+                    prev_glb_path = None
+
+    lifecycle.meta["viewer_context"] = {
+        "version": version_num, "label": label,
+        "models": {
+            "a": {"version": prev["version"], "label": prev["label"]} if prev_glb_path else {
+                "version": version_num, "label": label,
+            },
+            **({"b": {"version": version_num, "label": label}} if prev_glb_path else {}),
+        },
+    }
+    viewer_path = version_dir / "viewer.html"
+    if not fast_path:
+        _heartbeat("writing viewer.html…")
+        def _write_viewer():
+            _render_unified(
+                viewer_path,
+                glb_a=prev_glb_path or viewer_glb_path,
+                glb_b=viewer_glb_path if prev_glb_path else None,
+                label_a=prev["label"] if prev_glb_path else label,
+                label_b=label if prev_glb_path else "",
+                default_mode="side-by-side" if prev_glb_path else "single-a",
+                preview_png=version_dir / "preview.png" if preview_meta else None,
+                diff_side_png=(
+                    version_dir / "diff_side.png"
+                    if diff_meta and diff_meta.get("side_by_side")
+                    else None
+                ),
+                diff_overlay_png=(
+                    version_dir / "diff_overlay.png"
+                    if diff_meta and diff_meta.get("overlay")
+                    else None
+                ),
+                diff_volume_png=(
+                    version_dir / "diff_volume.png"
+                    if diff_meta and diff_meta.get("volume_png")
+                    else None
+                ),
+                parts=parts_output,
+                parts_model="b" if prev_glb_path else "a",
+                part_changes=part_changes,
+                groups=groups_output,
+                viewer_context=lifecycle.meta["viewer_context"],
+                previous_parts=previous_parts,
+            )
+
+        if comparison_recorder is not None:
+            with comparison_recorder.observe("viewer_generation"):
+                _write_viewer()
+        else:
+            _t = _start_phase("viewer_generation")
+            _write_viewer()
+            _finish_phase(
+                "viewer_generation", _t, "viewer_generation_ms"
+            )
+        viewer_meta = f"{dir_name}/viewer.html"
+        viewer_glb_meta = f"{dir_name}/output.glb"
+        lifecycle.meta["viewer"] = viewer_meta
+        lifecycle.meta["viewer_glb"] = viewer_glb_meta
+        lifecycle.set_artifact("viewer", "success")
+
+    project_viewer = None
+    if viewer_meta:
+        from agentcad.project_viewer import handoff
+        project_viewer = handoff(get_project().build_root, version_dir, open_view=open_view)
+
+    viewer_opened = bool(project_viewer and project_viewer.get("opened"))
+    if open_view:
+        try:
+            reused = bool(project_viewer and project_viewer.get("reused"))
+            lifecycle.set_artifact(
+                "browser",
+                "success" if viewer_opened or reused else "unavailable",
+                message=None if viewer_opened or reused else (
+                    (project_viewer or {}).get("message", "Browser did not open.")
+                ),
+            )
+        except Exception as exc:
+            warnings.append(f"Could not open the review viewer: {type(exc).__name__}: {exc}")
+            lifecycle.set_artifact(
+                "browser",
+                "failed",
+                message=f"{type(exc).__name__}: {exc}",
+            )
+
+    # Finalize metadata only; the successful manifest entry was committed at
+    # the core boundary and is never rolled back by optional artifact work.
+    if parts_output:
+        lifecycle.meta["parts"] = parts_output
+    if groups_output:
+        lifecycle.meta["groups"] = groups_output
+    if parsed_params:
+        lifecycle.meta["params"] = parsed_params
+    if warnings:
+        lifecycle.meta["warnings"] = warnings
+    if preview_meta:
+        lifecycle.meta["preview"] = preview_meta
+    if diff_meta:
+        lifecycle.meta["diff"] = diff_meta
+    if viewer_meta:
+        lifecycle.meta["viewer"] = viewer_meta
+        lifecycle.meta["viewer_glb"] = viewer_glb_meta
+    if renders_meta:
+        lifecycle.meta["renders"] = renders_meta
+    lifecycle.meta["completed_phases"] = list(_phase_tracker.completed)
+    lifecycle.meta["phase_timings"] = dict(_timings)
+    lifecycle.finish_pending(message="Optional artifact was not needed.")
+
+    hint = None
+    if viewer_meta:
+        if prev_glb_path:
+            hint = (
+                f"Review {viewer_meta} in the browser — A is the previous run, "
+                f"B is this run, with side-by-side and overlay ready."
+            )
+        else:
+            hint = f"Review {viewer_meta} in the browser."
+
+    # Output success JSON
+    output_json = {
+        "command": "run",
+        "status": "success",
+        "core": lifecycle.meta["core"],
+        "artifacts": lifecycle.meta["artifacts"],
+        "runtime": runtime_name,
+        "output_type": output_type,
+        "version": version_num,
+        "label": label,
+        "outputs": {
+            "step": f"{dir_name}/output.step",
+            "script": f"{dir_name}/script.py",
+            **exports_meta,
+        },
+    }
+    output_json["metrics"] = metrics
+    output_json["validation"] = validation
+    output_json["validation_profile"] = validation_profile
+    if mesh_validation:
+        output_json["mesh_validation"] = mesh_validation
+    if parts_output:
+        output_json["parts"] = parts_output
+    if groups_output:
+        output_json["groups"] = groups_output
+    if parsed_params:
+        output_json["params"] = parsed_params
+    if warnings:
+        output_json["warnings"] = warnings
+    if comparison_recorder is not None:
+        output_json["comparison_phases"] = comparison_recorder.entries
+    if preview_meta:
+        output_json["preview"] = preview_meta
+    if diff_meta:
+        output_json["diff"] = diff_meta
+    if viewer_meta:
+        output_json["viewer"] = viewer_meta
+        output_json["viewer_glb"] = viewer_glb_meta
+        output_json["viewer_opened"] = viewer_opened
+    if renders_meta:
+        output_json["renders"] = renders_meta
+    if hint:
+        if project_viewer and project_viewer.get("url"):
+            hint = f"Live project: {project_viewer['url']} — updates automatically. Version snapshot: {hint}"
+        output_json["hint"] = hint
+    if project_viewer:
+        output_json["project_viewer"] = project_viewer
+    _timings["total_ms"] = round((time.perf_counter() - _t_total_start) * 1000)
+    output_json["timings"] = _timings
+    output_json["completed_phases"] = list(_phase_tracker.completed)
+    output_json["phase_timings"] = dict(_timings)
+    _emit_run(output_json)

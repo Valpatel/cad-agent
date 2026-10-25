@@ -1,0 +1,66 @@
+from __future__ import annotations
+
+import ast
+
+from scripts import check_architecture_boundaries as boundaries
+from tests.architecture_source_helpers import _function_span, _imports
+
+
+def test_architecture_checker_tracks_export_gerber_modules() -> None:
+    assert "kicad_mcp.export.gerber" in boundaries.DOMAIN_MODULES
+    assert "kicad_mcp.export.gerber" in boundaries.PURE_HELPERS
+    assert "kicad_mcp.tools.export_gerber" in boundaries.DOMAIN_MODULES
+
+
+def test_export_gerber_adapter_does_not_import_monolith() -> None:
+    adapter = boundaries.SRC_ROOT / "kicad_mcp" / "tools" / "export_gerber.py"
+    assert adapter.exists()
+    assert "kicad_mcp.tools.export" not in _imports(adapter)
+
+
+def test_export_gerber_register_stays_below_100_lines() -> None:
+    adapter = boundaries.SRC_ROOT / "kicad_mcp" / "tools" / "export_gerber.py"
+    assert adapter.exists()
+    assert _function_span(adapter, "register") <= 100
+    assert boundaries.REGISTER_LINE_LIMITS["kicad_mcp.tools.export_gerber"] == 100
+
+
+def test_export_composition_root_no_longer_owns_gerber_tools() -> None:
+    root = boundaries.SRC_ROOT / "kicad_mcp" / "tools" / "export.py"
+    tree = ast.parse(root.read_text(encoding="utf-8"), filename=str(root))
+    register_node = next(
+        node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "register"
+    )
+    nested = {
+        node.name
+        for node in register_node.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+    assert nested.isdisjoint({"_export_gerber", "export_gerber"})
+
+
+def test_manufacturing_package_uses_shared_gerber_service() -> None:
+    root = boundaries.SRC_ROOT / "kicad_mcp" / "tools" / "export.py"
+    tree = ast.parse(root.read_text(encoding="utf-8"), filename=str(root))
+    register_node = next(
+        node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "register"
+    )
+    service_call = next(
+        node.value
+        for node in register_node.body
+        if isinstance(node, ast.Assign)
+        and isinstance(node.value, ast.Call)
+        and isinstance(node.value.func, ast.Name)
+        and node.value.func.id == "ExportManufacturingPackageService"
+    )
+    export_gerber = next(
+        keyword.value for keyword in service_call.keywords if keyword.arg == "export_gerber"
+    )
+    calls = [node for node in ast.walk(export_gerber) if isinstance(node, ast.Call)]
+    assert any(
+        isinstance(call.func, ast.Attribute)
+        and isinstance(call.func.value, ast.Name)
+        and call.func.value.id == "gerber_service"
+        and call.func.attr == "export"
+        for call in calls
+    )

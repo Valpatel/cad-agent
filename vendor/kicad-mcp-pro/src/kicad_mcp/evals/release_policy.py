@@ -1,0 +1,670 @@
+"""Risk-based live-model assurance and approved-baseline reuse policy."""
+
+from __future__ import annotations
+
+import ast
+import copy
+import fnmatch
+import hashlib
+import os
+import re
+import subprocess
+from dataclasses import dataclass
+from datetime import date
+from pathlib import Path
+from shutil import which
+from typing import Any, Literal, cast
+
+import yaml
+
+from ..path_safety import resolve_repo_or_temp
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
+AssuranceMode = Literal["none", "smoke", "full"]
+
+_SHA40 = re.compile(r"^[0-9a-f]{40}$")
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_POLICY_KEYS = frozenset(
+    {
+        "schema_version",
+        "baseline_max_age_days",
+        "release_pull_request_head",
+        "release_tag_pattern",
+        "minimum_smoke_configurations",
+        "smoke_configurations",
+        "agent_contract_paths",
+    }
+)
+_BASELINE_KEYS = frozenset(
+    {
+        "schema_version",
+        "approved",
+        "approved_at",
+        "source_revision",
+        "agent_contract_digest",
+        "evidence",
+        "minimum_repeats",
+        "required_configurations",
+        "configurations",
+    }
+)
+
+
+class ReleasePolicyError(ValueError):
+    """Raised when release-assurance policy or baseline metadata is invalid."""
+
+
+@dataclass(frozen=True, slots=True)
+class ReleasePolicyConfig:
+    """Versioned risk-classification policy consumed by release automation."""
+
+    baseline_max_age_days: int
+    release_pull_request_head: str
+    release_tag_pattern: str
+    minimum_smoke_configurations: int
+    smoke_configurations: tuple[str, ...]
+    agent_contract_paths: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class BaselineMetadata:
+    """Audit metadata required to reuse an approved live-model baseline."""
+
+    approved: bool
+    approved_at: date | None
+    source_revision: str | None
+    agent_contract_digest: str | None
+    workflow_run_id: int | None
+    aggregate_sha256: str | None
+    required_configurations: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class ReleasePolicyDecision:
+    """One deterministic assurance decision for a release candidate."""
+
+    mode: AssuranceMode
+    reason: str
+    baseline_age_days: int | None
+    current_contract_digest: str
+    baseline_contract_digest: str | None
+    required_configurations: tuple[str, ...]
+    smoke_configurations: tuple[str, ...]
+    release_base_ref: str | None
+    release_contract_changed: bool | None
+    contract_changed_paths: tuple[str, ...] = ()
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "mode": self.mode,
+            "reason": self.reason,
+            "baseline_age_days": self.baseline_age_days,
+            "current_contract_digest": self.current_contract_digest,
+            "baseline_contract_digest": self.baseline_contract_digest,
+            "required_configurations": list(self.required_configurations),
+            "smoke_configurations": list(self.smoke_configurations),
+            "release_base_ref": self.release_base_ref,
+            "release_contract_changed": self.release_contract_changed,
+            "contract_changed_paths": list(self.contract_changed_paths),
+        }
+
+
+def _mapping(value: object, description: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise ReleasePolicyError(f"{description} must be a mapping.")
+    return cast(dict[str, Any], value)
+
+
+def _string_list(value: object, description: str) -> tuple[str, ...]:
+    if not isinstance(value, list) or not value:
+        raise ReleasePolicyError(f"{description} must be a non-empty list of strings.")
+    items: list[str] = []
+    for item in value:
+        if not isinstance(item, str) or not item.strip():
+            raise ReleasePolicyError(f"{description} must contain non-empty strings.")
+        items.append(item.strip())
+    if len(items) != len(set(items)):
+        raise ReleasePolicyError(f"{description} must not contain duplicates.")
+    return tuple(items)
+
+
+def _validate_release_tag_pattern(pattern: object) -> str:
+    if not isinstance(pattern, str) or not pattern.strip():
+        raise ReleasePolicyError("release_tag_pattern must be a non-empty string.")
+    cleaned = pattern.strip()
+    if any(character.isspace() for character in cleaned):
+        raise ReleasePolicyError("release_tag_pattern must not contain whitespace.")
+    return cleaned
+
+
+def _validate_contract_paths(paths: tuple[str, ...]) -> None:
+    for pattern in paths:
+        if pattern.startswith("/") or ".." in Path(pattern).parts:
+            raise ReleasePolicyError(f"Unsafe agent contract path pattern: {pattern!r}.")
+
+
+def load_release_policy(path: str | Path) -> ReleasePolicyConfig:
+    """Load one strict versioned release-assurance policy."""
+    raw = _mapping(
+        yaml.safe_load(
+            resolve_repo_or_temp(path, repo_root=_REPO_ROOT).read_text(encoding="utf-8")
+        ),
+        "Release policy",
+    )
+    unknown = sorted(set(raw) - _POLICY_KEYS)
+    if unknown:
+        raise ReleasePolicyError(f"Release policy has unsupported fields: {unknown}.")
+    if raw.get("schema_version") != 1:
+        raise ReleasePolicyError("Release policy schema_version must be 1.")
+
+    max_age = raw.get("baseline_max_age_days")
+    if isinstance(max_age, bool) or not isinstance(max_age, int) or max_age < 1:
+        raise ReleasePolicyError("baseline_max_age_days must be an integer >= 1.")
+    release_head = raw.get("release_pull_request_head")
+    if not isinstance(release_head, str) or not release_head.strip():
+        raise ReleasePolicyError("release_pull_request_head must be a non-empty string.")
+    release_tag_pattern = _validate_release_tag_pattern(raw.get("release_tag_pattern"))
+
+    minimum_smoke = raw.get("minimum_smoke_configurations")
+    if isinstance(minimum_smoke, bool) or not isinstance(minimum_smoke, int) or minimum_smoke < 1:
+        raise ReleasePolicyError("minimum_smoke_configurations must be an integer >= 1.")
+    smoke_configurations = _string_list(raw.get("smoke_configurations"), "smoke_configurations")
+    if minimum_smoke > len(smoke_configurations):
+        raise ReleasePolicyError("minimum_smoke_configurations cannot exceed smoke_configurations.")
+    paths = _string_list(raw.get("agent_contract_paths"), "agent_contract_paths")
+    _validate_contract_paths(paths)
+
+    return ReleasePolicyConfig(
+        baseline_max_age_days=max_age,
+        release_pull_request_head=release_head.strip(),
+        release_tag_pattern=release_tag_pattern,
+        minimum_smoke_configurations=minimum_smoke,
+        smoke_configurations=smoke_configurations,
+        agent_contract_paths=paths,
+    )
+
+
+def load_baseline_metadata(path: str | Path) -> BaselineMetadata:
+    raw = _mapping(
+        yaml.safe_load(
+            resolve_repo_or_temp(path, repo_root=_REPO_ROOT).read_text(encoding="utf-8")
+        ),
+        "Baseline",
+    )
+    unknown = sorted(set(raw) - _BASELINE_KEYS)
+    if unknown:
+        raise ReleasePolicyError(f"Baseline has unsupported fields: {unknown}.")
+    if raw.get("schema_version") != 1:
+        raise ReleasePolicyError("Baseline schema_version must be 1.")
+    approved = raw.get("approved")
+    if not isinstance(approved, bool):
+        raise ReleasePolicyError("Baseline approved must be boolean.")
+    required = _string_list(raw.get("required_configurations"), "required_configurations")
+    _mapping(raw.get("configurations", {}), "Baseline configurations")
+
+    approved_at: date | None = None
+    source_revision: str | None = None
+    contract_digest: str | None = None
+    workflow_run_id: int | None = None
+    aggregate_sha256: str | None = None
+
+    if approved:
+        (
+            approved_at,
+            source_revision,
+            contract_digest,
+            workflow_run_id,
+            aggregate_sha256,
+        ) = _approved_baseline_fields(raw)
+
+    return BaselineMetadata(
+        approved=approved,
+        approved_at=approved_at,
+        source_revision=source_revision,
+        agent_contract_digest=contract_digest,
+        workflow_run_id=workflow_run_id,
+        aggregate_sha256=aggregate_sha256,
+        required_configurations=required,
+    )
+
+
+def _approved_baseline_fields(raw: dict[str, Any]) -> tuple[date, str, str, int, str]:
+    approved_at_raw = raw.get("approved_at")
+    if not isinstance(approved_at_raw, str):
+        raise ReleasePolicyError("Approved baseline approved_at must be an ISO date.")
+    try:
+        approved_at = date.fromisoformat(approved_at_raw)
+    except ValueError as exc:
+        raise ReleasePolicyError("Approved baseline approved_at must be an ISO date.") from exc
+
+    source_revision_raw = raw.get("source_revision")
+    if not isinstance(source_revision_raw, str) or not _SHA40.fullmatch(source_revision_raw):
+        raise ReleasePolicyError("Approved baseline source_revision must be a lowercase Git SHA.")
+    source_revision = source_revision_raw
+
+    digest_raw = raw.get("agent_contract_digest")
+    if not isinstance(digest_raw, str) or not _SHA256.fullmatch(digest_raw):
+        raise ReleasePolicyError(
+            "Approved baseline agent_contract_digest must be a lowercase SHA-256."
+        )
+    contract_digest = digest_raw
+
+    evidence = _mapping(raw.get("evidence"), "Approved baseline evidence")
+    run_id = evidence.get("workflow_run_id")
+    if isinstance(run_id, bool) or not isinstance(run_id, int) or run_id < 1:
+        raise ReleasePolicyError("Approved baseline evidence workflow_run_id must be positive.")
+    workflow_run_id = run_id
+    aggregate_raw = evidence.get("aggregate_sha256")
+    if not isinstance(aggregate_raw, str) or not _SHA256.fullmatch(aggregate_raw):
+        raise ReleasePolicyError(
+            "Approved baseline evidence aggregate_sha256 must be a lowercase SHA-256."
+        )
+    aggregate_sha256 = aggregate_raw
+
+    return approved_at, source_revision, contract_digest, workflow_run_id, aggregate_sha256
+
+
+def _git(repo_root: Path, *arguments: str, text: bool = True) -> str | bytes:
+    git = which("git")
+    if git is None:
+        raise ReleasePolicyError("git executable is unavailable.")
+    environment = os.environ.copy()
+    for variable in (
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+        "GIT_COMMON_DIR",
+        "GIT_DIR",
+        "GIT_INDEX_FILE",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_WORK_TREE",
+    ):
+        environment.pop(variable, None)
+    result = subprocess.run(
+        [git, *arguments],
+        cwd=repo_root,
+        check=False,
+        capture_output=True,
+        text=text,
+        env=environment,
+    )
+    if result.returncode != 0:
+        stderr = result.stderr.strip() if text else result.stderr.decode("utf-8", "replace").strip()
+        raise ReleasePolicyError(f"Git command failed: {' '.join(arguments)}: {stderr}")
+    return cast(str | bytes, result.stdout)
+
+
+def _matches_contract(path: str, policy: ReleasePolicyConfig) -> bool:
+    return any(fnmatch.fnmatchcase(path, pattern) for pattern in policy.agent_contract_paths)
+
+
+_ACTION_PIN_RE = re.compile(rb"(uses:\s*\S+)@[0-9a-f]{40}\b")
+
+
+def _normalize_workflow_action_pins(path: str, content: bytes) -> bytes:
+    """Strip pinned action SHAs from workflow YAML before hashing.
+
+    Bumping a `uses: owner/action@<sha>` pin (dependency-bot CI maintenance)
+    does not change agent-facing tool/prompt/adapter behavior, so it should
+    not trip the live-model contract-change gate. Any other edit to these
+    files (job steps, thresholds, script invocations) still changes the
+    digest normally.
+    """
+    if not path.startswith(".github/workflows/"):
+        return content
+    return _ACTION_PIN_RE.sub(rb"\1", content)
+
+
+# Intentionally narrow: this is a reviewed, non-model-facing maintenance
+# exception, NOT an AST-based blanket bypass for agent adapter changes.
+# Removing this unused *name* from an already-executed from-import leaves the
+# module import and all remaining bindings intact. Preserve the raw digest.
+_VERIFIED_UNUSED_IMPORT = (
+    "scripts/run_live_model_eval.py",
+    "kicad_mcp.evals.live_runner",
+    "EvidenceSanitizationError",
+)
+
+
+def _approved_nonfunctional_import_removal(
+    path: str, old_content: bytes, new_content: bytes
+) -> bool:
+    """Accept only the reviewed, unused alias removal from an existing import.
+
+    Never normalize arbitrary Python, import side effects, comments, prompts,
+    or changes to any other model-facing file. AST must otherwise be identical.
+    """
+    file_path, module, alias = _VERIFIED_UNUSED_IMPORT
+    if path != file_path:
+        return False
+    try:
+        previous = ast.parse(old_content.decode("utf-8"))
+        current = ast.parse(new_content.decode("utf-8"))
+    except (UnicodeDecodeError, SyntaxError):
+        return False
+    # Reflection can observe even an unused module-global name; fail closed.
+    reflective_calls = {"eval", "exec", "globals", "locals", "vars", "dir"}
+    for node in ast.walk(previous):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+            if node.func.id in reflective_calls:
+                return False
+        if isinstance(node, ast.Name) and node.id == alias and isinstance(node.ctx, ast.Load):
+            return False
+    canonical_previous = copy.deepcopy(previous)
+    candidates = [
+        node
+        for node in canonical_previous.body
+        if isinstance(node, ast.ImportFrom)
+        and node.level == 0
+        and node.module == module
+        and len(node.names) > 1
+        and sum(name.name == alias and name.asname is None for name in node.names) == 1
+    ]
+    if len(candidates) != 1:
+        return False
+    candidates[0].names = [name for name in candidates[0].names if name.name != alias]
+    return ast.dump(canonical_previous, include_attributes=False) == ast.dump(
+        current, include_attributes=False
+    )
+
+
+def _contract_changed_paths(
+    repo_root: str | Path,
+    policy: ReleasePolicyConfig,
+    *,
+    base_ref: str,
+    head_ref: str,
+) -> tuple[str, ...]:
+    """List actual model-facing file differences, including added/deleted files."""
+    root = Path(repo_root)
+    paths = cast(str, _git(root, "diff", "--name-only", "--no-renames", base_ref, head_ref))
+    return tuple(sorted(path for path in paths.splitlines() if _matches_contract(path, policy)))
+
+
+def _only_verified_nonfunctional_release_diff(
+    repo_root: str | Path, policy: ReleasePolicyConfig, *, base_ref: str, head_ref: str
+) -> bool:
+    paths = _contract_changed_paths(repo_root, policy, base_ref=base_ref, head_ref=head_ref)
+    if paths != (_VERIFIED_UNUSED_IMPORT[0],):
+        return False
+    root = Path(repo_root)
+    try:
+        original = cast(bytes, _git(root, "show", f"{base_ref}:{paths[0]}", text=False))
+        candidate = cast(bytes, _git(root, "show", f"{head_ref}:{paths[0]}", text=False))
+    except ReleasePolicyError:
+        return False
+    return _approved_nonfunctional_import_removal(paths[0], original, candidate)
+
+
+def compute_agent_contract_digest(
+    repo_root: str | Path,
+    policy: ReleasePolicyConfig,
+    *,
+    ref: str = "HEAD",
+) -> str:
+    """Hash configured tracked file paths at one exact Git revision."""
+    root = Path(repo_root)
+    listed = cast(str, _git(root, "ls-tree", "-r", "--name-only", ref))
+    paths = sorted(path for path in listed.splitlines() if _matches_contract(path, policy))
+    if not paths:
+        raise ReleasePolicyError("Agent contract path set matched no tracked files.")
+
+    digest = hashlib.sha256()
+    for path in paths:
+        content = cast(bytes, _git(root, "show", f"{ref}:{path}", text=False))
+        content = _normalize_workflow_action_pins(path, content)
+        encoded_path = path.encode("utf-8")
+        digest.update(encoded_path)
+        digest.update(b"\0")
+        digest.update(str(len(content)).encode("ascii"))
+        digest.update(b"\0")
+        digest.update(content)
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def resolve_previous_release_ref(
+    repo_root: str | Path,
+    policy: ReleasePolicyConfig,
+    *,
+    candidate_ref: str = "HEAD",
+) -> str:
+    """Resolve the latest reachable server release before the candidate commit."""
+    root = Path(repo_root)
+    candidate_commit = cast(str, _git(root, "rev-parse", f"{candidate_ref}^{{commit}}")).strip()
+    tags = cast(
+        str,
+        _git(
+            root,
+            "tag",
+            "--merged",
+            candidate_ref,
+            "--list",
+            policy.release_tag_pattern,
+            "--sort=-version:refname",
+        ),
+    )
+    for tag in tags.splitlines():
+        tag = tag.strip()
+        if not tag:
+            continue
+        tag_commit = cast(str, _git(root, "rev-parse", f"{tag}^{{commit}}")).strip()
+        if tag_commit == candidate_commit:
+            continue
+        return tag
+    raise ReleasePolicyError(
+        f"Unable to resolve previous server release matching {policy.release_tag_pattern!r}."
+    )
+
+
+def contract_changed_between(
+    repo_root: str | Path,
+    policy: ReleasePolicyConfig,
+    *,
+    base_ref: str,
+    head_ref: str,
+) -> bool:
+    """Return true when configured model-facing content differs between revisions."""
+    if not base_ref or set(base_ref) == {"0"}:
+        return True
+    try:
+        base_digest = compute_agent_contract_digest(repo_root, policy, ref=base_ref)
+        head_digest = compute_agent_contract_digest(repo_root, policy, ref=head_ref)
+    except ReleasePolicyError:
+        return True
+    return base_digest != head_digest
+
+
+def evaluate_push_assurance(
+    *,
+    repo_root: str | Path,
+    policy_path: str | Path,
+    baseline_path: str | Path,
+    base_ref: str,
+    head_ref: str,
+) -> ReleasePolicyDecision:
+    """Run smoke on main only when the configured agent contract changed."""
+    policy = load_release_policy(policy_path)
+    baseline = load_baseline_metadata(baseline_path)
+    current_digest = compute_agent_contract_digest(repo_root, policy, ref=head_ref)
+    changed = contract_changed_between(
+        repo_root,
+        policy,
+        base_ref=base_ref,
+        head_ref=head_ref,
+    )
+    return ReleasePolicyDecision(
+        mode="smoke" if changed else "none",
+        reason="agent_contract_changed_on_main" if changed else "no_agent_contract_change",
+        baseline_age_days=None,
+        current_contract_digest=current_digest,
+        baseline_contract_digest=baseline.agent_contract_digest,
+        required_configurations=baseline.required_configurations,
+        smoke_configurations=policy.smoke_configurations,
+        release_base_ref=None,
+        release_contract_changed=None,
+    )
+
+
+def evaluate_noop_assurance(
+    *,
+    repo_root: str | Path,
+    policy_path: str | Path,
+    baseline_path: str | Path,
+    ref: str = "HEAD",
+) -> ReleasePolicyDecision:
+    """Return a stable successful decision for non-release pull requests."""
+    policy = load_release_policy(policy_path)
+    baseline = load_baseline_metadata(baseline_path)
+    return ReleasePolicyDecision(
+        mode="none",
+        reason="not_release_pull_request",
+        baseline_age_days=None,
+        current_contract_digest=compute_agent_contract_digest(repo_root, policy, ref=ref),
+        baseline_contract_digest=baseline.agent_contract_digest,
+        required_configurations=baseline.required_configurations,
+        smoke_configurations=policy.smoke_configurations,
+        release_base_ref=None,
+        release_contract_changed=None,
+    )
+
+
+def evaluate_release_readiness(
+    *,
+    repo_root: str | Path,
+    policy_path: str | Path,
+    baseline_path: str | Path,
+    ref: str = "HEAD",
+    today: date | None = None,
+) -> ReleasePolicyDecision:
+    """Require live evidence only when the release changes the agent contract."""
+    policy = load_release_policy(policy_path)
+    baseline = load_baseline_metadata(baseline_path)
+    release_base_ref = resolve_previous_release_ref(repo_root, policy, candidate_ref=ref)
+    current_digest = compute_agent_contract_digest(repo_root, policy, ref=ref)
+    release_digest = compute_agent_contract_digest(repo_root, policy, ref=release_base_ref)
+    release_contract_changed = current_digest != release_digest
+    changed_paths = (
+        _contract_changed_paths(repo_root, policy, base_ref=release_base_ref, head_ref=ref)
+        if release_contract_changed
+        else ()
+    )
+    # Keep the byte-level digest and original approved evidence unchanged.
+    # Only this explicitly reviewed no-op deletion can avoid a full re-baseline.
+    verified_noop = release_contract_changed and _only_verified_nonfunctional_release_diff(
+        repo_root, policy, base_ref=release_base_ref, head_ref=ref
+    )
+    if verified_noop:
+        return ReleasePolicyDecision(
+            mode="none",
+            reason="verified_unused_import_only_since_release",
+            baseline_age_days=None,
+            current_contract_digest=current_digest,
+            baseline_contract_digest=baseline.agent_contract_digest,
+            required_configurations=baseline.required_configurations,
+            smoke_configurations=policy.smoke_configurations,
+            release_base_ref=release_base_ref,
+            release_contract_changed=False,
+            contract_changed_paths=changed_paths,
+        )
+
+    if not release_contract_changed:
+        return ReleasePolicyDecision(
+            mode="none",
+            reason="no_agent_contract_change_since_release",
+            baseline_age_days=None,
+            current_contract_digest=current_digest,
+            baseline_contract_digest=baseline.agent_contract_digest,
+            required_configurations=baseline.required_configurations,
+            smoke_configurations=policy.smoke_configurations,
+            release_base_ref=release_base_ref,
+            release_contract_changed=False,
+            contract_changed_paths=changed_paths,
+        )
+
+    if not baseline.approved:
+        return ReleasePolicyDecision(
+            mode="full",
+            reason="baseline_unapproved",
+            baseline_age_days=None,
+            current_contract_digest=current_digest,
+            baseline_contract_digest=None,
+            required_configurations=baseline.required_configurations,
+            smoke_configurations=policy.smoke_configurations,
+            release_base_ref=release_base_ref,
+            release_contract_changed=True,
+            contract_changed_paths=changed_paths,
+        )
+
+    approved_at = baseline.approved_at
+    baseline_digest = baseline.agent_contract_digest
+    if approved_at is None or baseline_digest is None:
+        raise ReleasePolicyError("Approved baseline metadata is incomplete.")
+    reference_date = date.today() if today is None else today
+    age_days = (reference_date - approved_at).days
+    if age_days < 0:
+        return ReleasePolicyDecision(
+            mode="full",
+            reason="baseline_approval_in_future",
+            baseline_age_days=age_days,
+            current_contract_digest=current_digest,
+            baseline_contract_digest=baseline_digest,
+            required_configurations=baseline.required_configurations,
+            smoke_configurations=policy.smoke_configurations,
+            release_base_ref=release_base_ref,
+            release_contract_changed=True,
+            contract_changed_paths=changed_paths,
+        )
+    if age_days > policy.baseline_max_age_days:
+        return ReleasePolicyDecision(
+            mode="full",
+            reason="baseline_stale",
+            baseline_age_days=age_days,
+            current_contract_digest=current_digest,
+            baseline_contract_digest=baseline_digest,
+            required_configurations=baseline.required_configurations,
+            smoke_configurations=policy.smoke_configurations,
+            release_base_ref=release_base_ref,
+            release_contract_changed=True,
+            contract_changed_paths=changed_paths,
+        )
+    if current_digest != baseline.agent_contract_digest:
+        return ReleasePolicyDecision(
+            mode="full",
+            reason="agent_contract_changed",
+            baseline_age_days=age_days,
+            current_contract_digest=current_digest,
+            baseline_contract_digest=baseline_digest,
+            required_configurations=baseline.required_configurations,
+            smoke_configurations=policy.smoke_configurations,
+            release_base_ref=release_base_ref,
+            release_contract_changed=True,
+            contract_changed_paths=changed_paths,
+        )
+    return ReleasePolicyDecision(
+        mode="smoke",
+        reason="approved_baseline_reusable",
+        baseline_age_days=age_days,
+        current_contract_digest=current_digest,
+        baseline_contract_digest=baseline_digest,
+        required_configurations=baseline.required_configurations,
+        smoke_configurations=policy.smoke_configurations,
+        release_base_ref=release_base_ref,
+        release_contract_changed=True,
+        contract_changed_paths=changed_paths,
+    )
+
+
+__all__ = [
+    "BaselineMetadata",
+    "ReleasePolicyConfig",
+    "ReleasePolicyDecision",
+    "ReleasePolicyError",
+    "compute_agent_contract_digest",
+    "contract_changed_between",
+    "evaluate_noop_assurance",
+    "evaluate_push_assurance",
+    "evaluate_release_readiness",
+    "load_baseline_metadata",
+    "load_release_policy",
+    "resolve_previous_release_ref",
+]

@@ -1,0 +1,262 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+from scripts import hook_pre_push
+from scripts.hook_pre_push import Check, build_plan
+
+
+def _commands(plan: list[Check]) -> list[list[str]]:
+    return [check.command for check in plan]
+
+
+def _names(plan: list[Check]) -> list[str]:
+    return [check.name for check in plan]
+
+
+def test_python_change_gets_scoped_quality_and_matching_tests(tmp_path: Path) -> None:
+    source = tmp_path / "src" / "kicad_mcp" / "widgets.py"
+    unit = tmp_path / "tests" / "unit" / "test_widgets.py"
+    source.parent.mkdir(parents=True)
+    unit.parent.mkdir(parents=True)
+    source.write_text("VALUE = 1\n", encoding="utf-8")
+    unit.write_text("def test_value(): pass\n", encoding="utf-8")
+
+    plan = build_plan(["src/kicad_mcp/widgets.py"], root=tmp_path)
+    names = _names(plan)
+    commands = _commands(plan)
+
+    assert names[:3] == ["ruff-format", "ruff-lint", "mypy-changed"]
+    assert "targeted-tests" in names
+    assert [
+        commands[0][0],
+        "-m",
+        "pytest",
+        "tests/unit/test_widgets.py",
+        "-q",
+    ] in commands
+    assert not any("run_pytest.py" in " ".join(command) for command in commands)
+
+
+def test_script_change_gets_shared_ruff_quality_checks(tmp_path: Path) -> None:
+    script = tmp_path / "scripts" / "quality_target.py"
+    script.parent.mkdir(parents=True)
+    script.write_text("VALUE = 1\n", encoding="utf-8")
+
+    plan = build_plan(["scripts/quality_target.py"], root=tmp_path)
+
+    assert _names(plan) == ["ruff-format", "ruff-lint"]
+
+
+def _setup_ruff_only_mode(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    plan = [
+        Check("ruff-format", ["ruff", "format"]),
+        Check("ruff-lint", ["ruff", "check"]),
+        Check("targeted-tests", ["pytest"]),
+    ]
+    executed: list[str] = []
+
+    monkeypatch.setattr(hook_pre_push, "changed_files", lambda base: ["scripts/demo.py"])
+    monkeypatch.setattr(hook_pre_push, "build_plan", lambda changed: plan)
+    return executed
+
+
+def test_ruff_only_mode_runs_only_shared_ruff_checks(monkeypatch: pytest.MonkeyPatch) -> None:
+    executed = _setup_ruff_only_mode(monkeypatch)
+    monkeypatch.setattr(
+        hook_pre_push,
+        "_run",
+        lambda check: executed.append(check.name) or 0,
+    )
+
+    assert hook_pre_push.main(["--base", "a" * 40, "--ruff-only"]) == 0
+    assert executed == ["ruff-format", "ruff-lint"]
+
+
+def test_ruff_only_mode_propagates_first_ruff_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    executed = _setup_ruff_only_mode(monkeypatch)
+
+    def fail_format(check: Check) -> int:
+        executed.append(check.name)
+        return 1 if check.name == "ruff-format" else 0
+
+    monkeypatch.setattr(hook_pre_push, "_run", fail_format)
+
+    assert hook_pre_push.main(["--base", "a" * 40, "--ruff-only"]) == 1
+    assert executed == ["ruff-format"]
+
+
+def test_workflow_change_only_adds_workflow_checks(tmp_path: Path) -> None:
+    workflow = tmp_path / ".github" / "workflows" / "ci.yml"
+    workflow.parent.mkdir(parents=True)
+    workflow.write_text("name: CI\n", encoding="utf-8")
+
+    plan = build_plan([".github/workflows/ci.yml"], root=tmp_path)
+
+    assert _names(plan) == ["workflow-policy", "actionlint", "zizmor"]
+
+
+def test_web_and_tauri_checks_are_pre_push_only_and_conditional(tmp_path: Path) -> None:
+    web = tmp_path / "src" / "kicad_mcp" / "web" / "dashboard.py"
+    tauri = tmp_path / "src-tauri" / "src" / "main.rs"
+    web.parent.mkdir(parents=True)
+    tauri.parent.mkdir(parents=True)
+    web.write_text("VALUE = 1\n", encoding="utf-8")
+    tauri.write_text("fn main() {}\n", encoding="utf-8")
+
+    plan = build_plan(
+        ["src/kicad_mcp/web/dashboard.py", "src-tauri/src/main.rs"],
+        root=tmp_path,
+    )
+
+    assert "web-route-tests" in _names(plan)
+    assert "tauri-cargo-check" in _names(plan)
+
+
+def test_web_route_change_keeps_exact_scoped_test_command(tmp_path: Path) -> None:
+    """Changing policy path constants must not change pre-push test selection."""
+    web_file = tmp_path / "src" / "kicad_mcp" / "web" / "dashboard.py"
+    web_file.parent.mkdir(parents=True)
+    web_file.write_text("VALUE = 1\n", encoding="utf-8")
+
+    plan = build_plan(["src/kicad_mcp/web/dashboard.py"], root=tmp_path)
+    web_commands = [check.command for check in plan if check.name == "web-route-tests"]
+    assert web_commands == [
+        [
+            hook_pre_push.sys.executable,
+            "-m",
+            "pytest",
+            "tests/unit/test_web_routes.py",
+            "tests/unit/test_web_routes_step3.py",
+            "-q",
+        ]
+    ]
+
+
+def test_documentation_only_change_has_no_python_or_full_suite(tmp_path: Path) -> None:
+    doc = tmp_path / "docs" / "notes.md"
+    doc.parent.mkdir(parents=True)
+    doc.write_text("# Notes\n", encoding="utf-8")
+
+    plan = build_plan(["docs/notes.md"], root=tmp_path)
+
+    assert plan == []
+
+
+def test_changed_files_uses_pre_commit_push_range(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[list[str]] = []
+
+    def fake_git_output(arguments: list[str]) -> str:
+        calls.append(arguments)
+        if arguments[0] == "diff":
+            return "src/kicad_mcp/server.py\nREADME.md"
+        raise AssertionError(arguments)
+
+    monkeypatch.setenv("PRE_COMMIT_FROM_REF", "a" * 40)
+    monkeypatch.setenv("PRE_COMMIT_TO_REF", "b" * 40)
+    monkeypatch.setattr(hook_pre_push, "_git_output", fake_git_output)
+
+    assert hook_pre_push.changed_files(None) == ["src/kicad_mcp/server.py", "README.md"]
+    assert calls == [["diff", "--name-only", "--diff-filter=ACMRTUXB", f"{'a' * 40}..{'b' * 40}"]]
+
+
+def test_explicit_base_rejects_option_like_ref_before_git_invocation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[list[str]] = []
+
+    def fake_git_output(arguments: list[str]) -> str:
+        calls.append(arguments)
+        raise AssertionError(arguments)
+
+    monkeypatch.setattr(hook_pre_push, "_git_output", fake_git_output)
+
+    try:
+        hook_pre_push.changed_files("--help")
+    except ValueError as exc:
+        assert "safe Git ref" in str(exc)
+    else:
+        raise AssertionError("option-like base ref should be rejected")
+
+    assert calls == []
+
+
+def test_explicit_base_is_canonicalized_before_merge_base(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[list[str]] = []
+    commit = "e" * 40
+    merge_base = "f" * 40
+
+    def fake_git_output(arguments: list[str]) -> str:
+        calls.append(arguments)
+        if arguments[0] == "rev-parse":
+            return commit
+        if arguments[0] == "merge-base":
+            return merge_base
+        if arguments[0] == "diff":
+            return "src/kicad_mcp/server.py"
+        raise AssertionError(arguments)
+
+    monkeypatch.setattr(hook_pre_push, "_git_output", fake_git_output)
+
+    assert hook_pre_push.changed_files("origin/main") == ["src/kicad_mcp/server.py"]
+    assert calls == [
+        ["rev-parse", "--verify", "--end-of-options", "origin/main^{commit}"],
+        ["merge-base", commit, "HEAD"],
+        ["diff", "--name-only", "--diff-filter=ACMRTUXB", f"{merge_base}..HEAD"],
+    ]
+
+
+def test_new_branch_falls_back_to_main_merge_base(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[list[str]] = []
+
+    def fake_git_output(arguments: list[str]) -> str:
+        calls.append(arguments)
+        if arguments[:2] == ["merge-base", "origin/main"]:
+            return "c" * 40
+        if arguments[0] == "diff":
+            return "package.json"
+        raise AssertionError(arguments)
+
+    monkeypatch.setenv("PRE_COMMIT_FROM_REF", hook_pre_push.ZERO_SHA)
+    monkeypatch.setenv("PRE_COMMIT_TO_REF", "d" * 40)
+    monkeypatch.delenv("PRE_PUSH_BASE", raising=False)
+    monkeypatch.setattr(hook_pre_push, "_git_output", fake_git_output)
+
+    assert hook_pre_push.changed_files(None) == ["package.json"]
+    assert calls == [
+        ["merge-base", "origin/main", "d" * 40],
+        ["diff", "--name-only", "--diff-filter=ACMRTUXB", f"{'c' * 40}..{'d' * 40}"],
+    ]
+
+
+def test_canonical_helper_changes_select_architecture_guard(tmp_path: Path) -> None:
+    changed_files = [
+        "src/kicad_mcp/pcb/geometry.py",
+        "src/kicad_mcp/validation/drc_runner.py",
+    ]
+    for relative_path in changed_files:
+        path = tmp_path / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("VALUE = 1\n", encoding="utf-8")
+
+    plan = build_plan(changed_files, root=tmp_path)
+
+    assert "architecture-boundaries" in _names(plan)
+
+
+def test_hook_configuration_selects_focused_contract_tests(tmp_path: Path) -> None:
+    (tmp_path / "lefthook.yml").write_text("pre-commit: {}\n", encoding="utf-8")
+    for name in (
+        "test_install_git_hooks.py",
+        "test_staged_sensitive_paths.py",
+        "test_hook_pre_push.py",
+        "test_workflow_tooling.py",
+    ):
+        path = tmp_path / "tests" / "unit" / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("def test_placeholder(): pass\n", encoding="utf-8")
+    plan = build_plan(["lefthook.yml"], root=tmp_path)
+    assert [check.name for check in plan] == ["local-hook-contract-tests"]
+    assert plan[0].command[1:4] == ["-m", "pytest", "-q"]

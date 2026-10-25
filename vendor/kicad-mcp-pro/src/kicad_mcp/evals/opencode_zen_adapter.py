@@ -1,0 +1,58 @@
+"""Experimental OpenCode Zen adapter for sanitized live-model evaluations."""
+
+from __future__ import annotations
+
+from collections.abc import Mapping, Sequence
+
+import httpx
+
+from .nvidia_nim_adapter import (
+    StructuredOutputMode,
+    ToolCatalogEntry,
+    request_openai_compatible_chat,
+)
+
+OPENCODE_ZEN_CHAT_COMPLETIONS_URL = "https://opencode.ai/zen/v1/chat/completions"
+OPENCODE_ZEN_FREE_MODELS = frozenset(
+    {
+        "mimo-v2.5-free",
+        "nemotron-3-ultra-free",
+        "nemotron-3.5-lightning-free",
+    }
+)
+OPENCODE_ZEN_PAID_MODELS = frozenset({"minimax-m3"})
+OPENCODE_ZEN_CHAT_MODELS = OPENCODE_ZEN_FREE_MODELS | OPENCODE_ZEN_PAID_MODELS
+
+
+def request_opencode_zen(
+    *,
+    model: str,
+    prompt: str,
+    api_key: str,
+    catalog: Sequence[ToolCatalogEntry | Mapping[str, object]],
+    timeout_seconds: float = 50,
+    transport: httpx.BaseTransport | None = None,
+    structured_output: StructuredOutputMode = "none",
+) -> dict[str, object]:
+    """Invoke one reviewed Zen chat model without retaining provider payloads."""
+    if model not in OPENCODE_ZEN_CHAT_MODELS:
+        raise ValueError("Model is not a reviewed OpenCode Zen chat model.")
+    return request_openai_compatible_chat(
+        endpoint=OPENCODE_ZEN_CHAT_COMPLETIONS_URL,
+        model=model,
+        prompt=prompt,
+        api_key=api_key,
+        catalog=catalog,
+        timeout_seconds=timeout_seconds,
+        transport=transport,
+        structured_output=structured_output,
+    )
+
+
+__all__ = [
+    "OPENCODE_ZEN_CHAT_COMPLETIONS_URL",
+    "OPENCODE_ZEN_CHAT_MODELS",
+    "OPENCODE_ZEN_FREE_MODELS",
+    "OPENCODE_ZEN_PAID_MODELS",
+    "request_opencode_zen",
+]

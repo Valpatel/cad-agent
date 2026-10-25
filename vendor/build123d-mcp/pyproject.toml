@@ -1,0 +1,99 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "build123d-mcp"
+version = "0.3.92.dev0"
+description = "MCP server wrapping build123d for interactive 3D CAD"
+readme = "README.md"
+requires-python = ">=3.11,<3.15"
+license = { file = "LICENSE" }
+authors = [{ name = "Paul Fremantle", email = "pzfreo@gmail.com" }]
+keywords = ["mcp", "build123d", "cad", "3d", "ai"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "License :: OSI Approved :: Apache Software License",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "mcp>=2,<3",
+    # build123d is pre-1.0 and 0.x minor bumps may break the API.
+    # CI tests 0.10, 0.11 and 0.13 (0.13 runs on OCP 8; 0.12 shares 0.11's
+    # OCP 7.9 stack). Bump deliberately.
+    "build123d>=0.10,<0.14",
+    # 0.11 switched build123d's OCP dependency to cadquery-ocp-novtk, which no
+    # longer pulls VTK transitively. render.py drives VTK directly, so VTK must
+    # be declared explicitly. Harmless on 0.10 (cadquery-ocp already provides it).
+    "vtk>=9.3",
+    "bd_warehouse",
+    # SVG → PNG rasterisation for 2D drawing review (render_view path).
+    # resvg-py ships pre-built Rust wheels for all platforms with no native
+    # library dependencies — works out-of-the-box on Linux/macOS/Windows.
+    "resvg-py",
+    # Drawing-annotation helpers (dim_linear, leader, view_axes, lint_drawing).
+    # Bundled at runtime so `inspect_drawing`'s docstring promise — and the
+    # build123d://drafting cookbook — actually work out of the box.
+    # Import name remains `build123d_drafting` (install name ≠ import name).
+    "build123d-drafting-helpers>=0.10.0",
+    # Shared geometry-only feature inventory and exact run-local face evidence.
+    "quiddity>=0.3.11,<0.4",
+    "defusedxml>=0.7.1",
+    "augura>=0.1.8",
+    "scipy",
+    "pillow",
+]
+
+[project.optional-dependencies]
+http = ["uvicorn"]
+
+[tool.uv]
+# build123d 0.11 pulls cadquery-ocp-novtk>=7.9; that resolves to 7.9.3.1.1, whose
+# macOS wheel is broken (ships no OCP.GccEnt module → build123d fails to import).
+# 7.9.3.1 is intact. Constrain away from the bad build — a *constraint* only bites
+# when novtk is actually in the resolution (build123d 0.11), so the build123d 0.10
+# matrix, which uses cadquery-ocp instead, is untouched. Remove when upstream fixes
+# or yanks 7.9.3.1.1.
+constraint-dependencies = ["cadquery-ocp-novtk!=7.9.3.1.1"]
+
+[project.urls]
+Homepage = "https://github.com/pzfreo/build123d-mcp"
+Repository = "https://github.com/pzfreo/build123d-mcp"
+Issues = "https://github.com/pzfreo/build123d-mcp/issues"
+
+[project.scripts]
+build123d-mcp = "build123d_mcp.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/build123d_mcp"]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-timeout",
+    "mypy",
+    "pytest-cov>=7.1.0",
+    "ruff",
+]
+
+[tool.mypy]
+files = ["src"]
+ignore_missing_imports = true
+
+[tool.ruff]
+# line-length 100 matches the existing code; E501 is not enabled, so this only
+# governs where the formatter reflows code (not comments or strings).
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+# Phase 1 (issue #185): objective, auto-fixable rules only. Safety/complexity
+# rules (BLE blind-except, S bandit, C901) are intentionally deferred — the
+# sandbox/worker design uses deliberate broad-excepts and eval/exec/subprocess
+# that would each need per-site noqa judgement, out of scope for an automated
+# baseline.
+select = ["F", "I", "UP", "C4"]

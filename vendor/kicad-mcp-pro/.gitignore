@@ -1,0 +1,78 @@
+# Dependencies
+node_modules/
+.venv/
+
+# Editor / IDE
+.vscode/
+.idea/
+
+# Build outputs
+dist/
+packages/protocol-schemas/dist-test/
+out/
+site/
+coverage/
+htmlcov/
+coverage.xml
+python.junit.xml
+.coverage
+performance-results/
+artifacts/
+.pytest-tmp*/
+*.whl
+*.tar.gz
+
+# Python caches
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/tmp/
+
+# Local/editor state
+.DS_Store
+Thumbs.db
+.codex-checkpoints/
+.kicad_mcp/
+.kicad-mcp/
+.kicad-mcp-cache/
+.omo/
+.hypothesis/
+*.log
+*.db
+
+# Secret-bearing local files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+cookies.json
+storage_state.json
+
+
+TEMP/
+
+# Backup artifacts from setup wizard
+*.mcp.json.*.bak
+# User config file created by kicad-mcp-pro setup wizard
+.mcp.json
+
+# Testing and mutation artifacts
+mutants/
+.mutmut-cache/
+.codacy/
+
+# Tauri / Rust build artifacts
+src-tauri/target/
+src-tauri/gen/
+
+# Serena local index cache
+.serena/
+
+# Repository-scoped development toolchain
+.dev-tools/
+.dev-cache/
+.dev-env.sh
+lefthook-local.yml

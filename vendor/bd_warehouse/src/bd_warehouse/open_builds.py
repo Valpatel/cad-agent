@@ -1,0 +1,2333 @@
+"""
+
+OpenBuilds Parts
+
+name: open_builds.py
+by:   Gumyr
+date: June 27th 2024
+
+desc: This python/build123d code is a parameterized set of models of parts from
+      https://openbuildspartstore.com/.
+
+license:
+
+    Copyright 2024 Gumyr
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+"""
+
+import copy
+import math
+from typing import Literal, cast
+
+from bd_materials import finishes, metals, plastics
+from build123d import (
+    IN,
+    MM,
+    Align,
+    Axis,
+    BasePartObject,
+    BaseSketchObject,
+    Box,
+    BuildLine,
+    BuildPart,
+    BuildSketch,
+    Circle,
+    Color,
+    Compound,
+    CounterBoreHole,
+    CounterSinkHole,
+    Cylinder,
+    Edge,
+    Face,
+    FontStyle,
+    GeomType,
+    GridLocations,
+    Helix,
+    Hole,
+    JernArc,
+    Line,
+    LinearJoint,
+    Location,
+    Locations,
+    Mode,
+    Part,
+    Plane,
+    Polyline,
+    Pos,
+    Rectangle,
+    RectangleRounded,
+    RegularPolygon,
+    RevoluteJoint,
+    RigidJoint,
+    Rot,
+    RotationLike,
+    SlotCenterToCenter,
+    SlotOverall,
+    SortBy,
+    Text,
+    Vector,
+    chamfer,
+    extrude,
+    fillet,
+    insert,
+    make_face,
+    mirror,
+    pack,
+    revolve,
+    sweep,
+    tuplify,
+)
+
+from bd_warehouse.bearing import SingleRowCappedDeepGrooveBallBearing
+from bd_warehouse.fastener import (
+    HexNut,
+    LowProfileScrew,
+    SetScrew,
+    SocketHeadCapScrew,
+    TapHole,
+    ThreadedHole,
+)
+from bd_warehouse.thread import TrapezoidalThread
+
+CAVITY_RADIUS = 2.3 * MM
+FILLET_RADIUS = 1.5 * MM
+
+m5 = SocketHeadCapScrew("M5-0.8", 20 * MM)  # Used to create threaded holes
+
+
+class AcmeAntiBacklashNutBlock8mm(BasePartObject):
+    """Part Object: OpenBuilds 8mm Acme Anti Backlash Nut Block
+
+    This Anti-Backlash Nut Block for 8mm Lead Screw is a great choice for many build
+    projects requiring lead screw linear motion where high precision and repeatability
+    with zero play or slop is needed.
+
+    Product Features:
+        - Screw and nut for secure and precise backlash adjustment
+        - Recesses screw holes for non obtrusive placement
+        - Can be mounted on plates or V-Slot
+        - Works best with OpenBuilds Lead Screw
+
+    Specifications:
+        - Tr8*8(p2) Metric Acme Tap (compatible with our customized 8mm Metric Acme Lead
+          Screws)
+        - Mounting Hole Spacing: 20mm
+        - Pitch: 2mm
+        - Lead: 8mm
+        - Delrin
+        - Color: Black
+        - These Anti-Backlash Nut Blocks have been customized to work directly with the
+          OpenBuilds system.
+
+    Args:
+        rotation (RotationLike, optional): angles to rotate about axes. Defaults to (0, 0, 0).
+        align (Align | tuple[Align, Align, Align], optional): align min, center,
+            or max of object. Defaults to (Align.CENTER, Align.CENTER, Align.MIN).
+        mode (Mode, optional): combine mode. Defaults to Mode.ADD.
+    """
+
+    _applies_to = [BuildPart._tag]
+
+    def __init__(
+        self,
+        rotation: RotationLike = (0, 0, 0),
+        align: None | Align | tuple[Align, Align, Align] = None,
+        mode: Mode = Mode.ADD,
+    ):
+
+        with BuildPart() as block:
+            with BuildSketch(Plane.XY.offset(-6)):
+                RectangleRounded(34, 33, 3)
+                with Locations((-9, 6)):
+                    Circle(2.5, mode=Mode.SUBTRACT)
+                    Rectangle(
+                        26, 5, align=(Align.MIN, Align.CENTER), mode=Mode.SUBTRACT
+                    )
+                with Locations((10, -6.5), (-10, -6.5)):
+                    Circle(2.55, mode=Mode.SUBTRACT)
+            extrude(amount=12)
+            with BuildSketch(Plane.XY.offset(6)):
+                with Locations((10, -6.5), (-10, -6.5)) as mounts:
+                    Circle(4.5)
+            extrude(amount=-2, mode=Mode.SUBTRACT)
+            with BuildSketch(Plane.XY.offset(-6)):
+                with Locations((10, -6.5), (-10, -6.5)):
+                    RegularPolygon(4.618802153517, 6, rotation=30)
+            extrude(amount=5, mode=Mode.SUBTRACT)
+            with Locations(Plane.XZ):
+                Hole(4)
+            with Locations(-Plane.XZ.offset(-17)):
+                with Locations((10, 0)) as screw_hole:
+                    ThreadedHole(m5, depth=10, counter_sunk=False)
+
+        super().__init__(
+            cast(Part, block.part), rotation=rotation, align=align, mode=mode
+        )
+        self.material = metals.aluminum(
+            finish=[finishes.brushed(), finishes.anodize("black")]
+        )
+        self.label = "AcmeAntiBacklashNutBlock8mm"
+        for label, face in zip(
+            ["a", "b"], self.faces().group_by(Axis.Z)[-3].sort_by(Axis.X, reverse=True)
+        ):
+            RigidJoint(label, self, Pos(face.center()))
+        for label, loc in zip(["nut_a", "nut_b"], mounts):
+            RigidJoint(label, self, loc * Location((0, 0, -6), (0, 0, 1), 30))
+        RigidJoint("screw", self, screw_hole.locations[0])
+        RigidJoint("bottom", self, Pos(Z=-6))
+
+
+class AcmeAntiBacklashNutBlock8mmAssembly(Compound):
+    """Assembly: OpenBuilds 8mm Acme Anti Backlash Nut Block Assembly
+
+    All of the components in anti backlash nut assembly:
+        - AcmeAntiBacklashNutBlock8mm x 1
+        - AluminumSpacer x 2
+        - M5 HexNut x 2
+        - SocketHeadCapScrew x 1
+
+    The RigidJoint "a" or "b" - positioned at the top of the spaces - can be used to
+    connect this assembly to a gantry plate.
+
+    """
+
+    def __init__(self):
+
+        super().__init__()
+        screw = SocketHeadCapScrew("M5-0.8", 13 * MM)
+        nut0 = HexNut("M5-0.8")
+        nut1 = copy.copy(nut0)
+        acme_nut = Rot(Z=-90) * AcmeAntiBacklashNutBlock8mm()
+        acme_nut.joints["nut_a"].connect_to(nut0.joints["a"])
+        acme_nut.joints["nut_b"].connect_to(nut1.joints["a"])
+        acme_nut.joints["screw"].connect_to(screw.joints["a"])
+        s0 = AluminumSpacer("6mm")
+        s1 = copy.copy(s0)
+        acme_nut.joints["a"].connect_to(s0.joints["a"])
+        acme_nut.joints["b"].connect_to(s1.joints["a"])
+
+        self.children = [acme_nut, s0, s1, nut0, nut1, screw]
+        self.label = "AcmeAntiBacklashNutBlock8mmAssembly"
+        RigidJoint("a", self, s0.joints["b"].location * Rot(Z=90))
+        RigidJoint("b", self, s1.joints["b"].location * Rot(Z=90))
+
+
+class AluminumSpacer(BasePartObject):
+    """Part Object: OpenBuilds AluminumSpacer
+
+    Aluminum spacers used throughout our system to ensure precision alignment and spacing
+    between components.
+
+    Product Features:
+        - Rigid to maintain stability during motion
+        - Lightweight, non-magnetic and corrosion resistance
+
+    Specifications:
+        - M5 ID
+        - Various Lengths
+        - 10mm OD
+        - Aluminum
+        - Color: Silver
+
+    Args:
+        length (str): one of '3mm', '1/8in', '6mm', '1/4in', '9mm', '10mm', '13.2mm', '20mm',
+            '35mm', '1-1/2in' or '40mm'
+        rotation (RotationLike, optional): angles to rotate about axes. Defaults to (0, 0, 0).
+        align (Align | tuple[Align, Align, Align], optional): align min, center,
+            or max of object. Defaults to (Align.CENTER, Align.CENTER, Align.MIN).
+        mode (Mode, optional): combine mode. Defaults to Mode.ADD.
+
+    Raises:
+        ValueError: Invalid shim_type
+    """
+
+    _applies_to = [BuildPart._tag]
+
+    def __init__(
+        self,
+        length: Literal[
+            "3mm",
+            "1/8in",
+            "6mm",
+            "1/4in",
+            "9mm",
+            "10mm",
+            "13.2mm",
+            "20mm",
+            "35mm",
+            "1-1/2in",
+            "40mm",
+        ],
+        rotation: RotationLike = (0, 0, 0),
+        align: None | Align | tuple[Align, Align, Align] = None,
+        mode: Mode = Mode.ADD,
+    ):
+
+        valid_lengths = {
+            "3mm": 3 * MM,
+            "1/8in": IN / 8,
+            "6mm": 6 * MM,
+            "1/4in": IN / 4,
+            "9mm": 9 * MM,
+            "10mm": 10 * MM,
+            "13.2mm": 13.2 * MM,
+            "20mm": 20 * MM,
+            "35mm": 35 * MM,
+            "1-1/2in": 1.5 * IN,
+            "40mm": 40 * MM,
+        }
+        try:
+            spacer_length = valid_lengths[length]
+        except KeyError as exc:
+            raise ValueError(
+                f"{length} is an invalid length, must be one of {tuple(valid_lengths.keys())}"
+            ) from exc
+
+        with BuildPart() as spacer:
+            with BuildSketch():
+                Circle(5)
+                Circle(2.6, mode=Mode.SUBTRACT)
+            extrude(amount=spacer_length)
+
+        super().__init__(
+            cast(Part, spacer.part), rotation=rotation, align=align, mode=mode
+        )
+        self.material = metals.aluminum()
+        self.label = f"AluminumSpacer-{length}"
+        # "a" and "b" are the bottom and top mounting faces, respectively.
+        RigidJoint("a", self, Location())
+        RigidJoint("b", self, Pos(Z=spacer_length))
+        # "center" is the top-face mounting/rotation axis used by wheel assemblies;
+        # it is not the geometric midpoint of the spacer.
+        RigidJoint("center", self, Pos(Z=spacer_length))
+
+
+class CBeamAssembly(Compound):
+    """Assembly: OpenBuilds C-Beam Linear Actuator Assembly
+
+    Complete C-Beam linear actuator assembly consisting of a C-Beam rail, lead screw,
+    motorized end assembly, and optional end plate and XLarge C-Beam gantry.
+
+    Product Features:
+        - Combines linear motion and structural framing components
+        - Supports an optional adjustable gantry position
+        - Provides a linear joint for positioning along the lead screw axis
+        - Includes mounting joints for the rear, front, and cross-front rail faces
+
+    Product Specifications:
+        - C-Beam Linear Rail
+        - Metric Tr8*8-2p lead screw
+        - Optional XLarge C-Beam Gantry
+        - Optional C-Beam End Mount and bearing
+
+    Args:
+        rail_length (float): length of the C-Beam rail
+        gantry_position (float, optional): position of the gantry along the rail.
+            Defaults to None.
+        screw_length (float, optional): lead screw length. If omitted, the length is
+            calculated from the end assemblies when possible. Defaults to None.
+        end_plate (bool, optional): include the additional C-Beam end plate and bearing.
+            Defaults to True.
+        simple (bool, optional): use a simplified lead screw representation. Defaults to True.
+    """
+
+    def __init__(
+        self,
+        rail_length: float,
+        gantry_position: float | None = None,
+        screw_length: float | None = None,
+        end_plate: bool = True,
+        simple: bool = True,
+    ):
+        super().__init__()
+
+        rail = Rot(X=-90) * CBeamLinearRail(length=rail_length)
+        end_assembly = CBeamEndAssembly()
+        components = [rail, end_assembly]
+        if end_plate:
+            end_plate = Pos(Y=rail_length) * (
+                Rot(X=-90, Z=-90) * CBeamEndMount(align=Align.NONE)
+            )
+            bearing = SingleRowCappedDeepGrooveBallBearing(size="M8-16-5")
+            end_plate.joints["bearing"].connect_to(bearing.joints["b"])
+            lm5 = LowProfileScrew("M5-0.8", 25 * MM)
+            lm5s = [lm5] + [copy.copy(lm5) for _ in range(3)]
+            for i in range(4):
+                end_plate.joints[f"screw-{i}"].connect_to(lm5s[i].joints["a"])
+            if screw_length is None:
+                screw_length = (
+                    end_plate.joints["bearing"].location.position.Y
+                    - end_assembly.joints["screw"].location.position.Y
+                )
+            components.extend([end_plate, bearing] + lm5s)
+        elif screw_length is None:
+            screw_length = rail_length
+
+        screw = MetricLeadScrew(screw_length, simple=simple)
+        end_assembly.joints["screw"].connect_to(screw.joints["axis"])
+        components.append(screw)
+
+        if gantry_position is not None:
+            gantry = XLargeCBeamGantry(6)
+            rail.joints["screw_axis"].connect_to(
+                gantry.joints["nut"], position=gantry_position
+            )
+            components.append(gantry)
+
+        self.children = components
+        if gantry_position is not None:
+            gantry_top_center = (
+                gantry.faces().sort_by(Axis.X)[-1].without_holes().center()
+            )
+            RigidJoint(
+                "gantry_center",
+                self,
+                Location(Plane(gantry_top_center, x_dir=(0, 1, 0), z_dir=(1, 0, 0))),
+            )
+        rail_bbox = rail.bounding_box()
+        RigidJoint(
+            "rail_back",
+            self,
+            Location(
+                Plane(
+                    (rail_bbox.min.X, rail_length / 2, 0),
+                    x_dir=(0, 1, 0),
+                    z_dir=(1, 0, 0),
+                )
+            ),
+        )
+        RigidJoint(
+            "rail_front",
+            self,
+            Location(
+                Plane(
+                    (rail_bbox.max.X, rail_length / 2, 0),
+                    x_dir=(0, 1, 0),
+                    z_dir=(-1, 0, 0),
+                )
+            ),
+        )
+        RigidJoint(
+            "rail_cross_front",
+            self,
+            Location(
+                Plane(
+                    (rail_bbox.max.X, rail_length / 2, 0),
+                    x_dir=(0, 0, -1),
+                    z_dir=(1, 0, 0),
+                )
+            ),
+        )
+        LinearJoint(
+            "screw_axis",
+            self,
+            Axis(rail.joints["screw_axis"].location.position, (0, 1, 0)),
+            linear_range=(0, rail_length),
+        )
+        self.label = "CBeam Assembly"
+
+
+class CBeamCapped(Compound):
+    """Assembly: OpenBuilds C-Beam Capped Linear Rail
+
+    C-Beam Linear Rail assembly with a C-Beam End Mount and bearing at each end. The
+    end mounts are secured with M5 low-profile screws and provide end support for a
+    separately modeled lead screw.
+
+    Product Features:
+        - End-mounted bearings for lead screw support
+        - Capped ends for a compact C-Beam assembly
+        - Rigid joints for the top and bottom rail centers
+
+    Product Specifications:
+        - C-Beam Linear Rail
+        - Two C-Beam End Mounts
+        - Two M8-16-5 capped deep-groove ball bearings
+        - Eight M5 low-profile screws
+
+    The bearings provide end support for a separately modeled lead screw; this
+    assembly does not include the lead screw itself.
+
+    Args:
+        length (float): length of the C-Beam rail
+    """
+
+    def __init__(
+        self,
+        length: float,
+    ):
+        lm5 = LowProfileScrew("M5-0.8", 25 * MM)
+        lm5s = [lm5] + [copy.copy(lm5) for _ in range(7)]
+        rail = Rot(X=-90) * CBeamLinearRail(length=length)
+        bearings = [
+            b := SingleRowCappedDeepGrooveBallBearing(size="M8-16-5"),
+            copy.copy(b),
+        ]
+        end_plates = [
+            Pos(Y=l) * (Rot(X=a, Z=-90) * CBeamEndMount(align=Align.NONE))
+            for a, l in ((-90, length), (90, 0))
+        ]
+        for i in range(2):
+            for j in range(4):
+                end_plates[i].joints[f"screw-{j}"].connect_to(
+                    lm5s[i * 4 + j].joints["a"]
+                )
+            end_plates[i].joints["bearing"].connect_to(bearings[i].joints["b"])
+
+        super().__init__()
+        self.children = [rail] + end_plates + bearings + lm5s
+        self.label = "CBeamCapped"
+        RigidJoint(
+            "bottom_center",
+            self,
+            Location(Plane((-20, length / 2, 0), x_dir=(0, 1, 0), z_dir=(1, 0, 0))),
+        )
+        RigidJoint(
+            "top_center",
+            self,
+            Location(Plane((20, length / 2, 0), x_dir=(0, 0, 1), z_dir=(1, 0, 0))),
+        )
+
+
+class CBeamEndAssembly(Compound):
+    """Assembly: OpenBuilds C-Beam End Assembly
+
+    Motorized end assembly for driving an OpenBuilds C-Beam lead screw. The assembly
+    combines a C-Beam End Mount, NEMA 23 stepper motor, flexible coupler, bearing,
+    mounting spacers, and the required fasteners.
+
+    Product Features:
+        - Supports and drives a C-Beam lead screw
+        - Includes motor mounting spacers for alignment
+        - Provides a rigid joint at the coupler's lead screw connection
+
+    Product Specifications:
+        - NEMA 23 stepper motor
+        - 8mm flexible coupler
+        - M8-16-5 capped deep-groove ball bearing
+        - Two 40mm aluminum spacers
+        - Four M5 low-profile screws
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        lm5s = [s := LowProfileScrew("M5-0.8", 25 * MM)] + [
+            copy.copy(s) for _ in range(3)
+        ]
+        end_plate = Rot(X=90, Z=-90) * CBeamEndMount(align=Align.NONE)
+        for i in range(4):
+            end_plate.joints[f"screw-{i}"].connect_to(lm5s[i].joints["a"])
+        bearing = SingleRowCappedDeepGrooveBallBearing(size="M8-16-5")
+        end_plate.joints["bearing"].connect_to(bearing.joints["b"])
+        stand_off = AluminumSpacer("40mm")
+        stand_offs: list[AluminumSpacer] = []
+        for i in range(2):
+            s = copy.copy(stand_off)
+            end_plate.joints[f"motor_mount-{i}"].connect_to(s.joints["a"])
+            stand_offs.append(s)
+
+        motor = StepperMotor("Nema23")
+        stand_offs[0].joints["b"].connect_to(motor.joints["c"])
+        stand_offs[1].joints["b"].connect_to(motor.joints["d"])
+        coupler = FlexibleCoupler("8mm")
+        motor.joints["shaft"].connect_to(coupler.joints["a"])
+        self.children = [end_plate, motor, coupler, bearing] + stand_offs + lm5s
+        self.label = "CBeam End Assembly"
+        RigidJoint("screw", self, -coupler.joints["b"].location)
+
+
+class CBeamEndMount(BasePartObject):
+    """CBeamEndMount
+
+    Ensure seamless integration of your motor with the C-Beam Linear Rail using the
+    versatile C-Beam End Mount. Designed with pre-threaded holes and a bearing recess
+    for lead screw transmission, this mount also features additional countersunk holes
+    for flush mounting, making it an excellent choice for various projects.
+
+    Product Features:
+        - Pre-tapped holes
+        - Countersunk holes
+        - Bearing recess for lead screw transmission
+
+    Args:
+        rotation (RotationLike, optional): angles to rotate about axes. Defaults to (0, 0, 0).
+        align (Align | tuple[Align, Align, Align], optional): align min, center,
+            or max of object. Defaults to (Align.CENTER, Align.CENTER, Align.MIN).
+        mode (Mode, optional): combine mode. Defaults to Mode.ADD.
+    """
+
+    _applies_to = [BuildPart._tag]
+
+    def __init__(
+        self,
+        rotation: RotationLike = (0, 0, 0),
+        align: None | Align | tuple[Align, Align, Align] = (
+            Align.CENTER,
+            Align.CENTER,
+            Align.MIN,
+        ),
+        mode: Mode = Mode.ADD,
+    ):
+
+        with BuildPart() as plate:
+            Box(80, 50, 12)
+            with Locations(Location((0, 7.4, -6), (0, 1, 0), 180)):
+                CounterBoreHole(5.588, 8.05, 4.5)
+            with Locations((0, 8.9 - 25, 6)):
+                with GridLocations(47.14, 0, 2, 1) as motor_mounts:
+                    ThreadedHole(m5, counter_sunk=False)
+            with Locations((0, 10 - 25, 6)):
+                with GridLocations(20, 0, 2, 1) as h1:
+                    CounterBoreHole(2.6, 4.6, 1.55)
+            with Locations((0, 5, 6)):
+                with GridLocations(60, 0, 2, 1) as h2:
+                    CounterBoreHole(2.6, 4.6, 1.55)
+            with Locations(Plane(plate.faces().sort_by(Axis.Y)[-1], x_dir=(1, 0, 0))):
+                with GridLocations(20, 0, 2, 1):
+                    ThreadedHole(m5, counter_sunk=False, depth=14 * MM)
+
+        for i, motor_mount in enumerate(motor_mounts):
+            RigidJoint(f"motor_mount-{i}", plate.part, motor_mount)
+        for i, screw_hole in enumerate(h1.locations + h2.locations):
+            RigidJoint(f"screw-{i}", plate.part, screw_hole * Pos(Z=-1.55))
+
+        super().__init__(
+            cast(Part, plate.part).moved(Pos(0, 5, 6)), rotation, align, mode
+        )
+        self.label = "CBeamEndMount"
+        self.material = metals.aluminum(
+            finish=[finishes.brushed(), finishes.anodize("black")]
+        )
+
+        bearing_circle = (
+            self.faces()
+            .sort_by(Axis.Z)[2]
+            .edges()
+            .filter_by(GeomType.CIRCLE)
+            .sort_by(Edge.radius)[-1]
+        )
+        RigidJoint("bearing", self, Pos(bearing_circle.arc_center))
+
+
+class CBeamLinearRailProfile(BaseSketchObject):
+    """Sketch Object: OpenBuilds C Beam Linear Rail Profile
+
+    Args:
+        rotation (float, optional): angles to rotate objects. Defaults to 0.
+        align (Align | tuple[Align, Align], optional): align min, center, or max
+            of object. Defaults to (Align.CENTER, Align.CENTER).
+        mode (Mode, optional): combination mode. Defaults to Mode.ADD.
+    """
+
+    _applies_to = [BuildSketch._tag]
+
+    def __init__(
+        self,
+        rotation: float = 0,
+        align: tuple[Align, Align] = (Align.CENTER, Align.CENTER),
+        mode: Mode = Mode.ADD,
+    ):
+        with BuildSketch():
+            with BuildLine():
+                Polyline(
+                    (-2.7, 38.2),
+                    (-2.7, 36.239339828220196),
+                    (-6.1, 32.839339828220226),
+                    (-6.1, 27.160660171779885),
+                    (-0.7393398282202048, 21.8),
+                    (2.7, 21.8),
+                    (2.7, 23.76066017177987),
+                    (6.1, 27.160660171779845),
+                    (6.1, 32.83933982822018),
+                    (2.7, 36.239339828220174),
+                    (2.7, 38.2),
+                    close=True,
+                )
+            cavity = make_face()
+
+        with BuildSketch() as cbeam:
+            with Locations((0, -30), (0, 30)):
+                Rectangle(40, 20)
+            with Locations((-10, 0)):
+                Rectangle(20, 80)
+            v = cbeam.vertices().filter_by(lambda v: v.X == 0, reverse=True)
+            fillet(v, FILLET_RADIUS)
+            with Locations(
+                (10, 30), (-10, 30), (-10, 10), (-10, -10), (-10, -30), (10, -30)
+            ):
+                Circle(CAVITY_RADIUS, mode=Mode.SUBTRACT)
+            with Locations((10, -30), (10, 30)):
+                _VSlotGroove(mode=Mode.SUBTRACT)
+                _VSlotGroove(90, mode=Mode.SUBTRACT)
+                _VSlotGroove(-90, mode=Mode.SUBTRACT)
+            with Locations((-10, -30)):
+                _VSlotGroove(-90, mode=Mode.SUBTRACT)
+            with Locations((-10, 30)):
+                _VSlotGroove(90, mode=Mode.SUBTRACT)
+            with Locations((-10, 0)):
+                with GridLocations(0, 20, 1, 4):
+                    _VSlotGroove(180, mode=Mode.SUBTRACT)
+                with GridLocations(0, 20, 1, 2):
+                    _VSlotGroove(mode=Mode.SUBTRACT)
+            insert(cavity, mode=Mode.SUBTRACT)
+            insert(cavity.mirror(Plane.XZ), mode=Mode.SUBTRACT)
+            insert(
+                cavity.mirror(Plane((20, 0, 0), z_dir=(1, 1, 0))),
+                mode=Mode.SUBTRACT,
+            )
+            insert(
+                cavity.mirror(Plane((20, 0, 0), z_dir=(1, -1, 0))),
+                mode=Mode.SUBTRACT,
+            )
+            insert(
+                cavity.mirror(Plane.XZ).mirror(Plane((20, 0, 0), z_dir=(1, -1, 0))),
+                mode=Mode.SUBTRACT,
+            )
+            with Locations((-10, 0)):
+                _VSlotInternalCavity(mode=Mode.SUBTRACT)
+
+        super().__init__(obj=cbeam.sketch, rotation=rotation, align=align, mode=mode)
+
+
+class CBeamLinearRail(BasePartObject):
+    """Part Object: OpenBuilds C-Beam Linear Rail
+
+    C-Beam Linear Rail aluminum extrusion profile is the ultimate solution combining both
+    linear motion and a modular, structural framing system. It's lightweight yet rigid and
+    provides an ultra smooth track for precise motion.
+
+    OpenBuilds created C-Beam Linear Rail aluminum extrusion profile and has added a
+    library of compatible modular Parts which today is known as the OpenBuilds System.
+    We have shipped over a million feet of V-Slot/C-Beam and counting to businesses,
+    classrooms, laboratories and makers all over the world!
+
+    Much like working with lumber, you can cut C-Beam on a chop saw (using a metal blade)
+    or even use a hacksaw. From there, you simply use a screw driver to make the
+    connections.
+
+    Product Features:
+        - Lightweight and strong
+        - Tee Nut channel
+        - Smooth v-groove for linear motion
+        - M5 tap-ready holes
+        - Aluminum extrusion
+        - Sizes: 80x40
+
+    Args:
+        length (float): rail length
+        rotation (RotationLike, optional): angles to rotate about axes. Defaults to (0, 0, 0).
+        align (Align | tuple[Align, Align, Align], optional): align min, center,
+            or max of object. Defaults to (Align.CENTER, Align.CENTER, Align.MIN).
+        mode (Mode, optional): combine mode. Defaults to Mode.ADD.
+    """
+
+    _applies_to = [BuildPart._tag]
+
+    def __init__(
+        self,
+        length: float,
+        rotation: RotationLike = (0, 0, 0),
+        align: Align | tuple[Align, Align, Align] = (
+            Align.CENTER,
+            Align.CENTER,
+            Align.MIN,
+        ),
+        mode: Mode = Mode.ADD,
+    ):
+        rail = extrude(CBeamLinearRailProfile(), amount=length, dir=(0, 0, 1))
+        super().__init__(
+            part=rail, rotation=rotation, align=tuplify(align, 3), mode=mode
+        )
+        self.material = metals.aluminum()
+
+        # RigidJoint("test1", self, Location((10, 0, 0), (0, 90, 0)))
+        # RigidJoint("test2", self, Location((0, -10, 50), (90, 0, 0)))
+        self.label = f"CBeamLinearRailx{length}"
+        LinearJoint(
+            "screw_axis", self, Axis((10, 0, 0), (0, 0, 1)), linear_range=(0, length)
+        )
+        RigidJoint(
+            "bottom_center",
+            self,
+            Location(Plane((-20, 0, length / 2), x_dir=(0, 0, 1), z_dir=(1, 0, 0))),
+        )
+        RigidJoint(
+            "top_center",
+            self,
+            Location(Plane((20, 0, length / 2), x_dir=(0, -1, 0), z_dir=(1, 0, 0))),
+        )
+
+
+class CBeamGantryPlate(BasePartObject):
+    """Part Object: OpenBuilds C-Beam Gantry Plate
+
+    Achieve a compact gantry cart footprint with the versatile C-Beam Gantry Plate. This
+    plate accommodates up to 4 Mini V Wheels and can be easily configured to station wheels
+    inside the C-Beam Linear Rail track. The plate features recessed and pre-tapped holes
+    for professional flush mounts, making it a reliable component for various mounting
+    configurations.
+
+    Product Features:
+        - Countersunk holes
+        - Pre-tapped holes
+        - Center recess
+        - Multiple mounting configurations
+
+    Specifications:
+        - Size: 77.5 x 77.5mm
+        - Thickness: 6mm
+        - Material: 6061-T5 Aluminum
+        - Finish: Brushed and Anodized
+        - Color: Black
+
+    Args:
+        rotation (RotationLike, optional): angles to rotate about axes. Defaults to (0, 0, 0).
+        align (Align | tuple[Align, Align, Align], optional): align min, center,
+            or max of object. Defaults to (Align.CENTER, Align.CENTER, Align.MIN).
+        mode (Mode, optional): combine mode. Defaults to Mode.ADD.
+    """
+
+    _applies_to = [BuildPart._tag]
+
+    def __init__(
+        self,
+        rotation: RotationLike = (0, 0, 0),
+        align: None | Align | tuple[Align, Align, Align] = None,
+        mode: Mode = Mode.ADD,
+    ):
+
+        with BuildPart() as plate:
+            with BuildSketch():
+                RectangleRounded(38.575 * 2, 38.575 * 2, 4.635)
+                with Locations((-5, 0)):
+                    SlotCenterToCenter(10, 2.55 * 2, mode=Mode.SUBTRACT)
+            extrude(amount=6)
+            with BuildSketch(Plane.XY.offset(6)):
+                RectangleRounded(29.9, 29.9, 4.92)
+            extrude(amount=-1.5, mode=Mode.SUBTRACT)
+
+            with Locations((0, 14.25, 6)):
+                with GridLocations(60, 0, 2, 1):
+                    CounterBoreHole(3.6, 6, 1.5)
+            with Locations((0, -14.25, 6)):
+                with GridLocations(60, 0, 2, 1):
+                    CounterBoreHole(2.55, 4.5, 1.5)
+            with Locations((0, 0, 6)):
+                with GridLocations(40, 40, 2, 2):
+                    ThreadedHole(m5, counter_sunk=False, depth=6 * MM)
+                with GridLocations(20, 60, 2, 2):
+                    ThreadedHole(m5, counter_sunk=False, depth=6 * MM)
+            with GridLocations(60, 30, 2, 3):
+                Hole(2.55)
+            with GridLocations(20, 20, 3, 2):
+                Hole(2.55)
+            with GridLocations(0, 40, 1, 2):
+                Hole(2.55)
+            with Locations((-10, -10), (-10, 10), (10, 0)):
+                Hole(2.55)
+
+        super().__init__(
+            cast(Part, plate.part), rotation=rotation, align=align, mode=mode
+        )
+        self.material = metals.aluminum(
+            finish=[finishes.brushed(), finishes.anodize("black")]
+        )
+        self.label = "CBeamGantryPlate"
+
+
+class CBeamGantryPlateXLarge(BasePartObject):
+    """Part Object: OpenBuilds C-Beam Gantry Plate X-Large
+
+    Achieve unparalleled stability in your builds with the XLarge C-Beam Gantry Plate,
+    designed to accommodate up to six wheels for an extremely stable gantry. This versatile
+    plate is essential for both Belt and Pinion and Lead Screw transmissions. With recessed
+    holes for professional flush mounts and tapped holes for a 90° connection, this plate is
+    ideal for XY configurations, offering multiple mounting options to suit your project needs.
+
+    Product Features:
+        - Wide stance for enhanced stability
+        - Countersunk holes for a flush finish
+        - Tapped holes for easy 90° connections
+        - Center recess for additional mounting options
+        - Supports multiple mounting configurations
+
+    Specifications:
+        - Size: 125 x 125mm
+        - Thickness: 6mm
+        - Material: 6061 – T5 Aluminum
+        - Finish: Brushed and anodized
+        - Color: Black
+
+    Args:
+        rotation (RotationLike, optional): angles to rotate about axes. Defaults to (0, 0, 0).
+        align (Align | tuple[Align, Align, Align], optional): align min, center,
+            or max of object. Defaults to (Align.CENTER, Align.CENTER, Align.MIN).
+        mode (Mode, optional): combine mode. Defaults to Mode.ADD.
+    """
+
+    _applies_to = [BuildPart._tag]
+
+    def __init__(
+        self,
+        rotation: RotationLike = (0, 0, 0),
+        align: None | Align | tuple[Align, Align, Align] = None,
+        mode: Mode = Mode.ADD,
+    ):
+        with BuildPart() as plate:
+            with BuildSketch(Plane.XY):
+                RectangleRounded(125, 125, 10)
+                with GridLocations(30, 30, 3, 3):
+                    Circle(2.6, mode=Mode.SUBTRACT)
+                with GridLocations(20, 80.6, 2, 2):
+                    Circle(2.6, mode=Mode.SUBTRACT)
+                with GridLocations(65, 80.6, 2, 2):
+                    Circle(2.6, mode=Mode.SUBTRACT)
+                with GridLocations(60, 20, 2, 2):
+                    Circle(2.6, mode=Mode.SUBTRACT)
+                with GridLocations(60, 100.6, 2, 2):
+                    Circle(2.6, mode=Mode.SUBTRACT)
+                with GridLocations(20, 20, 2, 2) as nut_holes:
+                    Circle(2.6, mode=Mode.SUBTRACT)
+            extrude(amount=6)
+
+            # Recess
+            with BuildSketch(Plane.XY.offset(6)):
+                RectangleRounded(35, 35, 2.8)
+            extrude(amount=-1.6, mode=Mode.SUBTRACT)
+
+            # Slots
+            with BuildSketch(Plane.XY.offset(6)):
+                with GridLocations(102.6, 20, 2, 2):
+                    SlotOverall(11.135, 4.568 * 2)
+            extrude(amount=-1.6, mode=Mode.SUBTRACT)
+            with BuildSketch(Plane.XY):
+                with GridLocations(102.6, 20, 2, 2):
+                    SlotOverall(7.1, 2.55 * 2)
+            extrude(amount=6, mode=Mode.SUBTRACT)
+
+            # CounterSink - tapped holes (thread not modelled)
+            with Locations((0, 0, 6)):
+                with GridLocations(100.6, 60, 2, 2):
+                    CounterSinkHole(2.1, 2.7, counter_sink_angle=90)
+
+            # CounterBore
+            with Locations((0, -50.3, 6)):
+                with GridLocations(50.3, 0, 3, 1) as eccentric_mounts:
+                    CounterBoreHole(3.6, 6.125, 1.6, 6)
+            with Locations((0, 50.3, 6)):
+                with GridLocations(50.3, 0, 3, 1) as fixed_mounts:
+                    CounterBoreHole(2.55, 4.5675, 1.6, 6)
+
+        super().__init__(
+            cast(Part, plate.part), rotation=rotation, align=align, mode=mode
+        )
+        self.material = metals.aluminum(
+            finish=[finishes.brushed(), finishes.anodize("black")]
+        )
+        self.label = "CBeamGantryPlateXLarge"
+        self.thickness = 6 * MM
+        for label, loc in zip(["a", "b", "c"], eccentric_mounts):
+            RigidJoint(label, self, Pos(*(loc.position - Vector(0, 0, 6))))
+        for label, loc in zip(["d", "e", "f"], fixed_mounts):
+            RigidJoint(label, self, Pos(*(loc.position - Vector(0, 0, 6))))
+        for label, loc in zip(["a", "b", "c", "d"], nut_holes):
+            RigidJoint(f"nut_{label}", self, loc)
+        RigidJoint("top_center", self, Location((0, 0, 6 * MM)))
+
+
+class CBeamRiserPlate(BasePartObject):
+    """Part Object: OpenBuilds C-Beam Riser Plate
+
+    A key component used to attach C-Beam Gantry Plates to a C-Beam Shield. Pre-threaded
+    holes and center recess allow for flush mounting a top plate. Each set contains 2 riser
+    plates.
+
+    Product Features:
+        - C-Beam and V-Slot 20x80mm compatible
+        - Pre-tapped holes
+        - Center recess
+
+    Specifications:
+        - Size: 77.5 x 14.874mm
+        - Thickness: 8mm
+        - Material: 6061-T5 Aluminum
+        - Finish: Brushed and Anodized
+        - Color: Black
+
+    Args:
+        rotation (RotationLike, optional): angles to rotate about axes. Defaults to (0, 0, 0).
+        align (Align | tuple[Align, Align, Align], optional): align min, center,
+            or max of object. Defaults to (Align.CENTER, Align.CENTER, Align.MIN).
+        mode (Mode, optional): combine mode. Defaults to Mode.ADD.
+    """
+
+    _applies_to = [BuildPart._tag]
+
+    def __init__(
+        self,
+        rotation: RotationLike = (0, 0, 0),
+        align: None | Align | tuple[Align, Align, Align] = None,
+        mode: Mode = Mode.ADD,
+    ):
+
+        with BuildPart() as plate:
+            with BuildSketch() as sk:
+                Rectangle(38.75 * 2, 7.437 * 2)
+                fillet(sk.vertices().group_by(Axis.Y)[0], 1.2)
+                fillet(sk.vertices().group_by(Axis.Y)[-1], 3.5)
+                with Locations((0, -1.323)):
+                    with GridLocations(20, 0, 2, 1):
+                        Circle(2.55, mode=Mode.SUBTRACT)
+            extrude(amount=8)
+            with BuildSketch(Plane((0, -7.427, 8))):
+                RectangleRounded(32.24, 2 * 11.86712, 0.75)
+            extrude(amount=-2.1, mode=Mode.SUBTRACT)
+            with Locations((0, -1.323, 8)):
+                with GridLocations(60, 0, 2, 1):
+                    ThreadedHole(m5, counter_sunk=False, depth=8 * MM)
+
+        super().__init__(
+            cast(Part, plate.part), rotation=rotation, align=align, mode=mode
+        )
+        self.material = metals.aluminum(
+            finish=[finishes.brushed(), finishes.anodize("black")]
+        )
+        self.label = "CBeamRiserPlate"
+
+
+class EccentricSpacer(BasePartObject):
+    """Part Object: OpenBuilds Eccentric Spacer
+
+    These Eccentric Spacers are the perfect solution for creating a pre-load from the V-Wheels
+    to the V-Slot Linear Rail.
+
+    Pro-Tip: Eccentric Spacers comes with a divot/text on the outside which allows you to know
+    at all times where the smallest part of the CAM hole is located.
+
+    Product Features:
+        - Up to 1.5mm off center adjustment
+        - Tension wheel to v-slot for a snug, locked on fit
+        - Wide stance for stability
+
+    Specifications:
+        - Version - V7
+        - 6mm or 1/4" CAM Height
+        - 5mm Bore
+        - Rim fits into a 7.12mm Hole
+        - Aluminum
+
+    Args:
+        cam_height (Literal["6mm", "1/4in"]): cam height. Defaults to "6mm".
+        rotation (RotationLike, optional): angles to rotate about axes. Defaults to (0, 0, 0).
+        align (Align | tuple[Align, Align, Align], optional): align min, center,
+            or max of object. Defaults to (Align.CENTER, Align.CENTER, Align.MIN).
+        mode (Mode, optional): combine mode. Defaults to Mode.ADD.
+    """
+
+    _applies_to = [BuildPart._tag]
+
+    def __init__(
+        self,
+        cam_height: Literal["6mm", "1/4in"] = "6mm",
+        rotation: RotationLike = (0, 0, 0),
+        align: None | Align | tuple[Align, Align, Align] = None,
+        mode: Mode = Mode.ADD,
+    ):
+
+        valid_heights = {
+            "6mm": 6 * MM,
+            "1/4in": IN / 4,
+        }
+        try:
+            cam_length = valid_heights[cam_height]
+        except KeyError as exc:
+            raise ValueError(
+                f"{cam_height} is an invalid cam height,"
+                f" must be one of {tuple(valid_heights.keys())}"
+            ) from exc
+
+        # 10mm across the flats
+        hex_radius = (2 / 3) * 10 * MM * math.sin(math.radians(60))
+        with BuildPart() as spacer:
+            with BuildSketch():
+                RegularPolygon(hex_radius, 6)
+            extrude(amount=6)
+            with BuildSketch(Plane.YZ) as chamf:
+                Rectangle(hex_radius, cam_length, align=Align.MIN)
+                chamfer(chamf.vertices().group_by(Axis.Y)[0], 0.6)
+            revolve(mode=Mode.INTERSECT)
+            with Locations((0, 0, cam_length)):
+                Cylinder(
+                    hex_radius + 0.25 * MM,
+                    1 * MM,
+                    align=(Align.CENTER, Align.CENTER, Align.MAX),
+                )
+            with BuildSketch():
+                Circle(3.555)
+            extrude(amount=cam_length + 2.5 * MM)
+            with Locations((0, 0.79 * MM)):  # eccentric hole
+                Hole(2.5)
+            with BuildSketch(spacer.faces().filter_by(Axis.Y).sort_by(Axis.Y)[-1]):
+                Text(cam_height, font_size=1.5 * MM, font_style=FontStyle.BOLD)
+            extrude(amount=-0.1 * MM, mode=Mode.SUBTRACT)
+
+        super().__init__(
+            cast(Part, spacer.part).locate(Pos(0, -0.79 * MM, 0)),
+            rotation=rotation,
+            align=align,
+            mode=mode,
+        )
+        self.material = metals.aluminum()
+        self.label = f"EccentricSpacer-{cam_height}"
+        # "a" and "b" are the bottom and top mounting faces, respectively.
+        RigidJoint("a", self, Location())
+        RigidJoint("b", self, Pos(Z=2.5 * MM + cam_length - 2.5 * MM))
+        # "center" identifies the eccentric mounting/rotation axis at the top face.
+        RigidJoint("center", self, Pos(0, -0.79 * MM, cam_length))
+
+
+class FlexibleCoupler(BasePartObject):
+    """Part Object: OpenBuilds Flexible Coupler
+
+    These Flexible couplings are used to transmit torque from a stepper motor to a lead
+    screw, thus creating the movement in an actuator.
+
+    Specifications:
+        - Length: 25mm (.98")
+        - OD: 20mm (.79")
+        - Shaft: 5mm x 8mm or 1/4"
+        - Aluminum
+        - Color: Silver
+
+    Args:
+        shaft_diameter (Literal["8mm", "1/4in"]): load shaft diameter
+        rotation (RotationLike, optional): angles to rotate about axes. Defaults to (0, 0, 0).
+        align (Align | tuple[Align, Align, Align], optional): align min, center,
+            or max of object. Defaults to (Align.CENTER, Align.CENTER, Align.MIN).
+        mode (Mode, optional): combine mode. Defaults to Mode.ADD.
+
+    Raises:
+        ValueError: Invalid shaft diameter
+    """
+
+    _applies_to = [BuildPart._tag]
+
+    def __init__(
+        self,
+        shaft_diameter: Literal["8mm", "1/4in"],
+        rotation: RotationLike = (0, 0, 0),
+        align: None | Align | tuple[Align, Align, Align] = None,
+        mode: Mode = Mode.ADD,
+    ):
+        valid_diameters = {
+            "8mm": 8 * MM,
+            "1/4in": IN / 4,
+        }
+        try:
+            d2 = valid_diameters[shaft_diameter]
+        except KeyError as exc:
+            raise ValueError(
+                f"{shaft_diameter} is an invalid shaft diameter,"
+                f" must be one of {tuple(valid_diameters.keys())}"
+            ) from exc
+
+        d1 = 5 * MM  # NEMA 17
+
+        with BuildPart() as coupler:
+            Cylinder(10, 25, align=(Align.CENTER, Align.CENTER, Align.MAX))
+            with Locations(coupler.faces().sort_by(Axis.Z)[-1]):
+                Hole(d1 / 2, 25 * MM / 2)
+                Box(
+                    10,
+                    0.9,
+                    8.3,
+                    align=(Align.MIN, Align.CENTER, Align.MAX),
+                    mode=Mode.SUBTRACT,
+                )
+            with Locations(coupler.faces().sort_by(Axis.Z)[0]):
+                Hole(d2 / 2, 25 * MM / 2)
+                Box(
+                    11,
+                    0.9,
+                    8.3,
+                    align=(Align.MIN, Align.CENTER, Align.MAX),
+                    mode=Mode.SUBTRACT,
+                )
+            chamfer(coupler.edges().filter_by(GeomType.CIRCLE), 0.3 * MM)
+            with Locations(
+                Location((5, 9.2, -4), (1, 0, 0), -90),
+                Location((5, 9.2, -21), (1, 0, 0), -90),
+            ):
+                Cylinder(6 / 2, 6, mode=Mode.SUBTRACT)
+                Hole(1.7)
+            with BuildLine():
+                spiral = Helix(2, 2, 11, center=(0, 0, -18.2))
+            with BuildSketch(spiral ^ 0):
+                Rectangle(10, 0.7, align=(Align.MIN, Align.MIN))
+            spiral_cut = sweep(is_frenet=True, mode=Mode.PRIVATE).rotate(Axis.Z, 90)
+            for i in range(0, 10, 2):
+                insert(spiral_cut.moved(Pos(Z=i)), mode=Mode.SUBTRACT)
+
+            super().__init__(
+                cast(Part, coupler.part).rotate(Axis.X, 180),
+                rotation=rotation,
+                align=align,
+                mode=mode,
+            )
+            self.material = metals.aluminum(finish=[finishes.bead_blast()])
+            self.label = f"FlexibleCoupler-{shaft_diameter}"
+            RigidJoint("a", self, Pos(Z=12.5 * MM))
+            RigidJoint("b", self, Location((0, 0, 12.5 * MM), (1, 0, 0), 180))
+
+
+class LBracket(BasePartObject):
+    """Part Object: OpenBuilds LBracket
+
+    Right-angle mounting bracket for joining OpenBuilds plates, profiles, and other
+    components. The two perpendicular flanges provide elongated mounting slots for
+    positional adjustment during assembly.
+
+    Product Features:
+        - Two perpendicular mounting flanges
+        - Elongated slots for adjustable component positioning
+        - Suitable for OpenBuilds modular assemblies
+
+    Specifications:
+        - 3mm thick brushed aluminum anodize black
+        - 20mm flange width
+        - 14.5mm flange depth
+        - 3.5mm wide slots with 5.5mm center-to-center spacing
+
+    Args:
+        rotation (RotationLike, optional): angles to rotate about axes. Defaults to (0, 0, 0).
+        align (Align | tuple[Align, Align, Align], optional): align min, center,
+            or max of object. Defaults to Align.NONE.
+        mode (Mode, optional): combine mode. Defaults to Mode.ADD.
+    """
+
+    _applies_to = [BuildPart._tag]
+
+    def __init__(
+        self,
+        rotation: RotationLike = (0, 0, 0),
+        align: Align | tuple[Align, Align, Align] = Align.NONE,
+        mode: Mode = Mode.ADD,
+    ):
+        with BuildPart() as bracket:
+            for c, pln in ((15, Plane.XY), (10, -Plane.ZY)):
+                with BuildSketch(pln):
+                    Rectangle(20, 14.5, align=(Align.MIN, Align.CENTER))
+                    with Locations((c, 0)):
+                        SlotCenterToCenter(1.75, 5.5, rotation=90, mode=Mode.SUBTRACT)
+                extrude(amount=3)
+
+        super().__init__(
+            part=cast(Part, bracket.part), rotation=rotation, align=align, mode=mode
+        )
+        self.material = metals.aluminum(
+            finish=[finishes.brushed(), finishes.anodize("black")]
+        )
+        RigidJoint("corner", self, -Location())
+        RigidJoint("screw_a", self, Pos(15, 0, 3))
+        RigidJoint("screw_b", self, Location(Plane((3, 0, 10), z_dir=(1, 0, 0))))
+        RigidJoint("nut_a", self, Pos(15, 0, 0) * Rot(Z=90))
+        RigidJoint(
+            "nut_b", self, Location(Plane((0, 0, 10), x_dir=(0, 1, 0), z_dir=(1, 0, 0)))
+        )
+        self.label = "LBracket"
+
+
+class LockCollar(Compound):
+    """Assembly: OpenBuilds LockCollar
+
+    Lock Collars are used to create mechanical stops at any location along a shaft or to
+    secure components to it. A popular use is to lock the 8mm Lead Screw place. Includes
+    M5x4 set screw.
+
+    Product Features:
+        - One piece for even distributed clamping force
+        - Integrated set screw to prevent slippage
+
+    Product Specifications:
+        - 1/4" Size ID: 0.250 in, OD: .500 in, W: 7mm
+        - 5mm Size ID: 5mm, OD: 0.5 in, W: 7mm
+        - 8mm Size ID: 8mm, OD: 14mm, W: 7mm
+        - Black Oxide Finished Steel
+        - Color: Black
+
+    Args:
+        inside_diameter (Literal["5mm", "8mm", "1/4in"]): inside diameter of
+            the collor
+
+    Raises:
+        ValueError: Invalid inside diameter
+    """
+
+    def __init__(self, inside_diameter: Literal["5mm", "8mm", "1/4in"]):
+        valid_sizes = {
+            "5mm": (5 * MM, IN / 2, 7 * MM),
+            "8mm": (8 * MM, 14 * MM, 7 * MM),
+            "1/4in": (IN / 4, IN / 2, 7 * MM),
+        }
+        try:
+            bore, od, h = valid_sizes[inside_diameter]
+        except KeyError as exc:
+            raise ValueError(
+                f"{inside_diameter} is an invalid inside diameter,"
+                f" must be one of {tuple(valid_sizes.keys())}"
+            ) from exc
+        super().__init__()
+
+        setscrew = SetScrew("M5-0.8", 4 * MM)
+        with BuildPart() as collar:
+            with BuildSketch():
+                Circle(od / 2)
+                Circle(bore / 2, mode=Mode.SUBTRACT)
+            extrude(amount=h)
+            with Locations(Location((0, od / 2, h / 2), (1, 0, 0), -90)):
+                ThreadedHole(setscrew, depth=od / 2)
+        collar_part = cast(Part, collar.part)
+        collar_part.color = Color(0x020202)
+        collar_part.label = "Collar"
+        self.children = [collar_part, setscrew.locate(setscrew.hole_locations[0])]
+        self.label = f"LockCollar{inside_diameter}"
+        RigidJoint("a", self, Location())
+        RigidJoint("b", self, -Location((0, 0, h)))
+
+
+class MetricLeadScrew(Compound):
+    """Assembly: OpenBuilds MetricLeadScrew
+
+    These precision trapezoidal 8mm metric lead screws are a perfect combination of high
+    torque and speed.
+
+    Note that although this lead screw is a single object it is created as an Assembly
+    for efficiency reasons.
+
+    Product Features:
+        - Large diameter helps eliminate whipping
+        - High pitch which provides a quick 8mm translation for every single revolution
+        - Works best with OpenBuilds Nut Blocks and Anti-Backlash Nut Blocks
+
+    Product Specifications:
+        - Tr8*8-2p (4 starts)
+        - Pitch: 2mm
+        - Stainless Steel 304
+        - Color: Silver
+        - Lead Screw Diameter: 7.8~(mm) Note - These lead screws have been customized to
+          work directly with OpenBuilds system.
+
+    Args:
+        length (float): screw length
+    """
+
+    def __init__(self, length: float, simple: bool = True):
+
+        super().__init__()
+        if simple:
+            root_radius = 7.8 * MM / 2
+        else:
+            thread = TrapezoidalThread(
+                7.8 * MM,
+                2 * MM,
+                30,
+                length,
+                starts=4,
+                end_finishes=("chamfer", "chamfer"),
+            )
+            root_radius = thread.root_radius
+        components = [
+            Cylinder(
+                root_radius,
+                length,
+                align=(Align.CENTER, Align.CENTER, Align.MIN),
+            ),
+        ]
+        if not simple:
+            components.append(thread)
+        self.children = components
+
+        self.material = metals.stainless()
+        RigidJoint("axis", self, Location())
+        self.label = f"8mm lead screw x {length}"
+
+
+class RouterSpindleMount(BasePartObject):
+    """RouterSpindleMount
+
+    Ensure the secure mounting of your router or spindle with this robust and adjustable
+    mount. The thick and hefty design provides a stable base, while the adjustable
+    faceplate accommodates size variations. This mount features pre-tapped holes for
+    easy installation and optional attachments like the OpenBuilds LED Light Ring.
+
+    Product Features:
+        - Removable faceplate for quick tool changes
+        - Adjustable faceplate to accommodate various router sizes
+        - Countersunk holes for a flush finish
+        - Tapped holes for easy mounting
+        - Flexible mounting options
+
+    Args:
+        parts (Literal["base", "faceplate", "both"], optional): parts to be created.
+            Defaults to "both".
+        rotation (RotationLike, optional): angles to rotate about axes. Defaults to (0, 0, 0).
+        align (Align | tuple[Align, Align, Align], optional): align min, center,
+            or max of object. Defaults to None.
+        mode (Mode, optional): combine mode. Defaults to Mode.ADD.
+
+    Raises:
+        ValueError: invalid parts parameter
+    """
+
+    _applies_to = [BuildPart._tag]
+
+    def __init__(
+        self,
+        parts: Literal["base", "faceplate", "both"] = "both",
+        rotation: RotationLike = (0, 0, 0),
+        align: None | Align | tuple[Align, Align, Align] = None,
+        mode: Mode = Mode.ADD,
+    ):
+        m5 = SocketHeadCapScrew("M5-0.8", 20 * MM)
+        width = 90.8 * MM
+        height = 30.6 * MM + 54.5 * MM
+        thickness = 20 * MM
+        top_mount_centers: GridLocations | list[Location] = []
+        if parts in ["base", "both"]:
+            with BuildPart() as base:
+                # Create the basic shape
+                with BuildSketch(Plane.XY.offset(-thickness / 2)) as c:
+                    with Locations((0, height / 2 - 54.5)):
+                        Rectangle(width, height)
+                    Circle(35.5, mode=Mode.SUBTRACT)
+                    Rectangle(
+                        28.15 * 2,
+                        35.5,
+                        align=(Align.CENTER, Align.MIN),
+                        mode=Mode.SUBTRACT,
+                    )
+                    fillet(c.vertices().group_by(Axis.Y)[0], 5)
+                    fillet(c.vertices().group_by(Axis.Y)[-2], 7.5)
+                extrude(amount=thickness)
+
+                # Create the holes
+                with Locations(
+                    (30.0, -44.2, thickness / 2),
+                    (20.0, -44.2, thickness / 2),
+                    (-20.0, -44.2, thickness / 2),
+                    (-30.0, -44.2, thickness / 2),
+                ) as top_mount_centers:
+                    ThreadedHole(m5, counter_sunk=False)
+                with Locations(base.faces().sort_by(Axis.Y)[0]):
+                    with GridLocations(20, 0, 4, 1):
+                        ThreadedHole(m5, counter_sunk=False, depth=7 * MM)
+                with Locations(
+                    -Plane.YZ.offset(-width / 2), Plane.YZ.offset(width / 2)
+                ):
+                    with Locations((10.6, 0), (-29.4, 0)):
+                        ThreadedHole(m5, counter_sunk=False, depth=9 * MM)
+                with Locations(
+                    -Plane.XZ.offset(-cast(Part, base.part).bounding_box().max.Y)
+                ):
+                    with GridLocations(36.8 * 2, 0, 2, 1):
+                        ThreadedHole(m5, counter_sunk=False, depth=13 * MM)
+
+        if parts in ["faceplate", "both"]:
+            with BuildPart() as faceplate:
+                with BuildSketch(Plane.XY.offset(-thickness / 2)) as s:
+                    # Create basic half shape
+                    Rectangle(23.65, 48.2, align=Align.MIN)
+                    with Locations((0, 48.2)):
+                        Rectangle(45.4, 48.2 - 36.2, align=(Align.MIN, Align.MAX))
+                    Circle(35.5, mode=Mode.SUBTRACT)
+
+                    # Fillet corners
+                    fillet(s.vertices().group_by(Axis.Y)[-1].sort_by(Axis.X)[-1], 1.4)
+                    fillet(s.vertices().group_by(Axis.Y)[-3].sort_by(Axis.X)[0], 3)
+                    fillet(s.vertices().sort_by(Axis.Y)[0], 1.3)
+
+                    # Mirror
+                    mirror(about=Plane.YZ)
+                extrude(amount=thickness)
+
+                # Holes
+                with Locations(faceplate.faces().group_by(Axis.Y)[-1]):
+                    with GridLocations(36.8 * 2, 0, 2, 1):
+                        CounterBoreHole(3, 5.1, 1.5)
+
+                # Sunken embossed text
+                with BuildSketch(faceplate.faces().sort_by(Axis.Y)[-1]):
+                    RectangleRounded(27.45 * 2, 13, 2.5)
+                extrude(amount=-1 * MM, mode=Mode.SUBTRACT)
+                with BuildSketch(
+                    faceplate.faces().filter_by(Axis.Y).sort_by(Axis.Y)[-2]
+                ):
+                    Text("OPENBUILDS", 7.5 * MM, font_style=FontStyle.BOLD)
+                extrude(amount=0.1 * MM)
+
+        base_part, faceplate_part = cast(Part, base.part), cast(Part, faceplate.part)
+        if parts == "both":
+            mount = base_part + faceplate_part
+        elif parts == "base":
+            mount = base_part
+        elif parts == "faceplate":
+            mount = faceplate_part
+        else:
+            raise ValueError(
+                f"the parts parameter must one of 'base', 'faceplate' or 'both' "
+                f"not {parts}"
+            )
+        mount.label = "RouterSpindleMount"
+        super().__init__(mount, rotation, align, mode)
+        self.material = metals.aluminum(
+            finish=[finishes.brushed(), finishes.anodize("black")]
+        )
+        for label, pos in zip(["a", "b", "c", "d"], top_mount_centers):
+            RigidJoint(f"top_{label}", self, -pos)
+        for label, pos in zip(["a", "b", "c", "d"], top_mount_centers):
+            RigidJoint(f"bottom_{label}", self, pos * Pos(0, 0, -thickness))
+        RigidJoint(
+            "back_mount",
+            self,
+            self.faces().sort_by(Axis.Y)[0].location_at(0.5, 0.5, x_dir=(-1, 0, 0)),
+        )
+
+
+class ShimWasher(BasePartObject):
+    """Part Object: OpenBuilds Shim/Washer
+
+    Product Features:
+        - Reduce wear and prevents binding
+        - Creates a tighter fit among parts
+
+    Args:
+        shim_type (Literal['MiniVWheel', '10x5x1', '12x8x1', 'SlotWasher', 'FlatWasher']):
+            shim / washer
+        rotation (RotationLike, optional): angles to rotate about axes. Defaults to (0, 0, 0).
+        align (Align | tuple[Align, Align, Align], optional): align min, center,
+            or max of object. Defaults to (Align.CENTER, Align.CENTER, Align.MIN).
+        mode (Mode, optional): combine mode. Defaults to Mode.ADD.
+
+    Raises:
+        ValueError: Invalid shim_type
+    """
+
+    _applies_to = [BuildPart._tag]
+
+    def __init__(
+        self,
+        shim_type: Literal[
+            "MiniVWheel", "10x5x1", "12x8x1", "SlotWasher", "FlatWasher"
+        ],
+        rotation: RotationLike = (0, 0, 0),
+        align: None | Align | tuple[Align, Align, Align] = None,
+        mode: Mode = Mode.ADD,
+    ):
+        # OD, ID, Thickness
+        dimensions = {
+            "MiniVWheel": (8, 5, 1),
+            "10x5x1": (10, 5, 1),
+            "12x8x1": (12, 8, 1),
+            "SlotWasher": (15, 5, 2),
+            "FlatWasher": (0.75 * IN, 0.25 * IN, 0.08 * IN),
+        }
+        try:
+            od, bore, thickness = dimensions[shim_type]
+        except KeyError as exc:
+            raise ValueError(
+                f"Invalid shim_type {shim_type} must be one of {tuple(dimensions.keys())}"
+            ) from exc
+
+        with BuildPart() as shim:
+            with BuildSketch():
+                Circle(od / 2)
+                Circle(bore / 2, mode=Mode.SUBTRACT)
+            extrude(amount=thickness)
+            fillet(shim.edges().group_by(SortBy.LENGTH)[-1], thickness / 5)
+
+        super().__init__(
+            cast(Part, shim.part), rotation=rotation, align=align, mode=mode
+        )
+        self.material = metals.aluminum()
+        self.label = f"ShimWasher-{shim_type}"
+        RigidJoint("a", self, Location())
+        RigidJoint("b", self, Pos(Z=thickness))
+
+
+class SpacerBlock(BasePartObject):
+    """Part Object: OpenBuilds Spacer Block
+
+    This Spacer Block allows you to raise the V-Slot Gantry Plate up away from the rail
+    12mm so that you can run transmission components such as a Belt Drive or Threaded Rod
+    underneath the V-Slot Gantry Plate.
+
+    Product Features:
+        - Adds transmission spacing to any V-Slot Liner Actuators
+        - Compatible with multiple OpenBuilds plates
+
+    Specifications:
+        - Size: 86.4 x 20mm
+        - Thickness: 12mm
+        - M5 Tapped Holes to allow mounting to the V-Slot Gantry Plate
+        - 3 Holes that allow for mounting of full size OpenBuilds Wheels
+        - Anodized Aluminum
+        - Color: Black
+
+    Args:
+        rotation (RotationLike, optional): angles to rotate about axes. Defaults to (0, 0, 0).
+        align (Align | tuple[Align, Align, Align], optional): align min, center,
+            or max of object. Defaults to (Align.CENTER, Align.CENTER, Align.MIN).
+        mode (Mode, optional): combine mode. Defaults to Mode.ADD.
+    """
+
+    _applies_to = [BuildPart._tag]
+
+    def __init__(
+        self,
+        rotation: RotationLike = (0, 0, 0),
+        align: None | Align | tuple[Align, Align, Align] = None,
+        mode: Mode = Mode.ADD,
+    ):
+
+        with BuildPart() as plate:
+            with BuildSketch():
+                RectangleRounded(86.4, 20, 3.36)
+                with GridLocations(30, 0, 3, 1):
+                    Circle(3.6, mode=Mode.SUBTRACT)
+            extrude(amount=12)
+            with Locations((0, 0, 12)):
+                with GridLocations(40, 0, 2, 1):
+                    ThreadedHole(m5, counter_sunk=False, depth=12)
+
+        super().__init__(
+            cast(Part, plate.part), rotation=rotation, align=align, mode=mode
+        )
+        self.material = metals.aluminum(
+            finish=[finishes.brushed(), finishes.anodize("black")]
+        )
+        self.label = "SpacerBlock"
+
+
+class TNut(BasePartObject):
+    """Part Object: OpenBuilds TNut
+
+    T-nut for attaching components to the OpenBuilds V-Slot linear rail. The nut
+    slides into the rail's tee slot and provides an M5 tapped mounting point.
+
+    Product Features:
+        - Slides into OpenBuilds V-Slot extrusion
+        - M5 tapped hole for component mounting
+        - Chamfered leading edge for easier insertion
+
+    Specifications:
+        - M5 x 0.8 tapped hole
+        - 5.9mm wide
+        - 10mm long
+        - Mild steel
+
+    Args:
+        rotation (RotationLike, optional): angles to rotate about axes. Defaults to (0, 0, 0).
+        align (Align | tuple[Align, Align, Align], optional): align min, center,
+            or max of object. Defaults to Align.NONE.
+        mode (Mode, optional): combine mode. Defaults to Mode.ADD.
+    """
+
+    _applies_to = [BuildPart._tag]
+
+    def __init__(
+        self,
+        rotation: RotationLike = (0, 0, 0),
+        align: Align | tuple[Align, Align, Align] = Align.NONE,
+        mode: Mode = Mode.ADD,
+    ):
+        with BuildPart() as nut_builder:
+            with BuildSketch(Plane.XZ) as profile:
+                Rectangle(w := 5.9, h := 4, align=(Align.CENTER, Align.MAX))
+                with Locations((0, -0.8)):
+                    Rectangle(l := 10, 3.2, align=(Align.CENTER, Align.MAX))
+                chamfer(profile.vertices().group_by(Axis.Y)[0], 1.6)
+            extrude(amount=5.9 / 2, both=True)
+            with BuildSketch() as plan:
+                Rectangle(l, w)
+                corners = [
+                    plan.vertices().group_by(Axis.Y)[0].sort_by(Axis.X)[0],
+                    plan.vertices().group_by(Axis.Y)[-1].sort_by(Axis.X)[-1],
+                ]
+                fillet(corners, w / 2)
+            extrude(amount=-h, mode=Mode.INTERSECT)
+            TapHole(m5, counter_sunk=False)
+
+        super().__init__(
+            part=cast(Part, nut_builder.part), rotation=rotation, align=align, mode=mode
+        )
+        self.material = metals.mild_steel()
+        RigidJoint("a", self, Pos(Z=1))
+        RigidJoint("b", self, Pos(Z=0))
+        self.label = "TNut"
+
+
+class _VSlotGroove(BaseSketchObject):
+    """Sketch Object: OpenBuilds V Slot Linear Rail Groove
+
+    Args:
+        rotation (float, optional): angles to rotate objects. Defaults to 0.
+        align (Align | tuple[Align, Align], optional): align min, center, or
+            max of object. Defaults to (Align.CENTER, Align.CENTER).
+        mode (Mode, optional): combination mode. Defaults to Mode.ADD.
+    """
+
+    _applies_to = [BuildSketch._tag]
+
+    def __init__(
+        self,
+        rotation: float = 0,
+        mode: Mode = Mode.ADD,
+    ):
+        with BuildSketch() as groove:
+            with BuildLine():
+                Polyline(
+                    (3.69, 0),
+                    (3.9, 0.21),
+                    (3.9, 2.8393398282202034),
+                    (6.560660171779773, 5.5),
+                    (8.2, 5.5),
+                    (8.2, 3.125),
+                    (8.545, 3.125),
+                    (10, 4.58),
+                    (10, 0),
+                )
+                mirror(about=Plane.XZ)
+            make_face()
+
+        super().__init__(obj=groove.sketch, rotation=rotation, align=None, mode=mode)
+
+
+class _VSlotInternalCavity(BaseSketchObject):
+    """Sketch Object: OpenBuilds V Slot Linear Rail Internal Cavity
+
+    Args:
+        rotation (float, optional): angles to rotate objects. Defaults to 0.
+        align (Align | tuple[Align, Align], optional): align min, center, or
+            max of object. Defaults to (Align.CENTER, Align.CENTER).
+        mode (Mode, optional): combination mode. Defaults to Mode.ADD.
+    """
+
+    _applies_to = [BuildSketch._tag]
+
+    def __init__(
+        self,
+        rotation: float = 0,
+        mode: Mode = Mode.ADD,
+    ):
+        with BuildSketch() as cavity:
+            with BuildLine():
+                Polyline(
+                    (-8.2, 0),
+                    (-8.2, -2.7),
+                    (-6.23933983, -2.7),
+                    (-2.83933983, -6.1),
+                    (0, -6.1),
+                )
+                mirror(about=Plane.XZ)
+                mirror(about=Plane.YZ)
+            make_face()
+
+        super().__init__(obj=cavity.sketch, rotation=rotation, align=None, mode=mode)
+
+
+class VSlotLinearRailProfile(BaseSketchObject):
+    """Sketch Object: OpenBuilds V Slot Linear Rail Profile
+
+    Args:
+        rotation (float, optional): angles to rotate objects. Defaults to 0.
+        align (Align | tuple[Align, Align], optional): align min, center, or
+            max of object. Defaults to (Align.CENTER, Align.CENTER).
+        mode (Mode, optional): combination mode. Defaults to Mode.ADD.
+    """
+
+    _applies_to = [BuildSketch._tag]
+
+    def __init__(
+        self,
+        rail_size: Literal["20x20", "20x40", "20x60", "20x80", "40x40"] = "20x20",
+        rotation: float = 0,
+        align: tuple[Align, Align] = (Align.CENTER, Align.CENTER),
+        mode: Mode = Mode.ADD,
+    ):
+        grooves: dict[str, tuple[list[tuple[int, int]], list[int]]] = {
+            "20x20": ([(0, 0), (0, 0), (0, 0), (0, 0)], [0, 90, 180, 270]),
+            "20x40": (
+                [(0, 10), (0, 10), (0, 10), (0, -10), (0, -10), (0, -10)],
+                [0, 90, 180, 180, 270, 0],
+            ),
+            "20x60": (
+                [
+                    (0, 0),
+                    (0, 20),
+                    (0, 20),
+                    (0, 20),
+                    (0, 0),
+                    (0, -20),
+                    (0, -20),
+                    (0, -20),
+                ],
+                [0, 0, 90, 180, 180, 180, 270, 0],
+            ),
+            "20x80": (
+                [
+                    (0, 10),
+                    (0, 30),
+                    (0, 30),
+                    (0, 30),
+                    (0, 10),
+                    (0, -10),
+                    (0, -30),
+                    (0, -30),
+                    (0, -30),
+                    (0, -10),
+                ],
+                [0, 0, 90, 180, 180, 180, 180, 270, 0, 0],
+            ),
+            "40x40": (
+                [
+                    (10, 10),
+                    (10, 10),
+                    (-10, 10),
+                    (-10, 10),
+                    (-10, -10),
+                    (-10, -10),
+                    (10, -10),
+                    (10, -10),
+                ],
+                [0, 90, 90, 180, 180, 270, 270, 0],
+            ),
+        }
+        with BuildSketch() as cavity_40x40:
+            with BuildLine():
+                l = Polyline(
+                    (18.2, 2.7),
+                    (16.239339828219503, 2.7),
+                    (12.839339828219602, 6.1),
+                    (7.1606601717797975, 6.1),
+                    (6.1, 7.160660171780418),
+                    (6.1, 12.839339828220236),
+                    (2.7, 16.23933982822021),
+                    (2.7, 18.2),
+                    (-2.7, 18.2),
+                )
+                insert(l.rotate(Axis.Z, 90))
+                insert(l.rotate(Axis.Z, 180))
+                insert(l.rotate(Axis.Z, 270))
+            make_face()
+
+        if rail_size in ["20x20", "20x40", "20x60", "20x80", "40x40"]:
+            width, height = (int(v) for v in rail_size.split("x"))
+        else:
+            raise ValueError(
+                f"The rail_size of {rail_size} isn't valid"
+                f" - must be one of 20x20, 20x40, 20x60, 20x80, or 40x40"
+            )
+        with BuildSketch() as vslot:
+            RectangleRounded(width, height, FILLET_RADIUS)
+            with GridLocations(20, 20, width // 20, height // 20):
+                Circle(CAVITY_RADIUS, mode=Mode.SUBTRACT)
+            for pos, angle in zip(*grooves[rail_size]):
+                with Locations(pos):
+                    _VSlotGroove(angle, mode=Mode.SUBTRACT)
+            if rail_size in ["20x40", "20x60", "20x80"]:
+                with GridLocations(0, 20, 1, height // 20 - 1):
+                    _VSlotInternalCavity(mode=Mode.SUBTRACT)
+            elif rail_size == "40x40":
+                insert(cavity_40x40, mode=Mode.SUBTRACT)
+        super().__init__(obj=vslot.sketch, rotation=rotation, align=align, mode=mode)
+
+
+class VSlotLinearRail(BasePartObject):
+    """Part Object: OpenBuilds V Slot Linear Rail
+
+    V-Slot Linear Rail aluminum extrusion profile is the ultimate solution combining both
+    linear motion and a modular, structural framing system. It's lightweight yet rigid and
+    provides an ultra smooth track for precise motion.
+
+    OpenBuilds created V-Slot Linear Rail aluminum extrusion profile and has added a
+    library of compatible modular parts which today is known as the OpenBuilds System.
+    We have shipped over one million feet of V-Slot and counting to businesses, classrooms,
+    laboratories and makers all over the world!
+
+    Much like working with lumber, you can cut V-Slot on a chop saw (using a metal blade)
+    or even use a hacksaw. From there, you simply use a screw driver to make the connections.
+
+    Product Features:
+        - Lightweight and strong
+        - Tee Nut channel
+        - Smooth v-groove for linear motion
+        - M5 tap-ready holes
+        - Aluminum extrusion
+        - Sizes: 20x20, 20x40, 20x60, 20x80, and 40x40
+
+    Args:
+        rail_size (Literal["20x20", "20x40", "20x60", "20x80", "40x40"]): size in mm
+        rotation (RotationLike, optional): angles to rotate about axes. Defaults to (0, 0, 0).
+        align (Align | tuple[Align, Align, Align], optional): align min, center,
+            or max of object. Defaults to (Align.CENTER, Align.CENTER, Align.MIN).
+        mode (Mode, optional): combine mode. Defaults to Mode.ADD.
+
+    Raises:
+            ValueError: Invalid rail_size
+    """
+
+    _applies_to = [BuildPart._tag]
+
+    def __init__(
+        self,
+        rail_size: Literal["20x20", "20x40", "20x60", "20x80", "40x40"],
+        length: float,
+        rotation: RotationLike = (0, 0, 0),
+        align: Align | tuple[Align, Align, Align] = (
+            Align.CENTER,
+            Align.CENTER,
+            Align.MIN,
+        ),
+        mode: Mode = Mode.ADD,
+    ):
+        if rail_size not in ["20x20", "20x40", "20x60", "20x80", "40x40"]:
+            raise ValueError(
+                f"The rail_size of {rail_size} isn't valid"
+                f" - must be one of 20x20, 20x40, 20x60, 20x80, or 40x40"
+            )
+        rail = extrude(VSlotLinearRailProfile(rail_size), amount=length, dir=(0, 0, 1))
+        super().__init__(
+            part=rail, rotation=rotation, align=tuplify(align, 3), mode=mode
+        )
+        self.material = metals.aluminum()
+        self.label = f"VSlot Rail {rail_size}x{length}"
+
+
+class XLargeCBeamGantry(Compound):
+    """XLargeCBeamGantry
+
+    The C-Beam XLarge Gantry Set is ideal for high-performance demands. Tailored to
+    excel in robust Linear Actuator gantries and CNC Machines, it fuses strength,
+    resilience, and unwavering stability.
+
+    Setting this Gantry kit apart are four robust Xtreme V Wheels. They shine under
+    intense force and weight, delivering heightened accuracy and minimal compression
+    for precision-driven tasks.
+
+    Builders across various industries vouch for this Kit's reliability and consistent
+    performance. Purpose-built for the X, Y, and Z axes of our OpenBuilds LEAD CNC Machine,
+    elevate your projects with the proven versatility of the C-Beam XLargeGantry Set.
+
+    Specifications:
+        - Plate dimensions: 125mm x 125mm
+        - Designed to be compatible with C-Beam Linear Rail
+        - Specifically engineered for Lead Screw-driven systems
+
+    Args:
+        wheel_count (Literal[4, 6], optional): number of wheels. Defaults to 4.
+        eccentric_angle (float, optional): angle of the eccentric spaces. Values
+            less than 90 will tighten the wheels to the rail while values greater
+            than 90 will loosen the fit. Defaults to 90.
+
+    Raises:
+        ValueError: Invalid wheel_count
+    """
+
+    def __init__(self, wheel_count: Literal[4, 6] = 4, eccentric_angle: float = 90):
+        if wheel_count not in [4, 6]:
+            raise ValueError(f"wheel_count of {wheel_count} must be either 4 or 6")
+        plate = CBeamGantryPlateXLarge()
+        w0 = XtremeSolidVWheelAssembly(True)
+        w2 = copy.copy(w0)
+        w3 = XtremeSolidVWheelAssembly(False)
+        w5 = copy.copy(w3)
+        wheels = [w0, w2, w3, w5]
+        acme_nut_assembly = AcmeAntiBacklashNutBlock8mmAssembly()
+
+        plate.joints["a"].connect_to(w0.joints["mount"], angle=eccentric_angle)
+        plate.joints["c"].connect_to(w2.joints["mount"], angle=eccentric_angle)
+        plate.joints["d"].connect_to(w3.joints["mount"])
+        plate.joints["f"].connect_to(w5.joints["mount"])
+        if wheel_count == 6:
+            w1 = copy.copy(w0)
+            w4 = copy.copy(w3)
+            wheels.extend([w1, w4])
+            plate.joints["b"].connect_to(w1.joints["mount"], angle=eccentric_angle)
+            plate.joints["e"].connect_to(w4.joints["mount"])
+        plate.joints["nut_a"].connect_to(acme_nut_assembly.joints["a"])
+
+        super().__init__()
+        self.label = "XLargeCBeamGantry"
+        self.children = [plate, acme_nut_assembly] + wheels
+        RigidJoint("nut", self, Location((0, 0, -12.5 * MM), (0, 1, 0), -90))
+        RigidJoint("top_center", self, plate.joints["top_center"].location)
+
+
+class XtremeSolidVWheel(BasePartObject):
+    """Part Object: OpenBuilds Xtreme Solid V Wheel
+
+    A heavy-duty alternative to Delrin Wheels. Suitable during applications where substantial
+    force and weight are introduced into the system.  Perfect when additional accuracy is
+    needed and less compression than in the Delrin is desired. Flat profile designed to work
+    effortlessly with a belt on a belt and pinion system as well as lead screw and belt driven
+    systems.
+
+    Product Features:
+        - Heavy Duty
+        - Long lasting solid construction
+        - Ultra smooth finish for precise motion
+        - Flat wheel surface for belt travel (belt & pinion option)
+        - Self-Centering and Self- Lubricating
+        - Even distribution of weight
+        - Easily assembled and maintained
+
+    Args:
+        rotation (RotationLike, optional): angles to rotate about axes. Defaults to (0, 0, 0).
+        align (Align | tuple[Align, Align, Align], optional): align min, center,
+            or max of object. Defaults to Align.CENTER.
+        mode (Mode, optional): combine mode. Defaults to Mode.ADD.
+    """
+
+    _applies_to = [BuildPart._tag]
+
+    def __init__(
+        self,
+        rotation: RotationLike = (0, 0, 0),
+        align: None | Align | tuple[Align, Align, Align] = Align.CENTER,
+        mode: Mode = Mode.ADD,
+    ):
+        with BuildPart() as wheel:
+            with BuildSketch(Plane.YZ) as x_section:
+                with Locations((8, 0)):
+                    Rectangle(3.95, 10.2, align=(Align.MIN, Align.CENTER))
+                    Rectangle(2, 1)
+                chamfer(x_section.vertices().group_by(Axis.X)[-1], 2.15)
+            revolve()
+
+        super().__init__(
+            part=cast(Part, wheel.part),
+            rotation=rotation,
+            align=tuplify(align, 3),
+            mode=mode,
+        )
+        self.material = plastics.pc(
+            color=Color("white"), thickness_mm=2, opacity=0.1, roughness=0.45
+        )
+        self.label = "XtremeSolidVWheel"
+        RigidJoint("a", self, Pos(Z=-11 / 2))
+        RigidJoint("b", self, Pos(Z=+11 / 2))
+
+
+class XtremeSolidVWheelAssembly(Compound):
+    """Assembly: OpenBuilds Xtreme Solid V Wheel Assembly
+
+    All of the components in a Xtreme Solid V Wheel assembly:
+        - Xtreme Solid V Wheel x 1
+        - M5-16-5 bearing x 2
+        - 10x5x1 Shim x 2
+        - Aluminum Spacer or Eccentric Spacer
+        - Hex Nut
+
+    Note that the RevoluteJoint "mount" should be used to attach this wheel assembly
+    to a gantry plate as it enables the eccentric spacer to precisely align the wheel
+    to the rail by changing the joint angle.
+
+    Args:
+        eccentric (bool): Use an eccentric spacer.
+    """
+
+    def __init__(self, eccentric: bool):
+        nut = HexNut("M5-0.8")
+        b0 = SingleRowCappedDeepGrooveBallBearing("M5-16-5")
+        b1 = copy.copy(b0)
+        shim0 = ShimWasher("10x5x1")
+        shim1 = copy.copy(shim0)
+        spacer = EccentricSpacer("6mm") if eccentric else AluminumSpacer("6mm")
+        tire = XtremeSolidVWheel()
+        tire.joints["a"].connect_to(b0.joints["a"])
+        b0.joints["b"].connect_to(shim0.joints["a"])
+        b0.joints["a"].connect_to(nut.joints["b"])
+        tire.joints["b"].connect_to(b1.joints["b"])
+        b1.joints["b"].connect_to(shim1.joints["a"])
+        shim1.joints["b"].connect_to(spacer.joints["a"])
+        screw = LowProfileScrew("M5-0.8", 30, simple=False)
+        screw.position += (  # pylint: disable=no-member
+            0,
+            0,
+            spacer.joints["b"].location.position.Z + 6 - 1.55,
+        )
+        super().__init__()
+        self.label = "XtremeSolidVWheelAssembly"
+        self.children = [tire, b0, shim0, shim1, b1, spacer, nut, screw]
+        # The spacer's "center" joint is the wheel assembly's mounting axis.
+        RevoluteJoint(
+            "mount", self, Axis(spacer.joints["center"].location.position, (0, 0, 1))
+        )
+
+
+class StepperMotor(Compound):
+    """Assembly: OpenBuilds StepperMotors
+
+    This custom Openbuilds NEMA Stepper Motor series offers a range of options, from the
+    NEMA 17 for lighter duty, high-precision CNC projects, to the NEMA 23 for larger builds
+    requiring more power, and the NEMA 23 High Torque for enhanced holding power and
+    strength to elevate any build.
+
+    Product Features:
+        - Plug and Play Xtension connector for easy and fast install
+        - Flat shaft section for better torque
+
+    Common Product Specifications:
+        - Step Angle: 1.8
+        - 4 Wire Bi-Polar
+        - RoHS Compliant
+
+    NEMA 17 Product Specifications:
+        - Shaft Size: 5mm
+        - Torque: 76 oz*in
+        - Peak Current is 1.68A/phase
+        - M3 Mounting Holes
+        - 12-24VDC (Recommended)
+
+    NEMA 23 Product Specifications
+        - Shaft Size: 1/4"
+        - Torque: 175 oz*in
+        - Peak Current is 2.8A/phase
+        - 12-48VDC (Recommended)
+
+    NEMA 23 High Torque Product Specifications:
+        - 2 Phase
+        - Shaft Size: 1/4"
+        - Torque: 345 oz*in
+        - 24-48VDC (Recommended)
+
+    Args:
+        motor_type (Literal["Nema17", "Nema23", "Nema23HighTorque"]): steppers
+        motor_length (float | None, optional): The length of the motor body
+            in the axis of the shaft. If None, uses a standard length for the
+            specified motor type. Defaults to None.
+
+    Raises:
+        ValueError: Invalid motor_type
+    """
+
+    def __init__(
+        self,
+        motor_type: Literal["Nema17", "Nema23", "Nema23HighTorque"],
+        motor_length: float | None = None,
+    ):
+        motor_data: dict[str, tuple[float, float, float, float, float]] = {
+            "Nema17": (48, 5, 2, 9, 24),
+            "Nema23": (56, IN / 4, 2.675, 5.6, 20.6),
+            "Nema23HighTorque": (86, IN / 4, 2.675, 5.6, 20.6),
+        }
+        try:
+            length, shaft_d, flat, shaft_l1, shaft_l2 = motor_data[motor_type]
+        except KeyError as exc:
+            raise ValueError(
+                f"{motor_type} is invalid, must be one of {motor_data.keys()}"
+            ) from exc
+
+        if motor_length is not None:
+            if motor_length <= 0:
+                raise ValueError(
+                    f"Expected motor_length greater than 0, got {motor_length}"
+                )
+            length = motor_length
+
+        m3 = SocketHeadCapScrew("M3-0.5", 20)
+
+        with BuildPart() as stepper:
+            if motor_type in ["Nema23", "Nema23HighTorque"]:
+                skt1_length = min(length / 2, 11)
+                skt2_length = min(length, 4.8)
+                with BuildSketch() as skt1:
+                    with BuildLine():
+                        l1 = Line((28.2, 0), (28.2, 16.07))
+                        l2 = JernArc(l1 @ 1, l1 % 1, 2.5, 90)
+                        l3 = Line(l2 @ 1, (23.57, 18.57))
+                        l4 = JernArc(l3 @ 1, l3 % 1, 5, -45)
+                        mirror(about=Plane(l4 ^ 1))
+                        mirror(about=Plane.YZ)
+                        mirror(about=Plane.XZ)
+                    make_face()
+                extrude(amount=-skt1_length)
+                insert(Face(skt1.wire().offset_2d(-0.1)))
+                extrude(amount=-length + skt1_length)
+                insert(skt1.face().located(Pos(Z=-length + skt1_length)))
+                extrude(amount=-skt1_length)
+                with BuildSketch():
+                    RectangleRounded(28.2 * 2, 28.2 * 2, 4.6)
+                    with GridLocations(23.57 * 2, 23.57 * 2, 2, 2) as mount_holes:
+                        Circle(2.55, mode=Mode.SUBTRACT)
+                extrude(amount=-skt2_length)
+                with BuildSketch():
+                    Circle(19.05)
+                extrude(amount=1.6)
+            else:
+                skt1_length = min(length / 2, 8.75)
+                with BuildSketch() as skt1:
+                    Rectangle(21.209 * 2, 21.209 * 2)
+                    Circle(26.5, mode=Mode.INTERSECT)
+                extrude(amount=-skt1_length)
+                with BuildSketch():
+                    Rectangle(21.109 * 2, 21.109 * 2)
+                    Circle(25, mode=Mode.INTERSECT)
+                extrude(amount=-length)
+                insert(skt1.face().located(Pos(Z=-length + skt1_length)))
+                extrude(amount=-skt1_length)
+                with GridLocations(15.5 * 2, 15.5 * 2, 2, 2) as mount_holes:
+                    Hole(1.5, 6)
+                    ThreadedHole(m3, depth=7.5, counter_sunk=False)
+                with BuildSketch():
+                    Circle(11)
+                extrude(amount=2)
+
+        with BuildPart() as shaft:
+            with BuildSketch():
+                Circle(shaft_d / 2)
+            extrude(amount=shaft_l1)
+            with BuildSketch():
+                Circle(shaft_d / 2)
+                with Locations((0, flat)):
+                    Rectangle(
+                        shaft_d,
+                        shaft_d,
+                        align=(Align.CENTER, Align.MIN),
+                        mode=Mode.SUBTRACT,
+                    )
+            extrude(amount=shaft_l2)
+
+        stepper_part, shaft_part = cast(Part, stepper.part), cast(Part, shaft.part)
+        stepper_part.color = Color(0x020202)
+        shaft_part.color = Color(0xC0C0C0)
+
+        super().__init__()
+        self.label = f"StepperMotor-{motor_type}"
+        self.children = [stepper_part, shaft_part]
+        for label, loc in zip(["a", "b", "c", "d"], mount_holes.locations):
+            RigidJoint(label, self, -loc)
+        RigidJoint(
+            "shaft", self, self.faces().sort_by(Axis.Z)[-1].location_at(0.5, 0.5)
+        )
+
+
+if __name__ == "__main__":
+    from ocp_vscode import show
+
+    # AluminumSpacer("6mm")  # 2
+    # AluminumSpacer("40mm")  # 2
+    # FlexibleCoupler("1/4in")  # 1
+    # AluminumSpacer("3mm")  # 2
+    # EccentricSpacer("6mm")  # 2
+    # XtremeSolidVWheelAssembly(eccentric=True)  # 2
+    # XtremeSolidVWheelAssembly(eccentric=False)  # 2
+    # LowProfileScrew("M5-0.8", 20 * MM),  # 10
+    # LowProfileScrew("M5-0.8", 50 * MM),  # 2
+    # LowProfileScrew("M5-0.8", 27 * MM),  # 4
+    # LockCollar("8mm") # 2
+    # SingleRowCappedDeepGrooveBallBearing("M8-16-5")  # 2
+    # ShimWasher("12x8x1")  # 2
+    # CBeamEndMount()  # 2
+    # CBeamGantryPlateXLarge()  # 1
+    # CBeamLinearRail(500 * MM)  # 1
+    # MetricLeadScrew(500 * MM)  # 1
+    # AcmeAntiBacklashNutBlock8mm()  # 1
+    # ShimWasher("10x5x1")  # 2
+    # StepperMotor("Nema23")  # 1
+
+    # show(XLargeCBeamGantry(4))
+
+    # show(
+    #     pack(
+    #         [
+    #             CBeamLinearRailProfile(),
+    #             VSlotLinearRailProfile("20x20"),
+    #             VSlotLinearRailProfile("20x40"),
+    #             VSlotLinearRailProfile("20x60"),
+    #             VSlotLinearRailProfile("20x80"),
+    #             VSlotLinearRailProfile("40x40"),
+    #         ],
+    #         10,
+    #     )
+    # )
+
+    # show(
+    #     pack(
+    #         [
+    #             AcmeAntiBacklashNutBlock8mm(),
+    #             AluminumSpacer("3mm"),
+    #             AluminumSpacer("1/8in"),
+    #             AluminumSpacer("6mm"),
+    #             AluminumSpacer("1/4in"),
+    #             AluminumSpacer("9mm"),
+    #             AluminumSpacer("10mm"),
+    #             AluminumSpacer("13.2mm"),
+    #             AluminumSpacer("20mm"),
+    #             AluminumSpacer("35mm"),
+    #             AluminumSpacer("1-1/2in"),
+    #             AluminumSpacer("40mm"),
+    #             CBeamEndMount(),
+    #             CBeamLinearRail(25),
+    #             CBeamGantryPlate(),
+    #             CBeamGantryPlateXLarge(),
+    #             CBeamRiserPlate(),
+    #             EccentricSpacer("6mm"),
+    #             EccentricSpacer("1/4in"),
+    #             FlexibleCoupler("1/4in"),
+    #             FlexibleCoupler("8mm"),
+    #             LockCollar("1/4in"),
+    #             LockCollar("5mm"),
+    #             LockCollar("8mm"),
+    #             LowProfileScrew("M3-0.5", 6, simple=False),
+    #             LowProfileScrew("M4-0.7", 8, simple=False),
+    #             LowProfileScrew("M5-0.8", 10, simple=False),
+    #             MetricLeadScrew(25 * MM),
+    #             RouterSpindleMount().rotate(Axis.Z, 180),
+    #             ShimWasher("MiniVWheel"),
+    #             ShimWasher("10x5x1"),
+    #             ShimWasher("12x8x1"),
+    #             ShimWasher("SlotWasher"),
+    #             ShimWasher("FlatWasher"),
+    #             SingleRowCappedDeepGrooveBallBearing("M5-10-4", "OpenBuilds"),
+    #             SpacerBlock(),
+    #             StepperMotor("Nema17"),
+    #             StepperMotor("Nema23"),
+    #             StepperMotor("Nema23HighTorque"),
+    #             VSlotLinearRail("20x20", 25),
+    #             VSlotLinearRail("20x40", 25),
+    #             VSlotLinearRail("20x60", 25),
+    #             VSlotLinearRail("20x80", 25),
+    #             VSlotLinearRail("40x40", 25),
+    #             XtremeSolidVWheel(),
+    #         ],
+    #         20,
+    #     )
+    # )
+    # exit()
+
+    show(
+        pack(
+            [
+                AcmeAntiBacklashNutBlock8mmAssembly(),
+                XLargeCBeamGantry(4),
+                XLargeCBeamGantry(6),
+                XtremeSolidVWheelAssembly(True),
+                XtremeSolidVWheelAssembly(False),
+            ],
+            20,
+        )
+    )

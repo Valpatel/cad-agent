@@ -1,0 +1,3845 @@
+import base64
+import json
+import sys
+import webbrowser
+from pathlib import Path
+
+import click
+from agentcad.project import get_project, project_options, derived_dir
+
+from agentcad.comparison_phases import ComparisonPhaseRecorder
+
+
+# Unified viewer template. Handles all display modes in a single HTML file:
+#   - single-a        → one model, orbit/zoom (current `agentcad view FILE` behavior)
+#   - single-b        → second/comparison model alone
+#   - side-by-side    → two viewports, synchronized camera
+#   - overlay         → both models tinted (green A, red B), opacity sliders
+#   - agent-view      → shows agent-visible images and structured handoff state
+#   - spec            → docked measurement/spec review panel with 3D highlights
+#
+# A mode is enabled only if the data it needs was embedded. The mode toggle
+# bar hides unavailable buttons automatically.
+#
+# Placeholder replacements (in _render_unified):
+#   __MODEL_A_URL__          base64 data URI (always present)
+#   __MODEL_B_URL__          base64 data URI, or "" if absent
+#   __LABEL_A__              human-readable label for A
+#   __LABEL_B__              human-readable label for B, or ""
+#   __PREVIEW_PNG_URL__      base64 data URI for preview.png, or ""
+#   __DIFF_SIDE_PNG_URL__    base64 data URI for diff_side.png, or ""
+#   __DIFF_OVERLAY_PNG_URL__ base64 data URI for diff_overlay.png, or ""
+#   __DIFF_VOLUME_PNG_URL__  base64 data URI for diff_volume.png, or ""
+#   __DEFAULT_MODE__         starting mode string
+#   __PARTS_MODEL__          model ("a" or "b") represented by PARTS
+#   __PART_CHANGES_JSON__    previous/current named-part change summary, or null
+#   __GROUPS_JSON__          part groups payload
+#   __REVIEW_JSON__          measure/check-spec review payload, or null
+#   __PART_REVIEW_JSON__     part visibility/focus state, or null
+#   __VIEWER_CONTEXT_JSON__  source version/label metadata for review comments
+_HTML_UNIFIED = r"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="referrer" content="no-referrer">
+<title>agentcad viewer</title>
+<style>
+  body { margin: 0; overflow: hidden; background: #efefef; font-family: monospace; }
+  canvas { display: block; }
+  #canvas { position: fixed; top: 0; left: 0; }
+  body.spec-open #canvas { right: 396px; }
+  #modes {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(255,255,255,0.92);
+    border-radius: 6px; overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    display: flex; user-select: none;
+  }
+  #modes button {
+    background: transparent; border: none; padding: 8px 12px;
+    font-family: monospace; font-size: 12px; color: #333;
+    cursor: pointer; border-right: 1px solid rgba(0,0,0,0.08);
+  }
+  #modes button:last-child { border-right: none; }
+  #modes button:hover { background: rgba(0,0,0,0.05); }
+  #modes button.active { background: #333; color: #fff; }
+  #modes button.spec.active { background: #1b75bb; color: #fff; }
+  #modes button.disabled { opacity: 0.25; cursor: not-allowed; }
+  body.spec-open #modes { right: 412px; }
+  .label {
+    position: absolute; top: 10px; color: #333;
+    padding: 4px 10px; background: rgba(255,255,255,0.85);
+    border-radius: 4px; font-size: 12px; user-select: none;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  #label-left { left: 16px; }
+  #label-right { left: calc(var(--viewer-width, 100vw) / 2 + 16px); }
+  body.split-open .label {
+    top: 54px;
+    max-width: calc(var(--viewer-width, 100vw) / 2 - 32px);
+  }
+  #divider {
+    position: fixed; top: 0; bottom: 0; left: calc(var(--viewer-width, 100vw) / 2);
+    width: 1px; background: rgba(0,0,0,0.2);
+    pointer-events: none; display: none;
+  }
+  #overlay-controls {
+    position: absolute; top: 60px; left: 12px;
+    background: rgba(255,255,255,0.92); padding: 10px 14px;
+    border-radius: 6px; font-size: 12px; color: #333;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); user-select: none;
+    display: none;
+  }
+  #overlay-controls .row { margin: 4px 0; display: flex; align-items: center; gap: 8px; }
+  #overlay-controls .swatch { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+  #overlay-controls input[type=range] { width: 120px; }
+  #agent-view {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: #f5f5f5; overflow: auto;
+    padding: 60px 24px 24px; display: none;
+    box-sizing: border-box;
+  }
+  #agent-view .panel { margin: 0 auto 24px; max-width: 1200px; background: #fff; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  #agent-view .panel h3 { margin: 0 0 8px; font-size: 14px; color: #555; font-weight: normal; }
+  #agent-view .panel img { max-width: 100%; display: block; }
+  #agent-view .agent-note { margin: 0 0 14px; color: #222; font-size: 13px; line-height: 1.5; max-width: 840px; }
+  #agent-view .agent-state-grid { display: grid; grid-template-columns: minmax(140px, 220px) minmax(0, 1fr); gap: 8px 14px; font-size: 13px; }
+  #agent-view .agent-state-key { color: #667085; }
+  #agent-view .agent-state-value { color: #222; min-width: 0; }
+  #agent-view .agent-chip {
+    display: inline-flex; align-items: center; gap: 6px; margin: 0 6px 6px 0;
+    padding: 3px 7px; border: 1px solid rgba(0,0,0,0.12); border-radius: 999px;
+    background: #f8fafc; color: #222; font-size: 12px;
+  }
+  #agent-view .agent-swatch { width: 10px; height: 10px; border: 1px solid rgba(0,0,0,0.18); border-radius: 2px; display: inline-block; box-sizing: border-box; }
+  #agent-view .empty-state { color: #667085; font-size: 13px; line-height: 1.5; }
+  #agent-view .empty-state strong { display: block; margin-bottom: 4px; color: #222; font-weight: 600; }
+  #parts-view {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: #f5f5f5; overflow: auto;
+    padding: 60px 24px 24px; display: none;
+    box-sizing: border-box;
+  }
+  #parts-view .panel { margin: 0 auto; max-width: 720px; background: #fff; border-radius: 8px; padding: 20px 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  #parts-view h3 { margin: 0 0 12px; font-size: 14px; color: #555; font-weight: normal; }
+  #parts-view h4 { margin: 16px 0 8px; font-size: 11px; color: #667085; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  #parts-view ol { margin: 0; padding-left: 24px; font-family: monospace; font-size: 13px; color: #222; }
+  #parts-view ol li { margin: 6px 0; }
+  #parts-view .swatch { width: 11px; height: 11px; border: 1px solid rgba(0,0,0,0.18); border-radius: 2px; display: inline-block; margin-right: 8px; vertical-align: -1px; box-sizing: border-box; }
+  #parts-view .group-list { display: grid; gap: 6px; margin-bottom: 10px; }
+  #parts-view .group-row {
+    display: grid; grid-template-columns: 16px minmax(0, 1fr) auto;
+    align-items: center; gap: 8px; padding: 8px 10px;
+    border: 1px solid rgba(0,0,0,0.08); border-radius: 6px;
+    background: #f8fafc; font-family: monospace; font-size: 13px;
+  }
+  #parts-view .group-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #222; }
+  #parts-view .meta { color: #667085; font-size: 11px; white-space: nowrap; }
+  #parts-view .part-group-tag {
+    display: inline-block; margin-left: 8px; padding: 1px 5px;
+    border: 1px solid rgba(0,0,0,0.12); border-radius: 999px;
+    color: #3f4856; background: #f8fafc; font-size: 11px;
+  }
+  #parts-view .changes { margin-bottom: 18px; padding: 14px; border: 1px solid #d9dee7; border-radius: 7px; background: #f8fafc; }
+  #parts-view .changes h4 { margin-top: 0; }
+  #parts-view .change-summary { margin: 0 0 10px; color: #222; font-size: 13px; font-weight: 700; }
+  #parts-view .change-empty { margin: 0; color: #667085; font-size: 12px; }
+  #parts-view .change-list { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+  #parts-view .change-row { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; font-size: 12px; line-height: 1.4; }
+  #parts-view .change-kind { color: #667085; text-transform: uppercase; font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+  #parts-view .change-items { color: #222; }
+  #part-controls {
+    position: absolute; top: 60px; left: 12px; z-index: 20;
+    width: 340px; max-height: calc(100vh - 126px); overflow: auto;
+    background: rgba(255,255,255,0.94); border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+    color: #1f2933; display: none; user-select: none;
+  }
+  #part-controls .head {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 10px 12px; border-bottom: 1px solid rgba(0,0,0,0.08);
+  }
+  #part-controls h3 { margin: 0; font-size: 13px; font-weight: 700; }
+  #part-controls .actions { display: flex; gap: 6px; align-items: center; }
+  #part-controls .actions button { white-space: nowrap; }
+  #part-controls .handoff {
+    display: none; margin: 10px 10px 0; padding: 8px 10px;
+    border: 1px solid rgba(27,117,187,0.20); border-radius: 6px;
+    background: rgba(232,241,251,0.78);
+  }
+  #part-controls .handoff-title {
+    margin: 0; color: #1d4f7a; font-size: 11px; font-weight: 700;
+  }
+  #part-controls .handoff-note {
+    margin: 4px 0 0; color: #2f3b4a; font-size: 11px; line-height: 1.35;
+  }
+  #part-controls button {
+    border: 1px solid rgba(0,0,0,0.14); background: #fff; color: #27313f;
+    border-radius: 5px; padding: 5px 7px; font-family: monospace; font-size: 11px;
+    cursor: pointer;
+  }
+  #part-controls button:hover { background: #f2f5f8; }
+  #part-controls button.active { background: #27313f; color: #fff; border-color: #27313f; }
+  #part-controls .rows { display: grid; gap: 6px; padding: 10px; }
+  #part-controls .section-title { padding: 8px 10px 0; color: #667085; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+  #part-controls .part-row {
+    display: grid; grid-template-columns: 16px minmax(0, 1fr) auto;
+    align-items: center; gap: 8px; padding: 7px; border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 6px; background: rgba(255,255,255,0.85);
+  }
+  #part-controls .part-row.selected { border-color: #1b75bb; box-shadow: 0 0 0 3px rgba(27,117,187,0.12); }
+  #part-controls .part-row.hidden { opacity: 0.48; }
+  #part-controls .group-row { background: rgba(248,250,252,0.95); border-style: solid; }
+  #part-controls .swatch { width: 12px; height: 12px; border: 1px solid rgba(0,0,0,0.18); border-radius: 2px; box-sizing: border-box; }
+  #part-controls .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+  #part-controls .sub { color: #667085; font-size: 10px; margin-top: 2px; }
+  #part-controls .row-actions { display: flex; gap: 4px; }
+  #part-controls .foot { padding: 0 12px 10px; color: #667085; font-size: 10px; line-height: 1.35; }
+  #spec-panel {
+    position: fixed; top: 0; right: 0; bottom: 0; width: 396px;
+    background: #fff; border-left: 1px solid #d9dee7;
+    display: none; grid-template-rows: auto minmax(0, 1fr);
+    box-sizing: border-box; z-index: 25; color: #1d2430;
+  }
+  body.spec-open #spec-panel { display: grid; }
+  #spec-panel .head { padding: 14px 16px; border-bottom: 1px solid #d9dee7; background: #fbfcfd; }
+  #spec-panel .verdict { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  #spec-panel .pill {
+    display: inline-grid; place-items: center; padding: 4px 12px;
+    border-radius: 999px; font-size: 12px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .04em;
+  }
+  #spec-panel .pill.pass { background: #e8f5ef; color: #1f8a5b; }
+  #spec-panel .pill.fail { background: #fae9e8; color: #c2413f; }
+  #spec-panel .pill.info { background: #e8f1fb; color: #1b75bb; }
+  #spec-panel h1 { margin: 0; font-size: 14px; line-height: 1.2; }
+  #spec-panel h1 small { display: block; margin-top: 2px; color: #667085; font-size: 11px; font-weight: normal; }
+  #spec-panel .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  #spec-panel .stat { padding: 8px; border: 1px solid #d9dee7; border-radius: 6px; background: #fff; }
+  #spec-panel .stat span { display: block; color: #667085; font-size: 10px; text-transform: uppercase; letter-spacing: .03em; }
+  #spec-panel .stat strong { display: block; margin-top: 3px; font-size: 13px; white-space: nowrap; }
+  #spec-panel .scroll { min-height: 0; overflow: auto; padding: 14px 16px 18px; }
+  #spec-panel section { margin-bottom: 20px; }
+  #spec-panel h2 { margin: 0 0 8px; color: #3b4554; font-size: 12px; text-transform: uppercase; }
+  #spec-panel .rows { display: grid; gap: 8px; }
+  #spec-panel .review-row {
+    width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px; align-items: center; text-align: left;
+    border: 1px solid #d9dee7; border-radius: 7px; background: #fff;
+    padding: 10px; cursor: pointer; font: inherit; color: inherit;
+  }
+  #spec-panel .review-row:hover, #spec-panel .review-row.active {
+    border-color: #1b75bb; box-shadow: 0 0 0 3px rgba(27,117,187,0.12);
+  }
+  #spec-panel .review-row.pass { border-left: 3px solid #1f8a5b; }
+  #spec-panel .review-row.fail { border-left: 3px solid #c2413f; }
+  #spec-panel .title { min-width: 0; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; }
+  #spec-panel .title span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #spec-panel .dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; background: #1b75bb; }
+  #spec-panel .dot.pass { background: #1f8a5b; }
+  #spec-panel .dot.fail { background: #c2413f; }
+  #spec-panel .sub { grid-column: 1 / -1; color: #667085; font-size: 12px; line-height: 1.4; }
+  #spec-panel .badge {
+    min-width: 56px; height: 24px; display: inline-grid; place-items: center;
+    padding: 0 8px; border-radius: 999px; background: #f7f8fa;
+    color: #3f4856; font-size: 11px; font-weight: 800; text-transform: uppercase;
+  }
+  #spec-panel .badge.pass { background: #e8f5ef; color: #1f8a5b; }
+  #spec-panel .badge.fail { background: #fae9e8; color: #c2413f; }
+  #spec-panel .metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  #spec-panel .metric { padding: 10px 8px; border: 1px solid #d9dee7; border-radius: 6px; background: #fff; }
+  #spec-panel .metric span { display: block; font-size: 10px; color: #667085; text-transform: uppercase; }
+  #spec-panel .metric strong { display: block; margin-top: 4px; font-size: 14px; }
+  #spec-panel .cmd {
+    width: 100%; min-height: 32px; border: 1px solid #d9dee7; border-radius: 6px;
+    background: #f8fafc; padding: 7px 9px; color: #313b4b; text-align: left;
+    font-family: monospace; font-size: 11px; cursor: pointer;
+  }
+  #info {
+    position: absolute; bottom: 12px; left: 16px; color: #666;
+    font-size: 11px; user-select: none;
+  }
+  #pause-btn {
+    position: absolute; bottom: 16px; right: 16px;
+    width: 32px; height: 32px; border: none; border-radius: 50%;
+    background: rgba(0,0,0,0.4); color: #fff;
+    font-size: 14px; line-height: 32px; text-align: center;
+    cursor: pointer; user-select: none;
+  }
+  #pause-btn:hover { background: rgba(0,0,0,0.6); }
+  body.spec-open #pause-btn { right: 412px; }
+  #export-gif-btn {
+    position: absolute; bottom: 16px; right: 56px;
+    height: 32px; padding: 0 12px; border: none; border-radius: 16px;
+    background: rgba(0,0,0,0.4); color: #fff;
+    font-family: monospace; font-size: 12px;
+    cursor: pointer; user-select: none;
+  }
+  #export-gif-btn:hover { background: rgba(0,0,0,0.6); }
+  #export-gif-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  body.spec-open #export-gif-btn { right: 452px; }
+  #export-progress {
+    position: absolute; bottom: 56px; right: 16px;
+    background: rgba(0,0,0,0.7); color: #fff;
+    font-family: monospace; font-size: 11px;
+    padding: 6px 10px; border-radius: 4px; user-select: none;
+  }
+  #comment-toggle-btn {
+    position: absolute; top: 10px; left: 12px; z-index: 42;
+    height: 34px; padding: 0 12px; border: 1px solid rgba(0,0,0,.14);
+    border-radius: 17px; background: rgba(255,255,255,.94); color: #27313f;
+    font: 12px monospace; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  }
+  #comment-toggle-btn.active { background: #1b75bb; border-color: #1b75bb; color: #fff; }
+  #comment-toggle-btn[disabled] { opacity: .5; cursor: not-allowed; }
+  body.placing-comment #canvas {
+    cursor: crosshair;
+    outline: 4px solid rgba(27,117,187,.8);
+    outline-offset: -4px;
+  }
+  #comment-placement-hud {
+    position: fixed; top: 14px; left: 50%; z-index: 44;
+    display: none; transform: translateX(-50%); align-items: center; gap: 10px;
+    max-width: calc(100vw - 420px); padding: 10px 14px; border-radius: 8px;
+    background: #172b3d; color: #fff; box-shadow: 0 5px 18px rgba(0,0,0,.28);
+    font: 12px monospace; pointer-events: none;
+  }
+  body.placing-comment #comment-placement-hud { display: flex; }
+  #comment-placement-hud strong { color: #78c8ff; text-transform: uppercase; }
+  #comment-placement-hud kbd {
+    padding: 2px 5px; border: 1px solid rgba(255,255,255,.4); border-radius: 4px;
+    background: rgba(255,255,255,.1); color: #fff; font: 10px monospace;
+  }
+  #comment-target-preview {
+    position: fixed; z-index: 43; display: none; width: 28px; height: 28px;
+    transform: translate(-50%, -50%); box-sizing: border-box; border: 3px solid #fff;
+    border-radius: 50%; background: rgba(27,117,187,.3);
+    box-shadow: 0 0 0 3px #1b75bb, 0 3px 12px rgba(0,0,0,.35);
+    pointer-events: none;
+  }
+  #comment-target-preview::before {
+    content: ''; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px;
+    transform: translate(-50%, -50%); border-radius: 50%; background: #fff;
+  }
+  #comment-target-preview.locked {
+    width: 34px; height: 34px; background: #1b75bb;
+    box-shadow: 0 0 0 4px rgba(27,117,187,.28), 0 3px 12px rgba(0,0,0,.35);
+  }
+  #comment-target-preview.locked::after {
+    content: 'Comment here'; position: absolute; top: 39px; left: 50%;
+    transform: translateX(-50%); width: max-content; padding: 4px 7px; border-radius: 4px;
+    background: #172b3d; color: #fff; font: 10px monospace;
+  }
+  #comment-pins { position: fixed; inset: 0; z-index: 34; pointer-events: none; }
+  .comment-pin {
+    position: absolute; transform: translate(-50%, -50%); pointer-events: auto;
+    min-width: 26px; height: 26px; padding: 0 6px; border: 2px solid #fff;
+    border-radius: 14px; background: #1b75bb; color: #fff; font: 700 11px monospace;
+    box-shadow: 0 2px 7px rgba(0,0,0,.32); cursor: pointer;
+  }
+  .comment-pin.addressed { background: #d97706; }
+  .comment-pin.resolved { background: #667085; }
+  .comment-pin.draft { background: #b54708; border-style: dashed; }
+  body.placing-comment .comment-pin { pointer-events: none; opacity: .35; }
+  #comments-panel {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 45; width: 360px;
+    display: none; grid-template-rows: auto auto minmax(0,1fr) auto;
+    box-sizing: border-box; background: #fff; border-left: 1px solid #d9dee7;
+    box-shadow: -4px 0 18px rgba(0,0,0,.10); color: #1d2430;
+  }
+  #comments-panel.open { display: grid; }
+  #comments-panel .head { display: flex; justify-content: space-between; align-items: center; padding: 14px; border-bottom: 1px solid #e3e6eb; }
+  #comments-panel h2 { margin: 0; font-size: 14px; }
+  #comments-panel button {
+    border: 1px solid #d5dae2; border-radius: 5px; background: #fff; color: #27313f;
+    padding: 6px 8px; font: 11px monospace; cursor: pointer;
+  }
+  #comments-panel button:hover { background: #f2f5f8; }
+  #comments-panel button.primary { background: #1b75bb; border-color: #1b75bb; color: #fff; }
+  #comments-panel button.active { background: #27313f; border-color: #27313f; color: #fff; }
+  #comment-tools { display: grid; gap: 8px; padding: 12px; border-bottom: 1px solid #e3e6eb; }
+  #comments-panel #new-comment-btn {
+    width: 100%; padding: 10px 12px; font-size: 12px; font-weight: 700;
+  }
+  #comment-status { min-height: 15px; color: #667085; font-size: 10px; line-height: 1.4; }
+  body.placing-comment #comment-status {
+    margin: 0 -4px; padding: 7px 8px; border-radius: 5px;
+    background: #eaf5fc; color: #125987; font-weight: 700;
+  }
+  #comments-list { min-height: 0; overflow: auto; padding: 10px; display: grid; align-content: start; gap: 8px; }
+  .comment-row { border: 1px solid #d9dee7; border-left: 3px solid #1b75bb; border-radius: 6px; padding: 9px; cursor: pointer; }
+  .comment-row.draft { border-color: #f0c36d; border-left-color: #b54708; background: #fff8e7; }
+  .comment-row.addressed { border-left-color: #d97706; }
+  .comment-row.resolved { border-left-color: #667085; opacity: .7; }
+  .comment-row.selected { box-shadow: 0 0 0 3px rgba(27,117,187,.12); }
+  .comment-row .meta { display: flex; justify-content: space-between; gap: 8px; color: #667085; font-size: 10px; text-transform: uppercase; }
+  .comment-row p { margin: 7px 0; font-size: 12px; line-height: 1.4; white-space: pre-wrap; }
+  .comment-row .target { color: #667085; font-size: 10px; }
+  .comment-row .author { margin-top: 7px; color: #344054; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+  .comment-row .actions { display: flex; gap: 5px; margin-top: 8px; }
+  .comment-row .draft-note { margin-top: 6px; color: #8a3b0a; font-size: 10px; font-weight: 700; }
+  .comment-thread { display: grid; gap: 7px; margin-top: 9px; padding-top: 8px; border-top: 1px solid #e3e6eb; }
+  .comment-reply { padding-left: 9px; border-left: 2px solid #b8c2cf; }
+  .comment-reply.agent { border-left-color: #1b75bb; }
+  .comment-reply .byline { color: #667085; font-size: 9px; font-weight: 700; text-transform: uppercase; }
+  .comment-reply p { margin: 3px 0 0; font-size: 11px; }
+  .thread-composer { display: grid; gap: 6px; margin-top: 9px; }
+  .thread-composer textarea {
+    width: 100%; min-height: 52px; resize: vertical; box-sizing: border-box;
+    border: 1px solid #b8c2cf; border-radius: 6px; padding: 7px; font: 11px monospace;
+  }
+  .thread-composer .actions { justify-content: flex-end; margin-top: 0; }
+  #comments-panel button.danger { color: #b42318; }
+  #comment-composer { display: none; padding: 12px; border-top: 1px solid #d9dee7; background: #fbfcfd; }
+  #comment-composer.open { display: block; }
+  #comment-anchor-summary { margin-bottom: 7px; color: #667085; font-size: 10px; }
+  #comment-part-field { display: none; margin: 0 0 9px; }
+  #comment-part-field.visible { display: grid; gap: 4px; }
+  #comment-part-field span { color: #344054; font-size: 10px; font-weight: 700; }
+  #comment-part-select {
+    width: 100%; box-sizing: border-box; border: 1px solid #b8c2cf; border-radius: 6px;
+    background: #fff; color: #1d2430; padding: 7px 8px; font: 11px monospace;
+  }
+  #comment-part-hint { color: #667085; font-size: 9px; line-height: 1.35; }
+  #comment-scope-field { display: none; margin: 0 0 9px; padding: 0; border: 0; }
+  #comment-scope-field.visible { display: grid; gap: 5px; }
+  #comment-scope-field legend { padding: 0; color: #344054; font-size: 10px; font-weight: 700; }
+  #comment-scope-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+  #comments-panel #comment-scope-options button { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #comment-scope-options button.active { background: #1b75bb; border-color: #1b75bb; color: #fff; }
+  #comment-scope-hint { color: #667085; font-size: 9px; line-height: 1.35; }
+  .comment-scope-badge {
+    display: inline-flex; align-items: center; margin-left: 6px; padding: 1px 5px;
+    border-radius: 999px; background: #eaf5fc; color: #125987; font: 700 9px monospace;
+  }
+  #parts-view .part-comment-badge {
+    margin-left: 9px; padding: 3px 7px; border: 0; border-radius: 999px;
+    background: #1b75bb; color: #fff; font: 700 10px monospace; cursor: pointer;
+  }
+  #part-controls .part-comment-badge { margin-left: 5px; color: #1b75bb; font-size: 9px; font-weight: 700; }
+  #comment-text { width: 100%; min-height: 72px; resize: vertical; box-sizing: border-box; border: 1px solid #cfd5de; border-radius: 6px; padding: 8px; font: 12px monospace; }
+  #comment-composer .actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 7px; }
+  #submit-review-btn { margin: 10px 12px 12px; }
+  #comments-empty { color: #667085; padding: 18px 8px; font-size: 12px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="divider"></div>
+<div class="label" id="label-left" style="display:none;"></div>
+<div class="label" id="label-right" style="display:none;"></div>
+<div id="overlay-controls">
+  <div class="row">
+    <span class="swatch" style="background:#4caf50;"></span>
+    <label><input type="checkbox" id="visible-a" checked> Previous · <span id="ov-label-a"></span></label>
+  </div>
+  <div class="row"><span style="width:12px;"></span>opacity <input type="range" id="opacity-a" min="0" max="100" value="70"></div>
+  <div class="row">
+    <span class="swatch" style="background:#e53935;"></span>
+    <label><input type="checkbox" id="visible-b" checked> Current · <span id="ov-label-b"></span></label>
+  </div>
+  <div class="row"><span style="width:12px;"></span>opacity <input type="range" id="opacity-b" min="0" max="100" value="70"></div>
+</div>
+<div id="agent-view">
+  <div class="panel" id="panel-agent-handoff" style="display:none;">
+    <h3 id="agent-handoff-heading">Agent handoff</h3>
+    <p class="agent-note" id="agent-handoff-note"></p>
+    <div class="agent-state-grid" id="agent-handoff-details"></div>
+  </div>
+  <div class="panel" id="panel-agent-images-empty" style="display:none;">
+    <div class="empty-state">
+      <strong>No preview images</strong>
+      The agent did not ask for a preview on this run.
+    </div>
+  </div>
+  <div class="panel" id="panel-preview" style="display:none;">
+    <h3>preview.png — balanced top, bottom, upper-iso, and lower-iso views the agent reads by default</h3>
+    <img id="img-preview">
+  </div>
+  <div class="panel" id="panel-diff-side" style="display:none;">
+    <h3>diff_side.png — four matched views of the previous and current revisions</h3>
+    <img id="img-diff-side">
+  </div>
+  <div class="panel" id="panel-diff-overlay" style="display:none;">
+    <h3>diff_overlay.png — visual silhouette overlap, not physical correctness (coincident gray, reference-only blue, candidate-only orange)</h3>
+    <img id="img-diff-overlay">
+  </div>
+  <div class="panel" id="panel-diff-volume" style="display:none;">
+    <h3>diff_volume.png — source-frame 3D volume (exact or labeled approximate; shared gray, reference-only blue, candidate-only orange)</h3>
+    <img id="img-diff-volume">
+  </div>
+</div>
+<div id="parts-view">
+  <div class="panel">
+    <h3 id="parts-heading">Parts</h3>
+    <div class="changes" id="parts-changes" style="display:none;">
+      <h4>What changed</h4>
+      <p class="change-summary" id="parts-change-summary"></p>
+      <ul class="change-list" id="parts-change-list"></ul>
+      <p class="change-empty" id="parts-change-empty" style="display:none;"></p>
+    </div>
+    <div id="parts-groups-section" style="display:none;">
+      <h4>Groups</h4>
+      <div class="group-list" id="parts-groups"></div>
+    </div>
+    <h4 id="parts-list-heading" style="display:none;">Parts</h4>
+    <ol id="parts-list"></ol>
+  </div>
+</div>
+<div id="part-controls">
+  <div class="head">
+    <h3 id="part-controls-heading">Part controls</h3>
+    <div class="actions">
+      <button id="ghost-rest-btn" title="Make non-selected parts transparent">Ghost rest</button>
+      <button id="reset-parts-btn" title="Show every part and clear isolate state">Reset</button>
+    </div>
+  </div>
+  <div class="handoff" id="part-handoff">
+    <p class="handoff-title" id="part-handoff-title"></p>
+    <p class="handoff-note" id="part-handoff-note"></p>
+  </div>
+  <div class="rows" id="part-control-rows"></div>
+  <div class="foot">Focus or isolate by stable part id. This state can be generated by agents with agentcad parts view.</div>
+</div>
+<aside id="spec-panel">
+  <div class="head">
+    <div class="verdict">
+      <span class="pill info" id="review-pill">review</span>
+      <h1><span id="review-heading">Spec check</span><small id="review-subtitle">measurement review</small></h1>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Features</span><strong id="review-features">—</strong></div>
+      <div class="stat"><span>Count error</span><strong id="review-error">—</strong></div>
+      <div class="stat"><span>Validity</span><strong id="review-validity">—</strong></div>
+    </div>
+  </div>
+  <div class="scroll">
+    <section id="review-spec-section">
+      <h2>Spec checklist</h2>
+      <div class="rows" id="review-spec-rows"></div>
+    </section>
+    <section id="review-measure-section">
+      <h2>Cylindrical features</h2>
+      <div class="rows" id="review-measure-rows"></div>
+    </section>
+    <section>
+      <h2>Dimensions</h2>
+      <div class="metric-grid" id="review-dimensions"></div>
+    </section>
+  </div>
+</aside>
+<div id="modes">
+  <button data-mode="single-a" id="btn-single-a">A</button>
+  <button data-mode="single-b" id="btn-single-b">B</button>
+  <button data-mode="side-by-side" id="btn-side">Side-by-side</button>
+  <button data-mode="overlay" id="btn-overlay">Overlay</button>
+  <button data-mode="agent-view" id="btn-agent">Agent view</button>
+  <button data-mode="parts" id="btn-parts">Parts</button>
+  <button data-mode="spec" id="btn-spec" class="spec">Spec check</button>
+</div>
+<div id="info">drag to orbit · scroll to zoom</div>
+<button id="pause-btn" title="Pause / play rotation">&#9646;&#9646;</button>
+<button id="export-gif-btn" title="Export current view as animated GIF">Export GIF</button>
+<div id="export-progress" style="display:none;">Encoding GIF… <span id="export-progress-pct">0%</span></div>
+<button id="comment-toggle-btn" title="Open spatial comments (C)">Comments</button>
+<div id="comment-placement-hud"><strong>Place comment</strong><span>Click the surface you mean</span><kbd>Esc</kbd><span>cancel</span></div>
+<div id="comment-target-preview"></div>
+<div id="comment-pins"></div>
+<aside id="comments-panel">
+  <div class="head"><h2>Review comments</h2><button id="close-comments-btn" title="Close">Close</button></div>
+  <div id="comment-tools">
+    <button class="primary" id="new-comment-btn">+ New comment</button>
+    <div id="comment-status"></div>
+  </div>
+  <div id="comments-list"><div id="comments-empty">No comments yet. Choose <strong>New comment</strong>, then click the model where you want to leave feedback.</div></div>
+  <div>
+    <div id="comment-composer">
+      <div id="comment-anchor-summary"></div>
+      <label id="comment-part-field">
+        <span>Refers to part</span>
+        <select id="comment-part-select"></select>
+        <small id="comment-part-hint">Suggested from where you clicked. You can choose any named part.</small>
+      </label>
+      <fieldset id="comment-scope-field">
+        <legend>Applies to</legend>
+        <div id="comment-scope-options">
+          <button type="button" data-comment-scope="a">Previous</button>
+          <button type="button" data-comment-scope="b">Current</button>
+          <button type="button" data-comment-scope="both">Both</button>
+        </div>
+        <small id="comment-scope-hint"></small>
+      </fieldset>
+      <textarea id="comment-text" placeholder="What should change?"></textarea>
+      <div class="actions">
+        <button id="cancel-comment-btn">Cancel</button>
+        <button id="save-comment-btn">Save draft</button>
+        <button class="primary" id="send-comment-btn">Send comment</button>
+      </div>
+    </div>
+    <button class="primary" id="submit-review-btn" style="display:none;">Send all drafts</button>
+  </div>
+</aside>
+
+<script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const MODEL_A_URL = "__MODEL_A_URL__";
+const MODEL_B_URL = "__MODEL_B_URL__";
+const LABEL_A = "__LABEL_A__";
+const LABEL_B = "__LABEL_B__";
+const PREVIEW_PNG_URL = "__PREVIEW_PNG_URL__";
+const DIFF_SIDE_PNG_URL = "__DIFF_SIDE_PNG_URL__";
+const DIFF_OVERLAY_PNG_URL = "__DIFF_OVERLAY_PNG_URL__";
+const DIFF_VOLUME_PNG_URL = "__DIFF_VOLUME_PNG_URL__";
+const DEFAULT_MODE = "__DEFAULT_MODE__";
+const PARTS_MODEL = "__PARTS_MODEL__";
+const PARTS = __PARTS_JSON__;
+const PART_CHANGES = __PART_CHANGES_JSON__;
+const GROUPS = __GROUPS_JSON__;
+const REVIEW = __REVIEW_JSON__;
+const PART_REVIEW = __PART_REVIEW_JSON__;
+const VIEWER_CONTEXT = __VIEWER_CONTEXT_JSON__;
+const COMMENT_PARTS = [...new Map([...__COMMENT_PARTS_JSON__, ...PARTS].map(p => [p.id, p])).values()];
+
+const hasB = MODEL_B_URL.length > 0;
+const liveProject = parent !== window && new URLSearchParams(location.search).get('live') === '1';
+const hasAgentImgs = PREVIEW_PNG_URL.length > 0 || DIFF_SIDE_PNG_URL.length > 0 || DIFF_OVERLAY_PNG_URL.length > 0 || DIFF_VOLUME_PNG_URL.length > 0;
+const hasAgentState = Boolean(PART_REVIEW);
+const hasAgentView = hasAgentImgs || hasAgentState;
+const hasParts = Array.isArray(PARTS) && PARTS.length > 0;
+const hasPartChanges = Boolean(PART_CHANGES);
+const hasPartsView = hasParts || hasPartChanges;
+const hasGroups = Array.isArray(GROUPS) && GROUPS.length > 0;
+const hasReview = REVIEW && (REVIEW.measure || REVIEW.check_spec);
+const partObjects = new Map();
+const partObjectsByRole = { a: new Map(), b: new Map() };
+const partRows = new Map();
+const groupRows = new Map();
+let currentMode = null;
+let viewerReady = false;
+let partState = {
+  selected: (PART_REVIEW && (PART_REVIEW.selected || PART_REVIEW.focus)) || null,
+  focus: (PART_REVIEW && PART_REVIEW.focus) || null,
+  hidden: new Set((PART_REVIEW && PART_REVIEW.hidden) || []),
+  isolated: new Set((PART_REVIEW && PART_REVIEW.isolated) || []),
+  ghostRest: Boolean(PART_REVIEW && PART_REVIEW.ghost_rest),
+};
+window.agentcadViewer = {
+  debugState: viewerDebugState,
+  captureState: captureLiveState,
+  restoreState: restoreLiveState,
+  lastState: null,
+};
+
+// The project shell swaps complete snapshots only after the next model has
+// loaded. Standalone file viewers keep working without a parent or server.
+function captureLiveState() {
+  return {
+    commentsOpen: document.getElementById('comments-panel').classList.contains('open'),
+    selectedCommentId,
+    mode: currentMode, hasB,
+    position: camera.position.toArray(), target: controls.target.toArray(),
+    autoRotate: controls.autoRotate,
+    hidden: [...partState.hidden], isolated: [...partState.isolated],
+    selected: partState.selected, ghostRest: partState.ghostRest,
+    overlay: ['opacity-a', 'opacity-b', 'visible-a', 'visible-b'].map(id => {
+      const el = document.getElementById(id);
+      return {id, value:el.value, checked:el.checked};
+    }),
+  };
+}
+function restoreLiveState(state) {
+  if (!state) return false;
+  let mode = state.mode;
+  // First-run A represents current. In a subsequent A/B snapshot current is B.
+  if (!state.hasB && hasB && mode === 'single-a') mode = 'single-b';
+  if (state.hasB && !hasB && mode === 'single-b') mode = 'single-a';
+  const button = [...document.querySelectorAll('#modes button')].find(b => b.dataset.mode === mode);
+  const fallback = !button || button.disabled;
+  setMode(fallback ? (hasB ? 'single-b' : 'single-a') : mode);
+  setAutoRotate(false);
+  const vector = v => Array.isArray(v) && v.length === 3 && v.every(Number.isFinite);
+  if (vector(state.position) && vector(state.target)) {
+    controls.enableDamping = false;
+    controls.update();
+    camera.position.fromArray(state.position);
+    controls.target.fromArray(state.target);
+    camera.lookAt(controls.target);
+    controls.update();
+    controls.enableDamping = true;
+  }
+  const ids = new Set(PARTS.map(p => p.id));
+  partState.hidden = new Set((state.hidden || []).filter(id => ids.has(id)));
+  partState.isolated = new Set((state.isolated || []).filter(id => ids.has(id)));
+  partState.selected = ids.has(state.selected) ? state.selected : null;
+  partState.ghostRest = Boolean(state.ghostRest);
+  applyPartState();
+  for (const item of state.overlay || []) {
+    if (!['opacity-a', 'opacity-b', 'visible-a', 'visible-b'].includes(item.id)) continue;
+    const el = document.getElementById(item.id);
+    el.value = item.value; el.checked = item.checked;
+    el.dispatchEvent(new Event(item.id.startsWith('opacity') ? 'input' : 'change'));
+  }
+  setAutoRotate(Boolean(state.autoRotate));
+  selectedCommentId = state.selectedCommentId || null;
+  if (state.commentsOpen && !['parts', 'agent-view'].includes(currentMode)) setCommentPanel(true, { preserveCamera: true });
+  renderReviewComments();
+  publishViewerDebugState();
+  return fallback;
+}
+function tellProject(type, extra = {}) {
+  if (parent !== window && location.protocol !== 'file:') {
+    parent.postMessage({type, ...extra}, location.origin);
+  }
+}
+window.addEventListener('message', event => {
+  if (event.source !== parent || parent === window || event.origin !== location.origin || !viewerReady) return;
+  if (event.data?.type === 'agentcad:capture') {
+    const commentBusy = reviewBusy();
+    tellProject('agentcad:state', {state:captureLiveState(), busy:exportBtn.disabled || commentBusy,
+      busyReason: commentBusy ? 'Finish or save your comment to show the latest build' : 'Waiting for GIF export'});
+  } else if (event.data?.type === 'agentcad:restore') {
+    const fallback = restoreLiveState(event.data.state);
+    renderFrame();
+    tellProject('agentcad:restored', {fallback});
+  }
+});
+
+// Disable buttons that lack data
+function setupModeButtons() {
+  const disable = (id, reason) => {
+    const b = document.getElementById(id);
+    b.classList.add('disabled');
+    b.disabled = true;
+    b.title = reason;
+  };
+  if (!hasB) {
+    disable('btn-single-b', 'Open a second model to compare B.');
+    disable('btn-side', 'Open two models to use side-by-side comparison.');
+    disable('btn-overlay', 'Open two models to use overlay comparison.');
+  }
+  document.getElementById('btn-single-a').textContent = hasB ? 'Previous' : 'Current';
+  document.getElementById('btn-single-a').title = hasB ? LABEL_A : `Current · ${LABEL_A}`;
+  document.getElementById('btn-single-b').textContent = 'Current';
+  document.getElementById('btn-single-b').title = `Current · ${LABEL_B}`;
+  if (!hasAgentView) {
+    disable('btn-agent', 'Agent view is available when preview images, diff images, or handoff state are embedded.');
+  }
+  if (!hasPartsView) { disable('btn-parts', 'No named parts or part changes were embedded in this viewer.'); }
+  if (!hasReview) { disable('btn-spec', 'Run view with --measure or --spec to enable Spec check.'); }
+
+  // Agent-view panels: show only those with data
+  setupAgentHandoffPanel();
+  if (!hasAgentImgs && hasAgentView) {
+    document.getElementById('panel-agent-images-empty').style.display = '';
+  }
+  if (PREVIEW_PNG_URL) { document.getElementById('panel-preview').style.display = ''; document.getElementById('img-preview').src = PREVIEW_PNG_URL; }
+  if (DIFF_SIDE_PNG_URL) { document.getElementById('panel-diff-side').style.display = ''; document.getElementById('img-diff-side').src = DIFF_SIDE_PNG_URL; }
+  if (DIFF_OVERLAY_PNG_URL) { document.getElementById('panel-diff-overlay').style.display = ''; document.getElementById('img-diff-overlay').src = DIFF_OVERLAY_PNG_URL; }
+  if (DIFF_VOLUME_PNG_URL) { document.getElementById('panel-diff-volume').style.display = ''; document.getElementById('img-diff-volume').src = DIFF_VOLUME_PNG_URL; }
+
+  if (hasPartsView) {
+    setupStaticPartsPanel();
+  }
+  if (hasParts) {
+    setupPartControls();
+  }
+  if (hasReview) {
+    setupReviewPanel();
+  }
+
+  // Populate overlay control labels
+  document.getElementById('ov-label-a').textContent = LABEL_A;
+  document.getElementById('ov-label-b').textContent = LABEL_B;
+
+  document.querySelectorAll('#modes button').forEach(b => {
+    b.addEventListener('click', () => { if (!b.disabled) setMode(b.dataset.mode); });
+  });
+}
+setupModeButtons();
+
+function partLabel(part) {
+  return part.name || part.id;
+}
+
+function groupLabel(group) {
+  return group.name || group.id;
+}
+
+function groupPartIds(groupId) {
+  const group = GROUPS.find(g => g.id === groupId);
+  return group ? (group.part_ids || []) : [];
+}
+
+function partById(partId) {
+  return PARTS.find(p => p.id === partId) || null;
+}
+
+function groupById(groupId) {
+  return GROUPS.find(g => g.id === groupId) || null;
+}
+
+function makeAgentChip(label, color) {
+  const chip = document.createElement('span');
+  chip.className = 'agent-chip';
+  if (color) {
+    const swatch = document.createElement('span');
+    swatch.className = 'agent-swatch';
+    swatch.style.background = color;
+    chip.appendChild(swatch);
+  }
+  chip.appendChild(document.createTextNode(label));
+  return chip;
+}
+
+function appendAgentHandoffRow(details, key, value) {
+  const keyEl = document.createElement('div');
+  keyEl.className = 'agent-state-key';
+  keyEl.textContent = key;
+  const valueEl = document.createElement('div');
+  valueEl.className = 'agent-state-value';
+  if (Array.isArray(value)) {
+    if (value.length) {
+      for (const item of value) valueEl.appendChild(item);
+    } else {
+      valueEl.textContent = 'None';
+    }
+  } else {
+    valueEl.textContent = value || 'None';
+  }
+  details.appendChild(keyEl);
+  details.appendChild(valueEl);
+}
+
+function formatPartChips(ids) {
+  return (ids || []).map(id => {
+    const part = partById(id);
+    const group = part && part.group ? groupById(part.group) : null;
+    const label = part ? `${partLabel(part)} (${part.id})` : id;
+    return makeAgentChip(label, group && group.color);
+  });
+}
+
+function formatGroupChips(ids) {
+  return (ids || []).map(id => {
+    const group = groupById(id);
+    const count = group ? group.part_ids.length : 0;
+    const label = group ? `${groupLabel(group)} (${count} ${count === 1 ? 'part' : 'parts'})` : id;
+    return makeAgentChip(label, group && group.color);
+  });
+}
+
+function setupAgentHandoffPanel() {
+  const panel = document.getElementById('panel-agent-handoff');
+  if (!PART_REVIEW) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  document.getElementById('agent-handoff-heading').textContent = PART_REVIEW.review_label || 'Agent handoff';
+  document.getElementById('agent-handoff-note').textContent = (
+    PART_REVIEW.note || 'Part visibility is temporary; submitted review comments are saved.'
+  );
+
+  const details = document.getElementById('agent-handoff-details');
+  details.innerHTML = '';
+  appendAgentHandoffRow(details, 'Focus group', formatGroupChips(PART_REVIEW.focus_group ? [PART_REVIEW.focus_group] : []));
+  appendAgentHandoffRow(details, 'Focus part', formatPartChips(PART_REVIEW.focus ? [PART_REVIEW.focus] : []));
+  appendAgentHandoffRow(details, 'Selected part', formatPartChips(PART_REVIEW.selected ? [PART_REVIEW.selected] : []));
+  appendAgentHandoffRow(details, 'Hidden groups', formatGroupChips(PART_REVIEW.hidden_groups || []));
+  appendAgentHandoffRow(details, 'Hidden parts', formatPartChips(PART_REVIEW.hidden || []));
+  appendAgentHandoffRow(details, 'Isolated groups', formatGroupChips(PART_REVIEW.isolated_groups || []));
+  appendAgentHandoffRow(details, 'Isolated parts', formatPartChips(PART_REVIEW.isolated || []));
+  appendAgentHandoffRow(details, 'Ghost rest', PART_REVIEW.ghost_rest ? 'On' : 'Off');
+  appendAgentHandoffRow(details, 'Lifecycle', PART_REVIEW.temporary ? 'Temporary, not saved' : (PART_REVIEW.persisted ? 'Persisted' : 'Not specified'));
+  appendAgentHandoffRow(details, 'Inventory', hasGroups ? `${PARTS.length} parts, ${GROUPS.length} groups` : `${PARTS.length} parts`);
+
+  panel.style.display = '';
+}
+
+function setupPartHandoff() {
+  const handoff = document.getElementById('part-handoff');
+  if (!PART_REVIEW || (!PART_REVIEW.review_label && !PART_REVIEW.note)) {
+    handoff.style.display = 'none';
+    return;
+  }
+  const title = document.getElementById('part-handoff-title');
+  const note = document.getElementById('part-handoff-note');
+  title.textContent = PART_REVIEW.review_label || 'Review note';
+  note.textContent = PART_REVIEW.note || 'Part visibility is temporary; submitted review comments are saved.';
+  handoff.style.display = 'block';
+}
+
+function setupStaticPartsPanel() {
+  setupPartChangesPanel();
+  document.getElementById('parts-heading').textContent = hasGroups
+    ? `Parts ${PARTS.length} · Groups ${GROUPS.length}`
+    : (hasParts ? `Parts (${PARTS.length})` : 'Parts');
+  document.getElementById('parts-list-heading').style.display = hasGroups ? 'block' : 'none';
+
+  const groupsSection = document.getElementById('parts-groups-section');
+  const groupsList = document.getElementById('parts-groups');
+  groupsList.innerHTML = '';
+  groupsSection.style.display = hasGroups ? 'block' : 'none';
+  if (hasGroups) {
+    for (const g of GROUPS) groupsList.appendChild(makeStaticGroupRow(g));
+  }
+
+  const list = document.getElementById('parts-list');
+  list.innerHTML = '';
+  for (const p of PARTS) list.appendChild(makeStaticPartRow(p));
+}
+
+function setupPartChangesPanel() {
+  const panel = document.getElementById('parts-changes');
+  if (!PART_CHANGES) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  panel.style.display = 'block';
+  document.getElementById('parts-change-summary').textContent = PART_CHANGES.summary;
+  const list = document.getElementById('parts-change-list');
+  const empty = document.getElementById('parts-change-empty');
+  list.innerHTML = '';
+  const rows = [
+    ['Added', PART_CHANGES.added || []],
+    ['Removed', PART_CHANGES.removed || []],
+    ['Renamed', PART_CHANGES.renamed || []],
+    ['Changed', PART_CHANGES.changed || []],
+  ];
+  let rendered = 0;
+  for (const [kind, items] of rows) {
+    if (!items.length) continue;
+    const row = document.createElement('li');
+    row.className = 'change-row';
+    const key = document.createElement('span');
+    key.className = 'change-kind';
+    key.textContent = kind;
+    const value = document.createElement('span');
+    value.className = 'change-items';
+    value.textContent = items.map(item => {
+      if (kind === 'Renamed') return `${item.from || item.id} → ${item.to || item.id} (${item.id})`;
+      if (kind === 'Changed') return `${item.name || item.id} (${item.fields.join(', ')})`;
+      return item.name ? `${item.name} (${item.id})` : item.id;
+    }).join(', ');
+    row.appendChild(key);
+    row.appendChild(value);
+    list.appendChild(row);
+    rendered += 1;
+  }
+  list.style.display = rendered ? 'grid' : 'none';
+  empty.style.display = rendered ? 'none' : 'block';
+  empty.textContent = 'No named part changes detected.';
+}
+
+function makeStaticGroupRow(group) {
+  const row = document.createElement('div');
+  row.className = 'group-row';
+  row.dataset.groupId = group.id;
+
+  const swatch = document.createElement('span');
+  swatch.className = 'swatch';
+  swatch.style.background = group.color || '#c0c0c0';
+  swatch.title = group.color || 'group';
+  row.appendChild(swatch);
+
+  const name = document.createElement('span');
+  name.className = 'group-name';
+  name.textContent = groupLabel(group);
+  row.appendChild(name);
+
+  const count = document.createElement('span');
+  count.className = 'meta';
+  const partCount = (group.part_ids || []).length;
+  count.textContent = `${group.id} · ${partCount} ${partCount === 1 ? 'part' : 'parts'}`;
+  row.appendChild(count);
+  return row;
+}
+
+function connectionSummary(part) {
+  const connection = part.connection;
+  if (!connection) return '';
+  if (connection.status === 'disconnected')
+    return `Warning: touches no other part; ${fmtNumber(connection.distance_mm)} mm from ${connection.nearest_part_id}`;
+  if (connection.status === 'floating') return 'Intentionally floating';
+  if (connection.status === 'unavailable') return 'Contact check unavailable';
+  return '';
+}
+
+function makeStaticPartRow(part) {
+  const li = document.createElement('li');
+  li.dataset.partId = part.id;
+  if (part.color) {
+    const swatch = document.createElement('span');
+    swatch.className = 'swatch';
+    swatch.style.background = part.color;
+    swatch.title = part.color;
+    li.appendChild(swatch);
+  }
+  li.appendChild(document.createTextNode(partLabel(part)));
+  const connection = connectionSummary(part);
+  if (connection) {
+    const note = document.createElement('small');
+    note.textContent = ` · ${connection}`;
+    if (part.connection.status === 'disconnected') note.style.color = '#c2413f';
+    li.appendChild(note);
+  }
+  if (part.part_of) {
+    const tag = document.createElement('span');
+    tag.className = 'part-group-tag';
+    tag.textContent = part.part_of;
+    li.appendChild(tag);
+  }
+  return li;
+}
+
+function setupPartControls() {
+  setupPartHandoff();
+  const rows = document.getElementById('part-control-rows');
+  rows.innerHTML = '';
+  document.getElementById('part-controls-heading').textContent = hasGroups
+    ? `Parts ${PARTS.length} · Groups ${GROUPS.length}`
+    : `Part controls (${PARTS.length})`;
+  if (hasGroups) {
+    const heading = document.createElement('div');
+    heading.className = 'section-title';
+    heading.textContent = 'Groups';
+    rows.appendChild(heading);
+    for (const g of GROUPS) {
+      rows.appendChild(makeControlRow({
+        id: g.id,
+        label: groupLabel(g),
+        sub: `${g.id} · ${(g.part_ids || []).length} parts`,
+        color: g.color,
+        isGroup: true,
+      }));
+    }
+    const partsHeading = document.createElement('div');
+    partsHeading.className = 'section-title';
+    partsHeading.textContent = 'Parts';
+    rows.appendChild(partsHeading);
+  }
+  for (const p of PARTS) {
+    rows.appendChild(makeControlRow({
+      id: p.id,
+      label: partLabel(p),
+      sub: [p.part_of ? `${p.id} · ${p.part_of}` : p.id, connectionSummary(p)].filter(Boolean).join(' · '),
+      color: p.color,
+      isGroup: false,
+    }));
+  }
+  document.getElementById('ghost-rest-btn').addEventListener('click', () => {
+    partState.ghostRest = !partState.ghostRest;
+    applyPartState();
+  });
+  document.getElementById('reset-parts-btn').addEventListener('click', () => {
+    partState.hidden.clear();
+    partState.isolated.clear();
+    partState.ghostRest = false;
+    applyPartState();
+  });
+  applyPartState();
+}
+
+function makeControlRow({ id, label, sub, color, isGroup }) {
+    const row = document.createElement('div');
+    row.className = isGroup ? 'part-row group-row' : 'part-row';
+    row.dataset[isGroup ? 'groupId' : 'partId'] = id;
+    const swatch = document.createElement('span');
+    swatch.className = 'swatch';
+    swatch.style.background = color || '#c0c0c0';
+    row.appendChild(swatch);
+
+    const name = document.createElement('button');
+    name.type = 'button';
+    name.className = 'name';
+    name.title = `Focus ${id}`;
+    name.textContent = label;
+    name.addEventListener('click', () => {
+      if (isGroup) selectGroup(id, { focus: true });
+      else selectPart(id, { focus: true });
+    });
+    const textWrap = document.createElement('div');
+    textWrap.appendChild(name);
+    const subEl = document.createElement('div');
+    subEl.className = 'sub';
+    subEl.textContent = sub;
+    textWrap.appendChild(subEl);
+    row.appendChild(textWrap);
+
+    const actions = document.createElement('div');
+    actions.className = 'row-actions';
+    const hide = document.createElement('button');
+    hide.type = 'button';
+    hide.dataset.action = 'hide';
+    hide.textContent = 'Hide';
+    hide.title = `Hide or show ${id}`;
+    hide.addEventListener('click', () => {
+      if (isGroup) toggleGroupHidden(id);
+      else togglePartHidden(id);
+    });
+    const isolate = document.createElement('button');
+    isolate.type = 'button';
+    isolate.dataset.action = 'isolate';
+    isolate.textContent = 'Iso';
+    isolate.title = `Isolate ${id}`;
+    isolate.addEventListener('click', () => {
+      if (isGroup) toggleGroupIsolated(id);
+      else togglePartIsolated(id);
+    });
+    actions.appendChild(hide);
+    actions.appendChild(isolate);
+    row.appendChild(actions);
+
+    if (isGroup) groupRows.set(id, row);
+    else partRows.set(id, row);
+    return row;
+}
+
+function partMatchesNameExact(partId, name) {
+  if (!name) return false;
+  const value = String(name);
+  return value === String(partId);
+}
+
+function partMatchesNameFuzzy(partId, name) {
+  if (!name) return false;
+  const value = String(name);
+  return value.includes(String(partId));
+}
+
+function detectPartId(mesh, parts=PARTS) {
+  const names = [];
+  let node = mesh;
+  while (node) {
+    if (node.name) names.push(node.name);
+    node = node.parent;
+  }
+  for (const p of parts) {
+    if (names.some(name => partMatchesNameExact(p.id, name))) return p.id;
+    if (p.name && names.some(name => partMatchesNameExact(p.name, name))) return p.id;
+  }
+  // Fallback for exporters that decorate node names. Longest IDs first avoids
+  // assigning wheel_axle to wheel when both exist.
+  const longestFirst = [...parts].sort((a, b) => String(b.id).length - String(a.id).length);
+  for (const p of longestFirst) {
+    if (names.some(name => partMatchesNameFuzzy(p.id, name))) return p.id;
+    if (p.name && names.some(name => partMatchesNameFuzzy(p.name, name))) return p.id;
+  }
+  return null;
+}
+
+function cloneMaterialForPart(mesh) {
+  if (Array.isArray(mesh.material)) {
+    mesh.userData.originalMaterial = mesh.material.map(m => m.clone());
+    mesh.userData.ghostMaterial = mesh.material.map(m => {
+      const g = m.clone();
+      g.transparent = true;
+      g.opacity = 0.16;
+      g.depthWrite = false;
+      return g;
+    });
+  } else if (mesh.material) {
+    mesh.userData.originalMaterial = mesh.material.clone();
+    mesh.userData.ghostMaterial = mesh.material.clone();
+    mesh.userData.ghostMaterial.transparent = true;
+    mesh.userData.ghostMaterial.opacity = 0.16;
+    mesh.userData.ghostMaterial.depthWrite = false;
+  }
+}
+
+function registerPartMeshes(model) {
+  model.traverse(c => {
+    if (!c.isMesh) return;
+    const partId = detectPartId(c);
+    if (!partId) return;
+    c.userData.partId = partId;
+    cloneMaterialForPart(c);
+    if (!partObjects.has(partId)) partObjects.set(partId, []);
+    partObjects.get(partId).push(c);
+  });
+}
+
+function indexCommentPartMeshes(model, role) {
+  const index = partObjectsByRole[role];
+  model.traverse(c => {
+    if (!c.isMesh) return;
+    const partId = detectPartId(c, COMMENT_PARTS);
+    if (!partId) return;
+    c.userData.partId = partId;
+    if (!index.has(partId)) index.set(partId, []);
+    index.get(partId).push(c);
+  });
+}
+
+function partIsPrimary(partId) {
+  if (partState.isolated.size > 0) return partState.isolated.has(partId);
+  if (partState.selected) return partState.selected === partId;
+  return false;
+}
+
+function allMembersInSet(ids, set) {
+  return ids.length > 0 && ids.every(id => set.has(id));
+}
+
+function allPartMeshes() {
+  return Array.from(partObjects.values()).flat();
+}
+
+function meshMaterials(mesh) {
+  if (!mesh.material) return [];
+  return Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+}
+
+function meshIsGhosted(mesh) {
+  const materials = meshMaterials(mesh);
+  return materials.length > 0 && materials.every(m => m.transparent && m.opacity <= 0.2);
+}
+
+function viewerDebugState() {
+  return {
+    ready: viewerReady,
+    validation_marker_count: viewerReady ? reviewMarkerGroup.children.length : 0,
+    mode: currentMode,
+    camera: viewerReady ? {
+      position: camera.position.toArray(),
+      target: controls.target.toArray(),
+    } : null,
+    review: PART_REVIEW,
+    parts: PARTS.map(p => {
+      const meshes = partObjects.get(p.id) || [];
+      const visibleMeshes = meshes.filter(m => m.visible);
+      return {
+        id: p.id,
+        part_of: p.part_of || null,
+        mesh_count: meshes.length,
+        visible_mesh_count: visibleMeshes.length,
+        visible: visibleMeshes.length > 0,
+        hidden: partState.hidden.has(p.id),
+        isolated: partState.isolated.has(p.id),
+        selected: partState.selected === p.id || partState.isolated.has(p.id),
+        ghosted: visibleMeshes.length > 0 && visibleMeshes.every(meshIsGhosted),
+      };
+    }),
+    groups: GROUPS.map(g => {
+      const ids = groupPartIds(g.id);
+      return {
+        id: g.id,
+        part_ids: ids,
+        hidden: allMembersInSet(ids, partState.hidden),
+        isolated: allMembersInSet(ids, partState.isolated),
+        selected: ids.includes(partState.selected) || allMembersInSet(ids, partState.isolated),
+      };
+    }),
+    ghost_rest: partState.ghostRest,
+  };
+}
+
+function publishViewerDebugState() {
+  if (!window.agentcadViewer) return;
+  window.agentcadViewer.lastState = viewerDebugState();
+  window.dispatchEvent(new CustomEvent('agentcad:viewer-state', {
+    detail: window.agentcadViewer.lastState,
+  }));
+}
+
+// ---- Human review comments ---------------------------------------------
+// Persistent comments are available only when this generated file is served
+// by the live project viewer. file:// remains a fully functional read-only
+// viewer for backwards compatibility and offline artifact inspection.
+const reviewProject = location.pathname.match(/^\/projects\/([a-f0-9]{64})\/artifacts\/\d+\/viewer\.html$/);
+const reviewToken = reviewProject?.[1] || '';
+const reviewBase = `/projects/${reviewToken}/review`;
+const reviewEnabled = location.protocol === 'http:' && Boolean(reviewToken);
+let reviewComments = [];
+let commentPlacement = null;
+let pendingCommentAnchor = null;
+let selectedCommentId = null;
+let commentHoverPoint = null;
+let editingCommentId = null;
+let reviewCommentsFingerprint = '';
+let reviewWrites = 0;
+
+function reviewBusy() {
+  return reviewWrites > 0 || Boolean(commentPlacement || pendingCommentAnchor)
+    || [...document.querySelectorAll('.comment-reply-text')].some(el => el.value.trim());
+}
+
+function setCommentStatus(message) {
+  document.getElementById('comment-status').textContent = message || '';
+}
+
+async function reviewFetch(path, options={}) {
+  const headers = { ...(options.headers || {}), 'X-AgentCAD-Review-Token': reviewToken };
+  if (options.body) headers['Content-Type'] = 'application/json';
+  const writing = options.method === 'POST';
+  if (writing) reviewWrites++;
+  try {
+    const response = await fetch(reviewBase + path, { ...options, headers });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.message || payload.error || `Review request failed (${response.status})`);
+    return payload;
+  } finally {
+    if (writing) reviewWrites--;
+  }
+}
+
+function currentModelRole() {
+  if (currentMode === 'single-b') return 'b';
+  if (currentMode === 'side-by-side' || currentMode === 'overlay') return PARTS_MODEL;
+  return 'a';
+}
+
+function sourceForRole(role) {
+  const models = VIEWER_CONTEXT.models || {};
+  return models[role] || { version: VIEWER_CONTEXT.version, label: VIEWER_CONTEXT.label };
+}
+
+function modelForRole(role) {
+  return role === 'b' ? reviewModelB : reviewModelA;
+}
+
+function commentableModel(event=null) {
+  if (currentMode === 'single-a' || currentMode === 'spec') return { model: reviewModelA, role: 'a' };
+  if (currentMode === 'single-b') return { model: reviewModelB, role: 'b' };
+  if (currentMode === 'side-by-side' && event) {
+    const rect = canvas.getBoundingClientRect();
+    const halfWidth = rect.width / 2;
+    const isRight = event.clientX >= rect.left + halfWidth;
+    return {
+      model: isRight ? reviewSplitModelB : reviewSplitModelA,
+      role: isRight ? 'b' : 'a',
+      viewport: {
+        left: rect.left + (isRight ? halfWidth : 0),
+        top: rect.top,
+        width: halfWidth,
+        height: rect.height,
+      },
+    };
+  }
+  return { model: null, role: null };
+}
+
+function placementModelForRole(role) {
+  if (currentMode === 'side-by-side') return role === 'b' ? reviewSplitModelB : reviewSplitModelA;
+  return modelForRole(role);
+}
+
+function yUpToCad(point) {
+  return [point.x, -point.z, point.y];
+}
+
+function cadToYUp(point) {
+  return new THREE.Vector3(Number(point[0]), Number(point[2]), -Number(point[1]));
+}
+
+function partRelativeAtWorldPoint(partId, point, model=null) {
+  let meshes = partId ? (partObjects.get(partId) || []) : [];
+  if (model) {
+    meshes = [];
+    model.traverse(object => {
+      if (object.isMesh && detectPartId(object, COMMENT_PARTS) === partId) meshes.push(object);
+    });
+  }
+  if (!meshes.length) return null;
+  const box = new THREE.Box3();
+  for (const mesh of meshes) box.expandByObject(mesh);
+  const size = box.getSize(new THREE.Vector3());
+  return [
+    size.x > 1e-9 ? (point.x - box.min.x) / size.x : 0.5,
+    size.y > 1e-9 ? (point.y - box.min.y) / size.y : 0.5,
+    size.z > 1e-9 ? (point.z - box.min.z) / size.z : 0.5,
+  ];
+}
+
+function objectIsVisible(object) {
+  let current = object;
+  while (current) {
+    if (!current.visible) return false;
+    current = current.parent;
+  }
+  return true;
+}
+
+function closestVisiblePartId(clientX, clientY, active) {
+  if (!active?.model) return null;
+  const rect = canvas.getBoundingClientRect();
+  const viewport = active.viewport || { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+  const boxes = new Map();
+  active.model.traverse(mesh => {
+    if (!mesh.isMesh || !objectIsVisible(mesh)) return;
+    const partId = mesh.userData.partId || detectPartId(mesh, COMMENT_PARTS);
+    if (!partId) return;
+    if (!boxes.has(partId)) boxes.set(partId, new THREE.Box3());
+    boxes.get(partId).expandByObject(mesh);
+  });
+  let closest = null;
+  let closestDistance = Infinity;
+  for (const [partId, box] of boxes) {
+    if (box.isEmpty()) continue;
+    const projected = box.getCenter(new THREE.Vector3()).project(camera);
+    if (projected.z < -1 || projected.z > 1) continue;
+    const x = viewport.left + (projected.x + 1) * viewport.width / 2;
+    const y = viewport.top + (-projected.y + 1) * viewport.height / 2;
+    const distance = Math.hypot(x - clientX, y - clientY);
+    if (distance < closestDistance) {
+      closest = partId;
+      closestDistance = distance;
+    }
+  }
+  return closest;
+}
+
+function cameraSnapshot() {
+  return {
+    mode: currentMode,
+    position: camera.position.toArray(),
+    target: controls.target.toArray(),
+  };
+}
+
+function captureCommentScreenshot() {
+  if (canvas.style.display === 'none') return null;
+  renderFrame();
+  const maxWidth = 360;
+  const scale = Math.min(1, maxWidth / Math.max(1, canvas.width));
+  const probe = document.createElement('canvas');
+  probe.width = Math.max(1, Math.round(canvas.width * scale));
+  probe.height = Math.max(1, Math.round(canvas.height * scale));
+  probe.getContext('2d').drawImage(canvas, 0, 0, probe.width, probe.height);
+  return probe.toDataURL('image/jpeg', 0.72);
+}
+
+function setCommentPanel(open, { preserveCamera=false }={}) {
+  const oldWidth = canvas.clientWidth;
+  document.getElementById('comments-panel').classList.toggle('open', open);
+  document.getElementById('comment-toggle-btn').classList.toggle('active', open);
+  resize();
+  if (!preserveCamera && oldWidth !== canvas.clientWidth) {
+    camera.position.sub(controls.target).multiplyScalar(oldWidth / canvas.clientWidth).add(controls.target);
+    controls.update();
+  }
+  if (!open) cancelCommentPlacement();
+}
+
+function beginCommentPlacement() {
+  if (!reviewEnabled) return;
+  if (['agent-view', 'parts'].includes(currentMode)) return;
+  setCommentPanel(true);
+  pendingCommentAnchor = null;
+  editingCommentId = null;
+  commentHoverPoint = null;
+  commentPlacement = 'surface';
+  document.body.classList.add('placing-comment');
+  setAutoRotate(false);
+  setCommentStatus('Click the exact place you mean. The nearest visible part will be selected.');
+  updateCommentTargetPreview();
+}
+
+function cancelCommentPlacement() {
+  commentPlacement = null;
+  pendingCommentAnchor = null;
+  editingCommentId = null;
+  commentHoverPoint = null;
+  document.body.classList.remove('placing-comment');
+  document.getElementById('comment-composer').classList.remove('open');
+  document.getElementById('comment-part-field').classList.remove('visible');
+  document.getElementById('comment-scope-field').classList.remove('visible');
+  document.getElementById('comment-text').value = '';
+  updateCommentTargetPreview();
+  setCommentStatus('');
+}
+
+function commentScopeLabel(scope) {
+  if (scope === 'previous') return 'Previous';
+  if (scope === 'both') return 'Both';
+  if (!hasB) return 'Current';
+  return scope === 'b' ? 'Current' : 'Previous';
+}
+
+function commentScopeDescription(scope) {
+  if (scope === 'previous') return 'Previous revision is not displayed in this viewer';
+  if (scope === 'both') return `Both · ${LABEL_A} + ${LABEL_B}`;
+  if (!hasB) return `Current · ${LABEL_A}`;
+  return scope === 'b' ? `Current · ${LABEL_B}` : `Previous · ${LABEL_A}`;
+}
+
+function pendingAnchorLabel(anchor) {
+  const part = COMMENT_PARTS.find(p => p.id === anchor.part_id);
+  const partSuffix = part ? ` · ${partLabel(part)}` : '';
+  return `Pinned comment${partSuffix} · ${commentScopeLabel(anchor.scope || anchor.role)}`;
+}
+
+function setPendingCommentPart(partId) {
+  if (!pendingCommentAnchor) return;
+  pendingCommentAnchor.part_id = partId || null;
+  if (pendingCommentAnchor.kind === 'surface' && pendingCommentAnchor.display_point) {
+    const model = placementModelForRole(pendingCommentAnchor.role);
+    pendingCommentAnchor.part_relative = partId
+      ? partRelativeAtWorldPoint(partId, new THREE.Vector3(...pendingCommentAnchor.display_point), model)
+      : null;
+  }
+  document.getElementById('comment-anchor-summary').textContent = pendingAnchorLabel(pendingCommentAnchor);
+}
+
+function setPendingCommentScope(scope) {
+  if (!pendingCommentAnchor) return;
+  pendingCommentAnchor.scope = scope;
+  for (const button of document.querySelectorAll('[data-comment-scope]')) {
+    button.classList.toggle('active', button.dataset.commentScope === scope);
+  }
+  document.getElementById('comment-anchor-summary').textContent = pendingAnchorLabel(pendingCommentAnchor);
+}
+
+function setupCommentScopeSelector(anchor) {
+  const field = document.getElementById('comment-scope-field');
+  if (!hasB) {
+    field.classList.remove('visible');
+    setPendingCommentScope(anchor.role || 'a');
+    return;
+  }
+  field.classList.add('visible');
+  setPendingCommentScope(anchor.scope || anchor.role || PARTS_MODEL);
+  const labels = {
+    a: `Previous · ${LABEL_A}`,
+    b: `Current · ${LABEL_B}`,
+    both: `Both · ${LABEL_A} + ${LABEL_B}`,
+  };
+  for (const button of document.querySelectorAll('[data-comment-scope]')) {
+    button.textContent = commentScopeLabel(button.dataset.commentScope);
+    button.title = labels[button.dataset.commentScope] || '';
+  }
+  document.getElementById('comment-scope-hint').textContent = `Previous = ${LABEL_A} · Current = ${LABEL_B}`;
+}
+
+function setupCommentPartSelector(anchor) {
+  const field = document.getElementById('comment-part-field');
+  const select = document.getElementById('comment-part-select');
+  select.innerHTML = '';
+  if (!COMMENT_PARTS.length) {
+    field.classList.remove('visible');
+    return;
+  }
+  for (const part of COMMENT_PARTS) {
+    const option = document.createElement('option');
+    option.value = part.id;
+    option.textContent = `${partLabel(part)} · ${part.id}`;
+    select.appendChild(option);
+  }
+  const suggested = COMMENT_PARTS.some(part => part.id === anchor.part_id) ? anchor.part_id : COMMENT_PARTS[0].id;
+  select.value = suggested;
+  field.classList.add('visible');
+  setPendingCommentPart(suggested);
+}
+
+function openCommentComposer(anchor) {
+  pendingCommentAnchor = anchor;
+  commentPlacement = null;
+  commentHoverPoint = null;
+  document.body.classList.remove('placing-comment');
+  document.getElementById('comment-anchor-summary').textContent = pendingAnchorLabel(anchor);
+  setupCommentPartSelector(anchor);
+  setupCommentScopeSelector(anchor);
+  document.getElementById('comment-composer').classList.add('open');
+  document.getElementById('save-comment-btn').textContent = editingCommentId ? 'Save changes' : 'Save draft';
+  document.getElementById('comment-text').focus();
+  updateCommentTargetPreview();
+  setCommentStatus('');
+}
+
+function surfaceCommentHit(event) {
+  const active = commentableModel(event);
+  if (!active.model) {
+    return { active, hit: null };
+  }
+  const rect = canvas.getBoundingClientRect();
+  const viewport = active.viewport || { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+  const pointer = new THREE.Vector2(
+    ((event.clientX - viewport.left) / viewport.width) * 2 - 1,
+    -((event.clientY - viewport.top) / viewport.height) * 2 + 1,
+  );
+  const raycaster = new THREE.Raycaster();
+  raycaster.setFromCamera(pointer, camera);
+  const hit = raycaster.intersectObject(active.model, true)
+    .find(entry => entry.object.isMesh && objectIsVisible(entry.object));
+  return { active, hit };
+}
+
+function onSurfaceCommentMove(event) {
+  if (commentPlacement !== 'surface') return;
+  const { active, hit } = surfaceCommentHit(event);
+  commentHoverPoint = hit ? { point: hit.point.clone(), role: active.role } : null;
+  updateCommentTargetPreview();
+}
+
+function onSurfaceCommentLeave() {
+  if (commentPlacement !== 'surface') return;
+  commentHoverPoint = null;
+  updateCommentTargetPreview();
+}
+
+function onSurfaceCommentClick(event) {
+  if (commentPlacement !== 'surface') return;
+  const { active, hit } = surfaceCommentHit(event);
+  if (!active.model) {
+    setCommentStatus('Switch to A or B mode to place a surface pin.');
+    return;
+  }
+  if (!hit) {
+    setCommentStatus('No surface found there. Click directly on the model.');
+    return;
+  }
+  const local = active.model.worldToLocal(hit.point.clone());
+  const worldNormal = hit.face
+    ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld)
+    : new THREE.Vector3(0, 1, 0);
+  const partId = hit.object.userData.partId || detectPartId(hit.object, COMMENT_PARTS)
+    || closestVisiblePartId(event.clientX, event.clientY, active);
+  openCommentComposer({
+    kind: 'surface',
+    point_mm: yUpToCad(local),
+    normal: yUpToCad(worldNormal),
+    part_relative: partRelativeAtWorldPoint(partId, hit.point, active.model),
+    display_point: hit.point.toArray(),
+    role: active.role,
+    part_id: partId,
+  });
+}
+
+function pendingCommentPayload() {
+  const text = document.getElementById('comment-text').value.trim();
+  if (!text || !pendingCommentAnchor) {
+    setCommentStatus('Write a comment before saving.');
+    return null;
+  }
+  const anchor = { ...pendingCommentAnchor };
+  delete anchor.role;
+  delete anchor.scope;
+  delete anchor.part_id;
+  delete anchor.display_point;
+  const source = sourceForRole(pendingCommentAnchor.role);
+  return {
+    text,
+    source_version: source.version ?? null,
+    source_label: source.label ?? null,
+    target: {
+      model: pendingCommentAnchor.scope || pendingCommentAnchor.role,
+      scope: (pendingCommentAnchor.scope === 'both') ? 'both'
+        : (hasB && (pendingCommentAnchor.scope || pendingCommentAnchor.role) === 'a' ? 'previous' : 'current'),
+      source_model: pendingCommentAnchor.role,
+      part_id: pendingCommentAnchor.part_id || null,
+    },
+    anchor,
+    view: cameraSnapshot(),
+    screenshot: captureCommentScreenshot(),
+  };
+}
+
+async function savePendingComment({ send=false }={}) {
+  if (reviewWrites) return;
+  const payload = pendingCommentPayload();
+  if (!payload) return;
+  reviewWrites++;
+  let persisted = null;
+  try {
+    const result = editingCommentId
+      ? await reviewFetch(`/comments/${encodeURIComponent(editingCommentId)}/update`, {
+          method: 'POST', body: JSON.stringify(payload),
+        })
+      : await reviewFetch('/comments', { method: 'POST', body: JSON.stringify({ ...payload, send }) });
+    persisted = result.comment;
+    if (send && editingCommentId) {
+      await reviewFetch('/submit', {
+        method: 'POST', body: JSON.stringify({ comment_ids: [persisted.id] }),
+      });
+    }
+    cancelCommentPlacement();
+    await loadReviewComments();
+    setCommentStatus(send ? `Sent ${persisted.id} to the agent.` : `Saved ${persisted.id} as a draft. It has not been sent.`);
+  } catch (error) {
+    if (persisted && send) {
+      cancelCommentPlacement();
+      await loadReviewComments();
+      setCommentStatus(`${persisted.id} was saved as a draft but could not be sent: ${error.message}`);
+      return;
+    }
+    setCommentStatus(error.message);
+  } finally {
+    reviewWrites--;
+  }
+}
+
+async function sendDraftComment(commentId) {
+  if (reviewWrites) return;
+  try {
+    await reviewFetch('/submit', {
+      method: 'POST', body: JSON.stringify({ comment_ids: [commentId] }),
+    });
+    await loadReviewComments();
+    setCommentStatus(`Sent ${commentId} to the agent.`);
+  } catch (error) {
+    setCommentStatus(error.message);
+  }
+}
+
+function editDraftComment(comment) {
+  if (comment.status !== 'draft') return;
+  editingCommentId = comment.id;
+  const role = commentSourceRole(comment);
+  const world = commentWorldPoint(comment, role);
+  openCommentComposer({
+    ...(comment.anchor || {}),
+    role,
+    scope: commentScope(comment),
+    part_id: (comment.target || {}).part_id || null,
+    display_point: world ? world.toArray() : null,
+  });
+  document.getElementById('comment-text').value = comment.text || '';
+  document.getElementById('comment-text').focus();
+}
+
+async function deleteDraftComment(commentId) {
+  if (reviewWrites) return;
+  if (!window.confirm(`Delete unsent draft ${commentId}?`)) return;
+  try {
+    await reviewFetch(`/comments/${encodeURIComponent(commentId)}/delete`, {
+      method: 'POST', body: '{}',
+    });
+    await loadReviewComments();
+    setCommentStatus(`Deleted draft ${commentId}.`);
+  } catch (error) {
+    setCommentStatus(error.message);
+  }
+}
+
+async function submitReviewDrafts() {
+  if (reviewWrites) return;
+  const ids = reviewComments.filter(comment => comment.status === 'draft').map(comment => comment.id);
+  if (!ids.length) return;
+  try {
+    const result = await reviewFetch('/submit', {
+      method: 'POST', body: JSON.stringify({ comment_ids: ids }),
+    });
+    setCommentStatus(`Sent ${result.comments.length} draft${result.comments.length === 1 ? '' : 's'} to the agent.`);
+    await loadReviewComments();
+  } catch (error) {
+    setCommentStatus(error.message);
+  }
+}
+
+async function humanReply(commentId, message) {
+  if (reviewWrites) return;
+  const text = String(message || '').trim();
+  if (!text) {
+    setCommentStatus('Write a reply before sending.');
+    return;
+  }
+  try {
+    await reviewFetch(`/comments/${encodeURIComponent(commentId)}/reply`, {
+      method: 'POST', body: JSON.stringify({ message: text }),
+    });
+    await loadReviewComments();
+    setCommentStatus(`Reply added to ${commentId}.`);
+  } catch (error) {
+    setCommentStatus(error.message);
+  }
+}
+
+async function humanTransition(commentId, action, message='') {
+  if (reviewWrites) return;
+  try {
+    await reviewFetch(`/comments/${encodeURIComponent(commentId)}/${action}`, {
+      method: 'POST', body: JSON.stringify({ message: String(message || '').trim() }),
+    });
+    await loadReviewComments();
+  } catch (error) {
+    setCommentStatus(error.message);
+  }
+}
+
+function sameViewerVersion(comment) {
+  const versions = Object.values(VIEWER_CONTEXT.models || {}).map(model => String(model.version));
+  if (VIEWER_CONTEXT.version !== undefined) versions.push(String(VIEWER_CONTEXT.version));
+  return versions.includes(String(comment.source_version));
+}
+
+function commentScope(comment) {
+  const scope = (comment.target || {}).scope;
+  if (scope === 'current') return hasB ? 'b' : 'a';
+  if (scope === 'previous') return hasB ? 'a' : 'previous';
+  if (scope === 'both') return 'both';
+  const value = (comment.target || {}).model || PARTS_MODEL;
+  return ['a', 'b', 'both'].includes(value) ? value : PARTS_MODEL;
+}
+
+function commentSourceRole(comment) {
+  const target = comment.target || {};
+  const scope = commentScope(comment);
+  return target.source_model || (scope === 'both' ? PARTS_MODEL : scope);
+}
+
+function commentPinRoles(comment) {
+  if (!hasB && commentScope(comment) === 'previous') return [];
+  if (!hasB) return ['a'];
+  const scope = commentScope(comment);
+  if (scope === 'both') return ['a', 'b'];
+  return [scope];
+}
+
+function commentRoleVisible(role, comment) {
+  if (['agent-view', 'parts'].includes(currentMode)) return false;
+  if (currentMode === 'single-a' || currentMode === 'spec') return role === 'a';
+  if (currentMode === 'single-b') return role === 'b';
+  if (currentMode === 'side-by-side') return true;
+  if (currentMode === 'overlay') {
+    return commentScope(comment) !== 'both' || role === commentSourceRole(comment);
+  }
+  return false;
+}
+
+function commentPartMeshes(partId, role, useCurrentParts=false) {
+  if (useCurrentParts) return partObjects.get(partId) || [];
+  const roleIndex = partObjectsByRole[role] || partObjectsByRole[PARTS_MODEL];
+  return roleIndex.get(partId) || [];
+}
+
+function pointFromPartRelative(anchor, partId, role, useCurrentParts=false) {
+  if (!partId || !Array.isArray(anchor.part_relative)) return null;
+  const meshes = commentPartMeshes(partId, role, useCurrentParts);
+  if (!meshes.length) return null;
+  const box = new THREE.Box3();
+  for (const mesh of meshes) box.expandByObject(mesh);
+  const relative = anchor.part_relative;
+  const candidate = new THREE.Vector3(
+    THREE.MathUtils.lerp(box.min.x, box.max.x, relative[0]),
+    THREE.MathUtils.lerp(box.min.y, box.max.y, relative[1]),
+    THREE.MathUtils.lerp(box.min.z, box.max.z, relative[2]),
+  );
+  if (Array.isArray(anchor.normal)) {
+    const normal = cadToYUp(anchor.normal).normalize();
+    const distance = Math.max(box.getSize(new THREE.Vector3()).length() * 2, 1);
+    const raycaster = new THREE.Raycaster(
+      candidate.clone().add(normal.clone().multiplyScalar(distance)),
+      normal.clone().negate(),
+      0,
+      distance * 3,
+    );
+    const hit = raycaster.intersectObjects(meshes, false)[0];
+    if (hit) return hit.point;
+  }
+  return candidate;
+}
+
+function commentWorldPoint(comment, requestedRole=null) {
+  const anchor = comment.anchor || {};
+  const partId = (comment.target || {}).part_id;
+  const sameVersion = sameViewerVersion(comment);
+  const scope = commentScope(comment);
+  const role = requestedRole || (scope === 'both' ? commentSourceRole(comment) : scope);
+  if (role === 'previous') return null;
+  if (partId && !commentPartMeshes(partId, role).length) return null;
+  if (!sameVersion && !partId) return null;
+  if (anchor.kind === 'part' && partId) {
+    const meshes = commentPartMeshes(partId, role);
+    if (!meshes.length) return null;
+    const box = new THREE.Box3();
+    for (const mesh of meshes) box.expandByObject(mesh);
+    return box.getCenter(new THREE.Vector3());
+  }
+  if (anchor.kind !== 'surface' || !Array.isArray(anchor.point_mm)) return null;
+  const sameModelVersion = String(sourceForRole(role).version) === String(comment.source_version);
+  if (!sameModelVersion) {
+    const mapped = pointFromPartRelative(anchor, partId, role);
+    if (mapped) return mapped;
+    return null;
+  }
+  const model = modelForRole(role);
+  if (!model) return null;
+  return model.localToWorld(cadToYUp(anchor.point_mm));
+}
+
+function restoreCommentView(comment) {
+  selectedCommentId = comment.id;
+  const view = comment.view || {};
+  const scope = commentScope(comment);
+  const carriedMode = hasB && scope === 'a' ? 'single-a'
+    : (hasB && scope === 'b' ? 'single-b' : (PARTS_MODEL === 'b' && hasB ? 'single-b' : 'single-a'));
+  const mode = comment.target?.scope
+    ? (scope === 'both' && hasB ? 'side-by-side' : carriedMode)
+    : (sameViewerVersion(comment) ? view.mode : carriedMode);
+  if (mode && !['agent-view', 'parts'].includes(mode)) setMode(mode);
+  if (Array.isArray(view.position) && Array.isArray(view.target)) {
+    camera.position.fromArray(view.position);
+    controls.target.fromArray(view.target);
+    camera.lookAt(controls.target);
+    controls.update();
+  }
+  const partId = (comment.target || {}).part_id;
+  if (partId && partObjects.has(partId)) selectPart(partId, { focus: false });
+  renderReviewComments();
+}
+
+function makeCommentThread(comment) {
+  const thread = document.createElement('div');
+  thread.className = 'comment-thread';
+  for (const reply of (comment.replies || [])) {
+    const item = document.createElement('div');
+    item.className = `comment-reply ${reply.actor === 'agent' ? 'agent' : 'human'}`;
+    const byline = document.createElement('div');
+    byline.className = 'byline';
+    const actor = reply.actor === 'agent' ? 'Agent' : 'Human';
+    const action = reply.action ? ` · ${reply.action}` : '';
+    const version = reply.version !== undefined ? ` · Revision ${reply.version}` : '';
+    byline.textContent = `${actor}${action}${version}`;
+    const text = document.createElement('p');
+    text.textContent = reply.text;
+    item.append(byline, text);
+    thread.appendChild(item);
+  }
+  return thread;
+}
+
+function makeThreadComposer(comment) {
+  const composer = document.createElement('div');
+  composer.className = 'thread-composer';
+  const textarea = document.createElement('textarea');
+  textarea.className = 'comment-reply-text';
+  textarea.placeholder = comment.status === 'resolved'
+    ? 'Why are you reopening this comment?'
+    : 'Reply to this thread…';
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+  const cancel = document.createElement('button');
+  cancel.textContent = 'Cancel';
+  cancel.addEventListener('click', event => {
+    event.stopPropagation();
+    selectedCommentId = null;
+    renderReviewComments();
+  });
+  actions.appendChild(cancel);
+  if (comment.status === 'resolved') {
+    const reopen = document.createElement('button');
+    reopen.className = 'primary';
+    reopen.textContent = 'Reopen';
+    reopen.addEventListener('click', event => {
+      event.stopPropagation();
+      humanTransition(comment.id, 'reopen', textarea.value);
+    });
+    actions.appendChild(reopen);
+  } else {
+    const reply = document.createElement('button');
+    reply.className = 'primary';
+    reply.textContent = 'Send reply';
+    reply.addEventListener('click', event => {
+      event.stopPropagation();
+      humanReply(comment.id, textarea.value);
+    });
+    const resolve = document.createElement('button');
+    resolve.textContent = 'Resolve';
+    resolve.title = 'Resolve now, optionally adding the text above as a closing reply.';
+    resolve.addEventListener('click', event => {
+      event.stopPropagation();
+      humanTransition(comment.id, 'resolve', textarea.value);
+    });
+    actions.append(reply, resolve);
+  }
+  composer.addEventListener('click', event => event.stopPropagation());
+  composer.append(textarea, actions);
+  return composer;
+}
+
+function openCommentThread(comment) {
+  selectedCommentId = comment.id;
+  renderReviewComments();
+  document.querySelector(
+    `.comment-row[data-comment-id="${comment.id}"] .comment-reply-text`
+  )?.focus();
+}
+
+function makeCommentRow(comment) {
+  const row = document.createElement('article');
+  row.className = `comment-row ${comment.status}${selectedCommentId === comment.id ? ' selected' : ''}`;
+  row.dataset.commentId = comment.id;
+  row.addEventListener('click', () => restoreCommentView(comment));
+  const meta = document.createElement('div');
+  meta.className = 'meta';
+  const id = document.createElement('span'); id.textContent = comment.id;
+  const scope = document.createElement('span');
+  scope.className = 'comment-scope-badge';
+  scope.textContent = commentScopeLabel(commentScope(comment));
+  scope.title = commentScopeDescription(commentScope(comment));
+  id.appendChild(scope);
+  const status = document.createElement('span');
+  const latestReply = (comment.replies || []).at(-1);
+  const latestActor = (comment.events || []).at(-1)?.actor || latestReply?.actor || comment.author || 'human';
+  status.textContent = comment.status === 'draft'
+    ? 'Draft · Not sent'
+    : comment.status === 'resolved'
+      ? 'Resolved'
+      : latestActor === 'agent' || comment.status === 'addressed'
+        ? 'Open · Human response needed'
+        : 'Open · Agent response needed';
+  meta.append(id, status);
+  const author = document.createElement('div');
+  author.className = 'author';
+  author.textContent = comment.author === 'agent' ? 'Agent' : 'Human';
+  author.title = `Created on revision ${comment.source_version ?? '?'} · ${comment.source_label || ''}`;
+  const text = document.createElement('p'); text.textContent = comment.text;
+  const target = document.createElement('div');
+  target.className = 'target';
+  const partId = (comment.target || {}).part_id;
+  const part = COMMENT_PARTS.find(p => p.id === partId);
+  target.textContent = part
+    ? `Part · ${partLabel(part)} (${part.id})`
+    : `${(comment.anchor || {}).kind || 'comment'} · ${comment.source_label || 'saved view'}`;
+  row.append(meta, author, text, target);
+  if (viewerReady && (comment.anchor || {}).kind !== 'view'
+      && !commentPinRoles(comment).some(role => commentWorldPoint(comment, role))) {
+    const unplaced = document.createElement('div');
+    unplaced.className = 'comment-unplaced';
+    unplaced.textContent = 'Unplaced · part or revision is not present in this view';
+    row.appendChild(unplaced);
+  }
+  if (comment.status === 'draft') {
+    const note = document.createElement('div');
+    note.className = 'draft-note';
+    note.textContent = 'Not visible to the agent yet';
+    row.appendChild(note);
+  }
+  if ((comment.replies || []).length) row.appendChild(makeCommentThread(comment));
+  const actions = document.createElement('div'); actions.className = 'actions';
+  if (comment.status === 'draft') {
+    const send = document.createElement('button'); send.className = 'primary'; send.textContent = 'Send';
+    send.addEventListener('click', event => { event.stopPropagation(); sendDraftComment(comment.id); });
+    const edit = document.createElement('button'); edit.textContent = 'Edit';
+    edit.addEventListener('click', event => { event.stopPropagation(); editDraftComment(comment); });
+    const remove = document.createElement('button'); remove.className = 'danger'; remove.textContent = 'Delete';
+    remove.addEventListener('click', event => { event.stopPropagation(); deleteDraftComment(comment.id); });
+    actions.append(send, edit, remove);
+  } else if (selectedCommentId !== comment.id) {
+    const reply = document.createElement('button');
+    reply.textContent = comment.status === 'resolved' ? 'Reopen…' : 'Reply…';
+    reply.addEventListener('click', event => { event.stopPropagation(); openCommentThread(comment); });
+    actions.appendChild(reply);
+    if (comment.status !== 'resolved') {
+      const resolve = document.createElement('button'); resolve.textContent = 'Resolve';
+      resolve.addEventListener('click', event => {
+        event.stopPropagation(); humanTransition(comment.id, 'resolve');
+      });
+      actions.appendChild(resolve);
+    }
+  }
+  if (actions.children.length) row.appendChild(actions);
+  if (selectedCommentId === comment.id && comment.status !== 'draft') {
+    row.appendChild(makeThreadComposer(comment));
+  }
+  return row;
+}
+
+function renderPartCommentBadges() {
+  for (const badge of document.querySelectorAll('.part-comment-badge')) badge.remove();
+  const byPart = new Map();
+  for (const comment of reviewComments) {
+    const partId = (comment.target || {}).part_id;
+    if (!partId || comment.status === 'resolved') continue;
+    if (!byPart.has(partId)) byPart.set(partId, []);
+    byPart.get(partId).push(comment);
+  }
+  for (const [partId, comments] of byPart) {
+    const label = comments.map(comment => `${comment.id} ${commentScopeLabel(commentScope(comment))}`).join(' · ');
+    for (const row of document.querySelectorAll('#parts-list [data-part-id]')) {
+      if (row.dataset.partId !== partId) continue;
+      const badge = document.createElement('button');
+      badge.type = 'button';
+      badge.className = 'part-comment-badge';
+      badge.textContent = label;
+      badge.title = `${comments.length} comment${comments.length === 1 ? '' : 's'} on this part`;
+      badge.addEventListener('click', () => {
+        restoreCommentView(comments[0]);
+        setCommentPanel(true);
+      });
+      row.appendChild(badge);
+    }
+    for (const row of document.querySelectorAll('#part-control-rows [data-part-id]')) {
+      if (row.dataset.partId !== partId) continue;
+      const badge = document.createElement('span');
+      badge.className = 'part-comment-badge';
+      badge.textContent = label;
+      badge.title = `${comments.length} comment${comments.length === 1 ? '' : 's'} on this part`;
+      row.querySelector('.name')?.appendChild(badge);
+    }
+  }
+}
+
+function renderReviewComments() {
+  const list = document.getElementById('comments-list');
+  list.innerHTML = '';
+  if (!reviewComments.length) {
+    const empty = document.createElement('div'); empty.id = 'comments-empty';
+    empty.textContent = 'No comments yet. Choose New comment, then click the model where you want to leave feedback.';
+    list.appendChild(empty);
+  } else {
+    for (const comment of reviewComments) list.appendChild(makeCommentRow(comment));
+  }
+  const drafts = reviewComments.filter(comment => comment.status === 'draft').length;
+  const activeCount = reviewComments.filter(comment => comment.status !== 'resolved').length;
+  document.getElementById('comment-toggle-btn').textContent = activeCount ? `Comments (${activeCount})` : 'Comments';
+  const submit = document.getElementById('submit-review-btn');
+  submit.style.display = drafts ? 'block' : 'none';
+  submit.textContent = `Send all drafts${drafts ? ` (${drafts})` : ''}`;
+
+  const pins = document.getElementById('comment-pins');
+  pins.innerHTML = '';
+  for (const comment of reviewComments) {
+    if (comment.status === 'resolved') continue;
+    for (const role of commentPinRoles(comment)) {
+      const pin = document.createElement('button');
+      pin.className = `comment-pin ${comment.status}`;
+      pin.dataset.commentId = comment.id;
+      pin.dataset.role = role;
+      pin.textContent = `${comment.id} · ${commentScopeLabel(commentScope(comment))}`;
+      pin.title = `${commentScopeDescription(commentScope(comment))}: ${comment.text}`;
+      pin.addEventListener('click', () => { setCommentPanel(true); restoreCommentView(comment); });
+      pins.appendChild(pin);
+    }
+  }
+  renderPartCommentBadges();
+  updateCommentPins();
+}
+
+function updateCommentPins() {
+  updateCommentTargetPreview();
+  const rect = canvas.getBoundingClientRect();
+  for (const pin of document.querySelectorAll('.comment-pin')) {
+    const comment = reviewComments.find(entry => entry.id === pin.dataset.commentId);
+    if (!comment || canvas.style.display === 'none') { pin.style.display = 'none'; continue; }
+    const role = pin.dataset.role || commentSourceRole(comment);
+    if (!commentRoleVisible(role, comment)) { pin.style.display = 'none'; continue; }
+    const anchor = comment.anchor || {};
+    if (anchor.kind === 'view') {
+      if (!sameViewerVersion(comment) || (comment.view || {}).mode !== currentMode) {
+        pin.style.display = 'none';
+        continue;
+      }
+      const screen = anchor.screen || [0.5, 0.5];
+      pin.style.left = `${rect.left + rect.width * screen[0]}px`;
+      pin.style.top = `${rect.top + rect.height * screen[1]}px`;
+      pin.style.display = 'block';
+      continue;
+    }
+    const world = commentWorldPoint(comment, role);
+    if (!world) { pin.style.display = 'none'; continue; }
+    const position = projectCommentPoint(world, role, rect);
+    if (!position) { pin.style.display = 'none'; continue; }
+    pin.style.left = `${position.x}px`;
+    pin.style.top = `${position.y}px`;
+    pin.style.display = 'block';
+  }
+}
+
+function projectCommentPoint(world, role, rect=canvas.getBoundingClientRect()) {
+  const projected = world.clone().project(camera);
+  if (projected.z < -1 || projected.z > 1) return null;
+  if (currentMode === 'side-by-side') {
+    const halfWidth = rect.width / 2;
+    const left = rect.left + (role === 'b' ? halfWidth : 0);
+    return {
+      x: left + (projected.x + 1) * halfWidth / 2,
+      y: rect.top + (-projected.y + 1) * rect.height / 2,
+    };
+  }
+  return {
+    x: rect.left + (projected.x + 1) * rect.width / 2,
+    y: rect.top + (-projected.y + 1) * rect.height / 2,
+  };
+}
+
+function updateCommentTargetPreview() {
+  const marker = document.getElementById('comment-target-preview');
+  marker.classList.toggle('locked', Boolean(pendingCommentAnchor));
+  if (canvas.style.display === 'none') {
+    marker.style.display = 'none';
+    return;
+  }
+  const rect = canvas.getBoundingClientRect();
+  if (pendingCommentAnchor?.kind === 'view') {
+    const screen = pendingCommentAnchor.screen || [0.5, 0.5];
+    marker.style.left = `${rect.left + rect.width * screen[0]}px`;
+    marker.style.top = `${rect.top + rect.height * screen[1]}px`;
+    marker.style.display = 'block';
+    return;
+  }
+  const rawPoint = pendingCommentAnchor?.display_point || (commentHoverPoint && commentHoverPoint.point.toArray());
+  if (!rawPoint) {
+    marker.style.display = 'none';
+    return;
+  }
+  const role = pendingCommentAnchor?.role || commentHoverPoint?.role || PARTS_MODEL;
+  const position = projectCommentPoint(new THREE.Vector3(...rawPoint), role, rect);
+  if (!position) {
+    marker.style.display = 'none';
+    return;
+  }
+  marker.style.left = `${position.x}px`;
+  marker.style.top = `${position.y}px`;
+  marker.style.display = 'block';
+}
+
+async function loadReviewComments({ onlyIfChanged=false }={}) {
+  if (!reviewEnabled) return;
+  try {
+    const result = await reviewFetch('/comments');
+    if (onlyIfChanged && reviewBusy()) return;
+    const fingerprint = JSON.stringify(result.comments || []);
+    if (onlyIfChanged && fingerprint === reviewCommentsFingerprint) return;
+    reviewComments = result.comments || [];
+    reviewCommentsFingerprint = fingerprint;
+    renderReviewComments();
+  } catch (error) {
+    setCommentStatus(error.message);
+  }
+}
+
+function setupReviewComments() {
+  const toggle = document.getElementById('comment-toggle-btn');
+  if (!reviewEnabled) {
+    toggle.disabled = true;
+    toggle.title = 'Open the live project with `agentcad viewer open` to add comments.';
+    return;
+  }
+  toggle.addEventListener('click', () => setCommentPanel(!document.getElementById('comments-panel').classList.contains('open')));
+  document.getElementById('close-comments-btn').addEventListener('click', () => setCommentPanel(false));
+  document.getElementById('new-comment-btn').addEventListener('click', beginCommentPlacement);
+  document.getElementById('cancel-comment-btn').addEventListener('click', cancelCommentPlacement);
+  document.getElementById('save-comment-btn').addEventListener('click', () => savePendingComment());
+  document.getElementById('send-comment-btn').addEventListener('click', () => savePendingComment({ send: true }));
+  document.getElementById('comment-part-select').addEventListener('change', event => {
+    setPendingCommentPart(event.target.value);
+  });
+  for (const button of document.querySelectorAll('[data-comment-scope]')) {
+    button.addEventListener('click', () => setPendingCommentScope(button.dataset.commentScope));
+  }
+  document.getElementById('submit-review-btn').addEventListener('click', submitReviewDrafts);
+  canvas.addEventListener('click', onSurfaceCommentClick);
+  canvas.addEventListener('pointermove', onSurfaceCommentMove);
+  canvas.addEventListener('pointerleave', onSurfaceCommentLeave);
+  window.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && (commentPlacement || pendingCommentAnchor)) {
+      cancelCommentPlacement();
+      return;
+    }
+    if (event.key.toLowerCase() === 'c' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+      beginCommentPlacement();
+    }
+  });
+  loadReviewComments();
+  window.setInterval(() => {
+    if (reviewBusy()) return;
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+    loadReviewComments({ onlyIfChanged: true });
+  }, 3_000);
+}
+
+window.agentcadViewer.reviewDebugState = () => ({
+  enabled: reviewEnabled,
+  comments: reviewComments,
+  placement: commentPlacement,
+  pending_anchor: pendingCommentAnchor,
+});
+window.agentcadViewer.selectedPartScreenPoint = () => {
+  const meshes = partState.selected ? (partObjects.get(partState.selected) || []) : [];
+  if (!meshes.length) return null;
+  const box = new THREE.Box3();
+  for (const mesh of meshes) box.expandByObject(mesh);
+  const projected = box.getCenter(new THREE.Vector3()).project(camera);
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: rect.left + (projected.x + 1) * rect.width / 2,
+    y: rect.top + (-projected.y + 1) * rect.height / 2,
+  };
+};
+
+function applyPartState() {
+  if (!hasParts) return;
+  for (const p of PARTS) {
+    const row = partRows.get(p.id);
+    if (row) {
+      row.classList.toggle('selected', partState.selected === p.id || partState.isolated.has(p.id));
+      row.classList.toggle('hidden', partState.hidden.has(p.id));
+      const hideBtn = row.querySelector('[data-action="hide"]');
+      const isolateBtn = row.querySelector('[data-action="isolate"]');
+      if (hideBtn) {
+        hideBtn.classList.toggle('active', partState.hidden.has(p.id));
+        hideBtn.textContent = partState.hidden.has(p.id) ? 'Show' : 'Hide';
+      }
+      if (isolateBtn) isolateBtn.classList.toggle('active', partState.isolated.has(p.id));
+    }
+  }
+  const ghostBtn = document.getElementById('ghost-rest-btn');
+  if (ghostBtn) ghostBtn.classList.toggle('active', partState.ghostRest);
+  for (const g of GROUPS) {
+    const row = groupRows.get(g.id);
+    if (!row) continue;
+    const ids = groupPartIds(g.id);
+    const hidden = allMembersInSet(ids, partState.hidden);
+    const isolated = allMembersInSet(ids, partState.isolated);
+    row.classList.toggle('selected', isolated || ids.includes(partState.selected));
+    row.classList.toggle('hidden', hidden);
+    const hideBtn = row.querySelector('[data-action="hide"]');
+    const isolateBtn = row.querySelector('[data-action="isolate"]');
+    if (hideBtn) {
+      hideBtn.classList.toggle('active', hidden);
+      hideBtn.textContent = hidden ? 'Show' : 'Hide';
+    }
+    if (isolateBtn) isolateBtn.classList.toggle('active', isolated);
+  }
+
+  for (const mesh of allPartMeshes()) {
+    const partId = mesh.userData.partId;
+    const hidden = partState.hidden.has(partId);
+    const outsideIsolation = (
+      partState.isolated.size > 0
+      && !partState.isolated.has(partId)
+      && !partState.ghostRest
+    );
+    mesh.visible = !hidden && !outsideIsolation;
+    if (!mesh.visible) continue;
+    const shouldGhost = partState.ghostRest && !partIsPrimary(partId);
+    mesh.material = shouldGhost ? mesh.userData.ghostMaterial : mesh.userData.originalMaterial;
+  }
+  publishViewerDebugState();
+}
+
+function selectPart(partId, { focus=false }={}) {
+  partState.selected = partId;
+  applyPartState();
+  if (focus) focusPart(partId);
+}
+
+function togglePartHidden(partId) {
+  if (partState.hidden.has(partId)) partState.hidden.delete(partId);
+  else partState.hidden.add(partId);
+  selectPart(partId, { focus: false });
+}
+
+function togglePartIsolated(partId) {
+  if (partState.isolated.has(partId)) partState.isolated.delete(partId);
+  else {
+    partState.isolated.clear();
+    partState.isolated.add(partId);
+    partState.hidden.delete(partId);
+  }
+  selectPart(partId, { focus: true });
+}
+
+function selectGroup(groupId, { focus=false }={}) {
+  const ids = groupPartIds(groupId);
+  partState.selected = ids[0] || null;
+  applyPartState();
+  if (focus) focusGroup(groupId);
+}
+
+function toggleGroupHidden(groupId) {
+  const ids = groupPartIds(groupId);
+  const allHidden = allMembersInSet(ids, partState.hidden);
+  for (const id of ids) {
+    if (allHidden) partState.hidden.delete(id);
+    else partState.hidden.add(id);
+  }
+  selectGroup(groupId, { focus: false });
+}
+
+function toggleGroupIsolated(groupId) {
+  const ids = groupPartIds(groupId);
+  const allIsolated = allMembersInSet(ids, partState.isolated);
+  partState.isolated.clear();
+  if (!allIsolated) {
+    for (const id of ids) {
+      partState.isolated.add(id);
+      partState.hidden.delete(id);
+    }
+  }
+  selectGroup(groupId, { focus: true });
+}
+
+function focusPart(partId) {
+  const meshes = partObjects.get(partId) || [];
+  if (!meshes.length) return;
+  const box = new THREE.Box3();
+  for (const mesh of meshes) box.expandByObject(mesh);
+  if (box.isEmpty()) return;
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z, 1);
+  const direction = camera.position.clone().sub(controls.target);
+  if (direction.lengthSq() < 1e-6) direction.set(1, 0.8, 1);
+  direction.normalize();
+  controls.target.copy(center);
+  camera.position.copy(center).add(direction.multiplyScalar(maxDim * 3.2));
+  camera.near = Math.max(maxDim * 0.001, 0.01);
+  camera.far = Math.max(maxDim * 100, 1000);
+  camera.updateProjectionMatrix();
+  controls.update();
+}
+
+function focusGroup(groupId) {
+  focusPartIds(groupPartIds(groupId));
+}
+
+function focusPartIds(partIds) {
+  const meshes = partIds.flatMap(id => partObjects.get(id) || []);
+  if (!meshes.length) return;
+  const box = new THREE.Box3();
+  for (const mesh of meshes) box.expandByObject(mesh);
+  if (box.isEmpty()) return;
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z, 1);
+  const direction = camera.position.clone().sub(controls.target);
+  if (direction.lengthSq() < 1e-6) direction.set(1, 0.8, 1);
+  direction.normalize();
+  controls.target.copy(center);
+  camera.position.copy(center).add(direction.multiplyScalar(maxDim * 3.2));
+  camera.near = Math.max(maxDim * 0.001, 0.01);
+  camera.far = Math.max(maxDim * 100, 1000);
+  camera.updateProjectionMatrix();
+  controls.update();
+}
+
+function fmtNumber(value) {
+  if (value === null || value === undefined) return "—";
+  const n = Number(value);
+  if (!Number.isFinite(n)) return String(value);
+  return Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, "");
+}
+
+function findMeasuredBucket(feature) {
+  const buckets = (REVIEW.measure && REVIEW.measure.cylindrical_features) || [];
+  const measured = feature.measured || {};
+  return buckets.find(b => {
+    const diameterOk = Math.abs(Number(b.diameter_mm) - Number(measured.diameter_mm)) < 0.0001;
+    const axisOk = !measured.axis || b.axis === measured.axis;
+    return diameterOk && axisOk;
+  }) || null;
+}
+
+function rowSummary(feature, bucket) {
+  const target = feature.target || {};
+  const measured = feature.measured || {};
+  const expected = `expected Ø${fmtNumber(target.diameter_mm)} ×${fmtNumber(target.count)}`;
+  const actual = measured.diameter_mm === undefined
+    ? "measured none"
+    : `measured Ø${fmtNumber(measured.diameter_mm)} ×${fmtNumber(measured.count)}`;
+  const err = feature.count_error === undefined ? "" : ` · count_error ${feature.count_error}`;
+  const centers = bucket && bucket.representative_centers ? ` · ${bucket.representative_centers.length} centers` : "";
+  return `${expected} · ${actual}${err}${centers}`;
+}
+
+function makeReviewRow({ label, status, badge, summary, bucket, missing }) {
+  const row = document.createElement("button");
+  row.type = "button";
+  row.className = `review-row ${status}`;
+  row.innerHTML = `
+    <div class="title"><i class="dot ${status}"></i><span></span></div>
+    <span class="badge ${status}"></span>
+    <div class="sub"></div>
+  `;
+  row.querySelector(".title span").textContent = label;
+  row.querySelector(".badge").textContent = badge;
+  row.querySelector(".sub").textContent = summary;
+  row._reviewStatus = status || "info";
+  row._reviewBucket = bucket || null;
+  row._reviewMissing = missing || null;
+  row.addEventListener("click", () => selectReviewRow(row, { focus: true }));
+  return row;
+}
+
+function setupReviewPanel() {
+  const measure = REVIEW.measure || {};
+  const spec = REVIEW.check_spec || null;
+  const dims = (spec && spec.metrics && spec.metrics.dimensions) || (measure.metrics && measure.metrics.dimensions) || {};
+  const valid = (spec && spec.validity) ||
+    (measure.metrics ? { is_valid: measure.metrics.is_valid } : {});
+  const matched = spec ? (spec.matched_features || []) : [];
+  const missing = spec ? (spec.missing_features || []) : [];
+
+  const pill = document.getElementById("review-pill");
+  pill.className = "pill " + (spec ? (spec.passed ? "pass" : "fail") : "info");
+  pill.textContent = spec ? (spec.passed ? "pass" : "fail") : "measure";
+  document.getElementById("review-subtitle").textContent = spec
+    ? `${matched.length} matched · ${missing.length} missing`
+    : "measurement inventory";
+  document.getElementById("review-features").textContent = spec
+    ? `${matched.length} / ${matched.length + missing.length}`
+    : `${(measure.cylindrical_features || []).length}`;
+  document.getElementById("review-error").textContent = spec ? fmtNumber(spec.total_abs_count_error) : "—";
+  document.getElementById("review-validity").textContent = valid.is_valid === true ? "Valid" : valid.is_valid === false ? "Invalid" : "Undetermined";
+
+  const dimGrid = document.getElementById("review-dimensions");
+  for (const axis of ["x", "y", "z"]) {
+    const metric = document.createElement("div");
+    metric.className = "metric";
+    metric.innerHTML = `<span>${axis}</span><strong>${fmtNumber(dims[axis])} mm</strong>`;
+    dimGrid.appendChild(metric);
+  }
+
+  const specRows = document.getElementById("review-spec-rows");
+  if (!spec) {
+    document.getElementById("review-spec-section").style.display = "none";
+  } else {
+    for (const check of spec.structure_checks || []) {
+      specRows.appendChild(makeReviewRow({
+        label: check.expectation,
+        status: check.passed === true ? 'pass' : check.passed === false ? 'fail' : 'info',
+        badge: check.passed === true ? 'pass' : check.passed === false ? 'fail' : 'undetermined',
+        summary: `expected ${check.expected}, got ${check.actual === null ? 'unknown' : check.actual}`,
+      }));
+    }
+    for (const feature of matched) {
+      const bucket = findMeasuredBucket(feature);
+      specRows.appendChild(makeReviewRow({
+        label: feature.name,
+        status: feature.passed ? "pass" : "fail",
+        badge: feature.passed ? "pass" : "fail",
+        summary: rowSummary(feature, bucket),
+        bucket,
+      }));
+    }
+    for (const feature of missing) {
+      specRows.appendChild(makeReviewRow({
+        label: feature.name,
+        status: "fail",
+        badge: "missing",
+        summary: rowSummary(feature, null),
+        missing: feature,
+      }));
+    }
+  }
+
+  const measureRows = document.getElementById("review-measure-rows");
+  if (REVIEW.validation) {
+    const report = REVIEW.validation;
+    document.getElementById('review-heading').textContent = 'Validation';
+    document.getElementById('btn-spec').textContent = 'Validation';
+    document.querySelector('#review-measure-section h2').textContent = 'Findings and next checks';
+    pill.textContent = report.is_valid === true ? 'pass' : report.is_valid === false ? 'fail' : 'undetermined';
+    pill.className = 'pill ' + (report.is_valid === true ? 'pass' : report.is_valid === false ? 'fail' : 'info');
+    document.getElementById('review-subtitle').textContent = report.message;
+    const row = makeReviewRow({label: report.first_failure ? 'What we found' : 'Validation',
+      status: report.is_valid === false ? 'fail' : 'info', badge: pill.textContent,
+      summary: report.message + ((REVIEW.validation_markers || []).length
+        ? ' Red markers locate the reported failures. IDs refer to this file only.' : '')});
+    row._validationMarkers = REVIEW.validation_markers || [];
+    measureRows.appendChild(row);
+    if (report.guidance) {
+      measureRows.appendChild(makeReviewRow({label: "What we don't know", status: 'info',
+        badge: 'unknown', summary: report.guidance.unknown}));
+      for (const check of report.guidance.next_checks || []) {
+        measureRows.appendChild(makeReviewRow({label: 'Check next', status: 'info',
+          badge: 'inspect', summary: check}));
+      }
+    }
+    if ((report.repairs || []).length) {
+      const possible = document.createElement('details');
+      possible.id = 'validation-possible-repairs';
+      const heading = document.createElement('summary');
+      heading.textContent = 'Possible repairs (unverified)';
+      possible.appendChild(heading);
+      const disclaimer = document.createElement('p');
+      disclaimer.textContent = 'These are conditional options, not diagnosed causes or verified fixes. '
+        + 'Confirm the conditions before editing; no repair has been applied. Revalidate after any change.';
+      possible.appendChild(disclaimer);
+      for (const repair of report.repairs) {
+        const label = repair.kind.replaceAll('_', ' ');
+        const entry = makeReviewRow({label: label.charAt(0).toUpperCase() + label.slice(1), status: 'info',
+          badge: 'unverified',
+          summary: [repair.evidence && ('Related finding (not proof of cause): ' + repair.evidence.message),
+            'Possible explanation: ' + repair.why,
+            'Only consider if: ' + (repair.precondition || 'Applicability must be established by inspection.'),
+            repair.changes_intent ? 'Changes the design.' : 'Intended to preserve geometry only under these conditions; not verified.',
+            'If confirmed: ' + repair.how].filter(Boolean).join(' ')});
+        possible.appendChild(entry);
+      }
+      measureRows.appendChild(possible);
+    }
+  }
+  for (const bucket of (REVIEW.validation ? [] : measure.cylindrical_features || [])) {
+    measureRows.appendChild(makeReviewRow({
+      label: `Ø${fmtNumber(bucket.diameter_mm)} cylinders`,
+      status: "pass",
+      badge: `${bucket.count}`,
+      summary: `axis ${bucket.axis} · ${bucket.representative_centers.length} representative centers`,
+      bucket,
+    }));
+  }
+}
+
+function clearReviewMarkers() {
+  reviewMarkerGroup.traverse(child => {
+    if (child.geometry) child.geometry.dispose();
+    if (child.material) child.material.dispose();
+  });
+  reviewMarkerGroup.clear();
+}
+
+function cadAxisKey(axis) {
+  const value = String(axis || "+z").toLowerCase();
+  return value.endsWith("x") ? "x" : value.endsWith("y") ? "y" : "z";
+}
+
+function viewerAxisKey(axis) {
+  const key = cadAxisKey(axis);
+  if (key === "z") return "y";
+  if (key === "y") return "z";
+  return "x";
+}
+
+function orientMarker(marker, axis) {
+  const key = viewerAxisKey(axis);
+  marker.rotation.set(0, 0, 0);
+  if (key === "x") marker.rotation.y = Math.PI / 2;
+  if (key === "y") marker.rotation.x = -Math.PI / 2;
+}
+
+function cadPointToViewer(point) {
+  const viewerPoint = new THREE.Vector3(Number(point.x), Number(point.z), -Number(point.y));
+  if (reviewModelA) viewerPoint.add(reviewModelA.position);
+  return viewerPoint;
+}
+
+function reviewMetrics() {
+  return (REVIEW.check_spec && REVIEW.check_spec.metrics) || (REVIEW.measure && REVIEW.measure.metrics) || {};
+}
+
+function viewerBoundingBox() {
+  const bbox = reviewMetrics().bounding_box || {};
+  const x = bbox.x || null;
+  const y = bbox.y || null;
+  const z = bbox.z || null;
+  const offset = reviewModelA ? reviewModelA.position : new THREE.Vector3();
+  const shifted = (range, amount) => (
+    Array.isArray(range) && range.length === 2
+      ? [Number(range[0]) + amount, Number(range[1]) + amount]
+      : null
+  );
+  return {
+    x: shifted(x, offset.x),
+    y: shifted(z, offset.y),
+    z: Array.isArray(y) && y.length === 2
+      ? [-Number(y[1]) + offset.z, -Number(y[0]) + offset.z]
+      : null,
+  };
+}
+
+function markerLift(diameter) {
+  const markerDiameter = Number(diameter);
+  return Number.isFinite(markerDiameter) ? Math.max(markerDiameter * 0.003, 0.02) : 0.02;
+}
+
+function markerOutwardForAxis(key) {
+  const bbox = viewerBoundingBox();
+  const range = bbox[key] || null;
+  if (!Array.isArray(range) || range.length !== 2) return null;
+  const min = Number(range[0]);
+  const max = Number(range[1]);
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
+  const midpoint = (min + max) / 2;
+  return camera.position[key] >= midpoint ? 1 : -1;
+}
+
+function surfacePositionFromModel(center, diameter, axis) {
+  if (!reviewModelA) return null;
+  const key = viewerAxisKey(axis);
+  const bbox = viewerBoundingBox();
+  const range = bbox[key] || null;
+  if (!Array.isArray(range) || range.length !== 2) return null;
+  const min = Number(range[0]);
+  const max = Number(range[1]);
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
+
+  const outward = markerOutwardForAxis(key);
+  if (outward === null) return null;
+
+  const direction = new THREE.Vector3();
+  direction[key] = -outward;
+  const radialAxes = key === "x" ? ["y", "z"] : (key === "y" ? ["x", "z"] : ["x", "y"]);
+  const radius = Math.max(Number(diameter) / 2, 0.5);
+  const sampleRadius = radius * 1.05;
+  const base = cadPointToViewer(center);
+  const samples = [base.clone()];
+  for (let i = 0; i < 8; i++) {
+    const angle = (Math.PI * 2 * i) / 8;
+    const sample = base.clone();
+    sample[radialAxes[0]] += Math.cos(angle) * sampleRadius;
+    sample[radialAxes[1]] += Math.sin(angle) * sampleRadius;
+    samples.push(sample);
+  }
+
+  const hits = [];
+  const rayLength = Math.abs(max - min) + 2;
+  for (const sample of samples) {
+    const origin = sample.clone();
+    origin[key] = outward > 0 ? max + 1 : min - 1;
+    const raycaster = new THREE.Raycaster(origin, direction, 0, rayLength);
+    hits.push(...raycaster.intersectObject(reviewModelA, true));
+  }
+  if (!hits.length) return null;
+
+  hits.sort((a, b) => outward * (b.point[key] - a.point[key]));
+
+  const pos = hits[0].point.clone();
+  pos[radialAxes[0]] = base[radialAxes[0]];
+  pos[radialAxes[1]] = base[radialAxes[1]];
+  pos[key] += outward * markerLift(diameter);
+  return pos;
+}
+
+function fallbackMarkerSurfacePosition(center, diameter, axis) {
+  const pos = cadPointToViewer(center);
+  const key = viewerAxisKey(axis);
+  const bbox = viewerBoundingBox();
+  const range = bbox[key] || null;
+  if (Array.isArray(range) && range.length === 2) {
+    const min = Number(range[0]);
+    const max = Number(range[1]);
+    if (Number.isFinite(min) && Number.isFinite(max)) {
+      const outward = markerOutwardForAxis(key);
+      if (outward !== null) {
+        const face = outward > 0 ? max : min;
+        pos[key] = face + outward * markerLift(diameter);
+      }
+    }
+  }
+  return pos;
+}
+
+function markerSurfacePosition(center, diameter, axis) {
+  return surfacePositionFromModel(center, diameter, axis)
+    || fallbackMarkerSurfacePosition(center, diameter, axis);
+}
+
+function addRingMarker(center, diameter, axis, color, missing=false) {
+  const radius = Math.max(Number(diameter) / 2, 0.5);
+  const tube = Math.max(radius * 0.04, 0.11);
+  const geom = new THREE.TorusGeometry(radius, tube, 12, 64);
+  const mat = new THREE.MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity: missing ? 0.58 : 0.92,
+    depthTest: false,
+  });
+  const ring = new THREE.Mesh(geom, mat);
+  ring.position.copy(markerSurfacePosition(center, diameter, axis));
+  orientMarker(ring, axis);
+  reviewMarkerGroup.add(ring);
+
+  const haloGeom = new THREE.TorusGeometry(radius * 1.08, Math.max(tube * 1.6, 0.18), 12, 64);
+  const haloMat = new THREE.MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity: missing ? 0.16 : 0.22,
+    depthTest: false,
+  });
+  const halo = new THREE.Mesh(haloGeom, haloMat);
+  halo.position.copy(ring.position);
+  halo.rotation.copy(ring.rotation);
+  reviewMarkerGroup.add(halo);
+}
+
+function reviewCentersForRow(row) {
+  const points = [];
+  for (const marker of row._validationMarkers || []) {
+    for (const center of marker.points) points.push({center, diameter: 1});
+  }
+  const bucket = row._reviewBucket;
+  if (bucket && bucket.representative_centers) {
+    for (const center of bucket.representative_centers) {
+      points.push({ center, diameter: bucket.diameter_mm, axis: bucket.axis });
+    }
+  }
+  const missing = row._reviewMissing;
+  const target = missing && missing.target;
+  const centers = target && (target.representative_centers || target.centers);
+  if (centers) {
+    for (const center of centers) {
+      points.push({ center, diameter: target.diameter_mm, axis: target.axis });
+    }
+  }
+  return points;
+}
+
+function focusReviewRow(row) {
+  const points = reviewCentersForRow(row);
+  if (!points.length) return;
+  const viewerPoints = points.map(p => cadPointToViewer(p.center));
+  const focusBox = new THREE.Box3().setFromPoints(viewerPoints);
+  const center = focusBox.getCenter(new THREE.Vector3());
+  const span = focusBox.getSize(new THREE.Vector3());
+  const largestDiameter = Math.max(...points.map(p => Number(p.diameter) || 0), 1);
+  const featureSize = Math.max(span.x, span.y, span.z, largestDiameter);
+  const distance = Math.max(featureSize * 4.5, largestDiameter * 7, 12);
+  const direction = camera.position.clone().sub(controls.target);
+  if (direction.lengthSq() < 1e-6) direction.set(1, 0.7, 1);
+  direction.normalize();
+  controls.target.copy(center);
+  camera.position.copy(center).add(direction.multiplyScalar(distance));
+  camera.near = Math.max(distance * 0.001, 0.01);
+  camera.far = Math.max(distance * 100, 1000);
+  camera.updateProjectionMatrix();
+  controls.update();
+}
+
+function selectReviewRow(row, options={}) {
+  document.querySelectorAll("#spec-panel .review-row").forEach(r => r.classList.toggle("active", r === row));
+  clearReviewMarkers();
+  for (const marker of row._validationMarkers || []) {
+    const points = marker.points.map(cadPointToViewer);
+    if (points.length === 1) {
+      const dims = reviewMetrics().dimensions || {};
+      const radius = Math.max(...Object.values(dims).filter(v => typeof v === 'number'), 1) * 0.006;
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(radius, 12, 8),
+        new THREE.MeshBasicMaterial({color: 0xff3020, depthTest: false, depthWrite: false}));
+      dot.position.copy(points[0]); dot.renderOrder = 1000;
+      reviewMarkerGroup.add(dot);
+    } else if (points.length > 1) {
+      const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),
+        new THREE.LineBasicMaterial({color: 0xff3020, depthTest: false, depthWrite: false}));
+      line.renderOrder = 1000;
+      reviewMarkerGroup.add(line);
+    }
+  }
+  const bucket = row._reviewBucket;
+  if (bucket && bucket.representative_centers) {
+    const color = row._reviewStatus === "fail" ? 0xc24a43 : 0x3f8b62;
+    for (const center of bucket.representative_centers) {
+      addRingMarker(center, bucket.diameter_mm, bucket.axis, color, false);
+    }
+  }
+  const missing = row._reviewMissing;
+  const target = missing && missing.target;
+  const centers = target && (target.representative_centers || target.centers);
+  if (centers) {
+    for (const center of centers) {
+      addRingMarker(center, target.diameter_mm, target.axis, 0xc2413f, true);
+    }
+  }
+  if (options.focus) focusReviewRow(row);
+}
+
+function selectFirstReviewRow() {
+  const row = document.querySelector("#spec-panel .review-row");
+  if (row) selectReviewRow(row, { focus: false });
+}
+
+function refreshActiveReviewMarkers() {
+  const row = document.querySelector("#spec-panel .review-row.active");
+  if (row) selectReviewRow(row, { focus: false });
+}
+
+// ---- Renderer + camera (shared across 3D modes) ----
+const canvas = document.getElementById('canvas');
+// preserveDrawingBuffer keeps the canvas readable for GIF export between
+// renders (without it, toDataURL / drawImage returns a blank frame).
+const renderer = new THREE.WebGLRenderer({ antialias: true, canvas, preserveDrawingBuffer: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+function resize() {
+  // Must NOT pass updateStyle=false here — that leaves the canvas CSS at its
+  // previous size and the canvas ends up 2x the viewport on high-DPR displays,
+  // pushing the model off-screen.
+  const specWidth = currentMode === "spec" && hasReview ? 396 : 0;
+  const panel = document.getElementById('comments-panel');
+  const commentWidth = panel.classList.contains('open') ? panel.offsetWidth : 0;
+  const width = Math.max(1, window.innerWidth - specWidth - commentWidth);
+  panel.style.right = `${specWidth}px`;
+  document.body.style.setProperty('--viewer-width', `${width}px`);
+  document.getElementById('modes').style.right = `${specWidth + commentWidth + 10}px`;
+  renderer.setSize(width, window.innerHeight);
+}
+window.addEventListener('resize', resize);
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+camera.position.set(50, 50, 50);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.5;
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+const envTex = pmrem.fromScene(new RoomEnvironment()).texture;
+pmrem.dispose();
+
+// Materials
+const cadMat = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.45, roughness: 0.35 });
+const tintA = new THREE.MeshStandardMaterial({ color: 0x4caf50, metalness: 0.2, roughness: 0.5, transparent: true, opacity: 0.7, depthWrite: false });
+const tintB = new THREE.MeshStandardMaterial({ color: 0xe53935, metalness: 0.2, roughness: 0.5, transparent: true, opacity: 0.7, depthWrite: false });
+
+function buildScene() {
+  const s = new THREE.Scene();
+  s.background = new THREE.Color(0xefefef);
+  s.environment = envTex;
+  s.add(new THREE.HemisphereLight(0xffffff, 0xb0b0b0, 0.4));
+  const k = new THREE.DirectionalLight(0xffffff, 1.0); k.position.set(50, 100, 50); s.add(k);
+  const f = new THREE.DirectionalLight(0xffffff, 0.3); f.position.set(-30, 40, -50); s.add(f);
+  const r = new THREE.DirectionalLight(0xffffff, 0.4); r.position.set(0, 60, -80); s.add(r);
+  return s;
+}
+
+// Precreate scenes for modes that might be used
+const sceneA_single = buildScene();  // model A with embedded GLB materials
+const sceneB_single = buildScene();  // model B with embedded GLB materials (if B)
+const sceneA_split = buildScene();   // model A for side-by-side
+const sceneB_split = buildScene();   // model B for side-by-side
+const sceneOverlay = buildScene();   // both models with tinted materials
+const reviewMarkerGroup = new THREE.Group();
+sceneA_single.add(reviewMarkerGroup);
+
+// Track loaded model meshes for overlay mode so UI can toggle visibility
+let overlayModelA = null;
+let overlayModelB = null;
+let reviewModelA = null;
+let reviewModelB = null;
+let reviewSplitModelA = null;
+let reviewSplitModelB = null;
+
+// Combined bounding box used to fit the camera globally
+const combinedBox = new THREE.Box3();
+
+const loader = new GLTFLoader();
+
+function attach(scene, url, { material, onMesh, alignToCenter=false }) {
+  return new Promise((resolve, reject) => {
+    if (!url) { resolve(null); return; }
+    loader.load(url, gltf => {
+      const model = gltf.scene;
+      if (material) {
+        model.traverse(c => { if (c.isMesh) c.material = material; });
+      }
+      if (alignToCenter) {
+        const sourceBox = new THREE.Box3().setFromObject(model);
+        const sourceCenter = sourceBox.getCenter(new THREE.Vector3());
+        model.position.sub(sourceCenter);
+        model.updateMatrixWorld(true);
+      }
+      scene.add(model);
+
+      const box = new THREE.Box3().setFromObject(model);
+      combinedBox.union(box);
+
+      // Per-scene grid + axes
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const grid = new THREE.GridHelper(maxDim * 5, 80, 0xc8c8c8, 0xd8d8d8);
+      grid.material.opacity = 0.5; grid.material.transparent = true;
+      grid.position.y = box.min.y;
+      scene.add(grid);
+      const axes = new THREE.AxesHelper(maxDim * 0.8);
+      axes.position.set(box.min.x - maxDim * 0.3, box.min.y + 0.02, box.min.z - maxDim * 0.3);
+      scene.add(axes);
+
+      if (onMesh) onMesh(model);
+      resolve(model);
+    }, undefined, reject);
+  });
+}
+
+function fitCamera() {
+  if (combinedBox.isEmpty()) return;
+  const center = combinedBox.getCenter(new THREE.Vector3());
+  const size = combinedBox.getSize(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+  controls.target.copy(center);
+  camera.position.set(center.x + maxDim * 1.2, center.y + maxDim * 0.8, center.z + maxDim * 1.2);
+  camera.near = maxDim * 0.001;
+  camera.far = maxDim * 100;
+  camera.updateProjectionMatrix();
+  controls.update();
+}
+
+// Load all scenes in parallel, then fit camera
+Promise.all([
+  attach(sceneA_single, MODEL_A_URL, {
+    // Use one frame of reference throughout a live session, including v1.
+    // Otherwise the first A/B update centers geometry underneath an unchanged
+    // camera and visibly moves the model. Standalone snapshots keep their pose.
+    alignToCenter: hasB || liveProject,
+    onMesh: m => {
+      reviewModelA = m;
+      indexCommentPartMeshes(m, 'a');
+      if (PARTS_MODEL === 'a') {
+        registerPartMeshes(m);
+        applyPartState();
+      }
+    },
+  }),
+  hasB ? attach(sceneB_single, MODEL_B_URL, {
+    alignToCenter: true,
+    onMesh: m => {
+      reviewModelB = m;
+      indexCommentPartMeshes(m, 'b');
+      if (PARTS_MODEL === 'b') { registerPartMeshes(m); applyPartState(); }
+    },
+  }) : null,
+  hasB ? attach(sceneA_split, MODEL_A_URL, {
+    alignToCenter: true,
+    onMesh: m => reviewSplitModelA = m,
+  }) : null,
+  hasB ? attach(sceneB_split, MODEL_B_URL, {
+    alignToCenter: true,
+    onMesh: m => reviewSplitModelB = m,
+  }) : null,
+  hasB ? attach(sceneOverlay, MODEL_A_URL, {
+    material: tintA,
+    alignToCenter: true,
+    onMesh: m => overlayModelA = m,
+  }) : null,
+  hasB ? attach(sceneOverlay, MODEL_B_URL, {
+    material: tintB,
+    alignToCenter: true,
+    onMesh: m => overlayModelB = m,
+  }) : null,
+].filter(Boolean)).then(() => {
+  fitCamera();
+  applyPartState();
+  refreshActiveReviewMarkers();
+  if (partState.focus) focusPart(partState.focus);
+  viewerReady = true;
+  renderReviewComments();
+  publishViewerDebugState();
+  tellProject('agentcad:ready');
+}).catch(() => {
+  tellProject('agentcad:load-error');
+});
+
+// ---- Mode switching ----
+let currentScene = sceneA_single;
+let splitMode = false;
+resize();
+
+function setMode(mode) {
+  // Validate
+  if (!hasB && (mode === 'single-b' || mode === 'side-by-side' || mode === 'overlay')) return;
+  if (!hasAgentView && mode === 'agent-view') return;
+  if (!hasPartsView && mode === 'parts') return;
+  if (!hasReview && mode === 'spec') return;
+
+  currentMode = mode;
+  const spatialCommentsAvailable = !['agent-view', 'parts'].includes(mode);
+  const commentToggle = document.getElementById('comment-toggle-btn');
+  commentToggle.style.display = spatialCommentsAvailable ? '' : 'none';
+  if (!spatialCommentsAvailable) {
+    document.getElementById('comments-panel').classList.remove('open');
+    commentToggle.classList.remove('active');
+    cancelCommentPlacement();
+    for (const pin of document.querySelectorAll('.comment-pin')) pin.style.display = 'none';
+  }
+  document.body.classList.toggle('spec-open', mode === 'spec');
+  document.body.classList.toggle('split-open', mode === 'side-by-side');
+  document.querySelectorAll('#modes button').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+
+  const agentPanel = document.getElementById('agent-view');
+  const partsPanel = document.getElementById('parts-view');
+  const partControls = document.getElementById('part-controls');
+  const specPanel = document.getElementById('spec-panel');
+  const canvasEl = document.getElementById('canvas');
+  const divider = document.getElementById('divider');
+  const labelL = document.getElementById('label-left');
+  const labelR = document.getElementById('label-right');
+  const overlayPanel = document.getElementById('overlay-controls');
+  const infoEl = document.getElementById('info');
+  const pauseBtnEl = document.getElementById('pause-btn');
+  const exportBtnEl = document.getElementById('export-gif-btn');
+
+  // NB: these elements have `display: none` in CSS, so resetting to '' falls
+  // through to the stylesheet rule and leaves them hidden. We must set an
+  // explicit display value (block/flex) to show them.
+  agentPanel.style.display = 'none';
+  partsPanel.style.display = 'none';
+  partControls.style.display = 'none';
+  specPanel.style.display = 'none';
+  canvasEl.style.display = 'block';
+  divider.style.display = 'none';
+  labelL.style.display = 'none';
+  labelR.style.display = 'none';
+  overlayPanel.style.display = 'none';
+  infoEl.style.display = '';
+  pauseBtnEl.style.display = '';
+  exportBtnEl.style.display = '';
+
+  splitMode = false;
+  resize();
+
+  if (mode === 'agent-view') {
+    clearReviewMarkers();
+    agentPanel.style.display = 'block';
+    canvasEl.style.display = 'none';
+    infoEl.style.display = 'none';
+    pauseBtnEl.style.display = 'none';
+    exportBtnEl.style.display = 'none';
+    return;
+  }
+
+  if (mode === 'parts') {
+    clearReviewMarkers();
+    partsPanel.style.display = 'block';
+    canvasEl.style.display = 'none';
+    infoEl.style.display = 'none';
+    pauseBtnEl.style.display = 'none';
+    exportBtnEl.style.display = 'none';
+    return;
+  }
+
+  if (mode === 'single-a') {
+    clearReviewMarkers();
+    currentScene = sceneA_single;
+    labelL.textContent = `${hasB ? 'Previous' : 'Current'} · ${LABEL_A}`;
+    labelL.style.display = 'block';
+    if (hasParts && PARTS_MODEL === 'a') partControls.style.display = 'block';
+  } else if (mode === 'single-b') {
+    clearReviewMarkers();
+    currentScene = sceneB_single;
+    labelL.textContent = `Current · ${LABEL_B}`;
+    labelL.style.display = 'block';
+    if (hasParts && PARTS_MODEL === 'b') partControls.style.display = 'block';
+  } else if (mode === 'side-by-side') {
+    clearReviewMarkers();
+    splitMode = true;
+    divider.style.display = 'block';
+    labelL.textContent = 'Previous · ' + LABEL_A; labelL.style.display = 'block';
+    labelR.textContent = 'Current · ' + LABEL_B; labelR.style.display = 'block';
+  } else if (mode === 'overlay') {
+    clearReviewMarkers();
+    currentScene = sceneOverlay;
+    overlayPanel.style.display = 'block';
+  } else if (mode === 'spec') {
+    currentScene = sceneA_single;
+    if (hasParts && PARTS_MODEL === 'a') partControls.style.display = 'block';
+    specPanel.style.display = 'grid';
+    labelL.textContent = `${hasB ? 'Previous' : 'Current'} · ${LABEL_A}`;
+    labelL.style.display = 'block';
+    selectFirstReviewRow();
+  }
+}
+
+// Overlay mode UI wiring
+document.getElementById('opacity-a').addEventListener('input', e => { tintA.opacity = e.target.value / 100; });
+document.getElementById('opacity-b').addEventListener('input', e => { tintB.opacity = e.target.value / 100; });
+document.getElementById('visible-a').addEventListener('change', e => { if (overlayModelA) overlayModelA.visible = e.target.checked; });
+document.getElementById('visible-b').addEventListener('change', e => { if (overlayModelB) overlayModelB.visible = e.target.checked; });
+
+// Pause/play
+const pauseBtn = document.getElementById('pause-btn');
+function setAutoRotate(enabled) {
+  controls.autoRotate = enabled;
+  if (!enabled && controls.enableDamping) {
+    // Flush OrbitControls' residual spherical delta. Otherwise damping keeps
+    // moving the shared camera for a few frames after pause, which makes an
+    // immediate A/B toggle look like it changed orientation.
+    controls.enableDamping = false;
+    controls.update();
+    controls.enableDamping = true;
+  }
+  pauseBtn.innerHTML = controls.autoRotate ? '&#9646;&#9646;' : '&#9654;';
+}
+function pauseAutoRotate() {
+  setAutoRotate(false);
+}
+pauseBtn.addEventListener('click', () => {
+  setAutoRotate(!controls.autoRotate);
+});
+controls.addEventListener('start', pauseAutoRotate);
+
+// Render one frame to the canvas. Shared between the rAF loop and the GIF
+// export, so split-viewport rendering stays consistent.
+function renderFrame() {
+  renderer.setScissorTest(splitMode);
+  const w = renderer.domElement.clientWidth;
+  const h = renderer.domElement.clientHeight;
+  if (splitMode) {
+    const halfW = Math.floor(w / 2);
+    camera.aspect = halfW / h;
+    camera.updateProjectionMatrix();
+    renderer.setViewport(0, 0, halfW, h);
+    renderer.setScissor(0, 0, halfW, h);
+    renderer.render(sceneA_split, camera);
+    renderer.setViewport(halfW, 0, w - halfW, h);
+    renderer.setScissor(halfW, 0, w - halfW, h);
+    renderer.render(sceneB_split, camera);
+  } else {
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setViewport(0, 0, w, h);
+    renderer.render(currentScene, camera);
+  }
+}
+
+// Animate — handles both split viewport and single viewport
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+
+  if (currentMode === 'agent-view' || currentMode === 'parts') { return; }  // nothing to render
+
+  renderFrame();
+  updateCommentPins();
+}
+
+// Export current 3D view as a GIF. Captures whatever mode is active —
+// single-A, single-B, side-by-side, or overlay — by running a controlled
+// 360° azimuth sweep and watermarking each frame.
+const exportBtn = document.getElementById('export-gif-btn');
+const progressDiv = document.getElementById('export-progress');
+const progressPct = document.getElementById('export-progress-pct');
+
+// Cache the worker source as a same-origin blob URL — required because
+// file:// pages have origin "null" and can't construct a Worker pointing
+// at a cross-origin script directly. fetch() succeeds (jsdelivr sends
+// CORS headers); the blob URL we create from the source is same-origin.
+let cachedWorkerUrl = null;
+async function getGifWorkerUrl() {
+  if (cachedWorkerUrl) return cachedWorkerUrl;
+  const src = await fetch('https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js').then(r => r.text());
+  cachedWorkerUrl = URL.createObjectURL(new Blob([src], { type: 'application/javascript' }));
+  return cachedWorkerUrl;
+}
+
+async function exportGif() {
+  exportBtn.disabled = true;
+  progressDiv.style.display = 'block';
+  progressPct.textContent = 'preparing…';
+
+  const workerUrl = await getGifWorkerUrl();
+
+  const wasRotating = controls.autoRotate;
+  setAutoRotate(false);
+
+  const startPosition = camera.position.clone();
+  const startTarget = controls.target.clone();
+  const offset = camera.position.clone().sub(controls.target);
+  const radius = offset.length();
+  const startAzimuth = Math.atan2(offset.x, offset.z);
+  const elevation = Math.asin(offset.y / radius);
+
+  // Downsample to a bounded edge so file size stays sane. The live canvas
+  // can be 2000+px on high-DPI displays — a raw capture produces 10+MB GIFs.
+  const maxEdge = 720;
+  const srcW = renderer.domElement.width;
+  const srcH = renderer.domElement.height;
+  const scale = Math.min(1, maxEdge / Math.max(srcW, srcH));
+  const w = Math.max(1, Math.round(srcW * scale));
+  const h = Math.max(1, Math.round(srcH * scale));
+  const wmCanvas = document.createElement('canvas');
+  wmCanvas.width = w;
+  wmCanvas.height = h;
+  const wmCtx = wmCanvas.getContext('2d', { willReadFrequently: true });
+
+  const gif = new GIF({
+    workers: 2,
+    quality: 10,
+    width: w,
+    height: h,
+    workerScript: workerUrl,
+  });
+
+  const totalFrames = 60;
+  for (let i = 0; i < totalFrames; i++) {
+    const az = startAzimuth + (i / totalFrames) * Math.PI * 2;
+    camera.position.set(
+      startTarget.x + radius * Math.cos(elevation) * Math.sin(az),
+      startTarget.y + radius * Math.sin(elevation),
+      startTarget.z + radius * Math.cos(elevation) * Math.cos(az),
+    );
+    camera.lookAt(startTarget);
+    renderFrame();
+
+    wmCtx.drawImage(renderer.domElement, 0, 0, w, h);
+    wmCtx.fillStyle = 'rgba(30, 30, 30, 0.7)';
+    wmCtx.font = '14px monospace';
+    wmCtx.textAlign = 'right';
+    wmCtx.textBaseline = 'bottom';
+    wmCtx.fillText('agentcad.dev', w - 10, h - 10);
+
+    gif.addFrame(wmCanvas, { copy: true, delay: 50 });
+    progressPct.textContent = `capturing ${Math.round(((i + 1) / totalFrames) * 100)}%`;
+    await new Promise(r => setTimeout(r, 0));
+  }
+
+  gif.on('progress', p => {
+    progressPct.textContent = `encoding ${Math.round(p * 100)}%`;
+  });
+  gif.on('finished', blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'agentcad-export.gif';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    camera.position.copy(startPosition);
+    controls.target.copy(startTarget);
+    camera.lookAt(startTarget);
+    setAutoRotate(wasRotating);
+    exportBtn.disabled = false;
+    progressDiv.style.display = 'none';
+  });
+  gif.render();
+}
+
+exportBtn.addEventListener('click', exportGif);
+
+animate();
+
+// Start in the default mode
+setMode(DEFAULT_MODE);
+setupReviewComments();
+</script>
+</body>
+</html>
+"""
+
+
+def _error(message):
+    click.echo(json.dumps({
+        "command": "view",
+        "status": "error",
+        "message": message,
+    }))
+    sys.exit(1)
+
+
+def _open_browser(url):
+    """Single seam for opening the viewer in a browser. Tests stub this
+    (or the autouse fixture stubs `webbrowser.open` directly)."""
+    return webbrowser.open(url)
+
+
+def _resolve_to_glb(file_str):
+    """Resolve a file path to a GLB, auto-converting STEP if needed."""
+    glb_path, _shape, err = _resolve_to_glb_and_shape(file_str)
+    return glb_path, err
+
+
+def _resolve_to_glb_and_shape(file_str):
+    """Resolve a file path to (glb_path, topods_shape_or_none, error).
+
+    TopoDS_Shape is returned for STEP/BREP inputs. GLB inputs get None for the
+    shape — callers that need a shape (e.g. for PNG rendering) handle that.
+    """
+    file_path = Path(file_str).resolve()
+    if not file_path.exists():
+        return None, None, f"File '{file_str}' not found"
+
+    suffix = file_path.suffix.lower()
+    if suffix not in (".glb", ".step", ".stp", ".brep"):
+        return None, None, f"Unsupported format '{suffix}'. Use .glb, .step, or .brep"
+
+    if suffix in (".step", ".stp", ".brep"):
+        from agentcad.export import export_glb
+        from agentcad.step_io import load_cad_shape
+
+        try:
+            shape = load_cad_shape(file_path)
+        except ValueError as exc:
+            # load_cad_shape raises with an agent-actionable message; surface
+            # it as a clean error string so the command's JSON envelope picks
+            # it up instead of a Python traceback escaping to stderr.
+            return None, None, str(exc)
+        glb_path = derived_dir("view", file_path) / (file_path.stem + ".glb")
+        if get_project().configured:
+            glb_path = get_project().artifact_path(glb_path)
+        export_glb(shape, str(glb_path))
+        return glb_path, shape, None
+
+    return file_path, None, None
+
+
+def _embed_data_uri(path):
+    """Read a binary file and return it as a base64 data URI. Empty if path is None."""
+    if path is None:
+        return ""
+    data = Path(path).read_bytes()
+    b64 = base64.b64encode(data).decode("ascii")
+    mime = "image/png" if str(path).endswith(".png") else "application/octet-stream"
+    return f"data:{mime};base64,{b64}"
+
+
+def _diff_name_parts(glb_a, glb_b):
+    """Pick readable identifiers, disambiguating collisions."""
+    if glb_a.stem != glb_b.stem:
+        return glb_a.stem, glb_b.stem
+    return f"{glb_a.parent.name}_{glb_a.stem}", f"{glb_b.parent.name}_{glb_b.stem}"
+
+
+def _diff_display_labels(path_a, path_b):
+    """Keep distinct basenames short and disambiguate repeated output names."""
+    path_a = Path(path_a)
+    path_b = Path(path_b)
+    if path_a.name != path_b.name:
+        return path_a.name, path_b.name
+    return (
+        f"{path_a.parent.name}/{path_a.name}",
+        f"{path_b.parent.name}/{path_b.name}",
+    )
+
+
+def _render_unified(
+    out_html_path,
+    glb_a,
+    glb_b=None,
+    label_a=None,
+    label_b=None,
+    default_mode="single-a",
+    preview_png=None,
+    diff_side_png=None,
+    diff_overlay_png=None,
+    diff_volume_png=None,
+    parts=None,
+    parts_model="a",
+    part_changes=None,
+    groups=None,
+    review=None,
+    part_review=None,
+    viewer_context=None,
+    previous_parts=None,
+):
+    """Write a unified viewer HTML embedding the given artifacts.
+
+    Any optional arg left None is simply absent in the output; the viewer's
+    mode toggle will grey out the buttons that depend on missing data.
+    """
+    parts_payload = [
+        {k: p[k] for k in ("id", "id_source", "name", "color", "part_of", "connection") if k in p}
+        for p in (parts or [])
+    ]
+    groups_payload = [
+        {k: g[k] for k in ("id", "name", "color", "part_ids") if k in g}
+        for g in (groups or [])
+    ]
+    replacements = {
+        "__MODEL_A_URL__": _embed_data_uri(glb_a),
+        "__MODEL_B_URL__": _embed_data_uri(glb_b),
+        "__LABEL_A__": label_a or (glb_a.name if glb_a else ""),
+        "__LABEL_B__": label_b or (glb_b.name if glb_b else ""),
+        "__PREVIEW_PNG_URL__": _embed_data_uri(preview_png),
+        "__DIFF_SIDE_PNG_URL__": _embed_data_uri(diff_side_png),
+        "__DIFF_OVERLAY_PNG_URL__": _embed_data_uri(diff_overlay_png),
+        "__DIFF_VOLUME_PNG_URL__": _embed_data_uri(diff_volume_png),
+        "__DEFAULT_MODE__": default_mode,
+        "__PARTS_MODEL__": parts_model,
+        "__PARTS_JSON__": json.dumps(parts_payload),
+        "__PART_CHANGES_JSON__": json.dumps(part_changes) if part_changes else "null",
+        "__GROUPS_JSON__": json.dumps(groups_payload),
+        "__REVIEW_JSON__": json.dumps(review) if review else "null",
+        "__PART_REVIEW_JSON__": json.dumps(part_review) if part_review else "null",
+        "__VIEWER_CONTEXT_JSON__": json.dumps(viewer_context or {}),
+        "__COMMENT_PARTS_JSON__": json.dumps([
+            {k: p[k] for k in ("id", "name") if k in p} for p in (previous_parts or [])
+        ]),
+    }
+    html = _HTML_UNIFIED
+    for k, v in replacements.items():
+        html = html.replace(k, v)
+    Path(out_html_path).write_text(html)
+
+
+def _render_single(glb_path, *, review=None):
+    """Write single-model viewer HTML. Returns (html_path, url)."""
+    html_path = derived_dir("view", glb_path) / f"{glb_path.stem}_viewer.html"
+    _render_unified(
+        html_path,
+        glb_a=glb_path,
+        label_a=glb_path.name,
+        default_mode="spec" if review else "single-a",
+        review=review,
+    )
+    return html_path, html_path.as_uri()
+
+
+def _render_diff(
+    glb_a,
+    glb_b,
+    overlay=False,
+    out_dir=None,
+    review=None,
+    diff_side_png=None,
+    diff_overlay_png=None,
+    diff_volume_png=None,
+):
+    """Write diff viewer HTML (with side-by-side or overlay as default).
+
+    Returns (html_path, url, mode).
+    """
+    mode = "spec" if review else ("overlay" if overlay else "side-by-side")
+    name_a, name_b = _diff_name_parts(glb_a, glb_b)
+    label_a, label_b = _diff_display_labels(glb_a, glb_b)
+    target_dir = out_dir if out_dir is not None else glb_a.parent
+    html_path = target_dir / f"diff_{name_a}_{name_b}.html"
+    _render_unified(
+        html_path,
+        glb_a=glb_a,
+        glb_b=glb_b,
+        label_a=label_a,
+        label_b=label_b,
+        default_mode=mode,
+        diff_side_png=diff_side_png,
+        diff_overlay_png=diff_overlay_png,
+        diff_volume_png=diff_volume_png,
+        review=review,
+    )
+    return html_path, html_path.as_uri(), mode
+
+
+def _diff_png_path(glb_a, glb_b, out_dir):
+    label_a, label_b = _diff_name_parts(glb_a, glb_b)
+    return out_dir / f"diff_{label_a}_{label_b}.png"
+
+
+def _render_diff_png(shape_a, shape_b, glb_a, glb_b, out_dir):
+    """Render the four-view side-by-side comparison next to the diff HTML."""
+    from agentcad.render import render_diff_side_by_side
+
+    png_path = _diff_png_path(glb_a, glb_b, out_dir)
+    label_a, label_b = _diff_display_labels(glb_a, glb_b)
+    source_views = render_diff_side_by_side(
+        shape_a, shape_b, label_a, label_b, png_path
+    )
+    return png_path, source_views
+
+
+def _render_diff_overlay_png(
+    shape_a,
+    shape_b,
+    glb_a,
+    glb_b,
+    out_dir,
+    *,
+    source_views=None,
+):
+    """Render the four-view semantic difference map next to the diff HTML."""
+    from agentcad.render import render_diff_overlay
+
+    name_a, name_b = _diff_name_parts(glb_a, glb_b)
+    label_a, label_b = _diff_display_labels(glb_a, glb_b)
+    png_path = out_dir / f"diff_{name_a}_{name_b}_overlay.png"
+    comparison = render_diff_overlay(
+        shape_a,
+        shape_b,
+        label_a,
+        label_b,
+        png_path,
+        source_views=source_views,
+    )
+    return png_path, comparison
+
+
+def _render_solid_comparison_artifacts(
+    solid_comparison,
+    glb_a,
+    glb_b,
+    out_dir,
+):
+    """Write colored source-frame Boolean comparison artifacts."""
+    from agentcad.solid_compare import write_solid_comparison_artifacts
+
+    label_a, label_b = _diff_name_parts(glb_a, glb_b)
+    base = out_dir / f"diff_{label_a}_{label_b}_volume"
+    glb_path = base.with_suffix(".glb")
+    png_path = base.with_suffix(".png")
+    try:
+        written = write_solid_comparison_artifacts(
+            solid_comparison,
+            glb_path,
+            png_path,
+        )
+    except Exception:
+        # Numeric comparison remains authoritative if rendering/export fails.
+        return None, None
+    if not written:
+        return None, None
+    return glb_path, png_path
+
+
+def _review_error(message):
+    return (
+        f"{message} Review mode requires a STEP/STP source model (or BREP) so "
+        "agentcad can measure B-rep geometry."
+    )
+
+
+def _load_spec_json(spec_file):
+    try:
+        data = json.loads(Path(spec_file).read_text())
+    except FileNotFoundError:
+        return None, f"Spec file '{spec_file}' not found"
+    except json.JSONDecodeError as exc:
+        return None, f"Spec file '{spec_file}' is not valid JSON: {exc.msg}"
+
+    from agentcad.commands.check_spec import _validate_spec
+
+    errors = _validate_spec(data)
+    if errors:
+        return None, "Spec file does not match check-spec schema: " + "; ".join(errors)
+    return data, None
+
+
+def _build_review_payload(file_str, *, include_measure=False, spec_file=None, include_validation=False):
+    if not include_measure and spec_file is None and not include_validation:
+        return None, None
+
+    file_path = Path(file_str).resolve()
+    if not file_path.exists():
+        return None, f"File '{file_str}' not found"
+    if file_path.suffix.lower() not in (".step", ".stp", ".brep"):
+        return None, _review_error(f"Unsupported review input '{file_path.suffix}'.")
+
+    from agentcad import file_detect
+    from agentcad.commands.measure import measure_tier0_payload, validity_from_metrics
+
+    detection = file_detect.detect_file_type(file_path)
+    if detection["category"] != file_detect.TIER0_BREP:
+        return None, _review_error(
+            f"Could not measure '{file_str}' for viewer review."
+        )
+
+    try:
+        measurement = measure_tier0_payload(
+            str(file_path),
+            detection,
+            with_features=False,
+        )
+    except Exception as exc:
+        return None, f"Could not measure '{file_str}' for viewer review: {exc}"
+
+    review = {"measure": measurement}
+    if include_validation:
+        from agentcad.step_io import load_cad_shape
+        from agentcad.validation_guidance import validation_markers
+        review["validation"] = measurement["validation"]
+        review["validation_markers"] = validation_markers(load_cad_shape(file_path), measurement["validation"])
+
+    if spec_file is not None:
+        spec, err = _load_spec_json(spec_file)
+        if err:
+            return None, err
+
+        from agentcad.commands.check_spec import check_measurement_against_spec
+
+        check = check_measurement_against_spec(measurement, spec)
+        if include_validation:
+            review["validation"] = measurement["validation"]
+        check.update({
+            "command": "check-spec",
+            "status": "success",
+            "file": str(file_path),
+            "spec_file": str(Path(spec_file).resolve()),
+            "validity": validity_from_metrics(measurement["metrics"]),
+            "metrics": measurement["metrics"],
+            "next_actions": [
+                "revise the CAD so each missing or failed feature matches the spec",
+                f"agentcad check-spec {file_path} {Path(spec_file).resolve()}",
+            ] if not check["passed"] else [
+                "record this check-spec result with the completed model",
+                f"agentcad measure {file_path}",
+            ],
+        })
+        review["check_spec"] = check
+
+    return review, None
+
+
+@click.command()
+@click.argument("file")
+@click.argument("file_b", required=False)
+@click.option("--overlay", is_flag=True, default=False, help="Tinted overlay mode (single viewport, red/green).")
+@click.option("--validation", "with_validation", is_flag=True,
+              help="Show validation failures in red with repair guidance (one STEP/BREP file).")
+@click.option(
+    "--measure",
+    "with_measure",
+    is_flag=True,
+    default=False,
+    help="Embed measurement review data in the viewer's Spec check mode.",
+)
+@click.option(
+    "--spec",
+    "spec_file",
+    help="Run check-spec with this JSON spec and open the viewer in Spec check mode.",
+)
+@project_options
+def view(file, file_b, overlay, with_measure, spec_file, with_validation=False):
+    """Open a GLB or STEP file in the browser.
+
+    With one file: single-model viewer.
+    With two files: diff view (side-by-side by default, or --overlay for tinted overlay).
+    """
+    if with_validation and file_b is not None:
+        _error("--validation accepts one STEP/BREP file; omit the second file.")
+    review, err = _build_review_payload(
+        file,
+        include_measure=with_measure,
+        spec_file=spec_file,
+        include_validation=with_validation,
+    )
+    if err:
+        _error(err)
+
+    if file_b is None:
+        glb_a, shape_a, err = _resolve_to_glb_and_shape(file)
+        if err:
+            _error(err)
+        if overlay:
+            _error("--overlay requires two files")
+        html_path, url = _render_single(glb_a, review=review)
+        _open_browser(url)
+        response = {
+            "command": "view",
+            "status": "success",
+            "url": url,
+            "model": str(glb_a),
+        }
+        if review:
+            response["mode"] = "validation" if with_validation else "spec"
+            response["review"] = True
+            if with_validation:
+                response["validation"] = review["validation"]
+                response["is_valid"] = review["validation"]["is_valid"]
+        click.echo(json.dumps(response))
+        return
+
+    phase_recorder = ComparisonPhaseRecorder()
+    with phase_recorder.observe("source_loading"):
+        glb_a, shape_a, err = _resolve_to_glb_and_shape(file)
+        if err:
+            _error(err)
+        glb_b, shape_b, err = _resolve_to_glb_and_shape(file_b)
+    if err:
+        _error(err)
+
+    out_dir = (derived_dir("view", Path(file), Path(file_b))
+               if get_project().configured else glb_a.parent)
+    png_path = None
+    overlay_png_path = None
+    volume_glb_path = None
+    volume_png_path = None
+    projection_comparison = None
+    solid_comparison = None
+    if shape_a is not None and shape_b is not None:
+        from agentcad.solid_compare import compare_solid_volumes_with_fallback
+
+        with phase_recorder.observe("comparison_rendering"):
+            png_path, source_views = _render_diff_png(
+                shape_a, shape_b, glb_a, glb_b, out_dir
+            )
+        with phase_recorder.observe("projection_comparison"):
+            overlay_png_path, projection_comparison = (
+                _render_diff_overlay_png(
+                    shape_a,
+                    shape_b,
+                    glb_a,
+                    glb_b,
+                    out_dir,
+                    source_views=source_views,
+                )
+            )
+        try:
+            solid_comparison = compare_solid_volumes_with_fallback(
+                shape_a,
+                shape_b,
+                phase_recorder=phase_recorder,
+            )
+        except Exception:
+            solid_comparison = None
+        if solid_comparison is not None and solid_comparison.available:
+            with phase_recorder.observe(
+                "difference_artifact_export"
+            ) as phase:
+                volume_glb_path, volume_png_path = (
+                    _render_solid_comparison_artifacts(
+                        solid_comparison,
+                        glb_a,
+                        glb_b,
+                        out_dir,
+                    )
+                )
+                if volume_glb_path is None and volume_png_path is None:
+                    phase.status = "unavailable"
+                    phase.message = (
+                        "3D difference artifacts were not available."
+                    )
+        else:
+            phase_recorder.skip(
+                "difference_artifact_export",
+                "3D comparison produced no exportable geometry.",
+            )
+    else:
+        for phase_name in (
+            "comparison_rendering",
+            "projection_comparison",
+            "exact_3d_comparison",
+            "approximate_3d_comparison",
+            "difference_artifact_export",
+        ):
+            phase_recorder.skip(
+                phase_name,
+                "Loaded inputs did not include B-rep shapes.",
+            )
+
+    with phase_recorder.observe("viewer_generation"):
+        html_path, url, mode = _render_diff(
+            glb_a,
+            glb_b,
+            overlay=overlay,
+            review=review,
+            out_dir=out_dir,
+            diff_side_png=png_path,
+            diff_overlay_png=overlay_png_path,
+            diff_volume_png=volume_png_path,
+        )
+
+    response = {
+        "command": "view",
+        "status": "success",
+        "mode": mode,
+        "url": url,
+        "model_a": str(glb_a),
+        "model_b": str(glb_b),
+        "comparison_phases": phase_recorder.entries,
+    }
+    if review:
+        response["review"] = True
+
+    if png_path is not None:
+        response["png"] = str(png_path)
+    if overlay_png_path is not None:
+        response["overlay_png"] = str(overlay_png_path)
+    if projection_comparison is not None:
+        response["projection_comparison"] = projection_comparison
+    if solid_comparison is not None:
+        response["comparison_3d"] = solid_comparison.data
+    if volume_glb_path is not None:
+        response["volume_glb"] = str(volume_glb_path)
+    if volume_png_path is not None:
+        response["volume_png"] = str(volume_png_path)
+
+    response["url"] = url
+    _open_browser(url)
+    click.echo(json.dumps(response))

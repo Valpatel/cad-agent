@@ -1,0 +1,18 @@
+{
+  "policy": "Pinned by full commit SHA. Imports go to a vendor-update/* branch, are scanned against the reviewed baseline and are merged only after review. Upstream CI, git hooks and install scripts are never run.",
+  "projects": [
+    {"name": "text-to-cad", "url": "https://github.com/earthtojake/text-to-cad", "license": "MIT",
+     "exclude": ["models", ".github", ".githooks", "*.surf", "package-lock.json"],
+     "notes": "CAD skills + cadgen runtime (build123d/OCP). Telemetry and update check to be removed by patch."},
+    {"name": "kicad-happy", "url": "https://github.com/aklofas/kicad-happy", "license": "MIT", "exclude": [".github", ".githooks"],
+     "notes": "KiCad design review skills."},
+    {"name": "kicad-mcp-pro", "url": "https://github.com/oaslananka/kicad-mcp-pro", "license": "MIT", "exclude": [".github", ".githooks"],
+     "notes": "KiCad 10 MCP server (read-only by default). Pin; never launch via 'latest'."},
+    {"name": "build123d-mcp", "url": "https://github.com/pzfreo/build123d-mcp", "license": "Apache-2.0", "exclude": [".github", ".githooks"],
+     "notes": "build123d inspection MCP server."},
+    {"name": "agentcad", "url": "https://github.com/jdilla1277/agentcad", "license": "Apache-2.0", "exclude": [".github", ".githooks"],
+     "notes": "CAD CLI + MCP for agents."},
+    {"name": "bd_warehouse", "url": "https://github.com/gumyr/bd_warehouse", "license": "Apache-2.0", "exclude": [".github", ".githooks", "docs/assets"],
+     "notes": "Parametric fasteners, threads, bearings for build123d."}
+  ]
+}

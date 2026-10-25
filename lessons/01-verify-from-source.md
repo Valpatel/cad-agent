@@ -73,3 +73,15 @@ wrong at least once.
 - **Check:** The parameter `landing_basis` names the solid IDs and the assumption. Physical measurement stays on the
   pre-print checklist.
 - **Source:** 2026-10-24T16:39, 17:10; `cad/parameters.json` (`landing_basis`).
+
+### Find parts by name or reference designator, never by size alone
+- **Rule:** Locate a component in a vendor STEP by its product name or reference designator (XCAF labels), then confirm
+  it against a photo or silkscreen. Matching bounding-box size finds look-alikes.
+- **Incident:** The pin holes for the reset and recovery switches were first placed over two parts at PCB X 16.6 and 22.9,
+  chosen because their size matched a right-angle tact switch. The user described the real layout ("REC button is
+  closest to USB/IO headers, RST button is closest to the far board edge"). A name search then found the actual
+  SWITCH4-8X7X7MM instances at X 137-158, between the USB-C ports and the right-hand corner. The holes, sleeves and
+  labels were moved.
+- **Check:** Every connector or switch used for a cut-out records its STEP product name or refdes and the
+  solid/shell index in `parameters.json`. A test fails if a cut-out's basis names only a size.
+- **Source:** 2026-10-25 (session record; `cad/parameters.json` `service_buttons.basis`).

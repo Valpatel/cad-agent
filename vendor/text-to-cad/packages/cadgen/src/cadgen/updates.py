@@ -73,6 +73,11 @@ def parse_feed(data: Any) -> dict[str, Any] | None:
 
 
 def checking() -> bool:
+    """cad-agent: the update check never runs in our vendored copy; updates come through vendor_sync."""
+    return False
+
+
+def _upstream_checking() -> bool:
     """Whether to check at all: not turned off (``CADGEN_UPDATE_CHECK=0``), not in CI, and a copy
     that is told -- not one something else keeps up to date, nor a development install."""
     if str(os.environ.get("CADGEN_UPDATE_CHECK") or "").strip().lower() in _OFF:

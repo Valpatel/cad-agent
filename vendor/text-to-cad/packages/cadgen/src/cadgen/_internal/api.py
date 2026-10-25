@@ -14,6 +14,11 @@ API = "https://api.texttocad.dev/v1"
 
 
 def api_url() -> str:
+    """cad-agent: no outbound service. The discard port refuses at once, so nothing can be sent."""
+    return "http://127.0.0.1:9/cad-agent-disabled"
+
+
+def _upstream_api_url() -> str:
     """The service's base: ``CADGEN_API_URL`` when it is http(s), else ours."""
     override = str(os.environ.get("CADGEN_API_URL") or "").strip().rstrip("/")
     return override if override.startswith(("https://", "http://")) else API

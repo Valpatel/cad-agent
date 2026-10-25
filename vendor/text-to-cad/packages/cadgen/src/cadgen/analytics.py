@@ -408,6 +408,11 @@ def for_others(env: Mapping[str, str]) -> dict[str, str]:
 
 
 def refused(env: Any = None) -> bool:
+    """cad-agent: telemetry is always refused in our vendored copy."""
+    return True
+
+
+def _upstream_refused(env: Any = None) -> bool:
     """Whether an environment (this process's, or the one a client sent the daemon with a build) turns
     telemetry off: what is counted for it is never noted, whatever the process that counts was told."""
     try:

@@ -10,9 +10,10 @@ Rather than build another CAD framework, this repo combines what already exists.
    - Candidates include text-to-cad (MIT), the KiCad MCP servers, the build123d/CadQuery skills, and FreeCAD/OpenSCAD bridges.
    - Never copy code across licence boundaries: MIT, BSD or Apache-2.0 code may be incorporated with attribution, while
      GPL and AGPL tools run only as external programs.
-2. **Mine our own sessions.**
-   - Lessons come from our Claude Code and Codex histories: corrections, failed assumptions, checks that caught real
-     bugs, and what the user actually asked for.
+2. **Mine the J501 design session.**
+   - Lessons come only from the explicitly selected session: the J501 enclosure design session. Other session
+     histories are out of scope.
+   - We extract corrections, failed assumptions, checks that caught real bugs, and what the user actually asked for.
    - The miner runs locally (`mining/`). Output is scrubbed of personal data and cites its sources (session ID and date)
      in `lessons/`.
 3. **Continuously integrate and test.**

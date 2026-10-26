@@ -197,7 +197,23 @@ from cadagent.htmlreport import render_page, canonical_status, SCHEMA_VERSION
 from cadagent.links import missing_links
 from cadagent.package import build_package
 from cadagent.serve import make_server
+from cadagent.robot import (Body, combine, box_body, cylinder_body, solid_mass_properties, printed_part_body,
+                            Link, Joint, Visual, Collision, Motor, write_urdf, write_mjcf, check_urdf)
 ```
+
+### Robot export (`cadagent.robot`)
+
+Turns CAD parts into a simulator model with real mass properties:
+
+- `solid_mass_properties(shape, density)` reads mass, centre of mass and inertia from the solid (OCP `BRepGProp`).
+- `printed_part_body(shape, density, wall_mm, infill)` estimates a printed part: solid perimeters and skins plus
+  sparse infill, with the inertia scaled to that mass. It is an estimate, so weigh the printed part.
+- `box_body`, `cylinder_body` and `point_body` model bought parts from their catalogue mass. `Body` objects add with
+  the parallel-axis theorem, so a link is the sum of everything bolted to it.
+- `write_urdf` and `write_mjcf` write the same link tree. The MJCF adds motors, joint armature and friction, an IMU
+  site and a floor. Both refuse a closed loop: model a four-bar or five-bar leg as an equivalent serial chain.
+- `check_urdf` checks the tree, inertias (positive definite, triangle inequality), mesh files and joint limits.
+  text-to-cad's `cadgen urdf validate` is a second, independent validator.
 
 ## Tests
 

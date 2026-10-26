@@ -177,6 +177,7 @@ class Link:
     body: Body = field(default_factory=lambda: Body(0.0))
     visuals: List[Visual] = field(default_factory=list)
     collisions: List[Collision] = field(default_factory=list)
+    sites: List[Tuple[str, Vec]] = field(default_factory=list)   # named points (MJCF only): a muzzle, a sensor mount
 
 
 @dataclass
@@ -464,6 +465,8 @@ def write_mjcf(path: Path, robot: str, links: Sequence[Link], joints: Sequence[J
             ET.SubElement(el, "geom", **ga)
         if link.name == imu_link:
             ET.SubElement(el, "site", name="imu", pos=_fmt(b.com))
+        for site_name, at in link.sites:
+            ET.SubElement(el, "site", name=site_name, pos=_fmt(at), size="0.004")
         for cj in children.get(link.name, []):
             add_body(el, by_name[cj.child], cj)
 

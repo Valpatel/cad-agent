@@ -142,7 +142,7 @@ export function createStage(container, opts = {}) {
 
   return {
     renderer, scene, camera, controls, root, frame,
-    setSceneLight(v) { light.level = Math.max(0, Math.min(1, v)); },
+    setSceneLight(v, immediate = false) { light.level = Math.max(0, Math.min(1, v)); if (immediate) { light.current = light.level; applyLight(); } },
     onFrame(cb) { callbacks.push(cb); },
     start() { if (!running) { running = true; requestAnimationFrame(tick); } },
   };

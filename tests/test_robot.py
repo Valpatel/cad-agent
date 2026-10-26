@@ -144,3 +144,10 @@ def test_primitive_visuals_in_urdf_and_mjcf(tmp_path):
     vis = [i for i in range(m.ngeom) if m.geom_group[i] == 1]
     assert len(vis) == 2 and m.geom_size[vis[0]][2] == pytest.approx(0.15)
     assert m.geom_rgba[vis[0]][0] == pytest.approx(1.0) and m.geom_contype[vis[0]] == 0
+
+
+def test_mjcf_sites(tmp_path):
+    mujoco = pytest.importorskip("mujoco")
+    links = [r.Link("base", r.box_body(1.0, (0.1, 0.1, 0.1)), sites=[("muzzle", (0.2, 0, 0.1))])]
+    m = mujoco.MjModel.from_xml_path(str(r.write_mjcf(tmp_path / "s.xml", "s", links, [])))
+    assert m.site("muzzle").pos == pytest.approx([0.2, 0, 0.1])

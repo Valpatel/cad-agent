@@ -28,3 +28,13 @@ def test_variant_manifests_do_not_mix_assemblies():
     assert source['parts'][0]['visible'] is False
     with pytest.raises(ValueError):group_manifests(source,[{'id':'../bad','prefix':'a_'}])
     with pytest.raises(ValueError):group_manifests(source,[{'id':'empty','prefix':'missing_'}])
+
+
+def test_changed_mechanical_source_cannot_show_pass(tmp_path):
+    import json,hashlib
+    source=tmp_path/'parameters.json';source.write_text('{"width": 10}')
+    report=tmp_path/'fit.json';report.write_text(json.dumps({'pass':True, 'mechanical_sources':{'parameters.json':hashlib.sha256(source.read_bytes()).hexdigest()}}))
+    manifest={'groups':[{'reports':[{'file':'fit.json'}]}]}
+    assert '>PASS<' in review_html(tmp_path,manifest)
+    source.write_text('{"width": 20}')
+    assert '>STALE<' in review_html(tmp_path,manifest)

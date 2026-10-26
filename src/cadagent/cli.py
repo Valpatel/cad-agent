@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from cadagent._deps import MissingDependency
 from cadagent.project import CadConfigError, CadProject, Step, load_project
 
-SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "webkit", "all")
+SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "webkit", "all", "mcmaster")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -227,6 +227,46 @@ def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
         _say("checks FAILED; the package was still written for review")
     return report_rc or package_rc
 
+def cmd_mcmaster(args: argparse.Namespace) -> int:
+    """Download each part's STEP and product data from McMaster-Carr (one page at a time), normalise its frame, and
+    optionally record it in a catalogue JSON. Needs no project."""
+    from cadagent import mcmaster as mc
+
+    pns = [p.strip().upper() for p in args.pns]
+    if args.key and len(pns) != 1:
+        raise _Unusable("--key names one catalogue entry: give one part number with it")
+    out_root = Path(args.out)
+    rc = 0
+    with mc.Session(delay_s=args.delay) as session:
+        for pn in pns:
+            folder = out_root / pn
+            step = folder / f"{pn}.step"
+            try:
+                if step.exists() and not args.force:
+                    page = json.loads((folder / f"{pn}.page.json").read_text()) if (folder / f"{pn}.page.json").exists() else session.read(pn)
+                    _say(f"{pn}: STEP already here ({step}); --force downloads it again")
+                else:
+                    session.fetch(pn, folder, choose=args.choose)
+                    page = json.loads((folder / f"{pn}.page.json").read_text())
+                    _say(f"{pn}: {page.get('description')} | {page.get('price_text')} -> {step}")
+                if args.kind:
+                    material = mc.material_of(page.get("specs", {}).get("raw", {}))
+                    norm, info = mc.normalise(step, args.kind, density=args.density, material=material)
+                    (folder / f"{pn}.norm.json").write_text(json.dumps(info, indent=1) + "\n")
+                    _say(f"{pn}: {args.kind} -> {norm} bbox {info['bbox_mm']['size']} mm, "
+                         f"{info['volume_mm3']:.0f} mm3, ~{info['mass_g_est']} g")
+                    if args.catalog:
+                        cat = Path(args.catalog)
+                        n, cwd = norm.resolve(), Path.cwd().resolve()
+                        cad = str(n.relative_to(cwd)) if n.is_relative_to(cwd) else str(n)
+                        entry = mc.catalog_entry(page, info, cad=cad)
+                        mc.update_catalog(cat, args.key or pn, entry)
+                        _say(f"{pn}: catalogue {cat} [{args.key or pn}]")
+            except Exception as exc:  # one bad part should not stop the others
+                _err(f"mcmaster {pn}: {exc}")
+                rc = 1
+    return rc
+
 HANDLERS = {
     "build": cmd_build,
     "export-3mf": cmd_export_3mf,
@@ -242,6 +282,12 @@ HANDLERS = {
 
 def dispatch(args: argparse.Namespace) -> int:
     sub = getattr(args, "cad_command", None)
+    if sub == "mcmaster":                                  # works on files only: no project needed
+        try:
+            return cmd_mcmaster(args)
+        except (MissingDependency, _Unusable) as exc:
+            _err(f"mcmaster: {exc}")
+            return 2
     if sub not in HANDLERS:
         _err("choose a subcommand: " + ", ".join(SUBCOMMANDS) + " (cad-agent --help)")
         return 2
@@ -295,6 +341,21 @@ def build_parser() -> argparse.ArgumentParser:
     webkit_p = sub.add_parser("webkit", parents=[common], help="Copy the web kit (3D stage, viewer, HUD) into the project")
     webkit_p.add_argument("dest", nargs="?", default="web/kit", help="Destination folder (default: web/kit)")
     sub.add_parser("all", parents=[common], help="build, export-3mf, check + report, package")
+    mc_p = sub.add_parser("mcmaster", help="Download McMaster-Carr STEP + product data per part number and normalise "
+                                           "it (one page at a time; skills/mcmaster-parts/SKILL.md)")
+    mc_p.add_argument("pns", nargs="+", metavar="PN", help="McMaster-Carr part numbers, e.g. 91290A242")
+    from cadagent.mcmaster import KINDS as MC_KINDS
+    mc_p.add_argument("--kind", choices=MC_KINDS,
+                      help="Normalise into the frame for this kind of part (cadagent.mcmaster.FRAMES)")
+    mc_p.add_argument("--out", default="references/vendor/mcmaster", help="Folder; each part goes in OUT/<PN>/ "
+                                                                          "(keep it out of git except SOURCE.txt)")
+    mc_p.add_argument("--catalog", help="Catalogue JSON to record the part in ({source, items: {key: entry}})")
+    mc_p.add_argument("--key", help="Catalogue key for the part (default: the part number)")
+    mc_p.add_argument("--density", type=float, help="g/cm3 for the mass estimate (default: from the Material row)")
+    mc_p.add_argument("--delay", type=float, default=3.0, help="Seconds between product pages (default 3)")
+    mc_p.add_argument("--choose", nargs="+", metavar="OPTION", help="Option texts to click before the CAD download "
+                                                                    "(a part with variants, e.g. \"Right Hand\")")
+    mc_p.add_argument("--force", action="store_true", help="Download again even when the STEP is already here")
     return parser
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

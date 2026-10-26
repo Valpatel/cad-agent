@@ -666,4 +666,23 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
         if f:
             hist[s['name']] = [[r[0], r[1] - T0] for r in _series(f)]
     out['T_max_history'] = hist
+    # how much the answer still moved over the last fifth of the iterations
+    conv = {}
+    for k, v in hist.items():
+        a = np.array(v)
+        if len(a) > 5:
+            tail = a[a[:, 0] >= a[-1, 0] * 0.8]
+            conv[f'{k}_max_c_change'] = round(float(tail[-1, 1] - tail[0, 1]), 2)
+    for fan in meta['fans']:
+        f = fo(f'zone_{fan["name"]}')
+        if f:
+            a = np.array(_series(f))
+            if len(a) > 5:
+                tail = a[a[:, 0] >= a[-1, 0] * 0.8]
+                ax = np.asarray(fan['axis'], float) / np.linalg.norm(fan['axis'])
+                u0, u1 = float(tail[0, 1:4] @ ax), float(tail[-1, 1:4] @ ax)
+                conv[f'{fan["name"]}_flow_change_pct'] = round(100 * (u1 - u0) / u1, 1) if u1 else None
+                conv[f'{fan["name"]}_intake_c_change'] = round(float(tail[-1, 4] - tail[0, 4]), 2)
+    out['convergence'] = conv
+    out['converged'] = bool(conv) and all(abs(v) < (1.0 if k.endswith('_c_change') else 2.0) for k, v in conv.items() if v is not None)
     return out

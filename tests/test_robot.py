@@ -119,3 +119,28 @@ def test_mjcf_loads_in_mujoco_with_the_same_mass(tmp_path):
     d = mujoco.MjData(m)
     mujoco.mj_step(m, d)
     assert d.sensor("imu_quat").data.shape == (4,)
+
+
+def test_mjcf_collision_filtering_and_friction(tmp_path):
+    mujoco = pytest.importorskip("mujoco")
+    links = [r.Link("base", r.box_body(1.0, (0.1, 0.1, 0.1)), [], [r.Collision("box", (0.1, 0.1, 0.1), contype=2, conaffinity=1)]),
+             r.Link("wheel", r.cylinder_body(0.5, 0.05, 0.02, axis="y"), [], [r.Collision("cylinder", (0.05, 0.02), friction=(1.2, 0.01, 0.001))])]
+    joints = [r.Joint("w", "continuous", "base", "wheel", xyz=(0, 0.1, 0), axis=(0, 1, 0), effort=1.0)]
+    m = mujoco.MjModel.from_xml_path(str(r.write_mjcf(tmp_path / "b.xml", "b", links, joints)))
+    assert m.geom("base_col0").contype == 2 and m.geom("base_col0").conaffinity == 1
+    assert m.geom("wheel_col0").friction[0] == pytest.approx(1.2)
+
+
+def test_primitive_visuals_in_urdf_and_mjcf(tmp_path):
+    mujoco = pytest.importorskip("mujoco")
+    links = [r.Link("base", r.box_body(1.0, (0.1, 0.1, 0.1)), [r.Visual(kind="box", size=(0.1, 0.2, 0.3), rgba=(1, 0, 0, 1)),
+                                                                 r.Visual(kind="cylinder", size=(0.05, 0.1), rpy=(1.5708, 0, 0))],
+                    [r.Collision("box", (0.1, 0.1, 0.1))])]
+    u = r.write_urdf(tmp_path / "v.urdf", "v", links, [])
+    root = ET.parse(u).getroot()
+    assert root.find("link/visual/geometry/box").get("size") == "0.1 0.2 0.3"
+    assert r.check_urdf(u)["pass"] is True
+    m = mujoco.MjModel.from_xml_path(str(r.write_mjcf(tmp_path / "v.xml", "v", links, [])))
+    vis = [i for i in range(m.ngeom) if m.geom_group[i] == 1]
+    assert len(vis) == 2 and m.geom_size[vis[0]][2] == pytest.approx(0.15)
+    assert m.geom_rgba[vis[0]][0] == pytest.approx(1.0) and m.geom_contype[vis[0]] == 0

@@ -53,6 +53,8 @@ class SiteConfig:
     designs: str = ""
     pages: List[str] = field(default_factory=list)
     links: List[Dict[str, str]] = field(default_factory=list)
+    nav: List[Dict[str, str]] = field(default_factory=list)   # app-wide top bar: [{title, href}], hrefs from the root
+    theme: str = "light"                                       # light | hud (the control-room look of the web kit)
 
 
 def site_config(raw: Optional[Dict[str, Any]], default_title: str) -> SiteConfig:
@@ -215,6 +217,39 @@ footer{color:var(--muted);font-size:13px;padding:30px 0}
 @media (max-width:640px){.wrap{padding:0 16px}header.top{padding:20px 16px}article.doc{padding:4px 16px 16px}.milestones li{grid-template-columns:1fr}}
 """
 
+_HUD = """
+:root,:root[data-theme]{--bg:#0a0a0f;--card:#12121a;--ink:#e8edf5;--muted:#8892a4;--line:#2a303c;--accent:#00f0ff;
+--ok:#05ffa1;--warn:#fcee0a;--fail:#ff2a6d;--okbg:rgba(5,255,161,.08);--warnbg:rgba(252,238,10,.08);--failbg:rgba(255,42,109,.1);
+--nextbg:#1a1a2e;color-scheme:dark}
+body{font-family:'Inter',system-ui,sans-serif;background:linear-gradient(180deg,#0a0a0f,#060609) fixed}
+h1,h2,h3{letter-spacing:-.01em}h2{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;letter-spacing:.14em;
+text-transform:uppercase;color:var(--ink);display:flex;align-items:center;gap:8px}h2::before{content:"";width:12px;height:2px;
+background:var(--accent);box-shadow:0 0 6px rgba(0,240,255,.3)}
+.stat b,.metric b,.pill,.milestones .when,.d,code,.log td{font-family:'JetBrains Mono',ui-monospace,monospace}
+.card,.stat,.milestones li,details.decision,article.doc{background:rgba(18,18,26,.9);border-color:var(--line)}
+.card:hover{border-color:#0e7490}nav.links a.primary{color:#060609}
+"""
+
+_NAV_CSS = """
+.appnav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:4px;padding:0 16px;min-height:46px;
+background:rgba(6,6,9,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);overflow-x:auto}
+.appnav .brand{font-weight:700;margin-right:12px;white-space:nowrap;display:flex;align-items:center;gap:8px;color:var(--ink);text-decoration:none}
+.appnav .brand i{width:9px;height:9px;background:var(--accent);transform:rotate(45deg);box-shadow:0 0 10px rgba(0,240,255,.3)}
+.appnav a.tab{font:500 12px 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap}
+.appnav a.tab:hover{color:var(--accent)}.appnav a.tab.on{color:var(--accent);background:rgba(0,240,255,.06);box-shadow:inset 0 -2px 0 var(--accent)}
+"""
+
+
+def nav_html(cfg: "SiteConfig", current: str, prefix: str) -> str:
+    """The app-wide top bar. ``prefix`` turns root-relative hrefs into page-relative ones."""
+    if not cfg.nav:
+        return ""
+    tabs = "".join(f'<a class="tab{" on" if n.get("id", n["href"]) == current else ""}" href="{_e(n["href"] if re.match(r"^[a-z]+:", n["href"]) else prefix + n["href"])}">{_e(n["title"])}</a>'
+                   for n in cfg.nav)
+    return f'<nav class="appnav"><a class="brand" href="{prefix}site/"><i></i>{_e(cfg.title)}</a>{tabs}</nav>'
+
+
 _MERMAID = ('<script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs";'
             'mermaid.initialize({startOnLoad:true,theme:matchMedia("(prefers-color-scheme: dark)").matches?"dark":"default"});</script>')
 
@@ -223,10 +258,11 @@ def _e(v: Any) -> str:
     return html.escape("" if v is None else str(v))
 
 
-def _page(title: str, body: str, accent: str, depth: int = 0) -> str:
-    css = _CSS.replace("ACCENT", accent)
+def _page(title: str, body: str, accent: str, depth: int = 0, theme: str = "light") -> str:
+    css = _CSS.replace("ACCENT", accent) + _NAV_CSS + (_HUD if theme == "hud" else "")
+    fonts = f'<link rel="stylesheet" href="{"../" * (depth + 1)}_cadagent/kit/vendor/fonts/fonts.css">' if theme == "hud" else ""
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            f"<title>{_e(title)}</title><style>{css}</style></head><body>{body}{_MERMAID}</body></html>\n")
+            f"<title>{_e(title)}</title>{fonts}<style>{css}</style></head><body>{body}{_MERMAID}</body></html>\n")
 
 
 def _md_inline(text: str) -> str:
@@ -252,10 +288,10 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
         title = _title_of(text, rel)
         docs.append({"rel": rel, "title": title, "summary": _summary_of(text), "href": f"pages/{page_map[rel]}",
                      "mtime": datetime.fromtimestamp(p.stat().st_mtime).strftime("%Y-%m-%d")})
-        body = (f'<header class="top"><div class="wrap"><a href="../index.html">← {_e(cfg.title)}</a>'
+        body = (nav_html(cfg, "docs", "../../") + f'<header class="top"><div class="wrap"><a href="../index.html">← {_e(cfg.title)}</a>'
                 f'<p class="tag"><code>{_e(rel)}</code></p></div></header>'
                 f'<main class="wrap"><article class="doc">{render_markdown(text, p, root, page_map)}</article></main>')
-        (out / "pages" / page_map[rel]).write_text(_page(f"{title} · {cfg.title}", body, cfg.accent))
+        (out / "pages" / page_map[rel]).write_text(_page(f"{title} · {cfg.title}", body, cfg.accent, depth=1, theme=cfg.theme))
 
     milestones = _load(root, cfg.milestones) or []
     decisions = _load(root, cfg.decisions) or []
@@ -297,14 +333,26 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
         est = ' <span class="est">est.</span>' if x.get("estimate") else ""
         return f'<div class="metric {_e(x.get("level", ""))}"><b>{_e(x.get("value"))}{unit}</b><span>{_e(x.get("label"))}{est}</span></div>'
 
-    ds = "".join(
-        f'<div class="card"><span class="pill {_e(d.get("verdict", "next"))}">{_e(d.get("verdict", ""))}</span>'
-        f'<h3>{_e(d.get("name"))}</h3><p>{_md_inline(d.get("summary", ""))}</p>'
-        f'<div class="metrics">{"".join(metric(x) for x in d.get("metrics", []))}</div>'
-        f'<p>{d.get("checks", {}).get("ok", 0)} ok · {d.get("checks", {}).get("warn", 0)} warnings · {d.get("checks", {}).get("fail", 0)} problems'
-        + (f' · <a href="../{_e(d["link"])}">open</a>' if d.get("link") else "")
-        + (f' · <code>{_e(d["file"])}</code>' if d.get("file") else "") + "</p></div>"
-        for d in designs)
+    def badges_html(d: Dict[str, Any]) -> str:
+        bs = d.get("badges") or []
+        return ("<p>" + "".join(f'<span class="pill {_e(b.get("level", ""))}" title="{_e(b.get("title", ""))}">{_e(b["label"])}</span> ' for b in bs)
+                + "</p>") if bs else ""
+
+    def links_html(d: Dict[str, Any]) -> str:
+        ls = d.get("links") or []
+        return ("<p>" + " · ".join(f'<a href="{_e(href(l["href"]))}">{_e(l["title"])}</a>' for l in ls) + "</p>") if ls else ""
+
+    def design_card(d: Dict[str, Any]) -> str:
+        checks = d.get("checks", {})
+        tail = (f'<p>{checks.get("ok", 0)} ok · {checks.get("warn", 0)} warnings · {checks.get("fail", 0)} problems'
+                + (f' · <a href="../{_e(d["link"])}">open</a>' if d.get("link") else "")
+                + (f' · <code>{_e(d["file"])}</code>' if d.get("file") else "") + "</p>")
+        return (f'<div class="card"><span class="pill {_e(d.get("verdict", "next"))}">{_e(d.get("verdict", ""))}</span>'
+                f'<h3>{_e(d.get("name"))}</h3><p>{_md_inline(d.get("summary", ""))}</p>'
+                f'<div class="metrics">{"".join(metric(x) for x in d.get("metrics", []))}</div>'
+                + badges_html(d) + links_html(d) + tail + "</div>")
+
+    ds = "".join(design_card(d) for d in designs)
 
     def decision(d: Dict[str, Any]) -> str:
         src = d.get("source") or {}
@@ -323,7 +371,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
                         f'<p><code>{_e(d["rel"])}</code> · {_e(d["mtime"])}</p></div>' for d in docs)
     log_rows = "".join(f'<tr><td>{_e(c["hash"])}</td><td>{_e(c["date"])}</td><td>{_e(c["subject"])}</td></tr>' for c in log)
 
-    section = lambda t, body, empty: f"<h2>{t}</h2>" + (body or f'<p class="tag">{empty}</p>')
+    section = lambda t, body, empty: f'<h2 id="{slug(t)}">{t}</h2>' + (body or f'<p class="tag">{empty}</p>')
     main = (f'<main class="wrap">{stats}'
             + section("Progress", f'<ul class="milestones">{ms}</ul>' if ms else "", "No milestones file yet.")
             + section("Designs", f'<div class="grid">{ds}</div>' if ds else "", "No designs evaluated yet.")
@@ -331,7 +379,9 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
             + section("Documents", f'<div class="docs">{doc_cards}</div>' if doc_cards else "", "No documents configured.")
             + section("Recent changes", f'<div class="tablewrap"><table class="log">{log_rows}</table></div>' if log_rows else "", "No git history.")
             + f'<footer>Built {datetime.now().strftime("%Y-%m-%d %H:%M")} by cad-agent from the project files. Refresh to rebuild.</footer></main>')
-    (out / "index.html").write_text(_page(cfg.title, head + main, cfg.accent))
+    (out / "index.html").write_text(_page(cfg.title, nav_html(cfg, "overview", "../") + head + main, cfg.accent, theme=cfg.theme))
+    # the same top bar for the project's own pages: they fetch site/nav.json and render it with webkit/appnav.js
+    (out / "nav.json").write_text(json.dumps({"title": cfg.title, "nav": cfg.nav}, indent=1) + "\n")
     return {"site": str(out), "pages": len(pages), "milestones": len(milestones), "decisions": len(decisions),
             "designs": len(designs), "progress_pct": pct}
 

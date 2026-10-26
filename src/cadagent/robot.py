@@ -144,12 +144,17 @@ def printed_part_body(shape: Any, density_g_cm3: float, wall_mm: float = 1.6, in
 
 @dataclass
 class Visual:
-    mesh: str                      # path relative to the URDF file
+    """A visual shape: a mesh file, or a primitive (``kind`` box/cylinder/sphere with ``size`` in metres, as for
+    ``Collision``) for models that have no meshes yet."""
+
+    mesh: str = ""                 # path relative to the URDF file
     xyz: Vec = (0.0, 0.0, 0.0)
     rpy: Vec = (0.0, 0.0, 0.0)
     scale: float = 0.001           # meshes are written in mm
     rgba: Optional[Tuple[float, float, float, float]] = None
     material: str = ""
+    kind: str = "mesh"
+    size: Any = None
 
 
 @dataclass
@@ -161,6 +166,9 @@ class Collision:
     size: Any
     xyz: Vec = (0.0, 0.0, 0.0)
     rpy: Vec = (0.0, 0.0, 0.0)
+    contype: int = 1        # MJCF collision filtering: two geoms collide when contype & other.conaffinity is non-zero
+    conaffinity: int = 1
+    friction: Optional[Tuple[float, float, float]] = None   # MJCF sliding, torsional, rolling
 
 
 @dataclass
@@ -217,23 +225,13 @@ def write_urdf(path: Path, robot: str, links: Sequence[Link], joints: Sequence[J
         for v in l.visuals:
             ve = ET.SubElement(le, "visual")
             ET.SubElement(ve, "origin", xyz=_fmt(v.xyz), rpy=_fmt(v.rpy))
-            ET.SubElement(ET.SubElement(ve, "geometry"), "mesh", filename=v.mesh, scale=_fmt((v.scale,) * 3))
+            _urdf_geometry(ET.SubElement(ve, "geometry"), v.kind, v.mesh if v.kind == "mesh" else v.size, v.scale, l.name)
             if v.material:
                 ET.SubElement(ve, "material", name=v.material)
         for c in l.collisions:
             ce = ET.SubElement(le, "collision")
             ET.SubElement(ce, "origin", xyz=_fmt(c.xyz), rpy=_fmt(c.rpy))
-            g = ET.SubElement(ce, "geometry")
-            if c.kind == "box":
-                ET.SubElement(g, "box", size=_fmt(c.size))
-            elif c.kind == "cylinder":
-                ET.SubElement(g, "cylinder", radius=f"{c.size[0]:.6g}", length=f"{c.size[1]:.6g}")
-            elif c.kind == "sphere":
-                ET.SubElement(g, "sphere", radius=f"{c.size[0]:.6g}")
-            elif c.kind == "mesh":
-                ET.SubElement(g, "mesh", filename=str(c.size), scale="0.001 0.001 0.001")
-            else:
-                raise ValueError(f"unknown collision kind {c.kind!r} on {l.name}")
+            _urdf_geometry(ET.SubElement(ce, "geometry"), c.kind, c.size, 0.001, l.name)
     for j in joints:
         je = ET.SubElement(root, "joint", name=j.name, type=j.type)
         if j.armature is not None:
@@ -258,6 +256,19 @@ def write_urdf(path: Path, robot: str, links: Sequence[Link], joints: Sequence[J
     path = Path(path)
     path.write_text('<?xml version="1.0"?>\n' + ET.tostring(root, encoding="unicode") + "\n")
     return path
+
+
+def _urdf_geometry(g, kind: str, size: Any, scale: float, link: str) -> None:
+    if kind == "box":
+        ET.SubElement(g, "box", size=_fmt(size))
+    elif kind == "cylinder":
+        ET.SubElement(g, "cylinder", radius=f"{size[0]:.6g}", length=f"{size[1]:.6g}")
+    elif kind == "sphere":
+        ET.SubElement(g, "sphere", radius=f"{size[0]:.6g}")
+    elif kind == "mesh":
+        ET.SubElement(g, "mesh", filename=str(size), scale=_fmt((scale,) * 3))
+    else:
+        raise ValueError(f"unknown geometry kind {kind!r} on {link}")
 
 
 def tree_problems(links: Sequence[str], edges: Sequence[Tuple[str, str, str]]) -> List[str]:
@@ -384,6 +395,8 @@ def write_mjcf(path: Path, robot: str, links: Sequence[Link], joints: Sequence[J
     meshes: Dict[str, str] = {}
     world = ET.SubElement(m, "worldbody")
     if floor:
+        vis = ET.SubElement(m, "visual")
+        ET.SubElement(vis, "headlight", ambient="0.35 0.35 0.35", diffuse="0.55 0.55 0.55", specular="0.1 0.1 0.1")
         ET.SubElement(asset, "texture", name="grid", type="2d", builtin="checker", rgb1=".82 .80 .76",
                       rgb2=".72 .70 .66", width="512", height="512")
         ET.SubElement(asset, "material", name="grid", texture="grid", texrepeat="8 8", reflectance="0.05")
@@ -426,12 +439,26 @@ def write_mjcf(path: Path, robot: str, links: Sequence[Link], joints: Sequence[J
             else:
                 raise ValueError(f"MJCF export supports box, cylinder and sphere collisions, not {c.kind!r}")
             ga["rgba"] = "0.5 0.5 0.5 0"  # collision shapes are invisible; meshes show the part
+            if (c.contype, c.conaffinity) != (1, 1):
+                ga.update(contype=str(c.contype), conaffinity=str(c.conaffinity))
+            if c.friction:
+                ga["friction"] = _fmt(c.friction)
             ET.SubElement(el, "geom", **ga)
         for k, v in enumerate(link.visuals):
-            mesh_name = meshes.setdefault(v.mesh, f"mesh{len(meshes)}")
-            if len(meshes) > len(asset.findall("mesh")):
-                ET.SubElement(asset, "mesh", name=mesh_name, file=v.mesh, scale=_fmt((v.scale,) * 3))
-            ga = {"class": "visual", "type": "mesh", "mesh": mesh_name, "pos": _fmt(v.xyz), "quat": _fmt(rpy_to_quat(v.rpy))}
+            ga = {"class": "visual", "pos": _fmt(v.xyz), "quat": _fmt(rpy_to_quat(v.rpy))}
+            if v.kind == "mesh":
+                mesh_name = meshes.setdefault(v.mesh, f"mesh{len(meshes)}")
+                if len(meshes) > len(asset.findall("mesh")):
+                    ET.SubElement(asset, "mesh", name=mesh_name, file=v.mesh, scale=_fmt((v.scale,) * 3))
+                ga.update(type="mesh", mesh=mesh_name)
+            elif v.kind == "box":
+                ga.update(type="box", size=_fmt(x / 2 for x in v.size))
+            elif v.kind == "cylinder":
+                ga.update(type="cylinder", size=f"{v.size[0]:.6g} {v.size[1] / 2:.6g}")
+            elif v.kind == "sphere":
+                ga.update(type="sphere", size=f"{v.size[0]:.6g}")
+            else:
+                raise ValueError(f"unknown visual kind {v.kind!r} on {link.name}")
             if v.rgba:
                 ga["rgba"] = _fmt(v.rgba)
             ET.SubElement(el, "geom", **ga)

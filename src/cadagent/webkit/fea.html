@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FEA Results</title>
+<link rel="stylesheet" href="hud.css">
+<script type="importmap">{"imports": {"three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/addons/"}}</script>
+</head>
+<body>
+<div id="fea"></div>
+<script type="module">
+  // fea.html?case=<url of a Study.export_viewer() JSON, relative to this page>
+  // Scriptable for links and screenshots: &load=1.5 &field=ratio|stress|sf|disp &spot=1 &clip=x:0.4 &exag=20 &panel=0
+  // &title=... &root=../../ (the project root from this page: the app's top bar, site/nav.json) &nav=0
+  import { mountFeaViewer } from './fea-viewer.js';
+  import { mountAppNav } from './appnav.js';
+  const q = new URLSearchParams(location.search);
+  const root = q.get('root') ?? '../../';
+  const url = q.get('case');
+  if (q.get('nav') !== '0') await mountAppNav({ root, current: q.get('current') ?? '' });
+  const el = document.getElementById('fea');
+  const fail = (msg) => {
+    el.innerHTML = `<div id="hud"><header id="topbar"><span class="glyph"></span><h1>FEA results</h1></header>`
+      + `<main id="stage-overlay"><div class="hud-card" style="max-width:520px"><p class="hud-note">${msg}</p></div></main></div>`;
+  };
+  if (!url) {
+    fail('Open a case with <code>fea.html?case=&lt;url of the JSON&gt;</code>. Write one with <code>Study.export_viewer(path)</code> (cadagent.fea) after <code>solve()</code>.');
+  } else {
+    try {
+      const name = decodeURIComponent(url.split('/').pop().replace(/\.json$/, ''));
+      const v = await mountFeaViewer(el, url, { title: q.get('title') ?? name, back: q.get('back') ?? `${root}site/`, backLabel: 'Project site' });
+      document.title = `${q.get('title') ?? name}: FEA`;
+      if (q.has('field')) v.setField(q.get('field'));
+      if (q.has('load')) v.setLoad(+q.get('load'));
+      if (q.has('exag')) v.setExaggeration(+q.get('exag'));
+      if (q.has('clip')) { const [a, f] = q.get('clip').split(':'); v.setClip(a, f === undefined ? 0.5 : +f); }
+      if (q.get('panel') === '0') v.collapse.set(true);
+      if (q.has('spot')) v.flyTo(+q.get('spot') - 1, { instant: true });
+      if (q.get('play') === '1') v.play(true);
+      window.__fea = v;
+      document.body.dataset.ready = '1';
+    } catch (e) {
+      fail(`Could not load <code>${url.replace(/[&<>"']/g, '')}</code>: ${String(e.message).replace(/[&<>]/g, '')}`);
+    }
+  }
+</script>
+</body>
+</html>

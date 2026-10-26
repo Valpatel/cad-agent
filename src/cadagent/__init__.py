@@ -16,7 +16,8 @@ and a worked example in ``docs/toolkit.md``):
   boolean ``pass`` (or the key named by ``pass_key``). A missing file, a
   missing key or a non-boolean value is a failure, never a pass.
 * CAD checks never claim physical fit: reports always record
-  ``physical_fit_verified`` and ``slicer_run`` as false.
+  ``physical_fit_verified`` as false, and ``slicer_run`` as false unless
+  ``cad-agent slice`` has sliced the current 3MF files (sha256 checked).
 
 Heavy dependencies (cadquery/OCP, trimesh, vtk, PIL) are imported inside the
 functions that need them; a missing one raises ``MissingDependency`` naming the

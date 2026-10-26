@@ -256,6 +256,67 @@ Turns CAD parts into a simulator model with real mass properties:
 - `check_urdf` checks the tree, inertias (positive definite, triangle inequality), mesh files and joint limits.
   text-to-cad's `cadgen urdf validate` is a second, independent validator.
 
+## Simulation and optimisation (standard practice for anything that carries load or heat)
+
+Built on mature open-source tools, never reimplemented: OpenFOAM for airflow and heat, gmsh + scikit-fem for
+stiffness and strength, pyMOTO for topology optimisation, Bambu Studio for real filament grams, PyVista/VTK for
+pictures and animations. The survey that chose them, with licences and sources, is
+[`research/simulation-tools.md`](../research/simulation-tools.md). Install: `pip install -e ".[cad,fea,sim]"`, plus
+Docker (OpenFOAM runs in the official `opencfd/openfoam-default` image) and Bambu Studio for slicing.
+
+**Standard practice.** For every design that holds a heat source, carries a load or will be printed in quantity:
+1. **Slice it** (`cad-agent slice`): grams and print time per part, with the profile named. This is the number a
+   material-reduction claim is judged on, never the CAD volume. The report shows `slicer_run: true` only while the
+   sliced 3MF files are unchanged (sha256).
+2. **Load it** (`cadagent.fea`): the real load cases (handling, stacking, mounting shock) with the printed material's
+   layer-direction strength; report the safety factor and deflection, and the overload animation.
+3. **Cool it** (`cadagent.cfd`): a conjugate-heat-transfer case of the enclosure in room air, from the same CAD.
+   Report the hottest part against its limit, the fan's operating point, the air entering the fan (recirculation),
+   and the wall temperatures against the plastic's heat-deflection temperature.
+4. **Optimise with evidence**: topology optimisation (`cadagent.topopt`) shows where material carries load; the
+   design change is made in the parametric CAD and re-checked by 1-3. Compare revisions side by side.
+5. **State the limits** in every result (each module writes them): steady RANS, no radiation, compact models,
+   linear elastic, isotropic. Simulation does not prove fit, strength or temperature; a test does.
+
+### Airflow and heat (`cadagent.cfd`)
+`ThermalCase(name, domain, cell_mm, ambient_c)` takes CAD (CadQuery shapes, trimesh meshes or STL), in mm:
+- `wall(name, shape, level)`: no-slip adiabatic obstacles (enclosure, boards);
+- `solid(name, shape, material, power_w, level)`: a conducting region, optionally a heat source (`SOLIDS` table);
+- `contact(a, b, thickness_mm, k)`: a thermal pad or paste as an interface resistance;
+- `fan(Fan(...))`: an actuator disc with a straight-line fan curve between the datasheet's free-air flow and zero-flow
+  pressure, so the operating point comes out of the simulation;
+- `porous_box(name, lo, hi, d, f, e1, e2, heat_w)`: a compact fin block (Darcy-Forchheimer, nearly closed across the
+  fins) that releases the heat into the air passing through it;
+- `refine(lo, hi, level)`.
+`write()` produces a complete OpenFOAM case (snappyHexMesh, splitMeshRegions, chtMultiRegionSimpleFoam, function
+objects); `run()` runs it natively or in Docker; `results()` returns temperatures, fan flow and pressure, the air
+temperature through each fan, residual and temperature histories, and the limits.
+
+### Heatsinks (`cadagent.heatsink`)
+`PlateFin(...)` is the analytic plate-fin model (developing laminar channel flow, fin efficiency, spreading resistance,
+entrance and exit losses; sources cited in the module): `resistance(q)`, `pressure_drop(q)`, `operating_point(hs,
+FanCurve)`, and `porous_coefficients()` for the CFD fin block. It runs in microseconds, so it is the tool for heatsink
+studies (fin pitch, thickness, height against a fan curve), with CFD to confirm the chosen design.
+
+### Topology optimisation (`cadagent.topopt`)
+`TopOpt(lo, hi, voxel_mm, E_mpa)` with `design()`, `keep(shape)`, `void(shape)`, `fix(lo, hi)`, `load(lo, hi, N)`,
+then `run(volfrac, filter_mm, overhang='+z', maxit)`: minimum compliance with SIMP, a density filter (minimum member
+about twice `filter_mm`) and Langelaar's overhang filter for support-free printing, solved with MMA. `render()`,
+`animate()` (density evolution) and `export_stl()` show the result. It is a design guide: turn it into ribs, pockets
+or vents in the CAD and check that with FEA.
+
+### Pictures and animations (`cadagent.simviz`)
+`CFDResult(case)` loads a finished case in mm and °C. `section()`, `flow()` (streamlines), `walls()` (wall temperature
+with the region past a limit in the critical colour, named in the legend), `animate_flow()` (dashes moving at the
+air's speed while the camera turns), `animate_sweep()` (a section sweeping through) and `convergence_chart()`. Colour
+follows the job: one-hue ramps for temperature (orange) and speed (blue), never a rainbow.
+
+### Real grams (`cadagent.slicer`, `cad-agent slice`)
+Slices each part's 3MF with Bambu Studio's command line (an external AGPL program, run as a subprocess). The system
+profiles are flattened through their `inherits` chain first (unflattened, the slicer reports 0 g). Configure under
+`cad.slicer`: `printer`, `process`, `filament` (`pla`, `petg` or a profile name), `overrides` (process settings) and
+`parts`. Writes `exports/slice-report.json`.
+
 ## Tests
 
 ```bash

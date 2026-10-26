@@ -9,7 +9,7 @@ description = "CAD design verification and review reports for 3D-printed parts"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
-dependencies = ["pyyaml"]
+dependencies = ["pyyaml", "numpy"]
 
 [project.optional-dependencies]
 cad = [

@@ -52,3 +52,8 @@ repeated instances and exploded scenes. Record export/source hashes and keep
 nominal envelopes visibly distinct from official supplier geometry. A successful
 CAD boolean, valid BREP and a watertight print mesh are separate checks: tangent
 boss/wall contacts can pass one and fail another; use positive overlap at joins.
+
+Release packagers should select the validated public manifest, not recursively
+include every file in hardware folders. KiCad creates ignored `.kicad_prl` UI
+state next to designs. Compare local and clean-checkout ZIP membership and hashes;
+a passing source manifest does not automatically constrain a separate glob.

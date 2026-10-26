@@ -227,28 +227,67 @@ def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
         _say("checks FAILED; the package was still written for review")
     return report_rc or package_rc
 
+def _mcmaster_choices(pns: List[str], choose: Optional[List[str]]) -> Dict[str, List[str]]:
+    """--choose values -> option texts per part number. 'PN:OPTION' is for that part; a bare 'OPTION' is allowed only
+    when one part number is given."""
+    from cadagent.mcmaster import PN_RE
+
+    per: Dict[str, List[str]] = {pn: [] for pn in pns}
+    for c in choose or []:
+        head, sep, rest = c.partition(":")
+        if sep and PN_RE.match(head.strip().upper()):
+            pn = head.strip().upper()
+            if pn not in per:
+                raise _Unusable(f"--choose {c!r}: {pn} is not one of the part numbers given")
+            per[pn].append(rest.strip())
+        elif len(pns) == 1:
+            per[pns[0]].append(c.strip())
+        else:
+            raise _Unusable(f"--choose {c!r}: with several part numbers, say which part it is for (PN:OPTION)")
+    return per
+
+
 def cmd_mcmaster(args: argparse.Namespace) -> int:
-    """Download each part's STEP and product data from McMaster-Carr (one page at a time), normalise its frame, and
-    optionally record it in a catalogue JSON. Needs no project."""
+    """Download each part's STEP and product data from McMaster-Carr (one product page at a time), normalise its
+    frame, and optionally record it in a catalogue JSON. Needs no project. The browser is started only when a part
+    actually needs its page (no STEP or page data here yet, or --force), so re-normalising works offline."""
+    import contextlib
+
     from cadagent import mcmaster as mc
 
-    pns = [p.strip().upper() for p in args.pns]
+    try:
+        pns = [mc.validate_pn(p) for p in args.pns]
+    except ValueError as exc:
+        raise _Unusable(str(exc))
     if args.key and len(pns) != 1:
         raise _Unusable("--key names one catalogue entry: give one part number with it")
+    if not args.kind and (args.catalog or args.density is not None):
+        raise _Unusable("--catalog and --density need --kind (the frame the part is normalised into)")
+    choices = _mcmaster_choices(pns, args.choose)
+    if args.delay < mc.MIN_DELAY_S:
+        _say(f"WARN --delay {args.delay:g} s is below the minimum; using {mc.MIN_DELAY_S:g} s between pages")
     out_root = Path(args.out)
     rc = 0
-    with mc.Session(delay_s=args.delay) as session:
+    with contextlib.ExitStack() as stack:
+        session = None
+
+        def browser():
+            nonlocal session
+            if session is None:
+                session = stack.enter_context(mc.Session(delay_s=args.delay))
+            return session
+
         for pn in pns:
             folder = out_root / pn
-            step = folder / f"{pn}.step"
+            step, page_file = folder / f"{pn}.step", folder / f"{pn}.page.json"
             try:
-                if step.exists() and not args.force:
-                    page = json.loads((folder / f"{pn}.page.json").read_text()) if (folder / f"{pn}.page.json").exists() else session.read(pn)
-                    _say(f"{pn}: STEP already here ({step}); --force downloads it again")
+                if step.exists() and page_file.exists() and not args.force:
+                    _say(f"{pn}: already here ({step}); --force downloads it again")
                 else:
-                    session.fetch(pn, folder, choose=args.choose)
-                    page = json.loads((folder / f"{pn}.page.json").read_text())
-                    _say(f"{pn}: {page.get('description')} | {page.get('price_text')} -> {step}")
+                    browser().fetch(pn, folder, choose=choices[pn] or None)
+                    _say(f"{pn}: downloaded -> {step}")
+                page = json.loads(page_file.read_text())
+                _say(f"{pn}: {page.get('description')} | {page.get('price_text')}")
                 if args.kind:
                     material = mc.material_of(page.get("specs", {}).get("raw", {}))
                     norm, info = mc.normalise(step, args.kind, density=args.density, material=material)
@@ -259,9 +298,10 @@ def cmd_mcmaster(args: argparse.Namespace) -> int:
                         cat = Path(args.catalog)
                         n, cwd = norm.resolve(), Path.cwd().resolve()
                         cad = str(n.relative_to(cwd)) if n.is_relative_to(cwd) else str(n)
-                        entry = mc.catalog_entry(page, info, cad=cad)
-                        mc.update_catalog(cat, args.key or pn, entry)
+                        mc.update_catalog(cat, args.key or pn, mc.catalog_entry(page, info, cad=cad))
                         _say(f"{pn}: catalogue {cat} [{args.key or pn}]")
+            except MissingDependency:
+                raise                                       # no Playwright or no Chrome: nothing else will work
             except Exception as exc:  # one bad part should not stop the others
                 _err(f"mcmaster {pn}: {exc}")
                 rc = 1
@@ -349,12 +389,15 @@ def build_parser() -> argparse.ArgumentParser:
                       help="Normalise into the frame for this kind of part (cadagent.mcmaster.FRAMES)")
     mc_p.add_argument("--out", default="references/vendor/mcmaster", help="Folder; each part goes in OUT/<PN>/ "
                                                                           "(keep it out of git except SOURCE.txt)")
-    mc_p.add_argument("--catalog", help="Catalogue JSON to record the part in ({source, items: {key: entry}})")
+    mc_p.add_argument("--catalog", help="Catalogue JSON to record the part in: {source, items: {key: entry}}, or a list "
+                                             "of items with ids (needs --kind)")
     mc_p.add_argument("--key", help="Catalogue key for the part (default: the part number)")
     mc_p.add_argument("--density", type=float, help="g/cm3 for the mass estimate (default: from the Material row)")
-    mc_p.add_argument("--delay", type=float, default=3.0, help="Seconds between product pages (default 3)")
-    mc_p.add_argument("--choose", nargs="+", metavar="OPTION", help="Option texts to click before the CAD download "
-                                                                    "(a part with variants, e.g. \"Right Hand\")")
+    mc_p.add_argument("--delay", type=float, default=3.0, help="Seconds between product pages (default 3, minimum 2)")
+    mc_p.add_argument("--choose", action="append", metavar="[PN:]OPTION",
+                      help="Option text to click on the product page before the CAD download (a part with variants), "
+                           "one per flag, e.g. --choose 59935K53:\"Right Hand\"; the PN: prefix may be left out when "
+                           "one part number is given")
     mc_p.add_argument("--force", action="store_true", help="Download again even when the STEP is already here")
     return parser
 

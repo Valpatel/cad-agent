@@ -15,9 +15,10 @@ it must stay that way.
 
 ## Rules
 
-- **Download like an engineer, not a crawler.** One part at a time, a pause between pages (default 3 s), only the
-  pages for the parts you are choosing. No bulk downloads, no scraping of category pages, no parallel sessions.
-  Download a part again only when you need to (`--force`).
+- **Download like an engineer, not a crawler.** One part at a time, a pause between pages (default 3 s; the tool
+  never goes below 2 s), only the product pages of the parts you are choosing. The tool accepts only McMaster part
+  numbers (`PN_RE`, e.g. 91290A242), never a category, search or other URL. No bulk downloads, no parallel sessions.
+  A part already downloaded is reused offline (no browser); download it again only when you need to (`--force`).
 - **Keep the files local.** McMaster-Carr CAD is for design use; do not redistribute it. Gitignore the vendor folder
   and track only `SOURCE.txt`:
 
@@ -47,20 +48,31 @@ it must stay that way.
        cad-agent mcmaster 91290A242 --kind screw --out references/vendor/mcmaster \
            --catalog catalog/hardware.json --key screw_m5x20
 
-   This writes `OUT/<PN>/<PN>.step` (as downloaded), `<PN>.page.json` (title, price, pack quantity, every spec row,
-   option choices), `<PN>.norm.step`, `<PN>.norm.json` (axis found, bbox, volume, mass) and `SOURCE.txt`. Kinds and
-   their frames (`cadagent.mcmaster.FRAMES`) all put the axis on +Z:
-   - `bearing`, `washer`, `nut`, `insert`, `standoff`, `spacer`, `pin`, `grommet`, `rod`: centred on the axis, bottom
-     face at z = 0, part on +z.
-   - `screw`, `shoulder_screw`: the underside of the head at z = 0, head on +z, shank towards -z.
-   - `rod_end`: the ball centre at the origin, ball bore along +Y, threaded shank along -Z.
+   This writes `OUT/<PN>/<PN>.step` (the download, kept only if it is a STEP file), `<PN>.page.json` (title, price,
+   pack quantity, every spec row, option choices), `<PN>.norm.step`, `<PN>.norm.json` (axis found, how it was
+   seated, bbox, volume, mass) and an entry in `SOURCE.txt`. Kinds and their frames (`cadagent.mcmaster.FRAMES`)
+   all put the axis on +Z, through the origin (the cylinders' axis line, not the centre of mass); which end goes
+   down is decided from the part's shape, not from how the vendor modelled it:
+   - `bearing`, `washer`, `nut`, `insert`, `standoff`, `spacer`, `pin`, `grommet`, `rod`: the larger end (flange,
+     collar, head) at z = 0 and the part on +z; when both ends are the same size, the heavier end down
+     (`info["end_down"]` says which rule decided).
+   - `screw`: head on +z, shank towards -z. z = 0 is the underside of the head for socket, button, pan, hex and
+     flanged heads, and the top face for a countersunk (flat) head (`info["head"]`). A part with no head wider than
+     its shank (set screw, stud) is refused: use `pin` or `rod`.
+   - `shoulder_screw`: the underside of the head at z = 0, head on +z, shoulder and thread towards -z.
+   - `rod_end`: the ball centre at the origin, ball bore along +Y, threaded shank along -Z (without a modelled ball,
+     the middle of the bore).
 
-   A part with variants (a rod end's thread direction, a choice of finish) offers its CAD only after the choice:
-   pass the option text with `--choose "Right Hand"` (`Session.fetch(..., choose=[...])`); the page data records
-   what was offered and what was chosen.
+   A part with variants (a rod end's thread direction, a choice of finish) offers its CAD only after the choice.
+   Give the option text after the part numbers, one `--choose` per option, prefixed with the part it is for:
 
-   Playwright: `pip install playwright` into the environment that runs it. With Google Chrome installed nothing else
-   is needed.
+       cad-agent mcmaster 59935K53 91290A242 --choose "59935K53:Right Hand" --out references/vendor/mcmaster
+
+   (the `PN:` prefix may be left out when there is one part number). In Python: `Session.fetch(pn, out,
+   choose=["Right Hand"])`. The page data records what was offered and what was chosen.
+
+   Playwright: `pip install playwright` into the environment that runs it, plus Google Chrome (then nothing else is
+   needed; without Chrome the command stops with an install hint).
 3. **Record the catalogue entry.** `catalog_entry()` / `--catalog` gives: `mcmaster` (PN), `description`, `url`,
    `price_usd`, `pack_qty`, `dims_mm`, `material`, `mass_g` with `mass_basis` (McMaster's listed weight when the
    page gives one, otherwise CAD volume x density, which it says), `cad` (the normalised STEP path), `frame`, and
@@ -76,6 +88,8 @@ it must stay that way.
 ## Python
 
 ```python
+import json
+
 from cadagent import mcmaster as mc
 
 with mc.Session(delay_s=3) as s:                    # one browser, one page at a time

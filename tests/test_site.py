@@ -128,3 +128,27 @@ def test_site_serves_the_kit_and_links_the_model(tmp_path):
     finally:
         server.shutdown()
         server.server_close()
+
+
+def test_pcb_evidence_staleness_is_visible(tmp_path):
+    import json
+    from cadagent.pcb import evidence_bundle
+    (tmp_path/'board.kicad_pcb').write_text('board')
+    (tmp_path/'erc.json').write_text('{"sheets":[{"violations":[]}]}')
+    (tmp_path/'drc.json').write_text('{"violations":[],"unconnected_items":[],"schematic_parity":[]}')
+    bundle=evidence_bundle(tmp_path,{'erc':'erc.json','drc':'drc.json'},['board.kicad_pcb'],[{'pass':False}])
+    (tmp_path/'evidence.json').write_text(json.dumps(bundle))
+    (tmp_path/'designs.json').write_text(json.dumps({'designs':[{'name':'PCB','pcb_evidence':'evidence.json'}]}))
+    site.build_site(tmp_path,{'designs':'designs.json'},'PCB')
+    assert 'Checks pass' in (tmp_path/'site/index.html').read_text()
+    (tmp_path/'board.kicad_pcb').write_text('changed')
+    site.build_site(tmp_path,{'designs':'designs.json'},'PCB')
+    page=(tmp_path/'site/index.html').read_text()
+    assert 'Stale or failing checks' in page and 'not released' in page
+    assert 'liveReload' in page
+
+
+def test_watcher_includes_kicad_sources(tmp_path):
+    source=tmp_path/'a.kicad_pcb';source.write_text('source')
+    watcher=site._Watcher(tmp_path,{})
+    assert watcher.stamp() == source.stat().st_mtime

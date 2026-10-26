@@ -53,6 +53,8 @@ cad-agent check --project path/to/cad-project
 
 The project contract, the `cad-agent.yaml` format and every command are in [`docs/toolkit.md`](docs/toolkit.md).
 
+**PCB and enclosure workbenches:** [PCB workflow](docs/pcb.md) covers embedded schematics, copper layers, assembly views and housing renders in the status page; native KiCad ERC/DRC/parity evidence; source freshness; and JLC BOM/CPL checks. Use `cad-agent pcb-check` to bind reports to source files. Qualification gates stay separate from CAD checks.
+
 **Stiffness and strength studies** (`pip install -e ".[cad,fea]"`): `cadagent.fea.Study` meshes a STEP or CadQuery
 part with gmsh, solves linear elasticity with quadratic tetrahedra in scikit-fem, and reports deflection, stiffness
 (linear or torsional), the design von Mises stress and a safety factor against a material table that includes

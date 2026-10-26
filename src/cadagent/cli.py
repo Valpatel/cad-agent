@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from cadagent._deps import MissingDependency
 from cadagent.project import CadConfigError, CadProject, Step, load_project
 
-SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "webkit", "all")
+SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "webkit", "pcb-check", "all")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -214,6 +214,19 @@ def cmd_webkit(project: CadProject, args: argparse.Namespace) -> int:
     _say(f"webkit: copied to {dest}")
     return 0
 
+def cmd_pcb_check(project: CadProject, args: argparse.Namespace) -> int:
+    from cadagent.pcb import evidence_bundle
+    config_path = project.root / args.manifest
+    manifest = json.loads(config_path.read_text())
+    bundle = evidence_bundle(project.root, manifest.get("reports", {}),
+                             manifest.get("sources", []), manifest.get("release_gates", []))
+    destination = project.root / args.output
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(bundle, indent=2) + "\n")
+    _say(f"PCB checks: {'pass' if bundle['pass'] else 'FAIL'}; production: {'qualified' if bundle['production_ready'] else 'not released'}")
+    return 0 if bundle['pass'] else 1
+
+
 def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
     args.from_step = None
     args.only = None
@@ -238,6 +251,7 @@ HANDLERS = {
     "view": cmd_view,
     "webkit": cmd_webkit,
     "all": cmd_all,
+    "pcb-check": cmd_pcb_check,
 }
 
 def dispatch(args: argparse.Namespace) -> int:
@@ -294,6 +308,9 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("view", parents=[common], help="Export every part in assembly position for the 3D viewer")
     webkit_p = sub.add_parser("webkit", parents=[common], help="Copy the web kit (3D stage, viewer, HUD) into the project")
     webkit_p.add_argument("dest", nargs="?", default="web/kit", help="Destination folder (default: web/kit)")
+    pcb_p = sub.add_parser("pcb-check", parents=[common], help="Bind KiCad ERC/DRC evidence to current PCB sources")
+    pcb_p.add_argument("manifest", help="JSON with reports, sources and release_gates (paths relative to project root)")
+    pcb_p.add_argument("--output", default="exports/pcb-evidence.json")
     sub.add_parser("all", parents=[common], help="build, export-3mf, check + report, package")
     return parser
 

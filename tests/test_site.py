@@ -90,3 +90,41 @@ def test_serve_redirects_root_to_the_site(tmp_path):
     finally:
         server.shutdown()
         server.server_close()
+
+
+def test_view_export_writes_meshes_and_manifest(tmp_path):
+    cq = pytest.importorskip("cadquery")
+    from cadagent.project import from_dict
+    from cadagent.view import export_view
+    (tmp_path / "exports").mkdir()
+    for name, at in (("lid", (0, 0, 20)), ("base", (0, 0, 0))):
+        cq.exporters.export(cq.Workplane().box(40, 30, 10).translate(at), str(tmp_path / "exports" / f"{name}.step"))
+    (tmp_path / "exports" / "geometry-checks.json").write_text(json.dumps({"base": {}, "lid": {}, "ghost": {}}))
+    project = from_dict(tmp_path, {"name": "box", "view": {"hidden": ["lid"], "colors": {"base": "#123456"}}})
+    r = export_view(project)
+    m = json.loads((tmp_path / "exports" / "view" / "view.json").read_text())
+    assert r["parts"] == 2 and m["skipped"] == ["ghost"]
+    by = {p["name"]: p for p in m["parts"]}
+    assert by["base"]["color"] == "#123456" and by["lid"]["visible"] is False
+    assert by["lid"]["bounds_mm"][2] == pytest.approx(15, abs=0.01)
+    assert (tmp_path / "exports" / "view" / "lid.stl").stat().st_size > 84
+
+
+def test_site_serves_the_kit_and_links_the_model(tmp_path):
+    import threading, urllib.request
+    root = _project(tmp_path)
+    (root / "exports" / "view").mkdir()
+    (root / "exports" / "view" / "view.json").write_text('{"parts": []}')
+    server, url = site.serve_site(root, CFG, "x", "127.0.0.1", 0)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        with urllib.request.urlopen(url) as r:
+            assert b"_cadagent/kit/viewer.html" in r.read()
+        kit = url.replace("/site/", site.KIT_URL)
+        with urllib.request.urlopen(kit + "viewer.html") as r:
+            assert b"createViewer" in r.read()
+        with urllib.request.urlopen(kit + "vendor/three/addons/loaders/STLLoader.js") as r:
+            assert b"STLLoader" in r.read()
+    finally:
+        server.shutdown()
+        server.server_close()

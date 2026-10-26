@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3D Model Viewer</title>
+<link rel="stylesheet" href="hud.css">
+<script type="importmap">{"imports": {"three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/addons/"}}</script>
+</head>
+<body>
+<div id="app"></div>
+<div id="hud">
+  <header id="topbar"><span class="glyph"></span><h1 id="title">Model</h1><span class="hud-tag">3D view</span><span class="spacer"></span>
+    <a class="hud-tag" id="back" href="../../site/">Project site</a></header>
+  <main id="stage-overlay"><div class="hud-hint">DRAG · ORBIT // SCROLL · ZOOM // RIGHT-DRAG · PAN</div></main>
+  <aside id="panel"></aside>
+</div>
+<script type="module">
+  import { createViewer } from './viewer.js';
+  const q = new URLSearchParams(location.search);
+  const manifestUrl = q.get('manifest') ?? '../../exports/view/view.json';
+  createViewer({ app: document.getElementById('app'), panel: document.getElementById('panel'),
+                 title: document.getElementById('title'), manifestUrl })
+    .then((v) => {
+      // Scriptable for screenshots and docs: ?explode=0..1 &section=0..1 &view=iso|front|side|top &panel=0
+      if (q.has('explode')) v.setExplode(+q.get('explode'));
+      if (q.has('section')) v.setSection(+q.get('section'));
+      if (q.has('view')) [...document.querySelectorAll('.hud-btn')].find((b) => b.textContent === q.get('view').toUpperCase())?.click();
+      if (q.get('panel') === '0') document.getElementById('panel').style.display = 'none';
+      window.__viewer = v; document.body.dataset.ready = '1';
+    })
+    .catch((e) => { document.getElementById('panel').innerHTML = `<p class="hud-note">Could not load ${manifestUrl}: ${e.message}. Run <code>cad-agent view</code> first.</p>`; });
+</script>
+</body>
+</html>

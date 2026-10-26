@@ -37,6 +37,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from cadagent._deps import require
 
 SITE_DIR = "site"
+KIT_URL = "/_cadagent/kit/"
+KIT_DIR = Path(__file__).resolve().parent / "webkit"
 STATUS_ORDER = {"done": 0, "active": 1, "next": 2, "blocked": 3}
 
 
@@ -86,7 +88,7 @@ def page_files(root: Path, patterns: List[str]) -> List[Path]:
 def sources(root: Path, cfg: SiteConfig) -> List[Path]:
     """Every file the site is built from (for staleness checks)."""
     files = page_files(root, cfg.pages)
-    for rel in (cfg.milestones, cfg.decisions, cfg.designs):
+    for rel in (cfg.milestones, cfg.decisions, cfg.designs, "exports/view/view.json"):
         if rel and (root / rel).is_file():
             files.append(root / rel)
     head = root / ".git" / "HEAD"
@@ -268,8 +270,11 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
     def href(h: str) -> str:
         return h if re.match(r"^[a-z][a-z0-9+.-]*:", h) else f"../{h}"
 
+    all_links = list(cfg.links)
+    if (root / "exports" / "view" / "view.json").is_file():   # written by `cad-agent view`
+        all_links.append({"title": "3D model", "href": KIT_URL.strip("/") + "/viewer.html"})
     links = "".join(f'<a href="{_e(href(l["href"]))}" class="{"primary" if i == 0 else ""}">{_e(l["title"])}</a>'
-                    for i, l in enumerate(cfg.links))
+                    for i, l in enumerate(all_links))
     head = (f'<header class="top"><div class="wrap"><h1>{_e(cfg.title)}</h1><p class="tag">{_e(cfg.tagline)}</p>'
             + (f'<span class="notice">{_e(cfg.notice)}</span>' if cfg.notice else "")
             + (f'<nav class="links">{links}</nav>' if links else "") + "</div></header>")
@@ -358,6 +363,13 @@ def serve_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
             if self.path.startswith(f"/{SITE_DIR}/") and _stale(root, cfg):
                 build_site(root, raw_site, default_title)
             super().do_GET()
+
+        def translate_path(self, path):
+            if path.startswith(KIT_URL):   # the web kit ships inside cad-agent
+                rel = path[len(KIT_URL):].split("?")[0].split("#")[0]
+                target = (KIT_DIR / rel).resolve()
+                return str(target) if KIT_DIR in target.parents or target == KIT_DIR else str(KIT_DIR / "missing")
+            return super().translate_path(path)
 
         def end_headers(self):
             self.send_header("Cache-Control", "no-store")

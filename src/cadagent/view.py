@@ -1,0 +1,61 @@
+"""3D view export: every part in assembly position, for the browser viewer (webkit/viewer.html).
+
+Works for any CAD project: a housing, a bracket set, a mechanism or a robot. ``cad-agent view`` reads each part's STEP
+(assembly coordinates, as cad-agent projects export them) and writes ``exports/view/<part>.stl`` (binary, mm) plus
+``exports/view/view.json``. Optional config under ``cad: view:``::
+
+    view:
+      colors: {base: "#2f343c", cover: "#e8892b"}     # per part; others get a palette colour
+      hidden: [base_mount, front_gmsl]                 # alternative variants, off until ticked
+      explode: {cover: [0, 0, 1]}                      # explode direction per part (default: away from the centre)
+      extra: [{name: carrier, file: references/pcb-outline.step, color: "#2f8f4e"}]   # non-printed parts to show
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+from cadagent._deps import require
+
+PALETTE = ["#e8892b", "#5aa9e6", "#5cc8a8", "#c792ea", "#f2c14e", "#8a9099", "#ef6f6c", "#7bd389", "#6f8ab7", "#d4a373"]
+
+
+def _parts_from(project) -> List[str]:
+    path = Path(project.parts_file)
+    if not path.is_file():
+        raise FileNotFoundError(f"{path} not found: build the project first")
+    return list(json.loads(path.read_text()))
+
+
+def export_view(project, tolerance: float = 0.1, angular: float = 0.2) -> Dict[str, Any]:
+    """Write the meshes and the manifest. Parts without a STEP are listed as skipped, not errors."""
+    cq = require("cadquery", "the 3D view export")
+    cfg = dict(project.view or {})
+    colors: Dict[str, str] = cfg.get("colors", {})
+    hidden = set(cfg.get("hidden", []))
+    explode: Dict[str, List[float]] = cfg.get("explode", {})
+    out = project.exports_dir / "view"
+    out.mkdir(parents=True, exist_ok=True)
+
+    sources = [(name, project.exports_dir / f"{name}.step", None) for name in _parts_from(project)]
+    sources += [(e["name"], project.root / e["file"], e.get("color")) for e in cfg.get("extra", [])]
+    parts, skipped = [], []
+    for i, (name, step, color) in enumerate(sources):
+        if not step.is_file():
+            skipped.append(name)
+            continue
+        shape = cq.importers.importStep(str(step))
+        stl = out / f"{name}.stl"
+        cq.exporters.export(shape, str(stl), tolerance=tolerance, angularTolerance=angular, opt={"ascii": False})
+        bb = shape.val().BoundingBox() if hasattr(shape, "val") else shape.BoundingBox()
+        parts.append({
+            "name": name, "id": project.part_ids.get(name, ""), "file": stl.name,
+            "color": color or colors.get(name) or PALETTE[i % len(PALETTE)],
+            "visible": name not in hidden, "explode": explode.get(name),
+            "bounds_mm": [round(v, 2) for v in (bb.xmin, bb.ymin, bb.zmin, bb.xmax, bb.ymax, bb.zmax)],
+        })
+    manifest = {"title": project.title, "units": "mm", "up": "z", "parts": parts, "skipped": skipped}
+    (out / "view.json").write_text(json.dumps(manifest, indent=1) + "\n")
+    return {"manifest": str(out / "view.json"), "parts": len(parts), "skipped": skipped}

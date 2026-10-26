@@ -29,6 +29,9 @@ cad-agent = "cadagent.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+cadagent = ["webkit/*", "webkit/vendor/**/*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]

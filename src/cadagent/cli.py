@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from cadagent._deps import MissingDependency
 from cadagent.project import CadConfigError, CadProject, Step, load_project
 
-SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "all")
+SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "webkit", "all")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -197,6 +197,23 @@ def cmd_site(project: CadProject, args: argparse.Namespace) -> int:
         server.server_close()
     return 0
 
+def cmd_view(project: CadProject, args: argparse.Namespace) -> int:
+    from cadagent.view import export_view
+
+    r = export_view(project)
+    _say(f"view: {r['manifest']} ({r['parts']} parts" + (f"; no STEP for {', '.join(r['skipped'])}" if r["skipped"] else "") + ")")
+    _say("open it with `cad-agent site --serve` (3D model link) or webkit/viewer.html")
+    return 0
+
+def cmd_webkit(project: CadProject, args: argparse.Namespace) -> int:
+    import shutil
+    from cadagent.site import KIT_DIR
+
+    dest = (project.root / args.dest).resolve()
+    shutil.copytree(KIT_DIR, dest, dirs_exist_ok=True, ignore=shutil.ignore_patterns("__pycache__"))
+    _say(f"webkit: copied to {dest}")
+    return 0
+
 def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
     args.from_step = None
     args.only = None
@@ -218,6 +235,8 @@ HANDLERS = {
     "package": cmd_package,
     "serve": cmd_serve,
     "site": cmd_site,
+    "view": cmd_view,
+    "webkit": cmd_webkit,
     "all": cmd_all,
 }
 
@@ -272,6 +291,9 @@ def build_parser() -> argparse.ArgumentParser:
     site_p.add_argument("--serve", action="store_true", help="Serve it, rebuilding when a source file changes")
     site_p.add_argument("--port", type=int, default=None, help="Port (default: cad.serve.port, 0 = any free port)")
     site_p.add_argument("--host", default=None, help="Bind address (default: cad.serve.host, 127.0.0.1)")
+    sub.add_parser("view", parents=[common], help="Export every part in assembly position for the 3D viewer")
+    webkit_p = sub.add_parser("webkit", parents=[common], help="Copy the web kit (3D stage, viewer, HUD) into the project")
+    webkit_p.add_argument("dest", nargs="?", default="web/kit", help="Destination folder (default: web/kit)")
     sub.add_parser("all", parents=[common], help="build, export-3mf, check + report, package")
     return parser
 

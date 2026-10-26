@@ -176,6 +176,9 @@ Unquoted, the title is cut at the comma and the rest becomes a stray key.
 | `cad-agent report [--open]` | writes `exports/cad-agent-results.json` (schema 1.0, the vptest web shape, so `vptest web validate` and its renderer still accept it) and a standalone `docs/cad-agent-report.html` with inline styles (light and dark) that opens from `file://` | 1 if any row fails |
 | `cad-agent package` | zip + sha256 manifest from `package.include` | |
 | `cad-agent serve [--port N] [--host H]` | serves the project root; writes the URL to `preview/server-url.txt` | |
+| `cad-agent site [--serve]` | builds `site/` from milestones, decisions, a designs summary, Markdown pages and git history (config `cad: site:`); `--serve` rebuilds on change and serves the web kit at `/_cadagent/kit/` | |
+| `cad-agent view` | writes every part in assembly position to `exports/view/` (STL + `view.json`) for the 3D viewer (config `cad: view:` for colours, hidden variants, explode directions, extra parts) | |
+| `cad-agent webkit [DEST]` | copies the web kit (3D stage, model viewer, HUD panels, three.js, fonts) into the project, default `web/kit` | |
 | `cad-agent all` | build, export-3mf, check + report, package | 1 if anything failed |
 
 `--project PATH` (default: cwd), before or after the subcommand, selects the
@@ -201,7 +204,14 @@ from cadagent.robot import (Body, combine, box_body, cylinder_body, solid_mass_p
                             Link, Joint, Visual, Collision, Motor, write_urdf, write_mjcf, check_urdf)
 ```
 
-### Robot export (`cadagent.robot`)
+### 3D viewer (`cad-agent view` + the web kit)
+
+Works for any model: a housing, a bracket set, a mechanism or a robot. `cad-agent view` reads each part's STEP (assembly
+coordinates) and writes a binary STL per part plus `exports/view/view.json`. `viewer.html` in the web kit shows the
+assembly with a parts list (show/hide, colour), exploded view, section cut and standard views; the site links it when
+the manifest exists. The viewer is scriptable for screenshots: `viewer.html?explode=0.5&view=iso&panel=0`.
+
+### Robot export (`cadagent.robot`, optional)
 
 Turns CAD parts into a simulator model with real mass properties:
 

@@ -399,6 +399,25 @@ class Study:
         x[I] = sol
         return x
 
+    # --- failure bookkeeping shared by animate() and export_viewer()
+    def _element_volumes(self) -> np.ndarray:
+        P, T = self._m.p.T, self._m.t.T
+        a, b, c, d = (P[T[:, i]] for i in range(4))
+        return np.abs(np.einsum('ij,ij->i', np.cross(b - a, c - a), d - a)) / 6.0
+
+    def _design_stress(self) -> float:
+        """The peak element stress away from the clamp and load patches (unrounded): what the safety factor uses."""
+        free = ~self._touches_bc
+        return float(self.vm_elem[free].max()) if free.any() else float(self.vm_elem.max())
+
+    def overstressed_share(self, load_factor: float) -> float:
+        """Share of the part's volume in elements whose peak stress is past the strength at `load_factor` times the
+        design load. An upper bound on the overstressed volume (a whole element counts once its peak corner passes),
+        and, like the safety factor, it leaves out the elements touching a clamp or load patch."""
+        vol = self._element_volumes()
+        hit = (~self._touches_bc) & (self.vm_elem * load_factor > self.material.strength_mpa)
+        return float(vol[hit].sum() / vol.sum())
+
     # --- picture
     def render(self, path, scale: Optional[float] = None, view=(25, -60), title: Optional[str] = None):
         """Boundary of the deformed mesh coloured by von Mises stress; the deformation is exaggerated (scale)."""
@@ -478,9 +497,13 @@ class Study:
         if scale is None:                               # at the last frame the deformation shows as ~8 % of the part
             scale = 0.08 * size / (dmax * lam_end) if dmax > 0 else 1.0
         # stress over strength at the design load, per boundary face; elements touching a clamp or a load patch carry
-        # artificial spikes (the safety factor ignores them too), so they are capped just under the strength
-        vm = np.where(self._touches_bc, np.minimum(self.vm_elem, 0.99 * strength / lam_end), self.vm_elem)
+        # artificial spikes that the safety factor leaves out: capped at the design stress (never hotter than the
+        # reported peak) and kept out of the black "past the strength" test
+        vm = np.where(self._touches_bc, np.minimum(self.vm_elem, self._design_stress()), self.vm_elem)
         ratio = vm[elem] / strength
+        support_tri = self._touches_bc[elem]
+        vol = self._element_volumes()
+        free = ~self._touches_bc
         bc_nodes = set(np.unique(np.concatenate([self.face_tris[t].ravel() for t in self.fixed])).tolist()) if self.fixed else set()
         fixed_tri = np.array([all(int(n) in bc_nodes for n in t) for t in tris])
 
@@ -517,15 +540,16 @@ class Study:
             pc.set_verts((self.points + scale * lam * self.disp.T)[tris])
             q = ratio * lam
             col = cmap(np.clip(q, 0, 1))
-            col[q > 1.0] = (0.05, 0.05, 0.05, 1.0)
+            col[(q > 1.0) & ~support_tri] = (0.05, 0.05, 0.05, 1.0)
             col[fixed_tri] = (0.62, 0.64, 0.68, 1.0)
             pc.set_facecolor(col)
             state = ('design load' if abs(lam - 1) < 1e-9 else 'first failure' if abs(lam - sf) < 1e-9
                      else 'overload, past failure' if lam > sf else 'loading')
-            over = float((vm * lam > strength).mean()) * 100
+            over = float(vol[free & (self.vm_elem * lam > strength)].sum() / vol.sum()) * 100   # = overstressed_share
             line.set_text(f'load x{lam:.2f} of the design load: {state}')
             line2.set_text(f'max displacement {dmax * lam:.2f} mm,  peak stress {res.get("von_mises_design_mpa", 0) * lam:.0f} of '
-                           f'{strength:.0f} MPa,  past the strength: {over:.1f} % of the part')
+                           f'{strength:.0f} MPa,  past the strength: {"<0.1" if 0 < over < 0.1 else f"{over:.1f}"} % of the volume '
+                           '(elements whose peak passes it)')
             for t in (line, line2):
                 t.set_color('#b00020' if lam > sf + 1e-9 else '#222')
             return pc, line, line2
@@ -546,13 +570,19 @@ class Study:
         """Write the solved study for the web kit's FEA viewer (webkit/fea-viewer.js, fea.html?case=<this file>).
 
         Compact JSON: the boundary surface only (vertices in mm, outward-wound triangles), with base64 float32/uint32
-        arrays for the per-vertex displacement (mm, at the design load), the per-vertex von Mises stress (MPa: the
-        corner stresses of the adjacent elements, volume-weighted) and each triangle's element stress (its element's
-        peak, the value the safety factor uses), plus per-vertex flags (1 held, 2 loaded, 4 next to a clamp or load
-        patch whose artificial spike is capped, as in animate()). Also the material, the result, the loads (arrows
-        for forces, an axis for torques), the share of the volume past the strength as the load grows, and the hot
-        spots: the highest stresses away from the clamp and load patches, at least 4 mesh sizes apart, each with the
-        load factor at which it reaches the strength and a plain geometric hint read off the CAD faces.
+        arrays for the per-vertex displacement (mm, at the design load); the per-vertex von Mises stress (MPa), which
+        is the highest corner stress of the elements meeting at the vertex, the same no-averaging convention as the
+        safety factor; the volume-weighted average of those corners as `von_mises_smoothed` (shown as "smoothed": far
+        below the peak means the mesh is coarse for that gradient); each triangle's element peak stress; per-vertex
+        flags (1 held, 2 loaded, 4 only support elements meet here) and per-triangle flags (1 its element touches a
+        clamp or load patch). Support elements carry artificial spikes that the safety factor leaves out: they are
+        capped at the design stress and left out of the failure test, and their share is reported.
+
+        Also the material, the result, the loads (arrows for forces, an axis for torques), the overstressed volume as
+        an exact step curve over the load factor (the volume of the elements whose peak is past the strength: an
+        upper bound, as in overstressed_share()), and the hot spots: the highest stresses away from the supports, at
+        least 4 mesh sizes apart, each with the load factor at which it reaches the strength and a plain geometric
+        hint read off the CAD faces.
 
         Linear: every field scales with the load factor, so the viewer scales them live. Returns the path."""
         import base64
@@ -565,21 +595,30 @@ class Study:
         T = m.t.T                                      # (n elements, 4)
         S = float(self.material.strength_mpa)
         touches = self._touches_bc
-        vm_design = float(self.vm_elem[~touches].max()) if (~touches).any() else float(self.vm_elem.max())
+        free = ~touches
+        vm_design = self._design_stress()
         lam_fail = S / vm_design if vm_design > 0 else float('inf')
         lam_max = max(1.2, overload * lam_fail) if np.isfinite(lam_fail) else 1.2
-        # the clamp and load patches carry artificial spikes: capped just under the strength at the largest load shown,
-        # so they never read as a failure (the safety factor ignores them too)
-        cap = 0.99 * S / lam_max
+        # support elements (touching a clamp or load patch) carry artificial spikes that the safety factor leaves out:
+        # capped at the design stress, so they never read hotter than the reported peak, and kept out of the failure test
         corner = self.vm_corner.copy()
-        corner[touches] = np.minimum(corner[touches], cap)
+        corner[touches] = np.minimum(corner[touches], vm_design)
         elem = corner.max(axis=1)
-        a, b, c, d = (P[T[:, i]] for i in range(4))
-        vol = np.abs(np.einsum('ij,ij->i', np.cross(b - a, c - a), d - a)) / 6.0
-        num, den = np.zeros(len(P)), np.zeros(len(P))
-        np.add.at(num, T.ravel(), (corner * vol[:, None]).ravel())
-        np.add.at(den, T.ravel(), np.repeat(vol, 4))
-        node_vm = num / np.maximum(den, 1e-30)
+        vol = self._element_volumes()
+        n = len(P)
+        # per node: the highest corner stress of the elements meeting there (no averaging, like the safety factor);
+        # support elements count only where no other element meets
+        peak_free, peak_sup, has_free = np.zeros(n), np.zeros(n), np.zeros(n, dtype=bool)
+        np.maximum.at(peak_free, T[free].ravel(), corner[free].ravel())
+        np.maximum.at(peak_sup, T[touches].ravel(), corner[touches].ravel())
+        has_free[T[free].ravel()] = True
+        node_vm = np.where(has_free, peak_free, peak_sup)
+        def averaged(sel):                             # volume-weighted average of the corners, over the same elements
+            num, den = np.zeros(n), np.zeros(n)
+            np.add.at(num, T[sel].ravel(), (corner[sel] * vol[sel, None]).ravel())
+            np.add.at(den, T[sel].ravel(), np.repeat(vol[sel], 4))
+            return num / np.maximum(den, 1e-30)
+        node_smooth = np.where(has_free, averaged(free), averaged(touches))   # shown as "smoothed"
 
         # the boundary surface, wound so the normals point out of the material
         bf = m.boundary_facets()
@@ -601,11 +640,12 @@ class Study:
         nodes_of = lambda tags: np.unique(np.concatenate([self.face_tris[t].ravel() for t in tags])) if tags else np.zeros(0, int)
         held = nodes_of(self.fixed)
         loaded = nodes_of([x for ld in self.loads for x in ld.faces])
-        capped = np.unique(T[touches & (self.vm_corner.max(axis=1) > cap)].ravel())
         flags = np.zeros(len(P), dtype=np.uint8)
         flags[held] |= 1
         flags[loaded] |= 2
-        flags[capped] |= 4
+        flags[~has_free] |= 4
+        tri_flags = touches[own].astype(np.uint8)       # 1: the triangle's element is a support element (excluded)
+        tri_area = 0.5 * np.linalg.norm(nrm, axis=1)
 
         def arr(x, dtype):
             x = np.ascontiguousarray(x, dtype=dtype)
@@ -659,15 +699,26 @@ class Study:
                 dd = np.linalg.norm(surf_pts - x, axis=1)
                 iv = int(np.argmin(dd)); dist = float(dd[iv])
             sv = int(verts[iv])
+            smooth = float(node_smooth[node])
             spot_list.append({'rank': len(spot_list) + 1, 'position': x.tolist(), 'vertex': int(iv), 'normal': vnorm[sv].tolist(),
                               'stress_mpa': round(s, 2), 'of_strength': round(s / S, 3), 'fails_at': round(S / s, 3) if s > 0 else None,
-                              'depth_mm': round(float(dist), 2),
+                              'smoothed_mpa': round(smooth, 2), 'depth_mm': round(float(dist), 2),
+                              'mesh_note': (f'the averaged stress here is {smooth / s:.0%} of the peak: refine the mesh to pin '
+                                            'this value down') if smooth < 0.7 * s else '',
                               'hint': self._hint(sv, tri, nrm, vnorm, P) if dist < 0.5 * self.mesh_mm
                               else f'inside the material, {dist:.1f} mm under the surface'})
 
-        lams = np.linspace(0.0, lam_max, 49)
+        # overstressed volume, exactly: each non-support element joins at its own failure load factor S / peak
         vtot = float(vol.sum())
-        share = lambda lam: float(vol[elem * lam > S].sum() / vtot)
+        share = self.overstressed_share
+        ff = S / np.maximum(self.vm_elem[free], 1e-30)
+        order = np.argsort(ff)
+        ff_s, cum = ff[order], np.cumsum(vol[free][order]) / vtot
+        keep = ff_s <= lam_max * 1.0001
+        ff_s, cum = np.floor(ff_s[keep] * 1e4) / 1e4, cum[keep]       # rounded down: the bound stays an upper bound
+        last = np.r_[ff_s[1:] != ff_s[:-1], True] if len(ff_s) else np.zeros(0, bool)
+        ff_s, cum = ff_s[last], cum[last]
+        sup_area = float(tri_area[tri_flags == 1].sum() / max(tri_area.sum(), 1e-30))
         size = float(np.ptp(P, axis=0).max())
         res = {k: v for k, v in self.result.items()}
         data = {
@@ -684,24 +735,35 @@ class Study:
                 'index': arr(local[tri], np.uint32),
                 'displacement': arr(self.disp[:, verts].T, np.float32),
                 'von_mises': arr(node_vm[verts], np.float32),
+                'von_mises_smoothed': arr(node_smooth[verts], np.float32),
                 'tri_von_mises': arr(elem[own], np.float32),
                 'flags': arr(flags[verts], np.uint8),
+                'tri_flags': arr(tri_flags, np.uint8),
             },
-            'flag_bits': {'held': 1, 'loaded': 2, 'capped': 4},
+            'flag_bits': {'held': 1, 'loaded': 2, 'support_only': 4},
+            'tri_flag_bits': {'support': 1},
             'loads': loads,
             'failure': {
                 'design_stress_mpa': round(vm_design, 3), 'first_failure_factor': round(lam_fail, 4) if np.isfinite(lam_fail) else None,
-                'max_load_factor': round(lam_max, 4), 'capped_at_mpa': round(cap, 3),
+                'max_load_factor': round(lam_max, 4), 'capped_at_mpa': round(vm_design, 3),
+                'excluded': {'surface_share': round(sup_area, 5), 'volume_share': round(float(vol[touches].sum() / vtot), 5),
+                             'why': 'elements touching a clamp or load patch: idealised supports make artificial spikes '
+                                    'there; like the safety factor, the failure test leaves them out'},
                 'overstressed_volume': {'at_design_load': share(1.0), 'at_first_failure': share(lam_fail) if np.isfinite(lam_fail) else 0.0,
-                                        'at_1.25x_first_failure': share(1.25 * lam_fail) if np.isfinite(lam_fail) else 0.0},
-                'curve': {'load_factor': [round(float(v), 4) for v in lams], 'share': [float(f'{share(v):.4g}') for v in lams]},
+                                        'at_1.25x_first_failure': share(1.25 * lam_fail) if np.isfinite(lam_fail) else 0.0,
+                                        'definition': 'volume of the elements whose peak stress is past the strength '
+                                                      '(an upper bound), supports excluded, over the whole volume'},
+                # a step function: the share is curve.share[i] for load factors above curve.load_factor[i]
+                'curve': {'load_factor': [float(v) for v in ff_s], 'share': [float(f'{v:.4g}') for v in cum]},
             },
             'hot_spots': spot_list,
             'assumptions': ('Linear elastic, small deflection, isotropic: printed parts use the weak (layer) direction strength. '
                             'Every field scales with the load. It shows where and at what load the part first reaches its '
                             'strength, not how a crack grows after that. Faces clamped where held; no contact, preload or '
-                            'buckling. Stress spikes at the clamp and load patches are capped (they are artefacts of the '
-                            'idealised supports). The section cut shows the surface skin, not the stress inside.'),
+                            'buckling. Elements touching the clamp and load patches are left out of the failure test and '
+                            'capped at the design stress (their spikes are artefacts of the idealised supports). Stresses '
+                            'are element corner peaks, as the safety factor uses; the overstressed volume counts whole '
+                            'elements (an upper bound). The section cut shows the surface skin, not the stress inside.'),
         }
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)

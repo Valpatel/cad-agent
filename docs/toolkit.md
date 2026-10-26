@@ -249,38 +249,50 @@ the manifest exists. The viewer is scriptable for screenshots: `viewer.html?expl
 `fix()`/`force()`/`torque()` pick faces with selectors (`plane_at`, `cylinder_at`, `in_box`, `near`, `any_of`), and
 `solve()` returns deflection, stiffness, the design von Mises stress and the safety factor against `MATERIALS` (printed
 materials carry their weak, layer-direction strength). Stress spikes in the elements touching a clamp or a load patch
-are artefacts of the idealised support, so the design stress and every failure view leave them out.
+are artefacts of the idealised support, so the design stress and every failure view leave them out ("support
+patches": capped at the design stress, never shown as failed, their share of the surface reported).
+
+Stresses are element corner peaks, never averaged. The P2 strain is linear in a tetrahedron, so its extremes sit at the
+corners; the safety factor, the hot spots and the per-vertex colours all use the highest corner stress there. The
+volume-weighted average is exported too and shown as "smoothed". Where it falls well below the peak (a hot spot says
+so), the mesh is coarse for that gradient. `overstressed_share(load_factor)` is the share of the volume in elements
+whose peak is past the strength. It counts whole elements, so it is an upper bound on the overstressed volume.
+`animate()` and the viewer both report it.
 
 Showing how it fails, for the report:
 
 - `render(png)`: the deformed part coloured by stress.
 - `animate(mp4)`: the load ramped from zero through the design load to first failure (x safety factor) and past it;
-  regions past the strength turn black.
+  regions past the strength turn black, and every frame gives the overstressed volume share (an upper bound).
 - `export_viewer(json)`: data for the interactive viewer in the web kit (`fea-viewer.js`, `fea.html`). The boundary
-  surface only (a few MB at most at ~100k tets), with per-vertex displacement and von Mises stress, each triangle's
-  element stress, held/loaded flags, the loads, the share of the volume past the strength as the load grows, and up to
-  eight **hot spots**: the highest stresses away from the supports, at least 4 mesh sizes apart, each with the load
-  factor at which it reaches the strength and a plain hint from the CAD faces it lies on ("edge of a Ø5.5 hole",
-  "R4 inside fillet", "flat face, 1.9 mm from an R4 inside fillet", "sharp inside corner").
+  surface only (a few MB at most at ~100k tets), with per-vertex displacement, peak and smoothed von Mises stress,
+  each triangle's element peak, held/loaded/support flags, the loads, the overstressed volume as an exact step curve
+  over the load factor, and up to eight **hot spots**: the highest stresses away from the supports, at least 4 mesh
+  sizes apart. Each has the load factor at which it reaches the strength, a plain hint from the CAD faces it lies on
+  ("edge of a Ø5.5 hole", "R4 inside fillet", "flat face, 1.9 mm from an R4 inside fillet", "sharp inside corner"),
+  and a mesh note when the smoothed value is far below the peak.
 
 Open a case with `kit/fea.html?case=../../exports/fea/<part>-<case>.json` (the kit copied by `cad-agent webkit`, or the
 copy `cad-agent site --serve` serves at `/_cadagent/kit/fea.html`). The viewer has:
 
 - a load-factor slider from 0 to 1.3 x the failure load, and a play button that ramps it (pausing at the design load
   and at first failure). Deformation and colours scale linearly. Triangles whose element is past the strength turn
-  black, and the status card gives the peak stress and the share of the volume past the strength;
+  black (support patches never do), and the status card gives the peak stress and the overstressed volume share;
 - colour by stress/strength, stress, local safety factor or displacement, with a legend;
 - deformation exaggeration (true scale up to about 40 x), held faces in grey, and load arrows (curled for torques)
-  labelled with the load at the current factor;
+  labelled with the load at the current factor. Support patches can be greyed out ("not checked");
 - the hot-spot list (click to fly there; numbered markers on the part), a section cut (axis and position; it cuts the
-  surface skin, not the stress inside), a hover readout and a pinned probe (stress, % of strength, local safety
-  factor and displacement at a point);
+  surface skin, not the stress inside), a hover readout and a pinned probe (the peak stress, the smoothed stress, % of
+  strength, local safety factor and displacement at a point; on a support patch it says "not checked");
 - the assumptions: linear elastic, small deflection, isotropic with the weak-direction strength for prints. It shows
   where and at what load the part first fails, not crack growth.
 
 Links and screenshots can set the state: `&load=1.5&field=ratio|stress|sf|disp&spot=1&clip=x:0.4&exag=20&panel=0&play=1`.
-From your own page, call `mountFeaViewer(element, url, { title, back })`. It builds the kit layout inside the
-element and returns `setLoad`, `setField`, `setExaggeration`, `setClip`, `flyTo`, `play` and `fit`.
+Values that do not parse are ignored, and `panel=0` hides the panel for that visit only. The page loads only cases
+and `back` links on its own origin, and `root` must be a relative path.
+From your own page, call `mountFeaViewer(element, url, { title, back, panel })`. It builds the kit layout inside the
+element and returns `setLoad`, `setField`, `setExaggeration`, `setClip`, `flyTo`, `play`, `fit` and `dispose` (call it
+before mounting another viewer on the same page).
 
 ### Robot export (`cadagent.robot`, optional)
 

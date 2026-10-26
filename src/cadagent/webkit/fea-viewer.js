@@ -90,6 +90,7 @@ border:1px solid var(--hairline);border-radius:6px;background:var(--surface-2);c
 .fea-spot.fail .n{background:var(--magenta)}
 .fea-spot .f{color:var(--amber);font-weight:600;white-space:nowrap} .fea-spot.fail .f{color:var(--magenta)}
 .fea-spot .h{grid-column:2/-1;color:var(--muted)}
+.fea-spot .m{grid-column:2/-1;color:var(--amber);font-size:10px}
 .fea-marks{position:relative;height:16px;margin:-2px 6px 0;font:9px var(--font-mono);color:var(--muted)}
 .fea-marks span{position:absolute;top:3px;transform:translateX(-50%);white-space:nowrap}
 .fea-marks span::before{content:"";position:absolute;left:50%;top:-4px;width:1px;height:4px;background:currentColor}
@@ -98,16 +99,20 @@ border:1px solid var(--hairline);border-radius:6px;background:var(--surface-2);c
 .fea-row .hud-btn{padding:7px 10px}
 .fea-row .hud-btn.on{border-color:var(--cyan);color:var(--cyan);background:var(--glow-06)}
 .fea-note{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
-@media (max-width:820px){.fea-status{font-size:10px;padding:6px 8px;top:8px;left:8px}.fea-legend{bottom:8px;left:8px;padding:6px 8px}
-#stage-overlay .hud-hint,.fea-status .l3,.fea-legend .keys{display:none}
+@media (max-width:820px){.fea-status{font-size:10px;line-height:1.4;padding:6px 8px;top:8px;left:8px}.fea-legend{bottom:8px;left:8px;padding:6px 8px}
+.fea-legend .keys{gap:2px 8px;margin-top:4px} #stage-overlay .hud-hint{display:none}
 #hud{grid-template-rows:auto minmax(0,1fr) 38vh}}
 `;
 
 /**
- * mountFeaViewer(element, url, { title, back, backLabel }) -> Promise<{ stage, data, setLoad, setField, setExaggeration,
- *   setClip(axis 'off'|'x'|'y'|'z', 0..1, flip), flyTo(i, { instant }), play(on), fit(view 'iso'|'front'|'side'|'top'|'under'),
- *   collapse }>
- * Fields: 'ratio' (stress / strength), 'stress' (MPa), 'sf' (local safety factor), 'disp' (mm).
+ * mountFeaViewer(element, url, { title, back, backLabel, panel }) -> Promise<{ stage, data, setLoad, setField,
+ *   setExaggeration, setClip(axis 'off'|'x'|'y'|'z', 0..1, flip), flyTo(i, { instant }), play(on),
+ *   fit(view 'iso'|'front'|'side'|'top'|'under'), collapse, dispose() }>
+ * Fields: 'ratio' (stress / strength), 'stress' (MPa), 'sf' (local safety factor), 'disp' (mm). Stresses are element
+ * corner peaks, the values the safety factor uses (the averaged value is shown as "smoothed" in the readouts).
+ * `back` is used only when it resolves to this page's origin. `panel: false` starts with the side panel hidden without
+ * remembering it. Call dispose() before mounting another viewer in the same page. Bad arguments to the setters are
+ * ignored.
  */
 export async function mountFeaViewer(element, url, opts = {}) {
   const resp = await fetch(url, { cache: 'no-store' });
@@ -121,21 +126,34 @@ export async function mountFeaViewer(element, url, opts = {}) {
     st.textContent = CSS;
     document.head.appendChild(st);
   }
-  const mat = data.material, res = data.result || {}, F = data.failure;
-  const S = mat.strength_mpa;
-  const lamFail = F.first_failure_factor ?? Infinity;
-  const lamMax = F.max_load_factor;
-  const title = opts.title ?? data.name;
+  // everything from the file is data: numbers are coerced, strings are escaped or set as text
+  const num = (v, d = 0) => (v !== null && v !== '' && Number.isFinite(+v) ? +v : d);
+  const vec = (v, d = [0, 0, 0]) => (Array.isArray(v) && v.length === 3 ? v.map((x, i) => num(x, d[i])) : d.slice());
+  const mat = data.material || {}, res = data.result || {}, F = data.failure || {};
+  const S = Math.max(num(mat.strength_mpa, 1), 1e-9);
+  const lamFail = F.first_failure_factor == null ? Infinity : num(F.first_failure_factor, Infinity);
+  const lamMax = Math.max(num(F.max_load_factor, 1.2), 0.01);
+  const title = String(opts.title ?? data.name ?? 'FEA');
+  const sameOrigin = (h) => { try { const u = new URL(h, location.href); return u.origin === location.origin ? u.href : null; } catch { return null; } };
+  const backHref = opts.back ? sameOrigin(opts.back) : null;
+  const loadsData = (Array.isArray(data.loads) ? data.loads : []).map((ld) => ({
+    kind: ld?.kind === 'torque' ? 'torque' : 'force', origin: vec(ld?.origin), dir: vec(ld?.dir, [0, 0, 1]), n: num(ld?.n),
+    axis: vec(ld?.axis, [0, 0, 1]), center: vec(ld?.center), radius: num(ld?.radius), nm: num(ld?.nm), disp: vec(ld?.disp) }));
+  const spotsData = (Array.isArray(data.hot_spots) ? data.hot_spots : []).map((h) => ({
+    position: vec(h?.position), normal: vec(h?.normal, [0, 0, 1]), vertex: Math.trunc(num(h?.vertex, -1)),
+    stress_mpa: num(h?.stress_mpa), of_strength: num(h?.of_strength), fails_at: num(h?.fails_at, Infinity),
+    smoothed_mpa: h?.smoothed_mpa == null ? null : num(h.smoothed_mpa), hint: String(h?.hint ?? ''), mesh_note: String(h?.mesh_note ?? '') }));
 
   element.innerHTML = `<div id="app"></div><div id="hud">
     <header id="topbar"><span class="glyph"></span><h1>${esc(title)}</h1>
       <span class="hud-tag">${esc(mat.name)}</span><span class="hud-tag">SF ${fmt(res.safety_factor)}</span><span class="spacer"></span>
-      ${opts.back ? `<a class="hud-tag" href="${esc(opts.back)}">${esc(opts.backLabel ?? 'Back')}</a>` : ''}</header>
+      ${backHref ? `<a class="hud-tag" href="${esc(backHref)}">${esc(opts.backLabel ?? 'Back')}</a>` : ''}</header>
     <main id="stage-overlay">
       <div class="hud-card fea-status"><div class="l1"></div><div class="l2"></div><div class="l3"></div></div>
       <div class="hud-card fea-legend"><div class="name"></div><div class="bar"></div><div class="ticks"></div><div class="keys">
         <span><i class="sw" style="background:#9ea3ad"></i>held</span><span><i class="sw" style="background:#0d0d0d;border:1px solid #444"></i>past the strength</span>
-        <span><i class="sw" style="background:#ff2a6d"></i>loads</span><span><i class="sw" style="background:#fcee0a"></i>hot spots</span></div></div>
+        <span><i class="sw" style="background:#ff2a6d"></i>loads</span><span><i class="sw" style="background:#fcee0a"></i>hot spots</span>
+        <span class="sup" hidden><i class="sw" style="background:#59606b"></i>support patch (not checked)</span></div></div>
       <div class="hud-hint">DRAG · ORBIT // SCROLL · ZOOM // HOVER · VALUE // CLICK · PIN</div>
     </main>
     <aside id="panel"></aside></div><div class="fea-labels"></div><div class="fea-tip" hidden></div>`;
@@ -145,13 +163,17 @@ export async function mountFeaViewer(element, url, opts = {}) {
 
   // --- the surface: one vertex per triangle corner, so a triangle can turn black on its own (element stress)
   const surf = data.surface;
-  const nv = surf.vertices, nt = surf.triangles;
+  const nv = Math.trunc(num(surf.vertices)), nt = Math.trunc(num(surf.triangles));
   const P0 = decode(surf.positions), IDX = decode(surf.index), D = decode(surf.displacement);
   const VM = decode(surf.von_mises), VMT = decode(surf.tri_von_mises), FL = decode(surf.flags);
+  const SM = surf.von_mises_smoothed ? decode(surf.von_mises_smoothed) : null;         // averaged corners ("smoothed")
+  const TFL = surf.tri_flags ? decode(surf.tri_flags) : new Uint8Array(nt);           // 1: support element, not checked
+  if (P0.length !== 3 * nv || D.length !== 3 * nv || VM.length !== nv || FL.length !== nv || IDX.length !== 3 * nt
+      || VMT.length !== nt || TFL.length !== nt || IDX.some((i) => i >= nv)) throw new Error('inconsistent surface arrays');
   const DM = new Float32Array(nv);
   let dmaxS = 0;
   for (let i = 0; i < nv; i++) { DM[i] = Math.hypot(D[3 * i], D[3 * i + 1], D[3 * i + 2]); if (DM[i] > dmaxS) dmaxS = DM[i]; }
-  const dmax = Math.max(data.max_displacement_mm || 0, dmaxS);
+  const dmax = Math.max(num(data.max_displacement_mm), dmaxS);
   const heldTri = new Uint8Array(nt);
   for (let t = 0; t < nt; t++) heldTri[t] = (FL[IDX[3 * t]] & FL[IDX[3 * t + 1]] & FL[IDX[3 * t + 2]] & 1) ? 1 : 0;
   const PX = new Float32Array(nv * 3);                  // deformed positions per surface vertex
@@ -168,8 +190,8 @@ export async function mountFeaViewer(element, url, opts = {}) {
   front.castShadow = true;
 
   // CAD is z-up in mm; the stage is y-up in metres. Stand the part a little above the floor so it can sag.
-  const [lo, hi] = data.bounds_mm;
-  const size = data.size_mm, sizeM = size / 1000;
+  const lo = vec(data.bounds_mm?.[0]), hi = vec(data.bounds_mm?.[1]);
+  const size = Math.max(num(data.size_mm, 100), 1e-6), sizeM = size / 1000, meshMm = Math.max(num(data.mesh_mm, size / 30), 1e-6);
   const model = new THREE.Group();
   model.rotation.x = -Math.PI / 2;
   model.scale.setScalar(0.001);
@@ -191,7 +213,7 @@ export async function mountFeaViewer(element, url, opts = {}) {
   // --- loads: arrows (forces) and curled arrows (torques), riding on the deformed part
   const LOAD = 0xff2a6d;
   const loadMat = new THREE.MeshBasicMaterial({ color: LOAD, depthTest: false, transparent: true, opacity: 0.92 });
-  const loads = (data.loads || []).map((ld) => {
+  const loads = loadsData.map((ld) => {
     const g = new THREE.Group();
     g.renderOrder = 10;
     const label = document.createElement('div');
@@ -228,14 +250,15 @@ export async function mountFeaViewer(element, url, opts = {}) {
   });
 
   // --- hot spots: numbered labels on the part, a pulse ring when picked
-  const spots = (data.hot_spots || []).map((h) => {
+  const spots = spotsData.map((h, i) => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = `fea-label${h.fails_at < 1 ? ' fail' : ''}`;
-    b.textContent = h.rank;
-    b.title = `#${h.rank}: fails at ×${fmt(h.fails_at)} of the design load (${h.hint})`;
+    b.textContent = String(i + 1);
+    b.title = `#${i + 1}: fails at ×${fmt(h.fails_at)} of the design load (${h.hint})`;
     labelsEl.appendChild(b);
-    return { h, b, p: new THREE.Vector3(...h.position), n: new THREE.Vector3(...h.normal) };
+    const ok = h.vertex >= 0 && h.vertex < nv;                    // follows the deformed surface when it is on it
+    return { h: { ...h, vertex: ok ? h.vertex : -1 }, b, p: new THREE.Vector3(...h.position), n: new THREE.Vector3(...h.normal) };
   });
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.8, 1, 48), new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, depthTest: false, side: THREE.DoubleSide }));
   ring.renderOrder = 11;
@@ -248,9 +271,10 @@ export async function mountFeaViewer(element, url, opts = {}) {
 
   // --- state and the update of the surface
   const exagAuto = dmax > 0 ? Math.max(1, (0.08 * size) / (dmax * lamMax)) : 1;
-  const S_ = { lam: 1, exag: exagAuto, field: 'ratio', markFail: true, dirty: true };
+  const S_ = { lam: 1, exag: exagAuto, field: 'ratio', markFail: true, markSupport: false, dirty: true };
   const TV = new Float32Array(nv);
-  const vmDesign = F.design_stress_mpa;
+  const vmDesign = num(F.design_stress_mpa);
+  const SUP = linear(0x59606b);
 
   function fieldT(i) {
     const lam = S_.lam;
@@ -270,13 +294,18 @@ export async function mountFeaViewer(element, url, opts = {}) {
       TV[i] = fieldT(i);
     }
     for (let t = 0; t < nt; t++) {
-      const failed = S_.markFail && VMT[t] * lam > S;
+      const support = TFL[t] & 1;                    // support elements are left out of the failure test, as in the SF
+      const failed = S_.markFail && !support && VMT[t] * lam > S;
+      const grey = S_.markSupport && support ? 0.7 : 0;
       for (let j = 0; j < 3; j++) {
         const v = IDX[3 * t + j], o = (3 * t + j) * 3;
         pos[o] = PX[3 * v]; pos[o + 1] = PX[3 * v + 1]; pos[o + 2] = PX[3 * v + 2];
         if (heldTri[t]) { col[o] = HELD.r; col[o + 1] = HELD.g; col[o + 2] = HELD.b; }
         else if (failed) { col[o] = FAILED.r; col[o + 1] = FAILED.g; col[o + 2] = FAILED.b; }
-        else { const q = Math.round(clamp01(TV[v]) * (LUT_N - 1)) * 3; col[o] = LUT[q]; col[o + 1] = LUT[q + 1]; col[o + 2] = LUT[q + 2]; }
+        else {
+          const q = Math.round(clamp01(TV[v]) * (LUT_N - 1)) * 3;
+          col[o] = LUT[q] + grey * (SUP.r - LUT[q]); col[o + 1] = LUT[q + 1] + grey * (SUP.g - LUT[q + 1]); col[o + 2] = LUT[q + 2] + grey * (SUP.b - LUT[q + 2]);
+        }
       }
     }
     geo.attributes.position.needsUpdate = true;
@@ -286,20 +315,22 @@ export async function mountFeaViewer(element, url, opts = {}) {
       L.at = L.base.clone().add(new THREE.Vector3(...L.ld.disp).multiplyScalar(k));
       L.g.position.copy(L.at);
     }
-    for (const s of spots) s.at = new THREE.Vector3(PX[3 * s.h.vertex], PX[3 * s.h.vertex + 1], PX[3 * s.h.vertex + 2]);
+    for (const s of spots) s.at = s.h.vertex >= 0 ? new THREE.Vector3(PX[3 * s.h.vertex], PX[3 * s.h.vertex + 1], PX[3 * s.h.vertex + 2]) : s.p.clone();
     paintStatus();
     paintLegend();
     if (pinned) showProbe(pinned, true);
   }
 
   // --- overlays: the status card and the legend
-  const curve = F.curve;
+  // the overstressed volume: a step function (each element joins at its own failure load), an upper bound
+  const XS = (F.curve?.load_factor || []).map((x) => num(x, Infinity)), YS = (F.curve?.share || []).map((y) => num(y));
   function shareAt(lam) {
-    const xs = curve.load_factor, ys = curve.share;
-    if (lam <= xs[0]) return ys[0];
-    for (let i = 1; i < xs.length; i++) if (lam <= xs[i]) return ys[i - 1] + (ys[i] - ys[i - 1]) * (lam - xs[i - 1]) / (xs[i] - xs[i - 1]);
-    return ys[ys.length - 1];
+    let lo_ = 0, hi_ = Math.min(XS.length, YS.length);           // the number of steps strictly below lam
+    while (lo_ < hi_) { const mid = (lo_ + hi_) >> 1; if (XS[mid] < lam) lo_ = mid + 1; else hi_ = mid; }
+    return lo_ ? YS[lo_ - 1] : 0;
   }
+  const fmtShare = (sh) => (sh > 0 && sh < 0.001 ? '<0.1' : (sh * 100).toFixed(1));
+  const excluded = F.excluded || {};
   function stateOf(lam) {
     if (lam < 1e-6) return 'unloaded';
     if (Math.abs(lam - 1) < 0.006) return 'design load';
@@ -312,10 +343,10 @@ export async function mountFeaViewer(element, url, opts = {}) {
     const sh = shareAt(lam);
     statusEl.classList.toggle('over', over);
     statusEl.querySelector('.l1').textContent = `LOAD ×${lam.toFixed(2)} OF THE DESIGN LOAD · ${stateOf(lam).toUpperCase()}`;
-    statusEl.querySelector('.l2').textContent = `peak ${(vmDesign * lam).toFixed(1)} of ${S} MPa · max displacement ${(dmax * lam).toFixed(2)} mm`
+    statusEl.querySelector('.l2').textContent = `peak ${(vmDesign * lam).toFixed(1)} of ${fmt(S, 1)} MPa · max displacement ${(dmax * lam).toFixed(2)} mm`
       + ` (shown ×${S_.exag < 10 ? S_.exag.toFixed(1) : Math.round(S_.exag)})`;
     statusEl.querySelector('.l3').innerHTML = `first failure at ×${fmt(lamFail)} (the safety factor) · past the strength: `
-      + `<span class="${sh > 0 ? 'bad' : ''}">${sh > 0 && sh < 0.001 ? '<0.1' : (sh * 100).toFixed(1)} % of the volume</span>`;
+      + `<span class="${sh > 0 ? 'bad' : ''}">${fmtShare(sh)} % of the volume</span> (whole elements: an upper bound)`;
   }
   function paintLegend() {
     const f = S_.field, lam = S_.lam;
@@ -323,22 +354,26 @@ export async function mountFeaViewer(element, url, opts = {}) {
     legendEl.querySelector('.bar').style.background = gradient(f === 'sf');
     let ticks;
     if (f === 'ratio') ticks = ['0', '0.25', '0.5', '0.75', '1 strength'];
-    else if (f === 'stress') ticks = [0, 0.25, 0.5, 0.75, 1].map((x) => (x === 1 ? `${S} MPa` : (x * S).toFixed(0)));
+    else if (f === 'stress') ticks = [0, 0.25, 0.5, 0.75, 1].map((x) => (x === 1 ? `${fmt(S, 1)} MPa` : (x * S).toFixed(0)));
     else if (f === 'sf') ticks = ['0', '1', '2', '3', `${SF_RANGE}+`];
     else ticks = [0, 0.25, 0.5, 0.75, 1].map((x) => (x * dmaxS * lam).toFixed(dmaxS * lam < 1 ? 3 : 2) + (x === 1 ? ' mm' : ''));
     legendEl.querySelector('.ticks').innerHTML = ticks.map((t) => `<span>${esc(t)}</span>`).join('');
   }
 
   // --- panel
-  const info = readouts(section(panel, 'Result', { note: `${esc(data.name)}` }));
+  const info = readouts(section(panel, 'Result', { note: String(data.name ?? '') }));
   const vol = F.overstressed_volume || {};
-  const rows = [['material', mat.name], ['strength', `${S} MPa`], ['modulus E', `${mat.E_mpa} MPa`],
+  const rows = [['material', String(mat.name ?? '')], ['strength', `${fmt(S, 1)} MPa`], ['modulus E', `${fmt(num(mat.E_mpa), 0)} MPa`],
     ['design stress', `${fmt(vmDesign, 1)} MPa`], ['safety factor', fmt(res.safety_factor), res.safety_factor < 1 ? 'fail' : res.safety_factor < 1.5 ? 'warn' : 'ok'],
     ['max displacement', `${fmt(dmax, 3)} mm`]];
-  if (res.stiffness_n_per_mm) rows.push(['stiffness', `${res.stiffness_n_per_mm} N/mm`]);
-  if (res.torsional_stiffness_nm_per_deg) rows.push(['torsional stiffness', `${res.torsional_stiffness_nm_per_deg} N·m/°`]);
-  rows.push(['past strength ×1.25 SF', `${fmt((vol['at_1.25x_first_failure'] ?? 0) * 100, 1)} % vol`]);
-  if (res.mesh) rows.push(['mesh', `${res.mesh.tets} P2 tets, ${res.mesh.size_mm} mm`]);
+  if (res.stiffness_n_per_mm) rows.push(['stiffness', `${fmt(res.stiffness_n_per_mm, 1)} N/mm`]);
+  if (res.torsional_stiffness_nm_per_deg) rows.push(['torsional stiffness', `${fmt(res.torsional_stiffness_nm_per_deg, 2)} N·m/°`]);
+  rows.push(['past strength at 1.25 × SF', `${fmtShare(num(vol['at_1.25x_first_failure']))} % vol (upper bound)`]);
+  if (excluded.surface_share != null) {
+    const ex = num(excluded.surface_share);
+    rows.push(['support patches (not checked)', `${fmtShare(ex)} % of the surface`, ex > 0.4 ? 'warn' : '']);
+  }
+  if (res.mesh) rows.push(['mesh', `${fmt(res.mesh.tets, 0)} P2 tets, ${fmt(res.mesh.size_mm, 1)} mm`]);
   info.set(rows);
 
   const lsec = section(panel, 'Load', { note: 'linear: everything scales' });
@@ -366,6 +401,9 @@ export async function mountFeaViewer(element, url, opts = {}) {
                                   fmt: (v) => { const x = 10 ** v; return x < 1.05 ? 'true scale' : `×${x < 10 ? x.toFixed(1) : Math.round(x)}`; },
                                   onInput: (v) => { S_.exag = 10 ** v; S_.dirty = true; } });
   toggle(lsec, 'Black where past the strength', true, (on) => { S_.markFail = on; S_.dirty = true; });
+  toggle(lsec, 'Grey out the support patches (not checked)', false, (on) => {
+    S_.markSupport = on; legendEl.querySelector('.sup').hidden = !on; S_.dirty = true;
+  });
 
   const csec = section(panel, 'Colour by');
   const crow = document.createElement('div');
@@ -377,9 +415,10 @@ export async function mountFeaViewer(element, url, opts = {}) {
   const ssec = section(panel, 'Where it fails first', { note: `${spots.length} hot spots` });
   const list = document.createElement('div');
   list.className = 'fea-spots';
-  list.innerHTML = spots.length ? spots.map((s) => `<button class="fea-spot${s.h.fails_at < 1 ? ' fail' : ''}" data-i="${s.h.rank - 1}">`
-    + `<span class="n">${s.h.rank}</span><span>${fmt(s.h.stress_mpa, 1)} MPa · ${fmt(s.h.of_strength * 100, 0)} % of strength</span>`
-    + `<span class="f">fails ×${fmt(s.h.fails_at)}</span><span class="h">${esc(s.h.hint)}</span></button>`).join('')
+  list.innerHTML = spots.length ? spots.map((s, i) => `<button class="fea-spot${s.h.fails_at < 1 ? ' fail' : ''}" data-i="${i}">`
+    + `<span class="n">${i + 1}</span><span>${fmt(s.h.stress_mpa, 1)} MPa · ${fmt(s.h.of_strength * 100, 0)} % of strength</span>`
+    + `<span class="f">fails ×${fmt(s.h.fails_at)}</span><span class="h">${esc(s.h.hint)}</span>`
+    + `${s.h.mesh_note ? `<span class="m">${esc(s.h.mesh_note)}</span>` : ''}</button>`).join('')
     : '<p class="fea-note">No stress concentration away from the supports.</p>';
   ssec.appendChild(list);
   const pnote = document.createElement('p');
@@ -421,22 +460,36 @@ export async function mountFeaViewer(element, url, opts = {}) {
   slider(vsec, { label: 'Light', min: 0.2, max: 1, step: 0.01, value: 1, fmt: (v) => v.toFixed(2), onInput: (v) => stage.setSceneLight(v) });
 
   const asec = section(panel, 'Assumptions', { open: false });
-  const lines = (data.loads || []).map((ld) => (ld.kind === 'force' ? `force ${fmtN(ld.n)} along (${ld.dir.map((x) => x.toFixed(2)).join(', ')})`
+  const lines = loadsData.map((ld) => (ld.kind === 'force' ? `force ${fmtN(ld.n)} along (${ld.dir.map((x) => x.toFixed(2)).join(', ')})`
     : `torque ${Math.abs(ld.nm).toFixed(1)} N·m about (${ld.axis.map((x) => x.toFixed(2)).join(', ')})`));
   asec.innerHTML = `<p class="fea-note">${esc(data.assumptions)}</p>`
     + (mat.note ? `<p class="fea-note">Material: ${esc(mat.note)}.</p>` : '')
-    + `<p class="fea-note">Design loads (×1): ${esc(lines.join('; ') || 'none')}. Clamp/load-patch spikes capped at ${fmt(F.capped_at_mpa, 1)} MPa.</p>`;
+    + `<p class="fea-note">Design loads (×1): ${esc(lines.join('; ') || 'none')}. Elements touching the clamp and load patches are not checked`
+    + ` (like the safety factor) and are capped at the design stress, ${fmt(F.capped_at_mpa, 1)} MPa. "Past the strength" counts the`
+    + ` whole volume of each element whose peak passes it: an upper bound.</p>`;
 
   // --- actions
-  function setLoad(v) { S_.lam = Math.max(0, Math.min(lamMax, v)); loadSlider.set(S_.lam); S_.dirty = true; }
+  function setLoad(v) {
+    v = Number(v);
+    if (!Number.isFinite(v)) return;
+    S_.lam = Math.max(0, Math.min(lamMax, v)); loadSlider.set(S_.lam); S_.dirty = true;
+  }
   function setField(f) {
-    if (!FIELDS[f]) return;
+    if (!Object.hasOwn(FIELDS, f)) return;
     S_.field = f;
     crow.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.f === f));
     S_.dirty = true;
   }
-  function setExaggeration(x) { S_.exag = Math.max(1, x); exSlider.set(Math.log10(S_.exag)); S_.dirty = true; }
+  function setExaggeration(x) {
+    x = Number(x);
+    if (!Number.isFinite(x) || x <= 0) return;
+    S_.exag = Math.max(1, x); exSlider.set(Math.log10(S_.exag)); S_.dirty = true;
+  }
   function setClip(axis, f = cut.f, flip = cut.flip) {
+    if (!['off', 'x', 'y', 'z'].includes(axis)) return;
+    f = Number(f);
+    f = Number.isFinite(f) ? clamp01(f) : cut.f;
+    flip = Boolean(flip);
     Object.assign(cut, { axis, f, flip });
     xSlider.set(f);
     xrow.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.x === axis));
@@ -477,6 +530,8 @@ export async function mountFeaViewer(element, url, opts = {}) {
   }
   let picked = -1;
   function flyTo(i, { instant = false } = {}) {
+    i = Number(i);
+    if (!Number.isInteger(i)) return;
     const s = spots[i];
     if (!s) return;
     picked = i;
@@ -488,7 +543,7 @@ export async function mountFeaViewer(element, url, opts = {}) {
     const cur = stage.camera.position.clone().sub(stage.controls.target).normalize();
     // look along the surface normal (leaning towards the current view), or, when other walls are in the way (inside a
     // clevis, a hole, a pocket), the nearest tilt or distance from which the spot is in plain sight
-    const D = Math.max(0.8 * sizeM, 25 * data.mesh_mm / 1000);
+    const D = Math.max(0.8 * sizeM, 25 * meshMm / 1000);
     const up = Math.abs(nW.y) < 0.9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
     const a1 = new THREE.Vector3().crossVectors(nW, up).normalize(), a2 = new THREE.Vector3().crossVectors(nW, a1);
     const dirs = [nW.clone().multiplyScalar(0.85).addScaledVector(cur, 0.5).normalize(), nW.clone()];
@@ -513,7 +568,7 @@ export async function mountFeaViewer(element, url, opts = {}) {
 
   // is the line from `from` to the surface point `to` (world) blocked by the part? (what the section cut removed is not)
   const occRay = new THREE.Raycaster();
-  const occTol = (1.5 * data.mesh_mm) / 1000;
+  const occTol = (1.5 * meshMm) / 1000;
   function blocked(from, to) {
     const d = to.clone().sub(from);
     const len = d.length();
@@ -568,22 +623,30 @@ export async function mountFeaViewer(element, url, opts = {}) {
   function valuesAt(p) {
     const vs = [IDX[3 * p.t], IDX[3 * p.t + 1], IDX[3 * p.t + 2]];
     const lam = S_.lam;
-    let vm = 0, dm = 0, flags = 0;
+    let vm = 0, sm = 0, dm = 0, flags = 0;
     const x = new THREE.Vector3(), x0 = new THREE.Vector3();
     vs.forEach((v, j) => {
-      vm += p.w[j] * VM[v]; dm += p.w[j] * DM[v]; flags |= FL[v];
+      vm += p.w[j] * VM[v]; sm += p.w[j] * (SM ? SM[v] : VM[v]); dm += p.w[j] * DM[v]; flags |= FL[v];
       x.x += p.w[j] * PX[3 * v]; x.y += p.w[j] * PX[3 * v + 1]; x.z += p.w[j] * PX[3 * v + 2];
       x0.x += p.w[j] * P0[3 * v]; x0.y += p.w[j] * P0[3 * v + 1]; x0.z += p.w[j] * P0[3 * v + 2];
     });
-    const s = vm * lam, elem = VMT[p.t] * lam;
-    return { s, ratio: s / S, sf: s > 0 ? S / s : Infinity, d: dm * lam, elem, failed: elem > S, flags, x, x0, held: heldTri[p.t] };
+    // the value at a point: the corner peaks there or this triangle's element peak, whichever is higher (the SF's
+    // convention, so a failed spot never reads safe); the averaged value is shown as "smoothed"
+    const support = Boolean(TFL[p.t] & 1), elem = VMT[p.t] * lam;
+    const s = Math.max(vm * lam, elem);
+    return { s, smooth: sm * lam, ratio: s / S, sf: s > 0 ? S / s : Infinity, d: dm * lam, elem, failed: !support && elem > S,
+             support, flags, x, x0, held: heldTri[p.t] };
   }
   function tipHtml(v) {
     const notes = [];
     if (v.held) notes.push('held (clamped)');
     else if (v.flags & 2) notes.push('on a load patch');
-    if (v.flags & 4) notes.push('next to a support: its spike is capped');
-    return `<b>${v.s.toFixed(1)} MPa</b> · ${(v.ratio * 100).toFixed(0)} % of strength<br>`
+    if (v.support) {
+      return '<b>support patch</b>: not checked (idealised clamp or load spike; like the safety factor)<br>'
+        + `capped at the design stress · moves <b>${v.d.toFixed(3)} mm</b><br>`
+        + `<span class="dim">at (${v.x0.x.toFixed(1)}, ${v.x0.y.toFixed(1)}, ${v.x0.z.toFixed(1)}) mm${notes.length ? ' · ' + esc(notes.join(', ')) : ''}</span>`;
+    }
+    return `<b>${v.s.toFixed(1)} MPa</b> · ${(v.ratio * 100).toFixed(0)} % of strength <span class="dim">(smoothed ${v.smooth.toFixed(1)})</span><br>`
       + `local SF <b class="${v.sf < 1 ? 'bad' : ''}">${isFinite(v.sf) ? v.sf.toFixed(2) : '∞'}</b> · moves <b>${v.d.toFixed(3)} mm</b><br>`
       + `${v.failed ? '<span class="bad">past the strength here</span><br>' : ''}`
       + `<span class="dim">at (${v.x0.x.toFixed(1)}, ${v.x0.y.toFixed(1)}, ${v.x0.z.toFixed(1)}) mm${notes.length ? ' · ' + esc(notes.join(', ')) : ''}</span>`;
@@ -593,10 +656,16 @@ export async function mountFeaViewer(element, url, opts = {}) {
     probeDot.position.copy(model.localToWorld(v.x.clone()));
     probeDot.scale.setScalar(0.008 * sizeM);
     probeDot.visible = true;
-    probeOut.set([['stress', `${v.s.toFixed(1)} MPa`, v.failed ? 'fail' : ''], ['of strength', `${(v.ratio * 100).toFixed(0)} %`],
-      ['local SF', isFinite(v.sf) ? v.sf.toFixed(2) : '∞', v.sf < 1 ? 'fail' : v.sf < 1.5 ? 'warn' : 'ok'], ['displacement', `${v.d.toFixed(3)} mm`],
-      ['at (mm)', `${v.x0.x.toFixed(1)}, ${v.x0.y.toFixed(1)}, ${v.x0.z.toFixed(1)}`],
-      ...(v.held ? [['', 'held face']] : []), ...(v.flags & 4 ? [['', 'support spike capped']] : [])]);
+    const at = ['at (mm)', `${v.x0.x.toFixed(1)}, ${v.x0.y.toFixed(1)}, ${v.x0.z.toFixed(1)}`];
+    if (v.support) {
+      probeOut.set([['support patch', 'not checked', 'warn'], ['why', 'idealised clamp/load spike'], ['displacement', `${v.d.toFixed(3)} mm`], at,
+        ...(v.held ? [['', 'held face']] : [])]);
+    } else {
+      probeOut.set([['stress (peak)', `${v.s.toFixed(1)} MPa`, v.failed ? 'fail' : ''], ['smoothed', `${v.smooth.toFixed(1)} MPa`],
+        ['of strength', `${(v.ratio * 100).toFixed(0)} %`],
+        ['local SF', isFinite(v.sf) ? v.sf.toFixed(2) : '∞', v.sf < 1 ? 'fail' : v.sf < 1.5 ? 'warn' : 'ok'], ['displacement', `${v.d.toFixed(3)} mm`],
+        at, ...(v.held ? [['', 'held face']] : [])]);
+    }
     if (!quiet) probeSec.closest('details').open = true;
   }
   canvas.addEventListener('pointermove', (e) => { hover = { x: e.clientX, y: e.clientY, type: e.pointerType }; });
@@ -675,15 +744,36 @@ export async function mountFeaViewer(element, url, opts = {}) {
     }
   });
 
-  const collapse = collapsiblePanel(hud, panel, { key: 'fea-panel-collapsed', onChange: () => stage.setInsets(insets()) });
-  window.addEventListener('resize', () => {          // a resized or rotated screen: refit unless the user has moved the view
+  // panel: false (a link that hides the panel) must not change what later visits remember
+  const collapse = collapsiblePanel(hud, panel, { key: opts.panel === false ? 'fea-panel-collapsed-by-link' : 'fea-panel-collapsed',
+                                                  onChange: () => stage.setInsets(insets()) });
+  if (opts.panel === false) collapse.set(true);
+  const onResize = () => {                            // a resized or rotated screen: refit unless the user has moved the view
     if (!userMoved && !fly && picked < 0) fit(lastView); else stage.setInsets(insets());
-  });
+  };
+  window.addEventListener('resize', onResize);
   setField('ratio');
   update();
   S_.dirty = false;
   fit('iso');
   stage.start();
-  return { stage, data, setLoad, setField, setExaggeration, setClip, flyTo, fit, collapse,
+  let disposed = false;
+  function dispose() {                                // free the GPU and the listeners, empty the element
+    if (disposed) return;
+    disposed = true;
+    stopPlay();
+    window.removeEventListener('resize', onResize);
+    const seen = new Set();
+    for (const root of [model, ring, probeDot]) {
+      root.traverse((o) => {
+        if (o.geometry && !seen.has(o.geometry)) { seen.add(o.geometry); o.geometry.dispose(); }
+        for (const m of [].concat(o.material || [])) if (!seen.has(m)) { seen.add(m); m.dispose(); }
+      });
+    }
+    if (stage.dispose) stage.dispose();
+    else { stage.renderer.dispose(); stage.renderer.forceContextLoss(); }
+    element.innerHTML = '';
+  }
+  return { stage, data, setLoad, setField, setExaggeration, setClip, flyTo, fit, collapse, dispose,
            play: (on = true) => (on ? startPlay() : stopPlay()) };
 }

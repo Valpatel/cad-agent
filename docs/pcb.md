@@ -10,7 +10,7 @@ Set `cad.site.review: exports/review.json` in `cad-agent.yaml`:
 {"groups":[{"title":"Two-port adapter","summary":"Engineering prototype; fit testing pending","views":[{"title":"Schematic","kind":"pdf","file":"exports/2port/schematic.pdf"},{"title":"Top copper","kind":"svg","file":"exports/2port/pcb-top.svg"},{"title":"Housing","kind":"image","file":"preview/2port-open.png"}],"reports":[{"title":"Electrical CAD","file":"exports/2port/pcb-evidence.json"}],"downloads":[{"title":"PCB source","file":"hardware/2port/thor-2port.kicad_pcb"}]}]}
 ```
 
-All drawings are embedded directly in the status page. Variants and views use reusable controls shipped in the web kit. `image`, `svg`, `pdf` and local `html` views are supported. Missing assets stay visible as pending, and missing reports never show a pass. Supply meaningful captions stating geometry provenance and qualification limits. The local server reloads after source changes, including KiCad, CSV and PDF files. Use `?live=0` to disable reload for an inspection.
+All drawings are embedded directly in the status page. Variants and views use reusable controls shipped in the web kit. `image`, `svg`, `pdf`, local `html`, and `model` views are supported. A `model` file names the existing cad-agent viewer manifest and embeds that viewer; no second 3D engine is created. Configure `cad.view.groups: [{id: two, title: Two-port, prefix: "2port_"}]` to export a separate `exports/view/two.json` with only that assembly, reusing the same STL meshes. Missing assets stay visible as pending, and missing reports never show a pass. Supply meaningful captions stating geometry provenance and qualification limits. The local server reloads after source changes, including KiCad, CSV and PDF files. Use `?live=0` to disable reload for an inspection.
 
 ## Source-bound electrical evidence
 
@@ -35,3 +35,13 @@ Design cards can reference `pcb_evidence: exports/pcb-evidence.json`; they show 
 Import the native PCB STEP in the documented coordinate frame, and also check the nominal PCB outline and holes. Include connector mating envelopes, screws, captive nuts, cable paths and tool access. A board-only collision proxy misses components. Use measured/manufacturer dimensions when available and flag generic geometry. For ribbon relief, model hard stops, actual jacket thickness, compliant pads and a physical pull-test target; a cable hole alone is not strain relief.
 
 [Operational lessons](../.agents/SYMPTOM-INDEX.md) record pitfalls found in the Thor adapter project. The originating project is [pcb-agx-thor-can-breakout](https://github.com/mvalancy/pcb-agx-thor-can-breakout).
+
+### Enclosure fasteners
+
+Import `cadagent.fasteners` for dimension-driven screw and insert envelopes and
+`blind_insert_stack` for recessed-head axial checks. Supply sourced dimensions;
+there is no implicit vendor catalog. Check screw-tip clearance and minimum thread
+engagement across tolerances. A heat-set knurl deliberately intersects the
+as-printed pilot: report this separately from unintended assembly collisions.
+A supplier login or CAD download failure must remain visible. Never present an
+original dimensioned envelope as an official vendor STEP file.

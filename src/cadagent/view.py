@@ -33,6 +33,22 @@ def _parts_from(project) -> List[str]:
     return list(json.loads(path.read_text()))
 
 
+def group_manifests(manifest: Dict[str, Any], groups: List[dict]) -> Dict[str, dict]:
+    """Select assemblies without duplicating meshes; each selected variant starts visible."""
+    import re
+    result = {}
+    for group in groups:
+        identifier = group.get("id", "")
+        prefix = group.get("prefix", "")
+        if not re.fullmatch(r"[a-zA-Z0-9_-]+", identifier) or not prefix or identifier in result:
+            raise ValueError("View groups need unique safe ids and nonempty part-name prefixes")
+        selected = [dict(p, visible=True) for p in manifest["parts"] if p["name"].startswith(prefix)]
+        if not selected:
+            raise ValueError(f"View group {identifier!r} has no matching parts")
+        result[identifier] = dict(manifest, title=group.get("title", identifier), parts=selected)
+    return result
+
+
 def export_view(project, tolerance: float = 0.1, angular: float = 0.2) -> Dict[str, Any]:
     """Write the meshes and the manifest. Parts without a STEP are listed as skipped, not errors."""
     cq = require("cadquery", "the 3D view export")
@@ -72,4 +88,7 @@ def export_view(project, tolerance: float = 0.1, angular: float = 0.2) -> Dict[s
         })
     manifest = {"title": project.title, "units": "mm", "up": "z", "parts": parts, "skipped": skipped}
     (out / "view.json").write_text(json.dumps(manifest, indent=1) + "\n")
-    return {"manifest": str(out / "view.json"), "parts": len(parts), "skipped": skipped}
+    groups = group_manifests(manifest, cfg.get("groups", []))
+    for identifier, group in groups.items():
+        (out / f"{identifier}.json").write_text(json.dumps(group, indent=1) + "\n")
+    return {"manifest": str(out / "view.json"), "parts": len(parts), "skipped": skipped, "groups": list(groups)}

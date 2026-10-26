@@ -1,6 +1,7 @@
 """Reusable in-page review workbench for PCBs, housings and multi-part assemblies."""
 from pathlib import Path
 import html,json
+from urllib.parse import quote
 
 def review_html(root: Path, manifest: dict, prefix: str = '../') -> str:
     """Render trusted project-local assets; unsupported/missing views stay visible as gaps."""
@@ -16,9 +17,10 @@ def review_html(root: Path, manifest: dict, prefix: str = '../') -> str:
             valid=root.resolve() in path.parents and path.is_file()
             kind=v.get('kind','image');url=e(prefix+rel)
             tabs.append(f'<button type="button" data-review-view="{j}" aria-pressed="{str(j==0).lower()}">{title}</button>')
+            if kind=='model':url=e('/_cadagent/kit/viewer.html?manifest=/'+quote(rel,safe='/'))
             if not valid:body=f'<p class="notice">Pending asset: {e(rel)}</p>'
             elif kind in {'image','svg'}:body=f'<img src="{url}" alt="{title}" loading="lazy">'
-            elif kind in {'pdf','html'}:body=f'<iframe src="{url}" title="{title}" loading="lazy"></iframe>'
+            elif kind in {'pdf','html','model'}:body=f'<iframe src="{url}" title="{title}" loading="lazy"></iframe>'
             else:body=f'<p class="notice">Unsupported view type: {e(kind)}</p>'
             views.append(f'<div class="review-view" data-review-panel="{j}" {"hidden" if j else ""}>{body}<p>{e(v.get("caption",""))} · <a href="{url}">Open full size / download</a></p></div>')
         reports=[]

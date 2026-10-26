@@ -45,3 +45,10 @@ engagement across tolerances. A heat-set knurl deliberately intersects the
 as-printed pilot: report this separately from unintended assembly collisions.
 A supplier login or CAD download failure must remain visible. Never present an
 original dimensioned envelope as an official vendor STEP file.
+
+Final assembly pictures should render the exported STEP readback as well as the
+in-memory model. Reimport for independent placement review, especially for text,
+repeated instances and exploded scenes. Record export/source hashes and keep
+nominal envelopes visibly distinct from official supplier geometry. A successful
+CAD boolean, valid BREP and a watertight print mesh are separate checks: tangent
+boss/wall contacts can pass one and fail another; use positive overlap at joins.

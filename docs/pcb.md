@@ -14,7 +14,7 @@ All drawings are embedded directly in the status page. Variants and views use re
 
 ## Source-bound electrical evidence
 
-Run KiCad's full ERC and DRC, including schematic parity, immediately before binding the results. Use `--format json`; DRC reports must include `violations`, `unconnected_items` and `schematic_parity`. Do not use severity filters that omit warnings, exclude meaningful checks silently, or reuse old reports after changing a board. The adapter does not invoke KiCad and cannot prove that an arbitrary report was actually produced from an arbitrary source; the build orchestrator must run checks before the snapshot.
+Run KiCad's full ERC and DRC, including schematic parity, immediately before binding the results. Use `--format json`; DRC reports must include `violations`, `unconnected_items` and `schematic_parity`. Do not use severity filters that omit warnings, exclude meaningful checks silently, or reuse old reports after changing a board. Binding rejects reports with filesystem timestamps older than any listed source. This guard applies at local snapshot creation; subsequent freshness uses hashes so repository checkouts do not depend on timestamps. The adapter does not invoke KiCad and cannot prove that an arbitrary report was actually produced from an arbitrary source; the build orchestrator must run checks before the snapshot.
 
 An evidence manifest supplies:
 

@@ -46,3 +46,14 @@ def test_cpl_dnp_or_duplicate_reference_is_rejected(tmp_path):
 
 def test_incomplete_evidence_cannot_qualify(tmp_path):
     assert not evidence_bundle(tmp_path,{},[],[{'pass':True}])['production_ready']
+
+
+def test_binding_rejects_reports_older_than_source(tmp_path):
+    import os
+    (tmp_path/'erc').write_text('{"sheets":[{"violations":[]}]}')
+    (tmp_path/'drc').write_text('{"violations":[],"unconnected_items":[],"schematic_parity":[]}')
+    (tmp_path/'board').write_text('changed after checks')
+    os.utime(tmp_path/'board', ns=(2000000000000000000,2000000000000000000))
+    bundle=evidence_bundle(tmp_path,{'erc':'erc','drc':'drc'},['board'],[{'pass':True}])
+    assert not bundle['pass'] and not bundle['production_ready']
+    assert set(bundle['reports_older_than_source'])=={'erc','drc'}

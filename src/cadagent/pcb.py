@@ -56,8 +56,11 @@ def evidence_bundle(root: Path, reports: dict, sources: list[str], gates: list[d
     complete=set(reports)=={'erc','drc'} and bool(sources)
     hashes={rel:sha256(root/rel) for rel in sources}
     report_hashes={rel:sha256(root/rel) for rel in reports.values() if (root/rel).is_file()}
+    newest=max(((root/p).stat().st_mtime_ns for p in sources),default=0)
+    stale=[rel for rel in reports.values() if (root/rel).is_file() and (root/rel).stat().st_mtime_ns < newest]
+    complete=complete and not stale
     return {'schema_version':1,'pass':complete and all(c['pass'] for c in checks),
-            'checks':checks,'source_sha256':hashes,'report_sha256':report_hashes,
+            'reports_older_than_source':stale,'checks':checks,'source_sha256':hashes,'report_sha256':report_hashes,
             'production_ready':complete and bool(gates) and all(g.get('pass') is True for g in gates) and all(c['pass'] for c in checks),
             'release_gates':gates,'physical_fit_verified':False,'electrical_tested':False}
 

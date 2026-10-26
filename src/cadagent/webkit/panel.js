@@ -82,3 +82,45 @@ export function readouts(parent) {
     },
   };
 }
+
+/**
+ * collapsiblePanel(hud, panel, { key, onChange }) adds a button to the top bar and a tab on the panel's edge that hide
+ * and show the side panel, remembers the choice (localStorage `key`), and calls onChange(collapsed) after the layout
+ * changes (use it to update the stage's insets). Returns { collapsed(), set(bool) }.
+ */
+export function collapsiblePanel(hud, panel, { key = 'hud-panel-collapsed', onChange } = {}) {
+  const tab = document.createElement('button');
+  tab.className = 'hud-panel-tab';
+  tab.type = 'button';
+  hud.appendChild(tab);
+  const btn = document.createElement('button');
+  btn.className = 'hud-pill';
+  btn.type = 'button';
+  hud.querySelector('#topbar')?.appendChild(btn);
+  let state = false;
+  try { state = localStorage.getItem(key) === '1'; } catch { /* storage blocked */ }
+  function set(v) {
+    state = Boolean(v);
+    hud.classList.toggle('panel-collapsed', state);
+    tab.textContent = state ? '\u25C2' : '\u25B8';
+    tab.title = state ? 'Show the panel' : 'Hide the panel';
+    btn.textContent = state ? 'SHOW PANEL' : 'HIDE PANEL';
+    try { localStorage.setItem(key, state ? '1' : '0'); } catch { /* storage blocked */ }
+    requestAnimationFrame(() => onChange?.(state));
+  }
+  tab.onclick = btn.onclick = () => set(!state);
+  set(state);
+  return { collapsed: () => state, set };
+}
+
+/** The pixels of the stage that overlay UI covers: the side panel (unless collapsed) and the top bar. */
+export function overlayInsets(hud) {
+  const W = window.innerWidth;
+  const top = hud.querySelector('#topbar')?.getBoundingClientRect().bottom ?? 0;
+  const panel = hud.querySelector('#panel');
+  const pr = panel && !hud.classList.contains('panel-collapsed') ? panel.getBoundingClientRect() : null;
+  const app = document.getElementById('app')?.getBoundingClientRect().top ?? 0;
+  const side = pr && pr.width && pr.left > W / 2 ? W - pr.left : 0;
+  const below = pr && pr.width && pr.left <= W / 2 ? window.innerHeight - pr.top : 0;   // narrow screens: panel underneath
+  return { right: side, top: Math.max(0, top - app), bottom: below, left: 0 };
+}

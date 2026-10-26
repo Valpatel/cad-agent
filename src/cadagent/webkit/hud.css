@@ -98,7 +98,17 @@ input[type=range] { -webkit-appearance: none; }
 .hud-readouts .r.fail { background: rgba(255, 42, 109, 0.08); }
 .hud-note { font-size: 12px; color: var(--muted); margin: 0; }
 
+/* collapsible side panel (panel.js collapsiblePanel) */
+#hud.panel-collapsed { grid-template-columns: minmax(0, 1fr) 0; }
+#hud.panel-collapsed #panel { display: none; }
+.hud-panel-tab { position: absolute; top: 58px; right: calc(var(--panel-w) - 10px); z-index: 5; pointer-events: auto; width: 22px; height: 44px;
+  background: rgba(14, 14, 20, 0.9); color: var(--cyan); border: 1px solid var(--hairline); border-right: none; border-radius: 6px 0 0 6px;
+  font-size: 12px; cursor: pointer; }
+.hud-panel-tab:hover { border-color: var(--cyan-dim); }
+#hud.panel-collapsed .hud-panel-tab { right: 0; }
+
 @media (max-width: 820px) {
+  .hud-panel-tab { display: none; }
   #hud { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr) 46vh; grid-template-areas: "topbar" "stage" "panel"; }
   #panel { margin: 0 8px 8px; }
   #topbar { flex-wrap: wrap; padding: 8px 12px; }

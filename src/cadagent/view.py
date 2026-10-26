@@ -8,7 +8,11 @@ Works for any CAD project: a housing, a bracket set, a mechanism or a robot. ``c
       colors: {base: "#2f343c", cover: "#e8892b"}     # per part; others get a palette colour
       hidden: [base_mount, front_gmsl]                 # alternative variants, off until ticked
       explode: {cover: [0, 0, 1]}                      # explode direction per part (default: away from the centre)
-      extra: [{name: carrier, file: references/pcb-outline.step, color: "#2f8f4e"}]   # non-printed parts to show
+      extra: [{name: carrier, file: references/pcb-outline.step, color: "#2f8f4e"},     # non-printed parts to show
+              {glob: "exports/asm_*.step", strip: "asm_"}]                         # or many files at once
+      parts: false                                     # skip the parts file (when its STEPs are not in assembly position)
+
+Colours match a part's name exactly, else its name without a trailing _l/_r/_1/... suffix, else its first word.
 """
 
 from __future__ import annotations
@@ -39,8 +43,18 @@ def export_view(project, tolerance: float = 0.1, angular: float = 0.2) -> Dict[s
     out = project.exports_dir / "view"
     out.mkdir(parents=True, exist_ok=True)
 
-    sources = [(name, project.exports_dir / f"{name}.step", None) for name in _parts_from(project)]
-    sources += [(e["name"], project.root / e["file"], e.get("color")) for e in cfg.get("extra", [])]
+    sources = [(name, project.exports_dir / f"{name}.step", None) for name in _parts_from(project)] if cfg.get("parts", True) else []
+    for e in cfg.get("extra", []):
+        if "glob" in e:
+            for f in sorted(project.root.glob(e["glob"])):
+                sources.append((f.stem[len(e.get("strip", "")):] if f.stem.startswith(e.get("strip", "")) else f.stem, f, e.get("color")))
+        else:
+            sources.append((e["name"], project.root / e["file"], e.get("color")))
+
+    def colour_for(name, i):
+        import re
+        base = re.sub(r"_(l|r|left|right|front|rear|\d+)$", "", name)
+        return colors.get(name) or colors.get(base) or colors.get(name.split("_")[0]) or PALETTE[i % len(PALETTE)]
     parts, skipped = [], []
     for i, (name, step, color) in enumerate(sources):
         if not step.is_file():
@@ -52,8 +66,8 @@ def export_view(project, tolerance: float = 0.1, angular: float = 0.2) -> Dict[s
         bb = shape.val().BoundingBox() if hasattr(shape, "val") else shape.BoundingBox()
         parts.append({
             "name": name, "id": project.part_ids.get(name, ""), "file": stl.name,
-            "color": color or colors.get(name) or PALETTE[i % len(PALETTE)],
-            "visible": name not in hidden, "explode": explode.get(name),
+            "color": color or colour_for(name, i),
+            "visible": name not in hidden and not any(name.startswith(h + "_") for h in hidden), "explode": explode.get(name),
             "bounds_mm": [round(v, 2) for v in (bb.xmin, bb.ymin, bb.zmin, bb.xmax, bb.ymax, bb.zmax)],
         })
     manifest = {"title": project.title, "units": "mm", "up": "z", "parts": parts, "skipped": skipped}

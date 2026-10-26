@@ -23,7 +23,11 @@ function radialGlow(stops) {
 
 /**
  * createStage(container, { height = 1, accent = 0x00f0ff })
- * Returns { renderer, scene, camera, controls, root, setSceneLight(0..1), frame(height), onFrame(cb), start() }.
+ * Returns { renderer, scene, camera, controls, root, setSceneLight(0..1), frame(height), onFrame(cb), start(),
+ *           setInsets({ left, right, top, bottom }), fitView(points, { direction, margin }) }.
+ * `setInsets` takes the pixels covered by overlay UI (a side panel, a top bar): the view's centre moves into the
+ * uncovered area, so the model is not hidden behind the panels. `fitView` places the camera so all the points (THREE
+ * Vector3s, or a Box3) fit in that uncovered area, looking along `direction` at `target` (default: their centre).
  * `onFrame(cb)` registers cb(t, dt) called every animation frame before rendering.
  */
 export function createStage(container, opts = {}) {
@@ -112,13 +116,65 @@ export function createStage(container, opts = {}) {
   }
   applyLight();
 
+  const insets = { left: 0, right: 0, top: 0, bottom: 0 };
+  const size = () => [container.clientWidth || window.innerWidth, container.clientHeight || window.innerHeight];
   function resize() {
-    const w = container.clientWidth || window.innerWidth, hh = container.clientHeight || window.innerHeight;
+    const [w, hh] = size();
     renderer.setSize(w, hh, false);
     renderer.domElement.style.width = '100%';
     renderer.domElement.style.height = '100%';
     camera.aspect = w / hh;
+    // shift the projection so the camera looks at the centre of the area the overlays leave free
+    const dx = (insets.right - insets.left) / 2, dy = (insets.bottom - insets.top) / 2;
+    if (dx || dy) camera.setViewOffset(w, hh, dx, dy, w, hh); else camera.clearViewOffset();
     camera.updateProjectionMatrix();
+  }
+  function setInsets(next = {}) {
+    for (const k of Object.keys(insets)) insets[k] = Math.max(0, next[k] ?? 0);
+    resize();
+  }
+  function fitView(points, { direction = new THREE.Vector3(1, 0.6, 1.4), margin = 1.06, target = null, apply = true } = {}) {
+    const box = points.isBox3 ? points : new THREE.Box3().setFromPoints(points);
+    const pts = points.isBox3 ? [0, 1, 2, 3, 4, 5, 6, 7].map((i) => new THREE.Vector3(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z)) : points;
+    const sphere = box.getBoundingSphere(new THREE.Sphere());
+    const center = target ?? sphere.center;
+    const dir = direction.clone().normalize();
+    const [w, hh] = size();
+    resize();
+    // the free area in normalised device coordinates (the projection already includes the view offset)
+    const x0 = -1 + (2 * insets.left) / w, x1 = 1 - (2 * insets.right) / w, y0 = -1 + (2 * insets.bottom) / hh, y1 = 1 - (2 * insets.top) / hh;
+    const shrink = 1 / margin;
+    const v = new THREE.Vector3();
+    const saved = { p: camera.position.clone(), q: camera.quaternion.clone() };
+    const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    const fits = (dist) => {
+      camera.position.copy(center).addScaledVector(dir, dist);
+      camera.lookAt(center);
+      camera.updateMatrixWorld();
+      return pts.every((p) => {
+        if (v.copy(p).applyMatrix4(camera.matrixWorldInverse).z > -camera.near) return false;    // behind the camera
+        v.copy(p).project(camera);
+        return Math.abs(v.x - cx) <= shrink * (x1 - x0) / 2 && Math.abs(v.y - cy) <= shrink * (y1 - y0) / 2;
+      });
+    };
+    // perspective: near things look bigger, so search the distance that just fits every point
+    let hi = Math.max(sphere.radius, center.distanceTo(sphere.center) + sphere.radius) * 6, lo = 0.05 * sphere.radius;
+    if (fits(hi)) {
+      for (let k = 0; k < 32; k++) { const mid = (lo + hi) / 2; if (fits(mid)) hi = mid; else lo = mid; }
+    }
+    const dist = hi;
+    const position = center.clone().addScaledVector(dir, dist);
+    camera.position.copy(saved.p);
+    camera.quaternion.copy(saved.q);
+    camera.updateMatrixWorld();
+    if (!apply) return { center, distance: dist, position };
+    camera.position.copy(position);
+    controls.target.copy(center);
+    camera.far = Math.max(camera.far, dist + 4 * sphere.radius);
+    controls.maxDistance = Math.max(controls.maxDistance, 2 * dist);
+    camera.updateProjectionMatrix();
+    controls.update();
+    return { center, distance: dist, position };
   }
   new ResizeObserver(resize).observe(container);
   resize();
@@ -141,7 +197,7 @@ export function createStage(container, opts = {}) {
   }
 
   return {
-    renderer, scene, camera, controls, root, frame,
+    renderer, scene, camera, controls, root, frame, setInsets, fitView,
     setSceneLight(v, immediate = false) { light.level = Math.max(0, Math.min(1, v)); if (immediate) { light.current = light.level; applyLight(); } },
     onFrame(cb) { callbacks.push(cb); },
     start() { if (!running) { running = true; requestAnimationFrame(tick); } },

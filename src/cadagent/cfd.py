@@ -296,8 +296,11 @@ class ThermalCase:
                        'fans are actuator discs with a straight-line fan curve, no swirl'],
         }
 
-    def heat_input_w(self) -> float:
-        """Heat put into the domain: solid sources, evenly heated blocks and the target power of exchanger blocks."""
+    def heat_input_w(self) -> Optional[float]:
+        """Heat put into the domain: solid sources, evenly heated blocks and the target power of exchanger blocks.
+        None when an exchanger block has no target (its heat is whatever its fixed fin temperature gives)."""
+        if any(z.get('ha_w_k') and z.get('target_w') is None for z in self.porous):
+            return None
         return float(sum(b.power_w for b in self.bodies if b.kind == 'solid') +
                      sum((z.get('target_w') or 0.0) if z.get('ha_w_k') else z['heat_w'] for z in self.porous))
 
@@ -652,6 +655,8 @@ foamToVTK -allRegions -latestTime -noFunctionObjects > log.foamToVTK 2>&1
         if target_w is not None:
             for z in zones:
                 z['target_w'] = target_w / len(zones)
+        if any(z.get('target_w') is None for z in zones):
+            raise ValueError('calibrate_fins needs a target power: pass target_w, or porous_box(..., target_w=)')
         want = sum(z['target_w'] for z in zones)
         others = self.heat_input_w() - want
         hist, prev, calibrated = [], None, False
@@ -807,9 +812,11 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
         out['heat_out_w'] = round(float(heat_series[-1, 1]), 2)
         out['mass_imbalance_kg_s'] = float(m[n - 1, 1])
     q_in = meta.get('heat_input_w')
-    if q_in and out.get('heat_out_w') is not None:
+    if q_in is not None and out.get('heat_out_w') is not None:
         out['heat_input_w'] = q_in
-        out['energy_balance_pct'] = round(100 * (out['heat_out_w'] - q_in) / q_in, 1)
+        if q_in > 0:
+            out['energy_balance_pct'] = round(100 * (out['heat_out_w'] - q_in) / q_in, 1)
+        out['energy_balance_w'] = round(out['heat_out_w'] - q_in, 2)
     # cells each fan and fin zone actually caught (an empty zone silently does nothing)
     ts = cd / 'log.topoSet'
     if ts.exists():
@@ -867,6 +874,14 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
         conv['heat_out_change_pct'] = round(100 * (tail[-1, 1] - tail[0, 1]) / tail[-1, 1], 1) if tail[-1, 1] else None
     out['convergence'] = conv
     steady = bool(conv) and all(abs(v) < (1.0 if k.endswith('_c_change') else 2.0) for k, v in conv.items() if v is not None)
-    balanced = out.get('energy_balance_pct') is not None and abs(out['energy_balance_pct']) <= 5
+    # within 5 % of the heat put in (or 0.5 W of nothing, for an airflow-only case); not checkable when an exchanger
+    # block has no target power, and then said so
+    if out.get('energy_balance_pct') is not None:
+        balanced = abs(out['energy_balance_pct']) <= 5
+    elif out.get('energy_balance_w') is not None:
+        balanced = abs(out['energy_balance_w']) <= 0.5
+    else:
+        balanced = True
+        out['energy_balance'] = 'not checked: an exchanger block has no target power'
     out['converged'] = steady and balanced and not out.get('error')
     return out

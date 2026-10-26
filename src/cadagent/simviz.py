@@ -390,3 +390,89 @@ def convergence_chart(results: dict, path, title='Solver convergence'):
     fig.savefig(path)
     plt.close(fig)
     return path
+
+
+# --- structural results (cadagent.fea.Study) -------------------------------------------------------------------
+STRESS_RAMP = ['#f3f0fb', '#ddd6f5', '#c3b8ee', '#a597e6', '#8676dc', '#6250d6', '#4f3eb8', '#3d2f93', '#2b216b']
+
+
+def _fea_grid(study, scale: float = 0.0, load: float = 1.0):
+    pv = _pv()
+    pts = study.points + scale * load * study.disp.T
+    cells = np.hstack([np.full((len(study.tets), 1), 4), study.tets]).ravel()
+    g = pv.UnstructuredGrid(cells, np.full(len(study.tets), 10, dtype=np.uint8), pts)     # 10 = VTK_TETRA
+    g.cell_data['ratio'] = study.vm_elem * load / study.material.strength_mpa
+    return g
+
+
+def _fea_scale(study, frac=0.06):
+    size = float(np.ptp(study.points, axis=0).max())
+    dmax = float(np.linalg.norm(study.disp, axis=0).max())
+    return frac * size / dmax if dmax > 0 else 1.0
+
+
+def fea_view(study, path, title: str = '', subtitle: str = '', note: str = '', views=((-35, 30), (-35, -40)),
+             size=(1600, 900), percentile: float = 99.9):
+    """Stress over strength on the deformed part (one-hue ramp, scaled to the given percentile so a single notch
+    element does not wash the picture out), anything past the strength in the critical colour. Two views side by side
+    (default: from above and from below). The deformation is exaggerated by one stated factor."""
+    pv = _pv()
+    scale = _fea_scale(study)
+    g = _fea_grid(study, scale)
+    inner = ~study._touches_bc if hasattr(study, '_touches_bc') else np.ones(len(study.tets), bool)
+    top = float(np.percentile(g.cell_data['ratio'][inner], percentile))
+    surf = g.extract_surface(algorithm='dataset_surface')
+    lo, hi = np.array(surf.bounds).reshape(3, 2).T
+    c, span = (lo + hi) / 2, float(np.max(hi - lo))
+    p = pv.Plotter(off_screen=True, window_size=size, shape=(1, len(views)), lighting='three lights', border=False)
+    for i, (az, el) in enumerate(views):
+        p.subplot(0, i)
+        p.set_background(STAGE)
+        p.add_mesh(surf, scalars='ratio', cmap=cmap(STRESS_RAMP), clim=(0, max(top, 1e-6)), show_scalar_bar=(i == len(views) - 1),
+                   preference='cell', scalar_bar_args=dict(title='Stress / strength', vertical=True, position_x=0.86, position_y=0.2,
+                                                           width=0.05, height=0.6, color='#26323a', fmt='%.2f'))
+        over = surf.threshold(1.0, scalars='ratio', preference='cell')
+        if over.n_cells:
+            p.add_mesh(over, color=CRITICAL)
+        _camera(p, c, 2.0 * span, az, el)
+    p.screenshot(str(path))
+    p.close()
+    r = getattr(study, 'result', {})
+    legend = [('past the strength', CRITICAL)] if (g.cell_data['ratio'] > 1).any() else []
+    return frame(path, title or f'{study.name}: stress', subtitle or
+                 f"{r.get('material', '')}: max deflection {r.get('max_displacement_mm')} mm; colour scaled to the {percentile:g}th-percentile "
+                 f'stress ({top * study.material.strength_mpa:.1f} MPa)',
+                 note or f'Linear elastic; deformation exaggerated x{scale:.0f}. Left: from above; right: from below.', legend=legend)
+
+
+def fea_animate(study, path, overload: Optional[float] = None, seconds: float = 6, fps: int = 24, view=(-35, 30), size=(1280, 800),
+                percentile: float = 99.9):
+    """The load ramped from zero to ``overload`` x the design load (default: until the 99.9th-percentile stress
+    reaches the strength, plus 30 %), deformation exaggerated, regions past the strength in the critical colour while
+    the camera turns. Linear: each frame is the solved field times the load factor. MP4."""
+    pv = _pv()
+    scale = _fea_scale(study, 0.08)
+    inner = ~study._touches_bc if hasattr(study, '_touches_bc') else np.ones(len(study.tets), bool)
+    p999 = float(np.percentile(study.vm_elem[inner], percentile)) / study.material.strength_mpa
+    end = overload or max(1.2, 1.3 / max(p999, 1e-6))
+    frames = int(seconds * fps)
+    w = _writer(path, fps)
+    g0 = _fea_grid(study)
+    lo, hi = np.array(g0.bounds).reshape(3, 2).T
+    c, span = (lo + hi) / 2, float(np.max(hi - lo))
+    for k in range(frames):
+        lam = end * min(1.0, k / (frames * 0.8))
+        g = _fea_grid(study, scale / end, lam)
+        surf = g.extract_surface(algorithm='dataset_surface')
+        p = _plotter(size)
+        p.add_mesh(surf, scalars='ratio', cmap=cmap(STRESS_RAMP), clim=(0, 1), preference='cell', show_scalar_bar=False)
+        over = surf.threshold(1.0, scalars='ratio', preference='cell')
+        if over.n_cells:
+            p.add_mesh(over, color=CRITICAL)
+        state = 'design load' if abs(lam - 1) < end / frames else ('past the strength somewhere' if lam * p999 > 1 else 'loading')
+        p.add_text(f'load x{lam:.2f}  ({state})', position='upper_left', font_size=12, color='#26323a')
+        _camera(p, c, 2.0 * span, view[0] + 40 * k / frames, view[1])
+        w.append_data(p.screenshot(return_img=True))
+        p.close()
+    w.close()
+    return path

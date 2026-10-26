@@ -195,3 +195,23 @@ def test_still_room_stays_still(tmp_path):
     # measured: fixed BC mean 0.009 / max 0.031 m/s (buoyancy noise on a snapped mesh); the old uniform-static-pressure
     # BC gave mean 0.62 / max 1.47 m/s on this same case
     assert float(u.mean()) < 0.02 and float(u.max()) < 0.1
+
+
+def test_airflow_only_case_can_converge(tmp_path):
+    c = ThermalCase('t', domain=((-40, -40, 0), (80, 80, 100)), cell_mm=10)
+    c.wall('stand', box((0, 0, 0), (40, 40, 10)))
+    c.fan(Fan('fan', centre=(20, 20, 40), axis=(0, 0, -1), d_outer=30, d_hub=10, thickness=4, dp0_pa=20, q_free_m3h=20))
+    d = c.write(tmp_path / 'case', np_procs=2)
+    rows = [(i, 0.0) for i in range(10, 310, 10)]
+    _fake_results(d, {0: rows}, {0: rows})
+    r = c.results(d)
+    assert r['heat_input_w'] == 0 and r['energy_balance_w'] == pytest.approx(0.0) and r['converged'] is True
+
+
+def test_calibrate_without_a_target_says_so(tmp_path):
+    c = ThermalCase('t', domain=((-40, -40, 0), (80, 80, 100)), cell_mm=10)
+    c.porous_box('fins', (5, 5, 18), (35, 35, 30), d=(1e6, 1e9, 1e6), f=(0, 0, 0), ha_w_k=1.0, fin_temperature_c=35.0)
+    assert c.heat_input_w() is None
+    d = c.write(tmp_path / 'case', np_procs=2)
+    with pytest.raises(ValueError, match='target power'):
+        c.calibrate_fins(d)

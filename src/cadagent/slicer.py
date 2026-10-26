@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 PRINTER = 'Bambu Lab P1S 0.4 nozzle'
+_MARK = '.cadagent-slicer'
 PROCESS = '0.20mm Standard @BBL X1C'          # lists the P1S 0.4 nozzle among its compatible printers
 FILAMENTS = {'pla': 'Bambu PLA Basic @BBL P1S 0.4 nozzle', 'petg': 'Bambu PETG HF @BBL P1S 0.4 nozzle'}
 
@@ -121,10 +122,12 @@ def slice_part(model, workdir=None, printer: str = PRINTER, process: str = PROCE
     work = Path(workdir).resolve() if workdir else model.parent / 'slicer' / model.stem
     if work.exists():
         # only ever clear a folder this function wrote (or an empty one)
-        if not (work / 'result-summary.json').exists() and any(work.iterdir()):
+        ours = (work / _MARK).exists() or (work / 'result-summary.json').exists()   # the older marker too
+        if not ours and any(work.iterdir()):
             raise FileExistsError(f'{work} exists and is not a slicer work folder; choose an empty or new folder')
         shutil.rmtree(work)
     work.mkdir(parents=True)
+    (work / _MARK).write_text('cadagent.slicer work folder: safe to delete\n')   # first, so a crashed slice can be redone
     fil = FILAMENTS.get(filament, filament)
     mach, proc, fl = flatten('machine', printer), flatten('process', process), flatten('filament', fil)
     for k, v in (overrides or {}).items():
@@ -182,7 +185,15 @@ def slice_project(project, parts=None) -> dict:
         raise FileNotFoundError(error)
     names = list(parts or cfg.get('parts') or known)
     work = project.root / 'build' / 'slicer'
-    rows, total_g, total_min = {}, 0.0, 0.0
+    path = project.exports_dir / 'slice-report.json'
+    rows = {}
+    if parts and path.exists():   # slicing some parts updates them in a report made with the same settings
+        try:
+            old = json.loads(path.read_text())
+            if all(old.get(k) == v for k, v in _settings(project).items()):
+                rows = dict(old.get('parts', {}))
+        except json.JSONDecodeError:
+            pass
     for name in names:
         model = project.exports_dir / f'{name}.3mf'
         if not model.exists():
@@ -192,14 +203,13 @@ def slice_project(project, parts=None) -> dict:
                        filament=cfg.get('filament', 'pla'), overrides=cfg.get('overrides'))
         r['sha256'] = _sha(model)
         rows[name] = {k: r.get(k) for k in ('grams', 'minutes', 'filament_m', 'error', 'sha256')}
-        total_g += r.get('grams') or 0.0
-        total_min += r.get('minutes') or 0.0
+    total_g = sum(v.get('grams') or 0.0 for v in rows.values())
+    total_min = sum(v.get('minutes') or 0.0 for v in rows.values())
     exe = executable()
     out = {'slicer': 'Bambu Studio (command line)', **_settings(project), 'slicer_executable': str(Path(exe).resolve()) if exe else None,
            'parts': rows, 'total_grams': round(total_g, 1), 'total_hours': round(total_min / 60, 2),
            'pass': bool(rows) and all(v.get('grams') for v in rows.values()),
            'note': 'Slicer estimates for one copy of each part with the stated profile; supports off unless the profile turns them on.'}
-    path = project.exports_dir / 'slice-report.json'
     path.write_text(json.dumps(out, indent=2) + '\n')
     out['path'] = str(path)
     return out

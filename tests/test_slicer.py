@@ -33,3 +33,30 @@ def test_slices_a_cube(tmp_path):
     trimesh.creation.box(extents=(20, 20, 20)).apply_translation((0, 0, 10)).export(str(stl))
     r = slicer.slice_part(stl, workdir=work / 'out')
     assert 2.5 < r['grams'] < 6
+
+
+def test_work_folder_guard_and_partial_reslice(tmp_path, monkeypatch):
+    import pathlib
+    from tests.test_report import make_project
+    from cadagent.project import load_project
+    monkeypatch.setattr(slicer, 'executable', lambda: '/bin/false')
+    monkeypatch.setattr(slicer, 'flatten', lambda kind, name: {'name': name})
+    model = tmp_path / 'm.3mf'
+    model.write_text('x')
+    work = tmp_path / 'work'
+    work.mkdir()
+    (work / 'mine.txt').write_text('keep')
+    with pytest.raises(FileExistsError):
+        slicer.slice_part(model, workdir=work)
+    assert (work / 'mine.txt').exists()
+    slicer.slice_part(model, workdir=tmp_path / 'w2')      # a crashed slice still leaves the marker...
+    slicer.slice_part(model, workdir=tmp_path / 'w2')      # ...so it can be redone
+    root = make_project(tmp_path / 'proj')
+    project = load_project(root)
+    grams = {'box': 5.0, 'lid': 7.0}
+    monkeypatch.setattr(slicer, 'slice_part', lambda m, **kw: {'grams': grams[pathlib.Path(m).stem], 'minutes': 10.0})
+    full = slicer.slice_project(project)
+    assert set(full['parts']) == {'box', 'lid'} and full['total_grams'] == 12.0
+    grams['box'] = 4.0
+    part = slicer.slice_project(project, ['box'])
+    assert set(part['parts']) == {'box', 'lid'} and part['total_grams'] == 11.0

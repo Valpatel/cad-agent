@@ -21,7 +21,7 @@ cad = [
     "numpy",
 ]
 site = ["markdown>=3.5"]
-fea = ["gmsh>=4.11", "scikit-fem>=9", "matplotlib>=3.7"]
+fea = ["gmsh>=4.11", "scikit-fem>=9", "matplotlib>=3.7", "pypardiso>=0.4", "pyamg>=5"]
 dev = ["pytest"]
 
 [project.scripts]

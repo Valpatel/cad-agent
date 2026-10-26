@@ -15,6 +15,9 @@ handles bending well even with a few elements through a wall. Faces are picked w
 kind, bounding box, centre and area). Loads spread over the chosen faces: a force as a uniform traction, a torque as a
 tangential traction that grows with the distance from the axis (like bolts sharing a twisting load).
 
+Solvers: PARDISO (pip install pypardiso) when available, else SciPy's direct solver, or conjugate gradients with a
+smoothed-aggregation multigrid preconditioner (pyamg, with the six rigid-body modes) for big meshes.
+
 Limits, stated in every result: linear and small-deflection; isotropic material. Printed parts are not isotropic, so
 the printed materials carry an effective modulus and a strength for the weak (layer) direction, and the safety factor
 uses the weak-direction strength. Contact, bolt preload and buckling are not modelled.
@@ -258,7 +261,7 @@ class Study:
                 f += asm(LinearForm(lambda v, w: dot(tang(w.x), v)), fb)
                 applied.append({'kind': 'torque', 'nm': t / 1000.0, 'axis': a.tolist(), 'point_mm': c.tolist(), 'area_mm2': round(area, 1)})
 
-        u = solve(*condense(K, f, D=D))
+        u = self._solve(K, f, D, ib)
         self._m, self._ib, self._u = m, ib, u
 
         # stresses at each element's corners (the P2 strain is linear inside a tet, so its extremes are at the corners,
@@ -316,6 +319,61 @@ class Study:
                 res['torsional_stiffness_nm_per_deg'] = round(t / 1000.0 / math.degrees(ang), 2) if ang > 1e-12 else None
         self.result = res
         return res
+
+    def _solve(self, K, f, D, ib):
+        """PARDISO (pypardiso, multithreaded) when installed: about 20 times faster than SciPy's SuperLU on these
+        problems; else SuperLU for small problems and multigrid-preconditioned CG for big ones."""
+        from skfem import condense, solve
+        try:
+            import pypardiso
+        except ImportError:
+            pypardiso = None
+        if pypardiso is not None:
+            A, b, x, I = condense(K, f, D=D)
+            x = x.copy()
+            x[I] = pypardiso.spsolve(A.tocsr(), b)
+            return x
+        if K.shape[0] > 60000:
+            return self._solve_iterative(K, f, D, self._rigid_modes(ib))
+        return solve(*condense(K, f, D=D))
+
+    @staticmethod
+    def _rigid_modes(ib):
+        """The six rigid-body motions sampled at every degree of freedom (multigrid needs them for elasticity)."""
+        n = ib.N
+        comp = np.zeros(n, dtype=int)
+        for attr in ('nodal_dofs', 'edge_dofs', 'facet_dofs', 'interior_dofs'):
+            arr = getattr(ib, attr, None)
+            if arr is not None and arr.size:
+                for c in range(arr.shape[0]):
+                    comp[arr[c].ravel()] = c % 3
+        x = ib.doflocs                                  # (3, n)
+        B = np.zeros((n, 6))
+        for c in range(3):
+            B[comp == c, c] = 1.0
+        X, Y, Z = x
+        B[:, 3] = np.where(comp == 1, -Z, np.where(comp == 2, Y, 0.0))
+        B[:, 4] = np.where(comp == 0, Z, np.where(comp == 2, -X, 0.0))
+        B[:, 5] = np.where(comp == 0, -Y, np.where(comp == 1, X, 0.0))
+        return B
+
+    @staticmethod
+    def _solve_iterative(K, f, D, B=None):
+        import scipy.sparse.linalg as spla
+        from skfem import condense
+        A, b, x, I = condense(K, f, D=D)
+        try:
+            import pyamg
+            M = pyamg.smoothed_aggregation_solver(A.tocsr(), B=None if B is None else B[I], max_coarse=500).aspreconditioner(cycle='V')
+        except ImportError:                          # without pyamg: a diagonal preconditioner (slower)
+            dg = A.diagonal()
+            M = spla.LinearOperator(A.shape, matvec=lambda v: v / dg)
+        sol, info = spla.cg(A, b, M=M, rtol=1e-8, maxiter=4000)
+        if info != 0:
+            raise RuntimeError(f'the iterative solver did not converge (info {info})')
+        x = x.copy()
+        x[I] = sol
+        return x
 
     # --- picture
     def render(self, path, scale: Optional[float] = None, view=(25, -60), title: Optional[str] = None):

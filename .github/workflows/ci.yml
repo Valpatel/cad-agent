@@ -2,34 +2,43 @@ name: CI
 
 on:
   pull_request:
+    # 'edited' re-runs CI when a PR's base branch changes (e.g. retargeted from main to dev)
+    types: [opened, synchronize, reopened, edited]
   push:
     branches: [main, dev]
   workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # cancel superseded PR runs only; every commit on main and dev keeps its own result
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # Fast: the package with only its required dependency; every optional-dependency test must skip cleanly.
+  # Fast: the package with only its required dependencies; every optional-dependency test must skip cleanly.
+  # 3.10 is the oldest supported Python (and what JetPack 6 ships on Jetson).
   core:
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python: ['3.10', '3.12']
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: {python-version: '3.12', cache: pip}
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: {python-version: '${{ matrix.python }}'}
       - run: pip install -e ".[dev]"
       - run: python -m pytest -q
       - run: cad-agent --help
 
-  # Full: CAD, FEA and site extras, so the geometry, mesh and solver tests run instead of skipping.
+  # Full: CAD, FEA, robot and site extras, so the geometry, mesh, solver and simulator tests run instead of skipping.
   full:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with: {python-version: '3.12', cache: pip}
-      - name: System libraries for the gmsh and VTK wheels
+      - name: System libraries for the gmsh, VTK and MuJoCo wheels
         run: sudo apt-get update -q && sudo apt-get install -yq --no-install-recommends libglu1-mesa libxrender1 libxcursor1 libxft2 libxinerama1 libgl1 libegl1
-      - run: pip install -e ".[cad,fea,site,dev]"
+      - run: pip install -e ".[cad,fea,robot,site,dev]"
+      # importorskip would turn a broken heavy install into silent skips: import them all first, loudly
+      - run: python -c "import cadquery, OCP, trimesh, vtk, matplotlib, PIL, gmsh, skfem, mujoco, markdown; print('extras import ok')"
       - run: python -m pytest -q -rs

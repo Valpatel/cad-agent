@@ -125,7 +125,8 @@ def test_read_results_heat_balance_restarts_and_empty_files(tmp_path):
 
 
 def test_calibrate_fins_targets_the_block_and_steps_by_secant(tmp_path, monkeypatch):
-    # a 40 W solid plus an exchanger block that must deliver 20 W; the fake solver delivers 0.8 W/K x (T_fin - 25)
+    # a 40 W solid plus an exchanger block (hA 1 W/K) that must deliver 20 W; in the fake solver the block's air sits at
+    # 25 + 0.2 (T_fin - 25), so the block gives 0.8 (T_fin - 25) W and needs T_fin = 50 C
     c = ThermalCase('t', domain=((-40, -40, 0), (80, 80, 100)), cell_mm=10)
     c.solid('chip', box((10, 10, 10), (30, 30, 14)), SOLIDS['silicon'], power_w=40)
     c.porous_box('fins', (5, 5, 18), (35, 35, 30), d=(1e6, 1e9, 1e6), f=(0, 0, 0), ha_w_k=1.0, fin_temperature_c=35.0, target_w=20.0)
@@ -133,8 +134,9 @@ def test_calibrate_fins_targets_the_block_and_steps_by_secant(tmp_path, monkeypa
     state = {'tfin': 35.0}
 
     def fake_read(case_dir, case=None):
-        q_block = 0.8 * (state['tfin'] - 25.0)
-        return {'heat_out_w': 40.0 + q_block, 'solver_finished': True, 'convergence': {'heat_out_change_pct': 0.5}}
+        t_block = 25.0 + 0.2 * (state['tfin'] - 25.0)
+        return {'zones': {'fins': {'T_c': t_block}}, 'heat_out_w': 40.0 + (state['tfin'] - t_block), 'solver_finished': True,
+                'convergence': {'fins_T_change_c': 0.1, 'fan_intake_c_change': 0.0}}
 
     def fake_run(cmd, **kw):
         state['tfin'] = c.porous[0]['fin_temperature_c']
@@ -143,8 +145,8 @@ def test_calibrate_fins_targets_the_block_and_steps_by_secant(tmp_path, monkeypa
     monkeypatch.setattr(cfd, 'read_results', fake_read)
     monkeypatch.setattr(cfd.subprocess, 'run', fake_run)
     res = c.calibrate_fins(d)
-    assert res['calibrated'] is True
-    assert c.porous[0]['fin_temperature_c'] == pytest.approx(25.0 + 20.0 / 0.8, abs=0.5)
+    assert res['calibrated'] is True and res['block_heat_w'] == pytest.approx(20.0, rel=0.03)
+    assert c.porous[0]['fin_temperature_c'] == pytest.approx(50.0, abs=0.8)
 
 
 def test_fin_temperature_must_start_above_the_room():

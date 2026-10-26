@@ -493,12 +493,13 @@ interpolationSchemes { default linear; }
 snGradSchemes { default limited 0.5; }
 wallDist { method meshWave; }
 ''')
-        w.dict(f'system/{r}/fvSolution', '''solvers
+        u_relax, h_relax = getattr(self, '_relax', (0.3, 0.7))
+        w.dict(f'system/{r}/fvSolution', ('''solvers
 {
     "rho.*" { solver PCG; preconditioner DIC; tolerance 1e-7; relTol 0; }
     p_rgh { solver GAMG; smoother GaussSeidel; tolerance 1e-7; relTol 0.01; }
-    // solving energy tighter or relaxing it less (h 0.8-0.95, GAMG relTol 0.01) diverges in the first iterations,
-    // while the fan and buoyancy are still starting up
+    // relaxing energy less (0.8-0.95) or solving it tighter diverged in the first iterations of the J501 case; a
+    // restart, once the flow has formed, relaxes faster (see _continue)
     "(U|h|k|omega)" { solver PBiCGStab; preconditioner DILU; tolerance 1e-7; relTol 0.1; }
 }
 SIMPLE
@@ -509,9 +510,9 @@ SIMPLE
 relaxationFactors
 {
     fields { p_rgh 0.7; rho 1; }
-    equations { U 0.3; h 0.7; k 0.5; omega 0.5; }
+    equations { U __U__; h __H__; k 0.5; omega 0.5; }
 }
-''')
+''').replace('__U__', str(u_relax)).replace('__H__', str(h_relax)))
         src = []
         for z in self.porous:
             src.append(f'''{z['name']}Resistance
@@ -647,9 +648,12 @@ foamToVTK -allRegions -latestTime -noFunctionObjects > log.foamToVTK 2>&1
     def calibrate_fins(self, case_dir, target_w: Optional[float] = None, extra_iterations: int = 400, tolerance: float = 0.03,
                        rounds: int = 8, image: str = IMAGE, native: Optional[bool] = None) -> dict:
         """Set the exchanger blocks' fin temperature so they deliver their power, continuing the solve from where it
-        stopped. The blocks' own heat is the heat leaving with the air minus every other source. Each correction is a
-        secant step on T_fin (the delivered heat is close to linear in it), taken only once the heat leaving has
-        stopped changing; otherwise the round just keeps solving. ``calibrated`` in the result says whether it got there."""
+        stopped. A block's heat is exactly hA (T_fin - mean air temperature in the block), which settles long before
+        the heat leaving an open room does. Each correction is a secant step on T_fin, taken once the block and fan-intake
+        temperatures have stopped moving (0.5 K over the last fifth), and moves at most 20 K; otherwise the round just
+        keeps solving. Faster relaxation on restarts (velocity 0.5, energy 0.85) diverged on the J501 case after a fin
+        temperature step, so restarts keep the start-up values. ``calibrated`` says whether it got there;
+        ``energy_balance_pct`` says whether the whole room has caught up."""
         case = Path(case_dir).resolve()
         zones = [z for z in self.porous if z.get('ha_w_k')]
         if not zones:
@@ -664,16 +668,19 @@ foamToVTK -allRegions -latestTime -noFunctionObjects > log.foamToVTK 2>&1
         hist, prev, calibrated = [], None, False
         for k in range(rounds + 1):
             res = read_results(case, self)
-            q_out = res.get('heat_out_w')
-            if q_out is None:
-                hist.append({'round': k, 'error': 'no heat-leaving output'})
+            # the block's own heat is exact and local: sum of hA (T_fin - volume-mean air temperature in the block)
+            zt = [res.get('zones', {}).get(z['name'], {}).get('T_c') for z in zones]
+            if any(v is None for v in zt):
+                hist.append({'round': k, 'error': 'no fin-zone temperature output'})
                 break
-            q = q_out - others
-            drift = res.get('convergence', {}).get('heat_out_change_pct')
-            settled = drift is not None and abs(drift) <= 5
+            q = sum(z['ha_w_k'] * (z['fin_temperature_c'] - v) for z, v in zip(zones, zt))
+            conv = res.get('convergence', {})
+            moving = [abs(v) for kk, v in conv.items() if v is not None and (kk.endswith('_T_change_c') or kk.endswith('_intake_c_change'))]
+            settled = bool(moving) and max(moving) <= 0.5
             t_fin = zones[0]['fin_temperature_c']
-            hist.append({'round': k, 'block_heat_w': round(q, 2), 'heat_out_w': q_out, 'fin_temperature_c': t_fin,
-                         'heat_out_change_pct': drift, 'solver_finished': res.get('solver_finished')})
+            hist.append({'round': k, 'block_heat_w': round(q, 2), 'heat_out_w': res.get('heat_out_w'), 'fin_temperature_c': t_fin,
+                         'block_and_intake_change_c': max(moving) if moving else None, 'energy_balance_pct': res.get('energy_balance_pct'),
+                         'solver_finished': res.get('solver_finished')})
             if not res.get('solver_finished'):
                 break
             if settled and abs(q - want) <= tolerance * want:
@@ -687,7 +694,7 @@ foamToVTK -allRegions -latestTime -noFunctionObjects > log.foamToVTK 2>&1
                 else:
                     slope = max(q, 1e-3) / max(t_fin - self.ambient_c, 1.0)
                 slope = max(slope, 1e-3)
-                new = min(max(t_fin + (want - q) / slope, self.ambient_c + 1.0), t_fin + 60.0)
+                new = min(max(t_fin + (want - q) / slope, self.ambient_c + 1.0, t_fin - 20.0), t_fin + 20.0)   # <= 20 K a round
                 prev = (t_fin, q)
                 for z in zones:
                     z['fin_temperature_c'] = round(new, 3)
@@ -703,7 +710,9 @@ foamToVTK -allRegions -latestTime -noFunctionObjects > log.foamToVTK 2>&1
         res = read_results(case, self)
         res['fin_calibration'] = hist
         res['calibrated'] = calibrated
-        res['block_heat_w'] = round((res.get('heat_out_w') or 0) - others, 2)
+        zt = [res.get('zones', {}).get(z['name'], {}).get('T_c') for z in zones]
+        if all(v is not None for v in zt):
+            res['block_heat_w'] = round(sum(z['ha_w_k'] * (z['fin_temperature_c'] - v) for z, v in zip(zones, zt)), 2)
         return res
 
     def _continue(self, case: Path, extra: int):
@@ -860,6 +869,13 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
         if len(a) > 5:
             tail = a[a[:, 0] >= a[-1, 0] * 0.8]
             conv[f'{k}_max_c_change'] = round(float(tail[-1, 1] - tail[0, 1]), 2)
+    for z in meta.get('porous', []):
+        f = fo(f'zone_{z["name"]}')
+        if f:
+            a = np.array(_series(f))
+            if len(a) > 5:
+                tail = a[a[:, 0] >= a[-1, 0] * 0.8]
+                conv[f'{z["name"]}_T_change_c'] = round(float(tail[-1, 4] - tail[0, 4]), 2)
     for fan in meta['fans']:
         f = fo(f'zone_{fan["name"]}')
         if f:

@@ -54,6 +54,21 @@
 - Measure recirculation directly: the air temperature entering the fan, against the room. An intake ring from the
   grille to the fan is the fix when it is above room temperature.
 
+### Steady CHT of a box in an open room converges slowly: calibrate on local quantities
+- With the stable settings (velocity relaxation 0.3, energy 0.7), the heat leaving the room and the intake temperature
+  drifted for more than 2000 iterations. That's the buoyancy-coupled circulation settling, not the linear solver:
+  multigrid for energy changed nothing. Tighter energy solves, less energy relaxation, and frozen-flow energy passes
+  all diverged in the first iterations.
+- What works:
+  - start cautious;
+  - restart with faster relaxation once the flow has formed;
+  - set the fin temperature from the block's own heat, exactly hA (T_fin - mean block air temperature), which is
+    local and settles early;
+  - keep the room's energy balance as the honest "has everything caught up" indicator;
+  - give the room only modest margins (30 mm sides, 40 mm above): every extra litre of slow air is more iterations.
+- The fan flow changed by 2× between a 16 mm and an 8 mm base mesh: thin shroud plates and grilles need their cells.
+  Compare designs on the same mesh, and say which mesh it was.
+
 ### Compute is shared: one heavy solver at a time
 - MPI CFD runs only as fast as its slowest rank. With topology optimisation, FEA (MKL/PARDISO threads) and another
   session's jobs on the same 24 cores, the solver slowed from 6 s to about 60 s per iteration. Pause or nice the

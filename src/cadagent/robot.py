@@ -140,6 +140,38 @@ def printed_part_body(shape: Any, density_g_cm3: float, wall_mm: float = 1.6, in
                   "estimate": True}
 
 
+def stl_faces(path: Path) -> int:
+    """Triangle count of an STL file (binary or ASCII)."""
+    with open(path, "rb") as fh:
+        head = fh.read(84)
+    if head[:5] == b"solid" and b"facet" in Path(path).read_bytes()[:2000]:
+        return Path(path).read_bytes().count(b"facet normal")
+    return int.from_bytes(head[80:84], "little")
+
+
+def fit_mesh(path: Path, max_faces: int = 150_000) -> int:
+    """Decimate an STL in place (VTK quadric decimation) until it has at most ``max_faces`` triangles; MuJoCo refuses
+    meshes over 200 000 faces, and vendor STEP models (lettering, knurls, fillets) often tessellate far above that.
+    Returns the final triangle count."""
+    n = stl_faces(path)
+    if n <= max_faces:
+        return n
+    vtk = require("vtk", "mesh decimation")
+    r = vtk.vtkSTLReader()
+    r.SetFileName(str(path))
+    clean = vtk.vtkCleanPolyData()
+    clean.SetInputConnection(r.GetOutputPort())
+    dec = vtk.vtkQuadricDecimation()
+    dec.SetInputConnection(clean.GetOutputPort())
+    dec.SetTargetReduction(1.0 - 0.95 * max_faces / n)
+    w = vtk.vtkSTLWriter()
+    w.SetFileName(str(path))
+    w.SetFileTypeToBinary()
+    w.SetInputConnection(dec.GetOutputPort())
+    w.Write()
+    return stl_faces(path)
+
+
 # --------------------------------------------------------------------------- URDF
 
 @dataclass

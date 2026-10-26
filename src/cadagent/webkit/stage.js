@@ -39,7 +39,7 @@ export function createStage(container, opts = {}) {
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 200);
+  const camera = new THREE.PerspectiveCamera(38, 1, 0.05, 50);   // near/far are set from the model size in frame()
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
@@ -50,7 +50,7 @@ export function createStage(container, opts = {}) {
   const key = new THREE.DirectionalLight(0xffffff, 2.1);
   key.castShadow = true;
   key.shadow.mapSize.set(2048, 2048);
-  key.shadow.bias = -0.0004;
+  key.shadow.bias = -0.0005;
   key.shadow.radius = 5;
   const fill = new THREE.DirectionalLight(0xa9d8ff, 0.45);
   const rim = new THREE.DirectionalLight(accent, 1.0);
@@ -75,6 +75,11 @@ export function createStage(container, opts = {}) {
   // Size everything to the robot.
   function frame(height) {
     const s = height;
+    // A tight near/far range keeps depth precision high, so close surfaces do not flicker (z-fighting).
+    camera.near = 0.02 * s;
+    camera.far = 30 * s;
+    camera.updateProjectionMatrix();
+    key.shadow.normalBias = 0.01 * s;     // no shadow acne crawling over moving parts
     camera.position.set(1.5 * s, 1.15 * s, 2.6 * s);
     controls.target.set(0, 0.5 * s, 0);
     controls.minDistance = 0.6 * s;

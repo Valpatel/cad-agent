@@ -1,5 +1,34 @@
 # 05 — Cables, connectors and routing
 
+### Model every mating connector, place it on the measured axis, and derive the window from it (standard practice)
+- **Rule:** For every external port, identify the receptacle's exact part, then look up its mating plug: the
+  manufacturer's drawing or STEP, otherwise a catalogue or typical envelope labelled as assumed. Next:
+  - measure the receptacle's mating face and axis by slicing the board model at the face;
+  - place the plug there in its mated position;
+  - derive the panel window from the part of the plug that passes through the wall on insertion, plus clearance.
+
+  Never size a window from a receptacle bounding box. Then sweep each plug in along its axis against every printed part
+  and require zero overlap, the stated clearance all round (corner radii included) and no plug-to-plug clash. Use
+  `cadagent.connectors`: plug families, `window()`, `check_ports()` and the `draw_ports()` evidence image.
+- **Incident:** On 2026-10-25 the user reported: "The DC input connectors, ethernet connectors, and audio connector cutouts do not appear centered properly. … The DC input connector is not able to fit and mate properly." Then: "connector cutouts need to move up a bit, away from the bottom of the PCB." The cause had two parts.
+  - Windows were "solid face bbox + 0.5". A bbox includes the through-hole pins about 2.3 mm below the PCB, so the
+    RJ45 and DC windows sat about 2 mm low. The audio windows sat 0.5 mm low because they used the shell's centre, not
+    the nose's.
+  - The DC header J2 is a 2-pin 5.08 mm screw-flange header, 8.4 mm tall. Its mating plug, the Phoenix MSTB 2,5/2-STF-5,08,
+    is 15 mm tall and 20.17 mm wide, and its 9.9 mm body sits outside the header face, right through the 3 mm plate.
+    The old window stopped 5.9 mm below the plug top, a 354 mm³ sweep collision.
+
+  Run against the old windows, the new check fails all four front ports. Against the derived windows, all 13 ports in
+  three plate configurations pass.
+- **Check:** `exports/port-checks.json` `pass` (one row per port, with plug basis, margins, centring offsets and
+  interference volumes), plus `preview/port-fit.png`. The review's `pass_key` includes `port_plug_fit_pass`.
+- **Also label what the user must get right at the port:** after the fit fix the user asked: "power connector should
+  have polarity and voltage labeled on it, same with ethernet speeds". Take polarity from the schematic net names
+  (J2 pin 1 = DCJ_IN through F1). When the model cannot tell which physical pin is pin 1, say so and ask for a meter
+  check; don't present the guess as fact.
+- **Source:** 2026-10-25 (J501 session, port-fit fix); `cad/parameters.json` (`ports.*.mate`); `cad/ports.py`;
+  `tools/check_ports.py`; Phoenix 1777989 datasheet.
+
 ### Route cables from the connector's real mating direction
 - **Rule:** Start every route at the connector's actual board side and mating axis, and give the cable a defined entry
   and exit through the housing.

@@ -77,6 +77,8 @@ These rules come from printed-enclosure work (FDM, Bambu P1S bed) around a real 
 - **Check:** For each port: receptacle depth behind the outside face, window size ≥ envelope, web ≥ the minimum (1.8 mm).
   Record the sizing basis per port in `ports`.
 - **Source:** 2026-10-24T07:41; `README.md` (Port windows); `cad/parameters.json` (`plug_envelopes_note`).
+- **Superseded check:** a size-only check missed windows that were 2 mm off-centre and a plug taller than its header.
+  Model the mated plug and sweep it in (see 05, "Model every mating connector …").
 
 ### Build printable lead-ins into the cutter, and confirm with an overhang screen
 - **Rule:** Make lead-ins and transitions self-supporting (45° or a shape that narrows as it builds). Prefer tapered

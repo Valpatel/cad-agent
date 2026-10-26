@@ -32,7 +32,7 @@ trays, SATA cable routing and a review website. No other session histories were 
 | [02-user-intent-and-requirements.md](02-user-intent-and-requirements.md) | How the requirements evolved, and the user's corrections |
 | [03-mechanical-design-rules.md](03-mechanical-design-rules.md) | Strength, printability, landings, reliefs, windows, grilles, shell |
 | [04-fasteners-and-assembly-access.md](04-fasteners-and-assembly-access.md) | Tool access, assembly order, screw length, inserts, drive screws |
-| [05-cables-connectors-and-routing.md](05-cables-connectors-and-routing.md) | SATA routing, plug lengths, bend radius, wiring rules |
+| [05-cables-connectors-and-routing.md](05-cables-connectors-and-routing.md) | Mated-plug port windows (standard practice), SATA routing, plug lengths, bend radius, wiring rules |
 | [06-enclosure-features.md](06-enclosure-features.md) | Antennas, service pins, storage trays, mount plate, cap, power budget |
 | [07-verification-and-evidence.md](07-verification-and-evidence.md) | Checks that caught bugs, false positives, honest claims, stale outputs |
 | [08-review-site-ux.md](08-review-site-ux.md) | What the user wanted to see on the review site, and why |

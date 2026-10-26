@@ -198,11 +198,42 @@ from cadagent.render import Renderer
 from cadagent.report import collect, write_report, downloads_snippet, bambu_studio_url
 from cadagent.htmlreport import render_page, canonical_status, SCHEMA_VERSION
 from cadagent.links import missing_links
+from cadagent.connectors import (PLUG_FAMILIES, plug_segments, window, window_margins, PanelFrame,
+                                 envelope, check_ports, draw_ports)
 from cadagent.package import build_package
 from cadagent.serve import make_server
 from cadagent.robot import (Body, combine, box_body, cylinder_body, solid_mass_properties, printed_part_body,
                             Link, Joint, Visual, Collision, Motor, write_urdf, write_mjcf, check_urdf)
 ```
+
+### Mating connectors (`cadagent.connectors`): standard practice for every port
+
+Every external port's window is derived from its **mated plug**, never from the receptacle's bounding box. A bounding
+box includes pins below the board, which pushes the window low, and it misses plugs that are larger than the
+receptacle: a screw-flange terminal plug is 15 mm tall on an 8.4 mm header.
+
+1. **Identify the receptacle and its mate.** Get the receptacle's exact part from the schematic. For the mating plug,
+   prefer the manufacturer's drawing or STEP; otherwise use a catalogue or typical value, recorded as an assumption in
+   `basis`.
+2. **Measure the face and axis.** Slice the board model at the mating face; exclude pins and pegs below the board.
+3. **Describe the port in `parameters.json`** as a `mate` spec in the panel frame (u along the wall, v up, w out):
+   ```json
+   "mate": {"face": [u0, v0, u1, v1], "face_w": 2.08, "centre_on": "receptacle", "clearance": 0.5,
+            "plugs": [{"family": "rj45", "cavity": [u0, v0, u1, v1], "latch": "up"}], "basis": "..."}
+   ```
+   Families: `rj45`, `trs35`, `terminal_plug_flanged` (Phoenix MSTB STF), `overmold` (USB/HDMI/...),
+   `face_plug` (plug already in the board model) and `box`. Add a family when a new plug type shows up.
+4. **The build calls `window(mate, wall_w)`.** Only plug segments that start inside the wall's outer face (they pass
+   through it on insertion) size the window. `centre_on` picks the visual centre: the receptacle face or the plug.
+5. **A check step calls `check_ports()`** with the printed parts in assembly position. It sweeps each plug in from
+   outside and requires:
+   * zero interference;
+   * zero interference after growing the plug by the clearance (corner radii included);
+   * no plug-to-plug clash.
+
+   `draw_ports()` makes the evidence image. Add the check to `checks:` and the review `pass_key`.
+
+Worked example: j501-agx `cad/ports.py`, `tools/check_ports.py` and `exports/port-checks.json`.
 
 ### 3D viewer (`cad-agent view` + the web kit)
 

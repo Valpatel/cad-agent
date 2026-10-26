@@ -25,5 +25,31 @@ export async function mountAppNav({ root = '../', current = '' } = {}) {
     + cfg.nav.map((n) => `<a class="tab${(n.id ?? n.href) === current ? ' on' : ''}" href="${/^[a-z]+:/.test(n.href) ? n.href : root + n.href}">${esc(n.title)}</a>`).join('');
   document.body.prepend(nav);
   document.body.classList.add('has-appnav');
+  liveReload();
   return nav;
+}
+
+/**
+ * Live reload for local work: when the page is served by `cad-agent site --serve` on this machine, it polls the
+ * server for the newest change under the project and reloads once changes have settled (2 s quiet), at most every
+ * 8 s. `?live=0` turns it off for a page.
+ */
+export function liveReload({ every = 2000, settle = 2000, minGap = 8000 } = {}) {
+  if (!/^(127\.0\.0\.1|localhost|\[::1\])$/.test(location.hostname) || new URLSearchParams(location.search).get('live') === '0') return;
+  if (window.__cadagentLive) return;
+  window.__cadagentLive = true;
+  let first = null, seen = null, changedAt = 0;
+  const loadedAt = Date.now();
+  const tick = async () => {
+    try {
+      const r = await fetch('/_cadagent/changes', { cache: 'no-store' });
+      if (!r.ok) return;                                   // an older server: no live reload
+      const { stamp } = await r.json();
+      if (first === null) { first = seen = stamp; }
+      else if (stamp !== seen) { seen = stamp; changedAt = Date.now(); }
+      if (seen !== first && changedAt && Date.now() - changedAt >= settle && Date.now() - loadedAt >= minGap) location.reload();
+    } catch { /* server restarting */ }
+  };
+  setInterval(tick, every);
+  tick();
 }

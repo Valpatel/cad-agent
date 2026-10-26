@@ -25,6 +25,7 @@ from __future__ import annotations
 import html
 import json
 import os
+import time
 import re
 import subprocess
 from dataclasses import dataclass, field
@@ -55,6 +56,7 @@ class SiteConfig:
     links: List[Dict[str, str]] = field(default_factory=list)
     nav: List[Dict[str, str]] = field(default_factory=list)   # app-wide top bar: [{title, href}], hrefs from the root
     theme: str = "light"                                       # light | hud (the control-room look of the web kit)
+    live_reload: Dict[str, Any] = field(default_factory=dict)  # {watch: [folders], skip: [names]}: what `--serve` watches
 
 
 def site_config(raw: Optional[Dict[str, Any]], default_title: str) -> SiteConfig:
@@ -396,6 +398,45 @@ def _stale(root: Path, cfg: SiteConfig) -> bool:
     return any(p.stat().st_mtime > built for p in sources(root, cfg))
 
 
+LIVE_URL = "/_cadagent/changes"
+LIVE_SKIP = {".git", ".venv", "node_modules", "__pycache__", "build", "runs", "logs", "references", "vendor", ".pytest_cache"}
+LIVE_EXT = {".html", ".js", ".css", ".json", ".md", ".png", ".jpg", ".svg", ".mp4", ".stl", ".step", ".3mf", ".glb", ".yaml"}
+
+
+class _Watcher:
+    """The newest modification time of the files pages show, for live reload while someone works on the project.
+    `live_reload: {watch: [folders], skip: [folder names]}` in the site config narrows it; scans are cached for 1 s."""
+
+    def __init__(self, root: Path, cfg: Dict[str, Any]):
+        self.root = root
+        self.dirs = [root / d for d in cfg.get("watch", [])] or [root]
+        self.skip = LIVE_SKIP | set(cfg.get("skip", []))
+        self._at, self._stamp = 0.0, 0.0
+
+    def stamp(self) -> float:
+        now = time.time()
+        if now - self._at > 1.0:
+            newest = 0.0
+            for d in self.dirs:
+                newest = max(newest, self._scan(d))
+            self._at, self._stamp = now, newest
+        return self._stamp
+
+    def _scan(self, d: Path) -> float:
+        newest = 0.0
+        try:
+            with os.scandir(d) as it:
+                for e in it:
+                    if e.is_dir(follow_symlinks=False):
+                        if e.name not in self.skip and not e.name.startswith("."):
+                            newest = max(newest, self._scan(Path(e.path)))
+                    elif os.path.splitext(e.name)[1].lower() in LIVE_EXT:
+                        newest = max(newest, e.stat().st_mtime)
+        except OSError:
+            pass
+        return newest
+
+
 def serve_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: str, host: str = "127.0.0.1",
                port: int = 0) -> Tuple[ThreadingHTTPServer, str]:
     """Serve the project root; ``/`` redirects to the site, which rebuilds when a source changed."""
@@ -403,8 +444,18 @@ def serve_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
     cfg = site_config(raw_site, default_title)
     build_site(root, raw_site, default_title)
 
+    watch = _Watcher(root, cfg.live_reload or {})
+
     class Handler(SimpleHTTPRequestHandler):
         def do_GET(self):  # noqa: N802 (http.server API)
+            if self.path.startswith(LIVE_URL):          # live reload: the newest change under the watched folders
+                body = json.dumps({"stamp": watch.stamp()}).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
             if self.path in ("/", "/index.html"):
                 self.send_response(302)
                 self.send_header("Location", f"/{SITE_DIR}/")

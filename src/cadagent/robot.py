@@ -169,6 +169,7 @@ class Collision:
     contype: int = 1        # MJCF collision filtering: two geoms collide when contype & other.conaffinity is non-zero
     conaffinity: int = 1
     friction: Optional[Tuple[float, float, float]] = None   # MJCF sliding, torsional, rolling
+    name: str = ""          # MJCF geom name (to find its contacts), optional
 
 
 @dataclass
@@ -360,11 +361,18 @@ def check_urdf(path: Path) -> Dict[str, Any]:
 @dataclass
 class Motor:
     """A torque motor on a joint. ``effort`` (N m) becomes the control range; the controller applies the
-    torque-speed limit itself, because MuJoCo motors have none."""
+    torque-speed limit itself, because MuJoCo motors have none.
+
+    ``coupling`` makes it drive several joints at once through a fixed tendon, {joint: coefficient}: for example a knee
+    motor mounted on the body that turns the shin through a parallelogram drives hip + knee ({"hip": 1, "knee": 1}).
+    Its torque then appears on each joint times its coefficient, and ``armature`` (rotor inertia reflected to the
+    output, kg m^2) sits on that combined motion (MJCF only; URDF has no equivalent)."""
 
     joint: str
     effort: float
     name: str = ""
+    coupling: Optional[Dict[str, float]] = None
+    armature: float = 0.0
 
 
 def write_mjcf(path: Path, robot: str, links: Sequence[Link], joints: Sequence[Joint], motors: Sequence[Motor] = (),
@@ -430,7 +438,7 @@ def write_mjcf(path: Path, robot: str, links: Sequence[Link], joints: Sequence[J
             ET.SubElement(el, "inertial", pos=_fmt(b.com), mass=f"{b.mass:.6g}",
                           fullinertia=_fmt((i[0][0], i[1][1], i[2][2], i[0][1], i[0][2], i[1][2])))
         for k, c in enumerate(link.collisions):
-            ga = {"name": f"{link.name}_col{k}", "pos": _fmt(c.xyz), "quat": _fmt(rpy_to_quat(c.rpy))}
+            ga = {"name": c.name or f"{link.name}_col{k}", "pos": _fmt(c.xyz), "quat": _fmt(rpy_to_quat(c.rpy))}
             if c.kind == "box":
                 ga.update(type="box", size=_fmt(v / 2 for v in c.size))
             elif c.kind == "cylinder":
@@ -472,10 +480,23 @@ def write_mjcf(path: Path, robot: str, links: Sequence[Link], joints: Sequence[J
 
     add_body(world, by_name[root_name], None)
     if motors:
+        coupled = [mo for mo in motors if mo.coupling]
+        if coupled:
+            ten = ET.SubElement(m, "tendon")
+            for mo in coupled:
+                fx = ET.SubElement(ten, "fixed", name=f"{mo.name or mo.joint}_drive")
+                if mo.armature:
+                    fx.set("armature", f"{mo.armature:.6g}")
+                for jn, coef in mo.coupling.items():
+                    ET.SubElement(fx, "joint", joint=jn, coef=f"{coef:.6g}")
         act = ET.SubElement(m, "actuator")
         for mo in motors:
-            ET.SubElement(act, "motor", name=mo.name or mo.joint, joint=mo.joint,
-                          ctrlrange=f"{-mo.effort:.6g} {mo.effort:.6g}")
+            if mo.coupling:
+                ET.SubElement(act, "motor", name=mo.name or mo.joint, tendon=f"{mo.name or mo.joint}_drive",
+                              ctrlrange=f"{-mo.effort:.6g} {mo.effort:.6g}")
+            else:
+                ET.SubElement(act, "motor", name=mo.name or mo.joint, joint=mo.joint,
+                              ctrlrange=f"{-mo.effort:.6g} {mo.effort:.6g}")
     if imu_link:
         sen = ET.SubElement(m, "sensor")
         ET.SubElement(sen, "framequat", name="imu_quat", objtype="site", objname="imu")

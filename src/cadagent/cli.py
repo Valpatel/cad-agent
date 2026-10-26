@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from cadagent._deps import MissingDependency
 from cadagent.project import CadConfigError, CadProject, Step, load_project
 
-SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "all")
+SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "all")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -175,6 +175,28 @@ def cmd_serve(project: CadProject, args: argparse.Namespace) -> int:
 
     return serve(project, getattr(args, "host", None), getattr(args, "port", None))
 
+def cmd_site(project: CadProject, args: argparse.Namespace) -> int:
+    from cadagent.site import build_site, serve_site
+
+    if not getattr(args, "serve", False):
+        summary = build_site(project.root, project.site, project.title)
+        _say(f"site: {summary['site']}/index.html ({summary['pages']} pages, {summary['milestones']} milestones, "
+             f"{summary['decisions']} decisions, {summary['designs']} designs)")
+        return 0
+    host = getattr(args, "host", None) or project.serve.host
+    port = project.serve.port if getattr(args, "port", None) is None else args.port
+    server, url = serve_site(project.root, project.site, project.title, host, port)
+    project.preview_dir.mkdir(parents=True, exist_ok=True)
+    (project.preview_dir / "site-url.txt").write_text(url + "\n")
+    print(url, flush=True)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+    return 0
+
 def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
     args.from_step = None
     args.only = None
@@ -195,6 +217,7 @@ HANDLERS = {
     "report": cmd_report,
     "package": cmd_package,
     "serve": cmd_serve,
+    "site": cmd_site,
     "all": cmd_all,
 }
 
@@ -245,6 +268,10 @@ def build_parser() -> argparse.ArgumentParser:
     serve_p.add_argument("--port", type=int, default=None,
                          help="Port (default: cad.serve.port, 0 = any free port)")
     serve_p.add_argument("--host", default=None, help="Bind address (default: cad.serve.host, 127.0.0.1)")
+    site_p = sub.add_parser("site", parents=[common], help="Build the project site (progress, designs, decisions, docs)")
+    site_p.add_argument("--serve", action="store_true", help="Serve it, rebuilding when a source file changes")
+    site_p.add_argument("--port", type=int, default=None, help="Port (default: cad.serve.port, 0 = any free port)")
+    site_p.add_argument("--host", default=None, help="Bind address (default: cad.serve.host, 127.0.0.1)")
     sub.add_parser("all", parents=[common], help="build, export-3mf, check + report, package")
     return parser
 

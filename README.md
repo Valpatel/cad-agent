@@ -24,6 +24,15 @@ Rather than build another CAD framework, this repo combines what already exists.
    - Tools that win get adopted, the gaps go upstream as pull requests, and only what nobody else provides lives here
      in `skills/`.
 
+## Principles
+- **Modular and flexible for any CAD project.** cad-agent knows nothing about a particular product. Projects plug in
+  through files and config (`cad-agent.yaml`, parameter files, check JSONs, milestone and decision files). Anything
+  specific to one product stays in that product's repository.
+- **Cover the whole job:** CAD, BOM and cost, exploded diagrams and renders, decision records, standard design rules,
+  checks with evidence, robot and simulation export, and a project site that shows all of it.
+- **Bake in the best CAD agents in the world** rather than rebuild them: adopt, pin, review and test them, and only
+  write what nobody else provides.
+
 ## What we add (gaps found so far)
 - Designing an enclosure around a real board: STEP and schematic ingestion, and clearance against thousands of vendor solids.
 - Connector windows sized to the mating plugs, standoffs, and the cooler/heatsink stack.

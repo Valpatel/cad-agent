@@ -33,3 +33,13 @@ def test_shaft_torsional_stiffness():
     k = T / math.degrees(T * 1000 * L / (G * J))
     assert r['torsional_stiffness_nm_per_deg'] == pytest.approx(k, rel=0.04)
     assert r['von_mises_design_mpa'] == pytest.approx(math.sqrt(3) * T * 1000 * r0 / J, rel=0.1)
+
+
+@pytest.mark.parametrize('load', [100.0, 2000.0])          # safety factor above 1, and failing below the design load
+def test_overload_animation(tmp_path, load):
+    L, b, h = 100.0, 10.0, 10.0
+    st = Study(cq.Workplane('XY').box(L, b, h).translate((L / 2, 0, 0)), STEEL, mesh_mm=5.0, name='beam')
+    st.fix(plane_at(0, 0.0)).force(plane_at(0, L), (0, 0, -load))
+    st.solve()
+    out = st.animate(tmp_path / 'beam.gif', frames=12, fps=4)
+    assert out.exists() and out.stat().st_size > 1000

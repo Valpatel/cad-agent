@@ -50,6 +50,12 @@ MATERIALS = {
     'petg': Material('PETG', 1800, 0.38, 20, 1.27, 'Bambu PETG Basic: Z (layer) strength used'),
     'petg_cf': Material('PETG-CF', 2900, 0.36, 22, 1.29, 'Bambu PETG-CF: Z (layer) strength used'),
     'pa_cf': Material('PA6-CF', 4500, 0.35, 40, 1.17, 'Bambu PAHT-CF (dry): Z (layer) strength used'),
+    # PA6-CF as it is in use: nylon takes up moisture from the air and loses ~40 % of its strength and stiffness
+    # (x0.6 on Bambu's dry TDS), and a print has voids and seams (x0.8): design allowables, to confirm with coupons
+    'pa6_cf_xy': Material('PA6-CF along the layers (humid)', 3000, 0.35, 49, 1.17,
+                          'Bambu PA6-CF TDS 102 MPa dry in the layers, x0.6 humid, x0.8 print: for parts printed so their main stress runs in the layers'),
+    'pa6_cf_z': Material('PA6-CF across the layers (humid)', 2400, 0.35, 23, 1.17,
+                         'Bambu PA6-CF TDS 48 MPa dry across the layers, x0.6 humid, x0.8 print: the safe value when the stress crosses the layers'),
     'tpu95': Material('TPU 95A', 30, 0.45, 8, 1.22, 'flexible: stiffness only indicative'),
     'al6061': Material('Aluminium 6061-T6', 68900, 0.33, 276, 2.70, 'yield strength'),
     'al7075': Material('Aluminium 7075-T6', 71700, 0.33, 503, 2.81, 'yield strength'),
@@ -288,6 +294,7 @@ class Study:
         # that touch neither (the real peaks: fillets, holes, thin walls)
         bc_nodes = np.unique(np.concatenate([self.face_tris[t].ravel() for t in self.fixed + [x for ld in self.loads for x in ld.faces]]))
         touches = np.isin(self.tets, bc_nodes).any(axis=1)
+        self._touches_bc = touches
         vm_peak = float(self.vm_elem.max())
         vm_design = float(self.vm_elem[~touches].max()) if (~touches).any() else vm_peak
         res = {
@@ -412,5 +419,107 @@ class Study:
                      f"max {res.get('max_displacement_mm')} mm (deformation ×{scale:.0f})", fontsize=9)
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(path, bbox_inches='tight')
+        plt.close(fig)
+        return path
+
+    def animate(self, path, overload: float = 1.3, frames: int = 60, fps: int = 15, view=(25, -60),
+                title: Optional[str] = None, scale: Optional[float] = None):
+        """An overload video: the load ramps from zero through the design load (x1) to `overload` times the load at
+        which the part first reaches its strength (x SF). Linear: displacements and stresses scale with the load, so
+        each frame is the solved field times the load factor. Colour is stress over strength; past x SF the regions
+        above the material's strength turn black (where it yields or the layers part first). It shows where and at what
+        load a part fails, not how a crack grows after that. The deformation is exaggerated by one fixed factor,
+        printed on every frame with the real displacement.
+
+        Writes MP4 (H.264, needs ffmpeg) for a .mp4 path, else an animated GIF. Returns the path."""
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        from matplotlib import animation
+        from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
+        res = self.result
+        sf = res.get('safety_factor') or 1.0
+        strength = self.material.strength_mpa
+        lam_end = max(1.2, sf * overload)
+        # hold briefly at the design load and at first failure, so both are readable
+        keys = sorted({0.0, 1.0, sf, lam_end})
+        ramp = []
+        for k0, k1 in zip(keys, keys[1:]):
+            n = max(4, int(frames * (k1 - k0) / lam_end))
+            ramp += list(np.linspace(k0, k1, n, endpoint=False))
+            if k1 in (1.0, sf):
+                ramp += [k1] * (fps // 2)
+        ramp += [lam_end] * fps
+
+        m = self._m
+        bf = m.boundary_facets()
+        tris = m.facets[:, bf].T
+        elem = m.f2t[0, bf]
+        size = float(np.ptp(self.points, axis=0).max())
+        dmax = float(np.linalg.norm(self.disp, axis=0).max())
+        if scale is None:                               # at the last frame the deformation shows as ~8 % of the part
+            scale = 0.08 * size / (dmax * lam_end) if dmax > 0 else 1.0
+        # stress over strength at the design load, per boundary face; elements touching a clamp or a load patch carry
+        # artificial spikes (the safety factor ignores them too), so they are capped just under the strength
+        vm = np.where(self._touches_bc, np.minimum(self.vm_elem, 0.99 * strength / lam_end), self.vm_elem)
+        ratio = vm[elem] / strength
+        bc_nodes = set(np.unique(np.concatenate([self.face_tris[t].ravel() for t in self.fixed])).tolist()) if self.fixed else set()
+        fixed_tri = np.array([all(int(n) in bc_nodes for n in t) for t in tris])
+
+        cmap = plt.get_cmap('turbo')
+        fig = plt.figure(figsize=(9.6, 7.2), dpi=100)
+        ax = fig.add_axes((0.0, 0.06, 0.86, 0.84), projection='3d')
+        P_end = self.points + scale * lam_end * self.disp.T
+        lo, hi = np.minimum(self.points.min(axis=0), P_end.min(axis=0)), np.maximum(self.points.max(axis=0), P_end.max(axis=0))
+        c, r = (lo + hi) / 2, (hi - lo).max() / 2 * 0.78
+        ax.set_xlim(c[0] - r, c[0] + r); ax.set_ylim(c[1] - r, c[1] + r); ax.set_zlim(c[2] - r, c[2] + r)
+        ax.set_box_aspect((1, 1, 1))
+        ax.view_init(*view)
+        ax.set_axis_off()
+        pc = Poly3DCollection(self.points[tris], edgecolors='none', linewidths=0)
+        ax.add_collection3d(pc)
+        for ld in self.loads:                           # an arrow per force, at the middle of its faces
+            if ld.force is None:
+                continue
+            nodes = np.unique(np.concatenate([self.face_tris[t].ravel() for t in ld.faces]))
+            p0 = self.points[nodes].mean(axis=0)
+            dvec = ld.force / (np.linalg.norm(ld.force) or 1.0) * 0.28 * size
+            ax.quiver(*(p0 - dvec), *dvec, color='#d0006f', linewidth=2.5, arrow_length_ratio=0.25)
+        cax = fig.add_axes((0.88, 0.25, 0.022, 0.5))
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(0, 1))
+        fig.colorbar(sm, cax=cax, label='stress / strength (black: past it)')
+        fig.text(0.02, 0.965, title or f'{self.name}: {self.material.name}', fontsize=12, weight='bold')
+        line = fig.text(0.02, 0.93, '', fontsize=10)
+        line2 = fig.text(0.02, 0.905, '', fontsize=10)
+        fig.text(0.02, 0.02, f'Linear elastic; deformation exaggerated x{scale:.0f}; grey = held; pink arrows = loads. '
+                             'It shows where and at what load the part fails first, not how it breaks after.', fontsize=8, color='#555')
+
+        def draw(k):
+            lam = ramp[k]
+            pc.set_verts((self.points + scale * lam * self.disp.T)[tris])
+            q = ratio * lam
+            col = cmap(np.clip(q, 0, 1))
+            col[q > 1.0] = (0.05, 0.05, 0.05, 1.0)
+            col[fixed_tri] = (0.62, 0.64, 0.68, 1.0)
+            pc.set_facecolor(col)
+            state = ('design load' if abs(lam - 1) < 1e-9 else 'first failure' if abs(lam - sf) < 1e-9
+                     else 'overload, past failure' if lam > sf else 'loading')
+            over = float((vm * lam > strength).mean()) * 100
+            line.set_text(f'load x{lam:.2f} of the design load: {state}')
+            line2.set_text(f'max displacement {dmax * lam:.2f} mm,  peak stress {res.get("von_mises_design_mpa", 0) * lam:.0f} of '
+                           f'{strength:.0f} MPa,  past the strength: {over:.1f} % of the part')
+            for t in (line, line2):
+                t.set_color('#b00020' if lam > sf + 1e-9 else '#222')
+            return pc, line, line2
+
+        anim = animation.FuncAnimation(fig, draw, frames=len(ramp), blit=False)
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if path.suffix == '.mp4' and animation.writers.is_available('ffmpeg'):
+            anim.save(str(path), writer=animation.FFMpegWriter(fps=fps, codec='libx264', extra_args=['-pix_fmt', 'yuv420p', '-crf', '28']))
+        else:
+            path = path.with_suffix('.gif')
+            anim.save(str(path), writer=animation.PillowWriter(fps=fps))
         plt.close(fig)
         return path

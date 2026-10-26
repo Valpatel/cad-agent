@@ -35,7 +35,7 @@ export function createStage(container, opts = {}) {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 1.35;
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
@@ -46,15 +46,16 @@ export function createStage(container, opts = {}) {
   controls.maxPolarAngle = 1.5;
 
   // cool control-room lighting: white key, cold fill, accent rim
-  const hemi = new THREE.HemisphereLight(0xdcecff, 0x10151d, 0.6);
-  const key = new THREE.DirectionalLight(0xffffff, 2.1);
+  const hemi = new THREE.HemisphereLight(0xeef6ff, 0x2a3240, 1.1);
+  const key = new THREE.DirectionalLight(0xffffff, 2.8);
   key.castShadow = true;
   key.shadow.mapSize.set(2048, 2048);
   key.shadow.bias = -0.0005;
   key.shadow.radius = 5;
-  const fill = new THREE.DirectionalLight(0xa9d8ff, 0.45);
+  const fill = new THREE.DirectionalLight(0xcfe6ff, 1.0);
+  const ambient = new THREE.AmbientLight(0xffffff, 0.35);
   const rim = new THREE.DirectionalLight(accent, 1.0);
-  scene.add(hemi, key, fill, rim);
+  scene.add(hemi, key, fill, rim, ambient);
 
   const ground = new THREE.Mesh(new THREE.CircleGeometry(1, 64), new THREE.ShadowMaterial({ opacity: 0.4 }));
   ground.rotation.x = -Math.PI / 2;
@@ -63,7 +64,7 @@ export function createStage(container, opts = {}) {
   grid.material.transparent = true;
   grid.material.depthWrite = false;
   const pad = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({
-    map: radialGlow([[0, 'rgba(0, 240, 255, 0.20)'], [0.5, 'rgba(0, 240, 255, 0.05)'], [1, 'rgba(0, 240, 255, 0)']]),
+    map: radialGlow([[0, 'rgba(120, 220, 255, 0.32)'], [0.5, 'rgba(0, 240, 255, 0.09)'], [1, 'rgba(0, 240, 255, 0)']]),
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
   }));
   pad.rotation.x = -Math.PI / 2;
@@ -98,12 +99,13 @@ export function createStage(container, opts = {}) {
   }
   frame(h);
 
-  const light = { level: 0.85, current: 0.85, base: { hemi: 0.6, key: 2.1, fill: 0.45, rim: 1.0, grid: 0.09, pad: 1.0 } };
+  const light = { level: 1, current: 1, base: { hemi: 1.1, key: 2.8, fill: 1.0, rim: 1.0, grid: 0.12, pad: 1.0, ambient: 0.35 } };
   function applyLight() {
     const s = light.current, lit = 0.04 + 0.96 * s;
     hemi.intensity = light.base.hemi * lit;
     key.intensity = light.base.key * lit;
     fill.intensity = light.base.fill * lit;
+    ambient.intensity = light.base.ambient * lit;
     rim.intensity = light.base.rim * (0.12 + 0.88 * s);
     grid.material.opacity = light.base.grid * (0.35 + 0.65 * s);
     pad.material.opacity = light.base.pad * (0.45 + 0.55 * s);

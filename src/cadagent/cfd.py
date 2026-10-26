@@ -44,6 +44,7 @@ from cadagent._deps import require
 _WHY = 'the CFD case writer'
 IMAGE = 'opencfd/openfoam-default:2512'
 T0 = 273.15
+AIR_CP = 1005.0
 
 
 @dataclass(frozen=True)
@@ -176,13 +177,23 @@ class ThermalCase:
         self.fans.append(fan)
         return self
 
-    def porous_box(self, name, lo, hi, d, f, e1=(1, 0, 0), e2=(0, 1, 0), heat_w: float = 0.0, note: str = ''):
-        """A block of air with a Darcy-Forchheimer resistance (d 1/m2, f 1/m per local axis e1, e2, e3 = e1 x e2) that
-        releases ``heat_w`` into the air passing through it: a compact model of a fin block or a filter (lo, hi in mm)."""
+    def porous_box(self, name, lo, hi, d, f, e1=(1, 0, 0), e2=(0, 1, 0), heat_w: float = 0.0, ha_w_k: Optional[float] = None,
+                   fin_temperature_c: Optional[float] = None, note: str = ''):
+        """A block of air with a Darcy-Forchheimer resistance (d 1/m2, f 1/m per local axis e1, e2, e3 = e1 x e2): a
+        compact model of a fin block or a filter (lo, hi in mm). Heat, either way:
+
+        - ``ha_w_k`` and ``fin_temperature_c``: isothermal fins with conductance hA (W/K, h x area x fin efficiency)
+          heat each cell's air by hA/V (T_fin - T_air). Air cannot get hotter than the fins, and the heat goes where the
+          air flows. ``calibrate_fins()`` then sets T_fin so the block delivers a target power. Prefer this.
+        - ``heat_w``: that power released evenly through the block's volume. Simple, but air that stagnates in a corner
+          of the block heats without limit."""
         if not re.fullmatch(r'[A-Za-z][A-Za-z0-9]*', name):
             raise ValueError(f'{name!r}: zone names must be letters and digits only')
+        if (ha_w_k is None) != (fin_temperature_c is None):
+            raise ValueError('give both ha_w_k and fin_temperature_c, or neither')
         self.porous.append({'name': name, 'lo': np.asarray(lo, float), 'hi': np.asarray(hi, float), 'd': tuple(d), 'f': tuple(f),
-                            'e1': tuple(e1), 'e2': tuple(e2), 'heat_w': heat_w, 'note': note})
+                            'e1': tuple(e1), 'e2': tuple(e2), 'heat_w': heat_w, 'ha_w_k': ha_w_k,
+                            'fin_temperature_c': fin_temperature_c, 'note': note})
         return self
 
     def refine(self, lo, hi, level: int):
@@ -261,7 +272,8 @@ class ThermalCase:
                       'dp0_pa': f.dp0_pa, 'q_free_m3h': f.q_free_m3h, 'q_free_cfm': round(f.q_free_m3h / 1.699, 1), 'note': f.note,
                       'model': 'actuator disc, linear fan curve'} for f in self.fans],
             'porous': [{'name': z['name'], 'lo_mm': z['lo'].tolist(), 'hi_mm': z['hi'].tolist(), 'd': list(z['d']), 'f': list(z['f']),
-                        'e1': list(z['e1']), 'e2': list(z['e2']), 'heat_w': z['heat_w'], 'note': z['note']} for z in self.porous],
+                        'e1': list(z['e1']), 'e2': list(z['e2']), 'heat_w': z['heat_w'], 'ha_w_k': z.get('ha_w_k'),
+                        'fin_temperature_c': z.get('fin_temperature_c'), 'note': z['note']} for z in self.porous],
             'limits': ['steady RANS (k-omega SST): natural-convection plumes really fluctuate',
                        'no radiation: passive cases are pessimistic (radiation can carry a third of the heat from a hot plate in still air)',
                        'isotropic solids: heat pipes are an effective conductivity, with no dry-out limit',
@@ -289,6 +301,12 @@ class ThermalCase:
         type volFieldValue; libs (fieldFunctionObjects); region {self.fluid}; fields (U T);
         regionType cellZone; name {f}; operation volAverage;
         writeFields false; log false; writeControl timeStep; writeInterval 10;
+    }}''')
+        fos.append(f'''    heat_out
+    {{
+        type surfaceFieldValue; libs (fieldFunctionObjects); region {self.fluid}; regionType patch; name ambient;
+        fields (h); operation weightedSum; weightField phi; writeFields false; log false;
+        writeControl timeStep; writeInterval 10;
     }}''')
         fos.append(f'''    residuals
     {{
@@ -472,7 +490,9 @@ relaxationFactors
         coordinateSystem {{ origin (0 0 0); e1 ({z['e1'][0]} {z['e1'][1]} {z['e1'][2]}); e2 ({z['e2'][0]} {z['e2'][1]} {z['e2'][2]}); }}
     }}
 }}''')
-            if z['heat_w']:
+            if z.get('ha_w_k'):
+                src.append(self._exchanger(z))
+            elif z['heat_w']:
                 src.append(f'''{z['name']}Heat
 {{
     type scalarSemiImplicitSource; active true; selectionMode cellZone; cellZone {z['name']}; volumeMode absolute;
@@ -487,6 +507,17 @@ relaxationFactors
     sources {{ U {{ explicit ({F[0]:.4f} {F[1]:.4f} {F[2]:.4f}); implicit {-c:.4f}; }} }}
 }}''')
             w.dict(f'system/{r}/fvOptions', '\n'.join(src) + '\n')
+
+    @staticmethod
+    def _exchanger(z) -> str:
+        # S = hA/V (T_fin - T) on sensible enthalpy hs = cp (T - 298.15): explicit hA/V (T_fin - 298.15), implicit -hA/V / cp
+        vol = float(np.prod((z['hi'] - z['lo']) / 1000))
+        hav = z['ha_w_k'] / vol
+        return f'''{z['name']}Heat
+{{
+    type scalarSemiImplicitSource; active true; selectionMode cellZone; cellZone {z['name']}; volumeMode specific;
+    sources {{ h {{ explicit {hav * (z['fin_temperature_c'] + T0 - 298.15):.6g}; implicit {-hav / AIR_CP:.6g}; }} }}
+}}'''
 
     def _solid_files(self, w, b):
         m, r, Ta = b.material, b.name, self.ambient_c + T0
@@ -576,6 +607,67 @@ foamToVTK -allRegions -latestTime -noFunctionObjects > log.foamToVTK 2>&1
     def results(self, case_dir) -> dict:
         return read_results(case_dir, self)
 
+    def calibrate_fins(self, case_dir, target_w: float, extra_iterations: int = 300, tolerance: float = 0.03,
+                       rounds: int = 4, image: str = IMAGE, native: Optional[bool] = None) -> dict:
+        """Set each exchanger block's fin temperature so the heat leaving with the air matches ``target_w``, continuing
+        the solve from where it stopped. Linear in T_fin - T_in, so it converges in one or two rounds."""
+        case = Path(case_dir).resolve()
+        hist = []
+        for k in range(rounds):
+            res = read_results(case, self)
+            q = res.get('heat_out_w')
+            zones = [z for z in self.porous if z.get('ha_w_k')]
+            if q is None or not zones:
+                break
+            drift = res.get('convergence', {}).get('heat_out_change_pct')
+            settled = drift is not None and abs(drift) <= 5
+            hist.append({'round': k, 'heat_out_w': q, 'fin_temperature_c': [z['fin_temperature_c'] for z in zones],
+                         'heat_out_change_pct': drift})
+            if settled and abs(q - target_w) <= tolerance * target_w:
+                break
+            if settled:   # only correct the fins once the heat leaving has stopped moving; otherwise just keep solving
+                t_in = self.ambient_c
+                factor = min(3.0, max(1 / 3, target_w / max(q, 1e-6)))   # never jump further than x3 in one round
+                for z in zones:
+                    z['fin_temperature_c'] = t_in + (z['fin_temperature_c'] - t_in) * factor
+            self._continue(case, extra_iterations)
+            native_ = shutil.which('chtMultiRegionSimpleFoam') is not None if native is None else native
+            cmd = ['bash', str(case / 'Allrun.continue')] if native_ else [
+                'docker', 'run', '--rm', '--shm-size=8g', '-u', f'{os.getuid()}:{os.getgid()}', '-v', f'{case}:/case', image,
+                'bash', '-lc', 'cd /case && ./Allrun.continue']
+            subprocess.run(cmd)
+        res = read_results(case, self)
+        res['fin_calibration'] = hist + [{'round': len(hist), 'heat_out_w': res.get('heat_out_w'),
+                                          'fin_temperature_c': [z['fin_temperature_c'] for z in self.porous if z.get('ha_w_k')]}]
+        return res
+
+    def _continue(self, case: Path, extra: int):
+        cd = case / 'system' / 'controlDict'
+        txt = cd.read_text()
+        end = int(re.search(r'^endTime (\d+);', txt, re.M).group(1)) + extra
+        txt = re.sub(r'^endTime \d+;', f'endTime {end};', txt, flags=re.M)
+        # write at intervals that land on both the restart time and the new end; keep only the last two writes
+        step = math.gcd(end - extra, extra) or extra
+        txt = re.sub(r'^writeInterval \d+;', f'writeInterval {step};', txt, flags=re.M)
+        txt = re.sub(r'^purgeWrite \d+;', 'purgeWrite 2;', txt, flags=re.M)
+        cd.write_text(txt)
+        self.iterations = end
+        w = _Writer(case)
+        self._fluid_files(w)                      # rewrites fvOptions with the new fin temperatures
+        meta = json.loads((case / 'cadagent-case.json').read_text())
+        meta.update(self.describe())
+        (case / 'cadagent-case.json').write_text(json.dumps(meta, indent=2) + '\n')
+        n = self.np_procs
+        (case / 'Allrun.continue').write_text(f'''#!/bin/bash
+set -e
+cd "${{0%/*}}"
+mpirun -np {n} --oversubscribe chtMultiRegionSimpleFoam -parallel > log.solve.continue 2>&1
+reconstructPar -allRegions -latestTime > log.reconstructPar 2>&1
+rm -rf VTK
+foamToVTK -allRegions -latestTime -noFunctionObjects > log.foamToVTK 2>&1
+''')
+        (case / 'Allrun.continue').chmod(0o755)
+
 
 class _Writer:
     def __init__(self, case: Path):
@@ -607,8 +699,9 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
     pp = cd / 'postProcessing'
     out = {'case': meta['name'], 'ambient_c': meta['ambient_c'], 'solids': {}, 'fans': {}, 'limits': meta['limits']}
 
-    def fo(name):
-        hits = sorted(pp.glob(f'**/{name}/*/volFieldValue.dat'), key=lambda p: float(p.parent.name))
+    def fo(name, kind='volFieldValue'):
+        hits = sorted(pp.glob(f'**/{name}/*/{kind}.dat'), key=lambda p: float(p.parent.name))
+        hits = [h for h in hits if _last_row(h)]          # a restart that crashed leaves an empty file
         return hits[-1] if hits else None
 
     for s in meta['solids']:
@@ -641,6 +734,9 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
             dp = fan['dp0_pa'] * (1 - q / fan['q_free_m3h'])
             out['fans'][fan['name']] = {'flow_m3h': round(q, 2), 'flow_cfm': round(q / 1.699, 2), 'pressure_rise_pa': round(dp, 2),
                                         'fraction_of_free_air': round(q / fan['q_free_m3h'], 3), 'air_through_fan_c': z['T_c']}
+    f = fo('heat_out', 'surfaceFieldValue')
+    if f:
+        out['heat_out_w'] = round(float(_last_row(f)[1]), 2)
     res = sorted(pp.glob('**/residuals/*/solverInfo.dat'), key=lambda p: float(p.parent.name))
     if res:
         lines = res[-1].read_text().splitlines()
@@ -683,6 +779,12 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
                 u0, u1 = float(tail[0, 1:4] @ ax), float(tail[-1, 1:4] @ ax)
                 conv[f'{fan["name"]}_flow_change_pct'] = round(100 * (u1 - u0) / u1, 1) if u1 else None
                 conv[f'{fan["name"]}_intake_c_change'] = round(float(tail[-1, 4] - tail[0, 4]), 2)
+    f = fo('heat_out', 'surfaceFieldValue')
+    if f:
+        a = np.array(_series(f))
+        if len(a) > 5:
+            tail = a[a[:, 0] >= a[-1, 0] * 0.8]
+            conv['heat_out_change_pct'] = round(100 * (tail[-1, 1] - tail[0, 1]) / tail[-1, 1], 1) if tail[-1, 1] else None
     out['convergence'] = conv
     out['converged'] = bool(conv) and all(abs(v) < (1.0 if k.endswith('_c_change') else 2.0) for k, v in conv.items() if v is not None)
     return out

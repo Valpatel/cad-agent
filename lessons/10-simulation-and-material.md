@@ -20,11 +20,20 @@
   compatibility check).
 
 ### A thinner shell must be re-checked under load, and the check must catch it
-- **Incident:** the Rev 0.8 lid's first roof (3.5 mm, down from 6 mm) under 300 N on the lid: deflection 2.4 mm, twice
-  Rev 0.7. The design-stress safety factor came out at 0.44, set by one sharp corner. The FEA step caught it before any
-  print; ribs placed by the roof topology study fixed it.
-- **Rule:** report deflection and a percentile stress (99.9th) next to the peak, plus the peak's location. A single
-  element at a notch is a mesh-dependent spike; a stiffness loss is real.
+- **Incident:** the first Rev 0.8 lid had a 3.5 mm roof (down from 6 mm). Under 300 N on the lid it:
+  - deflected 2.4 mm, twice Rev 0.7's 1.19 mm;
+  - reached a 99.9th-percentile stress of 19.4 MPa, a safety factor of 1.3 on PLA's layer strength. Rev 0.7 had
+    6.4 MPa.
+
+  Its "design" stress (the peak away from the supports) read 56 MPa, but that was one element at a notch.
+  - **Ribs:** the roof topology study showed radial ribs from the intake ring to the walls and corners.
+  - **Sweep:** a parametric sweep (roof 3.5 / 4 / 4.5 mm × no, cross or star ribs, nine FEA runs) picked a 4.5 mm
+    roof with the star ribs: 0.87 mm, 11.7 MPa (safety factor 2.1), 133 cm³ against Rev 0.7's 198 cm³.
+  - **Where the stress was:** the hottest elements located the remaining weak points. Ribs ended on the lid's
+    vent slots, and the rib-to-ring junctions were sharp inside corners.
+- **Rule:** report deflection, a percentile stress (99.9th) and the peak with its location. One element at a notch is a
+  mesh-dependent spike; a stiffness loss is real. Compare against the previous revision computed the same way, with
+  the acceptance criteria fixed before the sweep.
 
 ### Thermal models of printed enclosures
 - Check the plastic, not just the chip. PLA's heat-deflection temperature is 57 °C and PETG's is 69 °C (Bambu TDS); air

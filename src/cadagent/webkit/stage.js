@@ -123,7 +123,11 @@ export function createStage(container, opts = {}) {
     const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
     light.current += (light.level - light.current) * (1 - Math.exp(-dt * 4));
     applyLight();
-    for (const cb of callbacks) cb(t, dt);
+    for (const cb of callbacks) {
+      try { cb(t, dt); } catch (err) {               // one bad callback must not freeze the stage
+        if (!cb.failed) { cb.failed = true; console.error(err); document.body.dataset.stageError = String(err?.stack ?? err).slice(0, 500); }
+      }
+    }
     controls.update();
     renderer.render(scene, camera);
     requestAnimationFrame(tick);

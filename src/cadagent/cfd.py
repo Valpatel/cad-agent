@@ -497,6 +497,8 @@ wallDist { method meshWave; }
 {
     "rho.*" { solver PCG; preconditioner DIC; tolerance 1e-7; relTol 0; }
     p_rgh { solver GAMG; smoother GaussSeidel; tolerance 1e-7; relTol 0.01; }
+    // solving energy tighter or relaxing it less (h 0.8-0.95, GAMG relTol 0.01) diverges in the first iterations,
+    // while the fan and buoyancy are still starting up
     "(U|h|k|omega)" { solver PBiCGStab; preconditioner DILU; tolerance 1e-7; relTol 0.1; }
 }
 SIMPLE
@@ -642,8 +644,8 @@ foamToVTK -allRegions -latestTime -noFunctionObjects > log.foamToVTK 2>&1
     def results(self, case_dir) -> dict:
         return read_results(case_dir, self)
 
-    def calibrate_fins(self, case_dir, target_w: Optional[float] = None, extra_iterations: int = 300, tolerance: float = 0.03,
-                       rounds: int = 4, image: str = IMAGE, native: Optional[bool] = None) -> dict:
+    def calibrate_fins(self, case_dir, target_w: Optional[float] = None, extra_iterations: int = 400, tolerance: float = 0.03,
+                       rounds: int = 8, image: str = IMAGE, native: Optional[bool] = None) -> dict:
         """Set the exchanger blocks' fin temperature so they deliver their power, continuing the solve from where it
         stopped. The blocks' own heat is the heat leaving with the air minus every other source. Each correction is a
         secant step on T_fin (the delivered heat is close to linear in it), taken only once the heat leaving has

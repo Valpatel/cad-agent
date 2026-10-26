@@ -434,7 +434,7 @@ def fea_view(study, path, title: str = '', subtitle: str = '', note: str = '', v
         over = surf.threshold(1.0, scalars='ratio', preference='cell')
         if over.n_cells:
             p.add_mesh(over, color=CRITICAL)
-        _camera(p, c, 2.0 * span, az, el)
+        _camera(p, c, 2.6 * span, az, el)
     p.screenshot(str(path))
     p.close()
     r = getattr(study, 'result', {})

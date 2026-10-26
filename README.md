@@ -53,6 +53,12 @@ cad-agent check --project path/to/cad-project
 
 The project contract, the `cad-agent.yaml` format and every command are in [`docs/toolkit.md`](docs/toolkit.md).
 
+**Stiffness and strength studies** (`pip install -e ".[cad,fea]"`): `cadagent.fea.Study` meshes a STEP or CadQuery
+part with gmsh, solves linear elasticity with quadratic tetrahedra in scikit-fem, and reports deflection, stiffness
+(linear or torsional), the design von Mises stress and a safety factor against a material table that includes
+printed materials with layer-direction strengths. Faces are picked with selectors (`plane_at`, `cylinder_at`,
+`in_box`, `near`). It is checked against a cantilever and a twisted shaft in `tests/test_fea.py` (within 3–6 %).
+
 ## Vendored tools
 Six upstreams are vendored under `vendor/`, pinned by commit, and updated weekly through a reviewed, scanned and
 sandboxed process (see `SECURITY.md` and `WEEKLY-UPDATE.md`): text-to-cad, kicad-happy and kicad-mcp-pro (MIT);

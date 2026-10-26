@@ -18,6 +18,8 @@ Models (all from the open literature, cited in the result):
 - A fan blowing down into the middle of the fins (``flow_length`` = half the fin length when the air leaves at both
   ends) is treated as two channels of that length in parallel; the turn from the fan into the channels is one extra
   velocity head. That is an engineering approximation, good for comparing designs, to calibrate against a test.
+- The thermal resistance is referenced to the inlet air (Teertstra's h already includes the air heating along the
+  channels), so it never falls below 1 / (m cp), the air's own limit, reported as ``air_limit``.
 
 Units: mm for geometry in, SI inside, K/W, Pa, m3/s out.
 """
@@ -83,8 +85,10 @@ class PlateFin:
         return q_m3s / self.branches / self._flow_area()
 
     # --- flow
-    def pressure_drop(self, q_m3s: float) -> float:
-        """Static pressure drop (Pa) at total flow q through the fins (all branches)."""
+    def pressure_drop(self, q_m3s: float, core_only: bool = False) -> float:
+        """Static pressure drop (Pa) at total flow q through the fins (all branches). ``core_only``: channel friction
+        alone, without the entrance, exit and turn losses (what a CFD porous block should carry when the CFD resolves
+        the block's faces and the fan jet itself)."""
         a = self.air
         L = (self.flow_length or self.length) / 1000
         b = self.gap / 1000
@@ -100,6 +104,8 @@ class PlateFin:
         Kc = 0.42 * (1 - sigma ** 2)                  # sudden contraction
         Ke = (1 - sigma) ** 2                         # sudden expansion
         q = 0.5 * a['rho'] * U ** 2
+        if core_only:
+            return 4 * f * L / Dh * q
         return (4 * f * L / Dh + Kc + Ke + self.turn_loss) * q
 
     # --- heat
@@ -143,38 +149,46 @@ class PlateFin:
         return psi_max / (k * a * math.sqrt(math.pi))
 
     def resistance(self, q_m3s: float, detail: bool = False):
-        """Base (under the source) to inlet air, K/W: spreading + 1D base + fins + the air's own temperature rise."""
+        """Base (under the source) to inlet air, K/W: spreading + 1D base + fins. The fin term already includes the air
+        heating up along the channels: Teertstra's h is referenced to the inlet air, and its low-flow limit is exactly
+        1 / (m cp). ``air_limit`` (1 / (m cp)) is reported for comparison, not added."""
         h = self.h(q_m3s)
         eta = self.fin_efficiency(h)
         A = self.area_fins()
         r_fins = 1 / (h * eta * A) if h > 0 else float('inf')
+        if q_m3s > 0:   # the air cannot carry more than m cp (T_base - T_in): the base strips between fins add area
+            r_fins = max(r_fins, 1 / (self.air['rho'] * self.air['cp'] * q_m3s))   # beyond the correlation's channel basis
         Ap = self.length * self.width * 1e-6
         self._h_eff = 1 / (r_fins * Ap)
         r_spread = self._spread(self._h_eff)
         r_base = (self.base_thickness / 1000) / (self.k_base * Ap)
-        r_air = 1 / (2 * self.air['rho'] * self.air['cp'] * q_m3s) if q_m3s > 0 else float('inf')  # mean air rise
-        total = r_spread + r_base + r_fins + r_air
+        r_air = 1 / (self.air['rho'] * self.air['cp'] * q_m3s) if q_m3s > 0 else float('inf')
+        total = r_spread + r_base + r_fins
         if not detail:
             return total
-        return {'total_k_per_w': total, 'spreading': r_spread, 'base': r_base, 'fins': r_fins, 'air_rise': r_air,
+        return {'total_k_per_w': total, 'spreading': r_spread, 'base': r_base, 'fins': r_fins, 'air_limit': r_air,
                 'h_w_m2k': h, 'fin_efficiency': eta, 'fin_area_m2': A, 'n_fins': self.n_fins,
                 'channel_velocity_m_s': self.channel_velocity(q_m3s)}
 
     # --- porous stand-in for CFD
-    def porous_coefficients(self, q_range=(0.002, 0.03)) -> dict:
-        """Darcy-Forchheimer coefficients (d 1/m2, f 1/m) along the channels that reproduce this pressure drop at the
-        superficial velocity of a porous block of the fin volume: dp/L = mu d V + rho f V^2 / 2. Across the fins the
-        block is made nearly solid (1000 times d) so the air keeps to the channels."""
+    def porous_coefficients(self, q_range=(0.002, 0.03), core_only: bool = True) -> dict:
+        """Darcy-Forchheimer coefficients (d 1/m2, f 1/m) along the channels that reproduce the channel pressure drop
+        at the superficial velocity of a porous block of the fin volume: dp/L = mu d V + rho f V^2 / 2. By default only
+        the channel friction (the CFD resolves the block's faces and the fan jet). Also returned: ``d_vector`` and
+        ``f_vector`` for local axes (along the channels, across the fins, along the fin height): open along the
+        channels and the fin height, nearly closed (1000 x d) across the fins, so the air keeps to the channels."""
         import numpy as np
         a = self.air
         L = (self.flow_length or self.length) / 1000
         face = self.width * self.fin_height * 1e-6 * self.branches
         qs = np.linspace(*q_range, 12)
         V = qs / face
-        y = np.array([self.pressure_drop(q) for q in qs]) / L
+        y = np.array([self.pressure_drop(q, core_only=core_only) for q in qs]) / L
         A = np.stack([a['mu'] * V, 0.5 * a['rho'] * V ** 2], 1)
         (d, f), *_ = np.linalg.lstsq(A, y, rcond=None)
-        return {'d': float(max(d, 1.0)), 'f': float(max(f, 0.0)), 'flow_length_m': L, 'porosity': self.porosity}
+        d, f = float(max(d, 1.0)), float(max(f, 0.0))
+        return {'d': d, 'f': f, 'd_vector': (d, 1000 * d, d), 'f_vector': (f, 0.0, f), 'flow_length_m': L,
+                'porosity': self.porosity, 'core_only': core_only}
 
     def describe(self) -> dict:
         d = asdict(self)

@@ -39,7 +39,15 @@
 - Check the plastic, not just the chip. PLA's heat-deflection temperature is 57 °C and PETG's is 69 °C (Bambu TDS); air
   leaving a cooler can exceed that. Report the walls' air temperature against a design limit below the HDT.
 - A fan is a curve, not a flow rate. Model it on its datasheet curve (`cadagent.cfd.Fan`) so the grille, fins and vents
-  set the operating point. The J501 fan delivers only about a seventh of its free-air flow.
+  set the operating point.
+- **Check that still air stays still before believing a buoyant case.** The first J501 runs used a uniform *static*
+  pressure on the open boundary (`prghTotalPressure`). Real room air needs the hydrostatic gradient, so the model blew
+  a fake wind through the room: about 350 m³/h, nine times the fan's free-air flow. That made the intake air read as
+  room temperature and every number optimistic. The separate review agent on the cad-agent PR caught it from the
+  boundary velocities (air going *down* through the top of a heated room). Fixed with `p_rgh` uniform (hydrostatic).
+  An unheated test room now stays at 0.009 m/s mean, against 0.62 m/s before. All results were re-run.
+- **Close the energy balance.** The heat leaving with the air must equal the heat put in. That check would have
+  caught both the draft and a calibration that targeted the wrong power.
 - Stacked 0.2-0.3 mm fins cannot be meshed at enclosure scale. Use a compact model: a porous block fitted to an
   analytic plate-fin model (`cadagent.heatsink`). Then turn the CFD's fan flow and intake temperature into the plate
   temperature with the same model, and say so.

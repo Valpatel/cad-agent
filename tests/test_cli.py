@@ -156,3 +156,13 @@ def test_module_runs_as_a_script(tmp_path):
                           capture_output=True, text=True, env=dict(os.environ, PYTHONPATH=str(src)))
     assert proc.returncode == 0, proc.stderr
     assert "0 fail" in proc.stdout
+
+
+def test_slice_reports_a_part_without_a_print_time(tmp_path, monkeypatch, capsys):
+    from cadagent import cli, slicer
+    monkeypatch.setattr(slicer, "executable", lambda: "/bin/true")
+    monkeypatch.setattr(slicer, "slice_project", lambda project, parts=None: {
+        "parts": {"box": {"grams": 5.0, "minutes": None}}, "total_grams": 5.0, "total_hours": 0.0,
+        "process": "p", "filament": "f", "path": "x", "pass": True})
+    assert cli.cmd_slice(None, type("A", (), {"parts": []})()) == 0
+    assert "time not reported" in capsys.readouterr().out

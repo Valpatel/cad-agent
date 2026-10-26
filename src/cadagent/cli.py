@@ -129,7 +129,8 @@ def cmd_slice(project: CadProject, args: argparse.Namespace) -> int:
     rep = slice_project(project, getattr(args, "parts", None) or None)
     for name, row in rep["parts"].items():
         if row.get("grams"):
-            _say(f"  {name:<24} {row['grams']:8.1f} g  {row['minutes']:7.1f} min")
+            minutes = f"{row['minutes']:7.1f} min" if row.get("minutes") is not None else "   time not reported"
+            _say(f"  {name:<24} {row['grams']:8.1f} g  {minutes}")
         else:
             _say(f"  {name:<24} FAILED: {row.get('error')}")
     _say(f"{rep['total_grams']} g, {rep['total_hours']} h ({rep['process']}, {rep['filament']}) -> {rep['path']}")

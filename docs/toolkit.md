@@ -290,7 +290,18 @@ Docker (OpenFOAM runs in the official `opencfd/openfoam-default` image) and Bamb
 - `refine(lo, hi, level)`.
 `write()` produces a complete OpenFOAM case (snappyHexMesh, splitMeshRegions, chtMultiRegionSimpleFoam, function
 objects); `run()` runs it natively or in Docker; `results()` returns temperatures, fan flow and pressure, the air
-temperature through each fan, residual and temperature histories, and the limits.
+temperature through each fan, residual and temperature histories, the heat leaving with the air against the heat put
+in (`energy_balance_pct`), the cells each fan and fin zone caught, and the limits. `converged` needs the temperatures,
+fan flow and heat leaving to have stopped changing *and* the energy balance within 5 %. Exchanger fin blocks are set
+to their power by `calibrate_fins()` (secant steps on the fin temperature, only once the heat leaving has settled;
+`calibrated` says whether it got there).
+
+Two choices matter for honest numbers, and both are covered by tests:
+- **The open boundary is hydrostatic** (`p_rgh` uniform): still room air stays still. A uniform *static* pressure
+  there drives a fake draft through the room (0.6 m/s mean in a still, unheated test room), which once made every
+  J501 result optimistic. The opt-in test `test_still_room_stays_still` runs that case for real.
+- **Fan and fin sources are zone totals** (`volumeMode absolute`), so the fan's pressure rise and the fins'
+  conductance do not depend on how many cells the zones catch.
 
 ### Heatsinks (`cadagent.heatsink`)
 `PlateFin(...)` is the analytic plate-fin model (developing laminar channel flow, fin efficiency, spreading resistance,

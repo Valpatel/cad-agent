@@ -20,7 +20,7 @@ import shutil
 import subprocess
 import zipfile
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 PRINTER = 'Bambu Lab P1S 0.4 nozzle'
 PROCESS = '0.20mm Standard @BBL X1C'          # lists the P1S 0.4 nozzle among its compatible printers
@@ -120,6 +120,9 @@ def slice_part(model, workdir=None, printer: str = PRINTER, process: str = PROCE
     model = Path(model).resolve()
     work = Path(workdir).resolve() if workdir else model.parent / 'slicer' / model.stem
     if work.exists():
+        # only ever clear a folder this function wrote (or an empty one)
+        if not (work / 'result-summary.json').exists() and any(work.iterdir()):
+            raise FileExistsError(f'{work} exists and is not a slicer work folder; choose an empty or new folder')
         shutil.rmtree(work)
     work.mkdir(parents=True)
     fil = FILAMENTS.get(filament, filament)
@@ -150,6 +153,20 @@ def _sha(path: Path) -> str:
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def _settings(project) -> dict:
+    cfg = dict(project.slicer or {})
+    fil = cfg.get('filament', 'pla')
+    return {'printer': cfg.get('printer', PRINTER), 'process': cfg.get('process', PROCESS), 'filament': FILAMENTS.get(fil, fil),
+            'overrides': cfg.get('overrides') or {}}
+
+
+def _expected_parts(project) -> List[str]:
+    from cadagent.report import load_parts
+    cfg = dict(project.slicer or {})
+    known, _ = load_parts(project)
+    return list(cfg.get('parts') or known)
+
+
 def slice_project(project, parts=None) -> dict:
     """Slice each part's 3MF (``exports/<part>.3mf``) with the project's ``cad.slicer`` settings and write
     ``exports/slice-report.json``: grams and minutes per part, the totals, the settings, and each 3MF's sha256 so the
@@ -177,10 +194,10 @@ def slice_project(project, parts=None) -> dict:
         rows[name] = {k: r.get(k) for k in ('grams', 'minutes', 'filament_m', 'error', 'sha256')}
         total_g += r.get('grams') or 0.0
         total_min += r.get('minutes') or 0.0
-    out = {'slicer': 'Bambu Studio (command line)', 'printer': cfg.get('printer', PRINTER), 'process': cfg.get('process', PROCESS),
-           'filament': FILAMENTS.get(cfg.get('filament', 'pla'), cfg.get('filament', 'pla')), 'overrides': cfg.get('overrides') or {},
+    exe = executable()
+    out = {'slicer': 'Bambu Studio (command line)', **_settings(project), 'slicer_executable': str(Path(exe).resolve()) if exe else None,
            'parts': rows, 'total_grams': round(total_g, 1), 'total_hours': round(total_min / 60, 2),
-           'pass': all(v.get('grams') for v in rows.values()),
+           'pass': bool(rows) and all(v.get('grams') for v in rows.values()),
            'note': 'Slicer estimates for one copy of each part with the stated profile; supports off unless the profile turns them on.'}
     path = project.exports_dir / 'slice-report.json'
     path.write_text(json.dumps(out, indent=2) + '\n')
@@ -189,13 +206,18 @@ def slice_project(project, parts=None) -> dict:
 
 
 def current_report(project) -> Optional[dict]:
-    """The slice report when every sliced part's 3MF is unchanged since it was sliced, else None."""
+    """The slice report only when it is complete and current: every expected part (``cad.slicer.parts``, else every
+    part) sliced, with the settings ``cad.slicer`` names now, from 3MF files unchanged since (sha256). Else None."""
     path = project.exports_dir / 'slice-report.json'
     if not path.exists():
         return None
     try:
         rep = json.loads(path.read_text())
     except json.JSONDecodeError:
+        return None
+    if not rep.get('parts') or set(rep['parts']) != set(_expected_parts(project)):
+        return None
+    if any(rep.get(k) != v for k, v in _settings(project).items()):
         return None
     for name, row in rep.get('parts', {}).items():
         f = project.exports_dir / f'{name}.3mf'

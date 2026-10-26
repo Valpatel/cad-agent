@@ -25,6 +25,7 @@ def test_long_channel_friction_tends_to_parallel_plates():
     re = AIR['rho'] * u * dh / AIR['mu']
     dp_friction = 24 / re * 4 * 5.0 / dh * 0.5 * AIR['rho'] * u ** 2
     assert hs.pressure_drop(q) == pytest.approx(dp_friction, rel=0.05)
+    assert hs.pressure_drop(q, core_only=True) <= hs.pressure_drop(q)
 
 
 def test_trends():
@@ -44,14 +45,26 @@ def test_operating_point_is_on_both_curves():
     assert hs.pressure_drop(op['q_m3s']) == pytest.approx(fan.dp(op['q_m3s']), rel=1e-3)
 
 
-def test_porous_fit_reproduces_the_pressure_drop():
+def test_porous_fit_reproduces_the_channel_pressure_drop():
     hs = sink()
     pc = hs.porous_coefficients()
     face = hs.width * hs.fin_height * 1e-6 * hs.branches
     q = 0.006
     v = q / face
     dp = (AIR['mu'] * pc['d'] * v + 0.5 * AIR['rho'] * pc['f'] * v ** 2) * pc['flow_length_m']
-    assert dp == pytest.approx(hs.pressure_drop(q), rel=0.1)
+    assert dp == pytest.approx(hs.pressure_drop(q, core_only=True), rel=0.1)
+    assert pc['d_vector'][1] == pytest.approx(1000 * pc['d']) and pc['d_vector'][0] == pc['d_vector'][2] == pc['d']
+
+
+def test_resistance_respects_the_air_limit():
+    # At low flow the fins approach the air's own limit 1/(m cp) (inlet-referenced h) and never beat it; they stay
+    # within 1/eta of it.
+    hs = sink()
+    for q in (0.0005, 0.001, 0.002):
+        r = hs.resistance(q, detail=True)
+        fins = r['total_k_per_w'] - r['spreading'] - r['base']
+        assert fins >= r['air_limit'] * 0.999
+        assert fins <= r['air_limit'] / r['fin_efficiency'] * 1.25
 
 
 def test_seeed_cooler_rating_is_plausible():
@@ -59,4 +72,4 @@ def test_seeed_cooler_rating_is_plausible():
     hs, fan = sink(), FanCurve(15.2, 38.9)
     op = operating_point(hs, fan)
     rise = 110 * hs.resistance(op['q_m3s'])
-    assert 35 < rise < 70
+    assert 25 < rise < 60

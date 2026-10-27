@@ -772,7 +772,7 @@ foamToVTK -allRegions -latestTime -noFunctionObjects > log.foamToVTK 2>&1
                            image: str = IMAGE, native: Optional[bool] = None) -> dict:
         """Keep continuing a case in steps of ``chunk`` iterations until it has converged: the heat leaving the room
         within ``tolerance_pct`` of the heat put in (``energy_balance_pct``) and the residuals and temperatures
-        settled (``converged`` from read_results), or until ``max_iterations`` in total. A conjugate case with a hot
+        settled (``steady`` from read_results), or until ``max_iterations`` in total. A conjugate case with a hot
         solid in a large room can need many thousands: the solid heats up long after the flow has settled. A case
         with no energy balance to close (no heat input) is left as it is. Returns the final results with
         ``continuation`` (the balance after each step), ``balanced`` and a ``stopped`` reason."""
@@ -788,7 +788,7 @@ foamToVTK -allRegions -latestTime -noFunctionObjects > log.foamToVTK 2>&1
             if bal is None:
                 stopped = 'no energy balance to close (no heat input, or no heat-out output)'
                 break
-            if abs(bal) <= tolerance_pct and res.get('converged'):
+            if abs(bal) <= tolerance_pct and res.get('steady') and not res.get('error'):
                 stopped = 'converged'
                 break
             if not res.get('solver_finished'):
@@ -805,7 +805,7 @@ foamToVTK -allRegions -latestTime -noFunctionObjects > log.foamToVTK 2>&1
                 break
         res['continuation'] = hist
         res['stopped'] = stopped
-        res['balanced'] = bool(bal is not None and abs(bal) <= tolerance_pct)
+        res['balanced'] = stopped == 'converged'
         return res
 
     def _continue(self, case: Path, extra: int):
@@ -993,5 +993,6 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
     else:
         balanced = True
         out['energy_balance'] = 'not checked: an exchanger block has no target power'
+    out['steady'] = steady
     out['converged'] = steady and balanced and not out.get('error')
     return out

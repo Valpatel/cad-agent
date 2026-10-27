@@ -285,7 +285,7 @@ def test_run_until_balanced_extends_in_chunks_from_a_rebuilt_case(tmp_path, monk
         end = int(re.search(r'^endTime (\d+);', (d / 'system/controlDict').read_text(), re.M).group(1))
         short = 40.0 / 2 ** ((end - 1000) / 1000)
         return {'energy_balance_pct': -short, 'heat_out_w': 7 * (1 - short / 100), 'solver_finished': True,
-                'converged': short <= 5, 'solids': {'chip': {'max_c': 60 + short}}}
+                'steady': short <= 5, 'converged': short <= 5, 'solids': {'chip': {'max_c': 60 + short}}}
 
     def fake_run(cmd, **kw):
         calls.append(cmd)
@@ -339,10 +339,14 @@ def test_run_until_balanced_stops_without_a_balance_on_oscillation_and_after_a_c
     res = c.run_until_balanced(d, chunk=10, max_iterations=1000)
     assert len(res['continuation']) == 1 and 'no energy balance' in res['stopped']
     # in tolerance once but not converged (oscillating): keep going until converged
-    _fake_solver(monkeypatch, [dict(ok, energy_balance_pct=-4, converged=False), dict(ok, energy_balance_pct=-7, converged=False),
-                               dict(ok, energy_balance_pct=-3, converged=True)])
+    _fake_solver(monkeypatch, [dict(ok, energy_balance_pct=-4, steady=False), dict(ok, energy_balance_pct=-7, steady=False),
+                               dict(ok, energy_balance_pct=-3, steady=True)])
     res = c.run_until_balanced(d, chunk=10, max_iterations=1000)
     assert res['stopped'] == 'converged' and len(res['continuation']) == 3
+    # a looser tolerance than read_results' own 5 %: settled at -7 % is enough at 10 %
+    _fake_solver(monkeypatch, [dict(ok, energy_balance_pct=-7, steady=True, converged=False)])
+    res = c.run_until_balanced(d, chunk=10, max_iterations=1000, tolerance_pct=10)
+    assert res['stopped'] == 'converged' and res['balanced'] and len(res['continuation']) == 1
     # a crashed chunk: the results come from after the crash
     it = iter([dict(ok, energy_balance_pct=-50, converged=False), dict(ok, energy_balance_pct=None, solver_finished=False)])
     monkeypatch.setattr(cfd, 'read_results', lambda case_dir, case=None: next(it))

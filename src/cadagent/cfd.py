@@ -374,7 +374,10 @@ class ThermalCase:
                          + (f' faceZone {b.name}; cellZone {b.name}; cellZoneInside inside;' if b.kind == 'solid' else '') + ' }'
                          for b in self.bodies)
         reg = '\n'.join(f'        box{i} {{ mode inside; levels ((1e15 {lv})); }}' for i, (_, _, lv) in enumerate(self.boxes))
-        p = self._fluid_point()  # the air is everything reachable from here; splitMeshRegions names it domain0
+        # the air is everything reachable from this point. It gets its own cellZone, named like the fluid region, so
+        # splitMeshRegions -cellZones names the region after it. Unzoned cells would be called domainN, with N set by
+        # the order the parallel split finds them: identical J501 cases came out as domain0 in one run, domain1 in another.
+        p = self._fluid_point()
         return f'''castellatedMesh true;
 snap true;
 addLayers false;
@@ -395,7 +398,7 @@ castellatedMeshControls
     {{
 {reg}
     }}
-    locationInMesh ({p[0]:.6f} {p[1]:.6f} {p[2]:.6f});
+    locationsInMesh ((({p[0]:.6f} {p[1]:.6f} {p[2]:.6f}) {self.fluid}));
 }}
 snapControls
 {{

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import os
 import shutil
 
@@ -58,6 +59,7 @@ def test_case_files(tmp_path):
     assert 'fluid (domain0)' in rp and 'solid (chip plate)' in rp
     snappy = (d / 'system/snappyHexMeshDict').read_text()
     assert 'cellZone chip' in snappy and 'cellZoneInside inside' in snappy
+    assert re.search(r'locationsInMesh \(\(\([-\d. ]+\) domain0\)\);', snappy), 'the air is a named zone, not numbered by the split'
     assert 'explicitPorositySource' in (d / 'system/domain0/fvOptions').read_text()
     assert 'thicknessLayers (0.0001)' in (d / '0/chip/T').read_text()
     meta = json.loads((d / 'cadagent-case.json').read_text())

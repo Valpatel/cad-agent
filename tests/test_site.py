@@ -152,3 +152,48 @@ def test_watcher_includes_kicad_sources(tmp_path):
     source=tmp_path/'a.kicad_pcb';source.write_text('source')
     watcher=site._Watcher(tmp_path,{})
     assert watcher.stamp() == source.stat().st_mtime
+def test_default_nav_lists_the_project_pages(tmp_path):
+    root = _project(tmp_path)
+    (root / "preview").mkdir()
+    (root / "preview" / "simulation.html").write_text("<html><head><title>Simulation · Bot</title></head><body></body></html>")
+    (root / "docs" / "review.html").write_text("<html><head><title>Engineering review</title></head><body></body></html>")
+    nav = site.default_nav(root, ["docs/review.html", "README.md", "docs/missing.html"], ["README.md"])
+    assert [n["title"] for n in nav] == ["Overview", "Docs", "Engineering review", "Simulation"]
+    assert nav[2]["href"] == "docs/review.html" and nav[3]["href"] == "preview/simulation.html"
+
+
+def test_inject_nav_marks_the_current_page_and_respects_pages_with_their_own_bar():
+    nav = [{"id": "overview", "title": "Overview", "href": "site/"}, {"id": "sim", "title": "Sim", "href": "preview/sim.html"}]
+    page = site.inject_nav("<html><body><h1>x</h1></body></html>", "/preview/sim.html?x=1", nav)
+    assert 'current: "sim"' in page and page.index("mountAppNav") < page.index("</body>")
+    assert 'current: "overview"' in site.inject_nav("<body></body>", "/site/index.html", nav)
+    own = '<body><nav class="appnav"></nav></body>'
+    assert site.inject_nav(own, "/x.html", nav) == own
+    assert site.inject_nav("<p>no body tag", "/x.html", nav).endswith("</script>")
+    assert site.inject_nav("<body></body>", "/x.html", []) == "<body></body>"
+
+
+def test_served_project_pages_get_the_top_bar(tmp_path):
+    import threading, urllib.request
+    root = _project(tmp_path)
+    (root / "preview").mkdir()
+    (root / "preview" / "index.html").write_text("<html><body><h1>Renders</h1></body></html>")
+    (root / "preview" / "sim.html").write_text("<html><body><h1>Sim</h1></body></html>")
+    cfg = dict(CFG, nav=[{"id": "overview", "title": "Overview", "href": "site/"}, {"id": "sim", "title": "Sim", "href": "preview/sim.html"}])
+    server, url = site.serve_site(root, cfg, "x", "127.0.0.1", 0)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    base = url.replace("/site/", "/")
+    try:
+        with urllib.request.urlopen(base + "preview/sim.html") as r:
+            body = r.read().decode()
+            assert "mountAppNav" in body and 'current: "sim"' in body and "<h1>Sim</h1>" in body
+        with urllib.request.urlopen(base + "preview/") as r:
+            assert "mountAppNav" in r.read().decode(), "a folder's index.html gets the bar too"
+        with urllib.request.urlopen(url) as r:
+            assert r.read().decode().count('class="appnav"') == 1, "the site has its bar built in, not twice"
+        with urllib.request.urlopen(base + "site/nav.json") as r:
+            assert json.loads(r.read())["nav"][1]["href"] == "preview/sim.html"
+        assert "mountAppNav" not in (root / "preview" / "sim.html").read_text(), "files on disk are left alone"
+    finally:
+        server.shutdown()
+        server.server_close()

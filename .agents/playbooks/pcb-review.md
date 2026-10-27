@@ -18,3 +18,5 @@ Treat connectivity, pair routing and return continuity as separate evidence. Use
 For GitHub projects, do not create `.github/README.md` when the root README is the intended overview. Keep workflow documentation under `.github/workflows/README.md` and regression-check precedence.
 
 Preserve the handedness of imported manufacturer/native STEP assemblies. Reorient using proper rotations/translations; a mirror may make a symmetric outline fit while reversing connector placement. Record the transform and check an asymmetric feature. Apply the same map to labels, mating envelopes and cable clamps.
+
+Inspect actual connected ground polygons when a zone-to-zone ratsnest remains. A via touching both layers may join two isolated islands; native connectivity must prove that the pair reaches the main return plane.

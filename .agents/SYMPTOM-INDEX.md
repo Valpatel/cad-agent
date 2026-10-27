@@ -9,3 +9,6 @@
 - Clean DRC but separated CAN lines or interrupted return copper: [route geometry and return-plane audit](inbox/2026-10-26-can-routing-is-not-connectivity.md).
 - GitHub shows a folder index instead of the project overview: [README precedence](inbox/2026-10-26-github-readme-precedence.md).
 - Collision checks pass but PCB import reverses handedness: [proper PCB STEP transform](inbox/2026-10-26-preserve-pcb-handedness.md).
+
+- Zone-to-zone ground ratsnest despite vias touching both layers: [bridge distinct connected regions](inbox/2026-10-26-ground-islands-need-a-real-bridge.md).
+- Dense engraved panel Boolean stalls: [bounded marking cuts](inbox/2026-10-26-panel-engraving-overlap-cost.md).

@@ -24,6 +24,9 @@ trays, SATA cable routing and a review website. No other session histories were 
   - Where the brief for this mining run mentioned an incident that could not be found in the transcript or the project
     files, the lesson says so rather than inventing details.
 
+File 11 comes from a different project: the incident notes of a CAN breakout PCB and housing designed on
+2026-10-26. Its Source lines name those notes, which stay in that project's repository.
+
 ## Index
 
 | File | Topic |
@@ -37,6 +40,8 @@ trays, SATA cable routing and a review website. No other session histories were 
 | [07-verification-and-evidence.md](07-verification-and-evidence.md) | Checks that caught bugs, false positives, honest claims, stale outputs |
 | [08-review-site-ux.md](08-review-site-ux.md) | What the user wanted to see on the review site, and why |
 | [09-agent-process.md](09-agent-process.md) | Mid-turn messages, status, consent, prior art, scope, delegation |
+| [10-simulation-and-material.md](10-simulation-and-material.md) | Exact bought parts, slicer grams, re-checking thinner shells, thermal models of printed enclosures, shared compute |
+| [11-pcb-evidence-and-review.md](11-pcb-evidence-and-review.md) | KiCad report severities and waivers, parity, source hashes, routing geometry, STEP handedness, readback renders, release allowlists (from a second project; see below) |
 
 ## Lesson format
 

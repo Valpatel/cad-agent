@@ -73,3 +73,16 @@
 - **Tool:** `cadagent.fasteners.filleted_wall_rib` builds explicit curved roots and wall overlap. Supply actual dimensions, then fuse to the boss/floor/wall and check one valid solid, insertion, driver, cable and board clearances. The regression test checks curved edges and nonzero overlap with the receiving wall.
 - **Limits:** CAD connectivity and nominal web width do not prove insert pull-out, fatigue, print anisotropy, creep or safe tightening torque. Print coupons and perform the project's load tests before setting ratings.
 - **Source:** 2026-10-26, Thor adapter prototype/mounting iteration; `tests/test_fasteners.py` reports three passing checks.
+
+### Fuse engraved text before cutting it, and check the printable mesh
+
+- **Rule:** Fuse the glyphs of each text item into one solid before the boolean cut, keeping the union to that one
+  item rather than a whole panel. Judge engraving by the exported mesh being watertight, not by how the BREP looks.
+- **Incident:** "AUX + PROTOTYPING INSIDE" in DejaVu Sans Bold at 2.2 mm had a 0.0000426 mm³ overlap between two
+  kerned glyph solids (0.6 mm extrusion). Cutting the raw glyph compound gave a non-watertight STL although the
+  lettering looked right.
+- **Check:** `tests/test_markings.py::test_kerned_bold_letters_export_as_a_watertight_engraving` failed before the fix
+  (`GeometryError: non-watertight STL`); `cadagent.markings` now fuses each item's glyphs, as it already did for a
+  line's overlapping stroke caps.
+- **Source:** 2026-10-26, Thor adapter lid rebuild.
+

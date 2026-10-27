@@ -11,6 +11,8 @@ Works for any CAD project: a housing, a bracket set, a mechanism or a robot. ``c
       extra: [{name: carrier, file: references/pcb-outline.step, color: "#2f8f4e"},     # non-printed parts to show
               {glob: "exports/asm_*.step", strip: "asm_"}]                         # or many files at once
       parts: false                                     # skip the parts file (when its STEPs are not in assembly position)
+      groups: [{id: two, title: Two-port, prefix: "2port_"}]   # also write exports/view/two.json with only those parts
+                                                       # (the id "view" is reserved; groups are checked before any write)
 
 Colours match a part's name exactly, else its name without a trailing _l/_r/_1/... suffix, else its first word.
 """
@@ -33,31 +35,43 @@ def _parts_from(project) -> List[str]:
     return list(json.loads(path.read_text()))
 
 
+RESERVED_GROUP_IDS = {"view"}   # exports/view/view.json is the full manifest
+
+
 def group_manifests(manifest: Dict[str, Any], groups: List[dict]) -> Dict[str, dict]:
-    """Select assemblies without duplicating meshes; each selected variant starts visible."""
+    """Select assemblies without duplicating meshes; each selected variant starts visible.
+
+    Raises CadConfigError (a ValueError) for a malformed, duplicate or reserved id, an empty prefix, or a prefix
+    that matches no part."""
     import re
+    from cadagent.project import CadConfigError
+    if not isinstance(groups, list):
+        raise CadConfigError("cad.view.groups must be a list of {id, prefix, title}")
     result = {}
     for group in groups:
+        if not isinstance(group, dict):
+            raise CadConfigError("cad.view.groups entries must be objects {id, prefix, title}")
         identifier = group.get("id", "")
         prefix = group.get("prefix", "")
-        if not re.fullmatch(r"[a-zA-Z0-9_-]+", identifier) or not prefix or identifier in result:
-            raise ValueError("View groups need unique safe ids and nonempty part-name prefixes")
+        if (not isinstance(identifier, str) or not re.fullmatch(r"[a-zA-Z0-9_-]+", identifier)
+                or not isinstance(prefix, str) or not prefix or identifier in result):
+            raise CadConfigError("View groups need unique safe ids and nonempty part-name prefixes")
+        if identifier in RESERVED_GROUP_IDS:
+            raise CadConfigError(f"View group id {identifier!r} is reserved: exports/view/{identifier}.json is the full manifest")
         selected = [dict(p, visible=True) for p in manifest["parts"] if p["name"].startswith(prefix)]
         if not selected:
-            raise ValueError(f"View group {identifier!r} has no matching parts")
+            raise CadConfigError(f"View group {identifier!r} has no parts starting with {prefix!r}")
         result[identifier] = dict(manifest, title=group.get("title", identifier), parts=selected)
     return result
 
 
 def export_view(project, tolerance: float = 0.1, angular: float = 0.2) -> Dict[str, Any]:
     """Write the meshes and the manifest. Parts without a STEP are listed as skipped, not errors."""
-    cq = require("cadquery", "the 3D view export")
     cfg = dict(project.view or {})
     colors: Dict[str, str] = cfg.get("colors", {})
     hidden = set(cfg.get("hidden", []))
     explode: Dict[str, List[float]] = cfg.get("explode", {})
     out = project.exports_dir / "view"
-    out.mkdir(parents=True, exist_ok=True)
 
     sources = [(name, project.exports_dir / f"{name}.step", None) for name in _parts_from(project)] if cfg.get("parts", True) else []
     for e in cfg.get("extra", []):
@@ -66,6 +80,11 @@ def export_view(project, tolerance: float = 0.1, angular: float = 0.2) -> Dict[s
                 sources.append((f.stem[len(e.get("strip", "")):] if f.stem.startswith(e.get("strip", "")) else f.stem, f, e.get("color")))
         else:
             sources.append((e["name"], project.root / e["file"], e.get("color")))
+
+    # validate the groups against the parts that will be exported before writing anything
+    group_manifests({"parts": [{"name": name} for name, step, _ in sources if step.is_file()]}, cfg.get("groups", []))
+    cq = require("cadquery", "the 3D view export")
+    out.mkdir(parents=True, exist_ok=True)
 
     def colour_for(name, i):
         import re

@@ -12,7 +12,7 @@ print files, reports and a linked review site. It works with Claude Code first, 
 <table>
 <tr>
 <td width="33%"><img src="docs/img/viewer.jpg" alt="3D viewer"><br><b>3D viewer and review site.</b> Every part in place, with explode, section and one top bar linking every report.</td>
-<td width="33%"><img src="docs/img/fea.jpg" alt="FEA of an enclosure lid"><br><b>Strength.</b> FEA of a ribbed lid under a 300 N press, with the stress shown on the part.</td>
+<td width="33%"><img src="docs/img/fea.jpg" alt="FEA of an enclosure lid"><br><b>Strength.</b> FEA of a ribbed lid under a 300 N press, coloured by stress as a fraction of the material's strength.</td>
 <td width="33%"><img src="docs/img/topology.jpg" alt="Topology optimisation of an enclosure floor"><br><b>Less material.</b> Topology optimisation keeps only the floor that carries load.</td>
 </tr>
 </table>
@@ -116,9 +116,9 @@ flowchart LR
 
 - **Adopt.** Six upstreams are vendored under `vendor/`, pinned by commit, scanned and updated weekly through a
   reviewed process ([`SECURITY.md`](SECURITY.md), [`WEEKLY-UPDATE.md`](WEEKLY-UPDATE.md)): text-to-cad,
-  kicad-happy and kicad-mcp-pro (MIT), and build123d-mcp, agentcad and bd_warehouse (Apache-2.0). GPL and AGPL
-  tools such as OpenFOAM run only as separate programs. Licences are in
-  [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+  kicad-happy and kicad-mcp-pro (MIT), and build123d-mcp, agentcad and bd_warehouse (Apache-2.0). OpenFOAM (GPL)
+  and Bambu Studio (AGPL) run only as separate programs. gmsh (GPL) is imported, but only by the optional `fea`
+  extra. Licences are in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 - **Learn.** [`lessons/`](lessons/) holds ten sets of rules mined from real design sessions, each citing its source.
   They cover verifying from source, connectors, fasteners, evidence, simulation and material.
 - **Evaluate, then fill the gaps.** Each tool is scored on the same tasks. What wins gets adopted, the gaps go

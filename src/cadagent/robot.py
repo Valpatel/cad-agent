@@ -18,6 +18,7 @@ All lengths taken from CAD are in mm and converted here; everything written out 
 from __future__ import annotations
 
 import math
+import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -138,6 +139,81 @@ def printed_part_body(shape: Any, density_g_cm3: float, wall_mm: float = 1.6, in
     return body, {"volume_cm3": round(vol / 1000, 3), "area_cm2": round(area / 100, 2), "wall_mm": wall_mm,
                   "infill": infill, "effective_fill": round(fill, 3), "mass_g": round(body.mass * 1000, 1),
                   "estimate": True}
+
+
+def stl_faces(path: Path) -> int:
+    """Triangle count of an STL file, binary or ASCII.
+
+    A file is binary when its size is exactly 84 + 50 x the count in its header (an 80-byte header may itself start with
+    "solid"), or when the header's count is 0 but the size is a whole number of 50-byte records; otherwise it is read as
+    ASCII and its ``endfacet`` keywords are counted, in any case. A binary header that disagrees with the file's size
+    (a truncated file) raises ``ValueError``."""
+    data = Path(path).read_bytes()
+    if len(data) >= 84:
+        n = int.from_bytes(data[80:84], "little")
+        if len(data) == 84 + 50 * n:
+            return n
+    ascii_n = len(re.findall(rb"endfacet", data, flags=re.IGNORECASE))
+    if ascii_n:
+        return ascii_n
+    if len(data) >= 84:
+        n = int.from_bytes(data[80:84], "little")
+        if n == 0 and (len(data) - 84) % 50 == 0:
+            return (len(data) - 84) // 50
+        raise ValueError(f"{path}: binary STL header says {n} triangles but the file holds {(len(data) - 84) / 50:g}")
+    return 0
+
+
+def fit_mesh(path: Path, max_faces: int = 150_000, passes: int = 3) -> int:
+    """Decimate an STL in place (VTK quadric decimation) until it has at most ``max_faces`` triangles; MuJoCo refuses
+    meshes over 200 000 faces, and vendor STEP models (lettering, knurls, fillets) often tessellate far above that.
+
+    Writes through a temporary file, so the original is only replaced by a good result. Raises ``ValueError`` for
+    ``max_faces < 1``, an empty or unreadable mesh, or a result still over the budget after ``passes`` passes.
+    Returns the final triangle count; a mesh already under the budget is left untouched."""
+    import os
+    import tempfile
+    if max_faces < 1:
+        raise ValueError(f"max_faces must be at least 1, not {max_faces}")
+    path = Path(path)
+    n = stl_faces(path)
+    if n == 0:
+        raise ValueError(f"{path}: no triangles")
+    if n <= max_faces:
+        return n
+    vtk = require("vtk", "mesh decimation")
+    src = path
+    fd, tmp = tempfile.mkstemp(suffix=".stl", dir=path.parent)
+    os.close(fd)
+    try:
+        for _ in range(passes):
+            r = vtk.vtkSTLReader()
+            r.SetFileName(str(src))
+            r.Update()
+            have = r.GetOutput().GetNumberOfPolys()
+            if have == 0:
+                raise ValueError(f"{path}: VTK read no triangles")
+            clean = vtk.vtkCleanPolyData()
+            clean.SetInputConnection(r.GetOutputPort())
+            dec = vtk.vtkQuadricDecimation()
+            dec.SetInputConnection(clean.GetOutputPort())
+            dec.SetTargetReduction(max(0.0, 1.0 - 0.95 * max_faces / have))
+            w = vtk.vtkSTLWriter()
+            w.SetFileName(tmp)
+            w.SetFileTypeToBinary()
+            w.SetInputConnection(dec.GetOutputPort())
+            w.Write()
+            got = stl_faces(Path(tmp))
+            if got == 0:
+                raise ValueError(f"{path}: decimation produced an empty mesh")
+            if got <= max_faces:
+                os.replace(tmp, path)
+                return got
+            src = Path(tmp)                         # still over: decimate the result again
+        raise ValueError(f"{path}: still {got} faces after {passes} passes (budget {max_faces})")
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
 
 
 # --------------------------------------------------------------------------- URDF

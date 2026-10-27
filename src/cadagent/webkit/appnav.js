@@ -1,6 +1,10 @@
 // The app-wide top bar for a project's own pages: reads site/nav.json (written by `cad-agent site`) and renders the
 // same tabs as the project site, so every page of the app shares one navigation.
 //   mountAppNav({ root: '../', current: 'simulate' })   // root: path from this page to the project root
+// `cad-agent site --serve` adds `mountAppNav({ root: '/', injected: true })` to every project page it sends. An injected
+// bar pads the body by its height (pages laid out for the bar, like the web kit's, use body.has-appnav and
+// --appnav-h instead), and steps aside for a bar the page mounts itself, whichever comes first, even from an older
+// copy of this file.
 const NAV_CSS = `
 .appnav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;gap:4px;padding:0 16px;height:46px;
 background:rgba(6,6,9,.94);backdrop-filter:blur(10px);border-bottom:1px solid #2a303c;overflow-x:auto;font-family:'Inter',system-ui,sans-serif}
@@ -10,21 +14,57 @@ background:rgba(6,6,9,.94);backdrop-filter:blur(10px);border-bottom:1px solid #2
 text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap}
 .appnav a.tab:hover{color:#00f0ff}.appnav a.tab.on{color:#00f0ff;background:rgba(0,240,255,.06);box-shadow:inset 0 -2px 0 #00f0ff}
 body.has-appnav{--appnav-h:46px}`;
+const NAV_H = 46;
 
-export async function mountAppNav({ root = '../', current = '' } = {}) {
+// root must be a plain relative path (../../, ./, designer/) or the site root "/" (the server-injected bar):
+// it goes into links and the nav.json URL
+const ROOT_OK = /^\/?(?:\.\.?\/)*(?:[A-Za-z0-9_-][A-Za-z0-9._-]*\/)*$/;
+
+export async function mountAppNav({ root = '../', current = '', injected = false } = {}) {
+  if (typeof root !== 'string' || !ROOT_OK.test(root)) return null;
   let cfg;
   try { cfg = await (await fetch(`${root}site/nav.json`)).json(); } catch { return null; }
   if (!cfg?.nav?.length) return null;
-  const style = document.createElement('style');
-  style.textContent = NAV_CSS;
-  document.head.appendChild(style);
+  const own = document.querySelector('nav.appnav:not([data-injected])');
+  if (own) return injected ? null : own;                       // one bar per page; the page's own wins
+  if (injected && document.querySelector('nav.appnav[data-injected]')) return null;
+  document.querySelectorAll('nav.appnav[data-injected]').forEach((n) => n.unmount?.());
+  if (!document.getElementById('cadagent-appnav-css')) {
+    const style = document.createElement('style');
+    style.id = 'cadagent-appnav-css';
+    style.textContent = NAV_CSS;
+    document.head.appendChild(style);
+  }
   const nav = document.createElement('nav');
   nav.className = 'appnav';
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  nav.innerHTML = `<a class="brand" href="${root}site/"><i></i>${esc(cfg.title)}</a>`
-    + cfg.nav.map((n) => `<a class="tab${(n.id ?? n.href) === current ? ' on' : ''}" href="${/^[a-z]+:/.test(n.href) ? n.href : root + n.href}">${esc(n.title)}</a>`).join('');
-  document.body.prepend(nav);
-  document.body.classList.add('has-appnav');
+  // nav.json links: relative to the project root, or absolute http(s)/mailto; anything else (javascript:, data:) is dropped
+  const href = (h) => {
+    h = String(h ?? '');
+    if (/^[a-z][a-z0-9+.-]*:/i.test(h)) return /^(https?:|mailto:)/i.test(h) ? h : null;
+    return h.startsWith('//') ? null : root + h;
+  };
+  nav.innerHTML = `<a class="brand" href="${esc(root)}site/"><i></i>${esc(cfg.title)}</a>`
+    + cfg.nav.filter((n) => href(n?.href) !== null).map((n) => `<a class="tab${(n.id ?? n.href) === current ? ' on' : ''}" `
+      + `href="${esc(href(n.href))}">${esc(n.title)}</a>`).join('');
+  const body = document.body;
+  const hadClass = body.classList.contains('has-appnav');
+  body.prepend(nav);
+  body.classList.add('has-appnav');
+  if (injected) {
+    nav.dataset.injected = '1';
+    const before = body.style.paddingTop;
+    const pad = parseFloat(getComputedStyle(body).paddingTop) || 0;
+    body.style.paddingTop = `${pad + NAV_H}px`;                 // a fixed bar over a page that was not laid out for one
+    const watch = new MutationObserver(() => { if (document.querySelector('nav.appnav:not([data-injected])')) nav.unmount(); });
+    watch.observe(body, { childList: true, subtree: true });
+    nav.unmount = () => {
+      watch.disconnect();
+      nav.remove();
+      body.style.paddingTop = before;
+      if (!hadClass && !document.querySelector('nav.appnav')) body.classList.remove('has-appnav');
+    };
+  }
   liveReload();
   return nav;
 }

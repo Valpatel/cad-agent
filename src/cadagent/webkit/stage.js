@@ -22,7 +22,7 @@ function radialGlow(stops) {
 }
 
 /**
- * createStage(container, { height = 1, accent = 0x00f0ff, zoomSpeed = 0.25 })
+ * createStage(container, { height = 1, accent = 0x00f0ff, zoomSpeed = 0.25, dragZoomSpeed = 1 })
  * Returns { renderer, scene, camera, controls, root, setSceneLight(0..1), frame(height), onFrame(cb), start(), stop(), dispose(),
  *           setInsets({ left, right, top, bottom }), fitView(points, { direction, margin }) }.
  * `setInsets` takes the pixels covered by overlay UI (a side panel, a top bar): the view's centre moves into the
@@ -47,9 +47,14 @@ export function createStage(container, opts = {}) {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
-  // Four wheel increments cover the former single-increment distance. Keep
-  // OrbitControls' continuous delta scaling; small trackpad motions stay small.
-  controls.zoomSpeed = opts.zoomSpeed ?? 0.25;
+  // Wheel zoom at a quarter speed (four wheel increments cover the former single-increment distance; small trackpad
+  // deltas and trackpad pinch, which arrives as ctrl+wheel, stay continuous), but middle-button drag and touch pinch at full speed: OrbitControls has one zoomSpeed for all
+  // three, so it is set per gesture, in the capture phase on the container, before OrbitControls sees the event.
+  const wheelZoom = opts.zoomSpeed ?? 0.25, dragZoom = opts.dragZoomSpeed ?? 1;
+  controls.zoomSpeed = wheelZoom;
+  const gestures = new AbortController();           // removed in dispose(), so re-mounting does not pile listeners up
+  container.addEventListener('wheel', () => { controls.zoomSpeed = wheelZoom; }, { capture: true, passive: true, signal: gestures.signal });
+  container.addEventListener('pointerdown', () => { controls.zoomSpeed = dragZoom; }, { capture: true, passive: true, signal: gestures.signal });
   controls.maxPolarAngle = 1.5;
 
   // cool control-room lighting: white key, cold fill, accent rim
@@ -212,6 +217,7 @@ export function createStage(container, opts = {}) {
       running = false;
       cancelAnimationFrame(frameId);
       observer.disconnect();
+      gestures.abort();
       controls.dispose();
       renderer.dispose();
       renderer.forceContextLoss();

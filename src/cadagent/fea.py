@@ -140,7 +140,7 @@ class Study:
         self.probe_faces: List[int] = []
         # a shape goes to a STEP file that only the mesher reads: in a folder of its own, gone once it is meshed (or
         # the export or the mesh fails); a STEP path the caller passes is theirs and stays
-        with tempfile.TemporaryDirectory(prefix='cadagent-fea-') as tmp:
+        with tempfile.TemporaryDirectory(prefix='cadagent-fea-', ignore_cleanup_errors=True) as tmp:
             self._step = self._as_step(shape, Path(tmp))
             self._mesh()
 

@@ -135,21 +135,24 @@ class _Load:
 class Study:
     def __init__(self, shape, material: Material, mesh_mm: float = 3.0, name: str = 'part'):
         self.material, self.mesh_mm, self.name = material, mesh_mm, name
-        self._step = self._as_step(shape)
         self.fixed: List[int] = []
         self.loads: List[_Load] = []
         self.probe_faces: List[int] = []
-        self._mesh()
+        # a shape goes to a STEP file that only the mesher reads: in a folder of its own, gone once it is meshed (or
+        # the export or the mesh fails); a STEP path the caller passes is theirs and stays
+        with tempfile.TemporaryDirectory(prefix='cadagent-fea-', ignore_cleanup_errors=True) as tmp:
+            self._step = self._as_step(shape, Path(tmp))
+            self._mesh()
 
     # --- geometry and mesh
     @staticmethod
-    def _as_step(shape) -> Path:
+    def _as_step(shape, folder: Path) -> Path:
         if isinstance(shape, (str, Path)):
             return Path(shape)
         import cadquery as cq
-        tmp = Path(tempfile.mkdtemp(prefix='cadagent-fea-')) / 'part.step'
-        cq.exporters.export(shape.val() if hasattr(shape, 'val') else shape, str(tmp))
-        return tmp
+        step = folder / 'part.step'
+        cq.exporters.export(shape.val() if hasattr(shape, 'val') else shape, str(step))
+        return step
 
     def _mesh(self):
         import gmsh

@@ -23,7 +23,7 @@ function radialGlow(stops) {
 
 /**
  * createStage(container, { height = 1, accent = 0x00f0ff })
- * Returns { renderer, scene, camera, controls, root, setSceneLight(0..1), frame(height), onFrame(cb), start(),
+ * Returns { renderer, scene, camera, controls, root, setSceneLight(0..1), frame(height), onFrame(cb), start(), stop(), dispose(),
  *           setInsets({ left, right, top, bottom }), fitView(points, { direction, margin }) }.
  * `setInsets` takes the pixels covered by overlay UI (a side panel, a top bar): the view's centre moves into the
  * uncovered area, so the model is not hidden behind the panels. `fitView` places the camera so all the points (THREE
@@ -176,13 +176,15 @@ export function createStage(container, opts = {}) {
     controls.update();
     return { center, distance: dist, position };
   }
-  new ResizeObserver(resize).observe(container);
+  const observer = new ResizeObserver(resize);
+  observer.observe(container);
   resize();
 
   const callbacks = [];
   const clock = new THREE.Clock();
-  let running = false;
+  let running = false, frameId = 0;
   function tick() {
+    if (!running) return;
     const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
     light.current += (light.level - light.current) * (1 - Math.exp(-dt * 4));
     applyLight();
@@ -193,13 +195,24 @@ export function createStage(container, opts = {}) {
     }
     controls.update();
     renderer.render(scene, camera);
-    requestAnimationFrame(tick);
+    frameId = requestAnimationFrame(tick);
   }
 
   return {
     renderer, scene, camera, controls, root, frame, setInsets, fitView,
     setSceneLight(v, immediate = false) { light.level = Math.max(0, Math.min(1, v)); if (immediate) { light.current = light.level; applyLight(); } },
     onFrame(cb) { callbacks.push(cb); },
-    start() { if (!running) { running = true; requestAnimationFrame(tick); } },
+    start() { if (!running) { running = true; frameId = requestAnimationFrame(tick); } },
+    stop() { running = false; cancelAnimationFrame(frameId); },
+    /** Stop, and free the WebGL context, the controls and the canvas (before mounting another stage on the page). */
+    dispose() {
+      running = false;
+      cancelAnimationFrame(frameId);
+      observer.disconnect();
+      controls.dispose();
+      renderer.dispose();
+      renderer.forceContextLoss();
+      renderer.domElement.remove();
+    },
   };
 }

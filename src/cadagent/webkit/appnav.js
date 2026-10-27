@@ -22,6 +22,8 @@ const ROOT_OK = /^\/?(?:\.\.?\/)*(?:[A-Za-z0-9_-][A-Za-z0-9._-]*\/)*$/;
 
 export async function mountAppNav({ root = '../', current = '', injected = false } = {}) {
   if (typeof root !== 'string' || !ROOT_OK.test(root)) return null;
+  // Embedded reviews inherit the host page's navigation; keep the model area clear.
+  if (window.top !== window.self) return null;
   let cfg;
   try { cfg = await (await fetch(`${root}site/nav.json`)).json(); } catch { return null; }
   if (!cfg?.nav?.length) return null;

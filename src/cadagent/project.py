@@ -92,6 +92,7 @@ class CadProject:
     site: Dict[str, Any] = field(default_factory=dict)
     view: Dict[str, Any] = field(default_factory=dict)
     slicer: Dict[str, Any] = field(default_factory=dict)
+    explore: Dict[str, Any] = field(default_factory=dict)
     unknown_keys: List[str] = field(default_factory=list)
 
     def resolve_revision(self) -> Optional[str]:
@@ -143,7 +144,7 @@ def _split_revision_from(spec: str) -> Tuple[str, str]:
 _TOP_KEYS = {
     "name", "title", "revision", "revision_from", "python", "exports_dir",
     "preview_dir", "docs_dir", "steps", "parts_file", "part_ids", "checks",
-    "printer", "package", "serve", "html_pages", "site", "view", "slicer",
+    "printer", "package", "serve", "html_pages", "site", "view", "slicer", "explore",
 }
 
 def _require_dict(value: Any, where: str) -> Dict[str, Any]:
@@ -268,6 +269,7 @@ def from_dict(root: Path, data: Dict[str, Any]) -> CadProject:
         site=_require_dict(data.get("site"), "cad.site"),
         view=_require_dict(data.get("view"), "cad.view"),
         slicer=_require_dict(data.get("slicer"), "cad.slicer"),
+        explore=_require_dict(data.get("explore"), "cad.explore"),
         unknown_keys=sorted(set(data) - _TOP_KEYS),
     )
 

@@ -33,6 +33,7 @@ import os
 import re
 import shutil
 import subprocess
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -164,8 +165,13 @@ class ThermalCase:
         return self
 
     def solid(self, name, shape, material: ThermalMaterial, power_w: float = 0.0, level=(2, 3)):
-        """A conducting solid region; ``power_w`` spreads that heat evenly through its volume."""
+        """A conducting solid region; ``power_w`` spreads that heat evenly through its volume. It must be one connected
+        piece: separate pieces would split into regions the case does not define (model each as its own solid)."""
         self._add(name, shape, 'solid', level, material, power_w)
+        pieces = len(self._meshes[name].split(only_watertight=False))
+        if pieces > 1:
+            warnings.warn(f'solid {name!r} is {pieces} separate pieces; the run will stop after splitMeshRegions. '
+                          'Model each piece as its own solid (with contact() between touching ones).', stacklevel=2)
         return self
 
     def contact(self, a: str, b: str, thickness_mm: float, k: float):
@@ -261,6 +267,8 @@ class ThermalCase:
         self._fluid_files(w)
         for b in solids:
             self._solid_files(w, b)
+        if solids:
+            w.dict('system/topoSetDict.fluidZone', self._fluid_zone(solids))
         if self.fans or self.porous:
             w.dict(f'system/{self.fluid}/topoSetDict', self._zone_sets())
         (case / 'Allrun').write_text(self._allrun(regions, bool(solids)))
@@ -368,13 +376,17 @@ class ThermalCase:
         geo = '\n'.join(f'    {b.path} {{ type triSurfaceMesh; name {b.name}; }}' for b in self.bodies)
         for i, (lo, hi, _) in enumerate(self.boxes):
             geo += f'\n    box{i} {{ type searchableBox; min ({lo[0]/1000:.6f} {lo[1]/1000:.6f} {lo[2]/1000:.6f}); max ({hi[0]/1000:.6f} {hi[1]/1000:.6f} {hi[2]/1000:.6f}); }}'
-        # solids: every cell inside the closed surface joins the region (the pieces need not touch, e.g. separate fins);
+        # solids: every cell inside the closed surface joins the region; it must be one connected piece (separate pieces
+        # split into regions of their own, which Allrun stops on: model each piece as its own solid);
         # walls: no zone, so the cells inside them are cut away
         surf = '\n'.join(f'        {b.name} {{ level ({b.level[0]} {b.level[1]}); patchInfo {{ type wall; }}'
                          + (f' faceZone {b.name}; cellZone {b.name}; cellZoneInside inside;' if b.kind == 'solid' else '') + ' }'
                          for b in self.bodies)
         reg = '\n'.join(f'        box{i} {{ mode inside; levels ((1e15 {lv})); }}' for i, (_, _, lv) in enumerate(self.boxes))
-        p = self._fluid_point()  # the air is everything reachable from here; splitMeshRegions names it domain0
+        # the air is everything reachable from here. Before the split, topoSet puts it in a cellZone named after
+        # the fluid region (see _fluid_zone), so splitMeshRegions -cellZones names the region after it and not
+        # domainN by split order: identical J501 cases came out as domain0 in one run and domain1 in another.
+        p = self._fluid_point()
         return f'''castellatedMesh true;
 snap true;
 addLayers false;
@@ -407,6 +419,19 @@ addLayersControls {{ layers {{}} relativeSizes true; expansionRatio 1.2; finalLa
     maxFaceThicknessRatio 0.5; maxThicknessToMedialRatio 0.3; minMedialAxisAngle 90; nBufferCellsNoExtrude 0; nLayerIter 50; }}
 meshQualityControls {{ #include "meshQualityDict" relaxed {{ maxNonOrtho 75; }} nSmoothScale 4; errorReduction 0.75; }}
 mergeTolerance 1e-6;
+'''
+
+    def _fluid_zone(self, solids):
+        """topoSet on the meshed (not yet split) case: every cell outside the solid zones joins a cellZone named after
+        the fluid region. A named location in snappyHexMesh (locationsInMesh) would do the same, but it also gives
+        cells in a solid's inside corners to the air, sealed pockets that then split off as regions of their own."""
+        names = ' '.join(b.name for b in solids)
+        return f'''actions
+(
+    {{ name cadagentSolidCells; type cellSet; action new; source zoneToCell; zones ({names}); }}
+    {{ name cadagentSolidCells; type cellSet; action invert; }}
+    {{ name {self.fluid}; type cellZoneSet; action new; source setToCellZone; set cadagentSolidCells; }}
+);
 '''
 
     def _zone_sets(self):
@@ -607,7 +632,15 @@ relaxationFactors { equations { h 1; } }
         n = self.np_procs
         par = f'mpirun -np {n} --oversubscribe'
         fan = f'{par} topoSet -region {self.fluid} -parallel > log.topoSet 2>&1\n' if (self.fans or self.porous) else ''
-        split = (f'{par} splitMeshRegions -cellZones -overwrite -parallel > log.splitMeshRegions 2>&1' if has_solids else
+        expected = ' '.join(regions)
+        split = (f'{par} topoSet -dict system/topoSetDict.fluidZone -parallel > log.topoSet.fluidZone 2>&1\n'
+                 f'{par} splitMeshRegions -cellZones -overwrite -parallel > log.splitMeshRegions 2>&1\n'
+                 '# every region must be one the case defines: an extra one is air (or solid) cut off from the rest\n'
+                 f'extra=$(cd processor0/constant && for d in */; do d=${{d%/}}; case " {expected} polyMesh " in *" $d "*) ;; '
+                 f'*) [ -d "$d/polyMesh" ] && echo "$d";; esac; done; true)\n'
+                 'if [ -n "$extra" ]; then echo "splitMeshRegions made regions this case does not define: $(echo $extra) '
+                 '(a pocket of air sealed off from the rest, or a solid in pieces); see log.splitMeshRegions" | tee log.solve >&2; exit 3; fi'
+                 if has_solids else
                  f'# air only: the mesh is the {self.fluid} region\n'
                  f'for p in processor*; do mkdir -p "$p/constant/{self.fluid}" && mv "$p/constant/polyMesh" "$p/constant/{self.fluid}/"; done')
         return f'''#!/bin/bash

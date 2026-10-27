@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cad-agent"
-version = "0.2.0"
+version = "0.3.0"
 description = "CAD design verification and review reports for 3D-printed parts"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -26,6 +26,7 @@ sim = ["trimesh>=4.0", "manifold3d>=2.4", "rtree>=1.0", "pyvista>=0.44", "imagei
        "pymoto>=2.0", "matplotlib>=3.7", "pillow>=10.0", "scipy>=1.10"]
 site = ["markdown>=3.5"]
 fea = ["gmsh>=4.11", "scikit-fem>=9", "matplotlib>=3.7", "pypardiso>=0.4", "pyamg>=5"]
+explore = ["optuna>=3.4"]
 dev = ["pytest"]
 
 [project.scripts]

@@ -18,7 +18,8 @@ from typing import Any, Dict, List, Optional, Sequence
 from cadagent._deps import MissingDependency
 from cadagent.project import CadConfigError, CadProject, Step, load_project
 
-SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "all", "mcmaster")
+SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
+               "mcmaster", "catalogue", "compare", "optimise")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -235,6 +236,33 @@ def cmd_webkit(project: CadProject, args: argparse.Namespace) -> int:
     _say(f"webkit: copied to {dest}")
     return 0
 
+def cmd_pcb_check(project: CadProject, args: argparse.Namespace) -> int:
+    from cadagent.pcb import evidence_bundle, manifest_problems
+    config_path = project.root / args.manifest
+    try:
+        manifest = json.loads(config_path.read_text())
+    except (OSError, ValueError) as exc:
+        raise _Unusable(f"cannot read evidence manifest {args.manifest}: {exc}") from exc
+    if not isinstance(manifest, dict):
+        raise _Unusable(f"{args.manifest}: the evidence manifest must be a JSON object")
+    fields = [manifest.get("reports", {}), manifest.get("sources", []), manifest.get("release_gates", []),
+              manifest.get("waivers")]
+    problems = manifest_problems(*fields)
+    if problems:
+        raise _Unusable(f"{args.manifest}: " + "; ".join(problems))
+    bundle = evidence_bundle(project.root, *fields)
+    destination = project.root / args.output
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(bundle, indent=2) + "\n")
+    for problem in bundle["problems"]:
+        _say(f"  {problem}")
+    for check in bundle["checks"]:
+        if check["reason"]:
+            _say(f"  {check['kind']}: {check['reason']}")
+    _say(f"PCB checks: {'pass' if bundle['pass'] else 'FAIL'}; production: {'qualified' if bundle['production_ready'] else 'not released'}")
+    return 0 if bundle['pass'] else 1
+
+
 def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
     args.from_step = None
     args.only = None
@@ -328,6 +356,164 @@ def cmd_mcmaster(args: argparse.Namespace) -> int:
                 rc = 1
     return rc
 
+
+# ----------------------------------------------------------------------------- explore: catalogue, compare, optimise
+
+def _warn(msg: str) -> None:
+    """A warning on stderr, so `--json` output on stdout stays parseable."""
+    print(f"cad-agent: WARN {msg}", file=sys.stderr, flush=True)
+
+
+def _explore(project: CadProject):
+    """The project's explore config and catalogue, with the catalogue's load problems."""
+    from cadagent.explore.catalogue import load_configured
+    from cadagent.explore.config import explore_config
+
+    if not project.explore:
+        raise _Unusable("no explore: section under cad: in cad-agent.yaml (docs/explore.md)")
+    cfg = explore_config(project.root, project.explore, project.title)
+    if cfg.unknown_keys:
+        _warn(f"unknown explore: keys ignored: {', '.join(cfg.unknown_keys)}")
+    if not cfg.catalogue:
+        raise _Unusable("cad.explore.catalogue lists no catalogue files")
+    catalogue, issues = load_configured(cfg)
+    return cfg, catalogue, issues
+
+
+def _design_paths(cfg, given: Optional[List[str]]) -> List[Path]:
+    """Design files named on the command line (relative to the project root, else to the current folder), or the
+    configured ones."""
+    if given:
+        paths, missing = [], []
+        for name in given:
+            found = next((p for p in (cfg.root / name, Path.cwd() / name) if p.is_file()), None)
+            (paths.append(found.resolve()) if found else missing.append(name))
+        if missing:
+            raise _Unusable(f"design file not found: {', '.join(missing)}")
+        return paths
+    files, unmatched = cfg.design_files()
+    for pat in unmatched:
+        _warn(f"design pattern {pat!r} matches no file")
+    if not files:
+        raise _Unusable("no design files (cad.explore.designs, default designs/*.json)")
+    return files
+
+
+def cmd_catalogue(project: CadProject, args: argparse.Namespace) -> int:
+    from cadagent.explore.catalogue import check_catalogue, counts
+    from cadagent.explore.design import DesignError, check_slots, load_design, resolve
+
+    cfg, catalogue, issues = _explore(project)
+    issues += check_catalogue(catalogue, cfg.categories or None, cfg.max_price_age_days)
+    issues += check_slots(cfg.slots, catalogue)
+    designs = []
+    files, _ = cfg.design_files()
+    for path in files:
+        rel = path.relative_to(cfg.root).as_posix() if path.is_relative_to(cfg.root) else str(path)
+        try:
+            cand, errors, checks = resolve(load_design(path), catalogue, cfg.slots)
+        except DesignError as exc:
+            errors, checks = [str(exc)], []
+        designs.append({"file": rel, "errors": errors, "warnings": [c["text"] for c in checks if c["level"] == "warn"]})
+    n = counts(issues)
+    design_errors = sum(len(d["errors"]) for d in designs)
+    by_cat = {c: len(catalogue.in_category(c)) for c in catalogue.categories()}
+    if getattr(args, "json", False):
+        print(json.dumps({"parts": len(catalogue), "files": sorted(set(catalogue.files.values())), "categories": by_cat,
+                          "issues": [vars(i) for i in issues], "designs": designs}, indent=1))
+    else:
+        for issue in sorted(issues, key=lambda i: i.level != "warn"):
+            if issue.level == "error" or not getattr(args, "errors_only", False):
+                _say(f"  {issue}")
+        for d in designs:
+            for e in d["errors"]:
+                _say(f"  ERROR design {d['file']}: {e}")
+        cats = ", ".join(f"{c} {k}" for c, k in by_cat.items())
+        _say(f"catalogue: {len(catalogue)} parts in {len(set(catalogue.files.values()))} file(s) ({cats}); "
+             f"{n['error']} errors, {n['warn']} warnings")
+        _say(f"designs: {len(designs)} checked against it, {design_errors} errors")
+    return 1 if n["error"] or design_errors else 0
+
+
+def _print_leaderboard(comp: Dict[str, Any], limit: int = 25) -> None:
+    from cadagent.explore import metrics as M
+
+    cols = comp["metrics"]
+    objectives = [o["metric"] for o in comp["objectives"]]
+    shown = [m for m in objectives + [m for m in cols if m not in objectives] if m in cols][:5]
+    arrows = {o["metric"]: "↓" if o["goal"] == "min" else "↑" for o in comp["objectives"]}
+    heads = [f"{cols[m]['label']}{' ' + arrows[m] if m in arrows else ''}" for m in shown]
+    width = min(max([len(str(d.get("name"))) for d in comp["designs"]] + [6]), 40)
+    _say(f"  {'rank':<5} {'design':<{width}}  {'verdict':<7}  " + "  ".join(f"{h:>14}" for h in heads))
+    for d in comp["designs"][:limit]:
+        rank = f"{d['rank']}{'*' if d.get('pareto') else ''}" if d.get("rank") else "-"
+        vals = []
+        for m in shown:
+            metric = (d.get("metrics") or {}).get(m)
+            col = cols[m]
+            vals.append(M.format_value(metric.get("value"), col["unit"], col.get("digits"), bool(metric.get("estimate")),
+                                       bool(metric.get("incomplete"))) if metric else "—")
+        _say(f"  {rank:<5} {str(d.get('name'))[:width]:<{width}}  {d.get('verdict', ''):<7}  "
+             + "  ".join(f"{v:>14}" for v in vals))
+    if len(comp["designs"]) > limit:
+        _say(f"  ... {len(comp['designs']) - limit} more in the JSON")
+    s = comp["summary"]
+    _say(f"{s['designs']} {'trials' if comp['kind'] == 'search' else 'designs'}: {s['feasible']} feasible, "
+         f"{s['pareto']} on the Pareto front (*), {s['errors']} could not be evaluated · est. = estimate, "
+         "≥ = total leaves out unpriced or unweighed parts · on paper only, nothing measured")
+
+
+def cmd_compare(project: CadProject, args: argparse.Namespace) -> int:
+    from cadagent.explore.catalogue import check_catalogue, counts
+    from cadagent.explore.compare import compare_designs, to_json, write_comparison
+    from cadagent.explore.evaluate import load_evaluator
+
+    cfg, catalogue, issues = _explore(project)
+    paths = _design_paths(cfg, getattr(args, "designs", None))
+    evaluator = load_evaluator(cfg.evaluator, project.root, project.python)
+    workers = getattr(args, "workers", 1) or 1
+    if workers < 1:
+        raise _Unusable("--workers must be 1 or more")
+    comp = compare_designs(cfg, catalogue, evaluator, paths, with_swaps=getattr(args, "swaps", False), workers=workers)
+    written = write_comparison(comp, cfg.out, cfg=cfg)
+    data = counts(issues + check_catalogue(catalogue, cfg.categories or None, cfg.max_price_age_days))
+    if getattr(args, "json", False):
+        print(to_json(comp), end="")
+    else:
+        _print_leaderboard(comp)
+        if data["error"] or data["warn"]:
+            _say(f"catalogue: {data['error']} errors, {data['warn']} warnings (cad-agent catalogue lists them)")
+        _say(f"comparison: {written['json']}")
+        _say(f"page:       {written['html']}")
+        _say(f"site cards: {written['cards']} (cad: site: designs:)")
+    if getattr(args, "open", False):
+        import webbrowser
+        webbrowser.open(written["html"].resolve().as_uri())
+    return 1 if comp["summary"]["errors"] or any(i.level == "error" for i in issues) else 0
+
+
+def cmd_optimise(project: CadProject, args: argparse.Namespace) -> int:
+    from cadagent.explore.evaluate import load_evaluator
+    from cadagent.explore.optimise import run_search
+
+    cfg, catalogue, issues = _explore(project)
+    for issue in issues:
+        if issue.level == "error":
+            _say(f"  {issue}")
+    if any(i.level == "error" for i in issues):
+        raise _Unusable("the catalogue has errors (cad-agent catalogue)")
+    evaluator = load_evaluator(cfg.evaluator, project.root, project.python)
+    r = run_search(cfg, catalogue, evaluator, trials=args.trials, workers=args.workers, sampler=args.sampler,
+                   seed=args.seed, fresh=args.fresh, progress=_say)
+    _say(f"search ({r['sampler']}): {r['new']} new trial(s) in {r['seconds']:.1f}s ({r['evaluated']} evaluated, "
+         f"{r['repeats']} repeats of earlier combinations), {r['trials']} in total; {r['feasible']} feasible, "
+         f"{r['pareto']} on the Pareto front" + (" (interrupted)" if r["interrupted"] else ""))
+    for name in r["best"]:
+        _say(f"  front: {name}")
+    _say(f"leaderboard: {r['leaderboard']}")
+    return 0 if r["feasible"] and not r["interrupted"] else 1
+
+
 HANDLERS = {
     "build": cmd_build,
     "export-3mf": cmd_export_3mf,
@@ -340,6 +526,10 @@ HANDLERS = {
     "slice": cmd_slice,
     "webkit": cmd_webkit,
     "all": cmd_all,
+    "pcb-check": cmd_pcb_check,
+    "catalogue": cmd_catalogue,
+    "compare": cmd_compare,
+    "optimise": cmd_optimise,
 }
 
 def dispatch(args: argparse.Namespace) -> int:
@@ -356,7 +546,7 @@ def dispatch(args: argparse.Namespace) -> int:
     try:
         project = load_project(getattr(args, "project", None))
         if project.unknown_keys:
-            _say(f"WARN unknown cad: keys ignored: {', '.join(project.unknown_keys)}")
+            _warn(f"unknown cad: keys ignored: {', '.join(project.unknown_keys)}")
         return HANDLERS[sub](project, args)
     except (CadConfigError, MissingDependency, _Unusable) as exc:
         _err(f"{sub}: {exc}")
@@ -368,6 +558,12 @@ def dispatch(args: argparse.Namespace) -> int:
         # GeometryError / Mesh3mfError: the output was produced but failed verification
         _err(f"{sub}: FAILED: {exc}")
         return 1
+    except KeyboardInterrupt:
+        if sub in ("compare", "optimise"):
+            from cadagent.explore.evaluate import kill_running_evaluators
+            kill_running_evaluators()
+        _err(f"{sub}: interrupted")
+        return 130
 
 PROJECT_HELP = "CAD project root containing cad-agent.yaml or vptest.yaml with a cad: section (default: cwd)"
 
@@ -404,6 +600,9 @@ def build_parser() -> argparse.ArgumentParser:
     slice_p.add_argument("parts", nargs="*", help="Parts to slice (default: cad.slicer.parts, else all)")
     webkit_p = sub.add_parser("webkit", parents=[common], help="Copy the web kit (3D stage, viewer, HUD) into the project")
     webkit_p.add_argument("dest", nargs="?", default="web/kit", help="Destination folder (default: web/kit)")
+    pcb_p = sub.add_parser("pcb-check", parents=[common], help="Bind KiCad ERC/DRC evidence to current PCB sources")
+    pcb_p.add_argument("manifest", help="JSON with reports, sources, release_gates and optional waivers (paths relative to project root)")
+    pcb_p.add_argument("--output", default="exports/pcb-evidence.json")
     sub.add_parser("all", parents=[common], help="build, export-3mf, check + report, package")
     mc_p = sub.add_parser("mcmaster", help="Download McMaster-Carr STEP + product data per part number and normalise "
                                            "it (one page at a time; skills/mcmaster-parts/SKILL.md)")
@@ -423,6 +622,27 @@ def build_parser() -> argparse.ArgumentParser:
                            "one per flag, e.g. --choose 59935K53:\"Right Hand\"; the PN: prefix may be left out when "
                            "one part number is given")
     mc_p.add_argument("--force", action="store_true", help="Download again even when the STEP is already here")
+    cat_p = sub.add_parser("catalogue", parents=[common],
+                           help="Check the part catalogue and the designs against it (cad: explore:, docs/explore.md)")
+    cat_p.add_argument("--json", action="store_true", help="Print the parts, categories and every issue as JSON")
+    cat_p.add_argument("--errors-only", action="store_true", help="Leave out the warnings")
+    cmp_p = sub.add_parser("compare", parents=[common],
+                           help="Evaluate the designs and rank them: comparison JSON, HTML page, site design cards")
+    cmp_p.add_argument("designs", nargs="*", metavar="DESIGN", help="Design files (default: cad.explore.designs)")
+    cmp_p.add_argument("--swaps", action="store_true",
+                       help="Also evaluate every one-part swap from the catalogue for each design")
+    cmp_p.add_argument("--workers", type=int, default=1,
+                       help="Swaps evaluated at the same time (threads; a command evaluator runs that many processes)")
+    cmp_p.add_argument("--json", action="store_true", help="Print the comparison JSON instead of the table")
+    cmp_p.add_argument("--open", action="store_true", help="Open the comparison page in a browser")
+    opt_p = sub.add_parser("optimise", parents=[common],
+                           help="Search slots and parameters for the best trade-offs (cad: explore: search:)")
+    opt_p.add_argument("--trials", type=int, default=None, help="Trials this run (default: search.trials)")
+    opt_p.add_argument("--workers", type=int, default=None, help="Evaluations at the same time (default: search.workers)")
+    opt_p.add_argument("--sampler", choices=("random", "grid", "nsga2", "tpe"), default=None,
+                       help="Override search.sampler (nsga2 and tpe need optuna)")
+    opt_p.add_argument("--seed", type=int, default=None, help="Override search.seed")
+    opt_p.add_argument("--fresh", action="store_true", help="Delete the previous trials and start over")
     return parser
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

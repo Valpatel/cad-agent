@@ -43,11 +43,13 @@ flowchart LR
 `cad-agent all` runs build, export-3mf, check, report and package in one go. It never claims a physical fit. A check
 either has evidence or it says what is assumed.
 
+**PCB and enclosure workbenches:** [PCB workflow](docs/pcb.md) covers embedded schematics, copper layers, assembly views and housing renders in the status page; native KiCad ERC/DRC/parity evidence; source freshness; and JLC BOM/CPL checks. Use `cad-agent pcb-check` to bind reports to source files. Qualification gates stay separate from CAD checks.
+
 ## What's in the box
 
 ```mermaid
 flowchart LR
-    D["✏️ <b>Design</b><br/>connectors · mcmaster<br/>robot · geometry"]
+    D["✏️ <b>Design</b><br/>connectors · mcmaster<br/>robot · geometry · explore"]
     V["🧪 <b>Verify</b><br/>fea · cfd · heatsink<br/>topopt · slicer"]
     S["🖼️ <b>Show</b><br/>render · simviz · reports<br/>site · 3D viewer"]
     P["📦 <b>Ship</b><br/>STL · STEP · 3MF<br/>hashed review zip"]
@@ -61,6 +63,7 @@ flowchart LR
 | ✏️ | `connectors` | Port windows derived from the modelled mating plug, then a sweep check that the plug really goes in |
 | ✏️ | `mcmaster` | The manufacturer's STEP and specs for a McMaster-Carr part number, normalised for assembly |
 | ✏️ | `robot` | Mass properties from CAD, links and joints, URDF and MuJoCo export, meshes kept under budget |
+| ✏️ | `explore` | Part catalogues with prices and sources, designs that pick a part per slot, the project's own evaluator, Pareto ranking of the trade-offs, one-part swaps and a search over parts and parameters ([guide](docs/explore.md)) |
 | 🧪 | `fea` | gmsh + scikit-fem linear elasticity with printed-material allowables, checked against textbook cases |
 | 🧪 | `cfd` | Conjugate heat transfer cases for OpenFOAM written from CAD: fans, fin blocks, heat sources |
 | 🧪 | `heatsink` | Plate-fin correlations, fan operating point and porous-block coefficients for CFD |
@@ -89,6 +92,7 @@ cad-agent site --serve --project path/to/your-project
 | `sim` | PyVista, pyMOTO, manifold3d: airflow cases, topology optimisation, pictures and videos (OpenFOAM and Bambu Studio run as separate programs) |
 | `robot` | MuJoCo, for robot export |
 | `site` | Markdown, for the review site |
+| `explore` | optuna, for the NSGA-II and TPE searches of `cad-agent optimise` (random and grid need nothing) |
 
 ## Built with cad-agent
 
@@ -119,7 +123,7 @@ flowchart LR
   kicad-happy and kicad-mcp-pro (MIT), and build123d-mcp, agentcad and bd_warehouse (Apache-2.0). OpenFOAM (GPL)
   and Bambu Studio (AGPL) run only as separate programs. gmsh (GPL) is imported, but only by the optional `fea`
   extra. Licences are in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
-- **Learn.** [`lessons/`](lessons/) holds ten sets of rules mined from real design sessions, each citing its source.
+- **Learn.** [`lessons/`](lessons/) holds eleven sets of rules mined from real design sessions, each citing its source.
   They cover verifying from source, connectors, fasteners, evidence, simulation and material.
 - **Evaluate, then fill the gaps.** Each tool is scored on the same tasks. What wins gets adopted, the gaps go
   upstream, and only what nobody else provides lives here.
@@ -157,7 +161,8 @@ Details are in [`CONTRIBUTING.md`](CONTRIBUTING.md). Rules for AI agents are in 
 |---|---|
 | [`src/cadagent/`](src/cadagent/) | The toolkit, with its web kit in `webkit/` |
 | [`tests/`](tests/) | The test suite, which also runs in CI |
-| [`docs/`](docs/) | [`toolkit.md`](docs/toolkit.md), the guide to the toolkit |
+| [`docs/`](docs/) | [`toolkit.md`](docs/toolkit.md), the guide to the toolkit, and [`explore.md`](docs/explore.md), design exploration |
+| [`examples/`](examples/) | Worked examples: [`explore-two-wheel`](examples/explore-two-wheel/) compares robot configurations |
 | [`skills/`](skills/) | Agent skills that fill gaps, such as McMaster parts |
 | [`lessons/`](lessons/) | Rules mined from design sessions, with their sources |
 | [`research/`](research/) | Landscape surveys, including the simulation tools |

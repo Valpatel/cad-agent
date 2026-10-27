@@ -1,0 +1,13 @@
+{
+ "name": "Standard",
+ "parts": {
+  "wheel_motor": "hub-165-36v",
+  "leg_actuator": "qdd-17nm",
+  "battery": "pack-10s-10ah",
+  "compute": "computer-small",
+  "wiring": {"custom": {"name": "Wiring, fasteners and bearings (allowance)", "category": "hardware",
+                        "price_usd": 45.0, "price_checked": "2026-10-26", "mass_g": 400, "confidence": "estimate"}}
+ },
+ "params": {"leg": {"length_mm": 160}, "body_shell_g": 900},
+ "notes": "The middle of the range: mid-size wheels, 17 N·m legs, a 36 V pack."
+}

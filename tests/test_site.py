@@ -128,3 +128,88 @@ def test_site_serves_the_kit_and_links_the_model(tmp_path):
     finally:
         server.shutdown()
         server.server_close()
+
+
+def test_default_nav_lists_the_project_pages(tmp_path):
+    root = _project(tmp_path)
+    (root / "preview").mkdir()
+    (root / "preview" / "simulation.html").write_text("<html><head><title>Simulation · Bot</title></head><body></body></html>")
+    (root / "docs" / "review.html").write_text("<html><head><title>Engineering review</title></head><body></body></html>")
+    nav = site.default_nav(root, ["docs/review.html", "README.md", "docs/missing.html"], ["README.md"])
+    assert [n["title"] for n in nav] == ["Overview", "Docs", "Engineering review", "Simulation"]
+    assert nav[2]["href"] == "docs/review.html" and nav[3]["href"] == "preview/simulation.html"
+
+
+def test_inject_nav_marks_the_current_page_and_respects_pages_with_their_own_bar():
+    nav = [{"id": "overview", "title": "Overview", "href": "site/"}, {"id": "sim", "title": "Sim", "href": "preview/my sim.html"}]
+    page = site.inject_nav(b"<html><body><h1>x</h1></body></html>", "/preview/my%20sim.html?x=1", nav)
+    assert b'current: "sim"' in page and page.index(b"mountAppNav") < page.index(b"</body>")
+    assert b'current: "overview"' in site.inject_nav(b"<body></body>", "/site/index.html", nav)
+    own = b'<body><nav class="appnav"></nav></body>'
+    assert site.inject_nav(own, "/x.html", nav) == own
+    off = b'<head><meta name="cadagent-nav" content="off"></head><body></body>'
+    assert site.inject_nav(off, "/x.html", nav) == off
+    assert site.inject_nav(b"<p>no body tag", "/x.html", nav).endswith(b"</script>")
+    assert site.inject_nav(b"<body></body>", "/x.html", []) == b"<body></body>"
+    latin = "<html><body>café Müller</body></html>".encode("latin-1")
+    assert site.inject_nav(latin, "/x.html", nav).startswith("<html><body>café Müller".encode("latin-1")), "bytes pass through"
+
+
+def test_default_nav_normalises_and_dedupes_paths(tmp_path):
+    root = _project(tmp_path)
+    (root / "pages").mkdir()
+    (root / "pages" / "x.html").write_text("<title>X</title>")
+    nav = site.default_nav(root, ["./pages/x.html", "pages/x.html", "../outside.html"])
+    assert [n["href"] for n in nav] == ["site/", "pages/x.html"]
+
+
+def test_served_project_pages_get_the_top_bar(tmp_path):
+    import threading, urllib.request
+    root = _project(tmp_path)
+    (root / "preview").mkdir()
+    (root / "preview" / "index.html").write_text("<html><body><h1>Renders</h1></body></html>")
+    (root / "preview" / "sim.html").write_text("<html><body><h1>Sim</h1></body></html>")
+    cfg = dict(CFG, nav=[{"id": "overview", "title": "Overview", "href": "site/"}, {"id": "sim", "title": "Sim", "href": "preview/sim.html"}])
+    server, url = site.serve_site(root, cfg, "x", "127.0.0.1", 0)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    base = url.replace("/site/", "/")
+    try:
+        with urllib.request.urlopen(base + "preview/sim.html") as r:
+            body = r.read().decode()
+            assert "mountAppNav" in body and 'current: "sim"' in body and "<h1>Sim</h1>" in body
+        with urllib.request.urlopen(base + "preview/") as r:
+            assert "mountAppNav" in r.read().decode(), "a folder's index.html gets the bar too"
+        with urllib.request.urlopen(url) as r:
+            assert r.read().decode().count('class="appnav"') == 1, "the site has its bar built in, not twice"
+        with urllib.request.urlopen(base + "site/nav.json") as r:
+            assert json.loads(r.read())["nav"][1]["href"] == "preview/sim.html"
+        assert "mountAppNav" not in (root / "preview" / "sim.html").read_text(), "files on disk are left alone"
+        head = urllib.request.Request(base + "preview/sim.html", method="HEAD")
+        with urllib.request.urlopen(head) as r, urllib.request.urlopen(base + "preview/sim.html") as g:
+            assert r.headers["Content-Length"] == g.headers["Content-Length"] == str(len(g.read()))
+        with urllib.request.urlopen(base + site.KIT_URL.lstrip("/") + "viewer.html") as r:
+            assert "mountAppNav" in r.read().decode(), "the web kit's pages get the bar too"
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_default_nav_picks_up_a_report_written_while_serving(tmp_path):
+    import threading, time, urllib.request
+    root = _project(tmp_path)
+    auto = lambda: site.default_nav(root, [], CFG["pages"])  # noqa: E731
+    server, url = site.serve_site(root, {k: v for k, v in CFG.items()}, "x", "127.0.0.1", 0, auto)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        with urllib.request.urlopen(url + "nav.json") as r:
+            assert [n["title"] for n in json.loads(r.read())["nav"]] == ["Overview", "Docs"]
+        (root / "preview").mkdir()
+        (root / "preview" / "simulation.html").write_text("<title>Simulation</title><body></body>")
+        time.sleep(2.1)
+        with urllib.request.urlopen(url + "nav.json") as r:
+            assert json.loads(r.read())["nav"][-1]["href"] == "preview/simulation.html"
+        with urllib.request.urlopen(url) as r:
+            assert 'class="appnav"' in r.read().decode(), "the site's own bar uses the default nav too"
+    finally:
+        server.shutdown()
+        server.server_close()

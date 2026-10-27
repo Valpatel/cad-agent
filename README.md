@@ -58,6 +58,10 @@ part with gmsh, solves linear elasticity with quadratic tetrahedra in scikit-fem
 (linear or torsional), the design von Mises stress and a safety factor against a material table that includes
 printed materials with layer-direction strengths. Faces are picked with selectors (`plane_at`, `cylinder_at`,
 `in_box`, `near`). It is checked against a cantilever and a twisted shaft in `tests/test_fea.py` (within 3–6 %).
+Every study can show how the part fails: `render()` (a picture), `animate()` (a video of the load ramped past
+first failure) and `export_viewer()`, which feeds the web kit's interactive viewer (`webkit/fea.html?case=...`):
+live load factor and deformation, hot spots with the load at which each fails, section cut and point readouts.
+See [`docs/toolkit.md`](docs/toolkit.md#stiffness-and-strength-cadagentfea).
 
 ## Vendored tools
 Six upstreams are vendored under `vendor/`, pinned by commit, and updated weekly through a reviewed, scanned and

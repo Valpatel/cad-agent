@@ -35,6 +35,25 @@ def test_shaft_torsional_stiffness():
     assert r['von_mises_design_mpa'] == pytest.approx(math.sqrt(3) * T * 1000 * r0 / J, rel=0.1)
 
 
+def test_torque_is_a_couple_wherever_its_point_is():
+    """A torque adds no net force, whatever point it is given: the bar twists the same with the point on the end face's
+    centre or 20 mm off it, and its end does not move sideways (it used to: the traction turned the face about the point
+    given, which adds a force when that is not the face's centroid)."""
+    import numpy as np
+
+    L, b, T = 100.0, 10.0, 5.0
+    res = []
+    for off in (0.0, 20.0):
+        st = Study(cq.Workplane('XY').box(L, b, b).translate((L / 2, 0, 0)), STEEL, mesh_mm=4.0, name='bar')
+        st.fix(plane_at(0, 0.0)).torque(plane_at(0, L), (L, off, 0.0), (1, 0, 0), T)
+        res.append(st.solve())
+    d0, d1 = (np.array(r['probe_displacement_mm']) for r in res)
+    assert np.allclose(d0, d1, atol=1e-9)
+    assert np.abs(d1).max() < 1e-6                         # the end face turns about its centre: its mean point stays put
+    assert res[0]['torsional_stiffness_nm_per_deg'] == pytest.approx(res[1]['torsional_stiffness_nm_per_deg'], rel=1e-6)
+    assert res[1]['loads'][0]['about_centroid_mm'] == pytest.approx([L, 0.0, 0.0], abs=1e-6)
+
+
 @pytest.mark.parametrize('load', [100.0, 2000.0])          # safety factor above 1, and failing below the design load
 def test_overload_animation(tmp_path, load):
     L, b, h = 100.0, 10.0, 10.0
@@ -167,3 +186,40 @@ def test_viewer_torque_load(tmp_path):
     assert ld['kind'] == 'torque' and ld['nm'] == pytest.approx(T)
     assert ld['axis'] == pytest.approx([1, 0, 0]) and ld['center'] == pytest.approx([L, 0, 0], abs=1e-6)
     assert 0.4 * r0 < ld['radius'] < r0
+
+
+def test_torque_is_exactly_the_requested_moment_on_unbalanced_faces(monkeypatch):
+    """The assembled load has no net force and a moment of exactly the torque along the axis, with no bending part,
+    also for faces not balanced about the axis: an inclined end face, and an end face plus a side face."""
+    import numpy as np
+    from cadagent.fea import any_of
+    cap = {}
+    orig = Study._solve
+
+    def spy(self, K, f, D, ib):
+        cap['f'], cap['ib'] = f.copy(), ib
+        return orig(self, K, f, D, ib)
+
+    monkeypatch.setattr(Study, '_solve', spy)
+    T = 5.0
+    bar = cq.Workplane('XY').box(100, 10, 10).translate((50, 0, 0))
+    wedge = bar.cut(cq.Workplane('XY').box(30, 30, 30).rotate((0, 0, 0), (0, 1, 0), 45).translate((100, 0, 0)))
+    inclined = lambda fc: fc.kind == 'Plane' and fc.center[0] > 78 and fc.center[2] > 1   # one face of the V-cut end, at 45°
+    for shape, sel in ((wedge, inclined), (bar, any_of(plane_at(0, 100), plane_at(1, 5)))):
+        st = Study(shape, STEEL, mesh_mm=4.0, name='bar')
+        r = st.fix(plane_at(0, 0)).torque(sel, (100, 0, 0), (1, 0, 0), T).solve()
+        B = Study._rigid_modes(cap['ib'])
+        force = B[:, :3].T @ cap['f']
+        c = np.array(r['loads'][0]['about_centroid_mm'])
+        moment = (B[:, 3:].T @ cap['f'] - np.cross(c, force)) / 1000.0
+        assert np.abs(force).max() < 1e-9
+        assert moment == pytest.approx([T, 0.0, 0.0], abs=1e-6)
+
+
+def test_viewer_draws_the_torque_about_the_faces_not_the_given_point(tmp_path):
+    L, T = 100.0, 5.0
+    st = Study(cq.Workplane('XY').box(L, 10, 10).translate((L / 2, 0, 0)), STEEL, mesh_mm=4.0, name='bar')
+    st.fix(plane_at(0, 0.0)).torque(plane_at(0, L), (L, 20.0, 0.0), (1, 0, 0), T)
+    st.solve()
+    d, _ = _viewer(st, tmp_path / 'bar.json')
+    assert d['loads'][0]['center'] == pytest.approx([L, 0, 0], abs=1e-6)

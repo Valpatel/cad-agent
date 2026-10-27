@@ -265,7 +265,7 @@ after updating cad-agent. The viewer is scriptable for screenshots: `viewer.html
 ### Stiffness and strength (`cadagent.fea`)
 
 `pip install -e ".[cad,fea]"`. `Study(shape_or_step, material, mesh_mm)` meshes any part with gmsh (P2 tetrahedra),
-`fix()`/`force()`/`torque()` pick faces with selectors (`plane_at`, `cylinder_at`, `in_box`, `near`, `any_of`), and
+`fix()`/`force()`/`torque()` pick faces with selectors (`plane_at`, `cylinder_at`, `in_box`, `near`, `any_of`). A `torque()` is a pure couple about the loaded faces' own centroid (no net force, exactly the torque along the axis); its `point` does not move the axis, so a force at a distance needs its own `force()`. Then
 `solve()` returns deflection, stiffness, the design von Mises stress and the safety factor against `MATERIALS` (printed
 materials carry their weak, layer-direction strength). Stress spikes in the elements touching a clamp or a load patch
 are artefacts of the idealised support, so the design stress and every failure view leave them out ("support

@@ -145,6 +145,9 @@ def _check_row(project: CadProject, check: Check, report_dir: Path) -> Dict[str,
             unknown.append(f"{key}: {value!r} is not a boolean")
         elif value is False:
             failed.append(key)
+    from cadagent.evidence import hashes_are_current
+    if isinstance(data, dict) and not hashes_are_current(project.root, data):
+        unknown.append("source or artifact evidence is stale")
     ok = not failed and not unknown
     problems = [f"{k} is false" for k in failed] + unknown
     evidence = None

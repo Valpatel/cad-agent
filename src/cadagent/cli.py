@@ -18,7 +18,8 @@ from typing import Any, Dict, List, Optional, Sequence
 from cadagent._deps import MissingDependency
 from cadagent.project import CadConfigError, CadProject, Step, load_project
 
-SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "all", "mcmaster")
+SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
+               "mcmaster")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -235,6 +236,33 @@ def cmd_webkit(project: CadProject, args: argparse.Namespace) -> int:
     _say(f"webkit: copied to {dest}")
     return 0
 
+def cmd_pcb_check(project: CadProject, args: argparse.Namespace) -> int:
+    from cadagent.pcb import evidence_bundle, manifest_problems
+    config_path = project.root / args.manifest
+    try:
+        manifest = json.loads(config_path.read_text())
+    except (OSError, ValueError) as exc:
+        raise _Unusable(f"cannot read evidence manifest {args.manifest}: {exc}") from exc
+    if not isinstance(manifest, dict):
+        raise _Unusable(f"{args.manifest}: the evidence manifest must be a JSON object")
+    fields = [manifest.get("reports", {}), manifest.get("sources", []), manifest.get("release_gates", []),
+              manifest.get("waivers")]
+    problems = manifest_problems(*fields)
+    if problems:
+        raise _Unusable(f"{args.manifest}: " + "; ".join(problems))
+    bundle = evidence_bundle(project.root, *fields)
+    destination = project.root / args.output
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(bundle, indent=2) + "\n")
+    for problem in bundle["problems"]:
+        _say(f"  {problem}")
+    for check in bundle["checks"]:
+        if check["reason"]:
+            _say(f"  {check['kind']}: {check['reason']}")
+    _say(f"PCB checks: {'pass' if bundle['pass'] else 'FAIL'}; production: {'qualified' if bundle['production_ready'] else 'not released'}")
+    return 0 if bundle['pass'] else 1
+
+
 def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
     args.from_step = None
     args.only = None
@@ -340,6 +368,7 @@ HANDLERS = {
     "slice": cmd_slice,
     "webkit": cmd_webkit,
     "all": cmd_all,
+    "pcb-check": cmd_pcb_check,
 }
 
 def dispatch(args: argparse.Namespace) -> int:
@@ -404,6 +433,9 @@ def build_parser() -> argparse.ArgumentParser:
     slice_p.add_argument("parts", nargs="*", help="Parts to slice (default: cad.slicer.parts, else all)")
     webkit_p = sub.add_parser("webkit", parents=[common], help="Copy the web kit (3D stage, viewer, HUD) into the project")
     webkit_p.add_argument("dest", nargs="?", default="web/kit", help="Destination folder (default: web/kit)")
+    pcb_p = sub.add_parser("pcb-check", parents=[common], help="Bind KiCad ERC/DRC evidence to current PCB sources")
+    pcb_p.add_argument("manifest", help="JSON with reports, sources, release_gates and optional waivers (paths relative to project root)")
+    pcb_p.add_argument("--output", default="exports/pcb-evidence.json")
     sub.add_parser("all", parents=[common], help="build, export-3mf, check + report, package")
     mc_p = sub.add_parser("mcmaster", help="Download McMaster-Carr STEP + product data per part number and normalise "
                                            "it (one page at a time; skills/mcmaster-parts/SKILL.md)")

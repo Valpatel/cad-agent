@@ -54,6 +54,7 @@ class SiteConfig:
     milestones: str = ""
     decisions: str = ""
     designs: str = ""
+    review: str = ""  # JSON: groups of embedded views, reports and downloads
     pages: List[str] = field(default_factory=list)
     links: List[Dict[str, str]] = field(default_factory=list)
     nav: List[Dict[str, str]] = field(default_factory=list)   # app-wide top bar: [{title, href}], hrefs from the root
@@ -94,9 +95,20 @@ def page_files(root: Path, patterns: List[str]) -> List[Path]:
 def sources(root: Path, cfg: SiteConfig) -> List[Path]:
     """Every file the site is built from (for staleness checks)."""
     files = page_files(root, cfg.pages)
-    for rel in (cfg.milestones, cfg.decisions, cfg.designs, "exports/view/view.json"):
+    for rel in (cfg.milestones, cfg.decisions, cfg.designs, cfg.review, "exports/view/view.json"):
         if rel and (root / rel).is_file():
             files.append(root / rel)
+    for group in (_load(root, cfg.review) or {}).get("groups", []):
+        for item in group.get("views", []) + group.get("reports", []):
+            rel = item.get("file", "")
+            if rel and (root / rel).is_file(): files.append(root / rel)
+    for design in (_load(root, cfg.designs) or {}).get("designs", []):
+        rel = design.get("pcb_evidence")
+        if rel and (root / rel).is_file():
+            files.append(root / rel)
+            bundle = _load(root, rel) or {}
+            files.extend(root / p for p in {**bundle.get("source_sha256", {}), **bundle.get("report_sha256", {})}
+                         if (root / p).is_file())
     head = root / ".git" / "HEAD"
     if head.is_file():
         files.append(head)
@@ -263,10 +275,12 @@ def _e(v: Any) -> str:
 
 
 def _page(title: str, body: str, accent: str, depth: int = 0, theme: str = "light") -> str:
-    css = _CSS.replace("ACCENT", accent) + _NAV_CSS + (_HUD if theme == "hud" else "")
+    from cadagent.review import REVIEW_CSS
+    css = REVIEW_CSS + _CSS.replace("ACCENT", accent) + _NAV_CSS + (_HUD if theme == "hud" else "")
     fonts = f'<link rel="stylesheet" href="{"../" * (depth + 1)}_cadagent/kit/vendor/fonts/fonts.css">' if theme == "hud" else ""
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            f"<title>{_e(title)}</title>{fonts}<style>{css}</style></head><body>{body}{_MERMAID}</body></html>\n")
+            f"<title>{_e(title)}</title>{fonts}<style>{css}</style></head><body>{body}{_MERMAID}"
+            + '<script type="module">import { liveReload } from "/_cadagent/kit/appnav.js"; liveReload();</script></body></html>\n')
 
 
 def _md_inline(text: str) -> str:
@@ -351,6 +365,18 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
         return ("<p>" + " · ".join(f'<a href="{_e(href(l["href"]))}">{_e(l["title"])}</a>' for l in ls) + "</p>") if ls else ""
 
     def design_card(d: Dict[str, Any]) -> str:
+        pcb_html = ""
+        if d.get("pcb_evidence"):
+            from cadagent.pcb import evidence_is_current
+            bundle = _load(root, d["pcb_evidence"]) or {}
+            current = evidence_is_current(root, bundle)
+            clean = current and bundle.get("pass") is True
+            status = "Checks pass" if clean else "Stale or failing checks"
+            gates = bundle.get("release_gates", [])
+            pending = sum(g.get("pass") is not True for g in gates)
+            pcb_html = (f'<p class="notice">PCB: {status} · {pending} open release gates. '
+                        f'Production: {"qualified" if clean and bundle.get("production_ready") is True else "not released"}.</p>'
+                        f'<p><a href="{_e(href(d["pcb_evidence"]))}">Source-bound PCB evidence</a></p>')
         checks = d.get("checks", {})
         tail = (f'<p>{checks.get("ok", 0)} ok · {checks.get("warn", 0)} warnings · {checks.get("fail", 0)} problems'
                 + (f' · <a href="../{_e(d["link"])}">open</a>' if d.get("link") else "")
@@ -358,7 +384,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
         return (f'<div class="card"><span class="pill {_e(d.get("verdict", "next"))}">{_e(d.get("verdict", ""))}</span>'
                 f'<h3>{_e(d.get("name"))}</h3><p>{_md_inline(d.get("summary", ""))}</p>'
                 f'<div class="metrics">{"".join(metric(x) for x in d.get("metrics", []))}</div>'
-                + badges_html(d) + links_html(d) + tail + "</div>")
+                + pcb_html + badges_html(d) + links_html(d) + tail + "</div>")
 
     ds = "".join(design_card(d) for d in designs)
 
@@ -380,7 +406,9 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
     log_rows = "".join(f'<tr><td>{_e(c["hash"])}</td><td>{_e(c["date"])}</td><td>{_e(c["subject"])}</td></tr>' for c in log)
 
     section = lambda t, body, empty: f'<h2 id="{slug(t)}">{t}</h2>' + (body or f'<p class="tag">{empty}</p>')
-    main = (f'<main class="wrap">{stats}'
+    from cadagent.review import review_html
+    review = review_html(root, _load(root, cfg.review) or {})
+    main = (f'<main class="wrap">{stats}{review}'
             + section("Progress", f'<ul class="milestones">{ms}</ul>' if ms else "", "No milestones file yet.")
             + section("Designs", f'<div class="grid">{ds}</div>' if ds else "", "No designs evaluated yet.")
             + section("Decisions", "".join(decision(d) for d in decs), "No decisions recorded yet.")
@@ -452,7 +480,7 @@ def _stale(root: Path, cfg: SiteConfig) -> bool:
 
 LIVE_URL = "/_cadagent/changes"
 LIVE_SKIP = {".git", ".venv", "node_modules", "__pycache__", "build", "runs", "logs", "references", "vendor", ".pytest_cache"}
-LIVE_EXT = {".html", ".js", ".css", ".json", ".md", ".png", ".jpg", ".svg", ".mp4", ".stl", ".step", ".3mf", ".glb", ".yaml"}
+LIVE_EXT = {".html", ".js", ".css", ".json", ".md", ".png", ".jpg", ".svg", ".mp4", ".stl", ".step", ".3mf", ".glb", ".yaml", ".yml", ".pdf", ".csv", ".kicad_sch", ".kicad_pcb", ".kicad_pro", ".kicad_dru", ".kicad_mod", ".kicad_sym"}
 
 
 class _Watcher:

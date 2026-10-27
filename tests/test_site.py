@@ -130,6 +130,54 @@ def test_site_serves_the_kit_and_links_the_model(tmp_path):
         server.server_close()
 
 
+def test_pcb_evidence_staleness_is_visible(tmp_path):
+    import json
+    from cadagent.pcb import evidence_bundle
+    (tmp_path/'board.kicad_pcb').write_text('board')
+    full='"included_severities":["error","warning","exclusion"],'
+    (tmp_path/'erc.json').write_text('{'+full+'"sheets":[{"violations":[]}]}')
+    (tmp_path/'drc.json').write_text('{'+full+'"violations":[],"unconnected_items":[],"schematic_parity":[]}')
+    import os
+    os.utime(tmp_path/'board.kicad_pcb',ns=(1,1))
+    bundle=evidence_bundle(tmp_path,{'erc':'erc.json','drc':'drc.json'},['board.kicad_pcb'],[{'pass':False}])
+    (tmp_path/'evidence.json').write_text(json.dumps(bundle))
+    (tmp_path/'designs.json').write_text(json.dumps({'designs':[{'name':'PCB','pcb_evidence':'evidence.json'}]}))
+    site.build_site(tmp_path,{'designs':'designs.json'},'PCB')
+    assert 'Checks pass' in (tmp_path/'site/index.html').read_text()
+    (tmp_path/'board.kicad_pcb').write_text('changed')
+    site.build_site(tmp_path,{'designs':'designs.json'},'PCB')
+    page=(tmp_path/'site/index.html').read_text()
+    assert 'Stale or failing checks' in page and 'not released' in page
+    assert 'liveReload' in page
+
+
+def test_card_workbench_and_report_agree_on_outside_root_evidence(tmp_path):
+    import json, hashlib
+    from cadagent.evidence import hashes_are_current
+    from cadagent.pcb import evidence_is_current
+    from cadagent.review import review_html
+    root = tmp_path / 'project'; root.mkdir()
+    (tmp_path / 'outside.kicad_pcb').write_text('outside')
+    (root / 'drc.json').write_text('{}')
+    digest = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+    bundle = {'pass': True, 'production_ready': False, 'release_gates': [],
+              'source_sha256': {'../outside.kicad_pcb': digest(tmp_path / 'outside.kicad_pcb')},
+              'report_sha256': {'drc.json': digest(root / 'drc.json')}}
+    (root / 'evidence.json').write_text(json.dumps(bundle))
+    (root / 'designs.json').write_text(json.dumps({'designs': [{'name': 'PCB', 'pcb_evidence': 'evidence.json'}]}))
+    (root / 'review.json').write_text(json.dumps({'groups': [{'reports': [{'file': 'evidence.json'}]}]}))
+    site.build_site(root, {'designs': 'designs.json', 'review': 'review.json'}, 'PCB')
+    page = (root / 'site/index.html').read_text()
+    assert not evidence_is_current(root, bundle) and not hashes_are_current(root, bundle)
+    assert 'Stale or failing checks' in page and '>STALE<' in page and 'Checks pass' not in page
+
+
+def test_watcher_includes_kicad_sources(tmp_path):
+    source=tmp_path/'a.kicad_pcb';source.write_text('source')
+    watcher=site._Watcher(tmp_path,{})
+    assert watcher.stamp() == source.stat().st_mtime
+
+
 def test_default_nav_lists_the_project_pages(tmp_path):
     root = _project(tmp_path)
     (root / "preview").mkdir()

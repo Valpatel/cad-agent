@@ -43,6 +43,8 @@ flowchart LR
 `cad-agent all` runs build, export-3mf, check, report and package in one go. It never claims a physical fit. A check
 either has evidence or it says what is assumed.
 
+**PCB and enclosure workbenches:** [PCB workflow](docs/pcb.md) covers embedded schematics, copper layers, assembly views and housing renders in the status page; native KiCad ERC/DRC/parity evidence; source freshness; and JLC BOM/CPL checks. Use `cad-agent pcb-check` to bind reports to source files. Qualification gates stay separate from CAD checks.
+
 ## What's in the box
 
 ```mermaid
@@ -119,7 +121,7 @@ flowchart LR
   kicad-happy and kicad-mcp-pro (MIT), and build123d-mcp, agentcad and bd_warehouse (Apache-2.0). OpenFOAM (GPL)
   and Bambu Studio (AGPL) run only as separate programs. gmsh (GPL) is imported, but only by the optional `fea`
   extra. Licences are in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
-- **Learn.** [`lessons/`](lessons/) holds ten sets of rules mined from real design sessions, each citing its source.
+- **Learn.** [`lessons/`](lessons/) holds eleven sets of rules mined from real design sessions, each citing its source.
   They cover verifying from source, connectors, fasteners, evidence, simulation and material.
 - **Evaluate, then fill the gaps.** Each tool is scored on the same tasks. What wins gets adopted, the gaps go
   upstream, and only what nobody else provides lives here.

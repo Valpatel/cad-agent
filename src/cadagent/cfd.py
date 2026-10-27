@@ -33,6 +33,7 @@ import os
 import re
 import shutil
 import subprocess
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -164,8 +165,13 @@ class ThermalCase:
         return self
 
     def solid(self, name, shape, material: ThermalMaterial, power_w: float = 0.0, level=(2, 3)):
-        """A conducting solid region; ``power_w`` spreads that heat evenly through its volume."""
+        """A conducting solid region; ``power_w`` spreads that heat evenly through its volume. It must be one connected
+        piece: separate pieces would split into regions the case does not define (model each as its own solid)."""
         self._add(name, shape, 'solid', level, material, power_w)
+        pieces = len(self._meshes[name].split(only_watertight=False))
+        if pieces > 1:
+            warnings.warn(f'solid {name!r} is {pieces} separate pieces; the run will stop after splitMeshRegions. '
+                          'Model each piece as its own solid (with contact() between touching ones).', stacklevel=2)
         return self
 
     def contact(self, a: str, b: str, thickness_mm: float, k: float):
@@ -370,7 +376,8 @@ class ThermalCase:
         geo = '\n'.join(f'    {b.path} {{ type triSurfaceMesh; name {b.name}; }}' for b in self.bodies)
         for i, (lo, hi, _) in enumerate(self.boxes):
             geo += f'\n    box{i} {{ type searchableBox; min ({lo[0]/1000:.6f} {lo[1]/1000:.6f} {lo[2]/1000:.6f}); max ({hi[0]/1000:.6f} {hi[1]/1000:.6f} {hi[2]/1000:.6f}); }}'
-        # solids: every cell inside the closed surface joins the region (the pieces need not touch, e.g. separate fins);
+        # solids: every cell inside the closed surface joins the region; it must be one connected piece (separate pieces
+        # split into regions of their own, which Allrun stops on: model each piece as its own solid);
         # walls: no zone, so the cells inside them are cut away
         surf = '\n'.join(f'        {b.name} {{ level ({b.level[0]} {b.level[1]}); patchInfo {{ type wall; }}'
                          + (f' faceZone {b.name}; cellZone {b.name}; cellZoneInside inside;' if b.kind == 'solid' else '') + ' }'
@@ -631,7 +638,7 @@ relaxationFactors { equations { h 1; } }
                  '# every region must be one the case defines: an extra one is air (or solid) cut off from the rest\n'
                  f'extra=$(cd processor0/constant && for d in */; do d=${{d%/}}; case " {expected} polyMesh " in *" $d "*) ;; '
                  f'*) [ -d "$d/polyMesh" ] && echo "$d";; esac; done; true)\n'
-                 'if [ -n "$extra" ]; then echo "splitMeshRegions made regions this case does not define: $extra '
+                 'if [ -n "$extra" ]; then echo "splitMeshRegions made regions this case does not define: $(echo $extra) '
                  '(a pocket of air sealed off from the rest, or a solid in pieces); see log.splitMeshRegions" | tee log.solve >&2; exit 3; fi'
                  if has_solids else
                  f'# air only: the mesh is the {self.fluid} region\n'

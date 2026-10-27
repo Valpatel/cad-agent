@@ -259,3 +259,9 @@ def test_sealed_air_pocket_stops_with_a_clear_message(tmp_path):
     d = c.write(tmp_path / 'case', np_procs=2)
     assert c.run(d) == 3
     assert 'regions this case does not define' in (d / 'log.solve').read_text()
+
+
+def test_solid_in_pieces_warns():
+    two = trimesh.util.concatenate([box((0, 0, 0), (2, 2, 2)), box((5, 0, 0), (7, 2, 2))])
+    with pytest.warns(UserWarning, match='2 separate pieces'):
+        ThermalCase('t', domain=((-5, -5, -5), (10, 10, 10))).solid('fins', two, SOLIDS['al6061'])

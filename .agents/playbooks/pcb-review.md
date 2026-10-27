@@ -20,3 +20,5 @@ For GitHub projects, do not create `.github/README.md` when the root README is t
 Preserve the handedness of imported manufacturer/native STEP assemblies. Reorient using proper rotations/translations; a mirror may make a symmetric outline fit while reversing connector placement. Record the transform and check an asymmetric feature. Apply the same map to labels, mating envelopes and cable clamps.
 
 Inspect actual connected ground polygons when a zone-to-zone ratsnest remains. A via touching both layers may join two isolated islands; native connectivity must prove that the pair reaches the main return plane.
+
+Keep source/artifact hash validation consistent between inline workbenches and standalone reports. Generic measurements need not use the PCB bundle schema. A native save after report generation requires rechecking the saved board; changing timestamps is not verification. Hash the actual geometry helpers so unrelated site-only changes do not invalidate geometry evidence.

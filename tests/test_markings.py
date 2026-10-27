@@ -19,3 +19,13 @@ def test_overlapping_strokes_engrave_as_one_valid_part():
     result=m.engrave(source,2,.4)
     assert result.isValid() and len(result.Solids())==1
     assert 0<result.Volume()<source.Volume()
+
+def test_kerned_bold_letters_export_as_a_watertight_engraving(tmp_path):
+    cq=pytest.importorskip('cadquery')
+    pytest.importorskip('trimesh')
+    from cadagent.geometry import export_print_stl
+    m=PanelMarkings();m.text('AUX + PROTOTYPING INSIDE',0,0,2.2,bold=True)
+    source=cq.Solid.makeBox(50,10,2.4,cq.Vector(-25,-5,0))
+    result=m.engrave(source,2.4,.4)
+    report=export_print_stl(result,tmp_path/'kerned.stl')
+    assert report['cad_valid'] and report['watertight'] and report['solid_count']==1

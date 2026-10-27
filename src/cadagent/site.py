@@ -246,12 +246,12 @@ background:var(--accent);box-shadow:0 0 6px rgba(0,240,255,.3)}
 
 _NAV_CSS = """
 .appnav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:4px;padding:0 16px;min-height:46px;
-background:rgba(6,6,9,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);overflow-x:auto}
-.appnav .brand{font-weight:700;margin-right:12px;white-space:nowrap;display:flex;align-items:center;gap:8px;color:var(--ink);text-decoration:none}
-.appnav .brand i{width:9px;height:9px;background:var(--accent);transform:rotate(45deg);box-shadow:0 0 10px rgba(0,240,255,.3)}
-.appnav a.tab{font:500 12px 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+background:rgba(6,6,9,.94);backdrop-filter:blur(10px);border-bottom:1px solid #2a303c;overflow-x:auto}
+.appnav .brand{font-weight:700;margin-right:12px;white-space:nowrap;display:flex;align-items:center;gap:8px;color:#e8edf5;text-decoration:none}
+.appnav .brand i{width:9px;height:9px;background:#00f0ff;transform:rotate(45deg);box-shadow:0 0 10px rgba(0,240,255,.3)}
+.appnav a.tab{font:500 12px 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:#8892a4;
 text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap}
-.appnav a.tab:hover{color:var(--accent)}.appnav a.tab.on{color:var(--accent);background:rgba(0,240,255,.06);box-shadow:inset 0 -2px 0 var(--accent)}
+.appnav a.tab:hover{color:#00f0ff}.appnav a.tab.on{color:#00f0ff;background:rgba(0,240,255,.06);box-shadow:inset 0 -2px 0 #00f0ff}
 """
 
 

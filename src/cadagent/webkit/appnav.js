@@ -12,7 +12,7 @@ background:rgba(6,6,9,.94);backdrop-filter:blur(10px);border-bottom:1px solid #2
 text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap}
 .appnav a.tab:hover{color:#00f0ff}.appnav a.tab.on{color:#00f0ff;background:rgba(0,240,255,.06);box-shadow:inset 0 -2px 0 #00f0ff}
 body.has-appnav{--appnav-h:46px}
-.appnav.sticky{position:sticky;margin:0 0 12px}`;
+.appnav.sticky{position:sticky;margin:0}`;
 
 export async function mountAppNav({ root = '../', current = '', sticky = false } = {}) {
   let cfg;
@@ -28,6 +28,10 @@ export async function mountAppNav({ root = '../', current = '', sticky = false }
     + cfg.nav.map((n) => `<a class="tab${(n.id ?? n.href) === current ? ' on' : ''}" href="${/^[a-z]+:/.test(n.href) ? n.href : root + n.href}">${esc(n.title)}</a>`).join('');
   document.body.prepend(nav);
   if (!sticky) document.body.classList.add('has-appnav');
+  else {   // run edge to edge whatever margin the page gives its body
+    const cs = getComputedStyle(document.body);
+    nav.style.margin = `-${cs.marginTop} -${cs.marginRight} ${cs.marginTop === '0px' ? '0' : cs.marginTop} -${cs.marginLeft}`;
+  }
   liveReload();
   return nav;
 }

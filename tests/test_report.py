@@ -164,3 +164,24 @@ def test_bambu_url_requires_http_and_encodes():
                    "&name=my%20part")
     with pytest.raises(ValueError):
         report.bambu_studio_url("../exports/x.3mf", "x")
+
+def test_slicer_run_only_for_current_slices(tmp_path):
+    import hashlib
+    root = make_project(tmp_path)
+    project = load_project(root)
+    sha = {n: hashlib.sha256((root / "exports" / f"{n}.3mf").read_bytes()).hexdigest() for n in ("box", "lid")}
+    from cadagent.slicer import _settings
+    rep = {"slicer": "Bambu Studio (command line)", **_settings(project), "total_grams": 12.5,
+           "total_hours": 1.2, "parts": {n: {"grams": 6.0, "minutes": 30, "sha256": sha[n]} for n in sha}}
+    path = root / "exports" / "slice-report.json"
+    path.write_text(json.dumps(rep))
+    results = report.collect(project)
+    assert results["slicer_run"] is True and "12.5 g" in results["footer_meta"]["slicer"]
+    # a different profile, a missing part or an empty report is not a current slice
+    for bad in ({**rep, "process": "0.28mm Draft"}, {**rep, "parts": {"box": rep["parts"]["box"]}}, {**rep, "parts": {}}):
+        path.write_text(json.dumps(bad))
+        assert report.collect(project)["slicer_run"] is False
+    path.write_text(json.dumps(rep))
+    (root / "exports" / "lid.3mf").write_text("changed after slicing")
+    results = report.collect(project)
+    assert results["slicer_run"] is False and results["footer_meta"]["slicer"] == "slicer not run"

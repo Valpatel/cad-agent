@@ -11,3 +11,18 @@ upstream LICENSE/NOTICE files; those terms apply to that code. Our changes are l
 | build123d-mcp | Apache-2.0 | https://github.com/pzfreo/build123d-mcp | `59b256121886` | 2026-10-24 |
 | agentcad | Apache-2.0 | https://github.com/jdilla1277/agentcad | `52af472ddade` | 2026-10-24 |
 | bd_warehouse | Apache-2.0 | https://github.com/gumyr/bd_warehouse | `e6ae6e7bae74` | 2026-10-24 |
+
+## Runtime dependencies and external programs (not vendored)
+
+The simulation modules use these at run time. None of their code is copied into this repository.
+
+| Project | Licence | How cad-agent uses it |
+|---|---|---|
+| OpenFOAM v2512 (OpenCFD) | GPL-3.0 | External program (`cadagent.cfd` writes a case and runs it natively or in the `opencfd/openfoam-default` Docker image) |
+| Bambu Studio | AGPL-3.0 | External program (`cadagent.slicer` runs its command line; profiles are read, flattened and passed back as files) |
+| gmsh | GPL-2.0-or-later | Imported by the optional `fea` extra. Our source stays MIT; distributing a bundle that includes gmsh falls under the GPL |
+| scikit-fem | BSD-3-Clause | Imported (`fea`) |
+| pyMOTO | MIT | Imported (`sim`, topology optimisation) |
+| PyVista, VTK | MIT, BSD-3-Clause | Imported (`sim`, pictures and animations) |
+| trimesh, manifold3d, Rtree | MIT, Apache-2.0, MIT | Imported (`sim`, mesh booleans and point-in-solid tests) |
+| imageio, imageio-ffmpeg (FFmpeg) | BSD-2-Clause (FFmpeg LGPL/GPL binary, run as a process) | Imported (`sim`, MP4 writing) |

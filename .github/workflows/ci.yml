@@ -29,8 +29,8 @@ jobs:
       - run: python -m pytest -q
       - run: cad-agent --help
 
-  # Full: CAD, FEA, robot, site and explore extras, so the geometry, mesh, solver, simulator and optimiser tests run
-  # instead of skipping.
+  # Full: CAD, FEA, simulation, robot, site and explore extras, so the geometry, mesh, solver, simulator and optimiser
+  # tests run instead of skipping.
   full:
     runs-on: ubuntu-24.04
     steps:
@@ -39,7 +39,7 @@ jobs:
         with: {python-version: '3.12', cache: pip}
       - name: System libraries for the gmsh, VTK and MuJoCo wheels
         run: sudo apt-get update -q && sudo apt-get install -yq --no-install-recommends libglu1-mesa libxrender1 libxcursor1 libxft2 libxinerama1 libgl1 libegl1
-      - run: pip install -e ".[cad,fea,robot,site,explore,dev]"
+      - run: pip install -e ".[cad,fea,robot,site,sim,explore,dev]"
       # importorskip would turn a broken heavy install into silent skips: import them all first, loudly
-      - run: python -c "import cadquery, OCP, trimesh, vtk, matplotlib, PIL, gmsh, skfem, mujoco, markdown, optuna; print('extras import ok')"
+      - run: python -c "import cadquery, OCP, trimesh, vtk, matplotlib, PIL, gmsh, skfem, mujoco, markdown, pymoto, pyvista, imageio, manifold3d, rtree, optuna; print('extras import ok')"
       - run: python -m pytest -q -rs

@@ -1,91 +1,173 @@
 # cad-agent
 
-One agent setup for hardware design on frontier models (Claude Code first, plus Codex, Cursor and Gemini). It covers
-3D-printed parts, sheet metal, laser-cut parts, CNC, enclosures around real PCBs, and KiCad PCB design.
+[![CI](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Rather than build another CAD framework, this repo combines what already exists. It works on three fronts:
+**Hardware design with AI agents, checked like engineering.** cad-agent turns a folder of CAD scripts into a
+repeatable pipeline: build the parts, check the fit, simulate strength and airflow, and publish the evidence as
+print files, reports and a linked review site. It works with Claude Code first, plus Codex, Cursor and Gemini.
 
-1. **Adopt the best public tools.**
-   - Track them in `upstreams/registry.yaml`, pinned by commit, with licence, install method and a security review.
-   - Candidates include text-to-cad (MIT), the KiCad MCP servers, the build123d/CadQuery skills, and FreeCAD/OpenSCAD bridges.
-   - Never copy code across licence boundaries: MIT, BSD or Apache-2.0 code may be incorporated with attribution, while
-     GPL and AGPL tools run only as external programs.
-2. **Mine the J501 design session.**
-   - Lessons come only from the explicitly selected session: the J501 enclosure design session. Other session
-     histories are out of scope.
-   - We extract corrections, failed assumptions, checks that caught real bugs, and what the user actually asked for.
-   - The miner runs locally (`mining/`). Output is scrubbed of personal data and cites its sources (session ID and date)
-     in `lessons/`.
-3. **Continuously integrate and test.**
-   - `evals/` holds design tasks with machine-checked acceptance criteria: geometry validity, clearances, DFM rules,
-     cable bend radius, fastener engagement, cost.
-   - Each candidate tool or skill set is scored on the same tasks. A scheduled job checks the upstreams for changes and
-     re-runs the evals.
-   - Tools that win get adopted, the gaps go upstream as pull requests, and only what nobody else provides lives here
-     in `skills/`.
+<p align="center"><img src="docs/img/gyropup.jpg" alt="Gyropup, a self-balancing wheel-legged robot designed with cad-agent" width="100%"></p>
 
-## Principles
-- **Modular and flexible for any CAD project.** cad-agent knows nothing about a particular product. Projects plug in
-  through files and config (`cad-agent.yaml`, parameter files, check JSONs, milestone and decision files). Anything
-  specific to one product stays in that product's repository.
-- **Cover the whole job:** CAD, BOM and cost, exploded diagrams and renders, decision records, standard design rules,
-  checks with evidence, robot and simulation export, and a project site that shows all of it.
-- **Bake in the best CAD agents in the world** rather than rebuild them: adopt, pin, review and test them, and only
-  write what nobody else provides.
+<table>
+<tr>
+<td width="33%"><img src="docs/img/viewer.jpg" alt="3D viewer"><br><b>3D viewer and review site.</b> Every part in place, with explode, section and one top bar linking every report.</td>
+<td width="33%"><img src="docs/img/fea.jpg" alt="FEA of an enclosure lid"><br><b>Strength.</b> FEA of a ribbed lid under a 300 N press, coloured by stress as a fraction of the material's strength.</td>
+<td width="33%"><img src="docs/img/topology.jpg" alt="Topology optimisation of an enclosure floor"><br><b>Less material.</b> Topology optimisation keeps only the floor that carries load.</td>
+</tr>
+</table>
 
-## What we add (gaps found so far)
-- Designing an enclosure around a real board: STEP and schematic ingestion, and clearance against thousands of vendor solids.
-- Connector windows sized to the mating plugs, standoffs, and the cooler/heatsink stack.
-- Cable routing with plug lengths and minimum bend radius.
-- Fastener length from the assembly stack and thread engagement.
-- An evidence-first review site: renders, PDF check sheets, STL/3MF/Bambu links, live check tables, and a progress log.
-- Mechanical-PCB co-design: KiCad board to enclosure, and back again for the outline, holes and connectors.
+## How it works
 
-## Toolkit
-`cad-agent` (Python package `cadagent` in `src/`) runs a CAD project's build steps and checks, writes and verifies
-bed-centred 3MF files, and produces a standalone HTML review report and a review package. It never claims physical
-fit. Install it with the CAD dependencies:
+A project describes itself in one `cad-agent.yaml`. cad-agent runs it and collects the proof.
 
-```bash
-pip install -e ".[cad]"
-cad-agent check --project path/to/cad-project
+```mermaid
+flowchart LR
+    P["📐 <b>Your project</b><br/>cad-agent.yaml<br/>CAD scripts · parameters"]
+    B["🔧 <b>build</b><br/>CAD · checks · simulations<br/>run as ordered steps"]
+    M["🖨️ <b>export-3mf</b><br/>bed-centred 3MF<br/>read back and verified"]
+    R["✅ <b>check + report</b><br/>every result, pass or fail<br/>with its evidence"]
+    Z["📦 <b>package</b><br/>review zip<br/>sha256 manifest"]
+    W["🌐 <b>site --serve</b><br/>linked review site<br/>3D viewer · live reload"]
+    P --> B --> M --> Z
+    B --> R --> Z
+    R --> W
+    classDef src fill:#1f2933,stroke:#e8892b,color:#f5f7fa
+    classDef step fill:#0e3a43,stroke:#00b8c8,color:#f5f7fa
+    classDef out fill:#2a2440,stroke:#9d7bff,color:#f5f7fa
+    class P src
+    class B,M,R step
+    class Z,W out
 ```
 
-The project contract, the `cad-agent.yaml` format and every command are in [`docs/toolkit.md`](docs/toolkit.md).
+`cad-agent all` runs build, export-3mf, check, report and package in one go. It never claims a physical fit. A check
+either has evidence or it says what is assumed.
 
-**Stiffness and strength studies** (`pip install -e ".[cad,fea]"`): `cadagent.fea.Study` meshes a STEP or CadQuery
-part with gmsh, solves linear elasticity with quadratic tetrahedra in scikit-fem, and reports deflection, stiffness
-(linear or torsional), the design von Mises stress and a safety factor against a material table that includes
-printed materials with layer-direction strengths. Faces are picked with selectors (`plane_at`, `cylinder_at`,
-`in_box`, `near`). It is checked against a cantilever and a twisted shaft in `tests/test_fea.py` (within 3–6 %).
+## What's in the box
 
-**Design exploration** (`cadagent.explore`, [`docs/explore.md`](docs/explore.md)): pick parts from a catalogue for
-each slot of a design, evaluate every design with the project's own model, and rank the trade-offs. The catalogue
-carries specs, prices with the date they were checked, sources and confidence flags; `cad-agent compare` ranks the
-designs into Pareto fronts over the project's objectives and constraints, tries every one-part swap and writes a
-standalone comparison page; `cad-agent optimise` searches parts and parameters (random or grid, or optuna's NSGA-II
-with `pip install -e ".[explore]"`). It works for an enclosure, a robot or a board alike; the worked example in
-[`examples/explore-two-wheel`](examples/explore-two-wheel/) compares small two-wheel-legged robots.
+```mermaid
+flowchart LR
+    D["✏️ <b>Design</b><br/>connectors · mcmaster<br/>robot · geometry · explore"]
+    V["🧪 <b>Verify</b><br/>fea · cfd · heatsink<br/>topopt · slicer"]
+    S["🖼️ <b>Show</b><br/>render · simviz · reports<br/>site · 3D viewer"]
+    P["📦 <b>Ship</b><br/>STL · STEP · 3MF<br/>hashed review zip"]
+    D --> V --> S --> P
+    classDef g fill:#14232b,stroke:#3a8fa3,color:#e8edf5
+    class D,V,S,P g
+```
 
-## Vendored tools
-Six upstreams are vendored under `vendor/`, pinned by commit, and updated weekly through a reviewed, scanned and
-sandboxed process (see `SECURITY.md` and `WEEKLY-UPDATE.md`): text-to-cad, kicad-happy and kicad-mcp-pro (MIT);
-build123d-mcp, agentcad and bd_warehouse (Apache-2.0). text-to-cad's telemetry, update check and outbound API are
-patched off. Licences and pins are listed in `THIRD_PARTY_NOTICES.md`.
+| | Module | What it gives you |
+|---|---|---|
+| ✏️ | `connectors` | Port windows derived from the modelled mating plug, then a sweep check that the plug really goes in |
+| ✏️ | `mcmaster` | The manufacturer's STEP and specs for a McMaster-Carr part number, normalised for assembly |
+| ✏️ | `robot` | Mass properties from CAD, links and joints, URDF and MuJoCo export, meshes kept under budget |
+| ✏️ | `explore` | Part catalogues with prices and sources, designs that pick a part per slot, the project's own evaluator, Pareto ranking of the trade-offs, one-part swaps and a search over parts and parameters ([guide](docs/explore.md)) |
+| 🧪 | `fea` | gmsh + scikit-fem linear elasticity with printed-material allowables, checked against textbook cases |
+| 🧪 | `cfd` | Conjugate heat transfer cases for OpenFOAM written from CAD: fans, fin blocks, heat sources |
+| 🧪 | `heatsink` | Plate-fin correlations, fan operating point and porous-block coefficients for CFD |
+| 🧪 | `topopt` | pyMOTO topology optimisation (SIMP, MMA, overhang filter) to cut filament where it does no work |
+| 🧪 | `slicer` | Bambu Studio's command line for real filament grams and print time |
+| 🖼️ | `render`, `simviz` | Off-screen renders, stress and flow pictures, MP4 animations |
+| 🖼️ | `report`, `simreport` | Results JSON and standalone HTML reports that name their limits |
+| 🖼️ | `site`, `view`, webkit | A local review site with progress, decisions, docs and a 3D viewer, all under one top bar |
+| 📦 | `mesh3mf`, `package` | 3MF writing with an independent read-back, and a hashed review zip |
+
+The full guide, the `cad-agent.yaml` format and every command are in [`docs/toolkit.md`](docs/toolkit.md).
+
+## Quick start
+
+```bash
+git clone https://github.com/Valpatel/cad-agent && cd cad-agent
+pip install -e ".[cad]"                      # add fea, sim, robot, site as needed
+cad-agent all --project path/to/your-project  # build, 3MF, check + report, package
+cad-agent site --serve --project path/to/your-project
+```
+
+| Extra | Adds |
+|---|---|
+| `cad` | CadQuery, trimesh, VTK: building, checking and rendering parts |
+| `fea` | gmsh, scikit-fem, PyPardiso: stiffness and strength |
+| `sim` | PyVista, pyMOTO, manifold3d: airflow cases, topology optimisation, pictures and videos (OpenFOAM and Bambu Studio run as separate programs) |
+| `robot` | MuJoCo, for robot export |
+| `site` | Markdown, for the review site |
+| `explore` | optuna, for the NSGA-II and TPE searches of `cad-agent optimise` (random and grid need nothing) |
+
+## Built with cad-agent
+
+| Project | What it is |
+|---|---|
+| [J501 AGX enclosure](https://github.com/mvalancy/j501-agx-orin) | A printed enclosure for the Seeed reServer J501 with a Jetson AGX Orin: port windows from mating plugs, FEA, airflow and topology-optimised floor vents |
+| [Gyropup](https://github.com/Valpatel/gyropup) | A self-balancing wheel-legged robot with a foam-ball turret: five-bar legs, McMaster hardware, strength and fall studies |
+| AGX Thor CAN boards | PCB and enclosure reviews |
+
+Anything specific to one product stays in that product's repository. cad-agent only holds what every project can use.
+
+## How cad-agent grows
+
+```mermaid
+flowchart LR
+    A["🔎 <b>Adopt</b><br/>the best public tools,<br/>pinned and security-reviewed"]
+    L["🧠 <b>Learn</b><br/>rules mined from real<br/>design sessions"]
+    E["📏 <b>Evaluate</b><br/>tasks with machine-checked<br/>acceptance criteria"]
+    G["🧩 <b>Fill the gaps</b><br/>only what nobody<br/>else provides"]
+    A --> E
+    L --> E
+    E --> G
+    G -.->|upstream PRs| A
+```
+
+- **Adopt.** Six upstreams are vendored under `vendor/`, pinned by commit, scanned and updated weekly through a
+  reviewed process ([`SECURITY.md`](SECURITY.md), [`WEEKLY-UPDATE.md`](WEEKLY-UPDATE.md)): text-to-cad,
+  kicad-happy and kicad-mcp-pro (MIT), and build123d-mcp, agentcad and bd_warehouse (Apache-2.0). OpenFOAM (GPL)
+  and Bambu Studio (AGPL) run only as separate programs. gmsh (GPL) is imported, but only by the optional `fea`
+  extra. Licences are in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+- **Learn.** [`lessons/`](lessons/) holds ten sets of rules mined from real design sessions, each citing its source.
+  They cover verifying from source, connectors, fasteners, evidence, simulation and material.
+- **Evaluate, then fill the gaps.** Each tool is scored on the same tasks. What wins gets adopted, the gaps go
+  upstream, and only what nobody else provides lives here.
+
+## Contributing
+
+Several projects and AI agents use cad-agent at once, so every change goes through a pull request.
+
+```mermaid
+gitGraph
+    commit id: "v0.1"
+    branch dev
+    checkout dev
+    commit id: "integration"
+    branch feature
+    checkout feature
+    commit id: "change + tests"
+    commit id: "review fixes"
+    checkout dev
+    merge feature id: "PR: CI + review"
+    checkout main
+    merge dev id: "release PR" tag: "vX.Y.Z"
+```
+
+1. Work in your own worktree on `feat/<topic>`, branched from `dev`.
+2. Open a PR into `dev`. CI runs `core` on Python 3.10 and 3.12, and `full` with every extra.
+3. A person or a separate review agent reviews it. Every comment is answered and resolved before the merge.
+4. Releases go from `dev` to `main` by PR. Both branches are protected.
+
+Details are in [`CONTRIBUTING.md`](CONTRIBUTING.md). Rules for AI agents are in [`AGENTS.md`](AGENTS.md).
 
 ## Layout
-- `src/cadagent/`: the toolkit; `tests/` its tests; `docs/toolkit.md` its guide
-- `vendor/`: vendored upstream code, with its manifest, patches, scan baselines and review reports
-- `tools/`: `vendor_sync.py` (safe import and update) and `security_scan.py` (red-flag scan)
-- `upstreams/`: registry of all surveyed tools, including those not vendored
-- `mining/`: the session-history miner (local only)
-- `lessons/`: rules mined from sessions, with provenance
-- `knowledge/`: sourced design rules, materials and costs, in a citable form
-- `skills/`: our skills; they fill gaps and do not duplicate the upstreams
-- `evals/`: benchmark tasks and the scoring harness
-- `research/`: landscape surveys
-- `examples/`: worked examples (vendor files are fetched by URL and hash, never committed); `explore-two-wheel` shows
-  the design-exploration framework
 
-## Status
-Phase 0. Repo created; the landscape survey and the session miner are in progress.
+| Folder | What is in it |
+|---|---|
+| [`src/cadagent/`](src/cadagent/) | The toolkit, with its web kit in `webkit/` |
+| [`tests/`](tests/) | The test suite, which also runs in CI |
+| [`docs/`](docs/) | [`toolkit.md`](docs/toolkit.md), the guide to the toolkit, and [`explore.md`](docs/explore.md), design exploration |
+| [`examples/`](examples/) | Worked examples: [`explore-two-wheel`](examples/explore-two-wheel/) compares robot configurations |
+| [`skills/`](skills/) | Agent skills that fill gaps, such as McMaster parts |
+| [`lessons/`](lessons/) | Rules mined from design sessions, with their sources |
+| [`research/`](research/) | Landscape surveys, including the simulation tools |
+| [`upstreams/`](upstreams/), [`vendor/`](vendor/) | The tool registry and the vendored, pinned upstreams |
+| [`tools/`](tools/), [`mining/`](mining/) | Vendor sync, security scan and the local session miner |
+
+## License
+
+MIT. See [`LICENSE`](LICENSE). Vendored code keeps its own licence, listed in
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).

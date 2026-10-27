@@ -25,6 +25,7 @@ from __future__ import annotations
 import html
 import json
 import os
+import posixpath
 import time
 import re
 import subprocess
@@ -33,7 +34,8 @@ from datetime import datetime
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
+from urllib.parse import unquote
 
 from cadagent._deps import require
 
@@ -234,12 +236,12 @@ background:var(--accent);box-shadow:0 0 6px rgba(0,240,255,.3)}
 
 _NAV_CSS = """
 .appnav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:4px;padding:0 16px;min-height:46px;
-background:rgba(6,6,9,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);overflow-x:auto}
-.appnav .brand{font-weight:700;margin-right:12px;white-space:nowrap;display:flex;align-items:center;gap:8px;color:var(--ink);text-decoration:none}
-.appnav .brand i{width:9px;height:9px;background:var(--accent);transform:rotate(45deg);box-shadow:0 0 10px rgba(0,240,255,.3)}
-.appnav a.tab{font:500 12px 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+background:rgba(6,6,9,.94);backdrop-filter:blur(10px);border-bottom:1px solid #2a303c;overflow-x:auto}
+.appnav .brand{font-weight:700;margin-right:12px;white-space:nowrap;display:flex;align-items:center;gap:8px;color:#e8edf5;text-decoration:none}
+.appnav .brand i{width:9px;height:9px;background:#00f0ff;transform:rotate(45deg);box-shadow:0 0 10px rgba(0,240,255,.3)}
+.appnav a.tab{font:500 12px 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:#8892a4;
 text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap}
-.appnav a.tab:hover{color:var(--accent)}.appnav a.tab.on{color:var(--accent);background:rgba(0,240,255,.06);box-shadow:inset 0 -2px 0 var(--accent)}
+.appnav a.tab:hover{color:#00f0ff}.appnav a.tab.on{color:#00f0ff;background:rgba(0,240,255,.06);box-shadow:inset 0 -2px 0 #00f0ff}
 """
 
 
@@ -275,10 +277,14 @@ def _md_inline(text: str) -> str:
     return re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", r'<a href="\2">\1</a>', t)
 
 
-def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: str) -> Dict[str, Any]:
-    """Write ``<root>/site/``. Returns a summary (pages written, counts)."""
+def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: str,
+               auto_nav: Optional[Callable[[], List[Dict[str, str]]]] = None) -> Dict[str, Any]:
+    """Write ``<root>/site/``. Returns a summary (pages written, counts). ``auto_nav`` gives the top bar when the
+    config has no ``nav`` (cad-agent passes :func:`default_nav` for the project)."""
     root = Path(root).resolve()
     cfg = site_config(raw_site, default_title)
+    if not cfg.nav and auto_nav:
+        cfg.nav = auto_nav()
     out = root / SITE_DIR
     (out / "pages").mkdir(parents=True, exist_ok=True)
     pages = page_files(root, cfg.pages)
@@ -390,6 +396,52 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
 
 # ----------------------------------------------------------------------------- serving
 
+def default_nav(root: Path, html_pages: Optional[List[str]] = None, site_pages: Optional[List[str]] = None) -> List[Dict[str, str]]:
+    """The top bar when the project configures none: the overview, the rendered documents, the 3D model, then each
+    project HTML page (``cad: html_pages``, plus the cad-agent report and simulation report when present), titled by
+    its ``<title>``. Every page the local server sends gets this bar, so the pages link to each other."""
+    root = Path(root)
+    nav = [{"id": "overview", "title": "Overview", "href": "site/"}]
+    if page_files(root, list(site_pages or [])):
+        nav.append({"id": "docs", "title": "Docs", "href": "site/#documents"})
+    if (root / "exports" / "view" / "view.json").is_file():
+        nav.append({"id": "model", "title": "3D model", "href": KIT_URL.strip("/") + "/viewer.html"})
+    seen = set()
+    for rel in list(html_pages or []) + ["docs/cad-agent-report.html", "preview/simulation.html"]:
+        rel = posixpath.normpath(str(rel).replace("\\", "/")).lstrip("/")
+        f = root / rel
+        if not rel.endswith(".html") or rel in seen or rel.startswith("..") or not f.is_file():
+            continue
+        seen.add(rel)
+        m = re.search(r"<title>(.*?)</title>", f.read_text(errors="replace")[:4000], re.S | re.I)
+        title = html.unescape(m.group(1)).strip().split(" · ")[0].split(" | ")[0] if m else Path(rel).stem
+        nav.append({"id": rel, "title": title[:28] or Path(rel).stem, "href": rel})
+    return nav
+
+
+_INJECT = ('<script type="module">import {{ mountAppNav }} from "{kit}appnav.js";'
+           'mountAppNav({{ root: "/", current: {current}, injected: true }});</script>')
+_OPT_OUT = re.compile(rb'<meta[^>]+name=["\']cadagent-nav["\'][^>]+content=["\']off["\']', re.I)
+
+
+def inject_nav(page: bytes, request_path: str, nav: List[Dict[str, str]]) -> bytes:
+    """Add the app-wide top bar to an HTML page the local server sends (bytes in, bytes out, so any encoding
+    survives). Skipped when the page has a bar in its markup or opts out with <meta name="cadagent-nav" content="off">;
+    a bar a page mounts from its own script replaces the injected one in the browser (webkit/appnav.js)."""
+    if not nav or b"appnav" in page or _OPT_OUT.search(page):
+        return page
+    path = unquote(request_path.split("?")[0].split("#")[0])
+    current = ""
+    for n in nav:
+        h = "/" + n["href"].split("#")[0]
+        if not re.match(r"^/[a-z]+:", h) and (path == h or (h.endswith("/") and path in (h + "index.html", h.rstrip("/")))):
+            current = n.get("id", n["href"])
+            break
+    tag = _INJECT.format(kit=KIT_URL, current=json.dumps(current)).encode()
+    i = page.lower().rfind(b"</body>")
+    return page[:i] + tag + page[i:] if i >= 0 else page + tag
+
+
 def _stale(root: Path, cfg: SiteConfig) -> bool:
     index = root / SITE_DIR / "index.html"
     if not index.is_file():
@@ -438,11 +490,21 @@ class _Watcher:
 
 
 def serve_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: str, host: str = "127.0.0.1",
-               port: int = 0) -> Tuple[ThreadingHTTPServer, str]:
-    """Serve the project root; ``/`` redirects to the site, which rebuilds when a source changed."""
+               port: int = 0, auto_nav: Optional[Callable[[], List[Dict[str, str]]]] = None) -> Tuple[ThreadingHTTPServer, str]:
+    """Serve the project root; ``/`` redirects to the site, which rebuilds when a source changed. Every HTML page
+    goes out with the top bar: the config's ``nav``, else ``auto_nav()``, worked out again at most every 2 s so a
+    report written while the server runs gets its tab."""
     root = Path(root).resolve()
     cfg = site_config(raw_site, default_title)
-    build_site(root, raw_site, default_title)
+    build_site(root, raw_site, default_title, auto_nav)
+    nav_cache = {"at": 0.0, "nav": cfg.nav}
+
+    def current_nav() -> List[Dict[str, str]]:
+        if cfg.nav or not auto_nav:
+            return cfg.nav
+        if time.time() - nav_cache["at"] > 2.0:
+            nav_cache.update(at=time.time(), nav=auto_nav())
+        return nav_cache["nav"]
 
     watch = _Watcher(root, cfg.live_reload or {})
 
@@ -462,8 +524,41 @@ def serve_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
                 self.end_headers()
                 return
             if self.path.startswith(f"/{SITE_DIR}/") and _stale(root, cfg):
-                build_site(root, raw_site, default_title)
+                build_site(root, raw_site, default_title, auto_nav)
+            if self._send_with_nav():
+                return
             super().do_GET()
+
+        def do_HEAD(self):  # noqa: N802 (http.server API): the same headers as GET
+            if not self._send_with_nav(head=True):
+                super().do_HEAD()
+
+        def _send_with_nav(self, head: bool = False) -> bool:
+            """Project HTML pages get the site's top bar on the way out (the files on disk are not changed), and
+            site/nav.json is always the current bar."""
+            nav = current_nav()
+            if not nav:
+                return False
+            if self.path.split("?")[0] == f"/{SITE_DIR}/nav.json":
+                body = (json.dumps({"title": cfg.title, "nav": nav}, indent=1) + "\n").encode()
+                ctype = "application/json"
+            else:
+                target = Path(self.translate_path(self.path))
+                if target.is_dir():
+                    if not self.path.split("?")[0].endswith("/"):
+                        return False                     # the stock handler redirects to the slash form
+                    target = target / "index.html"
+                if target.suffix.lower() not in (".html", ".htm") or not target.is_file():
+                    return False
+                body = inject_nav(target.read_bytes(), self.path, nav)
+                ctype = "text/html"                      # no charset: the page's own <meta charset> still applies
+            self.send_response(200)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            if not head:
+                self.wfile.write(body)
+            return True
 
         def translate_path(self, path):
             if path.startswith(KIT_URL):   # the web kit ships inside cad-agent

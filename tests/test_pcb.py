@@ -104,6 +104,19 @@ def test_ignored_and_excluded_checks_fail_unless_waived_by_name(tmp_path):
     assert not kicad_report(p, 'drc', {'missing_courtyard': ' ', 'clearance': 'x'})['pass']   # a waiver needs a reason
 
 
+def test_waiver_counts_cap_and_unused_waivers(tmp_path):
+    p = tmp_path/'drc.json'
+    p.write_text(json.dumps(dict(CLEAN_DRC, violations=[{'severity': 'exclusion', 'type': 'clearance'}] * 3)))
+    r = kicad_report(p, 'drc', {'clearance': 'reviewed net ties', 'silk_overlap': 'logos'})
+    assert r['pass'] and r['waived_counts'] == {'clearance': 3} and r['unused_waivers'] == ['silk_overlap']
+    r = kicad_report(p, 'drc', {'clearance': {'reason': 'two reviewed net ties', 'max': 2}})
+    assert not r['pass'] and r['unwaived'] == ['clearance'] and '3 excluded, waiver allows 2' in r['reason']
+    assert kicad_report(p, 'drc', {'clearance': {'reason': 'three reviewed net ties', 'max': 3}})['pass']
+    for bad in ({'clearance': {'reason': 'x', 'max': -1}}, {'clearance': {'reason': 'x', 'max': True}},
+                {'clearance': {'max': 3}}, {'clearance': {'reason': 'x', 'cap': 3}}):
+        assert not kicad_report(p, 'drc', bad)['pass']
+
+
 def test_paths_outside_the_root_fail(tmp_path):
     import os
     root = tmp_path/'project'; root.mkdir()

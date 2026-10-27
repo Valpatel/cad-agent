@@ -37,18 +37,30 @@ def contained(root: Path, rel) -> Path:
 
 
 def _waivers(waivers) -> dict:
+    """Normalise waivers to {key: {'reason': str, 'max': int | None}}. A waiver is a nonempty reason, or
+    {reason, max}: ``max`` caps how many excluded instances of that check it accepts (more fail)."""
     if waivers is None:
         return {}
-    if not isinstance(waivers, dict) or not all(isinstance(k, str) and k and isinstance(v, str) and v.strip()
-                                                for k, v in waivers.items()):
+    if not isinstance(waivers, dict):
         raise ValueError('waivers must map each KiCad check key to a nonempty reason')
-    return waivers
+    out = {}
+    for k, v in waivers.items():
+        if isinstance(v, str):
+            v = {'reason': v}
+        ok = (isinstance(k, str) and k and isinstance(v, dict) and set(v) <= {'reason', 'max'}
+              and isinstance(v.get('reason'), str) and v['reason'].strip()
+              and (v.get('max') is None or (isinstance(v['max'], int) and not isinstance(v['max'], bool) and v['max'] >= 0)))
+        if not ok:
+            raise ValueError('waivers must map each KiCad check key to a nonempty reason, or to {reason, max} '
+                             'with max a whole number of excluded instances')
+        out[k] = {'reason': v['reason'], 'max': v.get('max')}
+    return out
 
 
 def _failed_check(kind: str, reason: str) -> dict:
     return {'kind': kind, 'pass': False, 'errors': 0, 'warnings': 0, 'exclusions': 0,
             'unconnected': 0, 'parity': 0, 'ignored_checks': [], 'excluded_checks': [],
-            'unwaived': [], 'waived': {}, 'reason': reason}
+            'unwaived': [], 'waived': {}, 'waived_counts': {}, 'unused_waivers': [], 'reason': reason}
 
 
 def kicad_report(path: Path, kind: str, waivers: dict | None = None) -> dict:
@@ -98,12 +110,18 @@ def kicad_report(path: Path, kind: str, waivers: dict | None = None) -> dict:
         result['exclusions'] = len(excluded)
         result['ignored_checks'] = sorted(c['key'] for c in ignored)
         result['excluded_checks'] = sorted(set(excluded))
-        # Ignored checks and exclusions are visible findings; only a named, reasoned waiver accepts one.
+        # Ignored checks and exclusions are visible findings; only a named, reasoned waiver accepts one, and a waiver
+        # with a max accepts at most that many excluded instances. Counts and unused waivers stay in the result.
         findings = sorted(set(result['ignored_checks']) | set(excluded))
-        result['waived'] = {k: waivers[k] for k in findings if k in waivers}
-        result['unwaived'] = [k for k in findings if k not in waivers]
+        counts = {k: excluded.count(k) for k in findings}
+        over = [k for k in findings if k in waivers and waivers[k]['max'] is not None and counts[k] > waivers[k]['max']]
+        result['waived'] = {k: waivers[k]['reason'] for k in findings if k in waivers and k not in over}
+        result['waived_counts'] = {k: counts[k] for k in result['waived']}
+        result['unused_waivers'] = sorted(k for k in waivers if k not in findings)
+        result['unwaived'] = [k for k in findings if k not in waivers or k in over]
         if result['unwaived']:
-            result['reason'] = 'Unwaived ignored or excluded checks: ' + ', '.join(result['unwaived'])
+            result['reason'] = 'Unwaived ignored or excluded checks: ' + ', '.join(
+                f"{k} ({counts[k]} excluded, waiver allows {waivers[k]['max']})" if k in over else k for k in result['unwaived'])
         result['pass'] = not result['unwaived'] and not any(
             result[k] for k in ('errors','warnings','unconnected','parity'))
     except (OSError,ValueError,KeyError,TypeError) as e:

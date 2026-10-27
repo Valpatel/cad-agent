@@ -178,17 +178,17 @@ def cmd_serve(project: CadProject, args: argparse.Namespace) -> int:
 def cmd_site(project: CadProject, args: argparse.Namespace) -> int:
     from cadagent.site import build_site, default_nav, serve_site
 
-    site = dict(project.site)
-    if not site.get("nav"):     # every page still gets a top bar: the overview, docs, 3D model and the HTML pages
-        site["nav"] = default_nav(project.root, project.html_pages, site.get("pages"))
+    site = project.site
+    # without a configured `nav`, every page still gets a top bar: the overview, docs, 3D model and the HTML pages
+    auto_nav = lambda: default_nav(project.root, project.html_pages, site.get("pages"))  # noqa: E731
     if not getattr(args, "serve", False):
-        summary = build_site(project.root, site, project.title)
+        summary = build_site(project.root, site, project.title, auto_nav)
         _say(f"site: {summary['site']}/index.html ({summary['pages']} pages, {summary['milestones']} milestones, "
              f"{summary['decisions']} decisions, {summary['designs']} designs)")
         return 0
     host = getattr(args, "host", None) or project.serve.host
     port = project.serve.port if getattr(args, "port", None) is None else args.port
-    server, url = serve_site(project.root, site, project.title, host, port)
+    server, url = serve_site(project.root, site, project.title, host, port, auto_nav)
     project.preview_dir.mkdir(parents=True, exist_ok=True)
     (project.preview_dir / "site-url.txt").write_text(url + "\n")
     print(url, flush=True)

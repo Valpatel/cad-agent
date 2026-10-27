@@ -1,6 +1,7 @@
 """Reusable in-page review workbench for PCBs, housings and multi-part assemblies."""
 from pathlib import Path
-import html,json,hashlib
+import html,json
+from cadagent.evidence import hashes_are_current
 from urllib.parse import quote
 
 def review_html(root: Path, manifest: dict, prefix: str = '../') -> str:
@@ -33,10 +34,7 @@ def review_html(root: Path, manifest: dict, prefix: str = '../') -> str:
                 if 'report_sha256' in data:
                     from cadagent.pcb import evidence_is_current
                     if not evidence_is_current(root,data):state='STALE'
-                for source, expected in {**data.get('source_sha256', {}), **data.get('mechanical_sources', {}), **data.get('artifact_sha256', {})}.items():
-                    source_path=(root/source).resolve()
-                    if root.resolve() not in source_path.parents or not source_path.is_file() or hashlib.sha256(source_path.read_bytes()).hexdigest()!=expected:
-                        state='STALE'
+                if not hashes_are_current(root,data):state='STALE'
             except (OSError,ValueError,KeyError,TypeError):state='UNAVAILABLE'
             reports.append(f'<a class="review-report" href="{e(prefix+rel)}"><b>{e(report.get("title","Report"))}</b><span>{state}</span></a>')
         downloads=''.join(f'<a href="{e(prefix+d["file"])}">{e(d.get("title",Path(d["file"]).name))}</a>' for d in g.get('downloads',[]))

@@ -164,3 +164,18 @@ def test_bambu_url_requires_http_and_encodes():
                    "&name=my%20part")
     with pytest.raises(ValueError):
         report.bambu_studio_url("../exports/x.3mf", "x")
+
+
+def test_report_rejects_changed_source_and_artifact(tmp_path):
+    import hashlib
+    root = make_project(tmp_path, checks_yaml='  checks:\n    - {id: fit, file: exports/fit.json}\n')
+    source = root / 'input.dat'
+    source.write_bytes(b'reviewed')
+    output = root / 'exports/fit.json'
+    for field in ('source_sha256', 'mechanical_sources', 'artifact_sha256'):
+        source.write_bytes(b'reviewed')
+        output.write_text(json.dumps({'pass': True, field: {'input.dat': hashlib.sha256(source.read_bytes()).hexdigest()}}))
+        assert rows(report.collect(load_project(root)), 'cad-checks')['fit']['status'] == 'pass'
+        source.write_bytes(b'changed')
+        result = rows(report.collect(load_project(root)), 'cad-checks')['fit']
+        assert result['status'] == 'fail' and 'stale' in result['message']

@@ -24,12 +24,20 @@ cad-agent webkit designer/kit      # copies this kit into your project (re-run t
 
 | File | What it gives you |
 |---|---|
-| `stage.js` | `createStage(el, {height})`: renderer, orbit camera, control-room lighting, shadowed floor, grid, glow pad, `setSceneLight(0..1)`, `onFrame(cb)`, `stop()`, `dispose()`, `setInsets({left,right,top,bottom})` (keep the model out from under overlay panels), `fitView(points)`. Metres, y up |
+| `stage.js` | `createStage(el, {height, zoomSpeed = 0.25})`: renderer, orbit camera, control-room lighting, shadowed floor, grid, glow pad, `setSceneLight(0..1)`, `onFrame(cb)`, `stop()`, `dispose()`, `setInsets({left,right,top,bottom})` (keep the model out from under overlay panels), `fitView(points)`. Metres, y up |
 | `panel.js` | `section`, `slider`, `jointSliders`, `chips`, `toggle`, `readouts`: HUD panel controls; `collapsiblePanel(hud, panel)` (hide/show the side panel) and `overlayInsets(hud)` (pixels the overlays cover, for `setInsets`) |
 | `face.js` | `createFace({palette})`: a canvas-texture cartoon face with eased expressions, blinks, gaze drift and talking; `faceGlyph(name)` for buttons. Palettes `warm` and `visor` |
 | `fea-viewer.js`, `fea.html` | `mountFeaViewer(el, url)`: interactive FEA results from `cadagent.fea` `Study.export_viewer()`: the deformed part coloured by stress, stress/strength, local safety factor or displacement; a load-factor slider and a play ramp past first failure (black = past the strength); hot spots with the load at which each fails (click to fly there); held faces, load arrows, section cut, hover and pinned readouts; `dispose()` to re-mount. `fea.html?case=<json>` is the ready page (`&load=1.5&field=sf&spot=1&clip=x:0.4&panel=0` for links and screenshots) |
 | `hud.css` | The skin: Valpatel design language (dark void, cyan hairlines, monospace telemetry) |
 | `vendor/` | three.js r160 (+ OrbitControls, BufferGeometryUtils), Inter and JetBrains Mono |
+
+## Zoom sensitivity
+
+The shared stage uses `zoomSpeed: 0.25`, giving four wheel increments over the previous single-increment distance.
+Small trackpad deltas remain continuous. This OrbitControls setting also slows middle-button dolly and touch pinch;
+custom integrations can pass `{zoomSpeed: 1}` for the earlier sensitivity. Zoom limits, orbit and pan are unchanged.
+The model viewer and FEA viewer inherit the shared default. Projects with copied kits must rerun `cad-agent webkit`;
+`cad-agent site --serve` uses the installed toolkit directly (restart after updating it).
 
 ## Credits
 

@@ -22,7 +22,7 @@ function radialGlow(stops) {
 }
 
 /**
- * createStage(container, { height = 1, accent = 0x00f0ff })
+ * createStage(container, { height = 1, accent = 0x00f0ff, zoomSpeed = 0.25 })
  * Returns { renderer, scene, camera, controls, root, setSceneLight(0..1), frame(height), onFrame(cb), start(), stop(), dispose(),
  *           setInsets({ left, right, top, bottom }), fitView(points, { direction, margin }) }.
  * `setInsets` takes the pixels covered by overlay UI (a side panel, a top bar): the view's centre moves into the
@@ -47,6 +47,9 @@ export function createStage(container, opts = {}) {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
+  // Four wheel increments cover the former single-increment distance. Keep
+  // OrbitControls' continuous delta scaling; small trackpad motions stay small.
+  controls.zoomSpeed = opts.zoomSpeed ?? 0.25;
   controls.maxPolarAngle = 1.5;
 
   // cool control-room lighting: white key, cold fill, accent rim

@@ -121,7 +121,7 @@ flowchart LR
   kicad-happy and kicad-mcp-pro (MIT), and build123d-mcp, agentcad and bd_warehouse (Apache-2.0). OpenFOAM (GPL)
   and Bambu Studio (AGPL) run only as separate programs. gmsh (GPL) is imported, but only by the optional `fea`
   extra. Licences are in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
-- **Learn.** [`lessons/`](lessons/) holds ten sets of rules mined from real design sessions, each citing its source.
+- **Learn.** [`lessons/`](lessons/) holds eleven sets of rules mined from real design sessions, each citing its source.
   They cover verifying from source, connectors, fasteners, evidence, simulation and material.
 - **Evaluate, then fill the gaps.** Each tool is scored on the same tasks. What wins gets adopted, the gaps go
   upstream, and only what nobody else provides lives here.

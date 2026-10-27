@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from cadagent._deps import MissingDependency
 from cadagent.project import CadConfigError, CadProject, Step, load_project
 
-SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "webkit", "all", "mcmaster")
+SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "all", "mcmaster")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -121,6 +121,21 @@ def cmd_export_3mf(project: CadProject, args: argparse.Namespace) -> int:
     _say(f"{len(reports)} 3MF file(s) written and read back")
     return 0
 
+def cmd_slice(project: CadProject, args: argparse.Namespace) -> int:
+    from cadagent.slicer import executable, slice_project
+
+    if not executable():
+        raise _Unusable("Bambu Studio is not installed (snap install bambu-studio); nothing was sliced")
+    rep = slice_project(project, getattr(args, "parts", None) or None)
+    for name, row in rep["parts"].items():
+        if row.get("grams"):
+            minutes = f"{row['minutes']:7.1f} min" if row.get("minutes") is not None else "   time not reported"
+            _say(f"  {name:<24} {row['grams']:8.1f} g  {minutes}")
+        else:
+            _say(f"  {name:<24} FAILED: {row.get('error')}")
+    _say(f"{rep['total_grams']} g, {rep['total_hours']} h ({rep['process']}, {rep['filament']}) -> {rep['path']}")
+    return 0 if rep["pass"] else 1
+
 def _print_results(results: Dict[str, Any]) -> None:
     from cadagent.report import summarize
 
@@ -133,7 +148,10 @@ def _print_results(results: Dict[str, Any]) -> None:
             _say(f"  {status:<5} {check.get('name', '')[:width]:<{width}}  {check.get('message', '')}")
     counts = summarize(results)
     _say(f"{counts['pass']} pass / {counts['fail']} fail / {counts['skip']} skip"
-         " · CAD only: physical fit not verified, slicer not run")
+         " · CAD only: physical fit not verified, " + _slicer_note(results))
+
+def _slicer_note(results: Dict[str, Any]) -> str:
+    return results.get("footer_meta", {}).get("slicer", "slicer not run")
 
 def cmd_check(project: CadProject, args: argparse.Namespace) -> int:
     from cadagent.report import collect, summarize
@@ -316,6 +334,7 @@ HANDLERS = {
     "serve": cmd_serve,
     "site": cmd_site,
     "view": cmd_view,
+    "slice": cmd_slice,
     "webkit": cmd_webkit,
     "all": cmd_all,
 }
@@ -378,6 +397,8 @@ def build_parser() -> argparse.ArgumentParser:
     site_p.add_argument("--port", type=int, default=None, help="Port (default: cad.serve.port, 0 = any free port)")
     site_p.add_argument("--host", default=None, help="Bind address (default: cad.serve.host, 127.0.0.1)")
     sub.add_parser("view", parents=[common], help="Export every part in assembly position for the 3D viewer")
+    slice_p = sub.add_parser("slice", parents=[common], help="Slice each part's 3MF (Bambu Studio CLI): grams and print time")
+    slice_p.add_argument("parts", nargs="*", help="Parts to slice (default: cad.slicer.parts, else all)")
     webkit_p = sub.add_parser("webkit", parents=[common], help="Copy the web kit (3D stage, viewer, HUD) into the project")
     webkit_p.add_argument("dest", nargs="?", default="web/kit", help="Destination folder (default: web/kit)")
     sub.add_parser("all", parents=[common], help="build, export-3mf, check + report, package")

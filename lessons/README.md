@@ -24,6 +24,8 @@ trays, SATA cable routing and a review website. No other session histories were 
   - Where the brief for this mining run mentioned an incident that could not be found in the transcript or the project
     files, the lesson says so rather than inventing details.
 
+File 08 also includes an explicitly attributed later CAN-project wheel-zoom follow-up (2026-10-27).
+
 File 11 comes from a different project: the incident notes of a CAN breakout PCB and housing designed on
 2026-10-26. Its Source lines name those notes, which stay in that project's repository.
 

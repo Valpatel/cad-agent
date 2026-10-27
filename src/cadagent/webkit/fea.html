@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FEA Results</title>
+<link rel="stylesheet" href="hud.css">
+<script type="importmap">{"imports": {"three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/addons/"}}</script>
+</head>
+<body>
+<div id="fea"></div>
+<script type="module">
+  // fea.html?case=<url of a Study.export_viewer() JSON on this site, relative to this page>
+  // Scriptable for links and screenshots: &load=1.5 &field=ratio|stress|sf|disp &spot=1 &clip=x:0.4 &exag=20 &panel=0
+  // &play=1 &title=... &root=../../ (the project root from this page, for the app's top bar: a relative path) &nav=0
+  // &back=<a page on this site>. Parameters that do not parse are ignored.
+  import { mountFeaViewer } from './fea-viewer.js';
+  import { mountAppNav } from './appnav.js';
+  const q = new URLSearchParams(location.search);
+  // links stay on this site: no other origin and no javascript:, data: or similar URLs
+  const sameOrigin = (h) => { try { const u = new URL(h, location.href); return u.origin === location.origin ? u : null; } catch { return null; } };
+  const ROOT_OK = /^(?:\.\.?\/)*(?:[A-Za-z0-9_-][A-Za-z0-9._-]*\/)*$/;       // ../../ or ./ or designer/ ...
+  const root = q.has('root') && ROOT_OK.test(q.get('root')) && !q.get('root').startsWith('//') ? q.get('root') : '../../';
+  const finite = (k) => (q.has(k) && q.get(k).trim() !== '' && Number.isFinite(+q.get(k)) ? +q.get(k) : null);
+  const caseUrl = q.has('case') ? sameOrigin(q.get('case')) : null;
+  const back = (q.has('back') && sameOrigin(q.get('back'))) ? q.get('back') : `${root}site/`;
+  if (q.get('nav') !== '0') await mountAppNav({ root, current: q.get('current') ?? '' });
+  const el = document.getElementById('fea');
+  const fail = (msg) => {
+    el.innerHTML = '<div id="hud"><header id="topbar"><span class="glyph"></span><h1>FEA results</h1></header>'
+      + '<main id="stage-overlay"><div class="hud-card" style="max-width:520px"><p class="hud-note"></p></div></main></div>';
+    el.querySelector('.hud-note').textContent = msg;
+  };
+  if (!q.has('case')) {
+    fail('Open a case with fea.html?case=<url of the JSON>. Write one with Study.export_viewer(path) (cadagent.fea) after solve().');
+  } else if (!caseUrl) {
+    fail('The case must be a JSON file on this site (a relative URL or this origin).');
+  } else {
+    let v = null;
+    try {
+      const name = decodeURIComponent(caseUrl.pathname.split('/').pop().replace(/\.json$/, ''));
+      const title = q.get('title') ?? name;
+      v = await mountFeaViewer(el, caseUrl.href, { title, back, backLabel: 'Project site', panel: q.get('panel') === '0' ? false : undefined });
+      document.title = `${title}: FEA`;
+    } catch (e) {
+      fail(`Could not load ${caseUrl.pathname}: ${e.message}`);
+    }
+    if (v) {
+      // each setter ignores what it cannot use (an unknown field or axis, a load that is not a number)
+      if (q.has('field')) v.setField(q.get('field'));
+      if (finite('load') !== null) v.setLoad(finite('load'));
+      if (finite('exag') !== null) v.setExaggeration(finite('exag'));
+      if (q.has('clip')) { const [a, f] = q.get('clip').split(':'); v.setClip(a, f === undefined || f === '' ? 0.5 : +f); }
+      if (finite('spot') !== null) v.flyTo(finite('spot') - 1, { instant: true });
+      if (q.get('play') === '1') v.play(true);
+      window.__fea = v;
+      document.body.dataset.ready = '1';
+    }
+  }
+</script>
+</body>
+</html>

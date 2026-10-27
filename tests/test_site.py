@@ -152,6 +152,8 @@ def test_watcher_includes_kicad_sources(tmp_path):
     source=tmp_path/'a.kicad_pcb';source.write_text('source')
     watcher=site._Watcher(tmp_path,{})
     assert watcher.stamp() == source.stat().st_mtime
+
+
 def test_default_nav_lists_the_project_pages(tmp_path):
     root = _project(tmp_path)
     (root / "preview").mkdir()

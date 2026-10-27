@@ -202,6 +202,7 @@ from cadagent.connectors import (PLUG_FAMILIES, plug_segments, window, window_ma
                                  envelope, check_ports, draw_ports)
 from cadagent.package import build_package
 from cadagent.serve import make_server
+from cadagent.fea import Study, MATERIALS, Material, plane_at, cylinder_at, in_box, near, any_of
 from cadagent.robot import (Body, combine, box_body, cylinder_body, solid_mass_properties, printed_part_body,
                             Link, Joint, Visual, Collision, Motor, write_urdf, write_mjcf, check_urdf)
 ```
@@ -242,6 +243,57 @@ coordinates) and writes a binary STL per part plus `exports/view/view.json`. `vi
 assembly with a parts list (show/hide, colour), exploded view, section cut and standard views; the site links it when
 the manifest exists. The viewer is scriptable for screenshots: `viewer.html?explode=0.5&view=iso&panel=0`.
 
+### Stiffness and strength (`cadagent.fea`)
+
+`pip install -e ".[cad,fea]"`. `Study(shape_or_step, material, mesh_mm)` meshes any part with gmsh (P2 tetrahedra),
+`fix()`/`force()`/`torque()` pick faces with selectors (`plane_at`, `cylinder_at`, `in_box`, `near`, `any_of`), and
+`solve()` returns deflection, stiffness, the design von Mises stress and the safety factor against `MATERIALS` (printed
+materials carry their weak, layer-direction strength). Stress spikes in the elements touching a clamp or a load patch
+are artefacts of the idealised support, so the design stress and every failure view leave them out ("support
+patches": capped at the design stress, never shown as failed, their share of the surface reported).
+
+Stresses are element corner peaks, never averaged. The P2 strain is linear in a tetrahedron, so its extremes sit at the
+corners; the safety factor, the hot spots and the per-vertex colours all use the highest corner stress there. The
+volume-weighted average is exported too and shown as "smoothed". Where it falls well below the peak (a hot spot says
+so), the mesh is coarse for that gradient. `overstressed_share(load_factor)` is the share of the volume in elements
+whose peak is past the strength. It counts whole elements, so it is an upper bound on the overstressed volume.
+`animate()` and the viewer both report it.
+
+Showing how it fails, for the report:
+
+- `render(png)`: the deformed part coloured by stress.
+- `animate(mp4)`: the load ramped from zero through the design load to first failure (x safety factor) and past it;
+  regions past the strength turn black, and every frame gives the overstressed volume share (an upper bound).
+- `export_viewer(json)`: data for the interactive viewer in the web kit (`fea-viewer.js`, `fea.html`). The boundary
+  surface only (a few MB at most at ~100k tets), with per-vertex displacement, peak and smoothed von Mises stress,
+  each triangle's element peak, held/loaded/support flags, the loads, the overstressed volume as an exact step curve
+  over the load factor, and up to eight **hot spots**: the highest stresses away from the supports, at least 4 mesh
+  sizes apart. Each has the load factor at which it reaches the strength, a plain hint from the CAD faces it lies on
+  ("edge of a Ø5.5 hole", "R4 inside fillet", "flat face, 1.9 mm from an R4 inside fillet", "sharp inside corner"),
+  and a mesh note when the smoothed value is far below the peak.
+
+Open a case with `kit/fea.html?case=../../exports/fea/<part>-<case>.json` (the kit copied by `cad-agent webkit`, or the
+copy `cad-agent site --serve` serves at `/_cadagent/kit/fea.html`). The viewer has:
+
+- a load-factor slider from 0 to 1.3 x the failure load, and a play button that ramps it (pausing at the design load
+  and at first failure). Deformation and colours scale linearly. Triangles whose element is past the strength turn
+  black (support patches never do), and the status card gives the peak stress and the overstressed volume share;
+- colour by stress/strength, stress, local safety factor or displacement, with a legend;
+- deformation exaggeration (true scale up to about 40 x), held faces in grey, and load arrows (curled for torques)
+  labelled with the load at the current factor. Support patches can be greyed out ("not checked");
+- the hot-spot list (click to fly there; numbered markers on the part), a section cut (axis and position; it cuts the
+  surface skin, not the stress inside), a hover readout and a pinned probe (the peak stress, the smoothed stress, % of
+  strength, local safety factor and displacement at a point; on a support patch it says "not checked");
+- the assumptions: linear elastic, small deflection, isotropic with the weak-direction strength for prints. It shows
+  where and at what load the part first fails, not crack growth.
+
+Links and screenshots can set the state: `&load=1.5&field=ratio|stress|sf|disp&spot=1&clip=x:0.4&exag=20&panel=0&play=1`.
+Values that do not parse are ignored, and `panel=0` hides the panel for that visit only. The page loads only cases
+and `back` links on its own origin, and `root` must be a relative path.
+From your own page, call `mountFeaViewer(element, url, { title, back, panel })`. It builds the kit layout inside the
+element and returns `setLoad`, `setField`, `setExaggeration`, `setClip`, `flyTo`, `play`, `fit` and `dispose` (call it
+before mounting another viewer on the same page).
+
 ### Robot export (`cadagent.robot`, optional)
 
 Turns CAD parts into a simulator model with real mass properties:
@@ -255,6 +307,78 @@ Turns CAD parts into a simulator model with real mass properties:
   site and a floor. Both refuse a closed loop: model a four-bar or five-bar leg as an equivalent serial chain.
 - `check_urdf` checks the tree, inertias (positive definite, triangle inequality), mesh files and joint limits.
   text-to-cad's `cadgen urdf validate` is a second, independent validator.
+
+## Simulation and optimisation (standard practice for anything that carries load or heat)
+
+Built on mature open-source tools, never reimplemented: OpenFOAM for airflow and heat, gmsh + scikit-fem for
+stiffness and strength, pyMOTO for topology optimisation, Bambu Studio for real filament grams, PyVista/VTK for
+pictures and animations. The survey that chose them, with licences and sources, is
+[`research/simulation-tools.md`](../research/simulation-tools.md). Install: `pip install -e ".[cad,fea,sim]"`, plus
+Docker (OpenFOAM runs in the official `opencfd/openfoam-default` image) and Bambu Studio for slicing.
+
+**Standard practice.** For every design that holds a heat source, carries a load or will be printed in quantity:
+1. **Slice it** (`cad-agent slice`): grams and print time per part, with the profile named. This is the number a
+   material-reduction claim is judged on, never the CAD volume. The report shows `slicer_run: true` only while the
+   sliced 3MF files are unchanged (sha256).
+2. **Load it** (`cadagent.fea`): the real load cases (handling, stacking, mounting shock) with the printed material's
+   layer-direction strength; report the safety factor and deflection, and the overload animation.
+3. **Cool it** (`cadagent.cfd`): a conjugate-heat-transfer case of the enclosure in room air, from the same CAD.
+   Report the hottest part against its limit, the fan's operating point, the air entering the fan (recirculation),
+   and the wall temperatures against the plastic's heat-deflection temperature.
+4. **Optimise with evidence**: topology optimisation (`cadagent.topopt`) shows where material carries load; the
+   design change is made in the parametric CAD and re-checked by 1-3. Compare revisions side by side.
+5. **State the limits** in every result (each module writes them): steady RANS, no radiation, compact models,
+   linear elastic, isotropic. Simulation does not prove fit, strength or temperature; a test does.
+
+### Airflow and heat (`cadagent.cfd`)
+`ThermalCase(name, domain, cell_mm, ambient_c)` takes CAD (CadQuery shapes, trimesh meshes or STL), in mm:
+- `wall(name, shape, level)`: no-slip adiabatic obstacles (enclosure, boards);
+- `solid(name, shape, material, power_w, level)`: a conducting region, optionally a heat source (`SOLIDS` table);
+- `contact(a, b, thickness_mm, k)`: a thermal pad or paste as an interface resistance;
+- `fan(Fan(...))`: an actuator disc with a straight-line fan curve between the datasheet's free-air flow and zero-flow
+  pressure, so the operating point comes out of the simulation;
+- `porous_box(name, lo, hi, d, f, e1, e2, heat_w)`: a compact fin block (Darcy-Forchheimer, nearly closed across the
+  fins) that releases the heat into the air passing through it;
+- `refine(lo, hi, level)`.
+`write()` produces a complete OpenFOAM case (snappyHexMesh, splitMeshRegions, chtMultiRegionSimpleFoam, function
+objects); `run()` runs it natively or in Docker; `results()` returns temperatures, fan flow and pressure, the air
+temperature through each fan, residual and temperature histories, the heat leaving with the air against the heat put
+in (`energy_balance_pct`), the cells each fan and fin zone caught, and the limits. `converged` needs the temperatures,
+fan flow and heat leaving to have stopped changing *and* the energy balance within 5 %. Exchanger fin blocks are set
+to their power by `calibrate_fins()` (secant steps on the fin temperature, only once the heat leaving has settled;
+`calibrated` says whether it got there).
+
+Two choices matter for honest numbers, and both are covered by tests:
+- **The open boundary is hydrostatic** (`p_rgh` uniform): still room air stays still. A uniform *static* pressure
+  there drives a fake draft through the room (0.6 m/s mean in a still, unheated test room), which once made every
+  J501 result optimistic. The opt-in test `test_still_room_stays_still` runs that case for real.
+- **Fan and fin sources are zone totals** (`volumeMode absolute`), so the fan's pressure rise and the fins'
+  conductance do not depend on how many cells the zones catch.
+
+### Heatsinks (`cadagent.heatsink`)
+`PlateFin(...)` is the analytic plate-fin model (developing laminar channel flow, fin efficiency, spreading resistance,
+entrance and exit losses; sources cited in the module): `resistance(q)`, `pressure_drop(q)`, `operating_point(hs,
+FanCurve)`, and `porous_coefficients()` for the CFD fin block. It runs in microseconds, so it is the tool for heatsink
+studies (fin pitch, thickness, height against a fan curve), with CFD to confirm the chosen design.
+
+### Topology optimisation (`cadagent.topopt`)
+`TopOpt(lo, hi, voxel_mm, E_mpa)` with `design()`, `keep(shape)`, `void(shape)`, `fix(lo, hi)`, `load(lo, hi, N)`,
+then `run(volfrac, filter_mm, overhang='+z', maxit)`: minimum compliance with SIMP, a density filter (minimum member
+about twice `filter_mm`) and Langelaar's overhang filter for support-free printing, solved with MMA. `render()`,
+`animate()` (density evolution) and `export_stl()` show the result. It is a design guide: turn it into ribs, pockets
+or vents in the CAD and check that with FEA.
+
+### Pictures and animations (`cadagent.simviz`)
+`CFDResult(case)` loads a finished case in mm and °C. `section()`, `flow()` (streamlines), `walls()` (wall temperature
+with the region past a limit in the critical colour, named in the legend), `animate_flow()` (dashes moving at the
+air's speed while the camera turns), `animate_sweep()` (a section sweeping through) and `convergence_chart()`. Colour
+follows the job: one-hue ramps for temperature (orange) and speed (blue), never a rainbow.
+
+### Real grams (`cadagent.slicer`, `cad-agent slice`)
+Slices each part's 3MF with Bambu Studio's command line (an external AGPL program, run as a subprocess). The system
+profiles are flattened through their `inherits` chain first (unflattened, the slicer reports 0 g). Configure under
+`cad.slicer`: `printer`, `process`, `filament` (`pla`, `petg` or a profile name), `overrides` (process settings) and
+`parts`. Writes `exports/slice-report.json`.
 
 ## Tests
 

@@ -18,7 +18,8 @@ from typing import Any, Dict, List, Optional, Sequence
 from cadagent._deps import MissingDependency
 from cadagent.project import CadConfigError, CadProject, Step, load_project
 
-SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "webkit", "pcb-check", "all")
+SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
+               "mcmaster")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -121,6 +122,21 @@ def cmd_export_3mf(project: CadProject, args: argparse.Namespace) -> int:
     _say(f"{len(reports)} 3MF file(s) written and read back")
     return 0
 
+def cmd_slice(project: CadProject, args: argparse.Namespace) -> int:
+    from cadagent.slicer import executable, slice_project
+
+    if not executable():
+        raise _Unusable("Bambu Studio is not installed (snap install bambu-studio); nothing was sliced")
+    rep = slice_project(project, getattr(args, "parts", None) or None)
+    for name, row in rep["parts"].items():
+        if row.get("grams"):
+            minutes = f"{row['minutes']:7.1f} min" if row.get("minutes") is not None else "   time not reported"
+            _say(f"  {name:<24} {row['grams']:8.1f} g  {minutes}")
+        else:
+            _say(f"  {name:<24} FAILED: {row.get('error')}")
+    _say(f"{rep['total_grams']} g, {rep['total_hours']} h ({rep['process']}, {rep['filament']}) -> {rep['path']}")
+    return 0 if rep["pass"] else 1
+
 def _print_results(results: Dict[str, Any]) -> None:
     from cadagent.report import summarize
 
@@ -133,7 +149,10 @@ def _print_results(results: Dict[str, Any]) -> None:
             _say(f"  {status:<5} {check.get('name', '')[:width]:<{width}}  {check.get('message', '')}")
     counts = summarize(results)
     _say(f"{counts['pass']} pass / {counts['fail']} fail / {counts['skip']} skip"
-         " · CAD only: physical fit not verified, slicer not run")
+         " · CAD only: physical fit not verified, " + _slicer_note(results))
+
+def _slicer_note(results: Dict[str, Any]) -> str:
+    return results.get("footer_meta", {}).get("slicer", "slicer not run")
 
 def cmd_check(project: CadProject, args: argparse.Namespace) -> int:
     from cadagent.report import collect, summarize
@@ -243,6 +262,86 @@ def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
         _say("checks FAILED; the package was still written for review")
     return report_rc or package_rc
 
+def _mcmaster_choices(pns: List[str], choose: Optional[List[str]]) -> Dict[str, List[str]]:
+    """--choose values -> option texts per part number. 'PN:OPTION' is for that part; a bare 'OPTION' is allowed only
+    when one part number is given."""
+    from cadagent.mcmaster import PN_RE
+
+    per: Dict[str, List[str]] = {pn: [] for pn in pns}
+    for c in choose or []:
+        head, sep, rest = c.partition(":")
+        if sep and PN_RE.match(head.strip().upper()):
+            pn = head.strip().upper()
+            if pn not in per:
+                raise _Unusable(f"--choose {c!r}: {pn} is not one of the part numbers given")
+            per[pn].append(rest.strip())
+        elif len(pns) == 1:
+            per[pns[0]].append(c.strip())
+        else:
+            raise _Unusable(f"--choose {c!r}: with several part numbers, say which part it is for (PN:OPTION)")
+    return per
+
+
+def cmd_mcmaster(args: argparse.Namespace) -> int:
+    """Download each part's STEP and product data from McMaster-Carr (one product page at a time), normalise its
+    frame, and optionally record it in a catalogue JSON. Needs no project. The browser is started only when a part
+    actually needs its page (no STEP or page data here yet, or --force), so re-normalising works offline."""
+    import contextlib
+
+    from cadagent import mcmaster as mc
+
+    try:
+        pns = [mc.validate_pn(p) for p in args.pns]
+    except ValueError as exc:
+        raise _Unusable(str(exc))
+    if args.key and len(pns) != 1:
+        raise _Unusable("--key names one catalogue entry: give one part number with it")
+    if not args.kind and (args.catalog or args.density is not None):
+        raise _Unusable("--catalog and --density need --kind (the frame the part is normalised into)")
+    choices = _mcmaster_choices(pns, args.choose)
+    if args.delay < mc.MIN_DELAY_S:
+        _say(f"WARN --delay {args.delay:g} s is below the minimum; using {mc.MIN_DELAY_S:g} s between pages")
+    out_root = Path(args.out)
+    rc = 0
+    with contextlib.ExitStack() as stack:
+        session = None
+
+        def browser():
+            nonlocal session
+            if session is None:
+                session = stack.enter_context(mc.Session(delay_s=args.delay))
+            return session
+
+        for pn in pns:
+            folder = out_root / pn
+            step, page_file = folder / f"{pn}.step", folder / f"{pn}.page.json"
+            try:
+                if step.exists() and page_file.exists() and not args.force:
+                    _say(f"{pn}: already here ({step}); --force downloads it again")
+                else:
+                    browser().fetch(pn, folder, choose=choices[pn] or None)
+                    _say(f"{pn}: downloaded -> {step}")
+                page = json.loads(page_file.read_text())
+                _say(f"{pn}: {page.get('description')} | {page.get('price_text')}")
+                if args.kind:
+                    material = mc.material_of(page.get("specs", {}).get("raw", {}))
+                    norm, info = mc.normalise(step, args.kind, density=args.density, material=material)
+                    (folder / f"{pn}.norm.json").write_text(json.dumps(info, indent=1) + "\n")
+                    _say(f"{pn}: {args.kind} -> {norm} bbox {info['bbox_mm']['size']} mm, "
+                         f"{info['volume_mm3']:.0f} mm3, ~{info['mass_g_est']} g")
+                    if args.catalog:
+                        cat = Path(args.catalog)
+                        n, cwd = norm.resolve(), Path.cwd().resolve()
+                        cad = str(n.relative_to(cwd)) if n.is_relative_to(cwd) else str(n)
+                        mc.update_catalog(cat, args.key or pn, mc.catalog_entry(page, info, cad=cad))
+                        _say(f"{pn}: catalogue {cat} [{args.key or pn}]")
+            except MissingDependency:
+                raise                                       # no Playwright or no Chrome: nothing else will work
+            except Exception as exc:  # one bad part should not stop the others
+                _err(f"mcmaster {pn}: {exc}")
+                rc = 1
+    return rc
+
 HANDLERS = {
     "build": cmd_build,
     "export-3mf": cmd_export_3mf,
@@ -252,6 +351,7 @@ HANDLERS = {
     "serve": cmd_serve,
     "site": cmd_site,
     "view": cmd_view,
+    "slice": cmd_slice,
     "webkit": cmd_webkit,
     "all": cmd_all,
     "pcb-check": cmd_pcb_check,
@@ -259,6 +359,12 @@ HANDLERS = {
 
 def dispatch(args: argparse.Namespace) -> int:
     sub = getattr(args, "cad_command", None)
+    if sub == "mcmaster":                                  # works on files only: no project needed
+        try:
+            return cmd_mcmaster(args)
+        except (MissingDependency, _Unusable) as exc:
+            _err(f"mcmaster: {exc}")
+            return 2
     if sub not in HANDLERS:
         _err("choose a subcommand: " + ", ".join(SUBCOMMANDS) + " (cad-agent --help)")
         return 2
@@ -309,12 +415,32 @@ def build_parser() -> argparse.ArgumentParser:
     site_p.add_argument("--port", type=int, default=None, help="Port (default: cad.serve.port, 0 = any free port)")
     site_p.add_argument("--host", default=None, help="Bind address (default: cad.serve.host, 127.0.0.1)")
     sub.add_parser("view", parents=[common], help="Export every part in assembly position for the 3D viewer")
+    slice_p = sub.add_parser("slice", parents=[common], help="Slice each part's 3MF (Bambu Studio CLI): grams and print time")
+    slice_p.add_argument("parts", nargs="*", help="Parts to slice (default: cad.slicer.parts, else all)")
     webkit_p = sub.add_parser("webkit", parents=[common], help="Copy the web kit (3D stage, viewer, HUD) into the project")
     webkit_p.add_argument("dest", nargs="?", default="web/kit", help="Destination folder (default: web/kit)")
     pcb_p = sub.add_parser("pcb-check", parents=[common], help="Bind KiCad ERC/DRC evidence to current PCB sources")
     pcb_p.add_argument("manifest", help="JSON with reports, sources and release_gates (paths relative to project root)")
     pcb_p.add_argument("--output", default="exports/pcb-evidence.json")
     sub.add_parser("all", parents=[common], help="build, export-3mf, check + report, package")
+    mc_p = sub.add_parser("mcmaster", help="Download McMaster-Carr STEP + product data per part number and normalise "
+                                           "it (one page at a time; skills/mcmaster-parts/SKILL.md)")
+    mc_p.add_argument("pns", nargs="+", metavar="PN", help="McMaster-Carr part numbers, e.g. 91290A242")
+    from cadagent.mcmaster import KINDS as MC_KINDS
+    mc_p.add_argument("--kind", choices=MC_KINDS,
+                      help="Normalise into the frame for this kind of part (cadagent.mcmaster.FRAMES)")
+    mc_p.add_argument("--out", default="references/vendor/mcmaster", help="Folder; each part goes in OUT/<PN>/ "
+                                                                          "(keep it out of git except SOURCE.txt)")
+    mc_p.add_argument("--catalog", help="Catalogue JSON to record the part in: {source, items: {key: entry}}, or a list "
+                                             "of items with ids (needs --kind)")
+    mc_p.add_argument("--key", help="Catalogue key for the part (default: the part number)")
+    mc_p.add_argument("--density", type=float, help="g/cm3 for the mass estimate (default: from the Material row)")
+    mc_p.add_argument("--delay", type=float, default=3.0, help="Seconds between product pages (default 3, minimum 2)")
+    mc_p.add_argument("--choose", action="append", metavar="[PN:]OPTION",
+                      help="Option text to click on the product page before the CAD download (a part with variants), "
+                           "one per flag, e.g. --choose 59935K53:\"Right Hand\"; the PN: prefix may be left out when "
+                           "one part number is given")
+    mc_p.add_argument("--force", action="store_true", help="Download again even when the STEP is already here")
     return parser
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

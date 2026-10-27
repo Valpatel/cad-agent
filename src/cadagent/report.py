@@ -196,6 +196,10 @@ def collect(project: CadProject) -> Dict[str, Any]:
     ]
     counts = summarize({"features": features})
     revision = project.resolve_revision()
+    from cadagent.slicer import current_report
+    sliced = current_report(project)
+    slicer_text = (f"sliced ({sliced['slicer']}): {sliced['total_grams']} g, {sliced['total_hours']} h for "
+                   f"{len(sliced['parts'])} part(s), {sliced['process']}, {sliced['filament']}") if sliced else "slicer not run"
     return {
         "schema_version": SCHEMA_VERSION,
         "title": f"{project.title} · CAD verification",
@@ -208,12 +212,12 @@ def collect(project: CadProject) -> Dict[str, Any]:
         "footer_meta": {
             "checks": f"{counts['pass']} pass / {counts['fail']} fail / {counts['skip']} skip",
             "physical_fit": "physical fit NOT verified (CAD only)",
-            "slicer": "slicer not run",
+            "slicer": slicer_text,
         },
         "project": project.name,
         "revision": revision,
         "physical_fit_verified": False,
-        "slicer_run": False,
+        "slicer_run": bool(sliced),
         "pass": counts["fail"] == 0,
     }
 

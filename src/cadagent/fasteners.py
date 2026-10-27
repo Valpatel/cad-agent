@@ -44,3 +44,26 @@ def blind_insert_stack(*, head_seat, screw_length, insert_top, insert_length, ho
             'engagement_mm': round(max(0, min(head_seat, insert_top) - max(tip, bottom)), 6),
             'tip_clearance_mm': round(tip - hole_bottom, 6),
             'insert_bottom_clearance_mm': round(tip - bottom, 6)}
+
+
+def filleted_wall_rib(*, thickness, reach, height, root_radius, overlap):
+    """Support a boss at XY origin to a wall at Y=reach, extruded from Z=0.
+
+    The two concave quarter-circle roots spread the rib into the wall. Positive
+    overlap joins the receiving wall; callers must also overlap the floor and
+    boss, and check tool/cable/board clearance. This is geometry, not a strength
+    rating. Dimensions and orientation are supplied by the project.
+    """
+    if min(thickness, reach, height, root_radius, overlap) <= 0:
+        raise ValueError('Rib dimensions and fusion overlap must be positive')
+    if root_radius >= reach:
+        raise ValueError('Root radius must be smaller than rib reach')
+    cq = require('cadquery', 'filleted wall rib')
+    t, r, y = thickness / 2, root_radius, reach
+    # Explicit arc midpoints avoid ambiguous signed-radius conventions.
+    k = 2 ** -.5
+    return (cq.Workplane('XY').moveTo(-t, 0).lineTo(t, 0)
+            .lineTo(t, y-r).threePointArc((t+r-r*k, y-r+r*k), (t+r, y))
+            .lineTo(t+r, y+overlap).lineTo(-t-r, y+overlap)
+            .lineTo(-t-r, y).threePointArc((-t-r+r*k, y-r+r*k), (-t, y-r))
+            .close().extrude(height).val())

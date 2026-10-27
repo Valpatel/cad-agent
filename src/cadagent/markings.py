@@ -60,6 +60,8 @@ class PanelMarkings:
 
         OCCT can spend many minutes resolving a compound of overlapping stroke
         caps/circles. Fuse only the small per-item tool, then perform one cut.
+        Font kerning can also create tiny glyph overlaps: a cut with that raw
+        compound can look valid in BREP yet tessellate into non-manifold edges.
         """
         if depth <= 0:
             raise ValueError('Engraving depth must be positive')
@@ -68,7 +70,7 @@ class PanelMarkings:
             one.items = [item]
             tool = one.solids(face_z-depth, depth+.2)
             solids = tool.Solids()
-            if item[0] == 'line' and len(solids) > 1:
+            if item[0] in {'line', 'text'} and len(solids) > 1:
                 tool = solids[0].fuse(*solids[1:])
             shape = shape.cut(tool)
         return shape

@@ -1,0 +1,7 @@
+{
+ "extends": "standard.json",
+ "name": "Light",
+ "parts": {"wheel_motor": "hub-100-24v", "leg_actuator": "qdd-8nm", "battery": "pack-6s-5ah"},
+ "params": {"leg": {"length_mm": 120}},
+ "notes": "Small and cheap: 24 V parts throughout."
+}

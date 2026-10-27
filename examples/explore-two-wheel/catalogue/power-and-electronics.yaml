@@ -1,0 +1,46 @@
+# YAML works as well as JSON. Illustrative parts: see README.md#the-numbers.
+defaults:
+  confidence: estimate
+  price_checked: "2026-10-26"
+  sources: ["README.md#the-numbers"]
+items:
+  - id: pack-6s-5ah
+    category: battery
+    name: 6S Li-ion pack, 5 Ah
+    price_usd: 60.0
+    mass_g: 720
+    specs: {chemistry: Li-ion, voltage_nominal_v: 21.6, voltage_max_v: 25.2, voltage_min_v: 18.0, energy_wh: 108,
+            max_continuous_a: 20}
+  - id: pack-10s-10ah
+    category: battery
+    name: 10S Li-ion pack, 10 Ah
+    price_usd: 210.0
+    mass_g: 2300
+    preferred: true
+    specs: {chemistry: Li-ion, voltage_nominal_v: 36.0, voltage_max_v: 42.0, voltage_min_v: 30.0, energy_wh: 360,
+            max_continuous_a: 30}
+  - id: pack-13s-10ah
+    category: battery
+    name: 13S Li-ion pack, 10 Ah
+    price_usd: 280.0
+    mass_g: 3000
+    specs: {chemistry: Li-ion, voltage_nominal_v: 46.8, voltage_max_v: 54.6, voltage_min_v: 39.0, energy_wh: 468,
+            max_continuous_a: 30}
+  - id: computer-small
+    category: compute
+    name: Single-board computer on a wide-input carrier
+    price_usd: 95.0
+    mass_g: 120
+    specs: {power_typical_w: 8, input_voltage_range_v: [9, 48]}
+  - id: computer-ai
+    category: compute
+    name: Edge AI module on a wide-input carrier
+    price_usd: 600.0
+    mass_g: 650
+    specs: {power_typical_w: 30, input_voltage_range_v: [9, 60]}
+  - id: depth-camera
+    category: sensor
+    name: Stereo depth camera (no public price)
+    price_usd: null
+    mass_g: 75
+    specs: {power_typical_w: 3.5}

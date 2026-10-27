@@ -23,6 +23,7 @@ cad = [
 robot = ["mujoco>=3"]
 site = ["markdown>=3.5"]
 fea = ["gmsh>=4.11", "scikit-fem>=9", "matplotlib>=3.7", "pypardiso>=0.4", "pyamg>=5"]
+explore = ["optuna>=3.4"]
 dev = ["pytest"]
 
 [project.scripts]

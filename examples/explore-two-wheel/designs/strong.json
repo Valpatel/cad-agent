@@ -1,0 +1,8 @@
+{
+ "extends": "standard.json",
+ "name": "Strong",
+ "parts": {"wheel_motor": "hub-200-48v", "leg_actuator": "qdd-40nm", "battery": "pack-13s-10ah",
+           "compute": "computer-ai"},
+ "params": {"leg": {"length_mm": 200}},
+ "notes": "Big wheels, 40 N·m legs and an AI module for rough ground."
+}

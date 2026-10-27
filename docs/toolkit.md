@@ -180,6 +180,9 @@ Unquoted, the title is cut at the comma and the rest becomes a stray key.
 | `cad-agent view` | writes every part in assembly position to `exports/view/` (STL + `view.json`) for the 3D viewer (config `cad: view:` for colours, hidden variants, explode directions, extra parts) | |
 | `cad-agent webkit [DEST]` | copies the web kit (3D stage, model viewer, HUD panels, three.js, fonts) into the project, default `web/kit` | |
 | `cad-agent all` | build, export-3mf, check + report, package | 1 if anything failed |
+| `cad-agent catalogue [--json] [--errors-only]` | checks the part catalogue and every design against it (config `cad: explore:`, [explore.md](explore.md)) | 1 on an error |
+| `cad-agent compare [DESIGN ...] [--swaps] [--workers N] [--json] [--open]` | evaluates the designs with the project's evaluator, ranks them (Pareto fronts over the objectives) and writes `comparison.json`, `compare.html` and site design cards; `--swaps` tries every one-part swap | 1 if a design could not be evaluated |
+| `cad-agent optimise [--trials N] [--workers N] [--sampler S] [--fresh]` | searches slots and parameters (random, grid; NSGA-II and TPE with optuna) and keeps a leaderboard | 1 if no trial is feasible |
 
 `--project PATH` (default: cwd), before or after the subcommand, selects the
 project. Exit code 2 means the project or environment is unusable: a missing or
@@ -204,7 +207,20 @@ from cadagent.package import build_package
 from cadagent.serve import make_server
 from cadagent.robot import (Body, combine, box_body, cylinder_body, solid_mass_properties, printed_part_body,
                             Link, Joint, Visual, Collision, Motor, write_urdf, write_mjcf, check_urdf)
+from cadagent.explore import (explore_config, load_configured, check_catalogue, load_design, resolve, bom,
+                              load_evaluator, evaluate_design, compare_designs, comparison, write_comparison, swaps)
+from cadagent.explore.optimise import run_search
 ```
+
+### Explore and compare designs (`cadagent.explore`)
+
+For any product built from bought and made parts. A catalogue of parts (specs, prices with the date checked, sources,
+confidence flags), designs that pick one part per slot plus parameters, and the project's own evaluator (a Python
+function or any command speaking JSON) give every design its metrics and checks. `cad-agent compare` ranks the
+designs into Pareto fronts over the configured objectives, tries one-part swaps, and writes a standalone page and
+design cards for the site; `cad-agent optimise` searches parts and parameters (optuna's NSGA-II with the `explore`
+extra). The physics stays in the project. The full guide is [explore.md](explore.md); a worked example is
+[`examples/explore-two-wheel`](../examples/explore-two-wheel/).
 
 ### Mating connectors (`cadagent.connectors`): standard practice for every port
 

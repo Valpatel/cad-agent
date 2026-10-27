@@ -59,6 +59,14 @@ part with gmsh, solves linear elasticity with quadratic tetrahedra in scikit-fem
 printed materials with layer-direction strengths. Faces are picked with selectors (`plane_at`, `cylinder_at`,
 `in_box`, `near`). It is checked against a cantilever and a twisted shaft in `tests/test_fea.py` (within 3–6 %).
 
+**Design exploration** (`cadagent.explore`, [`docs/explore.md`](docs/explore.md)): pick parts from a catalogue for
+each slot of a design, evaluate every design with the project's own model, and rank the trade-offs. The catalogue
+carries specs, prices with the date they were checked, sources and confidence flags; `cad-agent compare` ranks the
+designs into Pareto fronts over the project's objectives and constraints, tries every one-part swap and writes a
+standalone comparison page; `cad-agent optimise` searches parts and parameters (random or grid, or optuna's NSGA-II
+with `pip install -e ".[explore]"`). It works for an enclosure, a robot or a board alike; the worked example in
+[`examples/explore-two-wheel`](examples/explore-two-wheel/) compares small two-wheel-legged robots.
+
 ## Vendored tools
 Six upstreams are vendored under `vendor/`, pinned by commit, and updated weekly through a reviewed, scanned and
 sandboxed process (see `SECURITY.md` and `WEEKLY-UPDATE.md`): text-to-cad, kicad-happy and kicad-mcp-pro (MIT);
@@ -76,7 +84,8 @@ patched off. Licences and pins are listed in `THIRD_PARTY_NOTICES.md`.
 - `skills/`: our skills; they fill gaps and do not duplicate the upstreams
 - `evals/`: benchmark tasks and the scoring harness
 - `research/`: landscape surveys
-- `examples/`: worked examples (vendor files are fetched by URL and hash, never committed)
+- `examples/`: worked examples (vendor files are fetched by URL and hash, never committed); `explore-two-wheel` shows
+  the design-exploration framework
 
 ## Status
 Phase 0. Repo created; the landscape survey and the session miner are in progress.

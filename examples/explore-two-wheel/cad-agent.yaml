@@ -1,0 +1,47 @@
+# A worked example of cad-agent's explore framework (docs/explore.md): pick parts for a small two-wheel-legged
+# robot from a catalogue, evaluate each design, compare the trade-offs and search for better ones.
+#   cad-agent catalogue          # check the catalogue and the designs
+#   cad-agent compare --swaps    # rank the designs: exports/explore/compare.html
+#   cad-agent optimise           # search parts and leg length: exports/explore/search/leaderboard.html
+cad:
+  name: explore-two-wheel
+  title: Two-wheel-legged robot options
+  explore:
+    catalogue: ["catalogue/*.json", "catalogue/*.yaml"]
+    categories: [wheel_motor, leg_actuator, battery, compute, sensor, hardware]
+    max_price_age_days: null          # illustrative prices (README.md#the-numbers): no age check
+    slots:
+      wheel_motor:  {category: wheel_motor,  qty: 2, required: true, group: Drive}
+      leg_actuator: {category: leg_actuator, qty: 4, required: true, group: Drive}
+      battery:      {category: battery,      required: true, group: Power}
+      compute:      {category: compute,      required: true, group: Electronics}
+      camera:       {category: sensor,       group: Electronics}
+      wiring:       {category: hardware,     group: Structure}
+    designs: ["designs/*.json"]
+    evaluator: tools/evaluate.py:evaluate
+    objectives:
+      - {metric: cost_usd, goal: min}
+      - {metric: mass_kg, goal: min}
+      - {metric: runtime_min, goal: max}
+    constraints:
+      - {metric: top_speed_kmh, min: 4}
+      - {metric: catch_lean_deg, min: 20}
+    metrics:
+      runtime_min: {digits: 0}
+      top_speed_kmh: {label: top speed}
+    card_metrics: [cost_usd, mass_kg, runtime_min, top_speed_kmh]
+    search:
+      base: designs/standard.json
+      sampler: random                 # or grid (all 270 combinations), nsga2 or tpe (pip install optuna)
+      trials: 60
+      seed: 1
+      space:
+        - {slot: wheel_motor}
+        - {slot: leg_actuator}
+        - {slot: battery}
+        - {slot: compute}
+        - {param: leg.length_mm, low: 120, high: 200, step: 20}
+  site:
+    designs: exports/explore/designs.json
+    links: [{title: Compare designs, href: exports/explore/compare.html}]
+    pages: [README.md]

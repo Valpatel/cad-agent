@@ -57,3 +57,24 @@ Release packagers should select the validated public manifest, not recursively
 include every file in hardware folders. KiCad creates ignored `.kicad_prl` UI
 state next to designs. Compare local and clean-checkout ZIP membership and hashes;
 a passing source manifest does not automatically constrain a separate glob.
+
+Use `filleted_wall_rib(thickness=…, reach=…, height=…, root_radius=…, overlap=…)`
+for a boss-to-wall brace with explicit curved roots. Its wall is at `Y=reach`;
+rotate/translate it into the assembly and overlap the floor and boss deliberately.
+Check post-cut web widths around seam grooves and counterbores. Keep clamp ribs
+outside the cable lane and provide driver access with the relevant lid state.
+Side mounting ears need their own screw seats, filleted roots and installation
+clearance; their mounting hardware is separate from the enclosure's insert screws.
+
+### Prototype pads and user-facing controls
+
+Preserve raw signals without promising software support from a net name. Trace the
+module pin and its ownership in current platform documentation before advertising
+GPIO/PWM/I²C access. Expose host power through explicit default-open links and
+verify that no prototype rail bypasses them. Bare isolated pads should carry no
+net and be excluded from assembly BOM/CPL; suppress automatic copper fill through
+the free grid. Document the row/column pitch, power-row connections and allowable
+component/lead envelopes. Re-run native DRC and schematic parity after the final
+router import: a successfully exported route session can still leave a power
+branch disconnected. Put illustrated controls beside native layers in the shared
+review groups, including which shunt enables each termination resistor.

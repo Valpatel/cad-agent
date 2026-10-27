@@ -13,3 +13,4 @@
 - Zone-to-zone ground ratsnest despite vias touching both layers: [bridge distinct connected regions](inbox/2026-10-26-ground-islands-need-a-real-bridge.md).
 - Dense engraved panel Boolean stalls: [bounded marking cuts](inbox/2026-10-26-panel-engraving-overlap-cost.md).
 - Current generic reports marked stale, or changed solids still pass: [declared evidence maps](inbox/2026-10-26-report-freshness-formats.md).
+- Narrow webs around counterbores, unsupported insert bosses or tangent ribs: [post-cut webs and filleted load paths](inbox/2026-10-26-insert-boss-load-path.md).

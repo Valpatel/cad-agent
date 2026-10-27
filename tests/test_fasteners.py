@@ -1,5 +1,6 @@
 import pytest
 from cadagent.fasteners import blind_insert_stack
+from cadagent.fasteners import filleted_wall_rib
 
 
 def test_blind_stack_recessed_lid():
@@ -15,3 +16,17 @@ def test_bottomed_and_short_screws_are_visible():
     assert blind_insert_stack(screw_length=10, **args)['engagement_mm'] == 0
     with pytest.raises(ValueError):
         blind_insert_stack(screw_length=20, **{**args, 'hole_bottom': 5})
+
+
+def test_wall_rib_has_real_curved_roots_and_positive_wall_overlap():
+    cq = pytest.importorskip('cadquery')
+    rib = filleted_wall_rib(thickness=3.2, reach=8, height=12,
+                            root_radius=1.6, overlap=.3)
+    wall = cq.Solid.makeBox(20, 2, 12, cq.Vector(-10, 8, 0))
+    assert rib.isValid() and len(rib.Solids()) == 1
+    assert rib.intersect(wall).Volume() > 20
+    assert len(rib.fuse(wall).Solids()) == 1
+    assert any(edge.geomType() == 'CIRCLE' for edge in rib.Edges())
+    assert rib.BoundingBox().ymax == pytest.approx(8.3)
+    with pytest.raises(ValueError):
+        filleted_wall_rib(thickness=3, reach=1, height=12, root_radius=2, overlap=.3)

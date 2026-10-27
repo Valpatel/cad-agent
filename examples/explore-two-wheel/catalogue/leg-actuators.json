@@ -1,0 +1,13 @@
+{
+ "defaults": {"category": "leg_actuator", "confidence": "estimate", "price_checked": "2026-10-26",
+              "sources": ["README.md#the-numbers"]},
+ "items": [
+  {"id": "qdd-8nm", "name": "Quasi-direct-drive actuator, 8 N·m", "price_usd": 120.0, "mass_g": 380,
+   "specs": {"peak_torque_nm": 8.0, "rated_torque_nm": 3.0, "voltage_nominal_v": 24, "voltage_range_v": [12, 30]}},
+  {"id": "qdd-17nm", "name": "Quasi-direct-drive actuator, 17 N·m", "price_usd": 260.0, "mass_g": 520, "preferred": true,
+   "specs": {"peak_torque_nm": 17.0, "rated_torque_nm": 6.0, "voltage_nominal_v": 48, "voltage_range_v": [24, 52]}},
+  {"id": "qdd-40nm", "name": "Quasi-direct-drive actuator, 40 N·m", "price_usd": 420.0, "mass_g": 1100,
+   "specs": {"peak_torque_nm": 40.0, "rated_torque_nm": 13.0, "voltage_nominal_v": 48, "voltage_range_v": [24, 60]},
+   "estimates": ["specs.rated_torque_nm"]}
+ ]
+}

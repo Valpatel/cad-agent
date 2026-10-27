@@ -49,7 +49,7 @@ either has evidence or it says what is assumed.
 
 ```mermaid
 flowchart LR
-    D["✏️ <b>Design</b><br/>connectors · mcmaster<br/>robot · geometry"]
+    D["✏️ <b>Design</b><br/>connectors · mcmaster<br/>robot · geometry · explore"]
     V["🧪 <b>Verify</b><br/>fea · cfd · heatsink<br/>topopt · slicer"]
     S["🖼️ <b>Show</b><br/>render · simviz · reports<br/>site · 3D viewer"]
     P["📦 <b>Ship</b><br/>STL · STEP · 3MF<br/>hashed review zip"]
@@ -63,6 +63,7 @@ flowchart LR
 | ✏️ | `connectors` | Port windows derived from the modelled mating plug, then a sweep check that the plug really goes in |
 | ✏️ | `mcmaster` | The manufacturer's STEP and specs for a McMaster-Carr part number, normalised for assembly |
 | ✏️ | `robot` | Mass properties from CAD, links and joints, URDF and MuJoCo export, meshes kept under budget |
+| ✏️ | `explore` | Part catalogues with prices and sources, designs that pick a part per slot, the project's own evaluator, Pareto ranking of the trade-offs, one-part swaps and a search over parts and parameters ([guide](docs/explore.md)) |
 | 🧪 | `fea` | gmsh + scikit-fem linear elasticity with printed-material allowables, checked against textbook cases |
 | 🧪 | `cfd` | Conjugate heat transfer cases for OpenFOAM written from CAD: fans, fin blocks, heat sources |
 | 🧪 | `heatsink` | Plate-fin correlations, fan operating point and porous-block coefficients for CFD |
@@ -91,6 +92,7 @@ cad-agent site --serve --project path/to/your-project
 | `sim` | PyVista, pyMOTO, manifold3d: airflow cases, topology optimisation, pictures and videos (OpenFOAM and Bambu Studio run as separate programs) |
 | `robot` | MuJoCo, for robot export |
 | `site` | Markdown, for the review site |
+| `explore` | optuna, for the NSGA-II and TPE searches of `cad-agent optimise` (random and grid need nothing) |
 
 ## Built with cad-agent
 
@@ -159,7 +161,8 @@ Details are in [`CONTRIBUTING.md`](CONTRIBUTING.md). Rules for AI agents are in 
 |---|---|
 | [`src/cadagent/`](src/cadagent/) | The toolkit, with its web kit in `webkit/` |
 | [`tests/`](tests/) | The test suite, which also runs in CI |
-| [`docs/`](docs/) | [`toolkit.md`](docs/toolkit.md), the guide to the toolkit |
+| [`docs/`](docs/) | [`toolkit.md`](docs/toolkit.md), the guide to the toolkit, and [`explore.md`](docs/explore.md), design exploration |
+| [`examples/`](examples/) | Worked examples: [`explore-two-wheel`](examples/explore-two-wheel/) compares robot configurations |
 | [`skills/`](skills/) | Agent skills that fill gaps, such as McMaster parts |
 | [`lessons/`](lessons/) | Rules mined from design sessions, with their sources |
 | [`research/`](research/) | Landscape surveys, including the simulation tools |

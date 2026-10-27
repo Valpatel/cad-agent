@@ -1,0 +1,6 @@
+{
+ "extends": "standard.json",
+ "name": "Long range",
+ "parts": {"battery": "pack-13s-10ah", "camera": "depth-camera"},
+ "notes": "A bigger pack and a depth camera. The 13S pack runs up to 54.6 V."
+}

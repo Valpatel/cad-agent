@@ -39,6 +39,11 @@ def normalise(name: str, raw: Any) -> Tuple[Dict[str, Any], Optional[str]]:
     if isinstance(raw, dict) and "value" not in raw:
         return {"value": None}, f"metric {name} has no 'value'"
     value = metric.get("value")
+    if not isinstance(value, (bool, int, float, str)) and callable(getattr(value, "item", None)):
+        try:                                     # a NumPy (or similar) scalar: its plain Python value
+            value = metric["value"] = value.item()
+        except (TypeError, ValueError):
+            pass
     problem = None
     if value is not None and not isinstance(value, (bool, int, float, str)):
         metric["value"], problem = None, f"metric {name} must be a number, true/false, text or null, got {type(value).__name__}"

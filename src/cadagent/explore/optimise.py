@@ -22,8 +22,9 @@ Every trial is written as a design (``<out>/search/trials/trial-00007.json``) an
 ``cad-agent compare``. ``trials.jsonl`` records each trial (one JSON object per line) and ``leaderboard.json`` +
 ``leaderboard.html`` rank them, refreshed as trials finish. The first trial of a new search is the base design
 itself, when the space can express it. Running again continues the numbering and, for optuna, the study in
-``study.db``; ``fresh=True`` (``--fresh``) deletes the previous trials first. A combination that was already
-evaluated is not evaluated again.
+``study.db`` (with a new seed); ``search.json`` records what the trials were computed against, and a run whose inputs
+changed stops and says what; ``fresh=True`` (``--fresh``) deletes the previous trials first. A combination that was
+already evaluated is not evaluated again. Ctrl-C stops the running command evaluators and writes the leaderboard.
 
 With ``workers`` above 1 a Python evaluator runs in threads, so it must be thread-safe, and it only runs in parallel
 where it waits on something else (a subprocess, a solver that releases the GIL). For CPU-heavy evaluation in Python,
@@ -34,6 +35,8 @@ The optimiser searches the model the evaluator encodes: a winning trial is as go
 
 from __future__ import annotations
 
+import hashlib
+import importlib.util
 import itertools
 import json
 import math
@@ -50,7 +53,8 @@ from cadagent._deps import require
 from cadagent.explore.catalogue import Catalogue, finite_or_none, is_number, json_default
 from cadagent.explore.compare import comparison, describe_choice, with_part, write_comparison
 from cadagent.explore.config import ExploreConfig
-from cadagent.explore.design import DesignError, candidates, fits, get_path, load_design, set_path
+from cadagent.explore.design import (DesignError, bom, bom_metrics, candidates, fits, get_path, load_design, resolve,
+                                     set_path)
 from cadagent.explore.evaluate import Evaluator, evaluate_design, kill_running_evaluators, value_of
 from cadagent.project import CadConfigError
 
@@ -250,18 +254,18 @@ class OptunaSampler:
     not be evaluated is marked failed."""
 
     def __init__(self, kind: str, space: List[Dimension], cfg: ExploreConfig, seed: int, population: int,
-                 storage: Path, name: str):
+                 storage: Path, name: str, base_missing: Optional[Dict[str, int]] = None):
         optuna = require("optuna", OPTUNA_HINT)
         optuna.logging.set_verbosity(optuna.logging.WARNING)
-        self.optuna, self.cfg = optuna, cfg
+        self.optuna, self.cfg, self.base_missing = optuna, cfg, base_missing or {}
         # optuna 5 takes constraints per trial (Trial.set_constraint); older versions through constraints_func
         self.keyed = hasattr(optuna.trial.Trial, "set_constraint")
         extra = {} if self.keyed else {"constraints_func": lambda t: t.user_attrs.get("constraints", [0.0])}
-        if kind == "nsga2":
-            sampler = optuna.samplers.NSGAIISampler(population_size=population, seed=seed, **extra)
-        else:
-            with warnings.catch_warnings():         # multivariate TPE is flagged experimental, and is the better TPE
-                warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        with warnings.catch_warnings():     # optuna flags multivariate TPE (and, before 5, constraints) experimental
+            warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+            if kind == "nsga2":
+                sampler = optuna.samplers.NSGAIISampler(population_size=population, seed=seed, **extra)
+            else:
                 sampler = optuna.samplers.TPESampler(seed=seed, multivariate=True, **extra)
         storage.parent.mkdir(parents=True, exist_ok=True)
         self.study = optuna.create_study(study_name=name, storage=_sqlite_storage(optuna, storage), sampler=sampler,
@@ -288,7 +292,7 @@ class OptunaSampler:
         if ev.get("verdict") == "error" or any(v is None for v in values):
             self.study.tell(trial, state=self.optuna.trial.TrialState.FAIL)
             return
-        constraints = constraint_values(ev, self.cfg)
+        constraints = constraint_values(ev, self.cfg, self.base_missing)
         if self.keyed:
             for i, v in enumerate(constraints):
                 trial.set_constraint(f"c{i}", v)
@@ -318,9 +322,18 @@ def _sqlite_storage(optuna: Any, path: Path) -> Any:
     return storage
 
 
-def constraint_values(ev: Dict[str, Any], cfg: ExploreConfig) -> List[float]:
-    """Optuna's convention, ≤ 0 is satisfied: the number of failed checks other than the constraints, then each
-    constraint's shortfall relative to its bound (1.0 when the metric has no value)."""
+def missing_count(metric: Optional[Dict[str, Any]]) -> int:
+    """How many lines an incomplete total leaves out (1 when it does not say)."""
+    if not metric or not metric.get("incomplete"):
+        return 0
+    return len(metric["missing"]) if isinstance(metric.get("missing"), list) else 1
+
+
+def constraint_values(ev: Dict[str, Any], cfg: ExploreConfig, base_missing: Optional[Dict[str, int]] = None) -> List[float]:
+    """Optuna's convention, ≤ 0 is satisfied: the number of failed checks other than the constraints; each
+    constraint's shortfall relative to its bound (absolute for a bound of 0; 1.0 when the metric has no value); and
+    how many more lines a minimised total leaves out than the base design's does, so the search cannot drift towards
+    parts without a price (a lower bound looks like a saving)."""
     fails = sum(1 for c in ev.get("checks") or [] if c["level"] == "fail" and not c["id"].startswith("constraint-"))
     out = [float(fails)]
     for c in cfg.constraints:
@@ -331,12 +344,88 @@ def constraint_values(ev: Dict[str, Any], cfg: ExploreConfig) -> List[float]:
         worst = -math.inf
         for bound, gap in ((c.min, (c.min - v) if c.min is not None else None), (c.max, (v - c.max) if c.max is not None else None)):
             if gap is not None:
-                worst = max(worst, gap / max(abs(bound), 1e-9))
+                worst = max(worst, gap / abs(bound) if bound else gap)    # relative, or absolute for a bound of 0
         out.append(float(worst))
+    metrics, base_missing = ev.get("metrics") or {}, base_missing or {}
+    out.append(float(sum(max(0, missing_count(metrics.get(o.metric)) - base_missing.get(o.metric, 0))
+                         for o in cfg.objectives if o.goal == "min")))
     return out
 
 
 # ----------------------------------------------------------------------------- the loop
+
+def base_missing(base: Dict[str, Any], catalogue: Catalogue, cfg: ExploreConfig) -> Dict[str, int]:
+    """How many lines each of the base design's BOM totals leaves out (no evaluator needed)."""
+    cand, errors, _ = resolve(base, catalogue, cfg.slots)
+    if cand is None:
+        return {}
+    return {name: missing_count(m) for name, m in bom_metrics(bom(cand, cfg.slots)).items()}
+
+
+FINGERPRINT = "search.json"
+_WHAT = {"objectives": "objectives", "constraints": "constraints", "currency": "currency", "space": "search space",
+         "slots": "slot settings", "base": "base design", "evaluator": "evaluator", "parts": "catalogue parts"}
+
+
+def _digest(value: Any) -> str:
+    return hashlib.sha256(json.dumps(value, sort_keys=True, default=str).encode()).hexdigest()[:16]
+
+
+def _evaluator_files(cfg: ExploreConfig) -> List[Path]:
+    """The evaluator's own source files, as far as they can be told: the Python file, or the files a command names."""
+    spec = cfg.evaluator
+    if spec is None:
+        return []
+    if spec.command:
+        return [cfg.root / a for a in spec.command if not a.startswith("{") and (cfg.root / a).is_file()]
+    target = spec.python.rpartition(":")[0]
+    if target.endswith(".py") or "/" in target:
+        return [cfg.root / target]
+    try:
+        found = importlib.util.find_spec(target)
+    except Exception:  # a parent package that fails to import: nothing to hash
+        return []
+    return [Path(found.origin)] if found and found.origin and Path(found.origin).is_file() else []
+
+
+def fingerprint(cfg: ExploreConfig, catalogue: Catalogue, sc: "SearchConfig", base: Dict[str, Any]) -> Dict[str, str]:
+    """A digest per input a trial's result depends on. A search continues only while they all match."""
+    ids = {c for d in sc.space if d.kind == "slot" for c in d.choices or [] if c}
+    for v in (base.get("parts") or {}).values():
+        ref = v if isinstance(v, str) else v.get("part") if isinstance(v, dict) else None
+        if ref:
+            ids.add(ref)
+    evaluator = None
+    if cfg.evaluator is not None:
+        evaluator = {"spec": cfg.evaluator.describe(), "timeout_s": cfg.evaluator.timeout_s,
+                     "files": {str(f): hashlib.sha256(f.read_bytes()).hexdigest() for f in _evaluator_files(cfg)}}
+    inputs = {
+        "objectives": [(o.metric, o.goal) for o in cfg.objectives],
+        "constraints": [(c.metric, c.min, c.max) for c in cfg.constraints],
+        "currency": cfg.currency,
+        "space": [vars(d) for d in sc.space],
+        "slots": {k: vars(v) for k, v in sorted(cfg.slots.items())},
+        "base": {k: v for k, v in base.items() if k not in ("name", "notes")},
+        "evaluator": evaluator,
+        "parts": {i: catalogue.get(i) for i in sorted(ids)},
+    }
+    return {k: _digest(v) for k, v in inputs.items()}
+
+
+def check_fingerprint(path: Path, current: Dict[str, str], trials: int) -> None:
+    """Refuse to continue a search whose earlier trials were computed against other inputs."""
+    if not trials or not path.is_file():
+        return
+    try:
+        earlier = json.loads(path.read_text())
+    except ValueError:
+        earlier = {}
+    changed = [_WHAT.get(k, k) for k in current if earlier.get(k) != current[k]]
+    if changed:
+        raise CadConfigError(f"the {trials} earlier trials in {path.parent} were run with a different "
+                             f"{', '.join(changed)}: run with --fresh to start over, or change "
+                             f"{'it' if len(changed) == 1 else 'them'} back")
+
 
 def choice_key(choice: Dict[str, Any]) -> str:
     return json.dumps(choice, sort_keys=True, default=str)
@@ -394,26 +483,30 @@ def run_search(cfg: ExploreConfig, catalogue: Catalogue, evaluator: Optional[Eva
     trials_dir, log, db = out / "trials", out / "trials.jsonl", out / "study.db"
     if fresh:
         shutil.rmtree(trials_dir, ignore_errors=True)
-        for p in (log, db, out / "leaderboard.json", out / "leaderboard.html"):
+        for p in (log, db, out / FINGERPRINT, out / "leaderboard.json", out / "leaderboard.html"):
             p.unlink(missing_ok=True)
     trials_dir.mkdir(parents=True, exist_ok=True)
     records = read_records(log)
+    base = load_design(sc.base)
+    fp = fingerprint(cfg, catalogue, sc, base)
+    check_fingerprint(out / FINGERPRINT, fp, len(records))
+    (out / FINGERPRINT).write_text(json.dumps(fp, indent=1) + "\n")
     cache: Dict[str, Dict[str, Any]] = {}
     for r in records:
         if r.get("evaluation", {}).get("verdict") != "error" and not r.get("duplicate_of"):
             cache.setdefault(choice_key(r["choice"]), r)
-    base = load_design(sc.base)
     base_name = sc.base.relative_to(cfg.root).as_posix() if sc.base.is_relative_to(cfg.root) else str(sc.base)
     if sc.sampler == "random":
         smp: Any = RandomSampler(sc.space, sc.seed, len(records))
     elif sc.sampler == "grid":
         smp = GridSampler(sc.space, set(cache))
-    else:
-        smp = OptunaSampler(sc.sampler, sc.space, cfg, sc.seed, sc.population, db, sc.name)
+    else:   # a continued run gets its own seed, or the seeded first generation would propose the same trials again
+        smp = OptunaSampler(sc.sampler, sc.space, cfg, sc.seed + len(records), sc.population, db, sc.name,
+                            base_missing(base, catalogue, cfg))
     first = base_choice(base, sc.space) if not records and sc.sampler != "grid" else None
     number = max([r["trial"] for r in records] or [0])
-    started, new, interrupted = time.monotonic(), 0, False
-    last_board = started
+    started, new, repeats, interrupted = time.monotonic(), 0, 0, False
+    last_board, board_cost = started, 0.0
     in_flight: Dict[Future, Tuple[int, Any, Dict[str, Any]]] = {}
     running: set = set()                                                  # combinations being evaluated now
     waiting: Dict[str, List[Tuple[int, Any, Dict[str, Any]]]] = {}       # repeats of those, until their result is in
@@ -433,12 +526,15 @@ def run_search(cfg: ExploreConfig, catalogue: Catalogue, evaluator: Optional[Eva
 
     def reuse(n: int, handle: Any, choice: Dict[str, Any], original: Dict[str, Any]) -> None:
         """A combination that was evaluated already: the same result under a new trial number."""
+        nonlocal repeats
         ev = {**original["evaluation"], "id": f"trial-{n:05d}", "name": f"trial {n} (= trial {original['trial']})",
               "choice": choice}
         smp.tell(handle, ev)
         record(n, choice, ev, original["trial"])
+        repeats += 1
 
-    with ThreadPoolExecutor(max_workers=sc.workers) as pool:
+    pool = ThreadPoolExecutor(max_workers=sc.workers)
+    try:
         try:
             exhausted = False
             while True:
@@ -481,9 +577,12 @@ def run_search(cfg: ExploreConfig, catalogue: Catalogue, evaluator: Optional[Eva
                     for m, h, c in waiting.pop(key, []):
                         reuse(m, h, c, original)
                         new += 1
-                    if time.monotonic() - last_board >= board_seconds:
+                    # rewritten as trials finish, but never more than a tenth of the time, so workers are not kept waiting
+                    if time.monotonic() - last_board >= max(board_seconds, 10 * board_cost):
+                        t0 = time.monotonic()
                         write_leaderboard(cfg, records, out)
                         last_board = time.monotonic()
+                        board_cost = last_board - t0
         except KeyboardInterrupt:
             interrupted = True
             for fut, (_, handle, _) in in_flight.items():
@@ -491,10 +590,18 @@ def run_search(cfg: ExploreConfig, catalogue: Catalogue, evaluator: Optional[Eva
                 smp.abandon(handle)
             for _, handle, _ in (w for ws in waiting.values() for w in ws):
                 smp.abandon(handle)
+            stopped = kill_running_evaluators()    # they run in their own session: Ctrl-C does not reach them
+            write_leaderboard(cfg, records, out)
+            python_left = len(in_flight) - stopped     # Python evaluators cannot be stopped from outside
+            progress(f"stopping: the leaderboard has the {len(records)} finished trials"
+                     + (f"; waiting for {python_left} running Python evaluation(s) (Ctrl-C again to stop now)"
+                        if python_left > 0 else ""))
             pool.shutdown(wait=False, cancel_futures=True)
-            kill_running_evaluators()            # they run in their own session: Ctrl-C does not reach them
+    finally:
+        pool.shutdown(wait=True)
     comp = write_leaderboard(cfg, records, out)
-    return {"trials": len(records), "new": new, "seconds": round(time.monotonic() - started, 1),
+    return {"trials": len(records), "new": new, "evaluated": new - repeats, "repeats": repeats,
+            "seconds": round(time.monotonic() - started, 1),
             "feasible": comp["summary"]["feasible"], "pareto": comp["summary"]["pareto"],
             "errors": comp["summary"]["errors"], "interrupted": interrupted, "sampler": sc.sampler,
             "leaderboard": str(out / "leaderboard.html"), "json": str(out / "leaderboard.json"),
@@ -502,10 +609,12 @@ def run_search(cfg: ExploreConfig, catalogue: Catalogue, evaluator: Optional[Eva
 
 
 def write_leaderboard(cfg: ExploreConfig, records: List[Dict[str, Any]], out: Path) -> Dict[str, Any]:
-    """Rank every distinct trial (repeats of a combination are left out) and write the leaderboard."""
+    """Rank every distinct trial (repeats of a combination are left out) and write the leaderboard. Its JSON keeps
+    each trial's metrics, checks and BOM totals; the full evaluations stay in trials.jsonl."""
     # finite_or_none: trials.jsonl written before NaN checks existed may hold NaN, which strict JSON refuses
     evaluations = [finite_or_none(r["evaluation"]) for r in records if not r.get("duplicate_of")]
-    comp = comparison(evaluations, cfg, kind="search", title=f"{cfg.title}: search")
+    comp = comparison(evaluations, cfg, kind="search")
     comp["summary"]["repeats"] = len(records) - len(evaluations)
-    write_comparison(comp, out, "leaderboard.json", "leaderboard.html", cards=False)
+    comp["records"] = "trials.jsonl"
+    write_comparison(comp, out, "leaderboard.json", "leaderboard.html", cards=False, slim_json=True)
     return comp

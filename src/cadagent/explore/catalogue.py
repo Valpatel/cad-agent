@@ -230,7 +230,7 @@ def source_url(item: Dict[str, Any]) -> Optional[str]:
 # ----------------------------------------------------------------------------- loading
 
 def read_data(path: Path) -> Any:
-    """Parse a JSON or YAML file; a parse error is raised as ``ValueError``."""
+    """Parse a JSON or YAML file (dates as ISO text); a parse error is raised as ``ValueError``."""
     text = Path(path).read_text()
     if Path(path).suffix in (".yaml", ".yml"):
         import yaml

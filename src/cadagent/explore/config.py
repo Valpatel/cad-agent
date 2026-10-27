@@ -25,6 +25,7 @@
 
 from __future__ import annotations
 
+import glob
 import re
 import shlex
 from dataclasses import dataclass, field
@@ -128,7 +129,8 @@ def expand(root: Path, patterns: List[str]) -> Tuple[List[Path], List[str]]:
     out: List[Path] = []
     unmatched: List[str] = []
     for pat in patterns:
-        hits = sorted(root.glob(pat)) if any(c in pat for c in "*?[") else [root / pat]
+        full = str(root / pat)                    # an absolute pattern stays absolute
+        hits = [Path(h) for h in sorted(glob.glob(full, recursive=True))] if any(c in pat for c in "*?[") else [Path(full)]
         found = [p.resolve() for p in hits if p.is_file() and p.suffix in DATA_SUFFIXES]
         if not found:
             unmatched.append(pat)

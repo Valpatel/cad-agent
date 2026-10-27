@@ -478,8 +478,9 @@ def cmd_optimise(project: CadProject, args: argparse.Namespace) -> int:
     evaluator = load_evaluator(cfg.evaluator, project.root, project.python)
     r = run_search(cfg, catalogue, evaluator, trials=args.trials, workers=args.workers, sampler=args.sampler,
                    seed=args.seed, fresh=args.fresh, progress=_say)
-    _say(f"search ({r['sampler']}): {r['new']} new trial(s) in {r['seconds']:.1f}s, {r['trials']} in total; "
-         f"{r['feasible']} feasible, {r['pareto']} on the Pareto front" + (" (interrupted)" if r["interrupted"] else ""))
+    _say(f"search ({r['sampler']}): {r['new']} new trial(s) in {r['seconds']:.1f}s ({r['evaluated']} evaluated, "
+         f"{r['repeats']} repeats of earlier combinations), {r['trials']} in total; {r['feasible']} feasible, "
+         f"{r['pareto']} on the Pareto front" + (" (interrupted)" if r["interrupted"] else ""))
     for name in r["best"]:
         _say(f"  front: {name}")
     _say(f"leaderboard: {r['leaderboard']}")
@@ -517,7 +518,7 @@ def dispatch(args: argparse.Namespace) -> int:
     try:
         project = load_project(getattr(args, "project", None))
         if project.unknown_keys:
-            _say(f"WARN unknown cad: keys ignored: {', '.join(project.unknown_keys)}")
+            _warn(f"unknown cad: keys ignored: {', '.join(project.unknown_keys)}")
         return HANDLERS[sub](project, args)
     except (CadConfigError, MissingDependency, _Unusable) as exc:
         _err(f"{sub}: {exc}")
@@ -529,6 +530,12 @@ def dispatch(args: argparse.Namespace) -> int:
         # GeometryError / Mesh3mfError: the output was produced but failed verification
         _err(f"{sub}: FAILED: {exc}")
         return 1
+    except KeyboardInterrupt:
+        if sub in ("compare", "optimise"):
+            from cadagent.explore.evaluate import kill_running_evaluators
+            kill_running_evaluators()
+        _err(f"{sub}: interrupted")
+        return 130
 
 PROJECT_HELP = "CAD project root containing cad-agent.yaml or vptest.yaml with a cad: section (default: cwd)"
 

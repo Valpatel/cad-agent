@@ -66,7 +66,7 @@ cad:
 
 | Key | Default | Meaning |
 |---|---|---|
-| `catalogue` | none (required) | globs or paths of catalogue files; a pattern that matches nothing is an error |
+| `catalogue` | none (required) | globs or paths of catalogue files, relative to the project root or absolute (`**` works); a pattern that matches nothing is an error |
 | `categories` | any | allowed categories |
 | `currency` | `usd` | three-letter code; prices are read from `price_<currency>` |
 | `max_price_age_days` | `90` | warn about prices checked longer ago; `null` turns it off |
@@ -123,7 +123,8 @@ an unquoted YAML date (`price_checked: 2026-10-26`) is read as the text `"2026-1
 | `preferred` | listed first in its category |
 
 Unknown values are `null`, never guessed. A price in another currency (`price_eur` in a `usd` project) is not
-converted: convert it and note the rate in `price_note`. Every other field is kept and passed to the evaluator.
+converted: convert it and note the rate in `price_note`. Every other field is kept and passed to the evaluator. In
+YAML, dates (`price_checked: 2026-10-26`) are read as ISO text, quoted or not.
 
 `cad-agent catalogue` reports **errors** (a wrong or missing id or category, a price without a date, a date in the
 future, a negative price, a number that is not finite (NaN or infinity: use `null` for an unknown value), a value JSON
@@ -167,7 +168,8 @@ catalogue. It exits 1 when there is an error. A design that uses a part with a n
 The **bill of materials** has a line per filled slot plus the evaluator's own lines, each with quantity, packs, unit
 and line price, mass, confidence, the date the price was checked, a source link and stock. The totals become two
 metrics every design has: `cost_<currency>` and `mass_kg`. A line without a price or mass is left out of that total,
-which is then marked **incomplete** and shown as `≥`; a total that includes an estimate is marked **est.**.
+which is then marked **incomplete**, shown as `≥` (a lower bound: the true value is at least that) and lists what it
+leaves out in `missing`; a total that includes an estimate is marked **est.**.
 
 ## Evaluator
 
@@ -192,8 +194,9 @@ def evaluate(candidate):                                  # cadagent.explore.des
 Every key is optional; an unknown key is reported, not fatal. A metric is a number (or true/false, text, `null`) or
 `{"value", "unit", "label", "digits", "estimate", "incomplete"}`; a value that is not finite becomes `null` and makes
 the design an `error`. Check levels are `ok`, `warn` and `fail`; any other level counts as `fail`. `lines` count in the cost and
-mass. A metric with the same name as a BOM metric replaces it (`mass_kg` from CAD, say). The evaluator's folder is put
-on `sys.path`, as when the file runs as a script, so it can import its neighbours.
+mass. A metric with the same name as a BOM metric replaces it (`mass_kg` from CAD, say). NumPy scalars are read as
+plain numbers. The evaluator's folder is appended to `sys.path`, so it can import its neighbours without shadowing a
+library. Each part the evaluator gets is its own copy; `candidate.catalogue` is shared, so read it only.
 
 In any language, `evaluator: {command: [node, tools/evaluate.mjs], timeout_s: 120}`: the request arrives as JSON on
 stdin (`{id, name, file, design, params, currency, parts: {slot: {item, qty, custom}}, bom}`), the result above is
@@ -219,13 +222,24 @@ files given, relative to the project root) and writes, under `out`:
 | `compare.html` | one standalone page (light and dark, opens from `file://`): a trade-off chart of the first two objectives, the sortable leaderboard, and per design its checks, BOM, parameters and swaps |
 | `designs.json` | design cards for the project site: set `site: designs: exports/explore/designs.json` |
 
+`cad-agent site --serve` adds the comparison page (and the search leaderboard) to the site's top bar when they are in
+the default `exports/explore`.
+
 A design is **feasible** when its verdict is `ok` or `warn`: no failed check, every constraint met, and a number for
 every objective. Feasible designs are sorted into **Pareto fronts**: rank 1 is the front, where no other feasible
 design is at least as good on every objective and better on one; rank 2 is the front once rank 1 is removed, and so
-on. Infeasible designs follow, fewest failures first. `--swaps` evaluates every one-part swap of every design (each
+on. Infeasible designs follow, fewest failures first.
+
+**Incomplete totals are lower bounds, never savings.** A cost of `≥ 1,240` (a part without a price) is never counted
+as better than a value it might exceed: a design does not beat another on that objective unless it certainly does.
+Two totals that leave out exactly the same lines (the same unpriced camera in both) compare by what they show, since
+their difference is known. A rank that rests on a lower bound is marked `≥` on the page. A constraint that an
+incomplete total might break (a maximum), or does not reach yet (a minimum), cannot be confirmed: that is a warning,
+not a pass. `--swaps` evaluates every one-part swap of every design (each
 other catalogue part of the slot's category) and shows, per swap, the change in each objective, whether it is still
-feasible, and whether it beats the design on every objective. With a large catalogue that is many evaluations (one
-process each for a command evaluator): `--workers N` runs N at a time.
+feasible, and whether it beats the design on every objective; a `?` marks a change that cannot be told because one
+of the totals leaves out a part without a value. With a large catalogue that is many evaluations (one process each
+for a command evaluator): `--workers N` runs N at a time.
 
 Exit codes: 0 when every design was evaluated (whatever its verdict), 1 when a design could not be evaluated or the
 catalogue failed to load, 2 when the configuration or the evaluator is unusable.
@@ -249,18 +263,26 @@ catalogue failed to load, 2 when the configuration or the evaluator is unusable.
 
 `cad-agent optimise [--trials N] [--workers N] [--sampler S] [--seed N] [--fresh]` builds each trial from the base
 design, writes it to `out/search/trials/trial-00007.json`, evaluates it exactly as `compare` would, and writes
-`out/search/trials.jsonl` (one record per trial) and `leaderboard.json` + `leaderboard.html` (refreshed while it runs).
-With random, nsga2 and tpe the first trial of a new search is the base design itself, when the space can express it;
-grid goes through the combinations in order.
+`out/search/trials.jsonl` (one record per trial, with its full evaluation) and `leaderboard.json` +
+`leaderboard.html` (refreshed while it runs, at most a tenth of the time; the JSON keeps metrics, checks and BOM
+totals). With random, nsga2 and tpe the first trial of a new search is the base design itself, when the space can
+express it; grid goes through the combinations in order.
 
 - **random** and **grid** need nothing installed. Grid tries every combination once (ranges need a `step`).
-- **nsga2** (multi-objective genetic search) and **tpe** use optuna. Failed checks and unmet constraints are passed
-  as optuna constraints, so infeasible trials still guide the search; a trial that could not be evaluated is marked
-  failed. The study is kept in `out/search/study.db`; its bookkeeping costs a few tens of milliseconds per trial,
-  which matters only when the evaluator itself takes milliseconds.
-- A combination that was already evaluated is not evaluated again, including one proposed while it is still running.
-- Running again continues: the numbering, the records and the optuna study carry on. `--fresh` deletes the previous
-  trials. Change the space or the objectives with `--fresh`.
+- **nsga2** (multi-objective genetic search) and **tpe** use optuna (3.4 and later). Failed checks, unmet
+  constraints, and minimised totals that leave out more parts than the base design's are passed as optuna
+  constraints, so infeasible trials still guide the search and it cannot drift towards parts without a price. A trial
+  that could not be evaluated is marked failed. The study is kept in `out/search/study.db`; its bookkeeping costs a
+  few tens of milliseconds per trial, which matters only when the evaluator itself takes milliseconds.
+- A combination that was already evaluated is not evaluated again, including one proposed while it is still running;
+  the summary counts evaluations and repeats separately.
+- Running again continues: the numbering, the records and the optuna study carry on, and the sampler gets a new seed
+  so it does not replay its first proposals. `out/search/search.json` records what the trials were computed against
+  (objectives, constraints, the space with its choices, slot settings, the base design, the evaluator and its file,
+  the catalogue parts in play); if any of them changed, the run stops and says what, and `--fresh` starts over.
+- Ctrl-C stops the command evaluators that are running (with whatever they started), writes the leaderboard, and
+  says how many Python evaluations it is still waiting for; a second Ctrl-C stops without them. A Python evaluator
+  cannot be stopped from outside in the middle of a call.
 - With `workers` above 1, Python evaluators run in threads: they must be thread-safe, and they only run in parallel
   where they wait on something else (a subprocess, a solver that releases the GIL). For CPU-heavy work use a command
   evaluator, so each trial is its own process.

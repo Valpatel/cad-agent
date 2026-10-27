@@ -80,7 +80,7 @@ def load_evaluator(spec: Optional[EvaluatorSpec], root: Path, python: str = "") 
         if not path.is_file():
             raise CadConfigError(f"evaluator file not found: {path}")
         if str(path.parent) not in sys.path:
-            sys.path.insert(0, str(path.parent))          # as when the file is run as a script: siblings import
+            sys.path.append(str(path.parent))             # siblings import; appended, so it never shadows a library
         name = f"_cadagent_evaluator_{abs(hash(str(path)))}"
         module_spec = importlib.util.spec_from_file_location(name, path)
         module = importlib.util.module_from_spec(module_spec)
@@ -92,7 +92,7 @@ def load_evaluator(spec: Optional[EvaluatorSpec], root: Path, python: str = "") 
             raise CadConfigError(f"evaluator {path.name} failed to import: {type(exc).__name__}: {exc}") from exc
     else:
         if str(Path(root).resolve()) not in sys.path:
-            sys.path.insert(0, str(Path(root).resolve()))
+            sys.path.append(str(Path(root).resolve()))
         try:
             module = importlib.import_module(target)
         except Exception as exc:
@@ -133,13 +133,14 @@ def _kill_group(proc: subprocess.Popen) -> None:
             pass
 
 
-def kill_running_evaluators() -> None:
-    """Kill every command evaluator running now, with what it started. Evaluators run in their own session, so the
-    terminal's Ctrl-C does not reach them: an interrupted run calls this."""
+def kill_running_evaluators() -> int:
+    """Kill every command evaluator running now, with what it started, and return how many there were. Evaluators run
+    in their own session, so the terminal's Ctrl-C does not reach them: an interrupted run calls this."""
     with _RUNNING_LOCK:
         procs = list(_RUNNING)
     for proc in procs:
         _kill_group(proc)
+    return len(procs)
 
 
 def _command_evaluator(spec: EvaluatorSpec, root: Path, python: str) -> Evaluator:
@@ -249,7 +250,8 @@ def value_of(metrics: Dict[str, Dict[str, Any]], name: str) -> Optional[float]:
 def goal_checks(metrics: Dict[str, Dict[str, Any]], objectives: List[Objective],
                 constraints: List[Constraint]) -> List[Dict[str, str]]:
     """A ``fail`` check per missing objective and per unmet or missing constraint; an ``ok`` check per met constraint.
-    The metric gets ``level`` ``ok`` or ``fail`` so tables can colour it."""
+    An incomplete total is a lower bound (the true value is at least the one shown): a maximum it might exceed, or a
+    minimum it does not reach yet, cannot be confirmed, which is a ``warn``. The metric gets the check's ``level``."""
     out = []
     for o in objectives:
         if value_of(metrics, o.metric) is None:
@@ -261,11 +263,18 @@ def goal_checks(metrics: Dict[str, Dict[str, Any]], objectives: List[Objective],
         if v is None:
             out.append({"id": cid, "level": "fail", "text": f"Constraint {c.describe()}: no numeric value."})
             continue
-        low = c.min is not None and v < c.min
-        high = c.max is not None and v > c.max
-        level = "fail" if low or high else "ok"
-        bound = f"below the minimum {c.min:g}" if low else f"above the maximum {c.max:g}" if high else f"meets {c.describe()}"
-        out.append({"id": cid, "level": level, "text": f"{c.metric} = {v:g}: {bound}."})
+        lower_bound = bool(metrics[c.metric].get("incomplete"))
+        shown = f"{c.metric} {'≥ ' if lower_bound else '= '}{v:g}"
+        if c.max is not None and v > c.max:
+            level, text = "fail", f"{shown}: above the maximum {c.max:g}."
+        elif c.min is not None and v < c.min and not lower_bound:
+            level, text = "fail", f"{shown}: below the minimum {c.min:g}."
+        elif lower_bound and (c.max is not None or (c.min is not None and v < c.min)):
+            level, text = "warn", (f"{shown}: cannot confirm {c.describe()}, as the total leaves out parts without a "
+                                   "value; add them to check it.")
+        else:
+            level, text = "ok", f"{shown}: meets {c.describe()}."
+        out.append({"id": cid, "level": level, "text": text})
         metrics[c.metric]["level"] = level
     return out
 

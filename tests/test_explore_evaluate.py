@@ -38,7 +38,7 @@ def test_without_an_evaluator_a_design_still_gets_cost_and_mass(tmp_path):
     ev = _evaluate(root, "base", None, cfg)
     assert ev["verdict"] == "warn", "the gasket has no price"
     assert ev["metrics"]["cost_usd"] == {"value": 35.0, "unit": "USD", "label": "cost", "estimate": False,
-                                         "incomplete": True, "source": "bom"}
+                                         "incomplete": True, "source": "bom", "missing": ["seal|gasket|1"]}
     assert ev["parts"] == {"fan": "fan-60", "psu": "psu-60w", "screws": "m3x8", "seal": "gasket"}
     assert ev["counts"] == {"ok": 0, "warn": 1, "fail": 0}
 
@@ -80,6 +80,13 @@ def test_an_evaluator_that_raises_makes_only_that_design_an_error(tmp_path):
     assert hot["verdict"] == "error" and hot["errors"][0].startswith("evaluator raised ValueError: boom (evaluate.py:3)")
     assert hot["metrics"]["cost_usd"]["value"] == 28.0, "cost and mass are still shown"
     assert base["verdict"] == "warn"
+
+
+def test_numpy_scalars_are_plain_numbers():
+    np = pytest.importorskip("numpy")
+    r = normalise_result({"metrics": {"n": np.int64(3), "x": np.float32(1.5), "a": np.array([1, 2])}})
+    assert r["metrics"]["n"] == {"value": 3} and type(r["metrics"]["n"]["value"]) is int
+    assert r["metrics"]["x"] == {"value": 1.5} and r["metrics"]["a"]["value"] is None
 
 
 def test_normalise_result_reports_problems_instead_of_crashing():
@@ -307,3 +314,13 @@ def test_non_finite_numbers_from_the_evaluator_make_the_design_an_error(tmp_path
                             "the evaluator returned inf at data.peak, not a finite number"]
     assert ev["bom"]["lines"][-1]["unit_price"] is None and ev["bom"]["totals"]["cost_complete"] is False
     json.dumps(ev, allow_nan=False)
+
+
+def test_the_evaluator_folder_never_shadows_a_library(tmp_path):
+    root = write_enclosure(tmp_path)
+    (root / "tools" / "platform.py").write_text("NOT_THE_STDLIB = True\n")
+    fn = load_evaluator(EvaluatorSpec(python="tools/evaluate.py:evaluate"), root)
+    import importlib
+    import platform
+    importlib.reload(platform)
+    assert hasattr(platform, "system") and sys.path[-1] == str((root / "tools").resolve()) and callable(fn)

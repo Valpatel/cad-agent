@@ -265,6 +265,7 @@ def _pick(slot: str, value: Any, spec: Optional[SlotSpec], catalogue: Catalogue)
             errors.append(f"slot {slot}: part {ref} has numbers that are not finite ({', '.join(bad)}); "
                           "cad-agent catalogue reports them")
             return None, errors, checks
+        item = copy.deepcopy(item)              # the evaluator may change its copy; the catalogue stays as it is
     if custom is None:
         why = fits(item, spec)
     elif spec and spec.category and item.get("category") != spec.category:     # a custom part: only its category
@@ -382,10 +383,15 @@ def bom_checks(b: Dict[str, Any]) -> List[Dict[str, str]]:
 
 
 def bom_metrics(b: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    """The BOM's two metrics. ``missing`` lists the lines a total leaves out (``slot|part|qty``): two totals that leave
+    out the same lines differ by exactly what they show."""
     t, cur = b["totals"], b["currency"]
+
+    def left_out(key: str) -> List[str]:
+        return sorted(f"{l['slot']}|{l['id'] or l['name']}|{l['qty']}" for l in b["lines"] if l[key] is None)
     return {
         f"cost_{cur}": {"value": t["cost"], "unit": cur.upper(), "label": "cost", "estimate": t["cost_estimate"],
-                        "incomplete": not t["cost_complete"], "source": "bom"},
+                        "incomplete": not t["cost_complete"], "source": "bom", "missing": left_out("line_price")},
         "mass_kg": {"value": t["mass_kg"], "unit": "kg", "label": "mass", "estimate": t["mass_estimate"],
-                    "incomplete": not t["mass_complete"], "source": "bom"},
+                    "incomplete": not t["mass_complete"], "source": "bom", "missing": left_out("line_mass_g")},
     }

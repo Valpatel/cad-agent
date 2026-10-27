@@ -156,3 +156,30 @@ def test_slot_choices_and_where_narrow_what_fits():
                           "frame": SlotSpec("frame", "frame")}, CAT)
     assert [(i.level, i.where, i.text) for i in issues] == [
         ("error", "slot x", "choices not in the catalogue: nope"), ("warn", "slot fan", "no catalogue part fits it")]
+
+
+def test_extends_changes_a_quantity_whatever_form_the_parent_used(tmp_path):
+    _design(tmp_path, "base", {"parts": {"fan": "fan-60", "psu": {"custom": {"name": "PSU", "category": "psu", "mass_g": 9}}}})
+    _design(tmp_path, "child", {"extends": "base.json", "parts": {"fan": {"qty": 2}, "psu": {"part": "psu-30w"}}})
+    child = load_design(tmp_path / "child.json")
+    assert child["parts"] == {"fan": {"part": "fan-60", "qty": 2}, "psu": {"part": "psu-30w"}}, "custom dropped for part"
+    cand, errors, _ = resolve(child, CAT, SLOTS)
+    assert errors == [] and cand.qty("fan") == 2 and cand.part("psu")["id"] == "psu-30w"
+    _design(tmp_path, "back", {"extends": "child.json", "parts": {"psu": {"custom": {"name": "Own", "category": "psu"}}}})
+    assert load_design(tmp_path / "back.json")["parts"]["psu"] == {"custom": {"name": "Own", "category": "psu"}}
+
+
+def test_unquoted_yaml_dates_stay_json(tmp_path):
+    from cadagent.explore.catalogue import load_catalogue
+    (tmp_path / "parts.yaml").write_text("- {id: f, category: fan, price_usd: 5, price_checked: 2026-10-20, mass_g: 3}\n")
+    (tmp_path / "d.yaml").write_text("parts: {fan: f}\nparams: {built: 2026-10-21}\n")
+    cat, issues = load_catalogue([tmp_path / "parts.yaml"])
+    assert issues == [] and cat["f"]["price_checked"] == "2026-10-20"
+    design = load_design(tmp_path / "d.yaml")
+    assert design["params"]["built"] == "2026-10-21" and json.dumps(design)
+
+
+def test_the_evaluator_gets_copies_of_catalogue_parts():
+    cand, _, _ = resolve({"parts": {"fan": "fan-60"}}, CAT, SLOTS)
+    cand.part("fan")["specs"]["airflow_cfm"] *= 0.5
+    assert CAT["fan-60"]["specs"]["airflow_cfm"] == 18

@@ -188,3 +188,85 @@ def test_swaps_and_search_respect_narrowed_slots(tmp_path):
     cfg.search["space"] = [{"slot": "fan", "choices": ["fan-40", "fan-80"]}]
     with pytest.raises(CadConfigError, match="do not fit slot fan: fan-80"):
         search_config(cfg, cat)
+
+
+def test_the_site_top_bar_lists_the_comparison(tmp_path):
+    from cadagent import site
+
+    root = write_enclosure(tmp_path)
+    cfg, cat, fn, comp = _compare(root)
+    write_comparison(comp, cfg.out, cfg=cfg)
+    nav = site.default_nav(root)
+    assert {"id": "exports/explore/compare.html", "title": "Design comparison", "href": "exports/explore/compare.html"} in nav
+
+
+def test_tick_labels_and_links_on_the_page():
+    from cadagent.explore.catalogue import link_url
+    from cadagent.explore.page import _nice_ticks, _tick_label
+
+    lo, hi, ticks = _nice_ticks(1, 12)
+    assert [_tick_label(t, ticks[1] - ticks[0]) for t in ticks] == ["0", "2.5", "5", "7.5", "10", "12.5"]
+    lo, hi, ticks = _nice_ticks(1000, 12000)
+    assert [_tick_label(t, ticks[1] - ticks[0]) for t in ticks] == ["0", "2.5K", "5K", "7.5K", "10K", "12.5K"]
+    assert [_tick_label(t, 0.25) for t in (0.25, 0.5, 1.0)] == ["0.25", "0.5", "1"]
+    assert link_url("javascript:alert(1)") is None and link_url("JavaScript:x") is None
+    assert link_url("https://example.com/a") == "https://example.com/a"
+
+
+def test_a_javascript_source_is_shown_as_text(tmp_path):
+    root = write_enclosure(tmp_path)
+    cat_file = root / "catalogue" / "parts.json"
+    data = json.loads(cat_file.read_text())
+    data["items"][1]["sources"] = ["javascript:alert(document.domain)"]
+    cat_file.write_text(json.dumps(data))
+    cfg, cat, fn, comp = _compare(root)
+    page = render_page(comp)
+    assert 'href="javascript:' not in page and "source: javascript:alert(document.domain)" in page
+
+
+def test_design_ids_are_never_absolute_and_never_clash(tmp_path):
+    from cadagent.explore.compare import design_ids
+
+    root = tmp_path / "root"
+    paths = [root / "a" / "v.json", root / "b" / "v.json", tmp_path / "elsewhere" / "v.json", root / "w.json"]
+    ids = design_ids(paths, root)
+    assert ids[:2] == ["a/v", "b/v"] and ids[3] == "w" and ids[2].startswith("v-") and "/" not in ids[2]
+    two = design_ids([tmp_path / "x" / "v.json", tmp_path / "y" / "v.json"], root)
+    assert len(set(two)) == 2 and all(i.startswith("v-") for i in two)
+
+
+def test_a_part_without_a_price_never_reads_as_a_saving(tmp_path):
+    """The reviewer's case: a supply identical to psu-60w but with no price."""
+    from cadagent.explore.config import Constraint
+
+    root = write_enclosure(tmp_path)
+    cat_file = root / "catalogue" / "parts.json"
+    data = json.loads(cat_file.read_text())
+    data["items"].append({"id": "psu-60w-oem", "category": "psu", "name": "60 W supply (OEM)", "price_usd": None,
+                          "mass_g": 260, "specs": {"power_w": 60}})
+    cat_file.write_text(json.dumps(data))
+    (root / "designs" / "oem.json").write_text(json.dumps({"extends": "base.json", "name": "OEM", "parts": {"psu": "psu-60w-oem"}}))
+    cfg, cat, fn, comp = _compare(root)
+    by = {d["id"]: d for d in comp["designs"]}
+    assert by["base"]["pareto"] and by["quiet"]["pareto"], "the unpriced supply does not push the others off the front"
+    assert by["oem"]["lower_bounds"] == ["cost_usd"]
+    design = load_design(root / "designs" / "base.json")
+    swap = next(s for s in swaps(design, by["base"], cat, cfg, fn) if s["to"] == "psu-60w-oem")
+    assert swap["delta"]["cost_usd"] == pytest.approx(-22.0) and "cost_usd" in swap["unsure"]
+    assert not swap["dominates"] and "cost_usd" not in swap["better"]
+    fan = next(s for s in swaps(design, by["base"], cat, cfg, fn) if s["to"] == "fan-40")
+    assert fan["better"] == ["cost_usd"], "both leave out the same gasket: the saving is exact"
+    cfg.constraints.append(Constraint("cost_usd", max=20))
+    ev = evaluate_design(load_design(root / "designs" / "oem.json"), cat, cfg, fn, "oem")
+    check = next(c for c in ev["checks"] if c["id"] == "constraint-cost_usd")
+    assert check["level"] == "warn" and "cannot confirm" in check["text"] and check["text"].startswith("cost_usd ≥ 16.5")
+
+
+def test_dominance_with_lower_bounds():
+    inf = float("inf")
+    assert not dominates([(10, inf), (1, 1)], [(30, 30), (1, 1)]), "a lower bound does not beat a value it might exceed"
+    assert dominates([(10, 10), (1, 1)], [(30, inf), (1, 1)]), "an exact value below a lower bound does"
+    same = "seal|gasket|1"
+    assert dominates([(10, inf, 10, same)], [(30, inf, 30, same)]), "the same lines left out: compare what is shown"
+    assert pareto_ranks([[(10, inf, 10, "a"), 1], [(30, inf, 30, "a"), 1], [(5, inf, 5, "b"), 1]]) == [1, 2, 1]
+    assert pareto_ranks([[1, 2], [2, 1], [3, 3], [1, 2]]) == [1, 1, 2, 1]

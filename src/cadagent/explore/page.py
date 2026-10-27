@@ -34,7 +34,8 @@ _CSS = """
 body{margin:0;background:var(--page);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
 a{color:var(--accent)}
 .wrap{padding:24px 32px 48px;max-width:1600px}
-h1{margin:0 0 4px;font-size:26px;line-height:1.25}h2{font-size:19px;margin:30px 0 10px}h3{font-size:16px;margin:16px 0 6px}
+h1{margin:0 0 4px;font-size:26px;line-height:1.25}.kicker{margin:0;color:var(--muted);font-size:13px;font-weight:600;
+letter-spacing:.06em;text-transform:uppercase}h2{font-size:19px;margin:30px 0 10px}h3{font-size:16px;margin:16px 0 6px}
 .meta{color:var(--ink2);margin:0;font-size:14px}.chips{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0}
 .chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:2px 10px;font-size:13px;color:var(--ink2)}
 .chip b{color:var(--ink);font-weight:600}
@@ -169,12 +170,19 @@ def _nice_ticks(lo: float, hi: float, n: int = 5) -> Tuple[float, float, List[fl
     return start, end, [start + i * step for i in range(count + 1)]
 
 
+def _decimals(step: float) -> int:
+    """Decimals that show every multiple of ``step`` exactly (2.5 needs one, 0.25 two)."""
+    text = f"{abs(step):.10g}"
+    return len(text.split(".")[1]) if "." in text and "e" not in text else 0
+
+
 def _tick_label(v: float, step: float) -> str:
+    """``2.5K``, ``7.5``, ``0.25``: the step decides the decimals; trailing zeros go."""
+    def trim(text: str) -> str:
+        return text.rstrip("0").rstrip(".") if "." in text else text
     if abs(v) >= 1000:
-        k = v / 1000
-        return f"{k:,.0f}K" if abs(step) >= 1000 or k.is_integer() else f"{k:,.1f}K"
-    decimals = max(0, -int(math.floor(math.log10(abs(step))))) if step and abs(step) < 1 else 0
-    return f"{v:,.{decimals}f}"
+        return trim(f"{v / 1000:,.{_decimals(step / 1000)}f}") + "K"
+    return trim(f"{v:,.{_decimals(step)}f}")
 
 
 def _place_label(text: str, px: float, py: float, marks: List[Tuple[float, float]],
@@ -239,6 +247,8 @@ def _chart(comp: Dict[str, Any]) -> str:
     for cls, layer in zip(("bad", "other", "front"), layers):
         for ev, x, y in layer:
             state = "Pareto front" if cls == "front" else "feasible" if cls == "other" else f"infeasible ({ev.get('verdict')})"
+            if ev.get("lower_bounds") and cls != "bad":
+                state += ", ranked on a lower bound"
             xv, yv = _fmt(ev["metrics"][ox["metric"]], cx), _fmt(ev["metrics"][oy["metric"]], cy)
             out.append(f'<a class="pt" href="#{_e(anchor(ev["id"]))}" data-name="{_e(ev.get("name"))}" '
                        f'data-xv="{_e(xv)}" data-xl="{_e(cx.get("label"))}" data-yv="{_e(yv)}" data-yl="{_e(cy.get("label"))}" '
@@ -278,8 +288,12 @@ def _leaderboard(comp: Dict[str, Any]) -> str:
     rows = []
     for ev in designs:
         rank = ev.get("rank")
+        bound = ""
+        if rank and ev.get("lower_bounds"):
+            names = ", ".join(cols.get(m, {}).get("label", m) for m in ev["lower_bounds"])
+            bound = f' <span class="dim" title="ranked on a lower bound: the {_e(names)} total leaves out parts">≥</span>'
         rank_cell = (f'<td class="num" data-v="{rank}"><span class="{"front" if ev.get("pareto") else ""}">'
-                     f'{"★ " if ev.get("pareto") else ""}{rank}</span></td>' if rank else '<td class="num" data-v="">—</td>')
+                     f'{"★ " if ev.get("pareto") else ""}{rank}</span>{bound}</td>' if rank else '<td class="num" data-v="">—</td>')
         choice = ev.get("choice")
         sub = f'<br><span class="dim">{_e(describe_choice(choice))}</span>' if isinstance(choice, dict) and choice else ""
         cells = [rank_cell, f'<td data-v="{_e(str(ev.get("name")).lower())}"><a href="#{_e(anchor(ev["id"]))}">{_e(ev.get("name"))}</a>{sub}</td>',
@@ -299,7 +313,9 @@ def _leaderboard(comp: Dict[str, Any]) -> str:
     return (f'<h2 id="leaderboard">Leaderboard</h2><div class="tablewrap"><table class="sortable"><thead><tr>{"".join(head)}</tr></thead>'
             f'<tbody>{"".join(rows)}</tbody></table></div>{tail}'
             '<p class="meta">★ the Pareto front (rank 1): no feasible design is at least as good on every objective and better on one. '
-            '≥ marks a total that leaves out parts without a price or mass; est. marks a value that rests on estimates.</p>')
+            '≥ marks a total that leaves out parts without a price or mass. Such a total is a lower bound and never counts as '
+            'better than a value it might exceed (unless both leave out the same parts), so a ≥ beside a rank means the rank '
+            'rests on one. est. marks a value that rests on estimates.</p>')
 
 
 def _source(url: Any) -> str:
@@ -357,9 +373,12 @@ def _swaps(ev: Dict[str, Any], comp: Dict[str, Any]) -> str:
         deltas = []
         for m in objs:
             d = s["delta"].get(m)
-            cls = " front" if m in s["better"] else ""
+            cls = "front" if m in s["better"] else "dim" if m in s.get("unsure", []) else ""
             txt = "—" if d is None else ("+" if d > 0 else "") + M.format_value(d, cols.get(m, {}).get("unit", ""), cols.get(m, {}).get("digits"))
-            deltas.append(f'<td class="num"><span class="{cls.strip()}">{_e(txt)}</span></td>')
+            if m in s.get("unsure", []):
+                txt += " ?"
+            title = ' title="cannot tell: one of the totals leaves out a part without a value"' if m in s.get("unsure", []) else ""
+            deltas.append(f'<td class="num"><span class="{cls}"{title}>{_e(txt)}</span></td>')
         tag = "Better on every objective." if s["dominates"] else " ".join(s["problems"])
         rows.append(f'<tr><td>{_e(s["slot"])}</td><td class="txt">{_e(s["name"])} <span class="dim">{_e(s["to"])}</span></td>'
                     f'<td>{_pill(s["verdict"])}</td>{"".join(deltas)}<td class="txt dim">{_e(tag)}</td></tr>')
@@ -367,7 +386,8 @@ def _swaps(ev: Dict[str, Any], comp: Dict[str, Any]) -> str:
             if len(sw) > MAX_SWAPS else "")
     return (f'<h3>One-part swaps</h3><p class="meta">Each row changes one slot to another catalogue part of its category and '
             f're-evaluates the design: swaps that beat it on every objective first, then feasible ones, then by how many '
-            f'objectives improve. Highlighted deltas are improvements.</p><div class="tablewrap"><table><thead><tr>'
+            f'objectives improve. Highlighted deltas are improvements; a ? marks a change that cannot be told because a total '
+            f'leaves out a part without a value.</p><div class="tablewrap"><table><thead><tr>'
             f'<th>Slot</th><th>Swap in</th><th>Verdict</th>{head}<th>Notes</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
             + more)
 
@@ -404,8 +424,10 @@ def render_page(comp: Dict[str, Any]) -> str:
                    + (f' ≥ {c["min"]:g}' if c.get("min") is not None else "") + (f' ≤ {c["max"]:g}' if c.get("max") is not None else "")
                    + "</span>" for c in comp.get("constraints") or [])
     what = "distinct trials" if comp.get("kind") == "search" else "designs"
+    kicker = "Search leaderboard" if comp.get("kind") == "search" else "Design comparison"
     repeats = f' ({s["repeats"]} repeated combinations left out)' if s.get("repeats") else ""
-    head = (f'<header><h1>{_e(comp["title"])}</h1><p class="meta">{s["designs"]} {what}{repeats} · {s["feasible"]} feasible · '
+    head = (f'<header><p class="kicker">{kicker}</p><h1>{_e(comp["title"])}</h1>'
+            f'<p class="meta">{s["designs"]} {what}{repeats} · {s["feasible"]} feasible · '
             f'{s["pareto"]} on the Pareto front' + (f' · {s["errors"]} could not be evaluated' if s.get("errors") else "")
             + f' · evaluator: <code>{_e(comp.get("evaluator"))}</code> · {_e(comp.get("generated"))}</p>'
             f'<div class="chips">{objs}{cons}</div>'
@@ -414,6 +436,6 @@ def render_page(comp: Dict[str, Any]) -> str:
     source = "the optimiser's trials" if comp.get("kind") == "search" else "the project's designs"
     return ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width,initial-scale=1">'
-            f'<title>{_e(comp["title"])}</title><style>{_CSS}</style></head>'
+            f'<title>{kicker} · {_e(comp["title"])}</title><style>{_CSS}</style></head>'
             f'<body><div class="wrap">{body}<footer>Written by cad-agent (cadagent.explore) from {source}.</footer></div>'
             f'<script>{_JS}</script></body></html>\n')

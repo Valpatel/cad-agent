@@ -43,3 +43,5 @@ jobs:
       # importorskip would turn a broken heavy install into silent skips: import them all first, loudly
       - run: python -c "import cadquery, OCP, trimesh, vtk, matplotlib, PIL, gmsh, skfem, mujoco, markdown, pymoto, pyvista, imageio, manifold3d, rtree, optuna; print('extras import ok')"
       - run: python -m pytest -q -rs
+      # the optimiser's adapter for optuna below 5 (constraints_func instead of Trial.set_constraint)
+      - run: pip install "optuna==3.4.0" && python -m pytest -q tests/test_explore_optimise.py

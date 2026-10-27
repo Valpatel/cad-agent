@@ -92,3 +92,22 @@ def test_optimise_needs_a_search_section_and_optuna_for_nsga2(tmp_path, capsys, 
     assert main(["optimise", "--project", str(root), "--sampler", "nsga2"]) == 2
     assert "needs 'optuna'" in capsys.readouterr().err
     assert main(["optimise", "--project", str(root), "--sampler", "grid", "--trials", "3"]) == 0
+
+
+def test_json_output_parses_with_an_unknown_cad_key(tmp_path, capsys):
+    root = write_enclosure(tmp_path)
+    (root / "cad-agent.yaml").write_text((root / "cad-agent.yaml").read_text().replace("  name: enclosure\n", "  name: enclosure\n  colour: blue\n"))
+    assert main(["catalogue", "--project", str(root), "--json"]) == 0
+    captured = capsys.readouterr()
+    assert json.loads(captured.out)["parts"] == 7 and "unknown cad: keys ignored: colour" in captured.err
+
+
+def test_absolute_catalogue_patterns(tmp_path, capsys):
+    root = write_enclosure(tmp_path / "proj")
+    shared = tmp_path / "shared"
+    shared.mkdir()
+    (root / "catalogue" / "parts.json").rename(shared / "parts.json")
+    cfg = (root / "cad-agent.yaml").read_text().replace("catalogue: [catalogue/*.json]", f"catalogue: ['{shared}/*.json']")
+    (root / "cad-agent.yaml").write_text(cfg)
+    assert main(["catalogue", "--project", str(root)]) == 0
+    assert "7 parts in 1 file(s)" in capsys.readouterr().out

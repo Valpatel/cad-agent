@@ -398,8 +398,9 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
 
 def default_nav(root: Path, html_pages: Optional[List[str]] = None, site_pages: Optional[List[str]] = None) -> List[Dict[str, str]]:
     """The top bar when the project configures none: the overview, the rendered documents, the 3D model, then each
-    project HTML page (``cad: html_pages``, plus the cad-agent report and simulation report when present), titled by
-    its ``<title>``. Every page the local server sends gets this bar, so the pages link to each other."""
+    project HTML page (``cad: html_pages``, plus the cad-agent report, the simulation report, the design comparison
+    and the search leaderboard when present), titled by its ``<title>``. Every page the local server sends gets this
+    bar, so the pages link to each other."""
     root = Path(root)
     nav = [{"id": "overview", "title": "Overview", "href": "site/"}]
     if page_files(root, list(site_pages or [])):
@@ -407,7 +408,8 @@ def default_nav(root: Path, html_pages: Optional[List[str]] = None, site_pages: 
     if (root / "exports" / "view" / "view.json").is_file():
         nav.append({"id": "model", "title": "3D model", "href": KIT_URL.strip("/") + "/viewer.html"})
     seen = set()
-    for rel in list(html_pages or []) + ["docs/cad-agent-report.html", "preview/simulation.html"]:
+    for rel in list(html_pages or []) + ["docs/cad-agent-report.html", "preview/simulation.html",
+                                         "exports/explore/compare.html", "exports/explore/search/leaderboard.html"]:
         rel = posixpath.normpath(str(rel).replace("\\", "/")).lstrip("/")
         f = root / rel
         if not rel.endswith(".html") or rel in seen or rel.startswith("..") or not f.is_file():

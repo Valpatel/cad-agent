@@ -186,6 +186,10 @@ def test_small_case_runs(tmp_path):
     res = c.results(d)
     assert res['solids']['chip']['max_c'] > res['ambient_c']
     assert 0 < res['fans']['fan']['flow_m3h'] < 20
+    # continue from the last write: a rebuilt case object picks up the processor count from the case
+    again = small_case()
+    assert again.extend(d, 10) == 0
+    assert again.results(d)['solver_finished']
 
 
 @pytest.mark.skipif(os.environ.get('CADAGENT_RUN_CFD') != '1' or not (shutil.which('docker') or shutil.which('chtMultiRegionSimpleFoam')),
@@ -265,3 +269,91 @@ def test_solid_in_pieces_warns():
     two = trimesh.util.concatenate([box((0, 0, 0), (2, 2, 2)), box((5, 0, 0), (7, 2, 2))])
     with pytest.warns(UserWarning, match='2 separate pieces'):
         ThermalCase('t', domain=((-5, -5, -5), (10, 10, 10))).solid('fins', two, SOLIDS['al6061'])
+
+
+def test_run_until_balanced_extends_in_chunks_from_a_rebuilt_case(tmp_path, monkeypatch):
+    # the heat leaving the room approaches the 7 W put in: 40 % short at first, then halving every 1000 iterations
+    def make():
+        c = ThermalCase('t', domain=((-40, -40, 0), (80, 80, 100)), cell_mm=10, iterations=1000)
+        c.solid('chip', box((10, 10, 10), (30, 30, 14)), SOLIDS['silicon'], power_w=7)
+        return c
+    d = make().write(tmp_path / 'case', np_procs=3)
+    c = make()                                   # a new process: rebuilt with the same settings, never written
+    calls = []
+
+    def fake_read(case_dir, case=None):
+        end = int(re.search(r'^endTime (\d+);', (d / 'system/controlDict').read_text(), re.M).group(1))
+        short = 40.0 / 2 ** ((end - 1000) / 1000)
+        return {'energy_balance_pct': -short, 'heat_out_w': 7 * (1 - short / 100), 'solver_finished': True,
+                'steady': short <= 5, 'converged': short <= 5, 'solids': {'chip': {'max_c': 60 + short}}}
+
+    def fake_run(cmd, **kw):
+        calls.append(cmd)
+        return type('R', (), {'returncode': 0})()
+
+    monkeypatch.setattr(cfd, 'read_results', fake_read)
+    monkeypatch.setattr(cfd.subprocess, 'run', fake_run)
+    res = c.run_until_balanced(d, chunk=1000, max_iterations=10000, tolerance_pct=5.0)
+    assert res['balanced'] and [h['iterations'] for h in res['continuation']] == [1000, 2000, 3000, 4000]
+    assert len(calls) == 3 and 'mpirun -np 3 ' in (d / 'Allrun.continue').read_text()
+    assert re.search(r'^endTime 4000;', (d / 'system/controlDict').read_text(), re.M)
+    # a cap stops it unbalanced, saying so
+    res = c.run_until_balanced(d, chunk=1000, max_iterations=4500, tolerance_pct=1.0)
+    assert not res['balanced'] and res['continuation'][-1]['iterations'] == 4000
+    assert 'cap' in res['stopped']
+    assert re.search(r'^writeInterval 4000;', (d / 'system/controlDict').read_text(), re.M), 'writes only the new end'
+
+
+def _fake_solver(monkeypatch, results):
+    """read_results returns the next of ``results`` each call; subprocess.run returns the next exit code (0)."""
+    it = iter(results)
+    monkeypatch.setattr(cfd, 'read_results', lambda case_dir, case=None: next(it))
+    monkeypatch.setattr(cfd.subprocess, 'run', lambda cmd, **kw: type('R', (), {'returncode': 0})())
+
+
+def test_extend_from_a_rebuilt_case_keeps_the_calibrated_fin_temperature(tmp_path, monkeypatch):
+    def make():
+        c = ThermalCase('t', domain=((-40, -40, 0), (80, 80, 100)), cell_mm=10)
+        c.solid('chip', box((10, 10, 10), (30, 30, 14)), SOLIDS['silicon'], power_w=5)
+        c.porous_box('fins', (5, 5, 18), (35, 35, 30), d=(1e6, 1e9, 1e6), f=(0, 0, 0), ha_w_k=1.0, fin_temperature_c=60.0)
+        return c
+    first = make()
+    d = first.write(tmp_path / 'case', np_procs=2)
+    first.porous[0].update(fin_temperature_c=75.0, target_w=12.0)        # what calibrate_fins settled
+    monkeypatch.setattr(cfd.subprocess, 'run', lambda cmd, **kw: type('R', (), {'returncode': 0})())
+    first._extend(d, 10)
+    again = make()                                                       # a new process: starts from 60 C
+    assert again.extend(d, 10) == 0
+    meta = json.loads((d / 'cadagent-case.json').read_text())
+    assert meta['porous'][0]['fin_temperature_c'] == 75.0 and meta['porous'][0]['target_w'] == 12.0
+    assert again.porous[0]['fin_temperature_c'] == 75.0
+
+
+def test_run_until_balanced_stops_without_a_balance_on_oscillation_and_after_a_crash(tmp_path, monkeypatch):
+    c = ThermalCase('t', domain=((-40, -40, 0), (80, 80, 100)), cell_mm=10, iterations=100)
+    c.solid('chip', box((10, 10, 10), (30, 30, 14)), SOLIDS['silicon'], power_w=5)
+    d = c.write(tmp_path / 'case', np_procs=3)
+    ok = {'solver_finished': True, 'solids': {}}
+    # nothing to balance: leave the case alone
+    _fake_solver(monkeypatch, [dict(ok, energy_balance_pct=None, converged=True)])
+    res = c.run_until_balanced(d, chunk=10, max_iterations=1000)
+    assert len(res['continuation']) == 1 and 'no energy balance' in res['stopped']
+    # in tolerance once but not converged (oscillating): keep going until converged
+    _fake_solver(monkeypatch, [dict(ok, energy_balance_pct=-4, steady=False), dict(ok, energy_balance_pct=-7, steady=False),
+                               dict(ok, energy_balance_pct=-3, steady=True)])
+    res = c.run_until_balanced(d, chunk=10, max_iterations=1000)
+    assert res['stopped'] == 'converged' and len(res['continuation']) == 3
+    # a looser tolerance than read_results' own 5 %: settled at -7 % is enough at 10 %
+    _fake_solver(monkeypatch, [dict(ok, energy_balance_pct=-7, steady=True, converged=False)])
+    res = c.run_until_balanced(d, chunk=10, max_iterations=1000, tolerance_pct=10)
+    assert res['stopped'] == 'converged' and res['balanced'] and len(res['continuation']) == 1
+    # a crashed chunk: the results come from after the crash
+    it = iter([dict(ok, energy_balance_pct=-50, converged=False), dict(ok, energy_balance_pct=None, solver_finished=False)])
+    monkeypatch.setattr(cfd, 'read_results', lambda case_dir, case=None: next(it))
+    monkeypatch.setattr(cfd.subprocess, 'run', lambda cmd, **kw: type('R', (), {'returncode': 1})())
+    res = c.run_until_balanced(d, chunk=10, max_iterations=1000)
+    assert res['solver_finished'] is False and 'exited 1' in res['stopped']
+    # the processor count always comes from the case itself
+    c.np_procs = 7
+    c._extend(d, 10)
+    assert 'mpirun -np 3 ' in (d / 'Allrun.continue').read_text()

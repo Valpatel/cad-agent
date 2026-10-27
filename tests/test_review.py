@@ -38,3 +38,26 @@ def test_changed_mechanical_source_cannot_show_pass(tmp_path):
     assert '>PASS<' in review_html(tmp_path,manifest)
     source.write_text('{"width": 20}')
     assert '>STALE<' in review_html(tmp_path,manifest)
+
+
+def test_generic_source_hash_report_is_current_without_pcb_bundle(tmp_path):
+    import json, hashlib
+    source = tmp_path / 'board.dat'
+    source.write_bytes(b'reviewed geometry')
+    report = tmp_path / 'routing.json'
+    report.write_text(json.dumps({'pass': True, 'source_sha256': {'board.dat': hashlib.sha256(source.read_bytes()).hexdigest()}}))
+    manifest = {'groups': [{'reports': [{'file': 'routing.json'}]}]}
+    assert '>PASS<' in review_html(tmp_path, manifest)
+    source.write_bytes(b'changed geometry')
+    assert '>STALE<' in review_html(tmp_path, manifest)
+
+
+def test_changed_assembly_artifact_cannot_show_pass(tmp_path):
+    import json, hashlib
+    artifact = tmp_path / 'lid.step'
+    artifact.write_bytes(b'original solid')
+    (tmp_path / 'fit.json').write_text(json.dumps({'pass': True, 'artifact_sha256': {'lid.step': hashlib.sha256(artifact.read_bytes()).hexdigest()}}))
+    manifest = {'groups': [{'reports': [{'file': 'fit.json'}]}]}
+    assert '>PASS<' in review_html(tmp_path, manifest)
+    artifact.write_bytes(b'changed solid')
+    assert '>STALE<' in review_html(tmp_path, manifest)

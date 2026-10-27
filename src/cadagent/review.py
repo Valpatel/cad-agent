@@ -30,10 +30,10 @@ def review_html(root: Path, manifest: dict, prefix: str = '../') -> str:
                 data=json.loads(path.read_text());value=data
                 for key in report.get('pass_key','pass').split('.'):value=value[key]
                 state='PASS' if value is True else 'PENDING / FAIL'
-                if 'source_sha256' in data:
+                if 'report_sha256' in data:
                     from cadagent.pcb import evidence_is_current
                     if not evidence_is_current(root,data):state='STALE'
-                for source, expected in data.get('mechanical_sources', {}).items():
+                for source, expected in {**data.get('source_sha256', {}), **data.get('mechanical_sources', {}), **data.get('artifact_sha256', {})}.items():
                     source_path=(root/source).resolve()
                     if root.resolve() not in source_path.parents or not source_path.is_file() or hashlib.sha256(source_path.read_bytes()).hexdigest()!=expected:
                         state='STALE'
@@ -44,7 +44,7 @@ def review_html(root: Path, manifest: dict, prefix: str = '../') -> str:
     return ('<section id="design-review" class="review-workbench"><h2>Design review</h2><nav class="review-tabs" aria-label="Design variants">'+''.join(buttons)+'</nav>'+''.join(panels)+'</section><script type="module" src="/_cadagent/kit/review.js"></script>')
 
 REVIEW_CSS='''
-.review-workbench{margin:24px 0;padding:24px;background:var(--panel,#14232d);border:1px solid #47606d;border-radius:12px}
+.review-workbench{margin:24px 0;padding:24px;background:var(--card,#fff);color:var(--ink,#202227);border:1px solid var(--line,#e4e0d7);border-radius:12px}
 .review-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.review-tabs button{font:inherit;color:inherit;background:transparent;border:1px solid #647987;border-radius:6px;padding:10px 15px;cursor:pointer}.review-tabs button[aria-pressed=true]{background:#14635f;color:white;border-color:#57c7b6}
 .review-view{background:#eff1ed;border-radius:8px;color:#14232d;overflow:hidden}.review-view img,.review-view iframe{display:block;width:100%;height:620px;object-fit:contain;border:0}.review-view p{padding:8px 16px;font-size:.85em}.review-view a{color:#07566b}.review-reports{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0}.review-report{border:1px solid #647987;border-radius:6px;padding:10px 14px;display:flex;gap:20px;align-items:center;text-decoration:none}.review-report span{font-size:.8em}.review-workbench [hidden]{display:none!important}@media(max-width:700px){.review-workbench{padding:12px}.review-view img,.review-view iframe{height:430px}}
 '''

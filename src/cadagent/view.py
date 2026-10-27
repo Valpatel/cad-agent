@@ -67,7 +67,6 @@ def group_manifests(manifest: Dict[str, Any], groups: List[dict]) -> Dict[str, d
 
 def export_view(project, tolerance: float = 0.1, angular: float = 0.2) -> Dict[str, Any]:
     """Write the meshes and the manifest. Parts without a STEP are listed as skipped, not errors."""
-    cq = require("cadquery", "the 3D view export")
     cfg = dict(project.view or {})
     colors: Dict[str, str] = cfg.get("colors", {})
     hidden = set(cfg.get("hidden", []))
@@ -84,6 +83,7 @@ def export_view(project, tolerance: float = 0.1, angular: float = 0.2) -> Dict[s
 
     # validate the groups against the parts that will be exported before writing anything
     group_manifests({"parts": [{"name": name} for name, step, _ in sources if step.is_file()]}, cfg.get("groups", []))
+    cq = require("cadquery", "the 3D view export")
     out.mkdir(parents=True, exist_ok=True)
 
     def colour_for(name, i):

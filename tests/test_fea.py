@@ -35,6 +35,25 @@ def test_shaft_torsional_stiffness():
     assert r['von_mises_design_mpa'] == pytest.approx(math.sqrt(3) * T * 1000 * r0 / J, rel=0.1)
 
 
+def test_torque_is_a_couple_wherever_its_point_is():
+    """A torque adds no net force, whatever point it is given: the bar twists the same with the point on the end face's
+    centre or 20 mm off it, and its end does not move sideways (it used to: the traction turned the face about the point
+    given, which adds a force when that is not the face's centroid)."""
+    import numpy as np
+
+    L, b, T = 100.0, 10.0, 5.0
+    res = []
+    for off in (0.0, 20.0):
+        st = Study(cq.Workplane('XY').box(L, b, b).translate((L / 2, 0, 0)), STEEL, mesh_mm=4.0, name='bar')
+        st.fix(plane_at(0, 0.0)).torque(plane_at(0, L), (L, off, 0.0), (1, 0, 0), T)
+        res.append(st.solve())
+    d0, d1 = (np.array(r['probe_displacement_mm']) for r in res)
+    assert np.allclose(d0, d1, atol=1e-9)
+    assert np.abs(d1).max() < 1e-6                         # the end face turns about its centre: its mean point stays put
+    assert res[0]['torsional_stiffness_nm_per_deg'] == pytest.approx(res[1]['torsional_stiffness_nm_per_deg'], rel=1e-6)
+    assert res[1]['loads'][0]['about_centroid_mm'] == pytest.approx([L, 0.0, 0.0], abs=1e-6)
+
+
 @pytest.mark.parametrize('load', [100.0, 2000.0])          # safety factor above 1, and failing below the design load
 def test_overload_animation(tmp_path, load):
     L, b, h = 100.0, 10.0, 10.0

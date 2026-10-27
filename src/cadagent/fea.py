@@ -227,7 +227,10 @@ class Study:
         return self
 
     def torque(self, selector: Selector, point: Sequence[float], axis: Sequence[float], t_nm: float, probe: bool = True):
-        """A torque (N·m) about the axis through point, applied over the selected faces as tangential traction."""
+        """A torque (N·m) about `axis`, applied over the selected faces as a pure couple: tangential traction about the
+        axis line through the faces' own area centroid, so it adds no net force. `point` is recorded with the load; a
+        couple does not depend on where it acts, and turning the faces about any other point than their centroid
+        would add a force (a 20 mm offset on a 10 mm bar bent it sideways; tests/test_fea.py)."""
         tags = self.select(selector)
         a = np.asarray(axis, float)
         self.loads.append(_Load(tags, torque=(np.asarray(point, float), a / np.linalg.norm(a), t_nm * 1000.0)))
@@ -263,6 +266,7 @@ class Study:
         D = ib.get_dofs(facets=facets_of(self.fixed)).all()
         f = np.zeros(K.shape[0])
         applied = []
+        centroids = {}                                 # torque loads: the axis point actually used (the faces' centroid)
         for ld in self.loads:
             fac = facets_of(ld.faces)
             fb = FacetBasis(m, e, facets=fac, intorder=3)
@@ -272,7 +276,9 @@ class Study:
                 f += asm(LinearForm(lambda v, w: dot(np.asarray(tr)[:, None, None] + 0.0 * w.x, v)), fb)
                 applied.append({'kind': 'force', 'n': ld.force.tolist(), 'area_mm2': round(area, 1)})
             else:
-                c, a, t = ld.torque
+                _, a, t = ld.torque
+                c = np.array([Functional(lambda w, i=i: w.x[i]).assemble(fb) for i in range(3)]) / area   # the faces' centroid
+                centroids[id(ld)] = c
                 def rperp(x):
                     r = x - c[:, None, None]
                     return r - np.einsum('i,ijk->jk', a, r)[None] * a[:, None, None]
@@ -281,7 +287,8 @@ class Study:
                     r = rperp(x)
                     return (t / J) * np.stack([a[1] * r[2] - a[2] * r[1], a[2] * r[0] - a[0] * r[2], a[0] * r[1] - a[1] * r[0]])
                 f += asm(LinearForm(lambda v, w: dot(tang(w.x), v)), fb)
-                applied.append({'kind': 'torque', 'nm': t / 1000.0, 'axis': a.tolist(), 'point_mm': c.tolist(), 'area_mm2': round(area, 1)})
+                applied.append({'kind': 'torque', 'nm': t / 1000.0, 'axis': a.tolist(), 'point_mm': ld.torque[0].tolist(),
+                                'about_centroid_mm': [round(float(v), 3) for v in c], 'area_mm2': round(area, 1)})
 
         u = self._solve(K, f, D, ib)
         self._m, self._ib, self._u = m, ib, u
@@ -332,7 +339,8 @@ class Study:
                 d = float(np.dot(probe, ld.force) / np.linalg.norm(ld.force))
                 res['stiffness_n_per_mm'] = round(float(np.linalg.norm(ld.force)) / d, 1) if d > 1e-12 else None
             else:
-                c, a, t = ld.torque
+                _, a, t = ld.torque
+                c = centroids[id(ld)]
                 nodes = probe_nodes
                 r = self.points[nodes] - c
                 rp = r - np.outer(r @ a, a)

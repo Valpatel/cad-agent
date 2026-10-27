@@ -731,12 +731,7 @@ foamToVTK -allRegions -latestTime -noFunctionObjects > log.foamToVTK 2>&1
                 prev = (t_fin, q)
                 for z in zones:
                     z['fin_temperature_c'] = round(new, 3)
-            self._continue(case, extra_iterations)
-            native_ = shutil.which('chtMultiRegionSimpleFoam') is not None if native is None else native
-            cmd = ['bash', str(case / 'Allrun.continue')] if native_ else [
-                'docker', 'run', '--rm', '--shm-size=8g', '-u', f'{os.getuid()}:{os.getgid()}', '-v', f'{case}:/case', image,
-                'bash', '-lc', 'cd /case && ./Allrun.continue']
-            rc = subprocess.run(cmd).returncode
+            rc = self._extend(case, extra_iterations, image=image, native=native)
             if rc != 0:
                 hist.append({'round': k, 'error': f'continuation exited {rc}'})
                 break
@@ -748,14 +743,78 @@ foamToVTK -allRegions -latestTime -noFunctionObjects > log.foamToVTK 2>&1
             res['block_heat_w'] = round(sum(z['ha_w_k'] * (z['fin_temperature_c'] - v) for z, v in zip(zones, zt)), 2)
         return res
 
+    def extend(self, case_dir, iterations: int, image: str = IMAGE, native: Optional[bool] = None) -> int:
+        """Continue a finished case for ``iterations`` more, from its last written time (the Allrun.continue script),
+        and rewrite its VTK. Works on a ThermalCase rebuilt with the same settings in a new process: what an earlier
+        run settled (each exchanger block's calibrated fin temperature and target power) is read back from the case's
+        cadagent-case.json first, so continuing never undoes a calibration. Returns the exit code."""
+        case = Path(case_dir).resolve()
+        meta = json.loads((case / 'cadagent-case.json').read_text())
+        saved = {z['name']: z for z in meta.get('porous', [])}
+        for z in self.porous:
+            if z['name'] in saved:
+                for k in ('fin_temperature_c', 'target_w'):
+                    if saved[z['name']].get(k) is not None:
+                        z[k] = saved[z['name']][k]
+        return self._extend(case, iterations, image=image, native=native)
+
+    def _extend(self, case: Path, iterations: int, image: str = IMAGE, native: Optional[bool] = None) -> int:
+        m = re.search(r'numberOfSubdomains\s+(\d+);', (case / 'system' / 'decomposeParDict').read_text())
+        self.np_procs = int(m.group(1)) if m else 1           # always this case's own decomposition
+        self._continue(case, int(iterations))
+        native = shutil.which('chtMultiRegionSimpleFoam') is not None if native is None else native
+        cmd = ['bash', str(case / 'Allrun.continue')] if native else [
+            'docker', 'run', '--rm', '--shm-size=8g', '-u', f'{os.getuid()}:{os.getgid()}', '-v', f'{case}:/case', image,
+            'bash', '-lc', 'cd /case && ./Allrun.continue']
+        return subprocess.run(cmd).returncode
+
+    def run_until_balanced(self, case_dir, chunk: int = 1000, max_iterations: int = 10000, tolerance_pct: float = 5.0,
+                           image: str = IMAGE, native: Optional[bool] = None) -> dict:
+        """Keep continuing a case in steps of ``chunk`` iterations until it has converged: the heat leaving the room
+        within ``tolerance_pct`` of the heat put in (``energy_balance_pct``) and the residuals and temperatures
+        settled (``steady`` from read_results), or until ``max_iterations`` in total. A conjugate case with a hot
+        solid in a large room can need many thousands: the solid heats up long after the flow has settled. A case
+        with no energy balance to close (no heat input) is left as it is. Returns the final results with
+        ``continuation`` (the balance after each step), ``balanced`` and a ``stopped`` reason."""
+        case = Path(case_dir).resolve()
+        hist = []
+        while True:
+            res = read_results(case, self)
+            end = int(re.search(r'^endTime (\d+);', (case / 'system' / 'controlDict').read_text(), re.M).group(1))
+            bal = res.get('energy_balance_pct')
+            hist.append({'iterations': end, 'energy_balance_pct': bal, 'heat_out_w': res.get('heat_out_w'),
+                         'converged': res.get('converged'),
+                         'solids_max_c': {k: v.get('max_c') for k, v in res.get('solids', {}).items()}})
+            if bal is None:
+                stopped = 'no energy balance to close (no heat input, or no heat-out output)'
+                break
+            if abs(bal) <= tolerance_pct and res.get('steady') and not res.get('error'):
+                stopped = 'converged'
+                break
+            if not res.get('solver_finished'):
+                stopped = 'the solver did not finish'
+                break
+            if end + chunk > max_iterations:
+                stopped = f'reached the {max_iterations}-iteration cap'
+                break
+            rc = self.extend(case, chunk, image=image, native=native)
+            if rc != 0:
+                res = read_results(case, self)          # the crashed chunk's own log, not the last good one
+                hist.append({'iterations': end + chunk, 'error': f'continuation exited {rc}'})
+                stopped = f'continuation exited {rc}'
+                break
+        res['continuation'] = hist
+        res['stopped'] = stopped
+        res['balanced'] = stopped == 'converged'
+        return res
+
     def _continue(self, case: Path, extra: int):
         cd = case / 'system' / 'controlDict'
         txt = cd.read_text()
         end = int(re.search(r'^endTime (\d+);', txt, re.M).group(1)) + extra
         txt = re.sub(r'^endTime \d+;', f'endTime {end};', txt, flags=re.M)
-        # write at intervals that land on both the restart time and the new end; keep only the last two writes
-        step = math.gcd(end - extra, extra) or extra
-        txt = re.sub(r'^writeInterval \d+;', f'writeInterval {step};', txt, flags=re.M)
+        # write only the new end (interval = end); earlier times stay as restart points, purgeWrite keeps two
+        txt = re.sub(r'^writeInterval \d+;', f'writeInterval {end};', txt, flags=re.M)
         txt = re.sub(r'^purgeWrite \d+;', 'purgeWrite 2;', txt, flags=re.M)
         cd.write_text(txt)
         self.iterations = end
@@ -934,5 +993,6 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
     else:
         balanced = True
         out['energy_balance'] = 'not checked: an exchanger block has no target power'
+    out['steady'] = steady
     out['converged'] = steady and balanced and not out.get('error')
     return out

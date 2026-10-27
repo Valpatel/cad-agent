@@ -73,3 +73,9 @@ something they could not see or could not act on.
   that the page and images load. `tools/serve_preview.py` writes the address to `preview/server-url.txt`.
 - **Check:** After a restart, fetch the page and one image at the saved URL.
 - **Source:** 2026-10-24T14:40.
+
+### Make wheel zoom fine enough to inspect small features
+- **Rule:** Use a moderate shared zoom sensitivity and preserve continuous wheel/trackpad deltas. Do not add a different zoom implementation to each project.
+- **Incident:** During a later CAN-housing review on 2026-10-27, the user asked for more fine-grained wheel control in the standard viewer. The shared stage now uses OrbitControls `zoomSpeed: 0.25`; custom integrations can override it. This also affects dolly and pinch gestures.
+- **Check:** In the browser at device pixel ratio 1, a 100-pixel wheel event changed camera distance by 1.29059%, versus 5.26316% at the prior sensitivity. Four fine increments matched one old increment; reversing the wheel restored distance. A 1-pixel delta moved only 0.012824%, with no JavaScript exceptions.
+- **Source:** CAN breakout review, 2026-10-27; `src/cadagent/webkit/stage.js` and a browser check on the served project viewer. This is a later-project follow-up, not evidence from the original J501 transcript.

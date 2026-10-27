@@ -494,7 +494,10 @@ class OrbitControls extends EventDispatcher {
 
 		function getZoomScale( delta ) {
 
-			const normalized_delta = Math.abs( delta ) / ( 100 * ( window.devicePixelRatio | 0 ) );
+			// cad-agent patch: the vendored release divided by ( window.devicePixelRatio | 0 ), which is 0 below a ratio of 1
+			// (90 % browser zoom: every wheel step jumped to the zoom limit) and halves the step on HiDPI screens. Newer
+			// three.js releases normalise by 100 alone, as here.
+			const normalized_delta = Math.abs( delta ) / 100;
 			return Math.pow( 0.95, scope.zoomSpeed * normalized_delta );
 
 		}

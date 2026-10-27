@@ -227,7 +227,10 @@ class Study:
         return self
 
     def torque(self, selector: Selector, point: Sequence[float], axis: Sequence[float], t_nm: float, probe: bool = True):
-        """A torque (N·m) about the axis through point, applied over the selected faces as tangential traction."""
+        """A torque (N·m) about `axis`, applied over the selected faces as a pure couple about their own area centroid:
+        no net force and a moment of exactly ``t_nm`` along ``axis`` (no bending moment, even for faces not balanced
+        about the axis). `point` is only recorded with the load: a couple does not depend on where it acts, so it does
+        not move the axis. To load a part with a force at a distance (a lever), add that force with force() as well."""
         tags = self.select(selector)
         a = np.asarray(axis, float)
         self.loads.append(_Load(tags, torque=(np.asarray(point, float), a / np.linalg.norm(a), t_nm * 1000.0)))
@@ -263,6 +266,7 @@ class Study:
         D = ib.get_dofs(facets=facets_of(self.fixed)).all()
         f = np.zeros(K.shape[0])
         applied = []
+        centroids = {}                                 # torque loads: the axis point actually used (the faces' centroid)
         for ld in self.loads:
             fac = facets_of(ld.faces)
             fb = FacetBasis(m, e, facets=fac, intorder=3)
@@ -272,19 +276,32 @@ class Study:
                 f += asm(LinearForm(lambda v, w: dot(np.asarray(tr)[:, None, None] + 0.0 * w.x, v)), fb)
                 applied.append({'kind': 'force', 'n': ld.force.tolist(), 'area_mm2': round(area, 1)})
             else:
-                c, a, t = ld.torque
-                def rperp(x):
-                    r = x - c[:, None, None]
-                    return r - np.einsum('i,ijk->jk', a, r)[None] * a[:, None, None]
-                J = Functional(lambda w: np.sum(rperp(w.x) ** 2, axis=0)).assemble(fb)
+                _, a, t = ld.torque
+                c = np.array([Functional(lambda w, i=i: w.x[i]).assemble(fb) for i in range(3)]) / area   # the faces' centroid
+                centroids[id(ld)] = c
+                # traction om × r about the centroid: no resultant force, and moment Ic om. Choosing om = Ic⁻¹ (t a), with
+                # Ic the faces' area inertia tensor about the centroid, makes the moment exactly t along the axis, also
+                # for faces not balanced about it (an inclined end face, an end face plus a side face), where turning
+                # them about the axis alone would add a bending moment. For a face square to the axis or a full
+                # cylinder this is the usual traction, linear in the distance from the axis.
+                Ic = np.zeros((3, 3))
+                for i in range(3):
+                    for j in range(i, 3):
+                        Ic[i, j] = Ic[j, i] = Functional(lambda w, i=i, j=j: (i == j) * sum((w.x[k] - c[k]) ** 2 for k in range(3))
+                                                         - (w.x[i] - c[i]) * (w.x[j] - c[j])).assemble(fb)
+                if np.linalg.cond(Ic) > 1e12:
+                    raise ValueError('torque faces have no extent to twist (a single line or point): select a face')
+                om = t * np.linalg.solve(Ic, a)
                 def tang(x):
-                    r = rperp(x)
-                    return (t / J) * np.stack([a[1] * r[2] - a[2] * r[1], a[2] * r[0] - a[0] * r[2], a[0] * r[1] - a[1] * r[0]])
+                    r = x - c[:, None, None]
+                    return np.stack([om[1] * r[2] - om[2] * r[1], om[2] * r[0] - om[0] * r[2], om[0] * r[1] - om[1] * r[0]])
                 f += asm(LinearForm(lambda v, w: dot(tang(w.x), v)), fb)
-                applied.append({'kind': 'torque', 'nm': t / 1000.0, 'axis': a.tolist(), 'point_mm': c.tolist(), 'area_mm2': round(area, 1)})
+                applied.append({'kind': 'torque', 'nm': t / 1000.0, 'axis': a.tolist(), 'point_mm': ld.torque[0].tolist(),
+                                'about_centroid_mm': [round(float(v), 3) for v in c], 'area_mm2': round(area, 1)})
 
         u = self._solve(K, f, D, ib)
         self._m, self._ib, self._u = m, ib, u
+        self._torque_centroids = centroids               # the viewer draws each torque about the axis actually used
 
         # stresses at each element's corners (the P2 strain is linear inside a tet, so its extremes are at the corners,
         # on the surface where bending stress peaks); von Mises per element = the largest of its corners
@@ -332,7 +349,8 @@ class Study:
                 d = float(np.dot(probe, ld.force) / np.linalg.norm(ld.force))
                 res['stiffness_n_per_mm'] = round(float(np.linalg.norm(ld.force)) / d, 1) if d > 1e-12 else None
             else:
-                c, a, t = ld.torque
+                _, a, t = ld.torque
+                c = centroids[id(ld)]
                 nodes = probe_nodes
                 r = self.points[nodes] - c
                 rp = r - np.outer(r @ a, a)
@@ -664,7 +682,8 @@ class Study:
                 loads.append({'kind': 'force', 'origin': cen.tolist(), 'dir': (ld.force / (mag or 1.0)).tolist(), 'n': round(mag, 2),
                               'vector_n': ld.force.tolist(), 'disp': moved.tolist(), 'faces': list(ld.faces)})
             else:
-                c0, ax, t = ld.torque
+                _, ax, t = ld.torque
+                c0 = getattr(self, '_torque_centroids', {}).get(id(ld), ld.torque[0])   # the faces' centroid once solved
                 rel = P[nodes] - c0
                 along = rel @ ax
                 radial = rel - np.outer(along, ax)

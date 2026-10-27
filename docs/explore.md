@@ -250,7 +250,8 @@ catalogue failed to load, 2 when the configuration or the evaluator is unusable.
 `cad-agent optimise [--trials N] [--workers N] [--sampler S] [--seed N] [--fresh]` builds each trial from the base
 design, writes it to `out/search/trials/trial-00007.json`, evaluates it exactly as `compare` would, and writes
 `out/search/trials.jsonl` (one record per trial) and `leaderboard.json` + `leaderboard.html` (refreshed while it runs).
-The first trial of a new search is the base design itself, when the space can express it.
+With random, nsga2 and tpe the first trial of a new search is the base design itself, when the space can express it;
+grid goes through the combinations in order.
 
 - **random** and **grid** need nothing installed. Grid tries every combination once (ranges need a `step`).
 - **nsga2** (multi-objective genetic search) and **tpe** use optuna. Failed checks and unmet constraints are passed

@@ -32,7 +32,7 @@ cad:
     card_metrics: [cost_usd, mass_kg, runtime_min, top_speed_kmh]
     search:
       base: designs/standard.json
-      sampler: random                 # or grid (all 270 combinations), nsga2 or tpe (pip install optuna)
+      sampler: random                 # or grid (all 270 combinations with --trials 270), nsga2 or tpe (pip install optuna)
       trials: 60
       seed: 1
       space:

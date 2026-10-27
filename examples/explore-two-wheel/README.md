@@ -10,7 +10,7 @@ pip install -e "../..[dev]"          # in this folder; optuna too for the nsga2 
 cad-agent catalogue                  # 12 parts, 0 errors, 1 warning (the depth camera has no price)
 cad-agent compare --swaps --open     # exports/explore/compare.html
 cad-agent optimise                   # 60 random trials: exports/explore/search/leaderboard.html
-cad-agent optimise --sampler grid --fresh    # all 270 combinations
+cad-agent optimise --sampler grid --fresh --trials 270   # all 270 combinations (trials: 60 caps a run)
 ```
 
 ![The comparison page: the trade-off chart of cost against mass with the Pareto front, and the leaderboard](compare.png)

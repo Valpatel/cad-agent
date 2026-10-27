@@ -190,3 +190,30 @@
   last_push: 2026-10-06
   status: candidate
   policy: ideas only (no licence)
+- name: OpenFOAM (OpenCFD v2512)
+  url: https://develop.openfoam.com/Development/openfoam
+  license: GPL-3.0
+  last_push: 2026-01-23
+  status: adopted
+  policy: external program only (GPL-3.0); run in the opencfd/openfoam-default Docker image
+- name: aatmdelissen/pyMOTO
+  url: https://github.com/aatmdelissen/pyMOTO
+  license: MIT
+  last_push: 2026-05-01
+  status: adopted
+  policy: may incorporate with attribution (imported as a dependency)
+- name: pyvista/pyvista
+  url: https://github.com/pyvista/pyvista
+  license: MIT
+  status: adopted
+  policy: may incorporate with attribution (imported as a dependency)
+- name: bambulab/BambuStudio
+  url: https://github.com/bambulab/BambuStudio
+  license: AGPL-3.0
+  status: adopted
+  policy: external program only (AGPL-3.0); command-line slicing for filament grams
+- name: optuna/optuna
+  url: https://github.com/optuna/optuna
+  license: MIT
+  status: candidate
+  policy: may incorporate with attribution; driver for multi-objective parameter studies

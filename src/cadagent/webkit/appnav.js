@@ -16,7 +16,12 @@ text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap}
 body.has-appnav{--appnav-h:46px}`;
 const NAV_H = 46;
 
+// root must be a plain relative path (../../, ./, designer/) or the site root "/" (the server-injected bar):
+// it goes into links and the nav.json URL
+const ROOT_OK = /^\/?(?:\.\.?\/)*(?:[A-Za-z0-9_-][A-Za-z0-9._-]*\/)*$/;
+
 export async function mountAppNav({ root = '../', current = '', injected = false } = {}) {
+  if (typeof root !== 'string' || !ROOT_OK.test(root)) return null;
   let cfg;
   try { cfg = await (await fetch(`${root}site/nav.json`)).json(); } catch { return null; }
   if (!cfg?.nav?.length) return null;
@@ -33,8 +38,15 @@ export async function mountAppNav({ root = '../', current = '', injected = false
   const nav = document.createElement('nav');
   nav.className = 'appnav';
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  nav.innerHTML = `<a class="brand" href="${root}site/"><i></i>${esc(cfg.title)}</a>`
-    + cfg.nav.map((n) => `<a class="tab${(n.id ?? n.href) === current ? ' on' : ''}" href="${/^[a-z]+:/.test(n.href) ? n.href : root + n.href}">${esc(n.title)}</a>`).join('');
+  // nav.json links: relative to the project root, or absolute http(s)/mailto; anything else (javascript:, data:) is dropped
+  const href = (h) => {
+    h = String(h ?? '');
+    if (/^[a-z][a-z0-9+.-]*:/i.test(h)) return /^(https?:|mailto:)/i.test(h) ? h : null;
+    return h.startsWith('//') ? null : root + h;
+  };
+  nav.innerHTML = `<a class="brand" href="${esc(root)}site/"><i></i>${esc(cfg.title)}</a>`
+    + cfg.nav.filter((n) => href(n?.href) !== null).map((n) => `<a class="tab${(n.id ?? n.href) === current ? ' on' : ''}" `
+      + `href="${esc(href(n.href))}">${esc(n.title)}</a>`).join('');
   const body = document.body;
   const hadClass = body.classList.contains('has-appnav');
   body.prepend(nav);

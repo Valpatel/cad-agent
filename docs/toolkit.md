@@ -257,8 +257,8 @@ Worked example: j501-agx `cad/ports.py`, `tools/check_ports.py` and `exports/por
 Works for any model: a housing, a bracket set, a mechanism or a robot. `cad-agent view` reads each part's STEP (assembly
 coordinates) and writes a binary STL per part plus `exports/view/view.json`. `viewer.html` in the web kit shows the
 assembly with a parts list (show/hide, colour), exploded view, section cut and standard views; the site links it when
-the manifest exists. Wheel zoom uses one-quarter sensitivity for closer inspection; small trackpad deltas remain
-continuous. Custom stages can override `createStage(el, {zoomSpeed: 1})` to restore the earlier sensitivity. The
+the manifest exists. Wheel zoom uses one-quarter sensitivity for closer inspection (middle-button drag and pinch keep full speed); small
+trackpad deltas remain continuous at any device pixel ratio. Custom stages can override `createStage(el, {zoomSpeed: 1})` to restore the earlier sensitivity. The
 shared setting also affects middle-button dolly and touch pinch. Update copied web kits, or restart a served site
 after updating cad-agent. The viewer is scriptable for screenshots: `viewer.html?explode=0.5&view=iso&panel=0`.
 

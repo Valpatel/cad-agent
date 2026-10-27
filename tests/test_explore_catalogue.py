@@ -8,7 +8,7 @@ from datetime import date
 import pytest
 
 from cadagent.explore.catalogue import (Catalogue, check_catalogue, check_item, display_name, in_stock, is_estimate,
-                                        load_catalogue, load_configured, mass_of, normal_confidence, price_of)
+                                        link_url, load_catalogue, load_configured, mass_of, normal_confidence, price_of)
 from cadagent.explore.config import explore_config
 
 TODAY = date(2026, 10, 26)
@@ -75,10 +75,35 @@ def test_a_good_item_has_no_issues():
     ({"preferred": "yes"}, "error", "preferred must be true or false"),
     ({"pack_qty": 0}, "error", "pack_qty must be a whole number"),
     ({"sources": None}, "warn", "cannot be checked"),
+    ({"price_usd": float("nan")}, "error", "price_usd is nan, not a finite number"),
+    ({"mass_g": float("inf")}, "error", "mass_g is inf, not a finite number"),
+    ({"specs": {"airflow_cfm": float("-inf")}}, "error", "specs.airflow_cfm is -inf"),
+    ({"specs": {"rpm": {1, 2}}}, "error", "JSON cannot carry"),
+    ({"sources": ["javascript:alert(1)"]}, "warn", "not an http(s) link"),
+    ({"buy": [{"seller": "x", "url": "data:text/html,hi"}]}, "warn", "not an http(s) link"),
 ])
 def test_item_checks(change, level, fragment):
     issues = check_item({**GOOD, **change}, "x", today=TODAY)
     assert any(fragment in i.text for i in issues if i.level == level), [str(i) for i in issues]
+
+
+def test_non_finite_values_are_not_numbers_and_references_are_not_links():
+    assert price_of({"price_usd": float("nan")}) is None and mass_of({"mass_g": float("inf")}) is None
+    assert check_item({**GOOD, "sources": ["Datasheet: rev B, p. 4"]}, "x", today=TODAY) == []
+    assert link_url("https://example.com/a") == "https://example.com/a" and link_url(" HTTP://x.org ") == "HTTP://x.org"
+    for url in ("javascript:alert(1)", "JaVaScRiPt:alert(1)", "java\tscript:alert(1)", "data:text/html,x", "/local",
+                "//evil.example", "vbscript:x", None, 3):
+        assert link_url(url) is None, url
+
+
+def test_yaml_dates_are_read_as_iso_text(tmp_path):
+    f = _write(tmp_path / "parts.yaml", "- {id: fan-60, category: fan, price_usd: 9, price_checked: 2026-10-01, mass_g: 30,\n"
+                                        "   sources: [x], specs: {tested: 2026-09-30 12:00:00}}\n")
+    cat, issues = load_catalogue([f], root=tmp_path)
+    assert issues == [] and cat["fan-60"]["price_checked"] == "2026-10-01"
+    assert cat["fan-60"]["specs"]["tested"] == "2026-09-30T12:00:00"
+    assert json.loads(json.dumps(cat["fan-60"]))["price_checked"] == "2026-10-01"
+    assert check_catalogue(cat, today=TODAY) == []
 
 
 def test_categories_and_price_age_are_configurable():

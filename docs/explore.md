@@ -86,7 +86,8 @@ Units come from the key names, as everywhere in cad-agent: `runtime_min` is in m
 ## Catalogue
 
 A catalogue file is a list of items, `{"items": [...]}` with optional `"defaults"` merged under every item (a
-category for the whole file, a shared source), or `{"items": {"<id>": {...}}}` keyed by id. JSON and YAML both work.
+category for the whole file, a shared source), or `{"items": {"<id>": {...}}}` keyed by id. JSON and YAML both work;
+an unquoted YAML date (`price_checked: 2026-10-26`) is read as the text `"2026-10-26"`, in designs too.
 
 ```json
 {
@@ -125,9 +126,11 @@ Unknown values are `null`, never guessed. A price in another currency (`price_eu
 converted: convert it and note the rate in `price_note`. Every other field is kept and passed to the evaluator.
 
 `cad-agent catalogue` reports **errors** (a wrong or missing id or category, a price without a date, a date in the
-future, a negative price, disagreeing masses, an unknown confidence, slot `choices` that are not in the catalogue) and
-**warnings** (no price, no mass, no source, an old price, a required or narrowed slot that no part fits), then checks
-every design against the catalogue. It exits 1 when there is an error.
+future, a negative price, a number that is not finite (NaN or infinity: use `null` for an unknown value), a value JSON
+cannot carry, disagreeing masses, an unknown confidence, slot `choices` that are not in the catalogue) and
+**warnings** (no price, no mass, no source, an old price, a source or buy link that is not `http(s)`, which pages show
+as text rather than a link, a required or narrowed slot that no part fits), then checks every design against the
+catalogue. It exits 1 when there is an error. A design that uses a part with a non-finite number is an `error`.
 
 ## Designs
 
@@ -151,8 +154,9 @@ every design against the catalogue. It exits 1 when there is an error.
   catalogue item), or `null`. The quantity defaults to the slot's `qty`, else 1. One part per slot: use more slots for
   more parts.
 - `extends` starts from another design (relative to this file): mappings merge key by key, so
-  `{"leg_actuator": {"qty": 2}}` changes only the quantity; anything else replaces; `null` empties a slot. `name` is
-  not inherited and defaults to the file name.
+  `{"leg_actuator": {"qty": 2}}` changes only the quantity (a parent's bare id counts as `{"part": id}`); in a slot,
+  `part` and `custom` replace each other and the quantity stays; anything else replaces; `null` empties a slot.
+  `name` is not inherited and defaults to the file name.
 - `params` is free-form for the evaluator.
 - An unknown part, a part that does not fit the slot (category, `choices`, `where`), a bad quantity or an empty
   required slot makes the design an `error`; a slot that is not configured is a warning (a typo shows).
@@ -186,19 +190,23 @@ def evaluate(candidate):                                  # cadagent.explore.des
 ```
 
 Every key is optional; an unknown key is reported, not fatal. A metric is a number (or true/false, text, `null`) or
-`{"value", "unit", "label", "digits", "estimate", "incomplete"}`; a value that is not finite becomes `null` with a
-warning. Check levels are `ok`, `warn` and `fail`; any other level counts as `fail`. `lines` count in the cost and
+`{"value", "unit", "label", "digits", "estimate", "incomplete"}`; a value that is not finite becomes `null` and makes
+the design an `error`. Check levels are `ok`, `warn` and `fail`; any other level counts as `fail`. `lines` count in the cost and
 mass. A metric with the same name as a BOM metric replaces it (`mass_kg` from CAD, say). The evaluator's folder is put
 on `sys.path`, as when the file runs as a script, so it can import its neighbours.
 
 In any language, `evaluator: {command: [node, tools/evaluate.mjs], timeout_s: 120}`: the request arrives as JSON on
 stdin (`{id, name, file, design, params, currency, parts: {slot: {item, qty, custom}}, bom}`), the result above is
 printed as JSON on stdout (log lines before it are fine; the last line is tried too). In the argv `{design}` becomes a
-temporary JSON file with the resolved design, `{id}` the design's id (a folder name for per-design outputs) and
-`{python}` the project's python. It runs in the project root with `CAD_AGENT_PROJECT` set.
+temporary JSON file with the resolved design (in a private temporary folder), `{id}` the design's id as a plain file
+name for a folder of per-design outputs (letters, digits and `. _ + -` only, such as `trial-00007`; an id with other
+characters, like `designs/a/std`, has them replaced and gets a short hash) and `{python}` the project's python. It
+runs in the project root with `CAD_AGENT_PROJECT` set, in its own process group: a timeout kills the evaluator and
+everything it started, anything it leaves running when it exits is killed too, and Ctrl-C stops them.
 
-An exception, a non-zero exit, a timeout or output that is not JSON makes that one design an `error` with the reason;
-the other designs are still evaluated, and the BOM's cost and mass are still shown.
+An exception, a non-zero exit, a timeout, output that is not JSON or a number that is not finite (NaN or infinity in
+`metrics`, `lines` or `data`) makes that one design an `error` with the reason; the other designs are still evaluated,
+and the BOM's cost and mass are still shown.
 
 ## Comparison
 

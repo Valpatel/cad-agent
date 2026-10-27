@@ -438,7 +438,7 @@ def _print_leaderboard(comp: Dict[str, Any], limit: int = 25) -> None:
 
 def cmd_compare(project: CadProject, args: argparse.Namespace) -> int:
     from cadagent.explore.catalogue import check_catalogue, counts
-    from cadagent.explore.compare import compare_designs, write_comparison
+    from cadagent.explore.compare import compare_designs, to_json, write_comparison
     from cadagent.explore.evaluate import load_evaluator
 
     cfg, catalogue, issues = _explore(project)
@@ -451,7 +451,7 @@ def cmd_compare(project: CadProject, args: argparse.Namespace) -> int:
     written = write_comparison(comp, cfg.out, cfg=cfg)
     data = counts(issues + check_catalogue(catalogue, cfg.categories or None, cfg.max_price_age_days))
     if getattr(args, "json", False):
-        print(json.dumps(comp, indent=1, default=str))
+        print(to_json(comp), end="")
     else:
         _print_leaderboard(comp)
         if data["error"] or data["warn"]:

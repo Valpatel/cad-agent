@@ -17,8 +17,9 @@ A design file (JSON or YAML)::
     }
 
 ``extends`` is resolved relative to the file: mappings merge key by key (so ``{"battery": {"qty": 3}}`` changes only
-the quantity), anything else replaces, and ``null`` empties a slot. ``name`` is not inherited; it defaults to the
-file name. One part per slot: use more slots for more parts.
+the quantity, also when the parent wrote the slot as a bare id), anything else replaces, and ``null`` empties a slot.
+In a slot, ``part`` and ``custom`` replace each other. ``name`` is not inherited; it defaults to the file name. One part
+per slot: use more slots for more parts.
 """
 
 from __future__ import annotations
@@ -30,7 +31,8 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from cadagent.explore.catalogue import (Catalogue, Issue, check_item, display_name, in_stock, is_estimate, is_number,
-                                        mass_of, normal_confidence, pack_qty, price_of, read_data, source_url)
+                                        mass_of, non_finite, normal_confidence, pack_qty, price_of, read_data,
+                                        source_url)
 from cadagent.explore.config import SlotSpec
 
 
@@ -46,6 +48,33 @@ def deep_merge(base: Any, override: Any) -> Any:
             out[k] = deep_merge(base.get(k), v) if k in base else copy.deepcopy(v)
         return out
     return copy.deepcopy(override)
+
+
+def merge_slot(base: Any, override: Any) -> Any:
+    """One slot of a design that ``extends`` another: a mapping override merges into the parent's slot, read as
+    ``{"part": id}`` when the parent gave a bare id; naming ``part`` drops an inherited ``custom`` and the other way
+    round (the quantity stays unless overridden). Anything else replaces."""
+    if isinstance(override, dict) and isinstance(base, (str, dict)):
+        merged = {"part": base} if isinstance(base, str) else dict(base)
+        if "part" in override:
+            merged.pop("custom", None)
+        if "custom" in override:
+            merged.pop("part", None)
+        return deep_merge(merged, override)
+    return copy.deepcopy(override)
+
+
+def merge_designs(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    """``override`` on top of ``base``: ``parts`` slot by slot (``merge_slot``), everything else by ``deep_merge``."""
+    out = deep_merge(base, {k: v for k, v in override.items() if k != "parts"})
+    parts, extra = base.get("parts"), override.get("parts")
+    if isinstance(parts, dict) and isinstance(extra, dict):
+        out["parts"] = copy.deepcopy(parts)
+        for slot, value in extra.items():
+            out["parts"][slot] = merge_slot(parts[slot], value) if slot in parts else copy.deepcopy(value)
+    elif "parts" in override:
+        out["parts"] = copy.deepcopy(extra)
+    return out
 
 
 def load_design(path: Path, _chain: Tuple[Path, ...] = ()) -> Dict[str, Any]:
@@ -65,7 +94,7 @@ def load_design(path: Path, _chain: Tuple[Path, ...] = ()) -> Dict[str, Any]:
     if parent:
         base = load_design(path.parent / str(parent), _chain + (path,))
         base.pop("name", None)
-        data = deep_merge(base, data)
+        data = merge_designs(base, data)
     data.setdefault("name", path.stem)
     for key in ("parts", "params"):
         if data.get(key) is not None and not isinstance(data[key], dict):
@@ -231,6 +260,11 @@ def _pick(slot: str, value: Any, spec: Optional[SlotSpec], catalogue: Catalogue)
         if item is None:
             errors.append(f"slot {slot}: unknown part id {ref!r}")
             return None, errors, checks
+        bad = [f"{path} = {value}" for path, value in non_finite(item)]
+        if bad:
+            errors.append(f"slot {slot}: part {ref} has numbers that are not finite ({', '.join(bad)}); "
+                          "cad-agent catalogue reports them")
+            return None, errors, checks
     if custom is None:
         why = fits(item, spec)
     elif spec and spec.category and item.get("category") != spec.category:     # a custom part: only its category
@@ -266,6 +300,8 @@ def resolve(design: Dict[str, Any], catalogue: Catalogue, slots: Optional[Dict[s
     for spec in slots.values():
         if spec.required and spec.name not in picks:
             errors.append(f"slot {spec.name} is required but empty")
+    for path, value in non_finite({k: v for k, v in design.items() if k != "parts"}):
+        errors.append(f"design: {path} is {value}, not a finite number")
     if errors:
         return None, errors, checks
     name = str(design.get("name") or design_id or "design")

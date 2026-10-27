@@ -13,6 +13,7 @@ import math
 from typing import Any, Dict, List, Optional, Tuple
 
 from cadagent.explore import metrics as M
+from cadagent.explore.catalogue import json_default, link_url
 from cadagent.explore.compare import anchor, describe_choice
 
 MAX_ROWS = 300          # leaderboard rows on the page (all of them stay in the JSON)
@@ -301,6 +302,16 @@ def _leaderboard(comp: Dict[str, Any]) -> str:
             '≥ marks a total that leaves out parts without a price or mass; est. marks a value that rests on estimates.</p>')
 
 
+def _source(url: Any) -> str:
+    """A link for an http(s) source; anything else (``javascript:``, a reference such as "datasheet p. 4") as text."""
+    if not url:
+        return ""
+    href = link_url(url)
+    if href:
+        return f'<a href="{_e(href)}" rel="noopener noreferrer">source</a>'
+    return f'source: {_e(str(url)[:120])}'
+
+
 def _bom(ev: Dict[str, Any], currency: str) -> str:
     b = ev.get("bom")
     if not b:
@@ -312,7 +323,7 @@ def _bom(ev: Dict[str, Any], currency: str) -> str:
         unit = "—" if l["unit_price"] is None else M.format_value(l["unit_price"], "", 2)
         mass = "—" if l["line_mass_g"] is None else M.format_value(l["line_mass_g"], "g", 0, l["mass_estimate"])
         packs = f' ({l["packs"]} × {l["pack_qty"]})' if l.get("pack_qty", 1) > 1 else ""
-        src = f'<a href="{_e(l["source"])}" rel="noopener">source</a>' if l.get("source") else ""
+        src = _source(l.get("source"))
         info = " · ".join(x for x in (_e(l.get("confidence") or ""), f'checked {_e(l["price_checked"])}' if l.get("price_checked") else "",
                                        "custom" if l.get("custom") and not l.get("from_evaluator") else "",
                                        "from the evaluator" if l.get("from_evaluator") else "",
@@ -377,7 +388,7 @@ def _details(comp: Dict[str, Any]) -> str:
             + (f'<p class="dim">{_e(ev["notes"])}</p>' if ev.get("notes") else "")
             + (f'<h3>Checks</h3><ul class="checks">{check_list}</ul>' if check_list else "")
             + _bom(ev, comp.get("currency", "usd"))
-            + (f'<h3>Parameters</h3><pre>{_e(json.dumps(params, indent=1))}</pre>' if params else "")
+            + (f'<h3>Parameters</h3><pre>{_e(json.dumps(params, indent=1, default=json_default))}</pre>' if params else "")
             + _swaps(ev, comp) + "</details>")
     more = len(comp["designs"]) - min(len(comp["designs"]), MAX_DETAILS)
     tail = f'<p class="meta">Details for the first {MAX_DETAILS}; the other {more} are in the JSON.</p>' if more > 0 else ""

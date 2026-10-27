@@ -18,6 +18,7 @@ says nothing about how good the numbers themselves are: they are as good as the 
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import os
 import re
@@ -26,9 +27,9 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from cadagent.explore import metrics as M
-from cadagent.explore.catalogue import Catalogue, display_name
+from cadagent.explore.catalogue import Catalogue, display_name, json_default
 from cadagent.explore.config import ExploreConfig, Objective
-from cadagent.explore.evaluate import Evaluator, evaluate_design, value_of
+from cadagent.explore.evaluate import Evaluator, evaluate_design, kill_running_evaluators, value_of
 
 SCHEMA = "cad-agent/explore-comparison/1"
 NOTES = [
@@ -206,7 +207,12 @@ def swaps(design: Dict[str, Any], base: Dict[str, Any], catalogue: Catalogue, cf
     if workers > 1 and len(options) > 1:
         from concurrent.futures import ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=workers) as pool:
-            results = list(pool.map(one, options))
+            try:
+                results = list(pool.map(one, options))
+            except KeyboardInterrupt:
+                pool.shutdown(wait=False, cancel_futures=True)
+                kill_running_evaluators()        # they run in their own session: Ctrl-C does not reach them
+                raise
     else:
         results = [one(o) for o in options]
     out = []
@@ -235,15 +241,18 @@ def swaps(design: Dict[str, Any], base: Dict[str, Any], catalogue: Catalogue, cf
 # ----------------------------------------------------------------------------- comparing a project's designs
 
 def design_ids(paths: Sequence[Path], root: Path) -> List[str]:
-    """File stems, or the path from the root where two stems clash."""
+    """File stems, or where two stems clash the path from the root (``designs/a/std``), or for a file outside the
+    root its stem and a short hash of its path; never an absolute path."""
     stems = [Path(p).stem for p in paths]
     out = []
     for p, stem in zip(paths, stems):
+        full = Path(p).resolve()
         if stems.count(stem) == 1:
             out.append(stem)
+        elif full.is_relative_to(Path(root).resolve()):
+            out.append(full.relative_to(Path(root).resolve()).with_suffix("").as_posix())
         else:
-            rel = Path(p).resolve().relative_to(root) if Path(p).resolve().is_relative_to(root) else Path(p)
-            out.append(rel.with_suffix("").as_posix())
+            out.append(f"{stem}-{hashlib.sha1(str(full).encode()).hexdigest()[:8]}")
     return out
 
 
@@ -311,13 +320,19 @@ def write_comparison(comp: Dict[str, Any], out_dir: Path, json_name: str = "comp
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     written = {"json": out_dir / json_name, "html": out_dir / html_name}
-    _write(written["json"], json.dumps(comp, indent=1, default=str) + "\n")
+    _write(written["json"], to_json(comp))
     _write(written["html"], render_page(comp))
     if cards and cfg is not None:
         href = Path(os.path.relpath(written["html"], cfg.root)).as_posix()
         written["cards"] = out_dir / "designs.json"
-        _write(written["cards"], json.dumps(site_cards(comp, cfg, href), indent=1) + "\n")
+        _write(written["cards"], to_json(site_cards(comp, cfg, href)))
     return written
+
+
+def to_json(data: Any) -> str:
+    """Strict JSON (no NaN or Infinity, which browsers' ``JSON.parse`` rejects; evaluations have been checked for them
+    already), dates as ISO strings."""
+    return json.dumps(data, indent=1, default=json_default, allow_nan=False) + "\n"
 
 
 def _write(path: Path, text: str) -> None:

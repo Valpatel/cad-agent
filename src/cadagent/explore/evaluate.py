@@ -23,29 +23,36 @@ say). Check levels are ``ok``, ``warn`` and ``fail``; any other level counts as 
 Any language (``evaluator: {command: [node, tools/evaluate.mjs], timeout_s: 120}``): the request
 (``Candidate.request()``: the design, the resolved parts with quantities and the BOM so far) arrives as JSON on
 stdin, and the result above is printed as JSON on stdout. In the argv, ``{design}`` becomes the path of a temporary
-JSON file holding the resolved design, ``{id}`` the design's id (a name for a folder of per-design outputs, such as
-``trial-00007``) and ``{python}`` the project's python. The command runs in the project root.
+JSON file holding the resolved design (in a private temporary folder), ``{id}`` the design's id as a plain file name
+(``safe_name``: letters, digits and ``. _ + -``, such as ``trial-00007``; an id with other characters gets them
+replaced and a short hash added) for a folder of per-design outputs, and ``{python}`` the project's python. The command
+runs in the project root, in its own process group: on a timeout the evaluator and everything it started are killed,
+and so is anything it leaves running when it exits.
 
-A crash, a non-zero exit, a timeout or output that is not JSON makes that design an ``error`` with the reason; it
-never stops the other designs.
+A crash, a non-zero exit, a timeout, output that is not JSON or a number that is not finite makes that design an
+``error`` with the reason; it never stops the other designs.
 """
 
 from __future__ import annotations
 
+import hashlib
 import importlib
 import importlib.util
 import json
 import os
+import re
+import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import traceback
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from cadagent.explore import metrics as M
-from cadagent.explore.catalogue import Catalogue, is_number
+from cadagent.explore.catalogue import Catalogue, finite_or_none, is_number, json_default, non_finite
 from cadagent.explore.config import Constraint, EvaluatorSpec, ExploreConfig, Objective
 from cadagent.explore.design import Candidate, bom, bom_checks, bom_metrics, resolve
 from cadagent.project import CadConfigError
@@ -96,25 +103,84 @@ def load_evaluator(spec: Optional[EvaluatorSpec], root: Path, python: str = "") 
     return fn
 
 
+SAFE_NAME_RE = re.compile(r"[^A-Za-z0-9._+-]+")
+_RUNNING: set = set()                      # evaluator processes running now (kill_running_evaluators)
+_RUNNING_LOCK = threading.Lock()
+
+
+def safe_name(text: str) -> str:
+    """``text`` as a plain file name: letters, digits and ``. _ + -`` only, never empty, ``.`` or ``..``, never
+    starting with ``-`` or ``.``. A name that had to change gets a short hash of the original, so two ids that differ
+    only in the characters replaced (``designs/a/std``, ``designs-a/std``) stay apart."""
+    text = str(text)
+    name = SAFE_NAME_RE.sub("-", text).strip(".-")[:80] or "design"
+    if name != text:
+        name = f"{name}-{hashlib.sha1(text.encode()).hexdigest()[:8]}"
+    return name
+
+
+def _kill_group(proc: subprocess.Popen) -> None:
+    """Kill the evaluator and everything it started (its process group, on POSIX)."""
+    if os.name == "posix":
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
+    if proc.poll() is None:
+        try:
+            proc.kill()
+        except OSError:
+            pass
+
+
+def kill_running_evaluators() -> None:
+    """Kill every command evaluator running now, with what it started. Evaluators run in their own session, so the
+    terminal's Ctrl-C does not reach them: an interrupted run calls this."""
+    with _RUNNING_LOCK:
+        procs = list(_RUNNING)
+    for proc in procs:
+        _kill_group(proc)
+
+
 def _command_evaluator(spec: EvaluatorSpec, root: Path, python: str) -> Evaluator:
     def run(candidate: Candidate) -> Dict[str, Any]:
+        name = safe_name(candidate.id or "design")
+        # a private folder per call; nothing is written anywhere else, whatever the design's id is
         with tempfile.TemporaryDirectory(prefix="cadagent-eval-") as tmp:
-            design_file = Path(tmp) / f"{candidate.id or 'design'}.json"
-            design_file.write_text(json.dumps(candidate.design, indent=1) + "\n")
-            argv = [a.replace("{design}", str(design_file)).replace("{python}", python).replace("{id}", candidate.id)
+            design_file = Path(tmp) / f"{name}.json"
+            design_file.write_text(json.dumps(candidate.design, indent=1, default=json_default) + "\n")
+            request = Path(tmp) / "request.json"
+            request.write_text(json.dumps(candidate.request(), default=json_default))
+            argv = [a.replace("{design}", str(design_file)).replace("{python}", python).replace("{id}", name)
                     for a in spec.command]
             env = dict(os.environ, CAD_AGENT_PROJECT=str(root), PYTHONUNBUFFERED="1")
-            try:
-                proc = subprocess.run(argv, input=json.dumps(candidate.request()), capture_output=True, text=True,
-                                      cwd=root, env=env, timeout=spec.timeout_s)
-            except subprocess.TimeoutExpired:
-                raise EvaluatorError(f"timed out after {spec.timeout_s:g} s") from None
-            except OSError as exc:
-                raise EvaluatorError(f"could not start {argv[0]}: {exc}") from exc
-        if proc.returncode != 0:
-            tail = (proc.stderr.strip().splitlines() or proc.stdout.strip().splitlines() or [""])[-1]
-            raise EvaluatorError(f"exit code {proc.returncode}: {tail[:300]}")
-        out = proc.stdout.strip()
+            # stdout and stderr go to files, not pipes: a child the evaluator leaves behind cannot hold the result up
+            with open(request, "rb") as stdin, open(Path(tmp) / "stdout", "w+b") as stdout, \
+                    open(Path(tmp) / "stderr", "w+b") as stderr:
+                try:
+                    proc = subprocess.Popen(argv, stdin=stdin, stdout=stdout, stderr=stderr, cwd=root, env=env,
+                                            start_new_session=os.name == "posix")
+                except OSError as exc:
+                    raise EvaluatorError(f"could not start {argv[0]}: {exc}") from exc
+                with _RUNNING_LOCK:
+                    _RUNNING.add(proc)
+                try:
+                    returncode = proc.wait(timeout=spec.timeout_s)
+                except subprocess.TimeoutExpired:
+                    raise EvaluatorError(f"timed out after {spec.timeout_s:g} s") from None
+                finally:
+                    _kill_group(proc)              # on a timeout or Ctrl-C, and whatever it left running
+                    proc.wait()
+                    with _RUNNING_LOCK:
+                        _RUNNING.discard(proc)
+                stdout.seek(0)
+                stderr.seek(0)
+                out_text = stdout.read().decode(errors="replace")
+                err_text = stderr.read().decode(errors="replace")
+        if returncode != 0:
+            tail = (err_text.strip().splitlines() or out_text.strip().splitlines() or [""])[-1]
+            raise EvaluatorError(f"exit code {returncode}: {tail[:300]}")
+        out = out_text.strip()
         for text in (out, (out.splitlines() or [""])[-1]):     # the whole output, else its last line (after logs)
             try:
                 return json.loads(text)
@@ -127,10 +193,14 @@ def _command_evaluator(spec: EvaluatorSpec, root: Path, python: str) -> Evaluato
 # ----------------------------------------------------------------------------- normalising what it returns
 
 def normalise_result(raw: Any) -> Dict[str, Any]:
-    """Check an evaluator result; returns ``{metrics, checks, lines, summary, data, problems}``. Raises
-    ``EvaluatorError`` when it is not a mapping; smaller problems are returned as ``problems`` (shown as warnings)."""
+    """Check an evaluator result; returns ``{metrics, checks, lines, summary, data, problems, errors}``. Raises
+    ``EvaluatorError`` when it is not a mapping; smaller problems are returned as ``problems`` (shown as warnings).
+    A NaN or infinity anywhere in it is an ``error`` (the design cannot be ranked on it) and is replaced by null."""
     if not isinstance(raw, dict):
         raise EvaluatorError(f"must return a mapping, got {type(raw).__name__}")
+    errors = [f"the evaluator returned {value} at {path}, not a finite number"
+              for path, value in non_finite({k: raw.get(k) for k in ("metrics", "lines", "data") if k in raw})]
+    raw = finite_or_none(raw)
     problems: List[str] = []
     unknown = sorted(set(raw) - RESULT_KEYS)
     if unknown:
@@ -166,7 +236,7 @@ def normalise_result(raw: Any) -> Dict[str, Any]:
         lines = []
     summary = raw.get("summary") or ""
     return {"metrics": metrics, "checks": checks, "lines": lines, "summary": str(summary),
-            "data": raw.get("data"), "problems": problems}
+            "data": raw.get("data"), "problems": problems, "errors": errors}
 
 
 # ----------------------------------------------------------------------------- objectives and constraints
@@ -228,10 +298,12 @@ def evaluate_design(design: Dict[str, Any], catalogue: Catalogue, cfg: ExploreCo
     if cand is not None:
         result["parts"] = {s: p.item.get("id") for s, p in cand.picks.items()}
         cand.bom = bom(cand, cfg.slots)
-        evaluated: Dict[str, Any] = {"metrics": {}, "checks": [], "lines": [], "summary": "", "data": None, "problems": []}
+        evaluated: Dict[str, Any] = {"metrics": {}, "checks": [], "lines": [], "summary": "", "data": None,
+                                     "problems": [], "errors": []}
         if evaluator is not None:
             try:
                 evaluated = normalise_result(evaluator(cand))
+                errors += evaluated["errors"]
             except EvaluatorError as exc:
                 errors.append(f"evaluator: {exc}")
             except Exception as exc:    # the project's code: report it on this design, keep going with the others
@@ -252,4 +324,4 @@ def evaluate_design(design: Dict[str, Any], catalogue: Catalogue, cfg: ExploreCo
     checks += [{"id": "error", "level": "fail", "text": e} for e in errors]
     result.update(checks=checks, errors=errors, verdict=verdict(checks, errors), counts=check_counts(checks),
                   seconds=round(time.monotonic() - started, 3))
-    return result
+    return finite_or_none(result)       # a NaN was reported above; JSON output never carries one

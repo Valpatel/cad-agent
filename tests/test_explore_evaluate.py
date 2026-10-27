@@ -3,17 +3,24 @@
 from __future__ import annotations
 
 import json
+import os
+import signal
 import sys
 import textwrap
+import time
+from datetime import date
+from pathlib import Path
 
 import pytest
 
+from cadagent.explore.catalogue import check_catalogue
+from cadagent.explore.compare import compare_designs, write_comparison
 from cadagent.explore.config import EvaluatorSpec, explore_config
 from cadagent.explore.design import load_design
-from cadagent.explore.evaluate import evaluate_design, load_evaluator, normalise_result
+from cadagent.explore.evaluate import evaluate_design, load_evaluator, normalise_result, safe_name
 from cadagent.project import CadConfigError
 
-from .explore_fixtures import enclosure_config, restore_sys_path, write_enclosure  # noqa: F401 (a fixture)
+from .explore_fixtures import CONFIG, enclosure_config, restore_sys_path, write_enclosure  # noqa: F401 (a fixture)
 
 pytestmark = pytest.mark.usefixtures("restore_sys_path")
 
@@ -84,9 +91,10 @@ def test_normalise_result_reports_problems_instead_of_crashing():
     assert r["checks"] == [{"id": "check-1", "level": "fail", "text": "x (level 'maybe' is not ok, warn or fail, so it counts as fail)"},
                            {"id": "check-3", "level": "warn", "text": "y"}]
     text = " ".join(r["problems"])
-    for fragment in ("unknown keys ['metric']", "not a finite number", "has no 'value'", "must be a number",
+    for fragment in ("unknown keys ['metric']", "has no 'value'", "must be a number",
                      "checks[1] is not a mapping", "lines must be a list"):
         assert fragment in text
+    assert r["errors"] == ["the evaluator returned nan at metrics.a, not a finite number"]
     with pytest.raises(Exception, match="must return a mapping"):
         normalise_result([1])
 
@@ -157,3 +165,145 @@ def test_config_defaults(tmp_path):
     assert [(o.metric, o.goal) for o in cfg.objectives] == [("cost_eur", "min"), ("mass_kg", "min")]
     assert cfg.evaluator.command == ["node", "tools/e.mjs", "{design}"] and cfg.unknown_keys == ["typo"]
     assert cfg.title == "T" and cfg.out == tmp_path.resolve() / "exports/explore" and cfg.designs == ["designs/*.json"]
+
+
+def test_safe_name_makes_a_plain_file_name():
+    assert safe_name("trial-00007") == "trial-00007" and safe_name("quiet") == "quiet"
+    allowed = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._+-")
+    for raw in ("designs/a/std", "/abs/shared/std", "..", "-rf", "base~fan=fan-40", "a b;$(x)"):
+        name = safe_name(raw)
+        assert set(name) <= allowed and not name.startswith((".", "-")), name
+    assert safe_name("designs/a/std") != safe_name("designs-a/std"), "a hash keeps ids apart"
+
+
+def test_a_command_evaluator_writes_only_into_its_own_temp_folder(tmp_path):
+    """Same-stem designs and a design outside the project: every one is evaluated, {id} is a plain name, and no
+    design file is written over (an absolute id used to replace the design outside the project)."""
+    root = write_enclosure(tmp_path / "proj")
+    for sub in ("a", "b"):
+        (root / "designs" / sub).mkdir()
+        (root / "designs" / sub / "variant.json").write_text(json.dumps({"extends": "../base.json", "name": f"V{sub}"}))
+    shared = tmp_path / "shared"
+    shared.mkdir()
+    (shared / "base.json").write_text((root / "designs" / "base.json").read_text())
+    (shared / "variant.json").write_text(json.dumps({"extends": "base.json", "name": "Shared"}))
+    before = (shared / "variant.json").read_bytes()
+    (root / "tools" / "eval_cmd.py").write_text(textwrap.dedent("""\
+        import json, os, sys
+        design_file, out_id = sys.argv[1], sys.argv[2]
+        os.makedirs(os.path.join("out", out_id))
+        print(json.dumps({"metrics": {"temp_rise_c": 1, "noise_dba": 20}, "summary": design_file}))
+        """))
+    cfg, cat = enclosure_config(root)
+    cfg.evaluator = EvaluatorSpec(command=["{python}", "tools/eval_cmd.py", "{design}", "{id}"])
+    fn = load_evaluator(cfg.evaluator, root, sys.executable)
+    files = [root / "designs" / "a" / "variant.json", root / "designs" / "b" / "variant.json", shared / "variant.json"]
+    comp = compare_designs(cfg, cat, fn, files)
+    by = {d["name"]: d for d in comp["designs"]}
+    assert {n: d["verdict"] for n, d in by.items()} == {"Va": "warn", "Vb": "warn", "Shared": "warn"}, \
+        [d["errors"] for d in comp["designs"]]
+    assert (shared / "variant.json").read_bytes() == before, "the design outside the project is untouched"
+    assert by["Va"]["id"] == "designs/a/variant" and by["Shared"]["id"].startswith("variant-")
+    assert not any(d["id"].startswith("/") for d in comp["designs"])
+    outs = list((root / "out").iterdir())
+    assert len(outs) == 3 and all(o.is_dir() and not any(o.iterdir()) for o in outs), "one plain folder per {id}"
+    for d in comp["designs"]:
+        written = Path(d["summary"])
+        assert written.name == f"{safe_name(d['id'])}.json" and written.parent.name.startswith("cadagent-eval-")
+        assert root not in written.parents and shared not in written.parents
+
+
+def test_dates_from_yaml_reach_a_command_evaluator_and_the_page(tmp_path):
+    """yaml reads an unquoted 2026-10-01 as a date; JSON cannot carry one, so catalogues and designs get ISO text."""
+    root = write_enclosure(tmp_path, CONFIG.replace("catalogue: [catalogue/*.json]",
+                                                    "catalogue: [catalogue/*.json, catalogue/*.yaml]"))
+    (root / "catalogue" / "more.yaml").write_text(
+        "- {id: fan-50, category: fan, name: 50 mm fan, price_usd: 7, price_checked: 2026-10-01, mass_g: 20,\n"
+        "   sources: ['https://example.com/fan-50'], specs: {airflow_cfm: 12, noise_dba: 28}}\n")
+    (root / "designs" / "dated.yaml").write_text("extends: base.json\nname: Dated\nparts: {fan: fan-50}\n"
+                                                 "params: {heat_w: 20, built: 2026-10-20}\n")
+    (root / "tools" / "eval_cmd.py").write_text(textwrap.dedent("""\
+        import json, sys
+        req = json.load(sys.stdin)
+        json.load(open(sys.argv[1]))
+        print(json.dumps({"metrics": {"temp_rise_c": 2, "noise_dba": 20},
+                          "summary": str(req["parts"]["fan"]["item"]["price_checked"]) + " " + str(req["params"]["built"])}))
+        """))
+    cfg, cat = enclosure_config(root)
+    assert cat["fan-50"]["price_checked"] == "2026-10-01"
+    assert not [i for i in check_catalogue(cat, cfg.categories, None) if i.level == "error"], "catalogue agrees"
+    cfg.evaluator = EvaluatorSpec(command=["{python}", "tools/eval_cmd.py", "{design}"])
+    fn = load_evaluator(cfg.evaluator, root, sys.executable)
+    comp = compare_designs(cfg, cat, fn, [root / "designs" / "dated.yaml"])
+    ev = comp["designs"][0]
+    assert ev["verdict"] == "warn" and ev["summary"] == "2026-10-01 2026-10-20", ev["errors"]
+    assert "2026-10-20" in write_comparison(comp, cfg.out, cfg=cfg)["html"].read_text()
+    # a date that did not come through read_data (a design built in Python) is sent as ISO text too
+    design = {"parts": {"fan": "fan-50", "psu": "psu-60w"}, "params": {"heat_w": 20, "built": date(2026, 10, 21)}}
+    ev = evaluate_design(design, cat, cfg, fn, "direct")
+    assert ev["verdict"] == "ok" and ev["summary"] == "2026-10-01 2026-10-21", ev["errors"]
+
+
+def _gone(pid, wait=5.0):
+    """True once ``pid`` has exited (a zombie waiting for init counts as exited)."""
+    deadline = time.monotonic() + wait
+    while time.monotonic() < deadline:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return True
+        try:
+            if Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[-1].split()[0] == "Z":
+                return True
+        except (OSError, IndexError):
+            pass
+        time.sleep(0.05)
+    return False
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="process groups are POSIX")
+@pytest.mark.parametrize("mode, timeout_s", [("hang", 1), ("exit", 30)])
+def test_a_command_evaluator_takes_what_it_started_with_it(tmp_path, mode, timeout_s):
+    """On a timeout the evaluator's children die with it; a child left running after the evaluator printed its result
+    neither holds the result up (it keeps stdout open) nor outlives it."""
+    root = write_enclosure(tmp_path)
+    pidfile = tmp_path / "child.pid"
+    (root / "tools" / "spawn.py").write_text(textwrap.dedent("""\
+        import json, subprocess, sys, time
+        child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])   # inherits stdout
+        open(sys.argv[2], "w").write(str(child.pid))
+        if sys.argv[1] == "hang":
+            time.sleep(60)
+        print(json.dumps({"metrics": {"temp_rise_c": 1, "noise_dba": 20}}))
+        """))
+    fn = load_evaluator(EvaluatorSpec(command=[sys.executable, "tools/spawn.py", mode, str(pidfile)],
+                                      timeout_s=timeout_s), root)
+    started = time.monotonic()
+    ev = _evaluate(root, "base", fn)
+    took = time.monotonic() - started
+    pid = int(pidfile.read_text())
+    try:
+        if mode == "hang":
+            assert ev["verdict"] == "error" and "timed out after 1 s" in ev["errors"][0] and took < 10
+        else:
+            assert ev["verdict"] == "warn" and took < 10, (ev["errors"], took)
+        assert _gone(pid), "the evaluator's child was left running"
+    finally:
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+
+
+def test_non_finite_numbers_from_the_evaluator_make_the_design_an_error(tmp_path):
+    root = write_enclosure(tmp_path, evaluator="def evaluate(c):\n"
+                                               "    return {'metrics': {'temp_rise_c': 1, 'noise_dba': 20},\n"
+                                               "            'lines': [{'name': 'Shell', 'price_usd': float('nan'), 'mass_g': 5}],\n"
+                                               "            'data': {'peak': float('inf')}}\n")
+    fn = load_evaluator(EvaluatorSpec(python="tools/evaluate.py:evaluate"), root)
+    ev = _evaluate(root, "base", fn)
+    assert ev["verdict"] == "error"
+    assert ev["errors"] == ["the evaluator returned nan at lines[0].price_usd, not a finite number",
+                            "the evaluator returned inf at data.peak, not a finite number"]
+    assert ev["bom"]["lines"][-1]["unit_price"] is None and ev["bom"]["totals"]["cost_complete"] is False
+    json.dumps(ev, allow_nan=False)

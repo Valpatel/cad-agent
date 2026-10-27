@@ -124,6 +124,48 @@ def test_the_page_escapes_names_and_handles_edge_cases(tmp_path):
     assert anchor("a b/c~d=e") == "d-a-b-c-d-e" and anchor("") == "d-design"
 
 
+def test_only_http_sources_become_links(tmp_path):
+    root = write_enclosure(tmp_path)
+    data = json.loads((root / "catalogue" / "parts.json").read_text())
+    data["items"][0]["sources"] = ["javascript:alert(document.domain)"]                      # fan-40
+    data["items"][3]["buy"] = [{"seller": "x", "url": "JavaScript:alert(1)", "in_stock": True}]   # psu-30w
+    (root / "catalogue" / "parts.json").write_text(json.dumps(data))
+    cfg, cat, fn, comp = _compare(root, swaps_too=True)
+    page = render_page(comp)
+    assert 'href="javascript' not in page.lower() and "source: javascript:alert(document.domain)" in page
+    assert '<a href="https://example.com/datasheet" rel="noopener noreferrer">source</a>' in page
+
+
+def test_non_finite_numbers_never_reach_the_ranking_or_the_json(tmp_path):
+    root = write_enclosure(tmp_path, evaluator=(
+        "def evaluate(c):\n"
+        "    shell = float('nan') if c.param('nan_line') else 3.0\n"
+        "    return {'metrics': {'temp_rise_c': 1.0, 'noise_dba': 20},\n"
+        "            'lines': [{'name': 'Shell', 'price_usd': shell, 'mass_g': 10}]}\n"))
+    data = json.loads((root / "catalogue" / "parts.json").read_text())
+    data["items"].append({"id": "fan-nan", "category": "fan", "name": "NaN fan", "price_usd": float("nan"), "mass_g": 5})
+    (root / "catalogue" / "parts.json").write_text(json.dumps(data))          # Python's json writes and reads NaN
+    (root / "designs" / "nanpart.json").write_text(json.dumps({"extends": "base.json", "name": "NaN part",
+                                                               "parts": {"fan": "fan-nan"}}))
+    (root / "designs" / "nanline.json").write_text(json.dumps({"extends": "base.json", "name": "NaN line",
+                                                               "params": {"nan_line": True}}))
+    files = [root / "designs" / f"{n}.json" for n in ("base", "nanpart", "nanline")]
+    cfg, cat, fn, comp = _compare(root, files)
+    by = {d["name"]: d for d in comp["designs"]}
+    assert by["NaN part"]["verdict"] == "error" and "part fan-nan has numbers that are not finite" in by["NaN part"]["errors"][0]
+    assert by["NaN line"]["verdict"] == "error" and "nan at lines[0].price_usd" in by["NaN line"]["errors"][0]
+    assert comp["summary"]["pareto"] == 1 and by["Base"]["pareto"], "a NaN cost cannot sit on the front"
+    written = write_comparison(comp, cfg.out, cfg=cfg)
+    text = written["json"].read_text()
+
+    def strict(constant):
+        raise AssertionError(f"{constant} in comparison.json")
+    assert json.loads(text, parse_constant=strict)["summary"]["errors"] == 2
+    comp["designs"][0]["metrics"]["cost_usd"]["value"] = float("nan")       # a regression fails loudly, not silently
+    with pytest.raises(ValueError):
+        write_comparison(comp, cfg.out, cfg=cfg)
+
+
 def test_site_cards_mark_errors_and_ranks(tmp_path):
     cfg, _ = enclosure_config(write_enclosure(tmp_path))
     cfg.objectives = OBJ

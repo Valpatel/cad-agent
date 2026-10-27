@@ -33,15 +33,18 @@ number is never in an unstated currency. Everything else on an item is kept and 
 from __future__ import annotations
 
 import json
+import math
 import re
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, time
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple
 
 CONFIDENCE = ("measured", "datasheet", "product_page", "seller_listing", "estimate")
 ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+-]*$")
 CURRENCY_PRICE_RE = re.compile(r"^price_[a-z]{3}$")
+URL_SCHEME_RE = re.compile(r"^([A-Za-z][A-Za-z0-9+.-]*):(?!\s)")     # "javascript:x", not "Datasheet: p. 4"
+LINK_SCHEMES = ("http", "https")
 
 
 @dataclass
@@ -55,7 +58,67 @@ class Issue:
 
 
 def is_number(value: Any) -> bool:
-    return isinstance(value, (int, float)) and not isinstance(value, bool)
+    """A finite int or float (not a bool): NaN and infinity are not numbers here."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
+def non_finite(data: Any, where: str = "") -> List[Tuple[str, float]]:
+    """``(dotted path, value)`` for every NaN or infinity anywhere in ``data`` (mappings and lists)."""
+    if isinstance(data, float) and not math.isfinite(data):
+        return [(where or "value", data)]
+    out: List[Tuple[str, float]] = []
+    if isinstance(data, dict):
+        for k, v in data.items():
+            out += non_finite(v, f"{where}.{k}" if where else str(k))
+    elif isinstance(data, (list, tuple)):
+        for i, v in enumerate(data):
+            out += non_finite(v, f"{where}[{i}]")
+    return out
+
+
+def finite_or_none(data: Any) -> Any:
+    """A copy of ``data`` with every NaN and infinity replaced by None, so it can be written as JSON."""
+    if isinstance(data, float) and not math.isfinite(data):
+        return None
+    if isinstance(data, dict):
+        return {k: finite_or_none(v) for k, v in data.items()}
+    if isinstance(data, (list, tuple)):
+        return [finite_or_none(v) for v in data]
+    return data
+
+
+def plain(data: Any) -> Any:
+    """``data`` with dates and times (as YAML reads an unquoted ``2026-10-26``) turned into ISO strings, keys
+    included, so catalogues and designs stay JSON-shaped everywhere."""
+    if isinstance(data, (date, datetime, time)):
+        return data.isoformat()
+    if isinstance(data, dict):
+        return {plain(k): plain(v) for k, v in data.items()}
+    if isinstance(data, list):
+        return [plain(v) for v in data]
+    return data
+
+
+def json_default(value: Any) -> Any:
+    """``default=`` for ``json.dumps`` wherever project data is written: dates and times become ISO strings; anything
+    else that JSON cannot carry becomes its text."""
+    if isinstance(value, (date, datetime, time)):
+        return value.isoformat()
+    return str(value)
+
+
+def _dates_only(value: Any) -> Any:
+    if isinstance(value, (date, datetime, time)):
+        return value.isoformat()
+    raise TypeError(f"{type(value).__name__} {value!r:.60}")
+
+
+def link_url(url: Any) -> Optional[str]:
+    """``url`` when it is safe to make a link of (``http:`` or ``https:``), else None."""
+    if not isinstance(url, str):
+        return None
+    m = URL_SCHEME_RE.match(url.strip())
+    return url.strip() if m and m.group(1).lower() in LINK_SCHEMES else None
 
 
 def normal_confidence(value: Any) -> Optional[str]:
@@ -172,7 +235,7 @@ def read_data(path: Path) -> Any:
     if Path(path).suffix in (".yaml", ".yml"):
         import yaml
         try:
-            return yaml.safe_load(text)
+            return plain(yaml.safe_load(text))
         except yaml.YAMLError as exc:
             raise ValueError(str(exc)) from exc
     return json.loads(text)
@@ -256,9 +319,16 @@ def check_item(item: Dict[str, Any], where: str, currency: str = "usd", categori
         err("missing category")
     elif categories and category not in set(categories):
         err(f"unknown category {category!r}; known: {', '.join(sorted(set(categories)))}")
+    for path, value in non_finite(item):
+        err(f"{path} is {value}, not a finite number (use null for an unknown value)")
+    try:
+        json.dumps(item, default=_dates_only)
+    except (TypeError, ValueError) as exc:      # evaluators and pages get items as JSON
+        err(f"holds a value JSON cannot carry: {exc}")
+    bad = lambda v: v is not None and not non_finite(v) and (not is_number(v) or v < 0)    # noqa: E731
     key = f"price_{currency}"
     price = item.get(key)
-    if price is not None and (not is_number(price) or price < 0):
+    if bad(price):
         err(f"{key} must be a number ≥ 0 or null, got {price!r}")
     if price is None:
         others = sorted(k for k in item if CURRENCY_PRICE_RE.match(k) and k != key and item[k] is not None)
@@ -287,7 +357,7 @@ def check_item(item: Dict[str, Any], where: str, currency: str = "usd", categori
         specs = {}
     top, nested = item.get("mass_g"), (specs or {}).get("mass_g")
     for label, v in (("mass_g", top), ("specs.mass_g", nested)):
-        if v is not None and (not is_number(v) or v < 0):
+        if bad(v):
             err(f"{label} must be a number ≥ 0 or null, got {v!r}")
     if is_number(top) and is_number(nested) and top != nested:
         err(f"mass_g {top} and specs.mass_g {nested} disagree")
@@ -308,6 +378,13 @@ def check_item(item: Dict[str, Any], where: str, currency: str = "usd", categori
         err("buy must be a list of {seller, url, in_stock}")
     if not sources and not buy and not item.get("url"):
         warn("no sources or buy links: the numbers cannot be checked")
+    urls = [s for s in sources if isinstance(s, str)] if isinstance(sources, list) else []
+    urls += [b.get("url") for b in buy if isinstance(b, dict) and isinstance(b.get("url"), str)] if isinstance(buy, list) else []
+    urls += [item["url"]] if isinstance(item.get("url"), str) else []
+    for url in urls:
+        m = URL_SCHEME_RE.match(url.strip())
+        if m and m.group(1).lower() not in LINK_SCHEMES:
+            warn(f"{url[:60]!r} is not an http(s) link: pages show it as text")
     return issues
 
 

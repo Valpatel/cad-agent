@@ -36,6 +36,35 @@ def test_extends_merges_mappings_replaces_values_and_does_not_inherit_the_name(t
     assert deep_merge({"x": [1]}, {"x": [2]}) == {"x": [2]}
 
 
+def test_extends_overrides_a_bare_id_slot_and_switches_between_part_and_custom(tmp_path):
+    custom = {"name": "Printed fan duct", "category": "fan", "price_usd": 2.0, "price_checked": "2026-10-01", "mass_g": 9}
+    _design(tmp_path, "base", {"parts": {"fan": "fan-60", "psu": {"custom": {**custom, "category": "psu"}},
+                                         "screws": {"part": "m3x8", "qty": 8}}})
+    _design(tmp_path, "two", {"extends": "base.json", "parts": {"fan": {"qty": 2}, "psu": {"part": "psu-30w"},
+                                                                "screws": {"custom": {**custom, "category": "fastener"}}}})
+    _design(tmp_path, "back", {"extends": "two.json", "parts": {"screws": {"part": "m3x8"}}})
+    two = load_design(tmp_path / "two.json")
+    assert two["parts"]["fan"] == {"part": "fan-60", "qty": 2}, "a bare id counts as {part: id}"
+    assert two["parts"]["psu"] == {"part": "psu-30w"}, "naming part drops the inherited custom part"
+    assert two["parts"]["screws"] == {"custom": {**custom, "category": "fastener"}, "qty": 8}, "custom drops part, keeps qty"
+    cand, errors, _ = resolve(two, CAT, SLOTS)
+    assert errors == [] and cand.qty("fan") == 2 and cand.part("psu")["id"] == "psu-30w" and cand.picks["screws"].custom
+    back = load_design(tmp_path / "back.json")
+    assert back["parts"]["screws"] == {"part": "m3x8", "qty": 8}
+    assert resolve(back, CAT, SLOTS)[1] == []
+
+
+def test_non_finite_numbers_in_a_part_or_the_design_are_errors():
+    cat = Catalogue({**CAT.items, "fan-nan": {**CAT["fan-60"], "id": "fan-nan", "price_usd": float("nan")}})
+    cand, errors, _ = resolve({"parts": {"fan": "fan-nan"}}, cat, SLOTS)
+    assert cand is None and errors[0] == ("slot fan: part fan-nan has numbers that are not finite (price_usd = nan); "
+                                          "cad-agent catalogue reports them")
+    cand, errors, _ = resolve({"parts": {"fan": "fan-60"}, "params": {"heat_w": float("inf")}}, CAT, SLOTS)
+    assert cand is None and errors == ["design: params.heat_w is inf, not a finite number"]
+    cand, errors, _ = resolve({"parts": {"fan": {"custom": {"category": "fan", "mass_g": float("nan")}}}}, CAT, SLOTS)
+    assert cand is None and any("mass_g is nan, not a finite number" in e for e in errors)
+
+
 def test_bad_design_files_raise_design_error(tmp_path):
     _design(tmp_path, "a", {"extends": "b.json"})
     _design(tmp_path, "b", {"extends": "a.json"})

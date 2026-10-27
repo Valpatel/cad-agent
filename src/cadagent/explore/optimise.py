@@ -47,11 +47,11 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 
 from cadagent._deps import require
-from cadagent.explore.catalogue import Catalogue, is_number
+from cadagent.explore.catalogue import Catalogue, finite_or_none, is_number, json_default
 from cadagent.explore.compare import comparison, describe_choice, with_part, write_comparison
 from cadagent.explore.config import ExploreConfig
 from cadagent.explore.design import DesignError, candidates, fits, get_path, load_design, set_path
-from cadagent.explore.evaluate import Evaluator, evaluate_design, value_of
+from cadagent.explore.evaluate import Evaluator, evaluate_design, kill_running_evaluators, value_of
 from cadagent.project import CadConfigError
 
 SAMPLERS = ("random", "grid", "nsga2", "tpe")
@@ -359,7 +359,7 @@ def base_choice(base: Dict[str, Any], space: List[Dimension]) -> Optional[Dict[s
 
 def trial_design(base: Dict[str, Any], space: List[Dimension], choice: Dict[str, Any], number: int,
                  base_name: str) -> Dict[str, Any]:
-    d = json.loads(json.dumps(base))
+    d = json.loads(json.dumps(base, default=json_default))
     for dim in space:
         if dim.kind == "slot":
             d = with_part(d, dim.target, choice[dim.key])
@@ -423,7 +423,7 @@ def run_search(cfg: ExploreConfig, catalogue: Catalogue, evaluator: Optional[Eva
                "evaluation": ev}
         records.append(rec)
         with open(log, "a") as fh:
-            fh.write(json.dumps(rec, default=str) + "\n")
+            fh.write(json.dumps(rec, default=json_default) + "\n")
         if ev["verdict"] != "error" and dup is None:
             cache.setdefault(choice_key(choice), rec)
         objs = " ".join(f"{o.metric}={value_of(ev['metrics'], o.metric):.4g}" if value_of(ev["metrics"], o.metric) is not None
@@ -461,7 +461,7 @@ def run_search(cfg: ExploreConfig, catalogue: Catalogue, evaluator: Optional[Eva
                         continue
                     design = trial_design(base, sc.space, choice, number, base_name)
                     path = trials_dir / f"trial-{number:05d}.json"
-                    path.write_text(json.dumps(design, indent=1) + "\n")
+                    path.write_text(json.dumps(design, indent=1, default=json_default) + "\n")
                     rel = path.relative_to(cfg.root).as_posix() if path.is_relative_to(cfg.root) else str(path)
                     fut = pool.submit(evaluate_design, design, catalogue, cfg, evaluator, f"trial-{number:05d}", rel, path)
                     in_flight[fut] = (number, handle, choice)
@@ -492,6 +492,7 @@ def run_search(cfg: ExploreConfig, catalogue: Catalogue, evaluator: Optional[Eva
             for _, handle, _ in (w for ws in waiting.values() for w in ws):
                 smp.abandon(handle)
             pool.shutdown(wait=False, cancel_futures=True)
+            kill_running_evaluators()            # they run in their own session: Ctrl-C does not reach them
     comp = write_leaderboard(cfg, records, out)
     return {"trials": len(records), "new": new, "seconds": round(time.monotonic() - started, 1),
             "feasible": comp["summary"]["feasible"], "pareto": comp["summary"]["pareto"],
@@ -502,7 +503,8 @@ def run_search(cfg: ExploreConfig, catalogue: Catalogue, evaluator: Optional[Eva
 
 def write_leaderboard(cfg: ExploreConfig, records: List[Dict[str, Any]], out: Path) -> Dict[str, Any]:
     """Rank every distinct trial (repeats of a combination are left out) and write the leaderboard."""
-    evaluations = [r["evaluation"] for r in records if not r.get("duplicate_of")]
+    # finite_or_none: trials.jsonl written before NaN checks existed may hold NaN, which strict JSON refuses
+    evaluations = [finite_or_none(r["evaluation"]) for r in records if not r.get("duplicate_of")]
     comp = comparison(evaluations, cfg, kind="search", title=f"{cfg.title}: search")
     comp["summary"]["repeats"] = len(records) - len(evaluations)
     write_comparison(comp, out, "leaderboard.json", "leaderboard.html", cards=False)

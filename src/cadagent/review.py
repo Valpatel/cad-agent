@@ -1,11 +1,28 @@
 """Reusable in-page review workbench for PCBs, housings and multi-part assemblies."""
+from __future__ import annotations
 from pathlib import Path
 import html,json
 from cadagent.evidence import hashes_are_current
 from urllib.parse import quote
 
+_SCRIPT = Path(__file__).resolve().parent / 'webkit' / 'review.js'
+
+
+def _local(root: Path, rel) -> Path | None:
+    """The resolved file when ``rel`` names a regular file inside ``root``; None otherwise (missing, outside, symlink out)."""
+    if not isinstance(rel, str) or not rel:
+        return None
+    base = Path(root).resolve()
+    path = (base / rel).resolve()
+    return path if base in path.parents and path.is_file() else None
+
+
 def review_html(root: Path, manifest: dict, prefix: str = '../') -> str:
-    """Render trusted project-local assets; unsupported/missing views stay visible as gaps."""
+    """Render trusted project-local assets; unsupported/missing views stay visible as gaps.
+
+    The page works as a static file: every panel is rendered visible and the inlined review script (webkit/review.js)
+    turns them into tabs. Report and download files outside the project root are treated as missing.
+    """
     e=lambda x:html.escape(str(x),quote=True)
     groups=manifest.get('groups',[])
     if not groups:return ''
@@ -14,20 +31,24 @@ def review_html(root: Path, manifest: dict, prefix: str = '../') -> str:
         buttons.append(f'<button type="button" data-review-group="{i}" aria-pressed="{str(i==0).lower()}">{e(g.get("title","Design"))}</button>')
         tabs=[];views=[]
         for j,v in enumerate(g.get('views',[])):
-            title=e(v.get('title','View'));rel=v.get('file','');path=(root/rel).resolve()
-            valid=root.resolve() in path.parents and path.is_file()
-            kind=v.get('kind','image');url=e(prefix+rel)
+            title=e(v.get('title','View'));rel=v.get('file','')
+            valid=_local(root,rel) is not None
+            kind=v.get('kind','image');url=e(prefix+str(rel))
+            caption=e(v.get("caption",""))
             tabs.append(f'<button type="button" data-review-view="{j}" aria-pressed="{str(j==0).lower()}">{title}</button>')
-            if kind=='model':url=e('/_cadagent/kit/viewer.html?manifest=/'+quote(rel,safe='/'))
+            if kind=='model':
+                url=e('/_cadagent/kit/viewer.html?manifest=/'+quote(str(rel),safe='/'))
+                caption=(caption+' · ' if caption else '')+'The 3D viewer needs the local server (<code>cad-agent site --serve</code>)'
             if not valid:body=f'<p class="notice">Pending asset: {e(rel)}</p>'
             elif kind in {'image','svg'}:body=f'<img src="{url}" alt="{title}" loading="lazy">'
             elif kind in {'pdf','html','model'}:body=f'<iframe src="{url}" title="{title}" loading="lazy"></iframe>'
             else:body=f'<p class="notice">Unsupported view type: {e(kind)}</p>'
-            views.append(f'<div class="review-view" data-review-panel="{j}" {"hidden" if j else ""}>{body}<p>{e(v.get("caption",""))} · <a href="{url}">Open full size / download</a></p></div>')
+            views.append(f'<div class="review-view" data-review-panel="{j}">{body}<p>{caption} · <a href="{url}">Open full size / download</a></p></div>')
         reports=[]
         for report in g.get('reports',[]):
-            rel=report.get('file','');path=root/rel
+            rel=report.get('file','');path=_local(root,rel)
             try:
+                if path is None:raise OSError(f'{rel} is missing or outside the project')
                 data=json.loads(path.read_text());value=data
                 for key in report.get('pass_key','pass').split('.'):value=value[key]
                 state='PASS' if value is True else 'PENDING / FAIL'
@@ -36,10 +57,15 @@ def review_html(root: Path, manifest: dict, prefix: str = '../') -> str:
                     if not evidence_is_current(root,data):state='STALE'
                 if not hashes_are_current(root,data):state='STALE'
             except (OSError,ValueError,KeyError,TypeError):state='UNAVAILABLE'
-            reports.append(f'<a class="review-report" href="{e(prefix+rel)}"><b>{e(report.get("title","Report"))}</b><span>{state}</span></a>')
-        downloads=''.join(f'<a href="{e(prefix+d["file"])}">{e(d.get("title",Path(d["file"]).name))}</a>' for d in g.get('downloads',[]))
-        panels.append(f'<section data-review-group-panel="{i}" {"hidden" if i else ""}><p>{e(g.get("summary",""))}</p><nav class="review-tabs" aria-label="Views">{"".join(tabs)}</nav>{"".join(views)}<div class="review-reports">{"".join(reports)}</div><nav class="links">{downloads}</nav></section>')
-    return ('<section id="design-review" class="review-workbench"><h2>Design review</h2><nav class="review-tabs" aria-label="Design variants">'+''.join(buttons)+'</nav>'+''.join(panels)+'</section><script type="module" src="/_cadagent/kit/review.js"></script>')
+            reports.append(f'<a class="review-report" href="{e(prefix+str(rel))}"><b>{e(report.get("title","Report"))}</b><span>{state}</span></a>')
+        downloads=[]
+        for d in g.get('downloads',[]):
+            rel=d.get('file','') if isinstance(d,dict) else ''
+            title=e((d.get('title') if isinstance(d,dict) else '') or Path(str(rel)).name or 'Download')
+            if _local(root,rel) is None:downloads.append(f'<span class="notice">Pending download: {title} ({e(rel or "no file given")})</span>')
+            else:downloads.append(f'<a href="{e(prefix+rel)}">{title}</a>')
+        panels.append(f'<section data-review-group-panel="{i}"><p>{e(g.get("summary",""))}</p><nav class="review-tabs" aria-label="Views">{"".join(tabs)}</nav>{"".join(views)}<div class="review-reports">{"".join(reports)}</div><nav class="links">{"".join(downloads)}</nav></section>')
+    return ('<section id="design-review" class="review-workbench"><h2>Design review</h2><nav class="review-tabs" aria-label="Design variants">'+''.join(buttons)+'</nav>'+''.join(panels)+'</section><script>'+_SCRIPT.read_text()+'</script>')
 
 REVIEW_CSS='''
 .review-workbench{margin:24px 0;padding:24px;background:var(--card,#fff);color:var(--ink,#202227);border:1px solid var(--line,#e4e0d7);border-radius:12px}

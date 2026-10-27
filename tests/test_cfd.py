@@ -59,7 +59,11 @@ def test_case_files(tmp_path):
     assert 'fluid (domain0)' in rp and 'solid (chip plate)' in rp
     snappy = (d / 'system/snappyHexMeshDict').read_text()
     assert 'cellZone chip' in snappy and 'cellZoneInside inside' in snappy
-    assert re.search(r'locationsInMesh \(\(\([-\d. ]+\) domain0\)\);', snappy), 'the air is a named zone, not numbered by the split'
+    assert 'locationInMesh (' in snappy and 'locationsInMesh' not in snappy
+    fz = (d / 'system/topoSetDict.fluidZone').read_text()
+    assert 'zones (chip plate)' in fz and re.search(r'name domain0; type cellZoneSet', fz), 'the air is a named zone, not numbered by the split'
+    allrun = (d / 'Allrun').read_text()
+    assert allrun.index('topoSetDict.fluidZone') < allrun.index('splitMeshRegions') < allrun.index('regions this case does not define')
     assert 'explicitPorositySource' in (d / 'system/domain0/fvOptions').read_text()
     assert 'thicknessLayers (0.0001)' in (d / '0/chip/T').read_text()
     meta = json.loads((d / 'cadagent-case.json').read_text())
@@ -219,3 +223,39 @@ def test_calibrate_without_a_target_says_so(tmp_path):
     d = c.write(tmp_path / 'case', np_procs=2)
     with pytest.raises(ValueError, match='target power'):
         c.calibrate_fins(d)
+
+
+def _frame(**kw):
+    # a square ring open at the top: snappy's named location (locationsInMesh) once gave its inside corners to the air
+    import trimesh as tm
+    c = ThermalCase('frame', domain=((-40, -40, 0), (80, 80, 100)), cell_mm=10, iterations=30, **kw)
+    c.wall('stand', box((-10, -10, 0), (50, 50, 10)), level=1)
+    ring = box((0, 0, 10), (40, 40, 22)).difference(box((6, 6, 9), (34, 34, 23)))
+    c.solid('frame', ring, SOLIDS['al6061'], power_w=5, level=2)
+    c.fan(Fan('fan', centre=(20, 20, 40), axis=(0, 0, -1), d_outer=30, d_hub=10, thickness=4, dp0_pa=20, q_free_m3h=20))
+    c.refine((0, 0, 30), (40, 40, 50), 2)
+    return c
+
+
+@pytest.mark.skipif(os.environ.get('CADAGENT_RUN_CFD') != '1' or not (shutil.which('docker') or shutil.which('chtMultiRegionSimpleFoam')),
+                    reason='set CADAGENT_RUN_CFD=1 with OpenFOAM or Docker to run a real case')
+@pytest.mark.parametrize('fluid', ['domain0', 'air'])
+def test_open_frame_splits_into_the_named_regions(tmp_path, fluid):
+    c = _frame(fluid=fluid)
+    d = c.write(tmp_path / 'case', np_procs=2)
+    assert c.run(d) == 0, (d / 'log.splitMeshRegions').read_text()[-2000:]
+    regions = sorted(p.name for p in (d / 'processor0' / 'constant').iterdir() if (p / 'polyMesh').is_dir())
+    assert regions == sorted([fluid, 'frame'])
+    assert c.results(d)['fans']['fan']['flow_m3h'] > 0
+
+
+@pytest.mark.skipif(os.environ.get('CADAGENT_RUN_CFD') != '1' or not (shutil.which('docker') or shutil.which('chtMultiRegionSimpleFoam')),
+                    reason='set CADAGENT_RUN_CFD=1 with OpenFOAM or Docker to run a real case')
+def test_sealed_air_pocket_stops_with_a_clear_message(tmp_path):
+    c = ThermalCase('pocket', domain=((-40, -40, 0), (80, 80, 100)), cell_mm=10, iterations=30)
+    c.wall('stand', box((-10, -10, 0), (50, 50, 10)), level=1)
+    c.solid('frame', box((0, 0, 10), (40, 40, 22)).difference(box((6, 6, 9), (34, 34, 23))), SOLIDS['al6061'], level=2)
+    c.solid('lid', box((0, 0, 22), (40, 40, 26)), SOLIDS['al6061'], power_w=5, level=2)
+    d = c.write(tmp_path / 'case', np_procs=2)
+    assert c.run(d) == 3
+    assert 'regions this case does not define' in (d / 'log.solve').read_text()

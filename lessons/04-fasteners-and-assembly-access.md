@@ -1,5 +1,9 @@
 # 04 — Fasteners and assembly access
 
+Bought hardware (screws, nuts, washers, inserts, pins, bearings, standoffs, rod ends) is chosen and placed with
+[`skills/mcmaster-parts`](../skills/mcmaster-parts/SKILL.md): a real McMaster-Carr part number, its STEP model
+normalised into a known frame, and its specification table in the hardware catalogue, never an envelope.
+
 ### Check tool access for every fastener at the step where it is installed
 - **Rule:** For each fastener, check that a real tool can reach it and turn it at the point in the assembly where it is
   fitted, not only in the finished assembly.

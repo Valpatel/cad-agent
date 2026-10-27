@@ -74,6 +74,8 @@ patched off. Licences and pins are listed in `THIRD_PARTY_NOTICES.md`.
 - `lessons/`: rules mined from sessions, with provenance
 - `knowledge/`: sourced design rules, materials and costs, in a citable form
 - `skills/`: our skills; they fill gaps and do not duplicate the upstreams
+  - [`mcmaster-parts`](skills/mcmaster-parts/SKILL.md): bought hardware as real McMaster-Carr parts (STEP model,
+    specs, price) fetched one page at a time and normalised into a known frame (`cad-agent mcmaster`)
 - `evals/`: benchmark tasks and the scoring harness
 - `research/`: landscape surveys
 - `examples/`: worked examples (vendor files are fetched by URL and hash, never committed)

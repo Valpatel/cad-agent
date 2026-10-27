@@ -27,6 +27,7 @@ uses the weak-direction strength. Contact, bolt preload and buckling are not mod
 from __future__ import annotations
 
 import math
+import shutil
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -139,7 +140,11 @@ class Study:
         self.fixed: List[int] = []
         self.loads: List[_Load] = []
         self.probe_faces: List[int] = []
-        self._mesh()
+        try:
+            self._mesh()
+        finally:                                     # a shape's own STEP export is only needed to mesh it
+            if not isinstance(shape, (str, Path)):
+                shutil.rmtree(self._step.parent, ignore_errors=True)
 
     # --- geometry and mesh
     @staticmethod

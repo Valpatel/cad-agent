@@ -24,6 +24,20 @@ def test_cantilever_tip_deflection_and_root_stress():
     assert r['stiffness_n_per_mm'] == pytest.approx(F / tip, rel=0.03)
 
 
+def test_study_leaves_no_temp_step(tmp_path):
+    # a shape is exported to a temporary STEP to mesh it; the export goes once it is meshed (a step file the caller
+    # passes is theirs and stays)
+    import glob
+    import tempfile
+    before = set(glob.glob(f'{tempfile.gettempdir()}/cadagent-fea-*'))
+    Study(cq.Workplane('XY').box(20, 10, 10), STEEL, mesh_mm=5.0, name='box')
+    assert set(glob.glob(f'{tempfile.gettempdir()}/cadagent-fea-*')) <= before
+    step = tmp_path / 'box.step'
+    cq.exporters.export(cq.Workplane('XY').box(20, 10, 10).val(), str(step))
+    Study(step, STEEL, mesh_mm=5.0, name='box from a file')
+    assert step.exists()
+
+
 def test_shaft_torsional_stiffness():
     r0, L, T = 10.0, 100.0, 50.0
     st = Study(cq.Workplane('YZ').circle(r0).extrude(L), STEEL, mesh_mm=3.0, name='shaft')

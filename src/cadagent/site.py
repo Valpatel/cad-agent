@@ -390,6 +390,48 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
 
 # ----------------------------------------------------------------------------- serving
 
+def default_nav(root: Path, html_pages: Optional[List[str]] = None, site_pages: Optional[List[str]] = None) -> List[Dict[str, str]]:
+    """The top bar when the project configures none: the overview, the rendered documents, the 3D model, then each
+    project HTML page (``cad: html_pages``, plus the cad-agent report and simulation report when present), titled by
+    its ``<title>``. Every page the local server sends gets this bar, so the pages link to each other."""
+    root = Path(root)
+    nav = [{"id": "overview", "title": "Overview", "href": "site/"}]
+    if page_files(root, list(site_pages or [])):
+        nav.append({"id": "docs", "title": "Docs", "href": "site/#documents"})
+    if (root / "exports" / "view" / "view.json").is_file():
+        nav.append({"id": "model", "title": "3D model", "href": KIT_URL.strip("/") + "/viewer.html"})
+    seen = set()
+    for rel in list(html_pages or []) + ["docs/cad-agent-report.html", "preview/simulation.html"]:
+        f = root / rel
+        if not rel.endswith(".html") or rel in seen or not f.is_file():
+            continue
+        seen.add(rel)
+        m = re.search(r"<title>(.*?)</title>", f.read_text(errors="replace")[:4000], re.S | re.I)
+        title = html.unescape(m.group(1)).strip().split(" · ")[0].split(" | ")[0] if m else Path(rel).stem
+        nav.append({"id": rel, "title": title[:28] or Path(rel).stem, "href": rel})
+    return nav
+
+
+_INJECT = ('<script type="module">import {{ mountAppNav }} from "{kit}appnav.js";'
+           'mountAppNav({{ root: "/", current: {current}, sticky: true }});</script>')
+
+
+def inject_nav(page: str, request_path: str, nav: List[Dict[str, str]]) -> str:
+    """Add the app-wide top bar to an HTML page the local server sends, unless the page has its own."""
+    if not nav or "appnav" in page:
+        return page
+    path = request_path.split("?")[0].split("#")[0]
+    current = ""
+    for n in nav:
+        h = "/" + n["href"].split("#")[0]
+        if not re.match(r"^/[a-z]+:", h) and (path == h or (h.endswith("/") and path in (h + "index.html", h.rstrip("/")))):
+            current = n.get("id", n["href"])
+            break
+    tag = _INJECT.format(kit=KIT_URL, current=json.dumps(current))
+    i = page.lower().rfind("</body>")
+    return page[:i] + tag + page[i:] if i >= 0 else page + tag
+
+
 def _stale(root: Path, cfg: SiteConfig) -> bool:
     index = root / SITE_DIR / "index.html"
     if not index.is_file():
@@ -463,7 +505,28 @@ def serve_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
                 return
             if self.path.startswith(f"/{SITE_DIR}/") and _stale(root, cfg):
                 build_site(root, raw_site, default_title)
+            if self._send_with_nav():
+                return
             super().do_GET()
+
+        def _send_with_nav(self) -> bool:
+            """Project HTML pages get the site's top bar on the way out (the files on disk are not changed)."""
+            if not cfg.nav:
+                return False
+            target = Path(self.translate_path(self.path))
+            if target.is_dir():
+                if not self.path.split("?")[0].endswith("/"):
+                    return False                         # the stock handler redirects to the slash form
+                target = target / "index.html"
+            if target.suffix.lower() != ".html" or not target.is_file():
+                return False
+            body = inject_nav(target.read_text(errors="replace"), self.path, cfg.nav).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return True
 
         def translate_path(self, path):
             if path.startswith(KIT_URL):   # the web kit ships inside cad-agent

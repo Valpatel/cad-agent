@@ -41,7 +41,7 @@ def review_html(root: Path, manifest: dict, prefix: str = '../') -> str:
             reports.append(f'<a class="review-report" href="{e(prefix+rel)}"><b>{e(report.get("title","Report"))}</b><span>{state}</span></a>')
         downloads=''.join(f'<a href="{e(prefix+d["file"])}">{e(d.get("title",Path(d["file"]).name))}</a>' for d in g.get('downloads',[]))
         panels.append(f'<section data-review-group-panel="{i}" {"hidden" if i else ""}><p>{e(g.get("summary",""))}</p><nav class="review-tabs" aria-label="Views">{"".join(tabs)}</nav>{"".join(views)}<div class="review-reports">{"".join(reports)}</div><nav class="links">{downloads}</nav></section>')
-    return ('<section class="review-workbench"><h2>Design review</h2><nav class="review-tabs" aria-label="Design variants">'+''.join(buttons)+'</nav>'+''.join(panels)+'</section><script type="module" src="/_cadagent/kit/review.js"></script>')
+    return ('<section id="design-review" class="review-workbench"><h2>Design review</h2><nav class="review-tabs" aria-label="Design variants">'+''.join(buttons)+'</nav>'+''.join(panels)+'</section><script type="module" src="/_cadagent/kit/review.js"></script>')
 
 REVIEW_CSS='''
 .review-workbench{margin:24px 0;padding:24px;background:var(--panel,#14232d);border:1px solid #47606d;border-radius:12px}

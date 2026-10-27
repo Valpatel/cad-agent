@@ -186,6 +186,10 @@ def test_small_case_runs(tmp_path):
     res = c.results(d)
     assert res['solids']['chip']['max_c'] > res['ambient_c']
     assert 0 < res['fans']['fan']['flow_m3h'] < 20
+    # continue from the last write: a rebuilt case object picks up the processor count from the case
+    again = small_case()
+    assert again.extend(d, 10) == 0
+    assert again.results(d)['solver_finished']
 
 
 @pytest.mark.skipif(os.environ.get('CADAGENT_RUN_CFD') != '1' or not (shutil.which('docker') or shutil.which('chtMultiRegionSimpleFoam')),
@@ -265,3 +269,34 @@ def test_solid_in_pieces_warns():
     two = trimesh.util.concatenate([box((0, 0, 0), (2, 2, 2)), box((5, 0, 0), (7, 2, 2))])
     with pytest.warns(UserWarning, match='2 separate pieces'):
         ThermalCase('t', domain=((-5, -5, -5), (10, 10, 10))).solid('fins', two, SOLIDS['al6061'])
+
+
+def test_run_until_balanced_extends_in_chunks_from_a_rebuilt_case(tmp_path, monkeypatch):
+    # the heat leaving the room approaches the 7 W put in: 40 % short at first, then halving every 1000 iterations
+    def make():
+        c = ThermalCase('t', domain=((-40, -40, 0), (80, 80, 100)), cell_mm=10, iterations=1000)
+        c.solid('chip', box((10, 10, 10), (30, 30, 14)), SOLIDS['silicon'], power_w=7)
+        return c
+    d = make().write(tmp_path / 'case', np_procs=3)
+    c = make()                                   # a new process: rebuilt with the same settings, never written
+    calls = []
+
+    def fake_read(case_dir, case=None):
+        end = int(re.search(r'^endTime (\d+);', (d / 'system/controlDict').read_text(), re.M).group(1))
+        short = 40.0 / 2 ** ((end - 1000) / 1000)
+        return {'energy_balance_pct': -short, 'heat_out_w': 7 * (1 - short / 100), 'solver_finished': True,
+                'solids': {'chip': {'max_c': 60 + short}}}
+
+    def fake_run(cmd, **kw):
+        calls.append(cmd)
+        return type('R', (), {'returncode': 0})()
+
+    monkeypatch.setattr(cfd, 'read_results', fake_read)
+    monkeypatch.setattr(cfd.subprocess, 'run', fake_run)
+    res = c.run_until_balanced(d, chunk=1000, max_iterations=10000, tolerance_pct=5.0)
+    assert res['balanced'] and [h['iterations'] for h in res['continuation']] == [1000, 2000, 3000, 4000]
+    assert len(calls) == 3 and 'mpirun -np 3 ' in (d / 'Allrun.continue').read_text()
+    assert re.search(r'^endTime 4000;', (d / 'system/controlDict').read_text(), re.M)
+    # a cap stops it unbalanced, saying so
+    res = c.run_until_balanced(d, chunk=1000, max_iterations=4500, tolerance_pct=1.0)
+    assert not res['balanced'] and res['continuation'][-1]['iterations'] == 4000

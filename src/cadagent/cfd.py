@@ -731,12 +731,7 @@ foamToVTK -allRegions -latestTime -noFunctionObjects > log.foamToVTK 2>&1
                 prev = (t_fin, q)
                 for z in zones:
                     z['fin_temperature_c'] = round(new, 3)
-            self._continue(case, extra_iterations)
-            native_ = shutil.which('chtMultiRegionSimpleFoam') is not None if native is None else native
-            cmd = ['bash', str(case / 'Allrun.continue')] if native_ else [
-                'docker', 'run', '--rm', '--shm-size=8g', '-u', f'{os.getuid()}:{os.getgid()}', '-v', f'{case}:/case', image,
-                'bash', '-lc', 'cd /case && ./Allrun.continue']
-            rc = subprocess.run(cmd).returncode
+            rc = self.extend(case, extra_iterations, image=image, native=native)
             if rc != 0:
                 hist.append({'round': k, 'error': f'continuation exited {rc}'})
                 break
@@ -746,6 +741,47 @@ foamToVTK -allRegions -latestTime -noFunctionObjects > log.foamToVTK 2>&1
         zt = [res.get('zones', {}).get(z['name'], {}).get('T_c') for z in zones]
         if all(v is not None for v in zt):
             res['block_heat_w'] = round(sum(z['ha_w_k'] * (z['fin_temperature_c'] - v) for z, v in zip(zones, zt)), 2)
+        return res
+
+    def extend(self, case_dir, iterations: int, image: str = IMAGE, native: Optional[bool] = None) -> int:
+        """Continue a finished case for ``iterations`` more, from its last written time (the Allrun.continue script),
+        and rewrite its VTK. Works on a ThermalCase rebuilt with the same settings in a new process. Returns the exit
+        code."""
+        case = Path(case_dir).resolve()
+        if not getattr(self, 'np_procs', None):
+            m = re.search(r'numberOfSubdomains\s+(\d+);', (case / 'system' / 'decomposeParDict').read_text())
+            self.np_procs = int(m.group(1)) if m else 1
+        self._continue(case, int(iterations))
+        native = shutil.which('chtMultiRegionSimpleFoam') is not None if native is None else native
+        cmd = ['bash', str(case / 'Allrun.continue')] if native else [
+            'docker', 'run', '--rm', '--shm-size=8g', '-u', f'{os.getuid()}:{os.getgid()}', '-v', f'{case}:/case', image,
+            'bash', '-lc', 'cd /case && ./Allrun.continue']
+        return subprocess.run(cmd).returncode
+
+    def run_until_balanced(self, case_dir, chunk: int = 1000, max_iterations: int = 10000, tolerance_pct: float = 5.0,
+                           image: str = IMAGE, native: Optional[bool] = None) -> dict:
+        """Keep continuing a case in steps of ``chunk`` iterations until the heat leaving the room is within
+        ``tolerance_pct`` of the heat put in (``energy_balance_pct``), or until ``max_iterations`` in total. A conjugate
+        case with a hot solid in a large room can need many thousands: the solid heats up long after the flow has
+        settled. Returns the final results with ``continuation`` (the balance after each step) and ``balanced``."""
+        case = Path(case_dir).resolve()
+        hist = []
+        while True:
+            res = read_results(case, self)
+            end = int(re.search(r'^endTime (\d+);', (case / 'system' / 'controlDict').read_text(), re.M).group(1))
+            bal = res.get('energy_balance_pct')
+            hist.append({'iterations': end, 'energy_balance_pct': bal, 'heat_out_w': res.get('heat_out_w'),
+                         'solids_max_c': {k: v.get('max_c') for k, v in res.get('solids', {}).items()}})
+            if bal is not None and abs(bal) <= tolerance_pct:
+                break
+            if not res.get('solver_finished') or end + chunk > max_iterations:
+                break
+            rc = self.extend(case, chunk, image=image, native=native)
+            if rc != 0:
+                hist.append({'iterations': end, 'error': f'continuation exited {rc}'})
+                break
+        res['continuation'] = hist
+        res['balanced'] = bool(res.get('energy_balance_pct') is not None and abs(res['energy_balance_pct']) <= tolerance_pct)
         return res
 
     def _continue(self, case: Path, extra: int):

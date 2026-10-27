@@ -33,9 +33,7 @@ cad-agent webkit designer/kit      # copies this kit into your project (re-run t
 
 ## Zoom sensitivity
 
-The shared stage zooms the wheel at `zoomSpeed: 0.25` (four wheel increments over the previous single-increment distance) and middle-button drag and pinch at `dragZoomSpeed: 1`. The vendored OrbitControls carries one local patch: the wheel delta is normalised by 100, not by the integer device pixel ratio (which was 0 below a ratio of 1).
-Small trackpad deltas remain continuous. This OrbitControls setting also slows middle-button dolly and touch pinch;
-custom integrations can pass `{zoomSpeed: 1}` for the earlier sensitivity. Zoom limits, orbit and pan are unchanged.
+The shared stage zooms the wheel (and a trackpad pinch, which arrives as ctrl+wheel) at `zoomSpeed: 0.25`, four wheel increments over the previous single-increment distance, and middle-button drag and touch pinch at `dragZoomSpeed: 1`. Small trackpad deltas remain continuous. Pass `{zoomSpeed: 1}` for the earlier wheel sensitivity. Zoom limits, orbit and pan are unchanged. The vendored OrbitControls carries one local patch: the wheel delta is normalised by 100, not by the integer device pixel ratio (which was 0 below a ratio of 1).
 The model viewer and FEA viewer inherit the shared default. Projects with copied kits must rerun `cad-agent webkit`;
 `cad-agent site --serve` uses the installed toolkit directly (restart after updating it).
 

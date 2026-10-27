@@ -48,12 +48,13 @@ export function createStage(container, opts = {}) {
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
   // Wheel zoom at a quarter speed (four wheel increments cover the former single-increment distance; small trackpad
-  // deltas stay continuous), but middle-button drag and pinch at full speed: OrbitControls has one zoomSpeed for all
+  // deltas and trackpad pinch, which arrives as ctrl+wheel, stay continuous), but middle-button drag and touch pinch at full speed: OrbitControls has one zoomSpeed for all
   // three, so it is set per gesture, in the capture phase on the container, before OrbitControls sees the event.
   const wheelZoom = opts.zoomSpeed ?? 0.25, dragZoom = opts.dragZoomSpeed ?? 1;
   controls.zoomSpeed = wheelZoom;
-  container.addEventListener('wheel', () => { controls.zoomSpeed = wheelZoom; }, { capture: true, passive: true });
-  container.addEventListener('pointerdown', () => { controls.zoomSpeed = dragZoom; }, { capture: true, passive: true });
+  const gestures = new AbortController();           // removed in dispose(), so re-mounting does not pile listeners up
+  container.addEventListener('wheel', () => { controls.zoomSpeed = wheelZoom; }, { capture: true, passive: true, signal: gestures.signal });
+  container.addEventListener('pointerdown', () => { controls.zoomSpeed = dragZoom; }, { capture: true, passive: true, signal: gestures.signal });
   controls.maxPolarAngle = 1.5;
 
   // cool control-room lighting: white key, cold fill, accent rim
@@ -216,6 +217,7 @@ export function createStage(container, opts = {}) {
       running = false;
       cancelAnimationFrame(frameId);
       observer.disconnect();
+      gestures.abort();
       controls.dispose();
       renderer.dispose();
       renderer.forceContextLoss();

@@ -186,3 +186,40 @@ def test_viewer_torque_load(tmp_path):
     assert ld['kind'] == 'torque' and ld['nm'] == pytest.approx(T)
     assert ld['axis'] == pytest.approx([1, 0, 0]) and ld['center'] == pytest.approx([L, 0, 0], abs=1e-6)
     assert 0.4 * r0 < ld['radius'] < r0
+
+
+def test_torque_is_exactly_the_requested_moment_on_unbalanced_faces(monkeypatch):
+    """The assembled load has no net force and a moment of exactly the torque along the axis, with no bending part,
+    also for faces not balanced about the axis: an inclined end face, and an end face plus a side face."""
+    import numpy as np
+    from cadagent.fea import any_of
+    cap = {}
+    orig = Study._solve
+
+    def spy(self, K, f, D, ib):
+        cap['f'], cap['ib'] = f.copy(), ib
+        return orig(self, K, f, D, ib)
+
+    monkeypatch.setattr(Study, '_solve', spy)
+    T = 5.0
+    bar = cq.Workplane('XY').box(100, 10, 10).translate((50, 0, 0))
+    wedge = bar.cut(cq.Workplane('XY').box(30, 30, 30).rotate((0, 0, 0), (0, 1, 0), 45).translate((100, 0, 0)))
+    inclined = lambda fc: fc.kind == 'Plane' and fc.center[0] > 78 and fc.center[2] > 1   # one face of the V-cut end, at 45°
+    for shape, sel in ((wedge, inclined), (bar, any_of(plane_at(0, 100), plane_at(1, 5)))):
+        st = Study(shape, STEEL, mesh_mm=4.0, name='bar')
+        r = st.fix(plane_at(0, 0)).torque(sel, (100, 0, 0), (1, 0, 0), T).solve()
+        B = Study._rigid_modes(cap['ib'])
+        force = B[:, :3].T @ cap['f']
+        c = np.array(r['loads'][0]['about_centroid_mm'])
+        moment = (B[:, 3:].T @ cap['f'] - np.cross(c, force)) / 1000.0
+        assert np.abs(force).max() < 1e-9
+        assert moment == pytest.approx([T, 0.0, 0.0], abs=1e-6)
+
+
+def test_viewer_draws_the_torque_about_the_faces_not_the_given_point(tmp_path):
+    L, T = 100.0, 5.0
+    st = Study(cq.Workplane('XY').box(L, 10, 10).translate((L / 2, 0, 0)), STEEL, mesh_mm=4.0, name='bar')
+    st.fix(plane_at(0, 0.0)).torque(plane_at(0, L), (L, 20.0, 0.0), (1, 0, 0), T)
+    st.solve()
+    d, _ = _viewer(st, tmp_path / 'bar.json')
+    assert d['loads'][0]['center'] == pytest.approx([L, 0, 0], abs=1e-6)

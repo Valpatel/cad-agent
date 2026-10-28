@@ -14,6 +14,7 @@ found is the config even if it lacks a ``cad:`` section. Example (see
         - {name: clearances, run: tools/check_clearances.py, needs: [build]}
       checks:
         - {id: clearances, title: Clearances, file: exports/clearances.json}
+      dossier: dossier/project.yaml       # optional: the design dossier (docs/dossier.md)
 
 In a ``vptest.yaml`` the section sits beside vptest's own ``project:`` /
 ``projects:`` sections; only ``cad:`` is read here. Unknown keys inside ``cad:`` are kept in ``CadProject.unknown_keys``
@@ -93,6 +94,7 @@ class CadProject:
     view: Dict[str, Any] = field(default_factory=dict)
     slicer: Dict[str, Any] = field(default_factory=dict)
     explore: Dict[str, Any] = field(default_factory=dict)
+    dossier: Optional[Path] = None     # dossier/project.yaml, loaded by cadagent.dossier.load_project_dossier
     unknown_keys: List[str] = field(default_factory=list)
 
     def resolve_revision(self) -> Optional[str]:
@@ -145,6 +147,7 @@ _TOP_KEYS = {
     "name", "title", "revision", "revision_from", "python", "exports_dir",
     "preview_dir", "docs_dir", "steps", "parts_file", "part_ids", "checks",
     "printer", "package", "serve", "html_pages", "site", "view", "slicer", "explore",
+    "dossier",
 }
 
 def _require_dict(value: Any, where: str) -> Dict[str, Any]:
@@ -270,6 +273,7 @@ def from_dict(root: Path, data: Dict[str, Any]) -> CadProject:
         view=_require_dict(data.get("view"), "cad.view"),
         slicer=_require_dict(data.get("slicer"), "cad.slicer"),
         explore=_require_dict(data.get("explore"), "cad.explore"),
+        dossier=root / str(data["dossier"]) if data.get("dossier") else None,
         unknown_keys=sorted(set(data) - _TOP_KEYS),
     )
 

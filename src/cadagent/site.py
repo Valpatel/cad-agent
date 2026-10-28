@@ -393,7 +393,12 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
         quote = f'<blockquote>“{_e(src["quote"])}”</blockquote>' if src.get("quote") else ""
         ref = f'<p>Source: {_md_inline(src["ref"])}</p>' if src.get("ref") else ""
         alts = d.get("alternatives") or []
-        alt = ("<p>Considered: " + "; ".join(_md_inline(a) for a in alts) + "</p>") if alts else ""
+        def alternative(a: Any) -> str:     # a string, or the dossier's {option, rejected}
+            if isinstance(a, dict):
+                why = f" (rejected: {_md_inline(a['rejected'])})" if a.get("rejected") else ""
+                return _md_inline(a.get("option", "")) + why
+            return _md_inline(a)
+        alt = ("<p>Considered: " + "; ".join(alternative(a) for a in alts) + "</p>") if alts else ""
         return (f'<details class="decision"><summary><span class="pill {_e(d.get("status", "decided"))}">{_e(d.get("status", "decided"))}</span>'
                 f'<b>{_e(d.get("title"))}</b><span class="d">{_e(d.get("id", ""))} · {_e(d.get("date", ""))} · {_e(src.get("kind", ""))}</span></summary>'
                 f'<p><b>{_md_inline(d.get("decision", ""))}</b></p><p>{_md_inline(d.get("why", ""))}</p>{quote}{ref}{alt}</details>')

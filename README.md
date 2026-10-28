@@ -63,6 +63,7 @@ flowchart LR
 | ✏️ | `connectors` | Port windows derived from the modelled mating plug, then a sweep check that the plug really goes in |
 | ✏️ | `mcmaster` | The manufacturer's STEP and specs for a McMaster-Carr part number, normalised for assembly |
 | ✏️ | `robot` | Mass properties from CAD, links and joints, URDF and MuJoCo export, meshes kept under budget |
+| ✏️ | `dossier` | The design dossier: requirements, sections, part spec cards, interfaces and decisions with the alternatives rejected, in YAML with `file:line` errors; build-script declarations of parts, cavities, joints, fasteners and assembly steps, exported for the gates ([guide](docs/dossier.md)) |
 | ✏️ | `explore` | Part catalogues with prices and sources, designs that pick a part per slot, the project's own evaluator, Pareto ranking of the trade-offs, one-part swaps and a search over parts and parameters ([guide](docs/explore.md)) |
 | 🧪 | `fea` | gmsh + scikit-fem linear elasticity with printed-material allowables, checked against textbook cases |
 | 🧪 | `cfd` | Conjugate heat transfer cases for OpenFOAM written from CAD: fans, fin blocks, heat sources |
@@ -161,7 +162,7 @@ Details are in [`CONTRIBUTING.md`](CONTRIBUTING.md). Rules for AI agents are in 
 |---|---|
 | [`src/cadagent/`](src/cadagent/) | The toolkit, with its web kit in `webkit/` |
 | [`tests/`](tests/) | The test suite, which also runs in CI |
-| [`docs/`](docs/) | [`toolkit.md`](docs/toolkit.md), the guide to the toolkit, and [`explore.md`](docs/explore.md), design exploration |
+| [`docs/`](docs/) | [`toolkit.md`](docs/toolkit.md), the guide to the toolkit, [`explore.md`](docs/explore.md), design exploration, and [`dossier.md`](docs/dossier.md), the design dossier |
 | [`examples/`](examples/) | Worked examples: [`explore-two-wheel`](examples/explore-two-wheel/) compares robot configurations |
 | [`skills/`](skills/) | Agent skills that fill gaps, such as McMaster parts |
 | [`lessons/`](lessons/) | Rules mined from design sessions, with their sources |

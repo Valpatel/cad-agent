@@ -29,7 +29,8 @@ def _project(tmp_path):
     (tmp_path / "docs" / "decisions.yaml").write_text(
         "- {id: D1, date: '2026-10-25', title: Name, decision: Call it Bot, why: short, status: decided,\n"
         "   source: {kind: user, quote: call it Bot}}\n"
-        "- {id: D2, date: '2026-10-25', title: MCU, decision: open, why: waiting, status: open}\n")
+        "- {id: D2, date: '2026-10-25', title: MCU, decision: open, why: waiting, status: open,\n"
+        "   alternatives: [Board A, {option: Board B, rejected: no stock}]}\n")
     (tmp_path / "exports" / "designs.json").write_text(json.dumps({"designs": [
         {"name": "Default", "file": "designs/default.json", "verdict": "warn", "summary": "**12 kg**",
          "metrics": [{"label": "mass", "value": 12.1, "unit": "kg", "estimate": True}], "checks": {"ok": 3, "warn": 1, "fail": 0}}]}))
@@ -45,6 +46,7 @@ def test_build_site_writes_index_and_pages(tmp_path):
     assert "A test robot" in index and "Private" in index and "1 / 3" in index
     assert index.index("MCU") < index.index("Name"), "open decisions come first"
     assert "“call it Bot”" in index and "<b>12 kg</b>" in index and "est." in index
+    assert "Considered: Board A; Board B (rejected: no stock)" in index, "dossier-style alternatives render"
     assert 'href="pages/readme-md.html"' in index
     assert 'href="../designer/"' in index and 'href="https://example.com/bot"' in index
 

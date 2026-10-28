@@ -10,8 +10,8 @@ prove that printed parts fit, move or hold: no tolerance stack, no print shrink,
 `physical_fit_verified: false` and lists its assumptions.
 
 Status: the shared machinery (T3), the minimum-wall gate (T8), the connectivity gate (T4), the containment gate (T5),
-the fastener gate (T6), the gate bench (T12) and the dossier lint (T2, [`dossier.md`](dossier.md#lint-and-status)) are
-built, and so is the motion gate (T7). Assembly access (T9) builds on them.
+the fastener gate (T6), the motion gate (T7), the assembly-access gate (T9), the gate bench (T12) and the dossier lint
+(T2, [`dossier.md`](dossier.md#lint-and-status)) are built.
 
 ## The assembly and the relation table
 
@@ -419,7 +419,8 @@ world axis, the `seat` and `thread start` columns show the coordinate along it (
 show the whole point.
 
 `evaluate(spec, measurement)` is the kernel-free core: core CI feeds it hand-written measurements. `measure` and the
-gate need OCP. Cost: on the gate bench, about 0.6 s for four screws (28 checks).
+gate need OCP. `tool_access(assembly, spec, i, tool, envelope, present, step)` runs the tool sweep alone and
+`tool_check(id, instance, spec, result)` turns it into the `tool` check; the assembly gate uses both. Cost: on the gate bench, about 0.6 s for four screws (28 checks).
 
 Limits. Threads are envelopes: engagement is the axial overlap with the receiver's modelled thread region, not a
 pull-out rating. A receiver bored wider than d + 0.4 `hole_clearance_mm` has no thread, and a plain hole between d
@@ -530,6 +531,92 @@ stack, so a clear pose in the model does not prove printed parts clear. Contacts
 table's tolerances (`touch_mm`; the near-tangent blind spot of the boolean kernel applies, see containment). Joint
 limits are the declared ranges; nothing checks that a stop actually ends the motion there.
 
+## Assembly-sequence access (`cadagent.gates.assembly`)
+
+Can every part go in, in the declared order, along its declared direction, and can each screw's tool reach it then?
+
+```python
+from cadagent.gates.assembly import assembly_gate, assembly_from_build, run_sequence, AccessOptions, steps_markdown
+
+v = assembly_from_build(result, dossier, extra, out="exports/gates/assembly.json")   # + assembly.md beside it
+v = assembly_gate(asm, result.steps, fasteners=fasteners_from_build(result), tools={"hex 2.5": {...}},
+                  options=AccessOptions(max_step_mm=1.0, margin_mm=1.0, refine_steps=12, missing_direction="warn"),
+                  intended_overlaps=[{"parts": ["insert", "boss"], "reason": "heat-set"}], cache=cache,
+                  service=["board"])         # or True: removal for service, as warnings (off by default)
+print(steps_markdown(v))
+```
+
+`assembly_from_build` takes the steps from the build (`steps_from`: the registry's `assembly.step()` calls, plus
+YAML steps in `project.yaml` whose order the build does not declare; the lint reports steps that disagree), the
+fasteners from `fasteners_from_build`, the tools from `tools_from` and the intended overlaps from `gates:` and
+`extra`.
+
+**Checks** (ids in the verdict):
+
+| Check | Fails when |
+|---|---|
+| `steps` | no steps, or two steps share an order (or an order is not an integer); nothing else runs then |
+| `cover:<part>` | an instance of the part is fitted by no step, or by more than one. `fit` names a part (all its instances) or one instance key (`ball#3`) |
+| `cover:<fastener>` | no step installs the fastener, or steps list it by name more than once |
+| `step:<n>:refs` | `fit` is not a part (or is a fastener); an `onto` part does not exist, is the fitted part, or is fitted at this step or later; a `fasteners` entry names no fastener or catalogue key, installs nothing (every fastener of that key goes in at another step: listed twice), or a key listed k > 1 times where a different number go in; a fastener named twice in one step; a direction that is not `+X`..`-Z` or a vector |
+| `step:<n>:fasteners` | a fastener installed here clamps (any `stack` part) or threads into a part fitted at a later step |
+| `step:<n>:insert` | an instance of the fitted part shares volume with a present part on its way in, or at its seat (`state: seat`), or the kernel could not decide (`unknown`), or the path needed over `max_samples`; a warning (`missing_direction="fail"`: a failure) when the step has no direction |
+| `step:<n>:tool:<screw>` | the fastener gate's `tool` rule (`fasteners.tool_check`) on its sweep (`fasteners.tool_access`) at this step: no tool or envelope, or the envelope overlapping a part present when the screw is driven. `step:<n>:tool` warns when a step declares a tool but installs no fastener |
+| `service:<instance>` | (warning, with `service=`: True, part names or instance keys) pulled back out along its direction from the finished assembly, the part meets a part fitted or a fastener installed later, other than its own fasteners (those that clamp it or thread into it, listed as `own_fasteners_first`); or the kernel could not decide (`undecided`). Parts no step brings in are not counted |
+
+**Which step installs a fastener**, and what is present when it is driven, are the fastener gate's rules
+(`install_step`, `present_at`), so both gates agree. A catalogue key listed once in a step means "these
+fasteners"; listed once per screw, the count must match.
+
+**What an insertion is checked against.** The parts fitted at earlier steps and the solids of fasteners installed at
+earlier steps. Parts no step fits are not obstacles (`cover:` fails them; `not_checked` lists them), and instances
+fitted at one step are not checked against each other (their order within the step is not declared). A pair
+declared in `intended_overlaps` (a press fit, a heat-set insert) is left out, with its reason, as an exclusion.
+
+**The insertion sweep.** The instance moves along `seat - s * direction`, `s` from `margin_mm` beyond the far side
+of the obstacle's box down to 0 (one obstacle at a time). This is conservative advancement:
+- from each position the part steps by its gap to the obstacle: the box distance while the boxes are at least
+  `max_step_mm` apart, the exact gap once they come closer. Moving by less than the gap cannot close it, so far
+  from contact nothing is skipped and a long approach costs a few queries;
+- only where the gap is under `max_step_mm` (sliding along a face, passing close by) is the line sampled at
+  `max_step_mm`;
+- shared volume over `overlap_mm3` at a sample blocks the step, and the first contact is bisected (`refine_steps`)
+  between the last clear sample and the first hit;
+- at the seat (`s = 0`) touching is the expected end and shared volume fails.
+
+The relations are exact B-rep (`relate`, contact area off), memoised and cached in `PairCache` on the content
+hash plus the translated placement, so an unchanged rerun reads only the cache.
+
+**Witnesses.** For a blocked pair: `first_contact_mm` = [last clear s, first hit s] (the distance before the seat
+where the part first meets the obstacle), the overlap's centroid there (the contact point) and the gap and
+closest points on the clear side. For a clear step: the parts it touches on the way or at its seat (`touching`),
+and the closest approach to any other present part as two numbers that bracket it: `min_clearance`, the smallest
+exact gap measured (at the seat or within `max_step_mm` of an obstacle's box; the closest approach is at most this),
+and `clearance_at_least`, a bound that holds over the whole path, between samples too (moving by h changes a gap by
+at most h, so between samples h apart with gaps g1 and g2 the gap is at least (g1 + g2 - h) / 2; for a pair whose
+swept box never comes near, the box gap). The step table shows `lo..hi`, one number when they agree, or `≥ lo`.
+
+**Output.** The verdict (`cadagent.gate/1`) carries `steps`, one row per step: fit, onto, direction, how many
+parts are present, the clearance bracket, what it touches, the fasteners it installs with each tool's status, and what
+blocked it; plus `not_checked` (steps without a direction, tools with nothing to drive, parts no step brings in)
+and `world_stats` (kernel queries, cache and memo hits, tool sweeps). With `out=`, `steps_markdown` writes the step
+table beside the JSON as `.md`.
+
+`run_sequence(world, steps, fasteners, ...)` is the kernel-free core: `world` gives part names and kinds, boxes, the
+relation of a translated part to another (`relate_at`) and the tool sweep (`AssemblySequenceWorld` wraps an
+`Assembly`), which is how the rules are tested in core CI.
+
+**Cost.** Gate bench, 15 steps, 25 parts, four tool sweeps: about 3.7 s cold, 238 exact queries (a part sliding
+along a face, like the board down the hopper wall or the pin through its bores, is sampled every `max_step_mm`), on
+a workstation at load 6.
+
+Limits. Straight-line insertion along one declared direction: no rotation, tilt or wiggle, no room for hands or
+fixtures. Rigid parts at their modelled size: no tolerance stack, flex or print shrink, so a clear path in the
+model does not prove the parts go together. Where the part is within `max_step_mm` of an obstacle the line is
+sampled: a feature thinner than the step, crossing another between two samples, can be missed (set `max_step_mm`
+smaller where clearances are tight). The near-tangent blind spot of the boolean kernel applies (see containment).
+The tool sweep has the fastener gate's limits.
+
 ## The gate bench (`tests/fixtures/gate_bench/build.py`)
 
 A generic mechanism declared through the dossier registry: a base, a hopper with filleted corners and a declared
@@ -544,10 +631,13 @@ In the `gusset_over_screw` seed, the lid goes on in one step and the gusset in t
 driven at the gusset's step. The fastener gate's tool sweep at that step meets the gusset. A gusset fitted after the
 screws are driven is not in the way then; the gate warns that it must come off before they can be removed.
 
+In the `lid_before_board` seed, the steps are reordered so the lid goes on before the board and the balls; the
+assembly gate finds the board (and the balls) meeting the lid's top 40.6 mm above their seats.
+
 `tests/test_gate_bench.py` runs every gate on the clean bench (no finding allowed) and on every seed (its gate must
-fail with a finding that names the seeded part; the wall seed's witnesses must lie on the thinned wall). A gate not
-built yet has an adapter that raises `NotImplementedError` and strict-xfail cases; its implementer writes the
-adapter and removes the mark.
+fail with a finding that names the seeded part; the wall seed's witnesses must lie on the thinned wall). Every gate
+of the plan now has an adapter; a gate added later starts with one that raises `NotImplementedError` and
+strict-xfail cases, and its implementer writes the adapter and removes the mark.
 
 ## Where this differs from the plan
 
@@ -566,5 +656,11 @@ adapter and removes the mark.
   chains are always gridded and independent joints combined on request (`combine`), where the plan grids only
   joints declared `coupled`; pairs that do not move relative to each other are never queried rather than taken
   from the full per-pose table; the collision onset of a one-axis joint is bisected; containment can run per pose.
+- **Assembly access**: the insertion is conservative advancement along the line (gap-sized steps, sampled only
+  near contact, the first contact bisected), not a fused swept solid: OCCT's prism of a solid is refused and the
+  prism of a curved face is not a valid solid, so an exact sweep is not robust. The sweep runs one obstacle at a time
+  from beyond that obstacle's box, rather than from outside the whole present set's box (equivalent: nothing
+  beyond the obstacle's box can be hit). Parts no step fits are not insertion obstacles (the coverage check fails
+  them). Additions: catalogue-key counts per step, the fastener order check and the optional service removal.
 - **Seed harness file**: `tests/test_gate_bench.py` (pytest only collects `test_*.py`), fixture directory
   `gate_bench` (importable name).

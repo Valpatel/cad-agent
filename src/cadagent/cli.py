@@ -349,7 +349,11 @@ def cmd_review_section(project: CadProject, args: argparse.Namespace) -> int:
                 _say(f"review-section {args.section}: the record is valid ({rec['verdict']}, actor {rec['actor']}); "
                      "not written (--check)")
                 return 0
-            _say(f"review-section {args.section}: {rec['verdict']} by {rec['actor']} -> {path}")
+            try:
+                shown = path.resolve().relative_to(Path(project.root).resolve()).as_posix()
+            except ValueError:
+                shown = str(path)
+            _say(f"review-section {args.section}: {rec['verdict']} by {rec['actor']} -> {shown}")
             from cadagent.dossier.lint import lint_project
             res = lint_project(project, min_section_status=None)
             row = (res.sections.get(args.section) if res is not None else None) or {}

@@ -308,11 +308,11 @@ class _Analyser:
     def nearest(self, inside: Sequence[str], outside: Sequence[str]) -> Optional[Relation]:
         """The closest measured pair between two sets: stored relations first, else up to
         ``NEAREST_CANDIDATES`` exact queries on the pairs whose boxes are closest."""
-        ins = set(inside)
+        ins, outs = set(inside), set(outside)
         best = None
         for pair, r in self.rels.items():
             x, y = tuple(pair)
-            if (x in ins) == (y in ins) or not ({x, y} & set(outside)) or r.gap_mm is None:
+            if (x in ins) == (y in ins) or (y if x in ins else x) not in outs or r.gap_mm is None:
                 continue
             r = r if r.a in ins else r.flipped()
             if best is None or (r.gap_mm, r.a, r.b) < (best.gap_mm, best.a, best.b):
@@ -476,7 +476,8 @@ class _Analyser:
                                    "kind": "allowed free"})
                 continue
             outside = [k for k in sorted(self.nodes) if comp[k] != cid]
-            near = self.nearest(parts, outside)
+            # the witness: the nearest part that could hold the island (same group), else any part
+            near = self.nearest(parts, [k for k in outside if self.group(k) == g]) or self.nearest(parts, outside)
             touches = []
             for k in parts:
                 for o in outside:
@@ -496,7 +497,7 @@ class _Analyser:
                 continue
             if not found:
                 self.check(f"connect:{label}", "pass", f"{len(parts)} part(s) reach {', '.join(anchors)} through "
-                           "rigid connections", anchors=anchors, parts=len(parts))
+                           "rigid connections", anchors=anchors, part_count=len(parts))
                 continue
             text = []
             for isl in found:

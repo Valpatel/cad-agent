@@ -55,8 +55,7 @@ CHECKLIST: Tuple[Dict[str, Any], ...] = (
     {"id": "plain-box", "kind": "solid", "per": None, "bad_answer": "yes", "gate": None,
      "question": "Does any part appear as a plain box with no features where a mechanism or interface should be?"},
     {"id": "matches-card", "kind": "solid", "per": None, "bad_answer": "no", "gate": None,
-     "question": "Does every part look like the function its card states (parts.*.function in the manifest)? Name "
-                 "any that does not."},
+     "question": "Does every part look like the function its card states (parts.*.function in the manifest)?"},
     {"id": "floating", "kind": "solid-rear", "per": None, "bad_answer": "yes", "gate": "connectivity",
      "question": "Is anything floating in the opposite iso: a part with nothing visibly holding it?"},
     {"id": "hidden-overlap", "kind": "xray", "per": None, "bad_answer": "yes", "gate": "connectivity",

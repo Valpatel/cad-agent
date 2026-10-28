@@ -241,21 +241,31 @@ def test_review_record_stale_badge_and_review_packet(bench):
                         "1f15c4890000000d49444154789c6360000002000154a24f5d0000000049454e44ae426082")
     (packet / "iso.png").write_bytes(png)
     (packet / "section-cut.png").write_bytes(png)
-    _dump(packet / "manifest.json", {"section": "S-arm", "hashes": {"arm": "f" * 64},
-                                     "images": [{"file": "iso.png", "view": "iso", "caption": "S-arm iso", "hash": "abc123"},
-                                                {"file": "section-cut.png", "view": "cut", "caption": "through the pin"},
-                                                {"file": "missing.png", "view": "opposite iso"}]})
+    _dump(packet / "manifest.json", {      # the shape of cad-agent.review-packet/1 (docs/review-packet.md, T10)
+        "schema": "cad-agent.review-packet/1", "section": {"id": "S-arm"},
+        "parts": {"arm": {"sha256": "f" * 64}, "pin": {"sha256": st["parts"]["pin"]["sha256"]}},
+        "views": [{"id": "solid-iso", "kind": "solid", "file": "iso.png", "caption": "S-arm iso", "sha256": "abc123"},
+                  {"id": "cut-joint-I-pin-arm", "kind": "cut", "file": "section-cut.png", "caption": "through the pin",
+                   "note": "a plane containing the joint axis"},
+                  {"id": "opposite iso", "kind": "solid", "file": "missing.png"},
+                  {"id": "exploded", "kind": "exploded", "file": None}],
+        "checklist": {"questions": [{"id": "q1", "question": "Is the pin seated in both cheeks?",
+                                     "views": ["cut-joint-I-pin-arm"]}]},
+        "not_rendered": [{"what": "joint I12", "why": "planar joints have no range to pose"}]})
     _site(bench)
     page = _read(bench, "review/section-s-arm.html")
     assert "stale: geometry changed since the review of 2026-10-01" in page
     assert '2 finding(s) open' in page and 'href="../../dossier/reviews/S-arm-2026-10-28.json"' in page
     pk = page.split('id="packet"')[1]
     assert 'src="../../exports/review/S-arm/iso.png"' in pk and "through the pin" in pk
-    iso = pk.split("iso.png")[2].split("</figure>")[0]
+    iso = pk.split("<b>solid-iso</b>")[1].split("</figure>")[0]
     assert "the stop has no fillet" in iso, "a reviewer finding sits beside the image it names"
     assert "caption the pin" in pk.split("Reviewer findings")[1]
     assert "Missing image: missing.png" in pk
-    assert "rendered from older geometry (arm changed)" in pk
+    assert "rendered from older geometry (arm changed)" in pk, "pin's hash matches, arm's does not"
+    cut = pk.split("<b>cut-joint-I-pin-arm</b>")[1].split("</figure>")[0]
+    assert "a plane containing the joint axis" in cut and "Is the pin seated in both cheeks?" in cut
+    assert "Not rendered in this packet" in pk and "planar joints have no range to pose" in pk
     _links_ok(bench)
 
 

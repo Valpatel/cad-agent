@@ -544,12 +544,13 @@ changes, and serves `.md`, `.dot` and `.yaml` files as plain text so the linked 
 when it is installed, else a built-in layered layout (each cluster laid out on its own, layers by distance from the
 grounded part, left to right). The page says which drew it, and writes `site/review/connectivity.svg` too.
 
-**The review packet** (plan T10) is read from `exports/review/<section>/manifest.json` when it exists. The reader
-is tolerant until that schema settles: the images are the list under `images` (or `views`, `renders`, `items`),
-each a path or `{file|path|image, caption|title, view|name, hash}`, resolved against the manifest's folder, then the
-project root; a manifest `hashes: {part: sha256}` that differs from the current build shows a "rendered from older
-geometry" banner. The current reviewer record's `findings` (`{severity, text|message, render|image|view}`) are
-listed beside the image they name, the rest below. Without a manifest the page says how to make one.
+**The review packet** (plan T10, `cad-agent.review-packet/1`) is read from `exports/review/<section>/manifest.json`
+when it exists: each of its `views` (`id`, `caption`, `note`, `file` relative to the manifest, null when not
+rendered) is shown with the checklist questions that name it, and the manifest's `parts.*.sha256` that differ from
+the current build show a "rendered from older geometry" banner. The reader also takes a plain `images` list (paths
+or `{file, caption, view, hash}`) and a `hashes: {part: sha256}` map. The current reviewer record's `findings`
+(`{severity, text|message, render|image|view}`) are listed beside the view they name (by id or file name), the rest
+below. Without a manifest the page says how to make one.
 
 Limits: the pages show what the files say. They do not recompute a status, and a page built before the gates ran
 again shows the old verdicts (the gates page marks them stale against the current geometry record).

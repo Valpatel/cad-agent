@@ -598,30 +598,43 @@ def _packet(data: ReviewData, sid: str) -> Optional[Dict[str, Any]]:
 
 
 def _packet_images(data: ReviewData, manifest: Mapping[str, Any]) -> List[Dict[str, Any]]:
-    """The packet's images, whatever the manifest calls them (``images``, ``views``, ``renders`` or ``items``; each
-    a path or ``{file|path|image, caption|title, view|name, hash}``), resolved against the manifest's directory,
-    then the project root."""
+    """The packet's views. ``cad-agent.review-packet/1`` (T10, ``cadagent.render.review_packet``) lists them under
+    ``views`` as ``{id, kind, file, caption, note, sha256}``, ``file`` relative to the manifest's folder and null for
+    a view not rendered. Until that schema is merged the reader is tolerant: ``images``, ``renders`` or ``items``,
+    each a path or ``{file|path|image, caption|title, id|view|name, hash|sha256}``, resolved against the manifest's
+    folder, then the project root."""
     items: List[Any] = []
-    for key in ("images", "views", "renders", "items"):
+    for key in ("views", "images", "renders", "items"):
         if isinstance(manifest.get(key), list):
             items = manifest[key]
             break
     out = []
     for it in items:
         d = {"file": it} if isinstance(it, str) else dict(it) if isinstance(it, dict) else {}
-        rel = next((d[k] for k in ("file", "path", "image", "png") if isinstance(d.get(k), str)), "")
-        if not rel:
+        if not d:
             continue
+        rel = next((d[k] for k in ("file", "path", "image", "png") if isinstance(d.get(k), str) and d.get(k)), "")
         found = ""
-        for base in (Path(manifest["_dir"]), data.root):
+        for base in ((Path(manifest["_dir"]), data.root) if rel else ()):
             p = (base / rel).resolve()
             if p.is_file() and data.root in p.parents:
                 found = _rel(p, data.root)
                 break
         out.append({"rel": found, "given": rel,
                     "caption": next((str(d[k]) for k in ("caption", "title") if d.get(k)), ""),
-                    "view": next((str(d[k]) for k in ("view", "name", "id") if d.get(k)), ""),
-                    "hash": next((str(d[k]) for k in ("hash", "geometry_hash", "sha256") if d.get(k)), "")})
+                    "view": next((str(d[k]) for k in ("id", "view", "name") if d.get(k)), ""),
+                    "note": str(d.get("note") or ""), "kind": str(d.get("kind") or ""),
+                    "hash": next((str(d[k]) for k in ("sha256", "hash", "geometry_hash") if d.get(k)), "")})
+    return out
+
+
+def _packet_hashes(manifest: Mapping[str, Any]) -> Dict[str, str]:
+    """``{part: sha256}`` the packet was rendered from: ``parts.<name>.sha256`` (T10's schema) or ``hashes``."""
+    out: Dict[str, str] = {}
+    if isinstance(manifest.get("parts"), dict):
+        out.update({k: str(v["sha256"]) for k, v in manifest["parts"].items() if isinstance(v, dict) and v.get("sha256")})
+    if isinstance(manifest.get("hashes"), dict):
+        out.update({k: str(v) for k, v in manifest["hashes"].items() if v})
     return out
 
 
@@ -644,8 +657,9 @@ def _packet_html(data: ReviewData, sid: str, links: _Links) -> str:
                 '<code>cadagent.render.review_packet</code>) adds the views the reviewer answers the checklist from.</p>')
     images = _packet_images(data, m)
     current = {pid: data.part_row(pid).get("sha256") for pid in data.part_ids(sid)}
-    hashes = m.get("hashes") if isinstance(m.get("hashes"), dict) else {}
+    hashes = _packet_hashes(m)
     changed = sorted(p for p, h in hashes.items() if p in current and current[p] and h != current[p])
+    questions = [q for q in ((m.get("checklist") or {}).get("questions") or []) if isinstance(q, dict)]
     banner = (f'<div class="banner">The packet was rendered from older geometry ({_e(", ".join(changed))} changed): '
               'render it again before the review.</div>' if changed else "")
     findings, record = _reviewer_findings(data, row)
@@ -666,12 +680,23 @@ def _packet_html(data: ReviewData, sid: str, links: _Links) -> str:
         mine_html = (f'<ul class="small">{"".join(f_html(f) for f in mine)}</ul>' if mine else "")
         if img["rel"]:
             pic = f'<a href="{_e(links.prefix + img["rel"])}"><img src="{_e(links.prefix + img["rel"])}" alt="{_e(img["caption"] or img["view"])}" loading="lazy"></a>'
-        else:
+        elif img["given"]:
             pic = f'<p class="notice">Missing image: {_e(img["given"])}</p>'
+        else:
+            pic = '<p class="notice">Not rendered in this packet</p>'
         hash_html = f' · <code class="hash">{_e(img["hash"][:16])}</code>' if img["hash"] else ""
-        figs.append(f'<figure>{pic}<figcaption><b>{_e(img["view"])}</b> {_e(img["caption"])}{hash_html}{mine_html}</figcaption></figure>')
+        note = f'<br><span class="small muted">{_e(img["note"])}</span>' if img["note"] else ""
+        asks = [q for q in questions if img["view"] and img["view"] in (q.get("views") or [])]
+        asks_html = ('<p class="small muted">Checklist:</p><ul class="small">'
+                     + "".join(f'<li>{_e(q.get("question"))}</li>' for q in asks) + "</ul>") if asks else ""
+        figs.append(f'<figure>{pic}<figcaption><b>{_e(img["view"])}</b> {_e(img["caption"])}{hash_html}{note}'
+                    f'{asks_html}{mine_html}</figcaption></figure>')
     rest = [f for i, f in enumerate(findings) if i not in used]
     rest_html = (f'<h3 class="rf">Reviewer findings</h3><ul>{"".join(f_html(f) for f in rest)}</ul>' if rest else "")
+    skipped = [x for x in m.get("not_rendered") or [] if isinstance(x, dict)]
+    if skipped:
+        rest_html += ('<p class="small muted">Not rendered: '
+                      + "; ".join(f'{_e(x.get("what"))} ({_e(x.get("why"))})' for x in skipped) + "</p>")
     rec_html = f'<p class="small muted">Reviewer record: {links.file(record)}</p>' if record else ""
     manifest_rel = _rel(Path(m["_dir"]) / "manifest.json", data.root)
     return (banner + (f'<div class="packet">{"".join(figs)}</div>' if figs else '<p class="tag">The packet lists no images.</p>')

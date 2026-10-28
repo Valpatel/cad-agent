@@ -19,25 +19,50 @@ HERE = Path(__file__).resolve().parent
 OUT = HERE / "site_snapshot"
 
 
-def main() -> int:
+def generate(out: Path, jobs: int = 2) -> int:
+    """Build the clean bench in a temporary copy, run every gate and write the site's inputs to ``out``. Returns the
+    ``cad-agent gates`` exit code (0: every gate passed); ``out`` is written only then."""
     from cadagent.cli import main as cli
     with tempfile.TemporaryDirectory() as tmp:
         bench = Path(tmp) / "gate_bench"
         shutil.copytree(HERE, bench, ignore=shutil.ignore_patterns("__pycache__", "site_snapshot", "exports", "site"))
-        code = cli(["gates", "--project", str(bench / "project"), "--build", "--jobs", "2"])
+        code = cli(["gates", "--project", str(bench / "project"), "--build", "--jobs", str(jobs)])
         if code != 0:
-            print("the clean bench must pass every gate", file=sys.stderr)
-            return 1
+            return code
         exports = bench / "project" / "exports"
-        shutil.rmtree(OUT, ignore_errors=True)
+        shutil.rmtree(out, ignore_errors=True)
         for src in [exports / "dossier-geometry.json", exports / "dossier-status.json",
                     *sorted((exports / "gates").glob("*"))]:
-            dst = OUT / src.relative_to(exports)
+            dst = Path(out) / src.relative_to(exports)
             dst.parent.mkdir(parents=True, exist_ok=True)
             if src.suffix == ".json":
                 dst.write_text(json.dumps(json.loads(src.read_text()), separators=(",", ":")) + "\n")
             else:
                 shutil.copy(src, dst)
+    return 0
+
+
+def summary(folder: Path) -> dict:
+    """What the snapshot means, without the content hashes (an OCCT upgrade changes those, not the meaning): each
+    verdict's status and check ids with their states, and every status in the dossier status file."""
+    folder = Path(folder)
+    out = {"gates": {}, "files": sorted(p.name for p in (folder / "gates").iterdir())}
+    for p in sorted((folder / "gates").glob("*.json")):
+        v = json.loads(p.read_text())
+        out["gates"][p.stem] = {"status": v.get("status"), "pass": v.get("pass"),
+                                "checks": sorted((c.get("id"), c.get("status")) for c in v.get("checks") or [])}
+    st = json.loads((folder / "dossier-status.json").read_text())
+    out["status"] = {kind: {k: x.get("status") for k, x in st.get(kind, {}).items()}
+                     for kind in ("sections", "parts", "requirements", "decisions")}
+    out["pass"] = st.get("pass")
+    return out
+
+
+def main() -> int:
+    code = generate(OUT)
+    if code != 0:
+        print("the clean bench must pass every gate", file=sys.stderr)
+        return 1
     print(f"wrote {OUT}")
     return 0
 

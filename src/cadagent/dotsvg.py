@@ -373,6 +373,10 @@ def _route(a: _Box, b: _Box, off: float) -> Tuple[Point, Point, Point, Point]:
     """A cubic Bezier between two boxes: side to side with horizontal tangents when one lies left of the other,
     top to bottom with vertical tangents when they overlap in x, and an arc out of the right sides when they share
     a column. ``off`` separates parallel edges."""
+    if a is b:                                                # a self-loop: a small arc out of the right side
+        x, y = a.x + a.w, a.y + a.h / 2
+        r = 18.0 + abs(off)
+        return (x, y - 6), (x + r, y - r), (x + r, y + r), (x, y + 6)
     if a.x > b.x + b.w:                                       # a right of b: route b to a, then reverse
         p3, c2, c1, p0 = _route(b, a, -off)
         return p0, c1, c2, p3
@@ -488,6 +492,10 @@ def _svg_graphviz(text: str) -> Optional[str]:
     if res.returncode != 0 or "<svg" not in res.stdout:
         return None
     svg = res.stdout[res.stdout.index("<svg"):]
+    # Graphviz paints a white page behind the graph; drop it so the page's background shows. Its other colours are
+    # literal (black text and lines), so in a dark theme the built-in layout reads better.
+    svg = re.sub(r'(<g id="graph0" class="graph"[^>]*>\s*(?:<title>[^<]*</title>\s*)?<polygon) fill="white"',
+                 r'\1 fill="none"', svg, count=1)
     return svg.replace("<svg ", '<svg class="dotgraph" ', 1)
 
 

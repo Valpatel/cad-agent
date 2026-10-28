@@ -542,7 +542,8 @@ changes, and serves `.md`, `.dot` and `.yaml` files as plain text so the linked 
 
 **The connectivity graph** is drawn from `exports/gates/connectivity.dot` by `cadagent.dotsvg`: Graphviz's `dot`
 when it is installed, else a built-in layered layout (each cluster laid out on its own, layers by distance from the
-grounded part, left to right). The page says which drew it, and writes `site/review/connectivity.svg` too.
+grounded part, left to right). The page says which drew it, and writes `site/review/connectivity.svg` too. The
+built-in drawing takes its colours from the page's theme (light or dark); Graphviz's keeps its own black on clear.
 
 **The review packet** (plan T10, `cad-agent.review-packet/1`) is read from `exports/review/<section>/manifest.json`
 when it exists: each of its `views` (`id`, `caption`, `note`, `file` relative to the manifest, null when not

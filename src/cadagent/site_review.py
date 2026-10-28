@@ -144,7 +144,8 @@ def collect(project: Any) -> ReviewData:
             data.dossier_error = str(exc)
         if status_path.is_file():
             built = status_path.stat().st_mtime
-            data.yaml_newer = [_rel(p, root) for p in _dossier_files(project) if p.stat().st_mtime > built]
+            data.yaml_newer = [_rel(p, root) for p in _dossier_files(project, data.dossier)
+                               if p.stat().st_mtime > built]
     try:
         from cadagent.gates.run import GatesConfigError, gates_config
         geo_path = gates_config(project).geometry
@@ -164,13 +165,32 @@ def collect(project: Any) -> ReviewData:
     return data
 
 
-def _dossier_files(project: Any) -> List[Path]:
+def _dossier_files(project: Any, dossier: Any = None) -> List[Path]:
+    """The files the YAML dossier is made of (``project.yaml``, every section and card file it loaded, the decisions
+    file) and its reviewer records (``reviews/*.json`` beside ``project.yaml``). Never a walk of the project."""
     path = getattr(project, "dossier", None)
     if not path:
         return []
-    base = Path(path).resolve().parent
-    out = [p for p in sorted(base.rglob("*")) if p.is_file() and p.suffix in (".yaml", ".yml", ".json")]
-    return out
+    root = Path(project.root).resolve()
+    main = Path(path).resolve()
+    if dossier is None:
+        try:
+            from cadagent.dossier import load_project_dossier
+            dossier = load_project_dossier(project, strict=False)
+        except Exception:                # noqa: BLE001 (then only project.yaml and the records are watched)
+            dossier = None
+    names = {main}
+    if dossier is not None:
+        items = [*dossier.requirements.values(), *dossier.sections.values(), *dossier.parts.values(),
+                 *dossier.interfaces.values(), *dossier.decisions.values(), *dossier.assembly]
+        for item in items:
+            where = getattr(item, "where", None)
+            if where is not None and where.file:
+                names.add((root / where.file).resolve())
+    reviews = main.parent / "reviews"
+    if reviews.is_dir():
+        names |= {p.resolve() for p in reviews.glob("*.json")}
+    return sorted(p for p in names if p.is_file())
 
 
 def sources(project: Any) -> List[Path]:
@@ -203,6 +223,10 @@ def nav_entries(project: Any) -> List[Dict[str, str]]:
 def _e(v: Any) -> str:
     from cadagent.site import _e as esc
     return esc(v)
+
+
+def _int(v: Any) -> int:
+    return v if isinstance(v, int) and not isinstance(v, bool) else 0
 
 
 def _slug(text: str) -> str:
@@ -250,8 +274,24 @@ class _Links:
         self.root = root
         self.prefix = "../../"
 
+    def rel(self, path: Any) -> str:
+        """A project-relative path for ``path`` (relative already, or absolute inside the root); "" outside it."""
+        text = str(path or "")
+        if not text:
+            return ""
+        p = Path(text)
+        if p.is_absolute():
+            try:
+                return p.resolve().relative_to(self.root).as_posix()
+            except ValueError:
+                return ""
+        return text
+
     def file(self, rel: Any, text: Optional[str] = None, *, line: Any = None) -> str:
-        rel = str(rel or "")
+        given = str(rel or "")
+        rel = self.rel(given)
+        if given and not rel:
+            return f"<code>{_e(text if text is not None else given)}</code>"
         shown = _e(text if text is not None else (f"{rel}:{line}" if line else rel))
         path = (self.root / rel).resolve() if rel else None
         if path is None or not rel or not (path == self.root or self.root in path.parents) or not path.exists():
@@ -263,6 +303,9 @@ class _Links:
         return self.file(rel, text) if self.exists(rel) else ""
 
     def exists(self, rel: str) -> bool:
+        rel = self.rel(rel)
+        if not rel:
+            return False
         p = (self.root / rel).resolve()
         return (self.root in p.parents) and p.exists()
 
@@ -271,8 +314,8 @@ def _check_href(check: Mapping[str, Any], links: _Links) -> str:
     cid = str(check.get("id", ""))
     if cid.startswith("gate:"):
         return f"gates.html#gate-{_slug(cid[5:])}"
-    f = check.get("file")
-    return links.prefix + str(f) if f and links.exists(str(f)) else ""
+    f = links.rel(check.get("file"))
+    return links.prefix + f if f and links.exists(f) else ""
 
 
 def _check_pills(checks: Sequence[Mapping[str, Any]], links: _Links) -> str:
@@ -372,7 +415,7 @@ def _counts(v: Optional[Mapping[str, Any]]) -> str:
     c = (v or {}).get("counts") or {}
     if not c:
         return ""
-    return f'{c.get("pass", 0)} pass · {c.get("warn", 0)} warn · {c.get("fail", 0)} fail'
+    return f'{_e(c.get("pass", 0))} pass · {_e(c.get("warn", 0))} warn · {_e(c.get("fail", 0))} fail'
 
 
 def _decision_html(dec: Any, status_row: Optional[Mapping[str, Any]] = None) -> str:
@@ -412,8 +455,8 @@ def _banners(data: ReviewData, links: _Links) -> str:
                    f'<code>cad-agent dossier</code> or <code>cad-agent gates</code>. Statuses below are not computed.</div>')
     elif data.status is not None and not data.status.get("pass", True):
         c = data.status.get("counts") or {}
-        out.append(f'<div class="banner bad">The dossier lint fails: {c.get("error", 0)} error(s), '
-                   f'{c.get("warning", 0)} warning(s). See <a href="index.html#lint">the findings</a>.</div>')
+        out.append(f'<div class="banner bad">The dossier lint fails: {_e(c.get("error", 0))} error(s), '
+                   f'{_e(c.get("warning", 0))} warning(s). See <a href="index.html#lint">the findings</a>.</div>')
     if data.yaml_newer:
         files = ", ".join(links.file(f) for f in data.yaml_newer[:6])
         out.append(f'<div class="banner">The dossier changed after the status file was written ({files}); run '
@@ -445,7 +488,7 @@ def _review_state(row: Mapping[str, Any]) -> Tuple[str, str]:
         if rev.get("signed_off") and row.get("status") == "signed_off":
             return "signed off", "pass"
         if rev.get("findings"):
-            return f'{rev["findings"]} finding(s) open', "warn"
+            return f'{rev["findings"]} finding(s) open', "warn"     # _pill escapes it
         return "reviewed", "pass"
     if row.get("invalidated"):
         return "review void (geometry changed)", "stale"
@@ -481,12 +524,12 @@ def index_page(data: ReviewData, cfg: Any) -> str:
     states = gate_states(data)
     gpass = sum(1 for s in states.values() if s in ("pass", "warn"))
     stats = ('<div class="stats">'
-             f'<div class="stat"><b>{sec_counts.get("signed_off", 0)} / {len(data.section_ids())}</b><span>sections signed off</span></div>'
-             f'<div class="stat"><b>{sum(sec_counts.get(s, 0) for s in ("gated", "reviewed", "signed_off"))} / '
+             f'<div class="stat"><b>{_e(sec_counts.get("signed_off", 0))} / {len(data.section_ids())}</b><span>sections signed off</span></div>'
+             f'<div class="stat"><b>{_e(sum(_int(sec_counts.get(s)) for s in ("gated", "reviewed", "signed_off")))} / '
              f'{len(data.section_ids())}</b><span>sections gated or better (required: {_e(st.get("required_section_status") or "—")})</span></div>'
              f'<a class="stat" href="requirements.html"><b>{verified} / {len(reqs)}</b><span>requirements verified</span></a>'
              f'<a class="stat" href="gates.html"><b>{gpass} / {len(states)}</b><span>gates pass on the current geometry</span></a>'
-             f'<div class="stat"><b>{c.get("error", "—")} / {c.get("warning", "—")}</b><span>lint errors / warnings</span></div></div>')
+             f'<div class="stat"><b>{_e(c.get("error", "—"))} / {_e(c.get("warning", "—"))}</b><span>lint errors / warnings</span></div></div>')
     findings = st.get("findings") or []
     lint = ("".join(f'<tr><td>{_pill("fail" if f.get("severity") == "error" else "warn", f.get("severity"))}</td>'
                     f'<td><code>{_e(f.get("code"))}</code></td><td>{_e(f.get("message"))}</td>'
@@ -514,6 +557,9 @@ def _interfaces_for(data: ReviewData, sid: str) -> List[Any]:
 
 
 def _findings_for(data: ReviewData, sid: str) -> List[Tuple[str, Dict[str, Any], Set[str]]]:
+    """The gate findings that concern the section: those naming one of its parts, and every failing finding that
+    names no known part (the dossier lint counts those against every part, so they block this section too; they come
+    back with an empty set of named parts)."""
     cards = set(data.section_of_part())
     mine = set(data.part_ids(sid))
     out = []
@@ -524,12 +570,12 @@ def _findings_for(data: ReviewData, sid: str) -> List[Tuple[str, Dict[str, Any],
             if not isinstance(f, dict):
                 continue
             named = parts_named(f.get("parts") or [], cards, data.geometry)
-            if named & mine:
+            if named & mine or (not named and f.get("status") == "fail" and mine):
                 out.append((gate, f, named))
     return out
 
 
-def _part_card(data: ReviewData, pid: str, links: _Links) -> str:
+def _part_card(data: ReviewData, pid: str, links: _Links, shown_interfaces: Set[str]) -> str:
     row = data.part_row(pid)
     card = (getattr(data.dossier, "parts", None) or {}).get(pid)
     status = row.get("status", "")
@@ -553,7 +599,9 @@ def _part_card(data: ReviewData, pid: str, links: _Links) -> str:
         if card.loads:
             dl.append(("Loads", "<br>".join(f"{_e(k)}: {_e(v)}" for k, v in card.loads.items())))
         if card.interfaces:
-            dl.append(("Interfaces", " ".join(f'<a href="#if-{_slug(i)}">{_e(i)}</a>' for i in card.interfaces)))
+            dl.append(("Interfaces", " ".join(f'<a href="#if-{_slug(i)}">{_e(i)}</a>' if i in shown_interfaces
+                                              else f'{_e(i)} <span class="badge">not declared</span>'
+                                              for i in card.interfaces)))
         if card.fasteners:
             dl.append(("Fasteners", "<br>".join(
                 _e(f"{f.qty or '?'} × {f.screws} to {f.to}" + (f" via {f.via}" if f.via else "")) for f in card.fasteners)))
@@ -578,7 +626,7 @@ def _part_card(data: ReviewData, pid: str, links: _Links) -> str:
     if row.get("sha256"):
         meta.append(f'geometry <code class="hash">{_e(row["sha256"][:16])}</code>')
     if row.get("findings"):
-        meta.append(f'<span class="badge">{row["findings"]} lint error(s)</span>')
+        meta.append(f'<span class="badge">{_e(row["findings"])} lint error(s)</span>')
     decs = "".join(_decision_html(dec, ((data.status or {}).get("decisions") or {}).get(dec.id))
                    for dec in (card.decisions if card is not None else []))
     return (f'<div class="partcard">{"".join(head)}{_ladder(status)}<dl>'
@@ -760,7 +808,7 @@ def section_page_html(data: ReviewData, sid: str, cfg: Any) -> str:
     sec_decs = "".join(_decision_html(dec, (st.get("decisions") or {}).get(dec.id))
                        for dec in (getattr(data.dossier, "decisions", None) or {}).values()
                        if dec.scope == "section" and dec.section == sid)
-    cards = "".join(_part_card(data, pid, links) for pid in data.part_ids(sid))
+    cards = "".join(_part_card(data, pid, links, {i.id for i in itfs}) for pid in data.part_ids(sid))
 
     states = gate_states(data)
     f_rows = []
@@ -769,6 +817,10 @@ def section_page_html(data: ReviewData, sid: str, cfg: Any) -> str:
         stale = (' <span class="badge">verdict ' + _e(states[gate]) + "</span>") if states.get(gate) in ("stale", "invalid") else ""
         parts = " ".join(f'<a href="{section_page(sec_of[p]) if sec_of.get(p) != sid else ""}#part-{_slug(p)}">{_e(p)}</a>'
                          if p in sec_of else _e(p) for p in sorted(named))
+        if not named:
+            raw = ", ".join(str(x) for x in f.get("parts") or [])
+            parts = (f'<span class="small muted">{_e(raw) + ": " if raw else ""}names no known part, so it counts '
+                     'against every part</span>')
         f_rows.append(f'<tr><td><a href="gates.html#gate-{_slug(gate)}">{_e(gate)}</a>{stale}</td><td><code>{_e(f.get("id"))}</code></td>'
                       f'<td>{_pill(f.get("status"))}</td><td>{parts}</td><td>{_e(f.get("message"))}<br>{_witness(f.get("evidence"))}</td></tr>')
     lint_rows = [f for f in (st.get("findings") or []) if f.get("item") == sid or set(f.get("parts") or []) & set(data.part_ids(sid))
@@ -814,7 +866,8 @@ def requirements_page(data: ReviewData, cfg: Any) -> str:
         quote = (f'<br><span class="small muted">{_e(src.kind)}: “{_e(src.quote)}”{" (" + _e(src.ref) + ")" if src.ref else ""}</span>'
                  if src and src.quote else "")
         secs = " ".join(f'<a href="{section_page(s)}">{_e(s)}</a>' for s in r.get("sections") or [])
-        derived = (f'<br><span class="small muted">derived: {" ".join(f'<a href="#req-{_slug(c)}">{_e(c)}</a>' for c in r["derived"])}</span>'
+        derived_links = " ".join('<a href="#req-%s">%s</a>' % (_slug(c), _e(c)) for c in r.get("derived") or [])
+        derived = (f'<br><span class="small muted">derived: {derived_links}</span>'
                    if r.get("derived") else "")
         parent = (f'<br><span class="small muted">from <a href="#req-{_slug(y.parent)}">{_e(y.parent)}</a></span>'
                   if y is not None and y.parent else "")
@@ -878,7 +931,7 @@ def gates_page(data: ReviewData, cfg: Any, out_dir: Path, engine: str = "auto") 
         c = st.get("counts") or {}
         files = " · ".join(x for x in (links.maybe(f"{gates_rel}/dossier-lint.json", ".json"),
                                        links.maybe(_rel(data.exports / STATUS_FILE, data.root), "status")) if x)
-        rows.append(f'<tr><td><b>dossier-lint</b></td><td>{_pill(state)}</td><td>{c.get("error", 0)} error · {c.get("warning", 0)} warning</td>'
+        rows.append(f'<tr><td><b>dossier-lint</b></td><td>{_pill(state)}</td><td>{_e(c.get("error", 0))} error · {_e(c.get("warning", 0))} warning</td>'
                     f'<td class="small">declarations against the build; statuses in dossier-status.json</td>'
                     f'<td><a href="index.html#lint">findings</a> · {files}</td></tr>')
     table = ('<div class="tablewrap"><table><tr><th>Gate</th><th>State</th><th>Checks</th><th>Summary</th><th>Files</th></tr>'

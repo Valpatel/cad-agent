@@ -411,3 +411,79 @@ def test_a_seeded_defect_reaches_its_section_page_through_the_cli(tmp_path):
     assert '<b>connectivity</b></td><td><span class="pill fail">fail</span>' in gates
     assert "static frame (not grounded)" in gates
     _links_ok(root)
+
+
+def test_the_committed_snapshot_matches_what_the_bench_produces(tmp_path):
+    """The core tests read a snapshot; this keeps it honest. Compared by meaning (statuses and check ids), not by
+    bytes: another OCCT gives other content hashes for the same geometry."""
+    pytest.importorskip("cadquery")
+    pytest.importorskip("trimesh")
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("site_snapshot", BENCH / "site_snapshot.py")
+    snap = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(snap)
+    assert snap.generate(tmp_path / "fresh") == 0
+    assert snap.summary(tmp_path / "fresh") == snap.summary(SNAPSHOT), REGEN
+
+
+
+# ------------------------------------------------------------------------------------------------- review follow-ups
+
+def test_a_failing_finding_that_names_no_part_shows_on_every_section(bench):
+    path = bench / "exports" / "gates" / "assembly.json"
+    v = _json(path)
+    v["findings"] = [{"id": "steps", "status": "fail", "message": "two steps share order 3", "parts": []}]
+    v.update({"pass": False, "status": "fail"})
+    _dump(path, v)
+    _site(bench)
+    for sid in ("s-arm", "s-bracket", "s-frame", "s-store"):
+        findings = _read(bench, f"review/section-{sid}.html").split('id="findings"')[1].split('id="packet"')[0]
+        assert "two steps share order 3" in findings and "counts against every part" in findings, sid
+
+
+def test_numbers_from_the_files_are_escaped(bench):
+    path = bench / "exports" / "gates" / "wall.json"
+    v = _json(path)
+    v["counts"]["pass"] = "<script>x</script>"
+    _dump(path, v)
+    st_path = bench / "exports" / "dossier-status.json"
+    st = _json(st_path)
+    st["counts"]["error"] = "<script>y</script>"
+    st["parts"]["hopper"]["findings"] = "<script>z</script>"
+    _dump(st_path, st)
+    _site(bench)
+    for page in (bench / "site").rglob("*.html"):
+        assert "<script>x" not in page.read_text() and "<script>y" not in page.read_text(), page
+        assert "<script>z" not in page.read_text(), page
+
+
+def test_check_files_given_absolute_and_interfaces_not_declared(bench):
+    st_path = bench / "exports" / "dossier-status.json"
+    st = _json(st_path)
+    report = bench / "exports" / "fea.json"
+    report.write_text("{}")
+    st["parts"]["bracket"]["checks"].append({"id": "fea:drop", "status": "pass", "file": str(report)})
+    st["parts"]["bracket"]["checks"].append({"id": "fea:far", "status": "pass", "file": "/etc/hostname"})
+    _dump(st_path, st)
+    sec = bench / "dossier" / "sections" / "bracket.yaml"
+    sec.write_text(sec.read_text().replace("  - I-bracket\n", "  - I-bracket\n  - I-nowhere\n", 1))
+    _site(bench)
+    page = _read(bench, "review/section-s-bracket.html")
+    assert 'href="../../exports/fea.json"' in page and "/etc/hostname" not in page.split("fea:far")[0][-200:]
+    assert 'href="#if-i-nowhere"' not in page and "I-nowhere <span class=\"badge\">not declared</span>" in page
+    _links_ok(bench)
+
+
+def test_the_server_watches_the_dossier_files_not_the_project():
+    from types import SimpleNamespace
+    root = BENCH / "project"
+    project = SimpleNamespace(root=root, dossier=root / "dossier" / "project.yaml", exports_dir=root / "exports")
+    files = {p.relative_to(root).as_posix() for p in site_review._dossier_files(project)}
+    assert files == {"dossier/project.yaml", "dossier/sections/arm.yaml", "dossier/sections/bracket.yaml",
+                     "dossier/sections/frame.yaml", "dossier/sections/store.yaml"}
+
+
+def test_a_self_loop_is_drawn():
+    svg, _ = dotsvg.dot_to_svg("graph { a -- a; a -- b }", engine="python")
+    loop = re.findall(r'<path d="([^"]+)"[^>]*><title>a – a</title>', svg)
+    assert loop and len(set(re.findall(r"[-\d.]+,[-\d.]+", loop[0]))) == 4, "four distinct points, not a dot"

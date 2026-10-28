@@ -461,7 +461,7 @@ neither a known gate nor a written verdict) or the `id` of a `cad.checks` entry.
 | `review-unknown-section` | error | a reviewer record names a section of the dossier |
 | `review-same-actor` | error | the reviewer did not build any part of the section (`parts.<name>.actor`) and is not named as an `author` of the section, its cards or decisions; neither the reviewer nor a part's builder is `unknown` (while `gates: require_separate_reviewer`, plan §5.3) |
 | `review-builder-unknown` | warning | a current review is of a section whose parts were built by a known actor; otherwise nobody can be shown to be someone else, and the review does not count (a fresh checkout built without `CAD_AGENT_ACTOR`: the section stays `gated`, `check` still passes) |
-| `review-incomplete` | warning | a current review passes `check_record` against the dossier and the packet on disk (every decision judged, every requirement traced, exactly the packet's questions answered); otherwise it does not count |
+| `review-incomplete` | warning | a current review passes `check_record` against the dossier and the packet on disk (for a sign-off: every decision judged, every requirement traced, every question answered; for any record: no answer to a question the packet does not ask, nothing outside the section); otherwise a sign-off does not count, and a change request still counts (it voids an earlier sign-off of the same geometry) |
 | `review-stale` | warning | the latest review still matches the geometry; otherwise its sign-off no longer counts |
 | `signoff-open-decision` | error | a section with an open decision is not signed off |
 | `geometry-missing` | warning | the geometry record exists (without it every card stays `draft`) |
@@ -517,9 +517,11 @@ invalid one is `review-invalid` and does not count. A record by a part's builder
 a record whose hashes match the current build is checked, since only such a record can count: an old record does not
 become an error because its reviewer later changed a part. A current record read from a file also goes through
 `check_record` against the dossier and the packet on disk (the checks `--submit` runs, without those the lint cannot
-make or reports itself: the packet's staleness, open decisions, the gates); a record that fails them does not count
-(`review-incomplete`). With no geometry record nothing is built, so no record is refused or counted. A requirement
-verified by `inspection` also needs the current record of each section serving it to trace it `yes`. Records are read in time order
+make or reports itself: the packet's staleness, open decisions, the gates, and which views and gates the packet had
+when the record was written); a sign-off that fails them does not count, and a change request that fails them still
+counts (`review-incomplete`). With no geometry record nothing is built, so no record is refused or counted. A requirement
+verified by `inspection` also needs the current record of each section serving it to trace it `yes` and not to
+request changes. Records are read in time order
 (`timestamp`, else `date`, then the `-2`, `-3` suffix of a second record the same day); the newest whose hashes
 match decides.
 
@@ -626,8 +628,8 @@ which fills in `actor` (from `CAD_AGENT_ACTOR`), `date`, `timestamp`, `signed_of
 | `stale-hashes` | `hashes` is not exactly the current hash of every part of the section: **stale hashes never sign off** (nor request changes on geometry that is gone); make a new bundle |
 | `same-actor` | while `gates: require_separate_reviewer`: the reviewer is `unknown`, a part's builder is `unknown`, the reviewer built a part of the section (`parts.<name>.actor`) or is the `author` of the section, a card or a decision |
 | `actor` | the record names an `actor` other than the submitting `CAD_AGENT_ACTOR` |
-| `unanswered`, `unknown-question`, `question-changed`, `unknown-view`, `unknown-measurement` | the checklist does not answer exactly the packet's questions, with their text and bad answers, from views the packet has, citing gates it quotes |
-| `unjudged`, `unknown-decision`, `untraced`, `unknown-requirement` | a decision or requirement of the section is not judged or traced, or one outside it is |
+| `unanswered`, `unknown-question`, `question-changed`, `unknown-view`, `unknown-measurement` | the checklist answers a question the packet does not ask, changes a question's text or bad answer, cites a view without an image or a gate the packet does not quote; a sign-off also leaves no question unanswered (`unanswered`), while a change request may stop at the first blocking flaw |
+| `unjudged`, `unknown-decision`, `untraced`, `unknown-requirement` | a decision or requirement outside the section is judged; a sign-off also judges and traces every one of the section's |
 | `packet`, `packet-stale` | a sign-off with no rendered packet, or one that is not current (`project_packet_stale`) |
 | `open-decision` | a sign-off while a decision of the section is `open` |
 | `below-gated` | a sign-off of a section that is `draft` or `built` |

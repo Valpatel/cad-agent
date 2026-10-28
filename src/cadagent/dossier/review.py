@@ -362,8 +362,10 @@ def check_record(data: Mapping[str, Any], *, dossier: Any, geometry: Optional[Ma
     of every part of the section (**stale hashes never sign off**, nor request changes on geometry that is gone); a
     reviewer who built or wrote the section, or is unknown, while separate review is required (the dossier's
     ``gates: require_separate_reviewer``, default true); a checklist that does not answer exactly the packet's
-    questions, with their text and bad answers; decisions and requirements of the section not judged. Refused for a
-    sign-off only: no packet or a stale one, an **open decision** in the section, a section below ``gated``."""
+    questions, with their text and bad answers (answers to questions it does not ask, decisions or requirements
+    outside the section). Refused for a sign-off only: a question, decision or requirement of the section left
+    unanswered (a change request may stop at the first blocking flaw), no packet or a stale one, an **open
+    decision** in the section, a section below ``gated``."""
     out = list(validate_record(data))
     if not isinstance(data, Mapping):
         return out
@@ -407,7 +409,7 @@ def check_record(data: Mapping[str, Any], *, dossier: Any, geometry: Optional[Ma
                           "images before signing off")
     else:
         missing = [q for q in questions if q not in answers]
-        if missing:
+        if missing and sign:
             bad("unanswered", f"checklist question(s) not answered: {', '.join(missing)}")
         foreign = sorted(set(answers) - set(questions))
         if foreign:
@@ -435,13 +437,13 @@ def check_record(data: Mapping[str, Any], *, dossier: Any, geometry: Optional[Ma
             bad("packet-stale", f"the review packet is not current evidence: {packet_stale}")
     decs = section_decisions(dossier, sid)
     judged = {str(d.get("id")) for d in data.get("decisions") or [] if isinstance(d, Mapping)}
-    if set(decs) - judged:
+    if sign and set(decs) - judged:
         bad("unjudged", f"decision(s) not judged: {', '.join(d for d in decs if d not in judged)}")
     if judged - set(decs):
         bad("unknown-decision", f"decision(s) {', '.join(sorted(judged - set(decs)))} are not in section {sid}")
     reqs = list(dossier.sections[sid].requirements)
     traced = {str(r.get("id")) for r in data.get("requirements") or [] if isinstance(r, Mapping)}
-    if set(reqs) - traced:
+    if sign and set(reqs) - traced:
         bad("untraced", f"requirement(s) not traced: {', '.join(r for r in reqs if r not in traced)}")
     if traced - set(reqs):
         bad("unknown-requirement", f"requirement(s) {', '.join(sorted(traced - set(reqs)))} are not served by "

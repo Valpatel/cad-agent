@@ -654,3 +654,40 @@ def test_the_diff_covers_the_section_s_own_sources(tmp_path):
     from cadagent.dossier.review import _load, _diff_paths
     paths = _diff_paths(_load(load_project(root), "S1"), "S1")
     assert paths == ["cad-agent.yaml", "cad/build.py", "cad/lid.py", "dossier"]      # not another section's joint
+
+
+def test_an_incomplete_change_request_still_voids_an_earlier_sign_off(project):
+    """A second reviewer stops at a critical flaw and answers one question: the change request is accepted by
+    --submit, and even written by hand (incomplete) it voids the earlier sign-off of the same geometry."""
+    root = Path(project.root)
+    assert submit_record(project, "S1", fill(template(project)), reviewer="reviewer")[2] == []
+    assert lint_project(project).sections["S1"]["status"] == "signed_off"
+    render_packet(root)
+    t = template(project)
+    short = {**fill(t, "changes_requested"), "checklist": fill(t)["checklist"][:1], "decisions": [],
+             "requirements": []}
+    short["findings"][0]["severity"] = "critical"
+    _, rec, problems = submit_record(project, "S1", short, reviewer="second-reviewer", write=False)
+    assert problems == []                                       # a change request may stop at the first flaw
+    rec["checklist"].append({"id": "made-up", "answer": "no", "evidence": "x", "views": ["solid-iso"],
+                             "image_only": True})              # and one written by hand that the lint flags
+    rec["timestamp"] = "2099-01-01T00:00:00Z"
+    (root / "dossier" / "reviews" / "S1-2099-01-01.json").write_text(json.dumps({**rec, "date": "2099-01-01"}))
+    res = lint_project(project, min_section_status=None)
+    [f] = [f for f in res.findings if f.code == "review-incomplete"]
+    assert "counts as a change request" in f.message
+    assert res.sections["S1"]["status"] == "reviewed" and res.sections["S1"]["review"]["verdict"] == "changes_requested"
+
+
+def test_a_packet_rendered_again_later_does_not_void_a_sign_off(project):
+    """`review-packet --view` after a sign-off leaves other views without an image: the record's answers cite
+    views the packet no longer has an image for, which only --submit judges."""
+    root = Path(project.root)
+    assert submit_record(project, "S1", fill(template(project)), reviewer="reviewer")[2] == []
+    m = json.loads((root / "exports/review/S1/manifest.json").read_text())
+    for v in m["views"]:
+        v["file"], v["sha256"] = None, None
+    m["rendered"] = 0
+    pk.write_manifest(m, root / "exports/review/S1")
+    res = lint_project(project)
+    assert "review-incomplete" not in res.codes() and res.sections["S1"]["status"] == "signed_off"

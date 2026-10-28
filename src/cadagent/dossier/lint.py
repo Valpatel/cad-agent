@@ -888,13 +888,18 @@ class _Linter:
         if r.data:
             problems = [p for p in check_record(r.data, dossier=self.d, geometry=self.ev.geometry,
                                                 packet=self.ev.packets.get(r.section), require_separate_reviewer=False)
-                        if p.code not in ("open-decision", "packet", "packet-stale", "below-gated")]
+                        if p.code not in LINT_SKIPS]
             if problems:
-                self.add("review-incomplete", f"reviewer record for section {r.section!r} does not count: "
+                # a sign-off that fails the checks does not count; a change request still does (it voids an earlier
+                # sign-off of the same geometry: an incomplete objection is still an objection)
+                counts = not r.signed_off
+                self.add("review-incomplete", f"reviewer record for section {r.section!r} "
+                                              + ("counts as a change request but is incomplete: " if counts else
+                                                 "does not count: ")
                                               + "; ".join(str(p) for p in problems[:4])
                                               + (f"; and {len(problems) - 4} more" if len(problems) > 4 else ""),
                          Where(r.file), item=r.section)
-                return False
+                return counts
         return True
 
     def _sha(self, pid: str) -> str:
@@ -1032,10 +1037,20 @@ class _Linter:
         return row
 
 
+# check_record codes the lint does not apply to a record read from a file: those it reports itself (an open
+# decision: signoff-open-decision) and those that judge the packet at submission time, which a packet rendered again
+# later (another view set, other gates) cannot (`--submit` checks them)
+LINT_SKIPS = ("open-decision", "packet", "packet-stale", "below-gated", "unknown-view", "unknown-measurement")
+
+
 def _traced_in(rec: Optional[Review], rid: str) -> bool:
-    """Whether a record traces requirement ``rid`` (``traced: yes``). A record without its data (built in code, not
-    read from a file) is taken as tracing it."""
-    if rec is None or not rec.data:
+    """Whether a record traces requirement ``rid`` (``traced: yes``) and does not request changes. A record without
+    its data (built in code, not read from a file) is taken as tracing it."""
+    if rec is None:
+        return True
+    if rec.verdict == "changes_requested":
+        return False
+    if not rec.data:
         return True
     return any(isinstance(r, dict) and r.get("id") == rid and r.get("traced") == "yes"
                for r in rec.data.get("requirements") or [])

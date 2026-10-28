@@ -335,3 +335,29 @@ def test_evidence_shape_content_hash():
     assert shape_content_hash(box.moved(cq.Location(cq.Vector(0, 0, 1e-3)))) != h
     flagged = shape_brep_text(box).replace(b"\n0101000\n", b"\n0111000\n")    # the kernel's "checked" bit
     assert flagged != shape_brep_text(box) and brep_content_hash(flagged) == h
+
+
+def test_gate_exemptions_take_instance_keys_and_fastener_names(tmp_path):
+    # #56: a party may be a part, an instance of one, or a fastener the build registers (the lint checks those)
+    pairs = ("intended_overlaps: [{parts: [hopper, pan_base], reason: heat-set inserts},\n"
+             "                        {parts: [screw_0, insert_0], reason: thread envelope},\n"
+             "                        {parts: ['m3:lid-base#1', 'ball#3'], reason: by instance}]\n"
+             "  ignore_pairs: [{parts: [screw_1, hopper_flap], reason: shown open only}]")
+    project = PROJECT.replace("intended_overlaps: [{parts: [hopper, pan_base], reason: heat-set inserts}]", pairs)
+    d = load_dossier(write(tmp_path, files({"dossier/project.yaml": project})))
+    assert [p.parts for p in d.gates.intended_overlaps] == [("hopper", "pan_base"), ("screw_0", "insert_0"),
+                                                            ("m3:lid-base#1", "ball#3")]
+    assert d.gates.ignore_pairs[0].parts == ("screw_1", "hopper_flap") and d.gates.ignore_pairs[0].where.line >= 1
+    assert d.gates.intended_overlaps[1].to_dict() == {"parts": ["screw_0", "insert_0"], "reason": "thread envelope"}
+
+
+@pytest.mark.parametrize("parties, message", [
+    ("[R4, hopper]", "which is not a part, part instance or fastener in this dossier (it is a requirement)"),
+    ("['S3#2', hopper]", "names 'S3', which is not a part, part instance or fastener in this dossier (it is a section)"),
+    ("[hopper, hopper]", "names 'hopper' twice"),
+])
+def test_gate_exemption_parties_that_cannot_be_right(tmp_path, parties, message):
+    project = PROJECT.replace("parts: [hopper, pan_base], reason: heat-set inserts",
+                              f"parts: {parties}, reason: heat-set inserts")
+    err = _error(tmp_path, {"dossier/project.yaml": project})
+    assert message in str(err) and err.file == "dossier/project.yaml", str(err)

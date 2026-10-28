@@ -629,33 +629,42 @@ def plan_packet(section: str, record: Mapping[str, Any], dossier: Any = None,
                  "iso", pose=pose, fit=pose_fit, target={"joint": jid, "moving": moving, "fixed": fixed,
                                           "contacts": j.get("intended_contacts") or []})
 
-    # cuts through fastener axes, and access views
+    # cuts through fastener axes (one per catalogue key and clamped part: alike screws need one look), access views
     by_dir: Dict[Tuple[float, ...], List[str]] = {}
+    groups: Dict[Tuple[str, str], List[str]] = {}
     for fname in fnames:
         f = rec.fasteners[fname]
         insts = f.get("instances") or []
         if not insts:
             not_rendered.append({"what": f"fastener {fname}", "why": "not placed (no axes)"})
             continue
-        o, d = insts[0].get("origin"), insts[0].get("direction")
-        if not (isinstance(o, list) and isinstance(d, list)):
-            continue
-        n = plane_containing(d)
-        view(f"cut-fastener-{fname}", "cut", f"cut through {fname}",
-             f"Plane containing the axis of {insts[0].get('key')}: head on {f.get('clamps')}, thread in "
-             f"{f.get('into')}.", [-c for c in n], clip={"origin": _r(o), "normal": _r(n)},
-             fit=_fit(_grow(_box(insts[0]), max(8.0, 1.2 * _diag(_box(insts[0]))))),
-             target={"fastener": fname, "key": f.get("key"), "clamps": f.get("clamps"), "into": f.get("into"),
-                     "instance": insts[0].get("key")})
+        groups.setdefault((str(f.get("key") or fname), str(f.get("clamps"))), []).append(fname)
         for inst in insts:
             dd = inst.get("direction")
             if isinstance(dd, list) and len(dd) == 3:
                 by_dir.setdefault(tuple(round(c, 3) + 0.0 for c in _unit(dd)), []).append(fname)
+    for (key, clamps), group in sorted(groups.items()):
+        fname = group[0]
+        f = rec.fasteners[fname]
+        inst = f["instances"][0]
+        o, d = inst.get("origin"), inst.get("direction")
+        if not (isinstance(o, list) and isinstance(d, list) and len(o) == 3 and len(d) == 3):
+            not_rendered.append({"what": f"cut through {fname}", "why": "its axis is not in the record"})
+            continue
+        n = plane_containing(d)
+        alike = sum(len(rec.fasteners[g].get("instances") or []) for g in group)
+        view(f"cut-fastener-{fname}", "cut", f"cut through {inst.get('key')}",
+             f"Plane containing the axis of {inst.get('key')}: head on {clamps}, thread in {f.get('into')}"
+             + (f" ({alike} {key} on {clamps} alike; the fastener gate measures each)." if alike > 1 else "."),
+             [-c for c in n], clip={"origin": _r(o), "normal": _r(n)},
+             fit=_fit(_grow(_box(inst), max(8.0, 1.2 * _diag(_box(inst))))),
+             target={"fastener": fname, "key": f.get("key"), "clamps": clamps, "into": f.get("into"),
+                     "instance": inst.get("key"), "alike": group})
     for d, fl in sorted(by_dir.items()):
         fl = sorted(set(fl))
-        label = _dir_label(d)
-        view(f"access-{label}", "access", f"access along {label}",
-             f"Looking along the screws' advance ({label}) from the tool's side: {', '.join(fl)}.",
+        side = _side(tuple(-c for c in d))
+        view(f"access-from-{side}", "access", f"access from the {side}",
+             f"Looking along the screws' advance from the tool's side ({side}): {', '.join(fl)}.",
              [-c for c in d], target={"advance": list(d), "fasteners": fl}, keys=list(sec_keys) + context_keys)
 
     # exploded
@@ -747,11 +756,15 @@ def _short(text: str, n: int) -> str:
     return text if len(text) <= n else "..." + text[-(n - 3):]
 
 
-def _dir_label(d: Sequence[float]) -> str:
+SIDES = {"+X": "right", "-X": "left", "+Y": "back", "-Y": "front", "+Z": "top", "-Z": "bottom"}
+
+
+def _side(d: Sequence[float]) -> str:
+    """The side of the model a direction points to (front is -Y, as in the named views), or the rounded vector."""
     for name, v in DIRS.items():
         if all(abs(d[i] - v[i]) < 1e-6 for i in range(3)):
-            return name
-    return "_".join(f"{c:+.2f}" for c in d)
+            return SIDES[name]
+    return "_".join(f"{c:+.2f}" for c in d).replace("+", "p").replace("-", "m")
 
 
 def _carried(jid: str, joints: Mapping[str, Mapping[str, Any]], body_of: Mapping[str, str]) -> Set[str]:
@@ -980,17 +993,14 @@ def render_views(manifest: Dict[str, Any], result: Any, out_dir: Union[str, Path
     return manifest
 
 
-def review_packet(section: str, *, root: Union[str, Path] = ".", out_dir: Union[str, Path, None] = None,
-                  size: Tuple[int, int] = (1400, 1000), explode: float = 1.0, context: str = "neighbours",
-                  only: Optional[Iterable[str]] = None, renderer: Any = None, render: bool = True) -> Dict[str, Any]:
-    """Render the review packet of one dossier section of the project at ``root`` into
-    ``<exports>/review/<section>/`` (or ``out_dir``) and write its ``manifest.json``; returns the manifest.
-
-    Reads the geometry record and its shapes, the YAML dossier, the gate verdicts and the dossier status. Needs
-    CadQuery, VTK and Pillow to render; ``render=False`` writes the planned manifest only (no CAD kernel)."""
-    from cadagent.gates.verdict import _toolkit_version
-    from cadagent.dossier import load_geometry, load_project_dossier
+def plan_project_packet(section: str, *, root: Union[str, Path] = ".", out_dir: Union[str, Path, None] = None,
+                        explode: float = 1.0, context: str = "neighbours") -> Tuple[Dict[str, Any], Path]:
+    """``plan_packet`` for a section of the project at ``root``, from its files: the geometry record, the dossier,
+    the gate verdicts (staleness judged as ``cad-agent check`` does) and the dossier status. Returns the manifest
+    and the directory it belongs in. Needs no CAD kernel."""
+    from cadagent.dossier import load_project_dossier
     from cadagent.dossier.lint import project_evidence
+    from cadagent.gates.verdict import _toolkit_version
     from cadagent.project import load_project
 
     project = load_project(root)
@@ -999,28 +1009,81 @@ def review_packet(section: str, *, root: Union[str, Path] = ".", out_dir: Union[
         raise PacketError(f"no geometry record ({ev.geometry_file}): run the build (cad-agent gates --build) first")
     dossier = load_project_dossier(project, strict=False)
     exports = Path(project.exports_dir)
-    status = _read_json(exports / "dossier-status.json")
-    lint = _read_json(exports / "gates" / f"{LINT_GATE}.json")
     target = Path(out_dir) if out_dir is not None else exports / "review" / safe_name(section)
     try:
         shown = target.resolve().relative_to(Path(project.root).resolve()).as_posix()
     except ValueError:
         shown = str(target)
-    manifest = plan_packet(section, ev.geometry, dossier, ev.gates, status, lint=lint, expected=ev.expected,
+    manifest = plan_packet(section, ev.geometry, dossier, ev.gates, _read_json(exports / "dossier-status.json"),
+                           lint=_read_json(exports / "gates" / f"{LINT_GATE}.json"), expected=ev.expected,
                            record_file=ev.geometry_file, out_dir=shown, gate_files=ev.gate_files, explode=explode,
                            context=context, toolkit=_toolkit_version())
-    if render:
-        result = load_geometry(exports / "dossier-geometry.json")
-        target.mkdir(parents=True, exist_ok=True)
-        for old in target.glob("*.png"):        # views from an earlier packet that this one does not make
-            if old.name not in {v["file"] for v in manifest["views"] if v.get("file")}:
-                old.unlink()
-        render_views(manifest, result, target, size=size, only=only, renderer=renderer)
-    else:
-        for v in manifest["views"]:
-            v["file"] = None
+    return manifest, target
+
+
+def project_sections(root: Union[str, Path] = ".") -> List[str]:
+    """The section ids of the project at ``root`` (dossier order, then any only the build names)."""
+    from cadagent.dossier import load_project_dossier
+    from cadagent.project import load_project
+
+    project = load_project(root)
+    record = _read_json(Path(project.exports_dir) / "dossier-geometry.json")
+    if record is None:
+        raise PacketError("no geometry record (exports/dossier-geometry.json): run the build first")
+    return sections_of(record, load_project_dossier(project, strict=False))
+
+
+def review_packet(section: str, *, root: Union[str, Path] = ".", out_dir: Union[str, Path, None] = None,
+                  size: Tuple[int, int] = (1400, 1000), explode: float = 1.0, context: str = "neighbours",
+                  only: Optional[Iterable[str]] = None, renderer: Any = None) -> Dict[str, Any]:
+    """Render the review packet of one dossier section of the project at ``root`` into
+    ``<exports>/review/<section>/`` (or ``out_dir``) and write its ``manifest.json``; returns the manifest.
+
+    Reads the geometry record and its shapes, the YAML dossier, the gate verdicts and the dossier status. Needs
+    CadQuery, VTK and Pillow (``MissingDependency`` otherwise); ``plan_project_packet`` is the kernel-free half."""
+    from cadagent._deps import require
+    from cadagent.dossier import load_geometry
+
+    for module, purpose in (("cadquery", "review packet shapes"), ("vtk", "review packet renders"),
+                            ("PIL.Image", "review packet captions")):
+        require(module, purpose)
+    manifest, target = plan_project_packet(section, root=root, out_dir=out_dir, explode=explode, context=context)
+    from cadagent.project import load_project
+    result = load_geometry(Path(load_project(root).exports_dir) / "dossier-geometry.json")
+    target.mkdir(parents=True, exist_ok=True)
+    previous = _read_json(target / "manifest.json")
+    render_views(manifest, result, target, size=size, only=only, renderer=renderer)
+    if only is not None:
+        _reuse(manifest, previous, target)
+    keep = {v["file"] for v in manifest["views"] if v.get("file")}
+    for old in target.glob("*.png"):        # images this packet does not list (another plan, or not current)
+        if old.name not in keep:
+            old.unlink()
     write_manifest(manifest, target)
     return manifest
+
+
+def _reuse(manifest: Dict[str, Any], previous: Optional[Mapping[str, Any]], target: Path) -> None:
+    """With ``only=``, keep an earlier packet's image of a view not rendered now when it is still current: the
+    same geometry digest and section hash, the same planned view, and the file's bytes still match its hash."""
+    if not isinstance(previous, Mapping) or previous.get("schema") != SCHEMA:
+        return
+    if (previous.get("geometry") or {}).get("digest") != manifest["geometry"]["digest"] or \
+            previous.get("section_hash") != manifest["section_hash"]:
+        return
+    old = {v.get("id"): v for v in previous.get("views") or [] if isinstance(v, Mapping)}
+    strip = ("file", "sha256")
+    for v in manifest["views"]:
+        if v.get("sha256"):
+            continue
+        p = old.get(v["id"])
+        if not p or not p.get("file") or not p.get("sha256"):
+            continue
+        same = {k: x for k, x in p.items() if k not in strip} == {k: x for k, x in v.items() if k not in strip}
+        path = target / str(p["file"])
+        if same and path.is_file() and file_sha256(path) == p["sha256"]:
+            v["file"], v["sha256"] = p["file"], p["sha256"]
+    manifest["rendered"] = sum(1 for v in manifest["views"] if v.get("sha256"))
 
 
 def _read_json(path: Path) -> Optional[Dict[str, Any]]:

@@ -686,7 +686,7 @@ cad:
   gates:
     geometry: exports/dossier-geometry.json      # default: <exports_dir>/dossier-geometry.json
     build: cad/build.py                          # build_module() it when the record is missing, or with --build
-    declarations: dossier/gate-declarations.yaml # plain-data declarations the YAML schema does not cover yet
+    declarations: dossier/gate-declarations.yaml # plain-data declarations the YAML schema does not cover
     cache: .cadagent-cache/gates                 # the pair cache (gitignored); --no-cache runs without it
     jobs: 2
     timeout_s: 3600
@@ -717,9 +717,11 @@ runs; another bad value (a containment, motion or wall option) fails that gate's
 and the declarations file are passed to the gates as in the sections above. The file holds what the YAML schema
 cannot say yet, with the keys `extra` takes: `grounded`, `free_parts`, `interfaces`, `contains`,
 `intended_overlaps`, `ignore_pairs`, `strict_interfaces`, `max_joint_gap_mm`, `fasteners`, `tools`,
-`motion_samples` and `wall_mm`. Today that is chiefly a pair exemption that names a fastener (the dossier's
-`gates.intended_overlaps` takes part ids only), such as a screw's thread envelope inside its insert. The dossier's
-`gates: tools:` and `gates: fasteners:` are read by the fastener and assembly gates as before.
+`motion_samples` and `wall_mm`. A pair exemption that names a fastener (a screw's thread envelope inside its
+insert) belongs in the dossier now: `gates.intended_overlaps` and `gates.ignore_pairs` take part names, instance
+keys and fastener names or instance keys, and the lint checks each against the geometry record
+(`exemption-unknown-party`, [dossier.md](dossier.md#rules)). The dossier's `gates: tools:` and `gates: fasteners:`
+are read by the fastener and assembly gates as before.
 
 **`check`, the report and the site.** With a `dossier:` or `gates:` key, `cad-agent check` and the report have an
 "Integrity gates" feature (`cad-gates`): one row per gate. A gate that applies fails when its verdict is missing,
@@ -757,8 +759,7 @@ fail with a finding that names the seeded part; the wall seed's witnesses must l
 
 The bench is also a project, `tests/fixtures/gate_bench/project/`: `cad-agent.yaml` with `cad.gates`, a `cad/build.py`
 that registers the bench with the seed named in `cad/parameters.json`, the YAML dossier (four sections, a card per
-part, the interfaces, decisions and requirements) and `dossier/gate-declarations.yaml` (the screw-in-insert
-overlaps). `tests/test_gates_cli.py` runs `cad-agent gates --build` on it: the clean bench passes all seven gates
+part, the interfaces, decisions, requirements and the screw-in-insert overlaps, which name the fasteners). `tests/test_gates_cli.py` runs `cad-agent gates --build` on it: the clean bench passes all seven gates
 with no finding and every section `gated` (about 10 s with three jobs on a loaded workstation), each geometric
 seed fails its gate through the CLI with a finding naming the seeded part (the other verdicts then read stale in
 `check`), and the decision seed fails the lint. Every gate

@@ -8,5 +8,4 @@ cad:
   dossier: dossier/project.yaml
   gates:
     build: cad/build.py
-    declarations: dossier/gate-declarations.yaml
     containment: {support: fail}

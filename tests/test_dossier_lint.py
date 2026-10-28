@@ -215,6 +215,14 @@ CASES = {
                        lambda f: card(f, "hopper")["contains"][0].update(count=2)),
     "fastener-count": (lambda f: card(f, "hopper")["fasteners"][0].update(qty=4),
                        lambda f: card(f, "hopper")["fasteners"][0].update(qty=2)),
+    # gate exemptions may name fasteners and instance keys (#56); the lint resolves them against the record
+    "exemption-unknown-party": (
+        lambda f: f["project.yaml"]["gates"].update(intended_overlaps=[
+            {"parts": ["m3:lid-hopper#5", "hopper"], "reason": "thread envelope in the boss"}]),
+        lambda f: f["project.yaml"]["gates"].update(intended_overlaps=[
+            {"parts": ["m3:lid-hopper#1", "hopper"], "reason": "thread envelope in the boss"},
+            {"parts": ["m3:lid-hopper", "lid"], "reason": "a fastener by name"},
+            {"parts": ["ball#1", "hopper"], "reason": "an instance key"}])),
     # loader errors are lint findings too
     "unknown-id": (lambda f: card(f, "lid").update(interfaces=["I2", "I99"]),
                    lambda f: card(f, "lid").update(interfaces=["I2"])),

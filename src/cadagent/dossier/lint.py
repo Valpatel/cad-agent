@@ -50,6 +50,9 @@ RULES: Dict[str, Tuple[str, str]] = {
     "interface-conflict": ("warning", "the two declarations of an interface agree on its other fields"),
     # fasteners
     "fastener-via-mismatch": ("error", "a card's fastener runs `via` an interface between this part and `to`"),
+    # gate exemptions (gates.intended_overlaps, gates.ignore_pairs)
+    "exemption-unknown-party": ("error", "a gates.intended_overlaps or ignore_pairs entry names parts, part instances "
+                                         "or fasteners the build registered"),
     # material.wall_mm
     "wall-undeclared": ("error", "a card checked by gate:wall (an error) or made by an additive process "
                                  "(a warning) declares material.wall_mm"),
@@ -553,6 +556,41 @@ class _Linter:
                                                    f"{primary.where}: {', '.join(diffs)} differ", other.where,
                              item=iid)
 
+    def exemptions(self) -> None:
+        """Each party of a pair exemption is something the build made: a part, one of its instance keys, a fastener
+        or one of a fastener's instance keys (what the gates match exemptions against). Needs the geometry record;
+        without it, names the YAML does not know stay unchecked (and geometry-missing says why)."""
+        geo = self.ev.geometry
+        if geo is None:
+            return
+        fasteners = geo.get("fasteners", {}) if isinstance(geo.get("fasteners"), dict) else {}
+        keys: Dict[str, Set[str]] = {}
+        for table in (self.geo_parts, fasteners):
+            for name, info in table.items():
+                insts = info.get("instances") if isinstance(info, dict) else None
+                keys[name] = {str(i.get("key")) for i in insts or [] if isinstance(i, dict)}
+                count = info.get("count") if isinstance(info, dict) else None
+                if not keys[name] and isinstance(count, int) and count > 0:     # a record without instances
+                    keys[name] = {name} if count == 1 else {f"{name}#{i}" for i in range(count)}
+        for key in ("intended_overlaps", "ignore_pairs"):
+            for ex in getattr(self.d.gates, key):
+                for party in ex.parts:
+                    base = _owner(party)
+                    if party in keys or (base in keys and party in keys[base]):
+                        continue
+                    if base in self.d.parts and base not in keys:
+                        continue            # a card without a shape: card-without-shape reports it
+                    if base in keys:
+                        have = sorted(keys[base]) or [base]
+                        why = (f"{base!r} has {len(have)} instance(s): " + ", ".join(have[:6])
+                               + (" ..." if len(have) > 6 else ""))
+                    else:
+                        why = "the build registers no part or fastener of that name" + (
+                            f" (fasteners: {', '.join(sorted(fasteners)[:8])})" if fasteners else "")
+                    self.add("exemption-unknown-party", f"gates.{key}: {party!r} is not a part, part instance or "
+                                                        f"fastener of the build: {why}", ex.where, item=party,
+                             parts=[p for p in ex.parts if _owner(p) in self.d.parts])
+
     def decisions(self) -> None:
         for did, dec in self.d.decisions.items():
             parts = [dec.part] if dec.part else []
@@ -706,6 +744,7 @@ class _Linter:
                              Where(file), item=f"gate:{name}")
         self.cards()
         self.interfaces()
+        self.exemptions()
         self.decisions()
         self.checks()
         self.requirements()

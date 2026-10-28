@@ -50,7 +50,8 @@ d.parts["hopper"].section, d.decisions["D41"].scope, d.findings   # findings: un
   references are not resolved, so its ids do not cascade into unknown-id errors.
 - **Findings** are warnings, never fatal: an unknown key (reported with its line and the keys that are known), and an
   interface declared differently by its two sections.
-- References the loader does **not** resolve, because they point outside the YAML: `checks` (check and gate ids,
+- References the loader does **not** resolve, because they point outside the YAML: a pair exemption's party that is
+  not a dossier part (a fastener name or instance key, checked by the lint's `exemption-unknown-party`), `checks` (check and gate ids,
   resolved by the lint against `cad-agent.yaml` checks and the gate verdicts), fastener catalogue keys (`screws`,
   `fastened_by`, step `fasteners`), cavity names (`contains[].cavity`, resolved against the registry), a decision's
   `confirmation`. The lint (plan T2) and the registry join ([below](#joining-cards-and-geometry)) report those.
@@ -89,6 +90,8 @@ gates:                                     # the integrity-gate configuration (p
   free_parts: [{part: ball, reason: loose in the hopper}]     # a reason is required (a bare id is an error)
   intended_overlaps: [{parts: [hopper, insert_m3], reason: heat-set insert}]   # reasons required here too
   ignore_pairs: [{parts: [lid_a, lid_b], reason: variants, never fitted together}]
+  # a pair's parties may be parts, instance keys (ball#3) or fasteners by name or instance (screw_0, m3:lid-base#1):
+  # intended_overlaps: [{parts: [screw_0, insert_0], reason: thread envelope inside the insert}]
   strict_interfaces: false                 # true: an undeclared contact fails instead of warning
   motion_samples: 12
   # any other key is kept in GateConfig.extra (and reported) so a new gate option works before the schema knows it
@@ -429,6 +432,7 @@ neither a known gate nor a written verdict) or the `id` of a `cad.checks` entry.
 | `interface-datum-conflict` | error | two sections that declare one interface agree on its datum (plan §5.4) |
 | `interface-conflict` | warning | they agree on its other fields |
 | `fastener-via-mismatch` | error | a card's fastener runs `via` an interface between this part and `to` |
+| `exemption-unknown-party` | error | every party of a `gates.intended_overlaps` or `gates.ignore_pairs` entry is a part, one of its instance keys, a fastener or one of a fastener's instance keys in the geometry record (unchecked without a record; a name that is another kind of dossier id is the loader's `unknown-id`) |
 | `wall-undeclared` | error / warning | a card checked by `gate:wall` (error), or made by an additive process (warning), declares `material.wall_mm` |
 | `decision-incomplete` | error | a decided decision has a `why` and at least one alternative |
 | `alternative-no-reason` | error | every alternative says why it was `rejected` |

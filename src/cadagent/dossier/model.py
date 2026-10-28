@@ -265,8 +265,11 @@ class FreePart(_Dump):
 
 @dataclass
 class PairExemption(_Dump):
+    """A pair the gates exempt, with its reason. A party is a part, an instance key (``ball#3``) or a fastener name
+    or instance key (``screw_0``, ``m3:lid-base#1``); the lint resolves the last two against the geometry record."""
     parts: Tuple[str, str]
     reason: str = ""
+    where: Optional[Where] = _where()
 
     def to_dict(self) -> Dict[str, Any]:
         out: Dict[str, Any] = {"parts": list(self.parts)}

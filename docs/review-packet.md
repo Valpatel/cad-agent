@@ -104,7 +104,7 @@ root. The file has no timestamp: an unchanged packet writes identical JSON.
                               "section_checks": [{"id": "contains:hopper_cavity:ball#0:inside",
                                                   "status": "pass", "message": "..."}]}},
     "missing_gates": ["motion"],
-    "lint": {"file": "exports/gates/dossier-lint.json", "sha256": "<verdict_digest>", "status": "pass",
+    "lint": {"file": null, "computed": true, "sha256": "<verdict_digest>", "status": "pass",
              "pass": true, "stale": null, "section_checks": []}
   },
   "findings": [
@@ -121,6 +121,7 @@ root. The file has no timestamp: an unchanged packet writes identical JSON.
      "keys": ["hopper", "ball#0", "..."], "offsets": {}, "pose": null, "callouts": []}
   ],
   "rendered": 11,
+  "dossier_digest": "<sha256 of the quoted dossier text>",
   "options": {"explode": 1.0, "context": "neighbours"},
   "render": {"size": [1400, 1000]},
   "checklist": {
@@ -157,7 +158,8 @@ Field notes:
   section part, an instance of one, a fastener of the section, or a cavity of a section part. `missing_gates` lists
   the gates a section card names in `checks` that have no verdict. `lint` is the dossier lint, which
   `review_packet` runs itself when it plans (the lint file records no inputs, so it cannot say whether it is
-  current); its `section_checks` are only those that are not passing. `section.status` and `blocked_by` come from
+  current), so its `file` is null and `computed` true (a lint passed in from a file names the file, is marked
+  stale, and makes the packet stale); its `section_checks` are only those that are not passing. `section.status` and `blocked_by` come from
   the same lint run.
 - **`findings`** are the failing and warning checks among them (and every failing check that names no known part,
   with `scope: "unattributed"`, since it may concern any part). `stale` is the stale reason of the verdict it comes
@@ -184,7 +186,10 @@ Field notes:
   that was already stale, or a lint read from a file; or, given the current verdicts (with each gate's expected
   declarations and options) and lint, one of them was rewritten, added or removed, or is stale now (a dossier edit
   that changes a gate's declarations makes the quoted verdicts stale without touching the geometry).
-  `project_packet_stale(manifest, root)` gathers all of that for a project, kernel-free. A packet is evidence only
+  With `current=` (the packet planned again), it is also stale when the dossier text it quotes changed:
+  `dossier_digest` covers the section's title, purpose and requirements, each part's function and decisions and the
+  checklist questions (top-level `dossier_digest` in the manifest). `project_packet_stale(manifest, root)` gathers
+  all of that for a project, kernel-free. A packet is evidence only
   for the hashes and verdicts it lists.
 
 ## The render checklist (`cadagent.packet.CHECKLIST`)

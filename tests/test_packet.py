@@ -319,10 +319,18 @@ def test_project_packet_staleness_follows_the_dossier(tmp_path):
     assert pk.project_packet_stale(m, root) is None
     # edit the dossier only: the gates' declarations change, so the verdicts the packet quotes are stale now
     proj = root / "dossier" / "project.yaml"
-    data = yaml.safe_load(proj.read_text())
+    original = proj.read_text()
+    data = yaml.safe_load(original)
     data["gates"] = {"intended_overlaps": [{"parts": ["screw", "hopper"], "reason": "thread in the boss"}]}
     proj.write_text(yaml.safe_dump(data, sort_keys=False))
     assert "stale now" in pk.project_packet_stale(m, root)
+    proj.write_text(original)
+    assert pk.project_packet_stale(m, root) is None
+    # edit only the text a packet quotes (a card's function): the captions and questions are out of date
+    sec = root / "dossier" / "sections" / "s1.yaml"
+    sec.write_text(sec.read_text().replace("function: Closes the hopper", "function: Seals the hopper"))
+    assert "dossier text" in pk.project_packet_stale(m, root)
+    assert m["measurements"]["lint"]["file"] is None and m["measurements"]["lint"]["computed"]
 
 
 def test_unknown_section_and_missing_record(tmp_path):

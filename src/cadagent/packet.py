@@ -536,7 +536,8 @@ def plan_packet(section: str, record: Mapping[str, Any], dossier: Any = None,
     lint_m: Optional[Dict[str, Any]] = None
     if isinstance(lint, Mapping):
         rows, found = _section_checks(lint, rec, section, part_set, fast_set)
-        lint_m = {"file": f"exports/gates/{LINT_GATE}.json", "sha256": verdict_digest(lint),
+        lint_m = {"file": None if lint_current else f"exports/gates/{LINT_GATE}.json",
+                  "computed": bool(lint_current), "sha256": verdict_digest(lint),
                   "status": lint.get("status"), "pass": lint.get("pass"),
                   "stale": None if lint_current else "read from a file that records no inputs: it may predate the "
                                                      "dossier or the verdicts (cad-agent review-packet runs the lint)",
@@ -736,7 +737,20 @@ def plan_packet(section: str, record: Mapping[str, Any], dossier: Any = None,
     }
     for f in findings:
         f["views"] = ["findings"] if any(c["finding"] == f["id"] for c in callouts) else []
+    manifest["dossier_digest"] = dossier_digest(manifest)
     return manifest
+
+
+def dossier_digest(manifest: Mapping[str, Any]) -> str:
+    """sha256 of the dossier text a packet quotes (the section's title, purpose and requirements, each part's
+    function and decisions, the checklist questions): captions and questions are judged against it."""
+    sec = manifest.get("section") or {}
+    quoted = {"section": {k: sec.get(k) for k in ("id", "title", "purpose", "requirements")},
+              "parts": {n: {k: p.get(k) for k in ("function", "decisions")}
+                        for n, p in (manifest.get("parts") or {}).items()},
+              "questions": [(q.get("id"), q.get("question")) for q in
+                            ((manifest.get("checklist") or {}).get("questions") or [])]}
+    return hashlib.sha256(json.dumps(quoted, sort_keys=True, default=str).encode()).hexdigest()
 
 
 def _pose_box(b: Optional[Box], origin: Sequence[float], d: Sequence[float], value: float, unit: Any,
@@ -900,11 +914,12 @@ def verdict_digest(data: Mapping[str, Any]) -> str:
 def packet_stale(manifest: Mapping[str, Any], record: Optional[Mapping[str, Any]], *,
                  verdicts: Optional[Mapping[str, Mapping[str, Any]]] = None,
                  expected: Optional[Mapping[str, Mapping[str, Any]]] = None,
-                 lint: Optional[Mapping[str, Any]] = None) -> Optional[str]:
+                 lint: Optional[Mapping[str, Any]] = None, current: Optional[Mapping[str, Any]] = None) -> Optional[str]:
     """None while the packet is current evidence, else why not. The packet is stale when the geometry record
     changed; when it quoted a verdict that was stale (or a lint read from a file) when it was made; and, given the
     current ``verdicts`` (with the ``expected`` declarations and options per gate, as ``cad-agent check`` judges
-    them) and the current ``lint`` verdict, when any of them differs from what it quoted or is stale now.
+    them) and the current ``lint`` verdict, when any of them differs from what it quoted or is stale now; and,
+    given ``current`` (the packet planned again now), when the dossier text it quotes changed (``dossier_digest``).
     ``project_packet_stale`` gathers all of these for a project."""
     from cadagent.gates.verdict import geometry_digest, stale_reason
     if record is None:
@@ -933,6 +948,8 @@ def packet_stale(manifest: Mapping[str, Any], record: Optional[Mapping[str, Any]
                 return f"verdict {g} is stale now ({why}): run cad-agent gates, then render the packet again"
     if lint is not None and (m.get("lint") or {}).get("sha256") != verdict_digest(lint):
         return "the dossier lint changed since the packet (the dossier or its evidence changed): render it again"
+    if current is not None and dossier_digest(manifest) != dossier_digest(current):
+        return "the dossier text the packet quotes (titles, functions, decisions, questions) changed: render it again"
     return None
 
 
@@ -945,8 +962,16 @@ def project_packet_stale(manifest: Mapping[str, Any], root: Union[str, Path] = "
     project = load_project(root)
     ev = project_evidence(project)
     res = lint_project(project)
+    current = None
+    sid = (manifest.get("section") or {}).get("id")
+    opts = manifest.get("options") or {}
+    try:
+        current, _ = plan_project_packet(str(sid), root=root, explode=float(opts.get("explode", 1.0)),
+                                         context=str(opts.get("context", "neighbours")))
+    except PacketError as exc:
+        return f"the packet cannot be planned again: {exc}"
     return packet_stale(manifest, ev.geometry, verdicts=ev.gates, expected=ev.expected,
-                        lint=res.to_verdict() if res is not None else None)
+                        lint=res.to_verdict() if res is not None else None, current=current)
 
 
 def write_manifest(manifest: Mapping[str, Any], out_dir: Union[str, Path]) -> Path:

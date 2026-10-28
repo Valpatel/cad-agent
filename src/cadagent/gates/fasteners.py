@@ -37,10 +37,10 @@ How it measures (no number the fastener was declared from is trusted where the m
 * **lines through the solids**: ``IntCurvesFace_ShapeIntersector`` crossings along a line, the spans
   between them classified with ``BRepClass3d_SolidClassifier``. The *annulus*: lines parallel to the axis
   at ``lines`` (8) angles, each with three rings between the shank and the head rim, where the head and the
-  clamped parts bear (one clean ring per angle is enough, so a chamfer at one radius does not decide); the
-  *axis* line; the *thread probe*: 4 lines at 0.92 d/2 (then just outside d/2, inside the smallest clearance
-  hole), where a receiver modelled at its minor or nominal diameter has material, gaps up to 1.5 pitches
-  bridged; *radial rays* in each clamped part for its hole radius;
+  clamped parts bear (the outer ring must bear; the inner ones may cross a chamfer at the hole); the
+  *axis* line; the *thread probe*: 4 lines at 0.92 d/2 and 4 just outside d/2 (inside the smallest clearance
+  hole; the one whose thread starts first wins), where a receiver modelled at its minor or nominal diameter
+  has material, gaps up to 1.5 pitches bridged; *radial rays* in each clamped part for its hole radius;
 * **the screw's solid** when the build placed one (catalogue STEP or ``cadagent.fasteners`` envelope):
   its length and head from its box in the axis frame, its overlaps from the relation table (cached),
   each overlap's extent along the axis from the common solid. Without a solid the head is ``head_d_mm``
@@ -76,12 +76,12 @@ ASSUMPTIONS = [
     "Each fastener is read along its own axis from the declared seat (dossier fastener() axes); the model is "
     "checked, not the hardware: no tolerance stack, no print shrink, no torque or pull-out rating.",
     "Threads are envelopes: engagement is the axial overlap of the screw with the receiver's modelled thread "
-    "region (material at 0.92 d/2, else just outside d/2 but inside d + hole_clearance/2; gaps up to 1.5 pitches "
-    "bridged, so crests and relief grooves read as one region), not proof of strength.",
+    "region (material at 0.92 d/2 or just outside d/2 but inside d + hole_clearance/2, whichever starts first; gaps "
+    "up to 1.5 pitches bridged, so crests and relief grooves read as one region), not proof of strength.",
     "The head bears where lines parallel to the axis (FastenerOptions.lines angles x three rings between shank and "
-    "head rim) first meet the clamped part; at each angle one clean ring is enough, so a chamfer at one radius "
-    "does not decide. Holes are measured by radial rays at 8 angles and three depths per clamped part. Features "
-    "between the samples are missed.",
+    "head rim) first meet the clamped part: the outer ring must bear at every angle, the inner ones may run "
+    "through a chamfer at the hole, and the stack needs one clean ring per angle. Holes are measured by radial "
+    "rays at 8 angles and three depths per clamped part. Features between the samples are missed.",
     "Without a placed screw solid the head is the declared head_d_mm x head_h_mm, else 1.6 d x 1.0 d "
     "(socket head), and the length is the record's length_mm.",
     "The tool is the declared envelope (stepped cylinders and an optional swing disc), swept straight along "
@@ -502,12 +502,15 @@ def evaluate(spec: FastenerSpec, measurement: Mapping[str, Any], options: Fasten
     checks: List[Check] = []
     cid = lambda c: f"fastener:{inst}:{c}"  # noqa: E731
 
-    # -------------------------------------------------------------- seat (the earliest hit over the rings, per angle)
+    # -------------------------------------------------------------- seat (the outer ring must bear at every angle;
+    # the inner rings may run through a chamfer at the hole, but material above the seat on any ring is a burial)
     probs, warns, parts, ev = [], [], {inst}, {}
     first = []
     for rings in angles:
-        hits = sorted((iv[0], iv[1], k) for ring in rings for k, ivs in ring.items() for iv in ivs if iv[1] > -seat_tol)
-        first.append(hits[0] if hits else None)
+        hits = sorted((iv[0], iv[1], k) for k, ivs in rings[-1].items() for iv in ivs if iv[1] > -seat_tol)
+        high = sorted((iv[0], iv[1], k) for ring in rings[:-1] for k, ivs in ring.items() for iv in ivs
+                      if iv[1] > -seat_tol and iv[0] < -seat_tol)
+        first.append(min(hits[:1] + high[:1]) if hits or high else None)
     ev["first_hit"] = [None if f is None else {"part": f[2], "t_mm": _r(f[0])} for f in first]
     if spec.head == "flat":
         rel = measurement.get("seat_contact")
@@ -608,6 +611,19 @@ def evaluate(spec: FastenerSpec, measurement: Mapping[str, Any], options: Fasten
     thread = measurement.get("thread") or {}
     tivs = _merge(thread.get("intervals") or [])
     t_start = tivs[0][0] if tivs else None
+    # a receiver that starts higher up under the head, with its first "thread" where its material crosses the axis,
+    # has a bore wider than both probes: what they met is the bottom of that bore, not thread
+    recv_top = min((iv[0] for rings in angles for ring in rings for k, ivs in ring.items() if role(k) == "into"
+                    for iv in ivs if iv[1] > seat_tol), default=None)
+    on_axis = min((iv[0] for k, ivs in axis.items() if role(k) == "into" for iv in ivs if iv[1] > seat_tol),
+                  default=None)
+    bottom_only = (t_start is not None and recv_top is not None and on_axis is not None
+                   and recv_top < t_start - gap_tol and abs(on_axis - t_start) <= gap_tol)
+    bore_bottom = None
+    if bottom_only:
+        bore_bottom = t_start
+        ev["bore_bottom_t_mm"] = _r(t_start)
+        tivs, t_start = [], None
     t_last = tivs[-1][1] if tivs else None
     for k, ivs in sorted(axis.items()):
         if role(k) == "stack" and k not in holes:
@@ -660,6 +676,10 @@ def evaluate(spec: FastenerSpec, measurement: Mapping[str, Any], options: Fasten
     parts.update(receivers[:1] if not tivs else thread.get("parts", [])[:1])
     if not receivers:
         probs.append(f"{spec.into} is not in the assembly")
+    elif not tivs and bore_bottom is not None:
+        radii = thread.get("probe_radii_mm") or []
+        probs.append(f"no thread modelled in {spec.into}: its bore is wider than the thread probes"
+                     + (f" (Ø{2 * max(radii):.2f})" if radii else "") + f" down to its bottom at t {bore_bottom:.2f}")
     elif not tivs:
         probs.append(f"no thread of {spec.into} on the axis: the receiver is not where the screw goes, or its "
                      f"bore is wider than the screw")
@@ -1062,8 +1082,13 @@ def measure(assembly: Any, spec: FastenerSpec, i: int, options: FastenerOptions 
     bridge = 1.5 * pitch if pitch else 0.5 * d          # thread crests, grooves and relief cuts read as one region
     hole_c = spec.hole_clearance_mm if spec.hole_clearance_mm is not None else o.hole_clearance_mm
     m["thread"] = {"radius_mm": None, "intervals": [], "parts": [], "bridge_mm": _r(bridge)}
-    # inside the nominal diameter; then just outside it, but below the smallest clearance hole (d + clearance)
-    for rt in (0.92 * d / 2, d / 2 + max(hole_c / 4, 0.005)):
+    # inside the nominal diameter, and just outside it but inside the smallest clearance hole (d + clearance): a
+    # receiver bored at its minor diameter meets both, one bored at the nominal diameter only the outer one (the
+    # inner one would meet only a blind hole's bottom). The probe whose thread starts first wins.
+    found = []
+    radii_t = (0.92 * d / 2, d / 2 + max(0.2 * hole_c, 0.005))
+    m["thread"]["probe_radii_mm"] = [_r(x) for x in radii_t]
+    for rt in radii_t:
         common, hit_parts = None, set()
         for j in range(4):
             got = probe.along(receivers, _at(p, u, 0, v, w, rt, math.pi / 2 * j + math.pi / 8), u, 0.0, t_end)
@@ -1071,9 +1096,11 @@ def measure(assembly: Any, spec: FastenerSpec, i: int, options: FastenerOptions 
             ivs = _merge([iv for ivs in got.values() for iv in ivs], gap=bridge)
             common = ivs if common is None else _intersect(common, ivs)
         if common:
-            m["thread"] = {"radius_mm": _r(rt), "intervals": common, "parts": sorted(hit_parts),
-                           "bridge_mm": _r(bridge)}
-            break
+            found.append((common[0][0], len(found), {"radius_mm": _r(rt), "intervals": common,
+                                                     "parts": sorted(hit_parts), "bridge_mm": _r(bridge),
+                                                     "probe_radii_mm": [_r(x) for x in radii_t]}))
+    if found:
+        m["thread"] = min(found)[2]
     # clearance holes: radial rays at three depths in each clamped part, where it lies below the seat (met on the
     # rings, or on lines just outside the head when its hole is wider than every ring)
     holes: Dict[str, Any] = {}
@@ -1226,20 +1253,31 @@ def _tool_sweep(assembly: Any, spec: FastenerSpec, i: int, m: Mapping[str, Any],
 def fastener_gate(assembly: Any, fasteners: Any, *, steps: Iterable[Any] = (),
                   tools: Optional[Mapping[str, Any]] = None,
                   options: FastenerOptions = FastenerOptions(), tol: Any = None, cache: Any = None,
-                  intended_overlaps: Iterable[Mapping[str, Any]] = (), out: Any = None) -> Dict[str, Any]:
+                  intended_overlaps: Iterable[Mapping[str, Any]] = (), poses: Optional[Mapping[str, Any]] = None,
+                  out: Any = None) -> Dict[str, Any]:
     """Run the fastener gate and return (with ``out``, write, plus a ``.md`` table beside it) the verdict.
 
     ``fasteners``: ``{name: FastenerSpec | mapping}`` or a list of specs (``fasteners_from_build`` makes them
     from a dossier build). ``steps``: the assembly steps (``BuildResult.steps`` or mappings with ``order``,
     ``fit``, ``onto``, ``fasteners``, ``tool``). ``tools``: ``{name: envelope}`` (``tool_envelope``).
     ``intended_overlaps``: ``[{parts, reason}]`` pairs whose shared volume is declared (beyond a screw and
-    its receiver's thread, which is always checked) and is left out, with the reason, as an exclusion."""
+    its receiver's thread, which is always checked) and is left out, with the reason, as an exclusion.
+
+    ``poses``: ``{body: location}`` runs the gate with those bodies moved (``Assembly.posed``), every check and
+    every tool sweep included. A fastener moves with its body: its placed solid's, else its clamped part's, else
+    its receiver's. From a dossier build those are ``relations.moving_bodies`` (the closure over fixed joints and
+    fastener clamps/into), so the screws holding a moving part, and their axes, go with it."""
     from cadagent.gates.relations import Tolerances, relation_table
     tol = tol or Tolerances()
     if isinstance(fasteners, Mapping):
         specs = {n: FastenerSpec.coerce(f, n) for n, f in fasteners.items()}
     else:
         specs = {s.name: s for s in (FastenerSpec.coerce(f) for f in fasteners)}
+    bodies = {n: [_fastener_body(assembly, spec, i) for i in range(len(spec.axes))] for n, spec in specs.items()}
+    if poses:
+        for b, loc in poses.items():
+            assembly = assembly.posed(b, loc)
+        specs = {n: _posed_spec(spec, bodies[n], poses) for n, spec in specs.items()}
     step_list = _steps(steps)
     tools = dict(tools or {})
     names = list(assembly)
@@ -1292,9 +1330,12 @@ def fastener_gate(assembly: Any, fasteners: Any, *, steps: Iterable[Any] = (),
             if step is None and step_list:
                 m["tool"]["no_step"] = True
             cs, row = evaluate(spec, m, options)
+            row["body"] = bodies[name][i]
             checks += cs
             table.append(row)
     limits = {k: v for k, v in asdict(options).items() if k != "stock_lengths_mm"}
+    if poses:
+        limits["poses"] = {b: _matrix_list(loc) for b, loc in poses.items()}
     limits.update(touch_mm=tol.touch_mm, overlap_mm3=tol.overlap_mm3,
                   stock_lengths="project" if options.stock_lengths_mm else "default metric + inch list")
     data = verdict(GATE, checks, assumptions=ASSUMPTIONS, limits=limits, exclusions=exclusions,
@@ -1304,6 +1345,39 @@ def fastener_gate(assembly: Any, fasteners: Any, *, steps: Iterable[Any] = (),
         path = write_verdict(out, data)
         path.with_suffix(".md").write_text("# Fasteners\n\n" + table_markdown(data))
     return data
+
+
+def _fastener_body(assembly: Any, spec: FastenerSpec, i: int) -> Optional[str]:
+    """The body a fastener instance moves with: its placed solid's, else its clamped part's, else its receiver's."""
+    inst = spec.instance_key(i)
+    if inst in assembly:
+        return assembly[inst].body
+    for name in (spec.clamps, spec.into):
+        keys = _keys(list(assembly), name)
+        if keys:
+            return assembly[keys[0]].body
+    return None
+
+
+def _posed_spec(spec: FastenerSpec, bodies: Sequence[Optional[str]], poses: Mapping[str, Any]) -> FastenerSpec:
+    """``spec`` with each axis moved by its body's pose (axes of bodies not posed stay)."""
+    from dataclasses import replace
+    from cadagent.gates.relations import _trsf
+    gp = require("OCP.gp", "posed fastener axes")
+    axes = []
+    for (o, d), b in zip(spec.axes, bodies):
+        if b in poses:
+            t = _trsf(poses[b])
+            po, vd = gp.gp_Pnt(*o).Transformed(t), gp.gp_Vec(*d).Transformed(t)
+            axes.append(((po.X(), po.Y(), po.Z()), (vd.X(), vd.Y(), vd.Z())))
+        else:
+            axes.append((o, d))
+    return replace(spec, axes=axes, instances=list(spec.instances))
+
+
+def _matrix_list(location: Any) -> List[float]:
+    from cadagent.gates.relations import _matrix, _trsf
+    return [_r(v, 9) for v in _matrix(_trsf(location))]
 
 
 def fastener_gate_from_build(result: Any, dossier: Any = None, extra: Optional[Mapping[str, Any]] = None, *,

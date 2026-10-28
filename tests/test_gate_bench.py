@@ -24,6 +24,7 @@ from cadagent.gates import relate_pair, relation_table  # noqa: E402
 from cadagent.gates.connectivity import Declarations, connectivity_gate  # noqa: E402
 from cadagent.gates.containment import containment_gate  # noqa: E402
 from cadagent.gates.fasteners import fastener_gate_from_build  # noqa: E402
+from cadagent.gates.motion import motion_gate  # noqa: E402
 from cadagent.gates.wall import wall_gate  # noqa: E402
 
 _PATH = Path(__file__).resolve().parent / "fixtures" / "gate_bench" / "build.py"
@@ -56,6 +57,10 @@ def gate_containment(bench):
 
 def gate_connectivity(bench):
     return connectivity_gate(bench.assembly, Declarations.from_build(bench.result, extra=bench.declarations))
+
+
+def gate_motion(bench):
+    return motion_gate(bench.assembly, intended_overlaps=bench.declarations["intended_overlaps"])
 
 
 def gate_dossier_lint(bench):
@@ -114,11 +119,11 @@ GATES = {
     "containment": (gate_containment, "T5"),
     "connectivity": (gate_connectivity, "T4"),
     "fasteners": (gate_fasteners, "T6"),
-    "motion": (_not_built("T7", "motion"), "T7"),
+    "motion": (gate_motion, "T7"),
     "assembly": (_not_built("T9", "assembly-access"), "T9"),
     "dossier-lint": (gate_dossier_lint, "T2"),
 }
-BUILT = {"wall", "connectivity", "containment", "dossier-lint", "fasteners"}
+BUILT = {"wall", "connectivity", "containment", "dossier-lint", "motion", "fasteners"}
 
 
 def _marks(gate):

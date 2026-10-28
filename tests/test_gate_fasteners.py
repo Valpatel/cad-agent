@@ -497,6 +497,22 @@ def test_chamfers_grooves_and_a_tapped_pilot_pass_with_full_engagement(kw):
     assert v["table"][0]["engagement_mm"] == pytest.approx(5.0, abs=1e-4)
 
 
+@pytest.mark.parametrize("bore", [3.0, 3.03])
+def test_a_blind_tapped_hole_bored_at_the_nominal_diameter_is_thread(bore):
+    """The inner probe (0.92 d/2) misses such a bore and meets only its bottom; the outer one starts at the top."""
+    v = gate(chamfer_rig(insert=None, base_hole_r=bore / 2, into="base", hole_bottom=0.5))
+    assert v["pass"] is True, v["findings"]
+    assert v["table"][0]["thread_start_mm"] == pytest.approx(3.0) and v["table"][0]["engagement_mm"] == 5.0
+
+
+def test_a_blind_bore_wider_than_the_probes_is_reported_as_no_thread_not_as_a_missing_pilot():
+    v = gate(chamfer_rig(insert=None, base_hole_r=1.525, into="base", hole_bottom=0.5))
+    f = by_id(v)
+    assert "no thread modelled in base: its bore is wider than the thread probes (Ø3.04) down to its bottom at t " \
+        "12.50" in f["fastener:screw:engagement"]["message"]
+    assert f["fastener:screw:holes"]["status"] == "pass" and f["fastener:screw:tip"]["status"] == "pass"
+
+
 def test_a_plain_clearance_hole_is_not_thread_and_a_wide_hole_lets_the_head_through():
     v = gate(chamfer_rig(insert=None, base_hole_r=1.6, into="base", hole_bottom=-1.0))
     assert "no thread of base on the axis" in by_id(v)["fastener:screw:engagement"]["message"]
@@ -618,6 +634,8 @@ def test_head_in_a_pocket_too_narrow_and_over_an_edge():
     assert by_id(v)["fastener:screw:holes"]["status"] == "pass"
     v = gate(rig(pocket_d=6.5))
     assert by_id(v)["fastener:screw:seat"]["status"] == "pass", by_id(v)["fastener:screw:seat"]
+    v = gate(rig(x=8.2))                       # 0.95 mm of the head off the lid's edge: the outer ring finds nothing
+    assert "nothing under the head" in by_id(v)["fastener:screw:seat"]["message"]
     v = gate(rig(x=9.0))                                              # the head hangs 1.75 mm off the lid's edge
     seat = by_id(v)["fastener:screw:seat"]
     assert seat["status"] == "fail" and "nothing under the head" in seat["message"]
@@ -630,3 +648,40 @@ def test_gate_writes_the_verdict_and_the_markdown_table(tmp_path):
     md = (tmp_path / "gates" / "fasteners.md").read_text()
     assert "| screw | lid → insert | Z 23.50 | Z 7.30 |" in md
     assert math.isclose(data["limits"]["tip_clearance_mm"], 0.5)
+
+
+def arm_rig():
+    """An arm on a revolute joint about the Y axis through the origin, with a plate screwed to its top by an M3 into
+    a Ø2.5 pilot in the arm; a static roof sits 40 mm out along -X, where the arm's top faces when turned 90°."""
+    cq = _cq()
+    from cadagent import dossier
+    from cadagent.fasteners import socket_head_envelope
+    with dossier.use_registry() as reg:
+        reg.add_part("base", _box(cq, -5, -20, -20, 5, -10, 5), grounded=True)
+        reg.add_part("roof", _box(cq, -42, -10, -10, -40, 10, 10).fuse(_box(cq, -42, -20, -10, -5, -10, -8)))
+        arm = _box(cq, -5, -10, -5, 5, 10, 5).cut(_cyl(cq, 1.25, -2, 5))
+        reg.add_part("arm", arm)
+        reg.add_part("plate", _box(cq, -5, -10, 5, 5, 10, 8).cut(_cyl(cq, 1.7, 5, 8)))
+        reg.joint("J", "revolute", parts=("arm", "base"), axis=((0, 0, 0), (0, 1, 0)), range_deg=(0, 90))
+        reg.fastener("m3_shcs", clamps="plate", into="arm", name="screw", at=[dossier.Axis((0, 0, 8), (0, 0, -1))],
+                     tool="hex 2.5", length_mm=8.0, diameter_mm=3.0, thread_start_mm=3.0, min_engagement_mm=1.5,
+                     shape=socket_head_envelope(3.0, 8.0, 5.5, 3.0))
+        return reg.build({}, write=False)
+
+
+def test_a_fastener_moves_with_its_body_when_the_gate_is_posed():
+    cq = _cq()
+    from cadagent.gates import Assembly
+    r = arm_rig()
+    asm = Assembly.from_build(r)
+    assert asm["screw"].body == asm["plate"].body == asm["arm"].body == "arm"       # relations.moving_bodies
+    home = gate(r, assembly=asm)
+    assert home["pass"] is True, home["findings"]
+    assert home["table"][0]["body"] == "arm" and home["table"][0]["seat"] == [0, 0, 8]
+    turned = cq.Location(cq.Vector(0, 0, 0), cq.Vector(0, 1, 0), -90)                 # the arm's top to -X
+    v = gate(r, assembly=asm, poses={"arm": turned})
+    (row,) = v["table"]
+    assert row["seat"] == pytest.approx([-8, 0, 0], abs=1e-6) and row["engagement_mm"] == pytest.approx(5.0)
+    f = [x for x in v["findings"]]
+    assert [x["id"] for x in f] == ["fastener:screw:tool"] and "roof" in f[0]["parts"], f
+    assert v["limits"]["poses"]["arm"][3] == pytest.approx(0.0)

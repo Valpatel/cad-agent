@@ -63,3 +63,23 @@ def test_categories_by_name(tmp_path):
     assert [(p['name'], p['category']) for p in m['parts']] == [('a', 'Parts'), ('b', 'Coupons')]
     with pytest.raises(CadConfigError):
         export_view(project(tmp_path, dict(view, categories={'Coupons': ['typo']})))
+
+
+def test_binary_stl_with_solid_header_and_trailing_bytes(tmp_path):
+    tri = tetra(tmp_path / 'a.stl')
+    data = (tmp_path / 'a.stl').read_bytes()
+    (tmp_path / 'a.stl').write_bytes(b'solid exported'.ljust(80, b' ') + data[80:] + b'\0\0')
+    assert np.allclose(_read_stl(tmp_path / 'a.stl'), tri)
+
+
+@pytest.mark.parametrize('bad', [{'extra': [{'name': 'a', 'file': 'a.stl'}, {'name': 'b', 'file': 'b.stl', 'offset': [1, 2]}]},
+                                 {'extra': [{'name': 'a', 'file': 'a.stl', 'offset': 5}]},
+                                 {'extra': [{'glob': '*.stl'}], 'categories': {'Carrier': 'a'}},
+                                 {'extra': [{'glob': '*.stl'}], 'categories': {'X': ['a'], 'Y': ['a']}}])
+def test_bad_config_rejected_before_writing(tmp_path, bad):
+    from cadagent.project import CadConfigError
+    tetra(tmp_path / 'a.stl')
+    tetra(tmp_path / 'b.stl')
+    with pytest.raises(CadConfigError):
+        export_view(project(tmp_path, dict(bad, parts=False)))
+    assert not (tmp_path / 'exports/view').exists()

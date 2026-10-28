@@ -263,10 +263,13 @@ ratio. Custom stages can pass `createStage(el, {zoomSpeed: 1})` for the earlier 
 after updating cad-agent. The viewer is scriptable for screenshots: `viewer.html?explode=0.5&view=iso&panel=0`.
 
 Show everything the parts fit around in the same viewer, not in a second one: `extra` entries add bought parts and
-reference boards from a STEP or an STL (`offset: [x, y, z]` mm moves a mesh into assembly position; `hidden: true` starts
-it off). A `category` on an entry (`parts_category` for the parts file; `categories: {Test coupons: [part, ...]}` moves
+reference boards from a STEP or an STL (`offset: [x, y, z]` mm moves the part into assembly position; `hidden: true`
+starts it off). A `category` on an entry (`parts_category` for the parts file; `categories: {Test coupons: [part, ...]}` moves
 parts by name) heads a section of the parts list with one box that shows or hides the whole section, e.g. *Printed parts*, *Cooler*, *Carrier board*. An extra whose file is
 missing is listed as not exported, so reference models that are not redistributed drop out of a fresh checkout.
+Configuration errors stop the export before anything is written: two parts with the same name (including an `extra`
+glob that matches a part from the parts file, which used to overwrite its mesh silently), an `offset` that is not three
+numbers, and a `categories` entry that is not a list, names a part that does not exist or lists a part twice.
 
 ### Stiffness and strength (`cadagent.fea`)
 

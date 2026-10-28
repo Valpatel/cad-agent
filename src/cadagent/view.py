@@ -78,13 +78,16 @@ def group_manifests(manifest: Dict[str, Any], groups: List[dict]) -> Dict[str, d
 def _read_stl(path: Path):
     """(n, 3, 3) float32 triangles from a binary or ASCII STL."""
     data = path.read_bytes()
-    if len(data) >= 84:
+    # ASCII starts with "solid" and has facets; a binary file's 80-byte header may also start with "solid", so the
+    # facet keyword decides, and trailing bytes after the binary records are allowed
+    ascii_stl = data[:5].lower() == b"solid" and b"facet" in data[:1024].lower()
+    if not ascii_stl and len(data) >= 84:
         n = int.from_bytes(data[80:84], "little")
-        if len(data) == 84 + 50 * n:
+        if len(data) >= 84 + 50 * n:
             rec = np.frombuffer(data, dtype=np.dtype([("normal", "<f4", 3), ("v", "<f4", (3, 3)), ("attr", "<u2")]), count=n, offset=84)
             return rec["v"].copy()
     text = data.decode("ascii", errors="ignore")
-    vertices = [line.split()[1:4] for line in text.splitlines() if line.lstrip().startswith("vertex")]
+    vertices = [line.split()[1:4] for line in text.splitlines() if line.lstrip().lower().startswith("vertex")]
     if not vertices or len(vertices) % 3:
         raise ValueError(f"{path} is not a readable STL")
     return np.asarray(vertices, dtype=np.float32).reshape(-1, 3, 3)
@@ -113,25 +116,35 @@ def export_view(project, tolerance: float = 0.1, angular: float = 0.2) -> Dict[s
     # (name, file, colour, offset, category, hidden)
     sources = ([(name, project.exports_dir / f"{name}.step", None, None, cfg.get("parts_category"), False)
                 for name in _parts_from(project)] if cfg.get("parts", True) else [])
+    from cadagent.project import CadConfigError
     for e in cfg.get("extra", []):
-        extra = (e.get("color"), e.get("offset"), e.get("category"), bool(e.get("hidden")))
+        offset = e.get("offset")
+        if offset is not None and not (isinstance(offset, (list, tuple)) and len(offset) == 3
+                                       and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in offset)):
+            raise CadConfigError(f"cad.view.extra offset must be [x, y, z] in mm, got {offset!r}")
+        extra = (e.get("color"), offset, e.get("category"), bool(e.get("hidden")))
         if "glob" in e:
             for f in sorted(project.root.glob(e["glob"])):
                 sources.append((f.stem[len(e.get("strip", "")):] if f.stem.startswith(e.get("strip", "")) else f.stem, f, *extra))
         else:
             sources.append((e["name"], project.root / e["file"], *extra))
     by_name = {}
-    for category, members in (cfg.get("categories") or {}).items():
+    categories = cfg.get("categories") or {}
+    if not isinstance(categories, dict):
+        raise CadConfigError("cad.view.categories must map a section title to a list of part names")
+    for category, members in categories.items():
+        if not isinstance(members, list) or not all(isinstance(m, str) for m in members):
+            raise CadConfigError(f"cad.view.categories[{category!r}] must be a list of part names")
         for member in members:
+            if member in by_name:
+                raise CadConfigError(f"cad.view.categories lists {member!r} under both {by_name[member]!r} and {category!r}")
             by_name[member] = category
     sources = [(name, source, color, offset, by_name.get(name, category), off) for name, source, color, offset, category, off in sources]
     names = [s[0] for s in sources if s[1].is_file()]
     unknown = sorted(set(by_name) - {s[0] for s in sources})
     if unknown:
-        from cadagent.project import CadConfigError
         raise CadConfigError(f"cad.view.categories names parts that do not exist: {unknown}")
     if len(set(names)) != len(names):
-        from cadagent.project import CadConfigError
         raise CadConfigError(f"cad.view: two parts are named {sorted({n for n in names if names.count(n) > 1})}")
 
     # validate the groups against the parts that will be exported before writing anything

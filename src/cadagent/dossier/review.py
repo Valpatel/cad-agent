@@ -540,8 +540,18 @@ def section_records(project: Any, section: str) -> List[Tuple[str, Dict[str, Any
         data = _read_json(path)
         if data is not None and data.get("section") == section:
             out.append((_rel(path, Path(project.root)), data))
-    out.sort(key=lambda fr: (record_time(fr[1]), fr[0]))
+    out.sort(key=lambda fr: record_order(fr[1], fr[0]))
     return out
+
+
+_SEQ_RE = re.compile(r"\d{4}-\d{2}-\d{2}-(\d+)\.json$")
+
+
+def record_order(data: Mapping[str, Any], file: str) -> Tuple[str, int, str]:
+    """The order records are read in: by time, then by the ``-2``, ``-3`` ... suffix ``submit_record`` gives a
+    second record of the same day (``S1-2026-10-28.json`` before ``S1-2026-10-28-2.json``), then by file."""
+    m = _SEQ_RE.search(file)
+    return record_time(data), int(m.group(1)) if m else 1, file
 
 
 def record_time(data: Mapping[str, Any]) -> str:
@@ -679,7 +689,8 @@ def write_bundle(project: Any, section: str, bundle_dir: Union[str, Path, None] 
     p = _load(project, section)
     if p.geometry is None:
         raise ReviewError(f"no geometry record ({p.geometry_file}): build first (cad-agent gates --build)")
-    out = Path(bundle_dir) if bundle_dir is not None else Path(project.exports_dir) / "review-bundle" / safe_name(section)
+    out = Path(bundle_dir) if bundle_dir is not None else \
+        Path(project.exports_dir) / "review-bundle" / safe_name(section)
     if out.exists():
         if not out.is_dir():
             raise ReviewError(f"{out} is a file")
@@ -920,6 +931,6 @@ def submit_record(project: Any, section: str, record: Union[str, Path, Mapping[s
 
 __all__ = ["ANSWERS", "BLOCKING", "BUNDLE_SCHEMA", "DECISION_VERDICTS", "Problem", "RECORD_SCHEMA", "ReviewError",
            "SEVERITIES", "TRACED", "VERDICTS", "actor_refusal", "check_record", "current_hashes", "head_commit",
-           "last_signoff", "open_decisions", "part_actors", "record_template", "record_time", "section_authors",
-           "section_decisions", "section_diff", "section_records", "submit_record", "validate_record",
-           "write_bundle"]
+           "last_signoff", "open_decisions", "part_actors", "record_order", "record_template", "record_time",
+           "section_authors", "section_decisions", "section_diff", "section_records", "submit_record",
+           "validate_record", "write_bundle"]

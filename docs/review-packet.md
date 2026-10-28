@@ -220,17 +220,21 @@ clear between the drawn poses. The gates measure those; the checklist names the 
 reviewer to read it from `measurements` instead. When a measurement and an image disagree, the measurement wins
 and the disagreement is itself a finding (a wrong declaration, or a view that misleads).
 
-## How a reviewer uses it (hand-off to T11)
+## How a reviewer uses it
 
-The reviewer pass (plan §5.3, T11) is given the section YAML, the gate verdicts, this manifest and its images, and
-the diff since the last review. It reads `measurements` and `findings` first, then answers every question in
-`checklist.questions` from the views listed with it, and writes its record (`dossier/reviews/<section>-<date>.json`)
-with the part hashes from `parts.*.sha256`. The answer shape T11 is expected to use:
+The reviewer pass ([`dossier.md`](dossier.md#the-reviewer-pass), plan §5.3) copies this manifest and its images
+into the reviewer's bundle (`cad-agent review-section <section>`) with the section YAML, the gate verdicts and the
+diff since the last sign-off. The reviewer reads `measurements` and `findings` first, then answers every question in
+`checklist.questions` from the views listed with it, and submits a record bound to the part hashes in
+`parts.*.sha256`. Each answer names the views it was read from and says whether it rests on the images alone:
 
 ```json
-{"checklist": [{"id": "contained-inside:hopper_cavity:ball", "answer": "yes", "view": "cut-cavity-hopper_cavity-plan",
-                "note": ""}]}
+{"checklist": [{"id": "contained-inside:hopper_cavity:ball", "answer": "yes", "evidence": "...",
+                "views": ["cut-cavity-hopper_cavity-plan"], "image_only": false,
+                "measurements": ["gate:containment"]}]}
 ```
+
+A sign-off needs the packet to be current (`project_packet_stale` is None): render it again after the gates run.
 
 ## Limits
 

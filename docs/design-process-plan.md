@@ -344,6 +344,10 @@ image; the gates answer those, and the checklist says so.
 
 ### 5.3 Reviewer pass and sign-off (T11)
 
+Built: `cadagent.dossier.review`, `cad-agent review-section` ([`dossier.md`](dossier.md#the-reviewer-pass)). The
+separate-reviewer switch is the dossier's `gates: require_separate_reviewer`, and the build actor is recorded per
+part (`parts.<name>.actor`).
+
 A separate agent (or person) that did not write the section, given: the section YAML, the gate JSON, the render
 packet, the checklist, and the diff since the last review. It:
 
@@ -357,14 +361,15 @@ packet, the checklist, and the diff since the last review. It:
 **Who is who.** Every build and every review record carries an `actor` string read from the `CAD_AGENT_ACTOR`
 environment variable (an agent or session id, or a person's handle, set by the harness or the person who starts the
 session; empty is recorded as `unknown`). `dossier-geometry.json` records the actor of the build that produced each
-part's hash; the review record records the reviewer's. When `review.require_separate_reviewer: true` (the default),
+part's hash; the review record records the reviewer's. When `gates: require_separate_reviewer: true` (the default),
 `cad-agent dossier` refuses a sign-off whose actor equals the build actor for any part in the section, or is `unknown`.
 This makes the separate-reviewer rule checkable, but it is only as strong as the variable: a harness that sets the same
 actor for both passes defeats it, and the plan says so rather than pretending otherwise.
 
 `cad-agent dossier` sets the section's status from the latest record whose hashes match the current build; any geometry
 change invalidates sign-off (the status falls back to `gated` when the gates pass on the new geometry, else `built`). The site shows who signed what and when. The reviewer
-cannot change geometry or YAML other than its own record.
+must not change geometry or YAML other than its own record; a reviewer who changes a part becomes that part's builder,
+so its own sign-off is refused.
 
 ### 5.4 How the main agent and implementers use it
 

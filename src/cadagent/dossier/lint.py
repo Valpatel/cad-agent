@@ -141,9 +141,9 @@ class Review:
     verdict: str = ""
 
     @property
-    def order(self) -> Tuple[str, str]:
-        from .review import record_time
-        return record_time({"timestamp": self.timestamp, "date": self.date}), self.file
+    def order(self) -> Tuple[str, int, str]:
+        from .review import record_order
+        return record_order({"timestamp": self.timestamp, "date": self.date}, self.file)
 
 
 @dataclass

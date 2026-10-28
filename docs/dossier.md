@@ -181,3 +181,164 @@ section. Comments are not preserved: the dossier is edited by hand, `to_dict()` 
 `cad-agent.yaml` gains one key in its `cad:` section, `dossier: dossier/project.yaml`. `CadProject.dossier` is the
 resolved path (None when absent), and `load_project_dossier(project)` loads it with file names shown relative to the
 project root.
+
+## Declaring geometry in the build script
+
+Only the build code knows which solid is the cavity, where a joint axis is and where each screw sits, so those
+facts are declared in code, next to the geometry (`cadagent.dossier.registry`). The YAML cards and the code are
+joined by id.
+
+```python
+from cadagent.dossier import Axis, part, cavity, joint, fastener, assembly, build
+
+@part("bench_base", section="S1", grounded=True)       # ground for the connectivity gate
+def bench_base(p): ...
+
+@part("hopper", section="S3")                          # registers the shape; joined to card "hopper"
+def hopper(p): ...                                     # returns a shape in assembly coordinates, as today
+
+@cavity("hopper", "hopper_cavity")                     # the void the containment gate tests against
+def hopper_cavity(p): return hopper_inner(p)           # always a declared solid: the gates do not derive one
+
+@part("ball", section="S3", free=True, reason="loose in the hopper")   # allowed to float; a reason is required
+def balls(p): return [sphere_at(c) for c in p["ball_centres"]]         # a list = one instance per item
+
+@joint("I9", kind="revolute", axis=lambda p: Axis(p["flap_pivot"], (0, 1, 0)), range_deg=(0, 70),
+       parts=("hopper_flap", "hopper"), intended_contacts=[("hopper_flap", "hopper_stop")])
+def flap_pivot(p): ...                                 # optional body, never called; joint() also works bare
+
+fastener("screw_m3x8", clamps="hopper", into="pan_base", via="I7", tool="hex_2.5",
+         at=lambda p: [Axis((x, y, p["flange_z"]), (0, 0, -1)) for x, y in p["flange_holes"]],
+         length_mm=8, thread_start_mm=lambda p: p["flange"], min_engagement_mm=4,
+         shape=lambda p: mcmaster_screw("91292A111"))  # optional solid, modelled in the McMaster screw frame
+
+assembly.step(1, fit="pan_base", onto="bench_base", direction="-Z", tool="hex_2.5", fasteners=["screw_m4x12"] * 3)
+
+if __name__ == "__main__":
+    build()            # parameters from cad/parameters.json; writes exports/dossier-geometry.json
+```
+
+| Declaration | Arguments | Notes |
+|---|---|---|
+| `@part(name, section="", *, place=None, grounded=False, free=False, reason="")` | function `(p)` or `()` returning a CadQuery shape, Workplane, Assembly, build123d object or `TopoDS_Shape`; a list for several instances | `place`: a `cq.Location`, an `(x, y, z)` translation, or a list of them (instances); then the function returns the shape in its own frame |
+| `@cavity(part, name)` | function returning one solid | in the part's frame: it follows the part's `place` |
+| `joint(interface, kind="revolute", *, parts=(moving, fixed), axis, range_deg=None, range_mm=None, intended_contacts=(), samples=None)` | `kind`: `fixed`, `revolute` (needs `range_deg`), `slider` (`range_mm`), `cylindrical` (both), `planar`, `ball` | the axis is in assembly coordinates; `axis` may be a function of the parameters |
+| `fastener(key, *, clamps, into, at, name="", via="", tool="", length_mm, diameter_mm, thread_start_mm, thread_depth_mm, min_engagement_mm, shape=None)` | `at`: one `Axis` per screw, from the head seat in the direction the screw advances | `thread_start_mm`: seat to first engaged thread; numbers may be functions; `shape` is placed at every axis (McMaster frame: origin on the seat, +Z out of the hole) |
+| `assembly.step(order, fit, onto=None, *, direction="", tool="", fasteners=(), access_check="", note="")` | `direction`: `+X`..`-Z` or `(x, y, z)` | steps may also be written in `project.yaml`; when both exist with the same order they must agree |
+
+Declarations are checked when they are made (a free part without a reason, a revolute joint without a range, an
+unknown kind, a bad id raise `RegistryError`). The same declaration run twice (a re-import) replaces itself; the same
+name declared at two places raises. The module-level functions write to `cadagent.dossier.REGISTRY`; a tool or test
+can use its own `Registry()` and its methods (`reg.part`, `reg.assembly.step`, ...).
+
+`build(params=None, *, out_dir="exports", root=None, write=True)` calls every declaration with the parameters
+(a mapping, a JSON path, or `cad/parameters.json` under `root`), and returns a `BuildResult`. A declaration that
+fails raises `RegistryError` naming it and its `file:line`. `build_module("cad/build.py")` imports a build script and
+builds it, adding `print_parts()`/`dossier_items()` when the script has them.
+
+### Migrating an existing build: `dossier_items()`
+
+A build that keeps `print_parts() -> {name: shape}` adds one function, and moves parts to decorators one at a time
+(a decorated part wins over a `print_parts()` entry of the same name):
+
+```python
+def dossier_items():
+    return {
+        "parts": {"hopper": {"section": "S3"}, "ball": {"section": "S3", "free": True, "reason": "loose"}},
+        "cavities": {"hopper_cavity": {"part": "hopper", "shape": hopper_inner(P)}},
+        "joints": [{"interface": "I9", "kind": "revolute", "parts": ("hopper_flap", "hopper"),
+                    "axis": Axis(P["flap_pivot"], (0, 1, 0)), "range_deg": (0, 70)}],
+        "fasteners": [{"key": "screw_m3x8", "clamps": "hopper", "into": "pan_base", "at": [...]}],
+        "assembly": [{"order": 1, "fit": "pan_base", "onto": "bench_base", "direction": "-Z"}],
+    }
+```
+
+Every `print_parts()` shape is registered; a part not yet given a section here is still a shape, and the join reports
+it as a shape without a card until its card exists. That list is the migration's to-do list.
+
+### `exports/dossier-geometry.json`
+
+```json
+{
+ "schema": "cad-agent.dossier-geometry/1", "units": "mm",
+ "hash": "sha256 of OCCT BREP text v1, no triangulation",
+ "parameters": {"file": "cad/parameters.json", "sha256": "..."},
+ "shapes_dir": "exports/dossier-shapes",
+ "parts": {"ball": {"section": "S3", "grounded": false, "free": true, "free_reason": "loose in the hopper",
+                    "sha256": "<hash of the instance hashes>", "count": 8, "declared_at": "cad/build.py:24",
+                    "instances": [{"key": "ball#0", "sha256": "...", "file": "dossier-shapes/<sha256>.brep",
+                                   "bbox": {"min": [x, y, z], "max": [x, y, z]}, "volume_mm3": 523.6,
+                                   "solids": 1, "valid": true}]}},
+ "cavities": {"hopper_cavity": {"part": "hopper", "sha256": "...", "file": "...", "bbox": {}, "volume_mm3": 0,
+                                "solids": 1, "valid": true, "declared_at": "cad/build.py:20"}},
+ "joints": {"I9": {"kind": "revolute", "moving": "hopper_flap", "fixed": "hopper",
+                   "axis": {"origin": [31, 0, 70], "direction": [0, 1, 0]}, "range": [0, 70], "unit": "deg",
+                   "intended_contacts": [["hopper_flap", "hopper"]], "samples": null, "declared_at": "..."}},
+ "fasteners": {"screw_m3x8:hopper-pan_base": {"key": "screw_m3x8", "clamps": "hopper", "into": "pan_base",
+               "via": "I7", "tool": "hex_2.5", "length_mm": 8, "thread_start_mm": 2.4, "min_engagement_mm": 4,
+               "count": 4, "instances": [{"key": "screw_m3x8:hopper-pan_base#0", "origin": [-25, -25, 12.4],
+               "direction": [0, 0, -1], "sha256": "...", "file": "...", "bbox": {}}], "declared_at": "..."}},
+ "assembly": {"steps": [{"order": 1, "fit": "pan_base", "onto": ["bench_base"], "direction": "-Z",
+                         "tool": "hex_2.5", "fasteners": ["screw_m4x12", "screw_m4x12", "screw_m4x12"],
+                         "declared_at": "cad/build.py:40"}]},
+ "physical_fit_verified": false
+}
+```
+
+- **Hashes** are content hashes: sha256 of the shape's BREP text (OCCT format version 1, no triangulation, so
+  meshing for an STL changes nothing). The same build gives the same hash in any process; a changed dimension or
+  placement changes it. An OCCT upgrade may change every hash, which only invalidates sign-offs (the safe
+  direction). The reader recomputes some frame values when it loads a BREP, so a shape read back may write different
+  bytes: compare the *recorded* hashes, never re-hash a loaded shape. `shape_sha256(shape)` is the function.
+- **Shapes** are written once each to `exports/dossier-shapes/<sha256>.brep` (content-addressed; files no longer
+  referenced are removed). The directory gets its own `.gitignore` (`*`): it is build output, regenerated by every
+  build. The JSON is the record to commit. Any gate cache belongs in a gitignored directory too.
+- Numbers are rounded to 1e-6 mm so the JSON diffs cleanly; `bbox` is the tight OCCT box.
+- Instance keys are `name` for a single instance and `name#0`, `name#1`, ... for several.
+
+### Hand-over to the gates
+
+The gates (`cadagent.gates`, plan §4) consume the registry through two calls and never import the build script:
+
+```python
+from cadagent.dossier import build_module, load_geometry
+
+result = build_module("cad/build.py")                    # in the build process, or
+result = load_geometry("exports/dossier-geometry.json")  # in another process (cad-agent gates): reads the BREPs,
+                                                         # checks each file against its recorded sha256
+shapes = result.assembly_shapes()          # {key: cq.Shape in assembly coordinates}: "hopper", "ball#3",
+                                           # "screw_m3x8:hopper-pan_base#0" (placed fasteners; fasteners=False omits)
+result.owner("ball#3")                     # "ball": the part an instance key belongs to
+result.parts["ball"]                       # [cq.Shape, ...] instances in order
+result.cavities["hopper_cavity"]           # cq.Shape, in assembly coordinates
+result.joints["I9"]                        # {"kind", "moving", "fixed", "axis": Axis, "range", "unit", ...}
+result.fastener_axes[name]                 # [Axis(origin=seat, direction=advance), ...]
+result.geometry                            # the JSON above: grounded / free flags, hashes for cache keys
+```
+
+What each gate reads: connectivity uses `assembly_shapes()`, `grounded` and `free` (union of the code flags,
+`gates.grounded`/`gates.free_parts` and `contains[].free` in the YAML), the joints and the dossier interfaces;
+containment uses `cavities` and the instances of `contains[].what`; the fastener gate uses `fasteners` (axes, stack
+numbers, placed solids) and the steps; the motion gate uses `joints` (axis, range, `intended_contacts`, `samples`,
+else `gates.motion_samples`); the assembly gate uses the steps. Pair caches key on the recorded `sha256` values.
+
+### Joining cards and geometry
+
+`join(dossier, geometry)` (geometry: a `BuildResult` or the JSON mapping, so the lint needs no CAD kernel) returns
+`Issue`s with `file:line` (the card's YAML line, or the build script's declaration line):
+
+| Code | Severity | When |
+|---|---|---|
+| `card-without-shape` | error | a part card no `@part` or `print_parts()` registers |
+| `shape-without-card` | error | a registered part with no card |
+| `section-mismatch` | error | `@part(section=...)` differs from the section the card is in |
+| `unknown-cavity`, `cavity-wrong-part` | error | `contains[].cavity` missing, unregistered, or on another part |
+| `contains-count` | error | `contains[].count` differs from the instances the build made |
+| `joint-without-interface`, `joint-parts-mismatch`, `joint-kind-mismatch` | error | a joint with no interface of its id, other parties, or another kind (`fixed` matches any rigid kind) |
+| `interface-without-joint` | error | a mechanism interface (`revolute`, `slider`, ...) with no `@joint` |
+| `unknown-part`, `unknown-interface` | error | a joint, fastener, cavity or step names something that does not exist |
+| `fastener-count` | error | a card's `fasteners[].qty` differs from the axes `fastener()` places |
+| `fastener-not-registered`, `step-fastener-unregistered` | warning | declared in the card or a step, not yet in code |
+| `step-conflict` | error | a step in `project.yaml` and in code with the same order disagree |
+
+The dossier lint (plan T2) runs this with its own checks and decides what fails `cad-agent check`.

@@ -73,7 +73,8 @@ SEEDS: Dict[str, Dict[str, Any]] = {
                         "what": "screw_1 shortened to 4 mm: 1.0 mm of thread in the insert, under 3 threads",
                         "params": {"screw_lengths": {"screw_1": 4.0}}},
     "gusset_over_screw": {"gate": "fasteners", "task": "T6", "parts": ["screw_0", "gusset"],
-                          "what": "a gusset on the lid overhangs screw_0's head, blocking the hex key",
+                          "what": "a gusset fitted on the lid before its screws are driven overhangs screw_0's head, "
+                                  "blocking the hex key",
                           "params": {"gusset": True}},
     "flap_hits_frame": {"gate": "motion", "task": "T7", "parts": ["arm", "frame"],
                         "what": "the arm's stop is raised to 60 deg; the arm hits the frame beam near 45 deg",
@@ -210,10 +211,13 @@ def register(reg, p: Dict[str, Any]) -> None:
     for item in p["assembly_order"]:
         for fit in ([f"insert_{i}" for i in range(4)] if item == "inserts" else [item]):
             extra = {"tool": "hex key 2.5", "fasteners": [f"screw_{i}" for i in range(4)]} if item == "lid" else {}
-            reg.assembly.step(order, fit, onto.get(item), direction="-Y" if item == "pin" else "-Z", **extra)
+            if item == "lid" and p["gusset"]:     # seed 6: the gusset goes on the lid before the screws are driven
+                reg.assembly.step(order, fit, onto.get(item), direction="-Z")
+                order += 1
+                fit = "gusset"
+            reg.assembly.step(order, fit, "lid" if fit == "gusset" else onto.get(item),
+                              direction="-Y" if item == "pin" else "-Z", **extra)
             order += 1
-    if p["gusset"]:
-        reg.assembly.step(order, "gusset", "lid", direction="-Z")
 
 
 def _declarations(p) -> Dict[str, Any]:

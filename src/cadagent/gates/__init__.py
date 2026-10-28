@@ -11,6 +11,8 @@ The machinery here is shared by every gate (the plan, ``docs/design-process-plan
 
 Gates built on it: ``cadagent.gates.wall`` (minimum wall); ``cadagent.gates.connectivity`` (floating parts,
 contacts against interfaces); ``cadagent.gates.containment`` (contents inside their container's registered cavity, per pose);
+``cadagent.gates.fasteners`` (each screw's seat, stack, holes, engagement, tip and length, and its tool's reach at
+the step that installs it);
 ``cadagent.gates.motion`` (collisions over every joint's sampled range).
 The gates check the CAD model against declared intent; none of them proves that printed parts fit, move or hold.
 The API reference is ``docs/gates.md``. CadQuery/OCP is imported only when a query runs.

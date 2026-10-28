@@ -21,6 +21,11 @@ cq = pytest.importorskip("cadquery")
 pytest.importorskip("trimesh")
 
 from cadagent.gates import relate_pair, relation_table  # noqa: E402
+from cadagent.gates.assembly import assembly_from_build  # noqa: E402
+from cadagent.gates.connectivity import Declarations, connectivity_gate  # noqa: E402
+from cadagent.gates.containment import containment_gate  # noqa: E402
+from cadagent.gates.fasteners import fastener_gate_from_build  # noqa: E402
+from cadagent.gates.motion import motion_gate  # noqa: E402
 from cadagent.gates.wall import wall_gate  # noqa: E402
 
 _PATH = Path(__file__).resolve().parent / "fixtures" / "gate_bench" / "build.py"
@@ -47,6 +52,67 @@ def gate_wall(bench):
                       for n, w in bench.print_parts.items()})
 
 
+def gate_containment(bench):
+    return containment_gate(bench.assembly, bench.declarations["contains"], support="fail")
+
+
+def gate_connectivity(bench):
+    return connectivity_gate(bench.assembly, Declarations.from_build(bench.result, extra=bench.declarations))
+
+
+def gate_motion(bench):
+    return motion_gate(bench.assembly, intended_overlaps=bench.declarations["intended_overlaps"])
+
+
+def gate_dossier_lint(bench):
+    """The bench's declarations as a dossier (one card per registered part), linted against its geometry record.
+    Statuses are informational here (no gate verdicts are passed); test_dossier_lint covers the status machine."""
+    from cadagent.dossier import (Alternative, Containment, Decision, Dossier, FastenerUse, Interface, PartCard,
+                                  Requirement, Section)
+    from cadagent.dossier.lint import Evidence, lint
+
+    decl, geo = bench.declarations, bench.result.geometry
+    parts, fasteners = geo["parts"], geo["fasteners"]
+    clamps = {name: f["clamps"] for name, f in fasteners.items()}
+    d = Dossier(file="gate-bench")
+    for i in decl["interfaces"]:
+        ends = list(dict.fromkeys(clamps.get(p, p) for p in i["parts"]))   # a screw stands for the part it clamps
+        if len(ends) == 2 and all(e in parts for e in ends):
+            kind = "revolute" if i["kind"] == "revolute" else "contact"
+            d.interfaces[i["id"]] = Interface(i["id"], between=ends, kind=kind, datum=i.get("datum", ""))
+            d.interface_declarations[i["id"]] = [d.interfaces[i["id"]]]
+    for name, info in parts.items():
+        sid = info["section"]
+        sec = d.sections.setdefault(sid, Section(sid, title=sid))
+        card = PartCard(name, function=f"bench part {name}", section=sid,
+                        interfaces=[k for k, i in d.interfaces.items() if name in i.between])
+        card.fasteners = [FastenerUse(to=f["into"], screws=f["key"], qty=f["count"], via=f["via"])
+                          for f in fasteners.values() if f["clamps"] == name]
+        card.contains = [Containment(what=c["what"], count=c["count"], cavity=c["cavity"], free=c["free"])
+                         for c in decl["contains"] if c["container"] == name]
+        sec.parts.append(card)
+        d.parts[name] = card
+    for r in decl["requirements"]:
+        d.requirements[r["id"]] = Requirement(r["id"], text=r["text"], verify_by="analysis", checks=r["checks"])
+        for sid in r["sections"]:
+            d.sections[sid].requirements.append(r["id"])
+    for x in decl["decisions"]:
+        dec = Decision(x["id"], decision=x["decision"], why=x["why"], scope=x["scope"],
+                       section=x.get("section") or d.parts[x["part"]].section, part=x.get("part", ""),
+                       alternatives=[Alternative(a["option"], a["rejected"]) for a in x["alternatives"]])
+        (d.parts[dec.part].decisions if dec.part else d.sections[dec.section].decisions).append(dec)
+        d.decisions[dec.id] = dec
+    return lint(d, Evidence(geometry=geo), min_section_status=None).to_verdict()
+
+
+def gate_fasteners(bench):
+    return fastener_gate_from_build(bench.result, extra=bench.declarations, assembly=bench.assembly)
+
+
+def gate_assembly(bench):
+    return assembly_from_build(bench.result, extra=bench.declarations, assembly=bench.assembly)
+
+
 def _not_built(task, gate):
     def adapter(bench):
         raise NotImplementedError(f"{task}: the {gate} gate is not built yet")
@@ -55,14 +121,14 @@ def _not_built(task, gate):
 
 GATES = {
     "wall": (gate_wall, "T8"),
-    "containment": (_not_built("T5", "containment"), "T5"),
-    "connectivity": (_not_built("T4", "connectivity"), "T4"),
-    "fasteners": (_not_built("T6", "fastener"), "T6"),
-    "motion": (_not_built("T7", "motion"), "T7"),
-    "assembly": (_not_built("T9", "assembly-access"), "T9"),
-    "dossier-lint": (_not_built("T2", "dossier-lint"), "T2"),
+    "containment": (gate_containment, "T5"),
+    "connectivity": (gate_connectivity, "T4"),
+    "fasteners": (gate_fasteners, "T6"),
+    "motion": (gate_motion, "T7"),
+    "assembly": (gate_assembly, "T9"),
+    "dossier-lint": (gate_dossier_lint, "T2"),
 }
-BUILT = {"wall"}
+BUILT = {"wall", "connectivity", "containment", "dossier-lint", "motion", "fasteners", "assembly"}
 
 
 def _marks(gate):
@@ -130,7 +196,7 @@ def test_bench_is_declared_through_the_dossier_registry(bench):
     assert geo["joints"]["I-pin-arm"]["moving"] == "arm" and geo["joints"]["I-pin-arm"]["range"] == [0.0, 40.0]
     f0 = geo["fasteners"]["screw_0"]
     assert f0["clamps"] == "lid" and f0["into"] == "insert_0" and f0["min_engagement_mm"] == 1.5
-    assert bench.assembly["screw_0"].kind == "fastener" and bench.assembly["hopper"].group == "store"
+    assert bench.assembly["screw_0"].kind == "fastener" and bench.assembly["hopper"].group == "S-store"
     # the screws sit where they are placed: head on the lid (Z=47..50), tip at the insert bottom (Z=39)
     from cadagent.gates.relations import bounding_box
     z0, z1 = bounding_box(bench.shape("screw_0"))[2::3]
@@ -147,6 +213,35 @@ def test_seed_ball_through_wall_shows_volume_outside_the_cavity():
     rel = relate_pair(b.assembly, "ball#7", "hopper_cavity")
     assert rel.state == "overlapping" and rel.a_outside_b_mm3 > 100
     assert relation_table(b.assembly).get("ball#7", "hopper").state == "overlapping"
+
+
+def test_seed_ball_through_wall_gate_reports_half_the_ball_outside():
+    """Seed 1 puts ball#7's centre on the cavity's +Y face: half the ball (r 5 mm) is outside, and its
+    far pole is 5 mm out (2.6 mm past the hopper's outer face)."""
+    v = gate_containment(gb.build("ball_through_wall"))
+    (inside,) = [f for f in v["findings"] if f["id"].endswith("ball#7:inside")]
+    assert inside["evidence"]["outside_mm3"] == pytest.approx(2 / 3 * 3.141592653589793 * 125, rel=1e-6)
+    assert inside["evidence"]["depth_mm"] == pytest.approx(5.0, abs=1e-3)
+    assert inside["evidence"]["furthest_outside_point"] == pytest.approx([41.0, 67.6, 21.4], abs=1e-3)
+    (wall,) = [f for f in v["findings"] if f["id"].endswith("ball#7:wall")]
+    assert wall["evidence"]["relation"]["overlap_mm3"] == pytest.approx(3.141592653589793 * (25 * 2.4 - 2.4 ** 3 / 3),
+                                                                        rel=1e-6)
+    # moved off the ball it stood on, it rests on nothing (the wall it crosses is vertical)
+    (support,) = [f for f in v["findings"] if f["id"].endswith(":support")]
+    assert support["evidence"]["unsupported"] == ["ball#7"]
+    assert len(v["findings"]) == 3
+
+
+def test_containment_poses_the_benchs_hopper_body_without_its_loose_balls(bench):
+    """Bodies come from Assembly.from_build (relations.moving_bodies): the hopper and its cavity form one body,
+    the free balls keep their own, so turning the hopper body leaves the balls behind, as in the incident."""
+    asm = bench.assembly
+    assert asm["hopper"].body == asm.cavities["hopper_cavity"].body != asm["ball#0"].body
+    v = containment_gate(asm, bench.declarations["contains"], support="off",
+                         poses={"home": {}, "slid": {asm["hopper"].body: (30.0, 0.0, 0.0)}})
+    home = [f for f in v["findings"] if f["id"].startswith("home/")]
+    out = {f["parts"][0] for f in v["findings"] if f["id"].startswith("slid/") and f["id"].endswith(":inside")}
+    assert home == [] and out == {f"ball#{i}" for i in range(8)}, v["findings"]
 
 
 def test_seed_bracket_floats_and_hovers_in_the_relation_table():

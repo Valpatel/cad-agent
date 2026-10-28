@@ -368,10 +368,29 @@ def check_wall(name: str, wall_mm: float, *, mesh: Any = None, shape: Any = None
                      (name,), evidence)
     if thinnest is None:
         return Check(cid, "fail", "no ray found an exit; nothing measured", (name,), evidence)
-    message = f"thinnest sampled {thinnest:.3f} mm >= {wall_mm:g} mm"
+    message = _pass_message(thinnest, wall_mm, tol_mm, evidence.get("mesh-ray"))
     if warnings:
         return Check(cid, "warn", f"{message}; " + "; ".join(warnings), (name,), evidence)
     return Check(cid, "pass", message, (name,), evidence)
+
+
+def _pass_message(thinnest: float, wall_mm: float, tol_mm: float, mesh: Optional[Mapping[str, Any]]) -> str:
+    """Why a wall check passed, without contradicting the numbers: the thinnest reading counted is at or
+    above the wall, or under it by no more than ``tol_mm``; thinner mesh readings the B-rep re-measured
+    above the limit are named as dismissed."""
+    if thinnest >= wall_mm:
+        message = f"thinnest sampled {thinnest:.3f} mm >= {wall_mm:g} mm"
+    else:
+        message = (f"thinnest sampled {thinnest:.3f} mm, under {wall_mm:g} mm by {wall_mm - thinnest:.3f} mm, within "
+                   f"the tol_mm allowance of {tol_mm:g} mm (passes at >= {wall_mm - tol_mm:.3f} mm; the allowance "
+                   f"covers mesh chord error)")
+    dismissed = (mesh or {}).get("dismissed_as_chord_error") or 0
+    if dismissed:
+        low = (mesh or {}).get("min_mm")
+        down = f" down to {low:.3f} mm" if low is not None else ""
+        message += (f"; {dismissed} thinner mesh reading(s){down} dismissed: the B-rep re-measured them at "
+                    f">= {wall_mm - tol_mm:.3f} mm (chord error)")
+    return message
 
 
 def _dedupe(rows: List[Dict[str, Any]], count: int, spacing: float = 1.0) -> List[Dict[str, Any]]:

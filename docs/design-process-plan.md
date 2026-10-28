@@ -100,7 +100,7 @@ Fields and where they are checked:
 | `material.wall_mm` | the minimum-wall gate (threshold per part, not per project) |
 | `decisions[].alternatives` | the dossier lint: a decision with no alternative or no `why` is `incomplete`; a section with an open decision cannot be signed off |
 | `checks` | each id resolves to a gate verdict or a configured check; the card's status cannot pass `gated` while one fails |
-| `status` | only the reviewer pass (5.3) may set `reviewed` and `signed_off`; the build resets it to `built` when the part's geometry hash changes |
+| `status` | only the reviewer pass (5.3) may set `reviewed` and `signed_off`; a change of the part's geometry hash voids the review, and the status falls back to what the current evidence supports (`gated` when its gates still pass, else `built`). As built (T2), every status is computed into `exports/dossier-status.json`; a YAML `status:` above the computed one is a finding |
 
 ### 3.3 Storage
 
@@ -166,6 +166,12 @@ A new page `site/review.html` (and `cad-agent site` section "Design review by se
   edges, undeclared contacts dashed red, floating components highlighted), the containment table, motion sweep results.
 
 The existing overview keeps its decisions section; decisions with a section scope also appear in that section's card.
+
+As built (T15, [`dossier.md`](dossier.md#on-the-review-site)): the pages live in `site/review/` (`index.html`, one
+`section-<id>.html` per section instead of expanding rows, `requirements.html` on its own page, `gates.html`); the
+gates page has a row per gate and each gate's findings with witnesses rather than gate-specific containment and
+motion tables, and the connectivity graph follows the DOT the gate writes (undeclared contacts orange, unrealised
+declarations red dashed).
 
 ## 4. Integrity gates (`cadagent.gates`)
 
@@ -310,6 +316,9 @@ them only when geometry changed (the cache keys make an unchanged assembly free)
 
 ### 5.1 Skill `skills/design-process/SKILL.md` (T10)
 
+Built: [`skills/design-process/SKILL.md`](../skills/design-process/SKILL.md), the packet and the checklist in
+[`review-packet.md`](review-packet.md) (`cadagent.render.review_packet`, `cad-agent review-packet`).
+
 Tells an agent building or changing a design to work in this order, per section:
 
 1. **Frame the section**: write (or update) its YAML: purpose, requirements it serves (quote the user), interfaces to
@@ -341,6 +350,10 @@ image; the gates answer those, and the checklist says so.
 
 ### 5.3 Reviewer pass and sign-off (T11)
 
+Built: `cadagent.dossier.review`, `cad-agent review-section` ([`dossier.md`](dossier.md#the-reviewer-pass)). The
+separate-reviewer switch is the dossier's `gates: require_separate_reviewer`, and the build actor is recorded per
+part (`parts.<name>.actor`).
+
 A separate agent (or person) that did not write the section, given: the section YAML, the gate JSON, the render
 packet, the checklist, and the diff since the last review. It:
 
@@ -354,14 +367,15 @@ packet, the checklist, and the diff since the last review. It:
 **Who is who.** Every build and every review record carries an `actor` string read from the `CAD_AGENT_ACTOR`
 environment variable (an agent or session id, or a person's handle, set by the harness or the person who starts the
 session; empty is recorded as `unknown`). `dossier-geometry.json` records the actor of the build that produced each
-part's hash; the review record records the reviewer's. When `review.require_separate_reviewer: true` (the default),
+part's hash; the review record records the reviewer's. When `gates: require_separate_reviewer: true` (the default),
 `cad-agent dossier` refuses a sign-off whose actor equals the build actor for any part in the section, or is `unknown`.
 This makes the separate-reviewer rule checkable, but it is only as strong as the variable: a harness that sets the same
 actor for both passes defeats it, and the plan says so rather than pretending otherwise.
 
 `cad-agent dossier` sets the section's status from the latest record whose hashes match the current build; any geometry
-change invalidates sign-off (the status falls back to `built`). The site shows who signed what and when. The reviewer
-cannot change geometry or YAML other than its own record.
+change invalidates sign-off (the status falls back to `gated` when the gates pass on the new geometry, else `built`). The site shows who signed what and when. The reviewer
+must not change geometry or YAML other than its own record; a reviewer who changes a part becomes that part's builder,
+so its own sign-off is refused.
 
 ### 5.4 How the main agent and implementers use it
 

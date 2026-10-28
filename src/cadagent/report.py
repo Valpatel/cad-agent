@@ -8,6 +8,11 @@ runs nothing. Features:
 * ``cad-print-files``: STL, 3MF and STEP present for every part.
 * ``cad-checks``: one row per configured check, from its ``pass_key``.
 * ``cad-links``: local links in ``html_pages`` resolve.
+* ``cad-dossier`` (only with ``cad: dossier:``): the dossier lint, one row per error and one per section with its
+  status; a section below ``gated`` fails (``cadagent.dossier.lint``, plan §5.4). The lint reads files only.
+* ``cad-gates`` (only with ``cad: dossier:`` or ``cad: gates:``): one row per integrity gate from
+  ``exports/gates/<gate>.json``; a missing, stale (inputs differ from the current geometry record, declarations or
+  options) or failing verdict fails, a gate with nothing to check is a skip (``cadagent.gates.run.gate_rows``).
 
 A missing file, missing key or non-boolean verdict is a failure, never a pass.
 Evidence paths are relative to ``docs_dir``, where the HTML report is written.
@@ -185,6 +190,49 @@ def links_feature(project: CadProject) -> Dict[str, Any]:
                    "message": "add cad.html_pages to cad-agent.yaml"}]
     return {"feature_id": "cad-links", "feature_title": "Review pages and links", "checks": checks}
 
+def dossier_feature(project: CadProject) -> Optional[Dict[str, Any]]:
+    """The dossier lint as report rows: one per error (except section status, which has its own row), one per
+    section with its computed status. None when the project has no dossier."""
+    from cadagent.dossier.lint import RANK, lint_project
+
+    result = lint_project(project)
+    if result is None:
+        return None
+    checks: List[Dict[str, Any]] = []
+    for f in result.errors:
+        if f.code != "section-below-gated":
+            checks.append(_row(f"dossier {f.code}", False, str(f), str(f)))
+    for sid, row in result.sections.items():
+        ok = RANK[row["status"]] >= RANK[result.min_section_status or "draft"]
+        message = f"{row['status']}" + (f": {'; '.join(row['blocked_by'][:3])}" if row["blocked_by"] else "")
+        checks.append(_row(f"section {sid} · {row['title']}", ok, message, message))
+    if not checks:
+        checks.append({"name": "dossier", "status": "skip", "message": "no sections in the dossier"})
+    elif not result.errors:
+        checks.insert(0, _row("dossier lint", True, f"{len(result.parts)} part card(s), "
+                                                    f"{len(result.warnings)} warning(s)"))
+    return {"feature_id": "cad-dossier", "feature_title": "Design dossier", "checks": checks}
+
+def gates_feature(project: CadProject, report_dir: Path) -> Optional[Dict[str, Any]]:
+    """The integrity gates as report rows (kernel-free: it reads the verdicts and the geometry record). None when the
+    project has neither a dossier nor a ``gates:`` key."""
+    from cadagent.gates.run import enabled, gate_rows
+
+    if not enabled(project):
+        return None
+    checks = []
+    for row in gate_rows(project):
+        path = row.pop("file", None)
+        if path:
+            md = Path(path).with_suffix(".md")
+            target = md if md.is_file() else Path(path)
+            if target.is_file():
+                row["evidence"] = {"type": "link", "url": _rel(target, report_dir), "label": target.name}
+        checks.append(row)
+    if not checks:
+        checks = [{"name": "gates", "status": "skip", "message": "no gate applies"}]
+    return {"feature_id": "cad-gates", "feature_title": "Integrity gates", "checks": checks}
+
 def collect(project: CadProject) -> Dict[str, Any]:
     """Results dict in schema 1.0 (the vptest web shape; ``vptest web validate`` accepts it)."""
     report_dir = project.docs_dir
@@ -194,6 +242,12 @@ def collect(project: CadProject) -> Dict[str, Any]:
         checks_feature(project, report_dir),
         links_feature(project),
     ]
+    gates = gates_feature(project, report_dir)
+    if gates is not None:
+        features.append(gates)
+    dossier = dossier_feature(project)
+    if dossier is not None:
+        features.append(dossier)
     counts = summarize({"features": features})
     revision = project.resolve_revision()
     from cadagent.slicer import current_report

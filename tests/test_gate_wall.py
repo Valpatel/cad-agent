@@ -163,7 +163,11 @@ def test_mesh_chord_error_is_dismissed_by_the_brep_and_counted():
     assert mesh_only.status == "fail"                                # a mesh alone reads it ~0.03 mm thin
     both = wall.check_wall("shell", 2.4, mesh=shell, shape=shell)
     assert both.status == "pass" and both.evidence["mesh-ray"]["dismissed_as_chord_error"] > 0
-    assert wall.check_wall("shell", 2.4, mesh=shell, tol_mm=0.1).status == "pass"
+    assert "dismissed: the B-rep re-measured them" in both.message, both.message
+    loose = wall.check_wall("shell", 2.4, mesh=shell, tol_mm=0.1)
+    assert loose.status == "pass"
+    # the message says why a reading under 2.4 passed, instead of "2.3xx mm >= 2.4 mm"
+    assert ">= 2.4 mm" not in loose.message and "within the tol_mm allowance of 0.1 mm" in loose.message, loose.message
 
 
 def test_an_open_mesh_with_a_brep_is_a_warning_not_a_failure():

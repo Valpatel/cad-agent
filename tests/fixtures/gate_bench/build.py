@@ -73,7 +73,8 @@ SEEDS: Dict[str, Dict[str, Any]] = {
                         "what": "screw_1 shortened to 4 mm: 1.0 mm of thread in the insert, under 3 threads",
                         "params": {"screw_lengths": {"screw_1": 4.0}}},
     "gusset_over_screw": {"gate": "fasteners", "task": "T6", "parts": ["screw_0", "gusset"],
-                          "what": "a gusset on the lid overhangs screw_0's head, blocking the hex key",
+                          "what": "a gusset fitted on the lid before its screws are driven overhangs screw_0's head, "
+                                  "blocking the hex key",
                           "params": {"gusset": True}},
     "flap_hits_frame": {"gate": "motion", "task": "T7", "parts": ["arm", "frame"],
                         "what": "the arm's stop is raised to 60 deg; the arm hits the frame beam near 45 deg",
@@ -151,21 +152,21 @@ def register(reg, p: Dict[str, Any]) -> None:
     base = _box(0, 0, 0, 160, 80, 4)
     if p["boss"]:
         base = base.fuse(cq.Solid.makeCylinder(4, 3, cq.Vector(90, 20, 4))).clean()
-    reg.add_part("base", base, section="frame", grounded=True)
+    reg.add_part("base", base, section="S-frame", grounded=True)
 
     hopper, cavity, top = _hopper(p)
-    reg.add_part("hopper", hopper, section="store")
+    reg.add_part("hopper", hopper, section="S-store")
     reg.add_cavity("hopper", "hopper_cavity", cavity)
     h, lid_t = p["hopper"], p["lid"]["t"]
     lid = cq.Workplane().add(_box(h["x"], h["y"], top, h["x"] + h["size"], h["y"] + h["size"], top + lid_t)) \
         .edges("|Z").fillet(h["corner_r"]).val()
     for cx, cy in post_centres(p):
         lid = lid.cut(cq.Solid.makeCylinder(p["lid"]["hole_d"] / 2, lid_t, cq.Vector(cx, cy, top)))
-    reg.add_part("lid", lid.clean(), section="store")
+    reg.add_part("lid", lid.clean(), section="S-store")
 
     ins, sc = p["insert"], p["screw"]
     for i, (cx, cy) in enumerate(post_centres(p)):
-        reg.add_part(f"insert_{i}", insert_envelope(ins["od"], ins["id"], ins["length"]), section="store",
+        reg.add_part(f"insert_{i}", insert_envelope(ins["od"], ins["id"], ins["length"]), section="S-store",
                      place=(cx, cy, top))
         length = p["screw_lengths"].get(f"screw_{i}", sc["length"])
         reg.fastener("m3_shcs", clamps="lid", into=f"insert_{i}", name=f"screw_{i}", via=f"I-thread-{i}",
@@ -181,19 +182,19 @@ def register(reg, p: Dict[str, Any]) -> None:
         i, d = p["ball_offset"]
         centres[i] = [v + dv for v, dv in zip(centres[i], d)]
     reg.add_part("ball", [cq.Solid.makeSphere(b["r"], cq.Vector(*c), angleDegrees1=-90) for c in centres],
-                 section="store", free=True, reason="loose balls in the hopper")
-    reg.add_part("board", _box(24, h["y"] + w, floor_z, 46, h["y"] + w + 1.6, floor_z + 20), section="store")
+                 section="S-store", free=True, reason="loose balls in the hopper")
+    reg.add_part("board", _box(24, h["y"] + w, floor_z, 46, h["y"] + w + 1.6, floor_z + 20), section="S-store")
 
     bracket = _box(82, 15, 7, 98, 25, 10).fuse(_box(95, 15, 10, 98, 25, 30)).clean()
-    reg.add_part("bracket", bracket, section="bracket", place=(0, 0, p["bracket_lift"]))
+    reg.add_part("bracket", bracket, section="S-bracket", place=(0, 0, p["bracket_lift"]))
 
     px, pz = PIVOT
-    reg.add_part("hinge_block", _box(99, 30, 4, 111, 40, 26).cut(_cyl_y(px, pz, 2.5, 30, 40)).clean(), section="arm")
-    reg.add_part("pin", _cyl_y(px, pz, 2.5, 28, 46), section="arm")
-    reg.add_part("arm", _box(100, 40, 14, 150, 44, 26).cut(_cyl_y(px, pz, 2.5, 40, 44)).clean(), section="arm")
+    reg.add_part("hinge_block", _box(99, 30, 4, 111, 40, 26).cut(_cyl_y(px, pz, 2.5, 30, 40)).clean(), section="S-arm")
+    reg.add_part("pin", _cyl_y(px, pz, 2.5, 28, 46), section="S-arm")
+    reg.add_part("arm", _box(100, 40, 14, 150, 44, 26).cut(_cyl_y(px, pz, 2.5, 40, 44)).clean(), section="S-arm")
     stop = cq.Workplane().add(_box(140, 38, 4, 150, 46, 14)).edges("|Z").fillet(2).val()
-    reg.add_part("stop", stop, section="arm")
-    reg.add_part("frame", _box(152, 36, 4, 156, 48, 60).fuse(_box(112, 36, 56, 156, 48, 60)).clean(), section="frame")
+    reg.add_part("stop", stop, section="S-arm")
+    reg.add_part("frame", _box(152, 36, 4, 156, 48, 60).fuse(_box(112, 36, 56, 156, 48, 60)).clean(), section="S-frame")
     reg.joint("I-pin-arm", "revolute", parts=("arm", "pin"), axis=((px, 0.0, pz), LIFT_AXIS),
               range_deg=tuple(p["flap_range_deg"]), intended_contacts=[("arm", "pin"), ("arm", "hinge_block"),
                                                                        ("arm", "stop")])
@@ -201,7 +202,7 @@ def register(reg, p: Dict[str, Any]) -> None:
         cx, cy = post_centres(p)[0]
         g = _box(cx + 5, cy - 4, top + lid_t, cx + 12, cy + 4, top + lid_t + 9)
         g = g.fuse(_box(cx - 5, cy - 4, top + lid_t + 6, cx + 12, cy + 4, top + lid_t + 9)).clean()
-        reg.add_part("gusset", g, section="store")
+        reg.add_part("gusset", g, section="S-store")
 
     onto = {"hopper": "base", "inserts": "hopper", "board": "hopper", "ball": "hopper", "lid": "hopper",
             "bracket": "base", "hinge_block": "base", "stop": "base", "arm": "hinge_block", "pin": "hinge_block",
@@ -210,14 +211,18 @@ def register(reg, p: Dict[str, Any]) -> None:
     for item in p["assembly_order"]:
         for fit in ([f"insert_{i}" for i in range(4)] if item == "inserts" else [item]):
             extra = {"tool": "hex key 2.5", "fasteners": [f"screw_{i}" for i in range(4)]} if item == "lid" else {}
-            reg.assembly.step(order, fit, onto.get(item), direction="-Y" if item == "pin" else "-Z", **extra)
+            if item == "lid" and p["gusset"]:     # seed 6: the gusset goes on the lid before the screws are driven
+                reg.assembly.step(order, fit, onto.get(item), direction="-Z")
+                order += 1
+                fit = "gusset"
+            reg.assembly.step(order, fit, "lid" if fit == "gusset" else onto.get(item),
+                              direction="-Y" if item == "pin" else "-Z", **extra)
             order += 1
-    if p["gusset"]:
-        reg.assembly.step(order, "gusset", "lid", direction="-Z")
 
 
 def _declarations(p) -> Dict[str, Any]:
-    """What the bench's YAML dossier would hold: interfaces, intended overlaps, contains, decisions, walls, tools."""
+    """What the bench's YAML dossier would hold: interfaces, intended overlaps, contains, decisions, requirements,
+    walls, tools."""
     interfaces = [
         {"id": "I-hopper", "parts": ["base", "hopper"], "kind": "seat"},
         {"id": "I-lid", "parts": ["hopper", "lid"], "kind": "seat"},
@@ -246,26 +251,45 @@ def _declarations(p) -> Dict[str, Any]:
          "why": "posts give the inserts 3 mm of wall without thickening the 2.4 mm shell",
          "alternatives": [{"option": "screw bosses outside the wall", "rejected": "widens the footprint"},
                           {"option": "snap-fit lid", "rejected": "the lid must stay on when the arm shakes the bench"}]},
-        {"id": "D2", "scope": "section", "section": "arm", "decision": "Arm rests on a fixed stop at 0 deg",
+        {"id": "D2", "scope": "section", "section": "S-arm", "decision": "Arm rests on a fixed stop at 0 deg",
          "why": "a hard stop gives a repeatable zero without a sensor",
          "alternatives": [{"option": "spring return", "rejected": "adds a part and a fatigue mode"}]},
+        {"id": "D3", "scope": "section", "section": "S-frame", "decision": "One flat base plate carries everything",
+         "why": "a single grounded part gives every subassembly one datum",
+         "alternatives": [{"option": "separate feet per subassembly", "rejected": "no common datum"}]},
+        {"id": "D4", "scope": "section", "section": "S-bracket", "decision": "L bracket seated on a base boss",
+         "why": "the boss sets the bracket height without shims",
+         "alternatives": [{"option": "bracket screwed to the plate", "rejected": "adds two fasteners"}]},
+    ]
+    requirements = [
+        {"id": "R1", "text": "Holds eight balls", "sections": ["S-store"], "checks": ["gate:containment"]},
+        {"id": "R2", "text": "The arm lifts 40 deg without hitting anything", "sections": ["S-arm"],
+         "checks": ["gate:motion"]},
+        {"id": "R3", "text": "Every part is held", "sections": ["S-frame", "S-bracket"],
+         "checks": ["gate:connectivity"]},
     ]
     if p["drop_alternatives"]:
         decisions[0]["alternatives"] = []
     return {"interfaces": interfaces, "intended_overlaps": overlaps,
             "contains": [{"container": "hopper", "cavity": "hopper_cavity", "what": "ball", "count": 8, "free": True}],
-            "decisions": decisions, "wall_mm": {"default": p["wall"]},
+            "decisions": decisions, "requirements": requirements, "wall_mm": {"default": p["wall"]},
             "tools": {"hex key 2.5": {"envelope_d": 6.0, "length": 60.0}}}
 
 
-def build(seed: Optional[str] = None, params: Optional[Dict[str, Any]] = None) -> Bench:
-    """Build the clean bench, or the bench with one seeded defect from ``SEEDS``."""
+def params_for(seed: Optional[str] = None, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """``PARAMS`` with one seed's defect (``SEEDS``) and ``params`` applied."""
     p = copy.deepcopy(PARAMS)
     if seed is not None:
         if seed not in SEEDS:
             raise KeyError(f"unknown seed {seed!r}; seeds: {sorted(SEEDS)}")
         p.update(copy.deepcopy(SEEDS[seed]["params"]))
     p.update(copy.deepcopy(params or {}))
+    return p
+
+
+def build(seed: Optional[str] = None, params: Optional[Dict[str, Any]] = None) -> Bench:
+    """Build the clean bench, or the bench with one seeded defect from ``SEEDS``."""
+    p = params_for(seed, params)
     with dossier.use_registry() as reg:
         register(reg, p)
         result = reg.build({}, write=False)

@@ -272,7 +272,8 @@ def test_rule_passes_on_the_fixed_case(tmp_path, code):
 
 def test_every_lint_rule_has_a_case():
     review_rules = {"review-invalid", "review-unknown-section", "review-same-actor", "review-stale",
-                    "signoff-open-decision", "geometry-invalid", "verdict-invalid"}   # tested below
+                    "signoff-open-decision", "geometry-invalid", "verdict-invalid",   # tested below
+                    "review-builder-unknown", "review-incomplete"}                     # test_dossier_review.py
     assert set(RULES) - review_rules <= set(CASES)
 
 
@@ -341,6 +342,18 @@ def _review(section="S1", date="2026-10-28", actor="reviewer", signed_off=True, 
     hashes = hashes if hashes is not None else {p: v["sha256"] for p, v in base_geometry()["parts"].items()}
     return Review(file=file or f"dossier/reviews/{section}-{date}.json", section=section, date=date, actor=actor,
                   signed_off=signed_off, hashes=hashes)
+
+
+def record_json(section="S1", actor="reviewer", signed_off=True, hashes=None, date="2026-10-28") -> Dict[str, Any]:
+    """A complete reviewer record (cadagent.dossier.review.validate_record) as a file holds it."""
+    return {"schema": "cad-agent.review/1", "section": section, "date": date, "timestamp": f"{date}T10:00:00Z",
+            "actor": actor, "verdict": "sign_off" if signed_off else "changes_requested", "signed_off": signed_off,
+            "hashes": hashes if hashes is not None else {p: v["sha256"] for p, v in base_geometry()["parts"].items()},
+            "checklist": [{"id": "q1", "answer": "yes", "evidence": "seen in the cut", "views": ["solid-iso"],
+                           "image_only": True}],
+            "decisions": [{"id": d, "verdict": "justified", "evidence": "rejected for a reason"} for d in ("D1", "D2")],
+            "requirements": [{"id": r, "traced": "yes", "evidence": "its checks"} for r in ("R1", "R2")],
+            "findings": [] if signed_off else [{"id": "F1", "severity": "major", "text": "fix the lid"}]}
 
 
 def test_reviewed_and_signed_off_need_a_current_record_by_another_actor(tmp_path):
@@ -412,14 +425,22 @@ def test_review_for_an_unknown_section(tmp_path):
 def test_review_records_are_read_and_validated(tmp_path):
     d = tmp_path / "reviews"
     d.mkdir()
-    good = {"schema": "cad-agent.review/1", "section": "S1", "date": "2026-10-28", "actor": "r",
-            "signed_off": True, "hashes": {"hopper": "b" * 64}, "findings": []}
+    good = {"schema": "cad-agent.review/1", "section": "S1", "date": "2026-10-28",
+            "timestamp": "2026-10-28T10:00:00Z", "actor": "r", "verdict": "sign_off", "signed_off": True,
+            "hashes": {"hopper": "b" * 64}, "findings": [], "decisions": [], "requirements": [],
+            "checklist": [{"id": "q1", "answer": "yes", "evidence": "seen", "views": ["solid-iso"],
+                           "image_only": True}]}
     (d / "S1-2026-10-28.json").write_text(json.dumps(good))
     (d / "S1-bad.json").write_text(json.dumps({"section": "S1", "signed_off": "yes"}))
     (d / "S1-broken.json").write_text("{")
+    # the minimal shape the lint read before T11 is no longer a record: no verdict, no answers, no evidence
+    (d / "S1-minimal.json").write_text(json.dumps({k: good[k] for k in ("schema", "section", "date", "actor",
+                                                                      "signed_off", "hashes", "findings")}))
     reviews, findings = load_reviews(d, tmp_path)
     assert [r.file for r in reviews] == ["reviews/S1-2026-10-28.json"]
-    assert sorted(f.where.file for f in findings) == ["reviews/S1-bad.json", "reviews/S1-broken.json"]
+    assert reviews[0].verdict == "sign_off" and reviews[0].timestamp == "2026-10-28T10:00:00Z"
+    assert sorted(f.where.file for f in findings) == ["reviews/S1-bad.json", "reviews/S1-broken.json",
+                                                      "reviews/S1-minimal.json"]
     assert {f.code for f in findings} == {"review-invalid"}
 
 
@@ -480,8 +501,7 @@ def test_lint_project_reads_every_input_and_writes_stable_outputs(tmp_path):
     res = lint_project(project)
     assert res.passed and res.parts["hopper"]["status"] == "gated"
     (root / "dossier" / "reviews").mkdir()
-    rec = {"section": "S1", "date": "2026-10-28", "actor": "reviewer", "signed_off": True,
-           "hashes": {p: v["sha256"] for p, v in base_geometry()["parts"].items()}}
+    rec = record_json(hashes={p: v["sha256"] for p, v in base_geometry()["parts"].items()})
     (root / "dossier" / "reviews" / "S1-2026-10-28.json").write_text(json.dumps(rec))
     res = lint_project(project)
     assert res.sections["S1"]["status"] == "signed_off"

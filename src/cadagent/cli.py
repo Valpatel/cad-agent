@@ -19,7 +19,8 @@ from cadagent._deps import MissingDependency
 from cadagent.project import CadConfigError, CadProject, Step, load_project
 
 SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
-               "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet")
+               "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet",
+               "review-section")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -327,6 +328,53 @@ def cmd_review_packet(project: CadProject, args: argparse.Namespace) -> int:
     except PacketError as exc:
         raise _Unusable(str(exc)) from None
     return 0
+
+
+def cmd_review_section(project: CadProject, args: argparse.Namespace) -> int:
+    """The reviewer pass (plan §5.3, T11): write the reviewer's prompt bundle for a section, or check and submit a
+    filled-in reviewer record (docs/dossier.md "The reviewer pass")."""
+    from cadagent.dossier.review import ReviewError, submit_record, write_bundle
+
+    record = args.submit or args.check
+    try:
+        if record:
+            path, rec, problems = submit_record(project, args.section, record, write=bool(args.submit))
+            for prob in problems:
+                _say(f"  REFUSED {prob}")
+            if problems:
+                _say(f"review-section {args.section}: the record is not accepted ({len(problems)} problem(s)); "
+                     "nothing written")
+                return 1
+            if path is None:
+                _say(f"review-section {args.section}: the record is valid ({rec['verdict']}, actor {rec['actor']}); "
+                     "not written (--check)")
+                return 0
+            try:
+                shown = path.resolve().relative_to(Path(project.root).resolve()).as_posix()
+            except ValueError:
+                shown = str(path)
+            _say(f"review-section {args.section}: {rec['verdict']} by {rec['actor']} -> {shown}")
+            from cadagent.dossier.lint import lint_project
+            res = lint_project(project, min_section_status=None)
+            row = (res.sections.get(args.section) if res is not None else None) or {}
+            _say(f"  section status now: {row.get('status', '?')}"
+                 + (f" ({'; '.join(row.get('blocked_by') or [])})" if row.get("blocked_by") else "")
+                 + " · run cad-agent dossier to write it")
+            return 0
+        manifest = write_bundle(project, args.section, args.bundle_dir, since=args.since)
+    except ReviewError as exc:
+        raise _Unusable(str(exc)) from None
+    sec = manifest["section"]
+    _say(f"{sec['id']}  {sec['title']}  ({sec['status']})  -> {manifest['dir']}")
+    _say(f"  packet: {manifest['packet']['questions']} question(s)"
+         + (f", {manifest['packet']['stale']}" if manifest["packet"]["stale"] else ", current"))
+    diff = manifest["diff"]
+    _say(f"  diff: {'since ' + diff['base'][:12] if diff.get('base') else diff.get('note') or 'none'}"
+         + (f" ({len(diff['paths'])} path(s))" if diff.get("base") else ""))
+    for b in manifest["blockers"]:
+        _say(f"  BLOCKER {b}")
+    _say(f"  reviewer: read {manifest['dir']}/PROMPT.md; submit with {manifest['submit']}")
+    return 0 if manifest["ready"] else 1
 
 
 def _packet_summary(manifest: Dict[str, Any], listed: bool) -> None:
@@ -667,6 +715,7 @@ HANDLERS = {
     "dossier": cmd_dossier,
     "gates": cmd_gates,
     "review-packet": cmd_review_packet,
+    "review-section": cmd_review_section,
 }
 
 def dispatch(args: argparse.Namespace) -> int:
@@ -810,6 +859,18 @@ def build_parser() -> argparse.ArgumentParser:
     rp_p.add_argument("--explode", type=float, default=1.0, help="Scale of the exploded view (0: no exploded view)")
     rp_p.add_argument("--context", choices=("neighbours", "all", "none"), default="neighbours",
                       help="Other sections' parts drawn faint (default: neighbours)")
+    rs_p = sub.add_parser("review-section", parents=[common],
+                          help="Reviewer pass: write a section's reviewer bundle, or --submit a reviewer record")
+    rs_p.add_argument("section", metavar="SECTION", help="The dossier section id")
+    rs_p.add_argument("--bundle-dir", default=None,
+                      help="Where to write the bundle (default: <exports>/review-bundle/<section>/)")
+    rs_p.add_argument("--since", default=None, metavar="REV",
+                      help="Diff the section's sources against this git revision (default: the last sign-off)")
+    rs_grp = rs_p.add_mutually_exclusive_group()
+    rs_grp.add_argument("--submit", metavar="RECORD",
+                        help="Check a filled-in reviewer record against the current build and write it to "
+                             "dossier/reviews/ (the actor is CAD_AGENT_ACTOR)")
+    rs_grp.add_argument("--check", metavar="RECORD", help="Like --submit, but write nothing")
     return parser
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

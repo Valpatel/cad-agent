@@ -124,19 +124,31 @@ what you find and go back to step 4; do not hand over a section you would not si
 
 ### 7. Hand the section to a separate reviewer
 
-Do not set `reviewed` or `signed_off` yourself; nothing you write can. Ask for a reviewer pass by an agent or person
-that did not build the section (plan §5.3, task T11) and give it:
+Do not set `reviewed` or `signed_off` yourself, and never write a reviewer record: the lint refuses records by a
+part's builder or a named author, but it cannot tell who wrote a file, so this rule is yours to keep. Write the
+reviewer's bundle and hand it to an agent or person that did not build or write the section (plan §5.3, `docs/dossier.md` "The reviewer pass"):
 
-- the section YAML and `git diff <last reviewed commit> -- dossier/ cad/` (what changed since the last review);
-- `exports/gates/*.json` and `exports/dossier-status.json`;
-- the packet directory `exports/review/<section>/`, whose `manifest.json` carries the checklist and the part hashes.
+```bash
+cad-agent review-section S3     # exports/review-bundle/S3/: PROMPT.md, the section YAML, gates.json, status.json,
+                                # packet/ (manifest + images), checklist.json, diff.patch, record-template.json
+```
 
-The reviewer answers the checklist, marks each decision `justified`, `weak` (why) or `missing alternative`, checks
-each requirement's trace, and writes `dossier/reviews/<section>-<date>.json` with its findings, its answers,
-`signed_off`, its own `actor` and the `hashes` from the manifest's `parts.*.sha256`. Until `cad-agent
-review-section` (T11) exists, the reviewer writes that record by hand in the shape `docs/dossier.md` gives. Any
-change to a part's geometry voids the sign-off; the reviewer must not rebuild before signing (the record holds the
-last build's actor). Answer every reviewer finding: fix it, or explain in the record why it stands.
+Exit 1 means something would refuse a sign-off today (`blockers` in `bundle.json`: a stale or missing packet, the
+section below `gated`, an open decision, a part built by `unknown`); fix it first unless you only want changes
+requested. Give the reviewer the bundle directory, not your conclusions. The reviewer follows `PROMPT.md`: answers
+every question `yes`, `no` or `unclear` with evidence and marks image-only answers, judges each decision
+`justified`, `weak` or `missing_alternative`, traces each requirement, writes findings with a severity, and submits:
+
+```bash
+CAD_AGENT_ACTOR=<reviewer> cad-agent review-section S3 --submit my-review.json   # --check validates only
+```
+
+That refuses stale hashes (the geometry changed since the bundle), a reviewer who built a part of the section or is
+named as its author, and, for a sign-off, an open decision or a stale packet; on success it writes
+`dossier/reviews/<section>-<date>.json`. Builds and reviews must run with `CAD_AGENT_ACTOR` set: each part records
+the actor that built its current geometry, so a reviewer who rebuilds unchanged geometry is still not its builder,
+but one who changes it is. Any change to a part's geometry voids the sign-off. Answer every reviewer finding: fix
+it and ask for a new review, or explain why it stands.
 
 ### 8. Report
 

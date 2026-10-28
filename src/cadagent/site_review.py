@@ -522,6 +522,8 @@ def _review_state(row: Mapping[str, Any]) -> Tuple[str, str]:
     if rev:
         if rev.get("signed_off") and row.get("status") == "signed_off":
             return "signed off", "pass"
+        if rev.get("verdict") == "changes_requested":
+            return f'changes requested ({rev.get("findings", 0)} finding(s))', "warn"
         if rev.get("findings"):
             return f'{rev["findings"]} finding(s) open', "warn"     # _pill escapes it
         return "reviewed", "pass"
@@ -721,13 +723,19 @@ def _packet_hashes(manifest: Mapping[str, Any]) -> Dict[str, str]:
     return out
 
 
-def _reviewer_findings(data: ReviewData, row: Mapping[str, Any]) -> Tuple[List[Dict[str, Any]], str]:
+def _reviewer_record(data: ReviewData, row: Mapping[str, Any]) -> Tuple[Dict[str, Any], str]:
+    """The current reviewer record the status row names (``cad-agent.review/1``, ``cadagent.dossier.review``)."""
     rev = row.get("review") or {}
     rel = rev.get("record")
     if not rel:
-        return [], ""
+        return {}, ""
     rec, _ = _read_json(data.root / rel)
-    found = [f for f in (rec or {}).get("findings") or [] if isinstance(f, dict)]
+    return (rec if isinstance(rec, dict) else {}), rel
+
+
+def _reviewer_findings(data: ReviewData, row: Mapping[str, Any]) -> Tuple[List[Dict[str, Any]], str]:
+    rec, rel = _reviewer_record(data, row)
+    found = [f for f in rec.get("findings") or [] if isinstance(f, dict)]
     return found, rel
 
 
@@ -746,6 +754,21 @@ def _packet_html(data: ReviewData, sid: str, links: _Links) -> str:
     banner = (f'<div class="banner">The packet was rendered from older geometry ({_e(", ".join(changed))} changed): '
               'render it again before the review.</div>' if changed else "")
     findings, record = _reviewer_findings(data, row)
+    answers = {str(a.get("id")): a for a in _reviewer_record(data, row)[0].get("checklist") or []
+               if isinstance(a, dict)}
+
+    def q_html(q: Mapping[str, Any]) -> str:
+        """A checklist question, with the reviewer's answer, its basis (image only or the measurement) and
+        evidence when the current record answers it."""
+        a = answers.get(str(q.get("id")))
+        if not a:
+            return f'<li>{_e(q.get("question"))}</li>'
+        ans = str(a.get("answer", ""))
+        flagged = ans == "unclear" or ans == q.get("bad_answer")
+        basis = ("image only" if a.get("image_only") is True else
+                 "measured: " + ", ".join(str(x) for x in a.get("measurements") or []))
+        return (f'<li>{_e(q.get("question"))} {_pill("warn" if flagged else "pass", ans or "?")} '
+                f'<span class="muted">({_e(basis)}) {_e(a.get("evidence", ""))}</span></li>')
 
     def matches(f: Mapping[str, Any], img: Mapping[str, Any]) -> bool:
         ref = str(next((f[k] for k in ("render", "image", "view", "file") if f.get(k)), ""))
@@ -771,7 +794,7 @@ def _packet_html(data: ReviewData, sid: str, links: _Links) -> str:
         note = f'<br><span class="small muted">{_e(img["note"])}</span>' if img["note"] else ""
         asks = [q for q in questions if img["view"] and img["view"] in (q.get("views") or [])]
         asks_html = ('<p class="small muted">Checklist:</p><ul class="small">'
-                     + "".join(f'<li>{_e(q.get("question"))}</li>' for q in asks) + "</ul>") if asks else ""
+                     + "".join(q_html(q) for q in asks) + "</ul>") if asks else ""
         figs.append(f'<figure>{pic}<figcaption><b>{_e(img["view"])}</b> {_e(img["caption"])}{hash_html}{note}'
                     f'{asks_html}{mine_html}</figcaption></figure>')
     rest = [f for i, f in enumerate(findings) if i not in used]

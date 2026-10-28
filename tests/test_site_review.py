@@ -491,6 +491,12 @@ def test_a_self_loop_is_drawn():
 
 def test_a_changed_declarations_file_rebuilds_and_is_named(bench):
     from cadagent.project import load_project
+    # the bench declares its gate exemptions in project.yaml since #56; give it a declarations file to watch
+    cfg_file = bench / "cad-agent.yaml"
+    cfg_file.write_text(cfg_file.read_text().replace("    build: cad/build.py\n",
+                                                     "    build: cad/build.py\n"
+                                                     "    declarations: dossier/gate-declarations.yaml\n"))
+    (bench / "dossier" / "gate-declarations.yaml").write_text("# nothing beyond the dossier\n")
     project = load_project(bench)
     _site(bench)
     extra = lambda: site_review.sources(project)  # noqa: E731

@@ -112,7 +112,8 @@ def write_verdict(path: Any, data: Mapping[str, Any]) -> Path:
 # the same geometry by another actor, or a declaration moved to another line, keeps verdicts current. Only these
 # fields are dropped, at these places: a part, joint or fastener *named* like one of them is still digested.
 VOLATILE_TOP = frozenset({"actor", "parameters", "shapes_dir", "out_dir", "hash"})
-VOLATILE_ENTRY = frozenset({"declared_at", "file"})          # in an entry of parts, cavities, joints, fasteners, steps
+VOLATILE_ENTRY = frozenset({"declared_at", "file", "actor"})  # in an entry of parts, cavities, joints, fasteners,
+                                                               # steps (``actor``: who built a part, plan T11)
 VOLATILE_KEYS = VOLATILE_TOP | VOLATILE_ENTRY
 
 

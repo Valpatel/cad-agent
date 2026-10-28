@@ -11,8 +11,9 @@ prove that printed parts fit, move or hold: no tolerance stack, no print shrink,
 
 Status: the shared machinery (T3), the minimum-wall gate (T8), the connectivity gate (T4), the containment gate (T5),
 the fastener gate (T6), the motion gate (T7), the assembly-access gate (T9), the gate bench (T12), the dossier lint
-(T2, [`dossier.md`](dossier.md#lint-and-status)) and the `cad-agent gates` command with its `check` and report rows
-(T14, [below](#running-the-gates-cad-agent-gates)) are built.
+(T2, [`dossier.md`](dossier.md#lint-and-status)), the `cad-agent gates` command with its `check` and report rows
+(T14, [below](#running-the-gates-cad-agent-gates)) and the site's gates page with the connectivity graph (T15,
+[`dossier.md`](dossier.md#on-the-review-site)) are built.
 
 ## The assembly and the relation table
 
@@ -333,7 +334,8 @@ pairs the table skipped. The verdict's other extra keys: `graph` (`nodes` with `
 `via_joint`; `groups`; `missing`: unrealised declarations), `floating`, `undeclared_contacts`, `unrealised` and
 `relation_stats`. `to_dot(verdict)` / `write_dot(verdict, path)` give a Graphviz graph (one cluster per group,
 floating parts red, joints that do not hold and unrealised declarations red); `connectivity_gate(out=...)` writes it
-beside the verdict as `.dot`. Render it with `dot -Tsvg` where Graphviz is installed; the toolkit does not need it.
+beside the verdict as `.dot`. The site's gates page draws it as SVG (`cadagent.dotsvg.dot_to_svg`: Graphviz when
+installed, else a built-in layout); `dot -Tsvg` renders it by hand. The toolkit does not need Graphviz.
 
 A relation table passed in (`table=`) is read, never changed: witness and joint queries go through `relate_pair`
 and the cache. `analyse(nodes, relations, declarations, contained=..., measure=..., lower_bounds=...,
@@ -729,7 +731,9 @@ unreadable, stale (its inputs differ from the current geometry record, the decla
 failing; it passes with its check and warning counts and links its `.md`. A gate with nothing to check, or skipped
 in `cad.gates.skip`, is a skip row with the reason. Other verdicts in `exports/gates/` (a project's own gates) get a
 row too; the dossier lint stays the `cad-dossier` feature. The site overview of a project that uses the gates shows
-how many verdicts pass on the current geometry, and how many are stale. `cad-agent all` runs the gates after
+how many verdicts pass on the current geometry, and how many are stale, linked to the gates page
+(`site/review/gates.html`, [dossier.md](dossier.md#on-the-review-site)): a row per gate with its state and files,
+the connectivity graph and every finding with its witness. `cad-agent all` runs the gates after
 `export-3mf` and before the report, rebuilding the record with `cad.gates.build` first unless a build step already
 runs that script; when they cannot run (no geometry record), it says so and still runs the dossier lint. Without a `dossier:` or
 `gates:` key nothing changes.

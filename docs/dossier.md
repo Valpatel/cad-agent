@@ -517,8 +517,8 @@ invalid one is `review-invalid` and does not count. A record by a part's builder
 a record whose hashes match the current build is checked, since only such a record can count: an old record does not
 become an error because its reviewer later changed a part. A current record read from a file also goes through
 `check_record` against the dossier and the packet on disk (the checks `--submit` runs, without those the lint cannot
-make or reports itself: the packet's staleness, open decisions, the gates, and which views and gates the packet had
-when the record was written); a sign-off that fails them does not count, and a change request that fails them still
+make or reports itself: the packet's staleness, open decisions, the gates, and, unless the packet on disk is the one
+the record names in `packet.sha256`, which views and gates the packet had when the record was written); a sign-off that fails them does not count, and a change request that fails them still
 counts (`review-incomplete`). With no geometry record nothing is built, so no record is refused or counted. A requirement
 verified by `inspection` also needs the current record of each section serving it to trace it `yes` and not to
 request changes. Records are read in time order

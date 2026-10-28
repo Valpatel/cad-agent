@@ -163,6 +163,7 @@ class Evidence:
     checks: Dict[str, CheckState] = field(default_factory=dict)             # configured check id -> state
     reviews: List[Review] = field(default_factory=list)
     packets: Dict[str, Mapping[str, Any]] = field(default_factory=dict)    # section -> review packet manifest
+    packet_sha256: Dict[str, str] = field(default_factory=dict)            # section -> sha256 of that file
     findings: List[Finding] = field(default_factory=list)                   # problems reading the inputs
     root: Optional[str] = None      # the directory finding files are relative to: lets a loader error on any line
                                     # inside a card be attributed to that card
@@ -383,7 +384,9 @@ def project_evidence(project: Any) -> Evidence:
             continue
         sid = (m.get("section") or {}).get("id") if isinstance(m, dict) else None
         if isinstance(sid, str) and m.get("schema") == "cad-agent.review-packet/1":
+            import hashlib
             ev.packets[sid] = m
+            ev.packet_sha256[sid] = hashlib.sha256(path.read_bytes()).hexdigest()
     try:                            # what `cad-agent gates` binds each verdict to, so the lint and check agree
         from ..gates.run import GATES, GatesConfigError, expected_inputs, gates_config, load_dossier, load_extra
         cfg = gates_config(project)
@@ -869,6 +872,14 @@ class _Linter:
             out[sid] = info
         return out
 
+    def _skips(self, r: Review) -> Tuple[str, ...]:
+        """The check_record codes not applied to ``r``: ``LINT_SKIPS``, less the view and gate citations when the
+        packet on disk is the one the record was submitted against (its ``packet.sha256``)."""
+        bound = (r.data.get("packet") or {}).get("sha256") if isinstance(r.data.get("packet"), dict) else None
+        if bound and bound == self.ev.packet_sha256.get(r.section):
+            return tuple(c for c in LINT_SKIPS if c not in ("unknown-view", "unknown-measurement"))
+        return LINT_SKIPS
+
     def _traced(self, sid: str, rid: str) -> bool:
         return _traced_in(self.current_records.get(sid), rid)
 
@@ -888,7 +899,7 @@ class _Linter:
         if r.data:
             problems = [p for p in check_record(r.data, dossier=self.d, geometry=self.ev.geometry,
                                                 packet=self.ev.packets.get(r.section), require_separate_reviewer=False)
-                        if p.code not in LINT_SKIPS]
+                        if p.code not in self._skips(r)]
             if problems:
                 # a sign-off that fails the checks does not count; a change request still does (it voids an earlier
                 # sign-off of the same geometry: an incomplete objection is still an objection)

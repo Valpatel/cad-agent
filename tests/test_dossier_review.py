@@ -691,3 +691,16 @@ def test_a_packet_rendered_again_later_does_not_void_a_sign_off(project):
     pk.write_manifest(m, root / "exports/review/S1")
     res = lint_project(project)
     assert "review-incomplete" not in res.codes() and res.sections["S1"]["status"] == "signed_off"
+
+
+def test_view_citations_are_checked_while_the_packet_is_the_one_submitted_against(project):
+    root = Path(project.root)
+    path, rec, problems = submit_record(project, "S1", fill(template(project)), reviewer="reviewer")
+    assert problems == []
+    rec["checklist"][0]["views"] = ["a-view-that-never-existed"]
+    path.write_text(json.dumps(rec))                           # edited by hand after submission
+    res = lint_project(project, min_section_status=None)
+    [f] = [f for f in res.findings if f.code == "review-incomplete"]
+    assert "unknown-view" in f.message and res.sections["S1"]["status"] == "gated"
+    render_packet(root)                                        # another packet: the lint can no longer judge views
+    assert "review-incomplete" not in lint_project(project, min_section_status=None).codes()

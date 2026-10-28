@@ -350,14 +350,106 @@ def test_site_overview_counts_current_passing_gates(project):
     from cadagent.site import build_site
     bind_verdicts(project, failing=["wall"])
     build_site(project, {}, "Demo")
+    assert "integrity gates" not in (project / "site" / "index.html").read_text()   # only for a gates project
+    assert main(["site", "--project", str(project)]) == 0
     html = (project / "site" / "index.html").read_text()
     assert "<b>4 / 5</b><span>integrity gates pass</span>" in html
     geo = project / "exports" / "dossier-geometry.json"
     record = json.loads(geo.read_text())
     record["parts"]["lid"]["instances"] = [{"key": "lid", "sha256": "1" * 64}]
     geo.write_text(json.dumps(record))
-    build_site(project, {}, "Demo")
+    build_site(project, {}, "Demo", gates_exports=project / "exports")
     assert "<b>0 / 5</b><span>integrity gates pass (5 stale)</span>" in (project / "site" / "index.html").read_text()
+
+
+# ----------------------------------------------------------------------------------------------- review fixes
+
+def test_a_part_named_like_a_volatile_field_is_still_digested():
+    from cadagent.gates.verdict import geometry_digest
+    rec = {"actor": "a", "parts": {"file": {"sha256": "1" * 64, "declared_at": "x:1"}},
+           "joints": {"hash": {"kind": "revolute", "range": [0, 10]}}}
+    moved = {**rec, "actor": "b", "parts": {"file": {"sha256": "1" * 64, "declared_at": "x:9"}}}
+    assert geometry_digest(moved) == geometry_digest(rec)
+    for changed in ({**rec, "parts": {"file": {"sha256": "2" * 64}}},
+                    {**rec, "joints": {"hash": {"kind": "revolute", "range": [0, 20]}}}):
+        assert geometry_digest(changed) != geometry_digest(rec)
+
+
+def test_a_failed_build_removes_the_old_verdicts(project, capsys, monkeypatch):
+    _config(project, "gates: {build: cad/build.py}\n")
+    bind_verdicts(project)
+    monkeypatch.setenv("FAKE_GATE_MODE", "crash")
+    monkeypatch.setenv("FAKE_GATE_TARGET", "--build")
+    assert main(["gates", "--project", str(project), "--build"]) == 1
+    out = capsys.readouterr().out
+    assert "FAIL build" in out and "exit code 3" in out and "gate-build.log" in out
+    assert not list((project / "exports" / "gates").glob("wall.*"))
+    rows = _results(project, capsys)
+    assert rows["gate wall"]["status"] == "fail" and "not run" in rows["gate wall"]["message"]
+
+
+def test_dry_run_before_the_first_build(tmp_path, capsys):
+    root = make_project(tmp_path, geometry=False)
+    _config(root, "gates: {build: cad/build.py}\n")
+    assert main(["gates", "--project", str(root), "--dry-run"]) == 0
+    assert "would build cad/build.py first" in capsys.readouterr().out
+
+
+def test_a_configured_skip_removes_the_verdict_the_lint_would_read(project, capsys):
+    bind_verdicts(project)
+    _config(project, "gates:\n  skip: {wall: checked by the vendor}\n")
+    assert main(["gates", "--project", str(project)]) == 1      # the hopper's card asks for gate:wall
+    assert not (project / "exports" / "gates" / "wall.json").exists()
+    assert "SKIP wall" in capsys.readouterr().out
+    status = json.loads((project / "exports" / "dossier-status.json").read_text())
+    assert "gate:wall unrun" in status["parts"]["hopper"]["blocked_by"][0]     # the old verdict no longer counts
+    assert status["parts"]["lid"]["status"] == "gated"
+
+
+def test_the_lint_compares_declarations_and_options_for_a_project(project):
+    from cadagent.dossier.lint import lint_project
+    bind_verdicts(project)
+    assert "verdict-stale" not in lint_project(load_project(project)).codes()
+    _config(project, "gates:\n  assembly: {max_step_mm: 2}\n")
+    res = lint_project(load_project(project))
+    [f] = [f for f in res.findings if f.code == "verdict-stale"]
+    assert f.item == "gate:assembly" and "options changed" in f.message
+
+
+@pytest.mark.parametrize("text, error", [
+    ("contains: [hopper]\n", "list of mappings"),
+    ("intended_overlaps: [{parts: [a, b]}]\n", "two parts and a reason"),
+    ("contains: [{what: ball}]\n", "needs container"),
+    ("tools: [hex]\n", "must be a mapping"),
+])
+def test_a_malformed_declarations_file_is_unusable(project, capsys, text, error):
+    (project / "decl.yaml").write_text(text)
+    _config(project, "gates: {declarations: decl.yaml}\n")
+    assert main(["gates", "--project", str(project)]) == 2
+    assert error in capsys.readouterr().err
+    rows = _results(project, capsys)
+    assert rows["gates configuration"]["status"] == "fail"
+
+
+def test_all_builds_with_the_gates_script_unless_a_step_runs_it(project, monkeypatch):
+    seen = []
+    for name in ("cmd_build", "cmd_export_3mf", "cmd_report", "cmd_package"):
+        monkeypatch.setattr(cli, name, lambda p, a: 0)
+    monkeypatch.setattr(cli, "cmd_gates", lambda p, a: seen.append(a.build) or 0)
+    _config(project, "gates: {build: cad/build.py}\n")
+    assert main(["all", "--project", str(project)]) == 0
+    _config(project, "steps: [{name: build, run: cad/build.py}]\n")
+    assert main(["all", "--project", str(project)]) == 0
+    assert seen == [True, False]
+
+
+def test_the_worker_path_leaves_an_installed_package_alone(monkeypatch, tmp_path):
+    import cadagent
+    monkeypatch.setenv("PYTHONPATH", "/somewhere")
+    assert gr._env()["PYTHONPATH"].split(":")[0] == str(Path(cadagent.__file__).resolve().parents[1])
+    fake = tmp_path / "lib" / "site-packages" / "cadagent" / "__init__.py"
+    monkeypatch.setattr(cadagent, "__file__", str(fake))
+    assert gr._env()["PYTHONPATH"] == "/somewhere"
 
 
 # ----------------------------------------------------------------------------------------------- end to end

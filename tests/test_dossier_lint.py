@@ -444,8 +444,15 @@ def make_project(root: Path, files=None, geometry=None, gates=None, checks_yaml=
     (exports / "gates").mkdir(parents=True)
     if geometry is not False:
         (exports / "dossier-geometry.json").write_text(json.dumps(geometry or base_geometry()))
+    from cadagent.gates import run as gr
+    from cadagent.gates.verdict import bind_inputs
+    from cadagent.project import load_project
+    project = load_project(root)
+    cfg = gr.gates_config(project)
+    extra, dossier = gr.load_extra(cfg), gr.load_dossier(project)
     for g in (gates if gates is not None else ("wall", "connectivity", "containment", "assembly")):
-        (exports / "gates" / f"{g}.json").write_text(json.dumps(_verdict(g, geometry=geometry or None)))
+        v = bind_inputs(_verdict(g), geometry or base_geometry(), **gr.expected_inputs(g, cfg, dossier, extra))
+        (exports / "gates" / f"{g}.json").write_text(json.dumps(v))   # as `cad-agent gates` writes it
     return root
 
 

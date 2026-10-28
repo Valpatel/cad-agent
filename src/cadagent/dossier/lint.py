@@ -147,6 +147,9 @@ class Evidence:
     findings: List[Finding] = field(default_factory=list)                   # problems reading the inputs
     root: Optional[str] = None      # the directory finding files are relative to: lets a loader error on any line
                                     # inside a card be attributed to that card
+    expected: Dict[str, Mapping[str, Any]] = field(default_factory=dict)   # gate -> the declarations and options
+                                    # its verdict must be bound to (cadagent.gates.run.expected_inputs); else only
+                                    # the geometry is compared
 
 
 @dataclass
@@ -231,8 +234,8 @@ class LintResult:
         return verdict(LINT_GATE, checks, assumptions=[
             "declarations only: the lint checks that the dossier is complete and agrees with the build's geometry "
             "record, not that the geometry is right (the gates) or meets the requirements (the reviewer)",
-            "a gate verdict counts only when its inputs match the current geometry record (verdict-stale "
-            "otherwise); its declarations and options are compared by cad-agent check, not here",
+            "a gate verdict counts only when its inputs match the current geometry record and, for a project, the "
+            "gate's declarations and options (verdict-stale otherwise)",
         ], limits={"required_section_status": self.min_section_status},
             extra={"sections": {k: v["status"] for k, v in self.sections.items()},
                    "parts": {k: v["status"] for k, v in self.parts.items()}})
@@ -356,6 +359,13 @@ def project_evidence(project: Any) -> Evidence:
     if project.dossier:
         ev.reviews, found = load_reviews(Path(project.dossier).parent / "reviews", root)
         ev.findings += found
+    try:                            # what `cad-agent gates` binds each verdict to, so the lint and check agree
+        from ..gates.run import GATES, GatesConfigError, expected_inputs, gates_config, load_dossier, load_extra
+        cfg = gates_config(project)
+        extra, dossier = load_extra(cfg), load_dossier(project)
+        ev.expected = {g: expected_inputs(g, cfg, dossier, extra) for g in GATES}
+    except (GatesConfigError, TypeError, ValueError):
+        pass                        # a bad gates config is check's finding; compare the geometry only
     return ev
 
 
@@ -586,7 +596,7 @@ class _Linter:
         from ..gates.verdict import stale_reason
         if self.ev.geometry is None:
             return None             # nothing is built: cards stay draft, and geometry-missing says why
-        return stale_reason(self.ev.gates[gate], self.ev.geometry)
+        return stale_reason(self.ev.gates[gate], self.ev.geometry, **dict(self.ev.expected.get(gate) or {}))
 
     def check_for_part(self, cid: str, pid: str) -> CheckState:
         """A gate verdict counts against a part when a failing finding names it (or names no part at all)."""

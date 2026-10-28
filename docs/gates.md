@@ -126,7 +126,7 @@ from cadagent.gates import Check, verdict, write_verdict
 checks = [Check("wall:hopper", "fail", "thinnest 0.800 mm < 2.4 mm", parts=["hopper"], evidence={...})]
 data = verdict("wall", checks, assumptions=["rays along the inward normal ..."], limits={"tol_mm": 0.01},
                exclusions=[{"parts": ["insert_0", "hopper"], "reason": "heat-set knurl"}])
-write_verdict("exports/gates/wall.json", data)
+write_verdict("exports/gates/wall.json", data)       # unbound: `check` reads it as stale (see Inputs below)
 ```
 
 The file (`schema: cadagent.gate/1`) has `pass`, `status` (`pass`/`warn`/`fail`), `counts`, `checks`, `findings`
@@ -145,12 +145,17 @@ bind_inputs(data, record, record_file="exports/dossier-geometry.json", declarati
 stale_reason(data, record, declarations=decl, options=opts)   # None, or why the verdict is stale
 ```
 
-`geometry_digest(record)` is the sha256 of the geometry record's canonical JSON without the keys that say who built
-it or where (`actor`, `declared_at`, `parameters`, file paths). A rebuild that changes a shape, a flag, a joint, a
-fastener or a step changes it; the same geometry rebuilt by someone else does not. `hashes` lets the stale message
-name the shapes that changed. A verdict without `inputs` is stale. The dossier lint compares the geometry
-(`verdict-stale`); `cad-agent check` also compares the declarations and options. A project's own gate that writes
-into `exports/gates/` binds its verdict the same way, or `check` reports it as stale.
+`geometry_digest(record)` is the sha256 of the geometry record's canonical JSON without the fields that say who
+built it or where: `actor`, `parameters`, `shapes_dir`, `out_dir` and `hash` at the top level, `declared_at` and
+`file` in each part, cavity, joint, fastener, instance and step (only those fields: a part named `file` is still
+digested). A rebuild that changes a shape, a flag, a joint, a fastener or a step changes it; the same geometry
+rebuilt by someone else does not. `hashes` lets the stale message name the shapes that changed. `toolkit` records
+the cad-agent version; it is not compared (an editable install keeps one version across code changes, and a
+release would void every verdict whether its gate changed or not), so rerun the gates after an upgrade. A verdict
+without `inputs` is stale. `cad-agent check` and the dossier lint (`verdict-stale`) compare the geometry, the
+gate's declarations and its options; `lint()` called without a project compares the geometry only. The gates'
+`out=` argument writes an unbound verdict: a gate run by hand, or a project's own gate writing into
+`exports/gates/`, binds it with `bind_inputs` first, or `check` reports it as stale.
 
 ## Minimum wall (`cadagent.gates.wall`)
 
@@ -666,7 +671,10 @@ function with the dossier and the declarations file, binds the verdict to its in
 table or the assembly step table), and `connectivity.dot`. The verdict is removed before the run, and a gate that
 exits abnormally, times out (`cad.gates.timeout_s`, 3600 s) or writes nothing gets a failing verdict naming the
 reason and the end of its log (`.cadagent-cache/logs/gate-<name>.log`). So an old passing verdict never survives a
-run that did not finish. `--jobs N` (or `cad.gates.jobs`) runs N gates at once. That is safe because the gates
+run that did not finish. When `--build` (or the build of a missing record) fails, no gate runs and every geometric
+verdict is removed, so `check` fails "not run" rather than passing on the previous build. A gate skipped in
+`cad.gates.skip` loses its verdict files too (the dossier lint would otherwise still count them); `--skip` leaves
+them for that run. `--jobs N` (or `cad.gates.jobs`) runs N gates at once. That is safe because the gates
 share only the pair cache, whose writes are atomic renames, and each writes its own files. Each process holds the
 whole geometry, so memory grows with N.
 
@@ -700,7 +708,8 @@ cad:
 | assembly | the `AccessOptions` fields (`max_step_mm`, `margin_mm`, `refine_steps`, `max_samples`, `tool_access`, `missing_direction`) and `service` |
 | wall | `tol_mm`, `max_rays`, `grid`, `spacing_mm`, `max_grid`, `parts` (part: minimum wall in mm) |
 
-Unknown keys and bad values are refused (exit 2) before anything runs. The assembly gate samples every
+Unknown keys, and bad values of `tol` and of the assembly and fastener options, are refused (exit 2) before anything
+runs; another bad value (a containment, motion or wall option) fails that gate's run, and its verdict says why. The assembly gate samples every
 `max_step_mm` wherever a part slides close along a face, so a long, tight slide costs many queries; a coarser
 `max_step_mm` (with the clearance it can then miss stated in the verdict's limits) is the knob for it.
 
@@ -717,9 +726,10 @@ cannot say yet, with the keys `extra` takes: `grounded`, `free_parts`, `interfac
 unreadable, stale (its inputs differ from the current geometry record, the declarations or the gate's options) or
 failing; it passes with its check and warning counts and links its `.md`. A gate with nothing to check, or skipped
 in `cad.gates.skip`, is a skip row with the reason. Other verdicts in `exports/gates/` (a project's own gates) get a
-row too; the dossier lint stays the `cad-dossier` feature. The site overview shows how many verdicts pass on the
-current geometry, and how many are stale. `cad-agent all` runs the gates after `export-3mf` and before the report;
-when they cannot run (no geometry record), it says so and still runs the dossier lint. Without a `dossier:` or
+row too; the dossier lint stays the `cad-dossier` feature. The site overview of a project that uses the gates shows
+how many verdicts pass on the current geometry, and how many are stale. `cad-agent all` runs the gates after
+`export-3mf` and before the report, rebuilding the record with `cad.gates.build` first unless a build step already
+runs that script; when they cannot run (no geometry record), it says so and still runs the dossier lint. Without a `dossier:` or
 `gates:` key nothing changes.
 
 The parent side (configuration, the plan, staleness, the report rows) needs no CAD kernel, so it runs in core CI;

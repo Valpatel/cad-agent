@@ -108,9 +108,12 @@ def write_verdict(path: Any, data: Mapping[str, Any]) -> Path:
     return path
 
 
-# keys of the geometry record that say who built it or where, not what was built: left out of the digest, so a
-# rebuild of the same geometry by another actor, or a declaration moved to another line, keeps verdicts current
-VOLATILE_KEYS = frozenset({"actor", "declared_at", "parameters", "shapes_dir", "out_dir", "file", "hash"})
+# what in the geometry record says who built it or where, not what was built: left out of the digest, so a rebuild of
+# the same geometry by another actor, or a declaration moved to another line, keeps verdicts current. Only these
+# fields are dropped, at these places: a part, joint or fastener *named* like one of them is still digested.
+VOLATILE_TOP = frozenset({"actor", "parameters", "shapes_dir", "out_dir", "hash"})
+VOLATILE_ENTRY = frozenset({"declared_at", "file"})          # in an entry of parts, cavities, joints, fasteners, steps
+VOLATILE_KEYS = VOLATILE_TOP | VOLATILE_ENTRY
 
 
 def digest_of(value: Any) -> str:
@@ -119,17 +122,31 @@ def digest_of(value: Any) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
 
 
-def _strip_volatile(value: Any) -> Any:
-    if isinstance(value, Mapping):
-        return {k: _strip_volatile(v) for k, v in value.items() if k not in VOLATILE_KEYS}
-    if isinstance(value, (list, tuple)):
-        return [_strip_volatile(v) for v in value]
-    return value
+def _entry(value: Any) -> Any:
+    """An entry of a record table without its volatile fields (and its instances' ``file``)."""
+    if not isinstance(value, Mapping):
+        return value
+    out = {k: v for k, v in value.items() if k not in VOLATILE_ENTRY}
+    if isinstance(out.get("instances"), list):
+        out["instances"] = [_entry(i) for i in out["instances"]]
+    return out
+
+
+def _strip_volatile(record: Mapping[str, Any]) -> Dict[str, Any]:
+    out: Dict[str, Any] = {k: v for k, v in record.items() if k not in VOLATILE_TOP}
+    for table in ("parts", "cavities", "joints", "fasteners"):
+        if isinstance(out.get(table), Mapping):
+            out[table] = {name: _entry(v) for name, v in out[table].items()}
+    asm = out.get("assembly")
+    if isinstance(asm, Mapping) and isinstance(asm.get("steps"), list):
+        out["assembly"] = {**asm, "steps": [_entry(s) for s in asm["steps"]]}
+    return out
 
 
 def geometry_digest(record: Mapping[str, Any]) -> str:
     """The digest of a geometry record (``exports/dossier-geometry.json``) as a gate input: every shape's content
-    hash, box and volume, the flags, joints, fasteners and steps, without ``VOLATILE_KEYS``."""
+    hash, box and volume, the flags, joints, fasteners and steps, without the fields in ``VOLATILE_TOP`` (top level)
+    and ``VOLATILE_ENTRY`` (in each table entry, instance and step)."""
     return digest_of(_strip_volatile(record))
 
 
@@ -153,13 +170,23 @@ def bind_inputs(data: Dict[str, Any], record: Mapping[str, Any], *, record_file:
     """Add ``inputs`` to a verdict dict (in place, and returned): what it was computed from. ``declarations`` and
     ``options`` are digested (``digest_of``) when given, so a change to them makes the verdict stale too."""
     inputs: Dict[str, Any] = {"geometry": {"file": record_file, "digest": geometry_digest(record),
-                                           "hashes": record_hashes(record)}}
+                                           "hashes": record_hashes(record)}, "toolkit": _toolkit_version()}
     if declarations is not None:
         inputs["declarations"] = digest_of(declarations)
     if options is not None:
         inputs["options"] = digest_of(options)
     data["inputs"] = inputs
     return data
+
+
+def _toolkit_version() -> str:
+    """Recorded with the inputs, not compared: an editable install keeps one version across code changes, and a
+    release would otherwise void every verdict whether or not its gate changed. Rerun the gates after an upgrade."""
+    try:
+        from importlib.metadata import version
+        return version("cad-agent")
+    except Exception:
+        return "unknown"
 
 
 def stale_reason(data: Mapping[str, Any], record: Optional[Mapping[str, Any]], *, declarations: Any = None,

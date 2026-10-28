@@ -207,6 +207,25 @@ def load_extra(cfg: GatesConfig) -> Dict[str, Any]:
     unknown = sorted(set(data) - set(EXTRA_KEYS))
     if unknown:
         raise GatesConfigError(f"{cfg.rel(path)}: unknown key(s) {unknown}; known: {list(EXTRA_KEYS)}")
+    for key in ("interfaces", "contains", "intended_overlaps", "ignore_pairs"):
+        items = data.get(key)
+        if items is not None and (not isinstance(items, list) or not all(isinstance(i, Mapping) for i in items)):
+            raise GatesConfigError(f"{cfg.rel(path)}: {key} must be a list of mappings")
+    for key in ("intended_overlaps", "ignore_pairs"):
+        for item in data.get(key) or []:
+            if not isinstance(item.get("parts"), list) or len(item["parts"]) != 2 or not str(item.get("reason") or
+                                                                                              "").strip():
+                raise GatesConfigError(f"{cfg.rel(path)}: each {key} entry names two parts and a reason: {item!r}")
+    for item in data.get("contains") or []:
+        if not item.get("what") or not item.get("container"):
+            raise GatesConfigError(f"{cfg.rel(path)}: each contains entry needs container, cavity and what: {item!r}")
+    for key in ("fasteners", "tools", "wall_mm"):
+        if data.get(key) is not None and not isinstance(data[key], Mapping):
+            raise GatesConfigError(f"{cfg.rel(path)}: {key} must be a mapping")
+    if data.get("free_parts") is not None and not isinstance(data["free_parts"], (list, Mapping)):
+        raise GatesConfigError(f"{cfg.rel(path)}: free_parts must be a list or a mapping of part to reason")
+    if data.get("grounded") is not None and not isinstance(data["grounded"], list):
+        raise GatesConfigError(f"{cfg.rel(path)}: grounded must be a list of parts")
     return data
 
 
@@ -505,18 +524,9 @@ def _wall(result, dossier, extra, cache, kwargs, opts):
         raise ValueError(f"a minimum wall is declared for {missing}, which the geometry record does not have")
     parts: Dict[str, Dict[str, Any]] = {}
     for name, wall_mm in declared.items():
-        info = result.geometry["parts"][name]
-        seen = set()
         shapes = result.parts[name]
-        for i, (shape, inst) in enumerate(zip(shapes, info.get("instances") or [{}] * len(shapes))):
-            box = inst.get("bbox") or {}
-            size = tuple(round(b - a, 4) for a, b in zip(box.get("min", ()), box.get("max", ())))
-            copy_key = (round(float(inst.get("volume_mm3") or 0.0), 3), size)
-            if inst and copy_key in seen:
-                continue                         # a copy of an instance already measured (same volume and size)
-            seen.add(copy_key)
-            key = name if len(shapes) == 1 else f"{name}#{i}"
-            parts[key] = {"wall_mm": wall_mm, "mesh": shape, "shape": shape}
+        for i, shape in enumerate(shapes):           # every instance: two instances may differ in shape
+            parts[name if len(shapes) == 1 else f"{name}#{i}"] = {"wall_mm": wall_mm, "mesh": shape, "shape": shape}
     return wall_gate(parts, **kwargs)
 
 
@@ -570,11 +580,15 @@ def worker_command(root: Path, gate: str, no_cache: bool = False) -> List[str]:
 
 
 def _env() -> Dict[str, str]:
+    """The worker's environment: the parent's, plus the directory ``cadagent`` was imported from on ``PYTHONPATH``
+    when it is a source checkout (an installed package is found by the same interpreter without it, and putting
+    ``site-packages`` first would shadow the standard library)."""
     import cadagent
-    pkg_root = str(Path(cadagent.__file__).resolve().parents[1])
+    pkg = Path(cadagent.__file__).resolve().parents[1]
     path = os.environ.get("PYTHONPATH", "")
-    return dict(os.environ, PYTHONUNBUFFERED="1",
-                PYTHONPATH=pkg_root + (os.pathsep + path if path else ""))
+    if pkg.name in ("site-packages", "dist-packages"):
+        return dict(os.environ, PYTHONUNBUFFERED="1")
+    return dict(os.environ, PYTHONUNBUFFERED="1", PYTHONPATH=str(pkg) + (os.pathsep + path if path else ""))
 
 
 def _spawn(cfg: GatesConfig, gate: str, cmd: List[str]) -> Tuple[int, str, float, str]:
@@ -629,10 +643,17 @@ def run_gates(project: Any, *, only: Sequence[str] = (), skip: Sequence[str] = (
         code, reason, secs, log = _spawn(cfg, "--build", worker_command(cfg.root, "--build"))
         if code != 0:
             why = reason or f"exit code {code}"
-            return RunResult([GateRun("build", "fail", f"{why}; log {log}: {_tail(cfg.root / log)}", secs, log)],
-                             round(time.monotonic() - started, 2))
+            for g in GATES:                    # the old verdicts describe a build that is no longer the intended one
+                remove_outputs(gates_dir, g)
+            row = GateRun("build", "fail", f"{why}; the gates did not run and their old verdicts were removed; "
+                                           f"log {log}: {_tail(cfg.root / log)}", secs, log)
+            progress(f"  FAIL build {secs:6.1f} s  {row.message}")
+            return RunResult([row], round(time.monotonic() - started, 2))
         built = True
     record = load_record(cfg)
+    if record is None and wants_geometry and dry_run and cfg.build is not None:
+        return RunResult([GateRun("build", "run", f"would build {cfg.rel(cfg.build)} first (no geometry record "
+                                                  "yet); what applies is known after the build")], 0.0)
     if record is None and wants_geometry:
         raise GatesConfigError(f"no geometry record at {cfg.rel(cfg.geometry)}: run the build that registers the "
                                "parts (cad-agent build), or set cad.gates.build (docs/gates.md)")
@@ -647,6 +668,8 @@ def run_gates(project: Any, *, only: Sequence[str] = (), skip: Sequence[str] = (
                 remove_outputs(gates_dir, p.gate)      # an old verdict of a gate with nothing to check misleads
         elif p.state == "skip":
             rows[p.gate] = GateRun(p.gate, "skip", p.reason)
+            if not dry_run and p.gate != LINT and p.gate in cfg.skip:
+                remove_outputs(gates_dir, p.gate)      # skipped by the project: an old verdict would still count
     todo = [p.gate for p in planned if p.state == "run" and p.gate != LINT]
     if dry_run:
         for g in todo:
@@ -771,16 +794,17 @@ def _verdict_row(name: str, path: Path, record: Mapping[str, Any], expected: Map
     return {"name": name, "status": "pass", "message": msg, "file": str(path)}
 
 
-def site_counts(root: Path, exports: str = "exports") -> Optional[Dict[str, int]]:
-    """``{"pass", "total", "stale"}`` over the gate verdicts in ``<root>/<exports>/gates/`` (the lint's left out):
+def site_counts(exports_dir: Path) -> Optional[Dict[str, int]]:
+    """``{"pass", "total", "stale"}`` over the gate verdicts in ``<exports_dir>/gates/`` (the lint's left out):
     a verdict counts as passing only when it passes and its geometry matches the current record. None when there
     are no verdicts. For the site overview, which reads files only."""
-    gates_dir = Path(root) / exports / "gates"
+    exports = Path(exports_dir)
+    gates_dir = exports / "gates"
     paths = [p for p in sorted(gates_dir.glob("*.json")) if p.stem != LINT] if gates_dir.is_dir() else []
     if not paths:
         return None
     try:
-        record = json.loads((Path(root) / exports / GEOMETRY_FILE).read_text())
+        record = json.loads((exports / GEOMETRY_FILE).read_text())
     except (OSError, ValueError):
         record = None
     out = {"pass": 0, "total": 0, "stale": 0}

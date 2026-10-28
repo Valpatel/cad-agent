@@ -514,8 +514,8 @@ author whose unchanged geometry someone else rebuilt could sign their own work o
 `inputs.geometry.digest` must equal the record's (`cadagent.gates.verdict.geometry_digest`). Otherwise, or when it
 has no `inputs`, the lint reports `verdict-stale` with the shapes that changed, the gate's checks read `stale`, and
 the parts stay `built` until `cad-agent gates` runs again. Rebuilding the same geometry (another actor, a
-declaration moved to another line) keeps verdicts current. The lint does not compare a verdict's declarations or
-options; `cad-agent check` does.
+declaration moved to another line) keeps verdicts current. For a project (`lint_project`, `cad-agent dossier`) the
+lint also compares the gate's declarations and options, as `cad-agent check` does ([gates.md](gates.md#verdicts)).
 
 **Limits.** A clean lint means the design is declared and agrees with the build. It does not mean the geometry is
 right (the gates check that) or that it meets its requirements (the reviewer checks that).

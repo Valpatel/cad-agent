@@ -200,14 +200,16 @@ def cmd_site(project: CadProject, args: argparse.Namespace) -> int:
     site = project.site
     # without a configured `nav`, every page still gets a top bar: the overview, docs, 3D model and the HTML pages
     auto_nav = lambda: default_nav(project.root, project.html_pages, site.get("pages"))  # noqa: E731
+    from cadagent.gates.run import enabled
+    gates_exports = project.exports_dir if enabled(project) else None
     if not getattr(args, "serve", False):
-        summary = build_site(project.root, site, project.title, auto_nav)
+        summary = build_site(project.root, site, project.title, auto_nav, gates_exports)
         _say(f"site: {summary['site']}/index.html ({summary['pages']} pages, {summary['milestones']} milestones, "
              f"{summary['decisions']} decisions, {summary['designs']} designs)")
         return 0
     host = getattr(args, "host", None) or project.serve.host
     port = project.serve.port if getattr(args, "port", None) is None else args.port
-    server, url = serve_site(project.root, site, project.title, host, port, auto_nav)
+    server, url = serve_site(project.root, site, project.title, host, port, auto_nav, gates_exports)
     project.preview_dir.mkdir(parents=True, exist_ok=True)
     (project.preview_dir / "site-url.txt").write_text(url + "\n")
     print(url, flush=True)
@@ -334,9 +336,14 @@ def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
         return 1
     if cmd_export_3mf(project, args):
         return 1
-    from cadagent.gates.run import enabled
+    from cadagent.gates.run import GatesConfigError, enabled, gates_config
     if enabled(project):
-        args.gate_only, args.gate_skip, args.dry_run, args.build = None, None, False, False
+        try:                    # rebuild the record unless a build step already runs the gates' build script
+            gb = gates_config(project).build
+        except GatesConfigError:
+            gb = None
+        stepped = {(project.root / s.run).resolve() for s in project.steps}
+        args.gate_only, args.gate_skip, args.dry_run, args.build = None, None, False, gb is not None and gb not in stepped
         args.no_cache, args.jobs = False, None
         try:
             cmd_gates(project, args)    # writes the verdicts and the dossier status; `check` (in report) fails on them

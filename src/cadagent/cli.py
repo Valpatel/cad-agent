@@ -19,7 +19,7 @@ from cadagent._deps import MissingDependency
 from cadagent.project import CadConfigError, CadProject, Step, load_project
 
 SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
-               "mcmaster", "catalogue", "compare", "optimise")
+               "mcmaster", "catalogue", "compare", "optimise", "agents")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -532,8 +532,36 @@ HANDLERS = {
     "optimise": cmd_optimise,
 }
 
+def cmd_agents(args: argparse.Namespace) -> int:
+    """Install or list the agent workflow kit (skills/ and agents/) for Claude Code and Codex: cadagent.agentkit."""
+    from cadagent import agentkit
+    root = agentkit.kit_root(args.source)
+    home = Path(args.home).expanduser() if args.home else Path.home()
+    targets = agentkit.TARGETS if args.target == "all" else (args.target,)
+    if args.action == "list":
+        for row in agentkit.status(home, root, targets):
+            _say(f"{row['kind']:5}  {row['name']:24} {row['state']:12} {row['dest']}")
+        return 0
+    warning = None if args.copy else agentkit.worktree_warning(root)
+    if warning:
+        _warn(warning)
+    result = agentkit.install(home, root, targets, copy=args.copy, dry_run=args.dry_run)
+    for line in result["done"]:
+        _say(("would " if args.dry_run else "") + line)
+    for dest in result["conflicts"]:
+        _err(f"agents: {dest} exists and was not installed by cad-agent; left untouched (move it away and rerun)")
+    _say(f"agents: {len(result['done'])} {'planned' if args.dry_run else 'installed'} from {root}"
+         + (f", {len(result['conflicts'])} conflicts" if result["conflicts"] else ""))
+    return 1 if result["conflicts"] else 0
+
 def dispatch(args: argparse.Namespace) -> int:
     sub = getattr(args, "cad_command", None)
+    if sub == "agents":                                    # installs into the user's home: no project needed
+        try:
+            return cmd_agents(args)
+        except (FileNotFoundError, ValueError) as exc:
+            _err(f"agents: {exc}")
+            return 2
     if sub == "mcmaster":                                  # works on files only: no project needed
         try:
             return cmd_mcmaster(args)
@@ -604,6 +632,15 @@ def build_parser() -> argparse.ArgumentParser:
     pcb_p.add_argument("manifest", help="JSON with reports, sources, release_gates and optional waivers (paths relative to project root)")
     pcb_p.add_argument("--output", default="exports/pcb-evidence.json")
     sub.add_parser("all", parents=[common], help="build, export-3mf, check + report, package")
+    ag_p = sub.add_parser("agents", help="Install the agent workflow kit (skills and subagents) for Claude Code and Codex, "
+                                         "or list what is installed (docs/agent-workflow.md)")
+    ag_p.add_argument("action", choices=("install", "list"))
+    ag_p.add_argument("--target", choices=("all", "claude", "codex"), default="all")
+    ag_p.add_argument("--source", type=Path, help="cad-agent checkout holding skills/ and agents/ (default: the one "
+                                                  "this cadagent is installed from)")
+    ag_p.add_argument("--home", help="home folder to install into (default: yours)")
+    ag_p.add_argument("--copy", action="store_true", help="copy instead of linking (for a checkout that will move)")
+    ag_p.add_argument("--dry-run", action="store_true", help="show what would be installed")
     mc_p = sub.add_parser("mcmaster", help="Download McMaster-Carr STEP + product data per part number and normalise "
                                            "it (one page at a time; skills/mcmaster-parts/SKILL.md)")
     mc_p.add_argument("pns", nargs="+", metavar="PN", help="McMaster-Carr part numbers, e.g. 91290A242")

@@ -1,6 +1,6 @@
 ---
 name: cad-work-tracking
-description: Use at the start of any multi-step change in a cad-agent or product repo, and every ~30 minutes while working. Keeps work recoverable when the session ends (tokens run out, the host crashes or is reformatted): a GitHub issue per piece of work with a done/next/how-to-resume checklist, a branch pushed in clean commits as you go, an early draft PR linked with "Closes #N", long runs recorded in the issue, and issues closed as PRs merge. Also use to resume work from GitHub alone.
+description: Use at the start of any multi-step change in a cad-agent or product repo, and every ~30 minutes while working. Keeps work recoverable when the session ends (tokens run out, the host crashes or is reformatted) with a GitHub issue per piece of work with a done/next/how-to-resume checklist, a branch pushed in clean commits as you go, an early draft PR linked with "Closes #N", long runs recorded in the issue, and issues closed as PRs merge. Also use to resume work from GitHub alone.
 ---
 
 # Work tracking: assume the session ends in 30 minutes

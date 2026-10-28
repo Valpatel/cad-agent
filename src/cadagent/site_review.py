@@ -26,6 +26,7 @@ pages say so. Everything is optional: a missing file shows as a gap with the com
 from __future__ import annotations
 
 import json
+import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -130,7 +131,7 @@ def enabled(project: Any) -> bool:
 
 def collect(project: Any) -> ReviewData:
     """Read the status file, the verdicts, the gate rows and the YAML dossier (for its words)."""
-    from cadagent.gates.run import GEOMETRY_FILE, gate_rows
+    from cadagent.gates.run import gate_rows
     root = Path(project.root).resolve()
     exports = Path(project.exports_dir)
     data = ReviewData(root=root, exports=exports, has_dossier=bool(getattr(project, "dossier", None)))
@@ -144,14 +145,10 @@ def collect(project: Any) -> ReviewData:
             data.dossier_error = str(exc)
         if status_path.is_file():
             built = status_path.stat().st_mtime
-            data.yaml_newer = [_rel(p, root) for p in _dossier_files(project, data.dossier)
+            decl = [p for p in _gate_files(project)[:-1] if p.is_file()]     # the declarations file, if any
+            data.yaml_newer = [_rel(p, root) for p in _dossier_files(project, data.dossier) + decl
                                if p.stat().st_mtime > built]
-    try:
-        from cadagent.gates.run import GatesConfigError, gates_config
-        geo_path = gates_config(project).geometry
-    except Exception:                    # noqa: BLE001 (the rows report a bad configuration)
-        geo_path = exports / GEOMETRY_FILE
-    data.geometry, _ = _read_json(geo_path)
+    data.geometry, _ = _read_json(_gate_files(project)[-1])
     gates_dir = exports / "gates"
     if gates_dir.is_dir():
         for p in sorted(gates_dir.glob("*.json")):
@@ -193,16 +190,54 @@ def _dossier_files(project: Any, dossier: Any = None) -> List[Path]:
     return sorted(p for p in names if p.is_file())
 
 
+def _gate_files(project: Any) -> List[Path]:
+    """The gates' declarations file and geometry record as ``cad: gates:`` names them (verdicts go stale when either
+    changes); nothing when the configuration is unreadable (the gates page says why)."""
+    try:
+        from cadagent.gates.run import gates_config
+        cfg = gates_config(project)
+    except Exception:                    # noqa: BLE001
+        return [Path(project.exports_dir) / "dossier-geometry.json"]
+    return [p for p in (cfg.declarations, cfg.geometry) if p is not None]
+
+
+_FILES_CACHE: Dict[str, Tuple[Tuple[Tuple[str, float], ...], List[Path]]] = {}
+
+
+def _watched_dossier_files(project: Any) -> List[Path]:
+    """``_dossier_files`` for the server, parsed again only when one of those files or the folders holding them
+    changed (a new section file changes its folder's time), not on every request."""
+    path = getattr(project, "dossier", None)
+    if not path:
+        return []
+    key = str(Path(path).resolve())
+
+    def stamp(files: List[Path]) -> Tuple[Tuple[str, float], ...]:
+        seen = sorted({str(f) for f in files} | {str(f.parent) for f in files} | {key, str(Path(key).parent)})
+        out = []
+        for name in seen:
+            try:
+                out.append((name, os.stat(name).st_mtime))
+            except OSError:
+                out.append((name, -1.0))
+        return tuple(out)
+
+    cached = _FILES_CACHE.get(key)
+    if cached is not None and stamp(cached[1]) == cached[0]:
+        return list(cached[1])
+    files = _dossier_files(project)
+    _FILES_CACHE[key] = (stamp(files), files)
+    return list(files)
+
+
 def sources(project: Any) -> List[Path]:
     """Files the review pages are built from, for ``cad-agent site --serve`` to rebuild when one changes."""
     exports = Path(project.exports_dir)
-    files = _dossier_files(project)
-    for p in [exports / STATUS_FILE, exports / "dossier-geometry.json"]:
-        if p.is_file():
-            files.append(p)
+    files = _watched_dossier_files(project) + _gate_files(project)
+    files.append(exports / STATUS_FILE)
     for pattern in ("gates/*", f"{PACKET_DIR}/*/manifest.json"):
-        files += [p for p in sorted(exports.glob(pattern)) if p.is_file()]
-    return files
+        files += sorted(exports.glob(pattern))
+    return [p for p in dict.fromkeys(files) if p.is_file()]
 
 
 def nav_entries(project: Any) -> List[Dict[str, str]]:

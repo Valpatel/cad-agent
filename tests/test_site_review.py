@@ -487,3 +487,22 @@ def test_a_self_loop_is_drawn():
     svg, _ = dotsvg.dot_to_svg("graph { a -- a; a -- b }", engine="python")
     loop = re.findall(r'<path d="([^"]+)"[^>]*><title>a – a</title>', svg)
     assert loop and len(set(re.findall(r"[-\d.]+,[-\d.]+", loop[0]))) == 4, "four distinct points, not a dot"
+
+
+def test_a_changed_declarations_file_rebuilds_and_is_named(bench):
+    from cadagent.project import load_project
+    project = load_project(bench)
+    _site(bench)
+    extra = lambda: site_review.sources(project)  # noqa: E731
+    cfg = site.site_config(project.site, project.title)
+    assert not site._stale(bench, cfg, extra)
+    decl = bench / "dossier" / "gate-declarations.yaml"
+    assert decl in site_review.sources(project)
+    later = (bench / "site" / "index.html").stat().st_mtime + 5
+    os.utime(decl, (later, later))
+    assert site._stale(bench, cfg, extra), "the gates' declarations file is watched"
+    _site(bench)
+    assert "dossier/gate-declarations.yaml" in _read(bench, "review/index.html").split("changed after the status file")[1][:400]
+    new = bench / "dossier" / "sections" / "extra.yaml"
+    new.write_text("id: S-extra\ntitle: Extra\n")
+    assert new in site_review.sources(project), "a new section file is picked up through its folder's time"

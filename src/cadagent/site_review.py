@@ -847,7 +847,9 @@ def gates_page(data: ReviewData, cfg: Any, out_dir: Path, engine: str = "auto") 
     lint = data.verdicts.get("dossier-lint")
     if lint is not None or data.status is not None:
         st = data.status or {}
-        state = "pass" if (lint or {}).get("pass") is True else "fail"
+        # the lint writes both files in one go; either one failing (or missing) is a failing lint
+        ok = (lint is None or lint.get("pass") is True) and (data.status is None or data.status.get("pass") is True)
+        state = "pass" if ok else "fail"
         c = st.get("counts") or {}
         files = " · ".join(x for x in (links.maybe(f"{gates_rel}/dossier-lint.json", ".json"),
                                        links.maybe(_rel(data.exports / STATUS_FILE, data.root), "status")) if x)

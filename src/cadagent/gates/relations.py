@@ -397,29 +397,17 @@ class Assembly:
         * ``Part.kind`` from ``result.kind(key)`` (``"part"`` or ``"fastener"``), ``group`` = the part's section;
         * every cavity via ``add_cavity`` with its recorded hash (its host must be a single placed part);
         * ``joints`` and ``fastener_axes`` copied onto the assembly for the motion and fastener gates;
-        * body labels, provisionally (docs/dossier.md, open for T7): a joint's ``moving`` part is its own body,
-          and fasteners whose ``clamps`` or ``into`` is that part, and parts joined to it by a ``fixed`` joint,
-          join its body.
+        * body labels, provisionally (docs/dossier.md, open for T7): ``moving_bodies``, a joint's ``moving`` part
+          seeds its body, which grows transitively across ``fixed`` joints and fasteners (the fastener, what it
+          clamps and what it threads into), never into a grounded part or a joint's ``fixed`` part.
         """
         geo = getattr(result, "geometry", None) or {}
         hashes = result.content_hashes() if hasattr(result, "content_hashes") else {}
         owner = getattr(result, "owner", None) or (lambda k: k)
         kind = getattr(result, "kind", None) or (lambda k: "part")
         joints = dict(getattr(result, "joints", None) or {})
-        body_of: Dict[str, str] = {}
-        for j in joints.values():
-            if j.get("kind") != "fixed" and j.get("moving"):
-                body_of[j["moving"]] = j["moving"]
-        for j in joints.values():
-            if j.get("kind") == "fixed":
-                for a, b in ((j.get("moving"), j.get("fixed")), (j.get("fixed"), j.get("moving"))):
-                    if a in body_of and b and b not in body_of:
-                        body_of[b] = body_of[a]
-        for name, info in (geo.get("fasteners") or {}).items():
-            for host in (info.get("clamps"), info.get("into")):
-                if host in body_of:
-                    body_of[name] = body_of[host]
-                    break
+        grounded = [n for n, info in (geo.get("parts") or {}).items() if info.get("grounded")]
+        body_of = moving_bodies(joints, geo.get("fasteners") or {}, grounded)
         out = cls()
         for key, (shape, recorded) in result.assembly_shapes(fasteners=fasteners, with_hashes=True).items():
             name = owner(key)
@@ -434,6 +422,40 @@ class Assembly:
         out.joints = joints
         out.fastener_axes = dict(getattr(result, "fastener_axes", None) or {})
         return out
+
+
+def moving_bodies(joints: Mapping[str, Mapping[str, Any]], fasteners: Mapping[str, Mapping[str, Any]] = {},
+                  grounded: Iterable[str] = ()) -> Dict[str, str]:
+    """``{name: body}`` for the parts that move: each non-fixed joint's ``moving`` part seeds a body named after
+    it, which grows transitively across ``fixed`` joints and fastener declarations (the fastener, what it
+    clamps and what it threads into). Growth stops at grounded parts, at any non-fixed joint's ``fixed``
+    part and at another body's parts; the connectivity gate reports such links. Names, not instance keys."""
+    seeds = {str(j["moving"]): str(j["moving"]) for _, j in sorted(joints.items())
+             if j.get("kind") != "fixed" and j.get("moving")}
+    stop = set(grounded) | {str(j.get("fixed")) for j in joints.values() if j.get("kind") != "fixed"}
+    links: Dict[str, List[str]] = {}
+
+    def link(a: Any, b: Any) -> None:
+        if a and b and a != b:
+            links.setdefault(str(a), []).append(str(b))
+            links.setdefault(str(b), []).append(str(a))
+
+    for _, j in sorted(joints.items()):
+        if j.get("kind") == "fixed":
+            link(j.get("moving"), j.get("fixed"))
+    for name, info in sorted(fasteners.items()):
+        link(name, info.get("clamps"))
+        link(name, info.get("into"))
+        link(info.get("clamps"), info.get("into"))
+    body_of = dict(seeds)
+    for seed in sorted(seeds):
+        queue = [seed]
+        while queue:
+            for m in sorted(links.get(queue.pop(0), [])):
+                if m not in body_of and m not in stop:
+                    body_of[m] = seed
+                    queue.append(m)
+    return body_of
 
 
 def _solids(topods) -> List[Any]:

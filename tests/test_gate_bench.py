@@ -21,6 +21,7 @@ cq = pytest.importorskip("cadquery")
 pytest.importorskip("trimesh")
 
 from cadagent.gates import relate_pair, relation_table  # noqa: E402
+from cadagent.gates.connectivity import Declarations, connectivity_gate  # noqa: E402
 from cadagent.gates.wall import wall_gate  # noqa: E402
 
 _PATH = Path(__file__).resolve().parent / "fixtures" / "gate_bench" / "build.py"
@@ -47,6 +48,10 @@ def gate_wall(bench):
                       for n, w in bench.print_parts.items()})
 
 
+def gate_connectivity(bench):
+    return connectivity_gate(bench.assembly, Declarations.from_build(bench.result, extra=bench.declarations))
+
+
 def _not_built(task, gate):
     def adapter(bench):
         raise NotImplementedError(f"{task}: the {gate} gate is not built yet")
@@ -56,13 +61,13 @@ def _not_built(task, gate):
 GATES = {
     "wall": (gate_wall, "T8"),
     "containment": (_not_built("T5", "containment"), "T5"),
-    "connectivity": (_not_built("T4", "connectivity"), "T4"),
+    "connectivity": (gate_connectivity, "T4"),
     "fasteners": (_not_built("T6", "fastener"), "T6"),
     "motion": (_not_built("T7", "motion"), "T7"),
     "assembly": (_not_built("T9", "assembly-access"), "T9"),
     "dossier-lint": (_not_built("T2", "dossier-lint"), "T2"),
 }
-BUILT = {"wall"}
+BUILT = {"wall", "connectivity"}
 
 
 def _marks(gate):

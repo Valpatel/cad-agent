@@ -403,7 +403,7 @@ def check_record(data: Mapping[str, Any], *, dossier: Any, geometry: Optional[Ma
         foreign = sorted(set(answers) - set(questions))
         if foreign:
             bad("unknown-question", f"answers to question(s) the packet does not ask: {', '.join(foreign)}")
-        views = {str(v.get("id")) for v in packet.get("views") or [] if isinstance(v, Mapping)}
+        views = {str(v.get("id")) for v in packet.get("views") or [] if isinstance(v, Mapping) and v.get("file")}
         gates = set((packet.get("measurements") or {}).get("gates") or {}) | {"dossier-lint"}
         for qid, a in answers.items():
             q = questions.get(qid)
@@ -414,7 +414,7 @@ def check_record(data: Mapping[str, Any], *, dossier: Any, geometry: Optional[Ma
                     bad("question-changed", f"checklist {qid}: `{key}` is not the packet's ({q.get(key)!r})")
             unseen = [v for v in a.get("views") or [] if isinstance(v, str) and v not in views]
             if unseen:
-                bad("unknown-view", f"checklist {qid}: view(s) {', '.join(unseen)} are not in the packet")
+                bad("unknown-view", f"checklist {qid}: view(s) {', '.join(unseen)} have no image in the packet")
             ungated = [m for m in a.get("measurements") or [] if isinstance(m, str) and m.startswith("gate:")
                        and m[5:] not in gates]
             if ungated:

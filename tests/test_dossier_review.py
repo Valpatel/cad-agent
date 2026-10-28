@@ -424,6 +424,20 @@ def test_a_same_actor_sign_off_is_refused_when_required(tmp_path):
     assert any("require_separate_reviewer" in str(f) for f in lint_project(load_project(root)).errors)
 
 
+def test_an_old_record_does_not_become_an_error_when_its_reviewer_builds_later(project):
+    """The reviewer signs off, then changes the lid (and so becomes its builder): the old record no longer counts
+    (stale), and is not reported as a same-actor review either."""
+    root = Path(project.root)
+    path, _, problems = submit_record(project, "S1", fill(template(project)), reviewer="reviewer")
+    assert problems == []
+    geo = geometry()
+    geo["parts"]["lid"].update(sha256="0" * 64, actor="reviewer")
+    (root / "exports" / "dossier-geometry.json").write_text(json.dumps(geo))
+    res = lint_project(project, min_section_status=None)
+    assert "review-stale" in res.codes() and "review-same-actor" not in res.codes()
+    assert res.sections["S1"]["status"] != "signed_off"
+
+
 def test_the_record_actor_is_the_submitting_actor(project, monkeypatch):
     rec = fill(template(project))
     rec["actor"] = "someone"

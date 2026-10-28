@@ -809,22 +809,15 @@ class _Linter:
         return out
 
     def _reviews(self, open_decisions: Mapping[str, List[str]]) -> Dict[str, Dict[str, Any]]:
-        """Per section: the latest record whose hashes match the current build, and what made others void."""
+        """Per section: the latest record whose hashes match the current build, and what made others void. Only a
+        record that matches the build can count, so only such a record is checked for the separate-reviewer rule: an
+        old record does not turn into an error because its reviewer later built a part."""
         out: Dict[str, Dict[str, Any]] = {}
         by_section: Dict[str, List[Review]] = {}
         for r in self.ev.reviews:
             if r.section not in self.d.sections:
                 self.add("review-unknown-section", f"reviewer record names section {r.section!r}, which is not in "
                                                    "the dossier", Where(r.file), item=r.section)
-                continue
-            if self.ev.geometry is None:
-                by_section.setdefault(r.section, []).append(r)      # nothing is built, so nothing can be reviewed
-                continue
-            why = actor_refusal(r.actor, r.section, self.d, self.ev.geometry) if self.separate else None
-            if why:
-                self.add("review-same-actor", f"reviewer record for section {r.section!r} is refused: {why}; a "
-                                              "separate reviewer is required (gates: require_separate_reviewer)",
-                         Where(r.file), item=r.section)
                 continue
             by_section.setdefault(r.section, []).append(r)
         for sid, records in by_section.items():
@@ -835,7 +828,17 @@ class _Linter:
             def stale(r: Review) -> List[str]:
                 return sorted(p for p, h in current.items() if not h or r.hashes.get(p) != h)
 
-            matching = [r for r in records if not stale(r)]
+            accepted = []
+            for r in records:
+                if self.ev.geometry is not None and self.separate and not stale(r):
+                    why = actor_refusal(r.actor, r.section, self.d, self.ev.geometry)
+                    if why:
+                        self.add("review-same-actor", f"reviewer record for section {r.section!r} is refused: {why}; "
+                                                      "a separate reviewer is required (gates: "
+                                                      "require_separate_reviewer)", Where(r.file), item=r.section)
+                        continue
+                accepted.append(r)
+            matching = [r for r in accepted if not stale(r)]
             info: Dict[str, Any] = {"record": None}
             if matching:
                 info["record"] = matching[-1]

@@ -510,8 +510,10 @@ The status uses the newest record whose hashes match, so a revert to reviewed ge
 **Reviewer records** (`dossier/reviews/*.json`, [the reviewer pass](#the-reviewer-pass)) are validated whole; an
 invalid one is `review-invalid` and does not count. A record by a part's builder or the section's author, or by
 `unknown`, or of a section whose builder is `unknown`, is refused (`review-same-actor`) while the dossier's
-`gates: require_separate_reviewer` is true (the default; `lint(..., require_separate_reviewer=)` overrides it); with
-no geometry record nothing is built, so no record is refused or counted. Records are read in time order
+`gates: require_separate_reviewer` is true (the default; `lint(..., require_separate_reviewer=)` overrides it). Only
+a record whose hashes match the current build is checked, since only such a record can count: an old record does not
+become an error because its reviewer later changed a part. With no geometry record nothing is built, so no record is
+refused or counted. Records are read in time order
 (`timestamp`, else `date`, then the `-2`, `-3` suffix of a second record the same day); the newest whose hashes
 match decides.
 
@@ -633,7 +635,10 @@ The lint runs `validate_record` on every record and its own rules on top (`revie
 critical or major) and list the record's `findings` beside the packet image each one's `view` names.
 
 **Limits.** The separate-reviewer rule is only as strong as `CAD_AGENT_ACTOR`: a harness that gives two agents the
-same value, or one agent two values, defeats it. A sign-off binds part hashes, not the dossier text: editing a card's
+same value, or one agent two values, defeats it. The per-part builder is carried from the geometry record a build
+replaces: a build into a directory without that record (a fresh checkout where `exports/` is not committed) records
+its own actor for every part, so a reviewer who builds there becomes the builder and is refused (the safe direction;
+commit the record, or review without rebuilding). A sign-off binds part hashes, not the dossier text: editing a card's
 function or a decision after a sign-off does not void it (the packet goes stale, so the next sign-off needs a new
 one). The reviewer judged renders and measurements of the model; a signed-off section is not shown to fit, hold or
 work.

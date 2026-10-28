@@ -274,9 +274,9 @@ def _e(v: Any) -> str:
     return html.escape("" if v is None else str(v))
 
 
-def _page(title: str, body: str, accent: str, depth: int = 0, theme: str = "light") -> str:
+def _page(title: str, body: str, accent: str, depth: int = 0, theme: str = "light", extra_css: str = "") -> str:
     from cadagent.review import REVIEW_CSS
-    css = REVIEW_CSS + _CSS.replace("ACCENT", accent) + _NAV_CSS + (_HUD if theme == "hud" else "")
+    css = REVIEW_CSS + _CSS.replace("ACCENT", accent) + extra_css + _NAV_CSS + (_HUD if theme == "hud" else "")
     fonts = f'<link rel="stylesheet" href="{"../" * (depth + 1)}_cadagent/kit/vendor/fonts/fonts.css">' if theme == "hud" else ""
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f"<title>{_e(title)}</title>{fonts}<style>{css}</style></head><body>{body}{_MERMAID}"
@@ -291,9 +291,9 @@ def _md_inline(text: str) -> str:
     return re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", r'<a href="\2">\1</a>', t)
 
 
-def _gates_stat(exports_dir: Optional[Path]) -> str:
-    """The integrity gates on the overview: verdicts that pass on the current geometry, of all written (the gates
-    page itself is T15's). Only for a project that uses the gates (``gates_exports`` given)."""
+def _gates_stat(exports_dir: Optional[Path], href: str = "") -> str:
+    """The integrity gates on the overview: verdicts that pass on the current geometry, of all written, linked to
+    the gates page when it is built. Only for a project that uses the gates (``gates_exports`` given)."""
     if exports_dir is None:
         return ""
     from cadagent.gates.run import site_counts
@@ -301,15 +301,18 @@ def _gates_stat(exports_dir: Optional[Path]) -> str:
     if c is None:
         return ""
     stale = f" ({c['stale']} stale)" if c["stale"] else ""
-    return f'<div class="stat"><b>{c["pass"]} / {c["total"]}</b><span>integrity gates pass{stale}</span></div>'
+    inner = f'<b>{c["pass"]} / {c["total"]}</b><span>integrity gates pass{stale}</span>'
+    return f'<a class="stat" href="{_e(href)}">{inner}</a>' if href else f'<div class="stat">{inner}</div>'
 
 
 def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: str,
                auto_nav: Optional[Callable[[], List[Dict[str, str]]]] = None,
-               gates_exports: Optional[Path] = None) -> Dict[str, Any]:
+               gates_exports: Optional[Path] = None, review_project: Any = None) -> Dict[str, Any]:
     """Write ``<root>/site/``. Returns a summary (pages written, counts). ``auto_nav`` gives the top bar when the
     config has no ``nav`` (cad-agent passes :func:`default_nav` for the project). ``gates_exports``: the project's
-    exports directory when it uses the integrity gates, for the gates stat on the overview."""
+    exports directory when it uses the integrity gates, for the gates stat on the overview. ``review_project``: the
+    loaded project (``CadProject``) when it has a dossier or gates; its review pages are written to
+    ``site/review/`` (:mod:`cadagent.site_review`) and linked from the overview."""
     root = Path(root).resolve()
     cfg = site_config(raw_site, default_title)
     if not cfg.nav and auto_nav:
@@ -329,6 +332,13 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
                 f'<p class="tag"><code>{_e(rel)}</code></p></div></header>'
                 f'<main class="wrap"><article class="doc">{render_markdown(text, p, root, page_map)}</article></main>')
         (out / "pages" / page_map[rel]).write_text(_page(f"{title} · {cfg.title}", body, cfg.accent, depth=1, theme=cfg.theme))
+
+    review_block, review_summary = "", None
+    if review_project is not None:
+        from cadagent import site_review
+        if site_review.enabled(review_project):
+            review_summary = site_review.build_review_pages(review_project, cfg, out)
+            review_block = site_review.overview_html(review_summary.pop("data"))
 
     milestones = _load(root, cfg.milestones) or []
     decisions = _load(root, cfg.decisions) or []
@@ -356,7 +366,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
              f'<div class="stat"><b>{_e(active["id"]) if active else "—"}</b><span>working on now{": " + _e(active["title"]) if active else ""}</span></div>'
              f'<div class="stat"><b>{len(decisions)}</b><span>decisions ({open_dec} open)</span></div>'
              f'<div class="stat"><b>{len(designs)}</b><span>designs evaluated</span></div>'
-             + _gates_stat(gates_exports) +
+             + _gates_stat(gates_exports, "review/gates.html" if review_summary else "") +
              f'<div class="stat"><b>{_e(log[0]["date"]) if log else "—"}</b><span>last change</span></div></div>')
 
     ms = "".join(
@@ -429,7 +439,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
     section = lambda t, body, empty: f'<h2 id="{slug(t)}">{t}</h2>' + (body or f'<p class="tag">{empty}</p>')
     from cadagent.review import review_html
     review = review_html(root, _load(root, cfg.review) or {})
-    main = (f'<main class="wrap">{stats}{review}'
+    main = (f'<main class="wrap">{stats}{review}{review_block}'
             + section("Progress", f'<ul class="milestones">{ms}</ul>' if ms else "", "No milestones file yet.")
             + section("Designs", f'<div class="grid">{ds}</div>' if ds else "", "No designs evaluated yet.")
             + section("Decisions", "".join(decision(d) for d in decs), "No decisions recorded yet.")
@@ -439,24 +449,30 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
     (out / "index.html").write_text(_page(cfg.title, nav_html(cfg, "overview", "../") + head + main, cfg.accent, theme=cfg.theme))
     # the same top bar for the project's own pages: they fetch site/nav.json and render it with webkit/appnav.js
     (out / "nav.json").write_text(json.dumps({"title": cfg.title, "nav": cfg.nav}, indent=1) + "\n")
-    return {"site": str(out), "pages": len(pages), "milestones": len(milestones), "decisions": len(decisions),
-            "designs": len(designs), "progress_pct": pct}
+    summary = {"site": str(out), "pages": len(pages), "milestones": len(milestones), "decisions": len(decisions),
+               "designs": len(designs), "progress_pct": pct}
+    if review_summary is not None:
+        summary["review"] = review_summary
+    return summary
 
 
 # ----------------------------------------------------------------------------- serving
 
-def default_nav(root: Path, html_pages: Optional[List[str]] = None, site_pages: Optional[List[str]] = None) -> List[Dict[str, str]]:
+def default_nav(root: Path, html_pages: Optional[List[str]] = None, site_pages: Optional[List[str]] = None,
+                extra: Optional[List[Dict[str, str]]] = None) -> List[Dict[str, str]]:
     """The top bar when the project configures none: the overview, the rendered documents, the 3D model, then each
     project HTML page (``cad: html_pages``, plus the cad-agent report, the simulation report, the design comparison
     and the search leaderboard when present), titled by its ``<title>``. Every page the local server sends gets this
-    bar, so the pages link to each other."""
+    bar, so the pages link to each other. ``extra`` tabs (the review pages, :func:`cadagent.site_review.nav_entries`)
+    come before the HTML pages."""
     root = Path(root)
     nav = [{"id": "overview", "title": "Overview", "href": "site/"}]
     if page_files(root, list(site_pages or [])):
         nav.append({"id": "docs", "title": "Docs", "href": "site/#documents"})
     if (root / "exports" / "view" / "view.json").is_file():
         nav.append({"id": "model", "title": "3D model", "href": KIT_URL.strip("/") + "/viewer.html"})
-    seen = set()
+    nav += list(extra or [])
+    seen = {n["href"] for n in nav}
     for rel in list(html_pages or []) + ["docs/cad-agent-report.html", "preview/simulation.html",
                                          "exports/explore/compare.html", "exports/explore/search/leaderboard.html"]:
         rel = posixpath.normpath(str(rel).replace("\\", "/")).lstrip("/")
@@ -493,12 +509,13 @@ def inject_nav(page: bytes, request_path: str, nav: List[Dict[str, str]]) -> byt
     return page[:i] + tag + page[i:] if i >= 0 else page + tag
 
 
-def _stale(root: Path, cfg: SiteConfig) -> bool:
+def _stale(root: Path, cfg: SiteConfig, extra: Optional[Callable[[], List[Path]]] = None) -> bool:
     index = root / SITE_DIR / "index.html"
     if not index.is_file():
         return True
     built = index.stat().st_mtime
-    return any(p.stat().st_mtime > built for p in sources(root, cfg))
+    files = sources(root, cfg) + (extra() if extra else [])
+    return any(p.is_file() and p.stat().st_mtime > built for p in files)
 
 
 LIVE_URL = "/_cadagent/changes"
@@ -542,13 +559,17 @@ class _Watcher:
 
 def serve_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: str, host: str = "127.0.0.1",
                port: int = 0, auto_nav: Optional[Callable[[], List[Dict[str, str]]]] = None,
-               gates_exports: Optional[Path] = None) -> Tuple[ThreadingHTTPServer, str]:
-    """Serve the project root; ``/`` redirects to the site, which rebuilds when a source changed. Every HTML page
-    goes out with the top bar: the config's ``nav``, else ``auto_nav()``, worked out again at most every 2 s so a
-    report written while the server runs gets its tab."""
+               gates_exports: Optional[Path] = None, review_project: Any = None) -> Tuple[ThreadingHTTPServer, str]:
+    """Serve the project root; ``/`` redirects to the site, which rebuilds when a source changed (the review
+    pages' sources included). Every HTML page goes out with the top bar: the config's ``nav``, else ``auto_nav()``,
+    worked out again at most every 2 s so a report written while the server runs gets its tab."""
     root = Path(root).resolve()
     cfg = site_config(raw_site, default_title)
-    build_site(root, raw_site, default_title, auto_nav, gates_exports)
+    build_site(root, raw_site, default_title, auto_nav, gates_exports, review_project)
+    review_sources = None
+    if review_project is not None:
+        from cadagent import site_review
+        review_sources = lambda: site_review.sources(review_project) if site_review.enabled(review_project) else []  # noqa: E731
     nav_cache = {"at": 0.0, "nav": cfg.nav}
 
     def current_nav() -> List[Dict[str, str]]:
@@ -561,6 +582,10 @@ def serve_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
     watch = _Watcher(root, cfg.live_reload or {})
 
     class Handler(SimpleHTTPRequestHandler):
+        # the review pages link verdicts (.md), the graph (.dot) and the dossier (.yaml): show them as text
+        extensions_map = {**SimpleHTTPRequestHandler.extensions_map, **{
+            ext: "text/plain; charset=utf-8" for ext in (".md", ".dot", ".yaml", ".yml", ".log")}}
+
         def do_GET(self):  # noqa: N802 (http.server API)
             if self.path.startswith(LIVE_URL):          # live reload: the newest change under the watched folders
                 body = json.dumps({"stamp": watch.stamp()}).encode()
@@ -575,8 +600,8 @@ def serve_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
                 self.send_header("Location", f"/{SITE_DIR}/")
                 self.end_headers()
                 return
-            if self.path.startswith(f"/{SITE_DIR}/") and _stale(root, cfg):
-                build_site(root, raw_site, default_title, auto_nav, gates_exports)
+            if self.path.startswith(f"/{SITE_DIR}/") and _stale(root, cfg, review_sources):
+                build_site(root, raw_site, default_title, auto_nav, gates_exports, review_project)
             if self._send_with_nav():
                 return
             super().do_GET()

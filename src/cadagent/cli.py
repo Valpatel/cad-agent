@@ -196,20 +196,28 @@ def cmd_serve(project: CadProject, args: argparse.Namespace) -> int:
 
 def cmd_site(project: CadProject, args: argparse.Namespace) -> int:
     from cadagent.site import build_site, default_nav, serve_site
+    from cadagent.site_review import nav_entries
 
     site = project.site
-    # without a configured `nav`, every page still gets a top bar: the overview, docs, 3D model and the HTML pages
-    auto_nav = lambda: default_nav(project.root, project.html_pages, site.get("pages"))  # noqa: E731
     from cadagent.gates.run import enabled
-    gates_exports = project.exports_dir if enabled(project) else None
+    review = project if enabled(project) else None     # a dossier or gates project gets the review pages
+    # without a configured `nav`, every page still gets a top bar: the overview, docs, 3D model, the review pages
+    # and the HTML pages
+    auto_nav = lambda: default_nav(project.root, project.html_pages, site.get("pages"), nav_entries(project))  # noqa: E731
+    gates_exports = project.exports_dir if review is not None else None
     if not getattr(args, "serve", False):
-        summary = build_site(project.root, site, project.title, auto_nav, gates_exports)
+        summary = build_site(project.root, site, project.title, auto_nav, gates_exports, review)
         _say(f"site: {summary['site']}/index.html ({summary['pages']} pages, {summary['milestones']} milestones, "
              f"{summary['decisions']} decisions, {summary['designs']} designs)")
+        if "review" in summary:
+            r = summary["review"]
+            graph = {"graphviz": "drawn by Graphviz", "python": "drawn by the built-in layout"}.get(r["graph"], "none yet")
+            _say(f"review: {summary['site']}/review/ ({r['sections']} section page(s), requirements, gates; "
+                 f"connectivity graph {graph})")
         return 0
     host = getattr(args, "host", None) or project.serve.host
     port = project.serve.port if getattr(args, "port", None) is None else args.port
-    server, url = serve_site(project.root, site, project.title, host, port, auto_nav, gates_exports)
+    server, url = serve_site(project.root, site, project.title, host, port, auto_nav, gates_exports, review)
     project.preview_dir.mkdir(parents=True, exist_ok=True)
     (project.preview_dir / "site-url.txt").write_text(url + "\n")
     print(url, flush=True)

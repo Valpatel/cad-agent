@@ -1,0 +1,119 @@
+"""The verdict file every gate writes: pass/warn/fail per check, the evidence, and the assumptions.
+
+Shape (``schema: cadagent.gate/1``), compatible with a ``cad.checks`` entry in
+``cad-agent.yaml`` (``pass`` is the top-level boolean the report reads)::
+
+    {"schema": "cadagent.gate/1", "gate": "wall", "pass": false, "status": "fail",
+     "counts": {"pass": 3, "warn": 0, "fail": 1},
+     "checks": [{"id": "wall:hopper", "status": "fail", "message": "...", "parts": ["hopper"],
+                 "evidence": {...}}, ...],
+     "findings": [<the checks that are not pass>],
+     "exclusions": [{"parts": [...], "reason": "..."}],
+     "limits": {"wall_mm": 2.4, ...},
+     "assumptions": ["what was sampled, the tolerances, what is not checked"],
+     "physical_fit_verified": false}
+
+Rules: ``pass`` is false when any check fails *or when no check ran* (an empty gate
+proves nothing). ``warn`` never fails the gate. A verdict must state at least one
+assumption. ``physical_fit_verified`` is always false: a gate checks the model.
+The file has no timestamp, so an unchanged run rewrites identical bytes.
+"""
+
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
+
+SCHEMA = "cadagent.gate/1"
+STATUSES = ("pass", "warn", "fail")
+
+
+@dataclass
+class Check:
+    """One gate result. ``evidence`` holds the numbers and witness points behind ``status``."""
+    id: str
+    status: str
+    message: str
+    parts: Sequence[str] = ()
+    evidence: Mapping[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        if self.status not in STATUSES:
+            raise ValueError(f"check {self.id!r}: status must be one of {STATUSES}, got {self.status!r}")
+        if not self.id:
+            raise ValueError("a check needs an id")
+
+    def to_dict(self) -> Dict[str, Any]:
+        out: Dict[str, Any] = {"id": self.id, "status": self.status, "message": self.message}
+        if self.parts:
+            out["parts"] = list(self.parts)
+        if self.evidence:
+            out["evidence"] = _jsonable(self.evidence)
+        return out
+
+
+def verdict(gate: str, checks: Iterable[Check], *, assumptions: Sequence[str],
+            limits: Optional[Mapping[str, Any]] = None, exclusions: Iterable[Mapping[str, Any]] = (),
+            extra: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
+    """Assemble a verdict dict (see the module docstring). ``exclusions`` are the declared intended
+    cases left out of the checks, each with its ``reason``; ``extra`` adds gate-specific keys."""
+    if not gate:
+        raise ValueError("a verdict needs a gate name")
+    assumptions = [str(a) for a in assumptions if str(a).strip()]
+    if not assumptions:
+        raise ValueError(f"gate {gate!r}: state at least one assumption (what was sampled, the tolerances)")
+    rows = [c if isinstance(c, Check) else Check(**c) for c in checks]
+    ids = [c.id for c in rows]
+    dupes = sorted({i for i in ids if ids.count(i) > 1})
+    if dupes:
+        raise ValueError(f"gate {gate!r}: duplicate check ids {dupes}")
+    excl: List[Dict[str, Any]] = []
+    for e in exclusions:
+        if not str(e.get("reason", "")).strip():
+            raise ValueError(f"gate {gate!r}: exclusion {dict(e)!r} has no reason")
+        excl.append(_jsonable(dict(e)))
+    counts = {s: sum(1 for c in rows if c.status == s) for s in STATUSES}
+    status = "fail" if counts["fail"] or not rows else ("warn" if counts["warn"] else "pass")
+    findings = [c.to_dict() for c in rows if c.status != "pass"]
+    if not rows:
+        findings.append({"id": f"{gate}:nothing-checked", "status": "fail",
+                         "message": "no check ran, so the gate proves nothing"})
+    out: Dict[str, Any] = {"schema": SCHEMA, "gate": gate, "pass": status != "fail", "status": status,
+                           "counts": counts, "checks": [c.to_dict() for c in rows], "findings": findings,
+                           "exclusions": excl, "limits": _jsonable(dict(limits or {})),
+                           "assumptions": assumptions, "physical_fit_verified": False}
+    if extra:
+        clash = set(extra) & set(out)
+        if clash:
+            raise ValueError(f"gate {gate!r}: extra keys {sorted(clash)} would overwrite the verdict")
+        out.update(_jsonable(dict(extra)))
+    return out
+
+
+def write_verdict(path: Any, data: Mapping[str, Any]) -> Path:
+    """Write a verdict dict as indented JSON (parent directories created). Returns the path."""
+    if data.get("schema") != SCHEMA or "pass" not in data:
+        raise ValueError("write_verdict expects a dict from verdict()")
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2) + "\n")
+    return path
+
+
+def _jsonable(value: Any) -> Any:
+    """Plain JSON types: tuples to lists, numpy scalars and arrays to Python, NaN refused."""
+    if isinstance(value, Mapping):
+        return {str(k): _jsonable(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple, set, frozenset)):
+        return [_jsonable(v) for v in value]
+    if hasattr(value, "tolist"):
+        return _jsonable(value.tolist())
+    if isinstance(value, float) and value != value:
+        raise ValueError("NaN in verdict evidence; report the failure instead")
+    if hasattr(value, "item") and not isinstance(value, (str, bytes)):
+        return value.item()
+    if hasattr(value, "to_dict"):
+        return _jsonable(value.to_dict())
+    return value

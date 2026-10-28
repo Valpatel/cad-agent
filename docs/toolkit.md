@@ -211,7 +211,16 @@ from cadagent.robot import (Body, combine, box_body, cylinder_body, solid_mass_p
 from cadagent.explore import (explore_config, load_configured, check_catalogue, load_design, resolve, bom,
                               load_evaluator, evaluate_design, compare_designs, comparison, write_comparison, swaps)
 from cadagent.explore.optimise import run_search
+from cadagent.gates import (Assembly, Tolerances, relation_table, relate_pair, relate, solid_interference,
+                            PairCache, shape_content_hash, Check, verdict, write_verdict)
+from cadagent.gates.wall import check_wall, wall_gate, mesh_thickness, brep_thickness, brep_thickness_near
 ```
+
+### Integrity gates (`cadagent.gates`)
+
+Assembly-level checks: the pairwise relation table (apart, touching, overlapping, contains, with witnesses and a
+content-hash pair cache), the verdict file every gate writes, and the minimum-wall gate. Reference and limits:
+[gates.md](gates.md).
 
 ### Explore and compare designs (`cadagent.explore`)
 

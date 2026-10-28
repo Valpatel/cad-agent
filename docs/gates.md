@@ -9,8 +9,9 @@ they read come from the dossier ([`dossier.md`](dossier.md)).
 prove that printed parts fit, move or hold: no tolerance stack, no print shrink, no deflection. Every verdict says
 `physical_fit_verified: false` and lists its assumptions.
 
-Status: the shared machinery (T3), the minimum-wall gate (T8), the containment gate (T5) and the gate bench (T12)
-are built. Connectivity (T4), fasteners (T6), motion (T7), assembly access (T9) and the dossier lint (T2) build on them.
+Status: the shared machinery (T3), the minimum-wall gate (T8), the connectivity gate (T4), the containment gate (T5)
+and the gate bench (T12) are built. Fasteners (T6), motion (T7), assembly access (T9) and the dossier lint (T2) build
+on them.
 
 ## The assembly and the relation table
 
@@ -55,8 +56,9 @@ offending solid pairs.
 - `Part.kind` from `result.kind(key)` (`"part"` or `"fastener"`) and `group` = the part's section;
 - every cavity through `add_cavity`, with its recorded hash;
 - `asm.joints` and `asm.fastener_axes` copied from the result for the motion and fastener gates;
-- body labels, provisionally (the open T7 question in `dossier.md`): a joint's `moving` part is its own body, and
-  fasteners whose `clamps` or `into` is that part, and parts joined to it by a `fixed` joint, join its body.
+- body labels, provisionally (the open T7 question in `dossier.md`), from `moving_bodies(joints, fasteners,
+  grounded)`: a joint's `moving` part seeds its body, which grows transitively across `fixed` joints and fasteners
+  (the fastener, what it clamps and what it threads into), never into a grounded part or a joint's `fixed` part.
 
 ### States
 
@@ -233,6 +235,100 @@ prefixed `<pose>/` when `poses` is given):
 - **Cost.** The 8-ball gate bench: about 2 s cold (the four balls on the floor are probed); 40 balls in a cone: about
   9 s cold on a loaded workstation. Every query goes through `cache` (`PairCache`), keyed on the content hashes and
   placements, so an unchanged rerun reads the cache.
+
+## Connectivity and floating parts (`cadagent.gates.connectivity`)
+
+Does every part hang on something, and is every declared connection really there?
+
+```python
+from cadagent.gates.connectivity import Declarations, connectivity_gate, connectivity_from_build, analyse, to_dot
+
+decl = Declarations.from_build(result, dossier, extra)     # build record + YAML dossier + plain-data extras
+v = connectivity_gate(Assembly.from_build(result), decl, cache=cache, out="exports/gates/connectivity.json")
+v = connectivity_from_build(result, dossier, out=...)      # the same in one call
+decl = Declarations(grounded=["base"], free={"ball": "loose in the hopper"},     # or by hand
+                    interfaces=[{"id": "I7", "between": ["hopper", "base"], "kind": "fastened", "clearance": 0.2}],
+                    joints={"I9": {"kind": "revolute", "moving": "flap", "fixed": "hopper"}},  # None: assembly.joints
+                    fasteners={"m3": {"clamps": "lid", "into": "insert_0",          # axes and length let a fastener
+                                      "axes": [((17.4, 22.4, 47), (0, 0, -1))], "length_mm": 8}},  # without a solid count
+                    contains=[{"what": "ball", "cavity": "hopper_cavity"}],      # container: the cavity's part
+                    intended_overlaps=[{"parts": ["hopper", "insert_0"], "reason": "heat-set"}],
+                    strict_interfaces=False, touch_mm=None, max_joint_gap_mm=1.0)
+```
+
+`from_build` joins: `grounded` and `free` flags, fastener axes and lengths from the build record; `gates:`
+(`grounded`, `free_parts`, `intended_overlaps`, `ignore_pairs`, `strict_interfaces`, `touch_tol_mm`) and every
+interface and card `contains` from the dossier; the same keys from `extra` (the bench passes its plain-data
+declarations there). A `contains` with `free: true` makes its items allowed-free with that as the reason.
+Interfaces declared twice are merged when equal; differing ones keep the first and warn (`duplicate:interface:<id>`).
+
+**The graph.** Nodes are the assembly's keys (instances and placed fasteners). Edges:
+
+| Edge | From |
+|---|---|
+| `contact` | the relation table: `touching`, `overlapping` or `contains` between two parts (`ignore_pairs` dropped) |
+| `contained` | an instance of a declared `contains` that lies inside its registered cavity (`relate_pair`), touching or not |
+| `fastener` | a fastener with no modelled solid whose axis, from the seat over `length_mm`, comes within `touch_mm` of what it clamps and of what it threads into (`fastener_reach`) |
+| `joint` | every joint instance pair, with the measured gap and whether it `holds` |
+
+**Bodies.** Each non-fixed joint's `moving` instances seed a moving body, which grows transitively across `fixed`
+joints and fastener declarations (the fastener, what it clamps, what it threads into). A link from a body into a
+grounded part, a joint's `fixed` part or another body fails `bodies:<b>` (a moving part bolted to what it moves
+against). Parts labelled into a moving body by the assembly keep that label; everything else is the static frame.
+Group ids are `static` and `body:<name>`.
+
+**Rigid edges.** An edge holds something up when both ends are in one group, neither end is an allowed-free part,
+and it is not a joint (a `fixed` joint counts when it holds). A contact across groups (the arm on its stop) or with a
+loose part is kept in the graph but holds nothing up: a static part touching only a moving body floats (it stays
+behind when the body moves), and so does a part resting only on a loose ball.
+
+**Joints hold when measured.** A non-fixed joint holds a moving instance when the instance is within the declared
+`clearance` of an interface with the joint's id, else within `max_joint_gap_mm` (1 mm), of a `fixed` instance; a
+`fixed` joint needs contact or a declared clearance. Every instance is checked. A component is grounded when it
+holds a grounded part, or a held moving instance whose `fixed` part is in a grounded component (chains followed).
+
+**Checks** (ids in the verdict):
+
+| Id | Fails when |
+|---|---|
+| `ground` | no grounded part, a grounded name not a part in the assembly (sections are refused), or a grounded part in a moving body. `ground:<name>` warns when a grounded part has several instances (each is ground) |
+| `connect:static`, `connect:body:<b>` | a component of the group is not grounded. One check per group; each island has its witness: the nearest grounded part (same group first), the exact gap, both closest points, what it touches across bodies or among loose parts, and the joints that do not hold it |
+| `joint:<id>` | a party is not a part; a moving instance not within its limit of a `fixed` instance; the `fixed` part in the moving body itself or not grounded; a `fixed` joint across two bodies |
+| `bodies:<b>`, `body-label:<key>` | a declared rigid link ties a moving body to ground, a joint's fixed part or another body (fail); a part's given moving-body label differs from the derived one (warn) |
+| `interface:<id>` | not two parties; a mechanism kind (`revolute`, `slider`, `cylindrical`, `planar`, `ball`) with no joint of that id, or one between other parts; any other geometric kind with no contact between its parties and no gap within `clearance` (`gap` needs a `clearance`). Parties are part names, instance keys or section ids; one contact between any instances realises it |
+| `fastener:<name>` | a modelled solid that does not touch what it clamps or what it threads into; a fastener without a solid whose measured axis misses either. Without a solid and without axes or length it warns and joins nothing |
+| `contact:<a>\|<b>` | a contact no interface, joint (its parts or `intended_contacts`), fastener, `contains` or intended overlap declares, and neither part free: a **warning**, a failure with `strict_interfaces` |
+| `free:<part>` | an allowed-free part with no reason (fail; it is then checked like any part) or one naming nothing (warning) |
+| `relation:<a>\|<b>` | the kernel could not decide the pair (`unknown`) |
+| `tolerances` | (warning) the declarations' `touch_mm` differs from the given table's, which is used |
+
+An island made only of allowed-free parts is an `exclusion` with their reasons. `not_checked` lists what the gate
+could not check: non-geometric interfaces (`electrical`, `thermal`, `fluid`, `other`), fasteners without a solid
+that could not be measured, `contains` whose cavity is not registered, interfaces whose pairs are all ignored, and
+pairs the table skipped. The verdict's other extra keys: `graph` (`nodes` with `group`, `body_given`, component,
+`grounded`, `free`, `held`, `floating`; `edges` with `rigid` and `declared_by`; `components` with `grounded` and
+`via_joint`; `groups`; `missing`: unrealised declarations), `floating`, `undeclared_contacts`, `unrealised` and
+`relation_stats`. `to_dot(verdict)` / `write_dot(verdict, path)` give a Graphviz graph (one cluster per group,
+floating parts red, joints that do not hold and unrealised declarations red); `connectivity_gate(out=...)` writes it
+beside the verdict as `.dot`. Render it with `dot -Tsvg` where Graphviz is installed; the toolkit does not need it.
+
+A relation table passed in (`table=`) is read, never changed: witness and joint queries go through `relate_pair`
+and the cache. `analyse(nodes, relations, declarations, contained=..., measure=..., lower_bounds=...,
+fastener_reach=...)` is the kernel-free core: it runs on any relation rows, which is how the rules are tested in core
+CI.
+
+Limits. The graph is the model's geometry within the relation tolerances: contact in the model does not prove that
+printed parts meet, stay put or carry load. A joint within its allowed gap is trusted as a connection; the gap is
+reported. A fastener without a solid is judged by its axis line alone (no thread, no head seat). A multi-instance
+grounded part makes every instance ground. Body labels are derived from declarations, not from motion. Witness search
+spends at most three extra exact queries per island or interface on pairs the table did not measure; a
+joint measures every moving × fixed instance pair.
+
+**Where this differs from the plan (§4.2).** The plan's single graph becomes per-group graphs, so a cross-body or
+loose-part contact cannot hold a part up; items in a declared cavity count as held (`contained`); a joint is a
+connection only within a measured gap; a mechanism interface is realised by its joint, not by contact; contacts
+involving a free part are not reported as undeclared; the graph is exported as DOT for the site (T15) to render as
+SVG.
 
 ## The gate bench (`tests/fixtures/gate_bench/build.py`)
 

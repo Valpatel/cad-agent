@@ -165,7 +165,7 @@ Details are in [`CONTRIBUTING.md`](CONTRIBUTING.md). Rules for AI agents are in 
 | [`tests/`](tests/) | The test suite, which also runs in CI |
 | [`docs/`](docs/) | [`toolkit.md`](docs/toolkit.md), the guide to the toolkit, [`explore.md`](docs/explore.md), design exploration, and [`dossier.md`](docs/dossier.md), the design dossier |
 | [`examples/`](examples/) | Worked examples: [`explore-two-wheel`](examples/explore-two-wheel/) compares robot configurations |
-| [`skills/`](skills/) | Agent skills: the section-by-section design process ([`design-process`](skills/design-process/SKILL.md)) and McMaster parts |
+| [`skills/`](skills/), [`agents/`](agents/) | Agent skills and subagents for Claude Code and Codex: work tracking, PR review, remote runs, the section-by-section design process ([`design-process`](skills/design-process/SKILL.md)) and McMaster parts ([agent workflow](docs/agent-workflow.md); `cad-agent agents install`) |
 | [`lessons/`](lessons/) | Rules mined from design sessions, with their sources |
 | [`research/`](research/) | Landscape surveys, including the simulation tools |
 | [`upstreams/`](upstreams/), [`vendor/`](vendor/) | The tool registry and the vendored, pinned upstreams |

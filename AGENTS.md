@@ -1,6 +1,11 @@
 # Rules for AI agents working in this repo
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md). Other agent sessions use and change this repo at the same time, so:
+Read [CONTRIBUTING.md](CONTRIBUTING.md). Follow the agent workflow kit ([docs/agent-workflow.md](docs/agent-workflow.md);
+install it with `cad-agent agents install`): the `cad-work-tracking`, `cad-pr-review` and `cad-remote-runs` skills and the
+`cad-pr-reviewer` and `cad-resume` subagents. Assume the session can end at any time: every piece of work has a
+GitHub issue, is pushed in clean commits as it goes and has an early draft PR, so another computer can pick it up.
+
+Other agent sessions use and change this repo at the same time, so:
 
 - **Never push to `main` or `dev`**, and never force-push a branch you did not create. Both are protected.
 - **Work in your own worktree** on a `feat/`, `fix/` or `ci/` branch from `origin/dev`

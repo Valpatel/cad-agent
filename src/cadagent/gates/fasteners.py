@@ -644,7 +644,8 @@ def evaluate(spec: FastenerSpec, measurement: Mapping[str, Any], options: Fasten
         if length <= t_start:
             probs.append(f"the screw stops {t_start - length:.2f} mm short of the thread in {spec.into}")
         else:
-            probs.append(f"{engage:.2f} mm of thread in {spec.into}" + (f" ({engage / pitch:.1f} threads)" if pitch else "")
+            probs.append(f"{engage:.2f} mm of thread in {spec.into}"
+                         + (f" ({engage / pitch:.1f} threads)" if pitch else "")
                          + f", under the minimum {need:.2f} mm ({need_src})")
     msg = "; ".join(probs + warns) or (f"{engage:.2f} mm engaged in {spec.into}" +
                                        (f" ({engage / pitch:.1f} threads)" if pitch else "") + f", minimum {need:.2f}")
@@ -669,7 +670,8 @@ def evaluate(spec: FastenerSpec, measurement: Mapping[str, Any], options: Fasten
                     continue                       # no pilot hole: the holes check's
                 if a < length - 1e-6:
                     parts.add(k)
-                    probs.append(f"the screw runs {min(b, length) - a:.2f} mm into {k} (t {a:.2f}..{min(b, length):.2f})"
+                    end = min(b, length)
+                    probs.append(f"the screw runs {end - a:.2f} mm into {k} (t {a:.2f}..{end:.2f})"
                                  + (", past its thread" if role(k) == "into" else ""))
                     hit_at = a if hit_at is None else min(hit_at, a)
                 else:
@@ -725,7 +727,8 @@ def evaluate(spec: FastenerSpec, measurement: Mapping[str, Any], options: Fasten
                      f"{float(spec.thread_start_mm):g}: recompute the stack")
     if tivs and spec.thread_depth_mm is not None and abs((thread_end - t_start) - float(spec.thread_depth_mm)) > \
             o.stack_tol_mm:
-        warns.append(f"{thread_end - t_start:.2f} mm of thread modelled, the record says {float(spec.thread_depth_mm):g}")
+        warns.append(f"{thread_end - t_start:.2f} mm of thread modelled, the record says "
+                     f"{float(spec.thread_depth_mm):g}")
     if t_start is not None and need is not None:
         lo_fit = t_start + need
         stop = ev_next = None
@@ -744,7 +747,8 @@ def evaluate(spec: FastenerSpec, measurement: Mapping[str, Any], options: Fasten
     if length is not None and not _stock_fit(length, stock):
         warns.append(f"length {length:g} mm is not a common stock length")
     if lo_fit is not None:
-        ev["stock_that_fits_mm"] = [s for s in stock if s >= lo_fit - 1e-6 and (hi_fit is None or s <= hi_fit + 1e-6)][:6]
+        ev["stock_that_fits_mm"] = [s for s in stock if s >= lo_fit - 1e-6
+                                    and (hi_fit is None or s <= hi_fit + 1e-6)][:6]
     ev.update(length_mm=_r(length), record_length_mm=spec.length_mm,
               thread_depth_required_mm=_r(length - t_start) if length is not None and t_start is not None else None)
     msg = "; ".join(probs + warns) or (f"{length:g} mm fits the stack" + (
@@ -762,8 +766,9 @@ def evaluate(spec: FastenerSpec, measurement: Mapping[str, Any], options: Fasten
     row = {"fastener": inst, "name": spec.name, "key": spec.key, "clamps": spec.clamps, "stack": list(spec.stack),
            "into": spec.into, "seat": [_r(c) for c in o_] if o_ else None, "direction": list(u_) if u_ else None,
            "thread_start": ts_pt, "grip_mm": _r(grip), "thread_start_mm": _r(t_start),
-           "thread_start_record_mm": spec.thread_start_mm, "thread_depth_mm": _r(thread_end - t_start) if tivs else None,
-           "engagement_mm": _r(engage), "engagement_threads": _r(engage / pitch, 2) if engage is not None and pitch else None,
+           "thread_start_record_mm": spec.thread_start_mm,
+           "thread_depth_mm": _r(thread_end - t_start) if tivs else None, "engagement_mm": _r(engage),
+           "engagement_threads": _r(engage / pitch, 2) if engage is not None and pitch else None,
            "min_engagement_mm": _r(need), "length_mm": _r(length),
            "stock": bool(length is not None and _stock_fit(length, stock)),
            "fits_mm": [_r(lo_fit), _r(hi_fit)] if lo_fit is not None else None,
@@ -844,7 +849,8 @@ def table_markdown(data: Mapping[str, Any]) -> str:
         length = num(r.get("length_mm")) + ("" if r.get("stock") or r.get("length_mm") is None else " (uncommon)")
         tool = (r.get("tool") or "–") + (f" (step {r['step']})" if r.get("step") is not None else "")
         status = r["status"] + (f": {', '.join(r['failed'])}" if r.get("failed") else "")
-        out.append(f"| {r['fastener']} | {' + '.join(r['stack'])} → {r['into']} | {coord(r.get('seat'), r.get('direction'))}"
+        out.append(f"| {r['fastener']} | {' + '.join(r['stack'])} → {r['into']} | "
+                   f"{coord(r.get('seat'), r.get('direction'))}"
                    f" | {coord(r.get('thread_start'), r.get('direction'))} | {num(r.get('grip_mm'))} | {eng} | "
                    f"{num(r.get('min_engagement_mm'))} | {length} | {fit} | {num(r.get('thread_depth_required_mm'))} | "
                    f"{num(r.get('tip_clearance_mm'))} | {tool} | {status} |")
@@ -1164,7 +1170,8 @@ def _tool_sweep(assembly: Any, spec: FastenerSpec, i: int, m: Mapping[str, Any],
     return out
 
 
-def fastener_gate(assembly: Any, fasteners: Any, *, steps: Iterable[Any] = (), tools: Optional[Mapping[str, Any]] = None,
+def fastener_gate(assembly: Any, fasteners: Any, *, steps: Iterable[Any] = (),
+                  tools: Optional[Mapping[str, Any]] = None,
                   options: FastenerOptions = FastenerOptions(), tol: Any = None, cache: Any = None,
                   intended_overlaps: Iterable[Mapping[str, Any]] = (), out: Any = None) -> Dict[str, Any]:
     """Run the fastener gate and return (with ``out``, write, plus a ``.md`` table beside it) the verdict.

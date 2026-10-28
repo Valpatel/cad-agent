@@ -60,8 +60,8 @@ def failed(checks):
 
 def test_clean_stack_passes_every_check_and_fills_the_lesson_04_row():
     checks, row = run()
-    assert {k: c.status for k, c in checks.items()} == {k: "pass" for k in
-                                                         ("seat", "stack", "holes", "engagement", "tip", "length", "tool")}
+    assert {k: c.status for k, c in checks.items()} == {
+        k: "pass" for k in ("seat", "stack", "holes", "engagement", "tip", "length", "tool")}
     assert row["grip_mm"] == 3.0 and row["thread_start_mm"] == 3.0 and row["engagement_mm"] == 5.0
     assert row["engagement_threads"] == 10.0 and row["min_engagement_mm"] == 1.5
     assert row["thread_depth_required_mm"] == 5.0 and row["tip_clearance_mm"] == 1.0
@@ -242,7 +242,8 @@ def test_tool_blocked_missing_unstepped_and_swing():
 
 def test_countersunk_head_uses_contact_not_the_annulus():
     flat = spec(head="flat")
-    checks, _ = run(flat, meas(seat_contact={"state": "touching", "gap_mm": 0.0}, annulus={"radius_mm": 2, "lines": []}))
+    checks, _ = run(flat, meas(seat_contact={"state": "touching", "gap_mm": 0.0},
+                               annulus={"radius_mm": 2, "lines": []}))
     assert checks["seat"].status == "pass"
     checks, _ = run(flat, meas(seat_contact={"state": "apart", "gap_mm": 0.4}))
     assert "0.400 mm off lid" in checks["seat"].message

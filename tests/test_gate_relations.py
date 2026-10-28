@@ -194,14 +194,43 @@ def test_synthetic_100_parts_under_5_seconds():
 # ----------------------------------------------------------------------------- cache
 
 @needs_cad
-def test_shape_hash_is_content_based_and_ignores_triangulation():
-    from cadagent.gates import shape_hash
+def test_content_hash_is_the_shared_evidence_function_and_bound_to_content():
+    from cadagent.evidence import shape_content_hash
+    from cadagent.gates import Assembly
     a, b = box(1, 2, 3), box(1, 2, 3)
-    assert shape_hash(a) == shape_hash(b)
-    before = shape_hash(a)
-    a.tessellate(0.1)
-    assert shape_hash(a) == before
-    assert shape_hash(box(1, 2, 3.001)) != before
+    assert shape_content_hash(a) == shape_content_hash(b)
+    assert shape_content_hash(box(1, 2, 3.001)) != shape_content_hash(a)
+    asm = Assembly()
+    assert asm.add("a", a).content_hash == shape_content_hash(a)
+    recorded = "ab" * 32
+    assert asm.add("b", b, content_hash=recorded).content_hash == recorded       # never re-hashed
+    with pytest.raises(ValueError, match="sha256"):
+        asm.add("c", box(1, 1, 1), content_hash="not-a-hash")
+
+
+@needs_cad
+def test_read_back_shapes_keep_the_cache_warm_through_recorded_hashes(tmp_path):
+    """A shape read back from BREP re-hashes differently; the hash recorded at build time does not."""
+    import io
+    from cadagent.evidence import shape_content_hash
+    from cadagent.gates import Assembly
+    built = {"a": box(5, 5, 5).rotate(cq.Vector(), cq.Vector(0, 0, 1), 30).moved(cq.Location(cq.Vector(1.1, 2.2, 0))),
+             "b": box(5, 5, 5, (5, -3, 0))}
+    recorded = {n: shape_content_hash(s) for n, s in built.items()}
+
+    def read_back(shape):
+        buf = io.BytesIO()
+        shape.exportBrep(buf)
+        buf.seek(0)
+        return cq.Shape.importBrep(buf)
+
+    cold = relation_table(Assembly(built), cache=PairCache(tmp_path))
+    assert cold.stats["kernel_queries"] == 1
+    loaded = Assembly()
+    for n, s in built.items():
+        loaded.add(n, read_back(s), content_hash=recorded[n])
+    warm = relation_table(loaded, cache=PairCache(tmp_path))
+    assert warm.stats["cache_hits"] == 1 and warm.stats["kernel_queries"] == 0
 
 
 @needs_cad
@@ -209,12 +238,12 @@ def test_cache_hit_skips_the_kernel_and_a_moved_part_requeries_only_its_pairs(tm
     from cadagent.gates import Assembly, relation_table
     shapes = {"base": box(30, 30, 2), "a": box(5, 5, 5, (0, 0, 2)), "b": box(5, 5, 5, (5, 0, 2)),
               "c": box(5, 5, 5, (20, 20, 2))}
-    from cadagent.gates import shape_hash
-    before = {n: shape_hash(v) for n, v in shapes.items()}
+    from cadagent.gates import shape_content_hash
+    before = {n: shape_content_hash(v) for n, v in shapes.items()}
     cache = PairCache(tmp_path / "cache")
     cold = relation_table(Assembly(shapes), cache=cache)
     assert cold.stats["kernel_queries"] == cold.stats["candidates"] == 4
-    assert {n: shape_hash(v) for n, v in shapes.items()} == before     # booleans run non-destructive
+    assert {n: shape_content_hash(v) for n, v in shapes.items()} == before     # booleans run non-destructive
 
     def no_kernel(*args, **kwargs):
         raise AssertionError("the kernel ran on a cached pair")

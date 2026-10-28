@@ -113,6 +113,15 @@ def verify_3mf(path: Path, vertices: np.ndarray, faces: np.ndarray) -> Dict[str,
         "ok": bool(triangles_match and watertight and volume_ok),
     }
 
+def _entry(member: str) -> zipfile.ZipInfo:
+    """A zip entry with a fixed date and mode, so the same mesh always gives the same
+    bytes (the slice report keys each part on its 3MF's sha256)."""
+    info = zipfile.ZipInfo(member, date_time=(1980, 1, 1, 0, 0, 0))
+    info.compress_type = zipfile.ZIP_DEFLATED
+    info.external_attr = 0o644 << 16
+    return info
+
+
 def write_3mf(
     path: Path,
     vertices: np.ndarray,
@@ -126,9 +135,9 @@ def write_3mf(
     placed = center_on_bed(vertices, bed_xy)
     faces = np.asarray(faces, dtype=np.int64)
     with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr("[Content_Types].xml", CONTENT_TYPES)
-        z.writestr("_rels/.rels", RELS)
-        z.writestr("3D/3dmodel.model", model_xml(placed, faces, name))
+        for member, data in (("[Content_Types].xml", CONTENT_TYPES), ("_rels/.rels", RELS),
+                             ("3D/3dmodel.model", model_xml(placed, faces, name))):
+            z.writestr(_entry(member), data)
     report = verify_3mf(path, placed, faces)
     if not report["ok"]:
         path.unlink(missing_ok=True)

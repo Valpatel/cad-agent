@@ -10,7 +10,8 @@ The machinery here is shared by every gate (the plan, ``docs/design-process-plan
 * ``verdict(...)`` / ``write_verdict(...)``: the pass/warn/fail file with its assumptions.
 
 Gates built on it: ``cadagent.gates.wall`` (minimum wall); ``cadagent.gates.connectivity`` (floating parts,
-contacts against interfaces); ``cadagent.gates.containment`` (contents inside their container's registered cavity, per pose).
+contacts against interfaces); ``cadagent.gates.containment`` (contents inside their container's registered cavity, per pose);
+``cadagent.gates.motion`` (collisions over every joint's sampled range).
 The gates check the CAD model against declared intent; none of them proves that printed parts fit, move or hold.
 The API reference is ``docs/gates.md``. CadQuery/OCP is imported only when a query runs.
 """

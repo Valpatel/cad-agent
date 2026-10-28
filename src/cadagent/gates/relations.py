@@ -397,7 +397,7 @@ class Assembly:
         * ``Part.kind`` from ``result.kind(key)`` (``"part"`` or ``"fastener"``), ``group`` = the part's section;
         * every cavity via ``add_cavity`` with its recorded hash (its host must be a single placed part);
         * ``joints`` and ``fastener_axes`` copied onto the assembly for the motion and fastener gates;
-        * body labels, provisionally (docs/dossier.md, open for T7): ``moving_bodies``, a joint's ``moving`` part
+        * body labels from ``moving_bodies`` (final; docs/dossier.md), a joint's ``moving`` part
           seeds its body, which grows transitively across ``fixed`` joints and fasteners (the fastener, what it
           clamps and what it threads into), never into a grounded part or a joint's ``fixed`` part.
         """

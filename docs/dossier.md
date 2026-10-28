@@ -356,9 +356,11 @@ containment uses `cavities` and the instances of `contains[].what`; the fastener
 numbers, placed solids) and the steps; the motion gate uses `joints` (axis, range, `intended_contacts`, `samples`,
 else `gates.motion_samples`); the assembly gate uses the steps. Pair caches key on the recorded hashes.
 
-Open for the motion gate (T7): a joint names one `moving` part, while plan §4.5 poses "the moving subtree". Until a
-`carries=[...]` declaration exists, the rule to adopt is that fasteners whose `clamps` or `into` is the moving part,
-and parts joined to it by a `fixed` joint, move with it.
+What moves with a joint (settled, final): a joint names one `moving` part, and its body is the transitive closure
+from it over `fixed` joints and fastener declarations (the fastener, what it clamps and what it threads into),
+stopped at grounded parts and at any joint's `fixed` part (`cadagent.gates.relations.moving_bodies`, used by
+`Assembly.from_build`, the connectivity gate and the motion gate). In a chain, a child joint's `fixed` part is
+therefore its parent's moving part itself; see [`gates.md`](gates.md#motion-range-interference-cadagentgatesmotion).
 
 ### Joining cards and geometry
 

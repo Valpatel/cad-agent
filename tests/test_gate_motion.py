@@ -186,6 +186,20 @@ def test_a_chain_is_sampled_on_a_grid_and_the_child_rides_on_its_parent():
     assert [d["joint"] for d in g["density"]] == ["X", "Z"]
 
 
+def test_a_child_axis_is_carried_by_its_parent():
+    """A turret turns 90 deg about Z; an arm on it slides along the turret's +X. At 90 deg the arm's slide points
+    along world +Y and reaches the post; sliding along world +X (the wrong composition) would miss it."""
+    boxes = {"base": (-20, -20, -2, 20, 20, 0), "turret": (-4, -4, 0, 4, 4, 4), "arm": (4, -2, 0, 14, 2, 4),
+             "post": (-5, 30, 0, 5, 35, 4)}
+    joints = {"T": {"kind": "revolute", "moving": "turret", "fixed": "base", "axis": ((0, 0, 0), (0, 0, 1)),
+                    "range": [0, 90], "unit": "deg", "samples": 2},
+              "A": slider("arm", "turret", (0, 20), samples=3)}
+    v = run_motion(BoxWorld(boxes), joints)
+    f = finding(v, "collision:arm|post")
+    assert f["evidence"]["first_pose"] == "T=90deg,A=20mm"
+    assert v["groups"][0]["id"] == "T+A"
+
+
 def test_independent_joints_whose_sweeps_meet_warn_until_combined():
     boxes = {"base": (0, 0, -2, 100, 10, 0), "a": (0, 0, 0, 10, 10, 10), "b": (50, 0, 0, 60, 10, 10)}
     joints = {"A": slider("a", "base", (0, 25), samples=6), "B": slider("b", "base", (-25, 0), samples=6)}
@@ -371,3 +385,16 @@ def test_bench_seed_7_onset_brackets_the_analytic_contact_angle():
     # wedge of a corner 45 mm out is about 0.02 deg deep)
     assert hit <= onset["hit"] and onset["clear"] - hit < 0.05 and onset["hit"] - onset["clear"] < 0.025, (onset, hit)
     assert f["evidence"]["last_clear_gap_mm"] > 0 and f["evidence"]["overlap_mm3"] > 0
+
+
+def test_motion_from_build_reads_the_dossier_gates_and_lists_unmoved_contents():
+    from types import SimpleNamespace
+    from cadagent.gates.motion import motion_from_build
+    gb = _bench()
+    bench = gb.build()
+    gates = SimpleNamespace(motion_samples=5, intended_overlaps=[], ignore_pairs=[], touch_tol_mm=0.01)
+    v = motion_from_build(bench.result, SimpleNamespace(gates=gates, parts={}), bench.declarations)
+    assert v["pass"] and v["findings"] == [], v["findings"]
+    assert v["groups"][0]["density"][0]["samples"] == 5 and v["limits"]["default_samples"] == 5
+    assert v["not_checked"] == ["contains ball in hopper_cavity: not moved by I-pin-arm"]
+    assert len(v["exclusions"]) == 4                     # the screws' thread envelopes, carried from the extras

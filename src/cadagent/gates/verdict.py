@@ -17,10 +17,16 @@ Rules: ``pass`` is false when any check fails *or when no check ran* (an empty g
 proves nothing). ``warn`` never fails the gate. A verdict must state at least one
 assumption. ``physical_fit_verified`` is always false: a gate checks the model.
 The file has no timestamp, so an unchanged run rewrites identical bytes.
+
+**Inputs.** ``cad-agent gates`` adds ``inputs`` (``bind_inputs``): the digest of the geometry record the gate read
+(``geometry_digest``), the content hash of every part instance, placed fastener and cavity in it, and digests of
+the gate's declarations and options. ``stale_reason(verdict, record)`` says why a verdict no longer describes the
+current record (or that it carries no inputs), so a verdict from an earlier build is never taken as current.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -100,6 +106,85 @@ def write_verdict(path: Any, data: Mapping[str, Any]) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2) + "\n")
     return path
+
+
+# keys of the geometry record that say who built it or where, not what was built: left out of the digest, so a
+# rebuild of the same geometry by another actor, or a declaration moved to another line, keeps verdicts current
+VOLATILE_KEYS = frozenset({"actor", "declared_at", "parameters", "shapes_dir", "out_dir", "file", "hash"})
+
+
+def digest_of(value: Any) -> str:
+    """sha256 of the canonical JSON of ``value`` (sorted keys, no whitespace)."""
+    text = json.dumps(_jsonable(value), sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(text.encode()).hexdigest()
+
+
+def _strip_volatile(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {k: _strip_volatile(v) for k, v in value.items() if k not in VOLATILE_KEYS}
+    if isinstance(value, (list, tuple)):
+        return [_strip_volatile(v) for v in value]
+    return value
+
+
+def geometry_digest(record: Mapping[str, Any]) -> str:
+    """The digest of a geometry record (``exports/dossier-geometry.json``) as a gate input: every shape's content
+    hash, box and volume, the flags, joints, fasteners and steps, without ``VOLATILE_KEYS``."""
+    return digest_of(_strip_volatile(record))
+
+
+def record_hashes(record: Mapping[str, Any]) -> Dict[str, str]:
+    """``{key: content hash}`` of every part instance, placed fastener and cavity in a geometry record (the same
+    keys as ``BuildResult.content_hashes``), read from the JSON alone."""
+    out: Dict[str, str] = {}
+    for table in ("parts", "fasteners"):
+        for info in (record.get(table) or {}).values():
+            for inst in (info or {}).get("instances") or []:
+                if isinstance(inst, Mapping) and inst.get("sha256") and inst.get("key"):
+                    out[str(inst["key"])] = str(inst["sha256"])
+    for name, info in (record.get("cavities") or {}).items():
+        if isinstance(info, Mapping) and info.get("sha256"):
+            out[str(name)] = str(info["sha256"])
+    return dict(sorted(out.items()))
+
+
+def bind_inputs(data: Dict[str, Any], record: Mapping[str, Any], *, record_file: str = "",
+                declarations: Any = None, options: Any = None) -> Dict[str, Any]:
+    """Add ``inputs`` to a verdict dict (in place, and returned): what it was computed from. ``declarations`` and
+    ``options`` are digested (``digest_of``) when given, so a change to them makes the verdict stale too."""
+    inputs: Dict[str, Any] = {"geometry": {"file": record_file, "digest": geometry_digest(record),
+                                           "hashes": record_hashes(record)}}
+    if declarations is not None:
+        inputs["declarations"] = digest_of(declarations)
+    if options is not None:
+        inputs["options"] = digest_of(options)
+    data["inputs"] = inputs
+    return data
+
+
+def stale_reason(data: Mapping[str, Any], record: Optional[Mapping[str, Any]], *, declarations: Any = None,
+                 options: Any = None) -> Optional[str]:
+    """None when the verdict's ``inputs`` match ``record`` (and, when given, the declarations and options digests);
+    otherwise why not: no inputs, a different geometry (naming the keys whose content hash changed, appeared or
+    went), or changed declarations or options. With no record, a verdict cannot be current."""
+    inputs = data.get("inputs")
+    if not isinstance(inputs, Mapping) or not isinstance(inputs.get("geometry"), Mapping):
+        return "not bound to a geometry record (no inputs): rerun cad-agent gates"
+    if record is None:
+        return "no geometry record to compare with"
+    geo = inputs["geometry"]
+    if geo.get("digest") != geometry_digest(record):
+        old = geo.get("hashes") if isinstance(geo.get("hashes"), Mapping) else {}
+        new = record_hashes(record)
+        changed = sorted(k for k in set(old) | set(new) if old.get(k) != new.get(k))
+        what = (f"{len(changed)} shape(s) changed: {', '.join(changed[:6])}" + (" ..." if len(changed) > 6 else "")
+                if changed else "the declarations in the record changed (flags, joints, fasteners or steps)")
+        return f"geometry changed since this verdict ({what})"
+    if declarations is not None and inputs.get("declarations") != digest_of(declarations):
+        return "the gate's declarations changed since this verdict"
+    if options is not None and inputs.get("options") != digest_of(options):
+        return "the gate's options changed since this verdict"
+    return None
 
 
 def _jsonable(value: Any) -> Any:

@@ -19,10 +19,12 @@ from cadagent.dossier.lint import (RULES, CheckState, Evidence, Review, lint, li
                                    write_outputs)
 
 
-def _verdict(gate: str, ok: bool = True, parts=()) -> Dict[str, Any]:
+def _verdict(gate: str, ok: bool = True, parts=(), geometry: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """A verdict bound to ``geometry`` (default ``base_geometry()``), as ``cad-agent gates`` writes it."""
+    from cadagent.gates.verdict import bind_inputs
     findings = [] if ok else [{"id": f"{gate}:x", "status": "fail", "message": "bad", "parts": list(parts)}]
-    return {"schema": "cadagent.gate/1", "gate": gate, "pass": ok, "status": "pass" if ok else "fail",
-            "findings": findings}
+    return bind_inputs({"schema": "cadagent.gate/1", "gate": gate, "pass": ok, "status": "pass" if ok else "fail",
+                        "findings": findings}, geometry if geometry is not None else base_geometry())
 
 
 def base_files() -> Dict[str, Any]:
@@ -94,6 +96,17 @@ def write(root: Path, files: Dict[str, Any]) -> Path:
     return root / "dossier" / "project.yaml"
 
 
+def rebind(ev: Evidence) -> Evidence:
+    """Bind every verdict made for ``base_geometry()`` to ``ev.geometry``: the gates were run again after the build
+    that the test's change stands for. A verdict bound to another geometry on purpose stays stale."""
+    from cadagent.gates.verdict import bind_inputs, geometry_digest
+    base = geometry_digest(base_geometry())
+    for v in ev.gates.values():
+        if ev.geometry is not None and ((v.get("inputs") or {}).get("geometry") or {}).get("digest") == base:
+            bind_inputs(v, ev.geometry)
+    return ev
+
+
 def run(tmp_path: Path, mutate: Optional[Callable[[Dict[str, Any]], Any]] = None,
         evidence: Optional[Evidence] = None, **kw):
     files = base_files()
@@ -102,7 +115,7 @@ def run(tmp_path: Path, mutate: Optional[Callable[[Dict[str, Any]], Any]] = None
     if mutate:
         mutate(files, ev) if mutate.__code__.co_argcount == 2 else mutate(files)
     d = load_dossier(write(tmp_path, files), strict=False, root=tmp_path)
-    return lint(d, ev, **kw)
+    return lint(d, rebind(ev), **kw)
 
 
 def card(files, pid):
@@ -189,6 +202,9 @@ CASES = {
                            lambda f, ev: (card(f, "lid").update(status="built"),
                                           ev.gates.update(connectivity=_verdict("connectivity", False, ["lid"])))),
     "geometry-missing": (lambda f, ev: setattr(ev, "geometry", None), lambda f, ev: None),
+    "verdict-stale": (lambda f, ev: ev.gates.update(wall=_verdict("wall", geometry={**base_geometry(), "joints": {
+                          "J": {"kind": "fixed"}}})),
+                      lambda f, ev: ev.gates.update(wall=_verdict("wall"))),
     # the registry join (docs/dossier.md "Joining cards and geometry"), reported by the lint
     "card-without-shape": (lambda f, ev: ev.geometry["parts"].pop("lid"), lambda f, ev: None),
     "shape-without-card": (lambda f, ev: ev.geometry["parts"].update(extra={"section": "S1", "sha256": "f" * 64,
@@ -232,7 +248,7 @@ def test_rule_fails_on_the_broken_case(tmp_path, code):
     assert found, f"{code} not reported; got {[str(f) for f in res.findings]}"
     for f in found:                       # file, line and code; a missing input file has no line to point at
         assert f.where is not None and f.where.file, f
-        assert f.where.line >= 1 or code == "geometry-missing", f
+        assert f.where.line >= 1 or code in ("geometry-missing", "verdict-stale"), f
     if (RULES.get(code) or ("error",))[0] == "error":
         assert not res.passed
 
@@ -429,7 +445,7 @@ def make_project(root: Path, files=None, geometry=None, gates=None, checks_yaml=
     if geometry is not False:
         (exports / "dossier-geometry.json").write_text(json.dumps(geometry or base_geometry()))
     for g in (gates if gates is not None else ("wall", "connectivity", "containment", "assembly")):
-        (exports / "gates" / f"{g}.json").write_text(json.dumps(_verdict(g)))
+        (exports / "gates" / f"{g}.json").write_text(json.dumps(_verdict(g, geometry=geometry or None)))
     return root
 
 
@@ -585,3 +601,43 @@ def test_without_a_build_no_review_is_refused_for_the_actor(tmp_path):
     res = run(tmp_path, evidence=base_evidence(geometry=None, reviews=[_review()]), min_section_status=None)
     assert "review-same-actor" not in res.codes()
     assert res.sections["S1"]["status"] == "draft"
+
+
+# --------------------------------------------------------------------------------------------- stale verdicts (#51)
+
+def test_a_verdict_from_an_earlier_build_is_stale_and_does_not_gate(tmp_path):
+    """The hopper is rebuilt and the gates are not run again: every verdict names the changed shape, counts as
+    stale (not pass), and the parts fall back to built."""
+    ev = base_evidence()
+    ev.geometry["parts"]["hopper"]["instances"] = [{"key": "hopper", "sha256": "0" * 64}]
+    for v in ev.gates.values():                     # verdicts as the gates wrote them for the previous build
+        v["inputs"]["geometry"]["hashes"]["hopper"] = "b" * 64
+    files = base_files()
+    d = load_dossier(write(tmp_path, files), strict=False, root=tmp_path)
+    ev.root = str(tmp_path)
+    res = lint(d, ev, min_section_status=None)
+    stale = [f for f in res.findings if f.code == "verdict-stale"]
+    assert {f.item for f in stale} == {"gate:wall", "gate:connectivity", "gate:containment", "gate:assembly"}
+    assert all("hopper" in f.message and f.severity == "error" for f in stale), [str(f) for f in stale]
+    assert res.parts["lid"]["status"] == "built" and "stale" in res.parts["lid"]["blocked_by"][0]
+    assert not res.passed
+
+
+def test_an_unbound_verdict_is_stale(tmp_path):
+    ev = base_evidence()
+    ev.gates["wall"].pop("inputs")
+    res = run(tmp_path, evidence=ev, min_section_status=None)
+    [f] = [f for f in res.findings if f.code == "verdict-stale"]
+    assert "no inputs" in f.message and res.parts["hopper"]["status"] == "built"
+
+
+def test_a_rebuild_by_another_actor_keeps_verdicts_current(tmp_path):
+    """Who built it and where a declaration sits are not inputs: the same shapes stay gated."""
+    ev = base_evidence()
+    ev.geometry["actor"] = "someone-else"
+    ev.geometry["parts"]["hopper"]["declared_at"] = "cad/build.py:99"
+    files = base_files()
+    d = load_dossier(write(tmp_path, files), strict=False, root=tmp_path)
+    ev.root = str(tmp_path)
+    res = lint(d, ev)
+    assert "verdict-stale" not in res.codes() and res.sections["S1"]["status"] == "gated"

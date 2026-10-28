@@ -343,7 +343,14 @@ def test_cli_lists_the_views_without_rendering(tmp_path, capsys):
     assert pk.project_sections(root) == ["S0", "S1", "S2"]
 
 
-@pytest.mark.skipif(all(importlib.util.find_spec(m) for m in ("cadquery", "vtk", "PIL")),
+def _have(module: str) -> bool:
+    try:
+        return importlib.util.find_spec(module) is not None
+    except (ImportError, ValueError):
+        return False
+
+
+@pytest.mark.skipif(all(_have(m) for m in ("cadquery", "vtk", "PIL")),
                     reason="checks the error when the CAD extra is missing")
 def test_rendering_without_the_cad_extra_says_what_is_missing(tmp_path):
     from cadagent import MissingDependency

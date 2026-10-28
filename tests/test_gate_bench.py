@@ -23,6 +23,7 @@ pytest.importorskip("trimesh")
 from cadagent.gates import relate_pair, relation_table  # noqa: E402
 from cadagent.gates.connectivity import Declarations, connectivity_gate  # noqa: E402
 from cadagent.gates.containment import containment_gate  # noqa: E402
+from cadagent.gates.fasteners import fastener_gate_from_build  # noqa: E402
 from cadagent.gates.wall import wall_gate  # noqa: E402
 
 _PATH = Path(__file__).resolve().parent / "fixtures" / "gate_bench" / "build.py"
@@ -98,6 +99,10 @@ def gate_dossier_lint(bench):
     return lint(d, Evidence(geometry=geo), min_section_status=None).to_verdict()
 
 
+def gate_fasteners(bench):
+    return fastener_gate_from_build(bench.result, extra=bench.declarations, assembly=bench.assembly)
+
+
 def _not_built(task, gate):
     def adapter(bench):
         raise NotImplementedError(f"{task}: the {gate} gate is not built yet")
@@ -108,12 +113,12 @@ GATES = {
     "wall": (gate_wall, "T8"),
     "containment": (gate_containment, "T5"),
     "connectivity": (gate_connectivity, "T4"),
-    "fasteners": (_not_built("T6", "fastener"), "T6"),
+    "fasteners": (gate_fasteners, "T6"),
     "motion": (_not_built("T7", "motion"), "T7"),
     "assembly": (_not_built("T9", "assembly-access"), "T9"),
     "dossier-lint": (gate_dossier_lint, "T2"),
 }
-BUILT = {"wall", "connectivity", "containment", "dossier-lint"}
+BUILT = {"wall", "connectivity", "containment", "dossier-lint", "fasteners"}
 
 
 def _marks(gate):

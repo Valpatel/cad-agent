@@ -21,6 +21,7 @@ cq = pytest.importorskip("cadquery")
 pytest.importorskip("trimesh")
 
 from cadagent.gates import relate_pair, relation_table  # noqa: E402
+from cadagent.gates.connectivity import Declarations, connectivity_gate  # noqa: E402
 from cadagent.gates.containment import containment_gate  # noqa: E402
 from cadagent.gates.wall import wall_gate  # noqa: E402
 
@@ -52,6 +53,10 @@ def gate_containment(bench):
     return containment_gate(bench.assembly, bench.declarations["contains"], support="fail")
 
 
+def gate_connectivity(bench):
+    return connectivity_gate(bench.assembly, Declarations.from_build(bench.result, extra=bench.declarations))
+
+
 def _not_built(task, gate):
     def adapter(bench):
         raise NotImplementedError(f"{task}: the {gate} gate is not built yet")
@@ -61,13 +66,13 @@ def _not_built(task, gate):
 GATES = {
     "wall": (gate_wall, "T8"),
     "containment": (gate_containment, "T5"),
-    "connectivity": (_not_built("T4", "connectivity"), "T4"),
+    "connectivity": (gate_connectivity, "T4"),
     "fasteners": (_not_built("T6", "fastener"), "T6"),
     "motion": (_not_built("T7", "motion"), "T7"),
     "assembly": (_not_built("T9", "assembly-access"), "T9"),
     "dossier-lint": (_not_built("T2", "dossier-lint"), "T2"),
 }
-BUILT = {"wall", "containment"}
+BUILT = {"wall", "connectivity", "containment"}
 
 
 def _marks(gate):
@@ -169,6 +174,18 @@ def test_seed_ball_through_wall_gate_reports_half_the_ball_outside():
     (support,) = [f for f in v["findings"] if f["id"].endswith(":support")]
     assert support["evidence"]["unsupported"] == ["ball#7"]
     assert len(v["findings"]) == 3
+
+
+def test_containment_poses_the_benchs_hopper_body_without_its_loose_balls(bench):
+    """Bodies come from Assembly.from_build (relations.moving_bodies): the hopper and its cavity form one body,
+    the free balls keep their own, so turning the hopper body leaves the balls behind, as in the incident."""
+    asm = bench.assembly
+    assert asm["hopper"].body == asm.cavities["hopper_cavity"].body != asm["ball#0"].body
+    v = containment_gate(asm, bench.declarations["contains"], support="off",
+                         poses={"home": {}, "slid": {asm["hopper"].body: (30.0, 0.0, 0.0)}})
+    home = [f for f in v["findings"] if f["id"].startswith("home/")]
+    out = {f["parts"][0] for f in v["findings"] if f["id"].startswith("slid/") and f["id"].endswith(":inside")}
+    assert home == [] and out == {f"ball#{i}" for i in range(8)}, v["findings"]
 
 
 def test_seed_bracket_floats_and_hovers_in_the_relation_table():

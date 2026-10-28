@@ -630,9 +630,10 @@ which fills in `actor` (from `CAD_AGENT_ACTOR`), `date`, `timestamp`, `signed_of
 The lint runs `validate_record` on every record and its own rules on top (`review-same-actor`, `review-stale`,
 `signoff-open-decision`), so a record written by hand gets the same checks except those that need the packet.
 
-**On the site.** The review pages (T15, `cadagent.site_review`) read the status file's `sections.<id>.review`
-(`record`, `date`, `actor`, `verdict`, `signed_off`, `findings`: the record's finding count, `blocking`: how many are
-critical or major) and list the record's `findings` beside the packet image each one's `view` names.
+**On the site.** The review pages ([below](#on-the-review-site)) read the status file's `sections.<id>.review`
+(`record`, `date`, `timestamp`, `actor`, `verdict`, `signed_off`, `findings`: the record's finding count,
+`blocking`: how many are critical or major) and list the record's `findings` beside the packet image each one's
+`view` names, with the reviewer's checklist answers.
 
 **Limits.** The separate-reviewer rule is only as strong as `CAD_AGENT_ACTOR`: a harness that gives two agents the
 same value, or one agent two values, defeats it. The per-part builder is carried from the geometry record a build
@@ -642,3 +643,40 @@ commit the record, or review without rebuilding). A sign-off binds part hashes, 
 function or a decision after a sign-off does not void it (the packet goes stale, so the next sign-off needs a new
 one). The reviewer judged renders and measurements of the model; a signed-off section is not shown to fit, hold or
 work.
+
+## On the review site
+
+`cad-agent site` builds review pages for a project with a `dossier:` or `gates:` key (`cadagent.site_review`), in
+`site/review/`, linked from the overview's "Design review" block and, when the site configures no `nav`, from three
+top-bar tabs (Review, Requirements, Gates). A project without either key sees no change.
+
+| Page | Shows |
+|---|---|
+| `index.html` | one row per section: status, requirements, part count, gate state (pass / fail / stale / unrun over its parts' gate checks), review state (unreviewed / findings open / reviewed / signed off / void), the reviewer record; the lint findings with their file and line |
+| `section-<id>.html` | the section's requirements (status, verifying checks), its interfaces and those of its parts, section decisions, and each part card: function, material, loads, fasteners, `contains`, decisions with the alternatives rejected and why, checks as pills linked to their evidence, the status ladder draft → built → gated → reviewed → signed_off, what keeps it from the next step, and a **stale** badge when the geometry changed since the last review (`invalidated`). Then every gate finding that names one of its parts (an instance, a fastener that clamps or threads into it, a cavity of it), with the witness, and the lint findings on it; then the review packet |
+| `requirements.html` | id, text and source quote, status, the sections it traces to, its own checks (and the card checks that only satisfy the trace), derived requirements, waivers and their rationale |
+| `gates.html` | one row per gate: state (pass, warn, fail, stale, missing, invalid, not applicable, skipped, from `cadagent.gates.run.gate_rows`), counts and links to the verdict's `.md`, `.json` and `.dot`; the connectivity graph as SVG; each gate's findings with witnesses, exclusions, what it did not check, assumptions and limits |
+
+**What it reads.** Statuses only from what the pipeline computed: `exports/dossier-status.json`, the verdicts in
+`exports/gates/` and the reviewer records the status file names. The YAML is loaded (`strict=False`) for the words
+only (functions, purposes, decisions, interfaces, requirement sources and waivers). When a dossier file is newer
+than the status file, every page says so ("run `cad-agent dossier`"); with no status file the pages still list the
+sections from the YAML, marked "not computed". `cad-agent site --serve` rebuilds the pages when any of these files
+changes, and serves `.md`, `.dot` and `.yaml` files as plain text so the linked verdicts open in the browser.
+
+**The connectivity graph** is drawn from `exports/gates/connectivity.dot` by `cadagent.dotsvg`: Graphviz's `dot`
+when it is installed, else a built-in layered layout (each cluster laid out on its own, layers by distance from the
+grounded part, left to right). The page says which drew it, and writes `site/review/connectivity.svg` too. The
+built-in drawing takes its colours from the page's theme (light or dark); Graphviz's keeps its own black on clear.
+
+**The review packet** (plan T10, `cad-agent.review-packet/1`) is read from `exports/review/<section>/manifest.json`
+when it exists: each of its `views` (`id`, `caption`, `note`, `file` relative to the manifest, null when not
+rendered) is shown with the checklist questions that name it, and the manifest's `parts.*.sha256` that differ from
+the current build show a "rendered from older geometry" banner. The reader also takes a plain `images` list (paths
+or `{file, caption, view, hash}`) and a `hashes: {part: sha256}` map. The current reviewer record's `findings`
+(`{severity, text|message, render|image|view}`) are listed beside the view they name (by id or file name), the rest
+below. Without a manifest the page says how to make one.
+
+Limits: the pages show what the files say. They do not recompute a status, and a page built before the gates ran
+again shows the old verdicts (the gates page marks them stale against the current geometry record).
+

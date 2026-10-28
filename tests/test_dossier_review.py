@@ -541,12 +541,24 @@ def test_cli_bundle_check_and_submit(project, tmp_path, capsys, monkeypatch):
     assert main(["review-section", "S9", "--project", str(root)]) == 2
 
 
-def test_the_site_reads_reviewer_findings_from_the_record(project):
-    """The site's section page (T15) lists a record's findings, beside the image a finding's `view` names; the
-    record schema keeps those keys (`severity`, `text`, `view`)."""
-    path, rec, _ = submit_record(project, "S1", fill(template(project), "changes_requested"), reviewer="reviewer")
-    f = rec["findings"][0]
-    assert set(f) >= {"severity", "text", "view"} and f["severity"] in ("critical", "major", "minor", "note")
+def test_the_site_shows_the_record(project):
+    """The site's section page (T15) lists the record's findings beside the image each one's `view` names, and the
+    reviewer's answer under each checklist question; the index says changes were requested."""
+    root = Path(project.root)
+    rec = fill(template(project), "changes_requested")
+    rec["checklist"][0]["answer"] = "unclear"
+    rec["checklist"][0]["evidence"] = "the cut hides the far wall"
+    path, rec, problems = submit_record(project, "S1", rec, reviewer="reviewer")
+    assert problems == []
     row = lint_project(project, min_section_status=None).to_status()["sections"]["S1"]["review"]
-    assert row["record"] == path.relative_to(project.root).as_posix() and row["findings"] == 1
-    assert yaml.safe_load(json.dumps(rec)) == rec
+    assert row["record"] == path.relative_to(root).as_posix() and row["findings"] == 1 and row["blocking"] == 1
+    assert main(["dossier", "--project", str(root), "--min-status", "none"]) == 0
+    assert main(["site", "--project", str(root)]) == 0
+    index = (root / "site" / "review" / "index.html").read_text()
+    assert "changes requested (1 finding(s))" in index
+    page = (root / "site" / "review" / "section-s1.html").read_text()
+    iso = page.split("<b>solid-iso</b>")[1].split("</figure>")[0]
+    assert "the lid has no locating lip" in iso, "a finding sits beside the image its view names"
+    q = rec["checklist"][0]
+    assert "the cut hides the far wall" in page and 'class="pill warn">unclear<' in page
+    assert ("image only" if q["image_only"] else f"measured: {q['measurements'][0]}") in page

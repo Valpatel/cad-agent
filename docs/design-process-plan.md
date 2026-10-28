@@ -167,6 +167,12 @@ A new page `site/review.html` (and `cad-agent site` section "Design review by se
 
 The existing overview keeps its decisions section; decisions with a section scope also appear in that section's card.
 
+As built (T15, [`dossier.md`](dossier.md#on-the-review-site)): the pages live in `site/review/` (`index.html`, one
+`section-<id>.html` per section instead of expanding rows, `requirements.html` on its own page, `gates.html`); the
+gates page has a row per gate and each gate's findings with witnesses rather than gate-specific containment and
+motion tables, and the connectivity graph follows the DOT the gate writes (undeclared contacts orange, unrealised
+declarations red dashed).
+
 ## 4. Integrity gates (`cadagent.gates`)
 
 All gates take the same input: `Assembly` = `{part_name: shape in assembly coordinates}` plus the dossier geometry

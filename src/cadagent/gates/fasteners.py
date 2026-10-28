@@ -1012,6 +1012,29 @@ def _t_range(a: Any, b: Any, p: Vec, u: Vec, v: Vec) -> Optional[List[float]]:
         return None
 
 
+def _head(spec: FastenerSpec, screw: Optional[Mapping[str, Any]], d: Optional[float]) -> Dict[str, Any]:
+    """The head: from the placed solid's box, else the declared ``head_d_mm`` x ``head_h_mm``, else 1.6 d x 1.0 d."""
+    if screw is not None:
+        return {"r_mm": screw["head_r_mm"], "h_mm": screw["head_h_mm"], "source": "solid"}
+    if d is None and not (spec.head_d_mm and spec.head_h_mm):
+        return {"r_mm": _r((spec.head_d_mm or 0.0) / 2), "h_mm": _r(spec.head_h_mm or 0.0),
+                "source": "unknown: no solid, diameter or head size"}
+    return {"r_mm": _r(spec.head_d_mm / 2 if spec.head_d_mm else 0.8 * d),
+            "h_mm": _r(spec.head_h_mm if spec.head_h_mm else d),
+            "source": "declared" if spec.head_d_mm else "default 1.6 d x 1.0 d"}
+
+
+def _screw_box(assembly: Any, spec: FastenerSpec, i: int) -> Optional[Dict[str, Any]]:
+    """Length and head of the placed solid of axis ``i``, from its box in the axis frame (None without a solid)."""
+    inst = spec.instance_key(i)
+    if inst not in assembly:
+        return None
+    p, u = spec.axes[i]
+    box = _local_box(assembly.shape(inst), p, u, _frame(u)[0])
+    return {"length_mm": _r(box[5]), "head_h_mm": _r(-box[2]),
+            "head_r_mm": _r(max(abs(box[0]), abs(box[1]), abs(box[3]), abs(box[4])))}
+
+
 def measure(assembly: Any, spec: FastenerSpec, i: int, options: FastenerOptions = FastenerOptions(), *,
             relations: Optional[Mapping[str, Any]] = None, excluded: Iterable[str] = (),
             probe: Optional[_Probe] = None) -> Dict[str, Any]:
@@ -1026,11 +1049,7 @@ def measure(assembly: Any, spec: FastenerSpec, i: int, options: FastenerOptions 
     others = [k for k in names if k != inst]
     probe = probe if probe is not None else _Probe(assembly)
     m: Dict[str, Any] = {"key": inst, "origin": [_r(c, 6) for c in p], "direction": [_r(c, 6) for c in u]}
-    screw = None
-    if has_solid:
-        box = _local_box(assembly.shape(inst), p, u, v)
-        screw = {"length_mm": _r(box[5]), "head_h_mm": _r(-box[2]),
-                 "head_r_mm": _r(max(abs(box[0]), abs(box[1]), abs(box[3]), abs(box[4])))}
+    screw = _screw_box(assembly, spec, i) if has_solid else None
     d = spec.diameter_mm
     if d is None and screw is not None:
         sbox = None
@@ -1049,12 +1068,7 @@ def measure(assembly: Any, spec: FastenerSpec, i: int, options: FastenerOptions 
     if d is None:
         m["error"] = "no diameter: declare diameter_mm or place the screw's solid"
         return m
-    if screw is not None:
-        head = {"r_mm": screw["head_r_mm"], "h_mm": screw["head_h_mm"], "source": "solid"}
-    else:
-        head = {"r_mm": _r(spec.head_d_mm / 2 if spec.head_d_mm else 0.8 * d),
-                "h_mm": _r(spec.head_h_mm if spec.head_h_mm else d),
-                "source": "declared" if spec.head_d_mm else "default 1.6 d x 1.0 d"}
+    head = _head(spec, screw, d)
     m["screw"], m["head"] = screw, head
     length = screw["length_mm"] if screw else spec.length_mm
     t_end = (length or 0.0) + o.look_ahead_mm
@@ -1250,6 +1264,25 @@ def _tool_sweep(assembly: Any, spec: FastenerSpec, i: int, m: Mapping[str, Any],
     return out
 
 
+def tool_access(assembly: Any, spec: FastenerSpec, i: int, tool_name: str, decl: Any, present: Sequence[str],
+                step: Optional[Mapping[str, Any]] = None, tol: Any = None, *, later: Sequence[str] = (),
+                probe: Optional[_Probe] = None) -> Dict[str, Any]:
+    """The ``tool`` check's sweep alone, for fastener ``spec``'s axis ``i``: the envelope of ``decl``
+    (``tool_envelope``) from the head along the axis against the ``present`` parts (blocking) and ``later`` ones
+    (service only). The head height is the placed solid's, else ``head_h_mm``, else 1.0 d. Returns the evidence
+    dict the ``tool`` check reads (``blocked``, ``swing``, ``clear``, ``error``); other gates (the assembly gate)
+    turn it into their own check with ``tool_check``."""
+    from cadagent.gates.relations import Tolerances
+    head = _head(spec, _screw_box(assembly, spec, i), spec.diameter_mm)
+    return _tool_sweep(assembly, spec, i, {"head": head}, tool_name, decl, present, step, tol or Tolerances(),
+                       probe, later)
+
+
+def tool_check(check_id: str, inst: str, spec: FastenerSpec, tool: Optional[Mapping[str, Any]]) -> Check:
+    """The ``tool`` check from a ``tool_access`` result (public name of the rule the fastener gate applies)."""
+    return _tool_eval(check_id, inst, spec, tool)
+
+
 def fastener_gate(assembly: Any, fasteners: Any, *, steps: Iterable[Any] = (),
                   tools: Optional[Mapping[str, Any]] = None,
                   options: FastenerOptions = FastenerOptions(), tol: Any = None, cache: Any = None,
@@ -1399,4 +1432,5 @@ def fastener_gate_from_build(result: Any, dossier: Any = None, extra: Optional[M
 
 __all__ = ["FastenerSpec", "FastenerOptions", "fastener_gate", "fastener_gate_from_build", "fasteners_from_build",
            "tools_from", "tool_envelope", "install_step", "present_at", "evaluate", "measure", "table_markdown",
+           "tool_access", "tool_check",
            "owner", "ASSUMPTIONS", "GATE", "CHECKS", "DEFAULT_STOCK_MM", "COARSE_PITCH_MM"]

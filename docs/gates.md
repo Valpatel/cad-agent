@@ -10,8 +10,8 @@ prove that printed parts fit, move or hold: no tolerance stack, no print shrink,
 `physical_fit_verified: false` and lists its assumptions.
 
 Status: the shared machinery (T3), the minimum-wall gate (T8), the connectivity gate (T4), the containment gate (T5),
-the gate bench (T12) and the dossier lint (T2, [`dossier.md`](dossier.md#lint-and-status)) are built. Fasteners (T6),
-motion (T7) and assembly access (T9) build on them.
+the gate bench (T12) and the dossier lint (T2, [`dossier.md`](dossier.md#lint-and-status)) are built, and so is the
+motion gate (T7). Fasteners (T6) and assembly access (T9) build on them.
 
 ## The assembly and the relation table
 
@@ -56,9 +56,9 @@ offending solid pairs.
 - `Part.kind` from `result.kind(key)` (`"part"` or `"fastener"`) and `group` = the part's section;
 - every cavity through `add_cavity`, with its recorded hash;
 - `asm.joints` and `asm.fastener_axes` copied from the result for the motion and fastener gates;
-- body labels, provisionally (the open T7 question in `dossier.md`), from `moving_bodies(joints, fasteners,
-  grounded)`: a joint's `moving` part seeds its body, which grows transitively across `fixed` joints and fasteners
-  (the fastener, what it clamps and what it threads into), never into a grounded part or a joint's `fixed` part.
+- body labels from `moving_bodies(joints, fasteners, grounded)` (the rule is final; see the motion gate): a joint's
+  `moving` part seeds its body, which grows transitively across `fixed` joints and fasteners (the fastener, what it
+  clamps and what it threads into), never into a grounded part or a joint's `fixed` part.
 
 ### States
 
@@ -330,6 +330,97 @@ connection only within a measured gap; a mechanism interface is realised by its 
 involving a free part are not reported as undeclared; the graph is exported as DOT for the site (T15) to render as
 SVG.
 
+## Motion-range interference (`cadagent.gates.motion`)
+
+Does anything that moves hit something over its declared range?
+
+```python
+from cadagent.gates.motion import motion_gate, motion_from_build, run_motion
+
+v = motion_gate(asm, out="exports/gates/motion.json")          # joints from Assembly.from_build (asm.joints)
+v = motion_gate(asm, {"I9": {"kind": "revolute", "moving": "flap", "fixed": "hopper",       # or by hand
+                             "axis": ((31, 0, 70), (0, 1, 0)), "range": [0, 70], "unit": "deg",
+                             "intended_contacts": [("flap", "hopper_stop")], "samples": 24}},
+                cache=PairCache(), samples={"I9": 30}, default_samples=12, max_step_deg=2.0, max_step_mm=1.0,
+                combine=[["I9", "I10"]], intended_contacts=[("flap", "seal")], strict_contacts=False,
+                intended_overlaps=[{"parts": ["brush", "drum"], "reason": "bristles"}], ignore_pairs=[("a", "b")],
+                refine_steps=8, max_poses=2000,
+                contains=[{"container": "cup", "cavity": "cup_void", "what": "ball"}], containment_options={})
+v = motion_from_build(result, dossier, extra)    # from_build + gates: (motion_samples, intended_overlaps,
+                                                 # ignore_pairs, touch_tol_mm) + cards' contains
+```
+
+**What moves.** A joint's `moving` part's body, as `Assembly.from_build` labels it with `moving_bodies`: the
+transitive closure over `fixed` joints and fastener `clamps`/`into`, stopped at grounded parts and at any joint's
+`fixed` part. This settles the open question in `dossier.md` and is final (the connectivity gate uses the same
+rule). A hand-built `Assembly` uses its own `body=` labels. A chain therefore hangs each child joint's `fixed`
+part on its parent's moving part itself, or labels the bodies by hand: a bracket fastened to the parent body and
+also a child joint's `fixed` part stays in the static frame, which the connectivity gate reports (`bodies:`).
+
+**Sampling.** Ranges are offsets from the pose the model was built in (0 = as modelled); axes are in assembly
+coordinates at that pose. A revolute joint rotates (right-handed about the axis direction), a slider translates
+along it, a cylindrical joint does both on a grid of the two. A joint needs the ranges of its kind (a revolute `range_deg`,
+or `range` with `unit: deg`; a slider `range_mm`; a cylindrical both), else `joint:<id>` fails. Each axis gets
+`samples={id: n}` (the caller's override), else the joint's own `samples`, else `default_samples` (12;
+`gates.motion_samples` from the dossier), raised until the step is at most `max_step_deg`/`max_step_mm`, evenly
+spaced with both ends included. A zero-length range is one pose and a `range:` warning. `planar` and `ball` joints
+have no range: a warning, listed in `not_checked`; `fixed` joints are rigid links, not sampled.
+
+**Chains and combinations.** A joint whose `fixed` part lies in another joint's moving body rides on it: the chain
+is one group, sampled on the full grid (parent samples × child samples), each child's transform carried by its
+parent's. Independent joints are sampled one at a time with the others at home (0 clamped into their range);
+`combine=[[...]]` grids them together. Independent groups whose swept boxes come within `near_mm` of each other
+get a `combination:` warning, since nothing sampled them moving at once. A grid over `max_poses` (2000) is
+coarsened evenly on every axis, with a `density:` warning.
+
+**Pairs and cost.** Per pose: every part of a moving body against every part outside it (the static frame, other
+bodies, both bodies of a chain). Pairs that never move relative to each other, static against static and parts of
+one body, are the same in every pose and are never queried: they are the relation table's and the connectivity
+gate's. Broad phase: each part's exact home box, its corners moved with the pose (a box enclosing the moved part),
+against `near_mm`; the narrow phase is `relate` (contact area off), memoised in memory and through `cache` on both
+parts' content hash and posed placement (the pose is in the key), so a repeated pose costs nothing and an unchanged
+rerun reads only the cache.
+
+| Check | Fails when | Evidence |
+|---|---|---|
+| `collision:<a>\|<b>` | a moving part shares more than `overlap_mm3` with another (overlapping or contains) at any pose, unless declared in `intended_overlaps`; also an intended contact driven into its face (`intended_contact: true`) | `first_pose`: the colliding pose nearest home (the sum over axes of the distance from home as a fraction of the range; ties in sweep order), the one met first moving out from rest; its `overlap_mm3`, `overlap_centroid` and `overlap_box`; `last_clear_pose`, its clear grid neighbour nearest home (one sample away on one axis), with `last_clear_gap_mm` and the closest points `point_a`/`point_b`; `colliding_poses`, `worst_pose`, `worst_overlap_mm3`; the `onset` bisected between the two along that axis (`joint`, `clear`, `hit`, the overlap at the hit side and the gap and closest points at the clear side; `others` gives the other axes' values, held fixed, on a grid) |
+| `contact:<a>\|<b>` | (warning) a moving part touches one that is not an intended contact; fails with `strict_contacts` | first pose, number of poses, closest points |
+| `relation:<a>\|<b>` | the kernel could not decide a pair at some pose (`unknown`) | the relation |
+| `motion:<group>` | any of the above in the group; passes otherwise | per axis `density` (samples, declared samples, `step` in deg or mm, the largest radius from the axis of the parts it carries, over the sampled poses, and `max_travel_per_step_mm`); the smallest exact clearance (touching included) among the non-intended pairs measured (`min_clearance_mm`, `at`: pair, pose, points) and, when smaller, the box distance of the nearest pair never measured (`unmeasured_gap_at_least_mm`: its gap is at least this); the intended contacts and the poses where they touch |
+| `joint:<id>` | a joint's part is missing, its `fixed` part is in its own moving body, two joints drive one body, joints carry each other in a loop, or a ranged joint has no range; a warning for `planar`/`ball` | |
+| `combination:<g1>+<g2>`, `density:<g>` | (warnings) see above | |
+| `containment@<group>/<pose>/...` | with `contains=`: the containment gate's checks at every pose of a group that moves the container's cavity or the contents | as the containment gate |
+
+**Intended contacts.** A joint's `intended_contacts`, its own `moving`/`fixed` pair (the bearing) and the
+`intended_contacts` argument may touch at any pose: an arm resting on its stop at the range end passes. Shared
+volume between them over `overlap_mm3` still fails. The onset is where shared volume first exceeds `overlap_mm3`,
+so it lies slightly past the first touch (about 0.02° for a corner 45 mm from the axis at the default tolerances).
+
+**Density, honestly.** The verdict reports the step between samples and the furthest any carried point moves in
+one step: step × the largest distance from the axis of the corners of the carried parts' boxes, over every sampled
+pose (a child joint's motion included, so a turret carrying an arm slid out is measured at full reach). It bounds
+the travel at the sampled poses; on a chain, a child pose between samples can reach a little further. A collision
+shorter than one step, or a feature thinner than that travel, can pass between samples: raise `samples` or set
+`max_step_*` where the smallest clearance is small next to the travel per step. The verdict never claims a swept
+volume.
+
+**Containment per pose.** With `contains=` (`motion_from_build` passes the cards' and `extra`'s), every declaration
+whose cavity or contents a group moves runs through `containment_gate` at that group's poses; the others are
+listed in `not_checked`. The cost is the containment gate's per pose.
+
+`run_motion(world, joints, ...)` is the kernel-free core: `world` gives part names, body labels, home boxes and
+`relate(mats, a, b)` per pose (`AssemblyWorld` wraps an `Assembly`), which is how the rules are tested in core CI.
+
+**Cost.** Gate bench, one joint at 12 samples: 12 poses, 48 exact queries, 0.8 s cold (on a workstation at load 6).
+The synthetic 100-part assembly (`tools/gate_timing.py --motion 20`) with three joints at 20 samples each: 60 poses,
+92 candidate pairs plus 32 bisection queries, 1.7 s cold, 0.07 s warm from the pair cache. The broad phase keeps
+the queries to the pairs that come near: real parts cost more per query (see the relation table), not more queries.
+
+Limits. Sampled poses, not a swept volume. Rigid bodies on ideal axes: no backlash, play, deflection or tolerance
+stack, so a clear pose in the model does not prove printed parts clear. Contacts are classified by the relation
+table's tolerances (`touch_mm`; the near-tangent blind spot of the boolean kernel applies, see containment). Joint
+limits are the declared ranges; nothing checks that a stop actually ends the motion there.
+
 ## The gate bench (`tests/fixtures/gate_bench/build.py`)
 
 A generic mechanism declared through the dossier registry: a base, a hopper with filleted corners and a declared
@@ -358,5 +449,9 @@ adapter and removes the mark.
 - **Containment, additions**: the contact probe for near-tangent crossings, the support check and per-pose runs are
   not in the plan; the plan's "40 spheres in a cone, one moved 5 mm up through the wall" moves it 5 mm along the
   wall's outward normal (the cone opens upwards, so "up" leads away from the wall).
+- **Motion**: no pose renders (the verdict gives the poses and witness points; T10's render packet can pose them);
+  chains are always gridded and independent joints combined on request (`combine`), where the plan grids only
+  joints declared `coupled`; pairs that do not move relative to each other are never queried rather than taken
+  from the full per-pose table; the collision onset of a one-axis joint is bisected; containment can run per pose.
 - **Seed harness file**: `tests/test_gate_bench.py` (pytest only collects `test_*.py`), fixture directory
   `gate_bench` (importable name).

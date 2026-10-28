@@ -492,7 +492,7 @@ class _Parser:
         if m is None:
             return GateConfig()
         known = ("touch_tol_mm", "grounded", "free_parts", "intended_overlaps", "ignore_pairs", "strict_interfaces",
-                 "motion_samples")
+                 "motion_samples", "require_separate_reviewer")
         passed_on = ("tools", "fasteners")      # read by the fastener and assembly gates from GateConfig.extra
         cfg = GateConfig()
         tol = self.number(m, "touch_tol_mm", "gates")
@@ -502,6 +502,7 @@ class _Parser:
         if samples is not None:
             cfg.motion_samples = int(samples)
         cfg.strict_interfaces = self.flag(m, "strict_interfaces", "gates")
+        cfg.require_separate_reviewer = self.flag(m, "require_separate_reviewer", "gates", default=True)
         cfg.grounded = self.ref_list(m, "grounded", "part", "gates")
         for item, w in self.items(m, "free_parts", "gates"):
             if isinstance(item, str):

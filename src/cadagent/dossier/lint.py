@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple
 
 from .model import PART_STATUS, Dossier, Issue, PartCard, Section, Where
+from .review import actor_refusal, part_actors
 
 STATUSES = PART_STATUS                       # draft, built, gated, reviewed, signed_off
 RANK = {s: i for i, s in enumerate(STATUSES)}
@@ -75,9 +76,11 @@ RULES: Dict[str, Tuple[str, str]] = {
     "status-not-earned": ("error", "a card claims reviewed/signed_off only with a current reviewer record"),
     "status-overclaimed": ("warning", "a card's YAML status is not above the computed one"),
     # reviewer records
-    "review-invalid": ("error", "a reviewer record is a JSON object with section, date, actor, signed_off, hashes"),
+    "review-invalid": ("error", "a reviewer record is valid (cadagent.dossier.review.validate_record: its fields, "
+                                "each answer with evidence, a sign-off consistent with its findings and answers)"),
     "review-unknown-section": ("error", "a reviewer record names a section of the dossier"),
-    "review-same-actor": ("error", "a sign-off is by an actor other than the build's, and not `unknown`"),
+    "review-same-actor": ("error", "a review is by an actor who neither built nor wrote any part of the section, "
+                                   "and not `unknown` (gates: require_separate_reviewer)"),
     "review-stale": ("warning", "the latest review still matches the geometry (else its sign-off is void)"),
     "signoff-open-decision": ("error", "a section with an open decision is not signed off"),
     # inputs
@@ -123,10 +126,9 @@ class CheckState:
 
 @dataclass
 class Review:
-    """A reviewer sign-off record (``dossier/reviews/<section>-<date>.json``, schema ``cad-agent.review/1``).
-
-    Only the fields the status machine needs are read here; the full schema and its validator are the reviewer
-    pass's (plan T11). ``hashes`` maps each part reviewed to the content hash it had (``dossier-geometry.json``
+    """A reviewer record (``dossier/reviews/<section>-<date>.json``, schema ``cad-agent.review/1``), as the status
+    machine reads it. ``load_reviews`` validates the whole record (``cadagent.dossier.review.validate_record``)
+    first. ``hashes`` maps each part reviewed to the content hash it had (``dossier-geometry.json``
     ``parts.<name>.sha256``)."""
     file: str
     section: str
@@ -135,6 +137,13 @@ class Review:
     signed_off: bool
     hashes: Dict[str, str]
     findings: List[Any] = field(default_factory=list)
+    timestamp: str = ""
+    verdict: str = ""
+
+    @property
+    def order(self) -> Tuple[str, str]:
+        from .review import record_time
+        return record_time({"timestamp": self.timestamp, "date": self.date}), self.file
 
 
 @dataclass
@@ -173,6 +182,7 @@ class LintResult:
     geometry_file: str = ""
     build_actor: str = ""
     min_section_status: Optional[str] = "gated"
+    require_separate_reviewer: bool = True
 
     @property
     def errors(self) -> List[Finding]:
@@ -199,6 +209,7 @@ class LintResult:
             "title": d.title if d else "",
             "statuses": list(STATUSES),
             "required_section_status": self.min_section_status,
+            "require_separate_reviewer": self.require_separate_reviewer,
             "pass": self.passed,
             "counts": {"error": len(self.errors), "warning": len(self.warnings),
                        "sections": _count(self.sections), "parts": _count(self.parts)},
@@ -274,22 +285,18 @@ def load_reviews(directory: Path, rel_to: Path) -> Tuple[List[Review], List[Find
         except (OSError, ValueError) as exc:
             findings.append(Finding("review-invalid", f"cannot read reviewer record: {exc}", Where(shown), "error"))
             continue
-        problems = []
-        if not isinstance(data, dict):
-            problems.append("not a JSON object")
-            data = {}
-        for key, kind in (("section", str), ("date", str), ("actor", str), ("signed_off", bool), ("hashes", dict)):
-            if not isinstance(data.get(key), kind):
-                problems.append(f"`{key}` missing or not a {kind.__name__}")
-        if data.get("schema") not in (None, REVIEW_SCHEMA):
-            problems.append(f"schema {data.get('schema')!r} is not {REVIEW_SCHEMA!r}")
+        from .review import validate_record
+        problems = [str(p) for p in validate_record(data)]
         if problems:
-            findings.append(Finding("review-invalid", "reviewer record: " + "; ".join(problems), Where(shown),
-                                    "error", item=str(data.get("section", ""))))
+            item = str(data.get("section", "")) if isinstance(data, dict) else ""
+            findings.append(Finding("review-invalid", "reviewer record: " + "; ".join(problems[:6])
+                                    + (f"; and {len(problems) - 6} more" if len(problems) > 6 else ""),
+                                    Where(shown), "error", item=item))
             continue
         reviews.append(Review(file=shown, section=data["section"], date=data["date"], actor=data["actor"],
                               signed_off=data["signed_off"], hashes={str(k): str(v) for k, v in data["hashes"].items()},
-                              findings=list(data.get("findings") or [])))
+                              findings=list(data.get("findings") or []), timestamp=str(data.get("timestamp", "")),
+                              verdict=str(data.get("verdict", ""))))
     return reviews, findings
 
 
@@ -382,10 +389,12 @@ def _show(path: Path, root: Path) -> str:
 # --------------------------------------------------------------------------------------------- the lint
 
 class _Linter:
-    def __init__(self, d: Dossier, ev: Evidence, min_section_status: Optional[str], require_separate_reviewer: bool):
+    def __init__(self, d: Dossier, ev: Evidence, min_section_status: Optional[str],
+                 require_separate_reviewer: Optional[bool]):
         self.d, self.ev = d, ev
         self.min = min_section_status
-        self.separate = require_separate_reviewer
+        self.separate = d.gates.require_separate_reviewer if require_separate_reviewer is None \
+            else require_separate_reviewer
         self.out: List[Finding] = []
         geo = ev.geometry or {}
         self.geo_parts: Mapping[str, Any] = geo.get("parts", {}) if isinstance(geo.get("parts", {}), dict) else {}
@@ -758,7 +767,7 @@ class _Linter:
         self.sections()
 
         res = LintResult(d, [], geometry_file=self.ev.geometry_file, build_actor=self.build_actor,
-                         min_section_status=self.min)
+                         min_section_status=self.min, require_separate_reviewer=self.separate)
         open_decisions = self._open_decisions()
         reviews = self._reviews(open_decisions)
         for pid, card in d.parts.items():
@@ -811,19 +820,17 @@ class _Linter:
             if self.ev.geometry is None:
                 by_section.setdefault(r.section, []).append(r)      # nothing is built, so nothing can be reviewed
                 continue
-            if self.separate and (r.actor.strip() in ("", "unknown") or r.actor == self.build_actor
-                                  or self.build_actor in ("", "unknown")):
-                why = ("the reviewer's actor is unknown" if r.actor.strip() in ("", "unknown") else
-                       "the build's actor is unknown (set CAD_AGENT_ACTOR for the build)"
-                       if self.build_actor in ("", "unknown") else f"the reviewer is the build's actor {r.actor!r}")
+            why = actor_refusal(r.actor, r.section, self.d, self.ev.geometry) if self.separate else None
+            if why:
                 self.add("review-same-actor", f"reviewer record for section {r.section!r} is refused: {why}; a "
-                                              "separate reviewer is required", Where(r.file), item=r.section)
+                                              "separate reviewer is required (gates: require_separate_reviewer)",
+                         Where(r.file), item=r.section)
                 continue
             by_section.setdefault(r.section, []).append(r)
         for sid, records in by_section.items():
             sec = self.d.sections[sid]
             current = {c.id: self._sha(c.id) for c in sec.parts}
-            records.sort(key=lambda r: (r.date, r.file))
+            records.sort(key=lambda r: r.order)
 
             def stale(r: Review) -> List[str]:
                 return sorted(p for p, h in current.items() if not h or r.hashes.get(p) != h)
@@ -859,6 +866,7 @@ class _Linter:
         states = [self.check_for_part(c, pid) for c in applicable]
         row: Dict[str, Any] = {"id": pid, "section": card.section, **_where_dict(card.where),
                                "claimed": card.status, "sha256": self._sha(pid),
+                               "built_by": part_actors(self.ev.geometry, [pid]).get(pid, ""),
                                "checks": [s.to_dict() for s in states]}
         status, blocked = "draft", []
         if errors:
@@ -892,7 +900,7 @@ class _Linter:
         row["blocked_by"] = blocked
         if review.get("record") is not None and status in ("reviewed", "signed_off"):
             rec = review["record"]
-            row["review"] = {"record": rec.file, "date": rec.date, "actor": rec.actor}
+            row["review"] = {"record": rec.file, "date": rec.date, "actor": rec.actor, "verdict": rec.verdict}
         if review.get("invalidated") and pid in review["invalidated"]["changed"]:
             row["invalidated"] = review["invalidated"]
         return row
@@ -916,8 +924,11 @@ class _Linter:
                        and r["blocked_by"]]
         row["status"], row["blocked_by"] = status, blocked
         rec = review.get("record")
-        row["review"] = ({"record": rec.file, "date": rec.date, "actor": rec.actor, "signed_off": rec.signed_off,
-                          "findings": len(rec.findings)} if rec is not None else None)
+        row["review"] = ({"record": rec.file, "date": rec.date, "timestamp": rec.timestamp, "actor": rec.actor,
+                          "verdict": rec.verdict, "signed_off": rec.signed_off, "findings": len(rec.findings),
+                          "blocking": sum(1 for f in rec.findings if isinstance(f, dict)
+                                          and f.get("severity") in ("critical", "major"))}
+                         if rec is not None else None)
         if review.get("invalidated"):
             row["invalidated"] = review["invalidated"]
         return row
@@ -985,17 +996,18 @@ def _where_dict(where: Optional[Where]) -> Dict[str, Any]:
 # ------------------------------------------------------------------------------------------------- entry points
 
 def lint(dossier: Dossier, evidence: Optional[Evidence] = None, *, min_section_status: Optional[str] = "gated",
-         require_separate_reviewer: bool = True) -> LintResult:
+         require_separate_reviewer: Optional[bool] = None) -> LintResult:
     """Lint a loaded dossier (load it with ``strict=False`` so its loader errors become findings) against
     ``evidence`` and compute every item's status. ``min_section_status`` (default ``gated``, plan §5.4) adds a
-    ``section-below-gated`` error for each section below it; ``None`` leaves statuses informational."""
+    ``section-below-gated`` error for each section below it; ``None`` leaves statuses informational.
+    ``require_separate_reviewer`` overrides the dossier's ``gates: require_separate_reviewer`` (default true)."""
     if min_section_status is not None and min_section_status not in RANK:
         raise ValueError(f"min_section_status must be one of {STATUSES}, got {min_section_status!r}")
     return _Linter(dossier, evidence or Evidence(), min_section_status, require_separate_reviewer).run()
 
 
 def lint_project(project: Any, *, min_section_status: Optional[str] = "gated",
-                 require_separate_reviewer: bool = True) -> Optional[LintResult]:
+                 require_separate_reviewer: Optional[bool] = None) -> Optional[LintResult]:
     """Lint the project's dossier (``cad: dossier:``) against what the project has written. None when the project
     has no dossier. A dossier whose top file cannot be read or parsed gives a result with only those findings."""
     from .load import DossierError, load_project_dossier

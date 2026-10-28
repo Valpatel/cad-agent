@@ -517,8 +517,10 @@ class Registry:
                 raise RegistryError(f"cavity name {cname!r} is also a part or fastener name; rename the cavity")
         p, param_record = _params(params, root)
         result = BuildResult(root=root, out_dir=out)
+        actor = build_actor()
+        previous = _previous_parts(out / GEOMETRY_FILE)
         geo: Dict[str, Any] = {"schema": SCHEMA, "units": "mm", "hash": HASH_RECIPE,
-                               "actor": os.environ.get("CAD_AGENT_ACTOR") or "unknown",
+                               "actor": actor,
                                "parameters": param_record, "out_dir": os.path.relpath(out, root), "shapes_dir": "",
                                "parts": {}, "cavities": {}, "joints": {}, "fasteners": {}, "assembly": {"steps": []},
                                "physical_fit_verified": False}
@@ -542,10 +544,12 @@ class Registry:
             placements[name] = places
             result.parts[name] = shapes
             infos = [result._record(s, f"{name}#{i}" if len(shapes) > 1 else name) for i, s in enumerate(shapes)]
+            sha = _combine(i["sha256"] for i in infos)
             geo["parts"][name] = {
                 "section": decl.section, "grounded": decl.grounded, "free": decl.free,
                 **({"free_reason": decl.reason} if decl.free else {}),
-                "sha256": _combine(i["sha256"] for i in infos), "count": len(infos), "instances": infos,
+                "sha256": sha, "count": len(infos), "instances": infos,
+                "actor": part_actor(previous.get(name), sha, actor),
                 "declared_at": _rel(decl.where, root)}
         for name, decl in self.cavities.items():
             try:
@@ -619,6 +623,36 @@ class Registry:
 
 
 # --------------------------------------------------------------------------------------------- build helpers
+
+def build_actor() -> str:
+    """Who runs this build: ``CAD_AGENT_ACTOR`` (an agent or session id, or a person), ``unknown`` when unset."""
+    return (os.environ.get("CAD_AGENT_ACTOR") or "").strip() or "unknown"
+
+
+def _previous_parts(path: Path) -> Dict[str, Any]:
+    """The ``parts`` table of the geometry record this build replaces ({} when there is none or it is unreadable)."""
+    try:
+        data = json.loads(Path(path).read_text())
+    except (OSError, ValueError):
+        return {}
+    if not isinstance(data, dict) or not isinstance(data.get("parts"), dict):
+        return {}
+    top = str(data.get("actor") or "unknown")
+    return {k: {**v, "actor": str(v.get("actor") or top)} for k, v in data["parts"].items() if isinstance(v, dict)}
+
+
+def part_actor(previous: Optional[Mapping[str, Any]], sha256: str, actor: str) -> str:
+    """The actor recorded for a part (``parts.<name>.actor``): the actor of the build that first produced its
+    current content hash. A rebuild that gives the part the same hash keeps the earlier actor (a reviewer who
+    rebuilds unchanged geometry does not become its builder, and an author whose unchanged geometry someone else
+    rebuilt stays its builder); a new hash takes this build's actor. An earlier ``unknown`` is replaced by a known
+    actor. A record written before per-part actors existed gives its top-level ``actor``."""
+    if previous and previous.get("sha256") == sha256:
+        before = str(previous.get("actor") or "unknown")
+        if before != "unknown":
+            return before
+    return actor
+
 
 def _params(params: Any, root: Path) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     if params is None:

@@ -289,6 +289,9 @@ class GateConfig(_Dump):
     ignore_pairs: List[PairExemption] = field(default_factory=list)
     strict_interfaces: bool = False
     motion_samples: int = 12
+    # the reviewer pass (plan §5.3, T11): a sign-off by the actor who built a part of the section, or by `unknown`,
+    # is refused while this is on. Not a gate input: changing it leaves the gate verdicts current.
+    require_separate_reviewer: bool = True
     extra: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:

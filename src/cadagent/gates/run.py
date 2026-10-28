@@ -253,13 +253,16 @@ def load_dossier(project: Any) -> Any:
         return None                 # the top file is unreadable: the lint reports it
 
 
+REVIEW_KEYS = ("require_separate_reviewer",)     # gates: keys that set the reviewer pass, not any gate
+
+
 def declarations(dossier: Any, extra: Mapping[str, Any]) -> Dict[str, Any]:
     """What the gates read from the dossier and the declarations file, as plain data: the digest input that makes
     a verdict stale when a declaration changes. Interface datums, loads and texts are left out (no gate reads
     them)."""
     out: Dict[str, Any] = {"extra": dict(extra)}
     if dossier is not None:
-        out["gates"] = dossier.gates.to_dict()
+        out["gates"] = {k: v for k, v in dossier.gates.to_dict().items() if k not in REVIEW_KEYS}
         out["interfaces"] = [{"id": i.id, "between": list(i.between), "kind": i.kind, "clearance": i.clearance}
                              for i in dossier.interfaces.values()]
         out["cards"] = {pid: {"contains": [c.to_dict() for c in card.contains],

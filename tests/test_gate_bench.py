@@ -57,6 +57,47 @@ def gate_connectivity(bench):
     return connectivity_gate(bench.assembly, Declarations.from_build(bench.result, extra=bench.declarations))
 
 
+def gate_dossier_lint(bench):
+    """The bench's declarations as a dossier (one card per registered part), linted against its geometry record.
+    Statuses are informational here (no gate verdicts are passed); test_dossier_lint covers the status machine."""
+    from cadagent.dossier import (Alternative, Containment, Decision, Dossier, FastenerUse, Interface, PartCard,
+                                  Requirement, Section)
+    from cadagent.dossier.lint import Evidence, lint
+
+    decl, geo = bench.declarations, bench.result.geometry
+    parts, fasteners = geo["parts"], geo["fasteners"]
+    clamps = {name: f["clamps"] for name, f in fasteners.items()}
+    d = Dossier(file="gate-bench")
+    for i in decl["interfaces"]:
+        ends = list(dict.fromkeys(clamps.get(p, p) for p in i["parts"]))   # a screw stands for the part it clamps
+        if len(ends) == 2 and all(e in parts for e in ends):
+            kind = "revolute" if i["kind"] == "revolute" else "contact"
+            d.interfaces[i["id"]] = Interface(i["id"], between=ends, kind=kind, datum=i.get("datum", ""))
+            d.interface_declarations[i["id"]] = [d.interfaces[i["id"]]]
+    for name, info in parts.items():
+        sid = info["section"]
+        sec = d.sections.setdefault(sid, Section(sid, title=sid))
+        card = PartCard(name, function=f"bench part {name}", section=sid,
+                        interfaces=[k for k, i in d.interfaces.items() if name in i.between])
+        card.fasteners = [FastenerUse(to=f["into"], screws=f["key"], qty=f["count"], via=f["via"])
+                          for f in fasteners.values() if f["clamps"] == name]
+        card.contains = [Containment(what=c["what"], count=c["count"], cavity=c["cavity"], free=c["free"])
+                         for c in decl["contains"] if c["container"] == name]
+        sec.parts.append(card)
+        d.parts[name] = card
+    for r in decl["requirements"]:
+        d.requirements[r["id"]] = Requirement(r["id"], text=r["text"], verify_by="analysis", checks=r["checks"])
+        for sid in r["sections"]:
+            d.sections[sid].requirements.append(r["id"])
+    for x in decl["decisions"]:
+        dec = Decision(x["id"], decision=x["decision"], why=x["why"], scope=x["scope"],
+                       section=x.get("section") or d.parts[x["part"]].section, part=x.get("part", ""),
+                       alternatives=[Alternative(a["option"], a["rejected"]) for a in x["alternatives"]])
+        (d.parts[dec.part].decisions if dec.part else d.sections[dec.section].decisions).append(dec)
+        d.decisions[dec.id] = dec
+    return lint(d, Evidence(geometry=geo), min_section_status=None).to_verdict()
+
+
 def _not_built(task, gate):
     def adapter(bench):
         raise NotImplementedError(f"{task}: the {gate} gate is not built yet")
@@ -70,9 +111,9 @@ GATES = {
     "fasteners": (_not_built("T6", "fastener"), "T6"),
     "motion": (_not_built("T7", "motion"), "T7"),
     "assembly": (_not_built("T9", "assembly-access"), "T9"),
-    "dossier-lint": (_not_built("T2", "dossier-lint"), "T2"),
+    "dossier-lint": (gate_dossier_lint, "T2"),
 }
-BUILT = {"wall", "connectivity", "containment"}
+BUILT = {"wall", "connectivity", "containment", "dossier-lint"}
 
 
 def _marks(gate):

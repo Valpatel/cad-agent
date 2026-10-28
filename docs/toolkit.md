@@ -159,8 +159,8 @@ and `tools/serve_preview.py` duplicate `cad-agent export-3mf`, `package` and
 `serve`; once those commands are adopted, drop the matching steps. Otherwise
 `cad-agent all` writes the 3MF files twice (harmless) and two packages.
 `tools/validate_review.py` can stay as a project check or give way to
-`cad-agent check`, which covers parts, print files, the configured checks and
-local links.
+`cad-agent check`, which covers parts, print files, the configured checks,
+local links and, with `cad: dossier:`, the dossier lint.
 
 A YAML flow mapping ends a value at the first comma, so a title with a comma
 must be quoted: `{id: storage, title: "Storage trays, cable routes", file: ...}`.
@@ -179,7 +179,8 @@ Unquoted, the title is cut at the comma and the rest becomes a stray key.
 | `cad-agent site [--serve]` | builds `site/` from milestones, decisions, a designs summary, Markdown pages and git history (config `cad: site:`); `--serve` rebuilds on change and serves the web kit at `/_cadagent/kit/`. One top bar links every page: `site: nav:` (`[{id, title, href}]`, hrefs from the project root) or, when unset, the overview, docs, 3D model and each `html_pages` page plus the check and simulation reports, the design comparison and the search leaderboard. The server adds the bar to every HTML page it sends (files on disk unchanged; a bar the page mounts itself wins; `<meta name="cadagent-nav" content="off">` opts a page out) | |
 | `cad-agent view` | writes every part in assembly position to `exports/view/` (STL + `view.json`) for the 3D viewer (config `cad: view:` for colours, hidden variants, explode directions, extra parts) | |
 | `cad-agent webkit [DEST]` | copies the web kit (3D stage, model viewer, HUD panels, three.js, fonts) into the project, default `web/kit` | |
-| `cad-agent all` | build, export-3mf, check + report, package | 1 if anything failed |
+| `cad-agent dossier [--json] [--no-write] [--min-status S]` | lints the design dossier (`cad: dossier:`) against the build's geometry record, the gate verdicts, the configured checks and the reviewer records; writes each section's and part's status to `exports/dossier-status.json` and the lint verdict to `exports/gates/dossier-lint.json` ([dossier.md](dossier.md#lint-and-status)) | 1 on a lint error or a section below `--min-status` (default `gated`) |
+| `cad-agent all` | build, export-3mf, dossier (when `cad: dossier:` is set), check + report, package | 1 if anything failed |
 | `cad-agent catalogue [--json] [--errors-only]` | checks the part catalogue and every design against it (config `cad: explore:`, [explore.md](explore.md)) | 1 on an error |
 | `cad-agent compare [DESIGN ...] [--swaps] [--workers N] [--json] [--open]` | evaluates the designs with the project's evaluator, ranks them (Pareto fronts over the objectives) and writes `comparison.json`, `compare.html` and site design cards; `--swaps` tries every one-part swap | 1 if a design could not be evaluated |
 | `cad-agent optimise [--trials N] [--workers N] [--sampler S] [--fresh]` | searches slots and parameters (random, grid; NSGA-II and TPE with optuna) and keeps a leaderboard | 1 if no trial is feasible |

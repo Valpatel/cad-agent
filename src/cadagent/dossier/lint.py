@@ -641,7 +641,7 @@ class _Linter:
                                                                                       for a in dec.alternatives)),
                                   **({"section": dec.section} if dec.section else {}),
                                   **({"part": dec.part} if dec.part else {}), **_where_dict(dec.where)}
-        res.findings = self.out
+        res.findings = sorted(self.out, key=lambda f: (f.where.file if f.where else "", f.where.line if f.where else 0))
         for row in list(res.parts.values()) + list(res.sections.values()):
             row["findings"] = sum(1 for f in self.out if f.severity == "error" and
                                   (f.item == row["id"] or row["id"] in f.parts))

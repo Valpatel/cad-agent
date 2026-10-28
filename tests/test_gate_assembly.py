@@ -175,6 +175,27 @@ def test_conservative_advancement_takes_gap_sized_steps_far_from_contact():
     assert r["state"] == "clear" and r["touching"] and r["samples"] >= 200   # sliding along: sampled at 1 mm
 
 
+def test_clearance_is_the_smallest_gap_measured_and_a_bound_that_holds_between_samples():
+    # coming in diagonally (down and to +X) past a block below and behind: the true closest approach is
+    # 2.5 * sqrt(2) = 3.536 mm (box world: exact = box distance)
+    world = BoxWorld({"part": (0, 0, 0, 10, 10, 10), "block": (-30, 0, 5, -20, 10, 15)})
+    true_gap = 2.5 * math.sqrt(2)
+    r = sweep_pair(world, "part", direction_vector((1, 0, -1)), "block")
+    # the closest approach lies between the bound and the smallest gap measured (the first sample and the seat
+    # are measured; in between the box gap carries it)
+    assert r["state"] == "clear" and 0 < r["gap_lower_bound_mm"] <= true_gap <= r["min_gap_mm"]
+    r = sweep_pair(world, "part", direction_vector((1, 0, -1)), "block", options=AccessOptions(max_step_mm=5))
+    assert true_gap - 1e-6 <= r["min_gap_mm"] < true_gap + 0.5 and r["gap_lower_bound_mm"] <= true_gap
+    # a start offset no longer reads as the clearance
+    near = dict(BOXES, card=(33, 10, 5, 35, 30, 20))                   # 3 mm off the block
+    checks, res, _ = run(near)
+    row = {r["order"]: r for r in res["steps"]}[3]
+    # its swept box stays 3 mm from the block's, so nothing is measured and the bound is that box gap
+    assert row["min_clearance_mm"] is None and row["clearance_at_least_mm"] == pytest.approx(3.0)
+    data = verdict("assembly", res["checks"], assumptions=["boxes"], extra={"steps": res["steps"]})
+    assert "| 3 | card | base | -Z | 2 | ≥ 3.00 |" in steps_markdown(data)
+
+
 def test_sampling_limits_are_reported_not_hidden():
     world = BoxWorld({"part": (0, 0, 0, 10, 10, 10), "rail": (10, 0, -50, 12, 10, 200)})
     r = sweep_pair(world, "part", (0.0, 0.0, -1.0), "rail", options=AccessOptions(max_samples=20))
@@ -302,6 +323,14 @@ def test_service_removal_names_the_parts_fitted_later_that_must_come_off_first()
     assert checks["service:cover"].status == "pass"
     checks, _, _ = run(service="card")
     assert [k for k in checks if k.startswith("service:")] == ["service:card"]
+    # a part no step fits is not 'fitted later'; one instance can be asked for on its own
+    boxes = dict(BOXES, loose=(30, 10, 22, 32, 30, 24), **{"peg#0": (50, 50, 5, 52, 52, 15),
+                                                            "peg#1": (60, 50, 5, 62, 52, 15)})
+    checks, res, _ = run(boxes, CLEAN + [{"order": 5, "fit": "peg", "onto": "base", "direction": "-Z"}],
+                         service=["card", "peg#0"])
+    assert checks["service:card"].evidence["remove_first"] == ["cover"]
+    assert sorted(k for k in checks if k.startswith("service:")) == ["service:card", "service:peg#0"]
+    assert any(n.get("parts") == ["loose"] for n in res["not_checked"])
     st = steps((4, {"fasteners": ["s0", "s1"], "tool": "hex 2.5"}))
     boxes = dict(BOXES, **{"s0": (14, 14, 22, 16, 16, 33), "s1": (19, 14, 22, 21, 16, 33)})
     kinds = {"s0": "fastener", "s1": "fastener"}
@@ -313,6 +342,14 @@ def test_service_removal_names_the_parts_fitted_later_that_must_come_off_first()
     assert cover.status == "pass" and cover.evidence["own_fasteners_first"] == ["s0", "s1"]
     assert checks["service:block"].evidence["remove_first"] == ["cover"]
     assert "service:card" not in checks
+
+
+def test_tool_access_without_a_head_height_fails_rather_than_sweep_from_the_seat():
+    from cadagent.gates.fasteners import tool_access, tool_check
+    sp = FastenerSpec(name="x", clamps="lid", into="nut", axes=[((0, 0, 10), (0, 0, -1))], tool="hex 2.5")
+    res = tool_access({}, sp, 0, "hex 2.5", {"envelope_d": 6, "length": 60}, ["lid"], {"order": 3, "fit": "lid"})
+    c = tool_check("step:3:tool:x", "x", sp, res)
+    assert c.status == "fail" and "no head height" in c.message
 
 
 # ----------------------------------------------------------------------------- real geometry

@@ -562,7 +562,7 @@ fasteners from `fasteners_from_build`, the tools from `tools_from` and the inten
 | `step:<n>:fasteners` | a fastener installed here clamps (any `stack` part) or threads into a part fitted at a later step |
 | `step:<n>:insert` | an instance of the fitted part shares volume with a present part on its way in, or at its seat (`state: seat`), or the kernel could not decide (`unknown`), or the path needed over `max_samples`; a warning (`missing_direction="fail"`: a failure) when the step has no direction |
 | `step:<n>:tool:<screw>` | the fastener gate's `tool` rule (`fasteners.tool_check`) on its sweep (`fasteners.tool_access`) at this step: no tool or envelope, or the envelope overlapping a part present when the screw is driven. `step:<n>:tool` warns when a step declares a tool but installs no fastener |
-| `service:<instance>` | (warning, with `service=`) pulled back out along its direction from the finished assembly, the part meets a part fitted later other than its own fasteners (those that clamp it or thread into it, listed as `own_fasteners_first`) |
+| `service:<instance>` | (warning, with `service=`: True, part names or instance keys) pulled back out along its direction from the finished assembly, the part meets a part fitted or a fastener installed later, other than its own fasteners (those that clamp it or thread into it, listed as `own_fasteners_first`); or the kernel could not decide (`undecided`). Parts no step brings in are not counted |
 
 **Which step installs a fastener**, and what is present when it is driven, are the fastener gate's rules
 (`install_step`, `present_at`), so both gates agree. A catalogue key listed once in a step means "these
@@ -575,9 +575,9 @@ declared in `intended_overlaps` (a press fit, a heat-set insert) is left out, wi
 
 **The insertion sweep.** The instance moves along `seat - s * direction`, `s` from `margin_mm` beyond the far side
 of the obstacle's box down to 0 (one obstacle at a time). This is conservative advancement:
-- from each position the part steps by its gap to the obstacle, the box distance or, once the boxes come within
-  `touch_mm`, the exact gap. Moving by less than the gap cannot close it, so far from contact nothing is skipped and
-  a long approach costs a few queries;
+- from each position the part steps by its gap to the obstacle: the box distance while the boxes are at least
+  `max_step_mm` apart, the exact gap once they come closer. Moving by less than the gap cannot close it, so far
+  from contact nothing is skipped and a long approach costs a few queries;
 - only where the gap is under `max_step_mm` (sliding along a face, passing close by) is the line sampled at
   `max_step_mm`;
 - shared volume over `overlap_mm3` at a sample blocks the step, and the first contact is bisected (`refine_steps`)
@@ -589,11 +589,15 @@ hash plus the translated placement, so an unchanged rerun reads only the cache.
 
 **Witnesses.** For a blocked pair: `first_contact_mm` = [last clear s, first hit s] (the distance before the seat
 where the part first meets the obstacle), the overlap's centroid there (the contact point) and the gap and
-closest points on the clear side. For a clear step: the parts it touches on the way or at its seat (`touching`) and
-the smallest clearance to any other present part (`min_clearance`, exact or a box lower bound, said which).
+closest points on the clear side. For a clear step: the parts it touches on the way or at its seat (`touching`),
+and the closest approach to any other present part as two numbers that bracket it: `min_clearance`, the smallest
+exact gap measured (at the seat or within `max_step_mm` of an obstacle's box; the closest approach is at most this),
+and `clearance_at_least`, a bound that holds over the whole path, between samples too (moving by h changes a gap by
+at most h, so between samples h apart with gaps g1 and g2 the gap is at least (g1 + g2 - h) / 2; for a pair whose
+swept box never comes near, the box gap). The step table shows `lo..hi`, one number when they agree, or `≥ lo`.
 
 **Output.** The verdict (`cadagent.gate/1`) carries `steps`, one row per step: fit, onto, direction, how many
-parts are present, the clearance, what it touches, the fasteners it installs with each tool's status, and what
+parts are present, the clearance bracket, what it touches, the fasteners it installs with each tool's status, and what
 blocked it; plus `not_checked` (steps without a direction, tools with nothing to drive, parts no step brings in)
 and `world_stats` (kernel queries, cache and memo hits, tool sweeps). With `out=`, `steps_markdown` writes the step
 table beside the JSON as `.md`.
@@ -602,7 +606,7 @@ table beside the JSON as `.md`.
 relation of a translated part to another (`relate_at`) and the tool sweep (`AssemblySequenceWorld` wraps an
 `Assembly`), which is how the rules are tested in core CI.
 
-**Cost.** Gate bench, 15 steps, 25 parts, four tool sweeps: about 3.5 s cold, 221 exact queries (a part sliding
+**Cost.** Gate bench, 15 steps, 25 parts, four tool sweeps: about 3.7 s cold, 238 exact queries (a part sliding
 along a face, like the board down the hopper wall or the pin through its bores, is sampled every `max_step_mm`), on
 a workstation at load 6.
 

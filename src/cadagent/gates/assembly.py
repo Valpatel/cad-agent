@@ -35,7 +35,7 @@ order within the step is not declared). A fastener goes in at its ``install_step
 the far side of each present part's box (``margin_mm`` past it) down to 0. It is conservative advancement: from
 each position the part steps by the gap to the obstacle, the box distance or the exact one (moving by less than
 the gap cannot close it), and by ``max_step_mm`` only while the gap is smaller than that, i.e. while it is within
-reach of contact or sliding along a face. Shared volume over ``overlap_mm3`` at any sample blocks the step; the
+reach of contact or sliding along a face; within ``max_step_mm`` of the obstacle's box every sample is exact. Shared volume over ``overlap_mm3`` at any sample blocks the step; the
 first contact is then bisected (``refine_steps``) between the last clear sample and the first hit. At the seat
 (``s = 0``) contact is expected and shared volume blocks, unless the pair is a declared intended overlap (then it
 is excluded from the sweep, with its reason, like a press-fit or heat-set insert).
@@ -279,7 +279,10 @@ def sweep_pair(world: SequenceWorld, key: str, direction: Vec, other: str, *,
 
     The positions are ``seat - s * direction``, ``s`` from the far side of ``other``'s box (plus ``margin_mm``)
     down to 0. Returns ``{"part": other, "state": ..., ...}`` with ``state`` one of ``clear`` (never shares
-    volume; ``min_gap_mm`` with ``gap_exact``, ``touching`` when it slides along or seats on ``other``),
+    volume; the closest approach lies between ``gap_lower_bound_mm``, which holds over the whole path, between
+    samples too, and ``min_gap_mm``, the smallest exact gap measured (the seat, and every sample within
+    ``max_step_mm`` of the obstacle's box; None when nothing was measured); ``touching`` when it slides along or
+    seats on ``other``),
     ``blocked`` (shares volume on the way: ``first_contact_mm`` = [last clear s, first hit s] after bisection,
     ``overlap_mm3`` and its centroid at the hit, the closest points at the clear side), ``seat`` (shares volume
     at its seat), ``unknown`` (the kernel could not decide a sample) or ``unchecked`` (over ``max_samples``).
@@ -294,11 +297,23 @@ def sweep_pair(world: SequenceWorld, key: str, direction: Vec, other: str, *,
                   for i in range(6))
     lb = box_distance(swept, qb)
     if lb > tol.touch_mm:
-        out.update(state="clear", min_gap_mm=_r(lb), gap_exact=False, samples=0)
+        out.update(state="clear", min_gap_mm=None, gap_lower_bound_mm=_r(lb), touching=False, samples=0)
         return out
     samples = 0
-    min_gap, exact = math.inf, True
+    measured = math.inf                 # the smallest exact gap measured on the path
+    bound = math.inf                    # a lower bound on the gap over the whole sampled path
     touching = False
+    last: Optional[Tuple[float, float]] = None   # (s, lower bound on the gap there) of the previous sample
+
+    def note(at: float, g: float) -> None:
+        # translating by h changes the gap by at most h, so between two samples h apart with gaps (at least)
+        # g1 and g2 the gap is at least (g1 + g2 - h) / 2
+        nonlocal bound, last
+        bound = min(bound, g)
+        if last is not None:
+            bound = min(bound, max(0.0, (last[1] + g - abs(last[0] - at)) / 2))
+        last = (at, g)
+
     if seat:
         rel0 = world.relate_at(key, (0.0, 0.0, 0.0), other)
         samples += 1
@@ -311,7 +326,7 @@ def sweep_pair(world: SequenceWorld, key: str, direction: Vec, other: str, *,
             return out
         g0 = rel0.gap_mm if rel0.gap_mm is not None else 0.0
         touching = g0 <= tol.touch_mm
-        min_gap = g0
+        measured = g0
     s, prev, prev_rel = travel, None, None
     step = options.max_step_mm
     while s > 1e-9:
@@ -322,9 +337,9 @@ def sweep_pair(world: SequenceWorld, key: str, direction: Vec, other: str, *,
         shift = tuple(s * c for c in back)
         gb = box_distance(_shift_box(pb, shift), qb)
         rel = None
-        if gb > tol.touch_mm:
-            gap, gap_exact = gb, False
-        else:
+        if gb >= step and prev is not None:     # far: the box gap is a safe step, no kernel query (the first
+            gap = gb                            # sample is exact, so the start offset never reads as a clearance)
+        else:                           # within reach of contact: measure exactly
             rel = world.relate_at(key, shift, other)
             samples += 1
             if rel.state == "unknown":
@@ -334,13 +349,16 @@ def sweep_pair(world: SequenceWorld, key: str, direction: Vec, other: str, *,
                 out.update(_onset(world, key, back, other, s, prev, rel, prev_rel, options))
                 out["samples"] = samples + out.pop("refine_samples", 0)
                 return out
-            gap, gap_exact = (rel.gap_mm if rel.gap_mm is not None else 0.0), True
+            gap = rel.gap_mm if rel.gap_mm is not None else 0.0
+            measured = min(measured, gap)
             touching = touching or gap <= tol.touch_mm
-        if gap < min_gap:
-            min_gap, exact = gap, gap_exact
+        note(s, gap)
         prev, prev_rel = s, rel
         s -= max(gap, step)
-    out.update(state="clear", min_gap_mm=_r(min_gap), gap_exact=exact, touching=touching, samples=samples)
+    if seat:
+        note(0.0, g0)
+    out.update(state="clear", min_gap_mm=_r(measured) if math.isfinite(measured) else None,
+               gap_lower_bound_mm=_r(bound) if math.isfinite(bound) else None, touching=touching, samples=samples)
     return out
 
 
@@ -586,7 +604,7 @@ def run_sequence(world: SequenceWorld, steps: Iterable[Any], fasteners: Any = No
                                 "checked", [s["fit"]]))
             not_checked.append({"step": o, "what": "insertion", "reason": "no direction"})
         elif inst:
-            blocked, results, nearest = [], {}, None
+            blocked, results, nearest, floor = [], {}, None, None
             for k in inst:
                 rs = []
                 for q in present:
@@ -595,11 +613,15 @@ def run_sequence(world: SequenceWorld, steps: Iterable[Any], fasteners: Any = No
                         exclusions[(k, q)] = {"parts": [k, q], "reason": reason, "step": o}
                         continue
                     r = sweep_pair(world, k, d, q, options=options, tol=tol)
-                    if r["state"] != "clear" or r.get("gap_exact") or r.get("touching"):
+                    if r["state"] != "clear" or r.get("min_gap_mm") is not None or r.get("touching"):
                         rs.append(r)
-                    if r["state"] == "clear" and not r.get("touching") and r.get("min_gap_mm") is not None:
-                        cand = (r["min_gap_mm"], not r["gap_exact"], k, q)
-                        nearest = cand if nearest is None or cand < nearest else nearest
+                    if r["state"] == "clear" and not r.get("touching"):
+                        if r.get("min_gap_mm") is not None:
+                            cand = (r["min_gap_mm"], k, q)
+                            nearest = cand if nearest is None or cand < nearest else nearest
+                        if r.get("gap_lower_bound_mm") is not None:
+                            cand = (r["gap_lower_bound_mm"], k, q)
+                            floor = cand if floor is None or cand < floor else floor
                     if r["state"] != "clear":
                         blocked.append((k, r))
                 results[k] = rs
@@ -608,10 +630,11 @@ def run_sequence(world: SequenceWorld, steps: Iterable[Any], fasteners: Any = No
                   "max_step_mm": options.max_step_mm, "margin_mm": options.margin_mm,
                   "touching": slides, "near": {k: rs for k, rs in results.items() if rs}}
             if nearest is not None:
-                ev["min_clearance"] = {"gap_mm": nearest[0], "exact": not nearest[1], "part": nearest[2],
-                                       "other": nearest[3]}
+                ev["min_clearance"] = {"gap_mm": nearest[0], "part": nearest[1], "other": nearest[2]}
+            if floor is not None:
+                ev["clearance_at_least"] = {"gap_mm": floor[0], "part": floor[1], "other": floor[2]}
             row.update(touching=slides, min_clearance_mm=nearest[0] if nearest else None,
-                       min_clearance_exact=(not nearest[1]) if nearest else None,
+                       clearance_at_least_mm=floor[0] if floor else None,
                        blocked=[{"instance": k, **r} for k, r in blocked])
             if blocked:
                 msgs = []
@@ -655,12 +678,17 @@ def run_sequence(world: SequenceWorld, steps: Iterable[Any], fasteners: Any = No
                 row["tools"] = tool_rows
 
         # service: pull each instance back out of the finished assembly past the parts fitted later
-        if service_on and inst and d is not None and (service_set is None or s["fit"] in service_set
-                                                       or owner(s["fit"]) in service_set):
-            later = [k for k in names if k not in inst and k not in present]
+        chosen = [k for k in inst if service_set is None or k in service_set or owner(k) in service_set
+                  or s["fit"] in service_set]
+        if service_on and chosen and d is not None:
+            # what goes in at or after this step (fasteners driven here come after the part); parts no step
+            # brings in are not "fitted later" and are listed in not_checked instead
+            later = [k for k in names if k not in inst and (installed_at.get(k) if (kinds[k] == "fastener" or
+                                                                                   k in installed_at)
+                                                            else first_fit.get(k)) is not None and k not in present]
             own = {sp.instance_key(i) for sp in specs.values() for i in range(len(sp.axes))
                    if owner(s["fit"]) in sp.stack + [sp.into] or s["fit"] in sp.stack + [sp.into]}
-            for k in inst:
+            for k in chosen:
                 first, own_hit, undecided = [], [], []
                 for q in later:
                     r = sweep_pair(world, k, d, q, options=options, tol=tol, seat=False)
@@ -759,12 +787,16 @@ def steps_markdown(data: Mapping[str, Any]) -> str:
             prev = status.get(o, "pass")
             status[o] = "fail" if "fail" in (prev, c["status"]) else ("warn" if "warn" in (prev, c["status"])
                                                                      else "pass")
-    lines = ["| Step | Fit | Onto | Direction | Present | Min clearance (mm) | Touching | Fasteners | Tool | Status |",
+    lines = ["| Step | Fit | Onto | Direction | Present | Clearance (mm) | Touching | Fasteners | Tool | Status |",
              "|---|---|---|---|---|---|---|---|---|---|"]
     for r in data.get("steps") or []:
         tools = ", ".join(f"{t['fastener']}: {t['status']}" for t in r.get("tools") or [])
-        mc = r.get("min_clearance_mm")
-        mc = (("" if r.get("min_clearance_exact") else "≥ ") + f"{mc:.2f}") if isinstance(mc, (int, float)) else "-"
+        mc, lo = r.get("min_clearance_mm"), r.get("clearance_at_least_mm")
+        if isinstance(mc, (int, float)) and isinstance(lo, (int, float)) and lo < mc - 5e-3:
+            mc = f"{lo:.2f}..{mc:.2f}"
+        else:
+            mc = f"{mc:.2f}" if isinstance(mc, (int, float)) else (f"≥ {lo:.2f}" if isinstance(lo, (int, float))
+                                                                   else "-")
         lines.append("| {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |".format(
             r["order"], r["fit"], ", ".join(r.get("onto") or []) or "-", r.get("direction") or "-",
             r.get("present", "-"), mc,

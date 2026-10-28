@@ -1273,7 +1273,14 @@ def tool_access(assembly: Any, spec: FastenerSpec, i: int, tool_name: str, decl:
     dict the ``tool`` check reads (``blocked``, ``swing``, ``clear``, ``error``); other gates (the assembly gate)
     turn it into their own check with ``tool_check``."""
     from cadagent.gates.relations import Tolerances
-    head = _head(spec, _screw_box(assembly, spec, i), spec.diameter_mm)
+    screw = _screw_box(assembly, spec, i)
+    if screw is None and spec.diameter_mm is None and not spec.head_h_mm:
+        # the fastener gate fails such a screw ("no diameter"); without a head height the sweep would start at
+        # the seat, so the tool check fails too rather than pass from the wrong place
+        return {"tool": tool_name, "step": step["order"] if step else None,
+                "step_fit": step["fit"] if step else None, "present": list(present),
+                "error": f"{spec.name}: no head height (declare diameter_mm or head_h_mm, or place the screw's solid)"}
+    head = _head(spec, screw, spec.diameter_mm)
     return _tool_sweep(assembly, spec, i, {"head": head}, tool_name, decl, present, step, tol or Tolerances(),
                        probe, later)
 

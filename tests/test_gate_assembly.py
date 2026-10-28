@@ -278,6 +278,8 @@ def test_fasteners_by_catalogue_key_are_counted_and_none_is_doubled_or_lost():
     assert "'s0x' names no declared fastener" in checks["step:4:refs"].message
     checks, _, _ = run(fasteners=screws(), tools=tools)
     assert failed(checks) == ["cover:s0", "cover:s1"] and "no step installs it" in checks["cover:s0"].message
+    checks, _, _ = run(step_list=steps((4, {"fasteners": ["s0", "s0", "s1"]})), fasteners=screws(), tools=tools)
+    assert failed(checks) == ["step:4:refs"] and "fastener 's0' is listed 2 times" in checks["step:4:refs"].message
 
 
 def test_a_blocked_tool_fails_at_the_step_and_a_tool_with_nothing_to_drive_warns():
@@ -298,6 +300,8 @@ def test_service_removal_names_the_parts_fitted_later_that_must_come_off_first()
     checks, _, _ = run(service=True)
     assert checks["service:card"].status == "warn" and checks["service:card"].evidence["remove_first"] == ["cover"]
     assert checks["service:cover"].status == "pass"
+    checks, _, _ = run(service="card")
+    assert [k for k in checks if k.startswith("service:")] == ["service:card"]
     st = steps((4, {"fasteners": ["s0", "s1"], "tool": "hex 2.5"}))
     boxes = dict(BOXES, **{"s0": (14, 14, 22, 16, 16, 33), "s1": (19, 14, 22, 21, 16, 33)})
     kinds = {"s0": "fastener", "s1": "fastener"}

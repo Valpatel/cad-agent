@@ -391,7 +391,7 @@ def _plan(steps: List[Dict[str, Any]], names: List[str], kinds: Mapping[str, str
     for s in steps:
         for k in _instances(parts, s["fit"]) if s["fit"] else []:
             fitted[k].append(s["order"])
-        for f in s["fasteners"]:
+        for f in dict.fromkeys(s["fasteners"]):          # a name repeated within one step is a refs problem
             if f in specs:
                 named[f].append(s["order"])
     install = {n: (install_step(sp, steps) or {}).get("order") for n, sp in specs.items()}
@@ -511,14 +511,15 @@ def run_sequence(world: SequenceWorld, steps: Iterable[Any], fasteners: Any = No
             checks.append(Check(f"cover:{name}", "pass", f"fitted at step {', '.join(map(str, at))}", [name], ev))
     for n in sorted(specs):
         by_name, st = plan["named"][n], plan["install"][n]
+        cid = f"cover:fastener:{n}" if n in plan["part_names"] else f"cover:{n}"   # a hand-built name clash
         if len(by_name) > 1:
-            checks.append(Check(f"cover:{n}", "fail", f"listed by name at steps {', '.join(map(str, by_name))}",
+            checks.append(Check(cid, "fail", f"listed by name at steps {', '.join(map(str, by_name))}",
                                 [n], {"steps": by_name}))
         elif st is None:
-            checks.append(Check(f"cover:{n}", "fail", "no step installs it (list its name or catalogue key under a "
+            checks.append(Check(cid, "fail", "no step installs it (list its name or catalogue key under a "
                                 "step's fasteners)", [n]))
         else:
-            checks.append(Check(f"cover:{n}", "pass", f"installed at step {st}", [n], {"step": st}))
+            checks.append(Check(cid, "pass", f"installed at step {st}", [n], {"step": st}))
 
     installed_at = {sp.instance_key(i): plan["install"][n] for n, sp in specs.items() for i in range(len(sp.axes))}
 
@@ -538,8 +539,8 @@ def run_sequence(world: SequenceWorld, steps: Iterable[Any], fasteners: Any = No
         not_checked.append({"what": "insertion obstacles", "parts": unplaced,
                             "reason": "no step fits or installs them, so no insertion is checked against them"})
 
-    service_on = service is True or (service not in (False, None) and bool(list(service)))
-    service_set = None if service is True else set(service or [])
+    service_set = None if service is True else set([service] if isinstance(service, str) else (service or []))
+    service_on = service is True or bool(service_set)
     for s in step_list:
         o = s["order"]
         row: Dict[str, Any] = {"order": o, "fit": s["fit"], "onto": s["onto"], "direction": s["direction"],
@@ -547,7 +548,8 @@ def run_sequence(world: SequenceWorld, steps: Iterable[Any], fasteners: Any = No
         ref = plan["refs"][o]
         refs_status = "fail" if ref["problems"] else "pass"
         checks.append(Check(f"step:{o}:refs", refs_status, "; ".join(ref["problems"]) or
-                            "fit, onto and fasteners resolve; onto parts come earlier", [s["fit"]] + s["onto"],
+                            "fit, onto and fasteners resolve; onto parts come earlier",
+                            [p for p in [s["fit"]] + s["onto"] if p],
                             ref["evidence"]))
         # fasteners installed here: what they clamp and thread into must already be fitted
         here = sorted(n for n, st in plan["install"].items() if st == o)
@@ -639,10 +641,10 @@ def run_sequence(world: SequenceWorld, steps: Iterable[Any], fasteners: Any = No
                 not_checked.append({"step": o, "what": "tool", "reason": "no fastener installed at the step"})
             stepd = {"order": o, "fit": s["fit"]}
             tool_rows = []
+            pres = present_at(stepd, step_list, names, specs, kinds) if here else []
             for n in here:
                 sp = specs[n]
                 tool_name = sp.tool or s["tool"]
-                pres = present_at(stepd, step_list, names, specs, kinds)
                 for i in range(len(sp.axes)):
                     ik = sp.instance_key(i)
                     res = world.tool(sp, i, tool_name, tools.get(tool_name), pres, stepd)
@@ -659,13 +661,21 @@ def run_sequence(world: SequenceWorld, steps: Iterable[Any], fasteners: Any = No
             own = {sp.instance_key(i) for sp in specs.values() for i in range(len(sp.axes))
                    if owner(s["fit"]) in sp.stack + [sp.into] or s["fit"] in sp.stack + [sp.into]}
             for k in inst:
-                first, own_hit = [], []
+                first, own_hit, undecided = [], [], []
                 for q in later:
                     r = sweep_pair(world, k, d, q, options=options, tol=tol, seat=False)
-                    if r["state"] != "clear":
+                    if r["state"] in ("unknown", "unchecked"):
+                        undecided.append({"part": q, "state": r["state"], "error": r.get("error")})
+                    elif r["state"] != "clear":
                         (own_hit if q in own else first).append(q)
                 ev = {"remove_first": first, "own_fasteners_first": own_hit, "direction": list(d)}
-                if first:
+                if undecided:
+                    ev["undecided"] = undecided
+                    checks.append(Check(f"service:{k}", "warn", f"removal of {k} not decided against "
+                                        f"{', '.join(u['part'] for u in undecided)}" +
+                                        (f"; {', '.join(first)} (fitted later) must come off first" if first else ""),
+                                        [k] + first + [u["part"] for u in undecided], ev))
+                elif first:
                     checks.append(Check(f"service:{k}", "warn", f"to pull {k} out along {s['direction']} reversed, "
                                         f"{', '.join(first)} (fitted later) must come off first", [k] + first, ev))
                 else:

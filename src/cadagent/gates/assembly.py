@@ -25,10 +25,11 @@ check                        fails when
                              in the finished assembly, meets a part fitted later other than its own fasteners
 ============================ ==========================================================================================
 
-**Present at a step.** The parts fitted at earlier steps, the solids of fasteners installed at earlier steps,
-and, conservatively, parts no step fits and fasteners no step installs (the fastener gate's ``present_at``, so
-both gates agree). Instances fitted at the same step are not checked against each other (their order within the
-step is not declared). A fastener goes in at its ``install_step`` (the fastener gate's rule).
+**Present at a step.** For an insertion: the parts fitted at earlier steps and the solids of fasteners installed
+at earlier steps; parts no step fits (``cover:`` fails them) are left out and listed in ``not_checked``. For a tool
+sweep: the fastener gate's ``present_at`` (everything fitted at or before the step, and, conservatively, parts no
+step fits), so both gates agree. Instances fitted at the same step are not checked against each other (their
+order within the step is not declared). A fastener goes in at its ``install_step`` (the fastener gate's rule).
 
 **The insertion sweep.** The part instance moves along the line ``seat - s * direction`` with ``s`` from beyond
 the far side of each present part's box (``margin_mm`` past it) down to 0. It is conservative advancement: from
@@ -69,9 +70,10 @@ AXES = {"X": (1.0, 0.0, 0.0), "Y": (0.0, 1.0, 0.0), "Z": (0.0, 0.0, 1.0)}
 ASSUMPTIONS = [
     "Each part goes in along a straight line in its step's declared direction, from beyond every part present "
     "to its modelled position: no rotation, tilt or wiggle, and no room for hands or fixtures is checked.",
-    "Present at a step: parts fitted at earlier steps and fasteners installed at earlier steps (the fastener "
-    "gate's install_step and present_at); parts no step fits and fasteners no step installs count as present "
-    "(conservative). Instances fitted at one step are not checked against each other.",
+    "An insertion is checked against the parts fitted and the fasteners installed at earlier steps (the fastener "
+    "gate's install_step); parts no step fits are not obstacles (the cover check fails them). A tool sweep is "
+    "checked against the fastener gate's present_at (parts no step fits count as present). Instances fitted at "
+    "one step are not checked against each other.",
     "Conservative advancement: the part steps by its gap to each obstacle (box distance or exact), which cannot "
     "skip a contact, and by max_step_mm only within that distance of it; a feature thinner than that step can "
     "pass another between two samples there.",
@@ -518,8 +520,23 @@ def run_sequence(world: SequenceWorld, steps: Iterable[Any], fasteners: Any = No
         else:
             checks.append(Check(f"cover:{n}", "pass", f"installed at step {st}", [n], {"step": st}))
 
+    installed_at = {sp.instance_key(i): plan["install"][n] for n, sp in specs.items() for i in range(len(sp.axes))}
+
     def present_before(order: Any) -> List[str]:
-        return present_at({"order": order - 0.5}, step_list, names, specs, kinds)
+        """The obstacles of an insertion: parts fitted and fastener solids installed at earlier steps. Unlike the
+        tool sweep (``present_at``), parts and fasteners no step brings in are left out: ``cover:`` fails them."""
+        out = []
+        for k in names:
+            at = installed_at.get(k) if (kinds[k] == "fastener" or k in installed_at) else first_fit.get(k)
+            if at is not None and at < order:
+                out.append(k)
+        return out
+
+    unplaced = [k for k in names if (installed_at.get(k) if (kinds[k] == "fastener" or k in installed_at)
+                                     else first_fit.get(k)) is None]
+    if unplaced:
+        not_checked.append({"what": "insertion obstacles", "parts": unplaced,
+                            "reason": "no step fits or installs them, so no insertion is checked against them"})
 
     service_on = service is True or (service not in (False, None) and bool(list(service)))
     service_set = None if service is True else set(service or [])
@@ -567,7 +584,7 @@ def run_sequence(world: SequenceWorld, steps: Iterable[Any], fasteners: Any = No
                                 "checked", [s["fit"]]))
             not_checked.append({"step": o, "what": "insertion", "reason": "no direction"})
         elif inst:
-            blocked, results = [], {}
+            blocked, results, nearest = [], {}, None
             for k in inst:
                 rs = []
                 for q in present:
@@ -578,27 +595,29 @@ def run_sequence(world: SequenceWorld, steps: Iterable[Any], fasteners: Any = No
                     r = sweep_pair(world, k, d, q, options=options, tol=tol)
                     if r["state"] != "clear" or r.get("gap_exact") or r.get("touching"):
                         rs.append(r)
+                    if r["state"] == "clear" and not r.get("touching") and r.get("min_gap_mm") is not None:
+                        cand = (r["min_gap_mm"], not r["gap_exact"], k, q)
+                        nearest = cand if nearest is None or cand < nearest else nearest
                     if r["state"] != "clear":
                         blocked.append((k, r))
                 results[k] = rs
-            gaps = [(r["min_gap_mm"], k, r["part"]) for k, rs in results.items() for r in rs
-                    if r["state"] == "clear" and r.get("min_gap_mm") is not None and not r.get("touching")]
             slides = sorted({r["part"] for rs in results.values() for r in rs if r.get("touching")})
             ev = {"direction": list(d), "instances": inst, "present": present,
                   "max_step_mm": options.max_step_mm, "margin_mm": options.margin_mm,
                   "touching": slides, "near": {k: rs for k, rs in results.items() if rs}}
-            if gaps:
-                g = min(gaps)
-                ev["min_clearance"] = {"gap_mm": g[0], "part": g[1], "other": g[2]}
-            row.update(touching=slides, min_clearance_mm=ev.get("min_clearance", {}).get("gap_mm"),
+            if nearest is not None:
+                ev["min_clearance"] = {"gap_mm": nearest[0], "exact": not nearest[1], "part": nearest[2],
+                                       "other": nearest[3]}
+            row.update(touching=slides, min_clearance_mm=nearest[0] if nearest else None,
+                       min_clearance_exact=(not nearest[1]) if nearest else None,
                        blocked=[{"instance": k, **r} for k, r in blocked])
             if blocked:
                 msgs = []
                 for k, r in blocked:
                     if r["state"] == "blocked":
-                        fc = r["first_contact_mm"]
-                        msgs.append(f"{k} meets {r['part']} {fc[1]:.2f} mm before its seat "
-                                    f"({r.get('overlap_mm3') or 0:.3f} mm³ there)")
+                        fc, at = r["first_contact_mm"], r.get("overlap_centroid")
+                        msgs.append(f"{k} meets {r['part']} {fc[1]:.2f} mm before its seat" +
+                                    (f" (first contact near ({', '.join(f'{c:.1f}' for c in at)}))" if at else ""))
                     elif r["state"] == "seat":
                         msgs.append(f"{k} overlaps {r['part']} at its seat ({r.get('overlap_mm3') or 0:.3f} mm³)")
                     else:
@@ -735,9 +754,10 @@ def steps_markdown(data: Mapping[str, Any]) -> str:
     for r in data.get("steps") or []:
         tools = ", ".join(f"{t['fastener']}: {t['status']}" for t in r.get("tools") or [])
         mc = r.get("min_clearance_mm")
+        mc = (("" if r.get("min_clearance_exact") else "≥ ") + f"{mc:.2f}") if isinstance(mc, (int, float)) else "-"
         lines.append("| {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |".format(
             r["order"], r["fit"], ", ".join(r.get("onto") or []) or "-", r.get("direction") or "-",
-            r.get("present", "-"), f"{mc:.2f}" if isinstance(mc, (int, float)) else "-",
+            r.get("present", "-"), mc,
             ", ".join(r.get("touching") or []) or "-", ", ".join(r.get("installs") or []) or "-",
             (r.get("tool") or "-") + (f" ({tools})" if tools else ""), status.get(r["order"], "pass")))
     blocked = [(r["order"], b) for r in data.get("steps") or [] for b in r.get("blocked") or []]

@@ -38,6 +38,9 @@ def test_same_mesh_gives_the_same_bytes(tmp_path, monkeypatch):
     monkeypatch.setattr(time, "localtime", lambda *_: time.struct_time((2033, 5, 18, 3, 33, 20, 2, 138, 0)))
     mesh3mf.write_3mf(b, v, f, "cube", bed_xy=(256, 256))
     assert hashlib.sha256(a.read_bytes()).digest() == hashlib.sha256(b.read_bytes()).digest()
+    import zipfile
+    for info in zipfile.ZipFile(b).infolist():
+        assert (info.date_time, info.create_system, info.external_attr >> 16) == ((1980, 1, 1, 0, 0, 0), 3, 0o100644)
 
 
 def test_cube_round_trip_is_centred_on_the_bed_and_verified(tmp_path):

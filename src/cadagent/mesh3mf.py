@@ -114,11 +114,14 @@ def verify_3mf(path: Path, vertices: np.ndarray, faces: np.ndarray) -> Dict[str,
     }
 
 def _entry(member: str) -> zipfile.ZipInfo:
-    """A zip entry with a fixed date and mode, so the same mesh always gives the same
-    bytes (the slice report keys each part on its 3MF's sha256)."""
+    """A zip entry with a fixed date, host OS and mode, so the same mesh always gives the
+    same bytes (the slice report keys each part on its 3MF's sha256). The deflate output
+    can still differ between zlib builds (stock zlib vs zlib-ng), so slice the 3MFs
+    written by the host that builds them."""
     info = zipfile.ZipInfo(member, date_time=(1980, 1, 1, 0, 0, 0))
     info.compress_type = zipfile.ZIP_DEFLATED
-    info.external_attr = 0o644 << 16
+    info.create_system = 3                      # Unix, on every host
+    info.external_attr = 0o100644 << 16         # regular file, rw-r--r--
     return info
 
 

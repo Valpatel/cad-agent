@@ -8,7 +8,8 @@ from cadagent.cli import main
 
 
 def kit(tmp_path):
-    root = tmp_path / 'kit'
+    root = tmp_path / 'cad-agent-kit'
+    (root / 'src/cadagent').mkdir(parents=True)
     (root / 'skills/alpha').mkdir(parents=True)
     (root / 'skills/alpha/SKILL.md').write_text('---\nname: alpha\ndescription: "Use when: alpha things"\n---\n\nBody A\n')
     (root / 'agents').mkdir()
@@ -60,7 +61,10 @@ def test_copy_mode_and_dry_run(tmp_path):
     agentkit.install(home, root, targets=('claude',), copy=True)
     assert not (home / '.claude/skills/alpha').is_symlink() and (home / '.claude/skills/alpha/SKILL.md').is_file()
     assert {row['state'] for row in agentkit.status(home, root, ('claude',))} == {'copied'}
+    (root / 'skills/alpha/SKILL.md').write_text((root / 'skills/alpha/SKILL.md').read_text() + 'New.\n')
+    assert 'copied, out of date' in {row['state'] for row in agentkit.status(home, root, ('claude',))}
     assert not agentkit.install(home, root, targets=('claude',), copy=True)['conflicts']   # copies are ours
+    assert {row['state'] for row in agentkit.status(home, root, ('claude',))} == {'copied'}
 
 
 def test_bad_kits_rejected(tmp_path):
@@ -82,3 +86,52 @@ def test_cli(tmp_path, capsys):
     assert main(['agents', 'list', '--source', str(root), '--home', str(home), '--target', 'codex']) == 0
     assert 'installed' in capsys.readouterr().out
     assert main(['agents', 'list', '--source', str(tmp_path), '--home', str(home)]) == 2     # not a kit
+
+
+def test_user_links_and_unreadable_files_are_conflicts(tmp_path):
+    root, home = kit(tmp_path), tmp_path / 'home'
+    own = tmp_path / 'my-skills/alpha'
+    own.mkdir(parents=True)
+    (home / '.claude/skills').mkdir(parents=True)
+    (home / '.claude/skills/alpha').symlink_to(own)                       # the user's own link
+    (home / '.claude/agents').mkdir(parents=True)
+    (home / '.claude/agents/reviewer.md').write_bytes(b'\xff\xfe not utf-8')
+    r = agentkit.install(home, root, targets=('claude',))
+    assert sorted(r['conflicts']) == sorted([str(home / '.claude/skills/alpha'), str(home / '.claude/agents/reviewer.md')])
+    assert (home / '.claude/skills/alpha').resolve() == own.resolve()
+
+
+def test_links_into_a_removed_cad_agent_worktree_are_replaced(tmp_path):
+    root, home = kit(tmp_path), tmp_path / 'home'
+    (home / '.claude/skills').mkdir(parents=True)
+    (home / '.claude/skills/alpha').symlink_to(tmp_path / 'cad-agent-old-worktree/skills/alpha')   # dangling
+    assert not agentkit.install(home, root, targets=('claude',))['conflicts']
+    assert (home / '.claude/skills/alpha').resolve() == (root / 'skills/alpha').resolve()
+
+
+def test_destinations_inside_the_kit_or_shared_codex_folder_refused(tmp_path):
+    root, home = kit(tmp_path), tmp_path / 'home'
+    (home / '.codex').mkdir(parents=True)
+    (home / '.codex/skills').symlink_to(root / 'skills')
+    with pytest.raises(ValueError, match='into the kit'):
+        agentkit.install(home, root)
+    (home / '.codex/skills').unlink()
+    (home / '.claude/skills').mkdir(parents=True)
+    (home / '.codex/skills').symlink_to(home / '.claude/skills')
+    with pytest.raises(ValueError, match='same folder'):
+        agentkit.install(home, root)
+    assert not agentkit.install(home, root, targets=('claude',))['conflicts']
+
+
+def test_hash_in_unquoted_description_rejected(tmp_path):
+    root = kit(tmp_path)
+    (root / 'agents/reviewer.md').write_text('---\nname: reviewer\ndescription: links PRs with Closes #N and more\n---\n')
+    with pytest.raises(ValueError, match='comment'):
+        agentkit.items(root)
+
+
+def test_codex_home(tmp_path, monkeypatch):
+    monkeypatch.setenv('CODEX_HOME', str(tmp_path / 'cx'))
+    monkeypatch.setattr(agentkit.Path, 'home', classmethod(lambda cls: tmp_path / 'home'))
+    assert agentkit.target_dirs(tmp_path / 'home')['codex_skills'] == tmp_path / 'cx/skills'
+    assert agentkit.target_dirs(tmp_path / 'other')['codex_skills'] == tmp_path / 'other/.codex/skills'

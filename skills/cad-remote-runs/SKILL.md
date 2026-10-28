@@ -15,8 +15,9 @@ where another computer can find them.
   Check its load first (`uptime`, `free -g`); other people's jobs may be running there.
 - **Give it the code from git**, not a hand copy, where possible: clone the repo there and `git fetch && git checkout
   <sha>` of your pushed branch. If you must copy a working tree (uncommitted changes, large untracked references),
-  use `rsync -a` with excludes for virtualenvs, caches and run folders, and pull back anything the host produced
-  before you push to it again (`--delete` overwrites newer remote results).
+  use `rsync -a` with excludes for virtualenvs, caches and run folders. Pull back anything the host produced before
+  you copy to it again. Use `--delete` only right after such a pull (it removes remote files that are not in your
+  copy, including results newer than it); without it, files you deleted locally stay on the host.
 - **Give it its own environment** (a virtualenv from the project's pinned requirements, `pip install -e` of the
   cad-agent checkout or version the project uses). Record which cad-agent commit it runs.
 
@@ -25,7 +26,7 @@ where another computer can find them.
 Detach it from the ssh session and the agent, and make the log say when it is done:
 
 ```bash
-ssh <host> 'cd <repo> && (setsid nohup bash -c "nice -n 5 <command> > build/<run>.log 2>&1; echo RUN-DONE rc=\$? >> build/<run>.log" < /dev/null > /dev/null 2>&1 &)'
+ssh <host> 'cd <repo> && mkdir -p build && (setsid nohup nice -n 5 bash -c "<command> > build/<run>.log 2>&1; echo RUN-DONE rc=\$? >> build/<run>.log" < /dev/null > /dev/null 2>&1 &)'
 ```
 
 Then **record it in the issue** right away (see `cad-work-tracking`):

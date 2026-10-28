@@ -21,8 +21,12 @@ cad-agent agents install --dry-run  # show first
 
 Links follow the checkout, so `git pull` updates the skills; rerun `install` after pulling to refresh the generated
 Codex files (`list` shows them as out of date). Link a long-lived checkout, not a feature worktree that will be
-removed; `--copy` copies instead. The installer replaces only what it installed (its links, generated files and
-marked copies); anything else at a destination is reported as a conflict and left alone.
+removed; `--copy` copies instead. The installer replaces only what it installed (links into a cad-agent checkout,
+generated files and marked copies); anything else at a destination, including your own links, is reported as a
+conflict and left alone. Codex's folder follows `$CODEX_HOME` when set. If `~/.codex/skills` is a link to
+`~/.claude/skills`, install with `--target claude`: Codex then sees the skills, and the generated agent skills would
+otherwise shadow Claude's subagents. Run a generated agent skill only in a separate Codex session, never on work
+that session wrote.
 
 ## What is in the kit
 

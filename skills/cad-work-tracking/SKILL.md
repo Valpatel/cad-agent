@@ -1,6 +1,6 @@
 ---
 name: cad-work-tracking
-description: Use at the start of any multi-step change in a cad-agent or product repo, and every ~30 minutes while working. Keeps work recoverable when the session ends (tokens run out, the host crashes or is reformatted) with a GitHub issue per piece of work with a done/next/how-to-resume checklist, a branch pushed in clean commits as you go, an early draft PR linked with "Closes #N", long runs recorded in the issue, and issues closed as PRs merge. Also use to resume work from GitHub alone.
+description: 'Use at the start of any multi-step change in a cad-agent or product repo, and every ~30 minutes while working. Keeps work recoverable when the session ends (tokens run out, the host crashes or is reformatted) with a GitHub issue per piece of work with a done/next/how-to-resume checklist, a branch pushed in clean commits as you go, an early draft PR linked with "Closes #N", long runs recorded in the issue, and issues closed as PRs merge. Also use to resume work from GitHub alone.'
 ---
 
 # Work tracking: assume the session ends in 30 minutes
@@ -33,7 +33,8 @@ alone.
    If not, checkpoint.
 6. **Close out as you go.** When a PR merges, its `Closes #N` closes the issue; check that it did, tick the tracking
    issue and comment with the merge commit. Close issues that turned out to be unnecessary, with the reason.
-   Delete merged branches and remove their worktrees (after checking no virtualenv imports from them).
+   Delete your own merged branches and remove your own worktrees (after checking no virtualenv imports from them);
+   never touch another session's branch or worktree.
 
 ## What must never live only locally
 
@@ -54,7 +55,9 @@ At the start of a session, or after a crash, rebuild the state from GitHub befor
 ```bash
 gh issue list --state open --assignee @me ; gh issue list --state open --limit 30
 gh pr list --state open --author @me
-git fetch --all --prune && git status -sb && git log --oneline -10 @{u}..HEAD   # unpushed work?
+git fetch --all --prune && git status -sb
+git log --oneline --branches --not --remotes                # commits on no remote: push them first
+git stash list
 ```
 
 Read the tracking issue's latest comment for the next step and the runs in flight; check each run's log on its host

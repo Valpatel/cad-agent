@@ -142,6 +142,14 @@ def safe_name(text: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", str(text)).strip("_") or "x"
 
 
+def _vec(v: Any, nonzero: bool = False) -> bool:
+    """Three finite numbers (and not all zero, with ``nonzero``)."""
+    if not (isinstance(v, (list, tuple)) and len(v) == 3 and all(
+            isinstance(c, (int, float)) and not isinstance(c, bool) and math.isfinite(c) for c in v)):
+        return False
+    return not nonzero or any(c != 0 for c in v)
+
+
 def _unit(v: Sequence[float]) -> Tuple[float, float, float]:
     n = math.sqrt(sum(float(c) ** 2 for c in v))
     if n == 0:
@@ -401,14 +409,16 @@ def _section_checks(verdict: Mapping[str, Any], rec: _Record, sid: str, parts: S
 
 def plan_packet(section: str, record: Mapping[str, Any], dossier: Any = None,
                 verdicts: Optional[Mapping[str, Mapping[str, Any]]] = None, status: Optional[Mapping[str, Any]] = None,
-                *, lint: Optional[Mapping[str, Any]] = None, expected: Optional[Mapping[str, Mapping[str, Any]]] = None,
+                *, lint: Optional[Mapping[str, Any]] = None, lint_current: bool = False,
+                expected: Optional[Mapping[str, Mapping[str, Any]]] = None,
                 record_file: str = "exports/dossier-geometry.json", out_dir: str = "",
                 gate_files: Optional[Mapping[str, str]] = None, explode: float = 1.0,
                 context: str = "neighbours", toolkit: str = "") -> Dict[str, Any]:
     """The packet manifest for ``section`` without image hashes (``views[].file`` set, ``sha256`` null).
 
     ``record``: the geometry record (JSON); ``dossier``: a loaded ``Dossier`` or None; ``verdicts``: ``{gate: verdict}``
-    from ``exports/gates/``; ``status``: ``exports/dossier-status.json``; ``lint``: the dossier-lint verdict;
+    from ``exports/gates/``; ``status``: ``exports/dossier-status.json``; ``lint``: the dossier-lint verdict
+    (``lint_current``: it was computed now, from this dossier, record and verdicts, not read from a file);
     ``expected``: ``{gate: {declarations, options}}`` to judge staleness as ``cad-agent check`` does (else the
     geometry only)."""
     from cadagent.gates.verdict import geometry_digest, stale_reason
@@ -477,6 +487,8 @@ def plan_packet(section: str, record: Mapping[str, Any], dossier: Any = None,
                 between = set(itf.between)
                 if between & (part_set | {section}):
                     out |= between
+                    for other in between - {section}:      # a party that is a section: all its parts
+                        out |= {n for n, info in rec.parts.items() if info.get("section") == other}
         for f in (rec.fasteners[n] for n in fnames):
             out |= {f.get("clamps"), f.get("into")} - {None}
         for j in rec.joints.values():
@@ -516,15 +528,18 @@ def plan_packet(section: str, record: Mapping[str, Any], dossier: Any = None,
             stale = stale_reason(v, record, **dict(expected.get(g) or {}))
         except Exception as exc:            # a malformed verdict is reported, never read as current
             stale = f"cannot compare inputs: {exc}"
-        gates_m[g] = {"file": gate_files.get(g, f"exports/gates/{g}.json"), "status": v.get("status"),
-                      "pass": v.get("pass"), "stale": stale, "checks": len(v.get("checks") or []),
-                      "section_checks": rows}
+        gates_m[g] = {"file": gate_files.get(g, f"exports/gates/{g}.json"), "sha256": verdict_digest(v),
+                      "status": v.get("status"), "pass": v.get("pass"), "stale": stale,
+                      "checks": len(v.get("checks") or []), "section_checks": rows}
         raw_findings += [(g, c, scope) for c, scope in found]
     wanted = {c[5:] for card in cards.values() for c in card.checks if str(c).startswith("gate:")}
     lint_m: Optional[Dict[str, Any]] = None
     if isinstance(lint, Mapping):
         rows, found = _section_checks(lint, rec, section, part_set, fast_set)
-        lint_m = {"file": f"exports/gates/{LINT_GATE}.json", "status": lint.get("status"), "pass": lint.get("pass"),
+        lint_m = {"file": f"exports/gates/{LINT_GATE}.json", "sha256": verdict_digest(lint),
+                  "status": lint.get("status"), "pass": lint.get("pass"),
+                  "stale": None if lint_current else "read from a file that records no inputs: it may predate the "
+                                                     "dossier or the verdicts (cad-agent review-packet runs the lint)",
                   "section_checks": [r for r in rows if r["status"] != "pass"]}
         raw_findings += [(LINT_GATE, c, scope) for c, scope in found if scope == "section"]
     measurements: Dict[str, Any] = {"gates": gates_m, "missing_gates": sorted(wanted - set(gates_m))}
@@ -536,6 +551,7 @@ def plan_packet(section: str, record: Mapping[str, Any], dossier: Any = None,
     for g, c, scope in raw_findings:
         findings.append({"id": f"F{len(findings) + 1}", "gate": g, "check": c.get("id"), "status": c.get("status"),
                          "message": c.get("message", ""), "parts": list(c.get("parts") or []), "scope": scope,
+                         "stale": (lint_m or {}).get("stale") if g == LINT_GATE else gates_m[g]["stale"],
                          "witness": witness_points(c.get("evidence"))})
 
     # -- views
@@ -596,7 +612,7 @@ def plan_packet(section: str, record: Mapping[str, Any], dossier: Any = None,
             continue
         axis = j.get("axis") or {}
         origin, d = axis.get("origin"), axis.get("direction")
-        if not (isinstance(origin, list) and isinstance(d, list) and len(origin) == 3 and len(d) == 3):
+        if not (_vec(origin) and _vec(d, nonzero=True)):
             not_rendered.append({"what": f"joint {jid}", "why": "no axis in the record"})
             continue
         n = plane_containing(d)
@@ -640,14 +656,14 @@ def plan_packet(section: str, record: Mapping[str, Any], dossier: Any = None,
         groups.setdefault((str(f.get("key") or fname), str(f.get("clamps"))), []).append(fname)
         for inst in insts:
             dd = inst.get("direction")
-            if isinstance(dd, list) and len(dd) == 3:
+            if _vec(dd, nonzero=True):
                 by_dir.setdefault(tuple(round(c, 3) + 0.0 for c in _unit(dd)), []).append(fname)
     for (key, clamps), group in sorted(groups.items()):
         fname = group[0]
         f = rec.fasteners[fname]
         inst = f["instances"][0]
         o, d = inst.get("origin"), inst.get("direction")
-        if not (isinstance(o, list) and isinstance(d, list) and len(o) == 3 and len(d) == 3):
+        if not (_vec(o) and _vec(d, nonzero=True)):
             not_rendered.append({"what": f"cut through {fname}", "why": "its axis is not in the record"})
             continue
         n = plane_containing(d)
@@ -710,6 +726,9 @@ def plan_packet(section: str, record: Mapping[str, Any], dossier: Any = None,
         "measurements": measurements,
         "findings": findings,
         "views": views,
+        "rendered": 0,
+        "options": {"explode": float(explode), "context": context},
+        "render": None,
         "checklist": checklist_for(views, parts),
         "not_rendered": not_rendered,
         "limits": list(LIMITS),
@@ -816,7 +835,7 @@ def _explode(rec: _Record, sec_keys: Sequence[str], fnames: Sequence[str],
                 base = list(offsets[host])
         for inst in f.get("instances") or []:
             dd = inst.get("direction")
-            if not (isinstance(dd, list) and len(dd) == 3):
+            if not _vec(dd, nonzero=True):
                 continue
             u = _unit(dd)
             offsets[str(inst.get("key"))] = _r([base[i] - u[i] * 0.25 * scale for i in range(3)], 4)
@@ -873,9 +892,21 @@ def checklist_for(views: Sequence[Mapping[str, Any]], parts: Mapping[str, Mappin
             "measured_only": [dict(m) for m in MEASURED_ONLY], "items": checklist_items(), "questions": questions}
 
 
-def packet_stale(manifest: Mapping[str, Any], record: Optional[Mapping[str, Any]]) -> Optional[str]:
-    """None while the packet was made from ``record`` (its geometry digest matches), else why it is stale."""
-    from cadagent.gates.verdict import geometry_digest
+def verdict_digest(data: Mapping[str, Any]) -> str:
+    """sha256 of a verdict's canonical JSON: what the packet quoted, to tell when a verdict was rewritten."""
+    return hashlib.sha256(json.dumps(data, sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()
+
+
+def packet_stale(manifest: Mapping[str, Any], record: Optional[Mapping[str, Any]], *,
+                 verdicts: Optional[Mapping[str, Mapping[str, Any]]] = None,
+                 expected: Optional[Mapping[str, Mapping[str, Any]]] = None,
+                 lint: Optional[Mapping[str, Any]] = None) -> Optional[str]:
+    """None while the packet is current evidence, else why not. The packet is stale when the geometry record
+    changed; when it quoted a verdict that was stale (or a lint read from a file) when it was made; and, given the
+    current ``verdicts`` (with the ``expected`` declarations and options per gate, as ``cad-agent check`` judges
+    them) and the current ``lint`` verdict, when any of them differs from what it quoted or is stale now.
+    ``project_packet_stale`` gathers all of these for a project."""
+    from cadagent.gates.verdict import geometry_digest, stale_reason
     if record is None:
         return "no geometry record to compare with"
     geo = manifest.get("geometry") if isinstance(manifest, Mapping) else None
@@ -883,7 +914,39 @@ def packet_stale(manifest: Mapping[str, Any], record: Optional[Mapping[str, Any]
         return "the packet records no geometry digest"
     if geo["digest"] != geometry_digest(record):
         return "the geometry changed since the packet was rendered: render it again"
+    m = manifest.get("measurements") or {}
+    quoted = m.get("gates") or {}
+    was = sorted(g for g, row in quoted.items() if row.get("stale"))
+    if was:
+        return f"the packet quotes verdicts that were stale when it was made ({', '.join(was)}): run cad-agent " \
+               "gates, then render the packet again"
+    if (m.get("lint") or {}).get("stale"):
+        return "the packet quotes a dossier lint that may not be current: render it again with cad-agent review-packet"
+    if verdicts is not None:
+        changed = sorted(g for g in set(quoted) | set(verdicts)
+                         if g not in quoted or g not in verdicts or quoted[g].get("sha256") != verdict_digest(verdicts[g]))
+        if changed:
+            return f"gate verdicts changed since the packet ({', '.join(changed)}): render it again"
+        for g in sorted(verdicts):
+            why = stale_reason(verdicts[g], record, **dict((expected or {}).get(g) or {}))
+            if why:
+                return f"verdict {g} is stale now ({why}): run cad-agent gates, then render the packet again"
+    if lint is not None and (m.get("lint") or {}).get("sha256") != verdict_digest(lint):
+        return "the dossier lint changed since the packet (the dossier or its evidence changed): render it again"
     return None
+
+
+def project_packet_stale(manifest: Mapping[str, Any], root: Union[str, Path] = ".") -> Optional[str]:
+    """``packet_stale`` against the project's current geometry record, gate verdicts (judged as ``cad-agent check``
+    does) and a fresh dossier lint. Needs no CAD kernel."""
+    from cadagent.dossier.lint import lint_project, project_evidence
+    from cadagent.project import load_project
+
+    project = load_project(root)
+    ev = project_evidence(project)
+    res = lint_project(project)
+    return packet_stale(manifest, ev.geometry, verdicts=ev.gates, expected=ev.expected,
+                        lint=res.to_verdict() if res is not None else None)
 
 
 def write_manifest(manifest: Mapping[str, Any], out_dir: Union[str, Path]) -> Path:
@@ -989,6 +1052,7 @@ def render_views(manifest: Dict[str, Any], result: Any, out_dir: Union[str, Path
         if path is None:
             v["file"] = None
     manifest["rendered"] = sum(1 for v in manifest["views"] if v.get("sha256"))
+    manifest["render"] = {"size": [int(size[0]), int(size[1])]}
     return manifest
 
 
@@ -998,7 +1062,7 @@ def plan_project_packet(section: str, *, root: Union[str, Path] = ".", out_dir: 
     the gate verdicts (staleness judged as ``cad-agent check`` does) and the dossier status. Returns the manifest
     and the directory it belongs in. Needs no CAD kernel."""
     from cadagent.dossier import load_project_dossier
-    from cadagent.dossier.lint import project_evidence
+    from cadagent.dossier.lint import lint_project, project_evidence
     from cadagent.gates.verdict import _toolkit_version
     from cadagent.project import load_project
 
@@ -1013,8 +1077,10 @@ def plan_project_packet(section: str, *, root: Union[str, Path] = ".", out_dir: 
         shown = target.resolve().relative_to(Path(project.root).resolve()).as_posix()
     except ValueError:
         shown = str(target)
-    manifest = plan_packet(section, ev.geometry, dossier, ev.gates, _read_json(exports / "dossier-status.json"),
-                           lint=_read_json(exports / "gates" / f"{LINT_GATE}.json"), expected=ev.expected,
+    res = lint_project(project)             # fresh: a lint file records no inputs, so it may be older than both
+    manifest = plan_packet(section, ev.geometry, dossier, ev.gates, res.to_status() if res is not None else None,
+                           lint=res.to_verdict() if res is not None else None, lint_current=True,
+                           expected=ev.expected,
                            record_file=ev.geometry_file, out_dir=shown, gate_files=ev.gate_files, explode=explode,
                            context=context, toolkit=_toolkit_version())
     return manifest, target
@@ -1067,8 +1133,10 @@ def _reuse(manifest: Dict[str, Any], previous: Optional[Mapping[str, Any]], targ
     same geometry digest and section hash, the same planned view, and the file's bytes still match its hash."""
     if not isinstance(previous, Mapping) or previous.get("schema") != SCHEMA:
         return
-    if (previous.get("geometry") or {}).get("digest") != manifest["geometry"]["digest"] or \
-            previous.get("section_hash") != manifest["section_hash"]:
+    for key in ("section_hash", "options", "render", "context"):    # the same section, drawn the same way
+        if previous.get(key) != manifest.get(key):
+            return
+    if (previous.get("geometry") or {}).get("digest") != manifest["geometry"]["digest"]:
         return
     old = {v.get("id"): v for v in previous.get("views") or [] if isinstance(v, Mapping)}
     strip = ("file", "sha256")

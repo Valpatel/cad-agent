@@ -574,8 +574,15 @@ class _Linter:
                     keys[name] = {name} if count == 1 else {f"{name}#{i}" for i in range(count)}
         for key in ("intended_overlaps", "ignore_pairs"):
             for ex in getattr(self.d.gates, key):
-                for party in ex.parts:
+                a, b = ex.parts
+                if a == b and a in keys and len(keys[a]) < 2:
+                    self.add("exemption-unknown-party", f"gates.{key}: [{a}, {a}] means the instances of {a!r} "
+                                                        f"among themselves, but the build makes {len(keys[a])}",
+                             ex.where, item=a, parts=[a] if a in self.d.parts else [])
+                for party in dict.fromkeys(ex.parts):
                     base = _owner(party)
+                    if base not in keys and self.d.kind_of(base) not in (None, "part"):
+                        continue            # another kind of dossier id: the loader's unknown-id reports it
                     if party in keys or (base in keys and party in keys[base]):
                         continue
                     if base in self.d.parts and base not in keys:

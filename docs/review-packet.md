@@ -62,7 +62,7 @@ outside it is cropped.
 | View id | Kind | When | What it shows |
 |---|---|---|---|
 | `solid-iso` | `solid` | always | the section in place, front iso |
-| `solid-rear` | `solid` | always | the opposite iso, from behind and the other side |
+| `solid-rear` | `solid-rear` | always | the opposite iso, from behind and the other side |
 | `xray-iso` | `xray` | always | the section's parts translucent, free items and fasteners opaque: what sits inside what |
 | `cut-cavity-<cavity>` | `cut` | per registered cavity of a section part | a vertical plane through the cavity's box centre, normal +Y, seen from −Y |
 | `cut-cavity-<cavity>-plan` | `cut` | the same | a horizontal plane through the centre, seen from above: the walls as a ring around the contents (an item through a wall shows here even when another item hides it in the side cut) |
@@ -97,18 +97,20 @@ root. The file has no timestamp: an unchanged packet writes identical JSON.
     "screw_0": {"sha256": "...", "kind": "fastener", "count": 1, "key": "m3_shcs", "clamps": "lid",
                 "into": "insert_0", "color": "#4a4f55", "instances": [{"key": "screw_0", "sha256": "..."}]}
   },
-  "context": [{"key": "base", "section": "S1", "sha256": "..."}],
+  "context": [{"key": "base", "section": "S1", "kind": "part", "sha256": "..."}],
   "measurements": {
-    "gates": {"containment": {"file": "exports/gates/containment.json", "status": "pass", "stale": null,
-                              "checks": 12, "section_checks": [{"id": "contains:hopper_cavity:ball#0:inside",
-                              "status": "pass", "message": "..."}]}},
+    "gates": {"containment": {"file": "exports/gates/containment.json", "sha256": "<verdict_digest>",
+                              "status": "pass", "pass": true, "stale": null, "checks": 12,
+                              "section_checks": [{"id": "contains:hopper_cavity:ball#0:inside",
+                                                  "status": "pass", "message": "..."}]}},
     "missing_gates": ["motion"],
-    "lint": {"file": "exports/gates/dossier-lint.json", "status": "pass", "stale": null, "section_checks": []}
+    "lint": {"file": "exports/gates/dossier-lint.json", "sha256": "<verdict_digest>", "status": "pass",
+             "pass": true, "stale": null, "section_checks": []}
   },
   "findings": [
     {"id": "F1", "gate": "containment", "check": "contains:hopper_cavity:ball#3:inside", "status": "fail",
-     "message": "...", "parts": ["ball#3", "hopper"], "scope": "section",
-     "witness": [{"label": "furthest_outside_point", "point": [31.0, 4.2, 40.0]}]}
+     "message": "...", "parts": ["ball#3", "hopper"], "scope": "section", "stale": null,
+     "witness": [{"label": "furthest_outside_point", "point": [31.0, 4.2, 40.0]}], "views": ["findings"]}
   ],
   "views": [
     {"id": "cut-cavity-hopper_cavity", "kind": "cut", "file": "cut-cavity-hopper_cavity.png", "sha256": "<png>",
@@ -119,6 +121,8 @@ root. The file has no timestamp: an unchanged packet writes identical JSON.
      "keys": ["hopper", "ball#0", "..."], "offsets": {}, "pose": null, "callouts": []}
   ],
   "rendered": 11,
+  "options": {"explode": 1.0, "context": "neighbours"},
+  "render": {"size": [1400, 1000]},
   "checklist": {
     "schema": "cad-agent.render-checklist/1",
     "instructions": ["Read measurements and findings before the images", "..."],
@@ -145,16 +149,24 @@ Field notes:
   hash the geometry record holds for the part (`parts.<name>.sha256`, a hash of its instance hashes; for a
   fastener, of its placed instances): the same hash a reviewer record (`dossier/reviews/*.json`, T11) binds in its
   `hashes`. `section_hash` changes when any of them does.
-- **`measurements`** comes before the views on purpose: a reviewer (and the site) reads it first. `stale` is null
-  for a current verdict, else the reason (`cadagent.gates.verdict.stale_reason` against the geometry record: an
-  old verdict is shown as stale, not as a pass). `section_checks` are the verdict's checks that name a section part,
-  an instance of one, a fastener of the section, or a cavity of a section part. `missing_gates` lists the gates a
-  section card names in `checks` that have no verdict.
+- **`measurements`** comes before the views on purpose: a reviewer (and the site) reads it first. Per gate:
+  `sha256` is `verdict_digest` of the verdict quoted (its canonical JSON), `status` and `pass` its own, `checks` how
+  many it has; `stale` is null for a current verdict, else the reason (`cadagent.gates.verdict.stale_reason`
+  against the geometry record and, for a project, the gate's declarations and options, as `cad-agent check` judges
+  it: an old verdict is shown as stale, not as a pass). `section_checks` are the verdict's checks that name a
+  section part, an instance of one, a fastener of the section, or a cavity of a section part. `missing_gates` lists
+  the gates a section card names in `checks` that have no verdict. `lint` is the dossier lint, which
+  `review_packet` runs itself when it plans (the lint file records no inputs, so it cannot say whether it is
+  current); its `section_checks` are only those that are not passing. `section.status` and `blocked_by` come from
+  the same lint run.
 - **`findings`** are the failing and warning checks among them (and every failing check that names no known part,
-  with `scope: "unattributed"`, since it may concern any part). `witness` collects the 3D points in the check's
+  with `scope: "unattributed"`, since it may concern any part). `stale` is the stale reason of the verdict it comes
+  from (null when current). `views` names the views that show it (`findings` when it has a callout). `witness` collects the 3D points in the check's
   evidence (keys containing `point` or `centroid`, nested witnesses included), at most four per finding. The
   `findings` view numbers them F1, F2, ... as callouts; a finding without a point is listed, not drawn.
-- **`views`**: `file` is null for a view not rendered (`only=`); `rendered` counts the views with an image.
+- **`views`**: `file` is null for a view not rendered (`only=`); `rendered` counts the views with an image (0 in a
+  plan). `options` are the planning options and `render` the rendering ones (`size`; null in a plan): an earlier
+  image is reused by `only=` only when both, the section hash, the geometry digest and the context all match.
   `keys` are the assembly keys drawn in the section's colours (plus the context parts in an access view);
   `offsets` (`{key: [dx, dy, dz]}`) the exploded displacements; `pose` (`{interface, kind, value, unit, body,
   keys, axis}`, plus `slide_mm` for a cylindrical joint) the joint position shown, as an offset from the modelled
@@ -165,8 +177,15 @@ Field notes:
   (no range to pose), a fastener without axes, parts no step places (drawn in place in the exploded view).
 - **`checklist`** is the machine-readable render checklist (below), instantiated for this section: one question
   per applicable item and target, each naming the views that answer it.
-- **Staleness.** `cadagent.packet.packet_stale(manifest, record)` is None while the packet matches the current
-  geometry record, else the reason; a packet is evidence only for the hashes it lists.
+- **`context[]`**: each context item's assembly key, its section (empty for a fastener), `kind` (`part` or
+  `fastener`) and content hash.
+- **Staleness.** `cadagent.packet.packet_stale(manifest, record, verdicts=None, expected=None, lint=None)` is None
+  while the packet is current evidence, else the reason: the geometry record changed; the packet quoted a verdict
+  that was already stale, or a lint read from a file; or, given the current verdicts (with each gate's expected
+  declarations and options) and lint, one of them was rewritten, added or removed, or is stale now (a dossier edit
+  that changes a gate's declarations makes the quoted verdicts stale without touching the geometry).
+  `project_packet_stale(manifest, root)` gathers all of that for a project, kernel-free. A packet is evidence only
+  for the hashes and verdicts it lists.
 
 ## The render checklist (`cadagent.packet.CHECKLIST`)
 
@@ -204,7 +223,7 @@ the diff since the last review. It reads `measurements` and `findings` first, th
 with the part hashes from `parts.*.sha256`. The answer shape T11 is expected to use:
 
 ```json
-{"checklist": [{"id": "contained-inside:hopper_cavity", "answer": "yes", "view": "cut-cavity-hopper_cavity",
+{"checklist": [{"id": "contained-inside:hopper_cavity:ball", "answer": "yes", "view": "cut-cavity-hopper_cavity-plan",
                 "note": ""}]}
 ```
 

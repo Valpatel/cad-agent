@@ -526,9 +526,11 @@ class _Parser:
                 if len(parts) != 2:
                     self.error(_where(p, "parts"), f"gates.{key}[].parts must name two parts, got {parts}")
                     continue
-                if parts[0] == parts[1]:
-                    self.error(_where(p, "parts"), f"gates.{key}[].parts names {parts[0]!r} twice: a pair is two "
-                                                   "different parts, instances or fasteners")
+                if parts[0] == parts[1] and _owner(parts[0]) != parts[0]:
+                    # [ball, ball] is the instances of ball among themselves; one instance twice is no pair
+                    self.error(_where(p, "parts"), f"gates.{key}[].parts names the instance {parts[0]!r} twice: a "
+                                                   "pair is two instances (or [part, part] for a part's instances "
+                                                   "among themselves)")
                     continue
                 reason = self.text(p, "reason", f"gates.{key}[]").strip()
                 if not reason:

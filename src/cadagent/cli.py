@@ -301,10 +301,13 @@ def cmd_review_packet(project: CadProject, args: argparse.Namespace) -> int:
     from cadagent.packet import PacketError, plan_project_packet, project_sections, review_packet
 
     try:
-        sections = list(args.sections or project_sections(project.root))
         size = tuple(int(v) for v in args.size.lower().split("x"))
-        if len(size) != 2 or min(size) < 200:
-            raise _Unusable(f"--size {args.size!r}: give WIDTHxHEIGHT, each at least 200")
+    except ValueError:
+        size = ()
+    if len(size) != 2 or min(size) < 200:
+        raise _Unusable(f"--size {args.size!r}: give WIDTHxHEIGHT, each at least 200")
+    try:
+        sections = list(args.sections or project_sections(project.root))
         for sid in sections:
             if args.list:
                 manifest, target = plan_project_packet(sid, root=project.root, explode=args.explode,
@@ -315,8 +318,6 @@ def cmd_review_packet(project: CadProject, args: argparse.Namespace) -> int:
             _packet_summary(manifest, listed=args.list)
     except PacketError as exc:
         raise _Unusable(str(exc)) from None
-    except ValueError as exc:
-        raise _Unusable(f"--size {args.size!r}: {exc}") from None
     return 0
 
 

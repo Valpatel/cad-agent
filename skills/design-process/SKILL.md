@@ -17,12 +17,13 @@ References: [`docs/dossier.md`](../../docs/dossier.md) (the YAML and the build-s
 
 ## Before you start
 
-- **Track it.** One GitHub issue per section or piece of work, a `feat/` branch pushed at once, a draft PR with
-  `Closes #N` (the `cad-work-tracking` skill). Commit and push at least every 30 minutes, WIP commits included, and
-  leave a checkpoint comment on the issue: done, next, what is running and where.
-- **Long runs go to a compute host** (`cad-agent all`, the gates on a large assembly, FEA, CFD): detached, recorded
-  in the issue with host role, command, log and done marker (the `cad-remote-runs` skill). On a shared workstation,
-  one `nice`d job at a time.
+- **Track it, as if the session could end any minute** (token budgets, crashes): one GitHub issue per section or
+  piece of work, a `feat/` branch pushed at once, a draft PR with `Closes #N`. Commit and push at least every 30
+  minutes, WIP commits included, and leave a checkpoint comment on the issue: done, next, what is running and where.
+  The `cad-work-tracking` skill of the cad-agent agent kit spells this out, where it is installed.
+- **Long runs go off the shared machine** (`cad-agent all`, the gates on a large assembly, FEA, CFD): run them
+  detached on a compute host and record host role, command, log and done marker in the issue (the
+  `cad-remote-runs` skill, where installed). Where agents share a workstation, one `nice`d job at a time.
 - **Set `CAD_AGENT_ACTOR`** to your session id. Builds record it; a reviewer's sign-off is refused when it equals the
   build's.
 

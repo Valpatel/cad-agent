@@ -176,6 +176,12 @@ def test_parts_hashes_and_context(tmp_path):
         plan(tmp_path, context="some")
 
 
+def test_an_interface_with_another_section_brings_its_parts_into_context(tmp_path, monkeypatch):
+    monkeypatch.setitem(PROJECT, "interfaces", PROJECT["interfaces"] + [
+        {"id": "I-sections", "between": ["S1", "S2"], "kind": "contact", "datum": "shared plate"}])
+    assert {c["key"] for c in plan(tmp_path)["context"]} == {"base", "pin", "arm"}
+
+
 def test_measurements_come_first_and_name_stale_and_missing_verdicts(tmp_path):
     m = plan(tmp_path)
     assert list(m).index("measurements") < list(m).index("views")
@@ -268,13 +274,55 @@ def test_generic_checklist_is_well_formed():
 
 
 def test_packet_staleness(tmp_path):
-    m = plan(tmp_path)
-    assert pk.packet_stale(m, record()) is None
+    # quoting an unbound verdict (fasteners) makes the packet stale from the start
+    assert "stale when it was made (fasteners)" in pk.packet_stale(plan(tmp_path), record())
     rec = record()
-    rec["parts"]["hopper"]["instances"][0]["sha256"] = "0" * 64
-    assert "geometry changed" in pk.packet_stale(m, rec)
+    current = verdicts(rec)
+    bind_inputs(current["fasteners"], rec)
+    d = load_dossier(write_dossier(tmp_path), strict=False, root=tmp_path)
+    lint = {"schema": "cadagent.gate/1", "gate": "dossier-lint", "pass": True, "status": "pass", "checks": []}
+    m = pk.plan_packet("S1", rec, d, current, None, lint=lint, lint_current=True)
+    assert m["findings"][0]["stale"] is None and m["measurements"]["lint"]["stale"] is None
+    assert pk.packet_stale(m, rec) is None
+    assert pk.packet_stale(m, rec, verdicts=current, lint=lint) is None
+    changed = record()
+    changed["parts"]["hopper"]["instances"][0]["sha256"] = "0" * 64
+    assert "geometry changed" in pk.packet_stale(m, changed)
+    # a verdict rewritten, added or gone since the packet
+    rewritten = copy.deepcopy(current)
+    rewritten["wall"]["status"] = "pass"
+    assert "gate verdicts changed since the packet (wall)" in pk.packet_stale(m, rec, verdicts=rewritten)
+    assert "(motion)" in pk.packet_stale(m, rec, verdicts={**current, "motion": current["wall"]})
+    # the same verdict files, but the gate's declarations changed (the dossier was edited): stale now
+    why = pk.packet_stale(m, rec, verdicts=current, expected={"wall": {"declarations": {"x": 1}}})
+    assert why.startswith("verdict wall is stale now") and "declarations changed" in why
+    assert "lint changed" in pk.packet_stale(m, rec, verdicts=current, lint={**lint, "status": "fail"})
+    # a lint read from a file (no inputs) cannot vouch for itself
+    m2 = pk.plan_packet("S1", rec, d, current, None, lint=lint)
+    assert m2["measurements"]["lint"]["stale"] and "may not be current" in pk.packet_stale(m2, rec)
     assert pk.packet_stale({"schema": pk.SCHEMA}, rec) == "the packet records no geometry digest"
     assert pk.packet_stale(m, None)
+
+
+def test_project_packet_staleness_follows_the_dossier(tmp_path):
+    root = make_project(tmp_path)
+    vfile = root / "exports" / "gates" / "fasteners.json"
+    from cadagent.gates import run as gr
+    from cadagent.project import load_project
+    cfg = gr.gates_config(load_project(root))
+    v = json.loads(vfile.read_text())
+    bind_inputs(v, record(), **gr.expected_inputs("fasteners", cfg, gr.load_dossier(load_project(root)),
+                                                  gr.load_extra(cfg)))
+    vfile.write_text(json.dumps(v))
+    m, _ = pk.plan_project_packet("S1", root=root)
+    assert m["measurements"]["lint"]["stale"] is None
+    assert pk.project_packet_stale(m, root) is None
+    # edit the dossier only: the gates' declarations change, so the verdicts the packet quotes are stale now
+    proj = root / "dossier" / "project.yaml"
+    data = yaml.safe_load(proj.read_text())
+    data["gates"] = {"intended_overlaps": [{"parts": ["screw", "hopper"], "reason": "thread in the boss"}]}
+    proj.write_text(yaml.safe_dump(data, sort_keys=False))
+    assert "stale now" in pk.project_packet_stale(m, root)
 
 
 def test_unknown_section_and_missing_record(tmp_path):
@@ -337,6 +385,8 @@ def test_cli_lists_the_views_without_rendering(tmp_path, capsys):
     assert not (root / "exports" / "review").exists()                   # nothing written
     assert main(["review-packet", "S9", "--project", str(root), "--list"]) == 2
     assert "unknown section 'S9'" in capsys.readouterr().err
+    assert main(["review-packet", "--project", str(root), "--size", "10x10"]) == 2
+    assert "--size '10x10'" in capsys.readouterr().err
     m, target = pk.plan_project_packet("S1", root=root)
     assert target == root / "exports" / "review" / "S1" and m["dir"] == "exports/review/S1"
     assert m["geometry"]["file"] == "exports/dossier-geometry.json" and m["toolkit"]
@@ -409,7 +459,8 @@ def test_packet_shows_the_seeded_defect(bench_packets):
     kinds = {v["kind"] for v in store["views"]}
     assert kinds == {"solid", "solid-rear", "xray", "cut", "access", "exploded", "findings"}
     failing = [f for f in store["findings"] if f["status"] == "fail"]
-    assert failing and all(f["gate"] == "containment" for f in failing)
+    assert {f["gate"] for f in failing} == {"containment", "dossier-lint"}     # the lint: the section is not gated
+    assert any(f["check"].startswith("section-below-gated@") for f in failing if f["gate"] == "dossier-lint")
     escape = next(f for f in failing if f["check"] == "contains:hopper_cavity:ball#7:inside")
     far = next(w for w in escape["witness"] if w["label"] == "furthest_outside_point")
     assert far["point"][1] > 62.6                                       # outside the cavity's +Y wall
@@ -432,3 +483,7 @@ def test_partial_render_keeps_current_images(bench_packets):
     exploded = next(v for v in m["views"] if v["id"] == "exploded")
     assert exploded["file"] is None and exploded["sha256"] is None
     assert not (root / "exports" / "review" / "S-bracket" / "exploded.png").exists()
+    # another image size: no earlier image matches, so only the view asked for is in the packet
+    m = pk.review_packet("S-bracket", root=root, size=(520, 360), only=["solid-iso"])
+    assert [v["id"] for v in m["views"] if v["file"]] == ["solid-iso"] and m["render"] == {"size": [520, 360]}
+    assert sorted(p.name for p in (root / "exports" / "review" / "S-bracket").glob("*.png")) == ["solid-iso.png"]

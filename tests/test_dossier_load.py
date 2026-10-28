@@ -349,12 +349,16 @@ def test_gate_exemptions_take_instance_keys_and_fastener_names(tmp_path):
                                                             ("m3:lid-base#1", "ball#3")]
     assert d.gates.ignore_pairs[0].parts == ("screw_1", "hopper_flap") and d.gates.ignore_pairs[0].where.line >= 1
     assert d.gates.intended_overlaps[1].to_dict() == {"parts": ["screw_0", "insert_0"], "reason": "thread envelope"}
+    # [part, part]: the part's instances among themselves (the lint checks it has several)
+    project = PROJECT.replace("parts: [hopper, pan_base], reason: heat-set", "parts: [ball, ball], reason: heat-set")
+    assert load_dossier(write(tmp_path, files({"dossier/project.yaml": project}))).gates.intended_overlaps[0].parts \
+        == ("ball", "ball")
 
 
 @pytest.mark.parametrize("parties, message", [
     ("[R4, hopper]", "which is not a part, part instance or fastener in this dossier (it is a requirement)"),
     ("['S3#2', hopper]", "names 'S3', which is not a part, part instance or fastener in this dossier (it is a section)"),
-    ("[hopper, hopper]", "names 'hopper' twice"),
+    ("['ball#3', 'ball#3']", "names the instance 'ball#3' twice"),
 ])
 def test_gate_exemption_parties_that_cannot_be_right(tmp_path, parties, message):
     project = PROJECT.replace("parts: [hopper, pan_base], reason: heat-set inserts",

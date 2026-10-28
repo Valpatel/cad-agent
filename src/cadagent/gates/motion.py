@@ -816,7 +816,8 @@ def _collision_check(world: World, g: _Group, grid, poses, values_of, world_mats
                     lo, lo_rel = mid, rel
             ev["onset"] = {"joint": g.axes[axis].joint, "clear": round(lo, 6), "hit": round(hi, 6),
                            "unit": g.axes[axis].unit, "bisections": refine_steps,
-                           "overlap_mm3": hi_rel.overlap_mm3, "overlap_centroid": hi_rel.witness.get("overlap_centroid")}
+                           "overlap_mm3": hi_rel.overlap_mm3,
+                           "overlap_centroid": hi_rel.witness.get("overlap_centroid")}
             if len(grid) > 1:
                 ev["onset"]["others"] = _label(g, poses[first_i])
             if lo_rel is not None:

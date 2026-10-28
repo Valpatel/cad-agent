@@ -177,7 +177,7 @@ Unquoted, the title is cut at the comma and the rest becomes a stray key.
 | `cad-agent package` | zip + sha256 manifest from `package.include` | |
 | `cad-agent serve [--port N] [--host H]` | serves the project root; writes the URL to `preview/server-url.txt` | |
 | `cad-agent site [--serve]` | builds `site/` from milestones, decisions, a designs summary, Markdown pages and git history (config `cad: site:`); `--serve` rebuilds on change and serves the web kit at `/_cadagent/kit/`. One top bar links every page: `site: nav:` (`[{id, title, href}]`, hrefs from the project root) or, when unset, the overview, docs, 3D model and each `html_pages` page plus the check and simulation reports, the design comparison and the search leaderboard. The server adds the bar to every HTML page it sends (files on disk unchanged; a bar the page mounts itself wins; `<meta name="cadagent-nav" content="off">` opts a page out) | |
-| `cad-agent view` | writes every part in assembly position to `exports/view/` (STL + `view.json`) for the 3D viewer (config `cad: view:` for colours, hidden variants, explode directions, extra parts) | |
+| `cad-agent view` | writes every part in assembly position to `exports/view/` (STL + `view.json`) for the 3D viewer (config `cad: view:` for colours, hidden variants, explode directions, extra parts from STEP or STL, list categories) | |
 | `cad-agent webkit [DEST]` | copies the web kit (3D stage, model viewer, HUD panels, three.js, fonts) into the project, default `web/kit` | |
 | `cad-agent all` | build, export-3mf, check + report, package | 1 if anything failed |
 | `cad-agent catalogue [--json] [--errors-only]` | checks the part catalogue and every design against it (config `cad: explore:`, [explore.md](explore.md)) | 1 on an error |
@@ -261,6 +261,12 @@ the manifest exists. Wheel zoom (and trackpad pinch) uses one-quarter sensitivit
 drag and touch pinch keep full speed (`dragZoomSpeed`), and small trackpad deltas remain continuous at any device pixel
 ratio. Custom stages can pass `createStage(el, {zoomSpeed: 1})` for the earlier wheel sensitivity. Update copied web kits, or restart a served site
 after updating cad-agent. The viewer is scriptable for screenshots: `viewer.html?explode=0.5&view=iso&panel=0`.
+
+Show everything the parts fit around in the same viewer, not in a second one: `extra` entries add bought parts and
+reference boards from a STEP or an STL (`offset: [x, y, z]` mm moves a mesh into assembly position; `hidden: true` starts
+it off). A `category` on an entry (and `parts_category` for the parts file) heads a section of the parts list with one
+box that shows or hides the whole section, e.g. *Printed parts*, *Cooler*, *Carrier board*. An extra whose file is
+missing is listed as not exported, so reference models that are not redistributed drop out of a fresh checkout.
 
 ### Stiffness and strength (`cadagent.fea`)
 

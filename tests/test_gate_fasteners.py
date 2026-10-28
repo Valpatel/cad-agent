@@ -142,7 +142,7 @@ def test_head_gap_buried_head_other_part_and_overhang_fail_the_seat():
     edge = copy.deepcopy(lines)
     edge[0], edge[1] = {}, {}
     checks, _ = run(m=meas(annulus={"radius_mm": 2.125, "lines": edge}))
-    assert "nothing under the head on 2 of 8 lines" in checks["seat"].message
+    assert "nothing under the head at 2 of 8 angles" in checks["seat"].message
 
 
 def test_material_inside_the_head_without_a_solid_is_a_pocket_wall():
@@ -192,6 +192,32 @@ def test_missing_undersized_and_pull_through_holes_and_head_overlaps():
                            "lid": {"state": "overlapping", "overlap_mm3": 0.4, "t_range": [-1.0, -0.2]}})
     checks, _ = run(m=m)
     assert failed(checks) == ["seat"] and "the head cuts into lid" in checks["seat"].message
+
+
+def test_one_clean_ring_per_angle_is_enough_so_a_chamfer_does_not_decide():
+    """Three rings per angle: the inner one runs through a 0.5 mm chamfer at the lid's exit and the insert's lead-in
+    (a gap), the outer ones bear and clamp. A gap on every ring still fails."""
+    chamfered = [[{"lid": [[0.075, 2.6]], "host": [[3.4, 20.0]]}, {"lid": [[0.0, 3.0]], "host": [[3.0, 20.0]]},
+                  {"lid": [[0.0, 3.0]], "host": [[3.0, 20.0]]}] for _ in range(LINES)]
+    checks, row = run(m=meas(annulus={"radii_mm": [1.9, 2.2, 2.5], "lines": chamfered}))
+    assert failed(checks) == [] and row["grip_mm"] == 3.0
+    hovering = [[{"lid": [[0.0, 3.0]], "host": [[3.4, 20.0]]}] * 3 for _ in range(LINES)]
+    checks, _ = run(m=meas(annulus={"radii_mm": [1.9, 2.2, 2.5], "lines": hovering}))
+    assert failed(checks) == ["stack"]
+
+
+def test_engagement_spans_grooves_and_thread_crests():
+    m = meas(thread={"radius_mm": 1.38, "intervals": [[3.0, 4.0], [4.5, 5.5], [6.0, 8.0]], "parts": ["insert"]},
+             interference={})
+    checks, row = run(spec(thread_depth_mm=5.0), m)
+    assert row["engagement_mm"] == 4.0 and checks["engagement"].evidence["thread_stretches"][1] == [4.5, 5.5]
+    assert failed(checks) == []
+
+
+def test_parts_fitted_later_over_the_head_warn_for_service():
+    tool = dict(meas()["tool"], service_blocked=[{"part": "cover", "state": "overlapping", "overlap_mm3": 5.0}])
+    checks, _ = run(m=meas(tool=tool))
+    assert checks["tool"].status == "warn" and "cover (fitted later) must come off" in checks["tool"].message
 
 
 def test_an_undecided_kernel_pair_fails_where_it_belongs():
@@ -313,6 +339,9 @@ def test_markdown_table_and_a_gate_with_nothing_placed():
     md = table_markdown({"table": [row]})
     assert md.splitlines()[0].startswith("| Fastener | Clamps → into | Seat |")
     assert "| m3 | lid → insert | Z 10.00 | Z 7.00 | 3.00 | 5.00 (10 thr) | 1.50 | 8.00 | 4.50–8.50 |" in md
+    s2 = 2 ** -0.5
+    _, tilted = run(m=meas(origin=[0, 0, 10], direction=[s2, 0, -s2]))
+    assert "| (0.00, 0.00, 10.00) | (2.12, 0.00, 7.88) |" in table_markdown({"table": [tilted]})
     from cadagent.gates import Assembly
     v = fastener_gate(Assembly(), {"m3": {"clamps": "lid", "into": "insert", "axes": []}})
     assert v["pass"] is False and v["findings"][0]["id"] == "fastener:m3:declaration"
@@ -421,9 +450,67 @@ def test_driver_blocked_by_a_gusset_at_the_install_step_only():
     (blk,) = tool["evidence"]["blocked"]
     assert blk["from_head_mm"] == pytest.approx(3.5, abs=1e-4)     # head top 26.5, bar from 30
     v = gate(insert_rig(gusset=30.0))                                # fitted after the screw: not in the way then
-    assert by_id(v)["fastener:screw:tool"]["status"] == "pass", by_id(v)["fastener:screw:tool"]
+    assert by_id(v)["fastener:screw:tool"]["status"] == "warn", by_id(v)["fastener:screw:tool"]   # service only
     v = gate(insert_rig(gusset=30.0, steps=False))                   # no steps: the finished assembly
     assert by_id(v)["fastener:screw:tool"]["status"] == "fail"
+
+
+def chamfer_rig(*, base_chamfer=0.0, entry=0.0, exit_=0.0, insert="plain", base_hole_r=2.0, into="insert",
+                hole_bottom=3.0, lid_r=1.7):
+    """A base 0..10 (a hole to Z ``hole_bottom``), an optional M3 insert (top at 10, plain or with three internal
+    relief grooves), a lid 10..13; chamfers on the base hole and both ends of the lid hole."""
+    cq = _cq()
+    from cadagent import dossier
+    from cadagent.fasteners import insert_envelope, socket_head_envelope
+
+    def cone(r0, r1, z0, z1):
+        return cq.Solid.makeCone(r0, r1, z1 - z0, cq.Vector(0, 0, z0))
+    with dossier.use_registry() as reg:
+        base = _box(cq, -10, -10, 0, 10, 10, 10).cut(_cyl(cq, base_hole_r, hole_bottom, 10))
+        if base_chamfer:
+            base = base.cut(cone(base_hole_r, base_hole_r + base_chamfer, 10 - base_chamfer, 10))
+        reg.add_part("base", base, grounded=True)
+        if insert:
+            ins = insert_envelope(4.0, 2.5, 5.0)
+            if insert == "grooved":
+                for z in (-4.0, -2.5, -1.0):
+                    ins = ins.cut(cq.Solid.makeCylinder(1.6, 0.5, cq.Vector(0, 0, z)))
+            reg.add_part("insert", ins, place=(0, 0, 10))
+        lid = _box(cq, -10, -10, 10, 10, 10, 13).cut(_cyl(cq, lid_r, 10, 13))
+        if entry:
+            lid = lid.cut(cone(lid_r, lid_r + entry, 13 - entry, 13))
+        if exit_:
+            lid = lid.cut(cone(lid_r + exit_, lid_r, 10, 10 + exit_))
+        reg.add_part("lid", lid)
+        reg.fastener("m3_shcs", clamps="lid", into=into, name="screw", at=[dossier.Axis((0, 0, 13), (0, 0, -1))],
+                     tool="hex 2.5", length_mm=8.0, diameter_mm=3.0, thread_start_mm=3.0, min_engagement_mm=1.5,
+                     shape=socket_head_envelope(3.0, 8.0, 5.5, 3.0))
+        return reg.build({}, write=False)
+
+
+@pytest.mark.parametrize("kw", [{}, {"base_chamfer": 0.5}, {"entry": 0.5}, {"exit_": 0.5}, {"insert": "grooved"},
+                                {"insert": None, "base_hole_r": 1.25, "into": "base"}],
+                         ids=["clean", "insert-lead-in", "lid-entry", "lid-exit", "grooved-insert", "tapped-pilot"])
+def test_chamfers_grooves_and_a_tapped_pilot_pass_with_full_engagement(kw):
+    v = gate(chamfer_rig(**kw))
+    assert v["pass"] is True and v["findings"] == [], v["findings"]
+    assert v["table"][0]["engagement_mm"] == pytest.approx(5.0, abs=1e-4)
+
+
+def test_a_plain_clearance_hole_is_not_thread_and_a_wide_hole_lets_the_head_through():
+    v = gate(chamfer_rig(insert=None, base_hole_r=1.6, into="base", hole_bottom=-1.0))
+    assert "no thread of base on the axis" in by_id(v)["fastener:screw:engagement"]["message"]
+    v = gate(chamfer_rig(lid_r=2.9))
+    holes = by_id(v)["fastener:screw:holes"]
+    assert holes["status"] == "fail" and "it pulls through" in holes["message"]
+
+
+def test_a_part_fitted_after_the_screw_over_its_head_warns_for_service():
+    v = gate(insert_rig(gusset=30.0))
+    tool = by_id(v)["fastener:screw:tool"]
+    assert v["pass"] is True and tool["status"] == "warn" and "gusset (fitted later) must come off" in tool["message"]
+    v = gate(insert_rig(gusset=30.0), options=FastenerOptions(service_access=False))
+    assert by_id(v)["fastener:screw:tool"]["status"] == "pass"
 
 
 def test_a_missing_tool_or_envelope_fails_and_an_unstepped_fastener_warns():

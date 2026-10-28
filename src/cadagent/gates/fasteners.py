@@ -35,11 +35,12 @@ tool       the declared tool envelope (stepped cylinders from the head along the
 How it measures (no number the fastener was declared from is trusted where the model can answer):
 
 * **lines through the solids**: ``IntCurvesFace_ShapeIntersector`` crossings along a line, the spans
-  between them classified with ``BRepClass3d_SolidClassifier``. The *annulus*: ``lines`` (8) lines parallel
-  to the axis halfway between the shank and the head rim, where the head and the clamped parts bear;
-  the *axis* line; the *thread probe*: 4 lines at 0.92 d/2 (then 1.08 d/2 if the receiver is not met),
-  where a receiver modelled at its minor or nominal diameter has material; *radial rays* in each clamped
-  part for its hole radius;
+  between them classified with ``BRepClass3d_SolidClassifier``. The *annulus*: lines parallel to the axis
+  at ``lines`` (8) angles, each with three rings between the shank and the head rim, where the head and the
+  clamped parts bear (one clean ring per angle is enough, so a chamfer at one radius does not decide); the
+  *axis* line; the *thread probe*: 4 lines at 0.92 d/2 (then just outside d/2, inside the smallest clearance
+  hole), where a receiver modelled at its minor or nominal diameter has material, gaps up to 1.5 pitches
+  bridged; *radial rays* in each clamped part for its hole radius;
 * **the screw's solid** when the build placed one (catalogue STEP or ``cadagent.fasteners`` envelope):
   its length and head from its box in the axis frame, its overlaps from the relation table (cached),
   each overlap's extent along the axis from the common solid. Without a solid the head is ``head_d_mm``
@@ -75,9 +76,11 @@ ASSUMPTIONS = [
     "Each fastener is read along its own axis from the declared seat (dossier fastener() axes); the model is "
     "checked, not the hardware: no tolerance stack, no print shrink, no torque or pull-out rating.",
     "Threads are envelopes: engagement is the axial overlap of the screw with the receiver's modelled thread "
-    "region (material within the nominal diameter, probed at 0.92 d/2, else 1.08 d/2), not proof of strength.",
-    "The head bears where 8 lines parallel to the axis, halfway between shank and head rim, first meet the "
-    "clamped part; holes are measured by radial rays at 8 angles and three depths per clamped part. Features "
+    "region (material at 0.92 d/2, else just outside d/2 but inside d + hole_clearance/2; gaps up to 1.5 pitches "
+    "bridged, so crests and relief grooves read as one region), not proof of strength.",
+    "The head bears where lines parallel to the axis (FastenerOptions.lines angles x three rings between shank and "
+    "head rim) first meet the clamped part; at each angle one clean ring is enough, so a chamfer at one radius "
+    "does not decide. Holes are measured by radial rays at 8 angles and three depths per clamped part. Features "
     "between the samples are missed.",
     "Without a placed screw solid the head is the declared head_d_mm x head_h_mm, else 1.6 d x 1.0 d "
     "(socket head), and the length is the record's length_mm.",
@@ -97,6 +100,7 @@ METRIC_STOCK_MM = (2, 2.5, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 18, 20, 22, 25, 28,
 INCH_STOCK_MM = tuple(sorted({round(n / 16 * 25.4, 4) for n in range(2, 17)} | {round(n / 8 * 25.4, 4)
                       for n in range(8, 33)} | {round(n / 4 * 25.4, 4) for n in range(16, 25)}))
 DEFAULT_STOCK_MM = tuple(sorted(set(float(x) for x in METRIC_STOCK_MM) | set(INCH_STOCK_MM)))
+RING_FRACTIONS = (0.3, 0.55, 0.8)     # annulus rings, as fractions of the way from the shank to the head rim
 
 
 @dataclass(frozen=True)
@@ -110,7 +114,8 @@ class FastenerOptions:
     length_tol_mm: float = 0.05        # the placed solid's length against the record's length_mm
     min_engagement_d: float = 0.8      # minimum engagement when none is declared, as a multiple of d
     look_ahead_mm: float = 10.0        # how far past the tip the axis is read
-    lines: int = 8                     # annulus lines
+    lines: int = 8                     # annulus angles (three rings each)
+    service_access: bool = True        # warn when a part fitted after the install step blocks the tool
     stock_lengths_mm: Optional[Tuple[float, ...]] = None   # None: DEFAULT_STOCK_MM
 
     def __post_init__(self):
@@ -411,6 +416,56 @@ def _status(probs: List[str], warns: List[str]) -> str:
     return "fail" if probs else ("warn" if warns else "pass")
 
 
+def _stack_ring(line: Mapping[str, Any], stack_order: List[str], excluded: set, seat_tol: float,
+                gap_tol: float) -> Dict[str, Any]:
+    """The stack along one line under the head: the clamped parts met, their order, undeclared parts inside the
+    stack, gaps, and whether the last one is pulled against something."""
+    probs: List[str] = []
+    parts: set = set()
+    runs = sorted((iv[0], iv[1], k) for k, ivs in line.items() for iv in _merge(ivs) if iv[1] > seat_tol)
+    seen: List[str] = []
+    for a, b, k in runs:
+        if owner(k) in stack_order and owner(k) not in [owner(x) for x in seen]:
+            seen.append(k)
+    want_idx = [stack_order.index(owner(k)) for k in seen]
+    if want_idx != sorted(want_idx):
+        probs.append(f"the stack meets {[owner(k) for k in seen]}, not {stack_order}")
+    absent = [n for n in stack_order if n not in [owner(k) for k in seen]]
+    if absent:
+        probs.append(f"{', '.join(absent)} not under the head")
+    last_end = None
+    if seen:
+        last = seen[-1]
+        for a, b, k in runs:
+            if k == last:
+                last_end = b if last_end is None or a <= last_end + gap_tol else last_end
+        between = [k for a, b, k in runs if owner(k) not in stack_order and a < last_end - gap_tol
+                   and b > seat_tol and k not in excluded]
+        if between:
+            parts.update(between)
+            probs.append(f"{', '.join(sorted(set(between)))} sits inside the clamped stack (not declared in it)")
+        pos = None
+        for a, b in _merge([(a, b) for a, b, _ in runs]):         # contiguity, from the seat to the last part's end
+            if pos is not None and a - pos > gap_tol and pos < last_end:
+                lo_part = [k for a2, b2, k in runs if abs(b2 - pos) < 1e-3]
+                hi_part = [k for a2, b2, k in runs if abs(a2 - a) < 1e-3]
+                parts.update(lo_part + hi_part)
+                probs.append(f"a {a - pos:.3f} mm gap between {'/'.join(lo_part) or '?'} and "
+                             f"{'/'.join(hi_part) or '?'} at t {pos:.2f}")
+            pos = b if pos is None else max(pos, b)
+            if b >= last_end - 1e-6:
+                break
+        held = any(k != last and a <= last_end + gap_tol and b > last_end + 1e-6 for a, b, k in runs)
+        after = [a for a, b, k in runs if a > last_end and k != last]
+        nxt = min(after) if after else None
+        if not held:
+            parts.add(last)
+            probs.append(f"nothing under {last} within {gap_tol:g} mm" + (
+                f" (next solid {nxt - last_end:.3f} mm further)" if nxt is not None else "") +
+                ": the stack is not pulled against the receiver")
+    return {"probs": probs, "parts": parts, "last_end": last_end, "order": [owner(k) for k in seen]}
+
+
 def evaluate(spec: FastenerSpec, measurement: Mapping[str, Any], options: FastenerOptions = FastenerOptions(),
              ) -> Tuple[List[Check], Dict[str, Any]]:
     """The checks and the lesson-04 table row for one fastener instance from its measurement (plain data, the
@@ -438,19 +493,20 @@ def evaluate(spec: FastenerSpec, measurement: Mapping[str, Any], options: Fasten
     seat_tol, gap_tol = o.seat_tol_mm, o.gap_tol_mm
     hole_c = spec.hole_clearance_mm if spec.hole_clearance_mm is not None else o.hole_clearance_mm
     tip_c = spec.tip_clearance_mm if spec.tip_clearance_mm is not None else o.tip_clearance_mm
-    lines = [dict(line) for line in (measurement.get("annulus") or {}).get("lines") or []]
+    # annulus lines: one entry per angle, either one ring (a {part: intervals} dict) or a list of rings
+    angles = [[dict(x)] if isinstance(x, Mapping) else [dict(r) for r in x]
+              for x in (measurement.get("annulus") or {}).get("lines") or []]
     axis = {k: _merge(v) for k, v in (measurement.get("axis") or {}).items()}
     inter = dict(measurement.get("interference") or {})
     excluded = set(measurement.get("excluded") or [])
     checks: List[Check] = []
     cid = lambda c: f"fastener:{inst}:{c}"  # noqa: E731
 
-    # -------------------------------------------------------------- seat
+    # -------------------------------------------------------------- seat (the earliest hit over the rings, per angle)
     probs, warns, parts, ev = [], [], {inst}, {}
     first = []
-    for line in lines:
-        hits = [(iv[0], iv[1], k) for k, ivs in line.items() for iv in ivs if iv[1] > -seat_tol]
-        hits.sort()
+    for rings in angles:
+        hits = sorted((iv[0], iv[1], k) for ring in rings for k, ivs in ring.items() for iv in ivs if iv[1] > -seat_tol)
         first.append(hits[0] if hits else None)
     ev["first_hit"] = [None if f is None else {"part": f[2], "t_mm": _r(f[0])} for f in first]
     if spec.head == "flat":
@@ -465,16 +521,18 @@ def evaluate(spec: FastenerSpec, measurement: Mapping[str, Any], options: Fasten
                 probs.append(f"the countersunk head is {rel['gap_mm']:.3f} mm off {spec.clamps}")
     else:
         clamps0 = [h for h in first if h is not None and owner(h[2]) == spec.clamps]
-        others = sorted({h[2] for h in first if h is not None and owner(h[2]) != spec.clamps})
-        missing = sum(1 for h in first if h is None)
-        if not lines:
+        others = sorted({h[2] for h in first if h is not None and owner(h[2]) != spec.clamps and h[0] <= seat_tol})
+        # nothing under the head, or only another part well below the seat: the head overhangs there
+        missing = sum(1 for h in first if h is None or (owner(h[2]) != spec.clamps and h[0] > seat_tol))
+        n = len(angles)
+        if not angles:
             probs.append("the seat was not measured")
         if others:
             parts.update(others)
-            probs.append(f"the head bears on {', '.join(others)}, not {spec.clamps} (on {len(lines) - len(clamps0)} "
-                         f"of {len(lines)} lines)")
+            probs.append(f"the head bears on {', '.join(others)}, not {spec.clamps} (at "
+                         f"{sum(1 for h in first if h is not None and h[2] in others)} of {n} angles)")
         if missing:
-            probs.append(f"nothing under the head on {missing} of {len(lines)} lines: it overhangs an edge or a pocket")
+            probs.append(f"nothing under the head at {missing} of {n} angles: it overhangs an edge or a pocket")
         if clamps0:
             parts.add(clamps0[0][2])
             lo, hi = min(h[0] for h in clamps0), max(h[0] for h in clamps0)
@@ -498,61 +556,27 @@ def evaluate(spec: FastenerSpec, measurement: Mapping[str, Any], options: Fasten
     checks.append(Check(cid("seat"), _status(probs, warns), "; ".join(probs + warns) or
                         f"the head bears on {spec.clamps} all round", sorted(parts), ev))
 
-    # -------------------------------------------------------------- stack (along the annulus)
+    # -------------------------------------------------------------- stack (per angle: one clean ring is enough)
     probs, warns, parts, ev = [], [], {inst}, {}
     grip = None
-    per_line = []
-    for li, line in enumerate(lines):
-        runs = sorted((iv[0], iv[1], k) for k, ivs in line.items() for iv in _merge(ivs) if iv[1] > seat_tol)
-        seen, pos, row = [], None, {"line": li}
-        for a, b, k in runs:
-            if owner(k) in stack_order and owner(k) not in [owner(x) for x in seen]:
-                seen.append(k)
-        row["order"] = seen
-        want_idx = [stack_order.index(owner(k)) for k in seen]
-        if want_idx != sorted(want_idx):
-            probs.append(f"line {li}: the stack meets {[owner(k) for k in seen]}, not {stack_order}")
-        absent = [n for n in stack_order if n not in [owner(k) for k in seen]]
-        if absent:
-            probs.append(f"line {li}: {', '.join(absent)} not under the head")
-        if seen:
-            last = seen[-1]
-            last_end = None
-            for a, b, k in runs:
-                if k == last:
-                    last_end = b if last_end is None or a <= last_end + gap_tol else last_end
-            between = [k for a, b, k in runs if owner(k) not in stack_order and last_end is not None
-                       and a < last_end - gap_tol and b > seat_tol and k not in excluded]
-            if between:
-                parts.update(between)
-                probs.append(f"line {li}: {', '.join(sorted(set(between)))} sits inside the clamped stack "
-                             f"(not declared in it)")
-            # contiguity: walk from the seat over the union of everything, to the end of the last stack part
-            union = _merge([(a, b) for a, b, _ in runs])
-            pos = None
-            for a, b in union:
-                if pos is not None and a - pos > gap_tol and pos < (last_end or 0):
-                    lo_part = [k for a2, b2, k in runs if abs(b2 - pos) < 1e-3]
-                    hi_part = [k for a2, b2, k in runs if abs(a2 - a) < 1e-3]
-                    parts.update(lo_part + hi_part)
-                    probs.append(f"line {li}: a {a - pos:.3f} mm gap between {'/'.join(lo_part) or '?'} and "
-                                 f"{'/'.join(hi_part) or '?'} at t {pos:.2f}")
-                pos = b if pos is None else max(pos, b)
-                if last_end is not None and b >= last_end - 1e-6:
-                    break
-            if last_end is not None:
-                row["grip_mm"] = _r(last_end)
-                grip = last_end if grip is None else max(grip, last_end)
-                held = any(k != last and a <= last_end + gap_tol and b > last_end + 1e-6 for a, b, k in runs)
-                after = [a for a, b, k in runs if a > last_end and k != last]
-                nxt = min(after) if after else None
-                if not held:
-                    parts.add(last)
-                    probs.append(f"line {li}: nothing under {last} within {gap_tol:g} mm" + (
-                        f" (next solid {nxt - last_end:.3f} mm further)" if nxt is not None else "") +
-                        ": the stack is not pulled against the receiver")
-        per_line.append(row)
-    ev["lines"] = per_line
+    per_angle = []
+    for ai, rings in enumerate(angles):
+        results = [_stack_ring(ring, stack_order, excluded, seat_tol, gap_tol) for ring in rings]
+        good = [r for r in results if not r["probs"]]
+        if good:
+            ends = [r["last_end"] for r in good if r["last_end"] is not None]
+            row = {"angle": ai, "ok": True, "order": good[-1]["order"], "grip_mm": _r(max(ends)) if ends else None}
+            if ends:
+                grip = max(ends) if grip is None else max(grip, max(ends))
+        else:
+            best = min(reversed(results), key=lambda r: len(r["probs"]))     # the outermost of the least bad
+            probs += [f"line {ai}: {p}" for p in best["probs"]]
+            parts.update(best["parts"])
+            row = {"angle": ai, "ok": False, "order": best["order"], "grip_mm": _r(best["last_end"])}
+            if best["last_end"] is not None:
+                grip = best["last_end"] if grip is None else max(grip, best["last_end"])
+        per_angle.append(row)
+    ev["angles"] = per_angle
     ev["grip_mm"] = _r(grip)
     probs = list(dict.fromkeys(probs))
     parts.update(_keys(roles, spec.clamps)[:1])
@@ -578,11 +602,13 @@ def evaluate(spec: FastenerSpec, measurement: Mapping[str, Any], options: Fasten
             probs.append(f"the hole in {k} is Ø{2 * r:.2f}, under Ø{2 * need_r:.2f} (d {d:g} + {hole_c:g} clearance)")
         if head_r is not None and r >= head_r - 1e-6 and owner(k) == spec.clamps and spec.head != "flat":
             parts.add(k)
-            probs.append(f"the head (Ø{2 * head_r:.2f}) is no wider than the hole in {k} (Ø{2 * r:.2f}): it pulls "
-                         f"through")
+            wide = "" if h.get("open_to_mm") is None or r < h["open_to_mm"] - 1e-6 else "≥"
+            probs.append(f"the head (Ø{2 * head_r:.2f}) is no wider than the hole in {k} (Ø{wide}{2 * r:.2f}): it "
+                         f"pulls through")
     thread = measurement.get("thread") or {}
     tivs = _merge(thread.get("intervals") or [])
     t_start = tivs[0][0] if tivs else None
+    t_last = tivs[-1][1] if tivs else None
     for k, ivs in sorted(axis.items()):
         if role(k) == "stack" and k not in holes:
             hit = [iv for iv in ivs if iv[1] > seat_tol and (grip is None or iv[0] < grip - gap_tol)]
@@ -624,10 +650,11 @@ def evaluate(spec: FastenerSpec, measurement: Mapping[str, Any], options: Fasten
     pitch = spec.pitch
     receivers = sorted(k for k, r in roles.items() if r == "into")
     if tivs:
-        thread_end = tivs[0][1]
+        thread_end = t_last
         if length is not None:
-            engage = max(0.0, min(length, thread_end) - t_start)
+            engage = sum(max(0.0, min(length, hi) - lo) for lo, hi in tivs)
     ev.update(thread_start_mm=_r(t_start), thread_end_mm=_r(thread_end), engagement_mm=_r(engage),
+              thread_stretches=[[_r(a), _r(b)] for a, b in tivs], bridge_mm=thread.get("bridge_mm"),
               min_engagement_mm=_r(need), min_source=need_src, pitch_mm=pitch, probe_radius_mm=thread.get("radius_mm"),
               threads=_r(engage / pitch, 2) if engage is not None and pitch else None)
     parts.update(receivers[:1] if not tivs else thread.get("parts", [])[:1])
@@ -818,6 +845,10 @@ def _tool_eval(check_id: str, inst: str, spec: FastenerSpec, tool: Optional[Mapp
     where = f"step {step}" if step is not None else "the finished assembly"
     if probs:
         return Check(check_id, "fail", "; ".join(probs) + f" (at {where})", parts, ev)
+    service = [b["part"] for b in tool.get("service_blocked") or []]
+    if service:
+        return Check(check_id, "warn", f"the {tool['tool']} reaches the head at {where}, but {', '.join(service)} "
+                     f"(fitted later) must come off before it can be removed", [inst] + service, ev)
     if tool.get("no_step"):
         return Check(check_id, "warn", f"no assembly step installs {spec.name}: the {tool['tool']} reaches it in the "
                      f"finished assembly", parts, ev)
@@ -835,6 +866,8 @@ def table_markdown(data: Mapping[str, Any]) -> str:
         if not pt or not u:
             return "–"
         i = max(range(3), key=lambda j: abs(u[j]))
+        if abs(u[i]) < 0.9999:                     # a tilted axis: the whole point
+            return "(" + ", ".join(f"{c:.2f}" for c in pt) + ")"
         return f"{'XYZ'[i]} {pt[i]:.2f}"
 
     def num(x, unit=""):
@@ -1017,40 +1050,52 @@ def measure(assembly: Any, spec: FastenerSpec, i: int, options: FastenerOptions 
     lo = [min(_at(p, u, t0)[j], _at(p, u, t_end)[j]) - reach for j in range(3)]
     hi = [max(_at(p, u, t0)[j], _at(p, u, t_end)[j]) + reach for j in range(3)]
     near = [k for k in others if all(probe.box(k)[j] <= hi[j] and probe.box(k)[j + 3] >= lo[j] for j in range(3))]
-    r_ann = (d / 2 + head["r_mm"]) / 2
+    # three rings between the shank and the head rim, so a chamfer or lead-in at one radius does not decide
+    radii = [d / 2 + f * (head["r_mm"] - d / 2) for f in RING_FRACTIONS]
     n = o.lines
-    m["annulus"] = {"radius_mm": _r(r_ann), "lines": [
-        probe.along(near, _at(p, u, 0, v, w, r_ann, 2 * math.pi * (j + 0.5) / n), u, t0, t_end) for j in range(n)]}
+    m["annulus"] = {"radii_mm": [_r(r) for r in radii], "lines": [
+        [probe.along(near, _at(p, u, 0, v, w, r, 2 * math.pi * (j + 0.5) / n), u, t0, t_end) for r in radii]
+        for j in range(n)]}
     m["axis"] = probe.along(near, p, u, t0, t_end)
     receivers = [k for k in near if roles.get(k) == "into"]
-    m["thread"] = {"radius_mm": None, "intervals": [], "parts": []}
-    for frac in (0.92, 1.08):
-        rt = frac * d / 2
+    pitch = spec.pitch
+    bridge = 1.5 * pitch if pitch else 0.5 * d          # thread crests, grooves and relief cuts read as one region
+    hole_c = spec.hole_clearance_mm if spec.hole_clearance_mm is not None else o.hole_clearance_mm
+    m["thread"] = {"radius_mm": None, "intervals": [], "parts": [], "bridge_mm": _r(bridge)}
+    # inside the nominal diameter; then just outside it, but below the smallest clearance hole (d + clearance)
+    for rt in (0.92 * d / 2, d / 2 + max(hole_c / 4, 0.005)):
         common, hit_parts = None, set()
         for j in range(4):
             got = probe.along(receivers, _at(p, u, 0, v, w, rt, math.pi / 2 * j + math.pi / 8), u, 0.0, t_end)
             hit_parts.update(got)
-            ivs = _merge([iv for ivs in got.values() for iv in ivs])
+            ivs = _merge([iv for ivs in got.values() for iv in ivs], gap=bridge)
             common = ivs if common is None else _intersect(common, ivs)
         if common:
-            m["thread"] = {"radius_mm": _r(rt), "intervals": common, "parts": sorted(hit_parts)}
+            m["thread"] = {"radius_mm": _r(rt), "intervals": common, "parts": sorted(hit_parts),
+                           "bridge_mm": _r(bridge)}
             break
-    # clearance holes: radial rays at three depths in each clamped part met on the annulus
+    # clearance holes: radial rays at three depths in each clamped part, where it lies below the seat (met on the
+    # rings, or on lines just outside the head when its hole is wider than every ring)
     holes: Dict[str, Any] = {}
+    reach_r = head["r_mm"] + 1.0
     for k in sorted(k for k in near if roles.get(k) == "stack"):
-        spans = _merge([iv for line in m["annulus"]["lines"] for iv in line.get(k, []) if iv[1] > 0])
+        spans = [iv for rings in m["annulus"]["lines"] for ring in rings for iv in ring.get(k, [])]
+        if not spans:
+            spans = [iv for j in range(4) for iv in probe.intervals(
+                k, _at(p, u, 0, v, w, head["r_mm"] + 0.5, math.pi / 2 * j + math.pi / 4), u, t0, t_end)]
+        spans = [[max(a, 0.0), b] for a, b in _merge(spans) if b > o.seat_tol_mm]
         best = None
         for a, b in spans:
             for t in (a + 0.1 * (b - a), (a + b) / 2, b - 0.1 * (b - a)):
                 for j in range(8):
                     ang = 2 * math.pi * j / 8
                     radial = tuple(math.cos(ang) * v[q] + math.sin(ang) * w[q] for q in range(3))
-                    ivs = probe.intervals(k, _at(p, u, t), radial, 0.0, r_ann + 0.5)
-                    r = ivs[0][0] if ivs else r_ann + 0.5
+                    ivs = probe.intervals(k, _at(p, u, t), radial, 0.0, reach_r)
+                    r = ivs[0][0] if ivs else reach_r
                     if best is None or r < best[0]:
                         best = (r, [_r(c) for c in _at(p, u, t, v, w, r, ang)])
         if best is not None:
-            holes[k] = {"radius_mm": _r(best[0]), "point": best[1]}
+            holes[k] = {"radius_mm": _r(best[0]), "point": best[1], "open_to_mm": _r(reach_r)}
     m["holes"] = holes
     # the head's volume (no solid): radial rays at its mid-height
     if screw is None and spec.head != "flat":
@@ -1086,7 +1131,9 @@ def measure(assembly: Any, spec: FastenerSpec, i: int, options: FastenerOptions 
 
 def _tool_sweep(assembly: Any, spec: FastenerSpec, i: int, m: Mapping[str, Any], tool_name: str,
                 decl: Any, present: Sequence[str], step: Optional[Mapping[str, Any]], tol: Any,
-                probe: Optional[_Probe] = None) -> Dict[str, Any]:
+                probe: Optional[_Probe] = None, later: Sequence[str] = ()) -> Dict[str, Any]:
+    """Sweep the tool's envelope against ``present`` (blocking) and ``later`` (parts fitted after the install step,
+    which only block removal for service)."""
     from cadagent.gates.relations import relate
     out: Dict[str, Any] = {"tool": tool_name, "step": step["order"] if step else None,
                            "step_fit": step["fit"] if step else None, "present": list(present)}
@@ -1119,23 +1166,29 @@ def _tool_sweep(assembly: Any, spec: FastenerSpec, i: int, m: Mapping[str, Any],
     from cadagent.gates.relations import bounding_box
     probe = probe if probe is not None else _Probe(assembly)
     ebox = bounding_box(solid.wrapped)
-    blocked = []
-    for k in present:
-        if k == inst:
-            continue
-        kb = probe.box(k)
-        if any(kb[j] > ebox[j + 3] + tol.touch_mm or kb[j + 3] < ebox[j] - tol.touch_mm for j in range(3)):
-            continue
-        rel = relate(solid.wrapped, assembly.shape(k), tol, names=("tool", k), contact_area=False)
-        if rel.state in ("overlapping", "contains", "unknown"):
-            row = {"part": k, "state": rel.state, "overlap_mm3": rel.overlap_mm3}
-            if rel.state != "unknown":
-                tr = _t_range(solid.wrapped, assembly.shape(k), p, u, v)
-                row["from_head_mm"] = _r(t - tr[1]) if tr else None
-            else:
-                row["error"] = rel.error
-            blocked.append(row)
+    def hits(keys: Sequence[str]) -> List[Dict[str, Any]]:
+        rows = []
+        for k in keys:
+            if k == inst:
+                continue
+            kb = probe.box(k)
+            if any(kb[j] > ebox[j + 3] + tol.touch_mm or kb[j + 3] < ebox[j] - tol.touch_mm for j in range(3)):
+                continue
+            rel = relate(solid.wrapped, assembly.shape(k), tol, names=("tool", k), contact_area=False)
+            if rel.state in ("overlapping", "contains", "unknown"):
+                row = {"part": k, "state": rel.state, "overlap_mm3": rel.overlap_mm3}
+                if rel.state != "unknown":
+                    tr = _t_range(solid.wrapped, assembly.shape(k), p, u, v)
+                    row["from_head_mm"] = _r(t - tr[1]) if tr else None
+                else:
+                    row["error"] = rel.error
+                rows.append(row)
+        return rows
+
+    blocked = hits(present)
     out["blocked"] = blocked
+    if later:
+        out["service_blocked"] = hits(later)
     sw = env["swing"]
     if sw:
         n = sw["sectors"]
@@ -1233,7 +1286,9 @@ def fastener_gate(assembly: Any, fasteners: Any, *, steps: Iterable[Any] = (),
             if m.get("error"):
                 checks.append(Check(f"fastener:{inst}:declaration", "fail", m["error"], [inst]))
                 continue
-            m["tool"] = _tool_sweep(assembly, spec, i, m, tool_name, tools.get(tool_name), present, step, tol, probe)
+            later = [k for k in names if k not in present] if options.service_access else []
+            m["tool"] = _tool_sweep(assembly, spec, i, m, tool_name, tools.get(tool_name), present, step, tol, probe,
+                                    later)
             if step is None and step_list:
                 m["tool"]["no_step"] = True
             cs, row = evaluate(spec, m, options)

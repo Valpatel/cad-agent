@@ -76,7 +76,7 @@ my-cad-project/
 | File | Orientation | Notes |
 |------|-------------|-------|
 | `exports/<part>.stl` | print orientation, lowest point on z=0 | degenerate faces removed; must be watertight |
-| `exports/<part>.3mf` | print orientation, centred on `printer.bed_mm` | written by `cad-agent export-3mf`, read back and verified |
+| `exports/<part>.3mf` | print orientation, centred on `printer.bed_mm` | written by `cad-agent export-3mf`, read back and verified; byte-reproducible (fixed zip dates), so a rebuild of unchanged geometry keeps the slice report current |
 | `exports/<part>.step` | assembly coordinates | for CAD review and re-use |
 
 "Open in Bambu Studio" uses `bambustudio://open?file=<url-encoded http URL of the 3MF>&name=<part>`.
@@ -159,8 +159,8 @@ and `tools/serve_preview.py` duplicate `cad-agent export-3mf`, `package` and
 `serve`; once those commands are adopted, drop the matching steps. Otherwise
 `cad-agent all` writes the 3MF files twice (harmless) and two packages.
 `tools/validate_review.py` can stay as a project check or give way to
-`cad-agent check`, which covers parts, print files, the configured checks and
-local links.
+`cad-agent check`, which covers parts, print files, the configured checks,
+local links and, with `cad: dossier:` (or `cad: gates:`), the integrity gates' verdicts and the dossier lint.
 
 A YAML flow mapping ends a value at the first comma, so a title with a comma
 must be quoted: `{id: storage, title: "Storage trays, cable routes", file: ...}`.
@@ -176,10 +176,15 @@ Unquoted, the title is cut at the comma and the rest becomes a stray key.
 | `cad-agent report [--open]` | writes `exports/cad-agent-results.json` (schema 1.0, the vptest web shape, so `vptest web validate` and its renderer still accept it) and a standalone `docs/cad-agent-report.html` with inline styles (light and dark) that opens from `file://` | 1 if any row fails |
 | `cad-agent package` | zip + sha256 manifest from `package.include` | |
 | `cad-agent serve [--port N] [--host H]` | serves the project root; writes the URL to `preview/server-url.txt` | |
-| `cad-agent site [--serve]` | builds `site/` from milestones, decisions, a designs summary, Markdown pages and git history (config `cad: site:`); `--serve` rebuilds on change and serves the web kit at `/_cadagent/kit/`. One top bar links every page: `site: nav:` (`[{id, title, href}]`, hrefs from the project root) or, when unset, the overview, docs, 3D model and each `html_pages` page plus the check and simulation reports, the design comparison and the search leaderboard. The server adds the bar to every HTML page it sends (files on disk unchanged; a bar the page mounts itself wins; `<meta name="cadagent-nav" content="off">` opts a page out) | |
+| `cad-agent site [--serve]` | builds `site/` from milestones, decisions, a designs summary, Markdown pages and git history (config `cad: site:`); `--serve` rebuilds on change and serves the web kit at `/_cadagent/kit/`. One top bar links every page: `site: nav:` (`[{id, title, href}]`, hrefs from the project root) or, when unset, the overview, docs, 3D model and each `html_pages` page plus the check and simulation reports, the design comparison and the search leaderboard. The server adds the bar to every HTML page it sends (files on disk unchanged; a bar the page mounts itself wins; `<meta name="cadagent-nav" content="off">` opts a page out). A project with a `dossier:` or `gates:` key also gets the review pages in `site/review/`: a page per dossier section, the requirements table and the gates page with the connectivity graph ([dossier.md](dossier.md#on-the-review-site)) | |
 | `cad-agent view` | writes every part in assembly position to `exports/view/` (STL + `view.json`) for the 3D viewer (config `cad: view:` for colours, hidden variants, explode directions, extra parts from STEP or STL, list categories) | |
 | `cad-agent webkit [DEST]` | copies the web kit (3D stage, model viewer, HUD panels, three.js, fonts) into the project, default `web/kit` | |
-| `cad-agent all` | build, export-3mf, check + report, package | 1 if anything failed |
+| `cad-agent dossier [--json] [--no-write] [--min-status S]` | lints the design dossier (`cad: dossier:`) against the build's geometry record, the gate verdicts, the configured checks and the reviewer records; writes each section's and part's status to `exports/dossier-status.json` and the lint verdict to `exports/gates/dossier-lint.json` ([dossier.md](dossier.md#lint-and-status)) | 1 on a lint error or a section below `--min-status` (default `gated`) |
+| `cad-agent review-packet [SECTION ...] [--list] [--view V ...] [--size WxH] [--explode F] [--context C]` | renders each dossier section's review packet into `exports/review/<section>/` with `manifest.json` (`cad-agent.review-packet/1`): the gate measurements and findings first, captioned views with content hashes, the render checklist ([review-packet.md](review-packet.md)); `--list` plans without rendering | 2 on an unknown section or with no geometry record |
+| `cad-agent review-section SECTION [--bundle-dir DIR] [--since REV]` | writes the reviewer's prompt bundle into `exports/review-bundle/<section>/` (`cad-agent.review-bundle/1`): the section YAML, the gate verdicts for its parts, the packet manifest and images, the checklist, the diff since the last sign-off and a record template ([dossier.md](dossier.md#the-reviewer-pass)) | 1 while a sign-off would be refused (stale packet, section below `gated`, open decision, unknown builder); 2 on an unknown section or with no build |
+| `cad-agent review-section SECTION --submit RECORD` / `--check RECORD` | checks a filled-in reviewer record against the current build (hashes current, the reviewer, `CAD_AGENT_ACTOR`, is not the section's builder or author, every question, decision and requirement answered; for a sign-off: packet current, no open decision) and writes `dossier/reviews/<section>-<date>.json` (`--check` writes nothing) | 1 when the record is refused |
+| `cad-agent gates [--only G ...] [--skip G ...] [--jobs N] [--no-cache] [--build] [--dry-run]` | runs every integrity gate that applies to the dossier geometry, each in its own process, then the dossier lint; writes `exports/gates/<gate>.json` and `.md`, bound to their inputs (config `cad: gates:`, [gates.md](gates.md#running-the-gates-cad-agent-gates)) | 1 if a gate (or its build) fails; 2 without a `dossier:`/`gates:` key, on a bad config, or with no geometry record and no build |
+| `cad-agent all` | build, export-3mf, gates and the dossier lint (when `cad: dossier:` or `cad: gates:` is set), check + report, package | 1 if anything failed |
 | `cad-agent catalogue [--json] [--errors-only]` | checks the part catalogue and every design against it (config `cad: explore:`, [explore.md](explore.md)) | 1 on an error |
 | `cad-agent compare [DESIGN ...] [--swaps] [--workers N] [--json] [--open]` | evaluates the designs with the project's evaluator, ranks them (Pareto fronts over the objectives) and writes `comparison.json`, `compare.html` and site design cards; `--swaps` tries every one-part swap | 1 if a design could not be evaluated |
 | `cad-agent optimise [--trials N] [--workers N] [--sampler S] [--fresh]` | searches slots and parameters (random, grid; NSGA-II and TPE with optuna) and keeps a leaderboard | 1 if no trial is feasible |
@@ -211,7 +216,16 @@ from cadagent.robot import (Body, combine, box_body, cylinder_body, solid_mass_p
 from cadagent.explore import (explore_config, load_configured, check_catalogue, load_design, resolve, bom,
                               load_evaluator, evaluate_design, compare_designs, comparison, write_comparison, swaps)
 from cadagent.explore.optimise import run_search
+from cadagent.gates import (Assembly, Tolerances, relation_table, relate_pair, relate, solid_interference,
+                            PairCache, shape_content_hash, Check, verdict, write_verdict)
+from cadagent.gates.wall import check_wall, wall_gate, mesh_thickness, brep_thickness, brep_thickness_near
 ```
+
+### Integrity gates (`cadagent.gates`)
+
+Assembly-level checks: the pairwise relation table (apart, touching, overlapping, contains, with witnesses and a
+content-hash pair cache), the verdict file every gate writes, and the minimum-wall gate. Reference and limits:
+[gates.md](gates.md).
 
 ### Explore and compare designs (`cadagent.explore`)
 

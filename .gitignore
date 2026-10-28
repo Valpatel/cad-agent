@@ -6,3 +6,4 @@ mining/raw/
 mining/out/private/
 *.egg-info/
 build/
+.cadagent-cache/

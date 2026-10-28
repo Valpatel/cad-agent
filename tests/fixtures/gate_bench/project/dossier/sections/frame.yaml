@@ -1,0 +1,36 @@
+# generated once from the bench's declarations (tests/fixtures/gate_bench/build.py); edit by hand
+id: S-frame
+title: Frame
+purpose: One grounded datum for every subassembly
+requirements:
+- R3
+parts:
+- id: base
+  function: Grounded plate that carries every subassembly, with a boss under the bracket
+  interfaces:
+  - I-hopper
+  - I-bracket
+  - I-block
+  - I-stop
+  - I-frame
+  material:
+    name: PETG
+    process: FDM
+    print_axis: +Z
+    wall_mm: 2.4
+- id: frame
+  function: Post and overhead beam the arm must clear
+  interfaces:
+  - I-frame
+  material:
+    name: PETG
+    process: FDM
+    print_axis: +Z
+    wall_mm: 2.4
+decisions:
+- id: D3
+  decision: One flat base plate carries everything
+  why: a single grounded part gives every subassembly one datum
+  alternatives:
+  - option: separate feet per subassembly
+    rejected: no common datum

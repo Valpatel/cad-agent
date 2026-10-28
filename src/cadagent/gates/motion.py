@@ -374,6 +374,7 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
     ``containment(group_id, poses, moved_bodies)``, when given, is called once per group with
     ``{pose_label: {body: transform}}`` and returns extra checks plus ``not_checked`` lines."""
     t0 = time.perf_counter()
+    combine = [list(c) for c in combine]
     checks: List[Check] = []
     not_checked: List[str] = []
     names = list(world.names)
@@ -435,17 +436,32 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
         fixed_bodies = {world.body(k) for k in _keys(names, j.fixed)}
         owners = [o for o, b in body_of_joint.items() if o != jid and o in js and set(b) & fixed_bodies]
         parent[jid] = owners[0] if owners else None
-    for jid in list(js):
+    for jid in sorted(js):
+        if jid not in js:
+            continue
         seen, cur = [jid], parent[jid]
-        while cur is not None and cur not in seen:
+        while cur is not None and cur in js and cur not in seen:
             seen.append(cur)
             cur = parent.get(cur)
-        if cur is not None:
-            checks.append(Check(f"joint:{jid}", "fail", f"joints {' -> '.join(seen + [cur])} carry each other in a "
-                                "loop", [js[jid].moving]))
-            for x in seen:
-                js.pop(x, None)
+        if cur is not None and cur in seen:
+            loop = seen[seen.index(cur):]
+            for x in loop:
+                checks.append(Check(f"joint:{x}", "fail", f"joints {' -> '.join(loop + [loop[0]])} carry each other "
+                                    "in a loop", [js[x].moving]))
+            for x in loop:
+                js.pop(x)
                 body_of_joint.pop(x, None)
+    changed = True
+    while changed:                      # a joint riding on one that cannot be posed cannot be posed either
+        changed = False
+        for jid in sorted(js):
+            p = parent.get(jid)
+            if p is not None and p not in js:
+                checks.append(Check(f"joint:{jid}", "fail", f"joint {jid} rides on joint {p}, which cannot be posed",
+                                    [js[jid].moving]))
+                js.pop(jid)
+                body_of_joint.pop(jid, None)
+                changed = True
     parent = {k: v for k, v in parent.items() if k in js}
 
     def root(jid: str) -> str:
@@ -635,8 +651,10 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
             msg = f"{g.id}: the kernel could not decide {len(unknown)} pair(s) ({text})"
         else:
             msg = f"{g.id}: no collision in {len(poses)} poses ({text})"
-        clearance = {"min_clearance_mm": best.get("gap_mm"), "at": best} if best else \
-            {"min_clearance_mm": None, "lower_bound_mm": min_box.get("mm"), "at": min_box}
+        clearance: Dict[str, Any] = {"min_clearance_mm": best.get("gap_mm"), "at": best or None}
+        if min_box and (not best or min_box["mm"] < best["gap_mm"]):
+            clearance["unmeasured_gap_at_least_mm"] = min_box["mm"]     # pairs whose boxes stayed beyond near_mm
+            clearance["unmeasured_at"] = min_box
         evidence = {"joints": g.joints, "poses": len(poses), "density": density, "coarsened": g.coarsened,
                     "max_poses": max_poses, "moving": moving_keys, "bodies": moving_bodies_g,
                     "intended_contacts": sorted(_pair_id(*sorted(p)) for p in set(intended) if len(p) == 2),

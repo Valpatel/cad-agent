@@ -12,7 +12,7 @@ import math
 
 import pytest
 
-from cadagent.gates import Relation, Tolerances
+from cadagent.gates import Relation
 from cadagent.gates.motion import (IDENTITY, Joint, World, box_distance, moved_box, rotation, run_motion,
                                    translation)
 
@@ -215,7 +215,8 @@ def test_a_grid_over_max_poses_is_coarsened_evenly_and_says_so():
     v = run_motion(BoxWorld(CHAIN), CHAIN_JOINTS, samples={"X": 30, "Z": 30}, max_poses=100)
     (g,) = v["groups"]
     assert g["poses"] == 100 and g["coarsened"] is True
-    assert [d["samples"] for d in g["density"]] == [10, 10] and [d["declared_samples"] for d in g["density"]] == [30, 30]
+    assert [d["samples"] for d in g["density"]] == [10, 10]
+    assert [d["declared_samples"] for d in g["density"]] == [30, 30]
     assert finding(v, "density:X+Z")["status"] == "warn"
 
 
@@ -228,6 +229,16 @@ def test_joint_declaration_problems():
     assert "in the moving body" in ids["joint:J"]["message"]
     assert "'ghost' is not in the assembly" in ids["joint:M"]["message"]
     assert ids["joint:P"]["status"] == "warn" and "joint:F" not in ids
+    assert v["pass"] is False
+
+
+def test_joints_that_carry_each_other_in_a_loop_fail_with_what_rides_on_them():
+    boxes = {"base": (0, 0, -2, 90, 10, 0), "a": (0, 0, 0, 10, 10, 10), "b": (20, 0, 0, 30, 10, 10),
+             "c": (40, 0, 0, 50, 10, 10)}
+    v = run_motion(BoxWorld(boxes), {"J1": slider("a", "b", (0, 1)), "J2": slider("b", "a", (0, 1)),
+                                     "J3": slider("c", "a", (0, 1))})
+    ids = {f["id"]: f["message"] for f in v["findings"]}
+    assert "in a loop" in ids["joint:J1"] and "rides on joint J1" in ids["joint:J3"]
     assert v["pass"] is False
 
 

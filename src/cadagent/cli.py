@@ -19,7 +19,7 @@ from cadagent._deps import MissingDependency
 from cadagent.project import CadConfigError, CadProject, Step, load_project
 
 SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
-               "mcmaster", "catalogue", "compare", "optimise")
+               "mcmaster", "catalogue", "compare", "optimise", "dossier")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -263,6 +263,36 @@ def cmd_pcb_check(project: CadProject, args: argparse.Namespace) -> int:
     return 0 if bundle['pass'] else 1
 
 
+def cmd_dossier(project: CadProject, args: argparse.Namespace) -> int:
+    """Lint the design dossier, compute every item's status and write exports/dossier-status.json and
+    exports/gates/dossier-lint.json (docs/dossier.md "Lint and status")."""
+    from cadagent.dossier.lint import STATUSES, lint_project, write_outputs
+
+    minimum = None if getattr(args, "min_status", "gated") == "none" else getattr(args, "min_status", "gated")
+    result = lint_project(project, min_section_status=minimum)
+    if result is None:
+        raise _Unusable("no dossier: add `dossier: dossier/project.yaml` to the cad: section (docs/dossier.md)")
+    if not getattr(args, "no_write", False):
+        status_path, verdict_path = write_outputs(result, project.exports_dir)
+    if getattr(args, "json", False):
+        print(json.dumps(result.to_status(), indent=2))
+        return 0 if result.passed else 1
+    for sid, row in result.sections.items():
+        _say(f"{row['status'].upper():<10} {sid}  {row['title']}")
+        for pid in row["parts"]:
+            prow = result.parts[pid]
+            why = f"  ({'; '.join(prow['blocked_by'])})" if prow["blocked_by"] else ""
+            _say(f"  {prow['status']:<10} {pid}{why}")
+    for f in result.findings:
+        _say(f"  {f.severity.upper():<7} {f.code:<26} {f}")
+    counts = {s: sum(1 for r in result.sections.values() if r["status"] == s) for s in STATUSES}
+    _say(f"dossier: {len(result.errors)} error(s), {len(result.warnings)} warning(s); sections "
+         + ", ".join(f"{n} {s}" for s, n in counts.items() if n) + " · declarations only, physical fit not verified")
+    if not getattr(args, "no_write", False):
+        _say(f"status:  {status_path}")
+        _say(f"verdict: {verdict_path}")
+    return 0 if result.passed else 1
+
 def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
     args.from_step = None
     args.only = None
@@ -270,6 +300,9 @@ def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
         return 1
     if cmd_export_3mf(project, args):
         return 1
+    if project.dossier:
+        args.json, args.no_write, args.min_status = False, False, "gated"
+        cmd_dossier(project, args)      # writes the status file; `check` (in report) fails on its errors
     report_rc = cmd_report(project, args)
     package_rc = cmd_package(project, args)
     if report_rc:
@@ -530,6 +563,7 @@ HANDLERS = {
     "catalogue": cmd_catalogue,
     "compare": cmd_compare,
     "optimise": cmd_optimise,
+    "dossier": cmd_dossier,
 }
 
 def dispatch(args: argparse.Namespace) -> int:
@@ -603,7 +637,7 @@ def build_parser() -> argparse.ArgumentParser:
     pcb_p = sub.add_parser("pcb-check", parents=[common], help="Bind KiCad ERC/DRC evidence to current PCB sources")
     pcb_p.add_argument("manifest", help="JSON with reports, sources, release_gates and optional waivers (paths relative to project root)")
     pcb_p.add_argument("--output", default="exports/pcb-evidence.json")
-    sub.add_parser("all", parents=[common], help="build, export-3mf, check + report, package")
+    sub.add_parser("all", parents=[common], help="build, export-3mf, dossier (when configured), check + report, package")
     mc_p = sub.add_parser("mcmaster", help="Download McMaster-Carr STEP + product data per part number and normalise "
                                            "it (one page at a time; skills/mcmaster-parts/SKILL.md)")
     mc_p.add_argument("pns", nargs="+", metavar="PN", help="McMaster-Carr part numbers, e.g. 91290A242")
@@ -643,6 +677,13 @@ def build_parser() -> argparse.ArgumentParser:
                        help="Override search.sampler (nsga2 and tpe need optuna)")
     opt_p.add_argument("--seed", type=int, default=None, help="Override search.seed")
     opt_p.add_argument("--fresh", action="store_true", help="Delete the previous trials and start over")
+    dos_p = sub.add_parser("dossier", parents=[common],
+                           help="Lint the design dossier and write each item's status (exports/dossier-status.json)")
+    dos_p.add_argument("--json", action="store_true", help="Print the status JSON instead of the table")
+    dos_p.add_argument("--no-write", action="store_true", help="Do not write the status and verdict files")
+    dos_p.add_argument("--min-status", choices=("draft", "built", "gated", "reviewed", "signed_off", "none"),
+                       default="gated", help="Status every section must reach (default gated, plan §5.4); "
+                                             "none: report statuses without failing on them")
     return parser
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

@@ -446,7 +446,11 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
             + section("Documents", f'<div class="docs">{doc_cards}</div>' if doc_cards else "", "No documents configured.")
             + section("Recent changes", f'<div class="tablewrap"><table class="log">{log_rows}</table></div>' if log_rows else "", "No git history.")
             + f'<footer>Built {datetime.now().strftime("%Y-%m-%d %H:%M")} by cad-agent from the project files. Refresh to rebuild.</footer></main>')
-    (out / "index.html").write_text(_page(cfg.title, nav_html(cfg, "overview", "../") + head + main, cfg.accent, theme=cfg.theme))
+    review_css = ""
+    if review_summary is not None:
+        from cadagent.site_review import CSS as review_css
+    (out / "index.html").write_text(_page(cfg.title, nav_html(cfg, "overview", "../") + head + main, cfg.accent,
+                                          theme=cfg.theme, extra_css=review_css))
     # the same top bar for the project's own pages: they fetch site/nav.json and render it with webkit/appnav.js
     (out / "nav.json").write_text(json.dumps({"title": cfg.title, "nav": cfg.nav}, indent=1) + "\n")
     summary = {"site": str(out), "pages": len(pages), "milestones": len(milestones), "decisions": len(decisions),

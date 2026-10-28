@@ -519,3 +519,38 @@ lint also compares the gate's declarations and options, as `cad-agent check` doe
 
 **Limits.** A clean lint means the design is declared and agrees with the build. It does not mean the geometry is
 right (the gates check that) or that it meets its requirements (the reviewer checks that).
+
+## On the review site
+
+`cad-agent site` builds review pages for a project with a `dossier:` or `gates:` key (`cadagent.site_review`), in
+`site/review/`, linked from the overview's "Design review" block and, when the site configures no `nav`, from three
+top-bar tabs (Review, Requirements, Gates). A project without either key sees no change.
+
+| Page | Shows |
+|---|---|
+| `index.html` | one row per section: status, requirements, part count, gate state (pass / fail / stale / unrun over its parts' gate checks), review state (unreviewed / findings open / reviewed / signed off / void), the reviewer record; the lint findings with their file and line |
+| `section-<id>.html` | the section's requirements (status, verifying checks), its interfaces and those of its parts, section decisions, and each part card: function, material, loads, fasteners, `contains`, decisions with the alternatives rejected and why, checks as pills linked to their evidence, the status ladder draft → built → gated → reviewed → signed_off, what keeps it from the next step, and a **stale** badge when the geometry changed since the last review (`invalidated`). Then every gate finding that names one of its parts (an instance, a fastener that clamps or threads into it, a cavity of it), with the witness, and the lint findings on it; then the review packet |
+| `requirements.html` | id, text and source quote, status, the sections it traces to, its own checks (and the card checks that only satisfy the trace), derived requirements, waivers and their rationale |
+| `gates.html` | one row per gate: state (pass, warn, fail, stale, missing, invalid, not applicable, skipped, from `cadagent.gates.run.gate_rows`), counts and links to the verdict's `.md`, `.json` and `.dot`; the connectivity graph as SVG; each gate's findings with witnesses, exclusions, what it did not check, assumptions and limits |
+
+**What it reads.** Statuses only from what the pipeline computed: `exports/dossier-status.json`, the verdicts in
+`exports/gates/` and the reviewer records the status file names. The YAML is loaded (`strict=False`) for the words
+only (functions, purposes, decisions, interfaces, requirement sources and waivers). When a dossier file is newer
+than the status file, every page says so ("run `cad-agent dossier`"); with no status file the pages still list the
+sections from the YAML, marked "not computed". `cad-agent site --serve` rebuilds the pages when any of these files
+changes, and serves `.md`, `.dot` and `.yaml` files as plain text so the linked verdicts open in the browser.
+
+**The connectivity graph** is drawn from `exports/gates/connectivity.dot` by `cadagent.dotsvg`: Graphviz's `dot`
+when it is installed, else a built-in layered layout (each cluster laid out on its own, layers by distance from the
+grounded part, left to right). The page says which drew it, and writes `site/review/connectivity.svg` too.
+
+**The review packet** (plan T10) is read from `exports/review/<section>/manifest.json` when it exists. The reader
+is tolerant until that schema settles: the images are the list under `images` (or `views`, `renders`, `items`),
+each a path or `{file|path|image, caption|title, view|name, hash}`, resolved against the manifest's folder, then the
+project root; a manifest `hashes: {part: sha256}` that differs from the current build shows a "rendered from older
+geometry" banner. The current reviewer record's `findings` (`{severity, text|message, render|image|view}`) are
+listed beside the image they name, the rest below. Without a manifest the page says how to make one.
+
+Limits: the pages show what the files say. They do not recompute a status, and a page built before the gates ran
+again shows the old verdicts (the gates page marks them stale against the current geometry record).
+

@@ -62,7 +62,7 @@ background:var(--bg);padding:8px;border-radius:8px;font-size:12px}
 .packet img{display:block;width:100%;height:auto;background:#eff1ed}.packet figcaption{padding:8px 12px;font-size:14px}
 .graph{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;overflow:auto}
 .graph svg{max-width:100%;height:auto}.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--muted);margin:8px 0}
-.subnav{margin:14px 0 0}
+.subnav{margin:14px 0 0}.packet+h3,.rf{margin-top:18px}
 @media (max-width:640px){.partcard dl{grid-template-columns:1fr}.packet{grid-template-columns:1fr}}
 """
 
@@ -671,7 +671,7 @@ def _packet_html(data: ReviewData, sid: str, links: _Links) -> str:
         hash_html = f' · <code class="hash">{_e(img["hash"][:16])}</code>' if img["hash"] else ""
         figs.append(f'<figure>{pic}<figcaption><b>{_e(img["view"])}</b> {_e(img["caption"])}{hash_html}{mine_html}</figcaption></figure>')
     rest = [f for i, f in enumerate(findings) if i not in used]
-    rest_html = (f'<h3>Reviewer findings</h3><ul>{"".join(f_html(f) for f in rest)}</ul>' if rest else "")
+    rest_html = (f'<h3 class="rf">Reviewer findings</h3><ul>{"".join(f_html(f) for f in rest)}</ul>' if rest else "")
     rec_html = f'<p class="small muted">Reviewer record: {links.file(record)}</p>' if record else ""
     manifest_rel = _rel(Path(m["_dir"]) / "manifest.json", data.root)
     return (banner + (f'<div class="packet">{"".join(figs)}</div>' if figs else '<p class="tag">The packet lists no images.</p>')

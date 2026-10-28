@@ -121,9 +121,15 @@ class FastenerOptions:
         if self.lines < 3:
             raise ValueError("FastenerOptions.lines must be at least 3")
 
-    @property
-    def stock(self) -> Tuple[float, ...]:
-        return tuple(self.stock_lengths_mm) if self.stock_lengths_mm else DEFAULT_STOCK_MM
+    def stock(self, diameter_mm: Optional[float] = None) -> Tuple[float, ...]:
+        """The project's stock lengths, else the metric list for a metric nominal diameter (ISO 261), the inch
+        list for any other diameter, and both when the diameter is unknown."""
+        if self.stock_lengths_mm:
+            return tuple(self.stock_lengths_mm)
+        if diameter_mm is None:
+            return DEFAULT_STOCK_MM
+        metric = round(float(diameter_mm), 3) in COARSE_PITCH_MM
+        return tuple(float(x) for x in METRIC_STOCK_MM) if metric else INCH_STOCK_MM
 
 
 SPEC_OPTIONAL = ("key", "via", "tool", "length_mm", "diameter_mm", "thread_start_mm", "thread_depth_mm",
@@ -482,6 +488,12 @@ def evaluate(spec: FastenerSpec, measurement: Mapping[str, Any], options: Fasten
             continue
         parts.add(k)
         probs.append(f"{k} has material {r:.2f} mm from the axis, inside the head (r {head_r:.2f}): a pocket wall")
+    for k, rel in sorted(inter.items()):
+        tr = rel.get("t_range")
+        if k not in excluded and rel.get("state") in ("overlapping", "contains") and tr and tr[1] <= seat_tol:
+            parts.add(k)
+            probs.append(f"the head cuts into {k} ({rel.get('overlap_mm3', 0):.3f} mm³, t {tr[0]:.2f}..{tr[1]:.2f}): "
+                         f"a pocket wall or a part over the seat")
     ev["head"] = head
     checks.append(Check(cid("seat"), _status(probs, warns), "; ".join(probs + warns) or
                         f"the head bears on {spec.clamps} all round", sorted(parts), ev))
@@ -583,14 +595,18 @@ def evaluate(spec: FastenerSpec, measurement: Mapping[str, Any], options: Fasten
                 parts.add(k)
                 probs.append(f"no pilot or tap hole in {k}: material on the axis from t {hit[0][0]:.2f}")
     for k, rel in sorted(inter.items()):
-        if k.startswith("_") or k in excluded:
+        if k in excluded:
             continue
         tr = rel.get("t_range")
+        if role(k) == "stack" and rel.get("state") == "unknown":
+            parts.add(k)
+            probs.append(f"the kernel could not decide the screw against {k}: {rel.get('error', '')}")
+        if tr and tr[1] <= seat_tol:
+            continue                               # the head's: the seat check reports it
         if role(k) == "stack" and rel.get("state") in ("overlapping", "contains"):
             parts.add(k)
-            where = "the head cuts into" if tr and tr[1] <= seat_tol else "the screw overlaps"
-            probs.append(f"{where} {k} ({rel.get('overlap_mm3', 0):.3f} mm³" +
-                         (f", t {tr[0]:.2f}..{tr[1]:.2f}" if tr else "") + ")")
+            probs.append(f"the screw overlaps {k} ({rel.get('overlap_mm3', 0):.3f} mm³" +
+                         (f", t {tr[0]:.2f}..{tr[1]:.2f}" if tr else "") + "): the hole is too small or missing")
         if role(k) == "into" and rel.get("state") in ("overlapping", "contains") and tr and t_start is not None \
                 and tr[0] < t_start - o.stack_tol_mm:
             parts.add(k)
@@ -653,7 +669,7 @@ def evaluate(spec: FastenerSpec, measurement: Mapping[str, Any], options: Fasten
                     continue                       # no pilot hole: the holes check's
                 if a < length - 1e-6:
                     parts.add(k)
-                    probs.append(f"the screw runs {min(b, length) - a:.2f} mm into {k} (t {a:.2f}..{length:.2f})"
+                    probs.append(f"the screw runs {min(b, length) - a:.2f} mm into {k} (t {a:.2f}..{min(b, length):.2f})"
                                  + (", past its thread" if role(k) == "into" else ""))
                     hit_at = a if hit_at is None else min(hit_at, a)
                 else:
@@ -668,8 +684,11 @@ def evaluate(spec: FastenerSpec, measurement: Mapping[str, Any], options: Fasten
         else:
             ev["next_solid"] = None
         for k, rel in sorted(inter.items()):
-            if k.startswith("_") or k in excluded or role(k) == "stack":
+            if k in excluded or role(k) == "stack":
                 continue
+            tr = rel.get("t_range")
+            if tr and tr[1] <= seat_tol:
+                continue                           # the head's: the seat check reports it
             if rel.get("state") == "unknown":
                 parts.add(k)
                 probs.append(f"the kernel could not decide the screw against {k}: {rel.get('error', '')}")
@@ -721,7 +740,7 @@ def evaluate(spec: FastenerSpec, measurement: Mapping[str, Any], options: Fasten
                          (f"..{hi_fit:.2f}" if hi_fit is not None else "+") + " mm the stack takes (thread at "
                          f"{t_start:.2f} + {need:.2f} engagement" + (f"; {ev_next} at {stop:.2f} less "
                                                                       f"{tip_c:g} tip room)" if ev_next else ")"))
-    stock = o.stock
+    stock = o.stock(spec.diameter_mm if spec.diameter_mm is not None else d)
     if length is not None and not _stock_fit(length, stock):
         warns.append(f"length {length:g} mm is not a common stock length")
     if lo_fit is not None:
@@ -1060,7 +1079,8 @@ def measure(assembly: Any, spec: FastenerSpec, i: int, options: FastenerOptions 
 
 
 def _tool_sweep(assembly: Any, spec: FastenerSpec, i: int, m: Mapping[str, Any], tool_name: str,
-                decl: Any, present: Sequence[str], step: Optional[Mapping[str, Any]], tol: Any) -> Dict[str, Any]:
+                decl: Any, present: Sequence[str], step: Optional[Mapping[str, Any]], tol: Any,
+                probe: Optional[_Probe] = None) -> Dict[str, Any]:
     from cadagent.gates.relations import relate
     out: Dict[str, Any] = {"tool": tool_name, "step": step["order"] if step else None,
                            "step_fit": step["fit"] if step else None, "present": list(present)}
@@ -1091,12 +1111,13 @@ def _tool_sweep(assembly: Any, spec: FastenerSpec, i: int, m: Mapping[str, Any],
     solid = solid.clean() if hasattr(solid, "clean") else solid
     inst = spec.instance_key(i)
     from cadagent.gates.relations import bounding_box
+    probe = probe if probe is not None else _Probe(assembly)
     ebox = bounding_box(solid.wrapped)
     blocked = []
     for k in present:
         if k == inst:
             continue
-        kb = bounding_box(assembly.shape(k))
+        kb = probe.box(k)
         if any(kb[j] > ebox[j + 3] + tol.touch_mm or kb[j + 3] < ebox[j] - tol.touch_mm for j in range(3)):
             continue
         rel = relate(solid.wrapped, assembly.shape(k), tol, names=("tool", k), contact_area=False)
@@ -1124,7 +1145,7 @@ def _tool_sweep(assembly: Any, spec: FastenerSpec, i: int, m: Mapping[str, Any],
             for k in present:
                 if k == inst:
                     continue
-                kb = bounding_box(assembly.shape(k))
+                kb = probe.box(k)
                 if any(kb[q] > sb[q + 3] or kb[q + 3] < sb[q] for q in range(3)):
                     continue
                 rel = relate(sector.wrapped, assembly.shape(k), tol, names=("swing", k), contact_area=False)
@@ -1205,7 +1226,7 @@ def fastener_gate(assembly: Any, fasteners: Any, *, steps: Iterable[Any] = (), t
             if m.get("error"):
                 checks.append(Check(f"fastener:{inst}:declaration", "fail", m["error"], [inst]))
                 continue
-            m["tool"] = _tool_sweep(assembly, spec, i, m, tool_name, tools.get(tool_name), present, step, tol)
+            m["tool"] = _tool_sweep(assembly, spec, i, m, tool_name, tools.get(tool_name), present, step, tol, probe)
             if step is None and step_list:
                 m["tool"]["no_step"] = True
             cs, row = evaluate(spec, m, options)

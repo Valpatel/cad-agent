@@ -10,8 +10,8 @@ prove that printed parts fit, move or hold: no tolerance stack, no print shrink,
 `physical_fit_verified: false` and lists its assumptions.
 
 Status: the shared machinery (T3), the minimum-wall gate (T8), the connectivity gate (T4), the containment gate (T5),
-the gate bench (T12) and the dossier lint (T2, [`dossier.md`](dossier.md#lint-and-status)) are built. Fasteners (T6),
-motion (T7) and assembly access (T9) build on them.
+the fastener gate (T6), the gate bench (T12) and the dossier lint (T2, [`dossier.md`](dossier.md#lint-and-status)) are
+built. Motion (T7) and assembly access (T9) build on them.
 
 ## The assembly and the relation table
 
@@ -330,6 +330,94 @@ connection only within a measured gap; a mechanism interface is realised by its 
 involving a free part are not reported as undeclared; the graph is exported as DOT for the site (T15) to render as
 SVG.
 
+## Fasteners and stacks (`cadagent.gates.fasteners`)
+
+Does every screw seat, clamp, engage and stop where the model says, and can its tool reach it when it goes in?
+
+```python
+from cadagent.gates.fasteners import (fastener_gate, fastener_gate_from_build, fasteners_from_build, FastenerSpec,
+                                      FastenerOptions, evaluate, measure, table_markdown, tool_envelope)
+
+v = fastener_gate_from_build(result, dossier, extra, out="exports/gates/fasteners.json")   # + fasteners.md beside it
+v = fastener_gate(asm, {"lid_screws": FastenerSpec(name="lid_screws", clamps="lid", into="insert", axes=[...],
+                                                   length_mm=8, diameter_mm=3, thread_start_mm=3, min_engagement_mm=1.5,
+                                                   tool="hex 2.5", stack=["lid", "gasket"], head_d_mm=5.5)},
+                  steps=result.steps, tools={"hex 2.5": {"envelope_d": 6, "length": 60}},
+                  options=FastenerOptions(tip_clearance_mm=0.5), cache=cache,
+                  intended_overlaps=[{"parts": ["screw", "foam"], "reason": "screw pierces the foam pad"}])
+print(table_markdown(v))           # the lesson-04 table
+```
+
+`fasteners_from_build` reads the geometry record's `fasteners` (key, clamps, into, tool, the stack numbers, every
+axis and placed solid) and adds gate options from the dossier's `gates: fasteners:` and `extra["fasteners"]`, keyed by
+fastener name or catalogue key: `stack` (the clamped parts, head side first; default `[clamps]`), `head` (`flat` for
+a countersunk head), `head_d_mm`, `head_h_mm`, `pitch_mm`, `hole_clearance_mm`, `tip_clearance_mm`. Tools come from
+`gates: tools:` and `extra["tools"]` (`tool_envelope`): `{envelope_d, length}`; `{segments: [{d, length}, ...]}`
+(a driver's shaft then handle, nearest the head first); `start: head | seat` (a key in the socket, or a socket over
+the head); `offset_mm`; `swing: {radius, at, thickness, min_deg}` for an L key's arm, which needs a free arc of
+`min_deg` (60) in 12 sectors.
+
+**How it reads the model.** Everything is in the screw's own frame: `t` is the distance from the seat along the
+advance direction, and the head is at `t < 0`. Lines parallel to the axis are cut through the solids
+(`IntCurvesFace_ShapeIntersector` crossings, the spans between them classified with `BRepClass3d_SolidClassifier`):
+- the *annulus*: 8 lines halfway between the shank and the head rim, where the head and the clamped parts bear;
+- the *axis*;
+- the *thread probe*: 4 lines at 0.92 d/2 (then 1.08 d/2), where a receiver modelled at its minor or nominal diameter
+  has material, kept only where every line agrees;
+- *radial rays* at three depths and 8 angles in each clamped part, for its hole radius.
+
+The placed screw solid gives the length and head (its box in the axis frame) and its overlaps (the relation table,
+cached; each overlap's extent along the axis from the common solid). Without a solid, the head is the declared
+`head_d_mm` x `head_h_mm`, or else 1.6 d x 1.0 d, and the length is the record's.
+
+**Checks** (ids `fastener:<instance>:<check>`; `fastener:<name>:declaration` for a fastener that cannot be placed):
+
+| Check | Fails when |
+|---|---|
+| `seat` | the first part under the head on any annulus line is not `clamps`, or stands more than `seat_tol_mm` (0.05) off the seat or above it (head buried); a line finds nothing (the head overhangs an edge or a pocket); the head's volume overlaps any part (a pocket wall). For a `flat` head, the solid must touch `clamps` within `seat_tol_mm` (warns without a solid) |
+| `stack` | a `stack` part is missing under the head or out of order; an undeclared part sits inside the stack; a gap over `gap_tol_mm` (0.05) between two parts, or under the last one (nothing pulls it down) |
+| `holes` | a clamped part has material on the axis, a hole under `d + hole_clearance_mm` (0.1, diametral), or a hole no smaller than the head (pull-through); the receiver has material on the axis at the thread start (no pilot or tap hole); the screw's solid overlaps a clamped part below the seat, or the receiver above its thread |
+| `engagement` | no thread of `into` on the axis; the screw stops short of it; the axial overlap with the receiver's thread is under `min_engagement_mm` (else `min_engagement_d` x d, 0.8, labelled in the evidence) |
+| `tip` | a solid on the axis before the tip (past the stack: the host, another part, the receiver's own bottom); the next solid past the tip is closer than `tip_clearance_mm` (0.5, bottoming); the solid overlaps another part, or the receiver past its thread; the kernel could not decide a pair |
+| `length` | the placed solid's length differs from the record's by over `length_tol_mm` (0.05); the length is outside the window the stack allows (thread start + minimum engagement, up to the next solid on the axis less `tip_clearance_mm`); the record's `thread_start_mm` differs from the model by over `stack_tol_mm` (recompute the stack). Warns on a `thread_depth_mm` that differs from the model and on an uncommon stock length (the metric list for a metric d, the inch list otherwise, or `stock_lengths_mm`); the evidence lists the stock lengths that fit |
+| `tool` | no tool declared (on the fastener or its install step), no envelope for it, the envelope overlapping a part present at the install step (more than `overlap_mm3`, or undecided), or the swing's free arc under `min_deg`. Warns when steps exist but none installs the fastener (then it is checked against every part) |
+
+**Install step and the parts present.** The step that installs a fastener is the first to list it by name in
+`fasteners`; failing that, the first to list its catalogue key and to fit or sit on a part it clamps or threads into;
+failing that, the first to list its key at all. Present at that step: the parts fitted at it or before; parts that no
+step fits, which are counted as present (conservative); and the solids of fasteners installed at it or before (or
+installed by no step). Without steps, everything counts as present.
+
+**Output.** The verdict (`cadagent.gate/1`) carries `table`, one lesson-04 row per instance:
+- the fastener, its stack and receiver;
+- the seat and thread-start points;
+- grip, measured thread start (and the record's), thread depth, engagement in mm and threads, the minimum;
+- length, whether it is a stock length, the window that fits, and the thread depth that length requires;
+- tip clearance;
+- the tool, its step and whether it is clear;
+- the status and the failed checks.
+
+With `out=`, a Markdown copy of the table (`table_markdown`) is written beside the JSON as `.md`. The `seat` column
+(and the `thread start` column) shows the coordinate along the axis's main world direction, e.g. `Z 47.00`.
+
+`evaluate(spec, measurement)` is the kernel-free core: core CI feeds it hand-written measurements. `measure` and the
+gate need OCP. Cost: on the gate bench, about 0.6 s for four screws (28 checks).
+
+Limits. Threads are envelopes: engagement is the axial overlap with the receiver's modelled thread region, not a
+pull-out rating, and a receiver bored wider than 1.08 d is not found. The annulus and the radial rays are samples, so
+a feature between them is missed. A countersunk seat is judged only by contact. The tool is a straight sweep of a
+declared envelope along the axis: there is no angled approach and no hand room beyond the envelope. Parts no step
+fits are assumed present.
+
+**Where this differs from the plan (§4.4).**
+- The stack is read from the model along the axis rather than computed from the declared numbers. The numbers are
+  compared with the model (`length`), and any drift fails.
+- A hole is a measured radius, not a boolean of shank plus clearance.
+- Seat, stack contact and pull-through are checks the plan did not list.
+- The tool sweep is a fused solid checked with `relate`, not `connectors.check_ports`. Port windows are a 2D panel
+  model and do not fit an axis sweep.
+- An uncommon length warns rather than fails.
+
 ## The gate bench (`tests/fixtures/gate_bench/build.py`)
 
 A generic mechanism declared through the dossier registry: a base, a hopper with filleted corners and a declared
@@ -339,6 +427,10 @@ assembly steps. What belongs in the YAML dossier (interfaces, intended overlaps,
 tool envelopes) is plain data until the bench gets a `dossier/` directory. `build(seed)` returns the
 `BuildResult`, `Assembly.from_build` of it and those declarations, for the clean bench or one of the plan's ten
 seeded defects (`SEEDS`).
+
+In the `gusset_over_screw` seed, the gusset is fitted onto the lid in the step *before* the lid goes on, so the
+fastener gate's tool sweep at the lid's install step meets it. A gusset fitted after the screws would not be in the
+way when they are driven.
 
 `tests/test_gate_bench.py` runs every gate on the clean bench (no finding allowed) and on every seed (its gate must
 fail with a finding that names the seeded part; the wall seed's witnesses must lie on the thinned wall). A gate not

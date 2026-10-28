@@ -251,7 +251,8 @@ Limits. The graph is the model's geometry within the relation tolerances: contac
 printed parts meet, stay put or carry load. A joint within its allowed gap is trusted as a connection; the gap is
 reported. A fastener without a solid is judged by its axis line alone (no thread, no head seat). A multi-instance
 grounded part makes every instance ground. Body labels are derived from declarations, not from motion. Witness search
-spends at most three extra exact queries per island, interface or joint on pairs the table did not measure.
+spends at most three extra exact queries per island or interface on pairs the table did not measure; a
+joint measures every moving × fixed instance pair.
 
 **Where this differs from the plan (§4.2).** The plan's single graph becomes per-group graphs, so a cross-body or
 loose-part contact cannot hold a part up; items in a declared cavity count as held (`contained`); a joint is a

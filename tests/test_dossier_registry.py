@@ -184,13 +184,15 @@ def test_plan_example_builds_and_writes_the_geometry_record(built):
 
 def test_shapes_are_content_addressed_and_gitignored(built):
     import hashlib
+    import re
     root, result = built
     shapes = root / "exports" / "dossier-shapes"
     assert (shapes / ".gitignore").read_text().splitlines()[-1] == "*"
     geo = result.geometry
     for info in geo["parts"]["ball"]["instances"] + [geo["cavities"]["hopper_cavity"]]:
         brep = (root / "exports" / info["file"]).read_bytes()
-        assert hashlib.sha256(brep).hexdigest() == info["sha256"]
+        # the recipe, pinned: sha256 of the BREP text with the 7-digit flag lines removed (= gates.cache.shape_hash)
+        assert hashlib.sha256(re.sub(rb"^[01]{7}$", b"", brep, flags=re.M)).hexdigest() == info["sha256"]
     stale = shapes / ("0" * 64 + ".brep")
     stale.write_text("old")
     result.write()
@@ -236,15 +238,16 @@ def test_hash_is_stable_across_processes_and_ignores_meshing(tmp_path):
     assert other == here
 
 
-def test_rebuild_with_same_parameters_is_identical(built, tmp_path):
-    from cadagent.dossier import build
+def test_rebuild_with_same_parameters_is_identical(built):
+    from cadagent.dossier import build_module
     root, first = built
-    again = build(root=root, write=False)       # same REGISTRY, parameters from cad/parameters.json
+    again = build_module(root / "cad" / "build.py", root=root, write=False)
     strip = lambda g: {k: v for k, v in g.items() if k != "shapes_dir"}
     assert strip(again.geometry) == strip(first.geometry)
-    moved = build({**PARAMS, "wall": 3.0}, root=root, write=False)
+    (root / "cad" / "parameters.json").write_text(json.dumps({**PARAMS, "wall": 3.0}))
+    moved = build_module(root / "cad" / "build.py", root=root, write=False)
     assert moved.geometry["parts"]["hopper"]["sha256"] != first.geometry["parts"]["hopper"]["sha256"]
-    assert moved.geometry["parameters"]["file"] is None
+    assert moved.geometry["parameters"]["sha256"] != first.geometry["parameters"]["sha256"]
 
 
 # ----------------------------------------------------------------------------------- joining cards and shapes
@@ -287,9 +290,11 @@ def test_join_reports_declaration_mismatches(built):
     project = project.replace("  - {id: I1,", "  - {id: I2, between: [hopper, hopper_flap], kind: ball}\n  - {id: I1,")
     (root / "dossier" / "project.yaml").write_text(project)
     d = load_dossier(root / "dossier" / "project.yaml")
-    codes = sorted(i.code for i in join(d, result) if i.severity == "error")
-    assert codes == ["contains-count", "fastener-count", "interface-without-joint", "joint-kind-mismatch",
-                     "step-conflict", "unknown-cavity"]
+    issues = [i for i in join(d, result) if i.severity == "error"]
+    assert sorted(i.code for i in issues) == ["contains-count", "fastener-count", "interface-without-joint",
+                                              "joint-kind-mismatch", "step-conflict", "unknown-cavity"]
+    count = next(i for i in issues if i.code == "fastener-count")
+    assert (count.where.file, count.where.line) == ("dossier/s3.yaml", 8)      # the fasteners[] entry; the card is line 5
 
 
 # ------------------------------------------------------------------------------ the dossier_items() migration
@@ -381,7 +386,7 @@ def test_place_makes_instances_and_cavities_follow_the_part(tmp_path):
     @reg.cavity("peg", "peg_void")
     def peg_void(p):
         return cq.Workplane().box(0.5, 0.5, 0.5).val()
-    with pytest.raises(RegistryError, match="3 placed instances"):
+    with pytest.raises(RegistryError, match="'peg' has 3 instances"):
         reg.build({"z": 0}, root=tmp_path, write=False)
 
 
@@ -471,3 +476,192 @@ def test_join_needs_only_the_json(tmp_path):
            "assembly": {"steps": []}}
     issues = sorted((i.code, i.message.split("'")[1]) for i in join(d, geo))
     assert issues == [("card-without-shape", "hopper_flap"), ("shape-without-card", "extra_bracket")]
+
+
+# ------------------------------------------------------------------------------- review #26 regressions
+
+PARAM_BUILD = textwrap.dedent('''\
+    import json
+    from pathlib import Path
+    import cadquery as cq
+
+    def print_parts():
+        w = json.loads((Path(__file__).parent / "parameters.json").read_text())["width"]
+        return {"plate": cq.Workplane().box(w, 10, 2).val()}
+    ''')
+
+
+def _project(root: Path, build: str, params=None) -> Path:
+    (root / "cad").mkdir(parents=True, exist_ok=True)
+    (root / "cad-agent.yaml").write_text("cad:\n  name: t\n")
+    (root / "cad" / "build.py").write_text(build)
+    (root / "cad" / "parameters.json").write_text(json.dumps(params or {"width": 10}))
+    return root / "cad" / "build.py"
+
+
+def test_second_build_records_the_new_print_parts_shapes(tmp_path):
+    pytest.importorskip("cadquery")
+    from cadagent.dossier import build_module
+    script = _project(tmp_path, PARAM_BUILD)
+    first = build_module(script, write=False)
+    (tmp_path / "cad" / "parameters.json").write_text(json.dumps({"width": 40}))
+    second = build_module(script, write=False)
+    xmax = lambda r: r.geometry["parts"]["plate"]["instances"][0]["bbox"]["max"][0]
+    assert (xmax(first), xmax(second)) == (5.0, 20.0)
+    # the same Registry fed twice through the migration path also takes the new shapes
+    import cadquery as cq
+    reg = Registry()
+    reg.add_build_items({"plate": cq.Workplane().box(10, 10, 2).val()}, where="b.py:0")
+    reg.add_build_items({"plate": cq.Workplane().box(40, 10, 2).val()}, where="b.py:0")
+    assert reg.build({}, root=tmp_path, write=False).geometry["parts"]["plate"]["instances"][0]["bbox"]["max"][0] == 20
+
+
+def test_builds_do_not_leak_between_projects(tmp_path):
+    pytest.importorskip("cadquery")
+    from cadagent.dossier import build_module
+    helper = "import cadquery as cq\nfrom cadagent.dossier import part\n\n@part('{name}')\ndef {name}(p):\n" \
+             "    return cq.Workplane().box(1, 1, 1).val()\n"
+    a = _project(tmp_path / "a", "import lid_part\nfrom cadagent.dossier import part\nimport cadquery as cq\n\n"
+                                 "@part('base')\ndef base(p):\n    return cq.Workplane().box(5, 5, 1).val()\n")
+    (tmp_path / "a" / "cad" / "lid_part.py").write_text(helper.format(name="lid"))
+    b = _project(tmp_path / "b", "from cadagent.dossier import part\nimport cadquery as cq\n\n"
+                                 "@part('bracket')\ndef bracket(p):\n    return cq.Workplane().box(2, 2, 2).val()\n")
+    assert set(build_module(a, write=False).parts) == {"lid", "base"}
+    assert set(build_module(b, write=False).parts) == {"bracket"}
+    # a helper module imported by the script runs its declarations again on the next build
+    assert set(build_module(a, write=False).parts) == {"lid", "base"}
+    assert len(REGISTRY) == 0, "build_module never writes to the global registry"
+
+
+def test_dossier_items_with_fasteners_and_steps_builds_twice(tmp_path):
+    pytest.importorskip("cadquery")
+    from cadagent.dossier import build_module
+    script = _project(tmp_path, textwrap.dedent('''\
+        import cadquery as cq
+        from cadagent.dossier import Axis
+
+        def print_parts():
+            return {"lid": cq.Workplane().box(10, 10, 2).translate((0, 0, 1)).val(),
+                    "base": cq.Workplane().box(10, 10, 2).translate((0, 0, -1)).val()}
+
+        def dossier_items():
+            return {"fasteners": [{"key": "m3x8", "clamps": "lid", "into": "base", "at": [Axis((0, 0, 2), (0, 0, -1))]}],
+                    "joints": [{"interface": "I1", "kind": "fixed", "parts": ("lid", "base"),
+                                "axis": Axis((0, 0, 0), (0, 0, 1))}],
+                    "assembly": [{"order": 1, "fit": "lid", "onto": "base", "direction": "-Z"}]}
+        '''))
+    reg = Registry()
+    for _ in range(2):          # the same registry, twice: re-running the declarations replaces them
+        result = build_module(script, registry=reg, write=False)
+    geo = result.geometry
+    assert geo["fasteners"]["m3x8:lid-base"]["declared_at"] == "cad/build.py:0 (fastener m3x8:lid-base)"
+    assert geo["joints"]["I1"]["declared_at"] == "cad/build.py:0 (joint I1)"
+    assert geo["assembly"]["steps"][0]["declared_at"] == "cad/build.py:0 (step 1)"
+    with pytest.raises(RegistryError, match="without an 'interface'"):
+        Registry().add_build_items({}, {"joints": [{"kind": "fixed", "parts": ("a", "b"), "axis": ((0, 0, 0), (0, 0, 1))}]})
+
+
+def test_fastener_cannot_take_a_part_name(tmp_path):
+    cq = pytest.importorskip("cadquery")
+    reg = Registry()
+    reg.part("lid")(lambda p: cq.Workplane().box(10, 10, 2).val())
+    with pytest.raises(RegistryError, match="also a part name"):
+        reg.fastener("m3", name="lid", clamps="lid", into="lid", at=[Axis((0, 0, 1), (0, 0, -1))])
+    with pytest.raises(RegistryError, match="no '#'"):
+        reg.fastener("m3", name="m3#1", clamps="lid", into="lid", at=[Axis((0, 0, 1), (0, 0, -1))])
+    late = Registry()               # fastener declared first, the part of the same name after: refused at build
+    late.fastener("m3", name="lid", clamps="lid", into="lid", at=[Axis((0, 0, 1), (0, 0, -1))],
+                  shape=lambda p: cq.Workplane().circle(1.5).extrude(-8).val())
+    late.part("lid")(lambda p: cq.Workplane().box(10, 10, 2).val())
+    with pytest.raises(RegistryError, match="also a part name"):
+        late.build({}, root=tmp_path, write=False)
+    ok = Registry()
+    ok.part("lid")(lambda p: cq.Workplane().box(10, 10, 2).val())
+    ok.fastener("m3", clamps="lid", into="lid", at=[Axis((0, 0, 1), (0, 0, -1))],
+                shape=lambda p: cq.Workplane().circle(1.5).extrude(-8).val())
+    result = ok.build({}, root=tmp_path, write=False)
+    shapes = result.assembly_shapes()
+    assert shapes["lid"].Volume() == pytest.approx(200) and result.kind("lid") == "part"
+    assert result.kind("m3:lid-lid") == "fastener" and result.kind("nothing") is None
+
+
+def test_cavity_needs_a_single_instance_part(tmp_path):
+    cq = pytest.importorskip("cadquery")
+    reg = Registry()
+    reg.part("cup")(lambda p: [cq.Workplane().box(10, 10, 10).val(),
+                               cq.Workplane().box(10, 10, 10).translate((50, 0, 0)).val()])
+    reg.cavity("cup", "cup_void")(lambda p: cq.Workplane().box(8, 8, 8).val())
+    with pytest.raises(RegistryError, match="'cup' has 2 instances"):
+        reg.build({}, root=tmp_path, write=False)
+
+
+def test_part_flags_are_checked_on_every_path():
+    reg = Registry()
+    with pytest.raises(RegistryError, match="both grounded and free"):
+        reg.add_build_items({"base": object()}, {"parts": {"base": {"grounded": True, "free": True, "reason": "x"}}})
+    with pytest.raises(RegistryError, match="without a reason"):
+        reg.add_build_items({"base": object()}, {"parts": {"base": {"free": True, "reason": "   "}}})
+    with pytest.raises(RegistryError, match="without a reason"):
+        reg.part("ball", free=True, reason=" \t")
+
+
+def test_root_is_the_project_and_records_hold_no_machine_paths(tmp_path, monkeypatch):
+    cq = pytest.importorskip("cadquery")
+    from cadagent.dossier import build_module, load_geometry
+    script = _project(tmp_path / "proj", PARAM_BUILD.replace("def print_parts", "from cadagent.dossier import part\n\n"
+                                                             "@part('tag')\ndef tag(p):\n"
+                                                             "    return cq.Workplane().box(1, 1, 1).val()\n\n"
+                                                             "def print_parts"))
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    monkeypatch.chdir(elsewhere)
+    monkeypatch.setenv("CAD_AGENT_ACTOR", "agent-test-1")
+    result = build_module(script, out_dir="build/geo")
+    proj = (tmp_path / "proj").resolve()
+    assert result.root == proj and (proj / "build" / "geo" / "dossier-geometry.json").is_file()
+    assert not (elsewhere / "build").exists() and not (elsewhere / "exports").exists()
+    geo = result.geometry
+    assert geo["actor"] == "agent-test-1" and geo["out_dir"] == "build/geo"
+    assert geo["parts"]["tag"]["declared_at"] == "cad/build.py:7"
+    assert str(tmp_path) not in json.dumps(geo)
+    again = load_geometry(proj / "build" / "geo" / "dossier-geometry.json", shapes=False)
+    assert again.root == proj
+    # a declaration from a file outside the project is recorded by its file name only
+    reg = Registry()
+    reg.part("ext")(lambda p: cq.Workplane().box(1, 1, 1).val())
+    rec = reg.build({}, root=proj, write=False).geometry["parts"]["ext"]["declared_at"]
+    assert rec.startswith("test_dossier_registry.py:")
+    with pytest.raises(RegistryError, match="outside the project root"):
+        reg.build({}, root=proj, out_dir="../out", write=False)
+
+
+def test_use_registry_scopes_the_module_level_declarations():
+    from cadagent.dossier import current_registry, part, use_registry
+    with use_registry() as reg:
+        assert current_registry() is reg
+
+        @part("scoped")
+        def scoped(p): ...
+    assert "scoped" in reg.parts and len(REGISTRY) == 0 and current_registry() is REGISTRY
+
+
+def test_shared_content_hash_and_hand_over_with_hashes(built):
+    import cadquery as cq
+    from cadagent import evidence
+    from cadagent.dossier import load_geometry, shape_sha256
+    root, result = built
+    assert shape_sha256 is evidence.shape_content_hash
+    pairs = result.assembly_shapes(with_hashes=True)
+    shape, digest = pairs["ball#3"]
+    assert digest == evidence.shape_content_hash(shape) == result.geometry["parts"]["ball"]["instances"][3]["sha256"]
+    assert set(pairs) == set(result.assembly_shapes())
+    # read back in another process: the recorded hashes travel with the shapes, nothing is re-hashed
+    again = load_geometry(root / "exports" / "dossier-geometry.json")
+    assert {k: h for k, (_, h) in again.assembly_shapes(with_hashes=True).items()} == \
+        {k: h for k, (_, h) in pairs.items()}
+    assert again.content_hashes()["hopper_cavity"] == result.geometry["cavities"]["hopper_cavity"]["sha256"]
+    reg = Registry()
+    reg.part("box")(lambda p: cq.Workplane().box(1, 1, 1).val())
+    reg.cavity("box", "box")(lambda p: cq.Workplane().box(0.5, 0.5, 0.5).val())
+    with pytest.raises(RegistryError, match="cavity name 'box'"):
+        reg.build({}, root=root, write=False)

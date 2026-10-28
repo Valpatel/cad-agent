@@ -15,11 +15,13 @@ __all__ = [
 
 # the build-script registry (docs/dossier.md "Declaring geometry in the build script")
 from .registry import (  # noqa: E402
-    REGISTRY, Axis, BuildResult, Registry, RegistryError, assembly, build, build_module, cavity, fastener, join,
-    joint, load_geometry, part, shape_sha256,
+    HASH_RECIPE, REGISTRY, Axis, BuildResult, Registry, RegistryError, assembly, brep_sha256, build, build_module,
+    cavity, current_registry, fastener, join, joint, load_geometry, part, project_root, shape_sha256, use_registry,
 )
+from ..evidence import shape_content_hash  # noqa: E402
 
 __all__ += [
-    "REGISTRY", "Axis", "BuildResult", "Registry", "RegistryError", "assembly", "build", "build_module", "cavity",
-    "fastener", "join", "joint", "load_geometry", "part", "shape_sha256",
+    "HASH_RECIPE", "REGISTRY", "Axis", "BuildResult", "Registry", "RegistryError", "assembly", "brep_sha256", "build",
+    "build_module", "cavity", "current_registry", "fastener", "join", "joint", "load_geometry", "part",
+    "project_root", "shape_content_hash", "shape_sha256", "use_registry",
 ]

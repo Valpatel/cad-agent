@@ -179,6 +179,7 @@ class FastenerUse(_Dump):
     qty: Optional[int] = None
     via: str = ""                       # interface id
     note: str = ""
+    where: Optional[Where] = _where()
 
 
 @dataclass

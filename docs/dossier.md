@@ -42,7 +42,7 @@ d.parts["hopper"].section, d.decisions["D41"].scope, d.findings   # findings: un
   requirements, sections, parts, interfaces and decisions, so an interface's `between: [a, b]` is never ambiguous.
   Prefixes (`R4`, `S3`, `I7`, `D41`) are a convention, not a rule.
 - **Errors** carry the file and line: a malformed id, a duplicate id, a reference to an id that does not exist or is
-  of the wrong kind ("… names 'R4', which is not an interface in this dossier (it is a requirement)"), a wrong type,
+  of the wrong kind, an empty file (reported at the line that names it), a gate exemption without a reason ("… names 'R4', which is not an interface in this dossier (it is a requirement)"), a wrong type,
   a value outside its enumeration, a duplicate YAML key, invalid YAML, a missing file. `load_dossier` raises one
   `DossierError` listing all of them (`.issues`, and `.file`/`.line` of the first). When a file fails to parse,
   references are not resolved, so its ids do not cascade into unknown-id errors.
@@ -84,8 +84,8 @@ assembly:
 gates:                                     # the integrity-gate configuration (plan §4.1)
   touch_tol_mm: 0.01
   grounded: [bench_base]                   # parts the connectivity gate treats as ground
-  free_parts: [{part: ball, reason: loose in the hopper}]     # or a bare id (the lint asks for a reason)
-  intended_overlaps: [{parts: [hopper, insert_m3], reason: heat-set insert}]
+  free_parts: [{part: ball, reason: loose in the hopper}]     # a reason is required (a bare id is an error)
+  intended_overlaps: [{parts: [hopper, insert_m3], reason: heat-set insert}]   # reasons required here too
   ignore_pairs: [{parts: [lid_a, lid_b], reason: variants, never fitted together}]
   strict_interfaces: false                 # true: an undeclared contact fails instead of warning
   motion_samples: 12
@@ -226,15 +226,30 @@ if __name__ == "__main__":
 | `fastener(key, *, clamps, into, at, name="", via="", tool="", length_mm, diameter_mm, thread_start_mm, thread_depth_mm, min_engagement_mm, shape=None)` | `at`: one `Axis` per screw, from the head seat in the direction the screw advances | `thread_start_mm`: seat to first engaged thread; numbers may be functions; `shape` is placed at every axis (McMaster frame: origin on the seat, +Z out of the hole) |
 | `assembly.step(order, fit, onto=None, *, direction="", tool="", fasteners=(), access_check="", note="")` | `direction`: `+X`..`-Z` or `(x, y, z)` | steps may also be written in `project.yaml`; when both exist with the same order they must agree |
 
-Declarations are checked when they are made (a free part without a reason, a revolute joint without a range, an
-unknown kind, a bad id raise `RegistryError`). The same declaration run twice (a re-import) replaces itself; the same
-name declared at two places raises. The module-level functions write to `cadagent.dossier.REGISTRY`; a tool or test
-can use its own `Registry()` and its methods (`reg.part`, `reg.assembly.step`, ...).
+Declarations are checked when they are made (a free part without a reason, a part both grounded and free, a revolute
+joint without a range, an unknown kind, a bad id raise `RegistryError`). The same declaration run twice (a re-import)
+replaces itself; the same name declared at two places raises. Parts, fasteners and cavities are separate kinds: a
+fastener or cavity named like a part is refused, and fastener names (default `key:clamps-into`) never contain `#`. A
+cavity belongs to a single-instance part (the containment gate must know which container it is).
+
+**Which registry.** The module-level `part`, `cavity`, `joint`, `fastener`, `assembly.step` and `build` write to the
+*current* registry: the innermost `with use_registry(reg):` block, else `cadagent.dossier.REGISTRY`.
+`build_module()` builds every script in a fresh registry of its own, so nothing leaks between two builds in one
+process (a test session, a watch loop, `cad-agent gates`); modules under the project root that the script imports are
+re-imported, so their declarations land in that build too. A tool or test can also use its own `Registry()` and its
+methods (`reg.part`, `reg.assembly.step`, ...).
 
 `build(params=None, *, out_dir="exports", root=None, write=True)` calls every declaration with the parameters
 (a mapping, a JSON path, or `cad/parameters.json` under `root`), and returns a `BuildResult`. A declaration that
-fails raises `RegistryError` naming it and its `file:line`. `build_module("cad/build.py")` imports a build script and
-builds it, adding `print_parts()`/`dossier_items()` when the script has them.
+fails raises `RegistryError` naming it and its `file:line`. `build_module("cad/build.py")` executes a build script
+and builds it, adding `print_parts()`/`dossier_items()` (called again on every build, so new parameters give new
+shapes). **`root`** defaults to the project root, `project_root(script)`: the nearest directory above the script with
+`cad-agent.yaml` or `vptest.yaml` (else the parent of a `cad/` directory), never the current directory. `out_dir`
+must be inside it. Every path in the record is relative to the root; a declaration made in a file outside the root
+is recorded by its file name only, so the committed record carries no machine paths.
+
+One `out_dir` holds one geometry record: a project with several build scripts gives each its own `out_dir`
+(a second build into the same directory replaces the record and removes the first build's shape files).
 
 ### Migrating an existing build: `dossier_items()`
 
@@ -254,16 +269,18 @@ def dossier_items():
 ```
 
 Every `print_parts()` shape is registered; a part not yet given a section here is still a shape, and the join reports
-it as a shape without a card until its card exists. That list is the migration's to-do list.
+it as a shape without a card until its card exists. That list is the migration's to-do list. The same checks apply
+as for decorators (a free part needs a reason; grounded and free together are refused; a joint needs `interface`).
 
 ### `exports/dossier-geometry.json`
 
 ```json
 {
  "schema": "cad-agent.dossier-geometry/1", "units": "mm",
- "hash": "sha256 of OCCT BREP text v1, no triangulation",
+ "hash": "cadagent.evidence.shape_content_hash: sha256 of the OCCT BREP text ...",
+ "actor": "agent-session-12",
  "parameters": {"file": "cad/parameters.json", "sha256": "..."},
- "shapes_dir": "exports/dossier-shapes",
+ "out_dir": "exports", "shapes_dir": "exports/dossier-shapes",
  "parts": {"ball": {"section": "S3", "grounded": false, "free": true, "free_reason": "loose in the hopper",
                     "sha256": "<hash of the instance hashes>", "count": 8, "declared_at": "cad/build.py:24",
                     "instances": [{"key": "ball#0", "sha256": "...", "file": "dossier-shapes/<sha256>.brep",
@@ -285,11 +302,21 @@ it as a shape without a card until its card exists. That list is the migration's
 }
 ```
 
-- **Hashes** are content hashes: sha256 of the shape's BREP text (OCCT format version 1, no triangulation, so
-  meshing for an STL changes nothing). The same build gives the same hash in any process; a changed dimension or
-  placement changes it. An OCCT upgrade may change every hash, which only invalidates sign-offs (the safe
-  direction). The reader recomputes some frame values when it loads a BREP, so a shape read back may write different
-  bytes: compare the *recorded* hashes, never re-hash a loaded shape. `shape_sha256(shape)` is the function.
+- **Hashes** are content hashes from one shared function, `cadagent.evidence.shape_content_hash(shape) -> str`
+  (also exported as `cadagent.dossier.shape_content_hash` and `shape_sha256`): sha256 of the shape's BREP text, OCCT
+  format version 1, without triangulation or normals, with the 7-digit per-shape flag lines removed. The registry
+  and the gates use the same function, so a recorded hash is a valid gate cache key.
+  - The same shape built the same way gives the same hash in any process and run (tested in a subprocess); a changed
+    dimension or placement changes it (the location is part of the text, so even `place=(0, 0, 0)` changes it: the
+    safe direction). Queries (`Volume`, `BoundingBox`, `isValid`, `fix`) and tessellation do not.
+  - Two different constructions of the same geometry may hash differently: a cache miss, never a false match. An OCCT
+    upgrade may change every hash, which only invalidates sign-offs.
+  - A shape **read back** from its BREP file may hash differently, because the reader recomputes frame directions
+    and location matrices (last-digit noise, signed zeros). Keep the recorded hash with the shape
+    (`assembly_shapes(with_hashes=True)`, `content_hashes()`); never re-hash a loaded shape to identify it.
+    `evidence.brep_content_hash(file_bytes)` checks a stored file against its record.
+- **`actor`** is `CAD_AGENT_ACTOR` from the environment (an agent or session id, or a person), `unknown` when unset:
+  the reviewer pass compares it with the reviewer's (plan §5.3).
 - **Shapes** are written once each to `exports/dossier-shapes/<sha256>.brep` (content-addressed; files no longer
   referenced are removed). The directory gets its own `.gitignore` (`*`): it is build output, regenerated by every
   build. The JSON is the record to commit. Any gate cache belongs in a gitignored directory too.
@@ -305,10 +332,15 @@ from cadagent.dossier import build_module, load_geometry
 
 result = build_module("cad/build.py")                    # in the build process, or
 result = load_geometry("exports/dossier-geometry.json")  # in another process (cad-agent gates): reads the BREPs,
-                                                         # checks each file against its recorded sha256
+                                                         # checks each file against its recorded hash; the root
+                                                         # comes from the record's out_dir
 shapes = result.assembly_shapes()          # {key: cq.Shape in assembly coordinates}: "hopper", "ball#3",
                                            # "screw_m3x8:hopper-pan_base#0" (placed fasteners; fasteners=False omits)
+pairs = result.assembly_shapes(with_hashes=True)   # {key: (cq.Shape, content hash recorded at build time)}:
+                                           # what the gates' Assembly.from_build() takes, nothing re-hashed
+result.content_hashes()                    # {key: hash} for every instance, placed fastener and cavity
 result.owner("ball#3")                     # "ball": the part an instance key belongs to
+result.kind("ball#3")                      # "part" | "fastener" (None when unknown)
 result.parts["ball"]                       # [cq.Shape, ...] instances in order
 result.cavities["hopper_cavity"]           # cq.Shape, in assembly coordinates
 result.joints["I9"]                        # {"kind", "moving", "fixed", "axis": Axis, "range", "unit", ...}
@@ -320,7 +352,11 @@ What each gate reads: connectivity uses `assembly_shapes()`, `grounded` and `fre
 `gates.grounded`/`gates.free_parts` and `contains[].free` in the YAML), the joints and the dossier interfaces;
 containment uses `cavities` and the instances of `contains[].what`; the fastener gate uses `fasteners` (axes, stack
 numbers, placed solids) and the steps; the motion gate uses `joints` (axis, range, `intended_contacts`, `samples`,
-else `gates.motion_samples`); the assembly gate uses the steps. Pair caches key on the recorded `sha256` values.
+else `gates.motion_samples`); the assembly gate uses the steps. Pair caches key on the recorded hashes.
+
+Open for the motion gate (T7): a joint names one `moving` part, while plan §4.5 poses "the moving subtree". Until a
+`carries=[...]` declaration exists, the rule to adopt is that fasteners whose `clamps` or `into` is the moving part,
+and parts joined to it by a `fixed` joint, move with it.
 
 ### Joining cards and geometry
 

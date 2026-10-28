@@ -36,11 +36,15 @@ Migration. A build that does not use decorators keeps ``print_parts()`` and adds
 ``build_module()`` registers both, a decorated part winning over a ``print_parts()`` entry of the same name, so a
 build moves one part at a time.
 
-Hashes. Every shape's ``sha256`` is the content hash of its BREP text (OCCT format version 1, without
-triangulation), the bytes of the file written to ``exports/dossier-shapes/<sha256>.brep``. It is stable across
-processes and runs; an OCCT upgrade may change it, which only invalidates a sign-off, never hides a change. Compare
-the recorded hashes (a gate cache keys on them); do not re-hash a shape loaded from its file (``shape_brep``). The
-shapes directory is build output and gets its own ``.gitignore``; the JSON is the record to commit.
+Hashes. Every shape's ``sha256`` is ``cadagent.evidence.shape_content_hash`` (shared with the gates): sha256 of its
+BREP text (OCCT format version 1, no triangulation) without the shape flag lines. The file
+``exports/dossier-shapes/<sha256>.brep`` holds that BREP text. The hash is stable across processes and runs; an OCCT
+upgrade may change it, which only invalidates a sign-off, never hides a change. Pass the recorded hashes along
+(``assembly_shapes(with_hashes=True)``); do not re-hash a shape loaded from its file. The shapes directory is build
+output and gets its own ``.gitignore``; the JSON is the record to commit.
+
+Scope. Module-level declarations go to the current registry (``use_registry``, else ``REGISTRY``);
+``build_module`` gives every build a fresh one. ``root`` is the project root (``project_root``), not the cwd.
 
 Nothing here proves fit: the registry records what the build made and what the author declared. The gates compare
 them; ``physical_fit_verified`` is always false.
@@ -48,17 +52,21 @@ them; ``physical_fit_verified`` is always false.
 
 from __future__ import annotations
 
+import contextlib
+import contextvars
 import hashlib
 import importlib.util
 import inspect
 import json
 import math
 import os
+import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
 
+from ..evidence import brep_content_hash, shape_brep_text, shape_content_hash
 from .model import DIRECTION_RE, ID_RE, JOINT_KINDS, Issue, Where
 
 SCHEMA = "cad-agent.dossier-geometry/1"
@@ -67,6 +75,10 @@ SHAPES_DIR = "dossier-shapes"
 MECHANISM_KINDS = ("revolute", "slider", "cylindrical", "planar", "ball")
 RIGID_KINDS = ("fastened", "bonded", "press_fit", "snap_fit", "contact", "gap")
 _THIS_FILE = os.path.normcase(os.path.abspath(__file__))
+_FASTENER_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_.:\-]*$")
+HASH_RECIPE = ("cadagent.evidence.shape_content_hash: sha256 of the OCCT BREP text (format version 1, no triangles, "
+               "no normals) with the 7-digit shape flag lines removed")
+CONFIG_NAMES = ("cad-agent.yaml", "vptest.yaml")
 
 
 class RegistryError(ValueError):
@@ -137,6 +149,7 @@ class PartDecl:
     free: bool = False
     reason: str = ""
     where: str = ""
+    origin: str = "code"        # code (a decorator or add_part) | print_parts
 
 
 @dataclass
@@ -222,6 +235,31 @@ def _check_id(value: str, what: str) -> str:
     return value
 
 
+def _check_part(name: str, grounded: bool, free: bool, reason: str) -> str:
+    _check_id(name, "part name")
+    reason = (reason or "").strip()
+    if free and not reason:
+        raise RegistryError(f"part {name!r} is declared free (allowed to float) without a reason")
+    if free and grounded:
+        raise RegistryError(f"part {name!r} cannot be both grounded and free")
+    return reason
+
+
+def project_root(start: Union[str, Path, None] = None) -> Path:
+    """The nearest directory at or above ``start`` (a build script or a directory) that holds ``cad-agent.yaml`` or
+    ``vptest.yaml``; else, for a script in a ``cad/`` directory, that directory's parent; else the current
+    directory."""
+    if start:
+        here = Path(start).resolve()
+        first = here if here.is_dir() else here.parent
+        for d in (first, *first.parents):
+            if any((d / n).is_file() for n in CONFIG_NAMES):
+                return d
+        if first.name == "cad":
+            return first.parent
+    return Path.cwd().resolve()
+
+
 def _range(value: Any, what: str) -> Optional[Tuple[float, float]]:
     if value is None:
         return None
@@ -242,6 +280,12 @@ class _Steps:
 
     def step(self, order: int, fit: str, onto: Union[str, Sequence[str], None] = None, *, direction: Any = "",
              tool: str = "", fasteners: Sequence[str] = (), access_check: str = "", note: str = "") -> StepDecl:
+        return self._step(order, fit, onto, direction=direction, tool=tool, fasteners=fasteners,
+                          access_check=access_check, note=note, where=_caller_where())
+
+    def _step(self, order: int, fit: str, onto: Union[str, Sequence[str], None] = None, *, direction: Any = "",
+              tool: str = "", fasteners: Sequence[str] = (), access_check: str = "", note: str = "",
+              where: str = "") -> StepDecl:
         if isinstance(order, bool) or not isinstance(order, int):
             raise RegistryError(f"assembly step order must be an integer, got {order!r}")
         if direction and not (isinstance(direction, str) and DIRECTION_RE.match(direction)) and not (
@@ -249,14 +293,15 @@ class _Steps:
             raise RegistryError(f"assembly step {order}: direction {direction!r}; use +X..-Z or (x, y, z)")
         onto_list = [onto] if isinstance(onto, str) else list(onto or [])
         decl = StepDecl(order=order, fit=fit, onto=onto_list, direction=direction, tool=tool,
-                        fasteners=list(fasteners), access_check=access_check, note=note, where=_caller_where())
+                        fasteners=list(fasteners), access_check=access_check, note=note, where=where)
         self._registry._add("steps", order, decl, f"assembly step {order}")
         return decl
 
 
 class Registry:
-    """Collects parts, cavities, joints, fasteners and assembly steps. ``cadagent.dossier.REGISTRY`` is the one
-    the module-level decorators write to; tests and tools can make their own."""
+    """Collects parts, cavities, joints, fasteners and assembly steps. The module-level ``part``, ``cavity``,
+    ``joint``, ``fastener``, ``assembly.step`` and ``build`` write to the *current* registry: the one
+    ``use_registry()`` set, else ``cadagent.dossier.REGISTRY``. ``build_module()`` gives every build a fresh one."""
 
     def __init__(self) -> None:
         self.parts: Dict[str, PartDecl] = {}
@@ -286,11 +331,7 @@ class Registry:
         """Decorator: the function makes part ``name`` (joined to the dossier card with that id).
         ``grounded`` marks a part the connectivity gate treats as ground; ``free`` a part allowed to float (loose
         items, an exploded lid), which needs a ``reason``."""
-        _check_id(name, "part name")
-        if free and not reason:
-            raise RegistryError(f"part {name!r} is declared free (allowed to float) without a reason")
-        if free and grounded:
-            raise RegistryError(f"part {name!r} cannot be both grounded and free")
+        _check_part(name, grounded, free, reason)
 
         def register(fn: Callable) -> Callable:
             self.add_part(name, fn, section=section, place=place, grounded=grounded, free=free, reason=reason,
@@ -299,13 +340,11 @@ class Registry:
         return register
 
     def add_part(self, name: str, make: Any, *, section: str = "", place: Any = None, grounded: bool = False,
-                 free: bool = False, reason: str = "", where: str = "") -> PartDecl:
+                 free: bool = False, reason: str = "", where: str = "", origin: str = "code") -> PartDecl:
         """Register a part from a function or an already-built shape (the ``print_parts()`` path)."""
-        _check_id(name, "part name")
-        if free and not reason:
-            raise RegistryError(f"part {name!r} is declared free (allowed to float) without a reason")
+        reason = _check_part(name, grounded, free, reason)
         decl = PartDecl(name=name, section=section, make=make, place=place, grounded=grounded, free=free,
-                        reason=reason, where=where or _caller_where())
+                        reason=reason, where=where or _caller_where(), origin=origin)
         self._add("parts", name, decl, f"part {name!r}")
         return decl
 
@@ -377,24 +416,41 @@ class Registry:
                  thread_depth_mm: Any = None, min_engagement_mm: Any = None, shape: Any = None) -> FastenerDecl:
         """Declare ``len(at)`` fasteners of catalogue item ``key`` clamping ``clamps`` to ``into``. ``at`` is one
         axis per screw (seat point, direction of advance), or a function of the parameters returning them. The
-        stack numbers (``thread_start_mm``, ``thread_depth_mm``, ``min_engagement_mm``) may also be functions."""
-        name = name or f"{key}:{clamps}-{into}"
-        if not key:
+        stack numbers (``thread_start_mm``, ``thread_depth_mm``, ``min_engagement_mm``) may also be functions.
+        ``name`` (default ``key:clamps-into``) must not be a part name: parts and fasteners are separate kinds."""
+        return self._fastener(key, clamps=clamps, into=into, at=at, name=name, via=via, tool=tool,
+                              length_mm=length_mm, diameter_mm=diameter_mm, thread_start_mm=thread_start_mm,
+                              thread_depth_mm=thread_depth_mm, min_engagement_mm=min_engagement_mm, shape=shape,
+                              where=_caller_where())
+
+    def _fastener(self, key: str, *, clamps: str, into: str, at: Any, name: str = "", via: str = "", tool: str = "",
+                  length_mm: Optional[float] = None, diameter_mm: Optional[float] = None, thread_start_mm: Any = None,
+                  thread_depth_mm: Any = None, min_engagement_mm: Any = None, shape: Any = None,
+                  where: str = "") -> FastenerDecl:
+        if not key or not isinstance(key, str):
             raise RegistryError("fastener needs a catalogue key")
+        for role, value in (("clamps", clamps), ("into", into)):
+            _check_id(value, f"fastener {role}")
+        name = name or f"{key}:{clamps}-{into}"
+        if not isinstance(name, str) or not _FASTENER_NAME.match(name):
+            raise RegistryError(f"fastener name {name!r}: a letter, then letters, digits, _ - . : (no '#', no spaces)")
+        if name in self.parts:
+            raise RegistryError(f"fastener name {name!r} is also a part name; give the fastener another name=")
         if via:
             _check_id(via, "fastener via")
         decl = FastenerDecl(name=name, key=key, clamps=clamps, into=into, at=at, via=via, tool=tool,
                             length_mm=length_mm, diameter_mm=diameter_mm, thread_start_mm=thread_start_mm,
                             thread_depth_mm=thread_depth_mm, min_engagement_mm=min_engagement_mm, shape=shape,
-                            where=_caller_where())
+                            where=where)
         self._add("fasteners", name, decl, f"fastener {name!r} (pass name= to tell two groups apart)")
         return decl
 
     # -- the migration path
     def add_build_items(self, parts: Mapping[str, Any], items: Optional[Mapping[str, Any]] = None,
                         where: str = "") -> None:
-        """Register ``print_parts()`` shapes and a ``dossier_items()`` mapping (docs/dossier.md). A part already
-        registered by a decorator keeps its decorated declaration."""
+        """Register ``print_parts()`` shapes and a ``dossier_items()`` mapping (docs/dossier.md). A part registered
+        in code (a decorator) keeps its declaration; a ``print_parts()`` entry from an earlier call is replaced, so
+        calling this again with new shapes records the new shapes."""
         items = dict(items or {})
         unknown = set(items) - {"parts", "cavities", "joints", "fasteners", "assembly"}
         if unknown:
@@ -405,13 +461,13 @@ class Registry:
             if name not in parts and name not in self.parts:
                 raise RegistryError(f"dossier_items() parts names {name!r}, which print_parts() does not return")
         for name, shape in parts.items():
-            if name in self.parts:
+            if name in self.parts and self.parts[name].origin != "print_parts":
                 continue
             m = dict(meta.get(name) or {})
             bad = set(m) - {"section", "place", "grounded", "free", "reason"}
             if bad:
                 raise RegistryError(f"dossier_items() parts[{name!r}] has unknown keys: {sorted(bad)}")
-            self.add_part(name, shape, where=f"{where} (print_parts {name})", **m)
+            self.add_part(name, shape, where=f"{where} (print_parts {name})", origin="print_parts", **m)
         for name, c in dict(items.get("cavities") or {}).items():
             c = dict(c)
             self.add_cavity(c.pop("part"), name, c.pop("shape"), where=f"{where} (cavity {name})")
@@ -419,21 +475,24 @@ class Registry:
                 raise RegistryError(f"dossier_items() cavities[{name!r}] has unknown keys: {sorted(c)}")
         for j in items.get("joints") or []:
             j = dict(j)
-            decl = self._joint_decl(j.pop("interface"), j.pop("kind", "revolute"), j.pop("parts"), j.pop("axis"),
+            iid = j.pop("interface", None)
+            if not iid:
+                raise RegistryError(f"dossier_items() joint without an 'interface': {j!r}")
+            decl = self._joint_decl(iid, j.pop("kind", "revolute"), j.pop("parts"), j.pop("axis"),
                                     j.pop("range_deg", None), j.pop("range_mm", None),
-                                    j.pop("intended_contacts", ()), j.pop("samples", None),
-                                    f"{where} (joint {j.get('interface', '')})")
+                                    j.pop("intended_contacts", ()), j.pop("samples", None), f"{where} (joint {iid})")
             if j:
                 raise RegistryError(f"dossier_items() joint {decl.interface!r} has unknown keys: {sorted(j)}")
             self._add("joints", decl.interface, decl, f"joint {decl.interface!r}")
         for f in items.get("fasteners") or []:
             f = dict(f)
-            decl = self.fastener(f.pop("key"), **f)
-            decl.where = f"{where} (fastener {decl.name})"
+            key = f.pop("key")
+            label = f.get("name") or f"{key}:{f.get('clamps')}-{f.get('into')}"
+            self._fastener(key, **f, where=f"{where} (fastener {label})")
         for s in items.get("assembly") or []:
             s = dict(s)
-            decl = self.assembly.step(s.pop("order"), s.pop("fit"), s.pop("onto", None), **s)
-            decl.where = f"{where} (step {decl.order})"
+            order = s.pop("order")
+            self.assembly._step(order, s.pop("fit"), s.pop("onto", None), **s, where=f"{where} (step {order})")
 
     # -- building
     def build(self, params: Union[Mapping[str, Any], str, Path, None] = None, *, out_dir: Union[str, Path] = "exports",
@@ -442,14 +501,26 @@ class Registry:
         ``write`` (default) also writes ``<out_dir>/dossier-geometry.json`` and the BREP of every shape.
 
         ``params``: a mapping, a path to a JSON file, or None for ``<root>/cad/parameters.json`` when it exists
-        (else ``{}``). ``root`` defaults to the current directory; paths in the record are relative to it.
+        (else ``{}``). ``root`` is the project root: by default the nearest directory holding ``cad-agent.yaml`` (or
+        ``vptest.yaml``) above the build script that calls this, else the current directory. Paths in the record are
+        relative to it, and ``out_dir`` must be inside it.
         """
-        root = Path(root or Path.cwd()).resolve()
+        root = Path(root).resolve() if root else project_root(_caller_where().rpartition(":")[0] or None)
+        out = (root / out_dir).resolve()
+        if out != root and root not in out.parents:
+            raise RegistryError(f"out_dir {out} is outside the project root {root}")
+        for fname in self.fasteners:
+            if fname in self.parts:
+                raise RegistryError(f"fastener name {fname!r} is also a part name; give the fastener another name=")
+        for cname in self.cavities:
+            if cname in self.parts or cname in self.fasteners:
+                raise RegistryError(f"cavity name {cname!r} is also a part or fastener name; rename the cavity")
         p, param_record = _params(params, root)
-        result = BuildResult(root=root, out_dir=(root / out_dir).resolve())
-        geo: Dict[str, Any] = {"schema": SCHEMA, "units": "mm", "hash": "sha256 of OCCT BREP text v1, no triangulation",
-                               "parameters": param_record, "shapes_dir": "", "parts": {}, "cavities": {},
-                               "joints": {}, "fasteners": {}, "assembly": {"steps": []},
+        result = BuildResult(root=root, out_dir=out)
+        geo: Dict[str, Any] = {"schema": SCHEMA, "units": "mm", "hash": HASH_RECIPE,
+                               "actor": os.environ.get("CAD_AGENT_ACTOR") or "unknown",
+                               "parameters": param_record, "out_dir": os.path.relpath(out, root), "shapes_dir": "",
+                               "parts": {}, "cavities": {}, "joints": {}, "fasteners": {}, "assembly": {"steps": []},
                                "physical_fit_verified": False}
         placements: Dict[str, List[Any]] = {}
         for name, decl in self.parts.items():
@@ -483,9 +554,10 @@ class Registry:
                     raise RegistryError("a cavity is one shape (fuse the voids)")
                 shape = shapes[0]
                 places = placements.get(decl.part) or []
-                if len(places) > 1:
-                    raise RegistryError(f"part {decl.part!r} has {len(places)} placed instances; declare the "
-                                        "cavity in assembly coordinates on a single-instance part")
+                count = len(result.parts.get(decl.part) or [])
+                if count > 1:
+                    raise RegistryError(f"part {decl.part!r} has {count} instances; a cavity belongs to a "
+                                        "single-instance part (declare one part per container)")
                 if places:
                     shape = shape.moved(places[0])
             except RegistryError as exc:
@@ -673,29 +745,10 @@ def _seat_location(axis: Axis) -> Any:
     return cq.Location(cq.Plane(origin=axis.origin, xDir=x, normal=z))
 
 
-def shape_brep(shape: Any) -> bytes:
-    """The BREP text a shape is hashed and stored as: OCCT format version 1, without triangulation or normals
-    (so meshing a shape for an STL does not change it). Building the same shape gives the same bytes in any process;
-    queries (volume, bounding box, ``isValid``, ``fix``) do not change them.
-
-    A shape *read back* from this text is not guaranteed to write the same bytes again: the reader recomputes frame
-    directions and location matrices (last-digit noise, signed zeros) and marks shapes checked, and no rounding
-    removes that for every value. So compare recorded hashes and check a file against its hash; never re-hash a
-    loaded shape to identify it.
-    """
-    from io import BytesIO
-    from OCP.BRepTools import BRepTools
-    from OCP.TopTools import TopTools_FormatVersion
-    buf = BytesIO()
-    BRepTools.Write_s(getattr(shape, "wrapped", shape), buf, False, False,
-                      TopTools_FormatVersion.TopTools_FormatVersion_VERSION_1)
-    return buf.getvalue()
-
-
-def shape_sha256(shape: Any) -> str:
-    """Content hash of a shape (``shape_brep``): stable across processes and runs, changes when geometry or placement
-    does. Not for shapes read back from a BREP file (see ``shape_brep``)."""
-    return hashlib.sha256(shape_brep(shape)).hexdigest()
+# The content hash lives in cadagent.evidence so the registry and the gates share one recipe.
+shape_brep = shape_brep_text
+brep_sha256 = brep_content_hash
+shape_sha256 = shape_content_hash
 
 
 def _combine(hashes: Iterable[str]) -> str:
@@ -703,15 +756,15 @@ def _combine(hashes: Iterable[str]) -> str:
 
 
 def _rel(where: str, root: Path) -> str:
-    """``/abs/cad/build.py:12 (note)`` -> ``cad/build.py:12 (note)`` when the file is under ``root``."""
+    """``/abs/cad/build.py:12 (note)`` -> ``cad/build.py:12 (note)``. A file outside ``root`` is recorded by its
+    name only, so the committed record never carries a machine's absolute paths."""
     head, sep, tail = where.partition(" (")
     path, colon, line = head.rpartition(":")
     if not colon or not line.isdigit():
         path, colon, line = head, "", ""
     if os.path.isabs(path):
         rel = os.path.relpath(path, root)
-        if not rel.startswith(".."):
-            path = rel
+        path = os.path.basename(path) if rel.startswith("..") or os.path.isabs(rel) else rel
     return path + (f":{line}" if colon else "") + (f" ({tail}" if sep else "")
 
 
@@ -740,7 +793,7 @@ class BuildResult:
 
     def _record(self, shape: Any, key: str) -> Dict[str, Any]:
         brep = shape_brep(shape)
-        sha = hashlib.sha256(brep).hexdigest()
+        sha = brep_sha256(brep)
         self._breps[sha] = brep
         bb = shape.BoundingBox()
         solids = len(shape.Solids())
@@ -771,23 +824,50 @@ class BuildResult:
         tmp.replace(self.path)
         return self.path
 
-    def assembly_shapes(self, fasteners: bool = True) -> Dict[str, Any]:
+    def assembly_shapes(self, fasteners: bool = True, with_hashes: bool = False) -> Dict[str, Any]:
         """``{key: shape in assembly coordinates}`` for the gates: one key per part instance (``name`` for a
-        single instance, ``name#i`` for several), plus every placed fastener (``fastener_name#i``)."""
+        single instance, ``name#i`` for several), plus every placed fastener (``fastener_name#i``). With
+        ``with_hashes`` the values are ``(shape, content_hash)``, the hash recorded at build time, so nothing has to
+        re-hash a shape read back from BREP. ``kind(key)`` tells parts from fasteners. A key used twice raises (the
+        build already refuses a fastener named like a part)."""
+        hashes = self.content_hashes() if with_hashes else {}
         out: Dict[str, Any] = {}
-        for name, shapes in self.parts.items():
-            for i, s in enumerate(shapes):
-                out[f"{name}#{i}" if len(shapes) > 1 else name] = s
-        if fasteners:
-            for name, shapes in self.fasteners.items():
+        tables = [self.parts] + ([self.fasteners] if fasteners else [])
+        for table in tables:
+            for name, shapes in table.items():
                 for i, s in enumerate(shapes):
-                    out[f"{name}#{i}" if len(shapes) > 1 else name] = s
+                    key = f"{name}#{i}" if len(shapes) > 1 else name
+                    if key in out:
+                        raise RegistryError(f"assembly key {key!r} is both a part and a fastener")
+                    out[key] = (s, hashes[key]) if with_hashes else s
+        return out
+
+    def content_hashes(self) -> Dict[str, str]:
+        """``{key: content hash}`` for every part instance, placed fastener and cavity, as recorded in the record."""
+        out: Dict[str, str] = {}
+        for table in ("parts", "fasteners"):
+            for info in self.geometry.get(table, {}).values():
+                for inst in info.get("instances", []):
+                    if "sha256" in inst:
+                        out[inst["key"]] = inst["sha256"]
+        for name, info in self.geometry.get("cavities", {}).items():
+            out[name] = info["sha256"]
         return out
 
     @staticmethod
     def owner(key: str) -> str:
         """The part (or fastener) name of an ``assembly_shapes()`` key."""
         return key.rsplit("#", 1)[0] if "#" in key and key.rsplit("#", 1)[1].isdigit() else key
+
+    def kind(self, key: str) -> Optional[str]:
+        """``"part"`` or ``"fastener"`` for an ``assembly_shapes()`` key (or a name), None when unknown."""
+        name = self.owner(key)
+        geo = self.geometry
+        if name in self.parts or name in geo.get("parts", {}):
+            return "part"
+        if name in self.fasteners or name in geo.get("fasteners", {}):
+            return "fastener"
+        return None
 
 
 def load_geometry(path: Union[str, Path], shapes: bool = True) -> BuildResult:
@@ -798,7 +878,9 @@ def load_geometry(path: Union[str, Path], shapes: bool = True) -> BuildResult:
     if geo.get("schema") != SCHEMA:
         raise RegistryError(f"{path}: schema {geo.get('schema')!r}, expected {SCHEMA!r}")
     out_dir = path.parent
-    root = out_dir.parent
+    root = out_dir
+    for _ in Path(geo.get("out_dir", "exports")).parts:   # the record says where out_dir sits under the root
+        root = root.parent
     result = BuildResult(root=root, out_dir=out_dir, geometry=geo, path=path)
     result.joints = {k: {**v, "axis": Axis(v["axis"]["origin"], v["axis"]["direction"])} for k, v in geo["joints"].items()}
     result.fastener_axes = {k: [Axis(i["origin"], i["direction"]) for i in v["instances"]]
@@ -810,7 +892,7 @@ def load_geometry(path: Union[str, Path], shapes: bool = True) -> BuildResult:
     def read(info: Dict[str, Any]) -> Any:
         f = out_dir / info["file"]
         raw = f.read_bytes()
-        if hashlib.sha256(raw).hexdigest() != info["sha256"]:
+        if brep_sha256(raw) != info["sha256"]:
             raise RegistryError(f"{f} does not match its recorded sha256; rebuild")
         from io import BytesIO
         return cq.Shape.importBrep(BytesIO(raw))
@@ -826,21 +908,37 @@ def load_geometry(path: Union[str, Path], shapes: bool = True) -> BuildResult:
 
 def build_module(module: Any, params: Any = None, *, registry: Optional["Registry"] = None, out_dir: str = "exports",
                  root: Union[str, Path, None] = None, write: bool = True) -> BuildResult:
-    """Build a project's ``cad/build.py``: import it (a path or a module) so its decorators register, add its
-    ``print_parts()`` and ``dossier_items()`` when it has them, and run ``Registry.build``."""
-    reg = registry if registry is not None else REGISTRY
+    """Build a project's ``cad/build.py`` in a registry of its own and return the result.
+
+    ``module`` is a path (the usual case) or an imported module. A path is executed with a fresh ``Registry`` as
+    the current one, so its decorators register there and nothing leaks between builds; modules under the project
+    root that it imports are re-imported for the same reason. An imported module contributes the declarations it
+    made in the current registry from its own file. Then ``print_parts()`` and ``dossier_items()`` are added when
+    the module has them (on every call, so new parameters give new shapes) and ``Registry.build`` runs.
+    ``root`` defaults to ``project_root(script)``.
+    """
+    reg = registry if registry is not None else Registry()
     if isinstance(module, (str, Path)):
         path = Path(module).resolve()
+        root = Path(root).resolve() if root else project_root(path)
         spec = importlib.util.spec_from_file_location(f"_cadagent_build_{path.stem}", path)
         if spec is None or spec.loader is None:
             raise RegistryError(f"cannot import {path}")
         mod = importlib.util.module_from_spec(spec)
         sys.path.insert(0, str(path.parent))
+        _forget_project_modules(root)
         try:
-            spec.loader.exec_module(mod)
+            with use_registry(reg):
+                spec.loader.exec_module(mod)
         finally:
             sys.path.remove(str(path.parent))
+            _forget_project_modules(root)
         module = mod
+    else:
+        file = getattr(module, "__file__", "") or ""
+        root = Path(root).resolve() if root else project_root(file or None)
+        if registry is None and file:
+            _copy_declarations(current_registry(), reg, file)
     items_fn = getattr(module, "dossier_items", None)
     parts_fn = getattr(module, "print_parts", None)
     if items_fn is not None and parts_fn is None:
@@ -849,6 +947,31 @@ def build_module(module: Any, params: Any = None, *, registry: Optional["Registr
         where = getattr(module, "__file__", "") or ""
         reg.add_build_items(parts_fn(), items_fn() if items_fn else None, where=f"{where}:0" if where else "")
     return reg.build(params, out_dir=out_dir, root=root, write=write)
+
+
+def _forget_project_modules(root: Path) -> None:
+    """Drop modules loaded from under ``root`` (outside any virtualenv) so the next import runs their
+    declarations again, into the registry that is current then."""
+    for name, mod in list(sys.modules.items()):
+        file = getattr(mod, "__file__", None)
+        if not file:
+            continue
+        f = Path(file).resolve()
+        if root in f.parents and "site-packages" not in f.parts and ".venv" not in f.parts:
+            sys.modules.pop(name, None)
+
+
+def _copy_declarations(source: "Registry", target: "Registry", file: str) -> None:
+    file = os.path.normcase(os.path.abspath(file))
+
+    def mine(decl: Any) -> bool:
+        head = decl.where.partition(" (")[0].rpartition(":")[0]
+        return bool(head) and os.path.normcase(os.path.abspath(head)) == file
+
+    for table in ("parts", "cavities", "joints", "fasteners", "steps"):
+        for key, decl in getattr(source, table).items():
+            if mine(decl):
+                getattr(target, table)[key] = decl
 
 
 # -------------------------------------------------------------------------------------- joining cards and code
@@ -933,10 +1056,10 @@ def join(dossier: Any, geometry: Union[Mapping[str, Any], BuildResult]) -> List[
             group = registered.get((use.screws, frozenset((pid, use.to))), [])
             if not group:
                 add("fastener-not-registered", f"part {pid!r} card lists {use.qty or ''} {use.screws} to {use.to!r}; "
-                                               "no fastener() declares them", card.where, "warning")
+                                               "no fastener() declares them", use.where or card.where, "warning")
             elif use.qty is not None and sum(f.get("count", 0) for f in group) != use.qty:
                 add("fastener-count", f"part {pid!r} card lists {use.qty} x {use.screws} to {use.to!r}; fastener() "
-                                      f"places {sum(f.get('count', 0) for f in group)}", card.where)
+                                      f"places {sum(f.get('count', 0) for f in group)}", use.where or card.where)
     keys = {f.get("key") for f in fasteners.values()} | set(fasteners)
     by_order = {s.order: s for s in dossier.assembly}
     for s in steps:
@@ -966,9 +1089,57 @@ def _norm(v: Any) -> Any:
 # ------------------------------------------------------------------------------------- the default registry
 
 REGISTRY = Registry()
-part = REGISTRY.part
-cavity = REGISTRY.cavity
-joint = REGISTRY.joint
-fastener = REGISTRY.fastener
-assembly = REGISTRY.assembly
-build = REGISTRY.build
+_CURRENT: "contextvars.ContextVar[Registry]" = contextvars.ContextVar("cadagent_dossier_registry")
+
+
+def current_registry() -> Registry:
+    """The registry the module-level declarations write to: the innermost ``use_registry()``, else ``REGISTRY``."""
+    return _CURRENT.get(REGISTRY)
+
+
+@contextlib.contextmanager
+def use_registry(registry: Optional[Registry] = None):
+    """Make ``registry`` (default: a new one) current inside the ``with`` block (per thread / async context)."""
+    registry = registry if registry is not None else Registry()
+    token = _CURRENT.set(registry)
+    try:
+        yield registry
+    finally:
+        _CURRENT.reset(token)
+
+
+def part(name: str, section: str = "", **kwargs: Any) -> Callable:
+    """``Registry.part`` on the current registry."""
+    return current_registry().part(name, section, **kwargs)
+
+
+def cavity(part: str, name: str) -> Callable:
+    """``Registry.cavity`` on the current registry."""
+    return current_registry().cavity(part, name)
+
+
+def joint(interface: str, kind: str = "revolute", **kwargs: Any) -> Callable:
+    """``Registry.joint`` on the current registry."""
+    return current_registry().joint(interface, kind, **kwargs)
+
+
+def fastener(key: str, **kwargs: Any) -> FastenerDecl:
+    """``Registry.fastener`` on the current registry."""
+    return current_registry().fastener(key, **kwargs)
+
+
+def build(params: Union[Mapping[str, Any], str, Path, None] = None, **kwargs: Any) -> BuildResult:
+    """``Registry.build`` on the current registry; ``root`` defaults to the calling script's project root."""
+    if not kwargs.get("root"):
+        kwargs["root"] = project_root(_caller_where().rpartition(":")[0] or None)
+    return current_registry().build(params, **kwargs)
+
+
+class _CurrentSteps:
+    """``assembly.step(...)`` on the current registry."""
+
+    def step(self, *args: Any, **kwargs: Any) -> StepDecl:
+        return current_registry().assembly.step(*args, **kwargs)
+
+
+assembly = _CurrentSteps()

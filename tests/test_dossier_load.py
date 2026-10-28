@@ -277,3 +277,61 @@ def test_cad_agent_yaml_dossier_key(tmp_path):
     assert d.file == "dossier/project.yaml" and "S3" in d.sections
     (tmp_path / "cad-agent.yaml").write_text("cad:\n  name: t\n")
     assert load_project_dossier(load_project(tmp_path)) is None
+
+
+# ------------------------------------------------------------------------------- review #26 regressions
+
+def test_empty_section_or_part_file_is_an_error_at_the_reference(tmp_path):
+    err = _error(tmp_path, {"dossier/sections/flap.yaml": "# to do\n"})
+    assert [i.code for i in err.issues] == ["empty-file"]
+    assert (err.file, err.line) == ("dossier/project.yaml", 6) and "dossier/sections/flap.yaml is empty" in str(err)
+    err = _error(tmp_path, {"dossier/sections/flap.yaml": FLAP, "dossier/parts/ball.yaml": ""})
+    assert [i.code for i in err.issues] == ["empty-file"]
+    assert (err.file, err.line) == ("dossier/sections/base.yaml", 13) and "parts/ball.yaml" in str(err)
+
+
+def test_empty_project_file_names_the_file(tmp_path):
+    err = _error(tmp_path, {"dossier/project.yaml": ""})
+    assert (err.file, err.line) == ("dossier/project.yaml", 1) and "0 dossier errors" not in str(err)
+    assert "is empty" in str(err)
+
+
+def test_non_scalar_key_reports_file_and_line(tmp_path):
+    err = _error(tmp_path, {"dossier/project.yaml": "title: t\n? [a, b]\n: c\n"})
+    assert err.issues[0].code == "bad-key" and (err.file, err.line) == ("dossier/project.yaml", 2)
+
+
+def test_gate_exemptions_need_a_reason(tmp_path):
+    project = PROJECT.replace("free_parts: [{part: ball, reason: loose in the hopper}]", "free_parts: [ball]")
+    err = _error(tmp_path, {"dossier/project.yaml": project})
+    assert [i.code for i in err.issues] == ["missing-reason"] and err.line == 16
+    project = PROJECT.replace("reason: heat-set inserts", "reason: '  '")
+    err = _error(tmp_path, {"dossier/project.yaml": project})
+    assert [i.code for i in err.issues] == ["missing-reason"] and "intended_overlaps" in str(err)
+
+
+def test_duplicate_card_does_not_cascade_from_its_decisions(tmp_path):
+    # the dropped duplicate's nested decision D99 is not read, so the real D99 elsewhere is not a second duplicate
+    flap = FLAP + "  - {id: hopper_flap, function: again, decisions: [{id: D99, decision: x}]}\n"
+    project = PROJECT.replace("decisions: decisions.yaml", "decisions:\n  - {id: D99, decision: y}")
+    err = _error(tmp_path, {"dossier/sections/flap.yaml": flap, "dossier/project.yaml": project})
+    assert [(i.code, i.message.split("'")[1]) for i in err.issues] == [("duplicate-id", "hopper_flap")]
+
+
+def test_fastener_entries_carry_their_line(dossier_path):
+    use = load_dossier(dossier_path).parts["hopper"].fasteners[0]
+    assert (use.where.file, use.where.line) == ("dossier/sections/hopper.yaml", 12)
+    assert "where" not in use.to_dict()
+
+
+def test_evidence_shape_content_hash():
+    cq = pytest.importorskip("cadquery")
+    from cadagent.evidence import brep_content_hash, shape_brep_text, shape_content_hash
+    box = cq.Workplane().box(10, 20, 30).edges("|Z").fillet(2).val()
+    h = shape_content_hash(box)
+    box.tessellate(0.1)
+    box.isValid()
+    assert shape_content_hash(box) == h == brep_content_hash(shape_brep_text(box))
+    assert shape_content_hash(box.moved(cq.Location(cq.Vector(0, 0, 1e-3)))) != h
+    flagged = shape_brep_text(box).replace(b"\n0101000\n", b"\n0111000\n")    # the kernel's "checked" bit
+    assert flagged != shape_brep_text(box) and brep_content_hash(flagged) == h

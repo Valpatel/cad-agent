@@ -35,7 +35,7 @@ class DossierError(ValueError):
 
     def __init__(self, issues: Sequence[Issue]):
         self.issues = list(issues)
-        first = self.issues[0] if self.issues else Issue("error", "invalid dossier")
+        first = self.issues[0] if self.issues else Issue("error", "invalid dossier (no details)")
         self.file = first.where.file if first.where else ""
         self.line = first.where.line if first.where else 0
         lines = [str(i) for i in self.issues]
@@ -70,6 +70,11 @@ def _yaml_load(text: str, file: str) -> Any:
         m.file, m.line, m.key_lines = file, node.start_mark.line + 1, {}
         for key_node, value_node in node.value:
             key = loader.construct_object(key_node, deep=True)
+            try:
+                hash(key)
+            except TypeError:
+                raise DossierError([Issue("bad-key", f"a key must be text, got a {'list' if isinstance(key, list) else 'mapping' if isinstance(key, dict) else type(key).__name__}",
+                                          Where(file, key_node.start_mark.line + 1))]) from None
             if key in m:
                 raise DossierError([Issue("duplicate-key", f"duplicate key {key!r}",
                                           Where(file, key_node.start_mark.line + 1))])
@@ -142,10 +147,15 @@ class _Parser:
             return None
         self.loaded.append(path)
         try:
-            return _yaml_load(text, self.show(path))
+            data = _yaml_load(text, self.show(path))
         except DossierError as exc:
             self.errors.extend(exc.issues)
             return None
+        if data is None:
+            at = where or Where(self.show(path), 1)
+            self.error(at, f"{self.show(path)} is empty (no YAML document); write its content or remove the reference",
+                       "empty-file")
+        return data
 
     def expand(self, entry: str, where: Where) -> List[Path]:
         pattern = str(self.base / entry)
@@ -403,7 +413,7 @@ class _Parser:
                 self.error(_where(f, "qty"), f"{fw}.qty must be >= 1")
             fasteners.append(FastenerUse(to=self.ref(f, "to", "part", fw), screws=self.text(f, "screws", fw, True),
                                          qty=qty, via=self.ref(f, "via", "interface", fw),
-                                         note=self.text(f, "note", fw)))
+                                         note=self.text(f, "note", fw), where=_where(f)))
         contains = []
         for item, w in self.items(m, "contains", what):
             c = self.mapping(item, w, f"{what}.contains[]")
@@ -417,6 +427,8 @@ class _Parser:
             contains.append(Containment(what=self.ref(c, "what", "part", cw), count=count,
                                         cavity=self.text(c, "cavity", cw), free=self.flag(c, "free", cw),
                                         where=_where(c)))
+        if not self.register(pid, "part", _where(m)):
+            return None             # a duplicate: its nested decisions are not read, so they cannot cascade
         card = PartCard(
             id=pid, function=self.text(m, "function", what), interfaces=self.ref_list(m, "interfaces", "interface", what),
             loads=self.free_map(m, "loads", what), material=self.material(m, what), fasteners=fasteners,
@@ -425,7 +437,7 @@ class _Parser:
             notes=self.text(m, "notes", what), section=section, file=file, where=_where(m))
         card.decisions = [d for item, w in self.items(m, "decisions", what)
                           if (d := self.decision(item, w, section=section, part=pid))]
-        return card if self.register(pid, "part", card.where) else None
+        return card
 
     def section(self, node: Any, where: Where, file: str = "") -> Optional[Section]:
         m = self.mapping(node, where, "section")
@@ -492,12 +504,15 @@ class _Parser:
         cfg.grounded = self.ref_list(m, "grounded", "part", "gates")
         for item, w in self.items(m, "free_parts", "gates"):
             if isinstance(item, str):
-                cfg.free_parts.append(FreePart(part=item))
+                self.error(w, f"gates.free_parts: {item!r} needs a reason: write {{part: {item}, reason: ...}} "
+                              "(a part allowed to float is an explained exclusion)", "missing-reason")
                 self.refs.append(("part", item, w, "gates.free_parts"))
             elif (f := self.mapping(item, w, "gates.free_parts[]")) is not None:
                 self.keys(f, ("part", "reason"), "gates.free_parts[]")
-                cfg.free_parts.append(FreePart(part=self.ref(f, "part", "part", "gates.free_parts[]"),
-                                               reason=self.text(f, "reason", "gates.free_parts[]")))
+                reason = self.text(f, "reason", "gates.free_parts[]").strip()
+                if not reason:
+                    self.error(_where(f), "gates.free_parts[] needs a reason", "missing-reason")
+                cfg.free_parts.append(FreePart(part=self.ref(f, "part", "part", "gates.free_parts[]"), reason=reason))
         for key in ("intended_overlaps", "ignore_pairs"):
             for item, w in self.items(m, key, "gates"):
                 p = self.mapping(item, w, f"gates.{key}[]")
@@ -508,8 +523,10 @@ class _Parser:
                 if len(parts) != 2:
                     self.error(_where(p, "parts"), f"gates.{key}[].parts must name two parts, got {parts}")
                     continue
-                getattr(cfg, key).append(PairExemption(parts=(parts[0], parts[1]),
-                                                       reason=self.text(p, "reason", f"gates.{key}[]")))
+                reason = self.text(p, "reason", f"gates.{key}[]").strip()
+                if not reason:
+                    self.error(_where(p), f"gates.{key}[] needs a reason (an explained exclusion)", "missing-reason")
+                getattr(cfg, key).append(PairExemption(parts=(parts[0], parts[1]), reason=reason))
         for key in m:
             if key not in known:
                 cfg.extra[key] = _strip(m[key])
@@ -672,7 +689,7 @@ def _merge_interfaces(p: _Parser, dossier: Dossier, project_interfaces: List[Int
 
 
 def _resolve(p: _Parser, dossier: Dossier) -> None:
-    if any(e.code in ("yaml", "duplicate-key", "missing-file") for e in p.errors):
+    if any(e.code in ("yaml", "duplicate-key", "bad-key", "missing-file", "empty-file") for e in p.errors):
         return      # ids from the file that failed to load would all report as unknown; fix the file first
     tables: Dict[str, Callable[[str], bool]] = {
         "requirement": lambda i: i in dossier.requirements,

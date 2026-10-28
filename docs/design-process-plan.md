@@ -185,12 +185,14 @@ The CLI `cad-agent gates [--only NAME]` runs them after `build`; `cad-agent chec
   can take seconds per pair. T3's acceptance therefore includes one real, filleted and shelled pair, and the budget in
   4.9 is a target to be measured, not a claim.
 - **Shape identity (content hash).** OCP's `TopoDS_Shape` hash is identity plus location, not content, and is not
-  stable across processes, so it is never used as a key. A shape's id is the sha256 of a canonical export: the shape in
-  its own frame written with `BRepTools.Write_s` (fixed OCCT version, default precision; the export must be shown
-  deterministic run to run in T3's tests, with a STEP export as the fallback if it is not), combined with its assembly
-  `Location` as a 4×4 matrix rounded to 1e-6 mm. This is the same byte-hash discipline as `cadagent.evidence`, which
-  hashes files with sha256. The same hash is what `dossier-geometry.json` records per part and what sign-off records
-  (5.3) are bound to.
+  stable across processes, so it is never used as a key. A shape's id is `cadagent.evidence.shape_content_hash`: the
+  sha256 of its BREP text (`BRepTools.Write_s`, format version 1, without triangulation or normals, so meshing does
+  not change it) with the per-shape flag lines removed (the kernel flips them on its own). The shape's assembly
+  location is part of that text. Shown deterministic across processes in the registry's tests. A shape read back
+  from BREP may hash differently (the reader recomputes frames), so the hash recorded at build time travels with the
+  shape and is never recomputed from a loaded copy. This is the same byte-hash discipline as `cadagent.evidence`,
+  which hashes files with sha256. The same hash is what `dossier-geometry.json` records per part and what sign-off
+  records (5.3) are bound to.
 - **Pair cache.** Results are cached by the two content hashes (and, for the motion gate, the pose transform of the
   moving part, 4.5) in `.cad-agent/cache/gates/` under the project root. The directory is created with a `.gitignore`
   containing `*` so it is never committed; only the verdict JSON goes to `exports/`. A rebuild that changes one part

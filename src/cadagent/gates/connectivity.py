@@ -50,7 +50,7 @@ GATE = "connectivity"
 STATIC = "static"
 MECHANISM_KINDS = ("revolute", "slider", "cylindrical", "planar", "ball")
 NON_GEOMETRIC_KINDS = ("electrical", "thermal", "fluid", "other")
-NEAREST_CANDIDATES = 3          # exact queries spent on the nearest neighbour of an island with no measured pair
+NEAREST_CANDIDATES = 3          # exact queries per nearest-neighbour search, on pairs the table did not measure
 
 ASSUMPTIONS = [
     "contact is the relation table's: no shared volume and a gap within touch_mm, or shared volume; a contact in "
@@ -306,8 +306,8 @@ class _Analyser:
         return float("inf") if v is None else float(v)
 
     def nearest(self, inside: Sequence[str], outside: Sequence[str]) -> Optional[Relation]:
-        """The closest measured pair between two sets: stored relations first, else up to
-        ``NEAREST_CANDIDATES`` exact queries on the pairs whose boxes are closest."""
+        """The closest pair between two sets: the stored relations, then up to ``NEAREST_CANDIDATES``
+        exact queries on unmeasured pairs whose boxes are closer than the best stored gap."""
         ins, outs = set(inside), set(outside)
         best = None
         for pair, r in self.rels.items():
@@ -317,9 +317,13 @@ class _Analyser:
             r = r if r.a in ins else r.flipped()
             if best is None or (r.gap_mm, r.a, r.b) < (best.gap_mm, best.a, best.b):
                 best = r
-        if best is not None or self.measure is None:
+        if self.measure is None:
             return best
-        cands = sorted((self.bound(x, y), x, y) for x in inside for y in outside if x != y)
+        # pairs the table did not measure can still be nearer than a measured one (a box distance is only a
+        # lower bound): measure the few whose boxes are closer than the best gap so far
+        limit = float("inf") if best is None else best.gap_mm
+        cands = sorted((self.bound(x, y), x, y) for x in inside for y in outside
+                       if x != y and frozenset((x, y)) not in self.rels and (best is None or self.bound(x, y) < limit))
         for _, x, y in cands[:NEAREST_CANDIDATES]:
             r = self.rel(x, y)
             if r is not None and r.gap_mm is not None and (best is None or r.gap_mm < best.gap_mm):

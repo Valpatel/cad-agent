@@ -301,7 +301,8 @@ def test_check_after_a_dossier_declaration_changes(project, capsys):
     path = project / "dossier" / "sections" / "store.yaml"
     path.write_text(path.read_text().replace("count: 2", "count: 3"))
     rows = _results(project, capsys)
-    assert rows["gate containment"]["status"] == "fail" and "declarations changed" in rows["gate containment"]["message"]
+    row = rows["gate containment"]
+    assert row["status"] == "fail" and "declarations changed" in row["message"]
     path.write_text(path.read_text().replace("count: 3", "count: 2").replace("Carries the hopper", "Holds it all"))
     rows = _results(project, capsys)
     assert rows["gate containment"]["status"] == "pass"           # card texts are not gate inputs
@@ -374,7 +375,8 @@ def clean_bench(tmp_path_factory):
     shutil.copytree(BENCH, base / "gate_bench", ignore=shutil.ignore_patterns("__pycache__"))
     root = base / "gate_bench" / "project"
     cache = base / "pair-cache"              # shared by every copy: the seeds reuse the clean bench's pairs
-    _config(root, f"gates:\n  cache: {cache}\n")
+    cfg = root / "cad-agent.yaml"
+    cfg.write_text(cfg.read_text().replace("  gates:\n", f"  gates:\n    cache: {cache}\n"))
     started = time.monotonic()
     code = main(["gates", "--project", str(root), "--build", "--jobs", "3"])
     return root, code, time.monotonic() - started

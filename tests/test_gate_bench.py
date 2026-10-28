@@ -196,7 +196,7 @@ def test_bench_is_declared_through_the_dossier_registry(bench):
     assert geo["joints"]["I-pin-arm"]["moving"] == "arm" and geo["joints"]["I-pin-arm"]["range"] == [0.0, 40.0]
     f0 = geo["fasteners"]["screw_0"]
     assert f0["clamps"] == "lid" and f0["into"] == "insert_0" and f0["min_engagement_mm"] == 1.5
-    assert bench.assembly["screw_0"].kind == "fastener" and bench.assembly["hopper"].group == "store"
+    assert bench.assembly["screw_0"].kind == "fastener" and bench.assembly["hopper"].group == "S-store"
     # the screws sit where they are placed: head on the lid (Z=47..50), tip at the insert bottom (Z=39)
     from cadagent.gates.relations import bounding_box
     z0, z1 = bounding_box(bench.shape("screw_0"))[2::3]

@@ -1,0 +1,100 @@
+# generated once from the bench's declarations (tests/fixtures/gate_bench/build.py); edit by hand
+id: S-store
+title: Store
+purpose: Hold eight loose balls under a screwed lid
+requirements:
+- R1
+parts:
+- id: hopper
+  function: Open box that holds the eight balls; corner posts carry the lid inserts
+  interfaces:
+  - I-hopper
+  - I-lid
+  - I-board
+  - I-insert-0
+  - I-insert-1
+  - I-insert-2
+  - I-insert-3
+  material:
+    name: PETG
+    process: FDM
+    print_axis: +Z
+    wall_mm: 2.4
+  contains:
+  - what: ball
+    count: 8
+    cavity: hopper_cavity
+    free: true
+  decisions:
+  - id: D1
+    decision: Square hopper with corner posts for the lid screws
+    why: posts give the inserts 3 mm of wall without thickening the 2.4 mm shell
+    alternatives:
+    - option: screw bosses outside the wall
+      rejected: widens the footprint
+    - option: snap-fit lid
+      rejected: the lid must stay on when the arm shakes the bench
+- id: lid
+  function: Closes the hopper; held by four screws into the heat-set inserts
+  interfaces:
+  - I-lid
+  - I-thread-0
+  - I-cap-0
+  - I-thread-1
+  - I-cap-1
+  - I-thread-2
+  - I-cap-2
+  - I-thread-3
+  - I-cap-3
+  material:
+    name: PETG
+    process: FDM
+    print_axis: +Z
+    wall_mm: 2.4
+  fasteners:
+  - to: insert_0
+    screws: m3_shcs
+    qty: 1
+    via: I-thread-0
+  - to: insert_1
+    screws: m3_shcs
+    qty: 1
+    via: I-thread-1
+  - to: insert_2
+    screws: m3_shcs
+    qty: 1
+    via: I-thread-2
+  - to: insert_3
+    screws: m3_shcs
+    qty: 1
+    via: I-thread-3
+- id: insert_0
+  function: 'Heat-set insert: the thread for a lid screw'
+  interfaces:
+  - I-insert-0
+  - I-thread-0
+  - I-cap-0
+- id: insert_1
+  function: 'Heat-set insert: the thread for a lid screw'
+  interfaces:
+  - I-insert-1
+  - I-thread-1
+  - I-cap-1
+- id: insert_2
+  function: 'Heat-set insert: the thread for a lid screw'
+  interfaces:
+  - I-insert-2
+  - I-thread-2
+  - I-cap-2
+- id: insert_3
+  function: 'Heat-set insert: the thread for a lid screw'
+  interfaces:
+  - I-insert-3
+  - I-thread-3
+  - I-cap-3
+- id: ball
+  function: Loose balls stored in the hopper
+- id: board
+  function: Sensor board standing against the hopper's -Y wall
+  interfaces:
+  - I-board

@@ -1,0 +1,173 @@
+# The gate bench's dossier: the YAML half of its declarations (the geometry half is registered in code)
+title: Gate bench
+requirements:
+- id: R1
+  text: Holds eight balls
+  source:
+    kind: derived
+    quote: Holds eight balls
+  verify_by: analysis
+  checks:
+  - gate:containment
+- id: R2
+  text: The arm lifts 40 deg without hitting anything
+  source:
+    kind: derived
+    quote: The arm lifts 40 deg without hitting anything
+  verify_by: analysis
+  checks:
+  - gate:motion
+- id: R3
+  text: Every part is held
+  source:
+    kind: derived
+    quote: Every part is held
+  verify_by: analysis
+  checks:
+  - gate:connectivity
+sections:
+- sections/*.yaml
+interfaces:
+- id: I-hopper
+  between:
+  - base
+  - hopper
+  kind: contact
+  datum: seat
+- id: I-lid
+  between:
+  - hopper
+  - lid
+  kind: contact
+  datum: seat
+- id: I-board
+  between:
+  - hopper
+  - board
+  kind: contact
+  datum: seat
+- id: I-bracket
+  between:
+  - base
+  - bracket
+  kind: contact
+  datum: boss top, Z=7
+- id: I-block
+  between:
+  - base
+  - hinge_block
+  kind: contact
+  datum: seat
+- id: I-pin-block
+  between:
+  - hinge_block
+  - pin
+  kind: contact
+  datum: bearing
+- id: I-pin-arm
+  between:
+  - pin
+  - arm
+  kind: revolute
+  datum: revolute
+- id: I-arm-block
+  between:
+  - hinge_block
+  - arm
+  kind: contact
+  datum: thrust face
+- id: I-stop
+  between:
+  - base
+  - stop
+  kind: contact
+  datum: seat
+- id: I-arm-stop
+  between:
+  - arm
+  - stop
+  kind: contact
+  datum: rest at 0 deg
+- id: I-frame
+  between:
+  - base
+  - frame
+  kind: contact
+  datum: seat
+- id: I-insert-0
+  between:
+  - hopper
+  - insert_0
+  kind: contact
+  datum: heat-set bore
+- id: I-thread-0
+  between:
+  - lid
+  - insert_0
+  kind: fastened
+  datum: thread
+- id: I-cap-0
+  between:
+  - lid
+  - insert_0
+  kind: contact
+  datum: flush insert face
+- id: I-insert-1
+  between:
+  - hopper
+  - insert_1
+  kind: contact
+  datum: heat-set bore
+- id: I-thread-1
+  between:
+  - lid
+  - insert_1
+  kind: fastened
+  datum: thread
+- id: I-cap-1
+  between:
+  - lid
+  - insert_1
+  kind: contact
+  datum: flush insert face
+- id: I-insert-2
+  between:
+  - hopper
+  - insert_2
+  kind: contact
+  datum: heat-set bore
+- id: I-thread-2
+  between:
+  - lid
+  - insert_2
+  kind: fastened
+  datum: thread
+- id: I-cap-2
+  between:
+  - lid
+  - insert_2
+  kind: contact
+  datum: flush insert face
+- id: I-insert-3
+  between:
+  - hopper
+  - insert_3
+  kind: contact
+  datum: heat-set bore
+- id: I-thread-3
+  between:
+  - lid
+  - insert_3
+  kind: fastened
+  datum: thread
+- id: I-cap-3
+  between:
+  - lid
+  - insert_3
+  kind: contact
+  datum: flush insert face
+gates:
+  tools:
+    hex key 2.5:
+      envelope_d: 6.0
+      length: 60.0

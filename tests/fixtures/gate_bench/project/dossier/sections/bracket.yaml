@@ -1,0 +1,23 @@
+# generated once from the bench's declarations (tests/fixtures/gate_bench/build.py); edit by hand
+id: S-bracket
+title: Bracket
+purpose: Carry a bracket at a fixed height
+requirements:
+- R3
+parts:
+- id: bracket
+  function: L bracket seated on the base boss
+  interfaces:
+  - I-bracket
+  material:
+    name: PETG
+    process: FDM
+    print_axis: +Z
+    wall_mm: 2.4
+decisions:
+- id: D4
+  decision: L bracket seated on a base boss
+  why: the boss sets the bracket height without shims
+  alternatives:
+  - option: bracket screwed to the plate
+    rejected: adds two fasteners

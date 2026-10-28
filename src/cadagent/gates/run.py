@@ -11,7 +11,7 @@ process, because it reads the other verdicts.
 Configuration, ``cad: gates:`` in ``cad-agent.yaml`` (every key optional)::
 
     gates:
-      geometry: exports/dossier-geometry.json    # the record the build writes (default: <exports>/dossier-geometry.json)
+      geometry: exports/dossier-geometry.json    # the record the build writes (this is the default)
       build: cad/build.py                        # build_module() it when the record is missing, or with --build
       declarations: dossier/gate-declarations.yaml   # plain-data declarations the YAML schema does not cover yet
       cache: .cadagent-cache/gates               # the pair cache (gitignored); --no-cache runs without it
@@ -276,7 +276,10 @@ def walls(record: Mapping[str, Any], dossier: Any, extra: Mapping[str, Any],
     for source in (extra.get("wall_mm") or {}, options.get("parts") or {}):
         if not isinstance(source, Mapping):
             raise GatesConfigError("wall_mm maps a part to its minimum wall in mm")
-        out.update({str(k): float(v) for k, v in source.items()})
+        try:
+            out.update({str(k): float(v) for k, v in source.items()})
+        except (TypeError, ValueError) as exc:
+            raise GatesConfigError(f"wall_mm maps a part to its minimum wall in mm: {exc}") from exc
     return dict(sorted(out.items()))
 
 
@@ -725,7 +728,11 @@ def gate_rows(project: Any) -> List[Dict[str, Any]]:
     dossier = load_dossier(project)
     rows: List[Dict[str, Any]] = []
     shapes = len(record_hashes(record))
-    for p in plan(project, cfg, record, dossier, extra):
+    try:
+        planned = plan(project, cfg, record, dossier, extra)
+    except (GatesConfigError, TypeError, ValueError) as exc:
+        return [{"name": "gates configuration", "status": "fail", "message": str(exc), "error": str(exc)}]
+    for p in planned:
         if p.gate == LINT:
             continue
         name = f"gate {p.gate}"

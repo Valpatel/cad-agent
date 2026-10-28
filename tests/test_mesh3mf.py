@@ -29,6 +29,20 @@ def test_cube_reference_mesh_is_closed_with_its_true_volume():
     assert mesh3mf.is_edge_manifold(f)
     assert mesh3mf.mesh_volume(v, f) == pytest.approx(1000.0)
 
+def test_same_mesh_gives_the_same_bytes(tmp_path, monkeypatch):
+    import hashlib, time
+    v, f = cube(10)
+    a, b = tmp_path / "a.3mf", tmp_path / "b.3mf"
+    mesh3mf.write_3mf(a, v, f, "cube", bed_xy=(256, 256))
+    monkeypatch.setattr(time, "time", lambda: 2_000_000_000.0)          # a later write time
+    monkeypatch.setattr(time, "localtime", lambda *_: time.struct_time((2033, 5, 18, 3, 33, 20, 2, 138, 0)))
+    mesh3mf.write_3mf(b, v, f, "cube", bed_xy=(256, 256))
+    assert hashlib.sha256(a.read_bytes()).digest() == hashlib.sha256(b.read_bytes()).digest()
+    import zipfile
+    for info in zipfile.ZipFile(b).infolist():
+        assert (info.date_time, info.create_system, info.external_attr >> 16) == ((1980, 1, 1, 0, 0, 0), 3, 0o100644)
+
+
 def test_cube_round_trip_is_centred_on_the_bed_and_verified(tmp_path):
     v, f = cube(10, origin=(-40, 7, 3))
     out = tmp_path / "cube.3mf"

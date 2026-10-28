@@ -76,7 +76,7 @@ my-cad-project/
 | File | Orientation | Notes |
 |------|-------------|-------|
 | `exports/<part>.stl` | print orientation, lowest point on z=0 | degenerate faces removed; must be watertight |
-| `exports/<part>.3mf` | print orientation, centred on `printer.bed_mm` | written by `cad-agent export-3mf`, read back and verified |
+| `exports/<part>.3mf` | print orientation, centred on `printer.bed_mm` | written by `cad-agent export-3mf`, read back and verified; byte-reproducible (fixed zip dates), so a rebuild of unchanged geometry keeps the slice report current |
 | `exports/<part>.step` | assembly coordinates | for CAD review and re-use |
 
 "Open in Bambu Studio" uses `bambustudio://open?file=<url-encoded http URL of the 3MF>&name=<part>`.

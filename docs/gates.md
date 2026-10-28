@@ -10,8 +10,9 @@ prove that printed parts fit, move or hold: no tolerance stack, no print shrink,
 `physical_fit_verified: false` and lists its assumptions.
 
 Status: the shared machinery (T3), the minimum-wall gate (T8), the connectivity gate (T4), the containment gate (T5),
-the fastener gate (T6), the motion gate (T7), the assembly-access gate (T9), the gate bench (T12) and the dossier lint
-(T2, [`dossier.md`](dossier.md#lint-and-status)) are built.
+the fastener gate (T6), the motion gate (T7), the assembly-access gate (T9), the gate bench (T12), the dossier lint
+(T2, [`dossier.md`](dossier.md#lint-and-status)) and the `cad-agent gates` command with its `check` and report rows
+(T14, [below](#running-the-gates-cad-agent-gates)) are built.
 
 ## The assembly and the relation table
 
@@ -125,14 +126,36 @@ from cadagent.gates import Check, verdict, write_verdict
 checks = [Check("wall:hopper", "fail", "thinnest 0.800 mm < 2.4 mm", parts=["hopper"], evidence={...})]
 data = verdict("wall", checks, assumptions=["rays along the inward normal ..."], limits={"tol_mm": 0.01},
                exclusions=[{"parts": ["insert_0", "hopper"], "reason": "heat-set knurl"}])
-write_verdict("exports/gates/wall.json", data)
+write_verdict("exports/gates/wall.json", data)       # unbound: `check` reads it as stale (see Inputs below)
 ```
 
 The file (`schema: cadagent.gate/1`) has `pass`, `status` (`pass`/`warn`/`fail`), `counts`, `checks`, `findings`
 (the checks that are not pass), `exclusions`, `limits`, `assumptions` and `physical_fit_verified: false`. `pass` is
 false when any check fails **or when no check ran**. Warnings never fail the gate. At least one assumption is
 required, every exclusion needs a reason, and the file has no timestamp, so an unchanged run writes identical bytes.
-Point a `cad.checks` entry at the file to put it in the report.
+
+**Inputs.** `cad-agent gates` adds `inputs` to every verdict, so a verdict from an earlier build is never taken as
+current:
+
+```python
+from cadagent.gates.verdict import bind_inputs, stale_reason, geometry_digest, record_hashes
+
+bind_inputs(data, record, record_file="exports/dossier-geometry.json", declarations=decl, options=opts)
+# data["inputs"] = {"geometry": {"file", "digest", "hashes": {key: content hash}}, "declarations": sha256, "options": sha256}
+stale_reason(data, record, declarations=decl, options=opts)   # None, or why the verdict is stale
+```
+
+`geometry_digest(record)` is the sha256 of the geometry record's canonical JSON without the fields that say who
+built it or where: `actor`, `parameters`, `shapes_dir`, `out_dir` and `hash` at the top level, `declared_at` and
+`file` in each part, cavity, joint, fastener, instance and step (only those fields: a part named `file` is still
+digested). A rebuild that changes a shape, a flag, a joint, a fastener or a step changes it; the same geometry
+rebuilt by someone else does not. `hashes` lets the stale message name the shapes that changed. `toolkit` records
+the cad-agent version; it is not compared (an editable install keeps one version across code changes, and a
+release would void every verdict whether its gate changed or not), so rerun the gates after an upgrade. A verdict
+without `inputs` is stale. `cad-agent check` and the dossier lint (`verdict-stale`) compare the geometry, the
+gate's declarations and its options; `lint()` called without a project compares the geometry only. The gates'
+`out=` argument writes an unbound verdict: a gate run by hand, or a project's own gate writing into
+`exports/gates/`, binds it with `bind_inputs` first, or `check` reports it as stale.
 
 ## Minimum wall (`cadagent.gates.wall`)
 
@@ -617,6 +640,101 @@ sampled: a feature thinner than the step, crossing another between two samples, 
 smaller where clearances are tight). The near-tangent blind spot of the boolean kernel applies (see containment).
 The tool sweep has the fastener gate's limits.
 
+## Running the gates (`cad-agent gates`)
+
+```bash
+cad-agent gates                         # every gate that applies, then the dossier lint
+cad-agent gates --only motion assembly  # just these (names: connectivity containment fasteners motion assembly
+cad-agent gates --skip motion           #   wall dossier-lint)
+cad-agent gates --jobs 3 --no-cache     # three gates at once; every query exact, nothing read from the pair cache
+cad-agent gates --build                 # build the geometry first (cad.gates.build)
+cad-agent gates --dry-run               # what would run, what does not apply and why
+```
+
+It needs a geometry record (`exports/dossier-geometry.json`, written by the registry's `build()`): the build step
+writes it, or `cad.gates.build` names the script that `build_module` builds when the record is missing or with
+`--build`. It exits 1 when a gate fails and 2 when the project cannot be gated (no `dossier:` or `gates:` key, a
+bad configuration, no geometry record and no build).
+
+**What runs.** A gate runs when it has something to check, worked out from the record and the declarations
+without the kernel: connectivity when there are parts, containment when a card or the declarations file has a
+`contains`, fasteners when the record has fasteners, motion when a joint moves (any kind but `fixed`), assembly
+when there are steps (registry or dossier), wall when a part declares a minimum wall (a card's `material.wall_mm`,
+the declarations file's `wall_mm`, or `cad.gates.wall.parts`). A gate with nothing to check is listed as not
+applicable and its old verdict files are removed. The dossier lint runs last when the project has a dossier, in the
+same process, because it reads the other verdicts; it writes `exports/dossier-status.json` too.
+
+**Worker processes.** Each geometric gate runs in a process of its own (`python -m cadagent.gates.run <root>
+<gate>`, with this interpreter): it loads the geometry with `load_geometry`, runs the gate's `*_from_build`
+function with the dossier and the declarations file, binds the verdict to its inputs and writes
+`exports/gates/<gate>.json` and `<gate>.md` (the findings, exclusions, assumptions and limits, plus the fastener
+table or the assembly step table), and `connectivity.dot`. The verdict is removed before the run, and a gate that
+exits abnormally, times out (`cad.gates.timeout_s`, 3600 s) or writes nothing gets a failing verdict naming the
+reason and the end of its log (`.cadagent-cache/logs/gate-<name>.log`). So an old passing verdict never survives a
+run that did not finish. When `--build` (or the build of a missing record) fails, no gate runs and every geometric
+verdict is removed, so `check` fails "not run" rather than passing on the previous build. A gate skipped in
+`cad.gates.skip` loses its verdict files too (the dossier lint would otherwise still count them); `--skip` leaves
+them for that run. `--jobs N` (or `cad.gates.jobs`) runs N gates at once. That is safe because the gates
+share only the pair cache, whose writes are atomic renames, and each writes its own files. Each process holds the
+whole geometry, so memory grows with N.
+
+**Configuration** (`cad-agent.yaml`, every key optional):
+
+```yaml
+cad:
+  dossier: dossier/project.yaml
+  gates:
+    geometry: exports/dossier-geometry.json      # default: <exports_dir>/dossier-geometry.json
+    build: cad/build.py                          # build_module() it when the record is missing, or with --build
+    declarations: dossier/gate-declarations.yaml # plain-data declarations the YAML schema does not cover yet
+    cache: .cadagent-cache/gates                 # the pair cache (gitignored); --no-cache runs without it
+    jobs: 2
+    timeout_s: 3600
+    skip: {motion: "slow; run with --only motion before a review"}    # a reason is required
+    connectivity: {tol: {touch_mm: 0.01}}
+    containment: {support: fail, probe_spacing_mm: 0.5}
+    fasteners: {tip_clearance_mm: 0.5, stock_lengths_mm: [6, 8, 10, 12]}
+    motion: {default_samples: 24, max_step_deg: 2.0, combine: [[I9, I10]]}
+    assembly: {max_step_mm: 2.0, margin_mm: 1.0, refine_steps: 8, max_samples: 5000, service: true}
+    wall: {tol_mm: 0.01, max_rays: 20000, parts: {bracket: 3.0}}
+```
+
+| Gate | Options (`cad.gates.<gate>`) |
+|---|---|
+| all but wall | `tol`: `Tolerances` fields (`touch_mm`, `overlap_mm3`, `contain_mm3`, `near_mm`, `volume_check_mm3`); default `touch_mm` from the dossier's `gates.touch_tol_mm` |
+| containment | `support`, `down`, `support_mm`, `mesh_samples`, `seed`, `deflection_mm`, `max_points`, `probe`, `probe_deflection_mm`, `probe_points`, `probe_spacing_mm` |
+| fasteners | the `FastenerOptions` fields (`seat_tol_mm`, `gap_tol_mm`, `hole_clearance_mm`, `tip_clearance_mm`, `stack_tol_mm`, `length_tol_mm`, `min_engagement_d`, `look_ahead_mm`, `lines`, `service_access`, `stock_lengths_mm`) |
+| motion | `samples`, `default_samples`, `max_step_deg`, `max_step_mm`, `combine`, `intended_contacts`, `strict_contacts`, `refine_steps`, `max_poses`, `containment` (per-pose containment on or off), `containment_options` |
+| assembly | the `AccessOptions` fields (`max_step_mm`, `margin_mm`, `refine_steps`, `max_samples`, `tool_access`, `missing_direction`) and `service` |
+| wall | `tol_mm`, `max_rays`, `grid`, `spacing_mm`, `max_grid`, `parts` (part: minimum wall in mm) |
+
+Unknown keys, and bad values of `tol` and of the assembly and fastener options, are refused (exit 2) before anything
+runs; another bad value (a containment, motion or wall option) fails that gate's run, and its verdict says why. The assembly gate samples every
+`max_step_mm` wherever a part slides close along a face, so a long, tight slide costs many queries; a coarser
+`max_step_mm` (with the clearance it can then miss stated in the verdict's limits) is the knob for it.
+
+**Declarations.** The dossier (`gates:`, the interfaces, cards' `contains` and `material.wall_mm`, `assembly`)
+and the declarations file are passed to the gates as in the sections above. The file holds what the YAML schema
+cannot say yet, with the keys `extra` takes: `grounded`, `free_parts`, `interfaces`, `contains`,
+`intended_overlaps`, `ignore_pairs`, `strict_interfaces`, `max_joint_gap_mm`, `fasteners`, `tools`,
+`motion_samples` and `wall_mm`. Today that is chiefly a pair exemption that names a fastener (the dossier's
+`gates.intended_overlaps` takes part ids only), such as a screw's thread envelope inside its insert. The dossier's
+`gates: tools:` and `gates: fasteners:` are read by the fastener and assembly gates as before.
+
+**`check`, the report and the site.** With a `dossier:` or `gates:` key, `cad-agent check` and the report have an
+"Integrity gates" feature (`cad-gates`): one row per gate. A gate that applies fails when its verdict is missing,
+unreadable, stale (its inputs differ from the current geometry record, the declarations or the gate's options) or
+failing; it passes with its check and warning counts and links its `.md`. A gate with nothing to check, or skipped
+in `cad.gates.skip`, is a skip row with the reason. Other verdicts in `exports/gates/` (a project's own gates) get a
+row too; the dossier lint stays the `cad-dossier` feature. The site overview of a project that uses the gates shows
+how many verdicts pass on the current geometry, and how many are stale. `cad-agent all` runs the gates after
+`export-3mf` and before the report, rebuilding the record with `cad.gates.build` first unless a build step already
+runs that script; when they cannot run (no geometry record), it says so and still runs the dossier lint. Without a `dossier:` or
+`gates:` key nothing changes.
+
+The parent side (configuration, the plan, staleness, the report rows) needs no CAD kernel, so it runs in core CI;
+only the workers load OCP.
+
 ## The gate bench (`tests/fixtures/gate_bench/build.py`)
 
 A generic mechanism declared through the dossier registry: a base, a hopper with filleted corners and a declared
@@ -635,7 +753,15 @@ In the `lid_before_board` seed, the steps are reordered so the lid goes on befor
 assembly gate finds the board (and the balls) meeting the lid's top 40.6 mm above their seats.
 
 `tests/test_gate_bench.py` runs every gate on the clean bench (no finding allowed) and on every seed (its gate must
-fail with a finding that names the seeded part; the wall seed's witnesses must lie on the thinned wall). Every gate
+fail with a finding that names the seeded part; the wall seed's witnesses must lie on the thinned wall).
+
+The bench is also a project, `tests/fixtures/gate_bench/project/`: `cad-agent.yaml` with `cad.gates`, a `cad/build.py`
+that registers the bench with the seed named in `cad/parameters.json`, the YAML dossier (four sections, a card per
+part, the interfaces, decisions and requirements) and `dossier/gate-declarations.yaml` (the screw-in-insert
+overlaps). `tests/test_gates_cli.py` runs `cad-agent gates --build` on it: the clean bench passes all seven gates
+with no finding and every section `gated` (about 10 s with three jobs on a loaded workstation), each geometric
+seed fails its gate through the CLI with a finding naming the seeded part (the other verdicts then read stale in
+`check`), and the decision seed fails the lint. Every gate
 of the plan now has an adapter; a gate added later starts with one that raises `NotImplementedError` and
 strict-xfail cases, and its implementer writes the adapter and removes the mark.
 
@@ -664,3 +790,8 @@ strict-xfail cases, and its implementer writes the adapter and removes the mark.
   them). Additions: catalogue-key counts per step, the fastener order check and the optional service removal.
 - **Seed harness file**: `tests/test_gate_bench.py` (pytest only collects `test_*.py`), fixture directory
   `gate_bench` (importable name).
+- **`cad-agent gates`**: gates run in worker processes (crash and timeout isolation, `--jobs`); the dossier lint is
+  part of the command; gate options live in `cad-agent.yaml` (`cad.gates`), with the declarations in the dossier
+  plus a plain-data declarations file for what its schema cannot express; verdicts carry their inputs, and `check`
+  fails a stale one. The plan had the slow gates as separate `cad-agent.yaml` steps (§4.9); `--only`/`--skip`,
+  `cad.gates.skip` and the pair cache cover that.

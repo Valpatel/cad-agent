@@ -44,7 +44,8 @@ def test_parser_exposes_every_subcommand():
     assert parser.prog == "cad-agent"
     sub = next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction))
     assert set(sub.choices) == {"build", "export-3mf", "check", "report", "package", "serve", "site", "view", "slice", "webkit",
-                                "pcb-check", "all", "mcmaster", "catalogue", "compare", "optimise", "dossier"}
+                                "pcb-check", "all", "mcmaster", "catalogue", "compare", "optimise", "dossier",
+                                "gates"}
     assert set(sub.choices) == set(SUBCOMMANDS)
     args = parser.parse_args(["build", "--project", "/p", "--from", "two", "--only", "two", "three"])
     assert (args.cad_command, args.project, args.from_step, args.only) == ("build", "/p", "two", ["two", "three"])
@@ -220,8 +221,14 @@ def test_check_runs_the_dossier_lint(tmp_path, capsys):
     (root / "exports" / "geometry-checks.json").write_text(json.dumps({"box": GOOD}))
     for ext in ("stl", "3mf", "step"):
         (root / "exports" / f"box.{ext}").write_text("x")
+    from .test_gates_cli import bind_verdicts
+    bind_verdicts(root)                       # as `cad-agent gates` writes them: bound to the current inputs
     assert main(["check", "--project", str(root), "--json"]) == 0
     results = json.loads(capsys.readouterr().out)
+    gates = next(f for f in results["features"] if f["feature_id"] == "cad-gates")
+    assert {c["name"]: c["status"] for c in gates["checks"]} == {
+        "gate connectivity": "pass", "gate containment": "pass", "gate fasteners": "pass",
+        "gate motion": "skip", "gate assembly": "pass", "gate wall": "pass"}
     feature = next(f for f in results["features"] if f["feature_id"] == "cad-dossier")
     names = {c["name"]: c["status"] for c in feature["checks"]}
     assert names == {"dossier lint": "pass", "section S1 · Store": "pass"}

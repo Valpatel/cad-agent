@@ -81,6 +81,7 @@ RULES: Dict[str, Tuple[str, str]] = {
     "geometry-missing": ("warning", "the build's geometry record exists, so cards can be joined to shapes"),
     "geometry-invalid": ("error", "the geometry record is readable JSON"),
     "verdict-invalid": ("error", "a gate verdict is readable JSON"),
+    "verdict-stale": ("error", "a gate verdict was computed from the current geometry record (its inputs match)"),
 }
 
 
@@ -101,7 +102,8 @@ class Finding(Issue):
 
 @dataclass
 class CheckState:
-    """A resolved check: ``pass``, ``fail``, ``unrun`` (its output does not exist yet) or ``unknown`` (no such id)."""
+    """A resolved check: ``pass``, ``fail``, ``unrun`` (its output does not exist yet), ``stale`` (a gate verdict
+    computed from another geometry record) or ``unknown`` (no such id)."""
     id: str
     status: str
     message: str = ""
@@ -145,6 +147,9 @@ class Evidence:
     findings: List[Finding] = field(default_factory=list)                   # problems reading the inputs
     root: Optional[str] = None      # the directory finding files are relative to: lets a loader error on any line
                                     # inside a card be attributed to that card
+    expected: Dict[str, Mapping[str, Any]] = field(default_factory=dict)   # gate -> the declarations and options
+                                    # its verdict must be bound to (cadagent.gates.run.expected_inputs); else only
+                                    # the geometry is compared
 
 
 @dataclass
@@ -229,8 +234,8 @@ class LintResult:
         return verdict(LINT_GATE, checks, assumptions=[
             "declarations only: the lint checks that the dossier is complete and agrees with the build's geometry "
             "record, not that the geometry is right (the gates) or meets the requirements (the reviewer)",
-            "gate verdicts are taken as written; the pipeline runs the gates after the build that wrote the "
-            "geometry record",
+            "a gate verdict counts only when its inputs match the current geometry record and, for a project, the "
+            "gate's declarations and options (verdict-stale otherwise)",
         ], limits={"required_section_status": self.min_section_status},
             extra={"sections": {k: v["status"] for k, v in self.sections.items()},
                    "parts": {k: v["status"] for k, v in self.parts.items()}})
@@ -354,6 +359,13 @@ def project_evidence(project: Any) -> Evidence:
     if project.dossier:
         ev.reviews, found = load_reviews(Path(project.dossier).parent / "reviews", root)
         ev.findings += found
+    try:                            # what `cad-agent gates` binds each verdict to, so the lint and check agree
+        from ..gates.run import GATES, GatesConfigError, expected_inputs, gates_config, load_dossier, load_extra
+        cfg = gates_config(project)
+        extra, dossier = load_extra(cfg), load_dossier(project)
+        ev.expected = {g: expected_inputs(g, cfg, dossier, extra) for g in GATES}
+    except (GatesConfigError, TypeError, ValueError):
+        pass                        # a bad gates config is check's finding; compare the geometry only
     return ev
 
 
@@ -567,6 +579,9 @@ class _Linter:
             name = cid[5:]
             if name in self.ev.gates:
                 v = self.ev.gates[name]
+                stale = self.stale(name)
+                if stale:
+                    return CheckState(cid, "stale", stale, self.ev.gate_files.get(name, ""))
                 return CheckState(cid, "pass" if v.get("pass") is True else "fail", str(v.get("status", "")),
                                   self.ev.gate_files.get(name, ""))
             if name in KNOWN_GATES:
@@ -575,6 +590,13 @@ class _Linter:
         if cid in self.ev.checks:
             return self.ev.checks[cid]
         return CheckState(cid, "unknown", "not a gate:<name> and not a cad.checks id in cad-agent.yaml")
+
+    def stale(self, gate: str) -> Optional[str]:
+        """Why gate ``gate``'s verdict is not from the current geometry record (None when it is)."""
+        from ..gates.verdict import stale_reason
+        if self.ev.geometry is None:
+            return None             # nothing is built: cards stay draft, and geometry-missing says why
+        return stale_reason(self.ev.gates[gate], self.ev.geometry, **dict(self.ev.expected.get(gate) or {}))
 
     def check_for_part(self, cid: str, pid: str) -> CheckState:
         """A gate verdict counts against a part when a failing finding names it (or names no part at all)."""
@@ -676,6 +698,12 @@ class _Linter:
         else:
             from .registry import join
             self.adopt(join(d, self.ev.geometry), known)
+            for name in sorted(self.ev.gates):
+                why = self.stale(name)
+                if why:
+                    file = self.ev.gate_files.get(name) or f"exports/gates/{name}.json"
+                    self.add("verdict-stale", f"gate {name!r}: {why}; it does not count until the gates run again",
+                             Where(file), item=f"gate:{name}")
         self.cards()
         self.interfaces()
         self.decisions()

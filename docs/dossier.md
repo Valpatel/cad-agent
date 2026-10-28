@@ -389,7 +389,8 @@ the same name.
 `cad-agent dossier` lints the dossier and computes the status of every part card and section. It writes
 `exports/dossier-status.json` (the site and the report read this, never the YAML) and the lint verdict
 `exports/gates/dossier-lint.json` (`cadagent.gate/1`, one check per finding plus one passing check per rule).
-`cad-agent check` runs the same lint as its `cad-dossier` feature, and `cad-agent all` runs `dossier` after the build.
+`cad-agent check` runs the same lint as its `cad-dossier` feature, and `cad-agent all` runs it after the build (as the last
+step of `cad-agent gates`, [gates.md](gates.md#running-the-gates-cad-agent-gates)).
 It needs no CAD kernel: it reads files only.
 
 ```python
@@ -449,6 +450,7 @@ neither a known gate nor a written verdict) or the `id` of a `cad.checks` entry.
 | `signoff-open-decision` | error | a section with an open decision is not signed off |
 | `geometry-missing` | warning | the geometry record exists (without it every card stays `draft`) |
 | `geometry-invalid`, `verdict-invalid` | error | the geometry record and the gate verdicts are readable |
+| `verdict-stale` | error | a gate verdict's inputs match the current geometry record ([gates.md](gates.md#verdicts)); a stale or unbound verdict is not a pass |
 
 The loader's errors and warnings ([above](#ids-errors-and-findings)) and the join's codes
 ([Joining cards and geometry](#joining-cards-and-geometry)) are findings under their own codes.
@@ -508,7 +510,12 @@ unchanged geometry has their own sign-off refused (rebuild as someone else, or n
 author whose unchanged geometry someone else rebuilt could sign their own work off. Per-part build actors in
 `dossier-geometry.json` would close both; that belongs with the reviewer pass (T11).
 
-**Limits.** The lint takes gate verdicts as written. It does not check that they were produced from the current
-geometry record, because verdicts carry no geometry hash yet. Run the gates after the build (as `cad-agent all`
-will once the gates command lands). A clean lint means the design is declared and agrees with the build. It does
-not mean the geometry is right (the gates check that) or that it meets its requirements (the reviewer checks that).
+**Stale verdicts.** A gate verdict counts only when it was computed from the current geometry record: its
+`inputs.geometry.digest` must equal the record's (`cadagent.gates.verdict.geometry_digest`). Otherwise, or when it
+has no `inputs`, the lint reports `verdict-stale` with the shapes that changed, the gate's checks read `stale`, and
+the parts stay `built` until `cad-agent gates` runs again. Rebuilding the same geometry (another actor, a
+declaration moved to another line) keeps verdicts current. For a project (`lint_project`, `cad-agent dossier`) the
+lint also compares the gate's declarations and options, as `cad-agent check` does ([gates.md](gates.md#verdicts)).
+
+**Limits.** A clean lint means the design is declared and agrees with the build. It does not mean the geometry is
+right (the gates check that) or that it meets its requirements (the reviewer checks that).

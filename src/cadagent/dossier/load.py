@@ -493,6 +493,7 @@ class _Parser:
             return GateConfig()
         known = ("touch_tol_mm", "grounded", "free_parts", "intended_overlaps", "ignore_pairs", "strict_interfaces",
                  "motion_samples")
+        passed_on = ("tools", "fasteners")      # read by the fastener and assembly gates from GateConfig.extra
         cfg = GateConfig()
         tol = self.number(m, "touch_tol_mm", "gates")
         if tol is not None:
@@ -530,7 +531,7 @@ class _Parser:
         for key in m:
             if key not in known:
                 cfg.extra[key] = _strip(m[key])
-        self.keys(m, known, "gates")
+        self.keys(m, known + passed_on, "gates")
         return cfg
 
 

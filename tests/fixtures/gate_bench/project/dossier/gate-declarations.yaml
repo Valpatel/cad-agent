@@ -1,0 +1,19 @@
+# Declarations the dossier schema cannot express yet: a pair exemption naming a fastener (gates.intended_overlaps
+# takes part ids only). Read by cad-agent gates (cad: gates: declarations:).
+intended_overlaps:
+- parts:
+  - screw_0
+  - insert_0
+  reason: 'thread envelope: the screw''s nominal diameter overlaps the insert''s minor diameter by design'
+- parts:
+  - screw_1
+  - insert_1
+  reason: 'thread envelope: the screw''s nominal diameter overlaps the insert''s minor diameter by design'
+- parts:
+  - screw_2
+  - insert_2
+  reason: 'thread envelope: the screw''s nominal diameter overlaps the insert''s minor diameter by design'
+- parts:
+  - screw_3
+  - insert_3
+  reason: 'thread envelope: the screw''s nominal diameter overlaps the insert''s minor diameter by design'

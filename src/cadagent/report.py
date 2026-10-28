@@ -10,6 +10,9 @@ runs nothing. Features:
 * ``cad-links``: local links in ``html_pages`` resolve.
 * ``cad-dossier`` (only with ``cad: dossier:``): the dossier lint, one row per error and one per section with its
   status; a section below ``gated`` fails (``cadagent.dossier.lint``, plan §5.4). The lint reads files only.
+* ``cad-gates`` (only with ``cad: dossier:`` or ``cad: gates:``): one row per integrity gate from
+  ``exports/gates/<gate>.json``; a missing, stale (inputs differ from the current geometry record, declarations or
+  options) or failing verdict fails, a gate with nothing to check is a skip (``cadagent.gates.run.gate_rows``).
 
 A missing file, missing key or non-boolean verdict is a failure, never a pass.
 Evidence paths are relative to ``docs_dir``, where the HTML report is written.
@@ -210,6 +213,26 @@ def dossier_feature(project: CadProject) -> Optional[Dict[str, Any]]:
                                                     f"{len(result.warnings)} warning(s)"))
     return {"feature_id": "cad-dossier", "feature_title": "Design dossier", "checks": checks}
 
+def gates_feature(project: CadProject, report_dir: Path) -> Optional[Dict[str, Any]]:
+    """The integrity gates as report rows (kernel-free: it reads the verdicts and the geometry record). None when the
+    project has neither a dossier nor a ``gates:`` key."""
+    from cadagent.gates.run import enabled, gate_rows
+
+    if not enabled(project):
+        return None
+    checks = []
+    for row in gate_rows(project):
+        path = row.pop("file", None)
+        if path:
+            md = Path(path).with_suffix(".md")
+            target = md if md.is_file() else Path(path)
+            if target.is_file():
+                row["evidence"] = {"type": "link", "url": _rel(target, report_dir), "label": target.name}
+        checks.append(row)
+    if not checks:
+        checks = [{"name": "gates", "status": "skip", "message": "no gate applies"}]
+    return {"feature_id": "cad-gates", "feature_title": "Integrity gates", "checks": checks}
+
 def collect(project: CadProject) -> Dict[str, Any]:
     """Results dict in schema 1.0 (the vptest web shape; ``vptest web validate`` accepts it)."""
     report_dir = project.docs_dir
@@ -219,6 +242,9 @@ def collect(project: CadProject) -> Dict[str, Any]:
         checks_feature(project, report_dir),
         links_feature(project),
     ]
+    gates = gates_feature(project, report_dir)
+    if gates is not None:
+        features.append(gates)
     dossier = dossier_feature(project)
     if dossier is not None:
         features.append(dossier)

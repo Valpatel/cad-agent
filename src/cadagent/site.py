@@ -291,10 +291,25 @@ def _md_inline(text: str) -> str:
     return re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", r'<a href="\2">\1</a>', t)
 
 
+def _gates_stat(exports_dir: Optional[Path]) -> str:
+    """The integrity gates on the overview: verdicts that pass on the current geometry, of all written (the gates
+    page itself is T15's). Only for a project that uses the gates (``gates_exports`` given)."""
+    if exports_dir is None:
+        return ""
+    from cadagent.gates.run import site_counts
+    c = site_counts(exports_dir)
+    if c is None:
+        return ""
+    stale = f" ({c['stale']} stale)" if c["stale"] else ""
+    return f'<div class="stat"><b>{c["pass"]} / {c["total"]}</b><span>integrity gates pass{stale}</span></div>'
+
+
 def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: str,
-               auto_nav: Optional[Callable[[], List[Dict[str, str]]]] = None) -> Dict[str, Any]:
+               auto_nav: Optional[Callable[[], List[Dict[str, str]]]] = None,
+               gates_exports: Optional[Path] = None) -> Dict[str, Any]:
     """Write ``<root>/site/``. Returns a summary (pages written, counts). ``auto_nav`` gives the top bar when the
-    config has no ``nav`` (cad-agent passes :func:`default_nav` for the project)."""
+    config has no ``nav`` (cad-agent passes :func:`default_nav` for the project). ``gates_exports``: the project's
+    exports directory when it uses the integrity gates, for the gates stat on the overview."""
     root = Path(root).resolve()
     cfg = site_config(raw_site, default_title)
     if not cfg.nav and auto_nav:
@@ -341,6 +356,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
              f'<div class="stat"><b>{_e(active["id"]) if active else "—"}</b><span>working on now{": " + _e(active["title"]) if active else ""}</span></div>'
              f'<div class="stat"><b>{len(decisions)}</b><span>decisions ({open_dec} open)</span></div>'
              f'<div class="stat"><b>{len(designs)}</b><span>designs evaluated</span></div>'
+             + _gates_stat(gates_exports) +
              f'<div class="stat"><b>{_e(log[0]["date"]) if log else "—"}</b><span>last change</span></div></div>')
 
     ms = "".join(
@@ -525,13 +541,14 @@ class _Watcher:
 
 
 def serve_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: str, host: str = "127.0.0.1",
-               port: int = 0, auto_nav: Optional[Callable[[], List[Dict[str, str]]]] = None) -> Tuple[ThreadingHTTPServer, str]:
+               port: int = 0, auto_nav: Optional[Callable[[], List[Dict[str, str]]]] = None,
+               gates_exports: Optional[Path] = None) -> Tuple[ThreadingHTTPServer, str]:
     """Serve the project root; ``/`` redirects to the site, which rebuilds when a source changed. Every HTML page
     goes out with the top bar: the config's ``nav``, else ``auto_nav()``, worked out again at most every 2 s so a
     report written while the server runs gets its tab."""
     root = Path(root).resolve()
     cfg = site_config(raw_site, default_title)
-    build_site(root, raw_site, default_title, auto_nav)
+    build_site(root, raw_site, default_title, auto_nav, gates_exports)
     nav_cache = {"at": 0.0, "nav": cfg.nav}
 
     def current_nav() -> List[Dict[str, str]]:
@@ -559,7 +576,7 @@ def serve_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
                 self.end_headers()
                 return
             if self.path.startswith(f"/{SITE_DIR}/") and _stale(root, cfg):
-                build_site(root, raw_site, default_title, auto_nav)
+                build_site(root, raw_site, default_title, auto_nav, gates_exports)
             if self._send_with_nav():
                 return
             super().do_GET()

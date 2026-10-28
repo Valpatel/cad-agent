@@ -291,6 +291,17 @@ def _md_inline(text: str) -> str:
     return re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", r'<a href="\2">\1</a>', t)
 
 
+def _gates_stat(root: Path) -> str:
+    """The integrity gates on the overview: verdicts that pass on the current geometry, of all written (the gates
+    page itself is T15's)."""
+    from cadagent.gates.run import site_counts
+    c = site_counts(root)
+    if c is None:
+        return ""
+    stale = f" ({c['stale']} stale)" if c["stale"] else ""
+    return f'<div class="stat"><b>{c["pass"]} / {c["total"]}</b><span>integrity gates pass{stale}</span></div>'
+
+
 def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: str,
                auto_nav: Optional[Callable[[], List[Dict[str, str]]]] = None) -> Dict[str, Any]:
     """Write ``<root>/site/``. Returns a summary (pages written, counts). ``auto_nav`` gives the top bar when the
@@ -341,6 +352,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
              f'<div class="stat"><b>{_e(active["id"]) if active else "—"}</b><span>working on now{": " + _e(active["title"]) if active else ""}</span></div>'
              f'<div class="stat"><b>{len(decisions)}</b><span>decisions ({open_dec} open)</span></div>'
              f'<div class="stat"><b>{len(designs)}</b><span>designs evaluated</span></div>'
+             + _gates_stat(root) +
              f'<div class="stat"><b>{_e(log[0]["date"]) if log else "—"}</b><span>last change</span></div></div>')
 
     ms = "".join(

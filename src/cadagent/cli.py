@@ -19,7 +19,7 @@ from cadagent._deps import MissingDependency
 from cadagent.project import CadConfigError, CadProject, Step, load_project
 
 SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
-               "mcmaster", "catalogue", "compare", "optimise", "dossier")
+               "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -293,6 +293,40 @@ def cmd_dossier(project: CadProject, args: argparse.Namespace) -> int:
         _say(f"verdict: {verdict_path}")
     return 0 if result.passed else 1
 
+def cmd_gates(project: CadProject, args: argparse.Namespace) -> int:
+    """Run every integrity gate that applies, each in a process of its own, then the dossier lint; write
+    exports/gates/<gate>.json and .md (docs/gates.md "Running the gates")."""
+    from cadagent.gates.run import GatesConfigError, enabled, run_gates
+
+    if not enabled(project):
+        raise _Unusable("no dossier: or gates: key in the cad: section; the gates read the dossier geometry "
+                        "(docs/gates.md \"Running the gates\")")
+    dry = getattr(args, "dry_run", False)
+    if getattr(args, "jobs", None) is not None and args.jobs < 1:
+        raise _Unusable("--jobs must be 1 or more")
+    try:
+        res = run_gates(project, only=getattr(args, "gate_only", None) or (), skip=getattr(args, "gate_skip", None)
+                        or (), jobs=getattr(args, "jobs", None), no_cache=getattr(args, "no_cache", False),
+                        build=getattr(args, "build", False), dry_run=dry, progress=_say)
+    except GatesConfigError as exc:
+        raise _Unusable(str(exc)) from exc
+    width = max([len(r.gate) for r in res.rows] + [8])
+    if dry:
+        for r in res.rows:
+            _say(f"  {r.status.upper() if r.status != 'na' else 'N/A':<4} {r.gate:<{width}}  {r.message}")
+        return 0
+    for r in res.rows:
+        if r.status in ("na", "skip"):
+            _say(f"  {'N/A' if r.status == 'na' else 'SKIP':<4} {r.gate:<{width}}  {r.message}")
+    counts = {s: sum(1 for r in res.rows if r.status == s) for s in ("pass", "fail", "na", "skip")}
+    _say(f"gates: {counts['pass']} pass, {counts['fail']} fail, {counts['na']} not applicable, {counts['skip']} "
+         f"skipped in {res.seconds:.1f}s" + (f" ({res.record})" if res.record else "")
+         + " · checks of the CAD model, physical fit not verified")
+    if res.rows and not res.passed:
+        _say(f"verdicts: {project.exports_dir / 'gates'}")
+    return 0 if res.passed else 1
+
+
 def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
     args.from_step = None
     args.only = None
@@ -300,9 +334,17 @@ def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
         return 1
     if cmd_export_3mf(project, args):
         return 1
-    if project.dossier:
-        args.json, args.no_write, args.min_status = False, False, "gated"
-        cmd_dossier(project, args)      # writes the status file; `check` (in report) fails on its errors
+    from cadagent.gates.run import enabled
+    if enabled(project):
+        args.gate_only, args.gate_skip, args.dry_run, args.build = None, None, False, False
+        args.no_cache, args.jobs = False, None
+        try:
+            cmd_gates(project, args)    # writes the verdicts and the dossier status; `check` (in report) fails on them
+        except _Unusable as exc:
+            _say(f"gates not run: {exc}")
+            if project.dossier:
+                args.json, args.no_write, args.min_status = False, False, "gated"
+                cmd_dossier(project, args)
     report_rc = cmd_report(project, args)
     package_rc = cmd_package(project, args)
     if report_rc:
@@ -564,6 +606,7 @@ HANDLERS = {
     "compare": cmd_compare,
     "optimise": cmd_optimise,
     "dossier": cmd_dossier,
+    "gates": cmd_gates,
 }
 
 def dispatch(args: argparse.Namespace) -> int:
@@ -637,7 +680,8 @@ def build_parser() -> argparse.ArgumentParser:
     pcb_p = sub.add_parser("pcb-check", parents=[common], help="Bind KiCad ERC/DRC evidence to current PCB sources")
     pcb_p.add_argument("manifest", help="JSON with reports, sources, release_gates and optional waivers (paths relative to project root)")
     pcb_p.add_argument("--output", default="exports/pcb-evidence.json")
-    sub.add_parser("all", parents=[common], help="build, export-3mf, dossier (when configured), check + report, package")
+    sub.add_parser("all", parents=[common], help="build, export-3mf, gates and the dossier lint (when configured), "
+                                                 "check + report, package")
     mc_p = sub.add_parser("mcmaster", help="Download McMaster-Carr STEP + product data per part number and normalise "
                                            "it (one page at a time; skills/mcmaster-parts/SKILL.md)")
     mc_p.add_argument("pns", nargs="+", metavar="PN", help="McMaster-Carr part numbers, e.g. 91290A242")
@@ -684,6 +728,19 @@ def build_parser() -> argparse.ArgumentParser:
     dos_p.add_argument("--min-status", choices=("draft", "built", "gated", "reviewed", "signed_off", "none"),
                        default="gated", help="Status every section must reach (default gated, plan §5.4); "
                                              "none: report statuses without failing on them")
+    from cadagent.gates.run import NAMES as GATE_NAMES
+    gates_p = sub.add_parser("gates", parents=[common],
+                             help="Run the integrity gates on the dossier geometry: exports/gates/<gate>.json + .md")
+    gates_p.add_argument("--only", dest="gate_only", nargs="+", choices=GATE_NAMES, metavar="GATE",
+                         help=f"Run only these gates ({', '.join(GATE_NAMES)})")
+    gates_p.add_argument("--skip", dest="gate_skip", nargs="+", choices=GATE_NAMES, metavar="GATE",
+                         help="Leave these gates out of this run")
+    gates_p.add_argument("--jobs", type=int, default=None,
+                         help="Gates run at once, each in its own process (default: cad.gates.jobs, else 1)")
+    gates_p.add_argument("--no-cache", action="store_true", help="Run without the pair cache (every query exact)")
+    gates_p.add_argument("--build", action="store_true",
+                         help="Build the geometry first with cad.gates.build (else only when the record is missing)")
+    gates_p.add_argument("--dry-run", action="store_true", help="List what would run and why, and run nothing")
     return parser
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

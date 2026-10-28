@@ -96,7 +96,7 @@ class CadProject:
     slicer: Dict[str, Any] = field(default_factory=dict)
     explore: Dict[str, Any] = field(default_factory=dict)
     dossier: Optional[Path] = None     # dossier/project.yaml, loaded by cadagent.dossier.load_project_dossier
-    gates: Dict[str, Any] = field(default_factory=dict)   # `cad-agent gates` settings, read by cadagent.gates.run
+    gates: Optional[Dict[str, Any]] = None   # `cad-agent gates` settings (cadagent.gates.run); None when absent
     unknown_keys: List[str] = field(default_factory=list)
 
     def resolve_revision(self) -> Optional[str]:
@@ -276,7 +276,7 @@ def from_dict(root: Path, data: Dict[str, Any]) -> CadProject:
         slicer=_require_dict(data.get("slicer"), "cad.slicer"),
         explore=_require_dict(data.get("explore"), "cad.explore"),
         dossier=root / str(data["dossier"]) if data.get("dossier") else None,
-        gates=_require_dict(data.get("gates"), "cad.gates") if "gates" in data else {},
+        gates=_require_dict(data.get("gates"), "cad.gates") if "gates" in data else None,
         unknown_keys=sorted(set(data) - _TOP_KEYS),
     )
 

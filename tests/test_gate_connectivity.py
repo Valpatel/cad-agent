@@ -65,8 +65,8 @@ def test_a_floating_part_fails_with_its_nearest_neighbour_and_gap():
     assert f["parts"] == ["box"]
     (isl,) = v["floating"]
     assert isl["parts"] == ["box"] and isl["nearest"]["neighbour"] == "beam" and isl["nearest"]["gap_mm"] == 3.0
-    assert isl["nearest"]["neighbour_anchored"] is True
-    assert "nearest beam at 3.000 mm" in f["message"]
+    assert isl["nearest"]["neighbour_grounded"] is True
+    assert "nearest grounded part beam at 3.000 mm" in f["message"], f["message"]
 
 
 def test_marking_the_floating_part_free_passes_and_records_the_reason():
@@ -124,9 +124,9 @@ def test_a_revolute_joint_links_a_part_that_touches_nothing():
             interfaces=FRAME_IFACES + [{"id": "J", "between": ["arm", "post"], "kind": "revolute"}])
     assert v["pass"] and v["findings"] == [], v["findings"]
     joint = next(c for c in v["checks"] if c["id"] == "joint:J")
-    assert "arm (body arm) hangs on post" in joint["message"] and "gap 0.200 mm" in joint["message"]
+    assert "holds arm on post (apart, gap 0.200 mm)" in joint["message"], joint["message"]
     groups = {g["group"]: g for g in v["graph"]["groups"]}
-    assert groups["arm"]["grounded"] and groups["arm"]["via_joint"] == "J"
+    assert groups["body:arm"]["grounded"] and groups["body:arm"]["via_joints"] == ["J"]
     # without the joint the arm floats
     lone = run(FRAME + ["arm"], FRAME_RELS + [apart("arm", "post", 0.2)], grounded=["base"], interfaces=FRAME_IFACES)
     assert failing(lone)["connect:static"]["parts"] == ["arm"]
@@ -143,7 +143,7 @@ def test_a_joint_clearance_limits_the_joint_gap():
     v = run(FRAME + ["arm"], FRAME_RELS + [apart("arm", "post", 0.6)], grounded=["base"], joints=joints,
             interfaces=FRAME_IFACES + [{"id": "J", "between": ["arm", "post"], "kind": "revolute",
                                         "clearance": 0.2}])
-    assert "over the declared clearance 0.2 mm" in failing(v)["joint:J"]["message"]
+    assert "needs <= 0.2 mm (declared clearance)" in failing(v)["joint:J"]["message"]
 
 
 def test_a_moving_body_hanging_on_a_floating_part_is_not_grounded():
@@ -152,6 +152,7 @@ def test_a_moving_body_hanging_on_a_floating_part_is_not_grounded():
             grounded=["base"], joints=joints, interfaces=FRAME_IFACES)
     f = failing(v)
     assert f["connect:static"]["parts"] == ["pin"] and "does not reach ground" in f["joint:J"]["message"]
+    assert f["connect:body:arm"]["parts"] == ["arm"] and "which does not reach ground" in f["connect:body:arm"]["message"]
     assert f["connect:static"]["evidence"]["islands"][0]["nearest"]["gap_mm"] == 1.5
 
 
@@ -162,7 +163,7 @@ def test_parts_of_a_moving_body_must_reach_its_joint_part():
     v = run(nodes, rels, grounded=["base"], joints=joints, interfaces=FRAME_IFACES + [
         {"id": "c", "between": ["arm", "cap"]}, {"id": "t", "between": ["tip", "beam"]}])
     f = failing(v)["connect:body:arm"]
-    assert f["parts"] == ["tip"] and "touches only beam in another body" in f["message"]
+    assert f["parts"] == ["tip"] and "touches beam only across bodies" in f["message"]
 
 
 def test_a_static_part_held_only_by_a_moving_body_floats():
@@ -170,16 +171,13 @@ def test_a_static_part_held_only_by_a_moving_body_floats():
     v = run(FRAME + ["arm", "cap"], FRAME_RELS + [touch("arm", "post"), touch("arm", "cap")], grounded=["base"],
             joints=joints, interfaces=FRAME_IFACES + [{"id": "c", "between": ["arm", "cap"]}])
     f = failing(v)["connect:static"]
-    assert f["parts"] == ["cap"] and "touches only arm" in f["message"]
-    # a fixed joint to the arm with the body label fixes it
-    nodes = FRAME + [Node("arm", body="arm"), Node("cap", body="arm")]
+    assert f["parts"] == ["cap"] and "touches arm only across bodies" in f["message"]
+    # a fixed joint to the arm puts the cap into the arm's body (derived, whatever its label)
     joints["F"] = {"kind": "fixed", "moving": "cap", "fixed": "arm"}
-    ok = run(nodes, FRAME_RELS + [touch("arm", "post")], grounded=["base"], joints=joints, interfaces=FRAME_IFACES)
+    ok = run(FRAME + ["arm", "cap"], FRAME_RELS + [touch("arm", "post"), touch("arm", "cap")], grounded=["base"],
+             joints=joints, interfaces=FRAME_IFACES)
     assert ok["pass"] and ok["findings"] == [], ok["findings"]
-    # a fixed joint across bodies is a labelling error
-    bad = run(FRAME + [Node("arm", body="arm"), "cap"], FRAME_RELS + [touch("arm", "post")], grounded=["base"],
-              joints=joints, interfaces=FRAME_IFACES)
-    assert "labelled as different bodies" in failing(bad)["joint:F"]["message"]
+    assert {n["id"]: n["group"] for n in ok["graph"]["nodes"]}["cap"] == "body:arm"
 
 
 def test_an_undeclared_contact_warns_and_fails_when_strict():
@@ -209,14 +207,19 @@ def test_contacts_declared_by_joints_fasteners_contains_overlaps_and_free_parts_
     assert "fastener:screw" in edges[("beam", "lid")]["declared_by"]
 
 
-def test_a_fastener_without_a_solid_joins_its_parts_on_its_declaration():
-    v = run(FRAME + ["lid"], FRAME_RELS, grounded=["base"], interfaces=FRAME_IFACES,
-            fasteners={"m3": {"clamps": "lid", "into": "beam"}})
-    assert v["pass"] and v["findings"] == [], v["findings"]
-    c = next(c for c in v["checks"] if c["id"] == "fastener:m3")
-    assert "not measured" in c["message"]
-    e = next(e for e in v["graph"]["edges"] if e["kind"] == "fastener")
-    assert e["measured"] is False and e["rigid"]
+def test_a_fastener_without_a_solid_joins_its_parts_only_when_its_axis_is_measured():
+    kw = dict(grounded=["base"], interfaces=FRAME_IFACES, fasteners={"m3": {"clamps": "lid", "into": "beam"}})
+    v = run(FRAME + ["lid"], FRAME_RELS, **kw)               # nothing measured: not a connection
+    f = {x["id"]: x for x in v["findings"]}
+    assert f["fastener:m3"]["status"] == "warn" and f["connect:static"]["parts"] == ["lid"]
+    assert v["not_checked"][0]["fastener"] == "m3"
+    nodes = {k: Node(k) for k in FRAME + ["lid"]}
+    an = analyse(nodes, FRAME_RELS, Declarations(**kw), fastener_reach={"m3": {"ok": True, "axes": []}})
+    assert not [c for c in an.checks if c.status != "pass"]
+    e = next(e for e in an.extra["graph"]["edges"] if e["kind"] == "fastener")
+    assert e["rigid"] and e["measured"] == "axis reaches both"
+    an = analyse(nodes, FRAME_RELS, Declarations(**kw), fastener_reach={"m3": {"ok": False, "reason": "misses lid"}})
+    assert {c.id for c in an.checks if c.status == "fail"} == {"fastener:m3", "connect:static"}
 
 
 def test_a_fastener_solid_must_touch_what_it_clamps_and_threads_into():
@@ -273,7 +276,7 @@ def test_the_graph_and_dot_are_deterministic(tmp_path):
     p = write_dot(v1, tmp_path / "g" / "c.dot")
     assert p.read_text() == dot
     nodes = {n["id"]: n for n in v1["graph"]["nodes"]}
-    assert nodes["box"]["floating"] and not nodes["base"]["floating"] and nodes["arm"]["group"] == "arm"
+    assert nodes["box"]["floating"] and not nodes["base"]["floating"] and nodes["arm"]["group"] == "body:arm"
 
 
 def test_declarations_from_a_geometry_record_and_dossier_without_a_kernel():
@@ -293,14 +296,16 @@ def test_declarations_from_a_geometry_record_and_dossier_without_a_kernel():
     decl = Declarations.from_build(Result(), d, {"interfaces": [{"id": "X", "parts": ["lid", "ball"]}]})
     assert decl.grounded == ["base", "stand"] and decl.free["ball"] == "loose" and decl.free["dust"] == "lint"
     assert "hopper_void" in decl.free["pellet"]
-    assert decl.fasteners == {"screw_0": {"clamps": "lid", "into": "base"}} and decl.joints["J"]["moving"] == "lid"
+    assert decl.fasteners == {"screw_0": {"clamps": "lid", "into": "base", "axes": [], "length_mm": None}}
+    assert decl.joints["J"]["moving"] == "lid"
     assert [i["id"] for i in decl.interfaces] == ["I1", "X"] and decl.interfaces[0]["clearance"] == 0.1
     assert decl.strict_interfaces and decl.touch_mm == 0.02
     assert decl.intended_overlaps == [{"parts": ["a", "b"], "reason": "insert"}]
     assert decl.contains[0] == {"what": "pellet", "cavity": "hopper_void", "container": "hopper", "free": True,
                                 "count": 40}
-    with pytest.raises(ValueError):
-        Declarations(interfaces=[{"id": "bad", "between": ["only-one"]}])
+    three = run(FRAME, FRAME_RELS, grounded=["base"], interfaces=FRAME_IFACES + [
+        {"id": "T", "between": ["base", "post", "beam"]}])
+    assert "names 3 parties" in failing(three)["interface:T"]["message"]
 
 
 # ----------------------------------------------------------------------------- on real solids (plan §4.2)
@@ -356,11 +361,17 @@ def test_real_interface_with_a_2_mm_gap_fails_then_passes_with_clearance_2_5():
 
 @needs_cad
 def test_real_revolute_joint_links_a_part_that_touches_nothing():
-    asm = frame_assembly({"arm": (box(30, 5, 5, (50, 50, 20)), {"body": "arm"})})
+    asm = frame_assembly({"arm": (box(30, 5, 5, (64.5, 10, 20)), {})})     # 0.5 mm from the right post
     asm.joints = {"J": {"kind": "revolute", "moving": "arm", "fixed": "right"}}
     v = connectivity_gate(asm, Declarations(grounded=["base"], interfaces=FRAME3D))
     assert v["pass"] and v["findings"] == [], v["findings"]
-    assert {n["id"]: n["group"] for n in v["graph"]["nodes"]}["arm"] == "arm"
+    assert {n["id"]: n["group"] for n in v["graph"]["nodes"]}["arm"] == "body:arm"
+    j = next(c for c in v["checks"] if c["id"] == "joint:J")
+    assert "gap 0.500 mm" in j["message"]
+    far = frame_assembly({"arm": (box(30, 5, 5, (50, 50, 20)), {})})       # 18 mm away: the joint does not hold
+    far.joints = asm.joints
+    v = connectivity_gate(far, Declarations(grounded=["base"], interfaces=FRAME3D))
+    assert "18.028 mm from right, needs <= 1 mm" in {f["id"]: f for f in v["findings"]}["joint:J"]["message"]
 
 
 @needs_cad
@@ -390,3 +401,189 @@ def test_touch_tolerance_from_the_declarations_is_used():
     v = connectivity_gate(asm, Declarations(grounded=["base"], interfaces=ifaces, touch_mm=0.001))
     assert not v["pass"] and v["limits"]["touch_mm"] == 0.001
     assert Tolerances().touch_mm == 0.01
+
+
+# ----------------------------------------------------------------------------- regressions from the PR review
+
+def test_review_1_a_fixed_joint_needs_contact_or_a_declared_clearance():
+    joints = {"F1": {"kind": "fixed", "moving": "bracket", "fixed": "post"}}
+    far = run(FRAME + ["bracket"], FRAME_RELS + [apart("bracket", "post", 35.0)], grounded=["base"], joints=joints,
+              interfaces=FRAME_IFACES)
+    f = failing(far)
+    assert f["connect:static"]["parts"] == ["bracket"]
+    assert "bracket is 35.000 mm from post, needs contact or a declared clearance" in f["joint:F1"]["message"]
+    held = run(FRAME + ["bracket"], FRAME_RELS + [touch("bracket", "post")], grounded=["base"], joints=joints,
+               interfaces=FRAME_IFACES)
+    assert held["pass"] and held["findings"] == [], held["findings"]
+    spaced = run(FRAME + ["bracket"], FRAME_RELS + [apart("bracket", "post", 0.3)], grounded=["base"], joints=joints,
+                 interfaces=FRAME_IFACES + [{"id": "F1", "between": ["bracket", "post"], "clearance": 0.5}])
+    assert spaced["pass"] and spaced["findings"] == [], spaced["findings"]
+
+
+def test_review_1_a_moving_joint_holds_only_within_max_joint_gap_mm_or_its_clearance():
+    joints = {"J": {"kind": "revolute", "moving": "arm", "fixed": "post"}}
+    kw = dict(grounded=["base"], joints=joints, interfaces=FRAME_IFACES)
+    far = run(FRAME + ["arm"], FRAME_RELS + [apart("arm", "post", 40.0)], **kw)
+    f = failing(far)
+    assert "needs <= 1 mm (max_joint_gap_mm)" in f["joint:J"]["message"]
+    assert f["connect:body:arm"]["parts"] == ["arm"] and "joint J does not hold arm" in f["connect:body:arm"]["message"]
+    assert run(FRAME + ["arm"], FRAME_RELS + [apart("arm", "post", 40.0)], max_joint_gap_mm=50.0, **kw)["pass"]
+    unmeasured = run(FRAME + ["arm"], FRAME_RELS, **kw)
+    assert "arm is unmeasured from post" in failing(unmeasured)["joint:J"]["message"]
+
+
+def test_review_3_a_free_part_holds_nothing_up():
+    v = run(FRAME + ["ball", "bracket"], FRAME_RELS + [touch("ball", "post"), touch("ball", "bracket")],
+            grounded=["base"], free={"ball": "loose"}, interfaces=FRAME_IFACES)
+    f = failing(v)["connect:static"]
+    assert f["parts"] == ["bracket"] and "touches only free part(s) ball, which hold nothing up" in f["message"]
+    assert {e["a"] + "|" + e["b"]: e["rigid"] for e in v["graph"]["edges"]}["ball|post"] is False
+    assert v["exclusions"] == [{"parts": ["ball"], "reason": "loose", "kind": "allowed free"}]
+
+
+def test_review_4_ground_is_parts_only_and_every_joint_instance_is_checked():
+    sec = run(FRAME + [Node("bracket", section="S1"), Node("frame", section="S1")], FRAME_RELS + [touch("frame", "base")],
+              grounded=["S1"], interfaces=FRAME_IFACES)
+    assert "grounded ['S1'] are sections" in failing(sec)["ground"]["message"]
+    wheels = [Node("wheel#0", body="wheel"), Node("wheel#1", body="wheel")]
+    v = run(FRAME + wheels, FRAME_RELS + [touch("wheel#0", "post"), apart("wheel#1", "post", 80.0)], grounded=["base"],
+            joints={"J": {"kind": "revolute", "moving": "wheel", "fixed": "post"}}, interfaces=FRAME_IFACES)
+    f = failing(v)
+    assert f["connect:body:wheel"]["parts"] == ["wheel#1"]
+    assert "wheel#1 is 80.000 mm from post" in f["joint:J"]["message"]
+    feet = run(FRAME + ["foot#0", "foot#1"], FRAME_RELS + [touch("foot#0", "base")], grounded=["base", "foot"],
+               interfaces=FRAME_IFACES + [{"id": "Ft", "between": ["base", "foot"]}])
+    assert feet["pass"] and [x["id"] for x in feet["findings"]] == ["ground:foot"]
+    assert "each is taken as ground" in feet["findings"][0]["message"]
+
+
+def test_review_5_a_bracket_bolted_to_a_moving_arm_moves_with_it():
+    joints = {"J1": {"kind": "revolute", "moving": "arm", "fixed": "post"}}
+    nodes = FRAME + [Node("arm", body="arm"), Node("screw_0", kind="fastener", body="arm"), "bracket"]
+    rels = FRAME_RELS + [touch("arm", "post"), touch("screw_0", "bracket"), touch("screw_0", "arm"),
+                         touch("bracket", "arm")]
+    v = run(nodes, rels, grounded=["base"], joints=joints, interfaces=FRAME_IFACES + [
+        {"id": "B", "between": ["bracket", "arm"]}], fasteners={"screw_0": {"clamps": "bracket", "into": "arm"}})
+    assert v["pass"] and v["findings"] == [], v["findings"]
+    groups = {n["id"]: n["group"] for n in v["graph"]["nodes"]}
+    assert groups["bracket"] == groups["screw_0"] == "body:arm"
+    # a chain of fixed joints, in any order, joins the body
+    chain = {"J1": joints["J1"], "a": {"kind": "fixed", "moving": "y", "fixed": "x"},
+             "b": {"kind": "fixed", "moving": "x", "fixed": "arm"}}
+    v = run(FRAME + ["arm", "x", "y"], FRAME_RELS + [touch("arm", "post"), touch("x", "arm"), touch("y", "x")],
+            grounded=["base"], joints=chain, interfaces=FRAME_IFACES)
+    assert v["pass"] and {n["id"]: n["group"] for n in v["graph"]["nodes"]}["y"] == "body:arm", v["findings"]
+    # bolting the moving arm to ground is a finding
+    bad = run(FRAME + ["arm"], FRAME_RELS + [touch("arm", "post"), touch("arm", "base")], grounded=["base"],
+              joints={**joints, "W": {"kind": "fixed", "moving": "arm", "fixed": "base"}}, interfaces=FRAME_IFACES)
+    assert "fixed joint W joins arm to base, a grounded part" in failing(bad)["bodies:arm"]["message"]
+
+
+def test_from_build_bodies_are_the_transitive_closure():
+    from cadagent.gates.relations import moving_bodies
+    joints = {"J": {"kind": "revolute", "moving": "arm", "fixed": "pin"}, "a": {"kind": "fixed", "moving": "y",
+                                                                                "fixed": "x"},
+              "b": {"kind": "fixed", "moving": "x", "fixed": "arm"}}
+    fasteners = {"s": {"clamps": "bracket", "into": "arm"}, "t": {"clamps": "pin", "into": "block"}}
+    assert moving_bodies(joints, fasteners, ["base"]) == {"arm": "arm", "x": "arm", "y": "arm", "s": "arm",
+                                                          "bracket": "arm"}
+
+
+def test_review_6_duplicate_interfaces_merge_or_warn():
+    same = run(FRAME, FRAME_RELS, grounded=["base"], interfaces=FRAME_IFACES + FRAME_IFACES)
+    assert same["pass"] and same["findings"] == []
+    diff = run(FRAME, FRAME_RELS, grounded=["base"], interfaces=FRAME_IFACES + [
+        {"id": "I1", "between": ["base", "post"], "clearance": 0.3}])
+    assert diff["pass"] and [x["id"] for x in diff["findings"]] == ["duplicate:interface:I1"]
+
+
+def test_review_7_ignored_pairs_are_dropped_from_the_graph():
+    rels = FRAME_RELS + [touch("base", "beam")]
+    v = run(FRAME, rels, grounded=["base"], interfaces=FRAME_IFACES,
+            ignore_pairs=[{"parts": ["base", "beam"], "reason": "variants"}])
+    assert v["pass"] and v["findings"] == [], v["findings"]
+
+
+def test_review_8_minor_items():
+    # a body named "static" stays a moving body
+    v = run(FRAME + [Node("arm", body="static")], FRAME_RELS + [apart("arm", "post", 0.2)], grounded=["base"],
+            joints={"J": {"kind": "revolute", "moving": "arm", "fixed": "post"}}, interfaces=FRAME_IFACES)
+    assert v["pass"] and {n["id"]: n["group"] for n in v["graph"]["nodes"]}["arm"] == "body:static", v["findings"]
+    # a mechanism interface on other parts than its joint
+    v = run(FRAME + ["arm"], FRAME_RELS + [apart("arm", "post", 0.2)], grounded=["base"],
+            joints={"J": {"kind": "revolute", "moving": "arm", "fixed": "post"}},
+            interfaces=FRAME_IFACES + [{"id": "J", "between": ["beam", "base"], "kind": "revolute"}])
+    assert "but joint J joins arm and post" in failing(v)["interface:J"]["message"]
+    # non-geometric interfaces are listed as not checked
+    v = run(FRAME, FRAME_RELS, grounded=["base"], interfaces=FRAME_IFACES + [
+        {"id": "E", "between": ["base", "beam"], "kind": "electrical"}])
+    assert v["not_checked"] == [{"interface": "E", "kind": "electrical", "reason": "not geometric"}]
+
+
+@needs_cad
+def test_review_real_false_passes_now_fail():
+    """The reviewer's three real-solid repros: each must fail."""
+    from cadagent.gates import Assembly
+
+    def asm_with(parts, joints=None):
+        a = Assembly()
+        a.add("base", cq.Workplane().box(100, 100, 10).val())
+        for name, loc in parts:
+            a.add(name, cq.Workplane().box(10, 10, 10).val(), loc)
+        a.joints = joints or {}
+        return a
+
+    a = asm_with([("bracket", (0, 0, 45))], {"F1": {"kind": "fixed", "moving": "bracket", "fixed": "base"}})
+    v = connectivity_gate(a, Declarations(grounded=["base"]))
+    assert not v["pass"] and "35.000 mm from base" in {f["id"]: f for f in v["findings"]}["joint:F1"]["message"]
+
+    a = asm_with([("shelf", (0, 0, 70))])
+    v = connectivity_gate(a, Declarations(grounded=["base"], fasteners={"m3": {"clamps": "shelf", "into": "base"}}))
+    assert not v["pass"] and {f["id"] for f in v["findings"]} >= {"fastener:m3", "connect:static"}
+    # with an axis and a length the reach is measured: 70 mm down from the shelf top reaches the base
+    m3 = {"clamps": "shelf", "into": "base", "axes": [((0, 0, 75), (0, 0, -1))]}
+    ok = connectivity_gate(a, Declarations(grounded=["base"], fasteners={"m3": {**m3, "length_mm": 72}}))
+    assert ok["pass"], ok["findings"]
+    short = connectivity_gate(a, Declarations(grounded=["base"], fasteners={"m3": {**m3, "length_mm": 20}}))
+    assert "does not reach both" in {f["id"]: f for f in short["findings"]}["fastener:m3"]["message"]
+
+    a = asm_with([("ball", (40, 0, 10)), ("shelf", (40, 0, 20))])
+    v = connectivity_gate(a, Declarations(grounded=["base"], free={"ball": "loose spare"}))
+    assert not v["pass"] and {f["id"]: f for f in v["findings"]}["connect:static"]["parts"] == ["shelf"]
+
+
+@needs_cad
+def test_review_7_a_table_passed_in_is_not_changed():
+    from cadagent.gates import relation_table
+    asm = frame_assembly({"box": (box(10, 10, 10, (40, 10, 20)), {})})
+    table = relation_table(asm)
+    before = dict(table.relations)
+    v = connectivity_gate(asm, Declarations(grounded=["base"], interfaces=FRAME3D, touch_mm=0.5), table=table)
+    assert table.relations == before
+    assert v["floating"][0]["nearest"]["gap_mm"] == pytest.approx(15.0)       # measured outside the table
+    assert "tolerances" in {f["id"] for f in v["findings"]}
+
+
+@needs_cad
+def test_review_8_contains_without_a_container_takes_the_cavity_part():
+    from cadagent.gates import Assembly
+    asm = Assembly()
+    asm.add("base", box(40, 40, 5))
+    asm.add("cup", box(30, 30, 30, (5, 5, 5)).cut(box(26, 26, 28, (7, 7, 7))))
+    asm.add_cavity("cup_void", box(26, 26, 28, (7, 7, 7)), part="cup")
+    asm.add("ball", cq.Solid.makeSphere(4, cq.Vector(20, 20, 11), angleDegrees1=-90))   # resting on the floor
+    v = connectivity_gate(asm, Declarations(grounded=["base"], interfaces=[{"id": "I", "between": ["base", "cup"]}],
+                                            contains=[{"what": "ball", "cavity": "cup_void"}]))
+    assert v["pass"] and v["findings"] == [], v["findings"]
+
+
+def test_review_8_contains_coverage_uses_the_contained_pairs_and_the_witness_says_if_it_is_grounded():
+    inside = Relation("ball", "cav", "contains", contained="a_in_b")
+    nodes = {k: Node(k) for k in FRAME + ["ball"]}
+    an = analyse(nodes, FRAME_RELS + [touch("ball", "base")], Declarations(
+        grounded=["base"], interfaces=FRAME_IFACES, contains=[{"what": "ball", "cavity": "cav"}]),
+        contained=[("ball", "base", "cav", inside)])
+    assert not [c for c in an.checks if c.status != "pass"]
+    v = run(FRAME + ["ball", "bracket"], FRAME_RELS + [touch("ball", "bracket")], grounded=["base"],
+            free={"ball": "loose"}, interfaces=FRAME_IFACES)
+    assert "nearest ungrounded part ball at 0.000 mm" in failing(v)["connect:static"]["message"]

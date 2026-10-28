@@ -9,8 +9,8 @@ they read come from the dossier ([`dossier.md`](dossier.md)).
 prove that printed parts fit, move or hold: no tolerance stack, no print shrink, no deflection. Every verdict says
 `physical_fit_verified: false` and lists its assumptions.
 
-Status: the shared machinery (T3), the minimum-wall gate (T8) and the gate bench (T12) are built. Connectivity (T4),
-containment (T5), fasteners (T6), motion (T7), assembly access (T9) and the dossier lint (T2) build on them.
+Status: the shared machinery (T3), the minimum-wall gate (T8), the containment gate (T5) and the gate bench (T12)
+are built. Connectivity (T4), fasteners (T6), motion (T7), assembly access (T9) and the dossier lint (T2) build on them.
 
 ## The assembly and the relation table
 
@@ -165,6 +165,61 @@ thin by its chord error (0.03–0.09 mm seen on 2.4 mm shells tessellated at 0.0
 sliver triangle's tilted normal can exit through a neighbouring face (16.7 mm read on a 20 mm filleted block): pass
 the B-rep, or set `tol_mm` to cover it. The threshold is the part's own (the dossier's `material.wall_mm`).
 
+## Containment (`cadagent.gates.containment`)
+
+```python
+from cadagent.gates.containment import containment_gate, check_contains, Contains, contains_declarations
+
+containment_gate(asm, [{"container": "hopper", "cavity": "hopper_cavity", "what": "ball", "count": 8}],
+                 out="exports/gates/containment.json")
+containment_gate(asm, contains_declarations(dossier))          # every card's `contains:` entry
+containment_gate(asm, decls, poses={"home": {}, "turned": {"turret": cq.Location(...)}})   # per pose
+containment_gate(asm, decls, support="fail", down=(0, 0, -1), support_mm=0.05)
+containment_gate(asm, decls, meshes={"ball#8": "scan.stl"})    # mesh-only items: sample-only
+containment_gate(asm, decls, exclusions=[{"parts": ["ball#0", "hopper"], "reason": "..."}], cache=cache)
+check_contains(asm, decl, pose="turned")                       # -> [Check] for one declaration, one pose
+```
+
+The cavity must be a registered `@cavity` solid (`Assembly.add_cavity`); there are no derived cavities. Instances of
+`what` are the parts named `what` or `what#0`, `what#1`, ... Checks per declaration (ids `contains:<cavity>:...`,
+prefixed `<pose>/` when `poses` is given):
+
+| Check | Fails when | Evidence |
+|---|---|---|
+| `<inst>:inside` | more than `contain_mm3` of the instance is outside the cavity, or the kernel was unsure | `outside_mm3`, `outside_fraction`, `depth_mm` and the `furthest_outside_point` with its `nearest_cavity_point`; for a contained one its `clearance_mm` from the boundary |
+| `<inst>:wall` | the instance shares more than `overlap_mm3` with the container's solid (touching is the intended rest) | the relation, with the overlap volume and centroid |
+| `<what>:interpenetration` | two instances share volume | every overlapping pair with `overlap_mm3` and its centroid |
+| `<what>:count` | the instances found differ from `count` (or none is found) | declared, found (B-rep and mesh) |
+| `<what>:support` | `support="fail"` and an instance rests on nothing; a warning with `"report"` (default); skipped with `"off"` | `unsupported`, `on_cavity`, `rests_on` |
+| `<what>:cavity` | the cavity is not registered (`unknown-cavity`) or belongs to another part (`cavity-wrong-part`), the dossier lint's codes | `lint` |
+
+- **Tangent contact is inside.** A ball resting on a cavity wall has 0 mm³ outside and is `touching` the container.
+- **Contact probe.** OCCT's surface intersection can miss a shallow near-tangent crossing: a 4 mm sphere pushed
+  0.03–0.1 mm through a cone wall read 0 mm³ outside at 5 of 50 positions tried, a consistent common = volume, cut = 0
+  that the `vol = common + cut` cross-check cannot see. So every instance whose exact gap to the cavity boundary is
+  within `touch_mm` is re-checked: its tessellation vertices (`probe_deflection_mm`, 0.01) are classified against the
+  cavity with `BRepClass3d_SolidClassifier`, which uses no surface intersection. A vertex outside by more than
+  `touch_mm` fails the instance with its depth (`kernel_missed_crossing`; the volume is not measured). It costs about
+  0.3 s per touching 4 mm ball; `probe=False` turns it off. **This limit applies to the relation table too** (a
+  near-tangent `touching` between two parts can be a shallow overlap); only the containment gate probes for it.
+- **Furthest point outside.** The furthest of the vertices of a tessellation of the escaped piece (`cut(instance,
+  cavity)`), then climbed to the piece's extreme point along the outward direction: exact for a ball through a flat
+  or cylindrical wall, a lower bound in general.
+- **Support.** An instance rests on X when moving it `support_mm` along `down` pushes more than `overlap_mm3` out of the
+  cavity or into another instance (boolean volume; within `support_mm` of contact, the vertex probe as fallback);
+  supported means resting on the cavity, or on a supported instance, followed down the chain. A static contact test
+  along one direction, not a settling or stability simulation; other parts (a board in the hopper) do not count.
+- **Poses.** `poses={name: {body: location}}` applies `Assembly.posed` per body. A container that turns while its
+  contents are modelled in fixed positions (the incident) fails in the pose where they part.
+- **Mesh-only items** (`meshes={key: trimesh | STL path | shape}`) are **sample-only**: points uniform in the mesh's
+  box are kept when inside it (generalised winding number, no `rtree` needed) and classified against the exact cavity
+  and container solids, so the outside and wall volumes are Monte Carlo estimates with a standard error
+  (`mesh_samples`, 4000, seeded); the mesh's vertices give the furthest-outside witness. Mesh items get no
+  interpenetration or support check.
+- **Cost.** The 8-ball gate bench: about 2 s cold (the four balls on the floor are probed); 40 balls in a cone: about
+  9 s cold on a loaded workstation. Every query goes through `cache` (`PairCache`), keyed on the content hashes and
+  placements, so an unchanged rerun reads the cache.
+
 ## The gate bench (`tests/fixtures/gate_bench/build.py`)
 
 A generic mechanism declared through the dossier registry: a base, a hopper with filleted corners and a declared
@@ -188,5 +243,10 @@ adapter and removes the mark.
 - **Wall probe**: exact B-rep rays replace the negative-offset probe. `BRepOffsetAPI_MakeOffsetShape` by −t/2
   returned a shell or a null shape on a 0.8 mm rib and on a 2.4 mm-walled box, the cases it was meant for.
 - **Derived cavities** are not built; containment takes a declared cavity solid.
+- **Containment, mesh-only items**: classified against the exact B-rep cavity (`BRepClass3d`), not with trimesh
+  `contains` against a tessellated cavity (the cavity is always a B-rep; trimesh `contains` needs `rtree`).
+- **Containment, additions**: the contact probe for near-tangent crossings, the support check and per-pose runs are
+  not in the plan; the plan's "40 spheres in a cone, one moved 5 mm up through the wall" moves it 5 mm along the
+  wall's outward normal (the cone opens upwards, so "up" leads away from the wall).
 - **Seed harness file**: `tests/test_gate_bench.py` (pytest only collects `test_*.py`), fixture directory
   `gate_bench` (importable name).

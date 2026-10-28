@@ -13,6 +13,14 @@ code by ``@cavity``). For each declaration, in each pose, the gate reports:
   is the intended rest; shared volume above ``overlap_mm3`` is a wall-piercing finding. This is
   independent of *inside*: a cavity drawn larger than the void reads every ball inside while the
   balls sit in the wall;
+* **contact probe** (part of *inside*): when the instance touches the cavity boundary (gap within
+  ``touch_mm``), the boolean's answer is checked independently. OCCT's surface intersection can miss
+  a shallow near-tangent crossing (measured: a 4 mm sphere pushed 0.03-0.1 mm through a cone wall
+  read 0 mm3 outside at 5 of 50 positions), and a missed crossing gives a consistent
+  common = volume, cut = 0 that the volume cross-check cannot see. The instance's tessellation
+  vertices (``probe_deflection_mm``, 0.01) are classified against the cavity (``BRepClass3d``, no
+  surface intersection involved); one outside by more than ``touch_mm`` fails the instance with
+  its depth (the volume is then not measured);
 * **interpenetration** (one check per declaration): content instances sharing volume, with the
   overlap per pair;
 * **count** (one check per declaration): the instances found against ``count``;
@@ -39,20 +47,23 @@ with ``<pose>/``.
 Limits, stated in every verdict: the model is checked against its declared cavity, not the print;
 the cavity solid is taken as the truth (a wrong cavity is only caught through the wall check);
 the furthest-outside point is the furthest of a sampled set (vertices of a tessellation of the
-escaped piece), so its depth is a lower bound to within the tessellation's deflection; support
-is a static contact test along one direction, not a stability or settling simulation.
+escaped piece, then climbed to the piece's extreme point along the outward direction), so its
+depth is a lower bound; the contact probe sees a crossing deeper than about its deflection, not
+a shallower one; an instance that does not touch the cavity boundary is not probed (the exact
+distance query found a gap); support is a static contact test along one direction, not a
+stability or settling simulation.
 """
 
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from cadagent._deps import require
 from cadagent.gates.cache import PairCache, digest, matrix_key
-from cadagent.gates.relations import (Assembly, Relation, Tolerances, _boolean, _kernel_version, _pt, _trsf,
-                                      _volume, aabb_distances, bounding_box, relate_pair)
+from cadagent.gates.relations import (Assembly, Relation, Tolerances, _boolean, _distance, _faces, _kernel_version,
+                                      _pt, _trsf, _volume, aabb_distances, bounding_box, relate_pair)
 from cadagent.gates.verdict import Check, verdict, write_verdict
 
 GATE = "containment"
@@ -67,9 +78,13 @@ ASSUMPTIONS = [
     "the wall check tests each instance against the container's solid: touching is allowed, shared volume "
     "above overlap_mm3 fails",
     "the point furthest outside is the furthest of the vertices of a tessellation of the escaped piece, "
-    "so its depth is a lower bound to within the tessellation deflection",
+    "climbed to the piece's extreme point along the outward direction; its depth is a lower bound",
+    "an instance touching the cavity boundary is re-checked by classifying its tessellation vertices "
+    "(probe_deflection_mm) against the cavity, because the boolean can miss a shallow near-tangent crossing; "
+    "a crossing shallower than about the probe deflection can still be missed",
     "support is a static contact test (the instance moved support_mm along `down` pushes into the cavity "
-    "boundary or into a supported instance), not a settling or stability simulation",
+    "boundary or into a supported instance, by boolean volume or, within support_mm, by the vertex probe), "
+    "not a settling or stability simulation; only the cavity and other instances count as support",
     "mesh-only items are sample-only: Monte Carlo volume estimates against the exact solids, with no "
     "interpenetration or support check",
     "the model is checked, not the print: no tolerance stack, shrink or deflection",
@@ -374,7 +389,6 @@ class _Ctx:
     probe_deflection: float = 0.01
     probe_points: int = 20000
     prefix: str = ""
-    summary: Dict[str, Any] = field(default_factory=dict)
 
     def cid(self, *parts: str) -> str:
         return self.prefix + ":".join(("contains",) + parts)
@@ -386,14 +400,14 @@ def _rel_evidence(rel: Relation) -> Dict[str, Any]:
     return {k: v for k, v in rel.to_dict().items() if k in keep}
 
 
-def _inside_check(ctx: _Ctx, d: Contains, inst: str) -> Tuple[Check, Dict[str, Any]]:
+def _inside_check(ctx: _Ctx, d: Contains, inst: str) -> Check:
     asm, tol = ctx.assembly, ctx.tol
     rel = relate_pair(asm, inst, d.cavity, tol, cache=ctx.cache, contact_area=False)
     ev: Dict[str, Any] = {"relation": _rel_evidence(rel)}
     cid = ctx.cid(d.cavity, inst, "inside")
     if rel.state == "unknown":
         return Check(cid, "fail", f"{inst} vs {d.cavity}: the kernel could not decide ({rel.error})",
-                     [inst, d.container], ev), {"name": inst, "state": "unknown"}
+                     [inst, d.container], ev)
     if rel.state == "contains" and rel.contained in ("a_in_b", "both"):
         ev.update(outside_mm3=rel.a_outside_b_mm3, clearance_mm=rel.wall_mm)
         if ctx.probe and rel.wall_mm is not None and rel.wall_mm <= tol.touch_mm:
@@ -407,8 +421,7 @@ def _inside_check(ctx: _Ctx, d: Contains, inst: str) -> Tuple[Check, Dict[str, A
             ev["probe"] = probe
             if probe.get("error"):
                 return Check(cid, "fail", f"{inst} touches {d.cavity}'s boundary and the contact probe failed "
-                                          f"({probe['error']})", [inst, d.container], ev), \
-                    {"name": inst, "state": "unknown"}
+                                          f"({probe['error']})", [inst, d.container], ev)
             if probe.get("probe_depth_mm", 0.0) > tol.touch_mm:
                 ev.update(outside_mm3=None, depth_mm=probe["probe_depth_mm"],
                           furthest_outside_point=probe["probe_point"], nearest_cavity_point=probe["probe_cavity_point"],
@@ -417,16 +430,12 @@ def _inside_check(ctx: _Ctx, d: Contains, inst: str) -> Tuple[Check, Dict[str, A
                                           f"{rel.a_outside_b_mm3:.4g} mm3 outside, but a surface point lies "
                                           f"{probe['probe_depth_mm']:.3g} mm outside at {probe['probe_point']} "
                                           "(a near-tangent crossing the kernel missed; volume not measured)",
-                             [inst, d.container], ev), \
-                    {"name": inst, "state": "escaped", "outside_mm3": None, "depth_mm": probe["probe_depth_mm"]}
+                             [inst, d.container], ev)
         return Check(cid, "pass", f"{inst} inside {d.cavity} ({rel.a_outside_b_mm3:.4g} mm3 outside, "
-                                  f"{rel.wall_mm:.4g} mm from its boundary)", [inst], ev), \
-            {"name": inst, "state": "inside", "outside_mm3": rel.a_outside_b_mm3}
+                                  f"{rel.wall_mm:.4g} mm from its boundary)", [inst], ev)
     vol = _volume(asm.shape(inst))
     whole = rel.state in ("apart", "touching")
-    outside = vol if whole else float(rel.a_outside_b_mm3 or 0.0)
-    if rel.state == "contains":       # the cavity inside the instance: the instance is still mostly outside
-        outside = float(rel.a_outside_b_mm3 or 0.0)
+    outside = vol if whole else float(rel.a_outside_b_mm3 or 0.0)   # overlapping, or the cavity inside it
     key = None if ctx.cache is None else _key("escape", tol, asm.item(inst).key, asm.item(d.cavity).key,
                                               f"{ctx.deflection!r}:{ctx.max_points}")
     try:
@@ -437,10 +446,9 @@ def _inside_check(ctx: _Ctx, d: Contains, inst: str) -> Tuple[Check, Dict[str, A
     ev.update(volume_mm3=round(vol, 6), outside_mm3=round(outside, 6),
               outside_fraction=round(outside / vol, 6) if vol > 0 else None, **wit)
     where = "wholly outside" if whole else f"{outside:.4g} mm3 ({100 * outside / vol:.1f} %) outside"
-    depth = f", furthest {wit['depth_mm']:.3g} mm out at {wit['furthest_outside_point']}" if "depth_mm" in wit \
-        else ""
-    return Check(cid, "fail", f"{inst} escapes {d.cavity}: {where}{depth}", [inst, d.container], ev), \
-        {"name": inst, "state": "escaped", "outside_mm3": round(outside, 6), "depth_mm": wit.get("depth_mm")}
+    depth = (f", furthest {wit['depth_mm']:.3g} mm out at {wit['furthest_outside_point']}" if "depth_mm" in wit
+             else "")
+    return Check(cid, "fail", f"{inst} escapes {d.cavity}: {where}{depth}", [inst, d.container], ev)
 
 
 def _wall_check(ctx: _Ctx, d: Contains, inst: str) -> Check:
@@ -515,7 +523,6 @@ def _rests(ctx: _Ctx, upper: str, lower: str, kind: str) -> Dict[str, Any]:
     out: Dict[str, Any] = {"rests": pushed > tol.overlap_mm3, "pushed_mm3": round(pushed, 6), "method": "boolean"}
     if out["rests"]:
         return out
-    from cadagent.gates.relations import _distance, _faces
     gap = _distance(_faces(us), _faces(ls))[0] if kind == "cavity" else _distance(us, ls)[0]
     out["gap_mm"] = round(gap, 6)
     if gap > ctx.support_mm + tol.touch_mm:
@@ -573,7 +580,7 @@ def _support_check(ctx: _Ctx, d: Contains, names: List[str]) -> Check:
     return Check(cid, "pass", f"every {d.what} instance rests on {d.cavity} or on another instance", [], ev)
 
 
-def _mesh_checks(ctx: _Ctx, d: Contains, inst: str) -> Tuple[List[Check], Dict[str, Any]]:
+def _mesh_checks(ctx: _Ctx, d: Contains, inst: str) -> List[Check]:
     asm, tol = ctx.assembly, ctx.tol
     container = None if frozenset((inst, d.container)) in ctx.excluded else asm.shape(d.container)
     try:
@@ -582,7 +589,7 @@ def _mesh_checks(ctx: _Ctx, d: Contains, inst: str) -> Tuple[List[Check], Dict[s
     except Exception as exc:
         err = f"{type(exc).__name__}: {exc}"
         return [Check(ctx.cid(d.cavity, inst, "inside"), "fail", f"{inst} (mesh): sampling failed ({err})",
-                      [inst], {"method": "sample-only", "error": err})], {"name": inst, "state": "unknown"}
+                      [inst], {"method": "sample-only", "error": err})]
     cid = ctx.cid(d.cavity, inst, "inside")
     escaped = res["outside_mm3"] > tol.contain_mm3 or res.get("depth_mm", 0.0) > tol.touch_mm
     if escaped:
@@ -604,8 +611,7 @@ def _mesh_checks(ctx: _Ctx, d: Contains, inst: str) -> Tuple[List[Check], Dict[s
         else:
             checks.append(Check(wid, "pass", f"{inst} (mesh, sample-only): no sample in {d.container}'s material",
                                 [inst], {"method": "sample-only"}))
-    return checks, {"name": inst, "state": "escaped" if escaped else "inside", "method": "sample-only",
-                    "outside_mm3": res["outside_mm3"]}
+    return checks
 
 
 def check_contains(assembly: Assembly, declaration: Any, *, tol: Tolerances = Tolerances(),
@@ -658,15 +664,10 @@ def _checks(ctx: _Ctx, d: Contains) -> List[Check]:
         return checks
     checks.append(Check(cav_id, "pass", f"cavity {d.cavity} is registered on {d.container}", [],
                         {"cavity_volume_mm3": round(_volume(asm.shape(d.cavity)), 6)}))
-    rows = []
     for inst in names:
-        c, row = _inside_check(ctx, d, inst)
-        checks += [c, _wall_check(ctx, d, inst)]
-        rows.append(row)
+        checks += [_inside_check(ctx, d, inst), _wall_check(ctx, d, inst)]
     for inst in mesh_names:
-        cs, row = _mesh_checks(ctx, d, inst)
-        checks += cs
-        rows.append(row)
+        checks += _mesh_checks(ctx, d, inst)
     if len(names) > 1:
         checks.append(_interpenetration_check(ctx, d, names))
     if ctx.support != "off" and names:
@@ -724,8 +725,8 @@ def containment_gate(assembly: Assembly, declarations: Iterable[Any], *, tol: To
             summary.append(_summary(d, cs, pose))
     limits = {"touch_mm": tol.touch_mm, "contain_mm3": tol.contain_mm3, "overlap_mm3": tol.overlap_mm3,
               "volume_check_mm3": tol.volume_check_mm3, "support": support, "down": list(_unit(down)),
-              "support_mm": support_mm, "witness_deflection_mm": deflection_mm, "witness_max_points": max_points, "contact_probe": probe,
-              "probe_deflection_mm": probe_deflection_mm, "probe_points": probe_points,
+              "support_mm": support_mm, "witness_deflection_mm": deflection_mm, "witness_max_points": max_points,
+              "contact_probe": probe, "probe_deflection_mm": probe_deflection_mm, "probe_points": probe_points,
               "mesh_samples": mesh_samples, "seed": seed,
               "poses": {p: {b: matrix_key(_matrix_of(loc)) for b, loc in locs.items()} for p, locs in pose_items
                         if p}}

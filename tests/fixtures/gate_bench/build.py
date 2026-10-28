@@ -217,7 +217,8 @@ def register(reg, p: Dict[str, Any]) -> None:
 
 
 def _declarations(p) -> Dict[str, Any]:
-    """What the bench's YAML dossier would hold: interfaces, intended overlaps, contains, decisions, walls, tools."""
+    """What the bench's YAML dossier would hold: interfaces, intended overlaps, contains, decisions, requirements,
+    walls, tools."""
     interfaces = [
         {"id": "I-hopper", "parts": ["base", "hopper"], "kind": "seat"},
         {"id": "I-lid", "parts": ["hopper", "lid"], "kind": "seat"},
@@ -249,12 +250,24 @@ def _declarations(p) -> Dict[str, Any]:
         {"id": "D2", "scope": "section", "section": "arm", "decision": "Arm rests on a fixed stop at 0 deg",
          "why": "a hard stop gives a repeatable zero without a sensor",
          "alternatives": [{"option": "spring return", "rejected": "adds a part and a fatigue mode"}]},
+        {"id": "D3", "scope": "section", "section": "frame", "decision": "One flat base plate carries everything",
+         "why": "a single grounded part gives every subassembly one datum",
+         "alternatives": [{"option": "separate feet per subassembly", "rejected": "no common datum"}]},
+        {"id": "D4", "scope": "section", "section": "bracket", "decision": "L bracket seated on a base boss",
+         "why": "the boss sets the bracket height without shims",
+         "alternatives": [{"option": "bracket screwed to the plate", "rejected": "adds two fasteners"}]},
+    ]
+    requirements = [
+        {"id": "R1", "text": "Holds eight balls", "sections": ["store"], "checks": ["gate:containment"]},
+        {"id": "R2", "text": "The arm lifts 40 deg without hitting anything", "sections": ["arm"],
+         "checks": ["gate:motion"]},
+        {"id": "R3", "text": "Every part is held", "sections": ["frame", "bracket"], "checks": ["gate:connectivity"]},
     ]
     if p["drop_alternatives"]:
         decisions[0]["alternatives"] = []
     return {"interfaces": interfaces, "intended_overlaps": overlaps,
             "contains": [{"container": "hopper", "cavity": "hopper_cavity", "what": "ball", "count": 8, "free": True}],
-            "decisions": decisions, "wall_mm": {"default": p["wall"]},
+            "decisions": decisions, "requirements": requirements, "wall_mm": {"default": p["wall"]},
             "tools": {"hex key 2.5": {"envelope_d": 6.0, "length": 60.0}}}
 
 

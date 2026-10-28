@@ -100,7 +100,7 @@ Fields and where they are checked:
 | `material.wall_mm` | the minimum-wall gate (threshold per part, not per project) |
 | `decisions[].alternatives` | the dossier lint: a decision with no alternative or no `why` is `incomplete`; a section with an open decision cannot be signed off |
 | `checks` | each id resolves to a gate verdict or a configured check; the card's status cannot pass `gated` while one fails |
-| `status` | only the reviewer pass (5.3) may set `reviewed` and `signed_off`; the build resets it to `built` when the part's geometry hash changes |
+| `status` | only the reviewer pass (5.3) may set `reviewed` and `signed_off`; a change of the part's geometry hash voids the review, and the status falls back to what the current evidence supports (`gated` when its gates still pass, else `built`). As built (T2), every status is computed into `exports/dossier-status.json`; a YAML `status:` above the computed one is a finding |
 
 ### 3.3 Storage
 
@@ -360,7 +360,7 @@ This makes the separate-reviewer rule checkable, but it is only as strong as the
 actor for both passes defeats it, and the plan says so rather than pretending otherwise.
 
 `cad-agent dossier` sets the section's status from the latest record whose hashes match the current build; any geometry
-change invalidates sign-off (the status falls back to `built`). The site shows who signed what and when. The reviewer
+change invalidates sign-off (the status falls back to `gated` when the gates pass on the new geometry, else `built`). The site shows who signed what and when. The reviewer
 cannot change geometry or YAML other than its own record.
 
 ### 5.4 How the main agent and implementers use it

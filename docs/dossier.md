@@ -20,6 +20,8 @@ dossier/parts/<name>.yaml      a part card split out of its section (optional)
 dossier/decisions.yaml         project decisions (the site's decisions format, extended)
 dossier/reviews/<section>-<date>.json   reviewer sign-off records (written by the reviewer pass only)
 exports/dossier-geometry.json  what the build script registered (written by the registry's build())
+exports/dossier-status.json    every item's computed status and the lint findings (written by `cad-agent dossier`)
+exports/gates/dossier-lint.json  the lint as a gate verdict
 ```
 
 Paths inside the dossier are relative to the directory of `project.yaml`. `sections:` entries may be globs
@@ -377,4 +379,134 @@ and parts joined to it by a `fixed` joint, move with it.
 | `fastener-not-registered`, `step-fastener-unregistered` | warning | declared in the card or a step, not yet in code |
 | `step-conflict` | error | a step in `project.yaml` and in code with the same order disagree |
 
-The dossier lint (plan T2) runs this with its own checks and decides what fails `cad-agent check`.
+The dossier lint runs this with its own checks; every code in this table is an error or warning of the lint under
+the same name.
+
+## Lint and status
+
+`cad-agent dossier` lints the dossier and computes the status of every part card and section. It writes
+`exports/dossier-status.json` (the site and the report read this, never the YAML) and the lint verdict
+`exports/gates/dossier-lint.json` (`cadagent.gate/1`, one check per finding plus one passing check per rule).
+`cad-agent check` runs the same lint as its `cad-dossier` feature, and `cad-agent all` runs `dossier` after the build.
+It needs no CAD kernel: it reads files only.
+
+```python
+from cadagent.dossier.lint import lint, lint_project, project_evidence, write_outputs, Evidence, RULES
+
+res = lint_project(load_project("."))            # None without a dossier: key
+res = lint(load_dossier(path, strict=False), Evidence(geometry=..., gates={...}, checks={...}, reviews=[...]))
+res.findings          # Finding(code, message, where=file:line, severity, item, parts): sorted by file and line
+res.parts["hopper"]   # {"status": "gated", "blocked_by": ["no current reviewer record"], "checks": [...], ...}
+res.sections["S3"], res.requirements["R4"], res.decisions["D41"]
+res.passed            # no error
+write_outputs(res, "exports")
+```
+
+**What it reads.** The loaded YAML (loaded with `strict=False`, so loader errors such as `unknown-id` become findings
+with their file and line), `exports/dossier-geometry.json`, every verdict in `exports/gates/`, the `cad.checks` of
+`cad-agent.yaml` (a check passes when every `pass_key` is `true`, as in the report) and the reviewer records in
+`dossier/reviews/*.json`.
+
+**Check ids.** A `checks:` entry (on a card or a requirement, a decision's `confirmation`, a step's `access_check`)
+is `gate:<name>` (the verdict `exports/gates/<name>.json`; `unrun` until it exists, and an error when `<name>` is
+neither a known gate nor a written verdict) or the `id` of a `cad.checks` entry. Any other id is `unknown-check`.
+
+### Rules
+
+`cadagent.dossier.lint.RULES` is the list; every finding gives its file, line and code. Errors fail
+`cad-agent check`; warnings are reported.
+
+| Code | Severity | What must hold |
+|---|---|---|
+| `card-no-function` | error | a part card states its `function` |
+| `card-no-interfaces` | error | a part card lists its interfaces (a free part, or a one-part dossier, may not) |
+| `card-no-decision` | warning | the card, or another card or the section it is in, records a decision |
+| `interface-not-party` | error | a card lists only interfaces whose `between` names the part or its section |
+| `interface-one-sided` | error | an interface between two parts is listed on both parts' cards |
+| `interface-datum-conflict` | error | two sections that declare one interface agree on its datum (plan §5.4) |
+| `interface-conflict` | warning | they agree on its other fields |
+| `fastener-via-mismatch` | error | a card's fastener runs `via` an interface between this part and `to` |
+| `wall-undeclared` | error / warning | a card checked by `gate:wall` (error), or made by an additive process (warning), declares `material.wall_mm` |
+| `decision-incomplete` | error | a decided decision has a `why` and at least one alternative |
+| `alternative-no-reason` | error | every alternative says why it was `rejected` |
+| `decision-open` | warning | an open decision; it also blocks its section's sign-off |
+| `unknown-check` | error | every check id resolves (above) |
+| `requirement-untraced` | error | every requirement is served by a section (or derived into one that is) |
+| `requirement-unchecked` | error | every requirement has a check: its own, or one on a card of a section that serves it |
+| `waiver-no-rationale` | error | a `waived` requirement says why |
+| `requirement-status-ignored` | warning | a requirement's status is computed; only `waived` belongs in YAML |
+| `section-no-requirements` | error | a section names the requirements it serves |
+| `section-no-parts` | warning | a section has part cards |
+| `section-below-gated` | error | every section has reached the required status (default `gated`, plan §5.4) |
+| `status-not-earned` | error | a card says `reviewed` or `signed_off` only when a current reviewer record gives it |
+| `status-overclaimed` | warning | a card's YAML status is not above the computed one |
+| `review-invalid` | error | a reviewer record is JSON with `section`, `date`, `actor`, `signed_off` and `hashes` |
+| `review-unknown-section` | error | a reviewer record names a section of the dossier |
+| `review-same-actor` | error | the reviewer is not the build's actor, and neither is `unknown` (plan §5.3) |
+| `review-stale` | warning | the latest review still matches the geometry; otherwise its sign-off no longer counts |
+| `signoff-open-decision` | error | a section with an open decision is not signed off |
+| `geometry-missing` | warning | the geometry record exists (without it every card stays `draft`) |
+| `geometry-invalid`, `verdict-invalid` | error | the geometry record and the gate verdicts are readable |
+
+The loader's errors and warnings ([above](#ids-errors-and-findings)) and the join's codes
+([Joining cards and geometry](#joining-cards-and-geometry)) are findings under their own codes.
+
+### The status machine
+
+Each part card climbs one step at a time, and stops at the first step its evidence does not reach. `blocked_by`
+says why it is not one step higher.
+
+| Status | Reached when |
+|---|---|
+| `draft` | the card exists; it stays here while it has a lint error, or the build registered no shape for it |
+| `built` | lint-clean, and the geometry record has its shape and content hash |
+| `gated` | every check that applies passes: the card's `checks` plus every gate verdict in `exports/gates/`. A gate counts against the part when a failing finding names it, an instance `name#i`, a fastener that clamps it or threads into it, or a cavity of it, and against every part when a failing finding names nothing known; at least one check must apply |
+| `reviewed` | a reviewer record for its section, by a separate actor, whose `hashes` match the current hash of every part in the section |
+| `signed_off` | that record says `signed_off: true` and the section has no open decision |
+
+A section's status is the lowest of its parts' (`draft` when it has no cards or a lint error of its own). Open
+decisions count against the section they are in, or the section of the part they are scoped to (a `part:` decision
+in `decisions.yaml` included). A lint error on any line inside a card is that card's (with `Evidence.root` set, as
+`lint_project` does).
+
+A requirement's evidence is its **own** `checks` and its derived requirements (`parent:`). The checks on the cards
+of the sections that serve it satisfy the trace rule and are listed as `covered_by`, but they verify nothing on their
+own: a wall gate passing says nothing about "the lid stays on". A requirement is
+
+- `verified` when it has evidence and all of it passes (every own check passes, every derived requirement is
+  `verified` or `waived`; for `verify_by: inspection`, also every section that serves it is at least `reviewed`);
+- `failed` when an own check fails or a derived requirement failed;
+- `not_tested` for `verify_by: test` or `demo` (cad-agent cannot run a test or a demonstration), and for a parent
+  whose only open children are `not_tested`;
+- `waived`, or else `unverified`.
+
+**Geometry changes void sign-off.** A reviewer record binds the content hash of each part it reviewed (the
+`sha256` of `parts.<name>` in `dossier-geometry.json`, the hash recorded at build time). When a part is rebuilt with
+different geometry, no record matches any more: the section falls back to `gated` if its gates still pass on the new
+build (`built` if not), the status file shows the voided record under `invalidated` with the parts that changed, and
+the lint warns `review-stale`. A card that still says `status: signed_off` in its YAML is then `status-not-earned`:
+statuses are computed, so leave `status:` out of the cards.
+
+The status uses the newest record whose hashes match, so a revert to reviewed geometry restores its sign-off.
+
+**Reviewer records** (`dossier/reviews/<section>-<date>.json`; the full schema and the reviewer pass are plan T11).
+The lint reads these fields:
+
+```json
+{"schema": "cad-agent.review/1", "section": "S3", "date": "2026-10-28", "actor": "review-agent-7",
+ "signed_off": true, "hashes": {"hopper": "<sha256>", "hopper_flap": "<sha256>"}, "findings": []}
+```
+
+A record whose `actor` is `unknown` or empty, or equals the build's `actor`, or a build whose `actor` is unknown, is
+refused (`review-same-actor`); with no geometry record nothing is built, so no record is refused or counted. This is
+only as strong as `CAD_AGENT_ACTOR`: a harness that sets the same value for both passes, or two different values for
+one agent, defeats it. And the geometry record holds one `actor`, that of the **last** build, not of the build that
+produced each hash (plan §5.3 asks for the latter; the registry does not record it yet). So a reviewer who rebuilds
+unchanged geometry has their own sign-off refused (rebuild as someone else, or not at all, before signing off), and an
+author whose unchanged geometry someone else rebuilt could sign their own work off. Per-part build actors in
+`dossier-geometry.json` would close both; that belongs with the reviewer pass (T11).
+
+**Limits.** The lint takes gate verdicts as written. It does not check that they were produced from the current
+geometry record, because verdicts carry no geometry hash yet. Run the gates after the build (as `cad-agent all`
+will once the gates command lands). A clean lint means the design is declared and agrees with the build. It does
+not mean the geometry is right (the gates check that) or that it meets its requirements (the reviewer checks that).

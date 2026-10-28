@@ -9,9 +9,9 @@ they read come from the dossier ([`dossier.md`](dossier.md)).
 prove that printed parts fit, move or hold: no tolerance stack, no print shrink, no deflection. Every verdict says
 `physical_fit_verified: false` and lists its assumptions.
 
-Status: the shared machinery (T3), the minimum-wall gate (T8), the connectivity gate (T4), the containment gate (T5)
-and the gate bench (T12) are built. Fasteners (T6), motion (T7), assembly access (T9) and the dossier lint (T2) build
-on them.
+Status: the shared machinery (T3), the minimum-wall gate (T8), the connectivity gate (T4), the containment gate (T5),
+the gate bench (T12) and the dossier lint (T2, [`dossier.md`](dossier.md#lint-and-status)) are built. Fasteners (T6),
+motion (T7) and assembly access (T9) build on them.
 
 ## The assembly and the relation table
 

@@ -177,6 +177,7 @@ containment_gate(asm, decls, poses={"home": {}, "turned": {"turret": cq.Location
 containment_gate(asm, decls, support="fail", down=(0, 0, -1), support_mm=0.05)
 containment_gate(asm, decls, meshes={"ball#8": "scan.stl"})    # mesh-only items: sample-only
 containment_gate(asm, decls, exclusions=[{"parts": ["ball#0", "hopper"], "reason": "..."}], cache=cache)
+containment_gate(asm, [{..., "closed_by": ["lid"]}])           # the cavity may reach into the lid's box
 check_contains(asm, decl, pose="turned")                       # -> [Check] for one declaration, one pose
 ```
 
@@ -192,27 +193,40 @@ prefixed `<pose>/` when `poses` is given):
 | `<what>:count` | the instances found differ from `count` (or none is found) | declared, found (B-rep and mesh) |
 | `<what>:support` | `support="fail"` and an instance rests on nothing; a warning with `"report"` (default); skipped with `"off"` | `unsupported`, `on_cavity`, `rests_on` |
 | `<what>:cavity` | the cavity is not registered (`unknown-cavity`) or belongs to another part (`cavity-wrong-part`), the dossier lint's codes | `lint` |
+| `<what>:cavity-fit` | the cavity shares volume with the container's material, or its box reaches outside the box of the container and its `closed_by` parts (by more than `touch_mm`) | the relation, `cavity_box`, `host_box`, `box_overshoot_mm` per axis |
 
+- **A cavity drawn too big** would pass contents that are not in the container: a ball beside the box, or stacked
+  above its rim, touches no material, so the wall check cannot see it. The `cavity-fit` check looks at the cavity
+  itself. It does not catch a cavity that stays within the container's box and outside its material (beside an
+  L-shaped container): contents in that extra volume read inside.
 - **Tangent contact is inside.** A ball resting on a cavity wall has 0 mm³ outside and is `touching` the container.
 - **Contact probe.** OCCT's surface intersection can miss a shallow near-tangent crossing: a 4 mm sphere pushed
   0.03–0.1 mm through a cone wall read 0 mm³ outside at 5 of 50 positions tried, a consistent common = volume, cut = 0
   that the `vol = common + cut` cross-check cannot see. So every instance whose exact gap to the cavity boundary is
-  within `touch_mm` is re-checked: its tessellation vertices (`probe_deflection_mm`, 0.01) are classified against the
-  cavity with `BRepClass3d_SolidClassifier`, which uses no surface intersection. A vertex outside by more than
-  `touch_mm` fails the instance with its depth (`kernel_missed_crossing`; the volume is not measured). It costs about
-  0.3 s per touching 4 mm ball; `probe=False` turns it off. **This limit applies to the relation table too** (a
+  within `touch_mm` is re-checked: points on its surface are classified against the cavity with
+  `BRepClass3d_SolidClassifier`, which uses no surface intersection. The points are the tessellation nodes
+  (`probe_deflection_mm`, 0.01) plus a UV grid of about `probe_spacing_mm` (0.5) on every face, trimmed to the face:
+  BRepMesh puts no node inside a plane or along a cylinder's or cone's straight direction, so nodes alone are blind
+  to a crossing in the middle of such a face. A point outside by more than `touch_mm` fails the instance with its
+  depth (`kernel_missed_crossing`; the volume is not measured). Blind spots: a crossing whose footprint falls between
+  samples (the grid is at most 64 × 64 per face, so coarser than the spacing on faces over 32 mm across), or no deeper
+  than `touch_mm`. On a 4 mm ball against a cone wall, every crossing of 0.015 mm or more was caught at 16 angles; at 0.01 mm (= `touch_mm`) the boolean and the probe both missed 5 of 16. It
+  costs about 0.3–0.5 s per touching ball; `probe=False` turns it off. **This limit applies to the relation table too** (a
   near-tangent `touching` between two parts can be a shallow overlap); only the containment gate probes for it.
 - **Furthest point outside.** The furthest of the vertices of a tessellation of the escaped piece (`cut(instance,
   cavity)`), then climbed to the piece's extreme point along the outward direction: exact for a ball through a flat
   or cylindrical wall, a lower bound in general.
-- **Support.** An instance rests on X when moving it `support_mm` along `down` pushes more than `overlap_mm3` out of the
-  cavity or into another instance (boolean volume; within `support_mm` of contact, the vertex probe as fallback);
+- **Support.** An instance rests on X when moving it `support_mm` along `down` pushes more than `overlap_mm3`
+  *further* out of the cavity or into another instance than before the move, so volume already outside or overlapping
+  is not support (boolean volumes; for a pair sharing no volume and within `support_mm`, the surface probe as
+  fallback, counting only points the move takes across);
   supported means resting on the cavity, or on a supported instance, followed down the chain. A static contact test
   along one direction, not a settling or stability simulation; other parts (a board in the hopper) do not count.
 - **Poses.** `poses={name: {body: location}}` applies `Assembly.posed` per body. A container that turns while its
   contents are modelled in fixed positions (the incident) fails in the pose where they part.
 - **Mesh-only items** (`meshes={key: trimesh | STL path | shape}`) are **sample-only**: points uniform in the mesh's
-  box are kept when inside it (generalised winding number, no `rtree` needed) and classified against the exact cavity
+  box are kept when inside it (generalised winding number, no `rtree` needed; computed in chunks sized to keep about
+  128 MB of temporaries whatever the triangle count, so time, not memory, grows with the mesh) and classified against the exact cavity
   and container solids, so the outside and wall volumes are Monte Carlo estimates with a standard error
   (`mesh_samples`, 4000, seeded); the mesh's vertices give the furthest-outside witness. Mesh items get no
   interpenetration or support check.

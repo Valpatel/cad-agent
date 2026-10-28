@@ -277,22 +277,151 @@ def test_mesh_only_items_take_the_sample_only_path():
 
 # ----------------------------------------------------------------------------- the other findings
 
+def open_box():
+    """A 40 x 40 x 30 box with 2.4 mm walls and floor, open at the top, and its true void."""
+    void = cq.Solid.makeBox(35.2, 35.2, 27.6, cq.Vector(2.4, 2.4, 2.4))
+    return cq.Solid.makeBox(40, 40, 30).cut(void), void
+
+
 @needs_cad
-def test_a_cavity_drawn_over_the_wall_still_fails_on_the_wall_check():
+def test_a_cavity_drawn_over_the_wall_fails_cavity_fit_and_the_wall_check():
     """The inverse case: inside the (wrong) cavity, but in the container's material."""
-    shell = cq.Solid.makeBox(40, 40, 30).cut(cq.Solid.makeBox(35.2, 35.2, 30, cq.Vector(2.4, 2.4, 2.4)))
+    shell, _ = open_box()
     asm = Assembly()
     asm.add("box", shell)
     asm.add_cavity("too_big", cq.Solid.makeBox(40, 40, 30), part="box")      # includes the walls
     asm.add("ball", ball(5, (5.5, 20, 7.4)))                                  # 2.6 mm into the -X wall
-    v = containment_gate(asm, [{"container": "box", "cavity": "too_big", "what": "ball"}], support="off")
+    decl = [{"container": "box", "cavity": "too_big", "what": "ball"}]
+    v = containment_gate(asm, decl, support="off")
     checks = by_id(v)
     assert checks["contains:too_big:ball:inside"]["status"] == "pass"
     wall = checks["contains:too_big:ball:wall"]
     assert wall["status"] == "fail" and wall["evidence"]["relation"]["overlap_mm3"] > 10
-    v = containment_gate(asm, [{"container": "box", "cavity": "too_big", "what": "ball"}], support="off",
+    fit = checks["contains:too_big:ball:cavity-fit"]
+    assert fit["status"] == "fail" and "drawn over the walls" in fit["message"]
+    assert fit["evidence"]["relation"]["overlap_mm3"] == pytest.approx(40 * 40 * 30 - 35.2 * 35.2 * 27.6, rel=1e-6)
+    v = containment_gate(asm, decl, support="off",
                          exclusions=[{"parts": ["ball", "box"], "reason": "test: a declared intended overlap"}])
-    assert v["pass"] is True and v["exclusions"][0]["reason"].startswith("test")
+    checks = by_id(v)
+    assert checks["contains:too_big:ball:wall"]["evidence"] == {"excluded": True}
+    assert [f["id"] for f in v["findings"]] == ["contains:too_big:ball:cavity-fit"]
+    assert v["exclusions"][0]["reason"].startswith("test")
+
+
+@needs_cad
+def test_a_cavity_drawn_past_the_container_fails_cavity_fit_even_with_its_contents_clear_of_the_walls():
+    """Review repro: the void extended 17.6 mm above the rim and fused with a block beside the +X wall.
+    A ball beside the box and a ball stacked above the rim touch no material, so only cavity-fit sees it."""
+    shell, void = open_box()
+    big = void.fuse(cq.Solid.makeBox(35.2, 35.2, 17.6, cq.Vector(2.4, 2.4, 30))) \
+        .fuse(cq.Solid.makeBox(20, 40, 30, cq.Vector(40, 0, 0))).clean()
+    asm = Assembly()
+    asm.add("box", shell)
+    asm.add_cavity("big", big, part="box")
+    for i, c in enumerate([(50, 20, 5), (20, 20, 7.4), (20, 20, 17.4), (20, 20, 27.4), (20, 20, 37.4)]):
+        asm.add(f"ball#{i}", ball(5, c))
+    v = containment_gate(asm, [{"container": "box", "cavity": "big", "what": "ball", "count": 5}], support="fail")
+    assert v["pass"] is False
+    fit = by_id(v)["contains:big:ball:cavity-fit"]
+    assert fit["status"] == "fail" and fit["parts"] == ["box"]
+    assert fit["evidence"]["box_overshoot_mm"] == {"x": 20.0, "y": 0.0, "z": pytest.approx(17.6)}
+    assert fit["evidence"]["relation"]["state"] == "touching"
+    others = [f["id"] for f in v["findings"] if f["id"] != "contains:big:ball:cavity-fit"]
+    assert others == [], others          # the balls themselves read inside: cavity-fit is what catches it
+
+
+@needs_cad
+def test_a_cavity_closed_by_a_lid_may_reach_into_the_lid_when_declared():
+    shell, void = open_box()
+    lid = cq.Solid.makeBox(40, 40, 8, cq.Vector(0, 0, 30)).cut(cq.Solid.makeBox(35.2, 35.2, 5, cq.Vector(2.4, 2.4, 30)))
+    asm = Assembly()
+    asm.add("box", shell)
+    asm.add("lid", lid)
+    asm.add_cavity("void", void.fuse(cq.Solid.makeBox(35.2, 35.2, 5, cq.Vector(2.4, 2.4, 30))).clean(), part="box")
+    asm.add("ball", ball(5, (20, 20, 7.4)))
+    decl = {"container": "box", "cavity": "void", "what": "ball"}
+    fit = by_id(containment_gate(asm, [decl]))["contains:void:ball:cavity-fit"]
+    assert fit["status"] == "fail" and "closed_by" in fit["message"] and fit["evidence"]["box_overshoot_mm"]["z"] == 5
+    v = containment_gate(asm, [{**decl, "closed_by": ["lid"]}])
+    assert v["pass"] is True and v["findings"] == [], v["findings"]
+    assert by_id(v)["contains:void:ball:cavity-fit"]["evidence"]["hosts"] == ["box", "lid"]
+    missing = containment_gate(asm, [{**decl, "closed_by": ["cap"]}])
+    assert "not in the assembly" in by_id(missing)["contains:void:ball:cavity-fit"]["message"]
+
+
+@needs_cad
+def test_the_probe_samples_the_middle_of_ruled_faces():
+    """Review repro: a cylinder item pushed 0.2 mm into a cylindrical rib hanging from the cavity ceiling.
+    Its tessellation has nodes only at its ends (x = +-30); the face grid samples the middle."""
+    from cadagent.gates.containment import _contact_probe, _points_of
+    box = cq.Solid.makeBox(80, 40, 30, cq.Vector(-40, -20, 0))
+    rib = cq.Solid.makeCylinder(3, 40, cq.Vector(0, -20, 30), cq.Vector(0, 1, 0))
+    cavity = box.cut(rib).clean().wrapped
+    item = cq.Solid.makeCylinder(5, 60, cq.Vector(-30, 0, 27 + 0.2 - 5), cq.Vector(1, 0, 0)).wrapped
+    assert {round(abs(p.X()), 3) for p in _points_of(item, 0.01, 20000)} == {30.0}
+    probe = _contact_probe(item, cavity, 0.01, 20000, 0.01)
+    assert probe["probe_outside"] > 0 and probe["probe_spacing_mm"] == 0.5
+    assert 0.1 < probe["probe_depth_mm"] <= 0.2 + 1e-6      # a sample's depth: 0.2 at x = 0, the grid is ~1 mm along x
+    assert abs(probe["probe_point"][0]) < 1.0
+
+
+@needs_cad
+def test_support_does_not_count_volume_already_outside_or_overlapping():
+    """Review repro: volume already outside the cavity, or shared with another ball, before the move
+    is not support. A ball through a vertical wall hovering 5 mm up, and a ball hovering beside a
+    column overlapping its top ball, read unsupported."""
+    rc = 30.0
+    bore = cq.Solid.makeCylinder(rc, 40)
+    asm = Assembly()
+    asm.add("tube", cq.Solid.makeCylinder(rc + 3, 43, cq.Vector(0, 0, -3)).cut(bore).clean())
+    asm.add_cavity("bore", bore, part="tube")
+    centres = [(rc - 4 + 1.0, 0, 9.0),                       # 1 mm through the wall, 5 mm above the floor
+               (-10, 0, 4.0), (-10, 0, 12.0),                # a column on the floor
+               (-10 + 7.0, 0, 11.0)]                         # beside the top ball, 1 mm lower, sharing volume
+    for i, c in enumerate(centres):
+        asm.add(f"ball#{i}", ball(4, c))
+    v = containment_gate(asm, [{"container": "tube", "cavity": "bore", "what": "ball"}])
+    f = by_id(v)["contains:bore:ball:support"]
+    assert f["evidence"]["on_cavity"] == ["ball#1"]
+    assert f["evidence"]["unsupported"] == ["ball#0", "ball#3"]
+    assert "ball#3" not in f["evidence"]["rests_on"]
+    assert f["evidence"]["rests_on"]["ball#2"] == ["ball#1"] or "ball#1" in f["evidence"]["rests_on"]["ball#2"]
+    assert by_id(v)["contains:bore:ball:interpenetration"]["status"] == "fail"
+    assert by_id(v)["contains:bore:ball#0:inside"]["status"] == "fail"
+
+
+@needs_cad
+def test_seed_style_escapee_through_the_side_reads_unsupported_when_hovering():
+    """An escapee whose only contact is the wall it crosses is not supported by it (vertical wall)."""
+    shell, void = open_box()
+    asm = Assembly()
+    asm.add("box", shell)
+    asm.add_cavity("void", void, part="box")
+    asm.add("ball", ball(5, (37.6, 20, 20)))                 # centre on the +X face of the void, 12.6 mm up
+    sup = by_id(containment_gate(asm, [{"container": "box", "cavity": "void", "what": "ball"}]))
+    assert sup["contains:void:ball:support"]["evidence"]["unsupported"] == ["ball"]
+
+
+def test_winding_memory_is_bounded_by_the_triangle_count():
+    """Review: a fixed 2048-point chunk needed about 0.36 MB per triangle (36 GB at 100k triangles)."""
+    import tracemalloc
+    from cadagent.gates.containment import WINDING_BUDGET_BYTES, _winding
+    # a closed octahedron refined into 32768 triangles (no trimesh needed)
+    v = np.array([[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]], float)
+    faces = [(0, 2, 4), (2, 1, 4), (1, 3, 4), (3, 0, 4), (2, 0, 5), (1, 2, 5), (3, 1, 5), (0, 3, 5)]
+    tris = np.array([[v[a], v[b], v[c]] for a, b, c in faces])
+    for _ in range(6):                                        # 8 * 4**6 = 32768 triangles
+        a, b, c = tris[:, 0], tris[:, 1], tris[:, 2]
+        ab, bc, ca = (a + b) / 2, (b + c) / 2, (c + a) / 2
+        tris = np.concatenate([np.stack(t, axis=1) for t in ((a, ab, ca), (ab, b, bc), (ca, bc, c), (ab, bc, ca))])
+    assert len(tris) == 32768
+    pts = np.array([[0.1, 0.1, 0.1]] * 100 + [[2.0, 0.0, 0.0]] * 100)
+    tracemalloc.start()
+    w = _winding(tris, pts)
+    peak = tracemalloc.get_traced_memory()[1]
+    tracemalloc.stop()
+    assert np.allclose(w[:100], 1.0, atol=1e-6) and np.allclose(w[100:], 0.0, atol=1e-6)
+    assert peak < 2 * WINDING_BUDGET_BYTES, f"peak {peak / 2**20:.0f} MB"   # the old chunking: about 1.1 GB here
 
 
 @needs_cad
@@ -336,10 +465,10 @@ def test_support_is_reported_and_failing_on_it_is_configurable():
 def test_a_container_that_moves_away_from_its_contents_is_caught_in_that_pose():
     """The incident's shape: the container is posed (a turret turned), its contents are modelled in place."""
     shell = cq.Solid.makeBox(40, 40, 30, cq.Vector(20, -20, 0)).cut(
-        cq.Solid.makeBox(35.2, 35.2, 30, cq.Vector(22.4, -17.6, 2.4)))
+        cq.Solid.makeBox(35.2, 35.2, 27.6, cq.Vector(22.4, -17.6, 2.4)))
     asm = Assembly()
     asm.add("hopper", shell, body="turret")
-    asm.add_cavity("void", cq.Solid.makeBox(35.2, 35.2, 30, cq.Vector(22.4, -17.6, 2.4)), part="hopper")
+    asm.add_cavity("void", cq.Solid.makeBox(35.2, 35.2, 27.6, cq.Vector(22.4, -17.6, 2.4)), part="hopper")
     for i, x in enumerate((30.0, 42.0)):
         asm.add(f"ball#{i}", ball(5, (x, 0, 7.4)))
     turned = cq.Location(cq.Vector(0, 0, 0), cq.Vector(0, 0, 1), 90)

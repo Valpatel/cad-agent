@@ -165,7 +165,10 @@ def test_seed_ball_through_wall_gate_reports_half_the_ball_outside():
     (wall,) = [f for f in v["findings"] if f["id"].endswith("ball#7:wall")]
     assert wall["evidence"]["relation"]["overlap_mm3"] == pytest.approx(3.141592653589793 * (25 * 2.4 - 2.4 ** 3 / 3),
                                                                         rel=1e-6)
-    assert len(v["findings"]) == 2
+    # moved off the ball it stood on, it rests on nothing (the wall it crosses is vertical)
+    (support,) = [f for f in v["findings"] if f["id"].endswith(":support")]
+    assert support["evidence"]["unsupported"] == ["ball#7"]
+    assert len(v["findings"]) == 3
 
 
 def test_seed_bracket_floats_and_hovers_in_the_relation_table():

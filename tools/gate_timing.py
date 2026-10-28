@@ -10,9 +10,10 @@ the same ``--cache`` to see the warm figure: the second run must make no kernel 
 ``tests/test_gate_relations.py`` imports ``synthetic_assembly`` from here and asserts the
 cold run is under 5 s.
 
-``--motion SAMPLES`` times the motion gate instead, on the same assembly with three joints (``MOTION_JOINTS``):
-two sliders that clear their 0.5 mm neighbours and a revolute that turns a cube into them, each sampled
-``SAMPLES`` times (one joint at a time, so ``3 x SAMPLES`` poses).
+``--motion SAMPLES`` times the motion gate instead, on the same assembly with three joints (``motion_joints``):
+a lift that clears its 0.5 mm neighbours, a slide that runs into the next row and a turn that swings a cube into
+its neighbours (so the verdict has collisions to witness), each sampled ``SAMPLES`` times (one joint at a time, so
+``3 x SAMPLES`` poses).
 """
 
 from __future__ import annotations

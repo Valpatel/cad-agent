@@ -359,10 +359,12 @@ also a child joint's `fixed` part stays in the static frame, which the connectiv
 
 **Sampling.** Ranges are offsets from the pose the model was built in (0 = as modelled); axes are in assembly
 coordinates at that pose. A revolute joint rotates (right-handed about the axis direction), a slider translates
-along it, a cylindrical joint does both on a grid of the two. Each axis gets the joint's `samples`, else
-`samples={id: n}`, else `default_samples` (12; `gates.motion_samples` from the dossier), raised until the step is
-at most `max_step_deg`/`max_step_mm`, evenly spaced with both ends included. `planar` and `ball` joints have no
-range: a warning, listed in `not_checked`; `fixed` joints are rigid links, not sampled.
+along it, a cylindrical joint does both on a grid of the two. A joint needs the ranges of its kind (a revolute `range_deg`,
+or `range` with `unit: deg`; a slider `range_mm`; a cylindrical both), else `joint:<id>` fails. Each axis gets
+`samples={id: n}` (the caller's override), else the joint's own `samples`, else `default_samples` (12;
+`gates.motion_samples` from the dossier), raised until the step is at most `max_step_deg`/`max_step_mm`, evenly
+spaced with both ends included. A zero-length range is one pose and a `range:` warning. `planar` and `ball` joints
+have no range: a warning, listed in `not_checked`; `fixed` joints are rigid links, not sampled.
 
 **Chains and combinations.** A joint whose `fixed` part lies in another joint's moving body rides on it: the chain
 is one group, sampled on the full grid (parent samples × child samples), each child's transform carried by its
@@ -381,10 +383,10 @@ rerun reads only the cache.
 
 | Check | Fails when | Evidence |
 |---|---|---|
-| `collision:<a>\|<b>` | a moving part shares more than `overlap_mm3` with another (overlapping or contains) at any pose, unless declared in `intended_overlaps`; also an intended contact driven into its face (`intended_contact: true`) | `first_pose` (in sweep order), its `overlap_mm3`, `overlap_centroid` and `overlap_box`; `last_clear_pose` with `last_clear_gap_mm` and the closest points `point_a`/`point_b`; `colliding_poses`, `worst_pose`, `worst_overlap_mm3`; for a one-axis group the bisected `onset` (`clear`, `hit`, the overlap and closest points at each side) |
+| `collision:<a>\|<b>` | a moving part shares more than `overlap_mm3` with another (overlapping or contains) at any pose, unless declared in `intended_overlaps`; also an intended contact driven into its face (`intended_contact: true`) | `first_pose`: the colliding pose nearest home (the sum over axes of the distance from home as a fraction of the range; ties in sweep order), the one met first moving out from rest; its `overlap_mm3`, `overlap_centroid` and `overlap_box`; `last_clear_pose`, its clear grid neighbour nearest home (one sample away on one axis), with `last_clear_gap_mm` and the closest points `point_a`/`point_b`; `colliding_poses`, `worst_pose`, `worst_overlap_mm3`; the `onset` bisected between the two along that axis (`joint`, `clear`, `hit`, the overlap at the hit side and the gap and closest points at the clear side; `others` gives the other axes' values on a grid) |
 | `contact:<a>\|<b>` | (warning) a moving part touches one that is not an intended contact; fails with `strict_contacts` | first pose, number of poses, closest points |
 | `relation:<a>\|<b>` | the kernel could not decide a pair at some pose (`unknown`) | the relation |
-| `motion:<group>` | any of the above in the group; passes otherwise | per axis `density` (samples, declared samples, `step` in deg or mm, the largest radius of the carried parts from the axis and `max_travel_per_step_mm`); the smallest exact clearance among the pairs measured (`min_clearance_mm`, `at`: pair, pose, points) and, when smaller, the box distance of the nearest pair never measured (`unmeasured_gap_at_least_mm`: its gap is at least this); the intended contacts and the poses where they touch |
+| `motion:<group>` | any of the above in the group; passes otherwise | per axis `density` (samples, declared samples, `step` in deg or mm, the largest radius from the axis of the parts it carries, over the sampled poses, and `max_travel_per_step_mm`); the smallest exact clearance (touching included) among the non-intended pairs measured (`min_clearance_mm`, `at`: pair, pose, points) and, when smaller, the box distance of the nearest pair never measured (`unmeasured_gap_at_least_mm`: its gap is at least this); the intended contacts and the poses where they touch |
 | `joint:<id>` | a joint's part is missing, its `fixed` part is in its own moving body, two joints drive one body, joints carry each other in a loop, or a ranged joint has no range; a warning for `planar`/`ball` | |
 | `combination:<g1>+<g2>`, `density:<g>` | (warnings) see above | |
 | `containment@<group>/<pose>/...` | with `contains=`: the containment gate's checks at every pose of a group that moves the container's cavity or the contents | as the containment gate |
@@ -395,7 +397,9 @@ volume between them over `overlap_mm3` still fails. The onset is where shared vo
 so it lies slightly past the first touch (about 0.02° for a corner 45 mm from the axis at the default tolerances).
 
 **Density, honestly.** The verdict reports the step between samples and the furthest any carried point moves in
-one step (step × the largest radius of the carried parts' home boxes from the axis, an upper bound). A collision
+one step: step × the largest distance from the axis of the corners of the carried parts' boxes, over every sampled
+pose (a child joint's motion included, so a turret carrying an arm slid out is measured at full reach). It bounds
+the travel at the sampled poses; on a chain, a child pose between samples can reach a little further. A collision
 shorter than one step, or a feature thinner than that travel, can pass between samples: raise `samples` or set
 `max_step_*` where the smallest clearance is small next to the travel per step. The verdict never claims a swept
 volume.

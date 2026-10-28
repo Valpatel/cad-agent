@@ -24,13 +24,14 @@ part it moves against (``cadagent.gates.relations``: apart / touching / overlapp
   ``moving``/``fixed`` pair, the bearing) may touch; shared volume between them beyond
   ``overlap_mm3`` still fails (a stop driven into its face). Touching anything else is a warning
   (``strict_contacts=True`` fails it). ``unknown`` fails.
-* **Witnesses.** For each colliding pair: the first colliding pose in sweep order, the overlap
-  volume, centroid and box there, and the last clear pose before it with the gap and the two
-  closest points. On a one-axis joint the boundary between the clear and the colliding sample is
-  bisected (``refine_steps``) to bracket the onset.
+* **Witnesses.** For each colliding pair: the colliding pose nearest home (met first moving out
+  from rest), the overlap volume, centroid and box there, and its clear grid neighbour nearest
+  home with the gap and the two closest points. The boundary between the two is bisected along
+  their axis (``refine_steps``) to bracket the onset.
 * **Density.** Per joint axis: the samples, the step (deg or mm between samples) and, for a
-  rotation, the largest travel of any point of the moving parts between two samples (step × the
-  largest radius of their home boxes from the axis). Anything thinner than that travel, or a
+  rotation, the largest travel of any point of the carried parts between two samples (step × the
+  largest distance of their boxes' corners from the axis over the sampled poses, a child joint's
+  motion included). Anything thinner than that travel, or a
   contact that starts and ends between two samples, can be missed: sampling is not a swept volume.
 
 Containment per pose (``contains=``): every ``contains`` declaration whose container or contents
@@ -158,12 +159,12 @@ class Dof:
     def values(self, n: Optional[int] = None) -> List[float]:
         n = self.samples if n is None else n
         if self.hi == self.lo or n < 2:
-            return [float(self.lo)]
+            return [float(self.lo)]          # a zero-length range is one pose
         return [self.lo + (self.hi - self.lo) * i / (n - 1) for i in range(n)]
 
     def step(self, n: Optional[int] = None) -> float:
         n = self.samples if n is None else n
-        return 0.0 if n < 2 else (self.hi - self.lo) / (n - 1)
+        return 0.0 if n < 2 or self.hi == self.lo else (self.hi - self.lo) / (n - 1)
 
 
 @dataclass
@@ -215,27 +216,36 @@ class Joint:
         rdeg = data.get("range_deg")
         rmm = data.get("range_mm")
         rng, unit = data.get("range"), data.get("unit")
-        if rng is not None and unit == "deg" and rdeg is None:
-            rdeg = rng
-        elif rng is not None and unit == "mm" and kind != "cylindrical" and rmm is None:
-            rmm = rng
-        elif rng is not None and not unit:
-            rdeg, rmm = (rng, rmm) if kind != "slider" else (rdeg, rng)
+        if rng is not None:            # the build record: ``range`` in ``unit`` (deg, or mm for a slider)
+            unit = unit or ("mm" if kind == "slider" else "deg")
+            if unit not in ("deg", "mm"):
+                raise ValueError(f"joint {jid!r}: unit must be deg or mm, got {unit!r}")
+            if unit == "deg" and rdeg is None:
+                rdeg = rng
+            elif unit == "mm" and rmm is None:
+                rmm = rng
+        need = {"revolute": ("deg",), "slider": ("mm",), "cylindrical": ("deg", "mm")}.get(kind, ())
+        have = tuple(u for u, r in (("deg", rdeg), ("mm", rmm)) if r is not None)
+        if kind in RANGED and set(have) != set(need):
+            missing = [u for u in need if u not in have]
+            extra = [u for u in have if u not in need]
+            why = (f"needs a range in {' and '.join(missing)}" if missing else "") + \
+                  ("; " if missing and extra else "") + (f"has a range in {' and '.join(extra)} it cannot use"
+                                                         if extra else "")
+            raise ValueError(f"joint {jid!r} ({kind}) {why}")
         n = samples if samples is not None else data.get("samples")
         n = int(n) if n is not None else int(default_samples)
         if n < 2:
             raise ValueError(f"joint {jid!r}: samples must be at least 2")
         dofs = []
         for want, r, kd, cap in (("deg", rdeg, "rotate", max_step_deg), ("mm", rmm, "slide", max_step_mm)):
-            if r is None or kind not in RANGED:
-                continue
-            if (kind == "revolute" and want != "deg") or (kind == "slider" and want != "mm"):
+            if want not in need:
                 continue
             lo, hi = sorted(float(v) for v in r)
             k = n
             if cap and hi > lo:
                 k = max(k, int(math.ceil((hi - lo) / cap - 1e-9)) + 1)
-            dofs.append(Dof(jid, kd, lo, hi, k))
+            dofs.append(Dof(jid, kd, lo, hi, k if hi > lo else 1))
         contacts = [(str(a), str(b)) for a, b in (data.get("intended_contacts") or [])]
         return cls(jid, kind, str(moving), str(fixed), origin, direction, dofs, contacts)
 
@@ -410,6 +420,10 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
             checks.append(Check(f"joint:{jid}", "fail", f"joint {jid} ({kind}) has no range to sample",
                                 [j.moving]))
             continue
+        for d in j.dofs:
+            if d.hi == d.lo:
+                checks.append(Check(f"range:{jid}:{d.unit}", "warn", f"joint {jid}'s {d.unit} range is "
+                                    f"{_fmt(d.lo)}..{_fmt(d.hi)}: one pose, no motion along it", [j.moving]))
         mk, fk = _keys(names, j.moving), _keys(names, j.fixed)
         problems = []
         if not mk:
@@ -504,9 +518,9 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
         axes = [d for j in order for d in js[j].dofs]
         counts = [a.samples for a in axes]
         coarsened = False
-        total = math.prod(counts)
-        if total > max_poses:
-            per = max(2, int(max_poses ** (1.0 / len(axes))))
+        if math.prod(counts) > max_poses:
+            moving_axes = sum(1 for c in counts if c > 1)
+            per = max(2, int(max_poses ** (1.0 / moving_axes) + 1e-9))
             counts = [min(c, per) for c in counts]
             coarsened = True
         groups.append(_Group("+".join(order), order, axes, counts, coarsened))
@@ -560,12 +574,30 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
                 i += n
             return out
 
+        def carried_rel(vals: Dict[str, List[float]], ancestor: str, jid: str) -> Tuple[float, ...]:
+            """The motion of ``jid``'s body relative to ``ancestor``'s moving frame (children below it)."""
+            m = IDENTITY
+            while jid != ancestor:
+                m = _mul(js[jid].transform(vals.get(jid) or home_values(jid)), m)
+                jid = parent[jid]  # type: ignore[assignment]
+            return m
+
+        carried = {i: [(jj, k) for jj in g.joints if _carries(parent, a.joint, jj)
+                       for b in body_of_joint[jj] for k in body_keys.get(b, [])]
+                   for i, a in enumerate(g.axes) if a.kind == "rotate"}
+        radius = {i: 0.0 for i in carried}
         pair_rows: Dict[Tuple[str, str], List[Tuple[int, Relation]]] = {}
         min_box: Dict[str, Any] = {}
         pose_mats: Dict[str, Dict[str, Tuple[float, ...]]] = {}
         for pi, vals in enumerate(poses):
-            mats = world_mats(values_of(vals))
+            vmap = values_of(vals)
+            mats = world_mats(vmap)
             pose_mats[_label(g, vals)] = {b: mats[b] for b in moving_bodies_g}
+            for i, rows_c in carried.items():         # how far the carried parts reach from this axis, in this pose
+                j = js[g.axes[i].joint]
+                for jj, k in rows_c:
+                    rel = carried_rel(vmap, j.id, jj)
+                    radius[i] = max(radius[i], _radius(moved_box(world.box(k), rel), j.origin, j.direction))
             boxes = {k: moved_box(world.box(k), mats.get(world.body(k), IDENTITY)) for k in names}
             for k in moving_keys:
                 swept.setdefault(g.id, {})[k] = _union(swept.get(g.id, {}).get(k), boxes[k])
@@ -600,7 +632,7 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
             bad = [(pi, r) for pi, r in rows if r.state in ("unknown", "unchecked")]
             touch = [(pi, r) for pi, r in rows if r.state == "touching"]
             for pi, r in rows:
-                if r.state == "apart" and not is_intended and r.gap_mm is not None and \
+                if r.state in ("apart", "touching") and not is_intended and r.gap_mm is not None and \
                         (not best or r.gap_mm < best["gap_mm"]):
                     best = {"gap_mm": r.gap_mm, "pair": list(pair), "pose": _label(g, poses[pi]),
                             "point_a": r.witness.get("point_a"), "point_b": r.witness.get("point_b")}
@@ -613,7 +645,7 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
                                     {"pose": _label(g, poses[pi]), "poses": len(bad), "relation": r.to_dict()}))
             if hits and not is_overlap_ok:
                 collisions.append(pair)
-                checks.append(_collision_check(world, g, poses, values_of, world_mats, pair, rows, hits,
+                checks.append(_collision_check(world, g, grid, poses, values_of, world_mats, pair, rows, hits,
                                                is_intended, refine_steps, tol))
             if touch and is_intended:
                 touched[_pair_id(a, b)] = {"poses": len(touch), "first": _label(g, poses[touch[0][0]]),
@@ -631,13 +663,10 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
         for a, c in zip(g.axes, g.counts):
             row: Dict[str, Any] = {"joint": a.joint, "axis": a.kind, "unit": a.unit, "range": [a.lo, a.hi],
                                    "samples": c, "declared_samples": a.samples, "step": round(a.step(c), 6)}
+            i = len(density)
             if a.kind == "rotate":
-                j = js[a.joint]
-                carried = [k for jj in g.joints if _carries(parent, a.joint, jj)
-                           for b in body_of_joint[jj] for k in body_keys.get(b, [])]
-                radius = max((_radius(world.box(k), j.origin, j.direction) for k in carried), default=0.0)
-                row["max_radius_mm"] = round(radius, 3)
-                row["max_travel_per_step_mm"] = round(math.radians(a.step(c)) * radius, 3)
+                row["max_radius_mm"] = round(radius[i], 3)
+                row["max_travel_per_step_mm"] = round(math.radians(a.step(c)) * radius[i], 3)
             else:
                 row["max_travel_per_step_mm"] = round(a.step(c), 3)
             density.append(row)
@@ -663,9 +692,10 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
         involved = sorted({x for p in collisions for x in p}) or [js[j].moving for j in g.joints]
         checks.append(Check(f"motion:{g.id}", "fail" if failed else "pass", msg, involved, evidence))
         if g.coarsened:
+            floor = " (2 per axis is the floor, so this is over max_poses too)" if len(poses) > max_poses else ""
             checks.append(Check(f"density:{g.id}", "warn", f"{g.id}: the full grid of "
                                 f"{math.prod(a.samples for a in g.axes)} poses exceeds max_poses={max_poses}; "
-                                f"sampled {len(poses)} ({', '.join(str(c) for c in g.counts)} per axis)",
+                                f"sampled {len(poses)} ({', '.join(str(c) for c in g.counts)} per axis){floor}",
                                 [js[j].moving for j in g.joints], {"density": density}))
         group_rows.append({"id": g.id, **{k: v for k, v in evidence.items() if k != "moving"},
                            "status": "fail" if failed else "pass"})
@@ -725,17 +755,32 @@ def _radius(box: Sequence[float], origin: Sequence[float], direction: Sequence[f
     return best
 
 
-def _collision_check(world: World, g: _Group, poses, values_of, world_mats, pair, rows, hits, is_intended: bool,
-                     refine_steps: int, tol: Tolerances) -> Check:
+def _collision_check(world: World, g: _Group, grid, poses, values_of, world_mats, pair, rows, hits,
+                     is_intended: bool, refine_steps: int, tol: Tolerances) -> Check:
+    """The witness of one colliding pair. The *first* colliding pose is the one nearest home (the sum over axes of
+    the distance from home as a fraction of the range; ties in sweep order), the pose the joint meets first moving
+    out from rest. Its clear grid neighbour nearest home (one sample away on one axis) gives the last clear pose and
+    the closest points, and the boundary between the two is bisected along that axis."""
     a, b = pair
-    first_i, first = hits[0]
+    index = list(itertools.product(*[range(len(v)) for v in grid]))
+    at = {idx: pi for pi, idx in enumerate(index)}
     by_pose = {pi: r for pi, r in rows}
-    clear_before = None
-    for pi in range(first_i - 1, -1, -1):          # the last pose before the hit where the pair did not share volume
-        r = by_pose.get(pi)
-        if r is None or r.state in ("apart", "touching"):
-            clear_before = (pi, r)
-            break
+
+    def from_home(pi: int) -> float:
+        return sum(abs(v - ax.home) / ((ax.hi - ax.lo) or 1.0) for v, ax in zip(poses[pi], g.axes))
+
+    first_i, first = min(hits, key=lambda t: (from_home(t[0]), t[0]))
+    clear = []                                     # grid neighbours of the hit where the pair shares no volume
+    for axis in range(len(grid)):
+        for step in (-1, 1):
+            idx = list(index[first_i])
+            idx[axis] += step
+            if 0 <= idx[axis] < len(grid[axis]):
+                pi = at[tuple(idx)]
+                r = by_pose.get(pi)
+                if r is None or r.state in ("apart", "touching"):
+                    clear.append((from_home(pi), pi, axis, r))
+    clear.sort(key=lambda t: (t[0], t[1]))
     worst_i, worst = max(hits, key=lambda t: t[1].overlap_mm3 or 0.0)
     ev: Dict[str, Any] = {
         "first_pose": _label(g, poses[first_i]), "overlap_mm3": first.overlap_mm3, "state": first.state,
@@ -744,38 +789,43 @@ def _collision_check(world: World, g: _Group, poses, values_of, world_mats, pair
         "worst_pose": _label(g, poses[worst_i]), "worst_overlap_mm3": worst.overlap_mm3,
         "intended_contact": is_intended,
     }
-    if clear_before is not None:
-        pi, r = clear_before
-        ev["last_clear_pose"] = _label(g, poses[pi])
+
+    def points(r: Relation) -> Tuple[Any, Any]:
+        pa, pb = r.witness.get("point_a"), r.witness.get("point_b")
+        return (pb, pa) if r.a != a else (pa, pb)
+
+    if clear:
+        _, ci, axis, r = clear[0]
+        ev["last_clear_pose"] = _label(g, poses[ci])
         if r is not None:
-            ev.update(last_clear_gap_mm=r.gap_mm, point_a=r.witness.get("point_a"), point_b=r.witness.get("point_b"))
-            if r.a != a:
-                ev["point_a"], ev["point_b"] = r.witness.get("point_b"), r.witness.get("point_a")
+            ev["last_clear_gap_mm"] = r.gap_mm
+            ev["point_a"], ev["point_b"] = points(r)
         else:
             ev["last_clear_gap_mm"] = f"> {tol.near_mm} (boxes apart)"
-    if len(g.axes) == 1 and clear_before is not None and refine_steps > 0:
-        lo, hi = poses[clear_before[0]][0], poses[first_i][0]
-        lo_rel = clear_before[1]
-        hi_rel = first
-        for _ in range(refine_steps):
-            mid = (lo + hi) / 2
-            r = world.relate(world_mats(values_of((mid,))), a, b)
-            if r.interferes or r.state in ("unknown", "unchecked"):
-                hi, hi_rel = mid, r
-            else:
-                lo, lo_rel = mid, r
-        unit = g.axes[0].unit
-        ev["onset"] = {"clear": round(lo, 6), "hit": round(hi, 6), "unit": unit, "bisections": refine_steps,
-                       "overlap_mm3": hi_rel.overlap_mm3, "overlap_centroid": hi_rel.witness.get("overlap_centroid")}
-        if lo_rel is not None:
-            pa, pb = lo_rel.witness.get("point_a"), lo_rel.witness.get("point_b")
-            if lo_rel.a != a:
-                pa, pb = pb, pa
-            ev["onset"].update(gap_mm=lo_rel.gap_mm, point_a=pa, point_b=pb)
+        if refine_steps > 0:
+            lo, hi = poses[ci][axis], poses[first_i][axis]
+            lo_rel, hi_rel = r, first
+            base = list(poses[first_i])
+            for _ in range(refine_steps):
+                mid = (lo + hi) / 2
+                base[axis] = mid
+                rel = world.relate(world_mats(values_of(tuple(base))), a, b)
+                if rel.interferes or rel.state in ("unknown", "unchecked"):
+                    hi, hi_rel = mid, rel
+                else:
+                    lo, lo_rel = mid, rel
+            ev["onset"] = {"joint": g.axes[axis].joint, "clear": round(lo, 6), "hit": round(hi, 6),
+                           "unit": g.axes[axis].unit, "bisections": refine_steps,
+                           "overlap_mm3": hi_rel.overlap_mm3, "overlap_centroid": hi_rel.witness.get("overlap_centroid")}
+            if len(grid) > 1:
+                ev["onset"]["others"] = _label(g, poses[first_i])
+            if lo_rel is not None:
+                pa, pb = points(lo_rel)
+                ev["onset"].update(gap_mm=lo_rel.gap_mm, point_a=pa, point_b=pb)
     where = f"first at {ev['first_pose']}"
     if "onset" in ev:
         o = ev["onset"]
-        where += f" (onset between {_fmt(o['clear'])} and {_fmt(o['hit'])} {o['unit']})"
+        where += f" (onset between {o['joint']}={_fmt(o['clear'])} and {_fmt(o['hit'])} {o['unit']})"
     if is_intended:
         msg = (f"{a} and {b}, an intended contact, share {first.overlap_mm3:g} mm3 (over {tol.overlap_mm3:g}) "
                f"{where}; {len(hits)} of {len(poses)} poses overlap")
@@ -797,7 +847,8 @@ def motion_gate(assembly: Any, joints: Optional[Mapping[str, Any]] = None, *, to
     """Sample every ranged joint of ``assembly`` and return (with ``out`` also write) the verdict.
 
     * ``joints``: ``{interface: joint}`` (default ``assembly.joints``, from ``Assembly.from_build``);
-    * ``samples``: per-joint sample counts, over the joint's own ``samples`` and ``default_samples`` (12);
+    * ``samples``: per-joint sample counts; they override the joint's own ``samples``, which overrides
+      ``default_samples`` (12);
       ``max_step_deg`` / ``max_step_mm`` raise a joint's count until its step is at most that;
     * ``combine``: lists of joint ids sampled together on a grid (chains are always gridded);
       ``max_poses`` (2000) caps a grid, coarsening every axis evenly (a warning);

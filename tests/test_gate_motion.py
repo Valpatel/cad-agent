@@ -104,6 +104,22 @@ def test_joint_from_the_build_record_and_the_registry_spelling():
 
 # ----------------------------------------------------------------------------- the core on boxes
 
+def test_joint_ranges_must_match_the_kind():
+    ax = ((0, 0, 0), (0, 0, 1))
+    with pytest.raises(ValueError, match="needs a range in mm"):
+        Joint.coerce("C", {"kind": "cylindrical", "moving": "a", "fixed": "b", "axis": ax, "range_deg": [0, 9]})
+    with pytest.raises(ValueError, match="needs a range in deg"):
+        Joint.coerce("R", {"kind": "revolute", "moving": "a", "fixed": "b", "axis": ax, "range": [0, 9], "unit": "mm"})
+    # an explicit range_mm wins over a unit-less range, which a slider reads in mm
+    j = Joint.coerce("S", {"kind": "slider", "moving": "a", "fixed": "b", "axis": ax, "range": [0, 9],
+                           "range_mm": [0, 3]})
+    assert (j.dofs[0].lo, j.dofs[0].hi) == (0, 3)
+    still = Joint.coerce("Z", {"kind": "slider", "moving": "a", "fixed": "b", "axis": ax, "range_mm": [2, 2]})
+    assert still.dofs[0].samples == 1 and still.dofs[0].values() == [2.0] and still.dofs[0].step() == 0
+
+
+
+
 def test_a_slider_that_reaches_a_wall_fails_with_the_first_pose_and_the_onset():
     w = BoxWorld(RAIL)
     v = run_motion(w, {"J": slider("carriage", "rail", (0, 50), samples=11)})
@@ -146,6 +162,9 @@ def test_an_undeclared_touch_warns_and_fails_when_strict():
     v = run_motion(BoxWorld(RAIL), {"J": slider("carriage", "rail", (0, 30))})
     assert v["pass"] and [f["id"] for f in v["findings"]] == ["contact:carriage|wall"]
     assert finding(v, "contact:")["status"] == "warn"
+    assert v["groups"][0]["min_clearance_mm"] == 0 and v["groups"][0]["at"]["pair"] == ["carriage", "wall"]
+    still = run_motion(BoxWorld(RAIL), {"J": slider("carriage", "rail", (5, 5))})
+    assert [f["id"] for f in still["findings"]] == ["range:J:mm"] and still["groups"][0]["poses"] == 1
     strict = run_motion(BoxWorld(RAIL), {"J": slider("carriage", "rail", (0, 30))}, strict_contacts=True)
     assert strict["pass"] is False
 
@@ -178,7 +197,9 @@ def test_a_chain_is_sampled_on_a_grid_and_the_child_rides_on_its_parent():
     (g,) = v["groups"]
     assert g["id"] == "X+Z" and g["poses"] == 25 and g["joints"] == ["X", "Z"]
     f = finding(v, "collision:beam|lift")
-    assert f["evidence"]["first_pose"] == "X=30mm,Z=20mm" and "onset" not in f["evidence"]
+    ev = f["evidence"]
+    assert ev["first_pose"] == "X=30mm,Z=20mm" and ev["last_clear_pose"] == "X=20mm,Z=20mm"    # a grid neighbour
+    assert ev["onset"]["joint"] == "X" and ev["onset"]["clear"] <= 20 < ev["onset"]["hit"] < 20.1
     assert f["evidence"]["colliding_poses"] == 2
     alone = run_motion(BoxWorld(CHAIN), {"X": CHAIN_JOINTS["X"]})
     assert alone["pass"], "the beam is out of reach with the lift down"
@@ -200,6 +221,27 @@ def test_a_child_axis_is_carried_by_its_parent():
     assert v["groups"][0]["id"] == "T+A"
 
 
+def test_a_parents_travel_per_step_counts_what_its_child_carries_out():
+    """The turret's step moves the arm's tip furthest when the arm is slid out: the radius is taken over the
+    sampled poses, not the home pose (review of #52)."""
+    boxes = {"base": (-20, -20, -2, 20, 20, 0), "turret": (-4, -4, 0, 4, 4, 4), "arm": (4, -2, 0, 14, 2, 4)}
+    joints = {"T": {"kind": "revolute", "moving": "turret", "fixed": "base", "axis": ((0, 0, 0), (0, 0, 1)),
+                    "range": [0, 90], "unit": "deg", "samples": 4},
+              "A": slider("arm", "turret", (0, 50), samples=3)}
+    (g,) = run_motion(BoxWorld(boxes), joints)["groups"]
+    turn = g["density"][0]
+    assert turn["max_radius_mm"] == pytest.approx(math.hypot(64, 2), abs=1e-3)
+    assert turn["max_travel_per_step_mm"] == pytest.approx(math.radians(30) * math.hypot(64, 2), abs=1e-3)
+
+
+def test_a_collision_below_home_gets_its_clear_neighbour_and_onset():
+    boxes = {"rail": (-60, 0, -2, 60, 10, 0), "carriage": (0, 0, 0, 10, 10, 10), "wall": (-25, 0, 0, -20, 10, 20)}
+    v = run_motion(BoxWorld(boxes), {"J": slider("carriage", "rail", (-30, 30), samples=13)})
+    ev = finding(v, "collision:carriage|wall")["evidence"]
+    assert ev["first_pose"] == "J=-25mm" and ev["last_clear_pose"] == "J=-20mm"   # moving out from home at 0
+    assert ev["point_a"] is not None and -20 + 1e-9 >= ev["onset"]["clear"] > ev["onset"]["hit"] > -20.1
+
+
 def test_independent_joints_whose_sweeps_meet_warn_until_combined():
     boxes = {"base": (0, 0, -2, 100, 10, 0), "a": (0, 0, 0, 10, 10, 10), "b": (50, 0, 0, 60, 10, 10)}
     joints = {"A": slider("a", "base", (0, 25), samples=6), "B": slider("b", "base", (-25, 0), samples=6)}
@@ -218,6 +260,9 @@ def test_a_grid_over_max_poses_is_coarsened_evenly_and_says_so():
     assert [d["samples"] for d in g["density"]] == [10, 10]
     assert [d["declared_samples"] for d in g["density"]] == [30, 30]
     assert finding(v, "density:X+Z")["status"] == "warn"
+    three = run_motion(BoxWorld(CHAIN), {**CHAIN_JOINTS, "Y": slider("beam", "rail", (0, 1))},
+                       samples={"X": 30, "Z": 30, "Y": 30}, combine=[["X", "Y"]], max_poses=1000)
+    assert three["groups"][0]["poses"] == 1000                  # 10 per axis: 1000 ** (1/3) is not rounded down to 9
 
 
 def test_joint_declaration_problems():

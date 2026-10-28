@@ -200,6 +200,7 @@ def test_a_chain_is_sampled_on_a_grid_and_the_child_rides_on_its_parent():
     ev = f["evidence"]
     assert ev["first_pose"] == "X=30mm,Z=20mm" and ev["last_clear_pose"] == "X=20mm,Z=20mm"    # a grid neighbour
     assert ev["onset"]["joint"] == "X" and ev["onset"]["clear"] <= 20 < ev["onset"]["hit"] < 20.1
+    assert ev["onset"]["others"] == "Z=20mm"
     assert f["evidence"]["colliding_poses"] == 2
     alone = run_motion(BoxWorld(CHAIN), {"X": CHAIN_JOINTS["X"]})
     assert alone["pass"], "the beam is out of reach with the lift down"

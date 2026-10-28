@@ -51,3 +51,15 @@ def test_duplicate_names_rejected_before_writing(tmp_path):
     with pytest.raises(CadConfigError):
         export_view(project(tmp_path, {'parts': False, 'extra': [{'name': 'a', 'file': 'a.stl'}, {'glob': '*.stl'}]}))
     assert not (tmp_path / 'exports/view').exists()
+
+
+def test_categories_by_name(tmp_path):
+    from cadagent.project import CadConfigError
+    tetra(tmp_path / 'a.stl')
+    tetra(tmp_path / 'b.stl')
+    view = {'parts': False, 'extra': [{'glob': '*.stl', 'category': 'Parts'}], 'categories': {'Coupons': ['b']}}
+    export_view(project(tmp_path, view))
+    m = json.loads((tmp_path / 'exports/view/view.json').read_text())
+    assert [(p['name'], p['category']) for p in m['parts']] == [('a', 'Parts'), ('b', 'Coupons')]
+    with pytest.raises(CadConfigError):
+        export_view(project(tmp_path, dict(view, categories={'Coupons': ['typo']})))

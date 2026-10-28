@@ -264,8 +264,8 @@ after updating cad-agent. The viewer is scriptable for screenshots: `viewer.html
 
 Show everything the parts fit around in the same viewer, not in a second one: `extra` entries add bought parts and
 reference boards from a STEP or an STL (`offset: [x, y, z]` mm moves a mesh into assembly position; `hidden: true` starts
-it off). A `category` on an entry (and `parts_category` for the parts file) heads a section of the parts list with one
-box that shows or hides the whole section, e.g. *Printed parts*, *Cooler*, *Carrier board*. An extra whose file is
+it off). A `category` on an entry (`parts_category` for the parts file; `categories: {Test coupons: [part, ...]}` moves
+parts by name) heads a section of the parts list with one box that shows or hides the whole section, e.g. *Printed parts*, *Cooler*, *Carrier board*. An extra whose file is
 missing is listed as not exported, so reference models that are not redistributed drop out of a fresh checkout.
 
 ### Stiffness and strength (`cadagent.fea`)

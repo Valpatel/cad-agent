@@ -14,11 +14,12 @@ Works for any CAD project: a housing, a bracket set, a mechanism or a robot. ``c
                category: Carrier, hidden: true}]                                   # offset, mm); off until ticked
       parts: false                                     # skip the parts file (when its STEPs are not in assembly position)
       parts_category: Printed parts                    # list heading for the parts file's parts
+      categories: {Test coupons: [m3_insert_coupon, rail_coupon]}   # move named parts to another section
       groups: [{id: two, title: Two-port, prefix: "2port_"}]   # also write exports/view/two.json with only those parts
                                                        # (the id "view" is reserved; groups are checked before any write)
 
 Colours match a part's name exactly, else its name without a trailing _l/_r/_1/... suffix, else its first word.
-A ``category`` (on an ``extra`` entry, or ``parts_category`` for the parts file) heads a section of the viewer's parts
+A ``category`` (on an ``extra`` entry, ``parts_category`` for the parts file, or ``categories`` by part name) heads a section of the viewer's parts
 list, with one checkbox that shows or hides the whole section: one viewer for the printed parts, the bought parts and
 the board they fit around. A missing extra file is listed as skipped, so reference files that are not redistributed
 (a vendor board model) simply drop out of a fresh checkout.
@@ -119,7 +120,16 @@ def export_view(project, tolerance: float = 0.1, angular: float = 0.2) -> Dict[s
                 sources.append((f.stem[len(e.get("strip", "")):] if f.stem.startswith(e.get("strip", "")) else f.stem, f, *extra))
         else:
             sources.append((e["name"], project.root / e["file"], *extra))
+    by_name = {}
+    for category, members in (cfg.get("categories") or {}).items():
+        for member in members:
+            by_name[member] = category
+    sources = [(name, source, color, offset, by_name.get(name, category), off) for name, source, color, offset, category, off in sources]
     names = [s[0] for s in sources if s[1].is_file()]
+    unknown = sorted(set(by_name) - {s[0] for s in sources})
+    if unknown:
+        from cadagent.project import CadConfigError
+        raise CadConfigError(f"cad.view.categories names parts that do not exist: {unknown}")
     if len(set(names)) != len(names):
         from cadagent.project import CadConfigError
         raise CadConfigError(f"cad.view: two parts are named {sorted({n for n in names if names.count(n) > 1})}")

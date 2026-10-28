@@ -493,6 +493,10 @@ def test_clean_bench_passes_every_gate_through_the_cli(clean_bench, capsys):
         assert summary[g]["findings"] == [], (g, summary[g]["findings"])
         assert (gates / f"{g}.md").is_file()
     assert (gates / "connectivity.dot").is_file()
+    # the screw-in-insert exemptions name fasteners in the dossier (#56) and reach the gates as exclusions
+    for g in ("containment", "motion"):
+        assert any(set(e["parts"]) == {"screw_0", "insert_0"} and "thread envelope" in e["reason"]
+                   for e in summary[g]["exclusions"]), (g, summary[g]["exclusions"])
     status = json.loads((root / "exports" / "dossier-status.json").read_text())
     assert {s["status"] for s in status["sections"].values()} == {"gated"}, status["sections"]
     rows = _results(root, capsys)

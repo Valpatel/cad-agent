@@ -215,6 +215,15 @@ CASES = {
                        lambda f: card(f, "hopper")["contains"][0].update(count=2)),
     "fastener-count": (lambda f: card(f, "hopper")["fasteners"][0].update(qty=4),
                        lambda f: card(f, "hopper")["fasteners"][0].update(qty=2)),
+    # gate exemptions may name fasteners and instance keys (#56); the lint resolves them against the record
+    "exemption-unknown-party": (
+        lambda f: f["project.yaml"]["gates"].update(intended_overlaps=[
+            {"parts": ["m3:lid-hopper#5", "hopper"], "reason": "thread envelope in the boss"}]),
+        lambda f: f["project.yaml"]["gates"].update(intended_overlaps=[
+            {"parts": ["m3:lid-hopper#1", "hopper"], "reason": "thread envelope in the boss"},
+            {"parts": ["m3:lid-hopper", "lid"], "reason": "a fastener by name"},
+            {"parts": ["ball#1", "hopper"], "reason": "an instance key"},
+            {"parts": ["ball", "ball"], "reason": "the two balls among themselves"}])),
     # loader errors are lint findings too
     "unknown-id": (lambda f: card(f, "lid").update(interfaces=["I2", "I99"]),
                    lambda f: card(f, "lid").update(interfaces=["I2"])),
@@ -648,3 +657,20 @@ def test_a_rebuild_by_another_actor_keeps_verdicts_current(tmp_path):
     ev.root = str(tmp_path)
     res = lint(d, ev)
     assert "verdict-stale" not in res.codes() and res.sections["S1"]["status"] == "gated"
+
+
+def test_exemption_parties_are_reported_once_and_pairs_of_one_part_need_instances(tmp_path):
+    def mutate(f):
+        f["project.yaml"]["gates"].update(intended_overlaps=[
+            {"parts": ["I1", "hopper"], "reason": "an interface is not a part"},
+            {"parts": ["lid", "lid"], "reason": "the lid's instances among themselves"},
+            {"parts": ["screw_9", "hopper"], "reason": "a typo"}])
+    res = run(tmp_path, mutate)
+    codes = [(f.code, f.item) for f in res.findings if f.code in ("unknown-id", "exemption-unknown-party")]
+    assert sorted(codes) == [("exemption-unknown-party", "lid"), ("exemption-unknown-party", "screw_9"),
+                             ("unknown-id", "")], [str(f) for f in res.findings]
+    msg = next(str(f) for f in res.findings if f.item == "screw_9")
+    assert "fasteners: m3:lid-hopper" in msg and "project.yaml:" in msg
+    # without a geometry record, names the YAML does not know cannot be checked (geometry-missing says why)
+    res = run(tmp_path, mutate, base_evidence(geometry=None))
+    assert "exemption-unknown-party" not in res.codes()

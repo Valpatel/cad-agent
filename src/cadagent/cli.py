@@ -19,7 +19,7 @@ from cadagent._deps import MissingDependency
 from cadagent.project import CadConfigError, CadProject, Step, load_project
 
 SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
-               "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates")
+               "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -294,6 +294,50 @@ def cmd_dossier(project: CadProject, args: argparse.Namespace) -> int:
         _say(f"status:  {status_path}")
         _say(f"verdict: {verdict_path}")
     return 0 if result.passed else 1
+
+def cmd_review_packet(project: CadProject, args: argparse.Namespace) -> int:
+    """Render each section's review packet: exports/review/<section>/*.png and manifest.json
+    (docs/review-packet.md)."""
+    from cadagent.packet import PacketError, plan_project_packet, project_sections, review_packet
+
+    try:
+        size = tuple(int(v) for v in args.size.lower().split("x"))
+    except ValueError:
+        size = ()
+    if len(size) != 2 or min(size) < 200:
+        raise _Unusable(f"--size {args.size!r}: give WIDTHxHEIGHT, each at least 200")
+    try:
+        sections = list(args.sections or project_sections(project.root))
+        for sid in sections:
+            if args.list:
+                manifest, target = plan_project_packet(sid, root=project.root, explode=args.explode,
+                                                       context=args.context)
+            else:
+                manifest = review_packet(sid, root=project.root, size=size, explode=args.explode,
+                                         context=args.context, only=args.view or None)
+            _packet_summary(manifest, listed=args.list)
+    except PacketError as exc:
+        raise _Unusable(str(exc)) from None
+    return 0
+
+
+def _packet_summary(manifest: Dict[str, Any], listed: bool) -> None:
+    sec = manifest["section"]
+    m = manifest["measurements"]
+    stale = sorted(g for g, v in m["gates"].items() if v.get("stale"))
+    fails = [f for f in manifest["findings"] if f["status"] == "fail"]
+    _say(f"{sec['id']}  {sec.get('title', '')}  ({sec.get('status', 'no status')})  -> {manifest['dir']}")
+    for v in manifest["views"]:
+        mark = "" if listed else ("  ok " if v.get("sha256") else "  -- ")
+        _say(f"  {mark}{v['id']:<34} {v['note']}")
+    for n in manifest["not_rendered"]:
+        _say(f"  not rendered: {n['what']}: {n['why']}")
+    _say(f"  {len(manifest['checklist']['questions'])} checklist question(s); {len(fails)} failing finding(s), "
+         f"{len(manifest['findings']) - len(fails)} warning(s)"
+         + (f"; stale verdicts: {', '.join(stale)}" if stale else "")
+         + (f"; no verdict: {', '.join(m['missing_gates'])}" if m.get("missing_gates") else "")
+         + " · renders are for diagnosis, not proof")
+
 
 def cmd_gates(project: CadProject, args: argparse.Namespace) -> int:
     """Run every integrity gate that applies, each in a process of its own, then the dossier lint; write
@@ -614,6 +658,7 @@ HANDLERS = {
     "optimise": cmd_optimise,
     "dossier": cmd_dossier,
     "gates": cmd_gates,
+    "review-packet": cmd_review_packet,
 }
 
 def dispatch(args: argparse.Namespace) -> int:
@@ -748,6 +793,15 @@ def build_parser() -> argparse.ArgumentParser:
     gates_p.add_argument("--build", action="store_true",
                          help="Build the geometry first with cad.gates.build (else only when the record is missing)")
     gates_p.add_argument("--dry-run", action="store_true", help="List what would run and why, and run nothing")
+    rp_p = sub.add_parser("review-packet", parents=[common],
+                          help="Render each dossier section's review packet: exports/review/<section>/ + manifest.json")
+    rp_p.add_argument("sections", nargs="*", metavar="SECTION", help="Section ids (default: every section)")
+    rp_p.add_argument("--list", action="store_true", help="List the views each section gets; render and write nothing")
+    rp_p.add_argument("--view", nargs="+", metavar="VIEW", help="Render only these view ids (others kept if current)")
+    rp_p.add_argument("--size", default="1400x1000", help="Image size WIDTHxHEIGHT (default 1400x1000)")
+    rp_p.add_argument("--explode", type=float, default=1.0, help="Scale of the exploded view (0: no exploded view)")
+    rp_p.add_argument("--context", choices=("neighbours", "all", "none"), default="neighbours",
+                      help="Other sections' parts drawn faint (default: neighbours)")
     return parser
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

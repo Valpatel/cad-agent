@@ -13,7 +13,7 @@ Configuration, ``cad: gates:`` in ``cad-agent.yaml`` (every key optional)::
     gates:
       geometry: exports/dossier-geometry.json    # the record the build writes (this is the default)
       build: cad/build.py                        # build_module() it when the record is missing, or with --build
-      declarations: dossier/gate-declarations.yaml   # plain-data declarations the YAML schema does not cover yet
+      declarations: dossier/gate-declarations.yaml   # plain-data declarations the YAML schema does not cover
       cache: .cadagent-cache/gates               # the pair cache (gitignored); --no-cache runs without it
       jobs: 2                                    # gates run at once, each in its own process
       timeout_s: 3600                            # per gate

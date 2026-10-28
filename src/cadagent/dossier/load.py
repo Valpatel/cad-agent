@@ -520,14 +520,22 @@ class _Parser:
                 if p is None:
                     continue
                 self.keys(p, ("parts", "reason"), f"gates.{key}[]")
-                parts = self.ref_list(p, "parts", "part", f"gates.{key}[]")
+                # a part, an instance of one (ball#3), or a fastener name or instance (screw_0, m3:lid-base#1):
+                # names the YAML does not know are the build's, and the lint checks them against its record
+                parts = self.ref_list(p, "parts", "pair_party", f"gates.{key}[]")
                 if len(parts) != 2:
                     self.error(_where(p, "parts"), f"gates.{key}[].parts must name two parts, got {parts}")
+                    continue
+                if parts[0] == parts[1] and _owner(parts[0]) != parts[0]:
+                    # [ball, ball] is the instances of ball among themselves; one instance twice is no pair
+                    self.error(_where(p, "parts"), f"gates.{key}[].parts names the instance {parts[0]!r} twice: a "
+                                                   "pair is two instances (or [part, part] for a part's instances "
+                                                   "among themselves)")
                     continue
                 reason = self.text(p, "reason", f"gates.{key}[]").strip()
                 if not reason:
                     self.error(_where(p), f"gates.{key}[] needs a reason (an explained exclusion)", "missing-reason")
-                getattr(cfg, key).append(PairExemption(parts=(parts[0], parts[1]), reason=reason))
+                getattr(cfg, key).append(PairExemption(parts=(parts[0], parts[1]), reason=reason, where=_where(p)))
         for key in m:
             if key not in known:
                 cfg.extra[key] = _strip(m[key])
@@ -699,14 +707,26 @@ def _resolve(p: _Parser, dossier: Dossier) -> None:
         "part_or_section": lambda i: i in dossier.parts or i in dossier.sections,
         "interface": lambda i: i in dossier.interfaces,
         "decision": lambda i: i in dossier.decisions,
+        # a dossier part or an instance of one; any other name that is not another kind of dossier id is left to
+        # the lint, which resolves fastener names and instance keys against the build's geometry record
+        "pair_party": lambda i: _owner(i) in dossier.parts or dossier.kind_of(_owner(i)) is None,
     }
+    expected_names = {"pair_party": "part, part instance or fastener"}
     for kind, item_id, where, context in p.refs:
         if not item_id or tables[kind](item_id):
             continue
+        if kind == "pair_party":
+            item_id = _owner(item_id)
         actual = dossier.kind_of(item_id)
-        expected = kind.replace("_or_", " or ")
+        expected = expected_names.get(kind) or kind.replace("_or_", " or ")
         hint = f" (it is a {actual})" if actual else ""
         p.error(where, f"{context} names {item_id!r}, which is not a {expected} in this dossier{hint}", "unknown-id")
+
+
+def _owner(key: str) -> str:
+    """The part or fastener name of an instance key (``ball#3`` -> ``ball``)."""
+    base, _, idx = key.rpartition("#")
+    return base if base and idx.isdigit() else key
 
 
 def load_project_dossier(project: Any, strict: bool = True) -> Optional[Dossier]:

@@ -460,14 +460,25 @@ says why it is not one step higher.
 |---|---|
 | `draft` | the card exists; it stays here while it has a lint error, or the build registered no shape for it |
 | `built` | lint-clean, and the geometry record has its shape and content hash |
-| `gated` | every check that applies passes: the card's `checks` plus every gate verdict in `exports/gates/`. A gate counts against the part when a failing finding names it (or an instance `name#i`) or names no part; at least one check must apply |
+| `gated` | every check that applies passes: the card's `checks` plus every gate verdict in `exports/gates/`. A gate counts against the part when a failing finding names it, an instance `name#i`, a fastener that clamps it or threads into it, or a cavity of it, and against every part when a failing finding names nothing known; at least one check must apply |
 | `reviewed` | a reviewer record for its section, by a separate actor, whose `hashes` match the current hash of every part in the section |
 | `signed_off` | that record says `signed_off: true` and the section has no open decision |
 
-A section's status is the lowest of its parts' (`draft` when it has no cards or a lint error of its own). A
-requirement is `verified` when every check traced to it passes (for `verify_by: inspection`, also every section that
-serves it is at least `reviewed`), `failed` when one fails, `not_tested` for `verify_by: test` (cad-agent cannot run
-a test), `waived`, or `unverified`.
+A section's status is the lowest of its parts' (`draft` when it has no cards or a lint error of its own). Open
+decisions count against the section they are in, or the section of the part they are scoped to (a `part:` decision
+in `decisions.yaml` included). A lint error on any line inside a card is that card's (with `Evidence.root` set, as
+`lint_project` does).
+
+A requirement's evidence is its **own** `checks` and its derived requirements (`parent:`). The checks on the cards
+of the sections that serve it satisfy the trace rule and are listed as `covered_by`, but they verify nothing on their
+own: a wall gate passing says nothing about "the lid stays on". A requirement is
+
+- `verified` when it has evidence and all of it passes (every own check passes, every derived requirement is
+  `verified` or `waived`; for `verify_by: inspection`, also every section that serves it is at least `reviewed`);
+- `failed` when an own check fails or a derived requirement failed;
+- `not_tested` for `verify_by: test` or `demo` (cad-agent cannot run a test or a demonstration), and for a parent
+  whose only open children are `not_tested`;
+- `waived`, or else `unverified`.
 
 **Geometry changes void sign-off.** A reviewer record binds the content hash of each part it reviewed (the
 `sha256` of `parts.<name>` in `dossier-geometry.json`, the hash recorded at build time). When a part is rebuilt with
@@ -487,8 +498,13 @@ The lint reads these fields:
 ```
 
 A record whose `actor` is `unknown` or empty, or equals the build's `actor`, or a build whose `actor` is unknown, is
-refused (`review-same-actor`). This is only as strong as `CAD_AGENT_ACTOR`: a harness that sets the same value for
-both passes, or two different values for one agent, defeats it.
+refused (`review-same-actor`); with no geometry record nothing is built, so no record is refused or counted. This is
+only as strong as `CAD_AGENT_ACTOR`: a harness that sets the same value for both passes, or two different values for
+one agent, defeats it. And the geometry record holds one `actor`, that of the **last** build, not of the build that
+produced each hash (plan §5.3 asks for the latter; the registry does not record it yet). So a reviewer who rebuilds
+unchanged geometry has their own sign-off refused (rebuild as someone else, or not at all, before signing off), and an
+author whose unchanged geometry someone else rebuilt could sign their own work off. Per-part build actors in
+`dossier-geometry.json` would close both; that belongs with the reviewer pass (T11).
 
 **Limits.** The lint takes gate verdicts as written. It does not check that they were produced from the current
 geometry record, because verdicts carry no geometry hash yet. Run the gates after the build (as `cad-agent all`

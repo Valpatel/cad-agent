@@ -215,8 +215,12 @@ def test_dossier_without_a_dossier_key_is_unusable(tmp_path, capsys):
 
 
 def test_check_runs_the_dossier_lint(tmp_path, capsys):
+    from .test_report import GOOD
     root = _dossier_project(tmp_path)
-    assert main(["check", "--project", str(root), "--json"]) in (0, 1)
+    (root / "exports" / "geometry-checks.json").write_text(json.dumps({"box": GOOD}))
+    for ext in ("stl", "3mf", "step"):
+        (root / "exports" / f"box.{ext}").write_text("x")
+    assert main(["check", "--project", str(root), "--json"]) == 0
     results = json.loads(capsys.readouterr().out)
     feature = next(f for f in results["features"] if f["feature_id"] == "cad-dossier")
     names = {c["name"]: c["status"] for c in feature["checks"]}

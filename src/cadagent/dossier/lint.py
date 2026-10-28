@@ -33,7 +33,8 @@ KNOWN_GATES = ("wall", "connectivity", "containment", "fasteners", "motion", "as
 LINT_GATE = "dossier-lint"
 STATUS_SCHEMA = "cad-agent.dossier-status/1"
 REVIEW_SCHEMA = "cad-agent.review/1"
-ADDITIVE = ("fdm", "fff", "sla", "sls", "mjf", "dlp", "polyjet", "additive", "print")
+ADDITIVE = ("fdm", "fff", "sla", "sls", "mjf", "dlp", "polyjet", "additive", "3d print", "3d-print")
+_ADDITIVE_RE = re.compile(r"\b(?:fdm|fff|sla|sls|mjf|dlp|polyjet|additive)\b|\b3d[ -]?print", re.I)
 
 # code -> (severity, what the rule checks). Loader codes (unknown-id, bad-interface, ...) and the registry join's
 # codes (card-without-shape, ...; docs/dossier.md "Joining cards and geometry") are reported under their own codes.
@@ -142,6 +143,8 @@ class Evidence:
     checks: Dict[str, CheckState] = field(default_factory=dict)             # configured check id -> state
     reviews: List[Review] = field(default_factory=list)
     findings: List[Finding] = field(default_factory=list)                   # problems reading the inputs
+    root: Optional[str] = None      # the directory finding files are relative to: lets a loader error on any line
+                                    # inside a card be attributed to that card
 
 
 @dataclass
@@ -332,7 +335,7 @@ def project_evidence(project: Any) -> Evidence:
     """Everything a project has written that the lint resolves against: the geometry record, gate verdicts,
     configured checks and reviewer records (``dossier/reviews/`` beside ``project.yaml``)."""
     root = Path(project.root)
-    ev = Evidence()
+    ev = Evidence(root=str(root))
     geo = Path(project.exports_dir) / "dossier-geometry.json"
     ev.geometry_file = _show(geo, root)
     if geo.is_file():
@@ -386,6 +389,53 @@ class _Linter:
         for sec in d.sections.values():
             if sec.where and sec.file:
                 self.file_section[sec.where.file] = sec.id
+        self.card_lines = self._card_ranges()
+
+    def _card_ranges(self) -> Dict[str, List[Tuple[int, int, str]]]:
+        """Per file, the lines each nested card spans: from its first line to the line before the next one indented
+        no deeper than its list dash. Needs the files (``Evidence.root``); without them only first lines match."""
+        out: Dict[str, List[Tuple[int, int, str]]] = {}
+        if self.ev.root is None:
+            return out
+        texts: Dict[str, List[str]] = {}
+        for card in self.d.parts.values():
+            w = card.where
+            if card.file or not w or not w.line:
+                continue
+            if w.file not in texts:
+                try:
+                    texts[w.file] = (Path(self.ev.root) / w.file).read_text().splitlines()
+                except OSError:
+                    texts[w.file] = []
+            lines = texts[w.file]
+            if w.line > len(lines):
+                continue
+            first = lines[w.line - 1]
+            col = len(first) - len(first.lstrip())
+            end = w.line
+            for j in range(w.line, len(lines)):
+                text = lines[j]
+                if text.strip() and not text.lstrip().startswith("#") and len(text) - len(text.lstrip()) <= col:
+                    break
+                end = j + 1
+            out.setdefault(w.file, []).append((w.line, end, card.id))
+        return out
+
+    def _card_at(self, where: Where) -> str:
+        pid = self.where_part.get((where.file, where.line)) or self.file_part.get(where.file)
+        if pid:
+            return pid
+        for start, end, cid in self.card_lines.get(where.file, []):
+            if start <= where.line <= end:
+                return cid
+        return ""
+
+    def _dec_section(self, dec: Any) -> str:
+        """A decision's section: its own, or its part's (a part-scoped decision in decisions.yaml names no section)."""
+        if dec.section:
+            return dec.section
+        card = self.d.parts.get(dec.part) if dec.part else None
+        return card.section if card else ""
 
     def add(self, code: str, message: str, where: Optional[Where], *, item: str = "", parts: Iterable[str] = (),
             severity: Optional[str] = None) -> None:
@@ -405,7 +455,7 @@ class _Linter:
             parts: Tuple[str, ...] = ()
             item = ""
             if i.where:
-                pid = self.where_part.get((i.where.file, i.where.line)) or self.file_part.get(i.where.file)
+                pid = self._card_at(i.where)
                 if pid:
                     parts = (pid,)
                 elif i.where.file in self.file_section:
@@ -420,8 +470,8 @@ class _Linter:
     # ---- rules
     def cards(self) -> None:
         d = self.d
-        decided_sections = {s.id for s in d.sections.values()
-                            if s.decisions or any(c.decisions for c in s.parts)}
+        decided_sections = {self._dec_section(x) for x in d.decisions.values()} - {""}
+        decided_parts = {x.part for x in d.decisions.values() if x.part}
         for card in d.parts.values():
             w, pid = card.where, card.id
             if not card.function.strip():
@@ -430,7 +480,7 @@ class _Linter:
             if not card.interfaces and pid not in self.free and len(d.parts) > 1:
                 self.add("card-no-interfaces", f"part {pid!r} lists no interfaces: name what it joins (or declare it "
                                                "free with a reason in gates.free_parts)", w, item=pid, parts=[pid])
-            if not card.decisions and card.section not in decided_sections:
+            if pid not in decided_parts and card.section not in decided_sections:
                 self.add("card-no-decision", f"part {pid!r} and its section {card.section!r} record no decision "
                                              "(the minimum card has one, with why and a rejected alternative)", w,
                          item=pid, parts=[pid])
@@ -457,7 +507,7 @@ class _Linter:
                     self.add("wall-undeclared", f"part {pid!r} is checked by gate:wall but declares no "
                                                 "material.wall_mm (the threshold is per part)", w, item=pid,
                              parts=[pid])
-                elif card.material and any(a in card.material.process.lower() for a in ADDITIVE):
+                elif card.material and _ADDITIVE_RE.search(card.material.process):
                     self.add("wall-undeclared", f"part {pid!r} is made by {card.material.process} but declares no "
                                                 "material.wall_mm", w, item=pid, parts=[pid], severity="warning")
 
@@ -480,7 +530,8 @@ class _Linter:
                     self.add("interface-datum-conflict", f"interface {iid!r} has datum {other.datum!r} here and "
                                                          f"{primary.datum!r} at {primary.where} (owner "
                                                          f"{primary.owner or 'not named'}); the owner's datum rules",
-                             other.where, item=iid, parts=[p for p in iface.between if p in d.parts])
+                             other.where, item=other.section or primary.section or iid,
+                             parts=[p for p in iface.between if p in d.parts])
                 diffs = [f for f in ("between", "kind", "clearance", "owner", "fastened_by")
                          if getattr(other, f) and getattr(primary, f) and
                          (sorted(getattr(other, f)) if f == "between" else getattr(other, f))
@@ -493,12 +544,13 @@ class _Linter:
     def decisions(self) -> None:
         for did, dec in self.d.decisions.items():
             parts = [dec.part] if dec.part else []
-            item = dec.part or dec.section or did
+            sid = self._dec_section(dec)
+            item = dec.part or sid or did
             if dec.status == "superseded":
                 continue
             if dec.status == "open":
                 self.add("decision-open", f"decision {did!r} is open"
-                         + (f"; section {dec.section!r} cannot be signed off until it is decided" if dec.section else ""),
+                         + (f"; section {sid!r} cannot be signed off until it is decided" if sid else ""),
                          dec.where, item=item, parts=parts)
             else:
                 missing = [k for k, ok in (("why", dec.why.strip()), ("an alternative", dec.alternatives)) if not ok]
@@ -531,12 +583,28 @@ class _Linter:
             return state
         v = self.ev.gates[cid[5:]]
         failing = [f for f in v.get("findings", []) if isinstance(f, dict) and f.get("status") == "fail"]
-        if not failing or any(not f.get("parts") for f in failing) or any(
-                _owner(p) == pid for f in failing for p in f.get("parts", [])):
-            mine = [f.get("id", "") for f in failing if not f.get("parts") or
-                    any(_owner(p) == pid for p in f.get("parts", []))]
+        named = [self._parts_named(f.get("parts") or []) for f in failing]
+        mine = [f.get("id", "") for f, n in zip(failing, named) if not n or pid in n]
+        if not failing or mine:
             return CheckState(cid, "fail", f"failing: {', '.join(mine[:5]) or v.get('status', 'fail')}", state.file)
         return CheckState(cid, "pass", "the gate fails on other parts only", state.file)
+
+    def _parts_named(self, names: Iterable[Any]) -> Set[str]:
+        """The part cards a gate finding's ``parts`` refer to: a part or one of its instances (``ball#3``), both parts
+        of a fastener (what it clamps and what it threads into), a cavity's part. Empty when none is known, and a
+        failing finding that names no known part counts against every part."""
+        geo = self.ev.geometry or {}
+        fasteners, cavities = geo.get("fasteners", {}) or {}, geo.get("cavities", {}) or {}
+        out: Set[str] = set()
+        for name in names:
+            o = _owner(str(name))
+            if o in self.d.parts or o in self.geo_parts:
+                out.add(o)
+            elif isinstance(fasteners.get(o), dict):
+                out |= {fasteners[o].get("clamps"), fasteners[o].get("into")} - {None}
+            elif isinstance(cavities.get(o), dict) and cavities[o].get("part"):
+                out.add(cavities[o]["part"])
+        return out
 
     def checks(self) -> None:
         d = self.d
@@ -603,7 +671,8 @@ class _Linter:
         if self.ev.geometry is None:
             if not any(f.code == "geometry-invalid" for f in self.ev.findings):
                 self.add("geometry-missing", f"no geometry record ({self.ev.geometry_file or 'not given'}): cards "
-                                             "cannot be joined to shapes and stay draft; run the build", None)
+                                             "cannot be joined to shapes and stay draft; run the build",
+                         Where(self.ev.geometry_file) if self.ev.geometry_file else None)
         else:
             from .registry import join
             self.adopt(join(d, self.ev.geometry), known)
@@ -633,7 +702,8 @@ class _Linter:
                                                     + "; ".join(row["blocked_by"][:4]), sec.where, item=sid,
                              parts=blocking)
         for rid in d.requirements:
-            res.requirements[rid] = self._requirement_status(rid, res)
+            self._requirement_status(rid, res)
+        res.requirements = {rid: res.requirements[rid] for rid in d.requirements}
         for did, dec in d.decisions.items():
             res.decisions[did] = {"scope": dec.scope, "status": dec.status,
                                   "complete": dec.status != "decided" or bool(dec.why.strip() and dec.alternatives
@@ -650,8 +720,9 @@ class _Linter:
     def _open_decisions(self) -> Dict[str, List[str]]:
         out: Dict[str, List[str]] = {}
         for did, dec in self.d.decisions.items():
-            if dec.status == "open" and dec.section:
-                out.setdefault(dec.section, []).append(did)
+            sid = self._dec_section(dec)
+            if dec.status == "open" and sid:
+                out.setdefault(sid, []).append(did)
         return out
 
     def _reviews(self, open_decisions: Mapping[str, List[str]]) -> Dict[str, Dict[str, Any]]:
@@ -662,6 +733,9 @@ class _Linter:
             if r.section not in self.d.sections:
                 self.add("review-unknown-section", f"reviewer record names section {r.section!r}, which is not in "
                                                    "the dossier", Where(r.file), item=r.section)
+                continue
+            if self.ev.geometry is None:
+                by_section.setdefault(r.section, []).append(r)      # nothing is built, so nothing can be reviewed
                 continue
             if self.separate and (r.actor.strip() in ("", "unknown") or r.actor == self.build_actor
                                   or self.build_actor in ("", "unknown")):
@@ -788,28 +862,45 @@ class _Linter:
                                            f"{computed!r}", card.where, item=card.id)
 
     def _requirement_status(self, rid: str, res: LintResult) -> Dict[str, Any]:
+        """Only the requirement's own ``checks`` and its derived requirements are evidence for it. Checks on the
+        cards of the sections that serve it are listed as ``covered_by`` (they satisfy the trace rule) but verify
+        nothing on their own: a wall gate passing says nothing about "the lid stays on"."""
+        if rid in res.requirements:
+            return res.requirements[rid]
         d = self.d
         req = d.requirements[rid]
+        res.requirements[rid] = {"status": "unverified"}          # a guard against a parent cycle
         sections = [s.id for s in d.sections.values() if rid in s.requirements]
-        cids = self.req_checks(rid)
-        states = [self.resolve_check(c) for c in cids]
+        states = [self.resolve_check(c) for c in req.checks]
         row: Dict[str, Any] = {"text": req.text, "verify_by": req.verify_by, "sections": sections,
                                "checks": [s.to_dict() for s in states], **_where_dict(req.where)}
+        covered = [c for c in self.req_checks(rid) if c not in req.checks]
+        if covered:
+            row["covered_by"] = covered
         children = [r.id for r in d.requirements.values() if r.parent == rid]
+        kids = [self._requirement_status(c, res)["status"] for c in children]
         if children:
             row["derived"] = children
+        own_ok = all(s.status == "pass" for s in states)
+        reviewed = req.verify_by != "inspection" or all(
+            RANK[res.sections[s]["status"]] >= RANK["reviewed"] for s in sections)
         if req.status == "waived":
-            row["status"] = "waived"
-        elif req.verify_by == "test":
-            row["status"] = "not_tested"          # cad-agent cannot run a physical test
-        elif any(s.status == "fail" for s in states):
-            row["status"] = "failed"
-        elif states and all(s.status == "pass" for s in states) and (
-                req.verify_by != "inspection" or
-                all(RANK[res.sections[s]["status"]] >= RANK["reviewed"] for s in sections)):
-            row["status"] = "verified"
+            status = "waived"
+        elif req.verify_by in ("test", "demo"):
+            status = "not_tested"            # cad-agent cannot run a physical test or demonstration
+        elif any(s.status == "fail" for s in states) or "failed" in kids:
+            status = "failed"
+        elif not states and not kids:
+            status = "unverified"            # no evidence of its own (card checks alone do not verify it)
+        elif own_ok and reviewed and all(k in ("verified", "waived") for k in kids):
+            status = "verified"
+        elif own_ok and reviewed and "not_tested" in kids and all(
+                k in ("verified", "waived", "not_tested") for k in kids):
+            status = "not_tested"
         else:
-            row["status"] = "unverified"
+            status = "unverified"
+        row["status"] = status
+        res.requirements[rid] = row
         return row
 
 

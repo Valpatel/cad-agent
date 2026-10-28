@@ -98,6 +98,7 @@ def run(tmp_path: Path, mutate: Optional[Callable[[Dict[str, Any]], Any]] = None
         evidence: Optional[Evidence] = None, **kw):
     files = base_files()
     ev = evidence if evidence is not None else base_evidence()
+    ev.root = str(tmp_path)
     if mutate:
         mutate(files, ev) if mutate.__code__.co_argcount == 2 else mutate(files)
     d = load_dossier(write(tmp_path, files), strict=False, root=tmp_path)
@@ -180,7 +181,7 @@ CASES = {
                                                                      "requirements": ["R1"]}}),
                          lambda f: f.update({"sections/empty.yaml": _other_section()})),
     "section-below-gated": (lambda f, ev: ev.gates.update(wall=_verdict("wall", False, ["hopper"])),
-                            lambda f, ev: ev.gates.update(wall=_verdict("wall", False, ["something_else"]))),
+                            lambda f, ev: ev.gates.update(wall=_verdict("wall", True))),
     "status-not-earned": (lambda f: card(f, "lid").update(status="signed_off"),
                           lambda f: card(f, "lid").update(status="gated")),
     "status-overclaimed": (lambda f, ev: (card(f, "lid").update(status="gated"), ev.gates.pop("connectivity"),
@@ -190,7 +191,8 @@ CASES = {
     "geometry-missing": (lambda f, ev: setattr(ev, "geometry", None), lambda f, ev: None),
     # the registry join (docs/dossier.md "Joining cards and geometry"), reported by the lint
     "card-without-shape": (lambda f, ev: ev.geometry["parts"].pop("lid"), lambda f, ev: None),
-    "shape-without-card": (lambda f, ev: ev.geometry["parts"].update(extra={"section": "S1", "sha256": "f" * 64}),
+    "shape-without-card": (lambda f, ev: ev.geometry["parts"].update(extra={"section": "S1", "sha256": "f" * 64,
+                                                                             "declared_at": "cad/build.py:30"}),
                            lambda f, ev: None),
     "unknown-cavity": (lambda f, ev: ev.geometry["cavities"].clear(), lambda f, ev: None),
     "contains-count": (lambda f: card(f, "hopper")["contains"][0].update(count=3),
@@ -228,9 +230,10 @@ def test_rule_fails_on_the_broken_case(tmp_path, code):
     res = run(tmp_path, lambda f, e: _apply(bad, f, e), ev)
     found = [f for f in res.findings if f.code == code]
     assert found, f"{code} not reported; got {[str(f) for f in res.findings]}"
-    for f in found:
-        assert f.where is None or (f.where.file and f.where.line >= 0), f
-    if (RULES.get(code) or ("error",))[0] == "error" and code not in ("wall-undeclared",):
+    for f in found:                       # file, line and code; a missing input file has no line to point at
+        assert f.where is not None and f.where.file, f
+        assert f.where.line >= 1 or code == "geometry-missing", f
+    if (RULES.get(code) or ("error",))[0] == "error":
         assert not res.passed
 
 
@@ -320,6 +323,7 @@ def test_reviewed_and_signed_off_need_a_current_record_by_another_actor(tmp_path
     assert res.sections["S1"]["status"] == "reviewed"
     res = run(tmp_path, evidence=base_evidence(reviews=[_review()]))
     assert res.sections["S1"]["status"] == "signed_off" and res.passed
+    assert "review-stale" not in res.codes()
     assert res.parts["hopper"]["review"]["actor"] == "reviewer"
     res = run(tmp_path, lambda f: card(f, "lid").update(status="signed_off"), base_evidence(reviews=[_review()]))
     assert "status-not-earned" not in res.codes()
@@ -404,6 +408,9 @@ def test_requirement_statuses(tmp_path):
     res = run(tmp_path, change)
     assert res.requirements["R3"]["status"] == "not_tested"
     assert res.requirements["R4"]["status"] == "unverified"         # inspection needs the section reviewed
+    # R2 has no check of its own: the hopper's wall gate covers the trace but verifies nothing about the lid
+    assert res.requirements["R2"]["status"] == "unverified"
+    assert res.requirements["R2"]["covered_by"] == ["gate:wall"] and res.requirements["R2"]["checks"] == []
     res = run(tmp_path, change, base_evidence(reviews=[_review()]))
     assert res.requirements["R4"]["status"] == "verified"
     ev = base_evidence()
@@ -489,3 +496,92 @@ def test_the_lint_imports_no_cad_kernel():
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
                          env={"PYTHONPATH": src, "PATH": ""})
     assert out.stdout.strip() == "False", out.stderr
+
+
+def test_demo_is_not_tested_and_a_parent_rolls_up_its_children(tmp_path):
+    def change(f, demo_ok=True):
+        reqs = f["project.yaml"]["requirements"]
+        reqs.append({"id": "R0", "text": "Feeds balls", "verify_by": "analysis"})
+        reqs[0]["parent"] = "R0"
+        reqs[1].update(parent="R0", checks=["gate:connectivity"])
+        reqs.append({"id": "R5", "text": "Feeds when the button is pressed", "verify_by": "demo",
+                     "checks": ["gate:connectivity"]})
+        f["sections/store.yaml"]["requirements"] += ["R5"]
+    res = run(tmp_path, change)
+    assert res.requirements["R5"]["status"] == "not_tested"
+    assert res.requirements["R0"]["status"] == "verified"
+    assert [f.code for f in res.findings] == []
+    ev = base_evidence()
+    ev.gates["connectivity"] = _verdict("connectivity", False, ["lid"])
+    assert run(tmp_path, change, ev).requirements["R0"]["status"] == "failed"
+
+
+def test_a_part_scoped_open_decision_in_project_yaml_blocks_its_section(tmp_path):
+    def change(f):
+        f["project.yaml"]["decisions"] = [{"id": "D7", "decision": "Lid hinge or loose lid", "part": "lid",
+                                           "status": "open"}]
+    res = run(tmp_path, change, base_evidence(reviews=[_review()]))
+    assert res.sections["S1"]["status"] == "reviewed" and res.sections["S1"]["open_decisions"] == ["D7"]
+    assert "signoff-open-decision" in res.codes()
+    [f] = [f for f in res.findings if f.code == "decision-open"]
+    assert "section 'S1'" in f.message and f.parts == ("lid",)
+
+
+def test_decisions_kept_in_project_decisions_count_for_their_cards(tmp_path):
+    def change(f):
+        for c in f["sections/store.yaml"]["parts"]:
+            c.pop("decisions", None)
+        alt = [{"option": "Other", "rejected": "worse"}]
+        f["project.yaml"]["decisions"] = [
+            {"id": "D1", "decision": "Flat plate", "why": "simplest", "part": "base", "alternatives": alt},
+            {"id": "D3", "decision": "One store", "why": "fewer parts", "section": "S1", "alternatives": alt}]
+    assert "card-no-decision" not in run(tmp_path, change).codes()
+
+
+def test_a_loader_error_inside_a_card_is_the_cards(tmp_path):
+    res = run(tmp_path, lambda f: card(f, "lid").update(interfaces=["I2", "I99"]), min_section_status=None)
+    [f] = [f for f in res.findings if f.code == "unknown-id"]
+    assert f.parts == ("lid",) and f.item == "lid"
+    assert res.parts["lid"]["status"] == "draft" and res.parts["hopper"]["status"] == "gated"
+
+
+def test_a_datum_conflict_between_sections_drops_the_declaring_section(tmp_path):
+    def change(f, ev):
+        f["sections/store.yaml"]["interfaces"].append(
+            {"id": "I3", "between": ["S1", "S2"], "kind": "contact", "datum": "A", "owner": "S1"})
+        other = _other_section()
+        other["interfaces"] = [{"id": "I3", "between": ["S1", "S2"], "kind": "contact", "datum": "B"}]
+        f["sections/other.yaml"] = other
+        _setup_other(f, ev)
+    res = run(tmp_path, change, min_section_status=None)
+    [f] = [f for f in res.findings if f.code == "interface-datum-conflict"]
+    assert f.item == "S2" and res.sections["S2"]["status"] == "draft"
+    assert res.sections["S1"]["status"] == "gated"
+
+
+@pytest.mark.parametrize("named, blocked", [
+    (["m3:lid-hopper#0"], {"lid", "hopper"}),           # a screw: what it clamps and what it threads into
+    (["hopper_cavity"], {"hopper"}),
+    (["no_such_thing"], {"base", "hopper", "lid", "ball"}),   # names nothing known: blocks every part
+])
+def test_gate_findings_on_fasteners_cavities_and_unknown_names(tmp_path, named, blocked):
+    ev = base_evidence()
+    ev.gates["fasteners"] = _verdict("fasteners", False, named)
+    res = run(tmp_path, evidence=ev, min_section_status=None)
+    assert {p for p, r in res.parts.items() if r["status"] == "built"} == blocked
+
+
+@pytest.mark.parametrize("process, warned", [("FDM", True), ("SLA resin", True), ("3D printed PETG", True),
+                                             ("injection moulded, pad print", False), ("slab cast", False)])
+def test_additive_process_match_is_by_word(tmp_path, process, warned):
+    def change(f):
+        card(f, "hopper")["material"] = {"name": "x", "process": process}
+        card(f, "hopper")["checks"] = []
+        f["project.yaml"]["requirements"][1]["checks"] = ["gate:connectivity"]
+    assert ("wall-undeclared" in run(tmp_path, change).codes()) is warned
+
+
+def test_without_a_build_no_review_is_refused_for_the_actor(tmp_path):
+    res = run(tmp_path, evidence=base_evidence(geometry=None, reviews=[_review()]), min_section_status=None)
+    assert "review-same-actor" not in res.codes()
+    assert res.sections["S1"]["status"] == "draft"

@@ -151,11 +151,13 @@ def _key(kind: str, tol: Tolerances, *parts: str) -> str:
     return digest(GATE, kind, VERSION, _kernel_version(), tol.key(), *parts)
 
 
-def _points_of(topods, deflection: float, max_points: int) -> List[Any]:
-    """Vertices of a tessellation of ``topods`` (in its location), thinned evenly to ``max_points``."""
+def _points_of(topods, deflection: float, max_points: int, angular: float = 0.1) -> List[Any]:
+    """Vertices of a tessellation of a copy of ``topods`` (in its location; the caller's shape keeps
+    its triangulation), thinned evenly to ``max_points``."""
     occ = {m: require(f"OCP.{m}", "the containment witness") for m in
-           ("BRepMesh", "BRep", "TopExp", "TopAbs", "TopoDS", "TopLoc")}
-    occ["BRepMesh"].BRepMesh_IncrementalMesh(topods, deflection, False, 0.1, True)
+           ("BRepMesh", "BRep", "TopExp", "TopAbs", "TopoDS", "TopLoc", "BRepBuilderAPI")}
+    topods = occ["BRepBuilderAPI"].BRepBuilderAPI_Copy(topods, True, False).Shape()
+    occ["BRepMesh"].BRepMesh_IncrementalMesh(topods, deflection, False, angular, True)
     pts = []
     ex = occ["TopExp"].TopExp_Explorer(topods, occ["TopAbs"].TopAbs_FACE)
     while ex.More():
@@ -189,6 +191,26 @@ def _distances_to(points: Sequence[Any], solid) -> List[Tuple[float, Any]]:
             raise RuntimeError("BRepExtrema_DistShapeShape did not converge on a witness point")
         out.append((float(d.Value()), d.PointOnShape2(1)))
     return out
+
+
+def _contact_probe(item, cavity, deflection: float, max_points: int, touch_mm: float) -> Dict[str, Any]:
+    """Independent check of a ``contains`` answer for an instance that touches the cavity boundary.
+
+    Near-tangent surface pairs are where OCCT's surface intersection can miss a shallow crossing
+    (seen: a sphere 0.03-0.1 mm through a cone wall read 0 mm3 outside at some positions), and a
+    missed crossing gives a consistent common = volume, cut = 0. So the instance's tessellation
+    vertices (on its true surface) are classified against the cavity (``BRepClass3d``, no surface
+    intersection involved); a vertex outside by more than ``touch_mm`` proves an escape."""
+    pts = _points_of(item, deflection, max_points)
+    clf = _classifier(cavity)
+    out = [p for p, st in zip(pts, _states(clf, [(p.X(), p.Y(), p.Z()) for p in pts], touch_mm)) if st == "out"]
+    res: Dict[str, Any] = {"probe_points": len(pts), "probe_deflection_mm": deflection, "probe_outside": len(out)}
+    if out:
+        dists = _distances_to(out, cavity)
+        i = max(range(len(out)), key=lambda k: dists[k][0])
+        res.update(probe_depth_mm=round(dists[i][0], 6), probe_point=_pt(out[i]),
+                   probe_cavity_point=_pt(dists[i][1]))
+    return res
 
 
 def _escape_witness(item, cavity, whole: bool, deflection: float, max_points: int) -> Dict[str, Any]:
@@ -348,6 +370,9 @@ class _Ctx:
     seed: int
     deflection: float
     max_points: int
+    probe: bool = True
+    probe_deflection: float = 0.01
+    probe_points: int = 20000
     prefix: str = ""
     summary: Dict[str, Any] = field(default_factory=dict)
 
@@ -371,6 +396,29 @@ def _inside_check(ctx: _Ctx, d: Contains, inst: str) -> Tuple[Check, Dict[str, A
                      [inst, d.container], ev), {"name": inst, "state": "unknown"}
     if rel.state == "contains" and rel.contained in ("a_in_b", "both"):
         ev.update(outside_mm3=rel.a_outside_b_mm3, clearance_mm=rel.wall_mm)
+        if ctx.probe and rel.wall_mm is not None and rel.wall_mm <= tol.touch_mm:
+            key = None if ctx.cache is None else _key("probe", tol, asm.item(inst).key, asm.item(d.cavity).key,
+                                                      f"{ctx.probe_deflection!r}:{ctx.probe_points}")
+            try:
+                probe, _ = _cached(ctx.cache, key, lambda: _contact_probe(
+                    asm.shape(inst), asm.shape(d.cavity), ctx.probe_deflection, ctx.probe_points, tol.touch_mm))
+            except Exception as exc:
+                probe = {"error": f"{type(exc).__name__}: {exc}"}
+            ev["probe"] = probe
+            if probe.get("error"):
+                return Check(cid, "fail", f"{inst} touches {d.cavity}'s boundary and the contact probe failed "
+                                          f"({probe['error']})", [inst, d.container], ev), \
+                    {"name": inst, "state": "unknown"}
+            if probe.get("probe_depth_mm", 0.0) > tol.touch_mm:
+                ev.update(outside_mm3=None, depth_mm=probe["probe_depth_mm"],
+                          furthest_outside_point=probe["probe_point"], nearest_cavity_point=probe["probe_cavity_point"],
+                          kernel_missed_crossing=True)
+                return Check(cid, "fail", f"{inst} escapes {d.cavity}: the boolean read "
+                                          f"{rel.a_outside_b_mm3:.4g} mm3 outside, but a surface point lies "
+                                          f"{probe['probe_depth_mm']:.3g} mm outside at {probe['probe_point']} "
+                                          "(a near-tangent crossing the kernel missed; volume not measured)",
+                             [inst, d.container], ev), \
+                    {"name": inst, "state": "escaped", "outside_mm3": None, "depth_mm": probe["probe_depth_mm"]}
         return Check(cid, "pass", f"{inst} inside {d.cavity} ({rel.a_outside_b_mm3:.4g} mm3 outside, "
                                   f"{rel.wall_mm:.4g} mm from its boundary)", [inst], ev), \
             {"name": inst, "state": "inside", "outside_mm3": rel.a_outside_b_mm3}
@@ -450,35 +498,59 @@ def _common(a, b) -> Dict[str, Any]:
         return {"error": f"{type(exc).__name__}: {exc}"}
 
 
+def _rests(ctx: _Ctx, upper: str, lower: str, kind: str) -> Dict[str, Any]:
+    """Whether ``upper`` moved ``support_mm`` along ``down`` pushes into ``lower``: out of the cavity
+    (``kind="cavity"``) or into another instance's solid (``"solid"``).
+
+    Booleans first; when they read no penetration but the gap is within ``support_mm``, the moved
+    instance's tessellation vertices are classified against ``lower`` (the same near-tangent
+    fallback as the contact probe), because the surface intersection can miss a shallow crossing."""
+    asm, tol = ctx.assembly, ctx.tol
+    us, ls = asm.shape(upper), asm.shape(lower)
+    moved = _shifted(us, ctx.down, ctx.support_mm)
+    res = _common(moved, ls)
+    if res.get("error"):
+        return res
+    pushed = (_volume(us) - res["common_mm3"]) if kind == "cavity" else res["common_mm3"]
+    out: Dict[str, Any] = {"rests": pushed > tol.overlap_mm3, "pushed_mm3": round(pushed, 6), "method": "boolean"}
+    if out["rests"]:
+        return out
+    from cadagent.gates.relations import _distance, _faces
+    gap = _distance(_faces(us), _faces(ls))[0] if kind == "cavity" else _distance(us, ls)[0]
+    out["gap_mm"] = round(gap, 6)
+    if gap > ctx.support_mm + tol.touch_mm:
+        return out
+    shift = [c * ctx.support_mm for c in ctx.down]
+    pts = [(p.X() + shift[0], p.Y() + shift[1], p.Z() + shift[2])
+           for p in _points_of(us, ctx.probe_deflection, ctx.probe_points)]
+    want = "out" if kind == "cavity" else "in"
+    hits = sum(1 for st in _states(_classifier(ls), pts, tol.touch_mm) if st == want)
+    out.update(method="vertex probe", probe_points=len(pts), probe_hits=hits, rests=hits > 0)
+    return out
+
+
 def _support_check(ctx: _Ctx, d: Contains, names: List[str]) -> Check:
     asm, tol = ctx.assembly, ctx.tol
     cid = ctx.cid(d.cavity, d.what, "support")
-    cav = asm.shape(d.cavity)
-    sig = f"{ctx.support_mm!r}:{ctx.down!r}"
+    sig = f"{ctx.support_mm!r}:{ctx.down!r}:{ctx.probe_deflection!r}:{ctx.probe_points}"
     on_floor, errors, rests = {}, [], {n: [] for n in names}
-    for n in names:
-        moved = _shifted(asm.shape(n), ctx.down, ctx.support_mm)
-        key = None if ctx.cache is None else _key("support-floor", tol, asm.item(n).key, asm.item(d.cavity).key, sig)
-        vol = _volume(asm.shape(n))
 
-        def into_floor(moved=moved, vol=vol):
-            res = _common(moved, cav)
-            if "common_mm3" in res:
-                res = {"outside_mm3": round(vol - res["common_mm3"], 6)}
-            return res
-        res, _ = _cached(ctx.cache, key, into_floor)
+    def query(upper, lower, kind):
+        key = None if ctx.cache is None else _key(f"rests-{kind}", tol, asm.item(upper).key, asm.item(lower).key,
+                                                  sig)
+        try:
+            res, _ = _cached(ctx.cache, key, lambda: _rests(ctx, upper, lower, kind))
+        except Exception as exc:
+            res = {"error": f"{type(exc).__name__}: {exc}"}
         if res.get("error"):
-            errors.append({"item": n, "error": res["error"]})
-        on_floor[n] = res.get("outside_mm3", 0.0) > tol.overlap_mm3
+            errors.append({"item": upper, "on": lower, "error": res["error"]})
+        return bool(res.get("rests"))
+
+    for n in names:
+        on_floor[n] = query(n, d.cavity, "cavity")
     for a, b in _pairs(ctx, names, ctx.support_mm + tol.touch_mm):
         for upper, lower in ((a, b), (b, a)):
-            key = None if ctx.cache is None else _key("support-on", tol, asm.item(upper).key, asm.item(lower).key,
-                                                      sig)
-            res, _ = _cached(ctx.cache, key, lambda u=upper, lo=lower: _common(
-                _shifted(asm.shape(u), ctx.down, ctx.support_mm), asm.shape(lo)))
-            if res.get("error"):
-                errors.append({"item": upper, "on": lower, "error": res["error"]})
-            elif res["common_mm3"] > tol.overlap_mm3:
+            if query(upper, lower, "solid"):
                 rests[upper].append(lower)
     supported = {n for n, f in on_floor.items() if f}
     grew = True
@@ -540,7 +612,8 @@ def check_contains(assembly: Assembly, declaration: Any, *, tol: Tolerances = To
                    cache: Optional[PairCache] = None, support: str = "report", down: Sequence[float] = (0, 0, -1),
                    support_mm: float = 0.05, exclusions: Iterable[Mapping[str, Any]] = (),
                    meshes: Optional[Mapping[str, Any]] = None, mesh_samples: int = 4000, seed: int = 0,
-                   deflection_mm: float = 0.05, max_points: int = 600, pose: str = "") -> List[Check]:
+                   deflection_mm: float = 0.05, max_points: int = 600, probe: bool = True,
+                   probe_deflection_mm: float = 0.01, probe_points: int = 20000, pose: str = "") -> List[Check]:
     """The checks for one declaration on one assembly (one pose). See the module docstring."""
     if support not in SUPPORT_MODES:
         raise ValueError(f"support must be one of {SUPPORT_MODES}, got {support!r}")
@@ -549,7 +622,7 @@ def check_contains(assembly: Assembly, declaration: Any, *, tol: Tolerances = To
     d = Contains.coerce(declaration)
     ctx = _Ctx(assembly, tol, cache, support, _unit(down), float(support_mm),
                {frozenset(e["parts"]) for e in exclusions}, dict(meshes or {}), mesh_samples, seed,
-               deflection_mm, max_points, f"{pose}/" if pose else "")
+               deflection_mm, max_points, probe, probe_deflection_mm, probe_points, f"{pose}/" if pose else "")
     return _checks(ctx, d)
 
 
@@ -618,6 +691,7 @@ def containment_gate(assembly: Assembly, declarations: Iterable[Any], *, tol: To
                      support: str = "report", down: Sequence[float] = (0, 0, -1), support_mm: float = 0.05,
                      exclusions: Iterable[Mapping[str, Any]] = (), meshes: Optional[Mapping[str, Any]] = None,
                      mesh_samples: int = 4000, seed: int = 0, deflection_mm: float = 0.05, max_points: int = 600,
+                     probe: bool = True, probe_deflection_mm: float = 0.01, probe_points: int = 20000,
                      out: Any = None) -> Dict[str, Any]:
     """Run every ``contains`` declaration (in every pose) and return, with ``out`` also write, the verdict.
 
@@ -644,12 +718,14 @@ def containment_gate(assembly: Assembly, declarations: Iterable[Any], *, tol: To
         for d in decls:
             cs = check_contains(asm, d, tol=tol, cache=cache, support=support, down=down, support_mm=support_mm,
                                 exclusions=excl, meshes=meshes, mesh_samples=mesh_samples, seed=seed,
-                                deflection_mm=deflection_mm, max_points=max_points, pose=pose)
+                                deflection_mm=deflection_mm, max_points=max_points, probe=probe,
+                                probe_deflection_mm=probe_deflection_mm, probe_points=probe_points, pose=pose)
             checks += cs
             summary.append(_summary(d, cs, pose))
     limits = {"touch_mm": tol.touch_mm, "contain_mm3": tol.contain_mm3, "overlap_mm3": tol.overlap_mm3,
               "volume_check_mm3": tol.volume_check_mm3, "support": support, "down": list(_unit(down)),
-              "support_mm": support_mm, "witness_deflection_mm": deflection_mm, "witness_max_points": max_points,
+              "support_mm": support_mm, "witness_deflection_mm": deflection_mm, "witness_max_points": max_points, "contact_probe": probe,
+              "probe_deflection_mm": probe_deflection_mm, "probe_points": probe_points,
               "mesh_samples": mesh_samples, "seed": seed,
               "poses": {p: {b: matrix_key(_matrix_of(loc)) for b, loc in locs.items()} for p, locs in pose_items
                         if p}}

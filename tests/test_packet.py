@@ -391,7 +391,8 @@ def test_packet_renders_every_section_with_captions_and_hashes(bench_packets):
             assert im.size == (480, 360)
             assert im.getpixel((3, 3)) == (0x14, 0x2B, 0x38)                     # the caption bar
             assert v["caption"].startswith(f"{sid} ")
-            assert len(set(im.crop((0, 100, 480, 300)).getdata())) > 20, f"{sid}/{v['id']}: nothing drawn"
+            colours = im.crop((0, 100, 480, 300)).getcolors(maxcolors=100000) or []
+            assert len(colours) > 20, f"{sid}/{v['id']}: nothing drawn"
         assert sorted(p.name for p in folder.glob("*.png")) == sorted(v["file"] for v in m["views"])
 
 

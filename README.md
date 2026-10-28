@@ -71,7 +71,7 @@ flowchart LR
 | 🧪 | `heatsink` | Plate-fin correlations, fan operating point and porous-block coefficients for CFD |
 | 🧪 | `topopt` | pyMOTO topology optimisation (SIMP, MMA, overhang filter) to cut filament where it does no work |
 | 🧪 | `slicer` | Bambu Studio's command line for real filament grams and print time |
-| 🖼️ | `render`, `simviz` | Off-screen renders, stress and flow pictures, MP4 animations |
+| 🖼️ | `render`, `simviz` | Off-screen renders, stress and flow pictures, MP4 animations; a review packet per dossier section (solid, x-ray, cuts through cavities, joints and screws, exploded along the assembly steps, joint range ends, gate findings at their witness points) with the measurements first and the render checklist, from `cad-agent review-packet` ([guide](docs/review-packet.md)) |
 | 🖼️ | `report`, `simreport` | Results JSON and standalone HTML reports that name their limits |
 | 🖼️ | `site`, `view`, webkit | A local review site with progress, decisions, docs and a 3D viewer, all under one top bar |
 | 📦 | `mesh3mf`, `package` | 3MF writing with an independent read-back, and a hashed review zip |
@@ -165,7 +165,7 @@ Details are in [`CONTRIBUTING.md`](CONTRIBUTING.md). Rules for AI agents are in 
 | [`tests/`](tests/) | The test suite, which also runs in CI |
 | [`docs/`](docs/) | [`toolkit.md`](docs/toolkit.md), the guide to the toolkit, [`explore.md`](docs/explore.md), design exploration, and [`dossier.md`](docs/dossier.md), the design dossier |
 | [`examples/`](examples/) | Worked examples: [`explore-two-wheel`](examples/explore-two-wheel/) compares robot configurations |
-| [`skills/`](skills/) | Agent skills that fill gaps, such as McMaster parts |
+| [`skills/`](skills/) | Agent skills: the section-by-section design process ([`design-process`](skills/design-process/SKILL.md)) and McMaster parts |
 | [`lessons/`](lessons/) | Rules mined from design sessions, with their sources |
 | [`research/`](research/) | Landscape surveys, including the simulation tools |
 | [`upstreams/`](upstreams/), [`vendor/`](vendor/) | The tool registry and the vendored, pinned upstreams |

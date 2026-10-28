@@ -25,6 +25,7 @@ manifest = review_packet("S3", root=".", size=(1400, 1000), explode=1.0, context
 ```bash
 cad-agent review-packet S3            # one section; with no section: every section of the dossier
 cad-agent review-packet --list        # the views each section would get, without rendering (no CAD kernel)
+cad-agent review-packet S3 --view solid-iso exploded     # re-render these; the others are kept while current
 ```
 
 It reads, from the project at `root`: the geometry record (`exports/dossier-geometry.json` and its BREP shapes, via
@@ -33,9 +34,11 @@ It reads, from the project at `root`: the geometry record (`exports/dossier-geom
 raises `MissingDependency`. Run `cad-agent gates` first: a packet made from stale or missing verdicts says so in
 its measurements, it does not hide it.
 
-`plan_packet(section, record, dossier=None, verdicts=None, status=None)` (in `cadagent.packet`) is the
-kernel-free half: it works out the views, cut planes, explode offsets, poses, findings, witness points and the
-checklist from the JSON alone, and returns the manifest without image hashes. `review_packet` renders that plan.
+`cadagent.packet` has the kernel-free half: `plan_packet(section, record, dossier=None, verdicts=None,
+status=None, lint=None, expected=None, ...)` works out the views, cut planes, framing, explode offsets, poses,
+findings, witness points and the checklist from the JSON alone and returns the manifest without image hashes;
+`plan_project_packet(section, root=...)` does the same from a project's files; `project_sections(root)` lists the
+sections. `review_packet` renders the plan (`render_views`) and writes it (`write_manifest`).
 
 | Argument | Default | Meaning |
 |---|---|---|
@@ -45,25 +48,28 @@ checklist from the JSON alone, and returns the manifest without image hashes. `r
 | `size` | `(1400, 1000)` | image size in pixels |
 | `explode` | `1.0` | scale of the exploded offsets (0 turns the exploded view off) |
 | `context` | `"neighbours"` | other sections' parts drawn faint: `neighbours` (sharing an interface, a fastener or a joint, or whose box is within 10 % of the section's size), `all`, or `none` |
-| `only` | `None` | render only these view ids (the manifest still lists every view; the others keep `file: null`) |
+| `only` | `None` | render only these view ids; another view keeps its earlier image while that image is current (same geometry digest, section hash and planned view, and the file still matches its hash), else it gets `file: null` and its old image is removed |
 
 ## The views
 
 Every image is captioned with the section id and title and the view's name, with the section hash and the part
 count in the subtitle, and a note saying what the view is for. Section parts are coloured one colour each (listed
 in the manifest); parts allowed to float (`free`) are a contrast orange; placed fasteners are dark steel; context
-parts from other sections are light grey and translucent.
+parts from other sections are light grey and translucent. Each view is framed on its own box (`fit`): the
+section, the cavity's part, the joint's parties, a box around the screw, the exploded or posed parts; context
+outside it is cropped.
 
 | View id | Kind | When | What it shows |
 |---|---|---|---|
 | `solid-iso` | `solid` | always | the section in place, front iso |
 | `solid-rear` | `solid` | always | the opposite iso, from behind and the other side |
 | `xray-iso` | `xray` | always | the section's parts translucent, free items and fasteners opaque: what sits inside what |
-| `cut-cavity-<cavity>` | `cut` | per registered cavity of a section part | a plane through the cavity's centre, normal +Y, seen from −Y |
-| `cut-joint-<interface>` | `cut` | per joint with a party in the section | a plane containing the joint axis |
-| `cut-fastener-<name>` | `cut` | per fastener that clamps or threads into a section part | a plane containing the first screw's axis: head, stack and thread |
-| `exploded` | `exploded` | when steps fit section parts | each part moved back out along its step's direction, later steps further; fasteners back out along their own axis |
-| `access-<dir>` | `access` | per distinct fastener axis direction | looking along the screws' advance, from the tool's side |
+| `cut-cavity-<cavity>` | `cut` | per registered cavity of a section part | a vertical plane through the cavity's box centre, normal +Y, seen from −Y |
+| `cut-cavity-<cavity>-plan` | `cut` | the same | a horizontal plane through the centre, seen from above: the walls as a ring around the contents (an item through a wall shows here even when another item hides it in the side cut) |
+| `cut-joint-<interface>` | `cut` | per joint with a party in the section | a plane containing the joint axis, as near vertical as possible |
+| `cut-fastener-<name>` | `cut` | per group of fasteners with one catalogue key and one clamped part | a plane containing the first screw's axis: head, stack and thread (the fastener gate measures every screw; alike screws need one look) |
+| `exploded` | `exploded` | when steps fit section parts | each part moved back out along its step's direction, later steps further; fasteners back out along their own axis from where their install step's part went |
+| `access-from-<side>` | `access` | per distinct fastener axis direction | looking along the screws' advance from the tool's side (`top`, `bottom`, `front` = −Y, `back`, `left`, `right`, or the rounded vector), with neighbouring parts opaque since they can block the tool |
 | `pose-<interface>-min`, `-max` | `pose` | per ranged joint whose moving part is in the section | the moving body at each end of its declared range |
 | `findings` | `findings` | when a failing or warning finding has a witness point | `solid-iso` with a numbered callout at each witness |
 
@@ -106,20 +112,25 @@ root. The file has no timestamp: an unchanged packet writes identical JSON.
   ],
   "views": [
     {"id": "cut-cavity-hopper_cavity", "kind": "cut", "file": "cut-cavity-hopper_cavity.png", "sha256": "<png>",
-     "caption": "S3 Hopper and feed: cut through hopper_cavity", "note": "...",
+     "caption": "S3 Hopper and feed: cut through hopper_cavity, side", "note": "...",
      "camera": [0, -1, 0], "clip": {"origin": [30, 30, 40], "normal": [0, 1, 0]},
-     "target": {"cavity": "hopper_cavity", "part": "hopper"}, "keys": ["hopper", "ball#0", "..."],
-     "offsets": {}, "pose": null, "callouts": []}
+     "fit": {"min": [8, 8, 2], "max": [62, 62, 84]},
+     "target": {"cavity": "hopper_cavity", "part": "hopper", "contains": ["ball"]},
+     "keys": ["hopper", "ball#0", "..."], "offsets": {}, "pose": null, "callouts": []}
   ],
+  "rendered": 11,
   "checklist": {
     "schema": "cad-agent.render-checklist/1",
     "instructions": ["Read measurements and findings before the images", "..."],
     "answers": ["yes", "no", "unclear"],
     "measured_only": [{"id": "count", "topic": "how many items there are", "answered_by": ["gate:containment"]}],
+    "items": [{"id": "contained-inside", "kind": "cut", "per": "cavity", "bad_answer": "no",
+               "gate": "containment", "question": "In the cut through {cavity}, is every {what} ..."}],
     "questions": [
-      {"id": "contained-inside:hopper_cavity", "item": "contained-inside",
-       "question": "In the cut through hopper_cavity, is every ball fully inside the inner wall?",
-       "views": ["cut-cavity-hopper_cavity"], "bad_answer": "no", "gate": "containment"}
+      {"id": "contained-inside:hopper_cavity:ball", "item": "contained-inside",
+       "question": "In the cut through hopper_cavity, is every ball fully inside the inner wall of hopper?",
+       "views": ["cut-cavity-hopper_cavity", "cut-cavity-hopper_cavity-plan"], "bad_answer": "no",
+       "gate": "containment"}
     ]
   },
   "not_rendered": [{"what": "joint I12", "why": "planar joints have no range to pose"}],
@@ -143,10 +154,15 @@ Field notes:
   with `scope: "unattributed"`, since it may concern any part). `witness` collects the 3D points in the check's
   evidence (keys containing `point` or `centroid`, nested witnesses included), at most four per finding. The
   `findings` view numbers them F1, F2, ... as callouts; a finding without a point is listed, not drawn.
-- **`views`**: `file` is null for a view not rendered (`only=`). `keys` are the assembly keys drawn as section
-  items; `offsets` (`{key: [dx, dy, dz]}`) the exploded displacements; `pose` (`{interface, value, unit, body}`)
-  the joint position shown; `callouts` (`[{code, finding, point}]`) the numbered witness points. `camera` is a
-  named view (`iso`, ...) or the direction from the scene to the camera.
+- **`views`**: `file` is null for a view not rendered (`only=`); `rendered` counts the views with an image.
+  `keys` are the assembly keys drawn in the section's colours (plus the context parts in an access view);
+  `offsets` (`{key: [dx, dy, dz]}`) the exploded displacements; `pose` (`{interface, kind, value, unit, body,
+  keys, axis}`, plus `slide_mm` for a cylindrical joint) the joint position shown, as an offset from the modelled
+  position, right-handed about the axis; `callouts` (`[{code, finding, label, point, text}]`) the numbered witness
+  points; `fit` the box the camera frames. `camera` is a named view (`iso`, ...) or the direction from the scene
+  to the camera; `clip` keeps the side its normal points to.
+- **`not_rendered`** lists what the packet could not show and why: a card with no shape, a planar or ball joint
+  (no range to pose), a fastener without axes, parts no step places (drawn in place in the exploded view).
 - **`checklist`** is the machine-readable render checklist (below), instantiated for this section: one question
   per applicable item and target, each naming the views that answer it.
 - **Staleness.** `cadagent.packet.packet_stale(manifest, record)` is None while the packet matches the current
@@ -154,23 +170,24 @@ Field notes:
 
 ## The render checklist (`cadagent.packet.CHECKLIST`)
 
-Specific yes/no questions, each tied to a view kind (plan §5.2). `answers` are `yes`, `no` or `unclear`; `unclear`
+Specific yes/no questions, each tied to a view kind (plan §5.2). `per` says what an item is asked for: once per
+section, or once per cavity and contents (from the cards' `contains`), joint, fastener group, access direction or
+pose. `answers` are `yes`, `no` or `unclear`; `unclear`
 is a valid answer and is never read as a pass. `bad_answer` is the answer that is a finding.
 
 | Item | Asked of | Question (templated) | Finding when |
 |---|---|---|---|
-| `contained-inside` | `cut-cavity-*` | In the cut through {cavity}, is every {what} fully inside the inner wall? | no |
-| `cavity-in-container` | `cut-cavity-*` | Does the cut show {cavity}'s contents held by {part}'s walls and floor, not hanging outside it or standing on another part? | no |
+| `contained-inside` | `cut-cavity-*` (side and plan) | In the cut through {cavity}, is every {what} fully inside the inner wall of {part}? | no |
 | `joint-bearing` | `cut-joint-*` | In the cut through {interface}, does {moving} turn or slide on a real bearing feature of {fixed} (a bore around the pin, a slot around the slider), with no material in its path? | no |
 | `fastener-stack` | `cut-fastener-*` | In the cut through {fastener}, does the head sit on {clamps} and does the thread end inside {into}? | no |
 | `mating-feature` | `exploded` | In the exploded view, does every part have a visible mating feature (bore, boss, slot, seat, screw hole) that meets one on its neighbour? | no |
 | `assembly-order` | `exploded` | Does the explode order (later steps further out) look buildable: nothing shown going in through a part fitted before it? | no |
 | `plain-box` | `solid-iso`, `solid-rear` | Does any part appear as a plain box with no features where a mechanism or interface should be? | yes |
-| `matches-card` | `solid-iso` | Does every part look like the function its card states (see `parts.*.function`)? | no |
+| `matches-card` | `solid-iso`, `solid-rear` | Does every part look like the function its card states (`parts.*.function`)? | no |
 | `floating` | `solid-rear` | Is anything floating in the opposite iso: a part with nothing visibly holding it? | yes |
 | `hidden-overlap` | `xray-iso` | In the x-ray, does any part sit inside another part's material where no insert or press fit is declared? | yes |
-| `fastener-access` | `access-*` | Looking along the screws' axis from the tool's side, is every head of {fasteners} visible and unobstructed? | no |
-| `motion-contact` | `pose-*` | At this end of {interface}'s range, does {moving} touch anything other than its declared contacts ({contacts})? | yes |
+| `fastener-access` | `access-from-*` | Looking along the screws' axis from the tool's side, is every head of {fasteners} visible and unobstructed? | no |
+| `motion-contact` | `pose-*` | At this end of {interface}'s range ({value}), does {moving} touch anything other than its declared contacts ({contacts})? | yes |
 | `findings-located` | `findings` | Is each numbered callout on the parts its finding names? | no |
 
 **Not asked of an image** (`MEASURED_ONLY`): how many items there are, gaps and clearances under about a

@@ -779,7 +779,8 @@ strict-xfail cases, and its implementer writes the adapter and removes the mark.
 - **Containment, additions**: the contact probe for near-tangent crossings, the support check and per-pose runs are
   not in the plan; the plan's "40 spheres in a cone, one moved 5 mm up through the wall" moves it 5 mm along the
   wall's outward normal (the cone opens upwards, so "up" leads away from the wall).
-- **Motion**: no pose renders (the verdict gives the poses and witness points; T10's render packet can pose them);
+- **Motion**: no pose renders (the verdict gives the poses and witness points; the section review packet,
+  [review-packet.md](review-packet.md), renders each joint's range ends);
   chains are always gridded and independent joints combined on request (`combine`), where the plan grids only
   joints declared `coupled`; pairs that do not move relative to each other are never queried rather than taken
   from the full per-pose table; the collision onset of a one-axis joint is bisected; containment can run per pose.

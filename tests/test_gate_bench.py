@@ -20,7 +20,7 @@ import pytest
 cq = pytest.importorskip("cadquery")
 pytest.importorskip("trimesh")
 
-from cadagent.gates import relate, relation_table  # noqa: E402
+from cadagent.gates import relate_pair, relation_table  # noqa: E402
 from cadagent.gates.wall import wall_gate  # noqa: E402
 
 _PATH = Path(__file__).resolve().parent / "fixtures" / "gate_bench" / "build.py"
@@ -96,36 +96,57 @@ def test_every_plan_seed_is_a_case():
 
 # ----------------------------------------------------------------------------- the fixture's raw evidence (T3)
 
+def _free(bench, key):
+    return bool(bench.result.geometry["parts"].get(bench.result.owner(key), {}).get("free"))
+
+
 def test_clean_bench_contacts_are_exactly_the_declared_ones(bench, table):
     d = bench.declarations
     declared = {frozenset(i["parts"]) for i in d["interfaces"]}
-    free = set(d["free_parts"])
     intended = {frozenset(o["parts"]) for o in d["intended_overlaps"]}
     assert table.stats["states"]["unknown"] == 0
     for iface in d["interfaces"]:
         assert table.get(*iface["parts"]).in_contact, f"{iface['id']} not realised"
     for rel in table.contacts():
         pair = frozenset((rel.a, rel.b))
-        assert pair in declared or pair & free, f"undeclared contact {rel.a}-{rel.b}"
-        if rel.state == "overlapping":
-            assert pair in intended, f"undeclared overlap {rel.a}-{rel.b}: {rel.overlap_mm3} mm3"
+        assert pair in declared or _free(bench, rel.a) or _free(bench, rel.b), f"undeclared contact {rel.a}-{rel.b}"
+        if rel.interferes:                                   # overlapping or contains: shared volume
+            assert pair in intended, f"undeclared interference {rel.a}-{rel.b}: {rel.overlap_mm3} mm3"
     names = set(bench.assembly.names)
     for i in d["interfaces"]:
         assert set(i["parts"]) <= names
 
 
 def test_clean_bench_every_ball_is_inside_the_cavity(bench):
-    cavity = bench.cavities["hopper_cavity"]
-    for name in bench.declarations["contains"][0]["what"]:
-        rel = relate(bench.shape(name), cavity, names=(name, "hopper_cavity"))
+    for i in range(8):
+        rel = relate_pair(bench.assembly, f"ball#{i}", "hopper_cavity")
         assert rel.state == "contains" and rel.contained == "a_in_b"
+
+
+def test_bench_is_declared_through_the_dossier_registry(bench):
+    geo = bench.result.geometry
+    assert geo["parts"]["base"]["grounded"] and geo["parts"]["ball"]["free"] and geo["parts"]["ball"]["count"] == 8
+    assert geo["cavities"]["hopper_cavity"]["part"] == "hopper"
+    assert geo["joints"]["I-pin-arm"]["moving"] == "arm" and geo["joints"]["I-pin-arm"]["range"] == [0.0, 40.0]
+    f0 = geo["fasteners"]["screw_0"]
+    assert f0["clamps"] == "lid" and f0["into"] == "insert_0" and f0["min_engagement_mm"] == 1.5
+    assert bench.assembly["screw_0"].kind == "fastener" and bench.assembly["hopper"].group == "store"
+    # the screws sit where they are placed: head on the lid (Z=47..50), tip at the insert bottom (Z=39)
+    from cadagent.gates.relations import bounding_box
+    z0, z1 = bounding_box(bench.shape("screw_0"))[2::3]
+    assert (z0, z1) == (pytest.approx(39.0), pytest.approx(50.0))
+    steps = [s.fit for s in bench.result.steps]
+    assert steps.index("board") < steps.index("lid")
+    order = [s.fit for s in gb.build("lid_before_board").result.steps]
+    assert order.index("lid") < order.index("board")
+    assert gb.build("decision_without_alternatives").declarations["decisions"][0]["alternatives"] == []
 
 
 def test_seed_ball_through_wall_shows_volume_outside_the_cavity():
     b = gb.build("ball_through_wall")
-    rel = relate(b.shape("ball_7"), b.cavities["hopper_cavity"], names=("ball_7", "hopper_cavity"))
+    rel = relate_pair(b.assembly, "ball#7", "hopper_cavity")
     assert rel.state == "overlapping" and rel.a_outside_b_mm3 > 100
-    assert relation_table(b.assembly).get("ball_7", "hopper").state == "overlapping"
+    assert relation_table(b.assembly).get("ball#7", "hopper").state == "overlapping"
 
 
 def test_seed_bracket_floats_and_hovers_in_the_relation_table():
@@ -136,23 +157,21 @@ def test_seed_bracket_floats_and_hovers_in_the_relation_table():
     assert rel.state == "apart" and rel.gap_mm == pytest.approx(0.5)
 
 
+def test_seed_thin_wall_witness_lies_on_the_thinned_wall():
+    v = gate_wall(gb.build("thin_wall"))
+    (finding,) = v["findings"]
+    for w in finding["evidence"]["witnesses"]:
+        xs = sorted((w["point"][0], w["exit_point"][0]))
+        assert xs == [pytest.approx(57.6, abs=1e-3), pytest.approx(58.4, abs=1e-3)], w
+        assert w["thickness_mm"] == pytest.approx(0.8, abs=1e-3)
+
+
 def test_arm_clears_the_frame_over_its_declared_range_and_not_beyond(bench):
-    lo, hi = bench.declarations["joints"][0]["range_deg"]
-    first_hit = gb.arm_end_clearance_deg(bench)
+    lo, hi = bench.result.geometry["joints"]["I-pin-arm"]["range"]
+    first_hit = gb.arm_frame_contact_deg()
     assert hi < first_hit < gb.SEEDS["flap_hits_frame"]["params"]["flap_range_deg"][1]
     for deg in range(int(lo), int(hi) + 1, 5):
         rel = relation_table(gb.arm_pose(bench, deg), only=["arm"]).get("arm", "frame", exact=True)
         assert rel.state == "apart", f"arm meets frame at {deg} deg"
     hit = relation_table(gb.arm_pose(bench, first_hit + 1), only=["arm"]).get("arm", "frame")
     assert hit.state == "overlapping"
-
-
-def test_dossier_items_hook_carries_shapes_and_declarations(bench):
-    items = gb.dossier_items(bench)
-    assert set(items["parts"]) == set(bench.assembly.names)
-    assert "hopper_cavity" in items["cavities"] and items["grounded"] == ["base"]
-    assert items["decisions"][0]["alternatives"]
-    assert gb.build("decision_without_alternatives").declarations["decisions"][0]["alternatives"] == []
-    steps = gb.build("lid_before_board").declarations["assembly"]
-    order = [s["fit"][0] for s in steps]
-    assert order.index("lid") < order.index("board")

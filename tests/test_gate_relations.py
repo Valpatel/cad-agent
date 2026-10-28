@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from cadagent.gates import Check, PairCache, Tolerances, aabb_distances, verdict, write_verdict
+from cadagent.gates import Check, PairCache, Tolerances, aabb_distances, relation_table, verdict, write_verdict
 from cadagent.gates import relations as relations_mod  # the module
 
 try:
@@ -93,9 +93,9 @@ def test_touch_tolerance_and_contact_area_of_a_pin_in_its_bore():
 
 @needs_cad
 def test_kernel_failure_is_unknown_not_apart(monkeypatch):
-    def boom(a, b):
+    def boom(kind, a, b):
         raise RuntimeError("BRepAlgoAPI_Common failed")
-    monkeypatch.setattr(relations_mod, "_common", boom)
+    monkeypatch.setattr(relations_mod, "_boolean", boom)
     rel = relations_mod.relate(box(1, 1, 1), box(1, 1, 1, (0.5, 0, 0)))
     assert rel.state == "unknown" and "Common failed" in rel.error
 
@@ -338,3 +338,141 @@ def test_verdict_converts_numpy_evidence():
     assert json.loads(json.dumps(v))["checks"][0]["evidence"] == {"t": 2.4, "arr": [0, 1, 2]}
     with pytest.raises(ValueError, match="NaN"):
         verdict("demo", [Check("a", "pass", "", evidence={"t": float("nan")})], assumptions=["x"])
+
+
+# ----------------------------------------------------------------------------- review regressions (PR #27)
+
+def overlapping_compound():
+    """Two solids sharing 1 mm of height: a compound the boolean kernel silently mishandles."""
+    return cq.Compound.makeCompound([box(2, 2, 1.5), box(2, 2, 1.5, (0, 0, 0.5))])
+
+
+@needs_cad
+def test_a_compound_of_interfering_solids_is_refused_or_unknown_never_touching():
+    from cadagent.gates import Assembly, relate, solid_interference
+    bad = overlapping_compound()
+    assert solid_interference(bad) and solid_interference(box(1, 1, 1)) == []
+    rel = relate(box(2, 2, 3), bad)
+    assert rel.state == "unknown" and "fuse" in rel.error
+    with pytest.raises(ValueError, match="fuse"):
+        Assembly().add("bad", bad)
+    root = cq.Assembly(name="root")
+    root.add(cq.Workplane().add([box(2, 2, 1.5), box(2, 2, 1.5, (0, 0, 0.5))]), name="node")
+    with pytest.raises(ValueError, match="fuse"):
+        Assembly.from_cadquery(root)
+    ok = cq.Compound.makeCompound([box(1, 1, 1), box(1, 1, 1, (3, 0, 0))])   # separate solids are fine
+    assert relate(ok, box(1, 1, 1, (0.5, 0, 0))).state == "overlapping"
+
+
+@needs_cad
+def test_volume_cross_check_turns_a_silent_kernel_error_into_unknown(monkeypatch):
+    """If Common came back empty (or over-counted) without an error, the Cut volumes disagree."""
+    real = relations_mod._boolean
+    a, b = box(10, 10, 10), box(10, 10, 10, (5, 0, 0))
+
+    def empty_common(kind, x, y):
+        return relations_mod._compound([]) if kind == "common" else real(kind, x, y)
+    monkeypatch.setattr(relations_mod, "_boolean", empty_common)
+    rel = relations_mod.relate(a, b)
+    assert rel.state == "unknown" and "volumes disagree" in rel.error
+
+    def overcounted_common(kind, x, y):                 # common = all of a: would read as a_in_b
+        return x if kind == "common" else real(kind, x, y)
+    monkeypatch.setattr(relations_mod, "_boolean", overcounted_common)
+    rel = relations_mod.relate(a, b)
+    assert rel.state == "unknown"
+
+
+@needs_cad
+def test_unexamined_pairs_read_unchecked_unless_their_boxes_prove_a_gap():
+    from cadagent.gates import Assembly
+    asm = Assembly({"a": box(10, 10, 10), "alt": box(10, 10, 10, (5, 0, 0)), "m": box(1, 1, 1, (40, 0, 0)),
+                    "far": box(1, 1, 1, (80, 0, 0))})
+    skipped = relation_table(asm, skip_pairs=[("a", "alt")]).get("a", "alt")
+    assert skipped.state == "unchecked" and not skipped.exact
+    only = relation_table(asm, only=["m"])
+    assert only.get("a", "alt").state == "unchecked"
+    assert only.get("a", "far").state == "apart" and only.get("a", "far").gap_lower_bound_mm > 60
+    assert only.get("a", "alt", exact=True).state == "overlapping"
+
+
+@needs_cad
+def test_a_buried_part_is_contains_and_counts_as_interference():
+    from cadagent.gates import Assembly
+    asm = Assembly({"block": box(20, 20, 20), "pin": cq.Solid.makeCylinder(2, 10, cq.Vector(10, 10, 5))})
+    table = relation_table(asm)
+    rel = table.get("pin", "block")
+    assert rel.state == "contains" and rel.contained == "a_in_b" and rel.interferes
+    assert table.interferences() == [table.get("block", "pin")]
+    assert not relation_table(Assembly({"a": box(1, 1, 1), "b": box(1, 1, 1, (1, 0, 0))})).get("a", "b").interferes
+
+
+@needs_cad
+def test_cavities_are_cached_items_outside_the_pair_table_and_move_with_their_part(tmp_path, monkeypatch):
+    from cadagent.gates import Assembly, relate_pair
+    shell = box(20, 20, 20).cut(box(16, 16, 18, (2, 2, 2)))
+    asm = Assembly()
+    asm.add("hopper", shell, body="hopper")
+    asm.add_cavity("void", box(16, 16, 18, (2, 2, 2)), part="hopper")
+    asm.add("ball", ball(3, cq.Vector(10, 10, 5)))
+    asm.add("base", box(40, 40, 2, (-10, -10, -2)))
+    assert "void" not in asm.names and relation_table(asm).stats["candidates"] == 2     # hopper-ball, hopper-base
+    rel = relate_pair(asm, "ball", "void", cache=PairCache(tmp_path))
+    assert rel.state == "contains" and rel.contained == "a_in_b" and rel.wall_mm == pytest.approx(0.0, abs=1e-6)
+    monkeypatch.setattr(relations_mod, "relate", lambda *a, **k: pytest.fail("kernel ran on a cached pair"))
+    assert relate_pair(asm, "ball", "void", cache=PairCache(tmp_path)).cached
+    monkeypatch.undo()
+    with pytest.raises(KeyError):
+        asm.add_cavity("orphan", box(1, 1, 1), part="nobody")
+    lifted = asm.posed("hopper", (0, 0, 30))
+    assert relate_pair(lifted, "ball", "void").state == "apart"          # the void went up with the hopper
+    assert lifted.shape("base") is asm.shape("base")                       # static parts are not re-located
+
+
+@needs_cad
+def test_the_kernel_version_is_part_of_the_cache_key(tmp_path, monkeypatch):
+    from cadagent.gates import Assembly
+    shapes = {"a": box(1, 1, 1), "b": box(1, 1, 1, (1, 0, 0))}
+    relation_table(Assembly(shapes), cache=PairCache(tmp_path))
+    assert relation_table(Assembly(shapes), cache=PairCache(tmp_path)).stats["cache_hits"] == 1
+    monkeypatch.setattr(relations_mod, "_kernel_version", lambda: "99.0")
+    assert relation_table(Assembly(shapes), cache=PairCache(tmp_path)).stats["cache_hits"] == 0
+
+
+@needs_cad
+def test_from_build_takes_placed_shapes_recorded_hashes_cavities_joints_and_fasteners(tmp_path, monkeypatch):
+    """The dossier hand-over: live result and a read-back from BREP give the same keys, places and cache keys."""
+    from cadagent import dossier
+    from cadagent.fasteners import socket_head_envelope
+    from cadagent.gates import Assembly
+    with dossier.use_registry() as reg:
+        reg.add_part("base", lambda p: box(40, 40, 4), grounded=True, section="S1")
+        reg.add_part("tub", lambda p: box(20, 20, 10).cut(box(16, 16, 8, (2, 2, 2))), section="S2",
+                     place=cq.Location(cq.Vector(5, 5, 4)))
+        reg.add_cavity("tub", "tub_void", lambda p: box(16, 16, 8, (2, 2, 2)))
+        reg.add_part("lid", lambda p: box(20, 20, 2, (5, 5, 14)).cut(cq.Solid.makeCylinder(1.7, 2, cq.Vector(8, 8, 14))),
+                     section="S2")
+        reg.add_part("flap", lambda p: box(10, 2, 10, (30, 0, 4)), section="S3")
+        reg.joint("J1", "revolute", parts=("flap", "base"), axis=((30, 0, 4), (0, 1, 0)), range_deg=(0, 90))
+        reg.fastener("m3x6", clamps="lid", into="tub", name="lid_screw", at=[dossier.Axis((8, 8, 16), (0, 0, -1))],
+                     shape=lambda p: socket_head_envelope(3, 6, 5.5, 3))
+        reg.fastener("m3x4", clamps="flap", into="base", name="hinge_screw",
+                     at=[dossier.Axis((35, 0, 9), (0, 1, 0))], shape=lambda p: socket_head_envelope(3, 4, 5.5, 3))
+        live = reg.build({}, out_dir="exports", root=tmp_path)
+    asm = Assembly.from_build(live)
+    assert sorted(asm.names) == ["base", "flap", "hinge_screw", "lid", "lid_screw", "tub"]
+    assert asm["lid_screw"].kind == "fastener" and asm["tub"].kind == "part" and asm["tub"].group == "S2"
+    hashes = live.content_hashes()
+    assert all(asm[n].content_hash == hashes[n] for n in asm.names)
+    assert relations_mod.bounding_box(asm.shape("lid_screw"))[2] == pytest.approx(10, abs=1e-6)   # seat 16, 6 long
+    assert relations_mod.bounding_box(asm.shape("tub"))[:3] == pytest.approx((5, 5, 4), abs=1e-6)
+    assert asm.cavities["tub_void"].container == "tub" and asm.cavities["tub_void"].content_hash == hashes["tub_void"]
+    assert asm["flap"].body == "flap" and asm["hinge_screw"].body == "flap" and asm["lid_screw"].body == "lid_screw"
+    assert set(asm.joints) == {"J1"} and set(asm.fastener_axes) == {"lid_screw", "hinge_screw"}
+
+    cold = relation_table(asm, cache=PairCache(tmp_path / "cache"))
+    assert cold.get("lid_screw", "lid").state == "touching" and cold.get("flap", "base").state == "touching"
+    loaded = dossier.load_geometry(tmp_path / "exports" / "dossier-geometry.json")
+    monkeypatch.setattr(relations_mod, "shape_content_hash", lambda s: pytest.fail("a read-back shape was re-hashed"))
+    warm = relation_table(Assembly.from_build(loaded), cache=PairCache(tmp_path / "cache"))
+    assert warm.stats["kernel_queries"] == 0 and warm.stats["cache_hits"] == cold.stats["candidates"]

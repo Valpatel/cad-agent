@@ -81,7 +81,7 @@ def test_mesh_inputs_subsampling_and_an_open_mesh(tmp_path):
     m = wall._as_mesh(plate())
     m.update_faces(list(range(len(m.faces) - 1)))           # drop a triangle: no longer closed
     c = wall.check_wall("open", 2.4, mesh=m)
-    assert c.status == "fail" and "watertight" in c.message
+    assert c.status == "fail" and "open" in c.message
     with pytest.raises(ValueError):
         wall.check_wall("nothing", 2.4)
 
@@ -96,3 +96,89 @@ def test_wall_gate_writes_one_verdict_with_per_part_thresholds(tmp_path):
     assert v["limits"]["parts"]["ribbed"] == {"wall_mm": 0.8} and v["physical_fit_verified"] is False
     assert any("not measured" in a for a in v["assumptions"])
     assert json.loads(out.read_text()) == v
+
+
+# ----------------------------------------------------------------------------- review regressions (PR #27)
+
+def funnel(t=2.4, angle=45.0, length=20.0, r0=10.0):
+    """A conical wall of normal thickness ``t`` with square-cut ends (no knife edge)."""
+    import math
+    c, s = math.cos(math.radians(angle)), math.sin(math.radians(angle))
+    p0 = (r0, 0.0)
+    p1 = (r0 + length * c, length * s)
+    n = (-s * t, c * t)
+    pts = [p0, p1, (p1[0] + n[0], p1[1] + n[1]), (p0[0] + n[0], p0[1] + n[1])]
+    return cq.Workplane("XZ").polyline(pts).close().revolve(360, (0, 0, 0), (0, 1, 0)).val()
+
+
+CURVED = {
+    "filleted box": (lambda: cq.Workplane().box(30, 30, 20).edges().fillet(2).val(), 20.0),
+    "ball": (lambda: cq.Solid.makeSphere(5, angleDegrees1=-90), 10.0),
+    "conical wall": (funnel, 2.4),
+    "shelled filleted box": (lambda: cq.Workplane().box(30, 30, 20).edges().fillet(4).shell(-2.4).val(), 2.4),
+    "spherical shell": (lambda: cq.Solid.makeSphere(10, angleDegrees1=-90).cut(cq.Solid.makeSphere(7.6, angleDegrees1=-90)), 2.4),
+}
+
+
+@pytest.mark.parametrize("name", list(CURVED))
+def test_curved_parts_pass_at_their_true_thickness(name):
+    make, true_t = CURVED[name]
+    s = make()
+    m = wall._as_mesh(s)
+    assert m.is_watertight, "the repaired tessellation must be closed"
+    c = wall.check_wall(name, true_t, mesh=s, shape=s)
+    assert c.status == "pass", c.message
+    assert c.evidence["brep-ray"]["min_mm"] == pytest.approx(true_t, abs=1e-6)
+    over = wall.check_wall(name, true_t + 0.1, mesh=s, shape=s)
+    assert over.status == "fail" and over.evidence["witnesses"][0]["thickness_mm"] == pytest.approx(true_t, abs=1e-3)
+
+
+@pytest.mark.parametrize("make", [lambda: cq.Workplane().box(30, 30, 20).edges().fillet(2).val(),
+                                  lambda: cq.Solid.makeSphere(5, angleDegrees1=-90),
+                                  lambda: cq.Solid.makeCone(10, 0, 20)])
+def test_tessellations_with_poles_apexes_and_fillet_corners_are_closed_after_repair(make, tmp_path):
+    s = make()
+    verts, tris = s.tessellate(0.05, 0.2)
+    raw = trimesh.Trimesh([(v.x, v.y, v.z) for v in verts], tris, process=True)
+    assert not raw.is_watertight                                     # what the review found
+    assert wall._as_mesh(s).is_watertight
+    stl = tmp_path / "part.stl"
+    cq.exporters.export(s, str(stl))
+    assert wall._as_mesh(stl).is_watertight
+    assert "open" not in wall.check_wall("p", 0.5, mesh=s).message
+
+
+def test_a_cone_reads_thin_only_at_its_sharp_apex_and_rim():
+    s = cq.Solid.makeCone(10, 0, 20)
+    c = wall.check_wall("cone", 2.0, mesh=s, shape=s)
+    assert c.status == "fail"
+    for w in c.evidence["witnesses"]:                                # the apex, or the 63 deg base rim
+        x, y, z = w["point"]
+        assert z > 14 or (z < 1 and (x * x + y * y) ** 0.5 > 9), w
+
+
+def test_mesh_chord_error_is_dismissed_by_the_brep_and_counted():
+    shell = CURVED["spherical shell"][0]()
+    mesh_only = wall.check_wall("shell", 2.4, mesh=shell)
+    assert mesh_only.status == "fail"                                # a mesh alone reads it ~0.03 mm thin
+    both = wall.check_wall("shell", 2.4, mesh=shell, shape=shell)
+    assert both.status == "pass" and both.evidence["mesh-ray"]["dismissed_as_chord_error"] > 0
+    assert wall.check_wall("shell", 2.4, mesh=shell, tol_mm=0.1).status == "pass"
+
+
+def test_an_open_mesh_with_a_brep_is_a_warning_not_a_failure():
+    p = plate()
+    m = wall._as_mesh(p)
+    m.update_faces(list(range(len(m.faces) - 1)))
+    c = wall.check_wall("open", 2.4, mesh=m, shape=p)
+    assert c.status == "warn" and "B-rep rays are the evidence" in c.message
+
+
+def test_brep_sampling_scales_with_face_size_and_finds_an_eccentric_bore():
+    tube = cq.Workplane().circle(10).extrude(20).cut(cq.Workplane().center(4.2, 0).circle(5).extrude(20)).val()
+    c = wall.check_wall("tube", 1.0, shape=tube)
+    assert c.status == "fail"
+    assert c.evidence["brep-ray"]["min_mm"] < 0.9                      # true minimum 0.8 at +X
+    assert c.evidence["witnesses"][0]["point"][0] > 8
+    coarse = wall.brep_thickness(tube, grid=3, max_grid=3)
+    assert coarse["thickness"].min() > c.evidence["brep-ray"]["min_mm"]

@@ -211,6 +211,7 @@ class Part:
     body: str = ""
     group: Optional[str] = None
     container: Optional[str] = None
+    kind: str = "part"
     _located: Any = field(default=None, repr=False, compare=False)
     _hash: Optional[str] = field(default=None, repr=False, compare=False)
 
@@ -254,6 +255,8 @@ class Assembly:
     def __init__(self, parts: Optional[Mapping[str, Any]] = None):
         self._parts: Dict[str, Part] = {}
         self.cavities: Dict[str, Part] = {}
+        self.joints: Dict[str, Any] = {}           # from a dossier build: {interface: {kind, moving, fixed, axis, ...}}
+        self.fastener_axes: Dict[str, Any] = {}    # from a dossier build: {fastener: [Axis(seat, advance), ...]}
         for name, shape in (parts or {}).items():
             self.add(name, shape)
 
@@ -294,7 +297,8 @@ class Assembly:
         if part not in self._parts:
             raise KeyError(f"cavity {name!r}: no part {part!r} in the assembly")
         topods, matrix = self._new(name, shape, location, content_hash)
-        cav = Part(name, topods, matrix, self._parts[part].body, self._parts[part].group, part, _hash=content_hash)
+        cav = Part(name, topods, matrix, self._parts[part].body, self._parts[part].group, part, "cavity",
+                   _hash=content_hash)
         self.cavities[name] = cav
         return cav
 
@@ -356,6 +360,7 @@ class Assembly:
         out = Assembly()
         out._parts = {n: pose(p) for n, p in self._parts.items()}
         out.cavities = {n: pose(c) for n, c in self.cavities.items()}
+        out.joints, out.fastener_axes = self.joints, self.fastener_axes
         return out
 
     @classmethod
@@ -384,30 +389,50 @@ class Assembly:
 
     @classmethod
     def from_build(cls, result: Any, *, fasteners: bool = True) -> "Assembly":
-        """The assembly a dossier build made (``cadagent.dossier``'s ``BuildResult``, live or from
-        ``load_geometry``): every ``assembly_shapes()`` instance, already placed, with the content hash
-        recorded at build time (so read-back shapes are never re-hashed), grouped by section; every
-        declared cavity via ``add_cavity`` with its recorded hash; joint-moving parts as their own bodies.
+        """The assembly a dossier build made: a ``cadagent.dossier`` ``BuildResult``, live or from ``load_geometry``.
+
+        * parts and placed fasteners from ``assembly_shapes(with_hashes=True)``, already in assembly coordinates,
+          keyed as the build keys them (``"hopper"``, ``"ball#3"``), each with the content hash recorded at build
+          time, so a shape read back from BREP is never re-hashed and the pair cache stays warm;
+        * ``Part.kind`` from ``result.kind(key)`` (``"part"`` or ``"fastener"``), ``group`` = the part's section;
+        * every cavity via ``add_cavity`` with its recorded hash (its host must be a single placed part);
+        * ``joints`` and ``fastener_axes`` copied onto the assembly for the motion and fastener gates;
+        * body labels, provisionally (docs/dossier.md, open for T7): a joint's ``moving`` part is its own body,
+          and fasteners whose ``clamps`` or ``into`` is that part, and parts joined to it by a ``fixed`` joint,
+          join its body.
         """
         geo = getattr(result, "geometry", None) or {}
-        recorded: Dict[str, str] = {}
-        section: Dict[str, Optional[str]] = {}
-        for kind in ("parts", "fasteners"):
-            for name, info in (geo.get(kind) or {}).items():
-                for inst in info.get("instances") or []:
-                    if inst.get("sha256"):
-                        recorded[inst["key"]] = inst["sha256"]
-                    section[inst.get("key", name)] = info.get("section") or None
-        out = cls()
+        hashes = result.content_hashes() if hasattr(result, "content_hashes") else {}
         owner = getattr(result, "owner", None) or (lambda k: k)
-        for key, shape in result.assembly_shapes(fasteners=fasteners).items():
-            out.add(key, shape, content_hash=recorded.get(key), group=section.get(key) or owner(key))
+        kind = getattr(result, "kind", None) or (lambda k: "part")
+        joints = dict(getattr(result, "joints", None) or {})
+        body_of: Dict[str, str] = {}
+        for j in joints.values():
+            if j.get("kind") != "fixed" and j.get("moving"):
+                body_of[j["moving"]] = j["moving"]
+        for j in joints.values():
+            if j.get("kind") == "fixed":
+                for a, b in ((j.get("moving"), j.get("fixed")), (j.get("fixed"), j.get("moving"))):
+                    if a in body_of and b and b not in body_of:
+                        body_of[b] = body_of[a]
+        for name, info in (geo.get("fasteners") or {}).items():
+            for host in (info.get("clamps"), info.get("into")):
+                if host in body_of:
+                    body_of[name] = body_of[host]
+                    break
+        out = cls()
+        for key, (shape, recorded) in result.assembly_shapes(fasteners=fasteners, with_hashes=True).items():
+            name = owner(key)
+            section = ((geo.get("parts") or {}).get(name) or {}).get("section") or None
+            part = out.add(key, shape, content_hash=recorded, group=section, body=body_of.get(name))
+            part.kind = kind(key) or "part"
         for name, shape in (getattr(result, "cavities", None) or {}).items():
-            info = (geo.get("cavities") or {}).get(name, {})
-            host = info.get("part")
+            host = ((geo.get("cavities") or {}).get(name) or {}).get("part")
             if host not in out:
                 raise KeyError(f"cavity {name!r} belongs to {host!r}, which is not a single placed part")
-            out.add_cavity(name, shape, part=host, content_hash=info.get("sha256"))
+            out.add_cavity(name, shape, part=host, content_hash=hashes.get(name))
+        out.joints = joints
+        out.fastener_axes = dict(getattr(result, "fastener_axes", None) or {})
         return out
 
 

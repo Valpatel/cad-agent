@@ -1,25 +1,24 @@
-"""Gate bench: a small generic mechanism with declared intent, and the plan's seeded defects (§6).
+"""Gate bench: a small generic mechanism declared through the dossier registry, and the plan's seeded defects (§6).
 
-The mechanism (millimetres, Z up, everything placed in assembly coordinates):
+The mechanism (millimetres, Z up, everything in assembly coordinates):
 
-* ``base``: a 160 x 80 x 4 plate, the grounded part, with a 8 mm boss that carries the bracket;
-* ``hopper``: an open box (2.4 mm walls and floor) on the base, with four corner posts holding
-  heat-set ``insert_0..3``; its void is declared as the cavity ``hopper_cavity``;
-* ``ball_0..7``: loose 10 mm balls inside the hopper (declared ``contains``, free);
+* ``base``: a 160 x 80 x 4 plate, the grounded part, with an 8 mm boss that carries the bracket;
+* ``hopper``: an open box (2.4 mm walls and floor, filleted outer corners) on the base, with four
+  corner posts holding heat-set ``insert_0..3``; its void is the declared cavity ``hopper_cavity``;
+* ``ball``: eight loose 10 mm balls in the hopper, one part with eight instances (``ball#0..7``), free;
 * ``board``: a sensor board standing in the hopper against the -Y wall;
-* ``lid`` on the hopper, held by ``screw_0..3`` (M3 x 8 envelopes) into the inserts;
+* ``lid`` on the hopper, held by four fasteners ``screw_0..3`` (M3 x 8 envelopes) into the inserts;
 * ``bracket``: an L bracket on the base boss;
-* ``hinge_block``, ``pin``, ``arm`` and ``stop``: an arm on a pin (revolute joint about Y),
-  resting on the stop at 0 deg and declared to lift to 40 deg;
+* ``hinge_block``, ``pin``, ``arm`` and ``stop`` (filleted): an arm on a pin, the revolute joint
+  ``I-pin-arm`` about Y, resting on the stop at 0 deg and declared to lift to 40 deg;
 * ``frame``: a post and an overhead beam that the arm clears at 40 deg and would hit near 45 deg.
 
-``build(seed=None)`` returns a ``Bench``: the ``Assembly`` (``cadagent.gates``), the cavity solids,
-the declarations as plain data (interfaces, intended overlaps, free and grounded parts, contains,
-joints, fasteners, assembly steps, decisions, per-part minimum walls), and the parameters.
-
-Registry hook: until the dossier registry (plan T13) exists, ``dossier_items(bench)`` returns
-the same declarations in one dict, the plan's §3.4 ``dossier_items()`` migration path, so the
-registry can adopt this fixture by importing that function instead of the bench changing shape.
+``build(seed=None)`` declares everything on a fresh ``cadagent.dossier.Registry`` (parts, the cavity,
+the joint, the fasteners with their placed shapes and stack numbers, the assembly steps), builds it
+without writing files, and returns a ``Bench``: the ``BuildResult``, ``Assembly.from_build`` of it,
+and the declarations that belong in the YAML dossier rather than the build script (interfaces,
+intended overlaps, ``contains``, decisions, per-part minimum walls, tool envelopes) as plain data
+until the bench grows a ``dossier/`` directory.
 
 Seeds (``SEEDS``) each inject one defect; ``tests/test_gate_bench.py`` runs them per gate.
 """
@@ -29,19 +28,21 @@ from __future__ import annotations
 import copy
 import math
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import cadquery as cq
 
+from cadagent import dossier
 from cadagent.fasteners import insert_envelope, socket_head_envelope
 from cadagent.gates import Assembly
 
 PARAMS: Dict[str, Any] = {
     "wall": 2.4,
-    "hopper": {"x": 10.0, "y": 15.0, "size": 50.0, "height": 40.0},
+    "hopper": {"x": 10.0, "y": 15.0, "size": 50.0, "height": 40.0, "corner_r": 3.0},
     "post": 10.0,
     "insert": {"od": 4.0, "id": 2.5, "length": 5.0, "hole_depth": 6.0},
     "screw": {"d": 3.0, "length": 8.0, "head_d": 5.5, "head_h": 3.0, "pitch": 0.5, "min_threads": 3},
+    "screw_lengths": {},
     "lid": {"t": 3.0, "hole_d": 3.4},
     "ball": {"r": 5.0, "x": [29.0, 41.0], "y": [34.0, 46.0]},
     "bracket_lift": 0.0,
@@ -50,15 +51,15 @@ PARAMS: Dict[str, Any] = {
     "gusset": False,
     "thin_wall": None,
     "ball_offset": None,
-    "assembly_order": ["base", "hopper", "inserts", "board", "balls", "lid", "screws", "bracket", "hinge_block",
+    "assembly_order": ["base", "hopper", "inserts", "board", "ball", "lid", "bracket", "hinge_block",
                        "stop", "arm", "pin", "frame"],
     "drop_alternatives": False,
 }
 
 SEEDS: Dict[str, Dict[str, Any]] = {
-    "ball_through_wall": {"gate": "containment", "task": "T5", "parts": ["ball_7"],
-                          "what": "ball_7 pushed 5 mm into the +Y wall (2.6 mm out of the far side)",
-                          "params": {"ball_offset": ["ball_7", [0.0, 16.6, 0.0]]}},
+    "ball_through_wall": {"gate": "containment", "task": "T5", "parts": ["ball#7"],
+                          "what": "ball#7 pushed 5 mm into the +Y wall (2.6 mm out of the far side)",
+                          "params": {"ball_offset": [7, [0.0, 16.6, 0.0]]}},
     "bracket_floats": {"gate": "connectivity", "task": "T4", "parts": ["bracket"],
                        "what": "the base boss that carries the bracket is deleted, so the bracket floats",
                        "params": {"boss": False}},
@@ -82,7 +83,7 @@ SEEDS: Dict[str, Dict[str, Any]] = {
                   "params": {"thin_wall": 0.8}},
     "lid_before_board": {"gate": "assembly", "task": "T9", "parts": ["board", "lid"],
                          "what": "assembly steps reordered: the lid goes on before the board goes in",
-                         "params": {"assembly_order": ["base", "hopper", "inserts", "lid", "balls", "board", "screws",
+                         "params": {"assembly_order": ["base", "hopper", "inserts", "lid", "ball", "board",
                                                        "bracket", "hinge_block", "stop", "arm", "pin", "frame"]}},
     "decision_without_alternatives": {"gate": "dossier-lint", "task": "T2", "parts": ["hopper"],
                                       "what": "decision D1 loses its rejected alternatives",
@@ -91,19 +92,25 @@ SEEDS: Dict[str, Dict[str, Any]] = {
 
 PIVOT = (105.0, 20.0)          # arm pivot (x, z); the axis runs along Y
 LIFT_AXIS = (0.0, -1.0, 0.0)   # a positive angle about this axis lifts the arm's free end
+PRINTED = ("base", "hopper", "lid", "bracket", "hinge_block", "arm", "stop", "frame")
 
 
 @dataclass
 class Bench:
+    result: Any                                  # cadagent.dossier.BuildResult
     assembly: Assembly
-    cavities: Dict[str, Any]
     declarations: Dict[str, Any]
     params: Dict[str, Any]
     seed: Optional[str] = None
     print_parts: Dict[str, float] = field(default_factory=dict)   # printed part -> declared minimum wall (mm)
 
     def shape(self, name: str):
+        """A part or cavity in assembly coordinates (``TopoDS_Shape``)."""
         return self.assembly.shape(name)
+
+    @property
+    def cavities(self) -> Dict[str, Any]:
+        return {n: c.located for n, c in self.assembly.cavities.items()}
 
 
 def _box(x0, y0, z0, x1, y1, z1):
@@ -114,7 +121,7 @@ def _cyl_y(cx, cz, r, y0, y1):
     return cq.Solid.makeCylinder(r, y1 - y0, cq.Vector(cx, y0, cz), cq.Vector(0, 1, 0))
 
 
-def _post_centres(p):
+def post_centres(p):
     h, post, w = p["hopper"], p["post"], p["wall"]
     lo_x, hi_x = h["x"] + w + post / 2, h["x"] + h["size"] - w - post / 2
     lo_y, hi_y = h["y"] + w + post / 2, h["y"] + h["size"] - w - post / 2
@@ -125,93 +132,92 @@ def _hopper(p):
     h, w, post = p["hopper"], p["wall"], p["post"]
     x0, y0, z0 = h["x"], h["y"], 4.0
     x1, y1, top = x0 + h["size"], y0 + h["size"], z0 + h["height"]
-    shell = _box(x0, y0, z0, x1, y1, top).cut(_box(x0 + w, y0 + w, z0 + w, x1 - w, y1 - w, top))
-    for cx, cy in _post_centres(p):
+    outer = cq.Workplane().add(_box(x0, y0, z0, x1, y1, top)).edges("|Z").fillet(h["corner_r"]).val()
+    shell = outer.cut(_box(x0 + w, y0 + w, z0 + w, x1 - w, y1 - w, top))
+    for cx, cy in post_centres(p):
         shell = shell.fuse(_box(cx - post / 2, cy - post / 2, z0 + w, cx + post / 2, cy + post / 2, top))
         ins = p["insert"]
         shell = shell.cut(cq.Solid.makeCylinder(ins["od"] / 2, ins["hole_depth"], cq.Vector(cx, cy, top - ins["hole_depth"])))
     if p["thin_wall"] is not None:
         shell = shell.cut(_box(x1 - w + p["thin_wall"], y0 - 1, z0 - 1, x1 + 1, y1 + 1, top + 1))
     cavity = _box(x0 + w, y0 + w, z0 + w, x1 - w, y1 - w, top)
-    for cx, cy in _post_centres(p):
+    for cx, cy in post_centres(p):
         cavity = cavity.cut(_box(cx - post / 2, cy - post / 2, z0 + w, cx + post / 2, cy + post / 2, top))
     return shell.clean(), cavity.clean(), top
 
 
-def build(seed: Optional[str] = None, params: Optional[Dict[str, Any]] = None) -> Bench:
-    """Build the clean bench, or the bench with one seeded defect from ``SEEDS``."""
-    p = copy.deepcopy(PARAMS)
-    if seed is not None:
-        if seed not in SEEDS:
-            raise KeyError(f"unknown seed {seed!r}; seeds: {sorted(SEEDS)}")
-        p.update(copy.deepcopy(SEEDS[seed]["params"]))
-    p.update(copy.deepcopy(params or {}))
-    asm = Assembly()
-
+def register(reg, p: Dict[str, Any]) -> None:
+    """Declare the bench on registry ``reg`` for parameters ``p`` (``PARAMS`` with a seed applied)."""
     base = _box(0, 0, 0, 160, 80, 4)
     if p["boss"]:
         base = base.fuse(cq.Solid.makeCylinder(4, 3, cq.Vector(90, 20, 4))).clean()
-    asm.add("base", base, group="frame")
+    reg.add_part("base", base, section="frame", grounded=True)
 
     hopper, cavity, top = _hopper(p)
-    asm.add("hopper", hopper, group="store")
-    lid_t = p["lid"]["t"]
-    lid = _box(p["hopper"]["x"], p["hopper"]["y"], top, p["hopper"]["x"] + p["hopper"]["size"],
-               p["hopper"]["y"] + p["hopper"]["size"], top + lid_t)
-    for cx, cy in _post_centres(p):
+    reg.add_part("hopper", hopper, section="store")
+    reg.add_cavity("hopper", "hopper_cavity", cavity)
+    h, lid_t = p["hopper"], p["lid"]["t"]
+    lid = cq.Workplane().add(_box(h["x"], h["y"], top, h["x"] + h["size"], h["y"] + h["size"], top + lid_t)) \
+        .edges("|Z").fillet(h["corner_r"]).val()
+    for cx, cy in post_centres(p):
         lid = lid.cut(cq.Solid.makeCylinder(p["lid"]["hole_d"] / 2, lid_t, cq.Vector(cx, cy, top)))
-    asm.add("lid", lid.clean(), group="store")
+    reg.add_part("lid", lid.clean(), section="store")
 
     ins, sc = p["insert"], p["screw"]
-    lengths = p.get("screw_lengths", {})
-    for i, (cx, cy) in enumerate(_post_centres(p)):
-        asm.add(f"insert_{i}", insert_envelope(ins["od"], ins["id"], ins["length"]), (cx, cy, top), group="store")
-        length = lengths.get(f"screw_{i}", sc["length"])
-        asm.add(f"screw_{i}", socket_head_envelope(sc["d"], length, sc["head_d"], sc["head_h"]),
-                (cx, cy, top + lid_t), group="store")
+    for i, (cx, cy) in enumerate(post_centres(p)):
+        reg.add_part(f"insert_{i}", insert_envelope(ins["od"], ins["id"], ins["length"]), section="store",
+                     place=(cx, cy, top))
+        length = p["screw_lengths"].get(f"screw_{i}", sc["length"])
+        reg.fastener("m3_shcs", clamps="lid", into=f"insert_{i}", name=f"screw_{i}", via=f"I-thread-{i}",
+                     at=[dossier.Axis((cx, cy, top + lid_t), (0, 0, -1))], tool="hex key 2.5",
+                     length_mm=length, diameter_mm=sc["d"], thread_start_mm=lid_t, thread_depth_mm=ins["length"],
+                     min_engagement_mm=sc["pitch"] * sc["min_threads"],
+                     shape=socket_head_envelope(sc["d"], length, sc["head_d"], sc["head_h"]))
 
-    b = p["ball"]
-    floor_z = 4.0 + p["wall"]
-    centres = [(x, y, floor_z + b["r"] + layer * 2 * b["r"]) for layer in (0, 1) for x in b["x"] for y in b["y"]]
-    for i, c in enumerate(centres):
-        if p["ball_offset"] and p["ball_offset"][0] == f"ball_{i}":
-            c = tuple(v + d for v, d in zip(c, p["ball_offset"][1]))
-        asm.add(f"ball_{i}", cq.Solid.makeSphere(b["r"], cq.Vector(*c), angleDegrees1=-90), group="store")
+    b, w = p["ball"], p["wall"]
+    floor_z = 4.0 + w
+    centres = [[x, y, floor_z + b["r"] + layer * 2 * b["r"]] for layer in (0, 1) for x in b["x"] for y in b["y"]]
+    if p["ball_offset"]:
+        i, d = p["ball_offset"]
+        centres[i] = [v + dv for v, dv in zip(centres[i], d)]
+    reg.add_part("ball", [cq.Solid.makeSphere(b["r"], cq.Vector(*c), angleDegrees1=-90) for c in centres],
+                 section="store", free=True, reason="loose balls in the hopper")
+    reg.add_part("board", _box(24, h["y"] + w, floor_z, 46, h["y"] + w + 1.6, floor_z + 20), section="store")
 
-    w = p["wall"]
-    asm.add("board", _box(24, p["hopper"]["y"] + w, floor_z, 46, p["hopper"]["y"] + w + 1.6, floor_z + 20),
-            group="store")
-
-    lift = p["bracket_lift"]
     bracket = _box(82, 15, 7, 98, 25, 10).fuse(_box(95, 15, 10, 98, 25, 30)).clean()
-    asm.add("bracket", bracket, (0, 0, lift), group="bracket")
+    reg.add_part("bracket", bracket, section="bracket", place=(0, 0, p["bracket_lift"]))
 
     px, pz = PIVOT
-    block = _box(99, 30, 4, 111, 40, 26).cut(_cyl_y(px, pz, 2.5, 30, 40))
-    asm.add("hinge_block", block.clean(), group="arm")
-    asm.add("pin", _cyl_y(px, pz, 2.5, 28, 46), group="arm")
-    arm = _box(100, 40, 14, 150, 44, 26).cut(_cyl_y(px, pz, 2.5, 40, 44))
-    asm.add("arm", arm.clean(), body="arm", group="arm")
-    asm.add("stop", _box(140, 38, 4, 150, 46, 14), group="arm")
-    frame = _box(152, 36, 4, 156, 48, 60).fuse(_box(112, 36, 56, 156, 48, 60)).clean()
-    asm.add("frame", frame, group="frame")
-
+    reg.add_part("hinge_block", _box(99, 30, 4, 111, 40, 26).cut(_cyl_y(px, pz, 2.5, 30, 40)).clean(), section="arm")
+    reg.add_part("pin", _cyl_y(px, pz, 2.5, 28, 46), section="arm")
+    reg.add_part("arm", _box(100, 40, 14, 150, 44, 26).cut(_cyl_y(px, pz, 2.5, 40, 44)).clean(), section="arm")
+    stop = cq.Workplane().add(_box(140, 38, 4, 150, 46, 14)).edges("|Z").fillet(2).val()
+    reg.add_part("stop", stop, section="arm")
+    reg.add_part("frame", _box(152, 36, 4, 156, 48, 60).fuse(_box(112, 36, 56, 156, 48, 60)).clean(), section="frame")
+    reg.joint("I-pin-arm", "revolute", parts=("arm", "pin"), axis=((px, 0.0, pz), LIFT_AXIS),
+              range_deg=tuple(p["flap_range_deg"]), intended_contacts=[("arm", "pin"), ("arm", "hinge_block"),
+                                                                       ("arm", "stop")])
     if p["gusset"]:
-        cx, cy = _post_centres(p)[0]
+        cx, cy = post_centres(p)[0]
         g = _box(cx + 5, cy - 4, top + lid_t, cx + 12, cy + 4, top + lid_t + 9)
         g = g.fuse(_box(cx - 5, cy - 4, top + lid_t + 6, cx + 12, cy + 4, top + lid_t + 9)).clean()
-        asm.add("gusset", g, group="store")
+        reg.add_part("gusset", g, section="store")
 
-    decl = _declarations(p, top, lid_t)
-    prints = {n: w for n in ("base", "hopper", "lid", "bracket", "hinge_block", "arm", "stop", "frame")}
+    onto = {"hopper": "base", "inserts": "hopper", "board": "hopper", "ball": "hopper", "lid": "hopper",
+            "bracket": "base", "hinge_block": "base", "stop": "base", "arm": "hinge_block", "pin": "hinge_block",
+            "frame": "base"}
+    order = 1
+    for item in p["assembly_order"]:
+        for fit in ([f"insert_{i}" for i in range(4)] if item == "inserts" else [item]):
+            extra = {"tool": "hex key 2.5", "fasteners": [f"screw_{i}" for i in range(4)]} if item == "lid" else {}
+            reg.assembly.step(order, fit, onto.get(item), direction="-Y" if item == "pin" else "-Z", **extra)
+            order += 1
     if p["gusset"]:
-        prints["gusset"] = w
-    return Bench(asm, {"hopper_cavity": cavity}, decl, p, seed, prints)
+        reg.assembly.step(order, "gusset", "lid", direction="-Z")
 
 
-def _declarations(p, top, lid_t) -> Dict[str, Any]:
-    sc, ins = p["screw"], p["insert"]
-    lengths = p.get("screw_lengths", {})
+def _declarations(p) -> Dict[str, Any]:
+    """What the bench's YAML dossier would hold: interfaces, intended overlaps, contains, decisions, walls, tools."""
     interfaces = [
         {"id": "I-hopper", "parts": ["base", "hopper"], "kind": "seat"},
         {"id": "I-lid", "parts": ["hopper", "lid"], "kind": "seat"},
@@ -219,13 +225,13 @@ def _declarations(p, top, lid_t) -> Dict[str, Any]:
         {"id": "I-bracket", "parts": ["base", "bracket"], "kind": "seat", "datum": "boss top, Z=7"},
         {"id": "I-block", "parts": ["base", "hinge_block"], "kind": "seat"},
         {"id": "I-pin-block", "parts": ["hinge_block", "pin"], "kind": "bearing"},
-        {"id": "I-pin-arm", "parts": ["pin", "arm"], "kind": "revolute", "joint": "J-arm"},
+        {"id": "I-pin-arm", "parts": ["pin", "arm"], "kind": "revolute"},
         {"id": "I-arm-block", "parts": ["hinge_block", "arm"], "kind": "thrust face"},
         {"id": "I-stop", "parts": ["base", "stop"], "kind": "seat"},
         {"id": "I-arm-stop", "parts": ["arm", "stop"], "kind": "rest at 0 deg"},
         {"id": "I-frame", "parts": ["base", "frame"], "kind": "seat"},
     ]
-    fasteners, overlaps = [], []
+    overlaps = []
     for i in range(4):
         interfaces += [{"id": f"I-insert-{i}", "parts": ["hopper", f"insert_{i}"], "kind": "heat-set bore"},
                        {"id": f"I-seat-{i}", "parts": ["lid", f"screw_{i}"], "kind": "head seat"},
@@ -233,23 +239,8 @@ def _declarations(p, top, lid_t) -> Dict[str, Any]:
                        {"id": f"I-cap-{i}", "parts": ["lid", f"insert_{i}"], "kind": "flush insert face"}]
         overlaps.append({"parts": [f"screw_{i}", f"insert_{i}"], "reason": "thread envelope: the screw's "
                          "nominal diameter overlaps the insert's minor diameter by design"})
-        fasteners.append({"id": f"F{i}", "screw": f"screw_{i}", "clamps": "lid", "into": f"insert_{i}",
-                          "axis": [0, 0, -1], "head_seat_z": top + lid_t, "length": lengths.get(f"screw_{i}", sc["length"]),
-                          "thread_top_z": top, "thread_length": ins["length"], "hole_bottom_z": top - ins["hole_depth"],
-                          "min_engagement_mm": sc["pitch"] * sc["min_threads"],
-                          "tool": {"kind": "hex key", "size": 2.5, "envelope_d": 6.0, "length": 60.0}})
     if p["gusset"]:
         interfaces.append({"id": "I-gusset", "parts": ["lid", "gusset"], "kind": "seat"})
-    steps_parts = {"base": ["base"], "hopper": ["hopper"], "inserts": [f"insert_{i}" for i in range(4)],
-                   "board": ["board"], "balls": [f"ball_{i}" for i in range(8)], "lid": ["lid"],
-                   "screws": [f"screw_{i}" for i in range(4)], "bracket": ["bracket"], "hinge_block": ["hinge_block"],
-                   "stop": ["stop"], "arm": ["arm"], "pin": ["pin"], "frame": ["frame"]}
-    direction = {"pin": "-Y"}
-    steps = [{"step": n + 1, "fit": steps_parts[k], "direction": direction.get(k, "-Z"),
-              **({"tool": "hex key 2.5", "fasteners": [f"F{i}" for i in range(4)]} if k == "screws" else {})}
-             for n, k in enumerate(p["assembly_order"])]
-    if p["gusset"]:
-        steps.insert(6, {"step": 6.5, "fit": ["gusset"], "direction": "-Z"})
     decisions = [
         {"id": "D1", "scope": "part", "part": "hopper", "decision": "Square hopper with corner posts for the lid screws",
          "why": "posts give the inserts 3 mm of wall without thickening the 2.4 mm shell",
@@ -261,22 +252,25 @@ def _declarations(p, top, lid_t) -> Dict[str, Any]:
     ]
     if p["drop_alternatives"]:
         decisions[0]["alternatives"] = []
-    lo, hi = p["flap_range_deg"]
-    return {
-        "grounded": ["base"],
-        "interfaces": interfaces,
-        "intended_overlaps": overlaps,
-        "free_parts": [f"ball_{i}" for i in range(8)],
-        "contains": [{"container": "hopper", "cavity": "hopper_cavity", "what": [f"ball_{i}" for i in range(8)],
-                      "count": 8, "free": True}],
-        "joints": [{"id": "J-arm", "kind": "revolute", "body": "arm", "parts": ["arm", "pin"],
-                    "axis_point": [PIVOT[0], 0.0, PIVOT[1]], "axis_dir": list(LIFT_AXIS), "range_deg": [lo, hi],
-                    "intended_contacts": [["arm", "pin"], ["arm", "hinge_block"], ["arm", "stop"]]}],
-        "fasteners": fasteners,
-        "assembly": steps,
-        "decisions": decisions,
-        "wall_mm": {"default": p["wall"]},
-    }
+    return {"interfaces": interfaces, "intended_overlaps": overlaps,
+            "contains": [{"container": "hopper", "cavity": "hopper_cavity", "what": "ball", "count": 8, "free": True}],
+            "decisions": decisions, "wall_mm": {"default": p["wall"]},
+            "tools": {"hex key 2.5": {"envelope_d": 6.0, "length": 60.0}}}
+
+
+def build(seed: Optional[str] = None, params: Optional[Dict[str, Any]] = None) -> Bench:
+    """Build the clean bench, or the bench with one seeded defect from ``SEEDS``."""
+    p = copy.deepcopy(PARAMS)
+    if seed is not None:
+        if seed not in SEEDS:
+            raise KeyError(f"unknown seed {seed!r}; seeds: {sorted(SEEDS)}")
+        p.update(copy.deepcopy(SEEDS[seed]["params"]))
+    p.update(copy.deepcopy(params or {}))
+    with dossier.use_registry() as reg:
+        register(reg, p)
+        result = reg.build({}, write=False)
+    prints = {n: p["wall"] for n in PRINTED + (("gusset",) if p["gusset"] else ())}
+    return Bench(result, Assembly.from_build(result), _declarations(p), p, seed, prints)
 
 
 def arm_pose(bench: Bench, degrees: float) -> Assembly:
@@ -284,20 +278,11 @@ def arm_pose(bench: Bench, degrees: float) -> Assembly:
     px, pz = PIVOT
     rot = cq.Location(cq.Vector(px, 0, pz)) * cq.Location(cq.Vector(0, 0, 0), cq.Vector(*LIFT_AXIS), degrees) \
         * cq.Location(cq.Vector(-px, 0, -pz))
-    return bench.assembly.posed("arm", rot)
+    return bench.assembly.posed(bench.assembly["arm"].body, rot)
 
 
-def dossier_items(bench: Bench) -> Dict[str, Any]:
-    """The registry hook (plan §3.4): every declaration plus the shapes, as one plain dict."""
-    return {"parts": {n: bench.assembly[n].shape for n in bench.assembly},
-            "cavities": dict(bench.cavities),
-            "print_parts": dict(bench.print_parts),
-            **copy.deepcopy(bench.declarations)}
-
-
-def arm_end_clearance_deg(bench: Bench) -> float:
+def arm_frame_contact_deg() -> float:
     """Angle at which the arm's top far corner reaches the frame beam (analytic, for the tests)."""
     r, h = 45.0, 6.0
     beam = 56.0 - PIVOT[1]
-    # solve r sin(t) + h cos(t) = beam
     return math.degrees(math.asin(beam / math.hypot(r, h)) - math.atan2(h, r))

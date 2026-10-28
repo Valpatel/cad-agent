@@ -3,53 +3,365 @@
  "method": "papers read on arXiv (abs/HTML, version noted); repositories via GitHub API and raw files; vendored upstreams from pinned source; 'verified' = primary source read, 'unverified' = README, vendor page or third-party claim only",
  "companion": "design-workflows.md",
  "practices": [
-  {"id": 1, "practice": "deterministic geometric checks before visual review; hard validity gate", "evidence": "strong", "sources": ["CADSmith arXiv 2603.26512 Table I: IoU 0.8085->0.9563 from geometric checks alone, ->0.9629 with VLM judge; median CD unchanged", "CADGenBench validity gate", "Embodied CAD arXiv 2606.31252", "CAD-Coder arXiv 2505.19713"]},
-  {"id": 2, "practice": "decide interfaces, joints and connectors before geometry", "evidence": "strong for assemblies", "sources": ["ArtiCAD arXiv 2604.10992 ablation: late assembly prediction motion 3.82->3.16, success 100->89.2%", "AssemCAD arXiv 2607.05123: typed parts, geometry-backed ports, mates; APR 0.8%->82.5% (body, unverified in abstract)"]},
-  {"id": 3, "practice": "containment and interpenetration as first-class relations", "evidence": "practice", "sources": ["build123d-mcp clearance: apart|touching|containing|interpenetrating (Apache-2.0, vendored)", "AssemCAD BRepClass3d_SolidClassifier port checks"]},
-  {"id": 4, "practice": "author-declared structure expectations diffed against built geometry", "evidence": "practice", "sources": ["agentcad expect_solids/floating (Apache-2.0, vendored)", "text-to-cad: intended fits must be named (MIT, vendored)"]},
-  {"id": 5, "practice": "spec-driven conformance with evidence tiers", "evidence": "practice", "sources": ["build123d-mcp verify_spec: measured|structural|recognised|unverified; conforms only with >=1 checked and no FAIL"]},
-  {"id": 6, "practice": "visual review as diagnosis: few named views, yes/no questions, unclear allowed, every visual concern becomes a deterministic check", "evidence": "moderate", "sources": ["CADCodeVerify arXiv 2410.05340: PCD 0.155->0.127; without images 0.126->0.153; VQA answers 64.6-68.2% correct", "CADSmith: judge removed outliers only", "CADReview arXiv 2505.22304: drops on hidden internal components", "text-to-cad snapshot-review.md", "3DSRBench, BLINK, VLMCountBench"]},
-  {"id": 7, "practice": "independent judge given measurements first, images second, with anti-hallucination rules", "evidence": "practice", "sources": ["Multi-Agent-CAD prompts/qa_judge.md (MIT)", "CADSmith stronger-model validator"]},
-  {"id": 8, "practice": "interface control documents and requirement traces", "evidence": "professional standard", "sources": ["NASA SP-2016-6105 Rev 2 App. L", "NASA SE Handbook 5.3", "NPR 7123.1D App. G", "Doorstop fingerprints (LGPL-3.0)"]},
-  {"id": 9, "practice": "decision records with alternatives rejected", "evidence": "standard; thin empirical evidence (Burge 2008)", "sources": ["Nygard 2011", "MADR (MIT or CC0)"]},
-  {"id": 10, "practice": "DFMEA rows and DFA necessity criteria as review checklist", "evidence": "professional standard", "sources": ["AIAG-VDA FMEA Handbook 2019 (paywalled)", "Boothroyd-Dewhurst three criteria (secondary)"]},
-  {"id": 11, "practice": "assembly-sequence and tool-access checks at the installing step", "evidence": "practice", "sources": ["MIL-HDBK-470A, MIL-STD-1472 (listings only)", "cad-agent lesson 04"]},
-  {"id": 12, "practice": "sign-off bound to a geometry hash", "evidence": "practice", "sources": ["cadagent.evidence", "text-to-cad document_hash"]}
+  {
+   "id": 1,
+   "practice": "kernel checks and a hard validity gate before any render; judge reads measurements before images",
+   "evidence": "strong",
+   "sources": [
+    "CADSmith arXiv 2603.26512 Table I: median IoU 0.8085->0.9563 in the no-vision setting (LLM judge on kernel metrics, no render), ->0.9629 with the render; median CD unchanged",
+    "CADGenBench validity gate",
+    "Embodied CAD arXiv 2606.31252",
+    "CAD-Coder arXiv 2505.19713"
+   ]
+  },
+  {
+   "id": 2,
+   "practice": "decide interfaces, joints and connectors before geometry",
+   "evidence": "strong for assemblies",
+   "sources": [
+    "ArtiCAD arXiv 2604.10992 ablation: late assembly prediction motion 3.82->3.16, success 100->89.2%",
+    "AssemCAD arXiv 2607.05123 Table 3, text-to-CAD setting: APR 87.50% vs 66.67% best baseline (GPT-5.5); Claude-4.8 85.00% SR / 0.83% APR; image-text setting 84.17 / 82.50; Table 4 disagrees (82.50 for text)"
+   ]
+  },
+  {
+   "id": 3,
+   "practice": "containment and interpenetration as first-class relations",
+   "evidence": "practice",
+   "sources": [
+    "build123d-mcp clearance: apart|touching|containing|interpenetrating (Apache-2.0, vendored)",
+    "AssemCAD BRepClass3d_SolidClassifier port checks"
+   ]
+  },
+  {
+   "id": 4,
+   "practice": "author-declared structure expectations diffed against built geometry",
+   "evidence": "practice",
+   "sources": [
+    "agentcad expect_solids/floating (Apache-2.0, vendored)",
+    "text-to-cad: intended fits must be named (MIT, vendored)"
+   ]
+  },
+  {
+   "id": 5,
+   "practice": "spec-driven conformance with evidence tiers",
+   "evidence": "practice",
+   "sources": [
+    "build123d-mcp verify_spec: measured|structural|recognised|unverified; conforms only with >=1 checked and no FAIL"
+   ]
+  },
+  {
+   "id": 6,
+   "practice": "visual review as diagnosis: few named views, yes/no questions, unclear allowed, every visual concern becomes a deterministic check",
+   "evidence": "moderate",
+   "sources": [
+    "CADCodeVerify arXiv 2410.05340: PCD 0.155->0.127; without images 0.126->0.153; VQA answers 64.6-68.2% correct",
+    "CADSmith: judge removed outliers only",
+    "CADReview arXiv 2505.22304: drops on hidden internal components",
+    "text-to-cad snapshot-review.md",
+    "3DSRBench, BLINK, VLMCountBench"
+   ]
+  },
+  {
+   "id": 7,
+   "practice": "independent judge given measurements first, images second, with anti-hallucination rules",
+   "evidence": "practice",
+   "sources": [
+    "Multi-Agent-CAD prompts/qa_judge.md (MIT)",
+    "CADSmith stronger-model validator"
+   ]
+  },
+  {
+   "id": 8,
+   "practice": "interface control documents and requirement traces",
+   "evidence": "professional standard",
+   "sources": [
+    "NASA SP-2016-6105 Rev 2 App. L",
+    "NASA SE Handbook 5.3",
+    "NPR 7123.1D App. G",
+    "Doorstop fingerprints (LGPL-3.0)"
+   ]
+  },
+  {
+   "id": 9,
+   "practice": "decision records with alternatives rejected",
+   "evidence": "standard; thin empirical evidence (Burge 2008)",
+   "sources": [
+    "Nygard 2011",
+    "MADR (MIT or CC0)"
+   ]
+  },
+  {
+   "id": 10,
+   "practice": "DFMEA rows and DFA necessity criteria as review checklist",
+   "evidence": "professional standard",
+   "sources": [
+    "AIAG-VDA FMEA Handbook 2019 (paywalled)",
+    "Boothroyd-Dewhurst three criteria (secondary)"
+   ]
+  },
+  {
+   "id": 11,
+   "practice": "assembly-sequence and tool-access checks at the installing step",
+   "evidence": "practice",
+   "sources": [
+    "MIL-HDBK-470A, MIL-STD-1472 (listings only)",
+    "cad-agent lesson 04"
+   ]
+  },
+  {
+   "id": 12,
+   "practice": "sign-off bound to a geometry hash",
+   "evidence": "practice",
+   "sources": [
+    "cadagent.evidence",
+    "text-to-cad document_hash"
+   ]
+  }
  ],
  "systems": [
-  {"name": "Pan-Chera/Multi-Agent-CAD", "url": "https://github.com/Pan-Chera/Multi-Agent-CAD", "license": "MIT", "verified": true, "last_push": "2026-10-17", "technique": "planner -> architect -> deterministic translator -> QA engines -> judge (measurements, optional 4 renders) -> repair; 5 retries", "evidence": "10 prompts / 141 features: 140/141 vs baseline 138/141; 116x fewer tokens; quality delta within noise"},
-  {"name": "earthtojake/text-to-cad", "url": "https://github.com/earthtojake/text-to-cad", "license": "MIT", "verified": true, "vendored_sha": "2f793659fb7bab537e2f00836e06448fc4087cb2", "technique": "model function; snapshot per visible change; visual concern -> deterministic check; no plan step", "evidence": "none in repo; CADGenBench 28.0% vs 27.4% bare model (unverified)"},
-  {"name": "pzfreo/build123d-mcp", "url": "https://github.com/pzfreo/build123d-mcp", "license": "Apache-2.0", "verified": true, "technique": "measure after execute; clearance before render; design_audit; verify_spec; validate then test-export", "evidence": "CADGenBench top entry 86.9% (unverified third-party snapshot)"},
-  {"name": "jdilla1277/agentcad", "url": "https://github.com/jdilla1277/agentcad", "license": "Apache-2.0", "verified": true, "technique": "validation layers; expect_solids/floating; edit_risk; review comment store", "evidence": "own uncontrolled CADGenBench run"},
-  {"name": "Zoo Zookeeper", "url": "https://zoo.dev/press/zoo-introduces-zookeeper", "license": "closed", "verified": "press release only", "technique": "research, constraints, design plan before CAD; inspect/snapshot tools", "evidence": "none published"},
-  {"name": "Onshape AI Advisor", "url": "https://www.onshape.com/en/features/ai-advisor", "license": "closed", "verified": true, "technique": "documentation Q&A only", "evidence": "n/a"},
-  {"name": "Leo AI", "url": "https://www.getleo.ai/ai-for-cad", "license": "closed", "verified": "vendor claims only", "technique": "guidelines lookup, calculations, clarifying questions, assembly output", "evidence": "none"},
-  {"name": "CADCodeVerify", "url": "https://arxiv.org/abs/2410.05340", "license": "repo has no licence file", "verified": true, "technique": "compile loop + VQA on 4 renders, 2 iterations", "evidence": "PCD 0.155->0.127 (GPT-4); ablation without images 0.126->0.153"},
-  {"name": "CADFusion", "url": "https://arxiv.org/abs/2501.19054", "license": "MIT (microsoft/CADFusion, archived)", "verified": true, "technique": "training-time visual feedback (DPO)", "evidence": "visual score 7.69->8.96, invalidity 4.84->6.20%"},
-  {"name": "From Idea to CAD", "url": "https://arxiv.org/abs/2503.04417", "license": "no code", "verified": true, "technique": "requirements / CAD engineer / QA agent with 7 views", "evidence": "qualitative, 5 designs"},
-  {"name": "CADSmith", "url": "https://arxiv.org/abs/2603.26512", "license": "not stated", "verified": true, "technique": "planner, coder, executor, validator (kernel metrics + 3 renders), refiner; 5 iterations", "evidence": "exec 95->99->100%; IoU 0.8085->0.9563->0.9629; mean CD 28.37->18.19->0.74, median unchanged"},
-  {"name": "CADDesigner", "url": "https://arxiv.org/abs/2508.01031", "license": "not stated", "verified": true, "technique": "ReAct with 6-view checker", "evidence": "IoU 0.277 vs CADCodeVerify 0.235; no vision ablation"},
-  {"name": "CAD-Assistant", "url": "https://arxiv.org/abs/2412.13810", "license": "custom (NOASSERTION)", "verified": true, "technique": "VLLM planner into FreeCAD", "evidence": "CQA 0.686/0.782->0.791/0.857"},
-  {"name": "CAD-Coder (Doris)", "url": "https://arxiv.org/abs/2505.14646", "license": "Apache-2.0", "verified": true, "technique": "fine-tuned VLM image->CadQuery", "evidence": "100% valid syntax"},
-  {"name": "CAD-Coder (CoT+GRPO)", "url": "https://arxiv.org/abs/2505.19713", "license": "not checked", "verified": true, "technique": "CD reward, 0 for non-executing code", "evidence": "CD 6.54 vs 29.29; invalid 1.45%"},
-  {"name": "CADReview/ReCAD", "url": "https://arxiv.org/abs/2505.22304", "license": "repo has no licence", "verified": true, "technique": "trained reviewer on views + program", "evidence": "error localisation 41.5->71.8%; drops on hidden components"},
-  {"name": "ArtiCAD", "url": "https://arxiv.org/abs/2604.10992", "license": "not stated", "verified": true, "technique": "connectors before geometry; per-part agents; review agent; rollback", "evidence": "late assembly ablation motion 3.82->3.16, success -11pt"},
-  {"name": "AssemCAD", "url": "https://arxiv.org/abs/2607.05123", "license": "not stated", "verified": true, "technique": "typed parts, geometry-backed ports, executable mates, clash check", "evidence": "SR 89.2%, APR 87.5% vs 85% / 0.8% (body; abstract has no numbers)"},
-  {"name": "Embodied CAD", "url": "https://arxiv.org/abs/2606.31252", "license": "not checked", "verified": true, "technique": "kernel-gated step-wise ops; GRPO", "evidence": "executable 100%; exact-policy 93.1->93.2%"},
-  {"name": "AADvark", "url": "https://arxiv.org/abs/2604.15184", "license": "not checked", "verified": true, "technique": "per-face colours and labels; joint solver as signal", "evidence": "qualitative; 468 calls, $15.85"},
-  {"name": "CADGenBench", "url": "https://github.com/huggingface/cadgenbench", "license": "Apache-2.0 code, ODC-BY data", "verified": true, "technique": "validity gate then 0.4 shape + 0.4 interface + 0.2 topology", "evidence": "tool-using entries dominate (leaderboard unverified)"}
+  {
+   "name": "Pan-Chera/Multi-Agent-CAD",
+   "url": "https://github.com/Pan-Chera/Multi-Agent-CAD",
+   "license": "MIT",
+   "verified": true,
+   "last_push": "2026-10-17",
+   "technique": "planner -> architect -> deterministic translator -> QA engines -> judge (measurements, optional 4 renders) -> repair; 5 retries",
+   "evidence": "10 prompts / 141 features: 140/141 vs baseline 138/141; 116x fewer tokens; quality delta within noise"
+  },
+  {
+   "name": "earthtojake/text-to-cad",
+   "url": "https://github.com/earthtojake/text-to-cad",
+   "license": "MIT",
+   "verified": true,
+   "vendored_sha": "2f793659fb7bab537e2f00836e06448fc4087cb2",
+   "technique": "model function; snapshot per visible change; visual concern -> deterministic check; no plan step",
+   "evidence": "none in repo; CADGenBench 28.0% vs 27.4% bare model (unverified)",
+   "note": "upstream 0.8.1 released 2026-10-27"
+  },
+  {
+   "name": "pzfreo/build123d-mcp",
+   "url": "https://github.com/pzfreo/build123d-mcp",
+   "license": "Apache-2.0",
+   "verified": true,
+   "technique": "measure after execute; clearance before render; design_audit; verify_spec; validate then test-export",
+   "evidence": "CADGenBench top entry 86.9% (unverified third-party snapshot)"
+  },
+  {
+   "name": "jdilla1277/agentcad",
+   "url": "https://github.com/jdilla1277/agentcad",
+   "license": "Apache-2.0",
+   "verified": true,
+   "technique": "validation layers; expect_solids/floating; edit_risk; review comment store",
+   "evidence": "own uncontrolled CADGenBench run"
+  },
+  {
+   "name": "Zoo Zookeeper",
+   "url": "https://zoo.dev/press/zoo-introduces-zookeeper",
+   "license": "closed",
+   "verified": "press release only",
+   "technique": "research, constraints, design plan before CAD; inspect/snapshot tools",
+   "evidence": "none published"
+  },
+  {
+   "name": "Onshape AI Advisor",
+   "url": "https://www.onshape.com/en/features/ai-advisor",
+   "license": "closed",
+   "verified": true,
+   "technique": "documentation Q&A only",
+   "evidence": "n/a"
+  },
+  {
+   "name": "Leo AI",
+   "url": "https://www.getleo.ai/ai-for-cad",
+   "license": "closed",
+   "verified": "vendor claims only",
+   "technique": "guidelines lookup, calculations, clarifying questions, assembly output",
+   "evidence": "none"
+  },
+  {
+   "name": "CADCodeVerify",
+   "url": "https://arxiv.org/abs/2410.05340",
+   "license": "repo has no licence file",
+   "verified": true,
+   "technique": "compile loop + VQA on 4 renders, 2 iterations",
+   "evidence": "PCD 0.155->0.127 (GPT-4); ablation without images 0.126->0.153"
+  },
+  {
+   "name": "CADFusion",
+   "url": "https://arxiv.org/abs/2501.19054",
+   "license": "MIT (microsoft/CADFusion, archived)",
+   "verified": true,
+   "technique": "training-time visual feedback (DPO)",
+   "evidence": "visual score 7.69->8.96, invalidity 4.84->6.20%"
+  },
+  {
+   "name": "From Idea to CAD",
+   "url": "https://arxiv.org/abs/2503.04417",
+   "license": "no code",
+   "verified": true,
+   "technique": "requirements / CAD engineer / QA agent with 7 views",
+   "evidence": "qualitative, 5 designs"
+  },
+  {
+   "name": "CADSmith",
+   "url": "https://arxiv.org/abs/2603.26512",
+   "license": "not stated",
+   "verified": true,
+   "technique": "planner, coder, executor, validator (kernel metrics + 3 renders), refiner; 5 iterations",
+   "evidence": "no-vision (judge on kernel metrics, no render) vs full: exec 95->99->100%; median IoU 0.8085->0.9563->0.9629; mean CD 28.37->18.19->0.74, median 0.55->0.48->0.48"
+  },
+  {
+   "name": "CADDesigner",
+   "url": "https://arxiv.org/abs/2508.01031",
+   "license": "not stated",
+   "verified": true,
+   "technique": "ReAct with 6-view checker",
+   "evidence": "IoU 0.277 vs CADCodeVerify 0.235; no vision ablation"
+  },
+  {
+   "name": "CAD-Assistant",
+   "url": "https://arxiv.org/abs/2412.13810",
+   "license": "custom (NOASSERTION)",
+   "verified": true,
+   "technique": "VLLM planner into FreeCAD",
+   "evidence": "CQA 0.686/0.782->0.791/0.857"
+  },
+  {
+   "name": "CAD-Coder (Doris)",
+   "url": "https://arxiv.org/abs/2505.14646",
+   "license": "Apache-2.0",
+   "verified": true,
+   "technique": "fine-tuned VLM image->CadQuery",
+   "evidence": "100% valid syntax"
+  },
+  {
+   "name": "CAD-Coder (CoT+GRPO)",
+   "url": "https://arxiv.org/abs/2505.19713",
+   "license": "not checked",
+   "verified": true,
+   "technique": "CD reward, 0 for non-executing code",
+   "evidence": "CD 6.54 vs 29.29; invalid 1.45%"
+  },
+  {
+   "name": "CADReview/ReCAD",
+   "url": "https://arxiv.org/abs/2505.22304",
+   "license": "repo has no licence",
+   "verified": true,
+   "technique": "trained reviewer on views + program",
+   "evidence": "error localisation 41.5->71.8%; drops on hidden components"
+  },
+  {
+   "name": "ArtiCAD",
+   "url": "https://arxiv.org/abs/2604.10992",
+   "license": "not stated",
+   "verified": true,
+   "technique": "connectors before geometry; per-part agents; review agent; rollback",
+   "evidence": "late assembly ablation motion 3.82->3.16, success -11pt"
+  },
+  {
+   "name": "AssemCAD",
+   "url": "https://arxiv.org/abs/2607.05123",
+   "license": "not stated",
+   "verified": true,
+   "technique": "typed parts, geometry-backed ports, executable mates, clash check",
+   "evidence": "Table 3 text-to-CAD: SR 89.17%, APR 87.50% vs best baseline APR 66.67% (GPT-5.5); Claude-4.8 85.00% / 0.83%; image-text 84.17 / 82.50; Table 4 inconsistent (82.50 for text)"
+  },
+  {
+   "name": "Embodied CAD",
+   "url": "https://arxiv.org/abs/2606.31252",
+   "license": "not checked",
+   "verified": true,
+   "technique": "kernel-gated step-wise ops; GRPO",
+   "evidence": "executable 100%; exact-policy 93.1->93.2%"
+  },
+  {
+   "name": "AADvark",
+   "url": "https://arxiv.org/abs/2604.15184",
+   "license": "not checked",
+   "verified": true,
+   "technique": "per-face colours and labels; joint solver as signal",
+   "evidence": "qualitative; 468 calls, $15.85"
+  },
+  {
+   "name": "CADGenBench",
+   "url": "https://github.com/huggingface/cadgenbench",
+   "license": "Apache-2.0 code, ODC-BY data",
+   "verified": true,
+   "technique": "validity gate then 0.4 shape + 0.4 interface + 0.2 topology",
+   "evidence": "tool-using entries dominate (leaderboard unverified)"
+  }
  ],
  "verification_primitives": [
-  {"name": "BRepExtrema_DistShapeShape", "lib": "OCCT via OCP", "license": "LGPL-2.1 + exception", "use": "min gap, witnesses, InnerSolution containment hint", "measured_ms_per_simple_pair": 9.9},
-  {"name": "BRepAlgoAPI_Common + VolumeProperties", "lib": "OCCT", "license": "LGPL-2.1 + exception", "use": "exact overlap volume; containment by vol(A∩B)==vol(A)", "measured_ms_per_simple_pair": 3.4},
-  {"name": "BRepClass3d_SolidClassifier", "lib": "OCCT", "license": "LGPL-2.1 + exception", "use": "point in solid", "measured": "24 points in 7 ms"},
-  {"name": "BOPAlgo_CheckerSI", "lib": "OCCT", "license": "LGPL-2.1 + exception", "use": "self-interference of a compound"},
-  {"name": "trimesh.collision.CollisionManager / python-fcl", "license": "MIT / BSD", "use": "sampled-pose motion checks, continuousCollide"},
-  {"name": "trimesh.Trimesh.contains", "license": "MIT", "use": "mesh containment fallback (parity rays, both directions)"},
-  {"name": "manifold3d", "license": "Apache-2.0", "use": "robust mesh booleans"},
-  {"name": "gpytoolbox.swept_volume", "license": "MIT (method patent-pending per sgsellan/swept-volumes README)", "use": "exact swept envelope when needed"}
+  {
+   "name": "BRepExtrema_DistShapeShape",
+   "lib": "OCCT via OCP",
+   "license": "LGPL-2.1 + exception",
+   "use": "min gap, witnesses, InnerSolution containment hint",
+   "measured_ms_per_simple_pair": 9.9
+  },
+  {
+   "name": "BRepAlgoAPI_Common + VolumeProperties",
+   "lib": "OCCT",
+   "license": "LGPL-2.1 + exception",
+   "use": "exact overlap volume; containment by vol(A\u2229B)==vol(A)",
+   "measured_ms_per_simple_pair": 3.4
+  },
+  {
+   "name": "BRepClass3d_SolidClassifier",
+   "lib": "OCCT",
+   "license": "LGPL-2.1 + exception",
+   "use": "point in solid",
+   "measured": "24 points in 7 ms"
+  },
+  {
+   "name": "BOPAlgo_CheckerSI",
+   "lib": "OCCT",
+   "license": "LGPL-2.1 + exception",
+   "use": "self-interference of a compound"
+  },
+  {
+   "name": "trimesh.collision.CollisionManager / python-fcl",
+   "license": "MIT / BSD",
+   "use": "sampled-pose motion checks, continuousCollide"
+  },
+  {
+   "name": "trimesh.Trimesh.contains",
+   "license": "MIT",
+   "use": "mesh containment fallback (parity rays, both directions)"
+  },
+  {
+   "name": "manifold3d",
+   "license": "Apache-2.0",
+   "use": "robust mesh booleans"
+  },
+  {
+   "name": "gpytoolbox.swept_volume",
+   "license": "MIT (method patent-pending per sgsellan/swept-volumes README)",
+   "use": "exact swept envelope when needed"
+  }
  ],
- "experiment": {"date": "2026-10-27", "what": "100 synthetic solids, CadQuery/OCP, loaded workstation", "broad_phase": "4950 pairs -> 100 candidates in 3 ms", "gap_queries": "0.99 s", "common_volumes": "0.34 s", "total_s": 1.35, "note": "real parts cost 10-100x per pair; script not committed"},
- "gaps": ["no open tool checks joint-graph consistency", "no open 'part inside its cavity' validator beyond pairwise clearance", "no evaluation of section cuts, exploded or colour-coded renders as VLM judge inputs", "no open-source Boothroyd DFA tables or tolerance stack-up tool", "no paper ablates a single-part planner alone"],
- "do_not_copy": ["CADCodeVerify repo (no licence)", "CADReview repo (no licence)", "CAD-Assistant, Text2CAD, CAD-Recode (custom/NC)", "JoinABLe dataset (non-commercial research only)", "draftwright (AGPL-3.0; external program only)", "AIAG-VDA AP table and Boothroyd penalty tables (copyrighted)"]
+ "experiment": {
+  "date": "2026-10-27",
+  "what": "100 synthetic solids, CadQuery/OCP, loaded workstation",
+  "broad_phase": "4950 pairs -> 100 candidates in 3 ms",
+  "gap_queries": "0.99 s",
+  "common_volumes": "0.34 s",
+  "total_s": 1.35,
+  "note": "real parts cost more per pair (estimate 10-100x, unmeasured); script committed at research/bench/gate_timing.py"
+ },
+ "gaps": [
+  "no open tool checks joint-graph consistency",
+  "no open 'part inside its cavity' validator beyond pairwise clearance",
+  "no evaluation of section cuts, exploded or colour-coded renders as VLM judge inputs",
+  "no open-source Boothroyd DFA tables or tolerance stack-up tool",
+  "no paper ablates a single-part planner alone"
+ ],
+ "do_not_copy": [
+  "CADCodeVerify repo (no licence)",
+  "CADReview repo (no licence)",
+  "CAD-Assistant, Text2CAD, CAD-Recode (custom/NC)",
+  "JoinABLe dataset (non-commercial research only)",
+  "draftwright (AGPL-3.0; external program only)",
+  "AIAG-VDA AP table and Boothroyd penalty tables (copyrighted)"
+ ]
 }

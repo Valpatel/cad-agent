@@ -562,3 +562,95 @@ def test_the_site_shows_the_record(project):
     q = rec["checklist"][0]
     assert "the cut hides the far wall" in page and 'class="pill warn">unclear<' in page
     assert ("image only" if q["image_only"] else f"measured: {q['measurements'][0]}") in page
+
+
+# ----------------------------------------------------------------------------------------------- review of #59
+
+def test_a_hand_written_record_gets_the_submit_checks_in_the_lint(project):
+    """A sign-off written by hand, with a made-up question and no decisions or requirements judged, does not
+    count: the lint runs check_record against the dossier and the packet on disk, as --submit would."""
+    root = Path(project.root)
+    _, good, problems = submit_record(project, "S1", fill(template(project)), reviewer="reviewer", write=False)
+    assert problems == []
+    bad = {**good, "decisions": [], "requirements": [],
+           "checklist": [{"id": "made-up", "answer": "yes", "evidence": "fine", "views": ["solid-iso"],
+                          "image_only": True}]}
+    assert validate_record(bad) == []                                       # well formed on its own
+    reviews = root / "dossier" / "reviews"
+    reviews.mkdir()
+    (reviews / "S1-2026-10-28.json").write_text(json.dumps(bad))
+    res = lint_project(project)
+    [f] = [f for f in res.findings if f.code == "review-incomplete"]
+    assert "unjudged" in f.message and "untraced" in f.message and "unknown-question" in f.message
+    assert res.sections["S1"]["status"] == "gated" and res.passed            # it does not count; gated is the bar
+    (reviews / "S1-2026-10-28.json").write_text(json.dumps(good))
+    res = lint_project(project)
+    assert "review-incomplete" not in res.codes() and res.sections["S1"]["status"] == "signed_off"
+    # without the packet on disk the questions cannot be checked; decisions and requirements still are
+    shutil.rmtree(root / "exports" / "review")
+    (reviews / "S1-2026-10-28.json").write_text(json.dumps({**bad, "checklist": good["checklist"]}))
+    res = lint_project(project)
+    [f] = [f for f in res.findings if f.code == "review-incomplete"]
+    assert "unknown-question" not in f.message and "unjudged" in f.message
+
+
+def test_an_unknown_builder_makes_a_review_not_count_without_failing(project):
+    """A fresh checkout built without CAD_AGENT_ACTOR: nobody can be shown to be someone else, so the sign-off
+    does not count, but that is a warning, not an error that fails `cad-agent check`."""
+    root = Path(project.root)
+    assert submit_record(project, "S1", fill(template(project)), reviewer="reviewer")[2] == []
+    geo = geometry()
+    for info in geo["parts"].values():
+        info["actor"] = "unknown"
+    (root / "exports" / "dossier-geometry.json").write_text(json.dumps(geo))
+    res = lint_project(project)
+    [f] = [f for f in res.findings if f.code == "review-builder-unknown"]
+    assert f.severity == "warning" and "review-same-actor" not in res.codes()
+    assert res.passed and res.sections["S1"]["status"] == "gated"
+
+
+def test_an_inspection_requirement_needs_the_review_to_trace_it(tmp_path):
+    files = base_files()
+    files["project.yaml"]["requirements"][0]["verify_by"] = "inspection"
+    project = load_project(setup_project(tmp_path, files))
+    rec = fill(template(project), "changes_requested")
+    rec["requirements"][0]["traced"] = "no"
+    assert submit_record(project, "S1", rec, reviewer="reviewer")[2] == []
+    res = lint_project(project, min_section_status=None)
+    assert res.sections["S1"]["status"] == "reviewed" and res.requirements["R1"]["status"] == "unverified"
+    render_packet(Path(project.root))               # a record changes the lint the packet quotes: render it again
+    assert submit_record(project, "S1", fill(template(project)), reviewer="reviewer")[2] == []
+    assert lint_project(project).requirements["R1"]["status"] == "verified"
+
+
+def test_the_separate_review_switch_is_not_a_gate_input(tmp_path):
+    from cadagent.gates import run as gr
+    from cadagent.gates.verdict import digest_of
+    root = setup_project(tmp_path)
+
+    def digest() -> str:
+        project = load_project(root)
+        cfg = gr.gates_config(project)
+        return digest_of(gr.declarations(gr.load_dossier(project), gr.load_extra(cfg)))
+
+    before = digest()
+    files = base_files()
+    files["project.yaml"]["gates"]["require_separate_reviewer"] = False
+    write(root, files)
+    assert digest() == before
+    files["project.yaml"]["gates"]["strict_interfaces"] = True                # a real gate option does change it
+    write(root, files)
+    assert digest() != before
+
+
+def test_the_diff_covers_the_section_s_own_sources(tmp_path):
+    geo = geometry()
+    geo["parts"]["lid"]["declared_at"] = "cad/lid.py:3"
+    geo["joints"]["I9"] = {"kind": "revolute", "moving": "arm", "fixed": "post", "declared_at": "cad/other.py:5"}
+    root = setup_project(tmp_path, geo=geo)
+    for f in ("cad/build.py", "cad/lid.py", "cad/other.py"):
+        (root / f).parent.mkdir(exist_ok=True)
+        (root / f).write_text("# build\n")
+    from cadagent.dossier.review import _load, _diff_paths
+    paths = _diff_paths(_load(load_project(root), "S1"), "S1")
+    assert paths == ["cad-agent.yaml", "cad/build.py", "cad/lid.py", "dossier"]      # not another section's joint

@@ -1,0 +1,311 @@
+{
+ "checklist": {
+  "schema": "cad-agent.render-checklist/1",
+  "instructions": [
+   "Read `measurements` and `findings` before looking at any image; the gates measured what the images show.",
+   "Answer every question with yes, no or unclear, citing the view you answered from. unclear is a valid answer and is never a pass: say what view would settle it.",
+   "Do not answer a count, a gap, a wall thickness or an engagement from an image: read it from the gate named in `measured_only`.",
+   "When an image and a measurement disagree, the measurement wins, and the disagreement is a finding (a wrong declaration, or a misleading view).",
+   "Record the part hashes (`parts.*.sha256`) your answers are for; a change of geometry voids them."
+  ],
+  "answers": [
+   "yes",
+   "no",
+   "unclear"
+  ],
+  "measured_only": [
+   {
+    "id": "count",
+    "topic": "how many items there are",
+    "answered_by": [
+     "gate:containment",
+     "gate:assembly"
+    ]
+   },
+   {
+    "id": "gap",
+    "topic": "gaps and clearances under about a millimetre, and whether two parts touch",
+    "answered_by": [
+     "gate:connectivity",
+     "gate:motion",
+     "gate:assembly"
+    ]
+   },
+   {
+    "id": "wall",
+    "topic": "wall thickness",
+    "answered_by": [
+     "gate:wall"
+    ]
+   },
+   {
+    "id": "thread",
+    "topic": "thread engagement, screw length and tip clearance",
+    "answered_by": [
+     "gate:fasteners"
+    ]
+   },
+   {
+    "id": "overlap",
+    "topic": "overlap volumes and how far an item is outside its cavity",
+    "answered_by": [
+     "gate:containment",
+     "gate:connectivity"
+    ]
+   },
+   {
+    "id": "path",
+    "topic": "whether something moves clear between the drawn poses, or goes in clear along its path",
+    "answered_by": [
+     "gate:motion",
+     "gate:assembly"
+    ]
+   }
+  ],
+  "items": [
+   {
+    "id": "contained-inside",
+    "kind": "cut",
+    "per": "cavity",
+    "bad_answer": "no",
+    "gate": "containment",
+    "question": "In the cut through {cavity}, is every {what} fully inside the inner wall of {part}?"
+   },
+   {
+    "id": "joint-bearing",
+    "kind": "cut",
+    "per": "joint",
+    "bad_answer": "no",
+    "gate": "connectivity",
+    "question": "In the cut through {interface}, does {moving} turn or slide on a real bearing feature of {fixed} (a bore around the pin, a slot around the slider), with no material in its path?"
+   },
+   {
+    "id": "fastener-stack",
+    "kind": "cut",
+    "per": "fastener",
+    "bad_answer": "no",
+    "gate": "fasteners",
+    "question": "In the cut through {fastener}, does the head sit on {clamps} and does the thread end inside {into}?"
+   },
+   {
+    "id": "mating-feature",
+    "kind": "exploded",
+    "per": null,
+    "bad_answer": "no",
+    "gate": "connectivity",
+    "question": "In the exploded view, does every part have a visible mating feature (bore, boss, slot, seat, screw hole) that meets one on its neighbour?"
+   },
+   {
+    "id": "assembly-order",
+    "kind": "exploded",
+    "per": null,
+    "bad_answer": "no",
+    "gate": "assembly",
+    "question": "Does the explode order (later steps further out) look buildable: nothing shown going in through a part fitted before it?"
+   },
+   {
+    "id": "plain-box",
+    "kind": "solid",
+    "per": null,
+    "bad_answer": "yes",
+    "gate": null,
+    "question": "Does any part appear as a plain box with no features where a mechanism or interface should be?"
+   },
+   {
+    "id": "matches-card",
+    "kind": "solid",
+    "per": null,
+    "bad_answer": "no",
+    "gate": null,
+    "question": "Does every part look like the function its card states (parts.*.function in the manifest)?"
+   },
+   {
+    "id": "floating",
+    "kind": "solid-rear",
+    "per": null,
+    "bad_answer": "yes",
+    "gate": "connectivity",
+    "question": "Is anything floating in the opposite iso: a part with nothing visibly holding it?"
+   },
+   {
+    "id": "hidden-overlap",
+    "kind": "xray",
+    "per": null,
+    "bad_answer": "yes",
+    "gate": "connectivity",
+    "question": "In the x-ray, does any part sit inside another part's material where no insert or press fit is declared?"
+   },
+   {
+    "id": "fastener-access",
+    "kind": "access",
+    "per": "access",
+    "bad_answer": "no",
+    "gate": "fasteners",
+    "question": "Looking along the screws' axis from the tool's side, is every head of {fasteners} visible and unobstructed?"
+   },
+   {
+    "id": "motion-contact",
+    "kind": "pose",
+    "per": "pose",
+    "bad_answer": "yes",
+    "gate": "motion",
+    "question": "At this end of {interface}'s range ({value}), does {moving} touch anything other than its declared contacts ({contacts})?"
+   },
+   {
+    "id": "findings-located",
+    "kind": "findings",
+    "per": null,
+    "bad_answer": "no",
+    "gate": null,
+    "question": "Is each numbered callout on the parts its finding names?"
+   }
+  ],
+  "questions": [
+   {
+    "id": "contained-inside:hopper_cavity:ball",
+    "item": "contained-inside",
+    "question": "In the cut through hopper_cavity, is every ball fully inside the inner wall of hopper?",
+    "views": [
+     "cut-cavity-hopper_cavity",
+     "cut-cavity-hopper_cavity-plan"
+    ],
+    "bad_answer": "no",
+    "gate": "containment"
+   },
+   {
+    "id": "fastener-stack:m3:lid-hopper",
+    "item": "fastener-stack",
+    "question": "In the cut through m3:lid-hopper, does the head sit on lid and does the thread end inside hopper?",
+    "views": [
+     "cut-fastener-m3:lid-hopper"
+    ],
+    "bad_answer": "no",
+    "gate": "fasteners"
+   },
+   {
+    "id": "mating-feature",
+    "item": "mating-feature",
+    "question": "In the exploded view, does every part have a visible mating feature (bore, boss, slot, seat, screw hole) that meets one on its neighbour?",
+    "views": [
+     "exploded"
+    ],
+    "bad_answer": "no",
+    "gate": "connectivity"
+   },
+   {
+    "id": "assembly-order",
+    "item": "assembly-order",
+    "question": "Does the explode order (later steps further out) look buildable: nothing shown going in through a part fitted before it?",
+    "views": [
+     "exploded"
+    ],
+    "bad_answer": "no",
+    "gate": "assembly"
+   },
+   {
+    "id": "plain-box",
+    "item": "plain-box",
+    "question": "Does any part appear as a plain box with no features where a mechanism or interface should be?",
+    "views": [
+     "solid-iso",
+     "solid-rear"
+    ],
+    "bad_answer": "yes",
+    "gate": null
+   },
+   {
+    "id": "matches-card",
+    "item": "matches-card",
+    "question": "Does every part look like the function its card states (parts.*.function in the manifest)?",
+    "views": [
+     "solid-iso",
+     "solid-rear"
+    ],
+    "bad_answer": "no",
+    "gate": null
+   },
+   {
+    "id": "floating",
+    "item": "floating",
+    "question": "Is anything floating in the opposite iso: a part with nothing visibly holding it?",
+    "views": [
+     "solid-rear"
+    ],
+    "bad_answer": "yes",
+    "gate": "connectivity"
+   },
+   {
+    "id": "hidden-overlap",
+    "item": "hidden-overlap",
+    "question": "In the x-ray, does any part sit inside another part's material where no insert or press fit is declared?",
+    "views": [
+     "xray-iso"
+    ],
+    "bad_answer": "yes",
+    "gate": "connectivity"
+   },
+   {
+    "id": "fastener-access:from-top",
+    "item": "fastener-access",
+    "question": "Looking along the screws' axis from the tool's side, is every head of m3:lid-hopper visible and unobstructed?",
+    "views": [
+     "access-from-top"
+    ],
+    "bad_answer": "no",
+    "gate": "fasteners"
+   }
+  ]
+ },
+ "decisions": [
+  {
+   "id": "D1",
+   "decision": "Flat plate",
+   "why": "simplest",
+   "status": "decided",
+   "alternatives": [
+    {
+     "option": "Ribbed plate",
+     "rejected": "not needed"
+    }
+   ],
+   "verdict": null,
+   "evidence": ""
+  },
+  {
+   "id": "D2",
+   "decision": "Square box",
+   "why": "prints flat",
+   "status": "decided",
+   "alternatives": [
+    {
+     "option": "Cone",
+     "rejected": "needs supports"
+    }
+   ],
+   "verdict": null,
+   "evidence": ""
+  }
+ ],
+ "requirements": [
+  {
+   "id": "R1",
+   "text": "Holds two balls",
+   "verify_by": "analysis",
+   "status": "verified",
+   "checks": [
+    "gate:containment"
+   ],
+   "traced": null,
+   "evidence": ""
+  },
+  {
+   "id": "R2",
+   "text": "The lid stays on",
+   "verify_by": "analysis",
+   "status": "unverified",
+   "checks": [],
+   "traced": null,
+   "evidence": ""
+  }
+ ]
+}

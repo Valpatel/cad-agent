@@ -272,7 +272,8 @@ def test_rule_passes_on_the_fixed_case(tmp_path, code):
 
 def test_every_lint_rule_has_a_case():
     review_rules = {"review-invalid", "review-unknown-section", "review-same-actor", "review-stale",
-                    "signoff-open-decision", "geometry-invalid", "verdict-invalid"}   # tested below
+                    "signoff-open-decision", "geometry-invalid", "verdict-invalid",   # tested below
+                    "review-builder-unknown", "review-incomplete"}                     # test_dossier_review.py
     assert set(RULES) - review_rules <= set(CASES)
 
 
@@ -350,7 +351,8 @@ def record_json(section="S1", actor="reviewer", signed_off=True, hashes=None, da
             "hashes": hashes if hashes is not None else {p: v["sha256"] for p, v in base_geometry()["parts"].items()},
             "checklist": [{"id": "q1", "answer": "yes", "evidence": "seen in the cut", "views": ["solid-iso"],
                            "image_only": True}],
-            "decisions": [], "requirements": [],
+            "decisions": [{"id": d, "verdict": "justified", "evidence": "rejected for a reason"} for d in ("D1", "D2")],
+            "requirements": [{"id": r, "traced": "yes", "evidence": "its checks"} for r in ("R1", "R2")],
             "findings": [] if signed_off else [{"id": "F1", "severity": "major", "text": "fix the lid"}]}
 
 

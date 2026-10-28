@@ -1,0 +1,67 @@
+id: S1
+title: Store
+purpose: Hold the balls
+requirements:
+- R1
+- R2
+interfaces:
+- id: I1
+  between:
+  - base
+  - hopper
+  kind: fastened
+  datum: base top
+  owner: S1
+- id: I2
+  between:
+  - hopper
+  - lid
+  kind: fastened
+  datum: hopper rim
+  owner: S1
+parts:
+- id: base
+  function: Carries the hopper
+  interfaces:
+  - I1
+  decisions:
+  - id: D1
+    decision: Flat plate
+    why: simplest
+    alternatives:
+    - option: Ribbed plate
+      rejected: not needed
+- id: hopper
+  function: Holds the balls
+  interfaces:
+  - I1
+  - I2
+  material:
+    name: PETG
+    process: FDM
+    wall_mm: 2.4
+  fasteners:
+  - to: lid
+    screws: m3
+    qty: 2
+    via: I2
+  contains:
+  - what: ball
+    count: 2
+    cavity: hopper_cavity
+    free: true
+  checks:
+  - gate:wall
+  decisions:
+  - id: D2
+    decision: Square box
+    why: prints flat
+    alternatives:
+    - option: Cone
+      rejected: needs supports
+- id: lid
+  function: Closes the hopper
+  interfaces:
+  - I2
+- id: ball
+  function: Loose item

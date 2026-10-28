@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple
 
 from .model import PART_STATUS, Dossier, Issue, PartCard, Section, Where
-from .review import actor_refusal, part_actors
+from .review import actor_check, check_record, part_actors
 
 STATUSES = PART_STATUS                       # draft, built, gated, reviewed, signed_off
 RANK = {s: i for i, s in enumerate(STATUSES)}
@@ -81,6 +81,11 @@ RULES: Dict[str, Tuple[str, str]] = {
     "review-unknown-section": ("error", "a reviewer record names a section of the dossier"),
     "review-same-actor": ("error", "a review is by an actor who neither built nor wrote any part of the section, "
                                    "and not `unknown` (gates: require_separate_reviewer)"),
+    "review-builder-unknown": ("warning", "a current review of a section whose parts were built by a known actor "
+                                          "(else nobody can be shown to be someone else, and it does not count)"),
+    "review-incomplete": ("warning", "a current review judges every decision and traces every requirement of its "
+                                     "section, and answers exactly the questions of the packet on disk (else it "
+                                     "does not count; cadagent.dossier.review.check_record)"),
     "review-stale": ("warning", "the latest review still matches the geometry (else its sign-off is void)"),
     "signoff-open-decision": ("error", "a section with an open decision is not signed off"),
     # inputs
@@ -139,6 +144,7 @@ class Review:
     findings: List[Any] = field(default_factory=list)
     timestamp: str = ""
     verdict: str = ""
+    data: Dict[str, Any] = field(default_factory=dict, repr=False)    # the whole record, as read
 
     @property
     def order(self) -> Tuple[str, int, str]:
@@ -156,6 +162,7 @@ class Evidence:
     gate_files: Dict[str, str] = field(default_factory=dict)
     checks: Dict[str, CheckState] = field(default_factory=dict)             # configured check id -> state
     reviews: List[Review] = field(default_factory=list)
+    packets: Dict[str, Mapping[str, Any]] = field(default_factory=dict)    # section -> review packet manifest
     findings: List[Finding] = field(default_factory=list)                   # problems reading the inputs
     root: Optional[str] = None      # the directory finding files are relative to: lets a loader error on any line
                                     # inside a card be attributed to that card
@@ -296,7 +303,7 @@ def load_reviews(directory: Path, rel_to: Path) -> Tuple[List[Review], List[Find
         reviews.append(Review(file=shown, section=data["section"], date=data["date"], actor=data["actor"],
                               signed_off=data["signed_off"], hashes={str(k): str(v) for k, v in data["hashes"].items()},
                               findings=list(data.get("findings") or []), timestamp=str(data.get("timestamp", "")),
-                              verdict=str(data.get("verdict", ""))))
+                              verdict=str(data.get("verdict", "")), data=data))
     return reviews, findings
 
 
@@ -369,6 +376,14 @@ def project_evidence(project: Any) -> Evidence:
     if project.dossier:
         ev.reviews, found = load_reviews(Path(project.dossier).parent / "reviews", root)
         ev.findings += found
+    for path in sorted((Path(project.exports_dir) / "review").glob("*/manifest.json")):
+        try:                        # the review packets (T10), to check a record's answers against the questions
+            m = json.loads(path.read_text())
+        except (OSError, ValueError):
+            continue
+        sid = (m.get("section") or {}).get("id") if isinstance(m, dict) else None
+        if isinstance(sid, str) and m.get("schema") == "cad-agent.review-packet/1":
+            ev.packets[sid] = m
     try:                            # what `cad-agent gates` binds each verdict to, so the lint and check agree
         from ..gates.run import GATES, GatesConfigError, expected_inputs, gates_config, load_dossier, load_extra
         cfg = gates_config(project)
@@ -399,6 +414,7 @@ class _Linter:
         geo = ev.geometry or {}
         self.geo_parts: Mapping[str, Any] = geo.get("parts", {}) if isinstance(geo.get("parts", {}), dict) else {}
         self.build_actor = str(geo.get("actor", "") or "unknown") if ev.geometry is not None else ""
+        self.current_records: Dict[str, Optional[Review]] = {}
         self.free = self._free_parts()
         self.where_part: Dict[Tuple[str, int], str] = {}
         self.file_part: Dict[str, str] = {}
@@ -830,13 +846,8 @@ class _Linter:
 
             accepted = []
             for r in records:
-                if self.ev.geometry is not None and self.separate and not stale(r):
-                    why = actor_refusal(r.actor, r.section, self.d, self.ev.geometry)
-                    if why:
-                        self.add("review-same-actor", f"reviewer record for section {r.section!r} is refused: {why}; "
-                                                      "a separate reviewer is required (gates: "
-                                                      "require_separate_reviewer)", Where(r.file), item=r.section)
-                        continue
+                if self.ev.geometry is not None and not stale(r) and not self._record_counts(r):
+                    continue
                 accepted.append(r)
             matching = [r for r in accepted if not stale(r)]
             info: Dict[str, Any] = {"record": None}
@@ -851,11 +862,40 @@ class _Linter:
                                          f"applies: {', '.join(changed)} changed or not built since", Where(latest.file),
                          item=sid, parts=changed)
             rec = info["record"]
+            self.current_records[sid] = rec
             if rec is not None and rec.signed_off and open_decisions.get(sid):
                 self.add("signoff-open-decision", f"section {sid!r} is signed off in {rec.file} with open decision(s) "
                                                   f"{', '.join(open_decisions[sid])}", Where(rec.file), item=sid)
             out[sid] = info
         return out
+
+    def _traced(self, sid: str, rid: str) -> bool:
+        return _traced_in(self.current_records.get(sid), rid)
+
+    def _record_counts(self, r: Review) -> bool:
+        """Whether a record that matches the build may count: the separate-reviewer rule, then (for a record read
+        from a file) ``check_record`` against the dossier and the packet on disk, as ``--submit`` checks it. The
+        rules the lint reports itself (an open decision) and those it cannot check here (a missing or stale packet,
+        the gates) are left out."""
+        if self.separate:
+            found = actor_check(r.actor, r.section, self.d, self.ev.geometry)
+            if found:
+                kind, why = found
+                code = "review-builder-unknown" if kind == "builder-unknown" else "review-same-actor"
+                self.add(code, f"reviewer record for section {r.section!r} is refused: {why}; a separate reviewer is "
+                               "required (gates: require_separate_reviewer)", Where(r.file), item=r.section)
+                return False
+        if r.data:
+            problems = [p for p in check_record(r.data, dossier=self.d, geometry=self.ev.geometry,
+                                                packet=self.ev.packets.get(r.section), require_separate_reviewer=False)
+                        if p.code not in ("open-decision", "packet", "packet-stale", "below-gated")]
+            if problems:
+                self.add("review-incomplete", f"reviewer record for section {r.section!r} does not count: "
+                                              + "; ".join(str(p) for p in problems[:4])
+                                              + (f"; and {len(problems) - 4} more" if len(problems) > 4 else ""),
+                         Where(r.file), item=r.section)
+                return False
+        return True
 
     def _sha(self, pid: str) -> str:
         info = self.geo_parts.get(pid)
@@ -971,7 +1011,7 @@ class _Linter:
             row["derived"] = children
         own_ok = all(s.status == "pass" for s in states)
         reviewed = req.verify_by != "inspection" or all(
-            RANK[res.sections[s]["status"]] >= RANK["reviewed"] for s in sections)
+            RANK[res.sections[s]["status"]] >= RANK["reviewed"] and self._traced(s, rid) for s in sections)
         if req.status == "waived":
             status = "waived"
         elif req.verify_by in ("test", "demo"):
@@ -990,6 +1030,15 @@ class _Linter:
         row["status"] = status
         res.requirements[rid] = row
         return row
+
+
+def _traced_in(rec: Optional[Review], rid: str) -> bool:
+    """Whether a record traces requirement ``rid`` (``traced: yes``). A record without its data (built in code, not
+    read from a file) is taken as tracing it."""
+    if rec is None or not rec.data:
+        return True
+    return any(isinstance(r, dict) and r.get("id") == rid and r.get("traced") == "yes"
+               for r in rec.data.get("requirements") or [])
 
 
 def _where_dict(where: Optional[Where]) -> Dict[str, Any]:

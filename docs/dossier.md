@@ -460,6 +460,8 @@ neither a known gate nor a written verdict) or the `id` of a `cad.checks` entry.
 | `review-invalid` | error | a reviewer record passes `validate_record` ([the reviewer pass](#the-reviewer-pass)): every field, each answer with its evidence, a sign-off consistent with its findings and answers |
 | `review-unknown-section` | error | a reviewer record names a section of the dossier |
 | `review-same-actor` | error | the reviewer did not build any part of the section (`parts.<name>.actor`) and is not named as an `author` of the section, its cards or decisions; neither the reviewer nor a part's builder is `unknown` (while `gates: require_separate_reviewer`, plan §5.3) |
+| `review-builder-unknown` | warning | a current review is of a section whose parts were built by a known actor; otherwise nobody can be shown to be someone else, and the review does not count (a fresh checkout built without `CAD_AGENT_ACTOR`: the section stays `gated`, `check` still passes) |
+| `review-incomplete` | warning | a current review passes `check_record` against the dossier and the packet on disk (every decision judged, every requirement traced, exactly the packet's questions answered); otherwise it does not count |
 | `review-stale` | warning | the latest review still matches the geometry; otherwise its sign-off no longer counts |
 | `signoff-open-decision` | error | a section with an open decision is not signed off |
 | `geometry-missing` | warning | the geometry record exists (without it every card stays `draft`) |
@@ -509,11 +511,15 @@ The status uses the newest record whose hashes match, so a revert to reviewed ge
 
 **Reviewer records** (`dossier/reviews/*.json`, [the reviewer pass](#the-reviewer-pass)) are validated whole; an
 invalid one is `review-invalid` and does not count. A record by a part's builder or the section's author, or by
-`unknown`, or of a section whose builder is `unknown`, is refused (`review-same-actor`) while the dossier's
+`unknown`, is refused (`review-same-actor`; a section whose builder is `unknown` gives the warning
+`review-builder-unknown` and the record does not count either) while the dossier's
 `gates: require_separate_reviewer` is true (the default; `lint(..., require_separate_reviewer=)` overrides it). Only
 a record whose hashes match the current build is checked, since only such a record can count: an old record does not
-become an error because its reviewer later changed a part. With no geometry record nothing is built, so no record is
-refused or counted. Records are read in time order
+become an error because its reviewer later changed a part. A current record read from a file also goes through
+`check_record` against the dossier and the packet on disk (the checks `--submit` runs, without those the lint cannot
+make or reports itself: the packet's staleness, open decisions, the gates); a record that fails them does not count
+(`review-incomplete`). With no geometry record nothing is built, so no record is refused or counted. A requirement
+verified by `inspection` also needs the current record of each section serving it to trace it `yes`. Records are read in time order
 (`timestamp`, else `date`, then the `-2`, `-3` suffix of a second record the same day); the newest whose hashes
 match decides.
 
@@ -627,8 +633,13 @@ which fills in `actor` (from `CAD_AGENT_ACTOR`), `date`, `timestamp`, `signed_of
 | `below-gated` | a sign-off of a section that is `draft` or `built` |
 | `section`, `geometry`, `unbuilt` | the section is not in the dossier; nothing is built; a part has no shape |
 
-The lint runs `validate_record` on every record and its own rules on top (`review-same-actor`, `review-stale`,
-`signoff-open-decision`), so a record written by hand gets the same checks except those that need the packet.
+The lint runs `validate_record` on every record, and `check_record` on a record that matches the build, against the
+dossier and the packet on disk (`review-incomplete`; without a packet on disk the questions cannot be checked),
+with its own rules on top (`review-same-actor`, `review-builder-unknown`, `review-stale`, `signoff-open-decision`).
+What it cannot check is whether the packet was current when the record was written: only `--submit` checks that.
+
+A record changes the dossier lint that the packet quotes, so after any record the packet reads stale: render it
+again (`cad-agent review-packet`) before the next sign-off.
 
 **On the site.** The review pages ([below](#on-the-review-site)) read the status file's `sections.<id>.review`
 (`record`, `date`, `timestamp`, `actor`, `verdict`, `signed_off`, `findings`: the record's finding count,
@@ -636,7 +647,11 @@ The lint runs `validate_record` on every record and its own rules on top (`revie
 `view` names, with the reviewer's checklist answers.
 
 **Limits.** The separate-reviewer rule is only as strong as `CAD_AGENT_ACTOR`: a harness that gives two agents the
-same value, or one agent two values, defeats it. The per-part builder is carried from the geometry record a build
+same value, or one agent two values, defeats it. The lint cannot tell who wrote a record file: a file in
+`dossier/reviews/` that names another actor counts if it passes the checks (`--submit` at least stamps the actor
+from the environment; who commits the file is git's record, not the lint's). Someone who only edited the section's
+YAML (a gate exemption, a card) without building a part and without an `author:` line is not known as its author
+and is not refused. The per-part builder is carried from the geometry record a build
 replaces: a build into a directory without that record (a fresh checkout where `exports/` is not committed) records
 its own actor for every part, so a reviewer who builds there becomes the builder and is refused (the safe direction;
 commit the record, or review without rebuilding). A sign-off binds part hashes, not the dossier text: editing a card's

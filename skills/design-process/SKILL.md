@@ -124,8 +124,9 @@ what you find and go back to step 4; do not hand over a section you would not si
 
 ### 7. Hand the section to a separate reviewer
 
-Do not set `reviewed` or `signed_off` yourself; nothing you write can. Write the reviewer's bundle and hand it to an
-agent or person that did not build or write the section (plan §5.3, `docs/dossier.md` "The reviewer pass"):
+Do not set `reviewed` or `signed_off` yourself, and never write a reviewer record: the lint refuses records by a
+part's builder or a named author, but it cannot tell who wrote a file, so this rule is yours to keep. Write the
+reviewer's bundle and hand it to an agent or person that did not build or write the section (plan §5.3, `docs/dossier.md` "The reviewer pass"):
 
 ```bash
 cad-agent review-section S3     # exports/review-bundle/S3/: PROMPT.md, the section YAML, gates.json, status.json,

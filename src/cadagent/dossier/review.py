@@ -289,27 +289,36 @@ def section_authors(dossier: Any, section: str) -> Dict[str, str]:
     return out
 
 
-def actor_refusal(reviewer: str, section: str, dossier: Any, geometry: Optional[Mapping[str, Any]]) -> Optional[str]:
-    """Why ``reviewer`` may not sign ``section`` off while separate review is required, or None. Refused: an
-    unknown reviewer; a part of the section whose builder is unknown; a reviewer who built a part of the section
-    (``parts.<name>.actor``) or is named as an ``author`` of the section, one of its cards or decisions."""
+def actor_check(reviewer: str, section: str, dossier: Any,
+                geometry: Optional[Mapping[str, Any]]) -> Optional[Tuple[str, str]]:
+    """``(kind, why)`` when ``reviewer`` may not sign ``section`` off while separate review is required, else None.
+    ``kind``: ``reviewer-unknown``; ``builder-unknown`` (a part of the section was built by ``unknown``, so nobody
+    can be shown to be someone else); ``built`` (the reviewer built a part of the section, ``parts.<name>.actor``);
+    ``author`` (the reviewer is named as an ``author`` of the section, one of its cards or decisions)."""
     who = (reviewer or "").strip()
     if who in UNKNOWN:
-        return "the reviewer's actor is unknown (set CAD_AGENT_ACTOR for the reviewer)"
+        return "reviewer-unknown", "the reviewer's actor is unknown (set CAD_AGENT_ACTOR for the reviewer)"
     sec = dossier.sections.get(section) if dossier is not None else None
     parts = [c.id for c in sec.parts] if sec is not None else []
     actors = part_actors(geometry, parts)
     unknown = sorted(p for p, a in actors.items() if a in UNKNOWN)
     if unknown:
-        return (f"the build actor of {', '.join(unknown)} is unknown (set CAD_AGENT_ACTOR for the build, and "
-                "rebuild)")
+        return "builder-unknown", (f"the build actor of {', '.join(unknown)} is unknown (set CAD_AGENT_ACTOR for "
+                                   "the build, and rebuild)")
     built = sorted(p for p, a in actors.items() if a == who)
     if built:
-        return f"the reviewer {who!r} built {', '.join(built)}"
+        return "built", f"the reviewer {who!r} built {', '.join(built)}"
     wrote = sorted(k for k, a in section_authors(dossier, section).items() if a == who)
     if wrote:
-        return f"the reviewer {who!r} is the author of {', '.join(wrote)}"
+        return "author", f"the reviewer {who!r} is the author of {', '.join(wrote)}"
     return None
+
+
+def actor_refusal(reviewer: str, section: str, dossier: Any, geometry: Optional[Mapping[str, Any]]) -> Optional[str]:
+    """Why ``reviewer`` may not sign ``section`` off while separate review is required, or None (``actor_check``
+    without the kind)."""
+    found = actor_check(reviewer, section, dossier, geometry)
+    return found[1] if found else None
 
 
 def section_decisions(dossier: Any, section: str) -> List[str]:
@@ -567,19 +576,34 @@ def last_signoff(project: Any, section: str) -> Optional[Tuple[str, Dict[str, An
     return signed[-1] if signed else None
 
 
-def _diff_paths(p: _Project) -> List[str]:
+def _diff_paths(p: _Project, section: str) -> List[str]:
     """What a change to the section can be in: the dossier directory (its reviews left out), the build scripts
-    that declared the geometry, the parameters file and ``cad-agent.yaml``."""
+    that declared the section's geometry (its parts, their cavities, the joints and fasteners that involve them,
+    the steps that fit them), the parameters file and ``cad-agent.yaml``."""
     root = p.root
     paths = {_rel(Path(p.project.dossier).parent, root)}
     geo = p.geometry or {}
-    for table in ("parts", "cavities", "joints", "fasteners"):
-        for info in (geo.get(table) or {}).values():
-            if isinstance(info, Mapping) and isinstance(info.get("declared_at"), str):
-                paths.add(info["declared_at"].rsplit(":", 1)[0])
+    mine = {c.id for c in p.dossier.sections[section].parts}
+
+    def add(info: Any) -> None:
+        if isinstance(info, Mapping) and isinstance(info.get("declared_at"), str):
+            paths.add(info["declared_at"].rsplit(":", 1)[0])
+
+    for name, info in (geo.get("parts") or {}).items():
+        if name in mine:
+            add(info)
+    for info in (geo.get("cavities") or {}).values():
+        if isinstance(info, Mapping) and info.get("part") in mine:
+            add(info)
+    for info in (geo.get("joints") or {}).values():
+        if isinstance(info, Mapping) and {info.get("moving"), info.get("fixed")} & mine:
+            add(info)
+    for info in (geo.get("fasteners") or {}).values():
+        if isinstance(info, Mapping) and {info.get("clamps"), info.get("into")} & mine:
+            add(info)
     for step in ((geo.get("assembly") or {}).get("steps") or []):
-        if isinstance(step, Mapping) and isinstance(step.get("declared_at"), str):
-            paths.add(step["declared_at"].rsplit(":", 1)[0])
+        if isinstance(step, Mapping) and step.get("fit") in mine:
+            add(step)
     params = (geo.get("parameters") or {}).get("file")
     if isinstance(params, str) and params:
         paths.add(params)
@@ -593,7 +617,7 @@ def section_diff(p: _Project, section: str, since: Optional[str] = None) -> Dict
     """The diff of the section's sources since the last sign-off (or ``since``, a git revision): base commit,
     paths, the patch text (working tree against the base, so uncommitted changes are in it) and the untracked
     files under those paths."""
-    info: Dict[str, Any] = {"base": None, "since": since, "record": None, "paths": _diff_paths(p), "patch": "",
+    info: Dict[str, Any] = {"base": None, "since": since, "record": None, "paths": _diff_paths(p, section), "patch": "",
                             "untracked": [], "note": ""}
     if head_commit(p.root) is None:
         info["note"] = "not a git checkout: no diff"
@@ -930,7 +954,7 @@ def submit_record(project: Any, section: str, record: Union[str, Path, Mapping[s
 
 
 __all__ = ["ANSWERS", "BLOCKING", "BUNDLE_SCHEMA", "DECISION_VERDICTS", "Problem", "RECORD_SCHEMA", "ReviewError",
-           "SEVERITIES", "TRACED", "VERDICTS", "actor_refusal", "check_record", "current_hashes", "head_commit",
+           "SEVERITIES", "TRACED", "VERDICTS", "actor_check", "actor_refusal", "check_record", "current_hashes", "head_commit",
            "last_signoff", "open_decisions", "part_actors", "record_order", "record_template", "record_time",
            "section_authors", "section_decisions", "section_diff", "section_records", "submit_record",
            "validate_record", "write_bundle"]

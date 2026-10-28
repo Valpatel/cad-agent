@@ -1,0 +1,51 @@
+{
+ "section": "S1",
+ "parts": [
+  "base",
+  "hopper",
+  "lid",
+  "ball"
+ ],
+ "gates": {
+  "assembly": {
+   "file": "exports/gates/assembly.json",
+   "sha256": "909206c3f055cd8e570b0c001dc0825a2951a7b834c2353a12dab90d5ff1636d",
+   "status": "pass",
+   "pass": true,
+   "stale": null,
+   "checks": 0,
+   "section_checks": []
+  },
+  "connectivity": {
+   "file": "exports/gates/connectivity.json",
+   "sha256": "9db910e80a38802d89ef0ea059aa6e74f5c4e1186e722ff80598ff2d7812ed83",
+   "status": "pass",
+   "pass": true,
+   "stale": null,
+   "checks": 0,
+   "section_checks": []
+  },
+  "containment": {
+   "file": "exports/gates/containment.json",
+   "sha256": "968202de5f10c2cff3211125d6aaf6575358b712b4e4c32c1a14e6550c92c7e3",
+   "status": "pass",
+   "pass": true,
+   "stale": null,
+   "checks": 0,
+   "section_checks": []
+  },
+  "wall": {
+   "file": "exports/gates/wall.json",
+   "sha256": "23c2285c92aca9da36a0d64d273933aed4ddc4b4707decf5b6774fe65eed471f",
+   "status": "pass",
+   "pass": true,
+   "stale": null,
+   "checks": 0,
+   "section_checks": []
+  }
+ },
+ "missing_gates": [],
+ "findings": [],
+ "lint_findings": [],
+ "note": "the gate checks that name a part of this section (from the review packet); a stale verdict is not a pass"
+}

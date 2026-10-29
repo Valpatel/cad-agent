@@ -176,7 +176,7 @@ Unquoted, the title is cut at the comma and the rest becomes a stray key.
 | `cad-agent check [--json]` | collects results (no build), prints a table or the results JSON | 1 if any row fails |
 | `cad-agent report [--open]` | writes `exports/cad-agent-results.json` (schema 1.0, the vptest web shape, so `vptest web validate` and its renderer still accept it) and a standalone `docs/cad-agent-report.html` with inline styles (light and dark) that opens from `file://` | 1 if any row fails |
 | `cad-agent package` | zip + sha256 manifest from `package.include` | |
-| `cad-agent release [--out DIR] [--no-zip]` | the print release: `release/<name>-rev<revision>/index.html` (parts with thumbnails, print settings, slicer mass and time, STEP/STL/3MF links; assembly pages; hardware; source) and a reproducible zip next to it ([below](#the-print-release-cad-agent-release)) | 2 on a missing part file or a foreign `--out` folder |
+| `cad-agent release [--out DIR] [--no-zip] [--revision TEXT] [--date D]` | the print release: `release/<name>-rev<revision>/index.html` (parts with thumbnails, print settings, slicer mass and time, STEP/STL/3MF links; assembly pages; hardware; source) and a reproducible zip next to it ([below](#the-print-release-cad-agent-release)) | 2 on a bad config (a path outside the project), a missing part file or a foreign `--out` folder |
 | `cad-agent serve [--port N] [--host H]` | serves the project root; writes the URL to `preview/server-url.txt` | |
 | `cad-agent site [--serve]` | builds `site/` from milestones, decisions, a designs summary, Markdown pages and git history (config `cad: site:`); `--serve` rebuilds on change and serves the web kit at `/_cadagent/kit/`. One top bar links every page: `site: nav:` (`[{id, title, href}]`, hrefs from the project root) or, when unset, the overview, docs, 3D model and each `html_pages` page plus the check and simulation reports, the design comparison and the search leaderboard. The server adds the bar to every HTML page it sends (files on disk unchanged; a bar the page mounts itself wins; `<meta name="cadagent-nav" content="off">` opts a page out). A project with a `dossier:` or `gates:` key also gets the review pages in `site/review/`: a page per dossier section, the requirements table and the gates page with the connectivity graph ([dossier.md](dossier.md#on-the-review-site)) | |
 | `cad-agent view` | writes every part in assembly position to `exports/view/` (STL + `view.json`) for the 3D viewer (config `cad: view:` for colours, hidden variants, explode directions, extra parts from STEP or STL, list categories) | |
@@ -427,45 +427,64 @@ profiles are flattened through their `inherits` chain first (unflattened, the sl
 ### The print release (`cad-agent release`)
 
 What someone who wants to *print and build* the design downloads, as opposed to the review package
-(`cad-agent package`), which carries the evidence. `cad-agent release` writes `release/<name>-rev<revision>/` (or
-`--out DIR`) and `<folder>.zip` next to it:
+(`cad-agent package`), which carries the evidence. `cad-agent release [--out DIR] [--no-zip] [--revision TEXT]
+[--date YYYY-MM-DD]` writes `release/<name>-rev<revision>/` (or `DIR`) and `<folder>.zip` next to it (with `--out
+DIR`, the zip is `DIR.zip`):
 
 | Path | Content |
 |---|---|
-| `index.html` | one standalone page (inline CSS, light and dark, no scripts, opens from `file://`): the totals, the recommended print settings from the slice report, then a card per part with its thumbnail, quantity, material, notes, mass and time per copy, and its STEP, STL and 3MF; then the assembly pages, the hardware table and the source |
+| `index.html` | one standalone page (inline CSS, light and dark, no scripts, opens from `file://`): the release's parts and totals, the recommended print settings (`cad.slicer`), then each group of parts (with its own count, mass and time) as cards: thumbnail, quantity, material, notes, mass and time per copy, and the STEP, STL and 3MF; then the assembly pages, the hardware table and the source |
 | `cad/` | `<part>.step`, `.stl`, `.3mf` from `exports_dir`, plus `extra_cad` |
 | `images/` | the thumbnails |
-| `docs/` | the `pages` and the images they link to; Markdown is also rendered to HTML (with the `markdown` package) |
-| `source/` | the files matched by `include` minus `exclude` |
-| `manifest.json` | `format: cad-agent.release/1`, the parts, and the sha256 of every file |
+| `docs/<project path>` | the `pages`, and the images they link to, at their project paths, so their relative links keep working; links to files the release carries elsewhere (`cad/`, `source/`) are rewritten in the copies; Markdown is also rendered to HTML (with the `markdown` package) |
+| `source/<project path>` | the files matched by `include` minus `exclude` |
+| `manifest.json` | `format: cad-agent.release/1`, `revision`, `date`, `git` (`commit`, `dirty`, `modified`), `slicer`, `parts` (`part`, `group`, `optional`, `quantity`, `grams`, `minutes`), `warnings`, and `files` (the sha256 of every file) |
 
-A part's mass and time come from `exports/slice-report.json` only while the sha256 recorded there still matches the
-part's 3MF; otherwise its card says **not sliced** and the totals leave it out (run `cad-agent slice`). Simulation
-results and renders are not included unless a glob names them. The folder is rewritten from scratch each run (a
-non-empty folder that is not an earlier release is refused); the zip has sorted entries with fixed dates, so the same
-files give the same bytes.
+Rules the command enforces:
+
+- **Inside the project only.** Every configured path and glob must be relative, without `..`; a file that resolves
+  outside the project (a symlink) is skipped with a warning, and nothing is written outside the release folder.
+- **No hidden or git-ignored files** from globs (`.env`, a gitignored vendor STEP); each skip is a warning. Any file
+  over `max_file_mb` (default 20) is a warning.
+- **Slicer numbers only while current:** a part's mass and time are shown only when the slice report was made with
+  the settings `cad.slicer` names now and the part's 3MF still has the sha256 recorded for it; otherwise the card says
+  **not sliced** and the totals leave it out (run `cad-agent slice`).
+- **Honest counts:** the page counts the parts in the release and each group's parts. It does not claim a number of
+  pieces to print, because groups may hold alternatives (one of two bases) and optional parts (`optional: true`).
+- **What was built:** the release copies the working tree; uncommitted changes to tracked files are a warning and are
+  recorded in the manifest (`git.dirty`, `git.modified`) and on the page. The date is `--date`, `cad.release.date`,
+  `SOURCE_DATE_EPOCH`, else the last commit's date; outside git with none of them it is today, with a warning, so the
+  release is not reproducible across days.
+- Parts in the parts file that no group lists are a warning. The folder is rewritten from scratch each run (a
+  non-empty folder that is not an earlier release is refused); the zip has sorted entries with fixed dates, so the
+  same files give the same bytes.
 
 ```yaml
 cad:
   release:
     title: J501 enclosure                  # default: cad.title
+    revision: 0.9.1                        # default: --revision, else cad.revision / revision_from
     groups:                                # or `parts: [a, b]`; default: every part in the parts file
-      - {title: Print these, parts: [base, cover, rear_io], note: The enclosure set.}
-      - {title: Optional, parts: [chimney_cap]}
+      - {title: Enclosure, parts: [base, cover, rear_io], note: "Every build: one base and the cover."}
+      - {title: Drive storage, parts: [storage_35], optional: true}
     quantities: {rail_key: 2}              # default 1
-    material: PLA                          # default: the slice report's filament
+    material: PLA                          # default: the filament in cad.slicer
     notes:                                 # label -> text, shown on the part's card in this order
-      cover: {orientation: roof down on the bed, supports: none}
-    thumbnail: "{preview}/part-{part}.png" # the default; {preview} is preview_dir
-    extra_cad: [exports/assembly.step]
+      cover: {orientation: roof down on the bed, supports: none}   # quote values that contain commas
+    thumbnail: "{preview}/part-{part}.png" # the default; only {part} and {preview} (preview_dir)
+    extra_cad: [exports/assembly.step]     # never vendor geometry
     pages: [ASSEMBLY.md, "docs/assembly/*"]
-    hardware: docs/hardware.csv            # or a list of mappings: [{item: M3 x 10, qty: 4}]
+    hardware: docs/hardware.csv            # or a list of mappings: [{item: M3 x 10, qty: "4"}]
     include: ["cad/**", "tools/**", cad-agent.yaml, "requirements*.txt", README.md, "LICENSE*"]   # the default
-    exclude: ["**/__pycache__/**", "**/*.pyc", "**/.DS_Store"]                                  # the default
-    date: 2026-10-29                       # default: the last commit's date
+    exclude: ["**/__pycache__/**", "**/*.pyc"]                                                  # the default
+    max_file_mb: 20
+    date: 2026-10-29
 ```
 
-Attach the zip (and, if you like, the folder's `index.html` as a page) to the GitHub release.
+**Publishing.** The default `release/` folder is inside the project: add `release/` to `.gitignore`. Attach the
+**zip** to the GitHub release: GitHub serves release assets as downloads and does not render an attached
+`index.html`, and on its own that page's `images/`, `cad/` and `docs/` links would not resolve. Say in the release
+notes to unpack the zip and open `index.html`, or publish the folder with GitHub Pages to browse it online.
 
 ## Tests
 

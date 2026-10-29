@@ -482,5 +482,7 @@ Limits:
 - **Known misses.** A hole capped at one end by a later feature reads as a blind hole. A counterbore blocked right
   across, with a smaller hole cut through the block, reads as a ledge. Look at the listed ledges and the blind holes
   in a section view.
+- A block from one side that covers half the hole or more over its full depth leaves too little wall to count as a
+  hole; it reads as a slot end. Look at blocked holes in a section view.
 - Concentric openings under 30 mm that are not holes fail: a small fan guard's rings, or a recess around a post. List
   them as exceptions. [common-issues.md](common-issues.md) lists this check with the other recurring review findings.

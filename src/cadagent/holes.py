@@ -31,6 +31,8 @@ Limits, stated in every result (``LIMITS``):
 * a hole capped at one end by a later feature reads as a blind hole, and a rib that blocks a counterbore completely
   while a smaller hole is cut through it reads as a ledge: geometry alone cannot tell them from designed ones, so
   review the ``ledges`` list and the blind holes in a section view;
+* a block from one side that covers half the hole or more over its full depth leaves 180 degrees of wall or less, so
+  the rest reads as a slot end, not a hole;
 * concentric openings under ``max_diameter_mm`` that are not holes (a small fan guard's rings, a recess around a post)
   fail: list them in ``exceptions`` with the reason or lower ``max_diameter_mm`` for the part's project.
 """
@@ -55,6 +57,8 @@ LIMITS = ("cylindrical holes only (not tapered, polygonal or helical-thread geom
           "material inside each hole's own wall is measured, not tool or screw-head clearance beyond it",
           "a hole capped at one end reads as blind, and a counterbore blocked right across with a smaller hole cut "
           "through reads as a ledge: check the ledges and blind holes by eye",
+          "a block from one side that covers half the hole or more over its full depth leaves too little wall to "
+          "count as a hole (it reads as a slot end): check blocked holes in a section view",
           "concentric openings up to max_diameter_mm that are not holes (small fan-guard rings) need an exception",
           "the model, not the print: no shrink, elephant foot or support material")
 
@@ -305,8 +309,8 @@ def check_shape(shape: Any, tol_mm: float = TOL_MM, min_volume_mm3: float = MIN_
         if vol <= min_volume_mm3:
             continue
         item = dict(b.to_dict(), intrusion_mm3=round(vol, 3), intrusion_centre_mm=centre)
-        if b.arc_deg < 359.0 and b.faces == 1:
-            item["hint"] = ("the wall is one face with a gap, along the hole's full depth: a D-flat or key cut on "
+        if b.arc_deg < 359.0:
+            item["hint"] = ("the wall has a gap along the hole's full depth: a D-flat, double flat or key cut on "
                             "purpose? If so, list it in cad.holes.exceptions with the reason")
         reason = _excepted(b, exceptions)
         if reason:
@@ -403,6 +407,8 @@ def check_project(project, parts: Optional[Sequence[str]] = None, out: Optional[
     if stray:
         raise CadConfigError(f"no such part(s) {stray}")
     path = Path(out) if out else project.exports_dir / "hole-checks.json"
+    if not path.parent.is_dir():
+        raise CadConfigError(f"{path.parent} does not exist")
     rows: Dict[str, Any] = {}
     if parts and path.is_file():                 # a partial run keeps the other parts' rows from a result made the same way
         try:

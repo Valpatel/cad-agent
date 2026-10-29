@@ -439,7 +439,7 @@ DIR`, the zip is `DIR.zip`):
 | `images/` | the thumbnails |
 | `docs/<project path>` | the `pages`, and the images they link to, at their project paths, so their relative links keep working; links to files the release carries elsewhere (`cad/`, `source/`) are rewritten in the copies; Markdown is also rendered to HTML (with the `markdown` package) |
 | `source/<project path>` | the files matched by `include` minus `exclude` |
-| `manifest.json` | `format: cad-agent.release/1`, `revision`, `date`, `git` (`commit`, `dirty`, `modified`, `untracked_released`), `slicer`, `parts` (`part`, `group`, `optional`, `quantity`, `grams`, `minutes`), `warnings`, and `files` (the sha256 of every file) |
+| `manifest.json` | `format: cad-agent.release/1`, `revision`, `date`, `git` (`commit`, `dirty`, `modified`, `untracked_released`), `slicer`, `parts` (`part`, `group`, `optional`, `pick_one`, `quantity`, `grams`, `minutes`), `build` (`title`, `parts`, `grams`, `minutes`; null without one), `warnings`, and `files` (the sha256 of every file) |
 
 Rules the command enforces:
 
@@ -452,7 +452,10 @@ Rules the command enforces:
   the settings `cad.slicer` names now and the part's 3MF still has the sha256 recorded for it; otherwise the card says
   **not sliced** and the totals leave it out (run `cad-agent slice`).
 - **Honest counts:** the page counts the parts in the release and each group's parts. It does not claim a number of
-  pieces to print, because groups may hold alternatives (one of two bases) and optional parts (`optional: true`).
+  pieces to print, because groups may hold alternatives (`pick_one: true`: one of two bases; its count line says
+  "print one of these" instead of a total) and optional parts (`optional: true`). For what one build takes, name it
+  under `build`: the page's first figure is then that build's filament and time, at the listed quantities, shown only
+  while every part in it is sliced. A build takes at most one part from a pick-one group.
 - **What was built:** the release copies the working tree; uncommitted changes to tracked files are a warning and are
   recorded in the manifest (`git.dirty`, `git.modified`) and on the page; released files that are not in git at all
   are a warning too (`git.untracked_released`), since the recorded commit cannot rebuild them. The date is `--date`, `cad.release.date`,
@@ -469,7 +472,9 @@ cad:
     revision: 0.9.1                        # default: --revision, else cad.revision / revision_from
     groups:                                # or `parts: [a, b]`; default: every part in the parts file
       - {title: Enclosure, parts: [base, cover, rear_io], note: "Every build: one base and the cover."}
+      - {title: Front plate (print one), parts: [front_gmsl, front_plain], pick_one: true}
       - {title: Drive storage, parts: [storage_35], optional: true}
+    build: {title: Desktop build, parts: [base, cover, rear_io, front_plain]}   # one complete build, totalled
     quantities: {rail_key: 2}              # default 1
     material: PLA                          # default: the filament in cad.slicer
     notes:                                 # label -> text, shown on the part's card in this order

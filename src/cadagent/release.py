@@ -26,7 +26,9 @@ Config ``cad: release:`` (all optional)::
       revision: 0.9.1                      # default: cad.revision / revision_from (or --revision)
       groups:                              # or `parts: [a, b]`; default: every part in the parts file
         - {title: Print these, parts: [base, cover], note: The enclosure set.}
+        - {title: Base (print one), parts: [base, base_wall], pick_one: true}
         - {title: Drive storage, parts: [tray], optional: true}
+      build: {title: Desktop build, parts: [lid, base]}   # one complete build: its filament and time on the page
       quantities: {rail_key: 2}            # default 1
       material: PLA                        # default: the filament in cad.slicer
       notes:                               # shown on the part's card, in this order
@@ -68,9 +70,9 @@ CAD_SUFFIXES = (".step", ".stl", ".3mf")
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
 MARKER = "cad-agent.release/1"
 ZIP_DATE = (1980, 1, 1, 0, 0, 0)
-_KEYS = {"title", "revision", "parts", "groups", "quantities", "material", "notes", "thumbnail", "extra_cad", "pages",
+_KEYS = {"title", "revision", "parts", "groups", "build", "quantities", "material", "notes", "thumbnail", "extra_cad", "pages",
          "hardware", "include", "exclude", "max_file_mb", "date"}
-_GROUP_KEYS = {"title", "parts", "note", "optional"}
+_GROUP_KEYS = {"title", "parts", "note", "optional", "pick_one"}
 
 
 @dataclass
@@ -79,6 +81,7 @@ class Group:
     parts: List[str]
     note: str = ""
     optional: bool = False
+    pick_one: bool = False      # alternatives: print one of these parts, not all of them
 
 
 @dataclass
@@ -98,6 +101,7 @@ class ReleaseConfig:
     max_file_mb: float = DEFAULT_MAX_FILE_MB
     date: str = ""
     left_out: List[str] = field(default_factory=list)      # known parts no group lists
+    build: Optional[Group] = None                            # one complete build, totalled on the page
 
 
 @dataclass
@@ -142,17 +146,19 @@ def release_config(project: CadProject, known_parts: Sequence[str]) -> ReleaseCo
     groups: List[Group] = []
     if "groups" in raw:
         if not isinstance(raw["groups"], list) or not raw["groups"]:
-            raise CadConfigError("cad.release.groups must be a non-empty list of {title, parts, note, optional}")
+            raise CadConfigError("cad.release.groups must be a non-empty list of {title, parts, note, optional, "
+                                 "pick_one}")
         for i, g in enumerate(raw["groups"]):
             if not isinstance(g, dict) or not g.get("title") or not g.get("parts"):
                 raise CadConfigError(f"cad.release.groups[{i}] needs a title and a non-empty parts list")
             bad = sorted(set(g) - _GROUP_KEYS)
             if bad:
                 raise CadConfigError(f"cad.release.groups[{i}]: unknown keys {bad}; known: {sorted(_GROUP_KEYS)}")
-            if not isinstance(g.get("optional", False), bool):
-                raise CadConfigError(f"cad.release.groups[{i}].optional must be true or false")
+            for flag in ("optional", "pick_one"):
+                if not isinstance(g.get(flag, False), bool):
+                    raise CadConfigError(f"cad.release.groups[{i}].{flag} must be true or false")
             groups.append(Group(str(g["title"]), _strings(g["parts"], f"cad.release.groups[{i}].parts"),
-                                str(g.get("note") or ""), bool(g.get("optional", False))))
+                                str(g.get("note") or ""), bool(g.get("optional", False)), bool(g.get("pick_one", False))))
     elif "parts" in raw:
         parts = _strings(raw["parts"], "cad.release.parts", allow_none=False)
         if not parts:
@@ -182,6 +188,18 @@ def release_config(project: CadProject, known_parts: Sequence[str]) -> ReleaseCo
     for name in list(quantities) + list(notes):
         if name not in seen:
             raise CadConfigError(f"cad.release: {name!r} has a quantity or notes but is not a released part")
+    build = None
+    if raw.get("build") is not None:
+        b = raw["build"]
+        if not isinstance(b, dict) or set(b) - {"title", "parts"} or not b.get("title") or not b.get("parts"):
+            raise CadConfigError("cad.release.build must be {title, parts} with a non-empty parts list")
+        build = Group(str(b["title"]), _strings(b["parts"], "cad.release.build.parts"))
+        if len(set(build.parts)) != len(build.parts) or any(n not in seen for n in build.parts):
+            raise CadConfigError("cad.release.build.parts must be released parts, each listed once")
+        for g in groups:
+            picked = [n for n in build.parts if n in g.parts]
+            if g.pick_one and len(picked) > 1:
+                raise CadConfigError(f"cad.release.build takes {picked} from {g.title!r}, which is pick one")
     hardware = raw.get("hardware")
     if hardware is not None and not isinstance(hardware, (str, list)):
         raise CadConfigError("cad.release.hardware must be a CSV path or a list of mappings")
@@ -212,6 +230,7 @@ def release_config(project: CadProject, known_parts: Sequence[str]) -> ReleaseCo
     return ReleaseConfig(
         title=str(raw.get("title") or project.title or project.name),
         groups=groups,
+        build=build,
         revision=str(raw.get("revision") or ""),
         quantities={str(k): int(v) for k, v in quantities.items()},
         material=str(raw.get("material") or ""),
@@ -556,6 +575,15 @@ def _sum(parts: Sequence[Dict[str, Any]]) -> Tuple[float, float, int]:
             len(sliced))
 
 
+def _build_entry(cfg: ReleaseConfig, parts: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    if not cfg.build:
+        return None
+    grams, minutes, n = _sum([p for p in parts if p["part"] in cfg.build.parts])
+    whole = n == len(cfg.build.parts)
+    return {"title": cfg.build.title, "parts": cfg.build.parts, "grams": round(grams, 2) if whole else None,
+            "minutes": round(minutes, 1) if whole else None}
+
+
 def _page(project: CadProject, cfg: ReleaseConfig, revision: str, date: str, parts: List[Dict[str, Any]],
           settings: Dict[str, Any], slice_note: str, docs: List[Dict[str, str]], hardware: List[Dict[str, str]],
           sources: List[str], extra: List[Dict[str, str]], zip_name: Optional[str], git: Dict[str, Any]) -> str:
@@ -573,6 +601,10 @@ def _page(project: CadProject, cfg: ReleaseConfig, revision: str, date: str, par
     if n_sliced:
         scope = "every listed part" if not missing else f"the {n_sliced} sliced parts"
         stats += [(f"{grams:.0f} g", f"filament for {scope}"), (_duration(minutes), f"print time for {scope}")]
+    if cfg.build:
+        b_grams, b_min, b_sliced = _sum([p for p in parts if p["part"] in cfg.build.parts])
+        if b_sliced == len(cfg.build.parts):
+            stats.insert(0, (f"{b_grams:.0f} g", f"{_duration(b_min)} for one build: {cfg.build.title}"))
     stats_html = "".join(f'<div class="stat"><b>{_e(a)}</b><span>{_e(b)}</span></div>' for a, b in stats)
     rows = [("Printer", settings.get("printer") or project.printer.name), ("Process", settings.get("process")),
             ("Filament", settings.get("filament")),
@@ -601,10 +633,13 @@ def _page(project: CadProject, cfg: ReleaseConfig, revision: str, date: str, par
         members = [by_name[n] for n in g.parts]
         g_grams, g_min, g_sliced = _sum(members)
         count = f"{len(members)} part{'s' if len(members) != 1 else ''}"
-        if g_sliced:
+        if g.pick_one:
+            count += " · print one of these"
+        elif g_sliced:
             count += (f" · {g_grams:.0f} g, {_duration(g_min)} for all of them" if g_sliced == len(members)
                       else f" · {g_grams:.0f} g, {_duration(g_min)} for the {g_sliced} sliced")
-        flag = ' <span class="pill opt">optional</span>' if g.optional else ""
+        flag = (' <span class="pill opt">optional</span>' if g.optional else "") \
+            + (' <span class="pill opt">pick one</span>' if g.pick_one else "")
         cards = "".join(_card(project, cfg, m) for m in members)
         body.append(f'<h2>{_e(g.title)}{flag}</h2><p class="count">{_e(count)}</p>'
                     + (f'<p class="lead">{_e(g.note)}</p>' if g.note else "") + f'<div class="grid">{cards}</div>')
@@ -749,7 +784,7 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
             if not row:
                 warnings.append(f"{name}: not sliced" + (f" ({slice_note})" if slice_note else
                                                          f" (no current slice-report row for {name}.3mf)"))
-            parts.append({"part": name, "group": g.title, "optional": g.optional, "quantity": cfg.quantities.get(name, 1),
+            parts.append({"part": name, "group": g.title, "optional": g.optional, "pick_one": g.pick_one, "quantity": cfg.quantities.get(name, 1),
                           "material": material, "files": files, "image": image, "grams": row.get("grams"),
                           "minutes": row.get("minutes")})
     skipped: List[str] = []
@@ -833,7 +868,9 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
                 "git": {k: git[k] for k in ("commit", "dirty", "modified", "untracked_released")} if git else None,
                 "slicer": {"settings": settings, "report_current": not slice_note,
                            "report_settings": {k: report.get(k) for k in settings} if report else None},
-                "parts": [{k: p[k] for k in ("part", "group", "optional", "quantity", "grams", "minutes")} for p in parts],
+                "parts": [{k: p[k] for k in ("part", "group", "optional", "pick_one", "quantity", "grams", "minutes")}
+                          for p in parts],
+                "build": _build_entry(cfg, parts),
                 "warnings": warnings, "files": files}
     (folder / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     if zip_path:

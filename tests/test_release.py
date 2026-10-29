@@ -92,6 +92,26 @@ def test_groups_count_honestly_and_flag_optional(tmp_path):
     assert [(x["part"], x["optional"]) for x in parts] == [("lid", False), ("base", True)]
 
 
+def test_pick_one_groups_and_the_build_total(tmp_path):
+    p = project(tmp_path, {"groups": [{"title": "Lid", "parts": ["lid"]},
+                                      {"title": "Base (print one)", "parts": ["base"], "pick_one": True}],
+                           "build": {"title": "Desktop build", "parts": ["lid"]}, "quantities": {"lid": 2}})
+    r = build_release(p, out=tmp_path / "out/b")
+    page = (r.folder / "index.html").read_text()
+    assert "pick one</span>" in page and "1 part · print one of these" in page
+    assert "<b>100 g</b><span>3 h 00 min for one build: Desktop build" in page    # the build's quantities count
+    m = json.loads((r.folder / "manifest.json").read_text())
+    assert m["build"] == {"title": "Desktop build", "parts": ["lid"], "grams": 100.0, "minutes": 180.0}
+    assert [(x["part"], x["pick_one"]) for x in m["parts"]] == [("lid", False), ("base", True)]
+
+
+def test_a_build_with_an_unsliced_part_has_no_total(tmp_path):
+    p = project(tmp_path, {"build": {"title": "All", "parts": ["lid", "base"]}})     # base's slice row is stale
+    r = build_release(p, out=tmp_path / "out/u")
+    assert "one build" not in (r.folder / "index.html").read_text()
+    assert json.loads((r.folder / "manifest.json").read_text())["build"]["grams"] is None
+
+
 def test_parts_left_out_of_groups_are_warned(tmp_path):
     p = project(tmp_path, {"groups": [{"title": "Only", "parts": ["lid"]}]})
     assert any("not released" in w and "base" in w for w in build_release(p, out=tmp_path / "out/w").warnings)
@@ -192,7 +212,11 @@ def test_names_are_url_encoded(tmp_path):
     {"parts": ["lid"], "groups": [{"title": "x", "parts": ["base"]}]}, {"parts": ["lid", "lid"]}, {"parts": []},
     {"include": None}, {"quantities": {"lid": 0}}, {"notes": {"ghost": {"a": "b"}}}, {"colour": "red"},
     {"groups": [{"title": "x", "parts": ["lid"], "notes": "typo"}]}, {"max_file_mb": 0},
-    {"notes": {"lid": {"use": "desktop", "or any setup": None}}}, {"hardware": [{"item": "M3", "qty": None}]}])
+    {"notes": {"lid": {"use": "desktop", "or any setup": None}}}, {"hardware": [{"item": "M3", "qty": None}]},
+    {"groups": [{"title": "x", "parts": ["lid"], "pick_one": "yes"}]}, {"build": {"title": "b", "parts": ["ghost"]}},
+    {"build": {"title": "b", "parts": ["lid", "lid"]}}, {"build": {"parts": ["lid"]}}, {"build": ["lid"]},
+    {"build": {"title": "b", "parts": ["lid"], "note": "typo"}},
+    {"groups": [{"title": "x", "parts": ["lid", "base"], "pick_one": True}], "build": {"title": "b", "parts": ["lid", "base"]}}])
 def test_bad_config(tmp_path, bad):
     with pytest.raises(CadConfigError):
         build_release(project(tmp_path, bad), out=tmp_path / "out/bad")

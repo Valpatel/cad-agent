@@ -136,7 +136,9 @@ def holes_feature(project: CadProject) -> Dict[str, Any]:
                                "\n".join(lines)))
         else:
             ex = f", {len(row['excepted'])} listed exception(s)" if row.get("excepted") else ""
-            checks.append(_row(label, True, f"{row['holes']} hole(s) clear{ex}", ""))
+            ld = (f", {len(row['ledges'])} ledge(s) between coaxial bores (confirm they are designed)"
+                  if row.get("ledges") else "")
+            checks.append(_row(label, True, f"{row['holes']} hole(s) clear{ex}{ld}", ""))
     return {"feature_id": "cad-holes", "feature_title": "Holes clear", "checks": checks}
 
 def parts_feature(project: CadProject, report_dir: Path) -> Dict[str, Any]:

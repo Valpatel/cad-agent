@@ -431,10 +431,12 @@ def cmd_gates(project: CadProject, args: argparse.Namespace) -> int:
 
 def cmd_holes(project: CadProject, args: argparse.Namespace) -> int:
     from cadagent.holes import check_project
+    from cadagent.project import CadConfigError
 
+    out = getattr(args, "out", None)
     try:
-        result = check_project(project, getattr(args, "parts", None) or None)
-    except ValueError as exc:
+        result = check_project(project, getattr(args, "parts", None) or None, Path(out) if out else None)
+    except (ValueError, CadConfigError) as exc:
         raise _Unusable(str(exc)) from exc
     for part, row in result["parts"].items():
         if row.get("skipped"):
@@ -449,7 +451,7 @@ def cmd_holes(project: CadProject, args: argparse.Namespace) -> int:
         else:
             ex = f" ({len(row['excepted'])} listed exception(s))" if row.get("excepted") else ""
             _say(f"  PASS  {part}: {row['holes']} hole(s) clear{ex}")
-    _say(f"holes: {project.exports_dir / 'hole-checks.json'}")
+    _say(f"holes: {out or project.exports_dir / 'hole-checks.json'}")
     return 0 if result["pass"] else 1
 
 def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
@@ -462,7 +464,7 @@ def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
     try:                            # writes exports/hole-checks.json; the report's "Holes clear" rows fail on findings
         cmd_holes(project, args)
     except _Unusable as exc:
-        _say(f"holes not run: {exc}")
+        _say(f"holes FAILED to run: {exc} (the report's Holes clear rows fail)")
     from cadagent.gates.run import GatesConfigError, enabled, gates_config
     if enabled(project):
         try:                    # rebuild the record unless a build step already runs the gates' build script
@@ -855,7 +857,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("export-3mf", parents=[common], help="Write a bed-centred 3MF per part STL and verify it")
     holes_p = sub.add_parser("holes", parents=[common], help="Check every hole of every part (exports/<part>.step) is "
                                                              "clear of material: ribs or bosses added after the holes")
-    holes_p.add_argument("parts", nargs="*", help="only these parts (default: every part in the parts file)")
+    holes_p.add_argument("parts", nargs="*", help="only these parts (default: every part in the parts file); the other "
+                                                  "parts' rows are kept from a result made with the same settings")
+    holes_p.add_argument("--out", help="write the result here instead of exports/hole-checks.json (a reviewer's "
+                                       "read-only run)")
     check_p = sub.add_parser("check", parents=[common], help="Collect check results; exit 1 if any fail")
     check_p.add_argument("--json", action="store_true", help="Print the results JSON (schema 1.0)")
     report_p = sub.add_parser("report", parents=[common], help="Write results JSON + standalone HTML report")

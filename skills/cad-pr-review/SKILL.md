@@ -46,7 +46,8 @@ by an agent or person that did not write it, and the review lives on the PR, whe
   - simulations: converged and steady, energy or force balance closed, mesh dependence acknowledged;
   - nothing claims more than CAD can show (fit, strength and temperature are predictions until tested);
   - the [common-issues index](../../docs/common-issues.md), every row: each automatic check (for example "Holes
-    clear") present in the report, passing and current, run yourself if missing (`cad-agent holes` is light). Each
+    clear") present in the report, passing and current. If one is missing, run it yourself without writing into the
+    checkout (`cad-agent holes --out /tmp/<scratch>/holes.json`). Each
     review-only row is checked by looking at the model and named in the summary. A mistake the index does not list
     is a finding, and it is added to the index.
 - Post inline comments on the exact lines (`gh api repos/<o>/<r>/pulls/<n>/comments` with `commit_id`, `path`,

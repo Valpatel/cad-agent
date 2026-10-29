@@ -453,11 +453,17 @@ updated, or `html_pages` will report them as broken.
 
 A rib, boss or skirt unioned after the holes were cut refills part of a hole. The part is still one valid
 watertight solid, and fit, FEA and slice checks all pass. `cad-agent holes` (run by `all`) catches it from each part's
-STEP with no declarations: every concave cylindrical hole (wall faces covering at least 200° once joined, so fillets
-and slot ends are not holes; up to 30 mm across, so grille rings are not) is probed with a cylinder 0.05 mm inside its
-wall over its full depth. Material inside above 0.05 mm³ fails, with the hole's axis, diameter, depth range and the
-centre of the intrusion. Faces on one axis join into one hole across a rib, but coaxial holes in opposite walls stay
-separate, and so do the two sides of a ledge with a smaller hole through it (a stepped bore).
+STEP with no declarations. A hole is a set of concave cylindrical faces on one axis whose wall reaches at least 200°
+around the circle, so a rib right across a hole still leaves one, while fillets and slot ends do not count. Holes are
+up to 30 mm across. Each hole is probed with a cylinder 0.05 mm inside its wall over its full depth; material inside
+above 0.05 mm³ fails, with the hole's axis, diameter, depth range and the centre of the intrusion. Coaxial holes in
+opposite walls are separate holes. Two same-size bores with a smaller hole through the solid between them are a
+stepped bore: the **ledge** is listed for a person to confirm, not failed.
+
+The result (`exports/hole-checks.json`) is bound to each STEP's sha256 and to the check's version and settings. A
+changed STEP or a changed `cad.holes` makes it stale, and a stale result fails its row like a failing one. `cad-agent
+holes PART` rechecks one part and keeps the others' rows. `--out FILE` writes elsewhere, for a reviewer who must not
+change the checkout. Expect about 10 s for a large enclosure part.
 
 ```yaml
 cad:
@@ -465,11 +471,16 @@ cad:
     exceptions:                 # holes with material in them on purpose, each with its reason
       base:
         - {at: [1.25, 46.5, 62], diameter_mm: 6.6, reason: anti-rotation flat for the RP-SMA bulkhead (D-hole)}
-    skip: {gasket: printed in TPU, no fastener holes}   # parts not checked, with the reason
+        # at: a point on the hole's axis (part coordinates); radius_mm: how far from the axis it may be (default 0.5)
+    skip: {gasket: printed in TPU without fastener holes}   # parts not checked, with the reason
     # tol_mm: 0.05, min_volume_mm3: 0.05, min_arc_deg: 200, max_diameter_mm: 30
 ```
 
-Limits: cylindrical holes only (not tapered, polygonal or helical-thread geometry), and only material inside the
-hole's own wall is measured, not tool or screw-head clearance beyond it. [common-issues.md](common-issues.md) lists
-this with the other recurring review findings.
-
+Limits:
+- Only cylindrical holes are checked, not tapered, polygonal or helical-thread geometry. Only material inside the
+  hole's own wall is measured, not tool or screw-head clearance beyond it.
+- **Known misses.** A hole capped at one end by a later feature reads as a blind hole. A counterbore blocked right
+  across, with a smaller hole cut through the block, reads as a ledge. Look at the listed ledges and the blind holes
+  in a section view.
+- Concentric openings under 30 mm that are not holes fail: a small fan guard's rings, or a recess around a post. List
+  them as exceptions. [common-issues.md](common-issues.md) lists this check with the other recurring review findings.

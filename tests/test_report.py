@@ -40,7 +40,11 @@ def bind_holes(root: Path, parts) -> None:
     import hashlib
     rows = {n: {"pass": True, "holes": 0, "findings": [], "excepted": [], "step": f"{n}.step",
                 "sha256": hashlib.sha256((root / "exports" / f"{n}.step").read_bytes()).hexdigest()} for n in parts}
-    (root / "exports" / "hole-checks.json").write_text(json.dumps({"version": 1, "parts": rows, "pass": True}))
+    from cadagent.holes import VERSION, config, config_key
+    from cadagent.project import load_project
+    key = config_key(config(load_project(root)))
+    (root / "exports" / "hole-checks.json").write_text(json.dumps({"version": VERSION, "config_key": key, "parts": rows,
+                                                                  "pass": True}))
 
 def rows(results, feature_id):
     feature = next(f for f in results["features"] if f["feature_id"] == feature_id)

@@ -108,3 +108,71 @@ def test_stepped_bore_with_a_ledge_passes_and_a_blocking_rib_fails():
     rib = cq.Workplane("XY").box(30, 8, 3).translate((0, 0, 5))                            # wider than the hole
     r = holes.check_shape(plate.union(rib).val())
     assert not r["pass"] and r["findings"][0]["diameter_mm"] == pytest.approx(3.4)
+
+
+def test_a_rib_wider_than_most_of_the_counterbore_is_still_caught():
+    plate = cq.Workplane("XY").box(30, 30, 10, centered=(True, True, False))
+    rib = cq.Workplane("XY").box(30, 5, 10, centered=(True, True, False))          # full depth, 5 mm across a D6.4
+    hole = cq.Workplane("XY").circle(3.2).extrude(20).translate((0, 0, -5))
+    r = holes.check_shape(plate.cut(hole).union(rib).val())
+    assert not r["pass"] and r["findings"][0]["span_deg"] >= 200        # two opposite arcs still span the circle
+
+
+def test_ledges_are_reported_and_known_misses_are_recorded():
+    block = cq.Workplane("XY").box(20, 20, 30, centered=(True, True, False))
+    stepped = (cq.Workplane("XY").circle(3.3).extrude(26).translate((0, 0, 4))
+               .union(cq.Workplane("XY").circle(1.7).extrude(40).translate((0, 0, -5)))
+               .union(cq.Workplane("XY").circle(3.3).extrude(3).translate((0, 0, -1))))
+    r = holes.check_shape(block.cut(stepped).val())
+    assert r["pass"] and len(r["ledges"]) == 1 and r["ledges"][0]["thickness_mm"] == pytest.approx(2.0)
+    # Known miss (LIMITS): a boss unioned over a through hole caps it, and the hole then reads as a blind hole.
+    plate = cq.Workplane("XY").box(20, 20, 5, centered=(True, True, False)).cut(
+        cq.Workplane("XY").circle(1.7).extrude(10).translate((0, 0, -2)))
+    capped = plate.union(cq.Workplane("XY").circle(4).extrude(3).translate((0, 0, 5)))
+    assert holes.check_shape(capped.val())["pass"]
+    assert any("capped" in l for l in holes.LIMITS)
+
+
+def test_skip_missing_step_config_binding_partial_runs_and_out(tmp_path):
+    from cadagent.project import load_project
+    from cadagent.report import holes_feature
+
+    root = project(tmp_path, plate_with_counterbore(False))
+    parts = {"plate": {"cad_valid": True}, "gasket": {"cad_valid": True}, "lid": {"cad_valid": True}}
+    (root / "exports/geometry-checks.json").write_text(json.dumps(parts))
+    cq.exporters.export(cq.Workplane().add(plate_with_counterbore(False)), str(root / "exports/lid.step"))
+    cfg = root / "cad-agent.yaml"
+    cfg.write_text(cfg.read_text() + "  holes:\n    skip: {gasket: printed in TPU without fastener holes}\n")
+    assert main(["holes", "--project", str(root)]) == 0
+    rows = {c["name"]: c for c in holes_feature(load_project(root))["checks"]}
+    assert all(c["status"] == "pass" for c in rows.values()) and "TPU" in rows["gasket"]["message"]
+    (root / "exports/lid.step").unlink()
+    rows = {c["name"]: c for c in holes_feature(load_project(root))["checks"]}
+    assert rows["lid"]["status"] == "fail" and "not found" in rows["lid"]["message"]
+    assert main(["holes", "--project", str(root)]) == 1
+    rows = {c["name"]: c for c in holes_feature(load_project(root))["checks"]}
+    assert "not found" in rows["lid"]["message"] and rows["plate"]["status"] == "pass"
+    cfg.write_text(cfg.read_text().replace("skip: {gasket: printed in TPU without fastener holes}",
+                                           "skip: {gasket: printed in TPU without fastener holes, lid: not exported}"))
+    assert "stale" in holes_feature(load_project(root))["checks"][0]["message"]          # settings changed
+    assert main(["holes", "--project", str(root)]) == 0
+    assert main(["holes", "--project", str(root), "plate"]) == 0                          # keeps the other rows
+    data = json.loads((root / "exports/hole-checks.json").read_text())
+    assert set(data["parts"]) == {"plate", "gasket", "lid"}
+    out = tmp_path / "review.json"
+    assert main(["holes", "--project", str(root), "--out", str(out)]) == 0
+    assert out.is_file() and json.loads(out.read_text())["pass"]
+
+
+@pytest.mark.parametrize("bad", [
+    "holes: {exceptions: {plate: [{at: [0, 0, 0], reason: x, size: 3}]}}",
+    "holes: {exceptions: {plate: [{at: [0, a, 0], reason: x}]}}",
+    "holes: {exceptions: {plaet: [{diameter_mm: 3, reason: x}]}}",
+    "holes: {min_arc_deg: 400}",
+    "holes: {tol_mm: 0}",
+])
+def test_config_errors(tmp_path, bad):
+    from cadagent.project import load_project
+    root = project(tmp_path, plate_with_counterbore(False), "  " + bad + "\n")
+    with pytest.raises(CadConfigError):
+        holes.config(load_project(root), ["plate"])

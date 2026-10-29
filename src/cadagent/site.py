@@ -28,6 +28,7 @@ import os
 import posixpath
 import time
 import re
+import shutil
 import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -266,8 +267,14 @@ def nav_html(cfg: "SiteConfig", current: str, prefix: str) -> str:
     return f'<nav class="appnav"><a class="brand" href="{prefix}site/"><i></i>{_e(cfg.title)}</a>{tabs}</nav>'
 
 
-_MERMAID = ('<script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs";'
-            'mermaid.initialize({startOnLoad:true,theme:matchMedia("(prefers-color-scheme: dark)").matches?"dark":"default"});</script>')
+def _diagrams(depth: int) -> str:
+    prefix = ("../" * depth if depth else "./") + "assets/"
+    return (f'<link rel="stylesheet" href="{prefix}diagrams.css">'
+            f'<script type="module">import("{prefix}diagrams.js").then(m=>m.observeDiagrams()).catch(()=>{{'
+            'document.querySelectorAll("pre.mermaid,pre:has(>code.language-mermaid)").forEach(p=>{'
+            'p.classList.add("cad-diagram-boot-error");const b=document.createElement("button");'
+            'b.className="cad-diagram-reload";b.textContent="Reload diagrams";b.onclick=()=>location.reload();p.after(b);});'
+            '});</script>')
 
 
 def _e(v: Any) -> str:
@@ -278,8 +285,9 @@ def _page(title: str, body: str, accent: str, depth: int = 0, theme: str = "ligh
     from cadagent.review import REVIEW_CSS
     css = REVIEW_CSS + _CSS.replace("ACCENT", accent) + extra_css + _NAV_CSS + (_HUD if theme == "hud" else "")
     fonts = f'<link rel="stylesheet" href="{"../" * (depth + 1)}_cadagent/kit/vendor/fonts/fonts.css">' if theme == "hud" else ""
+    diagram_theme = "dark" if theme == "hud" else "light"
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            f"<title>{_e(title)}</title>{fonts}<style>{css}</style></head><body>{body}{_MERMAID}"
+            f'<title>{_e(title)}</title>{fonts}<style>{css}</style>{_diagrams(depth)}</head><body data-diagram-theme="{diagram_theme}">{body}'
             + '<script type="module">import { liveReload } from "/_cadagent/kit/appnav.js"; liveReload();</script></body></html>\n')
 
 
@@ -319,6 +327,12 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
         cfg.nav = auto_nav()
     out = root / SITE_DIR
     (out / "pages").mkdir(parents=True, exist_ok=True)
+    # Ship the renderer with generated HTML; published sites must not depend on a CDN.
+    for rel in ("diagrams.js", "diagrams.css", "vendor/mermaid/mermaid.min.js",
+                "vendor/mermaid/LICENSE", "vendor/mermaid/SOURCE.json"):
+        target = out / "assets" / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(KIT_DIR / rel, target)
     pages = page_files(root, cfg.pages)
     page_map = {p.relative_to(root).as_posix(): f"{slug(p.relative_to(root).as_posix())}.html" for p in pages}
     docs = []

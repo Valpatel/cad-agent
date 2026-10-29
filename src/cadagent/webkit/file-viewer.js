@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {createStage} from './stage.js';
 import {fileURL,loadFileGeometry} from './file-loader.js';
+import {mountFileTheme,normalizeFileTheme} from './file-viewer-theme.js';
 const views={iso:[1,.7,1.3],front:[0,0,1],side:[1,0,0],top:[0,1,.0001]};
 function element(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text)node.textContent=text;return node;}
 function disposeModel(group){group?.traverse(node=>{if(node.isMesh){node.geometry.dispose();for(const material of [].concat(node.material))material.dispose();}});}
@@ -19,7 +20,8 @@ function buildModel(data){
   group.position.set(-center.x,-box.min.y,-center.z);group.updateMatrixWorld(true);return group;
 }
 /** Mount an original-file preview. Later loads preserve the usable scene until replacement is ready. */
-export function createFileViewer(host,{file,back,onState=()=>{},timeoutMs=30000,parseTimeoutMs=120000}={}){
+export function createFileViewer(host,{file,back,theme='dark',onState=()=>{},timeoutMs=30000,parseTimeoutMs=120000}={}){
+  normalizeFileTheme(theme);
   const root=element('div','file-viewer'),header=element('header','file-header'),titleBox=element('div','file-title'),title=element('h1',null,'Original CAD file'),subtitle=element('p',null,'Inspect the original geometry · download it unchanged');
   titleBox.append(title,subtitle);const nav=element('nav','file-nav');nav.setAttribute('aria-label','File navigation');
   if(back){try{const url=new URL(back,location.href);if(url.origin===location.origin&&/^https?:$/.test(url.protocol)&&!url.username&&!url.password){const link=element('a','file-link','Back to parts');link.href=url.href;nav.append(link);}}catch{/* No external navigation fallback. */}}
@@ -31,6 +33,7 @@ export function createFileViewer(host,{file,back,onState=()=>{},timeoutMs=30000,
   const unitLabel=element('label',null,'STL units'),unitSelect=element('select');unitSelect.setAttribute('aria-label','STL units');for(const [value,label] of [['millimeter','mm'],['centimeter','cm'],['meter','m'],['micron','μm'],['inch','in'],['foot','ft']]){const option=element('option',null,label);option.value=value;unitSelect.append(option);}unitLabel.append(unitSelect);unitLabel.hidden=true;toolbar.append(unitLabel);
   const help=element('p','file-help','Drag to orbit · two fingers to pan or pinch · scroll gently to zoom'),details=element('details','file-details'),summary=element('summary',null,'File details'),detailText=element('p');details.append(summary,detailText);footer.append(toolbar,help,details);root.append(header,canvas,footer);host.append(root);
   let stage;try{stage=createStage(canvas,{height:.2,screenshots:true});}catch(error){root.remove();throw error;}
+  let appearance;try{appearance=mountFileTheme(root,stage,theme);}catch(error){stage.dispose();root.remove();throw error;}
   stage.controls.maxPolarAngle=Math.PI;stage.controls.minPolarAngle=0;
   let model=null,info=null,currentFile=file,request=0,controller=null,disposed=false,busy=false,view='iso',zoomTarget=null;
   const events=new AbortController();
@@ -72,5 +75,5 @@ export function createFileViewer(host,{file,back,onState=()=>{},timeoutMs=30000,
   retry.addEventListener('click',()=>load());cancelButton.addEventListener('click',cancel);unitSelect.addEventListener('change',()=>load());
   stage.start();if(file)load();else{currentFile=null;setStatus('empty','Open an STL, STEP or 3MF link from a parts list to preview its original geometry.');}
   const params=new URLSearchParams(location.search);if(params.get('ui')==='0')root.dataset.ui='hidden';if(views[params.get('view')])view=params.get('view');
-  return{stage,root,get model(){return model;},get info(){return info;},load,cancel,retry:()=>load(),fit,dispose(){if(disposed)return;disposed=true;request++;controller?.abort();events.abort();observer.disconnect();cancelAnimationFrame(resizeFrame);disposeModel(model);stage.dispose();root.remove();}};
+  return{stage,root,get model(){return model;},get info(){return info;},load,cancel,retry:()=>load(),fit,setTheme:appearance.set,dispose(){if(disposed)return;disposed=true;request++;controller?.abort();events.abort();appearance.dispose();observer.disconnect();cancelAnimationFrame(resizeFrame);disposeModel(model);stage.dispose();root.remove();}};
 }

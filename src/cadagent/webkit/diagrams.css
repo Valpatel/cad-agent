@@ -1,0 +1,18 @@
+/* Diagrams own their horizontal overflow; source stays available only on request. */
+.cad-diagram{margin:1.4rem 0;max-width:100%;min-width:0;padding:1rem;border:1px solid #c8d2cc;border-radius:12px;background:#fff;color:#263e35;font:14px/1.5 system-ui,sans-serif;color-scheme:light}
+.cad-diagram[data-theme=dark]{background:#171d27;color:#ecf0f7;border-color:#526176;color-scheme:dark}
+.cad-diagram-view{overflow:auto;max-width:100%;min-height:80px;overscroll-behavior-x:contain}
+.cad-diagram-view svg{display:block;height:auto;max-width:none!important;margin:auto}
+.cad-diagram-status{margin:0;min-height:24px}.cad-diagram-status[hidden],.cad-diagram [hidden]{display:none!important}
+.cad-diagram button,.cad-diagram summary{min-height:44px;padding:10px 14px;font:inherit;color:inherit;cursor:pointer}
+.cad-diagram button{background:transparent;border:1px solid currentColor;border-radius:6px;margin-top:8px}
+.cad-diagram summary{width:max-content;max-width:100%;text-decoration:underline;text-underline-offset:3px}
+.cad-diagram details{margin-top:8px}.cad-diagram details pre{margin:0;background:transparent;color:inherit;max-height:300px;overflow:auto;white-space:pre;font-size:12px}
+.cad-diagram button:focus-visible,.cad-diagram summary:focus-visible,.cad-diagram-view:focus-visible{outline:3px solid #168788;outline-offset:3px}
+/* The linked stylesheet is available before a deferred module or runtime download. */
+pre.mermaid,pre:has(>code.language-mermaid){font-size:0!important;line-height:0!important;color:transparent;min-height:80px;white-space:normal}
+pre>code.language-mermaid{display:none}
+pre.mermaid::before,pre:has(>code.language-mermaid)::before{content:'Loading diagram…';display:block;font:14px/1.5 system-ui,sans-serif;color:var(--ink,#263e35)}
+pre.cad-diagram-boot-error::before{content:'Diagram renderer could not load.'}
+.cad-diagram-reload{min-height:44px;padding:10px 14px;cursor:pointer;font:inherit}
+.cad-diagram-hint{margin:0 0 10px;font-size:13px;font-weight:600;line-height:1.5}

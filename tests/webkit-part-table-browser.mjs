@@ -9,7 +9,7 @@ const html = `<!doctype html><html lang="en"><meta name="viewport" content="widt
 <tr data-part-key="d" data-part-label="Rod"><td>Rod</td><td data-sort-value="1">1 piece</td><td data-sort-value="2">$2.00</td></tr>
 </tbody><tfoot><tr><td>Total</td><td>13 known pieces</td><td>$14 known</td></tr></tfoot></table></div></main><script type="module">
 import {createPartTracker} from '/kit/part-tracker.js';import {enhancePartTable,mountProgressTools} from '/kit/part-table.js';
-window.tracker=createPartTracker({project:'fixture'});mountProgressTools(document.getElementById('progress'),tracker);
+window.tracker=createPartTracker({project:'fixture'});window.progressTools=mountProgressTools(document.getElementById('progress'),tracker);
 window.tableAPI=enhancePartTable(document.getElementById('parts'),{tracker,statuses:[{id:'ordered',label:'Ordered'},{id:'inHand',label:'In hand'}]});document.body.dataset.ready='true';
 </script></html>`;
 const site = await serveWebkit(new Map([['/fixture', (_req, res) => { res.writeHead(200, { 'Content-Type': 'text/html' }); res.end(html); }]]));
@@ -54,11 +54,31 @@ try {
     await page.getByLabel('Sort Assembly parts', { exact: true }).focus(); assert.ok(await page.getByLabel('Sort Assembly parts', { exact: true }).evaluate(el => el === document.activeElement));
     await page.screenshot({ path: `${out}/${engine.name()}-${width}.png`, fullPage: true });
   }
+  // File decoding can finish after a newer selection or after a portal rerender.
+  // Neither stale completion may overwrite the checklist or saved state.
+  await page.evaluate(() => {
+    const text = File.prototype.text;
+    File.prototype.text = function () { return this.name === 'held.json' ? new Promise(resolve => { window.releaseImport = resolve; }) : text.call(this); };
+  });
+  const progressFile = value => JSON.stringify({ version: 1, project: 'fixture', parts: { d: { inHand: value } } });
+  await page.locator('input[type=file]').setInputFiles({ name: 'held.json', mimeType: 'application/json', buffer: Buffer.from(progressFile(true)) });
+  await page.waitForFunction(() => !!window.releaseImport);
+  await page.locator('input[type=file]').setInputFiles({ name: 'newer.json', mimeType: 'application/json', buffer: Buffer.from(progressFile(false)) });
+  await page.waitForFunction(() => !window.tracker.get('d', 'inHand'));
+  await page.evaluate(async text => { window.releaseImport(text); await new Promise(resolve => setTimeout(resolve, 0)); }, progressFile(true));
+  assert.equal(await page.evaluate(() => window.tracker.get('d', 'inHand')), false);
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem(window.tracker.key)).parts.d.inHand), false);
+  await page.evaluate(() => { window.releaseImport = null; });
+  await page.locator('input[type=file]').setInputFiles({ name: 'held.json', mimeType: 'application/json', buffer: Buffer.from(progressFile(true)) });
+  await page.waitForFunction(() => !!window.releaseImport);
+  await page.evaluate(async text => { window.progressTools.dispose(); window.releaseImport(text); await new Promise(resolve => setTimeout(resolve, 0)); }, progressFile(true));
+  assert.equal(await page.evaluate(() => window.tracker.get('d', 'inHand')), false);
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem(window.tracker.key)).parts.d.inHand), false);
   await context.close();
   const denied = await browser.newContext(); await denied.addInitScript(() => { Storage.prototype.setItem = function () { throw new DOMException('Denied', 'SecurityError'); }; });
   const limited = await denied.newPage(); await visit(limited); await limited.getByRole('checkbox', { name: 'Ordered: Bolt 10', exact: true }).check();
   assert.match(await limited.locator('.cad-progress-tools').textContent(), /stay in this tab/); assert.ok(await limited.getByRole('checkbox', { name: 'Ordered: Bolt 10', exact: true }).isChecked());
   await denied.close(); assert.deepEqual(errors, []);
-  await writeFile(`${out}/${engine.name()}-report.json`, JSON.stringify({ checkedAt: new Date().toISOString(), engine: engine.name(), errors, checks: ['numeric/text stable sorting', 'unknown values last both directions', 'keyboard/touch controls', 'filter count', 'stable checked identities', 'revisit/cross-tab persistence', 'atomic import and native download', 'denied storage', '4 responsive layouts'] }, null, 2));
+  await writeFile(`${out}/${engine.name()}-report.json`, JSON.stringify({ checkedAt: new Date().toISOString(), engine: engine.name(), errors, checks: ['numeric/text stable sorting', 'unknown values last both directions', 'keyboard/touch controls', 'filter count', 'stable checked identities', 'revisit/cross-tab persistence', 'atomic import and native download', 'stale/disposed import isolation', 'denied storage', '4 responsive layouts'] }, null, 2));
   console.log(`PASS ${engine.name()}: sortable parts, stable local status, import/export, keyboard and 4 layouts`);
 } finally { await browser.close(); await site.close(); }

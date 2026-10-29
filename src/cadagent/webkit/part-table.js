@@ -103,6 +103,7 @@ export function enhancePartTable(table, { label = table.caption?.textContent || 
 }
 
 export function mountProgressTools(host, tracker) {
+  let disposed = false, importGeneration = 0;
   const box = node('div', undefined, 'cad-progress-tools'), message = node('p'), receipt = node('p', '', 'cad-progress-receipt');
   receipt.setAttribute('role', 'status');
   const exportButton = node('button', 'Export progress'), importButton = node('button', 'Import progress'), file = node('input');
@@ -110,19 +111,24 @@ export function mountProgressTools(host, tracker) {
   const paint = () => { message.textContent = tracker.warning || 'Saved in this browser for this project. Export a backup to use it elsewhere. Checking a box does not place an order.'; };
   paint(); const unsubscribe = tracker.subscribe(paint);
   exportButton.addEventListener('click', () => {
+    if (disposed) return;
     const url = URL.createObjectURL(new Blob([tracker.export()], { type: 'application/json' })), link = node('a');
     link.href = url; link.download = `${tracker.project.replace(/[^a-z0-9_-]/gi, '-')}-progress.json`; document.body.append(link); link.click(); link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000); receipt.textContent = 'Progress exported.';
   });
-  importButton.addEventListener('click', () => file.click());
+  importButton.addEventListener('click', () => { if (!disposed) file.click(); });
   file.addEventListener('change', async () => {
+    if (disposed) return;
+    const generation = ++importGeneration;
     const selected = file.files?.[0]; if (!selected) return;
     try {
       if (selected.size > 2_000_000) throw new Error('Choose a progress file smaller than 2 MB.');
-      const count = tracker.import(await selected.text()); receipt.textContent = `Imported progress for ${count} parts. Matching statuses were updated; other progress was kept.`;
-    } catch (error) { receipt.textContent = error.message; }
-    finally { file.value = ''; }
+      const text = await selected.text();
+      if (disposed || generation !== importGeneration) return;
+      const count = tracker.import(text); receipt.textContent = `Imported progress for ${count} parts. Matching statuses were updated; other progress was kept.`;
+    } catch (error) { if (!disposed && generation === importGeneration) receipt.textContent = error.message; }
+    finally { if (!disposed && generation === importGeneration) file.value = ''; }
   });
   box.append(message, exportButton, importButton, file, receipt); host.append(box);
-  return { element: box, dispose() { unsubscribe(); box.remove(); } };
+  return { element: box, dispose() { disposed = true; ++importGeneration; unsubscribe(); box.remove(); } };
 }

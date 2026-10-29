@@ -439,7 +439,7 @@ DIR`, the zip is `DIR.zip`):
 | `images/` | the thumbnails |
 | `docs/<project path>` | the `pages`, and the images they link to, at their project paths, so their relative links keep working; links to files the release carries elsewhere (`cad/`, `source/`) are rewritten in the copies; Markdown is also rendered to HTML (with the `markdown` package) |
 | `source/<project path>` | the files matched by `include` minus `exclude` |
-| `manifest.json` | `format: cad-agent.release/1`, `revision`, `date`, `git` (`commit`, `dirty`, `modified`, `untracked_released`), `slicer`, `parts` (`part`, `group`, `optional`, `pick_one`, `quantity`, `grams`, `minutes`), `build` (`title`, `parts`, `grams`, `minutes`; null without one), `warnings`, and `files` (the sha256 of every file) |
+| `manifest.json` | `format: cad-agent.release/1`, `revision`, `date`, `git` (`commit`, `dirty`, `modified`, `untracked_released`), `slicer`, `parts` (`part`, `group`, `optional`, `pick_one`, `quantity`, `grams`, `minutes`), `build` (`title`, `parts`, `grams`, `minutes`; null without one; `grams` and `minutes` are null while any of its parts is not sliced), `warnings`, and `files` (the sha256 of every file) |
 
 Rules the command enforces:
 
@@ -453,9 +453,11 @@ Rules the command enforces:
   **not sliced** and the totals leave it out (run `cad-agent slice`).
 - **Honest counts:** the page counts the parts in the release and each group's parts. It does not claim a number of
   pieces to print, because groups may hold alternatives (`pick_one: true`: one of two bases; its count line says
-  "print one of these" instead of a total) and optional parts (`optional: true`). For what one build takes, name it
-  under `build`: the page's first figure is then that build's filament and time, at the listed quantities, shown only
-  while every part in it is sliced. A build takes at most one part from a pick-one group.
+  "print one of these" instead of a total, and needs two parts or more) and optional parts (`optional: true`). With
+  a pick-one group the page leaves out the filament and time over every part, which would add up the alternatives.
+  For what one build takes, name it under `build`: the page's first figure is then that build's filament and time,
+  at the listed quantities, while every part in it is sliced (otherwise it says "not sliced"). A build takes at most
+  one part from a pick-one group; one that takes none from a group that is not optional is a warning.
 - **What was built:** the release copies the working tree; uncommitted changes to tracked files are a warning and are
   recorded in the manifest (`git.dirty`, `git.modified`) and on the page; released files that are not in git at all
   are a warning too (`git.untracked_released`), since the recorded commit cannot rebuild them. The date is `--date`, `cad.release.date`,

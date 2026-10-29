@@ -102,6 +102,7 @@ class ReleaseConfig:
     date: str = ""
     left_out: List[str] = field(default_factory=list)      # known parts no group lists
     build: Optional[Group] = None                            # one complete build, totalled on the page
+    build_gaps: List[str] = field(default_factory=list)      # required pick-one groups the build takes nothing from
 
 
 @dataclass
@@ -157,6 +158,8 @@ def release_config(project: CadProject, known_parts: Sequence[str]) -> ReleaseCo
             for flag in ("optional", "pick_one"):
                 if not isinstance(g.get(flag, False), bool):
                     raise CadConfigError(f"cad.release.groups[{i}].{flag} must be true or false")
+            if g.get("pick_one") and len(_strings(g["parts"], f"cad.release.groups[{i}].parts")) < 2:
+                raise CadConfigError(f"cad.release.groups[{i}] is pick one but lists one part; leave pick_one out")
             groups.append(Group(str(g["title"]), _strings(g["parts"], f"cad.release.groups[{i}].parts"),
                                 str(g.get("note") or ""), bool(g.get("optional", False)), bool(g.get("pick_one", False))))
     elif "parts" in raw:
@@ -188,18 +191,26 @@ def release_config(project: CadProject, known_parts: Sequence[str]) -> ReleaseCo
     for name in list(quantities) + list(notes):
         if name not in seen:
             raise CadConfigError(f"cad.release: {name!r} has a quantity or notes but is not a released part")
-    build = None
+    build, build_gaps = None, []
     if raw.get("build") is not None:
         b = raw["build"]
-        if not isinstance(b, dict) or set(b) - {"title", "parts"} or not b.get("title") or not b.get("parts"):
+        if not isinstance(b, dict) or not b.get("title") or not b.get("parts"):
             raise CadConfigError("cad.release.build must be {title, parts} with a non-empty parts list")
+        bad = sorted(set(b) - {"title", "parts"})
+        if bad:
+            raise CadConfigError(f"cad.release.build: unknown keys {bad}; known: ['parts', 'title']")
         build = Group(str(b["title"]), _strings(b["parts"], "cad.release.build.parts"))
-        if len(set(build.parts)) != len(build.parts) or any(n not in seen for n in build.parts):
-            raise CadConfigError("cad.release.build.parts must be released parts, each listed once")
+        twice = sorted({n for n in build.parts if build.parts.count(n) > 1})
+        unreleased = [n for n in build.parts if n not in seen]
+        if twice or unreleased:
+            raise CadConfigError(f"cad.release.build.parts must be released parts, each listed once (listed twice: "
+                                 f"{twice or 'none'}; not released: {unreleased or 'none'})")
         for g in groups:
             picked = [n for n in build.parts if n in g.parts]
             if g.pick_one and len(picked) > 1:
                 raise CadConfigError(f"cad.release.build takes {picked} from {g.title!r}, which is pick one")
+            if g.pick_one and not g.optional and not picked:
+                build_gaps.append(g.title)
     hardware = raw.get("hardware")
     if hardware is not None and not isinstance(hardware, (str, list)):
         raise CadConfigError("cad.release.hardware must be a CSV path or a list of mappings")
@@ -231,6 +242,7 @@ def release_config(project: CadProject, known_parts: Sequence[str]) -> ReleaseCo
         title=str(raw.get("title") or project.title or project.name),
         groups=groups,
         build=build,
+        build_gaps=build_gaps,
         revision=str(raw.get("revision") or ""),
         quantities={str(k): int(v) for k, v in quantities.items()},
         material=str(raw.get("material") or ""),
@@ -595,16 +607,18 @@ def _page(project: CadProject, cfg: ReleaseConfig, revision: str, date: str, par
         meta.append(("Download", zip_name))
     meta_html = "".join(f"<li>{_e(k)} <b>{_e(v)}</b></li>" for k, v in meta)
     # Totals cover every listed part once at its quantity; groups may hold alternatives and optional parts, so the
-    # page never claims this is what one build needs. Each group carries its own count.
+    # page never claims this is what one build needs. Each group carries its own count. With pick-one groups a total
+    # over every part adds up alternatives nobody prints together, so it is left out (`build` names one build).
     grams, minutes, n_sliced = _sum(parts)
     stats = [(str(len(parts)), "parts in this release"), (str(len(cfg.groups)), "groups" if len(cfg.groups) > 1 else "group")]
-    if n_sliced:
+    if n_sliced and not any(g.pick_one for g in cfg.groups):
         scope = "every listed part" if not missing else f"the {n_sliced} sliced parts"
         stats += [(f"{grams:.0f} g", f"filament for {scope}"), (_duration(minutes), f"print time for {scope}")]
-    if cfg.build:
-        b_grams, b_min, b_sliced = _sum([p for p in parts if p["part"] in cfg.build.parts])
-        if b_sliced == len(cfg.build.parts):
-            stats.insert(0, (f"{b_grams:.0f} g", f"{_duration(b_min)} for one build: {cfg.build.title}"))
+    build = _build_entry(cfg, parts)
+    if build:
+        stats.insert(0, (f"{build['grams']:.0f} g", f"{_duration(build['minutes'])} for one build: {build['title']}")
+                     if build["grams"] is not None else
+                     ("not sliced", f"one build: {build['title']} (slice every part in it for its total)"))
     stats_html = "".join(f'<div class="stat"><b>{_e(a)}</b><span>{_e(b)}</span></div>' for a, b in stats)
     rows = [("Printer", settings.get("printer") or project.printer.name), ("Process", settings.get("process")),
             ("Filament", settings.get("filament")),
@@ -728,6 +742,9 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
                         "reproducible release")
     if cfg.left_out:
         warnings.append(f"not released (no group lists them): {', '.join(cfg.left_out)}")
+    if cfg.build_gaps:
+        warnings.append(f"build {cfg.build.title!r} takes no part from the pick-one group(s) "
+                        f"{', '.join(repr(t) for t in cfg.build_gaps)}; it is not a complete build")
     folder = (Path(out) if out else root / "release" / f"{_slug(project.name)}-rev{_slug(revision)}").resolve()
     if root == folder or root.is_relative_to(folder):
         raise CadConfigError(f"release folder {folder} would contain the project")

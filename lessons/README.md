@@ -58,3 +58,9 @@ File 11 comes from a different project: the incident notes of a CAN breakout PCB
 
 Timestamps are UTC as they appear in the transcript, truncated to the minute. Part numbers (P1, P9, P15 and so on)
 are the project's printed-part IDs.
+
+## Later rendered-motion incidents
+
+The 2026-10-28 Gyropup pivot validation lesson is maintained in
+[the rendered-motion domain](../.agents/domains/rendered-motion.md), with a
+[symptom index](../.agents/SYMPTOM-INDEX.md). It is not part of the original J501 transcript mining.

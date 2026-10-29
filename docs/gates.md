@@ -801,3 +801,9 @@ strict-xfail cases, and its implementer writes the adapter and removes the mark.
   plus a plain-data declarations file for what its schema cannot express; verdicts carry their inputs, and `check`
   fails a stale one. The plan had the slow gates as separate `cad-agent.yaml` steps (§4.9); `--only`/`--skip`,
   `cad.gates.skip` and the pair cache cover that.
+
+## Rendered simulation pivots
+
+The motion gate poses CAD bodies; it does not execute web viewer transforms. Use the separate
+[rendered-motion trace check](rendered-motion.md) to compare actual scene landmarks against independent CAD joint
+frames and component ownership. Keep both checks when a project publishes an articulated simulation.

@@ -99,12 +99,12 @@ The same values are CSS custom properties: `--file-background`, `--file-canvas`,
 `--file-accent`, `--file-grid`, `--file-glow` and `--file-font`. Override them after
 the default stylesheet on `.file-viewer[data-file-theme=light]` (or `dark`). Set
 matching root tokens and `data-file-theme` on the standalone HTML element to theme
-its loading/error fallback too. Stage accent/grid/glow colors are read from these
-tokens whenever `setTheme` runs; use six-digit hex for those three CSS tokens.
+its loading/error fallback too. Stage canvas/accent/grid/glow colors are read from these
+tokens whenever `setTheme` runs; use six-digit hex for those four CSS tokens.
 Other CSS tokens accept ordinary CSS color values. Consumer palettes must retain
 readable contrast; colors do not imply a manufacturing-readiness assessment.
 
-The reusable stage exposes `setPalette({accent, grid, glow})` and the equivalent
+The reusable stage exposes `setPalette({accent, grid, glow, background})` and the equivalent
 initial `palette` option. Existing stage callers keep their original palette when
 neither is supplied. Palette changes preserve camera, controls and model materials.
 

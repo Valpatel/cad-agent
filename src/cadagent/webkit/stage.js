@@ -83,7 +83,8 @@ export function createStage(container, opts = {}) {
   scene.add(ground, grid, pad);
 
   /** Recolor stage accents without changing the model's authored materials or camera. */
-  function setPalette({accent:nextAccent=accent,grid:nextGrid=0x0e7490,glow:nextGlow=0x00f0ff}={}) {
+  function setPalette({accent:nextAccent=accent,grid:nextGrid=0x0e7490,glow:nextGlow=0x00f0ff,background}={}) {
+    if(background!==undefined)scene.background=new THREE.Color(background);
     rim.color.set(nextAccent);
     const replacement=new THREE.GridHelper(1,52,nextAccent,nextGrid);
     grid.geometry.dispose();grid.geometry=replacement.geometry;

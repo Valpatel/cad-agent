@@ -22,7 +22,7 @@ export function mountFileTheme(root,stage,initial='dark'){
   function apply(){
     root.dataset.fileTheme=theme.mode==='auto'?(media.matches?'dark':'light'):theme.mode;
     const css=getComputedStyle(root),read=name=>css.getPropertyValue(variable(name)).trim();
-    stage.setPalette({accent:read('accent'),grid:read('grid'),glow:read('glow')});
+    stage.setPalette({accent:read('accent'),grid:read('grid'),glow:read('glow'),background:read('canvas')});
   }
   function set(value){
     if(disposed)return;

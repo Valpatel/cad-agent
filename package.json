@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "test:webkit-unit": "node --test tests/webkit-*.test.mjs",
-    "test:part-table": "node tests/webkit-part-table-browser.mjs"
+    "test:part-table": "node tests/webkit-part-table-browser.mjs",
+    "test:file-viewer": "node tests/webkit-file-viewer-browser.mjs"
   },
   "devDependencies": { "@playwright/test": "1.56.1" },
   "engines": { "node": ">=22" }

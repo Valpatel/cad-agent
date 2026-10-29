@@ -433,18 +433,19 @@ DIR`, the zip is `DIR.zip`):
 
 | Path | Content |
 |---|---|
-| `index.html` | one standalone page (inline CSS, light and dark, no scripts, opens from `file://`): the release's parts and totals, the recommended print settings (`cad.slicer`), then each group of parts (with its own count, mass and time) as cards: thumbnail, quantity, material, notes, mass and time per copy, and the STEP, STL and 3MF; then the assembly pages, the hardware table and the source |
+| `index.html` | one standalone page (inline CSS, light and dark, no scripts, opens from `file://`): the release's parts and totals, the recommended print settings (`cad.slicer`, else those of a current slice report; with neither, the page says no slicer settings are configured), then each group of parts (with its own count, mass and time) as cards: thumbnail, quantity, material, notes, mass and time per copy, and the STEP, STL and 3MF; then the assembly pages, the hardware table and the source |
 | `cad/` | `<part>.step`, `.stl`, `.3mf` from `exports_dir`, plus `extra_cad` |
 | `images/` | the thumbnails |
 | `docs/<project path>` | the `pages`, and the images they link to, at their project paths, so their relative links keep working; links to files the release carries elsewhere (`cad/`, `source/`) are rewritten in the copies; Markdown is also rendered to HTML (with the `markdown` package) |
 | `source/<project path>` | the files matched by `include` minus `exclude` |
-| `manifest.json` | `format: cad-agent.release/1`, `revision`, `date`, `git` (`commit`, `dirty`, `modified`), `slicer`, `parts` (`part`, `group`, `optional`, `quantity`, `grams`, `minutes`), `warnings`, and `files` (the sha256 of every file) |
+| `manifest.json` | `format: cad-agent.release/1`, `revision`, `date`, `git` (`commit`, `dirty`, `modified`, `untracked_released`), `slicer`, `parts` (`part`, `group`, `optional`, `quantity`, `grams`, `minutes`), `warnings`, and `files` (the sha256 of every file) |
 
 Rules the command enforces:
 
 - **Inside the project only.** Every configured path and glob must be relative, without `..`; a file that resolves
   outside the project (a symlink) is skipped with a warning, and nothing is written outside the release folder.
-- **No hidden or git-ignored files** from globs (`.env`, a gitignored vendor STEP); each skip is a warning. Any file
+- **No hidden or git-ignored files** from globs (`.env`, a gitignored vendor STEP; tracked files, even force-added
+  ones, are kept); each skip is a warning, and so is a git error that stops the ignore check. Any file
   over `max_file_mb` (default 20) is a warning.
 - **Slicer numbers only while current:** a part's mass and time are shown only when the slice report was made with
   the settings `cad.slicer` names now and the part's 3MF still has the sha256 recorded for it; otherwise the card says
@@ -452,7 +453,8 @@ Rules the command enforces:
 - **Honest counts:** the page counts the parts in the release and each group's parts. It does not claim a number of
   pieces to print, because groups may hold alternatives (one of two bases) and optional parts (`optional: true`).
 - **What was built:** the release copies the working tree; uncommitted changes to tracked files are a warning and are
-  recorded in the manifest (`git.dirty`, `git.modified`) and on the page. The date is `--date`, `cad.release.date`,
+  recorded in the manifest (`git.dirty`, `git.modified`) and on the page; released files that are not in git at all
+  are a warning too (`git.untracked_released`), since the recorded commit cannot rebuild them. The date is `--date`, `cad.release.date`,
   `SOURCE_DATE_EPOCH`, else the last commit's date; outside git with none of them it is today, with a warning, so the
   release is not reproducible across days.
 - Parts in the parts file that no group lists are a warning. The folder is rewritten from scratch each run (a

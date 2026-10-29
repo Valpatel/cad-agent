@@ -103,6 +103,7 @@ def test_source_globs_skip_excluded_hidden_and_evidence(tmp_path):
     files = set(r.files)
     assert {"source/cad/build.py", "source/tools/helper.py", "source/README.md", "source/cad-agent.yaml"} <= files
     assert not any(f.endswith((".pyc", ".tmp", ".env")) for f in files)
+    assert any("cad/.env: hidden" in w for w in r.warnings)
     assert not any("sim.json" in f or "slice-report" in f for f in files)
     manifest = json.loads((r.folder / "manifest.json").read_text())
     assert manifest["format"] == "cad-agent.release/1" and manifest["files"] == r.files
@@ -117,12 +118,19 @@ def test_git_ignored_files_are_skipped_and_a_dirty_tree_is_recorded(tmp_path):
     run("init", "-q")
     run("-c", "user.email=t@t", "-c", "user.name=t", "add", "-A")
     run("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "x")
+    (root / "cad/kept.vendor").write_text("our own\n")
+    run("add", "-f", "cad/kept.vendor")                                     # force-added: tracked, so released
+    run("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "y")
     (root / "cad/build.py").write_text("print('changed')\n")
+    (root / "cad/new.py").write_text("x = 2\n")                            # untracked but matched by cad/**
     p = project(tmp_path, {}, root=root)
     r = build_release(p, out=tmp_path / "out/git")
     assert "source/cad/model.vendor" not in r.files and any("ignored by git" in w for w in r.warnings)
+    assert "source/cad/kept.vendor" in r.files and "source/cad/new.py" in r.files
+    assert any("not in git" in w and "cad/new.py" in w for w in r.warnings)
     m = json.loads((r.folder / "manifest.json").read_text())
     assert m["git"]["dirty"] is True and "cad/build.py" in m["git"]["modified"] and len(m["git"]["commit"]) == 40
+    assert "cad/new.py" in m["git"]["untracked_released"]
     assert any("uncommitted" in w for w in r.warnings) and "uncommitted changes" in (r.folder / "index.html").read_text()
 
 
@@ -233,3 +241,18 @@ def test_cli(tmp_path, capsys):
     assert json.loads((tmp_path / "cli/demo/manifest.json").read_text())["revision"] == "1.2.1"
     (p.root / "cad-agent.yaml").write_text("cad:\n  name: demo\n  release: {include: ['../x']}\n")
     assert main(["release", "--project", str(p.root), "--out", str(tmp_path / "cli/bad")]) == 2
+
+
+def test_no_slicer_settings_without_config_or_current_report(tmp_path):
+    p = project(tmp_path, {})
+    (p.root / "exports/slice-report.json").unlink()
+    page = (build_release(p, out=tmp_path / "out/n").folder / "index.html").read_text()
+    assert "no slicer settings configured" in page and "Bambu" not in page and "Recommended print settings" not in page
+    assert "<dt>Material</dt>" not in page
+
+
+def test_settings_from_config_do_not_claim_slicing_when_nothing_is_current(tmp_path):
+    p = project(tmp_path, {}, slice_ok=False)
+    p.slicer = {"filament": "petg"}
+    page = (build_release(p, out=tmp_path / "out/c").folder / "index.html").read_text()
+    assert "Recommended print settings" in page and "PETG" in page and "were sliced with them" not in page

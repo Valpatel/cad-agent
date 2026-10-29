@@ -252,16 +252,20 @@ def _git(root: Path, *args: str, stdin: Optional[str] = None) -> Optional[str]:
     return r.stdout if r.returncode == 0 else None
 
 
-def _git_ignored(root: Path, rels: Sequence[str]) -> set:
-    """The paths among ``rels`` that git ignores (empty outside a git work tree)."""
+def _git_ignored(root: Path, rels: Sequence[str]) -> Tuple[set, str]:
+    """The paths among ``rels`` that git ignores, and an error when git could not say (empty outside a git work
+    tree). Tracked files are never ignored, so a force-added file is kept."""
     if not rels or _git(root, "rev-parse", "--is-inside-work-tree") is None:
-        return set()
+        return set(), ""
     try:
-        r = subprocess.run(["git", "-C", str(root), "check-ignore", "--no-index", "--stdin", "-z"], capture_output=True,
+        r = subprocess.run(["git", "-C", str(root), "check-ignore", "--stdin", "-z"], capture_output=True,
                            text=True, timeout=60, input="\0".join(rels) + "\0")
-    except (OSError, subprocess.SubprocessError):
-        return set()
-    return {p for p in r.stdout.split("\0") if p}
+    except (OSError, subprocess.SubprocessError) as exc:
+        return set(), f"git check-ignore failed ({exc}); git-ignored files were not filtered out"
+    if r.returncode not in (0, 1):            # 1 = nothing ignored; anything else is an error (e.g. dubious ownership)
+        return set(), (f"git check-ignore failed (exit {r.returncode}: {r.stderr.strip()[:200]}); git-ignored files "
+                       "were not filtered out")
+    return {p for p in r.stdout.split("\0") if p}, ""
 
 
 def _glob(root: Path, patterns: Sequence[str], exclude: Sequence[str] = (),
@@ -280,15 +284,19 @@ def _glob(root: Path, patterns: Sequence[str], exclude: Sequence[str] = (),
             if any(_glob_match(rel, g) for g in exclude):
                 continue
             if any(bit.startswith(".") for bit in rel.split("/")):
+                if skipped is not None:
+                    skipped.append(f"{rel}: hidden; not released")
                 continue
             if not p.resolve().is_relative_to(real_root):
                 if skipped is not None:
                     skipped.append(f"{rel}: links outside the project; not released")
                 continue
             out.setdefault(rel, p)
-    ignored = _git_ignored(root, list(out))
-    if ignored and skipped is not None:
+    ignored, error = _git_ignored(root, list(out))
+    if skipped is not None:
         skipped.extend(f"{rel}: ignored by git; not released" for rel in sorted(ignored))
+        if error:
+            skipped.append(error)
     return [out[k] for k in sorted(out) if k not in ignored]
 
 
@@ -570,11 +578,14 @@ def _page(project: CadProject, cfg: ReleaseConfig, revision: str, date: str, par
             ("Filament", settings.get("filament")),
             ("Overrides", ", ".join(f"{k} = {v}" for k, v in (settings.get("overrides") or {}).items()))]
     rows = [(k, v) for k, v in rows if v]
-    settings_html = ""
-    if rows:
-        settings_html = ('<div class="settings"><b>Recommended print settings</b> (Bambu Studio presets; the mass and '
-                         "time on each card were sliced with them)<dl>"
+    if settings and rows:
+        said = " (Bambu Studio presets; the mass and time on the cards were sliced with them)" if n_sliced else \
+            " (Bambu Studio presets)"
+        settings_html = (f'<div class="settings"><b>Recommended print settings</b>{said}<dl>'
                          + "".join(f"<dt>{_e(k)}</dt><dd>{_e(v)}</dd>" for k, v in rows) + "</dl></div>")
+    else:
+        settings_html = ('<div class="settings"><b>Print settings:</b> no slicer settings configured (<code>cad.slicer'
+                         "</code>); use your slicer's defaults for the material.</div>")
     alert = ""
     if missing:
         why = f" ({_e(slice_note)})" if slice_note else ""
@@ -687,7 +698,14 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
         raise CadConfigError(f"release folder {folder} would contain the project")
     _prepare(folder)
     report, current, slice_note = _slice_rows(project)
-    settings = _settings(project)
+    # Recommended settings: cad.slicer when the project names them, else those of a current slice report; never the
+    # slicer module's defaults on their own (a Prusa project must not be told to use Bambu presets).
+    if project.slicer:
+        settings = _settings(project)
+    elif report and not slice_note:
+        settings = {k: report.get(k) for k in ("printer", "process", "filament", "overrides")}
+    else:
+        settings = {}
     material = cfg.material or str(settings.get("filament") or "").split(" @")[0]
     copied: Dict[str, Path] = {}
     origin: Dict[str, str] = {}      # project path -> its copy in the release (rewrites the pages' links)
@@ -766,7 +784,15 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
             if f"docs/{img}" not in copied:
                 put(project.root / img, f"docs/{img}")
             origin[img] = f"docs/{img}"
-    warnings.extend(skipped)
+    warnings.extend(dict.fromkeys(skipped))
+    if git:
+        others = set((_git(root, "ls-files", "--others", "--exclude-standard", "-z") or "").split("\0")) - {""}
+        released = set(sources) | {f.relative_to(project.root).as_posix() for f in page_files} | {
+            f.relative_to(project.root).as_posix() for f in _glob(project.root, cfg.extra_cad)}
+        git["untracked_released"] = sorted(others & released)
+        if git["untracked_released"]:
+            warnings.append(f"not in git (the commit cannot rebuild them): {', '.join(git['untracked_released'][:5])}"
+                            f"{', ...' if len(git['untracked_released']) > 5 else ''}")
     raw_links = dict(origin)
     html_links = dict(origin)
     html_links.update({rel: f"docs/{rel[:-3]}.html" for rel in texts if rel.endswith(".md")})
@@ -804,7 +830,7 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
     files = {rel: _sha(p) for rel, p in sorted(copied.items())}
     manifest = {"format": MARKER, "project": project.name, "title": cfg.title, "revision": revision, "date": date,
                 "date_reproducible": stable,
-                "git": {k: git[k] for k in ("commit", "dirty", "modified")} if git else None,
+                "git": {k: git[k] for k in ("commit", "dirty", "modified", "untracked_released")} if git else None,
                 "slicer": {"settings": settings, "report_current": not slice_note,
                            "report_settings": {k: report.get(k) for k in settings} if report else None},
                 "parts": [{k: p[k] for k in ("part", "group", "optional", "quantity", "grams", "minutes")} for p in parts],

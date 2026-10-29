@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {chromium,webkit} from '@playwright/test';
 import {serveWebkit} from './webkit-server.mjs';
+import {checkFileThemes} from './webkit-file-theme-browser.mjs';
 import {zipSync,strToU8} from '../src/cadagent/webkit/vendor/file-parsers/fflate.module.js';
 const vertices=[[0,0,0],[10,0,0],[10,20,0],[0,20,0],[0,0,30],[10,0,30],[10,20,30],[0,20,30]],faces=[[0,2,1],[0,3,2],[4,5,6],[4,6,7],[0,1,5],[0,5,4],[1,2,6],[1,6,5],[2,3,7],[2,7,6],[3,0,4],[3,4,7]];
 const stl=new Uint8Array(84+faces.length*50),dv=new DataView(stl.buffer);dv.setUint32(80,faces.length,true);faces.forEach((face,i)=>face.forEach((vertex,j)=>vertices[vertex].forEach((n,k)=>dv.setFloat32(84+i*50+12+j*12+k*4,n,true))));
@@ -74,5 +75,6 @@ try{
   await visit('/bad.stl',{width:320,height:568});await state('error');const errorLayout=await page.locator('.file-status').evaluate(node=>{const r=node.getBoundingClientRect(),b=node.querySelector('button').getBoundingClientRect();return{left:r.left,right:r.right,bottom:r.bottom,retryHeight:b.height,retryBottom:b.bottom,viewport:innerHeight};});assert.ok(errorLayout.left>=0&&errorLayout.right<=320&&errorLayout.bottom<=errorLayout.viewport&&errorLayout.retryHeight>=44&&errorLayout.retryBottom<=errorLayout.bottom);await page.screenshot({path:`${out}/${engine.name()}-error-320.png`});cases.push({errorLayout});
   // Module graph failures have an import-independent reload fallback.
   let moduleAttempts=0;await page.route('**/file-viewer.js',route=>++moduleAttempts===1?route.abort():route.continue());await visit('/block.stl');await page.getByRole('button',{name:'Retry viewer'}).waitFor();assert.equal(await page.getByRole('link',{name:'Download original'}).getAttribute('href'),site.url+'/block.stl');await page.getByRole('button',{name:'Retry viewer'}).click();await state('ready');assert.equal(moduleAttempts,2);cases.push({moduleRetryAttempts:moduleAttempts});
+  await checkFileThemes({page,site,out,engine:engine.name(),cases});
   assert.deepEqual(errors,[]);await writeFile(`${out}/${engine.name()}-report.json`,JSON.stringify({passed:true,cases,errors,timestamp:new Date().toISOString()},null,2));console.log(JSON.stringify({passed:true,engine:engine.name(),cases:cases.length,out}));
 }finally{await browser.close();await site.close();}

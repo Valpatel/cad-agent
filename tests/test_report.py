@@ -32,7 +32,15 @@ def make_project(root: Path, parts=None, checks_yaml="") -> Path:
             (root / "exports" / f"{name}.{ext}").write_text("x")
     (root / "preview" / "part-box.png").write_bytes(b"\x89PNG")
     (root / "preview" / "index.html").write_text('<a href="part-box.png">box</a>')
+    bind_holes(root, parts)
     return root
+
+def bind_holes(root: Path, parts) -> None:
+    """A passing hole check bound to the placeholder STEP files, as `cad-agent holes` writes it."""
+    import hashlib
+    rows = {n: {"pass": True, "holes": 0, "findings": [], "excepted": [], "step": f"{n}.step",
+                "sha256": hashlib.sha256((root / "exports" / f"{n}.step").read_bytes()).hexdigest()} for n in parts}
+    (root / "exports" / "hole-checks.json").write_text(json.dumps({"version": 1, "parts": rows, "pass": True}))
 
 def rows(results, feature_id):
     feature = next(f for f in results["features"] if f["feature_id"] == feature_id)
@@ -45,8 +53,8 @@ def assert_schema(results):
     """The schema 1.0 shape that vptest web also renders."""
     assert results["schema_version"] == "1.0"
     assert set(results) == TOP_KEYS
-    assert [f["feature_id"] for f in results["features"]] == ["cad-parts", "cad-print-files", "cad-checks",
-                                                              "cad-links"]
+    assert [f["feature_id"] for f in results["features"]] == ["cad-parts", "cad-print-files", "cad-holes",
+                                                              "cad-checks", "cad-links"]
     assert {"project", "revision", "generated"} == set(results["header_meta"])
     assert {"checks", "physical_fit", "slicer"} == set(results["footer_meta"])
     for feature in results["features"]:

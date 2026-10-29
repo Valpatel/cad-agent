@@ -327,12 +327,13 @@ def test_all_runs_the_gates_after_the_build(project, capsys, monkeypatch):
     calls = []
     monkeypatch.setattr(cli, "cmd_build", lambda p, a: calls.append("build") or 0)
     monkeypatch.setattr(cli, "cmd_export_3mf", lambda p, a: calls.append("3mf") or 0)
+    monkeypatch.setattr(cli, "cmd_holes", lambda p, a: calls.append("holes") or 0)
     monkeypatch.setattr(cli, "cmd_report", lambda p, a: calls.append("report") or 0)
     monkeypatch.setattr(cli, "cmd_package", lambda p, a: calls.append("package") or 0)
     real = cli.cmd_gates
     monkeypatch.setattr(cli, "cmd_gates", lambda p, a: calls.append("gates") or real(p, a))
     assert main(["all", "--project", str(project)]) == 0
-    assert calls == ["build", "3mf", "gates", "report", "package"]
+    assert calls == ["build", "3mf", "holes", "gates", "report", "package"]
     assert (project / "exports" / "gates" / "wall.json").is_file()
     assert (project / "exports" / "dossier-status.json").is_file()
 

@@ -67,6 +67,7 @@ from __future__ import annotations
 
 import numbers
 import math
+import sys
 import time
 from dataclasses import asdict, dataclass, field, replace
 from typing import Any, Dict, Iterable, Iterator, List, Mapping, Optional, Sequence, Tuple
@@ -78,7 +79,7 @@ from cadagent.gates.cache import PairCache, digest, matrix_key
 STATES = ("apart", "touching", "overlapping", "contains", "unknown", "unchecked")
 CONTACT_STATES = ("touching", "overlapping", "contains")
 INTERFERENCE_STATES = ("overlapping", "contains")
-RELATIONS_VERSION = "3"   # adaptive volumes and numerical uncertainty; invalidate non-adaptive results
+RELATIONS_VERSION = "4"   # validated BREP + aggregate GK errors; invalidate earlier volume estimates
 _IDENTITY = (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
 
 
@@ -270,8 +271,6 @@ class Assembly:
                                                                           for c in content_hash)):
             raise ValueError(f"{name!r}: content_hash must be a sha256 hex digest")
         topods = getattr(shape, "wrapped", shape)
-        if _count_solids(topods) == 0:
-            raise ValueError(f"{name!r} has no solid; relations are volume relations")
         clash = solid_interference(topods)
         if clash:
             raise ValueError(f"{name!r} is a compound whose solids share volume ({clash[0][2]:.4g} mm3 between solids "
@@ -473,12 +472,51 @@ def _count_solids(topods) -> int:
     return len(_solids(topods))
 
 
+def _validate_volume_shape(topods, *, require_solid: bool = False) -> int:
+    """Reject invalid/open solids and missing exact surfaces before integration.
+
+    OCCT's volume routines silently skip non-geometric faces. A valid compound
+    may also contain free faces alongside solids; those must not contribute an
+    unclosed surface integral. Valid lower-dimensional Boolean results have zero
+    volume, but cannot be assembly inputs. Return the solid count.
+    """
+    if topods.IsNull():
+        raise ValueError("null BREP cannot establish a volume")
+    count = _count_solids(topods)
+    if require_solid and not count:
+        raise ValueError("shape has no solid; relations are volume relations")
+    check = require("OCP.BRepCheck", "volume topology validation")
+    if not check.BRepCheck_Analyzer(topods, True).IsValid():
+        raise ValueError("invalid BREP (including open solids) cannot establish a volume")
+    exp = require("OCP.TopExp", "volume topology validation")
+    abs_ = require("OCP.TopAbs", "volume topology validation")
+    brep = require("OCP.BRep", "volume surface validation")
+    ds = require("OCP.TopoDS", "volume surface validation")
+    classifier = require("OCP.BRepClass3d", "bounded solid validation")
+    precision = require("OCP.Precision", "bounded solid validation")
+    for solid in _solids(topods):
+        region = classifier.BRepClass3d_SolidClassifier(ds.TopoDS.Solid_s(solid))
+        region.PerformInfinitePoint(precision.Precision.Confusion_s())
+        if region.State() != abs_.TopAbs_OUT:
+            raise ValueError("solid is inverted, unbounded or has an indeterminate interior")
+    faces = exp.TopExp_Explorer(topods, abs_.TopAbs_FACE)
+    while faces.More():
+        if not brep.BRep_Tool.IsGeometric_s(ds.TopoDS.Face_s(faces.Current())):
+            raise ValueError("BREP face has no exact geometric surface")
+        faces.Next()
+    if count and exp.TopExp_Explorer(topods, abs_.TopAbs_FACE, abs_.TopAbs_SOLID).More():
+        raise ValueError("volume shape contains faces outside its solids")
+    return count
+
+
 def solid_interference(shape: Any, overlap_mm3: float = 0.001) -> List[Tuple[int, int, float]]:
     """``[(i, j, shared mm3)]`` for the solids of a compound that share more than ``overlap_mm3``.
 
     Such a compound is not a valid boolean argument: OCCT reports the common of it with another
     shape as done and empty. Empty for a single solid."""
-    solids = _solids(getattr(shape, "wrapped", shape))
+    topods = getattr(shape, "wrapped", shape)
+    _validate_volume_shape(topods, require_solid=True)
+    solids = _solids(topods)
     if len(solids) < 2:
         return []
     boxes = [bounding_box(s) for s in solids]
@@ -516,10 +554,9 @@ def _faces(topods):
 
 @dataclass(frozen=True)
 class _VolumeEstimate:
-    props: Any
     value: float
     error: float
-    relative_error: float
+    reported_error: float
     refinement_delta: float
 
 
@@ -527,26 +564,68 @@ def _measure_volume(topods) -> _VolumeEstimate:
     """Adaptive BREP integration, with an estimated (not rigorous) uncertainty.
 
     The default overload can badly mismeasure curved/trimmed faces. Ask for two
-    refinements and retain both OCCT's achieved-error estimate and their delta.
+    refinements and retain both OCCT's aggregate absolute-error estimate and their
+    delta. The Gauss overload reports a maximum face-relative error, which cannot
+    be scaled by net volume when signed face contributions cancel. The GK overload
+    instead sums absolute face errors at a shared reference point (OCCT 7.9.3).
     This does not change any geometric/conservation acceptance threshold.
     """
     gprop = require("OCP.GProp", "volume")
     bgprop = require("OCP.BRepGProp", "volume")
+    if not _validate_volume_shape(topods):
+        return _VolumeEstimate(0.0, 0.0, 0.0, 0.0)
     measured = []
     for eps in (1e-6, 1e-8):
         props = gprop.GProp_GProps()
-        error = float(bgprop.BRepGProp.VolumeProperties_s(topods, props, eps))
+        # OnlyClosed=False: validate, never silently omit an open shell.
+        # IsUseSpan=True: split BSpline spans. CGFlag=False: centroid moments are
+        # an optional witness, not a decision input; integrating tiny symmetric
+        # moments with GK can be thousands of times slower than the mass itself.
+        error = float(bgprop.BRepGProp.VolumePropertiesGK_s(
+            topods, props, eps, False, True, False, False, False))
         value = float(props.Mass())
-        if not math.isfinite(value) or not math.isfinite(error) or error < 0:
+        if not math.isfinite(value) or not math.isfinite(error) or error < 0 or value <= 0:
             raise RuntimeError("volume integration returned invalid value/error")
-        measured.append((props, value, error))
-    props, value, error = measured[-1]
+        # GK divides its absolute-error sum by mass only above Epsilon(1.0).
+        # In the tiny-volume branch the returned value is already absolute.
+        absolute_error = error * value if value > sys.float_info.epsilon else error
+        if not math.isfinite(absolute_error):
+            raise RuntimeError("volume integration returned invalid absolute error")
+        measured.append((props, value, error, absolute_error))
+    props, value, error, absolute_error = measured[-1]
     delta = abs(value - measured[0][1])
-    return _VolumeEstimate(props, value, max(abs(value) * error, delta), error, delta)
+    return _VolumeEstimate(value, max(absolute_error, delta), error, delta)
 
 
-def _volume_props(topods):
-    return _measure_volume(topods).props
+def _overlap_centroid(topods) -> Dict[str, Any]:
+    """Optional approximate witness, separate from mass/error decisions.
+
+    Gauss centroid refinements are inexpensive even for symmetric shapes. Their
+    agreement is not a rigorous position bound. Never use GK mass-only GProps'
+    uncomputed centroid, nor pretend a failed witness invalidates a mass verdict.
+    """
+    details: Dict[str, Any] = {"method": "Gauss centroid refinements 1e-6 and 1e-8; approximate witness only"}
+    out = {"overlap_centroid_estimate": details}
+    try:
+        gprop = require("OCP.GProp", "centroid witness")
+        bgprop = require("OCP.BRepGProp", "centroid witness")
+        points = []
+        for eps in (1e-6, 1e-8):
+            props = gprop.GProp_GProps()
+            error = bgprop.BRepGProp.VolumeProperties_s(topods, props, eps)
+            point = props.CentreOfMass()
+            xyz = (point.X(), point.Y(), point.Z())
+            if not all(math.isfinite(v) for v in (*xyz, props.Mass(), error)) or props.Mass() <= 0 or error < 0:
+                raise RuntimeError("centroid integration returned invalid value/error")
+            points.append(xyz)
+        delta = math.dist(*points)
+        details["refinement_delta_mm"] = delta
+        if delta > 1e-6:
+            raise RuntimeError("centroid refinements disagree by more than 1e-6 mm")
+        out["overlap_centroid"] = [round(v, 6) for v in points[-1]]
+    except Exception as exc:
+        details["unavailable"] = str(exc)
+    return out
 
 
 def _volume(topods) -> float:
@@ -628,17 +707,18 @@ def relate(a: Any, b: Any, tol: Tolerances = Tolerances(), *, names: Tuple[str, 
 
     Use ``relate_pair`` for named parts and cavities of an ``Assembly`` (it is cached). ``volumes``
     may pass two trusted volumes (or internal estimates) when the caller has them; a raw float declares
-    no additional measurement uncertainty. ``validated`` skips the multi-solid check
-    (``Assembly`` already ran it). Anything doubtful gives ``unknown`` with the reason in ``error``.
+    no additional measurement uncertainty. ``validated`` skips the input topology and
+    multi-solid checks (``Assembly`` already ran them). Anything doubtful gives ``unknown``
+    with the reason in ``error``.
     """
     sa, sb = getattr(a, "wrapped", a), getattr(b, "wrapped", b)
-    integration = {"method": "adaptive BRepGProp, requested relative errors 1e-6 and 1e-8",
-                   "error_basis": "max(OCCT estimated absolute error, refinement delta); not a rigorous bound",
+    integration = {"method": "adaptive BRepGProp GK, requested relative errors 1e-6 and 1e-8",
+                   "error_basis": "max(OCCT summed absolute face-error estimates, refinement delta); not a rigorous bound",
                    "max_estimated_error_mm3": 0.0, "max_refinement_delta_mm3": 0.0}
 
     def measure(shape, supplied=None):
         m = (_measure_volume(shape) if supplied is None else supplied if isinstance(supplied, _VolumeEstimate)
-             else _VolumeEstimate(None, float(supplied), 0.0, 0.0, 0.0))
+             else _VolumeEstimate(float(supplied), 0.0, 0.0, 0.0))
         if not all(math.isfinite(v) for v in (m.value, m.error, m.refinement_delta)) or m.error < 0:
             raise RuntimeError("volume integration returned invalid value/error")
         if m.value < -m.error:
@@ -653,8 +733,6 @@ def relate(a: Any, b: Any, tol: Tolerances = Tolerances(), *, names: Tuple[str, 
     try:
         if not validated:
             for n, s in zip(names, (sa, sb)):
-                if _count_solids(s) == 0:
-                    return unknown(f"{n} has no solid")
                 clash = solid_interference(s, tol.overlap_mm3)
                 if clash:
                     return unknown(f"{n} is a compound whose solids share volume; fuse it first")
@@ -665,7 +743,7 @@ def relate(a: Any, b: Any, tol: Tolerances = Tolerances(), *, names: Tuple[str, 
         check = tol.volume_check_mm3 + 1e-6 * max(va, vb)
         common = _boolean("common", sa, sb)
         mc = measure(common)
-        props, vc = mc.props, mc.value
+        vc = mc.value
         mac = measure(_boolean("cut", sa, sb))
         a_out = mac.value
         # Uncertainty consumes the existing conservation budget; it never enlarges it.
@@ -679,7 +757,7 @@ def relate(a: Any, b: Any, tol: Tolerances = Tolerances(), *, names: Tuple[str, 
             a_out, b_out = max(a_out, 0.0), max(b_out, 0.0)
             a_in = not _above_volume(a_out, mac.error, tol.contain_mm3)
             b_in = not _above_volume(b_out, mbc.error, tol.contain_mm3)
-            witness: Dict[str, Any] = {"overlap_centroid": _pt(props.CentreOfMass()),
+            witness: Dict[str, Any] = {**_overlap_centroid(common),
                                        "overlap_box": [round(v, 6) for v in bounding_box(common)],
                                        "volume_integration": integration}
             fields = dict(gap_mm=0.0, overlap_mm3=round(vc, 6), a_outside_b_mm3=round(a_out, 6),

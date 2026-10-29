@@ -79,6 +79,41 @@ def by_id(v):
     return {c["id"]: c for c in v["checks"]}
 
 
+@pytest.mark.parametrize("values,errors", [
+    ((1.0, 0.9985, 1.0), (0.001, 0.001, 0.001)),  # pushed straddles the threshold
+    ((1.0, 1.0, 1.001), (0.0001, 0.0001, 0.0001)),  # already-outside straddles it
+])
+def test_support_does_not_discard_uncertainty_or_override_it_with_a_probe(monkeypatch, values, errors):
+    from cadagent.gates import containment as con, relations as rel
+    estimates = iter(rel._VolumeEstimate(v, e, e, 0) for v, e in zip(values, errors))
+    monkeypatch.setattr(rel, "_measure_volume", lambda shape: next(estimates))
+    monkeypatch.setattr(con, "_boolean", lambda *args: object())
+    monkeypatch.setattr(con, "_shifted", lambda *args: object())
+    monkeypatch.setattr(con, "_pairs", lambda *args: [])
+    monkeypatch.setattr(con, "_probe_points", lambda *args: pytest.fail("uncertainty must not become a probe pass"))
+    asm = SimpleNamespace(shape=lambda name: object(), item=lambda name: SimpleNamespace(key=name))
+    ctx = SimpleNamespace(assembly=asm, tol=Tolerances(), down=(0, 0, -1), support_mm=0.1,
+                          cache=None, cid=lambda *args: ":".join(args), support="fail",
+                          probe_deflection=0.01, probe_points=10, probe_spacing=0.5)
+    result = con._support_check(ctx, Contains("container", "cavity", "part"), ["part"])
+    assert result.status == "fail"
+    assert "straddles" in str(result.evidence)
+
+
+def test_support_cache_is_bound_to_the_volume_measurement_policy(monkeypatch, tmp_path):
+    from cadagent.gates import containment as con, relations as rel
+    cache = PairCache(tmp_path)
+    args = ("rests-cavity", Tolerances(), "upper-hash", "cavity-hash", "support-options")
+    current = rel.RELATIONS_VERSION
+    monkeypatch.setattr(rel, "RELATIONS_VERSION", "2")
+    old_key = con._key(*args)
+    cache.put(old_key, {"rests": True, "method": "boolean"})
+    monkeypatch.setattr(rel, "RELATIONS_VERSION", current)
+    new_key = con._key(*args)
+    result, hit = con._cached(cache, new_key, lambda: {"rests": False, "method": "recomputed"})
+    assert old_key != new_key and not hit and result["rests"] is False
+
+
 def mc_outside(centre, r, inside, n=400_000, seed=1):
     """Monte Carlo volume of a ball outside a region (``inside(points) -> bool array``), and its standard error."""
     rng = np.random.default_rng(seed)
@@ -172,7 +207,7 @@ def test_a_ball_moved_5_mm_through_the_cone_wall_fails_with_the_right_volume_out
 
 @needs_cad
 @pytest.mark.parametrize("where", ["cone wall", "cone floor", "floor and wall"])
-def test_a_ball_tangent_to_the_cavity_reads_contained(where):
+def test_a_ball_tangent_to_the_cavity_requires_valid_boolean_results(where):
     if where == "cone wall":
         z, phi = 30.0, 0.3
         c = (cone_rho_tangent(z) * math.cos(phi), cone_rho_tangent(z) * math.sin(phi), z)
@@ -181,10 +216,43 @@ def test_a_ball_tangent_to_the_cavity_reads_contained(where):
     else:                                   # in the corner: on the floor and against the wall
         c = (cone_rho_tangent(R) * math.cos(1.0), cone_rho_tangent(R) * math.sin(1.0), R)
     asm = cone_assembly([c])
+    # Some OCP7.9.3.1 runtimes produce an invalid cone-minus-tangent-ball
+    # BREP here (observed aarch64; x86_64 control valid). Inspect the actual
+    # kernel outputs independently, never select expectations by architecture
+    # or by the relation's reported state. Invalid geometry must not pass.
+    import OCP
+    import platform
+    from OCP.BRepAlgoAPI import BRepAlgoAPI_Common, BRepAlgoAPI_Cut
+    from OCP.BRepCheck import BRepCheck_Analyzer
+    from OCP.TopTools import TopTools_ListOfShape
+    shapes = {"a": asm.shape("ball#0"), "b": asm.shape("cone")}
+    for name, algorithm, x, y in (("common", BRepAlgoAPI_Common, "a", "b"),
+                                   ("cut_a", BRepAlgoAPI_Cut, "a", "b"),
+                                   ("cut_b", BRepAlgoAPI_Cut, "b", "a")):
+        args, tools = TopTools_ListOfShape(), TopTools_ListOfShape()
+        args.Append(shapes[x])
+        tools.Append(shapes[y])
+        operation = algorithm()
+        operation.SetNonDestructive(True)
+        operation.SetArguments(args)
+        operation.SetTools(tools)
+        operation.Build()
+        assert operation.IsDone()
+        shapes[name] = operation.Shape()
+    invalid = {name for name, shape in shapes.items() if not BRepCheck_Analyzer(shape, True).IsValid()}
+    diagnostic = (where, platform.machine(), OCP.__version__, sorted(invalid))
     rel = relate_pair(asm, "ball#0", "cone")
+    v = containment_gate(asm, [{**CONE, "count": 1}], support="fail")
+    if invalid:
+        assert where == "cone wall" and invalid == {"cut_b"}, diagnostic
+        assert rel.state == "unknown" and "invalid BREP" in rel.error, (diagnostic, rel)
+        inside = by_id(v)["contains:cone:ball#0:inside"]
+        assert v["pass"] is False and inside["status"] == "fail", (diagnostic, v)
+        assert inside["evidence"]["relation"]["state"] == "unknown"
+        assert "invalid BREP" in inside["evidence"]["relation"]["error"]
+        return
     assert rel.state == "contains" and rel.contained == "a_in_b" and rel.a_outside_b_mm3 <= 1e-3
     assert rel.wall_mm == pytest.approx(0.0, abs=1e-6)
-    v = containment_gate(asm, [{**CONE, "count": 1}], support="fail")
     assert v["pass"] is True and v["findings"] == [], v["findings"]
     checks = by_id(v)
     assert checks["contains:cone:ball#0:wall"]["evidence"]["relation"]["state"] == "touching"

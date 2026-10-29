@@ -107,6 +107,53 @@ def test_module_service_cannot_be_silently_skipped_by_ordinary_service_mode():
     assert failures(result)[0].id == "subassemblies:service" and world.queries == 0
 
 
+@pytest.mark.parametrize("requested", ["board", "carrier", "board_screw", "retainer", "missing",
+                                       ["bumper", "board"], ["bumper", "missing"]])
+def test_every_explicit_service_target_must_resolve_to_a_supported_parent_operation(requested):
+    result, world = execute(service=requested, service_after={"electronics": ["bumper", "retainer"]})
+    assert [c.id for c in failures(result)] == ["subassemblies:service"]
+    assert world.queries == 0 and world.tool_calls == [] and result["steps"] == []
+    assert result["subassemblies"] == {} and result["service_after"] == {}
+
+
+@pytest.mark.parametrize("member", ["board", "carrier"])
+@pytest.mark.parametrize("use_owner", [False, True])
+def test_member_instance_and_owner_service_requests_are_both_rejected(member, use_owner):
+    boxes, specs, modules, steps = fixture()
+    key = member + "#0"
+    boxes[key] = boxes.pop(member)
+    members = modules["electronics"]["members"]
+    members[members.index(member)] = key
+    result, world = execute(boxes, specs, modules, steps, service=[member if use_owner else key])
+    assert [c.id for c in failures(result)] == ["subassemblies:service"]
+    assert "subassembly member" in failures(result)[0].message
+    assert world.queries == 0 and world.tool_calls == []
+
+
+@pytest.mark.parametrize("service", [1, b"bumper", {"bumper": True}, [None], [[]], ""])
+def test_malformed_service_requests_fail_before_geometry(service):
+    result, world = execute(service=service)
+    assert [c.id for c in failures(result)] == ["subassemblies:service"]
+    assert world.queries == 0 and world.tool_calls == []
+
+
+def test_parent_owner_service_request_produces_a_check_for_every_instance():
+    boxes, specs, modules, steps = fixture()
+    boxes["bumper#0"] = boxes.pop("bumper")
+    boxes["bumper#1"] = (4, 6, 0, 5, 9, 3)
+    result, _ = execute(boxes, specs, modules, steps, service=["bumper"])
+    assert not failures(result)
+    assert {c.id for c in result["checks"] if c.id.startswith("service:")} == {
+        "service:bumper#0", "service:bumper#1"}
+
+
+def test_service_true_preserves_parent_part_and_conditional_module_evidence():
+    result, _ = execute(service=True, service_after={"electronics": ["bumper", "retainer"]})
+    assert not failures(result)
+    assert {c.id for c in result["checks"] if c.id.startswith("service:")} == {"service:base", "service:bumper"}
+    assert result["service_after"]["electronics"]["status"] == "pass"
+
+
 @pytest.mark.parametrize("service_after", [[], False, {"missing": []}])
 def test_service_declaration_requires_a_mapping_of_known_modules(service_after):
     result, world = execute(service_after=service_after)
@@ -267,3 +314,21 @@ def test_brep_conditional_service_fails_if_the_later_bumper_remains():
                       service_after={"electronics":["retainer"]})
     assert [c["id"] for c in v["findings"]] == ["service_after:electronics"]
     assert v["service_after"]["electronics"]["blocked"][0]["part"] == "bumper"
+
+
+@pytest.mark.parametrize("requested", ["board", "carrier", "board_screw", "retainer", "missing"])
+def test_brep_explicit_service_target_cannot_yield_a_green_verdict_without_evidence(requested):
+    asm, specs, modules, steps = brep_fixture()
+    v = assembly_gate(asm, steps, fasteners=specs, subassemblies=modules,
+                      tools={"hex": {"envelope_d": .2, "length": 10}}, service=[requested])
+    assert not v["pass"] and v["limits"]["service"] is True
+    assert [c["id"] for c in v["findings"]] == ["subassemblies:service"]
+    assert v["subassemblies"] == {} and v["service_after"] == {}
+
+
+def test_brep_supported_parent_service_request_keeps_its_evidence():
+    asm, specs, modules, steps = brep_fixture()
+    v = assembly_gate(asm, steps, fasteners=specs, subassemblies=modules,
+                      tools={"hex": {"envelope_d": .2, "length": 10}}, service=["bumper"])
+    assert v["pass"], v["findings"]
+    assert [c["id"] for c in v["checks"] if c["id"].startswith("service:")] == ["service:bumper"]

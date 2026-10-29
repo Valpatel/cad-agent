@@ -187,6 +187,46 @@ def _prepare(world, steps, fasteners, subassemblies, overlaps, service_after):
             parent_specs, parent_overlaps, parent_plan, service_plans)
 
 
+def _service_targets(service, groups, parent_plan, service_plans):
+    """Resolve every requested target before members disappear into the parent view.
+
+    Individual member teardown is not the conditional withdrawal of a rigid module.
+    Reject it rather than quietly dropping a name the parent sequence cannot visit.
+    """
+    parts = parent_plan["parts"]
+    members = [key for keys in groups.values() for key in keys]
+    if service is True:
+        requested = parts
+    elif service is False or service is None:
+        requested = []
+    elif isinstance(service, str):
+        requested = [service]
+    elif isinstance(service, (bytes, Mapping)):
+        raise ValueError("service must be True, False or a sequence of part names")
+    else:
+        try:
+            requested = list(service)
+        except TypeError as exc:
+            raise ValueError("service must be True, False or a sequence of part names") from exc
+    ordinary = set()
+    for name in requested:
+        if not isinstance(name, str) or not name:
+            raise ValueError("service targets must be nonempty part names")
+        if name in groups:
+            if name not in service_plans:
+                raise ValueError(f"module service {name!r} requires explicit service_after prerequisites")
+        elif _instances(members, name):
+            raise ValueError(f"service target {name!r} is a subassembly member; individual member teardown is "
+                             "unsupported (use service_after for conditional whole-module withdrawal)")
+        else:
+            keys = _instances(parts, name)
+            if not keys:
+                raise ValueError(f"service target {name!r} is not a parent part or module; "
+                                 "unknown and fastener-only targets are unsupported")
+            ordinary.update(keys)
+    return sorted(ordinary)
+
+
 def run_subassemblies(world, steps, fasteners, *, tools, options, tol, intended_overlaps, service,
                       subassemblies, service_after):
     result = {"checks": [], "steps": [], "exclusions": [], "not_checked": [], "subassemblies": {}, "service_after": {}}
@@ -201,11 +241,10 @@ def run_subassemblies(world, steps, fasteners, *, tools, options, tol, intended_
         return result
     (specs, groups, internals, internal_specs, internal_overlaps, parent_world, parent_steps,
      parent_specs, parent_overlaps, parent_plan, service_plans) = prepared
-    requested = set(groups) if service is True else set([service] if isinstance(service, str) else (service or [])) & set(groups)
-    if requested - set(service_plans):
-        result["checks"].append(Check("subassemblies:service", "fail",
-                                      "module service requires explicit service_after prerequisites",
-                                      sorted(requested - set(service_plans))))
+    try:
+        ordinary_service = _service_targets(service, groups, parent_plan, service_plans)
+    except ValueError as exc:
+        result["checks"].append(Check("subassemblies:service", "fail", str(exc)))
         return result
     # Scoped groups require complete internal checks even when ordinary parent options are permissive.
     internal_options = replace(options, tool_access=True, missing_direction="fail")
@@ -225,8 +264,6 @@ def run_subassemblies(world, steps, fasteners, *, tools, options, tol, intended_
         result["not_checked"].append({"what": "parent insertion", "reason": "internal sequence failed or incomplete"})
         return result
     # The ordinary service mode is not a substitute for explicit module prerequisites.
-    ordinary_service = ([k for k in parent_world.names if k not in groups] if service is True else
-                        [k for k in ([service] if isinstance(service, str) else (service or [])) if k not in groups])
     parent = run_sequence(parent_world, parent_steps, parent_specs, tools=tools, options=options, tol=tol,
                           intended_overlaps=parent_overlaps, service=ordinary_service)
     for key in ("checks", "steps", "exclusions", "not_checked"):

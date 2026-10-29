@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from cadagent._deps import MissingDependency
 from cadagent.project import CadConfigError, CadProject, Step, load_project
 
-SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
+SUBCOMMANDS = ("build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
                "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet",
                "review-section", "agents", "motion-trace")
 LOG_TAIL_LINES = 20
@@ -429,6 +429,31 @@ def cmd_gates(project: CadProject, args: argparse.Namespace) -> int:
     return 0 if res.passed else 1
 
 
+def cmd_holes(project: CadProject, args: argparse.Namespace) -> int:
+    from cadagent.holes import check_project
+    from cadagent.project import CadConfigError
+
+    out = getattr(args, "out", None)
+    try:
+        result = check_project(project, getattr(args, "parts", None) or None, Path(out) if out else None)
+    except (ValueError, CadConfigError) as exc:
+        raise _Unusable(str(exc)) from exc
+    for part, row in result["parts"].items():
+        if row.get("skipped"):
+            _say(f"  SKIP  {part}: {row['skipped']}")
+        elif row.get("error"):
+            _say(f"  FAIL  {part}: {row['error']}")
+        elif row["findings"]:
+            _say(f"  FAIL  {part}: {len(row['findings'])} of {row['holes']} hole(s) have material inside")
+            for f in row["findings"]:
+                _say(f"          D{f['diameter_mm']} {f['from_mm']} -> {f['to_mm']}: {f['intrusion_mm3']} mm3 at "
+                     f"{f['intrusion_centre_mm']}")
+        else:
+            ex = f" ({len(row['excepted'])} listed exception(s))" if row.get("excepted") else ""
+            _say(f"  PASS  {part}: {row['holes']} hole(s) clear{ex}")
+    _say(f"holes: {out or project.exports_dir / 'hole-checks.json'}")
+    return 0 if result["pass"] else 1
+
 def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
     args.from_step = None
     args.only = None
@@ -436,6 +461,10 @@ def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
         return 1
     if cmd_export_3mf(project, args):
         return 1
+    try:                            # writes exports/hole-checks.json; the report's "Holes clear" rows fail on findings
+        cmd_holes(project, args)
+    except _Unusable as exc:
+        _say(f"holes FAILED to run: {exc} (the report's Holes clear rows fail)")
     from cadagent.gates.run import GatesConfigError, enabled, gates_config
     if enabled(project):
         try:                    # rebuild the record unless a build step already runs the gates' build script
@@ -699,6 +728,7 @@ def cmd_optimise(project: CadProject, args: argparse.Namespace) -> int:
 HANDLERS = {
     "build": cmd_build,
     "export-3mf": cmd_export_3mf,
+    "holes": cmd_holes,
     "check": cmd_check,
     "report": cmd_report,
     "package": cmd_package,
@@ -825,6 +855,12 @@ def build_parser() -> argparse.ArgumentParser:
     build_p.add_argument("--from", dest="from_step", metavar="STEP", help="Start at this step")
     build_p.add_argument("--only", nargs="+", metavar="STEP", help="Run only these steps (config order)")
     sub.add_parser("export-3mf", parents=[common], help="Write a bed-centred 3MF per part STL and verify it")
+    holes_p = sub.add_parser("holes", parents=[common], help="Check every hole of every part (exports/<part>.step) is "
+                                                             "clear of material: ribs or bosses added after the holes")
+    holes_p.add_argument("parts", nargs="*", help="only these parts (default: every part in the parts file); the other "
+                                                  "parts' rows are kept from a result made with the same settings")
+    holes_p.add_argument("--out", help="write the result here instead of exports/hole-checks.json (a reviewer's "
+                                       "read-only run)")
     check_p = sub.add_parser("check", parents=[common], help="Collect check results; exit 1 if any fail")
     check_p.add_argument("--json", action="store_true", help="Print the results JSON (schema 1.0)")
     report_p = sub.add_parser("report", parents=[common], help="Write results JSON + standalone HTML report")
@@ -846,7 +882,7 @@ def build_parser() -> argparse.ArgumentParser:
     pcb_p = sub.add_parser("pcb-check", parents=[common], help="Bind KiCad ERC/DRC evidence to current PCB sources")
     pcb_p.add_argument("manifest", help="JSON with reports, sources, release_gates and optional waivers (paths relative to project root)")
     pcb_p.add_argument("--output", default="exports/pcb-evidence.json")
-    sub.add_parser("all", parents=[common], help="build, export-3mf, gates and the dossier lint (when configured), "
+    sub.add_parser("all", parents=[common], help="build, export-3mf, holes, gates and the dossier lint (when configured), "
                                                  "check + report, package")
     mt_p = sub.add_parser("motion-trace", help="Validate rendered joint pivots against independent CAD landmarks")
     mt_p.add_argument("contract", type=Path, help="Independent joint/component reference JSON")

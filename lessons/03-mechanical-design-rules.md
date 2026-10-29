@@ -111,3 +111,16 @@ These rules come from printed-enclosure work (FDM, Bambu P1S bed) around a real 
 - **Check:** `assembly-paths.json` shows that the plates slide vertically (0.37 mm front, 0.25 mm rear clearance). Every
   loose part is either screwed or captured by a screwed part.
 - **Source:** 2026-10-24T07:41; `README.md` (Assembly step 9).
+
+### Cut every hole last, after all the added features
+
+- **What happened:** Rev 0.9 of the J501 lid (2026-10-29) added four stiffening ribs from the fan to the lid-screw
+  corners. The build cut the counterbores and clearance holes first and unioned the ribs afterwards. Each rib ran
+  into its socket-head counterbore, and the lid was printed that way. Every check passed: the lid was a valid watertight
+  solid, it cleared the cooler, and its FEA and slice were fine.
+- **Rule:** in the build, cut fastener holes, counterbores and insert bores after every rib, boss, skirt and gusset has
+  been added. Run `cad-agent holes` (part of `cad-agent all`), which probes every cylindrical hole in each part's STEP
+  for material inside it. A finding is a build-order bug unless it is a deliberate D-flat or bridge layer, which is
+  listed in `cad.holes.exceptions` with its reason.
+- **Index:** [docs/common-issues.md](../docs/common-issues.md) lists this and the other recurring review findings.
+- **Source:** mvalancy/j501-agx-orin#9; Valpatel/cad-agent#85.

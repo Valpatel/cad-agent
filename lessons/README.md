@@ -44,6 +44,7 @@ File 11 comes from a different project: the incident notes of a CAN breakout PCB
 | [09-agent-process.md](09-agent-process.md) | Mid-turn messages, status, consent, prior art, scope, delegation |
 | [10-simulation-and-material.md](10-simulation-and-material.md) | Exact bought parts, slicer grams, re-checking thinner shells, thermal models of printed enclosures, shared compute |
 | [11-pcb-evidence-and-review.md](11-pcb-evidence-and-review.md) | KiCad report severities and waivers, parity, source hashes, routing geometry, STEP handedness, readback renders, release allowlists (from a second project; see below) |
+| [12-original-file-viewer.md](12-original-file-viewer.md) | Original-file identity, parser units/frames, cancellable loading, dependency and wheel evidence |
 
 ## Lesson format
 

@@ -1,0 +1,19 @@
+.cad-table-tools,.cad-progress-tools{font:14px/1.5 var(--font-ui,system-ui,sans-serif);color:var(--text,#243f3a)}
+.cad-table-tools{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin:12px 0}
+.cad-table-tools label{display:flex;flex-direction:column;gap:4px;font-weight:650;min-width:0}
+.cad-table-tools input,.cad-table-tools select,.cad-progress-tools button{min-height:44px;box-sizing:border-box;border:1px solid var(--hairline,#a3b9ae);border-radius:8px;background:var(--surface,#fffaf2);color:inherit;padding:9px 12px;font:inherit;max-width:100%}
+.cad-table-search{flex:1 1 210px}.cad-table-sort{flex:0 1 230px}.cad-table-count{padding:10px 0;white-space:nowrap;font-size:12px}
+.cad-table-scroll{overflow-x:auto;max-width:100%;border-radius:12px;border:1px solid var(--hairline,#c6d1c9)}
+.cad-part-table{border-collapse:collapse;width:100%;font:13px/1.5 var(--font-ui,system-ui,sans-serif);color:var(--text,#243f3a);background:var(--surface,#fffaf2)}
+.cad-part-table caption{text-align:left;padding:10px 12px;font-weight:700}
+.cad-part-table th,.cad-part-table td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--hairline,#d8dfda);vertical-align:top}
+.cad-part-table th{font-weight:700;background:var(--surface-2,#eaf1e9);color:inherit}
+.cad-table-sort-button{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;width:100%;border:0;background:transparent;color:inherit;font:inherit;text-align:left;padding:0;cursor:pointer}
+.cad-table-sort-button>[aria-hidden]{font-size:18px;flex:none;color:var(--cyan,#276961)}
+.cad-part-table [hidden]{display:none!important}
+.cad-status-check{display:flex;align-items:center;gap:7px;min-height:44px;min-width:44px;cursor:pointer;white-space:nowrap;font-size:12px}
+.cad-status-check input{width:20px;height:20px;margin:0;accent-color:var(--cyan,#276961)}
+.cad-progress-tools{padding:14px 16px;border:1px solid var(--hairline,#c6d1c9);border-radius:12px;background:var(--surface-2,#eaf1e9);margin:16px 0}
+.cad-progress-tools p{margin:0 0 10px}.cad-progress-tools button{cursor:pointer;margin:0 8px 0 0}.cad-progress-receipt:empty{display:none}.cad-progress-receipt{margin-top:10px!important}
+.cad-table-tools :focus-visible,.cad-part-table :focus-visible,.cad-progress-tools :focus-visible{outline:3px solid var(--cyan,#276961);outline-offset:3px}
+@media(max-width:600px){.cad-table-tools{gap:8px}.cad-table-search,.cad-table-sort{flex:1 1 100%}.cad-table-count{padding:0}.cad-part-table th,.cad-part-table td{padding:8px}.cad-progress-tools button{margin-bottom:8px}}

@@ -44,7 +44,7 @@ def test_build_site_writes_index_and_pages(tmp_path):
     assert s["progress_pct"] == 33
     index = (root / "site" / "index.html").read_text()
     assert "A test robot" in index and "Private" in index and "1 / 3" in index
-    assert index.index("MCU") < index.index("Name"), "open decisions come first"
+    assert index.index("<b>MCU</b>") < index.index("<b>Name</b>"), "open decisions come first"
     assert "“call it Bot”" in index and "<b>12 kg</b>" in index and "est." in index
     assert "Considered: Board A; Board B (rejected: no stock)" in index, "dossier-style alternatives render"
     assert 'href="pages/readme-md.html"' in index
@@ -59,6 +59,11 @@ def test_markdown_links_are_rewritten(tmp_path):
     assert 'src="../../docs/pic.png"' in readme, "other files point back into the project"
     assert 'href="../../tools/"' in readme
     assert '<pre class="mermaid">' in readme
+    assert 'import("../assets/diagrams.js")' in readme
+    assert "cdn.jsdelivr.net" not in readme
+    assert 'import("./assets/diagrams.js")' in (root / "site/index.html").read_text()
+    for rel in ("diagrams.js", "diagrams.css", "vendor/mermaid/mermaid.min.js", "vendor/mermaid/LICENSE"):
+        assert (root / "site/assets" / rel).read_bytes() == (site.KIT_DIR / rel).read_bytes()
     plan = (root / "site" / "pages" / "docs-plan-md.html").read_text()
     assert 'href="readme-md.html"' in plan and "<table>" in plan
 

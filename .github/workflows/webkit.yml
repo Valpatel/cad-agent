@@ -28,6 +28,10 @@ jobs:
         env:
           PLAYWRIGHT_CHANNEL: chromium
           PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -e ".[site]"
       - run: npm run test:diagrams
         env:
           PLAYWRIGHT_CHANNEL: chromium

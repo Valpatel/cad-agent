@@ -3,6 +3,11 @@ const SELECTOR = 'pre > code.language-mermaid, pre.mermaid';
 const runtimeURL = new URL('./vendor/mermaid/mermaid.min.js', import.meta.url);
 let runtimePromise, queue = Promise.resolve(), sequence = 0;
 const records = new WeakMap();
+function updateOverflowHint(figure) {
+  const view = figure.querySelector('.cad-diagram-view'), hint = figure.querySelector('.cad-diagram-hint');
+  if (view && hint) hint.hidden = figure.dataset.state !== 'ready' || view.scrollWidth <= view.clientWidth + 1;
+}
+window.addEventListener('resize', () => document.querySelectorAll('.cad-diagram').forEach(updateOverflowHint));
 function runtime() {
   if (runtimePromise) return runtimePromise;
   runtimePromise = new Promise((resolve, reject) => {
@@ -32,12 +37,14 @@ function prepare(node) {
   const figure = document.createElement('figure'); figure.className = 'cad-diagram';
   figure.dataset.theme = themeFor(original); figure.setAttribute('aria-label', 'Engineering diagram');
   const status = document.createElement('p'); status.className = 'cad-diagram-status'; status.setAttribute('role', 'status');
+  const hint = document.createElement('p'); hint.className = 'cad-diagram-hint'; hint.hidden = true;
+  hint.textContent = 'Scroll sideways to see the full diagram →';
   const view = document.createElement('div'); view.className = 'cad-diagram-view'; view.tabIndex = 0;
   view.setAttribute('role', 'group'); view.setAttribute('aria-label', 'Diagram; scroll horizontally if needed');
   const retry = document.createElement('button'); retry.type = 'button'; retry.textContent = 'Retry diagram'; retry.hidden = true;
   const details = document.createElement('details'), summary = document.createElement('summary'); summary.textContent = 'Diagram source';
   const pre = document.createElement('pre'); pre.textContent = source; details.append(summary, pre);
-  figure.append(status, view, retry, details); original.replaceWith(figure);
+  figure.append(status, hint, view, retry, details); original.replaceWith(figure);
   const record = {figure, status, view, retry, source, running: null}; records.set(node, record);
   retry.addEventListener('click', () => render(record));
   return record;
@@ -64,10 +71,10 @@ function render(record) {
       if (!rendered || !rendered.viewBox.baseVal.width) throw new Error('Diagram returned no visible drawing');
       // Preserve legible labels on phones; contain scrolling inside the diagram instead of shrinking to unreadable text.
       rendered.style.width = `${rendered.viewBox.baseVal.width}px`;
-      bindFunctions?.(view); figure.dataset.state = 'ready'; status.hidden = true;
+      bindFunctions?.(view); figure.dataset.state = 'ready'; status.hidden = true; updateOverflowHint(figure);
     } catch {
       if (!figure.isConnected) return;
-      view.replaceChildren(); figure.dataset.state = 'error'; status.textContent = 'This diagram could not be drawn. Retry or open its source.'; retry.hidden = false;
+      view.replaceChildren(); figure.dataset.state = 'error'; updateOverflowHint(figure); status.textContent = 'This diagram could not be drawn. Retry or open its source.'; retry.hidden = false;
     } finally {
       scratch?.remove(); figure.setAttribute('aria-busy', 'false'); record.running = null;
     }

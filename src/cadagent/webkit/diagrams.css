@@ -15,3 +15,4 @@ pre>code.language-mermaid{display:none}
 pre.mermaid::before,pre:has(>code.language-mermaid)::before{content:'Loading diagram…';display:block;font:14px/1.5 system-ui,sans-serif;color:var(--ink,#263e35)}
 pre.cad-diagram-boot-error::before{content:'Diagram renderer could not load.'}
 .cad-diagram-reload{min-height:44px;padding:10px 14px;cursor:pointer;font:inherit}
+.cad-diagram-hint{margin:0 0 10px;font-size:13px;font-weight:600;line-height:1.5}

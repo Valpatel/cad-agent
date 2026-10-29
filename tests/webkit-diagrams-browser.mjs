@@ -21,6 +21,12 @@ try{
   await page.evaluate(()=>{document.getElementById('dynamic').innerHTML='<pre><code class="language-mermaid">flowchart TD\nStart-->Done</code></pre>';});await ready(page,3);await noRaw(page);
   const ids=await page.locator('.cad-diagram svg').evaluateAll(nodes=>nodes.map(n=>n.id));assert.equal(new Set(ids).size,3);
   await page.evaluate(()=>window.diagrams.render());assert.equal(await page.locator('.cad-diagram').count(),3);
+  const figure=page.locator('.cad-diagram').first();assert.ok(await figure.locator('.cad-diagram-hint').isVisible());
+  const rightmost=await figure.evaluate(el=>{const view=el.querySelector('.cad-diagram-view'),nodes=[...el.querySelectorAll('svg .node')];const node=nodes.sort((a,b)=>b.getBoundingClientRect().right-a.getBoundingClientRect().right)[0];view.scrollLeft=view.scrollWidth;const r=node.getBoundingClientRect(),v=view.getBoundingClientRect();return{text:node.textContent.trim(),right:r.right,edge:v.right,scroll:view.scrollLeft};});
+  assert.equal(rightmost.text,'Test');assert.ok(rightmost.scroll>0&&rightmost.right<=rightmost.edge+1);
+  await page.setViewportSize({width:1800,height:900});await page.waitForFunction(()=>document.querySelector('.cad-diagram-hint').hidden);
+  await page.setViewportSize({width:320,height:568});await page.waitForFunction(()=>!document.querySelector('.cad-diagram-hint').hidden);
+  await figure.locator('.cad-diagram-view').evaluate(el=>el.scrollLeft=0);
   await page.screenshot({path:`${out}/${engine.name()}-${theme}-320.png`,fullPage:true});cases.push({theme,paint,dynamic:true});await page.close();
  }
  // Loading is observable; failed runtime retry uses a fresh request and preserves healthy page content.

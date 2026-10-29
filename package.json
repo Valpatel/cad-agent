@@ -6,7 +6,7 @@
     "test:webkit-unit": "node --test tests/webkit-*.test.mjs",
     "test:part-table": "node tests/webkit-part-table-browser.mjs",
     "test:file-viewer": "node tests/webkit-file-viewer-browser.mjs",
-    "test:diagrams": "node tests/webkit-diagrams-browser.mjs"
+    "test:diagrams": "node tests/webkit-diagrams-browser.mjs && node tests/site-diagrams-browser.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1"

@@ -198,3 +198,13 @@ def test_unbounded_rotations_fail_before_allocating_capture_poses():
     c["joints"]["spin"]["range_deg"] = [0, 1e12]
     with pytest.raises(ValueError, match="bounded cycles"):
         required_poses(c)
+
+
+def test_installed_copy_retains_the_capture_protocol(tmp_path):
+    from pathlib import Path
+    from cadagent.agentkit import install
+    root = Path(__file__).resolve().parents[1]
+    result = install(tmp_path, root, ("codex",), copy=True)
+    assert not result["conflicts"]
+    skill = tmp_path / ".codex/skills/cad-motion-validation"
+    assert (skill / "references/trace-protocol.md").read_text() == (root / "skills/cad-motion-validation/references/trace-protocol.md").read_text()

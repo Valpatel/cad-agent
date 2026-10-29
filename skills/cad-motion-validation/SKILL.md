@@ -11,7 +11,7 @@ capture the actual rendered transforms, and compare them before claiming the sim
 1. Inventory all moving joints and components, including shafts/rotors, stationary housings, feed mechanisms,
    helper geometry and scene attachments. Record ownership, units, axis handedness, home datums and parent chains
    from CAD source or inspected geometry. Do not take the expected pivots from the suspect animation manifest.
-2. Read [the trace protocol](../../docs/rendered-motion.md). Build a reference with at least four noncoplanar
+2. Read [the trace protocol](references/trace-protocol.md). Build a reference with at least four noncoplanar
    landmarks per component. Drive the real renderer using `cad-agent motion-trace reference.json --poses-only`,
    then capture actual mesh vertices through its current world matrices in the common assembly frame, in mm.
 3. Run `cad-agent motion-trace reference.json capture.json --output motion-report.json`. Inspect the worst-point,

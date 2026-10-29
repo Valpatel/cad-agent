@@ -21,8 +21,8 @@ so a concave fillet (90 degrees) or a rounded slot end (180 degrees) is not one,
 openings are larger and are crossed by spokes on purpose). A boss (convex cylinder) is not a hole. Faces on one axis
 line are one bore where their axial ranges overlap or are less than ``merge_gap_mm`` (the larger of 5 mm and the
 diameter) apart, so a rib across a counterbore is inside the bore, while coaxial holes in opposite walls of a box stay
-separate. A thin solid layer across a bore on purpose (a sacrificial bridge layer) reads as an intrusion: list it in
-``exceptions`` with the reason.
+separate, and so do the two sides of a ledge with a smaller hole through it (a stepped bore). A thin solid layer across
+a bore on purpose (a sacrificial bridge layer) reads as an intrusion: list it in ``exceptions`` with the reason.
 
 Limits, stated in every result: cylindrical holes only (not tapered, threaded-as-helix or polygonal holes); the probe
 measures material inside the hole's own wall, not clearance for a tool or a screw head beyond it.
@@ -149,9 +149,12 @@ def find_bores(shape: Any, line_tol: float = 1e-3) -> List[Bore]:
         if _dot(_cross(X, Y), axis) < 0:
             a0 -= span
         b.pieces.append((min(ta, tb), max(ta, tb), a0, a0 + span))
+    lines: Dict[Tuple, List[Bore]] = {}
+    for key, b in bores.items():
+        lines.setdefault(key[1:], []).append(b)
     out: List[Bore] = []
-    for b in bores.values():
-        out.extend(_split(b))
+    for key, b in bores.items():
+        out.extend(_split(b, [o for o in lines[key[1:]] if o.radius < b.radius]))
     return out
 
 
@@ -194,13 +197,23 @@ def _coverage(arcs: Sequence[Tuple[float, float]]) -> float:
     return math.degrees(total)
 
 
-def _split(b: Bore) -> List[Bore]:
-    """Faces on one axis line, cut into separate bores where their axial ranges are far apart."""
+def _split(b: Bore, smaller: Sequence[Bore] = ()) -> List[Bore]:
+    """Faces on one axis line, cut into separate bores where their axial ranges are apart.
+
+    Ranges that overlap are one bore. Across a short gap (up to the larger of 5 mm and the diameter) they are one bore
+    with something blocking it, unless a smaller coaxial hole runs through the gap: that is a stepped bore (a ledge
+    or shoulder with the screw's clearance hole through it), and the two sides are separate holes."""
     gap = max(5.0, 2 * b.radius)
+    eps = 1e-3
+
+    def stepped(t0: float, t1: float) -> bool:
+        return any(q[0] <= t0 + eps and q[1] >= t1 - eps for o in smaller for q in o.pieces)
+
     pieces = sorted(b.pieces)
     groups: List[List[Tuple[float, float, float, float]]] = []
     for pc in pieces:
-        if groups and pc[0] <= max(q[1] for q in groups[-1]) + gap:
+        end = max(q[1] for q in groups[-1]) if groups else None
+        if groups and (pc[0] <= end + eps or (pc[0] <= end + gap and not stepped(end, pc[0]))):
             groups[-1].append(pc)
         else:
             groups.append([pc])

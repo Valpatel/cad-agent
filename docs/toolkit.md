@@ -457,7 +457,7 @@ STEP with no declarations: every concave cylindrical hole (wall faces covering a
 and slot ends are not holes; up to 30 mm across, so grille rings are not) is probed with a cylinder 0.05 mm inside its
 wall over its full depth. Material inside above 0.05 mm³ fails, with the hole's axis, diameter, depth range and the
 centre of the intrusion. Faces on one axis join into one hole across a rib, but coaxial holes in opposite walls stay
-separate.
+separate, and so do the two sides of a ledge with a smaller hole through it (a stepped bore).
 
 ```yaml
 cad:

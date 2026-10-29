@@ -95,3 +95,16 @@ def test_not_run_fails_and_skip_needs_a_reason(tmp_path):
     root2 = project(tmp_path / "b", plate_with_counterbore(True), "  holes:\n    skip: {plate: ''}\n")
     with pytest.raises(CadConfigError):
         holes.config(load_project(root2))
+
+
+def test_stepped_bore_with_a_ledge_passes_and_a_blocking_rib_fails():
+    block = cq.Workplane("XY").box(20, 20, 30, centered=(True, True, False))
+    stepped = (cq.Workplane("XY").circle(3.3).extrude(26).translate((0, 0, 4))          # bore from the top to z 4
+               .union(cq.Workplane("XY").circle(1.7).extrude(40).translate((0, 0, -5)))  # screw hole through the ledge
+               .union(cq.Workplane("XY").circle(3.3).extrude(3).translate((0, 0, -1))))  # counterbore under the ledge
+    assert holes.check_shape(block.cut(stepped).val())["pass"]
+    plate = cq.Workplane("XY").box(30, 30, 10, centered=(True, True, False)).cut(
+        cq.Workplane("XY").circle(1.7).extrude(20).translate((0, 0, -5)))
+    rib = cq.Workplane("XY").box(30, 8, 3).translate((0, 0, 5))                            # wider than the hole
+    r = holes.check_shape(plate.union(rib).val())
+    assert not r["pass"] and r["findings"][0]["diameter_mm"] == pytest.approx(3.4)

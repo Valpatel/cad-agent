@@ -20,7 +20,7 @@ from cadagent.project import CadConfigError, CadProject, Step, load_project
 
 SUBCOMMANDS = ("build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
                "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet",
-               "review-section", "agents", "motion-trace")
+               "review-section", "agents", "motion-trace", "release")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -188,6 +188,22 @@ def cmd_package(project: CadProject, args: argparse.Namespace) -> int:
         _say(f"  WARN include pattern matched nothing: {pattern}")
     _say(f"packaged {len(result.files)} file(s): {result.zip_path}")
     _say(f"manifest: {result.manifest_path}")
+    return 0
+
+def cmd_release(project: CadProject, args: argparse.Namespace) -> int:
+    from cadagent.release import build_release
+
+    out = Path(args.out).expanduser() if getattr(args, "out", None) else None
+    try:
+        result = build_release(project, out=out, make_zip=not getattr(args, "no_zip", False),
+                               revision=getattr(args, "revision", None), date=getattr(args, "date", None))
+    except (FileNotFoundError, FileExistsError) as exc:
+        raise _Unusable(str(exc)) from exc
+    for w in result.warnings:
+        _say(f"  WARN {w}")
+    _say(f"release: {len(result.parts)} part(s), {len(result.files)} file(s): {result.folder / 'index.html'}")
+    if result.zip_path:
+        _say(f"zip: {result.zip_path}")
     return 0
 
 def cmd_serve(project: CadProject, args: argparse.Namespace) -> int:
@@ -732,6 +748,7 @@ HANDLERS = {
     "check": cmd_check,
     "report": cmd_report,
     "package": cmd_package,
+    "release": cmd_release,
     "serve": cmd_serve,
     "site": cmd_site,
     "view": cmd_view,
@@ -866,6 +883,13 @@ def build_parser() -> argparse.ArgumentParser:
     report_p = sub.add_parser("report", parents=[common], help="Write results JSON + standalone HTML report")
     report_p.add_argument("--open", action="store_true", help="Open the report in a browser")
     sub.add_parser("package", parents=[common], help="Zip the review package with a sha256 manifest")
+    rel_p = sub.add_parser("release", parents=[common], help="Write the print release: a browsable page of the parts "
+                                                            "(thumbnails, print settings) with CAD files and source, and a zip")
+    rel_p.add_argument("--out", help="Release folder (default: release/<name>-rev<revision>); the zip is <out>.zip")
+    rel_p.add_argument("--no-zip", action="store_true", help="Write the folder only")
+    rel_p.add_argument("--revision", help="Release revision for the title, folder name and manifest (default: "
+                                          "cad.release.revision, else the project's revision)")
+    rel_p.add_argument("--date", help="Release date (default: cad.release.date, SOURCE_DATE_EPOCH, the last commit's date)")
     serve_p = sub.add_parser("serve", parents=[common], help="Serve the project over http (Bambu Studio links)")
     serve_p.add_argument("--port", type=int, default=None,
                          help="Port (default: cad.serve.port, 0 = any free port)")

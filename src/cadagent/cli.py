@@ -20,7 +20,7 @@ from cadagent.project import CadConfigError, CadProject, Step, load_project
 
 SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
                "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet",
-               "review-section", "agents")
+               "review-section", "agents", "motion-trace")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -740,8 +740,37 @@ def cmd_agents(args: argparse.Namespace) -> int:
          + (f", {len(result['conflicts'])} conflicts" if result["conflicts"] else ""))
     return 1 if result["conflicts"] else 0
 
+def cmd_motion_trace(args: argparse.Namespace) -> int:
+    """Check captured rendered landmarks, or print the required capture poses; no project config needed."""
+    from cadagent.motion_trace import required_poses, validate_motion_trace
+    import json
+    contract = json.loads(args.contract.read_text())
+    if args.poses_only:
+        result = required_poses(contract)
+        code = 0
+    else:
+        if args.trace is None:
+            raise ValueError("trace is required unless --poses-only is set")
+        trace = json.loads(args.trace.read_text())
+        result = validate_motion_trace(contract, trace, tolerance_mm=args.tolerance_mm)
+        code = 0 if result["status"] == "pass" else 1
+    content = json.dumps(result, indent=2, allow_nan=False) + "\n"
+    if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(content)
+    else:
+        print(content, end="")
+    return code
+
+
 def dispatch(args: argparse.Namespace) -> int:
     sub = getattr(args, "cad_command", None)
+    if sub == "motion-trace":
+        try:
+            return cmd_motion_trace(args)
+        except (OSError, ValueError) as exc:
+            _err(f"motion-trace: {exc}")
+            return 2
     if sub == "agents":                                    # installs into the user's home: no project needed
         try:
             return cmd_agents(args)
@@ -819,6 +848,12 @@ def build_parser() -> argparse.ArgumentParser:
     pcb_p.add_argument("--output", default="exports/pcb-evidence.json")
     sub.add_parser("all", parents=[common], help="build, export-3mf, gates and the dossier lint (when configured), "
                                                  "check + report, package")
+    mt_p = sub.add_parser("motion-trace", help="Validate rendered joint pivots against independent CAD landmarks")
+    mt_p.add_argument("contract", type=Path, help="Independent joint/component reference JSON")
+    mt_p.add_argument("trace", type=Path, nargs="?", help="Actual renderer capture JSON")
+    mt_p.add_argument("--poses-only", action="store_true", help="Emit required capture angles instead of validating")
+    mt_p.add_argument("--output", type=Path, help="Write JSON to a file (default: stdout)")
+    mt_p.add_argument("--tolerance-mm", type=float, default=.01, help="Landmark error limit in mm (default: 0.01)")
     ag_p = sub.add_parser("agents", help="Install the agent workflow kit (skills and subagents) for Claude Code and Codex, "
                                          "or list what is installed (docs/agent-workflow.md)")
     ag_p.add_argument("action", choices=("install", "list"))

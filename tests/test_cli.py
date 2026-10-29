@@ -44,7 +44,8 @@ def test_parser_exposes_every_subcommand():
     assert parser.prog == "cad-agent"
     sub = next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction))
     assert set(sub.choices) == {"build", "export-3mf", "check", "report", "package", "serve", "site", "view", "slice", "webkit",
-                                "pcb-check", "all", "mcmaster", "catalogue", "compare", "optimise"}
+                                "pcb-check", "all", "mcmaster", "catalogue", "compare", "optimise", "dossier",
+                                "gates", "review-packet", "review-section", "agents", "motion-trace"}
     assert set(sub.choices) == set(SUBCOMMANDS)
     args = parser.parse_args(["build", "--project", "/p", "--from", "two", "--only", "two", "three"])
     assert (args.cad_command, args.project, args.from_step, args.only) == ("build", "/p", "two", ["two", "three"])
@@ -167,3 +168,72 @@ def test_slice_reports_a_part_without_a_print_time(tmp_path, monkeypatch, capsys
         "process": "p", "filament": "f", "path": "x", "pass": True})
     assert cli.cmd_slice(None, type("A", (), {"parts": []})()) == 0
     assert "time not reported" in capsys.readouterr().out
+
+
+# ----------------------------------------------------------------------------------------- cad-agent dossier (T2)
+
+def _dossier_project(root: Path) -> Path:
+    from .test_dossier_lint import make_project as make_dossier_project
+    return make_dossier_project(root)
+
+
+def test_dossier_writes_status_and_verdict(tmp_path, capsys):
+    root = _dossier_project(tmp_path)
+    assert main(["dossier", "--project", str(root)]) == 0
+    out = capsys.readouterr().out
+    assert "GATED      S1  Store" in out and "0 error(s)" in out
+    status = json.loads((root / "exports" / "dossier-status.json").read_text())
+    assert status["pass"] is True and status["sections"]["S1"]["status"] == "gated"
+    verdict = json.loads((root / "exports" / "gates" / "dossier-lint.json").read_text())
+    assert verdict["schema"] == "cadagent.gate/1" and verdict["pass"] is True
+
+
+def test_dossier_fails_with_file_line_and_code(tmp_path, capsys):
+    root = _dossier_project(tmp_path)
+    path = root / "dossier" / "sections" / "store.yaml"
+    path.write_text(path.read_text().replace("why: prints flat", "why: ''"))
+    assert main(["dossier", "--project", str(root)]) == 1
+    out = capsys.readouterr().out
+    assert "decision-incomplete" in out and "dossier/sections/store.yaml:" in out
+    assert json.loads((root / "exports" / "gates" / "dossier-lint.json").read_text())["pass"] is False
+
+
+def test_dossier_min_status_json_and_no_write(tmp_path, capsys):
+    root = _dossier_project(tmp_path)
+    (root / "exports" / "gates" / "wall.json").unlink()
+    assert main(["dossier", "--project", str(root), "--no-write"]) == 1          # hopper: gate:wall unrun
+    assert not (root / "exports" / "dossier-status.json").exists()
+    capsys.readouterr()
+    assert main(["dossier", "--project", str(root), "--min-status", "none", "--json", "--no-write"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["parts"]["hopper"]["status"] == "built" and data["required_section_status"] is None
+
+
+def test_dossier_without_a_dossier_key_is_unusable(tmp_path, capsys):
+    make_project(tmp_path)
+    assert main(["dossier", "--project", str(tmp_path)]) == 2
+    assert "no dossier" in capsys.readouterr().err
+
+
+def test_check_runs_the_dossier_lint(tmp_path, capsys):
+    from .test_report import GOOD
+    root = _dossier_project(tmp_path)
+    (root / "exports" / "geometry-checks.json").write_text(json.dumps({"box": GOOD}))
+    for ext in ("stl", "3mf", "step"):
+        (root / "exports" / f"box.{ext}").write_text("x")
+    from .test_gates_cli import bind_verdicts
+    bind_verdicts(root)                       # as `cad-agent gates` writes them: bound to the current inputs
+    assert main(["check", "--project", str(root), "--json"]) == 0
+    results = json.loads(capsys.readouterr().out)
+    gates = next(f for f in results["features"] if f["feature_id"] == "cad-gates")
+    assert {c["name"]: c["status"] for c in gates["checks"]} == {
+        "gate connectivity": "pass", "gate containment": "pass", "gate fasteners": "pass",
+        "gate motion": "skip", "gate assembly": "pass", "gate wall": "pass"}
+    feature = next(f for f in results["features"] if f["feature_id"] == "cad-dossier")
+    names = {c["name"]: c["status"] for c in feature["checks"]}
+    assert names == {"dossier lint": "pass", "section S1 · Store": "pass"}
+    path = root / "dossier" / "sections" / "store.yaml"
+    path.write_text(path.read_text().replace("function: Closes the hopper", "function: ''"))
+    assert main(["check", "--project", str(root)]) == 1
+    out = capsys.readouterr().out
+    assert "dossier card-no-function" in out and "section S1" in out

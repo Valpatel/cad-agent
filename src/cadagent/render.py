@@ -10,6 +10,9 @@ Usage::
     r.render("section.png", shapes=[(base, (.2, .2, .25))], view="section",
              clip=((0, 60, 0), (0, 1, 0)))
 
+``review_packet(section, root=...)`` renders a dossier section's review packet (``cadagent.packet``,
+``docs/review-packet.md``).
+
 Colors are ``(r, g, b)`` or ``(r, g, b, opacity)`` floats in 0..1. Views are
 directions from the scene centre; the camera is parallel-projection and fitted
 to the scene, so only the direction matters. ``only`` (or the environment
@@ -88,6 +91,7 @@ class Renderer:
         self.bar_color = bar_color
         self.accent = accent
         self._stl_cache: Dict[str, Any] = {}
+        self._shape_cache: Dict[int, Tuple[Any, Any]] = {}     # id(shape) -> (shape, polydata): tessellate once
 
     def font(self, px: int) -> Any:
         if self.font_path:
@@ -98,6 +102,11 @@ class Renderer:
         return self.only is None or name in self.only
 
     def shape_actor(self, shape: Any, color: Color, offset: Sequence[float] = (0, 0, 0)) -> Any:
+        cached = self._shape_cache.get(id(shape))
+        if cached is not None and cached[0] is shape:
+            actor = self._poly_actor(cached[1], color)
+            actor.SetPosition(*offset)
+            return actor
         vtk = self.vtk
         verts, tris = shape.tessellate(*self.tessellation)
         pts = vtk.vtkPoints()
@@ -112,6 +121,7 @@ class Renderer:
         poly = vtk.vtkPolyData()
         poly.SetPoints(pts)
         poly.SetPolys(cells)
+        self._shape_cache[id(shape)] = (shape, poly)     # the shape is kept, so its id cannot be reused
         actor = self._poly_actor(poly, color)
         actor.SetPosition(*offset)
         return actor
@@ -165,6 +175,7 @@ class Renderer:
         size: Optional[Tuple[int, int]] = None,
         clip: Union[Plane, List[Plane], None] = None,
         zoom: Optional[float] = None,
+        fit: Optional[Tuple[Sequence[float], Sequence[float]]] = None,
     ) -> Optional[Path]:
         """Render one PNG into ``out_dir``; returns its path, or None when filtered out.
 
@@ -172,6 +183,7 @@ class Renderer:
         ``labels``: ``(code, text, world_point, (text_x, text_y))`` leader callouts.
         ``clip``: one ``(origin, normal)`` plane or a list of them; geometry on the
         side the normal points away from is cut.
+        ``fit``: a ``(min, max)`` box to frame instead of everything drawn (parts outside it are cropped).
         """
         if not self.wanted(name):
             return None
@@ -198,7 +210,8 @@ class Renderer:
                 actor.GetMapper().AddClippingPlane(plane)
             ren.AddActor(actor)
         ren.SetTwoSidedLighting(True)
-        bounds = ren.ComputeVisiblePropBounds()
+        bounds = ren.ComputeVisiblePropBounds() if fit is None else \
+            [float(fit[i % 2][i // 2]) for i in range(6)]
         center = [(bounds[0] + bounds[1]) / 2, (bounds[2] + bounds[3]) / 2, (bounds[4] + bounds[5]) / 2]
         diag = max(1.0, ((bounds[1] - bounds[0]) ** 2 + (bounds[3] - bounds[2]) ** 2 + (bounds[5] - bounds[4]) ** 2) ** 0.5)
         key = vtk.vtkLight()
@@ -229,7 +242,10 @@ class Renderer:
         cam.SetPosition(*(c + 3 * diag * d for c, d in zip(center, _unit(direction))))
         cam.SetViewUp(*up)
         cam.ParallelProjectionOn()
-        ren.ResetCamera()
+        if fit is None:
+            ren.ResetCamera()
+        else:
+            ren.ResetCamera(bounds)
         cam.Zoom(zoom if zoom is not None else (0.93 if labels else 1.04))
         win.Render()
         grab = vtk.vtkWindowToImageFilter()
@@ -276,6 +292,16 @@ class Renderer:
             d.rectangle((0, size[1] - NOTE_BAR_PX, size[0], size[1]), fill="white")
             d.text((30, size[1] - 40), note, font=self.font(17), fill="#516571")
         im.save(out)
+
+def review_packet(section: str, **kwargs: Any) -> Dict[str, Any]:
+    """The review packet of one dossier section: solid, opposite iso, x-ray, cuts through its cavities, joint axes
+    and fastener axes, exploded along its assembly steps, access along its screws, its joints' range ends and its
+    gate findings at their witness points, captioned with the section and content hashes, with
+    ``exports/review/<section>/manifest.json`` (``cad-agent.review-packet/1``). Keyword arguments and the manifest
+    schema: ``cadagent.packet.review_packet`` and ``docs/review-packet.md``."""
+    from cadagent.packet import review_packet as _review_packet
+    return _review_packet(section, **kwargs)
+
 
 def _is_plane(clip: Any) -> bool:
     return len(clip) == 2 and all(isinstance(v, (int, float)) for v in clip[0])

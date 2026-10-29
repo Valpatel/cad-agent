@@ -19,7 +19,8 @@ from cadagent._deps import MissingDependency
 from cadagent.project import CadConfigError, CadProject, Step, load_project
 
 SUBCOMMANDS = ("build", "export-3mf", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
-               "mcmaster", "catalogue", "compare", "optimise")
+               "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet",
+               "review-section", "agents", "motion-trace")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -196,18 +197,28 @@ def cmd_serve(project: CadProject, args: argparse.Namespace) -> int:
 
 def cmd_site(project: CadProject, args: argparse.Namespace) -> int:
     from cadagent.site import build_site, default_nav, serve_site
+    from cadagent.site_review import nav_entries
 
     site = project.site
-    # without a configured `nav`, every page still gets a top bar: the overview, docs, 3D model and the HTML pages
-    auto_nav = lambda: default_nav(project.root, project.html_pages, site.get("pages"))  # noqa: E731
+    from cadagent.gates.run import enabled
+    review = project if enabled(project) else None     # a dossier or gates project gets the review pages
+    # without a configured `nav`, every page still gets a top bar: the overview, docs, 3D model, the review pages
+    # and the HTML pages
+    auto_nav = lambda: default_nav(project.root, project.html_pages, site.get("pages"), nav_entries(project))  # noqa: E731
+    gates_exports = project.exports_dir if review is not None else None
     if not getattr(args, "serve", False):
-        summary = build_site(project.root, site, project.title, auto_nav)
+        summary = build_site(project.root, site, project.title, auto_nav, gates_exports, review)
         _say(f"site: {summary['site']}/index.html ({summary['pages']} pages, {summary['milestones']} milestones, "
              f"{summary['decisions']} decisions, {summary['designs']} designs)")
+        if "review" in summary:
+            r = summary["review"]
+            graph = {"graphviz": "drawn by Graphviz", "python": "drawn by the built-in layout"}.get(r["graph"], "none yet")
+            _say(f"review: {summary['site']}/review/ ({r['sections']} section page(s), requirements, gates; "
+                 f"connectivity graph {graph})")
         return 0
     host = getattr(args, "host", None) or project.serve.host
     port = project.serve.port if getattr(args, "port", None) is None else args.port
-    server, url = serve_site(project.root, site, project.title, host, port, auto_nav)
+    server, url = serve_site(project.root, site, project.title, host, port, auto_nav, gates_exports, review)
     project.preview_dir.mkdir(parents=True, exist_ok=True)
     (project.preview_dir / "site-url.txt").write_text(url + "\n")
     print(url, flush=True)
@@ -263,6 +274,161 @@ def cmd_pcb_check(project: CadProject, args: argparse.Namespace) -> int:
     return 0 if bundle['pass'] else 1
 
 
+def cmd_dossier(project: CadProject, args: argparse.Namespace) -> int:
+    """Lint the design dossier, compute every item's status and write exports/dossier-status.json and
+    exports/gates/dossier-lint.json (docs/dossier.md "Lint and status")."""
+    from cadagent.dossier.lint import STATUSES, lint_project, write_outputs
+
+    minimum = None if getattr(args, "min_status", "gated") == "none" else getattr(args, "min_status", "gated")
+    result = lint_project(project, min_section_status=minimum)
+    if result is None:
+        raise _Unusable("no dossier: add `dossier: dossier/project.yaml` to the cad: section (docs/dossier.md)")
+    if not getattr(args, "no_write", False):
+        status_path, verdict_path = write_outputs(result, project.exports_dir)
+    if getattr(args, "json", False):
+        print(json.dumps(result.to_status(), indent=2))
+        return 0 if result.passed else 1
+    for sid, row in result.sections.items():
+        _say(f"{row['status'].upper():<10} {sid}  {row['title']}")
+        for pid in row["parts"]:
+            prow = result.parts[pid]
+            why = f"  ({'; '.join(prow['blocked_by'])})" if prow["blocked_by"] else ""
+            _say(f"  {prow['status']:<10} {pid}{why}")
+    for f in result.findings:
+        _say(f"  {f.severity.upper():<7} {f.code:<26} {f}")
+    counts = {s: sum(1 for r in result.sections.values() if r["status"] == s) for s in STATUSES}
+    _say(f"dossier: {len(result.errors)} error(s), {len(result.warnings)} warning(s); sections "
+         + ", ".join(f"{n} {s}" for s, n in counts.items() if n) + " · declarations only, physical fit not verified")
+    if not getattr(args, "no_write", False):
+        _say(f"status:  {status_path}")
+        _say(f"verdict: {verdict_path}")
+    return 0 if result.passed else 1
+
+def cmd_review_packet(project: CadProject, args: argparse.Namespace) -> int:
+    """Render each section's review packet: exports/review/<section>/*.png and manifest.json
+    (docs/review-packet.md)."""
+    from cadagent.packet import PacketError, plan_project_packet, project_sections, review_packet
+
+    try:
+        size = tuple(int(v) for v in args.size.lower().split("x"))
+    except ValueError:
+        size = ()
+    if len(size) != 2 or min(size) < 200:
+        raise _Unusable(f"--size {args.size!r}: give WIDTHxHEIGHT, each at least 200")
+    try:
+        sections = list(args.sections or project_sections(project.root))
+        for sid in sections:
+            if args.list:
+                manifest, target = plan_project_packet(sid, root=project.root, explode=args.explode,
+                                                       context=args.context)
+            else:
+                manifest = review_packet(sid, root=project.root, size=size, explode=args.explode,
+                                         context=args.context, only=args.view or None)
+            _packet_summary(manifest, listed=args.list)
+    except PacketError as exc:
+        raise _Unusable(str(exc)) from None
+    return 0
+
+
+def cmd_review_section(project: CadProject, args: argparse.Namespace) -> int:
+    """The reviewer pass (plan §5.3, T11): write the reviewer's prompt bundle for a section, or check and submit a
+    filled-in reviewer record (docs/dossier.md "The reviewer pass")."""
+    from cadagent.dossier.review import ReviewError, submit_record, write_bundle
+
+    record = args.submit or args.check
+    try:
+        if record:
+            path, rec, problems = submit_record(project, args.section, record, write=bool(args.submit))
+            for prob in problems:
+                _say(f"  REFUSED {prob}")
+            if problems:
+                _say(f"review-section {args.section}: the record is not accepted ({len(problems)} problem(s)); "
+                     "nothing written")
+                return 1
+            if path is None:
+                _say(f"review-section {args.section}: the record is valid ({rec['verdict']}, actor {rec['actor']}); "
+                     "not written (--check)")
+                return 0
+            try:
+                shown = path.resolve().relative_to(Path(project.root).resolve()).as_posix()
+            except ValueError:
+                shown = str(path)
+            _say(f"review-section {args.section}: {rec['verdict']} by {rec['actor']} -> {shown}")
+            from cadagent.dossier.lint import lint_project
+            res = lint_project(project, min_section_status=None)
+            row = (res.sections.get(args.section) if res is not None else None) or {}
+            _say(f"  section status now: {row.get('status', '?')}"
+                 + (f" ({'; '.join(row.get('blocked_by') or [])})" if row.get("blocked_by") else "")
+                 + " · run cad-agent dossier to write it")
+            return 0
+        manifest = write_bundle(project, args.section, args.bundle_dir, since=args.since)
+    except ReviewError as exc:
+        raise _Unusable(str(exc)) from None
+    sec = manifest["section"]
+    _say(f"{sec['id']}  {sec['title']}  ({sec['status']})  -> {manifest['dir']}")
+    _say(f"  packet: {manifest['packet']['questions']} question(s)"
+         + (f", {manifest['packet']['stale']}" if manifest["packet"]["stale"] else ", current"))
+    diff = manifest["diff"]
+    _say(f"  diff: {'since ' + diff['base'][:12] if diff.get('base') else diff.get('note') or 'none'}"
+         + (f" ({len(diff['paths'])} path(s))" if diff.get("base") else ""))
+    for b in manifest["blockers"]:
+        _say(f"  BLOCKER {b}")
+    _say(f"  reviewer: read {manifest['dir']}/PROMPT.md; submit with {manifest['submit']}")
+    return 0 if manifest["ready"] else 1
+
+
+def _packet_summary(manifest: Dict[str, Any], listed: bool) -> None:
+    sec = manifest["section"]
+    m = manifest["measurements"]
+    stale = sorted(g for g, v in m["gates"].items() if v.get("stale"))
+    fails = [f for f in manifest["findings"] if f["status"] == "fail"]
+    _say(f"{sec['id']}  {sec.get('title', '')}  ({sec.get('status', 'no status')})  -> {manifest['dir']}")
+    for v in manifest["views"]:
+        mark = "" if listed else ("  ok " if v.get("sha256") else "  -- ")
+        _say(f"  {mark}{v['id']:<34} {v['note']}")
+    for n in manifest["not_rendered"]:
+        _say(f"  not rendered: {n['what']}: {n['why']}")
+    _say(f"  {len(manifest['checklist']['questions'])} checklist question(s); {len(fails)} failing finding(s), "
+         f"{len(manifest['findings']) - len(fails)} warning(s)"
+         + (f"; stale verdicts: {', '.join(stale)}" if stale else "")
+         + (f"; no verdict: {', '.join(m['missing_gates'])}" if m.get("missing_gates") else "")
+         + " · renders are for diagnosis, not proof")
+
+
+def cmd_gates(project: CadProject, args: argparse.Namespace) -> int:
+    """Run every integrity gate that applies, each in a process of its own, then the dossier lint; write
+    exports/gates/<gate>.json and .md (docs/gates.md "Running the gates")."""
+    from cadagent.gates.run import GatesConfigError, enabled, run_gates
+
+    if not enabled(project):
+        raise _Unusable("no dossier: or gates: key in the cad: section; the gates read the dossier geometry "
+                        "(docs/gates.md \"Running the gates\")")
+    dry = getattr(args, "dry_run", False)
+    if getattr(args, "jobs", None) is not None and args.jobs < 1:
+        raise _Unusable("--jobs must be 1 or more")
+    try:
+        res = run_gates(project, only=getattr(args, "gate_only", None) or (), skip=getattr(args, "gate_skip", None)
+                        or (), jobs=getattr(args, "jobs", None), no_cache=getattr(args, "no_cache", False),
+                        build=getattr(args, "build", False), dry_run=dry, progress=_say)
+    except GatesConfigError as exc:
+        raise _Unusable(str(exc)) from exc
+    width = max([len(r.gate) for r in res.rows] + [8])
+    if dry:
+        for r in res.rows:
+            _say(f"  {r.status.upper() if r.status != 'na' else 'N/A':<4} {r.gate:<{width}}  {r.message}")
+        return 0
+    for r in res.rows:
+        if r.status in ("na", "skip"):
+            _say(f"  {'N/A' if r.status == 'na' else 'SKIP':<4} {r.gate:<{width}}  {r.message}")
+    counts = {s: sum(1 for r in res.rows if r.status == s) for s in ("pass", "fail", "na", "skip")}
+    _say(f"gates: {counts['pass']} pass, {counts['fail']} fail, {counts['na']} not applicable, {counts['skip']} "
+         f"skipped in {res.seconds:.1f}s" + (f" ({res.record})" if res.record else "")
+         + " · checks of the CAD model, physical fit not verified")
+    if res.rows and not res.passed:
+        _say(f"verdicts: {project.exports_dir / 'gates'}")
+    return 0 if res.passed else 1
+
+
 def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
     args.from_step = None
     args.only = None
@@ -270,6 +436,22 @@ def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
         return 1
     if cmd_export_3mf(project, args):
         return 1
+    from cadagent.gates.run import GatesConfigError, enabled, gates_config
+    if enabled(project):
+        try:                    # rebuild the record unless a build step already runs the gates' build script
+            gb = gates_config(project).build
+        except GatesConfigError:
+            gb = None
+        stepped = {(project.root / s.run).resolve() for s in project.steps}
+        args.gate_only, args.gate_skip, args.dry_run, args.build = None, None, False, gb is not None and gb not in stepped
+        args.no_cache, args.jobs = False, None
+        try:
+            cmd_gates(project, args)    # writes the verdicts and the dossier status; `check` (in report) fails on them
+        except _Unusable as exc:
+            _say(f"gates not run: {exc}")
+            if project.dossier:
+                args.json, args.no_write, args.min_status = False, False, "gated"
+                cmd_dossier(project, args)
     report_rc = cmd_report(project, args)
     package_rc = cmd_package(project, args)
     if report_rc:
@@ -530,10 +712,71 @@ HANDLERS = {
     "catalogue": cmd_catalogue,
     "compare": cmd_compare,
     "optimise": cmd_optimise,
+    "dossier": cmd_dossier,
+    "gates": cmd_gates,
+    "review-packet": cmd_review_packet,
+    "review-section": cmd_review_section,
 }
+
+def cmd_agents(args: argparse.Namespace) -> int:
+    """Install or list the agent workflow kit (skills/ and agents/) for Claude Code and Codex: cadagent.agentkit."""
+    from cadagent import agentkit
+    root = agentkit.kit_root(args.source)
+    home = Path(args.home).expanduser() if args.home else Path.home()
+    targets = agentkit.TARGETS if args.target == "all" else (args.target,)
+    if args.action == "list":
+        for row in agentkit.status(home, root, targets):
+            _say(f"{row['kind']:5}  {row['name']:24} {row['state']:12} {row['dest']}")
+        return 0
+    warning = None if args.copy else agentkit.worktree_warning(root)
+    if warning:
+        _warn(warning)
+    result = agentkit.install(home, root, targets, copy=args.copy, dry_run=args.dry_run)
+    for line in result["done"]:
+        _say(("would " if args.dry_run else "") + line)
+    for dest in result["conflicts"]:
+        _err(f"agents: {dest} exists and was not installed by cad-agent; left untouched (move it away and rerun)")
+    _say(f"agents: {len(result['done'])} {'planned' if args.dry_run else 'installed'} from {root}"
+         + (f", {len(result['conflicts'])} conflicts" if result["conflicts"] else ""))
+    return 1 if result["conflicts"] else 0
+
+def cmd_motion_trace(args: argparse.Namespace) -> int:
+    """Check captured rendered landmarks, or print the required capture poses; no project config needed."""
+    from cadagent.motion_trace import required_poses, validate_motion_trace
+    import json
+    contract = json.loads(args.contract.read_text())
+    if args.poses_only:
+        result = required_poses(contract)
+        code = 0
+    else:
+        if args.trace is None:
+            raise ValueError("trace is required unless --poses-only is set")
+        trace = json.loads(args.trace.read_text())
+        result = validate_motion_trace(contract, trace, tolerance_mm=args.tolerance_mm)
+        code = 0 if result["status"] == "pass" else 1
+    content = json.dumps(result, indent=2, allow_nan=False) + "\n"
+    if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(content)
+    else:
+        print(content, end="")
+    return code
+
 
 def dispatch(args: argparse.Namespace) -> int:
     sub = getattr(args, "cad_command", None)
+    if sub == "motion-trace":
+        try:
+            return cmd_motion_trace(args)
+        except (OSError, ValueError) as exc:
+            _err(f"motion-trace: {exc}")
+            return 2
+    if sub == "agents":                                    # installs into the user's home: no project needed
+        try:
+            return cmd_agents(args)
+        except (FileNotFoundError, ValueError) as exc:
+            _err(f"agents: {exc}")
+            return 2
     if sub == "mcmaster":                                  # works on files only: no project needed
         try:
             return cmd_mcmaster(args)
@@ -603,7 +846,23 @@ def build_parser() -> argparse.ArgumentParser:
     pcb_p = sub.add_parser("pcb-check", parents=[common], help="Bind KiCad ERC/DRC evidence to current PCB sources")
     pcb_p.add_argument("manifest", help="JSON with reports, sources, release_gates and optional waivers (paths relative to project root)")
     pcb_p.add_argument("--output", default="exports/pcb-evidence.json")
-    sub.add_parser("all", parents=[common], help="build, export-3mf, check + report, package")
+    sub.add_parser("all", parents=[common], help="build, export-3mf, gates and the dossier lint (when configured), "
+                                                 "check + report, package")
+    mt_p = sub.add_parser("motion-trace", help="Validate rendered joint pivots against independent CAD landmarks")
+    mt_p.add_argument("contract", type=Path, help="Independent joint/component reference JSON")
+    mt_p.add_argument("trace", type=Path, nargs="?", help="Actual renderer capture JSON")
+    mt_p.add_argument("--poses-only", action="store_true", help="Emit required capture angles instead of validating")
+    mt_p.add_argument("--output", type=Path, help="Write JSON to a file (default: stdout)")
+    mt_p.add_argument("--tolerance-mm", type=float, default=.01, help="Landmark error limit in mm (default: 0.01)")
+    ag_p = sub.add_parser("agents", help="Install the agent workflow kit (skills and subagents) for Claude Code and Codex, "
+                                         "or list what is installed (docs/agent-workflow.md)")
+    ag_p.add_argument("action", choices=("install", "list"))
+    ag_p.add_argument("--target", choices=("all", "claude", "codex"), default="all")
+    ag_p.add_argument("--source", type=Path, help="cad-agent checkout holding skills/ and agents/ (default: the one "
+                                                  "this cadagent is installed from)")
+    ag_p.add_argument("--home", help="home folder to install into (default: yours)")
+    ag_p.add_argument("--copy", action="store_true", help="copy instead of linking (for a checkout that will move)")
+    ag_p.add_argument("--dry-run", action="store_true", help="show what would be installed")
     mc_p = sub.add_parser("mcmaster", help="Download McMaster-Carr STEP + product data per part number and normalise "
                                            "it (one page at a time; skills/mcmaster-parts/SKILL.md)")
     mc_p.add_argument("pns", nargs="+", metavar="PN", help="McMaster-Carr part numbers, e.g. 91290A242")
@@ -643,6 +902,47 @@ def build_parser() -> argparse.ArgumentParser:
                        help="Override search.sampler (nsga2 and tpe need optuna)")
     opt_p.add_argument("--seed", type=int, default=None, help="Override search.seed")
     opt_p.add_argument("--fresh", action="store_true", help="Delete the previous trials and start over")
+    dos_p = sub.add_parser("dossier", parents=[common],
+                           help="Lint the design dossier and write each item's status (exports/dossier-status.json)")
+    dos_p.add_argument("--json", action="store_true", help="Print the status JSON instead of the table")
+    dos_p.add_argument("--no-write", action="store_true", help="Do not write the status and verdict files")
+    dos_p.add_argument("--min-status", choices=("draft", "built", "gated", "reviewed", "signed_off", "none"),
+                       default="gated", help="Status every section must reach (default gated, plan §5.4); "
+                                             "none: report statuses without failing on them")
+    from cadagent.gates.run import NAMES as GATE_NAMES
+    gates_p = sub.add_parser("gates", parents=[common],
+                             help="Run the integrity gates on the dossier geometry: exports/gates/<gate>.json + .md")
+    gates_p.add_argument("--only", dest="gate_only", nargs="+", choices=GATE_NAMES, metavar="GATE",
+                         help=f"Run only these gates ({', '.join(GATE_NAMES)})")
+    gates_p.add_argument("--skip", dest="gate_skip", nargs="+", choices=GATE_NAMES, metavar="GATE",
+                         help="Leave these gates out of this run")
+    gates_p.add_argument("--jobs", type=int, default=None,
+                         help="Gates run at once, each in its own process (default: cad.gates.jobs, else 1)")
+    gates_p.add_argument("--no-cache", action="store_true", help="Run without the pair cache (every query exact)")
+    gates_p.add_argument("--build", action="store_true",
+                         help="Build the geometry first with cad.gates.build (else only when the record is missing)")
+    gates_p.add_argument("--dry-run", action="store_true", help="List what would run and why, and run nothing")
+    rp_p = sub.add_parser("review-packet", parents=[common],
+                          help="Render each dossier section's review packet: exports/review/<section>/ + manifest.json")
+    rp_p.add_argument("sections", nargs="*", metavar="SECTION", help="Section ids (default: every section)")
+    rp_p.add_argument("--list", action="store_true", help="List the views each section gets; render and write nothing")
+    rp_p.add_argument("--view", nargs="+", metavar="VIEW", help="Render only these view ids (others kept if current)")
+    rp_p.add_argument("--size", default="1400x1000", help="Image size WIDTHxHEIGHT (default 1400x1000)")
+    rp_p.add_argument("--explode", type=float, default=1.0, help="Scale of the exploded view (0: no exploded view)")
+    rp_p.add_argument("--context", choices=("neighbours", "all", "none"), default="neighbours",
+                      help="Other sections' parts drawn faint (default: neighbours)")
+    rs_p = sub.add_parser("review-section", parents=[common],
+                          help="Reviewer pass: write a section's reviewer bundle, or --submit a reviewer record")
+    rs_p.add_argument("section", metavar="SECTION", help="The dossier section id")
+    rs_p.add_argument("--bundle-dir", default=None,
+                      help="Where to write the bundle (default: <exports>/review-bundle/<section>/)")
+    rs_p.add_argument("--since", default=None, metavar="REV",
+                      help="Diff the section's sources against this git revision (default: the last sign-off)")
+    rs_grp = rs_p.add_mutually_exclusive_group()
+    rs_grp.add_argument("--submit", metavar="RECORD",
+                        help="Check a filled-in reviewer record against the current build and write it to "
+                             "dossier/reviews/ (the actor is CAD_AGENT_ACTOR)")
+    rs_grp.add_argument("--check", metavar="RECORD", help="Like --submit, but write nothing")
     return parser
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

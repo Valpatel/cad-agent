@@ -44,6 +44,7 @@ File 11 comes from a different project: the incident notes of a CAN breakout PCB
 | [09-agent-process.md](09-agent-process.md) | Mid-turn messages, status, consent, prior art, scope, delegation |
 | [10-simulation-and-material.md](10-simulation-and-material.md) | Exact bought parts, slicer grams, re-checking thinner shells, thermal models of printed enclosures, shared compute |
 | [11-pcb-evidence-and-review.md](11-pcb-evidence-and-review.md) | KiCad report severities and waivers, parity, source hashes, routing geometry, STEP handedness, readback renders, release allowlists (from a second project; see below) |
+| [12-original-file-viewer.md](12-original-file-viewer.md) | Original-file identity, parser units/frames, cancellable loading, dependency and wheel evidence |
 
 ## Lesson format
 
@@ -57,3 +58,9 @@ File 11 comes from a different project: the incident notes of a CAN breakout PCB
 
 Timestamps are UTC as they appear in the transcript, truncated to the minute. Part numbers (P1, P9, P15 and so on)
 are the project's printed-part IDs.
+
+## Later rendered-motion incidents
+
+The 2026-10-28 Gyropup pivot validation lesson is maintained in
+[the rendered-motion domain](../.agents/domains/rendered-motion.md), with a
+[symptom index](../.agents/SYMPTOM-INDEX.md). It is not part of the original J501 transcript mining.

@@ -1,0 +1,2988 @@
+{
+  "productRevision": "0f2ef3076b568749a7a7f4beb892237b2a5f0cfc",
+  "publishedRoots": [
+    "designer",
+    "exports",
+    "catalog",
+    "designs",
+    "docs",
+    "research",
+    "cad",
+    "sim",
+    "hardware",
+    "firmware"
+  ],
+  "excludedReferenceSTLs": 27,
+  "files": [
+    {
+      "path": "exports/asm_barrel.step",
+      "sha256": "e584dadde34c315972bf9594829e4808cea394b4a52eece041a3ce662a8116af",
+      "bytes": 176407,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_battery_1.step",
+      "sha256": "9d43fd17d386821745a5fe696271a9fb5213e71a4ddd7136bcc711d3e3ddc5db",
+      "bytes": 31877,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_battery_cradle.step",
+      "sha256": "3a983ddad5c5894dce6974e0c9020e1e3d0a5558a58cec4cc995215a546a158b",
+      "bytes": 88423,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_bumper_ring.step",
+      "sha256": "0dd351ad047e32f24f62ee5f52de86b09bb286db9fbd90f50415a58eb1443759",
+      "bytes": 42296,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_camera_cradle.step",
+      "sha256": "b7033804d3e056d53134aa208ee1f2b20cf7db82f0905e1fc0e55dcee0eaf5d1",
+      "bytes": 58091,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_camera_cradle_rear.step",
+      "sha256": "98e9d00d0991c2421eb6e7ac646fb435a1beb88525fc6c892649805127470e0a",
+      "bytes": 48161,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_camera_front.step",
+      "sha256": "101472a5d27714fcdb0cd2c52dfba18a746f5f28a2cc92b66e2f476436a6197d",
+      "bytes": 15489,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_camera_rear.step",
+      "sha256": "290c25b12b838c33314016c898cc3f0697eab532db123abef80db0bc88375de8",
+      "bytes": 15523,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_cartridge_body.step",
+      "sha256": "98e27687b25fadef97dd0255754c4fea7dc3ef43052579fbf7690abee4f803d3",
+      "bytes": 1215219,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_chassis.step",
+      "sha256": "fa18634bb7ed31b769fbe4ee7799d7ba0b765b83b967e5ef15f55298416ec9da",
+      "bytes": 278516,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_cradle.step",
+      "sha256": "0cd6d47a24780419b20c917208136038333af0425b19668fc8f50631adaad1a8",
+      "bytes": 394674,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_dial.step",
+      "sha256": "20a4c55c8312552eddbc1f6a362690a32e29972ac480d177ef86fc071db17d5c",
+      "bytes": 234253,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_electronics_bay.step",
+      "sha256": "fdccf09509093311f3c096e28d3a6273662f836d3b167666227f382bc49313ba",
+      "bytes": 75304,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_face.step",
+      "sha256": "9ac989904dca8aecd47973c5a0d0e4da3b5a7d59afc741feb4e6fd1b3e264cae",
+      "bytes": 69399,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_flywheel.step",
+      "sha256": "8f93eb67162e6d64b98306a19cecc9d602e2f247a0f5c4dbd3d33c39f2734e0c",
+      "bytes": 96450,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_flywheel_tyre.step",
+      "sha256": "ba440054d3cf104abce2f97fdb9035ea35ae7737e20b330298cd8fd13948bfed",
+      "bytes": 9355,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_head_saddle.step",
+      "sha256": "e908a389477243733805186e4d28a4f93e378d16d7285dcf66234857c5e4ce22",
+      "bytes": 160276,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_hip_motor_l.step",
+      "sha256": "7f2cedf573e10a4d9a5bcd28a39a78d0cec024edbc735334d76f1ae7b1f96e11",
+      "bytes": 10082,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_hip_motor_plate_l.step",
+      "sha256": "4b3a7d13c65093f7404e8904c2470a9756e1b014263e99a09b62fe15b8ab37c8",
+      "bytes": 199859,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_hip_motor_plate_r.step",
+      "sha256": "2ed93e4e2eb9419e8f0727d31d5ce3414fcc77eef2dda3fb6c47e1786897ac3e",
+      "bytes": 203685,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_hip_motor_r.step",
+      "sha256": "012929faafb67c4c99fd6f3b8bff3b7937f7caa774afa869e6943763073c80dd",
+      "bytes": 12362,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_hip_output_adapter_l.step",
+      "sha256": "4ba2f3612e848b62075b4fb5c6f7e1a85f6539babdcb8123a4c34ef222d0f8ae",
+      "bytes": 329270,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_hip_output_adapter_r.step",
+      "sha256": "655a050c18a5b1eb50bf379a53bac5a6b280fb975f250318deb45d1a5c90491b",
+      "bytes": 301511,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_hopper.step",
+      "sha256": "6ec41a43791fe4c11b2e21a4b79cd702636b0b7d6b20ce6be69133c2d4e0c321",
+      "bytes": 126156,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_hopper_flap.step",
+      "sha256": "b7615671f0ec4fd4494c00cabef0450345162987f516e5e1f9c8d58be49c3449",
+      "bytes": 31332,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_hopper_lid.step",
+      "sha256": "29b51dfeed8434d09a5034b2f4e8e5c692e81b6b44fb200b7949e06f14f164b1",
+      "bytes": 303859,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_j501_box.step",
+      "sha256": "dd40f34f4755afb41719e029fce074d8f7f0202e13de4a78ffdeccd2623a1d06",
+      "bytes": 60725,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_knee_crank_l.step",
+      "sha256": "7000260b9189d9092cc8a1a64fa2d973835a746d574eb30b50d3094b9a4b3da1",
+      "bytes": 77076,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_knee_crank_r.step",
+      "sha256": "4862d51685a00923823369ff607b90f327554fdb726a54be345c6d4e308ecf40",
+      "bytes": 65610,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_knee_motor_l.step",
+      "sha256": "c725b58888a8fa8a214aa2c4f863bfa8c3e33e7433130d2ee50a50a5365ae5be",
+      "bytes": 10086,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_knee_motor_plate_l.step",
+      "sha256": "6b3259f710c857bde0710d5a51c38887545d19b0210c6bdab4d389fb454f6387",
+      "bytes": 199750,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_knee_motor_plate_r.step",
+      "sha256": "1c5ef0d36b937058ea0dea9a7cc586ca217d18ec5f3bad96663e84e646da792c",
+      "bytes": 203598,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_knee_motor_r.step",
+      "sha256": "a0de53d5dcb6272554228010f1e9aff1f33dac7fd4a1d16b3f33abd82c5ec640",
+      "bytes": 12368,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_knee_output_adapter_l.step",
+      "sha256": "1d0a2e382407358591b561f5eb6e4b7905d01a6c354f9fdd8af4c015b22ab735",
+      "bytes": 329056,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_knee_output_adapter_r.step",
+      "sha256": "0ab07ed9e4f2b2c931bb51a428a768c7f2b3eea5764a5549801b59c33aa17c07",
+      "bytes": 301384,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_laser_mount.step",
+      "sha256": "3b9de8439f616cbfc4f199baff7314efcea8ef62f50f4c836a37c5c5f409829a",
+      "bytes": 96875,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_lidar.step",
+      "sha256": "b11778eaf95222cd6f7cde7979ecf0e2b30916bbe48de5fdef950f0218ca5edf",
+      "bytes": 5800,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_lidar_guard.step",
+      "sha256": "84c83e031805fc643d4c8beaede8c6aa191ad2b8e64482a6230b49bb93813745",
+      "bytes": 23294,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_lidar_hanger.step",
+      "sha256": "eb57c2626ccf1a7296bbeec3ba3ef9f73838d554d57922d72eef27f895c7f940",
+      "bytes": 50834,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_pan_base.step",
+      "sha256": "0e925fae4696f09b864ad677e9423fe5c24c2cfffadc2efb6d51555acbb0ba5c",
+      "bytes": 1287426,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_pan_clamp.step",
+      "sha256": "7e08847641671ebfcc7d9a60dda6cff4f948dd1110831517f398fa3a52a9c9e1",
+      "bytes": 85851,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_pan_pinion.step",
+      "sha256": "e429a27909823520c2aa912ed79a7d17b98856ee2a4b635b0454ac61f06007e4",
+      "bytes": 1446828,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_pan_ring.step",
+      "sha256": "ed317e8756a07688fdb41494e45709afb7e0b666a09d08abef675789621cf00f",
+      "bytes": 3852292,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_posts_l.step",
+      "sha256": "472a2940925f106c6f1219a6f71b904797cc3324a6c81795ecfb806146d5d46d",
+      "bytes": 19207,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_posts_r.step",
+      "sha256": "705fc6248b4fd22f8a414aa257761bd6b7b9cccfd877d1c8cd5f149bbdfce091",
+      "bytes": 22565,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_pushrod_l.step",
+      "sha256": "b3a2b423c56268faea57fdbc7f8e540cffc7ee334a68588e6947d9d3d1a832c2",
+      "bytes": 29825,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_pushrod_r.step",
+      "sha256": "eb6f96642bf5ad46fad62f3b96b40b47d2e80513d5e19dea94a3e9c51ec4b43b",
+      "bytes": 30992,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_shin_l.step",
+      "sha256": "95c375df638c45a8a9b8dfe6434e1f4c06ea1436eacfc0e2942ceb18761b1dc6",
+      "bytes": 209801,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_shin_r.step",
+      "sha256": "53b4075d6bc5b5bdc22cc82d2d5c7cb267ac11a3cf21fd39e7ef1d799515550b",
+      "bytes": 209103,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_thigh_l.step",
+      "sha256": "d8ab2ca88e9861562e062b7968a5fa7ba4759d6c8d289697d5f9041f16134941",
+      "bytes": 169049,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_thigh_r.step",
+      "sha256": "0188f9d75d487eddc815a5aeaab7f0679d3196d08038ba4ff7f1dc96b277dcb9",
+      "bytes": 179277,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_tilt_yoke.step",
+      "sha256": "6ac9456e06307c270f08db27733a69fd79f2551c76a0a34307e9c2683c9f8104",
+      "bytes": 625647,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_wheel_adapter_l.step",
+      "sha256": "65cb37a492c09f3034af1f4000a65a998569aa253ef02c71cb01bcee653b946c",
+      "bytes": 130848,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_wheel_adapter_r.step",
+      "sha256": "92a1caab2cf6502feb426c32a191b749a6ab1d4a82532f4244782ea82a307320",
+      "bytes": 119407,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_wheel_l.step",
+      "sha256": "ed8490fb5efd06e36a977c5176693d39b15b6830aed5220ffddcec2b4be7a1be",
+      "bytes": 18490,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_wheel_r.step",
+      "sha256": "9c9ee143575a46f31ab27fa5fafd5872b89c7b19e37021e842ccb5ca3fc54571",
+      "bytes": 19665,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_yoke_bracket_l.step",
+      "sha256": "ff31e5d4e44ac8f11820f421930e21339b013d4eedf5dc2cf85d7fab443453b8",
+      "bytes": 131537,
+      "format": "step"
+    },
+    {
+      "path": "exports/asm_yoke_bracket_r.step",
+      "sha256": "1d14367a452eade41c61f65b655087629274ed58ae739de7454fa33e31a1191f",
+      "bytes": 144532,
+      "format": "step"
+    },
+    {
+      "path": "exports/barrel.step",
+      "sha256": "e54a5946300b2d944e80f4ce1d1f5f6759c3efaa4ec79a97fbd90871952a1e3b",
+      "bytes": 176407,
+      "format": "step"
+    },
+    {
+      "path": "exports/barrel.stl",
+      "sha256": "9614cf26200260c8cd6891bd80f75a172037acf16117ac6f20d05a0b4f1cfb35",
+      "bytes": 237284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/battery_cradle.step",
+      "sha256": "0bcac3f7471c3e0298824fb111ad69d86d01bad6bd7cd86518f3197939ba8521",
+      "bytes": 88421,
+      "format": "step"
+    },
+    {
+      "path": "exports/battery_cradle.stl",
+      "sha256": "c0cb99e2658750c1a73eb2e54d00d2ee04cb34b2c7a28fd9fe452968ba59075a",
+      "bytes": 4684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/adapter_plate_front.step",
+      "sha256": "b39aae36a6326acd48a40846b5c9dfe1a9994692727db94ce8d9ca92dd668727",
+      "bytes": 52971,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/adapter_plate_front.stl",
+      "sha256": "5bad6c43b1a7de966cb762d36221071fe9cfaaf682c1c6f2200f9469309bb488",
+      "bytes": 169484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/adapter_plate_rear.step",
+      "sha256": "a01c6decb524980c5b10e7f301597bae7850029ba5d53bdc468a247011d263e5",
+      "bytes": 53042,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/adapter_plate_rear.stl",
+      "sha256": "c3b97e6b125c5f5221d34022a7c5720120672f014fd97eddc588ea59980e061b",
+      "bytes": 169484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/bay_door_front.step",
+      "sha256": "4cc96da0e9b18143fa69b7ecd5a52279e0cc815ba516cce651a57d93f2d5a2ef",
+      "bytes": 42164,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/bay_door_front.stl",
+      "sha256": "10df817f0161a86125bcafa21fe18af40f87ad534776181d7b4bbba0ba4a3d25",
+      "bytes": 64684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/bay_door_rear.step",
+      "sha256": "f157ca5e9c9b31ce0f48105b8bf581a2b150edca11149fb3732f2699a748eeeb",
+      "bytes": 42226,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/bay_door_rear.stl",
+      "sha256": "5397dc1c1bb75e30664960600ed34b39f9e203f49a765bb04e49be7e5c016b0e",
+      "bytes": 64684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/bay_rail_l.step",
+      "sha256": "69a7de792f9e865df4d3d4bd3d882e37732cb92a14b3fce09f6ad2325af1f65c",
+      "bytes": 205966,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/bay_rail_l.stl",
+      "sha256": "2dd42e5e9a72a2d2a151384d0d3be7d54981c01dc55119328ebca24439d7c184",
+      "bytes": 299284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/bay_rail_r.step",
+      "sha256": "8fda781b0d4c60c53dbb25059f4d1194d2c141d786e9d43bcf34caaa68d8b558",
+      "bytes": 206136,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/bay_rail_r.stl",
+      "sha256": "57cac53bf09a799b7071fb72b25bf3b4409e85d015118e8178f9247a2c8303aa",
+      "bytes": 299284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/bay_skid.step",
+      "sha256": "f571ed40c1340c36faa0cd53fcf6be03192acc73926542d63667a0262f956df2",
+      "bytes": 15753,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/bay_skid.stl",
+      "sha256": "ceb788f97deed6d78a63db5c3d24a1212d91b7b54678b2aea5f4558d7d8d3e00",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/bus_insulator.step",
+      "sha256": "aa8eb403d4fedebb23a8efb6f49dc7de3226091915e54cbe09bbd90dc65a057a",
+      "bytes": 220905,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/bus_insulator.stl",
+      "sha256": "2c138c7dbe129161c974555fc191b1f19a5ef2bab432c6fa11606b3e3e6ce2f3",
+      "bytes": 253284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/dcdc_bracket.step",
+      "sha256": "f6803dc4742c0e9eea52e017e21f91a2fcce62671a52a6ca34ec07d35f664d10",
+      "bytes": 51546,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/dcdc_bracket.stl",
+      "sha256": "e1cc02232bc0bf5df5b97f070a989bc5b84397f7f7942f5a92f4ad0ad0b972e7",
+      "bytes": 149284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/isolator.step",
+      "sha256": "608e4a32ff831e9143b4f26756407ff3e3d46762d4bdb6bce52b01ab870d2a62",
+      "bytes": 26880,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/isolator.stl",
+      "sha256": "e73b7552c0189f809cd69e35d0c59db0d016a6f9f18280171a85cc4687fbecce",
+      "bytes": 105084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/plate_post.step",
+      "sha256": "2e65574d10eaf55cab83c58bfbdd3f019657a948c3c49f6a5d4f29c6f0367a42",
+      "bytes": 40697,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/plate_post.stl",
+      "sha256": "5b5e282d2e16b95b5167b4ffcfa3f7754600f2f7e6b133974ef7a7e08ef0c16b",
+      "bytes": 64284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/post.step",
+      "sha256": "06089c249fe23af5d000f1c7574321aad06269c5536d94b551355acfa1cb96be",
+      "bytes": 211108,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/post.stl",
+      "sha256": "0db4877c1804b101d28002a5c1fbe89fcb71a8ec0c5cc64b61060a118213f9ad",
+      "bytes": 240884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/riser.step",
+      "sha256": "8ea96f26be31de33948057e36fb724bff76425c6cf66473452c5718486e54654",
+      "bytes": 92429,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/riser.stl",
+      "sha256": "d4f8dd2014dec059d827eeaa9c37906249f7bff661aa0625a86f92b74a96e1af",
+      "bytes": 420084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/sendcutsend/bay_floor_5052-H32_0.063in_x1.step",
+      "sha256": "89584928815565c544686535ecbe2828095f37d2a1184a2db47c6f260175df1e",
+      "bytes": 115594,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/sendcutsend/bay_side_5052-H32_0.063in_x2.step",
+      "sha256": "7e97e27e0f82b29e74e824e66d58a125cae519ef5662af0c19d6d786cb4ba8a9",
+      "bytes": 185681,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/sendcutsend/belly_plate_6061-T6_0.100in_x1.step",
+      "sha256": "e7d953ce513f63bd4de65bb9b271447e098003db4a92ab6da5e085206d1d2681",
+      "bytes": 164981,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/sendcutsend/bus_bar_C110_0.125in_x2.step",
+      "sha256": "6b02bfa3afec5ff1fdc351a6313f54f8664de0d00975bf2dc7d15be92440d45c",
+      "bytes": 48770,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/sendcutsend/cheek_5052-H32_0.187in_x2.step",
+      "sha256": "feae8ac0f57620c5c4c5ce92ae49e3f9d7d754c48e44ac26654f3e5ae817d9c8",
+      "bytes": 208802,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/sendcutsend/compute_pallet_6061-T6_0.125in_x1.step",
+      "sha256": "892a84905e0d3fc65792e2bba26c32f3bb49728491eaf62291678d34728ed502",
+      "bytes": 120344,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/sendcutsend/deck_5052-H32_0.100in_x1.step",
+      "sha256": "4ef99fe85dad1f14b2f4d31e0115a2f752a3067dd5216559ad88d7d4397ad107",
+      "bytes": 1210150,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/sendcutsend/floor_tray_5052-H32_0.125in_x1.step",
+      "sha256": "c34178586aa6396dacf9f64dbf862caa00863627a44541f643ab8a805b5c7466",
+      "bytes": 327431,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/sendcutsend/power_plate_5052-H32_0.100in_x1.step",
+      "sha256": "a9d75cc93169834ecf7f8db6595a16482953c98d6b452089e8e1633554a08e74",
+      "bytes": 280882,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/sendcutsend/turret_plate_6061-T6_0.125in_x1.step",
+      "sha256": "9b2066456f0985268dc4e3c1253a18b0d441f522da724fb81cd7246167ebb5cb",
+      "bytes": 204642,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/shell/apex_fillet_envelope.step",
+      "sha256": "b44858cd1eadd94b95e7a9f01ac80a29840e89e41fbfc41fe555eebd2e728128",
+      "bytes": 12896,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/shell/d435_cradle_front.step",
+      "sha256": "9969606e9b369d41efeacb4a143026d5ff765b276eb8c7d74c49b9045b361d57",
+      "bytes": 53343,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/shell/d435_cradle_front.stl",
+      "sha256": "361a4b7fb210e5e3ffc34dde6d5d9a0b95817975029e20eccd2fef2780cd04eb",
+      "bytes": 86284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/shell/d435_cradle_rear.step",
+      "sha256": "dba610e4ca7b31e3dd14fe3b764f89f7f4c2ec66cd607935100f90fc80ddcd91",
+      "bytes": 53444,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/shell/d435_cradle_rear.stl",
+      "sha256": "b17b7fa55c896144f95dc3896855f0487a66d9456ba1feef3f397f2cadf08f4d",
+      "bytes": 86284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/shell/ear_bracket_l.step",
+      "sha256": "d69c3441568d9138e84f8bf08db7fb10d4477ec9ae9f63fc652f1d87d15bbdfa",
+      "bytes": 102060,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/shell/ear_bracket_l.stl",
+      "sha256": "e525806e042ebbe048f3a7ea79802a9baa161d912535d9db1cf8b42c3d45ba35",
+      "bytes": 110484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/shell/ear_bracket_r.step",
+      "sha256": "963eed1b5c0b7db8be356f1867ad41ac66c11bb7ca30c6e44442511c5bf8bbb9",
+      "bytes": 102289,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/shell/ear_bracket_r.stl",
+      "sha256": "01118e218e761a42d8ee650bf0698f438321b0f040cfc77767532edb00e56204",
+      "bytes": 110484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/shell/eyes_clip.step",
+      "sha256": "700392acfec55639bf8039122596bf9a0cdf6c9cc15fe0689f53fb95049eeb1d",
+      "bytes": 25152,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/shell/eyes_clip.stl",
+      "sha256": "aac8b51043bf8627cc6b15d78b1de68303dddb6168bb1b786c783825b13db294",
+      "bytes": 43084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/shell/fan_duct.step",
+      "sha256": "a0ff3d23f49095c957d29ee104a03c889676104b766de77c48b55130054bb291",
+      "bytes": 129032,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/shell/fan_duct.stl",
+      "sha256": "922ab6dfa3ec3205549050f6eb8855f9c1a004383bb9b735e0a6478310a9be76",
+      "bytes": 144684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/shell/knee_wedge_front_envelope.step",
+      "sha256": "f47a626ee4e1675b9dac2867e33270d5278249701503a39e35fefaaf2a49e93f",
+      "bytes": 13246,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/shell/knee_wedge_rear_envelope.step",
+      "sha256": "b25c358b50e9f84a79e69efd8533f93b0c64a8051faa7ff074ce37c42af55295",
+      "bytes": 13237,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/shell/shell_door.step",
+      "sha256": "f68e837dc9c8268bd8e4129e203e2f8c245f9c30b0a3310430ec75817a5ce791",
+      "bytes": 46620,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/shell/shell_door.stl",
+      "sha256": "1b8df997631fd257335f648f9b3e1f0b1545ca7f04e22525bc08e8b464350a79",
+      "bytes": 107084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/shell/shell_front.step",
+      "sha256": "0be527a551082434d940811224aa73e0afd97930464d7f320d0c0c17ee4f3785",
+      "bytes": 230488,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/shell/shell_front.stl",
+      "sha256": "7d2ec7bc5bc98c2e2a05a0a951e111fdcf150a3dd6c8db5ac757d32362102c93",
+      "bytes": 345284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/shell/shell_hatch.step",
+      "sha256": "e4fa2de5854a8ce48a08b550d17856e8a18a613d6f1e109d6a7ab46315e45a0f",
+      "bytes": 39580,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/shell/shell_hatch.stl",
+      "sha256": "e6ffb639b12650c7fc9297686c414ce71dd592ac33fd17e8ae9c5fd216f26b8f",
+      "bytes": 64684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/shell/shell_rear.step",
+      "sha256": "2e3981cc06e0cc95d46f42461ecd598e52a8f9c8a19dc2b0b7b360477e814a03",
+      "bytes": 320316,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/shell/shell_rear.stl",
+      "sha256": "dde3d119b34edab9c9a0dffc9bdc05e978cdae8289d791a164b70761c1c8110c",
+      "bytes": 353584,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/shell/shell_side_l_front.step",
+      "sha256": "02b50b28c0ce7830aaf12f9f030754241a685e19a74a2310a2806eb4f3f34e6c",
+      "bytes": 417414,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/shell/shell_side_l_front.stl",
+      "sha256": "61d8dc197d83b9ff3c550685c42eaadff2121dde9cb8a2968bd31684236bba8e",
+      "bytes": 338884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/shell/shell_side_l_rear.step",
+      "sha256": "90ba4f4d6ecc391e5f73f706e0d0b01a7ea26f87b12041b54d0e315266135383",
+      "bytes": 808946,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/shell/shell_side_l_rear.stl",
+      "sha256": "0ea365c477f721190c99b841cdcbf4355e7071e2d22210526c68d6ce707ea4f0",
+      "bytes": 562484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/shell/shell_side_r_front.step",
+      "sha256": "686a2b5856bcb4a4c1e661702b1dd3c60c1223442cd511282c0e86a2fd8c08c1",
+      "bytes": 320760,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/shell/shell_side_r_front.stl",
+      "sha256": "5be5495037cf9090b557b11e0fdce98802c0b11ffad5a5a9babdb71a168be57b",
+      "bytes": 351084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/body/shell/shell_side_r_rear.step",
+      "sha256": "90c907673ad1e6fcdd2ddea16b4063249534ade90e77baa4aa69e97aeadac8a9",
+      "bytes": 664332,
+      "format": "step"
+    },
+    {
+      "path": "exports/body/shell/shell_side_r_rear.stl",
+      "sha256": "5922f9b30fc16888b5f6b0ef58769965c0a5db9529af6f183cf15f95e535ecb2",
+      "bytes": 492484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/bumper_ring.step",
+      "sha256": "8c651cb43211efe85dcfbe7587d039d334c2bcfc113d5a73a31cadd523ab55af",
+      "bytes": 42296,
+      "format": "step"
+    },
+    {
+      "path": "exports/bumper_ring.stl",
+      "sha256": "0316b091c84f753db51d4b1c8774ae7d29f4cdb42bd0bfa678a5e48d80909485",
+      "bytes": 144484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/camera_cradle.step",
+      "sha256": "121c2b9672d4047fe8ab14107f22f9d14a0df189dafa9e1b8d219143d065ebe1",
+      "bytes": 58089,
+      "format": "step"
+    },
+    {
+      "path": "exports/camera_cradle.stl",
+      "sha256": "4be44fc8d43a47fa690fa4897f20aa7ee33ad534533a43152a1ba9c2ae4ce097",
+      "bytes": 65884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/cartridge_body.step",
+      "sha256": "06cce459d74bbf42484713d2194525f1264fb377b14235dfc23569556397610c",
+      "bytes": 1215219,
+      "format": "step"
+    },
+    {
+      "path": "exports/cartridge_body.stl",
+      "sha256": "1a85a0d29771a4d97fdb2ca31c85c7943a855ab3a8c5f1de333b55ff1f4f805e",
+      "bytes": 1300384,
+      "format": "stl"
+    },
+    {
+      "path": "exports/chassis.step",
+      "sha256": "45a2721a41fb7a19f5f9f529812d8b7f78b175b0c8ac8e725452500a3ebe08ef",
+      "bytes": 278514,
+      "format": "step"
+    },
+    {
+      "path": "exports/chassis.stl",
+      "sha256": "16a7fb628b027bbb2799badfe642dbab6fd6de70ebc938a3fa0dc0d80a57c296",
+      "bytes": 729684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/cradle.step",
+      "sha256": "41bf923537ba2811e74f684006004cdcf474c073553ed0f0e40c4759a77aee29",
+      "bytes": 394674,
+      "format": "step"
+    },
+    {
+      "path": "exports/cradle.stl",
+      "sha256": "c712da4a0a3324cc4bb42df90b2923f6a850cb2f725153f01793df8cbd0bc377",
+      "bytes": 317684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/dial.step",
+      "sha256": "15a47b2d14d510f864393bc7662b4365f4ec51a0401f115aacb14f04066b8756",
+      "bytes": 234253,
+      "format": "step"
+    },
+    {
+      "path": "exports/dial.stl",
+      "sha256": "8e82aacb176b2742ef2b02421fb7aab36ff65de53b997b879072983feb86b33f",
+      "bytes": 131084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/electronics_bay.step",
+      "sha256": "18d71e8e62a02fcaf6454cd28bd028d3c24f8f5b414464c8aea0060b3114cea9",
+      "bytes": 75287,
+      "format": "step"
+    },
+    {
+      "path": "exports/electronics_bay.stl",
+      "sha256": "4c7ea9cfdaf10e3372ec76e1b1ad6757bddd0aff05a66ba772e5a0aa53951a54",
+      "bytes": 169484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/face.step",
+      "sha256": "95b2f4e82876664ac39bcee119d9ce0bb2b33fd3d580de8753291f61358b3690",
+      "bytes": 69397,
+      "format": "step"
+    },
+    {
+      "path": "exports/face.stl",
+      "sha256": "7f166e76bdd1d9ef82b353bd94cea37a74de0093fc9d090f533914526d33b686",
+      "bytes": 191484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/flywheel.step",
+      "sha256": "c7ce9788d97e87970db02d25087275fe33334c69a9c7bf20b13f486b31337c98",
+      "bytes": 96450,
+      "format": "step"
+    },
+    {
+      "path": "exports/flywheel.stl",
+      "sha256": "03b69d286e5e448134a904dbffa39c1efb9d5cfed926adaf7304327e3660b21a",
+      "bytes": 239984,
+      "format": "stl"
+    },
+    {
+      "path": "exports/flywheel_tyre.step",
+      "sha256": "2def9b9506caca5feec9dcddae782ffa4dbcb419e855babb3ec8162343235b80",
+      "bytes": 9355,
+      "format": "step"
+    },
+    {
+      "path": "exports/flywheel_tyre.stl",
+      "sha256": "e1a6dd3005f0c50ce4ff80516e4fb1bd5a55ab5a39745acb7fffcc64447d5072",
+      "bytes": 42084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/head_saddle.step",
+      "sha256": "4c06394d8299fe7a2d91b6211228a3b44d14ed9abdcda9fda32184aea7cbb77c",
+      "bytes": 160274,
+      "format": "step"
+    },
+    {
+      "path": "exports/head_saddle.stl",
+      "sha256": "24c69eb96dc35e1887bc2d2a5ed0822eb9521d8abac29c9689e99eee0832f776",
+      "bytes": 401684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/hip_motor_plate.step",
+      "sha256": "59737cad0ca9c664f88ef321ad6c11ff4547d6bcc260bebe1922e523ba82169a",
+      "bytes": 199859,
+      "format": "step"
+    },
+    {
+      "path": "exports/hip_motor_plate.stl",
+      "sha256": "f017b9cb40bad7ee95b27532a1ca50c0c646ea0e1c675e1e472357e56f292cb5",
+      "bytes": 638884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/hip_output_adapter.step",
+      "sha256": "e340a58b7a47210e5d0a88ac2fc7c9b7198ac02a40413da8778a4433a1583ec1",
+      "bytes": 320228,
+      "format": "step"
+    },
+    {
+      "path": "exports/hip_output_adapter.stl",
+      "sha256": "0efe0de49c99a5e23784186f5d81e76d6633ee807e584c024af477210151800d",
+      "bytes": 640484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/hopper.step",
+      "sha256": "00cde4b43b54c07ce72fe35dfb06eb1fea13ac0e0eef34dd77cf709adaa2746b",
+      "bytes": 126156,
+      "format": "step"
+    },
+    {
+      "path": "exports/hopper.stl",
+      "sha256": "cd06355cb2f615585a6b1c74698269144baf94a53d9e9b4583e3ffe8ac2b09de",
+      "bytes": 195284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/hopper_flap.step",
+      "sha256": "16243222a75eeaefd7e8a06f78570863b38c7b3974b892b72a26b94eb5531c0c",
+      "bytes": 31332,
+      "format": "step"
+    },
+    {
+      "path": "exports/hopper_flap.stl",
+      "sha256": "fdada2d6f1a93d549ad53f65fdf8db3b751306f091596c407352d9e638228edf",
+      "bytes": 54484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/hopper_lid.step",
+      "sha256": "fc1eb62874db5ad948d72b963d7fe6bfdcd3c206cf6c10ccc72d33d844da855d",
+      "bytes": 303859,
+      "format": "step"
+    },
+    {
+      "path": "exports/hopper_lid.stl",
+      "sha256": "8f62639ae7f06cfde5879e982d3fec93704e159bfc13cf2e3f28e6d2fde392ae",
+      "bytes": 140584,
+      "format": "stl"
+    },
+    {
+      "path": "exports/knee_crank.step",
+      "sha256": "1e6fe8505ed4a65972ab9a577104ac5563aa6adf65e0a6b589268abc65aa83f7",
+      "bytes": 76123,
+      "format": "step"
+    },
+    {
+      "path": "exports/knee_crank.stl",
+      "sha256": "0b08f0a4f2cd5af8beb8e513fb5e48cc40e7e7d7949230b9f782984754306a52",
+      "bytes": 261684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/knee_motor_plate.step",
+      "sha256": "2f505b678431b446bedd6955e66a6694f82b341c0029a975001a55160428d269",
+      "bytes": 199750,
+      "format": "step"
+    },
+    {
+      "path": "exports/knee_motor_plate.stl",
+      "sha256": "00a896a83842a6eaee2e82f9d1240cb61f8b04b7f5c40b4565437a1117e5e5a0",
+      "bytes": 638884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/knee_output_adapter.step",
+      "sha256": "b6c64eef1ee48d1c4560269908945313bf47385dafcd329e0c48d655bd2cbb69",
+      "bytes": 320215,
+      "format": "step"
+    },
+    {
+      "path": "exports/knee_output_adapter.stl",
+      "sha256": "a7d1636d367998bc3c6f16e341d634ddc50cb253ec8580d18bfe1fb94ee112e1",
+      "bytes": 640484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/laser_mount.step",
+      "sha256": "d8f849e2d5579b3ca75ac3288825f28e0dbda56d25a609d47b15c3e805a2fb6b",
+      "bytes": 96875,
+      "format": "step"
+    },
+    {
+      "path": "exports/laser_mount.stl",
+      "sha256": "dfb28002489a9aae263950bad614dc8045c66b0975c322fbde68c16474503f91",
+      "bytes": 155284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/leg/apex_spacer.step",
+      "sha256": "3db8d396776cd7624e206f1b4a48827ff2f36c9efabf365e39a32c54925359c3",
+      "bytes": 10631,
+      "format": "step"
+    },
+    {
+      "path": "exports/leg/apex_spacer.stl",
+      "sha256": "d5390645981dcf2852ef1552bd0017b07ae965c939e91b69c1df11950cba1255",
+      "bytes": 42084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/leg/cnc/output_adapter.step",
+      "sha256": "f31754b45d253ba6e3ca57cca5a7454bc7ae26b7f03080fcfe5a7d47df3ddca1",
+      "bytes": 255017,
+      "format": "step"
+    },
+    {
+      "path": "exports/leg/cnc/output_adapter.stl",
+      "sha256": "9bfc751e66a3b52ebe9c0ea7ab95d228a1922db1dc33e4f26e1af92259e73434",
+      "bytes": 881284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/leg/front_link.step",
+      "sha256": "91c14b71da3407dc79295ee5139739b9d83da5c7a8c55278aaed812984e4c8d3",
+      "bytes": 378322,
+      "format": "step"
+    },
+    {
+      "path": "exports/leg/front_link.stl",
+      "sha256": "10f37b736a52b2a165123afbf646ad6f93fdd77e8f42527e0b6c84663ecc12a1",
+      "bytes": 323484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/leg/hip_frame.step",
+      "sha256": "a6bb3354a5db321fda14fe9a747c19d25eb063a0ec03a7445ee1c3b7d83e1811",
+      "bytes": 746354,
+      "format": "step"
+    },
+    {
+      "path": "exports/leg/hip_frame.stl",
+      "sha256": "88e91b4fdbad02a0295385281a784abd6bbc8dbeb9217264e371fd895c64ce3e",
+      "bytes": 1372484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/leg/leg_stand.step",
+      "sha256": "466ffb893bd91896ea87874bc6b9cf8b47108fe29d0d014b880749ab5d155ac6",
+      "bytes": 4842223,
+      "format": "step"
+    },
+    {
+      "path": "exports/leg/stop_sleeve.step",
+      "sha256": "73aa357996855264bd58a9f84eb4c160cee06808ce6349853443ea7652672ba8",
+      "bytes": 10276,
+      "format": "step"
+    },
+    {
+      "path": "exports/leg/stop_sleeve.stl",
+      "sha256": "adb83a540176f5dfefffeb3e167693f31c18a3dc7f95e26ca0a0b369b355b201",
+      "bytes": 41884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/leg/upper_link.step",
+      "sha256": "896046c2e9c03379cb3cb09ac542ae6b884f26c5fd8a0c7221429a1a82dee2c6",
+      "bytes": 566962,
+      "format": "step"
+    },
+    {
+      "path": "exports/leg/upper_link.stl",
+      "sha256": "94f1c7beb19257ced968515aadfaae580007278b42666f26753502cde1e027a4",
+      "bytes": 632284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/leg/wheel_link.step",
+      "sha256": "cdbf2e9e8368badcae1f1aae2d9a7caa8aa8995c0d7c78730697093a33942310",
+      "bytes": 299679,
+      "format": "step"
+    },
+    {
+      "path": "exports/leg/wheel_link.stl",
+      "sha256": "b2c66d420c48e11e453e2789f4c2fbaab01653384f3fc4e7a13e0016cc6c9c4f",
+      "bytes": 470384,
+      "format": "stl"
+    },
+    {
+      "path": "exports/lidar_guard.step",
+      "sha256": "3b75fa025f219a7dd0d7936ea530f717da9feedc6de3885d0d12b59686f83ae9",
+      "bytes": 23292,
+      "format": "step"
+    },
+    {
+      "path": "exports/lidar_guard.stl",
+      "sha256": "fa8089c8dc6f5fb343dd91cc793a6b714cf247bcf2ae57b451d6d1faccb3dee4",
+      "bytes": 105084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/lidar_hanger.step",
+      "sha256": "39c1867efa8e2279f052498678a2adc360de1d35ba58121249a5b9766aa0eed7",
+      "bytes": 50832,
+      "format": "step"
+    },
+    {
+      "path": "exports/lidar_hanger.stl",
+      "sha256": "c44d11772518cb6c3d38c8859b54f46253e60cc509056330611cc231d454e220",
+      "bytes": 168884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/barrel.stl",
+      "sha256": "bd495114fe5b38a47df30451523470b9229e94edfc7d66ad49c489699859ef59",
+      "bytes": 96084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/battery_cradle.stl",
+      "sha256": "b4e8820c6153401f2efd49f0797a36d5d5fe3726b67ef114d10640cd705f7992",
+      "bytes": 4684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/bumper_ring.stl",
+      "sha256": "3a4ed7a1986924b51c555ef00e898867005dea90879d7ac0f31ecd4a0bc94bf3",
+      "bytes": 58684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/camera_cradle_front.stl",
+      "sha256": "1c3710e2f377b77f969272586a07d16c2e37541f2bf1b7ea93691bcb74715896",
+      "bytes": 28084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/camera_cradle_rear.stl",
+      "sha256": "8942f86ed19ab70bbba40ad0481db44f684194ed2075db7fb19944612faed538",
+      "bytes": 10884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/cartridge_body.stl",
+      "sha256": "0d70366625a800f7afd1263eb7f8d50da89a2487055531f9d385890d7001f964",
+      "bytes": 417584,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/chassis.stl",
+      "sha256": "fa18b95bcd9965471089267fbc43bded7229064ee00ed7c0cde242af35eba81c",
+      "bytes": 300284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/cradle.stl",
+      "sha256": "e01ce6c3a6d8382fc2893894b91ebb6de653c5a5e02885261d3b425bb6242eb7",
+      "bytes": 138884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/dial.stl",
+      "sha256": "26d5811959afc7fb37c5b617160840da25226920d488b11b02b8b0e36fb045bf",
+      "bytes": 57484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/electronics_bay.stl",
+      "sha256": "b920412df82cd7faa70a0e6b7266d311be5d7bd9c7ae079a1a27deaf8a6988bb",
+      "bytes": 68684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/face.stl",
+      "sha256": "19968e25f54ff8536cd5600fc773085533e6c0673a9ded7f376124ca8859d600",
+      "bytes": 77884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/flywheel_1.stl",
+      "sha256": "6964f3864e7abe2cdabfe4d6b75b7f070b93bd0d66778100c8bdc34c61b5e0e2",
+      "bytes": 96884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/flywheel_2.stl",
+      "sha256": "10c1f8304d89dc89a657be8492152947faef53b56bf902544a520feaf1bd6cf9",
+      "bytes": 96884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/flywheel_tyre_1.stl",
+      "sha256": "0422e215e47995a8c0109b64a388ed4c380136cacf3cb956fc2736b64c8f1f57",
+      "bytes": 16884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/flywheel_tyre_2.stl",
+      "sha256": "77beaf301454f54c09fe64f99109694d266c11bfbe9038362cf7b9ae31925afc",
+      "bytes": 16884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/head_saddle.stl",
+      "sha256": "f308582edcc4efbbf80a0be3b3345623e40115a6e5ec6b29064f2c63a3bf5a3b",
+      "bytes": 164084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/hip_motor_plate.stl",
+      "sha256": "6f8aac884a4173d77ecb8b42195a1406ebec2afa75122aa62986796e7db3c922",
+      "bytes": 258884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/hip_output_adapter.stl",
+      "sha256": "ffe33ed4d19407e9417098e87a3e12f5495e83b99ff52046fc188773dfb79ce5",
+      "bytes": 264684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/hopper.stl",
+      "sha256": "08fcb0f057c9b276b702330ea38c402cebf446a7e46455f13aeb87cad9d48e17",
+      "bytes": 79484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/hopper_flap.stl",
+      "sha256": "5dd963d914c4ef259b57a389cb6219ac6e5184d83e4ada3c3144c0ad141c1df8",
+      "bytes": 22484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/hopper_lid.stl",
+      "sha256": "2ea0bec2a1be3bd61000b2cf8d9a7948b7959202ec09b2e82283eaf7d480cf8c",
+      "bytes": 65084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/knee_crank.stl",
+      "sha256": "2a943990fcd7ac37a56ef6a07a99e3ba1abd7159d91a317c3d231639b969aac6",
+      "bytes": 105884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/knee_motor_plate.stl",
+      "sha256": "fa3e3f3bfbcd43bc37edcd2e285498954c0d2b7b33f873942b08ffdc3f0ae357",
+      "bytes": 258884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/knee_output_adapter.stl",
+      "sha256": "a9d67295f77216c5be29b4f017bb455cc419f96f2201db8a60e7bcec7333186a",
+      "bytes": 264684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/laser_mount.stl",
+      "sha256": "63791fd18fbd1ececbef2008d5c82ce13ae697f94e361b6cc5b3499e15f61c94",
+      "bytes": 65084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/lidar_guard.stl",
+      "sha256": "08a50d9cb685ea3a0357e301589834089653113a9379b0e933e3891a17c382cd",
+      "bytes": 42084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/lidar_hanger.stl",
+      "sha256": "502ac24a040ee1e61065efa8730a3779ca4fb21d4363af0751951925ef55adcd",
+      "bytes": 68484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/pan_base.stl",
+      "sha256": "b5b3d40e5c09b9bc984cccdc65506e62aeabb5f08560442915d160336d244273",
+      "bytes": 320584,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/pan_clamp.stl",
+      "sha256": "6c5a52a452f7d7d2382bafb9fd72ca69e39a0cf976e8e54cd8ea6b15f8459274",
+      "bytes": 51884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/pan_pinion.stl",
+      "sha256": "b93ec43d2623ecd7878b4b00b9443b4c4a3ca470294bc0268efc3db067b43d83",
+      "bytes": 122684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/pan_ring.stl",
+      "sha256": "c353d80cb0bb254d2ee8a8bcb70afc50180d933cdc68afe71038a17f6a2d2462",
+      "bytes": 265884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/posts.stl",
+      "sha256": "b8942896f8221cdd32f7886960d1f7f2aaa41ee66a02d8b96f9a49d894323dff",
+      "bytes": 24684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/pushrod.stl",
+      "sha256": "7fece94aa17c18149bc83c2d831044f2629635a582c223b4049a4c0354001a58",
+      "bytes": 41884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/shin.stl",
+      "sha256": "98d8baf9c393c56b450ba7049b9e38479ff1820ba46278cb570f59bcd13b6743",
+      "bytes": 160184,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/thigh.stl",
+      "sha256": "d127ed109694bb9fe2c4e2e4b975b8c6a79d1ddc19b0b6510a11111f8b70e6ef",
+      "bytes": 177684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/tilt_yoke.stl",
+      "sha256": "58ba9f3467278a06d4cc5aa2ac4c81e223490fd13154fd9cb3a496d03adb4d2d",
+      "bytes": 173484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/wheel.stl",
+      "sha256": "7dbfc6d84aa2321a27f8ee2bfe26785f819508e3f6573314fec9abae07ee509c",
+      "bytes": 25084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/wheel_adapter.stl",
+      "sha256": "12440ecac4ca01cf5945c7430898706de10214cd71e6d243dd783f4265abd596",
+      "bytes": 169384,
+      "format": "stl"
+    },
+    {
+      "path": "exports/links/yoke_bracket.stl",
+      "sha256": "afeb48289a37dd2209709451dd542ee86d64c0d9b64f29a132d1901f9d683487",
+      "bytes": 137284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/pan_base.step",
+      "sha256": "acd3484e7a414a3f042b6f0b3ae8d3aef67c654aa76db508fb0aaf24c4db301f",
+      "bytes": 1287426,
+      "format": "step"
+    },
+    {
+      "path": "exports/pan_base.stl",
+      "sha256": "f67d0d597788d14be8f325610ea79856813b14b5dc424e01800a41b7b5c51278",
+      "bytes": 707784,
+      "format": "stl"
+    },
+    {
+      "path": "exports/pan_clamp.step",
+      "sha256": "487a5cff208022469891f642cea9d26ee5345605b7d7eac6db10a16354c76dd5",
+      "bytes": 85851,
+      "format": "step"
+    },
+    {
+      "path": "exports/pan_clamp.stl",
+      "sha256": "2ee43123a69a36d669cd4b3a5bea2ff1da793b99360d3b07f48c742b07de3f86",
+      "bytes": 124684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/pan_pinion.step",
+      "sha256": "3fac90f131ad3e00d1f98dcba866d733e43b0b39ac5d6df265d085906504fd1e",
+      "bytes": 1446828,
+      "format": "step"
+    },
+    {
+      "path": "exports/pan_pinion.stl",
+      "sha256": "18a7f6cab1a7537da9428185fc25248d093a9294739eacb87c381a3cdaa42c6e",
+      "bytes": 198284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/pan_ring.step",
+      "sha256": "037231c4ea965f2413fa00a8f5dbb6361dc3c817bf771485a527d5dde3b01ffd",
+      "bytes": 3852292,
+      "format": "step"
+    },
+    {
+      "path": "exports/pan_ring.stl",
+      "sha256": "882fb66602e871f4c16de9465566e3804d85b6a3c79765ac7e7adac8d8f2f5ff",
+      "bytes": 379284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/ballast_spacer.step",
+      "sha256": "9497c2c070ab6888e6cd91b8f1ced6aa98801099801790fa9ae72258553c372b",
+      "bytes": 10677,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/ballast_spacer.stl",
+      "sha256": "2bc1c888a4a26a3deec945f0c6bf17b5b0967f7d55a9108f89dd6311bf3aa0f9",
+      "bytes": 42084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/bearing_disc.step",
+      "sha256": "adfb82becc673590499617c25fb31062fb6f884a62a904360b74703118b21577",
+      "bytes": 10598,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/bearing_disc.stl",
+      "sha256": "9b9a7894615b8e9b73f93e2330b9e0d6de769815c219800324502079a2eaa583",
+      "bytes": 42084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/coupon_apex_eye_m01.step",
+      "sha256": "f9a88e9f8a6046756f466560279d22a803f9ea68bc036cb858527dbf4daf3157",
+      "bytes": 182743,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/coupon_apex_eye_m01.stl",
+      "sha256": "8d683efe461de10b47547653e8ac7cfe576a03d41ed2880ad4ca1ba9999c8fab",
+      "bytes": 166884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/coupon_apex_eye_nom.step",
+      "sha256": "c9c28fc82bb78a78df76939107086761521ee4958970d69f585b5c04c1b1d7b9",
+      "bytes": 116439,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/coupon_apex_eye_nom.stl",
+      "sha256": "3891e3bed19d891f2f8f4befbfa6c24ca2977f7252d84fd55a95db761223ecec",
+      "bytes": 156184,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/coupon_apex_eye_p01.step",
+      "sha256": "eca2f74ce7f0c853946fbf17a9565f239061686c5660302dcbb1e0e9a8ddf108",
+      "bytes": 214956,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/coupon_apex_eye_p01.stl",
+      "sha256": "30e66bb21a3051781ac8d37e733e0e8835218f63c90334bc934db5f08e392549",
+      "bytes": 168484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/coupon_frame_ring_m01.step",
+      "sha256": "0d937c802679e6ca81862ef43afcf4fd45d86a90649470c932e64feb7fc37757",
+      "bytes": 187516,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/coupon_frame_ring_m01.stl",
+      "sha256": "4815e55690d11d14ccf5b915fb1a05c2e350e5fa9b321611b263ebfe2291469f",
+      "bytes": 187884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/coupon_frame_ring_nom.step",
+      "sha256": "c4e87682211aab971db87ce7e0c40e17b3df7f65ba861682f53587fc547101c0",
+      "bytes": 184957,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/coupon_frame_ring_nom.stl",
+      "sha256": "951b22e727d23befee56fd63fab25e84cc1472af7a605ff8e508b7cc1f4c9837",
+      "bytes": 431584,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/coupon_frame_ring_p01.step",
+      "sha256": "85a00912324f2f1e2ae45ceb2ce590b2ecc919b939f980e48d4a1badf073b290",
+      "bytes": 219734,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/coupon_frame_ring_p01.stl",
+      "sha256": "c5c5042f669a8db0fbf3cf966cb24cdfa53e3f9ce9a8e34c410796f457996326",
+      "bytes": 189484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/coupon_hub_face_m01.step",
+      "sha256": "f5c35d1405362b1b9ad8617ea34fec60d8e29caf6c2eeac316be1c19bad2a6fc",
+      "bytes": 239485,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/coupon_hub_face_m01.stl",
+      "sha256": "51cf02a6c3db4120982ea8fa6ed60dd2847668468ba2f19a2953ee4a7831547d",
+      "bytes": 345684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/coupon_hub_face_nom.step",
+      "sha256": "7283bcd52ce4b6cf444bf512298e6ad934cfeb72b82e5654ca597ab108f10ab4",
+      "bytes": 172908,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/coupon_hub_face_nom.stl",
+      "sha256": "1af993a0c758390ba099b25b66291c09ede84f79b5c860a7965f8c6dc5258f43",
+      "bytes": 335184,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/coupon_hub_face_p01.step",
+      "sha256": "33c9e17b7d8327a32aa5a10dffbd836c5b7b7932645b361d15d5521a3802acd4",
+      "bytes": 271302,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/coupon_hub_face_p01.stl",
+      "sha256": "bdd6cff8b25fa9c4f1057de4082d6366523dabdc33c2abd1543e1c703d6e5a53",
+      "bytes": 347284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/coupon_hub_stub_m01.step",
+      "sha256": "b53b15e97431e36273904f9823e20b534ab4a571fd206a536f9145d707045635",
+      "bytes": 154994,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/coupon_hub_stub_m01.stl",
+      "sha256": "b11fc83dec93d8bdc21e06a834bddc6c7202d9e7f1abd0bd53ac115ed09d9edf",
+      "bytes": 222884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/coupon_hub_stub_nom.step",
+      "sha256": "1e7b8e9d0a34b036744dace59306a4bda05917293bca5a2fee95ce583a555f30",
+      "bytes": 92658,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/coupon_hub_stub_nom.stl",
+      "sha256": "cb9000bed15bf80737b86414eb709953f5818179efab050bdb4fa941597e834f",
+      "bytes": 211984,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/coupon_hub_stub_p01.step",
+      "sha256": "72dd690463425de3a44728bf7b621db51e0422d7c4a44ae207c3008369fefa15",
+      "bytes": 185196,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/coupon_hub_stub_p01.stl",
+      "sha256": "911590a56740db9355731331904cc2e6a233d2095a07b1774186bef7d908c32b",
+      "bytes": 224484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/coupon_knee_boss_m01.step",
+      "sha256": "7b12b3d0002d006d7b36f3d54a507bc1e5e6ae4727fd11a659053bed1cfb2498",
+      "bytes": 203255,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/coupon_knee_boss_m01.stl",
+      "sha256": "cf05e4f609198ab451affc8646de47026871a8c3aed1b948f779cb7aa60af483",
+      "bytes": 160984,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/coupon_knee_boss_nom.step",
+      "sha256": "a0a3efcd3a7c57892ace5a910c0d86309f6210c6a792f0fd55f1514a126f3c93",
+      "bytes": 136584,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/coupon_knee_boss_nom.stl",
+      "sha256": "b56f14ceb8781bc64d73572e3a9efa20f83419cdfda7dc8b5aa8fe0f12ea0c28",
+      "bytes": 150384,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/coupon_knee_boss_p01.step",
+      "sha256": "6658646e662691011df91231c5286ca33d256ead3d7950909d32e6cd5eb5382e",
+      "bytes": 235012,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/coupon_knee_boss_p01.stl",
+      "sha256": "89a53087969182621defd4f614f7ef7f8903389ae93141cdf5c6ce2fe1e675cb",
+      "bytes": 162584,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/coupon_knee_eye_m01.step",
+      "sha256": "38e38bb3eecb5dcc6eabf3300a0a3337d9ed44724782f1510b88a5c1ba90648e",
+      "bytes": 200503,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/coupon_knee_eye_m01.stl",
+      "sha256": "e811c5657b23b13a2c64d414bb22b1933915314e4fcb95486feda97f5426d373",
+      "bytes": 129284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/coupon_knee_eye_nom.step",
+      "sha256": "3326f4d31c701887429bd17fee7292e2d5196b980de0d327207fb3132b71d5c1",
+      "bytes": 133755,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/coupon_knee_eye_nom.stl",
+      "sha256": "b3367d8816ad08848afe54ec4ad100e9486514a9d1a94d3438f66d57832def1d",
+      "bytes": 118784,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/coupon_knee_eye_p01.step",
+      "sha256": "82ae8863040af1912b510784d5be32b5f1e86e8f20cbb8d0d282ed21a6a25a04",
+      "bytes": 232421,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/coupon_knee_eye_p01.stl",
+      "sha256": "36d4034b7ded0d5317c7d5b5b59e1cf5d312105422df08070efd7f8abc94cd39",
+      "bytes": 130884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/dyno_hub.step",
+      "sha256": "85a22f4f892e2479ff2cb3c080a81c4549c04e3e869932bd517e530e21941b60",
+      "bytes": 187880,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/dyno_hub.stl",
+      "sha256": "8a2b121d8eda9721ba87bb71c276e8ee31ffb4d1d98e77deb66acb598c80a08b",
+      "bytes": 488284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/dyno_lug_plate.step",
+      "sha256": "909255aefd03690f074c89a7c315d2475fadcec2d52dd1342e5df508222435a9",
+      "bytes": 205839,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/dyno_lug_plate.stl",
+      "sha256": "8fb63b4b207447fc4f5e6756e3d3bb6302dab047e1ae4d109d7902fd37e327c2",
+      "bytes": 383884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/dyno_spider.step",
+      "sha256": "3c132a6aaa1d57ffcd84878af59e9f5c376add64188accc33a82ded8329e28b9",
+      "bytes": 105043,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/dyno_spider.stl",
+      "sha256": "14193d2ccb386f06f9d423cfa484b1f0a9cc53d81c7838811ac877798ef6115d",
+      "bytes": 45084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/insert_coupon.step",
+      "sha256": "6b30d1923c98bb8f54e5c5afc661a5a3aef71adb46751ef3946ac44e7a664719",
+      "bytes": 47220,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/insert_coupon.stl",
+      "sha256": "cad16f88ddbccdf0f289b4f8caa4a6ab7a402a281aec2f43daa94ed98d638cfd",
+      "bytes": 148084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/press_base.step",
+      "sha256": "cf42f2b9a1bbeb72ca66e6e0bac1de87a61289ed9fdca86f6bd26841bc00bf92",
+      "bytes": 42591,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/press_base.stl",
+      "sha256": "71533327cf5302281c2b9aba025046a5d22d4eb1c647f695810eb8fafeeed202",
+      "bytes": 44084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/press_cage.step",
+      "sha256": "39238a2d607cba6f8b23fa989455f1be8e20d9b647a7c270e9133e3074607782",
+      "bytes": 53131,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/press_cage.stl",
+      "sha256": "30613cfd2270d2a1182b0a0fd66332faf074094b1718f6813f5b5a1d541dc85a",
+      "bytes": 86484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/press_slider.step",
+      "sha256": "318cc9c3dd7206333c48ba033752c87be6143064d2ba2f83f87f4f7bf89aade4",
+      "bytes": 32994,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/press_slider.stl",
+      "sha256": "a2dddf2859e0a00e8e57224b8ab3aa8e008ec6d5401a7a90fcb0688998c24a22",
+      "bytes": 22484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/puller_m5.step",
+      "sha256": "48b589ec0b958681c54e070b2737e5f26b1067c2a9a3e051242014bd7afc3bf8",
+      "bytes": 66455,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/puller_m5.stl",
+      "sha256": "b3d5dbf94ab082836806d74e76d187f45e736a841914a37e79a565eec0669d52",
+      "bytes": 86684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/puller_m8.step",
+      "sha256": "49faa59fe064747b8d1c9a3b1e972669b2014cdb84986dc208351c28634c8584",
+      "bytes": 66455,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/puller_m8.stl",
+      "sha256": "d3bdcffcfd2203cfa324dcfaecc52ee8ad22b1b66e09fad771b978277e6e275c",
+      "bytes": 86684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/sleeve_anvil.step",
+      "sha256": "1094c7c86d57dfc4018c007685fab825245d99abbc16c5853d5d03541359f345",
+      "bytes": 19312,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/sleeve_anvil.stl",
+      "sha256": "6d23418954089ae63504313367549d0e91058c1891a68b869a309ac2f04a1bf8",
+      "bytes": 21684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/sleeve_block.step",
+      "sha256": "586d91019fb624790adec79de93437918ddca009995a3680dfbaafae4d79c5f3",
+      "bytes": 26023,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/sleeve_block.stl",
+      "sha256": "2194fddceac3159a370684a8900e350953feb46167d3d62b67c5a8ab8d03706f",
+      "bytes": 22084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bench/tyre_cradle.step",
+      "sha256": "3e6bcb9a30a21d288b4c7a93d9a887925daab57f839b87e543691077fb6b0a75",
+      "bytes": 126077,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bench/tyre_cradle.stl",
+      "sha256": "063916236b4627b66c1fb19a32c4aaa021750721a30153b02fafe8c03d4ec49f",
+      "bytes": 233084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bumper_base.step",
+      "sha256": "ed654d9319c9efde4a604670096263d788908593496f1cb121245ef034be56af",
+      "bytes": 65535,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bumper_base.stl",
+      "sha256": "ab16b8dd0d777c020c474a50207955729a2d4187a2ce9a513c31494afd48ee23",
+      "bytes": 107484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bumper_cap.step",
+      "sha256": "75271273e0d469fdbf7978aa4728042d6b4fd031b4a31d2b9563bd26b61ea169",
+      "bytes": 46058,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bumper_cap.stl",
+      "sha256": "28800e09d349bdb042da571555543b0ef408995e0012c8df8f954900d26b01fa",
+      "bytes": 23084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/bumper_tpu.step",
+      "sha256": "f9fb14fb00c92f5aee5a1849322be8ceae0baca5bdd3ca4c758a17b2085c2728",
+      "bytes": 31913,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/bumper_tpu.stl",
+      "sha256": "00ad9eb1031eb9cdeee3267ddf5c1f2068591831e27bd398753e138a9c7ae759",
+      "bytes": 22284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/drop_bracket.step",
+      "sha256": "f74b2f979774fa90d13c2005d572105805e92843ef2b2b3404ad6fb7970d5510",
+      "bytes": 51936,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/drop_bracket.stl",
+      "sha256": "6db1624087c7ba0eaac313f070e0502cf9aef8f3e938fca9a23a4de4aa533105",
+      "bytes": 107084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/load_cell_mount.step",
+      "sha256": "65b45e26566e9491be553c970c2186765dd146e8c2b49bb8f544de37ca2baf26",
+      "bytes": 65455,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/load_cell_mount.stl",
+      "sha256": "f3aa9cea2d761340891fc2f8d022226fca469335180edeff7e214d53b5edefc9",
+      "bytes": 44884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/pendant_clip.step",
+      "sha256": "32b6687a0dd8e108d027cc6da37360b455f84183644fc97073512fc257ac14e1",
+      "bytes": 53394,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/pendant_clip.stl",
+      "sha256": "a60fd3b6582ce6bd0a78e40f6c0e0940e1558ffdc224bac50a5d0094a0afc456",
+      "bytes": 83684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/pod.step",
+      "sha256": "3c1e5a15a49daea1f19470dc01c79e0ca18fd8a32b6315e0472f0021fe606e38",
+      "bytes": 254286,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/pod.stl",
+      "sha256": "cda00017d4b765d24a5a6ff604b43e65fda3b10327610bd52868b398fcd1607c",
+      "bytes": 615184,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/pod_lid.step",
+      "sha256": "d09c04b43ea640a78811c14f0c012981effa1acebaa43c9ff2459899621b6c6f",
+      "bytes": 216649,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/pod_lid.stl",
+      "sha256": "8f0f222cbb189f05639cbceef6b75f118417c7496caaca4a089115dcf3c533bc",
+      "bytes": 208284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/sendcutsend/carriage_plate.step",
+      "sha256": "048b938d3b7ce7eb8f36c73015d07bc895696b756098277aa3d480671e1ac7ba",
+      "bytes": 170844,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/tof_arm.step",
+      "sha256": "7839e360df40746c5a974871fd2960750eb1eef7caf703ca6b9665b365fef380",
+      "bytes": 52259,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/tof_arm.stl",
+      "sha256": "df53f9a0cdd925314ba18ce744930bfc4fb7764a62936e7621dc3c44cc3d67f5",
+      "bytes": 85884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/tof_mount.step",
+      "sha256": "a655850dc2d4ebe8e4237a056f2c3cfe335f1efa144c7d34766afb118880540d",
+      "bytes": 72001,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/tof_mount.stl",
+      "sha256": "2a72928d67675b41e94bb6f4510235199d6a42a72a7548be211bd67c8718c42a",
+      "bytes": 128684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/rig/top_stop_bracket.step",
+      "sha256": "7173637d8438c95d9c9cc79cd588f722fcd060c6f8a0377152656b054945766c",
+      "bytes": 194586,
+      "format": "step"
+    },
+    {
+      "path": "exports/rig/top_stop_bracket.stl",
+      "sha256": "d755552f1e472c142a53c82c1fb61428b3028e2a32477fe2bba31fb4f1552b56",
+      "bytes": 177084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/shin.step",
+      "sha256": "89ff6aecc489388ef53a5b0aef7c9912ff6191d0d99749f23ce5b7b0ba4e3ffe",
+      "bytes": 202005,
+      "format": "step"
+    },
+    {
+      "path": "exports/shin.stl",
+      "sha256": "a6d4b55a25dfec375c692cd063d2b246847bc74e3dc70ea25018e548fb7d0bbf",
+      "bytes": 392884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/barrel.stl",
+      "sha256": "ccb797222e64719fb8ba4a67ab236e6f9ba3b88ede36926a88cc917961bcde31",
+      "bytes": 96784,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/base_board.stl",
+      "sha256": "a3fd2d3a202337f01b3b45ad035b560fcbde07ebac8910b048ed94873d82fa20",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/board_bay.stl",
+      "sha256": "a1143179e3d8708137c93474ea5cc2309958d5d587da2218c01602a31fca8357",
+      "bytes": 136084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/box_deck.stl",
+      "sha256": "161d66ebfe52e14776ee9dbf174be7e9345ac3388916ac904397ba94aca6e5f6",
+      "bytes": 416884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/bumper_ring.stl",
+      "sha256": "d047f52ed061d204c241c5b06187d9a5651237a9817604959e24ccbbe3f4e69d",
+      "bytes": 92084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/cartridge_board.stl",
+      "sha256": "498a5f4998fcf645e2ace580b27ea87d9401cfad08469a9ff7510c0fa99fdb1c",
+      "bytes": 1484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/cartridge_body.stl",
+      "sha256": "9a1d34898ff717811cf7cea503a2021afbfc3050a9f593b10c9bd9b277d9c1a5",
+      "bytes": 574884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/circlip_50.stl",
+      "sha256": "b508e2f7fd8fbbd2eb43ba5cd0ea1a16a4172d56dfb5cfe6173bf0c99dfed463",
+      "bytes": 22484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/cradle.stl",
+      "sha256": "9beef3e7480337e5a65388e70e2b1abd2a32d54b63db68a00b1d06e18d477c2e",
+      "bytes": 197084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/ct_thumbscrew.stl",
+      "sha256": "b6afd366a0817921d16407376f3385f894c57e83309a96514f20f11fac992523",
+      "bytes": 16684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/dial.stl",
+      "sha256": "d7678d8f21659f2474a40a8584a327c477b5a47095daa9629a9123c3f93c2c24",
+      "bytes": 124884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/dt_plug.stl",
+      "sha256": "28f1ca619c56d1be8e3155378579ded6e63a6557ac89683ce9f523cf291708d1",
+      "bytes": 1084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/dt_receptacle.stl",
+      "sha256": "ea238f2e0512a268f5fec8e7959a1c93ebedeccd49e5b3eba4a5170084f683d2",
+      "bytes": 2284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/esc_l.stl",
+      "sha256": "8cc013dd96e24cf12f67cd0db26cd21af1f8120954896c39c4fb4beaf3705036",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/esc_r.stl",
+      "sha256": "b60dbd3221adb253c7dc6f8ca51da6bbb939e93ce1a75c4aeb649cef2cd6f1c1",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/feed_motor.stl",
+      "sha256": "7443a0eebc78e5fc89dd3c154a0cf729bae5d5ffba8de08acf83722ec15f20d5",
+      "bytes": 20684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/flywheel.stl",
+      "sha256": "008485a6764b8cc74f0a723fdd0cd2c80e975c286f552916f66d357df3667d43",
+      "bytes": 29484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/flywheel_m.stl",
+      "sha256": "2b1306a3d0c7574cbe216ed0be5b48165441a3bde03cdf167cfd38e27d61f9ae",
+      "bytes": 29484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/flywheel_motor_l.stl",
+      "sha256": "a3fe9b333ef59308834a5811c50c9c2f34eec804b58b2c9b50a6f60fc65f12b0",
+      "bytes": 67084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/flywheel_motor_r.stl",
+      "sha256": "cc41c6d0e8b76f0744b45e70f5a1274d0b843a6fa48e07b2eaf6a961192e385b",
+      "bytes": 67084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/flywheel_tyre.stl",
+      "sha256": "81b7de92f418d2166793e0cabf3158a7ded5b1ecbb971efef1fb86db075f90c1",
+      "bytes": 16884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/flywheel_tyre_m.stl",
+      "sha256": "dd4ae79516757df63905d2ab566f04fb088adc4262cfcfa20303050a0d4838c9",
+      "bytes": 16884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/hall_switch.stl",
+      "sha256": "7080d0d027e32403a036b13a2aceafb31fd228a7bf2240c1e736a771d931d95a",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/hopper.stl",
+      "sha256": "c186e72d2244027a836e994fc72b2fe3c6ee769c696264f9bc21476f6aba2933",
+      "bytes": 85784,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/hopper_flap.stl",
+      "sha256": "b98ec37332d4c4c1d9ea151e63f818ea187115ed2ee8771529b90d01f0e2c7dd",
+      "bytes": 22484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/hopper_lid.stl",
+      "sha256": "067a2337a229d7910f234c7bc4e13e5f283b15833389a826a80e3250e83c84fb",
+      "bytes": 65084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/index_magnet.stl",
+      "sha256": "f5ddcf2fba3c9ca0f7325baa379425300e22c29b75bc97f6532f1813aa78997c",
+      "bytes": 8284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/intake_shroud.stl",
+      "sha256": "4d6f22a52f5536de610e77e2d629865396aa82b0e03733330818b5ce3c0bd038",
+      "bytes": 84384,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/j501_base.stl",
+      "sha256": "d862d1f3781a74c0917f2c49875eb578f3f16f4f24ea56c97481671c8f88e9a7",
+      "bytes": 1138384,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/j501_cover.stl",
+      "sha256": "c4fa8e8198d0333c3d25acc162aaddcf19a796a7f6509ede8ce292840fbbb201",
+      "bytes": 1117984,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/j501_front_no_gmsl.stl",
+      "sha256": "098642b2660d082687c179c9e985554c8e29ff37c3c6745130bb21d3ecfcb5fd",
+      "bytes": 461684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/j501_rear_io.stl",
+      "sha256": "d9a282f5b40cd8896f49077deec97aa06d600ec1b418b02ce45499b41b833057",
+      "bytes": 489584,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/j501_side_hatch.stl",
+      "sha256": "abcf1d6d13cded51e6598565851ffc87fd03b0cc07377033ab5a8a82469c9fe1",
+      "bytes": 42684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/laser.stl",
+      "sha256": "15d5be6c52708b35f2b9fcd02ba5775f2c766c72206935bbe1ac432f8f488d87",
+      "bytes": 8284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/laser_mount.stl",
+      "sha256": "f83f4497c8d433a018578775bc2d1bffb5065055d381bc73b3dfae88477ce6ab",
+      "bytes": 63884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/lid_screw_1.stl",
+      "sha256": "832162b6b6f36b4570fdbb775954c56c28effbacacb60fd948eeaccb3c433b7a",
+      "bytes": 16684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/lid_screw_2.stl",
+      "sha256": "d1c98538320db5d110a075cabc4ef9fb509734fb77114120e2afee11563fffaa",
+      "bytes": 16684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/lid_screw_3.stl",
+      "sha256": "c7c1b0d73caf4c30f6be8d8cfff068cbd134adb4921f3af72f8eebbfa7d804a7",
+      "bytes": 16684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/lid_screw_4.stl",
+      "sha256": "2f6659cf9d5b9d388dde05a9907c5082d504a8b7433c09e36321727d3356db1d",
+      "bytes": 16684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/pan_base.stl",
+      "sha256": "ab877ba91a4087ea0317df00d66cdb58b12bc3ed8e8a6416cf207e23ad950ab3",
+      "bytes": 530284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/pan_bearing.stl",
+      "sha256": "2b7c1b64479805bd0ccdf762b9ea931740b37a0dff2fb3a69dcb4dc88aaac756",
+      "bytes": 33684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/pan_bearing_inner.stl",
+      "sha256": "ab1341d036e0c77c6933671299369d005e4716bac1148a06bc9053e51fea51c3",
+      "bytes": 16884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/pan_clamp.stl",
+      "sha256": "10396706c9744d6a3c873fed90586f7226f991231fc355edf55bb07a35f6dca8",
+      "bytes": 83484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/pan_pinion.stl",
+      "sha256": "f774c4c22dce5e532063e2971ec10b49fb445e11a334ad595b1b1b6bb47dc9a1",
+      "bytes": 164684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/pan_ring.stl",
+      "sha256": "6e15e745ab0cd9ecae961e1bcd39fce99bac4a0b1346299a27326ef3db139160",
+      "bytes": 374084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/pan_servo.stl",
+      "sha256": "d06edde8996fd5a4ee27ac1ed9f572a0ebce96303865da36169f9bdc4e6e18c1",
+      "bytes": 20684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/pan_spacer.stl",
+      "sha256": "eff3d312665bf4d19e100a0f435539a7a9a24fbd085fc6e7d575d8dcbf8da326",
+      "bytes": 25284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/pod_cover.stl",
+      "sha256": "f335d57582c93d2a95eb1e58d941a57106b2078b5c9ccc2433306e8d1e2a69ef",
+      "bytes": 77484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/pod_fuse.stl",
+      "sha256": "1a147c5a073346fcc61edacc5e5d5fa4bec6bfdd42d5458caf22cad00faf59c1",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/pod_pendant.stl",
+      "sha256": "98528294fed572fef0bfd346387994c7244504236f337484107d0c63fc0d23bd",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/pod_switch.stl",
+      "sha256": "38daaf8858270514ef692a3ede3ba11fb827747055e5a3eaf94a60ab0931cc72",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/pod_usb.stl",
+      "sha256": "ef54bbbd2b51b3a632a6670fd07531d93604765dd010697b76ea81a72a72df20",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/pod_wago.stl",
+      "sha256": "d774d431dc1b30bcf1410fd9d2739d635e3d409eef939dd8d2350d307ea66f2a",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/pod_xt60.stl",
+      "sha256": "d24d7ddfb98f8795859f4a33e28e592484d9382224b83a75d7e4e4d10aed7f78",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/ring_carrier.stl",
+      "sha256": "fe08d981dc23c70d6eef77dff8feeca8bfc6c93e1e487ff21206e368de1f5bfb",
+      "bytes": 123284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/ring_coupling.stl",
+      "sha256": "aaef33940eb5d97757813adecf6a71a718ba24ea0a2b9924f30ebff984f30795",
+      "bytes": 16884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/ring_driver.stl",
+      "sha256": "a2db03ed31c262a4f9297b266e85411571b92981f71d6b6e2d0d30f42d140b52",
+      "bytes": 45284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/ring_leads_rotor.stl",
+      "sha256": "9357d35cca139908eabf6bcc2b2876bef549d522b801490e9c3c99b09e92139d",
+      "bytes": 17784,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/shoulder_screw.stl",
+      "sha256": "baef4002081cea195a727a662f0689b3c009b753a26d0c3ea1dcc5e9f14b4bae",
+      "bytes": 25084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/slip_ring.stl",
+      "sha256": "453519aa756e7adb6baac9a5391caa10b8ae297ff543673ddce092049136a27a",
+      "bytes": 16684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/slip_ring_rotor.stl",
+      "sha256": "908373c88117db4a7e5db884c73a6f96c72957d24b94d4171193a3d856de2bb7",
+      "bytes": 8284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/tilt_bearing.stl",
+      "sha256": "7eabd055ba8a4c6ffbe286fc04d3bdd78aca33b4feb6ef93582c0fe63860a450",
+      "bytes": 33684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/tilt_bearing_inner.stl",
+      "sha256": "248c0f3667ffaed17264e7a21bed144775fee56f165fd320b4f82779ffca5b53",
+      "bytes": 16884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/tilt_servo.stl",
+      "sha256": "fa578ec54f47861e5cd9170ac5be5df1832dc52183a61012bb0cef230604946b",
+      "bytes": 20684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/tilt_yoke.stl",
+      "sha256": "36c324a2ef44b2e208bb5d5eccff6312d3665664a30c548620dfada7eec5fd69",
+      "bytes": 251784,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/turret_box/turret_board.stl",
+      "sha256": "869bd5ba08b01bad5c56710062b511ba91b90c6a48cdec394bc40e193c7156a9",
+      "bytes": 69084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__adapter_f_l.stl",
+      "sha256": "2cd56998c321be35f9f75a8191bbc33903bd75ce5f74bc5906e19b7085c666c3",
+      "bytes": 227784,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__adapter_f_r_m.stl",
+      "sha256": "66e310f46f6f857928b61baa0afe0a682fa2e006f6343b28cde54302c80f4bc7",
+      "bytes": 227784,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__adapter_r_l.stl",
+      "sha256": "492252717b7aac7de9e9149076b65e74db882edc55731976d3b2c9d7e5a2a084",
+      "bytes": 227784,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__adapter_r_r_m.stl",
+      "sha256": "68a82f8f4a0c9d336b28eb9b62ec7d853cd099ebb07d66de3527641fac4327b6",
+      "bytes": 227784,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__battery.stl",
+      "sha256": "7e599299aab982edca57e4d78c0d75dc06ee06252a5dfeda381756843b198f56",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__camera_front.stl",
+      "sha256": "cbd27852f66375336bbab37d167348e468a15a6801cd737082548e7863b5af90",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__camera_rear.stl",
+      "sha256": "ccddcdf61f60f0537df6dd24c44cd04399e375893cb47f1bfb4348055b3a1b65",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__compute.stl",
+      "sha256": "13e15b430207bafc9bbf87fad13ed810b724d02e553d1ff07d748398b3693710",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__dcdc_12v.stl",
+      "sha256": "69d78f8c7c5c69931d8176e7d519974468150694801433d73884fdba7ffa921e",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__dcdc_compute.stl",
+      "sha256": "dd71b89e251948f1d0f34c37f8d7d9e0110aa274baeebcaffa066c7765b2127a",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__electronics_small.stl",
+      "sha256": "dc390d290eea357bd1e82de98325cdf81225269de9be62e91b925c7bcecdd3a6",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__eyes.stl",
+      "sha256": "f65fa29d0085249c6d45fe3ac58f9dcd94ef41be7d1ff83072414dd4e8d6c60d",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__fuse.stl",
+      "sha256": "439c681f90d5bf670a1c4f5f2e2a143da13b216bbdc274a6420921de8d4f5434",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__headlight_l.stl",
+      "sha256": "9ff90cdf8c63c07a7f1c355ce782f96635a5a589f7fa9b48c5ca65e733f46e92",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__headlight_r.stl",
+      "sha256": "d6bd3c52415583019a4b641fa4a1e5bde52eb080112972cbf78e5d44559bd576",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__hip_frame_l.stl",
+      "sha256": "095e7d351484dd8eb9cd7c49276468d6a42f7bffaa3cb96fdc25852cb36ec7a5",
+      "bytes": 519284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__hip_frame_r_m.stl",
+      "sha256": "6df3faa795a0764b213d991065f901953af241b718daac0ab76bff7830b7e1b6",
+      "bytes": 519284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__interim_body.stl",
+      "sha256": "094c327f646b1713f7603cd04cbf6a9b90c9d2e035c77f958457465b0d56954b",
+      "bytes": 61684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__lidar.stl",
+      "sha256": "2ba4ece05c2a81093a94b76643b464109010eece6fe123b9c5a0a0ee06f7b16a",
+      "bytes": 15284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__motor_driver_l.stl",
+      "sha256": "329693b5f2bc2abad607219e1137016ee85be416241b1fdda16189b37ca18569",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__motor_driver_r.stl",
+      "sha256": "93b75f473a9f51794439c6e19d6d00352b30589e44f2b592b6514ddf3ce82eee",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__motor_f_l.stl",
+      "sha256": "9dff6b5be5611b0bd35897070811107122b5d7dfb5c4aca363ac2233eaa98a53",
+      "bytes": 14284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__motor_f_r_m.stl",
+      "sha256": "5ee5240182fee3fa733ed7798038fec7b43ec4b659a5e81a9242ea8c41943fea",
+      "bytes": 14284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__motor_r_l.stl",
+      "sha256": "8a25cbf487f5b370a3a08b05cad14690cc4d32e39ab62e376530601aa7ae9365",
+      "bytes": 14284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__motor_r_r_m.stl",
+      "sha256": "b0e03826d813641c37a09241abbf6faa1be0b8c26dd2e9a34ab99ad35cf39315",
+      "bytes": 14284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__power_switch.stl",
+      "sha256": "e15d895964d62fa3644f6bbbca79b1802fa92c52a313f5e241b8d8f10a49f5cd",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__regen_clamp.stl",
+      "sha256": "f10586ea435172885511e3b29ba9e21d9c44b5543511767a82923a3dd5fac968",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__turret_bumper_ring_3.stl",
+      "sha256": "96592ca57c465c188b153da46d2a42cca344e863ee780fa5c1eb5b22481a5844",
+      "bytes": 50484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__turret_dt_plug_7.stl",
+      "sha256": "dfd592dd2fc1718cac7852140f621be898b97604e3cccf0888620c90bfb846de",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__turret_dt_receptacle_6.stl",
+      "sha256": "57da35a9ec9fcd2eb476c9acfd270047e30df4bde183a73902e3ab860c476928",
+      "bytes": 2284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__turret_pan_base_0.stl",
+      "sha256": "4c4fc9e0bcb140b8a9b47384fe37b87b8c2391bc2f5ccf538a2a5e1c8b8a7444",
+      "bytes": 284284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__turret_pan_bearing_5.stl",
+      "sha256": "b87163b3c33d0a8b2c748e72d825bdadaac5d7e19ce66c483a226b796408d50e",
+      "bytes": 14484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__turret_pan_clamp_1.stl",
+      "sha256": "46f28dadab3bc55cfb6a23c730aaa674f5aa88b60412acfb0c50c59126b1916e",
+      "bytes": 45084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__turret_pan_pinion_2.stl",
+      "sha256": "3a48908bc76a8f4c3c8c415f9604c0a87bcc389b838fb9d794a2a8d3a3f0b4af",
+      "bytes": 115484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/body__turret_pan_servo_4.stl",
+      "sha256": "3d5160661e183c5c77c555a017daaf4db6e5252bdf583468c8695dda72eb1e92",
+      "bytes": 7884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/link__front_link.stl",
+      "sha256": "079e4e57b43d65799b75404791586fbaf180b51b3b277d6f7374fd3c893260b1",
+      "bytes": 74784,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/link__front_link_m.stl",
+      "sha256": "718bfea4bc61a46cfbbf78ec0abb619104a11bc26bb1e72ffff962f5b62642f0",
+      "bytes": 74784,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/link__hub.stl",
+      "sha256": "f6a62ae5720cfb21763d5cdc8d9dc3c9e6075d10c667d9e6c4c7a61f494816e9",
+      "bytes": 21484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/link__hub_m.stl",
+      "sha256": "e76f19d249212eaa61c59f9e5f702948c6855a2166b0eb579205760d0c78d273",
+      "bytes": 21484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/link__tyre.stl",
+      "sha256": "f0b83ff589ddcd41f97ee2f4747a923cb306900b39cf9339104b025d4e53d42b",
+      "bytes": 14484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/link__tyre_m.stl",
+      "sha256": "c9d0b7dcbbbc56fe6c8464cb0b4ca5739e8ef28e5b5c77bc468f98561fe55957",
+      "bytes": 14484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/link__upper_link.stl",
+      "sha256": "78816e0aafb1c832b4839a9370cf780b20a46cb13eca7c6c94d41f4e61c11784",
+      "bytes": 86584,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/link__upper_link_m.stl",
+      "sha256": "d3f2c85c92f07609c297dd23159e03f79795d48f26f0d9b35304ef3a4ffe946a",
+      "bytes": 86584,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/link__wheel_link.stl",
+      "sha256": "40f5f626880d1b9a75d4b83cf644cdc7ea1446a51a0eb6180f5776db600349fd",
+      "bytes": 119384,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/link__wheel_link_m.stl",
+      "sha256": "24824b26f07b878da96cc1d707e131f19128c587aa6ddaa0215ad522e7656113",
+      "bytes": 119384,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__pan_0_pan_ring.stl",
+      "sha256": "b5e8a923c75d42eba5b53232b322d2c55591a02afdb8187f37e17139ede58157",
+      "bytes": 255084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__pan_1_tilt_yoke.stl",
+      "sha256": "63cb501658480181a79540ddb68500bda008dfc5a05da090ce99b0b29a16d214",
+      "bytes": 153084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__pan_2_tilt_servo.stl",
+      "sha256": "8751eab0bf419cb506b9ab9fd2823c33d350549b42edc603d4707c93a4e2cf3b",
+      "bytes": 7884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__pan_3_tilt_bearing.stl",
+      "sha256": "5807e1791d8775d6d7a7dc27aa428aa070698841fe5ede6ee5341a841a2c3e30",
+      "bytes": 14484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__tilt_0_cradle.stl",
+      "sha256": "442fe8bd90ba1f01978d680892da2c909eaf74e3d6d7b6be3198b2cdbeb7c1dd",
+      "bytes": 121684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__tilt_10_barrel.stl",
+      "sha256": "4a23f57de02fb5bcea890f0a84660955a3a2b3229da052f3cca76bb46614e4e5",
+      "bytes": 84684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__tilt_11_laser_mount.stl",
+      "sha256": "4ba3fdf36fc56567426827309c488b95dba48560959f134c7a2d175c8559eada",
+      "bytes": 57484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__tilt_12_flywheel_motor_l.stl",
+      "sha256": "42cefa00d6b3418e24071e1733b4f19aa1a9f69816505d496c9c4763468e7a83",
+      "bytes": 21484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__tilt_13_flywheel_motor_r.stl",
+      "sha256": "4de98557b3cc5c73632876c45a0cc68c7b95a184504937c2e8f5959d122e20bb",
+      "bytes": 21484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__tilt_14_esc_l.stl",
+      "sha256": "a79fa4565ca260bfe5c2853b0db22838b472825a9435a4965972ee164c26dd84",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__tilt_15_esc_r.stl",
+      "sha256": "4085a20fc15561bc9cb8d8f2c072d3e96b2fdb2ece40b07d4d8acd55474be6c9",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__tilt_16_feed_motor.stl",
+      "sha256": "c7fd09b4a9315f59cd887505b402390940bd6b3b207115e10d4de58f9876823d",
+      "bytes": 13084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__tilt_17_feed_esc.stl",
+      "sha256": "247dde028f7c205ca1ff5e6c5b3fdfd4aee4083392c0d11d9a1760462f1343ac",
+      "bytes": 684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__tilt_18_laser.stl",
+      "sha256": "d9fc447e6fa736dd58667ecb5faf3ef698aba8c57c951948dc40830d1aa0e529",
+      "bytes": 7084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__tilt_1_cartridge_body.stl",
+      "sha256": "5979e7ac9b611184861e2a66b9ff0530c044a5bb6a62888aebf239924179e975",
+      "bytes": 357384,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__tilt_2_flywheel.stl",
+      "sha256": "d4fd67dd503a5f9123c467407b19ba011cda3a21f3748b41dda2afe093bedc5d",
+      "bytes": 83284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__tilt_3_flywheel.stl",
+      "sha256": "ea07a282c852d682f475c72f539ae735eb0b398dc1b68502d30c3aa3fdb0f613",
+      "bytes": 83284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__tilt_4_flywheel_tyre.stl",
+      "sha256": "0aabbd31a5819cc01fe77ce5f274889275b867d64cfc6dddfa211355ac775684",
+      "bytes": 14484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__tilt_5_flywheel_tyre.stl",
+      "sha256": "8b416b1c034b656a47e331bcec81534099c8e234ec1e9ccb002c72c9d4976a2d",
+      "bytes": 14484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__tilt_6_dial.stl",
+      "sha256": "e3ccd52ad9525da28b1ebc16f299da7bd769eeadc097a722d39268a44701839f",
+      "bytes": 50284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__tilt_7_hopper.stl",
+      "sha256": "a5b6ca2b2eff2f207cc0880231afe28f326b3d2489b5387d87015163c452f583",
+      "bytes": 69284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__tilt_8_hopper_lid.stl",
+      "sha256": "5f49840b782f49e13063e8032a0429a3ca301b8125af192eaf3f75017504ccd9",
+      "bytes": 57884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/sim/v2/rig/turret__tilt_9_hopper_flap.stl",
+      "sha256": "1923b724afc68355cd2a6c4b6093a92f5460243dfd356568c1e308703ac035c8",
+      "bytes": 19484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/thigh.step",
+      "sha256": "14a47936c8f989af99dc8d4d4ff8881d0aa7fb15f40f68c607fd00fdaf920865",
+      "bytes": 164414,
+      "format": "step"
+    },
+    {
+      "path": "exports/thigh.stl",
+      "sha256": "3383e0371d2cf57cf676defb2fefe9da451a04b398689e9cc76cc29a1e196777",
+      "bytes": 442284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/tilt_yoke.step",
+      "sha256": "2e50bee98114982215e781d6974926b3d51d6c0f733a02c110a2718bda6e3c3e",
+      "bytes": 625647,
+      "format": "step"
+    },
+    {
+      "path": "exports/tilt_yoke.stl",
+      "sha256": "401e30a26e84f43424e80727e04281363ca2be38661cc216c91dd655fce2984b",
+      "bytes": 387284,
+      "format": "stl"
+    },
+    {
+      "path": "exports/turret/bench/stand_bottom.step",
+      "sha256": "42c339b2d194e4023e1f38f62982a096c3e291c34bb53213234a841a937d1640",
+      "bytes": 183915,
+      "format": "step"
+    },
+    {
+      "path": "exports/turret/bench/stand_bottom.stl",
+      "sha256": "8ca0c6d543e39de770adeff06034de333adaa63e14d69c5d0bc012cd57bd6b9d",
+      "bytes": 446684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/turret/bench/stand_box.step",
+      "sha256": "8b9f1137702432083a6baec2336344962f50eba7bb75a0e941ce89aeec123e43",
+      "bytes": 297980,
+      "format": "step"
+    },
+    {
+      "path": "exports/turret/bench/stand_box.stl",
+      "sha256": "6fd2dbd587d2c155f21c6695ddc51b8cd5c36c93262692559d0e89fe40b22c1b",
+      "bytes": 477884,
+      "format": "stl"
+    },
+    {
+      "path": "exports/turret/box/box_deck.step",
+      "sha256": "e3c0f645d73873669ac9f2a7235efea18d902919a7f5cb9143c915a39f968272",
+      "bytes": 475024,
+      "format": "step"
+    },
+    {
+      "path": "exports/turret/box/box_deck.stl",
+      "sha256": "2a1c861afd81020744ff8c5e03e27bcd218fb1e02e54715e4014c88e2e56f756",
+      "bytes": 1061684,
+      "format": "stl"
+    },
+    {
+      "path": "exports/turret/box/intake_shroud.step",
+      "sha256": "e8f7694296c46290ca83fe89d3e5b2f78d236e710fc08ee05728c7a27f8a2f25",
+      "bytes": 427162,
+      "format": "step"
+    },
+    {
+      "path": "exports/turret/box/intake_shroud.stl",
+      "sha256": "a2843b57b058297d2296cd6aebec47fa3fb386efd5dab45b1c825a86b155083e",
+      "bytes": 178484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/turret/box/pod_cover.step",
+      "sha256": "9d209036de16f3a12840dc48d73d3f7acb020c8dd66b13beb7905b7d81906966",
+      "bytes": 69702,
+      "format": "step"
+    },
+    {
+      "path": "exports/turret/box/pod_cover.stl",
+      "sha256": "a62f75f598176583cae3c66d125e1116a298e9087c94af613d8d3f8f4fdd7381",
+      "bytes": 191084,
+      "format": "stl"
+    },
+    {
+      "path": "exports/turret/print/barrel.3mf",
+      "sha256": "13c033c599249b659a7d3d130ddd92853bd42a3024e025ec198a5e44d0865856",
+      "bytes": 45888,
+      "format": "3mf"
+    },
+    {
+      "path": "exports/turret/print/board_bay.3mf",
+      "sha256": "8ea0ef259c5ab3738ae87713ecd41bf2d6b3f3f1fe0bcb4f0c54e37e45118cd7",
+      "bytes": 65277,
+      "format": "3mf"
+    },
+    {
+      "path": "exports/turret/print/cartridge_body.3mf",
+      "sha256": "778d0dc8ed27c577b74d6e79108643921dbcdfb7db900d723fee6a87d03c3be2",
+      "bytes": 362914,
+      "format": "3mf"
+    },
+    {
+      "path": "exports/turret/print/cradle.3mf",
+      "sha256": "5299e0b7c30557c5128ea58347443894fddc0b32e56c098a58241840b988d553",
+      "bytes": 90574,
+      "format": "3mf"
+    },
+    {
+      "path": "exports/turret/print/dial.3mf",
+      "sha256": "a6972f6deb72a76c450b41f53c14edf40fae81ce4d8670b9e4023fe9da89843c",
+      "bytes": 62138,
+      "format": "3mf"
+    },
+    {
+      "path": "exports/turret/print/flywheel.3mf",
+      "sha256": "808f821cfe7c502698c2abf02d4ff378658082f4f7567ba00d5c67a0c767ab91",
+      "bytes": 16247,
+      "format": "3mf"
+    },
+    {
+      "path": "exports/turret/print/flywheel_tyre.3mf",
+      "sha256": "a4b89dc3010b4277f6008be033c1d14bdefa9f4bf76538a7f51a40cbb753eed9",
+      "bytes": 8677,
+      "format": "3mf"
+    },
+    {
+      "path": "exports/turret/print/hopper.3mf",
+      "sha256": "9baeda6205e6c5c9274747a02296eed166e0a964a8b196a96dc0c15b298ea47f",
+      "bytes": 43856,
+      "format": "3mf"
+    },
+    {
+      "path": "exports/turret/print/hopper_lid.3mf",
+      "sha256": "803d418565c764d36c0641b2988aec5e1cb2671e5d3e2a2807a95e042ddbfe3f",
+      "bytes": 28185,
+      "format": "3mf"
+    },
+    {
+      "path": "exports/turret/print/laser_mount.3mf",
+      "sha256": "df1a11c0d0bd71dae965824a5ddb7c50998394ba0be0d09c4822061a80044af0",
+      "bytes": 32388,
+      "format": "3mf"
+    },
+    {
+      "path": "exports/turret/print/pan_base.3mf",
+      "sha256": "2afe6043a09b0268eee5ca370ccba583197292157440380d4cd1b86abc6922e6",
+      "bytes": 241730,
+      "format": "3mf"
+    },
+    {
+      "path": "exports/turret/print/pan_pinion.3mf",
+      "sha256": "b7879bf9f49c60b1ae399636bee1f7b20a45a7a9fc2ec1abf880c240188149ef",
+      "bytes": 58444,
+      "format": "3mf"
+    },
+    {
+      "path": "exports/turret/print/pan_ring.3mf",
+      "sha256": "d1923a85ff7918996a1957140828d54f0d4aa3deefa0cecbb74d75a2ce3c7815",
+      "bytes": 108598,
+      "format": "3mf"
+    },
+    {
+      "path": "exports/turret/print/pan_spacer.3mf",
+      "sha256": "65c68427e1fa5871734443c676564027ac3054083dd70a7d89f91c4b62b08df5",
+      "bytes": 13229,
+      "format": "3mf"
+    },
+    {
+      "path": "exports/turret/print/ring_carrier.3mf",
+      "sha256": "273536e36a7ce4c12db60bd3abc09e67c3830106b12df9050dd8102d8e812f46",
+      "bytes": 60471,
+      "format": "3mf"
+    },
+    {
+      "path": "exports/turret/print/ring_driver.3mf",
+      "sha256": "6bbf50749b3f2a5d8d6413ca65e66696ce0170155777da47e425ba821d88f19c",
+      "bytes": 20396,
+      "format": "3mf"
+    },
+    {
+      "path": "exports/turret/print/stand_bottom.3mf",
+      "sha256": "b05055301135322cce0ff7701ef69a368757d49347d53123858c9804d9d4b5b3",
+      "bytes": 84342,
+      "format": "3mf"
+    },
+    {
+      "path": "exports/turret/print/stand_box.3mf",
+      "sha256": "2ef5cfd17d550de6a03ef8e9b56f2be74e84d01f4bdc368fb74f039c356624dc",
+      "bytes": 93007,
+      "format": "3mf"
+    },
+    {
+      "path": "exports/turret/print/tilt_yoke.3mf",
+      "sha256": "ac1d865ad75db4e2f96d50c817a38e8f1668bcdb1577f80573b2c8323c35fc64",
+      "bytes": 111349,
+      "format": "3mf"
+    },
+    {
+      "path": "exports/wheel_adapter.step",
+      "sha256": "3af7fdd5b42ee619258e78a1a7e1993a6448518acd241d88c671bc5101ff6808",
+      "bytes": 126905,
+      "format": "step"
+    },
+    {
+      "path": "exports/wheel_adapter.stl",
+      "sha256": "e7cba4f4e44fd793876a910bc1b0bd881fc659a546314c033363720def695e89",
+      "bytes": 419484,
+      "format": "stl"
+    },
+    {
+      "path": "exports/yoke_bracket.step",
+      "sha256": "98987a26ecc3f9d0b359fd94518bfbede00b6885aeb60711dcdf2a8ad6473ee8",
+      "bytes": 131535,
+      "format": "step"
+    },
+    {
+      "path": "exports/yoke_bracket.stl",
+      "sha256": "2eae50ed6f29bb533872e3c14bec0617e92486d2d5eba36a1240ccbea9d499d8",
+      "bytes": 333084,
+      "format": "stl"
+    }
+  ]
+}

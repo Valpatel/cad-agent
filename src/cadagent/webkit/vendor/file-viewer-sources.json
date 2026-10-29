@@ -1,0 +1,64 @@
+{
+  "occt": {
+    "version": "0.0.23",
+    "repository": "https://github.com/kovacsv/occt-import-js",
+    "commit": "c2148e54b456b571238d35cac037d304053d64b2",
+    "occt_commit": "d2abb6d844231cb8f29be6894440874a4700e4a5",
+    "npm_integrity": "sha512-RFfYQXYFX5C1mB1Aywm0ShcUKzXOr/VzTnlzhBSDJOR6YCAPt1HYCzeXWg1vwwjn/cUxwqRNhhtf1dlewoZYCQ=="
+  },
+  "three": {
+    "tag": "r160",
+    "source": "https://github.com/mrdoob/three.js/tree/r160/examples/jsm",
+    "modifications": "Loader imports only: three points to the existing local r160 module; fflate points to the adjacent official vendored module.",
+    "upstream_sha256": {
+      "STLLoader.js": "896d006a48b8f125385a485ccae154dadee801a953f0b45ceffe7ddd8a29ca93",
+      "3MFLoader.js": "ab87d6b14e4bfd3290348c0d16a924d44aa44d555f720df9e9d5bd5389fa59ca",
+      "fflate.module.js": "5686c3d02432a47d8e31f16cabc2d725bbf4531a3abb37cc6fd00142256e3730"
+    }
+  },
+  "linkedom": {
+    "version": "0.18.12",
+    "source": "https://github.com/WebReflection/linkedom/tree/v0.18.12",
+    "npm_integrity": "sha512-jalJsOwIKuQJSeTvsgzPe9iJzyfVaEJiEXl+25EkKevsULHvMJzpNqwvj1jOESWdmgKDiXObyjOYwlUqG7wo1Q=="
+  },
+  "sha256": {
+    "occt-import-js/LICENSE_LGPL_21.txt": "e237fa56668030e928551ddd60f05df5fe957f75eab874bbd017e085ed722e7c",
+    "occt-import-js/OCCT_LGPL_EXCEPTION.txt": "04580a884ea6cea294402649ff7b5cbb167d47462d1340a4ed33e550db10a81b",
+    "occt-import-js/license.occt-import-js.txt": "7ffe1954587c77dfba1cf8eb9b2ea743671fa6e63f9e7a2f258119d42e14eefe",
+    "occt-import-js/license.occt.txt": "090f8eb6ba63e72887c1f89b009fb1656cfda02d83b6e9805b20468520a5d77f",
+    "occt-import-js/occt-import-js.js": "3fb44ce11d00611f9b3f3c5775d520ebab48930c1f08279b7b1316f05f0d3379",
+    "occt-import-js/occt-import-js.wasm": "33391fc9d94ea5c869a6718488bf0a9a464222bac9bdc764dfe1690cef281952",
+    "occt-import-js/source/CMakeLists.txt": "32fe2efc2edd25c158d452552d04031e6d5557f1f73e69b0f39ccfe6440bc48a",
+    "occt-import-js/source/README.md": "b865a1e6e14c6bac33673d820109be285fe7e40371399b36c4553af8941f92ed",
+    "occt-import-js/source/occt-import-js/example/main.cpp": "4388a538f3fe7bd8d521dae999a9569c4ec3beda2a4e00e8b7f839a9f786ad66",
+    "occt-import-js/source/occt-import-js/src/importer-brep.cpp": "28b71b76eb2e21a4c480914f2a76ef7ff456394e8bc08f4bc7690759a54de036",
+    "occt-import-js/source/occt-import-js/src/importer-brep.hpp": "bef4521e93e8c356eb77ef022145defbd564841e9a087127332592b3341c0fac",
+    "occt-import-js/source/occt-import-js/src/importer-iges.cpp": "188b7864986645c3bf564f785c0de71954ee1512341fdce51a2fc0c5cf3260b3",
+    "occt-import-js/source/occt-import-js/src/importer-iges.hpp": "7d233253ebd78e7b7e94834213d05b4e7a980549d42b03546073d50a37761a4c",
+    "occt-import-js/source/occt-import-js/src/importer-step.cpp": "d0ecf3affa12fee3575539b92ec0c47e2459950d0ba9376bf1eb5137afc0c4f8",
+    "occt-import-js/source/occt-import-js/src/importer-step.hpp": "19c94ffc9f63e6901934c8b93d3b426d827c912c1ca078b21eea3527a78eabe4",
+    "occt-import-js/source/occt-import-js/src/importer-utils.cpp": "01b52562e6095c3c34ca570012c2d6ce92f7c11499a161759517e1f6e6974b20",
+    "occt-import-js/source/occt-import-js/src/importer-utils.hpp": "14e4ba441e338fb029e8ca917e72d1df1135b3a1f6c525e504a7ec5f583acdf6",
+    "occt-import-js/source/occt-import-js/src/importer-xcaf.cpp": "1e290c3f5bf19e4e092252ccbe9fb0b05f5b45110df5c6dbebf7dfb7ab731a33",
+    "occt-import-js/source/occt-import-js/src/importer-xcaf.hpp": "2edcbe25ed4fcca16fe57d23df0250497168499dc3bca225e46a9769627ac0db",
+    "occt-import-js/source/occt-import-js/src/importer.cpp": "1bfabb2a8a29bd2a191758e2e0b65c5d38757621fe06487fb86549c2dd26e661",
+    "occt-import-js/source/occt-import-js/src/importer.hpp": "4167c8001ade0ba2657e6a80e891b09cd6f331843841738192b8e210a29c3931",
+    "occt-import-js/source/occt-import-js/src/js-interface.cpp": "f0937a2864074b969beff55522e272c386a4b6ea1628a542ee9cdbccd075e319",
+    "occt-import-js/source/occt-import-js/src/js-interface.hpp": "19986457c70bee8ac09d2d4b0e440448d6ab8692d4fa587418ca4260d84bd571",
+    "occt-import-js/source/package.json": "1d177284b7fe88c6673b918041a00883df933c3dd88603d4fd62a07b0c9a6eb8",
+    "occt-import-js/source/tools/build_native_win_debug.bat": "96b7d1c48666b5986a42e158e8b59923cd765fd87fec15e2f7768593329d6bfa",
+    "occt-import-js/source/tools/build_native_win_release.bat": "a71601a7f0e529b83e8f450ce48afee7f0a5c186c33334f4c7d72925b2c2dfae",
+    "occt-import-js/source/tools/build_wasm_win.bat": "a87f473e584289c3a027d7e7c164508db2c7eac19811978621991e452734e7f6",
+    "occt-import-js/source/tools/build_wasm_win_dist.bat": "7649ccb12e7452919cd849e2a32fc2c339a7efaac3f49da57329cb498c23f5d6",
+    "occt-import-js/source/tools/build_wasm_win_release.bat": "8b53f851e73665e21e15995d7c5014e3efeb4d3ddfc92907b622ae7bf24ffa4f",
+    "occt-import-js/source/tools/setup_emscripten_win.bat": "55d56ac95e12471dded4a3abed4c2b08190e5e297370ede9b54d1210da7929f5",
+    "linkedom/LICENSE": "dc6d4961d8b6ee747231582ae9c53ce1d66bf76bc9f5a28f554c0e97210953bf",
+    "linkedom/worker.js": "196efeb17c260e001979dbc54a3c30e701a881c6e8a3eedaddc5ad83c99ee5ff",
+    "file-parsers/3MFLoader.js": "8f05e14fe460b2e1115dfc88de0248f2dfdf1d1bd6a827741deca2f449e075e5",
+    "file-parsers/FFLATE-LICENSE.txt": "62249119bb7df6e54300f37a37145c26a6d4420410aac8881a119c5b427cf751",
+    "file-parsers/STLLoader.js": "5008202cece503fd1ba8c04c0dd9000f6c311e19391b10d6390b90ac42235d6d",
+    "file-parsers/THREE-LICENSE.txt": "852e0e8699169bf9f6fdc6bda3e682d078dcbc738b5d33e74df594721bff271d",
+    "file-parsers/fflate.module.js": "5686c3d02432a47d8e31f16cabc2d725bbf4531a3abb37cc6fd00142256e3730",
+    "occt-import-js/source/SUBMODULES.gitconfig": "8855dcdbaebd2586adc881db417d5a9a68ac8631f78446d198f38a9a9d6f5482"
+  }
+}

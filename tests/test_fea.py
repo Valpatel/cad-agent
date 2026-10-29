@@ -24,6 +24,31 @@ def test_cantilever_tip_deflection_and_root_stress():
     assert r['stiffness_n_per_mm'] == pytest.approx(F / tip, rel=0.03)
 
 
+def test_study_leaves_no_temp_step(tmp_path, monkeypatch):
+    # a shape is exported to a temporary STEP to mesh it; the export goes once it is meshed, and when meshing fails;
+    # a STEP path the caller passes (str or Path) is theirs and stays. The test's own temp folder keeps other
+    # processes' studies out of the count.
+    import tempfile
+    tmp = tmp_path / 'tmp'
+    tmp.mkdir()
+    monkeypatch.setattr(tempfile, 'tempdir', str(tmp))
+    box = cq.Workplane('XY').box(20, 10, 10)
+    Study(box, STEEL, mesh_mm=5.0, name='box')
+    assert list(tmp.iterdir()) == []
+    step = tmp_path / 'box.step'
+    cq.exporters.export(box.val(), str(step))
+    for given in (step, str(step)):
+        Study(given, STEEL, mesh_mm=5.0, name='box from a file')
+        assert step.exists()
+
+    def broken(self):
+        raise RuntimeError('mesh failed')
+    monkeypatch.setattr(Study, '_mesh', broken)
+    with pytest.raises(RuntimeError, match='mesh failed'):
+        Study(box, STEEL, mesh_mm=5.0, name='box')
+    assert list(tmp.iterdir()) == []
+
+
 def test_shaft_torsional_stiffness():
     r0, L, T = 10.0, 100.0, 50.0
     st = Study(cq.Workplane('YZ').circle(r0).extrude(L), STEEL, mesh_mm=3.0, name='shaft')

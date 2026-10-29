@@ -64,9 +64,10 @@ export async function createViewer({ app, panel, title, manifestUrl }) {
 
   // Panel
   const info = readouts(section(panel, 'Model', { note: `${parts.length} parts` }));
-  info.set([['size', `${Math.round(size.x * 1000)} × ${Math.round(size.z * 1000)} × ${Math.round(size.y * 1000)} mm`],
-            ['parts shown', String(parts.filter((p) => p.mesh.visible).length)],
-            ...(manifest.skipped?.length ? [['without STEP', manifest.skipped.join(', '), 'warn']] : [])]);
+  const shownReadout = () => info.set([['size', `${Math.round(size.x * 1000)} × ${Math.round(size.z * 1000)} × ${Math.round(size.y * 1000)} mm`],
+                                       ['parts shown', String(parts.filter((p) => p.mesh.visible).length)],
+                                       ...(manifest.skipped?.length ? [['not exported', manifest.skipped.join(', '), 'warn']] : [])]);
+  shownReadout();
   const views = section(panel, 'View');
   slider(views, { label: 'Explode', min: 0, max: 1, step: 0.01, value: 0, fmt: (v) => `${Math.round(v * 100)}%`, onInput: setExplode });
   slider(views, { label: 'Section cut', min: 0, max: 1, step: 0.01, value: 1, fmt: (v) => (v >= 1 ? 'off' : `${Math.round(v * 100)}%`), onInput: setSection });
@@ -82,16 +83,45 @@ export async function createViewer({ app, panel, title, manifestUrl }) {
     camRow.appendChild(b);
   }
   views.appendChild(camRow);
-  const list = section(panel, 'Parts', { note: 'show · colour' });
-  for (const p of parts) {
-    const row = document.createElement('div');
-    row.className = 'hud-toggle';
-    row.innerHTML = `<input type="checkbox" ${p.mesh.visible ? 'checked' : ''}><input type="color" value="${esc(p.color)}" `
-      + `style="width:18px;height:18px;border:0;padding:0;background:none"><span>${esc(p.id ? p.id + ' · ' : '')}${esc(p.name.replaceAll('_', ' '))}</span>`;
-    const [vis, col] = row.querySelectorAll('input');
-    vis.onchange = () => { p.mesh.visible = vis.checked; };
-    col.oninput = () => p.mesh.material.color.set(col.value);
-    list.appendChild(row);
+  // Parts list: one section per category (printed parts, bought parts, the board...), each with a show/hide-all box.
+  const categories = [...new Set(parts.map((p) => p.category ?? ''))];
+  for (const category of categories) {
+    const members = parts.filter((p) => (p.category ?? '') === category);
+    // a section whose parts all start hidden (a reference board, variants) starts folded
+    const list = section(panel, category || 'Parts', { note: categories.length > 1 ? `${members.length} parts` : 'show · colour',
+                                                       open: categories.length === 1 || members.some((p) => p.mesh.visible) });
+    const rows = [];
+    let all = null;
+    const syncAll = () => {
+      if (!all) return;
+      const on = members.filter((p) => p.mesh.visible).length;
+      all.checked = on === members.length;
+      all.indeterminate = on > 0 && on < members.length;
+    };
+    if (categories.length > 1) {
+      const head = document.createElement('div');
+      head.className = 'hud-toggle';
+      head.innerHTML = `<input type="checkbox"><span><b>All ${esc((category || 'other parts').toLowerCase())}</b></span>`;
+      all = head.querySelector('input');
+      all.onchange = () => {
+        members.forEach((p, i) => { p.mesh.visible = all.checked; rows[i].checked = all.checked; });
+        syncAll();
+        shownReadout();
+      };
+      list.appendChild(head);
+    }
+    for (const p of members) {
+      const row = document.createElement('div');
+      row.className = 'hud-toggle';
+      row.innerHTML = `<input type="checkbox" ${p.mesh.visible ? 'checked' : ''}><input type="color" value="${esc(p.color)}" `
+        + `style="width:18px;height:18px;border:0;padding:0;background:none"><span>${esc(p.id ? p.id + ' · ' : '')}${esc(p.name.replaceAll('_', ' '))}</span>`;
+      const [vis, col] = row.querySelectorAll('input');
+      vis.onchange = () => { p.mesh.visible = vis.checked; syncAll(); shownReadout(); };
+      col.oninput = () => p.mesh.material.color.set(col.value);
+      rows.push(vis);
+      list.appendChild(row);
+    }
+    syncAll();
   }
   stage.start();
   return { stage, parts, setExplode, setSection };

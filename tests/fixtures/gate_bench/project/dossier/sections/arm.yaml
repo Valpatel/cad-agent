@@ -1,0 +1,51 @@
+# generated once from the bench's declarations (tests/fixtures/gate_bench/build.py); edit by hand
+id: S-arm
+title: Arm
+purpose: Lift an arm 40 deg about a pin from a fixed stop
+requirements:
+- R2
+parts:
+- id: hinge_block
+  function: Carries the arm pin
+  interfaces:
+  - I-block
+  - I-pin-block
+  - I-arm-block
+  material:
+    name: PETG
+    process: FDM
+    print_axis: +Z
+    wall_mm: 2.4
+- id: pin
+  function: Pivot pin of the arm
+  interfaces:
+  - I-pin-block
+  - I-pin-arm
+- id: arm
+  function: Lifts from its stop to 40 deg about the pin
+  interfaces:
+  - I-pin-arm
+  - I-arm-block
+  - I-arm-stop
+  material:
+    name: PETG
+    process: FDM
+    print_axis: +Z
+    wall_mm: 2.4
+- id: stop
+  function: Fixed stop the arm rests on at 0 deg
+  interfaces:
+  - I-stop
+  - I-arm-stop
+  material:
+    name: PETG
+    process: FDM
+    print_axis: +Z
+    wall_mm: 2.4
+decisions:
+- id: D2
+  decision: Arm rests on a fixed stop at 0 deg
+  why: a hard stop gives a repeatable zero without a sensor
+  alternatives:
+  - option: spring return
+    rejected: adds a part and a fatigue mode

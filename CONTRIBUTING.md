@@ -15,20 +15,24 @@ goes through a branch, a pull request, CI and a review.
 every review conversation must be resolved.
 
 ## Workflow
+Agents: install the workflow kit (`cad-agent agents install`, [docs/agent-workflow.md](docs/agent-workflow.md)) and
+follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes #<issue>`, and pushes as you go.
+
+0. **Issue.** Find or open the GitHub issue the change belongs to, with a checklist of done / next / how to resume.
 1. **Worktree from `dev`.** Never edit a checkout another session may be using:
    ```bash
    git fetch origin
    git worktree add --no-track ../cad-agent-<topic> -b feat/<topic> origin/dev
    cd ../cad-agent-<topic> && git push -u origin feat/<topic>     # the branch tracks itself, not dev
    ```
-2. **Commit** small, focused changes with tests (`tests/`). Keep the package generic: anything specific to one
+2. **Commit and push** small, focused changes with tests (`tests/`) as you go, not in one batch at the end. Keep the package generic: anything specific to one
    product stays in that product's repository.
-3. **Open a PR into `dev`** (`gh pr create --base dev`) and fill in the template, including what projects using
+3. **Open a PR into `dev`** early, as a draft if it is unfinished (`gh pr create --draft --base dev`), with `Closes #<issue>`; fill in the template, including what projects using
    cad-agent must change.
 4. **CI** (`.github/workflows/ci.yml`) runs `core` on Python 3.10 and 3.12 (required dependencies only; optional
    features must skip cleanly) and `full` (CAD, FEA, robot and site extras, imported loudly before the tests).
 5. **Review.** Every PR gets a review from a person or from a separate review agent that did not write the change,
-   posted as PR comments. GitHub cannot enforce this here (one owner account cannot approve its own PRs), so the
+   posted as PR comments (the `cad-pr-reviewer` subagent, or a separate Codex session with that skill). GitHub cannot enforce this here (one owner account cannot approve its own PRs), so the
    merger checks that a review exists. The author answers or fixes each comment and resolves it.
 6. **Merge** into `dev` (squash or merge commit). Then, before removing the worktree, repoint anything installed
    from it: `pip show -f cad-agent` (or the `direct_url.json` it lists) in each project venv tells you where

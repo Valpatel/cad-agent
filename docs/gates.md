@@ -576,6 +576,11 @@ YAML steps in `project.yaml` whose order the build does not declare; the lint re
 fasteners from `fasteners_from_build`, the tools from `tools_from` and the intended overlaps from `gates:` and
 `extra`.
 
+For a preassembled rigid module, use the additive Python `subassemblies={name: {members, steps}}` and
+`service_after={name: removed_parent_keys}` arguments. Its internal sequence is checked separately; every member
+and attached fastener then moves rigidly through the parent path. Prerequisite removal remains explicitly
+unverified. See [Rigid subassembly insertion](subassembly-insertion.md) for the strict scope, examples and limits.
+
 **Checks** (ids in the verdict):
 
 | Check | Fails when |

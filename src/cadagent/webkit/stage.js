@@ -22,9 +22,9 @@ function radialGlow(stops) {
 }
 
 /**
- * createStage(container, { height = 1, accent = 0x00f0ff, zoomSpeed = 0.25, dragZoomSpeed = 1 })
+ * createStage(container, { height = 1, accent = 0x00f0ff, zoomSpeed = 0.25, dragZoomSpeed = 1, palette })
  * Returns { renderer, scene, camera, controls, root, setSceneLight(0..1), frame(height), onFrame(cb), start(), stop(), dispose(),
- *           setInsets({ left, right, top, bottom }), fitView(points, { direction, margin }) }.
+ *           setInsets({ left, right, top, bottom }), fitView(points, { direction, margin }), setPalette({accent, grid, glow}) }.
  * `setInsets` takes the pixels covered by overlay UI (a side panel, a top bar): the view's centre moves into the
  * uncovered area, so the model is not hidden behind the panels. `fitView` places the camera so all the points (THREE
  * Vector3s, or a Box3) fit in that uncovered area, looking along `direction` at `target` (default: their centre).
@@ -81,6 +81,22 @@ export function createStage(container, opts = {}) {
   }));
   pad.rotation.x = -Math.PI / 2;
   scene.add(ground, grid, pad);
+
+  /** Recolor stage accents without changing the model's authored materials or camera. */
+  function setPalette({accent:nextAccent=accent,grid:nextGrid=0x0e7490,glow:nextGlow=0x00f0ff,background}={}) {
+    if(background!==undefined)scene.background=new THREE.Color(background);
+    rim.color.set(nextAccent);
+    const replacement=new THREE.GridHelper(1,52,nextAccent,nextGrid);
+    grid.geometry.dispose();grid.geometry=replacement.geometry;
+    replacement.material.dispose();
+    const rgb=new THREE.Color(nextGlow).getStyle();
+    const components=rgb.match(/[\d.]+/g);
+    const rgba=alpha=>`rgba(${components.join(',')},${alpha})`;
+    pad.material.map.dispose();
+    pad.material.map=radialGlow([[0,rgba(.22)],[.5,rgba(.07)],[1,rgba(0)]]);
+    pad.material.needsUpdate=true;
+  }
+  if(opts.palette)setPalette(opts.palette);
 
   const root = new THREE.Group();
   scene.add(root);
@@ -207,7 +223,7 @@ export function createStage(container, opts = {}) {
   }
 
   return {
-    renderer, scene, camera, controls, root, frame, setInsets, fitView,
+    renderer, scene, camera, controls, root, frame, setInsets, fitView, setPalette,
     setSceneLight(v, immediate = false) { light.level = Math.max(0, Math.min(1, v)); if (immediate) { light.current = light.level; applyLight(); } },
     onFrame(cb) { callbacks.push(cb); },
     start() { if (!running) { running = true; frameId = requestAnimationFrame(tick); } },
@@ -219,6 +235,7 @@ export function createStage(container, opts = {}) {
       observer.disconnect();
       gestures.abort();
       controls.dispose();
+      for(const object of [ground,grid,pad]){object.geometry.dispose();object.material.map?.dispose();object.material.dispose();}
       renderer.dispose();
       renderer.forceContextLoss();
       renderer.domElement.remove();

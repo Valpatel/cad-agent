@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-file-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="color-scheme" content="dark">
+  <meta name="color-scheme" content="dark light">
   <title>Original CAD file viewer</title>
   <link rel="stylesheet" href="./file-viewer.css">
   <script type="importmap">{"imports":{"three":"./vendor/three/three.module.min.js","three/addons/":"./vendor/three/addons/"}}</script>
@@ -15,6 +15,9 @@
   </main>
   <script type="module">
     const host=document.querySelector('#file-viewer'),fallback=host.querySelector('.file-bootstrap');
+    const requestedTheme=new URLSearchParams(location.search).get('theme');
+    const theme=['light','dark','auto'].includes(requestedTheme)?requestedTheme:document.documentElement.dataset.fileTheme;
+    document.documentElement.dataset.fileTheme=theme==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):theme;
     fallback.querySelector('button').addEventListener('click',()=>location.reload());
     // The original remains downloadable even when the entry graph cannot load.
     try{
@@ -25,7 +28,7 @@
     }catch{/* Invalid source URLs are explained by the viewer when it starts. */}
     try{
       const {createFileViewer}=await import('./file-viewer.js');
-      window.__fileViewer=createFileViewer(host,{file:new URLSearchParams(location.search).get('file'),back:new URLSearchParams(location.search).get('back')});
+      window.__fileViewer=createFileViewer(host,{file:new URLSearchParams(location.search).get('file'),back:new URLSearchParams(location.search).get('back'),theme});
       fallback.remove();
     }catch(error){
       fallback.querySelector('p').textContent='The 3D viewer could not start. Retry to load its renderer and controls.';

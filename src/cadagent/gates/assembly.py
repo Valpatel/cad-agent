@@ -323,6 +323,8 @@ def sweep_pair(world: SequenceWorld, key: str, direction: Vec, other: str, *,
         if rel0.interferes:
             out.update(state="seat", overlap_mm3=rel0.overlap_mm3, samples=samples,
                        overlap_centroid=rel0.witness.get("overlap_centroid"))
+            if "member_pair" in rel0.witness:
+                out["member_pair"] = rel0.witness["member_pair"]
             return out
         g0 = rel0.gap_mm if rel0.gap_mm is not None else 0.0
         touching = g0 <= tol.touch_mm
@@ -380,6 +382,8 @@ def _onset(world: SequenceWorld, key: str, back: Vec, other: str, hit: float, cl
     out: Dict[str, Any] = {"state": "blocked", "first_contact_mm": [_r(clear), _r(hit)],
                            "overlap_mm3": hit_rel.overlap_mm3,
                            "overlap_centroid": hit_rel.witness.get("overlap_centroid"), "refine_samples": n}
+    if "member_pair" in hit_rel.witness:
+        out["member_pair"] = hit_rel.witness["member_pair"]
     if clear_rel is not None:
         out["clear_gap_mm"] = clear_rel.gap_mm
         out["clear_points"] = [clear_rel.witness.get("point_a"), clear_rel.witness.get("point_b")]
@@ -474,11 +478,19 @@ def _plan(steps: List[Dict[str, Any]], names: List[str], kinds: Mapping[str, str
 def run_sequence(world: SequenceWorld, steps: Iterable[Any], fasteners: Any = None, *,
                  tools: Optional[Mapping[str, Any]] = None, options: AccessOptions = AccessOptions(),
                  tol: Tolerances = Tolerances(), intended_overlaps: Iterable[Mapping[str, Any]] = (),
-                 service: Any = False) -> Dict[str, Any]:
+                 service: Any = False, subassemblies: Optional[Mapping[str, Any]] = None,
+                 service_after: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
     """The gate's rules on any ``SequenceWorld``. Returns ``{"checks", "steps", "exclusions", "not_checked"}``.
 
     ``fasteners``: ``{name: FastenerSpec | mapping}`` or a list of specs. ``service``: True checks every part's
-    removal from the finished assembly, a list of part names checks those (warnings)."""
+    removal from the finished assembly, a list of part names checks those (warnings). ``subassemblies`` maps
+    module names to exact ``members`` and internal ``steps``; ``service_after`` lists explicitly assumed-removed
+    parent keys for conditional module withdrawal. See ``docs/subassembly-insertion.md``."""
+    if subassemblies is not None or service_after is not None:
+        from cadagent.gates.subassembly import run_subassemblies
+        return run_subassemblies(world, steps, fasteners, tools=tools, options=options, tol=tol,
+                                 intended_overlaps=intended_overlaps, service=service,
+                                 subassemblies=subassemblies, service_after=service_after)
     if isinstance(fasteners, Mapping):
         specs = {n: FastenerSpec.coerce(f, n) for n, f in fasteners.items()}
     else:
@@ -720,7 +732,8 @@ def assembly_gate(assembly: Any, steps: Iterable[Any], *, fasteners: Any = None,
                   tools: Optional[Mapping[str, Any]] = None, options: AccessOptions = AccessOptions(),
                   tol: Optional[Tolerances] = None, cache: Any = None,
                   intended_overlaps: Iterable[Mapping[str, Any]] = (), service: Any = False,
-                  out: Any = None) -> Dict[str, Any]:
+                  out: Any = None, subassemblies: Optional[Mapping[str, Any]] = None,
+                  service_after: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
     """Run the assembly-access gate on an ``Assembly`` and return (with ``out``, also write, plus a ``.md`` table
     beside it) the verdict.
 
@@ -733,12 +746,21 @@ def assembly_gate(assembly: Any, steps: Iterable[Any], *, fasteners: Any = None,
     tol = tol or Tolerances()
     world = AssemblySequenceWorld(assembly, tol, cache)
     res = run_sequence(world, steps, fasteners, tools=tools, options=options, tol=tol,
-                       intended_overlaps=intended_overlaps, service=service)
+                       intended_overlaps=intended_overlaps, service=service, subassemblies=subassemblies,
+                       service_after=service_after)
     limits = {f.name: getattr(options, f.name) for f in fields(options)}
     limits.update(touch_mm=tol.touch_mm, overlap_mm3=tol.overlap_mm3, service=bool(service))
-    data = verdict(GATE, res["checks"], assumptions=ASSUMPTIONS, limits=limits, exclusions=res["exclusions"],
+    assumptions = list(ASSUMPTIONS)
+    extra = {}
+    if subassemblies is not None or service_after is not None:
+        from cadagent.gates.subassembly import ASSUMPTIONS as SUBASSEMBLY_ASSUMPTIONS
+        assumptions += SUBASSEMBLY_ASSUMPTIONS
+        limits.update(rigid_subassemblies=True, conditional_service=bool(service_after),
+                      prerequisite_removal_verified=False)
+        extra = {"subassemblies": res.get("subassemblies", {}), "service_after": res.get("service_after", {})}
+    data = verdict(GATE, res["checks"], assumptions=assumptions, limits=limits, exclusions=res["exclusions"],
                    extra={"steps": res["steps"], "not_checked": res["not_checked"], "world_stats": world.stats,
-                          "tools": dict(tools or {})})
+                          "tools": dict(tools or {}), **extra})
     if out is not None:
         path = write_verdict(out, data)
         path.with_suffix(".md").write_text("# Assembly sequence\n\n" + steps_markdown(data))
@@ -809,6 +831,15 @@ def steps_markdown(data: Mapping[str, Any]) -> str:
             what = (f"{b['instance']} meets {b['part']} {b['first_contact_mm'][1]:.2f} mm before its seat"
                     if b["state"] == "blocked" else f"{b['instance']}: {b['state']} against {b['part']}")
             lines.append(f"- step {o}: {what}")
+    for name, internal in (data.get("subassemblies") or {}).items():
+        lines += ["", f"## Internal assembly: {name}", "",
+                  "Members: " + ", ".join(internal["members"]), "", steps_markdown(internal)]
+    if data.get("service_after"):
+        lines += ["", "## Conditional service removal", "",
+                  "Prerequisites are assumed already removed; their removal and tool access are not proved.", ""]
+        for name, evidence in data["service_after"].items():
+            lines.append(f"- {name}: after removing {', '.join(evidence['assumed_removed']) or 'nothing'}; "
+                         f"withdrawal {evidence['status']}.")
     return "\n".join(lines) + "\n"
 
 

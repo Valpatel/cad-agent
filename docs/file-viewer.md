@@ -70,6 +70,44 @@ await viewer.retry();
 viewer.dispose();
 ```
 
+## Product themes
+
+The default remains dark. Set `theme: 'light'`, `'dark'` or `'auto'` when mounting;
+the standalone page also accepts `?theme=light` (or `dark` / `auto`). Auto follows
+the OS preference while mounted. `viewer.setTheme(...)` changes appearance without
+reloading the file, resetting the camera or changing the original model materials.
+
+For a product palette, pass an object:
+
+```js
+const viewer = createFileViewer(host, {
+  file: '/exports/bracket.step',
+  theme: {mode: 'light', colors: {accent: '#126d58', surface: '#fffaf2'},
+          fontFamily: 'Inter, system-ui, sans-serif'}
+});
+```
+
+Color values are six-digit sRGB hex. Supported keys are `background`, `canvas`,
+`surface`, `text`, `muted`, `border`, `control`, `controlHover`, `controlText`,
+`focus`, `error`, `accent`, `grid` and `glow`. Supply fonts locally in the consumer;
+the viewer does not fetch a font or stylesheet from a remote service. Invalid
+options throw before replacing the active appearance.
+
+The same values are CSS custom properties: `--file-background`, `--file-canvas`,
+`--file-surface`, `--file-text`, `--file-muted`, `--file-border`, `--file-control`,
+`--file-control-hover`, `--file-control-text`, `--file-focus`, `--file-error`,
+`--file-accent`, `--file-grid`, `--file-glow` and `--file-font`. Override them after
+the default stylesheet on `.file-viewer[data-file-theme=light]` (or `dark`). Set
+matching root tokens and `data-file-theme` on the standalone HTML element to theme
+its loading/error fallback too. Stage accent/grid/glow colors are read from these
+tokens whenever `setTheme` runs; use six-digit hex for those three CSS tokens.
+Other CSS tokens accept ordinary CSS color values. Consumer palettes must retain
+readable contrast; colors do not imply a manufacturing-readiness assessment.
+
+The reusable stage exposes `setPalette({accent, grid, glow})` and the equivalent
+initial `palette` option. Existing stage callers keep their original palette when
+neither is supplied. Palette changes preserve camera, controls and model materials.
+
 `stage`, `root`, current `model` and `info` are exposed for inspection. `info`
 includes format, original source URL/name/byte length, triangle count, source bounds
 in millimeters, unit interpretation and warnings. A canceled/stale load returns

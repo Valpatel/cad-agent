@@ -1,0 +1,124 @@
+{
+  "schema": "cadagent.volume-probe/1",
+  "runtime": {
+    "toolkit_commit": "773477b1835a945f51962d8c3650f297ffead11c",
+    "relations_source_sha256": "8b60f1123052792b85d1c318209d9cc1eb93868fc9a9eac78169e6c79ef25b55",
+    "probe_source_sha256": "aa912e30dac6b6ee6c8e440d0c19d63256e17026e2cf51cbc9e2479893a2f656",
+    "ocp_version": "7.9.3.1",
+    "python": "3.12.3"
+  },
+  "inputs": {
+    "a": {
+      "file": "91290A111.norm.step",
+      "sha256": "5254e828992285b42974ce077f5b1443fb8831397bcd9e653c4f5680df3b4191",
+      "transform": [
+        0.0,
+        0.0,
+        -1.0,
+        46.4,
+        0.0,
+        1.0,
+        0.0,
+        -22.4,
+        1.0,
+        0.0,
+        0.0,
+        9.0
+      ]
+    },
+    "b": {
+      "file": "94459A140.norm.step",
+      "sha256": "2ee42df52bf86ee05039c239b23e0d589d0587bb604ee06c28531315631158a0",
+      "transform": [
+        0.0,
+        0.0,
+        1.0,
+        48.0,
+        0.0,
+        1.0,
+        0.0,
+        -22.4,
+        -1.0,
+        0.0,
+        0.0,
+        9.0
+      ]
+    }
+  },
+  "breps": {
+    "a": {
+      "file": "a.brep",
+      "sha256": "18554e167c64706dbbdfa46a0d6c74480c3de2b3be247d25cb85e24693067824"
+    },
+    "b": {
+      "file": "b.brep",
+      "sha256": "91bc772f018aeef9be8cc37810845edfe918aae0dcc33fa897611f69c924e9a6"
+    },
+    "common": {
+      "file": "common.brep",
+      "sha256": "bdcbe7b0dc55131110139ec58925d14aeeb2cc80789e4e3026fee1d989853c49"
+    },
+    "cut_a": {
+      "file": "cut_a.brep",
+      "sha256": "0632b21abb88be8e5f8900ce02f7a486a01b5ea1e0ddba71e49f2a1f5990134e"
+    },
+    "cut_b": {
+      "file": "cut_b.brep",
+      "sha256": "fb7491c00bec84a86290c08b7f18026b99697dfa9dc54a23ac818eeed8a244d9"
+    }
+  },
+  "preparation_runtime": {
+    "toolkit_commit": "773477b1835a945f51962d8c3650f297ffead11c",
+    "relations_source_sha256": "8b60f1123052792b85d1c318209d9cc1eb93868fc9a9eac78169e6c79ef25b55",
+    "probe_source_sha256": "aa912e30dac6b6ee6c8e440d0c19d63256e17026e2cf51cbc9e2479893a2f656",
+    "ocp_version": "7.9.3.1",
+    "python": "3.12.3"
+  },
+  "method": "gk",
+  "volumes": {
+    "a": {
+      "volume_mm3": 92.56418889571863,
+      "estimated_error_mm3": 5.29052551598852e-05,
+      "refinement_delta_mm3": 5.29052551598852e-05,
+      "reported_error": 5.9037598905437384e-08,
+      "seconds": 0.6597416109871119
+    },
+    "b": {
+      "volume_mm3": 42.17288731291566,
+      "estimated_error_mm3": 2.2759897044013727e-06,
+      "refinement_delta_mm3": 7.539716193605273e-07,
+      "reported_error": 5.396807876856796e-08,
+      "seconds": 0.33485221094451845
+    },
+    "common": {
+      "volume_mm3": 3.2881959879399303,
+      "estimated_error_mm3": 1.1757434079662232e-06,
+      "refinement_delta_mm3": 1.1757434079662232e-06,
+      "reported_error": 2.0387888609918365e-07,
+      "seconds": 0.211365062976256
+    },
+    "cut_a": {
+      "volume_mm3": 89.27587079434147,
+      "estimated_error_mm3": 3.550025904530685e-05,
+      "refinement_delta_mm3": 3.550025904530685e-05,
+      "reported_error": 9.016468634141926e-08,
+      "seconds": 0.7303979708813131
+    },
+    "cut_b": {
+      "volume_mm3": 38.884671099920205,
+      "estimated_error_mm3": 5.411675672917227e-06,
+      "refinement_delta_mm3": 5.411675672917227e-06,
+      "reported_error": 4.4300446928931686e-08,
+      "seconds": 0.46942050382494926
+    }
+  },
+  "physical_fit_verified": false,
+  "unchanged_conservation_budget_mm3": 0.010092564188895719,
+  "residual_a_mm3": 0.00012211343722867696,
+  "budget_consumed_a_mm3": 0.00021169469484183523,
+  "conservation_a_pass": true,
+  "residual_b_mm3": 2.022505552901066e-05,
+  "budget_consumed_b_mm3": 2.9088464314295484e-05,
+  "conservation_b_pass": true,
+  "seconds": 2.876976130064577
+}

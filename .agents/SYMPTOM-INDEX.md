@@ -9,3 +9,4 @@
 | Mermaid source appears on a document, or newly inserted diagrams never render | [Mermaid fences need rendered evidence](inbox/2026-10-29-markdown-fences-need-rendered-evidence.md), [shared diagram API](../docs/web-diagrams.md) |
 | A preassembled board/carrier must enter as one module, but flattening its steps invents tool access or insertion order | [Separate internal and parent assembly scopes](domains/assembly-scopes.md) |
 | Service is enabled but a requested module member has no service check or finding | [Resolve service targets before changing scope](inbox/2026-10-29-preassembly-needs-its-own-obstacle-scope.md#service-requests-must-survive-a-change-of-assembly-scope) |
+| Cut volume exceeds its input, curved volumes disagree, or a precise-looking invalid solid passes | [Validate solids and aggregate integration errors](inbox/2026-10-29-volume-precision-needs-valid-solids-and-aggregate-errors.md), [volume diagnostic](../docs/volume-precision.md) |

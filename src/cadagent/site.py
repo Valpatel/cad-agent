@@ -268,7 +268,7 @@ def nav_html(cfg: "SiteConfig", current: str, prefix: str) -> str:
 
 
 def _diagrams(depth: int) -> str:
-    prefix = "../" * depth + "assets/"
+    prefix = ("../" * depth if depth else "./") + "assets/"
     return (f'<link rel="stylesheet" href="{prefix}diagrams.css">'
             f'<script type="module">import("{prefix}diagrams.js").then(m=>m.observeDiagrams()).catch(()=>{{'
             'document.querySelectorAll("pre.mermaid,pre:has(>code.language-mermaid)").forEach(p=>{'

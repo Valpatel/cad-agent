@@ -32,7 +32,7 @@ try{
  release();await page.waitForFunction(()=>document.querySelectorAll('.cad-diagram[data-state=error]').length===2);
  await page.unroute('**/vendor/mermaid/mermaid.min.js');
  // Both failed graphs can retry without discarding the rest of the document.
- for(const button of await page.getByRole('button',{name:'Retry diagram'}).all())await button.click();await ready(page,2);await noRaw(page);
+ for(const figure of await page.locator('.cad-diagram').all())await figure.getByRole('button',{name:'Retry diagram'}).click();await ready(page,2);await noRaw(page);
  await page.evaluate(()=>{const p=document.createElement('pre');p.className='mermaid';p.textContent='not a supported diagram';document.getElementById('dynamic').append(p);});
  await page.waitForSelector('.cad-diagram[data-state=error]');assert.equal(await page.locator('.cad-diagram[data-state=ready]').count(),2);
  assert.equal(await page.locator('body > div[id^="dmermaid"],body > div[id^="dcad-diagram"]').count(),0);

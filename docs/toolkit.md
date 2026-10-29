@@ -173,6 +173,7 @@ Unquoted, the title is cut at the comma and the rest becomes a stray key.
 |---------|------|-----------|
 | `cad-agent build [--from STEP] [--only STEP ...]` | runs steps in order with the project python; per-step timing; stops at the first failure and prints the log tail | 1 on a failed step |
 | `cad-agent export-3mf` | `<part>.stl` -> verified, bed-centred `<part>.3mf` for every part in the parts file | 1 on a read-back mismatch |
+| `cad-agent holes [PART ...]` | checks every hole in every part is clear of material: finds the cylindrical holes in `exports/<part>.step` (concave, at least 200° of wall, up to 30 mm across), probes each with a cylinder just inside its wall, and writes `exports/hole-checks.json` bound to each STEP's sha256; `all` runs it and the report's "Holes clear" rows fail on material in a hole, a stale result or a check that did not run (config `cad: holes:`, [below](#holes-clear)) | 1 if a hole has material inside |
 | `cad-agent check [--json]` | collects results (no build), prints a table or the results JSON | 1 if any row fails |
 | `cad-agent report [--open]` | writes `exports/cad-agent-results.json` (schema 1.0, the vptest web shape, so `vptest web validate` and its renderer still accept it) and a standalone `docs/cad-agent-report.html` with inline styles (light and dark) that opens from `file://` | 1 if any row fails |
 | `cad-agent package` | zip + sha256 manifest from `package.include` | |
@@ -186,7 +187,7 @@ Unquoted, the title is cut at the comma and the rest becomes a stray key.
 | `cad-agent review-section SECTION [--bundle-dir DIR] [--since REV]` | writes the reviewer's prompt bundle into `exports/review-bundle/<section>/` (`cad-agent.review-bundle/1`): the section YAML, the gate verdicts for its parts, the packet manifest and images, the checklist, the diff since the last sign-off and a record template ([dossier.md](dossier.md#the-reviewer-pass)) | 1 while a sign-off would be refused (stale packet, section below `gated`, open decision, unknown builder); 2 on an unknown section or with no build |
 | `cad-agent review-section SECTION --submit RECORD` / `--check RECORD` | checks a filled-in reviewer record against the current build (hashes current, the reviewer, `CAD_AGENT_ACTOR`, is not the section's builder or author, every question, decision and requirement answered; for a sign-off: packet current, no open decision) and writes `dossier/reviews/<section>-<date>.json` (`--check` writes nothing) | 1 when the record is refused |
 | `cad-agent gates [--only G ...] [--skip G ...] [--jobs N] [--no-cache] [--build] [--dry-run]` | runs every integrity gate that applies to the dossier geometry, each in its own process, then the dossier lint; writes `exports/gates/<gate>.json` and `.md`, bound to their inputs (config `cad: gates:`, [gates.md](gates.md#running-the-gates-cad-agent-gates)) | 1 if a gate (or its build) fails; 2 without a `dossier:`/`gates:` key, on a bad config, or with no geometry record and no build |
-| `cad-agent all` | build, export-3mf, gates and the dossier lint (when `cad: dossier:` or `cad: gates:` is set), check + report, package | 1 if anything failed |
+| `cad-agent all` | build, export-3mf, holes, gates and the dossier lint (when `cad: dossier:` or `cad: gates:` is set), check + report, package | 1 if anything failed |
 | `cad-agent catalogue [--json] [--errors-only]` | checks the part catalogue and every design against it (config `cad: explore:`, [explore.md](explore.md)) | 1 on an error |
 | `cad-agent compare [DESIGN ...] [--swaps] [--workers N] [--json] [--open]` | evaluates the designs with the project's evaluator, ranks them (Pareto fronts over the objectives) and writes `comparison.json`, `compare.html` and site design cards; `--swaps` tries every one-part swap | 1 if a design could not be evaluated |
 | `cad-agent optimise [--trials N] [--workers N] [--sampler S] [--fresh]` | searches slots and parameters (random, grid; NSGA-II and TPE with optuna) and keeps a leaderboard | 1 if no trial is feasible |
@@ -513,3 +514,41 @@ The geometry and render tests skip unless cadquery and vtk are importable.
 
 Pages that link to the old report or results file names need their links
 updated, or `html_pages` will report them as broken.
+
+## Holes clear
+
+A rib, boss or skirt unioned after the holes were cut refills part of a hole. The part is still one valid
+watertight solid, and fit, FEA and slice checks all pass. `cad-agent holes` (run by `all`) catches it from each part's
+STEP with no declarations. A hole is a set of concave cylindrical faces on one axis whose wall reaches at least 200°
+around the circle, so a rib right across a hole still leaves one, while fillets and slot ends do not count. Holes are
+up to 30 mm across. Each hole is probed with a cylinder 0.05 mm inside its wall over its full depth; material inside
+above 0.05 mm³ fails, with the hole's axis, diameter, depth range and the centre of the intrusion. Coaxial holes in
+opposite walls are separate holes. Two same-size bores with a smaller hole through the solid between them are a
+stepped bore: the **ledge** is listed for a person to confirm, not failed.
+
+The result (`exports/hole-checks.json`) is bound to each STEP's sha256 and to the check's version and settings. A
+changed STEP or a changed `cad.holes` makes it stale, and a stale result fails its row like a failing one. `cad-agent
+holes PART` rechecks one part and keeps the others' rows. `--out FILE` writes elsewhere, for a reviewer who must not
+change the checkout. Expect about 10 s for a large enclosure part.
+
+```yaml
+cad:
+  holes:
+    exceptions:                 # holes with material in them on purpose, each with its reason
+      base:
+        - {at: [1.25, 46.5, 62], diameter_mm: 6.6, reason: anti-rotation flat for the RP-SMA bulkhead (D-hole)}
+        # at: a point on the hole's axis (part coordinates); radius_mm: how far from the axis it may be (default 0.5)
+    skip: {gasket: printed in TPU without fastener holes}   # parts not checked, with the reason
+    # tol_mm: 0.05, min_volume_mm3: 0.05, min_arc_deg: 200, max_diameter_mm: 30
+```
+
+Limits:
+- Only cylindrical holes are checked, not tapered, polygonal or helical-thread geometry. Only material inside the
+  hole's own wall is measured, not tool or screw-head clearance beyond it.
+- **Known misses.** A hole capped at one end by a later feature reads as a blind hole. A counterbore blocked right
+  across, with a smaller hole cut through the block, reads as a ledge. Look at the listed ledges and the blind holes
+  in a section view.
+- A block from one side that covers half the hole or more over its full depth leaves too little wall to count as a
+  hole; it reads as a slot end. Look at blocked holes in a section view.
+- Concentric openings under 30 mm that are not holes fail: a small fan guard's rings, or a recess around a post. List
+  them as exceptions. [common-issues.md](common-issues.md) lists this check with the other recurring review findings.

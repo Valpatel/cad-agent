@@ -43,7 +43,7 @@ def test_parser_exposes_every_subcommand():
     parser = build_parser()
     assert parser.prog == "cad-agent"
     sub = next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction))
-    assert set(sub.choices) == {"build", "export-3mf", "check", "report", "package", "serve", "site", "view", "slice", "webkit",
+    assert set(sub.choices) == {"build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "webkit",
                                 "pcb-check", "all", "mcmaster", "catalogue", "compare", "optimise", "dossier",
                                 "gates", "review-packet", "review-section", "agents", "motion-trace", "release"}
     assert set(sub.choices) == set(SUBCOMMANDS)
@@ -221,6 +221,8 @@ def test_check_runs_the_dossier_lint(tmp_path, capsys):
     (root / "exports" / "geometry-checks.json").write_text(json.dumps({"box": GOOD}))
     for ext in ("stl", "3mf", "step"):
         (root / "exports" / f"box.{ext}").write_text("x")
+    from .test_report import bind_holes
+    bind_holes(root, ["box"])
     from .test_gates_cli import bind_verdicts
     bind_verdicts(root)                       # as `cad-agent gates` writes them: bound to the current inputs
     assert main(["check", "--project", str(root), "--json"]) == 0

@@ -93,6 +93,7 @@ class CadProject:
     html_pages: List[str] = field(default_factory=list)
     site: Dict[str, Any] = field(default_factory=dict)
     view: Dict[str, Any] = field(default_factory=dict)
+    holes: Dict[str, Any] = field(default_factory=dict)
     slicer: Dict[str, Any] = field(default_factory=dict)
     explore: Dict[str, Any] = field(default_factory=dict)
     release: Dict[str, Any] = field(default_factory=dict)   # `cad-agent release` settings (cadagent.release)
@@ -149,7 +150,7 @@ def _split_revision_from(spec: str) -> Tuple[str, str]:
 _TOP_KEYS = {
     "name", "title", "revision", "revision_from", "python", "exports_dir",
     "preview_dir", "docs_dir", "steps", "parts_file", "part_ids", "checks",
-    "printer", "package", "serve", "html_pages", "site", "view", "slicer", "explore",
+    "printer", "package", "serve", "html_pages", "site", "view", "holes", "slicer", "explore",
     "dossier", "gates", "release",
 }
 
@@ -274,6 +275,7 @@ def from_dict(root: Path, data: Dict[str, Any]) -> CadProject:
         html_pages=[str(p) for p in _require_list(data.get("html_pages"), "cad.html_pages")],
         site=_require_dict(data.get("site"), "cad.site"),
         view=_require_dict(data.get("view"), "cad.view"),
+        holes=_require_dict(data.get("holes"), "cad.holes"),
         slicer=_require_dict(data.get("slicer"), "cad.slicer"),
         explore=_require_dict(data.get("explore"), "cad.explore"),
         release=_require_dict(data.get("release"), "cad.release"),

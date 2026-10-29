@@ -110,6 +110,37 @@ def _part_row(project: CadProject, part: str, info: Dict[str, Any], report_dir: 
     message = ("valid single solid · watertight · " if ok else "; ".join(problems) + " · ") + " · ".join(facts)
     return _row(project.part_label(part), ok, message, "\n".join(problems), evidence)
 
+def holes_feature(project: CadProject) -> Dict[str, Any]:
+    """One row per part: every hole clear of material (``exports/hole-checks.json``, bound to each part's STEP)."""
+    from cadagent.holes import current
+
+    parts, error = load_parts(project)
+    if error:
+        return {"feature_id": "cad-holes", "feature_title": "Holes clear",
+                "checks": [_row("parts file", False, "no part list", error)]}
+    checks = []
+    for part in parts:
+        row, why = current(project, part)
+        label = project.part_label(part)
+        if row is None:
+            checks.append(_row(label, False, f"hole check {why}", why))
+        elif row.get("skipped"):
+            checks.append(_row(label, True, f"not checked: {row['skipped']}", ""))
+        elif row.get("error"):
+            checks.append(_row(label, False, f"hole check failed to run: {row['error']}", row["error"]))
+        elif row.get("findings"):
+            lines = [f"D{f['diameter_mm']} hole from {f['from_mm']} to {f['to_mm']}: {f['intrusion_mm3']} mm3 of material "
+                     f"inside, centred at {f['intrusion_centre_mm']}" + (f" ({f['hint']})" if f.get("hint") else "")
+                     for f in row["findings"]]
+            checks.append(_row(label, False, f"{len(row['findings'])} of {row['holes']} hole(s) have material inside",
+                               "\n".join(lines)))
+        else:
+            ex = f", {len(row['excepted'])} listed exception(s)" if row.get("excepted") else ""
+            ld = (f", {len(row['ledges'])} ledge(s) between coaxial bores (confirm they are designed)"
+                  if row.get("ledges") else "")
+            checks.append(_row(label, True, f"{row['holes']} hole(s) clear{ex}{ld}", ""))
+    return {"feature_id": "cad-holes", "feature_title": "Holes clear", "checks": checks}
+
 def parts_feature(project: CadProject, report_dir: Path) -> Dict[str, Any]:
     parts, error = load_parts(project)
     checks = (
@@ -239,6 +270,7 @@ def collect(project: CadProject) -> Dict[str, Any]:
     features = [
         parts_feature(project, report_dir),
         print_files_feature(project, report_dir),
+        holes_feature(project),
         checks_feature(project, report_dir),
         links_feature(project),
     ]

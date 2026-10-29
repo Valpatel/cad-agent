@@ -44,6 +44,9 @@ that session wrote.
 `design-process` has its own *design* reviewer pass with sign-off (`cad-agent review-section`); `cad-pr-reviewer`
 reviews the pull request (code, evidence, docs), which is a different job.
 
+Reviews of geometry also walk [common-issues.md](common-issues.md): the mistakes that recur in CAD designs, each
+with the check that catches it, or that it needs a look.
+
 ## The workflow in one page
 
 Assume the session ends within 30 minutes: tokens run out, the workstation crashes or is reformatted. GitHub is the

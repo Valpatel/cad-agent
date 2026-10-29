@@ -96,6 +96,10 @@ Fix in this order, rerunning after each group (a fix early in the list often cle
 6. **Motion**: collisions over each joint's range.
 7. **Wall**, then the **lint's status rules** (decisions, traces, checks).
 
+Then the standard part checks, which every project runs whether or not it has a dossier: `cad-agent holes` (every
+hole in every part clear of material: build features first and cut holes last) and the rest of `cad-agent all`. Walk
+[docs/common-issues.md](../../docs/common-issues.md) for the issues no check covers yet.
+
 Never lower a threshold or widen a tolerance to pass. A finding that is not a defect becomes an explained
 exclusion: `gates.free_parts` (a loose item), `gates.intended_overlaps` (a heat-set insert, a press fit, a screw's
 thread envelope, which may name the fastener or an instance key) or `gates.ignore_pairs` (variants never fitted

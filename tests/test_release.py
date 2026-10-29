@@ -29,7 +29,8 @@ def project(tmp_path, release=None):
     (root / "tools/scratch.tmp").write_text("scratch\n")
     (root / "README.md").write_text("# Demo\n")
     (root / "docs/step.png").write_bytes(b"\x89PNG step")
-    (root / "docs/assembly.md").write_text("# Assembly\n\n1. Fit the lid.\n\n![step](step.png)\n")
+    (root / "docs/assembly.md").write_text("# Assembly\n\n1. Fit the lid.\n\n![step](step.png)\n\n"
+                                          "See [the readme](../README.md) and [the lid](../exports/lid.stl).\n")
     sha = lambda p: hashlib.sha256((root / "exports" / p).read_bytes()).hexdigest()
     (root / "exports/slice-report.json").write_text(json.dumps({
         "slicer": "Bambu Studio (command line)", "printer": "Bambu Lab P1S 0.4 nozzle", "process": "0.20mm Standard",
@@ -91,6 +92,8 @@ def test_markdown_pages_and_their_images(tmp_path):
     html = (r.folder / "docs/assembly.html").read_text()
     assert "Fit the lid" in html and 'src="step.png"' in html and 'href="../index.html"' in html
     assert 'href="docs/assembly.html"' in (r.folder / "index.html").read_text()
+    # links to files the release carries elsewhere point at those copies
+    assert 'href="../source/README.md"' in html and 'href="../cad/lid.stl"' in html
 
 
 def test_groups_and_bad_config(tmp_path):
@@ -99,7 +102,8 @@ def test_groups_and_bad_config(tmp_path):
     page = (build_release(p, out=tmp_path / "out/g").folder / "index.html").read_text()
     assert page.index("Print these") < page.index('id="part-base"') < page.index("Optional") < page.index('id="part-lid"')
     for bad in ({"parts": ["lid"], "groups": [{"title": "x", "parts": ["base"]}]}, {"parts": ["lid", "lid"]},
-                {"quantities": {"lid": 0}}, {"notes": {"ghost": {"a": "b"}}}, {"colour": "red"}):
+                {"quantities": {"lid": 0}}, {"notes": {"ghost": {"a": "b"}}}, {"colour": "red"},
+                {"notes": {"lid": {"use": "desktop", "or any setup": None}}}, {"hardware": [{"item": "M3", "qty": None}]}):
         with pytest.raises(CadConfigError):
             build_release(project(tmp_path / str(abs(hash(str(bad)))), bad), out=tmp_path / "out/bad")
     with pytest.raises(FileNotFoundError):

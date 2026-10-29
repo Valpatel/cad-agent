@@ -103,6 +103,7 @@ error even if `vptest.yaml` has one.
 | `checks` | `[]` | `{id, title, file, pass_key="pass", evidence?, links?}`; `pass_key` may be a list (all must be `true`) |
 | `printer` | none | `{name, bed_mm: [x, y, z]}`; parts must fit; 3MF files are centred on it |
 | `package` | none | `{name, include: [globs]}`; zip + `<name>-manifest.json` (sha256) in `exports_dir` |
+| `release` | every part, default source globs | the print release (`cad-agent release`): see [the print release](#the-print-release-cad-agent-release) |
 | `serve` | `127.0.0.1`, port 0 (any free) | `{host, port}` |
 | `html_pages` | `[]` | HTML / Markdown pages whose local links must resolve |
 
@@ -175,6 +176,7 @@ Unquoted, the title is cut at the comma and the rest becomes a stray key.
 | `cad-agent check [--json]` | collects results (no build), prints a table or the results JSON | 1 if any row fails |
 | `cad-agent report [--open]` | writes `exports/cad-agent-results.json` (schema 1.0, the vptest web shape, so `vptest web validate` and its renderer still accept it) and a standalone `docs/cad-agent-report.html` with inline styles (light and dark) that opens from `file://` | 1 if any row fails |
 | `cad-agent package` | zip + sha256 manifest from `package.include` | |
+| `cad-agent release [--out DIR] [--no-zip]` | the print release: `release/<name>-rev<revision>/index.html` (parts with thumbnails, print settings, slicer mass and time, STEP/STL/3MF links; assembly pages; hardware; source) and a reproducible zip next to it ([below](#the-print-release-cad-agent-release)) | 2 on a missing part file or a foreign `--out` folder |
 | `cad-agent serve [--port N] [--host H]` | serves the project root; writes the URL to `preview/server-url.txt` | |
 | `cad-agent site [--serve]` | builds `site/` from milestones, decisions, a designs summary, Markdown pages and git history (config `cad: site:`); `--serve` rebuilds on change and serves the web kit at `/_cadagent/kit/`. One top bar links every page: `site: nav:` (`[{id, title, href}]`, hrefs from the project root) or, when unset, the overview, docs, 3D model and each `html_pages` page plus the check and simulation reports, the design comparison and the search leaderboard. The server adds the bar to every HTML page it sends (files on disk unchanged; a bar the page mounts itself wins; `<meta name="cadagent-nav" content="off">` opts a page out). A project with a `dossier:` or `gates:` key also gets the review pages in `site/review/`: a page per dossier section, the requirements table and the gates page with the connectivity graph ([dossier.md](dossier.md#on-the-review-site)) | |
 | `cad-agent view` | writes every part in assembly position to `exports/view/` (STL + `view.json`) for the 3D viewer (config `cad: view:` for colours, hidden variants, explode directions, extra parts from STEP or STL, list categories) | |
@@ -421,6 +423,49 @@ Slices each part's 3MF with Bambu Studio's command line (an external AGPL progra
 profiles are flattened through their `inherits` chain first (unflattened, the slicer reports 0 g). Configure under
 `cad.slicer`: `printer`, `process`, `filament` (`pla`, `petg` or a profile name), `overrides` (process settings) and
 `parts`. Writes `exports/slice-report.json`.
+
+### The print release (`cad-agent release`)
+
+What someone who wants to *print and build* the design downloads, as opposed to the review package
+(`cad-agent package`), which carries the evidence. `cad-agent release` writes `release/<name>-rev<revision>/` (or
+`--out DIR`) and `<folder>.zip` next to it:
+
+| Path | Content |
+|---|---|
+| `index.html` | one standalone page (inline CSS, light and dark, no scripts, opens from `file://`): the totals, the recommended print settings from the slice report, then a card per part with its thumbnail, quantity, material, notes, mass and time per copy, and its STEP, STL and 3MF; then the assembly pages, the hardware table and the source |
+| `cad/` | `<part>.step`, `.stl`, `.3mf` from `exports_dir`, plus `extra_cad` |
+| `images/` | the thumbnails |
+| `docs/` | the `pages` and the images they link to; Markdown is also rendered to HTML (with the `markdown` package) |
+| `source/` | the files matched by `include` minus `exclude` |
+| `manifest.json` | `format: cad-agent.release/1`, the parts, and the sha256 of every file |
+
+A part's mass and time come from `exports/slice-report.json` only while the sha256 recorded there still matches the
+part's 3MF; otherwise its card says **not sliced** and the totals leave it out (run `cad-agent slice`). Simulation
+results and renders are not included unless a glob names them. The folder is rewritten from scratch each run (a
+non-empty folder that is not an earlier release is refused); the zip has sorted entries with fixed dates, so the same
+files give the same bytes.
+
+```yaml
+cad:
+  release:
+    title: J501 enclosure                  # default: cad.title
+    groups:                                # or `parts: [a, b]`; default: every part in the parts file
+      - {title: Print these, parts: [base, cover, rear_io], note: The enclosure set.}
+      - {title: Optional, parts: [chimney_cap]}
+    quantities: {rail_key: 2}              # default 1
+    material: PLA                          # default: the slice report's filament
+    notes:                                 # label -> text, shown on the part's card in this order
+      cover: {orientation: roof down on the bed, supports: none}
+    thumbnail: "{preview}/part-{part}.png" # the default; {preview} is preview_dir
+    extra_cad: [exports/assembly.step]
+    pages: [ASSEMBLY.md, "docs/assembly/*"]
+    hardware: docs/hardware.csv            # or a list of mappings: [{item: M3 x 10, qty: 4}]
+    include: ["cad/**", "tools/**", cad-agent.yaml, "requirements*.txt", README.md, "LICENSE*"]   # the default
+    exclude: ["**/__pycache__/**", "**/*.pyc", "**/.DS_Store"]                                  # the default
+    date: 2026-10-29                       # default: the last commit's date
+```
+
+Attach the zip (and, if you like, the folder's `index.html` as a page) to the GitHub release.
 
 ## Tests
 

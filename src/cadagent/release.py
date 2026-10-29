@@ -144,14 +144,23 @@ def release_config(project: CadProject, known_parts: Sequence[str]) -> ReleaseCo
     notes = raw.get("notes") or {}
     if not isinstance(notes, dict) or not all(isinstance(v, dict) for v in notes.values()):
         raise CadConfigError("cad.release.notes must map part -> {label: text}")
+    for part, labels in notes.items():
+        empty = [k for k, v in labels.items() if v is None or isinstance(v, (dict, list))]
+        if empty:   # usually an unquoted comma in a YAML {flow: mapping} that split one note into two keys
+            raise CadConfigError(f"cad.release.notes.{part}: {empty} have no text; quote values that contain commas")
     for name in list(quantities) + list(notes):
         if name not in seen:
             raise CadConfigError(f"cad.release: {name!r} has a quantity or notes but is not a released part")
     hardware = raw.get("hardware")
     if hardware is not None and not isinstance(hardware, (str, list)):
         raise CadConfigError("cad.release.hardware must be a CSV path or a list of mappings")
-    if isinstance(hardware, list) and not all(isinstance(r, dict) for r in hardware):
-        raise CadConfigError("cad.release.hardware rows must be mappings")
+    if isinstance(hardware, list):
+        if not all(isinstance(r, dict) for r in hardware):
+            raise CadConfigError("cad.release.hardware rows must be mappings")
+        for i, row in enumerate(hardware):
+            if any(v is None for v in row.values()):
+                raise CadConfigError(f"cad.release.hardware[{i}]: {[k for k, v in row.items() if v is None]} have no "
+                                     "value; quote values that contain commas")
     return ReleaseConfig(
         title=str(raw.get("title") or project.title or project.name),
         groups=groups,
@@ -353,7 +362,7 @@ h2{margin:34px 0 4px;font-size:1.25rem}.lead{margin:0 0 12px;color:var(--muted)}
 .card h3{margin:0;font-size:1.02rem;display:flex;gap:8px;align-items:baseline;justify-content:space-between}
 .card h3 .qty{font-size:.85rem;font-weight:600;color:var(--accent);white-space:nowrap}
 .card .id{color:var(--muted);font-weight:500;font-size:.85rem}
-.card dl{display:grid;grid-template-columns:max-content 1fr;gap:2px 10px;margin:0;font-size:.88rem}
+.card dl{display:grid;grid-template-columns:fit-content(42%) 1fr;gap:2px 10px;margin:0;font-size:.88rem}
 .card dt{color:var(--muted)}.card dd{margin:0}
 .pill{display:inline-block;padding:0 8px;border-radius:99px;font-size:.78rem;font-weight:700}
 .pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.warn{background:var(--warn-bg);color:var(--warn)}
@@ -510,12 +519,17 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
     report, current = _slice_rows(project)
     material = cfg.material or str(report.get("filament") or "").split(" @")[0]
     copied: Dict[str, Path] = {}
+    origin: Dict[str, str] = {}      # project path -> its first copy in the release (rewrites the pages' links)
 
     def put(src: Path, rel: str) -> str:
         dst = folder / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(src, dst)
         copied[rel] = dst
+        try:
+            origin.setdefault(src.resolve().relative_to(project.root.resolve()).as_posix(), rel)
+        except ValueError:
+            pass
         return rel
 
     preview = os.path.relpath(project.preview_dir, project.root)
@@ -543,35 +557,37 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
     for src in _glob(project.root, cfg.extra_cad):
         rel = put(src, f"cad/{src.name}")
         extra.append({"name": src.name, "href": rel, "size": _size(src.stat().st_size)})
-    # Assembly pages under docs/ (a leading docs/ is not repeated), with the images they link to; Markdown is also
-    # rendered to HTML, its links pointing at the release copies.
+    hardware = _hardware_rows(project, cfg.hardware)
+    sources = []
+    for src in _glob(project.root, cfg.include, cfg.exclude):
+        rel = src.relative_to(project.root).as_posix()
+        if src.resolve().is_relative_to(folder):
+            continue
+        put(src, f"source/{rel}")
+        sources.append(rel)
+    # Assembly pages under docs/ (a leading docs/ is not repeated), with the images they link to. Markdown is also
+    # rendered to HTML; its links to any file in the release (a part's CAD, a source file, another page) are rewritten.
     def doc_dest(rel: str) -> str:
         return "docs/" + (rel[len("docs/"):] if rel.startswith("docs/") else rel)
 
     page_files = _glob(project.root, cfg.pages)
-    placed: Dict[str, str] = {}
     texts: Dict[str, str] = {}
     for src in page_files:
         rel = src.relative_to(project.root).as_posix()
-        placed[rel] = doc_dest(rel)
-        if src.suffix.lower() not in IMAGE_SUFFIXES:
-            try:
-                texts[rel] = src.read_text()
-            except UnicodeDecodeError:
-                continue
-            for img in _linked_images(texts[rel], rel, project.root):
-                placed.setdefault(img, doc_dest(img))
-    for rel, dest in sorted(placed.items()):
-        put(project.root / rel, dest)
-    links = dict(placed)
-    rendered: Dict[str, str] = {}
-    for rel, text in texts.items():
-        if rel.endswith(".md"):
-            at = placed[rel][:-3] + ".html"
-            body = _render_markdown(text, links, rel, at)
-            if body is not None:
-                rendered[rel] = (at, body)
-                links[rel] = at
+        put(src, doc_dest(rel))
+        origin[rel] = doc_dest(rel)                    # the docs copy, not a source/ copy of the same file
+        if src.suffix.lower() in IMAGE_SUFFIXES:
+            continue
+        try:
+            texts[rel] = src.read_text()
+        except UnicodeDecodeError:
+            continue
+        for img in _linked_images(texts[rel], rel, project.root):
+            if not (folder / doc_dest(img)).exists():
+                put(project.root / img, doc_dest(img))
+            origin.setdefault(img, doc_dest(img))
+    links = dict(origin)
+    links.update({rel: origin[rel][:-3] + ".html" for rel in texts if rel.endswith(".md")})
     docs = []
     for src in page_files:
         rel = src.relative_to(project.root).as_posix()
@@ -583,27 +599,18 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
         else:
             m = re.search(r"<title>(.*?)</title>", text, re.S | re.I)
             title = html.unescape(m.group(1).strip()) if m else rel
-        href = placed[rel]
-        if rel in rendered:
-            at, body = rendered[rel]
-            body = _render_markdown(text, links, rel, at)          # again, now that every page's HTML name is known
-            back = _rel_from(at, "index.html")
+        href = origin[rel]
+        at = links[rel]
+        body = _render_markdown(text, links, rel, at) if rel.endswith(".md") else None
+        if body is not None:
             (folder / at).write_text(
                 f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" '
                 f'content="width=device-width,initial-scale=1"><title>{_e(title)}</title><style>{_DOC_CSS}</style>'
-                f'</head><body><div class="page"><p><a href="{_e(back)}">← {_e(cfg.title)}</a></p>'
+                f'</head><body><div class="page"><p><a href="{_e(_rel_from(at, "index.html"))}">← {_e(cfg.title)}</a></p>'
                 f"<article>{body}</article></div></body></html>\n")
             copied[at] = folder / at
             href = at
         docs.append({"title": title, "href": href})
-    hardware = _hardware_rows(project, cfg.hardware)
-    sources = []
-    for src in _glob(project.root, cfg.include, cfg.exclude):
-        rel = src.relative_to(project.root).as_posix()
-        if src.resolve().is_relative_to(folder):
-            continue
-        put(src, f"source/{rel}")
-        sources.append(rel)
     zip_path = folder.with_name(folder.name + ".zip") if make_zip else None
     (folder / "index.html").write_text(_page(project, cfg, revision, date, parts, report, docs, hardware, sources, extra,
                                              zip_path.name if zip_path else None))

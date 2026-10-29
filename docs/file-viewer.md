@@ -105,5 +105,24 @@ pass; retain representative browser and phone screenshot checks separately.
 
 Initial development evidence (2026-10-29): actual product barrel originals loaded
 as 4,744 STL triangles, 2,888 STEP triangles and 4,632 3MF triangles, each from its own
-bytes. STEP and print orientation differ; no sibling was substituted. Final browser
-and published-corpus receipts are recorded in the PR once those runs finish.
+bytes. STEP and print orientation differ; no sibling was substituted. The published corpus then passed 495/495 parser checks on an isolated GB10 compute
+worker (Node 22.23.4), with no failures or warnings: 288 STL, 188 STEP and 19 3MF,
+97,454,120 input bytes. The 27 tracked vendor reference STLs outside published roots
+were excluded. Total parser time was 97.178 seconds; the largest/slowest input was
+`exports/leg/leg_stand.step` (4,842,223 bytes, 120,166 triangles, 4.067 seconds).
+
+The exact [manifest](validation/file-viewer-corpus-manifest.json) and
+[per-file results](validation/file-viewer-corpus-results.json) retain source hashes,
+parser revision and limits. The manifest SHA256 is
+`9fd0962b2e2d2eeb04883de8bdd92390f291ebf98bc3753ad29a220b6eced5ea`.
+These are parser-only results. Separately, the Chromium and WebKit browser suites
+exercise rendering, measured phone/landscape framing, keyboard retry, stalled-body
+timeouts, main-thread responsiveness during busy parsing and native worker
+cancellation. Chromium also verifies native two-touch pinch. Both browsers render
+the known-dimension STEP/STL/3MF fixtures and preserve exact original download URLs.
+An independent reviewer additionally checked outward winding/signed volume for
+reflected 3MF instances and the STEP fixture, and verified the original download hash.
+
+The final [validation summary](validation/file-viewer-validation.json) records 26
+Chromium and 25 WebKit browser cases (the additional Chromium case uses native CDP
+two-touch pinch), 8 unit tests, 47 wheel-file checks and runtime source hashes.

@@ -1,0 +1,166 @@
+{
+  "date": "2026-10-29",
+  "browser": {
+    "chromium": {
+      "passed": true,
+      "cases": 26,
+      "timestamp": "2026-10-29T05:30:27.472Z",
+      "viewports": [
+        {
+          "width": 320,
+          "height": 568
+        },
+        {
+          "width": 568,
+          "height": 320
+        },
+        {
+          "width": 390,
+          "height": 844
+        },
+        {
+          "width": 844,
+          "height": 390
+        }
+      ],
+      "wheel": [
+        {
+          "wheelRatio": 1.0157136246604863,
+          "pixelRatio": 0.9998787288875006,
+          "top": [
+            0,
+            0.999999995,
+            9.999999957112647e-05
+          ]
+        }
+      ],
+      "pinch": [
+        {
+          "pinchRatio": 0.41666666666666696
+        }
+      ],
+      "errors": []
+    },
+    "webkit": {
+      "passed": true,
+      "cases": 25,
+      "timestamp": "2026-10-29T05:31:29.015Z",
+      "viewports": [
+        {
+          "width": 320,
+          "height": 568
+        },
+        {
+          "width": 568,
+          "height": 320
+        },
+        {
+          "width": 390,
+          "height": 844
+        },
+        {
+          "width": 844,
+          "height": 390
+        }
+      ],
+      "wheel": [
+        {
+          "wheelRatio": 1.0157109922082437,
+          "pixelRatio": 0.9998823566055616,
+          "top": [
+            0,
+            0.999999995,
+            9.999999957112647e-05
+          ]
+        }
+      ],
+      "pinch": [],
+      "errors": []
+    }
+  },
+  "unitTests": {
+    "passed": 8,
+    "viewerSpecific": 3
+  },
+  "wheel": {
+    "passed": true,
+    "wheelSha256": "f895002dbdb20020bf5c0a0f3864eab117a517a385ce7fce7293a5ba78ac3dc8",
+    "checkedFiles": [
+      "occt-import-js/LICENSE_LGPL_21.txt",
+      "occt-import-js/OCCT_LGPL_EXCEPTION.txt",
+      "occt-import-js/license.occt-import-js.txt",
+      "occt-import-js/license.occt.txt",
+      "occt-import-js/occt-import-js.js",
+      "occt-import-js/occt-import-js.wasm",
+      "occt-import-js/source/CMakeLists.txt",
+      "occt-import-js/source/README.md",
+      "occt-import-js/source/occt-import-js/example/main.cpp",
+      "occt-import-js/source/occt-import-js/src/importer-brep.cpp",
+      "occt-import-js/source/occt-import-js/src/importer-brep.hpp",
+      "occt-import-js/source/occt-import-js/src/importer-iges.cpp",
+      "occt-import-js/source/occt-import-js/src/importer-iges.hpp",
+      "occt-import-js/source/occt-import-js/src/importer-step.cpp",
+      "occt-import-js/source/occt-import-js/src/importer-step.hpp",
+      "occt-import-js/source/occt-import-js/src/importer-utils.cpp",
+      "occt-import-js/source/occt-import-js/src/importer-utils.hpp",
+      "occt-import-js/source/occt-import-js/src/importer-xcaf.cpp",
+      "occt-import-js/source/occt-import-js/src/importer-xcaf.hpp",
+      "occt-import-js/source/occt-import-js/src/importer.cpp",
+      "occt-import-js/source/occt-import-js/src/importer.hpp",
+      "occt-import-js/source/occt-import-js/src/js-interface.cpp",
+      "occt-import-js/source/occt-import-js/src/js-interface.hpp",
+      "occt-import-js/source/package.json",
+      "occt-import-js/source/tools/build_native_win_debug.bat",
+      "occt-import-js/source/tools/build_native_win_release.bat",
+      "occt-import-js/source/tools/build_wasm_win.bat",
+      "occt-import-js/source/tools/build_wasm_win_dist.bat",
+      "occt-import-js/source/tools/build_wasm_win_release.bat",
+      "occt-import-js/source/tools/setup_emscripten_win.bat",
+      "linkedom/LICENSE",
+      "linkedom/worker.js",
+      "file-parsers/3MFLoader.js",
+      "file-parsers/FFLATE-LICENSE.txt",
+      "file-parsers/STLLoader.js",
+      "file-parsers/THREE-LICENSE.txt",
+      "file-parsers/fflate.module.js",
+      "occt-import-js/source/SUBMODULES.gitconfig",
+      "file-viewer.html",
+      "file-viewer.js",
+      "file-viewer.css",
+      "file-loader.js",
+      "file-geometry.js",
+      "file-step-worker.js",
+      "file-mesh-worker.js",
+      "vendor/FILE-VIEWER-NOTICES.md",
+      "vendor/file-viewer-sources.json"
+    ],
+    "maxRuntimeAssetBytes": 7604031
+  },
+  "sourceSha256": {
+    "src/cadagent/webkit/file-viewer.css": "823d9c5e7d8eaa1c43644486578dad960e7caa13ed02c77610051547c2dcd88f",
+    "src/cadagent/webkit/file-geometry.js": "1f503af4149f96624ecaba68043ea44eaaa68503988646c5139edb482ab922fd",
+    "src/cadagent/webkit/file-viewer.js": "2e847e493fae7106e7db933826ec32425d26264b049fac6ec2e0c7a49c21704d",
+    "src/cadagent/webkit/file-loader.js": "09a7368fb7c0cf3f6d7cbb16eed173e7d48a8f7fc7fcff690621de65df4ec594",
+    "src/cadagent/webkit/file-mesh-worker.js": "3311c66e3adb40d0ea9123ded955655befa932797419f144a90ce06dcf64a9a9",
+    "src/cadagent/webkit/file-viewer.html": "dc5435a7e15087e6153d702771cf5c4980909c90d00431ca3c15dd950be7a9dc",
+    "src/cadagent/webkit/file-step-worker.js": "0e41118376d923b17b496820f6a2a3f151cb288757bdcf43ac159a159fa7a1fe"
+  },
+  "corpus": {
+    "manifestSha256": "9fd0962b2e2d2eeb04883de8bdd92390f291ebf98bc3753ad29a220b6eced5ea",
+    "parserRevision": "d6b4b8e",
+    "passed": 495,
+    "failed": 0,
+    "warnings": 0,
+    "bytes": 97454120,
+    "formats": {
+      "stl": 288,
+      "step": 188,
+      "3mf": 19
+    },
+    "excludedReferenceSTLs": 27,
+    "totalParserMs": 97178,
+    "maxParserMs": 4067,
+    "maxTriangles": 120166
+  },
+  "visualInspection": "Chromium320 portrait and WebKit568x320 landscape screenshots show whole geometry and readable controls. Final320 error copy and Retry are inside the viewport. Parser-only corpus is not manufacturing or all-model visual validation."
+}

@@ -16,6 +16,13 @@
   <script type="module">
     const host=document.querySelector('#file-viewer'),fallback=host.querySelector('.file-bootstrap');
     fallback.querySelector('button').addEventListener('click',()=>location.reload());
+    // The original remains downloadable even when the entry graph cannot load.
+    try{
+      const source=new URL(new URLSearchParams(location.search).get('file'),location.href);
+      if(source.origin===location.origin&&/^https?:$/.test(source.protocol)&&!source.username&&!source.password&&/\.(stl|step|stp|3mf)$/i.test(source.pathname)){
+        const download=document.createElement('a');download.className='file-link';download.href=source.href;download.download='';download.textContent='Download original';fallback.append(download);
+      }
+    }catch{/* Invalid source URLs are explained by the viewer when it starts. */}
     try{
       const {createFileViewer}=await import('./file-viewer.js');
       window.__fileViewer=createFileViewer(host,{file:new URLSearchParams(location.search).get('file'),back:new URLSearchParams(location.search).get('back')});

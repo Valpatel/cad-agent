@@ -64,7 +64,7 @@ export function createFileViewer(host,{file,back,onState=()=>{},timeoutMs=30000,
       const raw=new THREE.Box3();for(const m of info.meshes)raw.union(new THREE.Box3(new THREE.Vector3(...m.bounds.slice(0,3)),new THREE.Vector3(...m.bounds.slice(3))));
       info.boundsMm=raw.getSize(new THREE.Vector3()).toArray();summary.textContent=`${info.format} · ${info.triangles.toLocaleString()} triangles · ${info.boundsMm.map(n=>Number(n.toFixed(2))).join(' × ')} mm`;
       detailText.textContent=[info.unitNote,...info.warnings,'CAD Z-up is shown vertically. Preview tessellation does not alter the download.'].join('. ');
-      await new Promise(resolve=>requestAnimationFrame(()=>{stage.renderer.render(stage.scene,stage.camera);resolve();}));
+      await new Promise(resolve=>requestAnimationFrame(()=>{if(id===request&&!disposed)stage.renderer.render(stage.scene,stage.camera);resolve();}));
       if(id!==request||disposed)return false;document.body.dataset.ready='1';subtitle.textContent='Inspect the original geometry · download it unchanged';download.textContent='Download original';setStatus('ready');return true;
     }catch(error){if(id!==request||disposed)return false;setStatus(error.name==='AbortError'?'cancelled':'error',error.name==='AbortError'?'Loading cancelled. You can retry this original file.':(error.message||'The original file could not be opened.')+(model?' Still showing '+info.sourceName+'.':''));return false;}
   }

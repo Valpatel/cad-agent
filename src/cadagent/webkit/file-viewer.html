@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>Original CAD file viewer</title>
+  <link rel="stylesheet" href="./file-viewer.css">
+  <script type="importmap">{"imports":{"three":"./vendor/three/three.module.min.js","three/addons/":"./vendor/three/addons/"}}</script>
+</head>
+<body>
+  <main id="file-viewer" aria-label="Original CAD file viewer">
+    <section class="file-bootstrap" role="status" aria-live="polite"><h1>Original CAD file viewer</h1><p>Starting the 3D viewer…</p><button type="button" hidden>Retry viewer</button></section>
+    <noscript>This interactive preview needs JavaScript. Return to the parts list to download the original CAD file.</noscript>
+  </main>
+  <script type="module">
+    const host=document.querySelector('#file-viewer'),fallback=host.querySelector('.file-bootstrap');
+    fallback.querySelector('button').addEventListener('click',()=>location.reload());
+    // The original remains downloadable even when the entry graph cannot load.
+    try{
+      const source=new URL(new URLSearchParams(location.search).get('file'),location.href);
+      if(source.origin===location.origin&&/^https?:$/.test(source.protocol)&&!source.username&&!source.password&&/\.(stl|step|stp|3mf)$/i.test(source.pathname)){
+        const download=document.createElement('a');download.className='file-link';download.href=source.href;download.download='';download.textContent='Download original';fallback.append(download);
+      }
+    }catch{/* Invalid source URLs are explained by the viewer when it starts. */}
+    try{
+      const {createFileViewer}=await import('./file-viewer.js');
+      window.__fileViewer=createFileViewer(host,{file:new URLSearchParams(location.search).get('file'),back:new URLSearchParams(location.search).get('back')});
+      fallback.remove();
+    }catch(error){
+      fallback.querySelector('p').textContent='The 3D viewer could not start. Retry to load its renderer and controls.';
+      fallback.querySelector('button').hidden=false;document.body.dataset.viewerError=String(error?.message||error);
+    }
+  </script>
+</body>
+</html>

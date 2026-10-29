@@ -79,6 +79,41 @@ def by_id(v):
     return {c["id"]: c for c in v["checks"]}
 
 
+@pytest.mark.parametrize("values,errors", [
+    ((1.0, 0.9985, 1.0), (0.001, 0.001, 0.001)),  # pushed straddles the threshold
+    ((1.0, 1.0, 1.001), (0.0001, 0.0001, 0.0001)),  # already-outside straddles it
+])
+def test_support_does_not_discard_uncertainty_or_override_it_with_a_probe(monkeypatch, values, errors):
+    from cadagent.gates import containment as con, relations as rel
+    estimates = iter(rel._VolumeEstimate(v, e, e, 0) for v, e in zip(values, errors))
+    monkeypatch.setattr(rel, "_measure_volume", lambda shape: next(estimates))
+    monkeypatch.setattr(con, "_boolean", lambda *args: object())
+    monkeypatch.setattr(con, "_shifted", lambda *args: object())
+    monkeypatch.setattr(con, "_pairs", lambda *args: [])
+    monkeypatch.setattr(con, "_probe_points", lambda *args: pytest.fail("uncertainty must not become a probe pass"))
+    asm = SimpleNamespace(shape=lambda name: object(), item=lambda name: SimpleNamespace(key=name))
+    ctx = SimpleNamespace(assembly=asm, tol=Tolerances(), down=(0, 0, -1), support_mm=0.1,
+                          cache=None, cid=lambda *args: ":".join(args), support="fail",
+                          probe_deflection=0.01, probe_points=10, probe_spacing=0.5)
+    result = con._support_check(ctx, Contains("container", "cavity", "part"), ["part"])
+    assert result.status == "fail"
+    assert "straddles" in str(result.evidence)
+
+
+def test_support_cache_is_bound_to_the_volume_measurement_policy(monkeypatch, tmp_path):
+    from cadagent.gates import containment as con, relations as rel
+    cache = PairCache(tmp_path)
+    args = ("rests-cavity", Tolerances(), "upper-hash", "cavity-hash", "support-options")
+    current = rel.RELATIONS_VERSION
+    monkeypatch.setattr(rel, "RELATIONS_VERSION", "2")
+    old_key = con._key(*args)
+    cache.put(old_key, {"rests": True, "method": "boolean"})
+    monkeypatch.setattr(rel, "RELATIONS_VERSION", current)
+    new_key = con._key(*args)
+    result, hit = con._cached(cache, new_key, lambda: {"rests": False, "method": "recomputed"})
+    assert old_key != new_key and not hit and result["rests"] is False
+
+
 def mc_outside(centre, r, inside, n=400_000, seed=1):
     """Monte Carlo volume of a ball outside a region (``inside(points) -> bool array``), and its standard error."""
     rng = np.random.default_rng(seed)

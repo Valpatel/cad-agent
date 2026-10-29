@@ -73,12 +73,13 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from cadagent._deps import require
 from cadagent.gates.cache import PairCache, digest, matrix_key
+from cadagent.gates import relations as _relations
 from cadagent.gates.relations import (Assembly, Relation, Tolerances, _boolean, _distance, _faces, _kernel_version,
                                       _pt, _trsf, _volume, aabb_distances, bounding_box, relate_pair)
 from cadagent.gates.verdict import Check, verdict, write_verdict
 
 GATE = "containment"
-VERSION = "2"            # bump when a cached support or escape record changes meaning
+VERSION = "3"            # support decisions retain volume uncertainty
 SUPPORT_MODES = ("off", "report", "fail")
 
 ASSUMPTIONS = [
@@ -182,7 +183,7 @@ def _cached(cache: Optional[PairCache], key: Optional[str], compute):
 
 
 def _key(kind: str, tol: Tolerances, *parts: str) -> str:
-    return digest(GATE, kind, VERSION, _kernel_version(), tol.key(), *parts)
+    return digest(GATE, kind, VERSION, _relations.RELATIONS_VERSION, _kernel_version(), tol.key(), *parts)
 
 
 def _points_of(topods, deflection: float, max_points: int, angular: float = 0.1) -> List[Any]:
@@ -571,7 +572,8 @@ def _interpenetration_check(ctx: _Ctx, d: Contains, names: List[str]) -> Check:
 
 def _common(a, b) -> Dict[str, Any]:
     try:
-        return {"common_mm3": round(_volume(_boolean("common", a, b)), 6)}
+        measured = _relations._measure_volume(_boolean("common", a, b))
+        return {"common_mm3": measured.value, "estimated_error_mm3": measured.error}
     except Exception as exc:
         return {"error": f"{type(exc).__name__}: {exc}"}
 
@@ -593,10 +595,15 @@ def _rests(ctx: _Ctx, upper: str, lower: str, kind: str) -> Dict[str, Any]:
     # volume pushed out of the cavity / into the other solid by the move, net of what was already there
     pushed = (before["common_mm3"] - after["common_mm3"]) if kind == "cavity" \
         else (after["common_mm3"] - before["common_mm3"])
-    already = (_volume(us) - before["common_mm3"]) if kind == "cavity" else before["common_mm3"]
-    out: Dict[str, Any] = {"rests": pushed > tol.overlap_mm3, "pushed_mm3": round(pushed, 6),
-                           "already_mm3": round(already, 6), "method": "boolean"}
-    if out["rests"] or already > tol.overlap_mm3:
+    pushed_error = before["estimated_error_mm3"] + after["estimated_error_mm3"]
+    upper_volume = _relations._measure_volume(us) if kind == "cavity" else None
+    already = (upper_volume.value - before["common_mm3"]) if upper_volume else before["common_mm3"]
+    already_error = before["estimated_error_mm3"] + (upper_volume.error if upper_volume else 0.0)
+    out: Dict[str, Any] = {"rests": _relations._above_volume(pushed, pushed_error, tol.overlap_mm3),
+                           "pushed_mm3": round(pushed, 6), "already_mm3": round(already, 6), "method": "boolean",
+                           "pushed_estimated_error_mm3": pushed_error,
+                           "already_estimated_error_mm3": already_error}
+    if out["rests"] or _relations._above_volume(already, already_error, tol.overlap_mm3):
         return out          # the booleans see this pair's crossing; the probe below is for shallow misses
     gap = _distance(_faces(us), _faces(ls))[0] if kind == "cavity" else _distance(us, ls)[0]
     out["gap_mm"] = round(gap, 6)

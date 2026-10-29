@@ -12,4 +12,8 @@ Public negative controls found an open box shell wrapped as a solid could measur
 
 **Reproduce.** `PYTHONPATH=src python -m pytest tests/test_volume_precision.py tests/test_gate_relations.py -q`; `tools/volume_probe.py` holds private Boolean BREPs fixed and emits source/runtime/hash-bound numerical receipts. Private supplier geometry must not enter the repo.
 
-**Limits.** Estimated integration errors are not rigorous bounds. The private fixture still needs the corrected remote rerun and independent review. Numerical consistency does not establish mechanical fit, thread strength, printability, harness access or physical safety. See [the detailed method and source links](../../docs/volume-precision.md).
+**Follow-through.** Independent review at `773477b` caught two downstream omissions: containment support discarded the estimate while subtracting volumes, and its separate cache did not include the measurement policy. A controlled `0.0015 ± 0.002 mm³` pushed-volume estimate passed a 0.001 mm³ threshold. Support now carries summed errors, refuses uncertain decisions without a probe override, and invalidates old policy caches. Regression tests cover both the pushed and already-outside thresholds.
+
+**Remote result.** The exact-head fixed-BREP rerun completed: GK residuals 0.00012211 / 0.00002023 mm³, total budget consumption 0.00021169 / 0.00002909 mm³, below the unchanged 0.01009256 mm³ limit. Common volume remains 3.288196 mm³, requiring a separate mating-geometry explanation. Sanitized numerical receipts are committed; supplier BREPs remain private.
+
+**Limits.** Estimated integration errors are not rigorous bounds. Numerical consistency does not establish mechanical fit, thread strength, printability, harness access or physical safety. See [the detailed method, receipts and source links](../../docs/volume-precision.md). Review and current CI must cover the downstream correction before merge.

@@ -20,6 +20,8 @@ The corrected draft uses `VolumePropertiesGK_s` with two requested tolerances, 1
 
 The retained uncertainty is the larger of the fine aggregate absolute-error estimate and the two masses' difference. That uncertainty **consumes** the unchanged conservation budget, `0.01 + 1e-6 × max(part volumes)` mm³. Overlap and containment thresholds are unchanged. A threshold-straddling estimate or failed conservation check is `unknown`, never a clearance pass. Cache algorithm version 4 prevents results from older integration policies being reused.
 
+Containment's support test also retains uncertainty when subtracting before/after common volumes and when measuring how much was already outside. An unresolved threshold fails that support query; its surface-probe fallback cannot override the uncertainty. Its separate cache now includes the relation measurement policy and uses containment version 3, invalidating prior scalar-volume support decisions.
+
 ## Validate geometry before measuring it
 
 Solid count alone accepts an open shell wrapped as a solid. `BRepCheck_Analyzer` alone accepts an inverted closed solid whose interior includes infinity. Before broad-phase acceptance, assembly inputs must contain valid solids, exact face surfaces, no free faces outside their solids, and every solid must classify infinity as `OUT`. Source geometry is rejected, not silently repaired or reoriented. Boolean results receive the same geometric checks before measurement. A valid empty or lower-dimensional Boolean result has zero volume; it cannot serve as an assembly part.
@@ -34,4 +36,16 @@ Enabling GK centroid moments made a public full-sphere refinement take 3.8–5.7
 
 Public tests use analytic asymmetric Bezier solids of revolution and thin shells, rigid placements, independently calculated centroids, invalid/open/inverted solids, missing surfaces, invalid integration outputs, tiny-mass error units, threshold uncertainty, conservation-budget consumption and old-cache invalidation. Existing sphere, curved-cap, containment and synthetic 100-part timing tests remain applicable.
 
-Next: reproduce the private pair remotely, obtain independent review and current CI. No installed toolkit or product geometry changes before review. Passing numerical controls does not qualify thread engagement, assembly access, printed fit, material strength or electrical readiness.
+## Private fixed-BREP rerun
+
+The detached compute-host run at toolkit `773477b1835a945f51962d8c3650f297ffead11c`, OCP7.9.3.1, Python3.12.3 completed on 2026-10-29. Local and remote STEP hashes matched. [Inputs and fixed BREP hashes](validation/volume-2026-10-29/inputs.json), [default](validation/volume-2026-10-29/default.json), [Gauss](validation/volume-2026-10-29/gauss.json), and [GK](validation/volume-2026-10-29/gk.json) numerical receipts preserve source hashes and transforms without supplier geometry.
+
+| Method | Residual A, mm³ | Residual B, mm³ | Error-budget consumption A / B, mm³ |
+| --- | ---: | ---: | ---: |
+| Default | -14.11652768 | -4.58890516 | no aggregate estimate |
+| Gauss 1e-8 | 0.00027073 | 0.00006440 | no aggregate estimate |
+| GK refinements | 0.00012211 | 0.00002023 | 0.00021169 / 0.00002909 |
+
+Both GK budget consumptions fit the unchanged 0.01009256 mm³ conservation limit. Measuring all five fixed BREPs took 2.877 seconds (Boolean preparation is separate). **Common volume remains 3.288196 mm³: this is an interference to interpret, not clearance or proof of a correctly modeled threaded mate.** The result establishes numerical consistency for this fixture only.
+
+Next: obtain independent review and current CI, including the downstream support changes. No installed toolkit or product geometry changes before review. Passing numerical controls does not qualify thread engagement, assembly access, printed fit, material strength or electrical readiness.

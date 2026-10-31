@@ -6,6 +6,19 @@ tools: Bash, Read, Grep, Glob
 
 You pick up work that another session started. Follow the "Resuming" part of the `cad-work-tracking` skill.
 
+```mermaid
+flowchart TD
+    G["each repo: fetch, branches,<br/>unpushed commits, worktrees"] --> R
+    H["GitHub: issues, PRs, CI,<br/>threads, work claims"] --> R
+    L["runs: their logs on<br/>their hosts, read only"] --> R
+    R["report: goal, done, in flight,<br/>local-only state, next three steps"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class G,H,L here
+    class R out
+```
+
 1. For each repo you were given (default: the current directory):
    - `git fetch --all --prune`, `git status -sb`, `git worktree list`, and for each local branch the commits not on
      its upstream (`git log --oneline @{u}..HEAD` or `git log --oneline --branches --not --remotes`).

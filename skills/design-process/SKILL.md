@@ -11,6 +11,23 @@ looked. This process makes the design *declared* (what touches, holds, moves and
 gates), *justified* (a decision with the alternatives rejected for each part) and *reviewed* (a separate reviewer
 with a checklist), one section at a time.
 
+```mermaid
+flowchart TD
+    F["1 frame the section<br/>no geometry yet"] --> Cd["2 a card per part<br/>with its geometry"]
+    Cd --> G["3 declare geometry facts<br/>in the build script"]
+    G --> B["4 build, gate, lint,<br/>fix in order"]
+    B --> P["5–6 review packet,<br/>self-critique, measurements first"]
+    P --> Rv["7 a separate reviewer"]
+    Rv -->|"changes"| Cd
+    Rv --> Rp["8 report"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class Cd,G,B,P here
+    class F near
+    class Rv,Rp out
+```
+
 References: [`docs/dossier.md`](../../docs/dossier.md) (the YAML and the build-script declarations),
 [`docs/gates.md`](../../docs/gates.md) (what each gate measures), [`docs/review-packet.md`](../../docs/review-packet.md)
 (the packet and the checklist), [`docs/design-process-plan.md`](../../docs/design-process-plan.md) §5 (why).

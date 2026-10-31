@@ -5,7 +5,7 @@
  * filter that hides results without saying so. */
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { chromium, webkit } from '@playwright/test';
@@ -100,6 +100,51 @@ try {
         seen.push(`feedback link does not open the prefilled form: ${href}`);
     }
     for (const s of seen) problems.push(`${width}px ${route}: ${s}`);
+    await context.close();
+  }
+  // No text under a copy button (#126): every page with code, at mouse and touch widths around the kit's breakpoints,
+  // idle and right after a copy on the page with the most code (the "Copied" label is wider than "Copy").
+  const codePages = [];
+  for (const e of await readdir(dir, { withFileTypes: true, recursive: true })) {
+    const rel = path.relative(dir, path.join(e.parentPath, e.name));
+    if (!e.isFile() || !rel.endsWith('.html') || rel.startsWith('kit')) continue;
+    const pres = ((await readFile(path.join(dir, rel), 'utf8')).match(/<pre\b/g) || []).length;
+    if (pres) codePages.push(['/' + rel.replace(/\.html$/, '').split(path.sep).join('/'), pres]);
+  }
+  const busiest = codePages.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([r]) => r).reverse();
+  const covered = () => {
+    const out = [];
+    for (const el of document.querySelectorAll('cad-copy')) {
+      const btn = el.querySelector(':scope > .cad-copy-btn'), pre = el.querySelector(':scope > pre');
+      if (!btn || !pre || !btn.offsetWidth) continue;
+      const b = btn.getBoundingClientRect(), p = pre.getBoundingClientRect();
+      const view = [p.left + pre.clientLeft, p.top + pre.clientTop, p.left + pre.clientLeft + pre.clientWidth, p.top + pre.clientTop + pre.clientHeight];
+      const walk = document.createTreeWalker(pre, NodeFilter.SHOW_TEXT);
+      for (let n; (n = walk.nextNode());) {
+        const range = document.createRange();
+        range.selectNodeContents(n);
+        const hit = [...range.getClientRects()].find(q => {
+          const l = Math.max(q.left, view[0]), t = Math.max(q.top, view[1]), r = Math.min(q.right, view[2]), btm = Math.min(q.bottom, view[3]);
+          return r - l >= 1 && btm - t >= 1 && r > b.left + 1 && l < b.right - 1 && btm > b.top + 1 && t < b.bottom - 1;
+        });
+        if (hit && n.textContent.trim()) { out.push(`"${n.textContent.trim().split('\n')[0].slice(0, 40)}" under the ${b.width.toFixed(0)}px button`); break; }
+      }
+    }
+    return out;
+  };
+  for (const [width, touch] of [[360, true], [520, true], [768, true], [600, false], [800, false], [1366, false]]) {
+    const context = await browser.newContext({ viewport: { width, height: 900 }, hasTouch: touch });   // touch: pointer: coarse
+    if (engine === chromium) await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: base });
+    const page = await context.newPage();
+    const where = `${width}px ${touch ? 'touch' : 'mouse'}`;
+    for (const route of busiest) {
+      await page.goto(base + route, { waitUntil: 'load' });
+      await page.evaluate(() => document.fonts.ready.then(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))));
+      for (const c of await page.evaluate(covered)) problems.push(`${where} ${route}: ${c}`);
+    }
+    await page.locator('cad-copy > .cad-copy-btn').first().click();
+    await page.waitForFunction(() => document.querySelector('cad-copy > .cad-copy-btn')?.dataset.state !== 'idle');
+    for (const c of await page.evaluate(covered)) problems.push(`${where} ${busiest.at(-1)} after copying: ${c}`);
     await context.close();
   }
   const reduced = await browser.newPage({ reducedMotion: 'reduce' });

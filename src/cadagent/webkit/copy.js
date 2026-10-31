@@ -25,6 +25,7 @@ cad-copy>.cad-copy-btn[data-state=copied]{background:var(--cad-copy-ok-bg,#2e9d5
 cad-copy>.cad-copy-btn[data-state=manual]{background:var(--cad-copy-warn-bg,#ffe1cc)}
 cad-copy>.cad-copy-btn svg{width:1.1em;height:1.1em;flex:none}
 cad-copy>.cad-copy-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+@media(max-width:600px){cad-copy>pre{padding-top:3.2em;padding-right:1em}}
 @media(prefers-reduced-motion:reduce){cad-copy>.cad-copy-btn{transition:none}}`;
 
 const ICON = {

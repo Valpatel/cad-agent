@@ -43,31 +43,49 @@ alone.
 ## Work claims: sharing issues between agents
 
 A claim is an issue comment whose first line the tools parse. No host names, user names or private infrastructure:
-agents are named by a stable pseudonymous tag.
+agents are named by a stable pseudonymous tag. Always **post a new comment**; never edit an earlier one.
 
 ```markdown
-<!-- work v1 claim agent=a-7kq2m9xw lease=2026-11-01T19:00Z -->
-**Claimed** by agent `a-7kq2m9xw` until 2026-11-01T19:00Z UTC.
+<!-- work v1 claim agent=a-7kq2m4xw lease=2026-11-01T19:00Z -->
+**Claimed** by agent `a-7kq2m4xw` until 2026-11-01T19:00Z UTC.
 
 Scope: <what this agent is doing on this issue>
 Branch: <branch or PR>
 ```
 
+The first lines of the other actions:
+
+```markdown
+<!-- work v1 checkpoint agent=a-7kq2m4xw lease=2026-11-02T08:30Z -->
+<!-- work v1 release agent=a-7kq2m4xw -->
+<!-- work v1 done agent=a-7kq2m4xw -->
+```
+
+A checkpoint goes on with what was done and the next step, a release with resume notes, and done with the PR,
+commit or evidence.
+
 | Action | When | Lease |
 |---|---|---|
-| `claim` | before starting | until `lease=` (UTC), at most 24 h after the comment |
+| `claim` | before starting | until `lease=`, at most 24 h after the comment |
 | `checkpoint` | progress; at least once per lease | renews `lease=` |
-| `release` | stopping before the end, with resume notes | ends |
-| `done` | PR merged or evidence posted | ends |
+| `release` | stopping before the end, with resume notes | none: the claim ends |
+| `done` | PR merged or evidence posted | none: the claim ends |
 
+- **Format.** The tag is `a-` plus eight characters of `[a-z2-7]`. `lease=` is UTC to the minute, `YYYY-MM-DDTHH:MMZ`
+  (no seconds), and is at most 24 h after the comment's own timestamp.
 - **A claim not refreshed within its lease has expired**: the issue is open for anyone. Daily checkpoints are the
   price of holding work.
-- **The earliest unexpired claim holds.** A later agent backs off, or claims a non-overlapping scope and says so.
+- **Who holds a contested issue.** Each agent's run of claims starts with its first `claim` and continues while
+  every following `claim` or `checkpoint` is posted before the previous lease runs out. A gap ends the run; the
+  next comment starts a new one. Of the agents whose latest comment is an unexpired `claim` or `checkpoint`, the one
+  whose current run started first holds the issue. A later agent backs off, or claims a non-overlapping scope and
+  says so. **Re-read the comments after posting a claim**: if an earlier run is still active, post `release`.
 - A claim coordinates; it is not a lock, a permission or proof of progress. Before continuing someone's expired
   claim, read its last checkpoint and re-check the branch, PR, runs and side effects.
-- The tag is `a-` plus eight characters of `[a-z2-7]`. Valpatel agents get theirs, and post claims, with the
-  organisation's `work_claim.py` tool (`status`, `claim`, `checkpoint`, `release`, `done`, `mine`, `stale`), which
-  derives the tag from a private salt. Anyone else writes the comment by hand with any stable tag of that form.
+- **A tag names a harness on one machine, not a session.** Parallel sessions on the same machine and tool share a
+  tag, so a claim with your own tag may be another session's. Read its latest checkpoint before acting on it.
+- Pick any stable tag of the right form and write the comments by hand. Valpatel agents have a helper that derives
+  the tag and posts the comments.
 
 ## What must never live only locally
 

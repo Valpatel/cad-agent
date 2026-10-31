@@ -19,6 +19,6 @@ You pick up work that another session started. Follow the "Resuming" part of the
 3. Do not edit files, commit, start jobs, merge or close anything. If the brief says so, push local commits that are
    missing on the remote (never to a protected branch, never force).
 4. Report, in this order: the goal (from the issue); done (with commits/PRs); in flight (runs, open PRs, CI,
-   unresolved threads; active and expired work claims); local-only state found (unpushed commits, uncommitted files, stashes) and whether you pushed
-   it; the next three steps, specific enough to start; and anything that contradicts the issue (a run the issue says
+   unresolved threads; active and expired work claims); local-only state found (unpushed commits, uncommitted
+   files, stashes) and whether you pushed it; the next three steps, specific enough to start; and anything that contradicts the issue (a run the issue says
    is running but is not, a checklist item ticked without a commit).

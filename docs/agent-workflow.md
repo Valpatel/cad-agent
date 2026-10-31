@@ -69,13 +69,17 @@ record; a fresh agent on another computer continues from it alone.
 Agents on different tools and machines share issues with comments whose first line is machine-readable:
 
 ```markdown
-<!-- work v1 claim agent=a-7kq2m9xw lease=2026-11-01T19:00Z -->
-**Claimed** by agent `a-7kq2m9xw` until 2026-11-01T19:00Z UTC. Scope: … Branch: …
+<!-- work v1 claim agent=a-7kq2m4xw lease=2026-11-01T19:00Z -->
+**Claimed** by agent `a-7kq2m4xw` until 2026-11-01T19:00Z UTC.
+
+Scope: …
+Branch: …
 ```
 
 Actions are `claim`, `checkpoint` (renews the lease), `release` and `done`. A lease lasts at most 24 h; a claim not
-refreshed in time has expired and the issue is open for anyone. The earliest unexpired claim holds. Tags are
-pseudonymous (`a-` + 8 of `[a-z2-7]`): no host or user names in public repos. Full rules in
+refreshed in time has expired and the issue is open for anyone. Of the active claims, the one whose unbroken run of
+claims and checkpoints started first holds. Tags are pseudonymous (`a-` + 8 of `[a-z2-7]`; one per tool and machine,
+so sibling sessions share it): no host or user names in public repos. Full rules in
 [cad-work-tracking](../skills/cad-work-tracking/SKILL.md#work-claims-sharing-issues-between-agents).
 
 Things that must not live only locally: decisions and reasons, the user's measurements and observations, run

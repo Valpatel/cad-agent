@@ -107,22 +107,22 @@ That is the gap cad-agent #94/#95 fills.
 
 ```mermaid
 mindmap
-  root((since 2026-10-24))
+  root((since 10-24))
     Adopt when stable
-      OrcaSlicer 2.5 MCP
+      OrcaSlicer MCP
     Keep pinned
       text-to-cad
     Trial
       step-diff
-    Borrow the checks
-      b123d-print checks
-    Vendor selectively
+    Borrow checks
+      b123d-print
+    Vendor parts
       static74 skill
     Watch
-      NovaSolver: copy the gate idea
+      NovaSolver idea
       build123d sheet metal
     Skip
-      closed or non-Linux MCPs
+      closed MCPs
       FEABench
 ```
 

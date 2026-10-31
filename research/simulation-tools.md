@@ -9,10 +9,10 @@ Licence rule used throughout:
 
 ```mermaid
 flowchart TD
-    T["a GPL or AGPL tool"] --> Q{"how cad-agent uses it"}
-    Q -->|"imported into our<br/>MIT package"| I["whoever distributes the<br/>combination does so under the GPL"]
-    Q -->|"run as a separate process,<br/>files exchanged"| A["aggregate use<br/>no obligation on cad-agent"]
-    Q -->|"modified and offered<br/>over a network (AGPL)"| N["the AGPL network<br/>clause applies"]
+    T["a GPL or AGPL tool"] --> Q{"how cad-agent<br/>uses it"}
+    Q -->|"imported"| I["GPL binds whoever<br/>distributes the mix"]
+    Q -->|"separate process"| A["aggregate use:<br/>no obligation"]
+    Q -->|"modified + served"| N["AGPL network<br/>clause applies"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

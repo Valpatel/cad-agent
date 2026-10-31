@@ -17,7 +17,7 @@ $ python -m pytest -q tests/test_motion_trace.py
 43 passed in 0.24s
 $ python - <<'PY'
 import runpy
-from cadagent.motion_trace import validate_motion_trace
+from cadagent.sim.motion_trace import validate_motion_trace
 f = runpy.run_path('tests/test_motion_trace.py')
 c = f['contract']()
 r = validate_motion_trace(c, f['trace'](c, 'offset-pivot'))

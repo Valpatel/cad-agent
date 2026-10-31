@@ -147,7 +147,7 @@ dict from `print_parts()` as today plus `dossier_items()`, so existing builds mi
 cards and the code registry are joined by id; a card without a registered shape, or a shape without a card, is a
 lint finding.
 
-Fasteners come from the existing McMaster catalogue entries (`skills/mcmaster-parts`) or `cadagent.fasteners`
+Fasteners come from the existing McMaster catalogue entries (`skills/mcmaster-parts`) or `cadagent.geometry.fasteners`
 envelopes; a `fastener` declaration names the catalogue key, the head seat face and the part it threads into, which
 is what the stack gate needs (lesson 04).
 
@@ -250,7 +250,7 @@ The CLI `cad-agent gates [--only NAME]` runs them after `build`; `cad-agent chec
 
 ### 4.4 Fastener and stack consistency (T6)
 
-Extends `cadagent.fasteners.blind_insert_stack` from numbers to geometry:
+Extends `cadagent.geometry.fasteners.blind_insert_stack` from numbers to geometry:
 
 - For each dossier fastener: locate the screw solid (catalogue STEP placed by the build, or envelope), the head seat
   face on the clamped part, the thread-start on the mating part (insert top or tapped hole start, from the declaration),
@@ -261,7 +261,7 @@ Extends `cadagent.fasteners.blind_insert_stack` from numbers to geometry:
   region (an insert or tapped hole); any overlap elsewhere is a finding.
 - **Tool access**: at the assembly step that installs the fastener, sweep the declared tool envelope (driver
   diameter × length, or hex key with swing) from the head along the axis; it must not overlap any part present at that
-  step. Reuses the plug-sweep machinery of `cadagent.connectors.check_ports`.
+  step. Reuses the plug-sweep machinery of `cadagent.geometry.connectors.check_ports`.
 - Output `exports/gates/fasteners.json`: a table per fastener, as lesson 04 asks for; fails on engagement below the
   declared minimum, tip collision, or no tool access.
 - Tests: the existing `test_fasteners` cases turned into geometry; a screw whose driver is blocked by a gusset.
@@ -317,7 +317,7 @@ them only when geometry changed (the cache keys make an unchanged assembly free)
 ### 5.1 Skill `skills/design-process/SKILL.md` (T10)
 
 Built: [`skills/design-process/SKILL.md`](../skills/design-process/SKILL.md), the packet and the checklist in
-[`review-packet.md`](review-packet.md) (`cadagent.render.review_packet`, `cad-agent review-packet`).
+[`review-packet.md`](review-packet.md) (`cadagent.publish.render.review_packet`, `cad-agent review-packet`).
 
 Tells an agent building or changing a design to work in this order, per section:
 
@@ -442,7 +442,7 @@ Each is one implementer, one PR into `dev`, with tests. Dependencies in brackets
 | T9 | Assembly-sequence access gate | `src/cadagent/gates/assembly.py`, `tests/test_gate_assembly.py` | seed 9 caught; every part in exactly one step | T3, T13 |
 | T14 | `cad-agent gates` command, step integration, report rows, `exports/gates/*.json` collected by `check` | `cli.py`, `report.py`, `tests/test_cli.py` | `cad-agent all` runs every gate after build; a failing gate fails `check` | T4, T5, T6, T7, T8, T9 (the command can land after T4/T5 with the others registered as they merge) |
 | **Wave 4** | | | | |
-| T10 | Skill `skills/design-process/SKILL.md` with the section workflow, the render packet spec and the checklist; `cadagent.render.review_packet(section)` helper | `skills/design-process/SKILL.md`, `src/cadagent/render.py`, `tests/test_render.py` | the packet renders the fixture's sections with captions and hashes; the skill passes the repo's skill lint if any | T13, T14 |
+| T10 | Skill `skills/design-process/SKILL.md` with the section workflow, the render packet spec and the checklist; `cadagent.publish.render.review_packet(section)` helper | `skills/design-process/SKILL.md`, `src/cadagent/render.py`, `tests/test_render.py` | the packet renders the fixture's sections with captions and hashes; the skill passes the repo's skill lint if any | T13, T14 |
 | T11 | Reviewer pass: `cad-agent review-section <id>` prompt bundle (YAML, gates, renders, checklist, diff) and the sign-off record schema and validator; `actor` from `CAD_AGENT_ACTOR` in build and review records; status invalidation on hash change | `src/cadagent/dossier/review.py`, `cli.py`, `tests/test_dossier_review.py` | a record with stale hashes does not sign off; a record whose actor equals the build actor, or is `unknown`, is refused while `require_separate_reviewer` is on | T2, T10 |
 | T15 | Site: section review page, requirements table, gates page with the connectivity SVG | `src/cadagent/site.py`, `webkit/`, `tests/test_site.py` | pages built from the fixture; every link resolves (`html_pages`) | T2, T14 |
 | **Wave 5** | | | | |

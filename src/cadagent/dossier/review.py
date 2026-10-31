@@ -497,7 +497,7 @@ def _load(project: Any, section: str) -> _Project:
 
 
 def packet_dir(project: Any, section: str) -> Path:
-    from ..packet import safe_name
+    from ..publish.packet import safe_name
     return Path(project.exports_dir) / "review" / safe_name(section)
 
 
@@ -511,7 +511,7 @@ def _read_json(path: Path) -> Optional[Dict[str, Any]]:
 
 def _packet(p: _Project, section: str) -> Tuple[Optional[Dict[str, Any]], Optional[str], Path]:
     """The rendered packet's manifest, why it is not current (None when it is), and its directory."""
-    from ..packet import SCHEMA, project_packet_stale
+    from ..publish.packet import SCHEMA, project_packet_stale
 
     d = packet_dir(p.project, section)
     m = _read_json(d / "manifest.json")
@@ -710,7 +710,7 @@ def write_bundle(project: Any, section: str, bundle_dir: Union[str, Path, None] 
     schema ``cad-agent.review-bundle/1``). Needs no CAD kernel: the packet must have been rendered before
     (``cad-agent review-packet``). ``blockers`` lists what stops a sign-off now (the bundle is written anyway, so
     a reviewer can still request changes)."""
-    from ..packet import plan_project_packet, safe_name
+    from ..publish.packet import plan_project_packet, safe_name
 
     p = _load(project, section)
     if p.geometry is None:
@@ -902,7 +902,7 @@ def submit_record(project: Any, section: str, record: Union[str, Path, Mapping[s
     ``toolkit`` here. Returns the path written (None when not written), the record and its problems."""
     import os
     from ..gates.verdict import _toolkit_version
-    from ..packet import safe_name
+    from ..publish.packet import safe_name
 
     if isinstance(record, (str, Path)):
         try:

@@ -23,7 +23,7 @@ def test_min_gap_without_ocp(monkeypatch):
         geometry.min_gap(object(), object())
 
 def test_renderer_without_vtk(monkeypatch, tmp_path):
-    from cadagent.render import Renderer
+    from cadagent.publish.render import Renderer
 
     monkeypatch.setitem(sys.modules, "vtk", None)
     with pytest.raises(MissingDependency, match="vtk"):
@@ -33,8 +33,8 @@ def test_importing_the_package_pulls_in_no_heavy_dependency():
     import subprocess
 
     code = (
-        "import sys, cadagent, cadagent.cli, cadagent.report, cadagent.geometry, "
-        "cadagent.render, cadagent.mesh3mf, cadagent.htmlreport, cadagent.package, cadagent.serve\n"
+        "import sys, cadagent, cadagent.cli, cadagent.publish.report, cadagent.geometry, "
+        "cadagent.publish.render, cadagent.make.mesh3mf, cadagent.publish.htmlreport, cadagent.package, cadagent.publish.serve\n"
         "heavy = {'cadquery', 'OCP', 'trimesh', 'vtk', 'matplotlib', 'PIL'} & set(sys.modules)\n"
         "assert not heavy, heavy\n"
     )

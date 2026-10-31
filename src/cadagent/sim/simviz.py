@@ -1,7 +1,7 @@
 """Pictures and animations of simulation results (PyVista / VTK, rendered off screen).
 
-    from cadagent.simviz import CFDResult, section, flow, walls, animate_flow, animate_sweep
-    r = CFDResult('sim/cooled')                       # an OpenFOAM case written by cadagent.cfd, after foamToVTK
+    from cadagent.sim.simviz import CFDResult, section, flow, walls, animate_flow, animate_sweep
+    r = CFDResult('sim/cooled')                       # an OpenFOAM case written by cadagent.sim.cfd, after foamToVTK
     section(r, 'preview/thermal-section.png', normal='y', title='Cooled, 40 W')
     flow(r, 'preview/thermal-flow.png')
     walls(r, 'preview/thermal-walls.png', limit_c=57, limit_label='PLA heat deflection')
@@ -48,7 +48,7 @@ def cmap(ramp):
 
 
 class CFDResult:
-    """The latest written time of a cadagent.cfd case, in mm and °C."""
+    """The latest written time of a cadagent.sim.cfd case, in mm and °C."""
 
     def __init__(self, case_dir, time: Optional[str] = None):
         pv = _pv()
@@ -392,7 +392,7 @@ def convergence_chart(results: dict, path, title='Solver convergence'):
     return path
 
 
-# --- structural results (cadagent.fea.Study) -------------------------------------------------------------------
+# --- structural results (cadagent.sim.fea.Study) -------------------------------------------------------------------
 STRESS_RAMP = ['#f3f0fb', '#ddd6f5', '#c3b8ee', '#a597e6', '#8676dc', '#6250d6', '#4f3eb8', '#3d2f93', '#2b216b']
 
 

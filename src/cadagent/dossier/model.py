@@ -175,7 +175,7 @@ class Material(_Dump):
 class FastenerUse(_Dump):
     """A card's fastener entry: ``qty`` of catalogue item ``screws`` join this part ``to`` another along ``via``."""
     to: str = ""
-    screws: str = ""                    # catalogue key (McMaster skill or cadagent.fasteners)
+    screws: str = ""                    # catalogue key (McMaster skill or cadagent.geometry.fasteners)
     qty: Optional[int] = None
     via: str = ""                       # interface id
     note: str = ""

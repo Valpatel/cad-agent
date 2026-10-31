@@ -8,8 +8,8 @@ import pytest
 
 from cadagent.cli import main
 from cadagent.project import CadConfigError, from_dict
-from cadagent.release import build_release
-from cadagent.slicer import _settings
+from cadagent.make.release import build_release
+from cadagent.make.slicer import _settings
 
 CFG = {"name": "demo", "title": "Demo box", "revision": "1.2", "printer": {"name": "P1S", "bed_mm": [256, 256]}}
 

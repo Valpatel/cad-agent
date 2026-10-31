@@ -2,7 +2,7 @@
 
 Usage::
 
-    from cadagent.render import Renderer
+    from cadagent.publish.render import Renderer
 
     r = Renderer("preview", subtitle="REV 3 | FIT-CHECK PROTOTYPE")
     r.render("assembled.png", shapes=[(base, (.2, .2, .25)), (lid, (.25, .27, .3, .6))],
@@ -10,7 +10,7 @@ Usage::
     r.render("section.png", shapes=[(base, (.2, .2, .25))], view="section",
              clip=((0, 60, 0), (0, 1, 0)))
 
-``review_packet(section, root=...)`` renders a dossier section's review packet (``cadagent.packet``,
+``review_packet(section, root=...)`` renders a dossier section's review packet (``cadagent.publish.packet``,
 ``docs/review-packet.md``).
 
 Colors are ``(r, g, b)`` or ``(r, g, b, opacity)`` floats in 0..1. Views are
@@ -298,8 +298,8 @@ def review_packet(section: str, **kwargs: Any) -> Dict[str, Any]:
     and fastener axes, exploded along its assembly steps, access along its screws, its joints' range ends and its
     gate findings at their witness points, captioned with the section and content hashes, with
     ``exports/review/<section>/manifest.json`` (``cad-agent.review-packet/1``). Keyword arguments and the manifest
-    schema: ``cadagent.packet.review_packet`` and ``docs/review-packet.md``."""
-    from cadagent.packet import review_packet as _review_packet
+    schema: ``cadagent.publish.packet.review_packet`` and ``docs/review-packet.md``."""
+    from cadagent.publish.packet import review_packet as _review_packet
     return _review_packet(section, **kwargs)
 
 

@@ -19,7 +19,7 @@ from typing import Any, Dict
 import pytest
 import yaml
 
-from cadagent import packet as pk
+from cadagent.publish import packet as pk
 from cadagent.cli import main
 from cadagent.dossier.lint import lint_project
 from cadagent.dossier.registry import _previous_parts, part_actor

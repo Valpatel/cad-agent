@@ -1,7 +1,7 @@
 """Plate-fin heatsinks: thermal resistance, pressure drop, fan operating point, and the porous-zone coefficients that
-stand in for the fins in an enclosure CFD model (cadagent.cfd).
+stand in for the fins in an enclosure CFD model (cadagent.sim.cfd).
 
-    from cadagent.heatsink import PlateFin, FanCurve, operating_point
+    from cadagent.sim.heatsink import PlateFin, FanCurve, operating_point
     hs = PlateFin(length=87, width=100, fin_height=14, fin_thickness=0.3, pitch=1.8, base_thickness=3.5,
                   k_fin=200, k_base=1500, flow_length=43.5, source=(40, 40))
     fan = FanCurve(dp0_pa=15.2, q_free_m3h=38.9)

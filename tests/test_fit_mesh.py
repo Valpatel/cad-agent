@@ -4,7 +4,7 @@ import pytest
 cq = pytest.importorskip('cadquery')
 pytest.importorskip('vtk')
 
-from cadagent.robot import fit_mesh, stl_faces  # noqa: E402
+from cadagent.sim.robot import fit_mesh, stl_faces  # noqa: E402
 
 
 def test_fit_mesh_decimates_under_the_budget(tmp_path):

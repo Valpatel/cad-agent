@@ -9,7 +9,7 @@ Bought hardware is a real part: a part number, its manufacturer's model, its spe
 a STEP model and a full specification table (material, finish, strength class, thread, dimensions and tolerances,
 load and speed ratings, temperature range, compliance) for almost everything it sells. Use them.
 
-The tools: `cadagent.mcmaster` (Python) and `cad-agent mcmaster` (CLI). They read one product page at a time in the
+The tools: `cadagent.make.mcmaster` (Python) and `cad-agent mcmaster` (CLI). They read one product page at a time in the
 system Chrome (Playwright), with a pause between pages. That is the same traffic as an engineer choosing parts, and
 it must stay that way.
 
@@ -50,7 +50,7 @@ it must stay that way.
 
    This writes `OUT/<PN>/<PN>.step` (the download, kept only if it is a STEP file), `<PN>.page.json` (title, price,
    pack quantity, every spec row, option choices), `<PN>.norm.step`, `<PN>.norm.json` (axis found, how it was
-   seated, bbox, volume, mass) and an entry in `SOURCE.txt`. Kinds and their frames (`cadagent.mcmaster.FRAMES`)
+   seated, bbox, volume, mass) and an entry in `SOURCE.txt`. Kinds and their frames (`cadagent.make.mcmaster.FRAMES`)
    all put the axis on +Z, through the origin (the cylinders' axis line, not the centre of mass); which end goes
    down is decided from the part's shape, not from how the vendor modelled it:
    - `bearing`, `washer`, `nut`, `insert`, `standoff`, `spacer`, `pin`, `grommet`, `rod`: the larger end (flange,

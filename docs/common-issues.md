@@ -31,7 +31,7 @@ it. Once a check exists, move the entry from "review" to the check.
 |---|---|---|---|
 | **The wrong bought part**: a similar model, a guessed size, another revision | A printed lid 15 mm too short for the cooler that was actually fitted | Review: identify the exact part (vendor, part number, datasheet, photos) before sizing anything around it; record it | [10](../lessons/10-simulation-and-material.md) |
 | A photo read in the wrong orientation, or a flow direction assumed | Features on the wrong side; a CFD with the fan blowing the wrong way | Review: record the user's observations (measurements, "the fan blows up") with the date, and check assumptions against them | [01](../lessons/01-verify-from-source.md) |
-| Connector windows sized from a bounding box or the board connector, not the mating plug | The cable's overmould does not fit | `cadagent.connectors`: windows from the modelled mating plug, plus a sweep check | [03](../lessons/03-mechanical-design-rules.md), [05](../lessons/05-cables-connectors-and-routing.md) |
+| Connector windows sized from a bounding box or the board connector, not the mating plug | The cable's overmould does not fit | `cadagent.geometry.connectors`: windows from the modelled mating plug, plus a sweep check | [03](../lessons/03-mechanical-design-rules.md), [05](../lessons/05-cables-connectors-and-routing.md) |
 | A vendor model used as if it were measured data | Hidden errors in mounting holes or heights | Review: say which bodies are proxies | [01](../lessons/01-verify-from-source.md) |
 | Vendor files committed or redistributed | A licence problem; a leak that cannot be undone | Review the package and release include lists; fetch references with a script | [agent workflow](agent-workflow.md) |
 

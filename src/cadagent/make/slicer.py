@@ -1,6 +1,6 @@
 """Real filament grams and print time from a slicer (Bambu Studio's command line, run as a separate program).
 
-    from cadagent.slicer import slice_part
+    from cadagent.make.slicer import slice_part
     r = slice_part('exports/base.3mf', workdir='build/slicer', overrides={'wall_loops': '3', 'sparse_infill_density': '15%'})
     r['grams'], r['minutes']
 
@@ -178,7 +178,7 @@ def slice_part(model, workdir=None, printer: str = PRINTER, process: str = PROCE
             raise FileExistsError(f'{work} exists and is not a slicer work folder; choose an empty or new folder')
         shutil.rmtree(work)
     work.mkdir(parents=True)
-    (work / _MARK).write_text('cadagent.slicer work folder: safe to delete\n')   # first, so a crashed slice can be redone
+    (work / _MARK).write_text('cadagent.make.slicer work folder: safe to delete\n')   # first, so a crashed slice can be redone
     fil = FILAMENTS.get(filament, filament)
     profiles = {kind: resolve_profile(kind, name)
                 for kind, name in (('machine', printer), ('process', process), ('filament', fil))}
@@ -222,7 +222,7 @@ def _settings(project) -> dict:
 
 
 def _expected_parts(project) -> List[str]:
-    from cadagent.report import load_parts
+    from cadagent.publish.report import load_parts
     cfg = dict(project.slicer or {})
     known, _ = load_parts(project)
     return list(cfg.get('parts') or known)
@@ -235,7 +235,7 @@ def slice_project(project, parts=None) -> dict:
 
     ``cad.slicer`` keys (all optional): printer, process, filament (``pla``, ``petg`` or a profile name), overrides
     (process settings, e.g. ``{wall_loops: "3"}``), parts (the parts to slice; default all)."""
-    from cadagent.report import load_parts
+    from cadagent.publish.report import load_parts
 
     cfg = dict(project.slicer or {})
     known, error = load_parts(project)

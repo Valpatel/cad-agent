@@ -5,7 +5,7 @@ For Valpatel/cad-agent #96 (items 3–5), #94 (FEA step), #97 (pitfall catalogue
 CLIs. Notation: **(s)** search snippet only · **(u)** unverified · **[derived]** my calculation · "read" = text read on
 this date.
 
-## 0. What `cadagent.fea` does today
+## 0. What `cadagent.sim.fea` does today
 
 From the module docstring, read from `origin/dev:src/cadagent/fea.py`:
 - gmsh tetrahedra and scikit-fem P2 linear elasticity.

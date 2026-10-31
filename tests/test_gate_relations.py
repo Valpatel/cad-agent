@@ -443,7 +443,7 @@ def test_the_kernel_version_is_part_of_the_cache_key(tmp_path, monkeypatch):
 def test_from_build_takes_placed_shapes_recorded_hashes_cavities_joints_and_fasteners(tmp_path, monkeypatch):
     """The dossier hand-over: live result and a read-back from BREP give the same keys, places and cache keys."""
     from cadagent import dossier
-    from cadagent.fasteners import socket_head_envelope
+    from cadagent.geometry.fasteners import socket_head_envelope
     from cadagent.gates import Assembly
     with dossier.use_registry() as reg:
         reg.add_part("base", lambda p: box(40, 40, 4), grounded=True, section="S1")

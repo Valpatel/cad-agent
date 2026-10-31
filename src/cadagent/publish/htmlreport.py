@@ -1,6 +1,6 @@
 """Standalone HTML page for a results dict (schema 1.0).
 
-The results shape is the one ``cadagent.report.collect`` writes::
+The results shape is the one ``cadagent.publish.report.collect`` writes::
 
     {"schema_version": "1.0", "title": ..., "header_meta": {...}, "footer_meta": {...},
      "features": [{"feature_id", "feature_title",

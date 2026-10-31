@@ -8,7 +8,7 @@ import http from 'node:http';
 import {chromium,webkit} from '@playwright/test';
 const temporary=await mkdtemp(path.join(os.tmpdir(),'cad-agent-generated-diagrams-'));
 execFileSync(process.env.PYTHON||'python3',['-c',`import pathlib,sys
-from cadagent.site import build_site
+from cadagent.publish.site import build_site
 root=pathlib.Path(sys.argv[1]);(root/'README.md').write_text('# Generated diagrams\\n\\n\x60\x60\x60mermaid\\nflowchart LR\\nA[Plan]-->B[Build]\\n\x60\x60\x60\\n')
 for theme in ('light','hud'):
  p=root/theme;p.mkdir();(p/'README.md').write_text((root/'README.md').read_text());build_site(p,{'pages':['README.md'],'theme':theme},'Generated fixture')

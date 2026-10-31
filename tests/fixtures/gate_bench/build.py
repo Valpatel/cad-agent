@@ -33,7 +33,7 @@ from typing import Any, Dict, Optional
 import cadquery as cq
 
 from cadagent import dossier
-from cadagent.fasteners import insert_envelope, socket_head_envelope
+from cadagent.geometry.fasteners import insert_envelope, socket_head_envelope
 from cadagent.gates import Assembly
 
 PARAMS: Dict[str, Any] = {

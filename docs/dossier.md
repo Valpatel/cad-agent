@@ -663,7 +663,7 @@ work.
 
 ## On the review site
 
-`cad-agent site` builds review pages for a project with a `dossier:` or `gates:` key (`cadagent.site_review`), in
+`cad-agent site` builds review pages for a project with a `dossier:` or `gates:` key (`cadagent.publish.site_review`), in
 `site/review/`, linked from the overview's "Design review" block and, when the site configures no `nav`, from three
 top-bar tabs (Review, Requirements, Gates). A project without either key sees no change.
 
@@ -681,7 +681,7 @@ than the status file, every page says so ("run `cad-agent dossier`"); with no st
 sections from the YAML, marked "not computed". `cad-agent site --serve` rebuilds the pages when any of these files
 changes, and serves `.md`, `.dot` and `.yaml` files as plain text so the linked verdicts open in the browser.
 
-**The connectivity graph** is drawn from `exports/gates/connectivity.dot` by `cadagent.dotsvg`: Graphviz's `dot`
+**The connectivity graph** is drawn from `exports/gates/connectivity.dot` by `cadagent.publish.dotsvg`: Graphviz's `dot`
 when it is installed, else a built-in layered layout (each cluster laid out on its own, layers by distance from the
 grounded part, left to right). The page says which drew it, and writes `site/review/connectivity.svg` too. The
 built-in drawing takes its colours from the page's theme (light or dark); Graphviz's keeps its own black on clear.

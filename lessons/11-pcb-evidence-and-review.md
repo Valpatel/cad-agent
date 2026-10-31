@@ -53,7 +53,7 @@ the note. Nothing here was electrically or physically tested; the lessons are ab
   trace. Route constrained pairs first and reserve the plane beneath them before routing anything else.
 - **Incident:** boards that passed ERC, DRC and parity had separated pair conductors, and an auxiliary track left a
   19.3 mm gap in the reference plane under one pair. A total-copper-length sum hid it by adding the termination branch.
-- **Check:** `cadagent.pcb_routing` graph/path and paired-spacing measurements, with project-defined limits. They do not
+- **Check:** `cadagent.make.pcb_routing` graph/path and paired-spacing measurements, with project-defined limits. They do not
   establish impedance, data rate, EMC or transient immunity.
 - **Source:** `.agents/inbox/2026-10-26-can-routing-is-not-connectivity.md`.
 
@@ -72,7 +72,7 @@ the note. Nothing here was electrically or physically tested; the lessons are ab
   the same connector family.
 - **Incident:** exact connector pad geometry replaced a generic footprint of the same family and changed clearances,
   which needed a fresh DRC. A TVS part was referred to by a short family name that matches several products.
-- **Check:** BOM rows carry exact C-codes (`cadagent.pcb.check_jlc_files`), and a C-code is still not proof of stock or
+- **Check:** BOM rows carry exact C-codes (`cadagent.make.pcb.check_jlc_files`), and a C-code is still not proof of stock or
   orientation.
 - **Source:** `.agents/inbox/2026-10-26-pcb-evidence.md`, `.agents/domains/pcb.md` (cad-agent PR #1).
 
@@ -106,7 +106,7 @@ the note. Nothing here was electrically or physically tested; the lessons are ab
   polyline's own stroke and cap solids, and validate the final solid count and the exported mesh.
 - **Incident:** one aggregate subtraction ran for more than twelve minutes without finishing; the staged cuts finished a
   probe in about 109 s with one valid solid.
-- **Check:** `cadagent.markings.PanelMarkings.engrave`; timing depends on the artwork and is not guaranteed.
+- **Check:** `cadagent.geometry.markings.PanelMarkings.engrave`; timing depends on the artwork and is not guaranteed.
 - **Source:** `.agents/inbox/2026-10-26-panel-engraving-overlap-cost.md` (cad-agent PR #1).
 
 ### Package releases from the validated manifest, not a folder glob

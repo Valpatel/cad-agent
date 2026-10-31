@@ -5,7 +5,7 @@ import html,json
 from cadagent.evidence import hashes_are_current
 from urllib.parse import quote
 
-_SCRIPT = Path(__file__).resolve().parent / 'webkit' / 'review.js'
+_SCRIPT = Path(__file__).resolve().parent.parent / 'webkit' / 'review.js'
 
 
 def _local(root: Path, rel) -> Path | None:
@@ -53,7 +53,7 @@ def review_html(root: Path, manifest: dict, prefix: str = '../') -> str:
                 for key in report.get('pass_key','pass').split('.'):value=value[key]
                 state='PASS' if value is True else 'PENDING / FAIL'
                 if 'report_sha256' in data:
-                    from cadagent.pcb import evidence_is_current
+                    from cadagent.make.pcb import evidence_is_current
                     if not evidence_is_current(root,data):state='STALE'
                 if not hashes_are_current(root,data):state='STALE'
             except (OSError,ValueError,KeyError,TypeError):state='UNAVAILABLE'

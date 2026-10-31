@@ -494,7 +494,7 @@ def check_project(project, parts: Optional[Sequence[str]] = None, out: Optional[
     """Check every part's ``exports/<part>.step`` (or only ``parts``, kept with the other rows of a current result) and
     write ``exports/hole-checks.json`` (or ``out``)."""
     from cadagent.project import CadConfigError
-    from cadagent.report import load_parts
+    from cadagent.publish.report import load_parts
 
     known, error = load_parts(project)
     if error:
@@ -542,7 +542,7 @@ def current(project, part: str) -> Tuple[Optional[Dict[str, Any]], str]:
     """The recorded result for ``part`` if it was made from the STEP on disk now with the current settings, else
     ``(None, why)``. A skipped part or a missing STEP is returned as recorded (the row says which)."""
     from cadagent.project import CadConfigError
-    from cadagent.report import load_parts
+    from cadagent.publish.report import load_parts
 
     path = project.exports_dir / "hole-checks.json"
     if not path.is_file():

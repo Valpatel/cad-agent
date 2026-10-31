@@ -387,7 +387,7 @@ def _slice_rows(project: CadProject) -> Tuple[Dict[str, Any], Dict[str, Dict[str
 
     A row is current only while the report was made with the settings ``cad.slicer`` names now (the rule
     ``slicer.current_report`` uses) and the part's 3MF still has the sha256 recorded for it."""
-    from cadagent.slicer import _settings
+    from cadagent.make.slicer import _settings
 
     path = project.exports_dir / "slice-report.json"
     try:
@@ -724,8 +724,8 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
                   revision: Optional[str] = None, date: Optional[str] = None) -> ReleaseResult:
     """Write the release folder (and ``<folder>.zip``). ``revision`` and ``date`` override the config's and the
     project's (``--revision``, ``--date``)."""
-    from cadagent.report import load_parts
-    from cadagent.slicer import _settings
+    from cadagent.publish.report import load_parts
+    from cadagent.make.slicer import _settings
 
     known, _ = load_parts(project)
     cfg = release_config(project, list(known))

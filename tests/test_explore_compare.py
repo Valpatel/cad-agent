@@ -100,7 +100,7 @@ def test_write_comparison_writes_json_page_and_site_cards(tmp_path):
 
 def test_site_shows_the_cards(tmp_path):
     pytest.importorskip("markdown")
-    from cadagent.site import build_site
+    from cadagent.publish.site import build_site
     root = write_enclosure(tmp_path)
     cfg, cat, fn, comp = _compare(root)
     write_comparison(comp, cfg.out, cfg=cfg)
@@ -191,7 +191,7 @@ def test_swaps_and_search_respect_narrowed_slots(tmp_path):
 
 
 def test_the_site_top_bar_lists_the_comparison(tmp_path):
-    from cadagent import site
+    from cadagent.publish import site
 
     root = write_enclosure(tmp_path)
     cfg, cat, fn, comp = _compare(root)

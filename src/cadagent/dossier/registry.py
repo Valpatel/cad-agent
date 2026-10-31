@@ -179,7 +179,7 @@ class JointDecl:
 @dataclass
 class FastenerDecl:
     name: str
-    key: str                    # catalogue key (McMaster skill or cadagent.fasteners)
+    key: str                    # catalogue key (McMaster skill or cadagent.geometry.fasteners)
     clamps: str                 # the part under the head
     into: str                   # the part it threads into (insert, tapped hole or nut side)
     at: Any                     # Axis, list of Axis, or callable(p) returning either

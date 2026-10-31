@@ -96,7 +96,7 @@ class CadProject:
     holes: Dict[str, Any] = field(default_factory=dict)
     slicer: Dict[str, Any] = field(default_factory=dict)
     explore: Dict[str, Any] = field(default_factory=dict)
-    release: Dict[str, Any] = field(default_factory=dict)   # `cad-agent release` settings (cadagent.release)
+    release: Dict[str, Any] = field(default_factory=dict)   # `cad-agent release` settings (cadagent.make.release)
     dossier: Optional[Path] = None     # dossier/project.yaml, loaded by cadagent.dossier.load_project_dossier
     gates: Optional[Dict[str, Any]] = None   # `cad-agent gates` settings (cadagent.gates.run); None when absent
     unknown_keys: List[str] = field(default_factory=list)

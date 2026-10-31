@@ -109,8 +109,8 @@ def cmd_build(project: CadProject, args: argparse.Namespace) -> int:
     return 0
 
 def cmd_export_3mf(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.mesh3mf import export_parts_3mf
-    from cadagent.report import load_parts
+    from cadagent.make.mesh3mf import export_parts_3mf
+    from cadagent.publish.report import load_parts
 
     parts, error = load_parts(project)
     if error:
@@ -124,7 +124,7 @@ def cmd_export_3mf(project: CadProject, args: argparse.Namespace) -> int:
     return 0
 
 def cmd_slice(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.slicer import executable, slice_project
+    from cadagent.make.slicer import executable, slice_project
 
     if not executable():
         raise _Unusable("Bambu Studio is not installed (snap install bambu-studio); nothing was sliced")
@@ -139,7 +139,7 @@ def cmd_slice(project: CadProject, args: argparse.Namespace) -> int:
     return 0 if rep["pass"] else 1
 
 def _print_results(results: Dict[str, Any]) -> None:
-    from cadagent.report import summarize
+    from cadagent.publish.report import summarize
 
     width = max([len(c.get("name", "")) for f in results["features"] for c in f["checks"]] + [10])
     width = min(width, 48)
@@ -156,7 +156,7 @@ def _slicer_note(results: Dict[str, Any]) -> str:
     return results.get("footer_meta", {}).get("slicer", "slicer not run")
 
 def cmd_check(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.report import collect, summarize
+    from cadagent.publish.report import collect, summarize
 
     results = collect(project)
     if getattr(args, "json", False):
@@ -166,7 +166,7 @@ def cmd_check(project: CadProject, args: argparse.Namespace) -> int:
     return 1 if summarize(results)["fail"] else 0
 
 def cmd_report(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.report import summarize, write_report
+    from cadagent.publish.report import summarize, write_report
 
     json_path, html_path, results = write_report(project)
     _print_results(results)
@@ -191,7 +191,7 @@ def cmd_package(project: CadProject, args: argparse.Namespace) -> int:
     return 0
 
 def cmd_release(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.release import build_release
+    from cadagent.make.release import build_release
 
     out = Path(args.out).expanduser() if getattr(args, "out", None) else None
     try:
@@ -207,13 +207,13 @@ def cmd_release(project: CadProject, args: argparse.Namespace) -> int:
     return 0
 
 def cmd_serve(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.serve import serve
+    from cadagent.publish.serve import serve
 
     return serve(project, getattr(args, "host", None), getattr(args, "port", None))
 
 def cmd_site(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.site import build_site, default_nav, serve_site
-    from cadagent.site_review import nav_entries
+    from cadagent.publish.site import build_site, default_nav, serve_site
+    from cadagent.publish.site_review import nav_entries
 
     site = project.site
     from cadagent.gates.run import enabled
@@ -247,7 +247,7 @@ def cmd_site(project: CadProject, args: argparse.Namespace) -> int:
     return 0
 
 def cmd_view(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.view import export_view
+    from cadagent.publish.view import export_view
 
     r = export_view(project)
     _say(f"view: {r['manifest']} ({r['parts']} parts" + (f"; no STEP for {', '.join(r['skipped'])}" if r["skipped"] else "") + ")")
@@ -256,7 +256,7 @@ def cmd_view(project: CadProject, args: argparse.Namespace) -> int:
 
 def cmd_webkit(project: CadProject, args: argparse.Namespace) -> int:
     import shutil
-    from cadagent.site import KIT_DIR
+    from cadagent.publish.site import KIT_DIR
 
     dest = (project.root / args.dest).resolve()
     shutil.copytree(KIT_DIR, dest, dirs_exist_ok=True, ignore=shutil.ignore_patterns("__pycache__"))
@@ -264,7 +264,7 @@ def cmd_webkit(project: CadProject, args: argparse.Namespace) -> int:
     return 0
 
 def cmd_pcb_check(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.pcb import evidence_bundle, manifest_problems
+    from cadagent.make.pcb import evidence_bundle, manifest_problems
     config_path = project.root / args.manifest
     try:
         manifest = json.loads(config_path.read_text())
@@ -323,7 +323,7 @@ def cmd_dossier(project: CadProject, args: argparse.Namespace) -> int:
 def cmd_review_packet(project: CadProject, args: argparse.Namespace) -> int:
     """Render each section's review packet: exports/review/<section>/*.png and manifest.json
     (docs/review-packet.md)."""
-    from cadagent.packet import PacketError, plan_project_packet, project_sections, review_packet
+    from cadagent.publish.packet import PacketError, plan_project_packet, project_sections, review_packet
 
     try:
         size = tuple(int(v) for v in args.size.lower().split("x"))
@@ -446,8 +446,8 @@ def cmd_gates(project: CadProject, args: argparse.Namespace) -> int:
 
 
 def cmd_holes(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent import holes
-    from cadagent.holes import check_project
+    from cadagent.geometry import holes
+    from cadagent.geometry.holes import check_project
     from cadagent.project import CadConfigError
 
     out = getattr(args, "out", None)
@@ -507,7 +507,7 @@ def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
 def _mcmaster_choices(pns: List[str], choose: Optional[List[str]]) -> Dict[str, List[str]]:
     """--choose values -> option texts per part number. 'PN:OPTION' is for that part; a bare 'OPTION' is allowed only
     when one part number is given."""
-    from cadagent.mcmaster import PN_RE
+    from cadagent.make.mcmaster import PN_RE
 
     per: Dict[str, List[str]] = {pn: [] for pn in pns}
     for c in choose or []:
@@ -530,7 +530,7 @@ def cmd_mcmaster(args: argparse.Namespace) -> int:
     actually needs its page (no STEP or page data here yet, or --force), so re-normalising works offline."""
     import contextlib
 
-    from cadagent import mcmaster as mc
+    from cadagent.make import mcmaster as mc
 
     try:
         pns = [mc.validate_pn(p) for p in args.pns]
@@ -820,7 +820,7 @@ def cmd_snapfit(args: argparse.Namespace) -> int:
 
 def cmd_motion_trace(args: argparse.Namespace) -> int:
     """Check captured rendered landmarks, or print the required capture poses; no project config needed."""
-    from cadagent.motion_trace import required_poses, validate_motion_trace
+    from cadagent.sim.motion_trace import required_poses, validate_motion_trace
     import json
     contract = json.loads(args.contract.read_text())
     if args.poses_only:
@@ -966,9 +966,9 @@ def build_parser() -> argparse.ArgumentParser:
     mc_p = sub.add_parser("mcmaster", help="Download McMaster-Carr STEP + product data per part number and normalise "
                                            "it (one page at a time; skills/mcmaster-parts/SKILL.md)")
     mc_p.add_argument("pns", nargs="+", metavar="PN", help="McMaster-Carr part numbers, e.g. 91290A242")
-    from cadagent.mcmaster import KINDS as MC_KINDS
+    from cadagent.make.mcmaster import KINDS as MC_KINDS
     mc_p.add_argument("--kind", choices=MC_KINDS,
-                      help="Normalise into the frame for this kind of part (cadagent.mcmaster.FRAMES)")
+                      help="Normalise into the frame for this kind of part (cadagent.make.mcmaster.FRAMES)")
     mc_p.add_argument("--out", default="references/vendor/mcmaster", help="Folder; each part goes in OUT/<PN>/ "
                                                                           "(keep it out of git except SOURCE.txt)")
     mc_p.add_argument("--catalog", help="Catalogue JSON to record the part in: {source, items: {key: entry}}, or a list "

@@ -1,6 +1,6 @@
 """Topology optimisation of a part's material layout (pyMOTO, MIT): where must material be, for a given load?
 
-    from cadagent.topopt import TopOpt
+    from cadagent.sim.topopt import TopOpt
     t = TopOpt(lo=(0, 0, 0), hi=(206, 181, 8), voxel_mm=2.0, E_mpa=2700)   # a voxel box around the design region
     t.design(roof_slab)                 # CAD solid (CadQuery shape / trimesh / STL) the optimiser may hollow out
     t.keep(rim)                         # must stay solid (joints, bosses, sealing faces)
@@ -29,7 +29,7 @@ _WHY = 'topology optimisation'
 
 
 def _mesh(shape):
-    from cadagent.cfd import _mesh_of
+    from cadagent.sim.cfd import _mesh_of
     return _mesh_of(shape)
 
 
@@ -193,7 +193,7 @@ class TopOpt:
 
     # --- pictures
     def _scene(self, p, density, context=()):
-        from cadagent.simviz import SPEED_RAMP, cmap
+        from cadagent.sim.simviz import SPEED_RAMP, cmap
         s = self.surface(density)
         if s.n_points:
             p.add_mesh(s, color='#2a78d6', smooth_shading=True, specular=0.3)
@@ -209,7 +209,7 @@ class TopOpt:
             p.add_mesh(pv.Arrow(start=c - d * L, direction=d, scale=L), color='#d03b3b')
 
     def render(self, path, title='Topology optimisation', subtitle='', note='', view=(-35, 35), context=(), size=(1600, 1000)):
-        from cadagent.simviz import _plotter, _camera, frame
+        from cadagent.sim.simviz import _plotter, _camera, frame
         p = _plotter(size)
         self._scene(p, self.density, context)
         c = (self.lo + self.hi) / 2
@@ -223,7 +223,7 @@ class TopOpt:
                      note or 'Blue: material the load needs (density above 0.5). Red arrows: loads. A design guide, not a part to print as is.')
 
     def animate(self, path, fps=12, view=(-35, 35), context=(), size=(1280, 800), hold=1.5):
-        from cadagent.simviz import _plotter, _camera, _writer
+        from cadagent.sim.simviz import _plotter, _camera, _writer
         w = _writer(path, fps)
         c = (self.lo + self.hi) / 2
         frames = self.history + [self.history[-1]] * int(hold * fps)

@@ -256,7 +256,7 @@ def nav_entries(project: Any) -> List[Dict[str, str]]:
 # --------------------------------------------------------------------------------------------------- helpers
 
 def _e(v: Any) -> str:
-    from cadagent.site import _e as esc
+    from cadagent.publish.site import _e as esc
     return esc(v)
 
 
@@ -472,7 +472,7 @@ def _decision_html(dec: Any, status_row: Optional[Mapping[str, Any]] = None) -> 
 
 def _frame(cfg: Any, current: str, title: str, body: str, *, crumbs: str = "") -> str:
     """A page in site/review/: the shared top bar, a header with links to every review page, then the body."""
-    from cadagent.site import _page, nav_html
+    from cadagent.publish.site import _page, nav_html
     sub = (f'<nav class="links subnav"><a href="../index.html">Overview</a><a href="index.html">Sections</a>'
            f'<a href="requirements.html">Requirements</a><a href="gates.html">Gates</a></nav>')
     head = (f'<header class="top"><div class="wrap"><p class="tag"><a href="../index.html">← {_e(cfg.title)}</a>'
@@ -683,7 +683,7 @@ def _packet(data: ReviewData, sid: str) -> Optional[Dict[str, Any]]:
 
 
 def _packet_images(data: ReviewData, manifest: Mapping[str, Any]) -> List[Dict[str, Any]]:
-    """The packet's views. ``cad-agent.review-packet/1`` (T10, ``cadagent.render.review_packet``) lists them under
+    """The packet's views. ``cad-agent.review-packet/1`` (T10, ``cadagent.publish.render.review_packet``) lists them under
     ``views`` as ``{id, kind, file, caption, note, sha256}``, ``file`` relative to the manifest's folder and null for
     a view not rendered. Until that schema is merged the reader is tolerant: ``images``, ``renders`` or ``items``,
     each a path or ``{file|path|image, caption|title, id|view|name, hash|sha256}``, resolved against the manifest's
@@ -745,7 +745,7 @@ def _packet_html(data: ReviewData, sid: str, links: _Links) -> str:
     if m is None:
         return ('<p class="tag">No review packet for this section yet: the render packet '
                 f'(<code>exports/{PACKET_DIR}/{_e(sid)}/manifest.json</code>, made by '
-                '<code>cadagent.render.review_packet</code>) adds the views the reviewer answers the checklist from.</p>')
+                '<code>cadagent.publish.render.review_packet</code>) adds the views the reviewer answers the checklist from.</p>')
     images = _packet_images(data, m)
     current = {pid: data.part_row(pid).get("sha256") for pid in data.part_ids(sid)}
     hashes = _packet_hashes(m)
@@ -963,7 +963,7 @@ _LEGEND = ('<div class="legend"><span>▭ part · ⬭ fastener</span><span>doubl
 
 def gates_page(data: ReviewData, cfg: Any, out_dir: Path, engine: str = "auto") -> Tuple[str, Dict[str, Any]]:
     """The gates page, and what was drawn (``{"graph": "python"|"graphviz"|"", "svg": path}``)."""
-    from cadagent.dotsvg import dot_to_svg
+    from cadagent.publish.dotsvg import dot_to_svg
     links = _Links(data.root)
     gates_rel = _rel(data.exports / "gates", data.root)
     info: Dict[str, Any] = {"graph": "", "svg": ""}

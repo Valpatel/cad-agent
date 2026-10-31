@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from cadagent.view import _read_stl, _write_stl, export_view
+from cadagent.publish.view import _read_stl, _write_stl, export_view
 
 
 def tetra(path, ascii=False):

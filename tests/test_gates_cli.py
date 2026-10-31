@@ -139,7 +139,7 @@ def test_without_dossier_or_gates_key_nothing_changes(tmp_path, capsys):
     (tmp_path / "cad-agent.yaml").write_text("cad:\n  name: plain\n")
     assert main(["gates", "--project", str(tmp_path)]) == 2
     assert "no dossier: or gates: key" in capsys.readouterr().err
-    from cadagent.report import collect
+    from cadagent.publish.report import collect
     features = [f["feature_id"] for f in collect(load_project(tmp_path))["features"]]
     assert "cad-gates" not in features and "cad-dossier" not in features
 
@@ -310,7 +310,7 @@ def test_check_after_a_dossier_declaration_changes(project, capsys):
 
 def test_check_and_report_need_no_cad_kernel(project):
     bind_verdicts(project)
-    code = ("import sys; from cadagent.project import load_project; from cadagent.report import collect; "
+    code = ("import sys; from cadagent.project import load_project; from cadagent.publish.report import collect; "
             "from cadagent.gates.run import gates_config, plan; "
             f"r = collect(load_project({str(project)!r})); "
             "assert any(f['feature_id'] == 'cad-gates' for f in r['features']); "
@@ -348,7 +348,7 @@ def test_all_without_a_geometry_record_still_lints(tmp_path, capsys, monkeypatch
 
 
 def test_site_overview_counts_current_passing_gates(project):
-    from cadagent.site import build_site
+    from cadagent.publish.site import build_site
     bind_verdicts(project, failing=["wall"])
     build_site(project, {}, "Demo")
     assert "integrity gates" not in (project / "site" / "index.html").read_text()   # only for a gates project

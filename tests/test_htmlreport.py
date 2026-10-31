@@ -7,7 +7,7 @@ import json
 
 import pytest
 
-from cadagent import htmlreport, report
+from cadagent.publish import htmlreport, report
 from cadagent.project import load_project
 
 from .test_report import CHECKS, make_project

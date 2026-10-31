@@ -334,7 +334,7 @@ pairs the table skipped. The verdict's other extra keys: `graph` (`nodes` with `
 `via_joint`; `groups`; `missing`: unrealised declarations), `floating`, `undeclared_contacts`, `unrealised` and
 `relation_stats`. `to_dot(verdict)` / `write_dot(verdict, path)` give a Graphviz graph (one cluster per group,
 floating parts red, joints that do not hold and unrealised declarations red); `connectivity_gate(out=...)` writes it
-beside the verdict as `.dot`. The site's gates page draws it as SVG (`cadagent.dotsvg.dot_to_svg`: Graphviz when
+beside the verdict as `.dot`. The site's gates page draws it as SVG (`cadagent.publish.dotsvg.dot_to_svg`: Graphviz when
 installed, else a built-in layout); `dot -Tsvg` renders it by hand. The toolkit does not need Graphviz.
 
 A relation table passed in (`table=`) is read, never changed: witness and joint queries go through `relate_pair`

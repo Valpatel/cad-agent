@@ -29,7 +29,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from cadagent.geometry import within_bed
-from cadagent.htmlreport import SCHEMA_VERSION, canonical_status, render_page
+from cadagent.publish.htmlreport import SCHEMA_VERSION, canonical_status, render_page
 from cadagent.links import missing_links
 from cadagent.project import CadProject, Check, lookup
 
@@ -112,8 +112,8 @@ def _part_row(project: CadProject, part: str, info: Dict[str, Any], report_dir: 
 
 def holes_feature(project: CadProject) -> Dict[str, Any]:
     """One row per part: every hole clear of material (``exports/hole-checks.json``, bound to each part's STEP)."""
-    from cadagent import holes
-    from cadagent.holes import current
+    from cadagent.geometry import holes
+    from cadagent.geometry.holes import current
 
     parts, error = load_parts(project)
     if error:
@@ -283,7 +283,7 @@ def collect(project: CadProject) -> Dict[str, Any]:
         features.append(dossier)
     counts = summarize({"features": features})
     revision = project.resolve_revision()
-    from cadagent.slicer import current_report
+    from cadagent.make.slicer import current_report
     sliced = current_report(project)
     slicer_text = (f"sliced ({sliced['slicer']}): {sliced['total_grams']} g, {sliced['total_hours']} h for "
                    f"{len(sliced['parts'])} part(s), {sliced['process']}, {sliced['filament']}") if sliced else "slicer not run"

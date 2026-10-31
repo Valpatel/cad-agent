@@ -41,7 +41,7 @@ How it measures (no number the fastener was declared from is trusted where the m
   *axis* line; the *thread probe*: 4 lines at 0.92 d/2 and 4 just outside d/2 (inside the smallest clearance
   hole; the one whose thread starts first wins), where a receiver modelled at its minor or nominal diameter
   has material, gaps up to 1.5 pitches bridged; *radial rays* in each clamped part for its hole radius;
-* **the screw's solid** when the build placed one (catalogue STEP or ``cadagent.fasteners`` envelope):
+* **the screw's solid** when the build placed one (catalogue STEP or ``cadagent.geometry.fasteners`` envelope):
   its length and head from its box in the axis frame, its overlaps from the relation table (cached),
   each overlap's extent along the axis from the common solid. Without a solid the head is ``head_d_mm``
   x ``head_h_mm`` when declared, else 1.6 d x 1.0 d (a socket head), and the length is the record's;

@@ -5,7 +5,7 @@ A catalogue file is JSON or YAML in one of three layouts:
 * a list of items, each with an ``id``;
 * ``{"items": [...]}``, optionally with ``"defaults": {...}`` merged under every item (a ``category`` for the whole
   file, say);
-* ``{"items": {"<id>": {...}}}``, keyed by id (the layout ``cadagent.mcmaster`` writes).
+* ``{"items": {"<id>": {...}}}``, keyed by id (the layout ``cadagent.make.mcmaster`` writes).
 
 One item::
 

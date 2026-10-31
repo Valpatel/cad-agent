@@ -370,7 +370,7 @@ def insert_rig(screw_length=20.0, *, gusset=None, solid=True, lid_hole=3.4, seat
     otherwise). ``post``: an upright beside the screw, in no step, inside an L key's swing."""
     cq = _cq()
     from cadagent import dossier
-    from cadagent.fasteners import insert_envelope, socket_head_envelope
+    from cadagent.geometry.fasteners import insert_envelope, socket_head_envelope
     with dossier.use_registry() as reg:
         reg.add_part("base", _box(cq, -10, -10, 0, 10, 10, 7.3).cut(_cyl(cq, 2.0, 2.3, 7.3)), grounded=True)
         reg.add_part("insert", insert_envelope(4.0, 2.5, 4.3), place=(0, 0, 7.3))
@@ -414,7 +414,7 @@ def by_id(v):
 def test_blind_insert_stack_numbers_come_back_from_the_solids():
     """test_fasteners' recessed lid: seat 23.5, M3 x 20, insert top 7.3 x 4.3, hole bottom 2.3 -> engagement 3.8,
     tip clearance 1.2 (blind_insert_stack); the gate measures the same from the model."""
-    from cadagent.fasteners import blind_insert_stack
+    from cadagent.geometry.fasteners import blind_insert_stack
     want = blind_insert_stack(head_seat=23.5, screw_length=20, insert_top=7.3, insert_length=4.3, hole_bottom=2.3)
     v = gate(insert_rig())
     assert v["pass"] is True and v["findings"] == [], v["findings"]
@@ -461,7 +461,7 @@ def chamfer_rig(*, base_chamfer=0.0, entry=0.0, exit_=0.0, insert="plain", base_
     relief grooves), a lid 10..13; chamfers on the base hole and both ends of the lid hole."""
     cq = _cq()
     from cadagent import dossier
-    from cadagent.fasteners import insert_envelope, socket_head_envelope
+    from cadagent.geometry.fasteners import insert_envelope, socket_head_envelope
 
     def cone(r0, r1, z0, z1):
         return cq.Solid.makeCone(r0, r1, z1 - z0, cq.Vector(0, 0, z0))
@@ -567,7 +567,7 @@ def nut_rig(*, gap=0.0, hole_b=3.4, length=16.0, x_axis=False):
     """Two plates and a nut (Ø5.5 x 2.4, minor bore Ø2.5) on an M3 x 16, optionally laid along +X."""
     cq = _cq()
     from cadagent import dossier
-    from cadagent.fasteners import socket_head_envelope
+    from cadagent.geometry.fasteners import socket_head_envelope
     a = _box(cq, -8, -8, 6, 8, 8, 10).cut(_cyl(cq, 1.7, 6, 10))
     b = _box(cq, -8, -8, 2 - gap, 8, 8, 6 - gap)
     if hole_b:
@@ -611,7 +611,7 @@ def test_bolt_stack_with_a_gap_or_no_hole_in_the_second_plate_fails():
 def test_head_in_a_pocket_too_narrow_and_over_an_edge():
     cq = _cq()
     from cadagent import dossier
-    from cadagent.fasteners import insert_envelope, socket_head_envelope
+    from cadagent.geometry.fasteners import insert_envelope, socket_head_envelope
 
     def rig(pocket_d=None, x=0.0):
         with dossier.use_registry() as reg:
@@ -655,7 +655,7 @@ def arm_rig():
     a Ø2.5 pilot in the arm; a static roof sits 40 mm out along -X, where the arm's top faces when turned 90°."""
     cq = _cq()
     from cadagent import dossier
-    from cadagent.fasteners import socket_head_envelope
+    from cadagent.geometry.fasteners import socket_head_envelope
     with dossier.use_registry() as reg:
         reg.add_part("base", _box(cq, -5, -20, -20, 5, -10, 5), grounded=True)
         reg.add_part("roof", _box(cq, -42, -10, -10, -40, 10, 10).fuse(_box(cq, -42, -20, -10, -5, -10, -8)))

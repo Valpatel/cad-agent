@@ -42,7 +42,7 @@ from cadagent._deps import require
 
 SITE_DIR = "site"
 KIT_URL = "/_cadagent/kit/"
-KIT_DIR = Path(__file__).resolve().parent / "webkit"
+KIT_DIR = Path(__file__).resolve().parent.parent / "webkit"
 STATUS_ORDER = {"done": 0, "active": 1, "next": 2, "blocked": 3}
 
 
@@ -282,7 +282,7 @@ def _e(v: Any) -> str:
 
 
 def _page(title: str, body: str, accent: str, depth: int = 0, theme: str = "light", extra_css: str = "") -> str:
-    from cadagent.review import REVIEW_CSS
+    from cadagent.publish.review import REVIEW_CSS
     css = REVIEW_CSS + _CSS.replace("ACCENT", accent) + extra_css + _NAV_CSS + (_HUD if theme == "hud" else "")
     fonts = f'<link rel="stylesheet" href="{"../" * (depth + 1)}_cadagent/kit/vendor/fonts/fonts.css">' if theme == "hud" else ""
     diagram_theme = "dark" if theme == "hud" else "light"
@@ -320,7 +320,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
     config has no ``nav`` (cad-agent passes :func:`default_nav` for the project). ``gates_exports``: the project's
     exports directory when it uses the integrity gates, for the gates stat on the overview. ``review_project``: the
     loaded project (``CadProject``) when it has a dossier or gates; its review pages are written to
-    ``site/review/`` (:mod:`cadagent.site_review`) and linked from the overview."""
+    ``site/review/`` (:mod:`cadagent.publish.site_review`) and linked from the overview."""
     root = Path(root).resolve()
     cfg = site_config(raw_site, default_title)
     if not cfg.nav and auto_nav:
@@ -349,7 +349,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
 
     review_block, review_summary = "", None
     if review_project is not None:
-        from cadagent import site_review
+        from cadagent.publish import site_review
         if site_review.enabled(review_project):
             review_summary = site_review.build_review_pages(review_project, cfg, out)
             review_block = site_review.overview_html(review_summary.pop("data"))
@@ -407,7 +407,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
     def design_card(d: Dict[str, Any]) -> str:
         pcb_html = ""
         if d.get("pcb_evidence"):
-            from cadagent.pcb import evidence_is_current
+            from cadagent.make.pcb import evidence_is_current
             bundle = _load(root, d["pcb_evidence"]) or {}
             current = evidence_is_current(root, bundle)
             clean = current and bundle.get("pass") is True
@@ -451,7 +451,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
     log_rows = "".join(f'<tr><td>{_e(c["hash"])}</td><td>{_e(c["date"])}</td><td>{_e(c["subject"])}</td></tr>' for c in log)
 
     section = lambda t, body, empty: f'<h2 id="{slug(t)}">{t}</h2>' + (body or f'<p class="tag">{empty}</p>')
-    from cadagent.review import review_html
+    from cadagent.publish.review import review_html
     review = review_html(root, _load(root, cfg.review) or {})
     main = (f'<main class="wrap">{stats}{review}{review_block}'
             + section("Progress", f'<ul class="milestones">{ms}</ul>' if ms else "", "No milestones file yet.")
@@ -462,7 +462,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
             + f'<footer>Built {datetime.now().strftime("%Y-%m-%d %H:%M")} by cad-agent from the project files. Refresh to rebuild.</footer></main>')
     review_css = ""
     if review_summary is not None:
-        from cadagent.site_review import CSS as review_css
+        from cadagent.publish.site_review import CSS as review_css
     (out / "index.html").write_text(_page(cfg.title, nav_html(cfg, "overview", "../") + head + main, cfg.accent,
                                           theme=cfg.theme, extra_css=review_css))
     # the same top bar for the project's own pages: they fetch site/nav.json and render it with webkit/appnav.js
@@ -481,7 +481,7 @@ def default_nav(root: Path, html_pages: Optional[List[str]] = None, site_pages: 
     """The top bar when the project configures none: the overview, the rendered documents, the 3D model, then each
     project HTML page (``cad: html_pages``, plus the cad-agent report, the simulation report, the design comparison
     and the search leaderboard when present), titled by its ``<title>``. Every page the local server sends gets this
-    bar, so the pages link to each other. ``extra`` tabs (the review pages, :func:`cadagent.site_review.nav_entries`)
+    bar, so the pages link to each other. ``extra`` tabs (the review pages, :func:`cadagent.publish.site_review.nav_entries`)
     come before the HTML pages."""
     root = Path(root)
     nav = [{"id": "overview", "title": "Overview", "href": "site/"}]
@@ -586,7 +586,7 @@ def serve_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
     build_site(root, raw_site, default_title, auto_nav, gates_exports, review_project)
     review_sources = None
     if review_project is not None:
-        from cadagent import site_review
+        from cadagent.publish import site_review
         review_sources = lambda: site_review.sources(review_project) if site_review.enabled(review_project) else []  # noqa: E731
     nav_cache = {"at": 0.0, "nav": cfg.nav}
 

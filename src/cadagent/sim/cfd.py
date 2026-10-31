@@ -1,6 +1,6 @@
 """Airflow and heat: steady conjugate heat transfer (CHT) cases for OpenFOAM, written from CAD.
 
-    from cadagent.cfd import ThermalCase, Fan, SOLIDS
+    from cadagent.sim.cfd import ThermalCase, Fan, SOLIDS
     case = ThermalCase('cooled', domain=((-100, -100, -3), (306, 290, 260)), cell_mm=8, ambient_c=25)
     case.wall('enclosure', [base, cover, front, rear], level=2)          # no-slip, adiabatic obstacles
     case.solid('soc', soc_box, SOLIDS['silicon'], power_w=40, level=3)   # a heat source
@@ -238,7 +238,7 @@ class ThermalCase:
         if case.exists():
             # only ever remove a folder this module wrote (or an empty one): never a project folder by mistake
             if not (case / 'cadagent-case.json').exists() and any(case.iterdir()):
-                raise FileExistsError(f'{case} exists and is not a cadagent.cfd case; choose an empty or new folder')
+                raise FileExistsError(f'{case} exists and is not a cadagent.sim.cfd case; choose an empty or new folder')
             shutil.rmtree(case)
         tri = case / 'constant' / 'triSurface'
         tri.mkdir(parents=True)
@@ -644,7 +644,7 @@ relaxationFactors { equations { h 1; } }
                  f'# air only: the mesh is the {self.fluid} region\n'
                  f'for p in processor*; do mkdir -p "$p/constant/{self.fluid}" && mv "$p/constant/polyMesh" "$p/constant/{self.fluid}/"; done')
         return f'''#!/bin/bash
-# Written by cadagent.cfd. Runs inside the OpenFOAM environment (Docker image {IMAGE} or a native install).
+# Written by cadagent.sim.cfd. Runs inside the OpenFOAM environment (Docker image {IMAGE} or a native install).
 set -e
 cd "${{0%/*}}"
 blockMesh > log.blockMesh 2>&1
@@ -849,7 +849,7 @@ class _Writer:
         p.parent.mkdir(parents=True, exist_ok=True)
         obj = p.name
         head = ('FoamFile\n{\n    version 2.0;\n    format ascii;\n'
-                f'    class {cls};\n    object {obj};\n}}\n// written by cadagent.cfd\n\n')
+                f'    class {cls};\n    object {obj};\n}}\n// written by cadagent.sim.cfd\n\n')
         p.write_text(head + body)
 
 

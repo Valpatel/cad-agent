@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from cadagent import robot as r
+from cadagent.sim import robot as r
 
 
 def test_box_inertia_matches_the_textbook():

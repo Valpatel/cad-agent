@@ -5,7 +5,7 @@ import pytest
 
 cq = pytest.importorskip("cadquery")
 
-from cadagent import holes
+from cadagent.geometry import holes
 from cadagent.cli import main
 from cadagent.project import CadConfigError
 
@@ -73,7 +73,7 @@ def project(tmp_path, shape, extra=""):
 
 def test_cli_and_report_rows(tmp_path):
     from cadagent.project import load_project
-    from cadagent.report import holes_feature
+    from cadagent.publish.report import holes_feature
 
     root = project(tmp_path, plate_with_counterbore(True))
     assert main(["holes", "--project", str(root)]) == 1
@@ -89,7 +89,7 @@ def test_cli_and_report_rows(tmp_path):
 
 def test_not_run_fails_and_skip_needs_a_reason(tmp_path):
     from cadagent.project import load_project
-    from cadagent.report import holes_feature
+    from cadagent.publish.report import holes_feature
 
     root = project(tmp_path, plate_with_counterbore(False))
     assert holes_feature(load_project(root))["checks"][0]["status"] == "fail"
@@ -136,7 +136,7 @@ def test_ledges_are_reported_and_known_misses_are_recorded():
 
 def test_skip_missing_step_config_binding_partial_runs_and_out(tmp_path):
     from cadagent.project import load_project
-    from cadagent.report import holes_feature
+    from cadagent.publish.report import holes_feature
 
     root = project(tmp_path, plate_with_counterbore(False))
     parts = {"plate": {"cad_valid": True}, "gasket": {"cad_valid": True}, "lid": {"cad_valid": True}}

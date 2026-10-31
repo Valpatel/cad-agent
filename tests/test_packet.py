@@ -18,7 +18,7 @@ from typing import Any, Dict
 import pytest
 import yaml
 
-from cadagent import packet as pk
+from cadagent.publish import packet as pk
 from cadagent.cli import main
 from cadagent.dossier import load_dossier
 from cadagent.gates.verdict import bind_inputs

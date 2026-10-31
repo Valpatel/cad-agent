@@ -1,6 +1,6 @@
 """Linear-elastic stiffness and strength studies for any CAD part (STEP or a CadQuery shape).
 
-    from cadagent.fea import Study, MATERIALS, cylinder_at, plane_at, in_box
+    from cadagent.sim.fea import Study, MATERIALS, cylinder_at, plane_at, in_box
     st = Study('exports/thigh.step', MATERIALS['petg_cf'], mesh_mm=3.0)
     st.fix(cylinder_at(center=(0, 0, 0), axis=(0, 1, 0)))                       # bolt holes at the motor flange
     st.force(cylinder_at(center=(0, 0, -200), axis=(0, 1, 0)), (0, 0, 300))     # 300 N at the knee pin

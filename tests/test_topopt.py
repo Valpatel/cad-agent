@@ -7,7 +7,7 @@ import pytest
 
 pytest.importorskip("pymoto")
 trimesh = pytest.importorskip("trimesh")
-from cadagent.topopt import TopOpt  # noqa: E402
+from cadagent.sim.topopt import TopOpt  # noqa: E402
 
 
 def test_cantilever():
@@ -26,7 +26,7 @@ def test_cantilever():
 
 
 def test_hex_vents_only_where_material_is_not_needed():
-    from cadagent.topopt import hex_vents
+    from cadagent.sim.topopt import hex_vents
     t = TopOpt((0, 0, 0), (60, 40, 4), voxel_mm=2.0)
     d = np.zeros(t.domain.nel).reshape(t.n[::-1])
     d[:, :, :15] = 1.0                              # x < 30 mm is needed material

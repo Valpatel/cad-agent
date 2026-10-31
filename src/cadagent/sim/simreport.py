@@ -1,6 +1,6 @@
 """A standalone HTML page for simulation and optimisation results: before/after metrics, figures, videos, limits.
 
-    from cadagent.simreport import write_report, metric
+    from cadagent.sim.simreport import write_report, metric
     write_report('preview/simulation.html', 'J501 Rev 0.8: material, strength, airflow', sections=[
         {'id': 'material', 'title': 'Filament', 'summary': '...',
          'metrics': [metric('Lid', 164.4, 92.1, 'g', better='lower')],
@@ -137,7 +137,7 @@ def render(title: str, sections: List[dict], subtitle: str = '', meta: Optional[
             f'<header class="top"><div class="in"><h1>{html.escape(title)}</h1>'
             f'{f"<p>{html.escape(subtitle)}</p>" if subtitle else ""}<ul class="meta">{li}</ul></div></header>'
             f'<main><nav class="toc">{toc}</nav>{"".join(body)}</main>'
-            f'<footer>{footer or "Written by cad-agent (cadagent.simreport). Simulation is evidence for a design decision, not proof: test the printed part."}</footer>'
+            f'<footer>{footer or "Written by cad-agent (cadagent.sim.simreport). Simulation is evidence for a design decision, not proof: test the printed part."}</footer>'
             '</body></html>')
 
 

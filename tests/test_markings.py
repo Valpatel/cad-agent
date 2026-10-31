@@ -1,5 +1,5 @@
 import pytest
-from cadagent.markings import PanelMarkings
+from cadagent.geometry.markings import PanelMarkings
 
 def test_shared_artwork_proof_escapes_labels_and_preserves_world_axes():
     m=PanelMarkings();m.text('A&B <male>',10,20,3,bold=True);m.line([(1,2),(3,4)],.5)

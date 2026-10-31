@@ -542,7 +542,7 @@ def test_unreadable_inputs_are_findings(tmp_path):
 def test_the_lint_imports_no_cad_kernel():
     import subprocess
     import sys
-    code = ("import sys; import cadagent.dossier.lint, cadagent.cli, cadagent.report; "
+    code = ("import sys; import cadagent.dossier.lint, cadagent.cli, cadagent.publish.report; "
             "print(any(m in sys.modules for m in ('cadquery', 'OCP')))")
     src = str(Path(__file__).resolve().parents[1] / "src")
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,

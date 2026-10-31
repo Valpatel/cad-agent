@@ -9,8 +9,8 @@ Two halves:
   access along the fastener axes, joint range ends, findings), the section's findings with their witness points,
   the content hashes, and the render checklist instantiated for the section. It returns the manifest without image
   hashes.
-* ``review_packet(section, root=...)`` (also ``cadagent.render.review_packet``) loads a project, plans, renders
-  every view with ``cadagent.render.Renderer`` (CadQuery, VTK, Pillow) and writes
+* ``review_packet(section, root=...)`` (also ``cadagent.publish.render.review_packet``) loads a project, plans, renders
+  every view with ``cadagent.publish.render.Renderer`` (CadQuery, VTK, Pillow) and writes
   ``exports/review/<section>/manifest.json``.
 
 Renders are for diagnosis, not proof: the gates measure, the checklist never asks an image for a count or a gap.
@@ -1008,7 +1008,7 @@ def render_views(manifest: Dict[str, Any], result: Any, out_dir: Union[str, Path
                  renderer: Any = None) -> Dict[str, Any]:
     """Render the planned views of ``manifest`` from ``result`` (a dossier ``BuildResult`` with shapes) into
     ``out_dir``, filling ``views[].sha256`` (``file`` is set to null for views not rendered)."""
-    from cadagent.render import Renderer
+    from cadagent.publish.render import Renderer
 
     out_dir = Path(out_dir)
     shapes = result.assembly_shapes()

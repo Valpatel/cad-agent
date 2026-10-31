@@ -1,5 +1,10 @@
 # Agentic hardware-design landscape (verified 2026-10-24)
 
+> **Refreshed 2026-10-31** (issue #96): [agent toolkits since 10-24](agent-toolkits-2026-10.md) (text-to-cad 0.8 break,
+> OrcaSlicer 2.5 MCP, build123d sheet metal, snap-fit skills), [compliant mechanisms](compliant-mechanisms.md) (snap
+> fits, flexures, allowable strains, FDM anisotropy from datasheets) and [FEA and process tools](fea-and-process-tools.md)
+> (large-deflection contact solvers, orientation optimisers, sheet metal, 37 candidate deterministic checks).
+
 Scope: public tools that let frontier-model agents (Claude Code first; Codex, Cursor, Gemini) design 3D-printed,
 sheet-metal, laser-cut, CNC and molded parts, enclosures around real PCBs, and KiCad boards.
 Method: stars, SPDX licence and last push come from `gh api repos/OWNER/REPO` on this date; capabilities come from each

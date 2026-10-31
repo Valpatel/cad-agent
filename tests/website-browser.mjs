@@ -1,11 +1,12 @@
 /** Load cad-agent.valpatel.com pages in a real browser, served the way Cloudflare Pages serves them (pretty URLs and
  * the _headers file, including the Content-Security-Policy), at phone and desktop widths.
  * Fails on console errors, CSP violations, failed or third-party requests, sideways scrolling, a phone header without
- * the catalogue link, a hero animation that is not running (or still running under reduced motion), and a catalogue
- * filter that hides results without saying so. */
+ * the catalogue link, a hero animation that is not running (or still running under reduced motion), a catalogue
+ * filter that hides results without saying so, and a diagram wider than the article column at 1100 px (the narrowest
+ * width with the page tree), so no reader has to scroll a diagram sideways on a desktop. */
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { chromium, webkit } from '@playwright/test';
@@ -122,6 +123,22 @@ try {
   const still = await reduced.evaluate(() => document.getAnimations().filter(a => a.animationName?.startsWith('snap-')).length);
   if (still) problems.push(`reduced motion: ${still} hero animations still running`);
   await reduced.close();
+  // Every page with a diagram, at the narrowest desktop width: each rendered diagram fits its column (#122).
+  const diagramPages = [];
+  for (const e of await readdir(dir, { withFileTypes: true, recursive: true })) {
+    const rel = path.relative(dir, path.join(e.parentPath, e.name));
+    if (e.isFile() && rel.endsWith('.html') && !rel.startsWith('kit') && (await readFile(path.join(dir, rel), 'utf8')).includes('language-mermaid'))
+      diagramPages.push('/' + rel.replace(/\.html$/, '').split(path.sep).join('/'));
+  }
+  const wide = await browser.newPage({ viewport: { width: 1100, height: 900 } });
+  for (const route of diagramPages.sort()) {
+    await wide.goto(base + route, { waitUntil: 'networkidle' });
+    await wide.waitForFunction(() => [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'),
+      null, { timeout: 20000 }).catch(() => problems.push(`1100px ${route}: diagrams did not finish rendering`));
+    for (const d of await wide.$$eval('.cad-diagram .cad-diagram-view', views => views.map(v => ({ over: v.scrollWidth - v.clientWidth, w: v.scrollWidth }))))
+      if (d.over > 1) problems.push(`1100px ${route}: a diagram is ${d.w}px wide, ${d.over}px wider than the column (top-down, at most three boxes per row)`);
+  }
+  await wide.close();
   assert.deepEqual(problems, []);
   console.log(`${engine.name()}: ${ROUTES.length} routes at 360 and 1366 px under the site CSP PASS`);
 } finally {

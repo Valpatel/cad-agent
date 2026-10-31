@@ -456,7 +456,7 @@
   {
    "name": "Seeed-Studio/kicad-mcp-server",
    "url": "https://github.com/Seeed-Studio/kicad-mcp-server",
-   "license_spdx": null,
+   "license_spdx": "none",
    "stars": 168,
    "last_push": "2026-10-22",
    "clients": [
@@ -595,7 +595,7 @@
   {
    "name": "punkfab/circuit-skills",
    "url": "https://github.com/punkfab/circuit-skills",
-   "license_spdx": null,
+   "license_spdx": "none",
    "stars": 10,
    "last_push": "2026-10-06",
    "clients": [
@@ -673,10 +673,10 @@
   {
    "name": "SiddhuYen/eitri",
    "url": "https://github.com/SiddhuYen/eitri",
-   "license_spdx": "NOASSERTION",
+   "license_spdx": "FSL-1.1-MIT",
    "stars": 1,
    "last_push": "2026-10-31",
-   "notes": "local build123d agent with a geometry report",
+   "notes": "local build123d agent with a geometry report; Functional Source License 1.1 (MIT after two years): ideas only",
    "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
   },
   {
@@ -739,7 +739,7 @@
    "license_spdx": "MIT",
    "stars": 0,
    "last_push": "2026-10-26",
-   "notes": "FDM compliant-mechanism skill; prompt-only",
+   "notes": "FDM compliant-mechanism skill; prompt-only; candidate: take the selection table and evals with attribution after recomputing its strains",
    "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
   },
   {
@@ -767,6 +767,15 @@
    "stars": 0,
    "last_push": "2026-08-18",
    "notes": "STEP moulding DFM analysis with a Three.js view",
+   "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
+  },
+  {
+   "name": "naman113/Designstudio",
+   "url": "https://github.com/naman113/Designstudio",
+   "license_spdx": "MIT",
+   "stars": 8,
+   "last_push": "2026-10-23",
+   "notes": "\"Buildcore\": STEP to auto-dimensioned PDF drawings, grouped BOM, GLB viewer, parts catalogue (Docker, local port 8800)",
    "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
   }
  ],
@@ -837,7 +846,8 @@
    "license_spdx": "GPL-2.0-or-later",
    "url": "https://www.calculix.de/",
    "notes": "planned external solver for large-deflection snap force-travel with contact; apt ships 2.21",
-   "source": "research/fea-and-process-tools.md"
+   "source": "research/fea-and-process-tools.md",
+   "status": "candidate"
   }
  ],
  "benchmarks": [
@@ -916,7 +926,7 @@
    "url": "https://github.com/google/feabench",
    "license_spdx": "Apache-2.0",
    "paper": "arXiv 2504.06260",
-   "notes": "LLM agents on FEA problems; needs a COMSOL licence; prior art only"
+   "notes": "LLM agents on FEA problems; needs a COMSOL licence; prior art only; the repo is archived"
   }
  ],
  "refreshed_on": "2026-10-31"

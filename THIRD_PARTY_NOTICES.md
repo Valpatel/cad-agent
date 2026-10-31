@@ -6,8 +6,8 @@ upstream LICENSE/NOTICE files; those terms apply to that code. Our changes are l
 ```mermaid
 flowchart TD
     P["a project we found"] --> L{"its licence"}
-    L -->|"MIT, BSD, Apache"| V["vendor or adapt<br/>pinned, credited,<br/>LICENSE kept"]
-    L -->|"GPL, AGPL"| X["separate program<br/>never copied in"]
+    L -->|"MIT, BSD,<br/>Apache"| V["vendor or adapt<br/>pinned, credited,<br/>LICENSE kept"]
+    L -->|"GPL, AGPL"| X["run separately<br/>never copied in"]
     L -->|"no licence"| I["ideas only<br/>credited, no code"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c

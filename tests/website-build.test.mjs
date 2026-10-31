@@ -61,9 +61,15 @@ test('pages have one h1 and heading ids follow GitHub anchors', async () => {
     const n = ((await readFile(path.join(out, f), 'utf8')).match(/<h1[\s>]/g) || []).length;
     assert.equal(n, 1, `${f} has ${n} h1`);
   }
-  const readme = await ids('README.html');
-  assert.ok(readme.has('whats-in-the-box'), 'apostrophes are dropped, not encoded');
-  assert.ok((await ids('lessons/01-verify-from-source.html')).size > 3);
+  // GitHub's rule: entities decoded and punctuation dropped (no "39" from an encoded apostrophe), runs of spaces kept.
+  for (const f of html.filter(f => !f.startsWith('kit/'))) {
+    const text = await readFile(path.join(out, f), 'utf8');
+    for (const [, id, inner] of text.matchAll(/<h[1-6] id="([^"]*)">([\s\S]*?)<\/h[1-6]>/g)) {
+      assert.doesNotMatch(id, /(?:^|-)(?:39|quot|amp)(?:-|s-|$)/, `${f}: ${id}`);
+      if (/[’'&]/.test(inner) || /&#39;|&amp;|&quot;/.test(inner)) assert.doesNotMatch(id, /\d{2}/.test(inner) ? /^$/ : /39/, `${f}: ${id}`);
+    }
+  }
+  assert.ok((await ids('lessons/01-verify-from-source.html')).has('01--verify-from-source'), 'runs of spaces are not merged');
 });
 
 test('Markdown twins and llms-full.txt carry working links', async () => {

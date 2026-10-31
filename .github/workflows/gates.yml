@@ -1,42 +1,38 @@
 name: Gates
 # Merge gates (CONTRIBUTING.md "Gates"; rules in tools/ci_gates.py, tested in tests/test_ci_gates.py).
-# Required checks: branch-flow and review-gate on dev and main, release-gate on main.
+#
+# pull_request_target runs THIS file and tools/ci_gates.py as they are on the base branch, so a PR that edits the gates
+# cannot pass them. It never checks out or runs the PR's code: the PR is read as data (API, and for release PRs two
+# files read with git show). Results are commit statuses on the PR's head, named cad-gates/<base>/<gate>; branch
+# protection requires cad-gates/dev/{branch-flow,review} on dev and cad-gates/main/{branch-flow,review,release} on main.
+# After posting a verdict, the reviewer re-runs the gates: gh workflow run gates.yml -R <repo> -f pr=<n>
 on:
-  pull_request:
+  pull_request_target:
+    branches: [dev, main]
     types: [opened, synchronize, reopened, edited, ready_for_review]
-  pull_request_review:
-    types: [submitted, edited, dismissed]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number
+        required: true
 
 permissions:
   contents: read
   pull-requests: read
+  statuses: write
 
 concurrency:
-  group: gates-${{ github.event.pull_request.number }}-${{ github.event_name }}
+  group: gates-${{ github.event.pull_request.number || inputs.pr }}
   cancel-in-progress: true
 
 jobs:
-  branch-flow:
+  gates:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09   # v5
-        with: {persist-credentials: false}
-      - run: python3 tools/ci_gates.py branch-flow
-
-  review-gate:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09   # v5
-        with: {persist-credentials: false}
-      - run: python3 tools/ci_gates.py review-gate
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09   # v5; the base branch, never the PR
+        with: {persist-credentials: false, fetch-depth: 0}
+      - name: Evaluate and post the gates
         env:
           GH_TOKEN: ${{ github.token }}
-
-  release-gate:
-    if: github.event.pull_request.base.ref == 'main'
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09   # v5
-        with: {persist-credentials: false, fetch-depth: 0}
-      - run: git fetch --no-tags origin main:refs/remotes/origin/main
-      - run: python3 tools/ci_gates.py release-gate
+          PR: ${{ github.event.pull_request.number || inputs.pr }}
+        run: python3 tools/ci_gates.py all --repo "$GITHUB_REPOSITORY" --pr "$PR" --post || true   # the statuses decide

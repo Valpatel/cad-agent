@@ -1,7 +1,8 @@
 name: Release
 # After a release PR merges into main: tag vX.Y.Z with a GitHub release from CHANGELOG.md, then deploy
-# cad-agent.valpatel.com from that commit. The deploy needs the repository secret CLOUDFLARE_API_TOKEN (a Pages-only
-# token, set by the owner with `gh secret set`) and runs in the `production` environment, which only main may use.
+# cad-agent.valpatel.com from that commit. The deploy runs in the `production` environment, which only main may use,
+# and needs that environment's secret CLOUDFLARE_API_TOKEN (a Pages-only token, set by the owner with
+# `gh secret set CLOUDFLARE_API_TOKEN --env production`, never as a repository secret) and variable CLOUDFLARE_ACCOUNT_ID.
 on:
   push:
     branches: [main]
@@ -16,6 +17,7 @@ concurrency:
 
 jobs:
   tag:
+    if: github.ref == 'refs/heads/main'          # workflow_dispatch can name any branch; only main is released
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -25,7 +27,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09   # v5
         with: {fetch-depth: 0}
       - id: v
-        run: echo "version=$(python3 -c "import re;print(re.search(r'^version\s*=\s*\"([^\"]+)\"', open('pyproject.toml').read(), re.M).group(1))")" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(python3 tools/ci_gates.py version)" >> "$GITHUB_OUTPUT"
       - name: Tag and release (once per version)
         env:
           GH_TOKEN: ${{ github.token }}

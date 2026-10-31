@@ -20,8 +20,8 @@ Required checks, all automated. Nobody, agent or person, merges around them.
 
 ```mermaid
 flowchart LR
-    F["feat/ fix/ ci/ docs/ …<br/>from dev"] -->|"PR · CI · review-gate"| D["dev"]
-    D -->|"release PR · CI · review-gate<br/>on the head · release-gate"| M["main"]
+    F["feat/ fix/ ci/ docs/ …<br/>from dev"] -->|"CI · branch-flow · review"| D["dev"]
+    D -->|"CI · branch-flow · review on the head<br/>· release"| M["main"]
     M -->|"release.yml"| R["tag vX.Y.Z · GitHub release<br/>site deploy"]
     classDef b fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef r fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -29,21 +29,19 @@ flowchart LR
     class R r
 ```
 
-| Check | PR into `dev` | PR into `main` | What it asks |
+| Required check | `dev` | `main` | What it asks |
 |---|---|---|---|
 | `core (3.10)`, `core (3.12)`, `full` | ✓ | ✓ | The test suite with required dependencies only, and with every extra |
 | `browser (chromium)`, `browser (webkit)` | ✓ | ✓ | Web kit and website suites in two browser engines |
-| `branch-flow` | ✓ | ✓ | `dev` takes the branch kinds above (forks: the outside-contribution checks); `main` takes `dev` only |
-| `review-gate` | ✓ | ✓ | An independent review's latest verdict is pass; for `main`, on the head commit |
-| `release-gate` | | ✓ | `pyproject.toml` version above `main`'s, and a dated `## vX.Y.Z (YYYY-MM-DD)` entry in [CHANGELOG.md](CHANGELOG.md) |
+| `cad-gates/<base>/branch-flow` | ✓ | ✓ | `dev` takes `feat/ fix/ ci/ docs/ research/ test/ refactor/ release/ vendor-update/ dependabot/` branches (forks: the outside-contribution checks); `main` takes `dev` only |
+| `cad-gates/<base>/review` | ✓ | ✓ | The latest verdict from a reviewer with write access is pass; on the head commit for `main` and for forks |
+| `cad-gates/main/release` | | ✓ | `pyproject.toml` version above `main`'s, and a dated `## vX.Y.Z (YYYY-MM-DD)` entry in [CHANGELOG.md](CHANGELOG.md) |
 | Conversations resolved | ✓ | ✓ | Every review thread answered and resolved |
 
-The verdict is the last line of the reviewer's summary review, `<!-- cad-review verdict=pass sha=<head sha> -->` (or
-`verdict=block`), written by the `cad-pr-reviewer` subagent or a reviewer following the `cad-pr-review` skill. Only
-reviews from the owner, members and collaborators count. All our agents work through one account, so GitHub cannot
-tell author from reviewer: an author never writes a verdict on its own PR. The rules live in
-[`tools/ci_gates.py`](tools/ci_gates.py) and are tested in `tests/test_ci_gates.py`. Workflow actions are pinned by
-commit SHA.
+- **The verdict.** It is the last line of the reviewer's summary review: `<!-- cad-review verdict=pass sha=<40-character head sha> -->` (or `verdict=block`). It is written by the `cad-pr-reviewer` subagent, or by a reviewer following the `cad-pr-review` skill, who then re-runs the gates: `gh workflow run gates.yml -R Valpatel/cad-agent -f pr=<n>`.
+- **Who can review.** Only reviewers with write access count, and dismissed reviews never count. All our agents work through one account, so GitHub cannot tell author from reviewer: an author never writes a verdict on its own PR.
+- **How the gates run.** `gates.yml` runs on `pull_request_target`: the base branch's copy of the workflow and of [`tools/ci_gates.py`](tools/ci_gates.py) decides, so a PR cannot pass the gates by editing them. The PR is only read as data, never checked out or run. Results are commit statuses named after the base, so a PR into `dev` cannot supply `main`'s checks. A fork's own workflows run with a read-only token, so they cannot post statuses; anyone with write access can, which is why write access is the trust boundary. Fork workflows wait for approval, and the [`cad-intake`](skills/cad-intake/SKILL.md) skill reads a fork's workflow changes before approving them.
+- **Pins.** Workflow actions are pinned by commit SHA, and Dependabot proposes updates weekly.
 
 ## Workflow
 Agents: install the workflow kit (`cad-agent agents install`, [docs/agent-workflow.md](docs/agent-workflow.md)) and
@@ -65,7 +63,7 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
    `webkit.yml` runs the browser suites and `gates.yml` the [gates](#gates).
 5. **Review.** Every PR gets a review from a person or from a separate review agent that did not write the change,
    posted as PR comments (the `cad-pr-reviewer` subagent, or a separate Codex session with that skill), ending with
-   the verdict marker that `review-gate` reads. The author answers or fixes each comment and resolves it.
+   the verdict marker that the `review` gate reads. The author answers or fixes each comment and resolves it.
 6. **Merge** into `dev` (squash or merge commit). Then, before removing the worktree, repoint anything installed
    from it: `pip show -f cad-agent` (or the `direct_url.json` it lists) in each project venv tells you where
    `cadagent` comes from. Reinstall those from the `dev` checkout below, then `git worktree remove ../cad-agent-<topic>`.
@@ -80,12 +78,17 @@ A project that needs a new toolkit feature opens a cad-agent PR for it; it does 
 
 ## Releases
 Releases are cut when the user asks for one.
-1. On a `release/vX.Y.Z` branch from `dev`, bump `version` in `pyproject.toml` and date the CHANGELOG entry
-   (`## vX.Y.Z (YYYY-MM-DD)`, with what projects must change); PR it into `dev` and merge.
-2. Open a PR from `dev` into `main` titled `Release vX.Y.Z`. It needs CI, `release-gate`, and a review whose pass
-   verdict is on the PR's head commit. Merge it with a **merge commit** (not squash or rebase), so `main` and `dev`
-   keep a common history.
-3. `release.yml` then tags `vX.Y.Z` on the merge commit, publishes the GitHub release from the CHANGELOG entry, and
-   deploys cad-agent.valpatel.com from that commit (`production` environment; it needs the `CLOUDFLARE_API_TOKEN`
-   secret and the `CLOUDFLARE_ACCOUNT_ID` variable).
-4. Move the projects' pins (`requirements*.txt`) to the tag in their own PRs.
+1. On a `release/vX.Y.Z` branch from `dev`:
+   - bring in `main`'s release merges (`git merge origin/main`), so the release PR is up to date with `main`;
+   - bump `version` in `pyproject.toml`;
+   - date the CHANGELOG entry (`## vX.Y.Z (YYYY-MM-DD)`, with what projects must change).
+
+   PR it into `dev` and merge.
+2. Open a PR from `dev` into `main` titled `Release vX.Y.Z`. It needs CI, `cad-gates/main/release`, and a review whose pass verdict is on the PR's head commit. Merge it with a **merge commit** (not squash or rebase), so `main` and `dev` keep a common history.
+3. `release.yml` then:
+   - tags `vX.Y.Z` on the merge commit;
+   - publishes the GitHub release from the CHANGELOG entry;
+   - deploys cad-agent.valpatel.com from that commit.
+
+   The deploy uses the `production` environment, which only `main` may deploy to. It needs that environment's `CLOUDFLARE_API_TOKEN` secret, set by the owner with `gh secret set CLOUDFLARE_API_TOKEN --env production`, and its `CLOUDFLARE_ACCOUNT_ID` variable.
+4. Move the projects' pins (`requirements*.txt`) to the tag, each in its own PR.

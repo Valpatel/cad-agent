@@ -30,8 +30,8 @@ by an agent or person that did not write it, and the review lives on the PR, whe
 
 4. **Merge only under the repo's rules**: CI green, a review exists, every thread resolved, and the user's go-ahead
    where the repo requires it (cad-agent: its required checks and gates; product repos say in their AGENTS.md). Where the repo has
-   merge gates (cad-agent: `branch-flow`, `review-gate`, `release-gate`), they are required checks: a pass verdict
-   from the reviewer (step "As the reviewer") is what turns `review-gate` green. Merge commits, not
+   merge gates (cad-agent: the `cad-gates/...` statuses), they are required checks, and only an independent
+   reviewer's pass verdict turns the review gate green. Merge commits, not
    squash, unless the repo says otherwise. After the merge, check that the linked issues closed and tick the
    tracking issue (`cad-work-tracking`).
 
@@ -55,7 +55,8 @@ by an agent or person that did not write it, and the review lives on the PR, whe
 - Post inline comments on the exact lines (`gh api repos/<o>/<r>/pulls/<n>/comments` with `commit_id`, `path`,
   `line`, `side=RIGHT`), then one summary review (`gh pr review <n> --comment --body ...`) that says plainly whether
   anything is blocking. Its last line is the verdict marker for the head commit you reviewed:
-  `<!-- cad-review verdict=pass sha=<head sha> -->` when nothing blocking is left, otherwise `verdict=block`.
-  A re-review after fixes posts a new summary with a new marker. Do not approve or merge unless the repo's rules give
+  `<!-- cad-review verdict=pass sha=<full 40-character head sha> -->` when nothing blocking is left, otherwise
+  `verdict=block`. A re-review after fixes posts a new summary with a new marker. Where the repo has merge gates,
+  re-run them so they read it: `gh workflow run gates.yml -R <owner>/<repo> -f pr=<n>`. Do not approve or merge unless the repo's rules give
   the reviewer that role.
 - Finish with a list of findings (file:line, severity, one sentence) for the author.

@@ -8,7 +8,7 @@ flowchart TD
     P["a project we found"] --> L{"its licence"}
     L -->|"MIT, BSD, Apache"| V["vendor or adapt<br/>pinned, credited,<br/>LICENSE kept"]
     L -->|"GPL, AGPL"| X["separate program<br/>never copied in"]
-    L -->|"none, non-commercial"| I["ideas only<br/>credited, no code"]
+    L -->|"no licence"| I["ideas only<br/>credited, no code"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

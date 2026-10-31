@@ -173,7 +173,7 @@ Unquoted, the title is cut at the comma and the rest becomes a stray key.
 |---------|------|-----------|
 | `cad-agent build [--from STEP] [--only STEP ...]` | runs steps in order with the project python; per-step timing; stops at the first failure and prints the log tail | 1 on a failed step |
 | `cad-agent export-3mf` | `<part>.stl` -> verified, bed-centred `<part>.3mf` for every part in the parts file | 1 on a read-back mismatch |
-| `cad-agent holes [PART ...]` | checks every hole in every part is clear of material: finds the cylindrical holes in `exports/<part>.step` (concave, at least 200° of wall, up to 30 mm across), probes each with a cylinder just inside its wall, and writes `exports/hole-checks.json` bound to each STEP's sha256; `all` runs it and the report's "Holes clear" rows fail on material in a hole, a stale result or a check that did not run (config `cad: holes:`, [below](#holes-clear)) | 1 if a hole has material inside |
+| `cad-agent holes [PART ...]` | checks every hole in every part is clear of material: finds the cylindrical holes and countersinks in `exports/<part>.step` (concave, at least 200° of wall, up to 30 mm across), probes each with a cylinder or cone just inside its wall, and writes `exports/hole-checks.json` bound to each STEP's sha256; `all` runs it and the report's "Holes clear" rows fail on material in a hole, a stale result or a check that did not run (config `cad: holes:`, [below](#holes-clear)) | 1 if a hole has material inside |
 | `cad-agent check [--json]` | collects results (no build), prints a table or the results JSON | 1 if any row fails |
 | `cad-agent report [--open]` | writes `exports/cad-agent-results.json` (schema 1.0, the vptest web shape, so `vptest web validate` and its renderer still accept it) and a standalone `docs/cad-agent-report.html` with inline styles (light and dark) that opens from `file://` | 1 if any row fails |
 | `cad-agent package` | zip + sha256 manifest from `package.include` | |
@@ -540,6 +540,15 @@ above 0.05 mm³ fails, with the hole's axis, diameter, depth range and the centr
 opposite walls are separate holes. Two same-size bores with a smaller hole through the solid between them are a
 stepped bore: the **ledge** is listed for a person to confirm, not failed.
 
+**Countersinks** (and any concave cone on a hole: chamfered mouths, drill-point tips) are checked the same way: the
+cone's faces are grouped by axis, apex and angle, and probed with a truncated cone 0.05 mm inside the surface. A rib
+that reaches into a countersink without touching the bore below it fails as `kind: countersink`, with the included
+angle and the two end diameters; a flat-head screw would not seat there. Cones are labelled by shape: `countersink`
+(truncated, 55–130° included), `drill point` (closes to its apex) or `tapered hole` (drafted holes and pockets);
+material in any of them fails. `max_diameter_mm` applies to a cone's largest diameter, so countersinks over 30 mm
+(M16 flat heads and up) are only checked with a larger limit, and a countersink cut beside a wall takes its largest
+diameter from the notch it leaves there.
+
 The result (`exports/hole-checks.json`) is bound to each STEP's sha256 and to the check's version and settings. A
 changed STEP or a changed `cad.holes` makes it stale, and a stale result fails its row like a failing one. `cad-agent
 holes PART` rechecks one part and keeps the others' rows. `--out FILE` writes elsewhere, for a reviewer who must not
@@ -557,8 +566,8 @@ cad:
 ```
 
 Limits:
-- Only cylindrical holes are checked, not tapered, polygonal or helical-thread geometry. Only material inside the
-  hole's own wall is measured, not tool or screw-head clearance beyond it.
+- Only cylindrical and conical (countersink) holes are checked, not polygonal or helical-thread geometry. Only
+  material inside the hole's own wall is measured, not tool or screw-head clearance beyond it.
 - **Known misses.** A hole capped at one end by a later feature reads as a blind hole. A counterbore blocked right
   across, with a smaller hole cut through the block, reads as a ledge. Look at the listed ledges and the blind holes
   in a section view.

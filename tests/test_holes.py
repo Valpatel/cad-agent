@@ -1,4 +1,5 @@
 import json
+import math
 
 import pytest
 
@@ -176,3 +177,71 @@ def test_config_errors(tmp_path, bad):
     root = project(tmp_path, plate_with_counterbore(False), "  " + bad + "\n")
     with pytest.raises(CadConfigError):
         holes.config(load_project(root), ["plate"])
+
+
+def plate_with_countersink(rib_after_holes: bool):
+    """A 40 x 40 x 6 plate with an M4 flat-head hole: D4.5 through, 90 degree countersink to D9 at the top face, and a
+    2 mm rib on top that ends 2.6 mm from the axis: outside the D4.5 bore but inside the countersink's cone."""
+    plate = cq.Workplane("XY").box(40, 40, 6, centered=(True, True, False))
+    rib = cq.Workplane("XY").box(19.4, 2, 8, centered=False).translate((-22, -1, 4))
+    hole = (cq.Workplane("XY").circle(2.25).extrude(10).translate((0, 0, -2))
+            .union(cq.Solid.makeCone(2.25, 4.5 + 2, 2.25 + 2, cq.Vector(0, 0, 3.75), cq.Vector(0, 0, 1))))
+    if rib_after_holes:                      # the bug: the rib fills part of the countersink, the screw head will not seat
+        return plate.cut(hole).union(rib).val()
+    return plate.union(rib).cut(hole).val()
+
+
+def test_rib_in_a_countersink_is_found():
+    r = holes.check_shape(plate_with_countersink(rib_after_holes=True))
+    assert not r["pass"], r
+    f = r["findings"][0]
+    assert f["kind"] == "countersink" and f["included_angle_deg"] == pytest.approx(90.0)
+    assert f["intrusion_mm3"] > 0.5 and f["intrusion_centre_mm"][0] < 0
+    assert all(g.get("kind") == "countersink" for g in r["findings"])     # the D4.5 bore itself is clear
+
+
+def test_countersink_cut_last_passes():
+    r = holes.check_shape(plate_with_countersink(rib_after_holes=False))
+    assert r["pass"] and r["holes"] == 1 and r["cones"] == 1 and not r["findings"], r
+    assert holes.describe_count(r) == "2 openings (1 hole, 1 cone: countersinks, chamfers, drill points)"
+    assert holes.describe_count({"holes": 3}) == "3 hole(s)"
+
+
+def test_countersink_finding_is_labelled():
+    f = holes.check_shape(plate_with_countersink(rib_after_holes=True))["findings"][0]
+    assert f["label"] == "countersink D9.0 (90.0°)"
+
+
+def test_countersink_off_axis_and_on_the_underside_is_found():
+    part = cq.Workplane("XY").add(plate_with_countersink(rib_after_holes=True))
+    for rot in ([(0, 0, 0), (1, 0, 0), 180], [(0, 0, 0), (0, 1, 0), 90], [(0, 0, 0), (1, 1, 0), 37]):
+        r = holes.check_shape(part.rotate(*rot).translate((5, -7, 3)).val())
+        assert not r["pass"] and r["findings"][0]["kind"] == "countersink", rot
+
+
+def test_through_hole_chamfered_both_ends_with_one_apex_passes():
+    # D4 hole, 1 mm x 45 deg chamfers, 6 mm plate: T = D + 2c, so both chamfer cones share one apex (two nappes)
+    plate = cq.Workplane("XY").box(20, 20, 6, centered=(True, True, False)).faces(">Z").workplane().hole(4)
+    plate = plate.faces(">Z").edges("%CIRCLE").chamfer(1).faces("<Z").edges("%CIRCLE").chamfer(1)
+    r = holes.check_shape(plate.val())
+    assert r["pass"] and r["holes"] == 1 and r["cones"] == 2, r
+
+
+def test_drafted_hole_is_a_tapered_hole_not_a_countersink():
+    block = cq.Workplane("XY").box(20, 20, 10, centered=(True, True, False))
+    taper = cq.Solid.makeCone(2.5, 2.5 + 10 * math.tan(math.radians(1)), 10, cq.Vector(0, 0, 0), cq.Vector(0, 0, 1))
+    rib = cq.Workplane("XY").box(10, 1, 10, centered=False).translate((-10, -0.5, 0))
+    r = holes.check_shape(block.cut(cq.Workplane("XY").add(taper)).union(rib).val())
+    assert not r["pass"] and r["findings"][0]["kind"] == "tapered hole", r
+
+
+def test_drill_point_and_chamfered_mouth_do_not_false_fail():
+    block = cq.Workplane("XY").box(30, 30, 20, centered=(True, True, False))
+    tip = math.tan(math.radians(31))                       # 118 degree drill point
+    blind = (cq.Workplane("XY").circle(2.5).extrude(12).translate((0, 0, 8))
+             .union(cq.Solid.makeCone(0, 2.5, 2.5 / tip, cq.Vector(0, 0, 8 - 2.5 / tip), cq.Vector(0, 0, 1))))
+    shape = block.cut(blind).faces(">Z").edges("not %LINE").chamfer(0.8)
+    shape = shape.union(cq.Workplane("XY").circle(6).extrude(5).translate((8, 8, 20)).edges(">Z").chamfer(1)).val()
+    r = holes.check_shape(shape)
+    assert r["pass"], r
+    assert r["holes"] == 1 and r["cones"] == 2, r          # the bore, its drill point and its chamfered mouth

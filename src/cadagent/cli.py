@@ -446,6 +446,7 @@ def cmd_gates(project: CadProject, args: argparse.Namespace) -> int:
 
 
 def cmd_holes(project: CadProject, args: argparse.Namespace) -> int:
+    from cadagent import holes
     from cadagent.holes import check_project
     from cadagent.project import CadConfigError
 
@@ -460,13 +461,13 @@ def cmd_holes(project: CadProject, args: argparse.Namespace) -> int:
         elif row.get("error"):
             _say(f"  FAIL  {part}: {row['error']}")
         elif row["findings"]:
-            _say(f"  FAIL  {part}: {len(row['findings'])} of {row['holes']} hole(s) have material inside")
+            _say(f"  FAIL  {part}: {len(row['findings'])} of {holes.describe_count(row)} have material inside")
             for f in row["findings"]:
-                _say(f"          D{f['diameter_mm']} {f['from_mm']} -> {f['to_mm']}: {f['intrusion_mm3']} mm3 at "
+                _say(f"          {f.get('label') or 'D' + str(f['diameter_mm'])} {f['from_mm']} -> {f['to_mm']}: {f['intrusion_mm3']} mm3 at "
                      f"{f['intrusion_centre_mm']}")
         else:
             ex = f" ({len(row['excepted'])} listed exception(s))" if row.get("excepted") else ""
-            _say(f"  PASS  {part}: {row['holes']} hole(s) clear{ex}")
+            _say(f"  PASS  {part}: {holes.describe_count(row)} clear{ex}")
     _say(f"holes: {out or project.exports_dir / 'hole-checks.json'}")
     return 0 if result["pass"] else 1
 

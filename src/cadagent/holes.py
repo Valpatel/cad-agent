@@ -9,9 +9,13 @@ Method:
 * A **bore** is a set of concave cylindrical faces (the part's material outside the cylinder, the face normal pointing
   at the axis) on one axis line with one radius. Faces a feature split apart (a rib across a counterbore leaves the
   bore's wall in pieces) group back together.
+* A **countersink** (or any other concave cone: a chamfered hole mouth, a drill-point tip) is a set of concave
+  conical faces on one axis line with one apex and one half-angle, grouped the same way. A rib or boss added after
+  the countersink was cut fills part of the cone, and a flat-head screw will not seat even though the hole below it
+  is clear.
 * Each bore is probed with a cylinder ``tol_mm`` smaller in radius, spanning the bore's full axial extent (from the
   lowest to the highest point of any of its faces, less ``tol_mm`` at each end). The volume the probe shares with the
-  part is material inside the hole.
+  part is material inside the hole. A countersink is probed with a truncated cone ``tol_mm`` inside its surface.
 * A bore with more than ``min_volume_mm3`` inside fails; the finding gives its axis, diameter, axial range, the
   intrusion volume and the intrusion's centre, so it can be found in a viewer.
 
@@ -26,7 +30,7 @@ reported for a person to confirm (``ledges`` in the result), not failed.
 
 Limits, stated in every result (``LIMITS``):
 
-* cylindrical holes only (not tapered, polygonal or helical-thread geometry);
+* cylindrical and conical (countersink) holes only (not polygonal or helical-thread geometry);
 * material inside the hole's own wall is measured, not tool or screw-head clearance beyond it;
 * a hole capped at one end by a later feature reads as a blind hole, and a rib that blocks a counterbore completely
   while a smaller hole is cut through it reads as a ledge: geometry alone cannot tell them from designed ones, so
@@ -42,18 +46,18 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from cadagent._deps import require
 
-VERSION = 2
+VERSION = 3
 TOL_MM = 0.05
 MIN_VOLUME_MM3 = 0.05
 MIN_ARC_DEG = 200.0
 MAX_DIAMETER_MM = 30.0
-LIMITS = ("cylindrical holes only (not tapered, polygonal or helical-thread geometry)",
+LIMITS = ("cylindrical and conical (countersink) holes only (not polygonal or helical-thread geometry)",
           "material inside each hole's own wall is measured, not tool or screw-head clearance beyond it",
           "a hole capped at one end reads as blind, and a counterbore blocked right across with a smaller hole cut "
           "through reads as a ledge: check the ledges and blind holes by eye",
@@ -75,14 +79,46 @@ class Bore:
     arc_deg: float = 0.0                    # angular coverage of the wall faces, joined (360 for a full hole)
     span_deg: float = 0.0                   # how far round the circle the wall reaches: 360 less the largest gap
     pieces: List[Tuple[float, float, float, float]] = field(default_factory=list, repr=False)  # (t0, t1, a0, a1) per face
+    # conical bores (countersinks, chamfered mouths, drill tips): the apex's position along the axis and the half-angle.
+    # ``radius`` is then the largest radius reached over [t0, t1]. ``half_angle`` 0 means a cylinder.
+    apex_t: float = 0.0
+    half_angle: float = 0.0
+
+    @property
+    def conical(self) -> bool:
+        return self.half_angle > 0.0
+
+    def radius_at(self, t: float) -> float:
+        return abs(t - self.apex_t) * math.tan(self.half_angle) if self.conical else self.radius
 
     def to_dict(self) -> Dict[str, Any]:
         lo = [o + self.t0 * a for o, a in zip(self.origin, self.axis)]
         hi = [o + self.t1 * a for o, a in zip(self.origin, self.axis)]
-        return {"diameter_mm": round(2 * self.radius, 3), "axis": [round(a, 6) for a in self.axis],
-                "from_mm": [round(v, 3) for v in lo], "to_mm": [round(v, 3) for v in hi],
-                "depth_mm": round(self.t1 - self.t0, 3), "faces": self.faces, "arc_deg": round(self.arc_deg, 1),
-                "span_deg": round(self.span_deg, 1)}
+        d = {"diameter_mm": round(2 * self.radius, 3), "axis": [round(a, 6) for a in self.axis],
+             "from_mm": [round(v, 3) for v in lo], "to_mm": [round(v, 3) for v in hi],
+             "depth_mm": round(self.t1 - self.t0, 3), "faces": self.faces, "arc_deg": round(self.arc_deg, 1),
+             "span_deg": round(self.span_deg, 1)}
+        if self.conical:
+            d.update(kind=self.kind, included_angle_deg=round(2 * math.degrees(self.half_angle), 2),
+                     diameters_mm=[round(2 * self.radius_at(self.t0), 3), round(2 * self.radius_at(self.t1), 3)])
+        d["label"] = self.label
+        return d
+
+    @property
+    def kind(self) -> str:
+        """'hole' for a cylinder; for a cone: 'drill point' when it closes to its apex, 'countersink' for a truncated
+        cone of 55-130 degrees included angle (countersinks are 60/82/90/100/120), 'tapered hole' otherwise (draft)."""
+        if not self.conical:
+            return "hole"
+        if min(self.radius_at(self.t0), self.radius_at(self.t1)) < 0.05:
+            return "drill point"
+        return "countersink" if 55.0 <= 2 * math.degrees(self.half_angle) <= 130.0 else "tapered hole"
+
+    @property
+    def label(self) -> str:
+        if not self.conical:
+            return f"D{round(2 * self.radius, 3)} hole"
+        return f"{self.kind} D{round(2 * self.radius, 3)} ({round(2 * math.degrees(self.half_angle), 1)}°)"
 
 
 def _canonical(axis) -> Tuple[float, float, float]:
@@ -105,13 +141,13 @@ def _foot(point, axis) -> Tuple[float, float, float]:
 
 
 def find_bores(shape: Any, line_tol: float = 1e-3, ledges: Optional[List[Dict[str, Any]]] = None) -> List[Bore]:
-    """Every concave cylindrical bore in ``shape`` (a CadQuery shape or TopoDS_Shape). Stepped bores split at a ledge
-    append the ledge to ``ledges`` when given."""
+    """Every concave cylindrical or conical bore in ``shape`` (a CadQuery shape or TopoDS_Shape). Stepped bores split
+    at a ledge append the ledge to ``ledges`` when given."""
     require("OCP", "the hole-clearance check")
     from OCP.BRep import BRep_Tool
     from OCP.BRepAdaptor import BRepAdaptor_Surface
     from OCP.BRepTools import BRepTools
-    from OCP.GeomAbs import GeomAbs_Cylinder
+    from OCP.GeomAbs import GeomAbs_Cone, GeomAbs_Cylinder
     from OCP.gp import gp_Pnt, gp_Vec
     from OCP.TopAbs import TopAbs_FACE, TopAbs_REVERSED
     from OCP.TopExp import TopExp_Explorer
@@ -124,10 +160,13 @@ def find_bores(shape: Any, line_tol: float = 1e-3, ledges: Optional[List[Dict[st
         face = TopoDS.Face_s(exp.Current())
         exp.Next()
         surf = BRepAdaptor_Surface(face)
-        if surf.GetType() != GeomAbs_Cylinder:
+        kind = surf.GetType()
+        if kind not in (GeomAbs_Cylinder, GeomAbs_Cone):
             continue
-        cyl = surf.Cylinder()
-        pos, r = cyl.Position(), cyl.Radius()
+        cone = kind == GeomAbs_Cone
+        geom = surf.Cone() if cone else surf.Cylinder()
+        pos = geom.Position()
+        r = 0.0 if cone else geom.Radius()
         umin, umax, vmin, vmax = BRepTools.UVBounds_s(face)
         um, vm = (umin + umax) / 2, (vmin + vmax) / 2
         p, d1u, d1v = gp_Pnt(), gp_Vec(), gp_Vec()
@@ -147,14 +186,37 @@ def find_bores(shape: Any, line_tol: float = 1e-3, ledges: Optional[List[Dict[st
             continue
         axis = _canonical(ax)
         origin = _foot(loc, axis)
-        key = (round(r / line_tol), tuple(round(c / 1e-6) for c in axis), tuple(round(c / line_tol) for c in origin))
+        if cone:
+            half = abs(geom.SemiAngle())
+            if half < 1e-6 or half > math.radians(80):     # not a countersink-like cone
+                continue
+            apex = geom.Apex()
+            apex_t = sum((pc - oc) * a for pc, oc, a in zip((apex.X(), apex.Y(), apex.Z()), origin, axis))
+            ends = []
+            for v in (vmin, vmax):
+                q = surf.Value(um, v)
+                ends.append(sum((qc - oc) * a for qc, oc, a in zip((q.X(), q.Y(), q.Z()), origin, axis)))
+            ta, tb = ends
+            r = max(abs(ta - apex_t), abs(tb - apex_t)) * math.tan(half)
+            # which nappe: the two chamfers of a through hole can share one apex (T = D + 2c at 45 degrees) and must
+            # stay two cones, one on each side of it
+            side = 1 if (ta + tb) / 2 > apex_t else -1
+            key = ("cone", side, round(apex_t / line_tol), round(half / 1e-6), tuple(round(c / 1e-6) for c in axis),
+                   tuple(round(c / line_tol) for c in origin))
+        else:
+            # axial extent of this face in the bore's frame: the cylinder's V is along its own direction from its
+            # location
+            sign = 1.0 if sum(a * c for a, c in zip(axis, (ax.X(), ax.Y(), ax.Z()))) > 0 else -1.0
+            base = sum((lc - oc) * a for lc, oc, a in zip((loc.X(), loc.Y(), loc.Z()), origin, axis))
+            ta, tb = base + sign * vmin, base + sign * vmax
+            key = (round(r / line_tol), tuple(round(c / 1e-6) for c in axis), tuple(round(c / line_tol) for c in origin))
         b = bores.get(key)
         if b is None:
             b = bores[key] = Bore(origin=origin, axis=axis, radius=r)
-        # axial extent of this face in the bore's frame: the cylinder's V is along its own direction from its location
-        sign = 1.0 if sum(a * c for a, c in zip(axis, (ax.X(), ax.Y(), ax.Z()))) > 0 else -1.0
-        base = sum((lc - oc) * a for lc, oc, a in zip((loc.X(), loc.Y(), loc.Z()), origin, axis))
-        ta, tb = base + sign * vmin, base + sign * vmax
+            if cone:
+                b.apex_t, b.half_angle = apex_t, half
+        elif cone:
+            b.radius = max(b.radius, r)
         # angular range of the face in a frame fixed by the bore's axis, so faces of one hole line up
         e1 = _perpendicular(axis)
         e2 = _cross(axis, e1)
@@ -168,10 +230,14 @@ def find_bores(shape: Any, line_tol: float = 1e-3, ledges: Optional[List[Dict[st
         b.pieces.append((min(ta, tb), max(ta, tb), a0, a0 + span))
     lines: Dict[Tuple, List[Bore]] = {}
     for key, b in bores.items():
-        lines.setdefault(key[1:], []).append(b)
+        if not b.conical:
+            lines.setdefault(key[1:], []).append(b)
     out: List[Bore] = []
     for key, b in bores.items():
-        out.extend(_split(b, [o for o in lines[key[1:]] if o.radius < b.radius], ledges))
+        if b.conical:     # a cone has no stepped-bore ledges: split on gaps only
+            out.extend(_split(b, (), None))
+        else:
+            out.extend(_split(b, [o for o in lines[key[1:]] if o.radius < b.radius], ledges))
     return out
 
 
@@ -247,8 +313,9 @@ def _split(b: Bore, smaller: Sequence[Bore] = (), ledges: Optional[List[Dict[str
     out = []
     for g in groups:
         cov, span = _arc_stats([(q[2], q[3]) for q in g])
-        nb = Bore(origin=b.origin, axis=b.axis, radius=b.radius, t0=min(q[0] for q in g), t1=max(q[1] for q in g),
-                  faces=len(g), arc_deg=cov, span_deg=span, pieces=g)
+        t0, t1 = min(q[0] for q in g), max(q[1] for q in g)
+        radius = max(b.radius_at(t0), b.radius_at(t1)) if b.conical else b.radius
+        nb = replace(b, radius=radius, t0=t0, t1=t1, faces=len(g), arc_deg=cov, span_deg=span, pieces=g)
         if nb.t1 > nb.t0:
             out.append(nb)
     return out
@@ -257,11 +324,32 @@ def _split(b: Bore, smaller: Sequence[Bore] = (), ledges: Optional[List[Dict[str
 def probe(shape: Any, bore: Bore, tol_mm: float = TOL_MM) -> Tuple[float, Optional[List[float]]]:
     """Volume of ``shape`` inside ``bore`` (shrunk by ``tol_mm``) and the centre of that material."""
     cq = require("cadquery", "the hole-clearance check")
-    r, h = bore.radius - tol_mm, bore.t1 - bore.t0 - 2 * tol_mm
-    if r <= 0 or h <= 0:
-        return 0.0, None
+    h = bore.t1 - bore.t0 - 2 * tol_mm
     start = [o + (bore.t0 + tol_mm) * a for o, a in zip(bore.origin, bore.axis)]
-    probe_ = cq.Solid.makeCylinder(r, h, cq.Vector(*start), cq.Vector(*bore.axis))
+    if bore.conical:
+        # a truncated cone tol_mm inside the surface (normal offset: radius less tol / cos(half-angle))
+        inset = tol_mm / math.cos(bore.half_angle)
+        a, b = bore.t0 + tol_mm, bore.t1 - tol_mm
+        # the inward offset cone's own apex sits tol / sin(half-angle) from the real apex: never start nearer
+        reach = tol_mm / math.sin(bore.half_angle)
+        if bore.apex_t <= a:
+            a = max(a, bore.apex_t + reach)
+        elif bore.apex_t >= b:
+            b = min(b, bore.apex_t - reach)
+        h = b - a
+        start = [o + a * ax for o, ax in zip(bore.origin, bore.axis)]
+        r0, r1 = (r if r > 1e-6 else 0.0 for r in (bore.radius_at(a) - inset, bore.radius_at(b) - inset))
+        if h <= 0 or max(r0, r1) <= 0:
+            return 0.0, None
+        if abs(r0 - r1) < 1e-9:      # cannot happen for one nappe; probe as a cylinder rather than skip (fail closed)
+            probe_ = cq.Solid.makeCylinder(r0, h, cq.Vector(*start), cq.Vector(*bore.axis))
+        else:
+            probe_ = cq.Solid.makeCone(r0, r1, h, cq.Vector(*start), cq.Vector(*bore.axis))
+    else:
+        r = bore.radius - tol_mm
+        if r <= 0 or h <= 0:
+            return 0.0, None
+        probe_ = cq.Solid.makeCylinder(r, h, cq.Vector(*start), cq.Vector(*bore.axis))
     solid = shape if hasattr(shape, "intersect") else cq.Shape.cast(shape)
     common = solid.intersect(probe_)
     vol = common.Volume()
@@ -297,6 +385,16 @@ def holes(shape: Any, min_arc_deg: float = MIN_ARC_DEG, max_diameter_mm: float =
     return out
 
 
+def describe_count(row: Dict[str, Any]) -> str:
+    """'3 hole(s)' or '5 openings (3 holes, 2 cones: countersinks, chamfers, drill points)' for a check_shape result."""
+    cones = row.get("cones", 0)
+    if not cones:
+        return f"{row['holes']} hole(s)"
+    n = row["holes"]
+    return (f"{n + cones} openings ({n} hole{'' if n == 1 else 's'}, {cones} cone{'' if cones == 1 else 's'}: "
+            "countersinks, chamfers, drill points)")
+
+
 def check_shape(shape: Any, tol_mm: float = TOL_MM, min_volume_mm3: float = MIN_VOLUME_MM3,
                 exceptions: Sequence[Dict[str, Any]] = (), min_arc_deg: float = MIN_ARC_DEG,
                 max_diameter_mm: float = MAX_DIAMETER_MM) -> Dict[str, Any]:
@@ -318,8 +416,9 @@ def check_shape(shape: Any, tol_mm: float = TOL_MM, min_volume_mm3: float = MIN_
         else:
             findings.append(item)
     findings.sort(key=lambda f: -f["intrusion_mm3"])
-    return {"pass": not findings, "holes": len(bores), "findings": findings, "excepted": excepted, "ledges": ledges,
-            "tol_mm": tol_mm, "min_volume_mm3": min_volume_mm3, "min_arc_deg": min_arc_deg,
+    cones = sum(1 for b in bores if b.conical)
+    return {"pass": not findings, "holes": len(bores) - cones, "cones": cones, "findings": findings,
+            "excepted": excepted, "ledges": ledges, "tol_mm": tol_mm, "min_volume_mm3": min_volume_mm3, "min_arc_deg": min_arc_deg,
             "max_diameter_mm": max_diameter_mm}
 
 

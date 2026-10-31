@@ -1,0 +1,37 @@
+{
+  "fdm_machine_common.json": {
+    "name": "fdm_machine_common",
+    "machine_start_gcode": "M109 S205;"
+  },
+  "fdm_bbl_3dp_001_common.json": {
+    "name": "fdm_bbl_3dp_001_common",
+    "inherits": "fdm_machine_common"
+  },
+  "Bambu Lab P1S 0.4 nozzle.json": {
+    "name": "Bambu Lab P1S 0.4 nozzle",
+    "inherits": "fdm_bbl_3dp_001_common",
+    "include": [
+      "Bambu Lab P1S 0.4 nozzle template machine_start_gcode",
+      "Bambu Lab P1S 0.4 nozzle template machine_end_gcode",
+      "Bambu Lab P1S 0.4 nozzle template time_lapse_gcode",
+      "Bambu Lab P1S 0.4 nozzle template change_filament_gcode",
+      "Bambu Lab P1S 0.4 nozzle template layer_change_gcode"
+    ]
+  },
+  "Bambu Lab P1S 0.4 nozzle template machine_start_gcode.json": {
+    "name": "Bambu Lab P1S 0.4 nozzle template machine_start_gcode",
+    "machine_start_gcode": "M190 S[bed_temperature_initial_layer_single]\nM109 S{nozzle_temperature_initial_layer[initial_extruder]}"
+  },
+  "Bambu Lab P1S 0.4 nozzle template machine_end_gcode.json": {
+    "name": "Bambu Lab P1S 0.4 nozzle template machine_end_gcode"
+  },
+  "Bambu Lab P1S 0.4 nozzle template time_lapse_gcode.json": {
+    "name": "Bambu Lab P1S 0.4 nozzle template time_lapse_gcode"
+  },
+  "Bambu Lab P1S 0.4 nozzle template change_filament_gcode.json": {
+    "name": "Bambu Lab P1S 0.4 nozzle template change_filament_gcode"
+  },
+  "Bambu Lab P1S 0.4 nozzle template layer_change_gcode.json": {
+    "name": "Bambu Lab P1S 0.4 nozzle template layer_change_gcode"
+  }
+}

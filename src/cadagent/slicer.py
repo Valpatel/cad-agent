@@ -5,8 +5,9 @@
     r['grams'], r['minutes']
 
 The slicer's own system profiles inherit from parent profiles; passed to the command line as they are, they leave
-values such as the filament density unset (the slicer then reports 0 g). ``flatten`` resolves the whole chain into
-one file per profile before slicing. Profiles are named as the slicer names them (printer, process, filament).
+values such as the filament density unset (the slicer then reports 0 g). ``flatten`` resolves parents and ordered
+included templates into one file per profile before slicing. Profiles are named as the slicer names them
+(printer, process, filament). ``resolve_profile`` also returns hashes of the consumed profile files.
 
 Bambu Studio is AGPL-3.0: it is only ever run as a separate process. The snap package cannot read hidden folders
 or /tmp, so the work folder must be a normal folder under your home directory (the default is next to the model).
@@ -49,42 +50,92 @@ def profile_root() -> Path:
     raise FileNotFoundError('Bambu Studio system profiles not found; install Bambu Studio (snap install bambu-studio)')
 
 
-def _index(kind: str) -> Dict[str, Path]:
+def _profile_name(value, kind: str) -> str:
+    # Names are lookup labels, never paths: real Bambu labels include PA/PET.
+    if (not isinstance(value, str) or not value.strip() or '\\' in value
+            or value.startswith('/') or any(p in ('.', '..') for p in value.split('/'))):
+        raise ValueError(f'Invalid {kind} profile reference: {value!r}')
+    return value
+
+
+def _index(kind: str, root: Path) -> dict:
+    """Capture each JSON once; resolution and dependency hashes use those same bytes."""
     out = {}
-    for f in (profile_root() / kind).glob('*.json'):
+    for f in sorted((root / kind).glob('*.json')):
+        if not f.resolve().is_relative_to(root.resolve()):
+            raise ValueError(f'Profile path escapes root: {f}')
         try:
-            n = json.loads(f.read_text()).get('name')
+            raw = f.read_bytes()
+            data = json.loads(raw)
         except (json.JSONDecodeError, UnicodeDecodeError):
+            raise ValueError(f'Malformed {kind} profile JSON: {f}') from None
+        if not isinstance(data, dict):
+            raise ValueError(f'{kind} profile JSON must be an object: {f}')
+        if 'name' not in data:
+            # Bambu also ships nameless lookup maps in the profile folders.
+            # A named profile cannot be silently omitted from the index.
             continue
-        if n:
-            out[n] = f
+        n = _profile_name(data['name'], kind)
+        if n in out:
+            raise ValueError(f'Duplicate {kind} profile {n!r}: {out[n][0]} and {f}')
+        out[n] = (f, data, hashlib.sha256(raw).hexdigest())
     return out
 
 
-def flatten(kind: str, name: str) -> dict:
-    """A system profile with its whole ``inherits`` chain merged (child values win)."""
-    idx = _index(kind)
-    chain, seen = [], set()
-    n = name
-    while n:
-        if n in seen or n not in idx:
-            if n not in idx:
-                raise KeyError(f'{kind} profile {n!r} not found under {profile_root() / kind}')
-            break
-        seen.add(n)
-        d = json.loads(idx[n].read_text())
-        chain.append(d)
-        n = d.get('inherits')
-    out = {}
-    for d in reversed(chain):
-        out.update(d)
-    out.pop('inherits', None)
+def resolve_profile(kind: str, name: str) -> dict:
+    """Return ``settings`` and ``files`` (root-relative path → SHA-256) for a system profile.
+
+    Merge parent → includes in list order → explicit keys, recursively. Include
+    may be one name or a list. Missing dependencies raise KeyError; malformed,
+    ambiguous, escaping or cyclic dependencies raise ValueError. Files are read
+    once per call. The identities describe that capture, not ongoing filesystem
+    stability, executable G-code validation or physical print qualification.
+    """
+    ids = {'machine': 'printer_settings_id', 'process': 'print_settings_id', 'filament': 'filament_settings_id'}
+    if kind not in ids:
+        raise ValueError(f'Unknown profile kind: {kind!r}')
+    root = profile_root()
+    idx = _index(kind, root)
+    active, cache, files = [], {}, {}
+
+    def resolve(current):
+        current = _profile_name(current, kind)
+        if current in active:
+            raise ValueError(f'Cyclic {kind} inheritance/include: {" -> ".join(active + [current])}')
+        if current not in idx:
+            raise KeyError(f'{kind} profile {current!r} not found under {root / kind}')
+        if current in cache:
+            return dict(cache[current])
+        active.append(current)
+        path, data, sha = idx[current]
+        files[path.relative_to(root).as_posix()] = sha
+        parent = data.get('inherits', '')
+        if not isinstance(parent, str):
+            raise ValueError(f'Invalid {kind} parent in {current!r}: {parent!r}')
+        settings = resolve(parent) if parent else {}
+        included = data.get('include', [])
+        if isinstance(included, str):
+            included = [included]
+        if not isinstance(included, list):
+            raise ValueError(f'Invalid {kind} include list in {current!r}: {included!r}')
+        for reference in included:
+            settings.update(resolve(reference))
+        settings.update({k: v for k, v in data.items() if k not in ('inherits', 'include')})
+        active.pop()
+        cache[current] = dict(settings)
+        return settings
+
+    out = resolve(name)
     out['name'] = name
     out['from'] = 'system'          # 'User' presets fail the CLI's printer compatibility check
     # the compatibility check matches the process's compatible_printers against the printer's settings id
-    sid = {'machine': 'printer_settings_id', 'process': 'print_settings_id', 'filament': 'filament_settings_id'}[kind]
-    out[sid] = [name] if kind == 'filament' else name
-    return out
+    out[ids[kind]] = [name] if kind == 'filament' else name
+    return {'settings': out, 'files': files}
+
+
+def flatten(kind: str, name: str) -> dict:
+    """A system profile with parent and ordered includes merged before explicit child keys."""
+    return resolve_profile(kind, name)['settings']
 
 
 def _read_result(out: Path) -> dict:
@@ -129,22 +180,29 @@ def slice_part(model, workdir=None, printer: str = PRINTER, process: str = PROCE
     work.mkdir(parents=True)
     (work / _MARK).write_text('cadagent.slicer work folder: safe to delete\n')   # first, so a crashed slice can be redone
     fil = FILAMENTS.get(filament, filament)
-    mach, proc, fl = flatten('machine', printer), flatten('process', process), flatten('filament', fil)
+    profiles = {kind: resolve_profile(kind, name)
+                for kind, name in (('machine', printer), ('process', process), ('filament', fil))}
+    mach, proc, fl = (profiles[kind]['settings'] for kind in ('machine', 'process', 'filament'))
     for k, v in (overrides or {}).items():
         proc[k] = v if isinstance(v, list) or k not in proc or not isinstance(proc[k], list) else [str(v)] * len(proc[k])
     paths = {}
     for key, d in (('machine', mach), ('process', proc), ('filament', fl)):
         paths[key] = work / f'{key}.json'
         paths[key].write_text(json.dumps(d, indent=1))
+    settings_hashes = {kind: _sha(path) for kind, path in paths.items()}
     out = work / 'out'
     out.mkdir()
     cmd = [exe, '--slice', '0', '--arrange', '1', '--orient', '0',
            '--load-settings', f"{paths['machine']};{paths['process']}", '--load-filaments', str(paths['filament']),
            '--outputdir', str(out), '--export-3mf', 'sliced.3mf', str(model)]
     p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    if any(_sha(path) != settings_hashes[kind] for kind, path in paths.items()):
+        raise ValueError('Resolved slicer settings changed during slicing')
     r = _read_result(out)
     r.update(model=str(model), printer=printer, process=process, filament=fil,
              overrides=dict(overrides or {}), exit_code=p.returncode,
+             profile_sources={kind: p['files'] for kind, p in profiles.items()},
+             settings_sha256=settings_hashes,
              slicer=Path(exe).name, minutes=round(r.get('seconds', 0) / 60, 1) if r.get('seconds') else None)
     if not r.get('grams'):
         r['log_tail'] = (p.stdout + p.stderr)[-2000:]

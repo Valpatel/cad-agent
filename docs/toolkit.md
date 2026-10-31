@@ -421,7 +421,14 @@ follows the job: one-hue ramps for temperature (orange) and speed (blue), never 
 
 ### Real grams (`cadagent.slicer`, `cad-agent slice`)
 Slices each part's 3MF with Bambu Studio's command line (an external AGPL program, run as a subprocess). The system
-profiles are flattened through their `inherits` chain first (unflattened, the slicer reports 0 g). Configure under
+profiles resolve `inherits`, then ordered `include` templates, then explicit child settings (unresolved profiles
+can report 0 g or retain generic startup G-code). Missing, cyclic, duplicate, malformed or escaping profile
+dependencies fail explicitly. `flatten(kind, name)` returns the resolved settings; `resolve_profile(kind, name)`
+also returns `files`, the relative paths and SHA-256 hashes of the exact consumed bytes. Individual slice results
+record those dependency hashes and the settings JSON hashes. These identities describe the captured inputs, not
+ongoing filesystem stability or validation of the resulting executable G-code. Inspect actual temperature waits
+and startup order before printing; a filament label or successful slice does not establish physical readiness.
+Configure under
 `cad.slicer`: `printer`, `process`, `filament` (`pla`, `petg` or a profile name), `overrides` (process settings) and
 `parts`. Writes `exports/slice-report.json`.
 

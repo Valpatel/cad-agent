@@ -324,7 +324,7 @@ flowchart LR
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
     class S1,S2,S3,S4,S5 near
-    class C1,C2,C3,C4,C5 out
+    class C1,C2,C3,C4,C5 here
 ```
 
 | Symptom | Practice that catches it | Where it comes from |

@@ -784,14 +784,17 @@
    "name": "gumyr/build123d",
    "license_spdx": "Apache-2.0",
    "stars": 3519,
-   "last_push": "2026-10-23"
+   "last_push": "2026-10-23",
+   "use": "Python B-rep CAD on OpenCascade, the builder-style successor to CadQuery; many agentic-CAD projects generate it"
   },
   {
    "name": "CadQuery/cadquery",
    "license_spdx": "Apache-2.0",
    "stars": 5990,
    "last_push": "2026-10-24",
-   "license_note": "GitHub shows NOASSERTION; LICENSE text is Apache 2.0"
+   "license_note": "GitHub shows NOASSERTION; LICENSE text is Apache 2.0",
+   "use": "Python B-rep CAD on OpenCascade; the `cad` extra builds, measures and exports parts with it",
+   "status": "used"
   },
   {
    "name": "gumyr/bd_warehouse",
@@ -804,7 +807,8 @@
    "name": "partcad/partcad",
    "license_spdx": "Apache-2.0",
    "stars": 509,
-   "last_push": "2026-10-24"
+   "last_push": "2026-10-24",
+   "use": "package manager and registry for CAD parts and assemblies"
   },
   {
    "name": "sargo-devel/Cables",
@@ -825,7 +829,8 @@
    "license_spdx": "AGPL-3.0",
    "stars": 699,
    "last_push": "2026-09-04",
-   "license_note": "per README; no LICENSE detected by GitHub"
+   "license_note": "per README; no LICENSE detected by GitHub",
+   "use": "FreeCAD workbench that exchanges board and enclosure STEP models with KiCad (external only)"
   },
   {
    "name": "rjwalters/kicad-tools",
@@ -839,7 +844,8 @@
    "license_spdx": "MIT",
    "version": "0.8.0",
    "released": "2026-08-30",
-   "url": "https://pypi.org/project/kicad-python/"
+   "url": "https://pypi.org/project/kicad-python/",
+   "use": "KiCad's official Python bindings for its IPC API (KiCad 9 and later)"
   },
   {
    "name": "CalculiX 2.23 (conda-forge)",

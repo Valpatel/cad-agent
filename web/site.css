@@ -42,18 +42,11 @@ box-shadow:inset 0 1px 1px #ffffffc7,inset 0 0 0 1px #749dab55,0 24px 48px #204a
 .scene-label{position:absolute;top:44px;left:0;right:0;text-align:center;font:10px var(--mono);letter-spacing:.06em;color:#254952}
 .scene-caption{position:absolute;bottom:40px;left:20px;right:20px;text-align:center}
 .scene-caption b{display:block;font-size:15px;letter-spacing:-.3px}
-.scene-caption span{display:block;font:10px/1.6 var(--mono);color:#3e6a76;margin-top:6px}
+.scene-caption span{display:block;font:10px/1.6 var(--mono);color:#173d3c;margin-top:6px}
 .snap-demo{width:min(86%,440px);margin-top:-10px}
-.stamp{position:absolute;right:-6px;top:24%;transform:rotate(9deg);border:1px solid var(--ink);border-radius:16px;padding:10px 12px;background:#d9f1bc;font:600 10px/1.6 var(--mono);box-shadow:4px 5px 0 #173d3c12}
-/* snap demo animation: the catch slides under the hook, the arm flexes over the ramp and snaps back */
-@keyframes slide{0%,8%{transform:translateX(150px)}52%{transform:translateX(0)}70%,100%{transform:translateX(-22px)}}
-@keyframes flex{0%,20%{transform:rotate(0)}40%{transform:rotate(-6.5deg)}52%{transform:rotate(-6.5deg)}58%{transform:rotate(1deg)}63%,100%{transform:rotate(0)}}
-@keyframes strain{0%,20%{fill:#2e9d5b}40%,52%{fill:#d39a1c}63%,100%{fill:#2e9d5b}}
-@keyframes click{0%,56%{opacity:0;transform:scale(.6)}60%{opacity:1;transform:scale(1.1)}80%,100%{opacity:0;transform:scale(1)}}
-.snap-demo .catch{animation:slide 4.2s cubic-bezier(.45,.05,.4,1) infinite}
-.snap-demo .arm{transform-origin:62px 120px;transform-box:view-box;animation:flex 4.2s ease-in-out infinite}
-.snap-demo .root{animation:strain 4.2s ease-in-out infinite}
-.snap-demo .click{transform-origin:300px 70px;transform-box:view-box;animation:click 4.2s ease-out infinite}
+.stamp{position:absolute;right:22px;top:20%;transform:rotate(9deg);border:1px solid var(--ink);border-radius:16px;padding:10px 12px;background:#d9f1bc;font:600 10px/1.6 var(--mono);box-shadow:4px 5px 0 #173d3c12}
+/* the snap demo animation is generated from its geometry: tools/snap-demo.mjs → /web/snap-demo.css */
+.scene-caption a{color:inherit}
 /* ticker */
 .ticker{border-top:1px solid #c2dda0;border-bottom:1px solid #c2dda0;background:#d8efbb}
 .ticker .wrap{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:20px 0;font:600 10px/1.5 var(--mono);letter-spacing:.07em;text-transform:uppercase}
@@ -80,6 +73,8 @@ border:1px solid #173d3c12;box-shadow:inset 0 1px 0 #ffffffc7,0 12px 24px #173d3
 .card>a:first-child{text-decoration:none}.card>a:first-child::before{content:"";position:absolute;inset:0;border-radius:18px}
 .card-name{display:block;font-weight:750;font-size:16px;letter-spacing:-.3px;margin-bottom:8px}
 .card p{margin:10px 0 0;color:#4c6260;font-size:13px;line-height:1.75;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.card p.policy{font-size:11.5px;color:#4c6260;-webkit-line-clamp:2;border-top:1px dashed #c9d8ca;padding-top:8px}
+.filter-status{font:11px var(--mono);color:var(--muted);margin:8px 0 0;min-height:1em}
 .card .md{position:relative;z-index:1;float:right;font:600 10px var(--mono);margin-top:10px;color:var(--teal)}
 .pill{display:inline-block;font:600 9px/1 var(--mono);letter-spacing:.04em;padding:5px 8px;border-radius:100px;border:1px solid #173d3c30;margin:0 6px 4px 0;text-transform:uppercase;background:#fff}
 .pill-ours{background:#ffe1cc;border-color:#f3c3a3}.pill-adopted,.pill-used{background:#d8efbb;border-color:#bcd99a}.pill-trial{background:#ffedab;border-color:#ecd67f}.pill-candidate{background:#e2f0f5;border-color:#c3dbe4}
@@ -90,11 +85,11 @@ border:1px solid #173d3c12;box-shadow:inset 0 1px 0 #ffffffc7,0 12px 24px #173d3
 .closing .actions{justify-content:center;margin-top:26px}
 /* catalogue */
 .filters{position:sticky;top:84px;z-index:5;padding:14px 0;background:#fffdf5f0;backdrop-filter:blur(8px)}
-#q{width:100%;max-width:540px;padding:13px 18px;border-radius:100px;border:1px solid #c9d8ca;background:#fff;color:var(--ink);font:inherit;font-size:14px}
+#q{width:100%;max-width:540px;padding:13px 18px;border-radius:100px;border:1px solid #6f8a80;background:#fff;color:var(--ink);font:inherit;font-size:14px}
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.chip{font:650 12px var(--font);padding:8px 14px;border-radius:100px;border:1px solid #c9d8ca;background:#fff;color:var(--ink);cursor:pointer}
+.chip{font:650 12px var(--font);padding:8px 14px;border-radius:100px;border:1px solid #6f8a80;background:#fff;color:var(--ink);cursor:pointer}
 .chip[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff}
-.chip small{opacity:.65;margin-left:4px}
+.chip small{color:#3f5652;margin-left:4px}.chip[aria-pressed=true] small{color:#e5efe9}
 .group{margin:34px 0 10px}.group>h2{font-size:26px;margin-bottom:14px}
 .group[hidden],.card[hidden]{display:none}
 /* documents */
@@ -122,6 +117,7 @@ blockquote{border-left:3px solid var(--orange);margin-left:0;padding:4px 20px;co
 @media(max-width:1050px){.wrap{width:calc(100% - 56px)}.hero{gap:24px}.mission{padding:24px}.band-green{padding:32px;gap:30px}.lead{gap:36px}}
 @media(max-width:760px){.wrap{width:calc(100% - 36px)}.site-header .wrap{min-height:68px}.wordmark{font-size:24px}.site-header nav{gap:14px}
 .site-header nav a:not(.pill-link):not([data-keep]){display:none}.site-header nav .pill-link{padding:9px 14px;font-size:12px}
+.site-header .wrap{gap:10px}.wordmark img{width:28px;height:28px}
 .hero{grid-template-columns:1fr;padding:28px 0 48px}.hero-scene{min-height:400px}.stamp{right:4px}
 .ticker .wrap{flex-wrap:wrap;justify-content:center;column-gap:14px;row-gap:4px;font-size:9px}.section{padding:60px 0}
 .lead,.band-green{grid-template-columns:1fr}.missions{grid-template-columns:1fr}.mission{min-height:0}.filters{top:68px}.band-green{padding:26px 20px}}

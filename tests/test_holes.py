@@ -202,7 +202,36 @@ def test_rib_in_a_countersink_is_found():
 
 def test_countersink_cut_last_passes():
     r = holes.check_shape(plate_with_countersink(rib_after_holes=False))
-    assert r["pass"] and r["holes"] == 2 and not r["findings"], r
+    assert r["pass"] and r["holes"] == 1 and r["cones"] == 1 and not r["findings"], r
+    assert holes.describe_count(r) == "1 hole(s) and 1 cone(s) (countersinks, chamfers, drill points)"
+
+
+def test_countersink_finding_is_labelled():
+    f = holes.check_shape(plate_with_countersink(rib_after_holes=True))["findings"][0]
+    assert f["label"] == "countersink D9.0 (90.0°)"
+
+
+def test_countersink_off_axis_and_on_the_underside_is_found():
+    part = cq.Workplane("XY").add(plate_with_countersink(rib_after_holes=True))
+    for rot in ([(0, 0, 0), (1, 0, 0), 180], [(0, 0, 0), (0, 1, 0), 90], [(0, 0, 0), (1, 1, 0), 37]):
+        r = holes.check_shape(part.rotate(*rot).translate((5, -7, 3)).val())
+        assert not r["pass"] and r["findings"][0]["kind"] == "countersink", rot
+
+
+def test_through_hole_chamfered_both_ends_with_one_apex_passes():
+    # D4 hole, 1 mm x 45 deg chamfers, 6 mm plate: T = D + 2c, so both chamfer cones share one apex (two nappes)
+    plate = cq.Workplane("XY").box(20, 20, 6, centered=(True, True, False)).faces(">Z").workplane().hole(4)
+    plate = plate.faces(">Z").edges("%CIRCLE").chamfer(1).faces("<Z").edges("%CIRCLE").chamfer(1)
+    r = holes.check_shape(plate.val())
+    assert r["pass"] and r["holes"] == 1 and r["cones"] == 2, r
+
+
+def test_drafted_hole_is_a_tapered_hole_not_a_countersink():
+    block = cq.Workplane("XY").box(20, 20, 10, centered=(True, True, False))
+    taper = cq.Solid.makeCone(2.5, 2.5 + 10 * math.tan(math.radians(1)), 10, cq.Vector(0, 0, 0), cq.Vector(0, 0, 1))
+    rib = cq.Workplane("XY").box(10, 1, 10, centered=False).translate((-10, -0.5, 0))
+    r = holes.check_shape(block.cut(cq.Workplane("XY").add(taper)).union(rib).val())
+    assert not r["pass"] and r["findings"][0]["kind"] == "tapered hole", r
 
 
 def test_drill_point_and_chamfered_mouth_do_not_false_fail():
@@ -214,4 +243,4 @@ def test_drill_point_and_chamfered_mouth_do_not_false_fail():
     shape = shape.union(cq.Workplane("XY").circle(6).extrude(5).translate((8, 8, 20)).edges(">Z").chamfer(1)).val()
     r = holes.check_shape(shape)
     assert r["pass"], r
-    assert r["holes"] >= 2                                  # the bore and at least one cone were examined
+    assert r["holes"] == 1 and r["cones"] == 2, r          # the bore, its drill point and its chamfered mouth

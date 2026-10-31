@@ -99,9 +99,26 @@ class Bore:
              "depth_mm": round(self.t1 - self.t0, 3), "faces": self.faces, "arc_deg": round(self.arc_deg, 1),
              "span_deg": round(self.span_deg, 1)}
         if self.conical:
-            d.update(kind="countersink", included_angle_deg=round(2 * math.degrees(self.half_angle), 2),
+            d.update(kind=self.kind, included_angle_deg=round(2 * math.degrees(self.half_angle), 2),
                      diameters_mm=[round(2 * self.radius_at(self.t0), 3), round(2 * self.radius_at(self.t1), 3)])
+        d["label"] = self.label
         return d
+
+    @property
+    def kind(self) -> str:
+        """'hole' for a cylinder; for a cone: 'drill point' when it closes to its apex, 'countersink' for a truncated
+        cone of 55-130 degrees included angle (countersinks are 60/82/90/100/120), 'tapered hole' otherwise (draft)."""
+        if not self.conical:
+            return "hole"
+        if min(self.radius_at(self.t0), self.radius_at(self.t1)) < 0.05:
+            return "drill point"
+        return "countersink" if 55.0 <= 2 * math.degrees(self.half_angle) <= 130.0 else "tapered hole"
+
+    @property
+    def label(self) -> str:
+        if not self.conical:
+            return f"D{round(2 * self.radius, 3)} hole"
+        return f"{self.kind} D{round(2 * self.radius, 3)} ({round(2 * math.degrees(self.half_angle), 1)}°)"
 
 
 def _canonical(axis) -> Tuple[float, float, float]:
@@ -181,7 +198,10 @@ def find_bores(shape: Any, line_tol: float = 1e-3, ledges: Optional[List[Dict[st
                 ends.append(sum((qc - oc) * a for qc, oc, a in zip((q.X(), q.Y(), q.Z()), origin, axis)))
             ta, tb = ends
             r = max(abs(ta - apex_t), abs(tb - apex_t)) * math.tan(half)
-            key = ("cone", round(apex_t / line_tol), round(half / 1e-6), tuple(round(c / 1e-6) for c in axis),
+            # which nappe: the two chamfers of a through hole can share one apex (T = D + 2c at 45 degrees) and must
+            # stay two cones, one on each side of it
+            side = 1 if (ta + tb) / 2 > apex_t else -1
+            key = ("cone", side, round(apex_t / line_tol), round(half / 1e-6), tuple(round(c / 1e-6) for c in axis),
                    tuple(round(c / line_tol) for c in origin))
         else:
             # axial extent of this face in the bore's frame: the cylinder's V is along its own direction from its
@@ -309,9 +329,19 @@ def probe(shape: Any, bore: Bore, tol_mm: float = TOL_MM) -> Tuple[float, Option
     if bore.conical:
         # a truncated cone tol_mm inside the surface (normal offset: radius less tol / cos(half-angle))
         inset = tol_mm / math.cos(bore.half_angle)
-        r0 = max(0.0, bore.radius_at(bore.t0 + tol_mm) - inset)
-        r1 = max(0.0, bore.radius_at(bore.t1 - tol_mm) - inset)
+        a, b = bore.t0 + tol_mm, bore.t1 - tol_mm
+        # the inward offset cone's own apex sits tol / sin(half-angle) from the real apex: never start nearer
+        reach = tol_mm / math.sin(bore.half_angle)
+        if bore.apex_t <= a:
+            a = max(a, bore.apex_t + reach)
+        elif bore.apex_t >= b:
+            b = min(b, bore.apex_t - reach)
+        h = b - a
+        start = [o + a * ax for o, ax in zip(bore.origin, bore.axis)]
+        r0, r1 = (r if r > 1e-6 else 0.0 for r in (bore.radius_at(a) - inset, bore.radius_at(b) - inset))
         if h <= 0 or max(r0, r1) <= 0:
+            return 0.0, None
+        if abs(r0 - r1) < 1e-9:      # cannot happen for one nappe; guard makeCone's identical-radii error anyway
             return 0.0, None
         probe_ = cq.Solid.makeCone(r0, r1, h, cq.Vector(*start), cq.Vector(*bore.axis))
     else:
@@ -354,6 +384,12 @@ def holes(shape: Any, min_arc_deg: float = MIN_ARC_DEG, max_diameter_mm: float =
     return out
 
 
+def describe_count(row: Dict[str, Any]) -> str:
+    """'3 hole(s)' or '3 hole(s) and 2 cone(s) (countersinks, chamfers, drill points)' for a check_shape result."""
+    cones = row.get("cones", 0)
+    return f"{row['holes']} hole(s)" + (f" and {cones} cone(s) (countersinks, chamfers, drill points)" if cones else "")
+
+
 def check_shape(shape: Any, tol_mm: float = TOL_MM, min_volume_mm3: float = MIN_VOLUME_MM3,
                 exceptions: Sequence[Dict[str, Any]] = (), min_arc_deg: float = MIN_ARC_DEG,
                 max_diameter_mm: float = MAX_DIAMETER_MM) -> Dict[str, Any]:
@@ -375,8 +411,9 @@ def check_shape(shape: Any, tol_mm: float = TOL_MM, min_volume_mm3: float = MIN_
         else:
             findings.append(item)
     findings.sort(key=lambda f: -f["intrusion_mm3"])
-    return {"pass": not findings, "holes": len(bores), "findings": findings, "excepted": excepted, "ledges": ledges,
-            "tol_mm": tol_mm, "min_volume_mm3": min_volume_mm3, "min_arc_deg": min_arc_deg,
+    cones = sum(1 for b in bores if b.conical)
+    return {"pass": not findings, "holes": len(bores) - cones, "cones": cones, "findings": findings,
+            "excepted": excepted, "ledges": ledges, "tol_mm": tol_mm, "min_volume_mm3": min_volume_mm3, "min_arc_deg": min_arc_deg,
             "max_diameter_mm": max_diameter_mm}
 
 

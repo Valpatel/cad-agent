@@ -120,7 +120,7 @@ These rules come from printed-enclosure work (FDM, Bambu P1S bed) around a real 
   solid, it cleared the cooler, and its FEA and slice were fine.
 - **Rule:** in the build, cut fastener holes, counterbores, countersinks and insert bores after every rib, boss, skirt
   and gusset has been added. Run `cad-agent holes` (part of `cad-agent all`), which probes every cylindrical hole and
-  countersink in each part's STEP for material inside it. A finding is a build-order bug unless it is a deliberate D-flat or bridge layer, which is
-  listed in `cad.holes.exceptions` with its reason.
+  countersink in each part's STEP for material inside it. A finding is a build-order bug unless it is a deliberate
+  D-flat or bridge layer, which is listed in `cad.holes.exceptions` with its reason.
 - **Index:** [docs/common-issues.md](../docs/common-issues.md) lists this and the other recurring review findings.
 - **Source:** mvalancy/j501-agx-orin#9; Valpatel/cad-agent#85.

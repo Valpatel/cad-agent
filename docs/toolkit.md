@@ -543,7 +543,11 @@ stepped bore: the **ledge** is listed for a person to confirm, not failed.
 **Countersinks** (and any concave cone on a hole: chamfered mouths, drill-point tips) are checked the same way: the
 cone's faces are grouped by axis, apex and angle, and probed with a truncated cone 0.05 mm inside the surface. A rib
 that reaches into a countersink without touching the bore below it fails as `kind: countersink`, with the included
-angle and the two end diameters; a flat-head screw would not seat there.
+angle and the two end diameters; a flat-head screw would not seat there. Cones are labelled by shape: `countersink`
+(truncated, 55–130° included), `drill point` (closes to its apex) or `tapered hole` (drafted holes and pockets);
+material in any of them fails. `max_diameter_mm` applies to a cone's largest diameter, so countersinks over 30 mm
+(M16 flat heads and up) are only checked with a larger limit, and a countersink cut beside a wall takes its largest
+diameter from the notch it leaves there.
 
 The result (`exports/hole-checks.json`) is bound to each STEP's sha256 and to the check's version and settings. A
 changed STEP or a changed `cad.holes` makes it stale, and a stale result fails its row like a failing one. `cad-agent

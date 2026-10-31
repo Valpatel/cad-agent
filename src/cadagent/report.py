@@ -112,6 +112,7 @@ def _part_row(project: CadProject, part: str, info: Dict[str, Any], report_dir: 
 
 def holes_feature(project: CadProject) -> Dict[str, Any]:
     """One row per part: every hole clear of material (``exports/hole-checks.json``, bound to each part's STEP)."""
+    from cadagent import holes
     from cadagent.holes import current
 
     parts, error = load_parts(project)
@@ -129,16 +130,16 @@ def holes_feature(project: CadProject) -> Dict[str, Any]:
         elif row.get("error"):
             checks.append(_row(label, False, f"hole check failed to run: {row['error']}", row["error"]))
         elif row.get("findings"):
-            lines = [f"D{f['diameter_mm']} hole from {f['from_mm']} to {f['to_mm']}: {f['intrusion_mm3']} mm3 of material "
+            lines = [f"{f.get('label') or 'D' + str(f['diameter_mm']) + ' hole'} from {f['from_mm']} to {f['to_mm']}: {f['intrusion_mm3']} mm3 of material "
                      f"inside, centred at {f['intrusion_centre_mm']}" + (f" ({f['hint']})" if f.get("hint") else "")
                      for f in row["findings"]]
-            checks.append(_row(label, False, f"{len(row['findings'])} of {row['holes']} hole(s) have material inside",
+            checks.append(_row(label, False, f"{len(row['findings'])} of {holes.describe_count(row)} have material inside",
                                "\n".join(lines)))
         else:
             ex = f", {len(row['excepted'])} listed exception(s)" if row.get("excepted") else ""
             ld = (f", {len(row['ledges'])} ledge(s) between coaxial bores (confirm they are designed)"
                   if row.get("ledges") else "")
-            checks.append(_row(label, True, f"{row['holes']} hole(s) clear{ex}{ld}", ""))
+            checks.append(_row(label, True, f"{holes.describe_count(row)} clear{ex}{ld}", ""))
     return {"feature_id": "cad-holes", "feature_title": "Holes clear", "checks": checks}
 
 def parts_feature(project: CadProject, report_dir: Path) -> Dict[str, Any]:

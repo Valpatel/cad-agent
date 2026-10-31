@@ -5,24 +5,37 @@
  * at which the two outlines do not overlap, so the hook rides the catch's lead-in, slides over its top, drops in behind
  * its retaining face and holds when the part is pulled back. Rigid rotation about the root stands in for bending:
  * it is a picture of the motion, not a deflection result (`cad-agent snapfit` does the sizing).
- * Coordinates are SVG user units, y down. tests/site-snap-demo.test.mjs checks contact and engagement.
+ * Coordinates are SVG user units, y down. tests/website-snap-demo.test.mjs checks contact, engagement and the lock.
+ *
+ * Why the retaining faces lean: the hook hangs below the arm's pivot, so a square (vertical) face pushed by a
+ * pull-back has a lever arm about the root and turns the arm upward: the joint would hold only by friction.
+ * Both faces are undercut past the hook's arc of motion (UNDERCUT_DEG > ARC_DEG), so the pull's line of action
+ * passes below the root and drives the hook deeper instead (`lockMoment` > 0 over the whole contact).
  */
 export const ROOT = [64, 121];
+const TIP_Y = 154, RIB_TOP = 140, FACE_X = 282, PLAY = 2;
+// Direction of the hook's arc at the middle of the contact, measured from vertical; the faces lean 4° past it.
+export const ARC_DEG = Math.atan2((TIP_Y + RIB_TOP) / 2 - ROOT[1], FACE_X - ROOT[0]) * 180 / Math.PI;
+export const UNDERCUT_DEG = ARC_DEG + 4;
+const lean = Math.tan(UNDERCUT_DEG * Math.PI / 180);
+const hookFaceX = y => FACE_X + (TIP_Y - y) * lean, ribFaceX = y => FACE_X - PLAY + (TIP_Y - y) * lean;
 // Arm outline at rest: top edge, end face, hook lead-in ramp (faces the incoming catch), hook tip, retaining face
-// (faces the wall), underside back to the root.
-export const ARM = [[64, 100], [318, 110], [318, 132], [290, 154], [282, 154], [282, 132], [64, 142]];
-// Catch rib on the mating plate, engaged position: lead-in chamfer on the leading (left) side, square retaining face
-// on the right, which the hook's retaining face meets when the part is pulled back.
-export const RIB = [[246, 176], [246, 160], [266, 140], [280, 140], [280, 176]];
+// (faces the wall, undercut), underside back to the root.
+export const ARM = [[64, 100], [318, 110], [318, 132], [290, TIP_Y], [FACE_X, TIP_Y], [hookFaceX(132), 132], [64, 142]];
+// Catch rib on the mating plate, engaged position: lead-in chamfer on the leading (left) side, undercut retaining
+// face on the right, PLAY units from the hook's.
+export const RIB = [[246, 176], [246, 160], [266, RIB_TOP], [ribFaceX(RIB_TOP), RIB_TOP], [ribFaceX(176), 176]];
 export const PLATE = [[206, 176], [620, 176], [620, 190], [206, 190]];
+export const PARTS = { arm: ARM, rib: RIB, plate: PLATE };
 export const START = 120;              // mating part offset (+x) before insertion
 const MAX_LIFT = 12;                   // degrees; the search bracket
+const GAP = 0.02;                      // degrees the animated hook rides above contact (≈0.08 units): drawn touching
 
 const rotate = ([x, y], liftDeg) => {   // lift > 0 raises the free end (counter-clockwise on screen)
   const a = -liftDeg * Math.PI / 180, [cx, cy] = ROOT;
   return [cx + (x - cx) * Math.cos(a) - (y - cy) * Math.sin(a), cy + (x - cx) * Math.sin(a) + (y - cy) * Math.cos(a)];
 };
-export const armAt = lift => ARM.map(p => rotate(p, lift));
+export const armAt = (lift, arm = ARM) => arm.map(p => rotate(p, lift));
 export const shift = (poly, dx) => poly.map(([x, y]) => [x + dx, y]);
 
 const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
@@ -44,17 +57,39 @@ export function overlap(a, b) {
     if (segmentsCross(a[i], a[(i + 1) % a.length], b[j], b[(j + 1) % b.length])) return true;
   return a.some(p => inside(p, b)) || b.some(p => inside(p, a));
 }
-export const clear = (lift, offset) => {
-  const arm = armAt(lift);
-  return !overlap(arm, shift(RIB, offset)) && !overlap(arm, shift(PLATE, offset));
+export const clear = (lift, offset, parts = PARTS) => {
+  const arm = armAt(lift, parts.arm);
+  return !overlap(arm, shift(parts.rib, offset)) && !overlap(arm, shift(parts.plate, offset));
 };
-/** Smallest lift (degrees) at which the arm clears the mating part at this offset. */
-export function liftAt(offset) {
-  if (clear(0, offset)) return 0;
-  let lo = 0, hi = MAX_LIFT;
-  if (!clear(hi, offset)) throw new Error(`snap demo: no clearance at offset ${offset}`);
-  for (let i = 0; i < 50; i++) { const mid = (lo + hi) / 2; (clear(mid, offset) ? (hi = mid) : (lo = mid)); }
+/** How low (degrees) the arm can come down onto the mating part at this offset, swinging from above: the lowest
+ * lift whose whole path up to MAX_LIFT is clear. (The lowest clear lift is not enough: just after the hook passes
+ * the catch's corner, rest is clear but the swing down to it is not, so the hook still rides the corner.) */
+export function liftAt(offset, parts = PARTS) {
+  const STEP = 0.05;
+  if (!clear(MAX_LIFT, offset, parts)) throw new Error(`snap demo: no clearance at offset ${offset}`);
+  let hi = MAX_LIFT;
+  while (hi > 0 && clear(Math.max(0, hi - STEP), offset, parts)) hi = Math.max(0, hi - STEP);
+  if (hi === 0) return 0;
+  let lo = Math.max(0, hi - STEP);
+  for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; (clear(mid, offset, parts) ? (hi = mid) : (lo = mid)); }
   return hi;
+}
+/** Moment about the root of a frictionless pull-back contact force on the hook, per unit force, at the worst point
+ * of the retaining-face contact (rib top to hook tip). Positive turns the free end down, into the catch: the joint
+ * locks without friction. The rib's retaining face is its edge facing +x. */
+export function lockMoment(rib = RIB) {
+  const edges = rib.map((p, i) => [p, rib[(i + 1) % rib.length]]);
+  const [a, b] = edges.reduce((best, e) => (e[0][0] + e[1][0] > best[0][0] + best[1][0] ? e : best));
+  const [dx, dy] = [b[0] - a[0], b[1] - a[1]], len = Math.hypot(dx, dy);
+  let n = [dy / len, -dx / len];                       // a normal of the face; point it out of the rib (+x)
+  if (n[0] < 0) n = [-n[0], -n[1]];
+  const top = Math.min(...rib.map(p => p[1])), tip = Math.max(...ARM.map(p => p[1]));
+  let worst = Infinity;
+  for (let y = top; y <= tip + 1e-9; y += (tip - top) / 20) {
+    const x = a[0] + (y - a[1]) / dy * dx;              // contact point on the face at this height
+    worst = Math.min(worst, (x - ROOT[0]) * n[1] - (y - ROOT[1]) * n[0]);   // r × F, y down: > 0 turns clockwise
+  }
+  return worst;
 }
 /** Offset at which the hook drops in: below it the arm is at rest, just above it the arm is lifted. */
 export function snapOffset() {
@@ -63,12 +98,30 @@ export function snapOffset() {
   return hi;
 }
 /** How far the engaged part can be pulled back before the retaining faces meet. */
-export function pullStop() {
+export function pullStop(parts = PARTS) {
   let hi = 0;
-  while (clear(0, hi)) { hi += 0.25; if (hi > START) throw new Error('snap demo: the catch never meets the hook'); }
+  while (clear(0, hi, parts)) { hi += 0.25; if (hi > START) throw new Error('snap demo: the catch never meets the hook'); }
   let lo = hi - 0.25;
-  for (let i = 0; i < 50; i++) { const mid = (lo + hi) / 2; (clear(0, mid) ? (lo = mid) : (hi = mid)); }
+  for (let i = 0; i < 50; i++) { const mid = (lo + hi) / 2; (clear(0, mid, parts) ? (lo = mid) : (hi = mid)); }
   return lo;
+}
+/** CSS interpolates each keyframe pair linearly: add computed frames until every in-between pose is clear too. */
+export function densify(rows, steps = 16) {
+  const out = [rows[0]];
+  const lerp = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+  const fill = (a, b, depth) => {
+    const bad = Array.from({ length: steps - 1 }, (_, i) => lerp(a, b, (i + 1) / steps)).some(r => !clear(r[2], r[1]));
+    if (bad && depth < 8) {
+      const m = lerp(a, b, 0.5);
+      m[2] = Math.max(m[2], liftAt(m[1]) + (liftAt(m[1]) > 0 ? GAP : 0));
+      fill(a, m, depth + 1); out.push(m); fill(m, b, depth + 1);
+    }
+  };
+  for (let i = 1; i < rows.length; i++) {           // the reset jump happens while the part is invisible
+    if (rows[i - 1][3] || rows[i][3]) fill(rows[i - 1], rows[i], 0);
+    out.push(rows[i]);
+  }
+  return out;
 }
 
 const ease = u => u < .5 ? 4 * u * u * u : 1 - (-2 * u + 2) ** 3 / 2;
@@ -77,10 +130,11 @@ const mix = (a, b, t) => '#' + [0, 2, 4].map(i => Math.round(parseInt(a.slice(1 
   .toString(16).padStart(2, '0')).join('');
 
 /** Timeline samples: [percent, offset, lift, catchOpacity]. One loop: wait, insert (contact computed), snap, hold,
- * pull back against the retaining face, hold, fade out, reset, fade in. */
+ * pull back to contact with the retaining face (computed), hold, fade out, reset, fade in. Drawn, not computed:
+ * the timing, and a small overshoot past rest after the drop (checked clear). */
 export function timeline() {
   const rows = [[0, START, 0, 1], [8, START, 0, 1]];
-  const snap = snapOffset(), pull = pullStop() * 0.95;
+  const snap = snapOffset(), pull = pullStop();
   let snapped = false;
   for (let k = 1; k <= 84; k++) {      // insertion: 8 % → 50 %
     const pct = 8 + k * 0.5, offset = START * (1 - ease(k / 84));
@@ -88,14 +142,16 @@ export function timeline() {
       snapped = true;
       let overshoot = -0.4;            // as far past rest as the parts allow
       while (overshoot < 0 && !clear(overshoot, offset)) overshoot = Math.min(0, overshoot + 0.05);
-      rows.push([pct - 0.25, snap + 1e-3, liftAt(snap + 1e-3), 1], [pct + 0.6, offset, overshoot, 1], [pct + 1.4, offset, 0.15, 1], [pct + 2.2, offset, 0, 1]);
+      rows.push([pct - 0.25, snap + 1e-3, liftAt(snap + 1e-3) + GAP, 1], [pct + 0.6, offset, overshoot, 1], [pct + 1.4, offset, 0.15, 1], [pct + 2.2, offset, 0, 1]);
       continue;
     }
     if (snapped && rows.at(-1)[0] >= pct) continue;
-    rows.push([pct, offset, snapped ? 0 : liftAt(offset), 1]);
+    const lift = snapped ? 0 : liftAt(offset);
+    rows.push([pct, offset, lift > 0 ? lift + GAP : 0, 1]);
   }
   rows.push([60, 0, 0, 1], [63, pull, 0, 1], [80, pull, 0, 1], [86, pull, 0, 0], [86.1, START, 0, 0], [93, START, 0, 0], [98, START, 0, 1], [100, START, 0, 1]);
-  return { rows, snap, pull, maxLift: Math.max(...rows.map(r => r[2])) };
+  const all = densify(rows);
+  return { rows: all, snap, pull, maxLift: Math.max(...all.map(r => r[2])) };
 }
 
 export function snapDemo() {

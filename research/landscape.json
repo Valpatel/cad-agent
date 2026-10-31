@@ -785,7 +785,7 @@
    "license_spdx": "Apache-2.0",
    "stars": 3519,
    "last_push": "2026-10-23",
-   "use": "Python B-rep CAD on OpenCascade, the builder-style successor to CadQuery; many agentic-CAD projects generate it"
+   "use": "Python B-rep CAD library on OpenCascade with builder and algebra APIs, which grew out of the CadQuery community; many agentic-CAD projects generate it"
   },
   {
    "name": "CadQuery/cadquery",
@@ -830,7 +830,7 @@
    "stars": 699,
    "last_push": "2026-09-04",
    "license_note": "per README; no LICENSE detected by GitHub",
-   "use": "FreeCAD workbench that exchanges board and enclosure STEP models with KiCad (external only)"
+   "use": "FreeCAD workbench for KiCad ECAD-MCAD work: loads a board with its 3D models, syncs the board outline and keep-outs both ways, places and aligns footprint models, and exports colored STEP and VRML (external only)"
   },
   {
    "name": "rjwalters/kicad-tools",

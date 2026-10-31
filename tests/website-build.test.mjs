@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -30,7 +30,62 @@ test('only committed files are published, byte for byte', async () => {
   const webTracked = git('ls-tree', '-r', '--name-only', 'HEAD', 'web/').split('\n').filter(Boolean);
   const webOut = files.filter(f => f.startsWith('web/') && f !== 'web/snap-demo.css');
   assert.deepEqual(webOut.sort(), webTracked.sort());
-  for (const f of webTracked) assert.equal(await readFile(path.join(out, f), 'utf8'), git('show', `HEAD:${f}`), f);
+  for (const f of webTracked) assert.ok((await readFile(path.join(out, f))).equals(execFileSync('git', ['show', `HEAD:${f}`], { cwd: root })), f);
+});
+
+test('a dirty checkout publishes HEAD, and a draft says it has local changes', async () => {
+  // A scratch worktree of HEAD with an edited stylesheet, an edited doc and an untracked page planted in it.
+  const wt = path.join(tmp, 'wt');
+  execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });
+  try {
+    await writeFile(path.join(wt, 'web/site.css'), 'body{display:none}\n');
+    await writeFile(path.join(wt, 'docs/planted.md'), '# Planted\n\nnot committed\n');
+    await writeFile(path.join(wt, 'docs/toolkit.md'), '# Toolkit\n\nlocal edit <scr<script>x</script>ipt>window.__x=1</script>\n');
+    const run = (...a) => execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, ...a], { cwd: root }).toString();
+    const clean = path.join(tmp, 'clean'), draft = path.join(tmp, 'draft');
+    run('--out', clean);
+    assert.equal(await readFile(path.join(clean, 'web/site.css'), 'utf8'), git('show', 'HEAD:web/site.css'));
+    assert.ok(!existsSync(path.join(clean, 'docs/planted.html')), 'an untracked page was published');
+    assert.doesNotMatch(await readFile(path.join(clean, 'docs/toolkit.html'), 'utf8'), /local edit/);
+    run('--worktree', '--out', draft);
+    const toolkit = await readFile(path.join(draft, 'docs/toolkit.html'), 'utf8');
+    assert.match(toolkit, /local edit/);
+    assert.match(toolkit, /\+ local changes/);
+    assert.match(toolkit, /This page has uncommitted changes/);
+    assert.doesNotMatch(toolkit, /<script>|window\.__x=1<\/script>/, 'a nested script survived the sanitizer');
+    assert.throws(() => run('--release', '--out', path.join(tmp, 'rel')), /clean working tree/);
+  } finally {
+    execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
+  }
+});
+
+test('code samples keep their text, and every code block has a copy button', async () => {
+  const dossier = await readFile(path.join(out, 'docs/dossier.html'), 'utf8');
+  assert.match(dossier, /onto=None/, 'the sanitizer ate text inside code');
+  const toolkit = await readFile(path.join(out, 'docs/toolkit.html'), 'utf8');
+  const pres = (toolkit.match(/<pre>/g) || []).length, wrapped = (toolkit.match(/<cad-copy><pre>/g) || []).length;
+  const diagrams = (toolkit.match(/<pre><code class="language-mermaid">/g) || []).length;
+  assert.ok(pres > 3 && wrapped === pres - diagrams, `${wrapped} of ${pres} code blocks have a copy button`);
+  assert.match(await readFile(path.join(out, 'index.html'), 'utf8'), /<cad-copy class="agent-copy"[^>]*><pre class="agent-box"/);
+  assert.ok(files.includes('kit/copy.js'));
+});
+
+test('pages say when they were last updated and how to give feedback', async () => {
+  const commitDay = git('show', '-s', '--format=%cs', 'HEAD').trim();
+  const lessonDay = git('log', '-1', '--format=%cs', 'HEAD', '--', 'lessons/01-verify-from-source.md').trim();
+  assert.match(await readFile(path.join(out, 'index.html'), 'utf8'), new RegExp(`Last updated <time datetime="${commitDay}">`));
+  const lesson = await readFile(path.join(out, 'lessons/01-verify-from-source.html'), 'utf8');
+  assert.match(lesson, new RegExp(`Last updated <time datetime="${lessonDay}">`), 'a page shows its own last change');
+  const fb = lesson.match(/<aside class="feedback"[\s\S]*?<\/aside>/)?.[0];
+  assert.ok(fb, 'doc pages end with the feedback box');
+  const href = fb.match(/href="([^"]+)"/)[1].replace(/&amp;/g, '&');
+  const u = new URL(href);
+  assert.equal(u.origin + u.pathname, 'https://github.com/Valpatel/cad-agent/issues/new');
+  assert.equal(u.searchParams.get('template'), 'feedback.yml');
+  assert.equal(u.searchParams.get('page'), 'https://cad-agent.valpatel.com/lessons/01-verify-from-source');
+  assert.match(fb, /edit\/dev\/lessons\/01-verify-from-source\.md/);
+  const form = await readFile(path.join(root, '.github/ISSUE_TEMPLATE/feedback.yml'), 'utf8');
+  assert.match(form, /id: page\b/, 'the issue form has the field the link fills in');
 });
 
 test('builds are reproducible: two builds of the same commit are identical', async () => {
@@ -125,9 +180,19 @@ test('headers: each header comes from one rule, and every inline script is allow
   }
   const csp = text.match(/Content-Security-Policy: (.*)/)[1];
   assert.doesNotMatch(csp, /'unsafe-inline'[^;]*;.*script-src|script-src[^;]*'unsafe-inline'/);
+  // The policy allows exactly the kit pages' inline scripts (copied byte for byte from the kit); site pages have none.
   const { createHash } = await import('node:crypto');
-  for (const f of html) for (const m of (await readFile(path.join(out, f), 'utf8')).matchAll(/<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi))
-    if (m[1].trim()) assert.ok(csp.includes(`'sha256-${createHash('sha256').update(m[1]).digest('base64')}'`), `${f}: inline script not in CSP`);
+  const allowed = new Set(csp.match(/'sha256-[^']+'/g));
+  const kitHashes = new Set();
+  for (const f of html) for (const m of (await readFile(path.join(out, f), 'utf8')).matchAll(/<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)) {
+    if (!m[1].trim()) continue;
+    assert.ok(f.startsWith('kit/'), `${f}: inline script on a site page`);
+    assert.equal((await readFile(path.join(out, f), 'utf8')), git('show', `HEAD:src/cadagent/webkit/${f.slice(4)}`), `${f} is not the kit's own file`);
+    kitHashes.add(`'sha256-${createHash('sha256').update(m[1]).digest('base64')}'`);
+  }
+  assert.deepEqual([...allowed].sort(), [...kitHashes].sort());
+  assert.match(text, /Strict-Transport-Security: max-age=\d{8,}/);
+  assert.ok(files.includes('favicon.ico'), 'browsers probe /favicon.ico on text pages');
   assert.ok(files.includes('kit/vendor/fonts/OFL-Inter.txt') && files.includes('kit/vendor/fonts/OFL-JetBrainsMono.txt'), 'font licences ship with the fonts');
   assert.ok(existsSync(path.join(out, '404.html')));
   for (const f of html) assert.doesNotMatch(await readFile(path.join(out, f), 'utf8'), /(?:href|src)="\s*(?:javascript|vbscript|data:text):/i, f);

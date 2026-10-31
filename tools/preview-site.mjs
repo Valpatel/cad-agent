@@ -47,8 +47,10 @@ const rules = parseHeaders(await readFile(path.join(dir, '_headers'), 'utf8').ca
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
-  let pathname = decodeURIComponent(url.pathname);
-  if (pathname.includes('\0') || path.posix.normalize(pathname) !== pathname) { res.writeHead(400).end(); return; }
+  let pathname;
+  try { pathname = decodeURIComponent(url.pathname); } catch { res.writeHead(400).end(); return; }   // e.g. /%
+  // No NUL, no dot segments, no backslash: '/\\host' in a redirect would send the browser to another host.
+  if (/[\0\\]/.test(pathname) || path.posix.normalize(pathname) !== pathname) { res.writeHead(400).end(); return; }
   if (pathname.endsWith('.html')) {                               // Pages drops .html with a redirect
     const pretty = pathname === '/index.html' ? '/' : pathname.replace(/(?:\/index)?\.html$/, '');
     res.writeHead(308, { location: pretty + url.search }).end(); return;

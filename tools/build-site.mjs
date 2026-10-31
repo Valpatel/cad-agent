@@ -13,8 +13,11 @@ import path from 'node:path';
 import { marked } from 'marked';
 import YAML from 'yaml';
 import { snapDemo } from './snap-demo.mjs';
+import { sanitize, safeUrl } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
 
-const root = path.resolve(import.meta.dirname, '..');
+// --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
+const rootArg = process.argv.indexOf('--root');
+const root = path.resolve(rootArg > 0 ? process.argv[rootArg + 1] : path.join(import.meta.dirname, '..'));
 const outArg = process.argv.indexOf('--out');
 const out = outArg > 0 ? path.resolve(process.argv[outArg + 1]) : path.join(root, 'dist');
 const ORIGIN = 'https://cad-agent.valpatel.com';
@@ -28,12 +31,21 @@ const gitRaw = (...a) => execFileSync('git', a, { cwd: root, maxBuffer: 1 << 28 
 const git = (...a) => gitRaw(...a).toString().trim();
 if (RELEASE && git('status', '--porcelain')) throw new Error('--release needs a clean working tree (commit or stash first)');
 if (RELEASE && WORKTREE) throw new Error('--release and --worktree are exclusive');
-if (RELEASE && !git('branch', '-r', '--contains', 'HEAD')) throw new Error('--release needs HEAD pushed to GitHub, so the site matches a public commit');
+// Production is built from reviewed history only: a commit on origin/main or origin/dev (CD deploys from main).
+const onReviewed = ref => { try { execFileSync('git', ['merge-base', '--is-ancestor', 'HEAD', ref], { cwd: root }); return true; } catch { return false; } };
+if (RELEASE && !onReviewed('origin/main') && !onReviewed('origin/dev')) throw new Error('--release needs HEAD on origin/main or origin/dev (merged and pushed), so production only shows reviewed commits');
 const tracked = git('ls-tree', '-r', '-z', '--name-only', 'HEAD').split('\0').filter(Boolean);
 const head = git('rev-parse', 'HEAD');
 const revision = head;
-const revisionLabel = WORKTREE ? `${head.slice(0, 7)} + local changes` : head.slice(0, 7);
+// The content is always HEAD's (or the working tree's with --worktree), but the build tools run from disk: say so.
+const toolsDirty = git('status', '--porcelain', '--', 'tools/build-site.mjs', 'tools/snap-demo.mjs', 'package.json', 'package-lock.json');
+const revisionLabel = WORKTREE ? `${head.slice(0, 7)} + local changes` : toolsDirty ? `${head.slice(0, 7)} + local build tools` : head.slice(0, 7);
 const committed = git('show', '-s', '--format=%cI', 'HEAD');            // build time = commit time: reproducible
+if (RELEASE && git('rev-parse', '--is-shallow-repository') === 'true') throw new Error('--release needs full git history (fetch-depth: 0), so each page shows when it really changed');
+// When a page's source last changed: its last commit (null when it has uncommitted changes in a --worktree draft).
+const lastChange = file => WORKTREE && git('status', '--porcelain', '--', file) ? null : git('log', '-1', '--format=%cI', 'HEAD', '--', file) || committed;
+const isoDay = iso => iso.slice(0, 10);                 // the commit's own calendar date, as `git log` shows it
+const day = iso => new Date(`${isoDay(iso)}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 const readBuf = p => WORKTREE ? readFile(path.join(root, p)) : Promise.resolve(gitRaw('show', `HEAD:${p}`));
 const read = async p => (await readBuf(p)).toString('utf8');
 const copyTracked = async (f, dest) => { await mkdir(path.dirname(dest), { recursive: true }); await writeFile(dest, await readBuf(f)); };
@@ -41,6 +53,8 @@ const copyTracked = async (f, dest) => { await mkdir(path.dirname(dest), { recur
 await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });
 for (const f of tracked.filter(f => f.startsWith('web/'))) await copyTracked(f, path.join(out, f));
+// Browsers ask for /favicon.ico on pages without an icon link (llms.txt, the .md twins).
+if (tracked.includes('web/favicon.ico')) await copyTracked('web/favicon.ico', path.join(out, 'favicon.ico'));
 // The shared web kit (3D viewer, part tables, diagrams) is published as /kit/, the same files projects copy.
 for (const f of tracked.filter(f => f.startsWith('src/cadagent/webkit/'))) {
   await copyTracked(f, path.join(out, 'kit', f.slice('src/cadagent/webkit/'.length)));
@@ -116,7 +130,7 @@ const catalog = {
     ...commands.map(c => ({ type: 'tool', status: 'ours', name: `cad-agent ${c.name}`, summary: c.help,
       url: `${ORIGIN}/docs/toolkit`, how: `cad-agent ${c.name} --help` })),
     ...upstreams.map(u => ({ type: 'upstream', status: u.status, name: u.name, url: u.url,
-      summary: projectNotes.get(u.name) || u.policy, policy: u.policy,
+      summary: projectNotes.get(u.name) || u.what || u.policy, policy: u.policy,
       license: u.license, stars: u.stars, last_push: u.last_push })),
     // A library is 'used' only when landscape.json says so (a real dependency); otherwise it is tracked for reference.
     ...landscape.libraries.map(l => ({ type: 'library', status: l.status || 'reference', name: l.name, url: l.url || `https://github.com/${l.name}`,
@@ -134,7 +148,12 @@ await writeFile(path.join(out, 'catalog.json'), JSON.stringify(catalog, null, 2)
 // ----------------------------------------------------------------------------- HTML frame
 const NAV = [['/catalog', 'Catalogue', true], ['/docs/toolkit', 'Toolkit', true], ['/research/landscape', 'Landscape'],
   ['/docs/common-issues', 'Pitfalls'], ['/docs/agent-workflow', 'For agents']];
-function frame({ title, body, md, description = LEDE, current = '', page = 'doc', css = [] }) {
+// Feedback goes to GitHub: a short issue form with the page filled in, or an edit of the page's source.
+const feedbackURL = (title, url) => `${REPO}/issues/new?template=feedback.yml&title=${encodeURIComponent(`Feedback: ${title}`)}&page=${encodeURIComponent(ORIGIN + url)}`;
+const feedbackBox = (title, url, file) => `<aside class="feedback" aria-label="Feedback"><div><p class="feedback-title">Help us improve!</p>
+<p>Something wrong, missing or confusing on this page? Tell us in a minute. Every note is read, and ideas we use are credited.</p></div>
+<div class="feedback-actions"><a class="button" href="${esc(feedbackURL(title, url))}">Give feedback</a>${file ? `<a href="${REPO}/edit/dev/${esc(file)}">Suggest an edit</a>` : ''}</div></aside>`;
+function frame({ title, body, md, description = LEDE, current = '', page = 'doc', css = [], updated = committed, url = current || '/' }) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title === TAGLINE ? 'cad-agent · ' + TAGLINE : title + ' · cad-agent')}</title>
 <meta name="description" content="${esc(description)}">
@@ -144,8 +163,8 @@ ${md ? `<link rel="alternate" type="text/markdown" href="${esc(md)}" title="Mark
 <body class="${page}-page" data-diagram-theme="light"><header class="site-header"><div class="wrap"><a class="wordmark" href="/"><img src="/web/icon.svg" alt="" width="34" height="34">cad-agent<b>.</b></a>
 <nav aria-label="Main">${NAV.map(([h, t, keep]) => `<a href="${h}"${keep ? ' data-keep' : ''}${h === current ? ' aria-current="page"' : ''}>${t}</a>`).join('')}<a class="pill-link" href="${REPO}">GitHub ↗</a></nav></div></header>
 <main class="${page === 'landing' ? '' : 'wrap'} ${page === 'doc' ? 'doc' : ''}">${body}</main>
-<footer class="site-footer"><div class="wrap"><p>Created by <a href="https://valpatel.com">Valpatel Software LLC</a>. Code under the <a href="${REPO}/blob/dev/LICENSE">MIT licence</a>; every third-party tool keeps its own licence and credit. Built from <a href="${REPO}/commit/${revision}">${esc(revisionLabel)}</a>.</p>
-<div class="links"><a href="/llms.txt">llms.txt</a><a href="/llms-full.txt">llms-full.txt</a><a href="/catalog.json">catalog.json</a>${md ? `<a href="${esc(md)}">this page .md</a>` : ''}</div></div></footer>
+<footer class="site-footer"><div class="wrap"><p>Created by <a href="https://valpatel.com">Valpatel Software LLC</a>. Code under the <a href="${REPO}/blob/dev/LICENSE">MIT licence</a>; every third-party tool keeps its own licence and credit. ${updated ? `Last updated <time datetime="${isoDay(updated)}">${day(updated)}</time>.` : 'This page has uncommitted changes.'} Built from <a href="${REPO}/commit/${revision}">${esc(revisionLabel)}</a>.</p>
+<div class="links"><a href="${esc(feedbackURL(title === TAGLINE ? 'home page' : title, url))}">Help us improve ↗</a><a href="/llms.txt">llms.txt</a><a href="/llms-full.txt">llms-full.txt</a><a href="/catalog.json">catalog.json</a>${md ? `<a href="${esc(md)}">this page .md</a>` : ''}</div></div></footer>
 <script type="module" src="/web/site.js"></script></body></html>`;
 }
 
@@ -156,13 +175,7 @@ const decode = s => s.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (m, e) => e[0] ===
 // GitHub's anchor rule (github-slugger): lower case, drop everything but letters, marks, numbers, connectors, hyphens
 // and spaces, then each space becomes a hyphen (runs are not collapsed); repeats get -1, -2.
 export const slug = text => decode(text.replace(/<[^>]*>/g, '')).toLowerCase().replace(/[^\p{L}\p{M}\p{N}\p{Pc}\- ]/gu, '').replace(/ /g, '-');
-// Docs are ours, but research quotes outside sources: the site never serves script from Markdown. Drop <script>,
-// <iframe>/<object>/<embed>, inline handlers, and any URL scheme other than http(s), mailto and data: images.
-const SAFE_URL = /^(?:https?:|mailto:|data:image\/(?:png|jpe?g|gif|webp);|[^:]*$|[^:]*[/?#])/i;
-export const safeUrl = u => SAFE_URL.test(String(u ?? '').trim()) ? String(u ?? '') : '#';
-const sanitize = html => html.replace(/<(script|iframe|object|embed)\b[\s\S]*?(?:<\/\1>|$)/gi, '').replace(/<(?:embed|iframe|object)\b[^>]*>/gi, '')
-  .replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
-  .replace(/\b(href|src|action|formaction)\s*=\s*("([^"]*)"|'([^']*)')/gi, (m, attr, q, dq, sq) => `${attr}="${esc(safeUrl((dq ?? sq).replace(/&amp;/g, '&')))}"`);
+
 // Relative links in a Markdown copy: published pages and images stay relative (their .md twin or file is at the same
 // path); anything else (source files, tests) points at GitHub. absolute=true makes every link absolute (llms-full.txt).
 const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).map((chunk, i) => i % 2 ? chunk :
@@ -202,10 +215,12 @@ for (const p of pages) {
     return alt ? `<span class="badge">${alt}</span>` : '';
   });
   html = html.replace(/<table>/g, '<div class="table-scroll"><table>').replace(/<\/table>/g, '</table></div>');
+  // One-click copy on every code block (not on diagram sources, which render as pictures).
+  html = html.replace(/<pre>(<code(?! class="language-mermaid")[\s\S]*?<\/pre>)/g, '<cad-copy><pre>$1</cad-copy>');
   const crumbs = `<p class="crumbs"><a href="/catalog#${p.section}">${esc(SECTIONS.find(s => s.id === p.section).title)}</a> · <a href="${REPO}/blob/dev/${esc(p.file)}">${esc(p.file)}</a> · <a href="/${esc(p.file)}">Markdown</a></p>`;
   const dest = path.join(out, pageFile(p.file));
   await mkdir(path.dirname(dest), { recursive: true });
-  await writeFile(dest, frame({ title: p.title, body: crumbs + `<article class="prose">${html}</article>`, md: '/' + p.file, description: p.summary, current: pageURL(p.file) }));
+  await writeFile(dest, frame({ title: p.title, body: crumbs + `<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file), md: '/' + p.file, description: p.summary, current: pageURL(p.file), updated: lastChange(p.file) }));
   await writeFile(path.join(out, p.file), rewriteMd(p.file, p.src));   // the Markdown twin, same path
 }
 // Images referenced by docs.
@@ -244,9 +259,12 @@ const landing = `<div class="wrap"><section class="hero"><div class="hero-copy">
 <p class="intro">Mapping the best free resources, demonstrating their capabilities, and filling the gaps.</p>
 <p class="hero-description">cad-agent is the toolkit and field guide our agents use to design real hardware: which open-source tools to reach for, what each one is good at, the checks that catch the mistakes, and our own tools where nothing free does the job yet.</p>
 <div class="actions"><a class="button primary" href="/catalog">Browse the catalogue <span>→</span></a><a class="button" href="/docs/toolkit">Read the toolkit</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div>
-<div class="agent-box" aria-label="How an agent reads this site"><b>#</b> point any coding agent here<br>curl -s ${ORIGIN}/llms.txt<br>curl -s ${ORIGIN}/catalog.json<br>curl -s ${ORIGIN}/docs/toolkit.md <b># any page, .md</b></div>
+<cad-copy class="agent-copy" label="Copy"><pre class="agent-box" aria-label="How an agent reads this site"><b># point any coding agent here</b>
+curl -s ${ORIGIN}/llms.txt
+curl -s ${ORIGIN}/catalog.json
+curl -s ${ORIGIN}/docs/toolkit.md  <b># any page, as .md</b></pre></cad-copy>
 </div>
-<div class="hero-scene"><div class="scene-orbit"></div><p class="scene-label">DEMO 01 · CANTILEVER SNAP FIT</p>${SNAP_SVG}<span class="stamp">SIZED BY<br>NUMBERS</span>
+<div class="hero-scene"><div class="scene-orbit"></div><p class="scene-label">DEMO 01 · CANTILEVER SNAP FIT</p>${SNAP_SVG}<span class="stamp">CONTACT<br>COMPUTED</span>
 <div class="scene-caption"><b>One part, no screws.</b><span><a href="/docs/compliant"><code>cad-agent snapfit</code></a> checks root strain against the material and the print's layer direction</span></div></div></section>
 </div><div class="ticker"><div class="wrap"><span>Map the field</span><i>✦</i><span>Adopt what works</span><i>✦</i><span>Prove it on real parts</span><i>✦</i><span>Fill the gaps</span><i>✦</i><span>Made for AI and people</span></div></div><div class="wrap">
 <section class="section"><div class="lead"><h2>Three jobs, <span>one place.</span></h2><p>We are not attached to our own code. If someone else's tool, skill or agent does a job better, it goes in the catalogue and we use it. What is left, we build and test.</p></div>
@@ -269,6 +287,8 @@ const landing = `<div class="wrap"><section class="hero"><div class="hero-copy">
 ${card({ type: 'project', status: 'used', name: 'Gyropup', url: 'https://gyropup.com', summary: 'A wheel-legged foam-ball battle robot designed, simulated and documented by agents with this toolkit.' })}
 ${card({ type: 'project', status: 'used', name: 'J501 AGX Orin enclosure', url: 'https://github.com/mvalancy/j501-agx-orin', summary: 'A printed enclosure and cooler for a Jetson AGX Orin carrier: where most of the lessons came from.' })}
 </ul></section>
+<section class="section help-band"><div class="lead"><h2>Help us <span>improve!</span></h2><p>Found a mistake, a better tool, or a page that wasted your time? Tell us: it takes a minute and goes straight to the people and agents who maintain this. Ideas we use are credited by name.</p></div>
+<div class="help-actions"><a class="button primary" href="${esc(feedbackURL('home page', '/'))}">Give feedback</a><a class="button" href="${REPO}/issues">See open issues</a><a class="button" href="/CONTRIBUTING">How to contribute</a></div></section>
 <section class="closing"><p class="eyebrow">For agents and people</p><h2>Point your agent at <span>llms.txt</span>.</h2><div class="actions"><a class="button primary" href="/llms.txt">Open llms.txt</a><a class="button" href="/catalog">Browse the catalogue</a></div></section></div>`;
 await writeFile(path.join(out, 'index.html'), frame({ title: TAGLINE, body: landing, md: '/index.md', current: '/', page: 'landing', css: ['/web/snap-demo.css'] }));
 
@@ -311,15 +331,25 @@ await writeFile(path.join(out, 'llms-full.txt'), `# cad-agent: full text\n\n> ${
 // script each, allowed by hash. Styles allow inline for the diagram kit's SVG output; wasm for the STEP reader.
 const htmlFiles = async d => (await readdir(d, { withFileTypes: true, recursive: true }))
   .filter(e => e.isFile() && e.name.endsWith('.html')).map(e => path.join(e.parentPath, e.name));
+// Only the kit's own pages (copied byte for byte from src/cadagent/webkit/) may carry inline script, so only their
+// hashes go into the policy; any inline script on a site page stops the build.
 const inlineHashes = new Set();
-for (const f of await htmlFiles(out)) for (const m of (await readFile(f, 'utf8')).matchAll(/<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi))
-  if (m[1].trim()) inlineHashes.add(`'sha256-${createHash('sha256').update(m[1]).digest('base64')}'`);
+const INLINE = /<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
+for (const f of await htmlFiles(out)) {
+  const kit = path.relative(out, f).split(path.sep)[0] === 'kit';
+  for (const m of (await readFile(f, 'utf8')).matchAll(INLINE)) {
+    if (!m[1].trim()) continue;
+    if (!kit) throw new Error(`${path.relative(out, f)}: inline <script> on a site page (only the kit's pages may have one)`);
+    inlineHashes.add(`'sha256-${createHash('sha256').update(m[1]).digest('base64')}'`);
+  }
+}
 export const CSP = `default-src 'self'; script-src 'self' ${[...inlineHashes].sort().join(' ')} 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; ` +
   "img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; " +
   "form-action 'self'; frame-ancestors 'self'";
 await writeFile(path.join(out, '_headers'), [
   '/*', '  X-Content-Type-Options: nosniff', '  Referrer-Policy: strict-origin-when-cross-origin', `  Content-Security-Policy: ${CSP}`,
   '  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()', '  Cross-Origin-Opener-Policy: same-origin',
+  '  Strict-Transport-Security: max-age=31536000',
   '/*.md', '  Content-Type: text/markdown; charset=utf-8', '/llms.txt', '  Content-Type: text/plain; charset=utf-8',
   '/llms-full.txt', '  Content-Type: text/plain; charset=utf-8', '/kit/vendor/*', '  Cache-Control: public, max-age=86400', ''].join('\n'));
 await writeFile(path.join(out, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${ORIGIN}/sitemap.xml\n`);

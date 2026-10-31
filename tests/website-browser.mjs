@@ -26,7 +26,9 @@ const ROUTES = ['/', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', 
 const problems = [];
 try {
   for (const width of [360, 1366]) for (const route of ROUTES) {
-    const page = await browser.newPage({ viewport: { width, height: 800 } });
+    const context = await browser.newContext({ viewport: { width, height: 800 } });
+    if (engine === chromium) await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: base });
+    const page = await context.newPage();
     const seen = [];
     // A missing file shows up as an HTTP response below; the console's "status of 404" line repeats it, and on pages
     // without an icon link (the kit's) it is the browser's own /favicon.ico probe, which no page requested.
@@ -57,8 +59,36 @@ try {
       const hits = await page.$$eval('.group .card:not([hidden])', cs => cs.map(c => c.dataset.text));
       if (!hits.length || hits.some(t => !/(^|[^\p{L}\p{N}])mit/u.test(t))) seen.push('"mit" matches inside other words');
     }
+    if ((route === '/' || route === '/docs/toolkit') && width === 360) {   // copy buttons: one click, exact text
+      const block = page.locator(route === '/' ? 'cad-copy.agent-copy' : '.prose cad-copy').first();
+      const button = block.locator('.cad-copy-btn');
+      if (!(await button.isVisible())) seen.push('no visible copy button');
+      else {
+        const box = await button.boundingBox();
+        if (box.height < 24 || box.width < 44) seen.push(`copy button too small to tap (${box.width}x${box.height})`);
+        await page.evaluate(() => { window.__copied = null; document.addEventListener('cad-copy', e => { window.__copied = e.detail; }); });
+        await button.click();
+        const detail = await page.waitForFunction(() => window.__copied, null, { timeout: 3000 }).then(h => h.jsonValue()).catch(() => null);
+        const expected = await block.evaluate(el => el.querySelector('pre').textContent.replace(/\n$/, ''));
+        if (!detail) seen.push('copy button did nothing');
+        else {
+          if (detail.text !== expected) seen.push('copy button copied different text than the block shows');
+          if (detail.text.includes('Copy')) seen.push('copied text includes the button label');
+          const state = await button.getAttribute('data-state');
+          if (!(detail.ok ? state === 'copied' : state === 'manual')) seen.push(`copy button state ${state} after ok=${detail.ok}`);
+          if (engine === chromium && !detail.ok) seen.push('clipboard write failed in Chromium');
+          if (detail.ok && engine === chromium && (await page.evaluate(() => navigator.clipboard.readText())) !== expected) seen.push('clipboard holds other text');
+        }
+      }
+    }
+    if (route === '/docs/compliant') {
+      const href = await page.locator('.feedback a.button').getAttribute('href').catch(() => null);
+      const u = href && new URL(href);
+      if (!u || u.hostname !== 'github.com' || u.searchParams.get('template') !== 'feedback.yml' || !u.searchParams.get('page')?.endsWith('/docs/compliant'))
+        seen.push(`feedback link does not open the prefilled form: ${href}`);
+    }
     for (const s of seen) problems.push(`${width}px ${route}: ${s}`);
-    await page.close();
+    await context.close();
   }
   const reduced = await browser.newPage({ reducedMotion: 'reduce' });
   await reduced.goto(base + '/', { waitUntil: 'networkidle' });

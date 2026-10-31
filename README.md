@@ -27,7 +27,7 @@ and `catalog.json`).
 ## How it improves itself
 
 ```mermaid
-flowchart LR
+flowchart TD
     W["🛠️ <b>Real work</b><br/>a robot, an enclosure,<br/>a board"]
     G["🧩 <b>A gap</b><br/>a failed print, a review<br/>finding, a slow step"]
     S["🔎 <b>Search</b><br/>repos · guides · datasheets<br/>papers · agent skills"]
@@ -69,7 +69,7 @@ standing inside a countersink.
 A project describes itself in one `cad-agent.yaml`. cad-agent runs it and collects the proof.
 
 ```mermaid
-flowchart LR
+flowchart TD
     P["📐 <b>Your project</b><br/>cad-agent.yaml<br/>CAD scripts · parameters"]
     B["🔧 <b>build</b><br/>CAD · checks · simulations<br/>run as ordered steps"]
     M["🖨️ <b>export-3mf</b><br/>bed-centred 3MF<br/>read back and verified"]
@@ -95,7 +95,7 @@ either has evidence or it says what is assumed.
 ### What's in the box
 
 ```mermaid
-flowchart LR
+flowchart TD
     D["✏️ <b>Design</b><br/>connectors · mcmaster<br/>robot · geometry · explore"]
     V["🧪 <b>Verify</b><br/>fea · cfd · heatsink<br/>topopt · slicer"]
     S["🖼️ <b>Show</b><br/>render · simviz · reports<br/>site · 3D viewer"]

@@ -11,7 +11,7 @@ A private manufacturer screw/insert fixture from Gyropup produced a default meas
 | Adaptive, requested relative error 1e-8 | 0.00027073 | 0.00006440 |
 
 ```mermaid
-%%{init: {"xyChart": {"width": 640, "height": 400}, "themeVariables": {"xyChart": {"plotColorPalette": "#bd3a12"}}}}%%
+%%{init: {"xyChart": {"width": 640, "height": 400, "xAxis": {"labelPadding": 12}}, "themeVariables": {"xyChart": {"plotColorPalette": "#bd3a12"}}}}%%
 xychart-beta
     title "Size of |A − Common − Cut(A,B)|, mm³ (should be ≈ 0)"
     x-axis ["Default overload", "Adaptive, 1e-6", "Adaptive, 1e-8"]

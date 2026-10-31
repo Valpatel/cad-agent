@@ -43,6 +43,7 @@ snaps:
     max_mating_n: 30
   - name: example-I                # the guide's Example I, moulded polycarbonate
     material: pc
+    process: moulding
     length_mm: 19
     undercut_mm: 2.4
     design: 2
@@ -53,14 +54,25 @@ snaps:
 ```
 
 `cad-agent snapfit FILE` prints one PASS/FAIL line per snap with the root strain, the allowable and the forces, and
-exits 1 if any check fails. `--output` writes every row, the material derivation and the limits as JSON.
+any warnings. It exits 0 if every check passes, 1 if any fails and 2 for an unreadable or out-of-range file (the
+message names the snap and the field). `--output` writes every row, the material derivation and the limits as JSON.
 
-Fields: `name`, `material` (a name below, or `{name, strain, source, secant_mpa, friction}`), `length_mm`,
-`undercut_mm`, `design`, `section` (`rect: {width_mm, thickness_mm}` or `ring: {r_inner_mm, r_outer_mm, arc_deg,
-tension}`), and optionally `repeated`, `share` (0.5 when both parts flex equally), `secant_mpa`, `friction`,
-`same_material`, `lead_deg`, `return_deg`, `root_radius_mm`, `max_mating_n`, `min_retention_n`. For a layered process
-(`process: fdm`): a printed filament needs `orientation`; any other material needs `orientation`, `process_factor` and
-`process_source`. A missing one is a failing row, so layer lines are never silently ignored.
+Fields:
+- **Required:** `name`, `material` (a name below, or `{name, strain, source, secant_mpa, friction}` with `strain` a
+  **fraction**: 0.03 = 3 %), `length_mm`, `undercut_mm`, `section` (`rect: {width_mm, thickness_mm}` or `ring:
+  {r_inner_mm, r_outer_mm, arc_deg, tension}`), `root_radius_mm`, and `process` (`moulding`, `fdm`, `sla`, `sls` or
+  `mjf`; a printed filament implies `fdm`).
+- **Optional:** `design` (default 1), `repeated`, `share` (0.5 when both parts flex equally), `secant_mpa`,
+  `friction`, `same_material`, `lead_deg`, `return_deg`, `max_mating_n`, `min_retention_n`.
+- **Layered processes:** a printed filament needs `orientation` (`along` or `across` the layers). Any other material
+  in a layered process needs `orientation`, `process_factor` (0–1: a derating) and `process_source`.
+
+**Nothing passes unchecked.** A missing process, orientation, derating or root radius is a failing row. A declared
+`max_mating_n` or `min_retention_n` that cannot be computed fails and names what is missing: no secant modulus (only
+`pc` has guide points; give `secant_mpa` otherwise), no friction (PLA and PETG are not in the guide's table) or no
+angle. A self-locking hook (μ·tan α ≥ 1, e.g. a 90° return) cannot be pulled apart, so its retention is the hook's
+own strength, which this method does not compute: a declared retention minimum fails there. Where the guide gives
+secant-modulus points, the modulus is interpolated at the arm's actual root strain.
 
 ## Materials
 
@@ -78,26 +90,33 @@ a range the lower end is used.
 | `pla-bambu-basic` | 1.0 % | 1.0 % | `asa-bambu` | 1.5 % | 1.2 % |
 | `pla-bambu-matte` | 1.1 % | 1.0 % | `copa-polymaker-dry` | 2.0 % | 0.65 % |
 | `petg-polymaker` | 1.7 % | 1.6 % | `copa-polymaker-wet` | 3.3 % | 0.85 % |
-| `petg-bambu-basic` | 2.3 % | 2.3 % | `pa6-cf20-polymaker-dry` | 0.9 % | 0.9 % |
+| `petg-bambu-basic` | 2.3 % | 2.3 % | `pa6-cf20-polymaker-dry` | 0.8 % | 0.8 % |
 | `petg-bambu-hf` | 1.3 % | 1.0 % | `pa6-cf20-polymaker-wet` | 1.5 % | 1.5 % |
 | `petg-cf-bambu` | 1.7 % | 1.7 % | | | |
 
 The rule, per direction: `min(0.7 × UTS / E, 0.5 × elongation at break)` — the guide's 70 %-of-yield rule for
 amorphous resin with UTS/E as a lower bound on the yield strain, and its half-the-elongation rule for materials without
-a yield point. Across the layers the smaller of the Z and XY values is used, and nylon is capped at the moulded PA66
-value. **The direction matters more than strength suggests**: across the layers these datasheets keep 40–90 % of the
-in-plane strength but only 10–61 % of the elongation at break, and snap fits are limited by strain. Where half the
+a yield point. Across the layers the smaller of the Z and XY values is used. Nylon is capped at the moulded value of
+its family: CoPA at PA66 (the cap never binds), carbon-filled PA6 at DuPont's glass-filled PA66 (0.8 % dry, 1.5 % at
+50 % RH; it binds for the dry grade, derived 0.89 %). The "wet" rows are water-saturated datasheet specimens.
+**The direction matters more than strength suggests**: across the layers the PLA, PETG, ASA and CoPA datasheets keep
+40–90 % of the in-plane strength but only 10–61 % of the elongation at break, and snap fits are limited by strain.
+(Carbon-filled PA6 keeps 90–96 % of its elongation: the fibre already limits it in-plane.) Where half the
 elongation governs across the layers the allowable falls to 26–64 % of the in-plane value; CoPA is the clearest
 case, 2.0 % with the arm lying in the bed plane and 0.65 % with it built upright. Where 0.7 × UTS/E governs (PLA,
 PETG) the drop is smaller (to 78–100 %), but layer lines still act as notches, so lay flexing arms in the bed plane.
 
 ## Limits
 
+- **A pass has no extra margin.** It means the root strain is within the allowable; the guide's own examples design
+  to half the permissible strain.
 - Closed-form, small-deflection beam theory with one part rigid: no large deflection, contact, creep, fatigue or wall
-  deflection at the root. Large-deflection force-travel curves need FEA (CalculiX is the planned external solver).
+  deflection at the root. A warning is given when the deflection exceeds a tenth of the arm length (the guide's
+  Example I is at 0.13). Large-deflection force-travel curves need FEA (CalculiX is the planned external solver).
 - Printed allowables are **hypotheses until a coupon is measured**: the datasheets are for 100 % infill on one
   printer and profile. Forces for printed snaps use the datasheet tensile modulus, which is higher than the secant
-  modulus at the design strain, so mating forces are conservative and retention forces optimistic.
+  modulus at the design strain, so mating forces are conservative and retention forces optimistic; the force rows
+  say so.
 - Hook-face geometry and mould release are not checked. CAD and calculation do not prove a joint: print it and
   measure.
 
@@ -105,5 +124,7 @@ PETG) the drop is smaller (to 78–100 %), but layer lines still act as notches,
 
 `tests/test_snapfit.py` reproduces the guide's worked examples — Example I (h 3.28 mm, P 32.5 N, W 58.5 N), Example II
 (ring-segment hook, y 2.11 mm) and the annular lamp cover (P 748 N, W 1346 N) — checks that every printed row matches
-the derived table in the research note, that direction changes the verdict for the same geometry, and that this page's
-YAML example runs.
+the derived table in the research note, that direction changes the verdict for the same geometry, that uncomputable
+limits, out-of-range inputs and unstated processes fail, the ring section against numerical integration (arcs up to
+360°), the torsion relations from first principles, and that this page's YAML example and printed table match the
+code. The stated elongation and strength ranges are checked against the datasheet rows too.

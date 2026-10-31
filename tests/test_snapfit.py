@@ -78,9 +78,9 @@ def test_check_fails_over_strain_and_sharp_root_and_passes_good_design():
     sec = sf.rect_section(9.5, 3.28)
     good = sf.check_cantilever(length=19, section=sec, undercut=2.4, design=2, strain_allow=pc.allowable(),
                                secant_mpa=1815, friction=0.6, lead_deg=30, return_deg=90, root_radius=1.0,
-                               max_mating_n=80, min_retention_n=50)
+                               max_mating_n=80)
     assert good["pass"], good["rows"]
-    assert math.isinf(good["separation_force_n"])
+    assert good["self_locking"] and good["separation_force_n"] is None
     bad = sf.check_cantilever(length=10, section=sec, undercut=2.4, design=1,
                               strain_allow=pc.allowable(repeated=True, process_factor=0.5), root_radius=0.2)
     assert not bad["pass"]
@@ -98,12 +98,12 @@ def test_spec_file_cli_and_fdm_needs_stated_layer_derating(tmp_path, capsys):
     import json as _json
     from cadagent.cli import main
     spec = {"snaps": [
-        {"name": "example-I", "length_mm": 19, "design": 2, "undercut_mm": 2.4, "material": "pc",
+        {"name": "example-I", "length_mm": 19, "design": 2, "undercut_mm": 2.4, "material": "pc", "process": "moulding",
          "section": {"rect": {"width_mm": 9.5, "thickness_mm": 3.28}}, "lead_deg": 30, "return_deg": 90,
          "root_radius_mm": 1.0},
         {"name": "printed-clip", "length_mm": 15, "design": 1, "undercut_mm": 1.0, "process": "fdm",
          "material": {"name": "PETG (datasheet)", "strain": 0.03, "source": "test value"},
-         "section": {"rect": {"width_mm": 6, "thickness_mm": 1.6}}},
+         "section": {"rect": {"width_mm": 6, "thickness_mm": 1.6}}, "root_radius_mm": 0.8},
     ]}
     p = tmp_path / "snaps.json"
     p.write_text(_json.dumps(spec))
@@ -111,11 +111,12 @@ def test_spec_file_cli_and_fdm_needs_stated_layer_derating(tmp_path, capsys):
     assert main(["snapfit", str(p), "--output", str(out)]) == 1
     res = _json.loads(out.read_text())
     assert res["snaps"][0]["pass"] and res["snaps"][0]["mating_force_n"] == pytest.approx(58.5, abs=0.5)
+    assert "Infinity" not in out.read_text() and res["snaps"][0]["self_locking"]
     assert not res["snaps"][1]["pass"]
     assert res["snaps"][1]["rows"][0]["check"] == "process derating"
     text = capsys.readouterr().out
     assert "PASS  example-I" in text and "FAIL  printed-clip" in text
-    spec["snaps"][1].update(orientation="bending along layers (arm printed flat)", process_factor=0.8,
+    spec["snaps"][1].update(orientation="along", process_factor=0.8,
                             process_source="coupon C-12, 2026-11-01")
     p.write_text(_json.dumps(spec))
     assert main(["snapfit", str(p)]) == 0
@@ -131,7 +132,7 @@ from cadagent.compliant import allowables as al
     ("pla-polymaker", 0.011, 0.009), ("pla-bambu-basic", 0.010, 0.010), ("petg-polymaker", 0.017, 0.016),
     ("petg-bambu-basic", 0.023, 0.023), ("petg-bambu-hf", 0.013, 0.010), ("asa-polymaker", 0.013, 0.008),
     ("asa-bambu", 0.015, 0.012), ("copa-polymaker-dry", 0.020, 0.0065), ("copa-polymaker-wet", 0.033, 0.0085),
-    ("pa6-cf20-polymaker-dry", 0.009, 0.009),
+    ("pa6-cf20-polymaker-dry", 0.008, 0.008),           # capped at moulded glass-filled PA66 (0.89 % derived)
 ])
 def test_printed_allowables_match_the_derived_table(name, along, across):
     pm = al.PRINTED[name]
@@ -173,7 +174,10 @@ def test_printed_snap_direction_decides():
     across = _printed_snap(material="copa-polymaker-dry", orientation="across", undercut_mm=0.9)
     assert along["strain"] == pytest.approx(across["strain"]) == pytest.approx(0.01306, abs=1e-4)
     assert along["pass"] and not across["pass"] and across["rows"][0]["check"] == "root strain"
-    assert along["material"]["secant_note"].startswith("datasheet tensile modulus")
+    assert along["material"]["secant_basis"].startswith("datasheet tensile modulus")
+    assert "upper bound" in [x for x in _printed_snap(material="copa-polymaker-dry", orientation="along",
+                                                       undercut_mm=0.5, max_mating_n=50)["rows"]
+                             if x["check"] == "mating force"][0]["detail"]
     assert along["deflection_force_n"] > across["deflection_force_n"]     # Z modulus is lower
 
 
@@ -198,3 +202,121 @@ def test_docs_page_example_runs_and_table_matches_the_code():
     for name, along, across in rows:
         assert al.PRINTED[name].allowable("along") * 100 == pytest.approx(float(along), abs=0.06), name
         assert al.PRINTED[name].allowable("across") * 100 == pytest.approx(float(across), abs=0.06), name
+
+
+# --------------------------------------------------------------------------- review of #105: nothing passes unchecked
+
+def _snap(**kw):
+    s = {"name": "s", "material": "pc", "process": "moulding", "length_mm": 19, "undercut_mm": 2.4, "design": 2,
+         "section": {"rect": {"width_mm": 9.5, "thickness_mm": 3.28}}, "lead_deg": 30, "return_deg": 45,
+         "root_radius_mm": 1.0}
+    s.update(kw)
+    return sf.check_spec_entry(s)
+
+
+@pytest.mark.parametrize("kw, missing", [
+    ({"material": "pc-blend"}, "secant_mpa"),                                     # no secant modulus in the guide
+    ({"material": "petg-polymaker", "process": "fdm", "orientation": "along", "undercut_mm": 0.3}, "friction"),
+    ({"lead_deg": None}, "lead_deg"),
+])
+def test_a_declared_force_limit_that_cannot_be_computed_fails(kw, missing):
+    r = _snap(max_mating_n=1, **kw)
+    row = [x for x in r["rows"] if x["check"] == "mating force"][0]
+    assert not r["pass"] and not row["pass"] and missing in row["detail"]
+
+
+def test_self_locking_retention_fails_closed():
+    r = _snap(return_deg=90, min_retention_n=10)
+    row = [x for x in r["rows"] if x["check"] == "retention force"][0]
+    assert not row["pass"] and "self-locking" in row["detail"]
+    assert _snap(return_deg=30, min_retention_n=10)["pass"]
+
+
+@pytest.mark.parametrize("kw", [
+    {"material": {"name": "x", "strain": 3, "source": "typo: meant 3 %"}},
+    {"process_factor": 5}, {"share": 0}, {"undercut_mm": -1}, {"design": 4}, {"lead_deg": 95},
+    {"length_mm": "long"}, {"repeated": "yes"}, {"process": "casting"},
+    {"section": {"rect": {"width_mm": 0, "thickness_mm": 2}}},
+])
+def test_out_of_range_inputs_are_errors_that_name_the_field(kw):
+    with pytest.raises(ValueError, match="snap 's'"):
+        _snap(**kw)
+
+
+def test_process_must_be_stated_and_layered_processes_need_derating():
+    r = _snap(process=None)
+    assert not r["pass"] and r["rows"][0]["check"] == "process"
+    for proc in ("FDM ", "sls", "mjf", "sla"):
+        r = _snap(process=proc)
+        assert not r["pass"] and r["rows"][0]["check"] == "process derating", proc
+    ok = _snap(process="mjf", orientation="along", process_factor=0.5, process_source="coupon M-3")
+    assert ok["material"]["allowable"] == pytest.approx(0.02)
+
+
+def test_secant_modulus_is_interpolated_at_the_root_strain():
+    assert sf.secant_at({0.02: 1815.0, 0.005: 2200.0}, 0.0042) == 2200.0
+    assert sf.secant_at({0.02: 1815.0, 0.005: 2200.0}, 0.0125) == pytest.approx(2007.5)
+    r = _snap(undercut_mm=0.5)                                    # 0.42 % root strain
+    assert r["material"]["secant_mpa"] == 2200.0 and "interpolated" in r["material"]["secant_basis"]
+
+
+def test_missing_root_radius_fails():
+    r = _snap(root_radius_mm=None)
+    assert not r["pass"] and [x for x in r["rows"] if x["check"] == "root radius"][0]["value"] is None
+
+
+def test_large_deflection_is_warned():
+    assert _snap()["warnings"]                                    # Example I: y/l = 0.13
+    assert not _snap(undercut_mm=1.0)["warnings"]
+
+
+def test_ring_section_concave_fibre_beyond_180_degrees():
+    import numpy as np
+    for arc in (120.0, 200.0, 300.0, 360.0):
+        sec = sf.ring_section(10.0, 12.0, arc, tension="concave")
+        th = math.radians(arc) / 2
+        n_r, n_a = 400, 4000                                      # midpoint rule
+        r, a = np.meshgrid(10 + (np.arange(n_r) + 0.5) * 2 / n_r, -th + (np.arange(n_a) + 0.5) * 2 * th / n_a)
+        y, w = r * np.cos(a), r                                   # polar area element r dr da
+        ybar = (y * w).sum() / w.sum()
+        assert sec.dims["ybar"] == pytest.approx(ybar, abs=1e-3)
+        y_min = min(10 * math.cos(th), 12 * math.cos(min(th, math.pi)))   # exact extreme fibre
+        assert sec.c == pytest.approx(ybar - y_min, abs=1e-3), arc
+        assert y.min() >= y_min - 1e-9 and y.min() == pytest.approx(y_min, abs=0.01)
+        assert sec.inertia == pytest.approx((((y - ybar) ** 2) * w).sum() / w.sum() * sec.area, rel=1e-3)
+
+
+def test_torsion_force_and_deflection_from_first_principles():
+    t = sf.torsion_snap(bar_length=10, bar_radius=1.5, strain=0.04, secant_mpa=2000, lever_mm=8, bars=2)
+    phi = math.radians(t["twist_deg"])
+    torque = (2000 / 2.7) * (math.pi * 1.5 ** 4 / 2) * phi / 10   # T = G Ip phi / L per bar
+    assert t["force_n"] == pytest.approx(2 * torque / 8)
+    assert t["deflection_mm"] == pytest.approx(8 * math.sin(phi))
+
+
+def test_annular_shaft_factor():
+    q = 1.2
+    expect = 0.62 * math.sqrt((q - 1) / (q + 1)) / ((q * q + 1) / (q * q - 1) - 0.35)
+    assert sf.annular_factor_shaft(12.0, 10.0) == pytest.approx(expect)
+    assert sf.annular_factor_shaft(12.0, 10.0) > sf.annular_factor_hub(12.0, 10.0)   # the -nu term
+
+
+def test_bad_yaml_is_exit_2(tmp_path):
+    from cadagent.cli import main
+    p = tmp_path / "s.yaml"
+    p.write_text("snaps: [ {name: a, length_mm: 3")
+    assert main(["snapfit", str(p)]) == 2
+    p.write_text("snaps:\n  - name: a\n")
+    assert main(["snapfit", str(p)]) == 2
+
+
+def test_docs_ranges_match_the_datasheets():
+    # the living page's stated across/along ranges for PLA, PETG, ASA and CoPA come from the PRINTED rows
+    from pathlib import Path
+    doc = (Path(__file__).resolve().parents[1] / "docs" / "compliant.md").read_text()
+    rows = [v for k, v in al.PRINTED.items() if not k.startswith("pa6-cf")]
+    strength = [v.uts_mpa[1] / v.uts_mpa[0] for v in rows]
+    elong = [v.break_pct[1] / v.break_pct[0] for v in rows]
+    stated = f"{round(min(strength) * 100)}–{round(max(strength) * 100)} % of the in-plane strength but only " \
+             f"{round(min(elong) * 100)}–{round(max(elong) * 100)} % of the elongation"
+    assert " ".join(doc.split()).count(stated) == 1, stated

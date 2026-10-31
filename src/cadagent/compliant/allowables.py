@@ -2,9 +2,11 @@
 
 The moulding guides (Covestro/Bayer, DuPont, BASF) give permissible strains for injection-moulded resin. A printed part
 is weaker across its layers than along them, and much more so in **strain to failure** than in strength: across the
-layers the datasheets below keep 59-90 % of the in-plane strength but only 10-61 % of the in-plane elongation at break
+layers the datasheets below keep 40-90 % of the in-plane strength but only 10-61 % of the in-plane elongation at break
 (Allum et al., Addit. Manuf. 34 (2020) 101297: the inter-layer bond reaches bulk strength; the grooves between
-filaments act as notches). Snap fits are limited by strain, so the direction matters more than strength data suggest.
+filaments act as notches). Those ranges are for PLA, PETG, ASA and CoPA; carbon-filled PA6 keeps 90-96 % of its
+elongation, because the fibre already limits it in-plane. Snap fits are limited by strain, so the direction matters
+more than strength data suggest.
 
 **Rule** (derived; research/compliant-mechanisms.md section 6). For each direction, from the datasheet values:
 
@@ -33,6 +35,8 @@ STATUS = "derived from the datasheet; a hypothesis until a printed coupon is mea
 _PM = "https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/"
 _AX = "https://www.additive-x.com/shop/mpattachments/file/viewonline/id/{}/product_id/{}"
 _DUP_PA66 = "DuPont, General Design Principles - Module I, Table 10.06 (Zytel 101 PA66)"
+_DUP_PAGF = ("DuPont, General Design Principles - Module I, Table 10.06 (Zytel GR glass-filled PA66, lower end); "
+             "the nearest moulded family for fibre-filled nylon")
 
 
 @dataclass(frozen=True)
@@ -116,16 +120,18 @@ PRINTED: Dict[str, PrintedMaterial] = {
                                           cap_source=_DUP_PA66 + ", dry", friction=0.35, friction_same_factor=1.5),
     "copa-polymaker-wet": PrintedMaterial("Polymaker PolyMide CoPA (wet)", "Polymaker TDS V5.4 " + _PM
                                           + "nylon/polymide-tm-copa", (724, 660), (34.3, 13.7), (13.2, 1.7),
-                                          condition="conditioned, 6.16 % moisture", moulded_cap=0.06,
+                                          condition="water-saturated (6.16 % moisture)", moulded_cap=0.06,
                                           cap_source=_DUP_PA66 + ", 50 % RH", friction=0.35, friction_same_factor=1.5),
     "pa6-cf20-polymaker-dry": PrintedMaterial("Polymaker Fiberon PA6-CF20 (dry)", "Polymaker TDS V1.1 "
                                               "https://cdn.shopify.com/s/files/1/0548/7299/7945/files/"
                                               "TDS_FIBERON_PA6-CF20_V1.1_EN.pdf", (8637, 3760), (109.3, 54.0),
                                               (2.1, 1.9), condition="dry, annealed 100 degC / 16 h",
+                                              moulded_cap=0.008, cap_source=_DUP_PAGF + ", dry",
                                               friction=0.35, friction_same_factor=1.5),
     "pa6-cf20-polymaker-wet": PrintedMaterial("Polymaker Fiberon PA6-CF20 (wet)", "Polymaker TDS V1.1 "
                                               "https://cdn.shopify.com/s/files/1/0548/7299/7945/files/"
                                               "TDS_FIBERON_PA6-CF20_V1.1_EN.pdf", (2508, 1056), (54.7, 25.5),
-                                              (7.0, 6.7), condition="conditioned", friction=0.35,
-                                              friction_same_factor=1.5),
+                                              (7.0, 6.7), condition="water-saturated", moulded_cap=0.015,
+                                              cap_source=_DUP_PAGF + ", 50 % RH (the nearest stated condition)",
+                                              friction=0.35, friction_same_factor=1.5),
 }

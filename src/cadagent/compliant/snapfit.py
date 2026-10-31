@@ -36,8 +36,11 @@ LIMITS = (
     "one mating part assumed rigid unless share < 1 is given",
     "permissible strain and secant modulus are the caller's inputs; values in MATERIALS are guide data, not "
     "measurements of a particular batch or print",
-    "a printed part's inter-layer strength and strain are lower than in-plane; pass a sourced process_factor and "
-    "orient arms so bending stress runs along the layers",
+    "a printed part's inter-layer strength and strain are lower than in-plane: the datasheet filaments carry this per "
+    "direction; any other material in a layered process needs a sourced process_factor",
+    "a pass has no extra margin: the guide's own examples design to half the permissible strain",
+    "small deflection is assumed: when the deflection exceeds about a tenth of the arm length a warning is given "
+    "and the closed form overestimates force and strain accuracy",
     "hook-face geometry, wall deflection at the root and mould release are not checked",
     "the model, not the part: print a coupon and measure the force and the strain at failure",
 )
@@ -151,7 +154,10 @@ def ring_section(r_inner: float, r_outer: float, arc_deg: float, tension: str = 
     i_origin = (r_outer ** 4 - r_inner ** 4) / 8.0 * (2 * th + math.sin(2 * th))
     inertia = i_origin - area * ybar ** 2
     c_convex = r_outer - ybar
-    c_concave = ybar - r_inner * math.cos(th)
+    # lowest fibre along the symmetry axis: the inner arc ends up to a half-angle of 90 deg, then the outer arc ends,
+    # and the far side of the ring (-r_outer) for a full ring
+    y_min = r_inner * math.cos(th) if th <= math.pi / 2 else r_outer * math.cos(min(th, math.pi))
+    c_concave = ybar - y_min
     if tension not in ("convex", "concave"):
         raise ValueError("tension must be 'convex' or 'concave'")
     c, other = (c_convex, c_concave) if tension == "convex" else (c_concave, c_convex)
@@ -163,7 +169,7 @@ def ring_section(r_inner: float, r_outer: float, arc_deg: float, tension: str = 
 # Table 1 deflection factors: y = k * eps * l^2 / c for any section (shape D), by design:
 #   1 constant section; 2 thickness tapering linearly to h/2 at the hook; 3 width tapering to b/4 at the hook.
 # For a rectangle (c = h/2) these are the guide's 0.67, 1.09 and 0.86 * eps * l^2 / h.
-DESIGN_K = {1: 0.33, 2: 0.55, 3: 0.43}
+DESIGN_K = {1: 1.0 / 3.0, 2: 0.55, 3: 0.43}   # as printed: 1/3, 0.55, 0.43
 DESIGN_K_RECT = {1: 0.67, 2: 1.09, 3: 0.86}
 
 
@@ -259,149 +265,245 @@ def check_cantilever(*, length: float, section: Section, undercut: float, strain
                      lead_deg: Optional[float] = None, return_deg: Optional[float] = None,
                      root_radius: Optional[float] = None, share: float = 1.0,
                      max_mating_n: Optional[float] = None, min_retention_n: Optional[float] = None,
-                     name: str = "snap") -> Dict[str, Any]:
+                     name: str = "snap", modulus_note: Optional[str] = None) -> Dict[str, Any]:
     """Deterministic pass/fail rows for one cantilever snap. ``strain_allow`` already includes repeated-use and
-    process derating (see :meth:`Material.allowable`)."""
+    process derating (see :meth:`Material.allowable`). Every declared limit gives a row: one that cannot be computed
+    (missing secant modulus, friction or angle; a self-locking hook's retention) fails and says what is missing, and
+    a missing root radius fails, so nothing passes unchecked."""
+    _require(length > 0 and undercut > 0, f"{name}: length and undercut must be positive")
+    _require(0 < strain_allow <= 0.5, f"{name}: allowable strain {strain_allow!r} is not a fraction (0.03 = 3 %)")
+    _require(0 < share <= 1, f"{name}: share must be in (0, 1]")
+    _require(design in DESIGN_K, f"{name}: design must be 1, 2 or 3")
     y = undercut * share
     eps = root_strain(section, length, y, design)
     rows: List[Dict[str, Any]] = [{
         "check": "root strain", "value": eps, "limit": strain_allow, "pass": eps <= strain_allow,
         "detail": f"{eps * 100:.2f} % at {y:.3f} mm deflection vs {strain_allow * 100:.2f} % allowed"}]
     h = section.c + section.c_other
-    if root_radius is not None:
+    if root_radius is None:
+        rows.append({"check": "root radius", "value": None, "limit": MIN_ROOT_RADIUS_MM, "pass": False,
+                     "detail": "not stated: give root_radius_mm (at least 0.38 mm; R/h 0.6 is the target)"})
+    else:
         rows.append({"check": "root radius", "value": root_radius, "limit": MIN_ROOT_RADIUS_MM,
                      "pass": root_radius >= MIN_ROOT_RADIUS_MM,
                      "detail": f"R {root_radius:.2f} mm (minimum 0.38 mm); R/h {root_radius / h:.2f}"
                                + ("" if root_radius / h >= TARGET_ROOT_RATIO else
                                   f" below {TARGET_ROOT_RATIO}: the root concentrates strain (Fig. 9)")})
-    out: Dict[str, Any] = {"name": name, "strain": eps, "deflection_mm": y, "rows": rows}
-    if secant_mpa is not None:
-        p = deflection_force(section, length, eps, secant_mpa)
+    out: Dict[str, Any] = {"name": name, "strain": eps, "deflection_mm": y, "rows": rows, "warnings": []}
+    if y / length > 0.1:
+        out["warnings"].append(f"deflection {y:.2f} mm is {y / length:.2f} of the arm length: beyond small "
+                               "deflection; confirm with large-deflection FEA or a coupon")
+    p = deflection_force(section, length, eps, secant_mpa) if secant_mpa is not None else None
+    if p is not None:
         out["deflection_force_n"] = p
-        if friction is not None and lead_deg is not None:
-            w = mating_force(p, friction, lead_deg)
-            out["mating_force_n"] = w
-            if max_mating_n is not None:
-                rows.append({"check": "mating force", "value": w, "limit": max_mating_n, "pass": w <= max_mating_n,
-                             "detail": f"{w:.1f} N to assemble vs {max_mating_n:.1f} N allowed"})
-        if friction is not None and return_deg is not None:
-            s = mating_force(p, friction, return_deg)
-            out["separation_force_n"] = s
-            if min_retention_n is not None:
-                rows.append({"check": "retention force", "value": s, "limit": min_retention_n,
-                             "pass": s >= min_retention_n,
-                             "detail": ("self-locking (inseparable by pulling)" if math.isinf(s) else
-                                        f"{s:.1f} N to pull apart") + f" vs {min_retention_n:.1f} N required"})
+    suffix = f" ({modulus_note})" if modulus_note else ""
+
+    def missing(angle_name: str, angle: Optional[float]) -> List[str]:
+        return [k for k, v in (("secant_mpa", secant_mpa), ("friction", friction), (angle_name, angle)) if v is None]
+
+    if p is not None and friction is not None and lead_deg is not None:
+        out["mating_force_n"] = mating_force(p, friction, lead_deg)
+    if max_mating_n is not None:
+        if "mating_force_n" in out:
+            w = out["mating_force_n"]
+            rows.append({"check": "mating force", "value": w, "limit": max_mating_n, "pass": w <= max_mating_n,
+                         "detail": f"{w:.1f} N to assemble vs {max_mating_n:.1f} N allowed" + suffix})
+        else:
+            rows.append({"check": "mating force", "value": None, "limit": max_mating_n, "pass": False,
+                         "detail": "not computed: missing " + ", ".join(missing("lead_deg", lead_deg))})
+    if p is not None and friction is not None and return_deg is not None:
+        s = mating_force(p, friction, return_deg)
+        out["self_locking"] = math.isinf(s)
+        out["separation_force_n"] = None if math.isinf(s) else s
+    if min_retention_n is not None:
+        if out.get("self_locking"):
+            rows.append({"check": "retention force", "value": None, "limit": min_retention_n, "pass": False,
+                         "detail": "self-locking: pulling cannot release it, so retention is the hook's own shear or "
+                                   "bending strength, which this method does not compute; check it by FEA or a pull "
+                                   "test, or drop min_retention_n"})
+        elif "separation_force_n" in out:
+            s = out["separation_force_n"]
+            rows.append({"check": "retention force", "value": s, "limit": min_retention_n,
+                         "pass": s >= min_retention_n,
+                         "detail": f"{s:.1f} N to pull apart vs {min_retention_n:.1f} N required" + suffix})
+        else:
+            rows.append({"check": "retention force", "value": None, "limit": min_retention_n, "pass": False,
+                         "detail": "not computed: missing " + ", ".join(missing("return_deg", return_deg))})
     out["pass"] = all(r["pass"] for r in rows)
     out["limits"] = list(LIMITS)
     out["method"] = GUIDE
     return out
 
 
+def _require(ok: bool, message: str) -> None:
+    if not ok:
+        raise ValueError(message)
+
+
 # ----------------------------------------------------------------------------- spec files
 
-LAYERED_PROCESSES = ("fdm", "fff")
+PROCESSES = {"moulding": "moulded", "molding": "moulded", "injection-moulding": "moulded",
+             "injection-molding": "moulded", "fdm": "layered", "fff": "layered", "sla": "layered", "sls": "layered",
+             "mjf": "layered"}
+LAYERED_PROCESSES = tuple(k for k, v in PROCESSES.items() if v == "layered")
 
 
-def _material(spec: Dict[str, Any]) -> Material:
+def _num(spec: Dict[str, Any], key: str, name: str, *, required: bool = False, gt: Optional[float] = None,
+         ge: Optional[float] = None, le: Optional[float] = None, lt: Optional[float] = None,
+         default: Optional[float] = None, hint: str = "") -> Optional[float]:
+    """A number from a declaration, range-checked, with an error that names the snap and the field."""
+    if spec.get(key) is None:
+        if required:
+            raise ValueError(f"snap {name!r}: missing {key}")
+        return default
+    raw = spec[key]
+    if isinstance(raw, bool):
+        raise ValueError(f"snap {name!r}: {key} must be a number, not {raw!r}")
+    try:
+        v = float(raw)
+    except (TypeError, ValueError):
+        raise ValueError(f"snap {name!r}: {key} must be a number, not {raw!r}") from None
+    bad = ((gt is not None and not v > gt) or (ge is not None and not v >= ge) or (le is not None and not v <= le)
+           or (lt is not None and not v < lt) or not math.isfinite(v))
+    if bad:
+        rng = ", ".join(f"{op} {b:g}" for op, b in ((">", gt), (">=", ge), ("<=", le), ("<", lt)) if b is not None)
+        raise ValueError(f"snap {name!r}: {key} = {v:g} is out of range ({rng}){hint}")
+    return v
+
+
+def _material(spec: Dict[str, Any], name: str) -> Material:
     m = spec.get("material")
     if isinstance(m, str):
         if m not in MATERIALS:
-            raise ValueError(f"unknown material {m!r}; moulded: {', '.join(sorted(MATERIALS))}; printed: "
-                             f"{', '.join(sorted(PRINTED))}; or give "
-                             "{strain, source, secant_mpa, friction}")
+            raise ValueError(f"snap {name!r}: unknown material {m!r}; moulded: {', '.join(sorted(MATERIALS))}; "
+                             f"printed: {', '.join(sorted(PRINTED))}; or give {{name, strain, source, secant_mpa, "
+                             "friction}}")
         return MATERIALS[m]
-    if not isinstance(m, dict) or "strain" not in m or not m.get("source"):
-        raise ValueError("material must be a known name or a mapping with strain (fraction) and source")
-    secant = {float(m["strain"]): float(m["secant_mpa"])} if "secant_mpa" in m else {}
-    return Material(m.get("name", "custom"), float(m["strain"]), str(m["source"]), friction=m.get("friction"),
-                    secant_mpa=secant)
+    if not isinstance(m, dict) or not m.get("source"):
+        raise ValueError(f"snap {name!r}: material must be a known name or a mapping with strain (a fraction) and "
+                         "source")
+    frac = " (a fraction: 0.03 = 3 %)"
+    strain = _num(m, "strain", name, required=True, gt=0, le=0.5, hint=frac)
+    secant = _num(m, "secant_mpa", name, gt=0)
+    return Material(str(m.get("name", "custom")), strain, str(m["source"]),
+                    friction=_num(m, "friction", name, ge=0, le=1.5),
+                    secant_mpa={strain: secant} if secant is not None else {})
 
 
-def _section(spec: Dict[str, Any]) -> Section:
-    s = spec.get("section") or {}
-    if "rect" in s:
-        return rect_section(float(s["rect"]["width_mm"]), float(s["rect"]["thickness_mm"]))
-    if "ring" in s:
+def _section(spec: Dict[str, Any], name: str) -> Section:
+    s = spec.get("section")
+    if isinstance(s, dict) and isinstance(s.get("rect"), dict):
+        r = s["rect"]
+        return rect_section(_num(r, "width_mm", name, required=True, gt=0),
+                            _num(r, "thickness_mm", name, required=True, gt=0))
+    if isinstance(s, dict) and isinstance(s.get("ring"), dict):
         r = s["ring"]
-        return ring_section(float(r["r_inner_mm"]), float(r["r_outer_mm"]), float(r["arc_deg"]),
-                            r.get("tension", "convex"))
-    raise ValueError("section must be {rect: {width_mm, thickness_mm}} or {ring: {r_inner_mm, r_outer_mm, arc_deg}}")
+        return ring_section(_num(r, "r_inner_mm", name, required=True, gt=0),
+                            _num(r, "r_outer_mm", name, required=True, gt=0),
+                            _num(r, "arc_deg", name, required=True, gt=0, le=360), r.get("tension", "convex"))
+    raise ValueError(f"snap {name!r}: section must be {{rect: {{width_mm, thickness_mm}}}} or "
+                     "{ring: {r_inner_mm, r_outer_mm, arc_deg}}")
+
+
+def secant_at(points: Dict[float, float], strain: float) -> float:
+    """Secant modulus at ``strain`` from (strain -> Es) points: linear between points, the end value outside them."""
+    pts = sorted(points.items())
+    if strain <= pts[0][0]:
+        return pts[0][1]
+    for (e0, s0), (e1, s1) in zip(pts, pts[1:]):
+        if strain <= e1:
+            return s0 + (s1 - s0) * (strain - e0) / (e1 - e0)
+    return pts[-1][1]
 
 
 def check_spec_entry(spec: Dict[str, Any]) -> Dict[str, Any]:
-    """One cantilever snap from a declaration (see docs/compliant.md for the fields). A part made in layers (FDM)
-    must state its build orientation relative to the arm's bending stress and a sourced ``process_factor``; a missing
-    one fails, so layer lines are never forgotten."""
+    """One cantilever snap from a declaration (see docs/compliant.md for the fields). Inputs are range-checked (a
+    ValueError names the snap and field). The process must be stated; a layered part needs its orientation (and,
+    unless it is a datasheet filament, a sourced ``process_factor``); a missing one is a failing row, so layer lines
+    are never forgotten."""
+    if not isinstance(spec, dict):
+        raise ValueError(f"each snap must be a mapping, not {spec!r}")
+    name = str(spec.get("name", "snap"))
     if spec.get("type", "cantilever") != "cantilever":
-        raise ValueError("only cantilever snaps are declared in files so far; use the Python API for torsion/annular")
-    if isinstance(spec.get("material"), str) and spec["material"] in PRINTED:
-        return _check_printed(spec, PRINTED[spec["material"]])
-    mat = _material(spec)
-    process = str(spec.get("process", "")).lower()
-    pf = spec.get("process_factor")
-    extra: List[Dict[str, Any]] = []
-    if process in LAYERED_PROCESSES and (pf is None or not spec.get("process_source") or not spec.get("orientation")):
-        extra.append({"check": "process derating", "value": pf, "limit": "stated", "pass": False,
-                      "detail": "a layered (FDM) part needs orientation (bending along or across layers), "
-                                "process_factor and process_source"})
-    allow = mat.allowable(bool(spec.get("repeated", False)), float(pf) if pf is not None else 1.0)
-    secant = spec.get("secant_mpa")
-    if secant is None and mat.secant_mpa:
-        target = allow
-        secant = min(mat.secant_mpa.items(), key=lambda kv: abs(kv[0] - target))[1]
-    friction = spec.get("friction", mat.mu(bool(spec.get("same_material", True))))
-    r = check_cantilever(length=float(spec["length_mm"]), section=_section(spec), undercut=float(spec["undercut_mm"]),
-                         strain_allow=allow, design=int(spec.get("design", 1)), secant_mpa=secant, friction=friction,
-                         lead_deg=spec.get("lead_deg"), return_deg=spec.get("return_deg"),
-                         root_radius=spec.get("root_radius_mm"), share=float(spec.get("share", 1.0)),
-                         max_mating_n=spec.get("max_mating_n"), min_retention_n=spec.get("min_retention_n"),
-                         name=str(spec.get("name", "snap")))
-    r["rows"] = extra + r["rows"]
-    r["pass"] = all(row["pass"] for row in r["rows"])
-    r["material"] = {"name": mat.name, "strain": mat.strain, "source": mat.source, "allowable": allow,
-                     "repeated": bool(spec.get("repeated", False)), "process": process or None,
-                     "orientation": spec.get("orientation"), "process_factor": pf,
-                     "process_source": spec.get("process_source")}
-    return r
-
-
-def _check_printed(spec: Dict[str, Any], pm: PrintedMaterial) -> Dict[str, Any]:
-    """A cantilever printed in a datasheet filament: the allowable comes from the datasheet for the stated direction
-    (see :mod:`cadagent.compliant.allowables`), so no process_factor is needed, but the orientation is."""
-    process = str(spec.get("process", "fdm")).lower()
-    orientation = spec.get("orientation")
+        raise ValueError(f"snap {name!r}: only cantilever snaps are declared in files so far; use the Python API "
+                         "for torsion and annular joints")
+    for flag in ("repeated", "same_material"):
+        if flag in spec and not isinstance(spec[flag], bool):
+            raise ValueError(f"snap {name!r}: {flag} must be true or false")
+    printed = PRINTED.get(spec["material"]) if isinstance(spec.get("material"), str) else None
+    length = _num(spec, "length_mm", name, required=True, gt=0)
+    undercut = _num(spec, "undercut_mm", name, required=True, gt=0)
+    share = _num(spec, "share", name, gt=0, le=1, default=1.0)
+    design = spec.get("design", 1)
+    if design not in DESIGN_K:
+        raise ValueError(f"snap {name!r}: design must be 1, 2 or 3, not {design!r}")
+    pf = _num(spec, "process_factor", name, gt=0, le=1, hint=": a derating cannot raise the allowable")
+    section = _section(spec, name)
     repeated = bool(spec.get("repeated", False))
+    raw_process = spec.get("process")
+    process = str(raw_process).strip().lower() if raw_process is not None else ("fdm" if printed else "")
     extra: List[Dict[str, Any]] = []
-    if process not in LAYERED_PROCESSES:
-        raise ValueError(f"{pm.name} is a filament datasheet; process must be fdm, not {process!r}")
-    if orientation not in DIRECTIONS:
-        extra.append({"check": "print orientation", "value": orientation, "limit": "stated", "pass": False,
-                      "detail": "state orientation: 'along' (bending stress along the layers, arm lies in XY) or "
-                                "'across' (arm built along Z); checked here as 'across'"})
-        orientation = "across"
-    allow = pm.allowable(orientation, repeated) * float(spec.get("process_factor", 1.0))
-    secant = spec.get("secant_mpa")
-    secant_note = None
-    if secant is None:
-        secant = pm.secant_upper_bound(orientation)
-        secant_note = "datasheet tensile modulus: forces are upper bounds (retention optimistic); measure a coupon"
-    friction = spec.get("friction", pm.mu(bool(spec.get("same_material", True))))
-    r = check_cantilever(length=float(spec["length_mm"]), section=_section(spec), undercut=float(spec["undercut_mm"]),
-                         strain_allow=allow, design=int(spec.get("design", 1)), secant_mpa=secant, friction=friction,
-                         lead_deg=spec.get("lead_deg"), return_deg=spec.get("return_deg"),
-                         root_radius=spec.get("root_radius_mm"), share=float(spec.get("share", 1.0)),
-                         max_mating_n=spec.get("max_mating_n"), min_retention_n=spec.get("min_retention_n"),
-                         name=str(spec.get("name", "snap")))
+    if process and process not in PROCESSES:
+        raise ValueError(f"snap {name!r}: unknown process {process!r}; one of {', '.join(PROCESSES)}")
+    eps = root_strain(section, length, undercut * share, design)
+    modulus_note = None
+    if printed is not None:
+        if PROCESSES.get(process) != "layered" or process not in ("fdm", "fff"):
+            raise ValueError(f"snap {name!r}: {printed.name} is a filament datasheet; process must be fdm")
+        orientation = spec.get("orientation")
+        if orientation not in DIRECTIONS:
+            extra.append({"check": "print orientation", "value": orientation, "limit": "stated", "pass": False,
+                          "detail": "state orientation: 'along' (bending stress along the layers, arm lies in XY) "
+                                    "or 'across' (arm built along Z); checked here as 'across'"})
+            orientation = "across"
+        allow = printed.allowable(orientation, repeated) * (pf if pf is not None else 1.0)
+        secant = _num(spec, "secant_mpa", name, gt=0)
+        secant_basis = "given"
+        if secant is None:
+            secant = printed.secant_upper_bound(orientation)
+            secant_basis = "datasheet tensile modulus (an upper bound on the secant modulus)"
+            modulus_note = "upper bound: datasheet modulus"
+        friction = _num(spec, "friction", name, ge=0, le=1.5, default=printed.mu(spec.get("same_material", True)))
+        material = dict(printed.derivation(orientation, repeated), allowable=allow, process=process,
+                        process_factor=pf, secant_mpa=secant, secant_basis=secant_basis)
+    else:
+        mat = _material(spec, name)
+        if not process:
+            extra.append({"check": "process", "value": None, "limit": "stated", "pass": False,
+                          "detail": f"state process ({', '.join(PROCESSES)}): a printed part is weaker across its "
+                                    "layers than the moulded data assume"})
+        elif PROCESSES[process] == "layered" and (pf is None or not spec.get("process_source")
+                                                  or spec.get("orientation") not in DIRECTIONS):
+            extra.append({"check": "process derating", "value": pf, "limit": "stated", "pass": False,
+                          "detail": f"a {process} part in a moulding-guide material needs orientation (along or "
+                                    "across the layers), process_factor and process_source"})
+        allow = mat.allowable(repeated, pf if pf is not None else 1.0)
+        secant = _num(spec, "secant_mpa", name, gt=0)
+        secant_basis = "given"
+        if secant is None and mat.secant_mpa:
+            secant = secant_at(mat.secant_mpa, eps)
+            secant_basis = f"interpolated at the root strain {eps * 100:.2f} % from the guide's points"
+        friction = _num(spec, "friction", name, ge=0, le=1.5, default=mat.mu(spec.get("same_material", True)))
+        material = {"name": mat.name, "strain": mat.strain, "source": mat.source, "allowable": allow,
+                    "repeated": repeated, "process": process or None, "orientation": spec.get("orientation"),
+                    "process_factor": pf, "process_source": spec.get("process_source"), "secant_mpa": secant,
+                    "secant_basis": secant_basis if secant is not None else None}
+    r = check_cantilever(length=length, section=section, undercut=undercut, strain_allow=allow, design=design,
+                         secant_mpa=secant, friction=friction,
+                         lead_deg=_num(spec, "lead_deg", name, gt=0, lt=90),
+                         return_deg=_num(spec, "return_deg", name, gt=0, le=90),
+                         root_radius=_num(spec, "root_radius_mm", name, ge=0), share=share,
+                         max_mating_n=_num(spec, "max_mating_n", name, gt=0),
+                         min_retention_n=_num(spec, "min_retention_n", name, gt=0), name=name,
+                         modulus_note=modulus_note)
     r["rows"] = extra + r["rows"]
     r["pass"] = all(row["pass"] for row in r["rows"])
-    r["material"] = dict(pm.derivation(orientation, repeated), allowable=allow, process="fdm",
-                         process_factor=spec.get("process_factor"), secant_mpa=secant, secant_note=secant_note)
+    r["material"] = material
     return r
 
 
-def check_spec(data: Dict[str, Any]) -> Dict[str, Any]:
-    snaps = data.get("snaps")
+def check_spec(data: Any) -> Dict[str, Any]:
+    snaps = data.get("snaps") if isinstance(data, dict) else None
     if not isinstance(snaps, list) or not snaps:
         raise ValueError("the file needs a non-empty 'snaps' list")
     results = [check_spec_entry(s) for s in snaps]

@@ -793,20 +793,27 @@ def cmd_snapfit(args: argparse.Namespace) -> int:
     text = Path(args.spec).read_text()
     if str(args.spec).endswith((".yaml", ".yml")):
         import yaml
-        data = yaml.safe_load(text)
+        try:
+            data = yaml.safe_load(text)
+        except yaml.YAMLError as exc:
+            raise ValueError(f"{args.spec} is not valid YAML: {exc}") from None
     else:
         data = json.loads(text)
     result = snapfit.check_spec(data)
     for snap in result["snaps"]:
         forces = ", ".join(f"{k.replace('_n', '').replace('_', ' ')} {v:.1f} N" for k, v in snap.items()
-                           if k.endswith("_force_n") and v != float("inf"))
+                           if k.endswith("_force_n") and v is not None)
+        if snap.get("self_locking"):
+            forces += ("; " if forces else "") + "self-locking"
         _say(f"{'PASS' if snap['pass'] else 'FAIL'}  {snap['name']}: root strain {snap['strain'] * 100:.2f} % "
              f"(allowed {snap['material']['allowable'] * 100:.2f} %)" + (f"; {forces}" if forces else ""))
         for row in snap["rows"]:
             if not row["pass"]:
                 _say(f"      {row['check']}: {row['detail']}")
+        for warning in snap.get("warnings", []):
+            _say(f"      warning: {warning}")
     if args.output:
-        Path(args.output).write_text(json.dumps(result, indent=2, default=str) + "\n")
+        Path(args.output).write_text(json.dumps(result, indent=2, default=str, allow_nan=False) + "\n")
     return 0 if result["pass"] else 1
 
 

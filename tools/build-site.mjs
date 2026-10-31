@@ -141,6 +141,11 @@ for (const f of tracked.filter(f => /^docs\/img\/.*\.(svg|png|jpe?g|gif|webp)$/i
 const TYPE_LABEL = { tool: 'cad-agent tools', upstream: 'Agentic CAD projects we track', library: 'Libraries', benchmark: 'Benchmarks',
   doc: 'Docs', skill: 'Skills', agent: 'Subagents', lesson: 'Lessons (pitfalls)', research: 'Research' };
 const STATUS_NOTE = { ours: 'built here', adopted: 'adopted', trial: 'in trial', candidate: 'candidate', rejected: 'rejected', used: 'used', reference: 'reference' };
+// Living pages: one per topic. Sources, the condensed method, examples, and the tested tool agents call.
+const LIVING = [
+  { file: 'docs/compliant.md', name: 'Snap fits', summary: 'Covestro and DuPont guides plus 13 filament datasheets, condensed into cad-agent snapfit: tested against the guide\'s worked examples, with allowable strain by print direction.' },
+  { file: 'docs/common-issues.md', name: 'CAD pitfalls and their checks', summary: 'Recurring review findings from Gyropup and J501 (a rib inside a countersink, blocked holes, bridges), each with the automated check that catches it.' },
+];
 const card = i => `<li class="card" data-type="${esc(i.type)}" data-text="${esc((i.name + ' ' + (i.summary || '') + ' ' + (i.license || '')).toLowerCase())}">
 <a href="${esc(i.url)}"><span class="card-name">${esc(i.name)}</span></a>
 <span class="pill pill-${esc(i.status)}">${esc(STATUS_NOTE[i.status] || i.status)}</span>${i.license ? `<span class="pill">${esc(i.license)}</span>` : ''}${i.stars ? `<span class="pill">★ ${Number(i.stars).toLocaleString('en-US')}</span>` : ''}
@@ -182,6 +187,8 @@ const landing = `<div class="wrap"><section class="hero"><div class="hero-copy">
 </div></section>
 <section class="section" style="padding-top:0"><div class="lead"><h2>Skills your agents <span>can load.</span></h2><p>Claude Code and Codex install them with <code>cad-agent agents install</code>. Work survives crashes, reviews are independent, heavy runs go to compute hosts.</p></div>
 <ul class="cards">${skillCards.map(p => card({ type: p.section, status: 'ours', name: p.title, summary: p.summary, url: pageURL(p.file), markdown: '/' + p.file })).join('')}</ul></section>
+<section class="section" style="padding-top:0"><div class="lead"><h2>Living pages, <span>not link lists.</span></h2><p>One page per topic, built on the best sources anyone has published (design guides, datasheets, papers, other people's agent skills and repos) and on our own project history. Each page gives the method condensed with citations, worked examples you can see, and the tool an agent calls to do the work itself, with tests that fail if the page and the tool drift apart. Fewer tool calls and tokens spent re-deriving what is already known.</p></div>
+<ul class="cards">${LIVING.filter(l => pages.some(p => p.file === l.file)).map(l => card({ type: 'living', status: 'living page', name: l.name, summary: l.summary, url: pageURL(l.file), markdown: '/' + l.file })).join('')}${card({ type: 'living', status: 'next', name: 'Flexures, living hinges, bistable latches', summary: 'Same pattern: guides and papers, equations with their test cases, process and print-direction limits.', url: REPO + '/issues/94' })}</ul></section>
 <section class="band-green"><div><p class="eyebrow">Growing next</p><h2>Demos for <span>every capability.</span></h2><p>Each tool and research area gets a live demo here: animated snap-fit and flexure libraries, FEA and topology results in the 3D viewer, rendered diagrams, geometry that refines itself to save material.</p></div>
 <ul><li><a href="${REPO}/issues/94">Compliant-mechanism engineer</a>: snap fits, living hinges and flexures sized for the process, layer lines included</li>
 <li><a href="${REPO}/issues/107">Self-refining geometry</a>: declare mounts, keep-outs and loads; iterate to lighter printable parts</li>

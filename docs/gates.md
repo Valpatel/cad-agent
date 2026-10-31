@@ -9,6 +9,29 @@ they read come from the dossier ([`dossier.md`](dossier.md)).
 prove that printed parts fit, move or hold: no tolerance stack, no print shrink, no deflection. Every verdict says
 `physical_fit_verified: false` and lists its assumptions.
 
+```mermaid
+flowchart LR
+    B["build()<br/>geometry record"] --> T["relation table<br/>every part pair, cached"]
+    D["dossier<br/>declared intent"] --> G
+    T --> G
+    subgraph G["gates"]
+        W["wall"]
+        C["connectivity"]
+        K["containment"]
+        F["fasteners"]
+        M["motion"]
+        A["assembly access"]
+    end
+    G -->|"one each"| V["verdict files<br/>exports/gates/*.json"]
+    V --> S["cad-agent check,<br/>report, review site"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class T,W,C,K,F,M,A here
+    class B,D near
+    class V,S out
+```
+
 Status: the shared machinery (T3), the minimum-wall gate (T8), the connectivity gate (T4), the containment gate (T5),
 the fastener gate (T6), the motion gate (T7), the assembly-access gate (T9), the gate bench (T12), the dossier lint
 (T2, [`dossier.md`](dossier.md#lint-and-status)), the `cad-agent gates` command with its `check` and report rows

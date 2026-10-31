@@ -52,6 +52,21 @@ with the check that catches it, or that it needs a look.
 Assume the session ends within 30 minutes: tokens run out, the workstation crashes or is reformatted. GitHub is the
 record; a fresh agent on another computer continues from it alone.
 
+```mermaid
+flowchart LR
+    I["issue<br/>+ work claim"] --> B["branch,<br/>push at once"] --> P["draft PR<br/>Closes #N"] --> C["commit + push<br/>clean chunks"]
+    C --> K["checkpoint<br/>every ~30 min"] --> C
+    K --> H["heavy run on<br/>a compute host"] --> C
+    C --> R["independent review,<br/>every thread resolved"] --> M["merge under<br/>the repo's rules"]
+    X["session ends"] -.-> Z["fresh agent resumes<br/>from GitHub alone"] -.-> C
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class B,P,C,K here
+    class I,H,X,Z near
+    class R,M out
+```
+
 1. **Issue first, then claim it.** One per piece of work, with a checklist: done, next, running, how to resume. A big
    job gets a tracking issue linking smaller ones. Post a work-claim comment before starting (below).
 2. **Branch and push at once**, per the repo's rules (cad-agent: `feat/<topic>` worktree from `origin/dev`; product

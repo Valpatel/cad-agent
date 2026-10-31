@@ -203,7 +203,8 @@ def test_rib_in_a_countersink_is_found():
 def test_countersink_cut_last_passes():
     r = holes.check_shape(plate_with_countersink(rib_after_holes=False))
     assert r["pass"] and r["holes"] == 1 and r["cones"] == 1 and not r["findings"], r
-    assert holes.describe_count(r) == "1 hole(s) and 1 cone(s) (countersinks, chamfers, drill points)"
+    assert holes.describe_count(r) == "2 openings (1 hole, 1 cone: countersinks, chamfers, drill points)"
+    assert holes.describe_count({"holes": 3}) == "3 hole(s)"
 
 
 def test_countersink_finding_is_labelled():

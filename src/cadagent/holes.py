@@ -341,9 +341,10 @@ def probe(shape: Any, bore: Bore, tol_mm: float = TOL_MM) -> Tuple[float, Option
         r0, r1 = (r if r > 1e-6 else 0.0 for r in (bore.radius_at(a) - inset, bore.radius_at(b) - inset))
         if h <= 0 or max(r0, r1) <= 0:
             return 0.0, None
-        if abs(r0 - r1) < 1e-9:      # cannot happen for one nappe; guard makeCone's identical-radii error anyway
-            return 0.0, None
-        probe_ = cq.Solid.makeCone(r0, r1, h, cq.Vector(*start), cq.Vector(*bore.axis))
+        if abs(r0 - r1) < 1e-9:      # cannot happen for one nappe; probe as a cylinder rather than skip (fail closed)
+            probe_ = cq.Solid.makeCylinder(r0, h, cq.Vector(*start), cq.Vector(*bore.axis))
+        else:
+            probe_ = cq.Solid.makeCone(r0, r1, h, cq.Vector(*start), cq.Vector(*bore.axis))
     else:
         r = bore.radius - tol_mm
         if r <= 0 or h <= 0:
@@ -385,9 +386,13 @@ def holes(shape: Any, min_arc_deg: float = MIN_ARC_DEG, max_diameter_mm: float =
 
 
 def describe_count(row: Dict[str, Any]) -> str:
-    """'3 hole(s)' or '3 hole(s) and 2 cone(s) (countersinks, chamfers, drill points)' for a check_shape result."""
+    """'3 hole(s)' or '5 openings (3 holes, 2 cones: countersinks, chamfers, drill points)' for a check_shape result."""
     cones = row.get("cones", 0)
-    return f"{row['holes']} hole(s)" + (f" and {cones} cone(s) (countersinks, chamfers, drill points)" if cones else "")
+    if not cones:
+        return f"{row['holes']} hole(s)"
+    n = row["holes"]
+    return (f"{n + cones} openings ({n} hole{'' if n == 1 else 's'}, {cones} cone{'' if cones == 1 else 's'}: "
+            "countersinks, chamfers, drill points)")
 
 
 def check_shape(shape: Any, tol_mm: float = TOL_MM, min_volume_mm3: float = MIN_VOLUME_MM3,

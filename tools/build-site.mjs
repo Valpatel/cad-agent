@@ -1,0 +1,237 @@
+/** Build cad-agent.valpatel.com into dist/: one static bundle for local preview and Cloudflare Pages.
+ *
+ * Agent-first: every page has its Markdown source next to it (same path, .md), /llms.txt and /llms-full.txt index
+ * everything, and /catalog.json is the machine-readable catalogue (tools, libraries, skills, docs, lessons, research).
+ * Only git-tracked files are published, never vendor downloads, caches or local runs.
+ */
+import { readFile, writeFile, mkdir, cp, rm } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import path from 'node:path';
+import { marked } from 'marked';
+import YAML from 'yaml';
+
+const root = path.resolve(import.meta.dirname, '..');
+const out = path.join(root, 'dist');
+const ORIGIN = 'https://cad-agent.valpatel.com';
+const REPO = 'https://github.com/Valpatel/cad-agent';
+const TAGLINE = 'Your one stop shop for agentic CAD';
+const LEDE = 'Mapping the best free resources, demonstrating their capabilities, and filling the gaps. Made for AI and people.';
+const read = p => readFile(path.join(root, p), 'utf8');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const git = (...a) => execFileSync('git', a, { cwd: root }).toString().trim();
+const tracked = git('ls-files', '-z').split('\0').filter(Boolean);
+const revision = git('rev-parse', 'HEAD');
+
+await rm(out, { recursive: true, force: true });
+await mkdir(out, { recursive: true });
+await cp(path.join(root, 'web'), path.join(out, 'web'), { recursive: true });
+// The shared web kit (3D viewer, part tables, diagrams) is published as /kit/, the same files projects copy.
+for (const f of tracked.filter(f => f.startsWith('src/cadagent/webkit/'))) {
+  const dest = path.join(out, 'kit', f.slice('src/cadagent/webkit/'.length));
+  await mkdir(path.dirname(dest), { recursive: true });
+  await cp(path.join(root, f), dest);
+}
+
+// ----------------------------------------------------------------------------- content
+const front = src => {
+  const m = src.match(/^---\n([\s\S]*?)\n---\n/);
+  return m ? { meta: YAML.parse(m[1]) || {}, body: src.slice(m[0].length) } : { meta: {}, body: src };
+};
+const firstPara = md => (md.replace(/^#.*$/m, '').split(/\n\s*\n/).map(s => s.trim())
+  .find(s => s && !s.startsWith('#') && !s.startsWith('|') && !s.startsWith('```') && !s.startsWith('<')) || '')
+  .replace(/\s+/g, ' ').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/[*_`]/g, '').slice(0, 260);
+
+const SECTIONS = [
+  { id: 'docs', title: 'Docs', match: f => /^docs\/[^/]+\.md$/.test(f) || f === 'README.md' || f === 'CONTRIBUTING.md' },
+  { id: 'skills', title: 'Skills', match: f => /^skills\/[^/]+\/SKILL\.md$/.test(f) },
+  { id: 'agents', title: 'Subagents', match: f => /^agents\/[^/]+\.md$/.test(f) },
+  { id: 'lessons', title: 'Lessons (pitfalls)', match: f => /^lessons\/[^/]+\.md$/.test(f) },
+  { id: 'research', title: 'Research', match: f => /^research\/[^/]+\.md$/.test(f) },
+];
+const pages = [];
+for (const file of tracked) {
+  const section = SECTIONS.find(s => s.match(file));
+  if (!section || /(?:^|\/)(?:AGENTS|CLAUDE)\.md$/.test(file)) continue;
+  const src = await read(file);
+  const { meta, body } = front(src);
+  const title = meta.name || body.match(/^#\s+(.+)$/m)?.[1] || file;
+  pages.push({ file, section: section.id, title: String(title).replace(/[`*]/g, ''), summary: meta.description || firstPara(body), body, src });
+}
+const pageURL = f => '/' + f.replace(/\.md$/, '.html');
+const pageFiles = new Set(pages.map(p => p.file));
+
+// ----------------------------------------------------------------------------- catalogue
+const landscape = JSON.parse(await read('research/landscape.json'));
+const upstreams = YAML.parse(await read('upstreams/registry.yaml')) || [];
+const cli = await read('src/cadagent/cli.py');
+const commands = [...cli.matchAll(/sub\.add_parser\("([a-z0-9-]+)",[^)]*?help="((?:[^"\\]|\\.)*)"(?:\s*\n?\s*"((?:[^"\\]|\\.)*)")?/g)]
+  .map(m => ({ name: m[1], help: (m[2] + (m[3] || '')).replace(/\\"/g, '"') }));
+const catalog = {
+  schema: 'cad-agent-catalog/1', origin: ORIGIN, repo: REPO, revision, built: new Date().toISOString(),
+  tagline: TAGLINE, description: LEDE,
+  items: [
+    ...commands.map(c => ({ type: 'tool', status: 'ours', name: `cad-agent ${c.name}`, summary: c.help,
+      url: `${ORIGIN}/docs/toolkit.html`, how: `cad-agent ${c.name} --help` })),
+    ...upstreams.map(u => ({ type: 'upstream', status: u.status, name: u.name, summary: u.policy, url: u.url,
+      license: u.license, stars: u.stars, last_push: u.last_push })),
+    ...landscape.libraries.map(l => ({ type: 'library', status: 'used', name: l.name, url: l.url || `https://github.com/${l.name}`,
+      license: l.license_spdx, stars: l.stars, last_push: l.last_push, summary: l.role || l.notes || '' })),
+    ...landscape.benchmarks.map(b => ({ type: 'benchmark', status: 'reference', name: b.name, url: b.url,
+      license: b.license_spdx, summary: b.tasks || '' })),
+    ...pages.map(p => ({ type: p.section === 'docs' ? 'doc' : p.section.replace(/s$/, ''), status: 'ours', name: p.title,
+      summary: p.summary, url: ORIGIN + pageURL(p.file), markdown: `${ORIGIN}/${p.file}`, source: `${REPO}/blob/dev/${p.file}` })),
+  ],
+};
+const counts = catalog.items.reduce((a, i) => (a[i.type] = (a[i.type] || 0) + 1, a), {});
+await writeFile(path.join(out, 'catalog.json'), JSON.stringify(catalog, null, 2) + '\n');
+
+// ----------------------------------------------------------------------------- HTML frame
+const NAV = [['/catalog.html', 'Catalogue'], ['/docs/toolkit.html', 'Toolkit'], ['/research/landscape.html', 'Landscape'],
+  ['/docs/common-issues.html', 'Pitfalls'], ['/docs/agent-workflow.html', 'For agents']];
+function frame({ title, body, md, description = LEDE, current = '', page = 'doc' }) {
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(title === TAGLINE ? 'cad-agent · ' + TAGLINE : title + ' · cad-agent')}</title>
+<meta name="description" content="${esc(description)}">
+<link rel="icon" href="/web/icon.svg"><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/diagrams.css">
+${md ? `<link rel="alternate" type="text/markdown" href="${esc(md)}" title="Markdown for agents">` : ''}
+<link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt"></head>
+<body class="${page}-page" data-diagram-theme="light"><header class="site-header"><div class="wrap"><a class="wordmark" href="/"><img src="/web/icon.svg" alt="" width="34" height="34">cad-agent<b>.</b></a>
+<nav aria-label="Main">${NAV.map(([h, t]) => `<a href="${h}"${h === current ? ' aria-current="page"' : ''}>${t}</a>`).join('')}<a class="pill-link" href="${REPO}">GitHub ↗</a></nav></div></header>
+<main class="${page === 'landing' ? '' : 'wrap'} ${page === 'doc' ? 'doc' : ''}">${body}</main>
+<footer class="site-footer"><div class="wrap"><p>Created by <a href="https://valpatel.com">Valpatel Software LLC</a>. Code under the <a href="${REPO}/blob/dev/LICENSE">MIT licence</a>; every third-party tool keeps its own licence and credit. Built from <a href="${REPO}/commit/${revision}">${revision.slice(0, 7)}</a>.</p>
+<div class="links"><a href="/llms.txt">llms.txt</a><a href="/llms-full.txt">llms-full.txt</a><a href="/catalog.json">catalog.json</a>${md ? `<a href="${esc(md)}">this page .md</a>` : ''}</div></div></footer>
+<script type="module">import('/kit/diagrams.js').then(m=>m.observeDiagrams()).catch(()=>{});</script>
+<script type="module" src="/web/site.js"></script></body></html>`;
+}
+
+// ----------------------------------------------------------------------------- pages
+for (const p of pages) {
+  const ids = new Map();
+  const renderer = new marked.Renderer();
+  renderer.heading = function ({ tokens, depth }) {
+    const text = this.parser.parseInline(tokens);
+    const base = text.replace(/<[^>]*>/g, '').normalize('NFKD').replace(/[^\x00-\x7f]/g, '').replace(/[^\w\s-]/g, '').trim().toLowerCase().replace(/[-\s]+/g, '-');
+    const n = ids.get(base) || 0; ids.set(base, n + 1);
+    return `<h${depth} id="${base}${n ? '-' + n : ''}">${text}</h${depth}>`;
+  };
+  let html = await marked.parse(p.body, { renderer });
+  html = html.replace(/(href|src)="([^"#][^"]*)"/g, (all, attr, url) => {
+    if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(url)) return all;
+    const [pathname, ...hash] = url.split('#');
+    const resolved = pathname.startsWith('/') ? pathname.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(p.file), pathname));
+    let target;
+    if (pageFiles.has(resolved)) target = pageURL(resolved);
+    else if (attr === 'src' && tracked.includes(resolved) && /\.(svg|png|jpe?g|gif|webp)$/i.test(resolved)) target = '/' + resolved;
+    else target = `${REPO}/${tracked.includes(resolved) ? 'blob' : 'tree'}/dev/${resolved}`;
+    return `${attr}="${esc(target)}${hash.length ? '#' + esc(hash.join('#')) : ''}"`;
+  });
+  html = html.replace(/<table>/g, '<div class="table-scroll"><table>').replace(/<\/table>/g, '</table></div>');
+  const crumbs = `<p class="crumbs"><a href="/catalog.html#${p.section}">${esc(SECTIONS.find(s => s.id === p.section).title)}</a> · <a href="${REPO}/blob/dev/${esc(p.file)}">${esc(p.file)}</a> · <a href="/${esc(p.file)}">Markdown</a></p>`;
+  const dest = path.join(out, pageURL(p.file));
+  await mkdir(path.dirname(dest), { recursive: true });
+  await writeFile(dest, frame({ title: p.title, body: crumbs + `<article class="prose">${html}</article>`, md: '/' + p.file, description: p.summary, current: pageURL(p.file) }));
+  await writeFile(path.join(out, p.file), p.src);              // the Markdown twin, same path
+}
+// Images referenced by docs.
+for (const f of tracked.filter(f => /^docs\/img\/.*\.(svg|png|jpe?g|gif|webp)$/i.test(f))) {
+  await mkdir(path.dirname(path.join(out, f)), { recursive: true }); await cp(path.join(root, f), path.join(out, f));
+}
+
+// Catalogue page: cards from catalog.json, filterable in the browser.
+const TYPE_LABEL = { tool: 'cad-agent tools', upstream: 'Agentic CAD projects we track', library: 'Libraries', benchmark: 'Benchmarks',
+  doc: 'Docs', skill: 'Skills', agent: 'Subagents', lesson: 'Lessons (pitfalls)', research: 'Research' };
+const STATUS_NOTE = { ours: 'built here', adopted: 'adopted', trial: 'in trial', candidate: 'candidate', rejected: 'rejected', used: 'used', reference: 'reference' };
+const card = i => `<li class="card" data-type="${esc(i.type)}" data-text="${esc((i.name + ' ' + (i.summary || '') + ' ' + (i.license || '')).toLowerCase())}">
+<a href="${esc(i.url)}"><span class="card-name">${esc(i.name)}</span></a>
+<span class="pill pill-${esc(i.status)}">${esc(STATUS_NOTE[i.status] || i.status)}</span>${i.license ? `<span class="pill">${esc(i.license)}</span>` : ''}${i.stars ? `<span class="pill">★ ${Number(i.stars).toLocaleString('en-US')}</span>` : ''}
+<p>${esc(i.summary || '')}</p>${i.markdown ? `<a class="md" href="${esc(i.markdown.replace(ORIGIN, ''))}">.md</a>` : ''}</li>`;
+const groups = Object.keys(TYPE_LABEL).filter(t => counts[t]);
+const catalogBody = `<section class="section" style="padding-bottom:10px"><p class="eyebrow"><span class="status-dot"></span>Catalogue · ${catalog.items.length} entries</p><h1>Everything we map, <span>demonstrate</span> or build.</h1>
+<p class="hero-description">Other people's open-source projects and libraries come first; our own tools only where nothing free fills the gap. Agents read the same list as <a href="/catalog.json">catalog.json</a>.</p>
+<div class="filters"><input id="q" type="search" placeholder="Filter: snap fit, FEA, KiCad, MIT…" aria-label="Filter the catalogue">
+<div class="chips">${groups.map(t => `<button class="chip" data-type="${t}" aria-pressed="false">${esc(TYPE_LABEL[t])} <small>${counts[t]}</small></button>`).join('')}</div></div></section>
+${groups.map(t => `<section class="group" id="${t === 'doc' ? 'docs' : t === 'skill' ? 'skills' : t === 'agent' ? 'agents' : t === 'lesson' ? 'lessons' : t}" data-group="${t}"><h2>${esc(TYPE_LABEL[t])}</h2><ul class="cards">${catalog.items.filter(i => i.type === t).map(card).join('')}</ul></section>`).join('')}`;
+await writeFile(path.join(out, 'catalog.html'), frame({ title: 'Catalogue', body: catalogBody, current: '/catalog.html', page: 'catalog' }));
+
+// Landing page.
+const pick = (f) => pages.find(p => p.file === f);
+const skillCards = pages.filter(p => p.section === 'skills' || p.section === 'agents');
+const SNAP_SVG = `<svg class="snap-demo" viewBox="0 0 440 240" role="img" aria-label="Animated cantilever snap fit: the catch slides under the hook, the arm flexes over the ramp and clicks into place">
+<rect x="20" y="40" width="44" height="150" rx="6" fill="#254952" opacity=".85"/>
+<g class="arm"><path d="M62 96 L300 104 L300 112 L326 112 L300 140 L300 128 L62 146 Z" fill="#fffdf5" stroke="#173d3c" stroke-width="2.5" stroke-linejoin="round"/>
+<circle class="root" cx="64" cy="121" r="8" fill="#2e9d5b"/></g>
+<g class="catch"><path d="M262 210 L262 150 L312 150 L338 176 L338 210 Z" fill="#bd3a12" opacity=".9"/><rect x="200" y="206" width="220" height="8" rx="3" fill="#254952" opacity=".5"/></g>
+<g class="click"><text x="300" y="70" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="15" font-weight="700" fill="#bd3a12">click!</text></g>
+</svg>`;
+const landing = `<div class="wrap"><section class="hero"><div class="hero-copy">
+<p class="eyebrow"><span class="status-dot"></span>Open source · for AI agents and people</p>
+<h1>Your one stop shop for <span>agentic CAD.</span></h1>
+<p class="intro">Mapping the best free resources, demonstrating their capabilities, and filling the gaps.</p>
+<p class="hero-description">cad-agent is the toolkit and field guide our agents use to design real hardware: which open-source tools to reach for, what each one is good at, the checks that catch the mistakes, and our own tools where nothing free does the job yet.</p>
+<div class="actions"><a class="button primary" href="/catalog.html">Browse the catalogue <span>→</span></a><a class="button" href="/docs/toolkit.html">Read the toolkit</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div>
+<div class="agent-box" aria-label="How an agent reads this site"><b>#</b> point any coding agent here<br>curl -s ${ORIGIN}/llms.txt<br>curl -s ${ORIGIN}/catalog.json<br>curl -s ${ORIGIN}/docs/toolkit.md <b># any page, .md</b></div>
+</div>
+<div class="hero-scene"><div class="scene-orbit"></div><p class="scene-label">DEMO 01 · CANTILEVER SNAP FIT</p>${SNAP_SVG}<span class="stamp">SIZED BY<br>NUMBERS</span>
+<div class="scene-caption"><b>One part, no screws.</b><span>root strain checked against the material and the print's layer lines</span></div></div></section>
+</div><div class="ticker"><div class="wrap"><span>Map the field</span><i>✦</i><span>Adopt what works</span><i>✦</i><span>Prove it on real parts</span><i>✦</i><span>Fill the gaps</span><i>✦</i><span>Made for AI and people</span></div></div><div class="wrap">
+<section class="section"><div class="lead"><h2>Three jobs, <span>one place.</span></h2><p>We are not attached to our own code. If someone else's tool, skill or agent does a job better, it goes in the catalogue and we use it. What is left, we build and test.</p></div>
+<div class="missions">
+<a class="mission mission-blue" href="/research/landscape.html"><span class="mission-icon">🗺️</span><span class="mission-tag">Map</span><span class="mission-num">${(counts.upstream || 0) + (counts.library || 0) + (counts.benchmark || 0)}</span><p>Agentic-CAD projects, libraries and benchmarks, checked with dates, licences and what each is actually good for.</p><span class="go">See the landscape <span>→</span></span></a>
+<a class="mission mission-yellow" href="/docs/toolkit.html"><span class="mission-icon">🧪</span><span class="mission-tag">Demonstrate</span><span class="mission-num">${counts.tool || 0}</span><p>Commands that run on real projects: integrity gates, hole and fastener checks, FEA, CFD, topology optimisation, slicing, a 3D viewer and review reports.</p><span class="go">Open the toolkit <span>→</span></span></a>
+<a class="mission mission-orange" href="/docs/common-issues.html"><span class="mission-icon">🧩</span><span class="mission-tag">Fill the gaps</span><span class="mission-num">${counts.lesson || 0}</span><p>Lessons from real builds turned into deterministic checks: a rib in a countersink, a screw that bottoms out, a driver that cannot reach.</p><span class="go">Read the pitfalls <span>→</span></span></a>
+</div></section>
+<section class="section" style="padding-top:0"><div class="lead"><h2>Skills your agents <span>can load.</span></h2><p>Claude Code and Codex install them with <code>cad-agent agents install</code>. Work survives crashes, reviews are independent, heavy runs go to compute hosts.</p></div>
+<ul class="cards">${skillCards.map(p => card({ type: p.section, status: 'ours', name: p.title, summary: p.summary, url: pageURL(p.file), markdown: '/' + p.file })).join('')}</ul></section>
+<section class="band-green"><div><p class="eyebrow">Growing next</p><h2>Demos for <span>every capability.</span></h2><p>Each tool and research area gets a live demo here: animated snap-fit and flexure libraries, FEA and topology results in the 3D viewer, rendered diagrams, geometry that refines itself to save material.</p></div>
+<ul><li><a href="${REPO}/issues/94">Compliant-mechanism engineer</a>: snap fits, living hinges and flexures sized for the process, layer lines included</li>
+<li><a href="${REPO}/issues/107">Self-refining geometry</a>: declare mounts, keep-outs and loads; iterate to lighter printable parts</li>
+<li><a href="${REPO}/issues/97">Pitfall catalogue</a> with every automated check and its coverage</li>
+<li><a href="${REPO}/issues/96">Landscape refresh</a>: agent skills, large-deflection FEA, process tooling</li>
+<li><a href="${REPO}/issues/104">Showcase</a> and <a href="${REPO}/issues/106">agent-first catalogue</a></li></ul></section>
+<section class="section"><div class="lead"><h2>Built with <span>cad-agent.</span></h2><p>Real projects are the test bench: every tool here was needed by one of them first.</p></div><ul class="cards">
+${card({ type: 'project', status: 'used', name: 'Gyropup', url: 'https://gyropup.com', summary: 'A wheel-legged foam-ball battle robot designed, simulated and documented by agents with this toolkit.' })}
+${card({ type: 'project', status: 'used', name: 'J501 AGX Orin enclosure', url: 'https://github.com/mvalancy/j501-agx-orin', summary: 'A printed enclosure and cooler for a Jetson AGX Orin carrier: where most of the lessons came from.' })}
+</ul></section>
+<section class="closing"><p class="eyebrow">For agents and people</p><h2>Point your agent at <span>llms.txt</span>.</h2><div class="actions"><a class="button primary" href="/llms.txt">Open llms.txt</a><a class="button" href="/catalog.html">Browse the catalogue</a></div></section></div>`;
+await writeFile(path.join(out, 'index.html'), frame({ title: TAGLINE, body: landing, md: '/index.md', current: '/', page: 'landing' }));
+
+// ----------------------------------------------------------------------------- agent files
+const bySection = id => pages.filter(p => p.section === id);
+const llms = `# cad-agent
+
+> ${TAGLINE}. ${LEDE}
+
+cad-agent is an open-source toolkit and knowledge base for AI agents that design hardware: CAD models, assemblies,
+simulation and print releases. It maps the best free tools, demonstrates them on real projects and fills the gaps with
+tested tools of its own. Every page on this site has a Markdown twin at the same path with a .md extension.
+
+- Source: ${REPO} (MIT). Install: \`pip install -e .\` in a checkout; agent skills: \`cad-agent agents install\`.
+- Machine-readable catalogue: ${ORIGIN}/catalog.json (schema ${catalog.schema}; ${catalog.items.length} entries).
+- Full text of every page in one file: ${ORIGIN}/llms-full.txt
+- Built from commit ${revision}.
+
+## Start here
+
+- [README](${ORIGIN}/README.md): what cad-agent is and how it grows
+- [Toolkit](${ORIGIN}/docs/toolkit.md): every command, the project contract and the Python API
+- [Agent workflow](${ORIGIN}/docs/agent-workflow.md): skills, subagents, work claims and crash-safe work
+- [Common issues](${ORIGIN}/docs/common-issues.md): recurring CAD mistakes and the checks that catch them
+- [Landscape](${ORIGIN}/research/landscape.md): the agentic-CAD tools we track, verified
+
+${SECTIONS.map(s => `## ${s.title}\n\n${bySection(s.id).map(p => `- [${p.title}](${ORIGIN}/${p.file}): ${p.summary.replace(/\s+/g, ' ').slice(0, 200)}`).join('\n')}`).join('\n\n')}
+
+## Commands
+
+${commands.map(c => `- \`cad-agent ${c.name}\`: ${c.help}`).join('\n')}
+`;
+await writeFile(path.join(out, 'llms.txt'), llms);
+await writeFile(path.join(out, 'index.md'), llms);
+await writeFile(path.join(out, 'llms-full.txt'), `# cad-agent: full text\n\n> ${TAGLINE}. ${LEDE}\n\n` +
+  pages.map(p => `\n\n---\n\nSource: ${ORIGIN}/${p.file}\n\n${p.body.trim()}\n`).join(''));
+await writeFile(path.join(out, '_headers'), `/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n  Cache-Control: public, max-age=300\n/*.md\n  Content-Type: text/markdown; charset=utf-8\n/llms.txt\n  Content-Type: text/plain; charset=utf-8\n/llms-full.txt\n  Content-Type: text/plain; charset=utf-8\n/kit/vendor/*\n  Cache-Control: public, max-age=86400\n`);
+await writeFile(path.join(out, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${ORIGIN}/sitemap.xml\n`);
+await writeFile(path.join(out, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
+  ['/', '/catalog.html', ...pages.map(p => pageURL(p.file))].map(u => `<url><loc>${ORIGIN}${u}</loc></url>`).join('') + '</urlset>\n');
+await writeFile(path.join(out, '404.html'), frame({ title: 'Not found', body: '<h1>Not here.</h1><p>Try the <a href="/catalog.html">catalogue</a> or <a href="/llms.txt">llms.txt</a>.</p>' }));
+await writeFile(path.join(out, 'version.json'), JSON.stringify({ revision, built: catalog.built, pages: pages.length, items: catalog.items.length }, null, 2) + '\n');
+console.log(`Built dist: ${pages.length} pages (+ Markdown twins), ${catalog.items.length} catalogue entries, ${commands.length} commands. Revision ${revision.slice(0, 12)}`);

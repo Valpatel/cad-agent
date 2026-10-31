@@ -1,15 +1,20 @@
 {
-  "name": "cad-agent-webkit-checks",
+  "name": "cad-agent-web",
   "private": true,
   "type": "module",
   "scripts": {
     "test:webkit-unit": "node --test tests/webkit-*.test.mjs",
     "test:part-table": "node tests/webkit-part-table-browser.mjs",
     "test:file-viewer": "node tests/webkit-file-viewer-browser.mjs",
-    "test:diagrams": "node tests/webkit-diagrams-browser.mjs && node tests/site-diagrams-browser.mjs"
+    "test:diagrams": "node tests/webkit-diagrams-browser.mjs && node tests/site-diagrams-browser.mjs",
+    "build:site": "node tools/build-site.mjs",
+    "preview:site": "npm run build:site && python3 -m http.server -d dist 8781",
+    "deploy:site": "npm run build:site && wrangler pages deploy dist --project-name cad-agent --branch main"
   },
   "devDependencies": {
-    "@playwright/test": "1.56.1"
+    "@playwright/test": "1.56.1",
+    "marked": "16.4.1",
+    "yaml": "2.9.1"
   },
   "engines": {
     "node": ">=22"

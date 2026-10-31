@@ -178,10 +178,14 @@ try {
       sources, { timeout: 20000 }).catch(() => problems.push(`1100px ${route}: diagrams did not finish rendering`));
     const drawn = await wide.$$eval('.cad-diagram', fs => fs.filter(f => f.dataset.state === 'ready' && f.querySelector('svg')).length);
     if (drawn !== sources) problems.push(`1100px ${route}: ${drawn} of ${sources} diagrams rendered`);
-    const over = (await wide.$$eval('.cad-diagram .cad-diagram-view', views => views.map(v => ({ over: v.scrollWidth - v.clientWidth, w: v.scrollWidth }))))
-      .filter(d => d.over > 1 - SCROLLBAR);
+    // The drawing's own width against the room inside its view (scrollWidth is never below clientWidth, so it cannot
+    // show how much spare there is).
+    const over = (await wide.$$eval('.cad-diagram .cad-diagram-view', views => views.map(v => {
+      const cs = getComputedStyle(v), room = v.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      return { w: Math.ceil(v.querySelector('svg')?.getBoundingClientRect().width ?? v.scrollWidth), room };
+    }))).filter(d => d.w > d.room - SCROLLBAR + 1);
     if (KNOWN_WIDE.has(route)) { if (!over.length) problems.push(`${route} now fits: remove it from KNOWN_WIDE`); continue; }
-    for (const d of over) problems.push(`1100px ${route}: a diagram is ${d.w}px wide, ${d.over + SCROLLBAR}px wider than the column allows (top-down, at most three boxes per row)`);
+    for (const d of over) problems.push(`1100px ${route}: a diagram is ${d.w}px wide; the column has ${d.room}px, less ${SCROLLBAR}px for a scrollbar (top-down, at most three boxes per row)`);
   }
   await wide.close();
   // Very wide screens: the outline moves to its own column on the right and keeps marking the section being read.

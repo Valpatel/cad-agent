@@ -4,11 +4,11 @@ A preassembled module needs two separately checked sequences: its internal bench
 
 ```mermaid
 flowchart TD
-    M["module members<br/>exact instances + fasteners"] --> Bench["bench sequence<br/>checked against the members only"]
-    Bench -->|"qualified"| Ins["insert the module as one rigid step<br/>fit=module, direction"]
-    Bench -->|"failed or missing coverage"| X["parent result<br/>not qualified"]
+    M["module members<br/>instances + fasteners"] --> Bench["bench sequence<br/>members only"]
+    Bench -->|"qualified"| Ins["insert as one<br/>rigid step"]
+    Bench -->|"failed or gaps"| X["parent result<br/>not qualified"]
     Par["parent sequence"] --> Ins
-    Svc["service_after<br/>parts removed first"] --> Ins
+    Svc["service_after<br/>removed first"] --> Ins
     Ins --> Out["parent verdict<br/>internal results kept separate"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c

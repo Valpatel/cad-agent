@@ -18,11 +18,11 @@ instructions. Keep these notices with copies of the viewer.
 
 ```mermaid
 flowchart TD
-    U["?file= URL<br/>same origin only"] --> F["fetch the original bytes<br/>30 s and 128 MiB limits"]
-    U -.-> DL["download link<br/>the original file, unchanged"]
-    F --> STEP["STEP<br/>occt-import-js (WASM)"]
-    F --> MF["3MF<br/>three.js, units applied"]
-    F --> STL["STL<br/>mm unless chosen"]
+    U["?file= URL<br/>same origin only"] --> F["fetch the original<br/>30 s, 128 MiB"]
+    U -.-> DL["download link<br/>original, unchanged"]
+    F --> STEP["STEP<br/>OCCT, WASM"]
+    F --> MF["3MF<br/>three.js"]
+    F --> STL["STL<br/>mm default"]
     STEP & MF & STL --> CK["geometry checks<br/>finite, valid, bounded"]
     CK --> V["stage: Z-up to Y-up,<br/>on the floor, fitted"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c

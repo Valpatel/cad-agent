@@ -4,13 +4,13 @@ cad-agent supports electronics and mechanical evidence in the same local project
 
 ```mermaid
 flowchart TD
-    K["KiCad project<br/>the source of truth"] --> E["kicad-cli ERC + DRC<br/>--severity-all, parity"]
+    K["KiCad project<br/>source of truth"] --> E["ERC + DRC<br/>all severities"]
     K --> J["JLC BOM + CPL"]
     K --> S["board STEP"]
-    E --> M["evidence manifest"] --> C["cad-agent pcb-check<br/>exit 1 unless every check passes"]
+    E --> M["evidence manifest"] --> C["pcb-check<br/>exit 1 unless all pass"]
     J --> JC["check_jlc_files"]
-    S --> En["enclosure checks<br/>fasteners, envelopes, access"]
-    C & JC & En --> R["review site<br/>design cards, open gates"]
+    S --> En["enclosure<br/>checks"]
+    C & JC & En --> R["review site<br/>cards, open gates"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

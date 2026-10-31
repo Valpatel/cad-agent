@@ -14,11 +14,11 @@ This feature is developed on `feat/web-parts`, targeting `dev`. Gyropup may test
 
 ```mermaid
 flowchart TD
-    T["your semantic table<br/>stable part keys, data-sort-value"] --> E["enhancePartTable<br/>sort, filter, counts"]
+    T["your table<br/>stable part keys"] --> E["enhancePartTable<br/>sort, filter, count"]
     Tr["createPartTracker<br/>ordered, in hand, printed"] --> E
     E --> V["same rows, reordered<br/>original order kept"]
-    Tr <-->|"export / import, validated"| J["JSON file"]
-    Tr --> LS["browser storage<br/>says whether it saved"]
+    Tr <-->|"export / import"| J["JSON file"]
+    Tr --> LS["browser storage<br/>says if saved"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

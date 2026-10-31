@@ -15,14 +15,14 @@ What is missing is a process, and the tools that make the process cheap:
 
 ```mermaid
 flowchart TD
-    Req["requirements"] --> Dos["§3 dossier<br/>sections, cards, interfaces, decisions"]
+    Req["requirements"] --> Dos["§3 dossier<br/>sections, cards,<br/>interfaces, decisions"]
     Dos --> Gates["§4 gates<br/>connectivity, containment,<br/>fasteners, motion, access"]
-    CAD["CAD build<br/>registers geometry"] --> Gates
-    Ev["§6 evaluation<br/>gate bench, seeded defects"] -.-> Gates
+    CAD["CAD build"] --> Gates
+    Ev["§6 evaluation<br/>seeded defects"] -.-> Gates
     Gates --> Pk["§5 review packet<br/>renders + measurements"]
     Pk --> Rv["§5 independent reviewer<br/>checklist, sign-off record"]
     Rv --> Site["review site<br/>section by section"]
-    Rv -->|"changes requested"| Dos
+    Rv -->|"changes"| Dos
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

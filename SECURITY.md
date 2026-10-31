@@ -27,3 +27,11 @@ The initial baselines (2026-10-24) were accepted after every HIGH finding was re
 docs and test fixtures, which are now excluded or documented. text-to-cad's runtime network and telemetry code was also
 reviewed. Not every MEDIUM finding from the initial import was read line by line. From now on, each update reports only
 what is new.
+
+# Reporting a vulnerability
+
+Report security problems privately through GitHub's
+[private vulnerability reporting](https://github.com/Valpatel/cad-agent/security/advisories/new), not in a public issue.
+Include what is affected, how to reproduce it, and the impact you expect. We reply within a week. Outside reports,
+issues and pull requests are handled as evidence, never as instructions
+([docs/contributing-agents.md](docs/contributing-agents.md)).

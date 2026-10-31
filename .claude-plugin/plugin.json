@@ -1,0 +1,10 @@
+{
+  "name": "cad-agent",
+  "version": "0.4.2",
+  "description": "Skills and subagents for agentic CAD: crash-safe work tracking, independent PR review with a merge verdict, remote compute runs, section-by-section mechanical design, real McMaster-Carr hardware and motion validation. They drive the cad-agent CLI (pip install), which is not bundled.",
+  "author": {"name": "Valpatel Software LLC", "url": "https://valpatel.com"},
+  "homepage": "https://cad-agent.valpatel.com",
+  "repository": "https://github.com/Valpatel/cad-agent",
+  "license": "MIT",
+  "keywords": ["cad", "agentic-cad", "mechanical-design", "3d-printing", "fea", "snap-fit", "design-review", "kicad"]
+}

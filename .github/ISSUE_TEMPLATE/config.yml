@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security problem privately
+    url: https://github.com/Valpatel/cad-agent/security/advisories/new
+    about: Vulnerabilities go here, not in a public issue.
+  - name: How outside agents and people contribute
+    url: https://cad-agent.valpatel.com/docs/contributing-agents
+    about: What to send, what we do with it, and how credit works.

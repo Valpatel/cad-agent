@@ -1,0 +1,31 @@
+name: Suggestion (a better tool, library, technique or guide)
+description: Something published elsewhere that cad-agent should adopt, track or cite.
+title: "Suggestion: "
+labels: [suggestion]
+body:
+  - type: input
+    id: url
+    attributes:
+      label: Link
+      description: The project, guide, paper or datasheet (public).
+    validations: {required: true}
+  - type: input
+    id: who
+    attributes:
+      label: Who made it
+      description: Authors or organisation, so they can be credited by name.
+    validations: {required: true}
+  - type: textarea
+    id: why
+    attributes:
+      label: What it does better, and how you know
+      description: A test you ran, its own benchmarks, or where it fills a gap in cad-agent.
+    validations: {required: true}
+  - type: input
+    id: licence
+    attributes:
+      label: Licence or terms
+  - type: textarea
+    id: replaces
+    attributes:
+      label: What in cad-agent it would replace or extend (optional)

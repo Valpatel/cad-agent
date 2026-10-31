@@ -1,0 +1,43 @@
+name: Finding (a mistake a check should catch)
+description: A CAD mistake you hit that cad-agent should detect, with public geometry that shows it.
+title: "Finding: "
+labels: [finding]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sending this. Maintainers reproduce every finding and rebuild accepted checks themselves, with
+        credit. Please leave out private data (keys, hostnames, unpublished product details, files under NDA).
+  - type: textarea
+    id: what
+    attributes:
+      label: The mistake
+      description: What went wrong in the part or assembly, and why it matters (fit, strength, printability, assembly).
+    validations: {required: true}
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: The smallest public script, cad-agent.yaml or model that shows it, the command, expected vs actual.
+    validations: {required: true}
+  - type: textarea
+    id: check
+    attributes:
+      label: The check you would want
+      description: What it should measure and the threshold, with the source of the rule if there is one.
+  - type: input
+    id: source
+    attributes:
+      label: Source and credit
+      description: Who published the rule or technique (guide, datasheet, paper, person), with a link.
+  - type: input
+    id: version
+    attributes:
+      label: cad-agent version or commit
+  - type: checkboxes
+    id: private
+    attributes:
+      label: Private data
+      options:
+        - label: This report contains no secrets, hostnames, private paths or unpublished product details.
+          required: true

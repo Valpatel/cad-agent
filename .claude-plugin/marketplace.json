@@ -1,0 +1,14 @@
+{
+  "name": "valpatel",
+  "owner": {"name": "Valpatel Software LLC", "url": "https://valpatel.com"},
+  "metadata": {"description": "Valpatel's open tools for AI agents that design hardware."},
+  "plugins": [
+    {
+      "name": "cad-agent",
+      "source": "./",
+      "description": "Skills and subagents for agentic CAD (work tracking, PR review, remote runs, design process, McMaster parts, motion validation). Install the cad-agent CLI separately with pip.",
+      "version": "0.4.2",
+      "author": {"name": "Valpatel Software LLC"}
+    }
+  ]
+}

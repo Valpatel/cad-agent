@@ -3,7 +3,8 @@
  *   node tools/preview-site.mjs [--dir dist] [--port 8781] [--host 127.0.0.1]
  *
  * Pretty URLs (/docs/toolkit serves docs/toolkit.html; /x.html redirects to /x), 404.html with status 404, and the
- * response headers from dist/_headers, so the Content-Security-Policy is exercised before a deploy. Listens on
+ * response headers from dist/_headers (so the Content-Security-Policy is exercised before a deploy) and the redirects in
+ * dist/_redirects (exact paths, as moved pages use them). Listens on
  * loopback only unless --host says otherwise.
  */
 import { createServer } from 'node:http';
@@ -44,6 +45,9 @@ export function headersFor(rules, pathname) {
 
 const exists = async f => { try { return (await stat(f)).isFile(); } catch { return false; } };
 const rules = parseHeaders(await readFile(path.join(dir, '_headers'), 'utf8').catch(() => ''));
+// _redirects, as Pages reads it for exact paths: "<from> <to> [status]" per line.
+const redirects = new Map((await readFile(path.join(dir, '_redirects'), 'utf8').catch(() => '')).split('\n')
+  .map(l => l.trim().split(/\s+/)).filter(p => p.length >= 2 && p[0].startsWith('/')).map(([from, to, code]) => [from, [to, Number(code) || 302]]));
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
@@ -51,6 +55,7 @@ const server = createServer(async (req, res) => {
   try { pathname = decodeURIComponent(url.pathname); } catch { res.writeHead(400).end(); return; }   // e.g. /%
   // No NUL, no dot segments, no backslash: '/\\host' in a redirect would send the browser to another host.
   if (/[\0\\]/.test(pathname) || path.posix.normalize(pathname) !== pathname) { res.writeHead(400).end(); return; }
+  if (redirects.has(pathname)) { const [to, code] = redirects.get(pathname); res.writeHead(code, { location: to + url.search }).end(); return; }
   if (pathname.endsWith('.html')) {                               // Pages drops .html with a redirect
     const pretty = pathname === '/index.html' ? '/' : pathname.replace(/(?:\/index)?\.html$/, '');
     res.writeHead(308, { location: pretty + url.search }).end(); return;

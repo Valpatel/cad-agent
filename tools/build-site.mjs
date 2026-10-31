@@ -106,14 +106,24 @@ const SECTIONS = [
   { id: 'docs', title: 'Docs', match: f => /^docs\/[^/]+\.md$/.test(f) || f === 'README.md' || f === 'CONTRIBUTING.md' || f === 'THIRD_PARTY_NOTICES.md' },
   { id: 'skills', title: 'Skills', match: f => /^skills\/[^/]+\/SKILL\.md$/.test(f) },
   { id: 'agents', title: 'Subagents', match: f => /^agents\/[^/]+\.md$/.test(f) },
-  { id: 'lessons', title: 'Lessons (pitfalls)', match: f => /^lessons\/[^/]+\.md$/.test(f) },
+  { id: 'lessons', title: 'Lessons (pitfalls)', match: f => /^lessons\/(?:[a-z0-9-]+\/)?[^/]+\.md$/.test(f) },   // lessons/<area>/
   { id: 'research', title: 'Research', match: f => /^research\/[^/]+\.md$/.test(f) },
 ];
 const pages = [];
+// A file that moved keeps a one-line stub at its old path (`<!-- moved-to: new/path.md -->`), so links into the repo
+// keep working on GitHub; the site serves a permanent redirect instead of a page.
+const moved = [];
 for (const file of tracked) {
   const section = SECTIONS.find(s => s.match(file));
   if (!section || /(?:^|\/)(?:AGENTS|CLAUDE)\.md$/.test(file)) continue;
   const src = await read(file);
+  const to = src.match(/^<!--\s*moved-to:\s*(\S+?\.md)\s*-->/)?.[1];
+  if (to) {
+    const target = path.posix.normalize(path.posix.join(path.posix.dirname(file), to));
+    if (!tracked.includes(target)) throw new Error(`${file} says it moved to ${target}, which does not exist`);
+    moved.push([file, target]);
+    continue;
+  }
   const { meta, body } = front(src);
   const title = meta.name || body.match(/^#\s+(.+)$/m)?.[1] || file;
   pages.push({ file, section: section.id, title: String(title).replace(/[`*]/g, ''), summary: meta.description || firstPara(body), body, src });
@@ -151,6 +161,9 @@ const catalog = {
   ],
 };
 const counts = catalog.items.reduce((a, i) => (a[i.type] = (a[i.type] || 0) + 1, a), {});
+// Each ### entry in a lesson file is one lesson (lessons/README.md#lesson-format); the area READMEs are maps, not lessons.
+const lessonCount = pages.filter(p => p.section === 'lessons' && !/(?:^|\/)README\.md$/.test(p.file))
+  .reduce((n, p) => n + (p.body.replace(/```[\s\S]*?```/g, '').match(/^### /gm) || []).length, 0);
 await writeFile(path.join(out, 'catalog.json'), JSON.stringify(catalog, null, 2) + '\n');
 
 // ----------------------------------------------------------------------------- HTML frame
@@ -184,6 +197,11 @@ const decode = s => s.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (m, e) => e[0] ===
 // and spaces, then each space becomes a hyphen (runs are not collapsed); repeats get -1, -2.
 export const slug = text => decode(text.replace(/<[^>]*>/g, '')).toLowerCase().replace(/[^\p{L}\p{M}\p{N}\p{Pc}\- ]/gu, '').replace(/ /g, '-');
 
+// A link to a folder whose README is a page goes to that page (lessons/process/ → lessons/process/README).
+const folderPage = resolved => {
+  const readme = resolved.replace(/\/?$/, '/README.md');
+  return !resolved.endsWith('.md') && pageFiles.has(readme) ? readme : null;
+};
 // Relative links in a Markdown copy: published pages and images stay relative (their .md twin or file is at the same
 // path); anything else (source files, tests) points at GitHub. absolute=true makes every link absolute (llms-full.txt).
 const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).map((chunk, i) => i % 2 ? chunk :
@@ -191,6 +209,8 @@ const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).m
     if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(url)) return all;
     const [pathname, ...hash] = url.split('#');
     const resolved = pathname.startsWith('/') ? pathname.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(file), pathname));
+    const folder = folderPage(resolved);
+    if (folder) return `${open}${absolute ? `${ORIGIN}/${folder}` : pathname.replace(/\/?$/, '/README.md')}${hash.length ? '#' + hash.join('#') : ''}${close}`;
     const published = pageFiles.has(resolved) || (/^docs\/img\//.test(resolved) && tracked.includes(resolved));
     const target = published ? (absolute ? `${ORIGIN}/${resolved}` : url.split('#')[0])
       : `${REPO}/${tracked.includes(resolved) ? 'blob' : 'tree'}/dev/${resolved}`;
@@ -213,6 +233,7 @@ for (const p of pages) {
     const resolved = pathname.startsWith('/') ? pathname.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(p.file), pathname));
     let target;
     if (pageFiles.has(resolved)) target = pageURL(resolved);
+    else if (folderPage(resolved)) target = pageURL(folderPage(resolved));
     else if (attr === 'src' && tracked.includes(resolved) && /\.(svg|png|jpe?g|gif|webp)$/i.test(resolved)) target = '/' + resolved;
     else target = `${REPO}/${tracked.includes(resolved) ? 'blob' : 'tree'}/dev/${resolved}`;
     return target + (hash.length ? '#' + hash.join('#') : '');
@@ -279,7 +300,7 @@ curl -s ${ORIGIN}/docs/toolkit.md  <b># any page, as .md</b></pre></cad-copy>
 <div class="missions">
 <a class="mission mission-blue" href="/research/landscape"><span class="mission-icon">🗺️</span><span class="mission-tag">Map</span><span class="mission-num">${(counts.upstream || 0) + (counts.library || 0) + (counts.benchmark || 0)}</span><p>Agentic-CAD projects, libraries and benchmarks, checked with dates, licences and what each is actually good for.</p><span class="go">See the landscape <span>→</span></span></a>
 <a class="mission mission-yellow" href="/docs/toolkit"><span class="mission-icon">🧪</span><span class="mission-tag">Demonstrate</span><span class="mission-num">${counts.tool || 0}</span><p>Commands that run on real projects: integrity gates, hole and fastener checks, FEA, CFD, topology optimisation, slicing, a 3D viewer and review reports.</p><span class="go">Open the toolkit <span>→</span></span></a>
-<a class="mission mission-orange" href="/docs/common-issues"><span class="mission-icon">🧩</span><span class="mission-tag">Fill the gaps</span><span class="mission-num">${counts.lesson || 0}</span><p>Lessons from real builds turned into deterministic checks: a rib in a countersink, a screw that bottoms out, a driver that cannot reach.</p><span class="go">Read the pitfalls <span>→</span></span></a>
+<a class="mission mission-orange" href="/docs/common-issues"><span class="mission-icon">🧩</span><span class="mission-tag">Fill the gaps</span><span class="mission-num">${lessonCount}</span><p>Lessons from real builds turned into deterministic checks: a rib in a countersink, a screw that bottoms out, a driver that cannot reach.</p><span class="go">Read the pitfalls <span>→</span></span></a>
 </div></section>
 <section class="section" style="padding-top:0"><div class="lead"><h2>Skills your agents <span>can load.</span></h2><p>Claude Code and Codex install them with <code>cad-agent agents install</code>. Work survives crashes, reviews are independent, heavy runs go to compute hosts.</p></div>
 <ul class="cards">${skillCards.map(p => card({ type: p.section, status: 'ours', name: p.title, summary: p.summary, url: pageURL(p.file), markdown: '/' + p.file })).join('')}</ul></section>
@@ -358,6 +379,9 @@ for (const f of await htmlFiles(out)) {
 export const CSP = `default-src 'self'; script-src 'self' ${[...inlineHashes].sort().join(' ')} 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; ` +
   "img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; " +
   "form-action 'self'; frame-ancestors 'self'";
+// Cloudflare Pages redirects: each moved page and its Markdown twin, to the new path.
+await writeFile(path.join(out, '_redirects'), moved.flatMap(([from, to]) =>
+  [`/${from.replace(/\.md$/, '')} /${to.replace(/\.md$/, '')} 301`, `/${from} /${to} 301`]).join('\n') + (moved.length ? '\n' : ''));
 await writeFile(path.join(out, '_headers'), [
   '/*', '  X-Content-Type-Options: nosniff', '  Referrer-Policy: strict-origin-when-cross-origin', `  Content-Security-Policy: ${CSP}`,
   '  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()', '  Cross-Origin-Opener-Policy: same-origin',

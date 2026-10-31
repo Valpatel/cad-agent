@@ -228,8 +228,8 @@
   what: "Hyperparameter optimisation framework; cad-agent optimise uses its NSGA-II and TPE samplers"
   url: https://github.com/optuna/optuna
   license: MIT
-  status: candidate
-  policy: may incorporate with attribution; driver for multi-objective parameter studies
+  status: adopted
+  policy: optional dependency (the explore extra, optuna>=3.4); runs the NSGA-II and TPE samplers of cad-agent optimise
 - name: OrcaSlicer/OrcaSlicer
   url: https://github.com/OrcaSlicer/OrcaSlicer
   license: AGPL-3.0

@@ -7,6 +7,5 @@ mining/out/private/
 *.egg-info/
 build/
 .cadagent-cache/
-node_modules/
 node_modules
 dist/

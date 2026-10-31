@@ -96,18 +96,53 @@ try {
     }
     if (route === '/docs/toolkit') {                    // page tree: a column on wide screens, a toggle on phones
       const nav = page.locator('cad-nav');
+      // Nothing jumps while the page loads: the tree is styled and folded from the first paint (kit/nav.css).
+      const shift = await page.evaluate(() => new Promise(done => new PerformanceObserver((list, obs) => {
+        obs.disconnect(); done(list.getEntries().filter(e => !e.hadRecentInput).reduce((s, e) => s + e.value, 0));
+      }).observe({ type: 'layout-shift', buffered: true })).catch(() => 0));   // WebKit has no layout-shift entries
+      if (shift > 0.05) seen.push(`layout shifts while loading: ${shift.toFixed(3)}`);
       if (width >= 1100) {
         await page.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, document.body.scrollHeight / 2); });
         await page.waitForTimeout(300);
         const box = await nav.locator('.cad-nav-panel').boundingBox();
         if (!box || box.y < 0 || box.y > 200) seen.push(`page tree is not in view after scrolling (y=${box?.y})`);
-        if (!(await nav.locator('.cad-nav-outline a[data-active]').count())) seen.push('outline does not mark the section being read');
+        if (!(await nav.locator('.cad-nav-outline a[aria-current=location]').count())) seen.push('outline does not mark the section being read');
+        // The last sections can never reach the reading line; following their links must still mark them.
+        const last = nav.locator('.cad-nav-outline a').last();
+        await last.click();
+        await page.waitForTimeout(400);
+        if ((await last.getAttribute('aria-current')) !== 'location') seen.push('following the last outline link does not mark it');
+        if (!(await nav.locator('.cad-nav-filter').isVisible())) seen.push('the filter is out of view');
+        const filter = nav.locator('.cad-nav-filter');
+        await filter.fill('zzzz-no-such-page');
+        if (!/No pages match/.test(await nav.locator('.cad-nav-empty').textContent())) seen.push('filter with no match says nothing');
+        await filter.press('Escape');
+        const open = await nav.locator('details.cad-nav-group[open]').count();
+        if (open !== 1) seen.push(`clearing the filter leaves ${open} groups open (was 1)`);
       } else {
         const toggle = nav.locator('.cad-nav-toggle');
         if (!(await toggle.isVisible())) seen.push('no Contents toggle on a narrow screen');
         else if (await nav.locator('.cad-nav-panel').isVisible()) seen.push('page tree is open before the toggle is pressed');
         else { await toggle.click(); if (!(await nav.locator('a[aria-current=page]').isVisible())) seen.push('toggle does not open the page tree'); }
       }
+      // Keyboard users skip the header and the tree in one key press: after it, the next Tab is inside the article.
+      await page.goto(base + route, { waitUntil: 'networkidle' });
+      await page.keyboard.press('Tab');
+      if ((await page.evaluate(() => document.activeElement?.className)) !== 'skip-link') seen.push('the first Tab stop is not "Skip to content"');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Tab');
+      if (!(await page.evaluate(() => !!document.activeElement?.closest('#content')))) seen.push('after "Skip to content", Tab does not land in the article');
+      // A label is text, never markup (other projects may put user text in it).
+      const injected = await page.evaluate(() => {
+        const el = document.createElement('cad-nav');
+        el.setAttribute('label', '<img src=x onerror="window.__xss=1">Pages');
+        el.innerHTML = '<details class="cad-nav-group"><summary>x</summary><ul><li><a href="/">x</a></li></ul></details>';
+        document.body.append(el);
+        const r = !!el.querySelector('.cad-nav-toggle img');
+        el.remove();
+        return r;
+      });
+      if (injected) seen.push('nav label is parsed as HTML');
     }
     if (route === '/docs/compliant') {
       const href = await page.locator('.feedback a.button').getAttribute('href').catch(() => null);
@@ -127,22 +162,37 @@ try {
   const diagramPages = [];
   for (const e of await readdir(dir, { withFileTypes: true, recursive: true })) {
     const rel = path.relative(dir, path.join(e.parentPath, e.name));
-    if (e.isFile() && rel.endsWith('.html') && !rel.startsWith('kit') && (await readFile(path.join(dir, rel), 'utf8')).includes('language-mermaid'))
-      diagramPages.push('/' + rel.replace(/\.html$/, '').split(path.sep).join('/'));
+    if (!e.isFile() || !rel.endsWith('.html') || rel.startsWith('kit')) continue;
+    const sources = ((await readFile(path.join(dir, rel), 'utf8')).match(/class="language-mermaid"|<pre class="mermaid"/g) || []).length;
+    if (sources) diagramPages.push(['/' + rel.replace(/\.html$/, '').split(path.sep).join('/'), sources]);
   }
-  // Pages whose diagrams are being redrawn in an open PR; a page that fits again is reported, so it leaves this list.
+  // Pages whose diagrams are being redrawn in an open PR. One that fits again fails the test, so it leaves this list.
   const KNOWN_WIDE = new Map([['/README', '#115 rewrites the README and its diagrams']]);
+  // Headless Chrome hides scrollbars; a desktop browser with classic ones has up to 17px less, so keep that much spare.
+  const SCROLLBAR = 17;
   const wide = await browser.newPage({ viewport: { width: 1100, height: 900 } });
-  for (const route of diagramPages.sort()) {
+  for (const [route, sources] of diagramPages.sort()) {
     await wide.goto(base + route, { waitUntil: 'networkidle' });
-    await wide.waitForFunction(() => [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'),
-      null, { timeout: 20000 }).catch(() => problems.push(`1100px ${route}: diagrams did not finish rendering`));
+    await wide.waitForFunction(n => document.querySelectorAll('.cad-diagram').length >= n &&
+      [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'),
+      sources, { timeout: 20000 }).catch(() => problems.push(`1100px ${route}: diagrams did not finish rendering`));
+    const drawn = await wide.$$eval('.cad-diagram', fs => fs.filter(f => f.dataset.state === 'ready' && f.querySelector('svg')).length);
+    if (drawn !== sources) problems.push(`1100px ${route}: ${drawn} of ${sources} diagrams rendered`);
     const over = (await wide.$$eval('.cad-diagram .cad-diagram-view', views => views.map(v => ({ over: v.scrollWidth - v.clientWidth, w: v.scrollWidth }))))
-      .filter(d => d.over > 1);
-    if (KNOWN_WIDE.has(route)) { if (!over.length) console.log(`# ${route} now fits: remove it from KNOWN_WIDE`); continue; }
-    for (const d of over) problems.push(`1100px ${route}: a diagram is ${d.w}px wide, ${d.over}px wider than the column (top-down, at most three boxes per row)`);
+      .filter(d => d.over > 1 - SCROLLBAR);
+    if (KNOWN_WIDE.has(route)) { if (!over.length) problems.push(`${route} now fits: remove it from KNOWN_WIDE`); continue; }
+    for (const d of over) problems.push(`1100px ${route}: a diagram is ${d.w}px wide, ${d.over + SCROLLBAR}px wider than the column allows (top-down, at most three boxes per row)`);
   }
   await wide.close();
+  // Very wide screens: the outline moves to its own column on the right and keeps marking the section being read.
+  const wider = await browser.newPage({ viewport: { width: 1600, height: 900 } });
+  await wider.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
+  await wider.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, document.body.scrollHeight / 2); });
+  await wider.waitForTimeout(300);
+  if (!(await wider.locator('.doc-rail').isVisible())) problems.push('1600px: no "On this page" column');
+  else if (!(await wider.locator('.doc-rail a[aria-current=location]').count())) problems.push('1600px: the right-hand outline does not mark the section');
+  if (await wider.locator('cad-nav .cad-nav-outline').isVisible()) problems.push('1600px: the outline shows twice');
+  await wider.close();
   assert.deepEqual(problems, []);
   console.log(`${engine.name()}: ${ROUTES.length} routes at 360 and 1366 px under the site CSP PASS`);
 } finally {

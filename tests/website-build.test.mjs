@@ -217,15 +217,77 @@ test('doc pages carry the page tree, with this page marked', async () => {
   const catalog = JSON.parse(await readFile(path.join(out, 'catalog.json'), 'utf8'));
   for (const doc of catalog.items.filter(i => i.markdown && i.status === 'ours' && ['doc', 'lesson', 'skill', 'agent', 'research'].includes(i.type)))
     assert.ok(nav.includes(`href="${doc.url.replace('https://cad-agent.valpatel.com', '')}"`), `${doc.name} is missing from the page tree`);
-  assert.ok(files.includes('kit/nav.js'));
+  assert.ok(files.includes('kit/nav.js') && files.includes('kit/nav.css'));
+  // Written out in full, so the first paint is final and it works without script: a landmark, the toggle, the
+  // filter, and this page's outline (every h2/h3 with an id) under it, again in the right-hand column.
+  assert.match(toolkit, /<cad-nav [^>]*role="navigation" aria-label="Pages and contents"/);
+  assert.match(toolkit, /<link rel="stylesheet" href="\/kit\/nav\.css">/);
+  assert.match(nav, /^<button type="button" class="cad-nav-toggle" aria-expanded="false">/);
+  assert.match(nav, /<div class="cad-nav-panel"><input type="search" class="cad-nav-filter"/);
+  const article = toolkit.match(/<article class="prose">([\s\S]*?)<\/article>/)[1];
+  const heads = [...article.matchAll(/<h[23] id="([^"]+)">/g)].map(m => m[1]);
+  const listed = list => [...list.matchAll(/<a href="#([^"]+)">/g)].map(m => decodeURIComponent(m[1]));
+  const inTree = nav.match(/aria-current="page">[^<]*<\/a><ol class="cad-nav-outline"[^>]*>([\s\S]*?)<\/ol>/)?.[1];
+  assert.deepEqual(listed(inTree ?? ''), heads, 'the outline under the current page lists every h2/h3');
+  const rail = toolkit.match(/<nav class="doc-rail" aria-label="On this page">([\s\S]*?)<\/nav>/)?.[1];
+  assert.deepEqual(listed(rail ?? ''), heads, 'the right-hand outline lists every h2/h3');
+  assert.match(toolkit, /<body[^>]*><a class="skip-link" href="#content">Skip to content<\/a>/);
+  assert.match(toolkit, /<div class="doc-main" id="content" tabindex="-1">/);
 });
 
 // Owner (2026-10-31): "make sure every page has some interesting diagrams, animations, renders etc, don't make them
-// boring." Pages without any are listed in visuals.json; this number may only go down.
-const PAGES_WITHOUT_VISUALS = 45;
-test('pages without a picture, diagram or demo do not grow in number', async () => {
+// boring." The pages that still have no picture, render, diagram or demo, exactly (the backlog in #122). A page that
+// gains one must leave this list, and a new page without one fails, so the list only shrinks.
+const PAGES_WITHOUT_VISUALS = [
+  'CONTRIBUTING.md',
+  'THIRD_PARTY_NOTICES.md',
+  'agents/cad-pr-reviewer.md',
+  'agents/cad-resume.md',
+  'docs/agent-workflow.md',
+  'docs/common-issues.md',
+  'docs/compliant.md',
+  'docs/design-process-plan.md',
+  'docs/dossier.md',
+  'docs/explore.md',
+  'docs/file-viewer.md',
+  'docs/gates.md',
+  'docs/pcb.md',
+  'docs/rendered-motion.md',
+  'docs/review-packet.md',
+  'docs/subassembly-insertion.md',
+  'docs/toolkit.md',
+  'docs/volume-precision.md',
+  'docs/web-diagrams.md',
+  'docs/web-parts.md',
+  'lessons/01-verify-from-source.md',
+  'lessons/02-user-intent-and-requirements.md',
+  'lessons/03-mechanical-design-rules.md',
+  'lessons/04-fasteners-and-assembly-access.md',
+  'lessons/05-cables-connectors-and-routing.md',
+  'lessons/06-enclosure-features.md',
+  'lessons/07-verification-and-evidence.md',
+  'lessons/08-review-site-ux.md',
+  'lessons/09-agent-process.md',
+  'lessons/10-simulation-and-material.md',
+  'lessons/11-pcb-evidence-and-review.md',
+  'lessons/12-original-file-viewer.md',
+  'lessons/README.md',
+  'research/agent-toolkits-2026-10.md',
+  'research/compliant-mechanisms.md',
+  'research/design-workflows.md',
+  'research/fea-and-process-tools.md',
+  'research/landscape.md',
+  'research/simulation-tools.md',
+  'skills/cad-motion-validation/SKILL.md',
+  'skills/cad-pr-review/SKILL.md',
+  'skills/cad-remote-runs/SKILL.md',
+  'skills/cad-work-tracking/SKILL.md',
+  'skills/design-process/SKILL.md',
+  'skills/mcmaster-parts/SKILL.md',
+];
+test('the pages without a picture, diagram or demo are exactly the known backlog', async () => {
   const { without } = JSON.parse(await readFile(path.join(out, 'visuals.json'), 'utf8'));
-  assert.ok(without.length <= PAGES_WITHOUT_VISUALS,
-    `${without.length} pages have nothing to look at (was ${PAGES_WITHOUT_VISUALS}); add a diagram, render or demo: ${without.join(', ')}`);
-  if (without.length < PAGES_WITHOUT_VISUALS) console.log(`# lower PAGES_WITHOUT_VISUALS to ${without.length}`);
+  const gained = PAGES_WITHOUT_VISUALS.filter(p => !without.includes(p)), lacking = without.filter(p => !PAGES_WITHOUT_VISUALS.includes(p));
+  assert.deepEqual(lacking, [], `add a diagram, render or demo to: ${lacking.join(', ')}`);
+  assert.deepEqual(gained, [], `these now have something to look at; remove them from PAGES_WITHOUT_VISUALS: ${gained.join(', ')}`);
 });

@@ -1,67 +1,33 @@
 /** <cad-nav>: a sticky page tree for long docs on wide screens, with the current page's outline and where you are.
  *
+ *   <link rel="stylesheet" href="/kit/nav.css">          <!-- in <head>: styled and folded from the first paint -->
  *   <script type="module" src="/kit/nav.js"></script>
- *   <div class="layout">                      <!-- your grid: nav column + content column -->
- *     <cad-nav for="article" label="Contents">
- *       <details class="cad-nav-group" open><summary>Docs</summary>
- *         <ul><li><a href="/docs/a">A</a></li><li><a href="/docs/b" aria-current="page">B</a></li></ul></details>
- *       <details class="cad-nav-group"><summary>Lessons</summary><ul>…</ul></details>
+ *   <div class="layout">                                  <!-- your grid: nav column + content column -->
+ *     <cad-nav for="article" role="navigation" aria-label="Pages and contents">
+ *       <button type="button" class="cad-nav-toggle" aria-expanded="false">Pages and contents</button>
+ *       <div class="cad-nav-panel">
+ *         <input type="search" class="cad-nav-filter" placeholder="Filter pages" aria-label="Filter pages">
+ *         <details class="cad-nav-group" open><summary>Docs</summary>
+ *           <ul><li><a href="/docs/a">A</a></li><li><a href="/docs/b" aria-current="page">B</a>
+ *             <ol class="cad-nav-outline" aria-label="On this page"><li class="h2"><a href="#x">X</a></li></ol></li></ul>
+ *         </details>
+ *       </div>
  *     </cad-nav>
  *     <article>…<h2 id="x">…</h2>…</article>
  *   </div>
  *
  * Give <cad-nav> the full height of its column (align-self: stretch in a grid), so its panel can stay in view.
- * The tree is plain HTML (it works without script: groups open and close natively). The script adds:
- * - under the current page (`aria-current="page"`), an outline of the `for` element's h2/h3 headings (with ids), and
- *   marks the section being read as you scroll;
- * - a filter box that narrows the tree as you type (Esc clears);
- * - on narrow screens (below `wide`, default 1100px) one "Contents" toggle instead of a column.
- * Styles come in through a constructable stylesheet (no inline <style>, so strict CSPs allow it); restyle with the
- * --cad-nav-* custom properties or plain CSS. No dependencies.
+ * Everything above is plain HTML: without script the groups open and close natively and the outline links work. Write
+ * it out like this (a build step can) and nothing moves when the script arrives. A bare tree of groups also works:
+ * the script then adds the toggle, the filter and the outline (of the `for` element's h2/h3 headings with ids) itself,
+ * and sets the landmark role and label (`label`, default "Contents").
+ * The script:
+ * - marks the section being read in every outline (in the tree, and in any element matched by `rail`, e.g. a right-hand
+ *   "On this page" column) with aria-current="location", as you scroll and when you follow an outline link;
+ * - narrows the tree as you type in the filter (Esc clears; says so when nothing matches);
+ * - opens and closes the tree with the toggle on narrow screens (nav.css decides when the toggle shows).
+ * No dependencies.
  */
-const CSS = `cad-nav{display:block;font:var(--cad-nav-font,13px/1.5 system-ui,sans-serif);color:var(--cad-nav-fg,#173d3c)}
-cad-nav .cad-nav-panel{position:sticky;top:var(--cad-nav-top,96px);max-height:calc(100vh - var(--cad-nav-top,96px) - 16px);overflow:auto;
-  padding:4px 10px 24px 2px;overscroll-behavior:contain;scrollbar-width:thin}
-cad-nav .cad-nav-toggle{display:none}
-cad-nav .cad-nav-filter{width:100%;box-sizing:border-box;margin:0 0 12px;padding:8px 12px;border-radius:999px;font:inherit;
-  border:1px solid var(--cad-nav-line,#c9d8ca);background:var(--cad-nav-bg,#fff);color:inherit}
-cad-nav .cad-nav-filter:focus-visible{outline:2px solid var(--cad-nav-accent,#bd3a12);outline-offset:1px}
-cad-nav details{margin:0 0 6px}
-cad-nav summary{cursor:pointer;font-weight:700;font-size:.78em;letter-spacing:.08em;text-transform:uppercase;padding:6px 4px;
-  color:var(--cad-nav-muted,#526863);list-style-position:inside}
-cad-nav ul,cad-nav ol{list-style:none;margin:0;padding:0}
-cad-nav li a{display:block;padding:4px 8px 4px 12px;border-left:2px solid transparent;color:inherit;text-decoration:none;
-  border-radius:0 8px 8px 0;overflow-wrap:anywhere}
-cad-nav li a:hover{background:var(--cad-nav-hover,#eef1e4)}
-cad-nav li a:focus-visible{outline:2px solid var(--cad-nav-accent,#bd3a12);outline-offset:-2px}
-cad-nav a[aria-current=page]{font-weight:700;border-left-color:var(--cad-nav-accent,#bd3a12);background:var(--cad-nav-current,#f0f5e7)}
-cad-nav .cad-nav-outline{margin:2px 0 8px 14px;border-left:1px solid var(--cad-nav-line,#c9d8ca)}
-cad-nav .cad-nav-outline a{font-size:.92em;padding:3px 8px;color:var(--cad-nav-muted,#526863)}
-cad-nav .cad-nav-outline .h3 a{padding-left:20px;font-size:.88em}
-cad-nav .cad-nav-outline a[data-active]{color:var(--cad-nav-fg,#173d3c);font-weight:650;border-left-color:var(--cad-nav-active,#2e9d5b)}
-cad-nav [hidden]{display:none!important}
-cad-nav[data-narrow] .cad-nav-panel{position:static;max-height:none;overflow:visible;padding:0}
-cad-nav[data-narrow] .cad-nav-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 16px;
-  border-radius:12px;border:1px solid var(--cad-nav-line,#c9d8ca);background:var(--cad-nav-current,#f0f5e7);color:inherit;
-  font:inherit;font-weight:700;cursor:pointer;min-height:44px}
-cad-nav[data-narrow]:not([data-open]) .cad-nav-panel{display:none}
-cad-nav[data-narrow][data-open] .cad-nav-panel{margin-top:10px}
-@media(prefers-reduced-motion:reduce){cad-nav *{scroll-behavior:auto!important}}`;
-
-let styled = false;
-function addStyles() {
-  if (styled || typeof document === 'undefined') return;
-  styled = true;
-  try {
-    const sheet = new CSSStyleSheet();
-    sheet.replaceSync(CSS);
-    document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
-  } catch {
-    const style = document.createElement('style');
-    style.textContent = CSS;
-    document.head.append(style);
-  }
-}
 
 /** The outline entries for a container: h2 and h3 headings that have ids. */
 export function outlineOf(root) {
@@ -70,94 +36,167 @@ export function outlineOf(root) {
     .filter(h => h.text);
 }
 
+function outlineList(items) {
+  const list = document.createElement('ol');
+  list.className = 'cad-nav-outline';
+  list.setAttribute('aria-label', 'On this page');
+  for (const h of items) {
+    const li = document.createElement('li');
+    li.className = `h${h.level}`;
+    const a = document.createElement('a');
+    a.href = `#${encodeURIComponent(h.id)}`;
+    a.textContent = h.text;                                  // heading text, never markup
+    li.append(a);
+    list.append(li);
+  }
+  return list;
+}
+
 export class CadNav extends HTMLElement {
+  #stop;
+
   connectedCallback() {
-    if (this.dataset.ready) return;
-    this.dataset.ready = '1';
-    addStyles();
-    const panel = document.createElement('div');
-    panel.className = 'cad-nav-panel';
-    panel.id = `cad-nav-${Math.random().toString(36).slice(2, 8)}`;
-    panel.append(...this.childNodes);
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = 'cad-nav-toggle';
+    if (this.#stop) return;
+    this.#stop = new AbortController();
+    const signal = this.#stop.signal;
+    const label = this.getAttribute('label') || 'Contents';
+    if (!this.hasAttribute('role')) this.setAttribute('role', 'navigation');
+    if (!this.hasAttribute('aria-label')) this.setAttribute('aria-label', label);
+
+    let panel = this.querySelector(':scope > .cad-nav-panel');
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.className = 'cad-nav-panel';
+      panel.append(...[...this.childNodes].filter(n => !n.classList?.contains('cad-nav-toggle')));
+      this.append(panel);
+    }
+    panel.id ||= `cad-nav-${Math.random().toString(36).slice(2, 8)}`;
+    let toggle = this.querySelector(':scope > .cad-nav-toggle');
+    if (!toggle) {
+      toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'cad-nav-toggle';
+      toggle.textContent = label;                            // the label is page text, never markup
+      this.prepend(toggle);
+    }
     toggle.setAttribute('aria-controls', panel.id);
-    toggle.setAttribute('aria-expanded', 'false');
-    toggle.innerHTML = `<span>${this.getAttribute('label') || 'Contents'}</span><span aria-hidden="true">▾</span>`;
+    toggle.setAttribute('aria-expanded', String(this.hasAttribute('data-open')));
     toggle.addEventListener('click', () => {
       const open = !this.hasAttribute('data-open');
       this.toggleAttribute('data-open', open);
       toggle.setAttribute('aria-expanded', String(open));
-    });
-    const filter = document.createElement('input');
-    filter.type = 'search';
-    filter.className = 'cad-nav-filter';
-    filter.placeholder = 'Filter pages';
-    filter.setAttribute('aria-label', 'Filter pages');
-    panel.prepend(filter);
-    this.append(toggle, panel);
-    this.#outline(panel);
-    this.#filter(filter, panel);
-    const wide = window.matchMedia(`(min-width: ${this.getAttribute('wide') || '1100px'})`);
-    const fit = () => this.toggleAttribute('data-narrow', !wide.matches);
-    wide.addEventListener('change', fit);
-    fit();
-    // Show the current page in the column without moving the page itself.
-    const current = panel.querySelector('a[aria-current=page]');
-    if (current && wide.matches) panel.scrollTop = Math.max(0, current.offsetTop - panel.clientHeight / 3);
+    }, { signal });
+    let filter = panel.querySelector(':scope > .cad-nav-filter');
+    if (!filter) {
+      filter = document.createElement('input');
+      filter.type = 'search';
+      filter.className = 'cad-nav-filter';
+      filter.placeholder = 'Filter pages';
+      filter.setAttribute('aria-label', 'Filter pages');
+      panel.prepend(filter);
+    }
+    this.#filter(filter, panel, signal);
+    this.#outline(panel, signal);
+    this.#reveal(panel, filter);
   }
 
-  #outline(panel) {
+  disconnectedCallback() {
+    this.#stop?.abort();
+    this.#stop = undefined;
+  }
+
+  /** On a scrolling panel, bring the current page into view without hiding the filter (it is sticky) or, when it
+   * fits, the name of the page's group; never moves the page itself. */
+  #reveal(panel, filter) {
+    const current = panel.querySelector('a[aria-current=page]');
+    if (!current || panel.scrollHeight <= panel.clientHeight + 1) return;
+    const top = el => el.getBoundingClientRect().top - panel.getBoundingClientRect().top + panel.scrollTop;
+    const room = filter.offsetHeight + 16, visible = () => top(current) - panel.scrollTop + current.offsetHeight <= panel.clientHeight - 24;
+    if (visible()) return;
+    const group = current.closest('details');
+    panel.scrollTop = Math.max(0, (group ? top(group) : top(current)) - room);
+    if (!visible()) panel.scrollTop = Math.max(0, top(current) - panel.clientHeight / 3);
+  }
+
+  #outline(panel, signal) {
     const target = document.querySelector(this.getAttribute('for') || 'article');
     const current = panel.querySelector('a[aria-current=page]');
-    const items = outlineOf(target);
-    if (!current || items.length < 2) return;
-    current.closest('details')?.setAttribute('open', '');
-    const list = document.createElement('ol');
-    list.className = 'cad-nav-outline';
-    list.setAttribute('aria-label', 'On this page');
-    for (const h of items) {
-      const li = document.createElement('li');
-      li.className = `h${h.level}`;
-      const a = document.createElement('a');
-      a.href = `#${encodeURIComponent(h.id)}`;
-      a.textContent = h.text;
-      li.append(a);
-      list.append(li);
+    if (current && !panel.querySelector('.cad-nav-outline')) {
+      const items = outlineOf(target);
+      if (items.length >= 2) current.after(outlineList(items));
     }
-    current.after(list);
-    const links = new Map([...list.querySelectorAll('a')].map(a => [decodeURIComponent(a.hash.slice(1)), a]));
-    const heads = [...links.keys()].map(id => document.getElementById(id)).filter(Boolean);
-    // The section being read is the last heading above a line a third of the way down the window (checked once per
-    // frame while scrolling, so jumps and slow scrolls both land right).
-    let queued = false;
+    current?.closest('details')?.setAttribute('open', '');
+    const rails = this.getAttribute('rail') ? [...document.querySelectorAll(this.getAttribute('rail'))] : [];
+    const links = [...panel.querySelectorAll('.cad-nav-outline a'), ...rails.flatMap(r => [...r.querySelectorAll('a[href^="#"]')])];
+    const byId = new Map();
+    for (const a of links) {
+      const id = decodeURIComponent(a.hash.slice(1));
+      if (!byId.has(id)) byId.set(id, []);
+      byId.get(id).push(a);
+    }
+    const heads = [...byId.keys()].map(id => document.getElementById(id)).filter(Boolean)
+      .sort((a, b) => a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1);
+    if (!heads.length) return;
+    // The section being read: the last heading above a line a third of the way down the window, checked once per frame
+    // while scrolling. Two exceptions: a heading just jumped to (outline link, #hash) stays marked while it is on
+    // screen, and at the very bottom of the page, where the last sections can never reach the line, the last heading
+    // on screen is marked.
+    let pinned = null, queued = false;
+    const onScreen = h => { const t = h.getBoundingClientRect().top; return t >= -2 && t < innerHeight - 8; };
     const mark = () => {
       queued = false;
       const line = Math.min(innerHeight / 3, 220);
-      const current = heads.filter(h => h.getBoundingClientRect().top <= line).at(-1);
-      for (const [id, a] of links) a.toggleAttribute('data-active', id === current?.id);
+      let active = heads.filter(h => h.getBoundingClientRect().top <= line).at(-1);
+      const root = document.scrollingElement || document.documentElement;
+      if (root.scrollTop + innerHeight >= root.scrollHeight - 2) active = heads.filter(onScreen).at(-1) || active;
+      if (pinned && onScreen(pinned)) active = pinned;
+      else pinned = null;
+      for (const [id, as] of byId) for (const a of as) {
+        if (id === active?.id) a.setAttribute('aria-current', 'location');
+        else a.removeAttribute('aria-current');
+      }
     };
-    addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(mark); } }, { passive: true });
-    addEventListener('hashchange', mark);
+    const schedule = () => { if (!queued) { queued = true; requestAnimationFrame(mark); } };
+    const pin = id => { pinned = document.getElementById(id) || null; schedule(); };
+    addEventListener('scroll', schedule, { passive: true, signal });
+    addEventListener('resize', schedule, { passive: true, signal });
+    addEventListener('hashchange', () => pin(decodeURIComponent(location.hash.slice(1))), { signal });
+    for (const a of links) a.addEventListener('click', () => pin(decodeURIComponent(a.hash.slice(1))), { signal });
+    if (location.hash) pin(decodeURIComponent(location.hash.slice(1)));
     mark();
   }
 
-  #filter(input, panel) {
+  #filter(input, panel, signal) {
+    let status = panel.querySelector(':scope > .cad-nav-empty');
+    if (!status) {
+      status = document.createElement('p');
+      status.className = 'cad-nav-empty';
+      status.setAttribute('role', 'status');
+      input.after(status);
+    }
+    const groups = [...panel.querySelectorAll('.cad-nav-group')];
+    let saved = null;                                        // which groups were open before filtering began
     const apply = () => {
       const terms = input.value.toLowerCase().split(/\s+/).filter(Boolean);
+      if (terms.length && !saved) saved = groups.map(g => g.open);
+      let shown = 0;
       for (const li of panel.querySelectorAll('.cad-nav-group li')) {
         if (li.closest('.cad-nav-outline')) continue;
-        li.hidden = !terms.every(t => li.textContent.toLowerCase().includes(t));
+        const a = li.querySelector(':scope > a');
+        li.hidden = !terms.every(t => (a?.textContent || li.textContent).toLowerCase().includes(t));
+        if (!li.hidden) shown++;
       }
-      for (const group of panel.querySelectorAll('.cad-nav-group')) {
+      groups.forEach((group, i) => {
         const any = group.querySelector(':scope > ul > li:not([hidden])');
         group.hidden = !any;
-        if (terms.length && any) group.setAttribute('open', '');
-      }
+        if (terms.length) { if (any) group.open = true; }
+        else if (saved) group.open = saved[i];
+      });
+      if (!terms.length) saved = null;
+      status.textContent = terms.length && !shown ? `No pages match “${input.value.trim()}”.` : '';
     };
-    input.addEventListener('input', apply);
-    input.addEventListener('keydown', e => { if (e.key === 'Escape') { input.value = ''; apply(); } });
+    input.addEventListener('input', apply, { signal });
+    input.addEventListener('keydown', e => { if (e.key === 'Escape' && input.value) { input.value = ''; apply(); } }, { signal });
   }
 }
 

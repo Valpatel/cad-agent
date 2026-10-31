@@ -124,4 +124,6 @@ test('headers: each header comes from one rule, and every inline script is allow
     if (m[1].trim()) assert.ok(csp.includes(`'sha256-${createHash('sha256').update(m[1]).digest('base64')}'`), `${f}: inline script not in CSP`);
   assert.ok(files.includes('kit/vendor/fonts/OFL-Inter.txt') && files.includes('kit/vendor/fonts/OFL-JetBrainsMono.txt'), 'font licences ship with the fonts');
   assert.ok(existsSync(path.join(out, '404.html')));
+  for (const f of html) assert.doesNotMatch(await readFile(path.join(out, f), 'utf8'), /(?:href|src)="\s*(?:javascript|vbscript|data:text):/i, f);
+  assert.ok(files.includes('THIRD_PARTY_NOTICES.html'), 'licence notices are published');
 });

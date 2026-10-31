@@ -81,7 +81,7 @@ const firstPara = md => {
 };
 
 const SECTIONS = [
-  { id: 'docs', title: 'Docs', match: f => /^docs\/[^/]+\.md$/.test(f) || f === 'README.md' || f === 'CONTRIBUTING.md' },
+  { id: 'docs', title: 'Docs', match: f => /^docs\/[^/]+\.md$/.test(f) || f === 'README.md' || f === 'CONTRIBUTING.md' || f === 'THIRD_PARTY_NOTICES.md' },
   { id: 'skills', title: 'Skills', match: f => /^skills\/[^/]+\/SKILL\.md$/.test(f) },
   { id: 'agents', title: 'Subagents', match: f => /^agents\/[^/]+\.md$/.test(f) },
   { id: 'lessons', title: 'Lessons (pitfalls)', match: f => /^lessons\/[^/]+\.md$/.test(f) },
@@ -156,9 +156,13 @@ const decode = s => s.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (m, e) => e[0] ===
 // GitHub's anchor rule (github-slugger): lower case, drop everything but letters, marks, numbers, connectors, hyphens
 // and spaces, then each space becomes a hyphen (runs are not collapsed); repeats get -1, -2.
 export const slug = text => decode(text.replace(/<[^>]*>/g, '')).toLowerCase().replace(/[^\p{L}\p{M}\p{N}\p{Pc}\- ]/gu, '').replace(/ /g, '-');
-// Docs are ours, but the site never serves script from Markdown: drop <script>, inline handlers and javascript: URLs.
-const sanitize = html => html.replace(/<script\b[\s\S]*?<\/script>/gi, '').replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
-  .replace(/(href|src)\s*=\s*("|')\s*javascript:[^"']*\2/gi, '$1="#"');
+// Docs are ours, but research quotes outside sources: the site never serves script from Markdown. Drop <script>,
+// <iframe>/<object>/<embed>, inline handlers, and any URL scheme other than http(s), mailto and data: images.
+const SAFE_URL = /^(?:https?:|mailto:|data:image\/(?:png|jpe?g|gif|webp);|[^:]*$|[^:]*[/?#])/i;
+export const safeUrl = u => SAFE_URL.test(String(u ?? '').trim()) ? String(u ?? '') : '#';
+const sanitize = html => html.replace(/<(script|iframe|object|embed)\b[\s\S]*?(?:<\/\1>|$)/gi, '').replace(/<(?:embed|iframe|object)\b[^>]*>/gi, '')
+  .replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+  .replace(/\b(href|src|action|formaction)\s*=\s*("([^"]*)"|'([^']*)')/gi, (m, attr, q, dq, sq) => `${attr}="${esc(safeUrl((dq ?? sq).replace(/&amp;/g, '&')))}"`);
 // Relative links in a Markdown copy: published pages and images stay relative (their .md twin or file is at the same
 // path); anything else (source files, tests) points at GitHub. absolute=true makes every link absolute (llms-full.txt).
 const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).map((chunk, i) => i % 2 ? chunk :
@@ -217,7 +221,7 @@ const LIVING = [
   { file: 'docs/common-issues.md', name: 'CAD pitfalls and their checks', summary: 'Recurring review findings from Gyropup and J501 (a rib inside a countersink, blocked holes, bridges), each with the automated check that catches it.' },
 ];
 const card = i => `<li class="card" data-type="${esc(i.type)}" data-text="${esc((i.name + ' ' + (i.summary || '') + ' ' + (i.license || '')).toLowerCase())}">
-<a href="${esc(i.url)}"><span class="card-name">${esc(i.name)}</span></a>
+<a href="${esc(safeUrl(i.url))}"><span class="card-name">${esc(i.name)}</span></a>
 <span class="pill pill-${esc(i.status)}">${esc(STATUS_NOTE[i.status] || i.status)}</span>${i.license ? `<span class="pill">${esc(i.license)}</span>` : ''}${i.stars ? `<span class="pill">★ ${Number(i.stars).toLocaleString('en-US')}</span>` : ''}
 <p>${esc(i.summary || '')}</p>${i.policy && i.policy !== i.summary ? `<p class="policy">${esc(i.policy)}</p>` : ''}${i.markdown ? `<a class="md" href="${esc(i.markdown.replace(ORIGIN, ''))}">.md</a>` : ''}</li>`;
 const groups = Object.keys(TYPE_LABEL).filter(t => counts[t]);

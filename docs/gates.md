@@ -11,15 +11,17 @@ prove that printed parts fit, move or hold: no tolerance stack, no print shrink,
 
 ```mermaid
 flowchart TD
-    B["build()<br/>geometry record"] --> T["relation table<br/>every part pair, cached"]
-    T --> G["the gates<br/>wall · connectivity · containment<br/>fasteners · motion · assembly access"]
+    B["build()<br/>geometry record"] --> T["relation table<br/>part pairs, cached"]
+    B --> W["wall gate<br/>each part alone"]
+    T --> G["connectivity,<br/>containment, fasteners;<br/>motion and assembly<br/>via the pair cache"]
     D["dossier<br/>declared intent"] --> G
-    G -->|"one verdict file each"| V["exports/gates/*.json"]
-    V --> S["cad-agent check · report · review site"]
+    W & G -->|"one verdict file each"| V["exports/gates/*.json"]
+    V --> Li["dossier lint<br/>reads the verdicts, last"]
+    Li --> S["cad-agent check ·<br/>report · review site"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class T,G here
+    class T,G,W,Li here
     class B,D near
     class V,S out
 ```

@@ -94,5 +94,10 @@ test('image sizes come from the file, so pages keep the space before images load
   assert.deepEqual(imageSize(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 716">'), 'a.svg'), { width: 680, height: 716 });
   assert.deepEqual(imageSize(Buffer.from('<svg width="200px" viewBox="0 0 400 100">'), 'a.svg'), { width: 200, height: 50 });
   assert.equal(imageSize(Buffer.from('<svg viewBox="nonsense">'), 'a.svg'), null);
+  // KiCad and Inkscape write mm; single quotes are valid XML; a percentage leaves the size to the viewBox.
+  assert.deepEqual(imageSize(Buffer.from('<svg width="210mm" height="297mm" viewBox="0 0 210 297">'), 'a.svg'), { width: 794, height: 1123 });
+  assert.deepEqual(imageSize(Buffer.from("<svg width='100' height='50'>"), 'a.svg'), { width: 100, height: 50 });
+  assert.deepEqual(imageSize(Buffer.from('<svg width="72pt" viewBox="0 0 4 2">'), 'a.svg'), { width: 96, height: 48 });
+  assert.deepEqual(imageSize(Buffer.from('<svg width="100%" height="100%" viewBox="0 0 400 200">'), 'a.svg'), { width: 400, height: 200 });
   assert.equal(imageSize(Buffer.from('not an image'), 'a.webp'), null);
 });

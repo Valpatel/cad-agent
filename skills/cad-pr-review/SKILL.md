@@ -14,9 +14,6 @@ flowchart TD
     R --> F["author fixes or explains,<br/>replies, resolves every thread"]
     F -->|"changes"| R
     R -->|"pass on the head"| M["merge under the repo's rules"]
-    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
-    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
     class R,F here
     class A near
     class M out

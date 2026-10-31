@@ -8,14 +8,15 @@ flowchart TD
     Bench -->|"qualified"| Ins["insert as one<br/>rigid step"]
     Bench -->|"failed or gaps"| X["parent result<br/>not qualified"]
     Par["parent<br/>sequence"] --> Ins
-    Svc["service_after<br/>out first"] --> Ins
     Ins --> Out["parent verdict<br/>inner results<br/>kept apart"]
+    Out ~~~ Svc
+    Svc["service_after<br/>parts assumed out"] --> Wd["service check:<br/>withdraw the module<br/>(conditional)"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
     class Bench,Ins here
     class M,Par,Svc near
-    class X,Out out
+    class X,Out,Wd out
 ```
 
 Additive Python API (issue #68):

@@ -6,20 +6,6 @@ tools: Bash, Read, Grep, Glob
 
 You review a pull request you did not write. Follow the `cad-pr-review` skill (reviewer part). In short:
 
-```mermaid
-flowchart TD
-    Rd["read the PR, issue, diff,<br/>the repo's rules"] --> V["verify the claims<br/>tests, small scripts"]
-    V --> C["inline comments<br/>+ summary review"]
-    C --> M["verdict marker<br/>as the last line"]
-    N["never edits, approves<br/>or merges"] -.- C
-    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
-    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class V,C here
-    class Rd,N near
-    class M out
-```
-
 1. Read the PR description, the linked issue and the diff (`gh pr view <n>`, `gh pr diff <n>`, or
    `git diff origin/<base>...HEAD` in the checkout you were given). Read the repo's AGENTS.md for its rules.
 2. Do not edit, commit or push anything in the checkout, and do not touch any other worktree. Scratch scripts go in a
@@ -48,3 +34,14 @@ flowchart TD
    Do not approve or merge.
 7. Final message: each finding as `file:line, severity, one sentence`, plus what you checked and found fine, and the
    links to the review and comments.
+
+```mermaid
+flowchart TD
+    Rd["read the PR, issue, diff,<br/>the repo's rules"] --> V["verify the claims<br/>tests, small scripts"]
+    V --> C["inline comments<br/>+ summary review"]
+    C --> M["verdict marker<br/>as the last line"]
+    N["never edits, approves<br/>or merges"] -.- C
+    class V,C here
+    class Rd,N near
+    class M out
+```

@@ -208,6 +208,28 @@ test('code samples keep their links as written (no rewriting inside code)', asyn
     assert.ok(!(await readFile(path.join(out, f), 'utf8')).includes('&amp;amp;'), `${f}: an entity encoded twice`);
 });
 
+test('an image keeps the size its author gave, and its tag survives any alt text', async () => {
+  const wt = path.join(tmp, 'wt-img');
+  execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });
+  try {
+    const fig = 'img/research/fdm-anisotropy.svg';
+    const [W, H] = (await readFile(path.join(root, 'docs', fig), 'utf8')).match(/width="(\d+)" height="(\d+)"/).slice(1).map(Number);
+    await writeFile(path.join(wt, 'docs/toolkit.md'), `# Toolkit\n\n<img src="${fig}" alt="costs US$'s and $& and $$" width="300">\n\n` +
+      `<img src="${fig}" alt="half" width="50%">\n\n<img src="${fig}" alt="short" height="100">\n\nAfter the images.\n`);
+    const draft = path.join(tmp, 'draft-img');
+    execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, '--worktree', '--out', draft], { cwd: root });
+    const page = await readFile(path.join(draft, 'docs/toolkit.html'), 'utf8');
+    const tag = alt => page.match(new RegExp(`<img\\b[^>]*alt="${alt}"[^>]*>`))?.[0] || '';
+    assert.match(tag("costs US\\$'s and \\$&amp;? and \\$\\$"), new RegExp(`width="300" height="${Math.round(300 * H / W)}"`), 'a pixel width stays; the height follows');
+    assert.equal((page.match(/After the images\./g) || []).length, 1, '"$\'" in an alt text must not copy the rest of the page');
+    assert.equal((page.match(/<\/html>/g) || []).length, 1);
+    assert.match(tag('half'), new RegExp(`width="${W}" height="${H}" style="width:50%"`), 'a percentage is honoured, with the proportions kept');
+    assert.match(tag('short'), new RegExp(`width="${Math.round(100 * W / H)}" height="100"`), 'a pixel height stays; the width follows');
+  } finally {
+    execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
+  }
+});
+
 test('every local image has its width and height, so nothing jumps while it loads', async () => {
   const bare = [];
   for (const f of html.filter(f => !f.startsWith('kit/'))) {
@@ -215,4 +237,20 @@ test('every local image has its width and height, so nothing jumps while it load
       if (!/\swidth="\d+"/.test(tag) || !/\sheight="\d+"/.test(tag)) bare.push(`${f}: ${tag.slice(0, 100)}`);
   }
   assert.deepEqual(bare, []);
+});
+
+test('diagrams in files agents load leave the palette to the site', async () => {
+  const sources = git('ls-tree', '-r', '--name-only', 'HEAD', 'skills', 'agents').split('\n').filter(f => /^(skills\/[^/]+\/SKILL|agents\/[^/]+)\.md$/.test(f));
+  let drawn = 0;
+  for (const f of sources) {
+    const md = git('show', `HEAD:${f}`);
+    if (!/```mermaid/.test(md)) continue;
+    drawn++;
+    assert.doesNotMatch(md, /^\s*classDef (?:here|near|out)\b/m, `${f}: the site adds the palette; keep agent context short`);
+    const page = await readFile(path.join(out, f.replace(/\.md$/, '.html')), 'utf8');
+    const used = [...md.matchAll(/^\s*class\s+\S+\s+(here|near|out)\s*$/gm)].map(m => m[1]);
+    for (const c of new Set(used)) assert.match(page, new RegExp(`classDef ${c} fill:#`), `${f}: ${c} is drawn in the palette`);
+    assert.doesNotMatch(await readFile(path.join(out, f), 'utf8'), /classDef/, `${f}: the Markdown twin stays as written`);
+  }
+  assert.ok(drawn >= 8, `${drawn} skill and subagent diagrams`);
 });

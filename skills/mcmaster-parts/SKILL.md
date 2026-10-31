@@ -15,9 +15,6 @@ flowchart TD
     D --> C["catalogue entry<br/>PN, specs, price, mass"]
     C --> K["check the model<br/>bounding box vs the page"]
     K --> Pl["place it at its seat"]
-    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
-    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
     class D,C,K here
     class P near
     class Pl out

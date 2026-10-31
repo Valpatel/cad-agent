@@ -27,14 +27,14 @@ flowchart TD
     D --> E["evaluator<br/>the project's own model"]
     E --> Cmp["compare<br/>Pareto ranking, BOM, swaps"]
     Cmp --> Pg["comparison page + JSON"]
-    Cmp --> O["optimise<br/>search for better designs"]
-    O -->|"new designs"| D
+    E --> O["optimise<br/>trials from<br/>the base design"]
+    O --> L["leaderboard<br/>+ trial records"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
     class D,Cmp,O here
     class Cat,E near
-    class Pg out
+    class Pg,L out
 ```
 
 ## What it does, and what it does not

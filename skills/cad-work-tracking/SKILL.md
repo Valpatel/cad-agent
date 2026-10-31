@@ -18,9 +18,6 @@ flowchart TD
     C <--> K["checkpoint<br/>every ~30 min"]
     C --> D["close out<br/>as PRs merge"]
     X["session ends"] -.-> Z["resume from GitHub"] -.-> C
-    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
-    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
     class B,C,K here
     class I,X,Z near
     class D out

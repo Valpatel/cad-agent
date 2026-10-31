@@ -7,14 +7,16 @@ upstream LICENSE/NOTICE files; those terms apply to that code. Our changes are l
 flowchart TD
     P["a project we found"] --> L{"its licence"}
     L -->|"MIT, BSD,<br/>Apache"| V["vendor or adapt<br/>pinned, credited,<br/>LICENSE kept"]
-    L -->|"GPL, AGPL"| X["run apart<br/>never copied"]
-    L -->|"no licence"| I["ideas only<br/>credited"]
+    L -->|"copyleft"| C{"which?"}
+    C -->|"LGPL"| Lg["vendored unmodified,<br/>licences and<br/>sources kept"]
+    C -->|"GPL, AGPL"| X["never copied: run as<br/>its own program, or an<br/>optional import (gmsh)"]
+    L -->|"none, non-commercial,<br/>custom"| I["ideas only<br/>credited"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class L here
+    class L,C here
     class P near
-    class V,X,I out
+    class V,Lg,X,I out
 ```
 
 | Project | Licence | Upstream | Pinned commit | Imported |

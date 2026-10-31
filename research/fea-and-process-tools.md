@@ -52,7 +52,7 @@ Settings verified in the ccx 2.23 manual:
 flowchart TD
     M["model<br/>2D section, gmsh mesh (≥ 4 through the root),<br/>secant or TDS E, contact K ≈ 10·E, friction μ"] --> St["NLGEOM static step<br/>insert, then back out"]
     St --> Out["F–δ curve<br/>peak insertion W, release force"]
-    Out --> Acc{"within ~10 % of the<br/>Bayer closed form?"}
+    Out --> Acc{"closed form ±10 %,<br/>mesh halving < 5 %,<br/>back to 0 on release,<br/>strain ≤ allowable?"}
     Acc -->|"yes"| Ev["evidence: .inp, solver version,<br/>CSV, strain map, STEP hash"]
     Acc -->|"no: refine"| M
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c

@@ -52,11 +52,17 @@ export function imageSize(buf, name = '') {
   }
   if (/\.svg$/i.test(name)) {
     const tag = b.toString('utf8').match(/<svg\b[^>]*>/i)?.[0] || '';
-    const attr = a => { const v = tag.match(new RegExp(`\\s${a}="\\s*([\\d.]+)(?:px)?\\s*"`))?.[1]; return v ? parseFloat(v) : 0; };
-    const box = tag.match(/\sviewBox="\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)\s*"/);
+    // CSS absolute units in px (KiCad and Inkscape write mm); em as 16 px. A percentage or an unknown unit says nothing
+    // about size, so the viewBox decides.
+    const PX = { '': 1, px: 1, mm: 96 / 25.4, cm: 96 / 2.54, in: 96, pt: 96 / 72, pc: 16, q: 96 / 101.6, em: 16 };
+    const attr = a => {
+      const m = tag.match(new RegExp(`\\s${a}\\s*=\\s*(["'])\\s*([\\d.]+)\\s*([a-z]*)\\s*\\1`, 'i'));
+      return m && PX[m[3].toLowerCase()] ? parseFloat(m[2]) * PX[m[3].toLowerCase()] : 0;
+    };
+    const box = tag.match(/\sviewBox\s*=\s*(["'])\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)\s*\1/);
     let w = attr('width'), h = attr('height');
     if (box && !(w && h)) {                                              // keep the viewBox's proportions
-      const [bw, bh] = [parseFloat(box[1]), parseFloat(box[2])];
+      const [bw, bh] = [parseFloat(box[2]), parseFloat(box[3])];
       if (w) h = w * bh / bw; else if (h) w = h * bw / bh; else [w, h] = [bw, bh];
     }
     return w && h ? { width: Math.round(w), height: Math.round(h) } : null;

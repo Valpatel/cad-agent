@@ -11,12 +11,9 @@ where another computer can find them.
 
 ```mermaid
 flowchart TD
-    B["before: the issue records host,<br/>command, log, done marker"] --> S["start detached<br/>on a compute host"]
+    B["before: a host by need,<br/>code from git, its own env"] --> S["start detached, then record it<br/>in the issue: host, command,<br/>log, done marker"]
     S --> W["while it runs: checkpoints;<br/>any machine can check it"]
-    W --> A["after: pull the results back,<br/>commit them, update the issue"]
-    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
-    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    W --> A["after: check the result,<br/>pull it back, commit,<br/>update the issue"]
     class S,W here
     class B near
     class A out

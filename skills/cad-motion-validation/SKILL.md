@@ -14,9 +14,6 @@ flowchart TD
     Ref --> T["3 motion-trace<br/>worst point, pivot, radial error"]
     T --> E["4 more events; a planted<br/>wrong pivot must fail"]
     E --> P["5 pair with the CAD gates,<br/>record the limits"]
-    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
-    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
     class Ref,T,E here
     class I near
     class P out

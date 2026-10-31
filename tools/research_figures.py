@@ -35,14 +35,26 @@ def table(md: str, heading: str) -> list[list[str]]:
     return rows[1:]                                   # without the header row
 
 
-def number(cell: str) -> tuple[float, str] | None:
-    m = re.match(r"^(≥|>)?\s*([0-9]+(?:\.[0-9]+)?)$", cell.replace(",", ""))
-    return (float(m.group(2)), m.group(1) or "") if m else None
+GAP = re.compile(r"^(?:—(?:\s*\([^)]*\))?|n/a|no\b.*)$", re.I)     # "—", "— (why)", "n/a", "no Z data"
 
 
-def bars_svg(title: str, rows: list[tuple[str, list[tuple[float, str]]]], series: list[tuple[str, str]],
+def number(cell: str, where: str) -> tuple[float, str] | None:
+    """A table cell as (value, mark): a plain number, or one marked ``≥``/``>`` as a lower bound. An explicit gap
+    (``—``, ``— (why)``, ``n/a``, ``no … data``) is None. Anything else is an error, so an edit to a table (a footnote, ``~``,
+    ``32.3k``) can never drop a row from its chart while ``--check`` still passes."""
+    text = cell.replace(",", "").strip()
+    if GAP.match(text):
+        return None
+    m = re.match(r"^(≥|>)?\s*([0-9]+(?:\.[0-9]+)?)$", text)
+    if not m:
+        raise ValueError(f"{where}: {cell!r} is neither a number nor a gap (—); fix the table or the chart's reader")
+    return float(m.group(2)), m.group(1) or ""
+
+
+def bars_svg(title: str, rows: list[tuple[str, list[tuple[float, str] | None]]], series: list[tuple[str, str]],
              vmax: float, ticks: list[float], fmt, note: str) -> str:
-    """Horizontal grouped bars: one group per row, one bar per series, the value printed at the bar's end."""
+    """Horizontal grouped bars: one group per row, one bar per series, the value printed at the bar's end; a missing
+    value (None) gets "—" and no bar."""
     w, label_w, pad = 680, 210, 18
     bar_h, gap, group_gap = 13, 3, 14
     group_h = len(series) * bar_h + (len(series) - 1) * gap
@@ -67,9 +79,13 @@ def bars_svg(title: str, rows: list[tuple[str, list[tuple[float, str]]]], series
     for label, values in rows:
         out.append(f'<text x="{label_w - 10}" y="{y + group_h / 2 + 4:.1f}" font-size="12" fill="{INK}" '
                    f'text-anchor="end">{escape(label)}</text>')
-        for (v, mark), (_, colour) in zip(values, series):
-            out.append(f'<rect x="{label_w}" y="{y}" width="{x(v) - label_w:.1f}" height="{bar_h}" rx="2" fill="{colour}"/>')
-            out.append(f'<text x="{x(v) + 5:.1f}" y="{y + bar_h - 2.5}" font-size="11" fill="{INK}">{escape(mark + fmt(v))}</text>')
+        for value, (_, colour) in zip(values, series):
+            if value is None:
+                out.append(f'<text x="{label_w + 5}" y="{y + bar_h - 2.5}" font-size="11" fill="{MUTED}">—</text>')
+            else:
+                v, mark = value
+                out.append(f'<rect x="{label_w}" y="{y}" width="{x(v) - label_w:.1f}" height="{bar_h}" rx="2" fill="{colour}"/>')
+                out.append(f'<text x="{x(v) + 5:.1f}" y="{y + bar_h - 2.5}" font-size="11" fill="{INK}">{escape(mark + fmt(v))}</text>')
             y += bar_h + gap
         y += group_gap - gap
     out.append(f'<text x="{pad}" y="{h - 12}" font-size="11" fill="{MUTED}">{escape(note)}</text>')
@@ -81,13 +97,16 @@ def anisotropy() -> str:
     md = (ROOT / "research" / "compliant-mechanisms.md").read_text(encoding="utf-8")
     rows = []
     for cells in table(md, "## 5. FDM anisotropy"):
-        strength, strain = number(cells[4]), number(cells[5])
-        if strength and strain:
-            rows.append((re.sub(r"\s*\([^)]*\)\s*$", "", cells[0]), [strength, strain]))
+        where = f"compliant-mechanisms.md §5, {cells[0]}"
+        values = [number(cells[4], where), number(cells[5], where)]
+        if any(values):                                  # a row with no ratio at all (no Z data) has nothing to draw
+            rows.append((re.sub(r"\s*\([^)]*\)\s*$", "", cells[0]), values))
+    marks = "".join(v[1] for _, vs in rows for v in vs if v)
+    note = "Manufacturers' data sheets, 100 % infill (research/compliant-mechanisms.md §5)." + \
+        (" —: not known." if any(v is None for _, vs in rows for v in vs) else "") + (" ≥: a lower bound." if marks else "")
     return bars_svg("Pulled across the layers: what is left of the in-plane value (Z ÷ XY)", rows,
                     [("strength", GREEN), ("strain to failure", ORANGE)], 1.0, [0, 0.25, 0.5, 0.75, 1.0],
-                    lambda v: f"{v:.2f}".rstrip("0").rstrip(".") if v in (0, 1) else f"{v:.2f}",
-                    "Manufacturers' data sheets, 100 % infill (research/compliant-mechanisms.md §5). ≥: a lower bound.")
+                    lambda v: f"{v:.2f}".rstrip("0").rstrip(".") if v in (0, 1) else f"{v:.2f}", note)
 
 
 def stars(top: int = 12) -> str:
@@ -96,12 +115,15 @@ def stars(top: int = 12) -> str:
     rows = []
     for cells in table(md, "## 1. Capability matrix"):
         name = re.match(r"\[([^\]]+)\]", cells[0])
-        count = number(cells[2].split("/")[0].strip())
-        if name and count:
+        if not name:
+            raise ValueError(f"landscape.md §1: {cells[0]!r} does not start with a [project](link)")
+        count = number(cells[2].split("/")[0], f"landscape.md §1, {name.group(1)}")
+        if count:
             rows.append((name.group(1), [count]))
     rows.sort(key=lambda r: -r[1][0][0])
+    rows = rows[:top]
     vmax = (int(rows[0][1][0][0]) // 5000 + 1) * 5000
-    return bars_svg(f"GitHub stars, the {top} most-starred projects in the capability matrix", rows[:top],
+    return bars_svg(f"GitHub stars, the {len(rows)} most-starred projects in the capability matrix", rows,
                     [("stars", GREEN)], vmax, [i * vmax / 5 for i in range(6)], lambda v: f"{v:,.0f}",
                     f"Read from the matrix rows (research/landscape.md §1), verified {verified}. Stars measure attention, not fitness.")
 

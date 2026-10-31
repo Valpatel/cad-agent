@@ -20,9 +20,6 @@ flowchart TD
     P --> Rv["7 a separate reviewer"]
     Rv -->|"changes"| Cd
     Rv --> Rp["8 report"]
-    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
-    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
     class Cd,G,B,P here
     class F near
     class Rv,Rp out

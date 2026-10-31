@@ -184,6 +184,16 @@ const decode = s => s.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (m, e) => e[0] ===
 // and spaces, then each space becomes a hyphen (runs are not collapsed); repeats get -1, -2.
 export const slug = text => decode(text.replace(/<[^>]*>/g, '')).toLowerCase().replace(/[^\p{L}\p{M}\p{N}\p{Pc}\- ]/gu, '').replace(/ /g, '-');
 
+// The shared diagram palette (the style guide, #121). Files agents load (skills, subagents) keep only their
+// `class … here` lines, to save context; GitHub draws those diagrams in its default colours, and the site adds the
+// classDefs a diagram uses but does not define.
+const PALETTE = { here: 'fill:#fffdf5,stroke:#173d3c,color:#173d3c', near: 'fill:#eef1e4,stroke:#6f8a80,color:#173d3c',
+  out: 'fill:#ffe1cc,stroke:#bd3a12,color:#173d3c' };
+const withPalette = md => md.replace(/^```mermaid\n([\s\S]*?)^```$/gm, (all, src) => {
+  const used = [...new Set([...src.matchAll(/^\s*class\s+\S+\s+(here|near|out)\s*;?\s*$/gm)].map(m => m[1]))]
+    .filter(c => !new RegExp(`^\\s*classDef\\s+${c}\\b`, 'm').test(src));
+  return used.length ? '```mermaid\n' + src + used.map(c => `    classDef ${c} ${PALETTE[c]}\n`).join('') + '```' : all;
+});
 // Relative links in a Markdown copy: published pages and images stay relative (their .md twin or file is at the same
 // path); anything else (source files, tests) points at GitHub. absolute=true makes every link absolute (llms-full.txt).
 const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).map((chunk, i) => i % 2 ? chunk :
@@ -206,7 +216,7 @@ for (const p of pages) {
     return `<h${depth} id="${base}${n ? '-' + n : ''}">${text}</h${depth}>`;
   };
   const body = /^#\s/m.test(p.body) ? p.body : `# ${p.title}\n\n${p.body}`;          // subagents have no heading
-  let html = sanitize(await marked.parse(body, { renderer }));
+  let html = sanitize(await marked.parse(withPalette(body), { renderer }));
   html = rewriteUrls(html, (url, attr) => {          // only real tags: link text inside code samples stays as written
     if (!url || url.startsWith('#') || /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(url)) return null;
     const [pathname, ...hash] = url.split('#');
@@ -217,15 +227,25 @@ for (const p of pages) {
     else target = `${REPO}/${tracked.includes(resolved) ? 'blob' : 'tree'}/dev/${resolved}`;
     return target + (hash.length ? '#' + hash.join('#') : '');
   });
-  // Every local image gets its intrinsic width and height, so its space is kept while it loads (no layout shift); a
-  // percentage (README's width="100%") keeps no height, and CSS max-width already fits images to the column.
+  // Every local image gets a width and height, so its space is kept while it loads (no layout shift). The author's
+  // size wins, as on GitHub: a pixel width (or height) keeps its value and the other side follows the image's
+  // proportions; a percentage width becomes a style (the attributes then only carry the proportions); otherwise the
+  // image's own size. CSS (max-width:100%; height:auto) fits all of them to the column.
   const sized = [];
   for (const [tag] of html.matchAll(/<img\b[^>]*>/gi)) {
     const src = tag.match(/\ssrc="\/([^"#?]+)"/)?.[1]?.replace(/&amp;/g, '&');
     if (src && !(/\swidth="\d+"/.test(tag) && /\sheight="\d+"/.test(tag)) && tracked.includes(src)) sized.push([tag, imageSize(await readBuf(src), src)]);
   }
-  for (const [tag, size] of sized) if (size)
-    html = html.replace(tag, tag.replace(/\s(?:width|height)="[^"]*"/gi, '').replace(/^<img/i, `<img width="${size.width}" height="${size.height}"`));
+  for (const [tag, size] of sized) if (size) {
+    const given = a => tag.match(new RegExp(`\\s${a}="\\s*([^"]*?)\\s*"`, 'i'))?.[1] || '';
+    const [w, h] = [given('width'), given('height')];
+    let { width, height } = size, style = '';
+    if (/^\d+(?:px)?$/.test(w)) [width, height] = [parseInt(w), Math.round(parseInt(w) * size.height / size.width)];
+    else if (/^\d+(?:px)?$/.test(h)) [width, height] = [Math.round(parseInt(h) * size.width / size.height), parseInt(h)];
+    else if (/^\d+(?:\.\d+)?%$/.test(w) && !/\sstyle=/i.test(tag)) style = ` style="width:${w}"`;
+    const fixed = tag.replace(/\s(?:width|height)="[^"]*"/gi, '').replace(/^<img/i, `<img width="${width}" height="${height}"${style}`);
+    html = html.replace(tag, () => fixed);                       // a function: "$&" or "$'" in an alt text stays literal
+  }
   // No third-party requests from the site: remote images (README badges) become their alt text.
   html = html.replace(/<img\b[^>]*\bsrc="(?:https?:)?\/\/[^"]*"[^>]*>/gi, m => {
     const alt = m.match(/\balt="([^"]*)"/)?.[1];

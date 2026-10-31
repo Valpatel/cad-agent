@@ -128,18 +128,18 @@ export class CadNav extends HTMLElement {
     }
     current.after(list);
     const links = new Map([...list.querySelectorAll('a')].map(a => [decodeURIComponent(a.hash.slice(1)), a]));
-    const visible = new Set();
+    const heads = [...links.keys()].map(id => document.getElementById(id)).filter(Boolean);
+    // The section being read is the last heading above a line a third of the way down the window (checked once per
+    // frame while scrolling, so jumps and slow scrolls both land right).
+    let queued = false;
     const mark = () => {
-      const ids = [...links.keys()];
-      const first = ids.find(id => visible.has(id)) ?? lastAbove(ids);
-      for (const [id, a] of links) a.toggleAttribute('data-active', id === first);
+      queued = false;
+      const line = Math.min(innerHeight / 3, 220);
+      const current = heads.filter(h => h.getBoundingClientRect().top <= line).at(-1);
+      for (const [id, a] of links) a.toggleAttribute('data-active', id === current?.id);
     };
-    const lastAbove = ids => ids.filter(id => document.getElementById(id)?.getBoundingClientRect().top < 120).at(-1);
-    const io = new IntersectionObserver(entries => {
-      for (const e of entries) e.isIntersecting ? visible.add(e.target.id) : visible.delete(e.target.id);
-      mark();
-    }, { rootMargin: '-80px 0px -55% 0px' });
-    for (const id of links.keys()) { const el = document.getElementById(id); if (el) io.observe(el); }
+    addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(mark); } }, { passive: true });
+    addEventListener('hashchange', mark);
     mark();
   }
 

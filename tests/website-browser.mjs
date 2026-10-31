@@ -93,6 +93,21 @@ try {
         if (label.img || !label.text.includes('<img')) seen.push('copy label is parsed as HTML');
       }
     }
+    if (route === '/docs/toolkit') {                    // page tree: a column on wide screens, a toggle on phones
+      const nav = page.locator('cad-nav');
+      if (width >= 1100) {
+        await page.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, document.body.scrollHeight / 2); });
+        await page.waitForTimeout(300);
+        const box = await nav.locator('.cad-nav-panel').boundingBox();
+        if (!box || box.y < 0 || box.y > 200) seen.push(`page tree is not in view after scrolling (y=${box?.y})`);
+        if (!(await nav.locator('.cad-nav-outline a[data-active]').count())) seen.push('outline does not mark the section being read');
+      } else {
+        const toggle = nav.locator('.cad-nav-toggle');
+        if (!(await toggle.isVisible())) seen.push('no Contents toggle on a narrow screen');
+        else if (await nav.locator('.cad-nav-panel').isVisible()) seen.push('page tree is open before the toggle is pressed');
+        else { await toggle.click(); if (!(await nav.locator('a[aria-current=page]').isVisible())) seen.push('toggle does not open the page tree'); }
+      }
+    }
     if (route === '/docs/compliant') {
       const href = await page.locator('.feedback a.button').getAttribute('href').catch(() => null);
       const u = href && new URL(href);

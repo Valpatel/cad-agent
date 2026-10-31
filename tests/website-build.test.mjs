@@ -206,4 +206,24 @@ test('code samples keep their links as written (no rewriting inside code)', asyn
   assert.match(viewer, /<code[^>]*>[^<]*href="kit\/file-viewer\.html\?file=/, 'the file-viewer snippet was rewritten');
   for (const f of files.filter(f => f.endsWith('.html') && !f.startsWith('kit/')))
     assert.ok(!(await readFile(path.join(out, f), 'utf8')).includes('&amp;amp;'), `${f}: an entity encoded twice`);
+test('doc pages carry the page tree, with this page marked', async () => {
+  const toolkit = await readFile(path.join(out, 'docs/toolkit.html'), 'utf8');
+  const nav = toolkit.match(/<cad-nav [^>]*>([\s\S]*?)<\/cad-nav>/)?.[1];
+  assert.ok(nav, 'no <cad-nav> on a doc page');
+  assert.equal((nav.match(/aria-current="page"/g) || []).length, 1);
+  assert.match(nav, /<a href="\/docs\/toolkit" aria-current="page">/);
+  const catalog = JSON.parse(await readFile(path.join(out, 'catalog.json'), 'utf8'));
+  for (const doc of catalog.items.filter(i => i.markdown && i.status === 'ours' && ['doc', 'lesson', 'skill', 'agent', 'research'].includes(i.type)))
+    assert.ok(nav.includes(`href="${doc.url.replace('https://cad-agent.valpatel.com', '')}"`), `${doc.name} is missing from the page tree`);
+  assert.ok(files.includes('kit/nav.js'));
+});
+
+// Owner (2026-10-31): "make sure every page has some interesting diagrams, animations, renders etc, don't make them
+// boring." Pages without any are listed in visuals.json; this number may only go down.
+const PAGES_WITHOUT_VISUALS = 45;
+test('pages without a picture, diagram or demo do not grow in number', async () => {
+  const { without } = JSON.parse(await readFile(path.join(out, 'visuals.json'), 'utf8'));
+  assert.ok(without.length <= PAGES_WITHOUT_VISUALS,
+    `${without.length} pages have nothing to look at (was ${PAGES_WITHOUT_VISUALS}); add a diagram, render or demo: ${without.join(', ')}`);
+  if (without.length < PAGES_WITHOUT_VISUALS) console.log(`# lower PAGES_WITHOUT_VISUALS to ${without.length}`);
 });

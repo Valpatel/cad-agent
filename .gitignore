@@ -8,4 +8,5 @@ mining/out/private/
 build/
 .cadagent-cache/
 node_modules/
+node_modules
 dist/

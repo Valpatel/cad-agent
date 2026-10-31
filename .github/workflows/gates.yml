@@ -1,0 +1,42 @@
+name: Gates
+# Merge gates (CONTRIBUTING.md "Gates"; rules in tools/ci_gates.py, tested in tests/test_ci_gates.py).
+# Required checks: branch-flow and review-gate on dev and main, release-gate on main.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: gates-${{ github.event.pull_request.number }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  branch-flow:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09   # v5
+        with: {persist-credentials: false}
+      - run: python3 tools/ci_gates.py branch-flow
+
+  review-gate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09   # v5
+        with: {persist-credentials: false}
+      - run: python3 tools/ci_gates.py review-gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  release-gate:
+    if: github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09   # v5
+        with: {persist-credentials: false, fetch-depth: 0}
+      - run: git fetch --no-tags origin main:refs/remotes/origin/main
+      - run: python3 tools/ci_gates.py release-gate

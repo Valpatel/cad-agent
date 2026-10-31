@@ -10,6 +10,7 @@
  *     <article>…<h2 id="x">…</h2>…</article>
  *   </div>
  *
+ * Give <cad-nav> the full height of its column (align-self: stretch in a grid), so its panel can stay in view.
  * The tree is plain HTML (it works without script: groups open and close natively). The script adds:
  * - under the current page (`aria-current="page"`), an outline of the `for` element's h2/h3 headings (with ids), and
  *   marks the section being read as you scroll;

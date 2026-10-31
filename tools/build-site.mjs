@@ -196,6 +196,10 @@ const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).m
       : `${REPO}/${tracked.includes(resolved) ? 'blob' : 'tree'}/dev/${resolved}`;
     return `${open}${target}${hash.length ? '#' + hash.join('#') : ''}${close}`;
   })).join('');
+// Every page should show something: a picture, render, diagram, animation or demo. Pages without one are listed by
+// the build and kept from growing by tests/website-build.test.mjs.
+const VISUAL = /<img\b|<svg\b|<video\b|class="language-mermaid"|<cad-(?!copy|nav)[a-z-]+/g;
+const visuals = new Map();
 for (const p of pages) {
   const ids = new Map();
   const renderer = new marked.Renderer();
@@ -228,7 +232,16 @@ for (const p of pages) {
   const crumbs = `<p class="crumbs"><a href="/catalog#${p.section}">${esc(SECTIONS.find(s => s.id === p.section).title)}</a> · <a href="${REPO}/blob/dev/${esc(p.file)}">${esc(p.file)}</a> · <a href="/${esc(p.file)}">Markdown</a></p>`;
   const dest = path.join(out, pageFile(p.file));
   await mkdir(path.dirname(dest), { recursive: true });
-  await writeFile(dest, frame({ title: p.title, body: crumbs + `<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file), md: '/' + p.file, description: p.summary, current: pageURL(p.file), updated: lastChange(p.file) }));
+  // Long pages: a page tree with this page's outline on the left (the kit's <cad-nav>), the article on the right.
+  const tree = SECTIONS.map(s => {
+    const list = pages.filter(q => q.section === s.id);
+    if (!list.length) return '';
+    return `<details class="cad-nav-group"${s.id === p.section ? ' open' : ''}><summary>${esc(s.title)}</summary><ul>${list.map(q =>
+      `<li><a href="${esc(pageURL(q.file))}"${q.file === p.file ? ' aria-current="page"' : ''}>${esc(q.title)}</a></li>`).join('')}</ul></details>`;
+  }).join('');
+  const nav = `<cad-nav for=".prose" label="Pages and contents">${tree}</cad-nav>`;
+  await writeFile(dest, frame({ title: p.title, body: `<div class="doc-layout">${nav}<div class="doc-main">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + '</div></div>', md: '/' + p.file, description: p.summary, current: pageURL(p.file), updated: lastChange(p.file) }));
+  visuals.set(p.file, (html.match(VISUAL) || []).length);
   await writeFile(path.join(out, p.file), rewriteMd(p.file, p.src));   // the Markdown twin, same path
 }
 // Images referenced by docs.
@@ -369,4 +382,7 @@ await writeFile(path.join(out, 'sitemap.xml'), '<?xml version="1.0" encoding="UT
   ['/', '/catalog', ...pages.map(p => pageURL(p.file))].map(u => `<url><loc>${ORIGIN}${u}</loc></url>`).join('') + '</urlset>\n');
 await writeFile(path.join(out, '404.html'), frame({ title: 'Not found', body: '<h1>Not here.</h1><p>Try the <a href="/catalog">catalogue</a> or <a href="/llms.txt">llms.txt</a>.</p>' }));
 await writeFile(path.join(out, 'version.json'), JSON.stringify({ revision, built: catalog.built, pages: pages.length, items: catalog.items.length }, null, 2) + '\n');
-console.log(`Built ${path.relative(root, out) || out}${WORKTREE ? ' (draft: working tree)' : ''}: ${pages.length} pages (+ Markdown twins), ${catalog.items.length} catalogue entries, ${commands.length} commands. Revision ${revision.slice(0, 12)}`);
+// For agents and the tests: which pages still have nothing to look at.
+const noVisual = [...visuals].filter(([, n]) => !n).map(([f]) => f).sort();
+await writeFile(path.join(out, 'visuals.json'), JSON.stringify({ pages: Object.fromEntries([...visuals].sort()), without: noVisual }, null, 2) + '\n');
+console.log(`Built ${path.relative(root, out) || out}${WORKTREE ? ' (draft: working tree)' : ''}: ${pages.length} pages (+ Markdown twins), ${catalog.items.length} catalogue entries, ${commands.length} commands. Revision ${revision.slice(0, 12)}. ${noVisual.length} pages have no picture, diagram or demo yet (visuals.json).`);

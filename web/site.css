@@ -95,6 +95,11 @@ border:1px solid #173d3c12;box-shadow:inset 0 1px 0 #ffffffc7,0 12px 24px #173d3
 .group[hidden],.card[hidden]{display:none}
 /* documents */
 .doc{max-width:900px;padding:24px 0 40px}
+/* doc pages: page tree + outline on the left on wide screens (kit <cad-nav>), one column below */
+.doc:has(.doc-layout){max-width:none}
+.doc-layout{display:block}.doc-main{min-width:0;max-width:880px}
+cad-nav{--cad-nav-font:13px/1.5 var(--font);--cad-nav-fg:var(--ink);--cad-nav-muted:var(--muted);--cad-nav-accent:var(--orange);margin:16px 0 0}
+@media(min-width:1100px){.doc-layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:52px;align-items:start}cad-nav{margin-top:28px}}
 .crumbs{font:11px/1.7 var(--mono);letter-spacing:.04em;color:var(--muted);margin:20px 0 0}
 .prose{font-size:15px;line-height:1.8;overflow-wrap:anywhere}
 .prose h1{font-size:clamp(30px,4vw,46px);line-height:1.15;letter-spacing:-.05em;margin:18px 0 20px}

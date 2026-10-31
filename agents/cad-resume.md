@@ -7,7 +7,7 @@ tools: Bash, Read, Grep, Glob
 You pick up work that another session started. Follow the "Resuming" part of the `cad-work-tracking` skill.
 
 ```mermaid
-flowchart TD
+flowchart LR
     G["each repo<br/>branches, unpushed"] --> R
     H["GitHub<br/>issues, PRs, claims"] --> R
     L["runs<br/>logs, read only"] --> R

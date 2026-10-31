@@ -206,6 +206,8 @@ test('code samples keep their links as written (no rewriting inside code)', asyn
   assert.match(viewer, /<code[^>]*>[^<]*href="kit\/file-viewer\.html\?file=/, 'the file-viewer snippet was rewritten');
   for (const f of files.filter(f => f.endsWith('.html') && !f.startsWith('kit/')))
     assert.ok(!(await readFile(path.join(out, f), 'utf8')).includes('&amp;amp;'), `${f}: an entity encoded twice`);
+});
+
 test('doc pages carry the page tree, with this page marked', async () => {
   const toolkit = await readFile(path.join(out, 'docs/toolkit.html'), 'utf8');
   const nav = toolkit.match(/<cad-nav [^>]*>([\s\S]*?)<\/cad-nav>/)?.[1];

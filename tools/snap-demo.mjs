@@ -86,7 +86,9 @@ export function timeline() {
     const pct = 8 + k * 0.5, offset = START * (1 - ease(k / 84));
     if (!snapped && offset < snap) {   // the hook drops in: a quick fall with a small overshoot, then rest
       snapped = true;
-      rows.push([pct - 0.25, snap + 1e-3, liftAt(snap + 1e-3), 1], [pct + 0.6, offset, -0.4, 1], [pct + 1.4, offset, 0.15, 1], [pct + 2.2, offset, 0, 1]);
+      let overshoot = -0.4;            // as far past rest as the parts allow
+      while (overshoot < 0 && !clear(overshoot, offset)) overshoot = Math.min(0, overshoot + 0.05);
+      rows.push([pct - 0.25, snap + 1e-3, liftAt(snap + 1e-3), 1], [pct + 0.6, offset, overshoot, 1], [pct + 1.4, offset, 0.15, 1], [pct + 2.2, offset, 0, 1]);
       continue;
     }
     if (snapped && rows.at(-1)[0] >= pct) continue;
@@ -98,7 +100,7 @@ export function timeline() {
 
 export function snapDemo() {
   const { rows, maxLift } = timeline();
-  const snapPct = rows.find(r => r[2] < 0)[0];
+  const snapPct = rows.find((r, i) => i && rows[i - 1][2] > 0 && r[2] <= 0)[0];
   const pts = poly => poly.map(p => p.join(' ')).join(' L');
   const svg = `<svg class="snap-demo" viewBox="0 0 440 240" role="img" aria-label="Animated cantilever snap fit: the mating part slides in, its catch lifts the arm's hook over the lead-in, the hook drops in behind the catch and holds when the part is pulled back">
 <rect x="20" y="40" width="46" height="150" rx="6" fill="#254952" opacity=".85"/>

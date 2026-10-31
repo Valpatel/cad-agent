@@ -74,6 +74,7 @@ border:1px solid #173d3c12;box-shadow:inset 0 1px 0 #ffffffc7,0 12px 24px #173d3
 .card-name{display:block;font-weight:750;font-size:16px;letter-spacing:-.3px;margin-bottom:8px}
 .card p{margin:10px 0 0;color:#4c6260;font-size:13px;line-height:1.75;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
 .card p.policy{font-size:11.5px;color:#4c6260;-webkit-line-clamp:2;border-top:1px dashed #c9d8ca;padding-top:8px}
+.prose .badge{display:inline-block;font:600 10px/1 var(--mono);padding:5px 8px;border-radius:100px;border:1px solid #173d3c30;background:#fff;margin-right:6px}
 .filter-status{font:11px var(--mono);color:var(--muted);margin:8px 0 0;min-height:1em}
 .card .md{position:relative;z-index:1;float:right;font:600 10px var(--mono);margin-top:10px;color:var(--teal)}
 .pill{display:inline-block;font:600 9px/1 var(--mono);letter-spacing:.04em;padding:5px 8px;border-radius:100px;border:1px solid #173d3c30;margin:0 6px 4px 0;text-transform:uppercase;background:#fff}

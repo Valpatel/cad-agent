@@ -192,6 +192,11 @@ for (const p of pages) {
     else target = `${REPO}/${tracked.includes(resolved) ? 'blob' : 'tree'}/dev/${resolved}`;
     return `${attr}="${esc(target)}${hash.length ? '#' + esc(hash.join('#')) : ''}"`;
   });
+  // No third-party requests from the site: remote images (README badges) become their alt text.
+  html = html.replace(/<img\b[^>]*\bsrc="(?:https?:)?\/\/[^"]*"[^>]*>/gi, m => {
+    const alt = m.match(/\balt="([^"]*)"/)?.[1];
+    return alt ? `<span class="badge">${alt}</span>` : '';
+  });
   html = html.replace(/<table>/g, '<div class="table-scroll"><table>').replace(/<\/table>/g, '</table></div>');
   const crumbs = `<p class="crumbs"><a href="/catalog#${p.section}">${esc(SECTIONS.find(s => s.id === p.section).title)}</a> · <a href="${REPO}/blob/dev/${esc(p.file)}">${esc(p.file)}</a> · <a href="/${esc(p.file)}">Markdown</a></p>`;
   const dest = path.join(out, pageFile(p.file));

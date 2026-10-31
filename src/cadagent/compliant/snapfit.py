@@ -13,8 +13,9 @@ theory with one part rigid, in the guide's terms:
 * **One part rigid.** If both parts flex about equally, each takes half the deflection (pass ``share`` = 0.5).
 
 Limits, stated in every check result (``LIMITS``): no large-deflection, contact, creep or fatigue; the hook face is not
-sized; a printed (FDM) part is weaker across its layers than along them, which this module does not know unless the
-caller passes a process factor from a measured or sourced value (``process_factor``). Use FEA for large deflection
+sized. A printed (FDM) part is weaker across its layers than along them: for the filaments in
+:data:`cadagent.compliant.allowables.PRINTED` the allowable comes from the datasheet for the stated direction; for any
+other material in a layered process the caller passes a measured or sourced ``process_factor``. Use FEA for large deflection
 and print and measure a coupon before relying on a number.
 """
 from __future__ import annotations
@@ -22,6 +23,8 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
+
+from cadagent.compliant.allowables import DIRECTIONS, PRINTED, PrintedMaterial
 
 GUIDE = "Covestro, Snap-Fit Joints for Plastics - A Design Guide"
 REPEATED_USE_FACTOR = 0.6          # Table 2 note: frequent separation and rejoining
@@ -52,9 +55,14 @@ class Material:
     friction_same_factor: float = 1.0         # Table 3 factor for the same plastic on itself
     secant_mpa: Dict[float, float] = field(default_factory=dict)
     note: str = ""
+    strain_repeated: Optional[float] = None   # where the source gives its own value for frequent use
 
     def allowable(self, repeated: bool = False, process_factor: float = 1.0) -> float:
-        return self.strain * (REPEATED_USE_FACTOR if repeated else 1.0) * process_factor
+        if repeated:
+            base = self.strain_repeated if self.strain_repeated is not None else self.strain * REPEATED_USE_FACTOR
+        else:
+            base = self.strain
+        return base * process_factor
 
     def mu(self, same_material: bool = True) -> Optional[float]:
         if self.friction is None:
@@ -74,6 +82,26 @@ MATERIALS: Dict[str, Material] = {
     "pc-gf10": Material("PC, 10 % glass (Makrolon)", 0.022, _T2),
     "pc-gf20": Material("PC, 20 % glass (Makrolon)", 0.020, _T2),
 }
+# DuPont, General Design Principles - Module I, Table 10.06 (lug-type snap fits; "used once" with new material /
+# "used frequently"). Where a range is given the lower end is used. Friction: Covestro Table 3 mid-range.
+_DUP = "DuPont, General Design Principles - Module I, Table 10.06 (allowable strain, lug-type snap fits)"
+MATERIALS.update({
+    "pom-delrin-100": Material("POM (Delrin 100)", 0.08, _DUP, friction=0.275, friction_same_factor=1.5,
+                               strain_repeated=0.02, note="frequent use: 2-4 %, lower end"),
+    "pom-delrin-500": Material("POM (Delrin 500)", 0.06, _DUP, friction=0.275, friction_same_factor=1.5,
+                               strain_repeated=0.02, note="frequent use: 2-3 %, lower end"),
+    "pa66-dry": Material("PA66 (Zytel 101), dry as moulded", 0.04, _DUP, friction=0.35, friction_same_factor=1.5,
+                         strain_repeated=0.02),
+    "pa66-50rh": Material("PA66 (Zytel 101), 50 % RH", 0.06, _DUP, friction=0.35, friction_same_factor=1.5,
+                          strain_repeated=0.03),
+    "pa66-gf-dry": Material("Glass-filled PA66 (Zytel GR), dry", 0.008, _DUP, friction=0.35, friction_same_factor=1.5,
+                            strain_repeated=0.005, note="once: 0.8-1.2 %, frequent: 0.5-0.7 %; lower ends"),
+    "pa66-gf-50rh": Material("Glass-filled PA66 (Zytel GR), 50 % RH", 0.015, _DUP, friction=0.35,
+                             friction_same_factor=1.5, strain_repeated=0.01, note="once: 1.5-2.0 %, lower end"),
+    "pet-gf": Material("Glass-filled PET (Rynite)", 0.01, _DUP, strain_repeated=0.005),
+    "pbt-gf": Material("Glass-filled PBT (Crastin)", 0.012, _DUP, friction=0.375, strain_repeated=0.006),
+    "tpc-hytrel": Material("TPC elastomer (Hytrel)", 0.20, _DUP, strain_repeated=0.10),
+})
 
 
 def allowable_strain_from_yield(yield_or_break_strain: float, kind: str) -> float:
@@ -279,7 +307,8 @@ def _material(spec: Dict[str, Any]) -> Material:
     m = spec.get("material")
     if isinstance(m, str):
         if m not in MATERIALS:
-            raise ValueError(f"unknown material {m!r}; known: {', '.join(sorted(MATERIALS))}, or give "
+            raise ValueError(f"unknown material {m!r}; moulded: {', '.join(sorted(MATERIALS))}; printed: "
+                             f"{', '.join(sorted(PRINTED))}; or give "
                              "{strain, source, secant_mpa, friction}")
         return MATERIALS[m]
     if not isinstance(m, dict) or "strain" not in m or not m.get("source"):
@@ -306,6 +335,8 @@ def check_spec_entry(spec: Dict[str, Any]) -> Dict[str, Any]:
     one fails, so layer lines are never forgotten."""
     if spec.get("type", "cantilever") != "cantilever":
         raise ValueError("only cantilever snaps are declared in files so far; use the Python API for torsion/annular")
+    if isinstance(spec.get("material"), str) and spec["material"] in PRINTED:
+        return _check_printed(spec, PRINTED[spec["material"]])
     mat = _material(spec)
     process = str(spec.get("process", "")).lower()
     pf = spec.get("process_factor")
@@ -332,6 +363,40 @@ def check_spec_entry(spec: Dict[str, Any]) -> Dict[str, Any]:
                      "repeated": bool(spec.get("repeated", False)), "process": process or None,
                      "orientation": spec.get("orientation"), "process_factor": pf,
                      "process_source": spec.get("process_source")}
+    return r
+
+
+def _check_printed(spec: Dict[str, Any], pm: PrintedMaterial) -> Dict[str, Any]:
+    """A cantilever printed in a datasheet filament: the allowable comes from the datasheet for the stated direction
+    (see :mod:`cadagent.compliant.allowables`), so no process_factor is needed, but the orientation is."""
+    process = str(spec.get("process", "fdm")).lower()
+    orientation = spec.get("orientation")
+    repeated = bool(spec.get("repeated", False))
+    extra: List[Dict[str, Any]] = []
+    if process not in LAYERED_PROCESSES:
+        raise ValueError(f"{pm.name} is a filament datasheet; process must be fdm, not {process!r}")
+    if orientation not in DIRECTIONS:
+        extra.append({"check": "print orientation", "value": orientation, "limit": "stated", "pass": False,
+                      "detail": "state orientation: 'along' (bending stress along the layers, arm lies in XY) or "
+                                "'across' (arm built along Z); checked here as 'across'"})
+        orientation = "across"
+    allow = pm.allowable(orientation, repeated) * float(spec.get("process_factor", 1.0))
+    secant = spec.get("secant_mpa")
+    secant_note = None
+    if secant is None:
+        secant = pm.secant_upper_bound(orientation)
+        secant_note = "datasheet tensile modulus: forces are upper bounds (retention optimistic); measure a coupon"
+    friction = spec.get("friction", pm.mu(bool(spec.get("same_material", True))))
+    r = check_cantilever(length=float(spec["length_mm"]), section=_section(spec), undercut=float(spec["undercut_mm"]),
+                         strain_allow=allow, design=int(spec.get("design", 1)), secant_mpa=secant, friction=friction,
+                         lead_deg=spec.get("lead_deg"), return_deg=spec.get("return_deg"),
+                         root_radius=spec.get("root_radius_mm"), share=float(spec.get("share", 1.0)),
+                         max_mating_n=spec.get("max_mating_n"), min_retention_n=spec.get("min_retention_n"),
+                         name=str(spec.get("name", "snap")))
+    r["rows"] = extra + r["rows"]
+    r["pass"] = all(row["pass"] for row in r["rows"])
+    r["material"] = dict(pm.derivation(orientation, repeated), allowable=allow, process="fdm",
+                         process_factor=spec.get("process_factor"), secant_mpa=secant, secant_note=secant_note)
     return r
 
 

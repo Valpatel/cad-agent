@@ -119,3 +119,67 @@ def test_spec_file_cli_and_fdm_needs_stated_layer_derating(tmp_path, capsys):
                             process_source="coupon C-12, 2026-11-01")
     p.write_text(_json.dumps(spec))
     assert main(["snapfit", str(p)]) == 0
+
+
+# --------------------------------------------------------------------------- printed (datasheet) allowables
+
+from cadagent.compliant import allowables as al
+
+
+@pytest.mark.parametrize("name, along, across", [
+    # research/compliant-mechanisms.md section 6, single joining, to its rounding
+    ("pla-polymaker", 0.011, 0.009), ("pla-bambu-basic", 0.010, 0.010), ("petg-polymaker", 0.017, 0.016),
+    ("petg-bambu-basic", 0.023, 0.023), ("petg-bambu-hf", 0.013, 0.010), ("asa-polymaker", 0.013, 0.008),
+    ("asa-bambu", 0.015, 0.012), ("copa-polymaker-dry", 0.020, 0.0065), ("copa-polymaker-wet", 0.033, 0.0085),
+    ("pa6-cf20-polymaker-dry", 0.009, 0.009),
+])
+def test_printed_allowables_match_the_derived_table(name, along, across):
+    pm = al.PRINTED[name]
+    assert pm.allowable("along") == pytest.approx(along, abs=0.0006)
+    assert pm.allowable("across") == pytest.approx(across, abs=0.0006)
+    assert pm.allowable("across", repeated=True) == pytest.approx(0.6 * pm.allowable("across"))
+    assert pm.allowable("across") <= pm.allowable("along")
+
+
+def test_printed_rule_and_cap():
+    copa = al.PRINTED["copa-polymaker-dry"]
+    d = copa.derivation("across")
+    assert d["z"]["governed_by"] == "0.5 x elongation at break" and d["z"]["strain"] == pytest.approx(0.0065)
+    assert d["xy"]["governed_by"] == "0.7 x UTS/E"
+    assert d["status"].startswith("derived")
+    capped = al.PrintedMaterial("x", "test", (100, 100), (50, 50), (100, 100), moulded_cap=0.04)
+    assert capped.single("along") == 0.04                     # 0.7*0.5 = 35 % would exceed the moulded PA66 value
+    with pytest.raises(ValueError):
+        copa.allowable("z")
+
+
+def test_dupont_rows_use_their_own_repeated_values():
+    assert sf.MATERIALS["pom-delrin-100"].allowable() == 0.08
+    assert sf.MATERIALS["pom-delrin-100"].allowable(repeated=True) == 0.02
+    assert sf.MATERIALS["pc"].allowable(repeated=True) == pytest.approx(0.024)
+
+
+def _printed_snap(**kw):
+    s = {"name": "lid", "material": "petg-polymaker", "length_mm": 12, "undercut_mm": 0.6, "design": 1,
+         "section": {"rect": {"width_mm": 6, "thickness_mm": 1.4}}, "lead_deg": 30, "return_deg": 45,
+         "friction": 0.5, "root_radius_mm": 0.8}
+    s.update(kw)
+    return sf.check_spec_entry(s)
+
+
+def test_printed_snap_direction_decides():
+    # CoPA arm, 1.31 % root strain: fine with the arm lying in XY (2.0 %), fails built along Z (0.65 %)
+    along = _printed_snap(material="copa-polymaker-dry", orientation="along", undercut_mm=0.9)
+    across = _printed_snap(material="copa-polymaker-dry", orientation="across", undercut_mm=0.9)
+    assert along["strain"] == pytest.approx(across["strain"]) == pytest.approx(0.01306, abs=1e-4)
+    assert along["pass"] and not across["pass"] and across["rows"][0]["check"] == "root strain"
+    assert along["material"]["secant_note"].startswith("datasheet tensile modulus")
+    assert along["deflection_force_n"] > across["deflection_force_n"]     # Z modulus is lower
+
+
+def test_printed_snap_without_orientation_fails_and_assumes_across():
+    r = _printed_snap()
+    assert not r["pass"] and r["rows"][0]["check"] == "print orientation"
+    assert r["material"]["orientation"] == "across"
+    with pytest.raises(ValueError):
+        _printed_snap(orientation="along", process="sla")

@@ -74,7 +74,7 @@ const catalog = {
       url: `${ORIGIN}/docs/toolkit.html`, how: `cad-agent ${c.name} --help` })),
     ...upstreams.map(u => ({ type: 'upstream', status: u.status, name: u.name, summary: u.policy, url: u.url,
       license: u.license, stars: u.stars, last_push: u.last_push })),
-    ...landscape.libraries.map(l => ({ type: 'library', status: 'used', name: l.name, url: l.url || `https://github.com/${l.name}`,
+    ...landscape.libraries.map(l => ({ type: 'library', status: l.status || 'used', name: l.name, url: l.url || `https://github.com/${l.name}`,
       license: l.license_spdx, stars: l.stars, last_push: l.last_push, summary: l.role || l.notes || '' })),
     ...landscape.benchmarks.map(b => ({ type: 'benchmark', status: 'reference', name: b.name, url: b.url,
       license: b.license_spdx, summary: b.tasks || '' })),

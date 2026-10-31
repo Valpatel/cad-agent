@@ -8,9 +8,9 @@ You pick up work that another session started. Follow the "Resuming" part of the
 
 ```mermaid
 flowchart TD
-    G["each repo: fetch, branches,<br/>unpushed commits, worktrees"] --> R
-    H["GitHub: issues, PRs, CI,<br/>threads, work claims"] --> R
-    L["runs: their logs on<br/>their hosts, read only"] --> R
+    G["each repo<br/>branches, unpushed"] --> R
+    H["GitHub<br/>issues, PRs, claims"] --> R
+    L["runs<br/>logs, read only"] --> R
     R["report: goal, done, in flight,<br/>local-only state, next three steps"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c

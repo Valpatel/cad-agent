@@ -98,13 +98,13 @@ The rule, per direction: `min(0.7 × UTS / E, 0.5 × elongation at break)` — t
 amorphous resin with UTS/E as a lower bound on the yield strain, and its half-the-elongation rule for materials without
 a yield point. Across the layers the smaller of the Z and XY values is used. Nylon is capped at the moulded value of
 its family: CoPA at PA66 (the cap never binds), carbon-filled PA6 at DuPont's glass-filled PA66 (0.8 % dry, 1.5 % at
-50 % RH; it binds for the dry grade, derived 0.89 %). The "wet" rows are water-saturated datasheet specimens.
+50 % RH; both bind, from derived 0.89 % and 1.53 %). The "wet" rows are water-saturated datasheet specimens.
 **The direction matters more than strength suggests**: across the layers the PLA, PETG, ASA and CoPA datasheets keep
 40–90 % of the in-plane strength but only 10–61 % of the elongation at break, and snap fits are limited by strain.
-(Carbon-filled PA6 keeps 90–96 % of its elongation: the fibre already limits it in-plane.) Where half the
-elongation governs across the layers the allowable falls to 26–64 % of the in-plane value; CoPA is the clearest
-case, 2.0 % with the arm lying in the bed plane and 0.65 % with it built upright. Where 0.7 × UTS/E governs (PLA,
-PETG) the drop is smaller (to 78–100 %), but layer lines still act as notches, so lay flexing arms in the bed plane.
+(Carbon-filled PA6 keeps 90–96 % of its elongation: the fibre already limits it in-plane.) What this costs in allowable strain depends on which limit governs. Across the layers the allowable is 80–100 %
+of the in-plane value for PLA and PETG, 78 % for Bambu ASA, 64 % for Polymaker ASA and 26–32 % for CoPA, where half
+the elongation at break governs: 2.0 % with the arm lying in the bed plane against 0.65 % built upright. Layer lines
+also act as notches, which no tensile test shows, so lay flexing arms in the bed plane whatever the numbers say.
 
 ## Limits
 

@@ -257,7 +257,7 @@ def test_secant_modulus_is_interpolated_at_the_root_strain():
     assert sf.secant_at({0.02: 1815.0, 0.005: 2200.0}, 0.0042) == 2200.0
     assert sf.secant_at({0.02: 1815.0, 0.005: 2200.0}, 0.0125) == pytest.approx(2007.5)
     r = _snap(undercut_mm=0.5)                                    # 0.42 % root strain
-    assert r["material"]["secant_mpa"] == 2200.0 and "interpolated" in r["material"]["secant_basis"]
+    assert r["material"]["secant_mpa"] == 2200.0 and "held" in r["material"]["secant_basis"]
 
 
 def test_missing_root_radius_fails():
@@ -320,3 +320,34 @@ def test_docs_ranges_match_the_datasheets():
     stated = f"{round(min(strength) * 100)}–{round(max(strength) * 100)} % of the in-plane strength but only " \
              f"{round(min(elong) * 100)}–{round(max(elong) * 100)} % of the elongation"
     assert " ".join(doc.split()).count(stated) == 1, stated
+
+
+def test_docs_direction_costs_match_the_code():
+    from pathlib import Path
+    doc = " ".join((Path(__file__).resolve().parents[1] / "docs" / "compliant.md").read_text().split())
+    ratio = {k: v.allowable("across") / v.allowable("along") for k, v in al.PRINTED.items()}
+    pct = lambda keys: sorted(round(ratio[k] * 100) for k in keys)
+    pla_petg = pct(k for k in ratio if k.startswith(("pla", "petg")))
+    copa = pct(k for k in ratio if k.startswith("copa"))
+    assert f"{pla_petg[0]}–{pla_petg[-1]} % of the in-plane value for PLA and PETG" in doc
+    assert f"{round(ratio['asa-bambu'] * 100)} % for Bambu ASA, {round(ratio['asa-polymaker'] * 100)} % for Polymaker ASA" in doc
+    assert f"{copa[0]}–{copa[-1]} % for CoPA" in doc
+
+
+def test_self_locking_lead_fails_and_json_stays_valid(tmp_path):
+    import json as _json
+    from cadagent.cli import main
+    r = _snap(lead_deg=70, friction=0.6)
+    assert not r["pass"] and r["mating_self_locking"] and "mating_force_n" not in r
+    spec = tmp_path / "s.json"
+    spec.write_text(_json.dumps({"snaps": [{"name": "s", "material": "pc", "process": "moulding", "length_mm": 19,
+                                            "undercut_mm": 2.4, "design": 2, "lead_deg": 70, "root_radius_mm": 1,
+                                            "section": {"rect": {"width_mm": 9.5, "thickness_mm": 3.28}}}]}))
+    out = tmp_path / "r.json"
+    assert main(["snapfit", str(spec), "--output", str(out)]) == 1
+    assert _json.loads(out.read_text())["snaps"][0]["mating_self_locking"]
+
+
+def test_secant_basis_says_when_it_is_held_not_interpolated():
+    assert "held" in _snap(undercut_mm=0.3)["material"]["secant_basis"]          # below 0.5 %
+    assert "interpolated" in _snap(undercut_mm=1.5)["material"]["secant_basis"]  # 1.25 %

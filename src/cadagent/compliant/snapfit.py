@@ -302,8 +302,15 @@ def check_cantilever(*, length: float, section: Section, undercut: float, strain
         return [k for k, v in (("secant_mpa", secant_mpa), ("friction", friction), (angle_name, angle)) if v is None]
 
     if p is not None and friction is not None and lead_deg is not None:
-        out["mating_force_n"] = mating_force(p, friction, lead_deg)
-    if max_mating_n is not None:
+        w = mating_force(p, friction, lead_deg)
+        if math.isinf(w):
+            out["mating_self_locking"] = True
+            rows.append({"check": "lead angle", "value": lead_deg, "limit": "mu * tan(lead) < 1", "pass": False,
+                         "detail": f"mu {friction:g} x tan {lead_deg:g} deg >= 1: the lead self-locks and the parts "
+                                   "cannot be pushed together; use a shallower lead angle"})
+        else:
+            out["mating_force_n"] = w
+    if max_mating_n is not None and not out.get("mating_self_locking"):
         if "mating_force_n" in out:
             w = out["mating_force_n"]
             rows.append({"check": "mating force", "value": w, "limit": max_mating_n, "pass": w <= max_mating_n,
@@ -482,7 +489,10 @@ def check_spec_entry(spec: Dict[str, Any]) -> Dict[str, Any]:
         secant_basis = "given"
         if secant is None and mat.secant_mpa:
             secant = secant_at(mat.secant_mpa, eps)
-            secant_basis = f"interpolated at the root strain {eps * 100:.2f} % from the guide's points"
+            lo, hi = min(mat.secant_mpa), max(mat.secant_mpa)
+            secant_basis = (f"interpolated at the root strain {eps * 100:.2f} % from the guide's points" if lo <= eps <= hi
+                            else f"the guide's nearest point ({(lo if eps < lo else hi) * 100:g} %), held: the root "
+                                 f"strain {eps * 100:.2f} % is outside the points")
         friction = _num(spec, "friction", name, ge=0, le=1.5, default=mat.mu(spec.get("same_material", True)))
         material = {"name": mat.name, "strain": mat.strain, "source": mat.source, "allowable": allow,
                     "repeated": repeated, "process": process or None, "orientation": spec.get("orientation"),

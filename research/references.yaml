@@ -789,7 +789,8 @@ sources:
       - lessons/06-enclosure-features.md
     verified: >-
       2026-10-31: opened the PDF (Rev 3.4, 2018-01-19). Read the change history (side holes mandatory and
-      bottom holes optional for 7 mm drives) and the maximum fastener penetration rows by drive height.
+      bottom holes optional for 7 mm drives), the M3 thread, the side-hole positions (A50 14.00, A51 90.60 mm)
+      and the maximum fastener penetration (A38 2.00 mm for drives up to 7 mm, 3.00 mm above; A41 2.50 mm).
 
   - id: sff-8301
     title: "SFF-8301 3.5\" Form Factor Drive Dimensions, Rev 1.9"

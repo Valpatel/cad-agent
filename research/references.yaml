@@ -1,14 +1,1021 @@
 # cad-agent reference registry (Valpatel/cad-agent#118).
 #
 # One entry per outside source that a cad-agent rule, check or note relies on. Rules cite an entry as
-# [ref:<id>] and name the people or organisation in the text. Copyrighted guides are summarised and cited,
-# never copied. Paid standards are cited by number and title only.
+# [ref:<id>] and name the people or organisation in the text, so the experts keep the credit.
+# Copyrighted guides are summarised and cited, never copied. Paid standards are cited by number and title only.
 #
-# Fields: id, title, authors (named people only where the source names them), org, year (null when the
-# source does not state one), url, access (free | free-registration | paid | print), terms, areas,
-# used_for (repo paths, or "proposed"), verified (date and what was actually read).
+# Fields
+#   id        stable kebab-case key
+#   title     as the source prints it
+#   authors   named people, only where the source names them (byline, licence holder, credits); else []
+#   org       publisher or company
+#   year      as printed on the source; null when it prints none (file metadata dates are not used)
+#   url       where it was read
+#   access    free | free-registration | paid | print
+#   terms     how cad-agent may use it
+#   areas     design areas it supports
+#   used_for  repo paths that rely on it, or "proposed" (with the rule it would support)
+#   verified  date, and what was actually opened and read
 #
-# Work in progress: entries are being added and verified on research/expert-references.
+# Anything that could not be opened is under `unverified:` at the end, with the reason. Nothing there may be
+# cited as [ref:<id>] until someone reads it and moves it up.
 schema: 1
-sources: []
-unverified: []
+
+sources:
+
+  # ---------------------------------------------------------------- snap fits and moulded plastics
+
+  - id: covestro-snapfit
+    title: "Snap-Fit Joints for Plastics - A Design Guide"
+    authors: []
+    org: Covestro LLC (formerly Bayer MaterialScience LLC)
+    year: null
+    url: https://cdn.sparkfun.com/assets/home_page_posts/1/4/1/0/Plastic_Snap_fit_design.pdf
+    access: free
+    terms: cited and summarised, never copied; the PDF is not redistributed
+    areas: [snap-fits, moulding, materials]
+    used_for:
+      - src/cadagent/compliant/snapfit.py
+      - tests/test_snapfit.py
+      - docs/compliant.md
+      - research/compliant-mechanisms.md
+    verified: >-
+      2026-10-31: opened the Bayer-branded 26-page copy at this URL (pdftotext). Read the contents page,
+      the root-radius rule (not less than 0.015 in), Table 2 heading and the 60 % frequent-use note, the 70 %
+      of yield strain rule for amorphous resins, and Examples I and II. No year or authors are printed. The
+      Covestro-branded edition cited in snapfit.py was not opened in this pass.
+
+  - id: dupont-design-module-1
+    title: "General Design Principles for DuPont Engineering Polymers (Design Guide - Module I)"
+    authors: []
+    org: E. I. du Pont de Nemours and Company
+    year: 2000
+    url: https://www.emcoplastics.com/assets/pdf/acetal/General%20Design%20Principles%20for%20Engineering%20Polymers.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [snap-fits, moulding, materials, ribs-and-bosses]
+    used_for:
+      - src/cadagent/compliant/snapfit.py
+      - src/cadagent/compliant/allowables.py
+      - docs/compliant.md
+      - research/compliant-mechanisms.md
+      - research/fea-and-process-tools.md
+    verified: >-
+      2026-10-31: opened the 136-page PDF (a distributor's copy). Read the title page, the copyright line
+      (2000) and Table 10.06, "Suggested Allowable Strains (%) for Lug Type Snap-fits".
+
+  - id: basf-snapfit-prospector
+    title: "Improving Snapfit Design (Part 3)"
+    authors: [Chul Lee]
+    org: BASF, published on UL Prospector Knowledge Center
+    year: null
+    url: https://ulprospector.ul.com/1248/snapfit-3/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [snap-fits, moulding]
+    used_for:
+      - research/compliant-mechanisms.md
+    verified: >-
+      2026-10-31: opened the page. Read the byline (Chul Lee, Applications Technology Leader, BASF) and the
+      pointer to Figures IV-4 and IV-5 (worked examples for an Ultradur PBT and an Ultraform POM grade). The
+      BASF Snap-Fit Design Manual tables themselves were not read.
+
+  - id: klahn-2016-am-snapfit
+    title: "Design Guidelines for Additive Manufactured Snap-Fit Joints"
+    authors: [Christoph Klahn, Daniel Singer, Mirko Meboldt]
+    org: Procedia CIRP 50 (KITopen repository)
+    year: 2016
+    url: https://publikationen.bibliothek.kit.edu/1000142464
+    access: free
+    terms: cited and summarised
+    areas: [snap-fits, fdm]
+    used_for:
+      - docs/compliant.md
+      - research/compliant-mechanisms.md
+      - research/fea-and-process-tools.md
+    verified: >-
+      2026-10-31: opened the repository record. Read the title, authors and abstract. The volume and year are
+      as recorded in research/compliant-mechanisms.md, which read the paper on the same day.
+
+  - id: qiu-2003-bistable-thesis
+    title: "An Electrothermally-Actuated Bistable MEMS Relay for Power Applications"
+    authors: [Jin Qiu]
+    org: Massachusetts Institute of Technology (PhD thesis; supervisor Alexander H. Slocum)
+    year: 2003
+    url: https://pergatory.mit.edu/research/jqiu/thesisscreen.pdf
+    access: free
+    terms: cited and summarised
+    areas: [compliant-mechanisms]
+    used_for:
+      - research/compliant-mechanisms.md
+    verified: >-
+      2026-10-31: opened the PDF; read the title page (author, degree, June 2003, supervisor). The equations
+      were read by research/compliant-mechanisms.md on the same day.
+
+  - id: protolabs-living-hinge
+    title: "Living Hinge Basics for Injection Molding"
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/resources/blog/living-hinge-basics-for-injection-molding/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [compliant-mechanisms, moulding]
+    used_for:
+      - research/compliant-mechanisms.md
+    verified: >-
+      2026-10-31: opened the page. Read the hinge guideline (0.012 in thick, about 0.060 in spacing, 0.008 in
+      reduction on the folding side, 0.030 in radius on the tension side). Byline is "Protolabs".
+
+  - id: protolabs-injection-molding
+    title: "Plastic Injection Molding Design Guidelines"
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/services/injection-molding/plastic-injection-molding/design-guidelines/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [moulding]
+    used_for:
+      - research/compliant-mechanisms.md
+      - research/fea-and-process-tools.md
+    verified: >-
+      2026-10-31: opened the page. Read the draft table (0.5 deg vertical faces, 2 deg most situations,
+      3 deg minimum for shut-offs and light texture, 5 deg or more for heavier texture).
+
+  - id: hubs-snapfit-3dp
+    title: "How do you design snap-fit joints for 3D printing?"
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/how-design-snap-fit-joints-3d-printing/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [snap-fits, fdm, sls, mjf, sla]
+    used_for:
+      - research/compliant-mechanisms.md
+      - research/fea-and-process-tools.md
+    verified: >-
+      2026-10-31: opened the page. Read the clearances (0.5 mm FDM; 0.3 mm SLS, SLA, MJF, material jetting) and
+      the 1 mm minimum cantilever base and overhang depth. No byline.
+
+  - id: hubs-fdm-design
+    title: "How to design parts for FDM 3D printing"
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/how-design-parts-fdm-3d-printing/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm]
+    used_for:
+      - research/compliant-mechanisms.md
+      - research/fea-and-process-tools.md
+      - "proposed: lessons/03-mechanical-design-rules.md (45 degree self-supporting lead-ins); docs/common-issues.md (overhangs)"
+    verified: >-
+      2026-10-31: opened the page. Read the overhang rule (usually printable up to 45 deg; at 45 deg each layer
+      is half supported) and the bridging section. No byline.
+
+  # ---------------------------------------------------------------- printed and moulded material data
+
+  - id: bambu-pla-basic-tds
+    title: "Bambu Filament Technical Data Sheet V2.0: PLA Basic"
+    authors: []
+    org: Bambu Lab
+    year: null
+    url: https://www.additive-x.com/shop/mpattachments/file/viewonline/id/494/product_id/2236
+    access: free
+    terms: cited; values quoted with the TDS version; the PDF is not redistributed
+    areas: [materials, fdm]
+    used_for:
+      - src/cadagent/compliant/allowables.py
+      - src/cadagent/fea.py
+      - lessons/10-simulation-and-material.md
+      - docs/compliant.md
+    verified: >-
+      2026-10-31: opened the PDF (a reseller's copy of the official sheet). Read HDT 57 C at 0.45 MPa and 54 C
+      at 1.8 MPa (ISO 75); E 2680 / 2160 MPa, UTS 39 / 35 MPa, elongation 12.2 / 7.5 % (X-Y / Z, ISO 527).
+
+  - id: bambu-pla-matte-tds
+    title: "Bambu Filament Technical Data Sheet V2.0: PLA Matte"
+    authors: []
+    org: Bambu Lab
+    year: null
+    url: https://www.additive-x.com/shop/mpattachments/file/viewonline/id/513/product_id/2261
+    access: free
+    terms: cited; the PDF is not redistributed
+    areas: [materials, fdm]
+    used_for: [src/cadagent/compliant/allowables.py, docs/compliant.md]
+    verified: "2026-10-31: opened the PDF; read E 1960 / 1670 MPa, UTS 32 / 25 MPa, elongation 32.8 / 4.8 % (X-Y / Z)."
+
+  - id: bambu-petg-basic-tds
+    title: "Bambu Filament Technical Data Sheet V2.0: PETG Basic"
+    authors: []
+    org: Bambu Lab
+    year: null
+    url: https://www.additive-x.com/shop/mpattachments/file/viewonline/id/580/product_id/2330
+    access: free
+    terms: cited; the PDF is not redistributed
+    areas: [materials, fdm]
+    used_for:
+      - src/cadagent/compliant/allowables.py
+      - src/cadagent/fea.py
+      - lessons/10-simulation-and-material.md
+      - docs/compliant.md
+    verified: >-
+      2026-10-31: opened the PDF; read HDT 69 C at 0.45 MPa and 65 C at 1.8 MPa; E 1460 / 1120 MPa, UTS 48 / 39
+      MPa, elongation 11.2 / 5.7 % (X-Y / Z).
+
+  - id: bambu-petg-hf-tds
+    title: "Bambu Filament Technical Data Sheet V1.0: PETG HF"
+    authors: []
+    org: Bambu Lab
+    year: null
+    url: https://botland.com.pl/img/art/inne/25540_karta_produktu.pdf
+    access: free
+    terms: cited; the PDF is not redistributed
+    areas: [materials, fdm]
+    used_for: [src/cadagent/compliant/allowables.py, docs/compliant.md]
+    verified: "2026-10-31: opened the PDF; read E 1810 / 1540 MPa, UTS 34 / 23 MPa, elongation 8.6 / 5.1 % (X-Y / Z)."
+
+  - id: bambu-petg-cf-tds
+    title: "Bambu Filament Technical Data Sheet V2.0: PETG-CF"
+    authors: []
+    org: Bambu Lab
+    year: null
+    url: https://www.additive-x.com/shop/mpattachments/file/viewonline/id/596/product_id/2346
+    access: free
+    terms: cited; the PDF is not redistributed
+    areas: [materials, fdm]
+    used_for: [src/cadagent/compliant/allowables.py, src/cadagent/fea.py, docs/compliant.md]
+    verified: "2026-10-31: opened the PDF; read E 2460 / 1340 MPa, UTS 59 / 38 MPa, elongation 10.4 / 4.7 % (X-Y / Z)."
+
+  - id: bambu-asa-tds
+    title: "Bambu Filament Technical Data Sheet V2.0: ASA"
+    authors: []
+    org: Bambu Lab
+    year: null
+    url: https://www.additive-x.com/shop/mpattachments/file/viewonline/id/612/product_id/2399
+    access: free
+    terms: cited; the PDF is not redistributed
+    areas: [materials, fdm]
+    used_for: [src/cadagent/compliant/allowables.py, docs/compliant.md]
+    verified: "2026-10-31: opened the PDF; read E 2450 / 2120 MPa, UTS 52 / 35 MPa, elongation 9.2 / 4.6 % (X-Y / Z)."
+
+  - id: bambu-tpu-95a-hf-tds
+    title: "Bambu Filament Technical Data Sheet V1.0: TPU 95A HF"
+    authors: []
+    org: Bambu Lab
+    year: null
+    url: https://www.additive-x.com/shop/mpattachments/file/viewonline/id/823/product_id/2584
+    access: free
+    terms: cited; the PDF is not redistributed
+    areas: [materials, fdm]
+    used_for: [research/compliant-mechanisms.md]
+    verified: "2026-10-31: opened the PDF; read E 9.8 / 7.4 MPa, UTS 27.3 / 22.3 MPa, elongation >650 / >480 % (X-Y / Z)."
+
+  - id: polymaker-polylite-pla-tds
+    title: "PolyLite PLA Technical Data Sheet V5.4"
+    authors: []
+    org: Polymaker
+    year: null
+    url: https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/pla/polylite-tm-pla
+    access: free
+    terms: cited; values quoted with the TDS version
+    areas: [materials, fdm]
+    used_for: [src/cadagent/compliant/allowables.py, docs/compliant.md, tests/test_snapfit.py]
+    verified: "2026-10-31: read the wiki page (Markdown view); E 3426.9 / 3064.9 MPa, UTS 52.3 / 40.5 MPa, elongation 6.3 / 1.8 % (X-Y / Z)."
+
+  - id: polymaker-polylite-petg-tds
+    title: "PolyLite PETG Technical Data Sheet V5.4"
+    authors: []
+    org: Polymaker
+    year: null
+    url: https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/petg-pet/polylite-tm-petg
+    access: free
+    terms: cited
+    areas: [materials, fdm]
+    used_for: [src/cadagent/compliant/allowables.py, docs/compliant.md, tests/test_snapfit.py]
+    verified: "2026-10-31: read the wiki page; E 2116.8 / 1898.7 MPa, UTS 50.8 / 42.8 MPa, elongation 8.4 / 3.3 % (X-Y / Z)."
+
+  - id: polymaker-polylite-asa-tds
+    title: "PolyLite ASA Technical Data Sheet V5.4"
+    authors: []
+    org: Polymaker
+    year: null
+    url: https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/abs-asa/polylite-tm-asa
+    access: free
+    terms: cited
+    areas: [materials, fdm]
+    used_for: [src/cadagent/compliant/allowables.py, docs/compliant.md, tests/test_snapfit.py]
+    verified: "2026-10-31: read the wiki page; E 2379 / 1965 MPa, UTS 43.8 / 32 MPa, elongation 6.7 / 1.65 % (X-Y / Z)."
+
+  - id: polymaker-polymide-copa-tds
+    title: "PolyMide CoPA Technical Data Sheet V5.4"
+    authors: []
+    org: Polymaker
+    year: null
+    url: https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/nylon/polymide-tm-copa
+    access: free
+    terms: cited
+    areas: [materials, fdm]
+    used_for: [src/cadagent/compliant/allowables.py, docs/compliant.md, tests/test_snapfit.py]
+    verified: "2026-10-31: read the wiki page; dry E 2703 / 2209 MPa, UTS 78.0 / 45.8 MPa, elongation 12.7 / 1.3 % (X-Y / Z)."
+
+  - id: polymaker-polyflex-tpu95-tds
+    title: "PolyFlex TPU95 Technical Data Sheet V5.4"
+    authors: []
+    org: Polymaker
+    year: null
+    url: https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/tpu/polyflex-tm-tpu95
+    access: free
+    terms: cited
+    areas: [materials, fdm]
+    used_for: [research/compliant-mechanisms.md]
+    verified: "2026-10-31: read the wiki page; 33.6 MPa (ISO 37) and 551.2 % elongation, X-Y only."
+
+  - id: polymaker-fiberon-pa6-cf20-tds
+    title: "Fiberon PA6-CF20 Technical Data Sheet V1.1"
+    authors: []
+    org: Polymaker
+    year: null
+    url: https://cdn.shopify.com/s/files/1/0548/7299/7945/files/TDS_FIBERON_PA6-CF20_V1.1_EN.pdf
+    access: free
+    terms: cited; the PDF is not redistributed
+    areas: [materials, fdm]
+    used_for: [src/cadagent/compliant/allowables.py, docs/compliant.md, tests/test_snapfit.py]
+    verified: >-
+      2026-10-31: opened the PDF; dry E 8636.5 / 3759.5 MPa, UTS 109.3 / 54.0 MPa, elongation 2.1 / 1.9 %;
+      wet E 2508.1 / 1056.1 MPa, UTS 54.7 / 25.5 MPa, elongation 7.0 / 6.7 % (X-Y / Z).
+
+  - id: hp-mjf-5200-properties
+    title: "HP 3D Printing materials for the HP Jet Fusion 5200 Series 3D Printing Solution - Mechanical Properties (white paper 4AA7-7084ENW)"
+    authors: []
+    org: HP Development Company, L.P.
+    year: 2020
+    url: "https://info.sculpteo.com/hubfs/Material%20documentation/PA11%20HP/TDS%20HP%20pa12%20pa12gb%20pa11%20pp%20(1).pdf"
+    access: free
+    terms: cited; the PDF is not redistributed
+    areas: [materials, mjf]
+    used_for: [research/compliant-mechanisms.md]
+    verified: "2026-10-31: opened the 8-page PDF (a service bureau's copy); read the title, the document number and the September 2020 date."
+
+  # ---------------------------------------------------------------- DFM checklists
+
+  - id: dfma-dfm-checklist
+    title: "Design for Manufacturing design review checklist"
+    authors: []
+    org: Boothroyd Dewhurst, Inc.
+    year: null
+    url: https://www.dfma.com/resources/pdf/dfm-design-review-checklist.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, moulding, die-casting, dfm]
+    used_for:
+      - research/compliant-mechanisms.md
+      - research/fea-and-process-tools.md
+      - research/sheet-metal.md
+    verified: >-
+      2026-10-31: opened the 2-page PDF. Read the sheet-metal items: bend radii at least the thickness; hole to
+      edge at least 2x thickness; hole to bend at least 2x thickness plus the bend radius; minimum flange length
+      met; bend sequence feasible. The checklist gives no number for the minimum flange.
+
+  # ---------------------------------------------------------------- sheet metal: fabricators
+
+  - id: protolabs-sheet-metal
+    title: "Design Guidelines for Sheet Metal Fabrication"
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/services/sheet-metal-fabrication/design-guidelines/
+    access: free
+    terms: cited and summarised, never copied; its tables are not reproduced
+    areas: [sheet-metal]
+    used_for:
+      - research/compliant-mechanisms.md
+      - research/fea-and-process-tools.md
+      - research/sheet-metal.md
+      - vendor/text-to-cad/skills/dfm/references/sheet-metal.md
+    verified: >-
+      2026-10-31: opened the page. Read the thickness range, the tolerance tables (one surface and across
+      bends), bend angle tolerance (+/-1 deg), standard bend radii, minimum flange 4T, features within 4T of a
+      bend at risk, hems (inside diameter >= T, return 6T), offsets, holes and slots (diameter >= T, edge
+      distance 0.062 in or 0.125 in by thickness), notches and tabs, countersinks, and the pointer to the PEM
+      catalogue for hardware. No byline or date. It gives no K-factor, kerf, grain or relief numbers.
+
+  - id: hubs-sheet-metal
+    title: "Sheet metal fabrication: The manufacturing & design guide"
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/guides/sheet-metal-fabrication/
+    access: free
+    terms: cited and summarised, never copied; its K-factor chart is not reproduced
+    areas: [sheet-metal, laser-cutting, waterjet]
+    used_for:
+      - research/sheet-metal.md
+      - vendor/text-to-cad/skills/dfm/references/sheet-metal.md
+    verified: >-
+      2026-10-31: opened the page and its raw HTML. Read the K-factor definition and chart (air bending,
+      bottoming and coining; soft, medium and hard materials; three R/T bands), the laser corner fillet
+      (T/2), kerf (laser about 0.3 mm, waterjet 0.5-1 mm), hole size and spacing, hole-to-bend distance,
+      bend radius >= T, relief width >= T, and the cutting-tolerance table. No byline or date.
+
+  - id: sendcutsend-specs
+    title: "SendCutSend engineering specifications (sendcutsend-specs.json, schema 1.0)"
+    authors: []
+    org: SendCutSend
+    year: 2026
+    url: https://cdn.sendcutsend.com/specs/sendcutsend-specs.json
+    access: free
+    terms: >-
+      fetched and cited by SKU and field path with the access date; the file is not redistributed. Treat as
+      live data, not a stable API (it changes).
+    areas: [sheet-metal, laser-cutting, waterjet, pem-hardware, tolerances]
+    used_for:
+      - research/sheet-metal.md
+      - vendor/text-to-cad/skills/sendcutsend/references/official-sources.md
+    verified: >-
+      2026-10-31: downloaded the JSON (_meta.generated_at 2026-04-29, 178 materials; 57 with bending_specs).
+      Read per SKU: thickness, bend_radius, k_factor, bend_deduction, die_width, min flange before and after
+      bend, bend_relief_depth, corner relief distance, joggle limits, bend angle tolerance, min hole and hole
+      to edge, cut tolerance, tab_slot_tolerance, hardware and countersink distances, Brinell hardness.
+
+  - id: sendcutsend-ordering-guide
+    title: "SendCutSend ordering guide (sendcutsend-ordering-guide.md)"
+    authors: []
+    org: SendCutSend
+    year: null
+    url: https://cdn.sendcutsend.com/specs/sendcutsend-ordering-guide.md
+    access: free
+    terms: cited and summarised
+    areas: [sheet-metal]
+    used_for: [research/sheet-metal.md]
+    verified: >-
+      2026-10-31: read the file. Bend radius is set by the tooling and is not adjustable; maximum bend angle
+      typically 120-130 deg (no full 180 deg hem); bend angle tolerance +/-1 deg up to 24 in, +/-2 deg over;
+      tab-slot tolerance about 0.010 in; cut tolerance +/-0.005 in typical for laser.
+
+  - id: sendcutsend-tab-slot
+    title: "Designing Sheet Metal Parts With Tab and Slots"
+    authors: []
+    org: SendCutSend
+    year: 2023
+    url: https://sendcutsend.com/blog/designing-sheet-metal-parts-with-tab-and-slots/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, tabs-and-slots]
+    used_for: [research/sheet-metal.md]
+    verified: >-
+      2026-10-31: opened the page (published 2023-01-16, no byline). Read the slot width and height formulas,
+      the powder-coat allowance and the tab-length rule.
+
+  - id: sendcutsend-bend-relief
+    title: "How to Design Bend Reliefs & Corner Reliefs for Sheet Metal Parts"
+    authors: []
+    org: SendCutSend
+    year: 2024
+    url: https://sendcutsend.com/blog/guide-to-designing-bend-reliefs
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal]
+    used_for: [research/sheet-metal.md]
+    verified: >-
+      2026-10-31: opened the page (2024-01-18, no byline). Read relief width (>= T/2), relief depth
+      (>= T + R + 0.02 in, from the bend line), and the 0.015 in minimum corner gap.
+
+  - id: sendcutsend-countersink
+    title: "Countersink Design Best Practices"
+    authors: []
+    org: SendCutSend
+    year: 2022
+    url: https://sendcutsend.com/blog/countersink-design-best-practices
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, fasteners]
+    used_for: [research/sheet-metal.md]
+    verified: >-
+      2026-10-31: opened the page (2022-12-05, no byline). Read the example edge distance (0.781 in on 5052)
+      and the bend rule (half the die width from the bend centre).
+
+  - id: oshcut-bending-rules
+    title: "Metal Bending Design Rules"
+    authors: []
+    org: OSH Cut
+    year: null
+    url: https://www.oshcut.com/design-guide/metal-bending-design-rules
+    access: free
+    terms: cited and summarised
+    areas: [sheet-metal]
+    used_for: [research/sheet-metal.md]
+    verified: "2026-10-31: opened the page. Its only number is a gauging edge at least 0.25 in long for small parts."
+
+  - id: oshcut-material-304
+    title: "Stainless Steel 304 #1 Finish (material details)"
+    authors: []
+    org: OSH Cut
+    year: null
+    url: https://www.oshcut.com/materialdetails/stainless-steel-304-1-finish
+    access: free
+    terms: cited and summarised
+    areas: [sheet-metal, laser-cutting]
+    used_for: [research/sheet-metal.md]
+    verified: >-
+      2026-10-31: opened the page. Read kerf 0.006 in at every thickness, minimum and recommended hole sizes,
+      channel and wall minimums, and the K-factor note (about 0.4 for soft metals such as aluminium, about
+      0.45 for steel and stainless).
+
+  - id: xometry-manufacturing-standards
+    title: "Manufacturing Standards"
+    authors: []
+    org: Xometry, Inc.
+    year: null
+    url: https://www.xometry.com/manufacturing-standards/
+    access: free
+    terms: cited and summarised
+    areas: [sheet-metal, tolerances]
+    used_for: [research/sheet-metal.md]
+    verified: >-
+      2026-10-31: opened the page. Read the sheet-metal default tolerances (edge to bend, across bend, bend to
+      hole, overall, bend angle +/-1 deg, multiple formed surfaces, cut features) and that hems, curls and
+      welded assemblies need a manual quote.
+
+  - id: fictiv-tabs-slots
+    title: "Tabs and Slots for Sheet Metal Part Design"
+    authors: [David Willson]
+    org: Fictiv
+    year: 2025
+    url: https://www.fictiv.com/articles/sheet-metal-tabs-and-slots-assembly
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, tabs-and-slots, laser-cutting]
+    used_for: [research/sheet-metal.md]
+    verified: >-
+      2026-10-31: opened the page (byline David Willson, 2025-11-20). Read tab width and length, slot clearance
+      by process, corner radii, edge distance, tab spacing, distance from the bend tangent and kerf width.
+
+  - id: century-tywood-sheet-metal-reference
+    title: "Manufacturing Reference for Sheet Metal Products"
+    authors: []
+    org: Century Tywood (fabricator, Holliston, MA)
+    year: null
+    url: https://www.pblprojects.org/wp-content/uploads/2019/03/Manufacturing-Reference-Guide_for_Sheet_Metal_Products.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, tolerances]
+    used_for: [research/sheet-metal.md]
+    verified: >-
+      2026-10-31: opened the 13-page PDF (a third-party copy). Read grain direction, minimum flange
+      3.5 x (T + R), bend relief T + R, punched hole to bend 1.5 x (T + R), minimum hole = T, and hole-to-edge
+      and hole spacing rules.
+
+  # ---------------------------------------------------------------- sheet metal: named practitioners
+
+  - id: davis-2001-fabricator-design-tips
+    title: "Design tips for sheet metal: Bend relief, small holes, hole distortion near bends, and minimum flange widths"
+    authors: [Gerald Davis]
+    org: The FABRICATOR (FMA Communications)
+    year: 2001
+    url: https://www.thefabricator.com/article/bending/design-tips-for-sheet-metal-bend-relief-small-holes-hole-distortion-near-bends-and-minimum-flange-widths
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, grain-direction]
+    used_for: [research/sheet-metal.md]
+    verified: >-
+      2026-10-31: the live page is behind a bot check, so read the Internet Archive copy of 2017-12-01
+      (https://web.archive.org/web/20171201015017/http://www.thefabricator.com:80/article/bending/design-tips-for-sheet-metal-bend-relief-small-holes-hole-distortion-near-bends-and-minimum-flange-widths).
+      Byline Gerald Davis, 2001-10-25. Read the whole article.
+
+  - id: benson-2015-fabricator-inside-radius
+    title: "Predicting the inside radius when bending with the press brake"
+    authors: [Steve Benson]
+    org: The FABRICATOR (FMA Communications)
+    year: 2015
+    url: https://www.thefabricator.com/thefabricator/article/bending/predicting-the-inside-radius-when-bending-with-the-press-brake
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, bend-radius, k-factor]
+    used_for: [research/sheet-metal.md]
+    verified: >-
+      2026-10-31: the live page is behind a bot check, so read the Internet Archive copy of 2025-08-25.
+      Byline Steve Benson, 2015-08-12. Read the "20 percent rule" (air-formed inside radius as a share of the
+      die opening: 20-22 % stainless, about 16 % for 60-KSI cold-rolled steel), the worked comparison, and the
+      closed-hem bend deduction note.
+
+  - id: paulsen-2017-machine-design-sheet-metal
+    title: "Tips for Making Sheet-Metal Parts"
+    authors: [Greg Paulsen]
+    org: Machine Design (Paulsen was Director of Applications Engineering at Xometry)
+    year: 2017
+    url: https://www.machinedesign.com/mechanical-motion-systems/article/21835979/tips-for-making-sheetmetal-parts
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, hems, countersinks, tabs-and-slots]
+    used_for: [research/sheet-metal.md]
+    verified: >-
+      2026-10-31: opened the page (byline Greg Paulsen, 2017-09-22). Read the rules for bends, curls,
+      countersinks, hems, holes and slots, notches and tabs, corner fillets and relief cuts.
+
+  # ---------------------------------------------------------------- sheet metal: hardware
+
+  - id: pem-catalog-self-clinching-nuts
+    title: "PEM self-clinching nuts types S, SS, CLS, CLSS, SP: catalogue pages CLS-M3-1 and SP-M3-1"
+    authors: []
+    org: PennEngineering (PEM)
+    year: null
+    url: https://catalog.pemnet.com/item/nuts-types-s-ss-cls-clss-cla-sp/self-clinching-nuts-types-s-ss-cls-clss-sp-metric/cls-m3-1
+    access: free
+    terms: cited by part number; values not tabulated wholesale
+    areas: [sheet-metal, pem-hardware, fasteners]
+    used_for: [research/sheet-metal.md]
+    verified: >-
+      2026-10-31: opened the CLS-M3-1 and SP-M3-1 pages. Read minimum sheet thickness 1.00 mm, hole in sheet
+      4.22 +0.08 mm, minimum hole centreline to edge 4.8 mm, and the sheet hardness limits (CLS, 300-series
+      stainless: HRB 70 / HB 125 or less; SP, A286: HRB 90 / HB 185 or less), plus the footnotes. pemnet.com
+      itself returned empty bot-check pages; the catalogue subdomain worked.
+
+  # ---------------------------------------------------------------- sheet metal: CAD and open-source tools
+
+  - id: solidworks-k-factor
+    title: "K-Factor - 2022 - SOLIDWORKS Design Help"
+    authors: []
+    org: Dassault Systemes SolidWorks Corporation
+    year: 2022
+    url: https://help.solidworks.com/2022/English/SolidWorks/sldworks/c_K_Factor.htm
+    access: free
+    terms: cited
+    areas: [sheet-metal, k-factor]
+    used_for: [research/sheet-metal.md]
+    verified: "2026-10-31: opened the page; read BA = pi(R + KT) A/180 with K = t/T, t measured from the inside face to the neutral sheet."
+
+  - id: onshape-sheet-metal
+    title: "Sheet Metal (Onshape Help)"
+    authors: []
+    org: PTC Onshape
+    year: null
+    url: https://cad.onshape.com/help/Content/sheetmetal.htm
+    access: free
+    terms: cited
+    areas: [sheet-metal, k-factor]
+    used_for: [research/sheet-metal.md]
+    verified: "2026-10-31: opened the page; read the bend calculation options and the defaults (bend K Factor 0.45, rolled K Factor 0.5)."
+
+  - id: freecad-sheetmetal
+    title: "FreeCAD SheetMetal Workbench"
+    authors: [Shai Seger, Cerem Cem Aslan, Ulrich Brammer]
+    org: FreeCAD community (github.com/shaise)
+    year: null
+    url: https://github.com/shaise/FreeCAD_SheetMetal
+    access: free
+    terms: LGPL-2.1; cited and used as a reference or an external program, its code is not copied into cad-agent
+    areas: [sheet-metal, k-factor, unfolding]
+    used_for:
+      - research/fea-and-process-tools.md
+      - research/sheet-metal.md
+    verified: >-
+      2026-10-31: gh api (LGPL-2.1, pushed 2026-10-17, 350 stars, not archived). Read the README developer
+      credits, test case and material-definition table (R/T 1 -> 0.38, 3 -> 0.43, 99 -> 0.5, ANSI), the
+      changelog (relicensed GPL-3 to LGPL-2 on 2024-01-27), and SheetMetalNewUnfolder.py, which halves a DIN
+      K-factor to the ANSI one. The FreeCAD wiki was bot-blocked.
+
+  - id: build123d-sheet-metal
+    title: "build123d sheet metal (BuildSheet, unfold; dev branch)"
+    authors: [Roger Maitland]
+    org: build123d project (github.com/gumyr)
+    year: null
+    url: https://github.com/gumyr/build123d/tree/dev/docs/sheet_metal
+    access: free
+    terms: Apache-2.0; may be adopted with attribution
+    areas: [sheet-metal, unfolding, k-factor]
+    used_for:
+      - research/agent-toolkits-2026-10.md
+      - research/fea-and-process-tools.md
+      - research/sheet-metal.md
+    verified: >-
+      2026-10-31: gh api (Apache-2.0, default branch dev, pushed 2026-10-30, latest release v0.13.0 of
+      2026-09-21). Listed the dev tree (build_sheet.py, operations_sheet.py, sheet_utils.py, docs/sheet_metal/*)
+      and read build_sheet.py: BuildSheet takes one k_factor, default 0.5. The author is the repository
+      owner's GitHub profile name.
+
+  # ---------------------------------------------------------------- standards (paid: number and title only)
+
+  - id: din-6935
+    title: "DIN 6935:2011-10 Kaltbiegen von Flacherzeugnissen aus Stahl (Cold bending of flat rolled steel)"
+    authors: []
+    org: DIN (sold by DIN Media)
+    year: 2011
+    url: https://dinmedia.de/en/standard/din-6935/144419944
+    access: paid
+    terms: cited by number and title only
+    areas: [sheet-metal, k-factor]
+    used_for: [research/sheet-metal.md]
+    verified: "2026-10-31: opened the DIN Media store page; read the number, edition 2011-10, both titles, status current, 13 pages. Content not read."
+
+  - id: iso-2768-1
+    title: "ISO 2768-1:1989 General tolerances - Part 1: Tolerances for linear and angular dimensions without individual tolerance indications"
+    authors: []
+    org: ISO
+    year: 1989
+    url: https://evs.ee/en/iso-2768-1-1989
+    access: paid
+    terms: cited by number and title only
+    areas: [tolerances, sheet-metal, machining]
+    used_for: [research/sheet-metal.md]
+    verified: >-
+      2026-10-31: iso.org was bot-blocked; opened the Estonian Centre for Standardisation store page. Read the
+      title and the scope, which covers parts made by metal removal or formed from sheet metal. Content not read.
+
+  - id: iso-10642
+    title: "ISO 10642 Fasteners - Hexagon socket countersunk head screws with reduced loadability"
+    authors: []
+    org: ISO
+    year: 2026
+    url: https://evs.ee/en/iso-10642-2026
+    access: paid
+    terms: cited by number and title only
+    areas: [fasteners]
+    used_for: [lessons/04-fasteners-and-assembly-access.md]
+    verified: >-
+      2026-10-31: opened the store pages. The current edition is ISO 10642:2026 (valid from 2026-03-04); the
+      2019 edition is withdrawn and the 2004 edition before it. Content not read.
+
+  - id: iso-273
+    title: "ISO 273:1979 Fasteners - Clearance holes for bolts and screws"
+    authors: []
+    org: ISO
+    year: 1979
+    url: https://evs.ee/en/iso-273-1979
+    access: paid
+    terms: cited by number and title only
+    areas: [fasteners]
+    used_for: ["proposed: lessons/01-verify-from-source.md (infer the thread from clearance-hole sizes)"]
+    verified: "2026-10-31: opened the store page; read the title and scope (fine, medium and coarse series for 1-150 mm threads). Content not read."
+
+  - id: iec-61032
+    title: "IEC 61032:1997 Protection of persons and equipment by enclosures - Probes for verification"
+    authors: []
+    org: IEC
+    year: 1997
+    url: https://evs.ee/en/iec-61032-1997
+    access: paid
+    terms: cited by number and title only
+    areas: [enclosures, safety]
+    used_for: ["proposed: lessons/03-mechanical-design-rules.md (finger-safe grilles), once the probe dimension is read"]
+    verified: "2026-10-31: opened the store page; read the title and scope (test probes for access to hazardous parts). The probe dimensions were not read."
+
+  - id: iec-60529
+    title: "IEC 60529:1989 Degrees of protection provided by enclosures (IP Code)"
+    authors: []
+    org: IEC
+    year: 1989
+    url: https://evs.ee/en/iec-60529-1989
+    access: paid
+    terms: cited by number and title only
+    areas: [enclosures, safety]
+    used_for: ["proposed: lessons/03-mechanical-design-rules.md (finger-safe grilles)"]
+    verified: "2026-10-31: opened the store page; read the title and scope. Content not read."
+
+  - id: sff-8201
+    title: "SFF-8201 2.5\" Form Factor Drive Dimensions, Rev 3.4"
+    authors: []
+    org: SNIA SFF Technology Affiliate
+    year: 2018
+    url: https://members.snia.org/document/dl/25851
+    access: free
+    terms: cited
+    areas: [storage, fasteners]
+    used_for:
+      - lessons/04-fasteners-and-assembly-access.md
+      - lessons/06-enclosure-features.md
+    verified: >-
+      2026-10-31: opened the PDF (Rev 3.4, 2018-01-19). Read the change history (side holes mandatory and
+      bottom holes optional for 7 mm drives) and the maximum fastener penetration rows by drive height.
+
+  - id: sff-8301
+    title: "SFF-8301 3.5\" Form Factor Drive Dimensions, Rev 1.9"
+    authors: []
+    org: SNIA SFF Technology Affiliate
+    year: 2018
+    url: https://members.snia.org/document/dl/25862
+    access: free
+    terms: cited
+    areas: [storage, fasteners]
+    used_for:
+      - lessons/04-fasteners-and-assembly-access.md
+      - lessons/06-enclosure-features.md
+    verified: "2026-10-31: opened the PDF (Rev 1.9, 2018-01-19); read the fastener penetration limits (2.39 and 3.56 mm)."
+
+  # ---------------------------------------------------------------- software documentation
+
+  - id: kicad-cli-docs
+    title: "KiCad Command-Line Interface (9.0)"
+    authors: []
+    org: KiCad project
+    year: null
+    url: https://docs.kicad.org/9.0/en/cli/cli.html
+    access: free
+    terms: cited
+    areas: [pcb]
+    used_for: [lessons/11-pcb-evidence-and-review.md, docs/pcb.md]
+    verified: "2026-10-31: opened the page; read the pcb drc usage line with --severity-all, --severity-error, --severity-exclusions and --schematic-parity."
+
+  - id: github-docs-about-readmes
+    title: "About the repository README file"
+    authors: []
+    org: GitHub
+    year: null
+    url: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes
+    access: free
+    terms: cited
+    areas: [repository]
+    used_for: [lessons/11-pcb-evidence-and-review.md]
+    verified: "2026-10-31: opened the page; read that a README in .github, the root or docs is shown, chosen in that order."
+
+  # ---------------------------------------------------------------- vendored projects (code; see THIRD_PARTY_NOTICES.md)
+
+  - id: text-to-cad
+    title: "text-to-cad"
+    authors: []
+    org: Thompson Labs LLC (github.com/earthtojake)
+    year: 2026
+    url: https://github.com/earthtojake/text-to-cad
+    access: free
+    terms: MIT; vendored with attribution
+    areas: [cad, dfm, sheet-metal, fdm]
+    used_for: [vendor/text-to-cad, research/landscape.md, research/sheet-metal.md]
+    verified: >-
+      2026-10-31: gh api (MIT, pushed 2026-10-31); LICENSE copyright "2026 Thompson Labs LLC"; read the vendored
+      skills/dfm/references/sheet-metal.md and skills/sendcutsend/references/official-sources.md.
+
+  - id: kicad-happy
+    title: "kicad-happy"
+    authors: [Andrew Klofas]
+    org: github.com/aklofas
+    year: 2025
+    url: https://github.com/aklofas/kicad-happy
+    access: free
+    terms: MIT; vendored with attribution
+    areas: [pcb]
+    used_for: [vendor/kicad-happy]
+    verified: "2026-10-31: gh api (MIT, pushed 2026-10-31); LICENSE copyright 2025 Andrew Klofas."
+
+  - id: kicad-mcp-pro
+    title: "kicad-mcp-pro"
+    authors: [Osman Aslan]
+    org: github.com/oaslananka
+    year: 2026
+    url: https://github.com/oaslananka/kicad-mcp-pro
+    access: free
+    terms: MIT; vendored with attribution
+    areas: [pcb]
+    used_for: [vendor/kicad-mcp-pro]
+    verified: "2026-10-31: gh api (MIT, pushed 2026-10-31); LICENSE copyright 2026 Osman Aslan."
+
+  - id: build123d-mcp
+    title: "build123d-mcp"
+    authors: [Paul Fremantle]
+    org: github.com/pzfreo
+    year: null
+    url: https://github.com/pzfreo/build123d-mcp
+    access: free
+    terms: Apache-2.0; vendored with attribution
+    areas: [cad]
+    used_for: [vendor/build123d-mcp]
+    verified: "2026-10-31: gh api (Apache-2.0, pushed 2026-10-15). The LICENSE has no copyright line; the author is the owner's GitHub profile name."
+
+  - id: agentcad
+    title: "agentcad"
+    authors: [James Edward Dillard]
+    org: github.com/jdilla1277
+    year: null
+    url: https://github.com/jdilla1277/agentcad
+    access: free
+    terms: Apache-2.0; vendored with attribution
+    areas: [cad]
+    used_for: [vendor/agentcad]
+    verified: "2026-10-31: gh api (Apache-2.0, pushed 2026-10-31). The LICENSE has no copyright line; the author is the owner's GitHub profile name."
+
+  - id: bd-warehouse
+    title: "bd_warehouse"
+    authors: [Roger Maitland]
+    org: github.com/gumyr
+    year: null
+    url: https://github.com/gumyr/bd_warehouse
+    access: free
+    terms: Apache-2.0; vendored with attribution
+    areas: [cad, fasteners]
+    used_for: [vendor/bd_warehouse]
+    verified: "2026-10-31: gh api (Apache-2.0, pushed 2026-10-31). The LICENSE has no copyright line; the author is the owner's GitHub profile name."
+
+# ---------------------------------------------------------------------------------------------------------------
+# Not verified: could not be opened in this pass, or opened only for metadata. Do not cite these as [ref:...]
+# until someone reads the relevant section and moves the entry up.
+unverified:
+
+  - id: covestro-snapfit-covestro-edition
+    title: "Snap-Fit Joints for Plastics - A Design Guide (Covestro-branded edition)"
+    org: Covestro LLC
+    why: "A copy was supplied by the project owner (research/compliant-mechanisms.md [COV]); no public URL was found."
+
+  - id: basf-snapfit-manual
+    title: "BASF Snap-Fit Design Manual"
+    org: BASF
+    why: "Only unofficial copies exist; the strain tables are images (research/compliant-mechanisms.md)."
+
+  - id: celanese-snapfit
+    title: "Snap Fits (Celanese/Ticona design guide)"
+    org: Celanese / Ticona
+    why: "Read from a garbled patent-docket exhibit by research/compliant-mechanisms.md; not reopened."
+
+  - id: allum-2020-interlayer-bonding
+    title: "Interlayer bonding has bulk-material strength in extrusion additive manufacturing: New understanding of anisotropy"
+    authors: [James Allum, Amirpasha Moetazedian, Andrew Gleadall, Vadim V. Silberschmidt]
+    org: Additive Manufacturing 34, 101297
+    year: 2020
+    url: https://doi.org/10.1016/j.addma.2020.101297
+    why: "2026-10-31: only the Crossref metadata (title, authors, journal, volume, article number) was read; the repository page was bot-blocked."
+    used_for: [research/compliant-mechanisms.md, docs/compliant.md]
+
+  - id: bambu-pa6-cf-tds
+    title: "Bambu PA6-CF Technical Data Sheet"
+    org: Bambu Lab
+    why: "The mirror URL in research/compliant-mechanisms.md returns HTML (404) on 2026-10-31; no official PDF URL found."
+    used_for: [src/cadagent/fea.py]
+
+  - id: bambu-paht-cf-tds
+    title: "Bambu PAHT-CF Technical Data Sheet"
+    org: Bambu Lab
+    why: "Named in src/cadagent/fea.py ('pa_cf'); no URL is recorded and none was opened."
+    used_for: [src/cadagent/fea.py]
+
+  - id: formlabs-tough-resins
+    title: "Formlabs Tough 1500 / Tough 2000 pages"
+    org: Formlabs
+    why: "Search snippets only (s) in research/compliant-mechanisms.md; not reopened."
+
+  - id: howell-compliant-mechanisms
+    title: "Compliant Mechanisms (2001); Handbook of Compliant Mechanisms (2013)"
+    authors: [Howell, Magleby, Olsen]   # surnames as cited in research/compliant-mechanisms.md; not checked
+    org: Wiley
+    access: print
+    why: "Books not opened (research/compliant-mechanisms.md marks them u)."
+
+  - id: smith-flexures
+    title: "Flexures: Elements of Elastic Mechanisms"
+    authors: [Smith]   # surname as cited; not checked
+    org: CRC Press
+    year: 2000
+    access: print
+    why: "Not opened."
+
+  - id: lobontiu-flexure-hinges
+    title: "Compliant Mechanisms: Design of Flexure Hinges"
+    authors: [Lobontiu]   # surname as cited; not checked
+    org: CRC Press
+    year: 2002
+    access: print
+    why: "Not opened."
+
+  - id: boothroyd-dewhurst-knight-pdfma
+    title: "Product Design for Manufacture and Assembly"
+    authors: [Boothroyd, Dewhurst, Knight]   # surnames as commonly cited; not checked
+    org: CRC Press
+    access: print
+    why: "Print book; its sheet-metal chapter was not opened. The free Boothroyd Dewhurst checklist (dfma-dfm-checklist) is used instead."
+
+  - id: machinerys-handbook
+    title: "Machinery's Handbook"
+    org: Industrial Press
+    access: print
+    why: "Print book; its bend-allowance and minimum-bend-radius tables were not opened."
+
+  - id: xometry-sheet-metal-design-guide
+    title: "Design Guide: Sheet Metal Fabrication (eBook)"
+    org: Xometry, Inc.
+    url: https://www.xometry.com/resources/design-guides/design-guide-sheet-metal-fabrication/
+    access: free-registration
+    why: "2026-10-31: the landing page lists the topics but the numbers are in a download behind a form; only unofficial copies were found."
+
+  - id: benson-fabricator-other-columns
+    title: "Steve Benson's other Bending Basics columns (die width selection, minimum flange, 6061 and the 20 % rule)"
+    authors: [Steve Benson]
+    org: The FABRICATOR
+    why: "2026-10-31: live pages are bot-blocked and the Internet Archive had no copy of the ones tried."
+
+  - id: phoenix-1777989
+    title: "Phoenix Contact MSTB 2,5/2-STF-5,08 (1777989) datasheet"
+    org: Phoenix Contact
+    why: "2026-10-31: phoenixcontact.com returned 403. Named as a Source in lessons/05."
+    used_for: [lessons/05-cables-connectors-and-routing.md, src/cadagent/connectors.py]
+
+  - id: usb-type-c-spec
+    title: "USB Type-C Cable and Connector Specification"
+    org: USB Implementers Forum
+    why: "Candidate for plug overmould envelopes (lessons/03, lessons/05); not opened in this pass."
+
+  - id: compliant-note-other-sources
+    title: "Other sources cited in research/compliant-mechanisms.md section 10"
+    why: >-
+      Prusa forum posts, PlasticsToday, RapidDirect, Ulbrich, PRBM lecture notes, Haringx 1949, the BYU LET
+      and CAFP papers, Paros and Weisbord 1965, and the GitHub projects listed there were read or snippeted by
+      that note on 2026-10-31 and were not reopened in this pass. Move each up when it is reopened.

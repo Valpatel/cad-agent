@@ -1,4 +1,5 @@
-# External tools under evaluation, generated from research/landscape.json (verified 2026-10-24 with gh api).
+# External tools under evaluation, from research/landscape.json. Entries verified 2026-10-24 with gh api; entries
+# added 2026-10-31 from research/agent-toolkits-2026-10.md were verified that day (older ones were not re-checked).
 # status: candidate | trial | adopted | rejected. Licence policy: incorporate MIT/BSD/Apache-2.0 code with attribution;
 # GPL/AGPL tools run as external programs only; no-licence / non-commercial projects are ideas only.
 - name: earthtojake/text-to-cad
@@ -143,7 +144,7 @@
   policy: may incorporate with attribution
 - name: Seeed-Studio/kicad-mcp-server
   url: https://github.com/Seeed-Studio/kicad-mcp-server
-  license: None
+  license: none
   stars: 168
   last_push: 2026-10-22
   status: candidate
@@ -185,7 +186,7 @@
   policy: may incorporate with attribution
 - name: punkfab/circuit-skills
   url: https://github.com/punkfab/circuit-skills
-  license: None
+  license: none
   stars: 10
   last_push: 2026-10-06
   status: candidate
@@ -217,3 +218,129 @@
   license: MIT
   status: candidate
   policy: may incorporate with attribution; driver for multi-objective parameter studies
+- name: OrcaSlicer/OrcaSlicer
+  url: https://github.com/OrcaSlicer/OrcaSlicer
+  license: AGPL-3.0
+  stars: 16253
+  last_push: 2026-10-31
+  status: candidate
+  policy: "external program only (AGPL-3.0); built-in MCP server in 2.5.0 (beta 2026-10-27): adopt as an external process once stable"
+- name: OrcaSlicer/orcaslicer-mcp-skills
+  url: https://github.com/OrcaSlicer/orcaslicer-mcp-skills
+  license: AGPL-3.0
+  stars: 2
+  last_push: 2026-10-29
+  status: candidate
+  policy: install as a plugin with Orca 2.5; never copy its text (AGPL-3.0)
+- name: MaxEllis/orcaslicer-mcp
+  url: https://github.com/MaxEllis/orcaslicer-mcp
+  license: AGPL-3.0
+  stars: 86
+  last_push: 2026-10-12
+  status: rejected
+  policy: superseded by Orca's built-in MCP server
+- name: KD5RYN/b123d-print
+  url: https://github.com/KD5RYN/b123d-print
+  license: MIT
+  stars: 2
+  last_push: 2026-10-31
+  status: candidate
+  policy: "may incorporate with attribution: borrow the tip-over, round-top hole, bed-edge fillet and print-in-place gap checks (#97)"
+- name: ballerabdude/agent-cad-works
+  url: https://github.com/ballerabdude/agent-cad-works
+  license: Apache-2.0
+  stars: 1
+  last_push: 2026-10-26
+  status: candidate
+  policy: may incorporate with attribution; ideas for motion sweeps and vendor-STEP fit
+- name: gjaloyan/print3d-designer
+  url: https://github.com/gjaloyan/print3d-designer
+  license: MIT
+  stars: 1
+  last_push: 2026-10-29
+  status: candidate
+  policy: "may incorporate with attribution; watch: reads sliced G-code back layer by layer"
+- name: SiddhuYen/eitri
+  url: https://github.com/SiddhuYen/eitri
+  license: FSL-1.1-MIT
+  stars: 1
+  last_push: 2026-10-31
+  status: rejected
+  policy: "ideas only: Functional Source License (non-compete; becomes MIT after two years)"
+- name: pzfreo/specify-core
+  url: https://github.com/pzfreo/specify-core
+  license: Apache-2.0
+  stars: 7
+  last_push: 2026-10-31
+  status: candidate
+  policy: may incorporate with attribution; trial STEP diffs in PR reviews (with pzfreo/step-diff-demo)
+- name: heartland-eng/bd_hardware
+  url: https://github.com/heartland-eng/bd_hardware
+  license: none
+  stars: 0
+  last_push: 2026-10-28
+  status: rejected
+  policy: ideas only (no licence, README only)
+- name: novasolver/novasolver-studio
+  url: https://github.com/novasolver/novasolver-studio
+  license: GPL-3.0
+  stars: 1
+  last_push: 2026-10-31
+  status: candidate
+  policy: external program only (GPL-3.0); copy the ran/converged/verified gate idea, not code
+- name: WifiLast/freecad-mcp
+  url: https://github.com/WifiLast/freecad-mcp
+  license: none
+  stars: 0
+  last_push: 2026-10-18
+  status: rejected
+  policy: ideas only (no licence); binds 0.0.0.0 by default
+- name: V0v1kkk/freecad-engineering
+  url: https://github.com/V0v1kkk/freecad-engineering
+  license: MIT
+  stars: 3
+  last_push: 2026-08-12
+  status: candidate
+  policy: may incorporate with attribution; ideas for the FDM structural review (#94)
+- name: n3r/AgentCAD
+  url: https://github.com/n3r/AgentCAD
+  license: Apache-2.0
+  stars: 7
+  last_push: 2026-08-26
+  status: candidate
+  policy: "may incorporate with attribution; snap-fits skill reviewed for #95 (prompt-only; some strain rows unsourced)"
+- name: static74/3dp-compliant-mechanisms
+  url: https://github.com/static74/3dp-compliant-mechanisms
+  license: MIT
+  stars: 0
+  last_push: 2026-10-26
+  status: candidate
+  policy: "may incorporate with attribution: the selection table and evals are the ideas to take for #94, after recomputing its strain values (about 2x the datasheet-derived ones); nothing vendored yet"
+- name: MP-AI-20/mechanical-engineering-skills
+  url: https://github.com/MP-AI-20/mechanical-engineering-skills
+  license: MIT
+  stars: 10
+  last_push: 2026-06-09
+  status: rejected
+  policy: bulk-generated prompts with few primary citations
+- name: dwragon/Fusion360SnapFitGenerator
+  url: https://github.com/dwragon/Fusion360SnapFitGenerator
+  license: MPL-2.0
+  stars: 5
+  last_push: 2026-10-29
+  status: candidate
+  policy: reference for parameters (MPL-2.0 file-level copyleft; Fusion add-in, not an agent tool)
+- name: Vivek-Boora/dfm-agent
+  url: https://github.com/Vivek-Boora/dfm-agent
+  license: none
+  stars: 0
+  last_push: 2026-08-18
+  status: rejected
+  policy: "ideas only (no licence): pull direction, core/cavity/undercut classes for the moulding checks"
+- name: naman113/Designstudio
+  url: https://github.com/naman113/Designstudio
+  license: MIT
+  stars: 8
+  last_push: 2026-10-23
+  status: candidate
+  policy: may incorporate with attribution; watch (STEP to auto-dimensioned PDF drawings, BOM, GLB viewer)

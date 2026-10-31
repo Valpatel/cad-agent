@@ -20,7 +20,7 @@
 const CSS = `:where(cad-copy){display:block;position:relative}
 cad-copy>pre{padding-right:var(--cad-copy-room-x,5.5em)}
 cad-copy[data-wide]>pre{padding-top:var(--cad-copy-room-y,3.2em)}
-:where(cad-copy)>.cad-copy-btn{position:absolute;box-sizing:border-box;top:.55em;right:.55em;display:inline-flex;align-items:center;gap:.35em;
+:where(cad-copy)>.cad-copy-btn{position:absolute;box-sizing:border-box;top:.55em;right:.55em;display:inline-flex;align-items:center;justify-content:center;gap:.35em;
   min-height:2.2em;padding:.3em .8em;border-radius:999px;cursor:pointer;
   font:600 12px/1 var(--cad-copy-font,system-ui,sans-serif);color:var(--cad-copy-fg,#173d3c);
   background:var(--cad-copy-bg,#fffdf5);border:1px solid var(--cad-copy-border,#6f8a80);

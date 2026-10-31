@@ -87,7 +87,7 @@ def verdicts(reviews: Iterable[dict], can_write: Callable[[str], bool]) -> List[
 def review_gate(reviews: Iterable[dict], head_sha: str, can_write: Callable[[str], bool]) -> Result:
     marked = verdicts(reviews, can_write)
     if not marked:
-        return False, "no review verdict yet: the reviewer's summary review ends with <!-- cad-review verdict=... sha=... -->"
+        return False, "no review verdict yet: ask a separate reviewer; their summary review ends with the verdict marker"
     _, verdict, sha, who = marked[-1]
     if verdict != "pass":
         return False, f"latest verdict is block ({who}, {sha[:7]}): fix, then ask for a re-review"
@@ -172,16 +172,23 @@ def evaluate(repo: str, number: int, pr: Optional[dict] = None) -> Tuple[dict, D
     return pr, results
 
 
+def describe(msg: str) -> str:
+    """A status description as posted and as compared: whitespace collapsed, at most 139 characters, no trailing space.
+    The sweep compares what it would post with what GitHub stored, so the two must be the same string even if GitHub
+    trims or collapses whitespace on storage (otherwise every sweep re-posts and the 1000-status limit comes back)."""
+    return " ".join(msg.split())[:139].rstrip()
+
+
 def _status(repo: str, sha: str, context: str, state: str, msg: str) -> None:
     run = os.environ.get("GITHUB_SERVER_URL", "https://github.com") + f"/{repo}/actions/runs/" + os.environ.get("GITHUB_RUN_ID", "")
     _gh("api", "-X", "POST", f"repos/{repo}/statuses/{sha}", "-f", f"state={state}", "-f", f"context={context}",
-        "-f", f"description={msg[:139]}", "-f", f"target_url={run}")
+        "-f", f"description={describe(msg)}", "-f", f"target_url={run}")
 
 
 def current(repo: str, sha: str) -> Dict[str, Tuple[str, str]]:
-    """The latest (state, description) per status name on a commit."""
+    """The latest (state, description) per status name on a commit, descriptions normalised by ``describe``."""
     data = json.loads(_gh("api", f"repos/{repo}/commits/{sha}/status?per_page=100"))
-    return {s["context"]: (s["state"], s.get("description") or "") for s in data.get("statuses", [])}
+    return {s["context"]: (s["state"], describe(s.get("description") or "")) for s in data.get("statuses", [])}
 
 
 def post(repo: str, pr: dict, results: Dict[str, Result], only_changes: bool = False) -> int:
@@ -193,7 +200,7 @@ def post(repo: str, pr: dict, results: Dict[str, Result], only_changes: bool = F
     posted = 0
     for gate, (ok, msg) in results.items():
         context, state = f"cad-gates/{base}/{gate}", "success" if ok else "failure"
-        if now.get(context) == (state, msg[:139]):
+        if now.get(context) == (state, describe(msg)):
             continue
         _status(repo, sha, context, state, msg)
         posted += 1
@@ -218,7 +225,8 @@ def run(repo: str, number: int, do_post: bool, sweeping: bool = False) -> int:
     for gate, (ok, msg) in results.items():
         print(f"{'PASS' if ok else 'FAIL'} #{number} cad-gates/{base}/{gate}: {msg}")
     if do_post:
-        post(repo, pr, results, only_changes=sweeping)
+        n = post(repo, pr, results, only_changes=sweeping)
+        print(f"#{number}: posted {n} status{'es' if n != 1 else ''}" + (" (unchanged ones skipped)" if sweeping else ""))
         return 0
     return 0 if all(ok for ok, _ in results.values()) else 1
 

@@ -22,7 +22,7 @@ def review(verdict, sha=HEAD, who="mvalancy", state="COMMENTED", before="Summary
     return {"id": next(_ids), "state": state, "user": {"login": who}, "body": body}
 
 
-def gate(reviews, base="dev", same=True, head=HEAD):
+def gate(reviews, head=HEAD):
     return gates.review_gate(reviews, head, can_write)
 
 
@@ -81,11 +81,10 @@ def test_short_or_wrong_shas_do_not_count():
     assert not gate([review("pass", sha=HEAD.upper())])[0]
 
 
-@pytest.mark.parametrize("base,same", [("dev", True), ("dev", False), ("main", True)])
-def test_the_pass_must_be_on_the_head_commit(base, same):
-    ok, msg = gate([review("pass", sha=OLD)], base=base, same=same)           # a pass, then a push, is not a pass
+def test_the_pass_must_be_on_the_head_commit():
+    ok, msg = gate([review("pass", sha=OLD)])                                 # a pass, then a push, is not a pass
     assert not ok and "head commit" in msg
-    assert gate([review("pass")], base=base, same=same)[0]
+    assert gate([review("pass")])[0]
 
 
 PY = '[project]\nname = "cad-agent"\nversion = "{}"\n'
@@ -119,15 +118,16 @@ def test_cli_version(capsys, monkeypatch):
 
 class FakeGitHub:
     """Stands in for `gh`: answers the PR, reviews, permission and PR-list calls, and records status posts."""
-    def __init__(self, prs, reviews=(), fail=()):
+    def __init__(self, prs, reviews=(), fail=(), store=lambda d: d):
         self.prs, self.reviews, self.fail, self.posts, self.posts_full = prs, list(reviews), set(fail), [], []
+        self.store = store                  # what GitHub might do to a description when it stores it
 
     def __call__(self, *args):
         path = next(a for a in args if a.startswith("repos/"))
         if "-X" in args:
             fields = dict(a.split("=", 1) for a in args if "=" in a and not a.startswith("repos/"))
             self.posts.append((path.rsplit("/", 1)[1], fields["context"], fields["state"]))
-            self.posts_full.append((path.rsplit("/", 1)[1], fields["context"], fields["state"], fields["description"]))
+            self.posts_full.append((path.rsplit("/", 1)[1], fields["context"], fields["state"], self.store(fields["description"])))
             return "{}"
         if "/commits/" in path and "/status" in path:
             sha = path.split("/commits/")[1].split("/")[0]
@@ -204,3 +204,33 @@ def test_the_sweep_posts_only_changes_and_never_pending(monkeypatch):
     assert fake.posts[-1] == (HEAD, "cad-gates/dev/review", "failure")
     assert gates.sweep("o/r", do_post=False) == 1                    # without --post, a failing gate exits 1
     assert len(fake.posts) == 3
+
+
+@pytest.mark.parametrize("store", [lambda d: d, str.strip, lambda d: " ".join(d.split()), lambda d: d.replace("  ", " ")],
+                         ids=["verbatim", "trimmed", "collapsed", "double-spaces"])
+def test_the_sweep_is_not_fooled_by_how_github_stores_descriptions(monkeypatch, store):
+    """Review 4 of #116: a description cut at 139 characters on a space, or with doubled spaces, may come back changed;
+    the sweep must still see it as current, or it re-posts every time and the 1000-status limit returns."""
+    # a branch name whose failure text, cut at 139 characters, ends on a space; no verdict yet on the review gate
+    ref = next("x" * n for n in range(5, 120) if gates.branch_flow("dev", "x" * n, True)[1][:139].endswith(" "))
+    fake = FakeGitHub({5: pr(5, ref=ref)}, [], store=store)
+    monkeypatch.setattr(gates, "_gh", fake)
+    for _ in range(50):
+        gates.sweep("o/r", do_post=True)
+    per_name = {}
+    for _, context, _ in fake.posts:
+        per_name[context] = per_name.get(context, 0) + 1
+    assert per_name and all(n == 1 for n in per_name.values()), per_name
+
+
+def test_the_sweep_repairs_a_pending_left_by_a_crashed_run_and_posts_a_new_description(monkeypatch):
+    fake = FakeGitHub({5: pr(5)}, [review("pass", sha=OLD)])
+    monkeypatch.setattr(gates, "_gh", fake)
+    for context in gates.contexts("dev"):                     # a per-PR run that crashed after its pending step
+        gates._status("o/r", HEAD, context, "pending", "evaluating")
+    gates.sweep("o/r", do_post=True)
+    assert [s for _, _, s in fake.posts[-2:]] == ["success", "failure"]      # branch-flow passes; review: old pass
+    before = len(fake.posts)
+    fake.reviews.append(review("block", sha=HEAD))           # still failing, for a different reason
+    gates.sweep("o/r", do_post=True)
+    assert len(fake.posts) == before + 1 and fake.posts_full[-1][3].startswith("latest verdict is block")

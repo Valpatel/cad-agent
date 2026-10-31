@@ -9,7 +9,8 @@ name: Gates
 #
 # Reviews cannot trigger a workflow that may post statuses, so a new verdict is read by: the reviewer's re-run
 # (gh workflow run gates.yml -R <repo> -f pr=<n>), the sweep every 15 minutes, or the next push. Whoever merges first
-# runs `python3 tools/ci_gates.py all --repo <repo> --pr <n>` (reads the reviews live; must exit 0).
+# runs `python3 tools/ci_gates.py all --repo <repo> --pr <n>` from an up-to-date dev checkout (it reads the reviews
+# live; must exit 0).
 #
 # Public repos: GitHub disables pull_request_target by default from 2026-12-02 unless an Actions event policy allows
 # it. The repo's policy for this one workflow file allows all three of its events: pull_request_target, schedule and

@@ -101,7 +101,9 @@ its family: CoPA at PA66 (the cap never binds), carbon-filled PA6 at DuPont's gl
 50 % RH; both bind, from derived 0.89 % and 1.53 %). The "wet" rows are water-saturated datasheet specimens.
 **The direction matters more than strength suggests**: across the layers the PLA, PETG, ASA and CoPA datasheets keep
 40–90 % of the in-plane strength but only 10–61 % of the elongation at break, and snap fits are limited by strain.
-(Carbon-filled PA6 keeps 90–96 % of its elongation: the fibre already limits it in-plane.) What this costs in allowable strain depends on which limit governs. Across the layers the allowable is 80–100 %
+(Carbon-filled PA6 keeps 90–96 % of its elongation: the fibre already limits it in-plane.)
+
+What this costs in allowable strain depends on which limit governs. Across the layers the allowable is 80–100 %
 of the in-plane value for PLA and PETG, 78 % for Bambu ASA, 64 % for Polymaker ASA and 26–32 % for CoPA, where half
 the elongation at break governs: 2.0 % with the arm lying in the bed plane against 0.65 % built upright. Layer lines
 also act as notches, which no tensile test shows, so lay flexing arms in the bed plane whatever the numbers say.

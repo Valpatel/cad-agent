@@ -106,24 +106,20 @@ That is the gap cad-agent #94/#95 fills.
 ## 4. Recommendations
 
 ```mermaid
-mindmap
-  root((since 10-24))
-    Adopt when stable
-      OrcaSlicer MCP
-    Keep pinned
-      text-to-cad
-    Trial
-      step-diff
-    Borrow checks
-      b123d-print
-    Vendor parts
-      static74 skill
-    Watch
-      NovaSolver idea
-      build123d sheet metal
-    Skip
-      closed MCPs
-      FEABench
+flowchart LR
+    D1["adopt when stable"] --- I1["OrcaSlicer 2.5 MCP"]
+    D2["keep pinned"] --- I2["text-to-cad"]
+    D3["trial"] --- I3["step-diff"]
+    D4["borrow the checks"] --- I4["b123d-print"]
+    D5["vendor selectively"] --- I5["static74 skill"]
+    D6["watch"] --- I6["NovaSolver (copy the gate idea)<br/>build123d sheet metal"]
+    D7["skip"] --- I7["closed or non-Linux MCPs<br/>FEABench"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class D1,D2,D3,D4,D5 out
+    class D6,D7 near
+    class I1,I2,I3,I4,I5,I6,I7 here
 ```
 
 | # | Item | Decision |

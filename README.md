@@ -67,6 +67,7 @@ flowchart LR
 | ✏️ | `gates` | Integrity gates on the assembly: floating parts and unrealised interfaces, items outside their cavity, fastener seat, engagement, tip and tool reach, motion-range collisions, assembly order and access, minimum walls. `cad-agent gates` runs them in parallel processes, writes verdicts bound to the geometry they checked, and `check` fails on a failing or stale one ([guide](docs/gates.md)) |
 | ✏️ | `explore` | Part catalogues with prices and sources, designs that pick a part per slot, the project's own evaluator, Pareto ranking of the trade-offs, one-part swaps and a search over parts and parameters ([guide](docs/explore.md)) |
 | 🧪 | `fea` | gmsh + scikit-fem linear elasticity with printed-material allowables, checked against textbook cases |
+| 🧪 | `compliant` | Snap-fit sizing and checks (cantilever, torsion, annular) by the Covestro/Bayer method, tested against the guide's worked examples; allowable strain for moulded resins and, by print direction, for 13 filaments from their datasheets ([guide](docs/compliant.md)) |
 | 🧪 | `cfd` | Conjugate heat transfer cases for OpenFOAM written from CAD: fans, fin blocks, heat sources |
 | 🧪 | `heatsink` | Plate-fin correlations, fan operating point and porous-block coefficients for CFD |
 | 🧪 | `topopt` | pyMOTO topology optimisation (SIMP, MMA, overhang filter) to cut filament where it does no work |

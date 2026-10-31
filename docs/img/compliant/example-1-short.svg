@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 357" width="640" height="357" role="img" aria-label="Same hook, 12 mm arm: cantilever snap, root strain 5.02 percent">
+<style>text{font:13px system-ui,sans-serif;fill:#333}.dim{stroke:#555;stroke-width:1;fill:none}@media (prefers-color-scheme:dark){text{fill:#ddd}.dim{stroke:#aaa}}</style>
+<rect x="60.0" y="32.9" width="103.0" height="231.9" fill="#9aa4ad" opacity="0.5"/>
+<polygon points="163.0,120.4 175.8,120.4 188.7,120.4 201.6,120.4 214.5,120.4 227.3,120.4 240.2,120.4 253.1,120.4 265.9,120.4 278.8,120.4 291.7,120.4 304.6,120.4 317.4,120.4 330.3,120.4 343.2,120.4 356.0,120.4 368.9,120.4 381.8,120.4 394.7,120.4 407.5,120.4 420.4,120.4 433.3,120.4 446.1,120.4 459.0,120.4 471.9,120.4 471.9,162.6 364.9,239.0 364.9,177.2 356.0,178.4 343.2,180.2 330.3,182.0 317.4,183.7 304.6,185.5 291.7,187.2 278.8,189.0 265.9,190.8 253.1,192.5 240.2,194.3 227.3,196.0 214.5,197.8 201.6,199.6 188.7,201.3 175.8,203.1 163.0,204.8" fill="none" stroke="#888" stroke-dasharray="4 3"/>
+<polygon points="163.0,120.4 175.8,120.2 188.7,119.8 201.6,119.0 214.5,118.0 227.3,116.7 240.2,115.1 253.1,113.3 265.9,111.2 278.8,109.0 291.7,106.5 304.6,103.9 317.4,101.1 330.3,98.1 343.2,95.0 356.0,91.7 368.9,88.4 381.8,84.9 394.7,81.3 407.5,77.6 420.4,73.9 433.3,70.1 446.1,66.3 459.0,62.5 471.9,58.6 471.9,100.8 364.9,208.1 364.9,146.3 356.0,149.8 343.2,154.8 330.3,159.7 317.4,164.4 304.6,169.0 291.7,173.4 278.8,177.6 265.9,181.6 253.1,185.4 240.2,189.0 227.3,192.3 214.5,195.4 201.6,198.2 188.7,200.7 175.8,202.9 163.0,204.8" fill="#c8372d" fill-opacity="0.25" stroke="#c8372d" stroke-width="2"/>
+<circle cx="163.0" cy="120.4" r="5" fill="#c8372d"><title>root: peak strain</title></circle>
+<line class="dim" x1="509.0" y1="239.0" x2="509.0" y2="208.1"/>
+<line class="dim" x1="364.9" y1="239.0" x2="513.0" y2="239.0" stroke-dasharray="2 2"/>
+<text x="515.0" y="227.5">y 2.40 mm</text>
+<text x="60" y="311">Same hook, 12 mm arm · design 2 · l 12 mm · h 3.28 mm → 1.64 mm · lead 30°</text>
+<text x="60" y="331" style="fill:#c8372d">root strain 5.02 % of 4.00 % allowed (125 %) · P 129.2 N · W 232.8 N</text>
+<text x="60" y="349" style="font-size:11px;opacity:.75">FAIL · dashed: as made · filled: deflected over the catch (shape illustrative, numbers computed)</text>
+</svg>

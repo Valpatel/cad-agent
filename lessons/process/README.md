@@ -1,6 +1,6 @@
 # Lessons — process
 
-How the agent works with its sources, the user and a long session. Up: [all lessons](../README.md).
+How the agent works with its sources, the user and a long session.
 
 ```mermaid
 flowchart TD
@@ -20,4 +20,4 @@ flowchart TD
 | [user-intent-and-requirements.md](user-intent-and-requirements.md) | How the requirements evolved, and the user's corrections |
 | [agent-process.md](agent-process.md) | Mid-turn messages, status, consent, prior art, scope, delegation |
 
-Each lesson follows the [lesson format](../README.md#lesson-format): a rule, the incident, a check and its source.
+Each lesson follows the [lesson format](../README.md#lesson-format): a rule, the incident, a check and its source. Back to [all lessons](../README.md).

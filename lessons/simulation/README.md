@@ -1,6 +1,6 @@
 # Lessons — simulation
 
-Bought parts, material, load and thermal checks, and the compute they share. Up: [all lessons](../README.md).
+Bought parts, material, load and thermal checks, and the compute they share.
 
 ```mermaid
 flowchart TD
@@ -18,4 +18,4 @@ flowchart TD
 |---|---|
 | [simulation-and-material.md](simulation-and-material.md) | Exact bought parts, slicer grams, re-checking thinner shells, thermal models of printed enclosures, shared compute |
 
-Each lesson follows the [lesson format](../README.md#lesson-format): a rule, the incident, a check and its source.
+Each lesson follows the [lesson format](../README.md#lesson-format): a rule, the incident, a check and its source. Back to [all lessons](../README.md).

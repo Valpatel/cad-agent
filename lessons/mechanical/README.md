@@ -1,6 +1,6 @@
 # Lessons — mechanical
 
-Printed parts: strength, printability, fasteners and the enclosure's own features. Up: [all lessons](../README.md).
+Printed parts: strength, printability, fasteners and the enclosure's own features.
 
 ```mermaid
 flowchart TD
@@ -18,4 +18,4 @@ flowchart TD
 | [fasteners-and-assembly-access.md](fasteners-and-assembly-access.md) | Tool access, assembly order, screw length, inserts, drive screws |
 | [enclosure-features.md](enclosure-features.md) | Antennas, service pins, storage trays, mount plate, cap, power budget |
 
-Each lesson follows the [lesson format](../README.md#lesson-format): a rule, the incident, a check and its source.
+Each lesson follows the [lesson format](../README.md#lesson-format): a rule, the incident, a check and its source. Back to [all lessons](../README.md).

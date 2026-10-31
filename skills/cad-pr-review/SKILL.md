@@ -28,11 +28,11 @@ by an agent or person that did not write it, and the review lives on the PR, whe
    #   {reviewThreads(first:50){nodes{id isResolved comments(first:1){nodes{databaseId body}}}}}}}'
    ```
 
-4. **Merge only under the repo's rules**: CI green, a review exists, every thread resolved, and the user's go-ahead
-   where the repo requires it (cad-agent: its required checks and gates; product repos say in their AGENTS.md). Where the repo has
-   merge gates (cad-agent: the `cad-gates/...` statuses), they are required checks, and only an independent
-   reviewer's pass verdict turns the review gate green. Merge commits, not
-   squash, unless the repo says otherwise. After the merge, check that the linked issues closed and tick the
+4. **Merge only under the repo's rules**: CI green, an independent review, every thread resolved.
+   - Repos with merge gates (cad-agent's `cad-gates/...` statuses) make these required checks. Only an independent
+     reviewer's pass verdict turns the review gate green, and agents may merge once every check passes.
+   - Repos without gates say in their AGENTS.md whether the user's go-ahead is also needed.
+   - Merge commits, not squash, unless the repo says otherwise. After the merge, check that the linked issues closed and tick the
    tracking issue (`cad-work-tracking`).
 
 ## As the reviewer

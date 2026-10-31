@@ -313,6 +313,20 @@ Stated generically: a turret assembly in a robot project rendered its ammunition
 hold it; subassemblies read as boxes stuck on the side; every per-part check (valid solid, watertight, within the bed,
 no plastic-on-plastic overlap) passed.
 
+```mermaid
+flowchart LR
+    S1["ammunition outside<br/>the hopper"] --> C1["containment gate"]
+    S2["subassemblies touching by<br/>coincidence, or floating"] --> C2["connectivity gate<br/>against declared interfaces"]
+    S3["boxes where a mechanism<br/>should be"] --> C3["spec card per part<br/>+ an independent reviewer"]
+    S4["nobody looked"] --> C4["review packet<br/>named views, yes/no questions"]
+    S5["no record of why"] --> C5["decisions on the cards<br/>+ the dossier lint"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class S1,S2,S3,S4,S5 near
+    class C1,C2,C3,C4,C5 out
+```
+
 | Symptom | Practice that catches it | Where it comes from |
 |---|---|---|
 | ammunition outside the hopper | a declared `contains` relation and a containment gate (`vol(item ∩ cavity) == vol(item)`) | §1 row 3; §4.2; build123d-mcp `clearance(status=containing)` |

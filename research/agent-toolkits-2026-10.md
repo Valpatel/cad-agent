@@ -105,6 +105,27 @@ That is the gap cad-agent #94/#95 fills.
 
 ## 4. Recommendations
 
+```mermaid
+mindmap
+  root((since 2026-10-24))
+    Adopt when stable
+      OrcaSlicer 2.5 MCP
+    Keep pinned
+      text-to-cad
+    Trial
+      step-diff
+    Borrow the checks
+      b123d-print checks
+    Vendor selectively
+      static74 skill
+    Watch
+      NovaSolver: copy the gate idea
+      build123d sheet metal
+    Skip
+      closed or non-Linux MCPs
+      FEABench
+```
+
 | # | Item | Decision |
 |---|---|---|
 | 1 | OrcaSlicer 2.5 MCP + official skills | **Adopt when 2.5.0 is stable** (external process). Pilot now on a non-fleet workstation for slice evidence and supports |

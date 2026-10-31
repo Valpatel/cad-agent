@@ -48,6 +48,24 @@ Settings verified in the ccx 2.23 manual:
   surface on faces, especially with quadratic elements. The slave mesh must be at least as fine as the master.
 - Plane-stress elements are expanded to 3D internally and "must have a small thickness".
 
+```mermaid
+flowchart TD
+    G["2D section<br/>beam, hook, root fillet, mating ramp"] --> Me["gmsh second-order mesh<br/>≥ 4 elements through the root"]
+    Me --> Ma["material<br/>secant E, or printed XY / Z from the TDS"]
+    Ma --> Ct["contact pair<br/>linear overclosure K ≈ 10·E, friction μ"]
+    Ct --> St["NLGEOM static step<br/>insert, then back out"]
+    St --> Out["F–δ curve<br/>peak insertion W, release force"]
+    Out --> Acc{"within ~10 % of the<br/>Bayer closed form?"}
+    Acc -->|"yes"| Ev["evidence<br/>.inp, solver version, CSV,<br/>strain map, STEP hash"]
+    Acc -->|"no"| Me
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class Me,Ma,Ct,St here
+    class G near
+    class Out,Ev out
+```
+
 | Item | Choice for a cantilever-hook engagement |
 |---|---|
 | Geometry | The 2D section of the beam with its hook and root fillet, plus the mating ramp or edge. Use 3D only for ring segments, U shapes or annular snaps |

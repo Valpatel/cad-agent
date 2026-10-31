@@ -7,6 +7,20 @@ Licence rule used throughout:
 - **Calling** a GPL/AGPL program as a separate process (subprocess or Docker), and exchanging files with it, is ordinary "aggregate" use. It puts no obligation on cad-agent's licence.
 - AGPL's network clause applies only if we modify the AGPL program and offer it to users over a network.
 
+```mermaid
+flowchart TD
+    T["a GPL or AGPL tool"] --> Q{"how cad-agent uses it"}
+    Q -->|"imported into our<br/>MIT package"| I["whoever distributes the<br/>combination does so under the GPL"]
+    Q -->|"run as a separate process,<br/>files exchanged"| A["aggregate use<br/>no obligation on cad-agent"]
+    Q -->|"modified and offered<br/>over a network (AGPL)"| N["the AGPL network<br/>clause applies"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class Q here
+    class T near
+    class I,A,N out
+```
+
 > Existing exposure to flag: cad-agent already does `import gmsh`. Gmsh is GPL-2.0-or-later. Its exception covers combination with Netgen, METIS, OpenCASCADE and ParaView, but not with arbitrary MIT code ([gmsh.info/LICENSE.txt](https://gmsh.info/LICENSE.txt), [PyPI gmsh 4.15.2, "GPLv2+"](https://pypi.org/project/gmsh/)). This is the same situation as foamlib below. Document gmsh as an optional dependency, or call it via its CLI.
 
 ---

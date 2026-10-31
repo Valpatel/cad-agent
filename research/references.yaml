@@ -1,0 +1,14 @@
+# cad-agent reference registry (Valpatel/cad-agent#118).
+#
+# One entry per outside source that a cad-agent rule, check or note relies on. Rules cite an entry as
+# [ref:<id>] and name the people or organisation in the text. Copyrighted guides are summarised and cited,
+# never copied. Paid standards are cited by number and title only.
+#
+# Fields: id, title, authors (named people only where the source names them), org, year (null when the
+# source does not state one), url, access (free | free-registration | paid | print), terms, areas,
+# used_for (repo paths, or "proposed"), verified (date and what was actually read).
+#
+# Work in progress: entries are being added and verified on research/expert-references.
+schema: 1
+sources: []
+unverified: []

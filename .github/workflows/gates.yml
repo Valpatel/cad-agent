@@ -1,0 +1,55 @@
+name: Gates
+# Merge gates (CONTRIBUTING.md "Gates"; rules in tools/ci_gates.py, tested in tests/test_ci_gates.py).
+#
+# pull_request_target runs THIS file and tools/ci_gates.py as they are on the default branch (dev), so a PR that edits
+# the gates cannot pass them; PRs into main come from dev, so dev's copy judges them too. It never checks out or runs
+# the PR's code: the PR is read as data (API, and for release PRs two files read with git show). Results are commit
+# statuses on the PR's head, named cad-gates/<base>/<gate>; branch protection requires cad-gates/dev/{branch-flow,review}
+# on dev and cad-gates/main/{branch-flow,review,release} on main.
+#
+# Reviews cannot trigger a workflow that may post statuses, so a new verdict is read by: the reviewer's re-run
+# (gh workflow run gates.yml -R <repo> -f pr=<n>), the sweep every 15 minutes, or the next push. Whoever merges first
+# runs `python3 tools/ci_gates.py all --repo <repo> --pr <n>` (reads the reviews live; must exit 0).
+#
+# Public repos: GitHub disables pull_request_target by default from 2026-12-02 unless an Actions event policy allows
+# it. The repo's policy for this one workflow file allows all three of its events: pull_request_target, schedule and
+# workflow_dispatch (a policy lists allowed events, so leaving one out stops the sweep or the re-run).
+on:
+  pull_request_target:
+    branches: [dev, main]
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number
+        required: true
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+
+permissions:
+  contents: read
+  pull-requests: read
+  statuses: write
+
+concurrency:
+  group: gates-${{ github.event.pull_request.number || inputs.pr || 'sweep' }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    # A dispatch runs the copy on the branch it names: only the default branch's copy may post statuses.
+    if: github.event_name != 'workflow_dispatch' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09   # v5; the default branch, never the PR
+        with: {persist-credentials: false, fetch-depth: 1}   # release PRs fetch main and the PR head themselves
+      - name: Evaluate and post the gates
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number || inputs.pr }}
+        # Gate failures are posted as failure statuses. A per-PR crash fails the job and leaves the statuses pending; the
+        # sweep posts only changes (GitHub keeps at most 1000 statuses per commit and name) and fails only on errors.
+        run: |
+          if [ -n "$PR" ]; then python3 tools/ci_gates.py all --repo "$GITHUB_REPOSITORY" --pr "$PR" --post
+          else python3 tools/ci_gates.py sweep --repo "$GITHUB_REPOSITORY" --post; fi

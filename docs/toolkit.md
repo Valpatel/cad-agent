@@ -7,6 +7,28 @@ the toolkit (Python package `cadagent`) provides the runner, the 3MF writer,
 shared geometry screens, the renderer, link validation, the report, packaging
 and a local server.
 
+```mermaid
+flowchart LR
+    P["your project<br/>CAD script + cad-agent.yaml"] --> B["build<br/>parts, STEP, STL"]
+    B --> X["export-3mf<br/>print files, verified"]
+    X --> C["check<br/>project checks, geometry screens,<br/>links, gate verdicts"]
+    C --> R["report<br/>standalone HTML"]
+    C --> S["site<br/>3D viewer + every report"]
+    R & S --> K["package / release<br/>zip + sha256 manifest"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class B,X,C here
+    class P near
+    class R,S,K out
+```
+
+<table><tr>
+<td width="33%"><img src="img/viewer.jpg" alt="The 3D viewer and review site: every part of an assembly in place"><br><b>Site.</b> Every part in place, with explode and section, and one top bar linking every report.</td>
+<td width="33%"><img src="img/fea.jpg" alt="FEA of a ribbed enclosure lid under a 300 N press, coloured by stress"><br><b>Strength.</b> FEA of a ribbed lid under a 300 N press, coloured by stress as a fraction of the material's strength.</td>
+<td width="33%"><img src="img/topology.jpg" alt="Topology optimisation of an enclosure floor"><br><b>Less material.</b> Topology optimisation keeps only the floor that carries load.</td>
+</tr></table>
+
 ```bash
 pip install -e ".[cad]"          # in the cad-agent checkout; or install it into the project's own venv
 cd my-cad-project

@@ -20,7 +20,7 @@ from cadagent.project import CadConfigError, CadProject, Step, load_project
 
 SUBCOMMANDS = ("build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
                "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet",
-               "review-section", "agents", "motion-trace", "release")
+               "review-section", "agents", "motion-trace", "release", "snapfit")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -788,6 +788,36 @@ def cmd_agents(args: argparse.Namespace) -> int:
          + (f", {len(result['conflicts'])} conflicts" if result["conflicts"] else ""))
     return 1 if result["conflicts"] else 0
 
+def cmd_snapfit(args: argparse.Namespace) -> int:
+    """Size and check declared snap fits (cadagent.compliant.snapfit); exit 1 if any check fails."""
+    from cadagent.compliant import snapfit
+    text = Path(args.spec).read_text()
+    if str(args.spec).endswith((".yaml", ".yml")):
+        import yaml
+        try:
+            data = yaml.safe_load(text)
+        except yaml.YAMLError as exc:
+            raise ValueError(f"{args.spec} is not valid YAML: {exc}") from None
+    else:
+        data = json.loads(text)
+    result = snapfit.check_spec(data)
+    for snap in result["snaps"]:
+        forces = ", ".join(f"{k.replace('_n', '').replace('_', ' ')} {v:.1f} N" for k, v in snap.items()
+                           if k.endswith("_force_n") and v is not None)
+        if snap.get("self_locking"):
+            forces += ("; " if forces else "") + "self-locking"
+        _say(f"{'PASS' if snap['pass'] else 'FAIL'}  {snap['name']}: root strain {snap['strain'] * 100:.2f} % "
+             f"(allowed {snap['material']['allowable'] * 100:.2f} %)" + (f"; {forces}" if forces else ""))
+        for row in snap["rows"]:
+            if not row["pass"]:
+                _say(f"      {row['check']}: {row['detail']}")
+        for warning in snap.get("warnings", []):
+            _say(f"      warning: {warning}")
+    if args.output:
+        Path(args.output).write_text(json.dumps(result, indent=2, default=str, allow_nan=False) + "\n")
+    return 0 if result["pass"] else 1
+
+
 def cmd_motion_trace(args: argparse.Namespace) -> int:
     """Check captured rendered landmarks, or print the required capture poses; no project config needed."""
     from cadagent.motion_trace import required_poses, validate_motion_trace
@@ -824,6 +854,12 @@ def dispatch(args: argparse.Namespace) -> int:
             return cmd_agents(args)
         except (FileNotFoundError, ValueError) as exc:
             _err(f"agents: {exc}")
+            return 2
+    if sub == "snapfit":                                   # works on a declaration file only: no project needed
+        try:
+            return cmd_snapfit(args)
+        except (OSError, ValueError, KeyError) as exc:
+            _err(f"snapfit: {exc}")
             return 2
     if sub == "mcmaster":                                  # works on files only: no project needed
         try:
@@ -915,6 +951,9 @@ def build_parser() -> argparse.ArgumentParser:
     mt_p.add_argument("--poses-only", action="store_true", help="Emit required capture angles instead of validating")
     mt_p.add_argument("--output", type=Path, help="Write JSON to a file (default: stdout)")
     mt_p.add_argument("--tolerance-mm", type=float, default=.01, help="Landmark error limit in mm (default: 0.01)")
+    sf_p = sub.add_parser("snapfit", help="Size and check snap fits declared in a YAML/JSON file (docs/compliant.md)")
+    sf_p.add_argument("spec", help="file with a 'snaps' list")
+    sf_p.add_argument("--output", help="write the full result as JSON")
     ag_p = sub.add_parser("agents", help="Install the agent workflow kit (skills and subagents) for Claude Code and Codex, "
                                          "or list what is installed (docs/agent-workflow.md)")
     ag_p.add_argument("action", choices=("install", "list"))

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 271" width="640" height="271" role="img" aria-label="Example I (PC, tapered hook): cantilever snap, root strain 2.00 percent">
+<style>text{font:13px system-ui,sans-serif;fill:#333}.dim{stroke:#555;stroke-width:1;fill:none}@media (prefers-color-scheme:dark){text{fill:#ddd}.dim{stroke:#aaa}}</style>
+<rect x="60.0" y="28.8" width="70.2" height="154.3" fill="#9aa4ad" opacity="0.5"/>
+<polygon points="130.2,88.4 144.0,88.4 157.9,88.4 171.8,88.4 185.7,88.4 199.6,88.4 213.5,88.4 227.3,88.4 241.2,88.4 255.1,88.4 269.0,88.4 282.9,88.4 296.8,88.4 310.6,88.4 324.5,88.4 338.4,88.4 352.3,88.4 366.2,88.4 380.1,88.4 394.0,88.4 407.8,88.4 421.7,88.4 435.6,88.4 449.5,88.4 463.4,88.4 463.4,117.2 390.5,165.5 390.5,123.5 380.1,124.4 366.2,125.5 352.3,126.7 338.4,127.9 324.5,129.1 310.6,130.3 296.8,131.5 282.9,132.7 269.0,133.9 255.1,135.1 241.2,136.3 227.3,137.5 213.5,138.7 199.6,139.9 185.7,141.1 171.8,142.3 157.9,143.5 144.0,144.7 130.2,145.9" fill="none" stroke="#888" stroke-dasharray="4 3"/>
+<polygon points="130.2,88.4 144.0,88.3 157.9,88.0 171.8,87.5 185.7,86.7 199.6,85.8 213.5,84.8 227.3,83.5 241.2,82.2 255.1,80.6 269.0,79.0 282.9,77.2 296.8,75.2 310.6,73.2 324.5,71.1 338.4,68.9 352.3,66.6 366.2,64.2 380.1,61.8 394.0,59.3 407.8,56.7 421.7,54.2 435.6,51.6 449.5,48.9 463.4,46.3 463.4,75.1 390.5,137.0 390.5,95.0 380.1,97.7 366.2,101.4 352.3,104.9 338.4,108.4 324.5,111.8 310.6,115.2 296.8,118.4 282.9,121.5 269.0,124.5 255.1,127.4 241.2,130.1 227.3,132.7 213.5,135.1 199.6,137.4 185.7,139.5 171.8,141.4 157.9,143.1 144.0,144.6 130.2,145.9" fill="#2e9d5b" fill-opacity="0.25" stroke="#2e9d5b" stroke-width="2"/>
+<circle cx="130.2" cy="88.4" r="5" fill="#2e9d5b"><title>root: peak strain</title></circle>
+<line class="dim" x1="503.4" y1="165.5" x2="503.4" y2="137.0"/>
+<line class="dim" x1="390.5" y1="165.5" x2="507.4" y2="165.5" stroke-dasharray="2 2"/>
+<text x="509.4" y="155.3">y 2.40 mm</text>
+<text x="60" y="225">Example I (PC, tapered hook) · design 2 · l 19 mm · h 3.28 mm → 1.64 mm · lead 30°</text>
+<text x="60" y="245" style="fill:#2e9d5b">root strain 2.00 % of 4.00 % allowed (50 %) · P 32.6 N · W 58.6 N</text>
+<text x="60" y="263" style="font-size:11px;opacity:.75">PASS · dashed: as made · filled: deflected over the catch (shape illustrative, numbers computed)</text>
+</svg>

@@ -11,11 +11,11 @@ A private manufacturer screw/insert fixture from Gyropup produced a default meas
 | Adaptive, requested relative error 1e-8 | 0.00027073 | 0.00006440 |
 
 ```mermaid
-%%{init: {"xyChart": {"width": 640, "height": 340}, "themeVariables": {"xyChart": {"plotColorPalette": "#bd3a12"}}}}%%
+%%{init: {"xyChart": {"width": 640, "height": 360}, "themeVariables": {"xyChart": {"plotColorPalette": "#bd3a12"}}}}%%
 xychart-beta
-    title "Size of the volume error, mm³ (should be ≈ 0)"
+    title "Size of |A − Common − Cut(A,B)|, mm³ (should be ≈ 0)"
     x-axis ["Default overload", "Adaptive, 1e-6", "Adaptive, 1e-8"]
-    y-axis "|A − Common − Cut(A,B)|, mm³" 0 --> 15
+    y-axis "mm³" 0 --> 15
     bar [14.11652803, 0.00023872, 0.00027073]
 ```
 

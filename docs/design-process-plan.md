@@ -13,6 +13,24 @@ render with a checklist. The toolkit checks parts; it does not check the design.
 
 What is missing is a process, and the tools that make the process cheap:
 
+```mermaid
+flowchart LR
+    Req["requirements"] --> Dos["§3 dossier<br/>sections, spec cards,<br/>interfaces, decisions"]
+    CAD["CAD build<br/>registers geometry"] --> Gates
+    Dos --> Gates["§4 gates<br/>connectivity, containment,<br/>fasteners, motion, access"]
+    Gates --> Pk["§5 review packet<br/>renders + measurements"]
+    Pk --> Rv["§5 independent reviewer<br/>checklist, sign-off record"]
+    Rv --> Site["review site<br/>section by section"]
+    Rv -->|"changes requested"| Dos
+    Ev["§6 evaluation<br/>gate bench, seeded faults"] -.-> Gates
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class Dos,Gates,Pk here
+    class Req,CAD,Ev near
+    class Rv,Site out
+```
+
 | Missing | Today | After this plan |
 |---|---|---|
 | Decomposition | one `build.py` per product, interfaces in the author's head or a loose JSON | a **dossier**: requirements → sections → parts and interfaces, declared beside the CAD |

@@ -7,11 +7,11 @@ copies the skill to a different machine. It documents the independent CAD refere
 
 ```mermaid
 flowchart TD
-    CAD["CAD source<br/>axes, landmarks"] --> Ref["reference<br/>one home frame"]
-    Scene["browser scene<br/>matrices × vertices"] --> Obs["observed trace"]
+    CAD["CAD source<br/>axes, landmarks"] --> Ref["reference<br/>home frame"]
+    Scene["browser scene<br/>matrices × vertices"] --> Obs["observed<br/>trace"]
     Ref & Obs --> T["motion-trace<br/>compares each range"]
-    G["motion gate<br/>CAD interference"] -.->|"complements"| T
-    T --> Rep["report<br/>coverage, diagnostics, input hashes"]
+    G["motion gate<br/>interference"] -.->|"complements"| T
+    T --> Rep["report<br/>coverage, diagnostics,<br/>input hashes"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

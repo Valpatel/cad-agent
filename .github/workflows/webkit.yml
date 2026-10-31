@@ -20,6 +20,11 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps ${{ matrix.engine }}
       - run: npm run test:webkit-unit
+      - run: node --test tests/website-*.test.mjs
+      - run: node tests/website-browser.mjs
+        env:
+          PLAYWRIGHT_CHANNEL: chromium
+          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
       - run: npm run test:part-table
         env:
           PLAYWRIGHT_CHANNEL: chromium

@@ -99,7 +99,9 @@ test('every internal link and anchor in the HTML resolves', async () => {
   for (const f of html) {
     if (f.startsWith('kit/')) continue;                                // the kit's own pages are tested with the kit
     const text = await readFile(path.join(out, f), 'utf8');
-    for (const [, url] of text.matchAll(/(?:href|src)="([^"]+)"/g)) {
+    const urls = [...text.matchAll(/<[a-z][^>]*>/gi)].flatMap(([tag]) =>   // real tags only: code text is not a link
+      [...tag.matchAll(/\s(?:href|src)="([^"]+)"/gi)].map(m => m[1].replace(/&amp;/g, '&')));
+    for (const url of urls) {
       if (/^(?:[a-z]+:|\/\/)/i.test(url)) continue;
       const abs = url.startsWith('#') ? '/' + f.replace(/\.html$/, '') + url : new URL(url, 'https://x/' + f).pathname + (url.includes('#') ? '#' + url.split('#')[1] : '');
       const target = resolve(abs);
@@ -197,4 +199,11 @@ test('headers: each header comes from one rule, and every inline script is allow
   assert.ok(existsSync(path.join(out, '404.html')));
   for (const f of html) assert.doesNotMatch(await readFile(path.join(out, f), 'utf8'), /(?:href|src)="\s*(?:javascript|vbscript|data:text):/i, f);
   assert.ok(files.includes('THIRD_PARTY_NOTICES.html'), 'licence notices are published');
+});
+
+test('code samples keep their links as written (no rewriting inside code)', async () => {
+  const viewer = await readFile(path.join(out, 'docs/file-viewer.html'), 'utf8');
+  assert.match(viewer, /<code[^>]*>[^<]*href="kit\/file-viewer\.html\?file=/, 'the file-viewer snippet was rewritten');
+  for (const f of files.filter(f => f.endsWith('.html') && !f.startsWith('kit/')))
+    assert.ok(!(await readFile(path.join(out, f), 'utf8')).includes('&amp;amp;'), `${f}: an entity encoded twice`);
 });

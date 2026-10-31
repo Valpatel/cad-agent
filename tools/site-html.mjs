@@ -15,9 +15,22 @@ export const SANITIZE = {
   allowedAttributes: { a: ['href', 'title', 'id', 'name'], img: ['src', 'alt', 'title', 'width', 'height'],
     '*': ['id', 'align'], code: ['class'], pre: ['class'], div: ['class'], span: ['class'], td: ['align', 'width'],
     th: ['align', 'width'], input: ['type', 'checked', 'disabled'], ol: ['start'] },
-  allowedClasses: { code: ['language-*'], pre: ['mermaid'], div: false, span: false },
+  allowedClasses: { code: ['language-*'], pre: ['mermaid'], div: ['table-scroll', 'cad-table-scroll'], span: [] },
   allowedSchemes: ['http', 'https', 'mailto'], allowedSchemesByTag: { img: ['http', 'https', 'data'] },
   allowProtocolRelative: false, disallowedTagsMode: 'discard',
   exclusiveFilter: f => f.tag === 'input' && f.attribs.type !== 'checkbox',
 };
 export const sanitize = html => sanitizeHtml(html, SANITIZE);
+
+const ENTITY = { '&amp;': '&', '&quot;': '"', '&#39;': "'", '&lt;': '<', '&gt;': '>' };
+const decode = s => s.replace(/&(?:amp|quot|#39|lt|gt);/g, e => ENTITY[e]);
+const encode = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+/** Rewrite the href and src of real tags in sanitized HTML: `fn(url, attr)` gets the decoded URL and returns the new
+ * one (or null to keep it). Text that only looks like a tag (`<a href=...>` in a code sample, which the sanitizer
+ * leaves as `&lt;a href="..."`) is never touched, and each URL is decoded and encoded exactly once. */
+export function rewriteUrls(html, fn) {
+  return html.replace(/<(a|img)\b[^>]*>/gi, tag => tag.replace(/(\s)(href|src)="([^"]*)"/gi, (all, sp, attr, raw) => {
+    const url = fn(decode(raw), attr.toLowerCase());
+    return url == null ? all : `${sp}${attr}="${encode(url)}"`;
+  }));
+}

@@ -60,6 +60,9 @@ test('the retaining faces lock: a pull-back turns the hook into the catch, not o
 
 test('every in-between pose the browser draws is clear, not only the keyframes', () => {
   const { rows } = timeline();
+  const { css } = snapDemo();                          // the rows are exactly what the stylesheet carries
+  for (const r of rows) assert.ok(css.includes(`${r[0]}%{transform:translateX(${r[1]}px)`), `keyframe ${r} not emitted as is`);
+  for (let i = 1; i < rows.length; i++) assert.ok(rows[i][0] > rows[i - 1][0], `keyframe times not increasing at ${rows[i][0]}%`);
   for (let i = 1; i < rows.length; i++) for (let k = 1; k < 32; k++) {
     const t = k / 32, a = rows[i - 1], b = rows[i];
     if (!a[3] && !b[3]) continue;                      // the reset jump, while the part is invisible

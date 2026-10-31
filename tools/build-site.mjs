@@ -7,13 +7,14 @@
  * they are on disk (the footer then says so); `--release` refuses a dirty tree.
  */
 import { readFile, writeFile, mkdir, rm, readdir } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { marked } from 'marked';
 import YAML from 'yaml';
 import { snapDemo } from './snap-demo.mjs';
-import { sanitize, safeUrl } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
+import { sanitize, safeUrl, rewriteUrls } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
 const rootArg = process.argv.indexOf('--root');
@@ -37,8 +38,15 @@ if (RELEASE && !onReviewed('origin/main') && !onReviewed('origin/dev')) throw ne
 const tracked = git('ls-tree', '-r', '-z', '--name-only', 'HEAD').split('\0').filter(Boolean);
 const head = git('rev-parse', 'HEAD');
 const revision = head;
-// The content is always HEAD's (or the working tree's with --worktree), but the build tools run from disk: say so.
-const toolsDirty = git('status', '--porcelain', '--', 'tools/build-site.mjs', 'tools/snap-demo.mjs', 'package.json', 'package-lock.json');
+// The content is always HEAD's (or the working tree's with --worktree), but the build tools run from disk (from this
+// checkout, even with --root): say so when they differ from the built commit's, and never release with them.
+const TOOLS = ['tools/build-site.mjs', 'tools/site-html.mjs', 'tools/snap-demo.mjs', 'package.json', 'package-lock.json'];
+const toolsHere = path.join(import.meta.dirname, '..');
+const toolsDirty = TOOLS.filter(t => {
+  let committedCopy; try { committedCopy = gitRaw('show', `HEAD:${t}`); } catch { return true; }
+  return !committedCopy.equals(readFileSync(path.join(toolsHere, t)));
+}).join(', ');
+if (RELEASE && toolsDirty) throw new Error(`--release needs the build tools that run to match the built commit; these differ: ${toolsDirty}`);
 const revisionLabel = WORKTREE ? `${head.slice(0, 7)} + local changes` : toolsDirty ? `${head.slice(0, 7)} + local build tools` : head.slice(0, 7);
 const committed = git('show', '-s', '--format=%cI', 'HEAD');            // build time = commit time: reproducible
 if (RELEASE && git('rev-parse', '--is-shallow-repository') === 'true') throw new Error('--release needs full git history (fetch-depth: 0), so each page shows when it really changed');
@@ -199,15 +207,15 @@ for (const p of pages) {
   };
   const body = /^#\s/m.test(p.body) ? p.body : `# ${p.title}\n\n${p.body}`;          // subagents have no heading
   let html = sanitize(await marked.parse(body, { renderer }));
-  html = html.replace(/(href|src)="([^"#][^"]*)"/g, (all, attr, url) => {
-    if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(url)) return all;
+  html = rewriteUrls(html, (url, attr) => {          // only real tags: link text inside code samples stays as written
+    if (!url || url.startsWith('#') || /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(url)) return null;
     const [pathname, ...hash] = url.split('#');
     const resolved = pathname.startsWith('/') ? pathname.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(p.file), pathname));
     let target;
     if (pageFiles.has(resolved)) target = pageURL(resolved);
     else if (attr === 'src' && tracked.includes(resolved) && /\.(svg|png|jpe?g|gif|webp)$/i.test(resolved)) target = '/' + resolved;
     else target = `${REPO}/${tracked.includes(resolved) ? 'blob' : 'tree'}/dev/${resolved}`;
-    return `${attr}="${esc(target)}${hash.length ? '#' + esc(hash.join('#')) : ''}"`;
+    return target + (hash.length ? '#' + hash.join('#') : '');
   });
   // No third-party requests from the site: remote images (README badges) become their alt text.
   html = html.replace(/<img\b[^>]*\bsrc="(?:https?:)?\/\/[^"]*"[^>]*>/gi, m => {
@@ -334,13 +342,17 @@ const htmlFiles = async d => (await readdir(d, { withFileTypes: true, recursive:
 // Only the kit's own pages (copied byte for byte from src/cadagent/webkit/) may carry inline script, so only their
 // hashes go into the policy; any inline script on a site page stops the build.
 const inlineHashes = new Set();
-const INLINE = /<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
+// Every <script> tag is looked at (any attributes, `</script >`, an unclosed one): a script with a src may not also
+// have a body, and an inline one is only allowed on the kit's pages.
+const SCRIPT = /<script\b([^>]*)>([\s\S]*?)(<\/script\s*>|$)/gi;
 for (const f of await htmlFiles(out)) {
-  const kit = path.relative(out, f).split(path.sep)[0] === 'kit';
-  for (const m of (await readFile(f, 'utf8')).matchAll(INLINE)) {
-    if (!m[1].trim()) continue;
-    if (!kit) throw new Error(`${path.relative(out, f)}: inline <script> on a site page (only the kit's pages may have one)`);
-    inlineHashes.add(`'sha256-${createHash('sha256').update(m[1]).digest('base64')}'`);
+  const where = path.relative(out, f), kit = where.split(path.sep)[0] === 'kit';
+  for (const m of (await readFile(f, 'utf8')).matchAll(SCRIPT)) {
+    if (!m[3]) throw new Error(`${where}: unclosed <script>`);
+    if (/(?:^|\s)src\s*=/i.test(m[1])) { if (m[2].trim()) throw new Error(`${where}: <script src> with a body`); continue; }
+    if (!m[2].trim()) continue;
+    if (!kit) throw new Error(`${where}: inline <script> on a site page (only the kit's pages may have one)`);
+    inlineHashes.add(`'sha256-${createHash('sha256').update(m[2]).digest('base64')}'`);
   }
 }
 export const CSP = `default-src 'self'; script-src 'self' ${[...inlineHashes].sort().join(' ')} 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; ` +

@@ -79,6 +79,18 @@ try {
           if (engine === chromium && !detail.ok) seen.push('clipboard write failed in Chromium');
           if (detail.ok && engine === chromium && (await page.evaluate(() => navigator.clipboard.readText())) !== expected) seen.push('clipboard holds other text');
         }
+        // A label is text, never markup (other projects may put user text in it).
+        const label = await page.evaluate(() => {
+          const el = document.createElement('cad-copy');
+          el.setAttribute('label', '<img src=x onerror="window.__xss=1">Copy');
+          el.innerHTML = '<pre>x</pre>';
+          document.body.append(el);
+          const btn = el.querySelector('.cad-copy-btn');
+          const r = { text: btn.textContent, img: !!btn.querySelector('img') };
+          el.remove();
+          return r;
+        });
+        if (label.img || !label.text.includes('<img')) seen.push('copy label is parsed as HTML');
       }
     }
     if (route === '/docs/compliant') {

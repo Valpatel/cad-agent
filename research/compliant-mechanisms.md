@@ -124,18 +124,11 @@ All specimens were 100 % infill, ISO 527 / GB/T 1040. Z means pulled across the 
 | TPU 95A HF, Bambu (V1.0) | 9.8 / 7.4 | 27.3 / 22.3 | >650 / >480 | 0.82 | ≥0.74 | [BBL-TPU] |
 | PolyFlex TPU95, Polymaker (V5.4) | 33.6 XY (ISO 37) | — | 551 XY | — | no Z data | [PM-TPU] |
 
-```mermaid
-%%{init: {"xyChart": {"width": 640, "height": 480}, "themeVariables": {"xyChart": {"plotColorPalette": "#6f8a80, #bd3a12"}}}}%%
-xychart-beta horizontal
-    title "Across the layers ÷ along them: strength (bars), strain to failure (line)"
-    x-axis ["PLA Basic", "PLA Matte", "PolyLite PLA", "PETG Basic", "PETG HF", "PETG-CF", "PolyLite PETG", "ASA", "PolyLite ASA", "CoPA dry", "PA6-CF20 dry", "TPU 95A HF"]
-    y-axis "Z ÷ XY" 0 --> 1
-    bar [0.90, 0.78, 0.77, 0.81, 0.68, 0.64, 0.84, 0.67, 0.73, 0.59, 0.49, 0.82]
-    line [0.61, 0.15, 0.29, 0.51, 0.59, 0.45, 0.39, 0.50, 0.25, 0.10, 0.90, 0.74]
-```
+![Bar chart: for each filament, the strength and the strain to failure pulled across the layers, as a fraction of the in-plane value. Strength keeps 0.47 to 0.90; strain to failure keeps 0.10 to 0.61 for PLA, PETG, ASA and CoPA](../docs/img/research/fdm-anisotropy.svg)
 
-*From the table above (manufacturers' data sheets, dry where a wet value is also given; TPU's strain ratio is a lower
-bound). Pulled across the layers, most filaments keep 60–90 % of their strength but much less of their stretch.*
+*Drawn from the table above by `tools/research_figures.py` (a test keeps the two in step). Pulled across the layers,
+most filaments keep 60–90 % of their strength but much less of their stretch; the carbon-filled PA6 and TPU are the
+exceptions.*
 
 Reading the table:
 - **Strain to failure across the layers falls far more than strength.** For PLA, PETG, ASA and CoPA the Z/XY strength

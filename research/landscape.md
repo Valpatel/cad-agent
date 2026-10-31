@@ -13,17 +13,9 @@ Machine-readable copy: [`landscape.json`](landscape.json).
 
 ## 1. Capability matrix
 
-```mermaid
-%%{init: {"xyChart": {"width": 640, "height": 420}, "themeVariables": {"xyChart": {"plotColorPalette": "#6f8a80, #bd3a12"}}}}%%
-xychart-beta horizontal
-    title "GitHub stars of the most-starred projects in the matrix (2026-10-24)"
-    x-axis ["mcp-for-blender", "text-to-cad", "Amagine3D", "CADAM", "freecad-mcp", "KiCAD-MCP-Server", "kicad-happy", "Konnect", "modeling-app", "Multi-Agent-CAD"]
-    y-axis "stars" 0 --> 35000
-    bar [32261, 22951, 6259, 5328, 3040, 2933, 1499, 1399, 1321, 1048]
-```
+![Bar chart of GitHub stars for the twelve most-starred projects in the capability matrix, led by ahujasid/mcp-for-blender and earthtojake/text-to-cad](../docs/img/research/landscape-stars.svg)
 
-*Stars measure attention, not fitness: the matrix below is what decides. Read from the matrix rows on the date it was
-verified.*
+*Drawn from the matrix below by `tools/research_figures.py`. Stars measure attention, not fitness: the matrix decides.*
 
 
 Clients: **CC** = Claude Code plugin/skill, **MCP** = MCP server, **Cx** = Codex, **Cu** = Cursor, **Ge** = Gemini, **App** = standalone app.

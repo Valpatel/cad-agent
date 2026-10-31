@@ -17,6 +17,9 @@ alone.
    `gh issue list --state all --search "<words>"`. Open one per piece of work that will take more than a few
    minutes: `gh issue create --title "<outcome, not activity>" --body-file <file>`. Write the body with
    [the template below](#issue-template). A large job gets a tracking issue that links smaller ones.
+   **Then check who holds it and claim it.** Several agents on different tools and machines work the same repos.
+   Read the issue's latest [work-claim comments](#work-claims-sharing-issues-between-agents): if another agent holds
+   an unexpired claim, pick other work or claim a separate scope. Otherwise post a `claim` before changing anything.
 2. **Branch from the integration branch and push it at once.** Follow the repo's AGENTS.md / CONTRIBUTING.md: in
    cad-agent that is a `feat/<topic>` worktree from `origin/dev`; in a product repo, often `dev`. Push before you
    have much to push (`git push -u origin <branch>`), so the branch exists remotely from the start.
@@ -30,11 +33,41 @@ alone.
    - tick the issue checklist and add a short comment: what changed, what is running, the exact next step;
    - for each run in flight, the host, command, log path and how to collect its results (see `cad-remote-runs`).
    Ask yourself: "if this session ended now, could someone else continue from GitHub without asking me?"
-   If not, checkpoint.
+   If not, checkpoint. Post it as a work-claim `checkpoint` so it renews your lease (at least once a day).
 6. **Close out as you go.** When a PR merges, its `Closes #N` closes the issue; check that it did, tick the tracking
    issue and comment with the merge commit. Close issues that turned out to be unnecessary, with the reason.
    Delete your own merged branches and remove your own worktrees (after checking no virtualenv imports from them);
-   never touch another session's branch or worktree.
+   never touch another session's branch or worktree. End your claim with `done` (PR, commit, evidence), or
+   `release` with resume notes if you stop before the end.
+
+## Work claims: sharing issues between agents
+
+A claim is an issue comment whose first line the tools parse. No host names, user names or private infrastructure:
+agents are named by a stable pseudonymous tag.
+
+```markdown
+<!-- work v1 claim agent=a-7kq2m9xw lease=2026-11-01T19:00Z -->
+**Claimed** by agent `a-7kq2m9xw` until 2026-11-01T19:00Z UTC.
+
+Scope: <what this agent is doing on this issue>
+Branch: <branch or PR>
+```
+
+| Action | When | Lease |
+|---|---|---|
+| `claim` | before starting | until `lease=` (UTC), at most 24 h after the comment |
+| `checkpoint` | progress; at least once per lease | renews `lease=` |
+| `release` | stopping before the end, with resume notes | ends |
+| `done` | PR merged or evidence posted | ends |
+
+- **A claim not refreshed within its lease has expired**: the issue is open for anyone. Daily checkpoints are the
+  price of holding work.
+- **The earliest unexpired claim holds.** A later agent backs off, or claims a non-overlapping scope and says so.
+- A claim coordinates; it is not a lock, a permission or proof of progress. Before continuing someone's expired
+  claim, read its last checkpoint and re-check the branch, PR, runs and side effects.
+- The tag is `a-` plus eight characters of `[a-z2-7]`. Valpatel agents get theirs, and post claims, with the
+  organisation's `work_claim.py` tool (`status`, `claim`, `checkpoint`, `release`, `done`, `mine`, `stale`), which
+  derives the tag from a private salt. Anyone else writes the comment by hand with any stable tag of that form.
 
 ## What must never live only locally
 
@@ -54,6 +87,7 @@ At the start of a session, or after a crash, rebuild the state from GitHub befor
 
 ```bash
 gh issue list --state open --assignee @me ; gh issue list --state open --limit 30
+gh issue list --state open --search '"work v1" in:comments'  # issues with claims: read who holds what
 gh pr list --state open --author @me
 git fetch --all --prune && git status -sb
 git log --oneline --branches --not --remotes                # commits on no remote: push them first

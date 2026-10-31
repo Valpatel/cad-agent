@@ -207,3 +207,12 @@ test('code samples keep their links as written (no rewriting inside code)', asyn
   for (const f of files.filter(f => f.endsWith('.html') && !f.startsWith('kit/')))
     assert.ok(!(await readFile(path.join(out, f), 'utf8')).includes('&amp;amp;'), `${f}: an entity encoded twice`);
 });
+
+test('every local image has its width and height, so nothing jumps while it loads', async () => {
+  const bare = [];
+  for (const f of html.filter(f => !f.startsWith('kit/'))) {
+    for (const [tag] of (await readFile(path.join(out, f), 'utf8')).matchAll(/<img\b[^>]*\ssrc="\/[^"]*"[^>]*>/gi))
+      if (!/\swidth="\d+"/.test(tag) || !/\sheight="\d+"/.test(tag)) bare.push(`${f}: ${tag.slice(0, 100)}`);
+  }
+  assert.deepEqual(bare, []);
+});

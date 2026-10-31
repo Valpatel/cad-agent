@@ -14,7 +14,7 @@ import path from 'node:path';
 import { marked } from 'marked';
 import YAML from 'yaml';
 import { snapDemo } from './snap-demo.mjs';
-import { sanitize, safeUrl, rewriteUrls } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
+import { sanitize, safeUrl, rewriteUrls, imageSize } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
 const rootArg = process.argv.indexOf('--root');
@@ -217,6 +217,15 @@ for (const p of pages) {
     else target = `${REPO}/${tracked.includes(resolved) ? 'blob' : 'tree'}/dev/${resolved}`;
     return target + (hash.length ? '#' + hash.join('#') : '');
   });
+  // Every local image gets its intrinsic width and height, so its space is kept while it loads (no layout shift); a
+  // percentage (README's width="100%") keeps no height, and CSS max-width already fits images to the column.
+  const sized = [];
+  for (const [tag] of html.matchAll(/<img\b[^>]*>/gi)) {
+    const src = tag.match(/\ssrc="\/([^"#?]+)"/)?.[1]?.replace(/&amp;/g, '&');
+    if (src && !(/\swidth="\d+"/.test(tag) && /\sheight="\d+"/.test(tag)) && tracked.includes(src)) sized.push([tag, imageSize(await readBuf(src), src)]);
+  }
+  for (const [tag, size] of sized) if (size)
+    html = html.replace(tag, tag.replace(/\s(?:width|height)="[^"]*"/gi, '').replace(/^<img/i, `<img width="${size.width}" height="${size.height}"`));
   // No third-party requests from the site: remote images (README badges) become their alt text.
   html = html.replace(/<img\b[^>]*\bsrc="(?:https?:)?\/\/[^"]*"[^>]*>/gi, m => {
     const alt = m.match(/\balt="([^"]*)"/)?.[1];

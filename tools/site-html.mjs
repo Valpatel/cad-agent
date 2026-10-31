@@ -34,3 +34,32 @@ export function rewriteUrls(html, fn) {
     return url == null ? all : `${sp}${attr}="${encode(url)}"`;
   }));
 }
+
+/** The intrinsic size of a PNG, GIF, JPEG or SVG image ({ width, height } in CSS pixels), or null. The build writes it
+ * on every local <img>, so the browser keeps the image's space before it loads and the text never jumps. */
+export function imageSize(buf, name = '') {
+  const b = Buffer.from(buf);
+  if (b.length >= 24 && b.readUInt32BE(0) === 0x89504e47) return { width: b.readUInt32BE(16), height: b.readUInt32BE(20) };
+  if (b.length >= 10 && b.toString('latin1', 0, 3) === 'GIF') return { width: b.readUInt16LE(6), height: b.readUInt16LE(8) };
+  if (b.length >= 4 && b[0] === 0xff && b[1] === 0xd8) {               // JPEG: walk the segments to the frame header
+    for (let i = 2; i + 9 < b.length;) {
+      if (b[i] !== 0xff) { i++; continue; }
+      const m = b[i + 1];
+      if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) return { width: b.readUInt16BE(i + 7), height: b.readUInt16BE(i + 5) };
+      i += 2 + b.readUInt16BE(i + 2);
+    }
+    return null;
+  }
+  if (/\.svg$/i.test(name)) {
+    const tag = b.toString('utf8').match(/<svg\b[^>]*>/i)?.[0] || '';
+    const attr = a => { const v = tag.match(new RegExp(`\\s${a}="\\s*([\\d.]+)(?:px)?\\s*"`))?.[1]; return v ? parseFloat(v) : 0; };
+    const box = tag.match(/\sviewBox="\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)\s*"/);
+    let w = attr('width'), h = attr('height');
+    if (box && !(w && h)) {                                              // keep the viewBox's proportions
+      const [bw, bh] = [parseFloat(box[1]), parseFloat(box[2])];
+      if (w) h = w * bh / bw; else if (h) w = h * bw / bh; else [w, h] = [bw, bh];
+    }
+    return w && h ? { width: Math.round(w), height: Math.round(h) } : null;
+  }
+  return null;
+}

@@ -2,7 +2,7 @@
 // or unsafe URL survives, while the markup our docs use (and text inside code) comes through unchanged.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sanitize, safeUrl, rewriteUrls } from '../tools/site-html.mjs';
+import { sanitize, safeUrl, rewriteUrls, imageSize } from '../tools/site-html.mjs';
 
 const ATTACKS = {
   'nested script': '<scr<script>x</script>ipt>window.__x=1</script>',
@@ -81,4 +81,18 @@ test('link rewriting touches real tags only, and decodes and encodes each URL on
   assert.ok(out.includes('href="kit/file-viewer.html?file=a.step&amp;back=index.html"'), out);
   assert.ok(!out.includes('&amp;amp;'));
   assert.equal(rewriteUrls(html, () => null), html, 'returning null keeps the tag as it was');
+});
+
+test('image sizes come from the file, so pages keep the space before images load', () => {
+  const png = Buffer.alloc(24); png.writeUInt32BE(0x89504e47, 0); png.write('IHDR', 12, 'latin1'); png.writeUInt32BE(640, 16); png.writeUInt32BE(360, 20);
+  assert.deepEqual(imageSize(png, 'a.png'), { width: 640, height: 360 });
+  const gif = Buffer.from('GIF89a\x20\x00\x10\x00', 'latin1');
+  assert.deepEqual(imageSize(gif, 'a.gif'), { width: 32, height: 16 });
+  // JPEG: SOI, an APP0 segment to skip, then the SOF0 frame header (precision, height 200, width 300)
+  const jpg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x04, 0x00, 0x00, 0xff, 0xc0, 0x00, 0x11, 0x08, 0x00, 0xc8, 0x01, 0x2c, 0x03]);
+  assert.deepEqual(imageSize(jpg, 'a.jpg'), { width: 300, height: 200 });
+  assert.deepEqual(imageSize(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 716">'), 'a.svg'), { width: 680, height: 716 });
+  assert.deepEqual(imageSize(Buffer.from('<svg width="200px" viewBox="0 0 400 100">'), 'a.svg'), { width: 200, height: 50 });
+  assert.equal(imageSize(Buffer.from('<svg viewBox="nonsense">'), 'a.svg'), null);
+  assert.equal(imageSize(Buffer.from('not an image'), 'a.webp'), null);
 });

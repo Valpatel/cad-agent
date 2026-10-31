@@ -9,13 +9,12 @@ lesson that recorded it. Every review walks this list, whoever wrote the design 
    the sources yourself. Say in the review which ones you checked and how.
 
 ```mermaid
-flowchart LR
+flowchart TD
     A["cad-agent all"] -->|"every row passes"| R["walk the Review rows<br/>model, renders, sources"]
     A -->|"fails, stale<br/>or did not run"| F["finding"]
     R -->|"something is off"| F
-    R -->|"all checked,<br/>said how"| P["review can pass"]
-    F --> N["new kind of mistake?<br/>add it here + the check<br/>that would catch it"]
-    N -->|"check exists"| A
+    R -->|"all checked, said how"| P["review can pass"]
+    F --> N["new kind of mistake? add it here<br/>with the check that would catch it"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

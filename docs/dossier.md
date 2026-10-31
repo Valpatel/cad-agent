@@ -11,20 +11,17 @@ check the geometry against the declarations; a reviewer checks the declarations 
 it proves physical fit or strength.
 
 ```mermaid
-flowchart LR
+flowchart TD
     Req["requirements"] --> Sec["sections"]
-    Sec --> Card["spec card<br/>per part"]
-    Sec --> If["interfaces"]
-    Sec --> Dec["decisions<br/>+ rejected options"]
-    Sec --> Seq["assembly sequence"]
-    Geo["build script<br/>registers geometry"] -->|"joined by id"| Card
-    Card & If & Seq --> G["gates<br/>check geometry against it"]
-    Req & Dec --> Rv["reviewer pass<br/>checks it against the requirements"]
+    Sec --> Items["for each section: spec cards, interfaces,<br/>decisions with the options rejected,<br/>assembly sequence"]
+    Geo["build script<br/>registers geometry"] -->|"joined by id"| Items
+    Items --> G["gates<br/>check the geometry against it"]
+    Items --> Rv["reviewer pass<br/>checks it against the requirements"]
     G & Rv --> Site["review site"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class Req,Sec,Card,If,Dec,Seq here
+    class Req,Sec,Items here
     class Geo near
     class G,Rv,Site out
 ```

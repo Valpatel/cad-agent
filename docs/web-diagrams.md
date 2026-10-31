@@ -13,7 +13,7 @@ The Python site builder ships these assets in `site/assets` and initializes the 
 This diagram is drawn by the helper it describes.
 
 ```mermaid
-flowchart LR
+flowchart TD
     S["pre > code.language-mermaid<br/>in the page"] --> O["observeDiagrams()<br/>finds new blocks"]
     O --> L["loads vendored Mermaid 11.4.1<br/>only when a diagram exists"]
     L --> Q["queued render<br/>strict security mode"]

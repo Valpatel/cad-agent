@@ -6,12 +6,12 @@ copies the skill to a different machine. It documents the independent CAD refere
 `cad-agent motion-trace` CLI, required coverage, diagnostics and evidence limits.
 
 ```mermaid
-flowchart LR
+flowchart TD
     CAD["CAD source<br/>axes, pivots, landmarks"] --> Ref["reference contract<br/>one home frame"]
     Scene["the browser's scene<br/>world matrices × mesh vertices"] --> Obs["observed trace"]
-    Ref & Obs --> T["cad-agent motion-trace<br/>compare across each range"]
-    T --> Rep["report<br/>coverage, diagnostics,<br/>input hashes"]
+    Ref & Obs --> T["cad-agent motion-trace<br/>compares across each range"]
     G["gates --only motion<br/>CAD interference"] -.->|"complements"| T
+    T --> Rep["report<br/>coverage, diagnostics, input hashes"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

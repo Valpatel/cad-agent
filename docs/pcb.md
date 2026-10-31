@@ -3,12 +3,13 @@
 cad-agent supports electronics and mechanical evidence in the same local project site. KiCad remains the electrical source of truth; cad-agent consumes its native reports and displays the files. The same embedded review groups work for a PCB, printed housing, robot assembly or any combination.
 
 ```mermaid
-flowchart LR
-    K["KiCad project<br/>source of truth"] --> E["kicad-cli ERC + DRC<br/>--severity-all, parity"]
-    E --> M["evidence manifest<br/>reports, sources, release gates"]
-    M --> C["cad-agent pcb-check<br/>exit 1 unless every check passes"]
-    K --> J["JLC BOM + CPL"] --> JC["check_jlc_files"]
-    K --> S["board STEP"] --> En["enclosure checks<br/>fasteners, envelopes, access"]
+flowchart TD
+    K["KiCad project<br/>the source of truth"] --> E["kicad-cli ERC + DRC<br/>--severity-all, parity"]
+    K --> J["JLC BOM + CPL"]
+    K --> S["board STEP"]
+    E --> M["evidence manifest"] --> C["cad-agent pcb-check<br/>exit 1 unless every check passes"]
+    J --> JC["check_jlc_files"]
+    S --> En["enclosure checks<br/>fasteners, envelopes, access"]
     C & JC & En --> R["review site<br/>design cards, open gates"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c

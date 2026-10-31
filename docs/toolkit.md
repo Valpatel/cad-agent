@@ -8,7 +8,7 @@ shared geometry screens, the renderer, link validation, the report, packaging
 and a local server.
 
 ```mermaid
-flowchart LR
+flowchart TD
     P["your project<br/>CAD script + cad-agent.yaml"] --> B["build<br/>parts, STEP, STL"]
     B --> X["export-3mf<br/>print files, verified"]
     X --> C["check<br/>project checks, geometry screens,<br/>links, gate verdicts"]

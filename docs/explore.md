@@ -22,13 +22,13 @@ Long range fails a requirement. Every number comes from the catalogue's cited sp
 nothing on it is measured.*
 
 ```mermaid
-flowchart LR
+flowchart TD
     Cat["catalogue<br/>parts, specs, prices, sources"] --> D["designs<br/>one part per slot + parameters"]
     D --> E["evaluator<br/>the project's own model"]
     E --> Cmp["compare<br/>Pareto ranking, BOM, swaps"]
-    Cmp --> Pg["comparison page<br/>+ JSON"]
+    Cmp --> Pg["comparison page + JSON"]
     Cmp --> O["optimise<br/>search for better designs"]
-    O --> D
+    O -->|"new designs"| D
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

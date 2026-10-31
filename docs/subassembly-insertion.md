@@ -3,18 +3,18 @@
 A preassembled module needs two separately checked sequences: its internal bench assembly and its insertion into the parent. Treating its components as independent parent steps invents an installation order and can claim tool access in the wrong surrounding geometry.
 
 ```mermaid
-flowchart LR
-    M["module members<br/>exact instances + fasteners"] --> Bench["bench sequence<br/>checked against members only"]
-    Bench -->|"qualified"| Ins["insert the module<br/>as one rigid step<br/>fit=module, direction"]
+flowchart TD
+    M["module members<br/>exact instances + fasteners"] --> Bench["bench sequence<br/>checked against the members only"]
+    Bench -->|"qualified"| Ins["insert the module as one rigid step<br/>fit=module, direction"]
     Bench -->|"failed or missing coverage"| X["parent result<br/>not qualified"]
-    Svc["service_after<br/>parts removed first"] --> Ins
     Par["parent sequence"] --> Ins
+    Svc["service_after<br/>parts removed first"] --> Ins
     Ins --> Out["parent verdict<br/>internal results kept separate"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
     class Bench,Ins here
-    class M,Svc,Par near
+    class M,Par,Svc near
     class X,Out out
 ```
 

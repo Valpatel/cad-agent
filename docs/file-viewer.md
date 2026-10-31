@@ -17,14 +17,14 @@ exact source revisions, licenses, hashes, build instructions and library replace
 instructions. Keep these notices with copies of the viewer.
 
 ```mermaid
-flowchart LR
-    U["?file= URL<br/>same origin only"] --> F["fetch the original bytes<br/>30 s, 128 MiB limits"]
-    F --> STEP["STEP: occt-import-js<br/>in a worker (WASM)"]
-    F --> MF["3MF: three.js loader<br/>declared units applied"]
-    F --> STL["STL: millimetres assumed,<br/>units selectable"]
+flowchart TD
+    U["?file= URL<br/>same origin only"] --> F["fetch the original bytes<br/>30 s and 128 MiB limits"]
+    U -.-> DL["download link<br/>the original file, unchanged"]
+    F --> STEP["STEP<br/>occt-import-js, WASM worker"]
+    F --> MF["3MF<br/>three.js loader, units applied"]
+    F --> STL["STL<br/>mm assumed, units selectable"]
     STEP & MF & STL --> CK["geometry checks<br/>finite, valid, bounded"]
     CK --> V["stage: Z-up to Y-up,<br/>on the floor, fitted"]
-    F --> DL["download link:<br/>the original file"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

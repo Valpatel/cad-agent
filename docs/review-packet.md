@@ -6,11 +6,11 @@ the reviewer answers. The skill [`skills/design-process`](../skills/design-proce
 make one; the plan behind it is [`design-process-plan.md`](design-process-plan.md) §5.1–§5.2 (task T10).
 
 ```mermaid
-flowchart LR
+flowchart TD
     Sec["dossier section"] --> V["fixed views<br/>captioned renders"]
     Gt["gate verdicts<br/>findings, witness points"] --> M
-    V --> M["manifest.json<br/>measurements first,<br/>content hash per part"]
-    M --> Rv["reviewer<br/>reads measurements first,<br/>answers the checklist"]
+    V --> M["manifest.json<br/>measurements first, content hash per part"]
+    M --> Rv["reviewer<br/>reads measurements first, answers the checklist"]
     Rv --> Rec["review record<br/>bound to the part hashes"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c

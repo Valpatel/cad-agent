@@ -13,19 +13,18 @@ Acceptance evidence includes generic fixtures, actual project files, narrow/land
 This feature is developed on `feat/web-parts`, targeting `dev`. Gyropup may test the feature worktree while its PR is open, following CONTRIBUTING.md. Toolkit integration and release still follow the repository's review and explicit merge-instruction rules.
 
 ```mermaid
-flowchart LR
-    T["your semantic table<br/>stable part keys,<br/>data-sort-value"] --> E["enhancePartTable<br/>sort, filter, counts"]
-    E --> V["same rows, reordered<br/>original order kept"]
+flowchart TD
+    T["your semantic table<br/>stable part keys, data-sort-value"] --> E["enhancePartTable<br/>sort, filter, counts"]
     Tr["createPartTracker<br/>ordered, in hand, printed"] --> E
-    Tr <-->|"export / import<br/>validated, merged by part"| J["JSON file"]
+    E --> V["same rows, reordered<br/>original order kept"]
+    Tr <-->|"export / import, validated"| J["JSON file"]
     Tr --> LS["browser storage<br/>says whether it saved"]
-    E -.->|"file links"| FV["original-file viewer"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
     class E,Tr here
     class T,J near
-    class V,LS,FV out
+    class V,LS out
 ```
 
 ## Tables and status

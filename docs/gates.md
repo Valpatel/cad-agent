@@ -10,24 +10,16 @@ prove that printed parts fit, move or hold: no tolerance stack, no print shrink,
 `physical_fit_verified: false` and lists its assumptions.
 
 ```mermaid
-flowchart LR
+flowchart TD
     B["build()<br/>geometry record"] --> T["relation table<br/>every part pair, cached"]
+    T --> G["the gates<br/>wall · connectivity · containment<br/>fasteners · motion · assembly access"]
     D["dossier<br/>declared intent"] --> G
-    T --> G
-    subgraph G["gates"]
-        W["wall"]
-        C["connectivity"]
-        K["containment"]
-        F["fasteners"]
-        M["motion"]
-        A["assembly access"]
-    end
-    G -->|"one each"| V["verdict files<br/>exports/gates/*.json"]
-    V --> S["cad-agent check,<br/>report, review site"]
+    G -->|"one verdict file each"| V["exports/gates/*.json"]
+    V --> S["cad-agent check · report · review site"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class T,W,C,K,F,M,A here
+    class T,G here
     class B,D near
     class V,S out
 ```

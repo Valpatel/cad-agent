@@ -53,17 +53,18 @@ Assume the session ends within 30 minutes: tokens run out, the workstation crash
 record; a fresh agent on another computer continues from it alone.
 
 ```mermaid
-flowchart LR
-    I["issue<br/>+ work claim"] --> B["branch,<br/>push at once"] --> P["draft PR<br/>Closes #N"] --> C["commit + push<br/>clean chunks"]
-    C --> K["checkpoint<br/>every ~30 min"] --> C
-    K --> H["heavy run on<br/>a compute host"] --> C
-    C --> R["independent review,<br/>every thread resolved"] --> M["merge under<br/>the repo's rules"]
-    X["session ends"] -.-> Z["fresh agent resumes<br/>from GitHub alone"] -.-> C
+flowchart TD
+    I["issue + work claim"] --> B["branch + draft PR<br/>pushed at once"]
+    B --> C["commit + push<br/>in clean chunks"]
+    C <--> K["checkpoint every ~30 min<br/>heavy runs on a compute host"]
+    C --> R["independent review<br/>every thread resolved"]
+    R --> M["merge under the repo's rules"]
+    X["session ends"] -.-> Z["a fresh agent resumes<br/>from GitHub alone"] -.-> C
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class B,P,C,K here
-    class I,H,X,Z near
+    class B,C,K here
+    class I,X,Z near
     class R,M out
 ```
 

@@ -183,3 +183,18 @@ def test_printed_snap_without_orientation_fails_and_assumes_across():
     assert r["material"]["orientation"] == "across"
     with pytest.raises(ValueError):
         _printed_snap(orientation="along", process="sla")
+
+
+def test_docs_page_example_runs_and_table_matches_the_code():
+    # docs/compliant.md is a living page: its YAML example and printed-allowables table are checked here
+    import re
+    from pathlib import Path
+    import yaml
+    doc = (Path(__file__).resolve().parents[1] / "docs" / "compliant.md").read_text()
+    result = sf.check_spec(yaml.safe_load(re.search(r"```yaml\n(.*?)```", doc, re.S).group(1)))
+    assert result["pass"] and [s["name"] for s in result["snaps"]] == ["lid-latch", "example-I"]
+    rows = re.findall(r"`([a-z0-9-]+)` \| ([\d.]+) % \| ([\d.]+) %", doc)
+    assert {name for name, _, _ in rows} == set(al.PRINTED)
+    for name, along, across in rows:
+        assert al.PRINTED[name].allowable("along") * 100 == pytest.approx(float(along), abs=0.06), name
+        assert al.PRINTED[name].allowable("across") * 100 == pytest.approx(float(across), abs=0.06), name

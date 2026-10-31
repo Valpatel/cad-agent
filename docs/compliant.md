@@ -1,0 +1,107 @@
+# Snap fits and compliant features
+
+`cadagent.compliant` sizes and checks snap-fit joints so an agent does not re-derive the equations, guess a
+permissible strain or forget layer lines. It is the calculator half of the compliant-mechanism work (#94); the method,
+sources and open questions are in [research/compliant-mechanisms.md](../research/compliant-mechanisms.md).
+
+**Why it is built, not adopted.** The survey of 2026-10-31 ([research/agent-toolkits-2026-10.md](../research/agent-toolkits-2026-10.md))
+found agent skills for snap fits (static74/3dp-compliant-mechanisms, the AgentCAD snap-fits skill) but they are
+prompts only: no calculator, no tests against the design guides' worked examples, and printed strain limits about
+twice those the filament datasheets support. This module is tested against the guide's own examples, and every
+material value names its source.
+
+## What it does
+
+- **Cantilever, torsion and annular snaps** by the closed-form method of the Covestro (formerly Bayer) guide
+  *Snap-Fit Joints for Plastics – A Design Guide*: permissible deflection from strain, thickness for a target
+  deflection, deflection force from the secant modulus, mating and separation force from friction and the lead and
+  return angles, the torsion-bar and annular-joint relations. Rectangular and ring-segment sections (the guide's
+  Example II section is computed exactly).
+- **Deterministic pass/fail rows** for a declared snap: root strain against the allowable, root radius (at least
+  0.38 mm; R/h below 0.6 concentrates strain), mating force against a limit, retention force against a minimum.
+- **Allowable strain with its source**: moulded resins from the Covestro Table 2 and DuPont Table 10.06; 13 printed
+  filaments from their manufacturers' datasheets **by print direction**
+  ([`allowables.py`](../src/cadagent/compliant/allowables.py)).
+- **Figures**: `tools/snapfit_figures.py` draws the cantilever with its dimensions (`docs/img/compliant/`).
+
+## Declaring snaps
+
+```yaml
+# snaps.yaml: cad-agent snapfit snaps.yaml --output exports/snap-checks.json
+snaps:
+  - name: lid-latch
+    material: copa-polymaker-dry   # a printed filament: orientation decides the allowable
+    orientation: along             # bending stress along the layers (arm lies in XY); 'across' = arm built along Z
+    repeated: true                 # opened and closed often: 60 % of the single-joining strain
+    length_mm: 14
+    undercut_mm: 0.5
+    design: 1                      # 1 constant section, 2 thickness tapered to h/2, 3 width tapered to b/4
+    section: {rect: {width_mm: 6, thickness_mm: 1.6}}
+    root_radius_mm: 0.8
+    lead_deg: 30
+    return_deg: 45
+    max_mating_n: 30
+  - name: example-I                # the guide's Example I, moulded polycarbonate
+    material: pc
+    length_mm: 19
+    undercut_mm: 2.4
+    design: 2
+    section: {rect: {width_mm: 9.5, thickness_mm: 3.28}}
+    lead_deg: 30
+    return_deg: 90
+    root_radius_mm: 1.0
+```
+
+`cad-agent snapfit FILE` prints one PASS/FAIL line per snap with the root strain, the allowable and the forces, and
+exits 1 if any check fails. `--output` writes every row, the material derivation and the limits as JSON.
+
+Fields: `name`, `material` (a name below, or `{name, strain, source, secant_mpa, friction}`), `length_mm`,
+`undercut_mm`, `design`, `section` (`rect: {width_mm, thickness_mm}` or `ring: {r_inner_mm, r_outer_mm, arc_deg,
+tension}`), and optionally `repeated`, `share` (0.5 when both parts flex equally), `secant_mpa`, `friction`,
+`same_material`, `lead_deg`, `return_deg`, `root_radius_mm`, `max_mating_n`, `min_retention_n`. For a layered process
+(`process: fdm`): a printed filament needs `orientation`; any other material needs `orientation`, `process_factor` and
+`process_source`. A missing one is a failing row, so layer lines are never silently ignored.
+
+## Materials
+
+**Moulded** (permissible strain for one joining; frequent use in brackets): Covestro Table 2 — `pc` 4 % (2.4),
+`pc-high-heat` 4 %, `pc-abs` 2.5 % (1.5), `pc-blend` 3.5 %, `pc-gf10` 2.2 %, `pc-gf20` 2.0 %. DuPont Table 10.06 —
+`pom-delrin-100` 8 % (2), `pom-delrin-500` 6 % (2), `pa66-dry` 4 % (2), `pa66-50rh` 6 % (3), `pa66-gf-dry` 0.8 %
+(0.5), `pa66-gf-50rh` 1.5 % (1.0), `pet-gf` 1 % (0.5), `pbt-gf` 1.2 % (0.6), `tpc-hytrel` 20 % (10). Where DuPont gives
+a range the lower end is used.
+
+**Printed**, single joining, along / across the layers (derived from the datasheet; ×0.6 for frequent use):
+
+| Name | Along | Across | Name | Along | Across |
+|---|---|---|---|---|---|
+| `pla-polymaker` | 1.1 % | 0.9 % | `asa-polymaker` | 1.3 % | 0.8 % |
+| `pla-bambu-basic` | 1.0 % | 1.0 % | `asa-bambu` | 1.5 % | 1.2 % |
+| `pla-bambu-matte` | 1.1 % | 1.0 % | `copa-polymaker-dry` | 2.0 % | 0.65 % |
+| `petg-polymaker` | 1.7 % | 1.6 % | `copa-polymaker-wet` | 3.3 % | 0.85 % |
+| `petg-bambu-basic` | 2.3 % | 2.3 % | `pa6-cf20-polymaker-dry` | 0.9 % | 0.9 % |
+| `petg-bambu-hf` | 1.3 % | 1.0 % | `pa6-cf20-polymaker-wet` | 1.5 % | 1.5 % |
+| `petg-cf-bambu` | 1.7 % | 1.7 % | | | |
+
+The rule, per direction: `min(0.7 × UTS / E, 0.5 × elongation at break)` — the guide's 70 %-of-yield rule for
+amorphous resin with UTS/E as a lower bound on the yield strain, and its half-the-elongation rule for materials without
+a yield point. Across the layers the smaller of the Z and XY values is used, and nylon is capped at the moulded PA66
+value. **The direction matters more than strength suggests**: across the layers these datasheets keep 59–90 % of the
+in-plane strength but only 10–61 % of the elongation at break, and snap fits are limited by strain. CoPA is the
+clearest case: 2.0 % with the arm lying in the bed plane, 0.65 % with it built upright.
+
+## Limits
+
+- Closed-form, small-deflection beam theory with one part rigid: no large deflection, contact, creep, fatigue or wall
+  deflection at the root. Large-deflection force-travel curves need FEA (CalculiX is the planned external solver).
+- Printed allowables are **hypotheses until a coupon is measured**: the datasheets are for 100 % infill on one
+  printer and profile. Forces for printed snaps use the datasheet tensile modulus, which is higher than the secant
+  modulus at the design strain, so mating forces are conservative and retention forces optimistic.
+- Hook-face geometry and mould release are not checked. CAD and calculation do not prove a joint: print it and
+  measure.
+
+## Tests that keep it honest
+
+`tests/test_snapfit.py` reproduces the guide's worked examples — Example I (h 3.28 mm, P 32.5 N, W 58.5 N), Example II
+(ring-segment hook, y 2.11 mm) and the annular lamp cover (P 748 N, W 1346 N) — checks that every printed row matches
+the derived table in the research note, that direction changes the verdict for the same geometry, and that this page's
+YAML example runs.

@@ -78,9 +78,11 @@ Proposed deterministic scorer [derived]: for each of the 6 axis-aligned orientat
 - overhang area (`cadagent.geometry.downward_area`, already exists);
 - support volume;
 - the tip-over measure;
-- for each declared flexing feature, the fraction of peak bending strain whose direction has a Z component across layers.
+- for each declared flexing feature, the fraction of peak bending strain whose direction has a Z component across
+  layers.
 
-Reject any orientation that puts a snap or flexure's bending across layers (Klahn 2016, Hubs; compliant-mechanisms.md §5).
+Reject any orientation that puts a snap or flexure's bending across layers (Klahn 2016, Hubs; compliant-mechanisms.md
+§5).
 
 ## 4. Sheet metal: unfold and bend tables
 
@@ -112,7 +114,7 @@ common-mistakes list [UF-M]; b123d-print checks [B123]; Bayer [BAY]; the Klahn p
 | G4 | Rib/boss ends on air | Every rib end face touches a wall solid | common-issues.md | all | Face adjacency after the boolean | new |
 | M1 | Rib thickness vs wall | rib ≤ 60 % of the adjacent wall | [BD] (DuPont plots 60 % ribs [DUP]) | moulding | Medial thickness ratio | new |
 | M2 | Rib base fillet | ≈ ½ rib thickness | [DUP] | moulding | Fillet radius at the rib root | new |
-| M3 | Draft | ≥ 0.5° on vertical faces, 2° typical, ≥ 3° with texture | [PL-IM]; resin table [DUP] | moulding | Face normal · pull direction | new (cf. text-to-cad `mold_tool.py`) |
+| M3 | Draft | ≥ 0.5° on vertical faces, 2° typical, ≥ 3° light texture, ≥ 5° heavier texture (PM-T2), ≥ 3° on shut-offs | [PL-IM]; resin table [DUP] | moulding | Face normal · pull direction | new (cf. text-to-cad `mold_tool.py`) |
 | M4 | Wall thickness range per resin | e.g. PC 1.016–3.81 mm, PP 0.889–3.81 mm, nylon 0.762–2.921 mm | [PL-IM] | moulding | Ray-cast thickness histogram | new |
 | M5 | Boss OD | 2–2.5 × hole diameter | [DUP] | moulding / FDM | Annulus measure on bosses | new |
 | M6 | Blind cored hole | depth ≤ 2 × core-pin diameter; floor ≥ d/6 | [DUP] | moulding | Hole depth vs diameter | new |

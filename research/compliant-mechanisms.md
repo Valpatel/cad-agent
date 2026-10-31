@@ -16,7 +16,7 @@ listed in §10.
 | **Cantilever snap**: constant section, tapered to h/2, or width tapered to b/4 | One-off or occasional assembly of a lid, cover or panel; you want the joint stress-free once seated | Bayer Table 1 [BAY]: y = K·ε·l²/h, P = b·h²·E_s·ε/(6l), W = P(μ+tanα)/(1−μ·tanα). DuPont: S = FLc/I, y = FL³/3EI [DUP]. See §2 | Root crack at a sharp fillet; strain over the allowable because the undercut was guessed; creep loss of retention when left deflected; weld line at the hook [DUP] | Moulded: a 90° undercut needs a side core or a slot in the part [DUP]. FDM: deflect within the layers and never stack the beam in Z [KLA][HUBS-SF] |
 | **U-shaped / L-shaped snap** | Not enough straight length for the strain: folding the arm makes it longer in the same envelope | Bayer recommends a curved-beam analysis and gives no closed form [BAY]. BASF manual pp. V-1…V-4 [BASF] (s). A Fusion add-in implements U-shaped and overlay snaps [F360SF] | Strain peaks at the inner radius of the U; the fold becomes a stress raiser | FDM: the U must lie flat in XY |
 | **Torsion snap** | Release by pressing a lever; the hook rotates rather than bends | φ_pm[°] = (180/π)·γ_pm·l/r; γ_pm ≈ (1+ν)·ε_pm ≈ 1.35·ε_pm; P₁l₁ = P₂l₂ = γ·G·I_p/r, with I_p = πr⁴/2 for a round bar [BAY] (the PDF text is partly garbled; the form is standard torsion) | Shear fracture of the torsion bar; posts too weak | FDM: run the bar along a layer; posts in Z are weak in bending |
-| **Annular snap** | Round, rotationally symmetric parts: caps, lamp covers, bearings | y_pm = ε_pm·d with one part rigid (halve the strain if both parts are equally flexible); P = y·d·E_s·X; X_N = 0.62·[(d₀/d−1)/(d₀/d+1)]/{[(d₀/d)²+1]/[(d₀/d)²−1]+ν}; a groove far from the tube end needs up to 3× the force [BAY]. DuPont: hub-expansion force from interference stress and geometry factor W [DUP] | Hoop crack at a weld line [DUP]; an inseparable return angle needs a split-cavity mould [BAY] | FDM: a full ring is too stiff, so slot the collar into fingers [F360SF] |
+| **Annular snap** | Round, rotationally symmetric parts: caps, lamp covers, bearings | y_pm = ε_pm·d with one part rigid (halve the strain if both parts are equally flexible); P = y·d·E_s·X; X_N = 0.62·√[(d₀/d−1)/(d₀/d+1)]/{[(d₀/d)²+1]/[(d₀/d)²−1]+ν} (the square root is on the rendered page; pdftotext drops it; lamp cover: 1.69e-3, Bayer 1.7e-3); a groove far from the tube end needs up to 3× the force [BAY]. DuPont: hub-expansion force from interference stress and geometry factor W [DUP] | Hoop crack at a weld line [DUP]; an inseparable return angle needs a split-cavity mould [BAY] | FDM: a full ring is too stiff, so slot the collar into fingers [F360SF] |
 | **Living hinge** | Lid and box in one part, many cycles, moulded PP/PE | Moulded PP: 0.012 in (0.30 mm) thick, about 0.060 in (1.5 mm) spacing, a 0.008 in reduction on the side it folds towards, and a 0.030 in radius on the tension side [PL-LH]. Land 1.5 mm, thickness 0.2–0.4 mm [PT-LH] (s). Strain ε = t·θ/(2L) under uniform bending [derived] | Cracks at once if not flexed while warm (K-resin) [PL-LH]; knit line across the hinge [PL-LH] | A 180° fold of 0.3 mm over 1.5 mm reaches ε ≈ 31 % [derived], which only orienting PP/PE survives. FDM PLA/PETG hinges are short-life: print them flat with lines across the hinge axis (u). BOSL2 `living_hinge_mask` models a printed hinge by layer height [BOSL2] |
 | **Leaf flexure / parallel-guided stage** | Short-stroke guidance without backlash: probe mounts, stages, grippers | Small deflection: one leaf K_θ = EI/L under end moment; a fixed-guided leaf k = 12EI/L³, so two leaves give k = 24EI/L³ and σ_max = 3E·t·δ/L² [derived, beam theory]. Large deflection: PRBM γ = 0.85, K_Θ ≈ 2.65 for end force [PRB][CHEN-PRB] (s). References: Howell [HOW], Smith [SMITH] | Fatigue at the clamp; buckling under axial load; parasitic motion | FDM: leaves in XY, at least 2 perimeters, no infill in the leaf (u) |
 | **Notch hinge** (circular, elliptical) | Precision pivots with small rotation | Paros & Weisbord 1965, simplified (t ≪ R): θ/M ≈ 9πR^½ / (2E·b·t^{5/2}) (u: the constant was not checked against the 1965 paper; see Lobontiu [LOB]) [PW] | Stress concentration at the throat limits the angle to a few degrees | Needs isotropic, notch-tough material; poor in FDM (the notch sits across layers) (u) |
@@ -32,8 +32,8 @@ listed in §10.
 ## 2. Snap-fit equations and worked examples for tests (Bayer guide, read)
 
 Source [BAY]: Bayer MaterialScience, *Snap-Fit Joints for Plastics – A Design Guide* (26 pp). Covestro is the successor
-company and the issue cites the Covestro edition; the copy read here is the Bayer-branded PDF. Cite it, do not
-redistribute it.
+company and the issue cites the Covestro edition [COV]; the copy read here is the Bayer-branded PDF, and the Covestro
+edition prints the same equations and worked examples. Cite them, do not redistribute them.
 
 - **Undercut = deflection.** Partially crystalline resins may be strained almost to yield in a single brief snap.
   Amorphous resins may be strained to about 70 % of the yield strain. Glass-filled resins (no yield point) may be
@@ -41,10 +41,10 @@ redistribute it.
 - **Taper.** A beam whose thickness falls linearly to h/2 (Table 1 design 2) allows **more than 60 % more deflection**
   than a constant section: y = 1.09·ε·l²/h. A constant section (design 1) has y = 0.67·ε·l²/h and a width taper to b/4
   (design 3) has y = 0.86·ε·l²/h. These two constants are **(u)**: Table 1 is an image in this copy. They agree with the
-  1.09/0.67 ≈ 1.63 ratio, and 0.67 is exact beam theory for a constant rectangular section (y = PL³/3EI with
-  ε = PLh/2EI gives y = (2/3)·ε·l²/h) [derived]. The Covestro edition's worked examples print 1.09 (design 2) and the
-  general-section 0.55 (design 2) in text (read). The polarised-light figure shows a constant-section arm with 46 % higher strain and 17 % more
-  material than the optimum.
+  1.09/0.67 ≈ 1.63 ratio, and 0.67 is exact beam theory for a constant rectangular section (y = PL³/3EI with ε = PLh/2EI
+  gives y = (2/3)·ε·l²/h) [derived]. The Covestro edition's worked examples print 1.09 (design 2) and the
+  general-section 0.55 (design 2) in text (read). The polarised-light figure shows a constant-section arm with 46 %
+  higher strain and 17 % more material than the optimum.
 - **Root fillet.** Stress concentration levels off near R/h = 0.6, but a large radius makes a thick section that sinks.
   Use a compromise, and **never less than 0.015 in (0.38 mm)**. DuPont's general rule is a fillet of t/2 and a corner of
   at least 0.020 in (0.5 mm) [DUP].
@@ -126,8 +126,11 @@ All specimens were 100 % infill, ISO 527 / GB/T 1040. Z means pulled across the 
 
 Reading the table:
 - **Strain to failure across the layers falls far more than strength.** For PLA, PETG, ASA and CoPA the Z/XY strength
-  ratio is 0.59–0.90, but the Z/XY strain ratio is 0.10–0.61. Snap fits are limited by strain, so a beam that bends
-  across the layers loses most of its allowable deflection, not the 10–40 % the strength figures suggest.
+  ratio is 0.40–0.90 (0.59–0.90 without wet CoPA), but the Z/XY elongation ratio is 0.10–0.61. How much of the
+  *allowable* this costs depends on which limit governs in §6. Where 0.7·UTS/E governs, or the two limits are close
+  (PLA, PETG, Bambu ASA), the allowable across the layers is 78–100 % of the in-plane value. Where half the elongation
+  at break governs across the layers (Polymaker ASA, CoPA) it falls to 26–64 %. The orientation rule below applies
+  either way: the notch effect of layer lines is not in a tensile test.
 - **Allum et al. 2020** found that the bond between layers has bulk strength in printed PLA. Their explanation for the
   anisotropy is the extruded-filament geometry: grooves and voids concentrate strain, not incomplete bonding [ALL]. So
   layer lines act like notches, and Bayer's "half the elongation at break" rule for materials without a yield point is
@@ -165,7 +168,7 @@ Rule:
 4. In Z, use min(Z, XY).
 5. Bayer's own example designs at ½ε_pm, which is a factor of 2.
 
-| Material (TDS) | XY single / repeat | Z single / repeat | static74 skill, in-plane single / repeat / across layers [S74] | AgentCAD table, design value [AGCAD] |
+| Material (TDS) | XY single / repeat | Z single / repeat | static74 skill, in-plane single / repeat / across layers [S74] | AgentCAD table, design value before its printing derate [AGCAD] |
 |---|---|---|---|---|
 | PLA (Polymaker) | 1.1 / 0.6 % | 0.9 / 0.5 % | 2.0 / 1.2 / ≤0.5 % | 1.2 % |
 | PLA Basic (Bambu) | 1.0 / 0.6 % | 1.0 / 0.6 % | — | — |
@@ -179,8 +182,11 @@ Rule:
 | PA6-CF20, dry | 0.9 / 0.5 % | 0.9 / 0.5 % | — | — |
 | TPU 95A | strain does not govern; size for force and retention | — | ≥10 % | — |
 
-- The derived values are **about half** of static74's and AgentCAD's for PETG, which applied 70 % of an estimated yield
-  strain. Treat every row as a hypothesis until the cad-agent coupon (#94 item 5) measures it.
+- The derived values are **about half** of static74's for PETG, which applied 70 % of an estimated yield strain.
+  AgentCAD's 3.0 % is before its own printing derate. After that derate (1.5–2.1 % in the layer plane, 0.9 % across
+  the layers) it agrees with this table.
+- Rule 3 has no moulded value to compare PLA, PETG or ASA with: none of the guides read here lists them. Treat every row
+  as a hypothesis until the cad-agent coupon (#94 item 5) measures it.
 - The repo's existing `cadagent.fea.MATERIALS` already uses weak-direction strengths for printed materials, which is
   consistent.
 
@@ -191,7 +197,7 @@ Rule:
 | **FDM** | Anisotropic strain (§5); stair-step on slopes (ratchet feel across the steps) [KLA]; walls come in whole perimeters [S74]; bridges sag; creep in PLA (u) | Clearance 0.5 mm for snaps [HUBS-SF]; print-in-place 0.2–0.4 mm XY [PIP]; overhang about 45°, bridges under 5 mm sag least [HUBS-FDM] |
 | **SLS / MJF** | Near-isotropic strength with lower Z strain [HP]; no supports; powder must escape; PA12 picks up moisture | Clearance 0.3 mm; MJF root ≥ 1 mm [HUBS-SF] |
 | **SLA** | Choose a tough or durable resin, because standard resins are brittle [HUBS-SF]; post-cure changes the properties | Tough 2000 is not for living hinges [FL-T2000] |
-| **Injection moulding** | Isotropic but with weld lines [DUP]; undercuts need side actions or slots [DUP]; draft; fillet t/2 [DUP]; flex the hinge warm off the press [PL-LH]; the annular undercut must survive ejection [BAY] | Allowables in §3; draft 0.5° on vertical faces, 2° in most cases, 3° minimum with texture [PL-IM] |
+| **Injection moulding** | Isotropic but with weld lines [DUP]; undercuts need side actions or slots [DUP]; draft; fillet t/2 [DUP]; flex the hinge warm off the press [PL-LH]; the annular undercut must survive ejection [BAY] | Allowables in §3; draft 0.5° on vertical faces, 2° in most cases, 3° minimum with light texture and 5° or more with heavier texture (PM-T2), 3° minimum on shut-offs [PL-IM] |
 | **Laser-cut sheet / plastic** | Planar flexures (LET, kerf-pattern hinges) [LET][LH-INK] | Hole ≥ T; edge distance 1.574 mm for T ≤ 0.914 mm, else 3.175 mm [PL-SM] |
 | **Bent sheet metal** | Spring temper vs formability; relief and edge distances | Flange ≥ 4T; features within about 4T of a bend distort; hem ID ≥ T with a 6T return [PL-SM]; hole-to-bend ≥ 2T + R [BD-CHK] |
 
@@ -231,6 +237,8 @@ cases are its tests.
 
 ## 10. References
 
+- **[COV]** Covestro LLC, *Snap-Fit Joints for Plastics – A Design Guide* (the Covestro edition of [BAY]); a copy
+  supplied by the project owner, read for the 1.09 and 0.55 factors and Example II; not redistributed.
 - **[BAY]** Bayer MaterialScience, *Snap-Fit Joints for Plastics – A Design Guide*:
   https://cdn.sparkfun.com/assets/home_page_posts/1/4/1/0/Plastic_Snap_fit_design.pdf (read); mirror:
   https://fab.cba.mit.edu/classes/S62.12/people/vernelle.noel/Plastic_Snap_fit_design.pdf

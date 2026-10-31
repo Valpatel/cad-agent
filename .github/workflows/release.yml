@@ -1,0 +1,65 @@
+name: Release
+# After a release PR merges into main: tag vX.Y.Z with a GitHub release from CHANGELOG.md, then deploy
+# cad-agent.valpatel.com from that commit. The deploy runs in the `production` environment, which only main may use,
+# and needs that environment's secret CLOUDFLARE_API_TOKEN (a Pages-only token, set by the owner with
+# `gh secret set CLOUDFLARE_API_TOKEN --env production`, never as a repository secret) and variable CLOUDFLARE_ACCOUNT_ID.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    if: github.ref == 'refs/heads/main'          # workflow_dispatch can name any branch; only main is released
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09   # v5
+        with: {fetch-depth: 0, persist-credentials: false}   # the release is made through the API (gh), not git push
+      - id: v
+        run: echo "version=$(python3 tools/ci_gates.py version)" >> "$GITHUB_OUTPUT"
+      - name: Tag and release (once per version)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ steps.v.outputs.version }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/v$V" >/dev/null; then echo "v$V already tagged"; exit 0; fi
+          python3 - "$V" > notes.md <<'PY'
+          import re, sys
+          v = sys.argv[1]
+          log = open("CHANGELOG.md", encoding="utf-8").read()
+          m = re.search(rf"^## v{re.escape(v)} \(.*?\)\s*$(.*?)(?=^## |\Z)", log, re.M | re.S)
+          print(m.group(1).strip() if m else f"Release v{v}. See CHANGELOG.md.")
+          PY
+          gh release create "v$V" --target "$GITHUB_SHA" --title "v$V" --notes-file notes.md
+
+  site:
+    needs: tag
+    runs-on: ubuntu-24.04
+    environment: production
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09   # v5
+        with: {fetch-depth: 0, persist-credentials: false}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020   # v4
+        with: {node-version: 22, cache: npm}
+      - run: npm ci
+      - name: Build and deploy cad-agent.valpatel.com
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::warning::CLOUDFLARE_API_TOKEN secret or CLOUDFLARE_ACCOUNT_ID variable not set: site not deployed"; exit 0
+          fi
+          if [ ! -f tools/build-site.mjs ]; then echo "::warning::no site builder on main yet"; exit 0; fi
+          npm run deploy:site

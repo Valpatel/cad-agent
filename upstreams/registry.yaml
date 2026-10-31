@@ -52,6 +52,7 @@
   status: candidate
   policy: may incorporate with attribution
 - name: pzfreo/build123d-mcp
+  what: "MCP server for build123d: lets an agent build, inspect and render build123d models while it designs"
   url: https://github.com/pzfreo/build123d-mcp
   license: Apache-2.0
   stars: 130
@@ -87,6 +88,7 @@
   status: candidate
   policy: may incorporate with attribution
 - name: jhacksman/OpenSCAD-MCP-Server
+  what: "MCP server that turns a prompt into an OpenSCAD model, a preview image and a 3D file"
   url: https://github.com/jhacksman/OpenSCAD-MCP-Server
   license: MIT
   stars: 208
@@ -94,6 +96,7 @@
   status: candidate
   policy: may incorporate with attribution
 - name: RobertCoop/openscad-mcp
+  what: "MCP server for OpenSCAD modelling and rendering"
   url: https://github.com/RobertCoop/openscad-mcp
   license: MIT
   stars: 164
@@ -101,6 +104,7 @@
   status: candidate
   policy: may incorporate with attribution
 - name: altendky/onshape-mcp
+  what: "MCP server for reading and working with Onshape CAD documents"
   url: https://github.com/altendky/onshape-mcp
   license: Apache-2.0
   stars: 20
@@ -108,6 +112,7 @@
   status: candidate
   policy: may incorporate with attribution
 - name: faust-machines/fusion360-mcp-server
+  what: "MCP server that drives Autodesk Fusion 360"
   url: https://github.com/faust-machines/fusion360-mcp-server
   license: MIT
   stars: 131
@@ -143,6 +148,7 @@
   status: trial
   policy: may incorporate with attribution
 - name: Seeed-Studio/kicad-mcp-server
+  what: "MCP server for KiCad: analyse schematics and boards, trace pin-level connections, edit designs"
   url: https://github.com/Seeed-Studio/kicad-mcp-server
   license: none
   stars: 168
@@ -185,6 +191,7 @@
   status: candidate
   policy: may incorporate with attribution
 - name: punkfab/circuit-skills
+  what: "Claude Code skills for code-driven electronics: circuit simulation (ngspice, Falstad) and PCB layout (tscircuit to KiCad)"
   url: https://github.com/punkfab/circuit-skills
   license: none
   stars: 10
@@ -192,32 +199,37 @@
   status: candidate
   policy: ideas only (no licence)
 - name: OpenFOAM (OpenCFD v2512)
+  what: "Open-source CFD toolbox; cad-agent writes conjugate heat-transfer cases from CAD and runs it as a separate program"
   url: https://develop.openfoam.com/Development/openfoam
   license: GPL-3.0
   last_push: 2026-01-23
   status: adopted
   policy: external program only (GPL-3.0); run in the opencfd/openfoam-default Docker image
 - name: aatmdelissen/pyMOTO
+  what: "Modular Python framework for topology optimisation; cad-agent topopt runs SIMP with MMA on it"
   url: https://github.com/aatmdelissen/pyMOTO
   license: MIT
   last_push: 2026-05-01
   status: adopted
   policy: may incorporate with attribution (imported as a dependency)
 - name: pyvista/pyvista
+  what: "3D visualisation and mesh analysis on VTK; cad-agent renders stress and flow pictures and animations with it"
   url: https://github.com/pyvista/pyvista
   license: MIT
   status: adopted
   policy: may incorporate with attribution (imported as a dependency)
 - name: bambulab/BambuStudio
+  what: "Slicer for Bambu Lab and other printers; cad-agent runs its command line for real grams and print times"
   url: https://github.com/bambulab/BambuStudio
   license: AGPL-3.0
   status: adopted
   policy: external program only (AGPL-3.0); command-line slicing for filament grams
 - name: optuna/optuna
+  what: "Hyperparameter optimisation framework; cad-agent optimise uses its NSGA-II and TPE samplers"
   url: https://github.com/optuna/optuna
   license: MIT
-  status: candidate
-  policy: may incorporate with attribution; driver for multi-objective parameter studies
+  status: adopted
+  policy: optional dependency (the explore extra, optuna>=3.4); runs the NSGA-II and TPE samplers of cad-agent optimise
 - name: OrcaSlicer/OrcaSlicer
   url: https://github.com/OrcaSlicer/OrcaSlicer
   license: AGPL-3.0

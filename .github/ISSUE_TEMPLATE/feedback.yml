@@ -1,0 +1,40 @@
+name: Feedback on the site or docs
+description: Something wrong, missing or confusing on cad-agent.valpatel.com or in the docs. Takes a minute.
+title: "Feedback: "
+labels: [feedback]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping. Short is fine. Please leave out private data: keys, hostnames, internal paths,
+        unpublished product details, files under NDA.
+  - type: input
+    id: page
+    attributes:
+      label: Page
+      description: The page this is about (filled in when you came from the site).
+      placeholder: https://cad-agent.valpatel.com/docs/toolkit
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of feedback?
+      options:
+        - Something is wrong
+        - Something is missing
+        - Something is confusing
+        - A better tool, guide or source
+        - It helped (tell us how)
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: What you expected, what you found, and a link or source if you have one.
+    validations:
+      required: true
+  - type: input
+    id: credit
+    attributes:
+      label: How should we credit you? (optional)
+      description: A name or handle for the page that ends up using your idea. Leave empty to stay anonymous.

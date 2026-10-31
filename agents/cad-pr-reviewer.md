@@ -41,7 +41,10 @@ flowchart TD
    - When you find a mistake the index does not list, say so: it belongs in the index.
 6. Post inline comments on exact lines with severity (blocking / minor / nit) via
    `gh api repos/<owner>/<repo>/pulls/<n>/comments` (`commit_id` = head SHA, `path`, `line`, `side=RIGHT`), then one
-   summary review with `gh pr review <n> --comment` that states plainly whether anything blocks the merge. Do not
-   approve or merge.
+   summary review with `gh pr review <n> --comment` that states plainly whether anything blocks the merge. End the summary with the verdict marker on its own line, for the head commit you reviewed:
+   `<!-- cad-review verdict=pass sha=<full 40-character head sha> -->` when nothing blocking is left, otherwise
+   `verdict=block`. Repos with merge gates read it (cad-agent: the latest verdict must be pass, on the PR's head
+   commit); then re-run them: `gh workflow run gates.yml -R <owner>/<repo> -f pr=<n>`.
+   Do not approve or merge.
 7. Final message: each finding as `file:line, severity, one sentence`, plus what you checked and found fine, and the
    links to the review and comments.

@@ -6,8 +6,8 @@ sources and open questions are in [research/compliant-mechanisms.md](../research
 
 **Why it is built, not adopted.** The survey of 2026-10-31 ([research/agent-toolkits-2026-10.md](../research/agent-toolkits-2026-10.md))
 found agent skills for snap fits (static74/3dp-compliant-mechanisms, the AgentCAD snap-fits skill) but they are
-prompts only: no calculator, no tests against the design guides' worked examples, and printed strain limits about
-twice those the filament datasheets support. This module is tested against the guide's own examples, and every
+prompts only: no calculator and no tests against the design guides' worked examples, and static74's printed strain
+limits are about twice those the filament datasheets support. This module is tested against the guide's own examples, and every
 material value names its source.
 
 ## What it does
@@ -85,9 +85,11 @@ a range the lower end is used.
 The rule, per direction: `min(0.7 × UTS / E, 0.5 × elongation at break)` — the guide's 70 %-of-yield rule for
 amorphous resin with UTS/E as a lower bound on the yield strain, and its half-the-elongation rule for materials without
 a yield point. Across the layers the smaller of the Z and XY values is used, and nylon is capped at the moulded PA66
-value. **The direction matters more than strength suggests**: across the layers these datasheets keep 59–90 % of the
-in-plane strength but only 10–61 % of the elongation at break, and snap fits are limited by strain. CoPA is the
-clearest case: 2.0 % with the arm lying in the bed plane, 0.65 % with it built upright.
+value. **The direction matters more than strength suggests**: across the layers these datasheets keep 40–90 % of the
+in-plane strength but only 10–61 % of the elongation at break, and snap fits are limited by strain. Where half the
+elongation governs across the layers the allowable falls to 26–64 % of the in-plane value; CoPA is the clearest
+case, 2.0 % with the arm lying in the bed plane and 0.65 % with it built upright. Where 0.7 × UTS/E governs (PLA,
+PETG) the drop is smaller (to 78–100 %), but layer lines still act as notches, so lay flexing arms in the bed plane.
 
 ## Limits
 

@@ -1,5 +1,7 @@
 """The merge gates in tools/ci_gates.py: branch flow, review verdicts, release versions."""
 import importlib.util
+import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -79,12 +81,11 @@ def test_short_or_wrong_shas_do_not_count():
     assert not gate([review("pass", sha=HEAD.upper())])[0]
 
 
-def test_head_commit_rules():
-    assert gate([review("pass", sha=OLD)], base="dev", same=True)[0]          # own branch into dev: an earlier pass stands
-    ok, msg = gate([review("pass", sha=OLD)], base="main")
+@pytest.mark.parametrize("base,same", [("dev", True), ("dev", False), ("main", True)])
+def test_the_pass_must_be_on_the_head_commit(base, same):
+    ok, msg = gate([review("pass", sha=OLD)], base=base, same=same)           # a pass, then a push, is not a pass
     assert not ok and "head commit" in msg
-    assert not gate([review("pass", sha=OLD)], base="dev", same=False)[0]     # forks: a pass, then a push, is not a pass
-    assert gate([review("pass")], base="main")[0]
+    assert gate([review("pass")], base=base, same=same)[0]
 
 
 PY = '[project]\nname = "cad-agent"\nversion = "{}"\n'
@@ -114,3 +115,68 @@ def test_cli_version(capsys, monkeypatch):
     monkeypatch.chdir(Path(__file__).parents[1])
     assert gates.main(["version"]) == 0
     assert capsys.readouterr().out.strip().count(".") >= 1
+
+
+class FakeGitHub:
+    """Stands in for `gh`: answers the PR, reviews, permission and PR-list calls, and records status posts."""
+    def __init__(self, prs, reviews=(), fail=()):
+        self.prs, self.reviews, self.fail, self.posts = prs, list(reviews), set(fail), []
+
+    def __call__(self, *args):
+        path = next(a for a in args if a.startswith("repos/"))
+        if "-X" in args:
+            fields = dict(a.split("=", 1) for a in args if "=" in a and not a.startswith("repos/"))
+            self.posts.append((path.rsplit("/", 1)[1], fields["context"], fields["state"]))
+            return "{}"
+        if path.endswith("/reviews"):
+            return "\n".join(json.dumps(r) for r in self.reviews)
+        if "/collaborators/" in path:
+            return json.dumps({"permission": "admin" if "/mvalancy/" in path else "read"})
+        if "pulls?state=open" in path:
+            return "\n".join(str(n) for n, pr in self.prs.items() if pr["base"]["ref"] in ("dev", "main"))
+        n = int(path.rsplit("/", 1)[1])
+        if n in self.fail:
+            raise subprocess.CalledProcessError(1, "gh")
+        return json.dumps(self.prs[n])
+
+
+def pr(n, base="dev", ref="feat/x", sha=HEAD):
+    return {"number": n, "base": {"ref": base}, "head": {"ref": ref, "sha": sha, "repo": {"full_name": "o/r"}}}
+
+
+def test_post_names_statuses_after_the_base_and_goes_pending_first(monkeypatch):
+    fake = FakeGitHub({5: pr(5)}, [review("pass")])
+    monkeypatch.setattr(gates, "_gh", fake)
+    assert gates.run("o/r", 5, do_post=True) == 0
+    assert fake.posts[:2] == [(HEAD, "cad-gates/dev/branch-flow", "pending"), (HEAD, "cad-gates/dev/review", "pending")]
+    assert fake.posts[2:] == [(HEAD, "cad-gates/dev/branch-flow", "success"), (HEAD, "cad-gates/dev/review", "success")]
+    assert gates.contexts("main") == ["cad-gates/main/branch-flow", "cad-gates/main/review", "cad-gates/main/release"]
+
+
+def test_a_failing_gate_is_a_failure_status_not_an_error(monkeypatch):
+    fake = FakeGitHub({5: pr(5, ref="my-change")}, [review("block")])
+    monkeypatch.setattr(gates, "_gh", fake)
+    assert gates.run("o/r", 5, do_post=True) == 0
+    assert {(c, s) for _, c, s in fake.posts[2:]} == {("cad-gates/dev/branch-flow", "failure"), ("cad-gates/dev/review", "failure")}
+    assert gates.run("o/r", 5, do_post=False) == 1                           # the pre-merge check exits 1
+
+
+def test_a_crash_leaves_the_statuses_pending(monkeypatch):
+    fake = FakeGitHub({5: pr(5)})
+    def reviews_fail(*args):
+        if any(a.endswith("/reviews") for a in args):
+            raise subprocess.CalledProcessError(1, "gh")
+        return fake(*args)
+    monkeypatch.setattr(gates, "_gh", reviews_fail)
+    with pytest.raises(subprocess.CalledProcessError):
+        gates.run("o/r", 5, do_post=True)
+    assert [s for _, _, s in fake.posts] == ["pending", "pending"]
+
+
+def test_sweep_covers_every_open_pr_into_dev_and_main_and_reports_errors(monkeypatch, capsys):
+    fake = FakeGitHub({5: pr(5), 6: pr(6, base="main", ref="dev"), 7: pr(7, base="feat/site"), 8: pr(8)}, [review("pass")], fail={8})
+    monkeypatch.setattr(gates, "_gh", fake)
+    monkeypatch.setattr(gates, "evaluate", lambda repo, n, p=None: (p, {"branch-flow": (True, "ok"), "review": (True, "ok")}))
+    assert gates.sweep("o/r", do_post=True) == 1                             # #8 failed to load
+    assert {c.split("/")[1] for _, c, s in fake.posts if s == "success"} == {"dev", "main"}
+    assert "ERROR #8" in capsys.readouterr().err

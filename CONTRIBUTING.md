@@ -9,7 +9,7 @@ goes through a branch, a pull request, CI and a review.
 |---|---|---|
 | `main` | Released toolkit, tagged `vX.Y.Z`. | Only by merging a release PR from `dev`. |
 | `dev` | Integration, and the repository's default branch. Everything here passed CI and review. | Only by merging a reviewed PR. |
-| `feat/<topic>`, `fix/<topic>`, `ci/<topic>`, `docs/<topic>`, `research/<topic>`, `test/<topic>`, `refactor/<topic>`, `release/vX.Y.Z`, `vendor-update/<name>-<sha>` | One piece of work, branched from `dev`. | Its author, in its own worktree. |
+| `feat/<topic>`, `fix/<topic>`, `ci/<topic>`, `docs/<topic>`, `research/<topic>`, `test/<topic>`, `refactor/<topic>`, `release/vX.Y.Z`, `vendor-update/<name>-<sha>`, `dependabot/…` | One piece of work, branched from `dev`. | Its author, in its own worktree. |
 
 `main` and `dev` are protected: no direct pushes (admins included), no force pushes, the required checks below must
 pass and every review conversation must be resolved. Agents may merge into both, through the gates.
@@ -21,7 +21,7 @@ Required checks, all automated. Nobody, agent or person, merges around them.
 ```mermaid
 flowchart LR
     F["feat/ fix/ ci/ docs/ …<br/>from dev"] -->|"CI · branch-flow · review"| D["dev"]
-    D -->|"CI · branch-flow · review on the head<br/>· release"| M["main"]
+    D -->|"CI · branch-flow · review<br/>· release"| M["main"]
     M -->|"release.yml"| R["tag vX.Y.Z · GitHub release<br/>site deploy"]
     classDef b fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef r fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -34,13 +34,16 @@ flowchart LR
 | `core (3.10)`, `core (3.12)`, `full` | ✓ | ✓ | The test suite with required dependencies only, and with every extra |
 | `browser (chromium)`, `browser (webkit)` | ✓ | ✓ | Web kit and website suites in two browser engines |
 | `cad-gates/<base>/branch-flow` | ✓ | ✓ | `dev` takes `feat/ fix/ ci/ docs/ research/ test/ refactor/ release/ vendor-update/ dependabot/` branches (forks: the outside-contribution checks); `main` takes `dev` only |
-| `cad-gates/<base>/review` | ✓ | ✓ | The latest verdict from a reviewer with write access is pass; on the head commit for `main` and for forks |
+| `cad-gates/<base>/review` | ✓ | ✓ | The latest verdict from a reviewer with write access is pass, on the PR's head commit |
 | `cad-gates/main/release` | | ✓ | `pyproject.toml` version above `main`'s, and a dated `## vX.Y.Z (YYYY-MM-DD)` entry in [CHANGELOG.md](CHANGELOG.md) |
 | Conversations resolved | ✓ | ✓ | Every review thread answered and resolved |
 
 - **The verdict.** It is the last line of the reviewer's summary review: `<!-- cad-review verdict=pass sha=<40-character head sha> -->` (or `verdict=block`). It is written by the `cad-pr-reviewer` subagent, or by a reviewer following the `cad-pr-review` skill, who then re-runs the gates: `gh workflow run gates.yml -R Valpatel/cad-agent -f pr=<n>`.
 - **Who can review.** Only reviewers with write access count, and dismissed reviews never count. All our agents work through one account, so GitHub cannot tell author from reviewer: an author never writes a verdict on its own PR.
-- **How the gates run.** `gates.yml` runs on `pull_request_target`: the base branch's copy of the workflow and of [`tools/ci_gates.py`](tools/ci_gates.py) decides, so a PR cannot pass the gates by editing them. The PR is only read as data, never checked out or run. Results are commit statuses named after the base, so a PR into `dev` cannot supply `main`'s checks. A fork's own workflows run with a read-only token, so they cannot post statuses; anyone with write access can, which is why write access is the trust boundary. Fork workflows wait for approval, and the [`cad-intake`](skills/cad-intake/SKILL.md) skill reads a fork's workflow changes before approving them.
+- **How the gates run.** `gates.yml` runs on `pull_request_target`: the default branch's (`dev`'s) copy of the workflow and of [`tools/ci_gates.py`](tools/ci_gates.py) decides, so a PR cannot pass the gates by editing them, and PRs into `main` (which come from `dev`) are judged by the same copy. The PR is only read as data, never checked out or run. Results are commit statuses named after the base, so a PR into `dev` cannot supply `main`'s checks. A fork's own workflows run with a read-only token, so they cannot post statuses; anyone with write access can, which is why write access is the trust boundary. Fork workflows wait for approval; the intake skill (#120) reads a fork's workflow changes before approving them.
+- **When they run.** On every push to the PR, when the reviewer re-runs them after a verdict, and every 15 minutes for all open PRs (a review cannot trigger them). A run posts `pending` first, so a crash leaves the PR blocked rather than green.
+- **Just before merging**, run `python3 tools/ci_gates.py all --repo Valpatel/cad-agent --pr <n>` from an up-to-date `dev` checkout. It reads the reviews live and must exit 0, so a block posted since the last run stops the merge.
+- **GitHub settings the gates need** (owner): the `cad-gates/…` checks required on `dev` and `main` with GitHub Actions as their source; an Actions event policy that allows `pull_request_target` for `.github/workflows/gates.yml` (GitHub disables it by default in public repos from 2026-12-02); and the deploy token as a `production` environment secret.
 - **Pins.** Workflow actions are pinned by commit SHA, and Dependabot proposes updates weekly.
 
 ## Workflow

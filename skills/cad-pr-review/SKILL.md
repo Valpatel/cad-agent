@@ -30,7 +30,9 @@ by an agent or person that did not write it, and the review lives on the PR, whe
 
 4. **Merge only under the repo's rules**: CI green, an independent review, every thread resolved.
    - Repos with merge gates (cad-agent's `cad-gates/...` statuses) make these required checks. Only an independent
-     reviewer's pass verdict turns the review gate green, and agents may merge once every check passes.
+     reviewer's pass verdict on the head commit turns the review gate green, and agents may merge once every check
+     passes and, just before merging, `python3 tools/ci_gates.py all --repo <owner>/<repo> --pr <n>` exits 0 (it reads
+     the reviews live, so a block posted since the last gates run stops the merge).
    - Repos without gates say in their AGENTS.md whether the user's go-ahead is also needed.
    - Merge commits, not squash, unless the repo says otherwise. After the merge, check that the linked issues closed and tick the
    tracking issue (`cad-work-tracking`).

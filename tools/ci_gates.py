@@ -1,25 +1,30 @@
 #!/usr/bin/env python3
 """Merge gates for cad-agent pull requests (stdlib only), run by .github/workflows/gates.yml.
 
-    python tools/ci_gates.py all --repo Valpatel/cad-agent --pr 116           # print every gate's result
+    python tools/ci_gates.py all --repo Valpatel/cad-agent --pr 116           # every gate's result, read live; exit 1 if any fails
     python tools/ci_gates.py all --repo Valpatel/cad-agent --pr 116 --post    # and set them as commit statuses
+    python tools/ci_gates.py sweep --repo Valpatel/cad-agent --post           # every open PR into dev or main (scheduled)
     python tools/ci_gates.py version                                            # the pyproject.toml version
 
 Gates, for PRs into dev and main (CONTRIBUTING.md "Gates"):
 
 - branch-flow: main takes this repo's dev only; dev takes feat/ fix/ ci/ docs/ research/ test/ refactor/ release/
   vendor-update/ dependabot/ branches of this repo, or a fork's PR (the outside-contribution checks, #111, apply).
-- review: the latest verdict from a reviewer with write access must be pass. The verdict is the last line of a review:
-  ``<!-- cad-review verdict=pass sha=<40-character head commit> -->`` (or ``verdict=block``). For main, and for fork PRs,
-  the pass must be on the head commit; for this repo's own branches into dev, a pass on an earlier commit stands
-  (anyone who can push here can already merge).
+- review: the latest verdict from a reviewer with write access must be pass, on the PR's head commit (a push after the
+  pass needs a new verdict, so everything that reaches dev or main was reviewed as it is). The verdict is the last line
+  of a review: ``<!-- cad-review verdict=pass sha=<40-character head commit> -->`` (or ``verdict=block``).
 - release (main only): the pyproject.toml version is above main's and CHANGELOG.md has ``## vX.Y.Z (YYYY-MM-DD)``.
 
-Why statuses and not job results: the workflow runs on ``pull_request_target``, so the base branch's copy of this file
-decides, never the PR's (a PR that edits the gates cannot pass them), and it reads the PR only as data. Each result is
+Why statuses and not job results: the workflow runs on ``pull_request_target``, so the default branch's (dev's) copy of
+this file decides, never the PR's (a PR that edits the gates cannot pass them), and it reads the PR only as data. PRs
+into main come from dev, so dev's gates judge them too. Each result is
 posted as a commit status on the PR's head commit with the base in its name (``cad-gates/main/review``), so a PR into
 one branch cannot supply another branch's required check. A fork's own workflows get a read-only token and cannot post
 statuses. Anyone with write access can, which is why write access is the trust boundary throughout.
+
+Reviews do not trigger workflows that can post statuses, so a verdict posted after the last run is read by the next
+one: the reviewer's re-run (``workflow_dispatch``), the scheduled sweep (every 15 minutes), or a push. Just before
+merging, run ``all`` without ``--post``: it reads the reviews live and must exit 0.
 """
 from __future__ import annotations
 
@@ -86,7 +91,7 @@ def review_gate(reviews: Iterable[dict], base: str, head_sha: str, same_repo: bo
     _, verdict, sha, who = marked[-1]
     if verdict != "pass":
         return False, f"latest verdict is block ({who}, {sha[:7]}): fix, then ask for a re-review"
-    if (base == "main" or not same_repo) and sha != head_sha:
+    if sha != head_sha:
         return False, f"needs a pass on the head commit {head_sha[:7]}; the latest pass is on {sha[:7]}"
     return True, f"verdict pass by {who} on {sha[:7]}"
 
@@ -124,8 +129,17 @@ def _git_show(rev_path: str) -> str:
     return subprocess.run(["git", "show", rev_path], check=True, capture_output=True, text=True).stdout
 
 
-def evaluate(repo: str, number: int) -> Tuple[dict, Dict[str, Result]]:
-    pr = json.loads(_gh("api", f"repos/{repo}/pulls/{number}"))
+def contexts(base: str) -> List[str]:
+    """The status names a PR into ``base`` gets."""
+    return [f"cad-gates/{base}/{g}" for g in ("branch-flow", "review") + (("release",) if base == "main" else ())]
+
+
+def fetch_pr(repo: str, number: int) -> dict:
+    return json.loads(_gh("api", f"repos/{repo}/pulls/{number}"))
+
+
+def evaluate(repo: str, number: int, pr: Optional[dict] = None) -> Tuple[dict, Dict[str, Result]]:
+    pr = pr or fetch_pr(repo, number)
     base, head = pr["base"]["ref"], pr["head"]
     same = (head.get("repo") or {}).get("full_name") == repo
     results: Dict[str, Result] = {"branch-flow": branch_flow(base, head["ref"], same)}
@@ -145,7 +159,9 @@ def evaluate(repo: str, number: int) -> Tuple[dict, Dict[str, Result]]:
     results["review"] = review_gate(reviews, base, head["sha"], same, can_write)
     if base == "main":
         # The PR's files are read as data from its head commit (fetched, never checked out or run).
-        subprocess.run(["git", "fetch", "-q", "--no-tags", "origin", "+refs/heads/main:refs/remotes/origin/main",
+        # gh's credential helper, so the fetch also works for a private repo (the checkout keeps no credentials).
+        subprocess.run(["git", "-c", "credential.helper=", "-c", "credential.helper=!gh auth git-credential",
+                        "fetch", "-q", "--no-tags", "origin", "+refs/heads/main:refs/remotes/origin/main",
                         f"+refs/pull/{number}/head:refs/remotes/origin/pr-head"], check=True)
         try:
             log = _git_show(f"{head['sha']}:CHANGELOG.md")
@@ -156,12 +172,51 @@ def evaluate(repo: str, number: int) -> Tuple[dict, Dict[str, Result]]:
     return pr, results
 
 
+def _status(repo: str, sha: str, context: str, state: str, msg: str) -> None:
+    run = os.environ.get("GITHUB_SERVER_URL", "https://github.com") + f"/{repo}/actions/runs/" + os.environ.get("GITHUB_RUN_ID", "")
+    _gh("api", "-X", "POST", f"repos/{repo}/statuses/{sha}", "-f", f"state={state}", "-f", f"context={context}",
+        "-f", f"description={msg[:139]}", "-f", f"target_url={run}")
+
+
 def post(repo: str, pr: dict, results: Dict[str, Result]) -> None:
     base, sha = pr["base"]["ref"], pr["head"]["sha"]
-    run = os.environ.get("GITHUB_SERVER_URL", "https://github.com") + f"/{repo}/actions/runs/" + os.environ.get("GITHUB_RUN_ID", "")
     for gate, (ok, msg) in results.items():
-        _gh("api", "-X", "POST", f"repos/{repo}/statuses/{sha}", "-f", f"state={'success' if ok else 'failure'}",
-            "-f", f"context=cad-gates/{base}/{gate}", "-f", f"description={msg[:139]}", "-f", f"target_url={run}")
+        _status(repo, sha, f"cad-gates/{base}/{gate}", "success" if ok else "failure", msg)
+
+
+def run(repo: str, number: int, do_post: bool) -> int:
+    """Evaluate one PR and print (and with ``do_post`` set) its gates. With ``do_post`` the statuses go to pending first,
+    so a run that crashes leaves the PR blocked (fail closed) instead of keeping an older green; gate failures are
+    statuses, not errors. Exit: 0 posted (or all passed), 1 a gate failed (without --post), and an error raises."""
+    pr = fetch_pr(repo, number)
+    base = pr["base"]["ref"]
+    if base not in GATED:
+        print(f"#{number} into {base!r}: not gated")
+        return 0
+    if do_post:
+        for context in contexts(base):
+            _status(repo, pr["head"]["sha"], context, "pending", "evaluating")
+    pr, results = evaluate(repo, number, pr)
+    for gate, (ok, msg) in results.items():
+        print(f"{'PASS' if ok else 'FAIL'} #{number} cad-gates/{base}/{gate}: {msg}")
+    if do_post:
+        post(repo, pr, results)
+        return 0
+    return 0 if all(ok for ok, _ in results.values()) else 1
+
+
+def sweep(repo: str, do_post: bool) -> int:
+    """Every open PR into dev or main, so a verdict posted since the last run is read within one schedule."""
+    numbers = [int(n) for n in _gh("api", "--paginate", f"repos/{repo}/pulls?state=open&per_page=100",
+                                   "--jq", f'.[] | select(.base.ref == "dev" or .base.ref == "main") | .number').split()]
+    errors = 0
+    for n in numbers:
+        try:
+            run(repo, n, do_post)
+        except (subprocess.CalledProcessError, KeyError, ValueError) as e:
+            errors += 1
+            print(f"ERROR #{n}: {e}", file=sys.stderr)
+    return 1 if errors else 0
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -171,21 +226,18 @@ def main(argv: Optional[List[str]] = None) -> int:
     a.add_argument("--repo", required=True)
     a.add_argument("--pr", type=int, required=True)
     a.add_argument("--post", action="store_true", help="set the results as commit statuses on the PR's head")
+    s = sub.add_parser("sweep", help="evaluate every open PR into dev or main")
+    s.add_argument("--repo", required=True)
+    s.add_argument("--post", action="store_true")
     sub.add_parser("version", help="print the pyproject.toml version")
     args = ap.parse_args(argv)
     if args.cmd == "version":
         with open("pyproject.toml", encoding="utf-8") as f:
             print(".".join(map(str, parse_version(f.read()))))
         return 0
-    pr, results = evaluate(args.repo, args.pr)
-    if pr["base"]["ref"] not in GATED:
-        print(f"PR into {pr['base']['ref']!r}: not gated")
-        return 0
-    for gate, (ok, msg) in results.items():
-        print(f"{'PASS' if ok else 'FAIL'} cad-gates/{pr['base']['ref']}/{gate}: {msg}")
-    if args.post:
-        post(args.repo, pr, results)
-    return 0 if all(ok for ok, _ in results.values()) else 1
+    if args.cmd == "sweep":
+        return sweep(args.repo, args.post)
+    return run(args.repo, args.pr, args.post)
 
 
 if __name__ == "__main__":

@@ -29,8 +29,8 @@ You review a pull request you did not write. Follow the `cad-pr-review` skill (r
    `gh api repos/<owner>/<repo>/pulls/<n>/comments` (`commit_id` = head SHA, `path`, `line`, `side=RIGHT`), then one
    summary review with `gh pr review <n> --comment` that states plainly whether anything blocks the merge. End the summary with the verdict marker on its own line, for the head commit you reviewed:
    `<!-- cad-review verdict=pass sha=<full 40-character head sha> -->` when nothing blocking is left, otherwise
-   `verdict=block`. Repos with merge gates read it (cad-agent: the latest verdict must be pass, on the head commit
-   for `main` and for forks); then re-run them: `gh workflow run gates.yml -R <owner>/<repo> -f pr=<n>`.
+   `verdict=block`. Repos with merge gates read it (cad-agent: the latest verdict must be pass, on the PR's head
+   commit); then re-run them: `gh workflow run gates.yml -R <owner>/<repo> -f pr=<n>`.
    Do not approve or merge.
 7. Final message: each finding as `file:line, severity, one sentence`, plus what you checked and found fine, and the
    links to the review and comments.

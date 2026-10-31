@@ -4,11 +4,11 @@ Code under `vendor/` is copied from the projects below at the pinned commit. Eac
 upstream LICENSE/NOTICE files; those terms apply to that code. Our changes are listed as patches in `vendor/patches/`.
 
 ```mermaid
-flowchart LR
+flowchart TD
     P["a project we found"] --> L{"its licence"}
-    L -->|"MIT, BSD, Apache-2.0"| V["may be vendored or adapted<br/>pinned, credited, LICENSE kept<br/>(this table)"]
-    L -->|"GPL, AGPL"| X["run as a separate program<br/>never copied in<br/>(external programs below)"]
-    L -->|"none, or non-commercial"| I["ideas only<br/>credited, no code"]
+    L -->|"MIT, BSD, Apache"| V["vendor or adapt<br/>pinned, credited,<br/>LICENSE kept"]
+    L -->|"GPL, AGPL"| X["separate program<br/>never copied in"]
+    L -->|"none, non-commercial"| I["ideas only<br/>credited, no code"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

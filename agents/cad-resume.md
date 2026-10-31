@@ -11,7 +11,7 @@ flowchart TD
     G["each repo<br/>branches, unpushed"] --> R
     H["GitHub<br/>issues, PRs, claims"] --> R
     L["runs<br/>logs, read only"] --> R
-    R["report: goal, done, in flight,<br/>local-only state, next three steps"]
+    R["report<br/>goal, done, in flight,<br/>local-only state, next steps"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

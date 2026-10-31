@@ -138,32 +138,56 @@ export class CadNav extends HTMLElement {
       .sort((a, b) => a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1);
     if (!heads.length) return;
     // The section being read: the last heading above a line a third of the way down the window, checked once per frame
-    // while scrolling. Two exceptions: a heading just jumped to (outline link, #hash) stays marked while it is on
-    // screen, and at the very bottom of the page, where the last sections can never reach the line, the last heading
-    // on screen is marked.
-    let pinned = null, queued = false;
+    // while scrolling. Two exceptions: a heading just jumped to (an outline link or its #hash) stays marked, through a
+    // smooth scroll, until the reader scrolls on; and at the very bottom of a page that scrolls, where the last
+    // sections can never reach the line, the last heading on screen is marked.
+    let pinned = null, settled = true, settle = 0, queued = false, shown = null;
+    const root = document.scrollingElement || document.documentElement;
     const onScreen = h => { const t = h.getBoundingClientRect().top; return t >= -2 && t < innerHeight - 8; };
     const mark = () => {
       queued = false;
       const line = Math.min(innerHeight / 3, 220);
       let active = heads.filter(h => h.getBoundingClientRect().top <= line).at(-1);
-      const root = document.scrollingElement || document.documentElement;
-      if (root.scrollTop + innerHeight >= root.scrollHeight - 2) active = heads.filter(onScreen).at(-1) || active;
-      if (pinned && onScreen(pinned)) active = pinned;
-      else pinned = null;
+      if (root.scrollHeight > innerHeight + 2 && root.scrollTop + innerHeight >= root.scrollHeight - 2)
+        active = heads.filter(onScreen).at(-1) || active;
+      if (pinned) active = pinned;
       for (const [id, as] of byId) for (const a of as) {
         if (id === active?.id) a.setAttribute('aria-current', 'location');
         else a.removeAttribute('aria-current');
       }
+      if (active !== shown) { shown = active; for (const a of byId.get(active?.id) || []) this.#keepVisible(a, panel); }
     };
     const schedule = () => { if (!queued) { queued = true; requestAnimationFrame(mark); } };
-    const pin = id => { pinned = document.getElementById(id) || null; schedule(); };
-    addEventListener('scroll', schedule, { passive: true, signal });
+    const quiet = () => { clearTimeout(settle); settle = setTimeout(() => { settled = true; }, 150); };
+    const pin = id => {
+      if (!byId.has(id)) return;                              // only outline headings: not the skip link's target
+      pinned = document.getElementById(id); settled = false; quiet(); schedule();
+    };
+    const release = () => { if (pinned) { pinned = null; schedule(); } };
+    addEventListener('scroll', () => { if (pinned && settled) release(); else if (pinned) quiet(); schedule(); }, { passive: true, signal });
     addEventListener('resize', schedule, { passive: true, signal });
+    for (const type of ['wheel', 'touchmove']) addEventListener(type, release, { passive: true, signal });
+    addEventListener('keydown', e => { if (/^(?:Arrow(?:Up|Down)|Page(?:Up|Down)|Home|End| )$/.test(e.key)) release(); }, { signal });
     addEventListener('hashchange', () => pin(decodeURIComponent(location.hash.slice(1))), { signal });
     for (const a of links) a.addEventListener('click', () => pin(decodeURIComponent(a.hash.slice(1))), { signal });
     if (location.hash) pin(decodeURIComponent(location.hash.slice(1)));
     mark();
+  }
+
+  /** Scroll the list that holds a marked link (the panel, or a rail with its own scrollbar) so the link is in view;
+   * never the page. Not while the reader is filtering the tree. */
+  #keepVisible(a, panel) {
+    if (!a.getClientRects().length) return;                   // that copy of the outline is not shown at this width
+    let box = a.parentElement;
+    while (box && box !== document.body && !(box.scrollHeight > box.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(box).overflowY)))
+      box = box.parentElement;
+    if (!box || box === document.body) return;
+    if (box === panel && panel.querySelector(':scope > .cad-nav-filter')?.value) return;
+    const filter = box === panel ? panel.querySelector(':scope > .cad-nav-filter') : null;
+    const top = (filter?.offsetHeight || 0) + 16, bottom = 24;
+    const b = box.getBoundingClientRect(), r = a.getBoundingClientRect();
+    if (r.top < b.top + top) box.scrollTop -= b.top + top - r.top;
+    else if (r.bottom > b.bottom - bottom) box.scrollTop += r.bottom - (b.bottom - bottom);
   }
 
   #filter(input, panel, signal) {
@@ -174,20 +198,21 @@ export class CadNav extends HTMLElement {
       status.setAttribute('role', 'status');
       input.after(status);
     }
-    const groups = [...panel.querySelectorAll('.cad-nav-group')];
+    // Groups are the tree's <details> (with or without class="cad-nav-group"); pages are its links outside an outline.
+    const groups = [...panel.querySelectorAll('details')].filter(d => !d.closest('.cad-nav-outline'));
+    const pageItem = li => !li.closest('.cad-nav-outline');
     let saved = null;                                        // which groups were open before filtering began
     const apply = () => {
       const terms = input.value.toLowerCase().split(/\s+/).filter(Boolean);
       if (terms.length && !saved) saved = groups.map(g => g.open);
       let shown = 0;
-      for (const li of panel.querySelectorAll('.cad-nav-group li')) {
-        if (li.closest('.cad-nav-outline')) continue;
+      for (const li of [...panel.querySelectorAll('li')].filter(pageItem)) {
         const a = li.querySelector(':scope > a');
         li.hidden = !terms.every(t => (a?.textContent || li.textContent).toLowerCase().includes(t));
         if (!li.hidden) shown++;
       }
       groups.forEach((group, i) => {
-        const any = group.querySelector(':scope > ul > li:not([hidden])');
+        const any = [...group.querySelectorAll('li')].some(li => pageItem(li) && !li.hidden);
         group.hidden = !any;
         if (terms.length) { if (any) group.open = true; }
         else if (saved) group.open = saved[i];

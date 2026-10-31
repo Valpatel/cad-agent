@@ -229,17 +229,19 @@ test('doc pages carry the page tree, with this page marked', async () => {
   const listed = list => [...list.matchAll(/<a href="#([^"]+)">/g)].map(m => decodeURIComponent(m[1]));
   const inTree = nav.match(/aria-current="page">[^<]*<\/a><ol class="cad-nav-outline"[^>]*>([\s\S]*?)<\/ol>/)?.[1];
   assert.deepEqual(listed(inTree ?? ''), heads, 'the outline under the current page lists every h2/h3');
-  const rail = toolkit.match(/<nav class="doc-rail" aria-label="On this page">([\s\S]*?)<\/nav>/)?.[1];
+  const rail = toolkit.match(/<nav class="doc-rail" aria-labelledby="rail-title">([\s\S]*?)<\/nav>/)?.[1];
   assert.deepEqual(listed(rail ?? ''), heads, 'the right-hand outline lists every h2/h3');
-  assert.match(toolkit, /<body[^>]*><a class="skip-link" href="#content">Skip to content<\/a>/);
-  assert.match(toolkit, /<div class="doc-main" id="content" tabindex="-1">/);
+  assert.match(toolkit, /<body[^>]*><a class="skip-link" href="#main:content">Skip to content<\/a>/);
+  assert.match(toolkit, /<div class="doc-main" id="main:content" tabindex="-1">/);
+  // The rail is named once, by its visible title; the outline in the tree keeps its own name inside "Pages and contents".
+  assert.match(toolkit, /<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page<\/p><ol class="cad-nav-outline cad-nav-rail">/);
+  assert.match(toolkit, /aria-current="page">[^<]*<\/a><ol class="cad-nav-outline" aria-label="On this page">/);
 });
 
 // Owner (2026-10-31): "make sure every page has some interesting diagrams, animations, renders etc, don't make them
 // boring." The pages that still have no picture, render, diagram or demo, exactly (the backlog in #122). A page that
 // gains one must leave this list, and a new page without one fails, so the list only shrinks.
 const PAGES_WITHOUT_VISUALS = [
-  'CONTRIBUTING.md',
   'THIRD_PARTY_NOTICES.md',
   'agents/cad-pr-reviewer.md',
   'agents/cad-resume.md',

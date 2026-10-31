@@ -12,7 +12,8 @@ name: Gates
 # runs `python3 tools/ci_gates.py all --repo <repo> --pr <n>` (reads the reviews live; must exit 0).
 #
 # Public repos: GitHub disables pull_request_target by default from 2026-12-02 unless an Actions event policy allows
-# it. The repo's policy allow-lists this one workflow file (CONTRIBUTING.md "Gates").
+# it. The repo's policy for this one workflow file allows all three of its events: pull_request_target, schedule and
+# workflow_dispatch (a policy lists allowed events, so leaving one out stops the sweep or the re-run).
 on:
   pull_request_target:
     branches: [dev, main]
@@ -39,14 +40,16 @@ jobs:
     # A dispatch runs the copy on the branch it names: only the default branch's copy may post statuses.
     if: github.event_name != 'workflow_dispatch' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09   # v5; the default branch, never the PR
-        with: {persist-credentials: false, fetch-depth: 0}
+        with: {persist-credentials: false, fetch-depth: 1}   # release PRs fetch main and the PR head themselves
       - name: Evaluate and post the gates
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number || inputs.pr }}
-        # Gate failures are posted as failure statuses (exit 0). A crash fails the job and leaves the statuses pending.
+        # Gate failures are posted as failure statuses. A per-PR crash fails the job and leaves the statuses pending; the
+        # sweep posts only changes (GitHub keeps at most 1000 statuses per commit and name) and fails only on errors.
         run: |
           if [ -n "$PR" ]; then python3 tools/ci_gates.py all --repo "$GITHUB_REPOSITORY" --pr "$PR" --post
           else python3 tools/ci_gates.py sweep --repo "$GITHUB_REPOSITORY" --post; fi

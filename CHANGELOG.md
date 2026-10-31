@@ -15,8 +15,8 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   cones and counted apart from cylindrical holes (#101).
 - Release page: a browsable print page with thumbnails, print settings, CAD files and source (#87), pick-one groups
   and a one-build total (#89).
-- Merge gates: `cad-gates/<base>/branch-flow`, `…/review` and `cad-gates/main/release` statuses, run from the base
-  branch's copy of the gates; tagged releases and the site deploy from `main` (#112).
+- Merge gates: `cad-gates/<base>/branch-flow`, `…/review` and `cad-gates/main/release` statuses, run from the default
+  branch's (dev's) copy of the gates, on every push and every 15 minutes; tagged releases and the site deploy from `main` (#112).
 
 **Fixed**
 - Bambu slicer templates that include other templates are resolved before profiles are flattened (#93).

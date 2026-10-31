@@ -23,7 +23,7 @@ def review(verdict, sha=HEAD, who="mvalancy", state="COMMENTED", before="Summary
 
 
 def gate(reviews, base="dev", same=True, head=HEAD):
-    return gates.review_gate(reviews, base, head, same, can_write)
+    return gates.review_gate(reviews, head, can_write)
 
 
 @pytest.mark.parametrize("base,head,same,ok", [
@@ -120,14 +120,22 @@ def test_cli_version(capsys, monkeypatch):
 class FakeGitHub:
     """Stands in for `gh`: answers the PR, reviews, permission and PR-list calls, and records status posts."""
     def __init__(self, prs, reviews=(), fail=()):
-        self.prs, self.reviews, self.fail, self.posts = prs, list(reviews), set(fail), []
+        self.prs, self.reviews, self.fail, self.posts, self.posts_full = prs, list(reviews), set(fail), [], []
 
     def __call__(self, *args):
         path = next(a for a in args if a.startswith("repos/"))
         if "-X" in args:
             fields = dict(a.split("=", 1) for a in args if "=" in a and not a.startswith("repos/"))
             self.posts.append((path.rsplit("/", 1)[1], fields["context"], fields["state"]))
+            self.posts_full.append((path.rsplit("/", 1)[1], fields["context"], fields["state"], fields["description"]))
             return "{}"
+        if "/commits/" in path and "/status" in path:
+            sha = path.split("/commits/")[1].split("/")[0]
+            latest = {}
+            for s_sha, c, st, d in self.posts_full:
+                if s_sha == sha:
+                    latest[c] = (st, d)
+            return json.dumps({"statuses": [{"context": c, "state": st, "description": d} for c, (st, d) in latest.items()]})
         if path.endswith("/reviews"):
             return "\n".join(json.dumps(r) for r in self.reviews)
         if "/collaborators/" in path:
@@ -174,9 +182,25 @@ def test_a_crash_leaves_the_statuses_pending(monkeypatch):
 
 
 def test_sweep_covers_every_open_pr_into_dev_and_main_and_reports_errors(monkeypatch, capsys):
-    fake = FakeGitHub({5: pr(5), 6: pr(6, base="main", ref="dev"), 7: pr(7, base="feat/site"), 8: pr(8)}, [review("pass")], fail={8})
+    # the PR that fails to load comes first, so a sweep that stopped at an error would miss the others
+    fake = FakeGitHub({8: pr(8), 5: pr(5), 6: pr(6, base="main", ref="dev"), 7: pr(7, base="feat/site")}, [review("pass")], fail={8})
     monkeypatch.setattr(gates, "_gh", fake)
     monkeypatch.setattr(gates, "evaluate", lambda repo, n, p=None: (p, {"branch-flow": (True, "ok"), "review": (True, "ok")}))
     assert gates.sweep("o/r", do_post=True) == 1                             # #8 failed to load
     assert {c.split("/")[1] for _, c, s in fake.posts if s == "success"} == {"dev", "main"}
     assert "ERROR #8" in capsys.readouterr().err
+
+
+def test_the_sweep_posts_only_changes_and_never_pending(monkeypatch):
+    """GitHub keeps at most 1000 statuses per commit and name: a sweep every 15 minutes that re-posted everything would
+    freeze an unchanged head's statuses within days (review of #116). A later block must still turn the review red."""
+    fake = FakeGitHub({5: pr(5)}, [review("pass")])
+    monkeypatch.setattr(gates, "_gh", fake)
+    for _ in range(500):
+        gates.sweep("o/r", do_post=True)
+    assert len(fake.posts) == 2 and all(s == "success" for _, _, s in fake.posts)        # posted once, never pending
+    fake.reviews.append(review("block"))
+    assert gates.sweep("o/r", do_post=True) == 0                     # a failing gate is a status, not a job failure
+    assert fake.posts[-1] == (HEAD, "cad-gates/dev/review", "failure")
+    assert gates.sweep("o/r", do_post=False) == 1                    # without --post, a failing gate exits 1
+    assert len(fake.posts) == 3

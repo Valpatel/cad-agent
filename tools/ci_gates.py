@@ -23,8 +23,9 @@ one branch cannot supply another branch's required check. A fork's own workflows
 statuses. Anyone with write access can, which is why write access is the trust boundary throughout.
 
 Reviews do not trigger workflows that can post statuses, so a verdict posted after the last run is read by the next
-one: the reviewer's re-run (``workflow_dispatch``), the scheduled sweep (every 15 minutes), or a push. Just before
-merging, run ``all`` without ``--post``: it reads the reviews live and must exit 0.
+one: the reviewer's re-run (``workflow_dispatch``), the scheduled sweep (every 15 minutes; it posts only statuses that
+change, since GitHub keeps at most 1000 per commit and name), or a push. Just before merging, run ``all`` without
+``--post`` from an up-to-date dev checkout: it reads the reviews live and must exit 0.
 """
 from __future__ import annotations
 
@@ -83,8 +84,7 @@ def verdicts(reviews: Iterable[dict], can_write: Callable[[str], bool]) -> List[
     return sorted(out)
 
 
-def review_gate(reviews: Iterable[dict], base: str, head_sha: str, same_repo: bool,
-                can_write: Callable[[str], bool]) -> Result:
+def review_gate(reviews: Iterable[dict], head_sha: str, can_write: Callable[[str], bool]) -> Result:
     marked = verdicts(reviews, can_write)
     if not marked:
         return False, "no review verdict yet: the reviewer's summary review ends with <!-- cad-review verdict=... sha=... -->"
@@ -156,12 +156,12 @@ def evaluate(repo: str, number: int, pr: Optional[dict] = None) -> Tuple[dict, D
                 cache[login] = False
         return cache[login]
 
-    results["review"] = review_gate(reviews, base, head["sha"], same, can_write)
+    results["review"] = review_gate(reviews, head["sha"], can_write)
     if base == "main":
         # The PR's files are read as data from its head commit (fetched, never checked out or run).
         # gh's credential helper, so the fetch also works for a private repo (the checkout keeps no credentials).
         subprocess.run(["git", "-c", "credential.helper=", "-c", "credential.helper=!gh auth git-credential",
-                        "fetch", "-q", "--no-tags", "origin", "+refs/heads/main:refs/remotes/origin/main",
+                        "fetch", "-q", "--no-tags", "--depth=1", "origin", "+refs/heads/main:refs/remotes/origin/main",
                         f"+refs/pull/{number}/head:refs/remotes/origin/pr-head"], check=True)
         try:
             log = _git_show(f"{head['sha']}:CHANGELOG.md")
@@ -178,29 +178,47 @@ def _status(repo: str, sha: str, context: str, state: str, msg: str) -> None:
         "-f", f"description={msg[:139]}", "-f", f"target_url={run}")
 
 
-def post(repo: str, pr: dict, results: Dict[str, Result]) -> None:
+def current(repo: str, sha: str) -> Dict[str, Tuple[str, str]]:
+    """The latest (state, description) per status name on a commit."""
+    data = json.loads(_gh("api", f"repos/{repo}/commits/{sha}/status?per_page=100"))
+    return {s["context"]: (s["state"], s.get("description") or "") for s in data.get("statuses", [])}
+
+
+def post(repo: str, pr: dict, results: Dict[str, Result], only_changes: bool = False) -> int:
+    """Set the results as statuses; with ``only_changes``, skip any whose state and description are already current.
+    GitHub keeps at most 1000 statuses per commit and name, after which new ones are refused: a sweep that re-posted
+    every 15 minutes would freeze an unchanged head's statuses within days. Returns how many were posted."""
     base, sha = pr["base"]["ref"], pr["head"]["sha"]
+    now = current(repo, sha) if only_changes else {}
+    posted = 0
     for gate, (ok, msg) in results.items():
-        _status(repo, sha, f"cad-gates/{base}/{gate}", "success" if ok else "failure", msg)
+        context, state = f"cad-gates/{base}/{gate}", "success" if ok else "failure"
+        if now.get(context) == (state, msg[:139]):
+            continue
+        _status(repo, sha, context, state, msg)
+        posted += 1
+    return posted
 
 
-def run(repo: str, number: int, do_post: bool) -> int:
-    """Evaluate one PR and print (and with ``do_post`` set) its gates. With ``do_post`` the statuses go to pending first,
-    so a run that crashes leaves the PR blocked (fail closed) instead of keeping an older green; gate failures are
-    statuses, not errors. Exit: 0 posted (or all passed), 1 a gate failed (without --post), and an error raises."""
+def run(repo: str, number: int, do_post: bool, sweeping: bool = False) -> int:
+    """Evaluate one PR and print (and with ``do_post`` set) its gates. A run for one PR (a push, a dispatch) sets the
+    statuses to pending first, so a run that crashes leaves the PR blocked (fail closed) instead of keeping an older
+    green. A sweep posts only statuses that change (no pending step), to stay far below GitHub's 1000 statuses per
+    commit and name. Gate failures are statuses, not errors. Exit: 0 when posted or every gate passed, 1 when a gate
+    failed and nothing was posted; an error raises."""
     pr = fetch_pr(repo, number)
     base = pr["base"]["ref"]
     if base not in GATED:
         print(f"#{number} into {base!r}: not gated")
         return 0
-    if do_post:
+    if do_post and not sweeping:
         for context in contexts(base):
             _status(repo, pr["head"]["sha"], context, "pending", "evaluating")
     pr, results = evaluate(repo, number, pr)
     for gate, (ok, msg) in results.items():
         print(f"{'PASS' if ok else 'FAIL'} #{number} cad-gates/{base}/{gate}: {msg}")
     if do_post:
-        post(repo, pr, results)
+        post(repo, pr, results, only_changes=sweeping)
         return 0
     return 0 if all(ok for ok, _ in results.values()) else 1
 
@@ -209,14 +227,14 @@ def sweep(repo: str, do_post: bool) -> int:
     """Every open PR into dev or main, so a verdict posted since the last run is read within one schedule."""
     numbers = [int(n) for n in _gh("api", "--paginate", f"repos/{repo}/pulls?state=open&per_page=100",
                                    "--jq", f'.[] | select(.base.ref == "dev" or .base.ref == "main") | .number').split()]
-    errors = 0
+    errors = failing = 0
     for n in numbers:
         try:
-            run(repo, n, do_post)
+            failing += run(repo, n, do_post, sweeping=True)
         except (subprocess.CalledProcessError, KeyError, ValueError) as e:
             errors += 1
             print(f"ERROR #{n}: {e}", file=sys.stderr)
-    return 1 if errors else 0
+    return 1 if errors or failing else 0
 
 
 def main(argv: Optional[List[str]] = None) -> int:

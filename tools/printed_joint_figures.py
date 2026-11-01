@@ -113,15 +113,19 @@ def eye_figure() -> str:
 
 def peel_figure() -> str:
     """The root's layer stress against the side load: no bolt, the rod's preload kept, the rod's most preload."""
-    sec, A = BOSS["section"], BOSS["section"]["area_mm2"]
+    sec = BOSS["section"]
     m = pj.PRINTED[BOSS["material"]]
     s_z, s_xy = m.strength("across") / pj.SAFETY, m.strength("along") / pj.SAFETY
     kept, high = pj.RETAINED * BOLT["preload_n"]["low"], BOLT["preload_n"]["high"]
     loads = [10.0 * i for i in range(0, 21)]
-    bend = [p * BOSS["height_mm"] * sec["c_mm"] / sec["second_moment_mm4"] for p in loads]
-    series = (("no rod: tension side", "s2", [b for b in bend]),
-              (f"rod kept at {kept:.0f} N: tension side", "s1", [b - kept / A for b in bend]),
-              (f"rod at its most, {high:.0f} N: compression side", "s3", [-b - high / A for b in bend]))
+    # each point is root_peel's own: its states' mean (clamp and axial) and bending stresses at that side load (the
+    # check needs a load above 0, so the first point is taken at 1 mN)
+    states = [pj.root_peel(BOSS["material"], max(p, 1e-3), BOSS["height_mm"], sec, bolt=BOLT)["states"] for p in loads]
+    series = (("no rod: tension side", "s2", [s["no bolt"]["mean_mpa"] + s["no bolt"]["bending_mpa"] for s in states]),
+              (f"rod kept at {kept:.0f} N: tension side", "s1",
+               [s["kept"]["mean_mpa"] + s["kept"]["bending_mpa"] for s in states]),
+              (f"rod at its most, {high:.0f} N: compression side", "s3",
+               [s["tightened"]["mean_mpa"] - s["tightened"]["bending_mpa"] for s in states]))
     x0, x1, y0, y1, vmin, vmax = 60.0, 480.0, 40.0, 300.0, -40.0, 20.0
 
     def X(p):

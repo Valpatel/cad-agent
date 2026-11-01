@@ -62,6 +62,17 @@ def test_layout_spaces_holes_with_a_wall_between_them():
     assert len({y for _, y in standing["centres_mm"]}) == 1                 # one row, so it stands low
 
 
+def test_a_press_fit_coupon_takes_the_parts_own_wall():
+    default = fc.layout(fc.Fit("bushing seat", 8.0, "press"))
+    assert default["wall_mm"] == pytest.approx(0.25 * 8.45)                # max(2, a quarter of the largest hole)
+    own = fc.layout(fc.Fit("bushing seat", 8.0, "press", wall_mm=4.0))
+    assert own["wall_mm"] == 4.0 and own["size_mm"][0] > default["size_mm"][0]
+    xs = sorted({x for x, _ in own["centres_mm"]})
+    assert xs[1] - xs[0] == pytest.approx(max(own["diameters_mm"]) + 4.0)  # the wall between the largest holes
+    with pytest.raises(ValueError):
+        fc.Fit("bushing seat", 8.0, "press", wall_mm=0.5)
+
+
 def test_sheet_has_a_row_per_hole_with_blanks_to_fill():
     fits = [fc.Fit("pivot pin", 5.0, "slide"), fc.Fit("seat", 8.0, "press", count=3)]
     table = list(csv.DictReader(io.StringIO(fc.sheet(fits))))

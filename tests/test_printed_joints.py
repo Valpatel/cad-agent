@@ -95,6 +95,18 @@ def test_bearing_mode_geometry_passes_and_a_turning_pin_needs_a_bushing():
     assert rows(r)["pivot"]["verdict"] == "pass" and r["verdict"] == "pass"
 
 
+def test_bearing_mode_ratios_follow_the_filament_tested():
+    # Khosravani 2023, Table 2: PLA failed in bearing from e/D 3, w/D 6; ABS cleaved there and needed 4.5 and 9
+    assert pj.bearing_mode_ratios(PLA)[0] == {"edge_over_d": 3.0, "width_over_d": 6.0}
+    assert pj.bearing_mode_ratios("asa-bambu")[0] == {"edge_over_d": 4.5, "width_over_d": 9.0}
+    ratios, basis = pj.bearing_mode_ratios("petg-bambu-basic")
+    assert ratios == {"edge_over_d": 4.5, "width_over_d": 9.0} and "no printed test" in basis
+    # the planted defect: an ASA eye at PLA's ratios warns; at ABS's it passes
+    r = pj.pin_eye("asa-bambu", 200, 5, 8, 15, 30)
+    assert rows(r)["failure mode"]["verdict"] == "warn" and "ABS" in rows(r)["failure mode"]["detail"]
+    assert rows(pj.pin_eye("asa-bambu", 200, 5, 8, 22.5, 45))["failure mode"]["verdict"] == "pass"
+
+
 @pytest.mark.parametrize("bad", [dict(material="pla"), dict(load_dir=(0, 0, 1)), dict(bushing_mm=4),
                                  dict(safety=0.5), dict(build=(0, 0, 0))])
 def test_pin_eye_refuses(bad):
@@ -160,6 +172,17 @@ def test_planted_slack_rod_leaves_the_seam_opening():
     assert "opens each time" in rows(r)["layers closed"]["detail"]
 
 
+def test_a_boss_lying_in_the_layer_plane_has_no_seam_to_close():
+    # bending along the layers: the rod's preload has no seam to hold closed, whatever it is
+    r = pj.root_peel(PLA, 100, 20, pj.tube(12, 5.5), axis=(1, 0, 0), load_dir=(0, 0, 1),
+                     bolt=pj.through_bolt(5, 0.8, preload_n=1200))
+    assert rows(r)["layers closed"]["verdict"] == "pass" and "no layer seam" in rows(r)["layers closed"]["detail"]
+    assert "lying in the layer plane" in rows(r)["orientation"]["detail"]
+    # the same boss upright, the same 600 N kept: below the 1102 N that closes the seam
+    upright = pj.root_peel(PLA, 100, 20, pj.tube(12, 5.5), bolt=pj.through_bolt(5, 0.8, preload_n=1200))
+    assert rows(upright)["layers closed"]["verdict"] == "warn"
+
+
 @pytest.mark.parametrize("bad", [dict(section={"shape": "star"}), dict(load_dir=(0, 0, 1)), dict(retained=0),
                                  dict(section=pj.rect(3, 10), bolt=pj.through_bolt(3, 0.5, preload_n=100)),
                                  dict(section=pj.tube(12, 4), bolt=pj.through_bolt(5, 0.8, preload_n=100))])
@@ -185,6 +208,21 @@ def test_spring_washers_and_no_locking_warn_under_vibration():
     assert rows(pj.thread_locking("nut", "all-metal-locknut"))["locking"]["verdict"] == "pass"
     with pytest.raises(ValueError):
         pj.thread_locking("printed", "nylon-insert-nut")
+
+
+def test_a_jam_nut_warns_under_vibration():
+    # NASA RP-1228 p. 7: a jam nut is too unpredictable to be reliable; a locknut is the more practical choice
+    r = pj.thread_locking("nut", "jam-nut")
+    assert rows(r)["locking"]["verdict"] == "warn" and "unpredictable" in rows(r)["locking"]["detail"]
+    assert rows(pj.thread_locking("nut", "jam-nut", vibration=False))["locking"]["verdict"] == "pass"
+    assert rows(pj.thread_locking("nut", "safety-wire"))["locking"]["verdict"] == "pass"
+
+
+def test_thread_locking_refuses_a_friction_it_would_ignore_and_a_safety_under_one():
+    with pytest.raises(ValueError, match="metal faces"):
+        pj.thread_locking("nut", "all-metal-locknut", transverse_load_n=40, preload_n=500, friction=0.5)
+    with pytest.raises(ValueError, match="safety"):
+        pj.thread_locking("nut", "all-metal-locknut", safety=0.5)
 
 
 def test_transverse_slip_golden():

@@ -47,10 +47,13 @@ from cadagent.simulation.fea import layer_modes
 SAFETY = 2.0          # the default safety factor a stress row must reach to pass: a judgement for short-term datasheet
                       # strengths of 100 % infill bars, not a published value; pass a project's own
 RETAINED = 0.5        # the default share of preload plastic in the clamp path keeps for the life of the joint: assumed
-                      # (no long-term printed figure was found, 2026-11-01); see LIMITS and cad-agent #230
+                      # (no long-term printed figure was found, 2026-11-01); see root_peel's limits and cad-agent #230
 FLAT_DEG = 10.0       # an axis within this of the build direction counts as along it, and within it of the layer
                       # plane as in the plane
-BEARING_MODE = {"edge_over_d": 3.0, "width_over_d": 6.0}   # ASTM D5961's advice, which printed PLA bore out
+# The edge and width (over the hole) from which a printed eye fails in bearing, gradually, rather than suddenly in net
+# tension, shear-out or cleavage (Khosravani et al. 2023, Table 2). PLA's are ASTM D5961's advice; printed ABS cleaved
+# there and needed 4.5 and 9. ASA (a styrenic like ABS) takes ABS's, and a filament with no test the stricter pair.
+BEARING_MODE = {"pla": {"edge_over_d": 3.0, "width_over_d": 6.0}, "abs": {"edge_over_d": 4.5, "width_over_d": 9.0}}
 VERDICTS = ("pass", "warn", "fail")
 
 SRC: Dict[str, str] = {
@@ -58,6 +61,9 @@ SRC: Dict[str, str] = {
                      "McGraw-Hill, 2015, Section 8-12 (Bolted and Riveted Joints Loaded in Shear: the failure "
                      "modes, bearing F / (t d) and tension on the net section; a metal joint keeps its bolt 1.5 d "
                      "from the edge against tear-out)",
+    "lug-shear-out": "the usual lug shear-out convention: the end tears out along two planes from the hole's sides to "
+                     "the end, each (e - D/2) long, so tau = P / (2 t (e - D/2)); Shigley 8-12 names the mode and "
+                     "gives only a 1.5 d edge rule for metal",
     "shigley-beam": "Shigley 10th ed., Sections 3-9 (uniform axial stress F / A), 3-10 (bending, M c / I) and 3-11 "
                     "(the largest transverse shear: 3 V / 2 A for a rectangle, 4 V / 3 A for a solid circle, 2 V / A "
                     "for a thin tube)",
@@ -82,16 +88,22 @@ SRC: Dict[str, str] = {
                "gives, in the layer plane (X-Y) and across the layers (the lower of X-Y and Z); " + STATUS,
     "junker-1969": "G. H. Junker, New criteria for self-loosening of fasteners under vibration, SAE Transactions 78 "
                    "(1969) 314-335, SAE paper 690055: a joint loosens when it slips sideways under the head or nut "
-                   "and in the thread, whatever holds the nut, so the clamp must carry the side load by friction",
+                   "and in the thread, so the clamp must carry the side load by friction",
     "nasa-1228": "R. T. Barrett, Fastener Design Manual, NASA Reference Publication 1228 (March 1990), pp. 6-8 "
-                 "(locking methods: prevailing-torque locknuts and jam nuts bind the thread; locking adhesives; a "
-                 "helical spring lock washer is flat once the bolt is tight, and its locking ability is "
+                 "(locking methods: a prevailing-torque locknut binds the thread; a jam nut is too unpredictable to "
+                 "be reliable, and a locknut is the more practical choice (p. 7); a nylon patch grips a metal mating "
+                 "thread; a helical spring lock washer is flat once the bolt is tight, and its locking ability is "
                  "nonexistent): https://ntrs.nasa.gov/citations/19900009424",
     "henkel-243": "Henkel, LOCTITE 243 Technical Data Sheet (April 2025), General Information: not normally "
                   "recommended for use on plastics, particularly thermoplastics, where stress cracking of the "
                   "plastic could result; the other anaerobic threadlockers' sheets say the same: "
                   "https://datasheets.tdx.henkel.com/LOCTITE-243-en_GL.pdf",
     "covestro-friction": FRICTION_SOURCE,
+    "covestro-relaxation": "Covestro LLC, Engineering Polymers Part and Mold Design - Thermoplastics, A Design Guide "
+                           "(PDF of 2015-10), p. 75, Table 3-7: moulded polycarbonate at 1.2 % strain and 40 degC kept "
+                           "0.75 of its stress after a month, 0.67 after a year and 0.59 after six (the figures "
+                           "cad-agent #230 uses)",
+    "judgement": "no published source: a stated judgement of this module (2026-11-01), to be replaced by a test",
 }
 
 LIMITS_COMMON = (
@@ -171,11 +183,12 @@ def _angle(a: np.ndarray, b: np.ndarray) -> float:
 def eye_stresses(load_n: float, hole_mm: float, thickness_mm: float, edge_mm: float, width_mm: float
                  ) -> Dict[str, float]:
     """Nominal stresses (MPa) in an eye carrying a pin load P (N) through a hole of diameter D, a plate t thick, its
-    centre e from the end and the eye w wide across the hole (Shigley 10th ed., Section 8-12):
+    centre e from the end and the eye w wide across the hole:
 
-    * bearing on the hole's projected area, sigma_br = P / (D t);
-    * shear-out along two planes from the hole's sides to the end, tau = P / (2 t (e - D/2));
-    * tension across the net section beside the hole, sigma_nt = P / ((w - D) t)."""
+    * bearing on the hole's projected area, sigma_br = P / (D t) (Shigley 10th ed., Section 8-12);
+    * shear-out along two planes from the hole's sides to the end, tau = P / (2 t (e - D/2)) (the usual lug
+      convention; Shigley 8-12 names the mode);
+    * tension across the net section beside the hole, sigma_nt = P / ((w - D) t) (Shigley 8-12)."""
     P = _positive("load_n", load_n, strict=False)
     D, t = _positive("hole_mm", hole_mm), _positive("thickness_mm", thickness_mm)
     e, w = _positive("edge_mm", edge_mm), _positive("width_mm", width_mm)
@@ -245,16 +258,18 @@ def pin_eye(material: str, load_n: float, pin_mm: float, thickness_mm: float, ed
         rows.append(_row(mode, _graded(c["factor"], safety), round(c["stress_mpa"], 4),
                          {"factor": round(c["factor"], 3), "safety": safety},
                          f"{_EYE_DETAIL[mode]}; {c['stress_mpa']:.2f} MPa, factor {c['factor']:.2f} "
-                         f"({c['governs']} governs)", "shigley-shear", "fea-layer", "printed"))
+                         f"({c['governs']} governs)", "lug-shear-out" if mode == "shear-out" else "shigley-shear",
+                         "fea-layer", "printed"))
     # the failure mode: wide and long enough, the hole yields in bearing first, with warning; otherwise it breaks
+    ratios, basis = bearing_mode_ratios(material)
     eod, wod = edge_mm / hole, width_mm / hole
-    gradual = eod >= BEARING_MODE["edge_over_d"] and wod >= BEARING_MODE["width_over_d"]
+    gradual = eod >= ratios["edge_over_d"] and wod >= ratios["width_over_d"]
     rows.append(_row("failure mode", "pass" if gradual else "warn", {"edge_over_d": round(eod, 3),
-                     "width_over_d": round(wod, 3)}, dict(BEARING_MODE),
-                     "bearing first: the hole yields and stretches before anything breaks" if gradual else
-                     f"e/D {eod:.2f} and w/D {wod:.2f}, under {BEARING_MODE['edge_over_d']:g} and "
-                     f"{BEARING_MODE['width_over_d']:g}: the eye is more likely to break in net tension, shear-out "
-                     "or cleavage, suddenly, than to yield in bearing; printed ABS needed 4.5 and 9",
+                     "width_over_d": round(wod, 3)}, dict(ratios),
+                     (f"bearing first: the hole yields and stretches before anything breaks ({basis})" if gradual else
+                      f"e/D {eod:.2f} and w/D {wod:.2f}, under {ratios['edge_over_d']:g} and "
+                      f"{ratios['width_over_d']:g} ({basis}): the eye is more likely to break in net tension, "
+                      "shear-out or cleavage, suddenly, than to yield in bearing"),
                      "astm-d5961", "khosravani-2023"))
     # the layers: printed flat (pin along the build direction), every section lies in the layer plane
     tilt = _angle(a, n)
@@ -276,8 +291,8 @@ def pin_eye(material: str, load_n: float, pin_mm: float, thickness_mm: float, ed
         rows.append(_row("pivot", "pass" if bushing_mm is not None else "warn", bushing_mm is not None, True,
                          "the pin turns in the metal bushing, not in the plastic" if bushing_mm is not None else
                          "the pin turns in a printed bore: the bore wears and the hole grows, so the joint gets "
-                         "slack; no wear data for printed bores is in the table. Press a metal (or plastic "
-                         "plain-bearing) bushing into the eye", "shigley-shear"))
+                         "slack; no wear data for printed bores was found. Press a metal (or plastic "
+                         "plain-bearing) bushing into the eye", "judgement"))
     compare = None
     if bushing_mm is not None:
         compare = {mode: {"bare_factor": bare[mode]["factor"], "bushed_factor": case[mode]["factor"]}
@@ -383,7 +398,7 @@ def root_peel(material: str, side_load_n: float, height_mm: float, section: Dict
     the bolt's least preload kept and its most as tightened, against the layers (``build``). Rows: the root (graded
     against ``safety``); whether the kept preload holds the layer seam closed, and the torque that would; the
     feature's axis against the layers. ``advice`` gives the clamp that keeps the seam closed even when no bolt is
-    given: the owner's threaded-rod idea as a number."""
+    given: what a threaded rod and nuts through the boss must keep to hold the seam closed."""
     m, sxy, sz = _material(material)
     P = _positive("side_load_n", side_load_n)
     h = _positive("height_mm", height_mm)
@@ -424,6 +439,8 @@ def root_peel(material: str, side_load_n: float, height_mm: float, section: Dict
     # the clamp window: enough kept to hold the seam closed, not so much as tightened that the column is crushed
     advice: Dict[str, Any] = {"preload_to_close_n": close_n, "kept_share": retained,
                               "preload_window_n": (close_n / retained, max(crush_n, 0.0))}
+    tilt = _angle(a, n)
+    across = tilt < 90.0 - FLAT_DEG       # the bending crosses the layers, so there is a seam to hold closed
     if bolt is not None:
         kept = retained * bolt["preload_n"]["low"]
         d, (k_lo, k_hi) = bolt["diameter_mm"] * 1e-3, bolt["nut_factor"]
@@ -434,15 +451,19 @@ def root_peel(material: str, side_load_n: float, height_mm: float, section: Dict
                   "preload does not overload the compression side" if t_lo <= t_hi else
                   f"no torque does both: keeping it closed takes {t_lo:.2f} N m, and the compression side takes at "
                   f"most {t_hi:.2f} N m. Widen the boss (more area at the root) or shorten the lever")
-        rows.append(_row("layers closed", "pass" if kept >= close_n else "warn", round(kept, 3), round(close_n, 3),
-                         (f"the kept preload, {kept:.0f} N ({retained:g} of the least, {bolt['basis']}), holds the "
-                          f"tension side's layer seam closed ({close_n:.0f} N needed): it never opens under the load"
-                          if kept >= close_n else
-                          f"the kept preload, {kept:.0f} N ({retained:g} of the least, {bolt['basis']}), is below the "
-                          f"{close_n:.0f} N that holds the tension side closed: the layer seam opens each time the "
-                          "load comes, and a bond that opens and closes fatigues") + f"; {window}",
+        if not across:
+            closed = ("pass", "lying in the layer plane: no layer seam crosses the bending, so the preload has none to "
+                              "hold closed; the root row judges the stress along the layers")
+        elif kept >= close_n:
+            closed = ("pass", f"the kept preload, {kept:.0f} N ({retained:g} of the least, {bolt['basis']}), holds "
+                              f"the tension side's layer seam closed ({close_n:.0f} N needed): it never opens under "
+                              f"the load; {window}")
+        else:
+            closed = ("warn", f"the kept preload, {kept:.0f} N ({retained:g} of the least, {bolt['basis']}), is below "
+                              f"the {close_n:.0f} N that holds the tension side closed: the layer seam opens each time "
+                              f"the load comes, and a bond that opens and closes fatigues; {window}")
+        rows.append(_row("layers closed", closed[0], round(kept, 3), round(close_n, 3), closed[1],
                          "shigley-beam", "shigley-torque"))
-    tilt = _angle(a, n)
     if tilt <= FLAT_DEG:
         why = ("built upright: the root's bending stress crosses the layers, so the bond peels first" +
                ("" if bolt is not None else f"; a through-bolt kept at {close_n:.0f} N would hold it closed"))
@@ -461,8 +482,9 @@ def root_peel(material: str, side_load_n: float, height_mm: float, section: Dict
                        "bending does not change its load; a bolt in a clearance bore carries no bending until the "
                        "boss deflects onto it",
                        f"retained is assumed ({RETAINED:g} by default): no long-term preload figure for printed "
-                       "plastic was found; moulded polycarbonate kept 0.59 of its stress after six years at 40 degC, "
-                       "and printed PLA and PETG, nearer their glass transition, keep less (cad-agent #230)",
+                       "plastic was found; moulded polycarbonate kept 0.59 of its stress after six years at 40 degC "
+                       f"({SRC['covestro-relaxation']}), and printed PLA and PETG, nearer their glass transition, are "
+                       "likely to keep less",
                        "the plastic under the head or washer, and the rod's own strength, are not checked here: "
                        "cad-agent #230's check_clamp does them",
                        "a metal sleeve the full length of the boss takes the preload itself, so the plastic gets none "
@@ -493,9 +515,14 @@ def _locking_row(thread_in: str, locking: str, vibration: bool) -> Dict[str, Any
                "round the insert and can stress-crack it" if thread_in == "insert" else
                "an anaerobic threadlocker on a metal nut: keep it off the printed part")
         return _row("locking", v, locking, "not on plastic", why, "henkel-243")
+    if locking == "jam-nut":
+        return _row("locking", "warn" if vibration else "pass", locking, "a prevailing-torque locknut",
+                    "a jam nut tightened against the nut: NASA's manual finds it too unpredictable to be reliable and "
+                    "a locknut the more practical choice" if vibration else
+                    "a jam nut, and no vibration declared: preload alone holds", "nasa-1228")
     if locking in _NUT_ONLY:
         return _row("locking", "pass", locking, "binds the thread",
-                    "a prevailing-torque or jam nut binds the thread on metal: it keeps the nut from coming off, "
+                    "a prevailing-torque locknut binds the thread on metal: it keeps the nut from turning off, "
                     "though a joint that slips sideways still loses its preload", "nasa-1228", "junker-1969")
     if locking == "nylon-patch":
         v = "warn" if plastic else "pass"
@@ -503,7 +530,7 @@ def _locking_row(thread_in: str, locking: str, vibration: bool) -> Dict[str, Any
                     "a nylon patch on the screw cuts a printed thread rather than gripping it" if plastic else
                     "a nylon patch grips the metal thread it runs in", "nasa-1228")
     if locking == "spring-washer":
-        return _row("locking", "warn" if vibration else "pass", locking, "binds the thread",
+        return _row("locking", "warn" if vibration else "pass", locking, "a locking element",
                     "a helical spring lock washer is flat once the screw is tight and does not lock: it counts as "
                     "none", "nasa-1228")
     if locking == "safety-wire":
@@ -536,8 +563,13 @@ def thread_locking(thread_in: str, locking: str = "none", *, vibration: bool = T
     if locking in _NUT_ONLY and thread_in != "nut":
         raise ValueError(f"{locking} is a nut: thread_in must be 'nut'")
     _positive("safety", safety)
+    if safety < 1.0:
+        raise ValueError(f"safety must be at least 1, not {safety!r}")
     if not (_num(retained) and 0.0 < retained <= 1.0):
         raise ValueError(f"retained must be above 0 and at most 1, not {retained!r}")
+    if plastic_in_clamp and friction is not None:
+        raise ValueError("with plastic in the clamp the friction is the low end of Covestro's steel-on-plastic band; "
+                         "give friction only for metal faces (plastic_in_clamp=False)")
     if not (isinstance(interfaces, int) and not isinstance(interfaces, bool) and interfaces >= 1):
         raise ValueError(f"interfaces must be a whole number of at least 1, not {interfaces!r}")
     rows = [_locking_row(thread_in, locking, vibration)]
@@ -559,16 +591,17 @@ def thread_locking(thread_in: str, locking: str = "none", *, vibration: bool = T
         factors.append(factor)
         rows.append(_row("slip", _graded(factor, safety), round(factor, 3), safety,
                          f"friction holds {capacity:.0f} N sideways ({interfaces} x {mu:g} x {kept:.0f} N kept) "
-                         f"against {q:g} N: " + ("it slips, and a joint that slips loosens whatever locks it; carry "
-                                                 "the side load on a pin, bushing or shoulder (pin_eye)"
+                         f"against {q:g} N: " + ("it slips: a joint that slips loses its preload, and friction or "
+                                                 "prevailing-torque locking does not stop it turning off; carry the "
+                                                 "side load on a pin, bushing or shoulder (pin_eye)"
                                                  if factor < 1 else "it holds" if factor >= safety else
                                                  "it holds, with less margin than asked"),
                          "junker-1969", mu_src))
     if plastic_in_clamp:
         rows.append(_row("preload in plastic", "warn" if vibration else "pass", retained, 1.0,
                          f"plastic in the clamp path relaxes, taking the preload down to about {retained:g} of what "
-                         "was tightened; a metal sleeve or bushing through the plastic keeps the clamp in metal "
-                         "(cad-agent #230)", "junker-1969"))
+                         "was tightened (assumed); a metal sleeve or bushing through the plastic keeps the clamp in "
+                         "metal (cad-agent #230)", "covestro-relaxation", "judgement"))
     return _result("thread_locking", rows, factors,
                    inputs={"thread_in": thread_in, "locking": locking, "vibration": vibration,
                            "transverse_load_n": transverse_load_n, "preload_n": preload_n,
@@ -579,10 +612,24 @@ def thread_locking(thread_in: str, locking: str = "none", *, vibration: bool = T
                            "the friction of steel on a printed face is not measured: the low end of Covestro's "
                            "moulded band is taken",
                            f"retained is assumed ({RETAINED:g} by default; cad-agent #230 holds the relaxation data)",
+                           "a jam nut warns under vibration (NASA RP-1228 p. 7); a captive screw (wire or pin) "
+                           "passes, though a joint that slips still loses its preload",
                            "the locking rows are rules from the makers' and NASA's guidance, not a test: shake the "
                            "joint (a transverse vibration test, DIN 65151 / ISO 16130) when it matters"])
 
 
+def bearing_mode_ratios(material: str) -> Tuple[Dict[str, float], str]:
+    """The edge and width over the hole from which an eye in ``material`` fails in bearing first, and their basis:
+    measured on printed PLA, measured on printed ABS (ASA taken as ABS), or the stricter pair for a filament with no
+    test (Khosravani et al. 2023, Table 2)."""
+    _material(material)
+    if material.startswith("pla-"):
+        return dict(BEARING_MODE["pla"]), "ratios measured on printed PLA"
+    if material.startswith(("abs-", "asa-")):
+        return dict(BEARING_MODE["abs"]), "ratios measured on printed ABS; ASA taken as ABS"
+    return dict(BEARING_MODE["abs"]), "no printed test of this filament: the stricter ratios, printed ABS's"
+
+
 def sources() -> Dict[str, str]:
-    """Every outside document these checks take a number or a rule from, by key."""
+    """Every outside document these checks take a number or a rule from, by key; ``judgement`` marks a rule with none."""
     return dict(SRC)

@@ -22,9 +22,9 @@ rate one: print the part or a coupon and test it.**
 eye 6 mm thick in Bambu PETG Basic, its centre 10 mm from the end, 16 mm wide, bare or with an 8 mm metal bushing,
 printed flat (pin upright) or on its side.*
 
-`pin_eye` takes the three classic sections of a lug (Shigley 10th ed., Section 8-12): **bearing** on the hole,
-P / (D t); **shear-out** along two planes from the hole's sides to the end, P / (2 t (e − D/2)); **net tension**
-across the hole, P / ((w − D) t). Each nominal stress is resolved on the print's layers by the criterion of the FEA
+`pin_eye` takes the three classic sections of a lug: **bearing** on the hole, P / (D t), and **net tension** across
+the hole, P / ((w − D) t) (Shigley 10th ed., Section 8-12); **shear-out** along two planes from the hole's sides to
+the end, P / (2 t (e − D/2)), the usual lug convention for the mode Shigley names. Each nominal stress is resolved on the print's layers by the criterion of the FEA
 [layer check](toolkit.md#stiffness-and-strength-cadagentsimulationfea) (`cadagent.simulation.fea.layer_modes`): opening across the layers and shear along them
 against the across-layer strength, the rest against the in-plane strength. What the example shows:
 
@@ -37,9 +37,11 @@ against the across-layer strength, the rest against the in-plane strength. What 
 - **On its side, the shear-out planes are layers.** With the pin lying in the bed plane, the two shear-out planes
   (and the line along which the end splits) are layer planes, so shear-out is judged against the across-layer
   strength: 2.02 bare, 1.62 bushed. The `layers` row warns whenever the pin is more than 10° off the build direction.
-- **The failure mode.** Under e/D 3 or w/D 6 (ASTM D5961's advice), the eye is more likely to break suddenly in net
-  tension, shear-out or cleavage than to yield in bearing; printed PLA bore that out, and printed ABS needed 4.5 and 9
-  (Khosravani et al., 2023). The `failure mode` row warns, whatever the stresses.
+- **The failure mode.** A short or narrow eye is more likely to break suddenly in net tension, shear-out or cleavage
+  than to yield in bearing. Printed PLA failed in bearing from e/D 3 and w/D 6 (ASTM D5961's advice), but printed ABS
+  cleaved there and needed 4.5 and 9 (Khosravani et al., 2023). The `failure mode` row takes PLA's ratios for PLA,
+  ABS's for ASA, and ABS's, the stricter, for a filament with no test (PETG, CoPA, PA6-CF), and warns below them,
+  whatever the stresses.
 - **A pin that turns** (`pivots=True`) in a bare printed bore wears it: the `pivot` row warns until a bushing carries
   the rotation.
 
@@ -79,8 +81,8 @@ flowchart TD
     S -->|"no"| SL["it slips and loosens:<br/>carry the side load<br/>on a pin or bushing"]
     S -->|"yes"| L{"what locks it,<br/>in what thread?"}
     L --> F["threadlocker<br/>on plastic:<br/>fail"]
-    L --> W["spring washer<br/>or none:<br/>warn"]
-    L --> P["locknut, jam<br/>nut, wire:<br/>pass"]
+    L --> W["spring washer,<br/>jam nut, none:<br/>warn"]
+    L --> P["locknut<br/>or wire:<br/>pass"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -89,16 +91,18 @@ flowchart TD
     class SL,F,W,P out
 ```
 
-A screw loosens when the joint slips sideways under its head and in its thread (Junker, 1969), whatever holds the
-nut. `thread_locking` checks that friction holds the side load: the friction of steel on plastic is taken at its low
+A screw loosens when the joint slips sideways under its head and in its thread (Junker, 1969): a joint that slips
+loses its preload, and friction or a prevailing-torque nut does not stop it turning off. `thread_locking` checks that friction holds the side load: the friction of steel on plastic is taken at its low
 end (0.20, Covestro's table), on the preload the plastic keeps. Then it checks the locking element against the
 thread it is in:
 
 - **An anaerobic threadlocker on a printed thread fails.** Henkel's own data sheets do not recommend it on
   thermoplastics, where it can stress-crack the part. In an insert it warns: it wicks out onto the plastic.
 - **A helical spring lock washer warns.** It is flat once the screw is tight and does not lock (NASA RP-1228).
-- **A prevailing-torque or jam nut on a through-bolt passes.** It keeps the nut on, though a joint that slips still
-  loses its preload, so the slip row still counts.
+- **A jam nut warns.** NASA's manual finds it too unpredictable to be reliable, and a locknut the more practical
+  choice (RP-1228, p. 7).
+- **A prevailing-torque locknut on a through-bolt passes**, and so does a screw held captive by wire or a pin. They
+  keep the nut on, though a joint that slips still loses its preload, so the slip row still counts.
 - **Plastic in the clamp path warns** under vibration: its preload relaxes. A metal sleeve or bushing through the
   plastic keeps the clamp in metal (#230's limiters).
 
@@ -114,6 +118,8 @@ nominal + allowance + undersize, from [research/process-profiles.yaml](../resear
   for a press fit in a printed hole is published, so the sweep finds it.
 - **Orientation.** A fit with `axis="horizontal"` is exported standing on its edge, its holes in the bed plane, as
   the part's will be.
+- **Wall.** A press fit's grip depends on the plastic round the hole. Give `wall_mm` the part's own wall there, or the
+  hole that presses right in the coupon may be too tight or too loose in the part.
 
 ![A fit coupon for a 5 mm pin in a sliding fit: a 25 mm square plate with nine holes from 5.30 to 5.70 mm in 0.05 mm steps, hole 1 by the notched corner](img/joints/coupon.svg)
 

@@ -24,8 +24,11 @@ The numbers are research/process-profiles.yaml's (tests/test_fit_coupons.py keep
 * ``press``: no allowance (line to line once the undersize is added); no published interference for a press fit in a
   printed hole was found, so the sweep is how you find it.
 
-Limits: one row of holes per fit, no threads, no pegs. A coupon calibrates the printer, filament and slicer settings
-it was printed with: print it again when any of them changes. The sizes are where to start, not a promise of fit.
+Limits: one coupon per fit, round holes only (no threads, no pegs). A coupon calibrates the printer, filament and
+slicer settings it was printed with: print it again when any of them changes. A press fit's grip depends on the wall
+round the hole, which sets its hoop stiffness: give ``wall_mm`` the part's own wall round the hole, or the hole that
+presses right in the coupon may be too tight (or too loose) in the part. The sizes are where to start, not a promise
+of fit.
 """
 from __future__ import annotations
 
@@ -58,7 +61,9 @@ NOTCH_MM = 3.0
 class Fit:
     """A hole a bought part goes into: ``nominal_mm`` is the part's diameter (or the insert maker's hole), ``kind``
     one of ALLOWANCE_MM (or ``allowance_mm`` set), ``axis`` the hole's axis against the build direction, as the part
-    will be printed. ``count`` holes, ``step_mm`` apart, centred on the expected CAD size."""
+    will be printed. ``count`` holes, ``step_mm`` apart, centred on the expected CAD size. ``wall_mm`` is the plastic
+    between the holes and round the edge (by default the larger of 2 mm and a quarter of the largest hole); for a press
+    fit give the part's own wall round the hole."""
     name: str
     nominal_mm: float
     kind: str = "slide"
@@ -68,6 +73,7 @@ class Fit:
     undersize_mm: float = UNDERSIZE_MM
     step_mm: float = 0.05
     count: int = 9
+    wall_mm: Optional[float] = None
 
     def __post_init__(self):
         if not self.name or not isinstance(self.name, str):
@@ -84,6 +90,12 @@ class Fit:
             raise ValueError(f"count must be an odd whole number, so one hole sits at the expected size: {self.count!r}")
         if self.depth_mm is not None and not (math.isfinite(self.depth_mm) and self.depth_mm > 0):
             raise ValueError(f"depth_mm must be positive, not {self.depth_mm!r}")
+        if self.wall_mm is not None and not (isinstance(self.wall_mm, (int, float)) and math.isfinite(self.wall_mm)
+                                             and self.wall_mm >= 1.0):
+            raise ValueError(f"wall_mm must be at least 1 mm, not {self.wall_mm!r}")
+        if self.allowance_mm is not None and not (isinstance(self.allowance_mm, (int, float))
+                                                  and math.isfinite(self.allowance_mm)):
+            raise ValueError(f"allowance_mm must be a finite number, not {self.allowance_mm!r}")
         if not (math.isfinite(self.undersize_mm) and self.undersize_mm >= 0):
             raise ValueError(f"undersize_mm must be at least 0, not {self.undersize_mm!r}")
         if self.diameters()[0] <= 0:
@@ -114,7 +126,7 @@ class Fit:
 def layout(fit: Fit) -> Dict[str, Any]:
     """The coupon's plate: hole centres (row by row from the notched corner, sizes rising), its size and thickness."""
     ds = fit.diameters()
-    wall = max(MIN_WALL_MM, 0.25 * max(ds))
+    wall = fit.wall_mm if fit.wall_mm is not None else max(MIN_WALL_MM, 0.25 * max(ds))
     pitch = max(ds) + wall
     # a coupon printed flat is a square grid; one printed standing (horizontal holes) is one row, so it stands low
     cols = len(ds) if fit.axis == "horizontal" else math.ceil(math.sqrt(len(ds)))

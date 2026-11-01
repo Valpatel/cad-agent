@@ -258,12 +258,13 @@ def test_a_summary_is_computed_from_the_scene_alone():
 # ---------------------------------------------------------------------------------------------- the code reproduces it
 
 def test_the_coarse_steps_reproduce_on_the_recorded_mesher(scene):
-    """The 2 mm steps run again with today's code: on the gmsh build that made the record, the same tets and peak.
-    On another build the mesh may differ, which the record's mesher says; then this skips."""
+    """The 2 mm steps run again with today's code: on the gmsh build that made the record (the same library, whatever
+    the Python), the same tets, peak, verdict and face mesh. On another build the mesh may differ, which the record's
+    mesher says; then this skips."""
     pytest.importorskip("cadquery")
     pytest.importorskip("gmsh")
     pytest.importorskip("skfem")
-    from cadagent.simulation.fea import Material, _mesher_identity  # noqa: F401  (gmsh session per Study)
+    from cadagent.simulation.fea import Material
 
     spec = yaml.safe_load(SPEC.read_text(encoding="utf-8"))
     m = spec["material"]
@@ -272,7 +273,8 @@ def test_the_coarse_steps_reproduce_on_the_recorded_mesher(scene):
         rec = c["steps"][0]
         got = C._step(C.bracket(spec["part"], c["fillet_mm"]), mat, spec, spec["mesh_mm"], None,
                       window=spec["window_mm"])
-        if got["mesher"] != scene["mesher"]:
+        build = lambda m: (m["gmsh"], m["occ"], m["build"], m["library"], m["platform"]["machine"])
+        if build(got["mesher"]) != build(scene["mesher"]):     # the Python version does not change the mesh
             pytest.skip(f"gmsh here is not the recorded build ({got['mesher']['gmsh']}, "
                         f"{got['mesher']['library']['sha256_16']})")
         assert got["tets"] == rec["tets"], c["name"]

@@ -232,7 +232,7 @@ def record(spec: Mapping[str, Any], root: Path, spec_path: Optional[Path] = None
 
 
 def write_scene(scene: Mapping[str, Any], path: Path) -> None:
-    """The scene as JSON: one line per drawn point list, so a re-record's diff stays readable."""
+    """The scene as JSON, indented as the hero's are, so a re-record's diff shows which numbers moved."""
     Path(path).write_text(json.dumps(scene, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
 
 

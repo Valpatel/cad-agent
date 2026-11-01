@@ -34,3 +34,14 @@ You review a pull request you did not write. Follow the `cad-pr-review` skill (r
    Do not approve or merge.
 7. Final message: each finding as `file:line, severity, one sentence`, plus what you checked and found fine, and the
    links to the review and comments.
+
+```mermaid
+flowchart TD
+    Rd["read the PR, issue, diff,<br/>the repo's rules"] --> V["verify the claims<br/>tests, small scripts"]
+    V --> C["inline comments<br/>+ summary review"]
+    C --> M["verdict marker<br/>as the last line"]
+    N["never edits, approves<br/>or merges"] -.- C
+    class V,C here
+    class Rd,N near
+    class M out
+```

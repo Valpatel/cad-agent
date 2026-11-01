@@ -860,12 +860,12 @@ async function foldProblems() {
     const r = el.getBoundingClientRect(), hit = document.elementFromPoint(r.left + Math.min(r.width / 2, 24), r.top + r.height / 2);
     return !!hit && (hit === el || el.contains(hit));
   };
-  // With JavaScript off, Playwright can still run code in the page, but not wait on a promise there.
-  const painted = (page, js = true) => !js ? page.waitForTimeout(150) : page.evaluate(async () => {
-    await Promise.all([...document.querySelectorAll('link[rel=stylesheet]')].map(l => l.sheet ? 0 : new Promise(ok => l.addEventListener('load', ok, { once: true }))));
-    await document.fonts.ready;
-    await new Promise(ok => requestAnimationFrame(() => requestAnimationFrame(ok)));
-  });
+  // Stylesheets and fonts in, then two frames. With JavaScript off, Playwright can still run code in the page, but not
+  // wait on a promise there. WebKit holds document.fonts.ready while any request is pending (nav.js, held back), so
+  // the fonts' status is what counts.
+  const painted = (page, js = true) => !js ? page.waitForTimeout(150) :
+    page.waitForFunction(() => [...document.querySelectorAll('link[rel=stylesheet]')].every(l => l.sheet) && document.fonts.status === 'loaded',
+      null, { timeout: 10000 }).then(() => page.evaluate(() => new Promise(ok => requestAnimationFrame(() => requestAnimationFrame(ok)))));
   for (const width of [360, 1366]) for (const mode of ['script', 'slow', 'blocked', 'failing', 'none']) {
     const context = await browser.newContext({ viewport: { width, height: 800 }, javaScriptEnabled: mode !== 'none' });
     const page = await context.newPage();
@@ -923,8 +923,7 @@ async function foldProblems() {
       await page.evaluate(() => scrollTo(0, 0));
       const before = await page.evaluate(boxes);
       arrive();
-      await page.evaluate(() => customElements.whenDefined('cad-nav'));
-      await page.waitForFunction(() => document.querySelector('cad-nav .cad-nav-empty')?.getAttribute('role') === 'status');
+      await page.waitForFunction(() => customElements.get('cad-nav'), null, { timeout: 10000 });
       await painted(page);
       await page.evaluate(() => scrollTo(0, 0));
       const after = await page.evaluate(boxes);

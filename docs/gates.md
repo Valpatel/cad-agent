@@ -824,6 +824,13 @@ and `clearance_at_least`, a bound that holds over the whole path, between sample
 at most h, so between samples h apart with gaps g1 and g2 the gap is at least (g1 + g2 - h) / 2; for a pair whose
 swept box never comes near, the box gap). The step table shows `lo..hi`, one number when they agree, or `≥ lo`.
 
+![Three pairs from the assembly gate's box-world tests, each part moved in along a straight line: a card 3 mm off a block is clear on its swept box alone, with no kernel query; a card pushed into a cover fitted first hits it, and the first contact is bisected to 25 mm before its seat; a part passing a block's corner is sampled near it, and between two samples h apart its gap is at least (g1 + g2 - h) / 2](img/motion/insertion-sweep.svg)
+
+*`sweep_pair`, the insertion sweep described above, on three pairs: the swept-box early-out, a blocked insertion
+with its first contact bisected, and the exact samples near an obstacle with the bound between them. An
+illustration of the box world in `tests/test_gate_assembly.py`, seen from the side; the travel, gaps, bound, query
+counts and first contact are the gate's.*
+
 <details>
 <summary>The verdict's step table, the kernel-free core, and cost</summary>
 
@@ -850,13 +857,6 @@ sampled: a feature thinner than the step, crossing another between two samples, 
 smaller where clearances are tight). A near-tangent crossing the boolean misses reads `unknown`
 ([near-tangent crossings](#near-tangent-crossings-46)).
 The tool sweep has the fastener gate's limits.
-
-![Three pairs from the assembly gate's box-world tests, each part moved in along a straight line: a card 3 mm off a block is clear on its swept box alone, with no kernel query; a card pushed into a cover fitted first hits it, and the first contact is bisected to 25 mm before its seat; a part passing a block's corner is sampled near it, and between two samples h apart its gap is at least (g1 + g2 - h) / 2](img/motion/insertion-sweep.svg)
-
-*`sweep_pair`, the insertion sweep above, on three pairs: the swept-box early-out, a blocked insertion with its
-first contact bisected, and the exact samples near an obstacle with the bound between them. An illustration of the
-box world in `tests/test_gate_assembly.py`, seen from the side; the travel, gaps, bound, query counts and first
-contact are the gate's.*
 
 ## Running the gates (`cad-agent gates`)
 

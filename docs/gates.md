@@ -109,13 +109,23 @@ the goal (the containment gate); between parts it needs an intended-overlap decl
 
 ### Method, fail-safe rules and cost
 
-AABB broad phase (`BRepBndLib.AddOptimal`, numpy over all pairs). For each candidate: `BRepAlgoAPI_Common` for the
-shared volume and `BRepAlgoAPI_Cut` for each item's volume outside the other, all non-destructive (OCCT otherwise
-raises the arguments' tolerances in place, changing the caller's shapes), then `BRepExtrema_DistShapeShape` for the
-gap when nothing is shared.
+AABB broad phase (`BRepBndLib.AddOptimal`, numpy over all pairs). For each candidate, the distance comes first (#186):
+`BRepExtrema_DistShapeShape` between the two items' faces. A gap over `touch_mm` is `apart` at once
+(`witness.method = "distance-first"`) when it is proven and confirmed:
+
+- one vertex of each connected set of either item's faces lies outside the other's solids, which rules out one
+  inside the other;
+- `BRepAlgoAPI_Common` comes back empty.
+
+Every other pair takes the full path: `BRepAlgoAPI_Common` for the shared volume and `BRepAlgoAPI_Cut` for each
+item's volume outside the other, all non-destructive (OCCT otherwise raises the arguments' tolerances in place,
+changing the caller's shapes), then `BRepExtrema_DistShapeShape` on the solids for the gap when nothing is shared.
+The vertex test replaces BRepExtrema's own inner-solution test. That test classifies every vertex, which is most of a
+many-faced pair's time, and it is skipped for a compound of solids, where it would miss a part wholly inside.
 
 OCP 7.9 binds no error report on these operations (`HasErrors` is absent; `DSFiller()` reports warnings but crashes
-the interpreter at exit), and `IsDone()` stays true on invalid input. So every answer is cross-checked:
+the interpreter at exit), and `IsDone()` stays true on invalid input. So every answer is cross-checked. A
+distance-first `apart` needs the vertex test and the empty common to agree. Every other answer needs
 `vol(a) = common + cut(a, b)`, and the same for `b` when they overlap. A mismatch, an exception, a missing solid or a
 self-interfering compound gives `unknown`, never `touching`, `apart` or `contains`.
 

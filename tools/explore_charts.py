@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
-"""Regenerate the numbers behind the catalogue's compare and optimise covers from the tools' own output.
+"""Regenerate the numbers behind the catalogue's compare cover from the tool's own output.
 
     PYTHONPATH=src python3 tools/explore_charts.py            # write docs/img/explore/two-wheel-charts.json
     PYTHONPATH=src python3 tools/explore_charts.py --check    # exit 1 if the committed file differs (tests run this)
 
-It copies the worked example (examples/explore-two-wheel) to a scratch folder and runs, in it:
+It copies the worked example (examples/explore-two-wheel) to a scratch folder and runs ``cad-agent compare --json``
+there: the four designs, as the comparison page ranks them.
 
-* ``cad-agent compare --json``: the four designs, as the comparison page ranks them;
-* ``cad-agent optimise --fresh``: the example's seeded search (60 random trials, seed 1), read back from
-  ``exports/explore/search/leaderboard.json``.
-
-Nothing is typed by hand: each point is a design or trial with its cost and mass, whether it meets the constraints,
+Nothing is typed by hand: each point is a design with its cost and mass, whether it meets the constraints,
 whether it is on the Pareto front (over all the objectives in cad-agent.yaml: cost, mass and runtime, so a point on
 the front can look dominated on a cost and mass chart), and which totals are only lower bounds (``≥``: a part without
 a price or a mass). tools/site-catalog.mjs draws the covers from this file (catalog-art.mjs ``chartCover``).
@@ -72,22 +69,17 @@ def build() -> dict:
         work = Path(tmp) / EXAMPLE.name
         shutil.copytree(EXAMPLE, work, ignore=shutil.ignore_patterns("exports", "site", "__pycache__"))
         compare = json.loads(run(work, "compare", "--json"))
-        run(work, "optimise", "--fresh")
-        search = json.loads((work / "exports" / "explore" / "search" / "leaderboard.json").read_text(encoding="utf-8"))
-    s = search["summary"]
     return {
         "source": "examples/explore-two-wheel",
         "generated_by": "tools/explore_charts.py (run it with --check to compare)",
         "compare": chart(compare, "cad-agent compare", f"{len(compare['designs'])} designs"),
-        "optimise": chart(search, "cad-agent optimise",
-                          f"{s['designs']} trials evaluated, {s['feasible']} feasible, {s['pareto']} on the front"),
     }
 
 
 def text(data: dict) -> str:
     """Indented JSON with one point per line, so a changed number shows as a one-line diff."""
     points = {}
-    for name in ("compare", "optimise"):
+    for name in ("compare",):
         points[name] = data[name]["points"]
         data = {**data, name: {**data[name], "points": f"@{name}@"}}
     out = json.dumps(data, indent=1, ensure_ascii=False)

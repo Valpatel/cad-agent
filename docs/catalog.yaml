@@ -21,6 +21,8 @@
 #   pictures of the check it runs; the first one that exists and is not already a cover is its cover), or chart
 #   (file.json#key: the tool's own result, written by a generator with --check, drawn at card size). A command
 #   without either gets a cover drawn from its call and real flags.
+#     still   with an animated figure that a demo naming this tool already shows: the moment the tool's cover shows
+#             (its result, where the demo shows the process); it must differ from the demo's
 #
 # Every figure is a cover once: the demos take theirs first, then the tools, then our pages (the main guides first);
 # a page whose figures are all taken gets a cover drawn from its outline.
@@ -106,11 +108,13 @@ demos:
 
 tools:
   snapfit: {page: docs/compliant.md, figures: [docs/img/compliant/example-1.svg]}
-  holes: {page: docs/toolkit.md#holes-clear, figures: [docs/img/motion/rib-in-counterbore.svg]}
-  gates: {page: docs/gates.md, figures: [docs/img/motion/hinge-sweep.svg, docs/img/motion/module-insertion.svg]}
-  # compare and optimise: what the tools printed for examples/explore-two-wheel (tools/explore_charts.py writes the
-  # JSON from `cad-agent compare --json` and the seeded `cad-agent optimise`; tests run it with --check).
-  optimise: {page: docs/explore.md, chart: "docs/img/explore/two-wheel-charts.json#optimise"}
+  # holes, gates and optimise: the verdicts their demos build up to (the hole check's fail and pass, the module's
+  # bench, fit and withdrawal results, the search's front).
+  holes: {page: docs/toolkit.md#holes-clear, figures: [docs/img/motion/rib-in-counterbore.svg], still: 0.8}
+  gates: {page: docs/gates.md, figures: [docs/img/motion/module-insertion.svg], still: 0.85}
+  optimise: {page: docs/explore.md, figures: [docs/img/motion/search-front.svg], still: 0.9}
+  # compare: what `cad-agent compare --json` printed for examples/explore-two-wheel (tools/explore_charts.py writes
+  # the JSON; tests run it with --check).
   compare: {page: docs/explore.md, chart: "docs/img/explore/two-wheel-charts.json#compare"}
   catalogue: {page: docs/explore.md}
   view: {page: "docs/toolkit.md#3d-viewer-cad-agent-view--the-web-kit", figures: [docs/img/viewer.jpg]}

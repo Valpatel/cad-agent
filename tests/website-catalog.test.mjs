@@ -107,34 +107,49 @@ test('every cover is used once and no dense figure is a cover', async () => {
   }
 });
 
-test('compare and optimise draw what the tools printed: the front over every objective, lower bounds kept', async () => {
+test('compare draws what the tool printed: the front over every objective, the lower bound kept, labels clear', async () => {
   const data = JSON.parse(show('docs/img/explore/two-wheel-charts.json'));     // tools/explore_charts.py --check (pytest)
-  for (const cmd of ['compare', 'optimise']) {
-    const it = catalog.items.find(i => i.id === `tool-${cmd}`);
-    const svg = await readFile(local(it.cover), 'utf8');
-    const d = data[cmd];
-    assert.ok(svg.includes(`FRONT (${d.front_over.join(', ').toUpperCase()})`), `${cmd}: the legend says the front is over ${d.front_over}`);
-    assert.ok(!/<path d="M[^"]*L[^"]*" fill="none" stroke="#[0-9a-f]+" stroke-width="4"/.test(svg), `${cmd}: front points are not joined (it is not a front on these two axes)`);
-    const front = d.points.filter(p => p.front);
-    assert.equal((svg.match(/<circle [^>]*r="(?:10|8)" fill="#[0-9a-f]+" stroke="#fff"/g) || []).length >= front.length, true, `${cmd}: a filled mark per front point`);
-    for (const p of front) assert.ok(svg.includes(`>${p.label}${p.lower_bound.length ? ' ≥ ' : '<'}`), `${cmd}: ${p.label} is labelled`);
+  const d = data.compare, svg = await readFile(local(catalog.items.find(i => i.id === 'tool-compare').cover), 'utf8');
+  assert.ok(svg.includes(`FRONT (${d.front_over.join(', ').toUpperCase()})`), `the legend says the front is over ${d.front_over}`);
+  assert.ok(!/<path d="M[^"]*L[^"]*" fill="none" stroke="#[0-9a-f]+" stroke-width="4"/.test(svg), 'front points are not joined (it is not a front on these two axes)');
+  for (const p of d.points) assert.ok(svg.includes(`>${p.label}${p.lower_bound.length ? ' ≥ ' : '<'}`), `${p.label} is labelled${p.lower_bound.length ? ' with ≥' : ''}`);
+  assert.ok(svg.includes('>Long range ≥ $1,682<'), 'the lower bound keeps its ≥ on the chart');
+  assert.ok(d.points.some(p => p.lower_bound.includes('cost_usd')), 'the data still has a lower bound to keep');
+  assert.match(svg, /aria-label="[^"]*Long range: at least \$1,682/, 'the label reads the lower bound as "at least"');
+  // No label covers a mark or a lower-bound arrow (boxes as chartCover estimates them: 0.6 em per character).
+  const marks = [...svg.matchAll(/<circle cx="([\d.]+)" cy="([\d.]+)" r="([\d.]+)"/g)].map(m => m.slice(1).map(Number))
+    .filter(([, cy]) => cy > 60).map(([x, y, r]) => [x - r, y - r, x + r, y + r]);
+  const arrows = [...svg.matchAll(/<path d="M([\d.]+) ([\d.]+)h16m-6-6 6 6-6 6"/g)].map(m => m.slice(1).map(Number)).map(([x, y]) => [x, y - 6, x + 16, y + 6]);
+  const labels = [...svg.matchAll(/<text x="([\d.]+)" y="([\d.]+)" text-anchor="(start|end|middle)" font-family="[^"]*" font-size="(\d+)" font-weight="700" fill="[^"]*">([^<]+)</g)]
+    .map(([, x, y, anchor, fs, t]) => { const w = t.length * fs * 0.6, x0 = anchor === 'start' ? +x : anchor === 'end' ? x - w : x - w / 2; return [t, [x0, y - fs + 3, x0 + w, +y + 3]]; });
+  assert.equal(labels.length, d.points.length, 'one label per design');
+  const hits = (b, c) => b[0] < c[2] && c[0] < b[2] && b[1] < c[3] && c[1] < b[3];
+  for (const [t, box] of labels) {
+    for (const m of [...marks, ...arrows]) assert.ok(!hits(box, m), `"${t}" covers a mark or arrow at ${m}`);
+    for (const [u, other] of labels) if (u !== t) assert.ok(!hits(box, other), `"${t}" overlaps "${u}"`);
   }
-  const compare = await readFile(local(catalog.items.find(i => i.id === 'tool-compare').cover), 'utf8');
-  for (const p of data.compare.points) {
-    assert.ok(compare.includes(`>${p.label}${p.lower_bound.length ? ' ≥ ' : '<'}`), `compare labels ${p.label}${p.lower_bound.length ? ' with ≥' : ''}`);
+  // Failing designs are drawn last, so a ring near a front point stays visible.
+  assert.ok(svg.lastIndexOf('fill="none" stroke="') > svg.lastIndexOf('stroke="#fff" stroke-width="2.5"'), 'the failing ring is drawn above the filled marks');
+  // A chart of a tool's result is a picture: it ranks like one in the overview (#185). catalog.json lists each kind in
+  // featured order; the chart comes before every drawn call of the same maturity.
+  const tools = catalog.items.filter(i => i.kind === 'tool'), c = tools.find(i => i.id === 'tool-compare');
+  const drawn = tools.filter(t => /\/catalog\/covers\/tool-/.test(t.cover) && t !== c && t.maturity === c.maturity && !t.demo);
+  assert.ok(drawn.length, 'there is a drawn call to rank against');
+  for (const t of drawn) assert.ok(tools.indexOf(c) < tools.indexOf(t), `compare (a chart) is featured before ${t.id} (a drawn call)`);
+});
+
+test('a tool shares its demo\'s figure at another moment: the tool\'s result, not a second copy of the demo', async () => {
+  const data = YAML.parse(show('docs/catalog.yaml'));
+  for (const [cmd, t] of Object.entries(data.tools)) {
+    if (t.still == null) continue;
+    const tool = catalog.items.find(i => i.id === `tool-${cmd}`);
+    const demo = catalog.items.find(i => i.kind === 'demo' && i.cover_animated && i.cover_animated === tool.cover_animated);
+    assert.ok(demo, `${cmd}: its cover is a moment of a demo's figure`);
+    assert.ok(data.demos.find(x => `demo-${x.id}` === demo.id).tools?.includes(cmd), `${cmd}: ${demo.id} names it in tools`);
+    assert.notEqual(tool.cover, demo.cover, `${cmd}: not the demo's own still`);
+    assert.notEqual(await readFile(local(tool.cover), 'utf8'), await readFile(local(demo.cover), 'utf8'), `${cmd}: a different moment`);
   }
-  assert.ok(compare.includes('>Long range ≥ $1,682<'), 'the lower bound keeps its ≥ on the chart');
-  assert.ok(data.compare.points.some(p => p.lower_bound.includes('cost_usd')), 'the data still has a lower bound to keep');
-  assert.match(compare, /aria-label="[^"]*Long range: at least \$1,682/, 'the label reads the lower bound as "at least"');
-  // A chart of a tool's result is a picture: it ranks like one in the overview (#185).
-  // catalog.json lists each kind in featured order; a chart outranks a drawn call of the same maturity.
-  const tools = catalog.items.filter(i => i.kind === 'tool');
-  const charts = ['tool-compare', 'tool-optimise'];
-  for (const id of charts) {
-    const c = tools.find(i => i.id === id);
-    for (const t of tools.filter(t => /\/catalog\/covers\/tool-/.test(t.cover) && !charts.includes(t.id) && t.maturity === c.maturity && !t.demo && !c.demo))
-      assert.ok(tools.indexOf(c) < tools.indexOf(t), `${id} (a chart) is featured before ${t.id} (a drawn call)`);
-  }
+  for (const cmd of ['gates', 'holes', 'optimise']) assert.ok(data.tools[cmd].still != null, `${cmd} shows its result`);
 });
 
 test('every entry has an id, a kind, our own cover and a place: areas from docs/areas.yaml, or a bucket', async () => {

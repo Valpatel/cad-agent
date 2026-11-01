@@ -224,7 +224,10 @@ export function outsideCover({ kind, family, glyphSlug, tint, headline, license,
 }
 
 /** "$1,612", "10.3 kg": a value as a chart labels it. */
-const fmtValue = (v, unit) => unit === 'USD' ? `$${Math.round(v).toLocaleString('en-US')}` : `${(Math.round(v * 10) / 10).toLocaleString('en-US')} ${unit}`;
+const fmtValue = (v, unit, down = false) => {
+  const round = down ? Math.floor : Math.round;            // a lower bound rounds down: "≥ $1,682" never overstates it
+  return unit === 'USD' ? `$${round(v).toLocaleString('en-US')}` : `${(round(v * 10) / 10).toLocaleString('en-US')} ${unit}`;
+};
 
 /** A chart of one of our tools' results (docs/img/explore/two-wheel-charts.json, written from the tool's own output):
  * each design or trial on two axes. Filled accent: on the Pareto front, which the tool computes over every objective
@@ -240,36 +243,39 @@ export function chartCover({ title, x, y, points = [], front_over: frontOver = [
   const grid = [0.25, 0.5, 0.75].map(f => `M${L} ${r1(T + f * (B - T))}H${R}M${r1(L + f * (R - L))} ${T}V${B}`).join('');
   const few = points.length <= 6, xb = p => (p.lower_bound || []).includes(x.metric), yb = p => (p.lower_bound || []).includes(y.metric);
   const at = p => ({ cx: r1(px(p.x)), cy: r1(py(p.y)), r: few ? (p.front ? 10 : 8) : (p.front ? 8 : 5) });
-  // Marks: the front last, so it sits on top.
-  const order = [...points].sort((a, b) => (a.front - b.front) || (a.feasible - b.feasible));
+  // Marks: the front above the others, and the failing rings (hollow, so what lies under them shows) above all, so a
+  // ring next to a front point is not hidden by it.
+  const layer = p => !p.feasible ? 2 : p.front ? 1 : 0;
+  const order = [...points].sort((a, b) => layer(a) - layer(b));
   const marks = order.map(p => {
     const { cx, cy, r } = at(p);
     const arrow = (xb(p) ? `<path d="M${cx + r + 3} ${cy}h16m-6-6 6 6-6 6" fill="none" stroke="${MUTED}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` : '') +
       (yb(p) ? `<path d="M${cx} ${cy - r - 3}v-16m-6 6 6-6 6 6" fill="none" stroke="${MUTED}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` : '');
-    const dot = !p.feasible ? `<circle cx="${cx}" cy="${cy}" r="${r - 1}" fill="#fff" stroke="${MUTED}" stroke-width="${few ? 3 : 2}"/>`
+    const dot = !p.feasible ? `<circle cx="${cx}" cy="${cy}" r="${r - 1}" fill="none" stroke="${MUTED}" stroke-width="${few ? 3 : 2}"/>`
       : `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${p.front ? ACCENT : MUTED}" stroke="#fff" stroke-width="${few ? 2.5 : 1.5}"/>`;
     return arrow + dot;
   }).join('');
   // Labels (every point when there are few, else the front), each where it overlaps no mark, arrow or earlier label:
   // right of the point, then left, above, below.
+  // Each taken box belongs to a point (its mark, arrow or label): a label avoids every box but its own point's mark.
   const fs = few ? 17 : 15, taken = [];
   for (const p of points) {
     const { cx, cy, r } = at(p);
-    taken.push([cx - r - 2, cy - r - 2, cx + r + 2 + (xb(p) ? 24 : 0), cy + r + 2]);
-    if (yb(p)) taken.push([cx - 7, cy - r - 22, cx + 7, cy - r]);
+    taken.push({ owner: p, box: [cx - r - 2, cy - r - 2, cx + r + 2 + (xb(p) ? 24 : 0), cy + r + 2] });
+    if (yb(p)) taken.push({ owner: p, box: [cx - 7, cy - r - 22, cx + 7, cy - r] });
   }
   const hits = (b, c) => b[0] < c[2] && c[0] < b[2] && b[1] < c[3] && c[1] < b[3];
   const labels = [...points].filter(p => few || p.front).sort((a, b) => b.front - a.front).map(p => {
     // A lower bound says so in the label: "Long range ≥ $1,682" (it costs at least that).
-    const bound = [xb(p) && fmtValue(p.x, x.unit), yb(p) && fmtValue(p.y, y.unit)].filter(Boolean).join(', ');
+    const bound = [xb(p) && fmtValue(p.x, x.unit, true), yb(p) && fmtValue(p.y, y.unit, true)].filter(Boolean).join(', ');
     const { cx, cy, r } = at(p), tag = bound ? `${p.label} ≥ ${bound}` : p.label, w = tag.length * fs * 0.6, h = fs;
     const gap = r + 6 + (xb(p) ? 22 : 0);
     const spots = [[cx + gap, cy + 6, 'start'], [cx - r - 6, cy + 6, 'end'], [cx, cy - r - 8 - (yb(p) ? 20 : 0), 'middle'], [cx, cy + r + fs + 2, 'middle']];
     const box = ([tx, ty, anchor]) => { const x0 = anchor === 'start' ? tx : anchor === 'end' ? tx - w : tx - w / 2; return [x0, ty - h + 3, x0 + w, ty + 3]; };
     const inside = b => b[0] >= 18 && b[2] <= W - 18 && b[1] >= T - 6 && b[3] <= B - 2;
-    const own = taken.filter(t => !(t[0] <= cx && cx <= t[2] && t[1] <= cy && cy <= t[3]));
-    const spot = spots.find(sp => inside(box(sp)) && !own.some(t => hits(box(sp), t))) || spots.find(sp => inside(box(sp))) || spots[0];
-    taken.push(box(spot));
+    const others = taken.filter(t => t.owner !== p).map(t => t.box);
+    const spot = spots.find(sp => inside(box(sp)) && !others.some(t => hits(box(sp), t))) || spots.find(sp => inside(box(sp))) || spots[0];
+    taken.push({ owner: p, box: box(spot) });
     return `<text x="${r1(spot[0])}" y="${r1(spot[1])}" text-anchor="${spot[2]}" font-family="${esc(SANS)}" font-size="${fs}" font-weight="700" fill="${p.feasible ? INK : MUTED}">${esc(tag)}</text>`;
   }).join('');
   const axisName = a => `${a.label}${a.unit ? ` (${a.unit})` : ''}`;
@@ -290,7 +296,7 @@ export function chartCover({ title, x, y, points = [], front_over: frontOver = [
     `<text x="${R}" y="${B + 22}" text-anchor="end" font-family="${esc(SANS)}" font-size="14" font-weight="600" fill="${MUTED}">${esc(axisName(x))} →</text>` +
     `<text transform="translate(${L - 14} ${B}) rotate(-90)" font-family="${esc(SANS)}" font-size="14" font-weight="600" fill="${MUTED}">${esc(axisName(y))} →</text>` +
     (what ? `<text x="28" y="${B + 44}" font-family="${esc(MONO)}" font-size="11" font-weight="700" fill="${MUTED}">${esc(what.toUpperCase())}</text>` : '');
-  const describe = p => `${xb(p) ? 'at least ' : ''}${fmtValue(p.x, x.unit)}, ${yb(p) ? 'at least ' : ''}${fmtValue(p.y, y.unit)}`;
+  const describe = p => `${xb(p) ? 'at least ' : ''}${fmtValue(p.x, x.unit, xb(p))}, ${yb(p) ? 'at least ' : ''}${fmtValue(p.y, y.unit, yb(p))}`;
   const listed = few ? points : points.filter(p => p.front);
   const label = `${name}: ${title}, ${axisName(x)} against ${axisName(y)}${what ? `, ${what}` : ''}. ` +
     listed.map(p => `${p.label}: ${describe(p)}${p.front ? `, on the Pareto front over ${frontOver.join(', ')}` : ''}${p.feasible ? '' : ', fails a constraint'}`).join('; ') + '.';

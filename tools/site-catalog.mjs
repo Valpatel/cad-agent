@@ -180,6 +180,7 @@ export async function buildCatalog(ctx) {
 
   // --------------------------------------------------------------------------- covers
   const covers = new Map();                      // cover path on the site → { src, anim, fit }
+  const stills = new Set();                      // still-frame files written so far
   const coverFile = (name, svg) => { files.set(`catalog/covers/${name}`, svg); return `/catalog/covers/${name}`; };
   /** A figure from docs/img as a cover: animated SVGs get a still frame and keep the moving original for hover. */
   async function figureCover(file, still = 0.5) {
@@ -189,7 +190,11 @@ export async function buildCatalog(ctx) {
     let c = { src: '/' + file, anim: null, fit: /\.svg$/i.test(file) ? 'contain' : 'cover', figure: true };
     if (/\.svg$/i.test(file)) {
       const svg = (await ctx.read(file)).toString('utf8');
-      if (isAnimated(svg)) c = { ...c, src: coverFile(`still/${file.replace(/^docs\/img\//, '').replace(/\//g, '-')}`, stillFrame(svg, still)), anim: '/' + file };
+      // The first still of a figure keeps the plain name; another moment of it (a tool's result) gets its own file.
+      const plain = `still/${file.replace(/^docs\/img\//, '').replace(/\//g, '-')}`;
+      const name = stills.has(plain) ? plain.replace(/\.svg$/, `-at-${Math.round(still * 100)}.svg`) : plain;
+      stills.add(name);
+      if (isAnimated(svg)) c = { ...c, src: coverFile(name, stillFrame(svg, still)), anim: '/' + file };
     }
     covers.set(key, c);
     return c;
@@ -296,7 +301,7 @@ export async function buildCatalog(ctx) {
     const what = d.what || oneLine(shown?.alt || '');
     demos.push({ type: 'demo', status: 'ours', name: d.title, summary: what, url: ORIGIN + url, markdown: pageItems.has(pageFile) ? `${ORIGIN}/${pageFile}` : undefined,
       id: `demo-${slugify(d.id)}`, kind: 'demo', mode: d.mode, ...where2, what, notes: null, license: 'MIT', cover, demo: ORIGIN + url,
-      updated: pageItems.get(pageFile)?.updated || null, tools: d.tools || [], figure: d.cover });
+      updated: pageItems.get(pageFile)?.updated || null, tools: d.tools || [], figure: d.cover, still: d.still ?? 0.5 });
   };
   const pick = it => ({ areas: it?.areas || [], domains: it?.domains || [], maturity: it?.maturity || null, gyropup: !!it?.gyropup });
   for (const d of ctx.data.demos || []) await addDemo(d, 'docs/catalog.yaml');
@@ -321,9 +326,15 @@ export async function buildCatalog(ctx) {
   // Figures listed under `dense` (a whole report page, say) are never covers: they read as a grey box at card size.
   const dense = new Set(ctx.data.dense || []);
   const usedFigures = new Set(demos.map(d => d.figure));
-  const takeFigure = async (files, still = 0.5) => {
+  // A tool may also show the animated figure of a demo that names it in `tools`, at another moment (`still` in
+  // docs/catalog.yaml: the tool's result, where the demo shows the process), so it is not a second copy of the demo.
+  const takeFigure = async (files, still = 0.5, cmd = null) => {
     for (const f of files) {
-      if (usedFigures.has(f) || dense.has(f)) continue;
+      if (dense.has(f)) continue;
+      if (usedFigures.has(f)) {
+        const demo = cmd && demos.find(d => d.figure === f && d.tools.includes(cmd));
+        if (!demo || still === demo.still || !/\.svg$/i.test(f) || !isAnimated((await ctx.read(f)).toString('utf8'))) continue;
+      }
       const cover = await figureCover(f, still);
       if (cover) { usedFigures.add(f); return [cover, f]; }
     }
@@ -341,7 +352,7 @@ export async function buildCatalog(ctx) {
       href, doc: ORIGIN + href, markdown: pageItems.has(docFile) ? `${ORIGIN}/${docFile}` : undefined };
     const chart = t.chart && await chartData(t.chart, `docs/catalog.yaml tools.${c.name}.chart`);
     if (chart) it.cover = generated(it.id, chartCover({ ...chart, tint: TINT[tone(it)] || TINT.unplaced, name: it.name }), true);
-    else [it.cover, it.figure] = await takeFigure(t.figures || []);
+    else [it.cover, it.figure] = await takeFigure(t.figures || [], t.still ?? 0.5, t.still != null ? c.name : null);
     if (!it.cover) it.cover = generated(it.id, toolCover({ name: c.name, flags: flagsOf(c.name), glyphSlug: glyphOf(it), title: it.name }));
     const d = demos.find(d => d.tools.includes(c.name) || (it.figure && d.figure === it.figure));
     if (d) it.demo = d.demo;

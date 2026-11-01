@@ -71,7 +71,8 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   positions are checked against the closed forms of Gonçalves, Carvalho and Santos (COBEM 2009). The Jacobians follow
   Gosselin and Angeles (1990) and are checked against finite differences (#187).
 - `cadagent.simulation.robot.write_mjcf(..., loops=[LoopClosure(...)])` closes a loop in MuJoCo with an equality
-  constraint. It first checks that the two links' pins meet at home (`loop_gaps`, `home_frames`) (#187).
+  constraint. When the `LoopClosure` gives `other_anchor`, it first checks that the two links' pins meet at home
+  (`loop_gaps`, `home_frames`); without it, nothing is checked (#187).
 - `cad-agent motion-trace`: a contract can declare closed loops under `loops`. Their inputs are sampled together and
   their other joints solved, on the circuit the loop reaches from home. A new `loop-pose` check fails a renderer that
   leaves a loop open, assembles it the other way or shows another circuit (#187).
@@ -82,7 +83,9 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   They stay until a release whose CHANGELOG announces their removal at least one minor release ahead, under **Projects
   must change**. Their `DeprecationWarning` now says to move the import and points to the table in docs/toolkit.md
   (Package layout). No old path is removed (#144).
-- `nut_factor` takes the thread's flank angle (default 60°, the ISO thread), for 30° thread-forming screws (#161).
+- `nut_factor` takes the thread's flank angle in radians (default `math.radians(60)`, the ISO thread); pass
+  `math.radians(30)` for 30° thread-forming screws. It does not check the range: an angle given in degrees returns a
+  nut factor several times too low (#161).
 - `PrintedMaterial` gains `strength(direction)`: the lowest datasheet tensile strength along or across the layers
   (#161).
 - `Linkage`, `circles` and `ellipse_path` (the README hero's linkage helpers) moved to `cadagent.mechanical.linkages`.

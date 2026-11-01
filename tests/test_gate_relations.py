@@ -466,13 +466,18 @@ def test_a_crossing_along_an_existing_edge_is_unknown_too(family, kind, monkeypa
 
 
 @needs_cad
-def test_a_curve_along_an_iso_line_gets_samples_across_it():
+@pytest.mark.parametrize("start", [0, 90, 135, 225])
+def test_a_curve_along_an_iso_line_gets_samples_across_it(start):
     """A cylinder standing 0.02 mm into the plate: the section is a circle at constant height on its side face,
     so the UV box of the curve has no height. The rows across it then run at the face's height halved again and
     again from the curve: four rings in the 0.02 mm band below the plate's face, without the face's edges or
-    vertices, and evenly up the face."""
+    vertices, and evenly up the face. Round the face, the columns stay off its seam wherever the curve starts."""
     side = next(f for f in cq.Solid.makeCylinder(3, 10, cq.Vector(0, 0, -0.02)).Faces() if f.geomType() == "CYLINDER")
-    circle = [cq.Vector(3 * math.cos(t), 3 * math.sin(t), 0).toPnt() for t in (k * math.pi / 12 for k in range(25))]
+    circle = [cq.Vector(3 * math.cos(t), 3 * math.sin(t), 0).toPnt()
+              for t in (math.radians(start) + k * math.pi / 12 for k in range(25))]
+    full = Counter(round(math.degrees(math.atan2(p.Y(), p.X())) % 360, 6)
+                   for p in relations_mod._patch_grid(side.wrapped, circle, 12, boundary=False))
+    assert sum(k > 1 for k in full.values()) == 14                  # every column of the full grid
     zs = sorted({round(p.Z(), 9) for p in relations_mod._patch_grid(side.wrapped, circle, 12, boundary=False)})
     assert [z for z in zs if z < 0] == pytest.approx([-10 / 2 ** k for k in (9, 10, 11, 12)], abs=1e-9)
     assert zs[-1] == pytest.approx(-0.02 + 10 * 12 / 13, abs=1e-9)      # and evenly up the 10 mm face

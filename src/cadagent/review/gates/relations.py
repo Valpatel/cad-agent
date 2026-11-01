@@ -883,10 +883,11 @@ def _patch_grid(face, curve: Sequence[Any], n: int, boundary: bool = True) -> Li
         step = (high - low) / (n - 1)
         period = periods[len(rows)]
         if period and high - low + 2 * step > period:
-            # A curve round a periodic face (a circle round a cylinder): once round, evenly and off the seam,
-            # not the box's few rows a period apart (the coarse pass's 4 would land within 45 degrees).
+            # A curve round a periodic face (a circle round a cylinder): once round, evenly and half a step off
+            # the face's seam (``on_face`` wraps into [first, first + period)), not the box's few rows a period
+            # apart (the coarse pass's 4 would land within 45 degrees).
             boxes.append((-math.inf, math.inf))
-            rows.append([low + period * (i + 0.5) / (n + 2) for i in range(n + 2)])
+            rows.append([first + period * (i + 0.5) / (n + 2) for i in range(n + 2)])
             continue
         boxes.append((low - step, high + step))
         rows.append([boxes[-1][0] + (boxes[-1][1] - boxes[-1][0]) * i / (n + 1) for i in range(n + 2)])

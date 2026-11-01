@@ -565,18 +565,25 @@ try {
 }
 
 /** Wait for the page as its reader sees it, the state the checks read: loaded, the site's kit scripts and `modules` (a
- * page's own, such as its demo's) run or failed, the stylesheets and fonts in, and two frames drawn. Not for a quiet
- * network: Playwright discourages networkidle, and WebKit on CI once waited 30 s for it on a page that had loaded
- * (/docs/vision, #154). Importing a module the page has already asked for settles once the page's own import has, after
- * the page's own .then (site.js starting the diagrams). The fonts' status, not document.fonts.ready, which WebKit holds
- * while any request is pending. */
+ * page's own, such as its demo's) run or failed, then painted. Not for a quiet network: Playwright discourages
+ * networkidle, and WebKit on CI once waited 30 s for it on a page that had loaded (/docs/vision, #154). Importing a
+ * module the page has already asked for makes no second request and settles once the module has run. The page's own
+ * .then on it (site.js starting the diagrams) may still be queued then in Chrome, where the load event does not wait
+ * for dynamic imports (#225 review), so a task turn and the two frames of painted() follow. */
 async function settled(page, ...modules) {
   const kit = await page.evaluate(urls => Promise.race([Promise.allSettled(urls.map(u => import(u))).then(() => 'ran'),
-    new Promise(ok => setTimeout(ok, 15000, 'stuck'))]), [...SITE_KIT, ...modules]);
+    new Promise(ok => setTimeout(ok, 15000, 'stuck'))]).then(r => new Promise(ok => setTimeout(ok, 0, r))), [...SITE_KIT, ...modules]);
   if (kit !== 'ran') throw new Error(`${page.url()}: the kit scripts neither ran nor failed within 15 s`);
-  await page.waitForFunction(() => [...document.querySelectorAll('link[rel=stylesheet]')].every(l => l.sheet) && document.fonts.status === 'loaded',
-    null, { timeout: 10000 });
-  await page.evaluate(() => new Promise(ok => requestAnimationFrame(() => requestAnimationFrame(ok))));
+  await painted(page);
+}
+
+/** Stylesheets and fonts in, then two frames. With JavaScript off, Playwright can still run code in the page, but not
+ * wait on a promise there. In WebKit, document.fonts.ready waits for the load event, which there waits for the page's
+ * dynamic imports (nav.js, held back in foldProblems), so the fonts' status is what counts. */
+function painted(page, js = true) {
+  return !js ? page.waitForTimeout(150) :
+    page.waitForFunction(() => [...document.querySelectorAll('link[rel=stylesheet]')].every(l => l.sheet) && document.fonts.status === 'loaded',
+      null, { timeout: 10000 }).then(() => page.evaluate(() => new Promise(ok => requestAnimationFrame(() => requestAnimationFrame(ok)))));
 }
 
 /** The fan-curve explorer (the kit's <cad-fan-curve>) on /docs/fans, at phone and desktop widths, under the site CSP:
@@ -1038,6 +1045,7 @@ async function fourbarProblems() {
         // the other assembly, on the page's crank-rocker, paused: the coupler moves to where the ghost was. Not on a
         // rocking input, which dwells at its limits, where the two assemblies meet: paused there, nothing moves.
         await demo.evaluate(d => d.querySelector('.fb-play').click());     // pause, so the frames compare (the press: below)
+        if ((await demo.locator('.fb-play').textContent()) !== 'Play') say('the demo was not playing before the assembly switch, so a click started it');
         const coupler = await demo.locator('[data-part=coupler]').getAttribute('points');
         await page.getByLabel('Crossed').check();
         const ghost = await demo.locator('[data-part=ghost]').getAttribute('points');
@@ -1148,12 +1156,6 @@ async function foldProblems() {
     const r = el.getBoundingClientRect(), hit = document.elementFromPoint(r.left + Math.min(r.width / 2, 24), r.top + r.height / 2);
     return !!hit && (hit === el || el.contains(hit));
   };
-  // Stylesheets and fonts in, then two frames. With JavaScript off, Playwright can still run code in the page, but not
-  // wait on a promise there. WebKit holds document.fonts.ready while any request is pending (nav.js, held back), so
-  // the fonts' status is what counts.
-  const painted = (page, js = true) => !js ? page.waitForTimeout(150) :
-    page.waitForFunction(() => [...document.querySelectorAll('link[rel=stylesheet]')].every(l => l.sheet) && document.fonts.status === 'loaded',
-      null, { timeout: 10000 }).then(() => page.evaluate(() => new Promise(ok => requestAnimationFrame(() => requestAnimationFrame(ok)))));
   for (const width of [360, 1366]) for (const mode of ['script', 'slow', 'blocked', 'failing', 'none']) {
     const context = await browser.newContext({ viewport: { width, height: 800 }, javaScriptEnabled: mode !== 'none' });
     const page = await context.newPage();

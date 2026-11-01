@@ -195,6 +195,68 @@ plates Bambu Studio holds.
 
 </details>
 
+### Part cache (`cadagent.geometry.cache`)
+
+A build that makes every part on every run spends most of its time on parts nothing touched: a 46-part machine took
+about 13 minutes per run when most edits changed one or two parts. `PartCache` stores each built part as a BREP file
+under a hash of the files and values it was built from, and loads it back while that hash is unchanged, so a run
+rebuilds only the parts whose sources changed, and the clearance, render and slice steps can share one build:
+
+```python
+from cadagent.geometry.cache import PartCache
+
+cache = PartCache("exports/.partcache",
+                  sources=["cad/parameters.json", "cad/common.py"],   # files or folders every part reads
+                  key_extra={"variant": "long-reach"},                # other values the build depends on
+                  max_bytes=2_000_000_000)                            # optional size cap
+boom = cache.get_or_build("boom", build_boom, deps=["cad/boom.py"])  # builder: () -> cadquery Shape or Workplane
+parts = cache.get_all({"boom": (build_boom, ["cad/boom.py"]),        # name -> builder, or (builder, deps)
+                       "pin": build_pin})
+cache.clear()                                                        # forget every stored part
+```
+
+```mermaid
+flowchart TD
+    K["key: sha256 of format, cadquery version,<br/>sources, key_extra, the part's deps"] --> F{"&lt;key&gt;/&lt;name&gt;.json<br/>and .brep there?"}
+    F -->|"no"| B["build, write BREP then JSON<br/>(temp file, renamed into place)"]
+    F -->|"yes"| V{"sha256, validity, solid count,<br/>volume match the record?"}
+    V -->|"yes"| L["loaded part"]
+    V -->|"no: damaged or changed"| B
+    B --> L
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class K,F,V here
+    class B,L out
+```
+
+- **Layout.** `<root>/<key>/<name>.brep` and `<name>.json`, where `<key>` is 16 hex digits. Parts without `deps`
+  share one folder; a part's `deps` (files or folders) go into its own key, so editing `cad/boom.py` rebuilds the
+  boom only, and editing a `sources` file rebuilds everything. A missing source or dependency is an error, not
+  skipped. Folders count every file under them except `__pycache__`, `.git` and `*.pyc`.
+- **Checks on load.** The JSON records the BREP's sha256, `isValid()`, the solid count and the volume. A missing
+  or unreadable record, a different sha256, a BREP that does not import, or a validity, solid count or volume that
+  differs from the record (beyond 1e-7 relative) means the part is built again and stored again; `cache.rebuilt`
+  names those parts and why. `hits` and `misses` count lookups.
+- **Parallel runs.** Each file is written next to its name and renamed into place, BREP first and then the JSON that
+  vouches for it, so a run never reads half a file; two runs that build the same part both store it, and the last
+  rename wins.
+- **Size cap.** With `max_bytes`, after each part is stored the least recently used key folders (by the time a run
+  last loaded or wrote one) are removed until the cache fits; folders the current run used are kept. `prune()` and
+  `size()` do the same by hand.
+- **Out of the evidence.** Keep the cache under `exports_dir`: [reproducible outputs](#reproducible-outputs) leave
+  that folder out of the source date, and `cad-agent release` skips hidden folders. The root holds a `CACHEDIR.TAG`,
+  so `cad-agent package` never zips it, even from an `exports/**` glob. Do not commit it; add to `.gitignore`:
+
+  ```gitignore
+  exports/.partcache/
+  ```
+
+Limits: the key covers only what it is given. A builder that reads a file or setting not in `sources`, `deps` or
+`key_extra` is not rebuilt when that changes: list it, or `clear()`. The checks catch a damaged file, not a stale one.
+A hit loads the stored B-rep; the builder's warnings and side effects do not happen. Another cadquery version starts
+a fresh key (its OCCT can build the same source differently); other library versions are not in the key, so pass
+them in `key_extra` if they matter.
+
 ### Reproducible outputs
 
 The same project at the same commit gives the same bytes on every rebuild and in every checkout, so `git diff`
@@ -444,6 +506,7 @@ its new path instead (`monkeypatch.setitem(sys.modules, "cadagent.publish.report
 from cadagent.project import load_project    # CadProject, Step, Check, CadConfigError
 from cadagent.geometry import (solid_report, export_print_stl, export_step, step_timestamp, pairwise_intersections,
                                min_gap, downward_area, within_bed)
+from cadagent.geometry.cache import PartCache
 from cadagent.manufacturing.mesh3mf import write_3mf, read_3mf, verify_3mf, export_parts_3mf, is_edge_manifold
 from cadagent.publish.render import Renderer
 from cadagent.publish.report import collect, write_report, downloads_snippet, bambu_studio_url

@@ -247,25 +247,33 @@ def test_a_kernel_failure_between_the_faces_falls_back_to_brepextrema_on_the_sol
 
 @needs_cad
 def test_the_distance_on_many_faced_solids_beats_brepextrema_on_the_solids(monkeypatch):
-    """The budget (#186): two pocketed blocks 1 mm apart. The same relation as BRepExtrema on the solids, from the
-    faces alone, in under a third of the time of the old relate() (about a fifth when measured). On Gyropup's leg
-    (PR #198) that inner-solution test was most of the time of an apart pair, as here."""
+    """The budget (#186): two pocketed blocks 1 mm apart. relate() gives the same relation as with BRepExtrema on
+    the solids, from the faces alone. The distance step alone (``_solid_distance`` against ``_distance``) must take
+    under half the time. Measured: about 9x on 24 OCCT threads, 5-6x on 4 and about 4x on 2. OCCT builds about ten
+    classifiers per thread, so the old step gets cheaper on smaller machines. On Gyropup's leg (PR #198) that
+    inner-solution test was most of the time of an apart pair, as here."""
     from cadagent.review.gates import relate
     a, b = waffle(5), waffle(5, 21, up=True)
-    relate(a, b, validated=True)                                  # warm up imports and caches
     with monkeypatch.context() as m:
         used = _faces_used(m)
-        t0 = time.perf_counter()
         new = relate(a, b, validated=True)
-        new_s = time.perf_counter() - t0
     assert used == [True]                                         # BRepExtrema never ran on the solids
-    monkeypatch.setattr(relations_mod, "_solid_distance", lambda x, y, t: relations_mod._distance(x, y))
-    t0 = time.perf_counter()
-    old = relate(a, b, validated=True)
-    old_s = time.perf_counter() - t0
+    with monkeypatch.context() as m:
+        m.setattr(relations_mod, "_solid_distance", lambda x, y, t: relations_mod._distance(x, y))
+        old = relate(a, b, validated=True)
     assert new.state == "apart" and new.gap_mm == pytest.approx(1.0) and new.to_dict() == old.to_dict()
-    assert new_s < old_s / 3, (new_s, old_s)
 
+    def best_of_two(step):
+        times = []
+        for _ in range(2):
+            t0 = time.perf_counter()
+            step()
+            times.append(time.perf_counter() - t0)
+        return min(times)
+    sa, sb, tol = a.wrapped, b.wrapped, Tolerances()
+    new_s = best_of_two(lambda: relations_mod._solid_distance(sa, sb, tol))
+    old_s = best_of_two(lambda: relations_mod._distance(sa, sb))
+    assert new_s < old_s / 2, (new_s, old_s)
 
 
 # ----------------------------------------------------------------------------- Assembly

@@ -691,7 +691,11 @@ def _inner_vertex(solid, other) -> bool:
 
     The same test, done once: OCCT 7.9 (``BRepExtrema_DistShapeShape::SolidTreatment``) splits the vertices into
     about ten chunks per thread, of at least three each, and builds a new ``BRepClass3d_SolidClassifier`` for every
-    chunk; that construction is most of its time. It classifies at the same tolerance and looks only for IN."""
+    chunk; that construction is most of its time. It classifies at the same tolerance and looks only for IN.
+    It is not a bit-for-bit copy. A reused classifier carries its choice of ray from point to point, and OCCT's
+    chunks depend on the thread count. The two agree wherever the answer does not depend on the ray: every vertex
+    clear of the other's boundary, which is what the clearance in ``_solid_distance`` is for. Anything but OUT
+    counts as inside, so any doubt goes to BRepExtrema itself."""
     abs_ = require("OCP.TopAbs", "inner-solution test")
     if solid.ShapeType() not in (abs_.TopAbs_SOLID, abs_.TopAbs_COMPSOLID):
         return False

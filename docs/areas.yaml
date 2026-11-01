@@ -5,6 +5,7 @@
 #   priority  gyropup (needed for Gyropup to become real) and/or demo (makes a good video or interactive demo)
 #   pages     repo-relative Markdown pages (docs/, research/)       cli      `cad-agent` subcommands
 #   api       cadagent modules (today's import paths)                skills   skills/<name>/SKILL.md
+#   uses      another domain's cadagent modules the node relies on (never one of its own `api`)
 #   agents    agents/<name>.md                                       lessons  a lessons/ folder this node owns (#133)
 #   issues    open cad-agent issues or pull requests                 projects keys of `projects` below
 # A list may name the same item under several nodes. tests/test_areas.py checks that every item exists, that every
@@ -20,10 +21,10 @@
 #
 # Module names in `api` are import paths. Since #121 the code is laid out by this tree: `cadagent.<domain>.<module>`,
 # with the practice domain's review and publishing areas as `cadagent.review` and `cadagent.publish`, and the shared
-# core (`cadagent.geometry`, `.project`, `.links`, ...) at the top. A domain package's module is listed under its own
-# domain only (an area that relies on another domain's module, as airflow does on CFD, links to it through its
-# issues), and tests/test_package_areas.py keeps code and tree in step. The old flat paths still import with a warning
-# until v0.7.0, but the tests reject them here.
+# core (`cadagent.geometry`, `.project`, `.links`, ...) at the top. A domain package's module is listed in `api` under
+# its own domain only, so each module has one home; a node that relies on another domain's module names it in `uses`
+# instead (thermal's airflow uses `cadagent.simulation.cfd`). tests/test_package_areas.py keeps code and tree in step.
+# The old flat paths still import with a warning until v0.7.0, but the tests reject them here.
 version: 1
 
 maturity:
@@ -210,6 +211,8 @@ domains:
         scope: Fans, vents and grilles, and where the air really goes.
         maturity: tooling
         priority: [demo]
+        api: [cadagent.thermal.heatsink]
+        uses: [cadagent.simulation.cfd]
         issues: [47, 137]
         projects: [j501-enclosure]
       - slug: thermal-validation

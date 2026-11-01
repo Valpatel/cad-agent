@@ -1,8 +1,9 @@
 """Code and topic tree in step (#121): each domain package holds one domain of docs/areas.yaml.
 
 * every module in a domain package is listed under that domain (an ``api:`` entry);
-* every ``api:`` entry imports, at its current path;
-* no domain package holds a module that docs/areas.yaml places in another domain.
+* every ``api:`` and ``uses:`` entry imports, at its current path;
+* no domain package holds a module that docs/areas.yaml places in another domain (``api:`` is one home per module);
+* a ``uses:`` entry (a module a node relies on from another domain) is not one the node could list in ``api:``.
 
 The checks take a package folder and a tree, so the tests at the end run them on planted mistakes too: each rule is
 shown to catch the mistake it is for, and only that one."""
@@ -47,14 +48,14 @@ def owner(module: str):
     return parts[1], ".".join(parts[:3])
 
 
-def placements(tree) -> dict:
-    """{api entry: {(domain, area)}}; an area's topics count as the area, cross-cutting entries as ("cross_cutting",
-    None)."""
+def placements(tree, key="api") -> dict:
+    """{entry of `key`: {(domain, area)}}; an area's topics count as the area, cross-cutting entries as
+    ("cross_cutting", None)."""
     out: dict = {}
-    for module in tree.get("cross_cutting", {}).get("api", []):
+    for module in tree.get("cross_cutting", {}).get(key, []):
         out.setdefault(module, set()).add(("cross_cutting", None))
     for path, node in nodes(tree):
-        for module in node.get("api", []):
+        for module in node.get(key, []):
             out.setdefault(module, set()).add((path[0], path[1] if len(path) > 1 else None))
     return out
 
@@ -83,9 +84,10 @@ def unlisted(root: Path, tree) -> list:
 
 
 def unimportable(tree, load=importlib.import_module) -> list:
-    """Rule 2: api entries that do not import, or name an old path (which imports, with a warning, until v0.7.0)."""
+    """Rule 2: api and uses entries that do not import, or name an old path (which imports, with a warning, until
+    v0.7.0)."""
     bad = []
-    for entry in sorted(placements(tree)):
+    for entry in sorted(set(placements(tree)) | set(placements(tree, "uses"))):
         if _moved.new_name(entry):
             bad.append(f"{entry}: an old path; name {_moved.new_name(entry)}")
             continue
@@ -110,6 +112,20 @@ def misplaced(tree) -> list:
                         "or move it to the shared core" if domain == "cross_cutting" else "no package holds that area")
                 bad.append(f"{entry} lives in cadagent.{package} ({home_name(package)}) but is placed under "
                            f"{domain}{'/' + area if area else ''}: list it under its own domain only, {move}")
+    return bad
+
+
+def misused(tree) -> list:
+    """Rule 4: uses entries that are at home where they are named, so they belong in that node's api. (One that is in
+    the node's api already is test_areas' finding, not repeated here.)"""
+    bad = []
+    for path, node in nodes(tree):
+        where = (path[0], path[1] if len(path) > 1 else None)
+        for entry in node.get("uses", []):
+            package, _ = owner(entry)
+            if package and at_home(package, where) and entry not in node.get("api", []):
+                bad.append(f"{entry} is {'/'.join(path)}'s own domain's module ({home_name(package)}): list it under "
+                           f"api, not uses")
     return bad
 
 
@@ -138,6 +154,11 @@ def test_every_api_entry_imports(tree):
 
 def test_no_domain_package_holds_a_module_placed_in_another_domain(tree):
     bad = misplaced(tree)
+    assert not bad, "\n".join(bad)
+
+
+def test_uses_names_only_another_domains_modules(tree):
+    bad = misused(tree)
     assert not bad, "\n".join(bad)
 
 
@@ -174,6 +195,7 @@ def loader(root):
 def test_the_planted_tree_passes_every_rule(tmp_path):
     t = read_tree(PLANTED)
     assert unlisted(planted(tmp_path), t) == [] and unimportable(t, loader(tmp_path)) == [] and misplaced(t) == []
+    assert misused(t) == []
 
 
 def test_rule_1_finds_a_new_module_the_tree_does_not_list(tmp_path):
@@ -211,6 +233,37 @@ def test_rule_3_finds_a_module_placed_in_another_domain_too(tmp_path):
     assert unlisted(planted(tmp_path), t) == [] and unimportable(t, loader(tmp_path)) == []
     assert misplaced(t) == ["cadagent.simulation.cfd lives in cadagent.simulation (simulation) but is placed under "
                             "thermal/heat-sinks: list it under its own domain only, or move it to cadagent.thermal"]
+
+
+def test_uses_links_another_domains_module_without_a_second_home(tmp_path):
+    """thermal's area relies on CFD: in uses it breaks no rule, where in api it breaks rule 3."""
+    t = read_tree(PLANTED.replace("api: [cadagent.thermal.heatsink]",
+                                  "api: [cadagent.thermal.heatsink], uses: [cadagent.simulation.cfd]"))
+    assert unlisted(planted(tmp_path), t) == [] and unimportable(t, loader(tmp_path)) == []
+    assert misplaced(t) == [] and misused(t) == []
+
+
+def test_rule_2_checks_uses_entries_too(tmp_path):
+    t = read_tree(PLANTED.replace("api: [cadagent.thermal.heatsink]",
+                                  "api: [cadagent.thermal.heatsink], uses: [cadagent.cfd, cadagent.simulation.nope]"))
+    assert unimportable(t, loader(planted(tmp_path))) == [
+        "cadagent.cfd: an old path; name cadagent.simulation.cfd",
+        "cadagent.simulation.nope: does not import (No module named 'cadagent.simulation.nope')"]
+    assert misused(t) == []
+
+
+def test_rule_4_finds_a_uses_entry_at_home():
+    """simulation's own module in a simulation area's uses, and a publish module in publishing's: both belong in api.
+    A review module in publishing's uses is another home (practice's other package), so it is fine."""
+    t = read_tree(PLANTED.replace("api: [cadagent.simulation.cfd]",
+                                  "api: [cadagent.simulation.cfd], uses: [cadagent.simulation.fea]")
+                  .replace("api: [cadagent.publish.site]",
+                           "api: [cadagent.publish.site], uses: [cadagent.publish.render, cadagent.review.evidence]"))
+    assert misused(t) == [
+        "cadagent.simulation.fea is simulation/cfd's own domain's module (simulation): list it under api, not uses",
+        "cadagent.publish.render is practice/publishing's own domain's module (practice/publishing): list it under "
+        "api, not uses"]
+    assert misplaced(t) == []
 
 
 def test_rule_3_tells_the_practice_packages_apart():

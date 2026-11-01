@@ -3233,10 +3233,10 @@
    "passing": 27
   },
   "near_mm": 10.0,
-  "seconds": 173.5,
+  "seconds": 145.0,
   "workers": 6,
   "limits": "sampled poses only (not a swept volume); exact gaps by cadagent.review.gates.relations.relate, per pair of solids; a pair touching at every pose is a designed contact and has no gap to state; a pair apart at every pose by a gap that varies by at most 0.02 mm is a running gap about a shared axis; the rest pass each other",
-  "key": "5e3a90bf667b6c10166cd70228ec18d7d1e21741b099eee1ec1256d887164981"
+  "key": "dfbbead8162ead657d1617dbc54d1ac795c98748db4bc5956555bf21dec45fc2"
  },
  "text": {
   "wordmark": {
@@ -3254,5 +3254,5 @@
    "font": "DejaVuSans.ttf"
   }
  },
- "extract_seconds": 193.5
+ "extract_seconds": 181.1
 }

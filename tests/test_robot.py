@@ -254,3 +254,16 @@ def test_a_loop_closure_must_close_at_home(tmp_path):
         r.write_mjcf(tmp_path / "x.xml", "x", links, joints, loops=[r.LoopClosure("coupler", "coupler", (0, 0, 0))])
     # without other_anchor, nothing to check: MuJoCo takes the pin on the other link from the home pose
     r.write_mjcf(tmp_path / "y.xml", "y", links, joints, loops=[r.LoopClosure("coupler", "rocker", (0.12, 0, 0))])
+    # two closures that the check (and MuJoCo) cannot tell apart are refused, the open one with them
+    with pytest.raises(ValueError, match="each needs its own name"):
+        r.write_mjcf(tmp_path / "z.xml", "z", links, joints, loops=[loop, wrong])
+
+
+@pytest.mark.parametrize("scale", [1, 10, 30])
+def test_a_closed_loop_is_accepted_at_any_home_angle_and_size(tmp_path, scale):
+    # The check measures the model as given, so an exactly built loop passes whatever the file's rounding: Norton's
+    # four-bar at 0.12 m to 3.6 m links, built at 52 home angles.
+    for home in range(1, 360, 7):
+        links, joints, loop, _ = _fourbar(*(v * scale for v in (0.04, 0.12, 0.08, 0.10)), home_deg=home + 0.123456)
+        assert r.loop_gaps(links, joints, [loop])["pin"] < 1e-12 * scale
+        r.write_mjcf(tmp_path / "x.xml", "x", links, joints, floating=False, floor=False, loops=[loop])

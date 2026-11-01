@@ -11,6 +11,7 @@ the required poses sample the inputs only, and each sample's loop must close whe
 """
 from __future__ import annotations
 
+import bisect
 import hashlib
 import itertools
 import json
@@ -30,8 +31,9 @@ LIMITS = [
     "collision, force, speed, timing, hardware safety or physical-fit validation.",
     "Four affinely independent points identify a rigid transform, but do not prove the right "
     "mesh, complete geometry, or correct reference coordinates were captured.",
-    "A declared loop is solved as rigid links on ideal pins in one plane, on the assembly it has at home; "
-    "the renderer's loop must match that solution, and a loop that changes assembly at a lock fails.",
+    "A declared loop is solved as rigid links on ideal pins in one plane, on the assembly it has at home and the "
+    "circuit it reaches from home (traced on a grid of 0.5 or 2 degrees); the renderer's loop must match that "
+    "solution, and a loop that changes assembly at a lock, or shows another circuit, fails.",
 ]
 
 
@@ -226,17 +228,113 @@ def _loops(data: Mapping, joints: dict) -> dict:
                      "dependent": [j for j in members if j not in inputs], "joints": members, "signs": signs,
                      "arms": arms, "d": arms[1]["pivot"][0], "mode": 1 if side > 0 else -1, "pin": P,
                      "kind": "four-bar" if len(members) == 3 else "five-bar"}
+        out[name]["circuit"] = _circuit(out[name], joints)
     return out
+
+
+# The grid a loop's home circuit is traced on: degrees between points for one input, and for two (each axis has at
+# most 361 points, so a full turn of two inputs is 2 degrees apart)
+_CIRCUIT_STEP = {1: 0.5, 2: 2.0}
+
+
+def _loop_tip(loop: dict, angles: Mapping[str, float]):
+    """The crank angles (radians, in the loop's plane) for the inputs in ``angles``, and where the two chains meet on
+    the home assembly (None where they cannot)."""
+    arms, s = loop["arms"], loop["signs"]
+    thetas = [arm["theta0"] + (s[arm["chain"][0]] * math.radians(angles[arm["chain"][0]])
+                               if len(arm["chain"]) == 2 else 0.0) for arm in arms]
+    tip = fx.fivebar_point(arms[0]["a"], arms[0]["b"], arms[1]["a"], arms[1]["b"], loop["d"], thetas[0], thetas[1],
+                           loop["mode"])
+    return thetas, tip
+
+
+def _circuit(loop: dict, joints: dict) -> dict:
+    """The inputs the loop reaches from home without coming apart. A double rocker built in one of its ranges, for
+    example, cannot reach the mirror-image range that also closes on the same assembly: that is another circuit.
+    Traced by a flood fill from home over a grid of the inputs' ranges (``_CIRCUIT_STEP``, plus every required sample
+    and both ends), each grid point closing on the home assembly; so connected to the grid's resolution."""
+    inputs = loop["inputs"]
+    axes = []
+    for j in inputs:
+        lo, hi = joints[j]["range"]
+        step = _CIRCUIT_STEP[len(inputs)] if len(inputs) == 1 else max(_CIRCUIT_STEP[2], (hi - lo) / 360)
+        vals = {0.0, *_samples(j, joints[j])}
+        for end in (lo, hi):
+            n = max(1, math.ceil(abs(end) / step))
+            vals |= {end * i / n for i in range(n + 1)}
+        axes.append(sorted(vals))
+    start = tuple(ax.index(0.0) for ax in axes)
+
+    def closes(idx):
+        return _loop_tip(loop, dict(zip(inputs, (ax[i] for ax, i in zip(axes, idx)))))[1] is not None
+
+    reached, todo = {start}, [start]
+    while todo:
+        idx = todo.pop()
+        for k in range(len(idx)):
+            for step in (-1, 1):
+                nxt = idx[:k] + (idx[k] + step,) + idx[k + 1:]
+                if 0 <= nxt[k] < len(axes[k]) and nxt not in reached and closes(nxt):
+                    reached.add(nxt)
+                    todo.append(nxt)
+    return {"axes": axes, "reached": reached}
+
+
+def _on_circuit(loop: dict, angles: Mapping[str, float]) -> bool:
+    """Whether inputs that close the loop lie on its home circuit: a corner of the grid cell around them was reached."""
+    axes, reached = loop["circuit"]["axes"], loop["circuit"]["reached"]
+    around = []
+    for ax, j in zip(axes, loop["inputs"]):
+        v = angles[j]
+        i = bisect.bisect_left(ax, v)
+        around.append({min(max(i + o, 0), len(ax) - 1) for o in (-1, 0)} if i == len(ax) or ax[i] != v else {i})
+    return any(idx in reached for idx in itertools.product(*around))
+
+
+def _loop_samples(loop: dict, joints: dict) -> list[list[float]]:
+    """Each input's samples over the span its home circuit reaches (the joint's range where the circuit fills it): both
+    ends and at least three interior values, at most 90 degrees apart. An end set by a lock, not by the joint's range,
+    is pulled in one grid step, so no sample sits on the lock itself."""
+    axes, reached = loop["circuit"]["axes"], loop["circuit"]["reached"]
+    out = []
+    for k, j in enumerate(loop["inputs"]):
+        ax, idx = axes[k], sorted({r[k] for r in reached})
+        home = ax.index(0.0)
+        i0 = idx[0] if idx[0] == 0 else min(idx[0] + 1, home)
+        i1 = idx[-1] if idx[-1] == len(ax) - 1 else max(idx[-1] - 1, home)
+        if i0 == 0 and i1 == len(ax) - 1:
+            out.append(_samples(j, joints[j]))
+            continue
+        lo, hi = ax[i0], ax[i1]
+        count = max(4, math.ceil((hi - lo) / 90))
+        out.append([lo + i * (hi - lo) / count for i in range(count + 1)])
+    return out
+
+
+def _loop_inputs(name: str, loop: dict, joints: dict):
+    """The required samples of a loop's inputs (every input sample against every other) with its solved joints, and
+    the combinations skipped: where the loop cannot close, or closes only on another circuit."""
+    kept, skipped = [], []
+    for combo in itertools.product(*_loop_samples(loop, joints)):
+        given = dict(zip(loop["inputs"], combo))
+        dep = _loop_solve(loop, joints, given)
+        if dep is None or not _on_circuit(loop, given):
+            skipped.append({**given, "why": "cannot close" if dep is None else "another circuit"})
+            continue
+        for j, v in dep.items():
+            lo, hi = joints[j]["range"]
+            if not lo - 1e-8 <= v <= hi + 1e-8:
+                raise ValueError(f"loop {name}: at inputs {given} joint {j} is at {v:.6g} degrees, outside its range: "
+                                 "widen the range or narrow the inputs")
+        kept.append({**given, **dep})
+    return kept, skipped
 
 
 def _loop_solve(loop: dict, joints: dict, angles: Mapping[str, float]) -> Optional[dict]:
     """The loop's dependent joint angles (degrees from home) for its inputs in ``angles``, on its home assembly, each
     put in its joint's range where a turn of 360 degrees allows; None where the inputs cannot close the loop."""
     arms, s = loop["arms"], loop["signs"]
-    thetas = [arm["theta0"] + (s[arm["chain"][0]] * math.radians(angles[arm["chain"][0]])
-                               if len(arm["chain"]) == 2 else 0.0) for arm in arms]
-    tip = fx.fivebar_point(arms[0]["a"], arms[0]["b"], arms[1]["a"], arms[1]["b"], loop["d"], thetas[0], thetas[1],
-                           loop["mode"])
+    thetas, tip = _loop_tip(loop, angles)
     if tip is None:
         return None
     out = {}
@@ -256,10 +354,7 @@ def _loop_error(loop: dict, angles: Mapping[str, float]) -> float:
     """How far (mm) the loop's pins, carried by each chain at ``angles``, are from where the solver puts them for the
     same inputs: 0 for a closed loop on the home assembly. Infinite where the inputs cannot close it."""
     arms, s = loop["arms"], loop["signs"]
-    thetas = [arm["theta0"] + (s[arm["chain"][0]] * math.radians(angles[arm["chain"][0]])
-                               if len(arm["chain"]) == 2 else 0.0) for arm in arms]
-    tip = fx.fivebar_point(arms[0]["a"], arms[0]["b"], arms[1]["a"], arms[1]["b"], loop["d"], thetas[0], thetas[1],
-                           loop["mode"])
+    thetas, tip = _loop_tip(loop, angles)
     if tip is None:
         return math.inf
     worst = 0.0
@@ -295,26 +390,17 @@ def _required(joints: dict, loops: Optional[dict] = None) -> list[dict[str, floa
     loop_of = {j: name for name, lp in loops.items() for j in lp["joints"]}
     far_loop = {}
     # A loop's inputs are sampled together (every input sample against every other) and its other joints solved; a
-    # combination the loop cannot close is not a pose.
+    # combination the loop cannot close, or closes only on another circuit, is not a pose.
     for name, lp in loops.items():
         best = None
-        for combo in itertools.product(*(_samples(j, joints[j]) for j in lp["inputs"])):
-            angles = {**home, **dict(zip(lp["inputs"], combo))}
-            dep = _loop_solve(lp, joints, angles)
-            if dep is None:
-                continue
-            for j, v in dep.items():
-                lo, hi = joints[j]["range"]
-                if not lo - 1e-8 <= v <= hi + 1e-8:
-                    raise ValueError(f"loop {name}: at inputs {dict(zip(lp['inputs'], combo))} joint {j} is at "
-                                     f"{v:.6g} degrees, outside its range: widen the range or narrow the inputs")
-            pose = {**angles, **dep}
+        for given in _loop_inputs(name, lp, joints)[0]:
+            pose = {**home, **given}
             poses.append(pose)
             score = sum(abs(math.sin(math.radians(pose[j]) / 2)) for j in lp["joints"])
             if best is None or score > best[0]:
                 best = (score, {j: pose[j] for j in lp["joints"]})
         if best is None:
-            raise ValueError(f"loop {name}: no sampled input closes the loop")
+            raise ValueError(f"loop {name}: no sampled input closes the loop on its home circuit")
         far_loop[name] = best[1]
 
     def with_ancestors(base: dict, parent) -> None:
@@ -408,7 +494,9 @@ def validate_motion_trace(contract: Mapping, trace: Mapping, *, tolerance_mm: fl
     loop_rows = {name: {"kind": lp["kind"], "inputs": lp["inputs"], "dependent": lp["dependent"],
                         "links_mm": [{"crank": arm["a"], "link": arm["b"]} for arm in lp["arms"]],
                         "ground_mm": abs(lp["d"]), "max_pose_error_mm": 0., "worst_sample": None,
-                        "unreachable_samples": []}
+                        "unreachable_samples": [], "off_circuit_samples": [],
+                        "inputs_span_deg": {j: [v[0], v[-1]] for j, v in zip(lp["inputs"], _loop_samples(lp, joints))},
+                        "skipped_inputs_deg": _loop_inputs(name, lp, joints)[1]}
                  for name, lp in loops.items()}
     for sample in samples:
         _mapping(sample, "sample")
@@ -429,6 +517,8 @@ def validate_motion_trace(contract: Mapping, trace: Mapping, *, tolerance_mm: fl
             err, row = _loop_error(lp, angles), loop_rows[name]
             if math.isinf(err):
                 row["unreachable_samples"].append(sid)
+            elif not _on_circuit(lp, angles):
+                row["off_circuit_samples"].append(sid)
             elif row["worst_sample"] is None or err > row["max_pose_error_mm"]:
                 row.update(max_pose_error_mm=err, worst_sample=sid)
         observed = _mapping(sample.get("components"), f"sample {sid} components")
@@ -472,7 +562,7 @@ def validate_motion_trace(contract: Mapping, trace: Mapping, *, tolerance_mm: fl
         if row["max_error_mm"] > tolerance_mm:
             failures.append({"check": "rendered-landmarks", "component": name, **row})
     for name, row in loop_rows.items():
-        if row["unreachable_samples"] or row["max_pose_error_mm"] > tolerance_mm:
+        if row["unreachable_samples"] or row["off_circuit_samples"] or row["max_pose_error_mm"] > tolerance_mm:
             failures.append({"check": "loop-pose", "loop": name, **row})
     # Report sample spacing, including its limits. Time/rotation speed are not inferred from these poses.
     spacing = {}

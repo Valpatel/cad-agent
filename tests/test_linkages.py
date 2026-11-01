@@ -461,12 +461,31 @@ def test_the_committed_figure_matches_its_generator_and_is_safe_to_embed():
 def test_the_figure_quotes_the_closed_form_lock_and_a_passing_stride():
     lf = _figures()
     stride, sym, grid, lock = lf.solve()
-    want = math.degrees(math.acos((lf.D - 2 * lf.B1) / (2 * lf.A1)))       # symmetric: the knees 2b apart
+    # symmetric, the leg hanging (theta1 below the ground link): the knees 2b apart
+    want = -math.degrees(math.acos((lf.D - 2 * lf.B1) / (2 * lf.A1)))
     assert lock["at_deg"]["theta1"] == pytest.approx(want, abs=1e-9)
     assert stride["status"] == "pass" and stride["summary"]["flips"] == 0
-    # knees out all the way round, on one assembly, which the figure's dash-dot links are the other of
-    assert {tuple(s["working"]) for s in stride["steps"]} == {(-1, 1)}
-    assert {s["assembly"] for s in stride["steps"]} == {1}
+    # knees out all the way round with the foot below them, on one assembly, which the dash-dot links are the other of
+    assert {tuple(s["working"]) for s in stride["steps"]} == {lf.WORKING} == {(1, -1)}
+    assert {s["assembly"] for s in stride["steps"]} == {lf.MODE} == {-1}
+    assert max(s["tip"]["y"] for s in stride["steps"]) < 0                    # the foot below the hips
     content = (ROOT / "docs" / "img" / "linkages" / "fivebar.svg").read_text(encoding="utf-8")
-    assert f"θ1 = {want:.1f}°" in content and f"{stride['summary']['min_transmission_deg']:.1f}°" in content
+    assert f"θ1 = {lf.deg(want)}" in content and f"{stride['summary']['min_transmission_deg']:.1f}°" in content
     assert f"{grid['reachable']} of {grid['cells_total']}" in content
+
+
+@pytest.mark.parametrize("step_mm", [2.0, 5.0, 10.0])
+def test_a_tip_path_that_crosses_a_lock_between_samples_fails_whatever_the_step(step_mm):
+    # Straight down the symmetric five-bar's middle, the tip crosses two locks (the distal links in line). Whether or
+    # not a sample lands within lock_deg of them, the bisected crossings fail the sweep.
+    path = [(40.0, 197.5 - step_mm * i) for i in range(int(380 / step_mm))]
+    r = L.sweep_fivebar_tip(100, 120, 100, 120, 80, path)
+    crossed = r["summary"]["crossed_between_steps"]
+    assert [c["kind"] for c in crossed] == ["lock", "lock"] and r["status"] == "fail"
+    assert any("between samples" in p for p in r["problems"])
+    locks = [e["at"]["y"] for e in r["events"] if e["kind"] == "lock"]
+    # By symmetry: stretched, the knees are level with the tip and b either side of x = d/2, so a knee is d/2 - b from
+    # its hip and the tip at y = sqrt(a^2 - (b - d/2)^2) = 60; folded, both knees meet over x = d/2, at
+    # sqrt(a^2 - (d/2)^2), and the tip hangs b below them, at -28.35.
+    assert locks == pytest.approx([math.sqrt(100 ** 2 - (120 - 40) ** 2), math.sqrt(100 ** 2 - 40 ** 2) - 120],
+                                  abs=1e-9)

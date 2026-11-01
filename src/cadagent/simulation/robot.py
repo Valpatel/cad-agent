@@ -445,9 +445,10 @@ class LoopClosure:
 
     MuJoCo takes the matching point on ``other`` from the model's home pose, so that pose must close the loop, as a
     CAD assembly built in one closed pose does. Give ``other_anchor`` (the same pin in ``other``'s frame) and
-    ``write_mjcf`` checks that it does, to ``tolerance`` m, in the model as written: the file's 6 significant digits
-    close a loop to about 1e-7 of its links' size. MuJoCo holds the pin with a soft constraint, so it opens a little
-    under load."""
+    ``write_mjcf`` checks that it does, to ``tolerance`` m, in the model as given. The file then carries 6
+    significant digits, which leave the pin open by up to a few millionths of the links' size (2e-6 m at 1.2 m
+    links); MuJoCo's constraint pulls that closed in its first steps. It holds the pin with a soft constraint, so the
+    pin also opens a little under load."""
 
     link: str
     other: str
@@ -457,12 +458,9 @@ class LoopClosure:
     tolerance: float = 1e-6
 
 
-def home_frames(links: Sequence[Link], joints: Sequence[Joint], *,
-                written: bool = False) -> Dict[str, Tuple[Mat, Vec]]:
+def home_frames(links: Sequence[Link], joints: Sequence[Joint]) -> Dict[str, Tuple[Mat, Vec]]:
     """Each link's frame at home (every joint at 0) in the root link's frame: (rotation, origin). A joint places its
-    child at ``xyz`` and ``rpy`` in its parent's frame, as URDF and ``write_mjcf`` do. ``written=True`` rounds each
-    ``xyz`` and ``rpy`` to the 6 significant digits the files carry, so the frames are the ones a simulator reads."""
-    keep = _as_written if written else tuple
+    child at ``xyz`` and ``rpy`` in its parent's frame, as URDF and ``write_mjcf`` do."""
     problems = tree_problems([l.name for l in links], [(j.parent, j.child, j.name) for j in joints])
     if problems:
         raise ValueError("; ".join(problems))
@@ -476,9 +474,9 @@ def home_frames(links: Sequence[Link], joints: Sequence[Joint], *,
                 out[name] = (((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)), (0.0, 0.0, 0.0))
             else:
                 rp, op = frame(j.parent)
-                roll, pitch, yaw = (math.degrees(v) for v in keep(j.rpy))
+                roll, pitch, yaw = (math.degrees(v) for v in j.rpy)
                 local = _mm(rot_z(yaw), _mm(rot_y(pitch), rot_x(roll)))      # URDF: fixed axes x, then y, then z
-                out[name] = (_mm(rp, local), _add(op, _mv(rp, keep(j.xyz))))
+                out[name] = (_mm(rp, local), _add(op, _mv(rp, tuple(j.xyz))))
         return out[name]
 
     for l in links:
@@ -487,17 +485,28 @@ def home_frames(links: Sequence[Link], joints: Sequence[Joint], *,
 
 
 def loop_gaps(links: Sequence[Link], joints: Sequence[Joint], loops: Sequence["LoopClosure"]) -> Dict[str, float]:
-    """How far apart each loop closure's two anchors are at home, in m, in the model as written (6 significant
-    digits: about 1e-7 of the links' size). Only closures that give ``other_anchor`` are measured."""
-    frames = home_frames(links, joints, written=True)
+    """How far apart each loop closure's two anchors are at home, in m, in the model as given (the written file adds
+    up to a few millionths of the links' size: see ``LoopClosure``). Keyed by the closure's name, else
+    ``link-other``; only closures that give ``other_anchor`` are measured. Two closures with one key are refused."""
+    keys = _loop_keys(loops)
+    frames = home_frames(links, joints)
     out = {}
-    for k, lc in enumerate(loops):
+    for key, lc in zip(keys, loops):
         if lc.other_anchor is None:
             continue
         (ra, oa), (rb, ob) = frames[lc.link], frames[lc.other]
-        pa, pb = _add(oa, _mv(ra, _as_written(lc.anchor))), _add(ob, _mv(rb, _as_written(lc.other_anchor)))
-        out[lc.name or f"{lc.link}-{lc.other}"] = math.dist(pa, pb)
+        pa, pb = _add(oa, _mv(ra, tuple(lc.anchor))), _add(ob, _mv(rb, tuple(lc.other_anchor)))
+        out[key] = math.dist(pa, pb)
     return out
+
+
+def _loop_keys(loops: Sequence["LoopClosure"]) -> List[str]:
+    keys = [lc.name or f"{lc.link}-{lc.other}" for lc in loops]
+    repeated = sorted({k for k in keys if keys.count(k) > 1})
+    if repeated:
+        raise ValueError(f"loop closures {', '.join(repeated)}: each needs its own name (MuJoCo refuses a repeated "
+                         "name, and the home check must tell them apart)")
+    return keys
 
 
 @dataclass
@@ -537,7 +546,7 @@ def write_mjcf(path: Path, robot: str, links: Sequence[Link], joints: Sequence[J
             problems.append(f"loop closure {lc.name or lc.link}: a link cannot close a loop with itself")
     if problems:
         raise ValueError("; ".join(problems))
-    by_loop = {lc.name or f"{lc.link}-{lc.other}": lc for lc in loops}
+    by_loop = dict(zip(_loop_keys(loops), loops))
     for key, gap in loop_gaps(links, joints, loops).items():
         if gap > by_loop[key].tolerance:
             raise ValueError(f"loop closure {key}: its anchors are {gap * 1e3:.4g} mm apart at home; MuJoCo would hold "
@@ -685,9 +694,6 @@ def _fmt(v: Iterable[float]) -> str:
     return " ".join(f"{x:.6g}" for x in v)
 
 
-def _as_written(v: Iterable[float]) -> Vec:
-    """A vector as ``_fmt`` writes it, read back."""
-    return tuple(float(f"{x:.6g}") for x in v)
 
 
 def _add(a: Vec, b: Vec) -> Vec:

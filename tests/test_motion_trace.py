@@ -327,6 +327,8 @@ def test_an_independent_loop_renderer_passes():
     assert report["status"] == "pass", report["failures"]
     row = report["loops"]["leg"]
     assert row["kind"] == "five-bar" and row["max_pose_error_mm"] < 1e-9 and not row["unreachable_samples"]
+    assert {"hip_a": -60.0, "hip_b": -60.0, "why": "cannot close"} in row["skipped_inputs_deg"]
+    assert row["inputs_span_deg"] == {"hip_a": [-60, 60], "hip_b": [-60, 60]} and not row["off_circuit_samples"]
     assert row["links_mm"] == [pytest.approx({"crank": 30, "link": 45}), pytest.approx({"crank": 30, "link": 45})]
     assert report["components"]["shin_d"]["max_error_mm"] < 1e-9
 
@@ -408,3 +410,62 @@ def test_a_loop_at_a_lock_at_home_is_rejected():
     c["loops"]["leg"]["pin"] = [0.0, c1[1], 10]                     # the pin between the knees: shins in one line
     with pytest.raises(ValueError, match="in one line"):
         required_poses(c)
+
+
+def test_a_double_rocker_is_sampled_on_the_circuit_it_reaches_from_home():
+    # Grashof with the coupler shortest (80, 40, 120, 100 mm): the crank rocks between 51.3 and 125.1 degrees, and the
+    # same assembly closes again in the mirror-image range below the ground link, which the linkage cannot reach
+    # without coming apart. Built at 90 degrees with the crank's range a full turn, the required poses stay in
+    # 51.3..125.1, and a capture of the mirror range fails.
+    from cadagent import formulas as fx
+    a, b, c, d, home = 80, 40, 120, 100, 90.0
+    lim = fx.fourbar_input_limits(a, b, c, d)
+    t3h, t4h = fx.fourbar_angles(a, b, c, d, math.radians(home))
+    B = (a * math.cos(math.radians(home)), a * math.sin(math.radians(home)))
+    C = (d + c * math.cos(t4h), c * math.sin(t4h))
+    contract = {"schema_version": 1, "length_unit": "mm", "frame": "assembly-home", "reference": "double rocker",
+                "joints": {"crank": {"parent": None, "pivot": [0, 0, 0], "axis": [0, 0, 1], "range_deg": [-180, 180]},
+                           "coupler": {"parent": "crank", "pivot": [*B, 0], "axis": [0, 0, 1], "range_deg": [-360, 360]},
+                           "rocker": {"parent": None, "pivot": [d, 0, 0], "axis": [0, 0, 1], "range_deg": [-360, 360]}},
+                "components": {"crank": {"joint": "crank", "points": _box(5, 30, 0)},
+                               "coupler": {"joint": "coupler", "points": _box(*((B[0] + C[0]) / 2, (B[1] + C[1]) / 2), 0)},
+                               "rocker": {"joint": "rocker", "points": _box(d + 10, 40, 0)}},
+                "loops": {"x": {"closes": ["coupler", "rocker"], "pin": [*C, 0], "inputs": ["crank"]}}}
+    poses = required_poses(contract)
+    cranks = sorted(home + p["crank"] for p in poses)
+    assert math.degrees(lim["folded"]) < cranks[0] < math.degrees(lim["folded"]) + 1.5
+    assert math.degrees(lim["stretched"]) - 1.5 < cranks[-1] < math.degrees(lim["stretched"])
+    assert len(cranks) >= 5 and max(b - a for a, b in zip(cranks, cranks[1:])) <= 90
+
+    def pose(crank_abs):
+        t3, t4 = fx.fourbar_angles(a, b, c, d, math.radians(crank_abs))
+        rel = math.radians(crank_abs - home)
+        return {"crank": crank_abs - home, "coupler": math.degrees(math.remainder(t3 - t3h - rel, 2 * math.pi)),
+                "rocker": math.degrees(math.remainder(t4 - t4h, 2 * math.pi))}
+
+    def render(p):
+        q1, q2, q3 = (math.radians(p[k]) for k in ("crank", "coupler", "rocker"))
+        move = lambda pts, steps: [[*_chain(x, y, steps), z] for x, y, z in pts]          # noqa: E731
+        comps = contract["components"]
+        return {"crank": move(comps["crank"]["points"], [((0, 0), q1)]),
+                "coupler": move(comps["coupler"]["points"], [(B, q2), ((0, 0), q1)]),
+                "rocker": move(comps["rocker"]["points"], [((d, 0), q3)])}
+
+    samples = [{"id": str(i), "angles_deg": p, "components": render(p)} for i, p in enumerate(poses)]
+    trace = {"schema_version": 1, "length_unit": "mm", "frame": "assembly-home", "capture_source": "analytic",
+             "samples": samples}
+    report = validate_motion_trace(contract, trace)
+    assert report["status"] == "pass", report["failures"]
+    row = report["loops"]["x"]
+    assert row["inputs_span_deg"]["crank"] == [cranks[0] - home, cranks[-1] - home] and not row["skipped_inputs_deg"]
+    mirror = pose(-home)                                      # closes on the same assembly, on the other circuit
+    trace["samples"].append({"id": "mirror", "angles_deg": mirror, "components": render(mirror)})
+    report = validate_motion_trace(contract, trace)
+    assert [f["check"] for f in report["failures"]] == ["loop-pose"]
+    assert report["loops"]["x"]["off_circuit_samples"] == ["mirror"]
+
+
+def _chain(x, y, steps):
+    for about, rad in steps:
+        x, y = _turn((x, y), about, rad)
+    return x, y

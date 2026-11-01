@@ -79,7 +79,7 @@ determinants. The direct one goes to 0 at a **lock**: the two links meeting at t
 cannot drive it. The inverse one goes to 0 when a crank and its link fall **in line**: the edge of reach, or a rocker's
 end of travel. Between samples, each event is bisected to 2⁻⁴⁸ of the step. A change of assembly is a **flip**.
 
-![A five-bar leg, cranks 100 mm, links 120 mm and ground 80 mm, moves its tip round an elliptical stride inside its reach: its lowest transmission angle is 53.4° and its arms stay 68.8° from in line. Beside it, a map of the two crank angles shaded by transmission angle, with the stride's path; turning both cranks symmetrically from 90° locks at θ1 = 143.1°, where the links stretch into one line](img/linkages/fivebar.svg)
+![A five-bar leg hanging from its two hips, cranks 100 mm, links 120 mm and ground 80 mm, moves its foot round an elliptical stride inside its reach: its lowest transmission angle is 53.4° and its arms stay 68.8° from in line. Beside it, a map of the two crank angles shaded by transmission angle, with the stride's path; turning both cranks symmetrically from −90° locks at θ1 = −143.1°, where the links stretch into one line](img/linkages/fivebar.svg)
 
 *The five-bar in `tools/linkage_figures.py`, drawn from `sweep_fivebar_tip`, `sweep_fivebar` and `fivebar_workspace`.
 The dash-dot links are the other assembly on the same cranks. `tests/test_linkages.py` checks that the committed SVG
@@ -90,14 +90,16 @@ from cadagent.mechanical import linkages as L
 r = L.sweep_fourbar(100, 80, 70, 60, range(-180, 181, 5), branch="open")   # the triple rocker above, mm
 r["status"], r["summary"]["input_ranges"]      # 'fail' (18 steps cannot close), {'theta2': [-135.0, 135.0]}
 [(e["kind"], e["at_deg"]) for e in r["events"]]  # lock at ±137.87°, the rocker's end of travel at -112.02°
-leg = L.sweep_fivebar(100, 120, 100, 120, 80, [(90 + i, 90 - i) for i in range(0, 61, 5)], mode=1)
-leg["events"][0]                               # {'kind': 'lock', 'at_deg': {'theta1': 143.13, 'theta2': 36.87}, ...}
-stride = L.sweep_fivebar_tip(100, 120, 100, 120, 80, L.ellipse_path((40, 150), (50, 22), 180, 48))
+# the figure's leg, hanging: the foot below the hips (mode=-1), knees out (working=(1, -1))
+leg = L.sweep_fivebar(100, 120, 100, 120, 80, [(-90 - i, -90 + i) for i in range(0, 61, 5)], mode=-1)
+leg["events"][0]                             # {'kind': 'lock', 'at_deg': {'theta1': -143.13, 'theta2': -36.87}, ...}
+stride = L.sweep_fivebar_tip(100, 120, 100, 120, 80, L.ellipse_path((40, -150), (50, 22), 0, 48), working=(1, -1))
 stride["status"], stride["summary"]["min_transmission_deg"]                   # 'pass', 53.4
 ```
 
-A report's `status` is `fail` when a step cannot close, or when the loop locks or flips. A tip path also fails when a
-crank and its link fall in line. The status is `warn` when the transmission angle drops under the guideline (40°).
+A report's `status` is `fail` when a step cannot close, or when the loop locks or flips, at a step or between two of
+them (a bisected event fails whatever the step size). A tip path also fails when a crank and its link fall in line.
+The status is `warn` when the transmission angle drops under the guideline (40°).
 `track="hold"` keeps the declared assembly through a lock. `"nearest"` follows the pose nearest the last one and
 flags the flip. `fivebar_workspace` maps a grid of crank angles, and `fivebar_reach` gives each arm's annulus.
 
@@ -135,8 +137,9 @@ fails.
   chose; `"nearest"` takes the nearest pose. A real linkage can leave a lock either way.
 - **Sampled, not continuous.** A sweep finds an event where two samples straddle it. One that starts and ends between
   two samples is missed, so keep the steps small next to the travel.
-- **No collisions between the links.** A sweep that passes can still have links that hit each other or the frame;
-  the CAD [motion gate](gates.md) checks that.
+- **No collisions between the links.** A sweep that passes can still have links that hit each other or the frame.
+  The CAD [motion gate](gates.md) checks a joint's sweep for collisions, but it cannot yet sweep a loop's solved
+  poses; until it can, check the loop's extreme poses in CAD.
 - **Synthesis is out of scope.** Finding the lengths for a wanted motion is not done here; pylinkage does that.
 
 <details>

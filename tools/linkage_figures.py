@@ -29,14 +29,17 @@ OUT = ROOT / "docs" / "img" / "linkages"
 U = S.UNITS_PER_PX
 num = S.num
 
-# The figure's five-bar, in mm: cranks a, links b, ground d; the stride (an ellipse inside the reach) and the
-# symmetric sweep that locks.
+# The figure's five-bar, in mm: cranks a, links b, ground d (the hips, A and B), hanging as a leg with its foot below
+# them; the stride (an ellipse inside the reach, knees out: WORKING) and the symmetric sweep that locks, on the
+# assembly with the foot below the knees (MODE).
 A1 = A2 = 100.0
 B1 = B2 = 120.0
 D = 80.0
-STRIDE = {"centre": (40.0, 150.0), "radii": (50.0, 22.0), "start_deg": 180.0, "samples": 48}
-SYMMETRIC = [(90.0 + i, 90.0 - i) for i in range(61)]
-MAP = {"theta1": (0.0, 180.0), "theta2": (0.0, 180.0), "samples": (37, 37)}
+STRIDE = {"centre": (40.0, -150.0), "radii": (50.0, 22.0), "start_deg": 0.0, "samples": 48}
+WORKING = (1, -1)
+MODE = -1
+SYMMETRIC = [(-90.0 - i, -90.0 + i) for i in range(61)]
+MAP = {"theta1": (-180.0, 0.0), "theta2": (-180.0, 0.0), "samples": (37, 37)}
 BINS = [(0, 20, "m0"), (20, 40, "m1"), (40, 60, "m2"), (60, 90.0001, "m3")]       # transmission angle, degrees
 PERIOD = 7.2
 
@@ -45,12 +48,18 @@ THEME = S.Theme(light={**S.THEME.light, "m0": "#eef0e6", "m1": "#cddbd2", "m2": 
                 dark={**S.THEME.dark, "m0": "#1b2725", "m1": "#27403a", "m2": "#356358", "m3": "#4f907f"})
 
 
+def deg(v: float, digits: int = 1) -> str:
+    """An angle as the figure prints it, with a true minus sign."""
+    return f"{v:.{digits}f}°".replace("-", "\u2212")
+
+
 def solve():
     """The sweeps and the map the figure draws, and the numbers its label quotes."""
     path = L.ellipse_path(STRIDE["centre"], STRIDE["radii"], STRIDE["start_deg"], STRIDE["samples"])
-    stride = L.sweep_fivebar_tip(A1, B1, A2, B2, D, path)
-    sym = L.sweep_fivebar(A1, B1, A2, B2, D, SYMMETRIC)
-    grid = L.fivebar_workspace(A1, B1, A2, B2, D, MAP["theta1"], MAP["theta2"], samples=MAP["samples"], cells=True)
+    stride = L.sweep_fivebar_tip(A1, B1, A2, B2, D, path, working=WORKING)
+    sym = L.sweep_fivebar(A1, B1, A2, B2, D, SYMMETRIC, mode=MODE)
+    grid = L.fivebar_workspace(A1, B1, A2, B2, D, MAP["theta1"], MAP["theta2"], samples=MAP["samples"], mode=MODE,
+                               cells=True)
     lock = next(e for e in sym["events"] if e["kind"] == "lock")
     return stride, sym, grid, lock
 
@@ -65,15 +74,16 @@ def fivebar_svg() -> str:
     body, css = [], []
     an = S.Timeline(PERIOD)
 
-    def text(x, y, s, size=12, fill="ink", anchor=None, weight=None):
+    def text(x, y, s, size=12, fill="ink", anchor=None, weight=None, halo=False):
         a = f' text-anchor="{anchor}"' if anchor else ""
         w = f' font-weight="{weight}"' if weight else ""
-        return (f'<text x="{num(x * U)}" y="{num(y * U)}" font-size="{size * U}" style="fill:var(--{fill})"{a}{w}>'
+        h = f";paint-order:stroke;stroke:var(--bg);stroke-width:{3 * U}px;stroke-linejoin:round" if halo else ""
+        return (f'<text x="{num(x * U)}" y="{num(y * U)}" font-size="{size * U}" style="fill:var(--{fill}){h}"{a}{w}>'
                 f'{escape(s)}</text>')
 
     # ---- left: the linkage in its plane (mm, y up) to px
     lx0, ly0, lw, lh = 16, 40, 318, 246
-    win = (-125.0, -32.0, 205.0, 238.0)                                 # x0, y0, x1, y1 in mm
+    win = (-125.0, -222.0, 205.0, 48.0)                                 # x0, y0, x1, y1 in mm
     sc = min(lw / (win[2] - win[0]), lh / (win[3] - win[1]))
 
     def P(x, y):
@@ -98,9 +108,9 @@ def fivebar_svg() -> str:
                 f'stroke-dasharray:{1.5 * U} {3 * U};stroke-linecap:round"/>')
     # ground
     (ax, ay), (bx, by) = P(0, 0), P(D, 0)
-    hatch = "".join(f"M{num(ax + k * 9 * U - 6 * U)} {num(ay + 12 * U)}l{6 * U} {-7 * U}"
+    hatch = "".join(f"M{num(ax + k * 9 * U - 6 * U)} {num(ay - 12 * U)}l{6 * U} {7 * U}"
                     for k in range(int((bx - ax) / (9 * U)) + 2))
-    body.append(f'<path d="M{num(ax - 10 * U)} {num(ay + 5 * U)}H{num(bx + 10 * U)}{hatch}" '
+    body.append(f'<path d="M{num(ax - 10 * U)} {num(ay - 5 * U)}H{num(bx + 10 * U)}{hatch}" '
                 f'style="fill:none;stroke:var(--muted);stroke-width:{1.2 * U}"/>')
     # the other assembly on the same cranks, dash-dot: the tip on the far side of the knees
     other = L.sweep_fivebar(A1, B1, A2, B2, D, [(s["angles_deg"]["theta1"], s["angles_deg"]["theta2"]) for s in steps],
@@ -123,8 +133,8 @@ def fivebar_svg() -> str:
                 f'{line(c1h, ph, 3.4)}{pin(c1h)}{dot(ph, 5, "accent")}</g>{pin((ax, ay))}</g>')
     body.append(f'<g class="k2"><g class="o2">{ghost(c2h, q)}</g>{line((bx, by), c2h, 5)}<g class="d2">'
                 f'{line(c2h, ph, 3.4)}{pin(c2h)}{pin(ph)}</g>{pin((bx, by))}</g>')
-    body.append(text(ax / U - 24, ay / U + 18, "A", 12, "muted", "middle"))
-    body.append(text(bx / U + 24, by / U + 18, "B", 12, "muted", "middle"))
+    body.append(text(ax / U - 16, ay / U - 16, "A", 12, "muted", "middle"))
+    body.append(text(bx / U + 16, by / U - 16, "B", 12, "muted", "middle"))
     css.append(f".k1,.k2,.d1,.d2,.o1,.o2,.md{{transform-box:view-box}}"
                f".k1{{transform-origin:{num(ax)}px {num(ay)}px}}.k2{{transform-origin:{num(bx)}px {num(by)}px}}"
                f".d1,.o1{{transform-origin:{num(c1h[0])}px {num(c1h[1])}px}}"
@@ -183,11 +193,11 @@ def fivebar_svg() -> str:
         body.append(f'<path d="{"".join(ds)}" style="fill:var(--{key})"/>')
     body.append(f'<rect x="{num(M(a0, b1)[0] - cw / 2)}" y="{num(M(a0, b1)[1] - ch / 2)}" width="{num(ms * U + cw)}" '
                 f'height="{num(ms * U + ch)}" style="fill:none;stroke:var(--line);stroke-width:{1 * U}"/>')
-    for v in (0, 90, 180):
+    for v in (a0, (a0 + a1) / 2, a1):
         x, y = M(v, b0)
-        body.append(text(x / U, y / U + 18, f"{v}°", 11, "muted", "middle"))
+        body.append(text(x / U, y / U + 18, deg(v, 0), 11, "muted", "middle"))
         x, y = M(a0, v)
-        body.append(text(x / U - 8, y / U + 4, f"{v}°", 11, "muted", "end"))
+        body.append(text(x / U - 8, y / U + 4, deg(v, 0), 11, "muted", "end"))
     x, y = M((a0 + a1) / 2, b0)
     body.append(text(x / U, y / U + 34, "θ1 (crank at A)", 11, "muted", "middle"))
     x, y = M(a1, b1)
@@ -199,8 +209,8 @@ def fivebar_svg() -> str:
                 f'style="stroke:var(--accent);stroke-width:{2 * U};stroke-linecap:round"/>')
     body.append(f'<path d="M{num(p1[0] - 5 * U)} {num(p1[1] - 5 * U)}l{10 * U} {10 * U}m0 {-10 * U}l{-10 * U} {10 * U}" '
                 f'style="stroke:var(--accent);stroke-width:{2.4 * U}"/>')
-    body.append(text(p1[0] / U - 8, p1[1] / U + 18, f"lock, θ1 {lock['at_deg']['theta1']:.1f}°", 11, "ink",
-                     "end"))
+    body.append(text(p1[0] / U + 36, p1[1] / U - 12, f"lock, θ1 {deg(lock['at_deg']['theta1'])}", 11, "ink",
+                     "end", halo=True))
     # the stride's path, and a dot that follows the leg
     sp = [M(s["angles_deg"]["theta1"], s["angles_deg"]["theta2"]) for s in steps]
     body.append(f'<polygon points="{" ".join(f"{num(x)},{num(y)}" for x, y in sp)}" '
@@ -210,7 +220,7 @@ def fivebar_svg() -> str:
     frames = [(i * dt, (x - sp[0][0], y - sp[0][1])) for i, (x, y) in enumerate(sp)] + [(PERIOD, (0.0, 0.0))]
     an.add(".md", frames, lambda v: f"transform:translate({num(v[0])}px,{num(v[1])}px)", "linear")
     x, y = max(sp, key=lambda q: q[0])
-    body.append(text(x / U + 8, y / U + 4, "stride", 11, "ink"))
+    body.append(text(x / U + 8, y / U + 4, "stride", 11, "ink", halo=True))
     # legend: the transmission angle bands
     lgx, lgy = mx0 - 40, my0 + ms + 46
     body.append(text(lgx, lgy + 9, "transmission angle:", 11, "muted"))
@@ -226,7 +236,8 @@ def fivebar_svg() -> str:
              f"inside its reach, solved by sweep_fivebar_tip: its lowest transmission angle is "
              f"{sm['min_transmission_deg']:.1f}° and its arms stay {min(sm['in_line_margin_deg'].values()):.1f}° from "
              f"in line. Beside it, the map of the two crank angles shaded by transmission angle, with the stride's "
-             f"path; turning both cranks symmetrically from 90° locks at θ1 = {lock['at_deg']['theta1']:.1f}°, where "
+             f"path; turning both cranks symmetrically from {deg(SYMMETRIC[0][0], 0)} locks at θ1 = "
+             f"{deg(lock['at_deg']['theta1'])}, where "
              f"the links stretch into one line.")
     desc = (f"{grid['reachable']} of {grid['cells_total']} crank-angle samples close. Generated by "
             "tools/linkage_figures.py from cadagent.mechanical.linkages.")

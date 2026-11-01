@@ -206,6 +206,15 @@ def _report(kind: str, links: Mapping[str, float], inputs: Sequence[Tuple[float,
                         "link in one line: the edge of its reach, where the cranks must turn without bound")
     if flips:
         problems.append(f"{flips} branch flips: the linkage changes assembly between steps, through or near a lock")
+    # A lock (or, where they fail, an arm's crank and link in line) that the inputs cross between two reachable steps
+    # fails whether or not a sample lands near it: the bisected event is the evidence, not the sample spacing.
+    crossed = [e for e in events if (e["kind"] == "lock" or (fail_in_line and e["kind"] == "in-line"))
+               and all(poses[j] is not None for j in e["between"])]
+    summary["crossed_between_steps"] = [{"kind": e["kind"], "between": e["between"]} for e in crossed]
+    if crossed:
+        where = ", ".join(f"{e['kind']} between steps {e['between'][0]} and {e['between'][1]}" for e in crossed)
+        problems.append(f"the inputs cross {len(crossed)} singular pose(s) between samples ({where}): the cranks cannot "
+                        "hold the tip there")
     warnings = []
     if summary.get("below_guideline_steps"):
         warnings.append(f"{len(summary['below_guideline_steps'])} steps with a transmission angle under "
@@ -541,7 +550,8 @@ class Linkage:
     ``ground``: fixed joints {name: (u, v)}; ``links``: {body: (joint, joint)}; ``reference``: every joint in the pose
     the CAD was built in; ``solve``: [(joint, from_a, from_b)] in order, each joint from two known ones as an
     intersection of two circles (a dyad). Of the two intersections, the one nearest the joint's previous position is
-    taken, so the pose moves continuously from the reference pose and never jumps to the other branch. That covers
+    taken, so the pose moves continuously from the reference pose while the steps are small next to the links. Near a
+    lock the two intersections meet, and the nearer one can be on the other branch: ``sides`` shows that. That covers
     four-bars driven by an output point, five-bars driven by their tip, and chains of dyads. A path point no pose can
     reach raises ``ValueError``; the continuity rule needs path steps small next to the links."""
     ground: Mapping[str, Point]
@@ -587,7 +597,7 @@ class Linkage:
 
     def sides(self, pose: Mapping[str, Point]) -> Dict[str, int]:
         """Each solved joint's branch: +1 where it lies left of the line from its first known joint to its second, -1
-        right, 0 in line. A change between poses is a branch flip; the nearest rule should never make one."""
+        right, 0 in line. A change between poses is a branch flip, which the nearest rule can make near a lock."""
         out = {}
         for name, a, b in self.solve:
             pa, pb, pj = pose[a], pose[b], pose[name]

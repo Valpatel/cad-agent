@@ -50,11 +50,14 @@ the linkage cannot reach. Cut the loop at one pin and give the joints a tree of 
 `closes` names the two joints whose links meet at `pin` (home frame). Each runs back through its parents to where
 the two chains meet: one or two joints each, so three in a four-bar and four in a five-bar. The first joint of a
 two-joint chain is an input. The loop's axes must be parallel. Its other joints follow from the link lengths
-(`cadagent.mechanical.linkages`), on the assembly the loop has at home. Required poses sample every input against
-every other and skip the combinations that cannot close. A solved angle outside its joint's range is a contract error.
-Each sample's angles must put both chains' ends on the solved pin to the position tolerance: the `loop-pose` check.
-A renderer that leaves the loop open, or assembles it the other way, fails there even if its landmarks match the
-angles it reported. A sample whose inputs cannot close fails too.
+(`cadagent.mechanical.linkages`), on the assembly the loop has at home. They also stay on its home circuit: the
+inputs it reaches from home without coming apart. A double rocker, for example, also closes in a mirror-image range
+that it cannot reach. Required poses sample each input over the span its circuit reaches, every input against every
+other, and skip the combinations that cannot close or lie on another circuit. The report lists the span and the
+skipped combinations. A solved angle outside its joint's range is a contract error. Each sample's angles must put
+both chains' ends on the solved pin to the position tolerance: the `loop-pose` check. A renderer that leaves the loop
+open, or assembles it the other way, fails there even if its landmarks match the angles it reported. A sample whose
+inputs cannot close, or lie on another circuit, fails too.
 
 Each component needs at least four affinely independent (noncoplanar) ordered landmarks. For a solid, select
 actual mesh vertices spanning three dimensions and include extreme/shaft-adjacent points. Four landmarks identify

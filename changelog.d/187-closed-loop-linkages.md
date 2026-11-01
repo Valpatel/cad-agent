@@ -5,12 +5,13 @@
   between samples. Each report has a pass, warn or fail status, its reachable range and its stated limits.
   `fivebar_workspace` maps a grid of crank angles (#187).
 - `cadagent.formulas`: the five-bar's closed forms `fivebar_point`, `fivebar_inputs` and `fivebar_jacobians`. Their
-  golden vectors come from Gonçalves, Carvalho and Santos (COBEM 2009) and from Gosselin and Angeles (1990) (#187).
+  positions are checked against the closed forms of Gonçalves, Carvalho and Santos (COBEM 2009). The Jacobians follow
+  Gosselin and Angeles (1990) and are checked against finite differences (#187).
 - `cadagent.simulation.robot.write_mjcf(..., loops=[LoopClosure(...)])` closes a loop in MuJoCo with an equality
   constraint. It first checks that the two links' pins meet at home (`loop_gaps`, `home_frames`) (#187).
 - `cad-agent motion-trace`: a contract can declare closed loops under `loops`. Their inputs are sampled together and
-  their other joints solved. A new `loop-pose` check fails a renderer that leaves a loop open or assembles it the
-  other way (#187).
+  their other joints solved, on the circuit the loop reaches from home. A new `loop-pose` check fails a renderer
+  that leaves a loop open, assembles it the other way or shows another circuit (#187).
 - Linkages page: sweeping four- and five-bars, with an animated five-bar figure generated from the solver (#187).
 
 **Changed**

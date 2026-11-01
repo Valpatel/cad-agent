@@ -21,8 +21,11 @@ Solvers: PARDISO (pip install pypardiso) when available, else SciPy's direct sol
 smoothed-aggregation multigrid preconditioner (pyamg, with the six rigid-body modes) for big meshes.
 
 Limits, stated in every result: linear and small-deflection; isotropic material. Printed parts are not isotropic, so
-the printed materials carry an effective modulus and a strength for the weak (layer) direction, and the safety factor
-uses the weak-direction strength. Contact, bolt preload and buckling are not modelled.
+each printed material names the print direction its numbers are for (``Material.direction``). The defaults use the
+lowest modulus the data sheet gives across the layers (Z), so deflections err high, and a strength below the Z tensile
+strength, so the safety factor uses the weak direction. Contact, bolt preload and buckling are not
+modelled. The data sheet values come from 100 % infill test bars; a real print is softer and weaker, and no simulation
+proves that a part will fit or hold: check it against a printed coupon or the part itself.
 """
 from __future__ import annotations
 
@@ -38,31 +41,104 @@ import numpy as np
 @dataclass(frozen=True)
 class Material:
     name: str
-    E_mpa: float                 # Young's modulus (effective, for printed parts)
+    E_mpa: float                 # Young's modulus; printed parts: the data sheet's lowest modulus in `direction`
     nu: float
     strength_mpa: float          # the strength the safety factor uses (yield for metals; weak-direction for prints)
     density_g_cm3: float
     note: str = ''
+    source: str = ''             # the data sheet the numbers come from: its id in research/references.yaml (#118)
+    direction: str = ''          # printed parts: the print direction E and the strength are for ('Z': across the
+                                 # layers; 'X-Y': in the layer plane); '' for an isotropic material
 
 
-# Printed values: effective moduli and layer-direction strengths for well-printed parts (100 % walls near loads),
-# rounded down from Bambu Lab's TDS figures; treat them as design allowables to check against tests.
+_DIRECTION = {'Z': 'across the layers (Z)', 'X-Y': 'in the layer plane (X-Y)'}
+
+
+def _isotropic_basis(mat: Material) -> str:
+    """For the assumptions line: which print direction a printed material's modulus and strength are for."""
+    if not mat.direction:
+        return ''
+    return (f', with the data sheet modulus and strength {_DIRECTION.get(mat.direction, mat.direction)} everywhere '
+            '(a printed part is not isotropic)')
+
+
+# Printed materials (#125). Every number is from the manufacturer's technical data sheet (TDS), read on 2026-10-31.
+# The sheets test bars printed at 100 % infill, annealed and dried (ISO 527 tension, ISO 178 bending). Each row's
+# comment names the sheet's edition and both directions; where two editions disagree, the row says which it uses.
+#
+# - E is the lowest modulus the sheets give in the row's direction, across the layers (Z) unless the row says X-Y:
+#   the tensile modulus, except for PAHT-CF, whose Z bending modulus is lower. The in-plane (X-Y) moduli are higher.
+#   The solver is isotropic and does not know how the part was printed, so it takes the weak direction: deflections
+#   err high, not low. These studies apply forces and torques only, so the stresses do not depend on E; the
+#   deflections and stiffnesses do (they scale with 1/E).
+# - A part whose bending stays in the layer plane is stiffer. Give it the X-Y modulus from the comment, and keep the
+#   weak-direction strength: dataclasses.replace(MATERIALS['petg_cf'], E_mpa=2460, direction='X-Y').
+# - The strength is a design allowable below the TDS tensile strength across the layers.
+# - Poisson's ratio is not on these sheets; it is a typical value for the polymer. Across 0.35-0.40 it changes a
+#   plate's bending stiffness by about 5 % (1 - nu^2) and a beam's hardly at all.
+# - Density is the sheet's (ISO 1183), for mass estimates.
+#
+# Before #125 the moduli were 2700 (PLA), 1800 (PETG) and 2900 (PETG-CF): close to the V2.0 sheets' X-Y *bending*
+# moduli (2750, 1790, 2890), not a tensile value. They were 31-116 % above the moduli used now (PAHT-CF 147 %, the
+# humid PA6-CF rows 41 % and 130 %, TPU 4x), so deflections read 24-54 % low (PAHT-CF 60 %, TPU 75 %).
+_HUMID, _PRINT = 0.6, 0.8   # PA6-CF in use: x0.6 for moisture taken up from the air, x0.8 for a print's voids and seams
 MATERIALS = {
-    'pla': Material('PLA', 2700, 0.35, 25, 1.24, 'Bambu PLA Basic: Z (layer) strength used'),
-    'petg': Material('PETG', 1800, 0.38, 20, 1.27, 'Bambu PETG Basic: Z (layer) strength used'),
-    'petg_cf': Material('PETG-CF', 2900, 0.36, 22, 1.29, 'Bambu PETG-CF: Z (layer) strength used'),
-    'pa_cf': Material('PA6-CF', 4500, 0.35, 40, 1.17, 'Bambu PAHT-CF (dry): Z (layer) strength used'),
-    # PA6-CF as it is in use: nylon takes up moisture from the air and loses ~40 % of its strength and stiffness
-    # (x0.6 on Bambu's dry TDS), and a print has voids and seams (x0.8): design allowables, to confirm with coupons
-    'pa6_cf_xy': Material('PA6-CF along the layers (humid)', 3000, 0.35, 49, 1.17,
-                          'Bambu PA6-CF TDS 102 MPa dry in the layers, x0.6 humid, x0.8 print: for parts printed so their main stress runs in the layers'),
-    'pa6_cf_z': Material('PA6-CF across the layers (humid)', 2400, 0.35, 23, 1.17,
-                         'Bambu PA6-CF TDS 48 MPa dry across the layers, x0.6 humid, x0.8 print: the safe value when the stress crosses the layers'),
-    'tpu95': Material('TPU 95A', 30, 0.45, 8, 1.22, 'flexible: stiffness only indicative'),
-    'al6061': Material('Aluminium 6061-T6', 68900, 0.33, 276, 2.70, 'yield strength'),
-    'al7075': Material('Aluminium 7075-T6', 71700, 0.33, 503, 2.81, 'yield strength'),
-    'steel': Material('Steel (mild)', 200000, 0.29, 250, 7.85, 'yield strength'),
-    'cf_tube': Material('Carbon tube (roll-wrapped)', 64000, 0.3, 650, 1.55, 'axial modulus/strength; not for local crushing'),
+    # Bambu PLA Basic TDS V3.0 (Bambu's copy, PDF created 2025-04): E 2580 X-Y / 2060 Z MPa, UTS 35 / 31 MPa,
+    # 1.24 g/cm3.
+    # https://store.bblcdn.com/s1/default/58b85d0f3db94878854a28fdb8a0006e/Bambu_PLA_Basic_Technical_Data_Sheet.pdf
+    # V2.0 (a reseller's copy, PDF created 2023-06) has 2680 / 2160 and 39 / 35: the lower V3.0 values are used.
+    'pla': Material('PLA', 2060, 0.35, 25, 1.24,
+                    'Bambu PLA Basic TDS V3.0: Z tensile modulus (X-Y 2580 MPa); strength below the Z tensile 31 MPa',
+                    source='bambu-pla-basic-tds', direction='Z'),
+    # Bambu PETG Basic TDS V2.0 (a reseller's copy, PDF created 2023-07): E 1460 / 1120 MPa, UTS 48 / 39 MPa,
+    # 1.25 g/cm3.
+    # https://www.additive-x.com/shop/mpattachments/file/viewonline/id/580/product_id/2330
+    # V3.0 (Bambu's copy, PDF created 2026-01) has E 2780 / 2550 and UTS 51 / 35. Those tensile moduli are almost twice
+    # V2.0's and above V3.0's own bending moduli (1950 / 1740), so V2.0's lower value stays until a coupon settles it.
+    # https://store.bblcdn.com/s1/default/cb94589bf7994fdcbfa833badefae9cd/Bambu_PETG_Basic_Technical_Data_Sheet.pdf
+    'petg': Material('PETG', 1120, 0.38, 20, 1.25,
+                     'Bambu PETG Basic TDS V2.0: Z tensile modulus (X-Y 1460 MPa; V3.0 lists 2550, not used); '
+                     'strength below the Z tensile 35 MPa (V3.0)', source='bambu-petg-basic-tds', direction='Z'),
+    # Bambu PETG-CF TDS V3.0 (Bambu's copy, PDF created 2023-08): E 2460 / 1340 MPa (as V2.0), UTS 35 / 29 MPa (V2.0:
+    # 59 / 38), 1.25 g/cm3. https://store.bblcdn.com/626e4f424bf345ae965ad0ddfcaf2459.pdf
+    'petg_cf': Material('PETG-CF', 1340, 0.36, 22, 1.25,
+                        'Bambu PETG-CF TDS V3.0: Z tensile modulus (X-Y 2460 MPa); strength below the Z tensile 29 MPa',
+                        source='bambu-petg-cf-tds', direction='Z'),
+    # Bambu PAHT-CF TDS V3.0 (Bambu's copy, PDF created 2023-08), dry: E 3860 / 2180 MPa, bending modulus 4230 / 1820 MPa,
+    # UTS 92 / 47 MPa, 1.06 g/cm3. https://store.bblcdn.com/7166b20bc68f4c87b32c972b856eeb4b.pdf
+    # The Z bending modulus is the sheet's lowest, so it is used. Named 'PA6-CF' before #125, though its note and
+    # values were PAHT-CF's; Bambu's PA6-CF is the two rows below.
+    'pa_cf': Material('PAHT-CF (dry)', 1820, 0.35, 40, 1.06,
+                      'Bambu PAHT-CF TDS V3.0, dry: Z bending modulus, the sheet\'s lowest (Z tensile 2180, X-Y 3860 '
+                      'MPa); strength below the Z tensile 47 MPa', source='bambu-paht-cf-tds', direction='Z'),
+    # Bambu PA6-CF TDS V3.0 (Bambu's copy, PDF created 2023-08), dry: E 4430 / 2170 MPa, UTS 102 / 48 MPa, 1.09 g/cm3.
+    # https://store.bblcdn.com/b2abc59ac250492b979a52f1ce3e61b3.pdf
+    # As it is in use: x0.6 humid on strength and stiffness and x0.8 for the print, in both directions. These are
+    # design allowables, to confirm with coupons. Moisture can cost more stiffness than that: Polymaker's PA6-CF20
+    # sheet (V1.1) puts the water-saturated modulus at about 0.3 x dry.
+    'pa6_cf_xy': Material('PA6-CF along the layers (humid)', 4430 * _HUMID * _PRINT, 0.35, 102 * _HUMID * _PRINT, 1.09,
+                          'Bambu PA6-CF TDS V3.0, dry X-Y values (4430 MPa, 102 MPa) x0.6 humid x0.8 print: for parts '
+                          'printed so their main stress runs in the layers', source='bambu-pa6-cf-tds', direction='X-Y'),
+    'pa6_cf_z': Material('PA6-CF across the layers (humid)', 2170 * _HUMID * _PRINT, 0.35, 48 * _HUMID * _PRINT, 1.09,
+                         'Bambu PA6-CF TDS V3.0, dry Z values (2170 MPa, 48 MPa) x0.6 humid x0.8 print: the safe value '
+                         'when the stress crosses the layers', source='bambu-pa6-cf-tds', direction='Z'),
+    # Bambu TPU 95A HF TDS V1.0 (Bambu's copy, PDF created 2023-11): E 9.8 / 7.4 MPa, UTS 27.3 / 22.3 MPa, 1.22 g/cm3.
+    # https://store.bblcdn.com/58df32731eab4c90a7dac9b12e13ba88.pdf
+    # Polymaker's PolyFlex TPU95 (TDS V5.4) lists 33.6 MPa in X-Y (ISO 37). The sheets differ about 4x, and TPU is far
+    # from linear, so a linear study of it is indicative only.
+    'tpu95': Material('TPU 95A', 7.4, 0.45, 8, 1.22,
+                      'Bambu TPU 95A HF TDS V1.0: Z tensile modulus (X-Y 9.8 MPa); flexible, stiffness only indicative',
+                      source='bambu-tpu-95a-hf-tds', direction='Z'),
+    # Metals and the carbon tube: typical handbook values, not tied to a sheet in research/references.yaml. Checked
+    # for #125: Protolabs' CNC data sheet for 6061-T651/T6 (2026) gives yield 276 MPa, E 10.0 Msi (68.9 GPa) and
+    # 2.70 g/cm3. Its 7075-T651/T6 sheet gives only specification ranges: yield 434-476 MPa (T6 sheet) and 372-462 MPa
+    # (T651 plate). Both are below the typical 503 MPa here, so a 7075 safety factor is optimistic.
+    'al6061': Material('Aluminium 6061-T6', 68900, 0.33, 276, 2.70, 'typical yield strength'),
+    'al7075': Material('Aluminium 7075-T6', 71700, 0.33, 503, 2.81,
+                       'typical yield strength (specification minimums are lower)'),
+    'steel': Material('Steel (mild)', 200000, 0.29, 250, 7.85, 'yield strength (ASTM A36 minimum)'),
+    'cf_tube': Material('Carbon tube (roll-wrapped)', 64000, 0.3, 650, 1.55,
+                        'axial modulus/strength, typical, not from a sheet: use the supplier\'s; not for local crushing'),
 }
 
 
@@ -336,6 +412,7 @@ class Study:
         vm_design = float(self.vm_elem[~touches].max()) if (~touches).any() else vm_peak
         res = {
             'part': self.name, 'material': mat.name, 'material_note': mat.note,
+            'material_source': mat.source or None, 'material_direction': mat.direction or None,
             'mesh': {'nodes': int(self.points.shape[0]), 'tets': int(self.tets.shape[0]), 'size_mm': self.mesh_mm, 'element': 'P2 tetrahedra'},
             'loads': applied,
             'max_displacement_mm': round(float(mag.max()), 4),
@@ -343,7 +420,8 @@ class Study:
             'max_von_mises_mpa': round(vm_peak, 2),
             'von_mises_design_mpa': round(vm_design, 2),
             'safety_factor': round(mat.strength_mpa / vm_design, 2) if vm_design > 0 else None,
-            'assumptions': 'linear elastic, small deflection, isotropic; faces clamped where fixed; no contact, preload or buckling',
+            'assumptions': f'linear elastic, small deflection, isotropic{_isotropic_basis(mat)}; faces clamped where fixed; '
+                           'no contact, preload or buckling',
         }
         for ld in self.loads:                      # stiffness along each load
             if probe is None:
@@ -747,7 +825,8 @@ class Study:
             'format': 'cadagent-fea-viewer', 'version': 1, 'name': self.name,
             'units': {'length': 'mm', 'stress': 'MPa', 'force': 'N', 'torque': 'N·m'},
             'material': {'name': self.material.name, 'E_mpa': self.material.E_mpa, 'nu': self.material.nu,
-                         'strength_mpa': S, 'note': self.material.note},
+                         'strength_mpa': S, 'note': self.material.note, 'source': self.material.source or None,
+                         'direction': self.material.direction or None},
             'result': res, 'mesh_mm': self.mesh_mm, 'size_mm': round(size, 3),
             'bounds_mm': [P.min(axis=0).tolist(), P.max(axis=0).tolist()],
             'max_displacement_mm': float(np.linalg.norm(self.disp, axis=0).max()),
@@ -779,7 +858,7 @@ class Study:
                 'curve': {'load_factor': [float(v) for v in ff_s], 'share': [float(f'{v:.4g}') for v in cum]},
             },
             'hot_spots': spot_list,
-            'assumptions': ('Linear elastic, small deflection, isotropic: printed parts use the weak (layer) direction strength. '
+            'assumptions': (f'Linear elastic, small deflection, isotropic{_isotropic_basis(self.material)}. '
                             'Every field scales with the load. It shows where and at what load the part first reaches its '
                             'strength, not how a crack grows after that. Faces clamped where held; no contact, preload or '
                             'buckling. Elements touching the clamp and load patches are left out of the failure test and '

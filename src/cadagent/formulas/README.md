@@ -7,7 +7,7 @@ stops being valid, and its source by author, title, edition and section:
 - coil springs;
 - screw preload and thread strip;
 - four-bar linkages;
-- conduction, film resistance and fan operating points.
+- conduction, film resistance, fans in series and parallel, fan operating points and the stall region.
 
 `from cadagent import formulas as fx`, then `fx.catalogue()` lists every formula. It sits in the shared core, beside
 `geometry/`, because its users span mechanical and thermal design. See [docs/formulas.md](../../../docs/formulas.md).
@@ -40,7 +40,7 @@ flowchart TD
 | `springs.py` | Coil-spring index, Bergsträsser factor, rate and shear stress |
 | `screws.py` | Tensile stress area, nut factor, preload from torque and back, thread shear areas and strip force |
 | `linkages.py` | Grashof class and inversion, four-bar angles from the input angle, transmission angle, the input's limits |
-| `thermal.py` | Wall and film resistance, wall heat flow, straight-line fan curve, system coefficient, fan operating point |
+| `thermal.py` | Wall and film resistance, wall heat flow, straight-line fan curve, system coefficient, fans in series and parallel, fan operating point, stall flow |
 
 A closed form is not proof of fit or strength. Each result holds only within the limits it states, and a printed part
 is weaker across its layers than any isotropic formula assumes. Test the part.

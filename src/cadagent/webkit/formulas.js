@@ -3,16 +3,19 @@
  *   import { snapArm, cantileverShape, fourbarAngles } from '/kit/formulas.js';
  *   snapArm(0.020, 0.0016, 0.006, 0.0015, 2.703e9, 0.02, 1);   // SI: m, Pa, strain as a fraction
  *   fourbarAngles(40, 120, 80, 100, 40 * Math.PI / 180);       // [theta3, theta4] in rad, or null
+ *   fanOperatingPoint([[0, 83], [0.0548, 0]], 1.5e4);          // flow m^3/s, pressure Pa, stable, stall
  *
  * The Python package is the reference. tests/webkit-formulas.test.mjs runs every function here on the golden vectors
  * that tools/formula_vectors.py writes from the Python, so the two agree to 1e-12. Change the Python first, then
  * this file, then regenerate the vectors. Units, limits and sources are documented on the Python functions
- * (cadagent/formulas/beams.py and linkages.py) and in docs/formulas.md.
+ * (cadagent/formulas/beams.py, linkages.py and thermal.py) and in docs/formulas.md.
  *
  * In short: Euler-Bernoulli small-deflection beam theory. The snap-fit functions use the Covestro (Bayer) guide's
  * Table 1 factors, as `cad-agent snapfit` does. A closed form is not proof of strength: print a coupon and measure.
  * The four-bar functions are position analysis of rigid links on ideal pins (Norton's Design of Machinery, after
- * Freudenstein): no velocity, force, dynamics or joint clearance.
+ * Freudenstein): no velocity, force, dynamics or joint clearance. The fan functions match a fan curve (the datasheet's
+ * points joined by straight lines) to a system curve r Q + k Q^2 at one air density (White's Fluid Mechanics,
+ * Section 11.5): steady flow, identical fans, no interaction losses.
  */
 
 // Covestro Table 1, rectangular section: y = k eps l^2 / h (1 constant, 2 thickness to h/2, 3 width to b/4).
@@ -166,4 +169,95 @@ export function fourbarInputLimits(a, b, c, d) {
   const folded = closes && near < fold - tol ? toggle(fold) : null;
   const stretched = closes && far > stretch + tol ? toggle(stretch) : null;
   return { closes, fullTurn: closes && folded === null && stretched === null, folded, stretched };
+}
+
+// ----------------------------------------------------------------------------- fans (thermal.py)
+// SI: flow in m^3/s, pressure in Pa; a fan curve is [[Q, dp], ...] with Q increasing, joined by straight lines.
+
+function fanPoints(curve) {
+  const ok = Array.isArray(curve) && curve.length >= 2 && curve.every(pt => Array.isArray(pt) && pt.length === 2 &&
+    typeof pt[0] === 'number' && typeof pt[1] === 'number' && Number.isFinite(pt[0]) && Number.isFinite(pt[1]));
+  if (!ok || curve.some((pt, i) => i && !(pt[0] > curve[i - 1][0])))
+    throw new RangeError('the fan curve needs at least two finite points with increasing flow');
+  return curve.map(([q, p]) => [q, p]);
+}
+// A whole number of fans, 1 or more (thermal.py, _fan_count): true, "2" and 2.5 are refused.
+function fanCount(n) {
+  if (!Number.isInteger(n) || n < 1) throw new RangeError(`the number of fans must be a whole number, 1 or more, not ${n}`);
+  return n;
+}
+const isFinitePos = x => typeof x === 'number' && Number.isFinite(x) && x > 0;
+const isFiniteNonNeg = x => typeof x === 'number' && Number.isFinite(x) && x >= 0;
+// Python's math.copysign(x, y), with the sign of -0
+const copysign = (x, y) => (y < 0 || Object.is(y, -0) ? -Math.abs(x) : Math.abs(x));
+// Python's math.isclose(x, y, rel_tol=1e-9, abs_tol=1e-15)
+const sameRoot = (x, y) => x === y || Math.abs(x - y) <= Math.max(1e-9 * Math.max(Math.abs(x), Math.abs(y)), 1e-15);
+
+/** The straight-line fan curve between shut-off pressure (Pa) and free-air flow (m^3/s). */
+export function fanCurveLine(dpShutoff, qFree) {
+  if (!isFinitePos(dpShutoff) || !isFinitePos(qFree)) throw new RangeError('the shut-off pressure and the free-air flow must both be above 0');
+  return [[0, dpShutoff], [qFree, 0]];
+}
+
+/** Quadratic system curve through one point: k = dp / Q^2 (Pa s^2/m^6). */
+export function systemCoefficient(dp, q) {
+  if (!isFinitePos(q) || !isFiniteNonNeg(dp)) throw new RangeError('the system point needs a flow above 0 and a pressure drop of 0 or more');
+  return dp / (q * q);
+}
+
+/** Identical fans in series: the same flow through each, pressures add (dp_n = n dp). */
+export function fansInSeries(curve, count) {
+  const n = fanCount(count);
+  return fanPoints(curve).map(([q, p]) => [q, n * p]);
+}
+
+/** Identical fans in parallel: the same pressure across each, flows add (Q_n = n Q). */
+export function fansInParallel(curve, count) {
+  const n = fanCount(count);
+  return fanPoints(curve).map(([q, p]) => [n * q, p]);
+}
+
+/** The flow at the stall peak (the end of the curve's last rise, and of a flat top after it): below it an axial fan
+ * runs stalled. null when the pressure never rises with flow. */
+export function fanStallFlow(curve) {
+  const pts = fanPoints(curve);
+  let last = -1;
+  for (let i = 0; i + 1 < pts.length; i++) if (pts[i + 1][1] > pts[i][1]) last = i;
+  if (last < 0) return null;
+  let j = last + 1;
+  while (j + 1 < pts.length && pts[j + 1][1] === pts[j][1]) j++;
+  return pts[j][0];
+}
+
+/** Where the fan curve meets the system dp = r Q + k Q^2, solved exactly on each straight segment (thermal.py):
+ * { flow, pressure, intersections (every crossing [Q, dp], low flow first), stable (one crossing), stall (below the
+ * stall peak) }. The operating point is the highest-flow crossing. */
+export function fanOperatingPoint(curve, k, r = 0) {
+  const pts = fanPoints(curve);
+  if (!isFiniteNonNeg(k) || !isFiniteNonNeg(r) || (k === 0 && r === 0)) throw new RangeError('the system needs a positive loss: k > 0 or r > 0');
+  const found = [];
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const [q1, p1] = pts[i], [q2, p2] = pts[i + 1];
+    const s = (p2 - p1) / (q2 - q1);
+    const qa = k, qb = r - s, qc = -(p1 - s * q1);
+    let roots;
+    if (qa === 0) roots = qb ? [-qc / qb] : [];
+    else {
+      const disc = qb * qb - 4 * qa * qc;
+      if (disc < 0) continue;
+      const sq = Math.sqrt(disc);
+      const t = -0.5 * (qb + copysign(sq, qb));
+      roots = t ? [t / qa, qc / t] : [-qb / (2 * qa)];
+    }
+    for (let q of roots) {
+      if (q1 - 1e-12 * q2 <= q && q <= q2 * (1 + 1e-12) && q >= 0) {
+        q = Math.min(Math.max(q, q1), q2);
+        if (!found.some(([f]) => sameRoot(q, f))) found.push([q, r * q + k * q * q]);
+      }
+    }
+  }
+  if (!found.length) throw new RangeError("the fan and system curves do not cross within the fan curve's points");
+  found.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const [q, p] = found.at(-1), peak = fanStallFlow(pts);
+  return { flow: q, pressure: p, intersections: found, stable: found.length === 1, stall: peak !== null && q < peak };
 }

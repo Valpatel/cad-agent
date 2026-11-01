@@ -16,6 +16,7 @@ if (header) { const f = () => header.classList.toggle('scrolled', scrollY > 8); 
 // Interactive demos from the kit, only on pages that have one (the build links their stylesheets).
 if (document.querySelector('cad-cantilever')) import('/kit/cantilever.js').catch(() => {});
 if (document.querySelector('cad-fourbar')) import('/kit/fourbar.js').catch(() => {});
+if (document.querySelector('cad-fan-curve')) import('/kit/fan-curve.js').catch(() => {});
 // A 3D model (the home page's Gyropup): the element waits for the page to load and come into view before it fetches
 // three.js and the model, so the poster is all the first paint needs.
 if (document.querySelector('cad-model')) import('/kit/model.js').catch(() => {});

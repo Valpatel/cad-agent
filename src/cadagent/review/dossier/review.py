@@ -813,7 +813,7 @@ def write_bundle(project: Any, section: str, bundle_dir: Union[str, Path, None] 
         "section": {"id": section, "title": sec.title, "purpose": sec.purpose, "requirements": list(sec.requirements),
                     "status": status, "blocked_by": lint_row.get("blocked_by", [])},
         "dir": _rel(out, p.root),
-        "created": _now().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "created": _source_iso(p.root, out),
         "commit": head_commit(p.root),
         "geometry": {"file": p.geometry_file, "hashes": template["hashes"], "built_by": actors},
         "require_separate_reviewer": p.dossier.gates.require_separate_reviewer,
@@ -840,6 +840,17 @@ def write_bundle(project: Any, section: str, bundle_dir: Union[str, Path, None] 
 def _sha_file(path: Path) -> str:
     import hashlib
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def _source_iso(root: Path, out: Path) -> Optional[str]:
+    """The bundle's date: ``SOURCE_DATE_EPOCH``, else the last commit that changed the project outside the bundle
+    (``cadagent.project.source_time``), as ``YYYY-MM-DDTHH:MM:SSZ``; None outside git. Never the wall clock, so
+    the same commit gives the same bundle (#150). A record's ``timestamp`` is the time it was submitted, and stays
+    so."""
+    from cadagent.project import source_time
+
+    found = source_time(root, outputs=[out])
+    return found[0].strftime("%Y-%m-%dT%H:%M:%SZ") if found else None
 
 
 def _now() -> _dt.datetime:

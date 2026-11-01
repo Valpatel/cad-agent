@@ -87,8 +87,11 @@ my-cad-project/
    `export_step` writes the same geometry with a fixed header date (`SOURCE_DATE_EPOCH` when set, the
    [reproducible-builds](https://reproducible-builds.org/specs/source-date-epoch/) convention, else
    2000-01-01T00:00:00), the product named after the file (or `name=`), and links numbered from 1 within the file.
-   Another OCCT version can still write different bytes for the same geometry, and a cadquery `Assembly` is not
-   covered (it is refused; `Assembly.save` is not reproducible yet, #150).
+   Another OCCT version can still write different bytes for the same geometry. A cadquery `Assembly` goes through
+   `export_step` too (`export_step(assy, OUT / "assembly.step")`, #150): the file `Assembly.save` writes, with the
+   header and link ids fixed as for a part, each node added without a name called `<parent>.<k>` instead of a random
+   uuid, and the colour records in one order. Sub-shape names and colours (`Assembly.addSubshape`) are refused.
+   See [reproducible outputs](#reproducible-outputs) for the other files.
 3. **Each check is a script** in `tools/` that writes `exports/<name>.json` with
    a top-level boolean `"pass"`. A check that cannot compute its answer writes
    `"pass": false` with the reason; it never omits the file or the key.
@@ -121,6 +124,46 @@ my-cad-project/
 | `exports/<part>.stl` | print orientation, lowest point on z=0 | degenerate faces removed; must be watertight |
 | `exports/<part>.3mf` | print orientation, centred on `printer.bed_mm` | written by `cad-agent export-3mf`, read back and verified; byte-reproducible (fixed zip dates), so a rebuild of unchanged geometry keeps the slice report current |
 | `exports/<part>.step` | assembly coordinates | for CAD review and re-use |
+
+### Reproducible outputs
+
+The same project at the same commit gives the same bytes on every rebuild and in every checkout, so `git diff`
+after a rebuild shows real changes only, and checks bound to a file's sha256 stay current (#91, #150). Where a file
+records a time, it is the source date, never the wall clock:
+
+```mermaid
+flowchart TD
+    E{"SOURCE_DATE_EPOCH<br/>set?"} -->|"yes"| S["that time<br/>(a malformed value<br/>is an error, exit 2)"]
+    E -->|"no"| G{"a commit changed<br/>the project outside<br/>its outputs?"}
+    G -->|"yes"| C["the last such<br/>commit's time"]
+    G -->|"no"| U["undated"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class E,G here
+    class S,C,U out
+```
+
+The outputs left out of that history are `exports_dir`, `preview_dir`, `site/`, `release/`, the report page and the
+file being written (`cadagent.project.source_time`), so a project that commits its report or site does not move
+their date by committing them. The site's "Recent changes" table leaves out the same commits. A `simreport` page is
+dated by the project that holds it (the nearest folder above it with `cad-agent.yaml`), wherever the script runs
+from. `SOURCE_DATE_EPOCH` is the
+[reproducible-builds](https://reproducible-builds.org/specs/source-date-epoch/) convention: seconds since
+1970-01-01 UTC, for example `SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)`.
+
+| Output | What is fixed |
+|---|---|
+| part STEP (`export_step`) | header date `2000-01-01T00:00:00` (or `SOURCE_DATE_EPOCH`), product named after the file, link ids |
+| assembly STEP (`export_step(assy)`) | the same, plus unnamed nodes named `<parent>.<k>` and the colour records in one order; names cadquery's reader would refuse or misread (a child with its parent's name or a sibling's) are refused |
+| `exports/<part>.3mf`, the release zip | sorted entries, fixed date (1980-01-01), mode and host |
+| review package (`cad-agent package`) | sorted entries; the source date, mode `rw-r--r--` and a Unix host on every entry |
+| results JSON (`header_meta.generated`), report page, `simreport` pages (`Generated`), the site's footer, the explore comparison (`generated`), the review bundle (`created`) | the source date, shown with where it came from: `2026-10-30 12:00 UTC (last commit)` |
+| the site's document cards | each page's last commit date, not its file time (which a fresh checkout resets) |
+
+Limits: another OCCT, cadquery or zlib build (stock zlib or zlib-ng) can write different bytes for the same model;
+a shallow clone sees a later commit than a full one (set `SOURCE_DATE_EPOCH` in CI that compares outputs); two pages
+a project writes outside those folders and commits count each other as sources (keep them in `exports_dir` or
+`preview_dir`). A review record's `timestamp` is the time it was submitted, and stays so.
 
 "Open in Bambu Studio" uses `bambustudio://open?file=<url-encoded http URL of the 3MF>&name=<part>`.
 The slicer fetches the file over http, so the link only works when the page is
@@ -220,7 +263,7 @@ Unquoted, the title is cut at the comma and the rest becomes a stray key.
 | `cad-agent holes [PART ...]` | checks every hole in every part is clear of material: finds the cylindrical holes and countersinks in `exports/<part>.step` (concave, at least 200° of wall, up to 30 mm across), probes each with a cylinder or cone just inside its wall, and writes `exports/hole-checks.json` bound to each STEP's sha256; `all` runs it and the report's "Holes clear" rows fail on material in a hole, a stale result or a check that did not run (config `cad: holes:`, [below](#holes-clear)) | 1 if a hole has material inside |
 | `cad-agent check [--json]` | collects results (no build), prints a table or the results JSON | 1 if any row fails |
 | `cad-agent report [--open]` | writes `exports/cad-agent-results.json` (results schema 1.0) and a standalone `docs/cad-agent-report.html` with inline styles (light and dark) that opens from `file://` | 1 if any row fails |
-| `cad-agent package` | zip + sha256 manifest from `package.include` | |
+| `cad-agent package` | zip + sha256 manifest from `package.include`; the same files give the same zip ([reproducible outputs](#reproducible-outputs)) | 2 on a malformed `SOURCE_DATE_EPOCH` |
 | `cad-agent release [--out DIR] [--no-zip] [--revision TEXT] [--date D]` | the print release: `release/<name>-rev<revision>/index.html` (parts with thumbnails, print settings, slicer mass and time, STEP/STL/3MF links; assembly pages; hardware; source) and a reproducible zip next to it ([below](#the-print-release-cad-agent-release)) | 2 on a bad config (a path outside the project), a missing part file or a foreign `--out` folder |
 | `cad-agent serve [--port N] [--host H]` | serves the project root; writes the URL to `preview/server-url.txt` | |
 | `cad-agent site [--serve]` | builds `site/` from milestones, decisions, a designs summary, Markdown pages and git history (config `cad: site:`); `--serve` rebuilds on change and serves the web kit at `/_cadagent/kit/`. One top bar links every page: `site: nav:` (`[{id, title, href}]`, hrefs from the project root) or, when unset, the overview, docs, 3D model and each `html_pages` page plus the check and simulation reports, the design comparison and the search leaderboard. The server adds the bar to every HTML page it sends (files on disk unchanged; a bar the page mounts itself wins; `<meta name="cadagent-nav" content="off">` opts a page out). A project with a `dossier:` or `gates:` key also gets the review pages in `site/review/`: a page per dossier section, the requirements table and the gates page with the connectivity graph ([dossier.md](dossier.md#on-the-review-site)) | |
@@ -825,6 +868,7 @@ The geometry and render tests skip unless cadquery and vtk are importable.
 | `docs/cad-agent-report.html` | the standalone report page (in `docs_dir`), written by `cad-agent report` with the results |
 | `CAD_AGENT_PROJECT` | set to the project root for every build step and design evaluator |
 | `CAD_AGENT_RENDER_ONLY` | comma-separated picture names: a `Renderer` made without `only=` renders just those |
+| `SOURCE_DATE_EPOCH` | seconds since 1970-01-01 UTC: the date STEP headers, zips and report pages record ([reproducible outputs](#reproducible-outputs)); a value that is not a whole number stops the command |
 | `from cadagent.<package> import ...` | the Python API ([package layout](#package-layout-v050)) |
 
 ## Holes clear

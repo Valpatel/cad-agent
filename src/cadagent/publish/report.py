@@ -25,14 +25,13 @@ from __future__ import annotations
 import html as _html
 import json
 import os
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from cadagent.geometry import within_bed
 from cadagent.publish.htmlreport import SCHEMA_VERSION, canonical_status, render_page
 from cadagent.links import missing_links
-from cadagent.project import CadProject, Check, lookup
+from cadagent.project import CadProject, Check, lookup, source_stamp
 
 RESULTS_NAME = "cad-agent-results.json"
 REPORT_NAME = "cad-agent-report.html"
@@ -295,7 +294,8 @@ def collect(project: CadProject) -> Dict[str, Any]:
         "header_meta": {
             "project": project.name,
             "revision": f"rev {revision}" if revision else "revision unknown",
-            "generated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+            # SOURCE_DATE_EPOCH or the last commit, never the wall clock: a rebuild writes the same bytes (#150)
+            "generated": source_stamp(project.root, outputs=report_paths(project)),
         },
         "footer_meta": {
             "checks": f"{counts['pass']} pass / {counts['fail']} fail / {counts['skip']} skip",
@@ -329,16 +329,20 @@ def render_html(results: Dict[str, Any], extra_panels: Iterable[str] = ()) -> st
     alerts = [{"severity": "warning", "title": "CAD verification only", "body": HONESTY_NOTE}]
     return render_page(results, alerts=alerts, extra_panels=extra_panels)
 
+def report_paths(project: CadProject) -> Tuple[Path, Path]:
+    """Where ``write_report`` writes: ``<exports>/cad-agent-results.json`` and ``<docs>/cad-agent-report.html``."""
+    return project.exports_dir / RESULTS_NAME, project.docs_dir / REPORT_NAME
+
 def write_report(project: CadProject) -> Tuple[Path, Path, Dict[str, Any]]:
-    """Write ``<exports>/cad-agent-results.json`` and ``<docs>/cad-agent-report.html``."""
+    """Write ``<exports>/cad-agent-results.json`` and ``<docs>/cad-agent-report.html``. Both are the same bytes on
+    every rebuild of the same files at the same commit (``header_meta.generated`` is the commit's time, #150)."""
     results = collect(project)
     project.exports_dir.mkdir(parents=True, exist_ok=True)
     project.docs_dir.mkdir(parents=True, exist_ok=True)
-    json_path = project.exports_dir / RESULTS_NAME
+    json_path, html_path = report_paths(project)
     json_path.write_text(json.dumps(results, indent=2) + "\n")
     parts, _ = load_parts(project)
     extra = [downloads_snippet(project, page_dir=project.docs_dir)] if parts else []
-    html_path = project.docs_dir / REPORT_NAME
     html_path.write_text(render_html(results, extra))
     return json_path, html_path, results
 

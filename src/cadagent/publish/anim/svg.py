@@ -46,11 +46,12 @@ def attr(s: str) -> str:
 
 def _join(values: Sequence[str]) -> str:
     """Numbers separated as tightly as SVG path grammar allows: a minus sign or a leading point ends a number."""
-    out = ""
+    out, prev = "", None
     for v in values:
-        if out and not v.startswith("-") and not (v.startswith(".") and "." in out.split(" ")[-1].lstrip("-")):
+        if prev is not None and not v.startswith("-") and not (v.startswith(".") and "." in prev.lstrip("-")):
             out += " "
         out += v
+        prev = v
     return out
 
 
@@ -117,6 +118,42 @@ class PathBuilder:
 
     def d(self) -> str:
         return "".join(self.parts)
+
+
+def arc_points(p0, p1, rx: float, ry: float, rot_deg: float, large: bool, sweep: bool,
+               n: int) -> List[Tuple[float, float]]:
+    """``n + 1`` points along an SVG elliptical arc from ``p0`` to ``p1``, ends included (the SVG spec's
+    endpoint-to-centre conversion, appendix B.2.4; radii too small to reach are scaled up as browsers do)."""
+    (x0, y0), (x1, y1) = p0, p1
+    if (x0, y0) == (x1, y1) or rx == 0 or ry == 0:
+        return [(x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n) for i in range(n + 1)]
+    phi = math.radians(rot_deg)
+    c, s = math.cos(phi), math.sin(phi)
+    dx2, dy2 = (x0 - x1) / 2, (y0 - y1) / 2
+    xp, yp = c * dx2 + s * dy2, -s * dx2 + c * dy2
+    rx, ry = abs(rx), abs(ry)
+    lam = xp * xp / (rx * rx) + yp * yp / (ry * ry)
+    if lam > 1:
+        rx, ry = rx * math.sqrt(lam), ry * math.sqrt(lam)
+    num = rx * rx * ry * ry - rx * rx * yp * yp - ry * ry * xp * xp
+    den = rx * rx * yp * yp + ry * ry * xp * xp
+    coef = math.sqrt(max(0.0, num / den)) * (-1 if bool(large) == bool(sweep) else 1)
+    cxp, cyp = coef * rx * yp / ry, -coef * ry * xp / rx
+    cx, cy = c * cxp - s * cyp + (x0 + x1) / 2, s * cxp + c * cyp + (y0 + y1) / 2
+    ux, uy = (xp - cxp) / rx, (yp - cyp) / ry
+    vx, vy = (-xp - cxp) / rx, (-yp - cyp) / ry
+    t1 = math.atan2(uy, ux)
+    dt = math.atan2(ux * vy - uy * vx, ux * vx + uy * vy)
+    if sweep and dt < 0:
+        dt += 2 * math.pi
+    elif not sweep and dt > 0:
+        dt -= 2 * math.pi
+    out = []
+    for i in range(n + 1):
+        t = t1 + dt * i / n
+        out.append((cx + rx * math.cos(t) * c - ry * math.sin(t) * s, cy + rx * math.cos(t) * s + ry * math.sin(t) * c))
+    out[0], out[-1] = (x0, y0), (x1, y1)
+    return out
 
 
 def polygon_d(loops: Iterable[Sequence[Tuple[float, float]]]) -> str:
@@ -260,7 +297,8 @@ _URL = re.compile(r"""url\(\s*["']?(?!#)""", re.I)
 
 def problems(svg: str, budget: Optional[int] = None) -> List[str]:
     """Why ``svg`` is not safe to embed as a GitHub README ``<img>``: an empty list when it is. ``budget`` is the
-    size limit in bytes (default ``BUDGET_BYTES``)."""
+    size limit in bytes (default ``BUDGET_BYTES``). Elements are compared by local name in any namespace, and the
+    CSS rules are read from the ``<style>`` elements and ``style`` attributes."""
     budget = BUDGET_BYTES if budget is None else budget
     out = []
     size = len(svg.encode("utf-8"))
@@ -270,30 +308,34 @@ def problems(svg: str, budget: Optional[int] = None) -> List[str]:
         root = ET.fromstring(svg)
     except ET.ParseError as e:
         return out + [f"not well-formed XML: {e}"]
-    ns = "{http://www.w3.org/2000/svg}"
-    if root.tag != ns + "svg":
+    local = lambda tag: tag.rsplit("}", 1)[-1] if isinstance(tag, str) else ""
+    if root.tag != "{http://www.w3.org/2000/svg}svg":
         out.append(f"root element is {root.tag}, not svg")
-    tags = {el.tag.replace(ns, "") for el in root.iter()}
+    tags = {local(el.tag) for el in root.iter()}
     for bad in ("script", "foreignObject", "iframe", "image", "use", "a"):
         if bad in tags:
             out.append(f"contains <{bad}>")
+    if tags & {"animate", "animateTransform", "animateMotion", "animateColor", "set", "discard"}:
+        out.append("SMIL animation (use CSS, which reduced motion can stop)")
     for el in root.iter():
         for k in el.attrib:
-            if k.lower().startswith("on"):
-                out.append(f"event handler attribute {k} on <{el.tag.replace(ns, '')}>")
+            if local(k).lower().startswith("on"):
+                out.append(f"event handler attribute {local(k)} on <{local(el.tag)}>")
     if _EXTERNAL.search(svg):
         out.append("an href or src that is not a same-document #fragment")
     if _URL.search(svg) or "@import" in svg:
         out.append("a url() or @import that is not a same-document #fragment")
+    css = "".join(el.text or "" for el in root.iter() if local(el.tag) == "style")
+    inline = "".join(el.get("style", "") for el in root.iter())
+    if "\\" in css + inline:
+        out.append("a backslash in CSS (an escape could hide a url() or @import)")
     if root.get("role") != "img" or not root.get("aria-label"):
         out.append('no role="img" with an aria-label on the root')
-    title = root.find(ns + "title")
+    title = next((el for el in root if local(el.tag) == "title"), None)
     if title is None or not (title.text or "").strip():
         out.append("no <title>")
-    if REDUCED_MOTION not in svg:
-        out.append("no prefers-reduced-motion rule that stops every animation")
-    if "@keyframes" not in svg:
+    if REDUCED_MOTION not in css:
+        out.append("no prefers-reduced-motion rule in a <style> that stops every animation")
+    if "@keyframes" not in css:
         out.append("no CSS animation")
-    if re.search(r"<animate|<set\b", svg):
-        out.append("SMIL animation (use CSS, which reduced motion can stop)")
     return out

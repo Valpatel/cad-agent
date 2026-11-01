@@ -108,8 +108,8 @@ def test_the_hero_states_its_checks_from_the_scene(tool, built):
     assert lk["motion_error_px"] < 2, "the drawn motion strays too far from the exact 3D motion"
     assert max(lk["motion_error_px_by_part"].values()) == lk["motion_error_px"]
     text = built["hero"]
-    assert f"{scene['fea']['design_mpa']:.1f} MPa" in text
-    assert f"{scene['fea']['first_failure_factor']:.2f}× load" in text
+    assert f"first failure predicted at {scene['fea']['first_failure_factor']:.2f}× load" in text
+    assert lk["edge_error_px"] < 2, "drawn edges stray too far from the exact 3D motion"
     if scene.get("clearance"):
         assert f"{scene['clearance']['poses']} poses" in text
 
@@ -147,6 +147,14 @@ MUTATIONS = [
     ("no reduced motion", lambda t: t.replace(svg.REDUCED_MOTION, ""), "prefers-reduced-motion"),
     ("no animation", lambda t: t.replace("@keyframes", "@media print"), "no CSS animation"),
     ("SMIL", lambda t: _insert(t, '<animate attributeName="opacity" dur="1s"/>'), "SMIL"),
+    ("prefixed SMIL", lambda t: _insert(t, '<s:animate xmlns:s="http://www.w3.org/2000/svg" attributeName="x"/>'),
+     "SMIL"),
+    ("XHTML script", lambda t: _insert(t, '<h:script xmlns:h="http://www.w3.org/1999/xhtml">x()</h:script>'),
+     "<script>"),
+    ("reduced motion outside the style", lambda t: t.replace(svg.REDUCED_MOTION, "").replace(
+        "</desc>", svg.REDUCED_MOTION + "</desc>"), "prefers-reduced-motion"),
+    ("CSS escape", lambda t: t.replace("<style>", "<style>.z{fill:u\\72l(https://example.com/p.svg)}", 1),
+     "backslash"),
 ]
 
 
@@ -162,6 +170,13 @@ def test_each_rule_fails_an_svg_that_breaks_it(built, what, mutate, expect):
 
 # ---------------------------------------------------------------------------------------------------- the helpers
 
+def test_path_numbers_are_separated_where_the_grammar_needs_it():
+    from cadagent.publish.anim.svg import _join
+
+    assert _join(["1.5", "-2", ".5"]) == "1.5-2 .5"        # ".5" after "-2" would read as -2.5
+    assert _join(["1.5", ".5", "-2", "3"]) == "1.5.5-2 3"
+
+
 def test_numbers_are_compact():
     assert [svg.num(v, 2) for v in (0.5, -0.5, 1.0, -0.001, 12.345)] == [".5", "-.5", "1", "0", "12.35"]
 
@@ -170,6 +185,16 @@ def test_paths_are_relative_integers_and_continue_shared_ends():
     d = svg.segments_d([["L", 10, 10, 20, 10], ["L", 20, 10, 20, 30], ["A", 20, 30, 40, 30, 10, 10, 0, 0, 1]])
     assert d == "M10 10l10 0 0 20a10 10 0 0 1 20 0"
     assert svg.polygon_d([[(0, 0), (4, 0), (4, 4)], [(10, 10), (12, 10), (12, 12)]]) == "M0 0l4 0 0 4zm10 10l2 0 0 2z"
+
+
+def test_arc_points_follow_the_svg_arc():
+    up = svg.arc_points((0, 0), (2, 0), 1, 1, 0, False, True, 2)        # sweep 1 turns clockwise on screen (y down)
+    down = svg.arc_points((0, 0), (2, 0), 1, 1, 0, False, False, 2)
+    assert [c for p in up for c in p] == pytest.approx([0, 0, 1, -1, 2, 0])
+    assert [c for p in down for c in p] == pytest.approx([0, 0, 1, 1, 2, 0])
+    big = svg.arc_points((0, 0), (2, 0), 2, 2, 0, True, True, 8)        # the large arc of a radius-2 circle,
+    assert [math.dist(p, (1, -math.sqrt(3))) for p in big] == pytest.approx([2] * 9)   # centred above the chord
+    assert big[4] == pytest.approx((1, -math.sqrt(3) - 2))
 
 
 def test_two_animations_on_one_element_are_one_rule():

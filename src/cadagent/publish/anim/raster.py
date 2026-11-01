@@ -188,18 +188,24 @@ def dilate(mask: np.ndarray) -> np.ndarray:
     return out
 
 
-def nearest(labels: np.ndarray, x: float, y: float, empty: int, radius: int = 4) -> int:
-    """The label of the cell nearest the point (x, y) in cell coordinates (cell (row j, col i) spans i..i+1,
-    j..j+1) among cells within ``radius`` that are not ``empty``; ``empty`` when there are none."""
-    rows, cols = labels.shape
+def nearest_cell(valid: np.ndarray, x: float, y: float, radius: int = 4):
+    """The (row, col) of the ``valid`` cell nearest the point (x, y) in cell coordinates (cell (row j, col i) spans
+    i..i+1, j..j+1) within ``radius`` cells, or None."""
+    rows, cols = valid.shape
     ci, cj = int(math.floor(x)), int(math.floor(y))
     j0, j1, i0, i1 = max(0, cj - radius), min(rows, cj + radius + 1), max(0, ci - radius), min(cols, ci + radius + 1)
     if j0 >= j1 or i0 >= i1:
-        return empty
-    win = labels[j0:j1, i0:i1]
-    jj, ii = np.nonzero(win != empty)
+        return None
+    jj, ii = np.nonzero(valid[j0:j1, i0:i1])
     if not len(jj):
-        return empty
+        return None
     d = (ii + i0 + 0.5 - x) ** 2 + (jj + j0 + 0.5 - y) ** 2
     n = int(np.lexsort((ii, jj, d))[0])                 # nearest; ties broken by position, so the result is stable
-    return int(win[jj[n], ii[n]])
+    return int(jj[n] + j0), int(ii[n] + i0)
+
+
+def nearest(labels: np.ndarray, x: float, y: float, empty: int, radius: int = 4) -> int:
+    """The label of the cell nearest the point (x, y) (see ``nearest_cell``) among cells that are not ``empty``;
+    ``empty`` when there are none within ``radius``."""
+    cell = nearest_cell(labels != empty, x, y, radius)
+    return empty if cell is None else int(labels[cell])

@@ -60,6 +60,7 @@ linkage:
   expect: {lengths: {A-B: 150, A-C: 150, B-D: 150, C-E: 250, D-E: 250}, tolerance_mm: 0.5}
   dead_points: [[C, A, E], [D, B, E]]     # a knee straight or folded flat is a dead point
   path: {ellipse: {centre: [0, -255], radii: [80, 45], start_deg: -90}, samples: 24}
+  trace_part: tyre      # the path is drawn in the wheel's middle plane
 clearance: {near_mm: 10, every: 2}
 fea:
   part: hip_frame
@@ -78,6 +79,8 @@ present:
     axes, a scan checks the clearance between the moving parts, the hip frame fills with stress from Gyropup's own
     FEA, and the five-bar steps through a stride solved from its real link lengths. It ends on the cad-agent wordmark
     with the three checks passed. Geometry and results from github.com/Valpatel/gyropup (MIT).
+  checks:               # the check rows' words; {placeholders} are filled from the scene
+    motion_margin: "five-bar stride · knees ≥ {margin}° from a dead point"
   captions:
     draw: "Gyropup's leg, drawn from its STEP file"
     assemble: "the parts slide into place"

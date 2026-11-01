@@ -6,7 +6,7 @@ The README's hero is not drawn by hand. `tools/readme_anim.py` makes it from a r
 - clearances from the assembly gates' relation engine;
 - stress bands from the project's own FEA field.
 
-It writes one SVG of about 130 KB that animates with CSS alone, so GitHub shows it in a README `<img>`.
+It writes one SVG of about 140 KB that animates with CSS alone, so GitHub shows it in a README `<img>`.
 
 ![Gyropup's five-bar leg drawn from its STEP file, assembled, then checked: the closest passing gap, the hip frame's FEA stress and a stride solved from the link lengths, ending on the cad-agent wordmark](img/hero/gyropup-leg.svg)
 
@@ -49,7 +49,7 @@ Copy `tools/anim/gyropup-leg.yaml`, then add the figure to `FIGURES` in `tools/r
   - Four-bars driven by an output point, five-bars and chains of dyads all fit (`cadagent.publish.anim.linkage`).
 - **the view**: a direction and an up vector. Set the stage box in pixels.
 - **the FEA field**: optional, a `cadagent-fea-viewer` v1 file (what `cadagent.fea` writes for the viewer), with the stress bands as fractions of strength.
-- **the words**: the wordmark and tagline, drawn as outlines because an `<img>` loads no fonts. Labels and captions sit under `present`, so they can change without re-extracting.
+- **the words**: the wordmark and tagline, drawn as outlines because an `<img>` loads no fonts. Labels, captions and the check rows' wording (`present.checks`, with `{placeholders}` filled from the scene) sit under `present`, so they can change without re-extracting.
 
 A different kind of figure (a board into its enclosure, print layers, a convergence chart) gets its own scene module next to `cadagent.publish.anim.hero`. It reuses the shared parts:
 - edge projection: `cad`;
@@ -74,8 +74,8 @@ Both colour schemes are in the one SVG (`prefers-color-scheme`), on its own back
 ## What it approximates
 
 - **Hidden lines.** Each solid hides only its own edges. Solids hide each other by their filled silhouettes, painted back to front. The order is the one that draws the fewest cells wrong on depth rasters of the assembled and exploded states. Interlocking parts, such as a pin through a bore, have no right order, so the scene records how many overlapping cells are drawn wrong.
-- **Motion.** Each moving solid is drawn in slices along the joint axis. Each slice is moved by an exact rotation at its own depth. The scene records the largest error over the visible surface, per part. For Gyropup's leg it is about 1 px. The hidden lines stay those of the reference pose.
+- **Motion.** Each moving solid is drawn in slices along the joint axis. Each slice is moved by an exact rotation at its own depth, and edges are cut where they pass into the next slice. The scene records the largest error per part, over the visible mesh vertices and over the visible edges. For Gyropup's leg both are about 1 px. The hidden lines stay those of the reference pose.
 - **Clearance.** It is checked at sampled poses, not as a swept volume. A pair of parts whose gap stays the same at every pose is turning about its own shared axis: a flange on its motor, a pin in its bearing, a spacer beside it. Such a pair is listed as a joint interface. The closest gap shown is between parts that move past each other.
-- **Stress.** The colours show the FEA's surface field, capped at its design stress. The numbers shown are the FEA's own.
+- **Stress.** The colours show the FEA's surface field, capped at its design stress. The load factor shown is the FEA's own prediction of first failure, made under its assumptions (linear-elastic, weakest print direction, idealised clamps).
 
 CAD and simulation narrow a design down. They do not prove that a printed part fits or holds.

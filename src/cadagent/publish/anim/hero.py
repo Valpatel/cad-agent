@@ -19,10 +19,12 @@ What the drawing approximates, stated in the scene and its caption:
   the order that draws the fewest cells wrong, counted on depth rasters of the assembled and the exploded states.
   Interlocking parts (a pin through a bore) have no right order; the scene records how many overlapping cells
   are drawn wrong, of how many.
-* The linkage moves each solid as one 2D transform of its drawing: the body's exact rotation in the linkage's
-  plane, taken at the middle depth (along the joint axis) of the solid's visible surface. Geometry nearer or farther
-  than that depth is off by up to ``motion_error_px`` at the worst pose (the scene records it and the part). The
-  hidden lines stay those of the reference pose.
+* The linkage moves each moving solid in slabs: slices along the joint axis, at most ``slab_mm`` deep. Each slab
+  (its fill and its edges, cut where they cross into the next slab) gets the body's exact rotation in the
+  linkage's plane at the slab's middle depth. The scene records the largest error over the visible mesh vertices
+  (``motion_error_px``) and over the edges where they are visible in the assembled leg (``edge_error_px``), per
+  part. The hidden lines stay those of the
+  reference pose.
 * Clearance is checked at the sampled poses only. A pair of solids whose extents along the joint axes do not
   overlap can never meet while every joint turns about that axis. Such pairs are counted, not queried. The sweep
   is slow (#186), so a previous scene's result is reused when its key (the assembly's sha256 and the parts,
@@ -72,11 +74,21 @@ JOINT_GAP_SPREAD_MM = 0.02  # a pair whose gap changes less than this over the s
 
 
 def _clearance_key(spec: Mapping[str, Any], assembly_sha256: str) -> str:
-    """What the clearance sweep depends on, hashed: a previous result with the same key can be reused."""
+    """What the clearance sweep depends on, hashed: a previous result with the same key can be reused. Covers the
+    assembly, the parts, linkage and clearance specs, the sweep's version and the relation engine's source and
+    default tolerances."""
     import hashlib
 
+    import dataclasses
+    import inspect
+
+    from cadagent.gates import relations
+
+    # the relation engine too: its code and default tolerances (a faster or stricter relate() reruns the sweep)
+    engine = hashlib.sha256(inspect.getsource(relations).encode()).hexdigest()
     basis = {"version": CLEARANCE_VERSION, "assembly": assembly_sha256, "parts": spec["parts"],
-             "linkage": spec["linkage"], "clearance": spec.get("clearance", {})}
+             "linkage": spec["linkage"], "clearance": spec.get("clearance", {}), "relate": engine,
+             "tolerances": dataclasses.asdict(relations.Tolerances())}
     return hashlib.sha256(json.dumps(basis, sort_keys=True).encode()).hexdigest()
 
 
@@ -161,6 +173,10 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True,
         xy, z = view.project(v)
         geo[p["solid"]] = {"seg": cad.hlr_segments(s, view), "v": v, "t": t, "xy": xy, "z": z}
     log(f"hidden lines and meshes for {len(parts)} solids: {time.time() - t0:.1f} s")
+
+    def rng_axis(i: int) -> Tuple[float, float]:
+        """A solid's extent along the joint axis."""
+        return float(geo[i]["v"][:, iaxis].min()), float(geo[i]["v"][:, iaxis].max())
 
     def plane_to_world(uv: Tuple[float, float], depth: float) -> np.ndarray:
         w = np.zeros(3)
@@ -342,25 +358,74 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True,
     log(f"painter's order: {len(order)} solids drawn, {len(hidden)} never visible; "
         f"{n_slabs} depth slabs; motion error up to {motion_err:.2f} px ({worst})")
 
-    # ---- the drawing: per solid and slab, its silhouette and its edges, in units
+    # how far a point drawn at the wrong depth along the axis strays, per mm, at the worst pose: |(L - I) a|
+    sens = {}
+    for b in bodies:
+        sens[b] = max(float(np.linalg.norm((motion2d(b, pose)[:2, :2] - np.eye(2)) @ a_axis)) for pose in poses)
+
+    # ---- the drawing: per solid and slab, its silhouette and its edges, in units. Edges are cut where they cross
+    # from one slab to the next, so each piece moves at its own slab's depth.
     out_solids = []
+    edge_err: Dict[str, float] = {}
     for i in order:
         p = next(q for q in parts if q["solid"] == i)
         mask = np.isfinite(asm[i])
         segs = cad.transform_segments(geo[i]["seg"], k, tuple(off))
-        if len(slabs[i]) == 1:
+        if p["body"] == "ground" or i not in axis_depth:
             masks, seg_groups = [mask], [segs]
         else:
-            # each cell and edge goes to the slab of its depth along the axis
             cell_slab = np.where(mask, slab_of(i, np.nan_to_num(axis_depth[i], nan=0.0)), -1)
             # one cell of overlap between neighbouring slabs, so no seam shows between their fills
             masks = [raster.dilate(cell_slab == j) & mask for j in range(len(slabs[i]))]
             seg_groups = [[] for _ in slabs[i]]
+            covered = cell_slab >= 0
+
+            def probe(x, y):
+                """The slab of the nearest covered cell, and its axis depth where the solid is the one seen there
+                when assembled (elsewhere other solids cover the edge, so its error does not show); (-1, None)
+                off the solid."""
+                c = raster.nearest_cell(covered, x, y)
+                if c is None:
+                    return -1, None
+                return int(cell_slab[c]), (float(axis_depth[i][c]) if front_id[c] == i else None)
+
+            def note(depth, slab):
+                if depth is not None:
+                    e = abs(depth - slabs[i][slab][2]) * sens[p["body"]] * k / U
+                    edge_err[p["part"]] = max(edge_err.get(p["part"], 0.0), e)
+
             for sg in segs:
-                ends = [(sg[1], sg[2]), (sg[-2], sg[-1])] if sg[0] != "A" else [(sg[1], sg[2]), (sg[3], sg[4])]
-                found = [raster.nearest(cell_slab, x, y, -1) for x, y in ends]
-                found = [f for f in found if f >= 0]
-                seg_groups[int(round(sum(found) / len(found))) if found else 0].append(sg)
+                if sg[0] == "A":
+                    # an arc stays an arc when it lies in one slab (a circle across the axis), else it is cut as
+                    # a polyline of short chords
+                    span = math.dist(sg[1:3], sg[3:5]) + 2 * max(sg[5], sg[6])
+                    pts = S.arc_points(sg[1:3], sg[3:5], sg[5], sg[6], sg[7], sg[8], sg[9], max(4, int(span / 4)))
+                    found = [probe(*pt) for pt in pts]
+                    labs = {f for f, _ in found if f >= 0}
+                    if len(labs) <= 1:
+                        slab = labs.pop() if labs else 0
+                        for _, d in found:
+                            note(d, slab)
+                        seg_groups[slab].append(sg)
+                        continue
+                else:
+                    pts = list(zip(sg[1::2], sg[2::2]))
+                for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+                    n = max(1, int(math.ceil(math.hypot(x1 - x0, y1 - y0) / 4)))       # a probe every 2 px
+                    found = [probe(x0 + (x1 - x0) * (m + 0.5) / n, y0 + (y1 - y0) * (m + 0.5) / n) for m in range(n)]
+                    labs = [f for f, _ in found]
+                    last = next((f for f in labs if f >= 0), 0)
+                    for m in range(n):                     # a probe off the solid takes its neighbour's slab
+                        labs[m] = last = labs[m] if labs[m] >= 0 else last
+                    start = 0
+                    for m in range(1, n + 1):
+                        if m == n or labs[m] != labs[start]:
+                            t0, t1 = start / n, m / n
+                            seg_groups[labs[start]].append(["L", x0 + (x1 - x0) * t0, y0 + (y1 - y0) * t0,
+                                                            x0 + (x1 - x0) * t1, y0 + (y1 - y0) * t1])
+                            start = m
+                    for (_, d), slab in zip(found, labs):
+                        note(d, slab)
         out = []
         for (_, _, depth), m, sg in zip(slabs[i], masks, seg_groups):
             loops = raster.region(m, grid, float(spec.get("outline_tol", 0.6)), min_area=2.0)
@@ -368,6 +433,8 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True,
                         "fill": S.polygon_d(loops), "edges": S.segments_d(sg)})
         out_solids.append({"solid": i, "part": p["part"], "body": p["body"], "style": p["style"],
                            "explode": [_r(c, 1) for c in explode_vec[i] * k], "slabs": out})
+    log(f"edges: visible ones drawn up to {max(edge_err.values(), default=0):.2f} px from their exact motion "
+        f"({max(edge_err, key=edge_err.get, default=None)})")
 
     # ---- the FEA field on its part
     fea_out = None
@@ -435,8 +502,16 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True,
         frames[b] = {"pivot": units_pt(link.reference[link.links[b][0]], 0.0), "frames": rows}
     # the driven joint's trace, at the depth of the outermost solid it carries (for a wheel: its outer face)
     driven = lk["driven"]
-    drive_body = next(b for b in bodies if driven in link.links[b])
-    trace_depth = max(solid_depth[p["solid"]] for p in parts if p["body"] == drive_body)
+    # drawn at the depth of the part that travels it (``linkage.trace_part``, e.g. a wheel: its middle plane),
+    # else at the deepest solid of the bodies that carry the driven joint
+    trace_part = lk.get("trace_part")
+    if trace_part:
+        ranges = [rng_axis(p["solid"]) for p in parts if p["part"] == trace_part]
+        if not ranges:
+            raise ValueError(f"linkage.trace_part {trace_part} is not a part")
+        trace_depth = (min(r[0] for r in ranges) + max(r[1] for r in ranges)) / 2
+    else:
+        trace_depth = max(solid_depth[p["solid"]] for p in parts if driven in link.links.get(p["body"], ()))
     trace = [units_pt(p[driven], trace_depth) for p in poses]
 
     # ---- text outlines
@@ -466,6 +541,8 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True,
                     "bodies": frames, "trace": trace, "trace_depth_mm": _r(trace_depth, 1),
                     "motion_error_px": _r(motion_err, 2), "motion_error_part": worst,
                     "motion_error_px_by_part": {n: _r(e, 2) for n, e in sorted(err_by_part.items())},
+                    "edge_error_px": _r(max(edge_err.values(), default=0.0), 2),
+                    "edge_error_px_by_part": {n: _r(e, 2) for n, e in sorted(edge_err.items())},
                     "reach_mm": [_r(min(math.dist(p[driven], (0, 0)) for p in poses), 1),
                                  _r(max(math.dist(p[driven], (0, 0)) for p in poses), 1)]},
         "fea": fea_out, "clearance": clear_out, "text": texts,
@@ -850,7 +927,7 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
         body.append(f'<text x="{col}" y="{98 * U}" class="cap w c{i}">{S.attr(cap)}</text>')
         tl.opacity(f".c{i}", [(0, 0), (t_on, 0), (t_on + 0.25, 1), (t_off, 1), (t_off + 0.25, 0), (P, 0)])
     css.append(f".cap{{font-size:{15 * U}px;fill:var(--muted);opacity:0}}")
-    rows = _check_rows(scene)
+    rows = _check_rows(scene, present.get("checks"))
     y0 = present.get("rows_y_px", 186) * U
     narrow = []
     for i, (label, detail, t_on, ok) in enumerate(rows):
@@ -898,23 +975,40 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
     return S.document(W, H, present["label"], present["description"], "".join(css) + tl.stylesheet(), body, theme)
 
 
-def _check_rows(scene: Mapping[str, Any]) -> List[Tuple[str, str, float, bool]]:
-    """(name, result, when it is marked, passed) for each check the scene carries."""
+# what each check row says, with the scene's numbers; a spec's ``present.checks`` may replace any of them
+CHECK_WORDS = {
+    "fit": "{clashes} in {poses} poses · passing parts ≥ {gap} mm apart",
+    "strength": "FEA {part}: first failure predicted at {factor}× load",
+    "motion": "a {samples}-step stride solved from the link lengths",
+    "motion_margin": "stride solved from the link lengths · ≥ {margin}° from a dead point",
+}
+
+
+def _check_rows(scene: Mapping[str, Any], words: Mapping[str, str] = None) -> List[Tuple[str, str, float, bool]]:
+    """(name, result, when it is marked, passed) for each check the scene carries, in ``words`` (CHECK_WORDS
+    overridden by the spec's ``present.checks``)."""
+    w_ = {**CHECK_WORDS, **(words or {})}
     ph = Phases
     rows = []
     c = scene.get("clearance")
     if c:
         clash = len(c.get("clashes", []))
         w = c.get("closest") or {}
-        rows.append(("fit", (f"{clash} clashes" if clash else "no clash") + f" in {c['poses']} poses · passing parts "
-                     f"≥ {_fmt(w.get('gap_mm', 0))} mm apart", ph.scan[1], not clash))
+        rows.append(("fit", w_["fit"].format(clashes=f"{clash} clashes" if clash else "no clash", poses=c["poses"],
+                                             gap=_fmt(w.get("gap_mm", 0))), ph.scan[1], not clash))
     f = scene.get("fea")
     if f:
-        ok = f["first_failure_factor"] is None or f["first_failure_factor"] > 1.0
-        rows.append(("strength", f"FEA {f['part'].replace('_', ' ')}: {_fmt(f['design_mpa'])} MPa, "
-                     f"fails at {_fmt(f['first_failure_factor'], 2)}× load", ph.fea[1], ok))
+        factor = f["first_failure_factor"]
+        ok = factor is None or factor > 1.0
+        rows.append(("strength", w_["strength"].format(part=f["part"].replace("_", " "), mpa=_fmt(f["design_mpa"]),
+                                                       factor="?" if factor is None else _fmt(factor, 2)),
+                     ph.fea[1], ok))
     lk = scene["linkage"]
-    margin = min(lk["dead_point_margin_deg"])
-    rows.append(("motion", f"five-bar stride · knees ≥ {_fmt(margin, 0)}° from a dead point", ph.motion[1],
-                 margin > 0))
+    margins = lk.get("dead_point_margin_deg") or []
+    if margins:                                       # the knees' (or any joint's) distance from a dead point
+        margin = min(margins)
+        rows.append(("motion", w_["motion_margin"].format(margin=_fmt(margin, 0), samples=lk["samples"]),
+                     ph.motion[1], margin > 0))
+    else:
+        rows.append(("motion", w_["motion"].format(samples=lk["samples"]), ph.motion[1], True))
     return rows

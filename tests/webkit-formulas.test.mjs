@@ -13,13 +13,19 @@ const root = path.resolve(import.meta.dirname, '..');
 const vectors = JSON.parse(await readFile(path.join(root, 'tests/fixtures/formula-vectors.json'), 'utf8'));
 const { rel, abs } = vectors.tolerance;
 
-const close = (got, want, where) => {
+// A case may carry its own tolerance (where the Python says why: a double root), and `angles` for results that are
+// angles in rad: compared round the circle (pi and -pi are one position; a last-ulp difference picks either) and to
+// the relative tolerance in rad, since an angle near 0 is no less certain in rad than one near pi.
+const close = (got, want, where, tol = { rel, abs }, angles = false) => {
   if (typeof want === 'number') {
     assert.equal(typeof got, 'number', `${where}: not a number`);
-    assert.ok(Math.abs(got - want) <= Math.max(abs, rel * Math.abs(want)), `${where}: ${got} != ${want}`);
+    const diff = Math.abs(got - want), apart = angles ? Math.min(diff, Math.abs(diff - 2 * Math.PI)) : diff;
+    const scale = angles ? Math.max(1, Math.abs(want)) : Math.abs(want);
+    assert.ok(apart <= Math.max(tol.abs, tol.rel * scale), `${where}: ${got} != ${want}`);
   } else if (want && typeof want === 'object') {
+    assert.ok(got && typeof got === 'object', `${where}: ${got} where the Python has ${JSON.stringify(want)}`);
     assert.deepEqual(Object.keys(got).sort(), Object.keys(want).sort(), `${where}: keys`);
-    for (const k of Object.keys(want)) close(got[k], want[k], `${where}.${k}`);
+    for (const k of Object.keys(want)) close(got[k], want[k], `${where}.${k}`, tol, angles);
   } else assert.equal(got, want, where);
 };
 
@@ -28,8 +34,28 @@ test('every ported function reproduces the Python on every golden vector', () =>
   for (const [i, c] of vectors.cases.entries()) {
     assert.equal(typeof fx[c.js], 'function', `case ${i}: ${c.js} is not in formulas.js`);
     if (c.raises) continue;
-    close(fx[c.js](...c.args), c.expected, `case ${i} ${c.js}(${c.args.join(', ')})`);
+    close(fx[c.js](...c.args), c.expected, `case ${i} ${c.js}(${c.args.join(', ')})`, c.tolerance, c.angles);
   }
+});
+
+test('the four-bar vectors cover both branches, change points and the input limits, and loosen only there', () => {
+  const four = vectors.cases.filter(c => c.js === 'fourbarAngles');
+  assert.ok(four.some(c => c.args[5] === false) && four.some(c => c.args[5] === true), 'both branches');
+  assert.ok(four.some(c => c.expected === null) && four.some(c => c.expected !== null), 'closing and not closing');
+  const limits = vectors.cases.filter(c => c.js === 'fourbarInputLimits').map(c => c.expected);
+  assert.ok(limits.some(l => l.fullTurn) && limits.some(l => l.folded !== null && l.stretched !== null) &&
+    limits.some(l => l.folded === null && l.stretched !== null) && limits.some(l => !l.closes), 'every kind of input range');
+  for (const kind of ['crank-rocker', 'double-crank', 'rocker-crank', 'double-rocker', 'triple-rocker', 'change-point'])
+    assert.ok(vectors.cases.some(c => c.js === 'grashof' && c.expected.inversion === kind), kind);
+  // every exact limit angle is a vector, on both branches
+  for (const c of vectors.cases.filter(c => c.js === 'fourbarInputLimits'))
+    for (const edge of [c.expected.folded, c.expected.stretched].filter(e => e !== null))
+      assert.equal(four.filter(f => f.args.slice(0, 4).join() === c.args.join() && f.args[4] === edge).length, 2, `${c.args} at ${edge}`);
+  const loose = vectors.cases.filter(c => c.tolerance);
+  assert.ok(loose.length && loose.every(c => /double root/.test(c.tolerance.why) && c.tolerance.rel <= 1e-7 && c.tolerance.abs <= 1e-7));
+  const positions = vectors.cases.filter(c => c.js === 'fourbarAngles' || c.js === 'transmissionAngle');
+  assert.ok(positions.every(c => c.angles), 'four-bar results are compared as angles');
+  assert.ok(loose.length < positions.length / 4, 'the double-root tolerance is for the few vectors where the branches meet');
 });
 
 test('the port has exactly the functions the vectors cover, no untested extras', () => {

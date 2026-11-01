@@ -9,25 +9,28 @@ description = "Agent toolkit for mechanical and electrical design: CAD checks, s
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
-dependencies = ["pyyaml", "numpy"]
+# Floors (#151): no lower release with a known advisory (research/security-report.md), and each one tested: CI runs the
+# core suite at numpy 1.22.0, pyyaml 6.0 and pytest 9.0.3, and the site tests at markdown 3.8.1. vtk 9.5.2 is the lowest
+# VTK that cadquery-ocp 7.9.3 (cadquery 2.8) pins; cadquery 2.6 and 2.7 pin vtk 9.3.1.
+dependencies = ["pyyaml>=6.0", "numpy>=1.22"]
 
 [project.optional-dependencies]
 cad = [
     "cadquery>=2.4",
     "trimesh>=4.0",
-    "vtk>=9.2",
+    "vtk>=9.5.2",
     "matplotlib>=3.7",
-    "pillow>=10.0",
-    "numpy",
+    "pillow>=13.0",
+    "numpy>=1.22",
 ]
 robot = ["mujoco>=3"]
 # airflow/heat case writing, topology optimisation, pictures and animations (OpenFOAM and Bambu Studio are external programs)
 sim = ["trimesh>=4.0", "manifold3d>=2.4", "rtree>=1.0", "pyvista>=0.44", "imageio>=2.30", "imageio-ffmpeg>=0.5",
-       "pymoto>=2.0", "matplotlib>=3.7", "pillow>=10.0", "scipy>=1.10"]
-site = ["markdown>=3.5"]
+       "pymoto>=2.0", "matplotlib>=3.7", "pillow>=13.0", "scipy>=1.10"]
+site = ["markdown>=3.8.1"]
 fea = ["gmsh>=4.11", "scikit-fem>=9", "matplotlib>=3.7", "pypardiso>=0.4", "pyamg>=5"]
 explore = ["optuna>=3.4"]
-dev = ["pytest"]
+dev = ["pytest>=9.0.3"]
 
 [project.scripts]
 cad-agent = "cadagent.cli:main"

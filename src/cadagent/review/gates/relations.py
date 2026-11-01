@@ -827,8 +827,8 @@ def relate(a: Any, b: Any, tol: Tolerances = Tolerances(), *, names: Tuple[str, 
     with the reason in ``error``.
 
     Distance first (#186): after the input checks, a pair whose boundaries are more than ``touch_mm`` apart,
-    with neither inside the other, is ``apart`` without volumes or booleans (``_proven_apart``); every other
-    pair takes the full path, unchanged.
+    with neither inside the other and an empty common, is ``apart`` without volume integration or the cut
+    (``_proven_apart``); every other pair takes the full path, unchanged.
     """
     sa, sb = getattr(a, "wrapped", a), getattr(b, "wrapped", b)
     if not validated:

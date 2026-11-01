@@ -166,7 +166,7 @@ docs/gates.md:
       shows: output
       tool: cad-agent review-packet
       on: fixture
-      caption: "A seeded failure (screw_too_long): screw_0 made 4 mm longer. The tip check fails, 3.00 mm into the hopper, and so does length (12 mm, outside the 4.5 to 8.5 mm the stack takes); the connectivity gate warns of an undeclared contact, 21.21 mm³ shared."
+      caption: "A seeded failure (screw_too_long): screw_0 made 4 mm longer. Its tip runs 3.00 mm into the hopper and its 12 mm length is outside the 4.5 to 8.5 mm the stack takes, so tip and length fail."
       alt: A section along two screws of the gate bench; the left screw is longer and its tip runs below the insert into the hopper's post
     - after: fasteners-and-stacks-cadagentreviewgatesfasteners
       below: Bodies and poses.
@@ -237,7 +237,7 @@ docs/gates.md:
       shows: output
       tool: cad-agent review-packet
       on: fixture
-      caption: "A seeded failure (flap_hits_frame): the arm's stop raised from 40 to 60 degrees, shown at 60. The motion gate sampled 12 poses, 5.45 degrees apart (up to 4.32 mm of travel), found the arm in the frame in 3 of them and narrowed the first contact to between 44.89 and 44.91 degrees."
+      caption: "A seeded failure (flap_hits_frame): the arm's stop raised from 40 to 60 degrees, shown at 60. Of 12 sampled poses 3 put the arm in the frame; the first contact lies between 44.89 and 44.91 degrees."
       alt: The gate bench's arm raised to 60 degrees, its purple beam passing through the grey frame above it
     - after: the-gate-bench-testsfixturesgate_benchbuildpy
       img: docs/img/packets/clean-store-solid-iso.webp

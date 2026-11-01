@@ -73,7 +73,8 @@ test('schema-1 fields keep their schema-1 values: summary, licence (null stays n
       else if (!ADDED[w.type]?.includes(k)) assert.ok(!(k in got), `${w.name}: ${k} was not in schema 1`);
     }
   }
-  assert.ok(want.some(w => w.license === null), 'the data still has a null licence to keep');
+  // No entry has a null licence any more: #151 recorded "none" for the last one (CADPrompt), as the supply-chain
+  // report's catalogue-no-licence check asks. The loop above still fails if schema 2 drops or changes a null.
   // Our own entries: schema 1 wrote these fields and no others; the additions are the ones fields.schema_1 lists.
   const OWN = { tool: ['summary', 'how'], doc: ['summary', 'markdown', 'source'] };
   const OWN_ADDED = { tool: ['license', 'markdown'], doc: ['license'] };

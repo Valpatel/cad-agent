@@ -17,7 +17,8 @@
   `curl | sh` installer is described as the risk it is. The supply-chain report's open findings fall from 1 critical,
   15 medium, 37 low and 12 info to 1 critical, 0 medium, 24 low and 10 info, with 3 read and accepted in
   `research/security-accepted.yaml`. What is left: DOMPurify and KaTeX inside Mermaid (#154), repositories with no
-  push for a year (#154's automatic badges), Dependabot (owner, #153), and sites that refuse scripts or did not answer (info).
+  push for a year (#154's automatic badges), Dependabot (owner, #153), and sites that refuse scripts or did not
+  answer (info).
 
 **Projects must change**
 - A project environment holding pillow below 13.0, vtk below 9.5.2 or markdown below 3.8.1 must upgrade them

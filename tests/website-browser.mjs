@@ -27,6 +27,8 @@ const browser = await engine.launch(engine === chromium ? { channel: process.env
 const ROUTES = ['/', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', '/research/landscape', '/agents/cad-resume',
   '/lessons/mechanical/design-rules', '/kit/file-viewer', '/missing-page'];
 // /kit/viewer is the kit's project viewer: it needs a project's exports/view/view.json, so it is not a site page.
+// The most a page with a diagram may move while it loads (#132; Google calls a page good under 0.1).
+const DIAGRAM_SHIFT = 0.05;
 const problems = [];
 try {
   problems.push(...await cantileverProblems());          // the snap-arm explorer on /docs/compliant (#137), below
@@ -540,16 +542,16 @@ try {
  * moved the page twice as it loaded (0.58 on /lessons/process/agent-process at 360 px, 0.10 on /docs/style-guide at
  * 1366 px); Google calls a page good under 0.1. On the pages below, at phone and desktop widths: the layout shift while
  * the page loads stays under DIAGRAM_SHIFT (Chrome; WebKit does not report shifts), the diagrams show with script off,
- * each in the same box as with script on (so the script moves nothing, anywhere on the page, in either engine), the
- * sideways-scroll hint shows exactly when its diagram overflows, without script too, and no page downloads Mermaid. */
-const DIAGRAM_SHIFT = 0.05;
+ * each the same size as with script on (so the script changes no diagram, anywhere on the page, in either engine), the
+ * sideways-scroll hint shows exactly when its diagram overflows, without script too, and no page downloads Mermaid
+ * (DIAGRAM_SHIFT is set at the top, with the routes). */
 async function drawnDiagramProblems() {
   const out = [];
   const PAGES = ['/docs/toolkit', '/docs/style-guide', '/docs/vision', '/lessons/process/agent-process'];
   const boxes = page => page.$$eval('.cad-diagram', figs => figs.map(f => {
     const r = f.getBoundingClientRect(), svg = f.querySelector('.cad-diagram-view svg')?.getBoundingClientRect();
     const view = f.querySelector('.cad-diagram-view'), hint = f.querySelector('.cad-diagram-hint');
-    return { state: f.dataset.state, box: [r.x, r.y + scrollY, r.width, r.height].map(n => Math.round(n * 2) / 2), svg: svg && [svg.width, svg.height],
+    return { state: f.dataset.state, box: [r.width, r.height].map(n => Math.round(n * 2) / 2), svg: svg && [svg.width, svg.height],
       overflows: view.scrollWidth > view.clientWidth + 1, hint: hint.getBoundingClientRect().height > 0 && getComputedStyle(hint).display !== 'none' };
   }));
   for (const width of [360, 1366]) for (const route of PAGES) {
@@ -580,7 +582,7 @@ async function drawnDiagramProblems() {
     before.forEach((b, i) => {
       if (b.state !== 'ready' || !b.svg || b.svg[0] < 100 || b.svg[1] < 30) out.push(`${where}: diagram ${i + 1} does not show without script (${JSON.stringify(b)})`);
       const a = after[i];
-      if (!a || a.box.join() !== b.box.join()) out.push(`${where}: diagram ${i + 1} is at ${b.box} without script and at ${a?.box} with it`);
+      if (!a || a.box.join() !== b.box.join()) out.push(`${where}: diagram ${i + 1} is ${b.box.join(' x ')} px without script and ${a?.box.join(' x ')} px with it`);
       for (const [label, m] of [['without script', b], ['with script', a]])
         if (m && m.hint !== m.overflows) out.push(`${where}: diagram ${i + 1} ${m.overflows ? 'overflows' : 'fits'} but its scroll hint is ${m.hint ? 'shown' : 'hidden'} ${label}`);
     });

@@ -58,7 +58,8 @@ function prepare(node, options = {}) {
   const details = document.createElement('details'), summary = document.createElement('summary'); summary.textContent = 'Diagram source';
   const pre = document.createElement('pre'); pre.className = 'cad-diagram-source'; pre.textContent = source; details.append(summary, pre);
   figure.append(status, hint, view, retry, details); original.replaceWith(figure); figures.add(figure);
-  const record = {figure, status, view, retry, source, running: null, id: options.id, font: options.fontFamily, mermaid: options.mermaid};
+  const record = {figure, status, view, retry, source, running: null, id: options.id, font: options.fontFamily, fontSize: options.fontSize,
+    mermaid: options.mermaid};
   records.set(node, record);
   retry.addEventListener('click', () => render(record));
   return record;
@@ -88,7 +89,7 @@ function render(record) {
       const mermaid = record.mermaid || await runtime();
       if (!figure.isConnected) return;
       mermaid.initialize({startOnLoad: false, securityLevel: 'strict', theme: figure.dataset.theme === 'dark' ? 'dark' : 'default',
-        fontFamily: record.font || FONT, suppressErrorRendering: true});
+        fontFamily: record.font || FONT, ...(record.fontSize ? {themeVariables: {fontSize: record.fontSize}} : {}), suppressErrorRendering: true});
       scratch = document.createElement('div'); scratch.style.cssText = 'position:absolute;left:-100000px;top:0;';
       document.body.append(scratch);
       const {svg, bindFunctions} = await mermaid.render(record.id || `cad-diagram-${++sequence}`, source, scratch);
@@ -125,16 +126,17 @@ export function observeDiagrams(root = document.body) {
 }
 /** Draw one diagram ahead of time, for a page that will show it without running Mermaid: the source goes into
  * `parent` as a block, is drawn in `theme` ('light' or 'dark') with `id` as its SVG id and `fontFamily` (a font the page
- * itself serves, already loaded here, so the labels measure the same for every reader), and the finished figure is
+ * itself serves, already loaded here, so the labels measure the same for every reader) at `fontSize` (CSS, default
+ * Mermaid's 16px), and the finished figure is
  * returned, or null when Mermaid cannot draw it. The overflow hint is left to the stylesheet, which knows the
  * drawing's width and the column's. `mermaid` is the Mermaid to draw with (default: the vendored one, loaded once):
  * Mermaid numbers some elements with counters that run on from one drawing to the next, so a drawing that must not
  * depend on what was drawn before gets a fresh instance. */
-export async function drawDiagram(source, {theme = 'light', id, fontFamily = FONT, parent = document.body, mermaid} = {}) {
+export async function drawDiagram(source, {theme = 'light', id, fontFamily = FONT, fontSize, parent = document.body, mermaid} = {}) {
   const holder = document.createElement('div'); holder.dataset.diagramTheme = theme === 'dark' ? 'dark' : 'light';
   const pre = document.createElement('pre'); pre.className = 'mermaid'; pre.textContent = source;
   holder.append(pre); parent.append(holder);
-  const record = prepare(pre, {id, fontFamily, mermaid});
+  const record = prepare(pre, {id, fontFamily, fontSize, mermaid});
   await render(record);
   const {figure} = record;
   holder.remove();

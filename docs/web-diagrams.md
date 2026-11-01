@@ -10,37 +10,34 @@ The Python site builder ships these assets in `site/assets` and initializes the 
 
 ## How a diagram gets onto the page
 
-On this site, the build draws it (#132). In a project's own pages, the reader's browser does.
+On this site, the build draws it (#132). On a project's own pages, and wherever no browser was at hand to build with, the reader's browser does.
 
 ```mermaid
 flowchart TD
-    S["pre > code.language-mermaid<br/>in the page"] --> B{"drawn at<br/>build time?"}
-    B -->|"site build:<br/>tools/site-diagrams.mjs"| H["drawDiagram() in<br/>headless Chromium"]
-    H --> F["finished figure<br/>in the HTML"]
-    B -->|"no browser,<br/>or a project page"| O["observeDiagrams()<br/>finds the block"]
-    O --> L["loads vendored<br/>Mermaid 11.17.2"]
-    L --> V["SVG in place<br/>source in a disclosure"]
-    L -->|"error"| E["error and Retry<br/>on this diagram only"]
-    F --> K["observeDiagrams()<br/>keeps it as drawn"]
+    S["a Mermaid block<br/>in the page"] --> B{"a browser<br/>at build time?"}
+    B -->|"yes: the site"| H["drawDiagram()<br/>in headless Chromium"]
+    B -->|"no"| O["observeDiagrams()<br/>in the reader's browser"]
+    H --> F["finished figure<br/>in the HTML, kept"]
+    O --> V["SVG in place,<br/>or Retry"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class B,H,O,L here
+    class B,H,O here
     class S near
-    class F,K,V,E out
+    class F,V out
 ```
 
 ## Drawn at build time
 
 Drawn in the reader's browser, a diagram near the top of a page moved the text twice as it loaded: once when its placeholder went in, again when the drawing settled. The layout shift was up to 0.58 on a phone (`/lessons/process/agent-process`), against Google's "good" limit of 0.1. So the site build draws every diagram itself, with the kit's own `drawDiagram`, in the headless Chromium the browser tests use. Each page then arrives with `<figure class="cad-diagram" data-state="ready">`: the SVG, sized, with its source in the disclosure. Nothing moves while it loads, it shows without script, and no page downloads Mermaid. The Markdown twin keeps the Mermaid fence for agents.
 
-- **The same bytes every time:** the SVG id is a hash of the source, theme, Mermaid build, kit and font. Each drawing gets a fresh Mermaid instance, because sequence and class diagrams number their elements with counters that run on from one drawing to the next, and Math.random is seeded. Every diagram is drawn twice and kept only if both match. Labels are measured in the site's own webfont (Inter, which every reader downloads), not in the build machine's Arial. A test builds the site twice with empty caches and compares every page byte for byte.
+- **The same bytes every time:** the SVG id is a hash of the source, theme, Mermaid build, kit and font. Each drawing gets a fresh Mermaid instance, because sequence and class diagrams number their elements with counters that run on from one drawing to the next, and Math.random is seeded. Every diagram is drawn twice and kept only if both match. Labels are measured in the site's own webfont, not in the build machine's Arial: Inter, which every reader downloads, at 15px. That reads at the size of 16px Arial and keeps each diagram as wide as before. A test builds the site twice with empty caches and compares every page byte for byte.
 - **Themes:** the build draws in the page's `data-diagram-theme` (the site is light). If the page's theme turns out different, `observeDiagrams` draws that figure again in the right theme. A dark or HUD page drawn in the browser works as before.
 - **Cached:** figures are kept in `.cache/site-diagrams/` under that hash (`CAD_AGENT_DIAGRAM_CACHE` moves it). A rebuild draws only what changed, and a warm cache needs no browser.
 - **Safe:** Mermaid draws in strict mode, and a drawing with a script, an event handler or a `javascript:` link is refused. The pages keep the site's CSP: no inline script, and inline styles are allowed as before.
 - **Never fatal:** with no Chromium (`npx playwright install chromium`, or Google Chrome), or with `--client-diagrams`, the build says so and leaves the blocks for `observeDiagrams`, as before. The same happens to a diagram Mermaid cannot draw. `npm run deploy:site` deploys either way.
 
-Measured with `tests/website-browser.mjs` in Chrome (the sum of layout shifts while the page loads; WebKit does not report them):
+Measured in Chrome, once every diagram had finished: the sum of the layout shifts while the page loaded, median of three loads. WebKit does not report layout shifts.
 
 | Page | 360 px before | 360 px after | 1366 px before | 1366 px after |
 |---|---|---|---|---|
@@ -49,4 +46,4 @@ Measured with `tests/website-browser.mjs` in Chrome (the sum of layout shifts wh
 | `/docs/vision` (3 diagrams) | 0 | 0 | 0 | 0 |
 | `/docs/toolkit` | 0 | 0 | 0 | 0 |
 
-Before, 51 of the 106 page-and-width cases with a diagram scored 0.1 or more. After, the worst of all 106 is 0.012. On `/docs/toolkit` and `/docs/vision` the diagrams sit below the first screen, so their shift no longer counts: a layout shift only counts what moves on screen. The browser test holds every page with a diagram under 0.05 at 1366 px, and these four at 360 px as well. On them it also checks that each diagram shows without script, in the same box as with script.
+Before, 53 of the 106 page-and-width cases with a diagram scored 0.1 or more. After, the worst of all 106 is 0.012. On `/docs/toolkit` and `/docs/vision` the diagrams sit below the first screen, so their shift no longer counts: a layout shift only counts what moves on screen. The browser test holds every page with a diagram under 0.05 at 1366 px, and these four at 360 px as well. On them it also checks that each diagram shows without script, at the same size as with script.

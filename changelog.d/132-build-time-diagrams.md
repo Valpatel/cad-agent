@@ -6,9 +6,9 @@
   the same source, theme, Mermaid and kit, and is cached in `.cache/site-diagrams/`. With no browser, or with
   `--client-diagrams`, the build warns and leaves the diagrams to the reader's browser; `npm run deploy:site` still
   deploys (#132).
-- Web kit: `drawDiagram(source, {theme, id, fontFamily, mermaid})` in `diagrams.js` draws one diagram ahead of time and
-  returns the finished figure. `observeDiagrams` keeps such figures as they are, and draws one again only when the
-  page's theme is not the one it was drawn in (#132).
+- Web kit: `drawDiagram(source, {theme, id, fontFamily, fontSize, mermaid})` in `diagrams.js` draws one diagram ahead
+  of time and returns the finished figure. `observeDiagrams` keeps such figures as they are, and draws one again only
+  when the page's theme is not the one it was drawn in (#132).
 
 **Changed**
 - Web kit: the sideways-scroll hint is sized by `diagrams.css` from the drawing's width (`--cad-diagram-w`) and the

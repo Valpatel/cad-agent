@@ -10,7 +10,7 @@
  *   those; each drawing gets a fresh Mermaid (its sequence and class diagrams number elements with counters that run
  *   on from one drawing to the next) and a seeded Math.random; every diagram is drawn twice and kept only if both
  *   drawings match; and the labels are measured in the site's own webfont (Inter, which every reader downloads), not in
- *   whatever Arial the build machine has.
+ *   whatever Arial the build machine has (FONT_SIZE says why 15px).
  * - Cached: each figure is kept under .cache/site-diagrams/ by a SHA-256 of all of the above, so a build only draws what
  *   changed and, once the cache is warm, needs no browser at all.
  * - Safe: Mermaid draws in strict mode (DOMPurify on every label); a drawing with a script, an event handler or a
@@ -26,8 +26,10 @@ import path from 'node:path';
 // Bump when the drawing code here changes what it writes, so old cache entries are not reused.
 const RENDERER = 'site-diagrams/1';
 export const BLOCK = /<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/g;
-// The site's text face, self-hosted under /kit/vendor/fonts (site.css loads it on every page).
-export const FONT = "'Inter', Arial, sans-serif";
+// The site's text face, self-hosted under /kit/vendor/fonts (site.css loads it on every page), at 15px: Inter's x-height
+// is about 5 % taller than Arial's, so 15px Inter reads at the size of the 16px Arial a reader's browser draws with,
+// and the diagrams come out as wide as they were (within 1 %), so each still fits the article column.
+export const FONT = "'Inter', Arial, sans-serif", FONT_SIZE = '15px';
 const KIT_FILES = ['diagrams.js', 'diagrams.css', 'vendor/mermaid/mermaid.min.js', 'vendor/fonts/fonts.css', 'vendor/fonts/inter.woff2'];
 const TYPES = { '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.html': 'text/html' };
 const ORIGIN = 'http://cad-agent-diagrams.invalid';      // routed in the page, never fetched
@@ -58,7 +60,7 @@ export async function drawDiagrams(htmls, { kit, site, theme = 'light', css = ['
   for (const f of KIT_FILES) files.set(`/kit/${f}`, await kit(f));
   for (const c of css) if (c.startsWith('/web/')) files.set(c, await site(c.slice('/web/'.length)));
   // What a drawing depends on, besides its source.
-  const basis = sha(JSON.stringify([RENDERER, theme, FONT, css, ...[...files].map(([f, b]) => [f, sha(b)])]));
+  const basis = sha(JSON.stringify([RENDERER, theme, FONT, FONT_SIZE, css, ...[...files].map(([f, b]) => [f, sha(b)])]));
   const mermaidVersion = JSON.parse(await kit('vendor/mermaid/SOURCE.json')).version;
   const keyOf = source => sha(`${basis}\n${source}`);
   const sources = new Map();                                       // key → source
@@ -133,8 +135,8 @@ async function drawInBrowser(browser, todo, { files, theme, css }) {
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
     await page.goto(`${ORIGIN}/draw.html`);
-    const results = await page.evaluate(async ({ items, theme, font }) => {
-      await document.fonts.load(`16px ${font.split(',')[0]}`);
+    const results = await page.evaluate(async ({ items, theme, font, fontSize }) => {
+      await document.fonts.load(`${fontSize} ${font.split(',')[0]}`);
       await document.fonts.ready;
       const { drawDiagram } = await import('/kit/diagrams.js');
       // A fresh Mermaid for each drawing: the same script run again (V8 keeps its compiled code, so this is quick).
@@ -159,7 +161,7 @@ async function drawInBrowser(browser, todo, { files, theme, css }) {
         const twice = [];
         for (let run = 0; run < 2; run++) {
           window.__cadSeed(parseInt(key.slice(0, 8), 16));
-          const figure = await drawDiagram(source, { theme, id, fontFamily: font, parent: document.querySelector('main'), mermaid: freshMermaid() });
+          const figure = await drawDiagram(source, { theme, id, fontFamily: font, fontSize, parent: document.querySelector('main'), mermaid: freshMermaid() });
           twice.push(figure && { html: figure.outerHTML, unsafe: unsafe(figure) });
         }
         const [a, b] = twice;
@@ -167,7 +169,7 @@ async function drawInBrowser(browser, todo, { files, theme, css }) {
           : a.html !== b?.html ? { error: 'two drawings of it differ' } : { html: a.html }]);
       }
       return out;
-    }, { items: todo.map(([key, source]) => ({ key, source, id: idOf(key) })), theme, font: FONT });
+    }, { items: todo.map(([key, source]) => ({ key, source, id: idOf(key) })), theme, font: FONT, fontSize: FONT_SIZE });
     if (errors.length) throw new Error(`the drawing page failed: ${errors.join('; ')}`);
     return results;
   } finally { await context.close(); }

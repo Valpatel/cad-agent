@@ -892,7 +892,7 @@ research/simulation-tools.md:
       shows: output
       tool: cad-agent optimise
       on: example
-      caption: "What the toolkit built since: cad-agent optimise, a search over parts and parameters with built-in random and grid sampling, and optuna's NSGA-II and TPE (not GPSampler). Here 60 seeded random trials of a worked example with made-up parts, by cost and mass; trials 47 and 1 are the Pareto front."
+      caption: "What the toolkit built since: cad-agent optimise, a search over parts and parameters with built-in random and grid sampling, and optuna's NSGA-II and TPE (not GPSampler). Here 60 seeded random trials (49 distinct) of a worked example with made-up parts, by cost and mass; trials 47 and 1 are the Pareto front."
       alt: "A scatter chart of 49 trials by cost and mass: most are infeasible open circles; two feasible grey dots; trials 47 and 1 in blue on the Pareto front"
     - after: fast-low-fidelity-path-for-optimisation-loops
       below: Thermal resistance network + fan operating point
@@ -925,5 +925,5 @@ research/simulation-tools.md:
       drawn_by: tools/plates_figure.py
       tool: cadagent.manufacturing.plates
       on: gyropup
-      caption: "What the toolkit built on this command line: cad-agent export-3mf packs every printed part onto plates in one Bambu Studio project, which the CLI slices plate by plate with each plate's filament. Gyropup's 45 printed parts on 19 plates of 256 mm: 14 of PA6-CF, 3 of PETG and 2 of TPU."
+      caption: "What the toolkit built beside this command line: cad-agent slice runs it for grams and print time, and cad-agent export-3mf packs every printed part onto plates in one Bambu Studio project, one filament a plate, to open, check and slice. Gyropup's 45 printed parts on 19 plates of 256 mm: 14 of PA6-CF, 3 of PETG and 2 of TPU."
       alt: "Gyropup's 45 printed parts on 19 Bambu Studio plates of 256 mm, grouped by filament: 14 plates of PA6-CF, 3 of PETG and 2 of TPU, with every plate's wiper corner kept clear"

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 380" width="680" height="380" role="img" aria-label="How far past the worst corner: the bracket's judged volume above each utilisation" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif">
+<rect width="680" height="380" rx="14" fill="#fffdf5" stroke="#d8e0d3"/>
+<text x="18" y="30" font-size="15" font-weight="700" fill="#173d3c">How far past the worst corner: the bracket's judged volume above each utilisation</text>
+<line x1="18" y1="52" x2="34" y2="52" stroke="#bd3a12" stroke-width="2.5"/>
+<text x="39" y="56" font-size="12" fill="#526863">combined: max 1.06, p99 0.59, 55 elements (2 mm³) past 1</text>
+<line x1="390.0" y1="52" x2="406.0" y2="52" stroke="#2f6f9f" stroke-width="2.5"/>
+<text x="411.0" y="56" font-size="12" fill="#526863">max-stress: max 0.93, p99 0.58, none past 1</text>
+<line x1="64" y1="300.0" x2="650" y2="300.0" stroke="#d8e0d3"/>
+<text x="56" y="304.0" font-size="11" fill="#526863" text-anchor="end">0</text>
+<line x1="64" y1="264.3" x2="650" y2="264.3" stroke="#d8e0d3"/>
+<text x="56" y="268.3" font-size="11" fill="#526863" text-anchor="end">0.2</text>
+<line x1="64" y1="228.7" x2="650" y2="228.7" stroke="#d8e0d3"/>
+<text x="56" y="232.7" font-size="11" fill="#526863" text-anchor="end">0.4</text>
+<line x1="64" y1="193.0" x2="650" y2="193.0" stroke="#d8e0d3"/>
+<text x="56" y="197.0" font-size="11" fill="#526863" text-anchor="end">0.6</text>
+<line x1="64" y1="157.3" x2="650" y2="157.3" stroke="#d8e0d3"/>
+<text x="56" y="161.3" font-size="11" fill="#526863" text-anchor="end">0.8</text>
+<line x1="64" y1="121.7" x2="650" y2="121.7" stroke="#d8e0d3"/>
+<text x="56" y="125.7" font-size="11" fill="#526863" text-anchor="end">1</text>
+<line x1="64" y1="86.0" x2="650" y2="86.0" stroke="#d8e0d3"/>
+<text x="56" y="90.0" font-size="11" fill="#526863" text-anchor="end">1.2</text>
+<text x="18" y="193" font-size="11" fill="#526863" text-anchor="middle" transform="rotate(-90 18 193)">utilisation (stress over allowable)</text>
+<line x1="64.0" y1="86" x2="64.0" y2="300" stroke="#d8e0d3" stroke-dasharray="2 4"/>
+<text x="64.0" y="317" font-size="11" fill="#526863" text-anchor="middle">0.001 %</text>
+<line x1="181.2" y1="86" x2="181.2" y2="300" stroke="#d8e0d3" stroke-dasharray="2 4"/>
+<text x="181.2" y="317" font-size="11" fill="#526863" text-anchor="middle">0.01 %</text>
+<line x1="298.4" y1="86" x2="298.4" y2="300" stroke="#d8e0d3" stroke-dasharray="2 4"/>
+<text x="298.4" y="317" font-size="11" fill="#526863" text-anchor="middle">0.1 %</text>
+<line x1="415.6" y1="86" x2="415.6" y2="300" stroke="#d8e0d3" stroke-dasharray="2 4"/>
+<text x="415.6" y="317" font-size="11" fill="#526863" text-anchor="middle">1 %</text>
+<line x1="532.8" y1="86" x2="532.8" y2="300" stroke="#d8e0d3" stroke-dasharray="2 4"/>
+<text x="532.8" y="317" font-size="11" fill="#526863" text-anchor="middle">10 %</text>
+<line x1="650.0" y1="86" x2="650.0" y2="300" stroke="#d8e0d3" stroke-dasharray="2 4"/>
+<text x="650.0" y="317" font-size="11" fill="#526863" text-anchor="middle">100 %</text>
+<text x="357" y="336" font-size="11" fill="#526863" text-anchor="middle">share of the judged volume at or above that utilisation (each element whole, from its highest corner)</text>
+<line x1="64" y1="121.7" x2="650" y2="121.7" stroke="#173d3c" stroke-dasharray="6 4"/>
+<text x="646" y="115.7" font-size="11" fill="#173d3c" text-anchor="end">the allowable</text>
+<line x1="415.6" y1="86" x2="415.6" y2="300" stroke="#526863"/>
+<text x="420.6" y="98" font-size="11" fill="#173d3c">p99: 1 % of the volume is above it</text>
+<path d="M64.0,110.2 L64.0,110.5 L67.7,110.5 L71.4,110.5 L75.1,111.7 L78.7,111.7 L82.4,111.7 L86.1,111.7 L89.8,111.7 L93.5,111.7 L97.2,111.7 L100.9,111.9 L104.5,111.9 L108.2,111.9 L111.9,111.9 L115.6,111.9 L119.3,111.9 L123.0,112.3 L126.7,112.3 L130.3,112.6 L134.0,112.6 L137.7,112.7 L141.4,112.7 L145.1,112.7 L148.8,112.9 L152.5,112.9 L156.1,113.9 L159.8,114.6 L163.5,114.6 L167.2,115.0 L170.9,115.5 L174.6,115.5 L178.3,116.1 L181.9,116.2 L185.6,116.3 L189.3,116.4 L193.0,116.4 L196.7,117.1 L200.4,117.1 L204.1,117.2 L207.7,117.6 L211.4,117.6 L215.1,117.8 L218.8,118.2 L222.5,118.6 L226.2,118.8 L229.8,119.0 L233.5,119.7 L237.2,120.3 L240.9,120.4 L244.6,120.6 L248.3,121.4 L252.0,121.8 L255.6,123.0 L259.3,123.3 L263.0,124.0 L266.7,124.8 L270.4,126.0 L274.1,126.6 L277.8,127.9 L281.4,128.5 L285.1,129.3 L288.8,130.3 L292.5,131.5 L296.2,131.8 L299.9,132.8 L303.6,134.5 L307.2,136.0 L310.9,137.3 L314.6,139.5 L318.3,141.2 L322.0,142.6 L325.7,144.8 L329.4,147.3 L333.0,149.2 L336.7,150.0 L340.4,151.3 L344.1,152.6 L347.8,154.1 L351.5,155.3 L355.2,157.0 L358.8,158.6 L362.5,160.2 L366.2,162.4 L369.9,164.6 L373.6,166.9 L377.3,169.5 L381.0,172.1 L384.6,174.2 L388.3,177.1 L392.0,179.8 L395.7,182.2 L399.4,184.7 L403.1,186.6 L406.8,188.9 L410.4,191.0 L414.1,193.4 L417.8,196.3 L421.5,197.8 L425.2,199.6 L428.9,201.3 L432.6,201.4 L436.2,201.5 L439.9,201.6 L443.6,201.6 L447.3,201.7 L451.0,201.8 L454.7,201.8 L458.4,201.9 L462.0,202.0 L465.7,202.0 L469.4,202.1 L473.1,202.1 L476.8,202.2 L480.5,202.2 L484.2,202.2 L487.8,202.3 L491.5,202.3 L495.2,202.4 L498.9,202.4 L502.6,202.5 L506.3,202.5 L509.9,202.6 L513.6,202.7 L517.3,202.8 L521.0,202.8 L524.7,202.9 L528.4,203.1 L532.1,203.2 L535.7,203.4 L539.4,203.6 L543.1,203.8 L546.8,203.9 L550.5,204.1 L554.2,204.3 L557.9,204.5 L561.5,204.7 L565.2,204.9 L568.9,205.1 L572.6,205.3 L576.3,205.5 L580.0,205.7 L583.7,205.9 L587.3,206.0 L591.0,206.2 L594.7,206.6 L598.4,207.2 L602.1,207.9 L605.8,208.7 L609.5,209.9 L613.1,213.8 L616.8,221.6 L620.5,230.2 L624.2,237.1 L627.9,242.5 L631.6,249.5 L635.3,255.7 L638.9,260.5 L642.6,267.3 L646.3,275.4 L650.0,289.7" fill="none" stroke="#bd3a12" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="64.0" cy="110.2" r="5" fill="#fffdf5" stroke="#bd3a12" stroke-width="2"><title>combined: the worst element, utilisation 1.064 (safety factor 0.94)</title></circle>
+<circle cx="415.6" cy="194.4" r="5" fill="#fffdf5" stroke="#bd3a12" stroke-width="2"><title>combined: p99, utilisation 0.592 (safety factor 1.69)</title></circle>
+<path d="M64.0,134.1 L64.0,135.2 L67.7,135.2 L71.4,135.2 L75.1,135.2 L78.7,135.2 L82.4,135.2 L86.1,135.2 L89.8,135.3 L93.5,135.3 L97.2,135.3 L100.9,135.3 L104.5,135.4 L108.2,135.4 L111.9,135.4 L115.6,135.5 L119.3,135.5 L123.0,135.5 L126.7,135.5 L130.3,136.6 L134.0,136.6 L137.7,137.0 L141.4,137.0 L145.1,137.2 L148.8,137.2 L152.5,137.7 L156.1,137.7 L159.8,138.6 L163.5,139.2 L167.2,139.2 L170.9,139.2 L174.6,139.2 L178.3,139.6 L181.9,139.9 L185.6,140.2 L189.3,140.3 L193.0,140.4 L196.7,140.6 L200.4,140.8 L204.1,141.1 L207.7,141.9 L211.4,142.0 L215.1,142.4 L218.8,142.7 L222.5,142.9 L226.2,143.0 L229.8,143.5 L233.5,144.1 L237.2,144.4 L240.9,144.9 L244.6,145.6 L248.3,145.8 L252.0,146.7 L255.6,147.5 L259.3,149.0 L263.0,149.6 L266.7,150.1 L270.4,151.5 L274.1,152.6 L277.8,153.4 L281.4,154.3 L285.1,154.9 L288.8,155.4 L292.5,155.9 L296.2,156.4 L299.9,157.6 L303.6,158.1 L307.2,158.8 L310.9,159.7 L314.6,160.6 L318.3,161.2 L322.0,162.2 L325.7,162.9 L329.4,164.0 L333.0,164.9 L336.7,166.0 L340.4,167.2 L344.1,168.3 L347.8,169.1 L351.5,169.9 L355.2,171.1 L358.8,172.1 L362.5,173.5 L366.2,175.0 L369.9,176.6 L373.6,177.8 L377.3,179.2 L381.0,180.7 L384.6,183.2 L388.3,184.6 L392.0,185.8 L395.7,187.2 L399.4,189.1 L403.1,190.6 L406.8,192.5 L410.4,194.4 L414.1,196.5 L417.8,198.0 L421.5,199.6 L425.2,201.2 L428.9,201.3 L432.6,201.5 L436.2,201.5 L439.9,201.6 L443.6,201.6 L447.3,201.8 L451.0,201.8 L454.7,201.9 L458.4,201.9 L462.0,202.0 L465.7,202.0 L469.4,202.1 L473.1,202.1 L476.8,202.2 L480.5,202.2 L484.2,202.3 L487.8,202.3 L491.5,202.3 L495.2,202.4 L498.9,202.5 L502.6,202.5 L506.3,202.6 L509.9,202.6 L513.6,202.7 L517.3,202.8 L521.0,202.8 L524.7,203.0 L528.4,203.1 L532.1,203.3 L535.7,203.4 L539.4,203.6 L543.1,203.8 L546.8,203.9 L550.5,204.1 L554.2,204.3 L557.9,204.5 L561.5,204.7 L565.2,204.9 L568.9,205.1 L572.6,205.4 L576.3,205.5 L580.0,205.7 L583.7,205.9 L587.3,206.0 L591.0,206.2 L594.7,206.6 L598.4,207.2 L602.1,207.9 L605.8,208.8 L609.5,209.9 L613.1,213.8 L616.8,221.7 L620.5,230.5 L624.2,237.2 L627.9,242.7 L631.6,249.8 L635.3,256.0 L638.9,260.6 L642.6,267.7 L646.3,276.0 L650.0,289.7" fill="none" stroke="#2f6f9f" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="64.0" cy="134.1" r="5" fill="#fffdf5" stroke="#2f6f9f" stroke-width="2"><title>max-stress: the worst element, utilisation 0.930 (safety factor 1.07)</title></circle>
+<circle cx="415.6" cy="197.1" r="5" fill="#fffdf5" stroke="#2f6f9f" stroke-width="2"><title>max-stress: p99, utilisation 0.577 (safety factor 1.73)</title></circle>
+<text x="60" y="366" font-size="11" fill="#526863">the bracket of layer-criteria.png · plateau: the base, bent evenly in its layer plane (a region) · left of 1 %: round the root fillet</text>
+</svg>

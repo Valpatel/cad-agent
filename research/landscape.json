@@ -427,7 +427,7 @@
    "drawings": "no",
    "vendor_integration": "Freerouting",
    "evals": "none",
-   "notes": "archived 2026-10-26; continues as Konnect-EDA (commercial, closed source, free during its beta), so no longer a candidate; obhox/kicad-mcp is a fork (8 stars, AGPL-3.0)"
+   "notes": "archived 2026-10-26, and GitHub showed it unarchived again on 2026-11-01 (last commit 2026-10-25); continues as Konnect-EDA (commercial, closed source, free during its beta), so no longer a candidate; obhox/kicad-mcp is a fork (8 stars, AGPL-3.0)"
   },
   {
    "name": "oaslananka/kicad-mcp-pro",
@@ -525,8 +525,8 @@
    "notes": "plugin.json has no hooks"
   },
   {
-   "name": "American-Embedded/kistack",
-   "url": "https://github.com/American-Embedded/kistack",
+   "name": "BackplaneWorks/kistack",
+   "url": "https://github.com/BackplaneWorks/kistack",
    "license_spdx": "MIT",
    "stars": 411,
    "last_push": "2026-10-24",
@@ -545,11 +545,11 @@
    "drawings": "no",
    "vendor_integration": "none",
    "evals": "none",
-   "notes": "GitHub shows NOASSERTION; LICENSE text is MIT"
+   "notes": "GitHub shows NOASSERTION; LICENSE text is MIT. Moved from American-Embedded/kistack to the BackplaneWorks organisation (GitHub redirects the old name to the same repository), seen 2026-11-01"
   },
   {
-   "name": "i2cjak/Backplane",
-   "url": "https://github.com/i2cjak/Backplane",
+   "name": "BackplaneWorks/Backplane",
+   "url": "https://github.com/BackplaneWorks/Backplane",
    "license_spdx": "MIT",
    "stars": 731,
    "last_push": "2026-10-25",
@@ -568,7 +568,7 @@
    "drawings": "no",
    "vendor_integration": "none",
    "evals": "none",
-   "notes": "install via curl | sh; ships a KiCad fork (GPL)"
+   "notes": "its installer is a script piped from the network into a shell, which runs whatever the server sends at that moment: read it first, or build from a pinned commit; ships a KiCad fork (GPL). Moved from i2cjak/Backplane to the BackplaneWorks organisation (GitHub redirects the old name to the same repository), seen 2026-11-01"
   },
   {
    "name": "copperheadhq/copperhead",
@@ -930,7 +930,8 @@
     "evaluation"
    ],
    "url": "https://github.com/Kamel773/CAD_Code_Generation",
-   "license": null,
+   "license_spdx": "none",
+   "license_note": "no licence file (GitHub detects none, checked 2026-11-01): all rights reserved, ideas only",
    "venue": "ICLR 2025",
    "size": "200 prompts"
   },
@@ -1006,6 +1007,8 @@
     "evaluation"
    ],
    "url": "https://cadarena.dev/",
+   "license": "none",
+   "license_note": "a website; its home page states no licence or terms (checked 2026-11-01): ideas only",
    "status": "unverified"
   },
   {

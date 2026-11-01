@@ -26,8 +26,9 @@ Without the console script, `python -m cadagent.cli <subcommand>` does the same.
 The toolkit started as `vptest cad` in the vptest framework; projects set up for
 it keep working (see [Coming from vptest](#coming-from-vptest)).
 
-The toolkit's pipeline, in order. `cad-agent all` runs it through `package` (build, export-3mf, holes, gates,
-report, package); `site` and `release` are commands of their own:
+The toolkit's pipeline, in order. `cad-agent all` runs it through `package`: build, export-3mf, holes, gates (only
+when the project enables them), report (which runs `check` first) and package. `site` and `release` are commands of
+their own:
 
 ```mermaid
 flowchart TD

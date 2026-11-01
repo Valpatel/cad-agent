@@ -631,7 +631,7 @@
    "license_spdx": "AGPL-3.0",
    "stars": 2,
    "last_push": "2026-10-29",
-   "notes": "official Claude Code / Codex skills for a general Orca MCP server that no release ships yet (a draft PR); no code",
+   "notes": "official Claude Code / Codex skills for an Orca MCP server (General > AI features > MCP server) that no release or branch has yet; no code",
    "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
   },
   {

@@ -97,6 +97,19 @@ test('schema-1 fields keep their schema-1 values: summary, licence (null stays n
   }
 });
 
+test("an outside entry's licence note reaches its card, benchmarks included", () => {
+  const landscape = JSON.parse(show('research/landscape.json'));
+  const noted = [...landscape.projects.map(p => ['upstream', p]), ...landscape.libraries.map(l => ['library', l]),
+    ...landscape.benchmarks.map(b => ['benchmark', b])].filter(([, e]) => e.license_note);
+  assert.ok(noted.some(([type]) => type === 'benchmark'), 'a benchmark with a licence note to check');
+  for (const [type, e] of noted) {
+    const got = catalog.items.find(i => i.type === type && i.name === e.name);
+    if (!got) continue;                                  // a landscape project that is not an upstream has no card
+    assert.ok(got.notes?.includes(e.license_note.split(':')[0]), `${e.name}: notes ${got.notes}`);
+    if (type === 'benchmark' && got.status === 'unverified') assert.ok(!/licence not yet checked/.test(got.notes), `${e.name}: ${got.notes}`);
+  }
+});
+
 test('every cover is used once and no dense figure is a cover', async () => {
   const by = new Map();
   for (const i of catalog.items) by.set(i.cover, [...(by.get(i.cover) || []), i.id]);

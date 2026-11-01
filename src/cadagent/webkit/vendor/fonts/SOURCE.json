@@ -1,4 +1,5 @@
 {
+  "npm": false,
   "license": "OFL-1.1",
   "note": "Not from npm: the latin subsets Google Fonts serves for two variable fonts, saved from fonts.gstatic.com, and the licence texts from each font's own repository at a pinned commit. fonts.css is ours: the two @font-face rules. On 2026-11-01 each url below served exactly these bytes (SHA-256 in files).",
   "files": {

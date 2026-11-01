@@ -1007,7 +1007,7 @@
     "evaluation"
    ],
    "url": "https://cadarena.dev/",
-   "license": "none",
+   "license_spdx": "none",
    "license_note": "a website; its home page states no licence or terms (checked 2026-11-01): ideas only",
    "status": "unverified"
   },

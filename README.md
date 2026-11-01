@@ -150,6 +150,9 @@ cad-agent site --serve --project path/to/your-project
 | `site` | Markdown, for the review site |
 | `explore` | optuna, for the NSGA-II and TPE searches of `cad-agent optimise` (random and grid need nothing) |
 
+The package runs on Python 3.10 or newer; the `cad` and `sim` extras need 3.11 or newer, because every Pillow release
+for 3.10 has critical advisories and CadQuery 2.8 needs 3.11.
+
 ## Projects it learns from
 
 | Project | What it is |

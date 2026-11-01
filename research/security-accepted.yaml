@@ -4,12 +4,13 @@
 
 - check: npm-install-script
   subject: npm:fsevents
-  fp: ebf02989b46d4603
+  fp: 0cf2576d5c5533dc
   reason: >-
     Optional, macOS-only dependency of Playwright (os: darwin), so CI and Linux machines never install it. Read on
     2026-11-01 (#151): the registry's manifest for 2.3.2 lists install "node-gyp rebuild" (gypfile), but the tarball
     the lockfile pins (its sha512 matches) has no binding.gyp and its package.json has no install script; it ships a
-    prebuilt fsevents.node, so npm runs nothing at install. Re-read it when Playwright moves to another fsevents.
+    prebuilt fsevents.node, so npm runs nothing at install. The fingerprint is 2.3.2's: when Playwright moves to
+    another fsevents, the finding comes back to be read again.
   accepted: 2026-11-01
 
 - check: repo-archived

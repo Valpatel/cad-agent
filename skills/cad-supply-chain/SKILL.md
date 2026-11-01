@@ -29,7 +29,7 @@ flowchart TD
 | You are about to | Run |
 |---|---|
 | add a Python or npm dependency, or raise or drop a pin | `rows --online` before you push; paste the rows into the PR |
-| vendor a project or a web kit file, or update one | `rows --online`, plus the vendor scan (`tools/vendor_sync.py import`); a web kit folder gets a `SOURCE.json` receipt: the npm tarball, its integrity and each file's SHA-256 (`three/SOURCE.json`), or each file's URL when it is not from npm (`fonts/SOURCE.json`) |
+| vendor a project or a web kit file, or update one | `rows --online`, plus the vendor scan (`tools/vendor_sync.py import`); a web kit folder gets a `SOURCE.json` receipt: the npm tarball, its integrity and each file's SHA-256 (`three/SOURCE.json`), or `"npm": false` and each file's URL when it is not from npm (`fonts/SOURCE.json`) |
 | add a catalogue entry (`upstreams/registry.yaml`, `research/landscape.json`) or a link in a published page | `rows --online` |
 | recommend a tool, skill, plugin or MCP server to someone | `report --online` and read its row; check it is not installed from a registry |
 | act on the weekly "Supply-chain report" issue | `report --online` to confirm, then fix in a PR |
@@ -134,7 +134,7 @@ Fix it in a PR, or record why it is fine (below). The action for each kind of fi
 | `link-redirect-domain`, `link-not-https` | Check the destination is the same organisation; link it directly over HTTPS, or drop it. |
 | `licence-changed`, `licence-none` | Re-read the licence; update the record and the policy line. |
 | `install-from-registry`, `install-unpinned` | Rewrite the advice: vendor a pinned commit (`tools/vendor_sync.py`) or name an exact version or commit. Never tell anyone to install skills from a registry. Our own plugin, added from this repository at a release tag or commit, is the exception. |
-| `npm-install-script` | Read the script. Prefer `npm ci --ignore-scripts` where the package works without it. |
+| `npm-install-script` | Read the script. Prefer `npm ci --ignore-scripts` where the package works without it. The finding is per version: accepting it needs its `fp`, so the next version's script is read again. |
 | `repo-*` settings | Repository settings are the owner's: report them, do not change them. |
 
 </details>
@@ -165,10 +165,10 @@ flowchart TD
 ```
 
 Without `fp`, an acceptance covers every finding of that check on that subject, so the tool refuses an `advisory`
-acceptance without one: accepting one moderate advisory must not hide the next one on the same package. An accepted
-finding stays in the report, marked accepted, and no longer counts for the exit code. The tool never accepts a
-critical finding (a malicious package, a critical advisory), and you never accept a hash mismatch or drift you cannot
-explain.
+or `npm-install-script` acceptance without one: accepting one moderate advisory must not hide the next one on the same
+package, and a script read at one version says nothing about the next. An accepted finding stays in the report, marked
+accepted, and no longer counts for the exit code. The tool never accepts a critical finding (a malicious package, a
+critical advisory), and you never accept a hash mismatch or drift you cannot explain.
 
 ## Limits (say them when you report)
 

@@ -388,7 +388,8 @@ export async function buildCatalog(ctx) {
     const unverified = b.status === 'unverified';
     const what = plainText(b.what || [b.tasks, b.size, b.venue || b.paper].filter(Boolean).join(' · ')) || null;
     const notes = [b.notes, b.ground_truth && `Ground truth: ${b.ground_truth}.`, b.data_license && `Data licence: ${b.data_license}.`,
-      unverified && 'Listed from its paper or site; tasks, data and licence not yet checked.'].filter(Boolean).map(plainText).join(' ') || null;
+      b.license_note && `Licence: ${b.license_note}.`,
+      unverified && `Listed from its paper or site; tasks${b.license_note ? ' and data' : ', data and licence'} not yet checked.`].filter(Boolean).map(plainText).join(' ') || null;
     items.push({ type: 'benchmark', status: unverified ? 'unverified' : 'reference', name: b.name, url: b.url, license: b.license_spdx || b.license,
       stars: b.stars, summary: [b.tasks || b.notes, b.size, b.venue || b.paper].filter(Boolean).join(' · ') || (unverified ? 'Listed from its paper or site; tasks, data and licence not yet checked.' : ''),
       id: `benchmark-${slugify(b.name)}`, kind: 'benchmark', ...where, what, notes, updated: b.last_push || null, raw: b });

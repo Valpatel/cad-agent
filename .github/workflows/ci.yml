@@ -15,7 +15,8 @@ concurrency:
 
 jobs:
   # Fast: the package with only its required dependencies; every optional-dependency test must skip cleanly.
-  # 3.10 is the oldest supported Python (and what JetPack 6 ships on Jetson).
+  # 3.10 is the oldest supported Python (and what JetPack 6 ships on Jetson). The cad and sim extras need 3.11 or newer
+  # (#151: every Pillow for 3.10 has critical advisories, and CadQuery 2.8 needs 3.11), so `full` runs on 3.12.
   core:
     runs-on: ubuntu-24.04
     timeout-minutes: 15

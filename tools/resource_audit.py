@@ -86,7 +86,7 @@ ACCEPTED = 'research/security-accepted.yaml'
 OUR_REPOS = {'valpatel/cad-agent'}
 OUR_MARKETPLACES = {'valpatel'}   # the plugin marketplace name our own repository publishes
 CHANGE_BRANCHES = ('dev',)       # where new items enter: gate checks what a change adds only for these (see gate)
-FP_REQUIRED = {'advisory', 'vendor-upstream-advisory'}   # an acceptance of these names its fingerprint
+FP_REQUIRED = {'advisory', 'vendor-upstream-advisory', 'npm-install-script'}   # an acceptance of these names its fingerprint
 TARBALL_LIMIT = 64 << 20         # largest npm tarball read to check a web kit receipt
 OUR_HOSTS = {'cad-agent.valpatel.com'}
 UA = 'cad-agent-resource-audit/1 (+https://github.com/Valpatel/cad-agent)'
@@ -854,7 +854,8 @@ def check_npm(rep, net, npm_audit=True):
                 where = f" (only on {', '.join(e['os'])})" if e.get('os') else ''
                 rep.add('npm-install-script', 'medium', sid, f'{name} runs an install script{where}',
                         f"{e['path']} {e.get('version')}: hasInstallScript" + (', optional' if e.get('optional') else ''),
-                        'Read the script; in CI prefer npm ci --ignore-scripts where the package works without it.')
+                        'Read the script; in CI prefer npm ci --ignore-scripts where the package works without it.',
+                        key=str(e.get('version') or ''))   # a script read at one version says nothing about the next
             if not e.get('license'):
                 rep.add('npm-no-licence', 'low', sid, f'{name} declares no licence', f"{e['path']} {e.get('version')}",
                         'Check its repository for a licence before relying on it.')
@@ -1195,7 +1196,9 @@ def bundled_of(rec):
 def webkit_components(root):
     """Each top-level folder of the kit's vendor/: the npm packages it holds, the ones its files bundle, its repositories
     and its npm receipts, all read from the kit's own receipts. A folder with a SOURCE.json describes itself; one whose
-    SOURCE.json names no npm package (fonts/, fetched from Google Fonts by URL) records hashes and sources only."""
+    SOURCE.json says "npm": false (fonts/, fetched from Google Fonts by URL) records hashes and sources only. A receipt
+    that names no package and does not say so is still checked as the npm package named like its folder, and
+    check_webkit() flags it."""
     src, folders, _bad = kit_receipts(root)
 
     def entry(key):
@@ -1216,7 +1219,7 @@ def webkit_components(root):
         'fonts': dict(packages=[], repos=[]),
     }
     for folder, rec in folders.items():
-        if not rec.get('package'):
+        if rec.get('npm') is False:
             comps.setdefault(folder, dict(packages=[], repos=[]))
             continue
         comps[folder] = dict(packages=[(rec.get('package') or folder, rec.get('version'))], bundled=bundled_of(rec),
@@ -1229,14 +1232,46 @@ def webkit_components(root):
 
 
 def receipt_problems(name, rec):
-    """Offline: does an npm receipt say exactly which tarball it came from? [(title, evidence)]."""
+    """Offline: does an npm receipt say exactly which tarball it came from, and does each file it patches say where it
+    is in the package and which file there the patch was made against? [(title, evidence, action)]."""
     out, src, integ = [], str(rec.get('source') or ''), str(rec.get('npm_integrity') or '')
+    tarball = 'Record the registry tarball and its integrity, as the npm lockfile does, so the files can be checked against it.'
     ver = rec.get('version')
     if src and not re.fullmatch(r'https://registry\.npmjs\.org/(@[^/]+/)?[^/]+/-/[^/]+-' + re.escape(str(ver)) + r'\.tgz', src):
-        out.append((f'the {name} receipt does not name the npm tarball of version {ver}', f'source {src}'))
+        out.append((f'the {name} receipt does not name the npm tarball of version {ver}', f'source {src}', tarball))
     if src.startswith('https://registry.npmjs.org/') and not integ.startswith('sha512-'):
-        out.append((f'the {name} receipt has no sha512 package integrity', f'npm_integrity {integ[:20] or "(none)"}'))
+        out.append((f'the {name} receipt has no sha512 package integrity', f'npm_integrity {integ[:20] or "(none)"}', tarball))
+    patched, paths = rec.get('patched'), rec.get('paths_in_package') or {}
+    if patched is not None and not isinstance(patched, dict):
+        out.append((f'the {name} receipt\'s "patched" is not a map of files', f'patched {str(patched)[:40]}',
+                    'Write it as {file: {"upstream_sha256": ..., "change": ...}}.'))
+    for local, entry in sorted((patched if isinstance(patched, dict) else {}).items()):
+        base = entry.get('upstream_sha256') if isinstance(entry, dict) else None
+        if not (isinstance(base, str) and re.fullmatch(r'[0-9a-f]{64}', base)):
+            out.append((f'the {name} receipt\'s patch to {local} records no upstream_sha256', f'patched {local}: {json.dumps(entry)[:80]}',
+                        'Record the SHA-256 of the package\'s file the patch was made against, so a new package version '
+                        'cannot hide behind the patch.'))
+        if local not in paths:
+            out.append((f'the {name} receipt patches {local} but does not say where it is in the package',
+                        f'{local} is not in paths_in_package', 'Add its path in the package, so the patch can be checked against it.'))
     return out
+
+
+def non_npm_problems(folder, rec):
+    """Offline: a SOURCE.json with no npm package. It must say so ("npm": false; otherwise the advisory, bundle and
+    tarball checks would be skipped without a word) and name a source for every file it hashes. [(title, evidence, action)]."""
+    if rec.get('package'):
+        return []
+    if rec.get('npm') is not False:
+        return [(f'the {folder} receipt names no npm package', f'{KIT}/{folder}/SOURCE.json: no "package", no "npm": false',
+                 'Name the npm package, version, source tarball and integrity, or say "npm": false and record where each '
+                 'file came from in "sources".')]
+    sources = rec.get('sources') if isinstance(rec.get('sources'), dict) else {}
+    nosrc = sorted(f for f in (rec.get('files') or {}) if f not in sources)
+    if nosrc:
+        return [(f'the {folder} receipt names no source for {len(nosrc)} files', ', '.join(nosrc[:6]),
+                 'Record where each file came from (a URL, or "ours") in "sources".')]
+    return []
 
 
 def check_webkit(rep, net, added_files=()):
@@ -1295,10 +1330,11 @@ def check_webkit(rep, net, added_files=()):
                 rep.add('webkit-version', 'medium', row['id'], f'the {top} receipt says it bundles {n} {v}, but no file carries "{v}"',
                         ', '.join(f.name for f in bundlers), 'Read the bundle\'s version strings and correct the receipt.', key=f'bundled:{n}')
         for name, rec in (c or {}).get('receipts', []):
-            for title, evidence in receipt_problems(name, rec):
-                rep.add('webkit-receipt', 'medium', row['id'], title, evidence,
-                        'Record the registry tarball and its integrity, as the npm lockfile does, so the files can be checked against it.',
-                        key=f'{name}:{title}')
+            for title, evidence, action in receipt_problems(name, rec):
+                rep.add('webkit-receipt', 'medium', row['id'], title, evidence, action, key=f'{name}:{title}')
+        if top in folders and f'{top}/SOURCE.json' not in bad:        # an unreadable receipt is already a high finding
+            for title, evidence, action in non_npm_problems(top, folders[top]):
+                rep.add('webkit-receipt', 'medium', row['id'], title, evidence, action, key=f'{top}:{title}')
         new_unhashed = [f for f in unhashed.get(top, []) if f'{KIT}/{f}' in set(added_files)]
         if new_unhashed:
             rep.add('webkit-unhashed', 'medium', row['id'], f'new vendored files in {top} have no recorded hash',
@@ -1420,8 +1456,8 @@ def verify_receipt(rep, net, row, top, name, rec):
             upstream = hashlib.sha256(members[inpkg]).hexdigest()
             same = hashlib.sha256(mine.read_bytes()).hexdigest() == upstream
             if local in patched:
-                base = (patched[local] or {}).get('upstream_sha256') if isinstance(patched[local], dict) else None
-                (unpatched if same else other_base if base and base != upstream else as_patched).append(local)
+                base = patched[local].get('upstream_sha256') if isinstance(patched[local], dict) else None
+                (unpatched if same else as_patched if base == upstream else other_base).append(local)
             elif not same:
                 differ.append(local)
     changed = differ + as_patched + other_base
@@ -1433,7 +1469,7 @@ def verify_receipt(rep, net, row, top, name, rec):
                 'The patch was lost (restore it) or the record is stale (remove the file from "patched").', key=f'{name}:unpatched')
     if other_base:
         rep.add('webkit-receipt', 'medium', row['id'], f'the {name} package\'s {", ".join(other_base)} is not the file its '
-                'patch was made against', 'upstream_sha256 in the receipt differs from the file in the tarball',
+                'patch was made against', 'upstream_sha256 in the receipt is missing or differs from the file in the tarball',
                 'Re-read the patch against the package\'s file and correct upstream_sha256.', key=f'{name}:base')
     if missing:
         rep.add('webkit-receipt', 'medium', row['id'], f'the {name} receipt names paths its package does not have',
@@ -1807,8 +1843,9 @@ def build(root, as_of=None, net=None, repo=None, installed=False, catalog=None, 
 
 def load_accepted(path):
     """research/security-accepted.yaml: [{check, subject, reason, accepted, fp?}]. An acceptance without fp covers every
-    finding of that check on that subject, so the advisory checks must name the fingerprint: otherwise accepting one
-    moderate advisory would hide every later one on the same package."""
+    finding of that check on that subject, so the checks in FP_REQUIRED must name the fingerprint: otherwise accepting one
+    moderate advisory would hide every later one on the same package, and an install script read at one version would
+    cover the next version's script too."""
     text = read_text(Path(path)) if path else None
     if not text:
         return []
@@ -1820,7 +1857,7 @@ def load_accepted(path):
             raise SystemExit(f'{path}: every accepted finding needs check, subject and reason')
         if a['check'] in FP_REQUIRED and not a.get('fp'):
             raise SystemExit(f"{path}: accepting {a['check']} on {a['subject']} needs its fp (the finding's fingerprint), "
-                             'so a later advisory on the same package is not hidden too')
+                             'so a later finding on the same package (another advisory, another version) is not hidden too')
     return items
 
 

@@ -1,0 +1,719 @@
+{
+ "regenerate": "PYTHONPATH=src python3 tools/site-packet-pictures.py",
+ "size": [
+  1400,
+  1000
+ ],
+ "toolkit": "0.1.0",
+ "cadquery": "2.8.0",
+ "ocp": "7.9.3.1",
+ "vtk": "9.6.2",
+ "scenarios": {
+  "clean": {
+   "commit": "aa9b17fa17d87a4b1d73cd7bf6f037ed8cb827ae",
+   "seed": null,
+   "what": null,
+   "seeded_gate": null,
+   "gates": {
+    "assembly": {
+     "status": "pass",
+     "counts": {
+      "pass": 55,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "connectivity": {
+     "status": "pass",
+     "counts": {
+      "pass": 31,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "containment": {
+     "status": "pass",
+     "counts": {
+      "pass": 21,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "dossier-lint": {
+     "status": "pass",
+     "counts": {
+      "pass": 34,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "fasteners": {
+     "status": "pass",
+     "counts": {
+      "pass": 28,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "motion": {
+     "status": "pass",
+     "counts": {
+      "pass": 1,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "wall": {
+     "status": "pass",
+     "counts": {
+      "pass": 8,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    }
+   }
+  },
+  "ball_through_wall": {
+   "commit": "aa9b17fa17d87a4b1d73cd7bf6f037ed8cb827ae",
+   "seed": "ball_through_wall",
+   "what": "ball#7 pushed 5 mm into the +Y wall (2.6 mm out of the far side)",
+   "seeded_gate": "containment",
+   "gates": {
+    "assembly": {
+     "status": "fail",
+     "counts": {
+      "pass": 54,
+      "warn": 0,
+      "fail": 1
+     },
+     "findings": [
+      {
+       "id": "step:8:insert",
+       "status": "fail",
+       "message": "moving in along -Z: ball#7 overlaps hopper at its seat (174.019 mm³)"
+      }
+     ]
+    },
+    "connectivity": {
+     "status": "pass",
+     "counts": {
+      "pass": 31,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "containment": {
+     "status": "fail",
+     "counts": {
+      "pass": 18,
+      "warn": 0,
+      "fail": 3
+     },
+     "findings": [
+      {
+       "id": "contains:hopper_cavity:ball#7:inside",
+       "status": "fail",
+       "message": "ball#7 escapes hopper_cavity: 261.8 mm3 (50.0 %) outside, furthest 5 mm out at [41.0, 67.6, 21.4]"
+      },
+      {
+       "id": "contains:hopper_cavity:ball#7:wall",
+       "status": "fail",
+       "message": "ball#7 is in hopper's material: 174 mm3 shared around [41.0, 63.750087, 21.4]"
+      },
+      {
+       "id": "contains:hopper_cavity:ball:support",
+       "status": "fail",
+       "message": "1 of 8 ball instance(s) rest on nothing within 0.05 mm along [0.0, 0.0, -1.0]: ball#7"
+      }
+     ]
+    },
+    "dossier-lint": {
+     "status": "fail",
+     "counts": {
+      "pass": 33,
+      "warn": 0,
+      "fail": 1
+     },
+     "findings": [
+      {
+       "id": "section-below-gated@dossier/sections/store.yaml:2",
+       "status": "fail",
+       "message": "section 'S-store' is built, below gated: hopper: gate:assembly fail (failing: step:8:insert); gate:containment fail (failing: contains:hopper_cavity:ball#7:inside, contains:hopper_cavity:ball#7:wall); ball: gate:assembly fail (failing: step:8:insert); gate:containment fail (failing: contains:hopper_cavity:ball#7:inside, contains:hopper_cavity:ball#7:wall, contains:hopper_cavity:ball:support)"
+      }
+     ]
+    },
+    "fasteners": {
+     "status": "pass",
+     "counts": {
+      "pass": 28,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "motion": {
+     "status": "pass",
+     "counts": {
+      "pass": 1,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "wall": {
+     "status": "pass",
+     "counts": {
+      "pass": 8,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    }
+   }
+  },
+  "thin_wall": {
+   "commit": "aa9b17fa17d87a4b1d73cd7bf6f037ed8cb827ae",
+   "seed": "thin_wall",
+   "what": "the hopper's +X wall thinned from 2.4 to 0.8 mm",
+   "seeded_gate": "wall",
+   "gates": {
+    "assembly": {
+     "status": "pass",
+     "counts": {
+      "pass": 55,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "connectivity": {
+     "status": "pass",
+     "counts": {
+      "pass": 31,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "containment": {
+     "status": "pass",
+     "counts": {
+      "pass": 21,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "dossier-lint": {
+     "status": "fail",
+     "counts": {
+      "pass": 33,
+      "warn": 0,
+      "fail": 1
+     },
+     "findings": [
+      {
+       "id": "section-below-gated@dossier/sections/store.yaml:2",
+       "status": "fail",
+       "message": "section 'S-store' is built, below gated: hopper: gate:wall fail (failing: wall:hopper)"
+      }
+     ]
+    },
+    "fasteners": {
+     "status": "pass",
+     "counts": {
+      "pass": 28,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "motion": {
+     "status": "pass",
+     "counts": {
+      "pass": 1,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "wall": {
+     "status": "fail",
+     "counts": {
+      "pass": 7,
+      "warn": 0,
+      "fail": 1
+     },
+     "findings": [
+      {
+       "id": "wall:hopper",
+       "status": "fail",
+       "message": "thinnest 0.800 mm < 2.4 mm (sampled; see witnesses)"
+      }
+     ]
+    }
+   }
+  },
+  "screw_too_long": {
+   "commit": "b17a214146ee3af3d43546322c6c5b0cfb06bb5d",
+   "seed": "screw_too_long",
+   "what": "screw_0 lengthened 4 mm: its tip runs 3 mm past the insert hole into the post",
+   "seeded_gate": "fasteners",
+   "gates": {
+    "assembly": {
+     "status": "pass",
+     "counts": {
+      "pass": 55,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "connectivity": {
+     "status": "warn",
+     "counts": {
+      "pass": 31,
+      "warn": 1,
+      "fail": 0
+     },
+     "findings": [
+      {
+       "id": "contact:hopper|screw_0",
+       "status": "warn",
+       "message": "hopper and screw_0 are in contact (overlapping, 21.21 mm3 shared) but no interface, joint, fastener, contains or intended overlap declares it"
+      }
+     ]
+    },
+    "containment": {
+     "status": "pass",
+     "counts": {
+      "pass": 21,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "dossier-lint": {
+     "status": "fail",
+     "counts": {
+      "pass": 33,
+      "warn": 0,
+      "fail": 1
+     },
+     "findings": [
+      {
+       "id": "section-below-gated@dossier/sections/store.yaml:2",
+       "status": "fail",
+       "message": "section 'S-store' is built, below gated: hopper: gate:fasteners fail (failing: fastener:screw_0:tip); lid: gate:fasteners fail (failing: fastener:screw_0:tip, fastener:screw_0:length); insert_0: gate:fasteners fail (failing: fastener:screw_0:tip, fastener:screw_0:length)"
+      }
+     ]
+    },
+    "fasteners": {
+     "status": "fail",
+     "counts": {
+      "pass": 26,
+      "warn": 0,
+      "fail": 2
+     },
+     "findings": [
+      {
+       "id": "fastener:screw_0:tip",
+       "status": "fail",
+       "message": "the screw runs 3.00 mm into hopper (t 9.00..12.00); the screw's solid overlaps hopper (21.206 mm³, t 9.00..12.00)"
+      },
+      {
+       "id": "fastener:screw_0:length",
+       "status": "fail",
+       "message": "length 12 is outside the 4.50..8.50 mm the stack takes (thread at 3.00 + 1.50 engagement; hopper at 9.00 less 0.5 tip room)"
+      }
+     ]
+    },
+    "motion": {
+     "status": "pass",
+     "counts": {
+      "pass": 1,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "wall": {
+     "status": "pass",
+     "counts": {
+      "pass": 8,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    }
+   }
+  },
+  "flap_hits_frame": {
+   "commit": "b17a214146ee3af3d43546322c6c5b0cfb06bb5d",
+   "seed": "flap_hits_frame",
+   "what": "the arm's stop is raised to 60 deg; the arm hits the frame beam near 45 deg",
+   "seeded_gate": "motion",
+   "gates": {
+    "assembly": {
+     "status": "pass",
+     "counts": {
+      "pass": 55,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "connectivity": {
+     "status": "pass",
+     "counts": {
+      "pass": 31,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "containment": {
+     "status": "pass",
+     "counts": {
+      "pass": 21,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "dossier-lint": {
+     "status": "fail",
+     "counts": {
+      "pass": 33,
+      "warn": 0,
+      "fail": 2
+     },
+     "findings": [
+      {
+       "id": "section-below-gated@dossier/sections/arm.yaml:2",
+       "status": "fail",
+       "message": "section 'S-arm' is built, below gated: arm: gate:motion fail (failing: collision:arm|frame, motion:I-pin-arm)"
+      },
+      {
+       "id": "section-below-gated@dossier/sections/frame.yaml:2",
+       "status": "fail",
+       "message": "section 'S-frame' is built, below gated: frame: gate:motion fail (failing: collision:arm|frame, motion:I-pin-arm)"
+      }
+     ]
+    },
+    "fasteners": {
+     "status": "pass",
+     "counts": {
+      "pass": 28,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "motion": {
+     "status": "fail",
+     "counts": {
+      "pass": 0,
+      "warn": 0,
+      "fail": 2
+     },
+     "findings": [
+      {
+       "id": "collision:arm|frame",
+       "status": "fail",
+       "message": "arm collides with frame: 15.1762 mm3 shared first at I-pin-arm=49.0909deg (onset between I-pin-arm=44.8935 and 44.9148 deg); 3 of 12 poses"
+      },
+      {
+       "id": "motion:I-pin-arm",
+       "status": "fail",
+       "message": "I-pin-arm: 1 colliding pair(s) over 12 poses (I-pin-arm 0..60 deg in 12 samples (5.45455 deg apart, up to 4.322 mm of travel))"
+      }
+     ]
+    },
+    "wall": {
+     "status": "pass",
+     "counts": {
+      "pass": 8,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    }
+   }
+  },
+  "lid_before_board": {
+   "commit": "b17a214146ee3af3d43546322c6c5b0cfb06bb5d",
+   "seed": "lid_before_board",
+   "what": "assembly steps reordered: the lid goes on before the board goes in",
+   "seeded_gate": "assembly",
+   "gates": {
+    "assembly": {
+     "status": "fail",
+     "counts": {
+      "pass": 53,
+      "warn": 0,
+      "fail": 2
+     },
+     "findings": [
+      {
+       "id": "step:8:insert",
+       "status": "fail",
+       "message": "moving in along -Z: ball#0 meets lid 40.59 mm before its seat (first contact near (29.0, 34.0, 47.0)); ball#1 meets lid 40.59 mm before its seat (first contact near (29.0, 46.0, 47.0)); ball#2 meets lid 40.59 mm before its seat (first contact near (41.0, 34.0, 47.0)); ball#3 meets lid 40.59 mm before its seat (first contact near (41.0, 46.0, 47.0)); ball#4 meets lid 30.59 mm before its seat (first contact near (29.0, 34.0, 47.0)); ball#5 meets lid 30.59 mm before its seat (first contact near (29.0, 46.0, 47.0)); ball#6 meets lid 30.59 mm before its seat (first contact near (41.0, 34.0, 47.0)); ball#7 meets lid 30.59 mm before its seat (first contact near (41.0, 46.0, 47.0))"
+      },
+      {
+       "id": "step:9:insert",
+       "status": "fail",
+       "message": "moving in along -Z: board meets lid 40.60 mm before its seat (first contact near (35.0, 18.2, 47.0))"
+      }
+     ]
+    },
+    "connectivity": {
+     "status": "pass",
+     "counts": {
+      "pass": 31,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "containment": {
+     "status": "pass",
+     "counts": {
+      "pass": 21,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "dossier-lint": {
+     "status": "fail",
+     "counts": {
+      "pass": 33,
+      "warn": 0,
+      "fail": 1
+     },
+     "findings": [
+      {
+       "id": "section-below-gated@dossier/sections/store.yaml:2",
+       "status": "fail",
+       "message": "section 'S-store' is built, below gated: lid: gate:assembly fail (failing: step:8:insert, step:9:insert); ball: gate:assembly fail (failing: step:8:insert); board: gate:assembly fail (failing: step:9:insert)"
+      }
+     ]
+    },
+    "fasteners": {
+     "status": "pass",
+     "counts": {
+      "pass": 28,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "motion": {
+     "status": "pass",
+     "counts": {
+      "pass": 1,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "wall": {
+     "status": "pass",
+     "counts": {
+      "pass": 8,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    }
+   }
+  }
+ },
+ "pictures": {
+  "clean-store-xray-iso.webp": {
+   "scenario": "clean",
+   "section": "S-store",
+   "view": "xray-iso",
+   "caption": "S-store Store: x-ray",
+   "note": "Section parts translucent; free items, fasteners and declared cavities shown inside.",
+   "section_hash": "19e7fb6613ec",
+   "findings": []
+  },
+  "clean-store-cut-cavity-hopper_cavity.webp": {
+   "scenario": "clean",
+   "section": "S-store",
+   "view": "cut-cavity-hopper_cavity",
+   "caption": "S-store Store: cut through hopper_cavity, side",
+   "note": "Vertical plane through the centre of hopper_cavity (normal +Y), seen from -Y: contents against the walls.",
+   "section_hash": "19e7fb6613ec",
+   "findings": []
+  },
+  "clean-store-cut-fastener-screw_0.webp": {
+   "scenario": "clean",
+   "section": "S-store",
+   "view": "cut-fastener-screw_0",
+   "caption": "S-store Store: cut through screw_0",
+   "note": "Plane containing the axis of screw_0: head on lid, thread in insert_0 (4 m3_shcs on lid alike; the fastener gate measures each).",
+   "section_hash": "19e7fb6613ec",
+   "findings": []
+  },
+  "clean-store-access-from-top.webp": {
+   "scenario": "clean",
+   "section": "S-store",
+   "view": "access-from-top",
+   "caption": "S-store Store: access from the top",
+   "note": "Looking along the screws' advance from the tool's side (top): screw_0, screw_1, screw_2, screw_3.",
+   "section_hash": "19e7fb6613ec",
+   "findings": []
+  },
+  "clean-store-exploded.webp": {
+   "scenario": "clean",
+   "section": "S-store",
+   "view": "exploded",
+   "caption": "S-store Store: exploded along the assembly steps",
+   "note": "Each part backed out along its step's direction, later steps further; screws along their axis.",
+   "section_hash": "19e7fb6613ec",
+   "findings": []
+  },
+  "clean-arm-pose-I-pin-arm-min.webp": {
+   "scenario": "clean",
+   "section": "S-arm",
+   "view": "pose-I-pin-arm-min",
+   "caption": "S-arm Arm: I-pin-arm at 0 deg (min of range)",
+   "note": "The moving body at the min end of its declared range; declared contacts: arm-pin, arm-hinge_block, arm-stop.",
+   "section_hash": "4dab98bda33f",
+   "findings": []
+  },
+  "clean-arm-pose-I-pin-arm-max.webp": {
+   "scenario": "clean",
+   "section": "S-arm",
+   "view": "pose-I-pin-arm-max",
+   "caption": "S-arm Arm: I-pin-arm at 40 deg (max of range)",
+   "note": "The moving body at the max end of its declared range; declared contacts: arm-pin, arm-hinge_block, arm-stop.",
+   "section_hash": "4dab98bda33f",
+   "findings": []
+  },
+  "clean-arm-cut-joint-I-pin-arm.webp": {
+   "scenario": "clean",
+   "section": "S-arm",
+   "view": "cut-joint-I-pin-arm",
+   "caption": "S-arm Arm: cut through joint I-pin-arm",
+   "note": "Plane containing the revolute axis of I-pin-arm: arm on pin.",
+   "section_hash": "4dab98bda33f",
+   "findings": []
+  },
+  "ball_through_wall-store-findings.webp": {
+   "scenario": "ball_through_wall",
+   "section": "S-store",
+   "view": "findings",
+   "caption": "S-store Store: gate findings at their witness points",
+   "note": "5 finding(s); numbered callouts at the witness points (see findings in the manifest).",
+   "section_hash": "ae8adfb05427",
+   "findings": [
+    {
+     "id": "F1",
+     "gate": "assembly",
+     "check": "step:8:insert",
+     "status": "fail"
+    },
+    {
+     "id": "F2",
+     "gate": "containment",
+     "check": "contains:hopper_cavity:ball#7:inside",
+     "status": "fail"
+    },
+    {
+     "id": "F3",
+     "gate": "containment",
+     "check": "contains:hopper_cavity:ball#7:wall",
+     "status": "fail"
+    },
+    {
+     "id": "F4",
+     "gate": "containment",
+     "check": "contains:hopper_cavity:ball:support",
+     "status": "fail"
+    },
+    {
+     "id": "F5",
+     "gate": "dossier-lint",
+     "check": "section-below-gated@dossier/sections/store.yaml:2",
+     "status": "fail"
+    }
+   ]
+  },
+  "ball_through_wall-store-cut-cavity-hopper_cavity-plan.webp": {
+   "scenario": "ball_through_wall",
+   "section": "S-store",
+   "view": "cut-cavity-hopper_cavity-plan",
+   "caption": "S-store Store: cut through hopper_cavity, plan",
+   "note": "Horizontal plane through the centre of hopper_cavity, seen from above: the walls as a ring around the contents.",
+   "section_hash": "ae8adfb05427",
+   "findings": []
+  },
+  "thin_wall-store-cut-cavity-hopper_cavity-plan.webp": {
+   "scenario": "thin_wall",
+   "section": "S-store",
+   "view": "cut-cavity-hopper_cavity-plan",
+   "caption": "S-store Store: cut through hopper_cavity, plan",
+   "note": "Horizontal plane through the centre of hopper_cavity, seen from above: the walls as a ring around the contents.",
+   "section_hash": "fc5a474895f1",
+   "findings": []
+  },
+  "screw_too_long-store-cut-fastener-screw_0.webp": {
+   "scenario": "screw_too_long",
+   "section": "S-store",
+   "view": "cut-fastener-screw_0",
+   "caption": "S-store Store: cut through screw_0",
+   "note": "Plane containing the axis of screw_0: head on lid, thread in insert_0 (4 m3_shcs on lid alike; the fastener gate measures each).",
+   "section_hash": "0bdd24fba5ed",
+   "findings": []
+  },
+  "flap_hits_frame-arm-pose-I-pin-arm-max.webp": {
+   "scenario": "flap_hits_frame",
+   "section": "S-arm",
+   "view": "pose-I-pin-arm-max",
+   "caption": "S-arm Arm: I-pin-arm at 60 deg (max of range)",
+   "note": "The moving body at the max end of its declared range; declared contacts: arm-pin, arm-hinge_block, arm-stop.",
+   "section_hash": "4dab98bda33f",
+   "findings": []
+  },
+  "lid_before_board-store-findings.webp": {
+   "scenario": "lid_before_board",
+   "section": "S-store",
+   "view": "findings",
+   "caption": "S-store Store: gate findings at their witness points",
+   "note": "3 finding(s); numbered callouts at the witness points (see findings in the manifest).",
+   "section_hash": "19e7fb6613ec",
+   "findings": [
+    {
+     "id": "F1",
+     "gate": "assembly",
+     "check": "step:8:insert",
+     "status": "fail"
+    },
+    {
+     "id": "F2",
+     "gate": "assembly",
+     "check": "step:9:insert",
+     "status": "fail"
+    },
+    {
+     "id": "F3",
+     "gate": "dossier-lint",
+     "check": "section-below-gated@dossier/sections/store.yaml:2",
+     "status": "fail"
+    }
+   ]
+  }
+ }
+}

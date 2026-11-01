@@ -33,6 +33,11 @@
 # `cad-agent site` from the bench's committed run (tests/fixtures/gate_bench/site_snapshot). The bench as built: six
 # gates, 144 checks (31 + 21 + 28 + 1 + 55 + 8), all pass; its arm sweeps 0 to 40 degrees in 12 poses with no
 # collision and 1.60 mm least clearance (the motion gate's verdict, site_snapshot/gates/motion.json).
+#
+# The review-packet renders (docs/img/packets/) come from tools/site-packet-pictures.py, which runs `cad-agent gates
+# --build` and `cad-agent review-packet` on a copy of the bench, as built and with one seeded defect at a time
+# (tests/fixtures/gate_bench/build.py, SEEDS). docs/img/packets/SOURCE.json records each run's gate verdicts, and
+# tests/test_packet_pictures.py holds the captions below to it: a seeded picture's caption names its seed.
 
 docs/gates.md:
   hero:
@@ -322,3 +327,101 @@ docs/common-issues.md:
       on: example
       caption: A result that never converges. Refining the mesh at a steel L-bracket's sharp inside corner from 2 mm to 0.125 mm raises its peak stress from 443 to 1448 MPa; with an R1.5 fillet it stays between 432 and 447 MPa. Model the fillet the part will have, then refine until the peak settles.
       alt: Peak stress at an L-bracket's inside corner against mesh size; the sharp corner's peak keeps rising as the mesh is refined, the filleted corner's stays flat
+
+research/design-workflows.md:
+  hero:
+    img: docs/img/packets/ball_through_wall-store-cut-cavity-hopper_cavity-plan.webp
+    shows: output
+    tool: cad-agent review-packet
+    on: fixture
+    caption: The incident in §6, reproduced on purpose on the gate bench, the repo's own test assembly. A seeded failure (ball_through_wall) pushes one ball 5 mm into the hopper's wall; a plan cut through the hopper's cavity shows it, and the containment gate fails it, 261.8 mm³ (50 %) outside the cavity.
+    alt: A plan section through the gate bench's hopper, its walls a blue ring round four orange balls, and a fifth ball sitting in the top wall, half outside the cavity
+  figures:
+    - after: 1-summary-the-practices-that-have-evidence
+      below: Kernel checks and a hard validity gate
+      img: docs/img/gates/bench-review.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: "Practice 1 as cad-agent runs it: every gate's verdict on the gate bench as built, with its check counts. Six gates, 144 checks, all pass, and each says physical fit is not verified."
+      alt: The review site's gates table for the gate bench, each gate marked pass with its check counts and links to its verdict files
+    - after: 1-summary-the-practices-that-have-evidence
+      below: Sign-off invalidated by a geometry hash
+      img: docs/img/packets/clean-store-exploded.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "Practice 11 on the gate bench as built: each part backed out along its assembly step's direction, later steps further, screws along their axes. The assembly gate checks each step's insertion and tool access; 55 checks pass."
+      alt: "An exploded view of the gate bench's store: the hopper at the bottom, a board and the balls above it, then the lid and four screws on top"
+    - after: 22-earthtojaketext-to-cad-cad-skill-build123d-mcp-and-agentcad-vendored-pinned
+      below: Snapshot policy
+      img: docs/img/packets/clean-store-cut-fastener-screw_0.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "One view chosen for one question, as text-to-cad's snapshot policy asks: a cut in the plane of screw_0's axis on the gate bench as built, its head on the lid and its thread in the insert. The fastener gate measures the stack (28 checks pass); the picture shows where."
+      alt: A section through the gate bench's hopper and lid along two screws, each head on the lid and its thread in an insert, with the balls below
+    - after: 22-earthtojaketext-to-cad-cad-skill-build123d-mcp-and-agentcad-vendored-pinned
+      below: lint_drawing
+      img: docs/img/packets/clean-store-cut-cavity-hopper_cavity.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "The containing relation in cad-agent's containment gate: a vertical cut through the gate bench's registered hopper cavity, the balls inside it, resting on its floor and on each other. 21 checks pass (each ball inside and clear of the wall, count, support and the cavity's fit)."
+      alt: A vertical section through the gate bench's hopper, four orange balls in two rows inside the blue walls, the lid on top
+    - after: 25-what-the-evidence-says
+      img: docs/img/packets/screw_too_long-store-cut-fastener-screw_0.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A hidden-interior fault, the kind renders miss: a seeded failure (screw_too_long) makes screw_0 4 mm longer. From outside the bench looks the same; a cut along the screw shows its tip past the insert, and the fastener gate measured it 3.00 mm into the hopper, at a length outside the 4.5 to 8.5 mm the stack takes."
+      alt: A section along two screws of the gate bench; the left screw is longer and its tip runs below the insert into the hopper's post
+    - after: 3-professional-mechanical-design-practice-an-agent-can-execute
+      img: docs/img/gates/bench-requirements.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: "Requirements traceability (3.2) as cad-agent does it: the gate bench's requirements, from its project.yaml, each traced to the sections that carry it and the gate check that verifies it. All three are verified by analysis."
+      alt: The review site's requirements table for the gate bench, three requirements marked verified, each with its traced sections, its verifying gate check and its source
+    - after: 41-contact-graphs-and-interference
+      img: docs/img/gates/bench-connectivity.svg
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: "The liaison graph the connectivity gate builds, on the gate bench as built: parts linked by contacts and fasteners (ovals), the balls declared free in the hopper (dashed boxes), the arm its own body on a joint (blue dashed). 31 checks pass."
+      alt: A graph of the gate bench's parts linked by contacts and fasteners, grouped into the static frame and the arm's body
+    - after: 42-containment
+      img: docs/img/packets/ball_through_wall-store-findings.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "The containment gate on a seeded failure (ball_through_wall): its findings drawn as numbered callouts at their witness points. Ball 7 is 261.8 mm³ (50 %) outside the cavity, its furthest point 5 mm out, 174 mm³ inside the hopper's material, and it rests on nothing; the assembly step that inserts it fails too."
+      alt: An x-ray view of the gate bench's store with callouts F1 to F3 pointing at one ball in the hopper's wall
+    - after: 43-mates-and-joints
+      img: docs/img/packets/clean-arm-cut-joint-I-pin-arm.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A revolute joint as built: a cut in the plane of the axis of the gate bench's joint I-pin-arm, the arm on its pin."
+      alt: "A section through the gate bench's arm joint: the green pin passing through the blue arm block above the base"
+    - after: 44-kinematic-interference
+      img: docs/img/packets/flap_hits_frame-arm-pose-I-pin-arm-max.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: Sampled poses on a seeded failure (flap_hits_frame), the arm's stop raised from 40 to 60 degrees and shown at 60. The motion gate sampled 12 poses, 5.45 degrees apart, found the arm in the frame in 3 of them and narrowed the first contact to between 44.89 and 44.91 degrees. Its report states the sample density.
+      alt: The gate bench's arm raised to 60 degrees, its purple beam passing through the grey frame above it
+    - after: 45-minimum-wall-and-feature-size
+      img: docs/img/packets/thin_wall-store-cut-cavity-hopper_cavity-plan.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "Ray thickness, re-measured on the B-rep, on a seeded failure (thin_wall): the gate bench's hopper with its +X wall thinned from 2.4 to 0.8 mm, in a plan cut through its cavity. The wall gate reads 0.800 mm, under the 2.4 mm the part's dossier asks for."
+      alt: A plan section through the gate bench's hopper with four balls inside; its right wall is much thinner than the other three
+    - after: 5-visual-review-of-renders-by-a-vision-model
+      img: docs/img/packets/clean-store-xray-iso.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A view for hidden interiors, one of the unmeasured mitigations the plan uses: the review packet's x-ray of the gate bench's store as built, its parts translucent and the loose balls, screws and declared cavity drawn inside. No paper has measured how much such a view helps a judge."
+      alt: "An x-ray view of the gate bench's store: translucent hopper and lid with eight orange balls and four screws visible inside"

@@ -109,6 +109,9 @@ flowchart LR
   raises and *"has shown nothing about the design"*. A scene is bound to a `document_hash`; selector ids are
   revision-scoped. **No plan-before-build step exists (V)**: the brief says a simple part may need a sentence and a
   complex assembly a dimension/interface checklist, with no required format.
+
+<!-- the site places a figure here (docs/pages.yaml) -->
+
 - **build123d-mcp** ([repo](https://github.com/pzfreo/build123d-mcp), **Apache-2.0 (V, LICENSE)**). Its system prompt
   (V, `default_prompt.md`) orders the loop: `measure` after every `execute` (faces and volume must change as expected
   after a boolean), `clearance` between mates before any render (`touching` or `apart`, never `interpenetrating`),
@@ -119,6 +122,9 @@ flowchart LR
   tiers `measured | structural | recognised | unverified`, and *"conforms = no FAILs and ≥1 requirement actually
   checked"*; `lint_drawing` must return zero violations before a drawing is done. CADGenBench: a build123d-MCP entry
   leads the leaderboard at 86.9 % (u, via a 2026-10-25 third-party snapshot; the HF Space did not render).
+
+<!-- the site places a figure here (docs/pages.yaml) -->
+
 - **agentcad** ([repo](https://github.com/jdilla1277/agentcad), **Apache-2.0 (V, LICENSE)**). Validation layers (V,
   `validation.py`): BRepCheck, shell closure (free edges), mesh manifold, structure, advisory (sliver faces, loose
   tolerances). Authors declare `expect_solids`, `expect_shells` and `floating: true` per shown object (V,

@@ -72,6 +72,7 @@ export const GLYPHS = {
   'agent-workflow': '<path d="M28 20v60M28 32c0 12 44 6 44 18s-44 6-44 18"/><circle cx="28" cy="14" r="6"/><circle class="a" cx="72" cy="50" r="7"/><circle cx="28" cy="86" r="6"/>',
   'design-process': '<rect x="16" y="10" width="68" height="80" rx="6"/><path class="a" d="M27 32l6 6 11-13M27 56l6 6 11-13"/><path d="M52 34h22M52 58h22M27 78h46"/>',
   'review-and-evidence': '<circle cx="42" cy="42" r="26"/><path d="M61 61l27 27"/><path class="a" d="M30 42l8 8 15-16"/>',
+  'supply-chain': '<rect x="6" y="36" width="48" height="28" rx="14"/><rect class="a" x="46" y="36" width="48" height="28" rx="14"/><path d="M30 50h40"/><path d="M50 10v14M50 76v14"/>',
   publishing: '<rect x="8" y="16" width="84" height="68" rx="6"/><path d="M8 32h84"/><path class="a" d="M22 48h34M22 60h56M22 71h42"/>',
   evaluation: '<circle cx="50" cy="50" r="38"/><circle cx="50" cy="50" r="23"/><circle class="a" cx="50" cy="50" r="8"/><path d="M50 2v18M50 80v18M2 50h18M80 50h18"/>',
   // buckets and kinds

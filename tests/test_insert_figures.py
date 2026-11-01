@@ -39,6 +39,7 @@ def test_the_pages_numbers_are_what_the_module_computes():
     lid = I.check_joint(**m3, head_mm=7.0, clearance_mm=3.4, clamped={"thickness_mm": 4.0})
     assert f"at most {lid['torque']['allowed_nm']:.2f} N m ({lid['torque']['governed_by'].replace('_', ' ')})" in page
     assert f"{lid['torque']['allowed_nm']:.2f}, '{lid['torque']['governed_by']}'" in page
+    assert f"above: {lid['torque']['allowed_nm']:.2f} N·m)" in page
     pull = lid["capacity"]["pull_out"]
     assert f"low {pull['low']:.0f}, mid {pull['mid']:.0f}, high {pull['high']:.0f} N" in page
     bracket = I.check_clamp("M4", "pla-bambu-basic", 6.0, head_mm=7.0, clearance_mm=4.5)

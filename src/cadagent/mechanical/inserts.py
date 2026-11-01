@@ -578,6 +578,14 @@ INSTALL_ALL = ("melt it in to about 90 % of its depth with the tip, then press i
                "screw jacks it out")
 
 
+INSTALL_FAR_SIDE = ("from the far face: melt it in with the tip, then press it with a flat tool on to the shoulder "
+                    "in front of it, flush with the far face when the pocket is the insert's length, or below it when "
+                    "the pocket is deeper, and hold it while it sets (CNC Kitchen tips); heat installation needs "
+                    "little force, generally under 220 N (SPIROL's inserts guide, p. 18). An insert left short of "
+                    "the shoulder is pulled on to it by the screw, through its knurl (jack-out); clear the melt from "
+                    "the shoulder's hole")
+
+
 def install_notes(material: str) -> Dict[str, str]:
     """How to set an insert into one printed material: the iron's temperature from the published rules and the tests
     that used it, and how to press it."""
@@ -1053,10 +1061,17 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
                        "(CNC Kitchen 2026), so the insert has more plastic to push aside and may not seat" if
                        cad_hole < lo else "larger: the knurl bites less; drilled true to size, CNC Kitchen's M3 lost "
                                           "most of its strength between 4.1 and 4.2 mm"))))
+    install = install_notes(material)
     if installed_from == "far side":
         # the insert goes in from the far face and is pressed onto the shoulder in front of it: the pocket from the
         # far face is as deep as the insert, or deeper with the insert pressed on below the far face
         depth = ins.length_mm if hole_depth_mm is None else float(hole_depth_mm)
+        hd = dict(hd, depth_mm=round(ins.length_mm, 3), depth_rules_mm={"the insert's length, from the far face":
+                                                                         round(ins.length_mm, 3)},
+                  why=hd["why"][:2] + [f"from the far face, {ins.length_mm:g} mm deep, the insert's length, to the "
+                                       "shoulder in front of it: pressed flush with the far face, the insert lands on "
+                                       "the shoulder; its melt goes back to the far face"] + hd["why"][3:])
+        install = dict(install, how=INSTALL_FAR_SIDE)
         gap = depth - ins.length_mm
         v = "pass" if gap <= 1e-9 else "warn"
         rows.append(_row("hole depth", round(depth, 3), round(ins.length_mm, 3), v,
@@ -1192,6 +1207,9 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
         area = math.pi / 4.0 * (knurl ** 2 - clear ** 2) * MM ** 2
         face = {"area_mm2": area / MM ** 2, "on": "brass", "load_pass": BRASS_YIELD_PA[0] * area}
         caps["insert_face"] = face["load_pass"]
+        if cmat != "metal":
+            # a printed clamped part sits on that same ring: its plastic carries the clamp there too
+            caps["clamped_on_insert"] = bearing_strength(cmat) / margin * area
     elif lim is not None and path["path"] == "seat":
         # a far-side insert: the limiter lands on the shoulder of plastic in front of it, round the shoulder's hole
         # its whole end: the shoulder is the boss face, wider than the limiter
@@ -1246,6 +1264,15 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
                          f"({face['area_mm2']:.2f} mm^2, MPa): brass is far stiffer than the boss round it, so the "
                          "ring takes nearly all the clamp. Against brass's yield (124-310 MPa by temper): over it "
                          "the face embeds and the preload falls"))
+        if cmat != "metal":
+            strength = bearing_strength(cmat)
+            v = _graded(sigma, strength / margin * (1 + 1e-9), strength)
+            rows.append(_row("clamped on insert", round(sigma / 1e6, 1), round(strength / margin / 1e6, 1), v,
+                             f"the printed clamped part sits on the same {face['area_mm2']:.2f} mm^2 ring, so its "
+                             f"plastic carries the preload there (MPa), against its compressive strength / {margin:g} "
+                             f"({BEARING_BASIS.get(family(cmat), 'its datasheet strength along the layers')}): over "
+                             "it the plastic crushes into the ring and the preload falls. A washer or a limiter "
+                             "spreads it"))
     # service loads on the knurl
     knurl_pull = pull_n + (preload["high"] if path["path"] == "jack-out" else 0.0)
     if path["path"] != "seat" and knurl_pull > 0:
@@ -1289,7 +1316,7 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
                        "preload_n": preload, "thread_share": lt["thread_share"], "nut_factor": lt["nut_factor"],
                        "friction": {"thread": list(THREAD_FRICTION), "collar": list(collar)}},
             "capacity": cap, "hole": hd, "boss": bd, "limiter": asdict(lim) if lim else None, "preload_kept": kept,
-            "install": install_notes(material), "checks": rows, "margin": margin, "limits": list(LIMITS)}
+            "install": install, "checks": rows, "margin": margin, "limits": list(LIMITS)}
 
 
 # steel in steel or aluminium: VDI 2230's friction classes B and C cover the thread and the head alike

@@ -26,7 +26,7 @@ joints:
 
 ```text
 $ cad-agent inserts joints.yaml --output result.json
-WARN  lid: M3 94459A140 in Bambu PLA Basic, through-insert; tighten to at most 0.64 N m (insert face)
+WARN  lid: M3 94459A140 in Bambu PLA Basic, through-insert; tighten to at most 0.20 N m (clamped on insert)
       warn: preload kept: the clamped plastic relaxes and takes the preload with it: ...
 WARN  bracket: M4 clamping Bambu PLA Basic; tighten to at most 0.68 N m (head bearing)
       warn: preload kept: the clamped plastic relaxes and takes the preload with it: ...
@@ -43,7 +43,7 @@ from cadagent.mechanical import inserts
 inserts.hole_design(inserts.insert("mcmaster-94459A140"))      # 4.2 mm in CAD (the maker's 4.0 + 0.2), 6.7 mm deep
 r = inserts.check_joint("mcmaster-94459A140", "pla-bambu-basic", boss_outside_mm=9.5, head_mm=7.0,
                         clearance_mm=3.4, clamped={"thickness_mm": 4.0})
-r["verdict"], r["torque"]["allowed_nm"], r["torque"]["governed_by"]   # 'warn', 0.64, 'insert_face'
+r["verdict"], r["torque"]["allowed_nm"], r["torque"]["governed_by"]   # 'warn', 0.20, 'clamped_on_insert'
 r["capacity"]["pull_out"]                                         # low 811, mid 1152, high 1394 N
 inserts.check_clamp("M10", "pa6-cf20-polymaker-wet", 40.0, head_mm=20.0, clearance_mm=12.0, torque_nm=20.0,
                     limiter={"outside_mm": 18.0, "bore_mm": 12.0}, limiter_length_mm=39.8)
@@ -60,7 +60,8 @@ check works out, and it changes every limit after it.
 - **Flush, or up to 0.13 mm proud** (PEM, SPIROL). The clamped part bears on the insert's end. The clamp goes through
   the brass, and the knurl carries only what pulls the parts apart. M3 in PLA Basic, clamping metal: tighten to at
   most **0.40 N·m**, set by the insert's end face: the ring round the clamped part's hole takes nearly all the clamp,
-  held to brass's 124 MPa.
+  held to brass's 124 MPa. A printed clamped part sits on that same ring, so its plastic sets a lower limit (the lid
+  above: 0.20 N·m). A washer or a limiter spreads it.
 - **Recessed, even by 0.05 mm.** The screw pulls the insert towards the head until the gap closes. The knurl
   carries the whole preload, so the same joint 0.2 mm recessed may take only **0.13 N·m**.
 - **A clamped part whose hole is as wide as the insert** bears on the plastic round it. That jacks the insert out
@@ -153,6 +154,7 @@ the layers, from the maker's data sheet, and c is fitted to published tests.
 | head over limiter | the head or washer reaches past it | it covers only the limiter | |
 | limiter on insert | its bore smaller than the insert's face | | not abutting |
 | insert face | the clamped part's or the limiter's end on the insert: the ring under brass's 124 MPa | up to 310 MPa | over it |
+| clamped on insert | a printed clamped part on that ring under its compressive strength / 2 | under the strength | over it |
 | limiter end (far-side insert) | its end on the shoulder's plastic under its compressive strength / 2 | under the strength | over it |
 | limiter rating | the preload under 75 % of the proof load of the class it is rated for | under the proof load | over it |
 | limiter wall (your own) | the stress in its wall under its yield / 2 | under the yield, or no yield given | over it |

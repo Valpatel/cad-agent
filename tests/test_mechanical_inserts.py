@@ -154,16 +154,20 @@ def test_a_flush_insert_with_a_washer_passes_at_the_torque_it_recommends():
     assert {k: v["verdict"] for k, v in rows.items() if k != "preload kept"} == {
         "hole diameter": "pass", "hole depth": "pass", "melt volume": "pass", "boss wall": "pass",
         "clamp path": "pass", "tightening torque": "pass", "insert thread": "pass", "head bearing": "pass",
-        "insert face": "pass"}
-    # the plastic under the washer caps the preload at 78.06 MPa / 2 on pi/4 (7^2 - 3.4^2); the insert's end, round
-    # the same hole, at brass's 124 MPa, is lower and sets the torque at the least nut factor
+        "insert face": "pass", "clamped on insert": "pass"}
+    # the plastic under the washer caps the preload at 78.06 MPa / 2 on pi/4 (7^2 - 3.4^2); the brass of the insert's
+    # end, round the same hole, at 124 MPa on its ring; and the printed lid sitting on that ring, at 78.06 MPa / 2 on
+    # it, is the lowest and sets the torque at the least nut factor
     area = math.pi / 4 * (7.0 ** 2 - 3.4 ** 2) * MM ** 2
     ring = math.pi / 4 * (I.INSERTS["mcmaster-94459A140"].outer_mm ** 2 - 3.4 ** 2) * MM ** 2
     k_lo = r["torque"]["nut_factor"]["low"]
-    assert r["torque"]["preload_caps_n"]["head_bearing"] == pytest.approx(78.06e6 / 2 * area, rel=1e-9)
-    assert r["torque"]["governed_by"] == "insert_face"
-    assert r["torque"]["allowed_nm"] == pytest.approx(k_lo * 3e-3 * 124e6 * ring, rel=1e-9)
-    assert rows["head bearing"]["value"] < 78.06 / 2 and rows["insert face"]["value"] == pytest.approx(124.0, abs=0.1)
+    caps = r["torque"]["preload_caps_n"]
+    assert caps["head_bearing"] == pytest.approx(78.06e6 / 2 * area, rel=1e-9)
+    assert caps["insert_face"] == pytest.approx(124e6 * ring, rel=1e-9)
+    assert r["torque"]["governed_by"] == "clamped_on_insert"
+    assert r["torque"]["allowed_nm"] == pytest.approx(k_lo * 3e-3 * 78.06e6 / 2 * ring, rel=1e-9)
+    assert rows["clamped on insert"]["value"] == pytest.approx(78.06 / 2, abs=0.05)
+    assert rows["head bearing"]["value"] < 78.06 / 2 and rows["insert face"]["value"] < 124.0
     # without a limiter the plastic in the clamp relaxes: a warning, with the measured figures in it
     assert rows["preload kept"]["verdict"] == "warn" and "Amza" in rows["preload kept"]["detail"]
     assert r["verdict"] == "warn"
@@ -570,8 +574,12 @@ def test_the_insert_face_is_held_to_brass_yield_under_a_clamped_part_as_under_a_
 def test_a_far_side_insert_is_pressed_onto_its_shoulder_and_its_melt_goes_back_to_the_far_face():
     base = dict(insert="mcmaster-94459A140", material="pla-bambu-basic", installed_from="far side", recess_mm=3.0,
                 boss_outside_mm=9.5, clamped={"material": "metal"})
-    rows = _rows(I.check_joint(**base))
+    r = I.check_joint(**base)
+    rows = _rows(r)
     assert rows["hole depth"]["verdict"] == "pass" and rows["hole depth"]["limit"] == 5.7
+    # the result's hole and install note say the same as the rows
+    assert r["hole"]["depth_mm"] == 5.7 and "far face" in r["hole"]["why"][2]
+    assert "on to the shoulder" in r["install"]["how"] and "never below" not in r["install"]["how"]
     assert rows["melt volume"]["value"] is None and "far face" in rows["melt volume"]["detail"]
     deep = _rows(I.check_joint(**base, hole_depth_mm=6.7))["hole depth"]
     assert deep["verdict"] == "warn" and "1.00 mm deeper" in deep["detail"] and "jack-out" in deep["detail"]
@@ -591,3 +599,18 @@ def test_the_preload_kept_level_is_a_named_assumption():
                       limiter={"outside_mm": 18.0, "bore_mm": 12.0}, limiter_length_mm=39.8)
     kept = _rows(r)["preload kept"]
     assert kept["limit"] == I.PRELOAD_KEPT_PASS and "assumed level" in kept["detail"]
+
+
+def test_a_printed_part_clamped_on_a_flush_insert_bears_on_its_ring():
+    lid = I.check_joint("mcmaster-94459A140", "petg-bambu-basic", boss_outside_mm=9.5, head_mm=7.0, clearance_mm=3.4,
+                        clamped={"thickness_mm": 4.0})
+    row = _rows(lid)["clamped on insert"]
+    strength = I.bearing_strength("petg-bambu-basic") / 1e6
+    assert row["verdict"] == "pass" and row["limit"] == pytest.approx(strength / 2, abs=0.05)
+    # the torque the brass alone would allow crushes the lid into the ring
+    over = _rows(I.check_joint("mcmaster-94459A140", "petg-bambu-basic", boss_outside_mm=9.5, head_mm=7.0,
+                               clearance_mm=3.4, clamped={"thickness_mm": 4.0}, torque_nm=0.64))["clamped on insert"]
+    assert over["verdict"] == "fail" and over["value"] > strength
+    # clamping metal, nothing printed sits on the ring
+    metal = I.check_joint("mcmaster-94459A140", "petg-bambu-basic", boss_outside_mm=9.5, clamped={"material": "metal"})
+    assert "clamped on insert" not in _rows(metal)

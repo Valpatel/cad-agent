@@ -65,6 +65,36 @@ async function countsMatchIndex(page, where) {
     if (Number(n) !== want) fail(where, `tab ${tab || 'All'} says ${n}, index.json ${want}`);
   }
 }
+// A gallery whose start failed is the page as written: what the no-script page shows, and no control left working.
+async function failedLikeNoScript(page, route, where) {
+  await page.waitForSelector('cad-gallery[data-failed]', { timeout: 10000 }).catch(() => fail(where, 'the page did not mark data-failed'));
+  if (await page.locator('cad-gallery[data-ready]').count()) fail(where, 'the gallery still says it is ready');
+  const total = await page.locator('[data-item]').count();
+  const shown = await visible(page);
+  if (shown.length !== total) fail(where, `${shown.length} of ${total} entries visible`);
+  for (const sel of ['.cat-search', '#sort', '[data-gallery-more]']) if (await page.locator(sel).first().isVisible()) fail(where, `${sel} shows but cannot work`);
+  if (await page.locator('.cat-empty:visible').count()) fail(where, 'an empty-state box shows');
+  if (!(await page.locator('.play').isVisible())) fail(where, 'the "Play with it" strip is gone');
+  if (await page.locator('cad-gallery [role="tab"], cad-gallery [tabindex="-1"]').count()) fail(where, 'tabs keep their tab roles or a tabindex');
+  if (await page.locator('[data-gallery-chips] > *').count()) fail(where, 'a chip from the view is left');
+  const copies = await page.$$eval('cad-gallery cad-copy', els => els.map(e => e.querySelectorAll(':scope > .cad-copy-btn').length));
+  if (copies.some(n => n !== 1)) fail(where, `copy buttons per <cad-copy>: ${[...new Set(copies)]}`);
+  // The same panels, counts and status as the no-script page at this address.
+  const read = p => p.evaluate(() => ({
+    panels: [...document.querySelectorAll('[data-gallery-when]')].filter(e => e.checkVisibility()).length,
+    counts: [...document.querySelectorAll('cad-gallery [data-count]')].map(e => e.textContent.trim()).join(),
+    status: document.querySelector('[data-gallery-status]')?.textContent.trim(),
+  }));
+  const plain = await open(route, { js: false });
+  const [got, want] = [await read(page), await read(plain.page)];
+  for (const k of Object.keys(want)) if (got[k] !== want[k]) fail(where, `${k}: ${JSON.stringify(got[k]).slice(0, 80)}, no-script ${JSON.stringify(want[k]).slice(0, 80)}`);
+  await plain.done();
+  // A click on what was a chip or a tab does not bring the dead gallery back to life: links are plain links again.
+  await page.locator('[data-gallery-tabs] a').nth(1).click();
+  await page.waitForLoadState('domcontentloaded');
+  if ((await visible(page)).length !== total) fail(where, 'a click re-filtered the failed gallery');
+}
+
 // The first thing a shared view is about (the area's panel, else the first entry): its top, in px from the window's.
 const firstResultTop = page => page.evaluate(() => {
   const el = [...document.querySelectorAll('[data-gallery-when]:not([hidden]), [data-item]')].find(e => e.checkVisibility());
@@ -108,13 +138,24 @@ try {
       };
     };
     const { page, done } = await open('/catalog', { init, fails: /the first render throws/ });
-    await page.waitForSelector('cad-gallery[data-failed]', { timeout: 10000 }).catch(() => fail('first render throws', 'the page did not mark data-failed'));
-    if (await page.locator('cad-gallery[data-ready]').count()) fail('first render throws', 'the gallery still says it is ready');
-    const total = await page.locator('[data-item]').count();
-    const shown = await visible(page);
-    if (shown.length !== total) fail('first render throws', `${shown.length} of ${total} entries visible`);
-    for (const sel of ['.cat-search', '#sort', '[data-gallery-more]']) if (await page.locator(sel).first().isVisible()) fail('first render throws', `${sel} shows but cannot work`);
-    if (await page.locator('.cat-empty:visible').count()) fail('first render throws', 'an empty-state box shows');
+    await failedLikeNoScript(page, '/catalog', 'first render throws');
+    await done();
+  }
+
+  // The start throws later, after the first render, on a shared view: the page still goes back to what it wrote, with
+  // no chip, open area panel or filtered status left from the view (#189 review).
+  {
+    const init = () => {
+      const media = window.matchMedia.bind(window);
+      let thrown = false;
+      window.matchMedia = q => {
+        if (!thrown && /reduced-motion/.test(q) && document.querySelector('cad-gallery')?.hasAttribute('data-ready')) { thrown = true; throw new Error('test: the start throws after the first render'); }
+        return media(q);
+      };
+    };
+    const route = '/catalog?kind=tools&area=gears';
+    const { page, done } = await open(route, { init, fails: /the start throws after the first render/ });
+    await failedLikeNoScript(page, route, 'start throws late');
     await done();
   }
 
@@ -225,6 +266,22 @@ try {
       if (!(await offScreen(status))) fail('empty area', 'the status line repeats the box on screen');
       await done();
     }
+  }
+
+  // Links are the choice applied to the current view: after a tab change and a cleared search, an area link carries
+  // the new tab and no stale words (each render used to merge the href the last one wrote, #185).
+  {
+    const { page, done } = await open('/catalog?kind=tools');
+    await page.locator('[data-gallery-tabs] [data-tab="guides"]').click();
+    const search = page.locator('[data-gallery-search]');
+    await search.fill('gear');
+    await page.waitForTimeout(450);
+    await search.fill('');
+    await page.waitForTimeout(450);
+    const href = await page.getAttribute('.area-tree .area-link[data-value="gears"]', 'href');
+    const q = new URL(href, base).searchParams;
+    if (q.get('kind') !== 'guides' || q.get('area') !== 'gears' || q.has('q')) fail('stale links', `the Gears link after Guides and a cleared search: ${href}`);
+    await done();
   }
 
   // An area with entries, but none of the chosen kind, says so too instead of showing blank space (#185).

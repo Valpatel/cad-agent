@@ -113,13 +113,22 @@ export class CadGallery extends Base {
   connectedCallback() {
     if (this.#stop) return;
     this.#stop = new AbortController();
-    // Ready only once the first view is drawn: if setting up or the first render throws, the element marks itself
-    // failed and puts every card back, so gallery.css shows the page as it is without script.
+    this.removeAttribute('data-failed');                         // a new try (the element was moved)
+    // Ready only once the first view is drawn. If setting up or the first render throws, the element goes back to the
+    // markup and attributes the page wrote: every card in its order, the strip, plain jump links instead of tabs, no
+    // chips, the counts and status as written (the no-script page). It marks itself failed, so gallery.css hides the
+    // controls that need script, stops listening and rethrows. Buttons that <cad-copy> added are left out of the copy
+    // kept here, so the restored <cad-copy> elements build theirs again.
+    const attrs = [...this.attributes].map(a => [a.name, a.value]);
+    const pristine = document.createDocumentFragment();
+    for (const n of this.childNodes) pristine.append(n.cloneNode(true));
+    for (const el of pristine.querySelectorAll('cad-copy > .cad-copy-btn, cad-copy > .cad-copy-status')) el.remove();
     try { this.#start(this.#stop.signal); } catch (err) {
       this.#stop.abort();
-      for (const a of ['data-ready', 'data-overview', 'data-filtered']) this.removeAttribute(a);
-      for (const el of this.querySelectorAll('[data-item], [data-group]')) el.hidden = false;
-      for (const el of this.querySelectorAll('[data-gallery-empty], [data-gallery-empty-scope], [data-gallery-empty-kind]')) el.hidden = true;
+      clearTimeout(this.#timer);
+      for (const a of [...this.attributes]) this.removeAttribute(a.name);
+      for (const [name, value] of attrs) this.setAttribute(name, value);
+      this.replaceChildren(...pristine.childNodes);
       this.setAttribute('data-failed', '');
       throw err;
     }
@@ -278,6 +287,7 @@ export class CadGallery extends Base {
   }
 
   #render() {
+    if (this.hasAttribute('data-failed')) return;                // the page is the no-script page now
     const s = this.#state, patterns = searchPatterns(s.q);
     const filtered = !!(patterns.length || Object.keys(s.facets).length);
     const overview = !s.tab;

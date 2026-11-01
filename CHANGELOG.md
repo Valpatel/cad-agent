@@ -36,7 +36,7 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   hand-solved tests (#160).
 - `cadagent.thermal.fans`: the ebm-papst W2G115-AD15-13's curves at 8, 12 and 16 V, read from the datasheet's vector
   chart. Solved on the datasheet's own system curves, they give back every operating point it tabulates, within the
-  table's rounding (3.5 m³/h and 1 Pa) (#160).
+  table's rounding and the chart reading (the test allows 3.5 m³/h and 1 Pa) (#160).
 - The fan-curve explorer, `<cad-fan-curve>`, on the new Airflow and fans page and on Engineering formulas. Pick the
   voltage, the pressure your enclosure needs at 100 m³/h, and one to four fans in parallel or in series. It marks the
   operating point and the stall region, and warns when the point lands in it (#160).
@@ -115,8 +115,9 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   flow or pressure drop, which used to return a coefficient, now raises it too (#160).
 - `export-3mf` (and `all`) now exits 1 when a part fits no build plate or the parts need more than 36 plates. Set
   `cad.plates.parts` to the parts you print, or `cad.plates: false` to write no plates file. Where Bambu Studio is
-  installed, it also exits 1 when `cad.printer.bed_mm` is larger than the `cad.slicer` printer's plate (the P1S's
-  256 × 256 mm when `cad.slicer` is not set): set the bed to the printer's (#84).
+  installed, it also exits 1 when `cad.printer.bed_mm` is larger than the printable area of the `cad.slicer.printer`
+  profile (the P1S's 256 × 256 mm when `cad.slicer.printer` is not set): set `cad.slicer.printer` to your printer, or
+  `cad.plates: false` (#84).
 - `exports/` gains three files per project, deleted again by a run that fails or by `cad.plates: false`. A part
   named `<name>-plates` must be renamed, or plates turned off (#84).
 - A `cad.slicer` printer, process or filament (or a `cad.plates` filament) that Bambu Studio has no profile for now

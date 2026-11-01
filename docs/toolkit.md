@@ -618,8 +618,8 @@ criterion fails a band along the fillet, 55 elements and 2 mm³ (SF 0.94). The m
 Which is the more cautious depends on the corner. With one S_s, the combined bond is never below the max-stress one.
 It is up to √2 above it, where tension and shear peak together, as at that fillet. The full von Mises is lower than
 the in-plane one where the layers are squeezed while the layer plane is compressed harder (a gear tooth, a clamped
-boss); elsewhere it is higher. Gyropup's turret uses `criterion='max-stress'`, `bulk_stress='in-plane'` and
-S_s = S_z / 2. On its pan pinion, at one corner where the layers are squeezed, the full von Mises is 20.4 MPa and the
+boss); elsewhere it is the same or higher. Gyropup's turret checks its parts as `criterion='max-stress'`,
+`bulk_stress='in-plane'` and S_s = S_z / 2 do. On its pan pinion, at one corner where the layers are squeezed, the full von Mises is 20.4 MPa and the
 in-plane one 23.4. So the defaults pass that corner at 2.0, and the turret's check fails it at 1.75. Neither S_s is
 measured: S_z / 2 is 13 % below S_z / √3, so it is the stricter in shear. A coupon settles it.
 

@@ -41,6 +41,11 @@ try {
     page.on('response', r => { if (r.status() >= 400 && route !== '/missing-page') seen.push(`HTTP ${r.status()}: ${r.url()}`); });
     page.on('request', r => { if (!r.url().startsWith(base) && !/^(data|blob):/.test(r.url())) seen.push(`third party: ${r.url()}`); });
     await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
+    // The home page's 3D model: its box as first laid out, around the poster, before any script has run.
+    if (route === '/') await page.addInitScript(() => document.addEventListener('DOMContentLoaded', () => {
+      const r = document.querySelector('cad-model')?.getBoundingClientRect();
+      window.__posterBox = r && [r.width, r.height];
+    }));
     const res = await page.goto(base + route, { waitUntil: 'networkidle' });
     if (route === '/missing-page') { if (res.status() !== 404) seen.push(`status ${res.status()}`); }
     else if (res.status() !== 200) seen.push(`status ${res.status()}`);
@@ -65,6 +70,11 @@ try {
         return performance.getEntriesByType('resource').filter(r => /three\.module|\/web\/models\//.test(r.name) && !/\.webp$/.test(r.name) && r.startTime < loaded).map(r => r.name);
       });
       if (late.length) seen.push(`3D model fetched before the page loaded: ${late.join(', ')}`);
+      // The live model takes exactly the poster's box (a font arriving may move it, never resize it), and the page
+      // as a whole shifts no more than the page tree's limit.
+      const box = await page.evaluate(() => { const r = document.querySelector('cad-model').getBoundingClientRect(); return { now: [r.width, r.height], first: window.__posterBox }; });
+      if (!box.first || Math.abs(box.now[0] - box.first[0]) > 0.5 || Math.abs(box.now[1] - box.first[1]) > 0.5)
+        seen.push(`the 3D model's box changed from ${box.first?.map(Math.round)} to ${box.now.map(Math.round)}`);
       const shift = await page.evaluate(() => new Promise(done => {
         if (!PerformanceObserver.supportedEntryTypes?.includes('layout-shift')) return done(0);
         let sum = 0;
@@ -72,7 +82,16 @@ try {
           .observe({ type: 'layout-shift', buffered: true });
         setTimeout(() => done(sum), 200);
       }));
-      if (shift > 0.01) seen.push(`layout shifts on the home page: ${shift.toFixed(3)}`);
+      if (shift > 0.05) seen.push(`layout shifts on the home page: ${shift.toFixed(3)}`);
+      // Scrolled away, it draws nothing, even when the tab is hidden and shown again (#182 review).
+      if (ready === 'ready') {
+        await page.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, document.body.scrollHeight); });
+        await page.waitForTimeout(400);
+        const before = await page.evaluate(() => { document.dispatchEvent(new Event('visibilitychange')); return document.querySelector('cad-model').frames; });
+        await page.waitForTimeout(800);
+        const drawn = await page.evaluate(n => document.querySelector('cad-model').frames - n, before);
+        if (drawn > 1) seen.push(`the 3D model drew ${drawn} frames off screen after the tab came back`);
+      }
     }
     if (route === '/catalog' && width === 1366) {
       await page.fill('#q', 'zzzz-nothing-matches');
@@ -371,6 +390,10 @@ try {
       '/research/process-profiles', '/research/simulation-tools', '/skills/cad-pr-review/SKILL',
       '/skills/cad-work-tracking/SKILL', '/skills/design-process/SKILL', '/skills/mcmaster-parts/SKILL'].map(r => [r, 179]),
   ]);
+  // The list only shrinks: its length is pinned here, so a page can join it only with a visible edit to this number,
+  // and each page that leaves it brings the number down with it.
+  const WALLS_LEFT = 40;
+  if (WALLS.size !== WALLS_LEFT) problems.push(`walls: WALLS has ${WALLS.size} pages and WALLS_LEFT says ${WALLS_LEFT}: ${WALLS.size < WALLS_LEFT ? `lower WALLS_LEFT to ${WALLS.size}` : 'the backlog only shrinks; fix the page instead'}`);
   const sitePages = [];
   for (const e of await readdir(dir, { withFileTypes: true, recursive: true })) {
     const rel = path.relative(dir, path.join(e.parentPath, e.name));

@@ -78,9 +78,9 @@ flowchart TD
     J["a screw in a joint<br/>that vibrates"] --> S{"side load under<br/>friction × kept<br/>preload?"}
     S -->|"no"| SL["it slips and loosens:<br/>carry the side load<br/>on a pin or bushing"]
     S -->|"yes"| L{"what locks it,<br/>in what thread?"}
-    L --> F["threadlocker<br/>on plastic:<br/>fail, it cracks"]
-    L --> W["spring washer<br/>or nothing:<br/>warn"]
-    L --> P["locknut, jam nut<br/>or wire: pass"]
+    L --> F["threadlocker<br/>on plastic:<br/>fail"]
+    L --> W["spring washer<br/>or none:<br/>warn"]
+    L --> P["locknut, jam<br/>nut, wire:<br/>pass"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

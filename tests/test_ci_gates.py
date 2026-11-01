@@ -268,7 +268,6 @@ def test_a_run_for_one_pr_counts_its_pending_posts(monkeypatch, capsys):
     assert f"posted {len(fake.posts)} statuses (2 of them pending first)" in capsys.readouterr().out
 
 
-
 def _git(cwd, *args):
     return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", "-c", "init.defaultBranch=main",
                            *args], cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
@@ -305,8 +304,14 @@ def test_the_release_fetch_stays_shallow_in_a_shallow_checkout(origin_with_a_pr,
     """CI checks out with fetch-depth: 1; there the fetch stays one commit deep."""
     ci = tmp_path / "ci"
     _git(tmp_path, "clone", "-q", "--depth=1", f"file://{origin_with_a_pr}", str(ci))
+    for i in (3, 4):  # main and the PR move on after the checkout, so the fetch has history it could pull
+        (origin_with_a_pr / "f.txt").write_text(str(i))
+        _git(origin_with_a_pr, "commit", "-qam", f"c{i}")
+    _git(origin_with_a_pr, "update-ref", "refs/pull/7/head", "HEAD")
     monkeypatch.chdir(ci)
     assert "--depth=1" in gates.release_fetch(7)
     subprocess.run(gates.release_fetch(7), check=True, capture_output=True)
     assert _git(ci, "rev-parse", "--is-shallow-repository") == "true"
+    assert _git(ci, "rev-list", "--count", "origin/main") == "1"
     assert _git(ci, "rev-list", "--count", "origin/pr-head") == "1"
+    assert _git(ci, "rev-parse", "origin/pr-head") == _git(origin_with_a_pr, "rev-parse", "refs/pull/7/head")

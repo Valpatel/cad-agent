@@ -866,7 +866,7 @@ class Study:
                 warnings.warn(f"{self.name}: gmsh refused the first mesh ('{first}') and made it on a second try. Its "
                               'boundary recovery is not always repeatable on a marginal part, so the next run of this '
                               'study may be refused: look for faces closer together than the mesh size.',
-                              MeshWarning, stacklevel=5)   # _mesh_once < _mesh < __init__ < caller
+                              MeshWarning, stacklevel=4)   # _mesh_once < _mesh < __init__ < caller
             else:
                 gmsh.model.mesh.generate(3)
             self.points, index, self.face_tris, self.edge_segs = self._surface_mesh()

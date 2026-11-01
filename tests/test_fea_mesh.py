@@ -403,12 +403,17 @@ def test_a_shelled_box_too_thin_for_its_mesh_is_a_refusal():
         pytest.skip(f'gmsh {gmsh.__version__} meshes the 2 mm shell at 4 mm on this build')
 
 
-def test_a_retry_that_meshes_is_used_with_a_warning(tmp_path):
-    """gmsh's boundary recovery is not always repeatable on a marginal part: when the logged second try meshes, the
-    study uses that mesh and says so. (A STEP path of the caller's stays, so the part can be meshed again.)"""
-    step = tmp_path / 'cube.step'
-    cq.exporters.export(cq.Workplane('XY').box(10, 10, 10), str(step))
-    st = Study(step, STEEL, mesh_mm=5.0, name='cube')
-    with pytest.warns(MeshWarning, match='second try'):
-        st._mesh_once(logged=True, first='Could not recover boundary mesh: error 2')
-    assert len(st.tets) > 0
+def test_a_retry_that_meshes_is_used_with_a_warning(monkeypatch):
+    """gmsh's boundary recovery is not always repeatable on a marginal part: when the first try throws and the logged
+    second try meshes, the study uses that mesh and says so, with the warning on the caller's Study(...) line."""
+    real, calls = gmsh.model.mesh.generate, []
+    def flaky(dim=3):
+        calls.append(dim)
+        if len(calls) == 1:
+            raise Exception('Could not recover boundary mesh: error 2')
+        return real(dim)
+    monkeypatch.setattr(gmsh.model.mesh, 'generate', flaky)
+    with pytest.warns(MeshWarning, match='second try') as got:
+        st = Study(cq.Workplane('XY').box(10, 10, 10), STEEL, mesh_mm=5.0, name='cube')
+    assert len(calls) == 2 and len(st.tets) > 0
+    assert [w.filename for w in got if w.category is MeshWarning] == [__file__]

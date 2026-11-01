@@ -9,7 +9,7 @@
  * The page is plain semantic HTML that shows every entry, grouped by kind, without script; the kit's <cad-gallery>
  * adds the kind tabs, the area tree, filters, sorting and the URL state (kit/gallery.js).
  */
-import { GLYPHS, DOMAIN_GLYPH, TINT, STATUS_STYLE, glyphSprite, outsideCover, pageCover, toolCover, stillFrame, isAnimated } from './catalog-art.mjs';
+import { GLYPHS, DOMAIN_GLYPH, TINT, STATUS_STYLE, FAMILIES, glyphSprite, outsideCover, pageCover, toolCover, chartCover, familyOf, shortNumber, stillFrame, isAnimated } from './catalog-art.mjs';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const slugify = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -102,6 +102,41 @@ function sectionsOf(md) {
  * (docs/catalog.yaml), tracked (paths), read (async path → Buffer), pageURL, safeUrl, snap ({svg, css}) }.
  * Returns { catalog, files: Map(path → string), body (the page's HTML), counts (schema-1 type → count) }.
  */
+/** What each file's fields mean: written into the files, so an agent can code against them (llms.txt points here). */
+const CATALOG_FIELDS = {
+  schema_1: 'Kept from cad-agent-catalog/1 with the same values: type (upstream, tool, doc, lesson, research, skill, agent, library, ' +
+    'benchmark; new: demo), status, name, url (tools: the toolkit page, as before), summary (outside entries: our notes first, as before), ' +
+    'how (tools: the call), policy, license (null when not recorded), stars, last_push, markdown (the Markdown twin), source (the file on GitHub). ' +
+    'A field schema 1 left out is still left out; a null is still null.',
+  id: 'stable slug, unique: tool-<command>, project-<owner-repo>, library-…, benchmark-…, guide-…, lesson-…, research-…, skill-…, agent-…, demo-…',
+  kind: 'demo, tool, project, library, benchmark, guide, lesson, research, skill or agent (the page\'s tabs)',
+  areas: 'slugs from docs/areas.yaml (areas or domains; cross-cutting for pages about the whole project; unplaced for an outside entry without areas yet)',
+  maturity: 'the most mature of its areas: idea, surveyed, tooling, validated or proven (index.json maturity says what each means)',
+  what: 'one plain line saying what it is',
+  notes: 'our assessment (outside entries), or null',
+  doc: 'tools: the page that documents the command, with its anchor (markdown is that page\'s twin)',
+  cover: 'our own picture: a figure from docs/img, or one the build draws from this entry\'s data; never an outside image',
+  cover_animated: 'demos and figures that move: the moving version (cover is its still frame)',
+  demo: 'where to try or watch it, if anywhere',
+  mode: 'demos: interactive, animated or render',
+  related: 'ids of up to six entries that share an area (another kind first), else the domain',
+  licence_family: 'permissive, copyleft or other (other: none recorded, non-commercial, source-available or custom)',
+  gyropup: 'true when one of its areas is needed for Gyropup',
+  updated: 'the last change: last push (outside entries) or last commit (ours), as YYYY-MM-DD, or null',
+};
+const INDEX_FIELDS = {
+  count: 'entries in catalog.json', kinds: 'the page\'s tabs: tab, the kinds it holds, label, count, page',
+  maturity: 'the maturity levels, lowest first, and what each means',
+  domains: 'slug, title, scope, maturity, count, json (its file), page; areas: the same per area plus priority (gyropup, demo), kinds (count per kind), issues',
+  buckets: 'entries outside the areas: cross-cutting (about the whole project) and unplaced (outside entries without areas yet; 0 when all are placed)',
+};
+const AREA_FIELDS = {
+  level: 'domain, area or bucket', domain: 'areas: the domain it belongs to', priority: 'gyropup (needed for Gyropup), demo (a good demo)',
+  issues: 'GitHub issues for work in this area', topics: 'areas: its topics, with scope, maturity and issues', areas: 'domains: its areas',
+  count: 'entries here', kinds: 'count per kind',
+  items: 'every entry placed here (a domain holds its areas\' entries): the fields of catalog.json without summary and related',
+};
+
 export async function buildCatalog(ctx) {
   const { ORIGIN, REPO, pageURL, tracked } = ctx;
   const has = new Set(tracked);
@@ -224,7 +259,7 @@ export async function buildCatalog(ctx) {
       const before = demoEl ? [...p.html.slice(0, demoEl.index).matchAll(/<h[1-6] id="([^"]+)"/g)].at(-1)?.[1] : animFig[0].anchor;
       it.demo = ORIGIN + pageURL(p.file) + (before ? '#' + before : '');
     }
-    it.cover = figs.length ? await figureCover(figs[0].src) : null;
+    it.cover = null;                                // chosen below, after the demos and tools (no figure shows twice)
     it.figures = figs;
     items.push(it);
     pageItems.set(p.file, it);
@@ -271,14 +306,30 @@ export async function buildCatalog(ctx) {
         return flag.startsWith('-') ? flag + (meta ? ` ${meta}` : /action="store_true"/.test(m[3]) ? '' : ' …') : `<${flag}>`; });
   };
   const toolData = ctx.data.tools || {};
+  // Each figure is a cover once on the page: the demos have theirs, then the tools, then the pages in featured order.
+  // Figures listed under `dense` (a whole report page, say) are never covers: they read as a grey box at card size.
+  const dense = new Set(ctx.data.dense || []);
+  const usedFigures = new Set(demos.map(d => d.figure));
+  const takeFigure = async (files, still = 0.5) => {
+    for (const f of files) {
+      if (usedFigures.has(f) || dense.has(f)) continue;
+      const cover = await figureCover(f, still);
+      if (cover) { usedFigures.add(f); return [cover, f]; }
+    }
+    return [null, null];
+  };
   const cliChanged = ctx.cliUpdated?.slice(0, 10) || null;
   for (const c of ctx.commands) {
     const t = toolData[c.name] || {};
     const where = place(placed.cli.get(c.name) || [], `cad-agent ${c.name}`);
-    const url = (t.page && pageLink(t.page, `docs/catalog.yaml tools.${c.name}`)) || '/docs/toolkit#commands';
-    const it = { type: 'tool', status: 'ours', name: `cad-agent ${c.name}`, summary: c.help, url: ORIGIN + url, how: `cad-agent ${c.name} --help`,
-      id: `tool-${c.name}`, kind: 'tool', ...where, what: oneLine(c.help), notes: null, license: 'MIT', updated: cliChanged, command: c.name };
-    for (const f of t.figures || []) { it.cover = await figureCover(f, 0.5); if (it.cover) { it.figure = f; break; } }
+    const href = (t.page && pageLink(t.page, `docs/catalog.yaml tools.${c.name}`)) || '/docs/toolkit#commands';
+    const docFile = (t.page || 'docs/toolkit.md').split('#')[0];
+    // Schema 1's url (the toolkit page) is kept; `doc` is the page that documents this command, `markdown` its twin.
+    const it = { type: 'tool', status: 'ours', name: `cad-agent ${c.name}`, summary: c.help, url: `${ORIGIN}/docs/toolkit`, how: `cad-agent ${c.name} --help`,
+      id: `tool-${c.name}`, kind: 'tool', ...where, what: oneLine(c.help), notes: null, license: 'MIT', updated: cliChanged, command: c.name,
+      href, doc: ORIGIN + href, markdown: pageItems.has(docFile) ? `${ORIGIN}/${docFile}` : undefined };
+    if (t.chart) it.cover = generated(it.id, chartCover({ ...t.chart, tint: TINT[tone(it)] || TINT.unplaced, name: it.name }));
+    else [it.cover, it.figure] = await takeFigure(t.figures || []);
     if (!it.cover) it.cover = generated(it.id, toolCover({ name: c.name, flags: flagsOf(c.name), glyphSlug: glyphOf(it), title: it.name }));
     const d = demos.find(d => d.tools.includes(c.name) || (it.figure && d.figure === it.figure));
     if (d) it.demo = d.demo;
@@ -288,22 +339,23 @@ export async function buildCatalog(ctx) {
   // --------------------------------------------------------------------------- outside entries
   const asOf = ctx.landscape.refreshed_on || ctx.landscape.verified_on || ctx.built.slice(0, 10);
   const projectData = new Map(ctx.landscape.projects.map(p => [p.name, p]));
+  // Schema 1's fields keep their schema-1 values (summary is our notes first, as before); `what` is the plain line.
   for (const u of ctx.upstreams) {
     const p = projectData.get(u.name);
     const where = place(u.areas || [], `upstreams/registry.yaml ${u.name}`);
     const what = plainText(u.what) || composeWhat(p) || null;
     const notes = [p?.notes, p?.license_note].filter(Boolean).map(plainText).join(' ') || null;
-    items.push({ type: 'upstream', status: u.status, name: u.name, url: u.url, summary: what || notes || u.policy, policy: u.policy,
+    items.push({ type: 'upstream', status: u.status, name: u.name, url: u.url, summary: p?.notes || u.what || u.policy, policy: u.policy,
       license: u.license, stars: u.stars, last_push: u.last_push, id: `project-${slugify(u.name)}`, kind: 'project', ...where,
-      what, notes, updated: u.last_push || null });
+      what, notes, updated: u.last_push || null, raw: { ...p, ...u } });
   }
   // A library is 'used' only when landscape.json says so (a real dependency); otherwise it is tracked for reference.
   for (const l of ctx.landscape.libraries) {
     const where = place(l.areas || [], `research/landscape.json library ${l.name}`);
     const what = plainText(l.what || l.use || l.role) || null, notes = [l.notes, l.license_note].filter(Boolean).map(plainText).join(' ') || null;
     items.push({ type: 'library', status: l.status || 'reference', name: l.name, url: l.url || `https://github.com/${l.name}`,
-      license: l.license_spdx, stars: l.stars, last_push: l.last_push, summary: what || notes || '', id: `library-${slugify(l.name)}`, kind: 'library',
-      ...where, what, notes, updated: l.last_push || l.released || null });
+      license: l.license_spdx, stars: l.stars, last_push: l.last_push, summary: l.use || l.role || l.notes || '', id: `library-${slugify(l.name)}`, kind: 'library',
+      ...where, what, notes, updated: l.last_push || l.released || null, raw: l });
   }
   for (const b of ctx.landscape.benchmarks) {
     const where = place(b.areas || [], `research/landscape.json benchmark ${b.name}`);
@@ -312,9 +364,43 @@ export async function buildCatalog(ctx) {
     const notes = [b.notes, b.ground_truth && `Ground truth: ${b.ground_truth}.`, b.data_license && `Data licence: ${b.data_license}.`,
       unverified && 'Listed from its paper or site; tasks, data and licence not yet checked.'].filter(Boolean).map(plainText).join(' ') || null;
     items.push({ type: 'benchmark', status: unverified ? 'unverified' : 'reference', name: b.name, url: b.url, license: b.license_spdx || b.license,
-      stars: b.stars, summary: what || notes || '', id: `benchmark-${slugify(b.name)}`, kind: 'benchmark', ...where, what, notes, updated: b.last_push || null });
+      stars: b.stars, summary: [b.tasks || b.notes, b.size, b.venue || b.paper].filter(Boolean).join(' · ') || (unverified ? 'Listed from its paper or site; tasks, data and licence not yet checked.' : ''),
+      id: `benchmark-${slugify(b.name)}`, kind: 'benchmark', ...where, what, notes, updated: b.last_push || null, raw: b });
   }
   items.unshift(...demos);
+
+  // --------------------------------------------------------------------------- outside covers: the data they draw
+  const areaName = slug => nodes.get(slug)?.title || BUCKETS[slug]?.title || slug;
+  /** The one number (or fact) a cover shows in large type. */
+  const headlineOf = it => {
+    const src = it.raw || {};
+    if (it.stars != null && Number.isFinite(Number(it.stars))) return { number: shortNumber(Number(it.stars)), unit: '★ GitHub stars' };
+    const size = String(src.size || '').match(/^([\d,.]+)\s+([^,;(]+)/);
+    if (size) return { number: size[1], unit: size[2].trim().slice(0, 24) };
+    if (src.venue) return { text: src.venue, unit: 'paper' };
+    const arxiv = String(src.paper || '').match(/arxiv\s+(\S+)/i) || String(it.url || '').match(/arxiv\.org\/abs\/(\S+)/);
+    if (arxiv) return { text: 'arXiv', unit: arxiv[1] };
+    if (src.version) return { text: `v${src.version}`, unit: src.released ? `released ${src.released}` : 'version' };
+    if (it.status === 'unverified') return { text: 'Unverified', unit: 'listed from its site' };
+    if (it.status === 'adopted' || it.status === 'used') return { text: 'In use', unit: 'cad-agent builds on it' };
+    const host = String(it.url || '').match(/^https?:\/\/(?:www\.)?([^/]+)/)?.[1];
+    if (host && host !== 'github.com') return { text: host, unit: 'its home' };
+    return host ? { text: 'On GitHub', unit: 'stars not recorded yet' } : null;
+  };
+  const CLIENT = [[/claude/, 'Claude Code'], [/codex/, 'Codex'], [/cursor/, 'Cursor'], [/gemini|antigravity/, 'Gemini'], [/grok/, 'Grok'],
+    [/copilot/, 'Copilot'], [/vscode/, 'VS Code'], [/^mcp/, 'MCP'], [/skills\.sh/, 'skills.sh'], [/kicad-plugin/, 'KiCad plugin'],
+    [/github-action/, 'GitHub Action'], [/^cli$/, 'CLI'], [/web/, 'Web app'], [/desktop/, 'Desktop app'], [/standalone/, 'Standalone app']];
+  const human = s => s.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/[-_]/g, ' ').trim();
+  /** What it makes (processes) or where it runs (clients), else its areas: the band along the cover's foot. */
+  const bandOf = it => {
+    const src = it.raw || {};
+    const procs = [...new Set((src.processes || []).map(human).filter(p => p && !/^general$|only$/i.test(p)))];
+    if (procs.length) return { label: 'makes', items: procs };
+    const clients = [...new Set((src.clients || []).map(c => CLIENT.find(([re]) => re.test(c.toLowerCase()))?.[1] || human(c)))];
+    if (clients.length) return { label: 'runs in', items: clients };
+    const areas = it.areas.filter(a => !BUCKETS[a]).map(areaName);
+    return areas.length ? { label: it.kind === 'library' ? 'used for' : it.kind === 'benchmark' ? 'scores' : 'areas', items: areas } : null;
+  };
 
   // --------------------------------------------------------------------------- derived fields
   const ids = new Set();
@@ -323,20 +409,31 @@ export async function buildCatalog(ctx) {
     ids.add(it.id);
     if (!it.areas.length) it.areas = ['unplaced'];
     it.family = licenceFamily(it.license);
-    if (!it.cover) {
-      const tint = TINT[tone(it)] || TINT.unplaced;
-      if (['project', 'library', 'benchmark'].includes(it.kind))
-        it.cover = generated(it.id, outsideCover({ kind: it.kind, glyphSlug: glyphOf(it), tint, stars: it.stars, license: it.license, family: it.family,
-          lastPush: it.last_push, status: it.status, asOf, name: it.name }));
-      else {
-        const lessons = it.kind === 'lesson' && !/README\.md$/.test(it.page.file) ? (it.page.body.replace(/```[\s\S]*?```/g, '').match(/^### /gm) || []).length : 0;
-        it.cover = generated(it.id, pageCover({ kind: KIND_LABEL[it.kind], glyphSlug: glyphOf(it), tint, sections: sectionsOf(it.page.body), lessons, title: it.name }));
-      }
-    }
+  }
+  // Our pages take the first of their figures that no demo, tool or earlier page shows (README and the main guides
+  // first), else a cover drawn from their outline.
+  const PAGE_ORDER = ['guide', 'research', 'lesson', 'skill', 'agent'];
+  const BOOST = new Set(['README.md', 'docs/toolkit.md', 'docs/compliant.md', 'docs/common-issues.md', 'research/landscape.md', 'lessons/README.md']);
+  const pagesFirst = items.filter(it => it.page && !it.cover)
+    .sort((a, b) => (BOOST.has(b.page.file) - BOOST.has(a.page.file)) || PAGE_ORDER.indexOf(a.kind) - PAGE_ORDER.indexOf(b.kind));
+  for (const it of pagesFirst) {
+    let f;
+    [it.cover, f] = await takeFigure(it.figures.map(x => x.src));
+    if (it.cover) continue;
+    const lessons = it.kind === 'lesson' && !/README\.md$/.test(it.page.file) ? (it.page.body.replace(/```[\s\S]*?```/g, '').match(/^### /gm) || []).length : 0;
+    it.cover = generated(it.id, pageCover({ kind: KIND_LABEL[it.kind], glyphSlug: glyphOf(it), tint: TINT[tone(it)] || TINT.unplaced, sections: sectionsOf(it.page.body), lessons, title: it.name }));
+  }
+  // Outside entries: drawn from their own data (catalog-art.mjs outsideCover).
+  for (const it of items.filter(it => !it.cover)) {
+    const src = it.raw || {};
+    let family = familyOf(src.kernel) || familyOf([it.name, it.what, src.use, src.role].join(' '));
+    // A benchmark's glyph is what it scores (KiCad boards, CadQuery code, meshes), else the benchmark's own bars.
+    if (it.kind === 'benchmark' && (!family || ['parts', 'agent'].includes(family.key))) family = FAMILIES.find(f => f.key === 'benchmark');
+    it.cover = generated(it.id, outsideCover({ kind: it.kind, family, glyphSlug: glyphOf(it), tint: TINT[tone(it)] || TINT.unplaced,
+      headline: headlineOf(it), license: it.license, licFamily: it.family, status: it.status, band: bandOf(it), name: it.name }));
   }
   // Featured: a fixed score, so the order is the same on every build and agents can rely on it.
   const STATUS_SCORE = { adopted: 12, used: 12, trial: 8, ours: 6, candidate: 2, reference: 1, unverified: -4, rejected: -12 };
-  const BOOST = new Set(['README.md', 'docs/toolkit.md', 'docs/compliant.md', 'docs/common-issues.md', 'research/landscape.md', 'lessons/README.md']);
   for (const it of items) {
     it.score = (it.cover.figure ? 20 : 0) + (it.demo ? 14 : 0) + (it.gyropup ? 8 : 0) + 5 * (LEVELS.indexOf(it.maturity) + 1) +
       (STATUS_SCORE[it.status] || 0) + 3 * Math.log10((it.stars || 0) + 1) + (it.page && BOOST.has(it.page.file) ? 30 : 0);
@@ -356,7 +453,9 @@ export async function buildCatalog(ctx) {
   // --------------------------------------------------------------------------- catalog.json
   const asJson = it => {
     const o = { type: it.type, status: it.status, name: it.name, url: it.url };
-    for (const k of ['summary', 'how', 'policy', 'license', 'stars', 'last_push', 'markdown', 'source']) if (it[k] != null) o[k] = it[k];
+    // Schema-1 fields as schema 1 wrote them: a null stays null, an absent one stays absent.
+    for (const k of ['summary', 'how', 'policy', 'license', 'stars', 'last_push', 'markdown', 'source']) if (it[k] !== undefined) o[k] = it[k];
+    if (it.doc) o.doc = it.doc;
     Object.assign(o, { id: it.id, kind: it.kind, areas: it.areas, maturity: it.maturity, what: it.what || null, notes: it.notes || null,
       cover: abs(it.cover.src), demo: it.demo || null, related: it.related, licence_family: it.family, gyropup: it.gyropup, updated: it.updated || null });
     if (it.mode) o.mode = it.mode;
@@ -366,9 +465,7 @@ export async function buildCatalog(ctx) {
   const catalog = {
     schema: 'cad-agent-catalog/2', origin: ORIGIN, repo: REPO, revision: ctx.revision, built: ctx.built, tagline: ctx.tagline, description: ctx.description,
     index: `${ORIGIN}/catalog/index.json`, page: `${ORIGIN}/catalog`,
-    fields: 'Schema 1 fields (type, status, name, url, summary, how, policy, license, stars, last_push, markdown, source) are kept. ' +
-      'Schema 2 adds id (stable slug), kind, areas (docs/areas.yaml slugs; "unplaced" until an outside entry has some), maturity (of its areas), ' +
-      'what (one plain line), notes (our assessment), cover (our own picture), cover_animated, demo, mode, related (ids), licence_family, gyropup and updated.',
+    fields: CATALOG_FIELDS,
     items: items.map(asJson),
   };
   files.set('catalog.json', JSON.stringify(catalog, null, 2) + '\n');
@@ -381,13 +478,13 @@ export async function buildCatalog(ctx) {
   const issueLinks = n => (n.issues || []).map(i => `${REPO}/issues/${i}`);
   const writeNode = (slug, extra) => {
     const list = inNode(slug);
-    files.set(`catalog/${slug}.json`, JSON.stringify({ schema: 'cad-agent-catalog-area/1', origin: ORIGIN, revision: ctx.revision, ...extra,
+    files.set(`catalog/${slug}.json`, JSON.stringify({ schema: 'cad-agent-catalog-area/1', origin: ORIGIN, revision: ctx.revision, fields: AREA_FIELDS, item_fields: `${ORIGIN}/catalog.json (fields)`, ...extra,
       count: list.length, kinds: countKinds(list), page: nodeUrl(slug), index: `${ORIGIN}/catalog/index.json`, items: list.map(brief) }, null, 2) + '\n');
     return list.length;
   };
   const index = {
-    schema: 'cad-agent-catalog-index/1', origin: ORIGIN, revision: ctx.revision, built: ctx.built,
-    how: 'Pick a domain or area, fetch its json (every entry placed there, with its url, Markdown twin, command and cover), then open the entry. ' +
+    schema: 'cad-agent-catalog-index/1', origin: ORIGIN, revision: ctx.revision, built: ctx.built, fields: INDEX_FIELDS,
+    how: 'Pick a domain or area, fetch its json (every entry placed there, with its url, its Markdown twin for our pages and tools, the call for tools, and its cover), then open the entry. ' +
       'catalog.json has every entry. The page takes the same filters as URL parameters: kind, area, q, status, licence, maturity, gyropup, demo, sort.',
     catalog: `${ORIGIN}/catalog.json`, page: `${ORIGIN}/catalog`, areas_source: `${REPO}/blob/dev/docs/areas.yaml`,
     count: items.length, kinds: KINDS.map(k => ({ tab: k.tab, kinds: k.kind === 'skill' ? ['skill', 'agent'] : [k.kind], label: k.label,
@@ -445,8 +542,8 @@ function catalogPage({ ORIGIN, items, demos, nodes, index, areas, safeUrl }) {
     const call = it.how ? `<cad-copy class="card-call" text="${esc(it.how)}" label="Copy call"><code>${esc(it.how)}</code></cad-copy>` : '';
     const notes = it.notes || (outside && it.policy) ? `<details class="card-notes"><summary>Our notes</summary>${it.notes ? `<p>${esc(it.notes)}</p>` : ''}${it.policy ? `<p class="policy">Licence policy: ${esc(it.policy)}.</p>` : ''}</details>` : '';
     const badge = it.mode ? `<span class="pill pill-mode pill-${esc(it.mode)}">${esc(MODE_LABEL[it.mode])}</span>` : '';
-    return `<li class="card cat-card" id="${esc(it.id)}" data-item data-type="${esc(it.type)}" data-kind="${esc(k.tab)}" data-tone="${esc(it.domains[0] || it.areas[0])}" data-area="${esc(tokens(it))}" data-status="${esc(it.status)}" data-licence="${esc(it.family)}" data-maturity="${esc(it.maturity || 'none')}"${it.gyropup ? ' data-gyropup="1"' : ''}${it.demo ? ' data-demo="1"' : ''} data-sort-recent="${esc(it.updated || '')}" data-sort-stars="${it.stars ?? ''}" data-sort-maturity="${it.maturity ? LEVELS.indexOf(it.maturity) + 1 : ''}" data-sort-az="${esc(azKey)}" data-text="${esc(text)}"${i >= LIMIT ? ' data-over' : ''}>
-<h3 class="card-name"><a href="${esc(site(safeUrl(it.url)))}">${title(it)}</a></h3>
+    return `<li class="card cat-card" id="${esc(it.id)}" data-item data-type="${esc(it.type)}" data-kind="${esc(k.tab)}" data-tone="${esc(it.domains[0] || it.areas[0])}" data-area="${esc(tokens(it))}" data-status="${esc(it.status)}" data-licence="${esc(it.family)}" data-maturity="${esc(it.maturity || 'none')}"${it.gyropup ? ' data-gyropup="1"' : ''}${it.demo ? ' data-demo="1"' : ''} data-sort-recent="${esc(it.updated || '')}" data-sort-stars="${esc(it.stars ?? '')}" data-sort-maturity="${it.maturity ? LEVELS.indexOf(it.maturity) + 1 : ''}" data-sort-az="${esc(azKey)}" data-text="${esc(text)}"${i >= LIMIT ? ' data-over' : ''}>
+<h3 class="card-name"><a href="${esc(site(safeUrl(it.doc || it.url)))}">${title(it)}</a></h3>
 <p class="card-kicker"><span class="pill pill-kind">${esc(KIND_LABEL[it.kind])}</span>${badge}<span class="pill pill-${esc(it.status)}">${esc(statusText(it.status))}</span>${it.gyropup ? '<span class="pill pill-gyropup" title="Needed for Gyropup to become real">Gyropup</span>' : ''}</p>
 ${it.what ? `<p class="card-what">${esc(it.what)}</p>` : ''}${facts}${meta}${call}${notes}
 <div class="card-cover" data-fit="${it.cover.fit}">${img(it.cover)}</div></li>`;
@@ -470,12 +567,15 @@ ${it.what ? `<p class="card-what">${esc(it.what)}</p>` : ''}${facts}${meta}${cal
   const dots = m => `<span class="mat-dots" data-level="${LEVELS.indexOf(m) + 1}" title="Maturity: ${esc(m)}"><span class="sr">maturity ${esc(m)}</span></span>`;
   const gyro = n => (n.priority || []).includes('gyropup') ? '<span class="gyro" title="Needed for Gyropup"><span class="sr">needed for Gyropup</span></span>' : '';
   const count = slug => items.filter(it => it.areas.includes(slug) || it.domains.includes(slug)).length;
-  const tree = `<nav class="cat-areas" aria-labelledby="areas-title"><h2 class="side-title" id="areas-title">Areas</h2><ul class="area-tree">
-<li>${areaLink('', `${glyphUse('cross-cutting')}<span class="area-name">All areas</span>`, items.length, ' aria-current="true"').replace('?area=', '?area=')}</li>
-${areas.domains.map(d => `<li><details class="dom" data-domain="${esc(d.slug)}"><summary>${glyphUse(d.slug)}<span class="area-name">${esc(d.title)}</span><span class="count" data-count-of="area:${esc(d.slug)}">${count(d.slug)}</span></summary><ul>
+  // Domains with entries start open: on a wide screen the tree is the page's map. (The sheet on small screens folds
+  // them again, except the chosen one: kit/gallery.js.)
+  const tree = `<nav class="cat-areas" aria-labelledby="areas-title"><h2 class="side-title" id="areas-title">Areas</h2>
+<p class="tree-key"><span class="mat-dots" data-level="3" aria-hidden="true"></span> maturity <span class="gyro" aria-hidden="true"></span> needed for Gyropup</p><ul class="area-tree">
+<li>${areaLink('', `${glyphUse('cross-cutting')}<span class="area-name">All areas</span>`, items.length, ' aria-current="true"')}</li>
+${areas.domains.map(d => `<li><details class="dom" data-domain="${esc(d.slug)}"${count(d.slug) ? ' open' : ''}><summary>${glyphUse(d.slug)}<span class="area-name">${esc(d.title)}</span><span class="count" data-count-of="area:${esc(d.slug)}">${count(d.slug)}</span></summary><ul>
 <li>${areaLink(d.slug, `<span class="area-name">Everything in ${esc(d.title.replace(/^./, c => c.toLowerCase()))}</span>`, count(d.slug))}</li>
 ${(d.areas || []).map(a => `<li>${areaLink(a.slug, `${glyphUse(a.slug)}<span class="area-name">${esc(a.title)}</span>${gyro(a)}${dots(a.maturity)}`, count(a.slug), ` data-maturity="${esc(a.maturity)}"`)}</li>`).join('')}</ul></details></li>`).join('')}
-${Object.entries(BUCKETS).map(([slug, b]) => `<li class="bucket">${areaLink(slug, `${glyphUse(slug)}<span class="area-name">${esc(b.title)}</span>`, count(slug))}</li>`).join('')}
+${Object.entries(BUCKETS).filter(([slug]) => count(slug)).map(([slug, b]) => `<li class="bucket">${areaLink(slug, `${glyphUse(slug)}<span class="area-name">${esc(b.title)}</span>`, count(slug))}</li>`).join('')}
 </ul></nav>`;
 
   const option = (name, value, label, n) => `<label class="opt"><input type="checkbox" name="${name}" value="${esc(value)}"><span>${label}</span><span class="count" data-count>${n}</span></label>`;
@@ -529,10 +629,11 @@ ${tree}${filters}</div></aside>
 <div class="cat-main" id="cat-results" data-gallery-results>
 <div class="cat-toolbar"><button type="button" class="button sheet-open" aria-controls="cat-side" aria-expanded="false" data-gallery-sheet-open data-gallery-js>Areas and filters <span class="count" data-gallery-active></span></button>
 <p id="filter-status" class="filter-status" role="status" aria-live="polite" data-gallery-status>${items.length} entries</p>
-<label class="sort" data-gallery-js><span>Sort</span><select id="sort" name="sort" data-gallery-sort>${SORTS.map(([v, l]) => `<option value="${v}"${v === 'recent' || v === 'stars' || v === 'maturity' ? ' data-dir="desc"' : ''}>${l}</option>`).join('')}</select></label></div>
+<label class="sort" data-gallery-js><span class="sort-label">Sort</span><select id="sort" name="sort" aria-label="Sort" data-gallery-sort>${SORTS.map(([v, l]) => `<option value="${v}"${v === 'recent' || v === 'stars' || v === 'maturity' ? ' data-dir="desc"' : ''}>${l}</option>`).join('')}</select></label></div>
 <div class="cat-chips" role="group" data-gallery-chips aria-label="Active filters"></div>
 ${panels}
 <p class="cat-empty" data-gallery-empty hidden>No entries match. Try fewer words or clear the filters.</p>
+<p class="cat-empty" data-gallery-empty-scope hidden>Nothing in <b data-gallery-scope-name></b> yet. No tool, guide or outside project is placed here so far; the panel above says what it covers and how far it has come.</p>
 ${sections}</div></div>
 </cad-gallery><script type="module" src="/kit/gallery.js"></script>`;
 }

@@ -2,9 +2,12 @@
  *
  * Every glyph is a line drawing in a 100 x 100 box (stroke only; class "a" is the accent colour), one per area of
  * docs/areas.yaml plus a few for the buckets and kinds. Covers are 400 x 300 SVG files:
- * - outside projects, libraries and benchmarks: the area glyph (or the kind's, until the entry is placed) inside
- *   rings for its GitHub stars (one ring per factor of ten, the last one drawn as far as the stars reach), a licence
- *   badge coloured by family, a track for the last push (the dashed stretch is the time since), a status ribbon;
+ * - outside projects, libraries and benchmarks: what they are built on (the kernel or tool family: build123d,
+ *   OpenSCAD, KiCad, FreeCAD, a mesh tool, a slicer, a solver...) as the main glyph in its own colour, the one number
+ *   that matters as large type (GitHub stars, or a benchmark's size or venue), licence and status as labelled tags, and
+ *   a band naming what it makes or where it runs (its processes or clients, else its areas). All of it from
+ *   upstreams/registry.yaml and research/landscape.json;
+ * - charts we draw from our own tools' results (docs/catalog.yaml), e.g. the trade-off cad-agent compare plots;
  * - our pages: the page's outline as bars, one per section, as long as its text, marked when the section has a
  *   picture, diagram or code; lessons draw one tile per lesson;
  * - commands without a figure: the command and its real flags, read from cli.py;
@@ -32,6 +35,7 @@ function gearPath(cx, cy, teeth, outer, inner) {
 export const GLYPHS = {
   // mechanical design
   mechanisms: '<path d="M16 80 40 34 82 54"/><circle cx="16" cy="80" r="7"/><circle cx="40" cy="34" r="7"/><circle class="a" cx="82" cy="54" r="7"/><path d="M4 92h26"/>',
+  'cad-modelling': '<path d="M14 36 50 18l36 18v38L50 92 14 74z"/><path d="M14 36l36 18 36-18M50 54v38"/><ellipse class="a" cx="68" cy="66" rx="7" ry="10"/>',
   'housings-and-enclosures': '<rect x="14" y="44" width="72" height="42" rx="5"/><path class="a" d="M10 28h80v9H10z"/><path d="M28 64h16M60 58v14"/>',
   'compliant-mechanisms': '<path d="M16 10v80M16 32h54l14 18H62l-6-6H16"/><path class="a" d="M50 72h36v12H50z"/>',
   gears: `<path d="${gearPath(50, 50, 10, 40, 31)}"/><circle class="a" cx="50" cy="50" r="10"/>`,
@@ -79,6 +83,28 @@ export const GLYPHS = {
   demo: '<circle cx="50" cy="50" r="38"/><path class="a" d="M41 31v38l29-19z"/>',
   tool: '<rect x="8" y="16" width="84" height="68" rx="8"/><path class="a" d="M22 40l12 10-12 10"/><path d="M42 62h24"/>',
 };
+/** What an outside entry is built on: the main glyph of its cover, in the family's colour. `match` reads the entry's
+ * own words (kernel, name, what); the first family that matches wins, so specific tools come before general ones. */
+export const FAMILIES = [
+  { key: 'kicad', label: 'KiCad', color: '#2f6f39', match: /\bkicad|kipy|pcbnew|\bpcb\b|gerber/, glyph: '<rect x="10" y="16" width="80" height="68" rx="6"/><path d="M26 34h20l10 10h18M26 66h14l8-8h26"/><circle class="a" cx="26" cy="34" r="5"/><circle class="a" cx="26" cy="66" r="5"/><circle cx="78" cy="44" r="5"/><circle cx="78" cy="58" r="5"/>' },
+  { key: 'slicer', label: 'Slicer', color: '#c2410c', match: /slicer|slicing|bambu|prusa|orca/, glyph: '<path d="M36 8h28v16L50 40 36 24z"/><path class="a" d="M50 40v10"/><path d="M14 60h72M20 70h60M26 80h48M32 90h36"/>' },
+  { key: 'openscad', label: 'OpenSCAD', color: '#a16207', match: /openscad/, glyph: '<path d="M12 40h48v48H12z"/><circle cx="62" cy="38" r="26"/><path class="a" d="M60 64a26 26 0 0 1-24-24"/>' },
+  { key: 'build123d', label: 'build123d', color: '#1f6f8b', match: /build123d|\bb123d|bd_warehouse/, glyph: '<path d="M14 34 50 16l36 18v36L50 88 14 70z"/><path d="M14 34l36 18 36-18M50 52v36"/><path class="a" d="M62 64c6-3 12 0 12 6s-6 10-12 7-6-10 0-13z"/>' },
+  { key: 'cadquery', label: 'CadQuery', color: '#1f6f8b', match: /cadquery|\bocp\b|occt|open ?cascade/, glyph: '<path d="M14 34 50 16l36 18v36L50 88 14 70z"/><path d="M14 34l36 18 36-18M50 52v36"/><path class="a" d="M24 58l16 8"/>' },
+  { key: 'freecad', label: 'FreeCAD', color: '#9a3412', match: /freecad/, glyph: '<path d="M14 82V30l24-14h48v32L62 82z"/><path d="M14 30h24V16"/><path class="a" d="M28 92h44M28 88v8M72 88v8"/><circle cx="50" cy="50" r="10"/>' },
+  { key: 'blender', label: 'Blender', color: '#6b4fa0', match: /blender/, glyph: '<circle cx="50" cy="50" r="36"/><path d="M14 50h72M50 14c-14 10-14 62 0 72M50 14c14 10 14 62 0 72M22 30c18 6 38 6 56 0M22 70c18-6 38-6 56 0"/><circle class="a" cx="72" cy="30" r="5"/>' },
+  { key: 'cloud', label: 'Cloud CAD', color: '#475569', match: /onshape|fusion|zoo|\bkcl\b|solidworks|closed/, glyph: '<path d="M28 74h46a16 16 0 0 0 2-32 22 22 0 0 0-42-6 18 18 0 0 0-6 38z"/><path class="a" d="M40 52l10-6 10 6v12l-10 6-10-6z"/>' },
+  { key: 'mesh', label: 'Mesh', color: '#6b4fa0', match: /mesh|trimesh|manifold|pyvista|meshio|\bstl\b/, glyph: '<path d="M12 70 34 22l34 8 20 44-36 14z"/><path d="M34 22 52 88M12 70l56-40M34 22l54 52M12 70h76"/><circle class="a" cx="68" cy="30" r="5"/>' },
+  { key: 'fea', label: 'FEA', color: '#0f766e', match: /calculix|\bfea\b|\bfem\b|fenics|elmer|scikit-fem|finite.element|stress/, glyph: '<path d="M10 84 28 18 54 46 84 14 90 84z"/><path d="M10 84 54 46 90 84M28 18 54 46 84 14"/><path class="a" d="M54 46 32 84M54 46 68 84"/>' },
+  { key: 'cfd', label: 'CFD', color: '#0f766e', match: /openfoam|\bcfd\b|airflow|fluid/, glyph: '<circle cx="50" cy="50" r="13"/><path class="a" d="M6 28c22 0 26 9 44 9s22-9 44-9"/><path d="M6 50h24M70 50h24M6 72c22 0 26-9 44-9s22 9 44 9"/>' },
+  { key: 'harness', label: 'Harness', color: '#b45309', match: /harness|wireviz|cable/, glyph: '<path d="M10 30h20c14 0 14 40 28 40h32M10 50h20c10 0 14 20 28 20M10 70h20c8 0 12-10 20-10"/><rect class="a" x="80" y="58" width="12" height="24" rx="2"/><path d="M6 24v52"/>' },
+  { key: 'parts', label: 'Parts library', color: '#1f6f8b', match: /fastener|warehouse|partcad|package manager|parts/, glyph: '<path d="M28 12h44l8 14H20z"/><path d="M38 26v56l12 8 12-8V26"/><path class="a" d="M38 40l24 8M38 54l24 8M38 68l24 8"/>' },
+  { key: 'benchmark', label: 'Benchmark', color: '#4338ca', match: /benchmark|bench\b|eval|dataset|leaderboard|arena/, glyph: '<path d="M10 88h80"/><path d="M18 88V58h14v30M42 88V38h14v50M66 88V22h14v66"/><circle class="a" cx="73" cy="12" r="6"/>' },
+  { key: 'agent', label: 'Agent tools', color: '#bd3a12', match: /\bmcp\b|agent|plugin|skill|llm|claude|codex/, glyph: '<rect x="18" y="28" width="64" height="50" rx="12"/><circle class="a" cx="38" cy="52" r="6"/><circle class="a" cx="62" cy="52" r="6"/><path d="M50 28V14M42 14h16M40 66h20"/>' },
+];
+/** The family an outside entry belongs to, from its own text; null when nothing matches. */
+export const familyOf = text => FAMILIES.find(f => f.match.test(String(text || '').toLowerCase())) || null;
+
 export const DOMAIN_GLYPH = { mechanical: 'gears', manufacturing: '3d-printing', thermal: 'heat-sinks', simulation: 'structural-fea',
   electrical: 'circuit-boards', practice: 'agent-workflow' };
 /** Two-stop background tints by domain, from the site's palette. */
@@ -108,53 +134,94 @@ export const STATUS_STYLE = {
   trial: ['#ffe48a', '#5b4700', 'in trial'], candidate: ['#d7e9f1', '#1d4b5c', 'candidate'], rejected: ['#d9d8d0', '#3e4a47', 'rejected'],
   reference: ['#eef1e4', '#2f4b46', 'tracked'], unverified: ['#ffffff', '#6a4b00', 'unverified'],
 };
-const ribbon = status => {
-  const [bg, fg, text] = STATUS_STYLE[status] || STATUS_STYLE.reference;
-  return `<g transform="translate(${W} 0) rotate(45)"><rect x="-110" y="40" width="220" height="32" fill="${bg}"${status === 'unverified' ? ` stroke="${fg}" stroke-dasharray="5 4"` : ''}/>` +
-    `<text x="0" y="61" text-anchor="middle" font-family="${esc(MONO)}" font-size="14" font-weight="700" letter-spacing="1.2" fill="${fg}">${esc(text.toUpperCase())}</text></g>`;
-};
 export const LICENCE_STYLE = { permissive: ['#d8efbb', '#2f6f39'], copyleft: ['#ffe1cc', '#a42d0c'], other: ['#ffffff', '#526863'] };
-const licenceBadge = (license, family, x, y) => {
-  const [bg, fg] = LICENCE_STYLE[family] || LICENCE_STYLE.other, text = String(license || 'no licence');
-  const w = Math.max(56, text.length * 8.6 + 24);
-  return `<g transform="translate(${x} ${y})"><rect width="${r1(w)}" height="28" rx="14" fill="${bg}" stroke="${fg}" stroke-width="1.5"${family === 'other' ? ' stroke-dasharray="4 3"' : ''}/>` +
-    `<text x="${r1(w / 2)}" y="19" text-anchor="middle" font-family="${esc(MONO)}" font-size="13" font-weight="700" fill="${fg}">${esc(text)}</text></g>`;
+
+
+/** "22.9k" for 22,951: the number a reader takes in at a glance. */
+export const shortNumber = n => n >= 1e5 ? `${Math.round(n / 1e3)}k` : n >= 1e3 ? `${(Math.floor(n / 100) / 10).toFixed(1).replace(/\.0$/, '')}k` : String(n);
+
+/** A labelled tag (text, colours, dashed edge) at x, y, at most maxW wide; returns [svg, width]. */
+const pill = (text, x, y, [bg, fg], { dashed = false, size = 15, maxW = 400 } = {}) => {
+  const per = size * 0.6, fit = Math.floor((maxW - 18) / per);
+  text = String(text);
+  if (text.length > fit) text = text.slice(0, fit - 1) + '…';
+  const w = text.length * per + 18;
+  return [`<g transform="translate(${r1(x)} ${r1(y)})"><rect width="${r1(w)}" height="${size + 14}" rx="${(size + 14) / 2}" fill="${bg}" stroke="${fg}" stroke-width="1.5"${dashed ? ' stroke-dasharray="4 3"' : ''}/>` +
+    `<text x="${r1(w / 2)}" y="${size + 4}" text-anchor="middle" font-family="${esc(MONO)}" font-size="${size}" font-weight="700" fill="${fg}">${esc(text)}</text></g>`, w];
 };
 
-/** Months between two ISO dates (b after a), as a fraction. */
-const months = (a, b) => (Date.parse(b) - Date.parse(a)) / (30.44 * 864e5);
+/** Fit a line of text into a width by dropping items from the end ("FDM · SLA · SLS +7"). */
+const fitList = (items, maxChars) => {
+  if (items[0].length > maxChars) return items[0].slice(0, maxChars - 1) + '…';
+  const out = [];
+  for (const [i, t] of items.entries()) {
+    const rest = items.length - i - 1, line = [...out, t].join(' · ') + (rest ? ` +${rest}` : '');
+    if (line.length > maxChars && out.length) return out.join(' · ') + ` +${items.length - out.length}`;
+    out.push(t);
+  }
+  return out.join(' · ');
+};
 
-/** Outside entry: glyph in its star rings, licence, last push, status. */
-export function outsideCover({ kind, glyphSlug, tint, stars, license, family, lastPush, status, asOf, name }) {
-  const cx = 200, cy = 146, base = 46, step = 21;
-  let rings = '';
-  const decades = stars > 0 ? Math.log10(stars) : 0;
-  if (!(stars > 0)) rings += `<circle cx="${cx}" cy="${cy}" r="${base + step}" fill="none" stroke="${INK}" stroke-opacity=".18" stroke-width="1.6" stroke-dasharray="1 7" stroke-linecap="round"/>`;
-  for (let k = 1; k <= 5; k++) {
-    const r = base + step * k;
-    if (decades >= k) rings += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${INK}" stroke-opacity=".38" stroke-width="1.6" stroke-dasharray="3 5"/>`;
-    else if (decades > k - 1) {                    // the decade it is in, drawn as far as it reaches, clockwise from the top
-      const f = decades - (k - 1), a = -Math.PI / 2 + f * Math.PI * 2;
-      const ex = cx + r * Math.cos(a), ey = cy + r * Math.sin(a);
-      rings += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${INK}" stroke-opacity=".14" stroke-width="1.6"/>` +
-        `<path d="M${cx} ${cy - r}A${r} ${r} 0 ${f > 0.5 ? 1 : 0} 1 ${r1(ex)} ${r1(ey)}" fill="none" stroke="${ACCENT}" stroke-width="5" stroke-linecap="round"/>` +
-        `<circle cx="${r1(ex)}" cy="${r1(ey)}" r="7" fill="${ACCENT}"/>`;
-    }
+/** Outside project, library or benchmark: what it is built on, its one number, licence, status, what it makes. */
+export function outsideCover({ kind, family, glyphSlug, tint, headline, license, licFamily, status, band, name }) {
+  const color = family?.color || INK;
+  const art = family ? family.glyph : glyphFor(glyphSlug);
+  const cx = 104, cy = 128;
+  const disc = `<circle cx="${cx}" cy="${cy}" r="76" fill="#fffdf5" fill-opacity=".94"/><circle cx="${cx}" cy="${cy}" r="76" fill="${color}" fill-opacity=".1" stroke="${color}" stroke-width="3"/>` +
+    `<circle cx="${cx}" cy="${cy}" r="86" fill="none" stroke="${color}" stroke-opacity=".28" stroke-width="2" stroke-dasharray="2 6" stroke-linecap="round"/>` +
+    `<g transform="translate(${cx - 46} ${cy - 46}) scale(.92)" fill="none" stroke="${color}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">${art.replaceAll('class="a"', `stroke="${ACCENT}"`)}</g>`;
+  const x = 206;
+  const famLabel = family && family.label.toLowerCase() !== kind ? `<text x="${x}" y="64" font-family="${esc(MONO)}" font-size="15" font-weight="700" letter-spacing="1.4" fill="${color}">${esc(family.label.toUpperCase())}</text>` : '';
+  // The headline: a number in large type (stars, or a benchmark's size), else a short fact (its venue).
+  let big = '';
+  if (headline?.number != null) {
+    const n = String(headline.number), size = Math.min(62, Math.floor(184 / (n.length * 0.62)));
+    big = `<text x="${x - 3}" y="132" font-family="${esc(SANS)}" font-size="${size}" font-weight="800" letter-spacing="-2" fill="${INK}">${esc(n)}</text>` +
+      `<text x="${x}" y="158" font-family="${esc(SANS)}" font-size="16" font-weight="600" fill="${MUTED}">${esc(headline.unit)}</text>`;
+  } else if (headline?.text) {
+    const t = String(headline.text), size = Math.min(32, Math.floor(184 / (t.length * 0.6)));
+    big = `<text x="${x}" y="122" font-family="${esc(SANS)}" font-size="${size}" font-weight="800" letter-spacing="-.5" fill="${INK}">${esc(t)}</text>` +
+      (headline.unit ? `<text x="${x}" y="150" font-family="${esc(SANS)}" font-size="16" font-weight="600" fill="${MUTED}">${esc(headline.unit)}</text>` : '');
   }
-  // Last push on a two-year track ending at the catalogue's date: solid up to the push, dashed after it (quiet time).
-  let track = '';
-  if (lastPush && asOf) {
-    const x0 = 230, x1 = 376, y = 268, span = 24, ago = Math.min(span, Math.max(0, months(lastPush, asOf)));
-    const x = x1 - (ago / span) * (x1 - x0);
-    const ticks = Array.from({ length: span + 1 }, (_, i) => x0 + (i / span) * (x1 - x0))
-      .map((t, i) => `M${r1(t)} ${y - (i % 12 === 0 ? 7 : 3)}v${i % 12 === 0 ? 14 : 6}`).join('');
-    const fresh = ago <= 1 ? ACCENT : ago <= 6 ? INK : MUTED;
-    track = `<path d="${ticks}" stroke="${INK}" stroke-opacity=".35" stroke-width="1.5"/><path d="M${x0} ${y}H${r1(x)}" stroke="${INK}" stroke-width="3"/>` +
-      `<path d="M${r1(x)} ${y}H${x1}" stroke="${INK}" stroke-opacity=".5" stroke-width="3" stroke-dasharray="2 5"/><circle cx="${r1(x)}" cy="${y}" r="7" fill="${fresh}" stroke="#fff" stroke-width="2"/>`;
-  }
-  const label = `${name}: ${kind}, ${license || 'no licence'}, ${stars != null ? `${stars} GitHub stars` : 'stars not recorded'}${lastPush ? `, last push ${lastPush}` : ''}, ${(STATUS_STYLE[status] || STATUS_STYLE.reference)[2]}`;
-  return frame(tint, `${rings}<circle cx="${cx}" cy="${cy}" r="${base - 2}" fill="#fffdf5" fill-opacity=".9" stroke="${INK}" stroke-opacity=".25"/>` +
-    glyph(glyphSlug, cx - 30, cy - 30, 60) + tag(kind) + licenceBadge(license, family, 22, 254) + track + ribbon(status), label);
+  // Licence and status as words.
+  const right = W - 14;
+  const [licSvg, licW] = pill(String(license || 'no licence'), x, 176, LICENCE_STYLE[licFamily] || LICENCE_STYLE.other, { dashed: licFamily === 'other', maxW: right - x });
+  const st = STATUS_STYLE[status] || STATUS_STYLE.reference, stW = st[2].length * 9 + 18, inline = x + licW + 8 + stW <= right;
+  const [stSvg] = pill(st[2], inline ? x + licW + 8 : x, inline ? 176 : 211, [st[0], st[1]], { dashed: status === 'unverified' });
+  // The band: what it makes or where it runs.
+  const bandSvg = band?.items?.length ? `<rect y="246" width="${W}" height="54" fill="#ffffff" fill-opacity=".86"/><path d="M0 246h${W}" stroke="${color}" stroke-width="3"/>` +
+    `<text x="24" y="266" font-family="${esc(MONO)}" font-size="12" font-weight="700" letter-spacing="1.4" fill="${MUTED}">${esc(band.label.toUpperCase())}</text>` +
+    `<text x="24" y="289" font-family="${esc(SANS)}" font-size="17" font-weight="700" fill="${INK}">${esc(fitList(band.items, 36))}</text>` : '';
+  const label = `${name}: ${kind}${family ? ` on ${family.label}` : ''}, ${headline?.number != null ? `${headline.number} ${headline.unit}` : headline?.text || ''}, ${license || 'no licence'}, ${st[2]}` +
+    (band?.items?.length ? `; ${band.label}: ${band.items.join(', ')}` : '');
+  return frame(tint, disc + tag(kind, 24, 32) + famLabel + big + licSvg + stSvg + bandSvg, label);
+}
+
+/** A chart from one of our tools' results (docs/catalog.yaml): points on two axes, the Pareto front joined. */
+export function chartCover({ title, x: xLabel, y: yLabel, points = [], tint, name }) {
+  const L = 62, R = 376, T = 58, B = 236;
+  const xs = points.map(p => p.x), ys = points.map(p => p.y);
+  const pad = (lo, hi) => { const d = (hi - lo) || 1; return [lo - d * 0.12, hi + d * 0.12]; };
+  const [x0, x1] = pad(Math.min(...xs), Math.max(...xs)), [y0, y1] = pad(Math.min(...ys), Math.max(...ys));
+  const px = v => L + (v - x0) / (x1 - x0) * (R - L), py = v => B - (v - y0) / (y1 - y0) * (B - T);
+  const grid = [0.25, 0.5, 0.75].map(f => `M${L} ${r1(T + f * (B - T))}H${R}M${r1(L + f * (R - L))} ${T}V${B}`).join('');
+  const front = points.filter(p => p.front).sort((a, b) => a.x - b.x);
+  const line = front.length > 1 ? `<path d="M${front.map(p => `${r1(px(p.x))} ${r1(py(p.y))}`).join('L')}" fill="none" stroke="${ACCENT}" stroke-width="4" stroke-linecap="round"/>` : '';
+  const dots = points.map(p => {
+    const cxp = r1(px(p.x)), cyp = r1(py(p.y)), right = px(p.x) < (L + R) / 2;
+    const mark = p.fail ? `<circle cx="${cxp}" cy="${cyp}" r="8" fill="#fff" stroke="${MUTED}" stroke-width="3"/>`
+      : `<circle cx="${cxp}" cy="${cyp}" r="${p.front ? 10 : 8}" fill="${p.front ? ACCENT : MUTED}" stroke="#fff" stroke-width="2.5"/>`;
+    return mark + `<text x="${r1(px(p.x) + (right ? 15 : -15))}" y="${r1(py(p.y) + 6)}" text-anchor="${right ? 'start' : 'end'}" font-family="${esc(SANS)}" font-size="17" font-weight="700" fill="${p.fail ? MUTED : INK}">${esc(p.label)}${p.fail ? ' ✕' : ''}</text>`;
+  }).join('');
+  const body = `<rect x="12" y="12" width="${W - 24}" height="${H - 24}" rx="14" fill="#ffffff" fill-opacity=".92" stroke="${INK}" stroke-opacity=".15"/>` +
+    `<text x="28" y="42" font-family="${esc(SANS)}" font-size="17" font-weight="800" fill="${INK}">${esc(title)}</text>` +
+    `<path d="${grid}" stroke="${INK}" stroke-opacity=".08" stroke-width="1.5"/><path d="M${L} ${T}V${B}H${R}" fill="none" stroke="${INK}" stroke-width="2"/>` +
+    line + dots +
+    `<text x="${R}" y="${B + 26}" text-anchor="end" font-family="${esc(SANS)}" font-size="14" font-weight="600" fill="${MUTED}">${esc(xLabel)} →</text>` +
+    `<text transform="translate(${L - 16} ${B}) rotate(-90)" font-family="${esc(SANS)}" font-size="14" font-weight="600" fill="${MUTED}">${esc(yLabel)} →</text>` +
+    (front.length ? `<text x="${L + 6}" y="${B + 26}" font-family="${esc(MONO)}" font-size="12" font-weight="700" fill="${ACCENT}">— PARETO FRONT</text>` : '');
+  const label = `${name}: ${title}. ${points.map(p => `${p.label} ${p.x} ${xLabel}, ${p.y} ${yLabel}${p.front ? ' (on the front)' : ''}${p.fail ? ' (fails a requirement)' : ''}`).join('; ')}`;
+  return frame(tint, body, label);
 }
 
 /** Our page: its sections as bars (length = words), marked for pictures and code; lessons as one tile per lesson. */

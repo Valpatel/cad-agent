@@ -395,7 +395,10 @@ tested tools of its own. Every page on this site has a Markdown twin at the same
 
 - Source: ${REPO} (MIT). Install: \`pip install -e .\` in a checkout; agent skills: \`cad-agent agents install\`.
 - Machine-readable catalogue: ${ORIGIN}/catalog.json (schema ${catalog.schema}; ${catalog.items.length} entries, each with an id, kind,
-  areas, maturity, a one-line \`what\`, our \`notes\`, a cover picture, a demo link and related ids).
+  areas, maturity, a one-line \`what\`, our \`notes\`, a cover picture, a demo link and related ids; tools also have \`doc\`,
+  the page that documents the command, and \`markdown\`, its twin). Every schema-1 field keeps its schema-1 value: \`summary\`
+  is still our notes first for outside projects, a tool's \`url\` is still ${ORIGIN}/docs/toolkit, and a field that was null
+  is still null. Each file says what its fields mean in \`fields\`.
 - Find your way in two small fetches: ${ORIGIN}/catalog/index.json lists the domains and areas of hardware design
   (docs/areas.yaml) with counts, maturity and links; ${ORIGIN}/catalog/<area>.json (e.g. catalog/compliant-mechanisms.json)
   lists every tool, page, lesson, skill, demo and outside project in that area. Outside entries not yet placed in an area:

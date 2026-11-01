@@ -463,11 +463,11 @@ receptacle: a screw-flange terminal plug is 15 mm tall on an 8.4 mm header.
 #### The cable behind the plug
 
 A plug that fits is no use if its cable has no room to turn. Give the mate a `cable` with the diameter and minimum
-bend radius from the cable's data sheet, in the form the data sheet uses (millimetres, or a multiple of the diameter):
+bend radius from the cable's data sheet, in the form the data sheet uses: millimetres, as here, or a multiple of the
+diameter, `{"x_od": 5}`:
 
 ```json
 "cable": {"od": 6.1, "min_bend_radius": {"mm": 25}, "basis": "Belden CAT6+ UTP PVC patch cord, rev 0.202: 6.1 mm, 25 mm"}
-"cable": {"od": 6.7, "min_bend_radius": {"x_od": 5}, "basis": "Phoenix Contact VS-04-C-SDA/SDB/1,8: 6.7 mm, 5 x D"}
 ```
 
 `cable_bend(mate, obstacles, frame)` lets the cable leave the boot straight along the mating axis, then turns it 90°

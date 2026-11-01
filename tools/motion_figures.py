@@ -1029,17 +1029,6 @@ def cable_svg() -> str:
         g = [f'<g clip-path="url(#c{n})">']
         g.append(f'<path d="{path(v.rect(w0, v0, w1, shelf_top))}" fill="{PALE}" stroke="{INK}" stroke-width="1.5"/>')
         g.append(text(*v(w0 + 1.2, shelf_top - 4.6), "shelf", 10, MUTED))
-        # the cable: drawn first, so the boot hides the round end that the check's balls give it inside the boot
-        sx, sy = v(*p["start"][2:0:-1])
-        ex, ey = v(p["end"][2], p["end"][1])
-        arc = f'M{num(sx)} {num(sy)}A{num(rc * k)} {num(rc * k)} 0 0 {1 if name == "-v" else 0} {num(ex)} {num(ey)}'
-        dash = f'fill="none" stroke-linecap="round" stroke-dasharray="{num(length)} {num(length)}" class="cb"'
-        g.append(f'<path d="{arc}" stroke="{INK}" stroke-width="{num(od * k + 2.4)}" {dash}/>')
-        g.append(f'<path d="{arc}" stroke="#c9d6cc" stroke-width="{num(od * k)}" {dash}/>')
-        if not row["clear"]:
-            body.append(f'<clipPath id="s{n}"><path d="{path(v.rect(w0, v0, w1, shelf_top))}"/></clipPath>')
-            g.append(f'<path d="{arc}" stroke="{ORANGE}" stroke-width="{num(od * k)}" {dash} '
-                     f'clip-path="url(#s{n})"/>')
         wall = f'fill="{PALE}" stroke="{INK}" stroke-width="1.5"'
         g.append(f'<path d="{path(v.rect(WALL[0], SLAB[1], WALL[1], h["window"][1]))}" {wall}/>')
         g.append(f'<path d="{path(v.rect(WALL[0], h["window"][3], WALL[1], SLAB[3]))}" {wall}/>')
@@ -1047,8 +1036,19 @@ def cable_svg() -> str:
         fx = v(RJ45["face_w"], 0)[0]
         g.append(f'<path d="M{num(fx)} {num(v(0, RJ45["face"][1])[1])}V{num(v(0, RJ45["face"][3])[1])}" '
                  f'stroke="{GREEN}" stroke-width="3"/>')
-        g += ['<g class="pl">',
-              f'<path d="{path(v.rect(boot["w"][0], boot["v"][0], boot["w"][1], boot["v"][1]))}" fill="{PALE}" '
+        # the plug and its cable, one group, so they fade as one. The cable comes first: the boot hides the round end
+        # that the check's balls give it inside the boot. It is drawn along its bend by its dash offset.
+        sx, sy = v(*p["start"][2:0:-1])
+        ex, ey = v(p["end"][2], p["end"][1])
+        arc = f'M{num(sx)} {num(sy)}A{num(rc * k)} {num(rc * k)} 0 0 {1 if name == "-v" else 0} {num(ex)} {num(ey)}'
+        dash = f'fill="none" stroke-linecap="round" stroke-dasharray="{num(length)} {num(length)}" class="cb"'
+        g += ['<g class="pl">', f'<path d="{arc}" stroke="{INK}" stroke-width="{num(od * k + 2.4)}" {dash}/>',
+              f'<path d="{arc}" stroke="#c9d6cc" stroke-width="{num(od * k)}" {dash}/>']
+        if not row["clear"]:
+            body.append(f'<clipPath id="s{n}"><path d="{path(v.rect(w0, v0, w1, shelf_top))}"/></clipPath>')
+            g.append(f'<path d="{arc}" stroke="{ORANGE}" stroke-width="{num(od * k)}" {dash} '
+                     f'clip-path="url(#s{n})"/>')
+        g += [f'<path d="{path(v.rect(boot["w"][0], boot["v"][0], boot["w"][1], boot["v"][1]))}" fill="{PALE}" '
               f'stroke="{GREEN}"/>',
               text(*v((boot["w"][0] + boot["w"][1]) / 2, ve - 1.2), "boot", 10, MUTED, "middle"),
               f'<path d="{path(v.rect(plug_body["w"][0], plug_body["v"][0], plug_body["w"][1], plug_body["v"][1]))}" '

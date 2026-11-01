@@ -280,3 +280,18 @@ def test_check_ports_runs_the_cable_bend_and_fails_a_port_whose_cable_cannot_tur
     r = cn.check_ports({"lan": side, "near": near}, {"lan": frame, "near": frame}, {}, {"lan": WALL, "near": WALL})
     bend = r["ports"]["lan"]["cable_bend"]
     assert bend["status"] == "fail" and bend["directions"][0]["nearest"] == "plug near"
+
+def test_box_distances_match_opencascade_on_random_bends():
+    """The kernel-free distance (sampled, then refined) against OCC's exact one, on seeded random bends and boxes."""
+    import random
+    rnd = random.Random(168)
+    frame = cn.PanelFrame((3, -2, 1), (0, 0, 1), (1, 0, 0), (0, 1, 0))
+    for _ in range(40):
+        cable = dict(CAT6, directions=[rnd.uniform(0, 360)], turn_deg=rnd.uniform(20, 180), run=rnd.choice([0, 15]))
+        lo = [rnd.uniform(-45, 35), rnd.uniform(-45, 35), rnd.uniform(5, 60)]
+        box = {k: [a, a + rnd.uniform(2, 30)] for k, a in zip("uvw", lo)}
+        m = box_mate(cable)
+        a = cn.cable_bend(m, {"b": box})["directions"][0]
+        b = cn.cable_bend(m, {"b": world_box(frame, box)}, frame)["directions"][0]
+        assert a["clearance_mm"] == pytest.approx(b["clearance_mm"], abs=2e-3), (cable, box)
+        assert a["axis_inside"] == b["axis_inside"]

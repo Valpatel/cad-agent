@@ -401,23 +401,32 @@ def _box_distance(p: Sequence[float], box: Sequence[float]) -> float:
     """Distance from a point to an axis-aligned box ``(u0, v0, w0, u1, v1, w1)``: 0 inside it."""
     return math.sqrt(sum(max(lo - x, 0.0, x - hi) ** 2 for x, lo, hi in zip(p, box[:3], box[3:])))
 
-def _minimum(f: Callable[[float], float], a: float, b: float, n: int) -> float:
-    """The smallest value of ``f`` on ``[a, b]``: ``n`` samples, then a golden-section search in the bracket round
-    every sampled local minimum. The distance from a point to a box is 1-Lipschitz, so a basin narrower than the
-    sample step can hide only a value within half a step of a sampled one."""
+def _minimum(f: Callable[[float], float], a: float, b: float, n: int, speed: float) -> float:
+    """The smallest value of ``f`` on ``[a, b]``.
+
+    ``f`` is a distance from a point that moves at most ``speed`` mm per unit
+    of the parameter, so between two samples it cannot fall below the mean of
+    the two less half the distance moved. ``f`` is sampled ``n + 1`` times; a
+    golden-section search then runs in every step whose bound is below the best
+    value so far, which leaves the minimum within about 1e-9 mm wherever it is
+    unimodal over one step (a 0.25-degree step of the arc).
+    """
     if b <= a:
         return f(a)
     ts = [a + (b - a) * i / n for i in range(n + 1)]
     fs = [f(t) for t in ts]
     best = min(fs)
+    slack = speed * (b - a) / n
     g = (math.sqrt(5) - 1) / 2
-    for i in range(n + 1):
-        if (i > 0 and fs[i] > fs[i - 1]) or (i < n and fs[i] > fs[i + 1]):
+    for i in range(n):
+        if best <= 0:
+            return 0.0
+        if (fs[i] + fs[i + 1] - slack) / 2 >= best:
             continue
-        lo, hi = ts[max(i - 1, 0)], ts[min(i + 1, n)]
+        lo, hi = ts[i], ts[i + 1]
         x1, x2 = hi - g * (hi - lo), lo + g * (hi - lo)
         f1, f2 = f(x1), f(x2)
-        for _ in range(80):
+        for _ in range(50):
             if f1 <= f2:
                 hi, x2, f2 = x2, x1, f1
                 x1 = hi - g * (hi - lo)
@@ -427,7 +436,7 @@ def _minimum(f: Callable[[float], float], a: float, b: float, n: int) -> float:
                 x2 = lo + g * (hi - lo)
                 f2 = f(x2)
         best = min(best, f1, f2)
-    return best
+    return max(best, 0.0)
 
 def _boxes(obstacle: Any) -> Optional[List[Tuple[float, ...]]]:
     """A panel-frame obstacle as boxes, or None for a CAD shape. A box is ``{"u": [..], "v": [..], "w": [..]}``."""
@@ -444,11 +453,11 @@ def _axis_distance(path: Mapping[str, Any], obstacle: Any, frame: Optional["Pane
         n = max(8, int(math.ceil(path["turn_deg"] * 4)))
         best = math.inf
         for box in boxes:
-            best = min(best, _minimum(lambda a: _box_distance(arc(a), box), 0.0, th, n))
+            best = min(best, _minimum(lambda a: _box_distance(arc(a), box), 0.0, th, n, path["centreline_radius"]))
             if path["run"] > 0:
                 end, tg = path["end"], path["tangent"]
                 best = min(best, _minimum(lambda t: _box_distance([e + t * c for e, c in zip(end, tg)], box),
-                                          0.0, path["run"], 8))
+                                          0.0, path["run"], 8, 1.0))
         return best
     if frame is None:
         raise ValueError("a CAD-shape obstacle needs the port's PanelFrame to place the cable")
@@ -482,8 +491,11 @@ def cable_bend(mate: Mapping[str, Any], obstacles: Mapping[str, Any],
     ``status``: ``pass`` when some direction clears by at least the margin,
     ``warn`` when the best one clears by less, ``fail`` when none clears.
     ``direction`` names the best direction (the largest clearance, the first
-    tried on a tie), or None on a fail; ``works`` lists every direction that
-    clears. ``assumptions`` says what the check took as given.
+    tried on a tie), or None on a fail; ``clearance_mm`` is the best
+    direction's, so on a fail it says how far the least bad one runs in.
+    ``works`` lists every direction that clears, and ``directions`` has a row
+    for each: its clearance to every obstacle, the nearest, and the ``end`` of
+    the cable checked. ``assumptions`` says what the check took as given.
     """
     spec = cable_spec(mate)
     if spec is None:

@@ -260,8 +260,7 @@ export async function buildCatalog(ctx) {
     const base = src.split('/').pop().replace(/\.svg$/, '');
     await addDemo({ id: base, title: base.replace(/-/g, ' ').replace(/^./, c => c.toUpperCase()), cover: src, mode: 'animated' }, src);
   }
-  const MODE_RANK = { interactive: 0, animated: 1, render: 2 };
-  demos.sort((a, b) => MODE_RANK[a.mode] - MODE_RANK[b.mode]);      // stable: the data file's order within a mode
+  // The strip keeps the data file's order (curated: a mix of kinds up front), then any figure found by itself.
 
   // --------------------------------------------------------------------------- commands
   const flagsOf = name => {                    // the subcommand's own options, read from cli.py
@@ -453,9 +452,9 @@ ${it.what ? `<p class="card-what">${esc(it.what)}</p>` : ''}${facts}${meta}${cal
 <div class="card-cover" data-fit="${it.cover.fit}">${img(it.cover)}</div></li>`;
   };
 
-  // The "Play with it" strip: every demo, interactive first; animated covers play while in view.
+  // The "Play with it" strip: every demo in the data file's order; animated covers play while in view.
   const play = demos.length ? `<section class="play" aria-labelledby="play-title"><div class="play-head"><h2 id="play-title">Play with it</h2>
-<p>Demos you can drive or watch, and renders from our own tools. Every picture comes from the code that does the work.</p></div>
+<p>Demos you can drive or watch, and renders from our own tools. Every picture comes from the code that does the work.</p>${demos.length > 4 ? `<a class="play-all" href="/catalog?kind=demos#demos" data-gallery-link>All ${demos.length} demos <span aria-hidden="true">→</span></a>` : ''}</div>
 <ul class="play-strip" data-n="${demos.length}">${demos.map((d, i) => `<li class="play-tile" data-tone="${esc(d.domains[0] || 'unplaced')}"><a href="${esc(site(d.url))}">
 <span class="play-cover" data-fit="${d.cover.fit}">${img(d.cover, 640, 400, i < 4 ? 'eager' : 'lazy').replace('<img ', '<img data-anim-view ')}</span>
 <span class="play-text"><span class="pill pill-mode pill-${esc(d.mode)}">${esc(MODE_LABEL[d.mode])}</span><span class="play-name">${esc(d.name)}</span><span class="play-what">${esc(d.what)}</span></span></a></li>`).join('')}</ul></section>` : '';

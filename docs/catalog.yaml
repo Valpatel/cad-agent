@@ -3,7 +3,7 @@
 # cli.py and the site's own pages (tools/site-catalog.mjs). Every picture is one of our own figures in docs/img or is
 # drawn by the build from data; the catalogue never shows an outside image (licences, and the site's CSP).
 #
-# demos: the "Play with it" strip and the Demos tab, in this order. An entry appears once every file it names exists
+# demos: the "Play with it" strip and the Demos tab, in this order (a wide screen shows the first four in the strip). An entry appears once every file it names exists
 #   on the built commit, so a demo can be listed before the PR that adds its figure merges.
 #     id      stable slug (the catalogue entry is demo-<id>)
 #     title   what people see; what: one plain line
@@ -29,6 +29,13 @@ demos:
     url: docs/compliant.md#try-it-the-snap-arm-explorer
     areas: [compliant-mechanisms]
     tools: [snapfit]
+  - id: fea-lid
+    title: FEA of a ribbed lid
+    what: A 300 N press on an enclosure lid, coloured by stress as a fraction of the material's strength.
+    mode: render
+    cover: docs/img/fea.jpg
+    url: docs/toolkit.md#stiffness-and-strength-cadagentfea
+    areas: [structural-fea]
   - id: snap-fit
     title: Cantilever snap fit
     what: The hook rides up the catch's lead-in, drops in behind it and holds when pulled back, computed from the outlines.
@@ -38,6 +45,13 @@ demos:
     still: 0.56
     areas: [compliant-mechanisms]
     tools: [snapfit]
+  - id: topology-floor
+    title: Topology-optimised floor
+    what: Topology optimisation of an enclosure floor keeps only the material that carries load.
+    mode: render
+    cover: docs/img/topology.jpg
+    url: docs/toolkit.md#topology-optimisation-cadagenttopopt
+    areas: [topology-optimisation]
   - id: hinge-sweep
     title: Hinge sweep and collision onset
     what: A gate arm swept through its range; the first pose that hits the frame is bisected to a hundredth of a degree.
@@ -46,47 +60,6 @@ demos:
     still: 0.62
     areas: [mechanisms, design-process]
     tools: [gates]
-  - id: rib-in-counterbore
-    title: Rib in a counterbore
-    what: Why every hole is cut last; a rib added after the holes refills the counterbore, and the hole check finds it.
-    mode: animated
-    cover: docs/img/motion/rib-in-counterbore.svg
-    areas: [fasteners-and-hardware, review-and-evidence]
-    tools: [holes]
-  - id: connector-window
-    title: Connector window
-    what: A panel window sized from the mated plug, with the latch swept along its mating axis.
-    mode: animated
-    cover: docs/img/motion/connector-window.svg
-    areas: [housings-and-enclosures]
-  - id: module-insertion
-    title: Module insertion
-    what: A preassembled module checked on its bench, then inserted into its parent as one body and withdrawn.
-    mode: animated
-    cover: docs/img/motion/module-insertion.svg
-    areas: [fasteners-and-hardware]
-    tools: [gates]
-  - id: search-front
-    title: Design search front
-    what: Seeded trials arrive one by one and the cost and mass front is redrawn as they join it.
-    mode: animated
-    cover: docs/img/motion/search-front.svg
-    areas: [design-exploration]
-    tools: [optimise]
-  - id: fea-lid
-    title: FEA of a ribbed lid
-    what: A 300 N press on an enclosure lid, coloured by stress as a fraction of the material's strength.
-    mode: render
-    cover: docs/img/fea.jpg
-    url: docs/toolkit.md#stiffness-and-strength-cadagentfea
-    areas: [structural-fea]
-  - id: topology-floor
-    title: Topology-optimised floor
-    what: Topology optimisation of an enclosure floor keeps only the material that carries load.
-    mode: render
-    cover: docs/img/topology.jpg
-    url: docs/toolkit.md#topology-optimisation-cadagenttopopt
-    areas: [topology-optimisation]
   - id: review-viewer
     title: 3D viewer and review site
     what: Every part in place, with explode and section, and one top bar that links every report.
@@ -95,6 +68,33 @@ demos:
     url: docs/toolkit.md#3d-viewer-cad-agent-view--the-web-kit
     areas: [publishing]
     tools: [view, site]
+  - id: search-front
+    title: Design search front
+    what: Seeded trials arrive one by one and the cost and mass front is redrawn as they join it.
+    mode: animated
+    cover: docs/img/motion/search-front.svg
+    areas: [design-exploration]
+    tools: [optimise]
+  - id: rib-in-counterbore
+    title: Rib in a counterbore
+    what: Why every hole is cut last; a rib added after the holes refills the counterbore, and the hole check finds it.
+    mode: animated
+    cover: docs/img/motion/rib-in-counterbore.svg
+    areas: [fasteners-and-hardware, review-and-evidence]
+    tools: [holes]
+  - id: module-insertion
+    title: Module insertion
+    what: A preassembled module checked on its bench, then inserted into its parent as one body and withdrawn.
+    mode: animated
+    cover: docs/img/motion/module-insertion.svg
+    areas: [fasteners-and-hardware]
+    tools: [gates]
+  - id: connector-window
+    title: Connector window
+    what: A panel window sized from the mated plug, with the latch swept along its mating axis.
+    mode: animated
+    cover: docs/img/motion/connector-window.svg
+    areas: [housings-and-enclosures]
 
 tools:
   snapfit: {page: docs/compliant.md, figures: [docs/img/compliant/example-1.svg]}

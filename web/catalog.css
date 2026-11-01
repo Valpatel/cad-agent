@@ -35,13 +35,16 @@ svg.glyph{flex:none;width:20px;height:20px;fill:none;stroke:currentColor;stroke-
 .play-head p{margin:0;color:var(--muted);font-size:14px;max-width:620px}
 .play-strip{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
 .play-strip[data-n="1"]{grid-template-columns:minmax(0,560px)}
-@media(min-width:1000px){.play-strip:not([data-n="1"]):not([data-n="2"]):not([data-n="3"]):not([data-n="4"]){grid-template-columns:repeat(4,minmax(0,1fr))}
-  .play-strip:not([data-n="1"]):not([data-n="2"]):not([data-n="3"]):not([data-n="4"]) .play-tile:first-child{grid-column:span 2;grid-row:span 2}}
+/* wide screens: one row of four; the rest are a click away (the Demos tab), and swipe on smaller screens */
+@media(min-width:1000px){.play-strip:not([data-n="1"]):not([data-n="2"]):not([data-n="3"]){grid-template-columns:repeat(4,minmax(0,1fr))}
+  .play-tile:nth-child(n+5){display:none}}
+.play-all{margin-left:auto;align-self:center;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:6px 16px;border-radius:999px;border:1px solid var(--ink);
+  background:#fff;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
+.play-all:hover{background:var(--ink);color:#fff}
 .play-tile a{position:relative;display:flex;flex-direction:column;height:100%;border-radius:22px;overflow:hidden;text-decoration:none;background:#fff;
   border:1px solid #173d3c1f;box-shadow:inset 0 1px 0 #fff,0 12px 26px #173d3c12;transition:transform .2s,box-shadow .2s}
 .play-tile a:hover{transform:translateY(-3px);box-shadow:0 18px 34px #173d3c1f}
 .play-cover{display:block;aspect-ratio:16/10;background:radial-gradient(ellipse at 30% 15%,#ffffffa8,transparent 60%),linear-gradient(150deg,var(--tint-a,#eef8fb),var(--tint-b,#cfe3ec))}
-.play-tile:first-child .play-cover{flex:1}
 .play-cover img{display:block;width:100%;height:100%;object-fit:cover}
 .play-cover[data-fit=contain] img{object-fit:contain;padding:14px 18px}
 .play-text{display:flex;flex-direction:column;gap:4px;padding:14px 16px 16px}
@@ -165,8 +168,18 @@ cad-gallery[data-filtered] .play,cad-gallery:not([data-overview]) .play{display:
   background:#fff;font-size:13px;font-weight:700;text-decoration:none}
 .see-all:hover{background:var(--ink);color:#fff}
 
-/* medium screens: the area tree and filters become a sheet */
+/* narrow cards (two or three columns on smaller screens): the copy button takes the row, maturity shows as its bar */
+.cat-card{container-type:inline-size}
+@container (max-width:270px){
+  .card-call code{display:none}
+  .card-call>.cad-copy-btn{flex:1;justify-content:center}
+  .card-meta .mat{font-size:0;gap:0}
+}
+
+/* medium screens: the area tree and filters become a sheet; the demo strip scrolls sideways */
 @media(max-width:999.98px){
+  .play-strip{grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:minmax(260px,42%);overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin;padding-bottom:6px}
+  .play-tile{scroll-snap-align:start}
   .cat-body{display:block;padding-top:14px}
   .sheet-open{display:inline-flex}
   .cat-side{display:none;position:static;max-height:none;overflow:visible;padding:0}
@@ -220,10 +233,7 @@ cad-gallery[data-filtered] .play,cad-gallery:not([data-overview]) .play{display:
   .cat-card .card-facts{margin:6px 10px 0;font-size:10px;gap:3px 8px}
   .cat-card .card-facts>span:last-child{display:none}
   .cat-card .card-meta{margin:auto 10px 0;padding-top:8px;font-size:11px}
-  .cat-card .mat{font-size:0;gap:0}
   .card-call{margin:8px 10px 0}
-  .card-call code{display:none}
-  .card-call>.cad-copy-btn{width:100%}
   .card-notes{margin:6px 10px 0}
   .card-cover[data-fit=contain] img{padding:6px}
   .see-all{width:100%;justify-content:center}

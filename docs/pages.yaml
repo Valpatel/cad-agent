@@ -76,6 +76,131 @@ docs/gates.md:
       on: fixture
       caption: What touches what in the gate bench, drawn from the connectivity gate's verdict (connectivity.dot). Fasteners are ovals, the dashed boxes are balls allowed to sit free in the hopper, and the arm is its own body on a joint (blue dashed). 31 checks pass.
       alt: A graph of the gate bench's parts linked by contacts and fasteners, grouped into the static frame and the arm's body
+    - after: from-a-dossier-build
+      below: content hash recorded at build time
+      img: docs/img/packets/clean-store-xray-iso.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "What Assembly.from_build takes from a build, as the review packet draws the gate bench's store: the parts translucent, and inside them the loose balls (one part, eight instances), the four placed screws and the registered cavity."
+      alt: "An x-ray view of the gate bench's store: translucent hopper and lid with eight orange balls and four screws inside"
+    - after: states
+      below: between two parts is an interference
+      img: docs/img/packets/clean-store-cut-cavity-hopper_cavity.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: Two states on the gate bench as built, in a vertical cut through the hopper's cavity. Every ball is contains against the cavity, and the balls resting on its floor and walls are touching the hopper (tangent contact is inside). The containment gate's 21 checks pass.
+      alt: A vertical section through the gate bench's hopper, four orange balls in two rows inside the blue walls, the lid on top
+    - after: verdicts
+      img: docs/img/packets/ball_through_wall-store-findings.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A verdict's findings drawn where they are: the review packet numbers each finding at its witness point. A seeded failure (ball_through_wall) on the gate bench gives five, from the containment gate (ball 7 outside its cavity, in the hopper's wall, resting on nothing), the assembly gate and the dossier lint."
+      alt: An x-ray view of the gate bench's store with callouts F1 to F3 pointing at one ball in the hopper's wall
+    - after: minimum-wall-cadagentreviewgateswall
+      below: exact B-rep rays
+      img: docs/img/packets/thin_wall-store-cut-cavity-hopper_cavity-plan.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A seeded failure (thin_wall) on the gate bench: the hopper's +X wall thinned from 2.4 to 0.8 mm, in a plan cut through its cavity. The wall gate's thin mesh samples, re-measured on the B-rep, read 0.800 mm against the part's 2.4 mm."
+      alt: A plan section through the gate bench's hopper with four balls inside; its right wall is much thinner than the other three
+    - after: containment-cadagentreviewgatescontainment
+      img: docs/img/packets/ball_through_wall-store-cut-cavity-hopper_cavity-plan.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A seeded failure (ball_through_wall) on the gate bench, in a plan cut through the hopper's cavity: ball 7, pushed 5 mm into the wall, fails inside (261.8 mm³, 50 %, outside the cavity, furthest point 5 mm out), wall (174 mm³ in the hopper's material) and support."
+      alt: A plan section through the gate bench's hopper, its walls a blue ring round four orange balls, and a fifth ball sitting in the top wall, half outside the cavity
+    - after: connectivity-and-floating-parts-cadagentreviewgatesconnectivity
+      below: Joints hold when measured
+      img: docs/img/packets/clean-arm-cut-joint-I-pin-arm.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A joint that holds, on the gate bench as built: a cut in the plane of the axis of the revolute joint I-pin-arm, the arm on its pin and within the declared clearance of its fixed part."
+      alt: "A section through the gate bench's arm joint: the green pin passing through the blue arm block above the base"
+    - after: connectivity-and-floating-parts-cadagentreviewgatesconnectivity
+      below: An island made only of allowed-free parts
+      img: docs/img/gates/bench-section-interfaces.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: "The interfaces the connectivity gate realises, as the gate bench's dossier declares them for its arm section: the pin and the arm a revolute interface, realised by the joint of that id; the rest contacts, realised by touching."
+      alt: The review site's interfaces table for the gate bench's arm section, six interfaces of kind contact or revolute, then its decision D2, the arm resting on a fixed stop
+    - after: fasteners-and-stacks-cadagentreviewgatesfasteners
+      img: docs/img/packets/clean-store-cut-fastener-screw_0.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "The gate bench as built, cut in the plane of screw_0's axis: the head seated on the lid and the thread in its heat-set insert, which is what the seat, stack, engagement and tip checks read along the axis. 28 checks pass."
+      alt: A section through the gate bench's hopper and lid along two screws, each head on the lid and its thread in an insert, with the balls below
+    - after: fasteners-and-stacks-cadagentreviewgatesfasteners
+      below: Install step and the parts present
+      img: docs/img/packets/clean-store-access-from-top.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "The tool's view, on the gate bench as built: looking along the four lid screws' advance from the side their hex key comes from. The tool sweep checks the key's envelope along each axis against the parts present at the lid's step."
+      alt: The gate bench's lid seen from above, four screw heads at its corners
+    - after: fasteners-and-stacks-cadagentreviewgatesfasteners
+      below: Seat, stack contact and pull-through
+      img: docs/img/packets/screw_too_long-store-cut-fastener-screw_0.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A seeded failure (screw_too_long): screw_0 made 4 mm longer. The tip check fails, 3.00 mm into the hopper, and so does length (12 mm, outside the 4.5 to 8.5 mm the stack takes); the connectivity gate warns of an undeclared contact, 21.21 mm³ shared."
+      alt: A section along two screws of the gate bench; the left screw is longer and its tip runs below the insert into the hopper's post
+    - after: motion-range-interference-cadagentreviewgatesmotion
+      below: This settles the open question
+      img: docs/img/packets/clean-arm-pose-I-pin-arm-min.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "What moves, on the gate bench as built: the arm's body at the low end of its declared range, 0 degrees, resting on its stop, a declared contact that may touch at any pose."
+      alt: The gate bench's arm lying level on its stop beside the hinge block, the frame's post and beam above it
+    - after: motion-range-interference-cadagentreviewgatesmotion
+      below: The verdict never claims a swept
+      img: docs/img/packets/clean-arm-pose-I-pin-arm-max.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: The gate bench as built at the top of its range, 40 degrees. The motion gate sampled 12 poses, found no collision and a least clearance of 1.60 mm; with the range raised to 60 degrees (the flap_hits_frame seed, above) the arm meets the frame near 45.
+      alt: The gate bench's arm raised to 40 degrees, its purple beam below the grey frame
+    - after: assembly-sequence-access-cadagentreviewgatesassembly
+      below: For a preassembled rigid module
+      img: docs/img/packets/clean-store-exploded.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "The gate bench as built, each part backed out along its assembly step's direction, later steps further and screws along their axes: the paths the insertion sweep checks. 55 checks pass."
+      alt: "An exploded view of the gate bench's store: the hopper at the bottom, a board and the balls above it, then the lid and four screws on top"
+    - after: assembly-sequence-access-cadagentreviewgatesassembly
+      below: Witnesses.
+      img: docs/img/packets/lid_before_board-store-findings.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A seeded failure (lid_before_board): the steps reordered so the lid goes on first. The assembly gate's findings at their witness points: each ball and the board meet the lid about 40.6 mm before their seats."
+      alt: An x-ray view of the gate bench's store with callouts F1.1 to F1.4 and F2 pointing at the underside of the lid, above the balls and the board
+    - after: running-the-gates-cad-agent-gates
+      below: the site.
+      img: docs/img/gates/bench-sections.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: "What the gates feed, on the gate bench's review site: each section's gates and review state, from the verdicts in exports/gates/ and the dossier lint. Four sections, all gated, none signed off."
+      alt: The review site's front page for the gate bench, with counts and a table of its four sections with their status, requirements, parts, gates and review state
+    - after: the-gate-bench-testsfixturesgate_benchbuildpy
+      below: In the lid_before_board seed
+      img: docs/img/gates/bench-part-card.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: "One part of the gate bench on its review site: the arm's card, gated with all six of its gate checks passing, and not higher because no reviewer has recorded it."
+      alt: The review site's card for the gate bench's arm part, with its status steps, function, material, interfaces, six passing gate checks and the reason it is not higher
 
 docs/dossier.md:
   hero:

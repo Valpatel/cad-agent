@@ -5,13 +5,13 @@
   "repo": "https://github.com/Valpatel/cad-agent",
   "name": "cad-agent",
   "licence": "MIT",
-  "commit": "44a41cd956a4083a9e1338e921bb2395ff2ca87a",
+  "commit": "a3f584882da725d78543abbc33df4f0cb3a4f67a",
   "version": "0.8.0",
   "inputs": {
    "src/cadagent/formulas/beams.py": "97c6b497853746bc2d1231bd658b31bf4927fe76bbadc9ea7c8f7b7717ede74f",
    "src/cadagent/mechanical/compliant/allowables.py": "be1783b9becefd2cdba0bc1cdc15571ee77db79ac18f8caf614160da20e8ea34",
-   "src/cadagent/mechanical/compliant/snapfit.py": "752e7629f84b5ac817ed1ff67b85761a6e3460db85a64281f0dc6515223dafef",
-   "src/cadagent/publish/anim/snapfit.py": "f0a2ddcc9b34231c76d3d85659eba1977d26d3185367491171e5d86251baedf4",
+   "src/cadagent/mechanical/compliant/snapfit.py": "b76a0a506be9d2d5845248593fa5f88877fcfc4fee65daa90da78d3a17cb3618",
+   "src/cadagent/publish/anim/snapfit.py": "5c8603b509d291d92b79859bf30a42ce00c63359385abe57b03c2966b9f00299",
    "tools/anim/snap-engagement.yaml": "9f668005a1e181b7ccafe2ef4d0ba121b28c4e544a08d59bda4c61b699a25754"
   }
  },

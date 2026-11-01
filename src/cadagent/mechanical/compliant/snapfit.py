@@ -222,10 +222,10 @@ def engagement(*, length: float, section: Section, undercut: float, lead_deg: fl
     them: contact (travel 0), the top of the lead, the start and end of the land (if ``land_mm`` > 0, where the push
     falls from the lead's W to the land's mu * P), and released (the same travel, deflection 0). The peak is
     :func:`check_cantilever`'s numbers for the same arm. A self-locking lead (mu * tan(lead) >= 1) gives no push force
-    on the lead and sets ``mating_self_locking``, as :func:`check_cantilever` names it. As in the guide, contact stiffness, the drop's dynamics and the hook's turn with the
-    arm's tip are not modelled. The turn steepens the face the edge rides (a 15 mm arm lifted 1.3 mm turns its tip
-    7.4 deg), so near the top of a steep lead, or on a short arm, this under-states the push to mate: check those with
-    FEA or a push test."""
+    on the lead and sets ``mating_self_locking``, as :func:`check_cantilever` names it. As in the guide, contact
+    stiffness, the drop's dynamics and the hook's turn with the arm's tip are not modelled. The turn steepens the face
+    the edge rides (a 15 mm arm lifted 1.3 mm turns its tip 7.4 deg), so near the top of a steep lead, or on a short
+    arm, this under-states the push to mate: check those with FEA or a push test."""
     _require(length > 0 and undercut > 0, "length and undercut must be positive")
     _require(0 < lead_deg < 90, "lead_deg must be between 0 and 90")
     _require(land_mm >= 0, "land_mm must be 0 or more")

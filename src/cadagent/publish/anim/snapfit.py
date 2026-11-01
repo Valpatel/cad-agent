@@ -206,8 +206,8 @@ def sheet(material: Mapping[str, Any]) -> str:
 
 def _fill(template: str, scene: Mapping[str, Any], present: Mapping[str, Any], **more: Any) -> str:
     """A ``present`` string with {placeholders} from the scene: version, commit, the arm's dimensions (length,
-    thickness, width, undercut, lead, root, laid, printed) and the filled ``arm`` line, the peak root strain, each snap's
-    short name, allowable and ratio (short_0, allow_0, ratio_0, ...) and the data sheets."""
+    thickness, width, undercut, lead, root, laid, printed) and the filled ``arm`` line, the peak root strain, each
+    snap's short name, allowable and ratio (short_0, allow_0, ratio_0, ...) and the data sheets."""
     a, src = scene["arm"], scene["source"]
     words = {"version": src.get("version") or "?", "commit": (src.get("commit") or "?")[:7],
              "length": f"{a['length_mm']:g}", "thickness": f"{a['thickness_mm']:g}", "width": f"{a['width_mm']:g}",

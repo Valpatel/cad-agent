@@ -312,6 +312,100 @@ def downward_area(
         "large_face_centers_mm": centers[large].round(3).tolist(),
     }
 
+# Slack on the overhang limit: an STL stores single-precision vertices, which tilt a 45° chamfer by up to ~0.001°.
+ANGLE_TOL_DEG = 0.01
+
+def overhang_regions(
+    mesh: Any,
+    limit_deg: float = 45.0,
+    min_area: float = 4.0,
+    bed_z: float = 0.3,
+) -> Dict[str, Any]:
+    """The downward faces of a mesh in print orientation flatter than ``limit_deg``, grouped into connected regions.
+
+    The angle is a face's slope from horizontal, the convention of PrusaSlicer's support threshold and Bambu Studio's
+    threshold angle: 0° is a flat ceiling, 90° a vertical wall. A downward face with a slope under ``limit_deg`` is
+    flagged (with the default 45°, faces that lean more than 45° from vertical); a face at the limit, such as a 45°
+    chamfer, is not (``ANGLE_TOL_DEG``, 0.01°, absorbs an STL's single-precision rounding). ``downward_area``'s
+    ``max_angle_deg`` is the other way round (the normal's angle below horizontal, 90° minus this slope); at 45° the
+    two agree.
+
+    Faces whose centre is within ``bed_z`` of the mesh's lowest point sit on the bed and are left out. Flagged faces
+    that share an edge are one region (vertices within 1e-6 mm are merged first, so an STL's unshared vertices still
+    join). Regions under ``min_area`` mm² (chamfer slivers, tessellation) are counted but not listed. Each region:
+    ``area_mm2``, ``faces``, ``bounds_mm`` (xmin, ymin, zmin, xmax, ymax, zmax), ``centre_mm`` (area-weighted),
+    ``flattest_deg`` (its flattest face: 0 is a flat ceiling) and ``mean_slope_deg`` (area-weighted), largest first.
+
+    Accepts a trimesh-like object (``vertices`` and ``faces``) or an STL path; needs numpy and scipy (and trimesh for
+    a path). A mesh with no triangles raises ``ValueError``. A screen, not a slicer: a bridge anchored on both sides prints fine and is listed too, and a region's
+    support needs depend on the slicer, material and cooling.
+    """
+    np = require("numpy", "overhang regions")
+    csgraph = require("scipy.sparse.csgraph", "overhang regions (connected faces)")
+    sparse = require("scipy.sparse", "overhang regions (connected faces)")
+    if not 0.0 < float(limit_deg) <= 90.0:
+        raise ValueError(f"limit_deg must be in (0, 90], not {limit_deg}")
+    if isinstance(mesh, (str, Path)):
+        mesh = require("trimesh", "overhang regions").load_mesh(mesh)
+    vertices = np.asarray(mesh.vertices, dtype=float).reshape(-1, 3)
+    faces = np.asarray(mesh.faces, dtype=np.int64).reshape(-1, 3)
+    out: Dict[str, Any] = {"limit_deg": float(limit_deg), "min_area_mm2": float(min_area), "bed_z_mm": float(bed_z),
+                           "angle": "slope from horizontal: 0 = flat ceiling, 90 = vertical wall",
+                           "downward_area_mm2": 0.0, "regions": [], "small_regions": 0, "small_area_mm2": 0.0}
+    if not len(faces):
+        raise ValueError("the mesh has no triangles (an empty or unreadable STL?)")
+    tri = vertices[faces]
+    cross = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
+    double_area = np.linalg.norm(cross, axis=1)
+    areas = double_area / 2.0
+    nz = np.divide(cross[:, 2], double_area, out=np.zeros(len(faces)), where=double_area > 0)
+    centres = tri.mean(axis=1)
+    bed = float(vertices[:, 2].min()) + bed_z
+    slope_all = np.degrees(np.arccos(np.clip(-nz, -1.0, 1.0)))
+    flagged = np.flatnonzero((double_area > 0) & (nz < 0) & (slope_all < limit_deg - ANGLE_TOL_DEG)
+                             & (centres[:, 2] > bed))
+    out["downward_area_mm2"] = round(float(areas[flagged].sum()), 3)
+    if not len(flagged):
+        return out
+    _, ids = np.unique(np.round(vertices, 6), axis=0, return_inverse=True)
+    ids = ids.reshape(-1)
+    f = ids[faces[flagged]]
+    edges = np.sort(np.concatenate([f[:, [0, 1]], f[:, [1, 2]], f[:, [2, 0]]]), axis=1)
+    owner = np.tile(np.arange(len(flagged)), 3)
+    order = np.lexsort((edges[:, 1], edges[:, 0]))
+    edges, owner = edges[order], owner[order]
+    same = np.all(edges[1:] == edges[:-1], axis=1)
+    a, b = owner[:-1][same], owner[1:][same]
+    n = len(flagged)
+    graph = sparse.coo_matrix((np.ones(len(a)), (a, b)), shape=(n, n))
+    k, label = csgraph.connected_components(graph, directed=False)
+    w = areas[flagged]
+    region_area = np.bincount(label, weights=w, minlength=k)
+    centre = np.stack([np.bincount(label, weights=w * centres[flagged, i], minlength=k) for i in range(3)], axis=1)
+    centre /= region_area[:, None]
+    slope = slope_all[flagged]
+    flattest = np.full(k, 90.0)
+    np.minimum.at(flattest, label, slope)
+    mean_slope = np.bincount(label, weights=w * slope, minlength=k) / region_area
+    lo = np.full((k, 3), np.inf)
+    hi = np.full((k, 3), -np.inf)
+    np.minimum.at(lo, label, tri[flagged].min(axis=1))
+    np.maximum.at(hi, label, tri[flagged].max(axis=1))
+    count = np.bincount(label, minlength=k)
+    keep = region_area >= min_area
+    out["small_regions"] = int((~keep).sum())
+    out["small_area_mm2"] = round(float(region_area[~keep].sum()), 3)
+    for j in sorted(np.flatnonzero(keep), key=lambda j: (-region_area[j], tuple(centre[j]))):
+        out["regions"].append({
+            "area_mm2": round(float(region_area[j]), 2),
+            "faces": int(count[j]),
+            "bounds_mm": [round(float(v), 2) for v in (*lo[j], *hi[j])],
+            "centre_mm": [round(float(v), 2) for v in centre[j]],
+            "flattest_deg": round(float(flattest[j]), 1),
+            "mean_slope_deg": round(float(mean_slope[j]), 1),
+        })
+    return out
+
 def within_bed(bounds: Sequence[float], bed: Sequence[float]) -> bool:
     """True when every extent fits the bed; a 2-value bed checks X and Y only."""
     if len(bounds) < len(bed):

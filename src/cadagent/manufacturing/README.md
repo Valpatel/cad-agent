@@ -30,7 +30,11 @@ flowchart TD
 |---|---|
 | `mesh3mf.py` | A minimal 3MF writer with an independent read-back check (`cad-agent export-3mf`) |
 | `slicer.py` | Real filament grams and print time from Bambu Studio's command line, run as a separate program (`cad-agent slice`) |
+| `gcode.py` | The longest bridge and overhang-perimeter extrusions in sliced G-code (PrusaSlicer, Bambu Studio, OrcaSlicer), with height and position: where a "long bridging extrusions" warning points. Pure Python, imports nothing from cad-agent |
 | `plates.py` | Every printed part at its quantity packed onto build plates (MaxRects), in one Bambu Studio project 3MF with a read-back check and a top-down picture (`cad-agent export-3mf`) |
+
+`cad-agent overhangs` (in `cli.py`) screens the part STLs with `cadagent.geometry.overhang_regions`, the
+geometry-side companion of `gcode.py` ([toolkit: overhangs and bridges](../../../docs/toolkit.md#overhangs-and-bridges-cad-agent-overhangs)).
 
 Related: [package map](../README.md) · [publish](../publish/README.md) (the print release) ·
 [toolkit: print files](../../../docs/toolkit.md#print-files) ·

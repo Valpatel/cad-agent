@@ -3,7 +3,7 @@
 <desc id="d">Python dependencies: none; npm packages: none; Vendored projects: none; Web kit files: 1 critical, 2 low; Links and catalogue: 20 low; Install advice in pages: none; Repository: 2 low</desc>
 <rect width="720" height="444" fill="#fffdf5"/>
 <text x="16" y="28" font-size="17" font-weight="600" fill="#173d3c">Open findings by area and severity</text>
-<text x="16" y="48" font-size="12" fill="#526863">tools/resource_audit.py, online checks, 2026-11-01: 25 open at low or above, 3 accepted, 10 not verified (info, not shown)</text>
+<text x="16" y="48" font-size="12" fill="#526863">tools/resource_audit.py, online checks, 2026-11-01: 25 open at low or above, 3 accepted, 9 not verified (info, not shown)</text>
 <rect x="16" y="62" width="12" height="12" rx="2" fill="#5e0000"/><text x="33" y="72" font-size="12" fill="#173d3c">critical</text>
 <rect x="108.6" y="62" width="12" height="12" rx="2" fill="#903517"/><text x="125.6" y="72" font-size="12" fill="#173d3c">high</text>
 <rect x="172.39999999999998" y="62" width="12" height="12" rx="2" fill="#c46446"/><text x="189.39999999999998" y="72" font-size="12" fill="#173d3c">medium</text>
@@ -25,7 +25,7 @@
 <rect x="258.2" y="224" width="42.4" height="22" rx="2" fill="#ef9a7f"><title>Web kit files: 2 low</title></rect>
 <text x="279.4" y="239.5" font-size="11" fill="#173d3c" text-anchor="middle">2</text>
 <text x="308.6" y="239.5" font-size="12" font-weight="600" fill="#173d3c">3</text>
-<text x="224" y="278" font-size="13" fill="#173d3c" text-anchor="end">Links and catalogue</text><text x="224" y="293" font-size="11" fill="#526863" text-anchor="end">418 links</text>
+<text x="224" y="278" font-size="13" fill="#173d3c" text-anchor="end">Links and catalogue</text><text x="224" y="293" font-size="11" fill="#526863" text-anchor="end">419 links</text>
 <rect x="236.0" y="268" width="442.0" height="22" rx="2" fill="#ef9a7f"><title>Links and catalogue: 20 low</title></rect>
 <text x="457.0" y="283.5" font-size="11" fill="#173d3c" text-anchor="middle">20</text>
 <text x="686.0" y="283.5" font-size="12" font-weight="600" fill="#173d3c">20</text>

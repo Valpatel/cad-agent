@@ -20,7 +20,7 @@
   plain-HTTP CalculiX links are fixed,
   install advice no longer tells readers to install from a plugin marketplace or run `uvx` unpinned, and a
   `curl | sh` installer is described as the risk it is. The supply-chain report's open findings fall from 1 critical,
-  15 medium, 37 low and 12 info to 1 critical, 0 medium, 24 low and 10 info, with 3 read and accepted in
+  15 medium, 37 low and 12 info to 1 critical, 0 medium, 24 low and 9 info, with 3 read and accepted in
   `research/security-accepted.yaml`. What is left: DOMPurify and KaTeX inside Mermaid (#154), repositories with no
   push for a year (#154's automatic badges), Dependabot (owner, #153), and sites that refuse scripts or did not
   answer (info).

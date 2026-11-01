@@ -2,13 +2,12 @@
  "schema": "cad-agent-supply-chain/1",
  "as_of": "2026-11-01",
  "mode": "online",
- "revision": "6b2da5f7b2c2faa3584f95c49f9369bc4d554642",
+ "revision": "88ff87ffc2531d17bb2269de0eb2d4b45ee055c6",
  "dirty": false,
  "unverified": [
-  "url:https://develop.openfoam.com/Development/openfoam",
+  "url:https://github.com/pzfreo/cadgenbench-build123d",
   "url:https://help.solidworks.com/2022/English/SolidWorks/sldworks/c_K_Factor.htm",
   "url:https://hull-repository.worktribe.com/output/4511720/interlayer-bonding-has-bulk-material-strength-in-extrusion-additive-manufacturing-new-understanding-of-anisotropy",
-  "url:https://openelab.io/products/seeed-studio-recomputer-mini-j501-heatsink",
   "url:https://www.autodesk.com/products/fusion-360/blog/fusion-compute-mcp/",
   "url:https://www.iso.org/standard/67289.html",
   "url:https://www.iso.org/standard/7748.html",
@@ -21,14 +20,14 @@
   "high": 0,
   "medium": 0,
   "low": 24,
-  "info": 10,
+  "info": 9,
   "accepted": 3,
   "items": {
    "python": 22,
    "npm": 22,
    "vendored": 6,
    "webkit": 6,
-   "links": 418,
+   "links": 419,
    "skills": 13,
    "repo": 1
   }
@@ -727,8 +726,8 @@
    "title": "fsevents runs an install script (only on darwin)",
    "evidence": "node_modules/fsevents 2.3.2: hasInstallScript, optional",
    "action": "Read the script; in CI prefer npm ci --ignore-scripts where the package works without it.",
-   "fp": "ebf02989b46d4603",
-   "accepted": "Optional, macOS-only dependency of Playwright (os: darwin), so CI and Linux machines never install it. Read on 2026-11-01 (#151): the registry's manifest for 2.3.2 lists install \"node-gyp rebuild\" (gypfile), but the tarball the lockfile pins (its sha512 matches) has no binding.gyp and its package.json has no install script; it ships a prebuilt fsevents.node, so npm runs nothing at install. Re-read it when Playwright moves to another fsevents. (2026-11-01)"
+   "fp": "0cf2576d5c5533dc",
+   "accepted": "Optional, macOS-only dependency of Playwright (os: darwin), so CI and Linux machines never install it. Read on 2026-11-01 (#151): the registry's manifest for 2.3.2 lists install \"node-gyp rebuild\" (gypfile), but the tarball the lockfile pins (its sha512 matches) has no binding.gyp and its package.json has no install script; it ships a prebuilt fsevents.node, so npm runs nothing at install. The fingerprint is 2.3.2's: when Playwright moves to another fsevents, the finding comes back to be read again. (2026-11-01)"
   },
   {
    "severity": "medium",
@@ -969,15 +968,6 @@
   {
    "severity": "info",
    "check": "link-unverified",
-   "subject": "url:https://develop.openfoam.com/Development/openfoam",
-   "title": "develop.openfoam.com did not answer",
-   "evidence": "The read operation timed out (upstreams/registry.yaml)",
-   "action": "Check by hand; run again later.",
-   "fp": "67e6fa623e1087fd"
-  },
-  {
-   "severity": "info",
-   "check": "link-unverified",
    "subject": "url:https://help.solidworks.com/2022/English/SolidWorks/sldworks/c_K_Factor.htm",
    "title": "help.solidworks.com answered HTTP 403",
    "evidence": "research/process-profiles.md:729",
@@ -992,15 +982,6 @@
    "evidence": "research/compliant-mechanisms.md:292",
    "action": "Many sites refuse scripts; check by hand.",
    "fp": "5db1b666cc684617"
-  },
-  {
-   "severity": "info",
-   "check": "link-unverified",
-   "subject": "url:https://openelab.io/products/seeed-studio-recomputer-mini-j501-heatsink",
-   "title": "openelab.io answered HTTP 429",
-   "evidence": "research/simulation-tools.md:198",
-   "action": "Many sites refuse scripts; check by hand.",
-   "fp": "17dc89bae628ffaa"
   },
   {
    "severity": "info",
@@ -1055,6 +1036,15 @@
    "evidence": "research/process-profiles.md:670",
    "action": "Many sites refuse scripts; check by hand.",
    "fp": "36f364620c5c5627"
+  },
+  {
+   "severity": "info",
+   "check": "repo-unverified",
+   "subject": "url:https://github.com/pzfreo/cadgenbench-build123d",
+   "title": "pzfreo/cadgenbench-build123d could not be checked",
+   "evidence": "Get \"https://api.github.com/repos/pzfreo/cadgenbench-build123d\": dial tcp 20.29.134.17:443: i/o timeout",
+   "action": "Run again later.",
+   "fp": "f7af9087697e9418"
   }
  ],
  "inventory": {
@@ -1066,16 +1056,15 @@
      "cad"
     ],
     "range": {
-     "cad": ">=2.4"
+     "cad": ">=2.8"
     },
-    "floor": ">=2.4",
+    "floor": ">=2.8",
     "latest": "2.8.0",
     "last_release": "2026-06-21",
     "licence": "Apache Public License 2.0",
-    "floor_release": "2.4.0",
+    "floor_release": "2.8.0",
     "advisories": {
-     "latest": [],
-     "floor": []
+     "latest": []
     },
     "dependencies": 43
    },
@@ -2795,7 +2784,11 @@
     "status": [
      "adopted"
     ],
-    "http": null
+    "http": [
+     302,
+     200
+    ],
+    "final": "https://develop.openfoam.com/users/sign_in"
    },
    {
     "id": "url:https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes",
@@ -3120,7 +3113,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:190"
+     "README.md:193"
     ],
     "licence": null,
     "status": null,
@@ -3277,7 +3270,7 @@
     ],
     "where": [
      "research/landscape.json libraries",
-     "README.md:182",
+     "README.md:185",
      "research/landscape.md:53"
     ],
     "licence": [
@@ -3302,7 +3295,7 @@
     "names": [],
     "where": [
      "docs/fans.md:97",
-     "docs/formulas.md:65",
+     "docs/formulas.md:70",
      "research/simulation-tools.md:121"
     ],
     "licence": null,
@@ -3321,7 +3314,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "docs/formulas.md:65",
+     "docs/formulas.md:70",
      "research/simulation-tools.md:121"
     ],
     "licence": null,
@@ -3594,7 +3587,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "docs/formulas.md:74",
+     "docs/formulas.md:79",
      "docs/linkages.md:86"
     ],
     "licence": null,
@@ -4554,7 +4547,7 @@
     "names": [],
     "where": [
      "README.md:21",
-     "README.md:157",
+     "README.md:160",
      "THIRD_PARTY_NOTICES.md:40",
      "docs/animated-figures.md:13",
      "docs/vision.md:9"
@@ -4603,7 +4596,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:191"
+     "README.md:194"
     ],
     "licence": null,
     "status": null,
@@ -4669,7 +4662,7 @@
     ],
     "where": [
      "upstreams/registry.yaml",
-     "README.md:186",
+     "README.md:189",
      "research/compliant-mechanisms.md:260",
      "research/simulation-tools.md:32"
     ],
@@ -4815,7 +4808,7 @@
     "where": [
      "upstreams/registry.yaml",
      "research/landscape.json projects",
-     "README.md:176",
+     "README.md:179",
      "THIRD_PARTY_NOTICES.md:25",
      "research/landscape.md:46"
     ],
@@ -4978,7 +4971,7 @@
     ],
     "where": [
      "upstreams/registry.yaml",
-     "README.md:188",
+     "README.md:191",
      "research/simulation-tools.md:140"
     ],
     "licence": [
@@ -5195,7 +5188,7 @@
     "where": [
      "upstreams/registry.yaml",
      "research/landscape.json projects",
-     "README.md:175",
+     "README.md:178",
      "THIRD_PARTY_NOTICES.md:24",
      "research/agent-toolkits-2026-10.md:16",
      "…"
@@ -5353,7 +5346,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:184"
+     "README.md:187"
     ],
     "licence": null,
     "status": null,
@@ -5512,7 +5505,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:187"
+     "README.md:190"
     ],
     "licence": null,
     "status": null,
@@ -5575,7 +5568,7 @@
     ],
     "where": [
      "research/landscape.json libraries",
-     "README.md:180",
+     "README.md:183",
      "THIRD_PARTY_NOTICES.md:29",
      "research/landscape.md:54"
     ],
@@ -5601,7 +5594,7 @@
     ],
     "where": [
      "research/landscape.json libraries",
-     "README.md:183",
+     "README.md:186",
      "research/agent-toolkits-2026-10.md:17",
      "research/landscape.md:52"
     ],
@@ -5670,7 +5663,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "docs/formulas.md:70"
+     "docs/formulas.md:75"
     ],
     "licence": null,
     "status": null,
@@ -5735,7 +5728,7 @@
     "where": [
      "upstreams/registry.yaml",
      "research/landscape.json projects",
-     "README.md:179",
+     "README.md:182",
      "THIRD_PARTY_NOTICES.md:28",
      "research/agent-toolkits-2026-10.md:18",
      "…"
@@ -5824,7 +5817,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:185",
+     "README.md:188",
      "research/simulation-tools.md:40"
     ],
     "licence": null,
@@ -5861,7 +5854,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:190"
+     "README.md:193"
     ],
     "licence": null,
     "status": null,
@@ -5979,7 +5972,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:189"
+     "README.md:192"
     ],
     "licence": null,
     "status": null,
@@ -6051,7 +6044,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:184"
+     "README.md:187"
     ],
     "licence": null,
     "status": null,
@@ -6141,7 +6134,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:189"
+     "README.md:192"
     ],
     "licence": null,
     "status": null,
@@ -6160,7 +6153,7 @@
     "names": [],
     "where": [
      "README.md:51",
-     "README.md:158"
+     "README.md:161"
     ],
     "licence": null,
     "status": null,
@@ -6179,7 +6172,7 @@
     "names": [],
     "where": [
      "README.md:52",
-     "README.md:159"
+     "README.md:162"
     ],
     "licence": null,
     "status": null,
@@ -6365,7 +6358,7 @@
     "where": [
      "upstreams/registry.yaml",
      "research/landscape.json projects",
-     "README.md:177",
+     "README.md:180",
      "THIRD_PARTY_NOTICES.md:26",
      "research/landscape.md:43"
     ],
@@ -6411,7 +6404,7 @@
     ],
     "where": [
      "upstreams/registry.yaml",
-     "README.md:188",
+     "README.md:191",
      "research/simulation-tools.md:55"
     ],
     "licence": [
@@ -6579,7 +6572,7 @@
     ],
     "where": [
      "upstreams/registry.yaml",
-     "README.md:186",
+     "README.md:189",
      "research/simulation-tools.md:129"
     ],
     "licence": [
@@ -6625,7 +6618,7 @@
     "where": [
      "upstreams/registry.yaml",
      "research/landscape.json projects",
-     "README.md:178",
+     "README.md:181",
      "THIRD_PARTY_NOTICES.md:27",
      "research/agent-toolkits-2026-10.md:20",
      "…"
@@ -6656,11 +6649,11 @@
     "licence": null,
     "status": null,
     "github": {
-     "state": "ok",
-     "full_name": "pzfreo/cadgenbench-build123d",
-     "archived": false,
-     "licence": "Apache-2.0",
-     "pushed": "2026-10-21"
+     "state": "unverified",
+     "full_name": null,
+     "archived": null,
+     "licence": null,
+     "pushed": null
     }
    },
    {
@@ -7174,6 +7167,36 @@
     "final": null
    },
    {
+    "id": "url:https://gitlab.com/openfoam/core/openfoam/-/wikis/precompiled/docker",
+    "url": "https://gitlab.com/openfoam/core/openfoam/-/wikis/precompiled/docker",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:77"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://gitlab.com/openfoam/packaging/containers",
+    "url": "https://gitlab.com/openfoam/packaging/containers",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:77"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
     "id": "url:https://gitlab.com/openlb/release/-/blob/master/LICENSE",
     "url": "https://gitlab.com/openlb/release/-/blob/master/LICENSE",
     "kind": "docs",
@@ -7209,7 +7232,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:185"
+     "README.md:188"
     ],
     "licence": null,
     "status": null,
@@ -7586,7 +7609,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:183"
+     "README.md:186"
     ],
     "licence": null,
     "status": null,
@@ -7606,7 +7629,7 @@
     "licence": null,
     "status": null,
     "http": [
-     429
+     200
     ],
     "final": null
    },
@@ -7835,7 +7858,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "docs/formulas.md:76"
+     "docs/formulas.md:81"
     ],
     "licence": null,
     "status": null,
@@ -7896,7 +7919,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:191"
+     "README.md:194"
     ],
     "licence": null,
     "status": null,
@@ -8170,7 +8193,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:187"
+     "README.md:190"
     ],
     "licence": null,
     "status": null,
@@ -8436,7 +8459,7 @@
      302,
      200
     ],
-    "final": "https://link.springer.com/chapter/10.1007/978-3-030-90700-6_31?error=cookies_not_supported&code=6b909214-aad3-463f-a151-0e779eb10a39"
+    "final": "https://link.springer.com/chapter/10.1007/978-3-030-90700-6_31?error=cookies_not_supported&code=c1c49312-5dc7-40e6-bdb3-1e790fb13640"
    },
    {
     "id": "url:https://www.doi.org/10.1007/BF02120338",
@@ -8458,7 +8481,7 @@
      302,
      200
     ],
-    "final": "https://link.springer.com/article/10.1007/BF02120338?error=cookies_not_supported&code=7def34f4-b607-460c-903e-50203ce57bbc"
+    "final": "https://link.springer.com/article/10.1007/BF02120338?error=cookies_not_supported&code=30b0c18e-a2b7-4914-92b0-1e7a878adfd3"
    },
    {
     "id": "url:https://www.elegoo.com/blogs/3d-printer-user-guide/mastering-hollowing-and-adding-holes-in-elegoo-satellite",
@@ -8803,7 +8826,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:192"
+     "README.md:195"
     ],
     "licence": null,
     "status": null,
@@ -8818,7 +8841,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:193"
+     "README.md:196"
     ],
     "licence": null,
     "status": null,
@@ -8980,22 +9003,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:187"
-    ],
-    "licence": null,
-    "status": null,
-    "http": [
-     200
-    ],
-    "final": null
-   },
-   {
-    "id": "url:https://www.openfoam.com/download/openfoam-installation-on-mac-using-docker",
-    "url": "https://www.openfoam.com/download/openfoam-installation-on-mac-using-docker",
-    "kind": "docs",
-    "names": [],
-    "where": [
-     "research/simulation-tools.md:77"
+     "README.md:190"
     ],
     "licence": null,
     "status": null,
@@ -9391,7 +9399,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "docs/formulas.md:72"
+     "docs/formulas.md:77"
     ],
     "licence": null,
     "status": null,
@@ -9620,7 +9628,7 @@
     "kind": "agent",
     "source": "this repository",
     "file": "agents/cad-pr-reviewer.md",
-    "version": "6b2da5f7b2c2"
+    "version": "88ff87ffc253"
    },
    {
     "id": "agent:cad-resume",
@@ -9628,7 +9636,7 @@
     "kind": "agent",
     "source": "this repository",
     "file": "agents/cad-resume.md",
-    "version": "6b2da5f7b2c2"
+    "version": "88ff87ffc253"
    },
    {
     "id": "skill:cad-motion-validation",
@@ -9636,7 +9644,7 @@
     "kind": "skill",
     "source": "this repository",
     "file": "skills/cad-motion-validation/SKILL.md",
-    "version": "6b2da5f7b2c2"
+    "version": "88ff87ffc253"
    },
    {
     "id": "skill:cad-pr-review",
@@ -9644,7 +9652,7 @@
     "kind": "skill",
     "source": "this repository",
     "file": "skills/cad-pr-review/SKILL.md",
-    "version": "6b2da5f7b2c2"
+    "version": "88ff87ffc253"
    },
    {
     "id": "skill:cad-remote-runs",
@@ -9652,7 +9660,7 @@
     "kind": "skill",
     "source": "this repository",
     "file": "skills/cad-remote-runs/SKILL.md",
-    "version": "6b2da5f7b2c2"
+    "version": "88ff87ffc253"
    },
    {
     "id": "skill:cad-supply-chain",
@@ -9660,7 +9668,7 @@
     "kind": "skill",
     "source": "this repository",
     "file": "skills/cad-supply-chain/SKILL.md",
-    "version": "6b2da5f7b2c2"
+    "version": "88ff87ffc253"
    },
    {
     "id": "skill:cad-work-tracking",
@@ -9668,7 +9676,7 @@
     "kind": "skill",
     "source": "this repository",
     "file": "skills/cad-work-tracking/SKILL.md",
-    "version": "6b2da5f7b2c2"
+    "version": "88ff87ffc253"
    },
    {
     "id": "skill:design-process",
@@ -9676,7 +9684,7 @@
     "kind": "skill",
     "source": "this repository",
     "file": "skills/design-process/SKILL.md",
-    "version": "6b2da5f7b2c2"
+    "version": "88ff87ffc253"
    },
    {
     "id": "skill:mcmaster-parts",
@@ -9684,7 +9692,7 @@
     "kind": "skill",
     "source": "this repository",
     "file": "skills/mcmaster-parts/SKILL.md",
-    "version": "6b2da5f7b2c2"
+    "version": "88ff87ffc253"
    },
    {
     "id": "vendored-skills:build123d-mcp",

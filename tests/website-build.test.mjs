@@ -1,5 +1,6 @@
 // Build cad-agent.valpatel.com into a temporary folder from HEAD and check what would be published.
 import test from 'node:test';
+import YAML from 'yaml';
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
@@ -316,6 +317,46 @@ test('the pages without a picture, diagram or demo are exactly the known backlog
   const gained = PAGES_WITHOUT_VISUALS.filter(p => !without.includes(p)), lacking = without.filter(p => !PAGES_WITHOUT_VISUALS.includes(p));
   assert.deepEqual(lacking, [], `add a diagram, render or demo to: ${lacking.join(', ')}`);
   assert.deepEqual(gained, [], `these now have something to look at; remove them from PAGES_WITHOUT_VISUALS: ${gained.join(', ')}`);
+});
+
+test('docs/pages.yaml places real outputs on the site page only; the Markdown twin stays as written', async () => {
+  const spec = YAML.parse(git('show', 'HEAD:docs/pages.yaml'));
+  assert.ok(Object.keys(spec).length, 'docs/pages.yaml places something');
+  for (const [file, page] of Object.entries(spec)) {
+    const html = await readFile(path.join(out, file.replace(/\.md$/, '.html')), 'utf8');
+    const twin = await readFile(path.join(out, file), 'utf8');
+    for (const v of [...(page.hero ? [page.hero] : []), ...(page.band || []), ...(page.figures || [])]) {
+      assert.ok(html.includes(`<img src="/${v.img}" width=`), `${file}: ${v.img} on the page, sized`);
+      // the caption, after what the picture is: a real output of its tool, or a diagram and the script that drew it
+      const caption = v.caption.replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+      const what = v.shows === 'output' ? `<b class="shows-output">Real output</b> of <code>${v.tool}</code>, on `
+        : `<b class="shows-diagram">Diagram</b> of <code>${v.tool}</code>, drawn by <code>${v.drawn_by}</code>, on `;
+      assert.match(html, new RegExp(`${what.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}[^<]*(?:<a [^>]*>[^<]*</a>[^<]*)?\\.</span> ${caption.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}`), `${file}: ${v.img} says what it is, then its caption`);
+      assert.ok(!twin.includes(v.caption), `${file}: the twin does not gain the caption`);
+    }
+    assert.doesNotMatch(twin, /page-band|page-figure|section-cards/);
+  }
+});
+
+test('a catalogue demo opens at the section that shows it, not at a copy under the page title', async () => {
+  // Section cards and band tiles repeat a section's picture under the title; a demo that found its figure there
+  // opened the top of the page (#217 review: Connector window, on /docs/common-issues).
+  const ORIGIN = 'https://cad-agent.valpatel.com';
+  const catalog = JSON.parse(await readFile(path.join(out, 'catalog.json'), 'utf8'));
+  // A demo pinned with url: in docs/catalog.yaml links where it says; the others link where their figure is shown.
+  const pinned = new Set((YAML.parse(git('show', 'HEAD:docs/catalog.yaml')).demos || []).filter(d => d.url).map(d => d.title));
+  const demos = catalog.items.filter(i => i.type === 'demo' && !pinned.has(i.name) && i.url.startsWith(ORIGIN + '/') && i.url.includes('#'));
+  assert.ok(demos.length >= 3, 'demos found by their figure');
+  for (const d of demos) {
+    const [route, id] = d.url.slice(ORIGIN.length).split('#');
+    const page = (await readFile(path.join(out, resolve(route)), 'utf8'))
+      .replace(/<nav class="section-cards"[^>]*>[\s\S]*?<\/nav>|<ul class="band-tiles">[\s\S]*?<\/ul>/g, '');
+    const at = page.search(new RegExp(`<h[1-6] id="${id}"`));
+    assert.ok(at >= 0, `${d.name}: ${d.url} has no heading ${id}`);
+    const section = page.slice(at).split(/<h[1-6] id="/)[1];
+    assert.match(section, /<img\b|<cad-(?!copy|nav)[a-z]/, `${d.name}: the section at ${d.url} shows no picture or demo of its own`);
+  }
+  assert.match(catalog.items.find(i => i.name === 'Connector window').url, /\/docs\/common-issues#bought-parts-sources-and-assumptions$/);
 });
 
 test('a moved page leaves a stub on GitHub and a 301 on the site', async () => {

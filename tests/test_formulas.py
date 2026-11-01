@@ -167,10 +167,13 @@ def _saint_venant_rect(w, t, terms=200):
     return w * t ** 3 / 3 * (1 - 192 * t / (math.pi ** 5 * w) * s)
 
 
-@pytest.mark.parametrize("aspect", [1, 1.5, 2, 3, 4, 6, 10, 50])
-def test_rectangular_torsion_constant_against_the_series(aspect):
+@pytest.mark.parametrize("aspect,rel", [(1, 0.002), (1.145, 0.005), (1.5, 0.002), (2, 0.002), (3, 0.002), (4, 0.002),
+                                        (6, 0.002), (10, 0.002), (50, 0.002)])
+def test_rectangular_torsion_constant_against_the_series(aspect, rel):
+    # Roark's polynomial is furthest from the series at aspect 1.145, 0.49 % low (scanned from 1 to 50); the limits
+    # say "within 0.5 %".
     w, t = aspect * 2 * MM, 2 * MM
-    assert fx.torsion_constant_rect(w, t) == pytest.approx(_saint_venant_rect(w, t), rel=0.002)
+    assert fx.torsion_constant_rect(w, t) == pytest.approx(_saint_venant_rect(w, t), rel=rel)
     assert fx.torsion_constant_rect(t, w) == fx.torsion_constant_rect(w, t)          # either order
 
 

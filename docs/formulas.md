@@ -65,7 +65,7 @@ SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A 
 | `snap_deflection_force` | P = (b h² / 6) Es ε / L | Covestro guide, Table 1 (via `snapfit`) | secant modulus at that strain |
 | `snap_arm` | strain, force, stiffness, pass/fail, permissible deflection | Covestro guide, Table 1 (via `snapfit`) | a pass has no extra margin |
 | `shear_modulus` | G = E / 2(1 + ν) | Roark 8th ed., Section 2.2 | isotropic only |
-| `torsion_constant_round`, `torsion_constant_rect` | K for solid, hollow and rectangular bars | Roark 8th ed., Table 10.1, cases 1, 2, 4 | Saint-Venant torsion |
+| `torsion_constant_round`, `torsion_constant_rect` | K for solid, hollow and rectangular bars | Roark 8th ed., Table 10.1 (solid and hollow concentric circular, solid rectangular sections) | Saint-Venant torsion; the rectangle within 0.5 % |
 | `torsion_shear_stress_round`, `torsion_shear_stress_rect` | peak shear stress | Roark 8th ed., Table 10.1 | away from ends and steps |
 | `torsion_bar_twist`, `torsion_bar_stiffness` | θ = T L / K G, T / θ = K G / L | Roark 8th ed., Section 10.1 | constant section |
 | `spring_index`, `spring_rate` | C = D / d, k = G d⁴ / 8 D³ Na | Shigley 10th ed., Sections 10-1, 10-3, Eqs. (10-1), (10-9) | 4 ≤ C ≤ 12; 15–85 % of travel |
@@ -124,8 +124,8 @@ in the test:
   - The tapered-arm curves by numerical integration, and the Covestro Table 1 factors as the exact integrals rounded.
   - Example I of the guide in SI units, and agreement with `cad-agent snapfit` to 1e-12.
 - **Torsion.**
-  - Rectangular sections against the Saint-Venant series, and against the tabulated coefficients in Shigley,
-    Section 3-12.
+  - Rectangular sections against the Saint-Venant series (within 0.5 %, the worst at aspect 1.145), and against the
+    tabulated coefficients in Shigley, Section 3-12.
   - The guide's torsion snap as the same mechanics.
 - **Springs.**
   - The rate derived from the wire as a torsion bar.
@@ -134,7 +134,10 @@ in the test:
   - The ISO stress areas against their tabulated values.
   - K ≈ 0.2 from Eq. (8-26) at a friction of 0.15.
   - The 0.75 and 0.875 shear-area factors derived from the ISO 68-1 profile.
-- **Linkages.** Loop closure, and an independent circle-intersection construction, at every input angle.
+- **Linkages.**
+  - Loop closure, and an independent circle-intersection construction, at every input angle.
+  - Kites (a = b, c = d) and near-kites, every 0.1 degree, where the textbook root divides 0 by 0.
+  - Norton's Example 4-1.
 - **Heat and air.**
   - The composite wall face by face.
   - The fan point against the quadratic root and against `cadagent.heatsink.operating_point`.

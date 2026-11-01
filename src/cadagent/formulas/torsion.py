@@ -27,7 +27,7 @@ def shear_modulus(modulus: float, poisson: float) -> float:
 
 @formula(units={"outer_radius": "m", "inner_radius": "m (0 for a solid bar)"}, returns="torsion constant K, m^4",
          limits=(_SV, "circular or concentric hollow circular section (K equals the polar moment J)"),
-         source=cite("roark", "Table 10.1, cases 1 and 2 (solid and hollow circular sections)"))
+         source=cite("roark", "Table 10.1, the solid circular and the hollow concentric circular sections"))
 def torsion_constant_round(outer_radius: float, inner_radius: float = 0.0) -> float:
     """Torsion constant of a solid or hollow round bar: K = J = pi (ro^4 - ri^4) / 2."""
     if not 0.0 <= inner_radius < outer_radius:
@@ -36,8 +36,9 @@ def torsion_constant_round(outer_radius: float, inner_radius: float = 0.0) -> fl
 
 
 @formula(units={"width": "m", "thickness": "m"}, returns="torsion constant K, m^4",
-         limits=(_SV, "solid rectangle; within a few tenths of a percent of the exact series (tested)"),
-         source=cite("roark", "Table 10.1, case 4 (solid rectangular section; a and b are half the sides)"))
+         limits=(_SV, "solid rectangle; within 0.5 % of the exact series at any aspect ratio (worst 0.49 % low, at "
+                       "1.145; tested)"),
+         source=cite("roark", "Table 10.1, the solid rectangular section (a and b are half the sides)"))
 def torsion_constant_rect(width: float, thickness: float) -> float:
     """Torsion constant of a solid rectangle: K = a b^3 [16/3 - 3.36 (b/a)(1 - b^4 / 12 a^4)], a and b half the long
     and short sides."""
@@ -48,7 +49,7 @@ def torsion_constant_rect(width: float, thickness: float) -> float:
 @formula(units={"torque": "N m", "width": "m", "thickness": "m"},
          returns="peak shear stress, Pa (at the middle of the long sides)",
          limits=(_SV, "solid rectangle"),
-         source=cite("roark", "Table 10.1, case 4 (solid rectangular section)"))
+         source=cite("roark", "Table 10.1, the solid rectangular section"))
 def torsion_shear_stress_rect(torque: float, width: float, thickness: float) -> float:
     """Peak shear stress in a twisted solid rectangle: 3T / (8 a b^2) times Roark's polynomial in b/a."""
     a, b = max(width, thickness) / 2.0, min(width, thickness) / 2.0
@@ -58,7 +59,8 @@ def torsion_shear_stress_rect(torque: float, width: float, thickness: float) -> 
 
 @formula(units={"torque": "N m", "outer_radius": "m", "inner_radius": "m (0 for a solid bar)"},
          returns="peak shear stress, Pa (at the outer surface)", limits=(_SV, "circular or hollow circular section"),
-         source=cite("roark", "Table 10.1, cases 1 and 2 (tau = T r / J)"))
+         source=cite("roark", "Table 10.1, the solid circular and the hollow concentric circular sections "
+                     "(tau = T r / J)"))
 def torsion_shear_stress_round(torque: float, outer_radius: float, inner_radius: float = 0.0) -> float:
     """Peak shear stress in a twisted round bar: tau = T ro / J."""
     return torque * outer_radius / torsion_constant_round(outer_radius, inner_radius)

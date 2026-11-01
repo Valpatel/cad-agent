@@ -84,7 +84,8 @@ springs, hinges) lies in the build plate's plane, and bending across the layers 
 
 | Rule | Value | Applies when | Source |
 |---|---|---|---|
-| Expected tolerance | ±0.5 %, floor ±0.5 mm | Desktop FDM | [Protolabs Network][hubs-3dp-dimensional-accuracy]; [Xometry Europe][xometry-eu-fdm-design-tips] |
+| Expected tolerance | ±0.5 %, floor ±0.5 mm | Desktop (prototyping) FDM | [Protolabs Network][hubs-3dp-dimensional-accuracy] |
+| General tolerance | ±0.5 % (±0.5 mm), as printed; the YAML reads the ±0.5 mm as a floor, which the page does not state | Xometry Europe's standard and industrial machines (up to 900 × 600 × 900 mm) | [Xometry Europe][xometry-eu-fdm-design-tips] |
 | Expected tolerance | ±0.15 %, floor ±0.2 mm | Industrial FDM | [Protolabs Network][hubs-3dp-dimensional-accuracy] |
 | Tolerance the service holds | ±0.127 mm (±0.005 in) | Xometry's industrial FDM; no size dependence stated | Joel Schadegg and Aaron Lichtig, [Xometry][xometry-fdm-mini-guide] |
 | Clearance between mating parts (snap fits) | 0.5 mm | Protolabs Network FDM | [Protolabs Network][hubs-snapfit-3dp] |
@@ -111,8 +112,10 @@ springs, hinges) lies in the build plate's plane, and bending across the layers 
   carries load. They measure different things: printable, accepted, and strong. Design walls as whole perimeters.
 - **Overhang: 45° to 75°.** 45° is the conservative service rule. Prusa says 45–60° on a 0.4 mm nozzle and up to 75°
   with 360° cooling. The machine decides; the profile should carry the printer.
-- **Tolerance: ±0.127 mm to ±0.5 mm.** Xometry's US guide claims ±0.005 in flat; Protolabs Network and Xometry Europe
-  give ±0.5 % with a ±0.5 mm floor for desktop machines. At 50 mm that is a factor of four [derived].
+- **Tolerance: ±0.127 mm to ±0.5 mm.** Xometry's US guide claims ±0.005 in flat. Protolabs Network gives ±0.5 % with
+  a ±0.5 mm lower limit for desktop machines. Xometry Europe's table prints "±0.5 % (±0.5 mm)" for its standard and
+  industrial machines without saying which governs; the YAML reads it as the same floor, which is our reading, not
+  their text. At 50 mm the ±0.5 mm floor against Xometry's US figure is a factor of four [derived].
 - **Clearance: 0.2 to 0.5 mm.** Sliding fit 0.2–0.3 mm (Xometry Europe), moving parts from 0.3 mm (Prusa), snap fits
   0.5 mm (Protolabs Network). Xometry Europe's page also gives "0.5 mm clearance for an interference fit", which reads
   as a slip (a clearance cannot make an interference fit); the YAML does not use it.

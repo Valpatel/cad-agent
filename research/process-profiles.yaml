@@ -1383,8 +1383,12 @@ rules:
     quantity: general tolerance (±) on a dimension L
     value: "max(0.005*L, 0.5)"
     units: mm
-    applies: Xometry Europe's FDM service, ±0.5 % (±0.5 mm)
+    applies: >-
+      Xometry Europe's FDM service, standard and industrial machines (up to 900 × 600 × 900 mm); the specification
+      table prints ±0.5 % (±0.5 mm), read here as 0.5 % with a 0.5 mm floor. The page states no floor and no
+      "whichever is greater"; the floor is this file's reading
     source: xometry-eu-fdm-design-tips
+    as_printed: ±0.5% (±0.5 mm)
     status: read
     verified: 2026-10-31
   - id: fdm-tolerance-xometry-us

@@ -1,5 +1,6 @@
 // Build cad-agent.valpatel.com into a temporary folder from HEAD and check what would be published.
 import test from 'node:test';
+import YAML from 'yaml';
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
@@ -272,6 +273,21 @@ test('the pages without a picture, diagram or demo are exactly the known backlog
   const gained = PAGES_WITHOUT_VISUALS.filter(p => !without.includes(p)), lacking = without.filter(p => !PAGES_WITHOUT_VISUALS.includes(p));
   assert.deepEqual(lacking, [], `add a diagram, render or demo to: ${lacking.join(', ')}`);
   assert.deepEqual(gained, [], `these now have something to look at; remove them from PAGES_WITHOUT_VISUALS: ${gained.join(', ')}`);
+});
+
+test('docs/pages.yaml places real outputs on the site page only; the Markdown twin stays as written', async () => {
+  const spec = YAML.parse(git('show', 'HEAD:docs/pages.yaml'));
+  assert.ok(Object.keys(spec).length, 'docs/pages.yaml places something');
+  for (const [file, page] of Object.entries(spec)) {
+    const html = await readFile(path.join(out, file.replace(/\.md$/, '.html')), 'utf8');
+    const twin = await readFile(path.join(out, file), 'utf8');
+    for (const v of [...(page.band || []), ...(page.figures || [])]) {
+      assert.ok(html.includes(`<img src="/${v.img}" width=`), `${file}: ${v.img} on the page, sized`);
+      assert.ok(html.includes(v.caption.replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;')), `${file}: its caption`);
+      assert.ok(!twin.includes(v.caption), `${file}: the twin does not gain the caption`);
+    }
+    assert.doesNotMatch(twin, /page-band|page-figure/);
+  }
 });
 
 test('a moved page leaves a stub on GitHub and a 301 on the site', async () => {

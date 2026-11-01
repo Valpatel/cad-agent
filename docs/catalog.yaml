@@ -17,10 +17,13 @@
 #   An animated SVG in docs/img that a page shows and that is not listed here joins the strip by itself, titled from
 #   its file name and described by the first sentence of its alt text.
 #
-# tools: `cad-agent <command>` → page (where it is documented; default docs/toolkit.md#commands) and figures (the
-#   pictures of the check it runs; the first one that exists and is not already a cover is its cover), or chart
-#   (file.json#key: the tool's own result, written by a generator with --check, drawn at card size). A command
-#   without either gets a cover drawn from its call and real flags.
+# tools: `cad-agent <command>` → page (where it is documented; default docs/toolkit.md#commands) and figures (what the
+#   tool produced on a real project, else a picture of the check it runs; the first one that exists and is not
+#   already a cover is its cover), or chart (file.json#key: the tool's own result, written by a generator with
+#   --check, drawn at card size). A command without either gets a cover drawn from its call and real flags: that is
+#   for tools whose output is not a picture (files, numbers, a pass or fail).
+#   docs/img/tools/: tools/tool_figures.py runs the tools on this repo's test projects (the gate bench, the
+#   two-wheel example) and writes them; its docstring says how each is made and which ones --check compares.
 #
 # Every figure is a cover once: the demos take theirs first, then the tools, then our pages (the main guides first);
 # a page whose figures are all taken gets a cover drawn from its outline.
@@ -105,9 +108,16 @@ demos:
     areas: [housings-and-enclosures]
 
 tools:
+  # Gyropup's leg (github.com/Valpatel/gyropup, commit adc53d0): its build step, cad/build_leg.py, renders each
+  # assembly with cadagent.render.Renderer when `cad-agent build` runs it (exports/leg/leg-stand-iso.png, resized).
+  build: {figures: [docs/img/tools/build-gyropup-leg.jpg]}
+  site: {figures: [docs/img/tools/site-designs.jpg]}
+  dossier: {page: docs/dossier.md, figures: [docs/img/tools/dossier-review.jpg]}
+  review-packet: {page: docs/review-packet.md, figures: [docs/img/tools/review-packet-store.jpg]}
+  review-section: {page: docs/review-packet.md, figures: [docs/img/tools/review-section-arm.jpg]}
   snapfit: {page: docs/compliant.md, figures: [docs/img/compliant/example-1.svg]}
   holes: {page: docs/toolkit.md#holes-clear, figures: [docs/img/motion/rib-in-counterbore.svg]}
-  gates: {page: docs/gates.md, figures: [docs/img/motion/hinge-sweep.svg, docs/img/motion/module-insertion.svg]}
+  gates: {page: docs/gates.md, figures: [docs/img/tools/gates-connectivity.svg]}
   # compare and optimise: what the tools printed for examples/explore-two-wheel (tools/explore_charts.py writes the
   # JSON from `cad-agent compare --json` and the seeded `cad-agent optimise`; tests run it with --check).
   optimise: {page: docs/explore.md, chart: "docs/img/explore/two-wheel-charts.json#optimise"}
@@ -118,8 +128,5 @@ tools:
   release: {page: docs/toolkit.md#the-print-release-cad-agent-release}
   pcb-check: {page: docs/pcb.md}
   motion-trace: {page: docs/rendered-motion.md}
-  dossier: {page: docs/dossier.md}
-  review-packet: {page: docs/review-packet.md}
-  review-section: {page: docs/review-packet.md}
   agents: {page: docs/agent-workflow.md}
   mcmaster: {page: skills/mcmaster-parts/SKILL.md}

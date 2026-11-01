@@ -412,13 +412,23 @@ research/design-workflows.md:
       caption: Sampled poses on a seeded failure (flap_hits_frame), the arm's stop raised from 40 to 60 degrees and shown at 60. The motion gate sampled 12 poses, 5.45 degrees apart, found the arm in the frame in 3 of them and narrowed the first contact to between 44.89 and 44.91 degrees. Its report states the sample density.
       alt: The gate bench's arm raised to 60 degrees, its purple beam passing through the grey frame above it
     - after: 45-minimum-wall-and-feature-size
+      below: Ray casting along the inward normal
       img: docs/img/packets/thin_wall-store-cut-cavity-hopper_cavity-plan.webp
       shows: output
       tool: cad-agent review-packet
       on: fixture
       caption: "Ray thickness, re-measured on the B-rep, on a seeded failure (thin_wall): the gate bench's hopper with its +X wall thinned from 2.4 to 0.8 mm, in a plan cut through its cavity. The wall gate reads 0.800 mm, under the 2.4 mm the part's dossier asks for."
       alt: A plan section through the gate bench's hopper with four balls inside; its right wall is much thinner than the other three
+    - after: 46-existing-open-source-assembly-validators-and-cad-lint
+      below: STEPcode
+      img: docs/img/gates/bench-sections.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: What the gaps below ask for, as cad-agent now does it. The gate bench's dossier on its review site ties each section to its gates and its review state. Four sections, all gated, none signed off; three requirements verified; no lint findings.
+      alt: The review site's front page for the gate bench, with counts and a table of its four sections with their status, requirements, parts, gates and review state
     - after: 5-visual-review-of-renders-by-a-vision-model
+      below: Unmeasured (gap)
       img: docs/img/packets/clean-store-xray-iso.webp
       shows: output
       tool: cad-agent review-packet

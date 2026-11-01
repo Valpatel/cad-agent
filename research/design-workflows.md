@@ -311,6 +311,9 @@ No published "components must lie inside their cavity" validator was found (gap)
   pass/fail", mesh only) and Casys `mcp-dfm` (MIT) do; the documented weakness is that thin *diagonal* walls are
   undersampled when the ray follows the normal (V, mcp-dfm). libigl's `shape_diameter_function` (MPL-2.0) averages a cone
   of rays, which mitigates it.
+
+<!-- the site places a figure here (docs/pages.yaml) -->
+
 - **Medial-axis / inscribed-sphere** methods are exact: Attene et al., *ε-shapes*, Computers & Graphics 2017
   ([arXiv 1704.08049](https://arxiv.org/abs/1704.08049), V): finds thin walls *and* thin gaps; O(n²) worst case per
   vertex (2,720 s complete vs 45 s thresholded map in the paper); no code release found.

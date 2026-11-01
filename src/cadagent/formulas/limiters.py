@@ -104,6 +104,33 @@ def limiter_plastic_load(shortfall: float, plastic_stiffness: float, preload: fl
     return min(plastic_stiffness * max(shortfall, 0.0), preload)
 
 
+@formula(units={"modulus": "Pa (the clamped part's)", "thickness": "m (one frustum's length: half a member clamped "
+                                                                  "between two faces)",
+                "face_diameter": "m (the head, washer or nut face on the member)",
+                "hole_diameter": "m (the hole the cone keeps: the bolt's, or a limiter's outside)",
+                "half_angle": "rad (the cone's; 30 degrees by default)"},
+         returns="axial stiffness of the hollow cone frustum, N/m",
+         limits=("linear elastic and isotropic; the pressure is taken as spreading through a cone of fixed half angle "
+                 "(30 degrees fits finite-element results for steel, per Shigley); a printed part is neither "
+                 "isotropic nor solid, and an edge or a free face nearer than the cone cuts it short",),
+         source=cite("shigley", "Section 8-5 (Joints - Member Stiffness: the frustum of a hollow cone, Eqs. 8-19 and "
+                     "8-20)"))
+def frustum_stiffness(modulus: float, thickness: float, face_diameter: float, hole_diameter: float,
+                      half_angle: float = math.radians(30.0)) -> float:
+    """Stiffness of a clamped member as a hollow cone frustum: the load enters on a face of diameter D round a hole of
+    diameter d and spreads at a half angle alpha through a length t: k = pi E d tan(alpha) / ln[(2 t tan(alpha) + D -
+    d)(D + d) / ((2 t tan(alpha) + D + d)(D - d))]. Thin members tend to E A / t over the face's annulus; a narrow
+    face on a thick member is stiffer than that column, since the cone widens."""
+    E, t = _positive("modulus", modulus), _positive("thickness", thickness)
+    D, d = _positive("face_diameter", face_diameter), _positive("hole_diameter", hole_diameter)
+    if D <= d:
+        raise ValueError(f"face_diameter ({face_diameter!r}) must be larger than hole_diameter ({hole_diameter!r})")
+    if not (_num(half_angle) and 0.0 < half_angle < math.pi / 2):
+        raise ValueError(f"half_angle is in radians, between 0 and pi/2, not {half_angle!r}")
+    x = 2.0 * t * math.tan(half_angle)
+    return math.pi * E * d * math.tan(half_angle) / math.log((x + D - d) * (D + d) / ((x + D + d) * (D - d)))
+
+
 @formula(units={"interference": "m (diametral: the tube's outside minus the hole)", "diameter": "m (nominal fit)",
                 "hub_outer_diameter": "m (the plastic round the hole)", "hub_modulus": "Pa", "hub_poisson": "-",
                 "shaft_modulus": "Pa (the tube's)", "shaft_poisson": "-",

@@ -57,6 +57,23 @@ def test_a_short_limiter_loads_the_plastic_until_the_head_reaches_it():
         fx.limiter_plastic_load(math.nan, k, 3000.0)
 
 
+def test_frustum_stiffness_is_shigleys_cone_and_tends_to_the_column_when_thin():
+    E, D, d = 3.0e9, 20.0 * MM, 18.0 * MM
+    # a hand evaluation of Shigley's Eq. 8-19 at 30 degrees: x = 2 t tan 30 = 23.094 mm for t = 20 mm
+    x = 2.0 * 20.0 * math.tan(math.radians(30.0))
+    hand = math.pi * 3.0e9 * 18.0e-3 * math.tan(math.radians(30.0)) / math.log((x + 2.0) * 38.0 / ((x + 38.0) * 2.0))
+    assert fx.frustum_stiffness(E, 20.0 * MM, D, d) == pytest.approx(hand, rel=1e-12)
+    assert hand == pytest.approx(4.767e7, rel=1e-3)                    # 15.9 mm x E: 47.7 kN/mm
+    column = E * math.pi / 4.0 * (D ** 2 - d ** 2) / (0.01 * MM)
+    assert fx.frustum_stiffness(E, 0.01 * MM, D, d) == pytest.approx(column, rel=0.01)
+    # a narrow ring on a thick member: the cone is several times the column
+    assert fx.frustum_stiffness(E, 20.0 * MM, D, d) > 5 * E * math.pi / 4.0 * (D ** 2 - d ** 2) / (20.0 * MM)
+    for bad in (dict(face_diameter=d), dict(half_angle=30.0), dict(thickness=0.0)):
+        args = dict(modulus=E, thickness=20.0 * MM, face_diameter=D, hole_diameter=d) | bad
+        with pytest.raises(ValueError):
+            fx.frustum_stiffness(**args)
+
+
 def test_press_fit_matches_the_same_material_closed_form():
     # one material: p = E delta / (2 R^3) (ro^2 - R^2)(R^2 - ri^2) / (ro^2 - ri^2), delta radial (Shigley 3-16)
     E, nu, d, D, di, dd = 2.5e9, 0.35, 5 * MM, 9 * MM, 3 * MM, 0.08 * MM

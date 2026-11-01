@@ -141,7 +141,7 @@ def test_a_flush_insert_with_a_washer_passes_at_the_torque_it_recommends():
     assert r["clamp"]["path"] == "through-insert"
     assert {k: v["verdict"] for k, v in rows.items() if k != "preload kept"} == {
         "hole diameter": "pass", "hole depth": "pass", "melt volume": "pass", "boss wall": "pass",
-        "clamp path": "pass", "tightening torque": "pass", "head bearing": "pass"}
+        "clamp path": "pass", "tightening torque": "pass", "insert thread": "pass", "head bearing": "pass"}
     # the plastic under the washer sets the torque: 78.06 MPa / 2 on pi/4 (7^2 - 3.4^2), at the least nut factor
     area = math.pi / 4 * (7.0 ** 2 - 3.4 ** 2) * MM ** 2
     k_lo = r["torque"]["nut_factor"]["low"]
@@ -249,6 +249,98 @@ def test_a_limiter_in_a_recessed_insert_fails_to_abut_it():
     assert _rows(r)["limiter on insert"]["verdict"] == "fail"
 
 
+def test_the_screw_tip_bottoming_in_a_blind_hole_fails():
+    base = dict(insert="mcmaster-94459A775", material="petg-bambu-basic", boss_outside_mm=15.0, hole_depth_mm=9.5,
+                clamped={"material": "metal"})
+    tip = {d: _rows(I.check_joint(**base, screw_depth_mm=d))["screw tip"] for d in (7.0, 9.0, 11.5)}
+    assert [tip[d]["verdict"] for d in (7.0, 9.0, 11.5)] == ["pass", "warn", "fail"]
+    assert "2.00 mm past the hole's floor" in tip[11.5]["detail"] and "jacks the insert out" in tip[11.5]["detail"]
+    assert "7.00 of the insert's 7.9 mm" in tip[7.0]["detail"]
+    through = I.check_joint(**{**base, "through": True}, screw_depth_mm=20.0)
+    assert _rows(through)["screw tip"]["verdict"] == "pass"
+    # a hole no deeper than the insert cannot seat it
+    assert _rows(I.check_joint(**{**base, "hole_depth_mm": 7.9}))["hole depth"]["verdict"] == "fail"
+    with pytest.raises(ValueError):
+        I.check_joint(**base, screw_depth_mm=0.0)
+
+
+def test_the_inserts_own_thread_caps_the_torque_over_the_length_engaged():
+    r = I.check_joint("mcmaster-94459A140", "pla-bambu-basic", boss_outside_mm=9.5, clamped={"material": "metal"},
+                      screw_depth_mm=4.0)
+    # the ISO 68 internal area over 4 mm of M3, at brass's softest shear yield (0.577 x 124 MPa), over the margin
+    strip = 0.875 * math.pi * 3.0 * 4.0 * MM ** 2 * 0.577 * 124e6
+    assert _rows(r)["insert thread"]["limit"] == pytest.approx(strip / 2, abs=0.1)
+    assert r["torque"]["preload_caps_n"]["insert_thread"] == pytest.approx(strip / 2, rel=1e-9)
+    assert r["torque"]["governed_by"] == "insert_thread"
+    assert r["torque"]["allowed_nm"] == pytest.approx(r["torque"]["nut_factor"]["low"] * 3e-3 * strip / 2, rel=1e-9)
+    # all of the thread engaged when the tip is not given: more thread, a higher ceiling
+    full = I.check_joint("mcmaster-94459A140", "pla-bambu-basic", boss_outside_mm=9.5, clamped={"material": "metal"})
+    assert full["torque"]["preload_caps_n"]["insert_thread"] == pytest.approx(strip / 2 * 5.7 / 4.0, rel=1e-9)
+
+
+def test_a_clamped_hole_as_wide_as_the_insert_jacks_it_out():
+    narrow = I.check_joint("mcmaster-94459A140", "pla-bambu-basic", clamped={"material": "metal"}, clearance_mm=3.4)
+    wide = I.check_joint("mcmaster-94459A140", "pla-bambu-basic", clamped={"material": "metal"}, clearance_mm=5.0)
+    assert narrow["clamp"]["path"] == "through-insert" and wide["clamp"]["path"] == "jack-out"
+    assert "as wide as the insert" in wide["clamp"]["why"]
+    assert wide["torque"]["allowed_nm"] < narrow["torque"]["allowed_nm"] / 2
+
+
+# ----------------------------------------------------------------------------- a screw into metal, plastic clamped
+
+def test_check_clamp_holds_the_plastic_under_the_head_to_its_bearing_strength():
+    r = I.check_clamp("M4", "pa6-cf20-polymaker-wet", 15.6, head_mm=7.0, clearance_mm=4.5)
+    rows = _rows(r)
+    area = math.pi / 4 * (7.0 ** 2 - 4.5 ** 2) * MM ** 2
+    k_lo = fx.nut_factor(4e-3, 0.7e-3, 0.08, 0.20)
+    strength = I.bearing_strength("pa6-cf20-polymaker-wet")
+    assert r["torque"]["governed_by"] == "head_bearing"
+    assert r["torque"]["allowed_nm"] == pytest.approx(k_lo * 4e-3 * strength / 2 * area, rel=1e-9)
+    assert rows["head bearing"]["verdict"] == "pass"
+    assert rows["head bearing"]["value"] == pytest.approx(strength / 2e6, abs=0.01)
+    assert rows["preload kept"]["verdict"] == "warn"
+    over = I.check_clamp("M6", "pa6-cf20-polymaker-wet", 26.0, head_mm=10.0, clearance_mm=6.6, torque_nm=8.0)
+    assert over["verdict"] == "fail" and _rows(over)["head bearing"]["verdict"] == "fail"
+
+
+def test_check_clamp_takes_your_own_limiter_and_the_cone_sets_its_seating_force():
+    base = dict(thread="M10", material="pa6-cf20-polymaker-wet", thickness_mm=40.0, tolerance_mm=0.1, head_mm=20.0,
+                clearance_mm=12.0, torque_nm=20.0, limiter={"outside_mm": 18.0, "bore_mm": 12.0})
+    flush = _rows(I.check_clamp(**base, limiter_length_mm=40.0))
+    assert flush["limiter length"]["verdict"] == "warn" and "proud" in flush["limiter length"]["detail"]
+    assert flush["limiter wall"]["verdict"] == "warn"                      # no yield given: reported, not judged
+    sunk = I.check_clamp(**base, limiter_length_mm=39.8)
+    rows = _rows(sunk)
+    # 40.1 mm of plastic at most, the sleeve 39.8 +0/-0.05: the head squeezes the plastic 0.35 mm before it lands
+    E = I.PRINTED["pa6-cf20-polymaker-wet"].secant_upper_bound("across") * 1e6
+    cone = fx.frustum_stiffness(E, 40.1 / 2 * MM, 20.0 * MM, 18.0 * MM) / 2
+    column = E * math.pi / 4 * (20.0 ** 2 - 18.0 ** 2) * MM ** 2 / (40.1 * MM)
+    assert cone > 4 * column                                              # a narrow ring on thick plastic
+    assert rows["seating force"]["value"] == pytest.approx(cone * 0.35 * MM, abs=0.05)
+    assert rows["seating force"]["verdict"] == "warn" and "MPa" in rows["seating force"]["detail"]
+    strong = _rows(I.check_clamp(**{**base, "limiter": {"outside_mm": 18.0, "bore_mm": 12.0, "yield_pa": 640e6}},
+                                 limiter_length_mm=39.8))
+    assert strong["limiter wall"]["verdict"] == "pass"
+    for bad in (dict(thread="M7"), dict(thread="5"), dict(thickness_mm=0.05), dict(limiter_key="spirol-cl6000-m5"),
+                dict(limiter={"outside_mm": 12.0, "bore_mm": 12.0}), dict(limiter={"outside_mm": 18.0,
+                                                                                    "bore_mm": 12.0,
+                                                                                    "material": "titanium"})):
+        with pytest.raises(ValueError):
+            I.check_clamp(**{**base, **bad})
+
+
+def test_check_spec_runs_insert_and_clamp_joints_together():
+    spec = {"defaults": {"material": "pla-bambu-basic", "boss_outside_mm": 9.5},
+            "joints": [{"name": "a", "insert": "mcmaster-94459A140", "clamped": {"material": "metal"}},
+                       {"name": "b", "thread": "M5", "thickness_mm": 5.0}]}
+    r = I.check_spec(spec)
+    assert [j["name"] for j in r["joints"]] == ["a", "b"] and r["joints"][1]["thread"] == "M5"
+    for joint in ({"insert": "mcmaster-94459A140", "thread": "M3", "material": "pla-bambu-basic"},
+                  {"material": "pla-bambu-basic"}, {"thread": "M5", "thickness_mm": 5.0, "insert_axis": 1}):
+        with pytest.raises(ValueError):
+            I.check_spec({"defaults": {"material": "pla-bambu-basic"}, "joints": [joint]})
+
+
 def test_the_check_refuses_what_it_cannot_judge():
     for bad in (dict(insert="nope"), dict(material="steel"), dict(axis="sideways"), dict(screw_class="14.9"),
                 dict(pull_n=-1.0), dict(torque_nm=0.0), dict(margin=0.5), dict(recess_mm=math.nan),
@@ -294,6 +386,9 @@ def test_cli_checks_a_spec_file_and_exits_1_only_on_a_fail(tmp_path):
     spec.write_text("joints:\n  - {insert: mcmaster-94459A140, material: pla-bambu-basic, boss_outside_mm: 6,"
                     " clamped: {material: metal}}\n")
     assert subprocess.run(run, capture_output=True, text=True, env={**os.environ, **env}).returncode == 1
+    spec.write_text("joints:\n  - {name: hub, thread: M5, material: pla-bambu-basic, thickness_mm: 5}\n")
+    r = subprocess.run(run, capture_output=True, text=True, env={**os.environ, **env})
+    assert r.returncode == 0 and "M5 clamping" in r.stdout, r.stdout + r.stderr
     spec.write_text("joints: []\n")
     assert subprocess.run(run, capture_output=True, text=True, env={**os.environ, **env}).returncode == 2
 

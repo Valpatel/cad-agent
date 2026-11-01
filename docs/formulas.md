@@ -111,7 +111,7 @@ flowchart TD
 SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A strain is a fraction (0.02 = 2 %).
 
 <details>
-<summary>All 62 functions in <code>catalogue()</code>: what each computes, its source and where it is valid</summary>
+<summary>All 63 functions in <code>catalogue()</code>: what each computes, its source and where it is valid</summary>
 
 | Function | What | Source | Valid within |
 |---|---|---|---|
@@ -144,6 +144,7 @@ SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A 
 | `annulus_stress` | F / (π/4 (D² − d²)): a limiter's wall, the pressure under a head | Shigley 10th ed., Section 3-9 | uniform over full contact; no buckling |
 | `limiter_stack` | a compression limiter's standout over the plastic it goes through, worst case either way: proud, short or either | Shigley 10th ed., Section 1-14 (worst-case tolerance stack) | rigid parts, the tolerances given |
 | `limiter_plastic_load` | the plastic's share of the preload before the head lands on a short limiter, min(k s, F) | Shigley 10th ed., Section 8-7 | the plastic as a linear spring |
+| `frustum_stiffness` | a clamped member's stiffness as a hollow cone from the head's face, π E d tan α / ln[...] | Shigley 10th ed., Section 8-5, Eqs. 8-19 and 8-20 | linear elastic, isotropic; the cone's 30° half angle fits steel |
 | `press_fit_pressure`, `press_fit_force` | the contact pressure of a press fit (a limiter in its hole), and the force that pushes it out | Shigley 10th ed., Section 3-16 | smooth, elastic, long fit; a knurl cuts in instead |
 | `preload_retained`, `preload_retained_limited` | the preload left when the plastic in the clamp relaxes to a measured ratio, without and with a limiter | Shigley 10th ed., Sections 8-7 and 8-9 | the relaxation ratio is measured, not computed |
 | `insert_displaced_volume`, `overflow_volume` | the plastic a heat-set insert pushes aside, and the pocket below it in a blind hole | Shigley 10th ed., Section 1-14 (a volume balance) | incompressible melt, none lost to the iron |

@@ -20,8 +20,8 @@ from cadagent.formulas.beams import (DESIGNS, SUPPORTS, beam_stiffness, cantilev
                                      rect_second_moment, snap_arm, snap_deflection_force, snap_root_strain)
 from cadagent.formulas.inserts import (insert_clamp_path, insert_displaced_volume, insert_limited_torque,
                                        insert_shear_force, insert_shear_torque, overflow_volume)
-from cadagent.formulas.limiters import (PRELOAD_SHARE, annulus_stress, limiter_plastic_load, limiter_stack,
-                                        preload_retained, preload_retained_limited, press_fit_force,
+from cadagent.formulas.limiters import (PRELOAD_SHARE, annulus_stress, frustum_stiffness, limiter_plastic_load,
+                                        limiter_stack, preload_retained, preload_retained_limited, press_fit_force,
                                         press_fit_pressure, proof_load)
 from cadagent.formulas.linkages import (fivebar_inputs, fivebar_jacobians, fivebar_point, fourbar_angles,
                                         fourbar_input_limits, grashof, transmission_angle)

@@ -874,8 +874,11 @@ def cmd_inserts(args: argparse.Namespace) -> int:
     result = inserts.check_spec(data)
     for joint in result["joints"]:
         torque = joint["torque"]
-        _say(f"{joint['verdict'].upper():4}  {joint['name']}: {joint['insert']['thread']} {joint['insert']['part']} "
-             f"in {joint['material']['name']}, {joint['clamp']['path']}; tighten to at most "
+        what = (f"{joint['insert']['thread']} {joint['insert']['part']} in {joint['material']['name']}, "
+                f"{joint['clamp']['path']}" if "insert" in joint else
+                f"{joint['thread']} clamping {joint['material']['name']}" +
+                (" through a limiter" if joint["limiter"] else ""))
+        _say(f"{joint['verdict'].upper():4}  {joint['name']}: {what}; tighten to at most "
              f"{torque['allowed_nm']:.2f} N m ({torque['governed_by'].replace('_', ' ')})")
         for row in joint["checks"]:
             if row["verdict"] != "pass":

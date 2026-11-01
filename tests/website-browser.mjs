@@ -697,7 +697,8 @@ async function foldProblems() {
     await painted(page, js);
     const nav = page.locator('cad-nav'), toggle = nav.locator('.cad-nav-toggle'), fold = nav.locator('details.cad-nav-fold');
     const open = () => fold.evaluate(d => d.open);
-    if (width < 1100) {
+    if (!(await fold.count())) say('no <details class="cad-nav-fold"> around the tree');
+    else if (width < 1100) {
       if (!(await toggle.isVisible())) say('no "Pages and contents" toggle');
       else if (await open() || await page.evaluate(shows, 'cad-nav a[aria-current=page]')) say('the tree is open before the toggle is pressed');
       else {
@@ -725,7 +726,7 @@ async function foldProblems() {
       if (!(y >= 0 && y <= 200)) say(`the tree scrolls away with the page (its top at ${Math.round(y)}px), so the fold boxes the sticky panel in`);
       await page.evaluate(() => { scrollTo(0, 0); document.documentElement.style.scrollBehavior = ''; });
     }
-    if (mode === 'slow') {
+    if (mode === 'slow' && await fold.count()) {
       // The reader opens the tree on a phone before the script has arrived; when it does, the tree stays open and
       // nothing on the page moves (the boxes from the first paint, with the fold as the reader left it).
       if (width < 1100) {
@@ -759,15 +760,16 @@ async function foldProblems() {
   // the reader opened on a phone stays open through a wide window and back.
   const turn = await browser.newPage({ viewport: { width: 1366, height: 800 } });
   await turn.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
-  const isOpen = () => turn.locator('details.cad-nav-fold').evaluate(d => d.open);
+  const isOpen = () => turn.locator('details.cad-nav-fold').evaluate(d => d.open, null, { timeout: 2000 }).catch(() => null);
   await turn.setViewportSize({ width: 360, height: 800 });
-  await turn.waitForFunction(() => !document.querySelector('details.cad-nav-fold').open, null, { timeout: 2000 }).catch(() => {});
-  if (await isOpen()) out.push('1366 -> 360px: the fold the script opened for the wide window stays open on the phone');
+  await turn.waitForFunction(() => !document.querySelector('details.cad-nav-fold')?.open, null, { timeout: 2000 }).catch(() => {});
+  if ((await isOpen()) !== false) out.push('1366 -> 360px: the fold the script opened for the wide window stays open on the phone');
   await turn.locator('.cad-nav-toggle').click();
   await turn.setViewportSize({ width: 1366, height: 800 });
+  await turn.waitForTimeout(100);                               // a frame at each width, so the script sees both
   await turn.setViewportSize({ width: 360, height: 800 });
   await turn.waitForTimeout(100);
-  if (!(await isOpen())) out.push('360 -> 1366 -> 360px: the fold the reader opened was closed');
+  if ((await isOpen()) !== true) out.push('360 -> 1366 -> 360px: the fold the reader opened was closed');
   await turn.close();
   // No link text in the corners beside the filter pill while the tree is scrolled (#134): with a link under the
   // filter's top edge, the points just inside the pill's box at its rounded top corners hit the panel's cover.

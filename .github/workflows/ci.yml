@@ -57,3 +57,36 @@ jobs:
       - run: python -m pytest -q -rs
       # the optimiser's adapter for optuna below 5 (constraints_func instead of Trial.set_constraint)
       - run: pip install "optuna==3.4.0" && python -m pytest -q tests/test_explore_optimise.py
+
+  # Supply chain (tools/resource_audit.py, skills/cad-supply-chain/SKILL.md, docs/supply-chain.md): offline checks only,
+  # so the network can never make it flaky (the weekly supply-chain.yml runs the online ones). Not a required check, and
+  # it never blocks a release:
+  # - every event: no high or critical finding anywhere in the checkout;
+  # - into dev (a PR's base, or a push's branch), where new items enter: no medium finding on what the change adds, and
+  #   on a PR a report row in the description for each added dependency, vendored file or catalogue entry;
+  # - into main (a dev -> main release PR, the push after it): the whole-checkout check only. Every item there came
+  #   through a PR into dev that this job judged; "added since main" would be everything since the last release.
+  # It runs the PR's own copy of the tool and of research/security-accepted.yaml, so it is an honesty check, not a
+  # security boundary: a reviewer reads changes to those files (the skill says so).
+  supply-chain:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+        # depth 2: on a PR the checkout is the merge commit, whose first parent is the base branch
+        with: {fetch-depth: 2, persist-credentials: false}
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0   # v7.1.0
+        with: {python-version: '3.12'}
+      - run: pip install pyyaml        # the tool is stdlib plus pyyaml
+      - name: Gate what this change adds
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          INTO: ${{ github.base_ref || github.ref_name }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            python3 tools/resource_audit.py gate --base HEAD^1 --into "$INTO" --pr-body-env PR_BODY
+          else
+            python3 tools/resource_audit.py gate --base HEAD^1 --into "$INTO"
+          fi

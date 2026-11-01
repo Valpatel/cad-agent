@@ -97,7 +97,8 @@ formula states its units, limits and source in `fx.catalogue()`, and they are li
   curve), with the fan data read from the datasheet's vector chart rather than digitised from a picture.
 - **Tests:**
   - `tests/test_formulas.py` solves one fan, two in series and two in parallel on a straight-line curve by hand
-    (1/φ, √3 − 1 and the others), and the crossover where series and parallel give the same air.
+    (in a restrictive system, (√17 − 1)/8, 1/2 and (√65 − 1)/16 of the free-air flow), and the crossover where
+    series and parallel give the same air.
   - It also finds every operating point the datasheet tabulates, on the datasheet's own system curves, within its
     rounding (5 m³/h, 1 Pa), and checks that the table lies right of the stall peak at every voltage.
   - `tests/webkit-formulas.test.mjs` runs the port on the golden vectors, including the stall dip with three

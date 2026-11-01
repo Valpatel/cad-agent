@@ -392,9 +392,10 @@ try {
     await done();
   }
 
-  // Moving covers play while seen, and never under reduced motion.
+  // Moving covers play while seen, and never under reduced motion. Under 1000 px the strip holds every demo and
+  // swipes; wider, it shows only its first four, which need not include a moving one.
   for (const motion of ['no-preference', 'reduce']) {
-    const { page, done } = await open('/catalog', { motion });
+    const { page, done } = await open('/catalog', { motion, width: 900 });
     const img = page.locator('img[data-anim]').first();
     if (await img.count()) {
       const moving = await img.getAttribute('data-anim');

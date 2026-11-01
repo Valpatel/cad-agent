@@ -129,6 +129,21 @@ def _git_show(rev_path: str) -> str:
     return subprocess.run(["git", "show", rev_path], check=True, capture_output=True, text=True).stdout
 
 
+def release_fetch(number: int) -> List[str]:
+    """The git command that fetches main and the PR head for the release gate.
+
+    In CI the checkout is shallow (``fetch-depth: 1``), so ``--depth=1`` keeps the fetch small. A full local clone
+    fetches without it: ``--depth=1`` into a complete repository writes ``.git/shallow`` and cuts the history every
+    worktree of that clone shares, and the site's ``--release`` build then refuses to run.
+    """
+    shallow = subprocess.run(["git", "rev-parse", "--is-shallow-repository"], check=True, capture_output=True,
+                             text=True).stdout.strip() == "true"
+    # gh's credential helper, so the fetch also works for a private repo (the checkout keeps no credentials).
+    return ["git", "-c", "credential.helper=", "-c", "credential.helper=!gh auth git-credential",
+            "fetch", "-q", "--no-tags", *(["--depth=1"] if shallow else []), "origin",
+            "+refs/heads/main:refs/remotes/origin/main", f"+refs/pull/{number}/head:refs/remotes/origin/pr-head"]
+
+
 def contexts(base: str) -> List[str]:
     """The status names a PR into ``base`` gets."""
     return [f"cad-gates/{base}/{g}" for g in ("branch-flow", "review") + (("release",) if base == "main" else ())]
@@ -159,10 +174,7 @@ def evaluate(repo: str, number: int, pr: Optional[dict] = None) -> Tuple[dict, D
     results["review"] = review_gate(reviews, head["sha"], can_write)
     if base == "main":
         # The PR's files are read as data from its head commit (fetched, never checked out or run).
-        # gh's credential helper, so the fetch also works for a private repo (the checkout keeps no credentials).
-        subprocess.run(["git", "-c", "credential.helper=", "-c", "credential.helper=!gh auth git-credential",
-                        "fetch", "-q", "--no-tags", "--depth=1", "origin", "+refs/heads/main:refs/remotes/origin/main",
-                        f"+refs/pull/{number}/head:refs/remotes/origin/pr-head"], check=True)
+        subprocess.run(release_fetch(number), check=True)
         try:
             log = _git_show(f"{head['sha']}:CHANGELOG.md")
         except subprocess.CalledProcessError:

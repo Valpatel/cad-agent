@@ -567,7 +567,8 @@ def _convergence_figure(results: dict, title: str):
         def old_monitor_panel(ax):
             got = [f'{_conv_name(k)} {_judged(k, v, limits)}' for k, v in conv.items()]
             _say(ax, 'Monitored values', 'Their histories are not in these results. ' +
-                 ('Change over the last fifth of the newest solve (convergence): ' + '; '.join(got) if got else
+                 ('Change over the newest solve\'s iterations from 80 % of the last one on (convergence): ' + '; '.join(got)
+                  if got else
                   'No monitored values are recorded either.'))
         panels.append((old_monitor_panel, False))
     elif not monitors:

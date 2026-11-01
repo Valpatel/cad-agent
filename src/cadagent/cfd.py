@@ -684,7 +684,7 @@ foamToVTK -allRegions -latestTime -noFunctionObjects > log.foamToVTK 2>&1
         """Set the exchanger blocks' fin temperature so they deliver their power, continuing the solve from where it
         stopped. A block's heat is exactly hA (T_fin - mean air temperature in the block), which settles long before
         the heat leaving an open room does. Each correction is a secant step on T_fin, taken once the block and fan-intake
-        temperatures have stopped moving (0.5 K over the last fifth), and moves at most 20 K; otherwise the round just
+        temperatures have stopped moving (0.5 K over ``convergence_window``), and moves at most 20 K; otherwise the round just
         keeps solving. Faster relaxation on restarts (velocity 0.5, energy 0.85) diverged on the J501 case after a fin
         temperature step, so restarts keep the start-up values. ``calibrated`` says whether it got there;
         ``energy_balance_pct`` says whether the whole room has caught up."""
@@ -950,8 +950,10 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
     """Temperatures (°C), fan flows and residual history from a finished case's postProcessing output.
 
     The histories (``residuals``, ``T_max_history``, ``monitors``) cover the whole run, joined across continuations
-    (``restarts`` lists where each began); ``convergence`` is measured over ``convergence_window``, the last fifth of the
-    iterations within the newest solve."""
+    (``restarts`` lists where each began). ``convergence`` is how much each monitored value changed over
+    ``convergence_window``: the iterations from 80 % of the last one onward, cut to the newest solve (so after a
+    continuation shorter than a fifth of the run, the whole newest solve). ``convergence_limits`` is what ``steady``
+    holds each change to."""
     cd = Path(case_dir)
     meta = json.loads((cd / 'cadagent-case.json').read_text())
     pp = cd / 'postProcessing'
@@ -1067,8 +1069,8 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
     monitor('heat_out_w', 'heat out', 'heat leaving with the air', 'Heat leaving with the air', 'W', 'heat_out_change_pct',
             [(r[0], AIR_CP * (r[1] - t_amb * phi[r[0]])) for r in _whole_run(_outputs(pp, 'flux_T', 'surfaceFieldValue')) if r[0] in phi])
     out['monitors'] = monitors
-    # how much the answer still moved over the last fifth of the iterations, within the newest solve: a continuation
-    # (after a fin-temperature step, say) starts a new window, so calibrate_fins judges each step on its own
+    # how much the answer still moved over the iterations from 80 % of the last one on, cut to the newest solve: a
+    # continuation (after a fin-temperature step, say) starts a new window, so calibrate_fins judges each step on its own
     conv, window = {}, []
 
     def tail(a):

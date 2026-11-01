@@ -1,5 +1,5 @@
 /* Diagrams own their horizontal overflow; source stays available only on request. */
-.cad-diagram{margin:1.4rem 0;max-width:100%;min-width:0;padding:1rem;border:1px solid #c8d2cc;border-radius:12px;background:#fff;color:#263e35;font:14px/1.5 system-ui,sans-serif;color-scheme:light}
+.cad-diagram{margin:1.4rem 0;max-width:100%;min-width:0;padding:1rem;container-type:inline-size;border:1px solid #c8d2cc;border-radius:12px;background:#fff;color:#263e35;font:14px/1.5 system-ui,sans-serif;color-scheme:light}
 .cad-diagram[data-theme=dark]{background:#171d27;color:#ecf0f7;border-color:#526176;color-scheme:dark}
 .cad-diagram-view{overflow:auto;max-width:100%;min-height:80px;overscroll-behavior-x:contain}
 .cad-diagram-view svg{display:block;height:auto;max-width:none!important;margin:auto}
@@ -15,4 +15,8 @@ pre>code.language-mermaid{display:none}
 pre.mermaid::before,pre:has(>code.language-mermaid)::before{content:'Loading diagram…';display:block;font:14px/1.5 system-ui,sans-serif;color:var(--ink,#263e35)}
 pre.cad-diagram-boot-error::before{content:'Diagram renderer could not load.'}
 .cad-diagram-reload{min-height:44px;padding:10px 14px;cursor:pointer;font:inherit}
-.cad-diagram-hint{margin:0 0 10px;font-size:13px;font-weight:600;line-height:1.5}
+/* The sideways-scroll hint takes room only when the drawing (--cad-diagram-w, set where it is drawn) is wider than the
+   figure (100cqw), so a figure drawn at build time is laid out right without script and nothing moves when it runs. Its
+   height is capped, not set, so a hint that wraps (a narrow phone, larger text) keeps every line. */
+.cad-diagram-hint{margin:0;font-size:13px;font-weight:600;line-height:1.5;overflow:hidden;
+  max-height:clamp(0px,(var(--cad-diagram-w,0px) - 100cqw - 1px)*1000,10em);margin-bottom:clamp(0px,(var(--cad-diagram-w,0px) - 100cqw - 1px)*1000,10px)}

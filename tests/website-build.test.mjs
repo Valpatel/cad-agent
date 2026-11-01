@@ -12,7 +12,7 @@ const root = path.resolve(import.meta.dirname, '..');
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-website-'));
 const build = dir => execFileSync(process.execPath, ['tools/build-site.mjs', '--out', dir], { cwd: root }).toString();
 const out = path.join(tmp, 'a');
-build(out);
+const buildLog = build(out);
 test.after(() => rm(tmp, { recursive: true, force: true }));
 
 const files = (await readdir(out, { recursive: true, withFileTypes: true })).filter(e => e.isFile())
@@ -344,7 +344,7 @@ test('a link to a folder opens its README page', async () => {
 test('every lesson page has a diagram, and the home page counts lessons, not pages', async () => {
   const lessons = files.filter(f => /^lessons\/.+\.html$/.test(f));
   assert.ok(lessons.length >= 19, 'the index, six area READMEs and twelve lesson files');
-  for (const f of lessons) assert.match(await readFile(path.join(out, f), 'utf8'), /class="language-mermaid"|<img\b/, `${f} has no diagram or picture`);
+  for (const f of lessons) assert.match(await readFile(path.join(out, f), 'utf8'), /<figure class="cad-diagram"|class="language-mermaid"|<img\b/, `${f} has no diagram or picture`);
   const rules = git('grep', '-h', '-e', '^### ', 'HEAD', '--', 'lessons/*/*.md', ':!lessons/*/README.md').split('\n').filter(Boolean).length;
   assert.ok(rules > 50);
   assert.match(await readFile(path.join(out, 'index.html'), 'utf8'), new RegExp(`Fill the gaps</span><span class="mission-num">${rules}<`));
@@ -442,7 +442,7 @@ test('the palette goes into real diagrams only: not into a quoted example, and :
     const draft = path.join(tmp, 'draft-palette');
     execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, '--worktree', '--out', draft], { cwd: root });
     const page = await readFile(path.join(draft, 'docs/toolkit.html'), 'utf8');
-    const diagram = page.match(/<code class="language-mermaid">([\s\S]*?)<\/code>/)?.[1] || '';
+    const diagram = page.match(/<pre class="cad-diagram-source">([\s\S]*?)<\/pre>|<code class="language-mermaid">([\s\S]*?)<\/code>/)?.slice(1).join('') || '';
     assert.match(diagram, /classDef here fill:#fffdf5/, ':::here shorthand gets the palette');
     assert.doesNotMatch(diagram, /classDef (?:near|out)/, 'only the classes the diagram uses');
     const quoted = page.match(/<code class="language-markdown">([\s\S]*?)<\/code>/)?.[1] || '';
@@ -451,6 +451,57 @@ test('the palette goes into real diagrams only: not into a quoted example, and :
   } finally {
     execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
   }
+});
+
+// Diagrams are drawn by the build (#132, tools/site-diagrams.mjs): each Mermaid block arrives as a finished figure, so
+// nothing moves while the page loads and it shows without script. Its source stays in the figure and in the twin.
+test('every diagram arrives drawn, with its source, and the Markdown twins keep their fences', async () => {
+  assert.match(buildLog, /Diagrams: \d+ \(Mermaid 11\.\d+\.\d+\)/);
+  assert.doesNotMatch(buildLog, /left to the reader's browser/, 'the build drew no diagrams: install a browser (npx playwright install chromium)');
+  let figures = 0;
+  for (const f of html.filter(f => !f.startsWith('kit/'))) {
+    const page = await readFile(path.join(out, f), 'utf8');
+    assert.doesNotMatch(page, /class="language-mermaid"|<pre class="mermaid"/, `${f}: a Mermaid block was left for the reader's browser`);
+    const figs = [...page.matchAll(/<figure class="cad-diagram"[\s\S]*?<\/figure>/g)].map(m => m[0]);
+    for (const fig of figs) {
+      assert.match(fig, /^<figure class="cad-diagram" data-theme="light" aria-label="Engineering diagram" data-state="ready" aria-busy="false" style="--cad-diagram-w: [\d.]+px;">/, f);
+      assert.match(fig, /<div class="cad-diagram-view"[^>]*><svg id="cad-diagram-s[0-9a-f]{12}(?:-\d+)?" /, f);
+      assert.match(fig, /<details><summary>Diagram source<\/summary><pre class="cad-diagram-source">[^<]+<\/pre><\/details><\/figure>$/, f);
+      // Real tags only (the source is text): no script, handler or javascript: link in what Mermaid drew.
+      const tags = [...fig.replace(/<pre class="cad-diagram-source">[^<]*<\/pre>/, '').matchAll(/<([a-z][\w:-]*)\b([^>]*)>/gi)];
+      assert.deepEqual(tags.filter(([, t, a]) => /^script$/i.test(t) || /\son[a-z]+\s*=/i.test(a) || /javascript:/i.test(a)).map(m => m[0]), [], f);
+    }
+    const ids = [...page.matchAll(/<svg id="([^"]+)"/g)].map(m => m[1]);
+    assert.equal(new Set(ids).size, ids.length, `${f}: two diagrams share an SVG id`);
+    figures += figs.length;
+  }
+  assert.ok(figures >= 60, `${figures} diagrams`);
+  assert.match(await readFile(path.join(out, 'docs/style-guide.md'), 'utf8'), /^```mermaid$/m, 'the twin keeps the Mermaid source for agents');
+});
+
+test('two builds with empty diagram caches draw every page byte for byte the same', async () => {
+  const pages = async dir => new Map(await Promise.all((await readdir(dir, { recursive: true, withFileTypes: true }))
+    .filter(e => e.isFile() && e.name.endsWith('.html')).map(async e => [path.relative(dir, path.join(e.parentPath, e.name)), await readFile(path.join(e.parentPath, e.name))])));
+  const [a, b] = ['det-a', 'det-b'].map(n => path.join(tmp, n));
+  for (const d of [a, b]) {
+    const log = execFileSync(process.execPath, ['tools/build-site.mjs', '--out', d], { cwd: root, env: { ...process.env, CAD_AGENT_DIAGRAM_CACHE: `${d}-cache` } }).toString();
+    assert.match(log, /0 from the cache, \d+ drawn in /, log);
+  }
+  const [pa, pb] = [await pages(a), await pages(b)];
+  assert.deepEqual([...pa.keys()].sort(), [...pb.keys()].sort());
+  const differ = [...pa].filter(([f, buf]) => !buf.equals(pb.get(f))).map(([f]) => f);
+  assert.deepEqual(differ, []);
+  assert.ok([...pa.values()].some(buf => buf.includes('<figure class="cad-diagram"')));
+});
+
+test('with --client-diagrams (as on a machine with no browser) the blocks stay for the reader\'s browser, and the build passes', async () => {
+  const draft = path.join(tmp, 'client-diagrams');
+  const log = execFileSync(process.execPath, ['tools/build-site.mjs', '--client-diagrams', '--out', draft], { cwd: root }).toString();
+  assert.match(log, /left to the reader's browser/);
+  const page = await readFile(path.join(draft, 'docs/style-guide.html'), 'utf8');
+  assert.equal((page.match(/<pre><code class="language-mermaid">/g) || []).length, 3);
+  assert.doesNotMatch(page, /<figure class="cad-diagram"/);
+  assert.match(page, /<script type="module" src="\/web\/site\.js"><\/script>/, 'site.js still starts kit/diagrams.js');
 });
 
 test('no page refers to a lesson by its old number', () => {

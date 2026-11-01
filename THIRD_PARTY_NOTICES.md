@@ -43,7 +43,7 @@ contributors"), whose full text travels with them in `docs/img/gyropup/LICENSE.t
 
 ## Runtime dependencies and external programs (not vendored)
 
-The simulation modules use these at run time. None of their code is copied into this repository.
+The simulation modules and the site build use these at run time. None of their code is copied into this repository.
 
 | Project | Licence | How cad-agent uses it |
 |---|---|---|
@@ -54,6 +54,7 @@ The simulation modules use these at run time. None of their code is copied into 
 | pyMOTO | MIT | Imported (`sim`, topology optimisation) |
 | PyVista, VTK | MIT, BSD-3-Clause | Imported (`sim`, pictures and animations) |
 | trimesh, manifold3d, Rtree | MIT, Apache-2.0, MIT | Imported (`sim`, mesh booleans and point-in-solid tests) |
+| Playwright, Chromium | Apache-2.0, BSD-3-Clause | The site build draws its Mermaid diagrams in headless Chromium through Playwright, a dev dependency (`tools/site-diagrams.mjs`); the browser tests run in it too |
 | imageio, imageio-ffmpeg (FFmpeg) | BSD-2-Clause (FFmpeg LGPL/GPL binary, run as a process) | Imported (`sim`, MP4 writing) |
 
 ## Web kit (copied into project sites and published on cad-agent.valpatel.com)

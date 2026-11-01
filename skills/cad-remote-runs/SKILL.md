@@ -32,7 +32,7 @@ flowchart TD
   cad-agent checkout or version the project uses). Record which cad-agent commit it runs.
 
   <details>
-  <summary>An aarch64 host cannot pip-install gmsh, so the FEA needs conda-forge's</summary>
+  <summary>FEA on an aarch64 host: gmsh from conda-forge</summary>
 
   PyPI has no aarch64 Linux wheel for gmsh (4.15.2 or any other release), so the `fea` extra does not install
   there; nor does pypardiso, whose MKL is x86-64 only. Install `cad-agent[cad]` with `scikit-fem pyamg`, then link
@@ -57,6 +57,16 @@ ssh <host> 'cd <repo> && mkdir -p build && (setsid nohup nice -n 5 bash -c "<com
 
 Then **record it in the issue** right away (see `cad-work-tracking`):
 `<host role>: <command> (commit <sha>), log <path>, done when "RUN-DONE", results in <paths>, collect with <command>`.
+
+```mermaid
+flowchart TD
+    R["the run, detached<br/>setsid nohup nice"] -->|"stdout and stderr"| L["build/run.log<br/>on the host"]
+    L -->|"its last line"| D["RUN-DONE rc=N"]
+    I["the issue: host role,<br/>command, commit, log,<br/>how to collect"] -.->|"any machine<br/>checks"| L
+    class R,L here
+    class D near
+    class I out
+```
 
 ## While it runs
 

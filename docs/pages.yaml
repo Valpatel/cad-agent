@@ -762,3 +762,98 @@ docs/explore.md:
       on: example
       caption: "The search leaderboard's trade-off chart for the worked example: 60 seeded random trials, 49 distinct (the 11 repeats are not evaluated again), by cost and mass. Four are feasible; trials 47 and 1 are the Pareto front over cost, mass and runtime."
       alt: "A scatter chart of 49 trials by cost and mass: most are infeasible open circles; two feasible grey dots; trials 47 and 1 in blue on the Pareto front"
+
+docs/toolkit.md:
+  figures:
+    - after: the-project-contract
+      below: my-cad-project/
+      img: docs/img/gates/bench-sections.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: "The gate bench (tests/fixtures/gate_bench/) is a test project laid out by this contract. This is the front page of the review site cad-agent site built from what its build and gates wrote to exports/: four sections, all gated, none signed off; three requirements verified."
+      alt: The review site's front page for the gate bench, with counts and a table of its four sections with their status, requirements, parts, gates and review state
+    - after: the-project-contract
+      below: Renders go to
+      img: docs/img/packets/clean-store-solid-iso.webp
+      shows: output
+      tool: cadagent.publish.render
+      on: fixture
+      caption: "A render by cadagent.publish.render, as cad-agent review-packet draws one for the gate bench's store section: the caption bar holds the title and a subtitle (section hash, part and fastener counts, the build's geometry digest), the note bar what the picture is for."
+      alt: "A render of the gate bench's store section in place: grey hopper and base, a lid with four screws, under a dark caption bar with the section hash and counts and a note bar below"
+    - after: honest-evidence
+      below: CAD checks never claim physical fit
+      img: docs/img/gates/bench-review.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: The same review's gates page. Six gates, 144 checks, all pass, and each verdict says physical fit is not verified.
+      alt: The review site's gates table for the gate bench, with connectivity, containment, fasteners, motion, assembly, wall and dossier-lint, each marked pass with its check counts and links to its verdict files
+    - after: worked-example-j501-agx-jetson-agx-orin-enclosure
+      img: docs/img/viewer.jpg
+      shows: output
+      tool: cad-agent view
+      on: enclosure
+      caption: "This example's enclosure in its review site's 3D viewer: 6 of its 17 parts shown, with the parts list, explode, section cut and standard views."
+      alt: "The 3D viewer on the J501 AGX enclosure: a dark vented box with ports on its front, and a panel with explode, section and light sliders, view buttons and a list of 17 parts with 6 ticked"
+    - after: integrity-gates-cadagentreviewgates
+      img: docs/img/gates/bench-connectivity.svg
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: What touches what in the gate bench, drawn from the connectivity gate's verdict (connectivity.dot). Fasteners are ovals, the dashed boxes are balls allowed to sit free in the hopper, and the arm is its own body on a joint (blue dashed). 31 checks pass.
+      alt: A graph of the gate bench's parts linked by contacts and fasteners, grouped into the static frame and the arm's body
+    - after: explore-and-compare-designs-cadagentsimulationexplore
+      img: docs/img/explore/search-trade-off.webp
+      shows: output
+      tool: cad-agent optimise
+      on: example
+      caption: "The search leaderboard for the worked example (made-up parts): 60 seeded random trials, 49 distinct, by cost and mass. Four are feasible; trials 47 and 1 are the Pareto front over cost, mass and runtime."
+      alt: "A scatter chart of 49 trials by cost and mass: most are infeasible open circles; two feasible grey dots; trials 47 and 1 in blue on the Pareto front"
+    - after: mating-connectors-cadagentmechanicalconnectors-standard-practice-for-every-port
+      img: docs/img/motion/connector-window.svg
+      shows: diagram
+      drawn_by: tools/motion_figures.py
+      tool: cadagent.mechanical.connectors
+      on: fixture
+      caption: "An RJ45 plug pushed in along its mating axis, the port in tests/test_connectors.py in section. Through a window sized from the jack's bounding box its latch sweeps into the wall; through the window derived from the mated plug it clears by the 0.5 mm clearance. The swept volumes match the connector check's."
+      alt: "An RJ45 plug pushed in along its mating axis through two panel windows: through a window sized from the jack's bounding box the latch sweeps into the wall; through the window derived from the mated plug it clears by the 0.5 mm clearance"
+    - after: 3d-viewer-cad-agent-view--the-web-kit
+      img: docs/img/kit/file-viewer-step.webp
+      shows: output
+      tool: kit/file-viewer.js
+      on: gyropup
+      caption: "The web kit's single-file viewer, a sibling of viewer.html: a motor plate opened from its STEP file, tessellated into 7,724 triangles, 164.02 × 24.1 × 178 mm, placed on the floor and fitted. A visual tessellation, not a manufacturing check."
+      alt: The file viewer showing a grey motor plate with a large bore and a ring of screw holes in an isometric view, with view buttons and the file's format, triangle count and size below
+    - after: stiffness-and-strength-cadagentsimulationfea
+      below: Layer check X-Y / Z
+      img: docs/img/gyropup/wheel-link-fea.webp
+      shows: output
+      tool: cadagent.simulation.fea
+      on: gyropup
+      caption: "A study with the pa6_cf_xy row above: Gyropup's wheel link in a turn (case E1), 52,134 P2 tetrahedra, PA6-CF along the layers (humid). Safety factor 3.15 against a target of 2.0."
+      alt: Von Mises stress in Gyropup's wheel link, highest beside the axle bore, with a colour bar from 0 to 15 MPa
+    - after: robot-export-cadagentsimulationrobot-optional
+      below: solid_mass_properties
+      img: docs/img/linkages/fivebar.svg
+      shows: diagram
+      drawn_by: tools/linkage_figures.py
+      tool: cadagent.mechanical.linkages
+      on: example
+      caption: "A closed loop a tree cannot hold: a five-bar leg (cranks 100 mm, links 120 mm, ground 80 mm) moving its foot round a stride, its poses solved by cadagent.mechanical.linkages. Its lowest transmission angle is 53.4°; turning both cranks together from −90° locks at θ1 = −143.1°."
+      alt: "A five-bar leg hanging from its two hips moves its foot round an elliptical stride inside its reach; beside it, a map of the two crank angles shaded by transmission angle, with the stride's path"
+    - after: topology-optimisation-cadagentsimulationtopopt
+      img: docs/img/topology.jpg
+      shows: output
+      tool: cadagent.simulation.topopt
+      on: enclosure
+      caption: An enclosure floor with its mounting posts under load. Only the material that carries load is kept; it is a design guide, turned into ribs and pockets in the CAD and checked with FEA.
+      alt: Topology optimisation of an enclosure floor, with the remaining load paths between the mounting posts
+    - after: holes-clear
+      img: docs/img/motion/rib-in-counterbore.svg
+      shows: diagram
+      drawn_by: tools/motion_figures.py
+      tool: cad-agent holes
+      on: fixture-2d
+      caption: "Why every hole is cut last: a rib unioned after the holes runs into the counterbore and the clearance hole, and cad-agent holes finds it inside both. The counterbore plate in tests/test_holes.py, in section; the volumes match the hole check's."
+      alt: "Section through a screw hole in two build orders: a rib unioned after the clearance hole and counterbore were cut refills both, and the hole check finds rib inside each; with the holes cut last, both are clear"

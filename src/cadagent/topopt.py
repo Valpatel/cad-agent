@@ -1,7 +1,7 @@
 """Topology optimisation of a part's material layout (pyMOTO, MIT): where must material be, for a given load?
 
     from cadagent.topopt import TopOpt
-    t = TopOpt(lo=(0, 0, 0), hi=(206, 181, 8), voxel_mm=2.0, E_mpa=2700)   # a voxel box around the design region
+    t = TopOpt(lo=(0, 0, 0), hi=(206, 181, 8), voxel_mm=2.0, E_mpa=2060)   # a voxel box around the design region
     t.design(roof_slab)                 # CAD solid (CadQuery shape / trimesh / STL) the optimiser may hollow out
     t.keep(rim)                         # must stay solid (joints, bosses, sealing faces)
     t.void(fan_hole)                    # must stay empty (holes, clearances)
@@ -15,6 +15,9 @@ SIMP penalisation (p = 3), a density filter of radius ``filter_mm`` (it sets the
 radius) and, optionally, Langelaar's overhang filter so the layout prints without supports in the build direction.
 Solved with MMA (Svanberg), linear elastic, small deflection. It is a design guide: its output is a density field
 to read and turn into printable CAD (ribs, pockets, lattices), not a part to print as is.
+
+The default modulus is PLA's across the layers (2060 MPa, ``cadagent.fea.MATERIALS['pla']``). With one material the
+stiffest layout does not depend on E; only the compliance it reports does (it scales with 1/E).
 """
 from __future__ import annotations
 
@@ -34,7 +37,7 @@ def _mesh(shape):
 
 
 class TopOpt:
-    def __init__(self, lo, hi, voxel_mm: float = 2.0, E_mpa: float = 2700.0, nu: float = 0.35):
+    def __init__(self, lo, hi, voxel_mm: float = 2.0, E_mpa: float = 2060.0, nu: float = 0.35):
         pym = require('pymoto', _WHY)
         self.lo, self.hi = np.asarray(lo, float), np.asarray(hi, float)
         self.h = float(voxel_mm)

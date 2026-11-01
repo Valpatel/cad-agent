@@ -1,11 +1,12 @@
 /** Load cad-agent.valpatel.com pages in a real browser, served the way Cloudflare Pages serves them (pretty URLs and
  * the _headers file, including the Content-Security-Policy), at phone and desktop widths.
  * Fails on console errors, CSP violations, failed or third-party requests, sideways scrolling, a phone header without
- * the catalogue link, a hero animation that is not running (or still running under reduced motion), and a catalogue
- * filter that hides results without saying so. */
+ * the catalogue link, a hero animation that is not running (or still running under reduced motion), a catalogue
+ * filter that hides results without saying so, and a diagram wider than the article column at 1100 px (the narrowest
+ * width with the page tree), so no reader has to scroll a diagram sideways on a desktop. */
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { chromium, webkit } from '@playwright/test';
@@ -93,6 +94,106 @@ try {
         if (label.img || !label.text.includes('<img')) seen.push('copy label is parsed as HTML');
       }
     }
+    if (route === '/docs/toolkit') {                    // page tree: a column on wide screens, a toggle on phones
+      const nav = page.locator('cad-nav');
+      // Nothing jumps while the page loads: the tree is styled and folded from the first paint (kit/nav.css).
+      // Settles in every engine: no shift at all is the goal, not a hang, and WebKit has no layout-shift entries.
+      const shift = await page.evaluate(() => new Promise(done => {
+        if (!PerformanceObserver.supportedEntryTypes?.includes('layout-shift')) return done(0);
+        let sum = 0;
+        new PerformanceObserver(list => { for (const e of list.getEntries()) if (!e.hadRecentInput) sum += e.value; })
+          .observe({ type: 'layout-shift', buffered: true });
+        setTimeout(() => done(sum), 200);
+      }));
+      if (shift > 0.05) seen.push(`layout shifts while loading: ${shift.toFixed(3)}`);
+      if (width >= 1100) {
+        await page.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, document.body.scrollHeight / 2); });
+        await page.waitForTimeout(300);
+        const box = await nav.locator('.cad-nav-panel').boundingBox();
+        if (!box || box.y < 0 || box.y > 200) seen.push(`page tree is not in view after scrolling (y=${box?.y})`);
+        if (!(await nav.locator('.cad-nav-outline a[aria-current=location]').count())) seen.push('outline does not mark the section being read');
+        // The marked entry stays in view inside the panel (the outline sits under the tree, below the panel's fold), even
+        // when the reader had scrolled the panel back to its top.
+        await nav.locator('.cad-nav-panel').evaluate(p => { p.scrollTop = 0; });
+        await page.evaluate(() => scrollTo(0, document.body.scrollHeight * 0.85));
+        await page.waitForTimeout(300);
+        const inView = await nav.locator('.cad-nav-panel').evaluate(p => {
+          const a = p.querySelector('.cad-nav-outline a[aria-current=location]'), b = p.getBoundingClientRect(), r = a?.getBoundingClientRect();
+          return !!r && r.top >= b.top && r.bottom <= b.bottom;
+        });
+        if (!inView) seen.push('the marked outline entry is out of the panel\'s view');
+        // The last sections can never reach the reading line; following their links, with the site's smooth scrolling,
+        // must still mark them once the scroll settles. Scrolling on releases the mark to the reading line.
+        await page.evaluate(() => { document.documentElement.style.scrollBehavior = ''; scrollTo({ top: 0, behavior: 'instant' }); });
+        const links = nav.locator('.cad-nav-outline a');
+        // Until the page has not moved for 15 frames (a smooth scroll down a long page takes seconds).
+        const settle = () => page.evaluate(() => new Promise(done => {
+          let last = -1, still = 0;
+          const tick = () => { if (scrollY === last) { if (++still > 15) return done(); } else { still = 0; last = scrollY; } requestAnimationFrame(tick); };
+          tick(); setTimeout(done, 10000);
+        }));
+        for (const link of [links.nth((await links.count()) - 2), links.last()]) {
+          await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+          await link.click();
+          await settle();
+          if ((await link.getAttribute('aria-current')) !== 'location') seen.push(`following "${await link.textContent()}" (smooth scroll) does not mark it`);
+        }
+        // A jump marks its heading until the reader scrolls on: jump to a middle heading, then scroll back until it sits
+        // near the bottom of the window (still on screen, below the reading line). The section above is now being read.
+        const middle = links.nth(Math.floor((await links.count()) / 2));
+        await page.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; });   // an instant jump
+        await middle.click();
+        await settle();
+        const id = decodeURIComponent((await middle.getAttribute('href')).slice(1));
+        const back = await page.evaluate(i => innerHeight - 60 - document.getElementById(i).getBoundingClientRect().top, id);
+        await page.mouse.move(700, 400);
+        await page.mouse.wheel(0, -back);
+        await settle();
+        if ((await middle.getAttribute('aria-current')) === 'location') seen.push(`"${await middle.textContent()}" stays marked after the reader scrolls back`);
+        if (!(await nav.locator('.cad-nav-filter').isVisible())) seen.push('the filter is out of view');
+        const filter = nav.locator('.cad-nav-filter');
+        await filter.fill('zzzz-no-such-page');
+        if (!/No pages match/.test(await nav.locator('.cad-nav-empty').textContent())) seen.push('filter with no match says nothing');
+        await filter.press('Escape');
+        const open = await nav.locator('details.cad-nav-group[open]').count();
+        if (open !== 1) seen.push(`clearing the filter leaves ${open} groups open (was 1)`);
+      } else {
+        const toggle = nav.locator('.cad-nav-toggle');
+        if (!(await toggle.isVisible())) seen.push('no Contents toggle on a narrow screen');
+        else if (await nav.locator('.cad-nav-panel').isVisible()) seen.push('page tree is open before the toggle is pressed');
+        else { await toggle.click(); if (!(await nav.locator('a[aria-current=page]').isVisible())) seen.push('toggle does not open the page tree'); }
+      }
+      // Keyboard users skip the header and the tree in one key press: after it, the next Tab is inside the article.
+      await page.goto(base + route, { waitUntil: 'networkidle' });
+      await page.keyboard.press('Tab');
+      if ((await page.evaluate(() => document.activeElement?.className)) !== 'skip-link') seen.push('the first Tab stop is not "Skip to content"');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Tab');
+      if (!(await page.evaluate(() => !!document.activeElement?.closest('#main\\:content')))) seen.push('after "Skip to content", Tab does not land in the article');
+      // A label is text, never markup (other projects may put user text in it).
+      const injected = await page.evaluate(() => {
+        const el = document.createElement('cad-nav');
+        el.setAttribute('label', '<img src=x onerror="window.__xss=1">Pages');
+        el.innerHTML = '<details class="cad-nav-group"><summary>x</summary><ul><li><a href="/">x</a></li></ul></details>';
+        document.body.append(el);
+        const r = !!el.querySelector('.cad-nav-toggle img');
+        el.remove();
+        return r;
+      });
+      if (injected) seen.push('nav label is parsed as HTML');
+      // A bare tree (plain <details>, no kit classes) filters too, and says nothing when a page matches.
+      const bare = await page.evaluate(() => {
+        const el = document.createElement('cad-nav');
+        el.innerHTML = '<details open><summary>G</summary><ul><li><a href="/a">Alpha page</a></li><li><a href="/b">Beta page</a></li></ul></details>';
+        document.body.append(el);
+        const input = el.querySelector('.cad-nav-filter');
+        input.value = 'alpha'; input.dispatchEvent(new Event('input'));
+        const r = { hidden: [...el.querySelectorAll('li')].filter(li => li.hidden).length, empty: el.querySelector('.cad-nav-empty').textContent };
+        el.remove();
+        return r;
+      });
+      if (bare.hidden !== 1 || bare.empty) seen.push(`a bare tree does not filter: ${JSON.stringify(bare)}`);
+    }
     if (route === '/docs/compliant') {
       const href = await page.locator('.feedback a.button').getAttribute('href').catch(() => null);
       const u = href && new URL(href);
@@ -107,6 +208,118 @@ try {
   const still = await reduced.evaluate(() => document.getAnimations().filter(a => a.animationName?.startsWith('snap-')).length);
   if (still) problems.push(`reduced motion: ${still} hero animations still running`);
   await reduced.close();
+  // Every page with a diagram, at the narrowest desktop width: each rendered diagram fits its column (#122).
+  const diagramPages = [];
+  for (const e of await readdir(dir, { withFileTypes: true, recursive: true })) {
+    const rel = path.relative(dir, path.join(e.parentPath, e.name));
+    if (!e.isFile() || !rel.endsWith('.html') || rel.startsWith('kit')) continue;
+    const sources = ((await readFile(path.join(dir, rel), 'utf8')).match(/class="language-mermaid"|<pre class="mermaid"/g) || []).length;
+    if (sources) diagramPages.push(['/' + rel.replace(/\.html$/, '').split(path.sep).join('/'), sources]);
+  }
+  // Pages whose diagrams are being redrawn in an open PR. One that fits again fails the test, so it leaves this list.
+  const KNOWN_WIDE = new Map();
+  // Headless Chrome hides scrollbars; a desktop browser with classic ones has up to 17px less, so keep that much spare.
+  const SCROLLBAR = 17;
+  const wide = await browser.newPage({ viewport: { width: 1100, height: 900 } });
+  for (const [route, sources] of diagramPages.sort()) {
+    await wide.goto(base + route, { waitUntil: 'networkidle' });
+    await wide.waitForFunction(n => document.querySelectorAll('.cad-diagram').length >= n &&
+      [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'),
+      sources, { timeout: 20000 }).catch(() => problems.push(`1100px ${route}: diagrams did not finish rendering`));
+    const drawn = await wide.$$eval('.cad-diagram', fs => fs.filter(f => f.dataset.state === 'ready' && f.querySelector('svg')).length);
+    if (drawn !== sources) problems.push(`1100px ${route}: ${drawn} of ${sources} diagrams rendered`);
+    // The drawing's own width against the room inside its view (scrollWidth is never below clientWidth, so it cannot
+    // show how much spare there is).
+    // A view without a drawing failed to render; the count above reports it.
+    const over = (await wide.$$eval('.cad-diagram .cad-diagram-view', views => views.filter(v => v.querySelector('svg')).map(v => {
+      const cs = getComputedStyle(v), room = v.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      return { w: Math.ceil(v.querySelector('svg').getBoundingClientRect().width), room };
+    }))).filter(d => d.w > d.room - SCROLLBAR + 1);
+    if (KNOWN_WIDE.has(route)) { if (!over.length) problems.push(`${route} now fits: remove it from KNOWN_WIDE`); continue; }
+    for (const d of over) problems.push(`1100px ${route}: a diagram is ${d.w}px wide; the column has ${d.room}px, less ${SCROLLBAR}px for a scrollbar (top-down, at most three boxes per row)`);
+  }
+  await wide.close();
+  // Very wide screens: the outline moves to its own column on the right and keeps marking the section being read.
+  const wider = await browser.newPage({ viewport: { width: 1600, height: 900 } });
+  await wider.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
+  await wider.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, document.body.scrollHeight / 2); });
+  await wider.waitForTimeout(300);
+  if (!(await wider.locator('.doc-rail').isVisible())) problems.push('1600px: no "On this page" column');
+  else if (!(await wider.locator('.doc-rail a[aria-current=location]').count())) problems.push('1600px: the right-hand outline does not mark the section');
+  if (await wider.locator('cad-nav .cad-nav-outline').isVisible()) problems.push('1600px: the outline shows twice');
+  await wider.close();
+  // A big screen, where several last sections cannot reach the reading line: each outline link followed with the
+  // site's smooth scrolling marks its own section once the scroll settles (#123 review: 21 of 59 were wrong).
+  const big = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
+  await big.goto(base + '/docs/explore', { waitUntil: 'networkidle' });
+  const rail = big.locator('.doc-rail a');
+  const n = await rail.count();
+  for (let i = Math.max(0, n - 4); i < n; i++) {
+    await big.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+    await rail.nth(i).click();
+    await big.evaluate(() => new Promise(done => {
+      let last = -1, still = 0;
+      const tick = () => { if (scrollY === last) { if (++still > 15) return done(); } else { still = 0; last = scrollY; } requestAnimationFrame(tick); };
+      tick(); setTimeout(done, 10000);
+    }));
+    const marked = await big.locator('.doc-rail a[aria-current=location]').allTextContents();
+    const want = await rail.nth(i).textContent();
+    if (marked.join() !== want) problems.push(`2560px /docs/explore: following "${want}" marks "${marked.join()}"`);
+  }
+  // Typing in the filter does not move the page, so it must not release a jump (the space used to). Jump to a section
+  // that cannot reach the reading line and is not the last: released, the mark would fall to the last one on screen.
+  for (const i of [n - 2, n - 3]) {
+    await big.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+    await rail.nth(i).click();
+    await big.evaluate(() => new Promise(done => {
+      let last = -1, still = 0;
+      const tick = () => { if (scrollY === last) { if (++still > 15) return done(); } else { still = 0; last = scrollY; } requestAnimationFrame(tick); };
+      tick(); setTimeout(done, 10000);
+    }));
+    const kept = await rail.nth(i).textContent();
+    await big.locator('.cad-nav-filter').fill('');
+    await big.locator('.cad-nav-filter').pressSequentially('vi e');
+    await big.waitForTimeout(150);
+    const after = await big.locator('.doc-rail a[aria-current=location]').allTextContents();
+    if (after.join() !== kept) problems.push(`2560px /docs/explore: typing in the filter moved the mark from "${kept}" to "${after}"`);
+    await big.locator('.cad-nav-filter').press('Escape');
+  }
+  await big.close();
+  // The same jumps through the tree's own outline, in a window tall enough that several sections cannot reach the
+  // reading line (review 3: at 1366x900 only the last one cannot, and the bottom rule marks it anyway).
+  const tall = await browser.newPage({ viewport: { width: 1366, height: 1600 } });
+  await tall.goto(base + '/docs/explore', { waitUntil: 'networkidle' });
+  const unreachable = await tall.evaluate(() => {
+    const line = Math.min(innerHeight / 3, 220), max = document.documentElement.scrollHeight - innerHeight;
+    return [...document.querySelectorAll('cad-nav .cad-nav-outline a')].map((a, i) => [i, document.getElementById(decodeURIComponent(a.hash.slice(1)))])
+      .filter(([, h]) => h && h.getBoundingClientRect().top + scrollY - line > max).map(([i]) => i);
+  });
+  if (unreachable.length < 2) problems.push(`1366x1600 /docs/explore: only ${unreachable.length} section(s) cannot reach the reading line; pick a page where several cannot`);
+  const outline = tall.locator('cad-nav .cad-nav-outline a');
+  for (const i of unreachable) {
+    await tall.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+    await outline.nth(i).click();
+    await tall.evaluate(() => new Promise(done => {
+      let last = -1, still = 0;
+      const tick = () => { if (scrollY === last) { if (++still > 15) return done(); } else { still = 0; last = scrollY; } requestAnimationFrame(tick); };
+      tick(); setTimeout(done, 10000);
+    }));
+    if ((await outline.nth(i).getAttribute('aria-current')) !== 'location')
+      problems.push(`1366x1600 /docs/explore: following "${await outline.nth(i).textContent()}" (smooth scroll) does not mark it`);
+  }
+  await tall.close();
+  // A wheel over the page tree scrolls the page when the tree has nothing to scroll (review 3: the panel trapped it).
+  const desk = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
+  await desk.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
+  const panel = await desk.locator('cad-nav .cad-nav-panel').evaluate(p => {
+    const r = p.getBoundingClientRect(); return { fits: p.scrollHeight <= p.clientHeight + 1, x: r.left + r.width / 2, y: r.top + 200 };
+  });
+  if (!panel.fits) problems.push('1920px /docs/toolkit: the tree overflows its panel; pick a page where it fits');
+  await desk.mouse.move(panel.x, panel.y);
+  await desk.mouse.wheel(0, 300);
+  await desk.waitForTimeout(400);
+  if ((await desk.evaluate(() => scrollY)) < 100) problems.push('1920px /docs/toolkit: a wheel over the page tree does not scroll the page');
+  await desk.close();
   assert.deepEqual(problems, []);
   console.log(`${engine.name()}: ${ROUTES.length} routes at 360 and 1366 px under the site CSP PASS`);
 } finally {

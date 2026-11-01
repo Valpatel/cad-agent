@@ -23,6 +23,12 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 - Reproducible STEP files: `cadagent.geometry.export_step(shape, path)` writes the same bytes for the same model, with
   a fixed header date (`SOURCE_DATE_EPOCH` when set), the product named after the file and assembly links numbered
   within the file. `mcmaster normalise` writes `<PN>.norm.step` with it (#91).
+- FEA printed materials take their modulus from the filament data sheet they cite: the lowest the sheet gives, across
+  the layers (PLA 2060, PETG 1120, PETG-CF 1340, PAHT-CF 1820, TPU 7.4 MPa; the humid PA6-CF rows 2126 and 1042).
+  Before, they were 31-147 % higher (TPU about 4x), so deflections read 24-60 % low (TPU 75 %). Each printed
+  material now names its sheet (`source`), what E and the strength are taken from (`note`) and the print direction of
+  E (`direction`); results repeat them in their assumptions line, and the viewer shows the direction. Densities follow
+  the sheets, and `pa_cf` is named PAHT-CF, as its values always were (#125).
 
 **Docs and research**
 - Work-claim comments for sharing issues between agents (#102); the 2026-10-31 survey of agent toolkits, compliant
@@ -35,4 +41,9 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 across rebuilds. Hole-check counts now separate holes from cones. A countersunk seat that used to count as
 a hole reads as a countersink, so recorded counts and findings can change on the next run. Links to the numbered lessons
 (`lessons/NN-….md`) still work through one-line stubs on GitHub until v0.6.0, which removes them: point such links at
-the new paths before then (the stubs name them).
+the new paths before then (the stubs name them). FEA deflections and stiffnesses with the printed materials change with
+the new moduli (#125): re-run deflection, stiffness, flexure-travel and clearance-under-load checks against their
+limits. Under the same forces, stresses and safety factors do not change (the PA6-CF rows' strengths are now computed
+exactly, 48.96 and 23.04 MPa instead of 49 and 23). A force or a stress worked out at a given travel (a clip's
+retention, a flexure at full travel) falls with E, so re-check strength at travel too, with the in-plane modulus or a
+coupon.

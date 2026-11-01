@@ -2,7 +2,11 @@
 # added 2026-10-31 from research/agent-toolkits-2026-10.md were verified that day (older ones were not re-checked).
 # status: candidate | trial | adopted | rejected. Licence policy: incorporate MIT/BSD/Apache-2.0 code with attribution;
 # GPL/AGPL tools run as external programs only; no-licence / non-commercial projects are ideas only.
+# what: one line on what the project is and does, from its own README or site (2026-10-31); areas: one to three slugs
+# from docs/areas.yaml (a domain only when no area fits). Our assessment stays in status, policy and landscape notes.
 - name: earthtojake/text-to-cad
+  what: "Agent plugin that writes build123d models, exports STEP, STL and 3MF, runs DFM checks and makes drawings"
+  areas: [3d-printing, sheet-metal, cnc-machining]
   url: https://github.com/earthtojake/text-to-cad
   license: MIT
   stars: 22951
@@ -10,6 +14,8 @@
   status: trial
   policy: may incorporate with attribution
 - name: amagine-ai/Amagine3D
+  what: "Agent app that designs enclosures around internal components from a brief and images, as editable build123d"
+  areas: [housings-and-enclosures, 3d-printing]
   url: https://github.com/amagine-ai/Amagine3D
   license: Apache-2.0
   stars: 6259
@@ -17,6 +23,8 @@
   status: candidate
   policy: may incorporate with attribution
 - name: Adam-CAD/CADAM
+  what: "Browser text-to-CAD app that turns a prompt or image into an OpenSCAD model with parameter sliders"
+  areas: [mechanical]
   url: https://github.com/Adam-CAD/CADAM
   license: GPL-3.0
   stars: 5328
@@ -24,6 +32,8 @@
   status: candidate
   policy: external program only (GPL-3.0)
 - name: KittyCAD/modeling-app
+  what: "Zoo Design Studio: a CAD app where every part is KCL code, edited by clicking or typing, on a cloud engine"
+  areas: [mechanical]
   url: https://github.com/KittyCAD/modeling-app
   license: MIT
   stars: 1321
@@ -31,6 +41,8 @@
   status: candidate
   policy: may incorporate with attribution
 - name: Pan-Chera/Multi-Agent-CAD
+  what: "Multi-agent text-to-CAD in build123d for single parts and, as a preview, multi-part assemblies"
+  areas: [mechanisms, 3d-printing]
   url: https://github.com/Pan-Chera/Multi-Agent-CAD
   license: MIT
   stars: 1048
@@ -38,6 +50,8 @@
   status: candidate
   policy: may incorporate with attribution
 - name: OzAILabs/Claude-To-Print
+  what: "Claude Code skills that turn a sentence into a printable build123d model: STEP, STL and multi-colour 3MF"
+  areas: [3d-printing]
   url: https://github.com/OzAILabs/Claude-To-Print
   license: MIT
   stars: 4
@@ -45,6 +59,8 @@
   status: candidate
   policy: may incorporate with attribution
 - name: jdilla1277/agentcad
+  what: "CLI and MCP server that runs an agent's build123d scripts and returns STEP, renders, metrics and diffs"
+  areas: [mechanical]
   url: https://github.com/jdilla1277/agentcad
   license: Apache-2.0
   stars: 173
@@ -53,6 +69,7 @@
   policy: may incorporate with attribution
 - name: pzfreo/build123d-mcp
   what: "MCP server for build123d: lets an agent build, inspect and render build123d models while it designs"
+  areas: [mechanical]
   url: https://github.com/pzfreo/build123d-mcp
   license: Apache-2.0
   stars: 130
@@ -60,6 +77,8 @@
   status: candidate
   policy: may incorporate with attribution
 - name: flowful-ai/cad-skill
+  what: "Claude Code skill that writes CadQuery scripts for 3D-printable parts, with a Gridfinity bin generator"
+  areas: [3d-printing]
   url: https://github.com/flowful-ai/cad-skill
   license: PolyForm-Noncommercial-1.0.0
   stars: 692
@@ -67,6 +86,8 @@
   status: candidate
   policy: ideas only (PolyForm Noncommercial)
 - name: Svetlana-DAO-LLC/cad-agent
+  what: "Docker server where an agent sends build123d code over HTTP or MCP and gets back PNG renders and exports"
+  areas: [3d-printing]
   url: https://github.com/Svetlana-DAO-LLC/cad-agent
   license: LicenseRef-CAD-Agent-License
   stars: 53
@@ -74,6 +95,8 @@
   status: candidate
   policy: ideas only (custom licence)
 - name: MikeSuiter/claude-build123d-starter
+  what: "Claude Code project template for build123d models with a live VS Code preview, for printing, CNC and laser"
+  areas: [3d-printing, cnc-machining, laser-cutting]
   url: https://github.com/MikeSuiter/claude-build123d-starter
   license: MIT
   stars: 1
@@ -81,6 +104,8 @@
   status: candidate
   policy: may incorporate with attribution
 - name: neka-nat/freecad-mcp
+  what: "FreeCAD add-on and MCP server: an agent creates and edits models, runs Python and runs FEM analyses"
+  areas: [mechanical, structural-fea]
   url: https://github.com/neka-nat/freecad-mcp
   license: MIT
   stars: 3040
@@ -88,7 +113,8 @@
   status: candidate
   policy: may incorporate with attribution
 - name: jhacksman/OpenSCAD-MCP-Server
-  what: "MCP server that turns a prompt into an OpenSCAD model, a preview image and a 3D file"
+  what: "MCP server that builds OpenSCAD source or primitive dimensions into SCAD, STL and four PNG previews"
+  areas: [mechanical]
   url: https://github.com/jhacksman/OpenSCAD-MCP-Server
   license: MIT
   stars: 208
@@ -96,7 +122,8 @@
   status: candidate
   policy: may incorporate with attribution
 - name: RobertCoop/openscad-mcp
-  what: "MCP server for OpenSCAD modelling and rendering"
+  what: "MCP server for designing printable parts in OpenSCAD: renders, measures, checks interference and exports"
+  areas: [3d-printing]
   url: https://github.com/RobertCoop/openscad-mcp
   license: MIT
   stars: 164
@@ -105,6 +132,7 @@
   policy: may incorporate with attribution
 - name: altendky/onshape-mcp
   what: "MCP server for reading and working with Onshape CAD documents"
+  areas: [mechanical]
   url: https://github.com/altendky/onshape-mcp
   license: Apache-2.0
   stars: 20
@@ -113,6 +141,7 @@
   policy: may incorporate with attribution
 - name: faust-machines/fusion360-mcp-server
   what: "MCP server that drives Autodesk Fusion 360"
+  areas: [mechanical]
   url: https://github.com/faust-machines/fusion360-mcp-server
   license: MIT
   stars: 131
@@ -120,6 +149,8 @@
   status: candidate
   policy: may incorporate with attribution
 - name: ahujasid/mcp-for-blender
+  what: "MCP server and Blender add-on that let an AI build, texture and render scenes and run Blender Python"
+  areas: [results-and-visuals]
   url: https://github.com/ahujasid/mcp-for-blender
   license: MIT
   stars: 32261
@@ -127,6 +158,8 @@
   status: candidate
   policy: may incorporate with attribution
 - name: mixelpixx/KiCAD-MCP-Server
+  what: "MCP server for KiCad: edit schematics and boards, route with Freerouting, run DRC and look up JLCPCB parts"
+  areas: [circuit-boards]
   url: https://github.com/mixelpixx/KiCAD-MCP-Server
   license: MIT
   stars: 2933
@@ -134,6 +167,8 @@
   status: candidate
   policy: may incorporate with attribution
 - name: mixelpixx/Konnect
+  what: "Archived KiCad 10 plugin for AI-assisted schematic and PCB design; it continues as Konnect-EDA"
+  areas: [circuit-boards]
   url: https://github.com/mixelpixx/Konnect
   license: AGPL-3.0
   stars: 1399
@@ -141,6 +176,8 @@
   status: candidate
   policy: external program only (AGPL-3.0)
 - name: oaslananka/kicad-mcp-pro
+  what: "MCP server for KiCad schematic, PCB, ERC/DRC, DFM and manufacturing-export work, read-only by default"
+  areas: [circuit-boards]
   url: https://github.com/oaslananka/kicad-mcp-pro
   license: MIT
   stars: 149
@@ -149,6 +186,7 @@
   policy: may incorporate with attribution
 - name: Seeed-Studio/kicad-mcp-server
   what: "MCP server for KiCad: analyse schematics and boards, trace pin-level connections, edit designs"
+  areas: [circuit-boards]
   url: https://github.com/Seeed-Studio/kicad-mcp-server
   license: none
   stars: 168
@@ -156,6 +194,8 @@
   status: candidate
   policy: ideas only (no LICENSE file)
 - name: lamaalrajih/kicad-mcp
+  what: "MCP server for KiCad projects: list and open them, extract netlists and BOMs, run DRC, render boards"
+  areas: [circuit-boards]
   url: https://github.com/lamaalrajih/kicad-mcp
   license: MIT
   stars: 529
@@ -163,6 +203,8 @@
   status: candidate
   policy: may incorporate with attribution
 - name: aklofas/kicad-happy
+  what: "Agent skills that review KiCad schematics, layouts and Gerbers: power tree, subcircuits, SPICE, EMC, BOM"
+  areas: [circuit-boards]
   url: https://github.com/aklofas/kicad-happy
   license: MIT
   stars: 1499
@@ -170,6 +212,8 @@
   status: trial
   policy: may incorporate with attribution
 - name: American-Embedded/kistack
+  what: "Hand-written agent skills for KiCad: schematic work, PCB and Gerber review, parts, BOM and exports"
+  areas: [circuit-boards]
   url: https://github.com/American-Embedded/kistack
   license: MIT
   stars: 411
@@ -177,6 +221,8 @@
   status: candidate
   policy: may incorporate with attribution
 - name: i2cjak/Backplane
+  what: "Agent workspace for hardware on a KiCad fork, with KiCad and FreeCAD viewers that show each agent step"
+  areas: [circuit-boards, agent-workflow]
   url: https://github.com/i2cjak/Backplane
   license: MIT
   stars: 731
@@ -184,6 +230,8 @@
   status: candidate
   policy: may incorporate with attribution
 - name: copperheadhq/copperhead
+  what: "CLI agent that turns a brief into a KiCad schematic, draft layout and Gerbers, or edits an existing KiCad repo"
+  areas: [circuit-boards]
   url: https://github.com/copperheadhq/copperhead
   license: Apache-2.0
   stars: 627
@@ -191,7 +239,8 @@
   status: candidate
   policy: may incorporate with attribution
 - name: punkfab/circuit-skills
-  what: "Claude Code skills for code-driven electronics: circuit simulation (ngspice, Falstad) and PCB layout (tscircuit to KiCad)"
+  what: "Claude Code skills that simulate in ngspice, place boards in tscircuit, route in KiCad and fit enclosures"
+  areas: [circuit-boards, housings-and-enclosures]
   url: https://github.com/punkfab/circuit-skills
   license: none
   stars: 10
@@ -199,7 +248,8 @@
   status: candidate
   policy: ideas only (no licence)
 - name: OpenFOAM (OpenCFD v2512)
-  what: "Open-source CFD toolbox; cad-agent writes conjugate heat-transfer cases from CAD and runs it as a separate program"
+  what: "Open-source CFD toolbox; cad-agent writes conjugate heat-transfer cases for it from CAD"
+  areas: [cfd, airflow-and-fans]
   url: https://develop.openfoam.com/Development/openfoam
   license: GPL-3.0
   last_push: 2026-01-23
@@ -207,6 +257,7 @@
   policy: external program only (GPL-3.0); run in the opencfd/openfoam-default Docker image
 - name: aatmdelissen/pyMOTO
   what: "Modular Python framework for topology optimisation; cad-agent topopt runs SIMP with MMA on it"
+  areas: [topology-optimisation]
   url: https://github.com/aatmdelissen/pyMOTO
   license: MIT
   last_push: 2026-05-01
@@ -214,23 +265,28 @@
   policy: may incorporate with attribution (imported as a dependency)
 - name: pyvista/pyvista
   what: "3D visualisation and mesh analysis on VTK; cad-agent renders stress and flow pictures and animations with it"
+  areas: [results-and-visuals]
   url: https://github.com/pyvista/pyvista
   license: MIT
   status: adopted
   policy: may incorporate with attribution (imported as a dependency)
 - name: bambulab/BambuStudio
   what: "Slicer for Bambu Lab and other printers; cad-agent runs its command line for real grams and print times"
+  areas: [3d-printing]
   url: https://github.com/bambulab/BambuStudio
   license: AGPL-3.0
   status: adopted
   policy: external program only (AGPL-3.0); command-line slicing for filament grams
 - name: optuna/optuna
   what: "Hyperparameter optimisation framework; cad-agent optimise uses its NSGA-II and TPE samplers"
+  areas: [design-exploration]
   url: https://github.com/optuna/optuna
   license: MIT
   status: adopted
   policy: optional dependency (the explore extra, optuna>=3.4); runs the NSGA-II and TPE samplers of cad-agent optimise
 - name: OrcaSlicer/OrcaSlicer
+  what: "Open-source FDM slicer for many printer brands; the 2.5 beta adds a built-in MCP server and a CAD tab"
+  areas: [3d-printing]
   url: https://github.com/OrcaSlicer/OrcaSlicer
   license: AGPL-3.0
   stars: 16253
@@ -238,6 +294,8 @@
   status: candidate
   policy: "external program only (AGPL-3.0); built-in MCP server in 2.5.0 (beta 2026-10-27): adopt as an external process once stable"
 - name: OrcaSlicer/orcaslicer-mcp-skills
+  what: "OrcaSlicer's own agent skills for driving the slicer through its built-in MCP server, from setup to slicing"
+  areas: [3d-printing]
   url: https://github.com/OrcaSlicer/orcaslicer-mcp-skills
   license: AGPL-3.0
   stars: 2
@@ -245,6 +303,8 @@
   status: candidate
   policy: install as a plugin with Orca 2.5; never copy its text (AGPL-3.0)
 - name: MaxEllis/orcaslicer-mcp
+  what: "Third-party MCP server that drives a running OrcaSlicer: settings, presets, slicing and results as numbers"
+  areas: [3d-printing]
   url: https://github.com/MaxEllis/orcaslicer-mcp
   license: AGPL-3.0
   stars: 86
@@ -252,6 +312,8 @@
   status: rejected
   policy: superseded by Orca's built-in MCP server
 - name: KD5RYN/b123d-print
+  what: "MCP server, CLI and plugin that design build123d parts for printing, check them and export for the slicer"
+  areas: [3d-printing]
   url: https://github.com/KD5RYN/b123d-print
   license: MIT
   stars: 2
@@ -259,6 +321,8 @@
   status: candidate
   policy: "may incorporate with attribution: borrow the tip-over, round-top hole, bed-edge fillet and print-in-place gap checks (#97)"
 - name: ballerabdude/agent-cad-works
+  what: "build123d workflow that sweeps motion for collisions, checks printability, slices in Orca and fits vendor STEP"
+  areas: [mechanisms, 3d-printing, fasteners-and-hardware]
   url: https://github.com/ballerabdude/agent-cad-works
   license: Apache-2.0
   stars: 1
@@ -266,6 +330,8 @@
   status: candidate
   policy: may incorporate with attribution; ideas for motion sweeps and vendor-STEP fit
 - name: gjaloyan/print3d-designer
+  what: "Agent skill that models printable parts in build123d, compares them with a reference photo and checks G-code"
+  areas: [3d-printing]
   url: https://github.com/gjaloyan/print3d-designer
   license: MIT
   stars: 1
@@ -273,6 +339,8 @@
   status: candidate
   policy: "may incorporate with attribution; watch: reads sliced G-code back layer by layer"
 - name: SiddhuYen/eitri
+  what: "Local AI CAD agent that models build123d parts, measures them against the request, fixes failures and exports"
+  areas: [mechanical]
   url: https://github.com/SiddhuYen/eitri
   license: FSL-1.1-MIT
   stars: 1
@@ -280,6 +348,8 @@
   status: rejected
   policy: "ideas only: Functional Source License (non-compete; becomes MIT after two years)"
 - name: pzfreo/specify-core
+  what: "Writes manufacturing intent into STEP parts as AP242 PMI by asking questions, and diffs STEP revisions in PRs"
+  areas: [design-process, review-and-evidence]
   url: https://github.com/pzfreo/specify-core
   license: Apache-2.0
   stars: 7
@@ -287,6 +357,8 @@
   status: candidate
   policy: may incorporate with attribution; trial STEP diffs in PR reviews (with pzfreo/step-diff-demo)
 - name: heartland-eng/bd_hardware
+  what: "Planned build123d library of holes, insert pockets, nut traps and snap fits; the repo has only a README"
+  areas: [fasteners-and-hardware]
   url: https://github.com/heartland-eng/bd_hardware
   license: none
   stars: 0
@@ -294,6 +366,8 @@
   status: rejected
   policy: ideas only (no licence, README only)
 - name: novasolver/novasolver-studio
+  what: "Local FEM, heat and CFD app (CalculiX, OpenFOAM) with an MCP server and checks on every result"
+  areas: [structural-fea, cfd]
   url: https://github.com/novasolver/novasolver-studio
   license: GPL-3.0
   stars: 1
@@ -301,6 +375,8 @@
   status: candidate
   policy: external program only (GPL-3.0); copy the ran/converged/verified gate idea, not code
 - name: WifiLast/freecad-mcp
+  what: "FreeCAD MCP server for static FEM with CalculiX, SIMP topology optimisation and dimension optimisation"
+  areas: [structural-fea, topology-optimisation]
   url: https://github.com/WifiLast/freecad-mcp
   license: none
   stars: 0
@@ -308,6 +384,8 @@
   status: rejected
   policy: ideas only (no licence); binds 0.0.0.0 by default
 - name: V0v1kkk/freecad-engineering
+  what: "Agent skills and MCP setup for editable FreeCAD models, FDM structural reviews and FEM checks"
+  areas: [structural-fea, 3d-printing]
   url: https://github.com/V0v1kkk/freecad-engineering
   license: MIT
   stars: 3
@@ -315,6 +393,8 @@
   status: candidate
   policy: may incorporate with attribution; ideas for the FDM structural review (#94)
 - name: n3r/AgentCAD
+  what: "Code-first parametric CAD on build123d with a browser UI, a chat agent and an MCP server; runs on macOS"
+  areas: [mechanical]
   url: https://github.com/n3r/AgentCAD
   license: Apache-2.0
   stars: 7
@@ -322,6 +402,8 @@
   status: candidate
   policy: "may incorporate with attribution; snap-fits skill reviewed for #95 (prompt-only; some strain rows unsourced)"
 - name: static74/3dp-compliant-mechanisms
+  what: "Claude skill for FDM compliant mechanisms, snap fits, springs and glue features, after Slant 3D's methods"
+  areas: [compliant-mechanisms, 3d-printing]
   url: https://github.com/static74/3dp-compliant-mechanisms
   license: MIT
   stars: 0
@@ -329,6 +411,8 @@
   status: candidate
   policy: "may incorporate with attribution: the selection table and evals are the ideas to take for #94, after recomputing its strain values (about 2x the datasheet-derived ones); nothing vendored yet"
 - name: MP-AI-20/mechanical-engineering-skills
+  what: "Library of 647 prompt-style mechanical-engineering skills, from strength of materials to GD&T"
+  areas: [mechanical]
   url: https://github.com/MP-AI-20/mechanical-engineering-skills
   license: MIT
   stars: 10
@@ -336,6 +420,8 @@
   status: rejected
   policy: bulk-generated prompts with few primary citations
 - name: dwragon/Fusion360SnapFitGenerator
+  what: "Autodesk Fusion add-in that splits an enclosure in two and builds cantilever, torsion or annular snap fits"
+  areas: [compliant-mechanisms, housings-and-enclosures]
   url: https://github.com/dwragon/Fusion360SnapFitGenerator
   license: MPL-2.0
   stars: 5
@@ -343,6 +429,8 @@
   status: candidate
   policy: reference for parameters (MPL-2.0 file-level copyleft; Fusion add-in, not an agent tool)
 - name: Vivek-Boora/dfm-agent
+  what: "Reads a STEP part and shows mould pull direction, draft, undercuts and a parting line in a 3D web view"
+  areas: [mould-design]
   url: https://github.com/Vivek-Boora/dfm-agent
   license: none
   stars: 0
@@ -350,6 +438,8 @@
   status: rejected
   policy: "ideas only (no licence): pull direction, core/cavity/undercut classes for the moulding checks"
 - name: naman113/Designstudio
+  what: "Buildcore: turns STEP files into dimensioned drawings, a BOM, a 3D web view and a searchable parts catalogue"
+  areas: [publishing]
   url: https://github.com/naman113/Designstudio
   license: MIT
   stars: 8

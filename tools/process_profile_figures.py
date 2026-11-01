@@ -242,7 +242,229 @@ def sheet_metal() -> str:
                       "Read 2026-10-31.")
 
 
-FIGURES = {"process-min-wall.svg": min_wall, "process-sheet-metal.svg": sheet_metal}
+SHORT = {"E. I. du Pont de Nemours and Company": "DuPont", "Covestro LLC": "Covestro"}   # names too long for a row
+
+
+def _span_row(rule: dict, sources: dict, envs: list[dict], prefix: str = "", per: str | None = None) -> Row:
+    """A rule as one row, evaluated in each of ``envs``: a value that changes between them (a rule that steps with the
+    feature's area, say) becomes the range it spans, drawn as a bar (the limit varies). With ``per``, each value is
+    divided by that variable first, so a rule in proportion to it reads the same in every setting."""
+    def scaled(env: dict) -> Row:
+        name, lo, hi, colour, window = _row(rule, sources, env)
+        k = env[per] if per else 1.0
+        return name, None if lo is None else lo / k, None if hi is None else hi / k, colour, window
+    rows = [scaled(env) for env in envs]
+    name, _, _, colour, window = rows[0]
+    los = [r[1] for r in rows if r[1] is not None]
+    his = [r[2] for r in rows if r[2] is not None]
+    lo = min(los) if los else None
+    hi = max(his) if his else None
+    if "value" in rule:
+        lo, hi = min(r[1] for r in rows), max(r[2] for r in rows)
+    for long, short in SHORT.items():
+        name = name.replace(long, short)
+    return (f"{prefix}{name}", lo, hi, colour, window)
+
+
+def _scale(groups: list[tuple[str, list[Row]]], step: float) -> tuple[float, list[float]]:
+    top = max(v for _, rows in groups for _, lo, hi, *_ in rows for v in (lo, hi) if v is not None)
+    vmax = math.ceil(top / step) * step
+    if any(lo == vmax and hi is None for _, rows in groups for _, lo, hi, *_ in rows):
+        vmax += step  # room for the tail of a floor that sits at the top of the scale
+    return vmax, [round(i * step, 6) for i in range(int(round(vmax / step)) + 1)]
+
+
+def compared(title: str, subtitle: str, groups: list[tuple[str, str, str | None]], *, envs: list[dict] | None = None,
+             unit: str, step: float, note: str, kinds: dict[str, str] | None = None, per: str | None = None) -> str:
+    """A chart of the rules that share a compare key: ``groups`` is (heading, compare key, process or None), the
+    rules read from the YAML in file order and evaluated in ``envs`` (one or more variable settings). With ``kinds``
+    (compare key -> a word), a group holds every key in it and each row says which ("hole · Xometry")."""
+    data = load()
+    sources = {s["id"]: s for s in data["sources"]}
+    envs = envs or [{}]
+    out = []
+    for heading, key, process in groups:
+        keys = list(kinds) if key == "*" else [key]
+        rows = [_span_row(r, sources, envs, f"{kinds[r['compare']]} · " if kinds else "", per)
+                for k in keys for r in data["rules"]
+                if r.get("compare") == k and r.get("status") == "read" and (process is None or r["process"] == process)]
+        if rows:
+            out.append((heading, rows))
+    vmax, ticks = _scale(out, step)
+    n = sum(len(rows) for _, rows in out)
+    return ranges_svg(title, subtitle.format(n=n), out, vmax, ticks, unit, note)
+
+
+READ = "Each source's own wording and conditions are in the YAML file and on the page. Read 2026-10-31."
+BY_PROCESS = [(PROCESS_TITLES[p], p) for p in ("fdm", "sla", "sls", "mjf")]
+
+
+def fits() -> str:
+    return compared("Clearance between mating printed parts: what each source recommends",
+                    "{n} rules (compare: clearance-fit). A bar: the gap grows with the mating area (10 to 30 mm²).",
+                    [(t, "clearance-fit", p) for t, p in BY_PROCESS], envs=[{"area": 10.0}, {"area": 30.0}],
+                    unit="mm", step=0.1, note=READ)
+
+
+def holes_pins() -> str:
+    return compared("Smallest hole and pin that print, by process",
+                    "{n} rules (compare: min-hole, min-pin). ≥: a floor; a bar: the floor varies.",
+                    [(t, "*", p) for t, p in BY_PROCESS], unit="mm", step=0.5, note=READ,
+                    kinds={"min-hole": "hole", "min-pin": "pin"})
+
+
+def overhangs() -> str:
+    return compared("FDM: the steepest overhang printed without support, from vertical",
+                    "{n} rules (compare: overhang-max), in degrees from vertical. ≤: a ceiling; a bar: it varies.",
+                    [("FDM / FFF", "overhang-max", "fdm")], unit="degrees", step=15, note=READ)
+
+
+def escape_holes() -> str:
+    return compared("Drain and escape holes for hollow prints",
+                    "{n} rules (compare: escape-hole): the smallest hole that lets resin or powder out.",
+                    [(t, "escape-hole", p) for t, p in BY_PROCESS], unit="mm", step=2, note=READ)
+
+
+def fine_detail() -> str:
+    return compared("Embossed and engraved detail: the smallest that prints",
+                    "{n} rules (compare: emboss-min, engrave-min), height or depth.",
+                    [(t, "*", p) for t, p in BY_PROCESS], unit="mm", step=0.2, note=READ,
+                    kinds={"emboss-min": "emboss", "engrave-min": "engrave"})
+
+
+def moulding_wall() -> str:
+    return compared("Injection moulding: recommended wall thickness",
+                    "{n} rules (compare: im-wall). A bar: the range each source recommends for that resin.",
+                    [("By resin", "im-wall", "injection-moulding")], unit="mm", step=0.5, note=READ)
+
+
+def moulding_draft() -> str:
+    return compared("Injection moulding: draft on faces in the line of draw",
+                    "{n} rules (compare: im-draft), in degrees. ≥: a floor; a bar: it varies with resin or texture.",
+                    [("By resin and finish", "im-draft", "injection-moulding")], unit="degrees", step=1, note=READ)
+
+
+RIB = 0.6     # a rule given in rib thickness is drawn at a rib of 0.6 x wall, the most common ceiling
+
+
+def moulding_corners() -> str:
+    groups = [("Boss wall", "im-boss-wall", None), ("Inside corner radius", "im-corner", None)]
+    return compared("Injection moulding: boss walls and inside corners as multiples of the wall",
+                    "{n} rules as multiples of the wall. A bar: it varies (DuPont's boss wall steps down past 3.175 mm).", groups, envs=[{"wall": 1.0}, {"wall": 4.0}], unit="× wall",
+                    step=0.5, note=READ, per="wall")
+
+
+def moulding_ratios() -> str:
+    groups = [("Rib thickness", "im-rib-thickness", None), ("Rib height", "im-rib-height", None),
+              ("Fillet at the rib's base", "im-rib-fillet", None)]
+    return compared("Injection moulding: ribs as multiples of the wall",
+                    "{n} rules, at a nominal wall of 1 (so each reads as × wall); a rule given in rib thickness takes "
+                    f"a rib of {RIB} × wall.", groups, envs=[{"wall": 1.0, "rib": RIB}], unit="× nominal wall",
+                    step=0.5, note=READ)
+
+
+def sheet_holes() -> str:
+    env = dict(SHEET)
+    groups = [("Smallest inside bend radius", "sm-bend-radius-min", None), ("Smallest hole", "sm-hole-min", None),
+              ("Hole to the edge", "sm-hole-to-edge", None), ("Hole to hole", "sm-hole-spacing", None),
+              ("Hem return", "sm-hem-return", None)]
+    return compared(f"Sheet metal: holes, edges, bends and hems at T = {SHEET['T']} mm",
+                    "{n} rules evaluated from research/process-profiles.yaml at T = 1.5 mm. ≥: a floor; "
+                    "a bar: it varies with the alloy.", groups, envs=[env], unit="mm", step=2, note=READ)
+
+
+def cnc_depths() -> str:
+    groups = [("End-mill depth of cut", "cnc-tool-reach", None), ("Cavity depth (× its width)", "cnc-cavity-depth", None),
+              ("Hole depth", "cnc-hole-depth", None), ("Thread length", "cnc-thread-length", None)]
+    return compared("CNC: how deep a tool, hole or thread can go, as multiples of its diameter",
+                    "{n} rules, at a diameter (or cavity width) of 1, so each reads as × D. ≤: a ceiling.",
+                    groups, envs=[{"D": 1.0, "width": 1.0}], unit="× diameter", step=5, note=READ)
+
+
+POWDER_L = 25.0
+
+
+def powder_tolerance() -> str:
+    return compared(f"Powder bed: tolerance (±) on a {POWDER_L:g} mm dimension, by source",
+                    "{n} rules (compare: tolerance) for SLS and MJF, each evaluated at L = 25 mm (inside every "
+                    "rule's size band).", [(PROCESS_TITLES[p], "tolerance", p) for p in ("sls", "mjf")],
+                    envs=[{"L": POWDER_L}], unit="± mm", step=0.1, note=READ)
+
+
+FDM_L = 50.0
+
+
+def fdm_tolerance() -> str:
+    return compared(f"FDM: tolerance (±) on a {FDM_L:g} mm dimension, by source",
+                    "{n} rules (compare: tolerance), each evaluated at L = 50 mm: a factor of four between them.",
+                    [(PROCESS_TITLES["fdm"], "tolerance", "fdm")], envs=[{"L": FDM_L}], unit="± mm", step=0.1, note=READ)
+
+
+def cnc_tolerance() -> str:
+    return compared(f"Machined and moulded parts: default tolerance (±) on a {POWDER_L:g} mm dimension",
+                    "{n} rules (compare: tolerance), each evaluated at L = 25 mm.",
+                    [(PROCESS_TITLES[p], "tolerance", p) for p in ("cnc", "injection-moulding")],
+                    envs=[{"L": POWDER_L}], unit="± mm", step=0.05, note=READ)
+
+
+def resin_overhangs() -> str:
+    groups = [("Unsupported overhang length", "overhang-length-max", "sla"), ("Bridge between supports", "bridge-max", "sla")]
+    return compared("Resin: how far an overhang or a bridge may reach, by printer and service",
+                    "{n} rules (compare: overhang-length-max, bridge-max). ≤: a ceiling.",
+                    groups, unit="mm", step=5, note=READ)
+
+
+def moulding_bosses() -> str:
+    groups = [("Boss outside diameter", "im-boss-od", None), ("Depth of a blind cored hole", "im-hole-depth", None)]
+    return compared("Injection moulding: bosses and cored holes as multiples of the hole diameter",
+                    "{n} rules (compare: im-boss-od, im-hole-depth), at a hole diameter of 1, so each reads as × D.",
+                    groups, envs=[{"D": 1.0}], unit="× D", step=0.5, note=READ)
+
+
+def sheet_shop() -> str:
+    data = load()
+    sources = {s["id"]: s for s in data["sources"]}
+    shop = data["shop_tables"][0]
+    cols = shop["columns"]
+    groups = []
+    for material in dict.fromkeys(r[cols.index("material")] for r in shop["rows"]):
+        rows = [(f"{r[0]} · T {r[cols.index('T')]:.2f} mm · K {r[cols.index('K')]:.2f}", r[cols.index("R")],
+                 r[cols.index("R")], ORANGE, False) for r in shop["rows"] if r[cols.index("material")] == material]
+        groups.append((material[0].upper() + material[1:], rows))
+    vmax, ticks = _scale(groups, 0.5)
+    who = credit(sources[shop["source"]])
+    return ranges_svg(f"Sheet metal: one shop's inside bend radius and K-factor, by sheet ({who})",
+                      f"{sum(len(r) for _, r in groups)} rows of the shop's own tooling table (shop_tables), not a "
+                      "generic rule: R is not simply T.", groups, vmax, ticks, "R, mm",
+                      "Converted from inches at 25.4 mm; the printed values are in the YAML (as_printed). Read 2026-10-31.")
+
+
+CORNER = {"D": 6.0, "depth": 12.0}
+
+
+def cnc_corners() -> str:
+    return compared(f"CNC: inside corner radius for a {CORNER['D']:g} mm end mill cutting {CORNER['depth']:g} mm deep",
+                    "{n} rules (compare: cnc-corner-radius), evaluated at D = 6 mm and a pocket 12 mm deep. "
+                    "≥: a floor; a bar: it varies.", [("Inside vertical corner", "cnc-corner-radius", None)],
+                    envs=[CORNER], unit="mm", step=1, note=READ)
+
+
+def cnc_walls() -> str:
+    groups = [("Minimum wall", "min-wall", "cnc"), ("Smallest tool or cavity", "cnc-small-tool", None)]
+    return compared("CNC: the thinnest wall and the smallest tool, by source",
+                    "{n} rules (compare: min-wall, cnc-small-tool). ≥: a floor.", groups, unit="mm", step=0.5, note=READ)
+
+
+FIGURES = {"process-min-wall.svg": min_wall, "process-sheet-metal.svg": sheet_metal, "process-fits.svg": fits,
+           "process-holes-pins.svg": holes_pins,
+           "process-overhangs.svg": overhangs, "process-escape-holes.svg": escape_holes,
+           "process-fine-detail.svg": fine_detail, "process-moulding-wall.svg": moulding_wall,
+           "process-moulding-draft.svg": moulding_draft, "process-moulding-ratios.svg": moulding_ratios,
+           "process-sheet-holes.svg": sheet_holes, "process-cnc-depths.svg": cnc_depths,
+           "process-resin-overhangs.svg": resin_overhangs, "process-moulding-bosses.svg": moulding_bosses,
+           "process-sheet-shop.svg": sheet_shop, "process-cnc-corners.svg": cnc_corners, "process-cnc-walls.svg": cnc_walls,
+           "process-moulding-corners.svg": moulding_corners, "process-powder-tolerance.svg": powder_tolerance,
+           "process-cnc-tolerance.svg": cnc_tolerance, "process-fdm-tolerance.svg": fdm_tolerance}
 
 
 def main(argv: list[str]) -> int:

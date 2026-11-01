@@ -8,7 +8,8 @@ Without CadQuery these tests check:
 With CadQuery they also check each 2D model against the real code it stands for:
 * the motion gate on the gate bench;
 * the hole check on the counterbore plate;
-* the connector sweep in 3D.
+* the connector sweep in 3D;
+* the cable bend on CAD solids.
 """
 import ast
 import importlib.util
@@ -109,6 +110,24 @@ def test_connector_figure_draws_the_tests_port():
     assert h["interference_mm3"]["good"] == 0 and h["margins"]["good"]["min_margin_mm"] == pytest.approx(0.5)
 
 
+def test_cable_figure_runs_the_check_on_the_tests_port():
+    from cadagent.mechanical import connectors as cn
+    ns = before(ROOT / "tests" / "test_connectors.py", 'cq = pytest.importorskip("cadquery")')
+    assert ns["CAT6"] == mf.CAT6 and ns["SHELF"] == mf.SHELF and ns["rj45_mate"]() == mf.RJ45
+    h = mf.cable_numbers()
+    mate = dict(ns["rj45_mate"](), cable=ns["CAT6"])
+    assert h["result"] == cn.cable_bend(mate, {"wall": ns["wall_boxes"](cn.window(mate, ns["WALL"])), "shelf": ns["SHELF"]})
+    down, up = h["rows"]["-v"], h["rows"]["+v"]
+    ue, ve, we = h["result"]["exit"]
+    # the drawn gap runs from under the cable where it leaves the boot down to the shelf: that is the check's
+    assert up["clearance_mm"] == pytest.approx(ve - mf.CAT6["od"] / 2 - mf.SHELF["v"][1], abs=1e-3)
+    assert down["clearance_mm"] == pytest.approx(ve - mf.SHELF["v"][1] - h["result"]["reach_mm"]["beside"], abs=1e-3)
+    s = (mf.OUT / "cable-bend.svg").read_text(encoding="utf-8")
+    for said in ("1.35 mm into the shelf", "clear, 26.7 mm from the shelf", "R 25 inside", "needs 31.1 mm below",
+                 "the shelf is 29.75 below", "pass: turn +v (+u and −u clear too)"):
+        assert said in s, said
+
+
 def test_subassembly_figure_runs_the_tests_fixture():
     from tests.test_gate_subassembly import fixture
     boxes, specs, module, steps = fixture()
@@ -192,3 +211,15 @@ def test_connector_sweep_is_check_ports():
                            {"lan": win})
         assert r["ports"]["lan"]["sweep_interference_mm3"]["wall"] == pytest.approx(h["interference_mm3"][case], abs=1e-3)
         assert r["pass"] == (case == "good")
+
+
+def test_cable_figure_numbers_are_the_check_on_cad_shapes():
+    pytest.importorskip("cadquery")
+    from cadagent.mechanical import connectors as cn
+    from tests.test_connectors import wall_with, world_box
+    h = mf.cable_numbers()
+    frame = cn.PanelFrame((0, 0, 0), (1, 0, 0), (0, 0, 1), (0, -1, 0))
+    r = cn.cable_bend(h["mate"], {"wall": wall_with(h["window"], frame), "shelf": world_box(frame, mf.SHELF)}, frame)
+    for a, b in zip(h["result"]["directions"], r["directions"]):
+        assert a["clearance_by_part_mm"] == pytest.approx(b["clearance_by_part_mm"], abs=1e-3), a["direction"]
+    assert (r["status"], r["direction"], r["works"]) == (h["result"]["status"], "+v", h["result"]["works"])

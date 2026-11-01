@@ -263,7 +263,8 @@ def test_a_ball_tangent_to_the_cavity_requires_valid_boolean_results(where):
 @needs_cad
 def test_a_shallow_crossing_the_boolean_misses_is_caught_by_the_contact_probe():
     """A ball pushed 0.03-0.07 mm through the cone wall: OCCT's Common/Cut read 0 mm3 outside at some
-    positions (seen at this one), so the vertex probe has to catch it."""
+    positions (seen at this one). The relation's own crossing probe (#46) or, behind it, the gate's surface probe
+    has to catch it, with the depth."""
     z, phi = 30.0, 0.3
     rho = cone_rho_tangent(z)
     for dz in (0.05, 0.12):                           # down by dz = dz * SIN into the wall
@@ -272,6 +273,7 @@ def test_a_shallow_crossing_the_boolean_misses_is_caught_by_the_contact_probe():
         f = by_id(v)["contains:cone:ball#0:inside"]
         assert f["status"] == "fail", f
         assert f["evidence"]["depth_mm"] == pytest.approx(dz * SIN, abs=0.004)
+        assert f["evidence"]["kernel_missed_crossing"] is True and f["evidence"]["outside_mm3"] is None
     off = containment_gate(cone_assembly([c]), [CONE], support="off", probe=False)
     assert off["limits"]["contact_probe"] is False
 

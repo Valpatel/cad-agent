@@ -27,6 +27,9 @@ flowchart TD
 
 ## 1. 3D topology optimisation from Python
 
+<details>
+<summary>The eleven candidates: licence, maintenance, install and fit</summary>
+
 | Candidate | Licence (verified) | Maintenance | Install | Fit |
 |---|---|---|---|---|
 | **pyMOTO** | MIT ([repo](https://github.com/aatmdelissen/pyMOTO)) | v2.0.1, 2026-05-07; last commit 2026-06-02 ([releases](https://github.com/aatmdelissen/pyMOTO/releases)) | `pip install pymoto[fast]` or `conda install -c aatmdelissen pymoto` ([README](https://github.com/aatmdelissen/pyMOTO#quick-start-installation)) | Best fit. Voxel `VoxelDomain` in 2D and 3D; density filter; robust (eroded/dilated) formulation for minimum length scale; **`OverhangFilter`** (Langelaar AM filter, [example](https://github.com/aatmdelissen/pyMOTO/blob/master/examples/topology_optimization/ex_compliance_overhang.py)); OC, MMA and GCMMA; multigrid-preconditioned CG for 3D; stress constraints; thermal and thermo-mechanical modules (`ex_showcase_thermal.py`, `ex_thermo_mech.py`); `WriteToVTI` to dump the density field every iteration ([io.py](https://github.com/aatmdelissen/pyMOTO/blob/master/pymoto/modules/io.py)). Modules carry their own sensitivities, so non-design regions are just a mask or mapping on the design vector. |
@@ -40,6 +43,8 @@ flowchart TD
 | scikit-fem topopt example | BSD-3 ([repo](https://github.com/kinnala/scikit-fem)) | Active (12.0.2, 2026-06) | Already installed | **None found**: docs/examples ex01–ex56 contain no topology-optimisation example. We would have to write SIMP + MMA ourselves on top of our existing P2-tet FEA. |
 | OpenFOAM adjoint (ESI) | GPL-3 | v2606 | Docker (see §3) | `adjointOptimisationFoam` has `topologyOptimisation` tutorials for **fluid** topology ([tree](https://gitlab.com/openfoam/core/openfoam/-/tree/master/tutorials/incompressible/adjointOptimisationFoam)). This could later shape vents and ducts; it's not for structure. |
 | SU2 | LGPL-2.1 | v8.5.0 | — | Has a `fea_topology` test case ([TestCases](https://github.com/su2code/SU2/tree/master/TestCases)). Niche. |
+
+</details>
 
 **Recommendation:** use **pyMOTO** (MIT, importable) as the structural and thermal topology engine on a voxel domain built from our CadQuery solids:
 - **Non-design regions:** fix them to solid (bosses, insert pockets, port frames, the cooler seat) or to void (cooler, board, connector keep-outs, airflow paths).
@@ -67,6 +72,9 @@ flowchart TD
 
 ### OpenFOAM: ESI/OpenCFD vs Foundation
 
+<details>
+<summary>The two OpenFOAM lines compared: licence, release, CHT solver, closest tutorial, fan models, Docker</summary>
+
 | | ESI / OpenCFD (openfoam.com) | Foundation (openfoam.org) |
 |---|---|---|
 | Licence | GPL-3 ([v2606 news](https://www.openfoam.com/news/main-news/openfoam-v2606)) | GPL-3 ([COPYING](https://github.com/OpenFOAM/OpenFOAM-dev/blob/master/COPYING)) |
@@ -76,7 +84,12 @@ flowchart TD
 | Fan models | `fan` cyclic-baffle jump BC with modes velocity / uniformVelocity / **volumeFlowRate** / nonDimensional ([fanFvPatchField.H](https://gitlab.com/openfoam/core/openfoam/-/blob/master/src/finiteVolume/fields/fvPatchFields/derived/fan/fanFvPatchField.H)); `fanPressure`; `swirlFanVelocity`; **`fanMomentumSource`** fvOption: Δp(Q) fan curve applied in a cellZone ([header](https://gitlab.com/openfoam/core/openfoam/-/blob/master/src/fvOptions/sources/derived/fanMomentumSource/fanMomentumSource.H)); MRF; `actuationDiskSource`; `explicitPorositySource` | `fanPressureJump` and `fanPressure` BCs ([src](https://github.com/OpenFOAM/OpenFOAM-14/tree/master/src/finiteVolume/fields/fvPatchFields/derived)); fvModels `actuationDisk`, `radialActuationDisk`, `porosityForce`, `interRegionHeatTransfer`, `heatSource` ([src/fvModels](https://github.com/OpenFOAM/OpenFOAM-14/tree/master/src/fvModels)); MRF ([mixerVessel2DMRF](https://github.com/OpenFOAM/OpenFOAM-14/tree/master/tutorials/fluid/mixerVessel2DMRF)) |
 | Docker | `opencfd/openfoam-run:2606` (runtime only, 2026-06-23). `opencfd/openfoam-default:2512` / `latest` has tutorials and source; **no 2606 tag yet** ([run](https://hub.docker.com/r/opencfd/openfoam-run/tags), [default](https://hub.docker.com/r/opencfd/openfoam-default/tags)). The `openfoam-docker` starter script that dl.openfoam.com served moved to OpenCFD's [packaging/containers](https://gitlab.com/openfoam/packaging/containers) repository on GitLab (the old link answers 404, checked 2026-11-01; see the wiki's [Docker page](https://gitlab.com/openfoam/core/openfoam/-/wikis/precompiled/docker)). Read the script before running it, or run the image with `docker run` yourself. | **No official images after v11**: the newest on Docker Hub is `openfoam/openfoam11-paraview510`, last updated 2024-06 ([hub](https://hub.docker.com/u/openfoam)). v14 is shipped as Ubuntu apt packages (needs sudo) or source. |
 
+</details>
+
 ### Other solvers
+
+<details>
+<summary>Ten other solvers: licence, status and fit for CHT with fans</summary>
 
 | Candidate | Licence (verified) | Status | CHT / fan fit |
 |---|---|---|---|
@@ -91,6 +104,8 @@ flowchart TD
 | DAFoam | GPL-3 ([LICENSE.md](https://github.com/mdolab/dafoam/blob/main/LICENSE.md)) | v5.1.1; docker `dafoam/opt-packages:v5.1.1` | Discrete adjoint of OpenFOAM + OpenMDAO. A future option for gradient-based vent shape optimisation. |
 | CfdOF (FreeCAD) | LGPL-3 ([repo](https://github.com/jaheyns/CfdOF)) | Active | A GUI case generator for snappy and cfMesh, porous regions, buoyant flow. The README shows no multi-region CHT. A useful reference for writing snappy dictionaries. |
 
+</details>
+
 ### Python case-generation helpers
 
 - [foamlib](https://github.com/gerlero/foamlib): **GPL-3.0**, v1.9.0 (2026-10-19). A modern parser/writer with an async runner.
@@ -104,6 +119,20 @@ None of the good options is permissive. **Recommendation:**
 - Or confine foamlib to an optional GPL extra that runs as a separate process.
 
 ### Recommended primary path: steady CHT, a few M cells, 24 cores
+
+```mermaid
+flowchart TD
+    C["CadQuery shapes<br/>air, walls, solids, fans"] --> W["ThermalCase.write()<br/>the case and its Allrun"]
+    W --> M["blockMesh, decomposePar,<br/>snappyHexMesh, checkMesh"]
+    M --> S{"splitMeshRegions:<br/>only the regions<br/>the case defines?"}
+    S -->|"no: sealed air,<br/>a solid in pieces"| X["stop, exit 3"]
+    S -->|"yes"| F["chtMultiRegionSimpleFoam<br/>in parallel"]
+    F --> R["reconstructPar, foamToVTK;<br/>results() reads it back"]
+```
+
+*The pipeline as `cadagent.simulation.cfd` now runs it (its `Allrun`, natively or in the Docker image): it decomposes
+before meshing, so snappyHexMesh runs in parallel too, and it stops when splitMeshRegions makes a region the case
+does not define.*
 
 **ESI OpenFOAM v2606 in Docker (`opencfd/openfoam-run:2606`; use `openfoam-default:2512` for tutorials), `chtMultiRegionSimpleFoam`, starting from `cpuCabinet`.** Rationale:
 - It's a near-identical tutorial.
@@ -176,7 +205,18 @@ From the source option table ([PrintConfig.cpp](https://github.com/prusa3d/Prusa
 
 ## 6. Thermal reference data
 
+![Bar chart of the printed-material table below: for PLA Basic, PETG Basic and PETG HF, the glass transition and the heat deflection temperatures at 0.45 and 1.8 MPa, all between 54 and 69 degrees C, against a dashed line at the module's 80 degree C TTP limit](../docs/img/research/thermal-limits.svg)
+
+*Drawn by `tools/research_figures.py` from the printed-material table below, with the TTP limit read from the module's
+bullet (a test keeps them in step). All three filaments soften 11–26 °C below the 80 °C the module's thermal plate
+may reach. The plate is not the air at a printed wall: the wall's own temperature, from a CHT run or a thermocouple,
+decides.*
+
 **Jetson AGX Orin module.** Sources: [datasheet DS-10662-001 v1.8, Sep 2025, mirror](https://static.generation-robots.com/media/Jetson-AGX-Orin-Data-Sheet.pdf) and [Jetson Linux r36.4 power/thermal page](https://docs.nvidia.com/jetson/archives/r36.4/DeveloperGuide/SD/PlatformPowerAndPerformance/JetsonOrinNanoSeriesJetsonOrinNxSeriesAndJetsonAgxOrinSeries.html).
+
+<details>
+<summary>The module's power, power modes, plate and SoC limits, and its design guide</summary>
+
 - **Module power (datasheet):**
   - JAO 64GB: 15 W / 30 W / 50 W, "up to 60 W"
   - JAO 32GB: 15 W / 30 W / 40 W, "up to 40 W"
@@ -188,7 +228,13 @@ From the source option table ([PrintConfig.cpp](https://github.com/prusa3d/Prusa
 - **SoC thresholds (r36.4):** SW throttle 99 °C, HW throttle 103 °C, SW shutdown 104.5 °C, HW shutdown 105 °C. The devkit fan "cool" profile tops out at 2900 RPM.
 - **Thermal Design Guide (TDG-10943-001):** v1.1 is at [Mouser](https://www.mouser.com/pdfDocs/Jetson_AGX_Orin_Series_TDG-10943-001_v11.pdf), but it is **bot-protected and I could not read Table 2-1 or its figures**. Forum posts reference v1.2 and v1.3, and confirm that θ_jp is given for 32GB/64GB but "TBD" for Industrial ([forum](https://forums.developer.nvidia.com/t/agx-orin-industrial-missing-thermal-resistance-values-in-tdg/278394)). **Unverified:** a third-party claim of a 60 W "MAXN SUPER" mode for the 32GB module.
 
+</details>
+
 **Seeed J501 cooler.** The reference cooler in the repo README is [Seeed p-5970](https://www.seeedstudio.com/Aluminum-heatsink-with-Fan-for-Jetson-AGX-Orin-p-5970.html). The page publishes no numeric specs and it 403s to scripts. Seeed hosts a vendor datasheet under the J501 wiki ([WS-RDN-601, 100×87×34 mm](https://files.seeedstudio.com/wiki/reComputer-Jetson/J501/323011387Jetson_AGX_Orin_Heatsink_100x87x34mm-datasheet.pdf)); the repo has a saved copy:
+
+<details>
+<summary>The cooler's datasheet: fan, airflow, PWM curve, heat sink, and a height to measure</summary>
+
 - **Fan:** 8015 PWM fan (80×80×15 mm), ball bearing, 5 V, 0.16 A, 2300 RPM ±10 %, 27.4 dB(A).
 - **Airflow:** **22.90 CFM** at zero static pressure. **Max static pressure 1.55 mmH₂O (≈15.2 Pa)**; the datasheet swaps the two row labels.
 - **PWM curve:** 25/50/75/100 % → 700/1380/1920/2300 RPM.
@@ -196,6 +242,8 @@ From the source option table ([PrintConfig.cpp](https://github.com/prusa3d/Prusa
 - **Heatpipe count is not stated.**
 - **Height caveat:** the repo models the cooler top 50 mm above the seat (Z40.758 → Z90.758), but the datasheet says 34 mm. Possibly 34 mm of heatsink plus the 15 mm fan on top; measure it.
 - **Other coolers:** the different Mini J501 heatsink is listed at 110×100×50 mm and 14.1–55.26 CFM ([openelab](https://openelab.io/products/seeed-studio-recomputer-mini-j501-heatsink)). It is not ours.
+
+</details>
 
 **Printed-material limits (Bambu TDS; third-party-hosted copies; values read with pdftotext):**
 
@@ -209,7 +257,25 @@ With the TTP allowed up to 80 °C and the fan exhausting warm air, PLA within a 
 
 ## Existing projects combining CAD + TO + CFD for 3D printing
 
-There is no single mature FOSS project that does CadQuery → topology optimisation → CHT CFD → slicer. The closest building blocks:
+There is no single mature FOSS project that does CadQuery → topology optimisation → CHT CFD → slicer.
+
+```mermaid
+flowchart TD
+    C["CadQuery solids"] --> S["slice<br/>Bambu Studio"]
+    C --> L["load<br/>scikit-fem"]
+    C --> K["cool<br/>OpenFOAM"]
+    S & L & K --> O["optimise<br/>pyMOTO, Optuna"]
+    O --> C
+```
+
+*What cad-agent did instead: the blocks this survey chose, each run from its own module (`cad-agent slice`,
+`cadagent.simulation.fea` on P2 tetrahedra, `cadagent.simulation.cfd`, `cadagent.simulation.topopt` and
+`cad-agent optimise`), in the loop the [toolkit page](../docs/toolkit.md) sets as standard practice: a change found by
+optimising is made in the CAD and checked again. The slicer (AGPL) and OpenFOAM (GPL) run as separate processes;
+gmsh (GPL), which meshes for the FEA, is imported, as the note at the top says. Each result states its limits; none
+proves fit, strength or temperature.*
+
+The closest existing building blocks:
 - **FreeCAD** (LGPL-2.1) + **CfdOF** (LGPL-3), plus FreeCAD FEM + **beso** (LGPL-3): a GUI-centric equivalent.
 - **DAFoam** (GPL-3) + OpenMDAO: adjoint CFD shape optimisation.
 - **ESI `adjointOptimisationFoam`**: fluid topology optimisation.

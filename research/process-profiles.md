@@ -149,6 +149,11 @@ springs, hinges) lies in the build plate's plane, and bending across the layers 
 - **Insert holes.** CNC Kitchen's own data sheet hole (4.0 mm for M3) is right for the hole as built; printed holes
   come out smaller, so the CAD hole is larger. Stefan Hermann published the test that shows this.
 
+<img src="../docs/img/research/process-fdm-tolerance.svg" alt="Chart of the tolerance each FDM source gives on a 50 mm dimension: 0.127 mm from Xometry's US service, 0.2 mm industrial, 0.5 mm desktop and at Xometry Europe" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from the FDM `compare: tolerance` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31, each evaluated at 50 mm. A test redraws it and fails if the committed chart differs.*
+
+
 ## 3. SLA and MSLA (resin)
 
 This covers laser SLA (Formlabs Form 2 and Form 3, Protolabs, Materialise) and masked SLA on an LCD (Formlabs Form 4,
@@ -309,6 +314,11 @@ From Protolabs Network:
 - **Tolerance agrees** at about ±0.3 mm at 50 mm [derived]: Protolabs ±0.30, Materialise ±0.3, Protolabs Network ±0.3,
   JLC3DP ±0.3, Xometry US ±0.381.
 
+<img src="../docs/img/research/process-powder-tolerance.svg" alt="Chart of the tolerance each SLS and MJF source gives on a 25 mm dimension: 0.2 to 0.42 mm, with HP's own Z figure the widest" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from the SLS and MJF `compare: tolerance` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31, each evaluated at 25 mm. A test redraws it and fails if the committed chart differs.*
+
+
 ## 5. HP Multi Jet Fusion
 
 | Rule | Value | Applies when | Source |
@@ -346,12 +356,6 @@ From Protolabs Network:
 | Snap-fit base thickness and hook depth; clip width | ≥ 1 mm; ≥ 5 mm | | [Protolabs Network][hubs-snapfit-3dp] |
 | Strain to failure across the layers | 0.53–0.70 of XY (strength the same) | PA 12, PA 11, PP on the Jet Fusion 5200 | [HP][hp-mjf-5200-properties] |
 | Expected tolerance | ±0.3 %, floor ±0.3 mm | SLS and MJF | [Protolabs Network][hubs-3dp-dimensional-accuracy] |
-
-<img src="../docs/img/research/process-powder-tolerance.svg" alt="Chart of the tolerance each SLS and MJF source gives on a 25 mm dimension: 0.2 to 0.42 mm, with HP's own Z figure the widest" width="680">
-
-*Diagram drawn by `tools/process_profile_figures.py` from the SLS and MJF `compare: tolerance` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31, each evaluated at 25 mm. A test redraws it and fails if the committed chart differs.*
-
-
 ### Where the MJF sources disagree
 
 - **Thinnest wall: 0.3 to 2 mm.** HP and Xometry 0.3 mm, but for short walls; Protolabs, Stratasys Direct and the
@@ -666,6 +670,22 @@ D below is the tool or hole diameter. Two pages here are by named engineers at X
 - **Standards.** Protolabs names ISO 2768-1 (general tolerances) as its default. It is paid and was not read.
 
 ## 9. What this changes in cad-agent
+
+What reads the YAML today (solid) and what is planned to (dashed):
+
+```mermaid
+flowchart LR
+    Y["process-profiles.yaml<br/>rules, sources,<br/>a shop table"] --> E["evaluate()<br/>tools/process_profile_figures.py"]
+    E --> C["the charts on this page<br/>redrawn by the tests"]
+    Y -.->|"planned, #99"| P["cadagent.process<br/>a profile per process"]
+    P -.->|"planned"| K["checks that cite a rule id:<br/>sheet metal S1–S8, pitfalls #97"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class Y,E here
+    class C out
+    class P,K near
+```
 
 - **`cadagent.process` (#99)** can load `process-profiles.yaml` as it stands: rules by process and feature, the
   evaluator in `tools/process_profile_figures.py`, and the SendCutSend shop table. The acceptance in #99 (FDM PETG,

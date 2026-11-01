@@ -391,6 +391,15 @@ def powder_tolerance() -> str:
                     envs=[{"L": POWDER_L}], unit="± mm", step=0.1, note=READ)
 
 
+FDM_L = 50.0
+
+
+def fdm_tolerance() -> str:
+    return compared(f"FDM: tolerance (±) on a {FDM_L:g} mm dimension, by source",
+                    "{n} rules (compare: tolerance), each evaluated at L = 50 mm: a factor of four between them.",
+                    [(PROCESS_TITLES["fdm"], "tolerance", "fdm")], envs=[{"L": FDM_L}], unit="± mm", step=0.1, note=READ)
+
+
 def cnc_tolerance() -> str:
     return compared(f"Machined and moulded parts: default tolerance (±) on a {POWDER_L:g} mm dimension",
                     "{n} rules (compare: tolerance), each evaluated at L = 25 mm.",
@@ -455,7 +464,7 @@ FIGURES = {"process-min-wall.svg": min_wall, "process-sheet-metal.svg": sheet_me
            "process-resin-overhangs.svg": resin_overhangs, "process-moulding-bosses.svg": moulding_bosses,
            "process-sheet-shop.svg": sheet_shop, "process-cnc-corners.svg": cnc_corners, "process-cnc-walls.svg": cnc_walls,
            "process-moulding-corners.svg": moulding_corners, "process-powder-tolerance.svg": powder_tolerance,
-           "process-cnc-tolerance.svg": cnc_tolerance}
+           "process-cnc-tolerance.svg": cnc_tolerance, "process-fdm-tolerance.svg": fdm_tolerance}
 
 
 def main(argv: list[str]) -> int:

@@ -574,6 +574,9 @@ filament maker's data sheet (100 % infill test bars). Each names its sheet (`sou
 says in `note` which sheet value E and the strength come from, and gives the print direction of E (`direction`). The
 result's `assumptions` line repeats the modulus, the strength and the note, and the viewer shows the direction:
 
+<details>
+<summary>The printed materials: modulus, direction, strength, layer allowables and data sheet</summary>
+
 | Key | E (MPa) | Direction | Strength (MPa) | Layer check X-Y / Z (MPa) | Data sheet |
 |---|---:|---|---:|---:|---|
 | `pla` | 2060 | Z | 25 | 27.9 / 25 | Bambu PLA Basic V3.0 (X-Y 2580; Z tensile strength 31) |
@@ -583,6 +586,8 @@ result's `assumptions` line repeats the modulus, the strength and the note, and 
 | `pa6_cf_xy` | 1029 | X-Y | 40.8 | 40.8 / 18.1 | Bambu PA6-CF V3.0, dry X-Y, humid (modulus x0.290, strength x0.500: Polymaker PA6-CF20 V1.1, water-saturated / dry) x0.8 print (#157) |
 | `pa6_cf_z` | 488 | Z | 18.1 | 40.8 / 18.1 | Bambu PA6-CF V3.0, dry Z, humid (x0.281, x0.472) x0.8 print |
 | `tpu95` | 7.4 | Z | 8 | 9.8 / 8 | Bambu TPU 95A HF V1.0 (X-Y 9.8; Polymaker lists 33.6): indicative only |
+
+</details>
 
 The modulus is the sheet's lowest, across the layers, because the solver is isotropic and does not know how the part
 was printed, so deflections come out higher than with the sheet's in-plane values. They are not an upper bound on a
@@ -764,6 +769,9 @@ each sheet, as a ratio, as the row's strength does across the layers. The humid 
 
 </details>
 
+<details>
+<summary>What a result records about its material, and checking a record on another toolkit</summary>
+
 **What a result used** (`material_data`). `solve()` records the material data in `result['material_data']`:
 
 - `key`, the built-in row (None for a material of your own or a changed copy);
@@ -777,6 +785,8 @@ that differs, with now / recorded. Under forces and torques, deflections scale b
 factors by the strength ratio and masses by the density ratio. A built-in material's numbers are result-changing. A
 change to any of them needs a `**Projects must change**` fragment in [`changelog.d/`](../changelog.d/README.md), and
 `tests/test_fea_layers.py` pins every row's hash so it cannot slip through.
+
+</details>
 
 Stresses are element corner peaks, never averaged. The P2 strain is linear in a tetrahedron, so its extremes sit at the
 corners; the safety factor, the hot spots and the per-vertex colours all use the highest corner stress there. The
@@ -913,6 +923,9 @@ Turns CAD parts into a simulator model with real mass properties:
   sparse infill, with the inertia scaled to that mass. It is an estimate, so weigh the printed part.
 - `box_body`, `cylinder_body` and `point_body` model bought parts from their catalogue mass. `Body` objects add with
   the parallel-axis theorem, so a link is the sum of everything bolted to it.
+
+<!-- the site places a figure here (docs/pages.yaml) -->
+
 - `write_urdf` and `write_mjcf` write the same link tree. The MJCF adds motors, joint armature and friction, an IMU
   site and a floor. A tree cannot hold a closed loop, such as a four-bar or a five-bar leg. Cut it at one pin and
   pass that pin to `write_mjcf` as a `LoopClosure`: MuJoCo holds it with an equality constraint. Build the model in a
@@ -1180,9 +1193,9 @@ cad:
     exclude: ["**/__pycache__/**", "**/*.pyc"]                                                  # the default
     max_file_mb: 20
     date: 2026-10-29
+```
 
 </details>
-```
 
 **Publishing.** The default `release/` folder is inside the project: add `release/` to `.gitignore`. Attach the
 **zip** to the GitHub release: GitHub serves release assets as downloads and does not render an attached

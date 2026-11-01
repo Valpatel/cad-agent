@@ -19,7 +19,7 @@ pass and every review conversation must be resolved. Agents may merge into both,
 Required checks, all automated. Nobody, agent or person, merges around them.
 
 ```mermaid
-flowchart LR
+flowchart TD
     F["feat/ fix/ ci/ docs/ …<br/>from dev"] -->|"CI · branch-flow · review"| D["dev"]
     D -->|"CI · branch-flow · review<br/>· release"| M["main"]
     M -->|"release.yml"| R["tag vX.Y.Z · GitHub release<br/>site deploy"]

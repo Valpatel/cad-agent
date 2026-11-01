@@ -9,77 +9,6 @@
  "ocp": "7.9.3.1",
  "vtk": "9.6.2",
  "scenarios": {
-  "clean": {
-   "commit": "aa9b17fa17d87a4b1d73cd7bf6f037ed8cb827ae",
-   "seed": null,
-   "what": null,
-   "seeded_gate": null,
-   "gates": {
-    "assembly": {
-     "status": "pass",
-     "counts": {
-      "pass": 55,
-      "warn": 0,
-      "fail": 0
-     },
-     "findings": []
-    },
-    "connectivity": {
-     "status": "pass",
-     "counts": {
-      "pass": 31,
-      "warn": 0,
-      "fail": 0
-     },
-     "findings": []
-    },
-    "containment": {
-     "status": "pass",
-     "counts": {
-      "pass": 21,
-      "warn": 0,
-      "fail": 0
-     },
-     "findings": []
-    },
-    "dossier-lint": {
-     "status": "pass",
-     "counts": {
-      "pass": 34,
-      "warn": 0,
-      "fail": 0
-     },
-     "findings": []
-    },
-    "fasteners": {
-     "status": "pass",
-     "counts": {
-      "pass": 28,
-      "warn": 0,
-      "fail": 0
-     },
-     "findings": []
-    },
-    "motion": {
-     "status": "pass",
-     "counts": {
-      "pass": 1,
-      "warn": 0,
-      "fail": 0
-     },
-     "findings": []
-    },
-    "wall": {
-     "status": "pass",
-     "counts": {
-      "pass": 8,
-      "warn": 0,
-      "fail": 0
-     },
-     "findings": []
-    }
-   }
-  },
   "ball_through_wall": {
    "commit": "aa9b17fa17d87a4b1d73cd7bf6f037ed8cb827ae",
    "seed": "ball_through_wall",
@@ -729,81 +658,80 @@
      "findings": []
     }
    }
+  },
+  "clean": {
+   "commit": "e2489d2f59994307e1cad85f9692d3271f057bd9",
+   "seed": null,
+   "what": null,
+   "seeded_gate": null,
+   "gates": {
+    "assembly": {
+     "status": "pass",
+     "counts": {
+      "pass": 55,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "connectivity": {
+     "status": "pass",
+     "counts": {
+      "pass": 31,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "containment": {
+     "status": "pass",
+     "counts": {
+      "pass": 21,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "dossier-lint": {
+     "status": "pass",
+     "counts": {
+      "pass": 34,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "fasteners": {
+     "status": "pass",
+     "counts": {
+      "pass": 28,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "motion": {
+     "status": "pass",
+     "counts": {
+      "pass": 1,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "wall": {
+     "status": "pass",
+     "counts": {
+      "pass": 8,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    }
+   }
   }
  },
  "pictures": {
-  "clean-store-xray-iso.webp": {
-   "scenario": "clean",
-   "section": "S-store",
-   "view": "xray-iso",
-   "caption": "S-store Store: x-ray",
-   "note": "Section parts translucent; free items, fasteners and declared cavities shown inside.",
-   "section_hash": "19e7fb6613ec",
-   "findings": []
-  },
-  "clean-store-cut-cavity-hopper_cavity.webp": {
-   "scenario": "clean",
-   "section": "S-store",
-   "view": "cut-cavity-hopper_cavity",
-   "caption": "S-store Store: cut through hopper_cavity, side",
-   "note": "Vertical plane through the centre of hopper_cavity (normal +Y), seen from -Y: contents against the walls.",
-   "section_hash": "19e7fb6613ec",
-   "findings": []
-  },
-  "clean-store-cut-fastener-screw_0.webp": {
-   "scenario": "clean",
-   "section": "S-store",
-   "view": "cut-fastener-screw_0",
-   "caption": "S-store Store: cut through screw_0",
-   "note": "Plane containing the axis of screw_0: head on lid, thread in insert_0 (4 m3_shcs on lid alike; the fastener gate measures each).",
-   "section_hash": "19e7fb6613ec",
-   "findings": []
-  },
-  "clean-store-access-from-top.webp": {
-   "scenario": "clean",
-   "section": "S-store",
-   "view": "access-from-top",
-   "caption": "S-store Store: access from the top",
-   "note": "Looking along the screws' advance from the tool's side (top): screw_0, screw_1, screw_2, screw_3.",
-   "section_hash": "19e7fb6613ec",
-   "findings": []
-  },
-  "clean-store-exploded.webp": {
-   "scenario": "clean",
-   "section": "S-store",
-   "view": "exploded",
-   "caption": "S-store Store: exploded along the assembly steps",
-   "note": "Each part backed out along its step's direction, later steps further; screws along their axis.",
-   "section_hash": "19e7fb6613ec",
-   "findings": []
-  },
-  "clean-arm-pose-I-pin-arm-min.webp": {
-   "scenario": "clean",
-   "section": "S-arm",
-   "view": "pose-I-pin-arm-min",
-   "caption": "S-arm Arm: I-pin-arm at 0 deg (min of range)",
-   "note": "The moving body at the min end of its declared range; declared contacts: arm-pin, arm-hinge_block, arm-stop.",
-   "section_hash": "4dab98bda33f",
-   "findings": []
-  },
-  "clean-arm-pose-I-pin-arm-max.webp": {
-   "scenario": "clean",
-   "section": "S-arm",
-   "view": "pose-I-pin-arm-max",
-   "caption": "S-arm Arm: I-pin-arm at 40 deg (max of range)",
-   "note": "The moving body at the max end of its declared range; declared contacts: arm-pin, arm-hinge_block, arm-stop.",
-   "section_hash": "4dab98bda33f",
-   "findings": []
-  },
-  "clean-arm-cut-joint-I-pin-arm.webp": {
-   "scenario": "clean",
-   "section": "S-arm",
-   "view": "cut-joint-I-pin-arm",
-   "caption": "S-arm Arm: cut through joint I-pin-arm",
-   "note": "Plane containing the revolute axis of I-pin-arm: arm on pin.",
-   "section_hash": "4dab98bda33f",
-   "findings": []
-  },
   "ball_through_wall-store-findings.webp": {
    "scenario": "ball_through_wall",
    "section": "S-store",
@@ -943,6 +871,96 @@
    "caption": "S-store Store: access from the top",
    "note": "Looking along the screws' advance from the tool's side (top): screw_0, screw_1, screw_2, screw_3.",
    "section_hash": "a71359519bef",
+   "findings": []
+  },
+  "clean-store-xray-iso.webp": {
+   "scenario": "clean",
+   "section": "S-store",
+   "view": "xray-iso",
+   "caption": "S-store Store: x-ray",
+   "note": "Section parts translucent; free items, fasteners and declared cavities shown inside.",
+   "section_hash": "19e7fb6613ec",
+   "findings": []
+  },
+  "clean-store-cut-cavity-hopper_cavity.webp": {
+   "scenario": "clean",
+   "section": "S-store",
+   "view": "cut-cavity-hopper_cavity",
+   "caption": "S-store Store: cut through hopper_cavity, side",
+   "note": "Vertical plane through the centre of hopper_cavity (normal +Y), seen from -Y: contents against the walls.",
+   "section_hash": "19e7fb6613ec",
+   "findings": []
+  },
+  "clean-store-cut-cavity-hopper_cavity-plan.webp": {
+   "scenario": "clean",
+   "section": "S-store",
+   "view": "cut-cavity-hopper_cavity-plan",
+   "caption": "S-store Store: cut through hopper_cavity, plan",
+   "note": "Horizontal plane through the centre of hopper_cavity, seen from above: the walls as a ring around the contents.",
+   "section_hash": "19e7fb6613ec",
+   "findings": []
+  },
+  "clean-store-cut-fastener-screw_0.webp": {
+   "scenario": "clean",
+   "section": "S-store",
+   "view": "cut-fastener-screw_0",
+   "caption": "S-store Store: cut through screw_0",
+   "note": "Plane containing the axis of screw_0: head on lid, thread in insert_0 (4 m3_shcs on lid alike; the fastener gate measures each).",
+   "section_hash": "19e7fb6613ec",
+   "findings": []
+  },
+  "clean-store-access-from-top.webp": {
+   "scenario": "clean",
+   "section": "S-store",
+   "view": "access-from-top",
+   "caption": "S-store Store: access from the top",
+   "note": "Looking along the screws' advance from the tool's side (top): screw_0, screw_1, screw_2, screw_3.",
+   "section_hash": "19e7fb6613ec",
+   "findings": []
+  },
+  "clean-store-exploded.webp": {
+   "scenario": "clean",
+   "section": "S-store",
+   "view": "exploded",
+   "caption": "S-store Store: exploded along the assembly steps",
+   "note": "Each part backed out along its step's direction, later steps further; screws along their axis.",
+   "section_hash": "19e7fb6613ec",
+   "findings": []
+  },
+  "clean-arm-solid-iso.webp": {
+   "scenario": "clean",
+   "section": "S-arm",
+   "view": "solid-iso",
+   "caption": "S-arm Arm: solid, front iso",
+   "note": "The section in place. Measurements first: see the manifest.",
+   "section_hash": "4dab98bda33f",
+   "findings": []
+  },
+  "clean-arm-pose-I-pin-arm-min.webp": {
+   "scenario": "clean",
+   "section": "S-arm",
+   "view": "pose-I-pin-arm-min",
+   "caption": "S-arm Arm: I-pin-arm at 0 deg (min of range)",
+   "note": "The moving body at the min end of its declared range; declared contacts: arm-pin, arm-hinge_block, arm-stop.",
+   "section_hash": "4dab98bda33f",
+   "findings": []
+  },
+  "clean-arm-pose-I-pin-arm-max.webp": {
+   "scenario": "clean",
+   "section": "S-arm",
+   "view": "pose-I-pin-arm-max",
+   "caption": "S-arm Arm: I-pin-arm at 40 deg (max of range)",
+   "note": "The moving body at the max end of its declared range; declared contacts: arm-pin, arm-hinge_block, arm-stop.",
+   "section_hash": "4dab98bda33f",
+   "findings": []
+  },
+  "clean-arm-cut-joint-I-pin-arm.webp": {
+   "scenario": "clean",
+   "section": "S-arm",
+   "view": "cut-joint-I-pin-arm",
+   "caption": "S-arm Arm: cut through joint I-pin-arm",
+   "note": "Plane containing the revolute axis of I-pin-arm: arm on pin.",
+   "section_hash": "4dab98bda33f",
    "findings": []
   }
  }

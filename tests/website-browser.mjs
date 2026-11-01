@@ -932,11 +932,20 @@ async function fourbarProblems() {
     return !first ? 'the first live frame was not seen' :
       first.still !== first.live ? 'the first live frame is not the still: the crank jumps when the script takes over' : null;
   };
-  const frames = page => page.evaluate(() => new Promise(done => {
+  const frames = (page, count = 10) => page.evaluate(count => new Promise(done => {
     let n = 0;
-    const next = () => (++n >= 10 ? done() : requestAnimationFrame(next));
+    const next = () => (++n >= count ? done() : requestAnimationFrame(next));
     requestAnimationFrame(next);
-  }));
+  }), count);
+  // Pause the way a person does, with a press that lasts a few frames: WebKit drops the click of a press whose node the
+  // page replaces before the release, and the demo used to rewrite the button's label on every frame (#211; the
+  // compliant block says more). A quick click passes then, unless a frame falls inside it.
+  const hold = async (page, locator) => {
+    await locator.hover();
+    await page.mouse.down();
+    await frames(page, 3);
+    await page.mouse.up();
+  };
   // WCAG contrast of an element's text against the element's background (the nearest one that is not transparent)
   const contrast = (page, selector, attr = 'color') => page.evaluate(([sel, at]) => {
     const rgb = c => (c.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
@@ -1056,24 +1065,27 @@ async function fourbarProblems() {
         }
         // the other assembly: the coupler moves to where the ghost was
         const coupler = await demo.locator('[data-part=coupler]').getAttribute('points');
-        await demo.locator('.fb-play').click();                                         // pause, so the frames compare
+        await hold(page, demo.locator('.fb-play'));                                     // pause, so the frames compare
         await page.getByLabel('Crossed').check();
         const ghost = await demo.locator('[data-part=ghost]').getAttribute('points');
         if ((await demo.locator('[data-part=coupler]').getAttribute('points')) === coupler || !ghost) say('switching the assembly changed nothing');
         await demo.locator('.fb-play').click();                                         // play again
         await frames(page);
-        await demo.locator('.fb-play').click();
+        await hold(page, demo.locator('.fb-play'));
+        // The click handler pauses and draws the paused frame itself, so the label reads Play once the click lands.
         const stopped = await page.waitForFunction(() => document.querySelector('cad-fourbar .fb-play')?.textContent === 'Play',
           null, { timeout: 3000 }).then(() => true, () => false);
         const paused = await crank(page);
         await frames(page);
-        if (!stopped || (await crank(page)) !== paused) say('the pause button does not stop it');
-        const resumed = await page.evaluate(() => {
+        if (!stopped) say('the pause button does not stop it: a press held for 3 frames was not a click');
+        else if ((await crank(page)) !== paused) say('the pause button does not stop it: the crank moves while paused');
+        // Not paused, the click below would pause it instead: that failure is already reported once.
+        const resumed = stopped && await page.evaluate(() => {
           const d = document.querySelector('cad-fourbar');
           d.querySelector('.fb-play').click();
           return d.querySelector('[data-part=crank]').getAttribute('points');
         });
-        if (resumed !== paused) say('Play does not carry on from the paused frame');
+        if (stopped && resumed !== paused) say('Play does not carry on from the paused frame');
         await page.waitForFunction(() => document.querySelector('cad-fourbar .fb-status')?.textContent,
           null, { timeout: 3000 }).catch(() => say('the status line does not announce the result after an input'));
       }

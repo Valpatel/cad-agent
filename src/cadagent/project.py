@@ -1,7 +1,7 @@
-"""The ``cad:`` section of a project's ``cad-agent.yaml`` (or ``vptest.yaml``).
+"""The ``cad:`` section of a project's ``cad-agent.yaml``.
 
-``cad-agent.yaml`` is read when present, else ``vptest.yaml``; the first file
-found is the config even if it lacks a ``cad:`` section. Example (see
+``cad-agent.yaml`` at the project root is the config; without one, the error
+names any other YAML file there that has a ``cad:`` section. Example (see
 ``docs/toolkit.md`` for every field)::
 
     cad:
@@ -17,21 +17,21 @@ found is the config even if it lacks a ``cad:`` section. Example (see
       dossier: dossier/project.yaml       # optional: the design dossier (docs/dossier.md)
       gates: {jobs: 2}                    # optional: how `cad-agent gates` runs (docs/gates.md "Running the gates")
 
-In a ``vptest.yaml`` the section sits beside vptest's own ``project:`` /
-``projects:`` sections; only ``cad:`` is read here. Unknown keys inside ``cad:`` are kept in ``CadProject.unknown_keys``
+Only ``cad:`` is read: other top-level sections are ignored, so the file can carry
+other tools' settings too. Unknown keys inside ``cad:`` are kept in ``CadProject.unknown_keys``
 so a typo is reportable instead of fatal.
 """
 
 from __future__ import annotations
 
 import json
+import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 CONFIG_NAME = "cad-agent.yaml"
-CONFIG_NAMES = (CONFIG_NAME, "vptest.yaml")
 
 class CadConfigError(ValueError):
     """The ``cad:`` section is missing or malformed."""
@@ -285,18 +285,37 @@ def from_dict(root: Path, data: Dict[str, Any]) -> CadProject:
     )
 
 def find_config(root: Path) -> Optional[Path]:
-    """The first of ``CONFIG_NAMES`` present in ``root``, or None."""
-    return next((root / n for n in CONFIG_NAMES if (root / n).is_file()), None)
+    """``<root>/cad-agent.yaml`` if it is a file, else None."""
+    config = root / CONFIG_NAME
+    return config if config.is_file() else None
+
+def other_cad_configs(root: Path) -> List[str]:
+    """Names of the other ``*.yaml`` / ``*.yml`` files in ``root`` with a top-level ``cad:`` key, sorted.
+
+    They are never read as the config. The not-found error names them, so a project whose ``cad:`` section
+    sits in a file under another name learns to rename it to ``cad-agent.yaml``."""
+    names = []
+    for path in sorted(root.glob("*.y*ml")):
+        if path.name == CONFIG_NAME or path.suffix not in (".yaml", ".yml") or not path.is_file():
+            continue
+        try:
+            text = path.read_text(errors="replace")
+        except OSError:
+            continue
+        if re.search(r"^cad:", text, re.MULTILINE):
+            names.append(path.name)
+    return names
 
 def load_project(root: Union[str, Path, None] = None) -> CadProject:
-    """Read the ``cad:`` section of ``<root>/cad-agent.yaml`` or ``<root>/vptest.yaml``
-    (root defaults to cwd)."""
+    """Read the ``cad:`` section of ``<root>/cad-agent.yaml`` (root defaults to cwd)."""
     root = Path(root or Path.cwd()).resolve()
     config = find_config(root)
     if config is None:
+        others = other_cad_configs(root)
+        hint = (f"; {', '.join(others)} {'has' if len(others) == 1 else 'have'} a cad: section but only "
+                f"{CONFIG_NAME} is read: rename it to {CONFIG_NAME}") if others else ""
         raise CadConfigError(
-            f"{' / '.join(CONFIG_NAMES)} not found in {root}; "
-            "a CAD project needs one of them with a cad: section"
+            f"{CONFIG_NAME} not found in {root}; a CAD project needs one with a cad: section{hint}"
         )
     try:
         import yaml

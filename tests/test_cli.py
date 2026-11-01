@@ -22,7 +22,7 @@ def write_steps_project(root: Path, fail_at: str = "") -> Path:
         code = "import sys; print('running %s'); " % name
         code += "sys.exit(3)" if name == fail_at else (
             f"import os; open('exports/{name}.done', 'w').write(os.environ['CAD_AGENT_PROJECT'] + '|' "
-            "+ os.environ['VPTEST_CAD_PROJECT'])")
+            "+ os.getcwd())")
         (root / "tools" / f"{name}.py").write_text(code + "\n")
     (root / "exports").mkdir()
     (root / "cad-agent.yaml").write_text(textwrap.dedent(f"""\
@@ -91,7 +91,7 @@ def test_missing_script_fails_the_build(tmp_path, capsys):
 def test_unusable_project_exits_2(tmp_path, capsys):
     assert main(["check", "--project", str(tmp_path)]) == 2
     err = capsys.readouterr().err
-    assert err.startswith("cad-agent: check:") and "cad-agent.yaml" in err and "vptest.yaml" in err
+    assert err.startswith("cad-agent: check:") and "cad-agent.yaml not found" in err and "rename" not in err
     assert main(["--project", str(tmp_path)]) == 2
     assert "cad-agent --help" in capsys.readouterr().err
 
@@ -144,10 +144,13 @@ def test_serve_binds_and_records_the_url(tmp_path):
         server.shutdown()
         server.server_close()
 
-def test_vptest_yaml_still_works(tmp_path, capsys):
+def test_a_cad_section_under_another_file_name_is_named_not_read(tmp_path, capsys):
     root = make_project(tmp_path)
-    (root / "cad-agent.yaml").rename(root / "vptest.yaml")
-    assert main(["check", "--project", str(root)]) == 0
+    (root / "cad-agent.yaml").rename(root / "project.yaml")
+    assert main(["check", "--project", str(root)]) == 2
+    err = capsys.readouterr().err
+    assert "cad-agent.yaml not found" in err
+    assert "project.yaml has a cad: section but only cad-agent.yaml is read: rename it to cad-agent.yaml" in err
 
 def test_module_runs_as_a_script(tmp_path):
     import subprocess

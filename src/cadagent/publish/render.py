@@ -43,9 +43,6 @@ VIEWS: Dict[str, Tuple[Tuple[float, float, float], Tuple[float, float, float]]] 
     "section": ((0.0, -1.0, 0.0), (0, 0, 1)),
 }
 
-# read when ``only_env`` is unset, so vptest-era scripts keep working
-LEGACY_ONLY_ENV = "VPTEST_CAD_RENDER_ONLY"
-
 CAPTION_BAR_PX = 94
 NOTE_BAR_PX = 54
 
@@ -85,7 +82,7 @@ class Renderer:
         self.font_path = font or next((f for f in FONT_CANDIDATES if Path(f).exists()), None)
         self.tessellation = tessellation
         if only is None:
-            env = os.environ.get(only_env, "") or os.environ.get(LEGACY_ONLY_ENV, "")
+            env = os.environ.get(only_env, "")
             only = [n for n in env.split(",") if n.strip()] or None
         self.only = {n.strip() for n in only} if only is not None else None
         self.bar_color = bar_color

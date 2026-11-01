@@ -1,4 +1,4 @@
-"""The cad: section of cad-agent.yaml (or vptest.yaml, beside vptest's own sections)."""
+"""The cad: section of cad-agent.yaml, beside other tools' sections."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from cadagent.project import CadConfigError, find_config, load_project
+from cadagent.project import CadConfigError, find_config, load_project, other_cad_configs
 
 YAML = textwrap.dedent("""\
     project:
@@ -117,20 +117,30 @@ def test_missing_config_or_section_is_an_error(tmp_path):
     with pytest.raises(CadConfigError, match="no cad: section"):
         load_project(tmp_path)
 
-def test_vptest_yaml_is_read_beside_its_other_sections(tmp_path):
-    (tmp_path / "vptest.yaml").write_text(YAML)
+def test_only_cad_agent_yaml_is_read(tmp_path):
+    (tmp_path / "project.yaml").write_text(YAML)
+    assert find_config(tmp_path.resolve()) is None
+    with pytest.raises(CadConfigError, match="project.yaml has a cad: section but only cad-agent.yaml is read: "
+                                             "rename it to cad-agent.yaml"):
+        load_project(tmp_path)
+    (tmp_path / "project.yaml").rename(tmp_path / "cad-agent.yaml")
+    assert find_config(tmp_path.resolve()) == tmp_path.resolve() / "cad-agent.yaml"
     p = load_project(tmp_path)
     assert p.name == "widget" and [s.name for s in p.steps] == ["build", "check"]
     assert p.unknown_keys == ["colour_scheme"]
 
-def test_cad_agent_yaml_wins_over_vptest_yaml(tmp_path):
-    (tmp_path / "vptest.yaml").write_text("cad:\n  name: old\n")
-    (tmp_path / "cad-agent.yaml").write_text("cad:\n  name: new\n")
-    assert find_config(tmp_path.resolve()) == tmp_path.resolve() / "cad-agent.yaml"
-    assert load_project(tmp_path).name == "new"
-
-def test_first_config_found_is_the_config(tmp_path):
-    (tmp_path / "vptest.yaml").write_text("cad:\n  name: old\n")
+def test_cad_agent_yaml_is_the_config_even_without_a_cad_section(tmp_path):
+    (tmp_path / "other.yaml").write_text("cad:\n  name: old\n")
     (tmp_path / "cad-agent.yaml").write_text("other: {}\n")
     with pytest.raises(CadConfigError, match="cad-agent.yaml has no cad: section"):
+        load_project(tmp_path)
+
+def test_the_not_found_hint_names_only_top_level_cad_sections(tmp_path):
+    (tmp_path / "b.yml").write_text("cad:\n  name: b\n")
+    (tmp_path / "a.yaml").write_text("tools:\n  x: 1\ncad: {name: a}\n")
+    (tmp_path / "nested.yaml").write_text("project:\n  cad:\n    name: n\n")
+    (tmp_path / "notes.txt").write_text("cad:\n")
+    (tmp_path / "dir.yaml").mkdir()
+    assert other_cad_configs(tmp_path) == ["a.yaml", "b.yml"]
+    with pytest.raises(CadConfigError, match="a.yaml, b.yml have a cad: section"):
         load_project(tmp_path)

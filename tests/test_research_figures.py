@@ -21,8 +21,9 @@ def test_every_row_with_ratios_is_drawn():
     svg = (ROOT / "docs" / "img" / "research" / "fdm-anisotropy.svg").read_text()
     for name in ("PLA Basic, Bambu", "PolyMide CoPA, wet", "TPU 95A HF, Bambu"):
         assert f">{name}</text>" in svg
-    assert ">PA6-CF, Bambu</text>" not in svg                # from a search snippet, not a data sheet
-    assert "Not drawn (no data sheet): PA6-CF, Bambu." in svg
+    for name in ("PA6-CF, Bambu", "PETG Basic V3.0, Bambu", "PETG Basic V2.0, Bambu"):   # read from Bambu's sheets (#156)
+        assert f">{name}</text>" in svg
+    assert "Not drawn" not in svg                            # every row with a ratio is from a data sheet now
     assert "≥" not in svg                                    # TPU's two lower bounds give no ratio, not a bound
     assert svg.count(">not known</text>") == 1               # TPU's strain
     assert "PolyFlex TPU95" not in svg                       # no Z data: not drawn
@@ -34,7 +35,7 @@ def test_every_row_with_ratios_is_drawn():
     rows = table[2:]                                          # without the header and the --- line
     with_ratio = [r for r in rows if any(c.strip()[:1].isdigit() for c in r.split("|")[5:7])
                   and not re.search(r"\((?:s|u)\b", r.split("|")[7])]
-    assert svg.count('text-anchor="end"') == len(with_ratio) == 14   # every data-sheet row with a ratio, and no other
+    assert svg.count('text-anchor="end"') == len(with_ratio) == 16   # every data-sheet row with a ratio, and no other
 
 
 def _figures():

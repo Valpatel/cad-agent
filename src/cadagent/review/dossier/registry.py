@@ -78,7 +78,7 @@ _THIS_FILE = os.path.normcase(os.path.abspath(__file__))
 _FASTENER_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_.:\-]*$")
 HASH_RECIPE = ("cadagent.review.evidence.shape_content_hash: sha256 of the OCCT BREP text (format version 1, "
                "no triangles, no normals) with the 7-digit shape flag lines removed")
-CONFIG_NAMES = ("cad-agent.yaml", "vptest.yaml")
+CONFIG_NAME = "cad-agent.yaml"         # the project config that marks the project root (cadagent.project)
 
 
 class RegistryError(ValueError):
@@ -246,14 +246,13 @@ def _check_part(name: str, grounded: bool, free: bool, reason: str) -> str:
 
 
 def project_root(start: Union[str, Path, None] = None) -> Path:
-    """The nearest directory at or above ``start`` (a build script or a directory) that holds ``cad-agent.yaml`` or
-    ``vptest.yaml``; else, for a script in a ``cad/`` directory, that directory's parent; else the current
-    directory."""
+    """The nearest directory at or above ``start`` (a build script or a directory) that holds ``cad-agent.yaml``;
+    else, for a script in a ``cad/`` directory, that directory's parent; else the current directory."""
     if start:
         here = Path(start).resolve()
         first = here if here.is_dir() else here.parent
         for d in (first, *first.parents):
-            if any((d / n).is_file() for n in CONFIG_NAMES):
+            if (d / CONFIG_NAME).is_file():
                 return d
         if first.name == "cad":
             return first.parent
@@ -502,9 +501,9 @@ class Registry:
         ``write`` (default) also writes ``<out_dir>/dossier-geometry.json`` and the BREP of every shape.
 
         ``params``: a mapping, a path to a JSON file, or None for ``<root>/cad/parameters.json`` when it exists
-        (else ``{}``). ``root`` is the project root: by default the nearest directory holding ``cad-agent.yaml`` (or
-        ``vptest.yaml``) above the build script that calls this, else the current directory. Paths in the record are
-        relative to it, and ``out_dir`` must be inside it.
+        (else ``{}``). ``root`` is the project root: by default the nearest directory holding ``cad-agent.yaml`` above
+        the build script that calls this, else the current directory. Paths in the record are relative to it, and
+        ``out_dir`` must be inside it.
         """
         root = Path(root).resolve() if root else project_root(_caller_where().rpartition(":")[0] or None)
         out = (root / out_dir).resolve()

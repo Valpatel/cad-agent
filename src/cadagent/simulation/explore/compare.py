@@ -185,7 +185,8 @@ def rank(evaluations: Iterable[Dict[str, Any]], objectives: Sequence[Objective])
 
 def metric_columns(evaluations: Sequence[Dict[str, Any]], cfg: ExploreConfig) -> Dict[str, Dict[str, Any]]:
     """Display info for every metric that appears, objectives first, then the cost and mass, then the rest in the
-    order they first appear."""
+    order they first appear. When no design buys anything (a parameter-only project: no BOM lines anywhere), the
+    BOM's cost and mass, always 0, are left out of the columns unless they are objectives or constraints."""
     order: List[str] = [o.metric for o in cfg.objectives]
     for name in (cfg.cost_metric, "mass_kg"):
         if name not in order:
@@ -195,6 +196,12 @@ def metric_columns(evaluations: Sequence[Dict[str, Any]], cfg: ExploreConfig) ->
             if name not in order:
                 order.append(name)
     seen = {name for ev in evaluations for name in (ev.get("metrics") or {})}
+    if not any((ev.get("bom") or {}).get("lines") for ev in evaluations):
+        goals = {o.metric for o in cfg.objectives} | {c.metric for c in cfg.constraints}
+        for name in (cfg.cost_metric, "mass_kg"):
+            if name not in goals and all(((ev.get("metrics") or {}).get(name) or {}).get("source") == "bom"
+                                         for ev in evaluations if name in (ev.get("metrics") or {})):
+                seen.discard(name)
     out = {}
     for name in order:
         if name not in seen:

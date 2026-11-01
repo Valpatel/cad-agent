@@ -54,7 +54,8 @@ test('the port refuses what the Python refuses', () => {
 test('the demo materials carry a source and a strain in range for both print directions', () => {
   assert.ok(MATERIALS.length >= 10);
   for (const m of MATERIALS) {
-    assert.match(m.source, /TDS/, m.key);
+    // each data sheet read: its edition, the PDF's date, the page and the link (#156)
+    assert.match(m.source, /Technical Data Sheet V\d+\.\d+ \(PDF of \d{4}-\d\d-\d\d\), p\. \d+[^;]*: https:\/\//, m.key);
     for (const d of ['along', 'across']) {
       assert.ok(m.modulus[d] > 1e8 && m.modulus[d] < 2e10, `${m.key} ${d} modulus`);
       assert.ok(m.allowable[d].single > 0.001 && m.allowable[d].single < 0.1, `${m.key} ${d} strain`);

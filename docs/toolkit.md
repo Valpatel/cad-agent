@@ -30,8 +30,8 @@ cad-agent serve --port 8000      # needed for "Open in Bambu Studio" links
 ```
 
 Without the console script, `python -m cadagent.cli <subcommand>` does the same.
-The toolkit started as `vptest cad` in the vptest framework; projects set up for
-it keep working (see [Coming from vptest](#coming-from-vptest)).
+The file names and environment variables it uses are listed in
+[File names and environment variables](#file-names-and-environment-variables).
 
 The toolkit's pipeline, in order. `cad-agent all` runs it through `package`: build, export-3mf, holes, gates (only
 when the project enables them), report (which runs `check` first) and package. `site` and `release` are commands of
@@ -128,11 +128,12 @@ served (`cad-agent serve`); from `file://` the link downloads the 3MF instead.
 
 ## The `cad:` section of `cad-agent.yaml`
 
-`cad-agent` reads `<project>/cad-agent.yaml` when it exists, otherwise
-`<project>/vptest.yaml`. Only the `cad:` section is read; other top-level
-sections (such as vptest's `project:` and `projects:`) are ignored. The first
-file found is the config: a `cad-agent.yaml` without a `cad:` section is an
-error even if `vptest.yaml` has one.
+`cad-agent` reads `<project>/cad-agent.yaml`. Only the `cad:` section is read;
+other top-level sections are ignored, so the file can carry other tools'
+settings too. A `cad-agent.yaml` without a `cad:` section is an error. With no
+`cad-agent.yaml` at all, commands exit 2, and the error names any other
+`*.yaml` or `*.yml` file in the project root with a top-level `cad:` key, so it
+can be renamed: no other file name is read.
 
 | Key | Default | Meaning |
 |-----|---------|---------|
@@ -218,7 +219,7 @@ Unquoted, the title is cut at the comma and the rest becomes a stray key.
 | `cad-agent export-3mf` | `<part>.stl` -> verified, bed-centred `<part>.3mf` for every part in the parts file | 1 on a read-back mismatch |
 | `cad-agent holes [PART ...]` | checks every hole in every part is clear of material: finds the cylindrical holes and countersinks in `exports/<part>.step` (concave, at least 200° of wall, up to 30 mm across), probes each with a cylinder or cone just inside its wall, and writes `exports/hole-checks.json` bound to each STEP's sha256; `all` runs it and the report's "Holes clear" rows fail on material in a hole, a stale result or a check that did not run (config `cad: holes:`, [below](#holes-clear)) | 1 if a hole has material inside |
 | `cad-agent check [--json]` | collects results (no build), prints a table or the results JSON | 1 if any row fails |
-| `cad-agent report [--open]` | writes `exports/cad-agent-results.json` (schema 1.0, the vptest web shape, so `vptest web validate` and its renderer still accept it) and a standalone `docs/cad-agent-report.html` with inline styles (light and dark) that opens from `file://` | 1 if any row fails |
+| `cad-agent report [--open]` | writes `exports/cad-agent-results.json` (results schema 1.0) and a standalone `docs/cad-agent-report.html` with inline styles (light and dark) that opens from `file://` | 1 if any row fails |
 | `cad-agent package` | zip + sha256 manifest from `package.include` | |
 | `cad-agent release [--out DIR] [--no-zip] [--revision TEXT] [--date D]` | the print release: `release/<name>-rev<revision>/index.html` (parts with thumbnails, print settings, slicer mass and time, STEP/STL/3MF links; assembly pages; hardware; source) and a reproducible zip next to it ([below](#the-print-release-cad-agent-release)) | 2 on a bad config (a path outside the project), a missing part file or a foreign `--out` folder |
 | `cad-agent serve [--port N] [--host H]` | serves the project root; writes the URL to `preview/server-url.txt` | |
@@ -233,7 +234,7 @@ Unquoted, the title is cut at the comma and the rest becomes a stray key.
 | `cad-agent all` | build, export-3mf, holes, gates and the dossier lint (when `cad: dossier:` or `cad: gates:` is set), check + report, package | 1 if anything failed |
 | `cad-agent catalogue [--json] [--errors-only]` | checks the part catalogue and every design against it (config `cad: explore:`, [explore.md](explore.md)) | 1 on an error |
 | `cad-agent compare [DESIGN ...] [--swaps] [--workers N] [--json] [--open]` | evaluates the designs with the project's evaluator, ranks them (Pareto fronts over the objectives) and writes `comparison.json`, `compare.html` and site design cards; `--swaps` tries every one-part swap | 1 if a design could not be evaluated |
-| `cad-agent optimise [--trials N] [--workers N] [--sampler S] [--fresh]` | searches slots and parameters (random, grid; NSGA-II and TPE with optuna) and keeps a leaderboard | 1 if no trial is feasible |
+| `cad-agent optimise [--trials N] [--workers N] [--sampler S] [--fresh] [--no-confirm]` | searches slots and parameters (random, grid; NSGA-II and TPE with optuna), keeps a leaderboard, and re-evaluates the leaders at a higher fidelity (`search.confirm`) | 1 if no trial is feasible |
 
 `--project PATH` (default: cwd), before or after the subcommand, selects the
 project. Exit code 2 means the project or environment is unusable: a missing or
@@ -375,22 +376,26 @@ filament maker's data sheet (100 % infill test bars). Each names its sheet (`sou
 says in `note` which sheet value E and the strength come from, and gives the print direction of E (`direction`). The
 result's `assumptions` line repeats the modulus, the strength and the note, and the viewer shows the direction:
 
-| Key | E (MPa) | Direction | Strength (MPa) | Data sheet |
-|---|---:|---|---:|---|
-| `pla` | 2060 | Z | 25 | Bambu PLA Basic V3.0 (X-Y 2580; Z tensile strength 31) |
-| `petg` | 1120 | Z | 20 | Bambu PETG Basic V2.0 (X-Y 1460). V3.0 is a reformulated filament whose bars are not said to be annealed (2780 / 2550): not used |
-| `petg_cf` | 1340 | Z | 22 | Bambu PETG-CF V3.0 (X-Y 2460; Z tensile strength 29) |
-| `pa_cf` | 1820 | Z | 40 | Bambu PAHT-CF V3.0, dry (Z bending, the sheet's lowest; Z tensile 2180, X-Y 3860) |
-| `pa6_cf_xy` | 2126 | X-Y | 49 | Bambu PA6-CF V3.0, dry X-Y x0.6 humid x0.8 print. Uncertain: the x0.6 is a strength ratio, and a part that takes up water may be about half this stiff (#157) |
-| `pa6_cf_z` | 1042 | Z | 23 | Bambu PA6-CF V3.0, dry Z x0.6 humid x0.8 print. Uncertain in the same way |
-| `tpu95` | 7.4 | Z | 8 | Bambu TPU 95A HF V1.0 (X-Y 9.8; Polymaker lists 33.6): indicative only |
+| Key | E (MPa) | Direction | Strength (MPa) | Layer check X-Y / Z (MPa) | Data sheet |
+|---|---:|---|---:|---:|---|
+| `pla` | 2060 | Z | 25 | 27.9 / 25 | Bambu PLA Basic V3.0 (X-Y 2580; Z tensile strength 31) |
+| `petg` | 1120 | Z | 20 | 24.6 / 20 | Bambu PETG Basic V2.0 (X-Y 1460). V3.0 is a reformulated filament whose bars are not said to be annealed (2780 / 2550): a spool does not say which it is, and the lower modulus is the cautious one for deflection (`cad-agent snapfit` takes V3.0's, the cautious one for forces) |
+| `petg_cf` | 1340 | Z | 22 | 26.6 / 22 | Bambu PETG-CF V3.0 (X-Y 2460; Z tensile strength 29) |
+| `pa_cf` | 1820 | Z | 40 | 78.3 / 40 | Bambu PAHT-CF V3.0, dry (Z bending, the sheet's lowest; Z tensile 2180, X-Y 3860) |
+| `pa6_cf_xy` | 1029 | X-Y | 40.8 | 40.8 / 18.1 | Bambu PA6-CF V3.0, dry X-Y, humid (modulus x0.290, strength x0.500: Polymaker PA6-CF20 V1.1, water-saturated / dry) x0.8 print (#157) |
+| `pa6_cf_z` | 488 | Z | 18.1 | 40.8 / 18.1 | Bambu PA6-CF V3.0, dry Z, humid (x0.281, x0.472) x0.8 print |
+| `tpu95` | 7.4 | Z | 8 | 9.8 / 8 | Bambu TPU 95A HF V1.0 (X-Y 9.8; Polymaker lists 33.6): indicative only |
 
 The modulus is the sheet's lowest, across the layers, because the solver is isotropic and does not know how the part
 was printed, so deflections come out higher than with the sheet's in-plane values. They are not an upper bound on a
 print. The mesh is the solid CAD, and a print with sparse infill or thin walls can be softer still. The isotropic shear
 modulus does not bound a print's shear stiffness between layers either, which matters for short, thick parts. The
-two humid PA6-CF rows may be too stiff (table). Under forces and torques the stress does not depend on E, so only
-deflection and stiffness change with it.
+two humid PA6-CF rows take the modulus ratio of a water-saturated print (0.28–0.29 of dry). That is a judgement for
+the cautious end: no sheet gives a print conditioned in room air, where moulded PA6 keeps 0.31–0.58 of its dry
+modulus (unfilled to 30 % glass), so in room air these rows may be up to about 2x too soft, and a force at a given
+travel reads low ([research](../research/compliant-mechanisms.md), section 5). Under
+forces and torques the stress does not depend on E, so only deflection and stiffness change with it. The metals
+(`al6061`, `al7075`, `steel`) use design minimums from MIL-HDBK-5J, not typical values (#157); `cf_tube` is typical.
 
 At a given travel it is different. `stiffness_n_per_mm` is lower than with the in-plane modulus. So a force worked out
 from it at a given travel (a clip's retention, a flexure's preload, a spring rate) reads lower than for a solid part
@@ -415,6 +420,77 @@ Before v0.5.0 the printed moduli were 31-305 % higher (PLA 2700, PETG 1800, PETG
 2400, TPU 30), so deflections computed with them read 24-75 % low (#125). A real print, with walls, seams and sparse
 infill, is softer and weaker than a test bar, and no simulation proves that a part fits or holds: check it against a
 printed coupon.
+
+**Across the layers or along them** (`layer_check`). The study is isotropic, so its safety factor uses one strength
+everywhere: across the layers, the weak one, for every default printed row. `layer_check(normal)` resolves the same stress against the layers of a print whose
+layer normal (its build direction) is `normal`. At every element corner it splits the traction on the layer plane into
+σn, across the layers, and τn, along them, and runs two checks:
+
+- **bond:** √(max(σn, 0)² + 3τn²) against the across-layer allowable S_z;
+- **bulk:** von Mises against the in-plane allowable S_xy.
+
+```python
+lc = st.layer_check((0, 0, 1))          # printed flat on the XY plane; strengths from the material
+lc.safety_factor, lc.governed_by        # e.g. 2.07, 'bond'
+lc.worst                                # the worst corner: where, sigma_n, tau_n, von Mises, which check
+lc.factor, lc.mode                      # per element: safety factor and governing check
+lc.as_dict()                            # for a record, with its assumptions
+```
+
+![A PETG-CF bar pulled at 10 MPa: the bond check governs from 0 to 58 degrees of tilt, worst at 30 degrees (2.07), the bulk check past that (2.66); the solved bar's dots sit on the hand-computed lines](img/fea/layer-check.svg)
+
+The chart is a real study: a PETG-CF bar pulled along its length, checked at seven print tilts (`tools/fea_layer_figure.py`
+regenerates it). Pulled straight across the layers it holds 2.20, the bond against S_z. Lying down, it holds 2.66, the
+bulk against S_xy. At 30° it holds less than either, 2.07, because the layers then also carry shear.
+
+That dip comes from the shear term, and the shear term is an assumption. No filament data sheet gives an interlayer
+shear strength, so unless `strength_shear` is given it is S_z / √3, the ratio von Mises gives an isotropic solid. Pass
+`strength_shear` from a coupon (a short-beam or lap-shear test of the same print) when there is one.
+
+The strengths default to the material's `layer_strengths_mpa` (the table above): every printed row has them. A metal or a
+material of your own needs `strength_xy` and `strength_z`. `judge` (one bool per element) picks the elements judged; by
+default that is all but the clamp and load patches, as for the safety factor. `st.sig_corner` keeps the corner stress
+tensors (elements × 4 corners × 3 × 3, MPa) for checks of your own.
+
+Its limits:
+
+- It is a screening check, not a qualification.
+- The stress comes from the isotropic solve. A print whose load path depends on its stiffness can carry the load
+  differently.
+- Walls, seams and infill are not modelled.
+- Test a printed part.
+
+<details><summary>Where the bond check comes from, and the in-plane allowables</summary>
+
+The traction on a plane with normal n is t = σ·n; σn = n·t, and τn = |t − σn n|. The bond check is the quadratic
+interaction of the opening stress and the shear on the bond plane, (⟨σn⟩ / S_z)² + (τn / S_s)² = 1 at failure. This is
+the form of Brewer and Lagace's delamination-onset criterion (J. Compos. Mater. 22 (1988) 1141–1155), applied at a point
+here, without their averaging over a distance. Compression across the layers closes the bond, so it is left out of the
+bond check, and stays in the bulk check. With S_s = S_z / √3 it reads √(⟨σn⟩² + 3τn²) / S_z.
+
+The bulk check is the study's own von Mises check, against the in-plane allowable. Gyropup used both checks for its
+hip frame before they were in the toolkit (#144).
+
+S_z is the row's strength, an allowable below the sheet's Z tensile strength. S_xy is that allowable times the sheet's
+X-Y / Z tensile strength ratio, the lowest over the editions read. So in the layer plane it sits at least as far below
+each sheet, as a ratio, as the row's strength does across the layers. The humid PA6-CF rows share one pair, their two strengths. `tests/test_fea_materials.py` pins the rule, and
+`tests/test_fea_layers.py` checks the check against hand-computed cases.
+
+</details>
+
+**What a result used** (`material_data`). `solve()` records the material data in `result['material_data']`:
+
+- `key`, the built-in row (None for a material of your own or a changed copy);
+- the constants: `E_mpa` and the print direction it is for, `nu`, `strength_mpa`, the layer allowables and
+  `density_g_cm3`;
+- where they come from: `source`, and `note`, which names the data sheet and its edition;
+- `constants_hash`, a hash of the constants alone.
+
+A record made on one toolkit can be checked on another. `material_changes(old_result, new_result)` lists each constant
+that differs, with now / recorded. Under forces and torques, deflections scale by the inverse of the E ratio, safety
+factors by the strength ratio and masses by the density ratio. A built-in material's numbers are result-changing. A
+change to any of them needs a `**Projects must change**` fragment in [`changelog.d/`](../changelog.d/README.md), and
+`tests/test_fea_layers.py` pins every row's hash so it cannot slip through.
 
 Stresses are element corner peaks, never averaged. The P2 strain is linear in a tetrahedron, so its extremes sit at the
 corners; the safety factor, the hot spots and the per-vertex colours all use the highest corner stress there. The
@@ -643,20 +719,17 @@ PYTHONPATH=src /path/to/project/.venv/bin/python -m pytest tests -q
 
 The geometry and render tests skip unless cadquery and vtk are importable.
 
-## Coming from vptest
+## File names and environment variables
 
-| vptest cad | cad-agent |
-|------------|-----------|
-| `vptest cad <subcommand>` | `cad-agent <subcommand>` (same subcommands, options and exit codes) |
-| `vptest.yaml` | `cad-agent.yaml`; `vptest.yaml` is still read when `cad-agent.yaml` is absent |
-| `exports/vptest-cad-results.json` | `exports/cad-agent-results.json` (same schema) |
-| `docs/vptest-cad-report.html` | `docs/cad-agent-report.html` |
-| `VPTEST_CAD_PROJECT` (set for steps) | `CAD_AGENT_PROJECT`; the old name is still set |
-| `VPTEST_CAD_RENDER_ONLY` | `CAD_AGENT_RENDER_ONLY`; the old name is read when the new one is unset |
-| `from vptest.cad.x import ...` | `from cadagent.x import ...` |
-
-Pages that link to the old report or results file names need their links
-updated, or `html_pages` will report them as broken.
+| Name | What it is |
+|------|------------|
+| `cad-agent.yaml` | the project config at the project root; only its `cad:` section is read ([above](#the-cad-section-of-cad-agentyaml)) |
+| `cad-agent <subcommand>` | the commands ([above](#commands)); `python -m cadagent.cli <subcommand>` without the console script |
+| `exports/cad-agent-results.json` | the results, schema 1.0, written by `cad-agent report` |
+| `docs/cad-agent-report.html` | the standalone report page (in `docs_dir`), written by `cad-agent report` with the results |
+| `CAD_AGENT_PROJECT` | set to the project root for every build step and design evaluator |
+| `CAD_AGENT_RENDER_ONLY` | comma-separated picture names: a `Renderer` made without `only=` renders just those |
+| `from cadagent.<package> import ...` | the Python API ([package layout](#package-layout-v050)) |
 
 ## Holes clear
 

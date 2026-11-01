@@ -10,6 +10,129 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.6.0 (2026-11-01)
+
+**New**
+- `cadagent.simulation.fea.Study.layer_check(normal)` checks a printed part's stress against its layers, for a print
+  whose layer normal (build direction) is `normal`. Two checks run at every element corner. The bond check takes
+  √(max(σn, 0)² + 3τn²) against the across-layer allowable. The bulk check takes von Mises against the in-plane
+  allowable. It returns per-element factors and modes, the safety factor, the governing check and the worst corner
+  (`LayerCheck`; `as_dict()` for records). The interlayer shear allowable is on no data sheet, so it is assumed to be
+  S_z / √3 unless `strength_shear` is given. It is a screening check of the isotropic stress, not a qualification:
+  test a printed part (#144).
+- Every printed material in `MATERIALS` has `layer_strengths_mpa` (X-Y, Z), which `layer_check` defaults to.
+  - The Z allowable is the row's strength.
+  - The X-Y allowable is that strength times the lowest X-Y / Z tensile strength ratio of the sheet editions read, so
+    it sits at least as far below each sheet's in-plane strength, as a ratio: PLA 27.9, PETG 24.6, PETG-CF 26.6,
+    PAHT-CF 78.3 and TPU 95A 9.8 MPa.
+  - The humid PA6-CF rows share their two strengths, 40.8 / 18.1 MPa.
+  - No existing result changes (#144).
+- `Study.solve()` keeps the corner stress tensors as `Study.sig_corner` (elements × 4 corners × 3 × 3, MPa), for checks
+  of your own (#144).
+- `Study.result['material_data']` records the material data a study used (#144):
+  - the built-in row's `key`;
+  - E and the print direction it is for, ν, the strength, the layer allowables and the density;
+  - `source`, and `note`, which names the data sheet and its edition;
+  - `constants_hash`, a hash of the constants.
+- `material_changes(old, new)` lists what differs between the material data of two records (study results, their
+  `material_data`, `export_viewer()` files or `Material`s). A record made on one toolkit and checked on another then
+  shows a changed material as a material change, not a design change (#144).
+- `cad-agent optimise`: `search.confirm` evaluates the first `top` feasible trials again at a higher fidelity once the
+  trials are done, with `args` appended to the evaluator's command (`[--mesh, "3"]`) or its own `evaluator`. The
+  leaderboard ranks each confirmed trial on its confirmed values and keeps the screening values beside them (`confirm`
+  in `leaderboard.json`, a Confirmed column on the page). It flags a change of more than `tolerance_pct` (default 5 %)
+  in an objective or constraint, a trial that becomes infeasible, and a confirmation that fails.
+  Confirmations are kept in `confirm.jsonl` and reused while the confirm evaluator is unchanged; `--no-confirm` skips
+  the stage for one run (#144, [docs/explore.md](docs/explore.md#confirm-the-leaders)).
+- Command evaluators: `{result}` in the argv is a file path the evaluator writes its JSON reply to, read after the
+  command exits, so output that native code writes to fd 1 (gmsh, from C) can no longer corrupt the reply. Without
+  `{result}`, stdout is read as before. An evaluator that runs gmsh, OpenCASCADE or a solver can take `{result}` in
+  place of an `os.dup2` workaround (#144).
+
+**Changed**
+- `cad-agent.yaml` is the only project config file `cad-agent` reads, and `CAD_AGENT_PROJECT` and
+  `CAD_AGENT_RENDER_ONLY` are its only environment variables: the older config file name and the older names of both
+  variables are gone. With no `cad-agent.yaml`, the error names any other `*.yaml` / `*.yml` file in the project root
+  with a top-level `cad:` key and says to rename it (`cadagent.project.other_cad_configs`) (#135).
+- `cadagent.review.dossier.project_root` finds the project root by `cad-agent.yaml` only (#135).
+- `cad-agent catalogue`, `compare` and `optimise` run without a catalogue when no slots are declared: a search that
+  changes only parameters needs none, and each design's BOM is empty. With slots and no catalogue it is still an error,
+  which now names the slots. When no design has a BOM line, the always-0 cost and mass are left out of the comparison's
+  columns unless they are objectives or constraints. A parameter-only project can delete the empty catalogue file it
+  kept only to satisfy `cad-agent` (#144).
+- `PrintedMaterial` keeps every data-sheet edition read, current first, as `sheets` (a `Sheet` each: maker, title,
+  edition, PDF date, page, link and values). Across them it takes the lowest allowable, the highest modulus for the
+  mating force (`secant_upper_bound()`) and the lowest for the retention force (`retention_modulus()`), and
+  `derivation()` (the `cad-agent snapfit --output` JSON) names the edition behind each number (`xy.sheet`, `z.sheet`,
+  `modulus.mating.sheet`, `modulus.retention.sheet`). `source` lists every sheet. Pinned by
+  `tests/test_snapfit_sheets.py` (#156).
+- `check_cantilever()` takes `retention_secant_mpa` for the separation force; the snapfit output adds
+  `material.retention_secant_mpa` and, where it differs, `retention_deflection_force_n` (#156).
+
+**Fixed**
+- Web kit: vendored Mermaid 11.4.1 → 11.17.2, which clears its nine OSV advisories, among them the two label XSS
+  (sequence-diagram KaTeX labels, GHSA-7rqq-prvp-x9jh; architecture `iconText`, GHSA-8gwm-58g9-j8pw), CSS injection,
+  prototype pollution and the XY and Gantt chart infinite loops. A browser test now renders both XSS payloads and fails
+  if either runs (it does on 11.4.1). Still open: the DOMPurify 3.4.12 and KaTeX 0.16.47 that `mermaid.min.js`
+  bundles have five and one advisories of their own (fixed in DOMPurify 3.4.17 and KaTeX 0.18.2), which a check on
+  Mermaid does not show. No Mermaid release bundles a fixed DOMPurify yet; `SOURCE.json` records them (#152).
+- Web kit file viewer: the 3MF loader's fflate 0.6.9 (three.js r160's copy) → fflate 0.8.3 from npm. 0.6.9's
+  `unzipSync` loops forever on a crafted ZIP64 directory entry (GHSA-px8p-9vwx-vf98); a unit test feeds it that archive
+  and requires an error within 5 s. The viewer's own ZIP layout check already refused that archive before the parser saw
+  it; the fix covers any other code that imports the kit's `fflate.module.js`. Unzip filters now work as documented (#152).
+- `src/cadagent/webkit/vendor/mermaid/SOURCE.json` and `src/cadagent/webkit/vendor/file-viewer-sources.json`
+  record each package's npm URL, integrity and file SHA-256s; `tests/webkit-vendor.test.mjs` checks the files and
+  the notices against them (#152).
+- Printed snap-fit allowables (`cadagent.mechanical.compliant.allowables`) come from Bambu's current V3.0 data sheets,
+  which give lower strengths than the V2.0 copies cited before. Single joining, along / across the layers: PETG-CF
+  1.68 → 1.00 % (the old value was too generous: a snap sized with it can crack), PLA Basic 1.02 → 0.95 %, PLA Matte
+  1.14 / 1.05 → 1.07 / 0.92 %, Bambu ASA 1.49 / 1.16 → 1.06 / 1.02 % (#156).
+- Bambu PETG Basic V3.0 is a reformulated filament sold under the same name, and a spool does not say which it is.
+  `petg-bambu-basic` takes the cautious one for each quantity: the allowable from V3.0 (2.30 → 1.28 % along, 0.96 %
+  across), the mating force from V3.0's modulus (1460 / 1120 → 2780 / 2550 MPa) and the retention force from V2.0's
+  (1460 / 1120 MPa, as before) (#156).
+- FEA humid PA6-CF rows (`pa6_cf_xy`, `pa6_cf_z`): the modulus takes the wet / dry modulus ratio of a water-saturated
+  print (0.290 X-Y, 0.281 Z, Polymaker PA6-CF20 V1.1) instead of x0.6, a strength-like ratio; the strength takes the
+  sheet's strength ratio (0.500, 0.472). E 2126 → 1029 MPa and 1042 → 488 MPa; strength 48.96 → 40.84 MPa and 23.04 →
+  18.13 MPa (#157).
+- FEA metals use design minimums from MIL-HDBK-5J instead of typical values: `al6061` yield 276 → 241.3 MPa (E 68900 →
+  68258 MPa); `al7075` 503 → 461.9 MPa for sheet and plate up to 2 in thick (E 71700 → 71016 MPa, density 2.81 →
+  2.80); `steel` 250 → 248.2 MPa (AISI 1025, the same 36 ksi minimum as ASTM A36; E 200000 → 199948 MPa,
+  ν 0.29 → 0.32, so the shear modulus falls 2.3 %, density 7.85 → 7.86). Each note names its table and the weaker
+  stock the row does not cover (extruded 6061 rod, bar and shapes across the grain, 33 / 28 ksi; 7075 bar and rod,
+  66–60 ksi; 7075 plate over 2 in); `cf_tube` is labelled a typical value (#157).
+
+**Projects must change**
+- A project whose `cad:` section is in a config file under any other name: rename that file to `cad-agent.yaml`.
+  Every command that reads the project exits 2 until then, and its error names the file (#135).
+- A build step that reads the project root from the older variable: read `CAD_AGENT_PROJECT`. A script that sets the
+  older render-subset variable: set `CAD_AGENT_RENDER_ONLY` (#135).
+- Code that imported `cadagent.project.CONFIG_NAMES`, `cadagent.publish.render.LEGACY_ONLY_ENV` or
+  `cadagent.review.dossier.registry.CONFIG_NAMES`: use `cadagent.project.CONFIG_NAME` (#135).
+- Adding `{result}` to the evaluator of an existing search changes the evaluator in its `search.json`, so
+  `cad-agent optimise` refuses to continue those trials: run it once with `--fresh`. Adding or changing `confirm` does
+  not (#144).
+- Projects with a copied kit: rerun `cad-agent webkit <dir>` (and rebuild sites made with `cad-agent site`) to ship the
+  fixed files: the new Mermaid and fflate (#152), and the V3.0 snap-fit data in `formulas-data.js` that the
+  `<cad-cantilever>` widget reads (#156). Diagrams keep Mermaid 11's layout and theme; Mermaid 12 (ELK layout and a new
+  default look) is not taken.
+- Re-run `cad-agent snapfit` for printed snaps in `petg-cf-bambu` (allowable −41 %), `petg-bambu-basic` (−44 % along,
+  −58 % across), `asa-bambu` (−29 % / −11 %), `pla-bambu-matte` (−6 % / −12 %) and `pla-bambu-basic` (−7 %): a snap
+  whose root strain sits between the old and new allowable now fails. PETG Basic's mating force reads 1.9x (along) and
+  2.3x (across) higher, its retention force as before; PLA Basic's retention force reads 4 % / 5 % lower (#156).
+- Code that built `PrintedMaterial(name, source, e_mpa, uts_mpa, break_pct, ...)` passes `sheets=(Sheet(...), ...)`
+  instead, and reads the values from `material.sheets[i]`. `PrintedMaterial.rule(axis)` returns three values,
+  `(strain, limit, sheet)`, not two: code that unpacks two raises `ValueError` (#156).
+- Re-run FEA with `pa6_cf_xy` and `pa6_cf_z`: deflections read 2.07x and 2.14x larger than with v0.5.0 (2.9x and 4.9x
+  than with v0.4.2; stiffness the inverse), and safety factors 0.83x and 0.79x; a force or stress worked out at a
+  given travel falls with E (#157).
+- Re-run FEA safety factors with `al6061` (0.87x), `al7075` (0.92x) and `steel` (0.99x); aluminium deflections read
+  about 1 % larger. For a part cut from weaker stock, replace the row's strength with the handbook's for that stock:
+  extruded 6061 loaded across the grain (28 ksi, 193 MPa, over 1 in), 7075 plate thicker than 2 in (down to 54 ksi,
+  372 MPa, at 3.5–4 in), 7075 bar and rod (66 ksi to 2 in) (#157).
+- Printed-part FEA deflection checks not re-run since #125 (v0.5.0) read 31–147 % larger now than before it (TPU
+  305 %; the humid PA6-CF rows 191 % and 392 % with this release); re-run them with this release's values (#157).
+
 ## v0.5.0 (2026-11-01)
 
 **New**
@@ -144,4 +267,5 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   gets new hashes for those 44 from the move alone, and must measure again. The move leaves the other 17 byte for
   byte (`geometry`, `fasteners`, `connectors`, `markings`, `mcmaster`, `motion_trace`, `compliant/__init__`,
   `compliant/allowables`, `compliant/figures`, `mesh3mf`, `robot`, `pcb_routing`, `evidence`, `dossier/load`,
-  `gates/verdict`, `view`, `serve`); `geometry` and `mcmaster` change in this release anyway, for `export_step` (#91).
+  `gates/verdict`, `view`, `serve`); `geometry` and `mcmaster` change in this release anyway, for `export_step` (#91),
+  and so does `view`, for the home page's 3D model (`pack_view`, #182).

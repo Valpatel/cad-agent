@@ -16,7 +16,8 @@ runs nothing. Features:
 
 A missing file, missing key or non-boolean verdict is a failure, never a pass.
 Evidence paths are relative to ``docs_dir``, where the HTML report is written.
-The JSON keeps the vptest web schema 1.0 shape, so ``vptest web`` can render it too.
+The JSON is results schema 1.0 (``cadagent.publish.htmlreport.SCHEMA_VERSION``), the shape ``tests/test_report.py``
+pins, so a tool that reads the file can rely on it.
 """
 
 from __future__ import annotations
@@ -266,7 +267,7 @@ def gates_feature(project: CadProject, report_dir: Path) -> Optional[Dict[str, A
     return {"feature_id": "cad-gates", "feature_title": "Integrity gates", "checks": checks}
 
 def collect(project: CadProject) -> Dict[str, Any]:
-    """Results dict in schema 1.0 (the vptest web shape; ``vptest web validate`` accepts it)."""
+    """Results dict in schema 1.0 (``SCHEMA_VERSION``)."""
     report_dir = project.docs_dir
     features = [
         parts_feature(project, report_dir),

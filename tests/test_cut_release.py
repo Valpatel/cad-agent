@@ -147,7 +147,8 @@ def test_fragments_fill_an_empty_entry_and_keep_a_colon_heading():
     empty = CHANGELOG.replace("**New**\n- A thing (#1).\n", "")
     _, cl, _ = cut_release.cut(PYPROJECT, empty, bump="patch", date="2026-11-01", fragments=[FIX])
     assert "## Unreleased\n\n## v0.4.3 (2026-11-01)\n\n**Fixed**\n- CFD settles within 1 °C (#175).\n\n## v0.4.2" in cl
-    colon = CHANGELOG.replace("**New**\n- A thing (#1).\n", "**New**\n- A thing (#1).\n\n**Projects must change:**\n- Old.\n")
+    colon = CHANGELOG.replace("**New**\n- A thing (#1).\n",
+                              "**New**\n- A thing (#1).\n\n**Projects must change:**\n- Old.\n")
     folded = cut_release.fold_fragments(colon, [PMC])
     assert "**Projects must change:**\n- Old.\n- Rename the key (#135).\n" in folded
     assert folded.count("Projects must change") == 1
@@ -159,10 +160,55 @@ def test_fragments_fill_an_empty_entry_and_keep_a_colon_heading():
     ("**Removed**\n- gone\n", "unknown section"),
     ("**Fixed**\nprose only\n", "has no '- ' bullet"),
     ("\n\n", "no section heading"),
+    ("**Fixed**\n- a\n## v9.9.9 (2099-01-01)\n", "breaks the CHANGELOG entry"),
+    ("### Fixed\n- a\n", "breaks the CHANGELOG entry"),
+    ("**Fixed**\n- a\n**Projects must change:** re-run it.\n", "is a lead-in paragraph"),
 ])
 def test_refuses_a_malformed_fragment(text, message):
     with pytest.raises(ValueError, match=message):
         cut_release.fold_fragments(CHANGELOG, [("changelog.d/x.md", text)])
+
+
+def test_a_missing_section_goes_between_the_ones_around_it():
+    both = CHANGELOG.replace("**New**\n- A thing (#1).\n",
+                             "**New**\n- A thing (#1).\n\n**Projects must change**\n- Old.\n")
+    folded = cut_release.fold_fragments(both, [FIX])
+    assert ("**New**\n- A thing (#1).\n\n**Fixed**\n- CFD settles within 1 °C (#175).\n\n**Projects must change**\n"
+            "- Old.\n") in folded
+
+
+def test_a_lead_in_paragraph_opens_its_section():
+    # "**Projects must change:** text" on one line, the CHANGELOG's form up to v0.5.0 (from the review of #190)
+    lead = CHANGELOG.replace("**New**\n- A thing (#1).\n",
+                             "**New**\n- A thing (#1).\n\n"
+                             "**Projects must change:** write STEP files\nwith export_step.\n")
+    folded = cut_release.fold_fragments(lead, [FIX, PMC])
+    entry = folded.split("## Unreleased\n\n", 1)[1].split("\n## v0.4.2", 1)[0]
+    assert entry == ("**New**\n- A thing (#1).\n- A check (#135).\n\n**Fixed**\n- CFD settles within 1 °C (#175).\n\n"
+                     "**Projects must change:** write STEP files\nwith export_step.\n\n- Rename the key (#135).\n")
+    # a bold lead-in that is not a section stays inside the section it is in
+    note = CHANGELOG.replace("- A thing (#1).\n", "- A thing (#1).\n\n**Note:** read this.\n")
+    assert "**Note:** read this.\n\n- Another (#9).\n" in cut_release.fold_fragments(
+        note, [("changelog.d/9.md", "**New**\n- Another (#9).\n")])
+
+
+def test_hashes_that_are_not_headings_stay_in_a_fragment():
+    text = "**Fixed**\n- Two CFD fixes, closing\n  #175 and #176.\n- Code:\n\n      # a comment in indented code\n"
+    assert cut_release.read_fragment("x.md", text)["Fixed"] == ["- Two CFD fixes, closing", "  #175 and #176.",
+                                                               "- Code:", "      # a comment in indented code"]
+
+
+@pytest.mark.parametrize("before, gap", [
+    ("**Fixed**\nSome prose.\n", True),          # prose under a heading: a blank line starts the list
+    ("**Fixed**\n- a bullet\n", False),          # after a bullet: the list goes on
+    ("**Fixed**\n- a bullet\n  continued\n", False),
+    ("**Fixed**\n", False),                       # right under the heading
+])
+def test_a_blank_line_goes_before_new_bullets_only_after_prose(before, gap):
+    cl = CHANGELOG.replace("**New**\n- A thing (#1).\n", before)
+    folded = cut_release.fold_fragments(cl, [FIX])
+    last = before.rstrip("\n")
+    assert (last + ("\n\n" if gap else "\n") + "- CFD settles within 1 °C (#175).") in folded
 
 
 def test_cli_folds_and_deletes_fragments_but_not_on_a_dry_run(tmp_path):
@@ -176,7 +222,8 @@ def test_cli_folds_and_deletes_fragments_but_not_on_a_dry_run(tmp_path):
     assert (frags / "175-cfd.md").exists() and "#175" not in (tmp_path / "CHANGELOG.md").read_text()
     assert cut_release.main(["--patch", "--date", "2026-11-01", "--root", str(tmp_path)]) == 0
     assert sorted(p.name for p in frags.iterdir()) == ["README.md"]
-    assert "## v0.4.3 (2026-11-01)\n\n**Fixed**\n- CFD settles within 1 °C (#175)." in (tmp_path / "CHANGELOG.md").read_text()
+    written = (tmp_path / "CHANGELOG.md").read_text()
+    assert "## v0.4.3 (2026-11-01)\n\n**Fixed**\n- CFD settles within 1 °C (#175)." in written
 
 
 def test_this_repo_can_be_released():

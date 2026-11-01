@@ -58,9 +58,7 @@ def run_step(project: CadProject, step: Step) -> Dict[str, Any]:
     if not script.is_file():
         result["reason"] = f"script not found: {script}"
         return result
-    # VPTEST_CAD_PROJECT is still set for steps written against vptest cad
-    env = dict(os.environ, PYTHONUNBUFFERED="1", CAD_AGENT_PROJECT=str(project.root),
-               VPTEST_CAD_PROJECT=str(project.root))
+    env = dict(os.environ, PYTHONUNBUFFERED="1", CAD_AGENT_PROJECT=str(project.root))
     cmd = [project.python, str(script)]
     log_path = project.exports_dir / step.log if step.log else None
     started = time.monotonic()
@@ -602,9 +600,11 @@ def _explore(project: CadProject):
     cfg = explore_config(project.root, project.explore, project.title)
     if cfg.unknown_keys:
         _warn(f"unknown explore: keys ignored: {', '.join(cfg.unknown_keys)}")
-    if not cfg.catalogue:
-        raise _Unusable("cad.explore.catalogue lists no catalogue files")
-    catalogue, issues = load_configured(cfg)
+    if not cfg.catalogue and cfg.slots:
+        raise _Unusable(f"cad.explore.catalogue lists no catalogue files, but slots are declared "
+                        f"({', '.join(cfg.slots)}): parts come from a catalogue. A search that changes only "
+                        "parameters needs neither")
+    catalogue, issues = load_configured(cfg)           # no catalogue, no slots: a parameter search, empty BOMs
     return cfg, catalogue, issues
 
 
@@ -657,8 +657,12 @@ def cmd_catalogue(project: CadProject, args: argparse.Namespace) -> int:
             for e in d["errors"]:
                 _say(f"  ERROR design {d['file']}: {e}")
         cats = ", ".join(f"{c} {k}" for c, k in by_cat.items())
-        _say(f"catalogue: {len(catalogue)} parts in {len(set(catalogue.files.values()))} file(s) ({cats}); "
-             f"{n['error']} errors, {n['warn']} warnings")
+        if not cfg.catalogue:
+            _say("catalogue: none configured and no slots, so designs differ only in their parameters "
+                 "(their BOMs hold no catalogue parts)")
+        else:
+            _say(f"catalogue: {len(catalogue)} parts in {len(set(catalogue.files.values()))} file(s) ({cats}); "
+                 f"{n['error']} errors, {n['warn']} warnings")
         _say(f"designs: {len(designs)} checked against it, {design_errors} errors")
     return 1 if n["error"] or design_errors else 0
 
@@ -732,10 +736,18 @@ def cmd_optimise(project: CadProject, args: argparse.Namespace) -> int:
         raise _Unusable("the catalogue has errors (cad-agent catalogue)")
     evaluator = load_evaluator(cfg.evaluator, project.root, project.python)
     r = run_search(cfg, catalogue, evaluator, trials=args.trials, workers=args.workers, sampler=args.sampler,
-                   seed=args.seed, fresh=args.fresh, progress=_say)
+                   seed=args.seed, fresh=args.fresh, progress=_say, confirm=not getattr(args, "no_confirm", False),
+                   python=project.python)
     _say(f"search ({r['sampler']}): {r['new']} new trial(s) in {r['seconds']:.1f}s ({r['evaluated']} evaluated, "
          f"{r['repeats']} repeats of earlier combinations), {r['trials']} in total; {r['feasible']} feasible, "
          f"{r['pareto']} on the Pareto front" + (" (interrupted)" if r["interrupted"] else ""))
+    c = r.get("confirm")
+    if c:
+        _say(f"confirm ({c['evaluator']}): {c['new']} evaluated this run" + ("" if c["ran"] else " (--no-confirm)")
+             + f"; {c['leaders_confirmed']} of the top {c['top']} feasible confirmed, {c['confirmed']} trial(s) in all; "
+             f"{len(c['flagged'])} changed by more than {c['tolerance_pct']:g} % or failed")
+        for line in c["flagged"]:
+            _say(f"  flagged: {line}")
     for name in r["best"]:
         _say(f"  front: {name}")
     _say(f"leaderboard: {r['leaderboard']}")
@@ -892,7 +904,7 @@ def dispatch(args: argparse.Namespace) -> int:
         _err(f"{sub}: interrupted")
         return 130
 
-PROJECT_HELP = "CAD project root containing cad-agent.yaml or vptest.yaml with a cad: section (default: cwd)"
+PROJECT_HELP = "CAD project root containing cad-agent.yaml with a cad: section (default: cwd)"
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -1002,6 +1014,8 @@ def build_parser() -> argparse.ArgumentParser:
                        help="Override search.sampler (nsga2 and tpe need optuna)")
     opt_p.add_argument("--seed", type=int, default=None, help="Override search.seed")
     opt_p.add_argument("--fresh", action="store_true", help="Delete the previous trials and start over")
+    opt_p.add_argument("--no-confirm", action="store_true",
+                       help="Skip search.confirm this run (the leaderboard keeps earlier confirmations)")
     dos_p = sub.add_parser("dossier", parents=[common],
                            help="Lint the design dossier and write each item's status (exports/dossier-status.json)")
     dos_p.add_argument("--json", action="store_true", help="Print the status JSON instead of the table")

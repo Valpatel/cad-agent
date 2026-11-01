@@ -270,7 +270,7 @@ methods (`reg.part`, `reg.assembly.step`, ...).
 fails raises `RegistryError` naming it and its `file:line`. `build_module("cad/build.py")` executes a build script
 and builds it, adding `print_parts()`/`dossier_items()` (called again on every build, so new parameters give new
 shapes). **`root`** defaults to the project root, `project_root(script)`: the nearest directory above the script with
-`cad-agent.yaml` or `vptest.yaml` (else the parent of a `cad/` directory), never the current directory. `out_dir`
+`cad-agent.yaml` (else the parent of a `cad/` directory), never the current directory. `out_dir`
 must be inside it. Every path in the record is relative to the root; a declaration made in a file outside the root
 is recorded by its file name only, so the committed record carries no machine paths.
 

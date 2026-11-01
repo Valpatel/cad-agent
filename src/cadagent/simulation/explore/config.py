@@ -4,7 +4,8 @@
       explore:
         title: Drive options                      # default: the project title
         currency: usd                             # prices are read from "price_<currency>" (price_usd)
-        catalogue: ["catalogue/*.json"]           # part lists (JSON or YAML), globs relative to the project root
+        catalogue: ["catalogue/*.json"]           # part lists (JSON or YAML), globs relative to the project root;
+                                                  # needed only when slots are declared
         categories: [motor, battery, frame]       # when set, any other category is an error
         max_price_age_days: 90                    # older price_checked dates are warnings (null: never)
         slots:                                    # what each slot of a design takes
@@ -78,7 +79,7 @@ class SlotSpec:
 @dataclass
 class EvaluatorSpec:
     python: str = ""                                    # "tools/evaluate.py:evaluate" or "package.module:function"
-    command: List[str] = field(default_factory=list)    # argv; "{design}" becomes the design file's path
+    command: List[str] = field(default_factory=list)    # argv: {design}, {id}, {python}, {result} (evaluate.py)
     timeout_s: float = 600.0
 
     def describe(self) -> str:

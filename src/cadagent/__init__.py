@@ -3,7 +3,7 @@
 A CAD project adopts this toolkit by following one contract (full description
 and a worked example in ``docs/toolkit.md``):
 
-* ``cad-agent.yaml`` (or ``vptest.yaml``) at the project root carries a
+* ``cad-agent.yaml`` at the project root carries a
   ``cad:`` section (``cadagent.project.load_project``): name, title, revision,
   the ordered build ``steps`` (scripts run with the project's own python), the
   parts file, the project-specific ``checks``, the printer bed, packaging and

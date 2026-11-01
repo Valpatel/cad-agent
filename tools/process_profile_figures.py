@@ -110,11 +110,15 @@ def label(rule: dict, sources: dict) -> str:
 
 # ----------------------------------------------------------------------------- drawing
 
-def ranges_svg(title: str, subtitle: str, groups: list[tuple[str, list[tuple[str, float | None, float | None, str]]]],
+Row = tuple[str, float | None, float | None, str, bool]
+
+
+def ranges_svg(title: str, subtitle: str, groups: list[tuple[str, list[Row]]],
                vmax: float, ticks: list[float], unit: str, note: str) -> str:
-    """One row per rule, grouped. A row is (label, low, high, colour): low and high equal is one value (a dot); both set
-    is a range (a bar); high None is "at least low" (a dot with a fading tail to the right); low None is "at most
-    high" (a tail from zero to a dot)."""
+    """One row per rule, grouped. A row is (label, low, high, colour, window): low and high equal is one value (a dot);
+    both set is a range (a filled bar: one limit that varies between them), or with window set an allowed window (a
+    dot at low on an open bar to high: at least low and at most high); high None is "at least low" (a dot with a fading tail to the right); low
+    None is "at most high" (a tail from zero to a dot)."""
     w, label_w, pad, row_h, head_h = 680, 300, 18, 20, 24
     top = 78
     n_rows = sum(len(rows) for _, rows in groups)
@@ -138,11 +142,16 @@ def ranges_svg(title: str, subtitle: str, groups: list[tuple[str, list[tuple[str
     for group, rows in groups:
         out.append(f'<text x="{pad}" y="{y + 15}" font-size="12.5" font-weight="700" fill="{INK}">{escape(group)}</text>')
         y += head_h
-        for name, lo, hi, colour in rows:
+        for name, lo, hi, colour, window in rows:
             cy = y + row_h / 2
             out.append(f'<text x="{label_w - 10}" y="{cy + 4:.1f}" font-size="12" fill="{INK}" text-anchor="end">'
                        f'{escape(name)}</text>')
-            if lo is not None and hi is not None and hi > lo:
+            if lo is not None and hi is not None and hi > lo and window:  # at least lo and at most hi
+                out.append(f'<rect x="{x(lo):.1f}" y="{cy - 4:.1f}" width="{x(hi) - x(lo):.1f}" height="8" rx="4" '
+                           f'fill="{BG}" stroke="{colour}" stroke-width="1.6"/>')
+                out.append(f'<circle cx="{x(lo):.1f}" cy="{cy:.1f}" r="5" fill="{colour}"/>')
+                text, tx = f"≥ {fmt(lo)}, ≤ {fmt(hi)}", x(hi) + 7
+            elif lo is not None and hi is not None and hi > lo:     # one limit, somewhere in lo..hi
                 out.append(f'<rect x="{x(lo):.1f}" y="{cy - 4:.1f}" width="{x(hi) - x(lo):.1f}" height="8" rx="4" '
                            f'fill="{colour}"/>')
                 text, tx = f"{fmt(lo)}–{fmt(hi)}", x(hi) + 7
@@ -170,12 +179,12 @@ def ranges_svg(title: str, subtitle: str, groups: list[tuple[str, list[tuple[str
     return "\n".join(out) + "\n"
 
 
-def _row(rule: dict, sources: dict, env: dict, colour: str = GREEN):
+def _row(rule: dict, sources: dict, env: dict, colour: str = GREEN) -> Row:
     lo = evaluate(rule["min"], env) if "min" in rule else None
     hi = evaluate(rule["max"], env) if "max" in rule else None
     if "value" in rule:
         lo = hi = evaluate(rule["value"], env)
-    return label(rule, sources), lo, hi, colour
+    return label(rule, sources), lo, hi, colour, bool(rule.get("window"))
 
 
 # ----------------------------------------------------------------------------- the charts
@@ -193,13 +202,13 @@ def min_wall() -> str:
         rows = [_row(r, sources, {}) for r in rules if r["process"] == process]
         if rows:
             groups.append((PROCESS_TITLES[process], rows))
-    vmax = math.ceil(max(v for _, rows in groups for _, lo, hi, _ in rows for v in (lo, hi) if v is not None) * 2) / 2
-    if any(lo == vmax and hi is None for _, rows in groups for _, lo, hi, _ in rows):
+    vmax = math.ceil(max(v for _, rows in groups for _, lo, hi, *_ in rows for v in (lo, hi) if v is not None) * 2) / 2
+    if any(lo == vmax and hi is None for _, rows in groups for _, lo, hi, *_ in rows):
         vmax += 0.5  # room for the tail of a floor that sits at the top of the scale
     ticks = [i * 0.5 for i in range(int(vmax / 0.5) + 1)]
     n = sum(len(r) for _, r in groups)
     return ranges_svg("Minimum wall thickness: what each source recommends",
-                      f"{n} rules from research/process-profiles.yaml (compare: min-wall). A bar is a range; ≥ is a floor.",
+                      f"{n} rules (compare: min-wall). A bar: the minimum varies; open bar: an allowed window; ≥: a floor.",
                       groups, vmax, ticks, "mm",
                       "Each source's own wording and conditions are in the YAML file and on the page. Read 2026-10-31.")
 
@@ -221,9 +230,9 @@ def sheet_metal() -> str:
         rows = [_row(r, sources, SHEET) for r in data["rules"] if r.get("compare") == key and r.get("status") == "read"]
         if key in SHOP_COLUMNS:
             v = near[cols.index(SHOP_COLUMNS[key])]
-            rows.append((f"{credit(sources[shop['source']])} tooling · {near[0]}", v, v, ORANGE))
+            rows.append((f"{credit(sources[shop['source']])} tooling · {near[0]}", v, v, ORANGE, False))
         groups.append((title, rows))
-    vmax = math.ceil(max(v for _, rows in groups for _, lo, hi, _ in rows for v in (lo, hi) if v is not None) / 2) * 2
+    vmax = math.ceil(max(v for _, rows in groups for _, lo, hi, *_ in rows for v in (lo, hi) if v is not None) / 2) * 2
     ticks = [float(i) for i in range(0, int(vmax) + 1, 2)]
     t_near, r_near = near[cols.index("T")], near[cols.index("R")]
     return ranges_svg(f"Sheet metal: the same rule from different sources, at T = {SHEET['T']} mm, R = {SHEET['R']} mm",

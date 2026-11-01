@@ -82,6 +82,8 @@ def test_every_rule_has_a_source_units_a_value_and_a_date(data):
         assert _date(r["verified"]) <= dt.date.today(), rid
         assert {"min", "max", "value"} & set(r), f"{rid}: no min, max or value"
         assert not ("value" in r and ({"min", "max"} & set(r))), f"{rid}: value together with min/max"
+        assert "window" not in r or (r["window"] is True and {"min", "max"} <= set(r)), \
+            f"{rid}: window is true, and only on a rule with both min and max"
         assert rid.startswith({"injection-moulding": "im", "sheet-metal": "sm"}.get(r["process"], r["process"]) + "-"), \
             f"{rid}: id should start with its process"
 

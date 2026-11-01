@@ -23,6 +23,9 @@
 #              at least one. A number, or an expression in `variables` (for example "2*T + R"), using + - * / ( ),
 #              numbers, min() / max() and one "a if T <= x else b" for a rule that steps with thickness. min is
 #              "at least", max is "at most", min and max together a range, value a typical or nominal figure.
+#   window     optional, with both min and max: true when they are the two ends of an allowed window for the feature
+#              itself (at least min and at most max), not one limit that varies between them by size, material or
+#              support. Charts draw a window as an open bar
 #   units      one of `units`; for an expression, the units of its result
 #   applies    when the rule applies (material, thickness, machine, orientation)
 #   datum      optional: where a distance is measured from, when the source says (or "not stated")
@@ -3499,10 +3502,10 @@ rules:
     process: mjf
     feature: wall
     compare: min-wall
-    variant: range
     quantity: wall thickness range
     min: 0.5
     max: 3.0
+    window: true
     units: mm
     applies: Stratasys Direct; at most 3.0 mm to limit sink and warp
     source: stratasys-direct-mjf-design-guide

@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 1092" width="680" height="1092" role="img" aria-label="Minimum wall thickness: what each source recommends" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif">
 <rect width="680" height="1092" rx="14" fill="#fffdf5" stroke="#d8e0d3"/>
 <text x="18" y="30" font-size="15" font-weight="700" fill="#173d3c">Minimum wall thickness: what each source recommends</text>
-<text x="18" y="50" font-size="12" fill="#526863">42 rules from research/process-profiles.yaml (compare: min-wall). A bar is a range; ≥ is a floor.</text>
+<text x="18" y="50" font-size="12" fill="#526863">42 rules (compare: min-wall). A bar: the minimum varies; open bar: an allowed window; ≥: a floor.</text>
 <line x1="300.0" y1="70" x2="300.0" y2="1046" stroke="#d8e0d3"/>
 <text x="300.0" y="1061" font-size="11" fill="#526863" text-anchor="middle">0</text>
 <line x1="345.4" y1="70" x2="345.4" y2="1046" stroke="#d8e0d3"/>
@@ -149,9 +149,10 @@
 <rect x="390.9" y="822.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
 <circle cx="390.9" cy="824.0" r="5" fill="#6f8a80"/>
 <text x="381.9" y="828.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 1</text>
-<text x="290" y="848.0" font-size="12" fill="#173d3c" text-anchor="end">Stratasys Direct · range</text>
-<rect x="345.4" y="840.0" width="227.1" height="8" rx="4" fill="#6f8a80"/>
-<text x="579.6" y="848.0" font-size="11" fill="#173d3c" text-anchor="start">0.5–3</text>
+<text x="290" y="848.0" font-size="12" fill="#173d3c" text-anchor="end">Stratasys Direct</text>
+<rect x="345.4" y="840.0" width="227.1" height="8" rx="4" fill="#fffdf5" stroke="#6f8a80" stroke-width="1.6"/>
+<circle cx="345.4" cy="844.0" r="5" fill="#6f8a80"/>
+<text x="579.6" y="848.0" font-size="11" fill="#173d3c" text-anchor="start">≥ 0.5, ≤ 3</text>
 <text x="290" y="868.0" font-size="12" fill="#173d3c" text-anchor="end">JLC3DP · by size</text>
 <rect x="390.9" y="860.0" width="90.9" height="8" rx="4" fill="#6f8a80"/>
 <text x="488.7" y="868.0" font-size="11" fill="#173d3c" text-anchor="start">1–2</text>

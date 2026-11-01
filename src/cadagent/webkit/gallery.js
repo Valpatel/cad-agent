@@ -34,8 +34,10 @@
  *   view opens scrolled to `[data-gallery-results]`; `[data-gallery-when="area:gears"]` elements show only for that choice;
  * - `[data-gallery-chips]` (removable chips for the active choices), `[data-gallery-status]` (a live count),
  *   `[data-gallery-empty]`, `[data-gallery-empty-scope]` (instead, when a one-value facet alone leaves nothing: an area
- *   with nothing in it yet; `[data-gallery-scope-name]` inside it gets the choice's label), `[data-gallery-clear]`,
- *   `[data-gallery-active]` (how many filters are on);
+ *   with nothing in it yet; `[data-gallery-scope-name]` inside it gets the choice's label), `[data-gallery-empty-kind]`
+ *   (that facet has entries, but none under the chosen tab; `[data-gallery-kind-name]` gets the tab's name),
+ *   `[data-gallery-clear]`, `[data-gallery-active]` (how many filters are on). While one of these boxes shows, the
+ *   status line gets `data-gallery-boxed` (gallery.css hides it from view, not from screen readers);
  * - a sheet for small screens: `[data-gallery-sheet]` opens as a modal dialog from `[data-gallery-sheet-open]` (the
  *   page's CSS decides when that button shows) and closes with `[data-gallery-sheet-close]`, Escape or a click outside;
  * - covers that move: an <img data-anim="moving.svg"> swaps to it while its card is hovered or focused
@@ -111,7 +113,28 @@ export class CadGallery extends Base {
   connectedCallback() {
     if (this.#stop) return;
     this.#stop = new AbortController();
-    const signal = this.#stop.signal;
+    this.removeAttribute('data-failed');                         // a new try (the element was moved)
+    // Ready only once the first view is drawn. If setting up or the first render throws, the element goes back to the
+    // markup and attributes the page wrote: every card in its order, the strip, plain jump links instead of tabs, no
+    // chips, the counts and status as written (the no-script page). It marks itself failed, so gallery.css hides the
+    // controls that need script, stops listening and rethrows. Buttons that <cad-copy> added are left out of the copy
+    // kept here, so the restored <cad-copy> elements build theirs again.
+    const attrs = [...this.attributes].map(a => [a.name, a.value]);
+    const pristine = document.createDocumentFragment();
+    for (const n of this.childNodes) pristine.append(n.cloneNode(true));
+    for (const el of pristine.querySelectorAll('cad-copy > .cad-copy-btn, cad-copy > .cad-copy-status')) el.remove();
+    try { this.#start(this.#stop.signal); } catch (err) {
+      this.#stop.abort();
+      clearTimeout(this.#timer);
+      for (const a of [...this.attributes]) this.removeAttribute(a.name);
+      for (const [name, value] of attrs) this.setAttribute(name, value);
+      this.replaceChildren(...pristine.childNodes);
+      this.setAttribute('data-failed', '');
+      throw err;
+    }
+  }
+
+  #start(signal) {
     const $ = s => this.querySelector(s), $$ = s => [...this.querySelectorAll(s)];
     this.tabParam = this.getAttribute('tab-param') || 'tab';
     this.limit = Math.max(1, parseInt(this.getAttribute('limit'), 10) || 6);
@@ -125,7 +148,10 @@ export class CadGallery extends Base {
     this.single = [...new Set(this.facetLinks.map(a => a.dataset.facet))];
     this.facetNames = [...this.single, ...new Set(this.boxes.map(b => b.name).filter(n => !this.single.includes(n)))];
     this.defaultSort = this.sortSelect?.options[0]?.value || '';
+    // Each link is a choice applied to the current view; its href is rewritten to that view on every render, so the
+    // choice as written (which may clear something: ?kind= is every kind) is kept in data-gallery-to.
     this.links = $$('a[data-gallery-link]');
+    for (const a of this.links) a.dataset.galleryTo ??= a.getAttribute('href');
     this.results = $('[data-gallery-results]');
     this.#items = $$('[data-item]').map((el, index) => ({
       el, index, tab: el.closest('[data-group]')?.dataset.group || '', list: el.parentElement,
@@ -141,8 +167,8 @@ export class CadGallery extends Base {
       const group = target.closest('[data-group]');
       if (group && (target.hasAttribute('data-item') || target.matches('[data-group], .anchor, [data-group] > [id]'))) { this.#state.tab = group.dataset.group; fromHash = true; }
     }
-    this.toggleAttribute('data-ready', true);
     this.#render();
+    this.toggleAttribute('data-ready', true);
     // A tab chosen from an old #anchor goes into the address too, so Back returns to it.
     if (fromHash) history.replaceState(history.state, '', this.#url() + location.hash);
     // A link that carries a view (?kind=, ?area=, ?q=...) opens on its results, not on the page's introduction; not when
@@ -166,7 +192,7 @@ export class CadGallery extends Base {
       if (link && this.contains(link)) {
         e.preventDefault();
         if (link.matches('[data-tab]')) this.#state.tab = link.dataset.tab;
-        else this.#merge(new URL(link.getAttribute('href'), location.href).searchParams);
+        else this.#merge(new URL(link.dataset.galleryTo ?? link.getAttribute('href'), location.href).searchParams);
         this.#render(); this.#remember(); this.#reveal();
         return;
       }
@@ -261,6 +287,7 @@ export class CadGallery extends Base {
   }
 
   #render() {
+    if (this.hasAttribute('data-failed')) return;                // the page is the no-script page now
     const s = this.#state, patterns = searchPatterns(s.q);
     const filtered = !!(patterns.length || Object.keys(s.facets).length);
     const overview = !s.tab;
@@ -307,18 +334,24 @@ export class CadGallery extends Base {
       el.hidden = !(name === this.tabParam ? s.tab === value : s.facets[name]?.includes(value));
     }
     // Nothing to show: either the words and filters exclude everything, or the chosen area (a single-value facet, with
-    // no words or other filters) simply has nothing in it yet; that gets its own message.
+    // no words or other filters) has nothing in it yet, or nothing of the chosen kind; each gets its own message box.
     const tab = this.tabs.find(t => t.dataset.tab === s.tab && s.tab);
     const tabName = tab ? tab.firstChild.textContent.trim().toLowerCase() : '';
     const scoped = !patterns.length && Object.keys(s.facets).length > 0 && Object.keys(s.facets).every(n => this.single.includes(n));
     const scopeName = scoped ? Object.entries(s.facets).map(([n, v]) => this.#labelOf(n, v[0])).join(', ') : '';
     const scopeEmpty = scoped && !shown && !this.#items.some(it => matches(it, s, patterns, 'tab'));
+    const kindEmpty = scoped && !!s.tab && !shown && !scopeEmpty;
     const empty = this.querySelector('[data-gallery-empty]'), emptyScope = this.querySelector('[data-gallery-empty-scope]');
-    if (empty) empty.hidden = shown > 0 || (scoped && (!!emptyScope || !!s.tab));
+    const emptyKind = this.querySelector('[data-gallery-empty-kind]');
     if (emptyScope) emptyScope.hidden = !scopeEmpty;
+    if (emptyKind) emptyKind.hidden = !kindEmpty;
+    if (empty) empty.hidden = shown > 0 || (scopeEmpty && !!emptyScope) || (kindEmpty && !!emptyKind);
     for (const el of this.querySelectorAll('[data-gallery-scope-name]')) el.textContent = scopeName;
+    for (const el of this.querySelectorAll('[data-gallery-kind-name]')) el.textContent = tabName;
     const status = this.querySelector('[data-gallery-status]');
     if (status) {
+      // While a message box says it, the status line stays for screen readers but is hidden from view.
+      status.toggleAttribute('data-gallery-boxed', [empty, emptyScope, emptyKind].some(b => b && !b.hidden));
       const what = tabName || this.nouns[shown === 1 ? 0 : 1];
       status.textContent = scopeEmpty ? `Nothing in ${scopeName} yet.`
         : !shown && scoped && s.tab ? `No ${tabName} in ${scopeName} yet.`
@@ -332,7 +365,7 @@ export class CadGallery extends Base {
     for (const a of this.links) {                                // each link's href is the view it leads to
       const next = structuredClone(s);
       const before = this.#state; this.#state = next;
-      this.#merge(new URL(a.getAttribute('href'), location.href).searchParams);
+      this.#merge(new URL(a.dataset.galleryTo, location.href).searchParams);
       this.#state = before;
       a.setAttribute('href', this.#url(next));
     }

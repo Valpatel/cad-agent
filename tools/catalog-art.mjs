@@ -83,8 +83,10 @@ export const GLYPHS = {
   demo: '<circle cx="50" cy="50" r="38"/><path class="a" d="M41 31v38l29-19z"/>',
   tool: '<rect x="8" y="16" width="84" height="68" rx="8"/><path class="a" d="M22 40l12 10-12 10"/><path d="M42 62h24"/>',
 };
-/** What an outside entry is built on: the main glyph of its cover, in the family's colour. `match` reads the entry's
- * own words (kernel, name, what); the first family that matches wins, so specific tools come before general ones. */
+/** What an outside entry is built on: the main glyph of its cover, in the family's colour. `match` finds the family in
+ * a field's words; `names`, where given, are the family's tool names only (its other words, such as "cable" or
+ * "stress", are a subject, not what a thing is built on); `generic` families (parts, agents, benchmarks) say what a
+ * thing is for rather than what it is built on, so they are only a last resort (see familyFor). */
 export const FAMILIES = [
   { key: 'kicad', label: 'KiCad', color: '#2f6f39', match: /\bkicad|kipy|pcbnew|\bpcb\b|gerber/, glyph: '<rect x="10" y="16" width="80" height="68" rx="6"/><path d="M26 34h20l10 10h18M26 66h14l8-8h26"/><circle class="a" cx="26" cy="34" r="5"/><circle class="a" cx="26" cy="66" r="5"/><circle cx="78" cy="44" r="5"/><circle cx="78" cy="58" r="5"/>' },
   { key: 'slicer', label: 'Slicer', color: '#c2410c', match: /slicer|slicing|bambu|prusa|orca/, glyph: '<path d="M36 8h28v16L50 40 36 24z"/><path class="a" d="M50 40v10"/><path d="M14 60h72M20 70h60M26 80h48M32 90h36"/>' },
@@ -95,15 +97,37 @@ export const FAMILIES = [
   { key: 'blender', label: 'Blender', color: '#6b4fa0', match: /blender/, glyph: '<circle cx="50" cy="50" r="36"/><path d="M14 50h72M50 14c-14 10-14 62 0 72M50 14c14 10 14 62 0 72M22 30c18 6 38 6 56 0M22 70c18-6 38-6 56 0"/><circle class="a" cx="72" cy="30" r="5"/>' },
   { key: 'cloud', label: 'Cloud CAD', color: '#475569', match: /onshape|fusion|zoo|\bkcl\b|solidworks|closed/, glyph: '<path d="M28 74h46a16 16 0 0 0 2-32 22 22 0 0 0-42-6 18 18 0 0 0-6 38z"/><path class="a" d="M40 52l10-6 10 6v12l-10 6-10-6z"/>' },
   { key: 'mesh', label: 'Mesh', color: '#6b4fa0', match: /mesh|trimesh|manifold|pyvista|meshio|\bstl\b/, glyph: '<path d="M12 70 34 22l34 8 20 44-36 14z"/><path d="M34 22 52 88M12 70l56-40M34 22l54 52M12 70h76"/><circle class="a" cx="68" cy="30" r="5"/>' },
-  { key: 'fea', label: 'FEA', color: '#0f766e', match: /calculix|\bfea\b|\bfem\b|fenics|elmer|scikit-fem|finite.element|stress/, glyph: '<path d="M10 84 28 18 54 46 84 14 90 84z"/><path d="M10 84 54 46 90 84M28 18 54 46 84 14"/><path class="a" d="M54 46 32 84M54 46 68 84"/>' },
-  { key: 'cfd', label: 'CFD', color: '#0f766e', match: /openfoam|\bcfd\b|airflow|fluid/, glyph: '<circle cx="50" cy="50" r="13"/><path class="a" d="M6 28c22 0 26 9 44 9s22-9 44-9"/><path d="M6 50h24M70 50h24M6 72c22 0 26-9 44-9s22 9 44 9"/>' },
-  { key: 'harness', label: 'Harness', color: '#b45309', match: /harness|wireviz|cable/, glyph: '<path d="M10 30h20c14 0 14 40 28 40h32M10 50h20c10 0 14 20 28 20M10 70h20c8 0 12-10 20-10"/><rect class="a" x="80" y="58" width="12" height="24" rx="2"/><path d="M6 24v52"/>' },
-  { key: 'parts', label: 'Parts library', color: '#1f6f8b', match: /fastener|warehouse|partcad|package manager|parts/, glyph: '<path d="M28 12h44l8 14H20z"/><path d="M38 26v56l12 8 12-8V26"/><path class="a" d="M38 40l24 8M38 54l24 8M38 68l24 8"/>' },
-  { key: 'benchmark', label: 'Benchmark', color: '#4338ca', match: /benchmark|bench\b|eval|dataset|leaderboard|arena/, glyph: '<path d="M10 88h80"/><path d="M18 88V58h14v30M42 88V38h14v50M66 88V22h14v66"/><circle class="a" cx="73" cy="12" r="6"/>' },
-  { key: 'agent', label: 'Agent tools', color: '#bd3a12', match: /\bmcp\b|agent|plugin|skill|llm|claude|codex/, glyph: '<rect x="18" y="28" width="64" height="50" rx="12"/><circle class="a" cx="38" cy="52" r="6"/><circle class="a" cx="62" cy="52" r="6"/><path d="M50 28V14M42 14h16M40 66h20"/>' },
+  { key: 'fea', label: 'FEA', color: '#0f766e', match: /calculix|\bfea\b|\bfem\b|fenics|elmer|scikit-fem|finite.element|stress/, names: /calculix|fenics|elmer|scikit-fem|code.?aster/, glyph: '<path d="M10 84 28 18 54 46 84 14 90 84z"/><path d="M10 84 54 46 90 84M28 18 54 46 84 14"/><path class="a" d="M54 46 32 84M54 46 68 84"/>' },
+  { key: 'cfd', label: 'CFD', color: '#0f766e', match: /openfoam|\bcfd\b|airflow|fluid/, names: /openfoam|\bsu2\b/, glyph: '<circle cx="50" cy="50" r="13"/><path class="a" d="M6 28c22 0 26 9 44 9s22-9 44-9"/><path d="M6 50h24M70 50h24M6 72c22 0 26-9 44-9s22 9 44 9"/>' },
+  { key: 'harness', label: 'Harness', color: '#b45309', match: /harness|wireviz|cable/, names: /wireviz/, glyph: '<path d="M10 30h20c14 0 14 40 28 40h32M10 50h20c10 0 14 20 28 20M10 70h20c8 0 12-10 20-10"/><rect class="a" x="80" y="58" width="12" height="24" rx="2"/><path d="M6 24v52"/>' },
+  { key: 'parts', label: 'Parts library', color: '#1f6f8b', generic: true, match: /fastener|warehouse|partcad|package manager|parts? (?:librar|catalog)/, glyph: '<path d="M28 12h44l8 14H20z"/><path d="M38 26v56l12 8 12-8V26"/><path class="a" d="M38 40l24 8M38 54l24 8M38 68l24 8"/>' },
+  { key: 'benchmark', label: 'Benchmark', color: '#4338ca', generic: true, match: /benchmark|bench\b|eval|dataset|leaderboard|arena/, glyph: '<path d="M10 88h80"/><path d="M18 88V58h14v30M42 88V38h14v50M66 88V22h14v66"/><circle class="a" cx="73" cy="12" r="6"/>' },
+  { key: 'agent', label: 'Agent tools', color: '#bd3a12', generic: true, match: /\bmcp\b|agent|plugin|skill|llm|claude|codex/, glyph: '<rect x="18" y="28" width="64" height="50" rx="12"/><circle class="a" cx="38" cy="52" r="6"/><circle class="a" cx="62" cy="52" r="6"/><path d="M50 28V14M42 14h16M40 66h20"/>' },
 ];
-/** The family an outside entry belongs to, from its own text; null when nothing matches. */
-export const familyOf = text => FAMILIES.find(f => f.match.test(String(text || '').toLowerCase())) || null;
+/** The family whose words come first in a text (among `families`); null when none of them is there. */
+export function familyOf(text, families = FAMILIES) {
+  const t = String(text || '').toLowerCase();
+  let best = null, at = Infinity;
+  for (const f of families) {
+    const m = f.match.exec(t);
+    if (m && m.index < at) { best = f; at = m.index; }
+  }
+  return best;
+}
+
+/** Areas (docs/areas.yaml slugs) that imply a family when nothing in the entry's own words names one. */
+const AREA_FAMILY = { cfd: 'cfd', 'airflow-and-fans': 'cfd', 'structural-fea': 'fea', 'wiring-harnesses': 'harness' };
+
+/** An outside entry's family. The structured field first: its kernel (research/landscape.json). Then the tools its
+ * name names, then the tools its description names, whichever comes first in the text (so "build123d workflow that
+ * ... slices in Orca" is build123d, not a slicer). Then its areas, which say what it is for rather than what it is
+ * built on (a FreeCAD cable workbench is FreeCAD, not a harness tool). Only then the generic families: agent tools,
+ * parts libraries, benchmarks. Null when nothing fits: the cover then shows the area's glyph. */
+export function familyFor({ kernel, name, areas = [], text } = {}) {
+  const tools = FAMILIES.filter(f => !f.generic).map(f => f.names ? { ...f, match: f.names } : f);
+  const area = FAMILIES.find(f => f.key === areas.map(a => AREA_FAMILY[a]).find(Boolean)) || null;
+  return familyOf(kernel) || familyOf(name, tools) || familyOf(text, tools) || area || familyOf(`${name} ${text}`) || null;
+}
 
 export const DOMAIN_GLYPH = { mechanical: 'gears', manufacturing: '3d-printing', thermal: 'heat-sinks', simulation: 'structural-fea',
   electrical: 'circuit-boards', practice: 'agent-workflow' };
@@ -194,33 +218,89 @@ export function outsideCover({ kind, family, glyphSlug, tint, headline, license,
     `<text x="24" y="289" font-family="${esc(SANS)}" font-size="17" font-weight="700" fill="${INK}">${esc(fitList(band.items, 36))}</text>` : '';
   const label = `${name}: ${kind}${family ? ` on ${family.label}` : ''}, ${headline?.number != null ? `${headline.number} ${headline.unit}` : headline?.text || ''}, ${license || 'no licence'}, ${st[2]}` +
     (band?.items?.length ? `; ${band.label}: ${band.items.join(', ')}` : '');
-  return frame(tint, disc + tag(kind, 24, 32) + famLabel + big + licSvg + stSvg + bandSvg, label);
+  // On a phone the cover is about 170 px wide and these tags would be 6 px type; the card repeats them in full below,
+  // so the cover drops them when it is drawn narrower than 240 px (the media query sees the image's own width).
+  const tags = `<style>@media (max-width:240px){.tags{display:none}}</style><g class="tags">${licSvg}${stSvg}</g>`;
+  return frame(tint, disc + tag(kind, 24, 32) + famLabel + big + tags + bandSvg, label);
 }
 
-/** A chart from one of our tools' results (docs/catalog.yaml): points on two axes, the Pareto front joined. */
-export function chartCover({ title, x: xLabel, y: yLabel, points = [], tint, name }) {
-  const L = 62, R = 376, T = 58, B = 236;
+/** "$1,612", "10.3 kg": a value as a chart labels it. */
+const fmtValue = (v, unit, down = false) => {
+  const round = down ? Math.floor : Math.round;            // a lower bound rounds down: "≥ $1,682" never overstates it
+  return unit === 'USD' ? `$${round(v).toLocaleString('en-US')}` : `${(round(v * 10) / 10).toLocaleString('en-US')} ${unit}`;
+};
+
+/** A chart of one of our tools' results (docs/img/explore/two-wheel-charts.json, written from the tool's own output):
+ * each design or trial on two axes. Filled accent: on the Pareto front, which the tool computes over every objective
+ * (so a front point can look dominated on these two axes; the legend says over what). Grey: meets the constraints.
+ * Hollow: fails one. A total that is only a lower bound (a part without a price or mass) is labelled "≥ value" and
+ * gets an arrow pointing the way the real value lies. Points are labelled when there are few; with many, only the front is. */
+export function chartCover({ title, x, y, points = [], front_over: frontOver = [], tint, name, what }) {
+  const L = 66, R = 372, T = 70, B = 228;
   const xs = points.map(p => p.x), ys = points.map(p => p.y);
-  const pad = (lo, hi) => { const d = (hi - lo) || 1; return [lo - d * 0.12, hi + d * 0.12]; };
+  const pad = (lo, hi) => { const d = (hi - lo) || 1; return [lo - d * 0.1, hi + d * 0.1]; };
   const [x0, x1] = pad(Math.min(...xs), Math.max(...xs)), [y0, y1] = pad(Math.min(...ys), Math.max(...ys));
   const px = v => L + (v - x0) / (x1 - x0) * (R - L), py = v => B - (v - y0) / (y1 - y0) * (B - T);
   const grid = [0.25, 0.5, 0.75].map(f => `M${L} ${r1(T + f * (B - T))}H${R}M${r1(L + f * (R - L))} ${T}V${B}`).join('');
-  const front = points.filter(p => p.front).sort((a, b) => a.x - b.x);
-  const line = front.length > 1 ? `<path d="M${front.map(p => `${r1(px(p.x))} ${r1(py(p.y))}`).join('L')}" fill="none" stroke="${ACCENT}" stroke-width="4" stroke-linecap="round"/>` : '';
-  const dots = points.map(p => {
-    const cxp = r1(px(p.x)), cyp = r1(py(p.y)), right = px(p.x) < (L + R) / 2;
-    const mark = p.fail ? `<circle cx="${cxp}" cy="${cyp}" r="8" fill="#fff" stroke="${MUTED}" stroke-width="3"/>`
-      : `<circle cx="${cxp}" cy="${cyp}" r="${p.front ? 10 : 8}" fill="${p.front ? ACCENT : MUTED}" stroke="#fff" stroke-width="2.5"/>`;
-    return mark + `<text x="${r1(px(p.x) + (right ? 15 : -15))}" y="${r1(py(p.y) + 6)}" text-anchor="${right ? 'start' : 'end'}" font-family="${esc(SANS)}" font-size="17" font-weight="700" fill="${p.fail ? MUTED : INK}">${esc(p.label)}${p.fail ? ' ✕' : ''}</text>`;
+  const few = points.length <= 6, xb = p => (p.lower_bound || []).includes(x.metric), yb = p => (p.lower_bound || []).includes(y.metric);
+  const at = p => ({ cx: r1(px(p.x)), cy: r1(py(p.y)), r: few ? (p.front ? 10 : 8) : (p.front ? 8 : 5) });
+  // Marks: the front above the others, and the failing rings (hollow, so what lies under them shows) above all, so a
+  // ring next to a front point is not hidden by it.
+  const layer = p => !p.feasible ? 2 : p.front ? 1 : 0;
+  const order = [...points].sort((a, b) => layer(a) - layer(b));
+  const marks = order.map(p => {
+    const { cx, cy, r } = at(p);
+    const arrow = (xb(p) ? `<path d="M${cx + r + 3} ${cy}h16m-6-6 6 6-6 6" fill="none" stroke="${MUTED}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` : '') +
+      (yb(p) ? `<path d="M${cx} ${cy - r - 3}v-16m-6 6 6-6 6 6" fill="none" stroke="${MUTED}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` : '');
+    const dot = !p.feasible ? `<circle cx="${cx}" cy="${cy}" r="${r - 1}" fill="none" stroke="${MUTED}" stroke-width="${few ? 3 : 2}"/>`
+      : `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${p.front ? ACCENT : MUTED}" stroke="#fff" stroke-width="${few ? 2.5 : 1.5}"/>`;
+    return arrow + dot;
   }).join('');
-  const body = `<rect x="12" y="12" width="${W - 24}" height="${H - 24}" rx="14" fill="#ffffff" fill-opacity=".92" stroke="${INK}" stroke-opacity=".15"/>` +
-    `<text x="28" y="42" font-family="${esc(SANS)}" font-size="17" font-weight="800" fill="${INK}">${esc(title)}</text>` +
+  // Labels (every point when there are few, else the front), each where it overlaps no mark, arrow or earlier label:
+  // right of the point, then left, above, below.
+  // Each taken box belongs to a point (its mark, arrow or label): a label avoids every box but its own point's mark.
+  const fs = few ? 17 : 15, taken = [];
+  for (const p of points) {
+    const { cx, cy, r } = at(p);
+    taken.push({ owner: p, box: [cx - r - 2, cy - r - 2, cx + r + 2 + (xb(p) ? 24 : 0), cy + r + 2] });
+    if (yb(p)) taken.push({ owner: p, box: [cx - 7, cy - r - 22, cx + 7, cy - r] });
+  }
+  const hits = (b, c) => b[0] < c[2] && c[0] < b[2] && b[1] < c[3] && c[1] < b[3];
+  const labels = [...points].filter(p => few || p.front).sort((a, b) => b.front - a.front).map(p => {
+    // A lower bound says so in the label: "Long range ≥ $1,682" (it costs at least that).
+    const bound = [xb(p) && fmtValue(p.x, x.unit, true), yb(p) && fmtValue(p.y, y.unit, true)].filter(Boolean).join(', ');
+    const { cx, cy, r } = at(p), tag = bound ? `${p.label} ≥ ${bound}` : p.label, w = tag.length * fs * 0.6, h = fs;
+    const gap = r + 6 + (xb(p) ? 22 : 0);
+    const spots = [[cx + gap, cy + 6, 'start'], [cx - r - 6, cy + 6, 'end'], [cx, cy - r - 8 - (yb(p) ? 20 : 0), 'middle'], [cx, cy + r + fs + 2, 'middle']];
+    const box = ([tx, ty, anchor]) => { const x0 = anchor === 'start' ? tx : anchor === 'end' ? tx - w : tx - w / 2; return [x0, ty - h + 3, x0 + w, ty + 3]; };
+    const inside = b => b[0] >= 18 && b[2] <= W - 18 && b[1] >= T - 6 && b[3] <= B - 2;
+    const others = taken.filter(t => t.owner !== p).map(t => t.box);
+    const spot = spots.find(sp => inside(box(sp)) && !others.some(t => hits(box(sp), t))) || spots.find(sp => inside(box(sp))) || spots[0];
+    taken.push({ owner: p, box: box(spot) });
+    return `<text x="${r1(spot[0])}" y="${r1(spot[1])}" text-anchor="${spot[2]}" font-family="${esc(SANS)}" font-size="${fs}" font-weight="700" fill="${p.feasible ? INK : MUTED}">${esc(tag)}</text>`;
+  }).join('');
+  const axisName = a => `${a.label}${a.unit ? ` (${a.unit})` : ''}`;
+  // The key: only the marks this chart uses.
+  const keys = [[`FRONT${frontOver.length ? ` (${frontOver.join(', ').toUpperCase()})` : ''}`, `fill="${ACCENT}"`, ACCENT, points.some(p => p.front)],
+    ['MEETS', `fill="${MUTED}"`, MUTED, points.some(p => p.feasible && !p.front)],
+    ['FAILS', `fill="#fff" stroke="${MUTED}" stroke-width="2"`, MUTED, points.some(p => !p.feasible)]].filter(k => k[3]);
+  let kx = 34;
+  const key = `<g font-family="${esc(MONO)}" font-size="11" font-weight="700">` + keys.map(([t, style, color]) => {
+    const g = `<circle cx="${kx}" cy="54" r="5" ${style}/><text x="${kx + 9}" y="58" fill="${color}">${esc(t)}</text>`;
+    kx += 9 + t.length * 6.7 + 16;
+    return g;
+  }).join('') + '</g>';
+  const body = `<rect x="12" y="12" width="${W - 24}" height="${H - 24}" rx="14" fill="#ffffff" fill-opacity=".93" stroke="${INK}" stroke-opacity=".15"/>` +
+    `<text x="28" y="38" font-family="${esc(SANS)}" font-size="17" font-weight="800" fill="${INK}">${esc(title)}</text>` + key +
     `<path d="${grid}" stroke="${INK}" stroke-opacity=".08" stroke-width="1.5"/><path d="M${L} ${T}V${B}H${R}" fill="none" stroke="${INK}" stroke-width="2"/>` +
-    line + dots +
-    `<text x="${R}" y="${B + 26}" text-anchor="end" font-family="${esc(SANS)}" font-size="14" font-weight="600" fill="${MUTED}">${esc(xLabel)} →</text>` +
-    `<text transform="translate(${L - 16} ${B}) rotate(-90)" font-family="${esc(SANS)}" font-size="14" font-weight="600" fill="${MUTED}">${esc(yLabel)} →</text>` +
-    (front.length ? `<text x="${L + 6}" y="${B + 26}" font-family="${esc(MONO)}" font-size="12" font-weight="700" fill="${ACCENT}">— PARETO FRONT</text>` : '');
-  const label = `${name}: ${title}. ${points.map(p => `${p.label} ${p.x} ${xLabel}, ${p.y} ${yLabel}${p.front ? ' (on the front)' : ''}${p.fail ? ' (fails a requirement)' : ''}`).join('; ')}`;
+    marks + labels +
+    `<text x="${R}" y="${B + 22}" text-anchor="end" font-family="${esc(SANS)}" font-size="14" font-weight="600" fill="${MUTED}">${esc(axisName(x))} →</text>` +
+    `<text transform="translate(${L - 14} ${B}) rotate(-90)" font-family="${esc(SANS)}" font-size="14" font-weight="600" fill="${MUTED}">${esc(axisName(y))} →</text>` +
+    (what ? `<text x="28" y="${B + 44}" font-family="${esc(MONO)}" font-size="11" font-weight="700" fill="${MUTED}">${esc(what.toUpperCase())}</text>` : '');
+  const describe = p => `${xb(p) ? 'at least ' : ''}${fmtValue(p.x, x.unit, xb(p))}, ${yb(p) ? 'at least ' : ''}${fmtValue(p.y, y.unit, yb(p))}`;
+  const listed = few ? points : points.filter(p => p.front);
+  const label = `${name}: ${title}, ${axisName(x)} against ${axisName(y)}${what ? `, ${what}` : ''}. ` +
+    listed.map(p => `${p.label}: ${describe(p)}${p.front ? `, on the Pareto front over ${frontOver.join(', ')}` : ''}${p.feasible ? '' : ', fails a constraint'}`).join('; ') + '.';
   return frame(tint, body, label);
 }
 

@@ -1,0 +1,71 @@
+# The README hero: Gyropup's five-bar leg (leg v2), drawn from its real CAD by tools/readme_anim.py.
+# Paths are relative to a checkout of the source repository. Extract with
+#   python tools/readme_anim.py --extract hero --source <gyropup checkout>
+name: gyropup-leg
+source:
+  repo: https://github.com/Valpatel/gyropup
+  name: Gyropup leg v2
+  licence: MIT
+# the assembled leg at stand (300 mm hip to axle), written by Gyropup's cad/build_leg.py: one solid per part, in the
+# leg module's frame (x forward, y outwards, z up, mm); bought parts are envelopes
+assembly: exports/leg/leg_stand.step
+width: 900                  # the figure, CSS pixels
+height: 380
+stage: {x: 14, y: 12, w: 452, h: 356}     # where the drawing fits, every state included
+view: {direction: [0.32, 1.0, 0.33], up: [0, 0, 1]}     # from outside the leg, a little in front and above
+mesh_mm: 0.3
+# Solids by their number in the STEP, grouped into parts. body: the link a part moves with (ground stays);
+# explode: mm along the motor axes for the exploded start (+ outwards); match: a part file whose volume the solid must
+# have, so a rebuilt STEP with renumbered solids fails loudly instead of drawing the wrong thing.
+parts:
+  motors:            {solids: [12, 14], explode: -150, style: dark}
+  hip_frame:         {solids: [0], explode: -70, style: frame, match: exports/leg/hip_frame.step}
+  stop_sleeves:      {solids: [7, 8, 9, 10], explode: 10, style: stop, match: exports/leg/stop_sleeve.step}
+  adapter_front:     {solids: [1], body: upper_front, explode: -30, style: metal}
+  adapter_rear:      {solids: [2], body: upper_rear, explode: -30, style: metal}
+  upper_link_front:  {solids: [3], body: upper_front, explode: 40, style: link, match: exports/leg/upper_link.step}
+  upper_link_rear:   {solids: [4], body: upper_rear, explode: 40, style: link, match: exports/leg/upper_link.step}
+  eye_sleeves_front: {solids: [28], body: upper_front, explode: 40, style: metal}
+  eye_sleeves_rear:  {solids: [30], body: upper_rear, explode: 40, style: metal}
+  knee_nut_front:    {solids: [29], body: upper_front, explode: 25, style: metal}
+  knee_nut_rear:     {solids: [31], body: upper_rear, explode: 25, style: metal}
+  screws_front:      {solids: [59, 60, 61, 62, 63, 64, 65, 66], body: upper_front, explode: 70, style: metal}
+  screws_rear:       {solids: [67, 68, 69, 70, 71, 72, 73, 74], body: upper_rear, explode: 70, style: metal}
+  knee_pin_front:    {solids: [18], body: upper_front, explode: 230, style: metal}
+  knee_pin_rear:     {solids: [24], body: upper_rear, explode: 230, style: metal}
+  front_link:        {solids: [5], body: front_link, explode: 95, style: link, match: exports/leg/front_link.step}
+  knee_front:        {solids: [16, 17, 19, 20], body: front_link, explode: 125, style: metal}
+  apex_bearings:     {solids: [32, 33], body: front_link, explode: 95, style: metal}
+  wheel_link:        {solids: [6], body: wheel_link, explode: 150, style: link, match: exports/leg/wheel_link.step}
+  knee_rear:         {solids: [22, 23, 25, 26], body: wheel_link, explode: 175, style: metal}
+  apex_spacer:       {solids: [11], body: wheel_link, explode: 120, style: metal, match: exports/leg/apex_spacer.step}
+  circlip:           {solids: [34], body: wheel_link, explode: 120, style: metal}
+  wheel_screws:      {solids: [93, 94, 95, 96], body: wheel_link, explode: 190, style: metal}
+  wheel_hub:         {solids: [99], body: wheel_link, explode: 230, style: hub}
+  tyre:              {solids: [98], body: wheel_link, explode: 230, style: tyre}
+# The five-bar (Gyropup cad/fivebar.py): two motors D apart drive two upper links; two lower links meet at the axle.
+# Each joint is measured from a solid coaxial with it; the lengths must match the design's (exports/leg/leg.json).
+linkage:
+  plane: [x, z]
+  joints:
+    A: {solid: 1}       # front motor's output adapter
+    B: {solid: 2}       # rear motor's output adapter
+    C: {solid: 18}      # front knee pin
+    D: {solid: 24}      # rear knee pin
+    E: {solid: 34}      # the apex circlip, on the wheel axle
+  ground: [A, B]
+  links: {upper_front: [A, C], upper_rear: [B, D], front_link: [C, E], wheel_link: [D, E]}
+  solve: [[C, A, E], [D, B, E]]
+  driven: E
+  expect: {lengths: {A-B: 150, A-C: 150, B-D: 150, C-E: 250, D-E: 250}, tolerance_mm: 0.5}
+  dead_points: [[C, A, E], [D, B, E]]     # a knee straight or folded flat is a dead point
+  path: {ellipse: {centre: [0, -255], radii: [80, 45], start_deg: -90}, samples: 24}
+clearance: {near_mm: 10, every: 2}
+fea:
+  part: hip_frame
+  field: exports/leg/fea/hip-frame-e1-media/hip_frame-E1.json
+  case: E1
+  title: turn
+  bands: [0.0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5]   # stress as a fraction of strength
+text:
+  wordmark: {text: cad-agent, size: 50, weight: bold}

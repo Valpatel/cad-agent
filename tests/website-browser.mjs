@@ -614,11 +614,11 @@ async function cantileverProblems() {
       first.still !== first.live ? 'the first live frame is not the still: the beam jumps when the script takes over' : null;
   };
   // A run of animation frames, not a wait: a throttled runner can sit 300 ms without one.
-  const frames = page => page.evaluate(() => new Promise(done => {
+  const frames = (page, count = 10) => page.evaluate(count => new Promise(done => {
     let n = 0;
-    const next = () => (++n >= 10 ? done() : requestAnimationFrame(next));
+    const next = () => (++n >= count ? done() : requestAnimationFrame(next));
     requestAnimationFrame(next);
-  }));
+  }), count);
   for (const width of [360, 1366]) {
     const height = {};
     for (const script of [false, true]) {
@@ -663,21 +663,28 @@ async function cantileverProblems() {
         if ((await demo.locator('[data-out=verdict]').textContent()) !== 'PASS') say('the default arm does not pass flat on the bed');
         await page.getByLabel('Upright (across the layers)').check();
         if ((await demo.locator('[data-out=verdict]').textContent()) !== 'FAIL') say('printing the arm upright does not fail it');
-        await demo.locator('.cc-play').click();
-        // Wait for the pause to take effect before reading the frame, then let frames run (the click can land
-        // between two of them on a slow runner).
+        // Pause the way a person does, with a press that lasts a few frames. WebKit drops the click of a press whose
+        // node the page replaces before the release. The demo used to rewrite the button's label on every frame, so in
+        // WebKit a held press never paused it, and a quick test click failed only when a frame fell inside it (#211).
+        await demo.locator('.cc-play').hover();
+        await page.mouse.down();
+        await frames(page, 3);
+        await page.mouse.up();
+        // The click handler pauses and draws the paused frame itself, so the label reads Play once the click lands.
         const stopped = await page.waitForFunction(() => document.querySelector('cad-cantilever .cc-play')?.textContent === 'Play',
           null, { timeout: 3000 }).then(() => true, () => false);
         const paused = await beam(page);
         await frames(page);
-        if (!stopped || (await beam(page)) !== paused) say('the pause button does not stop it');
+        if (!stopped) say('the pause button does not stop it: a press held for 3 frames was not a click');
+        else if ((await beam(page)) !== paused) say('the pause button does not stop it: the beam moves while paused');
         // Play carries on from the frame on screen (full deflection), not from wherever a page clock has got to.
-        const resumed = await page.evaluate(() => {
+        // Not paused, the click below would pause it instead: that failure is already reported once.
+        const resumed = stopped && await page.evaluate(() => {
           const d = document.querySelector('cad-cantilever');
           d.querySelector('.cc-play').click();                    // renders in the click handler, before any frame
           return d.querySelector('[data-part=beam]').getAttribute('points');
         });
-        if (resumed !== paused) say('Play does not carry on from the paused frame');
+        if (stopped && resumed !== paused) say('Play does not carry on from the paused frame');
         await page.waitForFunction(() => document.querySelector('cad-cantilever .cc-status')?.textContent,
           null, { timeout: 3000 }).catch(() => say('the status line does not announce the result after an input'));
       }

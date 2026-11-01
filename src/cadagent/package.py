@@ -1,5 +1,6 @@
 """Review package: a zip of the files named by ``cad.package.include`` plus a
-sha256 manifest, written to the exports directory.
+sha256 manifest, written to the exports directory. Files inside a folder tagged with ``CACHEDIR.TAG`` (a part cache,
+``cadagent.geometry.cache``) are never packaged, even when an include glob reaches them.
 
 The zip is reproducible (#150): the same files give the same bytes on every rebuild and in every checkout. Its
 entries are sorted by path, and each has the same date, mode and host instead of the file's own: the date is
@@ -59,8 +60,10 @@ def build_package(project: CadProject) -> PackageResult:
     own = {zip_path.resolve(), manifest_path.resolve()}
     files: List[Path] = []
     unmatched: List[str] = []
+    tagged: Dict[Path, bool] = {}
     for pattern in project.package.include:
-        matched = sorted(p for p in project.root.glob(pattern) if p.is_file() and p.resolve() not in own)
+        matched = sorted(p for p in project.root.glob(pattern) if p.is_file() and p.resolve() not in own
+                         and not in_cache_dir(p, project.root, tagged))
         if not matched:
             unmatched.append(pattern)
         files.extend(p for p in matched if p not in files)
@@ -79,6 +82,19 @@ def build_package(project: CadProject) -> PackageResult:
             with open(p, "rb") as src, z.open(info, "w") as dst:      # streamed: big files stay out of memory
                 shutil.copyfileobj(src, dst, 1 << 20)
     return PackageResult(zip_path, manifest_path, manifest, unmatched)
+
+def in_cache_dir(path: Path, root: Path, seen: Optional[Dict[Path, bool]] = None) -> bool:
+    """True when a folder between ``root`` and ``path`` holds a ``CACHEDIR.TAG`` (https://bford.info/cachedir/), such
+    as a part cache (``cadagent.geometry.cache``): caches are never packaged, even when a glob reaches into them."""
+    seen = {} if seen is None else seen
+    for folder in path.parents:
+        if folder == root or root not in folder.parents:
+            return False
+        if folder not in seen:
+            seen[folder] = (folder / "CACHEDIR.TAG").is_file()
+        if seen[folder]:
+            return True
+    return False
 
 def zip_date(when: Optional[datetime.datetime]) -> Tuple[int, int, int, int, int, int]:
     """A zip entry date from a time (taken as UTC): ``ZIP_DATE`` for None, and clamped to the years a zip can store

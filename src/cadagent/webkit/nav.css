@@ -5,13 +5,14 @@
 :where(cad-nav){display:block;font:var(--cad-nav-font,13px/1.5 system-ui,sans-serif);color:var(--cad-nav-fg,#173d3c)}
 /* The fold, <details class="cad-nav-fold">: a native toggle on narrow screens (below), with or without script. On wide
  * screens it takes no box and its summary hides, so the panel is a column of <cad-nav> itself (and stays sticky), open
- * whether or not the <details> is (::details-content: Chrome 131, Safari 18.4, Firefox 143; older browsers show it once
- * nav.js opens the fold). Two rules, not one list: a browser that does not know ::details-content drops the whole list. */
+ * whether or not the <details> is (::details-content: Chrome 131, Safari 18.4, Firefox 143). Two rules, not one list: a
+ * browser that does not know ::details-content drops the whole list. */
 :where(cad-nav .cad-nav-fold){display:contents}
 :where(cad-nav .cad-nav-fold)::details-content{display:contents}
 :where(cad-nav .cad-nav-toggle){display:none}
-/* Older browsers without script: nothing would open the fold on a wide screen, so its summary stays to open it by hand. */
-@supports not selector(::details-content){@media(scripting:none){:where(cad-nav .cad-nav-toggle){display:block}}}
+/* Older browsers hide a closed fold's panel whatever its display, so on a wide screen its summary stays while the fold is
+ * closed: until nav.js opens it, or for good if the script is off, blocked or fails. */
+@supports not selector(::details-content){:where(cad-nav .cad-nav-fold:not([open]) > .cad-nav-toggle){display:block}}
 :where(cad-nav .cad-nav-panel){position:sticky;top:var(--cad-nav-top,96px);max-height:calc(100vh - var(--cad-nav-top,96px) - 16px);
   overflow:auto;padding:4px 10px 24px 4px;scrollbar-width:thin}
 /* Page colour from the panel's top edge to 8px below the filter, behind it and over the links that scroll under it:
@@ -52,10 +53,12 @@ cad-nav [hidden]{display:none!important}
     text-transform:none;list-style:none;cursor:pointer;text-align:left}
   :where(cad-nav .cad-nav-toggle)::-webkit-details-marker{display:none}
   :where(cad-nav .cad-nav-toggle:focus-visible){outline:2px solid var(--cad-nav-accent,#bd3a12);outline-offset:2px}
-  :where(cad-nav .cad-nav-toggle)::after{content:"▾";transition:transform .15s}
+  :where(cad-nav .cad-nav-toggle)::after{content:"▾";content:"▾"/"";transition:transform .15s}   /* no alt text: not in its name */
   :where(cad-nav .cad-nav-fold[open] > .cad-nav-toggle)::after{transform:rotate(180deg)}
   :where(cad-nav .cad-nav-fold[open] > .cad-nav-panel){margin-top:10px}
 }
 /* Without script there is nothing to filter. The fold still opens and closes natively. */
 @media(scripting:none){cad-nav .cad-nav-filter,cad-nav .cad-nav-panel::before{display:none}}
 @media(prefers-reduced-motion:reduce){:where(cad-nav .cad-nav-toggle)::after{transition:none}}
+/* On paper the tree is no use (and a fold the script opened for a wide window would print in full). */
+@media print{:where(cad-nav){display:none}}

@@ -249,6 +249,18 @@ try {
         return r;
       });
       if (bare.hidden !== 1 || bare.empty) seen.push(`a bare tree does not filter: ${JSON.stringify(bare)}`);
+      // A flat tree (no groups): the script opens the current page's group, never the fold itself, so on a phone it
+      // stays closed (#209 review).
+      const flat = await page.evaluate(() => {
+        const el = document.createElement('cad-nav');
+        el.innerHTML = '<ul><li><a href="/a">Alpha</a></li><li><a href="/b" aria-current="page">Beta</a></li></ul>';
+        document.body.append(el);
+        const open = el.querySelector(':scope > details.cad-nav-fold')?.open;
+        el.remove();
+        return open;
+      });
+      if (flat === undefined) seen.push('a flat tree gets no fold');
+      else if (flat !== width >= 1100) seen.push(`a flat tree's fold is ${flat ? 'open' : 'closed'} at ${width}px`);
     }
     if (route === '/docs/compliant') {
       const href = await page.locator('.feedback a.button').getAttribute('href').catch(() => null);
@@ -956,6 +968,11 @@ async function foldProblems() {
   await turn.setViewportSize({ width: 360, height: 800 });
   await turn.waitForTimeout(100);
   if ((await isOpen()) !== true) out.push('360 -> 1366 -> 360px: the fold the reader opened was closed');
+  // Printed from a wide window, where the script opened the fold: the tree does not print (#209 review).
+  await turn.setViewportSize({ width: 1366, height: 800 });
+  await turn.emulateMedia({ media: 'print' });
+  if ((await turn.locator('cad-nav').evaluate(n => getComputedStyle(n).display)) !== 'none') out.push('print: the page tree prints');
+  await turn.emulateMedia({ media: 'screen' });
   await turn.close();
   // No link text around the filter pill while the tree is scrolled (#134): with a link under the filter's top edge, the
   // points just inside the pill's box at its rounded corners, and in the strips above and below it, hit the panel's cover.

@@ -108,15 +108,14 @@ export class CadNav extends HTMLElement {
     this.#stop = undefined;
   }
 
-  /** Wide screens show the panel with the fold's summary hidden (nav.css) whether or not the <details> is open; the
-   * fold is opened there anyway, so a browser without ::details-content shows the panel too and the open state says
-   * what is on screen. The native toggle is the reader's on narrow screens: the only fold closed here is one opened
-   * here, when the window narrows again. */
+  /** On wide screens nav.css takes the fold's box away (display: contents) and shows the panel whether or not the
+   * <details> is open; the fold is opened there anyway, so a browser without ::details-content shows the panel too
+   * and the open state says what is on screen. The native toggle is the reader's on narrow screens: the only fold
+   * closed here is one opened here, when the window narrows again. */
   #fold(fold, signal) {
-    const summary = fold.querySelector(':scope > summary');
     let opened = false;
     const fit = () => {
-      const wide = !!summary && getComputedStyle(summary).display === 'none';
+      const wide = getComputedStyle(fold).display === 'contents';
       if (wide && !fold.open) { fold.open = true; opened = true; }
       else if (!wide && opened) { fold.open = false; opened = false; }
     };
@@ -132,8 +131,8 @@ export class CadNav extends HTMLElement {
     const top = el => el.getBoundingClientRect().top - panel.getBoundingClientRect().top + panel.scrollTop;
     const room = filter.offsetHeight + 16, visible = () => top(current) - panel.scrollTop + current.offsetHeight <= panel.clientHeight - 24;
     if (visible()) return;
-    const group = current.closest('details');
-    panel.scrollTop = Math.max(0, (group ? top(group) : top(current)) - room);
+    const group = current.closest('details');                   // its group, if the tree has groups (not the fold)
+    panel.scrollTop = Math.max(0, (group && panel.contains(group) ? top(group) : top(current)) - room);
     if (!visible()) panel.scrollTop = Math.max(0, top(current) - panel.clientHeight / 3);
   }
 
@@ -144,7 +143,8 @@ export class CadNav extends HTMLElement {
       const items = outlineOf(target);
       if (items.length >= 2) current.after(outlineList(items));
     }
-    current?.closest('details')?.setAttribute('open', '');
+    const group = current?.closest('details');
+    if (group && panel.contains(group)) group.open = true;   // its group, never the fold around the panel (a flat tree)
     const rails = this.getAttribute('rail') ? [...document.querySelectorAll(this.getAttribute('rail'))] : [];
     const links = [...panel.querySelectorAll('.cad-nav-outline a'), ...rails.flatMap(r => [...r.querySelectorAll('a[href^="#"]')])];
     const byId = new Map();

@@ -1035,6 +1035,15 @@ async function fourbarProblems() {
           }, links);
           if (cut.length) say(`${links}: tile text cut off: ${cut.join('; ')}`);
         }                                                                               // ends on the page's linkage
+        // the other assembly, on the page's crank-rocker, paused: the coupler moves to where the ghost was. Not on a
+        // rocking input, which dwells at its limits, where the two assemblies meet: paused there, nothing moves.
+        await hold(page, demo.locator('.fb-play'));                                     // pause, so the frames compare
+        const coupler = await demo.locator('[data-part=coupler]').getAttribute('points');
+        await page.getByLabel('Crossed').check();
+        const ghost = await demo.locator('[data-part=ghost]').getAttribute('points');
+        if ((await demo.locator('[data-part=coupler]').getAttribute('points')) === coupler || !ghost) say('switching the assembly changed nothing');
+        await demo.getByRole('radio', { name: 'Open', exact: true }).check();
+        await demo.locator('.fb-play').click();                                         // play again
         // the keyboard: the crank to its longest makes the linkage non-Grashof, and the input then rocks between limits
         const slider = page.getByRole('slider', { name: /^Crank a/ });
         await slider.focus();
@@ -1063,13 +1072,6 @@ async function fourbarProblems() {
           }));
           if (beyond > 104.5) say(`the input went to ${beyond}°, past its limit`);
         }
-        // the other assembly: the coupler moves to where the ghost was
-        const coupler = await demo.locator('[data-part=coupler]').getAttribute('points');
-        await hold(page, demo.locator('.fb-play'));                                     // pause, so the frames compare
-        await page.getByLabel('Crossed').check();
-        const ghost = await demo.locator('[data-part=ghost]').getAttribute('points');
-        if ((await demo.locator('[data-part=coupler]').getAttribute('points')) === coupler || !ghost) say('switching the assembly changed nothing');
-        await demo.locator('.fb-play').click();                                         // play again
         await frames(page);
         await hold(page, demo.locator('.fb-play'));
         // The click handler pauses and draws the paused frame itself, so the label reads Play once the click lands.

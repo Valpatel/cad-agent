@@ -8,6 +8,21 @@ lesson that recorded it. Every review walks this list, whoever wrote the design 
 2. Then go through the **Review** rows below. No automatic check covers them yet, so look at the model, the renders and
    the sources yourself. Say in the review which ones you checked and how.
 
+```mermaid
+flowchart TD
+    A["cad-agent all"] -->|"every row passes"| R["walk the Review rows<br/>model, renders, sources"]
+    A -->|"fails, stale<br/>or did not run"| F["finding"]
+    R -->|"something is off"| F
+    R -->|"all checked, said how"| P["review can pass"]
+    F --> N["new kind of mistake? add it here<br/>with the check that would catch it"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class A,R here
+    class N near
+    class F,P out
+```
+
 When a review finds a new kind of mistake, add it here, in the same PR or in an issue, with the check that would catch
 it. Once a check exists, move the entry from "review" to the check.
 
@@ -25,6 +40,10 @@ it. Once a check exists, move the entry from "review" to the check.
 | Slender columns or insert bosses not tied into a wall | They crack or wobble when the screw is driven | Review: every boss and column has a load path; FEA | [mechanical rules](../lessons/mechanical/design-rules.md) |
 | One weak feature fixed, its siblings left as they were | The same failure on the other three corners | Review: survey all similar features when one is found | [mechanical rules](../lessons/mechanical/design-rules.md) |
 
+![Section through a screw hole in two build orders: a rib unioned after the clearance hole and counterbore were cut refills both, and the hole check finds rib inside each; with the holes cut last, both are clear](img/motion/rib-in-counterbore.svg)
+
+*Why every hole is cut last: a rib unioned after the holes runs into the counterbore and the clearance hole, and `cad-agent holes` finds it inside both. An illustration of the counterbore plate in `tests/test_holes.py`, in section; the volumes match the hole check's.*
+
 ## Bought parts, sources and assumptions
 
 | Issue | How it shows up | Caught by | Lesson |
@@ -34,6 +53,10 @@ it. Once a check exists, move the entry from "review" to the check.
 | Connector windows sized from a bounding box or the board connector, not the mating plug | The cable's overmould does not fit | `cadagent.geometry.connectors`: windows from the modelled mating plug, plus a sweep check | [mechanical rules](../lessons/mechanical/design-rules.md), [cables](../lessons/wiring/cables-connectors-and-routing.md) |
 | A vendor model used as if it were measured data | Hidden errors in mounting holes or heights | Review: say which bodies are proxies | [verify from source](../lessons/process/verify-from-source.md) |
 | Vendor files committed or redistributed | A licence problem; a leak that cannot be undone | Review the package and release include lists; fetch references with a script | [agent workflow](agent-workflow.md) |
+
+![An RJ45 plug pushed in along its mating axis through two panel windows: through a window sized from the jack's bounding box the latch sweeps into the wall; through the window derived from the mated plug it clears by the 0.5 mm clearance](img/motion/connector-window.svg)
+
+*`cadagent.geometry.connectors` sizes the window from the mated plug and sweeps the plug in along its mating axis. A window sized from the jack's bounding box is too short where the latch passes. An illustration of the RJ45 port in `tests/test_connectors.py`, in section; the swept volumes match the connector check's.*
 
 ## Fasteners and assembly
 
@@ -49,7 +72,7 @@ it. Once a check exists, move the entry from "review" to the check.
 | Issue | How it shows up | Caught by | Lesson |
 |---|---|---|---|
 | Stale evidence: reports, renders or results from before the last change | A pass for geometry that no longer exists | Hash-bound results (slice report, hole check, gates, CI parameter check); rerun `cad-agent all` after every geometry change | [verification](../lessons/review/verification-and-evidence.md) |
-| Exports that change bytes on every rebuild | The slice report goes stale with no geometry change | Reproducible 3MF writer; check `git diff` after a rebuild with no change | [verification](../lessons/review/verification-and-evidence.md) |
+| Exports that change bytes on every rebuild | The slice report, hole check or fit review goes stale with no geometry change; noisy diffs | Reproducible 3MF writer; `cadagent.geometry.export_step` for STEP (fixed header date or `SOURCE_DATE_EPOCH`, product named after the file); check `git diff` after a rebuild with no change | [verification](../lessons/review/verification-and-evidence.md) |
 | A simulation trusted before it converged, balanced and was calibrated | Confident but wrong temperatures or stresses | The project's simulation checks: steady, energy balance, calibrated, and inputs that match the design (fan axis and position) | [simulation](../lessons/simulation/simulation-and-material.md) |
 | Material savings judged on CAD volume | The slicer disagrees by tens of percent | `cad-agent slice` | [simulation](../lessons/simulation/simulation-and-material.md) |
 | A render or report published without being looked at | Wrong colours, clipped views, a stale picture | Review: open every image before it is shown | [verification](../lessons/review/verification-and-evidence.md) |

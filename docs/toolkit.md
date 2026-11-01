@@ -7,6 +7,12 @@ the toolkit (Python package `cadagent`) provides the runner, the 3MF writer,
 shared geometry screens, the renderer, link validation, the report, packaging
 and a local server.
 
+<table><tr>
+<td width="33%"><img src="img/viewer.jpg" alt="The 3D viewer and review site: every part of an assembly in place"><br><b>Site.</b> Every part in place, with explode and section, and one top bar linking every report.</td>
+<td width="33%"><img src="img/fea.jpg" alt="FEA of a ribbed enclosure lid under a 300 N press, coloured by stress"><br><b>Strength.</b> FEA of a ribbed lid under a 300 N press, coloured by stress as a fraction of the material's strength.</td>
+<td width="33%"><img src="img/topology.jpg" alt="Topology optimisation of an enclosure floor"><br><b>Less material.</b> Topology optimisation keeps only the floor that carries load.</td>
+</tr></table>
+
 ```bash
 pip install -e ".[cad]"          # in the cad-agent checkout; or install it into the project's own venv
 cd my-cad-project
@@ -19,6 +25,24 @@ cad-agent serve --port 8000      # needed for "Open in Bambu Studio" links
 Without the console script, `python -m cadagent.cli <subcommand>` does the same.
 The toolkit started as `vptest cad` in the vptest framework; projects set up for
 it keep working (see [Coming from vptest](#coming-from-vptest)).
+
+What `cad-agent all` runs, in order:
+
+```mermaid
+flowchart TD
+    P["your project<br/>CAD script + cad-agent.yaml"] --> B["build<br/>parts, STEP, STL"]
+    B --> X["export-3mf<br/>print files, verified"]
+    X --> C["check<br/>project checks, geometry screens,<br/>links, gate verdicts"]
+    C --> R["report<br/>standalone HTML"]
+    C --> S["site<br/>3D viewer + every report"]
+    R & S --> K["package / release<br/>zip + sha256 manifest"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class B,X,C here
+    class P near
+    class R,S,K out
+```
 
 ## The project contract
 
@@ -42,10 +66,20 @@ my-cad-project/
    `{part: {cad_valid, solid_count, watertight, print_bounds_mm, ...}}`.
    `cadagent.geometry` does the generic part:
    ```python
-   from cadagent.geometry import export_print_stl, solid_report, pairwise_intersections
+   from cadagent.geometry import export_print_stl, export_step, solid_report, pairwise_intersections
    report = {n: export_print_stl(s, OUT / f"{n}.stl", rotation=PRINT_ROTATION.get(n))
              for n, s in print_parts().items()}          # raises on a non-watertight STL
+   for n, s in print_parts().items():
+       export_step(s, OUT / f"{n}.step")                 # the same bytes for the same model
    ```
+   Write STEP with `export_step`, not `cadquery.exporters.export`: OCCT stamps the write time into the header,
+   names the product `Open CASCADE STEP translator <version> <n>` by export order and numbers assembly links
+   across the process, so every rebuild would change every STEP file and stale every check bound to its sha256.
+   `export_step` writes the same geometry with a fixed header date (`SOURCE_DATE_EPOCH` when set, the
+   [reproducible-builds](https://reproducible-builds.org/specs/source-date-epoch/) convention, else
+   2000-01-01T00:00:00), the product named after the file (or `name=`), and links numbered from 1 within the file.
+   Another OCCT version can still write different bytes for the same geometry, and a cadquery `Assembly` is not
+   covered (it is refused; `Assembly.save` is not reproducible yet, #150).
 3. **Each check is a script** in `tools/` that writes `exports/<name>.json` with
    a top-level boolean `"pass"`. A check that cannot compute its answer writes
    `"pass": false` with the reason; it never omits the file or the key.
@@ -222,7 +256,7 @@ its new path instead (`monkeypatch.setitem(sys.modules, "cadagent.publish.report
 
 ```python
 from cadagent.project import load_project    # CadProject, Step, Check, CadConfigError
-from cadagent.geometry import (solid_report, export_print_stl, pairwise_intersections,
+from cadagent.geometry import (solid_report, export_print_stl, export_step, step_timestamp, pairwise_intersections,
                                min_gap, downward_area, within_bed)
 from cadagent.make.mesh3mf import write_3mf, read_3mf, verify_3mf, export_parts_3mf, is_edge_manifold
 from cadagent.publish.render import Renderer
@@ -341,11 +375,13 @@ deflection and stiffness change with it.
 At a given travel it is different. `stiffness_n_per_mm` is lower than with the in-plane modulus. So a force worked out
 from it at a given travel (a clip's retention, a flexure's preload, a spring rate) reads lower than for a solid part
 bent in the layer plane, and so does the stress at that travel, which scales with E (a cantilever pushed to a tip
-travel δ has σ = 3Ecδ/L²). That stress is low by E_Z / E_XY for a part loaded in the layer plane, which makes a strength
-check at a given travel unconservative: check a flexure's or a clip's strength at its travel with the in-plane modulus,
-or with a coupon, not with this one. (The snap-fit tool, `cad-agent snapfit`, uses strain allowables and its own
-moduli by direction, so it does not depend on this E.) A print with sparse infill or thin walls is softer than either,
-and then the force at a given travel reads high: a retention check needs a measured part.
+travel δ has σ = 3Ecδ/L²). For a part loaded in the layer plane that stress is E_Z / E_XY of what the in-plane modulus
+gives: multiply by E_XY / E_Z (1.84 for PETG-CF, 1.25 for PLA) to get the in-plane figure, which is itself an estimate
+for an isotropic solid. So a strength check at a given travel is unconservative with this modulus: check a flexure's
+or a clip's strength at its travel with the in-plane modulus, or with a coupon. (The snap-fit tool, `cad-agent
+snapfit`, uses strain allowables and its own moduli by direction, so it does not depend on this E.) A print with sparse
+infill or thin walls is softer than either, and then the force at a given travel reads high: a retention check
+needs a measured part.
 
 A part whose bending stays in the layer plane is stiffer. Give it the X-Y modulus, keep the weak-direction strength,
 and say so in the note, so the assumptions line stays true:

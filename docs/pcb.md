@@ -2,6 +2,24 @@
 
 cad-agent supports electronics and mechanical evidence in the same local project site. KiCad remains the electrical source of truth; cad-agent consumes its native reports and displays the files. The same embedded review groups work for a PCB, printed housing, robot assembly or any combination.
 
+```mermaid
+flowchart TD
+    K["KiCad project<br/>source of truth"] --> E["ERC + DRC<br/>all severities"]
+    K --> J["JLC BOM + CPL"]
+    K --> S["board STEP"]
+    E --> M["evidence manifest"] --> C["pcb-check<br/>exit 0 only if all pass"]
+    J --> JC["check_jlc_files"]
+    S --> En["enclosure<br/>checks"]
+    C --> R["review site, via review.json<br/>and the design cards"]
+    JC & En -.-> R
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class E,M,C,JC,En here
+    class K,J,S near
+    class R out
+```
+
 ## Embedded review pattern
 
 Set `cad.site.review: exports/review.json` in `cad-agent.yaml`:

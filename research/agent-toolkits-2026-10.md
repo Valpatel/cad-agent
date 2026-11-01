@@ -105,6 +105,17 @@ That is the gap cad-agent #94/#95 fills.
 
 ## 4. Recommendations
 
+```mermaid
+flowchart TD
+    A["use: OrcaSlicer 2.5 MCP (when stable),<br/>text-to-cad (pinned)"] -->|"less sure"| T["try or borrow: step-diff,<br/>b123d-print checks, static74 skill"]
+    T -->|"less sure"| W["watch or skip: NovaSolver,<br/>build123d sheet metal,<br/>closed MCPs, FEABench"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class A,T here
+    class W near
+```
+
 | # | Item | Decision |
 |---|---|---|
 | 1 | OrcaSlicer 2.5 MCP + official skills | **Adopt when 2.5.0 is stable** (external process). Pilot now on a non-fleet workstation for slice evidence and supports |

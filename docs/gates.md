@@ -9,6 +9,24 @@ they read come from the dossier ([`dossier.md`](dossier.md)).
 prove that printed parts fit, move or hold: no tolerance stack, no print shrink, no deflection. Every verdict says
 `physical_fit_verified: false` and lists its assumptions.
 
+```mermaid
+flowchart TD
+    B["build()<br/>geometry record"] --> T["relation table<br/>part pairs, cached"]
+    B --> W["wall gate<br/>each part alone"]
+    T --> G["connectivity,<br/>containment, fasteners;<br/>motion and assembly<br/>via the pair cache"]
+    D["dossier<br/>declared intent"] --> G
+    D -->|"wall_mm"| W
+    W & G -->|"one verdict file each"| V["exports/gates/*.json"]
+    V --> Li["dossier lint<br/>reads the verdicts, last"]
+    Li --> S["cad-agent check ·<br/>report · review site"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class T,G,W,Li here
+    class B,D near
+    class V,S out
+```
+
 Status: the shared machinery (T3), the minimum-wall gate (T8), the connectivity gate (T4), the containment gate (T5),
 the fastener gate (T6), the motion gate (T7), the assembly-access gate (T9), the gate bench (T12), the dossier lint
 (T2, [`dossier.md`](dossier.md#lint-and-status)), the `cad-agent gates` command with its `check` and report rows
@@ -525,6 +543,10 @@ rerun reads only the cache.
 | `joint:<id>` | a joint's part is missing, its `fixed` part is in its own moving body, two joints drive one body, joints carry each other in a loop, or a ranged joint has no range; a warning for `planar`/`ball` | |
 | `combination:<g1>+<g2>`, `density:<g>` | (warnings) see above | |
 | `containment@<group>/<pose>/...` | with `contains=`: the containment gate's checks at every pose of a group that moves the container's cavity or the contents | as the containment gate |
+
+![The gate bench arm swept from 0 to 60 degrees in 12 sampled poses: it shares volume with the frame beam from 49.09 degrees, the last clear pose is 43.64 degrees, and the onset is bisected to between 44.89 and 44.91 degrees](img/motion/hinge-sweep.svg)
+
+*The `collision:` check on the gate bench's `flap_hits_frame` seed, in section: the sampled poses, the ones that hit, the last clear pose and the onset bisected between them. An illustration drawn from a 2D model of the bench; `tests/test_motion_figures.py` checks its numbers against the gate's verdict.*
 
 **Intended contacts.** A joint's `intended_contacts`, its own `moving`/`fixed` pair (the bearing) and the
 `intended_contacts` argument may touch at any pose: an arm resting on its stop at the range end passes. Shared

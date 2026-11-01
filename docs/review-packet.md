@@ -6,6 +6,21 @@ the reviewer answers. `cadagent.publish.render.review_packet` writes it. The ski
 [`skills/design-process`](../skills/design-process/SKILL.md) tells an agent when to
 make one; the plan behind it is [`design-process-plan.md`](design-process-plan.md) §5.1–§5.2 (task T10).
 
+```mermaid
+flowchart TD
+    Sec["dossier section"] --> V["fixed views<br/>captioned renders"]
+    Gt["gate verdicts<br/>findings, witness points"] --> M
+    V --> M["manifest.json<br/>measurements first, content hash per part"]
+    M --> Rv["reviewer<br/>reads measurements first, answers the checklist"]
+    Rv --> Rec["review record<br/>bound to the part hashes"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class V,M here
+    class Sec,Gt near
+    class Rv,Rec out
+```
+
 **What a packet is for.** Renders are for *diagnosis*, not proof. The gates measure (containment, contact, gaps,
 engagement, clearances, counts); the renders let a reviewer see what the numbers describe and catch what no gate was
 declared for (a part that is a plain box, a mating feature that is missing, a part in the wrong place). The research

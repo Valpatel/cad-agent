@@ -9,6 +9,17 @@ Bought hardware is a real part: a part number, its manufacturer's model, its spe
 a STEP model and a full specification table (material, finish, strength class, thread, dimensions and tolerances,
 load and speed ratings, temperature range, compliance) for almost everything it sells. Use them.
 
+```mermaid
+flowchart TD
+    P["pick the part like an engineer<br/>category page, spec table"] --> D["download the STEP,<br/>normalise its frame"]
+    D --> C["catalogue entry<br/>PN, specs, price, mass"]
+    C --> K["check the model<br/>bounding box vs the page"]
+    K --> Pl["place it at its seat"]
+    class D,C,K here
+    class P near
+    class Pl out
+```
+
 The tools: `cadagent.make.mcmaster` (Python) and `cad-agent mcmaster` (CLI). They read one product page at a time in the
 system Chrome (Playwright), with a pause between pages. That is the same traffic as an engineer choosing parts, and
 it must stay that way.

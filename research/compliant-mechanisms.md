@@ -124,7 +124,7 @@ All specimens were 100 % infill, ISO 527 / GB/T 1040. Z means pulled across the 
 | TPU 95A HF, Bambu (V1.0) | 9.8 / 7.4 | 27.3 / 22.3 | >650 / >480 | 0.82 | — (both lower bounds) | [BBL-TPU] |
 | PolyFlex TPU95, Polymaker (V5.4) | 33.6 XY (ISO 37) | — | 551 XY | — | no Z data | [PM-TPU] |
 
-![Bar chart: for each filament, the strength and the strain to failure pulled across the layers, as a fraction of the in-plane value. Strength keeps 0.40 to 0.90; strain to failure keeps 0.10 to 0.61 for PLA, PETG, ASA and CoPA, and 0.64 to 0.96 for carbon-filled PA6; TPU's is not known](../docs/img/research/fdm-anisotropy.svg)
+![Bar chart: for each filament, the strength and the strain to failure pulled across the layers, as a fraction of the in-plane value. Strength keeps 0.40 to 0.90; strain to failure keeps 0.10 to 0.61 for PLA, PETG, ASA and CoPA, and 0.90 to 0.96 for carbon-filled PA6; TPU's is not known](../docs/img/research/fdm-anisotropy.svg)
 
 *Drawn from the table above by `tools/research_figures.py` (a test keeps the two in step). Pulled across the layers,
 most filaments keep 60–90 % of their strength but much less of their stretch; carbon-filled PA6 is the exception. TPU's

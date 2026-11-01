@@ -15,6 +15,7 @@ flowchart TD
     B --> W["wall gate<br/>each part alone"]
     T --> G["connectivity,<br/>containment, fasteners;<br/>motion and assembly<br/>via the pair cache"]
     D["dossier<br/>declared intent"] --> G
+    D -->|"wall_mm"| W
     W & G -->|"one verdict file each"| V["exports/gates/*.json"]
     V --> Li["dossier lint<br/>reads the verdicts, last"]
     Li --> S["cad-agent check ·<br/>report · review site"]

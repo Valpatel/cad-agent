@@ -185,15 +185,16 @@ const decode = s => s.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (m, e) => e[0] ===
 export const slug = text => decode(text.replace(/<[^>]*>/g, '')).toLowerCase().replace(/[^\p{L}\p{M}\p{N}\p{Pc}\- ]/gu, '').replace(/ /g, '-');
 
 // The shared diagram palette (the style guide, #121). Files agents load (skills, subagents) keep only their
-// `class … here` lines, to save context; GitHub draws those diagrams in its default colours, and the site adds the
-// classDefs a diagram uses but does not define.
+// `class … here` lines (or `:::here`), to save context; GitHub draws those diagrams in its default colours, and the site
+// adds the classDefs a diagram uses but does not define. Applied to the parsed code block, so a Mermaid example quoted
+// inside another fence is left as written.
 const PALETTE = { here: 'fill:#fffdf5,stroke:#173d3c,color:#173d3c', near: 'fill:#eef1e4,stroke:#6f8a80,color:#173d3c',
   out: 'fill:#ffe1cc,stroke:#bd3a12,color:#173d3c' };
-const withPalette = md => md.replace(/^```mermaid\n([\s\S]*?)^```$/gm, (all, src) => {
-  const used = [...new Set([...src.matchAll(/^\s*class\s+\S+\s+(here|near|out)\s*;?\s*$/gm)].map(m => m[1]))]
-    .filter(c => !new RegExp(`^\\s*classDef\\s+${c}\\b`, 'm').test(src));
-  return used.length ? '```mermaid\n' + src + used.map(c => `    classDef ${c} ${PALETTE[c]}\n`).join('') + '```' : all;
-});
+const withPalette = src => {
+  const used = new Set([...src.matchAll(/^\s*class\s+\S+\s+(here|near|out)\s*;?\s*$/gm), ...src.matchAll(/:::(here|near|out)\b/g)].map(m => m[1]));
+  const missing = [...used].filter(c => !new RegExp(`^\\s*classDef\\s+${c}\\b`, 'm').test(src));
+  return missing.length ? src.replace(/\n?$/, '\n') + missing.map(c => `    classDef ${c} ${PALETTE[c]}`).join('\n') : src;
+};
 // Relative links in a Markdown copy: published pages and images stay relative (their .md twin or file is at the same
 // path); anything else (source files, tests) points at GitHub. absolute=true makes every link absolute (llms-full.txt).
 const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).map((chunk, i) => i % 2 ? chunk :
@@ -209,6 +210,8 @@ const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).m
 for (const p of pages) {
   const ids = new Map();
   const renderer = new marked.Renderer();
+  const code = renderer.code.bind(renderer);
+  renderer.code = token => code(token.lang === 'mermaid' ? { ...token, text: withPalette(token.text) } : token);
   renderer.heading = function ({ tokens, depth }) {
     const text = this.parser.parseInline(tokens);
     const base = slug(text);
@@ -216,7 +219,7 @@ for (const p of pages) {
     return `<h${depth} id="${base}${n ? '-' + n : ''}">${text}</h${depth}>`;
   };
   const body = /^#\s/m.test(p.body) ? p.body : `# ${p.title}\n\n${p.body}`;          // subagents have no heading
-  let html = sanitize(await marked.parse(withPalette(body), { renderer }));
+  let html = sanitize(await marked.parse(body, { renderer }));
   html = rewriteUrls(html, (url, attr) => {          // only real tags: link text inside code samples stays as written
     if (!url || url.startsWith('#') || /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(url)) return null;
     const [pathname, ...hash] = url.split('#');

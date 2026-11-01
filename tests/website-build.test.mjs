@@ -254,3 +254,24 @@ test('diagrams in files agents load leave the palette to the site', async () => 
   }
   assert.ok(drawn >= 8, `${drawn} skill and subagent diagrams`);
 });
+
+test('the palette goes into real diagrams only: not into a quoted example, and :::here counts', async () => {
+  const wt = path.join(tmp, 'wt-palette');
+  execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });
+  try {
+    await writeFile(path.join(wt, 'docs/toolkit.md'), '# Toolkit\n\n' +
+      '```mermaid\nflowchart TD\n    A[a]:::here --> B[b]\n```\n\n' +
+      '````markdown\n```mermaid\nflowchart TD\n    Q[quoted]\n    class Q out\n```\n````\n');
+    const draft = path.join(tmp, 'draft-palette');
+    execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, '--worktree', '--out', draft], { cwd: root });
+    const page = await readFile(path.join(draft, 'docs/toolkit.html'), 'utf8');
+    const diagram = page.match(/<code class="language-mermaid">([\s\S]*?)<\/code>/)?.[1] || '';
+    assert.match(diagram, /classDef here fill:#fffdf5/, ':::here shorthand gets the palette');
+    assert.doesNotMatch(diagram, /classDef (?:near|out)/, 'only the classes the diagram uses');
+    const quoted = page.match(/<code class="language-markdown">([\s\S]*?)<\/code>/)?.[1] || '';
+    assert.match(quoted, /class Q out/);
+    assert.doesNotMatch(quoted, /classDef/, 'a Mermaid example inside another fence stays as written');
+  } finally {
+    execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
+  }
+});

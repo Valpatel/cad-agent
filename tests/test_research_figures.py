@@ -1,4 +1,5 @@
 """The research charts are drawn from the tables on their pages, and stay in step with them."""
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -20,9 +21,10 @@ def test_every_row_with_ratios_is_drawn():
     svg = (ROOT / "docs" / "img" / "research" / "fdm-anisotropy.svg").read_text()
     for name in ("PLA Basic, Bambu", "PolyMide CoPA, wet", "TPU 95A HF, Bambu"):
         assert f">{name}</text>" in svg
-    assert ">PA6-CF, Bambu</text>" in svg                    # strain only: its strength cell is a gap
+    assert ">PA6-CF, Bambu</text>" not in svg                # from a search snippet, not a data sheet
+    assert "Not drawn (no data sheet): PA6-CF, Bambu." in svg
     assert "≥" not in svg                                    # TPU's two lower bounds give no ratio, not a bound
-    assert svg.count(">—</text>") == 2 and "—: not known." in svg
+    assert svg.count(">not known</text>") == 1               # TPU's strain
     assert "PolyFlex TPU95" not in svg                       # no Z data: not drawn
     md = (ROOT / "research" / "compliant-mechanisms.md").read_text()
     section = md[md.index("## 5. FDM anisotropy"):]
@@ -30,8 +32,9 @@ def test_every_row_with_ratios_is_drawn():
     first = next(i for i, line in enumerate(lines) if line.startswith("|"))
     table = lines[first:next(i for i in range(first, len(lines)) if not lines[i].startswith("|"))]
     rows = table[2:]                                          # without the header and the --- line
-    with_ratio = [r for r in rows if any(c.strip()[:1].isdigit() for c in r.split("|")[5:7])]
-    assert svg.count('text-anchor="end"') == len(with_ratio) == 15   # every row with a ratio, and no other
+    with_ratio = [r for r in rows if any(c.strip()[:1].isdigit() for c in r.split("|")[5:7])
+                  and not re.search(r"\((?:s|u)\b", r.split("|")[7])]
+    assert svg.count('text-anchor="end"') == len(with_ratio) == 14   # every data-sheet row with a ratio, and no other
 
 
 def _figures():

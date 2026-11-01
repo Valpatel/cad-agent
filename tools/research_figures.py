@@ -80,8 +80,9 @@ def bars_svg(title: str, rows: list[tuple[str, list[tuple[float, str] | None]]],
         out.append(f'<text x="{label_w - 10}" y="{y + group_h / 2 + 4:.1f}" font-size="12" fill="{INK}" '
                    f'text-anchor="end">{escape(label)}</text>')
         for value, (_, colour) in zip(values, series):
-            if value is None:
-                out.append(f'<text x="{label_w + 5}" y="{y + bar_h - 2.5}" font-size="11" fill="{MUTED}">—</text>')
+            if value is None:                            # words, not a dash that could pass for a stub of a bar
+                out.append(f'<text x="{label_w + 5}" y="{y + bar_h - 2.5}" font-size="11" font-style="italic" '
+                           f'fill="{MUTED}">not known</text>')
             else:
                 v, mark = value
                 out.append(f'<rect x="{label_w}" y="{y}" width="{x(v) - label_w:.1f}" height="{bar_h}" rx="2" fill="{colour}"/>')
@@ -95,15 +96,19 @@ def bars_svg(title: str, rows: list[tuple[str, list[tuple[float, str] | None]]],
 
 def anisotropy() -> str:
     md = (ROOT / "research" / "compliant-mechanisms.md").read_text(encoding="utf-8")
-    rows = []
+    rows, unsheeted = [], []
     for cells in table(md, "## 5. FDM anisotropy"):
         where = f"compliant-mechanisms.md §5, {cells[0]}"
         values = [number(cells[4], where), number(cells[5], where)]
-        if any(values):                                  # a row with no ratio at all (no Z data) has nothing to draw
-            rows.append((re.sub(r"\s*\([^)]*\)\s*$", "", cells[0]), values))
+        label = re.sub(r"\s*\([^)]*\)\s*$", "", cells[0])
+        if re.search(r"\((?:s|u)\b", cells[6]):         # read from a search snippet or unverified: not a data sheet
+            unsheeted.append(label)
+        elif any(values):                                # a row with no ratio at all (no Z data) has nothing to draw
+            rows.append((label, values))
     marks = "".join(v[1] for _, vs in rows for v in vs if v)
     note = "Manufacturers' data sheets, 100 % infill (research/compliant-mechanisms.md §5)." + \
-        (" —: not known." if any(v is None for _, vs in rows for v in vs) else "") + (" ≥: a lower bound." if marks else "")
+        (" ≥: a lower bound." if marks else "") + \
+        (f" Not drawn (no data sheet): {', '.join(unsheeted)}." if unsheeted else "")
     return bars_svg("Pulled across the layers: what is left of the in-plane value (Z ÷ XY)", rows,
                     [("strength", GREEN), ("strain to failure", ORANGE)], 1.0, [0, 0.25, 0.5, 0.75, 1.0],
                     lambda v: f"{v:.2f}".rstrip("0").rstrip(".") if v in (0, 1) else f"{v:.2f}", note)

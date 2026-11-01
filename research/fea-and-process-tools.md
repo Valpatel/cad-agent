@@ -50,16 +50,18 @@ Settings verified in the ccx 2.23 manual:
 
 ```mermaid
 flowchart TD
-    M["model<br/>2D section, gmsh mesh (≥ 4 through the root),<br/>secant or TDS E, contact K ≈ 10·E, friction μ"] --> St["NLGEOM static step<br/>insert, then back out"]
-    St --> Out["F–δ curve<br/>peak insertion W, release force"]
-    Out --> Acc{"closed form ±10 %,<br/>mesh halving < 5 %,<br/>back to 0 on release,<br/>strain ≤ allowable?"}
-    Acc -->|"yes"| Ev["evidence: .inp, solver version,<br/>CSV, strain map, STEP hash"]
-    Acc -->|"no: refine"| M
+    M["model: 2D section,<br/>gmsh mesh (≥ 4 through<br/>the root), secant or<br/>TDS E, contact K ≈ 10·E,<br/>friction μ"] --> St["NLGEOM static step:<br/>insert, then back out"]
+    St --> Out["F–δ curve: peak<br/>insertion W,<br/>release force"]
+    Out --> Acc{"closed form ±10 %,<br/>mesh halving < 5 %,<br/>back to 0 on release?"}
+    Acc -->|"no: refine<br/>the model"| M
+    Acc -->|"yes"| Sa{"strain ≤<br/>allowable?"}
+    Sa -->|"no"| Dz["change the design"]
+    Sa -->|"yes"| Ev["evidence: .inp,<br/>solver version, CSV,<br/>strain map, STEP hash"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class M,St here
-    class Out,Ev out
+    class M,St,Acc,Sa here
+    class Out,Ev,Dz out
 ```
 
 | Item | Choice for a cantilever-hook engagement |

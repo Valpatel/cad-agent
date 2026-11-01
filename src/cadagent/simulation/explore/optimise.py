@@ -169,7 +169,7 @@ def confirm_config(raw: Any, cfg: ExploreConfig) -> Optional[ConfirmConfig]:
         args = shlex.split(args)
     if not isinstance(args, list) or not all(isinstance(a, str) or is_number(a) for a in args):
         raise CadConfigError(f"{where}.args must be a list of command-line arguments, such as [--mesh, '3'], got {args!r}")
-    args = [a if isinstance(a, str) else f"{a:g}" for a in args]
+    args = [str(a) for a in args]               # YAML reads `--mesh 3` as a number: the argv gets "3"
     own = parse_evaluator(raw.get("evaluator"), f"{where}.evaluator")
     base = own or cfg.evaluator
     if base is None:
@@ -567,8 +567,9 @@ def run_search(cfg: ExploreConfig, catalogue: Catalogue, evaluator: Optional[Eva
     trials finish, at most every ``board_seconds``, and once more at the end.
 
     With ``search.confirm`` configured the leaders are then confirmed (``confirm_leaders``); ``confirm=False`` skips
-    that for this run, and the leaderboard still uses the confirmations made earlier. ``confirm_evaluator`` replaces
-    the configured one (tests); otherwise it is loaded from the config, with ``python`` as a command's ``{python}``."""
+    that for this run, and the leaderboard still uses the confirmations made earlier. ``confirm_evaluator`` is a
+    callable to confirm with (an API caller's own); without it the configured one is loaded, with ``python`` as a
+    command's ``{python}``. Confirmations are recorded against the configured confirm evaluator either way."""
     sc = search_config(cfg, catalogue, trials=trials, workers=workers, sampler=sampler, seed=seed)
     out = cfg.out / "search"
     trials_dir, log, db = out / "trials", out / "trials.jsonl", out / "study.db"
@@ -589,6 +590,7 @@ def run_search(cfg: ExploreConfig, catalogue: Catalogue, evaluator: Optional[Eva
 
     def board() -> Dict[str, Any]:
         return write_leaderboard(cfg, records, out, confirmed, cc)
+
     cache: Dict[str, Dict[str, Any]] = {}
     for r in records:
         if r.get("evaluation", {}).get("verdict") != "error" and not r.get("duplicate_of"):

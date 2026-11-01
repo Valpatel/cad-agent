@@ -4,6 +4,21 @@ Every folder in this repo explains itself in a `README.md`, so a person or an ag
 folder is for, how its pieces connect, and where to go next. This page says how those READMEs look. The checker that
 keeps them present and linked is tracked in #113.
 
+Every README has the same shape. The boxes below are its sections, in order from the top; the two at the bottom sit
+side by side.
+
+```mermaid
+flowchart TD
+    N["# folder name<br/>one line: what it is for"] --> D["one Mermaid diagram<br/>arrows from the code"]
+    D --> W["What's here<br/>a row per file"]
+    W --> R["Related<br/>parent, neighbours, docs"]
+    W --> C["Credits<br/>whose work it builds on"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    class N,D,W here
+    class R,C near
+```
+
 ## Which folders
 
 - Every folder we write has a `README.md`.

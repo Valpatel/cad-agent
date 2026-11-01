@@ -136,7 +136,7 @@ def tree():
 
 
 def test_every_domain_package_is_in_the_layout():
-    folders = {p.name for p in PKG.iterdir() if (p / "__init__.py").is_file()} - {"geometry"}
+    folders = {p.name for p in PKG.iterdir() if (p / "__init__.py").is_file()} - {"geometry", "formulas"}  # shared core
     assert folders == set(HOME), f"domain packages {sorted(folders ^ set(HOME))}: add them to HOME (and to the tree)"
     domains = {d["slug"]: {a["slug"] for a in d.get("areas", [])} for d in read_tree()["domains"]}
     for package, (domain, areas) in HOME.items():

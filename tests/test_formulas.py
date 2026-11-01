@@ -146,6 +146,12 @@ def test_covestro_example_I_in_si_units():
     assert not arm["small_deflection"]                                         # 2.4 / 19 = 0.13, as the guide warns
     assert arm["permissible_deflection"] == pytest.approx(2 * 2.4 * MM, rel=0.01)
     assert arm["stiffness"] == pytest.approx(arm["force"] / (2.4 * MM))
+    # P / y is the same at any deflection, so an arm at rest reports the same stiffness, b h^3 Es / (6 k L^3)
+    rest = fx.snap_arm(19 * MM, 3.28 * MM, 9.5 * MM, 0.0, 1815e6, 0.04, design=2)
+    assert rest["strain"] == 0.0 and rest["force"] == 0.0 and rest["passes"]
+    k = snapfit.DESIGN_K_RECT[2]
+    assert rest["stiffness"] == pytest.approx(arm["stiffness"], rel=1e-12)
+    assert rest["stiffness"] == pytest.approx(9.5 * MM * (3.28 * MM) ** 3 * 1815e6 / (6 * k * (19 * MM) ** 3), rel=1e-12)
 
 
 def test_snap_arm_agrees_with_cad_agent_snapfit():

@@ -167,7 +167,8 @@ def snap_deflection_force(length: float, width: float, thickness: float, strain:
 
 @formula(units={"length": "m", "thickness": "m (at the root)", "width": "m (at the root)", "deflection": "m",
                 "modulus": "Pa", "allowable_strain": "fraction", "design": "1, 2 or 3 (Covestro Table 1)"},
-         returns="dict: strain, force (N), stiffness (N/m), ratio, passes, small_deflection, permissible_deflection (m)",
+         returns="dict: strain, force (N), stiffness (N/m: P / y, the same at any deflection in this linear model, "
+                 "zero deflection included), ratio, passes, small_deflection, permissible_deflection (m)",
          limits=_GUIDE + ("rectangular section; a pass has no extra margin (the guide designs to half the "
                           "permissible strain)", "not proof of strength: print a coupon and measure"),
          source=cite("covestro", "Table 1; computed by cadagent.compliant.snapfit"))
@@ -178,7 +179,10 @@ def snap_arm(length: float, thickness: float, width: float, deflection: float, m
     section = snapfit.rect_section(width, thickness)
     strain = snap_root_strain(length, thickness, deflection, design)
     force = snap_deflection_force(length, width, thickness, strain, modulus)
-    return {"strain": strain, "force": force, "stiffness": force / deflection if deflection > 0 else 0.0,
+    # P / y = b h^3 Es / (6 k L^3) whatever the deflection: the force at a unit deflection, so an arm at rest still
+    # reports its stiffness rather than 0
+    stiffness = snap_deflection_force(length, width, thickness, snap_root_strain(length, thickness, 1.0, design), modulus)
+    return {"strain": strain, "force": force, "stiffness": stiffness,
             "ratio": strain / allowable_strain, "passes": strain <= allowable_strain,
             "small_deflection": deflection <= SMALL_DEFLECTION * length,
             "permissible_deflection": snapfit.permissible_deflection(section, length, allowable_strain, design)}

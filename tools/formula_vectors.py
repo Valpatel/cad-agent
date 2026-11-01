@@ -47,6 +47,15 @@ def cases():
     def add(name, *args):
         out.append({"py": name, "js": camel(name), "args": list(args), "expected": jsonable(getattr(fx, name)(*args))})
 
+    def refuse(name, *args):
+        """An input the Python refuses with ValueError: the port must refuse it too (with RangeError)."""
+        try:
+            getattr(fx, name)(*args)
+        except ValueError:
+            out.append({"py": name, "js": camel(name), "args": list(args), "raises": "ValueError"})
+            return
+        raise SystemExit(f"{name}{tuple(args)} no longer raises ValueError: change the refusal cases")
+
     xis = [0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0]
     for design in fx.DESIGNS:
         for xi in xis:
@@ -68,6 +77,19 @@ def cases():
         for direction in DIRECTIONS:
             add("snap_arm", 20 * mm, 1.6 * mm, 6 * mm, 1.5 * mm, m.secant_upper_bound(direction) * 1e6,
                 m.allowable(direction), 1)
+    for design in fx.DESIGNS:                         # an arm at rest: no strain or force, the same stiffness
+        add("snap_arm", 20 * mm, 1.6 * mm, 6 * mm, 0.0, 2703e6, 0.02, design)
+    # What the Python refuses: xi outside 0..1, and a design that is not 1, 2 or 3 (including a string, a fraction
+    # and an inherited key of a JS object).
+    for xi in (-0.1, 1.2):
+        refuse("cantilever_shape", xi, 1)
+        refuse("cantilever_strain_profile", xi, 2)
+    for bad in (0, 4, 2.5, "2", "toString"):
+        refuse("cantilever_shape", 0.5, bad)
+        refuse("cantilever_strain_profile", 0.5, bad)
+        refuse("cantilever_thickness_profile", 0.5, bad)
+        refuse("snap_root_strain", 20 * mm, 1.6 * mm, 1.5 * mm, bad)
+        refuse("snap_arm", 20 * mm, 1.6 * mm, 6 * mm, 1.5 * mm, 2703e6, 0.02, bad)
     return out
 
 

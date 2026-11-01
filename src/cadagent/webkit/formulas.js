@@ -18,9 +18,11 @@ export const DESIGNS = Object.freeze({ 1: 'constant section', 2: 'thickness tape
 export const SMALL_DEFLECTION = 0.1;
 const THICKNESS_TIP_RATIO = 0.5, WIDTH_TIP_RATIO = 0.25;
 
+// A whole number that names a design, as the Python's `design in DESIGNS` (so "2", 2.5 and inherited keys such as
+// "toString" are refused).
 const design = d => {
-  if (!(d in DESIGN_K_RECT)) throw new RangeError(`design must be 1, 2 or 3, not ${d}`);
-  return Number(d);
+  if (!Number.isInteger(d) || !Object.hasOwn(DESIGN_K_RECT, d)) throw new RangeError(`design must be 1, 2 or 3, not ${d}`);
+  return d;
 };
 const unit = xi => {
   if (!(xi >= 0 && xi <= 1)) throw new RangeError('xi must be between 0 (root) and 1 (tip)');
@@ -37,13 +39,15 @@ export function snapDeflectionForce(length, width, thickness, strain, modulus) {
   return width * thickness ** 3 / 12 / (thickness / 2) * modulus * strain / length;
 }
 
-/** One rectangular snap arm: strain, force (N), stiffness (N/m), ratio to the allowable, pass, small deflection,
- * and the permissible deflection at the allowable strain (m). */
+/** One rectangular snap arm: strain, force (N), stiffness (N/m, the same at any deflection), ratio to the allowable,
+ * pass, small deflection, and the permissible deflection at the allowable strain (m). */
 export function snapArm(length, thickness, width, deflection, modulus, allowableStrain, d = 1) {
   const strain = snapRootStrain(length, thickness, deflection, d);
   const force = snapDeflectionForce(length, width, thickness, strain, modulus);
+  // P / y = b h^3 Es / (6 k L^3) whatever the deflection: the force at a unit deflection, so an arm at rest has one
+  const stiffness = snapDeflectionForce(length, width, thickness, snapRootStrain(length, thickness, 1, d), modulus);
   return {
-    strain, force, stiffness: deflection > 0 ? force / deflection : 0, ratio: strain / allowableStrain,
+    strain, force, stiffness, ratio: strain / allowableStrain,
     passes: strain <= allowableStrain, smallDeflection: deflection <= SMALL_DEFLECTION * length,
     permissibleDeflection: DESIGN_K_RECT[design(d)] * allowableStrain * length ** 2 / (2 * (thickness / 2)),
   };

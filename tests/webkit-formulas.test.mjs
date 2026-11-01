@@ -24,9 +24,10 @@ const close = (got, want, where) => {
 };
 
 test('every ported function reproduces the Python on every golden vector', () => {
-  assert.ok(vectors.cases.length > 50, 'too few vectors');
+  assert.ok(vectors.cases.filter(c => !c.raises).length > 50, 'too few vectors');
   for (const [i, c] of vectors.cases.entries()) {
     assert.equal(typeof fx[c.js], 'function', `case ${i}: ${c.js} is not in formulas.js`);
+    if (c.raises) continue;
     close(fx[c.js](...c.args), c.expected, `case ${i} ${c.js}(${c.args.join(', ')})`);
   }
 });
@@ -38,9 +39,16 @@ test('the port has exactly the functions the vectors cover, no untested extras',
 });
 
 test('the port refuses what the Python refuses', () => {
-  assert.throws(() => fx.cantileverShape(1.2, 1), RangeError);
-  assert.throws(() => fx.cantileverStrainProfile(-0.1, 2), RangeError);
-  assert.throws(() => fx.snapRootStrain(0.02, 0.0016, 0.001, 4), RangeError);
+  // The Python's ValueError is the port's RangeError; tools/formula_vectors.py writes a case for each refusal.
+  const refused = vectors.cases.filter(c => c.raises);
+  assert.ok(refused.length >= 20, 'too few refusal vectors');
+  for (const c of refused) {
+    assert.equal(c.raises, 'ValueError');
+    assert.throws(() => fx[c.js](...c.args), RangeError, `${c.js}(${c.args.map(a => JSON.stringify(a)).join(', ')}) did not throw`);
+  }
+  const rest = vectors.cases.filter(c => c.js === 'snapArm' && !c.raises && c.args[3] === 0);
+  assert.equal(rest.length, 3, 'an arm at rest for each design');
+  for (const c of rest) assert.ok(c.expected.stiffness > 0 && c.expected.force === 0, 'at rest: no force, the same stiffness');
 });
 
 test('the demo materials carry a source and a strain in range for both print directions', () => {

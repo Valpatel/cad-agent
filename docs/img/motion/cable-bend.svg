@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 414" width="680" height="414" role="img" aria-label="An RJ45 plug seated in its jack, and its Cat6 cable, 6.1 mm across, leaving the boot and turning at its 25 mm minimum bend radius. Turned down, it needs 31.1 mm below its axis and the shelf is 29.75 mm below, so it runs 1.35 mm into the shelf. Turned up, it clears; the nearest part is the shelf, 26.7 mm away. The check passes, turning +v." font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="12" fill="#173d3c">
+<style>.m10,.m11{fill:#526863}.m10{font-size:10px}.m11{font-size:11px}.n{visibility:hidden}@media (max-width:400px){text:not(.n),.w{visibility:hidden}.n{visibility:visible}}@keyframes k0{0%,100%{transform:translateX(38px);opacity:0}3%{transform:translateX(38px);opacity:1}14%,90%{transform:translateX(0px);opacity:1}94%{transform:translateX(0px);opacity:0}}@keyframes k1{0%,18%,94.5%,100%{stroke-dashoffset:168.4}46%,94%{stroke-dashoffset:0}}@keyframes k2{0%,48%,93%,100%{opacity:0}51%,90%{opacity:1}}@keyframes k3{0%,46%,93%,100%{opacity:0}49%,90%{opacity:1}}@keyframes k4{0%,50%,93%,100%{opacity:0}53%,90%{opacity:1}}@keyframes k5{0%,53%,93%,100%{opacity:0}56%,90%{opacity:1}}.pl{animation:k0 10s ease-in-out infinite}.cb{animation:k1 10s linear infinite}#r0,#r1{animation:k2 10s linear infinite}#d0,#d1{animation:k3 10s linear infinite}#v00,#v10{animation:k4 10s linear infinite}#v01,#v11{animation:k5 10s linear infinite}@media (prefers-reduced-motion:reduce){*{animation:none!important}}</style>
+<rect width="680" height="414" rx="14" fill="#fffdf5" stroke="#d8e0d3"/>
+<text x="20" y="28" font-size="15" font-weight="700">Cable bend: the cable behind the plug turned at its minimum radius</text>
+<text x="20" y="32" font-size="28" font-weight="700" class="n">Cable bend radius</text>
+<clipPath id="c0"><rect x="34" y="86" width="296.4" height="262.2"/></clipPath>
+<text x="34" y="56" font-size="13" font-weight="600">Turned down, towards the shelf</text>
+<text x="34" y="68" font-size="24" font-weight="700" class="n">Turned down</text>
+<text x="34" y="74" class="m11">needs 31.1 mm below its axis; the shelf is 29.75 below</text>
+<clipPath id="s0"><path d="M34 348.2 330.4 348.2 330.4 325.4 34 325.4Z"/></clipPath>
+<g clip-path="url(#c0)">
+<path d="M34 348.2 330.4 348.2 330.4 325.4 34 325.4Z" fill="#eef1e4" stroke="#173d3c" stroke-width="1.5"/>
+<text x="38.6" y="342.9" class="m10">shelf</text>
+<path d="M201.2 212.3A106.6 106.6 0 0 1 307.8 318.9" stroke="#173d3c" stroke-width="25.6" fill="none" stroke-linecap="round" stroke-dasharray="168.4 168.4" class="cb"/>
+<path d="M201.2 212.3A106.6 106.6 0 0 1 307.8 318.9" stroke="#c9d6cc" stroke-width="23.2" fill="none" stroke-linecap="round" stroke-dasharray="168.4 168.4" class="cb"/>
+<path d="M201.2 212.3A106.6 106.6 0 0 1 307.8 318.9" stroke="#bd3a12" stroke-width="23.2" fill="none" stroke-linecap="round" stroke-dasharray="168.4 168.4" class="cb" clip-path="url(#s0)"/>
+<path d="M54.9 325.4 66.3 325.4 66.3 251.3 54.9 251.3Z" fill="#eef1e4" stroke="#173d3c" stroke-width="1.5"/>
+<path d="M54.9 192.4 66.3 192.4 66.3 97.4 54.9 97.4Z" fill="#eef1e4" stroke="#173d3c" stroke-width="1.5"/>
+<text x="69" y="95.9" class="m10">wall</text>
+<path d="M49.2 247.5V196.2" stroke="#6f8a80" stroke-width="3"/>
+<g class="pl">
+<path d="M79.6 239.9 201.2 239.9 201.2 184.8 79.6 184.8Z" fill="#eef1e4" stroke="#6f8a80"/>
+<text x="140.4" y="216.9" class="m10" text-anchor="middle">boot</text>
+<path d="M49.2 238 79.6 238 79.6 194.3 49.2 194.3Z" fill="#fffdf5" stroke="#173d3c" stroke-width="1.5"/>
+</g>
+<g id="r0"><path d="M197.2 318.9h8M201.2 314.9v8M201.2 318.9L268.4 251.8" stroke="#173d3c" stroke-width="1.2"/><text x="228.8" y="287.4" class="m10" text-anchor="end">R 25 inside</text></g>
+<g id="d0"><text x="291.1" y="320.1" font-size="10" fill="#bd3a12" text-anchor="end">1.35 mm in</text></g>
+</g>
+<g id="v00"><text x="34" y="370.2" fill="#bd3a12">turned down (−v): 1.35 mm into the shelf</text><text x="34" y="378.2" font-size="24" fill="#bd3a12" class="n">1.4 mm into shelf</text></g>
+<g id="v01"><text x="34" y="388.2" fill="#bd3a12" font-weight="600">fail: this way it does not fit</text><text x="34" y="408.2" font-size="26" fill="#bd3a12" font-weight="700" class="n">fail</text></g>
+<clipPath id="c1"><rect x="366" y="86" width="296.4" height="262.2"/></clipPath>
+<text x="366" y="56" font-size="13" font-weight="600">Turned up</text>
+<text x="366" y="68" font-size="24" font-weight="700" class="n">Turned up</text>
+<text x="366" y="74" class="m11">needs 31.1 mm above its axis; nothing is there</text>
+<g clip-path="url(#c1)">
+<path d="M366 348.2 662.4 348.2 662.4 325.4 366 325.4Z" fill="#eef1e4" stroke="#173d3c" stroke-width="1.5"/>
+<text x="370.6" y="342.9" class="m10">shelf</text>
+<path d="M533.2 212.3A106.6 106.6 0 0 0 639.8 105.8" stroke="#173d3c" stroke-width="25.6" fill="none" stroke-linecap="round" stroke-dasharray="168.4 168.4" class="cb"/>
+<path d="M533.2 212.3A106.6 106.6 0 0 0 639.8 105.8" stroke="#c9d6cc" stroke-width="23.2" fill="none" stroke-linecap="round" stroke-dasharray="168.4 168.4" class="cb"/>
+<path d="M386.9 325.4 398.3 325.4 398.3 251.3 386.9 251.3Z" fill="#eef1e4" stroke="#173d3c" stroke-width="1.5"/>
+<path d="M386.9 192.4 398.3 192.4 398.3 97.4 386.9 97.4Z" fill="#eef1e4" stroke="#173d3c" stroke-width="1.5"/>
+<text x="401" y="95.9" class="m10">wall</text>
+<path d="M381.2 247.5V196.2" stroke="#6f8a80" stroke-width="3"/>
+<g class="pl">
+<path d="M411.6 239.9 533.2 239.9 533.2 184.8 411.6 184.8Z" fill="#eef1e4" stroke="#6f8a80"/>
+<text x="472.4" y="216.9" class="m10" text-anchor="middle">boot</text>
+<path d="M381.2 238 411.6 238 411.6 194.3 381.2 194.3Z" fill="#fffdf5" stroke="#173d3c" stroke-width="1.5"/>
+</g>
+<g id="r1"><path d="M529.2 105.8h8M533.2 101.8v8M533.2 105.8L600.4 172.9" stroke="#173d3c" stroke-width="1.2"/><text x="560.8" y="149.3" class="m10" text-anchor="end">R 25 inside</text></g>
+<g id="d1"><path d="M533.2 223.9V325.4M529.2 223.9h8M529.2 325.4h8" stroke="#bd3a12"/><text x="537.2" y="278.7" font-size="10" fill="#bd3a12">26.7</text></g>
+</g>
+<g id="v10"><text x="366" y="370.2">turned up (+v): clear, 26.7 mm from the shelf</text><text x="366" y="378.2" font-size="24" class="n">clear</text></g>
+<g id="v11"><text x="366" y="388.2" font-weight="600">pass: turn +v (+u and −u clear too)</text><text x="366" y="408.2" font-size="26" font-weight="700" class="n">pass</text></g>
+</svg>

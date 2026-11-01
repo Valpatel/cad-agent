@@ -9,6 +9,16 @@ Heavy runs (OpenFOAM CFD, FEA sweeps, topology optimisation, `cad-agent all`) on
 can exhaust its memory and crash every session on it. Run them on a compute host, detached, and write them down
 where another computer can find them.
 
+```mermaid
+flowchart TD
+    B["before: a host by need,<br/>code from git,<br/>its own env"] --> S["start detached, then<br/>record it in the issue:<br/>host, command, log,<br/>done marker"]
+    S --> W["while it runs:<br/>checkpoints; any<br/>machine can check it"]
+    W --> A["after: check the result,<br/>pull it back, commit,<br/>update the issue"]
+    class S,W here
+    class B near
+    class A out
+```
+
 ## Before the run
 
 - **Pick the host by need**: cores and memory for the solver, a GPU only if the tool uses one, Docker for OpenFOAM.

@@ -15,6 +15,28 @@ Worked example: [`examples/explore-two-wheel`](../examples/explore-two-wheel/) c
 configurations. The tests use a second, non-robot project: an electronics enclosure choosing a fan, a power supply and
 screws sold in packs (`tests/explore_fixtures.py`).
 
+![The comparison page of examples/explore-two-wheel: four two-wheel-legged robot designs plotted by cost and mass, two on the Pareto front, one infeasible, with the leaderboard below](img/explore/two-wheel-compare.png)
+
+*The page `cad-agent compare` wrote for the worked example (2026-10-26). Light and Standard are on the Pareto front;
+Long range fails a requirement. Every number comes from the catalogue's cited specs and the project's evaluator:
+nothing on it is measured.*
+
+```mermaid
+flowchart TD
+    Cat["catalogue<br/>parts, specs, prices, sources"] --> D["designs<br/>one part per slot + parameters"]
+    D --> E["evaluator<br/>the project's own model"]
+    E --> Cmp["compare<br/>Pareto ranking, BOM, swaps"]
+    Cmp --> Pg["comparison page + JSON"]
+    E --> O["optimise<br/>trials from<br/>the base design"]
+    O --> L["leaderboard<br/>+ trial records"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class D,Cmp,O here
+    class Cat,E near
+    class Pg,L out
+```
+
 ## What it does, and what it does not
 
 | Piece | Module | What it gives you |

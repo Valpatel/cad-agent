@@ -12,6 +12,21 @@ Acceptance evidence includes generic fixtures, actual project files, narrow/land
 
 This feature is developed on `feat/web-parts`, targeting `dev`. Gyropup may test the feature worktree while its PR is open, following CONTRIBUTING.md. Toolkit integration and release still follow the repository's review and explicit merge-instruction rules.
 
+```mermaid
+flowchart TD
+    T["your table<br/>stable part keys"] --> E["enhancePartTable<br/>sort, filter, count"]
+    Tr["createPartTracker<br/>ordered, in hand, printed"] --> E
+    E --> V["same rows, reordered<br/>original order kept"]
+    Tr <-->|"export<br/>import"| J["JSON<br/>file"]
+    Tr --> LS["browser<br/>storage"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class E,Tr here
+    class T,J near
+    class V,LS out
+```
+
 ## Tables and status
 
 Include `part-table.css`, then progressively enhance a semantic table. Keep numeric source values in `data-sort-value` rather than asking the component to guess units, pack quantities or currency from display text. Unknown values use an empty sort value and remain last in either direction. Put totals in `tfoot` (or mark a body total `data-fixed`).

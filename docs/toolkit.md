@@ -7,6 +7,12 @@ the toolkit (Python package `cadagent`) provides the runner, the 3MF writer,
 shared geometry screens, the renderer, link validation, the report, packaging
 and a local server.
 
+<table><tr>
+<td width="33%"><img src="img/viewer.jpg" alt="The 3D viewer and review site: every part of an assembly in place"><br><b>Site.</b> Every part in place, with explode and section, and one top bar linking every report.</td>
+<td width="33%"><img src="img/fea.jpg" alt="FEA of a ribbed enclosure lid under a 300 N press, coloured by stress"><br><b>Strength.</b> FEA of a ribbed lid under a 300 N press, coloured by stress as a fraction of the material's strength.</td>
+<td width="33%"><img src="img/topology.jpg" alt="Topology optimisation of an enclosure floor"><br><b>Less material.</b> Topology optimisation keeps only the floor that carries load.</td>
+</tr></table>
+
 ```bash
 pip install -e ".[cad]"          # in the cad-agent checkout; or install it into the project's own venv
 cd my-cad-project
@@ -19,6 +25,24 @@ cad-agent serve --port 8000      # needed for "Open in Bambu Studio" links
 Without the console script, `python -m cadagent.cli <subcommand>` does the same.
 The toolkit started as `vptest cad` in the vptest framework; projects set up for
 it keep working (see [Coming from vptest](#coming-from-vptest)).
+
+What `cad-agent all` runs, in order:
+
+```mermaid
+flowchart TD
+    P["your project<br/>CAD script + cad-agent.yaml"] --> B["build<br/>parts, STEP, STL"]
+    B --> X["export-3mf<br/>print files, verified"]
+    X --> C["check<br/>project checks, geometry screens,<br/>links, gate verdicts"]
+    C --> R["report<br/>standalone HTML"]
+    C --> S["site<br/>3D viewer + every report"]
+    R & S --> K["package / release<br/>zip + sha256 manifest"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class B,X,C here
+    class P near
+    class R,S,K out
+```
 
 ## The project contract
 
@@ -292,10 +316,53 @@ numbers, and a `categories` entry that is not a list, names a part that does not
 
 `pip install -e ".[cad,fea]"`. `Study(shape_or_step, material, mesh_mm)` meshes any part with gmsh (P2 tetrahedra),
 `fix()`/`force()`/`torque()` pick faces with selectors (`plane_at`, `cylinder_at`, `in_box`, `near`, `any_of`). A `torque()` is a pure couple about the loaded faces' own centroid (no net force, exactly the torque along the axis); its `point` does not move the axis, so a force at a distance needs its own `force()`. Then
-`solve()` returns deflection, stiffness, the design von Mises stress and the safety factor against `MATERIALS` (printed
-materials carry their weak, layer-direction strength). Stress spikes in the elements touching a clamp or a load patch
+`solve()` returns deflection, stiffness, the design von Mises stress and the safety factor against `MATERIALS`. Stress spikes in the elements touching a clamp or a load patch
 are artefacts of the idealised support, so the design stress and every failure view leave them out ("support
 patches": capped at the design stress, never shown as failed, their share of the surface reported).
+
+**Printed materials** (`pla`, `petg`, `petg_cf`, `pa_cf`, `pa6_cf_xy`, `pa6_cf_z`, `tpu95`) take their numbers from the
+filament maker's data sheet (100 % infill test bars). Each names its sheet (`source`, an id in the reference registry),
+says in `note` which sheet value E and the strength come from, and gives the print direction of E (`direction`). The
+result's `assumptions` line repeats the modulus, the strength and the note, and the viewer shows the direction:
+
+| Key | E (MPa) | Direction | Strength (MPa) | Data sheet |
+|---|---:|---|---:|---|
+| `pla` | 2060 | Z | 25 | Bambu PLA Basic V3.0 (X-Y 2580; Z tensile strength 31) |
+| `petg` | 1120 | Z | 20 | Bambu PETG Basic V2.0 (X-Y 1460). V3.0 is a reformulated filament whose bars are not said to be annealed (2780 / 2550): not used |
+| `petg_cf` | 1340 | Z | 22 | Bambu PETG-CF V3.0 (X-Y 2460; Z tensile strength 29) |
+| `pa_cf` | 1820 | Z | 40 | Bambu PAHT-CF V3.0, dry (Z bending, the sheet's lowest; Z tensile 2180, X-Y 3860) |
+| `pa6_cf_xy` | 2126 | X-Y | 49 | Bambu PA6-CF V3.0, dry X-Y x0.6 humid x0.8 print. Uncertain: the x0.6 is a strength ratio, and a part that takes up water may be about half this stiff (#157) |
+| `pa6_cf_z` | 1042 | Z | 23 | Bambu PA6-CF V3.0, dry Z x0.6 humid x0.8 print. Uncertain in the same way |
+| `tpu95` | 7.4 | Z | 8 | Bambu TPU 95A HF V1.0 (X-Y 9.8; Polymaker lists 33.6): indicative only |
+
+The modulus is the sheet's lowest, across the layers, because the solver is isotropic and does not know how the part
+was printed, so deflections come out higher than with the sheet's in-plane values. They are not an upper bound on a
+print. The mesh is the solid CAD, and a print with sparse infill or thin walls can be softer still. The isotropic shear
+modulus does not bound a print's shear stiffness between layers either, which matters for short, thick parts. The
+two humid PA6-CF rows may be too stiff (table). Under forces and torques the stress does not depend on E, so only
+deflection and stiffness change with it.
+
+At a given travel it is different. `stiffness_n_per_mm` is lower than with the in-plane modulus. So a force worked out
+from it at a given travel (a clip's retention, a flexure's preload, a spring rate) reads lower than for a solid part
+bent in the layer plane, and so does the stress at that travel, which scales with E (a cantilever pushed to a tip
+travel δ has σ = 3Ecδ/L²). That stress is low by E_Z / E_XY for a part loaded in the layer plane, which makes a strength
+check at a given travel unconservative: check a flexure's or a clip's strength at its travel with the in-plane modulus,
+or with a coupon, not with this one. (The snap-fit tool, `cad-agent snapfit`, uses strain allowables and its own
+moduli by direction, so it does not depend on this E.) A print with sparse infill or thin walls is softer than either,
+and then the force at a given travel reads high: a retention check needs a measured part.
+
+A part whose bending stays in the layer plane is stiffer. Give it the X-Y modulus, keep the weak-direction strength,
+and say so in the note, so the assumptions line stays true:
+
+```python
+dataclasses.replace(MATERIALS['petg_cf'], E_mpa=2460, direction='X-Y',
+                    note='Bambu PETG-CF TDS V3.0: E is the X-Y tensile modulus; strength the Z allowable')
+```
+
+Before v0.5.0 the printed moduli were 31-305 % higher (PLA 2700, PETG 1800, PETG-CF 2900, PAHT-CF 4500, PA6-CF 3000 and
+2400, TPU 30), so deflections computed with them read 24-75 % low (#125). A real print, with walls, seams and sparse
+infill, is softer and weaker than a test bar, and no simulation proves that a part fits or holds: check it against a
+printed coupon.
 
 Stresses are element corner peaks, never averaged. The P2 strain is linear in a tetrahedron, so its extremes sit at the
 corners; the safety factor, the hot spots and the per-vertex colours all use the highest corner stress there. The

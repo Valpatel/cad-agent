@@ -24,6 +24,12 @@ material value names its source.
   ([`allowables.py`](../src/cadagent/compliant/allowables.py)).
 - **Figures**: `tools/snapfit_figures.py` draws the cantilever with its dimensions (`docs/img/compliant/`).
 
+![Example I from the Covestro guide, computed: a tapered polycarbonate cantilever hook with its length, thicknesses and deflection drawn to scale, root strain 2.00 percent](img/compliant/example-1.svg)
+
+*Example I of the Covestro guide (polycarbonate, tapered hook), drawn by `tools/snapfit_figures.py` from the
+module's own result: the arm length, root thickness and undercut are the guide's inputs; the 2.00 % root strain and
+the forces are computed by the module, not typed in.*
+
 ## Declaring snaps
 
 ```yaml

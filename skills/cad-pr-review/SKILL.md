@@ -8,6 +8,17 @@ description: Use when a pull request in a cad-agent or product repo is ready for
 An author cannot review their own change: they read what they meant, not what they wrote. Every PR gets a review
 by an agent or person that did not write it, and the review lives on the PR, where anyone can see it later.
 
+```mermaid
+flowchart TD
+    A["author: a reviewable PR<br/>what, why, how it was checked"] --> R["independent reviewer<br/>verifies, comments, verdict"]
+    R --> F["author fixes or explains,<br/>replies, resolves every thread"]
+    F -->|"changes"| R
+    R -->|"pass on the head"| M["merge under the repo's rules"]
+    class R,F here
+    class A near
+    class M out
+```
+
 ## As the author
 
 1. **Make the PR reviewable.** Description: what and why, how it was checked (commands and their results, the real

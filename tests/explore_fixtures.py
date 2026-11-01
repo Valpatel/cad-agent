@@ -1,5 +1,6 @@
-"""A small non-robot project for the explore tests: an electronics enclosure that picks a fan, a power supply,
-screws sold in packs and a gasket with no public price."""
+"""Small non-robot projects for the explore tests: an electronics enclosure that picks a fan, a power supply, screws
+sold in packs and a gasket with no public price; and a bracket whose search changes only parameters (no catalogue),
+judged by a fake FEA command evaluator with a mesh setting."""
 
 from __future__ import annotations
 
@@ -71,6 +72,48 @@ CONFIG = textwrap.dedent("""\
     """)
 
 
+# A parameter-only project: no catalogue, no slots. A bracket's wall and its inner corner are searched; a fake FEA
+# command evaluator reads the safety factor, and a sharp corner's peak is a mesh artefact (it is singular, so a coarse
+# mesh under-reads the stress and the factor drops as the mesh refines), as the hip-frame study met (#144).
+FEA = textwrap.dedent('''\
+    import argparse, json, sys
+    ap = argparse.ArgumentParser()
+    ap.add_argument("result")
+    ap.add_argument("--mesh", type=float, default=4.0)          # the last --mesh wins, so confirm args override
+    a = ap.parse_args()
+    req = json.load(sys.stdin)
+    wall, corner = req["params"]["wall_mm"], req["params"]["corner"]
+    if corner == "sharp":
+        sf = 0.4 * wall + 0.6 + 0.5 * (a.mesh - 3.0)          # 0.5 too high at 4 mm, right at 3 mm
+    else:
+        sf = (0.4 * wall + 0.8) * (1 - 0.002 * (4.0 - a.mesh))  # a filleted corner converges: 0.2 % per mm
+    json.dump({"metrics": {"safety_factor": round(sf, 4), "mesh_mm": a.mesh}, "summary": req["id"]}, open(a.result, "w"))
+    ''')
+
+BRACKET = textwrap.dedent("""\
+    cad:
+      name: bracket
+      explore:
+        evaluator: {command: ["{python}", tools/fea.py, "{result}", --mesh, "4"], timeout_s: 60}
+        objectives: [{metric: safety_factor, goal: max}]
+        constraints: [{metric: safety_factor, min: 1.85}]
+        search:
+          base: designs/base.json
+          sampler: grid
+          space: [{param: wall_mm, choices: [2, 3, 4]}, {param: corner, choices: [sharp, round]}]
+          confirm: {top: 2, args: [--mesh, 3]}
+    """)
+
+
+def write_bracket(root: Path, config: str = BRACKET) -> Path:
+    for d in ("designs", "tools"):
+        (root / d).mkdir(parents=True, exist_ok=True)
+    (root / "designs" / "base.json").write_text(json.dumps({"name": "Base", "params": {"wall_mm": 3, "corner": "round"}}))
+    (root / "tools" / "fea.py").write_text(FEA)
+    (root / "cad-agent.yaml").write_text(config)
+    return root
+
+
 def write_enclosure(root: Path, config: str = CONFIG, evaluator: str = EVALUATOR) -> Path:
     for d in ("catalogue", "designs", "tools"):
         (root / d).mkdir(parents=True, exist_ok=True)
@@ -83,7 +126,7 @@ def write_enclosure(root: Path, config: str = CONFIG, evaluator: str = EVALUATOR
 
 
 def enclosure_config(root: Path):
-    """The parsed explore config and catalogue of a written enclosure project."""
+    """The parsed explore config and catalogue of a written enclosure (or bracket) project."""
     import yaml
 
     from cadagent.simulation.explore.catalogue import load_configured

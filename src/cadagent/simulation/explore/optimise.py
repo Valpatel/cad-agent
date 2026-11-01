@@ -17,6 +17,10 @@ The project says what may change and what "better" means; cad-agent runs the loo
         - {slot: battery, choices: [pack-a, pack-b, null]}     # or these; null leaves the slot empty
         - {param: wheel_diameter_mm, low: 120, high: 200, step: 10}
         - {param: frame.material, choices: [pla, petg]}        # dotted paths into the design's params
+      confirm:                              # optional: re-evaluate the leaders with a finer, slower evaluator
+        top: 3                              # the first 3 feasible trials of the leaderboard
+        args: [--mesh, "3"]                 # appended to the evaluator's command; or `evaluator:` (its own)
+        tolerance_pct: 5                    # flag a change of more than 5 % in an objective or constraint
 
 Every trial is written as a design (``<out>/search/trials/trial-00007.json``) and evaluated exactly like a design in
 ``cad-agent compare``. ``trials.jsonl`` records each trial (one JSON object per line) and ``leaderboard.json`` +
@@ -25,6 +29,12 @@ itself, when the space can express it. Running again continues the numbering and
 ``study.db`` (with a new seed); ``search.json`` records what the trials were computed against, and a run whose inputs
 changed stops and says what; ``fresh=True`` (``--fresh``) deletes the previous trials first. A combination that was
 already evaluated is not evaluated again. Ctrl-C stops the running command evaluators and writes the leaderboard.
+
+``confirm`` runs after the trials: the leaders are evaluated again with the confirm evaluator (``confirm_leaders``),
+recorded in ``confirm.jsonl``, and the leaderboard ranks each confirmed trial on its confirmed evaluation, keeping the
+screening values beside it (``confirmed_evaluation``). When that brings an unconfirmed trial into the top, it is
+confirmed too, up to ``limit`` confirmations a run. The sampler only ever learns the screening values, so the search
+itself stays at one fidelity.
 
 With ``workers`` above 1 a Python evaluator runs in threads, so it must be thread-safe, and it only runs in parallel
 where it waits on something else (a subprocess, a solver that releases the GIL). For CPU-heavy evaluation in Python,
@@ -41,6 +51,7 @@ import itertools
 import json
 import math
 import random
+import shlex
 import shutil
 import time
 import warnings
@@ -51,16 +62,22 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 
 from cadagent._deps import require
 from cadagent.simulation.explore.catalogue import Catalogue, finite_or_none, is_number, json_default
-from cadagent.simulation.explore.compare import comparison, describe_choice, with_part, write_comparison
-from cadagent.simulation.explore.config import ExploreConfig
+from cadagent.simulation.explore.compare import comparison, describe_choice, feasible, with_part, write_comparison
+from cadagent.simulation.explore.config import EvaluatorSpec, ExploreConfig, parse_evaluator
 from cadagent.simulation.explore.design import (DesignError, bom, bom_metrics, candidates, fits, get_path, load_design,
                                                 resolve, set_path)
-from cadagent.simulation.explore.evaluate import Evaluator, evaluate_design, kill_running_evaluators, value_of
+from cadagent.simulation.explore.evaluate import (Evaluator, check_counts, evaluate_design, kill_running_evaluators,
+                                                  load_evaluator, value_of, verdict)
 from cadagent.project import CadConfigError
 
 SAMPLERS = ("random", "grid", "nsga2", "tpe")
 OPTUNA_HINT = "the nsga2 and tpe samplers (pip install -e '.[explore]' in the cad-agent checkout, or pip install optuna)"
-_SEARCH_KEYS = {"base", "sampler", "trials", "workers", "seed", "population", "space", "name"}
+_SEARCH_KEYS = {"base", "sampler", "trials", "workers", "seed", "population", "space", "name", "confirm"}
+_CONFIRM_KEYS = {"top", "args", "evaluator", "timeout_s", "tolerance_pct", "limit"}
+# A screening value that moves by more than this when confirmed is flagged. 5 % is a common bar for a converged mesh
+# (a peak that changes less between two meshes is taken as settled); tighten it where a gate has little margin.
+DEFAULT_TOLERANCE_PCT = 5.0
+CONFIRM_LOG = "confirm.jsonl"
 
 
 @dataclass
@@ -114,6 +131,63 @@ class Dimension:
 
 
 @dataclass
+class ConfirmConfig:
+    """``search.confirm``: evaluate the leaders again with a finer (slower) evaluator, such as a finer mesh."""
+    spec: EvaluatorSpec                    # what runs: the search's evaluator with ``args`` appended, or its own
+    top: int = 3                           # the first ``top`` feasible trials of the leaderboard
+    tolerance_pct: float = DEFAULT_TOLERANCE_PCT
+    limit: int = 9                         # confirmations per run, at most (default 3 x top)
+
+    def describe(self) -> str:
+        return self.spec.describe()
+
+
+def _whole(value: Any, where: str, least: int) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < least:
+        raise CadConfigError(f"{where} must be a whole number ≥ {least}, got {value!r}")
+    return value
+
+
+def confirm_config(raw: Any, cfg: ExploreConfig) -> Optional[ConfirmConfig]:
+    """Parse ``search.confirm`` (None when absent). It needs ``args`` (appended to a command evaluator's argv, such as
+    ``[--mesh, "3"]``), its own ``evaluator``, or both: the same evaluator again would only repeat the trial."""
+    where = "cad.explore.search.confirm"
+    if raw in (None, False, {}):
+        return None
+    if not isinstance(raw, dict):
+        raise CadConfigError(f"{where} must be a mapping, got {raw!r}")
+    unknown = sorted(set(raw) - _CONFIRM_KEYS)
+    if unknown:
+        raise CadConfigError(f"{where}: unknown keys {unknown}")
+    top = _whole(raw.get("top", 3), f"{where}.top", 1)
+    limit = _whole(raw.get("limit", 3 * top), f"{where}.limit", top)
+    tolerance = raw.get("tolerance_pct", DEFAULT_TOLERANCE_PCT)
+    if not is_number(tolerance) or tolerance < 0:
+        raise CadConfigError(f"{where}.tolerance_pct must be a number ≥ 0 (a percentage), got {tolerance!r}")
+    args = raw.get("args") or []
+    if isinstance(args, str):
+        args = shlex.split(args)
+    if not isinstance(args, list) or not all(isinstance(a, str) or is_number(a) for a in args):
+        raise CadConfigError(f"{where}.args must be a list of command-line arguments, such as [--mesh, '3'], got {args!r}")
+    args = [a if isinstance(a, str) else f"{a:g}" for a in args]
+    own = parse_evaluator(raw.get("evaluator"), f"{where}.evaluator")
+    base = own or cfg.evaluator
+    if base is None:
+        raise CadConfigError(f"{where}: the search has no evaluator, so confirm needs its own 'evaluator'")
+    if own is None and not args:
+        raise CadConfigError(f"{where} needs 'args' (appended to the evaluator's command, such as [--mesh, '3']) or "
+                             "its own 'evaluator': the same evaluator again would only repeat each trial")
+    if args and base.python:
+        raise CadConfigError(f"{where}.args go on a command evaluator's argv, and {base.python} is a Python function: "
+                             "give confirm its own evaluator (another function, or a command) instead")
+    timeout = raw.get("timeout_s", base.timeout_s)
+    if not is_number(timeout) or timeout <= 0:
+        raise CadConfigError(f"{where}.timeout_s must be a number of seconds > 0, got {timeout!r}")
+    spec = EvaluatorSpec(python=base.python, command=list(base.command) + args, timeout_s=float(timeout))
+    return ConfirmConfig(spec=spec, top=top, tolerance_pct=float(tolerance), limit=limit)
+
+
+@dataclass
 class SearchConfig:
     base: Path
     sampler: str = "random"
@@ -123,6 +197,7 @@ class SearchConfig:
     population: int = 24
     name: str = "explore"
     space: List[Dimension] = field(default_factory=list)
+    confirm: Optional[ConfirmConfig] = None
 
 
 def _dimension(i: int, raw: Any, base: Dict[str, Any], cfg: ExploreConfig, catalogue: Catalogue) -> Dimension:
@@ -140,6 +215,9 @@ def _dimension(i: int, raw: Any, base: Dict[str, Any], cfg: ExploreConfig, catal
             ref = (base.get("parts") or {}).get(slot)
             ref = ref.get("part") if isinstance(ref, dict) else ref
             category = (catalogue.get(ref) or {}).get("category") if isinstance(ref, str) else None
+            if not len(catalogue):
+                raise CadConfigError(f"{where}: slot {slot} draws its parts from the catalogue, and none is "
+                                     "configured (cad.explore.catalogue); a parameter search lists only params")
             if not (spec and (spec.category or spec.choices is not None)) and not category:
                 raise CadConfigError(f"{where}: slot {slot} has no category (configure slots.{slot}.category, "
                                      "put a catalogue part in it in the base design, or list choices)")
@@ -206,7 +284,8 @@ def search_config(cfg: ExploreConfig, catalogue: Catalogue, **overrides: Any) ->
     keys = [d.key for d in space]
     if len(set(keys)) != len(keys):
         raise CadConfigError(f"cad.explore.search.space names something twice: {keys}")
-    return SearchConfig(base=base_path, sampler=sampler, space=space, name=str(raw.get("name") or "explore"), **ints)
+    return SearchConfig(base=base_path, sampler=sampler, space=space, name=str(raw.get("name") or "explore"),
+                        confirm=confirm_config(raw.get("confirm"), cfg), **ints)
 
 
 # ----------------------------------------------------------------------------- samplers: ask for a choice, tell the result
@@ -363,6 +442,15 @@ def base_missing(base: Dict[str, Any], catalogue: Catalogue, cfg: ExploreConfig)
 
 
 FINGERPRINT = "search.json"
+
+
+def _evaluator_identity(cfg: ExploreConfig, spec: Optional[EvaluatorSpec]) -> Optional[Dict[str, Any]]:
+    """What an evaluator's results depend on, as far as cad-agent can tell: its argv or function, its timeout, and a
+    hash of each of its source files."""
+    if spec is None:
+        return None
+    return {"spec": spec.describe(), "timeout_s": spec.timeout_s,
+            "files": {str(f): hashlib.sha256(f.read_bytes()).hexdigest() for f in _evaluator_files(cfg, spec)}}
 _WHAT = {"objectives": "objectives", "constraints": "constraints", "currency": "currency", "space": "search space",
          "slots": "slot settings", "base": "base design", "evaluator": "evaluator", "parts": "catalogue parts"}
 
@@ -371,9 +459,10 @@ def _digest(value: Any) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True, default=str).encode()).hexdigest()[:16]
 
 
-def _evaluator_files(cfg: ExploreConfig) -> List[Path]:
-    """The evaluator's own source files, as far as they can be told: the Python file, or the files a command names."""
-    spec = cfg.evaluator
+def _evaluator_files(cfg: ExploreConfig, spec: Optional[EvaluatorSpec] = None) -> List[Path]:
+    """The evaluator's own source files, as far as they can be told: the Python file, or the files a command names.
+    ``spec`` defaults to the search's evaluator."""
+    spec = cfg.evaluator if spec is None else spec
     if spec is None:
         return []
     if spec.command:
@@ -395,10 +484,7 @@ def fingerprint(cfg: ExploreConfig, catalogue: Catalogue, sc: "SearchConfig", ba
         ref = v if isinstance(v, str) else v.get("part") if isinstance(v, dict) else None
         if ref:
             ids.add(ref)
-    evaluator = None
-    if cfg.evaluator is not None:
-        evaluator = {"spec": cfg.evaluator.describe(), "timeout_s": cfg.evaluator.timeout_s,
-                     "files": {str(f): hashlib.sha256(f.read_bytes()).hexdigest() for f in _evaluator_files(cfg)}}
+    evaluator = _evaluator_identity(cfg, cfg.evaluator)
     inputs = {
         "objectives": [(o.metric, o.goal) for o in cfg.objectives],
         "constraints": [(c.metric, c.min, c.max) for c in cfg.constraints],
@@ -475,15 +561,20 @@ def read_records(path: Path) -> List[Dict[str, Any]]:
 
 def run_search(cfg: ExploreConfig, catalogue: Catalogue, evaluator: Optional[Evaluator], *, trials: Optional[int] = None,
                workers: Optional[int] = None, sampler: Optional[str] = None, seed: Optional[int] = None,
-               fresh: bool = False, progress: Callable[[str], None] = print, board_seconds: float = 2.0) -> Dict[str, Any]:
+               fresh: bool = False, progress: Callable[[str], None] = print, board_seconds: float = 2.0,
+               confirm: bool = True, confirm_evaluator: Optional[Evaluator] = None, python: str = "") -> Dict[str, Any]:
     """Run (or continue) the search; returns a summary with the leaderboard paths. The leaderboard is rewritten as
-    trials finish, at most every ``board_seconds``, and once more at the end."""
+    trials finish, at most every ``board_seconds``, and once more at the end.
+
+    With ``search.confirm`` configured the leaders are then confirmed (``confirm_leaders``); ``confirm=False`` skips
+    that for this run, and the leaderboard still uses the confirmations made earlier. ``confirm_evaluator`` replaces
+    the configured one (tests); otherwise it is loaded from the config, with ``python`` as a command's ``{python}``."""
     sc = search_config(cfg, catalogue, trials=trials, workers=workers, sampler=sampler, seed=seed)
     out = cfg.out / "search"
     trials_dir, log, db = out / "trials", out / "trials.jsonl", out / "study.db"
     if fresh:
         shutil.rmtree(trials_dir, ignore_errors=True)
-        for p in (log, db, out / FINGERPRINT, out / "leaderboard.json", out / "leaderboard.html"):
+        for p in (log, db, out / FINGERPRINT, out / CONFIRM_LOG, out / "leaderboard.json", out / "leaderboard.html"):
             p.unlink(missing_ok=True)
     trials_dir.mkdir(parents=True, exist_ok=True)
     records = read_records(log)
@@ -491,6 +582,13 @@ def run_search(cfg: ExploreConfig, catalogue: Catalogue, evaluator: Optional[Eva
     fp = fingerprint(cfg, catalogue, sc, base)
     check_fingerprint(out / FINGERPRINT, fp, len(records))
     (out / FINGERPRINT).write_text(json.dumps(fp, indent=1) + "\n")
+    cc = sc.confirm
+    confirmed = read_confirmations(out / CONFIRM_LOG, confirm_digest(cfg, cc)) if cc else {}
+    if cc and confirm and confirm_evaluator is None:     # loaded now, so a bad config stops before the long search
+        confirm_evaluator = load_evaluator(cc.spec, cfg.root, python)
+
+    def board() -> Dict[str, Any]:
+        return write_leaderboard(cfg, records, out, confirmed, cc)
     cache: Dict[str, Dict[str, Any]] = {}
     for r in records:
         if r.get("evaluation", {}).get("verdict") != "error" and not r.get("duplicate_of"):
@@ -580,7 +678,7 @@ def run_search(cfg: ExploreConfig, catalogue: Catalogue, evaluator: Optional[Eva
                     # rewritten as trials finish, but never more than a tenth of the time, so workers are not kept waiting
                     if time.monotonic() - last_board >= max(board_seconds, 10 * board_cost):
                         t0 = time.monotonic()
-                        write_leaderboard(cfg, records, out)
+                        board()
                         last_board = time.monotonic()
                         board_cost = last_board - t0
         except KeyboardInterrupt:
@@ -591,7 +689,7 @@ def run_search(cfg: ExploreConfig, catalogue: Catalogue, evaluator: Optional[Eva
             for _, handle, _ in (w for ws in waiting.values() for w in ws):
                 smp.abandon(handle)
             stopped = kill_running_evaluators()    # they run in their own session: Ctrl-C does not reach them
-            write_leaderboard(cfg, records, out)
+            board()
             python_left = len(in_flight) - stopped     # Python evaluators cannot be stopped from outside
             progress(f"stopping: the leaderboard has the {len(records)} finished trials"
                      + (f"; waiting for {python_left} running Python evaluation(s) (Ctrl-C again to stop now)"
@@ -599,22 +697,192 @@ def run_search(cfg: ExploreConfig, catalogue: Catalogue, evaluator: Optional[Eva
             pool.shutdown(wait=False, cancel_futures=True)
     finally:
         pool.shutdown(wait=True)
-    comp = write_leaderboard(cfg, records, out)
+    new_confirmed = 0
+    if cc and confirm and not interrupted:
+        new_confirmed, interrupted = confirm_leaders(cfg, catalogue, sc, records, out, confirm_evaluator, confirmed,
+                                                     board, progress)
+    comp = board()
+    summary = None
+    if cc:
+        flagged = [d for d in comp["designs"] if (d.get("confirm") or {}).get("flag")]
+        summary = {"evaluator": cc.describe(), "top": cc.top, "tolerance_pct": cc.tolerance_pct, "new": new_confirmed,
+                   "confirmed": comp["confirm"]["confirmed"], "ran": bool(confirm),
+                   "leaders_confirmed": comp["confirm"]["leaders_confirmed"],
+                   "flagged": [f"{d['name']}: {'; '.join(d['confirm']['reasons'])}" for d in flagged]}
     return {"trials": len(records), "new": new, "evaluated": new - repeats, "repeats": repeats,
             "seconds": round(time.monotonic() - started, 1),
             "feasible": comp["summary"]["feasible"], "pareto": comp["summary"]["pareto"],
             "errors": comp["summary"]["errors"], "interrupted": interrupted, "sampler": sc.sampler,
             "leaderboard": str(out / "leaderboard.html"), "json": str(out / "leaderboard.json"),
-            "best": [f"{d['name']}: {describe_choice(d.get('choice') or {})}" for d in comp["designs"] if d.get("pareto")][:10]}
+            "best": [f"{d['name']}: {describe_choice(d.get('choice') or {})}" for d in comp["designs"] if d.get("pareto")][:10],
+            "confirm": summary}
 
 
-def write_leaderboard(cfg: ExploreConfig, records: List[Dict[str, Any]], out: Path) -> Dict[str, Any]:
+def write_leaderboard(cfg: ExploreConfig, records: List[Dict[str, Any]], out: Path,
+                      confirmed: Optional[Dict[int, Dict[str, Any]]] = None,
+                      confirm: Optional[ConfirmConfig] = None) -> Dict[str, Any]:
     """Rank every distinct trial (repeats of a combination are left out) and write the leaderboard. Its JSON keeps
-    each trial's metrics, checks and BOM totals; the full evaluations stay in trials.jsonl."""
+    each trial's metrics, checks and BOM totals; the full evaluations stay in trials.jsonl. A trial in ``confirmed``
+    (trial number -> its ``confirm.jsonl`` record) is ranked on its confirmed evaluation (``confirmed_evaluation``)."""
     # finite_or_none: trials.jsonl written before NaN checks existed may hold NaN, which strict JSON refuses
-    evaluations = [finite_or_none(r["evaluation"]) for r in records if not r.get("duplicate_of")]
+    evaluations = []
+    for r in records:
+        if r.get("duplicate_of"):
+            continue
+        ev = finite_or_none(r["evaluation"])
+        c = (confirmed or {}).get(r["trial"]) if confirm is not None else None
+        if c is not None:
+            ev = confirmed_evaluation(ev, finite_or_none(c["evaluation"]), cfg, confirm.tolerance_pct,
+                                      str(c.get("evaluator") or confirm.describe()))
+        evaluations.append(ev)
     comp = comparison(evaluations, cfg, kind="search")
     comp["summary"]["repeats"] = len(records) - len(evaluations)
     comp["records"] = "trials.jsonl"
+    if confirm is not None:
+        done = [d for d in comp["designs"] if d.get("confirm")]
+        leaders = [d for d in comp["designs"] if d.get("feasible")][:confirm.top]
+        comp["confirm"] = {"evaluator": confirm.describe(), "top": confirm.top, "tolerance_pct": confirm.tolerance_pct,
+                           "limit": confirm.limit, "records": CONFIRM_LOG, "confirmed": len(done),
+                           "flagged": sum(1 for d in done if d["confirm"]["flag"]),
+                           "leaders_confirmed": sum(1 for d in leaders if d.get("confirm") and not d["confirm"]["errors"])}
+        comp["summary"].update(confirmed=len(done), flagged=comp["confirm"]["flagged"])
+        comp["notes"].append(
+            f"The first {confirm.top} feasible trials are evaluated again with {confirm.describe()} and ranked on those "
+            f"confirmed values; the others keep their screening values, which may be off by as much as the confirmed "
+            f"ones moved. A change of more than {confirm.tolerance_pct:g} % in an objective or constraint is flagged.")
     write_comparison(comp, out, "leaderboard.json", "leaderboard.html", cards=False, slim_json=True)
     return comp
+
+
+# ----------------------------------------------------------------------------- confirming the leaders
+
+def confirm_digest(cfg: ExploreConfig, cc: Optional[ConfirmConfig]) -> str:
+    """What a confirmation was computed with; a confirmation made with anything else is not used."""
+    return _digest(_evaluator_identity(cfg, cc.spec)) if cc else ""
+
+
+def read_confirmations(path: Path, digest: str) -> Dict[int, Dict[str, Any]]:
+    """Trial number -> its latest ``confirm.jsonl`` record made with the current confirm evaluator (``digest``)."""
+    out: Dict[int, Dict[str, Any]] = {}
+    for rec in read_records(path):
+        if rec.get("confirm") == digest and isinstance(rec.get("trial"), int) and isinstance(rec.get("evaluation"), dict):
+            out[rec["trial"]] = rec
+    return out
+
+
+def change_pct(screen: Optional[float], confirmed: Optional[float]) -> Optional[float]:
+    """The confirmed value's change from the screening value, in percent of the screening value; None when either is
+    missing, or when the screening value is 0 and the confirmed one is not (no percentage says how far that moved)."""
+    if screen is None or confirmed is None:
+        return None
+    if confirmed == screen:
+        return 0.0
+    return None if screen == 0 else (confirmed - screen) / abs(screen) * 100.0
+
+
+def confirmed_evaluation(screen: Dict[str, Any], confirmed: Dict[str, Any], cfg: ExploreConfig,
+                         tolerance_pct: float = DEFAULT_TOLERANCE_PCT, evaluator: str = "") -> Dict[str, Any]:
+    """The trial as the leaderboard ranks it once confirmed: the confirmed evaluation (its metrics, checks and verdict)
+    under the trial's own id and name, or the screening one when the confirmation could not be evaluated. ``confirm``
+    holds both values of every objective and constraint metric, their change in percent, and ``flag`` with its
+    ``reasons``: a change of more than ``tolerance_pct``, a value that appeared or went, a trial that became feasible
+    or infeasible, or a confirmation that failed. A flag adds a ``warn`` check."""
+    names = list(dict.fromkeys([o.metric for o in cfg.objectives] + [c.metric for c in cfg.constraints]))
+    failed = confirmed.get("verdict") == "error"
+    values: Dict[str, Dict[str, Any]] = {}
+    flagged: List[str] = []
+    reasons: List[str] = []
+    for name in names:
+        a = value_of(screen.get("metrics") or {}, name)
+        b = value_of(confirmed.get("metrics") or {}, name)
+        pct = change_pct(a, b)
+        values[name] = {"screen": a, "confirmed": b, "change_pct": None if pct is None else round(pct, 2)}
+        if failed or (a is None and b is None):
+            continue
+        if a is None or b is None or pct is None or abs(pct) > tolerance_pct:
+            flagged.append(name)
+            shown = "" if pct is None else f" ({pct:+.1f} %)"
+            reasons.append(f"{name} {'—' if a is None else f'{a:.4g}'} → {'—' if b is None else f'{b:.4g}'}{shown}")
+    if failed:
+        reasons.append("the confirmation could not be evaluated (" + "; ".join(confirmed.get("errors") or ["error"])[:300]
+                       + "), so the trial is ranked on its screening values")
+    elif feasible(screen) != feasible(confirmed):
+        reasons.append(f"{'feasible' if feasible(confirmed) else 'infeasible'} once confirmed ({confirmed.get('verdict')})")
+    block = {"evaluator": evaluator, "tolerance_pct": tolerance_pct, "verdict": confirmed.get("verdict"),
+             "screen_verdict": screen.get("verdict"), "values": values, "flagged": flagged, "flag": bool(reasons),
+             "reasons": reasons, "errors": list(confirmed.get("errors") or []) if failed else []}
+    merged = dict(screen if failed else confirmed)
+    merged.update(id=screen.get("id"), name=screen.get("name"), file=screen.get("file"), confirm=block)
+    if "choice" in screen:
+        merged["choice"] = screen["choice"]
+    if reasons:
+        checks = list(merged.get("checks") or []) + [{
+            "id": "confirm", "level": "warn",
+            "text": f"Confirmed with {evaluator or 'the confirm evaluator'}: {'; '.join(reasons)}."}]
+        merged.update(checks=checks, counts=check_counts(checks), verdict=verdict(checks, merged.get("errors") or []))
+    return merged
+
+
+def confirm_leaders(cfg: ExploreConfig, catalogue: Catalogue, sc: SearchConfig, records: List[Dict[str, Any]],
+                    out: Path, evaluator: Optional[Evaluator], confirmed: Dict[int, Dict[str, Any]],
+                    board: Callable[[], Dict[str, Any]], progress: Callable[[str], None] = print) -> Tuple[int, bool]:
+    """Evaluate the first ``top`` feasible trials of the leaderboard again with the confirm evaluator, re-rank, and
+    repeat while that brings unconfirmed trials into the top, up to ``limit`` evaluations. A trial already confirmed
+    with the same evaluator is not evaluated again (one whose confirmation failed is, on a later run). Each result is
+    appended to ``confirm.jsonl`` and added to ``confirmed``. Returns ``(evaluations, interrupted)``."""
+    cc = sc.confirm
+    if cc is None:
+        return 0, False
+    digest, log = confirm_digest(cfg, cc), out / CONFIRM_LOG
+    by_id = {r["id"]: r for r in records if not r.get("duplicate_of")}
+    base = load_design(sc.base)
+    base_name = sc.base.relative_to(cfg.root).as_posix() if sc.base.is_relative_to(cfg.root) else str(sc.base)
+    tried: set = set()                           # this run: a failed confirmation is not retried until the next one
+    new = 0
+    pool = ThreadPoolExecutor(max_workers=sc.workers)
+    futures: Dict[Future, Dict[str, Any]] = {}
+    try:
+        while new < cc.limit:
+            leaders = [d for d in board()["designs"] if d.get("feasible")][:cc.top]
+            todo = [by_id[d["id"]] for d in leaders if d["id"] in by_id]
+            todo = [r for r in todo if r["trial"] not in tried
+                    and (r["trial"] not in confirmed or confirmed[r["trial"]]["evaluation"].get("verdict") == "error")]
+            todo = todo[:cc.limit - new]
+            if not todo:
+                break
+            for rec in todo:
+                n = rec["trial"]
+                tried.add(n)
+                design = trial_design(base, sc.space, rec["choice"], n, base_name)
+                futures[pool.submit(evaluate_design, design, catalogue, cfg, evaluator, f"{rec['id']}-confirm",
+                                    rec.get("design"), out / "trials" / f"trial-{n:05d}.json")] = rec
+            while futures:
+                done, _ = wait(list(futures), return_when=FIRST_COMPLETED)
+                for fut in done:
+                    rec = futures.pop(fut)
+                    ev = fut.result()
+                    ev["choice"] = rec["choice"]
+                    crec = {"trial": rec["trial"], "id": rec["id"], "confirm": digest, "evaluator": cc.describe(),
+                            "evaluation": ev}
+                    with open(log, "a") as fh:
+                        fh.write(json.dumps(crec, default=json_default) + "\n")
+                    confirmed[rec["trial"]] = crec
+                    new += 1
+                    merged = confirmed_evaluation(finite_or_none(rec["evaluation"]), finite_or_none(ev), cfg,
+                                                  cc.tolerance_pct, cc.describe())
+                    c = merged["confirm"]
+                    moved = [f"{m} {v['screen']:.4g} → {v['confirmed']:.4g} ({v['change_pct']:+.1f} %)"
+                             for m, v in c["values"].items() if v["change_pct"] is not None]
+                    said = "; ".join(c["reasons"]) if c["flag"] else "; ".join(moved + [f"within {cc.tolerance_pct:g} %"])
+                    progress(f"  confirm trial {rec['trial']}: {ev['verdict']}  {said}")
+    except KeyboardInterrupt:
+        for fut in futures:
+            fut.cancel()
+        kill_running_evaluators()                # they run in their own session: Ctrl-C does not reach them
+        board()
+        progress(f"stopping the confirmation: {new} trial(s) confirmed this run are on the leaderboard")
+        pool.shutdown(wait=False, cancel_futures=True)
+        return new, True
+    finally:
+        pool.shutdown(wait=True)
+    return new, False

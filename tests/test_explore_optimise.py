@@ -5,16 +5,19 @@ from __future__ import annotations
 
 import json
 import random
+import sys
 
 import pytest
 
 from cadagent.simulation.explore.config import Constraint
 from cadagent.simulation.explore.evaluate import load_evaluator
-from cadagent.simulation.explore.optimise import (Dimension, base_choice, constraint_values, read_records, run_search,
-                                                  search_config, trial_design)
+from cadagent.simulation.explore.optimise import (Dimension, base_choice, change_pct, confirmed_evaluation,
+                                                  constraint_values, read_records, run_search, search_config,
+                                                  trial_design)
 from cadagent.project import CadConfigError
 
-from .explore_fixtures import enclosure_config, restore_sys_path, write_enclosure  # noqa: F401 (a fixture)
+from .explore_fixtures import (BRACKET, enclosure_config, restore_sys_path, write_bracket,  # noqa: F401 (a fixture)
+                               write_enclosure)
 
 pytestmark = pytest.mark.usefixtures("restore_sys_path")
 
@@ -62,6 +65,14 @@ def test_dimensions():
     ({"space": [{"slot": "fan", "range": 3}]}, "unknown keys"),
     ({"budget": 3}, "unknown keys"),
     ({"base": "designs/broken.json"}, "search.base: broken.json: unreadable"),
+    ({"confirm": {"mesh": 3}}, "confirm: unknown keys"),
+    ({"confirm": {"top": 2}}, "needs 'args'"),
+    ({"confirm": {"args": ["--mesh", 3]}}, "is a Python function"),
+    ({"confirm": {"top": 0, "evaluator": "tools/evaluate.py:evaluate"}}, "top must be a whole number ≥ 1"),
+    ({"confirm": {"top": 3, "limit": 2, "evaluator": "tools/evaluate.py:evaluate"}}, r"limit must be a whole number ≥ 3"),
+    ({"confirm": {"tolerance_pct": -1, "evaluator": "tools/evaluate.py:evaluate"}}, "tolerance_pct must be"),
+    ({"confirm": {"args": [["x"]], "evaluator": {"command": ["x"]}}}, "args must be a list"),
+    ({"confirm": [3]}, "confirm must be a mapping"),
 ])
 def test_search_config_errors(tmp_path, search, fragment):
     root, cfg, cat, fn = _setup(tmp_path, **search)
@@ -255,3 +266,92 @@ def test_the_leaderboard_json_is_slim(tmp_path):
     assert board["records"] == "trials.jsonl" and set(first["bom"]) == {"currency", "totals"}
     assert "lines" in read_records(cfg.out / "search" / "trials.jsonl")[0]["evaluation"]["bom"]
     assert "<h3>Bill of materials" in (cfg.out / "search" / "leaderboard.html").read_text(), "the page still has them"
+
+
+def _bracket(tmp_path, config=BRACKET):
+    root = write_bracket(tmp_path, config)
+    cfg, cat = enclosure_config(root)
+    assert len(cat) == 0, "a parameter search has no catalogue"
+    return root, cfg, cat, load_evaluator(cfg.evaluator, root, sys.executable)
+
+
+def _board(cfg):
+    board = json.loads((cfg.out / "search" / "leaderboard.json").read_text())
+    return board, {(d["choice"]["param:wall_mm"], d["choice"]["param:corner"]): d for d in board["designs"]}
+
+
+def test_confirm_reranks_the_leaders_on_a_finer_mesh_and_flags_the_artefacts(tmp_path):
+    """At 4 mm a sharp corner reads 0.5 too high. Confirming the top 2 at 3 mm drops the leader (4 mm wall, sharp) below
+    the filleted one, which brings the next sharp trial into the top 2; that one is confirmed too and fails the
+    constraint. The leaderboard ranks on the confirmed values and keeps the screening ones beside them."""
+    root, cfg, cat, fn = _bracket(tmp_path)
+    seen = []
+    r = run_search(cfg, cat, fn, trials=10, progress=seen.append)
+    assert r["trials"] == 6 and r["confirm"]["new"] == 3 and r["confirm"]["leaders_confirmed"] == 2
+    board, by = _board(cfg)
+    screen = sorted(read_records(cfg.out / "search" / "trials.jsonl"),
+                    key=lambda rec: -rec["evaluation"]["metrics"]["safety_factor"]["value"])
+    assert [rec["choice"]["param:corner"] for rec in screen[:2]] == ["sharp", "round"], "at 4 mm, sharp leads"
+    leaders = [(d["choice"]["param:wall_mm"], d["choice"]["param:corner"]) for d in board["designs"][:2]]
+    assert leaders == [(4, "round"), (4, "sharp")], "ranked on the confirmed values"
+    lead = by[(4, "round")]
+    assert lead["confirm"]["values"]["safety_factor"] == {"screen": 2.4, "confirmed": 2.3952, "change_pct": -0.2}
+    assert not lead["confirm"]["flag"] and lead["verdict"] == "ok" and lead["metrics"]["mesh_mm"]["value"] == 3.0
+    assert lead["summary"].endswith("-confirm"), "{id} of a confirmation is the trial's id + -confirm"
+    sharp = by[(4, "sharp")]
+    assert sharp["confirm"]["values"]["safety_factor"] == {"screen": 2.7, "confirmed": 2.2, "change_pct": -18.52}
+    assert sharp["confirm"]["flag"] and sharp["confirm"]["flagged"] == ["safety_factor"] and sharp["verdict"] == "warn"
+    assert "safety_factor 2.7 → 2.2 (-18.5 %)" in next(c["text"] for c in sharp["checks"] if c["id"] == "confirm")
+    fallen = by[(3, "sharp")]
+    assert not fallen["feasible"] and fallen["confirm"]["reasons"][-1] == "infeasible once confirmed (fail)"
+    assert "confirm" not in by[(3, "round")] and by[(3, "round")]["rank"] == 3, "unconfirmed: screening values"
+    assert board["confirm"]["confirmed"] == 3 and board["summary"]["flagged"] == 2
+    assert any(m.startswith("  confirm trial") and "-18.5 %" in m for m in seen)
+    page = (cfg.out / "search" / "leaderboard.html").read_text()
+    assert ">Confirmed</button>" in page and "was 2.7" in page and "<h3>Confirmation</h3>" in page
+    assert len(read_records(cfg.out / "search" / "confirm.jsonl")) == 3
+
+    r = run_search(cfg, cat, fn, trials=5, progress=lambda m: None)
+    assert (r["new"], r["confirm"]["new"]) == (0, 0), "nothing new to search or to confirm"
+    cfg.search["confirm"]["tolerance_pct"] = 20
+    r = run_search(cfg, cat, fn, trials=5, progress=lambda m: None)
+    board, by = _board(cfg)
+    assert r["confirm"]["new"] == 0 and not by[(4, "sharp")]["confirm"]["flag"], "the tolerance applies without a rerun"
+    assert by[(3, "sharp")]["confirm"]["flag"], "a trial that became infeasible stays flagged"
+    cfg.search["confirm"]["args"] = ["--mesh", 2.5]
+    r = run_search(cfg, cat, fn, trials=5, confirm=False, progress=lambda m: None)
+    assert r["confirm"]["new"] == 0 and r["confirm"]["confirmed"] == 0, "made with other args: not used, not rerun"
+    r = run_search(cfg, cat, fn, trials=5, progress=lambda m: None)
+    board, by = _board(cfg)
+    assert r["confirm"]["new"] == 4 and by[(4, "round")]["metrics"]["mesh_mm"]["value"] == 2.5
+    assert [(d["choice"]["param:wall_mm"], d["choice"]["param:corner"]) for d in board["designs"][:2]] == \
+        [(4, "round"), (3, "round")], "at 2.5 mm (4, sharp) drops below (3, round), which is then confirmed as well"
+    run_search(cfg, cat, fn, trials=2, fresh=True, confirm=False, progress=lambda m: None)
+    assert not (cfg.out / "search" / "confirm.jsonl").exists(), "--fresh starts the confirmations over too"
+
+
+def test_a_failed_confirmation_keeps_the_screening_values_and_is_flagged(tmp_path):
+    root, cfg, cat, fn = _bracket(tmp_path)
+    cfg.search["confirm"] = {"top": 1, "evaluator": {"command": [sys.executable, "-c", "import sys; sys.exit(4)"]}}
+    r = run_search(cfg, cat, fn, trials=6, progress=lambda m: None)
+    board, by = _board(cfg)
+    lead = board["designs"][0]
+    assert (lead["choice"]["param:wall_mm"], lead["choice"]["param:corner"]) == (4, "sharp"), "screening values rank"
+    assert lead["confirm"]["flag"] and "exit code 4" in lead["confirm"]["errors"][0] and lead["verdict"] == "warn"
+    assert "ranked on its screening values" in lead["confirm"]["reasons"][0]
+    assert r["confirm"]["new"] == 1 and r["confirm"]["leaders_confirmed"] == 0, "tried once this run, not again"
+    assert run_search(cfg, cat, fn, trials=1, progress=lambda m: None)["confirm"]["new"] == 1, "retried on the next"
+
+
+def test_change_pct_and_flags_at_the_edges(tmp_path):
+    root, cfg, cat, fn = _bracket(tmp_path)
+    assert change_pct(2.0, 2.0) == 0.0 and change_pct(2.0, 1.5) == -25.0 and change_pct(-2.0, -1.0) == 50.0
+    assert change_pct(0.0, 0.0) == 0.0 and change_pct(0.0, 0.1) is None and change_pct(None, 1.0) is None
+    ev = lambda v, verdict="ok": {"id": "trial-00001", "name": "trial 1", "verdict": verdict,  # noqa: E731
+                                  "metrics": {"safety_factor": {"value": v}}, "checks": [], "errors": []}
+    within = confirmed_evaluation(ev(2.0), ev(2.09), cfg, 5.0, "fine")
+    assert not within["confirm"]["flag"] and within["verdict"] == "ok"
+    from_zero = confirmed_evaluation(ev(0.0), ev(0.1), cfg, 5.0, "fine")
+    assert from_zero["confirm"]["flagged"] == ["safety_factor"] and from_zero["confirm"]["reasons"] == ["safety_factor 0 → 0.1"]
+    gone = confirmed_evaluation(ev(2.0), ev(None), cfg, 5.0, "fine")
+    assert gone["confirm"]["flagged"] == ["safety_factor"] and gone["confirm"]["values"]["safety_factor"]["confirmed"] is None

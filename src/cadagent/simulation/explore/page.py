@@ -2,7 +2,8 @@
 
 Sections: the objectives and the honesty notes; a trade-off chart of the first two objectives (the Pareto front in
 the accent colour, other feasible designs grey, infeasible ones hollow); the leaderboard (sortable; the chart's table
-view); and per design its checks, bill of materials, parameters and one-part swaps.
+view); and per design its checks, bill of materials, parameters and one-part swaps. A search with ``confirm`` adds a
+Confirmed column, the screening value under each confirmed one, and a confirmation table per confirmed trial.
 """
 
 from __future__ import annotations
@@ -273,12 +274,56 @@ def _chart(comp: Dict[str, Any]) -> str:
 
 # ----------------------------------------------------------------------------- leaderboard and details
 
+def _confirm_cell(ev: Dict[str, Any]) -> str:
+    """The Confirmed column: the largest change of an objective or constraint, a warning pill when flagged."""
+    c = ev.get("confirm")
+    if not c:
+        return '<td class="num dim" data-v="">—</td>'
+    changes = [v["change_pct"] for v in (c.get("values") or {}).values() if v.get("change_pct") is not None]
+    worst = max(changes, key=abs) if changes else 0.0
+    if c.get("errors"):
+        text, sort = "failed", 1e9
+    elif c.get("flag") and not changes:
+        text, sort = "changed", 1e8
+    else:
+        text, sort = f"{worst:+.1f} %".replace("-", "−"), abs(worst)
+    tip = "; ".join(c.get("reasons") or []) or f"every objective and constraint within {c.get('tolerance_pct', 0):g} %"
+    return (f'<td class="num" data-v="{sort}" title="{_e(tip)}"><span class="pill {"warn" if c.get("flag") else "ok"}">'
+            f'<i></i>{_e(text)}</span></td>')
+
+
+def _confirmation(ev: Dict[str, Any], comp: Dict[str, Any]) -> str:
+    c = ev.get("confirm")
+    if not c:
+        return ""
+    cols = comp["metrics"]
+    rows = []
+    for name, v in (c.get("values") or {}).items():
+        col = cols.get(name, {"label": name, "unit": "", "digits": None})
+        show = lambda x: "—" if x is None else M.format_value(x, col.get("unit", ""), col.get("digits"))   # noqa: E731
+        pct = "—" if v.get("change_pct") is None else f'{v["change_pct"]:+.1f} %'
+        flag = ' class="num lvl-fail"' if name in (c.get("flagged") or []) else ' class="num"'
+        rows.append(f'<tr><td>{_e(col.get("label", name))}</td><td class="num">{_e(show(v.get("screen")))}</td>'
+                    f'<td class="num">{_e(show(v.get("confirmed")))}</td><td{flag}>{_e(pct)}</td></tr>')
+    basis = ("Ranked on its screening values: the confirmation could not be evaluated." if c.get("errors")
+             else "Ranked on the confirmed values.")
+    return (f'<h3>Confirmation</h3><p class="meta">Evaluated again with <code>{_e(c.get("evaluator"))}</code>: '
+            f'{_e(c.get("screen_verdict"))} → {_e(c.get("verdict"))}. {basis} A change of more than '
+            f'{c.get("tolerance_pct", 0):g} % is flagged (the checks above say why).</p>'
+            '<div class="tablewrap"><table><thead><tr><th>Metric</th><th class="num">Screening</th>'
+            f'<th class="num">Confirmed</th><th class="num">Change</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>')
+
+
 def _leaderboard(comp: Dict[str, Any]) -> str:
     cols = comp["metrics"]
     goals = {o["metric"]: o["goal"] for o in comp.get("objectives") or []}
     designs = comp["designs"][:MAX_ROWS]
+    conf = comp.get("confirm")
     head = ['<th aria-sort="none" class="num"><button>#</button></th>', '<th aria-sort="none"><button>Design</button></th>',
             '<th aria-sort="none"><button>Verdict</button></th>']
+    if conf:
+        head.append(f'<th aria-sort="none" class="num" title="largest change of an objective or constraint when '
+                    f'evaluated again with {_e(conf.get("evaluator"))}"><button>Confirmed</button></th>')
     for name, col in cols.items():
         unit = f" ({col['unit']})" if col.get("unit") else ""
         goal = f' <span class="goal">· {goals[name]}</span>' if name in goals else ""
@@ -299,11 +344,18 @@ def _leaderboard(comp: Dict[str, Any]) -> str:
         cells = [rank_cell, f'<td data-v="{_e(str(ev.get("name")).lower())}"><a href="#{_e(anchor(ev["id"]))}">{_e(ev.get("name"))}</a>{sub}</td>',
                  f'<td data-v="{["ok", "warn", "fail", "error"].index(ev.get("verdict", "error")) if ev.get("verdict") in ("ok", "warn", "fail", "error") else 9}">'
                  f'{_pill(ev.get("verdict", "error"))}</td>']
+        if conf:
+            cells.append(_confirm_cell(ev))
+        confirmed = (ev.get("confirm") or {}) if not (ev.get("confirm") or {}).get("errors") else {}
         for name, col in cols.items():
             m = (ev.get("metrics") or {}).get(name)
             v = _value(ev, name)
             lvl = ' class="num lvl-fail" title="constraint not met"' if m and m.get("level") == "fail" else ' class="num"'
-            cells.append(f'<td{lvl} data-v="{"" if v is None else v}">{_e(_fmt(m, col, with_unit=False))}</td>')
+            was = (confirmed.get("values") or {}).get(name) or {}
+            before = M.format_value(was["screen"], "", col.get("digits")) if was.get("screen") is not None else ""
+            sub = (f'<br><span class="dim" title="the screening value">was {_e(before)}</span>'
+                   if before and before != M.format_value(was.get("confirmed"), "", col.get("digits")) else "")
+            cells.append(f'<td{lvl} data-v="{"" if v is None else v}">{_e(_fmt(m, col, with_unit=False))}{sub}</td>')
         c = ev.get("counts") or {}
         cells.append(f'<td class="num" data-v="{c.get("fail", 0) * 1000 + c.get("warn", 0)}">'
                      f'{c.get("ok", 0)} ok · {c.get("warn", 0)} warn · {c.get("fail", 0)} fail</td>')
@@ -315,7 +367,11 @@ def _leaderboard(comp: Dict[str, Any]) -> str:
             '<p class="meta">★ the Pareto front (rank 1): no feasible design is at least as good on every objective and better on one. '
             '≥ marks a total that leaves out parts without a price or mass. Such a total is a lower bound and never counts as '
             'better than a value it might exceed (unless both leave out the same parts), so a ≥ beside a rank means the rank '
-            'rests on one. est. marks a value that rests on estimates.</p>')
+            'rests on one. est. marks a value that rests on estimates.</p>'
+            + (f'<p class="meta">Confirmed: the first {conf["top"]} feasible trials were evaluated again with '
+               f'<code>{_e(conf["evaluator"])}</code> and are ranked on those values; "was" is the screening value. '
+               f'The column shows the largest change of an objective or constraint, flagged over '
+               f'{conf["tolerance_pct"]:g} %. Unconfirmed trials keep their screening values.</p>' if conf else ""))
 
 
 def _source(url: Any) -> str:
@@ -330,7 +386,7 @@ def _source(url: Any) -> str:
 
 def _bom(ev: Dict[str, Any], currency: str) -> str:
     b = ev.get("bom")
-    if not b:
+    if not b or not b.get("lines"):          # nothing bought: a parameter-only design
         return ""
     cur = currency.upper()
     rows = []
@@ -407,6 +463,7 @@ def _details(comp: Dict[str, Any]) -> str:
             + (f'<p>{_e(ev["summary"])}</p>' if ev.get("summary") else "")
             + (f'<p class="dim">{_e(ev["notes"])}</p>' if ev.get("notes") else "")
             + (f'<h3>Checks</h3><ul class="checks">{check_list}</ul>' if check_list else "")
+            + _confirmation(ev, comp)
             + _bom(ev, comp.get("currency", "usd"))
             + (f'<h3>Parameters</h3><pre>{_e(json.dumps(params, indent=1, default=json_default))}</pre>' if params else "")
             + _swaps(ev, comp) + "</details>")
@@ -429,6 +486,7 @@ def render_page(comp: Dict[str, Any]) -> str:
     head = (f'<header><p class="kicker">{kicker}</p><h1>{_e(comp["title"])}</h1>'
             f'<p class="meta">{s["designs"]} {what}{repeats} · {s["feasible"]} feasible · '
             f'{s["pareto"]} on the Pareto front' + (f' · {s["errors"]} could not be evaluated' if s.get("errors") else "")
+            + (f' · {s["confirmed"]} confirmed, {s.get("flagged", 0)} flagged' if comp.get("confirm") else "")
             + f' · evaluator: <code>{_e(comp.get("evaluator"))}</code> · {_e(comp.get("generated"))}</p>'
             f'<div class="chips">{objs}{cons}</div>'
             f'<div class="note">{"".join(f"<p>{_e(n)}</p>" for n in comp.get("notes") or [])}</div></header>')

@@ -29,6 +29,15 @@ replaced and a short hash added) for a folder of per-design outputs, and ``{pyth
 runs in the project root, in its own process group: on a timeout the evaluator and everything it started are killed,
 and so is anything it leaves running when it exits.
 
+``{result}`` becomes the path of a file (in the same private folder, not yet there) that the evaluator writes its
+JSON result to; cad-agent reads it once the command exits, and stdout is then only a log. Use it whenever the
+evaluation calls native code: gmsh, OpenCASCADE, many solvers and anything they start write to file descriptor 1
+from C, past Python's ``sys.stdout``, so ``contextlib.redirect_stdout`` does not catch them and their lines end up in
+(or after) the reply. Without ``{result}`` the reply is read from stdout: the whole output, else its last line, so
+log lines before the JSON are fine and anything after it is not. An evaluator that cannot take a file path can keep
+its stdout for the reply with ``os.dup2``: copy fd 1 for the reply, point fd 1 at stderr (``os.dup2(2, 1)``), and
+write the JSON to the copy.
+
 A crash, a non-zero exit, a timeout, output that is not JSON or a number that is not finite makes that design an
 ``error`` with the reason; it never stops the other designs.
 """
@@ -152,8 +161,10 @@ def _command_evaluator(spec: EvaluatorSpec, root: Path, python: str) -> Evaluato
             design_file.write_text(json.dumps(candidate.design, indent=1, default=json_default) + "\n")
             request = Path(tmp) / "request.json"
             request.write_text(json.dumps(candidate.request(), default=json_default))
+            result_file = Path(tmp) / "result.json"
             argv = [a.replace("{design}", str(design_file)).replace("{python}", python).replace("{id}", name)
-                    for a in spec.command]
+                    .replace("{result}", str(result_file)) for a in spec.command]
+            to_file = any("{result}" in a for a in spec.command)
             env = dict(os.environ, CAD_AGENT_PROJECT=str(root), PYTHONUNBUFFERED="1")
             # stdout and stderr go to files, not pipes: a child the evaluator leaves behind cannot hold the result up
             with open(request, "rb") as stdin, open(Path(tmp) / "stdout", "w+b") as stdout, \
@@ -178,16 +189,25 @@ def _command_evaluator(spec: EvaluatorSpec, root: Path, python: str) -> Evaluato
                 stderr.seek(0)
                 out_text = stdout.read().decode(errors="replace")
                 err_text = stderr.read().decode(errors="replace")
+            reply = result_file.read_bytes().decode(errors="replace") if to_file and result_file.is_file() else None
         if returncode != 0:
             tail = (err_text.strip().splitlines() or out_text.strip().splitlines() or [""])[-1]
             raise EvaluatorError(f"exit code {returncode}: {tail[:300]}")
+        if to_file:
+            if reply is None:
+                raise EvaluatorError("exited without writing its result to the {result} file")
+            try:
+                return json.loads(reply)
+            except ValueError:
+                raise EvaluatorError(f"the {{result}} file is not JSON: {reply.strip()[:200]!r}") from None
         out = out_text.strip()
         for text in (out, (out.splitlines() or [""])[-1]):     # the whole output, else its last line (after logs)
             try:
                 return json.loads(text)
             except ValueError:
                 continue
-        raise EvaluatorError(f"stdout is not a JSON object: {out[:200]!r}")
+        hint = " (native code such as gmsh writes to fd 1: pass {result} in the argv and write the JSON there)"
+        raise EvaluatorError(f"stdout is not a JSON object: {out[:200]!r}{hint if out else ''}")
     return run
 
 

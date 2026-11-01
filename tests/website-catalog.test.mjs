@@ -246,3 +246,17 @@ test('outside data cannot inject markup: a hostile registry entry is text on the
     execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
   }
 });
+
+test('an outside cover names what the entry is built on: its structured fields first, its description last', async () => {
+  // #185: the first free-text match used to win, so OpenFOAM was "Mesh", specify-core a "Parts library" and two
+  // build123d projects that slice their output "Slicer".
+  const want = { 'project-openfoam-opencfd-v2512': 'CFD', 'project-kd5ryn-b123d-print': 'build123d',
+    'project-ballerabdude-agent-cad-works': 'build123d', 'project-pzfreo-specify-core': null };
+  for (const [id, family] of Object.entries(want)) {
+    const it = catalog.items.find(i => i.id === id);
+    assert.ok(it, `${id} is in the catalogue`);
+    const label = (await readFile(local(it.cover), 'utf8')).match(/aria-label="([^"]*)"/)[1];
+    if (family) assert.match(label, new RegExp(`: project on ${family},`), `${id}: ${label}`);
+    else assert.doesNotMatch(label, /Parts library/, `${id}: ${label}`);
+  }
+});

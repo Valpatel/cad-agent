@@ -9,7 +9,7 @@
  * The page is plain semantic HTML that shows every entry, grouped by kind, without script; the kit's <cad-gallery>
  * adds the kind tabs, the area tree, filters, sorting and the URL state (kit/gallery.js).
  */
-import { GLYPHS, DOMAIN_GLYPH, TINT, STATUS_STYLE, FAMILIES, glyphSprite, outsideCover, pageCover, toolCover, chartCover, familyOf, shortNumber, stillFrame, isAnimated } from './catalog-art.mjs';
+import { GLYPHS, DOMAIN_GLYPH, TINT, STATUS_STYLE, FAMILIES, glyphSprite, outsideCover, pageCover, toolCover, chartCover, familyFor, shortNumber, stillFrame, isAnimated } from './catalog-art.mjs';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const slugify = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -427,7 +427,7 @@ export async function buildCatalog(ctx) {
   // Outside entries: drawn from their own data (catalog-art.mjs outsideCover).
   for (const it of items.filter(it => !it.cover)) {
     const src = it.raw || {};
-    let family = familyOf(src.kernel) || familyOf([it.name, it.what, src.use, src.role].join(' '));
+    let family = familyFor({ kernel: src.kernel, name: it.name, areas: it.areas, text: [it.what, src.use, src.role].filter(Boolean).join(' ') });
     // A benchmark's glyph is what it scores (KiCad boards, CadQuery code, meshes), else the benchmark's own bars.
     if (it.kind === 'benchmark' && (!family || ['parts', 'agent'].includes(family.key))) family = FAMILIES.find(f => f.key === 'benchmark');
     it.cover = generated(it.id, outsideCover({ kind: it.kind, family, glyphSlug: glyphOf(it), tint: TINT[tone(it)] || TINT.unplaced,

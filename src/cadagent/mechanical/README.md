@@ -36,7 +36,7 @@ flowchart TD
 | `mcmaster.py` | McMaster-Carr parts: the manufacturer's STEP and product data for a part number, normalised into a known frame |
 | `connectors.py` | Mating-connector envelopes: panel windows from the plug, then proof that the plug fits |
 | `markings.py` | One XY drawing for engraved markings and a matching SVG proof |
-| [`compliant/`](compliant/__init__.py) | Compliant features that replace parts: snap fits now, hinges and flexures next |
+| [`compliant/`](compliant/README.md) | Compliant features that replace parts: snap fits now, hinges and flexures next |
 | `motion_trace.py` | Compares rendered landmarks with CAD joint intent, without a CAD kernel |
 
 Related: [package map](../README.md) · [mcmaster-parts skill](../../../skills/mcmaster-parts/SKILL.md) ·

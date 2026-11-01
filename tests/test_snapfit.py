@@ -354,3 +354,93 @@ def test_self_locking_lead_fails_and_json_stays_valid(tmp_path):
 def test_secant_basis_says_when_it_is_held_not_interpolated():
     assert "held" in _snap(undercut_mm=0.3)["material"]["secant_basis"]          # below 0.5 %
     assert "interpolated" in _snap(undercut_mm=1.5)["material"]["secant_basis"]  # 1.25 %
+
+
+# ----------------------------------------------------------------------------- along the insertion (#165)
+
+def _example_I_engagement(**kw):
+    """The guide's Example I hook (PC, l 19, h 3.28, b 9.5, design 2, 2.4 mm undercut, 30 deg lead, mu 0.6,
+    Es 1,815 MPa) along its insertion."""
+    args = dict(length=19, section=sf.rect_section(9.5, 3.28), undercut=2.4, lead_deg=30, design=2,
+                secant_mpa=1815, friction=0.6)
+    args.update(kw)
+    return sf.engagement(**args)
+
+
+def test_engagement_peaks_at_the_guides_example_I_numbers():
+    """At the top of the lead the curve is the guide's own Example I result: about 2 % root strain, P 32.5 N and
+    W 58.5 N, the same as check_cantilever gives for that arm."""
+    e = _example_I_engagement(land_mm=1.5)
+    top = e["points"][1]
+    assert top["deflection_mm"] == pytest.approx(2.4)
+    assert top["strain"] == pytest.approx(0.02, abs=2e-4)
+    assert top["deflection_force_n"] == pytest.approx(32.5, abs=0.2)
+    assert top["mating_force_n"] == pytest.approx(58.5, abs=0.4)
+    c = sf.check_cantilever(length=19, section=sf.rect_section(9.5, 3.28), undercut=2.4, design=2, strain_allow=0.04,
+                            secant_mpa=1815, friction=0.6, lead_deg=30, root_radius=1.0)
+    assert top["strain"] == c["strain"] and top["mating_force_n"] == c["mating_force_n"]
+    assert top["deflection_force_n"] == c["deflection_force_n"] and e["peak"] == {
+        k: top[k] for k in ("deflection_mm", "strain", "deflection_force_n", "mating_force_n")}
+
+
+def test_engagement_rides_the_lead_then_the_land_then_drops():
+    e = _example_I_engagement(land_mm=1.5)
+    lead = 2.4 / math.tan(math.radians(30))
+    assert e["lead_travel_mm"] == pytest.approx(lead)
+    assert [p["phase"] for p in e["points"]] == ["lead", "lead", "land", "land", "released"]
+    assert [p["travel_mm"] for p in e["points"]] == pytest.approx([0, lead, lead, lead + 1.5, lead + 1.5])
+    assert [p["deflection_mm"] for p in e["points"]] == pytest.approx([0, 2.4, 2.4, 2.4, 0])
+    start, top, land0, land1, released = e["points"]
+    assert start["strain"] == start["deflection_force_n"] == start["mating_force_n"] == 0
+    # on the land only friction resists: the same formula at 0 deg, mu * P
+    assert land0["mating_force_n"] == land1["mating_force_n"] == pytest.approx(0.6 * top["deflection_force_n"])
+    assert sf.mating_force(top["deflection_force_n"], 0.6, 0) == pytest.approx(land0["mating_force_n"])
+    assert released["strain"] == released["mating_force_n"] == 0
+    # without a land the hook drops straight off the top of the lead
+    assert [p["phase"] for p in _example_I_engagement()["points"]] == ["lead", "lead", "released"]
+
+
+def test_engagement_is_linear_in_the_travel_on_the_lead():
+    """Halfway up the lead, every quantity is half its peak: the points returned are exact with straight lines
+    between them, which is what lets the figure animate them with linear keyframes."""
+    e = _example_I_engagement()
+    top = e["points"][1]
+    half = sf.root_strain(sf.rect_section(9.5, 3.28), 19, 1.2, 2)
+    assert half == pytest.approx(top["strain"] / 2)
+    p_half = sf.deflection_force(sf.rect_section(9.5, 3.28), 19, half, 1815)
+    assert sf.mating_force(p_half, 0.6, 30) == pytest.approx(top["mating_force_n"] / 2)
+    assert sf.travel_at_strain(e, top["strain"] / 2) == pytest.approx(e["lead_travel_mm"] / 2)
+    assert sf.travel_at_strain(e, top["strain"]) == pytest.approx(e["lead_travel_mm"])
+    assert sf.travel_at_strain(e, top["strain"] * 1.01) is None and sf.travel_at_strain(e, 0) is None
+
+
+def test_engagement_without_friction_or_modulus_gives_no_force_and_a_self_locking_lead_none():
+    e = _example_I_engagement(friction=None)
+    assert all(p["mating_force_n"] is None for p in e["points"]) and e["points"][1]["deflection_force_n"] > 0
+    e = _example_I_engagement(secant_mpa=None)
+    assert all(p["deflection_force_n"] is None and p["mating_force_n"] is None for p in e["points"])
+    locked = _example_I_engagement(lead_deg=60, land_mm=1.0)          # 0.6 tan 60 > 1
+    assert locked["self_locking"] and locked["points"][1]["mating_force_n"] is None
+    assert locked["points"][2]["mating_force_n"] == pytest.approx(0.6 * locked["points"][2]["deflection_force_n"])
+    assert not _example_I_engagement()["self_locking"]
+
+
+def test_engagement_shares_the_lift_and_refuses_nonsense():
+    full, half = _example_I_engagement(), _example_I_engagement(share=0.5)
+    assert half["points"][1]["deflection_mm"] == pytest.approx(1.2)
+    assert half["points"][1]["strain"] == pytest.approx(full["points"][1]["strain"] / 2)
+    assert half["lead_travel_mm"] == full["lead_travel_mm"]           # the edge still rides the whole undercut
+    for bad in ({"lead_deg": 0}, {"lead_deg": 90}, {"land_mm": -1}, {"share": 0}, {"undercut": 0}, {"design": 4}):
+        with pytest.raises(ValueError):
+            _example_I_engagement(**bad)
+
+
+def test_a_checked_snap_names_the_friction_it_used():
+    """check_spec_entry's material says which mu the forces used: the guide's family value, a given one, or none."""
+    base = {"material": "copa-polymaker-dry", "orientation": "along", "length_mm": 15, "undercut_mm": 1.3,
+            "section": {"rect": {"width_mm": 6, "thickness_mm": 1.6}}, "root_radius_mm": 1.0, "lead_deg": 30}
+    assert sf.check_spec_entry(base)["material"]["friction"] == pytest.approx(0.35 * 1.5)   # PA, same material
+    assert sf.check_spec_entry({**base, "friction": 0.4})["material"]["friction"] == 0.4
+    assert sf.check_spec_entry({**base, "material": "petg-cf-bambu"})["material"]["friction"] is None
+    assert sf.check_spec_entry({**base, "material": "pc", "process": "moulding"})["material"]["friction"] == \
+        pytest.approx(0.6)

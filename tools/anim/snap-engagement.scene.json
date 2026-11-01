@@ -5,7 +5,7 @@
   "repo": "https://github.com/Valpatel/cad-agent",
   "name": "cad-agent",
   "licence": "MIT",
-  "commit": "1311aed4fdc4bd942d0a407f7201825ec97fd598",
+  "commit": "acc9b30ec2eb38f5a67b97220fe22bd586b38040",
   "version": "0.8.0",
   "inputs": {
    "src/cadagent/formulas/beams.py": "97c6b497853746bc2d1231bd658b31bf4927fe76bbadc9ea7c8f7b7717ede74f",
@@ -349,5 +349,5 @@
    "over_from_mm": 1.62528281
   }
  ],
- "record_seconds": 0.01
+ "record_seconds": 0.0
 }

@@ -11,15 +11,18 @@ export const safeUrl = u => SAFE_URL.test(String(u ?? '').trim()) ? String(u ?? 
 export const SANITIZE = {
   allowedTags: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'a', 'img', 'ul', 'ol', 'li', 'pre', 'code', 'blockquote', 'em',
     'strong', 'del', 's', 'b', 'i', 'kbd', 'sub', 'sup', 'br', 'hr', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
-    'details', 'summary', 'div', 'span', 'input', 'cad-cantilever', 'cad-fourbar', 'cad-fan-curve'],
+    'details', 'summary', 'div', 'span', 'input', 'cad-cantilever', 'cad-fourbar', 'cad-fan-curve', 'cad-torsion-snap',
+    'cad-printed-boss'],
   allowedAttributes: { a: ['href', 'title', 'id', 'name'], img: ['src', 'alt', 'title', 'width', 'height'],
     '*': ['id', 'align'], code: ['class'], pre: ['class'], div: ['class'], span: ['class'], td: ['align', 'width'],
     th: ['align', 'width'], input: ['type', 'checked', 'disabled'], ol: ['start'],
-    // the kit's interactive demos (kit/cantilever.js, kit/fourbar.js, kit/fan-curve.js): their own attributes only, no
-    // style, no handlers
+    // the kit's interactive demos (kit/cantilever.js, kit/fourbar.js, kit/fan-curve.js, kit/torsion-snap.js,
+    // kit/printed-boss.js): their own attributes only, no style, no handlers
     'cad-cantilever': ['material', 'direction', 'design', 'repeated', 'length', 'thickness', 'width', 'deflection'],
     'cad-fourbar': ['crank', 'coupler', 'rocker', 'ground', 'branch', 'angle', 'theme'],
-    'cad-fan-curve': ['fan', 'system', 'count', 'arrangement', 'theme'] },
+    'cad-fan-curve': ['fan', 'system', 'count', 'arrangement', 'theme'],
+    'cad-torsion-snap': ['material', 'bars', 'repeated', 'length', 'width', 'thickness', 'twist', 'lever', 'theme'],
+    'cad-printed-boss': ['material', 'size', 'outside', 'engagement', 'torque', 'axis', 'theme'] },
   allowedClasses: { code: ['language-*'], pre: ['mermaid'], div: ['table-scroll', 'cad-table-scroll'], span: [] },
   allowedSchemes: ['http', 'https', 'mailto'], allowedSchemesByTag: { img: ['http', 'https', 'data'] },
   allowProtocolRelative: false, disallowedTagsMode: 'discard',

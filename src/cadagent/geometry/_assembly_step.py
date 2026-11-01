@@ -25,7 +25,9 @@ written text, and an order this cannot settle is an error rather than a file lef
 Limits: a style record type this does not know (OCCT changed its writer), or a tail the graphs do not cover, stops
 the export with ``GeometryError`` instead of writing a file that is not reproducible. Sub-shape names, colours and
 layers (``Assembly.addSubshape``) are refused: cadquery adds them in the order of a set of shapes hashed on their
-addresses. Another OCCT or cadquery version can write different bytes for the same assembly.
+addresses. So are written names that cadquery's reader (``Assembly.importStep``) would refuse or misread: two
+children of one node with one name, or a node with the root's name (an unnamed root is written with the file's
+name). Another OCCT or cadquery version can write different bytes for the same assembly.
 """
 
 from __future__ import annotations
@@ -71,10 +73,9 @@ def node_names(assy: Any, root: str) -> Dict[int, Tuple[str, str]]:
     return out
 
 
-def _check(assy: Any, names: Dict[int, Tuple[str, str]], step_string: Any) -> Dict[str, str]:
-    """The renames (cadquery's name -> the name written) after refusing what the file could not carry the same way
-    every time: sub-shape styling, a name OCCT's reader would misread, a renamed root whose old name another node
-    shares."""
+def _check(assy: Any, names: Dict[int, Tuple[str, str]], step_string: Any) -> None:
+    """Refuse what the file could not carry the same way every time, or what cadquery's reader would misread:
+    sub-shape styling, a name OCCT's reader would misread, and written names that clash."""
     def nodes(node: Any):
         yield node
         for child in node.children:
@@ -85,39 +86,62 @@ def _check(assy: Any, names: Dict[int, Tuple[str, str]], step_string: Any) -> Di
             raise ValueError(f"assembly node {node.name!r} has sub-shape names, colours or layers "
                              "(Assembly.addSubshape); cadquery writes those in an order that changes from run to run, "
                              "so export_step does not take them yet (#150)")
-    for old, new in names.values():
+    for _old, new in names.values():
         step_string(new, "STEP product name", "name the assembly node (or pass export_step another name=)")
-    renames = {old: new for old, new in names.values() if old != new}
-    root_old, root_new = names[id(assy)]
-    if root_old != root_new and not _UUID.match(root_old):
-        shared = [old for key, (old, _) in names.items() if key != id(assy) and old in (root_old, root_old + "_part")]
-        if shared:
-            raise ValueError(f"cannot write the assembly {root_old!r} as {root_new!r}: another node is also named "
-                             f"{shared[0]!r}; pass name={root_old!r} or rename that node")
-    return renames
+    _check_clashes(assy, names)
 
 
-def _rename_labels(doc: Any, renames: Dict[str, str]) -> None:
-    """Rename the document's labels: toCAF names a node's labels ``<name>`` and, for a node that holds a shape and
-    children, ``<name>_part``."""
-    from OCP.TCollection import TCollection_ExtendedString
-    from OCP.TDataStd import TDataStd_Name
-    from OCP.TDF import TDF_ChildIterator
+def _check_clashes(assy: Any, names: Dict[int, Tuple[str, str]]) -> None:
+    """Refuse written names that cadquery's reader (``Assembly.importStep``) would refuse or misread. It rebuilds the
+    tree with ``Assembly.add``, which wants each child's name new to its parent: not the parent's own name (nor its
+    ``<name>_part``, the label of a node that holds a shape and children), not a name already among the parent's
+    other children and their nodes. It also finds the top of the tree by the root's name, so no other node may carry
+    it: the file would read back as that node alone."""
+    def told(node: Any) -> str:
+        old, new = names[id(node)]
+        return f"{new!r}" if old == new else f"{new!r} (a node added without a name)"
 
-    full = dict(renames)
-    full.update({f"{old}_part": f"{new}_part" for old, new in renames.items()})
-    labels, it = [], TDF_ChildIterator(doc.Main(), True)
-    while it.More():
-        labels.append(it.Value())
-        it.Next()
-    for label in labels:
-        if not label.IsAttribute(TDataStd_Name.GetID_s()):     # FindAttribute alone crashes OCP on a miss
-            continue
-        attr = TDataStd_Name()
-        label.FindAttribute(TDataStd_Name.GetID_s(), attr)
-        name = attr.Get().ToExtString()
-        if name in full:
-            TDataStd_Name.Set_s(label, TCollection_ExtendedString(full[name]))
+    def walk(node: Any) -> set:
+        mine = names[id(node)][1]
+        taken, part = {mine}, ({f"{mine}_part"} if node.obj is not None and node.children else set())
+        for child in node.children:
+            theirs = names[id(child)][1]
+            if theirs in taken or theirs in part:
+                raise ValueError(f"two nodes of the assembly node {mine!r} would be written as {told(child)}; "
+                                 "cadquery's reader would refuse or lose one. Name the node, or rename the one "
+                                 f"it clashes with (an unnamed node is written as <parent>.<k>)")
+            taken |= walk(child)
+        return taken
+
+    root = names[id(assy)][1]
+
+    def under(node: Any):
+        for child in node.children:
+            yield child
+            yield from under(child)
+
+    for node in under(assy):
+        if names[id(node)][1] == root:
+            raise ValueError(f"the assembly would be written as {root!r}, the name of one of its nodes; cadquery's "
+                             "reader would read the file as that node alone. Pass export_step another name= "
+                             "(or rename the node)")
+    walk(assy)
+
+
+def _renamed(assy: Any, names: Dict[int, Tuple[str, str]]) -> Any:
+    """A copy of ``assy`` whose nodes carry the written names. toCAF names each node's labels from the node itself, so
+    each copy of a sub-assembly added twice gets the names of its own place."""
+    def copy(node: Any) -> Any:
+        out = node.__class__(node.obj, node.loc, names[id(node)][1], node.color, node.material, node.metadata)
+        for child in node.children:          # as Assembly._copy does, without Assembly.add's copy of each subtree
+            mine = copy(child)
+            mine.parent = out
+            out.children.append(mine)
+            out.objects[mine.name] = mine
+            out.objects.update(mine.objects)
+        return out
+
+    return copy(assy)
 
 
 def _entities(model: Any, kind: Any) -> List[Any]:
@@ -181,11 +205,13 @@ def order_style_tail(model: Any, where: str) -> bool:
     colour writer makes."""
     from cadagent.geometry import GeometryError
 
+    from OCP.StepVisual import StepVisual_MechanicalDesignGeometricPresentationRepresentation as Graph
+
+    if len(_entities(model, Graph)) < 2:                 # one graph or none: nothing to order, skip the scan
+        return False
     total = model.NbEntities()
     entities = [None] + [model.Entity(i) for i in range(1, total + 1)]
     graphs = [i for i in range(1, total + 1) if entities[i].DynamicType().Name() == _MDGPR]
-    if len(graphs) < 2:
-        return False
     start = graphs[0]
     strangers = sorted({entities[i].DynamicType().Name() for i in range(start, total + 1)} - _STYLE_FAMILY)
     if strangers:
@@ -260,9 +286,9 @@ def write_assembly(assy: Any, path: Path, name: Optional[str], step_string: Any,
     if not assy.children and assy.obj is None:
         raise ValueError(f"{path.name}: the assembly is empty")
     root = name if name is not None else (path.stem if _UUID.match(assy.name) else assy.name)
-    renames = _check(assy, node_names(assy, root), step_string)
-    _top, doc = toCAF(assy, True)                       # colours as STEP styles, as exportAssembly does
-    _rename_labels(doc, renames)
+    names = node_names(assy, root)
+    _check(assy, names, step_string)
+    _top, doc = toCAF(_renamed(assy, names), True)      # colours as STEP styles, as exportAssembly does
 
     writer = STEPCAFControl_Writer(XSControl_WorkSession(), False)    # registers the settings swapped in below
     writer.SetColorMode(True)

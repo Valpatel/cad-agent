@@ -58,9 +58,7 @@ def run_step(project: CadProject, step: Step) -> Dict[str, Any]:
     if not script.is_file():
         result["reason"] = f"script not found: {script}"
         return result
-    # VPTEST_CAD_PROJECT is still set for steps written against vptest cad
-    env = dict(os.environ, PYTHONUNBUFFERED="1", CAD_AGENT_PROJECT=str(project.root),
-               VPTEST_CAD_PROJECT=str(project.root))
+    env = dict(os.environ, PYTHONUNBUFFERED="1", CAD_AGENT_PROJECT=str(project.root))
     cmd = [project.python, str(script)]
     log_path = project.exports_dir / step.log if step.log else None
     started = time.monotonic()
@@ -892,7 +890,7 @@ def dispatch(args: argparse.Namespace) -> int:
         _err(f"{sub}: interrupted")
         return 130
 
-PROJECT_HELP = "CAD project root containing cad-agent.yaml or vptest.yaml with a cad: section (default: cwd)"
+PROJECT_HELP = "CAD project root containing cad-agent.yaml with a cad: section (default: cwd)"
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(

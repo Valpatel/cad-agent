@@ -73,7 +73,7 @@ flowchart TD
   only on an explicit true. A missing file or key is a failure.
 - **Incident:** The Rev 0.5 report opened with "nothing has been printed, run through a slicer, or test-fitted". The
   hex chamfer report said "the airflow gain is untested". The Bambu link was reported as found in the binary but not
-  tested. `assembly-checks.json` carries `physical_fit_verified: false`. The shared `vptest cad` report "always records
+  tested. `assembly-checks.json` carries `physical_fit_verified: false`. The shared CAD report "always records
   'physical fit not verified' and 'slicer not run', and nothing can set those to true". A missing file, a missing key or
   a value like "yes" counts as a failure.
 - **Check:** The report schema has unverifiable flags that cannot be set to true, plus an explicit limits list (the

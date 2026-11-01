@@ -16,8 +16,8 @@ def test_charts_are_embedded_where_their_tables_are():
     assert "docs/img/research/fdm-anisotropy.svg" in (ROOT / "research" / "compliant-mechanisms.md").read_text()
     assert "docs/img/research/landscape-stars.svg" in (ROOT / "research" / "landscape.md").read_text()
     md = (ROOT / "research" / "compliant-mechanisms.md").read_text()
-    assert md.index("**DuPont Table 10.06**") < md.index("docs/img/research/moulded-strain.svg") < md.index("## 4.")
-    assert md.index("## 6. Printed") < md.index("docs/img/research/printed-strain.svg") < md.index("## 7.")
+    assert md.index("## 3. Allowable") < md.index("docs/img/research/moulded-strain.svg") < md.index("**Bayer Table 2**")
+    assert md.index("## 6. Printed") < md.index("docs/img/research/printed-strain.svg") < md.index("| Material (TDS) |")
 
 
 def test_every_row_with_ratios_is_drawn():

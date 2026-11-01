@@ -671,13 +671,13 @@ research/compliant-mechanisms.md:
     alt: "An animated snap arm bending as a mating edge rides up its hook's lead, with its root strain rising to 1.38 percent against two filaments' allowables: a pass for CoPA, a fail for PETG-CF"
   figures:
     - after: 2-snap-fit-equations-and-worked-examples-for-tests-bayer-guide-read
-      below: Gold test case
+      below: Undercut = deflection.
       img: docs/img/compliant/example-1.svg
       shows: diagram
       drawn_by: tools/snapfit_figures.py
       tool: cadagent.mechanical.compliant.snapfit
       on: sources
-      caption: "Example I of the table above, computed by the toolkit's snap-fit calculator and drawn to scale: the guide's tapered polycarbonate hook, 19 mm long, deflected 2.4 mm. The 2.00 % root strain and the forces come out of the module, not typed in; a test holds them to the guide's answers."
+      caption: "Example I of the table below, computed by the toolkit's snap-fit calculator and drawn to scale: the guide's tapered polycarbonate hook, 19 mm long, deflected 2.4 mm. The 2.00 % root strain and the forces come out of the module, not typed in; a test holds them to the guide's answers."
       alt: "Example I from the snap-fit design guide, computed: a tapered polycarbonate cantilever hook with its length, thicknesses and deflection drawn to scale, root strain 2.00 percent"
     - after: 5-fdm-anisotropy-in-plane-x-y-vs-inter-layer-z-data-from-manufacturer-tds-read
       below: Strain to failure across the layers falls far more than strength
@@ -688,12 +688,19 @@ research/compliant-mechanisms.md:
       on: example
       caption: "The toolkit's layer check on a PETG-CF bar pulled at 10 MPa, solved at seven print tilts. Pulled straight across the layers its safety factor is 2.20 (the bond), lying in them 2.66 (the bulk), and at 30° only 2.07, where the layers also carry shear. Strength, not snap strain, but the same reason for the orientation rule below."
       alt: "A PETG-CF bar's safety factor against print tilt: the bond check governs from 0 to 58 degrees, worst at 30 degrees (2.07), the bulk check past that (2.66); the solved bar's dots sit on the hand-computed lines"
+    - after: 7-how-the-process-changes-each-feature
+      img: docs/img/research/process-fits.svg
+      shows: diagram
+      drawn_by: tools/process_profile_figures.py
+      tool: tools/process_profile_figures.py
+      on: sources
+      caption: "The clearance between mating printed parts that each source recommends, by process, from the process profiles: 0.1 mm to 0.76 mm, and most for powder parts printed together. The table's 0.5 mm for FDM snaps and 0.3 mm for SLS and MJF are Protolabs Network's rows here."
+      alt: "Range chart of the clearance between mating printed parts each source recommends, by process: 0.1 to 0.76 mm, with powder parts printed together needing the most"
     - after: 8-failure-modes-that-become-pitfall-catalogue-rows-97
-      below: Deterministic check candidate
       img: docs/img/compliant/cantilever-explorer.svg
       shows: diagram
       drawn_by: tools/cantilever-still.mjs
       tool: cadagent.formulas
       on: example
-      caption: "The first row as a working check: a dry CoPA arm 20 mm long, 1.6 mm at the root and 6 mm wide, bent 1.5 mm at the hook along its computed curve. Its root strain is 0.90 %, 44 % of the 2.02 % allowed along the layers, a pass; the push is 3.10 N. The live version is on the snap-fit page."
+      caption: "The first row below as a working check: a dry CoPA arm 20 mm long, 1.6 mm at the root and 6 mm wide, bent 1.5 mm at the hook along its computed curve. Its root strain is 0.90 %, 44 % of the 2.02 % allowed along the layers, a pass; the push is 3.10 N. The live version is on the snap-fit page."
       alt: "A CoPA snap arm 20 mm long bent 1.5 mm at the hook along its computed curve; root strain 0.90 percent, 44 percent of the 2.02 percent allowed along the layers, a pass; force 3.10 N"

@@ -379,8 +379,12 @@ test('maturity: the key lists every level in docs/areas.yaml, in order, and each
 test('no project is singled out: no Gyropup flag, badge, filter, boost or field (cad-agent is a general toolkit)', () => {
   assert.ok(catalog.items.every(i => !('gyropup' in i)), 'catalog.json entries have a gyropup field');
   assert.doesNotMatch(JSON.stringify(catalog.fields), /gyropup/i);
-  assert.doesNotMatch(JSON.stringify(index), /"gyropup"|needed for Gyropup|gyropup=/i);
-  for (const d of index.domains) for (const a of d.areas) assert.ok(Array.isArray(a.projects), `index.json ${a.slug}: no projects list`);
+  assert.doesNotMatch(`${index.how} ${JSON.stringify(index.fields)}`, /gyropup/i, 'index.json still describes a gyropup filter or priority');
+  // Areas list the real projects that used them (Gyropup among them, like the others), and priority is only `demo`.
+  for (const d of index.domains) for (const a of d.areas) {
+    assert.ok(Array.isArray(a.projects), `index.json ${a.slug}: no projects list`);
+    assert.deepEqual(a.priority.filter(p => p !== 'demo'), [], `index.json ${a.slug}: priority ${a.priority}`);
+  }
   for (const hook of ['class="gyro"', 'pill-gyropup', 'name="gyropup"', 'data-gyropup', 'Needed for Gyropup', 'needed for Gyropup']) assert.ok(!page.includes(hook), `the page still has ${hook}`);
   assert.doesNotMatch(show('web/catalog.css'), /gyro/i);
   for (const d of areas.domains) for (const n of [d, ...d.areas, ...d.areas.flatMap(a => a.topics || [])]) assert.ok(!(n.priority || []).includes('gyropup'), `docs/areas.yaml ${n.slug}: priority gyropup`);

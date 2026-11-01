@@ -42,7 +42,7 @@ a diagram inside that and readable on GitHub.
   outputs, but each label must say it too: a piece names its file, a neighbour its package, an output the file or page
   it is (`exports/hole-checks.json`).
 - **Every diagram renders** through the kit's `diagrams.js` (the site) and on GitHub.
-- **Left to right only for a two-column pairing**, sized to fit, with a note saying why. The one today is
+- **Left to right only for a two-column pairing**, sized to fit, with a note saying why. The one exception is
   `research/design-workflows.md` (#124): each incident symptom on the left, the check that catches it on the right.
 
 Use the shared palette, so diagrams look the same on GitHub and on cad-agent.valpatel.com. These are the values the

@@ -183,10 +183,15 @@ GATE_HTML = (PAGES / "login-gate.html").read_text()
 OTHER_HTML = (PAGES / "not-a-product.html").read_text()
 
 
-def test_the_login_gate_is_read_from_the_visible_text_only():
+def test_the_login_gate_is_read_from_the_text_a_reader_sees():
     assert mc.login_gate(GATE_HTML) == "Log in to view Product Detail"   # across tags, spaces and &nbsp;
     assert "in a script" not in mc.page_text(GATE_HTML)
-    assert mc.login_gate(OTHER_HTML) is None      # the header's "Log in" link and a script string do not count
+    # the header's "Log in" link, a script, a hidden login dialog, aria-hidden, display:none and a textarea: none count
+    assert mc.login_gate(OTHER_HTML) is None
+    assert mc.page_text(OTHER_HTML) == "Log in Order history\nNo results. Check the part number and try again."
+    # a browser's rendered text, when there is one, decides instead of the HTML
+    assert mc.login_gate(OTHER_HTML, text="Log in\nLog in to view Product Detail") == "Log in to view Product Detail"
+    assert mc.login_gate(GATE_HTML, text="Log in\tOrder history\n\nNothing here") is None
 
 
 @pytest.mark.parametrize("text, prompt", [
@@ -195,6 +200,11 @@ def test_the_login_gate_is_read_from_the_visible_text_only():
     ("<p>Please log in to continue</p>", "log in to continue"),
     ("<a>Log in</a> <p>Log in or create an account</p>", None),
     ("<p>Our blog in to view-only mode</p>", None),
+    ("<div hidden>Log in to view Product Detail</div>", None),
+    ("<div style='visibility:hidden'><p>Log in to view</p></div><p>Product</p>", None),
+    ("<div hidden><br><img src=x><p>Log in to view</p></div><p>Log in to view Product Detail</p>",
+     "Log in to view Product Detail"),                              # a void element inside does not leave it open
+    ("<div hidden><p>gone</div><p>Login to see the part</p>", "Login to see the part"),   # an unclosed child
     ("", None),
 ])
 def test_login_gate_phrases(text, prompt):
@@ -216,10 +226,17 @@ def test_a_login_gate_says_the_part_number_may_be_fine():
 
 
 class FakePage:
-    """The Playwright page calls Session._open makes, on a saved page that has no specification table."""
+    """The Playwright page calls Session._open makes, on a saved page that has no specification table. ``text`` is
+    what ``inner_text("body")`` gives (None: it fails, so Session falls back to the HTML)."""
 
-    def __init__(self, html=None):
-        self.html, self.url, self.visited = html, "", []
+    def __init__(self, html=None, text=None):
+        self.html, self.text, self.url, self.visited = html, text, "", []
+
+    def inner_text(self, selector, timeout=None):
+        assert selector == "body" and timeout
+        if self.text is None:
+            raise RuntimeError("no rendered text")
+        return self.text
 
     def goto(self, url, **kw):
         self.url = url
@@ -237,10 +254,14 @@ class FakePage:
         pass
 
 
-@pytest.mark.parametrize("html, login", [(GATE_HTML, True), (OTHER_HTML, False), (None, False)])
-def test_session_tells_a_login_gate_from_a_missing_page(html, login):
+@pytest.mark.parametrize("html, text, login", [
+    (GATE_HTML, None, True), (OTHER_HTML, None, False), (None, None, False),        # from the HTML
+    (OTHER_HTML, "Log in\nLog in to view Product Detail", True),                     # the rendered text decides
+    (GATE_HTML, "Log in\nNo results", False),                     # e.g. the prompt is hidden by a stylesheet
+])
+def test_session_tells_a_login_gate_from_a_missing_page(html, text, login):
     s = mc.Session()
-    s.page = FakePage(html)
+    s.page = FakePage(html, text)
     with pytest.raises(RuntimeError) as caught:
         s.read("5972K86")
     assert isinstance(caught.value, mc.LoginRequired) is login

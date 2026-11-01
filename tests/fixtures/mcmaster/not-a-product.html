@@ -1,6 +1,7 @@
 <!doctype html>
 <!-- Written for cad-agent's tests (same license as cad-agent); not copied from mcmaster.com. A page with no
-     specification table and no login prompt: only the header's "Log in" link, which every page has. -->
+     specification table and no login prompt a reader can see: the header's "Log in" link, which every page has,
+     and the prompt's phrase only where it is hidden (a script, a closed login dialog, a textarea). -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -10,5 +11,9 @@
 <body>
   <header><nav><a href="/login/">Log in</a> <a href="/order-history/">Order history</a></nav></header>
   <main><p>No results. Check the part number and try again.</p></main>
+  <div id="login-dialog" hidden><p>Log in to view Product Detail</p><br><input type="email"></div>
+  <div aria-hidden="true"><span>Log in to view prices</span></div>
+  <section style="display: none"><div><p>Sign in to see your order history</p></div></section>
+  <form><textarea name="note">Log in to view Product Detail</textarea></form>
 </body>
 </html>

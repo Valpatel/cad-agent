@@ -61,7 +61,13 @@ def torque_for_preload(preload: float, diameter: float, nut_factor: float = NUT_
 def nut_factor(diameter: float, pitch: float, thread_friction: float, collar_friction: float,
                flank_angle: float = math.radians(60.0)) -> float:
     """Nut factor from friction: K = (dm / 2d)(tan lambda + f sec alpha) / (1 - f tan lambda sec alpha) + 0.625 fc,
-    with dm the pitch diameter, lambda the lead angle and alpha half the flank angle."""
+    with dm the pitch diameter, lambda the lead angle and alpha half the flank angle.
+
+    ``flank_angle`` is in radians and must lie between 0 and pi/2 (no screw thread has an included angle of 90 degrees
+    or more): 60 passed as degrees would otherwise give about three times K without complaint."""
+    if not (_number(flank_angle) and 0.0 < flank_angle < math.pi / 2):
+        raise ValueError(f"flank_angle is the included angle in radians, between 0 and pi/2 (60 degrees is "
+                         f"{math.radians(60.0):.4f}), not {flank_angle!r}")
     dm = diameter - PITCH_DIAMETER * pitch
     tan_lead = pitch / (math.pi * dm)
     sec = 1.0 / math.cos(flank_angle / 2.0)

@@ -30,10 +30,15 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 **Docs and research**
 - Work-claim comments for sharing issues between agents (#102); the 2026-10-31 survey of agent toolkits, compliant
   mechanisms and FEA/process tools, and its catalogue entries (#109, #110).
+- Lessons grouped by area (`lessons/process/`, `mechanical/`, `wiring/`, `electronics/`, `simulation/`, `review/`),
+  with a diagram on every page (#133). The site redirects every old page for good (`tools/site-redirects.txt`).
 
 **Projects must change:** hole-check counts now separate holes from cones. A countersunk seat that used to count as
-a hole reads as a countersink, so recorded counts and findings can change on the next run. FEA deflections and
-stiffnesses with the printed materials change with the new moduli (#125): re-run deflection, stiffness, flexure-travel
-and clearance-under-load checks against their limits. A force worked out from the computed stiffness at a given
-travel (retention, preload) now reads lower too. Stresses do not change, nor do safety factors (the PA6-CF rows'
-strengths are now computed exactly, 48.96 and 23.04 MPa instead of 49 and 23).
+a hole reads as a countersink, so recorded counts and findings can change on the next run. Links to the numbered lessons
+(`lessons/NN-….md`) still work through one-line stubs on GitHub until v0.6.0, which removes them: point such links at
+the new paths before then (the stubs name them). FEA deflections and stiffnesses with the printed materials change with
+the new moduli (#125): re-run deflection, stiffness, flexure-travel and clearance-under-load checks against their
+limits. Under the same forces, stresses and safety factors do not change (the PA6-CF rows' strengths are now computed
+exactly, 48.96 and 23.04 MPa instead of 49 and 23). A force or a stress worked out at a given travel (a clip's
+retention, a flexure at full travel) falls with E, so re-check strength at travel too, with the in-plane modulus or a
+coupon.

@@ -36,6 +36,16 @@ test('only committed files are published, byte for byte', async () => {
   for (const f of webTracked) assert.ok((await readFile(path.join(out, f))).equals(execFileSync('git', ['show', `HEAD:${f}`], { cwd: root })), f);
 });
 
+// Plant a page over a real one in a scratch worktree. The real page's figures (docs/pages.yaml) would look for its
+// headings in the planted text, so its entry there goes too.
+const plant = async (wt, page, text) => {
+  await writeFile(path.join(wt, page), text);
+  const spec = path.join(wt, 'docs/pages.yaml');
+  const doc = YAML.parseDocument(await readFile(spec, 'utf8'));
+  doc.delete(page);
+  await writeFile(spec, doc.toString());
+};
+
 test('a dirty checkout publishes HEAD, and a draft says it has local changes', async () => {
   // A scratch worktree of HEAD with an edited stylesheet, an edited doc and an untracked page planted in it.
   const wt = path.join(tmp, 'wt');
@@ -43,7 +53,7 @@ test('a dirty checkout publishes HEAD, and a draft says it has local changes', a
   try {
     await writeFile(path.join(wt, 'web/site.css'), 'body{display:none}\n');
     await writeFile(path.join(wt, 'docs/planted.md'), '# Planted\n\nnot committed\n');
-    await writeFile(path.join(wt, 'docs/toolkit.md'), '# Toolkit\n\nlocal edit <scr<script>x</script>ipt>window.__x=1</script>\n');
+    await plant(wt, 'docs/toolkit.md', '# Toolkit\n\nlocal edit <scr<script>x</script>ipt>window.__x=1</script>\n');
     const run = (...a) => execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, ...a], { cwd: root }).toString();
     const clean = path.join(tmp, 'clean'), draft = path.join(tmp, 'draft');
     run('--out', clean);
@@ -277,7 +287,7 @@ test('an image keeps the size its author gave, and its tag survives any alt text
   try {
     const fig = 'img/research/fdm-anisotropy.svg';
     const [W, H] = (await readFile(path.join(root, 'docs', fig), 'utf8')).match(/width="(\d+)" height="(\d+)"/).slice(1).map(Number);
-    await writeFile(path.join(wt, 'docs/toolkit.md'), `# Toolkit\n\n<img src="${fig}" alt="costs US$'s and $& and $$" width="300">\n\n` +
+    await plant(wt, 'docs/toolkit.md', `# Toolkit\n\n<img src="${fig}" alt="costs US$'s and $& and $$" width="300">\n\n` +
       `<img src="${fig}" alt="half" width="50%">\n\n<img src="${fig}" alt="short" height="100">\n\nAfter the images.\n`);
     const draft = path.join(tmp, 'draft-img');
     execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, '--worktree', '--out', draft], { cwd: root });
@@ -510,7 +520,7 @@ test('the palette goes into real diagrams only: not into a quoted example, and :
   const wt = path.join(tmp, 'wt-palette');
   execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });
   try {
-    await writeFile(path.join(wt, 'docs/toolkit.md'), '# Toolkit\n\n' +
+    await plant(wt, 'docs/toolkit.md', '# Toolkit\n\n' +
       '```mermaid\nflowchart TD\n    A[a]:::here --> B[b]\n```\n\n' +
       '````markdown\n```mermaid\nflowchart TD\n    Q[quoted]\n    class Q out\n```\n````\n');
     const draft = path.join(tmp, 'draft-palette');

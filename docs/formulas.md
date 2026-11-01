@@ -6,22 +6,6 @@ instead of re-deriving the equations. The website's demonstrations call a browse
 two are tested against one set of golden vectors, so a demo never shows a number an agent would not get. Every
 function states its SI units and its validity limits, and cites its source by author, title, edition and section.
 
-```mermaid
-flowchart TD
-    S["Books, guides, standards<br/>Roark · Shigley · Covestro · Norton<br/>Incropera · White · ISO 68-1, 898-1"] --> P["cadagent.formulas<br/>(Python, SI, cited)"]
-    C["cadagent.mechanical.compliant<br/>snapfit · allowables"] --> P
-    P --> A["agents<br/>catalogue() · snap_arm() …"]
-    P --> V["tools/formula_vectors.py<br/>golden vectors · demo materials"]
-    V --> J["kit/formulas.js<br/>(browser port)"]
-    J --> D["&lt;cad-cantilever&gt;<br/>on Snap fits"]
-    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
-    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class P,V,J here
-    class S,C near
-    class A,D out
-```
-
 ## Try it: the snap-arm explorer
 
 The explorer (`<cad-cantilever>`, also on [Snap fits](compliant.md#try-it-the-snap-arm-explorer)) runs the browser port
@@ -32,6 +16,16 @@ against the filament's allowable strain.
 <cad-cantilever material="copa-polymaker-dry" direction="along" design="1" length="20" thickness="1.6" width="6" deflection="1.5">
 <img src="img/compliant/cantilever-explorer.svg" alt="Snap-arm explorer, before its controls load: a CoPA arm 20 mm long, 1.6 mm thick at the root and 6 mm wide, bent 1.5 mm at the hook along its computed curve; root strain 0.90 %, 44 % of the 2.02 % allowed along the layers, a pass; force 3.10 N" width="640" height="250">
 </cad-cantilever>
+
+## Limits
+
+- **A closed form is not proof of fit or strength.** Each result holds only inside the limits it states. A printed
+  part is weaker across its layers than any isotropic formula assumes, and creeps under a held load. Print the part
+  and measure it.
+- **Small deflection and linear elasticity.** These hold for every beam, torsion and spring formula here. For large
+  deflections, contact or plastic strain, use FEA (`cadagent.simulation.fea`) and a test.
+- **Screws.** Torque gives preload to about ±25 % even with a known nut factor; in plastic the factor is unknown
+  until measured. Thread stripping assumes even load sharing, which real threads do not have.
 
 ## Why it is built, not adopted
 
@@ -65,6 +59,24 @@ for linkage synthesis.
     solvers find the same operating point.
 
 </details>
+
+How the sources, the Python, the golden vectors and the browser port connect:
+
+```mermaid
+flowchart TD
+    S["Books, guides, standards<br/>Roark · Shigley · Covestro · Norton<br/>Incropera · White · ISO 68-1, 898-1"] --> P["cadagent.formulas<br/>(Python, SI, cited)"]
+    C["cadagent.mechanical.compliant<br/>snapfit · allowables"] --> P
+    P --> A["agents<br/>catalogue() · snap_arm() …"]
+    P --> V["tools/formula_vectors.py<br/>golden vectors · demo materials"]
+    V --> J["kit/formulas.js<br/>(browser port)"]
+    J --> D["&lt;cad-cantilever&gt;<br/>on Snap fits"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class P,V,J here
+    class S,C near
+    class A,D out
+```
 
 ## What it computes
 
@@ -119,16 +131,6 @@ fx.fan_operating_point(fx.fan_curve_line(15.2, 0.0108), k=2e6)   # flow, pressur
 
 In the browser, `kit/formulas.js` exports the functions the demos use (`snapArm`, `cantileverShape`,
 `cantileverStrainProfile` and the others in the golden vectors) in the same SI units.
-
-## Limits
-
-- **A closed form is not proof of fit or strength.** Each result holds only inside the limits it states. A printed
-  part is weaker across its layers than any isotropic formula assumes, and creeps under a held load. Print the part
-  and measure it.
-- **Small deflection and linear elasticity.** These hold for every beam, torsion and spring formula here. For large
-  deflections, contact or plastic strain, use FEA (`cadagent.simulation.fea`) and a test.
-- **Screws.** Torque gives preload to about ±25 % even with a known nut factor; in plastic the factor is unknown
-  until measured. Thread stripping assumes even load sharing, which real threads do not have.
 
 ## Tests that keep it honest
 

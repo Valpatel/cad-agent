@@ -473,7 +473,8 @@ def _end_labels(ax, ends, log=False, gap=0.075):
 def convergence_chart(results: dict, path, title='Solver convergence'):
     """The convergence of a cadagent.simulation.cfd run (the dict read_results returns), over the whole run: the air's
     initial residuals, then one panel per quantity the convergence claim rests on (the hottest temperature of each solid
-    region, air temperatures in the fan and fin zones, fan flow, the heat leaving against the heat put in), each on
+    region, air temperatures in the fan and fin zones and at each fan's inlet and outlet, fan flow, the heat leaving
+    against the heat put in), each on
     its own axis. Restarts are marked, the window ``convergence`` measured is shaded and each panel states that
     window's change and the limit ``steady`` holds it to; a run that stopped early is marked and said so. A panel with
     nothing to plot says why, and a case with no solid regions has no solids panel. Results read before whole-run

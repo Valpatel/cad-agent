@@ -186,6 +186,10 @@ def test_small_case_runs(tmp_path):
     res = c.results(d)
     assert res['solids']['chip']['max_c'] > res['ambient_c']
     assert 0 < res['fans']['fan']['flow_m3h'] < 20
+    # the fan's inlet and outlet faces were built and logged: the air the fan pushes forward, through both
+    fan = res['fans']['fan']
+    assert res['zone_faces']['fanInlet'] > 0 and res['zone_faces']['fanOutlet'] > 0
+    assert fan['inlet_kg_s'] > 0 and fan['outlet_kg_s'] > 0 and 'inlet_c' in fan and 'outlet_c' in fan
     # continue from the last write: a rebuilt case object picks up the processor count from the case
     again = small_case()
     assert again.extend(d, 10) == 0

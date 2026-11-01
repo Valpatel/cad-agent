@@ -79,6 +79,24 @@ def test_a_case_without_solids_has_no_solids_panel_and_shows_the_whole_run(tmp_p
     matplotlib.pyplot.close(fig)
 
 
+def test_a_fan_draws_its_volume_average_and_its_inlet_and_outlet_each_named(tmp_path):
+    # #47: the fan zone's volume average (35.0 °C) and the mass-flow-weighted inlet and outlet (37.5 °C), each its own
+    # line and colour, named at its end, each change held to 1 °C
+    r = cfd.read_results(recorded('fan-faces-known-profile', tmp_path))
+    fig = _figure(r)
+    air = _panels(fig)['Air temperature']
+    lines = {ln.get_label(): ln for ln in air.get_lines()}
+    want = {'fan: mean over the fan zone (by volume)': 35.0, 'fan: air entering (mass-flow-weighted)': 37.5,
+            'fan: air leaving (mass-flow-weighted)': 37.5}
+    assert set(want) <= set(lines)
+    assert {k: lines[k].get_ydata()[-1] for k in want} == want
+    assert len({lines[k].get_color() for k in want}) == 3
+    words = _words(air)
+    assert 'fan 35.0 °C' in words and 'fan inlet 37.5 °C' in words and 'fan outlet 37.5 °C' in words
+    assert 'fan inlet +0.00 °C (limit ±1 °C)' in words and 'fan outlet +0.00 °C (limit ±1 °C)' in words
+    matplotlib.pyplot.close(fig)
+
+
 def test_a_multi_region_run_that_stopped_early(tmp_path):
     r = cfd.read_results(recorded('solids-ended-early', tmp_path))
     fig = _figure(r)

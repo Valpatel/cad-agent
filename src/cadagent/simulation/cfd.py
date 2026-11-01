@@ -1035,7 +1035,15 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
     each monitored value changed over ``convergence_window``: the iterations from 80 % of the last one onward, cut to
     the newest solve (so after a continuation shorter than a fifth of the run, the whole newest solve; after one that
     stopped before its first temperature sample, nothing, and no window). ``convergence_limits`` is what ``steady``
-    holds each change to."""
+    holds each change to.
+
+    Each fan has three temperatures. ``fans[<fan>]['inlet_c']`` and ``['outlet_c']`` are mass-flow-weighted,
+    sum(phi T) / sum(phi), over the faces that cross the annulus at each end of its zone, with the net mass flow
+    through each (``inlet_kg_s``, ``outlet_kg_s``, positive along the axis) and ``heat_carried_w``, the heat the
+    outlet stream carries above the room (stream_heat_w). Use these in energy balances. ``air_through_fan_c`` (also
+    ``zones[<fan>]['T_c']``) is the volume average over the zone: it weights still and returning air like the air that
+    flows. A case written before the faces existed reports only the volume average. ``energy_conserved`` is
+    energy_check's verdict, and ``warnings`` says in words what is off."""
     cd = Path(case_dir)
     meta = json.loads((cd / 'cadagent-case.json').read_text())
     pp = cd / 'postProcessing'

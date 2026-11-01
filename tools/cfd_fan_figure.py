@@ -92,7 +92,7 @@ def facts(case: Path) -> dict:
     heat = [p[1] for p in r["monitors"]["heat_out_w"]["points"] if p[0] >= r["convergence_window"][0]]
     return {"mass_flow_g_s": round(f["outlet_kg_s"] * 1000, 2), "inlet_c": f["inlet_c"], "outlet_c": f["outlet_c"],
             "zone_by_volume_c": f["air_through_fan_c"], "heat_carried_w": f["heat_carried_w"], "heat_input_w": r["heat_input_w"],
-            "heat_out_w": r["heat_out_w"], "heat_out_window_w": [round(min(heat), 1), round(max(heat), 1)],
+            "heat_out_w": r["heat_out_w"], "energy_balance_pct": r["energy_balance_pct"], "heat_out_window_w": [round(min(heat), 1), round(max(heat), 1)],
             "window": r["convergence_window"], "energy_conserved": r["energy_conserved"], "steady": r["steady"]}
 
 
@@ -109,8 +109,8 @@ def draw(work: Path):
     vmax = float(np.ceil(top))
     ramp = cmap(TEMP_RAMP)
     ramp.set_bad(WALL)
-    fig = plt.figure(figsize=(10.2, 7.0), facecolor=PAPER)
-    axs = [fig.add_axes((0.065, 0.25, 0.39, 0.64)), fig.add_axes((0.535, 0.25, 0.39, 0.64))]
+    fig = plt.figure(figsize=(10.2, 7.3), facecolor=PAPER)
+    axs = [fig.add_axes((0.065, 0.27, 0.39, 0.62)), fig.add_axes((0.535, 0.27, 0.39, 0.62))]
     titles = {"exhaust-under-opening": "The fan 3 mm under the opening",
               "exhaust-ducted": "The fan in a duct, its hub plugged"}
     for ax, (name, ((X, Z, t, ux, uz), f)) in zip(axs, got.items()):
@@ -136,12 +136,15 @@ def draw(work: Path):
         ax.tick_params(colors=MUTED, labelsize=8)
         for sp in ax.spines.values():
             sp.set_color(MUTED)
-        note = (f"The fan moves {f['mass_flow_g_s']:.2f} g/s. Its air is {f['inlet_c']:.2f} °C in and {f['outlet_c']:.2f} °C "
-                f"out, mass-flow-weighted, and {f['zone_by_volume_c']:.2f} °C by volume over its zone. It carries "
-                f"{f['heat_carried_w']:.1f} W above the room, for {f['heat_input_w']:g} W put in "
-                f"({f['heat_out_w']:.1f} W leave the room).")
+        u = "\u00a0"                              # a number and its unit never part at a line end
+        pct = f"{f['energy_balance_pct']:+.1f}".replace("-", "−")
+        note = (f"The fan moves {f['mass_flow_g_s']:.2f}{u}g/s. Its air is {f['inlet_c']:.2f}{u}°C in and "
+                f"{f['outlet_c']:.2f}{u}°C out, mass-flow-weighted, and {f['zone_by_volume_c']:.2f}{u}°C by volume over "
+                f"its zone. It carries {f['heat_carried_w']:.2f}{u}W above the room, for {f['heat_input_w']:g}{u}W put in. "
+                f"{f['heat_out_w']:.2f}{u}W leave the room ({pct}{u}%"
+                + ("): energy conserved." if f["energy_conserved"] else f", past 5{u}%): flagged, energy not conserved."))
         box = ax.get_position()
-        fig.text(box.x0, 0.155, textwrap.fill(note, 72, break_on_hyphens=False), va="top", ha="left", color=INK, fontsize=8.6, linespacing=1.4)
+        fig.text(box.x0, 0.175, textwrap.fill(note, 72, break_on_hyphens=False), va="top", ha="left", color=INK, fontsize=8.6, linespacing=1.4)
     bar = fig.colorbar(im, cax=fig.add_axes((0.94, 0.33, 0.012, 0.48)))
     bar.set_label("air temperature (°C)", color=MUTED)
     bar.ax.tick_params(colors=MUTED, labelsize=8)
@@ -154,7 +157,7 @@ def draw(work: Path):
             "through the fan's axis. Blue: the fan's inlet and outlet faces; dashed: its zone, either side of the hub. "
             f"Neither run is steady: over the last fifth of the run the plume above the box swings the heat leaving it "
             f"between {lo:g} and {hi:g} W.")
-    fig.text(0.015, 0.045, textwrap.fill(foot, 150), ha="left", va="top", color=MUTED, fontsize=7.8, linespacing=1.35)
+    fig.text(0.015, 0.06, textwrap.fill(foot, 160), ha="left", va="top", color=MUTED, fontsize=7.8, linespacing=1.35)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     png = io.BytesIO()                            # a field section is a picture: WebP, a tenth of the size of an SVG
     fig.savefig(png, format="png", facecolor=PAPER, dpi=140)

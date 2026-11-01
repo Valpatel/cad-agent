@@ -802,9 +802,11 @@ Docker (OpenFOAM runs in the official `opencfd/openfoam-default` image) and Bamb
   fins) that releases the heat into the air passing through it;
 - `refine(lo, hi, level)`.
 `write()` produces a complete OpenFOAM case (snappyHexMesh, splitMeshRegions, chtMultiRegionSimpleFoam, function
-objects); `run()` runs it natively or in Docker; `results()` returns temperatures, fan flow and pressure, the air
-temperature through each fan, the heat leaving with the air against the heat put in (`energy_balance_pct`), the cells
-each fan and fin zone caught, and the limits. Its histories cover the whole run, joined across continuations
+objects); `run()` runs it natively or in Docker; `results()` returns temperatures, fan flow and pressure, three
+temperatures for each fan (below), the heat leaving with the air against the heat put in (`energy_balance_pct`), the
+cells each fan and fin zone caught, and the limits. With adiabatic walls every watt put in must leave with the air:
+when the heat leaving is more than 5 % off (`energy_check()`; 0.5 W when nothing is put in), `energy_conserved` is
+False and `warnings` says so, and the temperatures are not an answer yet. Its histories cover the whole run, joined across continuations
 (`restarts`, one entry per continuation; a second solve from the same saved time writes `<kind>_<time>.dat` and is read
 too, one that crashed at start and logged nothing is left out, and one that stopped before its first temperature
 sample still replaces the rows after its start): residuals, each solid's hottest temperature and `monitors` (fin-block
@@ -813,10 +815,52 @@ heat leaving to have stopped changing *and* the energy balance within 5 %. The c
 `convergence_window`: the iterations from 80 % of the last one onward, cut to the newest solve (after a continuation
 shorter than a fifth of the run, that is the whole newest solve; after one that logged no temperature rows, there is
 no window and nothing is steady). `steady` holds each change to its entry
-in `convergence_limits`: under 1 °C for every temperature (each solid's hottest, a fin block's air and the air through
-each fan) and under 2 % for the fan flow and the heat leaving. Exchanger fin blocks are set to their power by
+in `convergence_limits`: under 1 °C for every temperature (each solid's hottest, a fin block's air, and each fan's
+zone, inlet and outlet) and under 2 % for the fan flow and the heat leaving. Exchanger fin blocks are set to their power by
 `calibrate_fins()` (secant steps on the fin temperature, only once the heat leaving has settled; `calibrated` says
 whether it got there).
+
+**A fan's three temperatures.** Each fan has an inlet and an outlet face: the mesh faces that cross the annulus at each
+end of its zone, oriented along its axis. The solver logs two values on each face every 10 iterations: the
+mass-flow-weighted temperature, Σφ T / Σφ (`surfaceFieldValue`, `operation weightedAverage; weightField phi;`), and
+the net mass flow, Σφ.
+
+| In `fans[<fan>]` | What it is | Use it for |
+|---|---|---|
+| `inlet_c`, `outlet_c` | Mass-flow-weighted temperature on each face | Energy balances, Q = ṁ c_p ΔT |
+| `inlet_kg_s`, `outlet_kg_s` | Net mass flow through each face, along the axis | The ṁ in that balance |
+| `heat_carried_w` | ṁ c_p (`outlet_c` − room), from `stream_heat_w()` | A check against the heat put in |
+| `air_through_fan_c` | Volume average over the fan zone (also `zones[<fan>]['T_c']`) | How warm the fan sits, not heat: it counts still and returning air like air that flows |
+
+![Two sections through a vented 20 W box with an exhaust fan, coloured by air temperature with streamlines. With the fan 3 mm under the opening, air loops back down through the fan's hub and round its rim: the fan moves 4.06 g/s and carries 32.65 W above the room for 20 W put in. With the fan in a duct and its hub plugged, the air passes once: 2.81 g/s, 19.94 W. In both runs the inlet, outlet and volume-average temperatures agree within 0.1 K.](img/cfd/fan-faces.webp)
+
+*Two recorded runs (`tools/cfd_fan_figure.py`; `docs/img/cfd/SOURCE.json` holds the revision and the numbers). Here
+the three temperatures agree within 0.1 K; #47 expects about 1 K with a dead hub and tip recirculation. What differs
+is where the fan's air goes. A fan that takes back its own air counts that air each time it passes, so `heat_carried_w` is more than the
+heat put in. Its ṁ is then not the flow through the parts upstream, and T<sub>fan</sub> − Q / (ṁ c<sub>p</sub>)
+does not give the air there. The run under the opening also ends on a swing of its plume, so `energy_conserved` flags
+it (+5.7 %).*
+
+<details>
+<summary>How the faces are built, and their limits</summary>
+
+- **Built in the case, computed by the solver.** topoSet's `searchableSurfaceToFaceZone` takes the faces whose
+  cell-to-cell line crosses an annular `searchableDisk` (`radius`, `innerRadius`). The disk lies 0.1 µm inside each end
+  plane of the fan zone, and its `normal` is the fan's axis, which orients the faces. Keywords are from OpenFOAM
+  v2512's own headers in the `opencfd/openfoam-default:2512` image: `surfaceFieldValue.H`,
+  `searchableSurfaceToFaceZone.H` and `searchableDisk.H`. `empty-surface warn` makes a face that caught nothing write
+  NaN, not stop the run. `zone_faces` lists each face's count, and an empty one is an `error`.
+- **A staircase, not a plane.** On a snapped mesh the faces step with the cells, so their area is a few percent above
+  the annulus. The fluxes are exact: the faces separate the cells on one side from those on the other.
+- **Face values are interpolated** between the two cells either side. The solver's own energy flux is upwind, so the
+  two can differ slightly where the temperature changes sharply across a cell.
+- **The hub is not counted.** Air that returns through the hub of an actuator disc crosses neither face. Under the
+  opening above, it shows as the fan carrying more heat than is put in.
+- **Too little net flow to weight by** (under 1 % of the fan's free-air mass flow) gives `None` and a warning.
+  `weightedAverage` divides by the net flow.
+- **Old cases.** A case written before these faces has none, and continuing it does not add them: write it again.
+
+</details>
 
 Two choices matter for honest numbers, and both are covered by tests:
 - **The open boundary is hydrostatic** (`p_rgh` uniform): still room air stays still. A uniform *static* pressure

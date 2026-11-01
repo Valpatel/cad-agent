@@ -1,0 +1,105 @@
+{
+  "name": "exhaust-ducted",
+  "solver": "chtMultiRegionSimpleFoam (OpenFOAM v2512)",
+  "ambient_c": 25,
+  "domain_mm": [
+    [
+      -50.0,
+      -50.0,
+      0.0
+    ],
+    [
+      130.0,
+      130.0,
+      170.0
+    ]
+  ],
+  "base_cell_mm": 8,
+  "iterations": 1500,
+  "ground": "adiabatic no-slip floor (a table)",
+  "solids": [],
+  "walls": [
+    {
+      "name": "box",
+      "cell_mm": 2.0
+    },
+    {
+      "name": "hub",
+      "cell_mm": 2.0
+    }
+  ],
+  "contacts": [],
+  "fans": [
+    {
+      "name": "fan",
+      "centre_mm": [
+        40,
+        40,
+        60
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "d_outer_mm": 50,
+      "d_hub_mm": 20,
+      "dp0_pa": 20,
+      "q_free_m3h": 30,
+      "q_free_cfm": 17.7,
+      "note": "",
+      "model": "actuator disc, linear fan curve"
+    }
+  ],
+  "porous": [
+    {
+      "name": "heater",
+      "lo_mm": [
+        20.0,
+        20.0,
+        24.0
+      ],
+      "hi_mm": [
+        60.0,
+        60.0,
+        44.0
+      ],
+      "d": [
+        200000.0,
+        200000.0,
+        200000.0
+      ],
+      "f": [
+        0,
+        0,
+        0
+      ],
+      "e1": [
+        1,
+        0,
+        0
+      ],
+      "e2": [
+        0,
+        1,
+        0
+      ],
+      "heat_w": 20.0,
+      "ha_w_k": null,
+      "fin_temperature_c": null,
+      "target_w": 20.0,
+      "note": ""
+    }
+  ],
+  "heat_input_w": 20.0,
+  "limits": [
+    "steady RANS (k-omega SST): natural-convection plumes really fluctuate",
+    "no radiation: passive cases are pessimistic (radiation can carry a third of the heat from a hot plate in still air)",
+    "walls use wall functions without prism layers, so wall heat transfer depends on the mesh: check a case one level finer before trusting a small difference",
+    "converged means the temperatures, fan flow and heat leaving stopped changing and the heat leaving matches the heat put in (energy balance), not that the residuals reached a tolerance",
+    "isotropic solids: heat pipes are an effective conductivity, with no dry-out limit",
+    "obstacles (enclosure, boards) are adiabatic: the heat leaves only with the air",
+    "fans are actuator discs with a straight-line fan curve, no swirl",
+    "a fan's inlet and outlet temperatures are mass-flow-weighted over the annulus at each end of its zone (face values interpolated between the cells either side); air through the hub is not counted"
+  ]
+}

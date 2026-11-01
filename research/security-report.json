@@ -1,0 +1,7684 @@
+{
+ "schema": "cad-agent-supply-chain/1",
+ "as_of": "2026-11-01",
+ "mode": "online",
+ "revision": "e2ce893ad70195ed5016bc426821c0fafa470639",
+ "summary": {
+  "critical": 0,
+  "high": 0,
+  "medium": 19,
+  "low": 34,
+  "info": 7,
+  "accepted": 0,
+  "items": {
+   "python": 22,
+   "npm": 22,
+   "vendored": 6,
+   "webkit": 6,
+   "links": 313,
+   "skills": 13,
+   "repo": 2
+  }
+ },
+ "sources": {
+  "deps.dev": "api.deps.dev v3 dependency graphs (newest releases)",
+  "github": "GitHub REST API (gh)",
+  "npm-audit": "npm audit --package-lock-only",
+  "npm-registry": "registry.npmjs.org (abbreviated metadata)",
+  "offline": "pyproject.toml, package.json, package-lock.json, vendor/manifest.json, kit hash records, THIRD_PARTY_NOTICES.md, upstreams/registry.yaml, research/landscape.json, published Markdown",
+  "osv": "osv.dev querybatch and vulns",
+  "pypi": "pypi.org JSON API",
+  "scorecard": "api.securityscorecards.dev"
+ },
+ "limits": [
+  "A clean report is not proof of safety: advisory databases (OSV, the npm registry) only know what has been reported.",
+  "Licences come from licence files and registry metadata (GitHub, PyPI, npm), matched by keyword; they are not a legal review.",
+  "Link checks see status codes and redirects, not content: a parked or replaced page that answers 200 passes. Domain expiry is not checked.",
+  "GitHub links are checked at repository level; a missing file or anchor inside a live repository is not seen.",
+  "Python versions are checked at the newest release and the lowest release our range allows, not at every version in between.",
+  "Offline mode checks only what the checkout shows (pins, hashes, licence files, lockfile, link schemes, install advice)."
+ ],
+ "extra": {
+  "python_groups": {
+   "required": [
+    "numpy",
+    "pyyaml"
+   ],
+   "cad": [
+    "cadquery",
+    "matplotlib",
+    "numpy",
+    "pillow",
+    "trimesh",
+    "vtk"
+   ],
+   "robot": [
+    "mujoco"
+   ],
+   "sim": [
+    "imageio",
+    "imageio-ffmpeg",
+    "manifold3d",
+    "matplotlib",
+    "pillow",
+    "pymoto",
+    "pyvista",
+    "rtree",
+    "scipy",
+    "trimesh"
+   ],
+   "site": [
+    "markdown"
+   ],
+   "fea": [
+    "gmsh",
+    "matplotlib",
+    "pyamg",
+    "pypardiso",
+    "scikit-fem"
+   ],
+   "explore": [
+    "optuna"
+   ],
+   "dev": [
+    "pytest"
+   ]
+  },
+  "python_counts": {
+   "required": {
+    "direct": 2,
+    "with_transitive": 2
+   },
+   "cad": {
+    "direct": 6,
+    "with_transitive": 45
+   },
+   "robot": {
+    "direct": 1,
+    "with_transitive": 10
+   },
+   "sim": {
+    "direct": 10,
+    "with_transitive": 41
+   },
+   "site": {
+    "direct": 1,
+    "with_transitive": 1
+   },
+   "fea": {
+    "direct": 5,
+    "with_transitive": null
+   },
+   "explore": {
+    "direct": 1,
+    "with_transitive": 11
+   },
+   "dev": {
+    "direct": 1,
+    "with_transitive": 5
+   }
+  },
+  "npm_counts": {
+   "direct": 4,
+   "with_transitive": 22
+  }
+ },
+ "findings": [
+  {
+   "severity": "medium",
+   "check": "advisory",
+   "subject": "webkit:file-parsers",
+   "title": "the vendored fflate 0.6.9 has 1 known advisory",
+   "evidence": "GHSA-px8p-9vwx-vf98 (medium, fixed in 0.6.11): fflate unzipSync can enter an infinite loop when parsing malformed ZIP64 archives",
+   "action": "Update the vendored copy to >=0.6.11: new files, new SHA-256 records and notices, then the web kit browser suites (it ships to every project site that copies the kit).",
+   "fp": "1dec6a7c7b1dcffd"
+  },
+  {
+   "severity": "medium",
+   "check": "advisory",
+   "subject": "webkit:mermaid",
+   "title": "the vendored mermaid 11.4.1 has 9 known advisories",
+   "evidence": "GHSA-2v8p-3f2j-5mp7 (medium, fixed in 11.16.1): Mermaid XY Charts are vulnerable to an infinite loop DoS; GHSA-6m6c-36f7-fhxh (medium, fixed in 11.15.0): Mermaid Gantt Charts are vulnerable to an Infinite Loop DoS; GHSA-6x64-9x62-f2gx (medium, fixed in 11.16.1): Mermaid allows CSS injection applying to sibling elements of the diagram; GHSA-7rqq-prvp-x9jh (medium, fixed in 11.10.0): Mermaid improperly sanitizes sequence diagram labels leading to XSS; GHSA-87f9-hvmw-gh4p (medium, fixed in 11.15.0): Mermaid: Improper sanitization of configuration leads to CSS injection; GHSA-8gwm-58g9-j8pw (medium, fixed in 11.10.0): Mermaid does not properly sanitize architecture diagram iconText leading to XSS; GHSA-ghcm-xqfw-q4vr (medium, fixed in 11.15.0): Mermaid: Improper sanitization of `classDef` in state diagrams leads to HTML injection; GHSA-xcj9-5m2h-648r (medium, fixed in 11.15.0): Mermaid: Improper sanitization of `classDefs` in diagrams leads to CSS injection and 1 more",
+   "action": "Update the vendored copy to >=11.16.1: new files, new SHA-256 records and notices, then the web kit browser suites (it ships to every project site that copies the kit).",
+   "fp": "7dab172e01a48406"
+  },
+  {
+   "severity": "medium",
+   "check": "install-from-registry",
+   "subject": "doc:research/landscape.md",
+   "title": "research/landscape.md installs a plugin from a marketplace",
+   "evidence": "research/landscape.md:77: `claude plugin marketplace add earthtojake/text-to-cad#latest`",
+   "action": "Standing rule: never install skills or plugins from registries. Vendor a pinned commit (tools/vendor_sync.py) or point at a reviewed release by commit, and say so.",
+   "fp": "18d63ad8bdf1424e"
+  },
+  {
+   "severity": "medium",
+   "check": "install-from-registry",
+   "subject": "doc:research/landscape.md",
+   "title": "research/landscape.md installs a plugin from a marketplace",
+   "evidence": "research/landscape.md:78: `claude plugin install text-to-cad@earthtojake`",
+   "action": "Standing rule: never install skills or plugins from registries. Vendor a pinned commit (tools/vendor_sync.py) or point at a reviewed release by commit, and say so.",
+   "fp": "7fa62dc9261e6173"
+  },
+  {
+   "severity": "medium",
+   "check": "install-pipe-to-shell",
+   "subject": "doc:research/landscape.md",
+   "title": "research/landscape.md pipes a download into a shell",
+   "evidence": "research/landscape.md:147: `curl | sh`",
+   "action": "If this is advice, replace it with a pinned, checksummed download or a package manager; if it only describes how a project installs, say that it is a risk.",
+   "fp": "926c27703cdfd3ac"
+  },
+  {
+   "severity": "medium",
+   "check": "link-dead",
+   "subject": "url:https://dl.openfoam.com/source/latest/openfoam-docker",
+   "title": "https://dl.openfoam.com/source/latest/openfoam-docker is gone (HTTP 404)",
+   "evidence": "research/simulation-tools.md:63",
+   "action": "Replace it with a live source (or an archive.org copy, marked as such), or remove it.",
+   "fp": "c40ca70e3b370ea5"
+  },
+  {
+   "severity": "medium",
+   "check": "link-dead",
+   "subject": "url:https://polyalkemi.no/wp-content/uploads/2024/01/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf",
+   "title": "https://polyalkemi.no/wp-content/uploads/2024/01/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf is gone (HTTP 404)",
+   "evidence": "research/compliant-mechanisms.md:267",
+   "action": "Replace it with a live source (or an archive.org copy, marked as such), or remove it.",
+   "fp": "33fc015393876686"
+  },
+  {
+   "severity": "medium",
+   "check": "link-not-https",
+   "subject": "url:http://www.dhondt.de/",
+   "title": "www.dhondt.de is linked over plain HTTP",
+   "evidence": "research/fea-and-process-tools.md:24",
+   "action": "Link the https:// address; if the site has none, say so next to the link.",
+   "fp": "da125adb0e05d69f"
+  },
+  {
+   "severity": "medium",
+   "check": "link-not-https",
+   "subject": "url:http://www.dhondt.de/ccx_2.23.pdf",
+   "title": "www.dhondt.de is linked over plain HTTP",
+   "evidence": "research/fea-and-process-tools.md:24",
+   "action": "Link the https:// address; if the site has none, say so next to the link.",
+   "fp": "c3a432b0f477bfe4"
+  },
+  {
+   "severity": "medium",
+   "check": "npm-install-script",
+   "subject": "npm:fsevents",
+   "title": "fsevents runs an install script (only on darwin)",
+   "evidence": "node_modules/fsevents 2.3.2: hasInstallScript, optional",
+   "action": "Read the script; in CI prefer npm ci --ignore-scripts where the package works without it.",
+   "fp": "ebf02989b46d4603"
+  },
+  {
+   "severity": "medium",
+   "check": "repo-archived",
+   "subject": "url:https://github.com/google/feabench",
+   "title": "google/feabench is archived (read-only, no fixes)",
+   "evidence": "last push 2025-05-07",
+   "action": "Show it as \"unmaintained\" (status or note) instead of removing it; plan a replacement if we use its code.",
+   "fp": "c4a72a8d6b857b3c"
+  },
+  {
+   "severity": "medium",
+   "check": "repo-archived",
+   "subject": "url:https://github.com/microsoft/CADFusion",
+   "title": "microsoft/CADFusion is archived (read-only, no fixes)",
+   "evidence": "last push 2026-07-02",
+   "action": "Show it as \"unmaintained\" (status or note) instead of removing it; plan a replacement if we use its code.",
+   "fp": "dd5331c16c5f9fe0"
+  },
+  {
+   "severity": "medium",
+   "check": "repo-archived",
+   "subject": "url:https://github.com/mixelpixx/Konnect",
+   "title": "mixelpixx/Konnect is archived (read-only, no fixes)",
+   "evidence": "last push 2026-10-26",
+   "action": "Show it as \"unmaintained\" (status or note) instead of removing it; plan a replacement if we use its code.",
+   "fp": "ee6c94affc61faed"
+  },
+  {
+   "severity": "medium",
+   "check": "repo-dependency-graph-empty",
+   "subject": "repo:Valpatel/cad-agent",
+   "title": "GitHub's dependency graph sees no manifests",
+   "evidence": "dependencyGraphManifests.totalCount = 0, so Dependabot alerts cannot fire for package-lock.json or pyproject.toml",
+   "action": "Owner: check the dependency graph is enabled (Settings, Code security); until then this report is the only advisory check.",
+   "fp": "e103efb6ce52514b"
+  },
+  {
+   "severity": "medium",
+   "check": "repo-moved",
+   "subject": "url:https://github.com/American-Embedded/kistack",
+   "title": "American-Embedded/kistack moved to BackplaneWorks/kistack",
+   "evidence": "https://github.com/American-Embedded/kistack redirects to https://github.com/BackplaneWorks/kistack",
+   "action": "Update the link to the new name (the old name can be registered by someone else); check the new owner is who you expect.",
+   "fp": "a22034176893e7eb"
+  },
+  {
+   "severity": "medium",
+   "check": "repo-moved",
+   "subject": "url:https://github.com/anyoptimization/pymoo",
+   "title": "anyoptimization/pymoo moved to the-dual-space/pymoo",
+   "evidence": "https://github.com/anyoptimization/pymoo redirects to https://github.com/the-dual-space/pymoo",
+   "action": "Update the link to the new name (the old name can be registered by someone else); check the new owner is who you expect.",
+   "fp": "3124c1e1ec8b4f2f"
+  },
+  {
+   "severity": "medium",
+   "check": "repo-moved",
+   "subject": "url:https://github.com/facebook/Ax",
+   "title": "facebook/Ax moved to meta/Ax",
+   "evidence": "https://github.com/facebook/Ax redirects to https://github.com/meta/Ax",
+   "action": "Update the link to the new name (the old name can be registered by someone else); check the new owner is who you expect.",
+   "fp": "b25b4de8e79d948f"
+  },
+  {
+   "severity": "medium",
+   "check": "repo-moved",
+   "subject": "url:https://github.com/i2cjak/Backplane",
+   "title": "i2cjak/Backplane moved to BackplaneWorks/Backplane",
+   "evidence": "https://github.com/i2cjak/Backplane redirects to https://github.com/BackplaneWorks/Backplane",
+   "action": "Update the link to the new name (the old name can be registered by someone else); check the new owner is who you expect.",
+   "fp": "985224a99d226b1a"
+  },
+  {
+   "severity": "medium",
+   "check": "repo-secret-scanning",
+   "subject": "repo:Valpatel/cad-agent",
+   "title": "secret scanning is off",
+   "evidence": "security_and_analysis.secret_scanning: disabled",
+   "action": "Owner: turn on secret scanning and push protection (Settings, Code security); free for public repositories.",
+   "fp": "8847ada483400af2"
+  },
+  {
+   "severity": "low",
+   "check": "advisory",
+   "subject": "pypi:markdown",
+   "title": "our range allows markdown 3.5, which has 1 known advisory",
+   "evidence": "GHSA-5wmx-573v-2qwq (medium, fixed in 3.8.1): Python-Markdown has an Uncaught Exception",
+   "action": "Raise the floor to >=3.8.1 in pyproject.toml.",
+   "fp": "aec9c2aa2b775c24"
+  },
+  {
+   "severity": "low",
+   "check": "advisory",
+   "subject": "pypi:pillow",
+   "title": "our range allows pillow 10.0.0, which has 53 known advisories",
+   "evidence": "GHSA-332p-7hrc-92wf (critical, fixed in 13.0.0): Pillow: Heap buffer overflow in _tiffWriteProc when saving TIFF to BytesIO; GHSA-3f63-hfp8-52jq (critical, fixed in 10.2.0): Arbitrary Code Execution in Pillow; GHSA-5x8w-8jj5-q52h (critical, fixed in 13.0.0): Pillow: Heap buffer overflow in FlashPix (FPX) JPEG decoding leads to code execution; GHSA-8g5g-8vmr-9782 (critical, fixed in 13.0.0): Pillow: Heap buffer overflow in ImagingJpegDecode; GHSA-w889-685w-c8fh (critical, fixed in 13.0.0): Pillow: Argument Injection in Ghostscript call, potentially leading into RCE; GHSA-22hg-r758-rrw9 (high, fixed in 13.0.0): Pillow: Infinite loop in MIC n_frames when the embedded TIFF; GHSA-27h8-gf7j-v5hc (high, fixed in 13.0.0): Pillow: NULL dereference in ImagingExpand via rank filters on zero-size images; GHSA-3j72-p6qg-6xp7 (high, fixed in 13.0.0): Pillow: TarIO negative size field causes infinite CPU-spin loop and 45 more",
+   "action": "Raise the floor to >=13.0.0 in pyproject.toml.",
+   "fp": "f35b2ef2b183b94e"
+  },
+  {
+   "severity": "low",
+   "check": "advisory",
+   "subject": "pypi:vtk",
+   "title": "our range allows vtk 9.2.2, which has 3 known advisories",
+   "evidence": "PYSEC-2025-224 (medium, fixed in 9.5.1): Kitware VTK (Visualization Toolkit) up to 9.5.0 is vulnerable to Buffer Overflow in vtkGLTFDocumentLoader. The vulnerability occurs in the BufferDataExtractionW; PYSEC-2025-225 (medium, fixed in 9.5.1): Kitware VTK (Visualization Toolkit) through 9.5.0 contains a heap buffer overflow vulnerability in vtkGLTFDocumentLoader. When processing specially crafted GLTF; PYSEC-2025-226 (medium, fixed in 9.5.1): Kitware VTK (Visualization Toolkit) through 9.5.0 contains a heap use-after-free vulnerability in vtkGLTFDocumentLoader. The vulnerability manifests during mesh",
+   "action": "Raise the floor to >=9.5.1 in pyproject.toml.",
+   "fp": "7369b1a9d7cd0356"
+  },
+  {
+   "severity": "low",
+   "check": "catalogue-no-licence",
+   "subject": "url:https://cadarena.dev/",
+   "title": "no licence recorded for CAD Arena",
+   "evidence": "research/landscape.json benchmarks; research/landscape.md:180",
+   "action": "Record the licence (or \"none\": ideas only).",
+   "fp": "4bc4120cb500179e"
+  },
+  {
+   "severity": "low",
+   "check": "catalogue-no-licence",
+   "subject": "url:https://github.com/Kamel773/CAD_Code_Generation",
+   "title": "no licence recorded for CADPrompt/CADCodeVerify",
+   "evidence": "research/landscape.json benchmarks",
+   "action": "Record the licence (or \"none\": ideas only).",
+   "fp": "f23c1038a8199b04"
+  },
+  {
+   "severity": "low",
+   "check": "dependabot-ecosystem",
+   "subject": "repo:dependabot-npm",
+   "title": "Dependabot does not watch npm (package.json)",
+   "evidence": ".github/dependabot.yml ecosystems: github-actions",
+   "action": "Add a weekly npm entry targeting dev (owner decision: it opens PRs).",
+   "fp": "1f04e00c5e5dc2be"
+  },
+  {
+   "severity": "low",
+   "check": "dependabot-ecosystem",
+   "subject": "repo:dependabot-pip",
+   "title": "Dependabot does not watch pip (pyproject.toml)",
+   "evidence": ".github/dependabot.yml ecosystems: github-actions",
+   "action": "Add a weekly pip entry targeting dev (owner decision: it opens PRs).",
+   "fp": "b8c4dd692ce86b5e"
+  },
+  {
+   "severity": "low",
+   "check": "install-unpinned",
+   "subject": "doc:research/landscape.md",
+   "title": "research/landscape.md runs cadgen without a version",
+   "evidence": "research/landscape.md:91: `uvx cadgen telemetry off`",
+   "action": "Pin it (cadgen==X or cadgen@X), so a later release cannot change what runs.",
+   "fp": "088f765ec4785a1a"
+  },
+  {
+   "severity": "low",
+   "check": "install-unpinned",
+   "subject": "doc:research/landscape.md",
+   "title": "research/landscape.md runs kicad-mcp-pro without a version",
+   "evidence": "research/landscape.md:121: `uvx kicad-mcp-pro`",
+   "action": "Pin it (kicad-mcp-pro==X or kicad-mcp-pro@X), so a later release cannot change what runs.",
+   "fp": "706b0dd51618c34b"
+  },
+  {
+   "severity": "low",
+   "check": "licence-none",
+   "subject": "url:https://github.com/Kamel773/CAD_Code_Generation",
+   "title": "Kamel773/CAD_Code_Generation has no licence GitHub can detect",
+   "evidence": "https://github.com/Kamel773/CAD_Code_Generation",
+   "action": "Without a licence it is all rights reserved: ideas only, never copied code.",
+   "fp": "a869e4c8ec527310"
+  },
+  {
+   "severity": "low",
+   "check": "py-no-floor",
+   "subject": "pypi:numpy",
+   "title": "numpy has no lower version bound in cad, required",
+   "evidence": "pyproject.toml: cad: numpy, required: numpy",
+   "action": "Set a floor at a release without known advisories (and the oldest one you are willing to support), so an install with old pins cannot pick something worse.",
+   "fp": "bc30ada49488a67d"
+  },
+  {
+   "severity": "low",
+   "check": "py-no-floor",
+   "subject": "pypi:pyyaml",
+   "title": "pyyaml has no lower version bound in required",
+   "evidence": "pyproject.toml: required: pyyaml",
+   "action": "Set a floor at a release without known advisories (and the oldest one you are willing to support), so an install with old pins cannot pick something worse.",
+   "fp": "cb98b4e24608a717"
+  },
+  {
+   "severity": "low",
+   "check": "repo-dependabot-updates",
+   "subject": "repo:Valpatel/cad-agent",
+   "title": "Dependabot security updates are off",
+   "evidence": "security_and_analysis.dependabot_security_updates: disabled",
+   "action": "Owner decision: they open fix PRs for alerts (into the default branch, dev).",
+   "fp": "2757d089d0fb3961"
+  },
+  {
+   "severity": "low",
+   "check": "repo-stale",
+   "subject": "url:https://github.com/AutodeskAILab/JoinABLe",
+   "title": "no push to AutodeskAILab/JoinABLe for over a year",
+   "evidence": "last push 2022-04-22",
+   "action": "Check it is still maintained; if not, show it as \"unmaintained\".",
+   "fp": "2b3dd90bfb3d6816"
+  },
+  {
+   "severity": "low",
+   "check": "repo-stale",
+   "subject": "url:https://github.com/ElmerCSC/elmerfem-docker",
+   "title": "no push to ElmerCSC/elmerfem-docker for over a year",
+   "evidence": "last push 2021-03-09",
+   "action": "Check it is still maintained; if not, show it as \"unmaintained\".",
+   "fp": "90f30849d807734a"
+  },
+  {
+   "severity": "low",
+   "check": "repo-stale",
+   "subject": "url:https://github.com/Gary-code/CADReview",
+   "title": "no push to Gary-code/CADReview for over a year",
+   "evidence": "last push 2025-08-08",
+   "action": "Check it is still maintained; if not, show it as \"unmaintained\".",
+   "fp": "317ebec9ceb7bc11"
+  },
+  {
+   "severity": "low",
+   "check": "repo-stale",
+   "subject": "url:https://github.com/Kamel773/CAD_Code_Generation",
+   "title": "no push to Kamel773/CAD_Code_Generation for over a year",
+   "evidence": "last push 2025-02-28",
+   "action": "Check it is still maintained; if not, show it as \"unmaintained\".",
+   "fp": "ceddbe5d271799d5"
+  },
+  {
+   "severity": "low",
+   "check": "repo-stale",
+   "subject": "url:https://github.com/Mechanical-Python/SnapFit_Calculator",
+   "title": "no push to Mechanical-Python/SnapFit_Calculator for over a year",
+   "evidence": "last push 2022-03-16",
+   "action": "Check it is still maintained; if not, show it as \"unmaintained\".",
+   "fp": "289acd50063aa457"
+  },
+  {
+   "severity": "low",
+   "check": "repo-stale",
+   "subject": "url:https://github.com/SadilKhan/Text2CAD",
+   "title": "no push to SadilKhan/Text2CAD for over a year",
+   "evidence": "last push 2025-05-15",
+   "action": "Check it is still maintained; if not, show it as \"unmaintained\".",
+   "fp": "196726bf37b8d97d"
+  },
+  {
+   "severity": "low",
+   "check": "repo-stale",
+   "subject": "url:https://github.com/anniedoris/CAD-Coder",
+   "title": "no push to anniedoris/CAD-Coder for over a year",
+   "evidence": "last push 2025-07-17",
+   "action": "Check it is still maintained; if not, show it as \"unmaintained\".",
+   "fp": "428fc40b69f0735b"
+  },
+  {
+   "severity": "low",
+   "check": "repo-stale",
+   "subject": "url:https://github.com/artofscience/flexures",
+   "title": "no push to artofscience/flexures for over a year",
+   "evidence": "last push 2023-11-06",
+   "action": "Check it is still maintained; if not, show it as \"unmaintained\".",
+   "fp": "555dbcedcee7135a"
+  },
+  {
+   "severity": "low",
+   "check": "repo-stale",
+   "subject": "url:https://github.com/buxtronix/living-hinge",
+   "title": "no push to buxtronix/living-hinge for over a year",
+   "evidence": "last push 2024-05-31",
+   "action": "Check it is still maintained; if not, show it as \"unmaintained\".",
+   "fp": "493577645e42df9c"
+  },
+  {
+   "severity": "low",
+   "check": "repo-stale",
+   "subject": "url:https://github.com/calculix/beso",
+   "title": "no push to calculix/beso for over a year",
+   "evidence": "last push 2025-04-03",
+   "action": "Check it is still maintained; if not, show it as \"unmaintained\".",
+   "fp": "30785c80f5bc244e"
+  },
+  {
+   "severity": "low",
+   "check": "repo-stale",
+   "subject": "url:https://github.com/dimitrismallis/CAD-Assistant",
+   "title": "no push to dimitrismallis/CAD-Assistant for over a year",
+   "evidence": "last push 2025-10-30",
+   "action": "Check it is still maintained; if not, show it as \"unmaintained\".",
+   "fp": "8d460432d3f14bf8"
+  },
+  {
+   "severity": "low",
+   "check": "repo-stale",
+   "subject": "url:https://github.com/dl4to/dl4to",
+   "title": "no push to dl4to/dl4to for over a year",
+   "evidence": "last push 2024-11-19",
+   "action": "Check it is still maintained; if not, show it as \"unmaintained\".",
+   "fp": "88c304400adb65ce"
+  },
+  {
+   "severity": "low",
+   "check": "repo-stale",
+   "subject": "url:https://github.com/lamaalrajih/kicad-mcp",
+   "title": "no push to lamaalrajih/kicad-mcp for over a year",
+   "evidence": "last push 2025-10-17",
+   "action": "Check it is still maintained; if not, show it as \"unmaintained\".",
+   "fp": "cd663c4c619b1029"
+  },
+  {
+   "severity": "low",
+   "check": "repo-stale",
+   "subject": "url:https://github.com/missionlab/fenitop",
+   "title": "no push to missionlab/fenitop for over a year",
+   "evidence": "last push 2024-11-01",
+   "action": "Check it is still maintained; if not, show it as \"unmaintained\".",
+   "fp": "2eb000006eec4e1c"
+  },
+  {
+   "severity": "low",
+   "check": "repo-stale",
+   "subject": "url:https://github.com/nohkumado/openscad_snapfit",
+   "title": "no push to nohkumado/openscad_snapfit for over a year",
+   "evidence": "last push 2021-11-01",
+   "action": "Check it is still maintained; if not, show it as \"unmaintained\".",
+   "fp": "36442bf26b3e1a20"
+  },
+  {
+   "severity": "low",
+   "check": "repo-stale",
+   "subject": "url:https://github.com/sgsellan/swept-volumes",
+   "title": "no push to sgsellan/swept-volumes for over a year",
+   "evidence": "last push 2024-07-18",
+   "action": "Check it is still maintained; if not, show it as \"unmaintained\".",
+   "fp": "a4f7282e5567da9a"
+  },
+  {
+   "severity": "low",
+   "check": "repo-stale",
+   "subject": "url:https://github.com/skyneticist/flexure-hinge-calculator",
+   "title": "no push to skyneticist/flexure-hinge-calculator for over a year",
+   "evidence": "last push 2025-06-08",
+   "action": "Check it is still maintained; if not, show it as \"unmaintained\".",
+   "fp": "6d02d78c7b95392f"
+  },
+  {
+   "severity": "low",
+   "check": "repo-stale",
+   "subject": "webkit:occt-import-js",
+   "title": "no push to kovacsv/occt-import-js for over a year",
+   "evidence": "last push 2024-12-03",
+   "action": "Check it is still maintained; if not, show it as \"unmaintained\".",
+   "fp": "bdabae3be11f6e41"
+  },
+  {
+   "severity": "low",
+   "check": "vendor-incomplete",
+   "subject": "vendor:kicad-mcp-pro",
+   "title": "3 upstream files of kicad-mcp-pro are neither vendored nor excluded",
+   "evidence": ".mcp.json, .vscode/extensions.json, .vscode/mcp.example.json (3 of them ignored by a .gitignore, so never committed)",
+   "action": "Add them to the manifest exclude list with a reason (or commit them), so the record says what was left out.",
+   "fp": "50547c8ca1d2e98b"
+  },
+  {
+   "severity": "low",
+   "check": "webkit-unhashed",
+   "subject": "webkit:fonts",
+   "title": "5 vendored files in fonts have no recorded hash",
+   "evidence": "fonts/OFL-Inter.txt, fonts/OFL-JetBrainsMono.txt, fonts/fonts.css, fonts/inter.woff2, fonts/jetbrains-mono.woff2",
+   "action": "Record their SHA-256 and source (as mermaid/SOURCE.json does), so a silent change is caught.",
+   "fp": "5ccb4fc1613ee18c"
+  },
+  {
+   "severity": "low",
+   "check": "webkit-unhashed",
+   "subject": "webkit:three",
+   "title": "5 vendored files in three have no recorded hash",
+   "evidence": "three/addons/controls/OrbitControls.js, three/addons/geometries/RoundedBoxGeometry.js, three/addons/loaders/STLLoader.js, three/addons/utils/BufferGeometryUtils.js, three/three.module.min.js",
+   "action": "Record their SHA-256 and source (as mermaid/SOURCE.json does), so a silent change is caught.",
+   "fp": "1337b28f633067a6"
+  },
+  {
+   "severity": "info",
+   "check": "link-unverified",
+   "subject": "url:https://develop.openfoam.com/Development/openfoam",
+   "title": "develop.openfoam.com did not answer",
+   "evidence": "The read operation timed out (upstreams/registry.yaml)",
+   "action": "Check by hand; run again later.",
+   "fp": "67e6fa623e1087fd"
+  },
+  {
+   "severity": "info",
+   "check": "link-unverified",
+   "subject": "url:https://hull-repository.worktribe.com/output/4511720/interlayer-bonding-has-bulk-material-strength-in-extrusion-additive-manufacturing-new-understanding-of-anisotropy",
+   "title": "hull-repository.worktribe.com answered HTTP 403",
+   "evidence": "research/compliant-mechanisms.md:257",
+   "action": "Many sites refuse scripts; check by hand.",
+   "fp": "5db1b666cc684617"
+  },
+  {
+   "severity": "info",
+   "check": "link-unverified",
+   "subject": "url:https://openelab.io/products/seeed-studio-recomputer-mini-j501-heatsink",
+   "title": "openelab.io answered HTTP 429",
+   "evidence": "research/simulation-tools.md:184",
+   "action": "Many sites refuse scripts; check by hand.",
+   "fp": "17dc89bae628ffaa"
+  },
+  {
+   "severity": "info",
+   "check": "link-unverified",
+   "subject": "url:https://www.autodesk.com/products/fusion-360/blog/fusion-compute-mcp/",
+   "title": "www.autodesk.com answered HTTP 403",
+   "evidence": "research/agent-toolkits-2026-10.md:49",
+   "action": "Many sites refuse scripts; check by hand.",
+   "fp": "04a6672cbc0b6587"
+  },
+  {
+   "severity": "info",
+   "check": "link-unverified",
+   "subject": "url:https://www.mouser.com/pdfDocs/Jetson_AGX_Orin_Series_TDG-10943-001_v11.pdf",
+   "title": "www.mouser.com did not answer",
+   "evidence": "The read operation timed out (research/simulation-tools.md:175)",
+   "action": "Check by hand; run again later.",
+   "fp": "6c166add84d555bd"
+  },
+  {
+   "severity": "info",
+   "check": "link-unverified",
+   "subject": "url:https://www.plasticstoday.com/plastics-processing/can-this-part-be-saved-part-3-living-hinges",
+   "title": "www.plasticstoday.com answered HTTP 403",
+   "evidence": "research/compliant-mechanisms.md:283",
+   "action": "Many sites refuse scripts; check by hand.",
+   "fp": "bd930c8bde567110"
+  },
+  {
+   "severity": "info",
+   "check": "py-no-floor",
+   "subject": "pypi:pytest",
+   "title": "pytest has no lower version bound in dev",
+   "evidence": "pyproject.toml: dev: pytest",
+   "action": "Set a floor at a release without known advisories (and the oldest one you are willing to support), so an install with old pins cannot pick something worse.",
+   "fp": "2adc490aac3e2397"
+  }
+ ],
+ "inventory": {
+  "python": [
+   {
+    "id": "pypi:cadquery",
+    "name": "cadquery",
+    "groups": [
+     "cad"
+    ],
+    "range": {
+     "cad": ">=2.4"
+    },
+    "floor": ">=2.4",
+    "latest": "2.8.0",
+    "last_release": "2026-06-21",
+    "licence": "Apache Public License 2.0",
+    "floor_release": "2.4.0",
+    "advisories": {
+     "latest": [],
+     "floor": []
+    },
+    "dependencies": 43
+   },
+   {
+    "id": "pypi:gmsh",
+    "name": "gmsh",
+    "groups": [
+     "fea"
+    ],
+    "range": {
+     "fea": ">=4.11"
+    },
+    "floor": ">=4.11",
+    "latest": "4.15.2",
+    "last_release": "2026-03-24",
+    "licence": "GPLv2+",
+    "floor_release": "4.11.0",
+    "advisories": {
+     "latest": [],
+     "floor": []
+    },
+    "dependencies": 0
+   },
+   {
+    "id": "pypi:imageio",
+    "name": "imageio",
+    "groups": [
+     "sim"
+    ],
+    "range": {
+     "sim": ">=2.30"
+    },
+    "floor": ">=2.30",
+    "latest": "2.38.1",
+    "last_release": "2026-10-08",
+    "licence": "BSD-2-Clause",
+    "floor_release": "2.30.0",
+    "advisories": {
+     "latest": [],
+     "floor": []
+    },
+    "dependencies": 2
+   },
+   {
+    "id": "pypi:imageio-ffmpeg",
+    "name": "imageio-ffmpeg",
+    "groups": [
+     "sim"
+    ],
+    "range": {
+     "sim": ">=0.5"
+    },
+    "floor": ">=0.5",
+    "latest": "0.7.0",
+    "last_release": "2026-10-28",
+    "licence": "BSD-2-Clause",
+    "floor_release": "0.5.0",
+    "advisories": {
+     "latest": [],
+     "floor": []
+    },
+    "dependencies": 0
+   },
+   {
+    "id": "pypi:manifold3d",
+    "name": "manifold3d",
+    "groups": [
+     "sim"
+    ],
+    "range": {
+     "sim": ">=2.4"
+    },
+    "floor": ">=2.4",
+    "latest": "3.5.4",
+    "last_release": "2026-09-25",
+    "licence": "Apache Software License",
+    "floor_release": "2.4.5",
+    "advisories": {
+     "latest": [],
+     "floor": []
+    },
+    "dependencies": 1
+   },
+   {
+    "id": "pypi:markdown",
+    "name": "markdown",
+    "groups": [
+     "site"
+    ],
+    "range": {
+     "site": ">=3.5"
+    },
+    "floor": ">=3.5",
+    "latest": "3.11.2",
+    "last_release": "2026-10-19",
+    "licence": "BSD-3-Clause",
+    "floor_release": "3.5",
+    "advisories": {
+     "latest": [],
+     "floor": [
+      "GHSA-5wmx-573v-2qwq"
+     ]
+    },
+    "dependencies": 0
+   },
+   {
+    "id": "pypi:matplotlib",
+    "name": "matplotlib",
+    "groups": [
+     "cad",
+     "fea",
+     "sim"
+    ],
+    "range": {
+     "cad": ">=3.7",
+     "fea": ">=3.7",
+     "sim": ">=3.7"
+    },
+    "floor": ">=3.7",
+    "latest": "3.11.2",
+    "last_release": "2026-09-11",
+    "licence": "Python Software Foundation License",
+    "floor_release": "3.7.0",
+    "advisories": {
+     "latest": [],
+     "floor": []
+    },
+    "dependencies": 11
+   },
+   {
+    "id": "pypi:mujoco",
+    "name": "mujoco",
+    "groups": [
+     "robot"
+    ],
+    "range": {
+     "robot": ">=3"
+    },
+    "floor": ">=3",
+    "latest": "3.17.0",
+    "last_release": "2026-10-22",
+    "licence": "Apache-2.0",
+    "floor_release": "3.0.0",
+    "advisories": {
+     "latest": [],
+     "floor": []
+    },
+    "dependencies": 9
+   },
+   {
+    "id": "pypi:numpy",
+    "name": "numpy",
+    "groups": [
+     "cad",
+     "required"
+    ],
+    "range": {
+     "cad": "any",
+     "required": "any"
+    },
+    "floor": null,
+    "latest": "2.5.4",
+    "last_release": "2026-10-10",
+    "licence": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+    "advisories": {
+     "latest": []
+    },
+    "dependencies": 0
+   },
+   {
+    "id": "pypi:optuna",
+    "name": "optuna",
+    "groups": [
+     "explore"
+    ],
+    "range": {
+     "explore": ">=3.4"
+    },
+    "floor": ">=3.4",
+    "latest": "5.0.0",
+    "last_release": "2026-09-07",
+    "licence": "MIT License",
+    "floor_release": "3.4.0",
+    "advisories": {
+     "latest": [],
+     "floor": []
+    },
+    "dependencies": 10
+   },
+   {
+    "id": "pypi:pillow",
+    "name": "pillow",
+    "groups": [
+     "cad",
+     "sim"
+    ],
+    "range": {
+     "cad": ">=10.0",
+     "sim": ">=10.0"
+    },
+    "floor": ">=10.0",
+    "latest": "13.0.0",
+    "last_release": "2026-10-16",
+    "licence": "MIT-CMU",
+    "floor_release": "10.0.0",
+    "advisories": {
+     "latest": [],
+     "floor": [
+      "GHSA-22hg-r758-rrw9",
+      "GHSA-24rc-8hj2-v98c",
+      "GHSA-254f-3936-288h",
+      "GHSA-27h8-gf7j-v5hc",
+      "GHSA-332p-7hrc-92wf",
+      "GHSA-3f63-hfp8-52jq",
+      "GHSA-3j72-p6qg-6xp7",
+      "GHSA-44wm-f244-xhp3",
+      "GHSA-4558-3h8r-v8xp",
+      "GHSA-45hq-cxwh-f6vc",
+      "GHSA-462x-pgg6-55fp",
+      "GHSA-4rm8-3hmm-39fg",
+      "GHSA-4x4j-2g7c-83w6",
+      "GHSA-58r4-6rv3-gfh8",
+      "GHSA-5x8w-8jj5-q52h",
+      "GHSA-5x94-69rx-g8h2",
+      "GHSA-5xm2-6676-qcp9",
+      "GHSA-62p4-gmf7-7g93",
+      "GHSA-65qm-jvmh-6pqg",
+      "GHSA-6r8x-57c9-28j4",
+      "GHSA-74r2-7ff9-mjj2",
+      "GHSA-7mwm-ghpf-9vrm",
+      "GHSA-8g5g-8vmr-9782",
+      "GHSA-8v84-f9pq-wr9x",
+      "GHSA-9hw9-ch79-4vh6",
+      "GHSA-9v9v-9qvf-h2hj",
+      "GHSA-c6hw-5grf-ff96",
+      "GHSA-f2g6-542v-9j58",
+      "GHSA-fc9g-5qg7-mf45",
+      "GHSA-fj7v-r99m-22gq",
+      "GHSA-g7cr-3p24-7wf7",
+      "GHSA-g842-9rc4-69pw",
+      "GHSA-gg2r-wvfm-q9rx",
+      "GHSA-j4m9-6w36-pw47",
+      "GHSA-j7hp-h8jx-5ppr",
+      "GHSA-jg86-v3jv-hrpm",
+      "GHSA-jjj6-mw9f-p565",
+      "GHSA-mrfp-p49p-3hf2",
+      "GHSA-p4wg-p73j-c528",
+      "GHSA-p8hx-v2p6-rp84",
+      "GHSA-pchr-8j38-3x4p",
+      "GHSA-phj9-mv4w-65pm",
+      "GHSA-q45j-58j2-45rg",
+      "GHSA-r73j-pqj5-w3x7",
+      "GHSA-rfgq-q3w2-pmv2",
+      "GHSA-vjc4-5qp5-m44j",
+      "GHSA-vx6w-vv9f-6gvg",
+      "GHSA-w889-685w-c8fh",
+      "GHSA-wjx4-4jcj-g98j",
+      "GHSA-xgh8-jp6q-p5x8",
+      "GHSA-xj96-63gp-2gmr",
+      "GHSA-xvh5-g6gv-559v",
+      "PYSEC-2023-175"
+     ]
+    },
+    "dependencies": 0
+   },
+   {
+    "id": "pypi:pyamg",
+    "name": "pyamg",
+    "groups": [
+     "fea"
+    ],
+    "range": {
+     "fea": ">=5"
+    },
+    "floor": ">=5",
+    "latest": "5.4.1",
+    "last_release": "2026-10-30",
+    "licence": "MIT License",
+    "floor_release": "5.0.0",
+    "advisories": {
+     "latest": [],
+     "floor": []
+    }
+   },
+   {
+    "id": "pypi:pymoto",
+    "name": "pymoto",
+    "groups": [
+     "sim"
+    ],
+    "range": {
+     "sim": ">=2.0"
+    },
+    "floor": ">=2.0",
+    "latest": "2.0.1",
+    "last_release": "2026-05-07",
+    "licence": "MIT",
+    "floor_release": "2.0.0",
+    "advisories": {
+     "latest": [],
+     "floor": []
+    },
+    "dependencies": 15
+   },
+   {
+    "id": "pypi:pypardiso",
+    "name": "pypardiso",
+    "groups": [
+     "fea"
+    ],
+    "range": {
+     "fea": ">=0.4"
+    },
+    "floor": ">=0.4",
+    "latest": "0.4.7",
+    "last_release": "2025-11-02",
+    "licence": "BSD-3-Clause",
+    "floor_release": "0.4.0",
+    "advisories": {
+     "latest": [],
+     "floor": []
+    },
+    "dependencies": 8
+   },
+   {
+    "id": "pypi:pytest",
+    "name": "pytest",
+    "groups": [
+     "dev"
+    ],
+    "range": {
+     "dev": "any"
+    },
+    "floor": null,
+    "latest": "9.2.0",
+    "last_release": "2026-10-27",
+    "licence": "MIT",
+    "advisories": {
+     "latest": []
+    },
+    "dependencies": 4
+   },
+   {
+    "id": "pypi:pyvista",
+    "name": "pyvista",
+    "groups": [
+     "sim"
+    ],
+    "range": {
+     "sim": ">=0.44"
+    },
+    "floor": ">=0.44",
+    "latest": "0.49.2",
+    "last_release": "2026-10-28",
+    "licence": "MIT",
+    "floor_release": "0.44.0",
+    "advisories": {
+     "latest": [],
+     "floor": []
+    },
+    "dependencies": 31
+   },
+   {
+    "id": "pypi:pyyaml",
+    "name": "pyyaml",
+    "groups": [
+     "required"
+    ],
+    "range": {
+     "required": "any"
+    },
+    "floor": null,
+    "latest": "6.0.3",
+    "last_release": "2025-09-25",
+    "licence": "MIT",
+    "advisories": {
+     "latest": []
+    },
+    "dependencies": 0
+   },
+   {
+    "id": "pypi:rtree",
+    "name": "rtree",
+    "groups": [
+     "sim"
+    ],
+    "range": {
+     "sim": ">=1.0"
+    },
+    "floor": ">=1.0",
+    "latest": "1.4.1",
+    "last_release": "2025-08-13",
+    "licence": "MIT",
+    "floor_release": "1.0.0",
+    "advisories": {
+     "latest": [],
+     "floor": []
+    },
+    "dependencies": 0
+   },
+   {
+    "id": "pypi:scikit-fem",
+    "name": "scikit-fem",
+    "groups": [
+     "fea"
+    ],
+    "range": {
+     "fea": ">=9"
+    },
+    "floor": ">=9",
+    "latest": "12.0.2",
+    "last_release": "2026-06-05",
+    "licence": "BSD License",
+    "floor_release": "9.0.0",
+    "advisories": {
+     "latest": [],
+     "floor": []
+    },
+    "dependencies": 2
+   },
+   {
+    "id": "pypi:scipy",
+    "name": "scipy",
+    "groups": [
+     "sim"
+    ],
+    "range": {
+     "sim": ">=1.10"
+    },
+    "floor": ">=1.10",
+    "latest": "1.18.1",
+    "last_release": "2026-08-21",
+    "licence": "BSD License",
+    "floor_release": "1.10.0",
+    "advisories": {
+     "latest": [],
+     "floor": []
+    },
+    "dependencies": 1
+   },
+   {
+    "id": "pypi:trimesh",
+    "name": "trimesh",
+    "groups": [
+     "cad",
+     "sim"
+    ],
+    "range": {
+     "cad": ">=4.0",
+     "sim": ">=4.0"
+    },
+    "floor": ">=4.0",
+    "latest": "5.2.0",
+    "last_release": "2026-10-24",
+    "licence": "MIT License",
+    "floor_release": "4.0.0",
+    "advisories": {
+     "latest": [],
+     "floor": []
+    },
+    "dependencies": 1
+   },
+   {
+    "id": "pypi:vtk",
+    "name": "vtk",
+    "groups": [
+     "cad"
+    ],
+    "range": {
+     "cad": ">=9.2"
+    },
+    "floor": ">=9.2",
+    "latest": "9.7.1",
+    "last_release": "2026-09-28",
+    "licence": "BSD",
+    "floor_release": "9.2.2",
+    "advisories": {
+     "latest": [],
+     "floor": [
+      "PYSEC-2025-224",
+      "PYSEC-2025-225",
+      "PYSEC-2025-226"
+     ]
+    },
+    "dependencies": 12
+   }
+  ],
+  "npm": [
+   {
+    "id": "npm:@playwright/test",
+    "name": "@playwright/test",
+    "version": "1.56.1",
+    "direct": true,
+    "dev": true,
+    "optional": false,
+    "licence": "Apache-2.0",
+    "install_script": false,
+    "os": null,
+    "latest": "1.64.1"
+   },
+   {
+    "id": "npm:dayjs",
+    "name": "dayjs",
+    "version": "1.11.23",
+    "direct": false,
+    "dev": true,
+    "optional": false,
+    "licence": "MIT",
+    "install_script": false,
+    "os": null,
+    "latest": "1.11.23"
+   },
+   {
+    "id": "npm:dom-serializer",
+    "name": "dom-serializer",
+    "version": "3.1.1",
+    "direct": false,
+    "dev": true,
+    "optional": false,
+    "licence": "MIT",
+    "install_script": false,
+    "os": null,
+    "latest": "3.1.1"
+   },
+   {
+    "id": "npm:domelementtype",
+    "name": "domelementtype",
+    "version": "3.0.0",
+    "direct": false,
+    "dev": true,
+    "optional": false,
+    "licence": "BSD-2-Clause",
+    "install_script": false,
+    "os": null,
+    "latest": "3.0.0"
+   },
+   {
+    "id": "npm:domhandler",
+    "name": "domhandler",
+    "version": "6.0.1",
+    "direct": false,
+    "dev": true,
+    "optional": false,
+    "licence": "BSD-2-Clause",
+    "install_script": false,
+    "os": null,
+    "latest": "6.0.1"
+   },
+   {
+    "id": "npm:domutils",
+    "name": "domutils",
+    "version": "4.0.2",
+    "direct": false,
+    "dev": true,
+    "optional": false,
+    "licence": "BSD-2-Clause",
+    "install_script": false,
+    "os": null,
+    "latest": "4.0.2"
+   },
+   {
+    "id": "npm:entities",
+    "name": "entities",
+    "version": "8.1.0",
+    "direct": false,
+    "dev": true,
+    "optional": false,
+    "licence": "BSD-2-Clause",
+    "install_script": false,
+    "os": null,
+    "latest": "9.0.0"
+   },
+   {
+    "id": "npm:escape-string-regexp",
+    "name": "escape-string-regexp",
+    "version": "4.0.0",
+    "direct": false,
+    "dev": true,
+    "optional": false,
+    "licence": "MIT",
+    "install_script": false,
+    "os": null,
+    "latest": "5.0.0"
+   },
+   {
+    "id": "npm:fsevents",
+    "name": "fsevents",
+    "version": "2.3.2",
+    "direct": false,
+    "dev": true,
+    "optional": true,
+    "licence": "MIT",
+    "install_script": true,
+    "os": [
+     "darwin"
+    ],
+    "latest": "2.3.3"
+   },
+   {
+    "id": "npm:htmlparser2",
+    "name": "htmlparser2",
+    "version": "12.0.0",
+    "direct": false,
+    "dev": true,
+    "optional": false,
+    "licence": "MIT",
+    "install_script": false,
+    "os": null,
+    "latest": "12.0.0"
+   },
+   {
+    "id": "npm:is-plain-object",
+    "name": "is-plain-object",
+    "version": "5.1.0",
+    "direct": false,
+    "dev": true,
+    "optional": false,
+    "licence": "MIT",
+    "install_script": false,
+    "os": null,
+    "latest": "5.1.0"
+   },
+   {
+    "id": "npm:launder",
+    "name": "launder",
+    "version": "1.7.2",
+    "direct": false,
+    "dev": true,
+    "optional": false,
+    "licence": "MIT",
+    "install_script": false,
+    "os": null,
+    "latest": "1.7.2"
+   },
+   {
+    "id": "npm:marked",
+    "name": "marked",
+    "version": "16.4.1",
+    "direct": true,
+    "dev": true,
+    "optional": false,
+    "licence": "MIT",
+    "install_script": false,
+    "os": null,
+    "latest": "18.1.2"
+   },
+   {
+    "id": "npm:nanoid",
+    "name": "nanoid",
+    "version": "3.3.20",
+    "direct": false,
+    "dev": true,
+    "optional": false,
+    "licence": "MIT",
+    "install_script": false,
+    "os": null,
+    "latest": "6.0.2"
+   },
+   {
+    "id": "npm:parse-srcset",
+    "name": "parse-srcset",
+    "version": "1.0.2",
+    "direct": false,
+    "dev": true,
+    "optional": false,
+    "licence": "MIT",
+    "install_script": false,
+    "os": null,
+    "latest": "1.0.2"
+   },
+   {
+    "id": "npm:picocolors",
+    "name": "picocolors",
+    "version": "1.1.1",
+    "direct": false,
+    "dev": true,
+    "optional": false,
+    "licence": "ISC",
+    "install_script": false,
+    "os": null,
+    "latest": "1.1.1"
+   },
+   {
+    "id": "npm:playwright",
+    "name": "playwright",
+    "version": "1.56.1",
+    "direct": false,
+    "dev": true,
+    "optional": false,
+    "licence": "Apache-2.0",
+    "install_script": false,
+    "os": null,
+    "latest": "1.64.1"
+   },
+   {
+    "id": "npm:playwright-core",
+    "name": "playwright-core",
+    "version": "1.56.1",
+    "direct": false,
+    "dev": true,
+    "optional": false,
+    "licence": "Apache-2.0",
+    "install_script": false,
+    "os": null,
+    "latest": "1.64.1"
+   },
+   {
+    "id": "npm:postcss",
+    "name": "postcss",
+    "version": "8.5.32",
+    "direct": false,
+    "dev": true,
+    "optional": false,
+    "licence": "MIT",
+    "install_script": false,
+    "os": null,
+    "latest": "8.5.32"
+   },
+   {
+    "id": "npm:sanitize-html",
+    "name": "sanitize-html",
+    "version": "2.18.1",
+    "direct": true,
+    "dev": true,
+    "optional": false,
+    "licence": "MIT",
+    "install_script": false,
+    "os": null,
+    "latest": "2.18.1"
+   },
+   {
+    "id": "npm:source-map-js",
+    "name": "source-map-js",
+    "version": "1.2.2",
+    "direct": false,
+    "dev": true,
+    "optional": false,
+    "licence": "BSD-3-Clause",
+    "install_script": false,
+    "os": null,
+    "latest": "1.2.2"
+   },
+   {
+    "id": "npm:yaml",
+    "name": "yaml",
+    "version": "2.9.1",
+    "direct": true,
+    "dev": true,
+    "optional": false,
+    "licence": "ISC",
+    "install_script": false,
+    "os": null,
+    "latest": "2.9.1"
+   }
+  ],
+  "vendored": [
+   {
+    "id": "vendor:agentcad",
+    "name": "agentcad",
+    "url": "https://github.com/jdilla1277/agentcad",
+    "sha": "52af472ddade4b26d8b0d47f304ac5f9f6183d53",
+    "imported": "2026-10-24",
+    "licence": "Apache-2.0",
+    "files": 234,
+    "skills": 0,
+    "patches": [],
+    "licence_file": "vendor/agentcad/LICENSE",
+    "licence_detected": "Apache-2.0",
+    "upstream": {
+     "state": "ok",
+     "full_name": "jdilla1277/agentcad",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-10-31"
+    },
+    "scorecard": {
+     "score": null,
+     "note": "not scored"
+    },
+    "behind": 15,
+    "drift": {
+     "compared": 234,
+     "changed": 0,
+     "added": 0,
+     "missing": 0
+    }
+   },
+   {
+    "id": "vendor:bd_warehouse",
+    "name": "bd_warehouse",
+    "url": "https://github.com/gumyr/bd_warehouse",
+    "sha": "e6ae6e7bae74cb3a50cbde395930ba24a1051f88",
+    "imported": "2026-10-24",
+    "licence": "Apache-2.0",
+    "files": 123,
+    "skills": 0,
+    "patches": [],
+    "licence_file": "vendor/bd_warehouse/LICENSE",
+    "licence_detected": "Apache-2.0",
+    "upstream": {
+     "state": "ok",
+     "full_name": "gumyr/bd_warehouse",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-10-31"
+    },
+    "scorecard": {
+     "score": null,
+     "note": "not scored"
+    },
+    "behind": 2,
+    "drift": {
+     "compared": 123,
+     "changed": 0,
+     "added": 0,
+     "missing": 0
+    }
+   },
+   {
+    "id": "vendor:build123d-mcp",
+    "name": "build123d-mcp",
+    "url": "https://github.com/pzfreo/build123d-mcp",
+    "sha": "59b2561218864c15cde08f19dff97be3906b6938",
+    "imported": "2026-10-24",
+    "licence": "Apache-2.0",
+    "files": 175,
+    "skills": 4,
+    "patches": [],
+    "licence_file": "vendor/build123d-mcp/LICENSE",
+    "licence_detected": "Apache-2.0",
+    "upstream": {
+     "state": "ok",
+     "full_name": "pzfreo/build123d-mcp",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-10-15"
+    },
+    "scorecard": {
+     "score": null,
+     "note": "not scored"
+    },
+    "behind": 0,
+    "drift": {
+     "compared": 175,
+     "changed": 0,
+     "added": 0,
+     "missing": 0
+    }
+   },
+   {
+    "id": "vendor:kicad-happy",
+    "name": "kicad-happy",
+    "url": "https://github.com/aklofas/kicad-happy",
+    "sha": "2fd9aa0fe2d620f36627d9221e8b1393987ae38e",
+    "imported": "2026-10-24",
+    "licence": "MIT",
+    "files": 213,
+    "skills": 11,
+    "patches": [],
+    "licence_file": "vendor/kicad-happy/LICENSE",
+    "licence_detected": "MIT",
+    "upstream": {
+     "state": "ok",
+     "full_name": "aklofas/kicad-happy",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    },
+    "scorecard": {
+     "score": null,
+     "note": "not scored"
+    },
+    "behind": 0,
+    "drift": {
+     "compared": 213,
+     "changed": 0,
+     "added": 0,
+     "missing": 0
+    }
+   },
+   {
+    "id": "vendor:kicad-mcp-pro",
+    "name": "kicad-mcp-pro",
+    "url": "https://github.com/oaslananka/kicad-mcp-pro",
+    "sha": "f03b478f597d4b3e8c6d99827a2152b73077a122",
+    "imported": "2026-10-24",
+    "licence": "MIT",
+    "files": 2088,
+    "skills": 30,
+    "patches": [],
+    "licence_file": "vendor/kicad-mcp-pro/LICENSE",
+    "licence_detected": "MIT",
+    "upstream": {
+     "state": "ok",
+     "full_name": "oaslananka/kicad-mcp-pro",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-11-01"
+    },
+    "scorecard": {
+     "score": 8.7,
+     "date": "2026-10-31T23:42:42Z",
+     "zero": [
+      "Signed-Releases"
+     ]
+    },
+    "behind": 93,
+    "drift": {
+     "compared": 2088,
+     "changed": 0,
+     "added": 0,
+     "missing": 3
+    }
+   },
+   {
+    "id": "vendor:text-to-cad",
+    "name": "text-to-cad",
+    "url": "https://github.com/earthtojake/text-to-cad",
+    "sha": "2f793659fb7bab537e2f00836e06448fc4087cb2",
+    "imported": "2026-10-24",
+    "licence": "MIT",
+    "files": 1864,
+    "skills": 13,
+    "patches": [
+     "packages/cadgen/src/cadgen/_internal/api.py",
+     "packages/cadgen/src/cadgen/analytics.py",
+     "packages/cadgen/src/cadgen/updates.py"
+    ],
+    "licence_file": "vendor/text-to-cad/LICENSE",
+    "licence_detected": "MIT",
+    "upstream": {
+     "state": "ok",
+     "full_name": "earthtojake/text-to-cad",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    },
+    "scorecard": {
+     "score": null,
+     "note": "not scored"
+    },
+    "behind": 19,
+    "drift": {
+     "compared": 1864,
+     "changed": 0,
+     "added": 0,
+     "missing": 0
+    }
+   }
+  ],
+  "webkit": [
+   {
+    "id": "webkit:file-parsers",
+    "name": "file-parsers",
+    "files": 5,
+    "hashed": 5,
+    "packages": [
+     "three@0.160.0",
+     "fflate@0.6.9"
+    ],
+    "repo": "mrdoob/three.js",
+    "advisories": [
+     "GHSA-px8p-9vwx-vf98"
+    ],
+    "latest": {
+     "three": "0.187.0",
+     "fflate": "0.8.3"
+    }
+   },
+   {
+    "id": "webkit:fonts",
+    "name": "fonts",
+    "files": 5,
+    "hashed": 0,
+    "packages": [],
+    "repo": null,
+    "latest": {}
+   },
+   {
+    "id": "webkit:linkedom",
+    "name": "linkedom",
+    "files": 2,
+    "hashed": 2,
+    "packages": [
+     "linkedom@0.18.12"
+    ],
+    "repo": "WebReflection/linkedom",
+    "latest": {
+     "linkedom": "0.18.14"
+    }
+   },
+   {
+    "id": "webkit:mermaid",
+    "name": "mermaid",
+    "files": 3,
+    "hashed": 2,
+    "packages": [
+     "mermaid@11.4.1"
+    ],
+    "repo": "mermaid-js/mermaid",
+    "advisories": [
+     "GHSA-2v8p-3f2j-5mp7",
+     "GHSA-6m6c-36f7-fhxh",
+     "GHSA-6x64-9x62-f2gx",
+     "GHSA-7rqq-prvp-x9jh",
+     "GHSA-87f9-hvmw-gh4p",
+     "GHSA-8gwm-58g9-j8pw",
+     "GHSA-c4c3-pg64-4m4v",
+     "GHSA-ghcm-xqfw-q4vr",
+     "GHSA-xcj9-5m2h-648r"
+    ],
+    "latest": {
+     "mermaid": "12.2.0"
+    }
+   },
+   {
+    "id": "webkit:occt-import-js",
+    "name": "occt-import-js",
+    "files": 31,
+    "hashed": 31,
+    "packages": [
+     "occt-import-js@0.0.23"
+    ],
+    "repo": "kovacsv/occt-import-js",
+    "latest": {
+     "occt-import-js": "0.0.23"
+    }
+   },
+   {
+    "id": "webkit:three",
+    "name": "three",
+    "files": 5,
+    "hashed": 0,
+    "packages": [
+     "three@0.160.0"
+    ],
+    "repo": "mrdoob/three.js",
+    "latest": {
+     "three": "0.187.0"
+    }
+   }
+  ],
+  "links": [
+   {
+    "id": "url:http://www.dhondt.de/",
+    "url": "http://www.dhondt.de/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:24"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:http://www.dhondt.de/ccx_2.23.pdf",
+    "url": "http://www.dhondt.de/ccx_2.23.pdf",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:24"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://anaconda.org/conda-forge/paraview",
+    "url": "https://anaconda.org/conda-forge/paraview",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:116"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/1704.08049",
+    "url": "https://arxiv.org/abs/1704.08049",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:267"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/1911.10393",
+    "url": "https://arxiv.org/abs/1911.10393",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:73"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2409.17106",
+    "url": "https://arxiv.org/abs/2409.17106",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:127"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2410.05340",
+    "url": "https://arxiv.org/abs/2410.05340",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:113",
+     "research/landscape.md:176"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2411.05823",
+    "url": "https://arxiv.org/abs/2411.05823",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:127"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2412.13810",
+    "url": "https://arxiv.org/abs/2412.13810",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:118"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2412.14042",
+    "url": "https://arxiv.org/abs/2412.14042",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:127"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2501.19054",
+    "url": "https://arxiv.org/abs/2501.19054",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:114"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2502.03997",
+    "url": "https://arxiv.org/abs/2502.03997",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:127"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2503.04417",
+    "url": "https://arxiv.org/abs/2503.04417",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:115"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2504.06260",
+    "url": "https://arxiv.org/abs/2504.06260",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:61"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2505.04481",
+    "url": "https://arxiv.org/abs/2505.04481",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:127"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2505.08137",
+    "url": "https://arxiv.org/abs/2505.08137",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:127"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2505.14646",
+    "url": "https://arxiv.org/abs/2505.14646",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:119"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2505.19713",
+    "url": "https://arxiv.org/abs/2505.19713",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:120"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2505.22304",
+    "url": "https://arxiv.org/abs/2505.22304",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:121"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2508.01031",
+    "url": "https://arxiv.org/abs/2508.01031",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:117"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2603.26512",
+    "url": "https://arxiv.org/abs/2603.26512",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:116"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2604.10992",
+    "url": "https://arxiv.org/abs/2604.10992",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:122"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2604.15184",
+    "url": "https://arxiv.org/abs/2604.15184",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:125"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2605.10865",
+    "url": "https://arxiv.org/abs/2605.10865",
+    "kind": "catalogue",
+    "names": [
+     "BenchCAD"
+    ],
+    "where": [
+     "research/landscape.json benchmarks",
+     "research/design-workflows.md:127"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2605.10873",
+    "url": "https://arxiv.org/abs/2605.10873",
+    "kind": "catalogue",
+    "names": [
+     "CADBench"
+    ],
+    "where": [
+     "research/landscape.json benchmarks"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2605.18430",
+    "url": "https://arxiv.org/abs/2605.18430",
+    "kind": "catalogue",
+    "names": [
+     "Text2CAD-Bench"
+    ],
+    "where": [
+     "research/landscape.json benchmarks",
+     "research/landscape.md:179"
+    ],
+    "licence": [
+     "unverified"
+    ],
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2606.11152",
+    "url": "https://arxiv.org/abs/2606.11152",
+    "kind": "catalogue",
+    "names": [
+     "P3D-Bench"
+    ],
+    "where": [
+     "research/landscape.json benchmarks"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2606.13368",
+    "url": "https://arxiv.org/abs/2606.13368",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:127"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2606.31252",
+    "url": "https://arxiv.org/abs/2606.31252",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:124"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2607.05123",
+    "url": "https://arxiv.org/abs/2607.05123",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:123"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2607.05573",
+    "url": "https://arxiv.org/abs/2607.05573",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:150"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://arxiv.org/abs/2609.03773",
+    "url": "https://arxiv.org/abs/2609.03773",
+    "kind": "catalogue",
+    "names": [
+     "RealCADBench"
+    ],
+    "where": [
+     "research/landscape.json benchmarks"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://botland.com.pl/img/art/inne/25540_karta_produktu.pdf",
+    "url": "https://botland.com.pl/img/art/inne/25540_karta_produktu.pdf",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:266",
+     "research/simulation-tools.md:192"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://cadarena.dev/",
+    "url": "https://cadarena.dev/",
+    "kind": "catalogue",
+    "names": [
+     "CAD Arena"
+    ],
+    "where": [
+     "research/landscape.json benchmarks",
+     "research/landscape.md:180"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://cdn.sendcutsend.com/specs/sendcutsend-specs.json",
+    "url": "https://cdn.sendcutsend.com/specs/sendcutsend-specs.json",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/landscape.md:158"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://cdn.shopify.com/s/files/1/0548/7299/7945/files/TDS_FIBERON_PA6-CF20_V1.1_EN.pdf",
+    "url": "https://cdn.shopify.com/s/files/1/0548/7299/7945/files/TDS_FIBERON_PA6-CF20_V1.1_EN.pdf",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:276"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://cdn.sparkfun.com/assets/home_page_posts/1/4/1/0/Plastic_Snap_fit_design.pdf",
+    "url": "https://cdn.sparkfun.com/assets/home_page_posts/1/4/1/0/Plastic_Snap_fit_design.pdf",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:243",
+     "research/fea-and-process-tools.md:160"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://compliantmechanisms.byu.edu/",
+    "url": "https://compliantmechanisms.byu.edu/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:305"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://compliantmechanisms.byu.edu/software-analysis",
+    "url": "https://compliantmechanisms.byu.edu/software-analysis",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:306"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://deps.dev",
+    "url": "https://deps.dev",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "skills/cad-supply-chain/SKILL.md:121"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://dev-docs.kicad.org/en/apis-and-binding/ipc-api/for-addon-developers/",
+    "url": "https://dev-docs.kicad.org/en/apis-and-binding/ipc-api/for-addon-developers/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/landscape.md:139"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://develop.openfoam.com/Development/openfoam",
+    "url": "https://develop.openfoam.com/Development/openfoam",
+    "kind": "catalogue",
+    "names": [
+     "OpenFOAM (OpenCFD v2512)"
+    ],
+    "where": [
+     "upstreams/registry.yaml"
+    ],
+    "licence": [
+     "GPL-3.0"
+    ],
+    "status": [
+     "adopted"
+    ],
+    "http": null
+   },
+   {
+    "id": "url:https://dl.openfoam.com/source/latest/openfoam-docker",
+    "url": "https://dl.openfoam.com/source/latest/openfoam-docker",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:63"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     404
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes",
+    "url": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "lessons/11-pcb-evidence-and-review.md:128"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://docs.kicad.org/10.0/en/cli/cli.html",
+    "url": "https://docs.kicad.org/10.0/en/cli/cli.html",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/landscape.md:140"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://docs.nvidia.com/jetson/archives/r36.4/DeveloperGuide/SD/PlatformPowerAndPerformance/JetsonOrinNanoSeriesJetsonOrinNxSeriesAndJetsonAgxOrinSeries.html",
+    "url": "https://docs.nvidia.com/jetson/archives/r36.4/DeveloperGuide/SD/PlatformPowerAndPerformance/JetsonOrinNanoSeriesJetsonOrinNxSeriesAndJetsonAgxOrinSeries.html",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:165"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://dspace.mit.edu/handle/1721.1/39879",
+    "url": "https://dspace.mit.edu/handle/1721.1/39879",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:302"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://en.wikipedia.org/wiki/Freedom_and_constraint_topologies",
+    "url": "https://en.wikipedia.org/wiki/Freedom_and_constraint_topologies",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:303"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://fab.cba.mit.edu/classes/863.24/people/HayashiAni/2024/09/27/3d-prints.html",
+    "url": "https://fab.cba.mit.edu/classes/863.24/people/HayashiAni/2024/09/27/3d-prints.html",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:309"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://fab.cba.mit.edu/classes/S62.12/people/vernelle.noel/Plastic_Snap_fit_design.pdf",
+    "url": "https://fab.cba.mit.edu/classes/S62.12/people/vernelle.noel/Plastic_Snap_fit_design.pdf",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:244"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://files.seeedstudio.com/wiki/reComputer-Jetson/J501/323011387Jetson_AGX_Orin_Heatsink_100x87x34mm-datasheet.pdf",
+    "url": "https://files.seeedstudio.com/wiki/reComputer-Jetson/J501/323011387Jetson_AGX_Orin_Heatsink_100x87x34mm-datasheet.pdf",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:177"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://formlabs.com/blog/tough-2000-questions/",
+    "url": "https://formlabs.com/blog/tough-2000-questions/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:281"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://formlabs.com/global/support/Using-Tough-1500-Resin/",
+    "url": "https://formlabs.com/global/support/Using-Tough-1500-Resin/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:280"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://forum.prusa3d.com/forum/prusa-core-one-hardware-firmware-and-software-help/what-are-the-minimum-reliable-printing-distances",
+    "url": "https://forum.prusa3d.com/forum/prusa-core-one-hardware-firmware-and-software-help/what-are-the-minimum-reliable-printing-distances",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:308"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     301,
+     200
+    ],
+    "final": "https://forum.prusa3d.com/forum/prusa-core-one-hardware-firmware-and-software-help/what-are-the-minimum-reliable-printing-distances/"
+   },
+   {
+    "id": "url:https://forum.prusa3d.com/forum/prusaslicer/prusa-slicer-merging-my-print-in-place-bodies",
+    "url": "https://forum.prusa3d.com/forum/prusaslicer/prusa-slicer-merging-my-print-in-place-bodies",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:310"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     301,
+     200
+    ],
+    "final": "https://forum.prusa3d.com/forum/prusaslicer/prusa-slicer-merging-my-print-in-place-bodies/"
+   },
+   {
+    "id": "url:https://forums.developer.nvidia.com/t/agx-orin-industrial-missing-thermal-resistance-values-in-tdg/278394",
+    "url": "https://forums.developer.nvidia.com/t/agx-orin-industrial-missing-thermal-resistance-values-in-tdg/278394",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:175"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://github.com/Adam-CAD/CADAM",
+    "url": "https://github.com/Adam-CAD/CADAM",
+    "kind": "catalogue",
+    "names": [
+     "Adam-CAD/CADAM"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:22"
+    ],
+    "licence": [
+     "GPL-3.0"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "Adam-CAD/CADAM",
+     "archived": false,
+     "licence": "GPL-3.0",
+     "pushed": "2026-10-15"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/American-Embedded/kistack",
+    "url": "https://github.com/American-Embedded/kistack",
+    "kind": "catalogue",
+    "names": [
+     "American-Embedded/kistack"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:42"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "BackplaneWorks/kistack",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-26"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/Autodesk/XLB/blob/main/LICENSE",
+    "url": "https://github.com/Autodesk/XLB/blob/main/LICENSE",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:72"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "Autodesk/XLB",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-09-16"
+    }
+   },
+   {
+    "id": "url:https://github.com/AutodeskAILab/JoinABLe",
+    "url": "https://github.com/AutodeskAILab/JoinABLe",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:232"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "AutodeskAILab/JoinABLe",
+     "archived": false,
+     "licence": null,
+     "pushed": "2022-04-22"
+    }
+   },
+   {
+    "id": "url:https://github.com/BelfrySCAD/BOSL2",
+    "url": "https://github.com/BelfrySCAD/BOSL2",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:220",
+     "research/compliant-mechanisms.md:315"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "BelfrySCAD/BOSL2",
+     "archived": false,
+     "licence": "BSD-2-Clause",
+     "pushed": "2026-10-30"
+    }
+   },
+   {
+    "id": "url:https://github.com/CadQuery/cadquery",
+    "url": "https://github.com/CadQuery/cadquery",
+    "kind": "catalogue",
+    "names": [
+     "CadQuery/cadquery"
+    ],
+    "where": [
+     "research/landscape.json libraries",
+     "research/landscape.md:48"
+    ],
+    "licence": [
+     "Apache-2.0"
+    ],
+    "status": [
+     "used"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "CadQuery/cadquery",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-24"
+    },
+    "scorecard": 6.3
+   },
+   {
+    "id": "url:https://github.com/CalebBell/fluids",
+    "url": "https://github.com/CalebBell/fluids",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:107"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "CalebBell/fluids",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-09-15"
+    }
+   },
+   {
+    "id": "url:https://github.com/CalebBell/ht",
+    "url": "https://github.com/CalebBell/ht",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:107"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "CalebBell/ht",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2025-12-07"
+    }
+   },
+   {
+    "id": "url:https://github.com/CameronBrooks11/snapfit-scad",
+    "url": "https://github.com/CameronBrooks11/snapfit-scad",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:230"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "CameronBrooks11/snapfit-scad",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-05-11"
+    }
+   },
+   {
+    "id": "url:https://github.com/ChristophSchranz/Tweaker-3",
+    "url": "https://github.com/ChristophSchranz/Tweaker-3",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:68"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "ChristophSchranz/Tweaker-3",
+     "archived": false,
+     "licence": "GPL-3.0",
+     "pushed": "2026-03-24"
+    }
+   },
+   {
+    "id": "url:https://github.com/ElmerCSC/elmerfem-docker",
+    "url": "https://github.com/ElmerCSC/elmerfem-docker",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:69"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "ElmerCSC/elmerfem-docker",
+     "archived": false,
+     "licence": null,
+     "pushed": "2021-03-09"
+    }
+   },
+   {
+    "id": "url:https://github.com/ElmerCSC/elmerfem/blob/devel/LICENSE.md",
+    "url": "https://github.com/ElmerCSC/elmerfem/blob/devel/LICENSE.md",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:69"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "ElmerCSC/elmerfem",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-29"
+    }
+   },
+   {
+    "id": "url:https://github.com/ElmerCSC/elmerfem/tree/devel/fem/tests",
+    "url": "https://github.com/ElmerCSC/elmerfem/tree/devel/fem/tests",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:26"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "ElmerCSC/elmerfem",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-29"
+    }
+   },
+   {
+    "id": "url:https://github.com/ElmerCSC/elmerfem/tree/devel/license_texts",
+    "url": "https://github.com/ElmerCSC/elmerfem/tree/devel/license_texts",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:69"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "ElmerCSC/elmerfem",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-29"
+    }
+   },
+   {
+    "id": "url:https://github.com/FEniCS/dolfinx",
+    "url": "https://github.com/FEniCS/dolfinx",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:22"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "FEniCS/dolfinx",
+     "archived": false,
+     "licence": "LGPL-3.0",
+     "pushed": "2026-10-30"
+    }
+   },
+   {
+    "id": "url:https://github.com/FreeCAD/FreeCAD/blob/main/src/Mod/Fem/femsolver/calculix/write_constraint_contact.py",
+    "url": "https://github.com/FreeCAD/FreeCAD/blob/main/src/Mod/Fem/femsolver/calculix/write_constraint_contact.py",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:25"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "FreeCAD/FreeCAD",
+     "archived": false,
+     "licence": "LGPL-2.1",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/FreeCAD/FreeCAD/blob/main/src/Mod/Fem/femsolver/calculix/write_step_equation.py",
+    "url": "https://github.com/FreeCAD/FreeCAD/blob/main/src/Mod/Fem/femsolver/calculix/write_step_equation.py",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:25"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "FreeCAD/FreeCAD",
+     "archived": false,
+     "licence": "LGPL-2.1",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/FreeCAD/FreeCAD/releases",
+    "url": "https://github.com/FreeCAD/FreeCAD/releases",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:25"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "FreeCAD/FreeCAD",
+     "archived": false,
+     "licence": "LGPL-2.1",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/Gary-code/CADReview",
+    "url": "https://github.com/Gary-code/CADReview",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:121"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "Gary-code/CADReview",
+     "archived": false,
+     "licence": null,
+     "pushed": "2025-08-08"
+    }
+   },
+   {
+    "id": "url:https://github.com/GazzolaLab/PyElastica",
+    "url": "https://github.com/GazzolaLab/PyElastica",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:227",
+     "research/fea-and-process-tools.md:33"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "GazzolaLab/PyElastica",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-25"
+    }
+   },
+   {
+    "id": "url:https://github.com/Gernreich/living-hinge",
+    "url": "https://github.com/Gernreich/living-hinge",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:231",
+     "research/compliant-mechanisms.md:317"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "Gernreich/living-hinge",
+     "archived": false,
+     "licence": "CC0-1.0",
+     "pushed": "2026-10-25"
+    }
+   },
+   {
+    "id": "url:https://github.com/KD5RYN/b123d-print",
+    "url": "https://github.com/KD5RYN/b123d-print",
+    "kind": "catalogue",
+    "names": [
+     "KD5RYN/b123d-print"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/agent-toolkits-2026-10.md:36"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "KD5RYN/b123d-print",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/KD5RYN/b123d-print/blob/HEAD/docs/using/checks.md",
+    "url": "https://github.com/KD5RYN/b123d-print/blob/HEAD/docs/using/checks.md",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:314"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "KD5RYN/b123d-print",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/KD5RYN/b123d-print/blob/main/docs/using/checks.md",
+    "url": "https://github.com/KD5RYN/b123d-print/blob/main/docs/using/checks.md",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:36",
+     "research/fea-and-process-tools.md:70",
+     "research/fea-and-process-tools.md:159"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "KD5RYN/b123d-print",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/KD5RYN/b123d-print/blob/main/src/b123d_print/orient.py",
+    "url": "https://github.com/KD5RYN/b123d-print/blob/main/src/b123d_print/orient.py",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:36",
+     "research/fea-and-process-tools.md:70"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "KD5RYN/b123d-print",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/Kamel773/CAD_Code_Generation",
+    "url": "https://github.com/Kamel773/CAD_Code_Generation",
+    "kind": "catalogue",
+    "names": [
+     "CADPrompt/CADCodeVerify"
+    ],
+    "where": [
+     "research/landscape.json benchmarks"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "Kamel773/CAD_Code_Generation",
+     "archived": false,
+     "licence": null,
+     "pushed": "2025-02-28"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/Kayforkind/skill-slice",
+    "url": "https://github.com/Kayforkind/skill-slice",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:81"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "Kayforkind/skill-slice",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-08-19"
+    }
+   },
+   {
+    "id": "url:https://github.com/KittyCAD/mcp",
+    "url": "https://github.com/KittyCAD/mcp",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:19",
+     "research/landscape.md:23"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "KittyCAD/mcp",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-30"
+    }
+   },
+   {
+    "id": "url:https://github.com/KittyCAD/modeling-app",
+    "url": "https://github.com/KittyCAD/modeling-app",
+    "kind": "catalogue",
+    "names": [
+     "KittyCAD/modeling-app"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:23"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "KittyCAD/modeling-app",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/Kitware/trame",
+    "url": "https://github.com/Kitware/trame",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:117"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "Kitware/trame",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-09-28"
+    }
+   },
+   {
+    "id": "url:https://github.com/Kitware/vtk-js",
+    "url": "https://github.com/Kitware/vtk-js",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:117"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "Kitware/vtk-js",
+     "archived": false,
+     "licence": "BSD-3-Clause",
+     "pushed": "2026-10-28"
+    }
+   },
+   {
+    "id": "url:https://github.com/KratosMultiphysics/Kratos/blob/master/kratos/license.txt",
+    "url": "https://github.com/KratosMultiphysics/Kratos/blob/master/kratos/license.txt",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:31"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "KratosMultiphysics/Kratos",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/LGAI-Research/PCBWorld",
+    "url": "https://github.com/LGAI-Research/PCBWorld",
+    "kind": "catalogue",
+    "names": [
+     "PCBWorld"
+    ],
+    "where": [
+     "research/landscape.json benchmarks",
+     "research/landscape.md:181"
+    ],
+    "licence": [
+     "BSD-3-Clause"
+    ],
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "LGAI-Research/PCBWorld",
+     "archived": false,
+     "licence": "BSD-3-Clause",
+     "pushed": "2026-10-21"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/MP-AI-20/mechanical-engineering-skills",
+    "url": "https://github.com/MP-AI-20/mechanical-engineering-skills",
+    "kind": "catalogue",
+    "names": [
+     "MP-AI-20/mechanical-engineering-skills"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/agent-toolkits-2026-10.md:79"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "rejected"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "MP-AI-20/mechanical-engineering-skills",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-06-09"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/MaxEllis/orcaslicer-mcp",
+    "url": "https://github.com/MaxEllis/orcaslicer-mcp",
+    "kind": "catalogue",
+    "names": [
+     "MaxEllis/orcaslicer-mcp"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/agent-toolkits-2026-10.md:30"
+    ],
+    "licence": [
+     "AGPL-3.0"
+    ],
+    "status": [
+     "rejected"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "MaxEllis/orcaslicer-mcp",
+     "archived": false,
+     "licence": "AGPL-3.0",
+     "pushed": "2026-10-12"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/Mechanical-Python/SnapFit_Calculator",
+    "url": "https://github.com/Mechanical-Python/SnapFit_Calculator",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:222"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "Mechanical-Python/SnapFit_Calculator",
+     "archived": false,
+     "licence": "LGPL-2.1",
+     "pushed": "2022-03-16"
+    }
+   },
+   {
+    "id": "url:https://github.com/MikeSuiter/claude-build123d-starter",
+    "url": "https://github.com/MikeSuiter/claude-build123d-starter",
+    "kind": "catalogue",
+    "names": [
+     "MikeSuiter/claude-build123d-starter"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:30"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "MikeSuiter/claude-build123d-starter",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-06-08"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/Open-Cascade-SAS/OCCT",
+    "url": "https://github.com/Open-Cascade-SAS/OCCT",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:190"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "Open-Cascade-SAS/OCCT",
+     "archived": false,
+     "licence": "LGPL-2.1",
+     "pushed": "2026-10-20"
+    }
+   },
+   {
+    "id": "url:https://github.com/Open-Cascade-SAS/OCCT/blob/V7_9_3/src/BRepGProp/BRepGProp.cxx",
+    "url": "https://github.com/Open-Cascade-SAS/OCCT/blob/V7_9_3/src/BRepGProp/BRepGProp.cxx",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "docs/volume-precision.md:19"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "Open-Cascade-SAS/OCCT",
+     "archived": false,
+     "licence": "LGPL-2.1",
+     "pushed": "2026-10-20"
+    }
+   },
+   {
+    "id": "url:https://github.com/Open-Cascade-SAS/OCCT/blob/V7_9_3/src/BRepGProp/BRepGProp_VinertGK.cxx",
+    "url": "https://github.com/Open-Cascade-SAS/OCCT/blob/V7_9_3/src/BRepGProp/BRepGProp_VinertGK.cxx",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "docs/volume-precision.md:19"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "Open-Cascade-SAS/OCCT",
+     "archived": false,
+     "licence": "LGPL-2.1",
+     "pushed": "2026-10-20"
+    }
+   },
+   {
+    "id": "url:https://github.com/OpenFOAM/OpenFOAM-14",
+    "url": "https://github.com/OpenFOAM/OpenFOAM-14",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:59"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "OpenFOAM/OpenFOAM-14",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-26"
+    }
+   },
+   {
+    "id": "url:https://github.com/OpenFOAM/OpenFOAM-14/blob/master/tutorials/multiRegion/CHT/circuitBoardCooling/Allrun",
+    "url": "https://github.com/OpenFOAM/OpenFOAM-14/blob/master/tutorials/multiRegion/CHT/circuitBoardCooling/Allrun",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:60"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "OpenFOAM/OpenFOAM-14",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-26"
+    }
+   },
+   {
+    "id": "url:https://github.com/OpenFOAM/OpenFOAM-14/tree/master/src/finiteVolume/fields/fvPatchFields/derived",
+    "url": "https://github.com/OpenFOAM/OpenFOAM-14/tree/master/src/finiteVolume/fields/fvPatchFields/derived",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:62"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "OpenFOAM/OpenFOAM-14",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-26"
+    }
+   },
+   {
+    "id": "url:https://github.com/OpenFOAM/OpenFOAM-14/tree/master/src/fvModels",
+    "url": "https://github.com/OpenFOAM/OpenFOAM-14/tree/master/src/fvModels",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:62"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "OpenFOAM/OpenFOAM-14",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-26"
+    }
+   },
+   {
+    "id": "url:https://github.com/OpenFOAM/OpenFOAM-14/tree/master/tutorials/fluid/mixerVessel2DMRF",
+    "url": "https://github.com/OpenFOAM/OpenFOAM-14/tree/master/tutorials/fluid/mixerVessel2DMRF",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:62"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "OpenFOAM/OpenFOAM-14",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-26"
+    }
+   },
+   {
+    "id": "url:https://github.com/OpenFOAM/OpenFOAM-14/tree/master/tutorials/multiRegion/CHT",
+    "url": "https://github.com/OpenFOAM/OpenFOAM-14/tree/master/tutorials/multiRegion/CHT",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:61"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "OpenFOAM/OpenFOAM-14",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-26"
+    }
+   },
+   {
+    "id": "url:https://github.com/OpenFOAM/OpenFOAM-dev/blob/master/COPYING",
+    "url": "https://github.com/OpenFOAM/OpenFOAM-dev/blob/master/COPYING",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:58"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "OpenFOAM/OpenFOAM-dev",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-30"
+    }
+   },
+   {
+    "id": "url:https://github.com/OpenMDAO/OpenMDAO/blob/master/LICENSE.txt",
+    "url": "https://github.com/OpenMDAO/OpenMDAO/blob/master/LICENSE.txt",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:44"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "OpenMDAO/OpenMDAO",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-27"
+    }
+   },
+   {
+    "id": "url:https://github.com/OrcaSlicer/OrcaSlicer",
+    "url": "https://github.com/OrcaSlicer/OrcaSlicer",
+    "kind": "catalogue",
+    "names": [
+     "OrcaSlicer/OrcaSlicer"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/simulation-tools.md:126"
+    ],
+    "licence": [
+     "AGPL-3.0"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "OrcaSlicer/OrcaSlicer",
+     "archived": false,
+     "licence": "AGPL-3.0",
+     "pushed": "2026-10-31"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/OrcaSlicer/OrcaSlicer/blob/main/scripts/CAD/README.md",
+    "url": "https://github.com/OrcaSlicer/OrcaSlicer/blob/main/scripts/CAD/README.md",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:28"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "OrcaSlicer/OrcaSlicer",
+     "archived": false,
+     "licence": "AGPL-3.0",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/OrcaSlicer/OrcaSlicer/blob/main/src/slic3r/GUI/CAD/McpControl.cpp",
+    "url": "https://github.com/OrcaSlicer/OrcaSlicer/blob/main/src/slic3r/GUI/CAD/McpControl.cpp",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:28"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "OrcaSlicer/OrcaSlicer",
+     "archived": false,
+     "licence": "AGPL-3.0",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/OrcaSlicer/OrcaSlicer/releases/tag/v2.5.0-beta",
+    "url": "https://github.com/OrcaSlicer/OrcaSlicer/releases/tag/v2.5.0-beta",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:28"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "OrcaSlicer/OrcaSlicer",
+     "archived": false,
+     "licence": "AGPL-3.0",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/OrcaSlicer/orcaslicer-mcp-skills",
+    "url": "https://github.com/OrcaSlicer/orcaslicer-mcp-skills",
+    "kind": "catalogue",
+    "names": [
+     "OrcaSlicer/orcaslicer-mcp-skills"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/agent-toolkits-2026-10.md:29"
+    ],
+    "licence": [
+     "AGPL-3.0"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "OrcaSlicer/orcaslicer-mcp-skills",
+     "archived": false,
+     "licence": "AGPL-3.0",
+     "pushed": "2026-10-29"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/OrcaSlicer/orcaslicer-mcp-skills/blob/main/PRIVACY.md",
+    "url": "https://github.com/OrcaSlicer/orcaslicer-mcp-skills/blob/main/PRIVACY.md",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:28",
+     "research/agent-toolkits-2026-10.md:29"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "OrcaSlicer/orcaslicer-mcp-skills",
+     "archived": false,
+     "licence": "AGPL-3.0",
+     "pushed": "2026-10-29"
+    }
+   },
+   {
+    "id": "url:https://github.com/OzAILabs/Claude-To-Print",
+    "url": "https://github.com/OzAILabs/Claude-To-Print",
+    "kind": "catalogue",
+    "names": [
+     "OzAILabs/Claude-To-Print"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:25"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "OzAILabs/Claude-To-Print",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-08-15"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/Pan-Chera/Multi-Agent-CAD",
+    "url": "https://github.com/Pan-Chera/Multi-Agent-CAD",
+    "kind": "catalogue",
+    "names": [
+     "Pan-Chera/Multi-Agent-CAD"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/design-workflows.md:38",
+     "research/landscape.md:24"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "Pan-Chera/Multi-Agent-CAD",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-28"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/RobertCoop/openscad-mcp",
+    "url": "https://github.com/RobertCoop/openscad-mcp",
+    "kind": "catalogue",
+    "names": [
+     "RobertCoop/openscad-mcp"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "RobertCoop/openscad-mcp",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-09-10"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/SadilKhan/Text2CAD",
+    "url": "https://github.com/SadilKhan/Text2CAD",
+    "kind": "catalogue",
+    "names": [
+     "Text2CAD"
+    ],
+    "where": [
+     "research/landscape.json benchmarks",
+     "research/landscape.md:175"
+    ],
+    "licence": [
+     "CC-BY-NC-SA-4.0"
+    ],
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "SadilKhan/Text2CAD",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2025-05-15"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/Seeed-Studio/kicad-mcp-server",
+    "url": "https://github.com/Seeed-Studio/kicad-mcp-server",
+    "kind": "catalogue",
+    "names": [
+     "Seeed-Studio/kicad-mcp-server"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:39"
+    ],
+    "licence": [
+     "none"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "Seeed-Studio/kicad-mcp-server",
+     "archived": false,
+     "licence": null,
+     "pushed": "2026-10-22"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/SiddhuYen/eitri",
+    "url": "https://github.com/SiddhuYen/eitri",
+    "kind": "catalogue",
+    "names": [
+     "SiddhuYen/eitri"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/agent-toolkits-2026-10.md:39"
+    ],
+    "licence": [
+     "FSL-1.1-MIT"
+    ],
+    "status": [
+     "rejected"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "SiddhuYen/eitri",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-31"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/Svetlana-DAO-LLC/cad-agent",
+    "url": "https://github.com/Svetlana-DAO-LLC/cad-agent",
+    "kind": "catalogue",
+    "names": [
+     "Svetlana-DAO-LLC/cad-agent"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:29"
+    ],
+    "licence": [
+     "LicenseRef-CAD-Agent-License"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "Svetlana-DAO-LLC/cad-agent",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-02-17"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/V0v1kkk/freecad-engineering",
+    "url": "https://github.com/V0v1kkk/freecad-engineering",
+    "kind": "catalogue",
+    "names": [
+     "V0v1kkk/freecad-engineering"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/agent-toolkits-2026-10.md:59"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "V0v1kkk/freecad-engineering",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-08-12"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/Valpatel/gyropup",
+    "url": "https://github.com/Valpatel/gyropup",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "README.md:105"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "Valpatel/gyropup",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/Vivek-Boora/dfm-agent",
+    "url": "https://github.com/Vivek-Boora/dfm-agent",
+    "kind": "catalogue",
+    "names": [
+     "Vivek-Boora/dfm-agent"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/agent-toolkits-2026-10.md:67",
+     "research/compliant-mechanisms.md:316"
+    ],
+    "licence": [
+     "none"
+    ],
+    "status": [
+     "rejected"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "Vivek-Boora/dfm-agent",
+     "archived": false,
+     "licence": null,
+     "pushed": "2026-08-18"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/Wells-Group/asimov-contact",
+    "url": "https://github.com/Wells-Group/asimov-contact",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:28"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "Wells-Group/asimov-contact",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-08-03"
+    }
+   },
+   {
+    "id": "url:https://github.com/WifiLast/freecad-mcp",
+    "url": "https://github.com/WifiLast/freecad-mcp",
+    "kind": "catalogue",
+    "names": [
+     "WifiLast/freecad-mcp"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/agent-toolkits-2026-10.md:58"
+    ],
+    "licence": [
+     "none"
+    ],
+    "status": [
+     "rejected"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "WifiLast/freecad-mcp",
+     "archived": false,
+     "licence": null,
+     "pushed": "2026-10-18"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/aatmdelissen/pyMOTO",
+    "url": "https://github.com/aatmdelissen/pyMOTO",
+    "kind": "catalogue",
+    "names": [
+     "aatmdelissen/pyMOTO"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/compliant-mechanisms.md:225",
+     "research/simulation-tools.md:18"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "adopted"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "aatmdelissen/pyMOTO",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-29"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/aatmdelissen/pyMOTO#quick-start-installation",
+    "url": "https://github.com/aatmdelissen/pyMOTO#quick-start-installation",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:18"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "aatmdelissen/pyMOTO",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-29"
+    }
+   },
+   {
+    "id": "url:https://github.com/aatmdelissen/pyMOTO/blob/master/examples/topology_optimization/ex_compliance_overhang.py",
+    "url": "https://github.com/aatmdelissen/pyMOTO/blob/master/examples/topology_optimization/ex_compliance_overhang.py",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:18"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "aatmdelissen/pyMOTO",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-29"
+    }
+   },
+   {
+    "id": "url:https://github.com/aatmdelissen/pyMOTO/blob/master/pymoto/modules/io.py",
+    "url": "https://github.com/aatmdelissen/pyMOTO/blob/master/pymoto/modules/io.py",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:18"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "aatmdelissen/pyMOTO",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-29"
+    }
+   },
+   {
+    "id": "url:https://github.com/aatmdelissen/pyMOTO/releases",
+    "url": "https://github.com/aatmdelissen/pyMOTO/releases",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:18"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "aatmdelissen/pyMOTO",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-29"
+    }
+   },
+   {
+    "id": "url:https://github.com/adr/madr",
+    "url": "https://github.com/adr/madr",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:166"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "adr/madr",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-08-28"
+    }
+   },
+   {
+    "id": "url:https://github.com/ahujasid/mcp-for-blender",
+    "url": "https://github.com/ahujasid/mcp-for-blender",
+    "kind": "catalogue",
+    "names": [
+     "ahujasid/mcp-for-blender"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:35"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "ahujasid/mcp-for-blender",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-29"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/aklofas/kicad-happy",
+    "url": "https://github.com/aklofas/kicad-happy",
+    "kind": "catalogue",
+    "names": [
+     "aklofas/kicad-happy"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "THIRD_PARTY_NOTICES.md:9",
+     "research/landscape.md:41"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "trial"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "aklofas/kicad-happy",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/alexneufeld/YouCanNotUnfold",
+    "url": "https://github.com/alexneufeld/YouCanNotUnfold",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:93"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "alexneufeld/YouCanNotUnfold",
+     "archived": false,
+     "licence": "LGPL-2.1",
+     "pushed": "2026-10-09"
+    }
+   },
+   {
+    "id": "url:https://github.com/altendky/onshape-mcp",
+    "url": "https://github.com/altendky/onshape-mcp",
+    "kind": "catalogue",
+    "names": [
+     "altendky/onshape-mcp"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:33"
+    ],
+    "licence": [
+     "Apache-2.0"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "altendky/onshape-mcp",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-10-31"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/amagine-ai/Amagine3D",
+    "url": "https://github.com/amagine-ai/Amagine3D",
+    "kind": "catalogue",
+    "names": [
+     "amagine-ai/Amagine3D"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:21"
+    ],
+    "licence": [
+     "Apache-2.0"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "amagine-ai/Amagine3D",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-10-22"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/anniedoris/CAD-Coder",
+    "url": "https://github.com/anniedoris/CAD-Coder",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:119"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "anniedoris/CAD-Coder",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2025-07-17"
+    }
+   },
+   {
+    "id": "url:https://github.com/anyoptimization/pymoo",
+    "url": "https://github.com/anyoptimization/pymoo",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:42"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "the-dual-space/pymoo",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-07-07"
+    }
+   },
+   {
+    "id": "url:https://github.com/artofscience/flexures",
+    "url": "https://github.com/artofscience/flexures",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:228"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "artofscience/flexures",
+     "archived": false,
+     "licence": "GPL-3.0",
+     "pushed": "2023-11-06"
+    }
+   },
+   {
+    "id": "url:https://github.com/ballerabdude/agent-cad-works",
+    "url": "https://github.com/ballerabdude/agent-cad-works",
+    "kind": "catalogue",
+    "names": [
+     "ballerabdude/agent-cad-works"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/agent-toolkits-2026-10.md:37"
+    ],
+    "licence": [
+     "Apache-2.0"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "ballerabdude/agent-cad-works",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-10-26"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/bambulab/BambuStudio",
+    "url": "https://github.com/bambulab/BambuStudio",
+    "kind": "catalogue",
+    "names": [
+     "bambulab/BambuStudio"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/simulation-tools.md:126"
+    ],
+    "licence": [
+     "AGPL-3.0"
+    ],
+    "status": [
+     "adopted"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "bambulab/BambuStudio",
+     "archived": false,
+     "licence": "AGPL-3.0",
+     "pushed": "2026-10-13"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/buxtronix/living-hinge",
+    "url": "https://github.com/buxtronix/living-hinge",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:231",
+     "research/compliant-mechanisms.md:317"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "buxtronix/living-hinge",
+     "archived": false,
+     "licence": "GPL-3.0",
+     "pushed": "2024-05-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/calculix/beso",
+    "url": "https://github.com/calculix/beso",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:25"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "calculix/beso",
+     "archived": false,
+     "licence": "LGPL-3.0",
+     "pushed": "2025-04-03"
+    }
+   },
+   {
+    "id": "url:https://github.com/code-saturne/code_saturne",
+    "url": "https://github.com/code-saturne/code_saturne",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:71"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "code-saturne/code_saturne",
+     "archived": false,
+     "licence": "GPL-2.0",
+     "pushed": "2026-10-29"
+    }
+   },
+   {
+    "id": "url:https://github.com/col14m/cadrille",
+    "url": "https://github.com/col14m/cadrille",
+    "kind": "catalogue",
+    "names": [
+     "cadrille"
+    ],
+    "where": [
+     "research/landscape.json benchmarks",
+     "research/landscape.md:178"
+    ],
+    "licence": [
+     "Apache-2.0"
+    ],
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "col14m/cadrille",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-09-01"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/copperheadhq/copperhead",
+    "url": "https://github.com/copperheadhq/copperhead",
+    "kind": "catalogue",
+    "names": [
+     "copperheadhq/copperhead"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:44"
+    ],
+    "licence": [
+     "Apache-2.0"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "copperheadhq/copperhead",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-10-29"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/deepmodeling/jax-fem",
+    "url": "https://github.com/deepmodeling/jax-fem",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:23"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "deepmodeling/jax-fem",
+     "archived": false,
+     "licence": "GPL-3.0",
+     "pushed": "2026-10-09"
+    }
+   },
+   {
+    "id": "url:https://github.com/dimitrismallis/CAD-Assistant",
+    "url": "https://github.com/dimitrismallis/CAD-Assistant",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:118"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "dimitrismallis/CAD-Assistant",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2025-10-30"
+    }
+   },
+   {
+    "id": "url:https://github.com/dl4to/dl4to",
+    "url": "https://github.com/dl4to/dl4to",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:20"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "dl4to/dl4to",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2024-11-19"
+    }
+   },
+   {
+    "id": "url:https://github.com/dwragon/Fusion360SnapFitGenerator",
+    "url": "https://github.com/dwragon/Fusion360SnapFitGenerator",
+    "kind": "catalogue",
+    "names": [
+     "dwragon/Fusion360SnapFitGenerator"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/agent-toolkits-2026-10.md:80",
+     "research/compliant-mechanisms.md:221",
+     "research/compliant-mechanisms.md:311"
+    ],
+    "licence": [
+     "MPL-2.0"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "dwragon/Fusion360SnapFitGenerator",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-29"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/earthtojake/text-to-cad",
+    "url": "https://github.com/earthtojake/text-to-cad",
+    "kind": "catalogue",
+    "names": [
+     "earthtojake/text-to-cad"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "THIRD_PARTY_NOTICES.md:8",
+     "research/agent-toolkits-2026-10.md:16",
+     "research/design-workflows.md:62",
+     "…"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "trial"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "earthtojake/text-to-cad",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/earthtojake/text-to-cad/blob/main/claude.mcp.json",
+    "url": "https://github.com/earthtojake/text-to-cad/blob/main/claude.mcp.json",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:16"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "earthtojake/text-to-cad",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/earthtojake/text-to-cad/blob/main/docs/migrations/migrating-0.7-to-0.8.md",
+    "url": "https://github.com/earthtojake/text-to-cad/blob/main/docs/migrations/migrating-0.7-to-0.8.md",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:16"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "earthtojake/text-to-cad",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/earthtojake/text-to-cad/blob/main/packages/cadgen/src/cadgen/cli/telemetry.py",
+    "url": "https://github.com/earthtojake/text-to-cad/blob/main/packages/cadgen/src/cadgen/cli/telemetry.py",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:16"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "earthtojake/text-to-cad",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/earthtojake/text-to-cad/issues/614",
+    "url": "https://github.com/earthtojake/text-to-cad/issues/614",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/landscape.md:113"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "earthtojake/text-to-cad",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/earthtojake/text-to-cad/issues/626",
+    "url": "https://github.com/earthtojake/text-to-cad/issues/626",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/landscape.md:102"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "earthtojake/text-to-cad",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/earthtojake/text-to-cad/pull/518",
+    "url": "https://github.com/earthtojake/text-to-cad/pull/518",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/landscape.md:104",
+     "research/landscape.md:141"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "earthtojake/text-to-cad",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/easyw/kicadStepUpMod",
+    "url": "https://github.com/easyw/kicadStepUpMod",
+    "kind": "catalogue",
+    "names": [
+     "easyw/kicadStepUpMod"
+    ],
+    "where": [
+     "research/landscape.json libraries"
+    ],
+    "licence": [
+     "AGPL-3.0"
+    ],
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "easyw/kicadStepUpMod",
+     "archived": false,
+     "licence": null,
+     "pushed": "2026-09-04"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/facebook/Ax",
+    "url": "https://github.com/facebook/Ax",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:43"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "meta/Ax",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-29"
+    }
+   },
+   {
+    "id": "url:https://github.com/faust-machines/fusion360-mcp-server",
+    "url": "https://github.com/faust-machines/fusion360-mcp-server",
+    "kind": "catalogue",
+    "names": [
+     "faust-machines/fusion360-mcp-server"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:34"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "faust-machines/fusion360-mcp-server",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-06"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/filaPro/cad-recode",
+    "url": "https://github.com/filaPro/cad-recode",
+    "kind": "catalogue",
+    "names": [
+     "CAD-Recode"
+    ],
+    "where": [
+     "research/landscape.json benchmarks",
+     "research/landscape.md:177"
+    ],
+    "licence": [
+     "CC-BY-NC-4.0"
+    ],
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "filaPro/cad-recode",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2025-11-16"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/flowful-ai/cad-skill",
+    "url": "https://github.com/flowful-ai/cad-skill",
+    "kind": "catalogue",
+    "names": [
+     "flowful-ai/cad-skill"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:28"
+    ],
+    "licence": [
+     "PolyForm-Noncommercial-1.0.0"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "flowful-ai/cad-skill",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-25"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/gerlero/foamlib",
+    "url": "https://github.com/gerlero/foamlib",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:82"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "gerlero/foamlib",
+     "archived": false,
+     "licence": "GPL-3.0",
+     "pushed": "2026-10-29"
+    }
+   },
+   {
+    "id": "url:https://github.com/ghbalf/freecad-ai",
+    "url": "https://github.com/ghbalf/freecad-ai",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:81"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "ghbalf/freecad-ai",
+     "archived": false,
+     "licence": "LGPL-2.1",
+     "pushed": "2026-10-16"
+    }
+   },
+   {
+    "id": "url:https://github.com/gjaloyan/print3d-designer",
+    "url": "https://github.com/gjaloyan/print3d-designer",
+    "kind": "catalogue",
+    "names": [
+     "gjaloyan/print3d-designer"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/agent-toolkits-2026-10.md:38"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "gjaloyan/print3d-designer",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-29"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/google/feabench",
+    "url": "https://github.com/google/feabench",
+    "kind": "catalogue",
+    "names": [
+     "FEABench"
+    ],
+    "where": [
+     "research/landscape.json benchmarks",
+     "research/agent-toolkits-2026-10.md:61"
+    ],
+    "licence": [
+     "Apache-2.0"
+    ],
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "google/feabench",
+     "archived": true,
+     "licence": "Apache-2.0",
+     "pushed": "2025-05-07"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/gumyr/bd_warehouse",
+    "url": "https://github.com/gumyr/bd_warehouse",
+    "kind": "catalogue",
+    "names": [
+     "gumyr/bd_warehouse"
+    ],
+    "where": [
+     "research/landscape.json libraries",
+     "THIRD_PARTY_NOTICES.md:13",
+     "research/landscape.md:49"
+    ],
+    "licence": [
+     "Apache-2.0"
+    ],
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "gumyr/bd_warehouse",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-10-31"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/gumyr/build123d",
+    "url": "https://github.com/gumyr/build123d",
+    "kind": "catalogue",
+    "names": [
+     "gumyr/build123d"
+    ],
+    "where": [
+     "research/landscape.json libraries",
+     "research/agent-toolkits-2026-10.md:17",
+     "research/landscape.md:47"
+    ],
+    "licence": [
+     "Apache-2.0"
+    ],
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "gumyr/build123d",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-10-30"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/gumyr/build123d/tree/dev/docs/sheet_metal",
+    "url": "https://github.com/gumyr/build123d/tree/dev/docs/sheet_metal",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:17",
+     "research/fea-and-process-tools.md:91"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "gumyr/build123d",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-10-30"
+    }
+   },
+   {
+    "id": "url:https://github.com/heartland-eng/bd_hardware",
+    "url": "https://github.com/heartland-eng/bd_hardware",
+    "kind": "catalogue",
+    "names": [
+     "heartland-eng/bd_hardware"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/agent-toolkits-2026-10.md:42"
+    ],
+    "licence": [
+     "none"
+    ],
+    "status": [
+     "rejected"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "heartland-eng/bd_hardware",
+     "archived": false,
+     "licence": null,
+     "pushed": "2026-10-28"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/huggingface/cadgenbench",
+    "url": "https://github.com/huggingface/cadgenbench",
+    "kind": "catalogue",
+    "names": [
+     "CADGenBench"
+    ],
+    "where": [
+     "research/landscape.json benchmarks",
+     "research/design-workflows.md:126",
+     "research/landscape.md:174"
+    ],
+    "licence": [
+     "Apache-2.0"
+    ],
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "huggingface/cadgenbench",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-10-22"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/i2cjak/Backplane",
+    "url": "https://github.com/i2cjak/Backplane",
+    "kind": "catalogue",
+    "names": [
+     "i2cjak/Backplane"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:43"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "BackplaneWorks/Backplane",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/jaheyns/CfdOF",
+    "url": "https://github.com/jaheyns/CfdOF",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:78"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "jaheyns/CfdOF",
+     "archived": false,
+     "licence": "LGPL-3.0",
+     "pushed": "2026-10-28"
+    }
+   },
+   {
+    "id": "url:https://github.com/jdilla1277/agentcad",
+    "url": "https://github.com/jdilla1277/agentcad",
+    "kind": "catalogue",
+    "names": [
+     "jdilla1277/agentcad"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "THIRD_PARTY_NOTICES.md:12",
+     "research/agent-toolkits-2026-10.md:18",
+     "research/design-workflows.md:85",
+     "…"
+    ],
+    "licence": [
+     "Apache-2.0"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "jdilla1277/agentcad",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-10-31"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/jhacksman/OpenSCAD-MCP-Server",
+    "url": "https://github.com/jhacksman/OpenSCAD-MCP-Server",
+    "kind": "catalogue",
+    "names": [
+     "jhacksman/OpenSCAD-MCP-Server"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:32"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "jhacksman/OpenSCAD-MCP-Server",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-09-07"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/jihoonkim888/PyTopo3D",
+    "url": "https://github.com/jihoonkim888/PyTopo3D",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:19"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "jihoonkim888/PyTopo3D",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-06-16"
+    }
+   },
+   {
+    "id": "url:https://github.com/jmj3d/snapmates",
+    "url": "https://github.com/jmj3d/snapmates",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:230"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "jmj3d/snapmates",
+     "archived": false,
+     "licence": "CERN-OHL-W-2.0",
+     "pushed": "2026-05-16"
+    }
+   },
+   {
+    "id": "url:https://github.com/kinnala/scikit-fem",
+    "url": "https://github.com/kinnala/scikit-fem",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:26"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "kinnala/scikit-fem",
+     "archived": false,
+     "licence": "BSD-3-Clause",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/kinnala/scikit-fem/tree/master/docs/examples",
+    "url": "https://github.com/kinnala/scikit-fem/tree/master/docs/examples",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:29"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "kinnala/scikit-fem",
+     "archived": false,
+     "licence": "BSD-3-Clause",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/lamaalrajih/kicad-mcp",
+    "url": "https://github.com/lamaalrajih/kicad-mcp",
+    "kind": "catalogue",
+    "names": [
+     "lamaalrajih/kicad-mcp"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:40"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "lamaalrajih/kicad-mcp",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2025-10-17"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/laurigates/mcu-tinkering-lab",
+    "url": "https://github.com/laurigates/mcu-tinkering-lab",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:81"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "laurigates/mcu-tinkering-lab",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/lettucecfd/lettuce",
+    "url": "https://github.com/lettucecfd/lettuce",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:73"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "lettucecfd/lettuce",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-06"
+    }
+   },
+   {
+    "id": "url:https://github.com/mdolab/dafoam/blob/main/LICENSE.md",
+    "url": "https://github.com/mdolab/dafoam/blob/main/LICENSE.md",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:77"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "mdolab/dafoam",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-29"
+    }
+   },
+   {
+    "id": "url:https://github.com/meta-pytorch/botorch",
+    "url": "https://github.com/meta-pytorch/botorch",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:43"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "meta-pytorch/botorch",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-28"
+    }
+   },
+   {
+    "id": "url:https://github.com/microsoft/CADFusion",
+    "url": "https://github.com/microsoft/CADFusion",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:114"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "microsoft/CADFusion",
+     "archived": true,
+     "licence": "MIT",
+     "pushed": "2026-07-02"
+    }
+   },
+   {
+    "id": "url:https://github.com/missionlab/fenitop",
+    "url": "https://github.com/missionlab/fenitop",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:21"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "missionlab/fenitop",
+     "archived": false,
+     "licence": "GPL-3.0",
+     "pushed": "2024-11-01"
+    }
+   },
+   {
+    "id": "url:https://github.com/mixelpixx/KiCAD-MCP-Server",
+    "url": "https://github.com/mixelpixx/KiCAD-MCP-Server",
+    "kind": "catalogue",
+    "names": [
+     "mixelpixx/KiCAD-MCP-Server"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:36"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "mixelpixx/KiCAD-MCP-Server",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-26"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/mixelpixx/Konnect",
+    "url": "https://github.com/mixelpixx/Konnect",
+    "kind": "catalogue",
+    "names": [
+     "mixelpixx/Konnect"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:37"
+    ],
+    "licence": [
+     "AGPL-3.0"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "mixelpixx/Konnect",
+     "archived": true,
+     "licence": "AGPL-3.0",
+     "pushed": "2026-10-26"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/mvalancy/j501-agx-orin",
+    "url": "https://github.com/mvalancy/j501-agx-orin",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "README.md:104"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "mvalancy/j501-agx-orin",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/n3r/AgentCAD",
+    "url": "https://github.com/n3r/AgentCAD",
+    "kind": "catalogue",
+    "names": [
+     "n3r/AgentCAD"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/agent-toolkits-2026-10.md:60",
+     "research/agent-toolkits-2026-10.md:78",
+     "research/compliant-mechanisms.md:223"
+    ],
+    "licence": [
+     "Apache-2.0"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "n3r/AgentCAD",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-08-26"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/n3r/AgentCAD/blob/HEAD/agentcad/skills/snap-fits/tables/material_strain.json",
+    "url": "https://github.com/n3r/AgentCAD/blob/HEAD/agentcad/skills/snap-fits/tables/material_strain.json",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:313"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "n3r/AgentCAD",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-08-26"
+    }
+   },
+   {
+    "id": "url:https://github.com/naman113/Designstudio",
+    "url": "https://github.com/naman113/Designstudio",
+    "kind": "catalogue",
+    "names": [
+     "naman113/Designstudio"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/agent-toolkits-2026-10.md:41"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "naman113/Designstudio",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-23"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/neka-nat/freecad-mcp",
+    "url": "https://github.com/neka-nat/freecad-mcp",
+    "kind": "catalogue",
+    "names": [
+     "neka-nat/freecad-mcp"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:31"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "neka-nat/freecad-mcp",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-25"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/ninja7v/TopoptComec",
+    "url": "https://github.com/ninja7v/TopoptComec",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:226"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "ninja7v/TopoptComec",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/nohkumado/openscad_snapfit",
+    "url": "https://github.com/nohkumado/openscad_snapfit",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:230"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "nohkumado/openscad_snapfit",
+     "archived": false,
+     "licence": "GPL-3.0",
+     "pushed": "2021-11-01"
+    }
+   },
+   {
+    "id": "url:https://github.com/novasolver/novasolver-studio",
+    "url": "https://github.com/novasolver/novasolver-studio",
+    "kind": "catalogue",
+    "names": [
+     "novasolver/novasolver-studio"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/agent-toolkits-2026-10.md:57"
+    ],
+    "licence": [
+     "GPL-3.0"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "novasolver/novasolver-studio",
+     "archived": false,
+     "licence": "GPL-3.0",
+     "pushed": "2026-10-31"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/oaslananka/kicad-mcp-pro",
+    "url": "https://github.com/oaslananka/kicad-mcp-pro",
+    "kind": "catalogue",
+    "names": [
+     "oaslananka/kicad-mcp-pro"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "THIRD_PARTY_NOTICES.md:10",
+     "research/landscape.md:38"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "trial"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "oaslananka/kicad-mcp-pro",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-11-01"
+    },
+    "scorecard": 8.7
+   },
+   {
+    "id": "url:https://github.com/obhox/kicad-mcp",
+    "url": "https://github.com/obhox/kicad-mcp",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/landscape.md:37"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "obhox/kicad-mcp",
+     "archived": false,
+     "licence": "AGPL-3.0",
+     "pushed": "2026-07-16"
+    }
+   },
+   {
+    "id": "url:https://github.com/optuna/optuna",
+    "url": "https://github.com/optuna/optuna",
+    "kind": "catalogue",
+    "names": [
+     "optuna/optuna"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/simulation-tools.md:41"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "adopted"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "optuna/optuna",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-30"
+    },
+    "scorecard": 8.1
+   },
+   {
+    "id": "url:https://github.com/optuna/optuna/releases/tag/v5.0.0",
+    "url": "https://github.com/optuna/optuna/releases/tag/v5.0.0",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:41"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "optuna/optuna",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-30"
+    }
+   },
+   {
+    "id": "url:https://github.com/partcad/partcad",
+    "url": "https://github.com/partcad/partcad",
+    "kind": "catalogue",
+    "names": [
+     "partcad/partcad"
+    ],
+    "where": [
+     "research/landscape.json libraries",
+     "research/landscape.md:50"
+    ],
+    "licence": [
+     "Apache-2.0"
+    ],
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "partcad/partcad",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-11-01"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/projectchrono/chrono",
+    "url": "https://github.com/projectchrono/chrono",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:33"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "projectchrono/chrono",
+     "archived": false,
+     "licence": "BSD-3-Clause",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/prusa3d/PrusaSlicer",
+    "url": "https://github.com/prusa3d/PrusaSlicer",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:126"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "prusa3d/PrusaSlicer",
+     "archived": false,
+     "licence": "AGPL-3.0",
+     "pushed": "2026-09-21"
+    }
+   },
+   {
+    "id": "url:https://github.com/prusa3d/PrusaSlicer/blob/master/src/slic3r-shared/src/Slic3r/Biz/Config/Legacy/PrintConfig.cpp",
+    "url": "https://github.com/prusa3d/PrusaSlicer/blob/master/src/slic3r-shared/src/Slic3r/Biz/Config/Legacy/PrintConfig.cpp",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:156"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "prusa3d/PrusaSlicer",
+     "archived": false,
+     "licence": "AGPL-3.0",
+     "pushed": "2026-09-21"
+    }
+   },
+   {
+    "id": "url:https://github.com/punkfab/circuit-skills",
+    "url": "https://github.com/punkfab/circuit-skills",
+    "kind": "catalogue",
+    "names": [
+     "punkfab/circuit-skills"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:45"
+    ],
+    "licence": [
+     "none"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "punkfab/circuit-skills",
+     "archived": false,
+     "licence": null,
+     "pushed": "2026-10-06"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/pyvista/pyvista",
+    "url": "https://github.com/pyvista/pyvista",
+    "kind": "catalogue",
+    "names": [
+     "pyvista/pyvista"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/simulation-tools.md:115"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "adopted"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "pyvista/pyvista",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    },
+    "scorecard": 7.9
+   },
+   {
+    "id": "url:https://github.com/pyvista/pyvista/blob/main/pyvista/plotting/plotter.py",
+    "url": "https://github.com/pyvista/pyvista/blob/main/pyvista/plotting/plotter.py",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:115"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "pyvista/pyvista",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/pzfreo/build123d-mcp",
+    "url": "https://github.com/pzfreo/build123d-mcp",
+    "kind": "catalogue",
+    "names": [
+     "pzfreo/build123d-mcp"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "THIRD_PARTY_NOTICES.md:11",
+     "research/agent-toolkits-2026-10.md:20",
+     "research/design-workflows.md:75",
+     "…"
+    ],
+    "licence": [
+     "Apache-2.0"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "pzfreo/build123d-mcp",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-10-15"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/pzfreo/cadgenbench-build123d",
+    "url": "https://github.com/pzfreo/cadgenbench-build123d",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/landscape.md:27"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "pzfreo/cadgenbench-build123d",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-10-21"
+    }
+   },
+   {
+    "id": "url:https://github.com/pzfreo/draftwright",
+    "url": "https://github.com/pzfreo/draftwright",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:170"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "pzfreo/draftwright",
+     "archived": false,
+     "licence": "AGPL-3.0",
+     "pushed": "2026-10-30"
+    }
+   },
+   {
+    "id": "url:https://github.com/pzfreo/specify-core",
+    "url": "https://github.com/pzfreo/specify-core",
+    "kind": "catalogue",
+    "names": [
+     "pzfreo/specify-core"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/agent-toolkits-2026-10.md:40"
+    ],
+    "licence": [
+     "Apache-2.0"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "pzfreo/specify-core",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-11-01"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/pzfreo/step-diff-demo",
+    "url": "https://github.com/pzfreo/step-diff-demo",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:40"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "pzfreo/step-diff-demo",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-10-30"
+    }
+   },
+   {
+    "id": "url:https://github.com/rjwalters/kicad-tools",
+    "url": "https://github.com/rjwalters/kicad-tools",
+    "kind": "catalogue",
+    "names": [
+     "rjwalters/kicad-tools"
+    ],
+    "where": [
+     "research/landscape.json libraries",
+     "research/landscape.md:53"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "rjwalters/kicad-tools",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-11-01"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/sargo-devel/Cables",
+    "url": "https://github.com/sargo-devel/Cables",
+    "kind": "catalogue",
+    "names": [
+     "sargo-devel/Cables"
+    ],
+    "where": [
+     "research/landscape.json libraries",
+     "research/landscape.md:51"
+    ],
+    "licence": [
+     "LGPL-3.0"
+    ],
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "sargo-devel/Cables",
+     "archived": false,
+     "licence": "LGPL-3.0",
+     "pushed": "2026-10-27"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/scipy/scipy",
+    "url": "https://github.com/scipy/scipy",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:45"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "scipy/scipy",
+     "archived": false,
+     "licence": "BSD-3-Clause",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/sfepy/sfepy/tree/master/sfepy/examples/linear_elasticity",
+    "url": "https://github.com/sfepy/sfepy/tree/master/sfepy/examples/linear_elasticity",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:30"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "sfepy/sfepy",
+     "archived": false,
+     "licence": "BSD-3-Clause",
+     "pushed": "2026-10-23"
+    }
+   },
+   {
+    "id": "url:https://github.com/sgsellan/swept-volumes",
+    "url": "https://github.com/sgsellan/swept-volumes",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:246"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "sgsellan/swept-volumes",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2024-07-18"
+    }
+   },
+   {
+    "id": "url:https://github.com/shaise/FreeCAD_SheetMetal",
+    "url": "https://github.com/shaise/FreeCAD_SheetMetal",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:92"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "shaise/FreeCAD_SheetMetal",
+     "archived": false,
+     "licence": "LGPL-2.1",
+     "pushed": "2026-10-17"
+    }
+   },
+   {
+    "id": "url:https://github.com/shayya/dfm-agent",
+    "url": "https://github.com/shayya/dfm-agent",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:68"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "shayya/dfm-agent",
+     "archived": false,
+     "licence": null,
+     "pushed": "2026-04-20"
+    }
+   },
+   {
+    "id": "url:https://github.com/skyneticist/flexure-hinge-calculator",
+    "url": "https://github.com/skyneticist/flexure-hinge-calculator",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:232"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "skyneticist/flexure-hinge-calculator",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2025-06-08"
+    }
+   },
+   {
+    "id": "url:https://github.com/soheil-mp/solidworks-mcp",
+    "url": "https://github.com/soheil-mp/solidworks-mcp",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:51"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "soheil-mp/solidworks-mcp",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/static74/3dp-compliant-mechanisms",
+    "url": "https://github.com/static74/3dp-compliant-mechanisms",
+    "kind": "catalogue",
+    "names": [
+     "static74/3dp-compliant-mechanisms"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/agent-toolkits-2026-10.md:77",
+     "research/compliant-mechanisms.md:224",
+     "research/compliant-mechanisms.md:312"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "static74/3dp-compliant-mechanisms",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-26"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/stepcode/stepcode",
+    "url": "https://github.com/stepcode/stepcode",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:286"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "stepcode/stepcode",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-09-28"
+    }
+   },
+   {
+    "id": "url:https://github.com/su2code/SU2/blob/master/LICENSE.md",
+    "url": "https://github.com/su2code/SU2/blob/master/LICENSE.md",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:70"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "su2code/SU2",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/su2code/SU2/tree/master/TestCases",
+    "url": "https://github.com/su2code/SU2/tree/master/TestCases",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:28",
+     "research/simulation-tools.md:70"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "su2code/SU2",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-31"
+    }
+   },
+   {
+    "id": "url:https://github.com/sunnyday-technologies/CADCLAW",
+    "url": "https://github.com/sunnyday-technologies/CADCLAW",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:279"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "sunnyday-technologies/CADCLAW",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-10-14"
+    }
+   },
+   {
+    "id": "url:https://github.com/topopt/TopOpt_in_PETSc",
+    "url": "https://github.com/topopt/TopOpt_in_PETSc",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:24"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "topopt/TopOpt_in_PETSc",
+     "archived": false,
+     "licence": null,
+     "pushed": "2026-10-17"
+    }
+   },
+   {
+    "id": "url:https://github.com/wireviz/WireViz",
+    "url": "https://github.com/wireviz/WireViz",
+    "kind": "catalogue",
+    "names": [
+     "wireviz/WireViz"
+    ],
+    "where": [
+     "research/landscape.json libraries",
+     "research/landscape.md:52"
+    ],
+    "licence": [
+     "GPL-3.0"
+    ],
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "wireviz/WireViz",
+     "archived": false,
+     "licence": "GPL-3.0",
+     "pushed": "2026-10-25"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://gitlab.com/openfoam/core/openfoam",
+    "url": "https://gitlab.com/openfoam/core/openfoam",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:59"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://gitlab.com/openfoam/core/openfoam/-/blob/master/src/finiteVolume/fields/fvPatchFields/derived/fan/fanFvPatchField.H",
+    "url": "https://gitlab.com/openfoam/core/openfoam/-/blob/master/src/finiteVolume/fields/fvPatchFields/derived/fan/fanFvPatchField.H",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:62"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://gitlab.com/openfoam/core/openfoam/-/blob/master/src/fvOptions/sources/derived/fanMomentumSource/fanMomentumSource.H",
+    "url": "https://gitlab.com/openfoam/core/openfoam/-/blob/master/src/fvOptions/sources/derived/fanMomentumSource/fanMomentumSource.H",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:62"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://gitlab.com/openfoam/core/openfoam/-/tree/master/tutorials/heatTransfer/chtMultiRegionSimpleFoam/cpuCabinet",
+    "url": "https://gitlab.com/openfoam/core/openfoam/-/tree/master/tutorials/heatTransfer/chtMultiRegionSimpleFoam/cpuCabinet",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:61"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://gitlab.com/openfoam/core/openfoam/-/tree/master/tutorials/incompressible/adjointOptimisationFoam",
+    "url": "https://gitlab.com/openfoam/core/openfoam/-/tree/master/tutorials/incompressible/adjointOptimisationFoam",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:27"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://gitlab.com/openlb/release/-/blob/master/LICENSE",
+    "url": "https://gitlab.com/openlb/release/-/blob/master/LICENSE",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:74"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://gitlab.com/unigespc/palabos/-/blob/master/COPYING",
+    "url": "https://gitlab.com/unigespc/palabos/-/blob/master/COPYING",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:75"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://gmsh.info/LICENSE.txt",
+    "url": "https://gmsh.info/LICENSE.txt",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:10"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://help.autodesk.com/view/fusion360/ENU/?guid=FMCP-OVERVIEW",
+    "url": "https://help.autodesk.com/view/fusion360/ENU/?guid=FMCP-OVERVIEW",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:48"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://hub.docker.com/r/dolfinx/dolfinx",
+    "url": "https://hub.docker.com/r/dolfinx/dolfinx",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:22"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://hub.docker.com/r/kitware/paraview/tags",
+    "url": "https://hub.docker.com/r/kitware/paraview/tags",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:116"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://hub.docker.com/r/kitware/trame/tags",
+    "url": "https://hub.docker.com/r/kitware/trame/tags",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:117"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://hub.docker.com/r/opencfd/openfoam-default/tags",
+    "url": "https://hub.docker.com/r/opencfd/openfoam-default/tags",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:63"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://hub.docker.com/r/opencfd/openfoam-run/tags",
+    "url": "https://hub.docker.com/r/opencfd/openfoam-run/tags",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:63"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://hub.docker.com/r/simvia/code_saturne",
+    "url": "https://hub.docker.com/r/simvia/code_saturne",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:71"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://hub.docker.com/u/openfoam",
+    "url": "https://hub.docker.com/u/openfoam",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:63"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://huggingface.co/spaces/HuggingAI4Engineering/CADGenBench",
+    "url": "https://huggingface.co/spaces/HuggingAI4Engineering/CADGenBench",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/landscape.md:174"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://hull-repository.worktribe.com/output/4511720/interlayer-bonding-has-bulk-material-strength-in-extrusion-additive-manufacturing-new-understanding-of-anisotropy",
+    "url": "https://hull-repository.worktribe.com/output/4511720/interlayer-bonding-has-bulk-material-strength-in-extrusion-additive-manufacturing-new-understanding-of-anisotropy",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:257"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     403
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://ieeexplore.ieee.org/document/1284352",
+    "url": "https://ieeexplore.ieee.org/document/1284352",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:293"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     202
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://img.shields.io/badge/license-MIT-blue.svg",
+    "url": "https://img.shields.io/badge/license-MIT-blue.svg",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "README.md:4"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://info.sculpteo.com/hubfs/Material%20documentation/PA11%20HP/TDS%20HP%20pa12%20pa12gb%20pa11%20pp%20(1).pdf",
+    "url": "https://info.sculpteo.com/hubfs/Material%20documentation/PA11%20HP/TDS%20HP%20pa12%20pa12gb%20pa11%20pp%20(1).pdf",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:278"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://jsr.io/@casys/mcp-build123d",
+    "url": "https://jsr.io/@casys/mcp-build123d",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:281"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://mecheng.iisc.ac.in/suresh/me254/Lectures/PRB.pdf",
+    "url": "https://mecheng.iisc.ac.in/suresh/me254/Lectures/PRB.pdf",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:290"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://openelab.io/products/seeed-studio-recomputer-mini-j501-heatsink",
+    "url": "https://openelab.io/products/seeed-studio-recomputer-mini-j501-heatsink",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:184"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     429
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://openfoam.org/download/",
+    "url": "https://openfoam.org/download/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:59"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://osv.dev",
+    "url": "https://osv.dev",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "skills/cad-supply-chain/SKILL.md:119"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://patents.google.com/patent/US9157497",
+    "url": "https://patents.google.com/patent/US9157497",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:294"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://pergatory.mit.edu/research/jqiu/thesisscreen.pdf",
+    "url": "https://pergatory.mit.edu/research/jqiu/thesisscreen.pdf",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:292"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://pmc.ncbi.nlm.nih.gov/articles/PMC10358504",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10358504",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:297"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     301,
+     200
+    ],
+    "final": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10358504/"
+   },
+   {
+    "id": "url:https://polyalkemi.no/wp-content/uploads/2024/01/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf",
+    "url": "https://polyalkemi.no/wp-content/uploads/2024/01/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:267"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     301,
+     404
+    ],
+    "final": "https://polyalkemi.no/redirect/wasnotfound.aspx"
+   },
+   {
+    "id": "url:https://printago.io/blog/orca-slicer-cli-reference",
+    "url": "https://printago.io/blog/orca-slicer-cli-reference",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:152"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://publikationen.bibliothek.kit.edu/1000142464",
+    "url": "https://publikationen.bibliothek.kit.edu/1000142464",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:251",
+     "research/fea-and-process-tools.md:161"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://pypi.org/project/PyFoam/",
+    "url": "https://pypi.org/project/PyFoam/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:83"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     301,
+     200
+    ],
+    "final": "https://pypi.org/project/pyfoam/"
+   },
+   {
+    "id": "url:https://pypi.org/project/ccx2paraview/",
+    "url": "https://pypi.org/project/ccx2paraview/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:24"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://pypi.org/project/fluidfoam/",
+    "url": "https://pypi.org/project/fluidfoam/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:84"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://pypi.org/project/gmsh/",
+    "url": "https://pypi.org/project/gmsh/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:10"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://pypi.org/project/imageio-ffmpeg/",
+    "url": "https://pypi.org/project/imageio-ffmpeg/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:115"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://pypi.org/project/jax-fem/",
+    "url": "https://pypi.org/project/jax-fem/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:23"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://pypi.org/project/kicad-python/",
+    "url": "https://pypi.org/project/kicad-python/",
+    "kind": "catalogue",
+    "names": [
+     "kicad-python (PyPI)"
+    ],
+    "where": [
+     "research/landscape.json libraries"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://pypi.org/project/pytopo3d/",
+    "url": "https://pypi.org/project/pytopo3d/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:19"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://research.itu.edu.tr/en/publications/enhancing-the-structural-performance-of-additively-manufactured-o/",
+    "url": "https://research.itu.edu.tr/en/publications/enhancing-the-structural-performance-of-additively-manufactured-o/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:72"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://scholarsarchive.byu.edu/facpub/1560",
+    "url": "https://scholarsarchive.byu.edu/facpub/1560",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:294"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     301,
+     200
+    ],
+    "final": "https://scholarsarchive.byu.edu/facpub/1560/"
+   },
+   {
+    "id": "url:https://scholarsarchive.byu.edu/facpub/6578",
+    "url": "https://scholarsarchive.byu.edu/facpub/6578",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:295"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     301,
+     200
+    ],
+    "final": "https://scholarsarchive.byu.edu/facpub/6578/"
+   },
+   {
+    "id": "url:https://scorecard.dev",
+    "url": "https://scorecard.dev",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "skills/cad-supply-chain/SKILL.md:122"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://static.generation-robots.com/media/Jetson-AGX-Orin-Data-Sheet.pdf",
+    "url": "https://static.generation-robots.com/media/Jetson-AGX-Orin-Data-Sheet.pdf",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:165"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://techtransfer.universityofcalifornia.edu/NCD/29415.html",
+    "url": "https://techtransfer.universityofcalifornia.edu/NCD/29415.html",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:304"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://ulprospector.ul.com/1248/snapfit-3/",
+    "url": "https://ulprospector.ul.com/1248/snapfit-3/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:247"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     301,
+     200
+    ],
+    "final": "https://ulprospector.ul.com/1248/pe-snapfit-3/"
+   },
+   {
+    "id": "url:https://web.mae.ufl.edu/designlab/Lab%20Assignments/EML2322L%20Final%20Design%20Checklist.pdf",
+    "url": "https://web.mae.ufl.edu/designlab/Lab%20Assignments/EML2322L%20Final%20Design%20Checklist.pdf",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:156"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://web.mae.ufl.edu/designlab/TA/Common%20Design%20Review%20Mistakes.pdf",
+    "url": "https://web.mae.ufl.edu/designlab/TA/Common%20Design%20Review%20Mistakes.pdf",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:157"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://web.xidian.edu.cn/gmchen/files/20110919_163448.pdf",
+    "url": "https://web.xidian.edu.cn/gmchen/files/20110919_163448.pdf",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:291"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/pla/polylite-tm-pla",
+    "url": "https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/pla/polylite-tm-pla",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:271"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.additive-x.com/shop/mpattachments/file/viewonline/id/494/product_id/2236",
+    "url": "https://www.additive-x.com/shop/mpattachments/file/viewonline/id/494/product_id/2236",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:260",
+     "research/simulation-tools.md:190"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     302,
+     200
+    ],
+    "final": "https://www.additive-x.com/shop/media/mageplaza/product_attachments/attachment_file/b/a/bambu_pla_basic_technical_data_sheet_ax_1.pdf"
+   },
+   {
+    "id": "url:https://www.additive-x.com/shop/mpattachments/file/viewonline/id/580/product_id/2330",
+    "url": "https://www.additive-x.com/shop/mpattachments/file/viewonline/id/580/product_id/2330",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:191"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     302,
+     200
+    ],
+    "final": "https://www.additive-x.com/shop/media/mageplaza/product_attachments/attachment_file/b/a/bambu_petg_basic_technical_data_sheet_12.pdf"
+   },
+   {
+    "id": "url:https://www.autodesk.com/products/fusion-360/blog/fusion-compute-mcp/",
+    "url": "https://www.autodesk.com/products/fusion-360/blog/fusion-compute-mcp/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:49"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     403
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.calculix.de/",
+    "url": "https://www.calculix.de/",
+    "kind": "catalogue",
+    "names": [
+     "CalculiX 2.23 (conda-forge)"
+    ],
+    "where": [
+     "research/landscape.json libraries"
+    ],
+    "licence": [
+     "GPL-2.0-or-later"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.dfma.com/design-for-assembly.asp",
+    "url": "https://www.dfma.com/design-for-assembly.asp",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:164"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.dfma.com/resources/pdf/dfm-design-review-checklist.pdf",
+    "url": "https://www.dfma.com/resources/pdf/dfm-design-review-checklist.pdf",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:69",
+     "research/compliant-mechanisms.md:288",
+     "research/fea-and-process-tools.md:151"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.docketalarm.com/cases/PTAB/IPR2017-01990/Inter_Partes_Review_of_U.S._Pat._6631715/12-12-2017-Patent_Owner/Exhibit-2002-18-Exhibit_2002_Snap_Fits_Celanese/",
+    "url": "https://www.docketalarm.com/cases/PTAB/IPR2017-01990/Inter_Partes_Review_of_U.S._Pat._6631715/12-12-2017-Patent_Owner/Exhibit-2002-18-Exhibit_2002_Snap_Fits_Celanese/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:249"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.doi.org/10.1007/978-3-030-90700-6_31",
+    "url": "https://www.doi.org/10.1007/978-3-030-90700-6_31",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:253"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     302,
+     302,
+     301,
+     303,
+     302,
+     302,
+     200
+    ],
+    "final": "https://link.springer.com/chapter/10.1007/978-3-030-90700-6_31?error=cookies_not_supported&code=a7979916-824a-4a18-832d-19fa9c0af3fa"
+   },
+   {
+    "id": "url:https://www.doi.org/10.1007/BF02120338",
+    "url": "https://www.doi.org/10.1007/BF02120338",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:296"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     302,
+     302,
+     301,
+     301,
+     303,
+     302,
+     302,
+     200
+    ],
+    "final": "https://link.springer.com/article/10.1007/BF02120338?error=cookies_not_supported&code=5126cfc2-7b60-4752-8994-9bdbaff9a3d4"
+   },
+   {
+    "id": "url:https://www.emcoplastics.com/assets/pdf/acetal/General%20Design%20Principles%20for%20Engineering%20Polymers.pdf",
+    "url": "https://www.emcoplastics.com/assets/pdf/acetal/General%20Design%20Principles%20for%20Engineering%20Polymers.pdf",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:246",
+     "research/fea-and-process-tools.md:150"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.engineering.com/autodesk-announces-fusion-mcp-servers-and-more-ai-updates/",
+    "url": "https://www.engineering.com/autodesk-announces-fusion-mcp-servers-and-more-ai-updates/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:48"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.getleo.ai/ai-for-cad",
+    "url": "https://www.getleo.ai/ai-for-cad",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:105"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.hubs.com/guides/sheet-metal-fabrication/",
+    "url": "https://www.hubs.com/guides/sheet-metal-fabrication/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/landscape.md:159"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.hubs.com/knowledge-base/how-design-parts-fdm-3d-printing/",
+    "url": "https://www.hubs.com/knowledge-base/how-design-parts-fdm-3d-printing/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:255",
+     "research/fea-and-process-tools.md:154"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.hubs.com/knowledge-base/how-design-snap-fit-joints-3d-printing/",
+    "url": "https://www.hubs.com/knowledge-base/how-design-snap-fit-joints-3d-printing/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:254",
+     "research/fea-and-process-tools.md:155"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.kitware.com/paraview-6-0-0-release-notes/",
+    "url": "https://www.kitware.com/paraview-6-0-0-release-notes/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:116"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.mouser.com/pdfDocs/Jetson_AGX_Orin_Series_TDG-10943-001_v11.pdf",
+    "url": "https://www.mouser.com/pdfDocs/Jetson_AGX_Orin_Series_TDG-10943-001_v11.pdf",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:175"
+    ],
+    "licence": null,
+    "status": null,
+    "http": null
+   },
+   {
+    "id": "url:https://www.nasa.gov/reference/5-3-product-verification/",
+    "url": "https://www.nasa.gov/reference/5-3-product-verification/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:164"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.nasa.gov/reference/appendix-l-interface-requirements-document-outline/",
+    "url": "https://www.nasa.gov/reference/appendix-l-interface-requirements-document-outline/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:163"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.onshape.com/en/features/ai-advisor",
+    "url": "https://www.onshape.com/en/features/ai-advisor",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:103"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.openfoam.com/news/main-news/openfoam-v2606",
+    "url": "https://www.openfoam.com/news/main-news/openfoam-v2606",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:58"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.openlb.net/download/",
+    "url": "https://www.openlb.net/download/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:74"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.orcaslicer.com/wiki/cli/cli_actions",
+    "url": "https://www.orcaslicer.com/wiki/cli/cli_actions",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:152"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.orcaslicer.com/wiki/cli/cli_mode",
+    "url": "https://www.orcaslicer.com/wiki/cli/cli_mode",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:152"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.paraview.org/files/v6.2/",
+    "url": "https://www.paraview.org/files/v6.2/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:116"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.placera.se/pressmeddelanden/ptc-ptc-advances-leadership-in-ai-driven-design-with-launch-of-onshape-featurescript-mcp-server-20260813",
+    "url": "https://www.placera.se/pressmeddelanden/ptc-ptc-advances-leadership-in-ai-driven-design-with-launch-of-onshape-featurescript-mcp-server-20260813",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/agent-toolkits-2026-10.md:50"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.plasticstoday.com/plastics-processing/can-this-part-be-saved-part-3-living-hinges",
+    "url": "https://www.plasticstoday.com/plastics-processing/can-this-part-be-saved-part-3-living-hinges",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:283"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     403
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.protolabs.com/resources/blog/living-hinge-basics-for-injection-molding/",
+    "url": "https://www.protolabs.com/resources/blog/living-hinge-basics-for-injection-molding/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:282"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.protolabs.com/resources/design-tips/adding-crush-ribs-to-molded-parts/",
+    "url": "https://www.protolabs.com/resources/design-tips/adding-crush-ribs-to-molded-parts/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:284"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.protolabs.com/services/injection-molding/plastic-injection-molding/design-guidelines/",
+    "url": "https://www.protolabs.com/services/injection-molding/plastic-injection-molding/design-guidelines/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:287",
+     "research/fea-and-process-tools.md:152"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.protolabs.com/services/sheet-metal-fabrication/design-guidelines/",
+    "url": "https://www.protolabs.com/services/sheet-metal-fabrication/design-guidelines/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:286",
+     "research/fea-and-process-tools.md:153",
+     "research/landscape.md:159"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.rapiddirect.com/blog/crush-ribs/",
+    "url": "https://www.rapiddirect.com/blog/crush-ribs/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:285"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.research.autodesk.com/publications/cross-sectional-structural-analysis-for-3d-printing-optimization",
+    "url": "https://www.research.autodesk.com/publications/cross-sectional-structural-analysis-for-3d-printing-optimization",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:71"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     301,
+     200
+    ],
+    "final": "https://www.research.autodesk.com/publications/cross-sectional-structural-analysis-for-3d-printing-optimization/"
+   },
+   {
+    "id": "url:https://www.seeedstudio.com/Aluminum-heatsink-with-Fan-for-Jetson-AGX-Orin-p-5970.html",
+    "url": "https://www.seeedstudio.com/Aluminum-heatsink-with-Fan-for-Jetson-AGX-Orin-p-5970.html",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:177"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.ulbrich.com/blog/301-stainless-steel-strip-for-spring-applications/",
+    "url": "https://www.ulbrich.com/blog/301-stainless-steel-strip-for-spring-applications/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/compliant-mechanisms.md:289"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     301,
+     200
+    ],
+    "final": "https://www.ulbrich.com/blog/evaluating-301-stainless-steel-strip-for-spring-applications/"
+   },
+   {
+    "id": "url:https://www.wevolver.com/article/dfma-design-for-manufacturing-and-assembly-explained",
+    "url": "https://www.wevolver.com/article/dfma-design-for-manufacturing-and-assembly-explained",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:163"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://zoo.dev/press/zoo-introduces-zookeeper",
+    "url": "https://zoo.dev/press/zoo-introduces-zookeeper",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/design-workflows.md:96"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   }
+  ],
+  "skills": [
+   {
+    "id": "agent:cad-pr-reviewer",
+    "name": "cad-pr-reviewer",
+    "kind": "agent",
+    "source": "this repository",
+    "file": "agents/cad-pr-reviewer.md",
+    "version": "e2ce893ad701"
+   },
+   {
+    "id": "agent:cad-resume",
+    "name": "cad-resume",
+    "kind": "agent",
+    "source": "this repository",
+    "file": "agents/cad-resume.md",
+    "version": "e2ce893ad701"
+   },
+   {
+    "id": "skill:cad-motion-validation",
+    "name": "cad-motion-validation",
+    "kind": "skill",
+    "source": "this repository",
+    "file": "skills/cad-motion-validation/SKILL.md",
+    "version": "e2ce893ad701"
+   },
+   {
+    "id": "skill:cad-pr-review",
+    "name": "cad-pr-review",
+    "kind": "skill",
+    "source": "this repository",
+    "file": "skills/cad-pr-review/SKILL.md",
+    "version": "e2ce893ad701"
+   },
+   {
+    "id": "skill:cad-remote-runs",
+    "name": "cad-remote-runs",
+    "kind": "skill",
+    "source": "this repository",
+    "file": "skills/cad-remote-runs/SKILL.md",
+    "version": "e2ce893ad701"
+   },
+   {
+    "id": "skill:cad-supply-chain",
+    "name": "cad-supply-chain",
+    "kind": "skill",
+    "source": "this repository",
+    "file": "skills/cad-supply-chain/SKILL.md",
+    "version": "e2ce893ad701"
+   },
+   {
+    "id": "skill:cad-work-tracking",
+    "name": "cad-work-tracking",
+    "kind": "skill",
+    "source": "this repository",
+    "file": "skills/cad-work-tracking/SKILL.md",
+    "version": "e2ce893ad701"
+   },
+   {
+    "id": "skill:design-process",
+    "name": "design-process",
+    "kind": "skill",
+    "source": "this repository",
+    "file": "skills/design-process/SKILL.md",
+    "version": "e2ce893ad701"
+   },
+   {
+    "id": "skill:mcmaster-parts",
+    "name": "mcmaster-parts",
+    "kind": "skill",
+    "source": "this repository",
+    "file": "skills/mcmaster-parts/SKILL.md",
+    "version": "e2ce893ad701"
+   },
+   {
+    "id": "vendored-skills:build123d-mcp",
+    "name": "build123d-mcp",
+    "kind": "4 vendored skills",
+    "source": "https://github.com/pzfreo/build123d-mcp",
+    "file": "vendor/build123d-mcp/",
+    "version": "59b256121886"
+   },
+   {
+    "id": "vendored-skills:kicad-happy",
+    "name": "kicad-happy",
+    "kind": "11 vendored skills",
+    "source": "https://github.com/aklofas/kicad-happy",
+    "file": "vendor/kicad-happy/",
+    "version": "2fd9aa0fe2d6"
+   },
+   {
+    "id": "vendored-skills:kicad-mcp-pro",
+    "name": "kicad-mcp-pro",
+    "kind": "30 vendored skills",
+    "source": "https://github.com/oaslananka/kicad-mcp-pro",
+    "file": "vendor/kicad-mcp-pro/",
+    "version": "f03b478f597d"
+   },
+   {
+    "id": "vendored-skills:text-to-cad",
+    "name": "text-to-cad",
+    "kind": "13 vendored skills",
+    "source": "https://github.com/earthtojake/text-to-cad",
+    "file": "vendor/text-to-cad/",
+    "version": "2f793659fb7b"
+   }
+  ],
+  "repo": [
+   {
+    "id": "dependabot",
+    "ecosystems": [
+     "github-actions"
+    ]
+   },
+   {
+    "id": "repo:Valpatel/cad-agent",
+    "settings": {
+     "secret_scanning": "disabled",
+     "secret_scanning_push_protection": "disabled",
+     "dependabot_security_updates": "disabled",
+     "secret_scanning_non_provider_patterns": "disabled",
+     "secret_scanning_validity_checks": "disabled"
+    },
+    "dependabot_alerts": "enabled",
+    "dependency_graph": []
+   }
+  ]
+ }
+}

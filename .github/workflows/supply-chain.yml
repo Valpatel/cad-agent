@@ -1,0 +1,46 @@
+name: Supply-chain report
+# Weekly online run of tools/resource_audit.py (#117; skills/cad-supply-chain/SKILL.md). It reads OSV.dev, npm audit,
+# PyPI, the npm registry, deps.dev, the GitHub API and the OpenSSF Scorecard API, then opens, updates or closes ONE
+# issue ("Supply-chain report: open findings") when the findings change. It never pushes, never opens a PR and
+# never merges: the token can read the code and write issues, nothing else. Fixes go through normal PRs.
+#
+# Network answers vary, so this job never gates anything; CI's supply-chain job runs the offline checks instead.
+on:
+  schedule:
+    - cron: "41 6 * * 1"         # Mondays 06:41 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: supply-chain-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    if: github.repository == 'Valpatel/cad-agent'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09   # v5
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1   # v6
+        with: {python-version: '3.12'}
+      - run: pip install -e .        # pyyaml, one of the package's two required dependencies
+      - name: Run the report (online)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p build
+          python3 tools/resource_audit.py report --online --repo "$GITHUB_REPOSITORY" \
+            --json build/security-report.json --md build/security-report.md --fail-on none
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02   # v4
+        with:
+          name: security-report
+          path: build/security-report.*
+      - name: Open or update the tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/resource_audit.py issue --report build/security-report.json --repo "$GITHUB_REPOSITORY" --post

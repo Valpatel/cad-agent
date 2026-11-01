@@ -32,7 +32,7 @@ cad-agent webkit designer/kit      # copies this kit into your project (re-run t
 | `hud.css` | The skin: Valpatel design language (dark void, cyan hairlines, monospace telemetry) |
 | `vendor/` | three.js r160 (+ OrbitControls, BufferGeometryUtils), Inter and JetBrains Mono |
 | `formulas.js`, `formulas-data.js` | The browser port of `cadagent.formulas` (snap arm, cantilever curve and strain profile), SI units, tested against the Python on golden vectors (`tools/formula_vectors.py`); printed filaments with their modulus and allowable strain by print direction (generated, do not edit) |
-| `cantilever.js`, `cantilever.css` | `<cad-cantilever>`: an interactive snap-arm explorer. Sliders and the material and print direction drive a beam that bends along its computed curve, coloured by strain, with root strain, force and pass/fail. Link the CSS in `<head>` (it reserves the size, so nothing moves) and put a still `<img>` inside as the fallback; keyboard and screen-reader labelled, reduced motion respected, `drawCantilever()` for static figures ([docs](../../../docs/formulas.md)) |
+| `cantilever.js`, `cantilever.css` | `<cad-cantilever>`: an interactive snap-arm explorer. Sliders and the material and print direction drive a beam that bends along its computed curve, coloured by strain, with root strain, force and pass/fail. Link the CSS in `<head>` (it reserves the size, so nothing moves) and put a still `<img>` inside as the fallback; keyboard and screen-reader labelled, reduced motion respected, `drawCantilever()` for static figures. The equations and their sources are on the site's Engineering formulas page (`docs/formulas.md`) |
 
 ## Zoom sensitivity
 

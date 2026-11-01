@@ -956,6 +956,8 @@ def export_plates(project, known_parts: Optional[Sequence[str]] = None, settings
     plates from above) into ``exports_dir``; None when ``cad.plates`` is false. The project settings are
     ``settings_bytes`` when given, else Bambu Studio's for ``cad.slicer`` when it is installed and ``use_slicer``,
     else left out (the record and the warnings say so: Bambu Studio then opens the file on one plate)."""
+    import subprocess
+
     from cadagent.manufacturing import slicer
     from cadagent.publish.report import load_parts
 
@@ -993,7 +995,7 @@ def export_plates(project, known_parts: Optional[Sequence[str]] = None, settings
             settings_bytes = slicer.project_settings(project.root / "build" / "slicer" / "plates", sl["printer"],
                                                      sl["process"], groups, sl["overrides"],
                                                      colours=[PALETTE[i % len(PALETTE)] for i in range(len(groups))])
-        except (OSError, RuntimeError, KeyError, ValueError, FileExistsError) as exc:
+        except (OSError, RuntimeError, KeyError, ValueError, subprocess.SubprocessError) as exc:
             warnings.append(f"no project settings ({exc}); Bambu Studio will open the file on one plate")
     elif settings_bytes is None:
         warnings.append("Bambu Studio is not installed, so the file carries no project settings: Bambu Studio "

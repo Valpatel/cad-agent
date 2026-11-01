@@ -474,6 +474,19 @@ def test_export_plates_without_bambu_studio_says_what_it_left_out(tmp_path, monk
     assert P.export_plates(load_project(stl_project(tmp_path / "off", "  plates: false\n"))) is None
 
 
+def test_a_slicer_that_hangs_leaves_the_file_without_settings(tmp_path, monkeypatch):
+    from cadagent.project import load_project
+    monkeypatch.setattr(slicer, "executable", lambda: "/fake/BambuStudio")
+
+    def hang(*a, **kw):
+        raise subprocess.TimeoutExpired("bambu-studio", 300)
+
+    monkeypatch.setattr(slicer, "project_settings", hang)
+    rec = P.export_plates(load_project(stl_project(tmp_path)))
+    assert rec["project_settings"] == {"embedded": False}
+    assert any("no project settings" in w and "timed out" in w for w in rec["warnings"])
+
+
 def test_export_3mf_command_writes_the_plates(tmp_path, capsys, monkeypatch):
     from cadagent.cli import main
     monkeypatch.setattr(slicer, "executable", lambda: None)

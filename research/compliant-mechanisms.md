@@ -61,6 +61,15 @@ examples").
 
 ## 3. Allowable strain tables (moulded resin)
 
+![Bar chart of the two tables below: for each moulded resin, the strain a snap arm may take used once and used often. Glass-filled grades take 0.8 to 2.2 percent used once; unfilled POM and PA66 take 4 to 8 percent, the Hytrel elastomer 20 percent](../docs/img/research/moulded-strain.svg)
+
+*Drawn from the two tables below by `tools/research_figures.py` (a test keeps them in step). Glass-filled grades take
+0.8–2.2 % used once; unfilled POM and PA66 take 4–8 %, the elastomer 20 %. Used often, each allows about half as
+much: Bayer's rule is 60 %, DuPont's rows run from a quarter to two thirds.*
+
+<details>
+<summary>The two tables the chart draws: Bayer Table 2 and DuPont Table 10.06</summary>
+
 **Bayer Table 2** [BAY] (read): short-term strain limits at 23 °C for a single assembly; use about 60 % for frequent
 separation.
 
@@ -86,6 +95,8 @@ separation.
 | Rynite PET GR | 1 % | 0.5 % |
 | Crastin PBT GR | 1.2 % | 0.6 % |
 | Hytrel (TPC elastomer) | 20 % | 10 % |
+
+</details>
 
 - **BASF** *Snap-Fit Design Manual*, p. IV-4, has allowable strain and friction for eight resins, with worked examples
   for an Ultradur PBT grade and an Ultraform POM grade [BASF]. The values were **not read**: the tables are images, and
@@ -134,12 +145,17 @@ most filaments keep 60–90 % of their strength but much less of their stretch; 
 exception. TPU's strain ratio is not drawn: both its samples outlasted the test (>650 / >480 %), and a ratio of two
 lower bounds says nothing.*
 
+<details>
+<summary>Earlier editions of Bambu's sheets, and which PETG Basic a spool is</summary>
+
 **Earlier editions.** Bambu's V2.0 sheets (a reseller's copies: [BBL-PLA-V2], [BBL-PLAM-V2], [BBL-PETGCF-V2],
 [BBL-ASA-V2]) tested the same filaments and gave higher strengths: PLA Basic E 2680 / 2160 MPa and UTS 39 / 35 MPa;
 PLA Matte UTS 32 / 25 MPa and elongation 32.8 / 4.8 %; PETG-CF UTS 59 / 38 MPa; ASA UTS 52 / 35 MPa (the other values
 as V3.0). PETG Basic is two filaments, both in the table: V3.0's text calls it "the all-new Bambu Lab PETG Basic … The
 refined formula", and its bars are not said to be annealed (it advises against annealing PETG Basic), where V2.0's
 were annealed and dried at 65 °C for 8 h. A spool does not say which it is.
+
+</details>
 
 Reading the table:
 - **Strain to failure across the layers falls far more than strength.** For PLA, PETG, ASA and CoPA the Z/XY strength
@@ -166,6 +182,9 @@ Reading the table:
   value: a filled print plausibly sits between the unfilled and glass-filled moulded ratios (0.31–0.58), so in room
   air these rows may be up to about 2x too soft. That is cautious for deflection, but a force or stress worked out at
   a given travel reads low (#157).
+
+<!-- the site places a figure here (docs/pages.yaml) -->
+
 - **Orientation rule.** Lay the flexing member in XY and keep the joining direction independent of the bending
   direction. A cantilever built along Z is "poor", and the stair-step notches add stress concentration [KLA]. Hubs:
   avoid Z-built cantilevers; MJF root at least 1 mm thick; fillet ≥ 0.5×root thickness; width ≥ 5 mm [HUBS-SF].
@@ -188,6 +207,13 @@ MJF is isotropic in strength but not in strain.
 - No XY/Z breakdown was found, so SLA isotropy is (u).
 
 ## 6. Printed allowable strain: a starting rule to be confirmed by coupons [derived]
+
+![Bar chart of the table below: for each printed filament, the strain allowed for one assembly along the layers and across them. Most keep 74 to 100 percent of it across the layers; Polymaker's ASA keeps 62 percent and CoPA a third or less. TPU is not drawn](../docs/img/research/printed-strain.svg)
+
+*Drawn from the table below by `tools/research_figures.py` (a test keeps the two in step). Across the layers most
+filaments keep 74–100 % of their in-plane allowance, where the strength limit governs or the two limits are close;
+Polymaker's ASA keeps 62 % and CoPA a third or less, where half the elongation at break governs (§5). Every bar is a
+starting value until a coupon measures it.*
 
 Rule:
 1. Single assembly: ε_single = min(0.7·UTS/E, 0.5·ε_break), applied separately to XY and Z values. 0.7·σ/E is Bayer's
@@ -271,6 +297,9 @@ bistable beams with tests. cad-agent #95 has to build this; it is small (§2 equ
 cases are its tests.
 
 ## 10. References
+
+<details>
+<summary>The sources, by citation key: what each is, where it was read, and what it gave</summary>
 
 - **[COV]** Covestro LLC, *Snap-Fit Joints for Plastics – A Design Guide* (the Covestro edition of [BAY]); a copy
   supplied by the project owner, read for the 1.09 and 0.55 factors and Example II; not redistributed.
@@ -367,6 +396,8 @@ cases are its tests.
 - **[BOSL2]** https://github.com/BelfrySCAD/BOSL2 (`joiners.scad`, `hinges.scad` read)
 - **[DFMAG]** https://github.com/Vivek-Boora/dfm-agent (README read; no licence)
 - **[LH-INK]** https://github.com/buxtronix/living-hinge; https://github.com/Gernreich/living-hinge
+
+</details>
 
 **Could not verify:**
 - Bayer Table 1 constants 0.67 and 0.86 (image).

@@ -166,6 +166,8 @@ cad-nav{--cad-nav-font:13px/1.5 var(--font);--cad-nav-fg:var(--ink);--cad-nav-mu
   .doc-layout{grid-template-columns:260px minmax(0,880px) minmax(200px,1fr);gap:48px}
   .doc-rail{display:block;position:sticky;top:96px;max-height:calc(100vh - 112px);overflow:auto;margin-top:28px;padding-right:4px;scrollbar-width:thin}
   cad-nav .cad-nav-panel .cad-nav-outline{display:none}}
+/* On paper: no page tree (kit/nav.css) and no right-hand outline, so the article keeps the whole width, not the tree's column */
+@media print{.doc-layout{display:block}.doc-rail{display:none}}
 .crumbs{font:11px/1.7 var(--mono);letter-spacing:.04em;color:var(--muted);margin:20px 0 0}
 .prose{font-size:15px;line-height:1.8;overflow-wrap:anywhere}
 .prose h1{font-size:clamp(30px,4vw,46px);line-height:1.15;letter-spacing:-.05em;margin:18px 0 20px}

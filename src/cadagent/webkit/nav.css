@@ -60,5 +60,6 @@ cad-nav [hidden]{display:none!important}
 /* Without script there is nothing to filter. The fold still opens and closes natively. */
 @media(scripting:none){cad-nav .cad-nav-filter,cad-nav .cad-nav-panel::before{display:none}}
 @media(prefers-reduced-motion:reduce){:where(cad-nav .cad-nav-toggle)::after{transition:none}}
-/* On paper the tree is no use (and a fold the script opened for a wide window would print in full). */
+/* On paper the tree is no use (and a fold the script opened for a wide window would print in full). A page that lays out
+ * a column for <cad-nav> should drop that column in print too, or its content moves into the empty one. */
 @media print{:where(cad-nav){display:none}}

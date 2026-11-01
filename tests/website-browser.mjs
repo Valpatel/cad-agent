@@ -1037,11 +1037,18 @@ async function foldProblems() {
   await turn.setViewportSize({ width: 360, height: 800 });
   await turn.waitForTimeout(100);
   if ((await isOpen()) !== true) out.push('360 -> 1366 -> 360px: the fold the reader opened was closed');
-  // Printed from a wide window, where the script opened the fold: the tree does not print (#209 review).
-  await turn.setViewportSize({ width: 1366, height: 800 });
-  await turn.emulateMedia({ media: 'print' });
-  if ((await turn.locator('cad-nav').evaluate(n => getComputedStyle(n).display)) !== 'none') out.push('print: the page tree prints');
-  await turn.emulateMedia({ media: 'screen' });
+  // Printed from a wide window, where the script opened the fold: the tree does not print, and on paper wide enough for
+  // the site's grid (landscape A3, 1500 px) the article keeps the width, not the tree's empty column (#209 review).
+  for (const w of [1366, 1500]) {
+    await turn.setViewportSize({ width: w, height: 800 });
+    await turn.emulateMedia({ media: 'print' });
+    const paper = await turn.evaluate(() => ({ nav: getComputedStyle(document.querySelector('cad-nav')).display,
+      article: document.querySelector('.doc-main').getBoundingClientRect().width, rail: document.querySelector('.doc-rail')?.getClientRects().length || 0 }));
+    if (paper.nav !== 'none') out.push(`print at ${w}px: the page tree prints`);
+    if (paper.article < 600) out.push(`print at ${w}px: the article prints ${Math.round(paper.article)}px wide`);
+    if (paper.rail) out.push(`print at ${w}px: the "On this page" column prints`);
+    await turn.emulateMedia({ media: 'screen' });
+  }
   await turn.close();
   // No link text around the filter pill while the tree is scrolled (#134): with a link under the filter's top edge, the
   // points just inside the pill's box at its rounded corners, and in the strips above and below it, hit the panel's cover.

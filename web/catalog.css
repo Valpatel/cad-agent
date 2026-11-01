@@ -2,10 +2,12 @@
    (a sheet on small screens), and the card grid. Behaviour: kit/gallery.js and kit/gallery.css. Covers are our own
    figures or drawn from data by tools/catalog-art.mjs; the tints below match theirs. */
 .catalog{--bar-top:84px;--side-w:268px;--glyph-accent:var(--orange)}
-[data-tone=mechanical]{--tint-a:#eef8fb;--tint-b:#cfe3ec}[data-tone=manufacturing]{--tint-a:#fff7d9;--tint-b:#f4e1a2}
-[data-tone=thermal]{--tint-a:#ffefe3;--tint-b:#f6d3b8}[data-tone=simulation]{--tint-a:#eef8e4;--tint-b:#d0e8b6}
-[data-tone=electrical]{--tint-a:#eef1fb;--tint-b:#d3dbf0}[data-tone=practice]{--tint-a:#f7f5ea;--tint-b:#e5e7d3}
-[data-tone=cross-cutting]{--tint-a:#f4f8ee;--tint-b:#dde8d4}[data-tone=unplaced]{--tint-a:#f6f6f0;--tint-b:#e4e6dc}
+/* Each domain's tone: two tints for backgrounds (the covers' too: TINT in tools/catalog-art.mjs) and an ink for accents,
+   at least 3:1 against white and against both tints. Every domain in docs/areas.yaml has one: tests/website-catalog.test.mjs. */
+[data-tone=mechanical]{--tint-a:#eef8fb;--tint-b:#cfe3ec;--tone:#3f7f9c}[data-tone=manufacturing]{--tint-a:#fff7d9;--tint-b:#f4e1a2;--tone:#a07a0c}
+[data-tone=thermal]{--tint-a:#ffefe3;--tint-b:#f6d3b8;--tone:#c0602a}[data-tone=simulation]{--tint-a:#eef8e4;--tint-b:#d0e8b6;--tone:#4f8a35}
+[data-tone=electrical]{--tint-a:#eef1fb;--tint-b:#d3dbf0;--tone:#5468b0}[data-tone=practice]{--tint-a:#f7f5ea;--tint-b:#e5e7d3;--tone:#7d7f55}
+[data-tone=cross-cutting]{--tint-a:#f4f8ee;--tint-b:#dde8d4;--tone:#28736c}[data-tone=unplaced]{--tint-a:#f6f6f0;--tint-b:#e4e6dc;--tone:#66807a}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .glyph-sprite{position:absolute;width:0;height:0;overflow:hidden}
 svg.glyph{flex:none;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}
@@ -52,7 +54,7 @@ svg.glyph{flex:none;width:20px;height:20px;fill:none;stroke:currentColor;stroke-
 .play-name{font-weight:750;font-size:17px;letter-spacing:-.3px;margin-top:4px}
 .play-what{font-size:13px;line-height:1.55;color:#4c6260}
 .pill-mode{border-color:#173d3c40}.pill-interactive{background:#ffe1cc;border-color:#f3c3a3}.pill-animated{background:#ffedab;border-color:#ecd67f}.pill-render{background:#e2f0f5;border-color:#c3dbe4}
-.pill-kind{background:#fff;border-color:#173d3c55}.pill-gyropup{background:#173d3c;border-color:#173d3c;color:#fff}
+.pill-kind{background:#fff;border-color:#173d3c55}
 .pill-rejected{background:#e9e8e1;color:#4a5552}.pill-reference{background:#eef1e4}.pill-unverified{border-style:dashed}
 
 /* kind tabs: sticky under the header */
@@ -72,26 +74,85 @@ svg.glyph{flex:none;width:20px;height:20px;fill:none;stroke:currentColor;stroke-
 .cat-side{position:sticky;top:calc(var(--bar-top) + 70px);max-height:calc(100vh - var(--bar-top) - 86px);overflow:auto;scrollbar-width:thin;padding:0 6px 24px 0}
 .sheet-head{display:none}
 .side-title{font:700 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:4px 0 8px}
-.tree-key{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:-2px 0 10px;font-size:12px;color:#405f5c}
-.tree-key .gyro{margin-left:8px}
+/* A maturity bar (rows, filters, cards, panels and the key): a segment per level in docs/areas.yaml, with gaps to count */
+.mat-dots{display:inline-flex;flex:none;gap:2px;width:34px;height:6px;vertical-align:middle;--on:var(--teal);--off:#c5d3c7}
+.mat-dots>i{flex:1;background:var(--off);border-radius:1px}
+.mat-dots>i.on{background:var(--on)}
+.mat-dots>i:first-child{border-radius:3px 1px 1px 3px}.mat-dots>i:last-child{border-radius:1px 3px 3px 1px}
+/* the key above the tree: each level's bar and word; hovering or focusing a word shows what it means */
+.tree-key{margin:-2px 0 12px;font-size:12px;color:#405f5c}
+.key-head{display:flex;align-items:baseline;justify-content:space-between;gap:4px 12px;flex-wrap:wrap;margin:0 0 6px}
+.key-head a{color:var(--teal);font-weight:600}
+.key-scale{position:relative;display:flex;justify-content:space-between;gap:4px;margin:0;padding:0;list-style:none}
+/* each word's padding hangs into the gaps between words, but not past the rail's edges (.cat-side clips there) */
+.key-scale>li{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin:0 -3px;padding:3px;border-radius:6px;cursor:help;font:600 11px var(--font);color:var(--ink)}
+.key-scale>li:first-child{margin-left:0}.key-scale>li:last-child{margin-right:0}
+.key-scale>li:focus-visible{outline:2px solid #187a79;outline-offset:-2px}
+.key-means{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:3;padding:8px 11px;border-radius:10px;background:var(--ink);color:#fffdf5;
+  font:500 12px/1.45 var(--font);box-shadow:0 10px 24px #173d3c33;clip-path:inset(50%);pointer-events:none}
+.key-scale>li:focus{background:#e6eee3}.key-scale>li:focus .key-means{clip-path:none}
+@media(hover:hover){.key-scale>li:hover{background:#e6eee3}.key-scale>li:hover .key-means{clip-path:none}}
+.cat-tabs a[data-empty],.opt[data-empty]{color:#5d716c;font-weight:500}
+
+/* The area tree. Each domain is a panel, always outlined: a header band in its tints (glyph in a white circle, count in a
+   pill) and hairlines between its rows. "All areas" and the buckets are outlined rows of their own. Every row is a grid
+   (glyph | name | maturity | count), so bars and counts line up from row to row.
+   Hover (on screens that hover) and keyboard focus sweep the domain's tint in from the left, grow a bar in its ink and
+   step the glyph right; the chosen row is inked, with an orange edge and count. Which row is chosen, and which panels
+   start folded in the sheet: kit/gallery.js. */
 .area-tree,.area-tree ul{list-style:none;margin:0;padding:0}
-.area-tree summary{display:flex;align-items:center;gap:9px;min-height:38px;padding:4px 8px;border-radius:10px;cursor:pointer;font-weight:700;font-size:14px;list-style:none}
+.area-tree>li+li{margin-top:10px}
+.area-tree :focus-visible{outline-offset:-3px}
+.area-tree details.dom{border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 4px 14px #173d3c0d}
+.area-tree summary{display:grid;grid-template-columns:28px minmax(0,1fr) auto 12px;column-gap:9px;align-items:center;min-height:44px;padding:6px 12px 6px 8px;
+  cursor:pointer;list-style:none;font-weight:700;font-size:14px;background:linear-gradient(100deg,var(--tint-b),var(--tint-a))}
 .area-tree summary::-webkit-details-marker{display:none}
-.area-tree summary::after{content:"";width:7px;height:7px;margin-left:2px;border-right:2px solid #6f8a80;border-bottom:2px solid #6f8a80;transform:rotate(-45deg);transition:transform .15s;flex:none}
+.area-tree summary>svg.glyph{width:28px;height:28px;padding:5px;border-radius:50%;background:#ffffffc7;color:var(--tone);box-shadow:inset 0 0 0 1px #fff}
+.area-tree summary>.count{padding:2px 7px;border-radius:999px;background:#ffffffb3;color:var(--ink)}
+.area-tree summary::after{content:"";justify-self:center;width:7px;height:7px;border-right:2px solid #4c615c;border-bottom:2px solid #4c615c;transform:rotate(-45deg);transition:transform .15s}
+.area-tree details[open]>summary{border-bottom:1px solid var(--line)}
 .area-tree details[open]>summary::after{transform:rotate(45deg)}
-.area-tree summary:hover,.area-link:hover{background:#eef1e4}
-.area-tree summary .count{margin-left:auto}
-.area-link{display:flex;align-items:center;gap:8px;min-height:34px;padding:4px 8px;border-radius:10px;text-decoration:none;font-size:13.5px;line-height:1.3;border-left:3px solid transparent}
-.area-link .count{margin-left:auto;padding-left:6px}
-.area-tree ul ul .area-link{padding-left:22px}
-.area-tree ul ul svg.glyph{width:17px;height:17px}
-.area-link[aria-current=true]{background:#f0f5e7;border-left-color:var(--orange);font-weight:700}
-.area-link[data-maturity=idea] .area-name{color:#5d716c}
-.area-tree .bucket{margin-top:6px;border-top:1px dashed #c9d8ca;padding-top:6px}
-.area-tree summary[data-empty],.area-link[data-empty],.cat-tabs a[data-empty],.opt[data-empty]{color:#5d716c;font-weight:500}
-.mat-dots{display:inline-block;flex:none;width:29px;height:5px;border-radius:3px;background:linear-gradient(90deg,var(--teal) calc(var(--l,0) * 20%),#cfdccf 0)}
-.mat-dots[data-level="1"]{--l:1}.mat-dots[data-level="2"]{--l:2}.mat-dots[data-level="3"]{--l:3}.mat-dots[data-level="4"]{--l:4}.mat-dots[data-level="5"]{--l:5}
-.gyro{flex:none;width:8px;height:8px;border-radius:50%;background:var(--orange);box-shadow:0 0 0 3px #bd3a1222}
+.area-tree summary[data-empty]{color:#4c615c;font-weight:500}
+.area-link{position:relative;display:grid;grid-template-columns:20px minmax(0,1fr) 34px 30px;column-gap:8px;align-items:center;min-height:36px;
+  padding:5px 10px 5px 9px;text-decoration:none;font-size:13.5px;line-height:1.3;color:var(--ink);
+  background:linear-gradient(90deg,var(--tint-b),var(--tint-a) 70%,#fff0) no-repeat 0 0/0% 100%;transition:background-size .22s ease}
+.area-link>*{grid-row:1}
+.area-link>svg.glyph{grid-column:1;justify-self:center;transition:transform .2s ease,color .15s}
+.area-link>.area-name{grid-column:2}
+.area-link>.mat-dots{grid-column:3}
+.area-link>.count{grid-column:4;justify-self:end}
+.area-tree li li+li .area-link{border-top:1px solid #e7ece3}
+.area-tree li li svg.glyph{width:17px;height:17px}
+.area-link[data-maturity=idea] .area-name,.area-link[data-empty]{color:#5d716c}
+.area-link[data-empty]{font-weight:500}
+/* a domain's own row: "All", with an arrow in the glyph column (its full name is there for screen readers) */
+.area-link.dom-all{min-height:32px;font-weight:600;color:#405f5c}
+.area-link.dom-all::after{content:"↳";content:"↳"/"";grid-row:1;grid-column:1;justify-self:center;color:var(--tone);font-weight:700}
+.area-tree>li>.area-link{overflow:hidden;border:1px solid var(--line);border-radius:12px;background-color:#fff;box-shadow:0 4px 14px #173d3c0d}
+/* the bar on the left edge: grows on hover and focus, the chosen row's orange edge */
+.area-link::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:0 3px 3px 0;background:var(--tone,var(--teal));
+  transform:scaleY(0);transition:transform .2s ease}
+.area-link:focus-visible{background-size:100% 100%}
+.area-link:focus-visible::before{transform:none}
+.area-link:focus-visible>svg.glyph{transform:translateX(3px);color:var(--tone)}
+.area-link:focus-visible .area-name{color:var(--ink)}
+/* only where a pointer hovers: a tap on a touch screen leaves no hover behind */
+@media(hover:hover){
+  .area-tree summary:hover{background:var(--tint-b)}
+  .area-link:hover{background-size:100% 100%}
+  .area-link:hover::before{transform:none}
+  .area-link:hover>svg.glyph{transform:translateX(3px);color:var(--tone)}
+  .area-link:hover .area-name{color:var(--ink)}
+}
+.area-link[aria-current=true]{background:var(--ink);color:#fffdf5;font-weight:700}
+.area-link[aria-current=true] .area-name{color:inherit}
+.area-link[aria-current=true]::before{transform:none;top:0;bottom:0;width:4px;border-radius:0;background:var(--orange)}
+.area-link[aria-current=true]>svg.glyph{transform:none;color:#ffb595;--glyph-accent:#fffdf5}
+.area-link[aria-current=true]>.count{min-width:22px;padding:1px 5px;border-radius:999px;background:var(--orange);color:#fff;text-align:center}
+.area-link[aria-current=true]>.mat-dots{--on:#9fe0d4;--off:#ffffff40}
+.area-link.dom-all[aria-current=true]::after{color:#ffb595}
+.area-tree>li>.area-link[aria-current=true]{border-color:var(--ink);background-color:var(--ink)}
+.area-link[aria-current=true]:focus-visible{outline-color:#fffdf5}
 .cat-filters{margin-top:22px;border-top:1px solid var(--line);padding-top:16px}
 .cat-filters fieldset{border:0;margin:0 0 14px;padding:0;min-width:0}
 .cat-filters legend{font:700 12px var(--font);color:var(--ink);margin:0 0 4px;padding:0}
@@ -99,7 +160,7 @@ svg.glyph{flex:none;width:20px;height:20px;fill:none;stroke:currentColor;stroke-
 .opt:hover{background:#eef1e4}
 .opt input{width:17px;height:17px;margin:0;accent-color:var(--ink);flex:none}
 .opt .count{margin-left:auto}
-.opt .mat-dots{margin-right:2px}
+.opt .mat-dots{margin-right:8px}
 .clear-all{min-height:40px;padding:8px 16px;font-size:12px;margin-top:4px}
 
 /* toolbar, chips, area panel */
@@ -160,8 +221,6 @@ cad-gallery[data-filtered] .play,cad-gallery:not([data-overview]) .play{display:
 .card-area:hover{text-decoration:underline}
 .card-meta .more{font:600 10px var(--mono);margin-right:auto;margin-left:-4px}
 .mat{display:inline-flex;align-items:center;gap:6px;font:600 10.5px var(--mono);white-space:nowrap}
-.mat i{display:inline-block;width:29px;height:5px;border-radius:3px;background:linear-gradient(90deg,var(--teal) calc(var(--l,0) * 20%),#cfdccf 0)}
-.mat[data-level="1"]{--l:1}.mat[data-level="2"]{--l:2}.mat[data-level="3"]{--l:3}.mat[data-level="4"]{--l:4}.mat[data-level="5"]{--l:5}
 .card-call{position:relative;z-index:1;display:flex;align-items:center;gap:8px;min-height:34px;margin:10px 16px 0}
 .card-call code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;padding:6px 9px;border-radius:8px;background:var(--code)}
 .card-call>.cad-copy-btn{position:static;flex:none;min-height:32px}
@@ -196,7 +255,7 @@ cad-gallery[data-filtered] .play,cad-gallery:not([data-overview]) .play{display:
   .sheet-title{margin:0;font-weight:750;font-size:17px}
   .sheet-head .button{min-height:44px;padding:8px 18px}
   .sheet-head [data-gallery-sheet-close]::after{content:" (" attr(data-shown) ")"}
-  .area-link,.area-tree summary,.opt{min-height:44px}
+  .area-link,.area-link.dom-all,.area-tree summary,.opt{min-height:44px}
   :root.cad-gallery-sheet-open{overflow:hidden}
 }
 @media(max-width:760px){
@@ -244,4 +303,4 @@ cad-gallery[data-filtered] .play,cad-gallery:not([data-overview]) .play{display:
   .see-all{width:100%;justify-content:center}
 }
 @media(pointer:coarse){.card-call{min-height:44px}.card-notes summary{min-height:36px}.card-area{min-height:32px}}
-@media(prefers-reduced-motion:reduce){.play-tile a,.area-tree summary::after{transition:none}}
+@media(prefers-reduced-motion:reduce){.play-tile a,.area-tree summary::after,.area-link,.area-link::before,.area-link>svg.glyph{transition:none}}

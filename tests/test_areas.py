@@ -12,7 +12,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 AREAS = ROOT / "docs" / "areas.yaml"
 LEVELS = ["idea", "surveyed", "tooling", "validated", "proven"]
-PRIORITIES = {"gyropup", "demo"}
+PRIORITIES = {"demo"}
 SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 LIST_KEYS = ("priority", "pages", "cli", "api", "uses", "skills", "agents", "issues", "projects")
 NODE_KEYS = {"slug", "title", "scope", "maturity", "lessons", *LIST_KEYS}

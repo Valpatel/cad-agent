@@ -658,7 +658,7 @@ class Study:
         if self._slivers_mode == 'raise':
             raise MeshRefusal(msg, 'slivers', faces=faces, edges=edges)
         import warnings
-        warnings.warn(msg, MeshWarning, stacklevel=4)
+        warnings.warn(msg, MeshWarning, stacklevel=5)   # _check_slivers < _mesh_once < _mesh < __init__ < caller
 
     def _surface_mesh(self):
         """(points, gmsh node tag -> row, face tag -> triangles, edge tag -> segments) in the current gmsh session."""
@@ -725,7 +725,7 @@ class Study:
         rec = {'mesher': self.mesher,
                'refine': [{'at_mm': list(c), 'radius_mm': r, 'size_mm': s} for c, r, s in self.refine],
                'slivers': self.slivers, 'peak': self._peak_resolution()}
-        if not rec['peak'].get('wall_resolved', True):
+        if rec['peak']['wall_resolved'] is False:     # None: no wall found (the rays met nothing)
             import warnings
             warnings.warn(f"{self.name}: {rec['peak']['note']}", MeshWarning, stacklevel=3)
         return rec

@@ -110,6 +110,39 @@ box-shadow:inset 0 1px 1px #ffffffc7,inset 0 0 0 1px #749dab55,0 24px 48px #204a
 .skill-chips a{text-decoration:none}.skill-chips li>a:first-child{flex:1;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;font-size:14.5px}
 .skill-chips .pill{margin:0}.skill-md{display:grid;place-items:center;padding:0 12px;border-left:1px solid var(--line);font:11px var(--mono);color:var(--muted)}
 .skill-chips li:hover{border-color:var(--teal)}
+/* visual-first doc pages (#179, tools/site-pages.mjs): under the title a band (a hero figure and input → tool → output
+   tiles, from docs/pages.yaml) and cards for the sections that have a picture; figures inside sections; folded reference parts */
+.page-band{display:grid;gap:14px;margin:26px 0 22px}
+.band-hero,.page-figure{margin:0;padding:12px;border:1px solid var(--line);border-radius:18px;background:#fff}
+.page-figure{margin:22px 0 26px}
+.band-hero img,.page-figure img{display:block;width:100%;height:auto;margin:0 auto}
+.fig-full{display:block;cursor:zoom-in;border-radius:10px}
+.band-hero figcaption,.page-figure figcaption{margin-top:10px;font-size:13.5px;line-height:1.6;color:var(--muted)}
+.band-hero figcaption code,.page-figure figcaption code,.band-caption code{font-size:11.5px}
+.fig-what{color:var(--ink)}.fig-what b{font:650 10px/1.6 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:6px;margin-right:2px;white-space:nowrap}
+.shows-output{background:#d8efbb;color:#173d3c}.shows-diagram{background:#ffe1cc;color:#7a2a0c}
+.band-tiles{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.prose .band-tiles li{margin:0}
+.band-tiles a{display:flex;flex-direction:column;gap:9px;height:100%;padding:10px 10px 14px;border:1px solid var(--line);border-radius:16px;background:#fffdf5;text-decoration:none;color:var(--ink)}
+.band-tiles a:hover{border-color:var(--teal);box-shadow:0 8px 20px #173d3c14}
+.band-tiles img{display:block;width:100%;aspect-ratio:16/10;object-fit:contain;border-radius:10px;background:#fff;margin:0}
+.band-flow{display:flex;flex-wrap:wrap;align-items:center;gap:5px 6px;font:11px/1.4 var(--mono)}
+.band-flow code{font-size:11px;background:#173d3c;color:#d8efbb;padding:3px 7px;border-radius:6px}
+.band-input,.band-output{color:var(--muted);border:1px dashed #b9c6bd;border-radius:6px;padding:2px 6px}.band-output{border-style:solid;color:var(--ink);background:#fff}
+.band-arrow{color:var(--orange);font-weight:700}
+.band-caption{font-size:13.5px;line-height:1.55;color:var(--muted)}
+.section-cards{margin:0 0 30px}.section-cards ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.prose .section-cards li{margin:0}
+.section-cards a{display:flex;flex-direction:column;gap:7px;height:100%;padding:7px 7px 10px;border:1px solid var(--line);border-radius:14px;background:#fffdf5;text-decoration:none;color:var(--ink);font-size:13px;line-height:1.4;font-weight:600}
+.section-cards a:hover{border-color:var(--teal);box-shadow:0 6px 16px #173d3c12}
+.section-cards img{display:block;width:100%;aspect-ratio:16/10;object-fit:contain;border-radius:9px;background:#fff;margin:0}
+@media print{.section-cards{display:none}}
+details.fold{margin:18px 0;border:1px solid var(--line);border-radius:14px;background:#fbfaf3}
+details.fold>summary{cursor:pointer;padding:12px 16px;font-size:14px;color:var(--ink);list-style-position:inside}
+details.fold>summary:hover{background:#f2f5ea;border-radius:14px}
+details.fold[open]>summary{border-bottom:1px solid var(--line);border-radius:14px 14px 0 0}
+details.fold>:not(summary){margin:12px}
+.fold-kind{font:650 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-right:6px}
 .scene-caption a{color:inherit}
 /* ticker */
 .ticker{border-top:1px solid #c2dda0;border-bottom:1px solid #c2dda0;background:#d8efbb}

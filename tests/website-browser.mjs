@@ -108,9 +108,9 @@ try {
       const box = await page.evaluate(() => { const r = document.querySelector('cad-model').getBoundingClientRect(); return { now: [r.width, r.height], first: window.__posterBox }; });
       if (!box.first || Math.abs(box.now[0] - box.first[0]) > 0.5 || Math.abs(box.now[1] - box.first[1]) > 0.5)
         seen.push(`the 3D model's box changed from ${box.first?.map(Math.round)} to ${box.now.map(Math.round)}`);
-      // Each shift with what moved, so a CI log says where any shift comes from.
-      const { shift, moved } = await page.evaluate(() => new Promise(done => {
-        if (!PerformanceObserver.supportedEntryTypes?.includes('layout-shift')) return done({ shift: 0, moved: [] });
+      // The shift at every width, each with what moved, so a CI log says what it was and where any shift comes from.
+      const { shift, moved, measured = true } = await page.evaluate(() => new Promise(done => {
+        if (!PerformanceObserver.supportedEntryTypes?.includes('layout-shift')) return done({ shift: 0, moved: [], measured: false });
         let sum = 0; const moved = [];
         const name = n => !n ? '?' : n.nodeType !== 1 ? `${n.parentElement?.localName || '?'} text` : n.localName + (n.id ? '#' + n.id : '') + (n.classList[0] ? '.' + n.classList[0] : '');
         const rect = r => [r.x, r.y, r.width, r.height].map(Math.round).join(',');
@@ -123,7 +123,7 @@ try {
         setTimeout(() => done({ shift: sum, moved }), 200);
       }));
       if (shift > 0.05) seen.push(`layout shifts on the home page: ${shift.toFixed(3)} (${moved.join(' | ')})`);
-      else if (shift > 0.01) console.log(`  note: ${width}px /: layout shift ${shift.toFixed(3)}, under the 0.05 limit: ${moved.join(' | ')}`);
+      else if (measured) console.log(`  ${width}px /: layout shift ${shift.toFixed(3)}${moved.length ? `, under the 0.05 limit: ${moved.join(' | ')}` : ''}`);
       // Scrolled away, it draws nothing, even when the tab is hidden and shown again (#182 review).
       if (ready === 'ready') {
         await page.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, document.body.scrollHeight); });
@@ -430,20 +430,20 @@ try {
     // #146 adds the snap-arm explorer.
     ['/docs/compliant', 146],
     // #179 slice 3: real outputs for the rest. /docs/toolkit splits into area pages once #121's layout lands.
-    ...['/CONTRIBUTING', '/README', '/THIRD_PARTY_NOTICES', '/docs/agent-workflow', '/docs/common-issues', '/docs/design-process-plan',
-      '/docs/dossier', '/docs/explore', '/docs/file-viewer', '/docs/gates', '/docs/pcb', '/docs/review-packet', '/docs/toolkit',
-      '/docs/vision', '/docs/volume-precision', '/docs/web-parts', '/lessons/electronics/pcb-evidence-and-review',
-      '/lessons/mechanical/design-rules', '/lessons/mechanical/enclosure-features', '/lessons/mechanical/fasteners-and-assembly-access',
-      '/lessons/process/agent-process', '/lessons/process/user-intent-and-requirements', '/lessons/process/verify-from-source',
-      '/lessons/review/review-site-ux', '/lessons/review/verification-and-evidence',
-      '/lessons/simulation/simulation-and-material', '/lessons/wiring/cables-connectors-and-routing', '/research/agent-toolkits-2026-10',
-      '/research/compliant-mechanisms', '/research/design-workflows', '/research/fea-and-process-tools', '/research/landscape',
-      '/research/process-profiles', '/research/simulation-tools', '/skills/cad-pr-review/SKILL',
-      '/skills/cad-work-tracking/SKILL', '/skills/design-process/SKILL', '/skills/mcmaster-parts/SKILL'].map(r => [r, 179]),
+    ...['/CONTRIBUTING', '/README', '/THIRD_PARTY_NOTICES', '/docs/agent-workflow', '/docs/design-process-plan',
+      '/docs/dossier', '/docs/explore', '/docs/gates', '/docs/pcb', '/docs/review-packet', '/docs/toolkit',
+      '/docs/vision', '/docs/volume-precision', '/lessons/electronics/pcb-evidence-and-review',
+      '/lessons/mechanical/design-rules', '/lessons/mechanical/enclosure-features', '/lessons/process/agent-process',
+      '/lessons/process/verify-from-source', '/lessons/review/verification-and-evidence',
+      '/lessons/simulation/simulation-and-material', '/lessons/wiring/cables-connectors-and-routing',
+      '/research/agent-toolkits-2026-10', '/research/compliant-mechanisms', '/research/design-workflows',
+      '/research/fea-and-process-tools', '/research/landscape', '/research/process-profiles',
+      '/research/simulation-tools', '/skills/cad-pr-review/SKILL', '/skills/cad-work-tracking/SKILL',
+      '/skills/design-process/SKILL', '/skills/mcmaster-parts/SKILL'].map(r => [r, 179]),
   ]);
   // The list only shrinks: its length is pinned here, so a page can join it only with a visible edit to this number,
   // and each page that leaves it brings the number down with it.
-  const WALLS_LEFT = 39;
+  const WALLS_LEFT = 33;
   if (WALLS.size !== WALLS_LEFT) problems.push(`walls: WALLS has ${WALLS.size} pages and WALLS_LEFT says ${WALLS_LEFT}: ${WALLS.size < WALLS_LEFT ? `lower WALLS_LEFT to ${WALLS.size}` : 'the backlog only shrinks; fix the page instead'}`);
   const sitePages = [];
   for (const e of await readdir(dir, { withFileTypes: true, recursive: true })) {

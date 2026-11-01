@@ -136,8 +136,12 @@ def export_step(shape: Any, path: Path, name: Optional[str] = None) -> Path:
     printable ASCII with no quote followed by ``,`` or ``)`` (spaces or double quotes between count), which OCCT's
     reader misreads (``ValueError``).
     ``shape`` is a cadquery Shape or Workplane (several objects become one compound, as ``cadquery.exporters.export``
-    does), a build123d shape or an OCP ``TopoDS_Shape``. A cadquery ``Assembly`` is refused (``TypeError``): it
-    needs the XCAF writer, which this does not make reproducible (#150).
+    does), a build123d shape or an OCP ``TopoDS_Shape``, or a cadquery ``Assembly`` (#150): that is written as
+    ``Assembly.save`` writes it (OCCT's XCAF writer, colours and names), with the header and link ids fixed as for a
+    shape, the top product named ``name`` (default: the assembly's own name, or the file's stem when cadquery gave
+    it a uuid), each node added without a name called ``<parent>.<k>`` instead of a random uuid, and the colour
+    records in one order (``cadagent.geometry._assembly_step``). Sub-shape names and colours
+    (``Assembly.addSubshape``) are refused (``ValueError``).
 
     Limits: the other header fields stay as OCCT writes them (placeholder author and organisation, OCCT's version as
     preprocessor and originating system). The writer settings in ``STEP_SETTINGS`` are set for the call and put
@@ -151,10 +155,12 @@ def export_step(shape: Any, path: Path, name: Optional[str] = None) -> Path:
 
     path = Path(path)
     _step_string(path.name, "STEP file name", "rename the file (the header's FILE_NAME is the file's own name)")
-    name = _step_string(path.stem if name is None else name, "STEP product name", "pass export_step another name=")
     if isinstance(shape, cq.Assembly):
-        raise TypeError("export_step writes shapes, not a cadquery Assembly (Assembly.save writes those, "
-                        "with a time stamp and ids that are not reproducible yet: #150)")
+        from cadagent.geometry._assembly_step import write_assembly
+
+        write_assembly(shape, path, name, _step_string, _swap_step_settings, STEP_SETTINGS)
+        return path
+    name = _step_string(path.stem if name is None else name, "STEP product name", "pass export_step another name=")
     if isinstance(shape, cq.Workplane):
         objs = [o for o in shape.vals() if isinstance(o, cq.Shape)]
         if not objs:

@@ -1253,7 +1253,8 @@ def motion_trace_svg() -> str:
         u0, w0 = uw(q[still])
         moves = [(round(uw(p)[0] - u0, 1) + 0.0, round(uw(p)[1] - w0, 1) + 0.0) for p in q]
         lift = [round(-v.c * k * (p[2] - q[still][2]), 1) + 0.0 for p in q]
-        circle = f'<circle{f" id=\"{ident}\"" if len(set(moves)) > 1 else ""} cx="{num(u0)}" cy="{num(w0)}" r="{r}"/>'
+        own = f' id="{ident}"' if len(set(moves)) > 1 else ""
+        circle = f'<circle{own} cx="{num(u0)}" cy="{num(w0)}" r="{r}"/>'
         timeline(f"#{ident}", moves, lambda d: f"transform:translate({num(d[0])}px,{num(d[1])}px)")
         outer = f"z{ident}" if len(set(lift)) > 1 else None
         timeline(f"#z{ident}", lift, lambda d: f"transform:translateY({num(d)}px)")
@@ -1330,7 +1331,10 @@ def motion_trace_svg() -> str:
              f'<g fill="{INK}">{draw(layers["a"])}</g>', f'<g fill="{ORANGE}">{draw(layers["b"])}</g>']
     # B's rotor at the nested pose is off the bottom of the window
     nb = v(h["B"]["points"][nest]["rotor"][0])
-    body.append(f'<g id="nb" opacity="0">{text(max(nb[0] - 12, 30), bottom - 8, f"↓ B draws the rotor {fmt(h['B']['per_pose_mm'][nest], 1)} mm off, below this view", 11, ORANGE, weight="700", halo=True)}</g>')
+    off = fmt(h["B"]["per_pose_mm"][nest], 1)
+    note = text(max(nb[0] - 12, 30), bottom - 8, f"↓ B draws the rotor {off} mm off, below this view", 11, ORANGE,
+                weight="700", halo=True)
+    body.append(f'<g id="nb" opacity="0">{note}</g>')
     timeline("#nb", [1 if i == nest else 0 for i in range(n)], lambda o: f"opacity:{o}", "linear")
     body.append("</g>")
 
@@ -1538,7 +1542,8 @@ def sweep_svg() -> str:
              rect(v, card, f'fill="none" stroke="{INK}" stroke-dasharray="3 2"'), text(*v(31, -0.5), "seat", 10, MUTED, "middle")]
     steps(".cd", [v(0, vis["s"])[1] - v(0, 0)[1] for vis in hits], t3[1:], lambda o: f"transform:translateY({num(o)}px)")
     body.append(rect(v, card, f'class="cd" fill="{BG}" stroke="{INK}" stroke-width="1.5"'))
-    body.append(f'<g id="ov">{rect(v, (hit[0], 0, hit[2], hit[3], 0, cover[5]), f"fill=\"{ORANGE}\"")}</g>')
+    shared = rect(v, (hit[0], 0, hit[2], hit[3], 0, cover[5]), f'fill="{ORANGE}"')
+    body.append(f'<g id="ov">{shared}</g>')
     an.show("#ov", t3[-1], end)
     said = [f"seat first: gap {fmt(blk['seat_gap'], 2)}"] + [
         f"s {fmt(vis['s'], 0)}: " + (f"{fmt(vis['overlap_mm3'], 0)} mm³ shared, a hit" if vis["overlap_mm3"] else

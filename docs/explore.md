@@ -131,6 +131,9 @@ an unquoted YAML date (`price_checked: 2026-10-26`) is read as the text `"2026-1
 }
 ```
 
+<details>
+<summary>Every item field, and its rule</summary>
+
 | Field | Rule |
 |---|---|
 | `id` | unique across the catalogue; letters, digits, `.` `_` `-` `+` |
@@ -145,6 +148,8 @@ an unquoted YAML date (`price_checked: 2026-10-26`) is read as the text `"2026-1
 | `sources`, `buy` | where the numbers come from; an item with neither is flagged |
 | `preferred` | listed first in its category |
 
+</details>
+
 Unknown values are `null`, never guessed. A price in another currency (`price_eur` in a `usd` project) is not
 converted: convert it and note the rate in `price_note`. Every other field is kept and passed to the evaluator. In
 YAML, dates (`price_checked: 2026-10-26`) are read as ISO text, quoted or not.
@@ -157,6 +162,20 @@ as text rather than a link, a required or narrowed slot that no part fits), then
 catalogue. It exits 1 when there is an error. A design that uses a part with a non-finite number is an `error`.
 
 ## Designs
+
+```mermaid
+flowchart TD
+  S["designs/standard.json<br/>hub-165-36v wheels, qdd-17nm legs,<br/>pack-10s-10ah, computer-small, wiring allowance<br/>params: leg 160 mm, body shell 900 g"]
+  L["designs/long-range.json<br/>extends: standard.json<br/>battery: pack-13s-10ah<br/>camera: depth-camera"]
+  R["Long range, resolved<br/>Standard's parts and params,<br/>the 13S pack in place of the 10S,<br/>a depth camera added"]
+  B["bill of materials<br/>≥ 1,682.08 USD, 11.079 kg<br/>(the camera has no price)"]
+  S --> R
+  L --> R
+  R --> B
+```
+
+*How `extends` (below) resolves the worked example's Long range design: the two files in
+`examples/explore-two-wheel/designs/`, and the design and bill of materials `cad-agent compare` makes of them.*
 
 ```json
 {
@@ -173,20 +192,6 @@ catalogue. It exits 1 when there is an error. A design that uses a part with a n
   "notes": "Why this variant exists."
 }
 ```
-
-```mermaid
-flowchart TD
-  S["designs/standard.json<br/>hub-165-36v wheels, qdd-17nm legs,<br/>pack-10s-10ah, computer-small, wiring allowance<br/>params: leg 160 mm, body shell 900 g"]
-  L["designs/long-range.json<br/>extends: standard.json<br/>battery: pack-13s-10ah<br/>camera: depth-camera"]
-  R["Long range, resolved<br/>Standard's parts and params,<br/>the 13S pack in place of the 10S,<br/>a depth camera added"]
-  B["bill of materials<br/>≥ 1,682.08 USD, 11.079 kg<br/>(the camera has no price)"]
-  S --> R
-  L --> R
-  R --> B
-```
-
-*How `extends` resolves the worked example's Long range design: the two files in
-`examples/explore-two-wheel/designs/`, and the design and bill of materials `cad-agent compare` makes of them.*
 
 - A slot holds a catalogue id, `{"part": id, "qty": n}`, an inline `{"custom": {...}}` part (checked like a
   catalogue item), or `null`. The quantity defaults to the slot's `qty`, else 1. One part per slot: use more slots for

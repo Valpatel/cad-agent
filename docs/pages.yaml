@@ -716,14 +716,6 @@ research/compliant-mechanisms.md:
 
 docs/explore.md:
   figures:
-    - after: what-it-does-and-what-it-does-not
-      below: Physics and product rules.
-      img: docs/img/explore/long-range-checks.webp
-      shows: output
-      tool: cad-agent compare
-      on: example
-      caption: "The worked example's Long range design on the comparison page. Its three failed checks are its evaluator's voltage rules: the 13S pack runs to 54.6 V, more than the wheel motors, leg actuators and computer accept. cad-agent itself knows nothing about voltages."
-      alt: "The comparison page's card for the Long range design: fail, not ranked; three failed checks, the battery's 39 to 54.6 V against what the wheel motors, leg actuators and computer accept; a warning that the depth camera has no price; top speed and lean met"
     - after: configuration
       img: docs/img/explore/compare-header.webp
       shows: output
@@ -738,6 +730,14 @@ docs/explore.md:
       on: example
       caption: "The Long range design's bill of materials: each line's basis (its confidence, the date its price was checked, its source) comes from its catalogue item, and the last line from the evaluator. The depth camera has no public price, so its line shows a dash and the total, ≥ 1,682.08 USD, is a lower bound."
       alt: "A bill of materials table: wheel motors, leg actuators, a 13S battery, computer, wiring allowance, a depth camera with no price and the evaluator's printed parts, each with quantity, price, mass and basis; total at least 1,682.08 USD and 11.079 kg, estimated"
+    - after: evaluator
+      below: Every key is optional; an unknown key is reported
+      img: docs/img/explore/long-range-checks.webp
+      shows: output
+      tool: cad-agent compare
+      on: example
+      caption: "The worked example's Long range design on the comparison page. Its three failed checks are its evaluator's voltage rules: the 13S pack runs to 54.6 V, more than the wheel motors, leg actuators and computer accept. cad-agent itself knows nothing about voltages; the last two checks are the configured constraints."
+      alt: "The comparison page's card for the Long range design: fail, not ranked; three failed checks, the battery's 39 to 54.6 V against what the wheel motors, leg actuators and computer accept; a warning that the depth camera has no price; top speed and lean met"
     - after: comparison
       below: Incomplete totals are lower bounds, never savings.
       img: docs/img/explore/long-range-swaps.webp

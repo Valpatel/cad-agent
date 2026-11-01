@@ -218,15 +218,18 @@ def run(repo: str, number: int, do_post: bool, sweeping: bool = False) -> int:
     if base not in GATED:
         print(f"#{number} into {base!r}: not gated")
         return 0
+    pending = 0
     if do_post and not sweeping:
         for context in contexts(base):
             _status(repo, pr["head"]["sha"], context, "pending", "evaluating")
+            pending += 1
     pr, results = evaluate(repo, number, pr)
     for gate, (ok, msg) in results.items():
         print(f"{'PASS' if ok else 'FAIL'} #{number} cad-gates/{base}/{gate}: {msg}")
     if do_post:
-        n = post(repo, pr, results, only_changes=sweeping)
-        print(f"#{number}: posted {n} status{'es' if n != 1 else ''}" + (" (unchanged ones skipped)" if sweeping else ""))
+        n = post(repo, pr, results, only_changes=sweeping) + pending
+        print(f"#{number}: posted {n} status{'es' if n != 1 else ''}" + (" (unchanged ones skipped)" if sweeping else
+                                                                          f" ({pending} of them pending first)"))
         return 0
     return 0 if all(ok for ok, _ in results.values()) else 1
 

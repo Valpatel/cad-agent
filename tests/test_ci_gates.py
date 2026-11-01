@@ -234,3 +234,34 @@ def test_the_sweep_repairs_a_pending_left_by_a_crashed_run_and_posts_a_new_descr
     fake.reviews.append(review("block", sha=HEAD))           # still failing, for a different reason
     gates.sweep("o/r", do_post=True)
     assert len(fake.posts) == before + 1 and fake.posts_full[-1][3].startswith("latest verdict is block")
+
+
+def test_describe_collapses_whitespace_cuts_at_139_and_is_stable():
+    """Review of #129: these hold for describe() itself, not only through the sweep (gate texts rarely carry whitespace)."""
+    assert gates.describe("a  b\nc\t d ") == "a b c d"
+    assert gates.describe("  x\u00a0\u2003y  ") == "x y"                    # any Unicode whitespace
+    long = ("word " * 60).strip()
+    assert len(gates.describe(long)) <= 139 and not gates.describe(long).endswith(" ")
+    for text in ("a  b\nc", long, " lead", "trail ", "x" * 300, "é\u0301  ü"):
+        assert gates.describe(gates.describe(text)) == gates.describe(text)
+
+
+def test_the_sweep_reads_older_raw_descriptions_as_current(monkeypatch):
+    """A status posted before describe() existed (doubled spaces, a trailing space) is the same status, not a change:
+    current() must normalise what it reads, or the first sweeps after an upgrade re-post everything."""
+    fresh = FakeGitHub({5: pr(5)}, [review("pass")])
+    monkeypatch.setattr(gates, "_gh", fresh)
+    gates.sweep("o/r", do_post=True)
+    old = FakeGitHub({5: pr(5)}, [review("pass")])
+    old.posts_full = [(sha, c, st, d.replace(" ", "  ") + " ") for sha, c, st, d in fresh.posts_full]   # as raw text
+    monkeypatch.setattr(gates, "_gh", old)
+    gates.sweep("o/r", do_post=True)
+    assert old.posts == [], old.posts
+
+
+def test_a_run_for_one_pr_counts_its_pending_posts(monkeypatch, capsys):
+    fake = FakeGitHub({5: pr(5)}, [review("pass")])
+    monkeypatch.setattr(gates, "_gh", fake)
+    gates.run("o/r", 5, do_post=True)
+    assert f"posted {len(fake.posts)} statuses (2 of them pending first)" in capsys.readouterr().out
+

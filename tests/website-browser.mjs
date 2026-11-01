@@ -395,12 +395,17 @@ try {
   }
   await tall.close();
   // A wheel over the page tree scrolls the page when the tree has nothing to scroll (review 3: the panel trapped it).
+  // Every group is folded first, so the panel is still a scroll container but has nothing to scroll whatever the
+  // number of pages (the open Docs group and this page's outline outgrew 1080 px when the vision page arrived, #148).
   const desk = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
   await desk.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
   const panel = await desk.locator('cad-nav .cad-nav-panel').evaluate(p => {
-    const r = p.getBoundingClientRect(); return { fits: p.scrollHeight <= p.clientHeight + 1, x: r.left + r.width / 2, y: r.top + 200 };
+    for (const group of p.querySelectorAll('details')) group.open = false;
+    const r = p.getBoundingClientRect(), cs = getComputedStyle(p);
+    return { fits: p.scrollHeight <= p.clientHeight + 1, scroller: /auto|scroll/.test(cs.overflowY), x: r.left + r.width / 2, y: r.top + 60 };
   });
-  if (!panel.fits) problems.push('1920px /docs/toolkit: the tree overflows its panel; pick a page where it fits');
+  if (!panel.fits) problems.push('1920px /docs/toolkit: with every group folded the tree still overflows its panel');
+  if (!panel.scroller) problems.push('1920px /docs/toolkit: the tree panel is no longer a scroll container, so this check tests nothing');
   await desk.mouse.move(panel.x, panel.y);
   await desk.mouse.wheel(0, 300);
   await desk.waitForTimeout(400);

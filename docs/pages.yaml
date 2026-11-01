@@ -111,7 +111,7 @@ docs/gates.md:
       shows: output
       tool: cad-agent review-packet
       on: fixture
-      caption: "A seeded failure (ball_through_wall) on the gate bench, in a plan cut through the hopper's cavity: ball 7, pushed 5 mm into the wall, fails inside (261.8 mm³, 50 %, outside the cavity, furthest point 5 mm out), wall (174 mm³ in the hopper's material) and support."
+      caption: "A seeded failure (ball_through_wall), in a plan cut through the gate bench's hopper cavity: ball 7, pushed 5 mm into the wall, fails inside (261.8 mm³, 50 %, outside), wall (174 mm³ in the hopper) and support."
       alt: A plan section through the gate bench's hopper, its walls a blue ring round four orange balls, and a fifth ball sitting in the top wall, half outside the cavity
     - after: containment-cadagentreviewgatescontainment
       below: the cavity shares volume with the container
@@ -122,7 +122,7 @@ docs/gates.md:
       caption: "Tangent contact is inside: the gate bench as built in a vertical cut through the hopper's cavity, the balls resting on its floor and on each other, each with 0 mm³ outside. Support follows them down to the floor."
       alt: A vertical section through the gate bench's hopper, four orange balls in two rows inside the blue walls, the lid on top
     - after: connectivity-and-floating-parts-cadagentreviewgatesconnectivity
-      below: Each non-fixed joint's
+      below: every joint instance pair
       img: docs/img/packets/clean-arm-solid-iso.webp
       shows: output
       tool: cad-agent review-packet
@@ -169,7 +169,7 @@ docs/gates.md:
       caption: "A seeded failure (screw_too_long): screw_0 made 4 mm longer. The tip check fails, 3.00 mm into the hopper, and so does length (12 mm, outside the 4.5 to 8.5 mm the stack takes); the connectivity gate warns of an undeclared contact, 21.21 mm³ shared."
       alt: A section along two screws of the gate bench; the left screw is longer and its tip runs below the insert into the hopper's post
     - after: fasteners-and-stacks-cadagentreviewgatesfasteners
-      below: Install step and the parts present
+      below: Bodies and poses.
       img: docs/img/packets/gusset_over_screw-store-access-from-top.webp
       shows: output
       tool: cad-agent review-packet
@@ -177,12 +177,12 @@ docs/gates.md:
       caption: "A seeded failure (gusset_over_screw): a gusset fitted on the lid before its screws are driven. From the tool's side it covers screw_0's head, and the hex key's envelope hits it 3.00 mm from the head (84.8 mm³), so the tool check fails at that step."
       alt: The gate bench's lid seen from above, three screw heads at its corners and an orange gusset covering the fourth
     - after: motion-range-interference-cadagentreviewgatesmotion
-      below: This settles the open question
+      below: motion_from_build(result, dossier, extra)
       img: docs/img/packets/clean-arm-pose-I-pin-arm-min.webp
       shows: output
       tool: cad-agent review-packet
       on: fixture
-      caption: "What moves, on the gate bench as built: the arm's body at the low end of its declared range, 0 degrees, resting on its stop, a declared contact that may touch at any pose."
+      caption: "The gate bench as built at the low end of its declared range, 0 degrees: the arm, a body of its own, resting on its stop, a declared contact that may touch at any pose."
       alt: The gate bench's arm lying level on its stop beside the hinge block, the frame's post and beam above it
     - after: motion-range-interference-cadagentreviewgatesmotion
       below: The verdict never claims a swept
@@ -223,6 +223,21 @@ docs/gates.md:
       on: fixture
       caption: "What the gates feed, on the gate bench's review site: each section's gates and review state, from the verdicts in exports/gates/ and the dossier lint. Four sections, all gated, none signed off."
       alt: The review site's front page for the gate bench, with counts and a table of its four sections with their status, requirements, parts, gates and review state
+    - after: motion-range-interference-cadagentreviewgatesmotion
+      below: Chains and combinations.
+      img: docs/img/packets/flap_hits_frame-arm-pose-I-pin-arm-max.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A seeded failure (flap_hits_frame): the arm's stop raised from 40 to 60 degrees, shown at 60. The motion gate sampled 12 poses, 5.45 degrees apart (up to 4.32 mm of travel), found the arm in the frame in 3 of them and narrowed the first contact to between 44.89 and 44.91 degrees."
+      alt: The gate bench's arm raised to 60 degrees, its purple beam passing through the grey frame above it
+    - after: the-gate-bench-testsfixturesgate_benchbuildpy
+      img: docs/img/packets/clean-store-solid-iso.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "The gate bench as built: its store section, the hopper under a lid held by four screws, on the base, as the review packet renders it. The arm, its pin and stop and the frame are the arm section, pictured above."
+      alt: "The gate bench's store: a blue hopper with a green lid and four screw heads, standing on the grey base"
 
 docs/dossier.md:
   hero:

@@ -121,25 +121,16 @@ gap when nothing is shared.
 
 ```mermaid
 flowchart TD
-    P["a pair of parts"] --> N{"boxes within<br/>near_mm?"}
-    N -->|"no"| A1["apart, from the boxes"]
-    N -->|"yes"| C["Common and Cut,<br/>non-destructive"]
-    C --> X{"vol = common + cut,<br/>for each part?"}
-    X -->|"no, or a kernel error"| U["unknown"]
-    X -->|"yes"| V{"shared volume<br/>over overlap_mm3?"}
-    V -->|"no"| D["BRepExtrema gap"]
-    D --> T{"gap at most<br/>touch_mm?"}
-    T -->|"yes"| TO["touching"]
-    T -->|"no"| A2["apart"]
-    V -->|"yes"| I{"one has at most<br/>contain_mm3 outside?"}
-    I -->|"yes"| CO["contains"]
-    I -->|"no"| OV["overlapping"]
+    P{"a pair: boxes<br/>within near_mm?"} -->|"no"| A1["apart,<br/>from the boxes"]
+    P -->|"yes"| C{"Common and Cut:<br/>vol = common + cut?"}
+    C -->|"no, or an error"| U["unknown"]
+    C -->|"yes, shared volume<br/>up to overlap_mm3"| D["BRepExtrema gap:<br/>touching up to touch_mm,<br/>else apart"]
+    C -->|"yes, more shared"| I["contains if one has at most<br/>contain_mm3 outside,<br/>else overlapping"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class P,C,D near
-    class N,X,V,T,I here
-    class A1,A2,TO,CO,OV,U out
+    class P,C here
+    class A1,U,D,I out
 ```
 
 *How `relate` decides a pair's state, drawn from the rules on this page; the states are those in the table above.*
@@ -674,6 +665,9 @@ unverified. See [Rigid subassembly insertion](subassembly-insertion.md) for the 
 
 **Checks** (ids in the verdict):
 
+<details>
+<summary>The checks, by id, and when each fails</summary>
+
 | Check | Fails when |
 |---|---|
 | `steps` | no steps, or two steps share an order (or an order is not an integer); nothing else runs then |
@@ -684,6 +678,8 @@ unverified. See [Rigid subassembly insertion](subassembly-insertion.md) for the 
 | `step:<n>:insert` | an instance of the fitted part shares volume with a present part on its way in, or at its seat (`state: seat`), or the kernel could not decide (`unknown`), or the path needed over `max_samples`; a warning (`missing_direction="fail"`: a failure) when the step has no direction |
 | `step:<n>:tool:<screw>` | the fastener gate's `tool` rule (`fasteners.tool_check`) on its sweep (`fasteners.tool_access`) at this step: no tool or envelope, or the envelope overlapping a part present when the screw is driven. `step:<n>:tool` warns when a step declares a tool but installs no fastener |
 | `service:<instance>` | (warning, with `service=`: True, part names or instance keys) pulled back out along its direction from the finished assembly, the part meets a part fitted or a fastener installed later, other than its own fasteners (those that clamp it or thread into it, listed as `own_fasteners_first`); or the kernel could not decide (`undecided`). Parts no step brings in are not counted |
+
+</details>
 
 **Which step installs a fastener**, and what is present when it is driven, are the fastener gate's rules
 (`install_step`, `present_at`), so both gates agree. A catalogue key listed once in a step means "these
@@ -717,6 +713,9 @@ and `clearance_at_least`, a bound that holds over the whole path, between sample
 at most h, so between samples h apart with gaps g1 and g2 the gap is at least (g1 + g2 - h) / 2; for a pair whose
 swept box never comes near, the box gap). The step table shows `lo..hi`, one number when they agree, or `≥ lo`.
 
+<details>
+<summary>The verdict's step table, the kernel-free core, and cost</summary>
+
 **Output.** The verdict (`cadagent.gate/1`) carries `steps`, one row per step: fit, onto, direction, how many
 parts are present, the clearance bracket, what it touches, the fasteners it installs with each tool's status, and what
 blocked it; plus `not_checked` (steps without a direction, tools with nothing to drive, parts no step brings in)
@@ -730,6 +729,8 @@ relation of a translated part to another (`relate_at`) and the tool sweep (`Asse
 **Cost.** Gate bench, 15 steps, 25 parts, four tool sweeps: about 3.7 s cold, 238 exact queries (a part sliding
 along a face, like the board down the hopper wall or the pin through its bores, is sampled every `max_step_mm`), on
 a workstation at load 6.
+
+</details>
 
 Limits. Straight-line insertion along one declared direction: no rotation, tilt or wiggle, no room for hands or
 fixtures. Rigid parts at their modelled size: no tolerance stack, flex or print shrink, so a clear path in the

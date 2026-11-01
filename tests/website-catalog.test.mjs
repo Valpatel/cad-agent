@@ -9,6 +9,7 @@ import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import YAML from 'yaml';
+import { TINT } from '../tools/catalog-art.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-catalog-'));
@@ -311,4 +312,76 @@ test('outside covers drop their licence and status tags when drawn phone-size (t
     assert.match(svg, /@media \(max-width:240px\)\{\.tags\{display:none\}\}/, `${it.id}: no narrow rule`);
     assert.ok(svg.includes('<g class="tags">'), `${it.id}: tags not grouped`);
   }
+});
+
+// WCAG 2 relative luminance and contrast ratio, for #rrggbb colours.
+const luminance = hex => {
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(c => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const contrast = (a, b) => { const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
+
+test('every domain and bucket has a tone: the covers\' tints, and an ink that shows on white and on both tints', () => {
+  const css = show('web/catalog.css');
+  const tones = Object.fromEntries([...css.matchAll(/\[data-tone=([\w-]+)\]\{([^}]*)\}/g)].map(([, slug, body]) =>
+    [slug, Object.fromEntries([...body.matchAll(/--([\w-]+):(#[0-9a-f]{6})/g)].map(([, k, v]) => [k, v]))]));
+  for (const slug of [...domainSlugs, ...BUCKETS]) {
+    const t = tones[slug];
+    assert.ok(t?.tone && t['tint-a'] && t['tint-b'], `web/catalog.css: [data-tone=${slug}] needs --tint-a, --tint-b and --tone (a new domain in docs/areas.yaml needs a tone)`);
+    assert.deepEqual([t['tint-a'], t['tint-b']], TINT[slug], `${slug}: the rail's tints and the covers' (TINT in tools/catalog-art.mjs) differ`);
+    // The ink is a UI graphic (the hover bar, the glyph, the arrow): 3:1 against everything it sits on.
+    for (const bg of ['#ffffff', t['tint-a'], t['tint-b']]) assert.ok(contrast(t.tone, bg) >= 3, `${slug}: --tone ${t.tone} on ${bg} is ${contrast(t.tone, bg).toFixed(2)}:1 (3 needed)`);
+  }
+  // Each domain's panel and the standalone rows carry their tone in the markup.
+  for (const slug of domainSlugs) assert.match(page, new RegExp(`<details class="dom" data-domain="${slug}" data-tone="${slug}"`), `${slug}: panel without its tone`);
+  assert.match(page, /<li data-tone="cross-cutting"><a class="area-link"[^>]*data-value=""/, '"All areas" without a tone');
+  for (const m of page.matchAll(/<li class="bucket"([^>]*)><a [^>]*data-value="([\w-]+)"/g)) assert.equal(m[1], ` data-tone="${m[2]}"`, `bucket ${m[2]} without its tone`);
+});
+
+test('the area rail: hover effects only where a pointer hovers, and each domain\'s first row reads "All" with its name for screen readers', () => {
+  const css = show('web/catalog.css');
+  // A :hover rule outside @media(hover:hover) sticks on a touch screen after a tap.
+  const hoverBlock = css.match(/@media\(hover:hover\)\{([\s\S]*?)\n\}/)?.[1] || '';
+  const outside = css.replace(/@media\(hover:hover\)\{[\s\S]*?\n\}/, '');
+  assert.match(hoverBlock, /\.area-link:hover/, 'the rail\'s hover rules are not in @media(hover:hover)');
+  assert.doesNotMatch(outside, /(\.area-link|\.area-tree summary)[^{,]*:hover/, 'a rail :hover rule outside @media(hover:hover)');
+  // Its muted names stay readable on the white panels.
+  const idea = css.match(/\.area-link\[data-maturity=idea\] \.area-name[^{]*\{color:(#[0-9a-f]{6})/)?.[1];
+  assert.ok(idea && contrast(idea, '#ffffff') >= 4.5, `idea names: ${idea} on white`);
+  for (const d of areas.domains) {
+    const name = d.title.replace(/^./, c => c.toLowerCase());
+    assert.ok(page.includes(`data-value="${d.slug}"><span class="area-name">All<span class="sr"> in ${name}</span></span>`), `${d.slug}: its first row is not "All" with "in ${name}" for screen readers`);
+  }
+  assert.doesNotMatch(page, /Everything in /);
+});
+
+test('maturity: the key lists every level in docs/areas.yaml, in order, and each bar fills as many steps as its level', () => {
+  const levels = areas.maturity.map(m => m.level);
+  const key = page.match(/<ol class="key-scale"[^>]*>([\s\S]*?)<\/ol>/)?.[1];
+  assert.ok(key, 'no maturity key above the area tree');
+  assert.deepEqual([...key.matchAll(/<span class="key-word">([^<]+)<\/span>/g)].map(m => m[1]), levels);
+  const text = h => h.replace(/&(amp|lt|gt|quot|#39);/g, (_, e) => ({ amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'" })[e]);
+  assert.deepEqual([...key.matchAll(/<span class="key-means"><span class="sr">: <\/span>([^<]+)<\/span>/g)].map(m => text(m[1])), areas.maturity.map(m => m.means));
+  assert.match(page, /<div class="tree-key"><p class="key-head">[^]*?<a href="\/docs\/vision#maturity-how-an-area-grows">What the levels mean<\/a>/);
+  const bars = [...page.matchAll(/<span class="mat-dots" data-level="(\d)"[^>]*>((?:<i(?: class="on")?><\/i>)*)/g)];
+  assert.ok(bars.length > 40, `only ${bars.length} maturity bars`);
+  for (const [, level, segments] of bars) {
+    assert.equal(segments.match(/<i/g).length, levels.length, 'a bar with the wrong number of steps');
+    assert.equal((segments.match(/class="on"/g) || []).length, Number(level), `a level-${level} bar fills ${(segments.match(/class="on"/g) || []).length} steps`);
+  }
+  // A row's bar says it in words; a bar beside its level's word (filters, cards, the key) stays out of the way.
+  for (const d of areas.domains) for (const a of d.areas) {
+    const n = levels.indexOf(a.maturity) + 1;
+    assert.ok(page.includes(`<span class="sr">maturity ${n} of ${levels.length}, ${a.maturity}</span>`), `${a.slug}: no "maturity ${n} of ${levels.length}" for screen readers`);
+  }
+});
+
+test('no project is singled out: no Gyropup flag, badge, filter, boost or field (cad-agent is a general toolkit)', () => {
+  assert.ok(catalog.items.every(i => !('gyropup' in i)), 'catalog.json entries have a gyropup field');
+  assert.doesNotMatch(JSON.stringify(catalog.fields), /gyropup/i);
+  assert.doesNotMatch(JSON.stringify(index), /"gyropup"|needed for Gyropup|gyropup=/i);
+  for (const d of index.domains) for (const a of d.areas) assert.ok(Array.isArray(a.projects), `index.json ${a.slug}: no projects list`);
+  for (const hook of ['class="gyro"', 'pill-gyropup', 'name="gyropup"', 'data-gyropup', 'Needed for Gyropup', 'needed for Gyropup']) assert.ok(!page.includes(hook), `the page still has ${hook}`);
+  assert.doesNotMatch(show('web/catalog.css'), /gyro/i);
+  for (const d of areas.domains) for (const n of [d, ...d.areas, ...d.areas.flatMap(a => a.topics || [])]) assert.ok(!(n.priority || []).includes('gyropup'), `docs/areas.yaml ${n.slug}: priority gyropup`);
 });

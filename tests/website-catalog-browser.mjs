@@ -449,37 +449,46 @@ try {
   }
 
   // Forced colours (Windows High Contrast and the like) put the user's few system colours in place of ours and drop
-  // gradients. The bars' filled and empty steps, a hovered row and the chosen row must still differ (#104). Colours are
-  // compared as painted, each background composited over its ancestors': a forced background keeps the author's alpha,
-  // so before the fix a chosen row (opaque Canvas) and a row at rest (transparent Canvas) computed differently but
-  // painted the same white.
+  // gradients. The bars' filled and empty steps, a hovered row and the chosen row must still differ, the chosen row's
+  // text must show, and so must the focus ring on it (#104). Colours are compared as painted, each background
+  // composited over its ancestors': a forced background keeps the author's alpha, so before the fix a chosen row (opaque
+  // Canvas) and a row at rest (transparent Canvas) computed differently but painted the same white.
+  // WebKit's emulation matches the media query but forces no colour (it has no forced-color-adjust): the page keeps its
+  // own palette and paints no backplate, and its Highlight is a fixed light blue. So these checks run where colours are
+  // really forced: Chrome (and Edge, on Windows). In Chrome a page that is not forced fails: the checks would not run.
   {
     const where = 'forced colours';
+    const helpers = page => page.evaluate(() => {
+      const rgba = c => { const [r, g, b, a = 1] = c.match(/[\d.]+/g).map(Number); return [r, g, b, a]; };
+      // What a reader sees behind an element (or its pseudo-element): its background over its ancestors', over white.
+      window.paintOf = (el, pseudo) => {
+        const layers = [rgba(getComputedStyle(el, pseudo).backgroundColor)];
+        for (let e = pseudo ? el : el.parentElement; e && layers.at(-1)[3] < 1; e = e.parentElement) layers.push(rgba(getComputedStyle(e).backgroundColor));
+        return layers.reverse().reduce((under, [r, g, b, a]) => [r, g, b].map((v, i) => v * a + under[i] * (1 - a)), [255, 255, 255]).map(Math.round).join();
+      };
+      const lum = c => c.map(v => v / 255).map(v => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
+      const ratio = (x, y) => { const [hi, lo] = [lum(x), lum(y)].sort((p, q) => q - p); return (hi + 0.05) / (lo + 0.05); };
+      window.contrastOn = (el, bgEl = el) => ratio(rgba(getComputedStyle(el).color).slice(0, 3), paintOf(bgEl).split(',').map(Number));
+      // A focus ring drawn inside its row (outline-offset -3px): its colour over the row's, against the row's.
+      window.ringOn = a => { const row = paintOf(a).split(',').map(Number), [r, g, b, al] = rgba(getComputedStyle(a).outlineColor);
+        return ratio([r, g, b].map((v, i) => v * al + row[i] * (1 - al)), row); };
+      // Chrome paints a Canvas backplate behind text left to forced-color-adjust:auto, so that text must not be
+      // Canvas-coloured itself: the chosen row's name in HighlightText (white, like Canvas here) showed as a blank bar.
+      const probe = document.body.appendChild(document.createElement('i'));
+      probe.style.background = 'Canvas';
+      const canvas = rgba(getComputedStyle(probe).backgroundColor).slice(0, 3).join();
+      probe.remove();
+      const onBackplate = (el, pseudo) => getComputedStyle(el, pseudo).forcedColorAdjust !== 'none' && rgba(getComputedStyle(el, pseudo).color).slice(0, 3).join() === canvas;
+      // A row's text that would not show: its name, its count and a pseudo-element with words (a domain row's arrow).
+      window.lostText = a => [...[...a.querySelectorAll('.area-name, .count')].filter(e => onBackplate(e)).map(e => e.className),
+        ...['::before', '::after'].filter(p => /"[^"]/.test(getComputedStyle(a, p).content) && onBackplate(a, p))];
+    });
     const { page, done } = await open('/catalog', { forced: 'active' });
-    // WebKit's emulation matches the media query but forces no colour (it has no forced-color-adjust): the page keeps its
-    // own palette and paints no backplate, and its Highlight is a fixed light blue. So these checks run where colours are
-    // really forced: Chrome (and Edge, on Windows).
     const forcing = await page.evaluate(() => matchMedia('(forced-colors: active)').matches && CSS.supports('forced-color-adjust', 'none'));
-    if (!forcing) console.log(`${where}: ${engine.name()} does not force colours, so they are checked in Chrome`);
+    if (!forcing && engine === chromium) fail(where, 'Chrome did not force colours, so none of these checks ran');
+    else if (!forcing) console.log(`${where}: ${engine.name()} does not force colours, so they are checked in Chrome`);
     else {
-      await page.evaluate(() => {
-        const rgba = c => { const [r, g, b, a = 1] = c.match(/[\d.]+/g).map(Number); return [r, g, b, a]; };
-        // What a reader sees behind an element (or its pseudo-element): its background over its ancestors', over white.
-        window.paintOf = (el, pseudo) => {
-          const layers = [rgba(getComputedStyle(el, pseudo).backgroundColor)];
-          for (let e = pseudo ? el : el.parentElement; e && layers.at(-1)[3] < 1; e = e.parentElement) layers.push(rgba(getComputedStyle(e).backgroundColor));
-          return layers.reverse().reduce((under, [r, g, b, a]) => [r, g, b].map((v, i) => v * a + under[i] * (1 - a)), [255, 255, 255]).map(Math.round).join();
-        };
-        const lum = c => c.map(v => v / 255).map(v => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
-        window.contrastOn = (el, bgEl = el) => { const [hi, lo] = [lum(rgba(getComputedStyle(el).color).slice(0, 3)), lum(paintOf(bgEl).split(',').map(Number))].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
-        // Chrome paints a Canvas backplate behind text left to forced-color-adjust:auto, so that text must not be
-        // Canvas-coloured itself: the chosen row's name in HighlightText (white, like Canvas here) showed as a blank bar.
-        const probe = document.body.appendChild(document.createElement('i'));
-        probe.style.background = 'Canvas';
-        const canvas = rgba(getComputedStyle(probe).backgroundColor).slice(0, 3).join();
-        probe.remove();
-        window.onBackplate = el => getComputedStyle(el).forcedColorAdjust !== 'none' && rgba(getComputedStyle(el).color).slice(0, 3).join() === canvas;
-      });
+      await helpers(page);
       // The key's top level shows the filled colour and its lowest level ends in the empty one; every bar fills its level.
       const [on, off, fills] = await page.evaluate(n => {
         const key = [...document.querySelectorAll('.key-scale .mat-dots')];
@@ -489,11 +498,15 @@ try {
       }, index.maturity.length);
       if (on === off) fail(where, `filled and empty steps are both painted ${on}`);
       else for (const [level, n] of fills) if (Number(level) !== n) fail(where, `a level-${level} bar shows ${n} filled steps`);
-      // A row at rest, hovered (its edge bar shows) and chosen (the system's selection colours, its bar still readable).
+      // "All areas", chosen on /catalog, shows its name and count.
+      const allLost = await page.$eval('.area-tree > li > .area-link[aria-current="true"]', a => lostText(a));
+      if (allLost.length) fail(where, `"All areas", chosen: ${allLost} is Canvas-coloured on Chrome's Canvas backplate, so it does not show`);
+      // A row at rest, hovered (its edge bar shows), then chosen from the keyboard: the system's selection colours, its
+      // text and bar readable, and the focus ring, still on it, visible against it.
       const row = '.area-link[data-value="gears"]';
       const look = () => page.$eval(row, a => ({ row: paintOf(a), bar: paintOf(a, '::before'), text: contrastOn(a.querySelector('.area-name'), a),
         count: contrastOn(a.querySelector('.count')), steps: [...new Set([...a.querySelectorAll('.mat-dots i')].map(i => paintOf(i)))].length,
-        lost: [...a.querySelectorAll('.area-name, .count')].filter(onBackplate).map(e => e.className) }));
+        lost: lostText(a), ring: a.matches(':focus-visible') ? ringOn(a) : null }));
       await page.mouse.move(1300, 880);
       const rest = await look();
       await page.hover(row);
@@ -501,17 +514,28 @@ try {
         .catch(() => fail(where, 'hovering a row does not grow its edge bar'));
       const hovered = await look();
       if (hovered.bar === hovered.row) fail(where, `a hovered row's edge bar is painted like the row (${hovered.row}), so hover shows nothing`);
-      await page.click(row);
-      await page.waitForFunction(s => document.querySelector(s).getAttribute('aria-current') === 'true', row, { timeout: 5000 }).catch(() => fail(where, 'Gears is not chosen after a click'));
       await page.mouse.move(1300, 880);
+      await page.focus(row);
+      await page.keyboard.press('Enter');
+      await page.waitForFunction(s => document.querySelector(s).getAttribute('aria-current') === 'true', row, { timeout: 5000 }).catch(() => fail(where, 'Gears is not chosen after Enter'));
       await page.waitForFunction(s => !document.querySelector(s).getAnimations({ subtree: true }).length, row, { timeout: 3000 }).catch(() => {});
       const chosen = await look();
       if (chosen.row === rest.row) fail(where, `the chosen row is painted like one at rest (${rest.row})`);
       if (chosen.text < 4.5 || chosen.count < 4.5) fail(where, `chosen row: name ${chosen.text.toFixed(2)}:1, count ${chosen.count.toFixed(2)}:1`);
       if (chosen.steps < 2) fail(where, 'the chosen row\'s bar shows filled and empty steps alike');
       if (chosen.lost.length) fail(where, `chosen row: ${chosen.lost} is Canvas-coloured on Chrome's Canvas backplate, so it does not show`);
+      if (chosen.ring === null) fail(where, 'keyboard focus is not on the row just chosen with Enter');
+      else if (chosen.ring < 3) fail(where, `the focus ring on the chosen row is ${chosen.ring.toFixed(2)}:1 against it (3:1 needed)`);
     }
     await done();
+    // A domain's own row, chosen: its "All" and its arrow show.
+    if (forcing) {
+      const dom = await open('/catalog?area=mechanical', { forced: 'active' });
+      await helpers(dom.page);
+      const lost = await dom.page.$eval('.area-link.dom-all[aria-current="true"]', a => lostText(a)).catch(() => ['(no chosen domain row)']);
+      if (lost.length) fail(where, `?area=mechanical, its "All" row: ${lost} is Canvas-coloured on Chrome's Canvas backplate, so it does not show`);
+      await dom.done();
+    }
   }
 
   // A chip names what it filters: a domain's "All" row by its domain, a maturity box by its word (not its bar's

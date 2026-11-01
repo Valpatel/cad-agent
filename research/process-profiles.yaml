@@ -842,11 +842,13 @@ sources:
       cited; published by SendCutSend for design validation and manufacturability checks; the values in shop_tables are
       facts read from it, re-fetch before relying on them
     areas: [sheet-metal]
-    used_for: [research/process-profiles.yaml]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
     verified: >-
       2026-10-31: downloaded the JSON (_meta.generated_at 2026-04-29, 178 materials). Read bending_specs for the
       5052 aluminium (ALU-) and cold-rolled mild steel (CRS-) SKUs: thickness, bend_radius, k_factor,
-      min_flange_length_after_bend, bend_relief_depth.
+      min_flange_length_after_bend, bend_relief_depth. On review, downloaded the same file again (same generated_at):
+      no ALU6061- or ALU7075- SKU has bending_specs, and ALU2024-025 (0.025 in) has bend_radius 0.07 in. shop_tables
+      holds four of its eight bendable 5052 SKUs and six of its seven mild-steel ones.
 
   - id: solidworks-k-factor
     title: "K-Factor - 2022 - SOLIDWORKS Help"

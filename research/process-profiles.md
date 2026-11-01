@@ -468,9 +468,11 @@ At T = R = 1.5 mm (the chart above) [derived]:
 - **Relief width: T/2 (SendCutSend) against T (Protolabs Network, Paulsen).** Depth agrees at about T + R, with
   SendCutSend adding 0.5 mm.
 - **Hem return: 6T (Protolabs) against 4T (Paulsen).**
-- **R ≥ T is not a safe test either way.** SendCutSend bends 5052 at 0.36–0.60T and mild steel at 0.53–0.85T on
-  thicker stock, while Davis asks 4–8T for 6061 and 2024 [derived from `shop_tables`]. #118 already records this for
-  the planned check S5.
+- **R ≥ T is not a safe test either way.** SendCutSend bends 5052 at 0.36–0.60T on stock up to 2.3 mm and at
+  1.0–1.34T from 2.5 mm up (eight thicknesses in its [specs JSON][sendcutsend-specs]; the four in `shop_tables` give
+  0.36–1.0T), and mild steel at 0.53–0.85T from 1.9 mm. Davis asks 4–8T for 6061 and 2024, and SendCutSend's file
+  backs him: it publishes bend specs for no 6061 or 7075 stock, and bends its one 2024 sheet (0.64 mm) at R = 2.8T
+  [all derived from `bending_specs`]. #118 already records this for the planned check S5.
 
 ## 8. CNC machining
 

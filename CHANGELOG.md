@@ -10,6 +10,58 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.11.0 (2026-11-01)
+
+**New**
+- `tools/site-packet-pictures.py` renders the gate bench's review packets, as built and with one seeded defect per
+  gate, into `docs/img/packets/` with a `SOURCE.json` of each run's gate counts and findings;
+  `tests/test_packet_pictures.py` holds every caption on a seeded picture to its seed (#122).
+- `tools/site-explore-pictures.mjs` runs the explore worked example's `catalogue`, `compare --swaps` and `optimise`
+  and crops their pages into `docs/img/explore/`, dated from the example's last commit so a rebuild matches (#122).
+- `tools/research_figures.py` charts the moulded and printed allowable strains (ranges drawn as ranges) and the
+  printed materials' softening temperatures against a module's thermal plate limit, read from the research pages'
+  tables; `tools/process_profile_figures.py` draws a chart per process section from the profile rules (#122).
+- `cadagent.mechanical.connectors.cable_bend`: checks that the cable behind a plug can turn at its minimum bend radius
+  before it meets a wall, a part or the next plug. Give a mate a `cable` with its diameter and the radius as the data
+  sheet states it (`{"mm": 25}` or `{"x_od": 5}`); the check turns the cable each way across the mating axis and
+  returns pass, warn or fail with the clearance, the direction that works and the assumptions it made. It takes CAD
+  shapes or panel-frame boxes (no CAD kernel needed for those), and `bend_reach()` gives the room a bend needs in
+  closed form (#168).
+- `check_ports()` runs the cable check for every mate that has a `cable`, against the printed parts and the other
+  ports' plugs, and fails a port whose cable cannot turn. Mates without a `cable` are checked as before (#168).
+- A figure of the check, `docs/img/motion/cable-bend.svg`, on the connector-window port: a Cat6 cord turned down runs
+  1.35 mm into the shelf the enclosure stands on; turned up, it clears. "Cable routes at an impossible bend radius"
+  in `docs/common-issues.md` is now a checked row (#168).
+
+**Changed**
+- The eight longest text walls on the site now lead with real outputs: the toolkit, gates, explore and dossier
+  pages, and the process-profiles, design-workflows, compliant-mechanisms and simulation-tools research pages. Each
+  section shows a review-packet render, a command's own page, a chart drawn from the table beside it or a Mermaid
+  flow, with a caption that says what it shows and what it was computed on; long reference tables fold into
+  `<details>`. The wall backlog drops from 33 pages to 25 (#122).
+- Erratum for v0.10.0: `cadagent.simulation.cfd` `results()` changed in three ways v0.10.0's entry did not list (#47).
+  A case with fans gets one more `limits` entry. A fan's inlet or outlet face zone that catches no mesh faces sets
+  `error`, so the run is not `converged`. Every result has a new `warnings` key, and fan cases written from v0.10.0 on
+  have `zone_faces`. Code that compares the whole result, or counts its `limits`, must expect them.
+
+**Fixed**
+- `cadagent.review.gates.relations.relate`: a shallow near-tangent crossing that OCCT's boolean misses is no longer
+  read as `touching` or `contains`. Where the two boundaries meet, the curves found by `BRepAlgoAPI_Section` guide
+  samples that are classified against the other solid. A crossing outside the kernel's own common or cut makes the
+  pair `unknown`, with the point and depth in `witness["crossing_probe"]`. A ball of 4 mm radius 0.011–0.23 mm
+  through a cone wall had read `contains` or `touching` in 24 of 500 checks (250 positions, each against the cavity and
+  the wall's part) (#46).
+- Containment gate: an instance whose relation finds such a crossing fails as an escape, with the depth found (#46).
+
+**Projects must change**
+- `RELATIONS_VERSION` is now 5, so cached relations (`.cadagent-cache/gates/`) and the containment gate's cached
+  checks recompute on the next run. A pair that crossed where the kernel saw no crossing now reads `unknown`, and
+  every gate fails on it; nudge the parts apart or into a clear overlap. A pair whose crossing probe itself fails also
+  reads `unknown`, even with no crossing found. No answer changed on the README hero's clearance sweep (811 calls) or
+  the gate bench (#46).
+- `RelationTable.to_dict()["method"]` now names the crossing probe, so a stored relation table compared whole with a
+  new one differs even where every answer is the same (#46).
+
 ## v0.10.0 (2026-11-01)
 
 **New**

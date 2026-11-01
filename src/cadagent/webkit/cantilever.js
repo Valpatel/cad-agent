@@ -304,8 +304,14 @@ export class CadCantilever extends Base {
     set(p['label-force'], { x: f(g.arrow.x + 9), y: f(g.arrow.y1 - 2) }); p['label-force'].textContent = g.labels.force;
     set(p['verdict-box'], { fill: g.passes ? MIST : PEACH, stroke: g.passes ? SAGE : RUST });
     set(p['label-verdict'], { fill: g.passes ? INK : RUST }); p['label-verdict'].textContent = g.labels.verdict;
-    this.play.textContent = this.playing ? 'Pause' : 'Play';
-    this.play.setAttribute('aria-label', `${this.playing ? 'Pause' : 'Play'} the bending animation`);
+    // The button's label is written only when it changes. Writing it on every frame replaces its text node, and
+    // WebKit drops the click of a press that started on the old node, so in WebKit (Playwright's build; Safari not
+    // tried) a press of a few frames never paused the demo (#211).
+    const label = this.playing ? 'Pause' : 'Play';
+    if (this.play.textContent !== label) {
+      this.play.textContent = label;
+      this.play.setAttribute('aria-label', `${label} the bending animation`);
+    }
   }
 
   loop() {

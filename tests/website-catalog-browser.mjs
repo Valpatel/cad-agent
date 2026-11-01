@@ -226,7 +226,7 @@ try {
     if (!/^\?kind=tools$/.test(query(page)) || !page.url().endsWith('#tool')) fail('#tool', `URL after landing: ${page.url().slice(base.length)}`);
     await page.click('[data-gallery-tabs] [data-tab="projects"]');
     await page.goBack();
-    await page.waitForFunction(() => location.search === '?kind=tools');
+    await page.waitForFunction(() => location.search === '?kind=tools', null, { timeout: 5000 }).catch(() => fail('#tool', `Back went to ${page.url().slice(base.length)}`));
     const sel = await page.getAttribute('[data-gallery-tabs] [aria-selected="true"]', 'data-tab');
     if (sel !== 'tools') fail('#tool', `Back shows the ${sel || 'All'} tab, not Tools`);
     await done();

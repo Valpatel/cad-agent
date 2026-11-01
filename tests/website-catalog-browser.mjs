@@ -457,6 +457,37 @@ try {
     await done();
   }
 
+  // The status line's noun agrees with the number it follows: the total, when filtered. One entry shown of 181 read
+  // "1 of 181 entry" (#233 review). A tab names its cards by its own nouns; nothing shown gets a sentence, not a count.
+  {
+    const catalog = JSON.parse(await readFile(path.join(dir, 'catalog.json'), 'utf8'));
+    const allAreas = index.domains.flatMap(d => d.areas);
+    const inArea = (k, a) => catalog.items.filter(i => i.areas.includes(a.slug) && k.kinds.includes(i.kind)).length;
+    const one = allAreas.find(a => a.count === 1), many = index.domains.find(d => d.count > 1);
+    const tab = index.kinds.find(k => k.count > 1 && allAreas.some(a => inArea(k, a) === 1));
+    const tabArea = tab && allAreas.find(a => inArea(tab, a) === 1);
+    if (!one || !tab) fail('status', 'no area with a single entry (of one kind) to test with');
+    else {
+      const first = await open('/catalog');
+      const [oneNoun, manyNoun] = await first.page.$eval(`[data-gallery-tabs] [data-tab="${tab.tab}"]`, t => [t.dataset.itemNoun, t.dataset.itemsNoun]);
+      await first.done();
+      if (!oneNoun || !manyNoun || oneNoun === manyNoun) fail('status', `the ${tab.tab} tab's nouns: "${oneNoun}", "${manyNoun}"`);
+      for (const [route, want] of [
+        ['/catalog', `${index.count} entries`],
+        [`/catalog?area=${one.slug}`, `1 of ${index.count} entries`],
+        [`/catalog?area=${many.slug}`, `${many.count} of ${index.count} entries`],
+        ['/catalog?q=zzqxv', 'No entries match. Try fewer words or clear the filters.'],
+        [`/catalog?kind=${tab.tab}`, `${tab.count} ${manyNoun}`],
+        [`/catalog?kind=${tab.tab}&area=${tabArea.slug}`, `1 of ${tab.count} ${manyNoun}`],
+      ]) {
+        const { page, done } = await open(route);
+        const status = (await page.textContent('[data-gallery-status]')).trim();
+        if (status !== want) fail(route, `status "${status}", want "${want}"`);
+        await done();
+      }
+    }
+  }
+
   // A domain with entries but none of the chosen kind says so by the domain's name, not its row's "All in …" (#233).
   {
     const catalog = JSON.parse(await readFile(path.join(dir, 'catalog.json'), 'utf8'));

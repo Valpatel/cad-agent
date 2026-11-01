@@ -21,6 +21,7 @@
  * Everything is plain HTML first: without script every card shows, grouped, and the tab links jump to their groups.
  * The script adds:
  * - tabs (a `data-tab` link per group, '' for all; arrow keys, Home and End), one tab parameter in the URL (`tab-param`);
+ *   a tab's `data-item-noun` and `data-items-noun` name its cards in the status line (else its text names them);
  * - facets: checkboxes (several values, any of them matches) and `data-facet` links (one value), matched against the
  *   card's space-separated `data-<name>` tokens; facets combine with AND. Counts in `[data-count]` (inside the
  *   control) and `[data-count-of="name:value"]` show what each choice would leave, given the others;
@@ -75,6 +76,11 @@ export function stateToSearch(state, { tabParam = 'tab', facets = [], single = [
   const s = p.toString().replace(/%2C/g, ',');
   return s ? '?' + s : '';
 }
+
+/** The status line's count, its noun agreeing with the number it follows: the total when the view is filtered ("1 of
+ * 179 entries", "1 of 1 entry"), else the count shown ("1 entry", "12 entries"). `nouns`: [one, many]. */
+export const countLine = (shown, total, [one, many], filtered) =>
+  filtered ? `${shown} of ${total} ${total === 1 ? one : many}` : `${shown} ${shown === 1 ? one : many}`;
 
 /** Search terms as patterns: each word must start a word of the text, so "mit" finds MIT but not "commit". */
 export const searchPatterns = q => words(q).map(t => new RegExp('(?:^|[^\\p{L}\\p{N}])' + escapeRe(t), 'u'));
@@ -353,11 +359,11 @@ export class CadGallery extends Base {
     if (status) {
       // While a message box says it, the status line stays for screen readers but is hidden from view.
       status.toggleAttribute('data-gallery-boxed', [empty, emptyScope, emptyKind].some(b => b && !b.hidden));
-      const what = tabName || this.nouns[shown === 1 ? 0 : 1];
+      const nouns = tab ? [tab.dataset.itemNoun || tabName, tab.dataset.itemsNoun || tabName] : this.nouns;
       status.textContent = scopeEmpty ? `Nothing in ${scopeName} yet.`
         : !shown && scoped && s.tab ? `No ${tabName} in ${scopeName} yet.`
           : !shown ? `No ${this.nouns[1]} match. Try fewer words or clear the filters.`
-            : filtered ? `${shown} of ${this.#items.filter(it => !s.tab || it.tab === s.tab).length} ${what}` : `${shown} ${what}`;
+            : countLine(shown, this.#items.filter(it => !s.tab || it.tab === s.tab).length, nouns, filtered);
     }
     const active = Object.values(s.facets).reduce((n, v) => n + v.length, 0);
     for (const el of this.querySelectorAll('[data-gallery-active]')) el.textContent = active ? String(active) : '';

@@ -591,10 +591,11 @@ ${it.what ? `<p class="card-what">${esc(it.what)}</p>` : ''}${facts}${meta}${cal
 <span class="play-cover" data-fit="${d.cover.fit}">${img(d.cover, 640, 400, i < 4 ? 'eager' : 'lazy').replace('<img ', '<img data-anim-view ')}</span>
 <span class="play-text"><span class="pill pill-mode pill-${esc(d.mode)}">${esc(MODE_LABEL[d.mode])}</span><span class="play-name">${esc(d.name)}</span><span class="play-what">${esc(d.what)}</span></span></a></li>`).join('')}</ul></section>` : '';
 
-  // Kind tabs: plain links to the sections without script; the gallery makes them tabs.
+  // Kind tabs: plain links to the sections without script; the gallery makes them tabs. Their nouns name the status
+  // line's count ("3 of 25 tools", "1 of 8 research pages").
   const byTab = t => items.filter(it => tabOf(it.kind) === t);
   const tabs = `<nav class="cat-tabs" aria-label="Kinds" data-gallery-tabs><a href="#cat-results" data-tab="">All <span class="count" data-count>${items.length}</span></a>${KINDS.map(k =>
-    `<a href="#${k.tab}" data-tab="${k.tab}">${esc(k.label)} <span class="count" data-count>${byTab(k.tab).length}</span></a>`).join('')}</nav>`;
+    `<a href="#${k.tab}" data-tab="${k.tab}" data-item-noun="${esc(k.one)}" data-items-noun="${esc(k.many)}">${esc(k.label)} <span class="count" data-count>${byTab(k.tab).length}</span></a>`).join('')}</nav>`;
 
   // Area tree: domains fold; each area shows its glyph, maturity and count. data-tone gives each panel and row its
   // domain's tints and ink (web/catalog.css).

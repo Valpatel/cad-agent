@@ -601,6 +601,9 @@ against `near_mm`; the narrow phase is `relate` (contact area off), memoised in 
 parts' content hash and posed placement (the pose is in the key), so a repeated pose costs nothing and an unchanged
 rerun reads only the cache.
 
+<details>
+<summary>The checks, by id: when each fails and its evidence</summary>
+
 | Check | Fails when | Evidence |
 |---|---|---|
 | `collision:<a>\|<b>` | a moving part shares more than `overlap_mm3` with another (overlapping or contains) at any pose, unless declared in `intended_overlaps`; also an intended contact driven into its face (`intended_contact: true`) | `first_pose`: the colliding pose nearest home (the sum over axes of the distance from home as a fraction of the range; ties in sweep order), the one met first moving out from rest; its `overlap_mm3`, `overlap_centroid` and `overlap_box`; `last_clear_pose`, its clear grid neighbour nearest home (one sample away on one axis), with `last_clear_gap_mm` and the closest points `point_a`/`point_b`; `colliding_poses`, `worst_pose`, `worst_overlap_mm3`; the `onset` bisected between the two along that axis (`joint`, `clear`, `hit`, the overlap at the hit side and the gap and closest points at the clear side; `others` gives the other axes' values, held fixed, on a grid) |
@@ -610,6 +613,8 @@ rerun reads only the cache.
 | `joint:<id>` | a joint's part is missing, its `fixed` part is in its own moving body, two joints drive one body, joints carry each other in a loop, or a ranged joint has no range; a warning for `planar`/`ball` | |
 | `combination:<g1>+<g2>`, `density:<g>` | (warnings) see above | |
 | `containment@<group>/<pose>/...` | with `contains=`: the containment gate's checks at every pose of a group that moves the container's cavity or the contents | as the containment gate |
+
+</details>
 
 ![The gate bench's arm with the flap_hits_frame seed, swept from 0 to 60 degrees in 12 sampled poses: it shares volume with the frame beam from 49.09 degrees, the last clear pose is 43.64 degrees, and the onset is bisected to between 44.89 and 44.91 degrees](img/motion/hinge-sweep.svg)
 

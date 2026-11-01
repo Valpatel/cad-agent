@@ -51,7 +51,7 @@ def test_sources_are_cited_by_edition_not_quoted():
             assert re.search(r"ISO \d+-1:\d{4}", ref), key
         elif key in ("freudenstein", "gosselin", "goncalves"):                 # papers: a journal or proceedings, a year
             assert re.search(r"Transactions|Proceedings", ref) and re.search(r"\b(19|20)\d\d\b", ref), key
-        elif key in ("covestro-screws", "covestro-joining", "bulten"):      # a maker's document: its dated edition
+        elif key in ("covestro-screws", "covestro-joining", "bulten", "spirol-inserts"):   # a maker's dated edition
             assert re.search(r"\b20\d\d-\d\d(-\d\d)?\b", ref), key
         elif key != "covestro":
             assert re.search(r"\d+(st|nd|rd|th) ed\.", ref) and re.search(r"\b(19|20)\d\d\b", ref), key

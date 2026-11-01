@@ -44,7 +44,7 @@ inserts.hole_design(inserts.insert("mcmaster-94459A140"))      # 4.2 mm in CAD (
 r = inserts.check_joint("mcmaster-94459A140", "pla-bambu-basic", boss_outside_mm=9.5, head_mm=7.0,
                         clearance_mm=3.4, clamped={"thickness_mm": 4.0})
 r["verdict"], r["torque"]["allowed_nm"], r["torque"]["governed_by"]   # 'warn', 0.70, 'head_bearing'
-r["capacity"]["pull_out"]                                         # low 1063, mid 1169, high 1394 N
+r["capacity"]["pull_out"]                                         # low 811, mid 1152, high 1394 N
 inserts.check_clamp("M10", "pa6-cf20-polymaker-wet", 40.0, head_mm=20.0, clearance_mm=12.0, torque_nm=20.0,
                     limiter={"outside_mm": 18.0, "bore_mm": 12.0}, limiter_length_mm=39.8)
 inserts.coupon_plan()                                             # what to print and measure
@@ -61,7 +61,7 @@ check works out, and it changes every limit after it.
   the brass, and the knurl carries only what pulls the parts apart. M3 in PLA Basic, clamping metal: tighten to at
   most **0.65 N·m**, set by the insert's own thread.
 - **Recessed, even by 0.05 mm.** The screw pulls the insert towards the head until the gap closes. The knurl
-  carries the whole preload, so the same joint 0.2 mm recessed may take only **0.18 N·m**.
+  carries the whole preload, so the same joint 0.2 mm recessed may take only **0.13 N·m**.
 - **A clamped part whose hole is as wide as the insert** bears on the plastic round it. That jacks the insert out
   too, and the check says so.
 - **Pressed in from the far side**, the insert is pulled into the boss in front of it, and that shoulder must not
@@ -77,15 +77,16 @@ shorter, the head must squeeze the plastic by the difference before it lands.
 
 <img src="img/inserts/limiters.svg" alt="A compression limiter proud, flush and short of the plastic it passes through: proud, the plastic is loose round it; flush, the clamp goes through the metal; short, the head squeezes the plastic a few per cent before it lands on the limiter (SPIROL: at most 5 %, which printed plastic may not take)" width="870" height="330">
 
-- **Printed plastic takes less squeeze than moulded.** SPIROL allows the plastic 3 to 5 % compression. A printed
-  part's strength over its modulus is nearer 1.4 %, so the check warns past it.
-- **The seating force.** SPIROL's formula 3 takes the plastic under the head as a column. When the head overhangs the
-  limiter by a narrow ring on thick plastic, the load spreads and the plastic is stiffer than that, so the check also
-  takes Shigley's frustum and uses the higher of the two. An 18 mm steel sleeve 0.2 mm short of 40 mm of wet PA6-CF,
-  under a 20 mm washer, needs **550 N** as a column and **2935 N** as a cone. The ring then bears 49 MPa, so it warns.
+- **Some printed plastics take less squeeze than SPIROL allows.** SPIROL allows 3 to 5 % compression. A printed
+  plastic reaches its compressive strength at **2.6 %** (PETG Basic) to **3.6 %** (PLA Basic), so the check warns
+  past that.
+- **The seating force.** SPIROL's formula 3 takes the plastic under the head as a column. A narrow ring of head on
+  thick plastic spreads the load, and the far face sits on a broad face, so the check also takes Shigley's frustum
+  through the whole thickness and uses the higher. An 18 mm steel sleeve 0.2 mm short of 40 ± 0.1 mm of wet PA6-CF,
+  under a 20 mm washer, needs **550 N** as a column and **5055 N** as a cone. The ring then bears 85 MPa, so it warns.
 - **A limiter on a straight-knurl insert.** The limiter must abut the insert. Its end then bears on the thin ring
   between its bore and the knurl, 10.00 mm² for M5. Brass's yield there caps the preload at 1240 N. Squeezing 6.1 mm
-  of printed PETG by 4.9 % takes 3170 to 6338 N, so the limiter never seats and the check fails it. Make the limiter
+  of printed PETG by 4.9 % takes 3170 to 9146 N, so the limiter never seats and the check fails it. Make the limiter
   as long as the measured plastic, or use one with a proud knurl (Bulten), or a flanged insert.
 - **Limiters of your own.** `check_clamp` takes a sleeve, a bushing or a spacer as `limiter` (its outside, bore,
   metal and, for the wall, its yield). Catalogue limiters are SPIROL's CL6000 (aluminium) and CL8000 (brass), M3 to
@@ -97,7 +98,7 @@ flowchart TD
     P -->|"flush or proud"| T["through the brass"]
     P -->|"recessed, wide hole<br/>or the tip bottoms"| J["jack-out: the knurl<br/>takes the preload"]
     P -->|"far side"| S["the shoulder<br/>takes it"]
-    T --> C["torque ceilings: screw, torque-out,<br/>insert thread, head bearing,<br/>shoulder, insert face"]
+    T --> C["torque ceilings: screw (75 % of proof),<br/>torque-out, insert thread, head,<br/>shoulder, limiter"]
     J --> C
     S --> C
     C --> L{"limiter?"}
@@ -115,23 +116,25 @@ flowchart TD
 The pull-out force is the knurl's cylinder sheared, F = c τ π D L. τ is half the filament's tensile strength across
 the layers, from the maker's data sheet, and c is fitted to published tests.
 
-<img src="img/inserts/calibration.svg" alt="Published heat-set insert pull-out tests as shear stress on the knurl's cylinder against insert size: printed PLA 16.4-21.5 MPa, moulded hosts level across M3 to M8 within their spread; the check holds Bambu PLA Basic to 12.6 MPa" width="860" height="400">
+<img src="img/inserts/calibration.svg" alt="Published heat-set insert pull-out tests as shear stress on the knurl's cylinder against insert size: printed PLA 16.4-21.5 MPa at M3 and 12.5-16.0 MPa at M6, so the larger insert sits lower; the check holds Bambu PLA Basic to 9.6 MPa" width="860" height="400">
 
-- **PLA: c from 0.81 to 1.06**, from 11 results in three publications by two groups (László 2026, CNC Kitchen 2019
-  and 2026). Medium confidence, M3 × 5.7 inserts only.
-- **PETG: c 0.66**, from one result of three samples (CNC Kitchen 2020). Low confidence.
-- **Other families** (ASA, nylon) have no printed test. They take the lowest c of any family, and the check warns.
-- **Torque-out** comes from pull-out through r = 2 T / (F D). The tests give r from 0.87 (SPIROL, M3 in nylon) to 1.41
-  (PEM, M8 in ABS). One printed PETG test gives 1.12. The low end is taken.
-- **Other sizes** scale by the knurl's area. The moulded makers' tables are level across M3 to M8 when drawn this
-  way, which is what supports it.
+- **PLA: c from 0.62 to 1.06**, from 13 results in four publications by three groups (László 2026, CNC Kitchen 2019
+  and 2026, SPIROL 2026). Medium confidence. SPIROL's two M6 results set the low end.
+- **PETG: c from 0.51 to 0.73**, from three results: CNC Kitchen's M3 and SPIROL's two M6. Low confidence.
+- **SPIROL's M6 values are read off its bar charts** (its 3D-printing paper, Figures 10 and 12), to about 20 N.
+- **Other families** (ASA, nylon) have no printed test with a data sheet in the table. They take the lowest c of any
+  family, and the check warns.
+- **Torque-out** comes from pull-out through r = 2 T / (F D). The tests give r from 0.66 (SPIROL, printed
+  glass-filled PA6) to 1.41 (PEM, M8 in ABS). CNC Kitchen's printed PETG gives 1.12. The low end is taken.
+- **Other sizes** scale by the knurl's area. SPIROL's printed M6 results sit below the M3 ones, so area alone would
+  overstate a larger insert. The low end is the M6's.
 
 <details>
 <summary>Every row the check reports, and its rule</summary>
 
 | Row | Pass | Warn | Fail |
 |---|---|---|---|
-| hole diameter | the maker's hole −0.1 to +0.3 mm in CAD | outside that | at or over the knurl |
+| hole diameter | the maker's hole +0.2 to +0.3 mm in CAD (CNC Kitchen) | outside that | at or over the knurl |
 | hole depth | the deepest of the makers' rules (SPIROL: the insert plus two pitches; CNC Kitchen and ruthex: +1 mm; McMaster's least material thickness) | short of it | no deeper than the insert |
 | melt volume | the plastic the insert displaces fits the pocket below it | it does not | |
 | screw tip | above the floor and inside the insert | past the insert's end | at or past the floor |
@@ -139,20 +142,21 @@ the layers, from the maker's data sheet, and c is fitted to published tests.
 | insert axis | along the build direction | in the layer plane: no published number | |
 | calibration | a family with printed tests | no printed test in the family | |
 | clamp path | flush, proud to 0.13 mm, or a far-side shoulder | recessed or more proud | |
-| tightening torque | at most the lowest ceiling | within the margin over it | past it |
+| tightening torque | at most the lowest ceiling, the screw's at 75 % of its proof load (SPIROL) | within the margin over it | past it |
 | insert thread | the preload and load under its stripping force / 2 (ISO 68 area, brass at 124 MPa) | under the force | over it |
 | pull-out, push-out, torque-out | the separating load under the low capacity / 2 | under the low capacity | over it |
 | shoulder | the plug a far-side insert would punch, / 2 | under it | over it, or its hole wider than the insert |
 | head bearing | the preload on the plastic under the head under its compressive strength / 2 | under the strength | over it |
-| limiter length | squeeze at most 5 % | 5 to 7 %, past the printed plastic's 1.4 %, or proud | over 7 % |
+| limiter length | squeeze at most 5 %, the limiter's own included | 5 to 7 %, past the plastic's compressive strength over its modulus, or proud | over 7 % |
 | seating force | under the preload and 75 % of the proof load, the ring under its strength / 2 | the plastic crushes or creeps before the head lands | the head never lands |
 | head over limiter | the head or washer reaches past it | it covers only the limiter | |
 | limiter on insert, insert face | its end on the insert, the face under brass's 124 MPa | up to 310 MPa | not abutting, or over |
+| limiter end (far-side insert) | its end on the shoulder's plastic under its compressive strength / 2 | under the strength | over it |
 | limiter rating | the preload under 75 % of the proof load of the class it is rated for | under the proof load | over it |
 | limiter wall (your own) | the stress in its wall under its yield / 2 | under the yield, or no yield given | over it |
 | limiter press fit | the hoop stress its knurl raises in the hole under the strength along the layers / 2 | under the strength | over it |
 | limiter boss | a wall of at least 0.5 d (Bulten) and the boss 2 × the limiter (SPIROL) | the boss under 2 × | the wall under 0.5 d |
-| preload kept | a limiter keeps at least 0.9 of it | plastic in the clamp: it relaxes | |
+| preload kept | at least 0.9 of it, the screw, limiter and plastic as springs | plastic in the clamp: it relaxes | |
 
 The margin is 2.0 throughout (Covestro's least safety factor for plastic parts). Pass `margin` to change it.
 
@@ -160,34 +164,39 @@ The margin is 2.0 throughout (Covestro's least safety factor for plastic parts).
 
 ## Worked example: a robot's inserts
 
-[Gyropup](https://github.com/Valpatel/gyropup) has 151 heat-set inserts and a few clamped plastic joints, listed in
-its insert-joint audit (its PR #138). The checks ran on all 43 joint families. 40 fit them, and 5 of those fail:
+[Gyropup](https://github.com/Valpatel/gyropup) has 151 heat-set inserts and many clamped plastic joints, listed in
+its insert-joint audit (its PR #138, as merged). The checks ran on 41 of its 46 joint families and on 43 of the 47
+printed clamps. Five joints fail:
 
 - two screws reach 2.0 and 3.0 mm past the floor of a blind pilot, so they jack their inserts out;
 - a 4 mm pilot is no deeper than its 5.7 mm insert;
-- an M6 at 8 N·m puts 156 MPa on wet PA6-CF under its head, against the 27 MPa allowed, and an M4 at 2.3 N·m does
-  the same on PETG if what it clamps is printed.
+- an M6 at 8 N·m puts 156 MPa on wet PA6-CF under its head, against the 27 MPa allowed (114 MPa with an 11 mm
+  washer), and an M4 at 2.3 N·m does the same on PETG if what it clamps is printed.
 
-The audit found the same problems on its own.
+The audit found the same problems on its own. The printed clamps pass at the torque the check gives them (0.23 to
+1.24 N·m) and warn only because their plastic relaxes.
 
 <details>
 <summary>What the checks leave out, and where they and the audit differ</summary>
 
-Three families are outside these checks: a bearing stack with no plastic in it, pins with no screw, and 47 printed
-clamps the audit describes only in prose.
+Outside these checks: a bearing stack with no plastic in it, pins with no screw, a lid with no receiver, an
+adapter whose pattern is unpublished, four TPU isolators (no TPU data sheet in the table) and a nyloc whose bearing
+face is not given.
 
 - **A sleeve recessed 0.2 mm in a knee eye.** The audit puts the whole 10 kN on the 60 mm² of plastic under the
-  washer's overhang (168 MPa). Here the plastic is a spring: it takes about 2.9 kN, 49 MPa, before the washer lands
-  on the sleeve. Both say: press the sleeve proud.
+  washer's overhang (168 MPa). Here the plastic is a spring: with the eye's 40 ± 0.15 mm it takes about 5.8 kN,
+  97 MPa, before the washer lands on the sleeve. Both say: press the sleeve proud.
 - **Torque ceilings for plastic under the head.** The audit uses 25 MPa for sustained load. Here the limit is the
-  compressive strength over the margin, 27 MPa for wet PA6-CF, so the ceilings are a little higher (0.87 against
-  0.82 N·m for an M5).
+  compressive strength over the margin, 27 MPa for wet PA6-CF, so the ceilings are about 9 % higher.
+- **Every pilot is drawn at the maker's hole**, which the audit also notes. CNC Kitchen measured printed holes about
+  0.25 mm small, so each one warns.
 
 </details>
 
 ## Test coupons
 
 The plan prints each insert upright and lying, pulls it out, turns it out, and clamps it with and without a limiter.
+The limiter stands proud of its plate, so that cell measures an all-metal clamp against the plastic one.
 `python3 tools/insert_coupons.py --out exports/insert-coupons` writes each coupon's STEP and STL, in its print
 orientation, and the plan as JSON.
 
@@ -200,14 +209,14 @@ and the failure mode. Pull at 2 mm/min with a reaction plate that clears the bos
 
 ## Limits
 
-- **Not a rating.** The calibration is M3 × 5.7 in PLA (and one PETG result). Other sizes scale by the knurl's area,
-  and other families take the lowest fit.
+- **Not a rating.** The calibration is M3 × 5.7 and M6 × 12.7 in PLA and PETG. Other sizes scale by the knurl's
+  area, from the M6's lower fit, and other families take the lowest fit.
 - **Torque-out** comes from pull-out through the tests' ratio. **Push-out** and **an insert lying in the layer plane**
   have no published number, so they are flagged, not modelled.
 - **Static, short-term, room temperature.** A held load creeps. PLA inserts kept 26 to 55 % of their pull-out after a
   year outdoors (Materials 2025).
-- **Solid bosses.** The tests printed the boss solid round the insert. Infill and perimeters change the capacity by up
-  to 2.5 × (Kastner 2023).
+- **Bosses as tested.** SPIROL printed 5 wall loops at 55 % infill, László a 1.3 to 1.9 mm solid sleeve in 40 %
+  infill. Fewer walls hold less: one loop at 15 % infill held about a quarter of eleven (SPIROL, Figure 8).
 - **Preload kept.** Printed PLA was measured for an hour and printed joints for a week. The long-term figure is
   moulded polycarbonate's, and PLA, nearer its glass transition, will keep less.
 - **The seating force** takes the plastic as an elastic column or cone, with no edge or free face nearer than the cone.
@@ -227,13 +236,14 @@ table (Apache-2.0); the rest is read from the makers' pages, documents and CAD b
 
 **Inserts and holes.** CNC Kitchen's *Heat-Set Insert Dimensions and Design Guidelines* (2025-06-30); ruthex's size
 table; PennEngineering's *SI Threaded Inserts for Plastics* (2026-07-16), pp. SI-5, SI-6, SI-10, SI-25 and SI-26;
-SPIROL's *Inserts for Plastics Design Guide* (05/26), printed p. 5 and pp. 20 to 21, and *How to Select a Threaded Insert for Your
-3D Printed Assembly* (04/26); CNC Kitchen's *Tips & Tricks for Heat-Set Inserts* (2021) and ruthex's tip set page for
+SPIROL's *Inserts for Plastics Design Guide* (05/26), printed pp. 5, 8, 9, 18, 20 and 21, and *How to Select a
+Threaded Insert for Your 3D Printed Assembly* (04/26), pp. 2 to 5; CNC Kitchen's *Tips & Tricks for Heat-Set Inserts* (2021) and ruthex's tip set page for
 the iron's temperature; McMaster-Carr's 94459A pages, read 2026-11-01. McMaster's M2.5 and M6 rows and the 93365A
 family could not be read (a login was asked), so nothing is given for them.
 
 **Tests.** K. László, B. F. Szivós and V. Nemes, *Engineering Proceedings* 157 (2026) 40; CNC Kitchen, 2019-12-07,
-2020-05-30 and 2026-03-28; SPIROL's INS 19 table and PEM's IUT table, both in the guides above; T. Kastner et al.
+2020-05-30 and 2026-03-28; SPIROL's printed M6 tests (its 3D-printing paper, Figures 8 to 12, read off the charts);
+SPIROL's INS 19 table and PEM's IUT table, both in the guides above; T. Kastner et al.
 (2023) on infill and perimeters; *Materials* 18 (2025) 2591 on ageing.
 
 **Limiters and clamps.** SPIROL's *Compression Limiters Design Guide*, 04/21 (pp. 3, 4, 6, 7, 14) and 05/26 (pp. 6,
@@ -248,8 +258,8 @@ torque after 7 days); A. Liber-Kneć and S. Łagan, *Materials* 18 (2025) 3262 (
 filament makers' data sheets in [`allowables.py`](../src/cadagent/mechanical/compliant/allowables.py).
 
 **Relations.** Shigley's *Mechanical Engineering Design*, 10th ed.: Section 8-2 and Eq. 8-27 (torque and clamp),
-Section 8-5 (the frustum), Section 8-7 (load sharing), Section 3-16 (press fits), Section 5-5 (shear yield), Table
-A-5 (metals' moduli); ISO 68-1 (thread shear areas). Each one is in [Engineering formulas](formulas.md).
+Section 8-5 (the frustum), Section 8-7 (load sharing), Section 8-9 (75 % of the proof load), Section 3-16 (press
+fits), Section 5-5 (shear yield), Table A-5 (metals' moduli); ISO 68-1 (thread shear areas). Each one is in [Engineering formulas](formulas.md).
 
 </details>
 

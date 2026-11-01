@@ -50,7 +50,9 @@ def _positive(name: str, v: Any, strict: bool = True) -> float:
                  "or into the pocket below), below 0 the knurl's valleys are left partly empty",
          limits=("a straight hole as deep as the insert; the volume of the metal, not of the knurl's envelope; the "
                  "plastic is incompressible and none is lost to the iron",),
-         source=cite("shigley", "Section 1-14 (Dimensions and Tolerances: a volume balance of the parts as drawn)"))
+         source=cite("spirol-inserts", "p. 5 (the hole deeper than the insert: its least depth formula, the "
+                     "insert's length plus two pitches); the volume itself is plain geometry, each part a cross-section "
+                     "area times a length, from no outside formula"))
 def insert_displaced_volume(insert_volume: float, hole_diameter: float, bore_diameter: float, length: float) -> float:
     """Plastic an insert displaces as it goes into its hole: its metal plus its empty bore, less the hole it fills,
     V = V_insert - pi / 4 (Dh^2 - db^2) L."""
@@ -65,7 +67,9 @@ def insert_displaced_volume(insert_volume: float, hole_diameter: float, bore_dia
          returns="volume of the pocket below a seated insert, m^3 (0 when the hole is no deeper than the insert)",
          limits=("a straight blind hole; a cone at the bottom adds a little; melt that freezes on the way does not "
                  "reach the pocket",),
-         source=cite("shigley", "Section 1-14 (Dimensions and Tolerances: the space left in a blind hole)"))
+         source=cite("spirol-inserts", "p. 5 (the hole's least depth formula, the insert's length plus two pitches, "
+                     "which leaves this pocket); the volume is plain geometry, the hole's area times the depth past "
+                     "the insert"))
 def overflow_volume(hole_diameter: float, depth: float, length: float) -> float:
     """Volume of the pocket below an insert seated flush in a blind hole, pi / 4 Dh^2 (depth - L): where pushed-aside
     melt can go instead of welling up round the insert."""
@@ -158,24 +162,28 @@ def insert_clamp_path(recess: float, tolerance: float = 0.0, installed_from: str
                 "thread_friction": "(low, high), dimensionless (the screw in the insert's thread)",
                 "collar_friction": "(low, high), dimensionless (under the head or washer)",
                 "margin": "dimensionless (the factor kept under each insert limit)",
-                "flank_angle": "rad (included: 60 degrees for ISO metric)"},
+                "flank_angle": "rad (included: 60 degrees for ISO metric)",
+                "separating_load": "N (a service load pulling the parts apart, which the knurl also carries when "
+                                   "it jacks out)"},
          returns="dict: torque (the most to tighten to, N m), governed_by, the ceilings each limit sets (N m), "
                  "preload {low, high} at that torque (N), thread_share (the most of the torque the thread passes to "
                  "the insert) and nut_factor {low, high}",
          limits=("the thread torque turns the insert; friction on its end face, which also resists, is left out (the "
                  "cautious side)",
-                 "jack-out: the knurl carries the preload and the thread torque together, combined as a linear "
-                 "interaction F / F_out + T / T_out <= 1 / margin (cautious; no published combined test was found)",
+                 "jack-out: the knurl carries the preload, the separating load and the thread torque together, "
+                 "combined as a linear interaction (F + F_sep) / F_out + T / T_out <= 1 / margin (cautious; no "
+                 "published combined test was found)",
                  "the screw's ceiling takes it to its proof load at the least friction",
                  "the nut factor's friction band gives the preload only to about +/- 25 % even when it is known"),
          source=cite("shigley", "Section 8-8 (Relating Bolt Torque to Bolt Tension: the thread's and the collar's "
                      "shares of the torque) and Section 8-9 (proof load)"))
 def insert_limited_torque(diameter: float, pitch: float, path: str, pull_out: float, torque_out: float,
                           proof_load: float, thread_friction=(0.15, 0.25), collar_friction=(0.15, 0.25),
-                          margin: float = 2.0, flank_angle: float = math.radians(60.0)) -> Dict[str, Any]:
+                          margin: float = 2.0, flank_angle: float = math.radians(60.0),
+                          separating_load: float = 0.0) -> Dict[str, Any]:
     """The most a screw in an insert should be tightened: the lowest of the screw's ceiling (its proof load at the
     least friction), the insert's torque-out (the thread's share of the torque turns it) and, when it jacks out, its
-    pull-out under the preload. Each insert limit is divided by ``margin``."""
+    pull-out under the preload and the separating load. Each insert limit is divided by ``margin``."""
     d, p = _positive("diameter", diameter), _positive("pitch", pitch)
     if path not in PATHS:
         raise ValueError(f"path must be one of {PATHS}, not {path!r}")
@@ -190,13 +198,18 @@ def insert_limited_torque(diameter: float, pitch: float, path: str, pull_out: fl
     (ft_lo, ft_hi), (fc_lo, fc_hi) = bands["thread_friction"], bands["collar_friction"]
     if not (_num(margin) and margin >= 1.0):
         raise ValueError(f"margin must be a finite number of at least 1, not {margin!r}")
+    F_sep = _positive("separating_load", separating_load, strict=False)
+    if path == "jack-out" and F_sep >= Fout / margin:
+        raise ValueError(f"separating_load ({separating_load!r} N) leaves no room under the pull-out / margin "
+                         f"({Fout / margin:.4g} N): no torque is safe")
     k = {"low": nut_factor(d, p, ft_lo, fc_lo, flank_angle), "high": nut_factor(d, p, ft_hi, fc_hi, flank_angle)}
     # the thread's share of the torque is largest with the most thread friction and the least under the head
     share = nut_factor(d, p, ft_hi, 0.0, flank_angle) / nut_factor(d, p, ft_hi, fc_lo, flank_angle)
     ceilings = {"screw": k["low"] * Fp * d, "torque_out": Tout / (margin * share)}
     if path == "jack-out":
-        # F = T / (K_low d) at the least friction, the thread torque T * share; F/Fout + Tth/Tout <= 1/margin
-        ceilings["jack_out"] = 1.0 / (margin * (1.0 / (k["low"] * d * Fout) + share / Tout))
+        # F = T / (K_low d) at the least friction, the thread torque T * share;
+        # (F + F_sep) / Fout + Tth / Tout <= 1 / margin
+        ceilings["jack_out"] = (1.0 / margin - F_sep / Fout) / (1.0 / (k["low"] * d * Fout) + share / Tout)
     governed = min(ceilings, key=ceilings.get)
     T = ceilings[governed]
     return {"torque": T, "governed_by": governed, "ceilings": ceilings,

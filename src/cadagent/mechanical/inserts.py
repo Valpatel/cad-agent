@@ -187,13 +187,20 @@ SRC = {
               "above the plastic; installed below the surface, an insert is subjected to jack-out)",
     "spirol-inserts": "SPIROL International, Inserts for Plastics Design Guide, edition 05/26, printed p. 5 (hole "
                       "depth the insert length plus two thread pitches; a straight hole tapers at most 1 degree "
-                      "included; boss 2-3 x the insert diameter; flush, at most 0.13 mm proud) and pp. 20-21 "
-                      "(performance in nylon 6/6): https://www.spirol.com/assets/files/"
-                      "ins-threaded-inserts-design-guide-us.pdf",
+                      "included; boss 2-3 x the insert diameter; flush, at most 0.13 mm proud; the screw never "
+                      "bottoms, or the insert jacks out), pp. 8-9 (Series 19 and 29: the M6 long insert's knurl A "
+                      "8.76 mm and length 12.70 mm), p. 18 (heat installation under low force, generally under "
+                      "220 N) and pp. 20-21 (performance in nylon 6/6, in lb and in-lb with rounded metric values): "
+                      "https://www.spirol.com/assets/files/ins-threaded-inserts-design-guide-us.pdf",
     "spirol-3dp": "SPIROL International (K. Ionkin), How to Select a Threaded Insert for Your 3D Printed Assembly, "
-                  "edition 04/26, p. 2 (a boss at least 1.5 x the knurl diameter in FDM, full performance from 2 x) "
-                  "and p. 5 (wall loops at least the metric size; install at the heat-deflection temperature + "
-                  "65 degC): https://www.spirol.com/assets/files/inserts-for-3d-printed-assemblies-us.pdf",
+                  "edition 04/26, p. 2 (a boss at least 1.5 x the knurl diameter in FDM, full performance from 2 x), "
+                  "p. 3 (Figures 8 and 9: PLA, M6, pull-out and torque-out against wall loops at 15 % infill and "
+                  "against infill at 2 loops; Figure 10: INS 19 and INS 29 long M6, heat-installed, in printed PETG, "
+                  "PLA, PC and 30 % glass-filled PA6 at 55 % infill, 5 wall loops, 0.16 mm layers), p. 4 (Figure "
+                  "12: the same inserts in printed and in extruded polycarbonate) and p. 5 (wall loops at least the "
+                  "metric size; install at the heat-deflection temperature + 65 degC). The figures are bar charts "
+                  "with no values printed: the values here are read off them at 300 dpi, to about one pixel "
+                  "(20 N, 0.1 N m): https://www.spirol.com/assets/files/inserts-for-3d-printed-assemblies-us.pdf",
     "cnck-tips": "CNC Kitchen, Tips & Tricks for Heat-Set Inserts used in 3D printing (2021-10-01, read 2026-11-01): "
                  "an iron 10-20 degC above the print temperature (PLA about 225, PETG 245, ABS 265 degC); melt to "
                  "about 90 % of the depth, then press flush with a flat tool and hold; straight holes, no chamfer; "
@@ -394,7 +401,23 @@ class Test:
     note: str = ""
 
 
+LBF = 4.4482216152605                 # N per pound-force
+IN_LBF = 0.1129848290276167           # N m per inch pound-force
 _RX = "ruthex RX-M3x5.7 (knurl 4.6 mm, length 5.7 mm: ruthex's table)"
+# SPIROL 04/26, read at 300 dpi: (host, INS series, figure, host as named, family, pull-out N, torque-out N m, stand-in)
+_SPIROL_3DP = (
+    ("pla", 19, "Figure 10", "PLA (maker not named)", "pla", 4380.0, 17.8, "pla-polymaker"),
+    ("pla", 29, "Figure 10", "PLA (maker not named)", "pla", 5600.0, 24.1, "pla-polymaker"),
+    ("petg", 19, "Figure 10", "PETG (maker not named)", "petg", 3790.0, 13.3, "petg-polymaker"),
+    ("petg", 29, "Figure 10", "PETG (maker not named)", "petg", 5490.0, 19.1, "petg-polymaker"),
+    ("pc", 19, "Figure 10", "polycarbonate (maker not named)", "pc", 2910.0, 10.1, None),
+    ("pc", 29, "Figure 10", "polycarbonate (maker not named)", "pc", 3720.0, 14.3, None),
+    ("pc-fig12", 19, "Figure 12", "polycarbonate (maker not named; Figure 10 gives less)", "pc", 4240.0, 17.5, None),
+    ("pc-fig12", 29, "Figure 12", "polycarbonate (maker not named; Figure 10 gives less)", "pc", 5410.0, 24.4, None),
+    ("pa6-gf30", 19, "Figure 10", "PA6, 30 % glass fibre (maker not named)", "nylon", 6020.0, 17.3, None),
+    ("pa6-gf30", 29, "Figure 10", "PA6, 30 % glass fibre (maker not named)", "nylon", 7000.0, 22.8, None),
+)
+_SPIROL_EXTRUDED = ((19, 5000.0, 20.9), (29, 5900.0, 26.4))
 _RX19 = ("ruthex M3 (the post names no length: ruthex's standard M3 is 5.7 mm, knurl 4.6 mm, and that is assumed)")
 _LASZLO = [(1.28, "adaptive cubic", 1428.2, 3), (1.28, "cross-zag", 1353.6, 3), (1.28, "gyroid", 1467.2, 3),
            (1.60, "adaptive cubic", 1497.5, 3), (1.60, "cross-zag", 1416.9, 3), (1.60, "gyroid", 1488.7, 3),
@@ -410,13 +433,26 @@ TESTS: Tuple[Test, ...] = (
          note="181 kg x 9.80665; the screw broke first, so the torque-out is at least 3 N m"),
     Test("cnck-2020", SRC["cnck-2020"], _RX19, 4.6, 5.7, "PETG (maker not named)", "petg", True, 119 * G, 3.0, n=3,
          stand_in="petg-polymaker", note="119 kg x 9.80665"),
-    # moulded hosts: not used to fit c (no printed datasheet applies), only for how torque-out scales with pull-out
+    # SPIROL's printed M6 tests (55 % infill, 5 wall loops), read off its bar charts: PLA and PETG fit c; PC and
+    # glass-filled PA6 have no sheet in the datasheet table, so they give the torque ratio only
+    *(Test(f"spirol-3dp-{host}-ins{series}", SRC["spirol-3dp"] + f"; {fig}, INS {series} long M6",
+           f"SPIROL INS {series} long M6 (A 8.76, L 12.70 mm: SPIROL's guide, p. {8 if series == 19 else 9})", 8.76,
+           12.70, name, fam, True, f, t, stand_in=stand_in, note=f"read off {fig}'s bars: {f:.0f} N, {t:.1f} N m")
+      for host, series, fig, name, fam, f, t, stand_in in _SPIROL_3DP),
+    # moulded hosts: not used to fit c (no printed datasheet applies), only for how torque-out scales with pull-out.
+    # SPIROL's nylon 6/6 table gives lb and in-lb, with rounded metric values beside them: the primary values are used
     Test("spirol-ins19-m3", SRC["spirol-inserts"] + "; INS 19 long, M3 (4-40 row)", "SPIROL INS 19 long M3 (A 4.75, "
-         "L 5.74 mm)", 4.75, 5.74, "nylon 6/6, moulded, drilled hole", "nylon", False, 1445.0, 3.0),
+         "L 5.74 mm)", 4.75, 5.74, "nylon 6/6, moulded, drilled hole", "nylon", False, 325 * LBF, 28 * IN_LBF,
+         note="325 lb, 28 in-lb"),
     Test("spirol-ins19-m5", SRC["spirol-inserts"] + "; INS 19 long, M5", "SPIROL INS 19 long M5 (A 7.16, L 9.53 mm)",
-         7.16, 9.53, "nylon 6/6, moulded, drilled hole", "nylon", False, 3800.0, 14.0),
+         7.16, 9.53, "nylon 6/6, moulded, drilled hole", "nylon", False, 850 * LBF, 125 * IN_LBF,
+         note="850 lb, 125 in-lb"),
     Test("spirol-ins19-m8", SRC["spirol-inserts"] + "; INS 19 long, M8", "SPIROL INS 19 long M8 (A 10.34, L 12.70 mm)",
-         10.34, 12.70, "nylon 6/6, moulded, drilled hole", "nylon", False, 5800.0, 33.0),
+         10.34, 12.70, "nylon 6/6, moulded, drilled hole", "nylon", False, 1300 * LBF, 290 * IN_LBF,
+         note="1300 lb, 290 in-lb"),
+    *(Test(f"spirol-3dp-pc-extruded-ins{series}", SRC["spirol-3dp"] + f"; Figure 12, INS {series} long M6",
+           f"SPIROL INS {series} long M6 (A 8.76, L 12.70 mm)", 8.76, 12.70, "polycarbonate, extruded", "pc", False,
+           f, t, note=f"read off Figure 12's bars: {f:.0f} N, {t:.1f} N m") for series, f, t in _SPIROL_EXTRUDED),
     Test("pem-iut-m3-abs", SRC["pem-si"] + "; IUT M3 in ABS", "PEM IUT M3 (E 4.55, A 5.74 mm)", 4.55, 5.74,
          "ABS, moulded, ultrasonic", "abs", False, 730.0, 1.6),
     Test("pem-iut-m5-abs", SRC["pem-si"] + "; IUT M5 in ABS", "PEM IUT M5 (E 6.93, A 9.52 mm)", 6.93, 9.52,
@@ -442,9 +478,9 @@ def _median(v: List[float]) -> float:
 
 def calibration() -> Dict[str, Any]:
     """The shear model fitted to the published tests. For each test: the mean shear stress on the knurl's cylinder,
-    q = F / (pi D L), and for a printed one c = q / tau, tau being half the stand-in datasheet's strength across the
-    layers. c is fitted per polymer family; torque-out goes through the ratio of the two shears, r = 2 T / (F D),
-    which the printed and the moulded tests both give."""
+    q = F / (pi D L), and for a printed one with a stand-in datasheet c = q / tau, tau being half that sheet's strength
+    across the layers. c is fitted per polymer family; torque-out goes through the ratio of the two shears,
+    r = 2 T / (F D), which the printed and the moulded tests all give, pooled (its low end is a glass-filled PA6's)."""
     rows, fits, ratios = [], {}, []
     for t in TESTS:
         q = t.pull_n / (math.pi * t.outer_mm * t.length_mm) if t.pull_n else None          # N / mm^2 = MPa
@@ -462,19 +498,25 @@ def calibration() -> Dict[str, Any]:
                 ratios.append((r, t.printed, t.key))
         rows.append(row)
     pull = {fam: {"low": min(c), "mid": _median(c), "high": max(c), "cells": len(c),
-                  "tests": [t.key for t in TESTS if t.family == fam and t.printed]} for fam, c in fits.items()}
+                  "tests": [t.key for t in TESTS if t.family == fam and t.printed and t.stand_in]}
+            for fam, c in fits.items()}
     every = [c for cs in fits.values() for c in cs]
     pull["pooled"] = {"low": min(every), "mid": _median(every), "high": max(every), "cells": len(every),
-                      "tests": [t.key for t in TESTS if t.printed]}
+                      "tests": [t.key for t in TESTS if t.printed and t.stand_in]}
     r_all = [r for r, _, _ in ratios]
     return {"pull": pull,
             "torque_ratio": {"low": min(r_all), "mid": _median(r_all), "high": max(r_all),
                              "printed": [round(r, 4) for r, printed, _ in ratios if printed],
                              "tests": [k for _, _, k in ratios]},
-            "confidence": {"pla": f"medium: {pull['pla']['cells']} results from three publications by two groups, "
-                                  "M3 x 5.7 inserts only",
-                           "petg": "low: one result (3 samples), the insert's length assumed",
-                           "pooled": "none for this family: no printed test was found; the lowest c of any family"},
+            "confidence": {"pla": f"medium: {pull['pla']['cells']} results from four publications by three groups, "
+                                  "M3 x 5.7 and M6 x 12.7 inserts; SPIROL's two M6 results are read off a bar chart, "
+                                  "and they give the low end",
+                           "petg": f"low: {pull['petg']['cells']} results from two groups, SPIROL's two M6 results "
+                                   "read off a bar chart and CNC Kitchen's M3 (3 samples, the insert's length "
+                                   "assumed)",
+                           "pooled": "none for this family: no printed test in it with a datasheet in the table "
+                                     "(SPIROL's printed polycarbonate and glass-filled PA6 set the torque ratio "
+                                     "only); the lowest c of any family"},
             "stand_in": STAND_IN, "rows": rows}
 
 
@@ -521,7 +563,7 @@ INSTALL = {
 }
 INSTALL_ALL = ("melt it in to about 90 % of its depth with the tip, then press it flush with a flat tool and hold it "
                "while it sets (CNC Kitchen tips); heat installation needs little force, generally under 220 N "
-               "(SPIROL); flush, or proud by no more than 0.13 mm (PEM; SPIROL): never below the face, where the "
+               "(SPIROL's inserts guide, p. 18); flush, or proud by no more than 0.13 mm (PEM; SPIROL): never below the face, where the "
                "screw jacks it out")
 
 
@@ -601,7 +643,14 @@ LIMITER_COMPRESSION = (0.05, 0.07)   # the plastic squeezed at most 5 % (safe), 
 SEATING_SHARE = 0.75                 # the seating force at most 75 % of the proof load (spirol-cl-2021 p. 6)
 SHEAR_OVER_YIELD = 0.577            # shear yield over tensile yield, distortion energy (shigley Section 5-5)
 BRASS_YIELD_PA = (124e6, 310e6)      # the insert's face, by temper (brass)
-CLAMP_PLATE_MM = 5.1                 # the coupon's clamped plate: 0.1 mm over a 5 mm limiter, the stack's slack
+SCREW_SHARE = fx.PRELOAD_SHARE["reused"]   # the clamp load at most 75 % of the screw's proof load (spirol-cl-2021
+#                                            pp. 3-4: "strongly recommends not to exceed"; Shigley Section 8-9)
+PLASTIC_TOL_MM = 0.1                 # the clamped plastic's +/- when none is given: an assumption, no source
+OWN_LIMITER_TOL_MM = 0.05            # your own limiter's length tolerance when none is given: an assumption
+PLATE_HUB = 10.0                     # x the knurl: the plastic round a press fit when no outside is given
+CLAMP_PLATE_MM = 5.1                 # the coupon's clamped plate with no limiter
+COUPON_LIMITER_MM = 5.0              # the coupon's limiter (a SPIROL standard length, spirol-cl-2021 p. 14)
+COUPON_GAP_MM = 0.05                 # its least standout over the plate's thickest
 CLAMP_PLATE_TOL_MM = 0.05            # its thickness, printed and measured, to +/- this
 
 
@@ -615,10 +664,12 @@ METAL_MODULUS_PA = {"aluminium": 71.7e9, "brass": 106.0e9, "steel": 207.0e9}   #
 
 
 def own_limiter(thread: str, outside_mm: float, bore_mm: float, material: str = "steel",
-                yield_pa: Optional[float] = None, head_mm: float = 0.0, tolerance_mm: float = 0.05) -> Limiter:
+                yield_pa: Optional[float] = None, head_mm: float = 0.0,
+                tolerance_mm: float = OWN_LIMITER_TOL_MM) -> Limiter:
     """A limiter that is not a catalogue part: a sleeve, a bushing or a spacer pressed or slid into the clamped part
     (diameters in mm; ``outside`` is its outside where it meets the plastic). Give its wall's ``yield_pa`` for the
-    wall check; without it the wall is reported, not judged."""
+    wall check; without it the wall is reported, not judged. ``tolerance_mm`` is its length's, +0/-tol: the default
+    is an assumption, not a source, and the checks say so."""
     for nm, v in (("outside_mm", outside_mm), ("bore_mm", bore_mm), ("head_mm", head_mm),
                   ("tolerance_mm", tolerance_mm)):
         if not (isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) and v >= 0):
@@ -636,34 +687,60 @@ def own_limiter(thread: str, outside_mm: float, bore_mm: float, material: str = 
 
 
 def limiter_for(ins: Insert, material: str = "aluminium") -> Optional[Dict[str, Any]]:
-    """The catalogue limiter for an insert's thread (SPIROL CL6000 aluminium by default), at the coupon plate's
-    length: {key, length_mm, hole_mm (the CAD hole: the maker's largest)}; None where none is listed."""
+    """The catalogue limiter for an insert's thread (SPIROL CL6000 aluminium by default) and the coupon's plate for
+    it: {key, length_mm, plate_mm (the plate under the limiter's least length, so the limiter always stands proud
+    and the clamp is all metal), hole_mm (a slip fit in CAD: the knurl plus the printed hole's allowance, so no press
+    fit loads the plate)}; None where none is listed."""
     series = {"aluminium": "cl6000", "brass": "cl8000"}[material]
     key = f"spirol-{series}-{ins.thread.lower()}"
     if key not in LIMITERS:
         return None
-    return {"key": key, "length_mm": 5.0, "hole_mm": LIMITERS[key].hole_mm[1]}
+    lim = LIMITERS[key]
+    return {"key": key, "length_mm": COUPON_LIMITER_MM,
+            "plate_mm": round(COUPON_LIMITER_MM - lim.tolerance_mm - COUPON_GAP_MM - CLAMP_PLATE_TOL_MM, 3),
+            "hole_mm": round(lim.knurl_mm + CAD_ALLOWANCE_MM[1], 3)}
 
 
 # ----------------------------------------------------------------------------- the joint check
 
 LIMITS = (
-    "the strengths are a shear model calibrated to published pull-out tests of M3 x 5.7 inserts in PLA (and one in "
-    "PETG); other sizes scale by the knurl's area, which the moulded makers' tables support, and other families take "
-    "the lowest fit: a starting point to test (coupon_plan), not a rating",
+    "the strengths are a shear model calibrated to published pull-out tests of M3 x 5.7 and M6 x 12.7 inserts in "
+    "printed PLA and PETG; other sizes scale by the knurl's area, but SPIROL's M6 results sit below the M3 ones "
+    "(their c is lower), so the low end, which the checks use, comes from the larger insert; other families take the "
+    "lowest fit: a starting point to test (coupon_plan), not a rating",
     "torque-out comes from pull-out through the ratio r = 2 T / (F D) the published tests give (printed and "
     "moulded); its low end is taken",
     "push-out has no published test, and an insert lying in the layer plane has no published number: both are "
     "flagged, not modelled",
     "static, short-term, room temperature: a held load creeps; PLA inserts kept 26-55 % of their pull-out after a "
     "year of natural ageing (Materials 2025)",
-    "the boss is printed solid round the insert (the tests were); infill and perimeters change the capacity by up to "
-    "2.5 x (Kastner 2023)",
+    "the boss is printed as the tests printed it: at least 5 wall loops at 55 % infill (SPIROL), a 1.3-1.9 mm solid "
+    "sleeve in 40 % infill (Laszlo 2026), or solid (CNC Kitchen); fewer walls or sparser infill hold less (SPIROL's "
+    "Figure 8: one wall loop at 15 % infill held about a quarter of eleven; Kastner 2023: 30 to 70 % infill raised "
+    "pull-out about 2.5 x)",
     "the clamped part's face on a flush insert's end is not checked: it shares the clamp with the boss face",
     "preload relaxation: printed PLA was measured for an hour and printed joints for a week; the long-term figure is "
     "moulded polycarbonate's, and PLA, nearer its glass transition, will keep less",
     "CAD and closed forms do not prove a joint holds: print the coupons and measure",
 )
+
+
+def _lame(ratio: float) -> float:
+    """Lame's hoop stress at the bore of a thick ring, over the pressure in it: (b^2 + a^2) / (b^2 - a^2), b / a =
+    ``ratio`` (Shigley 10th ed., Section 3-14)."""
+    return (ratio ** 2 + 1.0) / (ratio ** 2 - 1.0)
+
+
+def _limiter_caps(lim: Optional["Limiter"], d: float, p: float, margin: float) -> Dict[str, float]:
+    """The most preload a limiter passes: its maker's clamp load (75 % of the proof load of the class it is rated
+    for), or its wall's yield / margin for one of your own."""
+    if lim is None:
+        return {}
+    if lim.rated_class:
+        return {"limiter_rating": SEATING_SHARE * fx.proof_load(d, p, PROOF_STRENGTH_PA[lim.rated_class])}
+    if lim.yield_pa:
+        return {"limiter_wall": lim.yield_pa / margin * math.pi / 4.0 * (lim.body_mm ** 2 - lim.bore_mm ** 2) * MM ** 2}
+    return {}
 
 
 def _band(lo: float, hi: float) -> Dict[str, float]:
@@ -699,22 +776,32 @@ def _clamp_rows(rows: List[Dict[str, Any]], thread: str, d_mm: float, p_mm: floa
 
     # the limiter
     kept = None
+    plastic_load, k_col, seated = 0.0, None, True
     if lim is not None:
         if lim.thread and lim.thread != thread:
             raise ValueError(f"limiter {lim.key} is for {lim.thread}, the screw is {thread}")
         t_nom = clamped.get("thickness_mm")
         if t_nom is None:
             raise ValueError("a limiter needs clamped={'thickness_mm': ...}: the plastic it goes through")
-        t_tol = float(clamped.get("tolerance_mm", 0.1))
+        given_tol = clamped.get("tolerance_mm")
+        t_tol = float(given_tol if given_tol is not None else PLASTIC_TOL_MM)
         L_lim = float(limiter_length_mm if limiter_length_mm is not None else t_nom)
         # length +0/-tol: centre it so the formula's symmetric tolerance spans the maker's band
         stack = fx.limiter_stack((L_lim - lim.tolerance_mm / 2) * MM, t_nom * MM, lim.tolerance_mm / 2 * MM,
                                  t_tol * MM)
         t_max, t_min = t_nom + t_tol, t_nom - t_tol
-        squeeze = max(-stack["standout"]["low"] / MM, 0.0) / t_max
+        shortfall_mm = max(-stack["standout"]["low"] / MM, 0.0)
+        A_c = math.pi / 4.0 * (lim.body_mm ** 2 - lim.bore_mm ** 2) * MM ** 2
+        d_c = preload["high"] * L_lim * MM / (A_c * lim.modulus_pa)          # SPIROL formula 2, m
+        squeeze = (shortfall_mm + d_c / MM) / t_max                           # SPIROL formula 1
         E_c = PRINTED[cmat].secant_upper_bound("across") * 1e6 if cmat != "metal" else None
-        yield_strain = PRINTED[cmat].strength("across") / PRINTED[cmat].secant_upper_bound("across") \
-            if cmat != "metal" else None
+        yield_strain = bearing_strength(cmat) / E_c if E_c is not None else None
+        tols = (f"; the limiter {L_lim:g} +0/-{lim.tolerance_mm:g} mm"
+                + (" (assumed for your own part: give its tolerance)" if lim.key == "own" and not lim.rated_class
+                   and lim.tolerance_mm == OWN_LIMITER_TOL_MM else "")
+                + f", the plastic {t_nom:g} +/- {t_tol:g} mm"
+                + (" (assumed, with no source: measure the printed part and give tolerance_mm)" if given_tol is None
+                   else ""))
         if stack["standout"]["high"] > 0:
             v = "warn"
             why = ("the limiter can stand proud of the plastic: the part may move about it (SPIROL); use one no "
@@ -722,42 +809,45 @@ def _clamp_rows(rows: List[Dict[str, Any]], thread: str, d_mm: float, p_mm: floa
         else:
             v = ("pass" if squeeze <= LIMITER_COMPRESSION[0] else "warn" if squeeze <= LIMITER_COMPRESSION[1]
                  else "fail")
-            why = f"the plastic squeezed at most {squeeze * 100:.1f} % before the head lands (SPIROL: 5 % safe, 7 % " \
-                  "safe for most plastics)"
+            why = (f"the plastic squeezed at most {squeeze * 100:.1f} % at the full preload, the limiter's own "
+                   f"{d_c / MM * 1000:.0f} um included (SPIROL formulas 1 and 2: 5 % safe, 7 % safe for most "
+                   "plastics)")
             if yield_strain is not None and squeeze > yield_strain:
                 v = "warn" if v == "pass" else v
-                why += f"; past {yield_strain * 100:.1f} %, the printed plastic's strength over its modulus: it " \
-                       "yields and relaxes"
+                why += (f"; past {yield_strain * 100:.1f} %, the printed plastic's compressive strength over its "
+                        f"modulus ({BEARING_BASIS[family(cmat)]}): it yields and relaxes")
         rows.append(_row("limiter length", round(L_lim, 3), {"plastic_min_mm": round(t_min, 3),
-                                                              "squeeze_max": LIMITER_COMPRESSION[0]}, v, why))
+                                                              "squeeze_max": LIMITER_COMPRESSION[0]}, v, why + tols))
         # the seating force: the plastic's share before the head lands on the limiter. SPIROL's formula 3 takes the
         # plastic under the head as a column; when the head overhangs the limiter by a narrow ring on thick plastic
-        # the pressure spreads and the plastic is stiffer than that, so Shigley's cone (two frusta, one from each
-        # face) gives the high end, which the verdict uses
+        # the pressure spreads and the plastic is stiffer than that. Its far face sits on a broad face (the metal it
+        # is clamped to, or the boss round an insert), so one cone runs through its whole thickness (Shigley's
+        # frustum): the high end, which the verdict uses
         head_c = max(head or 0.0, lim.head_mm) or lim.body_mm
-        plastic_load = 0.0
         seat_band = None
         if E_c is not None:
             A_p = math.pi / 4.0 * (max(head_c, lim.knurl_mm) ** 2 - lim.knurl_mm ** 2) * MM ** 2
             seat = 0.0
-            if A_p > 0 and squeeze > 0:
-                shortfall = squeeze * t_max * MM
+            if A_p > 0:
                 k_col = E_c * A_p / (t_max * MM)                        # SPIROL formula 3, elastic
-                k_cone = fx.frustum_stiffness(E_c, t_max / 2.0 * MM, head_c * MM, lim.knurl_mm * MM) / 2.0
+            if A_p > 0 and shortfall_mm > 0:
+                shortfall = shortfall_mm * MM
+                k_cone = fx.frustum_stiffness(E_c, t_max * MM, head_c * MM, lim.knurl_mm * MM)
                 k_p = max(k_col, k_cone)
                 seat_band = _band(k_col * shortfall, k_p * shortfall)
                 seat = seat_band["high"]
                 crush = bearing_strength(cmat) * A_p
                 plastic_load = fx.limiter_plastic_load(shortfall, k_p, min(preload["low"], crush))
             ring = seat / A_p if A_p > 0 else 0.0
+            seated = plastic_load < preload["low"]
             if seat < preload["low"] and seat <= SEATING_SHARE * Fp and ring <= bearing_strength(cmat) / margin:
                 v, why = "pass", "the head lands on the limiter with preload to spare"
-            elif plastic_load < preload["low"] and seat < preload["low"]:
+            elif seated and seat < preload["low"]:
                 v, why = "warn", (f"the head lands on the limiter, but the plastic round it then bears {ring / 1e6:.0f} "
                                   f"MPa, over its compressive strength / {margin:g} "
                                   f"({bearing_strength(cmat) / margin / 1e6:.0f} MPa): it creeps or crushes there. "
                                   "Make the limiter as long as the plastic, or relieve the face round it")
-            elif plastic_load < preload["low"]:
+            elif seated:
                 v, why = "warn", ("the plastic under the head crushes before the head lands: the limiter then takes "
                                   "the clamp, but the plastic is damaged")
             else:
@@ -775,9 +865,24 @@ def _clamp_rows(rows: List[Dict[str, Any]], thread: str, d_mm: float, p_mm: floa
                          "the head, washer or the limiter's own flange reaches past it onto the plastic (SPIROL)"
                          if reach else "the head or washer covers only the limiter: the plastic round it is loose; "
                                        "add a washer or use a headed limiter"))
-        # the limiter on the insert's face (it must abut it)
+        # the limiter's other end: on the insert's face (it must abut it), or on the shoulder of plastic in front of
+        # a far-side insert
         if insert is None:
             pass
+        elif insert["path"] == "seat":
+            face = insert.get("face")
+            if face is None:
+                rows.append(_row("limiter end", round(lim.body_mm, 3), None, "fail",
+                                 "the limiter is no wider than the hole in the shoulder in front of the far-side "
+                                 "insert: it has nothing to land on"))
+            else:
+                strength = bearing_strength(insert["material"])
+                sigma = preload["high"] / (face["area_mm2"] * MM ** 2)
+                v = _graded(sigma, strength / margin * (1 + 1e-9), strength)
+                rows.append(_row("limiter end", round(sigma / 1e6, 1), round(strength / margin / 1e6, 1), v,
+                                 f"the limiter lands on the shoulder of plastic in front of the far-side insert, not "
+                                 f"on its brass: the preload on that ring ({face['area_mm2']:.2f} mm^2, MPa) against "
+                                 f"its compressive strength / {margin:g}. That plastic stays in the clamp path"))
         elif not (lim.bore_mm < insert["knurl"] and insert["path"] != "jack-out"):
             rows.append(_row("limiter on insert", round(lim.bore_mm, 3), round(insert["knurl"], 3), "fail",
                              "the limiter must abut the insert, its bore smaller than the insert's face, or the screw "
@@ -785,7 +890,7 @@ def _clamp_rows(rows: List[Dict[str, Any]], thread: str, d_mm: float, p_mm: floa
         elif insert.get("face") is not None:
             face = insert["face"]
             sigma = preload["high"] / (face["area_mm2"] * MM ** 2)
-            v = _graded(sigma, BRASS_YIELD_PA[0], BRASS_YIELD_PA[1])
+            v = _graded(sigma, BRASS_YIELD_PA[0] * (1 + 1e-9), BRASS_YIELD_PA[1])
             rows.append(_row("insert face", round(sigma / 1e6, 1), round(BRASS_YIELD_PA[0] / 1e6, 1), v,
                              f"the preload on the ring of the insert's end under the limiter ({face['area_mm2']:.2f} "
                              "mm^2) against brass's yield (124-310 MPa by temper): over it the face embeds and the "
@@ -794,12 +899,12 @@ def _clamp_rows(rows: List[Dict[str, Any]], thread: str, d_mm: float, p_mm: floa
         sigma_w = fx.annulus_stress(preload["high"], lim.body_mm * MM, lim.bore_mm * MM)
         if lim.rated_class:
             rated = fx.proof_load(d, p, PROOF_STRENGTH_PA[lim.rated_class])
-            v = _graded(preload["high"], SEATING_SHARE * rated, rated)
+            v = _graded(preload["high"], SEATING_SHARE * rated * (1 + 1e-9), rated)
             rows.append(_row("limiter rating", round(preload["high"], 1), round(SEATING_SHARE * rated, 1), v,
                              f"the maker rates this series for class {lim.rated_class} (its clamp load, 75 % of "
                              f"proof); the wall carries {sigma_w / 1e6:.0f} MPa at the high preload"))
         elif lim.yield_pa:
-            v = _graded(sigma_w, lim.yield_pa / margin, lim.yield_pa)
+            v = _graded(sigma_w, lim.yield_pa / margin * (1 + 1e-9), lim.yield_pa)
             rows.append(_row("limiter wall", round(sigma_w / 1e6, 1), round(lim.yield_pa / margin / 1e6, 1), v,
                              f"the preload on the limiter's wall (MPa) against its yield / {margin:g}"))
         else:
@@ -810,7 +915,7 @@ def _clamp_rows(rows: List[Dict[str, Any]], thread: str, d_mm: float, p_mm: floa
             cad_lim_hole = float(limiter_hole_mm if limiter_hole_mm is not None else lim.hole_mm[1])
             interference = max(lim.knurl_mm - cad_lim_hole, 0.0)
             outside = clamped.get("outside_mm")
-            hub = float(outside) if outside else 10.0 * lim.knurl_mm
+            hub = float(outside) if outside else PLATE_HUB * lim.knurl_mm
             if interference > 0 and hub > lim.knurl_mm:
                 pr = fx.press_fit_pressure(interference * MM, lim.knurl_mm * MM, hub * MM,
                                            PRINTED[cmat].retention_modulus("along") * 1e6, POISSON_PLASTICS,
@@ -821,40 +926,53 @@ def _clamp_rows(rows: List[Dict[str, Any]], thread: str, d_mm: float, p_mm: floa
                 rows.append(_row("limiter press fit", round(hoop / 1e6, 2), round(strength / margin / 1e6, 2), v,
                                  f"the hoop stress (MPa) the knurl's {interference:.2f} mm interference raises in the "
                                  "printed hole, smooth-fit Lame, against the plastic's strength along the layers / "
-                                 f"{margin:g}; the knurl cuts in rather than stretching the hole, so this is high"))
+                                 f"{margin:g}; the knurl cuts in rather than stretching the hole, so this is high" +
+                                 ("" if outside else
+                                  f"; no outside_mm given, so the plastic is taken as a wide plate (a hub of "
+                                  f"{PLATE_HUB:g} x the knurl: Lame's hoop factor {_lame(PLATE_HUB):.2f}, against "
+                                  "1 for an endless plate)")))
             if outside:
                 bwall = (float(outside) - lim.knurl_mm) / 2.0
                 v = "fail" if bwall < 0.5 * d_mm else "warn" if float(outside) < 2 * lim.knurl_mm else "pass"
                 rows.append(_row("limiter boss", round(bwall, 3), round(0.5 * d_mm, 3), v,
                                  "plastic round the limiter: at least half the screw's diameter (Bulten), the boss "
                                  "about 2 x the limiter (SPIROL)"))
-    # preload kept
-    if cmat == "metal" and lim is None:
+    # preload kept: what plastic stays in the clamp path, and how much of the preload goes with it as it relaxes
+    shoulder_mat = insert.get("material") if insert is not None and insert["path"] == "seat" else None
+    relaxing = (cmat, "the clamped plastic") if lim is None and cmat != "metal" else \
+        (shoulder_mat, "the shoulder of plastic in front of the far-side insert") if shoulder_mat else None
+    lo_lt, hi_lt = LONG_TERM_REFERENCE
+    if relaxing:
+        rel = RELAXATION.get(family(relaxing[0]), {})
+        kept = {"basis": f"plastic in the clamp path ({relaxing[1]}): it relaxes", "low": lo_lt, "high": hi_lt,
+                "hours": rel.get("hours"), "joint_7d": rel.get("joint_7d")}
+        rows.append(_row("preload kept", f"{lo_lt:.2f}-{hi_lt:.2f}", "a limiter", "warn",
+                         f"{relaxing[1]} relaxes and takes the preload with it: "
+                         + (f"printed PLA kept {rel['hours'][0]:.2f}-{rel['hours'][1]:.2f} of a held stress "
+                            f"after 1 h (Liber-Knec 2025); " if rel.get("hours") else "")
+                         + (f"a printed joint kept {rel['joint_7d']:.3f} of its untightening torque after 7 days "
+                            f"(Amza 2021); " if rel.get("joint_7d") else "")
+                         + f"moulded polycarbonate keeps {lo_lt:.2f}-{hi_lt:.2f} over 1-6 years (Covestro); no "
+                           "long-term printed figure was found. A compression limiter keeps the clamp in metal"
+                         + ("" if lim is None else ", but this one lands on plastic")))
+    elif lim is None:
         kept = {"basis": "metal clamped part: no plastic in the clamp path", "low": 1.0, "high": 1.0}
     elif cmat != "metal":
-        rel = RELAXATION.get(family(cmat), {})
-        lo_lt, hi_lt = LONG_TERM_REFERENCE
-        if lim is None:
-            kept = {"basis": "plastic in the clamp path: it relaxes", "low": lo_lt, "high": hi_lt,
-                    "hours": rel.get("hours"), "joint_7d": rel.get("joint_7d")}
-            rows.append(_row("preload kept", f"{lo_lt:.2f}-{hi_lt:.2f}", "a limiter", "warn",
-                             "the clamped plastic relaxes and takes the preload with it: "
-                             + (f"printed PLA kept {rel['hours'][0]:.2f}-{rel['hours'][1]:.2f} of a held stress "
-                                f"after 1 h (Liber-Knec 2025); " if rel.get("hours") else "")
-                             + (f"a printed joint kept {rel['joint_7d']:.3f} of its untightening torque after 7 days "
-                                f"(Amza 2021); " if rel.get("joint_7d") else "")
-                             + f"moulded polycarbonate keeps {lo_lt:.2f}-{hi_lt:.2f} over 1-6 years (Covestro); no "
-                               "long-term printed figure was found. A compression limiter keeps the clamp in metal"))
-        else:
-            share = plastic_load / preload["low"] if preload["low"] > 0 else 0.0
-            k_lo_kept = fx.preload_retained_limited(plastic_load, preload["low"], lo_lt)
-            kept = {"basis": "limiter: only the plastic's share relaxes", "low": k_lo_kept, "high": 1.0,
-                    "plastic_share": share}
-            v = "pass" if k_lo_kept >= 0.9 else "warn"
-            rows.append(_row("preload kept", round(k_lo_kept, 3), 0.9, v,
-                             f"the plastic carries {share * 100:.1f} % of the preload; if it relaxes to "
-                             f"{lo_lt:.2f} (moulded PC over years, Covestro: no printed figure) the joint keeps "
-                             f"{k_lo_kept:.3f}"))
+        share = plastic_load / preload["low"] if preload["low"] > 0 else 0.0
+        # the screw at its stiffest (its plain shank over the plastic plus half a diameter, Shigley's grip into a
+        # tapped hole), the limiter if the head reached it, and the plastic beside it as a column (its softest)
+        kb = METAL_MODULUS_PA["steel"] * math.pi / 4.0 * d ** 2 / ((t_max + d_mm / 2.0) * MM)
+        kl = lim.modulus_pa * A_c / (L_lim * MM) if seated else 0.0
+        k_lo_kept = fx.preload_retained_limited(plastic_load, preload["low"], lo_lt, kb, kl, k_col or 0.0)
+        kept = {"basis": "limiter: only the plastic's share relaxes", "low": k_lo_kept, "high": 1.0,
+                "plastic_share": share}
+        v = "pass" if k_lo_kept >= 0.9 else "warn"
+        rows.append(_row("preload kept", round(k_lo_kept, 3), 0.9, v,
+                         f"the plastic carries {share * 100:.1f} % of the preload; if it relaxes to {lo_lt:.2f} "
+                         f"(moulded PC over years, Covestro: no printed figure) the joint keeps {k_lo_kept:.3f}: "
+                         f"the screw ({kb / 1e6:.0f} N/um at its stiffest) shortens against "
+                         + (f"the limiter ({kl / 1e6:.0f} N/um)" if seated else "the plastic alone (the head never "
+                            "reaches the limiter)") + " (Shigley Section 8-7)"))
 
     return kept
 
@@ -905,12 +1023,15 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
     # the hole
     cad_hole = hd["diameter_mm"] if hole_mm is None else float(hole_mm)
     knurl, _ = _knurl(ins)
-    lo, hi = ins.hole_mm - 0.1, ins.hole_mm + CAD_ALLOWANCE_MM[1]
-    v = ("pass" if lo <= cad_hole <= hi else "fail" if cad_hole >= knurl else "warn")
+    lo, hi = ins.hole_mm + CAD_ALLOWANCE_MM[0], ins.hole_mm + CAD_ALLOWANCE_MM[1]
+    # the knurl's crests bound the hole only where they were read (otherwise ``knurl`` is the maker's hole)
+    v = ("pass" if lo - 1e-9 <= cad_hole <= hi + 1e-9 else
+         "fail" if ins.outer_mm and cad_hole >= ins.outer_mm else "warn")
     rows.append(_row("hole diameter", round(cad_hole, 3), [round(lo, 3), round(hi, 3)], v,
                      "in CAD; the maker's hole plus 0.2-0.3 mm prints to size (CNC Kitchen 2026)" if v == "pass" else
                      ("no smaller than the knurl's crests will grip" if v == "fail" else
-                      ("smaller than the maker's: more plastic to push aside, and the insert may not seat" if
+                      (f"under the maker's {ins.hole_mm:g} mm plus 0.2: a printed hole comes out about 0.25 mm small "
+                       "(CNC Kitchen 2026), so the insert has more plastic to push aside and may not seat" if
                        cad_hole < lo else "larger: the knurl bites less; drilled true to size, CNC Kitchen's M3 lost "
                                           "most of its strength between 4.1 and 4.2 mm"))))
     if not through:
@@ -939,18 +1060,21 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
             raise ValueError(f"screw_depth_mm must be a depth above 0, not {screw_depth_mm!r}")
         end = max(recess_mm, 0.0) + ins.length_mm
         engaged = max(min(tip, end) - max(recess_mm, 0.0), 0.0)
-        if through:
-            v, why = "pass", "a through hole: the tip cannot bottom"
+        floor = None
+        if through or installed_from == "far side":
+            v, why = "pass", ("a through hole: the tip cannot bottom" if through else
+                              "the hole opens on the far side, where the insert went in: the tip cannot bottom")
         else:
             floor = hd["depth_mm"] if hole_depth_mm is None else float(hole_depth_mm)
             clear = floor - tip
             v = "fail" if clear <= 0 else "warn" if tip > end else "pass"
             why = (f"{clear:.2f} mm above the hole's floor" if v == "pass" else
                    f"past the insert's end by {tip - end:.2f} mm, into the room left for the melt below it, which "
-                   "may have filled it: the screw can bottom on it and jack the insert out (SPIROL)" if v == "warn"
-                   else f"{-clear:.2f} mm past the hole's floor: the screw bottoms and jacks the insert out instead of "
-                        "clamping (SPIROL). Use a shorter screw or deepen the hole")
-        rows.append(_row("screw tip", round(tip, 3), round(end if through else floor, 3), v,
+                   "may have filled it: the screw can bottom on it and jack the insert out (SPIROL's guide, p. 5)"
+                   if v == "warn" else
+                   f"{-clear:.2f} mm past the hole's floor: the screw bottoms and jacks the insert out instead of "
+                   "clamping (SPIROL's guide, p. 5). Use a shorter screw or deepen the hole")
+        rows.append(_row("screw tip", round(tip, 3), round(end if floor is None else floor, 3), v,
                          why + f"; {engaged:.2f} of the insert's {ins.length_mm:g} mm of thread engaged"))
     # the boss
     walls = []
@@ -992,13 +1116,18 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
     collar = COLLAR_ON_METAL if (lim is not None or cmat == "metal") else COLLAR_ON_PLASTIC
     Fp = fx.proof_load(d, p, PROOF_STRENGTH_PA[screw_class])
     pull_lo, torque_lo = cap["pull_out"]["low"], cap["torque_out"]["low"]
-    lt = fx.insert_limited_torque(d, p, path["path"], pull_lo, torque_lo, Fp, THREAD_FRICTION, collar, margin)
+    # a separating load the knurl can carry at all comes off what the preload may take when it jacks out; one it
+    # cannot fails the pull-out row whatever the torque
+    sep = pull_n if path["path"] == "jack-out" and pull_n < pull_lo / margin else 0.0
+    lt = fx.insert_limited_torque(d, p, path["path"], pull_lo, torque_lo, Fp, THREAD_FRICTION, collar, margin,
+                                  separating_load=sep)
     allowed, governed = lt["torque"], lt["governed_by"]
     k_lo, k_hi = lt["nut_factor"]["low"], lt["nut_factor"]["high"]
-    # what else caps the preload, each as the most preload it passes: the plastic under the head, the shoulder in
-    # front of a far-side insert, the insert's end under a limiter. Each becomes a torque ceiling at the least
-    # friction (the most preload a torque gives).
-    caps: Dict[str, float] = {}
+    # what else caps the preload, each as the most preload it passes: the screw's clamp load (75 % of its proof
+    # load), the plastic under the head, the shoulder in front of a far-side insert, the insert's thread, the
+    # limiter's end and its rating or wall. Each becomes a torque ceiling at the least friction (the most preload a
+    # torque gives), so the most to tighten to passes every row that the preload loads.
+    caps: Dict[str, float] = {"screw": SCREW_SHARE * Fp}
     head = head_mm or HEAD_BEARING_MM.get(ins.thread)
     clear = clearance_mm or CLEARANCE_MM.get(ins.thread)
     head_area = (math.pi / 4.0 * (head ** 2 - clear ** 2) * MM ** 2) if head and clear and head > clear else None
@@ -1006,8 +1135,9 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
         caps["head_bearing"] = bearing_strength(cmat) / margin * head_area
     shoulder = None
     if path["path"] == "seat":
-        shoulder = fx.insert_shear_force(knurl * MM, recess_mm * MM, cap["shear_strength_pa"], 1.0)
-        caps["shoulder"] = shoulder / margin
+        shoulder = fx.insert_shear_force(knurl * MM, recess_mm * MM, cap["shear_strength_pa"], cap["c"]["low"])
+        if shoulder / margin > pull_n:
+            caps["shoulder"] = shoulder / margin - pull_n
     # the insert's own thread: the length the screw engages (all of it unless screw_depth_mm says otherwise)
     engaged_len = ins.length_mm if engaged is None else engaged
     strip = (fx.thread_strip_force(d, p, engaged_len * MM, SHEAR_OVER_YIELD * BRASS_YIELD_PA[0], "internal")
@@ -1015,12 +1145,21 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
     if strip / margin > pull_n:
         caps["insert_thread"] = strip / margin - pull_n
     face = None
-    if lim is not None:
+    if lim is not None and path["path"] == "seat":
+        # a far-side insert: the limiter lands on the shoulder of plastic in front of it, round the shoulder's hole
+        hole_sh = clear or ins.diameter_mm
+        area = math.pi / 4.0 * (min(lim.body_mm, knurl) ** 2 - hole_sh ** 2) * MM ** 2
+        if area > 0:
+            face = {"area_mm2": area / MM ** 2, "on": "plastic",
+                    "load_pass": bearing_strength(material) / margin * area}
+            caps["limiter_end"] = face["load_pass"]
+    elif lim is not None:
         face_od = min(lim.body_mm, knurl)
         area = math.pi / 4.0 * (face_od ** 2 - lim.bore_mm ** 2) * MM ** 2
         if area > 0:
-            face = {"area_mm2": area / MM ** 2, "load_pass": BRASS_YIELD_PA[0] * area}
+            face = {"area_mm2": area / MM ** 2, "on": "brass", "load_pass": BRASS_YIELD_PA[0] * area}
             caps["insert_face"] = face["load_pass"]
+    caps.update(_limiter_caps(lim, d, p, margin))
     ceilings = dict(lt["ceilings"])
     for cap_name, F_max in caps.items():
         ceilings[cap_name] = k_lo * d * F_max
@@ -1045,7 +1184,7 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
         rows.append(_row("insert thread", 0.0, round(ins.length_mm, 3), "fail",
                          "the screw does not reach the insert's thread"))
     else:
-        v = _graded(F_t, strip / margin, strip)
+        v = _graded(F_t, strip / margin * (1 + 1e-9), strip)
         rows.append(_row("insert thread", round(F_t, 1), round(strip / margin, 1), v,
                          f"the preload and the separating load on the {engaged_len:.2f} mm of the insert's thread the "
                          "screw engages" + (" (all of it: give screw_depth_mm)" if engaged is None else "") +
@@ -1054,21 +1193,21 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
     # service loads on the knurl
     knurl_pull = pull_n + (preload["high"] if path["path"] == "jack-out" else 0.0)
     if path["path"] != "seat" and knurl_pull > 0:
-        v = _graded(knurl_pull, pull_lo / margin, pull_lo)
+        v = _graded(knurl_pull, pull_lo / margin * (1 + 1e-9), pull_lo)
         rows.append(_row("pull-out", round(knurl_pull, 1), round(pull_lo / margin, 1), v,
                          ("the separating load" + (" plus the preload (jack-out)" if path["path"] == "jack-out"
                                                    else "") +
                           f" against the low pull-out {pull_lo:.0f} N / {margin:g}")))
     if shoulder is not None:
         F_sh = preload["high"] + pull_n
-        v = _graded(F_sh, shoulder / margin, shoulder)
+        v = _graded(F_sh, shoulder / margin * (1 + 1e-9), shoulder)
         hole_sh = clear or ins.diameter_mm
         if hole_sh >= knurl:
             v = "fail"
         rows.append(_row("shoulder", round(F_sh, 1), round(shoulder / margin, 1), v,
                          f"the preload and the separating load push the insert against {recess_mm:g} mm of boss in "
-                         f"front of it: the plug it would punch out (shear on the knurl's cylinder, uncalibrated, "
-                         f"c = 1) over {margin:g}" +
+                         f"front of it: the plug it would punch out (shear on the knurl's cylinder at the family's "
+                         f"low c, {cap['c']['low']:.2f}, the same plastic sheared the same way) over {margin:g}" +
                          ("; the hole in the shoulder must be smaller than the insert" if hole_sh >= knurl else "")))
     if push_n > 0:
         v = _graded(push_n, cap["push_out"]["low"] / margin, cap["push_out"]["low"])
@@ -1083,7 +1222,7 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
 
     kept = _clamp_rows(rows, ins.thread, ins.diameter_mm, ins.pitch_mm, lim, clamped, cmat, preload, Fp, head, clear,
                        head_area, margin, limiter_length_mm, limiter_hole_mm,
-                       insert={"knurl": knurl, "path": path["path"], "face": face})
+                       insert={"knurl": knurl, "path": path["path"], "face": face, "material": material})
 
     return {"verdict": _worst(rows), "name": name or f"{ins.thread} {ins.part} in {material}",
             "insert": ins.as_dict(), "material": {"key": material, "name": PRINTED[material].name, "family": fam,
@@ -1113,7 +1252,7 @@ def _metric(thread: str) -> Tuple[float, float]:
     return dia, COARSE_PITCH_MM[dia]
 
 
-def check_clamp(thread: str, material: str, thickness_mm: float, tolerance_mm: float = 0.1,
+def check_clamp(thread: str, material: str, thickness_mm: float, tolerance_mm: Optional[float] = None,
                 outside_mm: Optional[float] = None, screw_class: str = "12.9", torque_nm: Optional[float] = None,
                 head_mm: Optional[float] = None, clearance_mm: Optional[float] = None,
                 limiter_key: Optional[str] = None, limiter: Optional[Dict[str, Any]] = None,
@@ -1124,7 +1263,8 @@ def check_clamp(thread: str, material: str, thickness_mm: float, tolerance_mm: f
     the head), the head's bearing on the plastic, a limiter's length against the plastic, its seating force, the head
     over it, its rating or wall, its press fit and boss, and the preload the joint keeps.
 
-    ``thickness_mm`` +/- ``tolerance_mm`` is the plastic in the clamp; ``outside_mm`` the plastic round a limiter.
+    ``thickness_mm`` +/- ``tolerance_mm`` is the plastic in the clamp (with none given, +/- 0.1 mm is assumed and
+    the limiter row says so); ``outside_mm`` the plastic round a limiter.
     A limiter is a catalogue key (``limiter_key``) or your own part (``limiter``: own_limiter's arguments, without
     the thread). A limiter that sits below the plastic's face is one shorter than the plastic: give its
     ``limiter_length_mm``. Lengths in mm, torques in N m."""
@@ -1135,9 +1275,11 @@ def check_clamp(thread: str, material: str, thickness_mm: float, tolerance_mm: f
     if not (isinstance(margin, (int, float)) and margin >= 1.0):
         raise ValueError(f"margin must be at least 1, not {margin!r}")
     for nm, v in (("thickness_mm", thickness_mm), ("tolerance_mm", tolerance_mm)):
+        if nm == "tolerance_mm" and v is None:
+            continue
         if not (isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) and v >= 0):
             raise ValueError(f"{nm} must be a finite size of at least 0, not {v!r}")
-    if thickness_mm <= tolerance_mm:
+    if thickness_mm <= (PLASTIC_TOL_MM if tolerance_mm is None else tolerance_mm):
         raise ValueError(f"thickness_mm ({thickness_mm!r}) must be more than its tolerance ({tolerance_mm!r})")
     if limiter_key and limiter:
         raise ValueError("give limiter_key (a catalogue limiter) or limiter (your own), not both")
@@ -1155,14 +1297,16 @@ def check_clamp(thread: str, material: str, thickness_mm: float, tolerance_mm: f
     k_lo = fx.nut_factor(d, p, THREAD_FRICTION_METAL[0], collar[0])
     k_hi = fx.nut_factor(d, p, THREAD_FRICTION_METAL[1], collar[1])
     Fp = fx.proof_load(d, p, PROOF_STRENGTH_PA[screw_class])
-    ceilings = {"screw": k_lo * d * Fp}
-    caps: Dict[str, float] = {}
+    # each cap is the most preload one limit passes, and a torque ceiling at the least friction: the screw's clamp
+    # load (75 % of its proof load), the plastic under the head, the limiter's rating or wall
+    caps: Dict[str, float] = {"screw": SCREW_SHARE * Fp}
     head = head_mm or HEAD_BEARING_MM.get(tag)
     clear = clearance_mm or CLEARANCE_MM.get(tag)
     head_area = (math.pi / 4.0 * (head ** 2 - clear ** 2) * MM ** 2) if head and clear and head > clear else None
     if lim is None and head_area:
         caps["head_bearing"] = bearing_strength(material) / margin * head_area
-        ceilings["head_bearing"] = k_lo * d * caps["head_bearing"]
+    caps.update(_limiter_caps(lim, d, p, margin))
+    ceilings = {k: k_lo * d * F for k, F in caps.items()}
     governed = min(ceilings, key=ceilings.get)
     allowed = ceilings[governed]
     T = allowed if torque_nm is None else torque_nm
@@ -1266,19 +1410,29 @@ def coupon_plan(keys: Optional[Tuple[str, ...]] = None, material: str = "pla-bam
                               "predicted": band, "unit": "N" if test == "pull" else "N m"})
             lim = limiter_for(ins)
             for limited in (False, True) if lim else (False,):
+                head = None if limited else HEAD_BEARING_MM.get(ins.thread)
                 j = check_joint(key, material, axis, boss_outside_mm=coupon_side(ins),
-                                clamped={"material": material, "thickness_mm": CLAMP_PLATE_MM,
+                                clamped={"material": material,
+                                         "thickness_mm": lim["plate_mm"] if limited else CLAMP_PLATE_MM,
                                          "tolerance_mm": CLAMP_PLATE_TOL_MM},
                                 limiter_key=lim["key"] if limited else None,
                                 limiter_length_mm=lim["length_mm"] if limited else None,
-                                head_mm=None if limited else HEAD_BEARING_MM.get(ins.thread, 2.0 * ins.diameter_mm),
-                                clearance_mm=CLEARANCE_MM.get(ins.thread))
+                                limiter_hole_mm=lim["hole_mm"] if limited else None,
+                                head_mm=head, clearance_mm=CLEARANCE_MM.get(ins.thread))
+                note = ("the limiter stands proud of the plate by design, so the clamp is all metal and the cell "
+                        "measures what a limiter keeps against the plastic cell; a catalogue limiter seated into "
+                        "printed plastic is what the seating-force row fails" if limited else
+                        "" if head else "no listed bearing diameter for this head: measure the head or washer and "
+                                        "run check_joint with head_mm before the test")
                 cells.append({"id": f"{ins.thread}x{ins.length_mm:g}-{axis}-clamp-{'limiter' if limited else 'plastic'}",
                               "insert": key, "axis": axis, "test": "clamp", "limiter": lim["key"] if limited else None,
+                              "plate_mm": lim["plate_mm"] if limited else CLAMP_PLATE_MM,
                               "count": PLAN_COUNT, "measure": MEASURE["clamp"],
                               "predicted": {"preload_kept": j["preload_kept"], "torque_nm": j["torque"]["allowed_nm"],
                                             "preload_n": j["torque"]["preload_n"]},
-                              "unit": "share of the preload kept, at the check's torque"})
+                              "check": {"verdict": j["verdict"],
+                                        "rows": {c["check"]: c["verdict"] for c in j["checks"]}},
+                              "note": note, "unit": "share of the preload kept, at the check's torque"})
     return {"material": material, "cells": cells, "record": list(RECORD),
             "coupons": "coupon_block(insert, axis) and clamp_plate(...) make the CAD; tools/insert_coupons.py exports "
                        "every coupon as STEP and STL"}

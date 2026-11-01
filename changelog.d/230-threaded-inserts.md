@@ -3,8 +3,10 @@
   screw into an insert: the makers' hole (CAD allowance included) and boss, the melt's room, the screw's tip against
   the hole's floor, where the clamp goes (through the insert, a far-side shoulder, or jack-out when the insert is
   recessed or the clamped hole is as wide as it), pull-out, torque-out and push-out from a shear model calibrated to
-  published tests (11 PLA results, one PETG), the insert's own thread, the plastic under the head, a SPIROL limiter
-  and the preload kept. It returns pass, warn or fail per row, the most to tighten to and what sets it. `check_clamp`
+  published tests (13 PLA results and three PETG, M3 and M6, SPIROL's read off its charts), the insert's own thread,
+  the plastic under the head, a SPIROL limiter and the preload kept (the screw, limiter and plastic as springs). It
+  returns pass, warn or fail per row and the most to tighten to, which passes every row the preload loads: the
+  screw at 75 % of its proof load, the limiter's rating, the insert and the plastic. `check_clamp`
   does the same for printed plastic clamped by a screw into metal or a nut, with a catalogue limiter or your own
   sleeve or spacer. `hole_design`, `boss_design`, `capacity`, `calibration`, `install_notes` and `coupon_plan` give
   the parts on their own, and every number names its document (#230).

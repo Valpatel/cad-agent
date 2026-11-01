@@ -17,7 +17,7 @@ joint.
 from __future__ import annotations
 
 import math
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from cadagent.formulas._registry import cite, formula
 from cadagent.formulas.screws import tensile_stress_area
@@ -196,18 +196,36 @@ def preload_retained(relaxation: float, stiffness_ratio: float) -> float:
 
 
 @formula(units={"plastic_load": "N (the plastic's share of the preload)", "preload": "N",
-                "relaxation": "dimensionless (0 to 1, measured)"},
+                "relaxation": "dimensionless (0 to 1, measured)",
+                "screw_stiffness": "N/m (kb; None: the bound)", "limiter_stiffness": "N/m (kl)",
+                "plastic_stiffness": "N/m (kp, as built)"},
          returns="share of the preload kept, 0 to 1",
-         limits=("the limiter and screw as rigid next to the plastic: the plastic holds its strain and relaxes to r "
-                 "of its load, the limiter keeps its own; metal settling (embedding) is not modelled",),
-         source=cite("shigley", "Section 8-7 (Tension Joints: parallel members share a fixed deflection)"))
-def preload_retained_limited(plastic_load: float, preload: float, relaxation: float) -> float:
-    """Preload kept by a joint with a compression limiter: the limiter's share stays and the plastic's relaxes, F/F0 =
-    (F0 - Fp + r Fp) / F0. With no load in the plastic (a flush or proud limiter) it is all kept."""
+         limits=("the screw in series with the limiter and the plastic side by side, at a fixed total length (the "
+                 "nut does not turn); the plastic's stiffness falls to r kp (the quasi-elastic method), the "
+                 "metals stay elastic; metal settling (embedding) is not modelled",
+                 "without the stiffnesses it returns the bound for a limiter soft next to the screw, where the screw "
+                 "loses the plastic's whole relaxed load: the cautious side"),
+         source=cite("shigley", "Section 8-7 (Tension Joints: the screw and the members as springs, parallel "
+                     "members sharing one deflection), with the plastic's modulus replaced by its relaxation modulus"))
+def preload_retained_limited(plastic_load: float, preload: float, relaxation: float,
+                             screw_stiffness: Optional[float] = None, limiter_stiffness: Optional[float] = None,
+                             plastic_stiffness: Optional[float] = None) -> float:
+    """Preload kept by a joint with a compression limiter when the plastic beside it relaxes: F/F0 = 1 - (1 - r)
+    (Fp / F0) kb / (kb + kl + r kp). With no load in the plastic (a flush or proud limiter) it is all kept; without
+    the stiffnesses kb / (kb + kl + r kp) is taken as 1, the most the screw can lose."""
     F0 = _positive("preload", preload)
     Fp = _positive("plastic_load", plastic_load, strict=False)
     if Fp > F0:
         raise ValueError(f"plastic_load cannot exceed the preload, not {plastic_load!r}")
     if not (_num(relaxation) and 0.0 <= relaxation <= 1.0):
         raise ValueError(f"relaxation must be from 0 to 1, not {relaxation!r}")
-    return (F0 - Fp + relaxation * Fp) / F0
+    given = [v is not None for v in (screw_stiffness, limiter_stiffness, plastic_stiffness)]
+    if any(given) and not all(given):
+        raise ValueError("give the screw's, the limiter's and the plastic's stiffness together, or none of them")
+    share = 1.0
+    if all(given):
+        kb = _positive("screw_stiffness", screw_stiffness)
+        kl = _positive("limiter_stiffness", limiter_stiffness, strict=False)   # 0: the head never reached it
+        kp = _positive("plastic_stiffness", plastic_stiffness, strict=False)
+        share = kb / (kb + kl + relaxation * kp)
+    return 1.0 - (1.0 - relaxation) * Fp / F0 * share

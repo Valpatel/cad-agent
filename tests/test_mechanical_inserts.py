@@ -85,15 +85,27 @@ def test_calibration_reproduces_the_published_tests():
     # Laszlo 2026, 1.28 mm wall, cross-zag: 1353.6 N -> q = 16.43 MPa; PolyLite PLA's tau 40.5 / 2 -> c = 0.8115
     assert rows["laszlo-2026-1.28-cross-zag"]["q_mpa"] == pytest.approx(1353.6 / area, abs=1e-3)
     assert rows["laszlo-2026-1.28-cross-zag"]["c"] == pytest.approx(0.8115, abs=1e-4)
-    assert cal["pull"]["pla"]["low"] == pytest.approx(1353.6 / area / 20.25, rel=1e-9)
+    # SPIROL 04/26, Figure 10 (read off the bars): INS 19 long M6 (8.76 x 12.70 mm) in printed PLA, 4380 N ->
+    # q = 12.53 MPa, c = 0.619, the lowest; CNC Kitchen 2019 the highest. PETG: SPIROL's INS 19, 3790 N -> 0.507
+    m6 = math.pi * 8.76 * 12.70
+    assert rows["spirol-3dp-pla-ins19"]["c"] == pytest.approx(0.6189, abs=1e-4)
+    assert cal["pull"]["pla"]["low"] == pytest.approx(4380.0 / m6 / 20.25, rel=1e-9)
     assert cal["pull"]["pla"]["high"] == pytest.approx(181 * 9.80665 / area / 20.25, rel=1e-9)   # CNC Kitchen 2019
-    assert cal["pull"]["petg"]["low"] == pytest.approx(119 * 9.80665 / area / 21.4, rel=1e-9)   # 0.662
-    assert cal["pull"]["pla"]["cells"] == 11 and cal["pull"]["pooled"]["low"] == cal["pull"]["petg"]["low"]
-    # torque over pull, r = 2 T / (F D): CNC Kitchen 2020 PETG 2 x 3 / (1167 N x 4.6 mm) = 1.118; SPIROL's M3 in
-    # nylon 0.874 is the lowest; PEM M8 in ABS 1.410 the highest; the 2019 bound (the screw broke first) is shown only
-    assert cal["torque_ratio"]["printed"] == [pytest.approx(1.1177, abs=1e-4)]
-    assert cal["torque_ratio"]["low"] == pytest.approx(2 * 3.0 * 1e3 / (1445.0 * 4.75), rel=1e-9)
+    assert cal["pull"]["petg"]["low"] == pytest.approx(3790.0 / m6 / 21.4, rel=1e-9)            # 0.507
+    assert rows["cnck-2020"]["c"] == pytest.approx(119 * 9.80665 / area / 21.4, abs=1e-4)       # 0.662
+    assert cal["pull"]["pla"]["cells"] == 13 and cal["pull"]["petg"]["cells"] == 3
+    assert cal["pull"]["pooled"]["low"] == cal["pull"]["petg"]["low"]
+    # the printed PC and glass-filled PA6 have no sheet in the table: they give r, not c
+    assert "c" not in rows["spirol-3dp-pa6-gf30-ins19"] and "spirol-3dp-pc-ins19" not in cal["pull"]["pooled"]["tests"]
+    # torque over pull, r = 2 T / (F D): CNC Kitchen 2020 PETG 2 x 3 / (1167 N x 4.6 mm) = 1.118; SPIROL's printed
+    # 30 % glass-filled PA6, INS 19 long M6, 2 x 17.3 / (6020 N x 8.76 mm) = 0.656 is the lowest; PEM M8 in ABS 1.410
+    # the highest; the 2019 bound (the screw broke first) is shown only
+    assert cal["torque_ratio"]["printed"][0] == pytest.approx(1.1177, abs=1e-4)
+    assert cal["torque_ratio"]["low"] == pytest.approx(2 * 17.3 * 1e3 / (6020.0 * 8.76), rel=1e-9)
     assert cal["torque_ratio"]["high"] == pytest.approx(2 * 26.0 * 1e3 / (3566.0 * 10.34), rel=1e-9)
+    # SPIROL's nylon table is read in its primary units: 325 lb and 28 in-lb for the M3 INS 19 long
+    assert rows["spirol-ins19-m3"]["pull_n"] == pytest.approx(1445.7, abs=0.1)
+    assert rows["spirol-ins19-m3"]["torque_nm"] == pytest.approx(3.164, abs=1e-3)
     assert "cnck-2019" not in cal["torque_ratio"]["tests"] and rows["cnck-2019"]["torque_at_least"]
     # the moulded tests carry no c: no printed datasheet applies to them
     assert all("c" not in r for r in cal["rows"] if not r["printed"])
@@ -106,7 +118,7 @@ def test_capacity_is_the_shear_model_with_the_fitted_band():
     tau = 0.5 * 31e6                                                       # Bambu PLA Basic, across the layers
     assert cap["shear_strength_pa"] == tau
     assert cap["pull_out"]["low"] == pytest.approx(c["low"] * tau * math.pi * 4.72e-3 * 5.7e-3, rel=1e-12)
-    assert cap["pull_out"]["low"] == pytest.approx(1063.1, abs=0.1)        # golden
+    assert cap["pull_out"]["low"] == pytest.approx(810.8, abs=0.1)         # golden: 0.6189 x 15.5 x pi 4.72 x 5.7
     r = I.calibration()["torque_ratio"]
     assert cap["torque_out"]["low"] == pytest.approx(
         fx.insert_shear_torque(4.72e-3, 5.7e-3, tau, c["low"] * r["low"]), rel=1e-12)
@@ -211,8 +223,9 @@ def test_a_far_side_insert_bears_on_its_shoulder():
     r = I.check_joint("mcmaster-94459A775", "pla-bambu-basic", installed_from="far side", recess_mm=3.0,
                       boss_outside_mm=15.0, clamped={"material": "metal"})
     assert r["clamp"]["path"] == "seat" and r["torque"]["governed_by"] == "shoulder"
-    plug = fx.insert_shear_force(7.11e-3, 3e-3, 15.5e6, 1.0)               # pi 7.11 x 3 mm x 15.5 MPa = 1038.6 N
-    assert plug == pytest.approx(1038.6, abs=0.1)
+    # the shoulder is the same plastic sheared on the knurl's cylinder, at the family's low c (0.6189)
+    plug = fx.insert_shear_force(7.11e-3, 3e-3, 15.5e6, I.calibration()["pull"]["pla"]["low"])
+    assert plug == pytest.approx(1038.6 * 0.6189, abs=0.1)                 # pi 7.11 x 3 mm x 15.5 MPa x c
     assert r["torque"]["preload_caps_n"]["shoulder"] == pytest.approx(plug / 2)
     assert _rows(r)["shoulder"]["verdict"] == "pass"
 
@@ -313,7 +326,7 @@ def test_check_clamp_takes_your_own_limiter_and_the_cone_sets_its_seating_force(
     rows = _rows(sunk)
     # 40.1 mm of plastic at most, the sleeve 39.8 +0/-0.05: the head squeezes the plastic 0.35 mm before it lands
     E = I.PRINTED["pa6-cf20-polymaker-wet"].secant_upper_bound("across") * 1e6
-    cone = fx.frustum_stiffness(E, 40.1 / 2 * MM, 20.0 * MM, 18.0 * MM) / 2
+    cone = fx.frustum_stiffness(E, 40.1 * MM, 20.0 * MM, 18.0 * MM)      # one cone: the far face on metal
     column = E * math.pi / 4 * (20.0 ** 2 - 18.0 ** 2) * MM ** 2 / (40.1 * MM)
     assert cone > 4 * column                                              # a narrow ring on thick plastic
     assert rows["seating force"]["value"] == pytest.approx(cone * 0.35 * MM, abs=0.05)
@@ -393,10 +406,109 @@ def test_cli_checks_a_spec_file_and_exits_1_only_on_a_fail(tmp_path):
     assert subprocess.run(run, capture_output=True, text=True, env={**os.environ, **env}).returncode == 2
 
 
+# every row the preload loads must pass at the torque the check recommends: each one is a torque ceiling
+
+LOADED = ("tightening torque", "insert thread", "pull-out", "shoulder", "head bearing", "insert face", "limiter end",
+          "limiter rating", "limiter wall")
+
+
+def _loaded_rows_pass(r):
+    bad = {c["check"]: (c["verdict"], c["detail"][:120]) for c in r["checks"]
+           if c["check"] in LOADED and c["verdict"] != "pass" and c["value"] is not None}     # not "not checked"
+    assert not bad, (r["name"], r["torque"]["governed_by"], bad)
+
+
+@pytest.mark.parametrize("key", sorted(I.INSERTS))
+@pytest.mark.parametrize("material", ["pla-bambu-basic", "petg-bambu-basic", "copa-polymaker-wet"])
+def test_the_recommended_torque_passes_every_row_it_loads_into_an_insert(key, material):
+    ins = I.insert(key)
+    lim = I.limiter_for(ins)
+    cap = I.capacity(ins, material)
+    pull = 0.3 * cap["pull_out"]["low"] / I.MARGIN
+    # a separating load the 2 mm shoulder in front of a far-side insert can carry on its own
+    plug = fx.insert_shear_force(I._knurl(ins)[0] * MM, 2.0 * MM, cap["shear_strength_pa"], cap["c"]["low"])
+    joints = [dict(clamped={"material": "metal"}), dict(clamped={"thickness_mm": 4.0}),
+              dict(recess_mm=0.2, clamped={"material": "metal"}, pull_n=pull),
+              dict(installed_from="far side", recess_mm=2.0, clamped={"material": "metal"},
+                   pull_n=0.3 * plug / I.MARGIN),
+              dict(clamped={"material": "metal"}, pull_n=pull, screw_class="8.8")]
+    if lim:
+        joints += [dict(limiter_key=lim["key"], limiter_length_mm=5.0, clamped={"thickness_mm": 5.0}, pull_n=pull),
+                   dict(limiter_key=lim["key"].replace("cl6000", "cl8000"), limiter_length_mm=5.0,
+                        clamped={"thickness_mm": 5.0}, installed_from="far side", recess_mm=2.0)]
+    for j in joints:
+        _loaded_rows_pass(I.check_joint(key, material, boss_outside_mm=4 * ins.diameter_mm + 4, **j))
+
+
+@pytest.mark.parametrize("thread", ["M3", "M4", "M5", "M6", "M8"])
+@pytest.mark.parametrize("screw_class", ["8.8", "10.9", "12.9"])
+def test_the_recommended_torque_passes_every_row_it_loads_clamping_plastic(thread, screw_class):
+    d = float(thread[1:])
+    for lim in ({}, {"limiter_key": f"spirol-cl6000-{thread.lower()}"}, {"limiter_key": f"spirol-cl8000-{thread.lower()}"},
+                {"limiter": {"outside_mm": 2.0 * d, "bore_mm": d + 0.4, "yield_pa": 300e6}}):
+        r = I.check_clamp(thread, "petg-bambu-basic", 6.0, head_mm=2.0 * d + 2.0, clearance_mm=d + 0.5,
+                          screw_class=screw_class, limiter_length_mm=6.0 if lim else None, **lim)
+        _loaded_rows_pass(r)
+        assert r["torque"]["preload_caps_n"]["screw"] == pytest.approx(0.75 * r["proof_load_n"])
+
+
+def test_a_catalogue_limiter_caps_the_preload_at_its_rating():
+    # SPIROL rates CL6000 for class 10.9: at most 75 % of a 10.9 screw's proof load, whatever class goes through it
+    r = I.check_clamp("M5", "petg-polymaker", 5.0, tolerance_mm=0.05, outside_mm=18.0,
+                      limiter_key="spirol-cl6000-m5", limiter_length_mm=5.0)
+    rated = 0.75 * fx.proof_load(5e-3, 0.8e-3, 830e6)
+    assert r["torque"]["governed_by"] == "limiter_rating"
+    assert r["torque"]["preload_caps_n"]["limiter_rating"] == pytest.approx(rated, rel=1e-12)
+    assert _rows(r)["limiter rating"]["verdict"] == "pass"
+
+
+def test_a_far_side_insert_has_no_floor_in_front_of_the_screw_and_its_limiter_lands_on_plastic():
+    base = dict(insert="mcmaster-94459A775", material="pla-bambu-basic", installed_from="far side", recess_mm=3.0,
+                boss_outside_mm=15.0)
+    tip = _rows(I.check_joint(**base, clamped={"material": "metal"}, screw_depth_mm=8.0))["screw tip"]
+    assert tip["verdict"] == "pass" and "far side" in tip["detail"]
+    r = I.check_joint(**base, limiter_key="spirol-cl6000-m5", limiter_length_mm=5.0, clamped={"thickness_mm": 5.0})
+    rows = _rows(r)
+    assert "limiter on insert" not in rows and "insert face" not in rows
+    assert rows["limiter end"]["verdict"] == "pass" and "limiter_end" in r["torque"]["preload_caps_n"]
+    # the shoulder's plastic stays in the clamp path, so the joint relaxes as one with no limiter
+    assert rows["preload kept"]["verdict"] == "warn" and "shoulder" in rows["preload kept"]["detail"]
+
+
+def test_the_hole_band_is_the_makers_plus_the_printed_allowance():
+    base = dict(insert="mcmaster-94459A140", material="pla-bambu-basic", boss_outside_mm=9.5,
+                clamped={"material": "metal"})
+    assert _rows(I.check_joint(**base, hole_mm=4.25))["hole diameter"]["verdict"] == "pass"
+    at_maker = _rows(I.check_joint(**base, hole_mm=4.0))["hole diameter"]
+    assert at_maker["verdict"] == "warn" and "0.25 mm small" in at_maker["detail"]
+    assert at_maker["limit"] == [4.2, 4.3]
+
+
+def test_the_squeeze_counts_the_limiters_own_deflection_and_states_assumed_tolerances():
+    r = I.check_clamp("M5", "petg-bambu-basic", 6.2, outside_mm=18.0, limiter_key="spirol-cl6000-m5",
+                      limiter_length_mm=6.0)
+    detail = _rows(r)["limiter length"]["detail"]
+    assert "um included" in detail and "assumed, with no source" in detail
+    lim = I.limiter("spirol-cl6000-m5")
+    d_c = r["torque"]["preload_n"]["high"] * 6.0e-3 / (math.pi / 4 * (lim.body_mm ** 2 - lim.bore_mm ** 2) * MM ** 2
+                                                       * lim.modulus_pa)
+    squeeze = (6.3 - (6.0 - 0.15) + d_c / MM) / 6.3                   # SPIROL formulas 1 and 2
+    assert f"{squeeze * 100:.1f} %" in detail
+    # the strain at which printed PETG reaches its measured compressive strength, not its tensile
+    E = I.PRINTED["petg-bambu-basic"].secant_upper_bound("across") * 1e6
+    assert f"{65.94e6 / E * 100:.1f} %" in detail
+
+
 # ----------------------------------------------------------------------------- the coupons
 
 def test_coupon_plan_covers_every_insert_both_axes_and_both_clamps():
     plan = I.coupon_plan()
+    # no clamp cell tests a joint the check fails; a limiter cell's limiter stands proud, so it keeps the preload
+    for c in plan["cells"]:
+        if c["test"] == "clamp":
+            assert c["check"]["verdict"] != "fail", c["id"]
+            if c["limiter"]:
+                assert c["predicted"]["preload_kept"]["low"] == 1.0 and c["plate_mm"] < 4.85, c["id"]
     ids = [c["id"] for c in plan["cells"]]
     assert len(ids) == len(set(ids))
     for key, ins in I.INSERTS.items():

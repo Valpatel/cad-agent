@@ -278,7 +278,7 @@ def figure_limiters() -> str:
 # a marker shape per host as well, and each series labelled where it sits, so colour never carries it alone.
 HOSTS = (("pla", True, "printed PLA", "circle"), ("petg", True, "printed PETG", "square"),
          ("nylon", False, "moulded nylon 6/6 (SPIROL)", "diamond"), ("abs", False, "moulded ABS (PEM)", "triangle"),
-         ("pc", False, "moulded polycarbonate (PEM)", "cross"))
+         ("pc", False, "moulded, extruded PC", "cross"))
 SERIES = S.Theme(light={**THEME.light, "s1": "#2a78d6", "s2": "#eb6834", "s3": "#1baf7a", "s4": "#eda100",
                         "s5": "#e87ba4"},
                  dark={**THEME.dark, "s1": "#3987e5", "s2": "#d95926", "s3": "#199e70", "s4": "#c98500",
@@ -328,7 +328,7 @@ def figure_calibration() -> str:
                      f"fit: c {pla['low']:.2f}-{pla['high']:.2f} × τ {tau:.2f} MPa (PolyLite PLA)", "small", "end"))
     q_check = pla["low"] * I.shear_strength("pla-bambu-basic") / 1e6
     body += [line(x0, Y(q_check), x1, Y(q_check), "check"),
-             text(x1 - 6, Y(q_check) + 16, f"the check in Bambu PLA Basic: {q_check:.1f} MPa", "small", "end")]
+             text(X(4.9), Y(q_check) - 6, f"the check in Bambu PLA Basic: {q_check:.1f} MPa", "small")]
     rows = {r["key"]: r for r in cal["rows"]}
     for i, (fam, printed, label, shape) in enumerate(HOSTS):
         pts = [(t.outer_mm, rows[t.key]["q_mpa"]) for t in I.TESTS if t.family == fam and t.printed == printed]
@@ -343,12 +343,15 @@ def figure_calibration() -> str:
         k = sum(1 for t in I.TESTS if t.family == fam and t.printed == printed)
         body += [marker(shape, 640, ly, f"s{i + 1}"), text(656, ly + 4, f"{label} ({k})", "small")]
         ly += 24
-    body.append(text(640, ly + 14, "printed: Laszlo 2026, CNC Kitchen", "small"))
-    body.append(text(640, ly + 30, "moulded: SPIROL 05/26, PEM SI", "small"))
+    body.append(text(640, ly + 14, "printed: Laszlo 2026, CNC Kitchen,", "small"))
+    body.append(text(640, ly + 30, "SPIROL 04/26 (M6, chart)", "small"))
+    body.append(text(640, ly + 46, "moulded: SPIROL, PEM SI", "small"))
+    q_pla = {t.key: rows[t.key]["q_mpa"] for t in I.TESTS if t.family == "pla" and t.printed}
+    m3 = [q for k, q in q_pla.items() if I.TESTS[[t.key for t in I.TESTS].index(k)].outer_mm < 5]
+    m6 = [q for k, q in q_pla.items() if I.TESTS[[t.key for t in I.TESTS].index(k)].outer_mm > 8]
     title = (f"Published heat-set insert pull-out tests as shear stress on the knurl's cylinder against insert size: "
-             f"printed PLA {min(rows[t.key]['q_mpa'] for t in I.TESTS if t.family == 'pla'):.1f}-"
-             f"{max(rows[t.key]['q_mpa'] for t in I.TESTS if t.family == 'pla'):.1f} MPa, moulded hosts level across "
-             f"M3 to M8 within their spread; the check holds Bambu PLA Basic to {q_check:.1f} MPa")
+             f"printed PLA {min(m3):.1f}-{max(m3):.1f} MPa at M3 and {min(m6):.1f}-{max(m6):.1f} MPa at M6, so the "
+             f"larger insert sits lower; the check holds Bambu PLA Basic to {q_check:.1f} MPa")
     return S.document(W, H, title, title, css, body, SERIES)
 
 

@@ -115,6 +115,27 @@ def test_a_limiter_keeps_its_own_share_and_the_plastic_relaxes():
     assert fx.preload_retained_limited(1000.0, 3000.0, 0.4) == pytest.approx((2000 + 400) / 3000)
     with pytest.raises(ValueError):
         fx.preload_retained_limited(4000.0, 3000.0, 0.4)
+    with pytest.raises(ValueError):
+        fx.preload_retained_limited(1000.0, 3000.0, 0.4, screw_stiffness=1e8)    # all three stiffnesses or none
+
+
+def test_the_screw_limiter_and_plastic_solved_as_three_springs():
+    # an independent solve: the screw (kb) in series with the limiter (kl) and the plastic (kp) side by side; the
+    # plastic was squeezed s before the head landed. Fix the total length, drop the plastic to r kp, solve again.
+    kb, kl, kp, r, s = 1.2e8, 9.0e8, 2.0e7, 0.59, 0.05e-3
+    F0 = 6000.0
+    # before: F0 = kl x + kp (s + x), so x (the shared squeeze after landing) = (F0 - kp s) / (kl + kp)
+    x = (F0 - kp * s) / (kl + kp)
+    Fpl = kp * (s + x)
+    total = F0 / kb + x                                     # screw stretch plus the members' squeeze
+    # after: kb (total - x') = kl x' + r kp (s + x')
+    x2 = (kb * total - r * kp * s) / (kb + kl + r * kp)
+    F1 = kb * (total - x2)
+    assert fx.preload_retained_limited(Fpl, F0, r, kb, kl, kp) == pytest.approx(F1 / F0, rel=1e-12)
+    # the bound without the stiffnesses loses more; a head that never landed (kl = 0) is the plain two-spring case
+    assert fx.preload_retained_limited(Fpl, F0, r) < F1 / F0
+    assert fx.preload_retained_limited(F0, F0, r, kb, 0.0, kp) == pytest.approx(fx.preload_retained(r, kp / kb),
+                                                                                rel=1e-12)
 
 
 # ----------------------------------------------------------------------------- the insert
@@ -203,6 +224,19 @@ def test_jack_out_takes_the_preload_and_the_thread_torque_together():
     assert T < seated["torque"]
     # a weak screw governs
     assert fx.insert_limited_torque(d, p, "seat", Fout, 50.0, 10.0)["governed_by"] == "screw"
+
+
+
+def test_jack_out_leaves_room_for_the_separating_load():
+    d, p, Fout, Tout, sep = 3 * MM, 0.5 * MM, 800.0, 0.5, 150.0
+    Fp = fx.proof_load(d, p, 970e6)
+    r = fx.insert_limited_torque(d, p, "jack-out", Fout, Tout, Fp, (0.15, 0.25), (0.15, 0.25), separating_load=sep)
+    T, k_lo = r["torque"], r["nut_factor"]["low"]
+    # the preload, the separating load and the thread torque together sit exactly on 1 / margin
+    assert (T / (k_lo * d) + sep) / Fout + T * r["thread_share"] / Tout == pytest.approx(0.5, rel=1e-12)
+    assert T < fx.insert_limited_torque(d, p, "jack-out", Fout, Tout, Fp, (0.15, 0.25), (0.15, 0.25))["torque"]
+    with pytest.raises(ValueError):                         # no torque leaves room for it
+        fx.insert_limited_torque(d, p, "jack-out", Fout, Tout, Fp, separating_load=400.0)
 
 
 @pytest.mark.parametrize("bad", [dict(path="sideways"), dict(pull_out=0.0), dict(margin=0.5),

@@ -63,5 +63,15 @@ def test_the_pages_numbers_are_what_the_module_computes():
     assert f"The ring then bears {ring} MPa" in page
     cal = I.calibration()
     pla, petg, r = cal["pull"]["pla"], cal["pull"]["petg"], cal["torque_ratio"]
-    assert f"c from {pla['low']:.2f} to {pla['high']:.2f}" in page and f"c {petg['low']:.2f}" in page
+    assert f"c from {pla['low']:.2f} to {pla['high']:.2f}" in page
+    assert f"c from {petg['low']:.2f} to {petg['high']:.2f}" in page and f"{pla['cells']} results" in page
     assert f"r from {r['low']:.2f}" in page and f"to {r['high']:.2f}" in page and f"gives {r['printed'][0]:.2f}" in page
+    # the strain at which printed PETG Basic and PLA Basic reach their measured compressive strength
+    for mat in ("petg-bambu-basic", "pla-bambu-basic"):
+        strain = I.bearing_strength(mat) / (I.PRINTED[mat].secant_upper_bound("across") * 1e6)
+        assert f"**{strain * 100:.1f} %**" in page
+    # the alt text of each figure is its title
+    for name in ("section", "clamp-paths", "limiters", "calibration", "coupons"):
+        svg = (ROOT / "docs" / "img" / "inserts" / f"{name}.svg").read_text()
+        title = re.search(r"<title[^>]*>([^<]*)", svg)[1]
+        assert f'alt="{title}"' in page, name

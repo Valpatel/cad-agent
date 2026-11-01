@@ -30,6 +30,7 @@ SOURCES: Dict[str, str] = {
     "covestro-joining": "Covestro LLC, Engineering Polymers: Joining Techniques - A Design Guide (PDF of 2015-10-30)",
     "bulten": "Bulten AB, DELTA PT: a superior thread-former for plastics, brochure version 250422 (2025-04-22), made "
               "under licence from EJOT",
+    "spirol-inserts": "SPIROL International, Inserts for Plastics Design Guide, edition 05/26 (2026-05)",
 }
 
 

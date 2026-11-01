@@ -1,11 +1,13 @@
 /** The catalogue (/catalog) in a real browser (PLAYWRIGHT_BROWSER=webkit for WebKit), served the way Cloudflare Pages
  * serves it (pretty URLs, the _headers CSP). Fails on console errors or CSP violations, outside requests, layout shift
  * while loading, entries hidden without script, tabs, filters, sorting or the URL state not agreeing with each other,
- * old /catalog#anchors that no longer land, a phone page over its height budget or not in two columns, a filter sheet
- * that traps or loses focus, and covers that move under prefers-reduced-motion. */
+ * old /catalog#anchors that no longer land (or that Back cannot return to), a shared view that opens on the hero, counts
+ * that disagree with catalog/index.json, markup from the URL, a page that hides entries when gallery.js fails, a cover
+ * shown twice in the overview, a phone page over its height budget, not in two columns or with pills under 11px, a
+ * filter sheet that traps or loses focus, and covers that move under prefers-reduced-motion. */
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { chromium, webkit } from '@playwright/test';
@@ -25,23 +27,45 @@ const PHONE_BUDGET = 14000;
 const problems = [];
 const fail = (where, what) => problems.push(`${where}: ${what}`);
 
-async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference' } = {}) {
+async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, javaScriptEnabled: js, reducedMotion: motion });
   const page = await context.newPage();
   const seen = [];
-  page.on('console', m => { if (m.type() === 'error' && !/status of 404/.test(m.text())) seen.push(`console: ${m.text()}`); });
+  if (block) await page.route(`**${block}`, r => r.abort());
+  page.on('console', m => { if (m.type() === 'error' && !/status of 404/.test(m.text()) && !(block && /gallery\.js|Failed to load|load failed|importing a module/i.test(m.text()))) seen.push(`console: ${m.text()}`); });
   page.on('pageerror', e => seen.push(`page error: ${e.message}`));
-  page.on('requestfailed', r => { if (!/ERR_ABORTED|cancelled/i.test(r.failure()?.errorText || '')) seen.push(`failed: ${r.url()}`); });
+  page.on('requestfailed', r => { if (!/ERR_ABORTED|cancelled/i.test(r.failure()?.errorText || '') && !(block && r.url().endsWith(block))) seen.push(`failed: ${r.url()}`); });
   page.on('response', r => { if (r.status() >= 400) seen.push(`HTTP ${r.status()}: ${r.url()}`); });
   page.on('request', r => { if (!r.url().startsWith(base) && !/^(data|blob):/.test(r.url())) seen.push(`third party: ${r.url()}`); });
   if (js) await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
   await page.goto(base + route, { waitUntil: 'networkidle' });
-  if (js) await page.waitForSelector('cad-gallery[data-ready]', { timeout: 10000 }).catch(() => seen.push('the gallery did not start'));
+  if (js && !block) await page.waitForSelector('cad-gallery[data-ready]', { timeout: 10000 }).catch(() => seen.push('the gallery did not start'));
   const done = async () => { for (const s of seen) fail(`${route} @${width}${js ? '' : ' no-JS'}`, s); await context.close(); };
   return { page, done };
 }
 const visible = (page, sel = '[data-item]') => page.$$eval(sel, els => els.filter(e => e.checkVisibility()).map(e => e.id));
 const query = page => new URL(page.url()).search;
+
+// Every count on the page (area tree, domains, tabs) against catalog/index.json, with no filters on.
+const index = JSON.parse(await readFile(path.join(dir, 'catalog/index.json'), 'utf8'));
+const indexCount = new Map([['', index.count], ...index.domains.map(d => [d.slug, d.count]),
+  ...index.domains.flatMap(d => d.areas.map(a => [a.slug, a.count])), ...index.buckets.map(b => [b.slug, b.count])]);
+async function countsMatchIndex(page, where) {
+  const links = await page.$$eval('.area-tree .area-link', as => as.map(a => [a.dataset.value, a.querySelector('[data-count]')?.textContent.trim()]));
+  const domains = await page.$$eval('.area-tree [data-count-of]', els => els.map(e => [e.dataset.countOf.replace(/^area:/, ''), e.textContent.trim()]));
+  if (links.length < index.domains.length + 20) fail(where, `only ${links.length} area links in the tree`);
+  for (const [slug, n] of [...links, ...domains]) if (Number(n) !== indexCount.get(slug)) fail(where, `area ${slug || '(all)'} says ${n}, index.json ${indexCount.get(slug)}`);
+  const tabs = await page.$$eval('[data-gallery-tabs] [data-tab]', ts => ts.map(t => [t.dataset.tab, t.querySelector('[data-count]')?.textContent.trim()]));
+  for (const [tab, n] of tabs) {
+    const want = tab ? index.kinds.find(k => k.tab === tab)?.count : index.count;
+    if (Number(n) !== want) fail(where, `tab ${tab || 'All'} says ${n}, index.json ${want}`);
+  }
+}
+// The first thing a shared view is about (the area's panel, else the first entry): its top, in px from the window's.
+const firstResultTop = page => page.evaluate(() => {
+  const el = [...document.querySelectorAll('[data-gallery-when]:not([hidden]), [data-item]')].find(e => e.checkVisibility());
+  return el ? Math.round(el.getBoundingClientRect().top) : null;
+});
 
 try {
   // Without script: every entry shows, grouped by kind, and nothing that needs script is offered.
@@ -52,6 +76,19 @@ try {
     if (shown.length !== total) fail('no-JS', `${shown.length} of ${total} entries visible`);
     if (await page.locator('.cat-search').isVisible()) fail('no-JS', 'the search box shows but cannot work');
     if (!(await page.locator('#tools').isVisible())) fail('no-JS', 'the Tools group is not visible');
+    await countsMatchIndex(page, 'no-JS');
+    await done();
+  }
+
+  // gallery.js blocked (a script error or a bad kit deploy): like no script, every entry shows and no dead controls.
+  {
+    const { page, done } = await open('/catalog', { block: '/kit/gallery.js' });
+    await page.waitForSelector('cad-gallery[data-failed]', { timeout: 10000 }).catch(() => fail('gallery.js blocked', 'the page did not mark data-failed'));
+    const total = await page.locator('[data-item]').count();
+    const shown = await visible(page);
+    if (shown.length !== total) fail('gallery.js blocked', `${shown.length} of ${total} entries visible`);
+    for (const sel of ['.cat-search', '#sort', '[data-gallery-more]']) if (await page.locator(sel).first().isVisible()) fail('gallery.js blocked', `${sel} shows but cannot work`);
+    if (!(await page.locator('.play').isVisible())) fail('gallery.js blocked', 'the "Play with it" strip is gone');
     await done();
   }
 
@@ -73,6 +110,15 @@ try {
     if ((await page.getAttribute('[data-gallery-tabs]', 'role')) !== 'tablist') fail('/catalog', 'tabs are not a tablist');
     const all = page.locator('[data-gallery-tabs] [data-tab=""]');
     if ((await all.getAttribute('aria-selected')) !== 'true') fail('/catalog', '"All" is not the selected tab');
+    await countsMatchIndex(page, '/catalog');
+    // No picture twice in the overview (the strip and the first cards of each group).
+    const covers = await page.$$eval('.play img, [data-item] .card-cover img', imgs => imgs.filter(i => i.checkVisibility()).map(i => i.dataset.still || i.getAttribute('src')));
+    const twice = covers.filter((c, i) => covers.indexOf(c) !== i);
+    if (twice.length) fail('/catalog', `covers shown twice in the overview: ${[...new Set(twice)]}`);
+    if (covers.length < 40) fail('/catalog', `only ${covers.length} covers in the overview`);
+    // Covers keep 4:3, whatever the picture.
+    const ratios = await page.$$eval('[data-item] .card-cover', els => els.filter(e => e.checkVisibility()).map(e => [e.closest('[data-item]').id, e.getBoundingClientRect().height / e.getBoundingClientRect().width]));
+    for (const [id, r] of ratios) if (Math.abs(r - 0.75) > 0.02) fail('/catalog', `${id}: cover is ${r.toFixed(3)} tall for its width (4:3 is 0.75)`);
 
     // A tab: the URL says it, only its group shows, all of it; arrow keys move between tabs.
     await page.click('[data-gallery-tabs] [data-tab="tools"]');
@@ -128,6 +174,40 @@ try {
     await bad.done();
   }
 
+  // A shared view opens on what was shared, not on the hero, on a desktop and on a phone.
+  for (const [width, height] of [[1366, 900], [390, 844]]) {
+    for (const route of ['/catalog?area=compliant-mechanisms', '/catalog?kind=tools', '/catalog?q=kicad']) {
+      const { page, done } = await open(route, { width, height });
+      await page.waitForTimeout(300);
+      const top = await firstResultTop(page);
+      if (top == null || top < 0 || top > height * 0.6) fail(`${route} @${width}`, `the first result is at ${top}px (window ${height}px)`);
+      await done();
+    }
+  }
+
+  // An area with nothing in it yet says so.
+  {
+    const empty = index.domains.flatMap(d => d.areas).find(a => a.count === 0);
+    if (empty) {
+      const { page, done } = await open(`/catalog?area=${empty.slug}`);
+      if (!(await page.locator('[data-gallery-empty-scope]').isVisible())) fail('empty area', `${empty.slug}: no "nothing here yet" message`);
+      else if (!(await page.textContent('[data-gallery-empty-scope]')).includes(empty.title)) fail('empty area', 'the message does not name the area');
+      if (await page.locator('[data-gallery-empty]').isVisible()) fail('empty area', 'it also says no entries match the filters');
+      await done();
+    }
+  }
+
+  // Markup in the URL stays text: the search chip is plain text, and nothing from it reaches the page as elements.
+  {
+    const hostile = '<b>x</b><img src=x>';
+    const { page, done } = await open(`/catalog?q=${encodeURIComponent(hostile)}`);
+    const chips = await page.$$eval('[data-gallery-chips] > *', cs => cs.map(c => [c.children.length, c.textContent]));
+    if (!chips.some(([, t]) => t.includes(hostile))) fail('?q=', `no chip shows the words as typed (${JSON.stringify(chips)})`);
+    if (chips.some(([n]) => n)) fail('?q=', 'a chip has child elements (markup from the URL)');
+    if (await page.locator('img[src="x"], cad-gallery b:text-is("x")').count()) fail('?q=', 'markup from the URL is on the page');
+    await done();
+  }
+
   // Old anchors land on their group, and an entry's id lands on that entry.
   for (const [hash, group] of [['tool', 'tools'], ['upstream', 'projects'], ['lessons', 'lessons'], ['tool-snapfit', 'tools']]) {
     const { page, done } = await open(`/catalog#${hash}`);
@@ -137,6 +217,18 @@ try {
     const box = await page.locator(`#${group}`).boundingBox();
     if (!box || box.y > 900 || box.y + box.height < 0) fail(`#${hash}`, `group ${group} is out of view (y=${box?.y})`);
     if (hash.includes('-') && !(await target.isVisible())) fail(`#${hash}`, 'the entry is hidden');
+    await done();
+  }
+
+  // An old anchor's tab is in the history: choose another tab, then Back returns to it.
+  {
+    const { page, done } = await open('/catalog#tool');
+    if (!/^\?kind=tools$/.test(query(page)) || !page.url().endsWith('#tool')) fail('#tool', `URL after landing: ${page.url().slice(base.length)}`);
+    await page.click('[data-gallery-tabs] [data-tab="projects"]');
+    await page.goBack();
+    await page.waitForFunction(() => location.search === '?kind=tools');
+    const sel = await page.getAttribute('[data-gallery-tabs] [aria-selected="true"]', 'data-tab');
+    if (sel !== 'tools') fail('#tool', `Back shows the ${sel || 'All'} tab, not Tools`);
     await done();
   }
 
@@ -158,6 +250,12 @@ try {
     if (await page.locator('[data-gallery-sheet] .area-tree').isVisible()) fail('phone', 'Escape did not close the sheet');
     if (!(await page.evaluate(() => document.activeElement.matches('[data-gallery-sheet-open]')))) fail('phone', 'focus did not return to the button');
     if (await page.evaluate(() => !!document.querySelector('[inert]'))) fail('phone', 'something stayed inert');
+    // Pills readable (11px or more), the sort named, the mode pill as wide as its word.
+    const small = await page.$$eval('.cat-card .pill, .play-text .pill', ps => ps.filter(p => p.checkVisibility()).map(p => parseFloat(getComputedStyle(p).fontSize)).filter(s => s < 11));
+    if (small.length) fail('phone', `${small.length} pills under 11px (${[...new Set(small)]})`);
+    if (!(await page.getByRole('combobox', { name: 'Sort' }).count())) fail('phone', 'the sort has no accessible name');
+    const stretch = await page.$$eval('.play-text', ts => ts.map(t => t.querySelector('.pill').getBoundingClientRect().width / t.getBoundingClientRect().width));
+    if (stretch.some(r => r > 0.7)) fail('phone', `a mode pill spans ${Math.round(Math.max(...stretch) * 100)}% of its tile`);
     // Tap targets in the toolbar.
     for (const sel of ['[data-gallery-sheet-open]', '#sort']) {
       const b = await page.locator(sel).boundingBox();

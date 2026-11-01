@@ -42,3 +42,45 @@ docs/gates.md:
       tool: cadagent.gates.connectivity
       caption: What touches what in the gate bench, from the connectivity gate's verdict. Fasteners are ovals, the dashed boxes are balls allowed to sit free in the hopper, and the arm is its own body on a joint (blue dashed). 31 checks pass.
       alt: A graph of the gate bench's parts linked by contacts and fasteners, grouped into the static frame and the arm's body
+
+# The gate bench's review site, from tools/site-bench-pictures.mjs (see docs/gates.md above).
+docs/dossier.md:
+  figures:
+    - after: schema
+      img: docs/img/gates/bench-requirements.webp
+      tool: cad-agent site
+      caption: The gate bench's requirements on its review site. Each is traced to the sections that carry it and the gate check that verifies it. All three are verified by analysis.
+      alt: The review site's requirements table for the gate bench, three requirements marked verified, each with its traced sections, its verifying gate check and its source
+    - after: the-status-machine
+      img: docs/img/gates/bench-section.webp
+      tool: cad-agent site
+      caption: The arm section of the gate bench on its review site. It is gated but not reviewed, and the page says why it is not higher (no reviewer record for its four parts). Below are its requirement, its interfaces and its decision.
+      alt: The review page of the arm section, with its purpose, status chips from draft to signed off with gated marked, the reasons it is not higher, its requirement, its interfaces and its decision
+    - after: lint-and-status
+      img: docs/img/gates/bench-review.webp
+      tool: cad-agent gates
+      caption: The dossier lint runs beside the gates and shows on the same review page. On the gate bench it reports no errors and no warnings.
+      alt: The gates page of the review site, the dossier-lint row last with no errors and no warnings
+
+docs/design-process-plan.md:
+  figures:
+    - after: 35-rendering-on-the-review-site
+      img: docs/img/gates/bench-section.webp
+      tool: cad-agent site
+      caption: As built, on the gate bench. The arm section's page shows its status, why it is not higher, its requirement, its interfaces and its decision.
+      alt: The review page of the arm section, with its purpose, status chips, the reasons it is not higher, its requirement, interfaces and decision
+    - after: 4-integrity-gates-cadagentgates
+      img: docs/img/gates/bench-review.webp
+      tool: cad-agent gates
+      caption: As built, on the gate bench. Six gates, 144 checks, all pass, and each says physical fit is not verified.
+      alt: The gates page of the review site with six gates and the dossier lint, all pass
+    - after: 42-connectivity-and-floating-parts-t4
+      img: docs/img/gates/bench-connectivity.svg
+      tool: cadagent.gates.connectivity
+      caption: As built, the gate bench's connectivity graph. Fasteners are ovals, the dashed boxes are balls allowed to sit free in the hopper, and the arm is its own body on a joint.
+      alt: A graph of the gate bench's parts linked by contacts and fasteners, grouped into the static frame and the arm's body
+    - after: 45-motion-range-interference-t7
+      img: docs/img/motion/hinge-sweep.svg
+      tool: cadagent.gates.motion
+      caption: As built, the gate bench's arm swept 0 to 60 degrees in 12 poses, then bisected. Contact with the frame starts between 44.89 and 44.91 degrees.
+      alt: An arm swept from 0 to 60 degrees; it first shares volume with the frame beam between 44.89 and 44.91 degrees

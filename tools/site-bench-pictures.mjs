@@ -8,7 +8,9 @@
  * to a temporary folder, runs `cad-agent site` there and writes:
  *
  * - docs/img/gates/bench-connectivity.svg: the connectivity graph the site draws from exports/gates/connectivity.dot;
- * - docs/img/gates/bench-review.webp: the top of the site's gates page (its verdict table), 1440 px wide.
+ * - docs/img/gates/bench-review.webp: the top of the site's gates page (its verdict table), 1440 px wide;
+ * - docs/img/gates/bench-requirements.webp: the requirements page, each requirement traced to a section and a gate;
+ * - docs/img/gates/bench-section.webp: the arm section's review page down to its decisions.
  */
 import { chromium } from '@playwright/test';
 import { execFileSync, spawn } from 'node:child_process';
@@ -41,23 +43,40 @@ try {
     server.on('exit', c => fail(new Error(`preview server exited ${c}`)));
   });
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
-  await page.goto(base + '/review/gates', { waitUntil: 'networkidle' });
-  const text = await page.textContent('body');
-  if (text.includes(tmp)) throw new Error('the page names the temporary folder');
-  // The site's header and its verdict table (the graph is the SVG above): down to the table's last row.
-  const end = await page.evaluate(() => Math.ceil(document.querySelector('table').getBoundingClientRect().bottom + scrollY + 28));
-  const shot = await page.screenshot({ type: 'png', fullPage: true, clip: { x: 0, y: 0, width: 1440, height: Math.min(end, 1500) } });
-  // WebP, encoded by the browser itself (no image library needed)
-  const webp = await page.evaluate(async png => {
-    const img = new Image();
-    img.src = 'data:image/png;base64,' + png;
-    await img.decode();
-    const c = Object.assign(document.createElement('canvas'), { width: img.width, height: img.height });
-    c.getContext('2d').drawImage(img, 0, 0);
-    return c.toDataURL('image/webp', 0.86).split(',')[1];
-  }, shot.toString('base64'));
-  await writeFile(path.join(OUT, 'bench-review.webp'), Buffer.from(webp, 'base64'));
-  console.log(`docs/img/gates/bench-review.webp: 1440 x ${Math.min(end, 1500)}`);
+  // Each picture: a page of the review site from its top to the end of one section (the heading's following siblings
+  // up to the next h1 or h2), or to the end of the elements a CSS selector names.
+  const SHOTS = [
+    ['bench-review.webp', '/review/gates', 'Gates'],                                   // the verdict table
+    ['bench-requirements.webp', '/review/requirements', 'table'],                      // requirements traced to gates
+    ['bench-section.webp', '/review/section-s-arm', 'Section decisions'],              // the arm's section, to its decisions
+  ];
+  for (const [name, route, heading] of SHOTS) {
+    await page.goto(base + route, { waitUntil: 'networkidle' });
+    if ((await page.textContent('body')).includes(tmp)) throw new Error(`${route} names the temporary folder`);
+    const end = await page.evaluate(text => {
+      const css = /^[a-z.#[]/.test(text) && document.querySelector(text);
+      if (css) return Math.ceil(Math.max(...[...document.querySelectorAll(text)].map(e => e.getBoundingClientRect().bottom)) + scrollY + 24);
+      const head = [...document.querySelectorAll('h1, h2')].find(h => h.textContent.trim() === text);
+      if (!head) throw new Error(`no heading "${text}"`);
+      let bottom = head.getBoundingClientRect().bottom;
+      for (let el = head.nextElementSibling; el && !(/^H[12]$/.test(el.tagName)); el = el.nextElementSibling)
+        bottom = Math.max(bottom, el.getBoundingClientRect().bottom);
+      return Math.ceil(bottom + scrollY + 24);
+    }, heading);
+    const height = Math.min(end, 1500);
+    const shot = await page.screenshot({ type: 'png', fullPage: true, clip: { x: 0, y: 0, width: 1440, height } });
+    // WebP, encoded by the browser itself (no image library needed)
+    const webp = await page.evaluate(async png => {
+      const img = new Image();
+      img.src = 'data:image/png;base64,' + png;
+      await img.decode();
+      const c = Object.assign(document.createElement('canvas'), { width: img.width, height: img.height });
+      c.getContext('2d').drawImage(img, 0, 0);
+      return c.toDataURL('image/webp', 0.86).split(',')[1];
+    }, shot.toString('base64'));
+    await writeFile(path.join(OUT, name), Buffer.from(webp, 'base64'));
+    console.log(`docs/img/gates/${name}: 1440 x ${height}`);
+  }
 } finally {
   await browser.close();
   server.kill();

@@ -10,6 +10,7 @@ and duct losses beyond these closed forms, Caleb Bell's ``ht`` and ``fluids`` (M
 from __future__ import annotations
 
 import math
+import numbers
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from cadagent.formulas._registry import cite, formula
@@ -76,9 +77,10 @@ def _fan_points(fan_curve: Sequence[Tuple[float, float]]) -> List[Tuple[float, f
 
 
 def _fan_count(count) -> int:
-    """A whole number of fans, at least 1 (2.0 is 2; True, "2" and 2.5 are refused, as the browser port does)."""
-    if isinstance(count, bool) or not isinstance(count, (int, float)) or not (math.isfinite(count) and count >= 1) \
-            or count != int(count):
+    """A whole number of fans, at least 1 (2.0 and numpy's 2 are 2; True, "2" and 2.5 are refused, as the browser port
+    does)."""
+    if isinstance(count, bool) or not isinstance(count, numbers.Real) \
+            or not (math.isfinite(count) and count >= 1) or count != int(count):
         raise ValueError(f"the number of fans must be a whole number, 1 or more, not {count!r}")
     return int(count)
 

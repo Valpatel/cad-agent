@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { readState, compute, verdict, summary, drawFanCurve, scales, readAt, CONTROLS, VOLTAGES, ARRANGEMENTS, VIEW,
   DEFAULTS, REFERENCE_FLOW, m3h } from '../src/cadagent/webkit/fan-curve.js';
+import { fanOperatingPoint, fanStallFlow } from '../src/cadagent/webkit/formulas.js';
 
 const root = path.resolve(import.meta.dirname, '..');
 const states = function* () {
@@ -50,6 +51,18 @@ test('the lessons the page states hold: a tight system stalls one fan, series be
   assert.match(summary(DEFAULTS, at(12)), /delivers 150 m³\/h at 26\.9 Pa, clear of the stall region, which is below 132 m³\/h\.$/);
   assert.match(summary({ ...DEFAULTS, system: 25, count: 2 }, at(25, 2)), /each fan carries 70 m³\/h, in the stall region \(below 132 m³\/h for one fan\)/);
   assert.equal(m3h(186.46773978319908 / 3600), '186 m³/h');
+});
+
+test('a curve the system crosses three times reads "Unstable" (no datasheet fan here has so deep a dip)', () => {
+  // the DIP curve of tools/formula_vectors.py, against the quadratic system its vectors cross three times
+  const dip = [[0, 20], [0.004, 8], [0.005, 14], [0.010, 6], [0.012, 0]], k = 5.3e5;
+  const op = fanOperatingPoint(dip, k), s = { ...DEFAULTS };
+  const r = { fan: { name: 'a fan with a deep dip' }, single: dip, curve: dip, k, op, stall: fanStallFlow(dip), stallEach: fanStallFlow(dip),
+    each: { flow: op.flow, pressure: op.pressure } };
+  assert.equal(op.intersections.length, 3);
+  assert.deepEqual(verdict(s, r), { text: 'Unstable', note: 'Crosses the curve 3 times', poor: true });
+  assert.match(summary(s, r), /crosses the fan curve 3 times, so the fan can settle at any of them, and the highest flow is shown/);
+  assert.match(drawFanCurve(s, r), /data-part="point"/);
 });
 
 test('attributes are read safely: unknown values fall back, numbers clamp to the controls', () => {

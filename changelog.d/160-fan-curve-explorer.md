@@ -9,8 +9,10 @@
   operating point and the stall region, and warns when the point lands in it (#160).
 
 **Changed**
-- `fan_operating_point` also returns `stall`, true when the point is below `fan_stall_flow`. Code that compares its
-  whole result with a dict must add the key (#160).
+- `fan_operating_point` also returns `stall`, true when the point is below `fan_stall_flow` (#160).
 - `fan_operating_point`, `fan_curve_line` and `system_coefficient` refuse what has no answer with `ValueError`: NaN or
-  infinite losses, a flow of 0 for the system point, and a shut-off pressure or free-air flow of 0 or less. A system
-  point at zero flow used to raise `ZeroDivisionError` (#160).
+  infinite losses, a flow of 0 for the system point, and a shut-off pressure or free-air flow of 0 or less (#160).
+
+**Projects must change**
+- Code that compares the whole result of `fan_operating_point` with a dict must add the `stall` key (#160).
+- Code that caught `ZeroDivisionError` from `system_coefficient` at zero flow must catch `ValueError` (#160).

@@ -103,8 +103,8 @@ export function summary(s, r) {
   if (n > 1) out += `; the system crosses the fan curve ${n} times, so the fan can settle at any of them, and the highest flow is shown`;
   if (r.stall === null) return `${out}; this curve has no stall dip.`;
   const where = perFan ? `; each fan carries ${m3h(r.each.flow)}` : '';
-  return r.op.stall ? `${out}${where}, in the stall region (below ${m3h(perFan ? r.stallEach : r.stall)}${perFan ? ' for one fan' : ''}), where the air ` +
-    'separates from the blades: noisy, and the flow swings with small changes.'
+  return r.op.stall ? `${out}${where}, in the stall region (below ${m3h(perFan ? r.stallEach : r.stall)}${perFan ? ' for one fan' : ''}), which the ` +
+    "maker's table leaves out: louder and less efficient, and on a flat or rising stretch the flow swings with small changes in the system."
     : `${out}${where}, clear of the stall region, which is below ${m3h(perFan ? r.stallEach : r.stall)}${perFan ? ' for one fan' : ''}.`;
 }
 

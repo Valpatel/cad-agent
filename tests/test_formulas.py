@@ -681,7 +681,8 @@ def test_identical_fans_in_series_and_in_parallel_hand_solved():
     assert fx.fans_in_parallel(line, 3) == [(0.0, p0), (3 * qf, 0.0)]
     assert fx.fans_in_series(line, 1) == fx.fans_in_parallel(line, 1) == line
     assert fx.fans_in_series(line, 2.0) == fx.fans_in_series(line, 2)       # a whole number written as a float
-    for bad in (0, -1, 2.5, True, "2", None, float("nan")):
+    assert fx.fans_in_parallel(line, np.int64(2)) == fx.fans_in_parallel(line, np.float64(2.0)) == parallel  # numpy's
+    for bad in (0, -1, 2.5, True, np.bool_(True), "2", None, float("nan"), np.float64(2.5)):
         for combine in (fx.fans_in_series, fx.fans_in_parallel):
             with pytest.raises(ValueError, match="whole number"):
                 combine(line, bad)
@@ -715,6 +716,25 @@ def test_datasheet_fans_reproduce_the_operating_points_their_datasheet_publishes
         # every point the maker tabulates lies right of the stall peak: the stall region is what it leaves out
         assert fx.fan_stall_flow(curve) * 3600 <= min(q for q, _ in fan.table) + 1.0
         assert fan.source.startswith("ebm-papst") and "item no. 50788-5-9980" in fan.source and "https://" in fan.source
+
+
+def test_no_system_through_the_origin_crosses_the_datasheet_fans_twice():
+    # docs/fans.md says the explorer never shows "Unstable", and why. On each straight segment, dp = a + b Q with a > 0,
+    # so dp / Q falls all the way; a system r Q + k Q^2 has dp / Q = r + k Q, which never falls, so they cross once.
+    # Series multiplies dp and parallel multiplies Q, which keeps a > 0. The synthetic DIP in tools/formula_vectors.py
+    # is where the check is tested with three crossings.
+    from cadagent.thermal.fans import FANS
+    for fan in FANS.values():
+        for n in (1, 2, 3, 4):
+            for curve in (fx.fans_in_series(fan.curve(), n), fx.fans_in_parallel(fan.curve(), n)):
+                for (q1, p1), (q2, p2) in zip(curve, curve[1:]):
+                    assert p1 - (p2 - p1) / (q2 - q1) * q1 > 0, (fan.key, n)
+                for k in np.geomspace(1e2, 1e7, 60):
+                    for r in (0.0, 100.0, 1000.0):
+                        op = fx.fan_operating_point(curve, float(k), r)
+                        assert op["stable"] and len(op["intersections"]) == 1, (fan.key, n, k, r)
+    page = (ROOT / "docs" / "fans.md").read_text()
+    assert 'never\nshows "Unstable"' in page and "Δp / Q = r + k Q" in page
 
 
 def test_the_fan_curve_explorer_and_its_pages_say_what_the_python_computes():

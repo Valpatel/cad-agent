@@ -14,10 +14,11 @@ Each curve is the datasheet's own marked points on its air-performance chart, re
 meets three published system curves (``table``); tests/test_formulas.py solves those operating points from ``points``
 and the system curves and finds the table again.
 
-Limits: the maker's test rig (ISO 5801, installation category A: free inlet, ducted outlet) at the chart's air
-density. A fan behind a grille, a finger guard or a board a few millimetres away loses pressure the chart does not
-show, so measure the real installation, or model it (cadagent.simulation.cfd). Add a fan here only with its datasheet's
-item number, revision and page, and read its points from the datasheet, not from a picture of it.
+Limits: the maker's test rig (ISO 5801, installation category A: free inlet, free outlet, so the pressure is the static
+rise with the outlet's velocity pressure counted as lost) at the chart's air density. A fan behind a grille, a finger
+guard or a board a few millimetres away loses pressure the chart does not show, so measure the real installation, or
+model it (cadagent.simulation.cfd). Add a fan here only with its datasheet's item number, revision and page, and read
+its points from the datasheet, not from a picture of it.
 """
 from __future__ import annotations
 

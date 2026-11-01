@@ -18,7 +18,7 @@ last peak. The default runs at 150 m³/h, clear of the stall region, which is be
 </cad-fan-curve>
 
 Try these:
-- **Make the enclosure tighter: 25 Pa at 100 m³/h** (smaller vents, a filter). The point drops to 112 m³/h and into the
+- **Make the enclosure tighter: 25 Pa at 100 m³/h** (smaller vents, a denser grille). The point drops to 112 m³/h and into the
   stall region. On that flat stretch a little more resistance costs a lot of air, and the fan gets loud.
 - **Add a second fan in parallel.** At 25 Pa you get 140 m³/h, and each fan still stalls at 70 m³/h. **Switch to series**
   and the pair gives 148 m³/h, clear of the stall region: in a restrictive system, fans in series win.
@@ -28,11 +28,16 @@ Try these:
 
 ## How to read it
 
-The stall region is left of the peak that ends the curve's last rise in pressure. There, the air separates from the
-blades: the fan is noisier, and its flow is set by a flat or rising stretch of the curve, so it swings with small
-changes in the system. A system curve can also cross a deep dip more than once. The fan can then settle at either
-crossing, and the result is flagged unstable. The maker's own table of measured points lies right of the peak at every
-voltage, which is the range the fan is meant to run in.
+The stall region is left of the peak that ends the curve's last rise in pressure. The maker's own table of measured
+points lies right of that peak at every voltage, which is the range the fan is meant to run in. In the stall region
+the fan is louder and less efficient. On a flat or rising stretch of the curve, its flow also swings with small
+changes in the system. Further left, where the curve falls steeply again, the point is steady but still stalled.
+
+A system curve can also cross a deep dip two or three times. The fan can then settle at any of the crossings, and
+`fan_operating_point` flags the result unstable. That needs a dip where pressure divided by flow rises: a system
+Δp = r Q + k Q² has Δp / Q = r + k Q, which never falls, so a curve whose Δp / Q falls all the way is crossed only
+once. This fan's dips are that shallow at all three voltages, in series and in parallel too, so the explorer never
+shows "Unstable". The Python tests the check on a curve with a deeper dip, which a system crosses three times.
 
 ```mermaid
 flowchart TD
@@ -75,8 +80,9 @@ formula states its units, limits and source in `fx.catalogue()`, and they are li
 
 - **Steady flow at one air density.** The datasheet's pressures are for 1.2 kg/m³ of air. Hot or thin air moves less
   mass for the same curve.
-- **The maker's test rig, not your enclosure.** The curve is measured with a free inlet and a ducted outlet (ISO 5801,
-  category A). A grille, a finger guard or a board close to the fan costs pressure that the curve does not show.
+- **The maker's test rig, not your enclosure.** The curve is measured with a free inlet and a free outlet (ISO 5801,
+  installation category A), so its pressure is the fan's static rise, with the outlet's velocity pressure counted as
+  lost. A grille, a finger guard or a board close to the fan costs pressure that the curve does not show.
 - **The system curve is the hard part.** A real one comes from a test or from CFD (`cadagent.simulation.cfd`), not
   from a guessed k. Δp = k Q² is turbulent loss; filters and fin channels add a linear part, `r` in
   `fan_operating_point`.

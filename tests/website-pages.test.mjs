@@ -7,7 +7,7 @@ import { CARDS_MIN, FOLD_LINES, FOLD_ROWS, fold, pagePlacer, sectionCards } from
 const PNG = Buffer.from('89504e470d0a1a0a0000000d49484452000002800000019008060000', 'hex');   // 640 x 400
 const base = {
   pageFiles: new Set(['docs/a.md', 'docs/b.md']),
-  tracked: ['docs/img/out.png', 'docs/img/two.png', 'src/cadagent/review/gates/motion.py', 'src/cadagent/simulation/fea/__init__.py', 'tools/draw.py'],
+  tracked: ['docs/img/out.png', 'docs/img/two.png', 'src/cadagent/review/gates/motion.py', 'src/cadagent/simulation/fea/__init__.py', 'tools/draw.py', 'src/cadagent/webkit/part-table.js'],
   commandNames: new Set(['gates', 'site']), readBuf: async () => PNG, pageURL: f => '/' + f.replace(/\.md$/, ''),
 };
 const out = (o = {}) => ({ img: 'docs/img/out.png', shows: 'output', tool: 'cad-agent site', on: 'fixture', caption: 'Six gates pass.', alt: 'A table', ...o });
@@ -24,6 +24,8 @@ test('a band (hero and tiles) goes under the title and its first paragraph, each
   assert.match(html, /<a href="\/docs\/b#x">[^]*?<b class="shows-diagram">Diagram<\/b> of <code>cadagent\.review\.gates\.motion<\/code>, drawn by <code>tools\/draw\.py<\/code>, on a test fixture, drawn in 2D; tests hold its numbers to the real check\.<\/span> Contact at 44\.9 degrees\./);
   assert.match(html, /<\/section><p>More\.<\/p>/);
   assert.equal(await place('docs/b.md', PAGE), PAGE, 'a page without an entry or pictures is untouched');
+  const kit = await pagePlacer({ ...base, spec: { 'docs/b.md': { hero: out({ tool: 'kit/part-table.js' }) } } })('docs/b.md', PAGE);
+  assert.match(kit, /<b class="shows-output">Real output<\/b> of <code>kit\/part-table\.js<\/code>/, 'a web kit file is a tool, as the site publishes it');
 });
 
 test('figures go after their section\'s first paragraph, in YAML order, or under the heading when that paragraph introduces a block', async () => {
@@ -64,9 +66,10 @@ test('the build stops on anything a reader could not trust', async () => {
   await fails({ 'docs/a.md': { band: [tile({ herf: '#one' }), tile()] } }, /band\[0\]: unknown key herf/);
   await fails({ 'docs/a.md': { hero: out({ img: 'docs/img/missing.png' }) } }, /not a committed picture/);
   await fails({ 'docs/a.md': { hero: out({ img: 'https://example.com/x.png' }) } }, /not a committed picture/);
-  await fails({ 'docs/a.md': { hero: out({ tool: 'cad-agent nonsense' }) } }, /not a cad-agent command, a cadagent module or a script under tools\//);
-  await fails({ 'docs/a.md': { hero: out({ tool: 'cadagent.gates.motion' }) } }, /not a cad-agent command, a cadagent module or a script under tools\//);
-  await fails({ 'docs/a.md': { hero: out({ tool: 'tools/missing.py' }) } }, /not a cad-agent command, a cadagent module or a script under tools\//);
+  await fails({ 'docs/a.md': { hero: out({ tool: 'cad-agent nonsense' }) } }, /not a cad-agent command, a cadagent module, a web kit file \(kit\/…\) or a script under tools\//);
+  await fails({ 'docs/a.md': { hero: out({ tool: 'cadagent.gates.motion' }) } }, /not a cad-agent command, a cadagent module, a web kit file \(kit\/…\) or a script under tools\//);
+  await fails({ 'docs/a.md': { hero: out({ tool: 'kit/missing.js' }) } }, /not a cad-agent command, a cadagent module, a web kit file \(kit\/…\) or a script under tools\//);
+  await fails({ 'docs/a.md': { hero: out({ tool: 'tools/missing.py' }) } }, /not a cad-agent command, a cadagent module, a web kit file \(kit\/…\) or a script under tools\//);
   await fails({ 'docs/a.md': { hero: out({ alt: '' }) } }, /hero: no alt/);
   await fails({ 'docs/a.md': { hero: out({ shows: 'render' }) } }, /shows is one of output, diagram/);
   await fails({ 'docs/a.md': { hero: out({ on: 'somewhere' }) } }, /on is one of gyropup/);

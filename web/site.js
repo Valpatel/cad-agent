@@ -32,3 +32,5 @@ if (q) {
 // Header gets its rule once the page scrolls.
 const header = document.querySelector('.site-header');
 if (header) { const f = () => header.classList.toggle('scrolled', scrollY > 8); addEventListener('scroll', f, { passive: true }); f(); }
+// Interactive demos from the kit, only on pages that have one (the build links their stylesheets).
+if (document.querySelector('cad-cantilever')) import('/kit/cantilever.js').catch(() => {});

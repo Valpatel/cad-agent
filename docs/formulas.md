@@ -99,7 +99,7 @@ In the browser, `kit/formulas.js` exports the functions the demos use (`snapArm`
 
 ## Demonstrations
 
-- **Snap-arm explorer** (`<cad-cantilever>`, on [Snap fits](compliant.md)). Sliders
+- **Snap-arm explorer** (`<cad-cantilever>`, on [Snap fits](compliant.md#try-it-the-snap-arm-explorer)). Sliders
   set the length, root thickness, width and deflection, and you pick the material and print direction. The beam
   bends along its computed curve, coloured by strain, with the root strain, force and pass or fail against the
   filament's allowable strain.

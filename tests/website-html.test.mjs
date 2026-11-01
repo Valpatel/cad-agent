@@ -82,3 +82,12 @@ test('link rewriting touches real tags only, and decodes and encodes each URL on
   assert.ok(!out.includes('&amp;amp;'));
   assert.equal(rewriteUrls(html, () => null), html, 'returning null keeps the tag as it was');
 });
+
+test('the kit demo element survives with its own attributes only (no handlers, styles or script inside)', () => {
+  const demo = '<cad-cantilever material="pla-polymaker" direction="across" design="2" repeated length="12" thickness="1.2" ' +
+    'width="5" deflection="0.8"><img src="img/x.svg" alt="still" width="640" height="250"></cad-cantilever>';
+  assert.equal(sanitize(demo), demo.replace('height="250">', 'height="250" />'));
+  const hostile = sanitize('<cad-cantilever onmouseover="alert(1)" style="position:fixed" id="x" data-x="1" is="a-b">' +
+    '<script>alert(1)</script><svg onload="alert(1)"></svg></cad-cantilever>');
+  assert.equal(hostile, '<cad-cantilever id="x"></cad-cantilever>');
+});

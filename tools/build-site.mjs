@@ -161,11 +161,16 @@ const feedbackURL = (title, url) => `${REPO}/issues/new?template=feedback.yml&ti
 const feedbackBox = (title, url, file) => `<aside class="feedback" aria-label="Feedback"><div><p class="feedback-title">Help us improve!</p>
 <p>Something wrong, missing or confusing on this page? Tell us in a minute. Every note is read, and ideas we use are credited.</p></div>
 <div class="feedback-actions"><a class="button" href="${esc(feedbackURL(title, url))}">Give feedback</a>${file ? `<a href="${REPO}/edit/dev/${esc(file)}">Suggest an edit</a>` : ''}</div></aside>`;
+// Pages with one of the kit's interactive demos load its stylesheet in <head> (it reserves the demo's size before the
+// script runs, so nothing moves) and preload its module; web/site.js imports it.
+const KIT_DEMOS = { 'cad-cantilever': 'cantilever' };
+const kitDemos = body => Object.entries(KIT_DEMOS).filter(([tag]) => body.includes(`<${tag}`))
+  .map(([, f]) => `<link rel="stylesheet" href="/kit/${f}.css"><link rel="modulepreload" href="/kit/${f}.js">`).join('');
 function frame({ title, body, md, description = LEDE, current = '', page = 'doc', css = [], updated = committed, url = current || '/' }) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title === TAGLINE ? 'cad-agent · ' + TAGLINE : title + ' · cad-agent')}</title>
 <meta name="description" content="${esc(description)}">
-<link rel="icon" href="/web/icon.svg"><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}
+<link rel="icon" href="/web/icon.svg"><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}${kitDemos(body)}
 ${md ? `<link rel="alternate" type="text/markdown" href="${esc(md)}" title="Markdown for agents">` : ''}
 <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt"></head>
 <body class="${page}-page" data-diagram-theme="light"><header class="site-header"><div class="wrap"><a class="wordmark" href="/"><img src="/web/icon.svg" alt="" width="34" height="34">cad-agent<b>.</b></a>

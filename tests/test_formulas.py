@@ -421,3 +421,25 @@ def test_docs_page_lists_every_formula_and_its_source():
     for ref in ("Roark", "Shigley", "Covestro", "Norton", "Freudenstein", "Incropera", "White", "ISO 68-1", "ISO 898-1"):
         assert ref in page
 
+
+
+def test_the_demo_on_docs_compliant_starts_from_what_the_python_computes():
+    # The page's <cad-cantilever> attributes, run through cadagent.formulas, give the root strain its still's alt text
+    # quotes (tools/cantilever-still.mjs checks the same from the browser side), and the page's claim that the arm
+    # passes flat and fails upright holds.
+    from cadagent.compliant.allowables import PRINTED
+    page = (ROOT / "docs" / "compliant.md").read_text()
+    tag = re.search(r"<cad-cantilever\b([^>]*)>([\s\S]*?)</cad-cantilever>", page)
+    assert tag, "docs/compliant.md has no <cad-cantilever> demo"
+    attrs = dict(re.findall(r'(\w+)="([^"]*)"', tag.group(1)))
+    m = PRINTED[attrs["material"]]
+    args = [float(attrs[k]) * MM for k in ("length", "thickness", "width", "deflection")]
+
+    def arm(direction):
+        return fx.snap_arm(*args, m.secant_upper_bound(direction) * 1e6, m.allowable(direction), int(attrs["design"]))
+
+    flat, upright = arm("along"), arm("across")
+    assert attrs["direction"] == "along" and flat["passes"] and not upright["passes"]
+    assert f"{flat['strain'] * 100:.2f} %" in tag.group(2) and f"{flat['force']:.2f} N" in tag.group(2)
+    assert f"{round(flat['ratio'] * 100)} %" in page and f"{round(upright['ratio'] * 100)} %" in page
+    assert 'src="img/compliant/cantilever-explorer.svg"' in tag.group(2)          # the still before the script loads

@@ -55,3 +55,9 @@ test('the demo materials carry a source and a strain in range for both print dir
     assert.ok(m.allowable.across.single <= m.allowable.along.single + 1e-15, `${m.key}: across above along`);
   }
 });
+
+
+test('the cantilever still on docs/compliant is what the component draws for the page\'s attributes', () => {
+  const out = execFileSync(process.execPath, ['tools/cantilever-still.mjs', '--check'], { cwd: root }).toString();
+  assert.match(out, /current/);
+});

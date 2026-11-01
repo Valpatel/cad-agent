@@ -7,7 +7,9 @@ finer, for a sharp corner and for the same corner with an R1.5 fillet.
 A steel L-bracket (legs 20 mm, 4 mm thick, 2 mm wide), one leg clamped at its end and 100 N on the other's, meshed
 at 2 mm, then refined round the inside corner (a 1.5 mm ball) to 1, 0.5, 0.25 and 0.125 mm. The dots are
 Study.solve()'s design peak; the dashed line is Williams' (1952) rate for a sharp 270° corner, stress ~ r^(λ-1) with
-sin(3πλ/2) = λ (λ = 0.5445), drawn through the 0.25 mm dot. The SVG carries its own light background, like the other
+sin(3πλ/2) = λ (λ = 0.5445), drawn through the 0.25 mm dot. It is a 2D rate: at the coarser meshes the peak sits
+where the corner meets a side face, a 3D vertex with its own exponent, so the measured steps (x1.22 to x1.47, about
+x1.34 on average) only come close to it. The SVG carries its own light background, like the other
 FEA charts, and a <title> on every dot for a hover readout.
 """
 from __future__ import annotations
@@ -102,7 +104,9 @@ def svg(data) -> str:
         for i, (s, v, peak, tets) in enumerate(rows):
             step = f", x{v / rows[i - 1][1]:.2f} on the step before" if i else ""
             tip = (f"{'sharp corner' if not r else f'R{r:g} fillet'}, {s:g} mm: {v:g} MPa{step}; {tets} tets, "
-                   f"{peak['elements_across']} elements across the {peak['wall_mm']:g} mm wall, at {peak['where']}")
+                   f"{peak['elements_across']} elements across the {peak['wall_mm']:g} mm wall"
+                   + (f", {peak['element_mm']:g} mm elements on the R{peak['radius_mm']:g}" if peak.get('radius_mm') else "")
+                   + f", at {peak['where']}")
             out.append(f'<circle cx="{X(s):.1f}" cy="{Y(v):.1f}" r="5" fill="{BG}" stroke="{colour}" stroke-width="2">'
                        f'<title>{escape(tip)}</title></circle>')
         last = rows[-1]

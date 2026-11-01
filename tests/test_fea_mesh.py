@@ -1,9 +1,11 @@
 """Mesh control in cadagent.simulation.fea (#144): local refinement, the mesher's identity, how well the mesh resolves
 the design peak, slivers before meshing and the mesher's refusals. Meshes stay small so the suite stays fast."""
+import gc
 import math
 import platform
 import re
 import warnings
+import weakref
 
 import numpy as np
 import pytest
@@ -12,8 +14,8 @@ cq = pytest.importorskip('cadquery')
 gmsh = pytest.importorskip('gmsh')
 pytest.importorskip('skfem')
 
-from cadagent.simulation.fea import (MIN_ELEMENTS_ACROSS, Material, MeshRefusal, MeshWarning, Study,  # noqa: E402
-                                     parse_gmsh_refusal, plane_at)
+from cadagent.simulation.fea import (MAX_ELEMENT_OVER_RADIUS, MIN_ELEMENTS_ACROSS, Material, MeshRefusal,  # noqa: E402
+                                     MeshWarning, Study, parse_gmsh_refusal, plane_at)
 
 STEEL = Material('steel', 200000, 0.3, 250, 7.85)
 
@@ -45,6 +47,12 @@ def _slit(gap):
     outer = cq.Workplane('XY').workplane(offset=10).circle(5 + gap).extrude(11).rotate((0, 0, 0), (0, 0, 1), 9)
     inner = cq.Workplane('XY').workplane(offset=9).circle(5).extrude(13)
     return base.cut(outer.cut(inner))
+
+
+def _step(fillet):
+    """A 10 mm wide bar 12 mm deep stepping down to 8 mm at x = 15, with an inside fillet at the step."""
+    s = cq.Workplane('XZ').polyline([(0, 0), (40, 0), (40, 8), (15, 8), (15, 12), (0, 12)]).close().extrude(-10)
+    return s.edges('|Y').edges(cq.selectors.NearestToPointSelector((15, 5, 8))).fillet(fillet)
 
 
 # --- local refinement
@@ -79,6 +87,16 @@ def test_refine_entries_are_checked_before_meshing():
         Study(box, STEEL, mesh_mm=3.0, slivers='loud')
 
 
+def test_a_refined_study_is_not_kept_alive_by_the_size_callback():
+    """gmsh's Python module keeps the last size callback in a global after finalize(): it holds the refine zones, not
+    the Study, so a dropped Study (its mesh and solution) is freed."""
+    st = Study(cq.Workplane('XY').box(20, 10, 10), STEEL, mesh_mm=5.0, name='box', refine=[((0, 0, 0), 2.0, 2.0)])
+    ref = weakref.ref(st)
+    del st
+    gc.collect()
+    assert ref() is None
+
+
 def _corner_peaks(fillet):
     """The design peak of the bracket (one leg clamped, 100 N on the other) at a 2 mm mesh, then with the corner
     refined to 0.5 and 0.25 mm."""
@@ -98,7 +116,9 @@ def _corner_peaks(fillet):
 def test_a_sharp_corner_keeps_rising_and_a_filleted_corner_converges():
     """The textbook difference, through refine=. A sharp 270° inside corner is singular: Williams (1952) gives the
     stress there as r^(λ-1), with λ the root of sin(3πλ/2) = λ (0.5445), so halving the element size multiplies the
-    peak by about 2^0.455 = 1.37, and it never settles. An R1.5 fillet at the same corner stays within a few percent:
+    peak by about 2^0.455 = 1.37, and it never settles. The bounds below show a peak that keeps rising, not that rate
+    as such (at the coarser meshes the peak sits where the corner meets a side face, a 3D vertex with its own
+    exponent). An R1.5 fillet at the same corner stays within a few percent:
     a corner-node peak carries about 2 % of mesh noise (moving the ball's centre by 1e-5 mm moves it that much)."""
     from scipy.optimize import brentq
     lam = brentq(lambda x: math.sin(1.5 * math.pi * x) - x, 0.3, 0.9)
@@ -155,6 +175,32 @@ def test_a_peak_in_a_thin_wall_is_flagged(thick, mesh, resolved):
         assert len(flagged) == 1 and 'not a result' in str(flagged[0].message) and 'not a result' in peak['note']
 
 
+def test_a_peak_on_a_fillet_with_elements_larger_than_its_radius_is_flagged():
+    """The wall count passes a fillet the mesh does not resolve: at 4 mm, the step's R0.5 fillet peak has 5 elements
+    across its 8 mm wall but 1.5 mm elements on a 0.5 mm radius, and reads about 9 % low (604 MPa against about 660
+    refined). One 0.75 x step moves it only 2.3 %, so the radius check flags it, and converge() does not call two
+    under-resolved meshes converged. Refined to elements under the radius, an R1 fillet passes both."""
+    def study(fillet, mesh, size=None):
+        mid = (15 + fillet * (1 - math.sqrt(0.5)), 5.0, 8 + fillet * (1 - math.sqrt(0.5)))
+        st = Study(_step(fillet), STEEL, mesh_mm=mesh, name='step', refine=[(mid, 2.5, size)] if size else None)
+        return st.fix(plane_at(0, 0.0)).force(plane_at(0, 40.0), (0, 0, -1000.0))
+    coarse = study(0.5, 4.0)
+    with pytest.warns(MeshWarning, match='larger than the radius'):
+        peak = coarse.solve()['mesh']['peak']
+    assert 'R0.5 inside fillet' in peak['where'] and peak['wall_resolved'] and peak['radius_mm'] == pytest.approx(0.5)
+    assert peak['element_mm'] > MAX_ELEMENT_OVER_RADIUS * 0.5 and peak['radius_resolved'] is False
+    assert 'refine=' in peak['note'] and 'settles' in peak['note']
+    with pytest.warns(MeshWarning, match='does not resolve it either'):
+        rec = coarse.converge()
+    assert abs(rec['change']) < rec['tolerance'] and not rec['converged']
+    fine = study(1.0, 4.0, 0.5)
+    with warnings.catch_warnings(record=True) as got:
+        warnings.simplefilter('always')
+        peak = fine.solve()['mesh']['peak']
+    assert peak['radius_mm'] == pytest.approx(1.0) and peak['radius_resolved'] and peak['note'] == ''
+    assert not [w for w in got if w.category is MeshWarning]
+
+
 def test_the_wall_at_a_hole_edge_is_the_plate_not_a_ray_along_the_hole():
     """A 12 mm plate bent across four Ø8 holes peaks at a hole's top edge. A ray from a hole-wall facet near that edge
     tilts with the facet and runs out through the top face 4 mm on; it went along the wall, not across it. The rays go
@@ -199,14 +245,14 @@ def test_converge_compares_a_finer_mesh():
 def test_sliver_faces_and_edges_are_found_before_meshing():
     """Two 20 mm blocks stacked 0.003 mm out of line leave 0.003 mm wide strip faces (0.06 mm², under (3/10)² = 0.09)
     and 0.003 mm edges: listed in Study.slivers, a MeshWarning by default, a MeshRefusal on request, nothing when
-    ignored; a refine ball round a strip's centre lowers its cut to (0.5/10)², so the strips no longer count, but the
-    edges, outside the balls, still do."""
+    ignored. A refine ball round a strip's centre leaves the rest of the strip at 3 mm, so the strip still counts."""
     strip = cq.Workplane('XY').box(20, 20, 10).union(cq.Workplane('XY').box(20, 20, 10).translate((0.003, 0, 10)))
     with pytest.raises(MeshRefusal) as caught:
         Study(strip, STEEL, mesh_mm=3.0, name='strip', slivers='raise')
     err = caught.value
     assert err.what == 'slivers' and len(err.faces) == 2 and len(err.edges) == 4
     assert all(f['area_mm2'] == pytest.approx(0.06, rel=1e-3) and f['under_mm2'] == pytest.approx(0.09) for f in err.faces)
+    assert all(f['why'] == 'small' and f['width_mm'] == pytest.approx(0.003, rel=1e-2) for f in err.faces)
     assert all(e['length_mm'] == pytest.approx(0.003, rel=1e-3) for e in err.edges)
     assert 'sliver face' in str(err) and f"face {err.faces[0]['tag']}" in str(err)
     with pytest.warns(MeshWarning, match='2 sliver face'):
@@ -220,7 +266,28 @@ def test_sliver_faces_and_edges_are_found_before_meshing():
         assert clean.slivers == {'faces': [], 'edges': []}
     local = Study(strip, STEEL, mesh_mm=3.0, name='strip', slivers='ignore',     # balls round the strips' centres only
                   refine=[((-9.998, 0, 5), 0.5, 0.5), ((10.002, 0, 5), 0.5, 0.5)])
-    assert local.slivers['faces'] == [] and len(local.slivers['edges']) == 4
+    assert len(local.slivers['faces']) == 2 and len(local.slivers['edges']) == 4
+
+
+def test_a_small_feature_inside_a_refine_ball_is_not_a_sliver():
+    """A 0.25 mm cube on a block: its faces (0.0625 mm²) and edges are slivers for a 3 mm mesh. Inside a 0.5 mm refine
+    ball that covers all of it, the cut is (0.5/10)² and 0.05 mm, so it meshes without a word."""
+    boss = cq.Workplane('XY').box(20, 20, 10).union(cq.Workplane('XY').box(0.25, 0.25, 0.25).translate((0, 0, 5.125)))
+    with pytest.raises(MeshRefusal) as caught:
+        Study(boss, STEEL, mesh_mm=3.0, name='boss', slivers='raise')
+    assert len(caught.value.faces) == 5 and len(caught.value.edges) == 12
+    st = Study(boss, STEEL, mesh_mm=3.0, name='boss', slivers='raise', refine=[((0, 0, 5.125), 1.0, 0.5)])
+    assert st.slivers == {'faces': [], 'edges': []}
+
+
+def test_a_narrow_face_is_a_sliver_too():
+    """The 0.02 mm slit's floor is a ring 0.02 mm wide and 0.63 mm² (over the 0.09 mm² cut): area alone passes it. Its
+    width, 2 x area / perimeter, is 0.02 mm, under 3/10, so slivers='raise' stops there, before gmsh refuses it."""
+    with pytest.raises(MeshRefusal) as caught:
+        Study(_slit(0.02), STEEL, mesh_mm=3.0, name='slit', slivers='raise')
+    (ring,) = caught.value.faces
+    assert caught.value.what == 'slivers' and ring['why'] == 'narrow' and ring['area_mm2'] > ring['under_mm2']
+    assert ring['width_mm'] == pytest.approx(0.02, rel=0.01) and '0.02 mm wide' in str(caught.value)
 
 
 # --- the mesher's refusals
@@ -272,15 +339,25 @@ def test_a_recorded_refusal_names_the_nearest_faces():
 
 def test_a_live_refusal_names_the_two_walls():
     """gmsh refuses the 0.02 mm slit (its surface meshes cut each other); the Study says where, and which faces: the
-    slit's two walls, R5 and R5.02, both at the point."""
+    slit's two walls, R5 and R5.02, both at the point. gmsh 4.15.2 (PyPI, x86-64) refuses it with a segment-facet
+    intersection. A build that meshes it, refuses it with no point, or fails it another way skips: the recorded-log
+    tests cover the parser and the lookup."""
     try:
-        Study(_slit(0.02), STEEL, mesh_mm=3.0, name='slit')
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', MeshWarning)        # the slit's floor ring: a narrow face, listed first
+            Study(_slit(0.02), STEEL, mesh_mm=3.0, name='slit')
     except MeshRefusal as err:
-        assert err.what == 'segment-facet intersection' and err.point is not None
+        if err.point is None:
+            pytest.skip(f'gmsh {gmsh.__version__} refuses the 0.02 mm slit without a point ({err.what})')
         assert {f['tag'] for f in err.faces[:2]} == {4, 6}
         assert sorted(f['radius_mm'] for f in err.faces[:2]) == pytest.approx([5.0, 5.02])
-        assert all(f['distance_mm'] < 0.05 for f in err.faces[:2]) and any(f['named_by_gmsh'] for f in err.faces)
-        assert 'PLC Error' in str(err) and 'Nearest faces: face' in str(err)
-        assert any('PLC Error' in line for line in err.log)
+        assert all(f['distance_mm'] < 0.05 for f in err.faces[:2]) and 'Nearest faces: face' in str(err)
+        if err.what == 'segment-facet intersection':
+            assert 'PLC Error' in str(err) and any('PLC Error' in line for line in err.log)
+            assert any(f['named_by_gmsh'] for f in err.faces)
+    except Exception as exc:                                    # gmsh's own errors are bare Exceptions
+        if type(exc) not in (Exception, RuntimeError):
+            raise
+        pytest.skip(f'gmsh {gmsh.__version__} fails the 0.02 mm slit another way: {str(exc)[:120]}')
     else:
-        pytest.skip(f'gmsh {gmsh.__version__} meshes the 0.02 mm slit on this build; the recorded-log test covers it')
+        pytest.skip(f'gmsh {gmsh.__version__} meshes the 0.02 mm slit on this build')

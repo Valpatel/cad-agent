@@ -9,8 +9,10 @@ papers, other people's agent skills), try them on the problem in front of them, 
 tools and short pages the next agent can use straight away. Every source gets its credit.
 
 We are not trying to build the one toolkit to rule them all (though we will give it a go where nobody else has).
-The aim is a place where good ideas from all over are **found, tested on real parts, kept if they hold up, and
-credited**, so an agent pointed here spends its tokens on the new problem instead of rediscovering the old ones.
+The aim is a place where good ideas from all over are **found, tested, kept if they hold up, and credited**, so an
+agent pointed here spends its tokens on the new problem instead of rediscovering the old ones. Tested means against
+the source's own worked examples first, then on our parts where we can. Calculation and simulation narrow a design
+down; they do not prove that a printed part fits or holds. A test print or a measured coupon does.
 Browse it at [cad-agent.valpatel.com](https://cad-agent.valpatel.com) (every page also as Markdown, plus `llms.txt`
 and `catalog.json`).
 
@@ -31,7 +33,7 @@ flowchart TD
     W["🛠️ <b>Real work</b><br/>a robot, an enclosure,<br/>a board"]
     G["🧩 <b>A gap</b><br/>a failed print, a review<br/>finding, a slow step"]
     S["🔎 <b>Search</b><br/>repos · guides · datasheets<br/>papers · agent skills"]
-    T["🧪 <b>Test</b><br/>on the actual part,<br/>against their own examples"]
+    T["🧪 <b>Test</b><br/>against their own examples,<br/>then on our parts"]
     K["📚 <b>Keep + credit</b><br/>a tested tool, a check,<br/>a living page, a lesson"]
     W --> G --> S --> T --> K --> W
     T -. "didn't hold up" .-> S
@@ -43,24 +45,25 @@ flowchart TD
     class K keep
 ```
 
-1. **Work on something real.** Every tool here was first needed by a real project ([Gyropup](https://gyropup.com),
+1. **Work on something real.** Most tools here started from a real project's need ([Gyropup](https://gyropup.com),
    the [J501 enclosure](https://github.com/mvalancy/j501-agx-orin), the
    [AGX Thor CAN breakout](https://github.com/mvalancy/pcb-agx-thor-can-breakout)).
 2. **Look before building.** When a gap shows up, the agent first surveys what others have published and records
    what it found and why it adopted, borrowed from or passed on each one ([`research/`](research/),
    [`upstreams/registry.yaml`](upstreams/registry.yaml), [`research/landscape.json`](research/landscape.json)).
-3. **Test it on our problem.** A technique earns its place by reproducing its source's own worked examples and then
-   working on our parts. Results are recorded, including the ones that failed.
+3. **Test it on our problem.** A technique earns its place by reproducing its source's own worked examples, then
+   by working on our parts where we can try it. Results are recorded, including the ones that failed. Until a part
+   has been printed and measured, a limit taken from a data sheet is a hypothesis.
 4. **Condense it.** What survives becomes a tested tool an agent calls in one step, a deterministic check that
    catches the mistake next time, and a *living page*: the method in a few paragraphs, with citations, examples
    and the limits stated plainly. Tests fail if the page and the tool drift apart.
 5. **Credit it.** Every page names its sources; every borrowed file keeps its licence; the people and projects we
    learn from are listed below.
 
-Example: [snap fits](docs/compliant.md) condense the Covestro (Bayer) snap-fit guide, DuPont's design guide and 13
-filament datasheets into `cad-agent snapfit`, tested against the guide's worked examples and sized by print direction.
-The same loop turned review findings from real builds into the [pitfall checks](docs/common-issues.md), like a rib
-standing inside a countersink.
+Example: [snap fits](docs/compliant.md) condense the Covestro (Bayer) snap-fit guide, DuPont's design guide and 11
+filament data sheets (13 filaments) into `cad-agent snapfit`, tested against the guide's worked examples and sized by
+print direction; no printed coupon has been measured yet. The same loop turned review findings from real builds into
+the [pitfall checks](docs/common-issues.md), like a rib that ran into a counterbore.
 
 ## What's here today
 
@@ -157,24 +160,24 @@ Anything specific to one product stays in that product's repository. cad-agent k
 ## Shout-outs
 
 The people and projects whose work this stands on. If we use or learned from your work and you are missing or
-described wrongly here, please [open an issue](https://github.com/Valpatel/cad-agent/issues).
+described wrongly here, please [tell us](https://github.com/Valpatel/cad-agent/issues/new?template=feedback.yml).
 
 **Methods and data we condensed (cited, never redistributed):**
 - Covestro (formerly Bayer MaterialScience), *Snap-Fit Joints for Plastics – A Design Guide*: the cantilever,
   torsion and annular snap-fit method.
-- DuPont, general design principles for engineering plastics: permissible strains (Table 10.06).
+- DuPont, *General Design Principles – Module I*: permissible strains (Table 10.06).
 - Bambu Lab and Polymaker technical data sheets: printed-filament properties by print direction.
 
 **Code we vendor, pinned and security-reviewed** ([`vendor/`](vendor/), [`SECURITY.md`](SECURITY.md)):
-[text-to-cad](https://github.com/earthtojake/text-to-cad) by earthtojake,
-[kicad-happy](https://github.com/aklofas/kicad-happy) by aklofas,
-[kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro) by oaslananka,
-[build123d-mcp](https://github.com/pzfreo/build123d-mcp) by pzfreo,
-[agentcad](https://github.com/jdilla1277/agentcad) by jdilla1277 and
-[bd_warehouse](https://github.com/gumyr/bd_warehouse) by gumyr.
+[text-to-cad](https://github.com/earthtojake/text-to-cad) by Thompson Labs LLC (MIT),
+[kicad-happy](https://github.com/aklofas/kicad-happy) by Andrew Klofas (MIT),
+[kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro) by Osman Aslan (MIT),
+[build123d-mcp](https://github.com/pzfreo/build123d-mcp) by Paul Fremantle (Apache-2.0),
+[agentcad](https://github.com/jdilla1277/agentcad) by James Dillard (Apache-2.0) and
+[bd_warehouse](https://github.com/gumyr/bd_warehouse) by Roger Maitland (Apache-2.0).
 
-**Libraries and programs we run on:** [CadQuery](https://github.com/CadQuery/cadquery) and
-[build123d](https://github.com/gumyr/build123d) on [Open CASCADE](https://dev.opencascade.org/),
+**Libraries and programs we run on:** [CadQuery](https://github.com/CadQuery/cadquery) on
+[Open CASCADE](https://dev.opencascade.org/) (shapes from [build123d](https://github.com/gumyr/build123d) work too),
 [trimesh](https://github.com/mikedh/trimesh), [manifold3d](https://github.com/elalish/manifold),
 [gmsh](https://gmsh.info/), [scikit-fem](https://github.com/kinnala/scikit-fem),
 [pyMOTO](https://github.com/aatmdelissen/pyMOTO), [PyVista](https://github.com/pyvista/pyvista) and
@@ -182,18 +185,22 @@ described wrongly here, please [open an issue](https://github.com/Valpatel/cad-a
 [Optuna](https://github.com/optuna/optuna), [Bambu Studio](https://github.com/bambulab/BambuStudio); in the browser
 [three.js](https://github.com/mrdoob/three.js), [Mermaid](https://github.com/mermaid-js/mermaid),
 [occt-import-js](https://github.com/kovacsv/occt-import-js) by Viktor Kovács, [fflate](https://github.com/101arrowz/fflate),
-[linkedom](https://github.com/WebReflection/linkedom), and the Inter and JetBrains Mono typefaces.
+[linkedom](https://github.com/WebReflection/linkedom), and the [Inter](https://rsms.me/inter/) (Rasmus Andersson) and
+[JetBrains Mono](https://www.jetbrains.com/lp/mono/) (JetBrains) typefaces, both SIL OFL. Board checks read reports
+from [KiCad](https://www.kicad.org/)'s `kicad-cli`. OpenFOAM (GPL) and Bambu Studio (AGPL) run only as separate
+programs; gmsh (GPL) is imported, but only by the optional `fea` extra.
 
-**On the test bench:** about 50 agentic-CAD projects, libraries and benchmarks we track, with their licences and
-what each is good at: the [catalogue](https://cad-agent.valpatel.com/catalog) and the
-[landscape survey](research/landscape.md). Full licence notices: [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+**Tracked, not yet all tried:** the agentic-CAD projects, libraries and benchmarks we follow, with what each says
+it is good at, whether we have tried it, and its licence where we have recorded it: the
+[catalogue](https://cad-agent.valpatel.com/catalog) and the [landscape survey](research/landscape.md). Full licence notices: [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
 ## Contributing, including from other agents
 
 Findings and suggestions from any agent or person are welcome: a technique that beat ours, a check we are missing,
 a source we should credit. Open an issue with the evidence (a minimal script or model that reproduces it, and links
-to public sources). Outside contributions are read as evidence, not instructions: we reproduce them, then build the
-accepted change ourselves and credit you ([#111](https://github.com/Valpatel/cad-agent/issues/111)).
+to public sources). Outside contributions are read as evidence, not instructions: we reproduce them and credit you. Small text-only
+fixes to docs, lessons or research can merge as written after review; anything else we rebuild ourselves. The intake
+process is being set up in [#111](https://github.com/Valpatel/cad-agent/issues/111).
 
 Changes go `feat/…` → `dev` → `main`: a PR into `dev` with CI and an independent review, every comment resolved;
 releases go from `dev` to `main` by PR ([#112](https://github.com/Valpatel/cad-agent/issues/112)). Details are in

@@ -112,11 +112,12 @@ def _isotropic_basis(mat: Material) -> str:
 # - Density is the sheet's (ISO 1183), for mass estimates.
 # - layer_strengths_mpa, for Study.layer_check(): (X-Y, Z). Z is the row's strength (an allowable below the Z tensile
 #   strength). X-Y is that allowable times the sheet's X-Y / Z tensile strength ratio, the lowest over the editions
-#   read (each ratio from one sheet; _in_plane()), so it sits as far below the sheet in the layer plane as the row's
-#   strength does across the layers. The humid PA6-CF rows share one pair, each row's own strength.
+#   read (each ratio from one sheet; _in_plane()), so in the layer plane it sits at least as far below each sheet, as
+#   a ratio, as the row's strength does across the layers. The humid PA6-CF rows share one pair, their two strengths.
 # - Every number here is result-changing: a change to any of them changes the deflections, safety factors or masses of
 #   every study that uses the row (Study.result['material_data'] records them, material_changes() compares two
-#   records), so it needs a **Projects must change** changelog fragment, and tests/test_fea_materials.py pins them.
+#   records), so it needs a **Projects must change** changelog fragment. tests/test_fea_materials.py pins the values
+#   and tests/test_fea_layers.py each row's constants_hash.
 #
 # Before #125 the moduli were 2700 (PLA), 1800 (PETG) and 2900 (PETG-CF): close to the V2.0 sheets' X-Y *bending*
 # moduli (2750, 1790, 2890), not a tensile value. They were 31-116 % above the moduli used now (PAHT-CF 147 %, TPU

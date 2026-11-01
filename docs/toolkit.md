@@ -472,7 +472,8 @@ The bulk check is the study's own von Mises check, against the in-plane allowabl
 hip frame before they were in the toolkit (#144).
 
 S_z is the row's strength, an allowable below the sheet's Z tensile strength. S_xy is that allowable times the sheet's
-X-Y / Z tensile strength ratio, the lowest over the editions read, so it sits as far below the sheet in the layer plane.
+X-Y / Z tensile strength ratio, the lowest over the editions read, so in the layer plane it sits at least as far below
+each sheet, as a ratio.
 The humid PA6-CF rows share one pair, their two strengths. `tests/test_fea_materials.py` pins the rule, and
 `tests/test_fea_layers.py` checks the check against hand-computed cases.
 

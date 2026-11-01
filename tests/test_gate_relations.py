@@ -416,11 +416,72 @@ def test_a_crossing_the_boolean_misses_is_unknown_with_its_depth(family, kind, m
         assert hit["lies"] == ("outside" if kind == "contains" and hit["surface"] == "a" else "inside")
 
 
+def split_at_plate(part):
+    """``part`` cut by the plate's top plane (z = 0) and glued back: the same solid, its faces split where they
+    meet the plate, so the crossing runs along an existing edge (the review of #228)."""
+    from OCP.BRepAlgoAPI import BRepAlgoAPI_Fuse, BRepAlgoAPI_Splitter
+    from OCP.BRepBuilderAPI import BRepBuilderAPI_MakeFace
+    from OCP.gp import gp_Dir, gp_Pln, gp_Pnt
+    from OCP.TopTools import TopTools_ListOfShape
+    args, tools = TopTools_ListOfShape(), TopTools_ListOfShape()
+    args.Append(part.wrapped)
+    tools.Append(BRepBuilderAPI_MakeFace(gp_Pln(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)), -50, 50, -50, 50).Face())
+    split = BRepAlgoAPI_Splitter()
+    split.SetArguments(args)
+    split.SetTools(tools)
+    split.Build()
+    halves = cq.Shape.cast(split.Shape()).Solids()
+    assert len(halves) == 2
+    glued = BRepAlgoAPI_Fuse(halves[0].wrapped, halves[1].wrapped)
+    glued.Build()
+    (whole,) = cq.Shape.cast(glued.Shape()).Solids()
+    assert len(whole.Faces()) > len(part.Faces()) and whole.Volume() == pytest.approx(part.Volume(), rel=1e-6)
+    return whole
+
+
+@needs_cad
+@pytest.mark.parametrize("family", ["ball", "cylinder"])
+@pytest.mark.parametrize("kind", ["touching", "contains"])
+def test_a_crossing_along_an_existing_edge_is_unknown_too(family, kind, monkeypatch):
+    """A part whose faces are split exactly at the plate's face, sunk into it: the section's only edge lies
+    along that split edge, and the kernel names no face pair for it. The faces next to the edge are sampled
+    (a coarse pass, then the full grid), so the crossing the boolean is made to miss is still ``unknown``."""
+    floor = relations_mod._probe_floor(Tolerances())
+    cavity = box(60, 60, 30, (-30, -30, 0))
+    # depths where the simulated cut of b stays within the volume check (a cylinder's crossing is wide)
+    for d in {"ball": (0.0005, 0.002, 0.02), "cylinder": (0.0005, 0.002, 0.003)}[family]:
+        part = split_at_plate({"ball": ball(4, cq.Vector(0, 0, 4 - d)),
+                               "cylinder": cq.Solid.makeCylinder(3, 10, cq.Vector(0, 0, -d))}[family])
+        a, b = part.wrapped, (plate() if kind == "touching" else cavity).wrapped
+        assert all(entry[3] for entry in relations_mod._section_patches(a, b))   # no face pair named anywhere
+        with monkeypatch.context() as m:
+            relate = _kernel_misses(m, kind)
+            rel = relate(part, plate() if kind == "touching" else cavity, contact_area=False)
+        if d < floor:
+            assert rel.state == kind, (d, rel)
+            continue
+        assert rel.state == "unknown", (d, rel)
+        assert rel.witness["crossing_probe"]["depth_mm"] == pytest.approx(d, rel=0.1), (d, rel.witness)
+
+
+@needs_cad
+def test_a_curve_along_an_iso_line_gets_samples_across_it():
+    """A cylinder standing 0.02 mm into the plate: the section is a circle at constant height on its side face,
+    so the UV box of the curve has no height. The rows across it then run at the face's height halved again and
+    again from the curve: four rings in the 0.02 mm band below the plate's face, without the face's edges or
+    vertices, and evenly up the face."""
+    side = next(f for f in cq.Solid.makeCylinder(3, 10, cq.Vector(0, 0, -0.02)).Faces() if f.geomType() == "CYLINDER")
+    circle = [cq.Vector(3 * math.cos(t), 3 * math.sin(t), 0).toPnt() for t in (k * math.pi / 12 for k in range(25))]
+    zs = sorted({round(p.Z(), 9) for p in relations_mod._patch_grid(side.wrapped, circle, 12, boundary=False)})
+    assert [z for z in zs if z < 0] == pytest.approx([-10 / 2 ** k for k in (9, 10, 11, 12)], abs=1e-9)
+    assert zs[-1] == pytest.approx(-0.02 + 10 * 12 / 13, abs=1e-9)      # and evenly up the 10 mm face
+
+
 @needs_cad
 def test_tangent_contacts_and_crossings_the_kernel_measured_keep_their_answers(monkeypatch):
     """The probe runs wherever the boundaries meet, and changes nothing where the boolean was right: tangent
     contacts (a point, a line, a face) and small crossings the kernel measured (a sharp corner 0.02 mm in shares
-    about 1e-5 mm3: ``touching`` by the tolerances)."""
+    7e-6 mm3: ``touching`` by the tolerances)."""
     from cadagent.review.gates import relate
     corner = box(2, 2, 2, (-1, -1, -1)).rotate(cq.Vector(0, 0, 0), cq.Vector(1, -1, 0), 54.7356103)
     corner = corner.translate(cq.Vector(0, 0, -corner.BoundingBox().zmin - 0.02))

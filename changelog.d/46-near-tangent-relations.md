@@ -10,4 +10,4 @@
 - `RELATIONS_VERSION` is now 5, so cached relations (`.cadagent-cache/gates/`) and the containment gate's cached
   checks recompute on the next run. A pair that crossed where the kernel saw no crossing now reads `unknown`, and
   every gate fails on it; nudge the parts apart or into a clear overlap. No answer changed on the README hero's
-  811-pair sweep or the gate bench.
+  clearance sweep (811 calls) or the gate bench.

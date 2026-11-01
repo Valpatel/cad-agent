@@ -43,7 +43,8 @@ How each state is decided (all tolerances absolute; see ``Tolerances``):
    wall within ``touch_mm / 10``): OCCT's boolean can miss a shallow near-tangent crossing, and then Common and Cut
    agree with each other and read none. ``BRepAlgoAPI_Section`` still finds the curves where the faces meet; points
    of each face around them are classified against the other solid (``_crossing_probe``). One on the wrong side by
-   more than ``touch_mm / 10`` that the kernel's own common or cut does not hold makes the pair ``unknown``.
+   more than ``touch_mm / 10`` that the kernel's own common or cut does not hold makes the pair ``unknown``. A
+   section edge with no face pair lies along an existing edge; the faces next to it get a coarse pass first.
 
 Fail-safe rules. OCP 7.9 binds no error report on ``BRepAlgoAPI_Common`` (``HasErrors`` is
 absent and ``DSFiller()`` crashes the interpreter at exit), and ``IsDone()`` stays true when an
@@ -70,8 +71,9 @@ Witnesses, so a reviewer can look at the right place:
 Limits. Exact B-rep queries on the model as given: no tolerance stack, no deflection, no print
 shrink. ``touching`` means the model puts the surfaces within ``touch_mm``; it does not prove the
 printed parts meet, and ``apart`` by 0.2 mm does not prove a printed clearance. The crossing probe
-is a safety net, not a proof: a crossing the section also misses, one no deeper than ``touch_mm / 10``
-or one between its samples is not seen, and its depth is that of the deepest sample (a lower bound).
+is a safety net, not a proof: a crossing the section also misses, one no deeper than ``touch_mm / 10``,
+one between its samples, or, next to an edge with no face pair, one the coarse pass steps over is not
+seen; its depth is that of the deepest sample (a lower bound).
 ``apart`` rests on ``BRepExtrema_DistShapeShape``, which read 0 at every crossing tried.
 """
 
@@ -769,6 +771,7 @@ def _boolean(kind: str, a, b):
 # ----------------------------------------------------------------------------- the crossing probe (#46)
 
 _PROBE_GRID = 12      # samples per direction over each section patch's UV box, plus one cell of margin each side
+_PROBE_COARSE = 2     # the first pass on a face next to a section edge that has no face pair (see _section_patches)
 _PROBE_CONFIRM = 8    # wrong-side samples per surface confirmed by an exact distance, farthest from the curve first
 _PROBE_PER_EDGE = 24  # points taken along each section edge
 
@@ -779,11 +782,16 @@ def _probe_floor(tol: Tolerances) -> float:
     return max(tol.touch_mm / 10, 1e-6)
 
 
-def _section_patches(a, b) -> List[Tuple[Any, Any, List[Any]]]:
-    """Where the faces of ``a`` and ``b`` cross: ``[(face of a, face of b, points along the curves between them)]``,
-    one entry per pair of faces (either face None when the kernel names only one), from a non-destructive
-    ``BRepAlgoAPI_Section``. The kernel names the faces of a curve where two faces intersect. An edge that comes
-    from coincident faces (a face contact) has none and is left out: coincident faces cannot cross.
+def _section_patches(a, b) -> List[Tuple[Any, Any, List[Any], bool]]:
+    """Where the boundaries of ``a`` and ``b`` meet: ``[(face of a, face of b, points along the curves there,
+    along an edge)]``, from a non-destructive ``BRepAlgoAPI_Section``.
+
+    * Where two faces intersect, the kernel names both: one entry per pair of faces (either face None when it
+      names only one), ``along an edge`` False.
+    * A section edge with no face named lies along an existing edge of ``a`` or ``b``: the rim of a face
+      contact, or a face split exactly at the other part's surface, which a crossing can still go through (the
+      review of #228: a ball split at a plate's face and sunk 0.02 mm into it). The section's history names that
+      edge (``Modified``), and each face next to it gets an entry (the other face None), ``along an edge`` True.
 
     The section finds the curves the boolean misses (#46): on a 4 mm ball crossing a cone wall by 0.011-0.23 mm,
     where Common and Cut read no crossing, it returned the whole closed intersection curve every time."""
@@ -799,38 +807,54 @@ def _section_patches(a, b) -> List[Tuple[Any, Any, List[Any]]]:
     op.Build()
     if not op.IsDone():
         raise RuntimeError("BRepAlgoAPI_Section did not finish")
-    abs_, ds = occ["TopAbs"], occ["TopoDS"]
+    abs_, ds, topexp = occ["TopAbs"], occ["TopoDS"], occ["TopExp"].TopExp
     maps = []
     for s in (a, b):
         m = occ["TopTools"].TopTools_IndexedMapOfShape()
-        occ["TopExp"].TopExp.MapShapes_s(s, abs_.TopAbs_FACE, m)
+        topexp.MapShapes_s(s, abs_.TopAbs_FACE, m)
         maps.append(m)
-    patches: Dict[Tuple[int, int], List[Any]] = {}
+    patches: Dict[Tuple[int, int, bool], List[Any]] = {}
+    unnamed = occ["TopTools"].TopTools_IndexedMapOfShape()
+    unnamed_points: List[List[Any]] = []
     ex = occ["TopExp"].TopExp_Explorer(op.Shape(), abs_.TopAbs_EDGE)
     while ex.More():
         edge = ex.Current()
         ex.Next()
+        curve = occ["BRepAdaptor"].BRepAdaptor_Curve(ds.TopoDS.Edge_s(edge))
+        t0, t1 = curve.FirstParameter(), curve.LastParameter()
+        points = [curve.Value(t0 + (t1 - t0) * k / _PROBE_PER_EDGE) for k in range(_PROBE_PER_EDGE + 1)]
         fa, fb = ds.TopoDS_Shape(), ds.TopoDS_Shape()
         ia = maps[0].FindIndex(fa) if op.HasAncestorFaceOn1(edge, fa) else 0
         ib = maps[1].FindIndex(fb) if op.HasAncestorFaceOn2(edge, fb) else 0
-        if not (ia or ib):
-            continue
-        curve = occ["BRepAdaptor"].BRepAdaptor_Curve(ds.TopoDS.Edge_s(edge))
-        t0, t1 = curve.FirstParameter(), curve.LastParameter()
-        patches.setdefault((ia, ib), []).extend(curve.Value(t0 + (t1 - t0) * k / _PROBE_PER_EDGE)
-                                                for k in range(_PROBE_PER_EDGE + 1))
+        if ia or ib:
+            patches.setdefault((ia, ib, False), []).extend(points)
+        elif unnamed.Add(edge) > len(unnamed_points):
+            unnamed_points.append(points)
+    for side, s in enumerate((a, b) if unnamed_points else ()):
+        faces_of = occ["TopTools"].TopTools_IndexedDataMapOfShapeListOfShape()
+        topexp.MapShapesAndAncestors_s(s, abs_.TopAbs_EDGE, abs_.TopAbs_FACE, faces_of)
+        for i in range(1, faces_of.Extent() + 1):
+            own = faces_of.FindKey(i)
+            split = op.Modified(own)                    # iterating an empty list costs more than the lookup
+            for piece in (own, *split) if split.Size() else (own,):     # the edge itself when left whole
+                k = unnamed.FindIndex(piece)
+                for face in faces_of.FindFromIndex(i) if k else ():
+                    j = maps[side].FindIndex(face)
+                    patches.setdefault((j, 0, True) if side == 0 else (0, j, True), []).extend(unnamed_points[k - 1])
     return [(ds.TopoDS.Face_s(maps[0].FindKey(i)) if i else None, ds.TopoDS.Face_s(maps[1].FindKey(j)) if j else None,
-             pts) for (i, j), pts in sorted(patches.items())]
+             pts, along) for (i, j, along), pts in sorted(patches.items())]
 
 
-def _patch_grid(face, curve: Sequence[Any], n: int) -> List[Any]:
+def _patch_grid(face, curve: Sequence[Any], n: int, boundary: bool = True) -> List[Any]:
     """Points of ``face`` on an (n + 2) x (n + 2) grid over the UV box of the ``curve`` points (projected onto the
-    face), one cell of margin each side, and their UV centroid, kept where the face is; plus points along the
-    face's edges in that box and every vertex of the face.
+    face), one cell of margin each side, and their UV centroid, kept where the face is; plus, with ``boundary``,
+    points along the face's edges in that box and every vertex of the face.
 
     The box follows the crossing: a 0.03 mm cap on a 4 mm ball is about 1 mm across, so the grid's spacing is
-    about 0.1 mm there, where a fixed grid over the face would step over it. A corner is the deepest point of a
-    tilted box's crossing, so the vertices are taken as they are."""
+    about 0.1 mm there, where a fixed grid over the face would step over it. Where the curve is an iso-line of
+    the face (a circle on a cylinder, a latitude on a sphere) the box has no height across it; there the rows
+    run from the curve at the face's width halved again and again, and evenly across the face. A corner is the
+    deepest point of a tilted box's crossing, so the vertices are taken as they are."""
     occ = {m: require(f"OCP.{m}", "the crossing probe") for m in
            ("BRep", "BRepAdaptor", "BRepTools", "BRepTopAdaptor", "ShapeAnalysis", "TopAbs", "TopExp", "TopoDS",
             "gp")}
@@ -844,10 +868,21 @@ def _patch_grid(face, curve: Sequence[Any], n: int) -> List[Any]:
     def unwrap(x, ref, period):     # across the seam, to within half a period of ``ref``
         return ref + ((x - ref + period / 2) % period) - period / 2 if period else x
     us, vs = [unwrap(x, us[0], periods[0]) for x in us], [unwrap(x, vs[0], periods[1]) for x in vs]
-    boxes = []
-    for vals in (us, vs):
-        step = (max(vals) - min(vals)) / (n - 1)
-        boxes.append((min(vals) - step, max(vals) + step))
+    boxes, rows = [], []
+    for vals, (first, last) in zip((us, vs), (lo[:2], lo[2:])):
+        low, high = min(vals), max(vals)
+        if high - low <= 1e-6 * (last - first):
+            # An iso-line: rows at the face's width halved again and again from the curve, each side, for a thin
+            # band along it (a cylinder 0.02 mm into a plate), and n + 2 across the whole face, for a face split
+            # exactly at the other part's surface (the review of #228).
+            width = last - first
+            rows.append(sorted({low, *(low + sign * width / 2 ** k for k in range(1, n + 1) for sign in (-1, 1)),
+                                *(first + width * i / (n + 1) for i in range(n + 2))}))
+            boxes.append((low - width, low + width))
+            continue
+        step = (high - low) / (n - 1)
+        boxes.append((low - step, high + step))
+        rows.append([boxes[-1][0] + (boxes[-1][1] - boxes[-1][0]) * i / (n + 1) for i in range(n + 2)])
     inside = occ["BRepTopAdaptor"].BRepTopAdaptor_FClass2d(face, 1e-7)
 
     def on_face(u, v):
@@ -860,10 +895,11 @@ def _patch_grid(face, curve: Sequence[Any], n: int) -> List[Any]:
         return None
 
     (u0, u1), (v0, v1) = boxes
-    m = n + 2
-    uvs = [(u0 + (u1 - u0) * i / (m - 1), v0 + (v1 - v0) * j / (m - 1)) for i in range(m) for j in range(m)]
+    uvs = [(u, v) for u in rows[0] for v in rows[1]]
     uvs.append((sum(us) / len(us), sum(vs) / len(vs)))
     points = [p for p in (on_face(u, v) for u, v in uvs) if p is not None]
+    if not boundary:
+        return points
     # The face's own boundary in the box (a tilted cylinder's rim), and every vertex: a crossing can run from the
     # curve to the face's edge, and a corner is the deepest point of a tilted box's crossing.
     ex = occ["TopExp"].TopExp_Explorer(face, occ["TopAbs"].TopAbs_EDGE)
@@ -906,7 +942,7 @@ def _crossing_probe(a, b, looks: Sequence[Tuple[int, str]], piece, floor: float)
     A sample on the wrong side is confirmed by its exact distance to the other's faces (more than ``floor``),
     then checked against ``piece``, the kernel's own result for that region (the common for ``touching``, the
     inner part's cut for ``contains``): a sample on ``piece`` is a crossing the kernel saw and measured (a sharp
-    corner 0.02 mm in, with 1e-6 mm3 shared, is ``touching`` by the tolerances). The deepest sample that is
+    corner 0.02 mm in, with 7e-6 mm3 shared, is ``touching`` by the tolerances). The deepest sample that is
     not on ``piece`` is returned (``None`` when there is none): the kernel missed a crossing at least that deep.
 
     A safety net, not a proof: a crossing the section also misses, or one whose samples all lie within ``floor``
@@ -923,15 +959,24 @@ def _crossing_probe(a, b, looks: Sequence[Tuple[int, str]], piece, floor: float)
         other = b if side == 0 else a
         classifier = occ["BRepClass3d"].BRepClass3d_SolidClassifier(other)
         wrong = []
-        for patch in patches:
-            if patch[side] is None:
-                continue
-            curve = np.array([(q.X(), q.Y(), q.Z()) for q in patch[2]])
-            for p in _patch_grid(patch[side], patch[2], _PROBE_GRID):
+        def off(points):
+            for p in points:
                 classifier.Perform(p, floor)
-                if classifier.State() == target[want]:   # farthest from the curve first: the middle of a cap
-                    far = float(np.min(np.linalg.norm(curve - (p.X(), p.Y(), p.Z()), axis=1)))
-                    wrong.append((-far, len(wrong), p))
+                if classifier.State() == target[want]:
+                    yield p
+        for face_a, face_b, along, along_edge in patches:
+            face = face_a if side == 0 else face_b
+            if face is None:
+                continue
+            # A face next to a section edge with no face pair is mostly a face contact's (its samples on the
+            # other's boundary or outside it): a coarse pass first, the full grid only when that finds a point
+            # on the wrong side.
+            if along_edge and next(off(_patch_grid(face, along, _PROBE_COARSE, boundary=False)), None) is None:
+                continue
+            curve = np.array([(q.X(), q.Y(), q.Z()) for q in along])
+            for p in off(_patch_grid(face, along, _PROBE_GRID)):   # farthest from the curve first: a cap's middle
+                far = float(np.min(np.linalg.norm(curve - (p.X(), p.Y(), p.Z()), axis=1)))
+                wrong.append((-far, len(wrong), p))
         if not wrong:
             continue
         other_faces = _faces(other)

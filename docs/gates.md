@@ -159,25 +159,34 @@ flowchart TD
 
 - **Why the section.** It finds the intersection curve where the boolean misses it: a closed curve around every
   missed crossing in the tests. The samples are a grid over each curve's box on each face (so a 1 mm cap gets
-  0.1 mm spacing), the face's edges in that box and its vertices. A sample on the wrong side by more than the floor
-  (`touch_mm / 10`, 0.001 mm by default) is confirmed by its exact distance to the other part's faces.
+  0.1 mm spacing), the face's edges in that box and its vertices. Where the curve is an iso-line of the face (a
+  circle on a cylinder), the rows across it close in on the curve by halves and also span the face. A sample on
+  the wrong side by more than the floor (`touch_mm / 10`, 0.001 mm by default) is confirmed by its exact
+  distance to the other part's faces.
+- **Edges with no face pair.** The kernel names the two faces of a curve where faces intersect. A section edge
+  that lies along an existing edge has none: the rim of a face contact, or a face split exactly at the other
+  part's surface, which a crossing can still go through. The section's history names that edge, and the faces
+  next to it get a coarse pass first (4 × 4), then the full grid if any sample is on the wrong side.
 - **Why the kernel's piece.** A sample inside the kernel's own common (for `touching`) or cut (for `contains`) is a
-  crossing the kernel saw and measured: a box corner 0.02 mm into a plate shares 1e-5 mm³ and stays `touching`.
+  crossing the kernel saw and measured: a box corner 0.02 mm into a plate shares 7e-6 mm³ and stays `touching`.
 - **The answer.** A crossing outside that piece is `unknown`: its volume is not measured, so neither `touching`
   nor `overlapping` can be stated. `witness["crossing_probe"]` names the surface, the point, its depth (a lower
   bound) and the other part's nearest point; the containment gate turns it into an escape. If the probe itself
   fails, the pair is `unknown` too.
 - **What it costs.** Only pairs whose boundaries meet pay: 0.03–0.06 s per ball pair above. On the README hero's
-  clearance sweep (811 calls on Gyropup's leg), it ran on the 168 touching calls and took 1.4 s in all, against
-  755 s for the sweep, with every relation unchanged. Those are face contacts: their section edges come from
-  coincident faces, which carry no face pair and are not sampled, since coincident faces cannot cross. Sampling
-  every one of their 912 edges anyway (145,441 samples) found no point on the wrong side. On the gate bench it
-  runs on the table's 31 touching pairs, 0.12 s of its 1.4–1.5 s.
+  clearance sweep (811 calls on Gyropup's leg), it ran on the 168 touching calls and took 3.7 s in all (at most
+  0.09 s a call), against 760 s for the sweep, with every relation unchanged. Those are face contacts, so none
+  of their section edges has a face pair: the coarse pass ran next to all of them and found nothing. The full
+  grid there (145,441 samples) found no point on the wrong side either. On the gate bench it runs on the table's
+  31 touching pairs and takes 0.3–0.4 s of the table's 1.5–1.6 s.
 - **Limits.** A safety net, not a proof. A crossing the section also misses, one whose samples all lie within the
-  floor, or one between samples is not seen. The depth is that of the deepest sample, so at most the true depth.
-  `apart` rests on `BRepExtrema_DistShapeShape`, which read 0 at every crossing tried. A fuzzy boolean does not
-  help: OCCT's fuzzy value makes entities within it coincide, which hides shallow crossings rather than finding
-  them, and `SetFuzzyValue` from 1e-5 to 1e-3 fixed only 3 of 12 missed crossings.
+  floor, or one between samples is not seen. Next to an edge with no face pair, so is one the coarse pass steps
+  over. The depth is that of the deepest sample, so at most the true depth. `apart` rests on
+  `BRepExtrema_DistShapeShape`, which read 0 at every crossing tried. A fuzzy boolean does not help. In OCCT's
+  [Boolean Operations guide](https://dev.opencascade.org/doc/overview/html/specification__boolean_operations.html)
+  ("Fuzzy Boolean Operation"), the fuzzy value is an additional tolerance under which touching and near-coincident
+  entities coincide. That hides shallow crossings rather than finding them, and `SetFuzzyValue` from 1e-5 to 1e-3
+  fixed only 3 of 12 missed crossings.
 
 <details><summary>Which crossings the boolean missed (OCP 7.9.3, x86_64)</summary>
 
@@ -193,7 +202,8 @@ sphere against a cone wall was ever misread; the planar cases and the other curv
 | ball in a bore, in a spherical cavity, against a torus; crossing rods; a cylinder on a cone | 0.002–0.2 mm | none | unchanged |
 
 The tests (`tests/test_gate_relations.py`) run the cone at three angles and the three planar families with the
-boolean made to miss the crossing as it does on the cone.
+boolean made to miss the crossing as it does on the cone. They also run a ball and a cylinder whose faces are
+split exactly at the plate's face, where the section's only edge has no face pair.
 
 </details>
 

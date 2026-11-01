@@ -31,6 +31,13 @@ How each state is decided (all tolerances absolute; see ``Tolerances``):
 1. **Broad phase.** Each part's axis-aligned box (``BRepBndLib.AddOptimal``, exact geometry).
    Pairs whose boxes are farther apart than ``near_mm`` are ``apart`` without a kernel call;
    the box distance is a lower bound on their gap (``gap_lower_bound_mm``).
+1a. **Distance first** (#186). ``BRepExtrema_DistShapeShape`` between the two parts' faces. A gap over
+   ``touch_mm`` with one vertex of each connected set of either part's faces outside the other part's
+   solids proves no shared volume (a part inside the other, or one in the other's void, is caught by
+   that test). If ``BRepAlgoAPI_Common`` then comes back empty, the pair is ``apart`` with that gap and
+   ``witness.method = "distance-first"``, and steps 2 and 3 are skipped. Every other pair takes them,
+   unchanged. The time saved is mostly the distance's own inner-solution test on solids (it classifies
+   every vertex), then the volume integrations and the cut.
 2. **Volumes.** ``BRepAlgoAPI_Common`` for the shared volume and ``BRepAlgoAPI_Cut`` for each
    part's volume outside the other, all run non-destructive (OCCT otherwise raises the
    arguments' tolerances in place). More than ``overlap_mm3`` shared is an overlap; a part with
@@ -46,8 +53,10 @@ argument is invalid (a compound of interfering solids gives an *empty* common). 
   ``relate`` returns ``unknown`` for one;
 * every narrow-phase answer is cross-checked: ``vol(a) = common + cut(a, b)`` (and the same for
   ``b`` when they overlap) within ``volume_check_mm3`` plus 1e-6 of the larger volume; a mismatch
-  is ``unknown``, never ``touching``, ``apart`` or ``contains``;
-* any exception from the kernel is ``unknown`` with the error.
+  is ``unknown``, never ``touching``, ``apart`` or ``contains``. A distance-first ``apart`` is
+  cross-checked instead by the proof against the empty common: two kernel answers that must agree;
+* any exception from the kernel is ``unknown`` with the error (in the distance-first step it sends
+  the pair to the full path, which then reports its own).
 
 Witnesses, so a reviewer can look at the right place:
 
@@ -669,6 +678,111 @@ def _distance(a, b):
     return float(dist.Value()), _pt(dist.PointOnShape1(1)), _pt(dist.PointOnShape2(1))
 
 
+def _boundary_points(topods) -> Optional[List[Any]]:
+    """One vertex point from each connected set of ``topods``' faces (faces joined through a shared vertex),
+    or None when a face has no vertex to stand for it (or there are no faces).
+
+    A connected set of faces that the other part's boundary never reaches lies wholly inside that part or
+    wholly outside it, so one point decides for the whole set."""
+    topexp = require("OCP.TopExp", "boundary components")
+    abs_ = require("OCP.TopAbs", "boundary components")
+    toptools = require("OCP.TopTools", "boundary components")
+    brep = require("OCP.BRep", "boundary components")
+    ds = require("OCP.TopoDS", "boundary components")
+    vertices = toptools.TopTools_IndexedMapOfShape()
+    parent: List[int] = []
+    first_face: Dict[int, int] = {}
+    stand_in: List[Any] = []
+
+    def root(i: int) -> int:
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    faces = topexp.TopExp_Explorer(topods, abs_.TopAbs_FACE)
+    while faces.More():
+        f = len(parent)
+        parent.append(f)
+        ex = topexp.TopExp_Explorer(faces.Current(), abs_.TopAbs_VERTEX)
+        if not ex.More():
+            return None
+        stand_in.append(ex.Current())
+        while ex.More():
+            v = vertices.Add(ex.Current())          # the same index for the same vertex, whatever its orientation
+            if v in first_face:
+                parent[root(f)] = root(first_face[v])
+            else:
+                first_face[v] = f
+            ex.Next()
+        faces.Next()
+    if not parent:
+        return None
+    firsts: Dict[int, int] = {}
+    for f in range(len(parent)):
+        firsts.setdefault(root(f), f)
+    return [brep.BRep_Tool.Pnt_s(ds.TopoDS.Vertex_s(stand_in[f])) for f in sorted(firsts.values())]
+
+
+def _any_point_not_outside(points: Sequence[Any], topods) -> bool:
+    """Whether any of ``points`` classifies IN, ON or unknown against a solid of ``topods``."""
+    classifier = require("OCP.BRepClass3d", "point classification")
+    abs_ = require("OCP.TopAbs", "point classification")
+    ds = require("OCP.TopoDS", "point classification")
+    precision = require("OCP.Precision", "point classification")
+    solids = _solids(topods)
+    if not solids:
+        return True
+    for solid in solids:
+        region = classifier.BRepClass3d_SolidClassifier(ds.TopoDS.Solid_s(solid))
+        for p in points:
+            region.Perform(p, precision.Precision.Confusion_s())
+            if region.State() != abs_.TopAbs_OUT:
+                return True
+    return False
+
+
+DISTANCE_FIRST = "distance-first"   # the ``method`` witness of an apart relation proven without volumes
+
+
+def _is_empty(topods) -> bool:
+    topods_ = require("OCP.TopoDS", "empty shape")
+    return topods.IsNull() or not topods_.TopoDS_Iterator(topods).More()
+
+
+def _proven_apart(sa, sb, tol: Tolerances, names: Tuple[str, str]) -> Optional[Relation]:
+    """The ``apart`` relation when the distance proves it and the common confirms it, else None (the full path
+    decides, as before).
+
+    Proof: the boundaries (every face of both parts) are more than ``touch_mm`` apart, and one vertex of each
+    connected set of one part's faces lies outside every solid of the other, both ways round. If two solids
+    whose boundaries never meet shared volume, a connected piece of one's boundary would lie inside the other
+    (take a component of the shared region's interior within one solid: the other's boundary cannot cross it,
+    so it lies wholly inside the other, its own boundary included). None does, so nothing is shared.
+
+    Check: ``BRepAlgoAPI_Common`` must come back empty too, so the answer never contradicts the boolean the full
+    path reads (a boundary crossing the distance missed, or a containment the classifier missed, goes to the
+    full path). What is skipped: both volume integrations, the cut and its integration, and the inner-solution
+    test of ``BRepExtrema_DistShapeShape`` on solids, which classifies every vertex (most of its time on a part
+    with hundreds of faces; it is skipped anyway for a compound of solids). The gap and points are
+    ``BRepExtrema_DistShapeShape`` on the faces: the values it gives on the solids when no vertex is inside.
+    Any kernel failure here falls back to the full path, which reports it."""
+    try:
+        gap, pa, pb = _distance(_faces(sa), _faces(sb))
+        if not gap > tol.touch_mm:
+            return None
+        for inner, outer in ((sa, sb), (sb, sa)):
+            points = _boundary_points(inner)
+            if points is None or _any_point_not_outside(points, outer):
+                return None
+        if not _is_empty(_boolean("common", sa, sb)):
+            return None
+    except Exception:  # the full path runs the same kernel calls and records the failure
+        return None
+    return Relation(names[0], names[1], "apart", gap_mm=round(gap, 6), overlap_mm3=0.0,
+                    witness={"point_a": pa, "point_b": pb, "method": DISTANCE_FIRST})
+
+
 def _shape_list(shapes):
     toptools = require("OCP.TopTools", "boolean arguments")
     out = toptools.TopTools_ListOfShape()
@@ -711,11 +825,37 @@ def relate(a: Any, b: Any, tol: Tolerances = Tolerances(), *, names: Tuple[str, 
     no additional measurement uncertainty. ``validated`` skips the input topology and
     multi-solid checks (``Assembly`` already ran them). Anything doubtful gives ``unknown``
     with the reason in ``error``.
+
+    Distance first (#186): after the input checks, a pair whose boundaries are more than ``touch_mm`` apart,
+    with neither inside the other, is ``apart`` without volumes or booleans (``_proven_apart``); every other
+    pair takes the full path, unchanged.
     """
     sa, sb = getattr(a, "wrapped", a), getattr(b, "wrapped", b)
-    integration = {"method": "adaptive BRepGProp GK, requested relative errors 1e-6 and 1e-8",
-                   "error_basis": "max(OCCT summed absolute face-error estimates, refinement delta); not a rigorous bound",
-                   "max_estimated_error_mm3": 0.0, "max_refinement_delta_mm3": 0.0}
+    if not validated:
+        try:
+            for n, s in zip(names, (sa, sb)):
+                if solid_interference(s, tol.overlap_mm3):
+                    return Relation(names[0], names[1], "unknown",
+                                    error=f"{n} is a compound whose solids share volume; fuse it first",
+                                    witness={"volume_integration": _integration_record()})
+        except Exception as exc:  # the OCCT wrappers raise several types; record, never pass silently
+            return Relation(names[0], names[1], "unknown", error=f"{type(exc).__name__}: {exc}",
+                            witness={"volume_integration": _integration_record()})
+    return (_proven_apart(sa, sb, tol, names)
+            or _relate_full(sa, sb, tol, names=names, volumes=volumes, contact_area=contact_area))
+
+
+def _integration_record() -> Dict[str, Any]:
+    return {"method": "adaptive BRepGProp GK, requested relative errors 1e-6 and 1e-8",
+            "error_basis": "max(OCCT summed absolute face-error estimates, refinement delta); not a rigorous bound",
+            "max_estimated_error_mm3": 0.0, "max_refinement_delta_mm3": 0.0}
+
+
+def _relate_full(sa, sb, tol: Tolerances, *, names: Tuple[str, str], volumes: Optional[Tuple[Any, Any]],
+                 contact_area: bool) -> Relation:
+    """The full narrow phase on validated ``TopoDS`` shapes: volumes, common and cut (cross-checked), then the
+    distance when nothing is shared. Every state comes from here except a distance-first ``apart``."""
+    integration = _integration_record()
 
     def measure(shape, supplied=None):
         m = (_measure_volume(shape) if supplied is None else supplied if isinstance(supplied, _VolumeEstimate)
@@ -732,11 +872,6 @@ def relate(a: Any, b: Any, tol: Tolerances = Tolerances(), *, names: Tuple[str, 
         return Relation(names[0], names[1], "unknown", error=why, witness={"volume_integration": integration})
 
     try:
-        if not validated:
-            for n, s in zip(names, (sa, sb)):
-                clash = solid_interference(s, tol.overlap_mm3)
-                if clash:
-                    return unknown(f"{n} is a compound whose solids share volume; fuse it first")
         ma, mb = (measure(s, v) for s, v in zip((sa, sb), volumes or (None, None)))
         va, vb = ma.value, mb.value
         if va <= ma.error or vb <= mb.error:
@@ -889,17 +1024,21 @@ def _relate_items(asm: Assembly, a: str, b: str, tol: Tolerances, cache: Optiona
             rel = Relation.from_dict({**hit, "a": "low", "b": "high"})   # stored oriented low key -> high key
             rel = rel.flipped() if flip else rel
             return replace(rel, a=a, b=b, cached=True)
-    vols = None
+    rel = None
     if volumes is not None:
-        try:
-            for n in (a, b):
-                if n not in volumes:
-                    volumes[n] = _measure_volume(asm.shape(n))
-        except Exception as exc:
-            return Relation(a, b, "unknown", error=f"volume integration failed: {exc}")
-        vols = (volumes[a], volumes[b])
-    rel = relate(asm.shape(a), asm.shape(b), tol, names=(a, b), volumes=vols, contact_area=contact_area,
-                 validated=True)
+        # distance first, so a part measured only against far parts is never integrated (#186)
+        rel = _proven_apart(asm.shape(a), asm.shape(b), tol, (a, b))
+        if rel is None:
+            try:
+                for n in (a, b):
+                    if n not in volumes:
+                        volumes[n] = _measure_volume(asm.shape(n))
+            except Exception as exc:
+                return Relation(a, b, "unknown", error=f"volume integration failed: {exc}")
+            rel = _relate_full(asm.shape(a), asm.shape(b), tol, names=(a, b), volumes=(volumes[a], volumes[b]),
+                               contact_area=contact_area)
+    else:
+        rel = relate(asm.shape(a), asm.shape(b), tol, names=(a, b), contact_area=contact_area, validated=True)
     if cache is not None and rel.state != "unknown":
         stored = rel.flipped() if flip else rel
         cache.put(key, {k: v for k, v in stored.to_dict().items() if k not in ("a", "b", "cached")})

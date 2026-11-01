@@ -632,22 +632,24 @@ for the governing one (`utilisation`), it gives:
 - `over_1`, the number of judged elements past the allowable, and their volume (`over_1_volume_mm3`, and its share
   of the judged volume).
 
-![The bracket's judged volume above each utilisation, on a log scale: under the combined criterion 0.04 % of it is past the allowable (55 elements, 2 cubic mm, max 1.06) and 1 % is above 0.59; under the maximum-stress criterion the max is 0.93; both curves fall to a plateau near 0.55, the base bent evenly in its layer plane](img/fea/layer-spread.svg)
-
-The chart is the same bracket's two checks as `stats` sees them. Left of 1 %, round the root fillet, the combined
-curve sits above the max-stress one, where tension and shear meet; the plateau near 0.55 is the base, bent evenly in
-its layer plane, a region. The p99 is weighted by volume, so a mesh made finer round the peak with `refine=` does not
-pull it up. A count of elements past 1 grows with such a mesh; their volume settles. Each element counts whole, from
-its highest corner, so the volume is an upper bound. `lc.worst['resolution']` measures the mesh at the worst corner,
-as `result['mesh']['peak']` does at the design peak. A corner at a sharp re-entrant edge, or in a wall one or two
-elements thick, is not a result. `st.render(path, field=lc)` draws the check, as in the bracket figure: black past
-the allowable, grey where not judged.
-
 ```python
 lc.stats['utilisation']    # {'max': 1.06, 'p99': 0.59, 'over_1': 55, 'over_1_volume_mm3': 1.98, ...}
 lc.worst['resolution']     # where that corner sits, the wall round it, elements across, an inside radius
 st.render('exports/fea/bracket-layers.png', field=lc, vmax=1.0)    # or field=lc.modes['shear']
 ```
+
+The p99 is weighted by volume, so a mesh made finer round the peak with `refine=` does not pull it up. A count of
+elements past 1 grows with such a mesh; their volume settles. Each element counts whole, from its highest corner, so
+the volume is an upper bound. `lc.worst['resolution']` measures the mesh at the worst corner, as `result['mesh']['peak']`
+does at the design peak. A corner at a sharp re-entrant edge, or in a wall one or two elements thick, is not a
+result. `st.render(path, field=lc)` draws the check, as in the bracket figure: black past the allowable, grey where
+not judged.
+
+![The bracket's judged volume above each utilisation, on a log scale: under the combined criterion 0.04 % of it is past the allowable (55 elements, 2 cubic mm, max 1.06) and 1 % is above 0.59; under the maximum-stress criterion the max is 0.93; both curves fall to a plateau near 0.55, the base bent evenly in its layer plane](img/fea/layer-spread.svg)
+
+The chart is the bracket's two checks as `stats` sees them. Left of 1 %, round the root fillet, the combined curve
+sits above the max-stress one, where tension and shear meet. The plateau near 0.55 is the base, bent evenly in its
+layer plane: a region.
 
 Its limits:
 

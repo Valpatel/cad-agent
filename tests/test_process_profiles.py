@@ -98,6 +98,16 @@ def test_every_expression_evaluates_and_ranges_are_ordered(data):
                 assert all(v >= 0 for v in got.values()), f"{r['id']}: a negative length"
 
 
+def test_rules_that_compare_share_their_units(data):
+    """A compare key sets rules side by side, so 45° must never be weighed against 3 mm."""
+    units = {}
+    for r in data["rules"]:
+        if "compare" in r:
+            units.setdefault(r["compare"], {}).setdefault(r["units"], []).append(r["id"])
+    mixed = {key: by_unit for key, by_unit in units.items() if len(by_unit) > 1}
+    assert not mixed, f"compare keys with more than one unit: {mixed}"
+
+
 def test_every_source_is_used(data):
     used = {r["source"] for r in data["rules"]} | {f["source"] for f in data["formulas"]} | \
         {t["source"] for t in data["shop_tables"]}

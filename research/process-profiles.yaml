@@ -14,8 +14,9 @@
 #   id         unique, kebab-case: <process>-<feature>-<qualifier>-<source short name>
 #   process    a key of `processes`
 #   feature    what on the part the rule is about (wall, hole, bend-radius, draft, …)
-#   compare    optional: rules from different sources or processes that limit the same quantity share this key, so
-#              a page or a check can set them side by side (tools/process_profile_figures.py draws them)
+#   compare    optional: rules from different sources or processes that limit the same quantity, in the same units,
+#              share this key, so a page or a check can set them side by side (tools/process_profile_figures.py draws
+#              them)
 #   variant    optional: a short qualifier when one source gives the same quantity more than once (supported)
 #   quantity   what is limited, in words
 #   min / max / value
@@ -1710,7 +1711,7 @@ rules:
   - id: sla-overhang-length-formlabs-form2
     process: sla
     feature: overhang
-    compare: overhang-max
+    compare: overhang-length-max
     variant: Form 2 (laser)
     quantity: horizontal unsupported overhang length
     max: 3.0
@@ -1818,7 +1819,7 @@ rules:
   - id: sla-overhang-length-formlabs-form3
     process: sla
     feature: overhang
-    compare: overhang-max
+    compare: overhang-length-max
     variant: Form 3 / 3B (laser)
     quantity: horizontal unsupported overhang length
     max: 5.0
@@ -1926,7 +1927,7 @@ rules:
   - id: sla-overhang-length-formlabs-form4
     process: sla
     feature: overhang
-    compare: overhang-max
+    compare: overhang-length-max
     variant: Form 4 (MSLA)
     quantity: horizontal unsupported overhang length
     max: 5.0
@@ -2208,7 +2209,7 @@ rules:
   - id: sla-overhang-length-xometry
     process: sla
     feature: overhang
-    compare: overhang-max
+    compare: overhang-length-max
     quantity: unsupported overhang length
     max: 2.0
     units: mm
@@ -2300,7 +2301,7 @@ rules:
   - id: sla-ledge-materialise
     process: sla
     feature: overhang
-    compare: overhang-max
+    compare: overhang-length-max
     quantity: horizontal ledge that needs no support
     max: 2.0
     units: mm

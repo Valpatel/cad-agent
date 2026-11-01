@@ -145,6 +145,47 @@ try {
     await page.locator('cad-copy > .cad-copy-btn').first().click();
     await page.waitForFunction(() => document.querySelector('cad-copy > .cad-copy-btn')?.dataset.state !== 'idle');
     for (const c of await page.evaluate(covered)) problems.push(`${where} ${busiest.at(-1)} after copying: ${c}`);
+    if (width === 768 || width === 1366) {
+      // Planted blocks (review of #130), so the site's content does not decide whether this can fail. A probe block
+      // learns where the text area ends and how wide a character is; then 41 copies of one line, each in a column
+      // 1.5 px wider than the last, sweep the line's end 60 px across the button's edge, so no band of a few pixels
+      // (a label a little wider than the room) is missed. All wrapped by enhance(); then every button pressed (the
+      // wider labels); then a stylesheet that arrives late and makes the button bigger.
+      await page.evaluate(async () => {
+        const { enhance } = await import('/kit/copy.js');
+        const frames = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const box = document.createElement('div');
+        box.id = 'planted';
+        document.querySelector('article, main, body').append(box);
+        const probe = Object.assign(document.createElement('div'), { style: 'width:520px' });
+        probe.append(Object.assign(document.createElement('pre'), { textContent: 'x'.repeat(10) }));
+        box.append(probe);
+        enhance(probe);
+        await frames();
+        const pre = probe.querySelector('pre'), cs = getComputedStyle(pre), range = document.createRange();
+        range.selectNodeContents(pre.firstChild);
+        const char = range.getBoundingClientRect().width / 10;
+        const text = pre.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        const line = 'x'.repeat(Math.floor(text / char));
+        box.replaceChildren();
+        for (let i = 0; i <= 40; i++) {
+          const col = Object.assign(document.createElement('div'), { style: `width:${490 + i * 1.5}px` });
+          col.append(Object.assign(document.createElement('pre'), { textContent: line }));
+          box.append(col);
+        }
+        enhance(box);
+      });
+      const settle = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+      await settle();
+      for (const c of await page.evaluate(covered)) problems.push(`${where} planted, idle: ${c}`);
+      await page.evaluate(() => { for (const b of document.querySelectorAll('#planted .cad-copy-btn')) b.click(); });
+      await page.waitForFunction(() => [...document.querySelectorAll('#planted .cad-copy-btn')].every(b => b.dataset.state !== 'idle'));
+      await settle();
+      for (const c of await page.evaluate(covered)) problems.push(`${where} planted, after copying: ${c}`);
+      await page.addStyleTag({ content: 'cad-copy>.cad-copy-btn{font-size:15px;padding:.3em 1.2em}' });
+      await settle();
+      for (const c of await page.evaluate(covered)) problems.push(`${where} planted, late stylesheet: ${c}`);
+    }
     await context.close();
   }
   const reduced = await browser.newPage({ reducedMotion: 'reduce' });

@@ -11,8 +11,10 @@
  * .cad-copy-btn`): a page's own rule on `cad-copy > .cad-copy-btn` (or the --cad-copy-* custom properties) wins, and
  * a plain `button {}` reset such as Tailwind's preflight does not. Focus rings stay at zero specificity, so a page's
  * own focus style wins. The button never covers text: the code keeps room on the right as wide as the button's widest
- * label (measured, and re-measured when fonts load), and code that scrolls sideways, or any code on a narrow screen,
- * gets a strip above it as tall as the button. On touch screens the button is 44 px tall.
+ * label (measured, and re-measured when fonts load or the button's own size changes), and code that scrolls sideways,
+ * or any code on a narrow screen, gets a strip above it as tall as the button. One limit: the strip is the <pre>'s
+ * own top padding, so code that also scrolls vertically (a max-height on <pre>) can scroll under the button.
+ * On touch screens the button is 44 px tall.
  *
  * enhance(root, selector) wraps every matching <pre> that is not already inside a <cad-copy> (default: all <pre>
  * except Mermaid sources), for pages whose HTML you do not generate yourself.
@@ -136,11 +138,14 @@ export class CadCopy extends HTMLElement {
       }
       show(state, now);
       button.style.minWidth = `${widest}px`;
-      fit();
+      fit(true);
     };
-    const fit = () => {
+    // fresh: just measured, so never measure again from here. Without it, a button wider than measure() can explain
+    // (a page rule measure() does not reproduce) would make measure() and fit() call each other for ever.
+    const fit = (fresh = false) => {
       if (!this.isConnected) return;
-      if (!widest && button.offsetWidth) return measure();     // first measured while hidden (a closed <details>)
+      if (!fresh && !widest && button.offsetWidth) return measure();     // first measured while hidden (a closed <details>)
+      if (!fresh && button.offsetWidth > widest + 0.5) return measure(); // page CSS grew the button since it was measured
       const p = pre.getBoundingClientRect(), b = button.getBoundingClientRect(), cs = getComputedStyle(pre);
       const x = `${Math.ceil(p.right - parseFloat(cs.borderRightWidth) - (b.right - widest) + 8)}px`;
       const y = `${Math.ceil(b.bottom - p.top - parseFloat(cs.borderTopWidth) + 6)}px`;
@@ -149,7 +154,9 @@ export class CadCopy extends HTMLElement {
       // Only the strip depends on overflow; the right-hand room never does, so this settles in one pass.
       this.toggleAttribute('data-wide', pre.scrollWidth > pre.clientWidth + 1);
     };
-    new ResizeObserver(fit).observe(pre);
+    const watch = new ResizeObserver(() => fit());           // not fit(entries): that would read as fresh
+    watch.observe(pre);
+    watch.observe(button);                                     // a stylesheet that arrives later can resize it
     measure();
     document.fonts?.ready.then(measure);
     matchMedia('(pointer: coarse)').addEventListener?.('change', measure);
@@ -161,8 +168,9 @@ export function enhance(root = document, selector = 'pre:not(.mermaid):not(:has(
   for (const pre of root.querySelectorAll(selector)) {
     if (pre.closest('cad-copy')) continue;
     const wrap = document.createElement('cad-copy');
-    pre.replaceWith(wrap);
-    wrap.append(pre);
+    const parent = pre.parentNode, next = pre.nextSibling;
+    wrap.append(pre);                                          // fill it first: it sets itself up when it connects
+    parent.insertBefore(wrap, next);
   }
 }
 

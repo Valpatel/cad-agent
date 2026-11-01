@@ -28,3 +28,6 @@
   every key it had keeps its value. A test that compares the whole dict must allow the new keys (#144).
 - A project that hashes its source folders in evidence receipts can move its old-path imports when it next
   regenerates them: no removal release is set yet (#144).
+- The old paths' warning text changed. It still starts `cadagent.<old> moved to cadagent.<new>`, but no longer says
+  "the old path goes in v0.7.0". A warnings filter or a test that matches the old ending must match the start
+  instead (#144).

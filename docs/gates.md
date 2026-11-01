@@ -130,7 +130,7 @@ Measured with `tools/gate_timing.py` on the synthetic 100-part assembly (4,950 p
 at load average 11: broad phase 0.006 s, narrow phase 1.9 s cold, 0.03 s warm from the cache. The cross-check's
 extra `Cut` roughly doubled the cold narrow phase. Real parts with hundreds of faces cost 10–100× more per pair. On
 Gyropup's leg (the README hero's clearance sweep, 811 pairs, PR #198), the single inner-solution test cut the time
-from 935 s to SWEEP_AFTER s of calls, every relation byte-identical. Most of what remains is BRepExtrema's own search between
+from 951 s to 685 s of calls, every relation byte-identical. Most of what remains is BRepExtrema's own search between
 nearby edges and faces.
 
 ### Pairs the table did not examine

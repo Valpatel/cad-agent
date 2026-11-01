@@ -715,7 +715,8 @@ def _solid_distance(a, b, tol: Tolerances):
 
     ``BRepExtrema_DistShapeShape`` on two solids first classifies every vertex of each against the other
     (``_inner_vertex``). Only if none is IN does it measure between their vertices, edges and faces, and those are
-    the sub-shapes of the faces when nothing is loose (``_loose``). So when the faces are more than
+    the sub-shapes of the faces when nothing is loose (``_loose``), met in the same order (``_faces`` keeps the
+    shape's own), so its ties break the same way and the points match too. So when the faces are more than
     ``max(touch_mm, 10 x the classification tolerance)`` apart, no vertex is anywhere near the other boundary, and
     ``_inner_vertex`` finds none either way round, the distance between the faces is the call's answer. Otherwise,
     or on any kernel error, ``_distance(a, b)`` itself decides, as before."""

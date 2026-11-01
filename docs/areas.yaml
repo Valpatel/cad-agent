@@ -2,7 +2,7 @@
 # the evaluation jobs (#142) and folder names (#145) use these slugs. Read docs/vision.md first.
 #
 # Every node: slug, title, scope (one line), maturity, and optionally:
-#   priority  gyropup (needed for Gyropup to become real) and/or demo (makes a good video or interactive demo)
+#   priority  demo (makes a good video or interactive demo)
 #   pages     repo-relative Markdown pages (docs/, research/)       cli      `cad-agent` subcommands
 #   api       cadagent modules (today's import paths)                skills   skills/<name>/SKILL.md
 #   uses      another domain's cadagent modules the node relies on (never one of its own `api`)
@@ -62,21 +62,20 @@ domains:
         title: Mechanisms
         scope: Joints, linkages, motor mounts and the motion between parts.
         maturity: tooling
-        priority: [gyropup, demo]
+        priority: [demo]
         pages: [docs/rendered-motion.md]
         cli: [motion-trace]
         api: [cadagent.mechanical.motion_trace]
         skills: [cad-motion-validation]
         projects: [gyropup]
         topics:
-          - {slug: motor-mounts, title: Motor mounts, scope: "Bolt circles, pilots and load paths for bought actuators and motors.", maturity: idea, priority: [gyropup], issues: [144]}
-          - {slug: linkages, title: Linkages, scope: "Four- and five-bar position, workspace and transmission angle.", maturity: tooling, priority: [gyropup, demo], pages: [docs/linkages.md], api: [cadagent.mechanical.linkages], issues: [187]}
-          - {slug: joints-and-bearings, title: Joints and bearings, scope: "Pivots, bearing seats, shafts and their fits.", maturity: idea, priority: [gyropup]}
+          - {slug: motor-mounts, title: Motor mounts, scope: "Bolt circles, pilots and load paths for bought actuators and motors.", maturity: idea, issues: [144]}
+          - {slug: linkages, title: Linkages, scope: "Four- and five-bar position, workspace and transmission angle.", maturity: tooling, priority: [demo], pages: [docs/linkages.md], api: [cadagent.mechanical.linkages], issues: [187]}
+          - {slug: joints-and-bearings, title: Joints and bearings, scope: "Pivots, bearing seats, shafts and their fits.", maturity: idea}
       - slug: housings-and-enclosures
         title: Housings and enclosures
         scope: Shells, lids, bosses, ribs, port windows and markings around electronics and mechanisms.
         maturity: tooling
-        priority: [gyropup]
         api: [cadagent.mechanical.connectors, cadagent.mechanical.markings]
         projects: [j501-enclosure, thor-can-breakout, gyropup]
         topics:
@@ -87,7 +86,7 @@ domains:
         title: Compliant mechanisms
         scope: One-piece parts that flex instead of sliding or screwing.
         maturity: tooling
-        priority: [gyropup, demo]
+        priority: [demo]
         pages: [docs/compliant.md, research/compliant-mechanisms.md]
         cli: [snapfit]
         api: [cadagent.mechanical.compliant]
@@ -109,28 +108,27 @@ domains:
         title: Wheels and driving
         scope: Wheels, hubs, tyres and the drivetrain that turns them.
         maturity: idea
-        priority: [gyropup, demo]
+        priority: [demo]
         projects: [gyropup]
       - slug: walking
         title: Walking
         scope: Legged mechanisms, from linkage legs to gaits.
         maturity: idea
-        priority: [gyropup, demo]
+        priority: [demo]
         projects: [gyropup]
         topics:
-          - {slug: five-bar-legs, title: Five-bar legs, scope: "Two-motor parallel legs: kinematics, workspace, loads.", maturity: idea, priority: [gyropup, demo], issues: [144]}
+          - {slug: five-bar-legs, title: Five-bar legs, scope: "Two-motor parallel legs: kinematics, workspace, loads.", maturity: idea, priority: [demo], issues: [144]}
       - slug: fasteners-and-hardware
         title: Fasteners, bought hardware and assembly
         scope: Screws, inserts and other bought parts, and getting them in and out.
         maturity: tooling
-        priority: [gyropup]
         pages: [docs/subassembly-insertion.md]
         cli: [holes, mcmaster]
         api: [cadagent.mechanical.fasteners, cadagent.mechanical.holes, cadagent.mechanical.mcmaster]
         skills: [mcmaster-parts]
         issues: [46]
         topics:
-          - {slug: fasteners, title: Fasteners, scope: "Screw stacks, engagement, bottoming and hole clearance.", maturity: tooling, priority: [gyropup]}
+          - {slug: fasteners, title: Fasteners, scope: "Screw stacks, engagement, bottoming and hole clearance.", maturity: tooling}
           - {slug: screw-bosses, title: Screw bosses, scope: "Thread-forming screws in printed bosses: clamp, stripping, torque window, wall.", maturity: tooling, priority: [demo], pages: [docs/screw-bosses.md], api: [cadagent.mechanical.bosses], issues: [161]}
           - {slug: bought-parts, title: Bought parts, scope: "Real catalogue parts with their manufacturer models.", maturity: tooling}
           - {slug: assembly-access, title: Assembly access, scope: "Tool reach, insertion paths and subassembly order.", maturity: tooling}
@@ -162,13 +160,12 @@ domains:
         title: 3D printing
         scope: FDM, SLA, SLS and MJF parts, from orientation to slicing.
         maturity: tooling
-        priority: [gyropup]
         cli: [export-3mf, slice]
         api: [cadagent.manufacturing.slicer, cadagent.manufacturing.mesh3mf, cadagent.manufacturing.plates]
         issues: [84, 99]
         projects: [gyropup, j501-enclosure]
         topics:
-          - {slug: fdm, title: FDM, scope: "Orientation, layer anisotropy, overhangs and slicer evidence.", maturity: tooling, priority: [gyropup]}
+          - {slug: fdm, title: FDM, scope: "Orientation, layer anisotropy, overhangs and slicer evidence.", maturity: tooling}
           - {slug: resin-and-powder, title: Resin and powder, scope: "SLA/MSLA, SLS and MJF design rules.", maturity: idea, issues: [99]}
       - slug: cnc-machining
         title: CNC machining
@@ -205,7 +202,6 @@ domains:
         title: Conduction and heat sinks
         scope: Heat paths from the chip to the air.
         maturity: tooling
-        priority: [gyropup]
         api: [cadagent.thermal.heatsink]
         projects: [j501-enclosure]
       - slug: airflow-and-fans
@@ -234,7 +230,7 @@ domains:
         title: Structural FEA
         scope: Stiffness and strength of printed and machined parts.
         maturity: tooling
-        priority: [gyropup, demo]
+        priority: [demo]
         pages: [research/fea-and-process-tools.md]
         api: [cadagent.simulation.fea]
         issues: [125]
@@ -251,7 +247,7 @@ domains:
         title: Motion and dynamics
         scope: Rigid-body simulation of robots and mechanisms.
         maturity: tooling
-        priority: [gyropup, demo]
+        priority: [demo]
         api: [cadagent.simulation.robot]
         projects: [gyropup]
       - slug: topology-optimisation
@@ -280,7 +276,6 @@ domains:
         title: Physical tests and coupons
         scope: Printed coupons, drop tests and bench measurements that settle a prediction.
         maturity: idea
-        priority: [gyropup]
 
   - slug: electrical
     title: Electrical design
@@ -295,14 +290,12 @@ domains:
         title: Wiring harnesses
         scope: Cables, connectors, routing and strain relief.
         maturity: idea
-        priority: [gyropup]
         lessons: wiring
         projects: [gyropup]
       - slug: circuit-boards
         title: Circuit boards
         scope: PCBs by job, with their evidence (ERC, DRC, routing, assembly).
         maturity: tooling
-        priority: [gyropup]
         pages: [docs/pcb.md]
         cli: [pcb-check]
         api: [cadagent.electrical.pcb, cadagent.electrical.pcb_routing]

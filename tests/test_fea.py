@@ -46,6 +46,53 @@ def test_printed_material_deflects_at_its_data_sheet_modulus(tmp_path):
     assert d['material']['source'] == 'bambu-petg-basic-tds'
 
 
+def test_layer_check_on_a_printed_bar_across_and_along_the_layers(tmp_path):
+    """#144: a PETG-CF bar pulled along x, sigma = F / A = 10 MPa. Printed standing on its end (layer normal x), the
+    load crosses the layers and the bond governs, at S_z / sigma; printed lying down (normal z or y), the load runs
+    along them and the bulk governs, at S_xy / sigma. Judged over the middle half of the bar, where the stress is
+    uniform; by default (all but the clamp and load patches) the bulk check is the study's own check at S_xy."""
+    import json
+
+    from cadagent.simulation.fea import MATERIALS, material_changes
+
+    m = MATERIALS['petg_cf']
+    xy, z = m.layer_strengths_mpa                                        # 26.55, 22 MPa
+    L, b, F = 100.0, 10.0, 1000.0
+    st = Study(cq.Workplane('XY').box(L, b, b).translate((L / 2, 0, 0)), m, mesh_mm=4.0, name='printed bar')
+    st.fix(plane_at(0, 0.0)).force(plane_at(0, L), (F, 0, 0))
+    r = st.solve()
+    sigma = F / b ** 2
+    assert st.sig_corner.shape == (len(st.tets), 4, 3, 3)
+    centre = st.points[st.tets].mean(axis=1)
+    mid = (centre[:, 0] > L / 4) & (centre[:, 0] < 3 * L / 4)
+
+    across = st.layer_check((1, 0, 0), judge=mid)
+    assert across.governed_by == 'bond' and across.safety_factor == pytest.approx(z / sigma, rel=1e-3)
+    assert across.safety_factor_bulk == pytest.approx(xy / sigma, rel=1e-3)
+    assert across.worst['sigma_n_mpa'] == pytest.approx(sigma, rel=1e-3) and abs(across.worst['tau_n_mpa']) < 0.01
+    assert L / 4 - b < across.worst['corner_mm'][0] < 3 * L / 4 + b
+    for normal in ((0, 0, 1), (0, 1, 0)):
+        along = st.layer_check(normal, judge=mid)
+        assert along.governed_by == 'bulk' and along.safety_factor == pytest.approx(xy / sigma, rel=1e-3)
+        assert along.safety_factor_bond > 100                           # nothing crosses or slides on the layers
+    t = math.radians(30)                                                 # the worst tilt for the assumed shear strength
+    tilted = st.layer_check((math.cos(t), 0, math.sin(t)), judge=mid)
+    assert tilted.safety_factor == pytest.approx(z / (sigma * math.sqrt(9 / 8)), rel=1e-3)
+    assert tilted.safety_factor < across.safety_factor
+
+    whole = st.layer_check((0, 0, 1))
+    assert whole.safety_factor_bulk == pytest.approx(xy / st._design_stress(), rel=1e-9)
+    assert whole.judged.sum() == (~st._touches_bc).sum()
+    assert len(whole.factor) == len(whole.mode) == len(st.tets)
+
+    rec = r['material_data']
+    assert rec['key'] == 'petg_cf' and (rec['strength_xy_mpa'], rec['strength_z_mpa']) == (xy, z)
+    assert rec['E_mpa'] == 1340 and rec['E_direction'] == 'Z' and rec['density_g_cm3'] == 1.25
+    d = json.loads(st.export_viewer(tmp_path / 'bar.json').read_text())
+    assert d['result']['material_data'] == rec
+    assert material_changes(d['result'], r) == []
+
+
 def test_study_leaves_no_temp_step(tmp_path, monkeypatch):
     # a shape is exported to a temporary STEP to mesh it; the export goes once it is meshed, and when meshing fails;
     # a STEP path the caller passes (str or Path) is theirs and stays. The test's own temp folder keeps other

@@ -28,9 +28,14 @@ by an agent or person that did not write it, and the review lives on the PR, whe
    #   {reviewThreads(first:50){nodes{id isResolved comments(first:1){nodes{databaseId body}}}}}}}'
    ```
 
-4. **Merge only under the repo's rules**: CI green, a review exists, every thread resolved, and the user's go-ahead
-   where the repo requires it (cad-agent: the user asks; product repos say in their AGENTS.md). Merge commits, not
-   squash, unless the repo says otherwise. After the merge, check that the linked issues closed and tick the
+4. **Merge only under the repo's rules**: CI green, an independent review, every thread resolved.
+   - Repos with merge gates (cad-agent's `cad-gates/...` statuses) make these required checks. Only an independent
+     reviewer's pass verdict on the head commit turns the review gate green, and agents may merge once every check
+     passes and, just before merging, `python3 tools/ci_gates.py all --repo <owner>/<repo> --pr <n>` run from an
+     up-to-date checkout of the integration branch (not the PR's copy) exits 0. It reads the reviews live, so a block
+     posted since the last gates run stops the merge.
+   - Repos without gates say in their AGENTS.md whether the user's go-ahead is also needed.
+   - Merge commits, not squash, unless the repo says otherwise. After the merge, check that the linked issues closed and tick the
    tracking issue (`cad-work-tracking`).
 
 ## As the reviewer
@@ -52,5 +57,9 @@ by an agent or person that did not write it, and the review lives on the PR, whe
     is a finding, and it is added to the index.
 - Post inline comments on the exact lines (`gh api repos/<o>/<r>/pulls/<n>/comments` with `commit_id`, `path`,
   `line`, `side=RIGHT`), then one summary review (`gh pr review <n> --comment --body ...`) that says plainly whether
-  anything is blocking. Do not approve or merge unless the repo's rules give the reviewer that role.
+  anything is blocking. Its last line is the verdict marker for the head commit you reviewed:
+  `<!-- cad-review verdict=pass sha=<full 40-character head sha> -->` when nothing blocking is left, otherwise
+  `verdict=block`. A re-review after fixes posts a new summary with a new marker. Where the repo has merge gates,
+  re-run them so they read it: `gh workflow run gates.yml -R <owner>/<repo> -f pr=<n>`. Do not approve or merge unless the repo's rules give
+  the reviewer that role.
 - Finish with a list of findings (file:line, severity, one sentence) for the author.

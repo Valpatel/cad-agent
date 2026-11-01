@@ -55,7 +55,7 @@ my-cad-project/
    [reproducible-builds](https://reproducible-builds.org/specs/source-date-epoch/) convention, else
    2000-01-01T00:00:00), the product named after the file (or `name=`), and links numbered from 1 within the file.
    Another OCCT version can still write different bytes for the same geometry, and a cadquery `Assembly` is not
-   covered (it is refused; `Assembly.save` is not reproducible yet).
+   covered (it is refused; `Assembly.save` is not reproducible yet, #150).
 3. **Each check is a script** in `tools/` that writes `exports/<name>.json` with
    a top-level boolean `"pass"`. A check that cannot compute its answer writes
    `"pass": false` with the reason; it never omits the file or the key.

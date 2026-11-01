@@ -121,7 +121,7 @@ def export_step(shape: Any, path: Path, name: Optional[str] = None) -> Path:
     OCCT writes the name as a STEP string, doubling quotes and backslashes; the name and the file's name must be
     printable ASCII (``ValueError``). ``shape`` is a cadquery Shape or Workplane (several objects become one
     compound, as ``cadquery.exporters.export`` does), a build123d shape or an OCP ``TopoDS_Shape``. A cadquery
-    ``Assembly`` is refused (``TypeError``): it needs the XCAF writer, which this does not make reproducible.
+    ``Assembly`` is refused (``TypeError``): it needs the XCAF writer, which this does not make reproducible (#150).
 
     Limits: the other header fields stay as OCCT writes them (placeholder author and organisation, OCCT's version as
     preprocessor and originating system), and another OCCT version can write different bytes for the same geometry.
@@ -141,7 +141,7 @@ def export_step(shape: Any, path: Path, name: Optional[str] = None) -> Path:
     _step_string(path.name, "STEP file name")
     if isinstance(shape, cq.Assembly):
         raise TypeError("export_step writes shapes, not a cadquery Assembly (Assembly.save writes those, "
-                        "with a time stamp and ids that are not reproducible)")
+                        "with a time stamp and ids that are not reproducible yet: #150)")
     if isinstance(shape, cq.Workplane):
         objs = [o for o in shape.vals() if isinstance(o, cq.Shape)]
         if not objs:
@@ -149,7 +149,8 @@ def export_step(shape: Any, path: Path, name: Optional[str] = None) -> Path:
         shape = objs[0] if len(objs) == 1 else cq.Compound.makeCompound(objs)
 
     writer = STEPControl_Writer()
-    # cadquery's exportStep settings, set on every call: they are process-wide, and an earlier export may have changed them.
+    # cadquery's exportStep settings, set on every call: they are process-wide, and an earlier export may have
+    # changed them.
     Interface_Static.SetIVal_s("write.surfacecurve.mode", 1)
     Interface_Static.SetIVal_s("write.precision.mode", 0)
     Interface_Static.SetCVal_s("xstep.cascade.unit", "MM")

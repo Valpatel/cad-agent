@@ -54,7 +54,8 @@ def cq(monkeypatch):
 
 
 def _two_boxes(cq):
-    return cq.Compound.makeCompound([cq.Solid.makeBox(1, 1, 1), cq.Solid.makeBox(1, 1, 1).translate(cq.Vector(3, 0, 0))])
+    return cq.Compound.makeCompound([cq.Solid.makeBox(1, 1, 1),
+                                     cq.Solid.makeBox(1, 1, 1).translate(cq.Vector(3, 0, 0))])
 
 
 def _file_name(path):

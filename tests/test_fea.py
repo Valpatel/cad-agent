@@ -270,3 +270,30 @@ def test_viewer_draws_the_torque_about_the_faces_not_the_given_point(tmp_path):
     st.solve()
     d, _ = _viewer(st, tmp_path / 'bar.json')
     assert d['loads'][0]['center'] == pytest.approx([L, 0, 0], abs=1e-6)
+
+
+def test_render_at_a_fixed_colour_scale(tmp_path, monkeypatch):
+    """Two variants compare by eye only at one colour scale: render(vmax=...) sets the colour bar's top, whatever the
+    study's own design stress, and leaves the result alone."""
+    import matplotlib.figure
+
+    st = Study(cq.Workplane('XY').box(100, 10, 10).translate((50, 0, 0)), STEEL, mesh_mm=5.0, name='beam')
+    st.fix(plane_at(0, 0.0)).force(plane_at(0, 100), (0, 0, -100))
+    r = st.solve()
+    before = dict(r)
+    seen = []
+    real = matplotlib.figure.Figure.colorbar
+
+    def spy(self, mappable, *a, **k):
+        seen.append((mappable.norm.vmin, mappable.norm.vmax, k.get('label'), k.get('extend')))
+        return real(self, mappable, *a, **k)
+
+    monkeypatch.setattr(matplotlib.figure.Figure, 'colorbar', spy)
+    assert st.render(tmp_path / 'own.png').stat().st_size > 0
+    assert st.render(tmp_path / 'fixed.png', vmax=250.0, scale=40).stat().st_size > 0
+    assert seen[0][1] == pytest.approx(r['von_mises_design_mpa']) and seen[0][3] == 'neither'
+    assert seen[1][:2] == (0, 250.0) and 'fixed scale 0-250' in seen[1][2] and seen[1][3] == 'max'
+    assert st.result == before
+    for bad in (0, -1, float('nan')):
+        with pytest.raises(ValueError):
+            st.render(tmp_path / 'bad.png', vmax=bad)

@@ -544,6 +544,10 @@ rerun reads only the cache.
 | `combination:<g1>+<g2>`, `density:<g>` | (warnings) see above | |
 | `containment@<group>/<pose>/...` | with `contains=`: the containment gate's checks at every pose of a group that moves the container's cavity or the contents | as the containment gate |
 
+![The gate bench arm swept from 0 to 60 degrees in 12 sampled poses: it shares volume with the frame beam from 49.09 degrees, the last clear pose is 43.64 degrees, and the onset is bisected to between 44.89 and 44.91 degrees](img/motion/hinge-sweep.svg)
+
+*The `collision:` check on the gate bench's `flap_hits_frame` seed, in section: the sampled poses, the ones that hit, the last clear pose and the onset bisected between them. An illustration drawn from a 2D model of the bench; `tests/test_motion_figures.py` checks its numbers against the gate's verdict.*
+
 **Intended contacts.** A joint's `intended_contacts`, its own `moving`/`fixed` pair (the bearing) and the
 `intended_contacts` argument may touch at any pose: an arm resting on its stop at the range end passes. Shared
 volume between them over `overlap_mm3` still fails. The onset is where shared volume first exceeds `overlap_mm3`,

@@ -149,10 +149,10 @@ def git(root, *args):
 
 
 def tracked(root: Path, prefix=''):
-    """Files git tracks under prefix (all files when root is not a git checkout, as in the tests)."""
-    out = git(root, 'ls-files', '-z', '--', prefix or '.')
+    """Files git tracks under prefix, plus new ones it does not ignore (every file when root is not a git checkout)."""
+    out = git(root, 'ls-files', '-z', '--cached', '--others', '--exclude-standard', '--', prefix or '.')
     if out is not None and (root / '.git').exists():
-        return sorted(f for f in out.split('\0') if f)
+        return sorted({f for f in out.split('\0') if f and (root / f).is_file()})
     base = root / prefix if prefix else root
     if base.is_file():
         return [prefix]
@@ -446,8 +446,11 @@ def advisory_finding(rep, subject, label, version, vulns, context, action_fix, s
     target, nofix = upgrade_hint(vulns, version)
     if context == 'floor':
         sev = 'critical' if any(i.startswith('MAL-') for i in ids) else 'low'
-    listed = '; '.join(f"{v['id']} ({v['severity']}{', fixed in ' + v['fixed'][0] if v['fixed'] else ', no fix'}): "
-                       f"{v['summary']}" for v in sorted(vulns, key=lambda v: (RANK[v['severity']], v['id']))[:8])
+    def fix(v):
+        above = [f for f in v['fixed'] if vkey(f) > vkey(version)]
+        return f', fixed in {min(above, key=vkey)}' if above else ', no fix listed'
+    listed = '; '.join(f"{v['id']} ({v['severity']}{fix(v)}): {v['summary']}"
+                       for v in sorted(vulns, key=lambda v: (RANK[v['severity']], v['id']))[:8])
     more = f' and {len(vulns) - 8} more' if len(vulns) > 8 else ''
     action = action_fix.format(target=target) if target else 'No fixed release is known: check whether our use is exposed; pin around it or replace it.'
     if nofix and target:
@@ -570,7 +573,7 @@ def check_python(rep, net, installed=False):
         if nofloor:
             sev = 'info' if set(nofloor) <= {'dev'} else 'low'
             rep.add('py-no-floor', sev, p['id'], f'{name} has no lower version bound in {", ".join(nofloor)}',
-                    f'pyproject.toml: {", ".join(f"{g}: {name}{p["specs"][g]}" for g in nofloor)}',
+                    'pyproject.toml: ' + ', '.join(f"{g}: {name}{p['specs'][g]}" for g in nofloor),
                     'Set a floor at a release without known advisories (and the oldest one you are willing to support), '
                     'so an install with old pins cannot pick something worse.')
         lows = [f for f in floors.values() if f]
@@ -986,8 +989,11 @@ def vendor_drift(rep, net, row, slug, entry):
                 'Re-import with tools/vendor_sync.py, or record the change as a patch in vendor/patches/.',
                 key=','.join(changed + added))
     if missing:
+        ignored = git(rep.root, 'check-ignore', '--', *[f"vendor/{row['name']}/{m}" for m in missing[:50]]) or ''
+        hidden = f" ({len(ignored.splitlines())} of them ignored by a .gitignore, so never committed)" if ignored else ''
         rep.add('vendor-incomplete', 'low', row['id'], f"{len(missing)} upstream files of {row['name']} are neither vendored nor excluded",
-                ', '.join(missing[:8]) + (' …' if len(missing) > 8 else ''), 'Add them to the manifest exclude list with a reason, or re-import.',
+                ', '.join(missing[:8]) + (' …' if len(missing) > 8 else '') + hidden,
+                'Add them to the manifest exclude list with a reason (or commit them), so the record says what was left out.',
                 key=','.join(missing))
 
 
@@ -1125,7 +1131,7 @@ def published(f):
 
 FENCE = re.compile(r'^(```|~~~)[^\n]*\n.*?^\1[ \t]*$', re.M | re.S)
 CODE = re.compile(r'`[^`\n]+`')
-URL = re.compile(r'https?://[^\s<>"\'`|\])]+')
+URL = re.compile(r'https?://(?:[^\s<>"\'`|\]()]|\([^\s()<>]*\))+')       # balanced (...) inside a URL is kept
 
 
 def code_spans(text):
@@ -1300,7 +1306,7 @@ def judge_link(rep, row, chain, err):
                 ' -> '.join(u for _, u in chain[:4]) + f' ({where})',
                 'Check the new site belongs to the same owner and is what we meant; link it directly, or drop the link.',
                 key=b)
-    if url.startswith('https://') and any(u.startswith('http://') for _, u in chain[1:]):
+    if url.startswith('https://') and final.startswith('http://'):
         rep.add('link-https-downgrade', 'medium', sid, f'{host(url)} redirects from HTTPS to plain HTTP', ' -> '.join(u for _, u in chain[:4]),
                 'Link a page that stays on HTTPS, or say so.')
 
@@ -1735,37 +1741,43 @@ def gh_json(*args):
     return json.loads(r.stdout or 'null')
 
 
-def cmd_issue(a):
-    """Open, update or close the one tracking issue, from a report; does nothing when the findings did not change."""
-    r = json.loads(Path(a.report).read_text())
+def plan_issue(r, issues, repo, title, authors=BOTS):
+    """The gh commands that bring the one tracking issue in line with a report: [(args, stdin)], and a note.
+
+    The issue is the one open issue opened by an allowed author whose body carries the fingerprint marker; anyone can
+    write a marker, so the author check keeps the workflow from editing someone else's issue."""
     live = [f for f in r['findings'] if not f.get('accepted') and RANK[f['severity']] <= RANK['low']
             and not f['check'].endswith('-unverified')]
     fps = sorted({f['fp'] for f in live})
+    mine = [i for i in issues or [] if MARK.search(i.get('body') or '') and (i.get('author') or {}).get('login') in set(authors)]
+    body = to_markdown(r, inventory=False, limit=60000) + f"\n<!-- cad-supply-chain-report fps={','.join(fps)} -->\n"
+    if not mine:
+        if not fps:
+            return [], 'no open findings at low or above; no issue needed'
+        return [(['issue', 'create', '-R', repo, '--title', title, '--body-file', '-'], body)], 'open a new issue'
+    num, old = str(mine[0]['number']), set(filter(None, MARK.search(mine[0]['body']).group(1).split(',')))
+    if old == set(fps):
+        return [], f'issue #{num}: findings unchanged'
+    new = [f for f in live if f['fp'] not in old]
+    gone = len(old - set(fps))
+    note = '\n'.join([f"Report of {r['as_of']} (revision `{(r['revision'] or '')[:12]}`): {len(new)} new, {gone} resolved.", ''] +
+                     [f"- **{f['severity']}** `{f['subject']}`: {f['title']}" for f in new[:50]]) + '\n'
+    plan = [(['issue', 'edit', num, '-R', repo, '--body-file', '-'], body),
+            (['issue', 'comment', num, '-R', repo, '--body-file', '-'], note)]
+    if not fps:
+        plan.append((['issue', 'close', num, '-R', repo, '--comment', 'No open findings at low or above: closing.'], None))
+    return plan, f'update issue #{num}: {len(new)} new, {gone} resolved'
+
+
+def cmd_issue(a):
+    """Open, update or close the one tracking issue from a report; nothing happens when the findings did not change."""
+    r = json.loads(Path(a.report).read_text())
     issues = gh_json('issue', 'list', '-R', a.repo, '--state', 'open', '--search', f'"{a.title}" in:title', '--limit', '30',
                      '--json', 'number,title,body,author')
-    authors = set(BOTS) | set(a.author or [])
-    mine = [i for i in issues or [] if MARK.search(i.get('body') or '') and (i.get('author') or {}).get('login') in authors]
-    body = to_markdown(r, inventory=False, limit=60000) + f"\n<!-- cad-supply-chain-report fps={','.join(fps)} -->\n"
-    plan = []
-    if not mine:
-        if fps:
-            plan.append(['issue', 'create', '-R', a.repo, '--title', a.title, '--body-file', '-', body])
-    else:
-        num, old = str(mine[0]['number']), set(filter(None, MARK.search(mine[0]['body']).group(1).split(',')))
-        if old == set(fps):
-            print(f'issue #{num}: findings unchanged')
-            return 0
-        new = [f for f in live if f['fp'] not in old]
-        gone = len(old - set(fps))
-        note = '\n'.join([f"Report of {r['as_of']} (revision `{(r['revision'] or '')[:12]}`): {len(new)} new, {gone} resolved.", ''] +
-                         [f"- **{f['severity']}** `{f['subject']}`: {f['title']}" for f in new[:50]]) + '\n'
-        plan.append(['issue', 'edit', num, '-R', a.repo, '--body-file', '-', body])
-        plan.append(['issue', 'comment', num, '-R', a.repo, '--body-file', '-', note])
-        if not fps:
-            plan.append(['issue', 'close', num, '-R', a.repo, '--comment', 'No open findings at low or above: closing.', None])
-    for cmd in plan:
-        args, stdin = cmd[:-1], cmd[-1]
-        print(('gh ' if a.post else 'would run: gh ') + ' '.join(x for x in args if x != '-'))
+    plan, note = plan_issue(r, issues, a.repo, a.title, BOTS + tuple(a.author or ()))
+    print(note)
+    for args, stdin in plan:
+        print(('gh ' if a.post else 'would run: gh ') + ' '.join(args))
         if a.post:
             res = subprocess.run(['gh', *args], input=stdin, capture_output=True, text=True)
             if res.returncode:

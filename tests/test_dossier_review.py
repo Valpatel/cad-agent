@@ -393,6 +393,60 @@ def test_a_record_with_stale_hashes_does_not_sign_off(project):
     assert "stale-hashes" in codes(submit_record(project, "S1", rec2, reviewer="reviewer", write=False)[2])
 
 
+# The keys a reviewer record could hold before #144: an earlier release refuses any other as `unknown-key`
+EARLIER_KEYS = {"schema", "section", "date", "timestamp", "actor", "verdict", "signed_off", "hashes", "checklist",
+                "decisions", "requirements", "findings", "build_actors", "commit", "packet", "bundle", "summary",
+                "toolkit", "physical_fit_verified"}
+
+
+def test_a_record_says_where_its_hashes_were_made_and_a_platform_change_is_named(tmp_path):
+    """The template carries the geometry record's platform (``hash.platform``) into the record's
+    ``bundle.hash_platform`` (#144), a key an earlier release accepts. When the geometry is rebuilt on another
+    platform and its hashes change, the stale-review warning and the refusal name both platforms."""
+    arm = {"machine": "aarch64", "system": "Linux", "libc": "glibc 2.39", "ocp": "7.9.3.1",
+           "ocp_package": "cadquery-ocp 7.9.3.1.1"}
+    geo = dict(geometry(), hash={"recipe": "occt-brep-text/1", "platform": arm})
+    project = load_project(setup_project(tmp_path, geo=geo))
+    root = Path(project.root)
+    tpl = template(project)
+    assert tpl["bundle"] == {"hash_platform": arm}
+    path, rec, problems = submit_record(project, "S1", fill(tpl), reviewer="reviewer")
+    assert problems == [], [str(p) for p in problems]
+    written = json.loads(path.read_text())
+    assert written["bundle"] == {"hash_platform": arm} and validate_record(rec) == []
+    assert set(written) <= EARLIER_KEYS                      # an earlier release still reads the record
+    # a record filled in without the template's bundle gets the current build's platform at submission
+    bare = {k: v for k, v in fill(tpl).items() if k != "bundle"}
+    assert submit_record(project, "S1", bare, reviewer="reviewer", write=False)[1]["bundle"] == {"hash_platform": arm}
+    # rebuilt on x86-64: one hash moved
+    moved = copy.deepcopy(geo)
+    moved["hash"]["platform"] = dict(arm, machine="x86_64")
+    moved["parts"]["hopper"]["sha256"] = "0" * 64
+    (root / "exports" / "dossier-geometry.json").write_text(json.dumps(moved))
+    stale = [f for f in lint_project(project, min_section_status=None).findings if f.code == "review-stale"]
+    assert len(stale) == 1 and "hopper changed or not built since" in stale[0].message
+    assert "made on aarch64 Linux" in stale[0].message and "current ones on x86_64 Linux" in stale[0].message
+    # the bundle was written on aarch64 and the build is now x86-64: the refusal names both
+    _, _, problems = submit_record(project, "S1", fill(tpl), reviewer="reviewer", write=False)
+    why = next(str(p) for p in problems if p.code == "stale-hashes")
+    assert "need not be a change of geometry" in why and "aarch64" in why and "x86_64" in why
+    # the same platform, or a geometry record from before #144 (no platform): the old message only, never the
+    # platform of the host running the lint
+    for hash_ in (dict(moved["hash"], platform=arm), "occt-brep-text/1"):
+        (root / "exports" / "dossier-geometry.json").write_text(json.dumps(dict(moved, hash=hash_)))
+        stale = [f for f in lint_project(project, min_section_status=None).findings if f.code == "review-stale"]
+        assert len(stale) == 1 and "made on" not in stale[0].message
+
+
+def test_a_record_without_hash_platform_stays_valid_and_a_bad_one_is_refused():
+    assert validate_record(valid_record()) == []                             # records written before #144
+    assert validate_record(valid_record(bundle={"hash_platform": {"machine": "x86_64"}})) == []
+    assert validate_record(valid_record(bundle={"other": 1})) == []           # bundle stays open, as before
+    for bad in ("x86_64", {"machine": 64}, ["x86_64"]):
+        assert "type" in codes(validate_record(valid_record(bundle={"hash_platform": bad})))
+    assert "unknown-key" in codes(validate_record(valid_record(hash_platform={"machine": "x86_64"})))
+
+
 def test_a_same_actor_sign_off_is_refused_when_required(tmp_path):
     root = setup_project(tmp_path)
     project = load_project(root)

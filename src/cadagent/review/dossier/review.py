@@ -35,6 +35,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
 
+from cadagent.review.evidence import hash_platform_note, record_hash_platform
+
 RECORD_SCHEMA = "cad-agent.review/1"
 BUNDLE_SCHEMA = "cad-agent.review-bundle/1"
 VERDICTS = ("sign_off", "changes_requested")
@@ -109,6 +111,11 @@ def validate_record(data: Any) -> List[Problem]:
             bad("type", "`signed_off` must be true or false")
         elif verdict in VERDICTS and data["signed_off"] != (verdict == "sign_off"):
             bad("verdict", f"`signed_off: {str(data['signed_off']).lower()}` contradicts `verdict: {verdict}`")
+    bundle = data.get("bundle")
+    if isinstance(bundle, Mapping) and "hash_platform" in bundle and not (
+            isinstance(bundle["hash_platform"], Mapping) and
+            all(isinstance(v, str) for v in bundle["hash_platform"].values())):
+        bad("type", "`bundle.hash_platform` must be an object of strings (cadagent.review.evidence.hash_platform)")
     hashes = data.get("hashes")
     if "hashes" in data:
         if not isinstance(hashes, Mapping) or not hashes:
@@ -388,8 +395,10 @@ def check_record(data: Mapping[str, Any], *, dossier: Any, geometry: Optional[Ma
     given = data.get("hashes") if isinstance(data.get("hashes"), Mapping) else {}
     stale = sorted(p for p, h in now.items() if h and given.get(p) != h)
     if stale:
+        note = hash_platform_note(record_platform(data), record_hash_platform(geometry))
         bad("stale-hashes", f"the hashes of {', '.join(stale)} are not the current build's: the geometry changed since "
-                            "the bundle (or the part was not reviewed); write a new bundle and review that")
+                            "the bundle (or the part was not reviewed); write a new bundle and review that"
+                            + (f" ({note})" if note else ""))
     extra = sorted(set(map(str, given)) - set(now))
     if extra:
         bad("stale-hashes", f"`hashes` names {', '.join(extra)}, which are not parts of section {sid}")
@@ -695,11 +704,24 @@ def record_template(p: _Project, section: str, packet: Optional[Mapping[str, Any
         reqs.append({"id": rid, "text": r.text if r else "", "verify_by": r.verify_by if r else "",
                      "status": row.get("status", ""), "checks": list(r.checks) if r else [],
                      "traced": None, "evidence": ""})
-    return {"schema": RECORD_SCHEMA, "section": section, "date": "", "timestamp": "", "actor": "",
-            "verdict": None, "signed_off": None,
-            "hashes": {k: v for k, v in current_hashes(d, section, p.geometry).items()},
-            "checklist": checklist, "decisions": decisions, "requirements": reqs, "findings": [],
-            "summary": "", "physical_fit_verified": False}
+    out = {"schema": RECORD_SCHEMA, "section": section, "date": "", "timestamp": "", "actor": "",
+           "verdict": None, "signed_off": None,
+           "hashes": {k: v for k, v in current_hashes(d, section, p.geometry).items()},
+           "checklist": checklist, "decisions": decisions, "requirements": reqs, "findings": [],
+           "summary": "", "physical_fit_verified": False}
+    platform = record_hash_platform(p.geometry)
+    if platform:                                     # where those hashes were made, kept through the submission
+        out["bundle"] = {"hash_platform": platform}
+    return out
+
+
+def record_platform(data: Any) -> Dict[str, str]:
+    """Where the hashes a reviewer record binds were made (``bundle.hash_platform``, #144), or ``{}`` for a record
+    that does not say (one written before #144). It sits under ``bundle``, a key every release accepts, so a record
+    written now still validates under an earlier release."""
+    bundle = data.get("bundle") if isinstance(data, Mapping) else None
+    platform = bundle.get("hash_platform") if isinstance(bundle, Mapping) else None
+    return {str(k): str(v) for k, v in platform.items()} if isinstance(platform, Mapping) else {}
 
 
 def write_bundle(project: Any, section: str, bundle_dir: Union[str, Path, None] = None, *,
@@ -909,7 +931,9 @@ def submit_record(project: Any, section: str, record: Union[str, Path, Mapping[s
     ``dossier/reviews/<section>-<date>.json`` (``-2``, ``-3``, ... when that exists). ``reviewer`` is the
     submitting actor (default ``CAD_AGENT_ACTOR``); it becomes the record's ``actor``. The record gets its
     ``date``, ``timestamp``, ``signed_off`` (from ``verdict``), ``commit``, ``build_actors``, ``packet`` binding and
-    ``toolkit`` here. Returns the path written (None when not written), the record and its problems."""
+    ``toolkit`` here, and ``bundle.hash_platform`` (where its hashes were made) when the template did not carry it
+    and the geometry record has one. Returns the path written (None when not written), the record and its
+    problems."""
     import os
     from cadagent.review.gates.verdict import _toolkit_version
     from cadagent.review.packet import safe_name
@@ -946,6 +970,11 @@ def submit_record(project: Any, section: str, record: Union[str, Path, Mapping[s
         "toolkit": _toolkit_version(),
         "physical_fit_verified": False,
     })
+    # where the hashes it binds were made (#144): the bundle's (the template carries it), else the current build's
+    current = record_hash_platform(p.geometry)
+    bundle = rec.get("bundle")
+    if current and not record_platform(data) and (bundle is None or isinstance(bundle, Mapping)):
+        rec["bundle"] = {**(bundle or {}), "hash_platform": current}
     for key in ("summary",):
         if key in rec and rec[key] in (None, ""):
             rec.pop(key)

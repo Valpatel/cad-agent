@@ -140,11 +140,17 @@ def _export_plates(project: CadProject, parts: List[str]) -> int:
     return 0
 
 def cmd_slice(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.manufacturing.slicer import executable, slice_project
+    from cadagent.manufacturing.slicer import engine_executable, engine_of, not_installed, slice_project
 
-    if not executable():
-        raise _Unusable("Bambu Studio is not installed (snap install bambu-studio); nothing was sliced")
-    rep = slice_project(project, getattr(args, "parts", None) or None)
+    engine = engine_of(project)
+    if not engine_executable(engine):
+        raise _Unusable(f"{not_installed(engine)}; nothing was sliced")
+    try:
+        rep = slice_project(project, getattr(args, "parts", None) or None)
+    except (ValueError, KeyError, FileNotFoundError) as exc:   # PrusaSlicer: a profile name or override key it lacks
+        if engine == "bambu":
+            raise
+        raise _Unusable(f"cannot slice: {exc.args[0] if exc.args else exc}") from None
     for name, row in rep["parts"].items():
         if row.get("grams"):
             minutes = f"{row['minutes']:7.1f} min" if row.get("minutes") is not None else "   time not reported"
@@ -976,7 +982,7 @@ def build_parser() -> argparse.ArgumentParser:
     site_p.add_argument("--port", type=int, default=None, help="Port (default: cad.serve.port, 0 = any free port)")
     site_p.add_argument("--host", default=None, help="Bind address (default: cad.serve.host, 127.0.0.1)")
     sub.add_parser("view", parents=[common], help="Export every part in assembly position for the 3D viewer")
-    slice_p = sub.add_parser("slice", parents=[common], help="Slice each part's 3MF (Bambu Studio CLI): grams and print time")
+    slice_p = sub.add_parser("slice", parents=[common], help="Slice each part's 3MF (Bambu Studio or PrusaSlicer CLI): grams and print time")
     slice_p.add_argument("parts", nargs="*", help="Parts to slice (default: cad.slicer.parts, else all)")
     webkit_p = sub.add_parser("webkit", parents=[common], help="Copy the web kit (3D stage, viewer, HUD) into the project")
     webkit_p.add_argument("dest", nargs="?", default="web/kit", help="Destination folder (default: web/kit)")

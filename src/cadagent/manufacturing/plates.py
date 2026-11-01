@@ -1031,7 +1031,8 @@ def export_plates(project, known_parts: Optional[Sequence[str]] = None, settings
     warnings = list(cfg.warnings)
     settings = _settings_record = None
     sl = slicer._settings(project)
-    if settings_bytes is None and use_slicer and slicer.executable():
+    bambu = sl.get("engine", "bambu") == "bambu"     # the project settings are Bambu Studio's own
+    if settings_bytes is None and use_slicer and bambu and slicer.executable():
         try:
             settings_bytes = slicer.project_settings(project.root / "build" / "slicer" / "plates", sl["printer"],
                                                      sl["process"], groups, sl["overrides"],
@@ -1042,6 +1043,9 @@ def export_plates(project, known_parts: Optional[Sequence[str]] = None, settings
                                  f"{exc.args[0] if exc.args else exc}") from None
         except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:
             warnings.append(f"no project settings ({exc}); Bambu Studio will open the file on one plate")
+    elif settings_bytes is None and use_slicer and not bambu:
+        warnings.append(f"no project settings: they are Bambu Studio's, and cad.slicer.engine is {sl['engine']}; "
+                        "Bambu Studio will open the file on one plate")
     elif settings_bytes is None:
         warnings.append("Bambu Studio is not installed, so the file carries no project settings: Bambu Studio "
                         "will open it on one plate (run export-3mf where it is installed)" if use_slicer else

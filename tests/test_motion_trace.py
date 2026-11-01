@@ -345,11 +345,14 @@ def test_a_sample_whose_inputs_cannot_close_fails():
     report = validate_motion_trace(leg_contract(), leg_trace(extra=[{"hip_a": -60, "hip_b": -60}]))
     assert report["status"] == "fail"
     assert report["loops"]["leg"]["unreachable_samples"] == [str(len(required_poses(leg_contract())))]
+    json.dumps(report, allow_nan=False)                 # the CLI writes it strictly: no inf for the open sample
 
 
-def test_a_four_bar_driven_from_either_end():
+@pytest.mark.parametrize("order", [1, -1])
+def test_a_four_bar_driven_from_either_end(order):
     # Norton's Example 4-1 (40, 120, 80, 100 mm) at 40 degrees, as a tree from the crank (crank, coupler, rocker) and
-    # from the rocker (rocker, coupler, crank): either way the rocker's angles are cadagent.formulas'.
+    # from the rocker (rocker, coupler, crank): either way the rocker's angles are cadagent.formulas'. The closing
+    # joints are listed both ways round (order), so the one-joint chain comes first or second.
     from cadagent import formulas as fx
     t3, t4 = fx.fourbar_angles(40, 120, 80, 100, math.radians(40))
     B = (40 * math.cos(math.radians(40)), 40 * math.sin(math.radians(40)))
@@ -362,7 +365,7 @@ def test_a_four_bar_driven_from_either_end():
         "rocker": {"parent": None, "pivot": [100, 0, 0], "axis": [0, 0, 1], "range_deg": [-180, 180]}},
         components={"a": {"joint": "coupler", "points": pts(60, 70)}, "b": {"joint": "rocker", "points": pts(110, 30)},
                     "c": {"joint": "crank", "points": pts(10, 10)}},
-        loops={"x": {"closes": ["coupler", "rocker"], "pin": [*C, 0], "inputs": ["crank"]}})
+        loops={"x": {"closes": ["coupler", "rocker"][::order], "pin": [*C, 0], "inputs": ["crank"]}})
     poses = required_poses(crank)
     assert sorted(p["crank"] for p in poses) == [-180, -90, 0, 90, 180]        # home, and every 90 degrees
     for p in poses:
@@ -373,7 +376,7 @@ def test_a_four_bar_driven_from_either_end():
         "coupler": {"parent": "rocker", "pivot": [*C, 0], "axis": [0, 0, 1], "range_deg": [-180, 180]},
         "crank": {"parent": None, "pivot": [0, 0, 0], "axis": [0, 0, 1], "range_deg": [-180, 180]}},
         components=crank["components"],
-        loops={"x": {"closes": ["coupler", "crank"], "pin": [*B, 0], "inputs": ["rocker"]}})
+        loops={"x": {"closes": ["coupler", "crank"][::order], "pin": [*B, 0], "inputs": ["rocker"]}})
     for p in required_poses(rocker):
         # the crank pin is a from the crank pivot and b from the coupler's pivot, the rocker's tip
         t = math.radians(p["rocker"])

@@ -101,11 +101,28 @@ crank and its link fall in line. The status is `warn` when the transmission angl
 `track="hold"` keeps the declared assembly through a lock. `"nearest"` follows the pose nearest the last one and
 flags the flip. `fivebar_workspace` maps a grid of crank angles, and `fivebar_reach` gives each arm's annulus.
 
-**In a robot and in a rendered trace.** `cadagent.simulation.robot.write_mjcf(..., loops=[LoopClosure(...)])` closes a
-loop in MuJoCo with an equality constraint, after checking that the pins meet at home. The tests settle a four-bar and
-a five-bar there and get the solver's angles to 1e-4°. A [motion-trace](rendered-motion.md) contract declares a loop
-under `loops`: its inputs are sampled together and its other joints solved, and a renderer that leaves the loop open
-or assembles it the other way fails.
+### In a robot and in a rendered trace
+
+```mermaid
+flowchart TD
+    F["cadagent.formulas<br/>fivebar_point · fourbar_angles<br/>fivebar_jacobians"] --> S["mechanical.linkages<br/>sweeps, locks, flips<br/>pass · warn · fail"]
+    S --> R["simulation.robot<br/>LoopClosure in MJCF"]
+    S --> T["mechanical.motion_trace<br/>loops: inputs sampled,<br/>loop-pose check"]
+    R --> M["MuJoCo holds the pin<br/>(an independent check)"]
+    T --> B["the renderer people see<br/>must close the loop"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class S,R,T here
+    class F near
+    class M,B out
+```
+
+`cadagent.simulation.robot.write_mjcf(..., loops=[LoopClosure(...)])` closes a loop in MuJoCo with an equality
+constraint, after checking that the pins meet at home. The tests settle a four-bar and a five-bar there and get the
+solver's angles to 1e-4°. A [motion-trace](rendered-motion.md) contract declares a loop under `loops`: its inputs are
+sampled together and its other joints solved, and a renderer that leaves the loop open or assembles it the other way
+fails.
 
 ## Limits
 

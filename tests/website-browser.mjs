@@ -742,6 +742,14 @@ async function fourbarProblems() {
         }
         await demo.evaluate(d => d.removeAttribute('theme'));
         await page.emulateMedia({ colorScheme: 'light' });
+        // the tiles' words fit for every kind of linkage (one line each at desktop width, cut with an ellipsis if not)
+        for (const links of [[80, 40, 120, 100], [80, 100, 40, 120], [150, 70, 70, 10], [100, 80, 70, 60], [150, 10, 10, 20], [40, 120, 80, 100]]) {
+          const cut = await demo.evaluate((d, lengths) => {
+            ['crank', 'coupler', 'rocker', 'ground'].forEach((k, i) => d.setAttribute(k, lengths[i]));
+            return [...d.querySelectorAll('.fb-tile b, .fb-tile span')].filter(n => n.scrollWidth > n.clientWidth + 1).map(n => n.textContent);
+          }, links);
+          if (cut.length) say(`${links}: tile text cut off: ${cut.join('; ')}`);
+        }                                                                               // ends on the page's linkage
         // the keyboard: the crank to its longest makes the linkage non-Grashof, and the input then rocks between limits
         const slider = page.getByRole('slider', { name: /^Crank a/ });
         await slider.focus();

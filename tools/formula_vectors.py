@@ -110,9 +110,12 @@ FOURBARS = [(40, 120, 80, 100),            # Norton's Example 4-1, a crank-rocke
 
 
 # Where the two assemblies meet (an input limit, or 0 and 180 degrees on a change-point linkage) the angles are a double
-# root: one ulp of difference in cos theta2 between two maths libraries moves them by about its square root, so the
-# port must agree there to 1e-7, not 1e-12. Whether the links close at all must still agree exactly.
-DOUBLE_ROOT = {"rel": 1e-7, "abs": 1e-7, "why": "within 1e-6 rad of where the branches meet: a double root"}
+# root: one ulp of difference in cos theta2 between two maths libraries moves them by about its square root (1e-8), so
+# the port must agree there to 1e-7, not 1e-12. Beside it (1e-9 to 1e-6 rad away) the error grows only by a few
+# thousand, so 1e-10 is enough. Whether the links close at all must still agree exactly. Measured on these vectors:
+# Chrome and WebKit match the Python bit for bit, and Node 20 differs by at most 1.2e-12 (one ulp in Math.cos).
+DOUBLE_ROOT = {"rel": 1e-7, "abs": 1e-7, "why": "where the branches meet: a double root"}
+NEAR_DOUBLE_ROOT = {"rel": 1e-10, "abs": 1e-10, "why": "within 1e-6 rad of where the branches meet: near a double root"}
 
 
 def fourbar_cases(add):
@@ -132,7 +135,8 @@ def fourbar_cases(add):
         if fx.grashof(*links)["kind"] == "change-point":
             meet += [0.0, math.pi]
         for t2 in angles:
-            near = {"tolerance": DOUBLE_ROOT} if any(abs(abs(t2) - m) < 1e-6 for m in meet) else {}
+            gap = min((abs(abs(t2) - m) for m in meet), default=1.0)
+            near = {"tolerance": DOUBLE_ROOT} if gap == 0 else {"tolerance": NEAR_DOUBLE_ROOT} if gap < 1e-6 else {}
             for crossed in (False, True):
                 add("fourbar_angles", *links, t2, crossed, angles=True, **near)
             add("transmission_angle", *links, t2, angles=True, **near)

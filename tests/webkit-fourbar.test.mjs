@@ -55,6 +55,29 @@ test('a rocking input: the travel is the port\'s limits, the start moves into it
   const none = compute(state({ crank: '150', coupler: '10', rocker: '10', ground: '20' }));
   assert.equal(none.travel, null);
   assert.equal(className(none), 'No loop');
+  // links that close in one position only (the sliders reach these): one angle, not a range of none
+  for (const [links, at] of [[['150', '70', '70', '10'], '0°'], [['33', '150', '84', '33'], '180°']]) {
+    const [crank, coupler, rocker, ground] = links, one = compute(state({ crank, coupler, rocker, ground }));
+    assert.equal(travelText(one), `Only ${at}`);
+    assert.equal(pill(one).text, `Triple rocker · closes only at ${at}`);
+  }
+});
+
+test('the lowest transmission angle is over the travel the start can reach, and the notes read as one sentence', () => {
+  // a rocker-crank starting in its upper range: lowest at that range's limit, not at the mirror range's
+  const s = state({ crank: '80', coupler: '100', rocker: '40', ground: '120' }), r = compute(s);
+  assert.ok(r.travel.mirror && r.low.t >= r.travel.lo && r.low.t <= r.travel.hi);
+  assert.match(summary(s, r), /rocker-crank \(output turns fully via both assemblies\); input travel 26\.4° to 86\.4°; lowest transmission angle 0° at 26\.4°/);
+  // a double crank's lowest is at 180 degrees, said as 180, not -180
+  const dc = state({ crank: '130', coupler: '120', rocker: '60', ground: '40' });
+  assert.match(summary(dc, compute(dc)), /lowest transmission angle [\d.]+° at 180°/);
+});
+
+test('the limit labels are drawn over the links, so a link passing over one does not hide it', () => {
+  const s = state({ crank: '80', coupler: '100', rocker: '40', ground: '120' }), svg = drawFourbar(s, compute(s));
+  const labels = svg.indexOf('data-part="limit-labels"');
+  assert.ok(labels > svg.indexOf('data-part="coupler"') && labels > svg.indexOf('data-part="plate"'));
+  assert.match(svg.slice(labels), /26\.4°/);
 });
 
 test('every slider setting: the animation stays where the links close, stops at the limits, and the figure draws', () => {

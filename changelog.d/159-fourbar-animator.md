@@ -9,5 +9,6 @@
   assemblies, the coupler curve, the Grashof class, and the transmission angle charted against 40°. A linkage whose
   input cannot turn fully stops at its limits. On the new Four-bar linkages page and on Engineering formulas (#159).
 
-**Changed**
-- Code that compares `grashof()`'s result with a whole dict must add the `inversion` key (#159).
+**Projects must change**
+- Code that compares `grashof()`'s whole result with a dict: add the `inversion` key. Code that reads `kind` or
+  `crank_rotates` is unchanged (#159).

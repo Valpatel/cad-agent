@@ -22,7 +22,9 @@ Try these:
 - **Make the crank the longest link** (crank 100, coupler 80, rocker 70, ground 60). Now no link turns fully: it is a
   triple rocker. The input rocks and stops at ±137.9°, and the crank's circle turns rust where the links cannot close.
 - **Make the coupler the shortest** (crank 80, coupler 40, rocker 120, ground 100). This is a double rocker. Its input
-  locks at 51.3° and at 125.1°, and the same links fit a mirror-image range below the ground link.
+  locks at 51.3° and at 125.1°, and the same links fit a mirror-image range below the ground link. The coupler turns
+  fully only by passing into the dashed assembly at each lock; the animator keeps the assembly you chose, so here the
+  coupler swings back.
 - **Switch the assembly.** Open and crossed are the two ways the same links fit together at one input angle. The
   transmission angle is the same for both.
 

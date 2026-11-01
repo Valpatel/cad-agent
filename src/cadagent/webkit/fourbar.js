@@ -39,8 +39,10 @@ export const BRANCHES = Object.freeze({ open: 'Open', crossed: 'Crossed' });
 const CLASSES = {
   'crank-rocker': ['Crank-rocker', 'Grashof: the crank turns fully'],
   'double-crank': ['Double crank', 'Grashof: both cranks turn fully'],
-  'rocker-crank': ['Rocker-crank', 'Grashof: only the output turns fully'],
-  'double-rocker': ['Double rocker', 'Grashof: only the coupler turns fully'],
+  // b or c shortest: that link turns fully only by passing into the other assembly at each lock, which the animator,
+  // keeping the assembly chosen, does not do (the input turns back, and so does that link)
+  'rocker-crank': ['Rocker-crank', 'Output turns fully via both assemblies'],
+  'double-rocker': ['Double rocker', 'Coupler turns fully via both assemblies'],
   'triple-rocker': ['Triple rocker', 'Non-Grashof: no link turns fully'],
   'change-point': ['Change point', 'S + L = P + Q'],
 };
@@ -124,8 +126,10 @@ export function compute(s) {
   const edges = [limits.folded, limits.stretched].filter(e => e !== null).flatMap(e => [e, -e]).map(into);
   const angles = [...Array.from({ length: 361 }, (_, k) => axis + k * RAD), ...edges].sort((x, y) => x - y);
   const samples = angles.map(t => ({ t, ...pose(s, t) }));
+  // the lowest transmission angle over the input's travel (not over the mirror range, which this start cannot reach)
+  const reach = p => !travel?.mirror || (p.t >= travel.lo && p.t <= travel.hi);
   let low = null;
-  for (const p of samples) if (p.mu !== null && (low === null || p.mu < low.mu)) low = { mu: p.mu, t: p.t };
+  for (const p of samples) if (p.mu !== null && reach(p) && (low === null || p.mu < low.mu)) low = { mu: p.mu, t: p.t };
   // where the branches meet in a change-point linkage: the links in one line at 0 or 180 degrees (mu = 0 there)
   const meets = g.kind !== 'change-point' ? [] : [0, Math.PI].filter(t => (transmissionAngle(a, b, c, d, t) ?? 1) < 1e-6).map(into);
   // one scale for the whole cycle and both branches, so the figure never zooms while it moves
@@ -139,24 +143,30 @@ export function compute(s) {
 
 /** An input angle (rad) as the figure and the chart show it: in the chart's axis, -180..180 or 0..360 degrees. */
 const shown = (r, t) => deg(r.axis === 0 ? t - TAU * Math.floor(t / TAU) : wrap(t));
+/** The same, but 180 rather than -180 for an angle on its own (not a range's end). */
+const alone = (r, t) => (shown(r, t) === -180 ? 180 : shown(r, t));
 export const className = r => r.limits.closes ? CLASSES[r.grashof.inversion][0] : 'No loop';
 export function classNote(r) {
-  if (!r.limits.closes) return 'One link is longer than the other three together';
+  if (!r.limits.closes) return 'One link outreaches the other three';
   if (r.grashof.kind !== 'change-point') return CLASSES[r.grashof.inversion][1];
   return `${CLASSES['change-point'][1]}: ${r.grashof.crankRotates ? 'the crank turns fully' : 'the input rocks'}`;
 }
-/** The input's travel in words: "Full turn", "±137.9°", "51.3° to 125.1°", or "None". */
+/** A rocking travel that is one angle: links that close in one position only (their lengths at a limit of closing). */
+const single = t => t?.kind === 'rock' && t.hi - t.lo < 1e-9;
+/** The input's travel in words: "Full turn", "±137.9°", "51.3° to 125.1°", "Only 180°", or "None". */
 export function travelText(r) {
   const t = r.travel;
   if (!t) return 'None';
   if (t.kind === 'turn') return 'Full turn';
+  if (single(t)) return `Only ${fmt(alone(r, t.lo))}`;
   if (Math.abs(t.lo + t.hi) < 1e-12) return `±${fmt(deg(t.hi))}`;
   return `${fmt(deg(t.lo))} to ${fmt(deg(t.hi))}`;
 }
 export function travelNote(r) {
   if (!r.travel) return 'The links cannot make a loop';
   if (r.travel.kind === 'turn') return 'The crank goes all the way round';
-  return r.travel.mirror ? 'Locks at both ends; a mirror range below the ground' : 'Locks where coupler and rocker line up';
+  if (single(r.travel)) return 'The links close in one position only';
+  return r.travel.mirror ? 'Locks at both ends; mirror range below' : 'Locks where coupler and rocker line up';
 }
 const lowText = r => (r.low === null ? '–' : fmt(deg(r.low.mu)));
 
@@ -164,8 +174,9 @@ export function summary(s, r) {
   const links = `Four-bar with crank ${s.crank}, coupler ${s.coupler}, rocker ${s.rocker} and ground ${s.ground} mm`;
   if (!r.limits.closes) return `${links}: the links cannot close at any input angle (one is longer than the other three together).`;
   const lowest = deg(r.low.mu);
-  return `${links}, ${s.branch} branch: ${className(r).toLowerCase()} (${classNote(r).replace(/^[^:]*: /, '')}); ` +
-    `input travel ${travelText(r).toLowerCase()}; lowest transmission angle ${lowText(r)} at ${fmt(shown(r, r.low.t))}, ` +
+  const note = classNote(r).replace(/^[^:]*: /, '');
+  return `${links}, ${s.branch} branch: ${className(r).toLowerCase()} (${note[0].toLowerCase()}${note.slice(1)}); ` +
+    `input travel ${travelText(r).toLowerCase()}; lowest transmission angle ${lowText(r)} at ${fmt(alone(r, r.low.t))}, ` +
     `${lowest < MU_POOR ? 'below' : 'above'} the ${MU_POOR}° guideline.`;
 }
 
@@ -213,7 +224,7 @@ export function geometry(s, r, t2, compact = false) {
 }
 
 /** What stays put while the crank moves: the ground, the crank's circle with the arcs where the links cannot close and
- * the limits, and the coupler point's path on the chosen branch. */
+ * the limits, and the coupler point's path on the chosen branch (under the links); and the limits' labels (over them). */
 function staticLayer(s, r, P, z) {
   const O2 = toSvg(r, [0, 0]), O4 = toSvg(r, [s.ground, 0]);
   const pivot = ([x, y]) => `<path d="M${f(x - 13)} ${f(y + 12)}h26M${f(x - 7)} ${f(y + 12)}l-5 7M${f(x + 1)} ${f(y + 12)}l-5 7M${f(x + 9)} ${f(y + 12)}l-5 7" stroke="${P.sage}" stroke-width="1.5" fill="none"/>` +
@@ -226,14 +237,15 @@ function staticLayer(s, r, P, z) {
   // inside the folded one
   const gaps = [...(S !== null ? [[S, TAU - S]] : []), ...(F !== null ? [[-F, F]] : [])];
   for (const [g0, g1] of gaps) out += `<path data-part="no-close" d="${crankArc(r, s.crank, g0, g1)}" fill="none" stroke="${P.rust}" stroke-width="3" stroke-dasharray="2 5" stroke-linecap="round"/>`;
+  let labels = '';
   for (const e of [F, S].filter(v => v !== null).flatMap(v => [v, -v])) {
     const [x, y] = toSvg(r, [s.crank * Math.cos(e), s.crank * Math.sin(e)]), dx = Math.cos(e), dy = -Math.sin(e);
     // outward along the radius, far enough that the label's box clears the crank pin whichever way it points
     const text = fmt(shown(r, e)), reach = 14 + Math.abs(dx) * 0.28 * z.small * text.length + Math.abs(dy) * 0.5 * z.small;
     const lx = Math.min(VIEW.width - 2.8 * z.small, Math.max(2.8 * z.small, x + dx * reach));
     const ly = Math.min(VIEW.height - 54, Math.max(z.small + 4, y + dy * reach + z.small / 3));
-    out += `<line data-part="limit" x1="${f(x - dx * 8)}" y1="${f(y - dy * 8)}" x2="${f(x + dx * 10)}" y2="${f(y + dy * 10)}" stroke="${P.rust}" stroke-width="2.5" stroke-linecap="round"/>` +
-      `<text x="${f(lx)}" y="${f(ly)}" text-anchor="middle" font-size="${z.small}" fill="${P.rust}"${halo(P)}>${esc(text)}</text>`;
+    out += `<line data-part="limit" x1="${f(x - dx * 8)}" y1="${f(y - dy * 8)}" x2="${f(x + dx * 10)}" y2="${f(y + dy * 10)}" stroke="${P.rust}" stroke-width="2.5" stroke-linecap="round"/>`;
+    labels += `<text x="${f(lx)}" y="${f(ly)}" text-anchor="middle" font-size="${z.small}" fill="${P.rust}"${halo(P)}>${esc(text)}</text>`;
   }
   // the coupler point's path: one polyline per run of positions that close
   const runs = [[]];
@@ -242,13 +254,14 @@ function staticLayer(s, r, P, z) {
     if (q) runs.at(-1).push(pt(r, q.P)); else if (runs.at(-1).length) runs.push([]);
   }
   for (const run of runs) if (run.length > 1) out += `<polyline data-part="trace" points="${run.join(' ')}" fill="none" stroke="${P.teal}" stroke-width="1.4" stroke-dasharray="1 3" stroke-linecap="round"/>`;
-  return out;
+  return { under: out, labels };
 }
 
 /** The pill under the linkage: the class, and where a rocking input locks or a turning one's lowest transmission angle
  * against the guideline. */
 export function pill(r) {
   if (!r.limits.closes) return { text: 'No loop: one link outreaches the rest', poor: true };
+  if (single(r.travel)) return { text: `${className(r)} · closes only at ${fmt(alone(r, r.travel.lo))}`, poor: true };
   if (r.travel.kind === 'rock') return { text: `${className(r)} · locks at ${lockText(r)}`, poor: true };
   const poor = deg(r.low.mu) < MU_POOR;
   return { text: `${className(r)} · lowest μ ${lowText(r)}${poor ? ` < ${MU_POOR}°` : ''}`, poor };
@@ -262,11 +275,11 @@ const lockText = r => travelText(r).replace(' to ', ', ');
 export function drawFourbar(s, r, { t2 = r.start, still = false, label = summary(s, r), palette = PALETTES.light, compact = false } = {}) {
   const P = palette, g = geometry(s, r, t2, compact), { width: W, height: H } = VIEW, z = SIZES[compact ? 'compact' : 'normal'];
   const pl = pill(r), pillW = Math.min(W - 8, z.ch * pl.text.length + 2.4 * z.pill), pillH = 2.1 * z.pill;
-  const other = s.branch === 'open' ? 'crossed' : 'open';
+  const other = s.branch === 'open' ? 'crossed' : 'open', back = staticLayer(s, r, P, z);
   return `<svg${still ? ' xmlns="http://www.w3.org/2000/svg"' : ''} viewBox="0 0 ${W} ${H}"${still ? ` width="${W}" height="${H}"` : ''} role="img" aria-label="${esc(label)}">` +
     (still ? `<title>${esc(label)}</title><rect width="${W}" height="${H}" fill="${P.back}"/>` : '') +
     `<g font-family="${still ? 'Inter,system-ui,-apple-system,Segoe UI,sans-serif' : 'inherit'}" font-size="${z.text}" fill="${P.ink}">` +
-    `<g data-part="static">${staticLayer(s, r, P, z)}</g>` +
+    `<g data-part="static">${back.under}</g>` +
     `<text data-part="label-input" x="16" y="${10 + z.text}" font-weight="700" fill="${P.rust}"${halo(P)}>${esc(g.inputLabel)}</text>` +
     (compact ? '' : `<text x="${W - 20}" y="26" font-size="13" fill="${P.muted}" text-anchor="end">${esc(s.branch)} branch, solid · ${other}, dashed</text>`) +
     `<path data-part="input-arc" d="${g.inputArc}" fill="none" stroke="${P.rust}" stroke-width="1.5"/>` +
@@ -281,6 +294,7 @@ export function drawFourbar(s, r, { t2 = r.start, still = false, label = summary
       return `<circle data-part="pin-${k}" cx="${f(x)}" cy="${f(y)}" r="5" fill="${P.back}" stroke="${P.ink}" stroke-width="2"/>`;
     }).join('') +
     `<circle data-part="point-p" cx="${f(g.P[0])}" cy="${f(g.P[1])}" r="4" fill="${P.teal}"/>` +
+    `<g data-part="limit-labels">${back.labels}</g>` +                  // over the links, which would hide them
     `<text data-part="label-mu" x="${g.muLabel.x}" y="${g.muLabel.y}" text-anchor="${g.muLabel.anchor}" font-weight="700" fill="${g.muLabel.poor ? P.rust : P.ink}"${halo(P)}>${esc(g.muLabel.text)}</text>` +
     `<rect x="${f((W - pillW) / 2)}" y="${f(H - 10 - pillH)}" width="${f(pillW)}" height="${f(pillH)}" rx="${f(pillH / 2)}" fill="${pl.poor ? P.peach : P.mist}" stroke="${pl.poor ? P.rust : P.sage}"/>` +
     `<text data-part="pill" x="${W / 2}" y="${f(H - 10 - pillH / 2 + 0.36 * z.pill)}" text-anchor="middle" font-size="${z.pill}" font-weight="700" fill="${pl.poor ? P.rust : P.ink}">${esc(pl.text)}</text>` +
@@ -487,9 +501,11 @@ export class CadFourbar extends Base {
   }
 
   setPlaying(on) {
+    const resume = on && !this.frame;
     this.playing = on;
     this.loop();
-    this.render();
+    // a resumed frame is drawn from the clock the pause stored, not from a second timer read a moment later
+    this.render(resume ? angleAt(this.result, this.elapsed) : undefined);
   }
 
   // Only what the user does is announced, once the slider stops moving: the first draw and attribute changes are not

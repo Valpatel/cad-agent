@@ -53,6 +53,9 @@ test('the four-bar vectors cover both branches, change points and the input limi
       assert.equal(four.filter(f => f.args.slice(0, 4).join() === c.args.join() && f.args[4] === edge).length, 2, `${c.args} at ${edge}`);
   const loose = vectors.cases.filter(c => c.tolerance);
   assert.ok(loose.length && loose.every(c => /double root/.test(c.tolerance.why) && c.tolerance.rel <= 1e-7 && c.tolerance.abs <= 1e-7));
+  // 1e-7 only exactly where the branches meet; beside it, 1e-10
+  const meets = loose.filter(c => c.tolerance.abs > 1e-10);
+  assert.ok(meets.length && meets.length < loose.length && meets.every(c => /^where/.test(c.tolerance.why)), 'the widest tolerance is only at the meeting points');
   const positions = vectors.cases.filter(c => c.js === 'fourbarAngles' || c.js === 'transmissionAngle');
   assert.ok(positions.every(c => c.angles), 'four-bar results are compared as angles');
   assert.ok(loose.length < positions.length / 4, 'the double-root tolerance is for the few vectors where the branches meet');

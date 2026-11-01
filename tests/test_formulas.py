@@ -342,22 +342,80 @@ def _loop_error(a, b, c, d, t2, t3, t4):
                - c * complex(math.cos(t4), math.sin(t4)) - d)
 
 
+def _coupler_side(a, b, c, d, t2, t4):
+    """Which side of the diagonal from the crank pin A to the output pivot O4 the coupler-rocker pin B is on, as the
+    sine of the angle from A->O4 to A->B: positive (left) on the open branch, negative on the crossed one, 0 where the
+    two assemblies meet. None where A sits on O4, so the diagonal has no direction."""
+    ax, ay = a * math.cos(t2), a * math.sin(t2)
+    bx, by = d + c * math.cos(t4), c * math.sin(t4)
+    e = math.hypot(d - ax, ay)
+    if e < 1e-6 * max(a, b, c, d):
+        return None
+    return ((d - ax) * (by - ay) + ay * (bx - ax)) / (e * b)
+
+
 @pytest.mark.parametrize("links", [(3, 3, 4, 4), (10, 10, 25, 25), (7, 7, 2, 2), (3 * MM, 3 * MM, 4 * MM, 4 * MM),
-                                   (3, 3 * (1 + 1e-9), 4, 4), (3 * (1 - 1e-9), 3, 4, 4), (5, 5, 5, 5)])
-def test_fourbar_kites_close_at_every_input_angle(links):
-    # A kite (a = b, c = d) has A = 0 in the quadratic at every input angle: the root must not come from 0 / 0, and
-    # round-off must not hide a position that closes. Every 0.1 degree, both branches, including 0 and 180 degrees (where
-    # the coupler pin sits on the input pivot) and the near-kites that lost digits before.
+                                   (3, 3 * (1 + 1e-9), 4, 4), (3 * (1 - 1e-9), 3, 4, 4), (5, 5, 5, 5),
+                                   # change points (S + L = P + Q) that turn fully: parallelograms (a = c, b = d) and a
+                                   # crank-rocker with a + b = c + d; the lengths 0.03 and so on are not exact in binary
+                                   (5, 2, 5, 2), (0.03, 0.07, 0.03, 0.07), (0.02, 0.05, 0.03, 0.04)])
+def test_fourbar_kites_and_change_points_close_at_every_input_angle(links):
+    # A kite (a = b, c = d) has A = 0 in the quadratic at every input angle: the root must not come from 0 / 0. At a
+    # change point the two assemblies meet at 0 or 180 degrees, so the discriminant is 0 there and round-off can push it
+    # below. Neither may hide a position that closes. Every 0.1 degree, both branches, and every 1e-9 rad for 5e-8 rad
+    # either side of 0 and 180 degrees (where the coupler pin sits on the input pivot, or the links lie flat).
     a, b, c, d = links
+    longest = max(links)
     assert fx.grashof(*links)["crank_rotates"]                             # the crank turns fully, so every angle closes
-    for tenth in range(3600):
-        t2 = math.radians(tenth / 10)
-        for crossed in (False, True):
-            got = fx.fourbar_angles(a, b, c, d, t2, crossed=crossed)
-            assert got is not None, (tenth / 10, crossed)
-            assert _loop_error(a, b, c, d, t2, *got) < 1e-12 * d, (tenth / 10, crossed)
+    angles = [math.radians(tenth / 10) for tenth in range(3600)]
+    angles += [base + k * 1e-9 for base in (0.0, math.pi) for k in range(-50, 51)]
+    for t2 in angles:
+        both = [fx.fourbar_angles(a, b, c, d, t2, crossed=crossed) for crossed in (False, True)]
+        for crossed, got in zip((False, True), both):
+            assert got is not None, (t2, crossed)
+            assert _loop_error(a, b, c, d, t2, *got) < 1e-12 * longest, (t2, crossed)
+            # the branch asked for: open on the left of the diagonal, crossed on the right; where the two meet (the
+            # pin on the diagonal, to round-off), both branches give that one position
+            side = _coupler_side(a, b, c, d, t2, got[1])
+            if side is None:                                              # crank pin on the output pivot
+                continue
+            if abs(side) > 1e-6:
+                assert (side < 0) == crossed, (t2, crossed, side)
+            else:
+                assert _loop_error(a, b, c, d, t2, *both[0]) < 1e-12 * longest and \
+                    abs(math.remainder(both[0][1] - both[1][1], 2 * math.pi)) < 1e-6, (t2, both)
+        assert fx.transmission_angle(a, b, c, d, t2) is not None, t2
     t3, t4 = fx.fourbar_angles(3, 3, 4, 4, 0.0)
     assert abs(math.cos(t4) + 1) < 1e-15                                  # the rocker folds back onto the ground link
+
+
+def test_fourbar_parallelogram_lies_flat_at_0_degrees():
+    # a = c = 5, b = d = 2 with the crank along the ground: the rocker lies along it too and the coupler joins their
+    # ends, one position for both branches, with the coupler in line with the rocker (mu = 0)
+    for crossed in (False, True):
+        assert fx.fourbar_angles(5, 2, 5, 2, 0.0, crossed=crossed) == (0.0, 0.0)
+    assert fx.transmission_angle(5, 2, 5, 2, 0.0) == 0.0
+
+
+@pytest.mark.parametrize("links", [(100, 80, 70, 60), (80, 40, 120, 100), (60, 30, 50, 70), (0.05, 0.02, 0.06, 0.04)])
+def test_fourbar_closes_at_the_limits_of_the_input(links):
+    # A crank that cannot turn fully stops where coupler and rocker line up: there the diagonal e from the crank pin
+    # to the output pivot is b + c or |b - c|, the linkage closes in one position (both branches meet) and the
+    # transmission angle is 0. Round-off at that angle used to return None for about half the branches.
+    a, b, c, d = links
+    longest = max(links)
+    assert not fx.grashof(*links)["crank_rotates"]
+    limits = [math.acos(cos) for span in (b + c, abs(b - c))
+              for cos in [(a * a + d * d - span * span) / (2 * a * d)] if abs(cos) <= 1]
+    assert limits
+    for t0 in limits:
+        for t2 in (t0, -t0):
+            for crossed in (False, True):
+                got = fx.fourbar_angles(a, b, c, d, t2, crossed=crossed)
+                assert got is not None and _loop_error(a, b, c, d, t2, *got) < 1e-12 * longest, (t2, crossed)
+            assert fx.transmission_angle(a, b, c, d, t2) == pytest.approx(0.0, abs=1e-6), t2
+    # well past a limit the links still cannot close
+    assert fx.fourbar_angles(a, b, c, d, limits[0] + 1e-3) is None or fx.fourbar_angles(a, b, c, d, limits[0] - 1e-3) is None
 
 
 def test_fourbar_norton_example_4_1():

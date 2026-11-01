@@ -75,8 +75,8 @@ SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A 
 | `tensile_stress_area` | As = π/4 (d − 0.9382 p)² | ISO 898-1:2013; Shigley Table 8-1 | ISO metric |
 | `thread_shear_areas`, `thread_strip_force` | 0.75 π D1 Le (screw), 0.875 π d Le (hole) | ISO 68-1:1998 basic profile | even load sharing, no tolerances |
 | `grashof` | Grashof class, whether the input crank turns fully | Norton 5th ed., Chapter 2 | rigid links |
-| `fourbar_angles` | coupler and output angles, open or crossed | Freudenstein (1955); Norton 5th ed., Chapter 4 | position only |
-| `transmission_angle` | angle between coupler and rocker | Norton 5th ed., Chapter 4 | position only |
+| `fourbar_angles` | coupler and output angles, open or crossed | Freudenstein (1955); Norton 5th ed., Chapter 4 | position only; a gap under 1e-12 of the longest link counts as closed |
+| `transmission_angle` | angle between coupler and rocker | Norton 5th ed., Chapter 4 | position only; the same closing test |
 | `wall_resistance`, `film_resistance` | R = L / k A, R = 1 / h A | Incropera 7th ed., Section 3.1.2, Eqs. (3.6), (3.9) | steady, 1-D |
 | `wall_heat_flow` | layers and films in series: heat flow and every face temperature | Incropera 7th ed., Section 3.1.3 | no contact resistance |
 | `fan_curve_line`, `system_coefficient` | the datasheet fan line; k in Δp = k Q² | White 7th ed., Section 11.5 | same air density |
@@ -137,6 +137,10 @@ in the test:
 - **Linkages.**
   - Loop closure, and an independent circle-intersection construction, at every input angle.
   - Kites (a = b, c = d) and near-kites, every 0.1 degree, where the textbook root divides 0 by 0.
+  - Parallelograms and other change-point linkages, every 0.1 degree and every 1e-9 rad near 0 and 180 degrees,
+    where the two branches meet and round-off can push the discriminant below 0. Each branch must be the one
+    asked for.
+  - The input's limit angles on linkages whose crank cannot turn fully, where the linkage closes in one position.
   - Norton's Example 4-1.
 - **Heat and air.**
   - The composite wall face by face.

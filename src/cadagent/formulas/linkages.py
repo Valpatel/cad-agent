@@ -16,6 +16,20 @@ from typing import Dict, Optional, Tuple
 from cadagent.formulas._registry import cite, formula
 
 _RIGID = "rigid links, ideal pin joints without clearance, planar, position only"
+# How near to closing counts as closed, as a fraction of the longest link. Where coupler and rocker line up (a
+# change point, such as a parallelogram at 0 or 180 degrees, or a limit of the input's travel) the two assemblies meet,
+# and round-off, or lengths like 0.03 that binary cannot hold exactly, can leave the links a few ulps apart.
+_CLOSE = 1e-12
+
+
+def _diagonal_closes(a: float, b: float, c: float, d: float, theta2: float) -> bool:
+    """Whether coupler and rocker can span the diagonal from the crank pin to the output pivot, to _CLOSE of the
+    longest link: |b - c| <= e <= b + c. The diagonal's x part is written as a cos theta2 - d =
+    a - d - 2 a sin^2(theta2 / 2), which keeps its digits near 0 degrees, where a cos theta2 - d would cancel."""
+    s = math.sin(0.5 * theta2)
+    e = math.hypot(a - d - 2.0 * a * s * s, a * math.sin(theta2))
+    tol = _CLOSE * max(a, b, c, d)
+    return abs(b - c) - tol <= e <= b + c + tol
 
 
 @formula(units={"a": "length (input crank)", "b": "length (coupler)", "c": "length (output rocker)",
@@ -43,7 +57,9 @@ def grashof(a: float, b: float, c: float, d: float) -> Dict[str, object]:
                 "d": "length (ground)", "theta2": "rad (input angle from the ground link)",
                 "crossed": "False for the open branch, True for the crossed one"},
          returns="(theta3, theta4) in rad, or None where the links cannot close at this input angle",
-         limits=(_RIGID, "the branch must be chosen: open and crossed are the two assemblies at the same input angle"),
+         limits=(_RIGID, "the branch must be chosen: open and crossed are the two assemblies at the same input angle",
+                 f"a gap under {_CLOSE:g} of the longest link counts as closed, so a change point or a limit of the "
+                 "input's travel gives its one position (both branches) instead of None"),
          source=cite("norton", "Chapter 4 (position analysis), the algebraic four-bar solution with Freudenstein's "
                      "K1 to K3; ") + "after " + cite("freudenstein", "the displacement equation"))
 def fourbar_angles(a: float, b: float, c: float, d: float, theta2: float,
@@ -59,7 +75,11 @@ def fourbar_angles(a: float, b: float, c: float, d: float, theta2: float,
     C = k1 - (k2 + 1.0) * cos2 + k3
     disc = B * B - 4.0 * A * C
     if disc < 0.0:
-        return None
+        # disc = ((b + c)^2 - e^2)(e^2 - (b - c)^2) / (a c)^2, with e the diagonal. Where the two assemblies meet it is
+        # 0, and round-off can leave it just below; if the diagonal says the links close, it is that double root.
+        if not _diagonal_closes(a, b, c, d, theta2):
+            return None
+        disc = 0.0
     root = math.sqrt(disc)
     # tan(theta4 / 2) = num / 2A = 2C / conj, since num * conj = 4AC. Take the larger of num and conj, so that A = 0
     # (a kite) does not leave 0 / 0; when both are 0 (B = 0, a double root), A = 0 puts the root at infinity, theta4 = pi.
@@ -78,13 +98,16 @@ def fourbar_angles(a: float, b: float, c: float, d: float, theta2: float,
 @formula(units={"a": "length (input crank)", "b": "length (coupler)", "c": "length (output rocker)",
                 "d": "length (ground)", "theta2": "rad (input angle)"},
          returns="transmission angle, rad, folded to 0..pi/2 (pi/2 is ideal; below about 40 degrees the linkage binds)",
-         limits=(_RIGID, "the same for both branches"),
+         limits=(_RIGID, "the same for both branches", f"closes under the same {_CLOSE:g} test as fourbar_angles"),
          source=cite("norton", "Chapter 4, the transmission angle of the four-bar (law of cosines)"))
 def transmission_angle(a: float, b: float, c: float, d: float, theta2: float) -> Optional[float]:
     """Angle between coupler and rocker: cos mu = (b^2 + c^2 - a^2 - d^2 + 2 a d cos theta2) / (2 b c), folded so
     the result is acute. None when the linkage cannot close."""
     cos_mu = (b * b + c * c - a * a - d * d + 2.0 * a * d * math.cos(theta2)) / (2.0 * b * c)
     if abs(cos_mu) > 1.0:
-        return None
+        # coupler and rocker in line (mu = 0) at a change point or a limit, pushed past 1 by round-off
+        if not _diagonal_closes(a, b, c, d, theta2):
+            return None
+        cos_mu = math.copysign(1.0, cos_mu)
     mu = math.acos(cos_mu)
     return min(mu, math.pi - mu)

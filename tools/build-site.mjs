@@ -26,8 +26,9 @@ const rootArg = process.argv.indexOf('--root');
 const root = path.resolve(rootArg > 0 ? process.argv[rootArg + 1] : path.join(import.meta.dirname, '..'));
 const outArg = process.argv.indexOf('--out');
 const out = outArg > 0 ? path.resolve(process.argv[outArg + 1]) : path.join(root, 'dist');
-// The site's one address. It is also served at cad-agent.gyropup.com, a second custom domain on the same Pages project;
-// every page names this origin as canonical, so search engines index one copy, and agents' links all use it.
+// The site's one address. It is also served at cad-agent.gyropup.com, a second custom domain on the same Pages project.
+// Every page names its address here as canonical (site pages by <link>, the kit's pages by a Link header), so search
+// engines index one copy. llms.txt, catalog.json, the sitemap and the feedback links use it too.
 const ORIGIN = 'https://cad-agent.valpatel.com';
 const REPO = 'https://github.com/Valpatel/cad-agent';
 const TAGLINE = 'Your one stop shop for agentic CAD';
@@ -570,12 +571,16 @@ export const CSP = `default-src 'self'; script-src 'self' ${[...inlineHashes].so
 // Cloudflare Pages redirects: each moved page and its Markdown twin, to the new path.
 await writeFile(path.join(out, '_redirects'), redirects.flatMap(([from, to]) =>
   [`/${from.replace(/\.md$/, '')} /${to.replace(/\.md$/, '')} 301`, `/${from} /${to} 301`]).join('\n') + (redirects.length ? '\n' : ''));
+// The kit's own pages (kit/*.html) are copied byte for byte from the kit, so they cannot carry a canonical <link>;
+// Pages sends it as a Link header instead, at the pretty URL Pages serves them on (/kit/viewer, not /kit/viewer.html).
+const kitPages = (await readdir(path.join(out, 'kit'))).filter(f => f.endsWith('.html')).sort().map(f => '/kit/' + f.replace(/\.html$/, ''));
 await writeFile(path.join(out, '_headers'), [
   '/*', '  X-Content-Type-Options: nosniff', '  Referrer-Policy: strict-origin-when-cross-origin', `  Content-Security-Policy: ${CSP}`,
   '  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()', '  Cross-Origin-Opener-Policy: same-origin',
   '  Strict-Transport-Security: max-age=31536000',
   '/*.md', '  Content-Type: text/markdown; charset=utf-8', '/llms.txt', '  Content-Type: text/plain; charset=utf-8',
-  '/llms-full.txt', '  Content-Type: text/plain; charset=utf-8', '/kit/vendor/*', '  Cache-Control: public, max-age=86400', ''].join('\n'));
+  '/llms-full.txt', '  Content-Type: text/plain; charset=utf-8', '/kit/vendor/*', '  Cache-Control: public, max-age=86400',
+  ...kitPages.flatMap(u => [u, `  Link: <${ORIGIN}${u}>; rel="canonical"`]), ''].join('\n'));
 await writeFile(path.join(out, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${ORIGIN}/sitemap.xml\n`);
 await writeFile(path.join(out, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
   ['/', '/catalog', ...pages.map(p => pageURL(p.file))].map(u => `<url><loc>${ORIGIN}${u}</loc></url>`).join('') + '</urlset>\n');

@@ -230,6 +230,79 @@ test('an image keeps the size its author gave, and its tag survives any alt text
   }
 });
 
+test('doc pages carry the page tree, with this page marked', async () => {
+  const toolkit = await readFile(path.join(out, 'docs/toolkit.html'), 'utf8');
+  const nav = toolkit.match(/<cad-nav [^>]*>([\s\S]*?)<\/cad-nav>/)?.[1];
+  assert.ok(nav, 'no <cad-nav> on a doc page');
+  assert.equal((nav.match(/aria-current="page"/g) || []).length, 1);
+  assert.match(nav, /<a href="\/docs\/toolkit" aria-current="page">/);
+  const catalog = JSON.parse(await readFile(path.join(out, 'catalog.json'), 'utf8'));
+  for (const doc of catalog.items.filter(i => i.markdown && i.status === 'ours' && ['doc', 'lesson', 'skill', 'agent', 'research'].includes(i.type)))
+    assert.ok(nav.includes(`href="${doc.url.replace('https://cad-agent.valpatel.com', '')}"`), `${doc.name} is missing from the page tree`);
+  assert.ok(files.includes('kit/nav.js') && files.includes('kit/nav.css'));
+  // Written out in full, so the first paint is final and it works without script: a landmark, the toggle, the
+  // filter, and this page's outline (every h2/h3 with an id) under it, again in the right-hand column.
+  assert.match(toolkit, /<cad-nav [^>]*role="navigation" aria-label="Pages and contents"/);
+  assert.match(toolkit, /<link rel="stylesheet" href="\/kit\/nav\.css">/);
+  assert.match(nav, /^<button type="button" class="cad-nav-toggle" aria-expanded="false">/);
+  assert.match(nav, /<div class="cad-nav-panel"><input type="search" class="cad-nav-filter"/);
+  const article = toolkit.match(/<article class="prose">([\s\S]*?)<\/article>/)[1];
+  const heads = [...article.matchAll(/<h[23] id="([^"]+)">/g)].map(m => m[1]);
+  const listed = list => [...list.matchAll(/<a href="#([^"]+)">/g)].map(m => decodeURIComponent(m[1]));
+  const inTree = nav.match(/aria-current="page">[^<]*<\/a><ol class="cad-nav-outline"[^>]*>([\s\S]*?)<\/ol>/)?.[1];
+  assert.deepEqual(listed(inTree ?? ''), heads, 'the outline under the current page lists every h2/h3');
+  const rail = toolkit.match(/<nav class="doc-rail" aria-labelledby="rail-title">([\s\S]*?)<\/nav>/)?.[1];
+  assert.deepEqual(listed(rail ?? ''), heads, 'the right-hand outline lists every h2/h3');
+  assert.match(toolkit, /<body[^>]*><a class="skip-link" href="#main:content">Skip to content<\/a>/);
+  assert.match(toolkit, /<div class="doc-main" id="main:content" tabindex="-1">/);
+  // The rail is named once, by its visible title; the outline in the tree keeps its own name inside "Pages and contents".
+  assert.match(toolkit, /<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page<\/p><ol class="cad-nav-outline cad-nav-rail">/);
+  assert.match(toolkit, /aria-current="page">[^<]*<\/a><ol class="cad-nav-outline" aria-label="On this page">/);
+});
+
+// Owner (2026-10-31): "make sure every page has some interesting diagrams, animations, renders etc, don't make them
+// boring." The pages that still have no picture, render, diagram or demo, exactly (the backlog in #122). A page that
+// gains one must leave this list, and a new page without one fails, so the list only shrinks.
+const PAGES_WITHOUT_VISUALS = [
+  'THIRD_PARTY_NOTICES.md',
+  'agents/cad-pr-reviewer.md',
+  'agents/cad-resume.md',
+  'docs/agent-workflow.md',
+  'docs/common-issues.md',
+  'docs/compliant.md',
+  'docs/design-process-plan.md',
+  'docs/dossier.md',
+  'docs/explore.md',
+  'docs/file-viewer.md',
+  'docs/gates.md',
+  'docs/pcb.md',
+  'docs/rendered-motion.md',
+  'docs/review-packet.md',
+  'docs/subassembly-insertion.md',
+  'docs/toolkit.md',
+  'docs/volume-precision.md',
+  'docs/web-diagrams.md',
+  'docs/web-parts.md',
+  'research/agent-toolkits-2026-10.md',
+  'research/compliant-mechanisms.md',
+  'research/design-workflows.md',
+  'research/fea-and-process-tools.md',
+  'research/landscape.md',
+  'research/simulation-tools.md',
+  'skills/cad-motion-validation/SKILL.md',
+  'skills/cad-pr-review/SKILL.md',
+  'skills/cad-remote-runs/SKILL.md',
+  'skills/cad-work-tracking/SKILL.md',
+  'skills/design-process/SKILL.md',
+  'skills/mcmaster-parts/SKILL.md',
+];
+test('the pages without a picture, diagram or demo are exactly the known backlog', async () => {
+  const { without } = JSON.parse(await readFile(path.join(out, 'visuals.json'), 'utf8'));
+  const gained = PAGES_WITHOUT_VISUALS.filter(p => !without.includes(p)), lacking = without.filter(p => !PAGES_WITHOUT_VISUALS.includes(p));
+  assert.deepEqual(lacking, [], `add a diagram, render or demo to: ${lacking.join(', ')}`);
+  assert.deepEqual(gained, [], `these now have something to look at; remove them from PAGES_WITHOUT_VISUALS: ${gained.join(', ')}`);
+});
+
 test('a moved page leaves a stub on GitHub and a 301 on the site', async () => {
   const stubs = git('grep', '-l', '-e', '^<!-- moved-to:', 'HEAD', '--', '*.md').split('\n').filter(Boolean).map(l => l.replace(/^HEAD:/, ''));
   assert.ok(stubs.length >= 12, 'the twelve numbered lessons are stubs');
@@ -300,7 +373,8 @@ test('redirects outlive the stubs, and a stub must point at a published page tha
       execFileSync('git', ['checkout', '-q', 'HEAD~1'], { cwd: wt });
     }
     // Bad lines in the list fail the build: a source listed twice (Pages keeps the first, the preview server the last),
-    // a leading slash, a source that is not a .md path, a file that is still in the repo, and a stub listed elsewhere.
+    // a leading slash, a source that is not a .md path or not a plain path (a splat, a placeholder, `..`, `//`, `./`),
+    // a file that is still in the repo, and a stub listed elsewhere.
     const list = path.join(wt, 'tools/site-redirects.txt');
     const original = await readFile(list, 'utf8');
     for (const [line, why] of [
@@ -308,6 +382,11 @@ test('redirects outlive the stubs, and a stub must point at a published page tha
       ['/lessons/gone.md lessons/README.md', 'without a leading slash'],
       ['lessons/gone lessons/README.md', 'without a leading slash'],
       ['web/site.css lessons/README.md', 'without a leading slash'],
+      ['lessons/*.md lessons/README.md', 'without a leading slash'],          // a Pages splat: every lesson would loop
+      ['lessons/:name.md lessons/README.md', 'without a leading slash'],      // a Pages placeholder
+      ['lessons/../gone.md lessons/README.md', 'without a leading slash'],
+      ['lessons//gone.md lessons/README.md', 'without a leading slash'],
+      ['lessons/./gone.md lessons/README.md', 'without a leading slash'],
       ['docs/toolkit.md lessons/README.md', 'is still a file in the repo'],
     ]) {
       await writeFile(list, original + line + '\n');

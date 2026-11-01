@@ -140,7 +140,11 @@ for (const [from, to] of redirects) {
   // Pages keeps the first rule for a path and the preview server the last, so a duplicate would make them disagree.
   if (seenFrom.has(from)) throw new Error(`${at} is listed twice`);
   seenFrom.add(from);
-  if (!/^(?!\/)[^\s]+\.md$/.test(from)) throw new Error(`${at}: a source is a repo path to a .md file, without a leading slash`);
+  // Pages reads * as a splat and :name as a placeholder, so `lessons/*.md` would redirect every lesson page, the
+  // target included, into a loop; the preview server matches exact paths and would never show it. Plain paths only.
+  if (!/^[\w-][\w.\/-]*\.md$/.test(from) || path.posix.normalize(from) !== from)
+    throw new Error(`${at}: a source is a plain repo path to a .md file (letters, digits, - _ . /), without a leading slash, ` +
+      '`..`, `//`, `*` or `:`');
   if (tracked.includes(from) && !stubFiles.has(from)) throw new Error(`${at} is still a file in the repo (only its stub may remain)`);
   if (!to || !pageFiles.has(to)) throw new Error(`${at} -> ${to}, which is not a published page`);
 }
@@ -197,12 +201,12 @@ function frame({ title, body, md, description = LEDE, current = '', page = 'doc'
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title === TAGLINE ? 'cad-agent · ' + TAGLINE : title + ' · cad-agent')}</title>
 <meta name="description" content="${esc(description)}">
-<link rel="icon" href="/web/icon.svg"><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}
+<link rel="icon" href="/web/icon.svg"><link rel="preload" href="/kit/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}
 ${md ? `<link rel="alternate" type="text/markdown" href="${esc(md)}" title="Markdown for agents">` : ''}
 <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt"></head>
-<body class="${page}-page" data-diagram-theme="light"><header class="site-header"><div class="wrap"><a class="wordmark" href="/"><img src="/web/icon.svg" alt="" width="34" height="34">cad-agent<b>.</b></a>
+<body class="${page}-page" data-diagram-theme="light"><a class="skip-link" href="#main:content">Skip to content</a><header class="site-header"><div class="wrap"><a class="wordmark" href="/"><img src="/web/icon.svg" alt="" width="34" height="34">cad-agent<b>.</b></a>
 <nav aria-label="Main">${NAV.map(([h, t, keep]) => `<a href="${h}"${keep ? ' data-keep' : ''}${h === current ? ' aria-current="page"' : ''}>${t}</a>`).join('')}<a class="pill-link" href="${REPO}">GitHub ↗</a></nav></div></header>
-<main class="${page === 'landing' ? '' : 'wrap'} ${page === 'doc' ? 'doc' : ''}">${body}</main>
+<main class="${page === 'landing' ? '' : 'wrap'} ${page === 'doc' ? 'doc' : ''}"${body.includes('id="main:content"') ? '' : ' id="main:content" tabindex="-1"'}>${body}</main>
 <footer class="site-footer"><div class="wrap"><p>Created by <a href="https://valpatel.com">Valpatel Software LLC</a>. Code under the <a href="${REPO}/blob/dev/LICENSE">MIT licence</a>; every third-party tool keeps its own licence and credit. ${updated ? `Last updated <time datetime="${isoDay(updated)}">${day(updated)}</time>.` : 'This page has uncommitted changes.'} Built from <a href="${REPO}/commit/${revision}">${esc(revisionLabel)}</a>.</p>
 <div class="links"><a href="${esc(feedbackURL(title === TAGLINE ? 'home page' : title, url))}">Help us improve ↗</a><a href="/llms.txt">llms.txt</a><a href="/llms-full.txt">llms-full.txt</a><a href="/catalog.json">catalog.json</a>${md ? `<a href="${esc(md)}">this page .md</a>` : ''}</div></div></footer>
 <script type="module" src="/web/site.js"></script></body></html>`;
@@ -246,6 +250,12 @@ const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).m
       : `${REPO}/${tracked.includes(resolved) ? 'blob' : 'tree'}/dev/${resolved}`;
     return `${open}${target}${hash.length ? '#' + hash.join('#') : ''}${close}`;
   })).join('');
+// Every page should show something: a picture, render, diagram, animation or demo. Pages without one are listed by
+// the build and kept from growing by tests/website-build.test.mjs.
+// What counts as something to look at in a doc page's sanitized HTML (the sanitizer drops inline <svg>, <video> and
+// custom elements, so pictures arrive as <img> and diagrams as Mermaid blocks; the browser test checks they render).
+const VISUAL = /<img\b|class="language-mermaid"|<pre class="mermaid"/g;
+const visuals = new Map();
 for (const p of pages) {
   const ids = new Map();
   const renderer = new marked.Renderer();
@@ -300,7 +310,24 @@ for (const p of pages) {
   const crumbs = `<p class="crumbs"><a href="/catalog#${p.section}">${esc(SECTIONS.find(s => s.id === p.section).title)}</a> · <a href="${REPO}/blob/dev/${esc(p.file)}">${esc(p.file)}</a> · <a href="/${esc(p.file)}">Markdown</a></p>`;
   const dest = path.join(out, pageFile(p.file));
   await mkdir(path.dirname(dest), { recursive: true });
-  await writeFile(dest, frame({ title: p.title, body: crumbs + `<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file), md: '/' + p.file, description: p.summary, current: pageURL(p.file), updated: lastChange(p.file) }));
+  // Long pages: the kit's <cad-nav> on the left (every page, grouped, with this page's outline under it) and, on very
+  // wide screens, the outline again in a right-hand column. All written out here, so the first paint is final (the
+  // script only marks the section being read, filters and toggles) and it all works without script.
+  const heads = [...html.matchAll(/<h([23]) id="([^"]+)">([\s\S]*?)<\/h\1>/g)]
+    .map(([, level, id, inner]) => ({ level, id, text: inner.replace(/<[^>]+>/g, '').trim() })).filter(h => h.text);
+  // The skip link's target is "main:content": slug() drops ":", so no heading id can take it (a "## Content" is "content").
+  const outline = (cls, label) => heads.length < 2 ? '' : `<ol class="cad-nav-outline${cls}"${label ? ' aria-label="On this page"' : ''}>${heads.map(h =>
+    `<li class="h${h.level}"><a href="#${esc(encodeURIComponent(h.id))}">${h.text}</a></li>`).join('')}</ol>`;
+  const tree = SECTIONS.map(s => {
+    const list = pages.filter(q => q.section === s.id);
+    if (!list.length) return '';
+    return `<details class="cad-nav-group"${s.id === p.section ? ' open' : ''}><summary>${esc(s.title)}</summary><ul>${list.map(q =>
+      `<li><a href="${esc(pageURL(q.file))}"${q.file === p.file ? ` aria-current="page">${esc(q.title)}</a>${outline('', true)}` : `>${esc(q.title)}</a>`}</li>`).join('')}</ul></details>`;
+  }).join('');
+  const nav = `<cad-nav for=".prose" rail=".doc-rail" role="navigation" aria-label="Pages and contents"><button type="button" class="cad-nav-toggle" aria-expanded="false">Pages and contents</button><div class="cad-nav-panel"><input type="search" class="cad-nav-filter" placeholder="Filter pages" aria-label="Filter pages"><p class="cad-nav-empty" role="status"></p>${tree}</div></cad-nav>`;
+  const rail = heads.length < 2 ? '' : `<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline(' cad-nav-rail', false)}</nav>`;
+  await writeFile(dest, frame({ title: p.title, body: `<div class="doc-layout">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + p.file, description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/nav.css'] }));
+  visuals.set(p.file, (html.match(VISUAL) || []).length);
   await writeFile(path.join(out, p.file), rewriteMd(p.file, p.src));   // the Markdown twin, same path
 }
 // Images referenced by docs.
@@ -444,4 +471,7 @@ await writeFile(path.join(out, 'sitemap.xml'), '<?xml version="1.0" encoding="UT
   ['/', '/catalog', ...pages.map(p => pageURL(p.file))].map(u => `<url><loc>${ORIGIN}${u}</loc></url>`).join('') + '</urlset>\n');
 await writeFile(path.join(out, '404.html'), frame({ title: 'Not found', body: '<h1>Not here.</h1><p>Try the <a href="/catalog">catalogue</a> or <a href="/llms.txt">llms.txt</a>.</p>' }));
 await writeFile(path.join(out, 'version.json'), JSON.stringify({ revision, built: catalog.built, pages: pages.length, items: catalog.items.length }, null, 2) + '\n');
-console.log(`Built ${path.relative(root, out) || out}${WORKTREE ? ' (draft: working tree)' : ''}: ${pages.length} pages (+ Markdown twins), ${catalog.items.length} catalogue entries, ${commands.length} commands. Revision ${revision.slice(0, 12)}`);
+// For agents and the tests: which pages still have nothing to look at.
+const noVisual = [...visuals].filter(([, n]) => !n).map(([f]) => f).sort();
+await writeFile(path.join(out, 'visuals.json'), JSON.stringify({ pages: Object.fromEntries([...visuals].sort()), without: noVisual }, null, 2) + '\n');
+console.log(`Built ${path.relative(root, out) || out}${WORKTREE ? ' (draft: working tree)' : ''}: ${pages.length} pages (+ Markdown twins), ${catalog.items.length} catalogue entries, ${commands.length} commands. Revision ${revision.slice(0, 12)}. ${noVisual.length} pages have no picture, diagram or demo yet (visuals.json).`);

@@ -265,11 +265,15 @@ def check_cantilever(*, length: float, section: Section, undercut: float, strain
                      lead_deg: Optional[float] = None, return_deg: Optional[float] = None,
                      root_radius: Optional[float] = None, share: float = 1.0,
                      max_mating_n: Optional[float] = None, min_retention_n: Optional[float] = None,
-                     name: str = "snap", modulus_note: Optional[str] = None) -> Dict[str, Any]:
+                     name: str = "snap", modulus_note: Optional[str] = None,
+                     retention_secant_mpa: Optional[float] = None,
+                     retention_note: Optional[str] = None) -> Dict[str, Any]:
     """Deterministic pass/fail rows for one cantilever snap. ``strain_allow`` already includes repeated-use and
     process derating (see :meth:`Material.allowable`). Every declared limit gives a row: one that cannot be computed
     (missing secant modulus, friction or angle; a self-locking hook's retention) fails and says what is missing, and
-    a missing root radius fails, so nothing passes unchecked."""
+    a missing root radius fails, so nothing passes unchecked. ``retention_secant_mpa``, where given, replaces
+    ``secant_mpa`` for the separation force: the cautious modulus is the high one for mating and the low one for
+    retention."""
     _require(length > 0 and undercut > 0, f"{name}: length and undercut must be positive")
     _require(0 < strain_allow <= 0.5, f"{name}: allowable strain {strain_allow!r} is not a fraction (0.03 = 3 %)")
     _require(0 < share <= 1, f"{name}: share must be in (0, 1]")
@@ -296,10 +300,16 @@ def check_cantilever(*, length: float, section: Section, undercut: float, strain
     p = deflection_force(section, length, eps, secant_mpa) if secant_mpa is not None else None
     if p is not None:
         out["deflection_force_n"] = p
+    ret_secant = retention_secant_mpa if retention_secant_mpa is not None else secant_mpa
+    p_ret = deflection_force(section, length, eps, ret_secant) if ret_secant is not None else None
+    if p_ret is not None and ret_secant != secant_mpa:
+        out["retention_deflection_force_n"] = p_ret
     suffix = f" ({modulus_note})" if modulus_note else ""
+    ret_note = retention_note if retention_note is not None else modulus_note
+    ret_suffix = f" ({ret_note})" if ret_note else ""
 
-    def missing(angle_name: str, angle: Optional[float]) -> List[str]:
-        return [k for k, v in (("secant_mpa", secant_mpa), ("friction", friction), (angle_name, angle)) if v is None]
+    def missing(angle_name: str, angle: Optional[float], modulus: Optional[float]) -> List[str]:
+        return [k for k, v in (("secant_mpa", modulus), ("friction", friction), (angle_name, angle)) if v is None]
 
     if p is not None and friction is not None and lead_deg is not None:
         w = mating_force(p, friction, lead_deg)
@@ -317,9 +327,9 @@ def check_cantilever(*, length: float, section: Section, undercut: float, strain
                          "detail": f"{w:.1f} N to assemble vs {max_mating_n:.1f} N allowed" + suffix})
         else:
             rows.append({"check": "mating force", "value": None, "limit": max_mating_n, "pass": False,
-                         "detail": "not computed: missing " + ", ".join(missing("lead_deg", lead_deg))})
-    if p is not None and friction is not None and return_deg is not None:
-        s = mating_force(p, friction, return_deg)
+                         "detail": "not computed: missing " + ", ".join(missing("lead_deg", lead_deg, secant_mpa))})
+    if p_ret is not None and friction is not None and return_deg is not None:
+        s = mating_force(p_ret, friction, return_deg)
         out["self_locking"] = math.isinf(s)
         out["separation_force_n"] = None if math.isinf(s) else s
     if min_retention_n is not None:
@@ -332,10 +342,11 @@ def check_cantilever(*, length: float, section: Section, undercut: float, strain
             s = out["separation_force_n"]
             rows.append({"check": "retention force", "value": s, "limit": min_retention_n,
                          "pass": s >= min_retention_n,
-                         "detail": f"{s:.1f} N to pull apart vs {min_retention_n:.1f} N required" + suffix})
+                         "detail": f"{s:.1f} N to pull apart vs {min_retention_n:.1f} N required" + ret_suffix})
         else:
             rows.append({"check": "retention force", "value": None, "limit": min_retention_n, "pass": False,
-                         "detail": "not computed: missing " + ", ".join(missing("return_deg", return_deg))})
+                         "detail": "not computed: missing " + ", ".join(missing("return_deg", return_deg,
+                                                                                ret_secant))})
     out["pass"] = all(r["pass"] for r in rows)
     out["limits"] = list(LIMITS)
     out["method"] = GUIDE
@@ -453,7 +464,7 @@ def check_spec_entry(spec: Dict[str, Any]) -> Dict[str, Any]:
     if process and process not in PROCESSES:
         raise ValueError(f"snap {name!r}: unknown process {process!r}; one of {', '.join(PROCESSES)}")
     eps = root_strain(section, length, undercut * share, design)
-    modulus_note = None
+    modulus_note = retention_note = retention_secant = None
     if printed is not None:
         if PROCESSES.get(process) != "layered" or process not in ("fdm", "fff"):
             raise ValueError(f"snap {name!r}: {printed.name} is a filament datasheet; process must be fdm")
@@ -465,14 +476,24 @@ def check_spec_entry(spec: Dict[str, Any]) -> Dict[str, Any]:
             orientation = "across"
         allow = printed.allowable(orientation, repeated) * (pf if pf is not None else 1.0)
         secant = _num(spec, "secant_mpa", name, gt=0)
-        secant_basis = "given"
+        retention_secant = secant
+        secant_basis = retention_basis = "given"
         if secant is None:
-            secant = printed.secant_upper_bound(orientation)
+            secant, retention_secant = printed.secant_upper_bound(orientation), printed.retention_modulus(orientation)
             secant_basis = "datasheet tensile modulus (an upper bound on the secant modulus)"
-            modulus_note = "upper bound: datasheet modulus"
+            retention_basis = secant_basis
+            modulus_note = retention_note = "upper bound: datasheet modulus"
+            if retention_secant != secant:
+                secant_basis = ("the highest datasheet tensile modulus of its editions, for mating force (an upper "
+                                "bound on the secant modulus)")
+                retention_basis = ("the lowest datasheet tensile modulus of its editions, for retention force (still "
+                                   "above the secant modulus)")
+                modulus_note = "upper bound: the highest edition's datasheet modulus"
+                retention_note = "upper bound: the lowest edition's datasheet modulus"
         friction = _num(spec, "friction", name, ge=0, le=1.5, default=printed.mu(spec.get("same_material", True)))
         material = dict(printed.derivation(orientation, repeated), allowable=allow, process=process,
-                        process_factor=pf, secant_mpa=secant, secant_basis=secant_basis)
+                        process_factor=pf, secant_mpa=secant, secant_basis=secant_basis,
+                        retention_secant_mpa=retention_secant, retention_secant_basis=retention_basis)
     else:
         mat = _material(spec, name)
         if not process:
@@ -505,7 +526,8 @@ def check_spec_entry(spec: Dict[str, Any]) -> Dict[str, Any]:
                          root_radius=_num(spec, "root_radius_mm", name, ge=0), share=share,
                          max_mating_n=_num(spec, "max_mating_n", name, gt=0),
                          min_retention_n=_num(spec, "min_retention_n", name, gt=0), name=name,
-                         modulus_note=modulus_note)
+                         modulus_note=modulus_note, retention_secant_mpa=retention_secant,
+                         retention_note=retention_note)
     r["rows"] = extra + r["rows"]
     r["pass"] = all(row["pass"] for row in r["rows"])
     r["material"] = material

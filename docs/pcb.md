@@ -43,7 +43,7 @@ Design cards can reference `pcb_evidence: exports/pcb-evidence.json`; they show 
 
 Import the native PCB STEP in the documented coordinate frame, and also check the nominal PCB outline and holes. Include connector mating envelopes, screws, captive nuts, cable paths and tool access. A board-only collision proxy misses components. Use measured/manufacturer dimensions when available and flag generic geometry. For ribbon relief, model hard stops, actual jacket thickness, compliant pads and a physical pull-test target; a cable hole alone is not strain relief.
 
-Generic lessons from the first PCB and enclosure project that used this workflow are in [lessons/11-pcb-evidence-and-review.md](../lessons/11-pcb-evidence-and-review.md). Board-specific incident notes stay in that product's repository.
+Generic lessons from the first PCB and enclosure project that used this workflow are in [lessons/electronics/pcb-evidence-and-review.md](../lessons/electronics/pcb-evidence-and-review.md). Board-specific incident notes stay in that product's repository.
 
 ### Enclosure fasteners
 

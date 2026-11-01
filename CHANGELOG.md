@@ -34,10 +34,14 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 **Docs and research**
 - Work-claim comments for sharing issues between agents (#102); the 2026-10-31 survey of agent toolkits, compliant
   mechanisms and FEA/process tools, and its catalogue entries (#109, #110).
+- Lessons grouped by area (`lessons/process/`, `mechanical/`, `wiring/`, `electronics/`, `simulation/`, `review/`),
+  with a diagram on every page (#133). The site redirects every old page for good (`tools/site-redirects.txt`).
 
 **Projects must change:**
 - Hole-check counts now separate holes from cones. A countersunk seat that used to count as a hole reads as a
   countersink, so recorded counts and findings can change on the next run.
+- Links to the numbered lessons (`lessons/NN-….md`) still work through one-line stubs on GitHub until v0.6.0,
+  which removes them: point such links at the new paths before then (the stubs name them).
 - Move imports to the new package paths before v0.7.0 (#114).
 - A test that replaces a *whole module* through its old path (`sys.modules["cadagent.report"] = fake`, or
   `cadagent.report = fake`) no longer reaches cad-agent's own code, which imports the new paths. Replace it at the new

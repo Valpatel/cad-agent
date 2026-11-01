@@ -29,7 +29,7 @@ it must stay that way.
 - **Strong, but few parts.** Prefer one family per fastener type: for example, black-oxide alloy steel class 12.9
   socket head screws (91290A) with a minimal set of lengths; 18-8 stainless where corrosion matters; class 10 nyloc
   nuts; one washer family per size. When a computed length is not stocked, move the seat or the pilot depth so a
-  stocked length fits (lesson 04) before adding another SKU. Report the number of distinct SKUs and the total part
+  stocked length fits ([Fasteners and assembly access](../../lessons/mechanical/fasteners-and-assembly-access.md)) before adding another SKU. Report the number of distinct SKUs and the total part
   count.
 - **Size from the CAD, then check against the page.** The stack comes from the CAD: grip, thread depth, insert pilot
   depth. Thread engagement is length minus grip. Check the chosen length against the depth actually available, and
@@ -83,7 +83,7 @@ it must stay that way.
    the head, a rod end's centre-to-end length). A mismatch means the wrong frame or the wrong part.
 5. **Place it in the assembly.** Import `<PN>.norm.step` and move it to the seat: for a screw, origin on the seat face
    and +Z out of the hole; for a bearing, the bottom face on the shoulder. Run the clash and tool-access checks
-   (lesson 04) with the real heads, nuts and washers in place, not envelopes.
+   ([Fasteners and assembly access](../../lessons/mechanical/fasteners-and-assembly-access.md)) with the real heads, nuts and washers in place, not envelopes.
 
 ## Python
 

@@ -8,7 +8,7 @@ import { readFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import * as fx from '../src/cadagent/webkit/formulas.js';
-import { MATERIALS, FANS } from '../src/cadagent/webkit/formulas-data.js';
+import { MATERIALS, FANS, SCREWS } from '../src/cadagent/webkit/formulas-data.js';
 
 const root = path.resolve(import.meta.dirname, '..');
 const vectors = JSON.parse(await readFile(path.join(root, 'tests/fixtures/formula-vectors.json'), 'utf8'));
@@ -117,7 +117,26 @@ test('the demo materials carry a source and a strain in range for both print dir
       assert.ok(Math.abs(m.allowable[d].repeated - 0.6 * m.allowable[d].single) < 1e-15, `${m.key} ${d} repeated`);
     }
     assert.ok(m.allowable.across.single <= m.allowable.along.single + 1e-15, `${m.key}: across above along`);
+    // the lowest datasheet tensile strength in each direction (Pa), for the screw boss
+    assert.ok(m.strength.across <= m.strength.along && m.strength.across > 1e7 && m.strength.along < 2e8, `${m.key} strength`);
   }
+});
+
+test('the demo screws are DELTA PT sizes in SI, with the friction band and the shear rule, each with its source', () => {
+  assert.match(SCREWS.source, /^Bulten AB, DELTA PT.*brochure version 250422, p\. 4.*https:\/\//);
+  assert.match(SCREWS.frictionSource, /Covestro, Snap-Fit Joints for Plastics.*Table 3/);
+  assert.deepEqual(SCREWS.friction, [0.2, 0.65]);
+  assert.equal(SCREWS.shearFromTensile, 0.5);
+  assert.deepEqual(SCREWS.sizes.map(x => x.key), ['20', '25', '30', '35', '40', '50']);
+  for (const x of SCREWS.sizes) {
+    assert.ok(Math.abs(x.diameter - Number(x.key) / 1e4) < 1e-15, `${x.key}: the size is the diameter in tenths of a mm`);
+    assert.ok(x.pitch / x.diameter > 0.34 && x.pitch / x.diameter < 0.4, `${x.key}: a DELTA PT pitch, about a third of d`);
+  }
+  const t = vectors.cases.filter(c => c.js === 'screwBoss' && !c.raises);
+  assert.ok(t.some(c => c.expected.passes) && t.some(c => !c.expected.torqueOk) && t.some(c => !c.expected.outsideOk) &&
+    t.some(c => !c.expected.engagementOk) && t.some(c => !c.expected.hoopOk), 'the boss vectors reach every verdict');
+  const bars = vectors.cases.filter(c => c.js === 'torsionSnapBar' && !c.raises);
+  assert.ok(bars.some(c => c.expected.passes) && bars.some(c => !c.expected.passes) && bars.some(c => c.args[7] === 2), 'the torsion vectors pass, fail and use two bars');
 });
 
 

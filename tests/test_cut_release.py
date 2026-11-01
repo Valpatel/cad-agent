@@ -15,6 +15,9 @@ _gspec.loader.exec_module(ci_gates)
 PYPROJECT = """[build-system]
 requires = ["setuptools"]
 
+[tool.before]
+version = "8.8.8"
+
 [project]
 name = "cadagent"
 version = "0.4.2"
@@ -40,7 +43,8 @@ Intro.
 def test_minor_bumps_and_dates_and_opens_a_new_unreleased():
     py, cl, v = cut_release.cut(PYPROJECT, CHANGELOG, bump="minor", date="2026-11-01")
     assert v == "0.5.0"
-    assert 'version = "0.5.0"' in py and 'version = "9.9.9"' in py  # only the [project] table changes
+    # only the [project] table changes, not a version line in a table before or after it
+    assert 'version = "0.5.0"' in py and 'version = "8.8.8"' in py and 'version = "9.9.9"' in py
     assert "## Unreleased\n\n## v0.5.0 (2026-11-01)\n\n**New**\n- A thing (#1).\n\n## v0.4.2" in cl
     assert ci_gates.release_gate(py, PYPROJECT, cl)[0]
 
@@ -64,6 +68,43 @@ def test_the_older_unreleased_heading_is_accepted():
 def test_refuses_a_changelog_it_cannot_release(changelog, message):
     with pytest.raises(ValueError, match=message):
         cut_release.cut(PYPROJECT, changelog, bump="minor", date="2026-11-01")
+
+
+@pytest.mark.parametrize("body", ["**New**\n", "### Fixed\n\n", "<!-- nothing yet -->\n", "**New**\n<!--\n- a\n-->\n"])
+def test_an_entry_with_only_headings_or_comments_is_empty(body):
+    with pytest.raises(ValueError, match="nothing to release"):
+        cut_release.cut(PYPROJECT, CHANGELOG.replace("**New**\n- A thing (#1).\n", body), bump="minor",
+                        date="2026-11-01")
+
+
+def test_refuses_a_heading_that_names_another_version():
+    old = CHANGELOG.replace("## Unreleased", "## v0.6.0 (unreleased)")
+    with pytest.raises(ValueError, match="names v0.6.0, not v0.5.0"):
+        cut_release.cut(PYPROJECT, old, bump="minor", date="2026-11-01")
+    assert "## v0.6.0 (2026-11-01)" in cut_release.cut(PYPROJECT, old, version="0.6.0", date="2026-11-01")[1]
+
+
+@pytest.mark.parametrize("version", ["v0.5.0", "abc", "0.5.0-rc1", ""])
+def test_refuses_a_version_that_is_not_digits(version):
+    with pytest.raises(ValueError, match="X.Y.Z digits"):
+        cut_release.cut(PYPROJECT, CHANGELOG, version=version, date="2026-11-01")
+
+
+def test_the_default_date_is_utc(monkeypatch):
+    class Clock(cut_release.dt.datetime):
+        @classmethod
+        def now(cls, tz=None):  # 2026-10-31 23:30 at -07:00 is 2026-11-01 06:30 UTC
+            moment = cut_release.dt.datetime(2026, 11, 1, 6, 30, tzinfo=cut_release.dt.timezone.utc)
+            return moment.astimezone(tz) if tz else moment.astimezone(cut_release.dt.timezone(
+                cut_release.dt.timedelta(hours=-7))).replace(tzinfo=None)
+    monkeypatch.setattr(cut_release.dt, "datetime", Clock)
+    assert cut_release.utc_today() == "2026-11-01"
+    assert "## v0.5.0 (2026-11-01)" in cut_release.cut(PYPROJECT, CHANGELOG, bump="minor")[1]
+
+
+def test_cli_reports_a_missing_root_without_a_traceback(tmp_path, capsys):
+    assert cut_release.main(["--minor", "--root", str(tmp_path / "nowhere")]) == 1
+    assert capsys.readouterr().err.startswith("cut_release: ")
 
 
 def test_refuses_a_version_not_above_the_current_one():

@@ -3,7 +3,9 @@
 Every release of cad-agent: what projects using it gain and what they must change. New work goes under
 `## Unreleased`. Releasing is part of the development loop ([CONTRIBUTING.md](CONTRIBUTING.md#releases)):
 `tools/cut_release.py` dates that entry as `## vX.Y.Z (YYYY-MM-DD)`, which the `cad-gates/main/release` check
-requires, and merging the release PR (`dev` → `main`) tags the release and deploys the site. Releases up to v0.4.2
+requires, and merging the release PR (`dev` → `main`) tags the release and deploys the site (when the owner has set
+the `production` environment's deploy secret; until then the site job warns and skips, and the site is deployed by
+hand from `main`). Releases up to v0.4.2
 are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
@@ -67,7 +69,11 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 - Lessons grouped by area (`lessons/process/`, `mechanical/`, `wiring/`, `electronics/`, `simulation/`, `review/`),
   with a diagram on every page (#133). The site redirects every old page for good (`tools/site-redirects.txt`).
 
-**Projects must change:** write STEP files with `cadagent.geometry.export_step` instead of
+**Projects must change:** `cad-agent check` and `cad-agent report` have a **Holes clear** row per part, and it fails
+("hole check not run") until `cad-agent holes` has run on the current STEP or the part is listed in `cad.holes.skip`
+(#88). A project whose CI runs `build` then `check` exits 1 after the upgrade: run `cad-agent holes` (or `cad-agent
+all`, which now runs it) before `check` and `report`, then fix each hole with material inside or list it as an
+exception. Write STEP files with `cadagent.geometry.export_step` instead of
 `cadquery.exporters.export` (or a project's own header rewrite); each STEP file changes once, then stays the same
 across rebuilds. Hole-check counts now separate holes from cones. A countersunk seat that used to count as
 a hole reads as a countersink, so recorded counts and findings can change on the next run. Links to the numbered lessons
@@ -77,4 +83,8 @@ the new moduli (#125): re-run deflection, stiffness, flexure-travel and clearanc
 limits. Under the same forces, stresses and safety factors do not change (the PA6-CF rows' strengths are now computed
 exactly, 48.96 and 23.04 MPa instead of 49 and 23). A force or a stress worked out at a given travel (a clip's
 retention, a flexure at full travel) falls with E, so re-check strength at travel too, with the in-plane modulus or a
-coupon.
+coupon. Densities change too, so mass estimates move by 1.6–9.4 %, and `MATERIALS['pa_cf'].name` is now
+`'PAHT-CF (dry)'` (was `'PA6-CF'`), so report titles that print it change (#147). The CFD `read_results` `residuals`
+and `T_max_history` cover the whole run, not only the newest solve (#155). Slicer include trees that are invalid or
+ambiguous now fail instead of degrading (#93). The catalogue's `schema` value is now `cad-agent-catalog/2`: a reader
+that checks for `/1` must accept `/2` (#174).

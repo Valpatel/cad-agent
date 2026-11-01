@@ -24,7 +24,10 @@ import sys
 from typing import Optional, Tuple
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-UNRELEASED = re.compile(r"^## (?:Unreleased|v[0-9]+(?:\.[0-9]+)* \(unreleased\))[ \t]*$", re.M)
+UNRELEASED = re.compile(r"^## (?:Unreleased|v(?P<named>[0-9]+(?:\.[0-9]+)*) \(unreleased\))[ \t]*$", re.M)
+VERSION = re.compile(r"^[0-9]+(?:\.[0-9]+)*$")
+# Lines that are not a change: sub-headings such as "**New**" or "### Fixed", and HTML comments.
+_NOT_A_CHANGE = re.compile(r"<!--.*?-->|^[ \t]*(?:#{3,6}[^\n]*|\*\*[^*\n]+\*\*:?)[ \t]*$", re.M | re.S)
 PROJECT_VERSION = re.compile(r'^(version\s*=\s*")([0-9]+(?:\.[0-9]+)*)("\s*)$', re.M)
 
 
@@ -34,6 +37,11 @@ def _gates():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def utc_today() -> str:
+    """Today's date in UTC, as GitHub dates its tags and releases (a local evening is already tomorrow in UTC)."""
+    return dt.datetime.now(dt.timezone.utc).date().isoformat()
 
 
 def next_version(current: Tuple[int, ...], bump: str) -> str:
@@ -65,8 +73,11 @@ def date_changelog(changelog: str, version: str, date: str) -> str:
     head = found[0]
     following = re.compile(r"^## ", re.M).search(changelog, head.end())
     body = changelog[head.end():following.start() if following else len(changelog)]
-    if not body.strip():
+    if not _NOT_A_CHANGE.sub("", body).strip():
         raise ValueError("the Unreleased entry is empty: nothing to release")
+    if head.group("named") and head.group("named") != version:
+        raise ValueError(f"the CHANGELOG's heading names v{head.group('named')}, not v{version}: "
+                         f"use --version {head.group('named')}, or rename the heading to '## Unreleased'")
     rest = changelog[:head.start()] + changelog[head.end():]  # the Unreleased heading may itself name the version
     if re.search(rf"^## v{re.escape(version)} \(", rest, re.M):
         raise ValueError(f"CHANGELOG.md already has an entry for v{version}")
@@ -80,8 +91,10 @@ def cut(pyproject: str, changelog: str, *, bump: Optional[str] = None, version: 
     current = gates.parse_version(pyproject)
     if (bump is None) == (version is None):
         raise ValueError("give exactly one of --minor, --patch or --version")
+    if version is not None and not VERSION.match(version):
+        raise ValueError(f"--version takes X.Y.Z digits, without a leading v: got {version!r}")
     version = version or next_version(current, bump)
-    date = date or dt.date.today().isoformat()
+    date = date or utc_today()
     dt.date.fromisoformat(date)  # an impossible date fails here, before the gate
     new_pyproject = bump_pyproject(pyproject, version)
     new_changelog = date_changelog(changelog, version, date)
@@ -97,7 +110,7 @@ def main(argv=None) -> int:
     which.add_argument("--minor", dest="bump", action="store_const", const="minor")
     which.add_argument("--patch", dest="bump", action="store_const", const="patch")
     which.add_argument("--version", help="an explicit X.Y.Z")
-    ap.add_argument("--date", help="the release date, YYYY-MM-DD (default today)")
+    ap.add_argument("--date", help="the release date, YYYY-MM-DD (default: today in UTC)")
     ap.add_argument("--root", type=pathlib.Path, default=ROOT, help="the repository root (default: this checkout)")
     ap.add_argument("--dry-run", action="store_true", help="check and print, write nothing")
     args = ap.parse_args(argv)
@@ -105,7 +118,7 @@ def main(argv=None) -> int:
     try:
         new_py, new_cl, version = cut(py_path.read_text(encoding="utf-8"), cl_path.read_text(encoding="utf-8"),
                                       bump=args.bump, version=args.version, date=args.date)
-    except ValueError as exc:
+    except (OSError, ValueError) as exc:
         print(f"cut_release: {exc}", file=sys.stderr)
         return 1
     if args.dry_run:
@@ -119,7 +132,9 @@ def main(argv=None) -> int:
           f"  git commit -am 'Release v{version}' && git push -u origin HEAD\n"
           f"  gh pr create --base dev --title 'Release v{version}: version and CHANGELOG'   # review, merge\n"
           f"  gh pr create --base main --head dev --title 'Release v{version}'              # review, merge (merge commit)\n"
-          f"release.yml then tags v{version}, publishes the GitHub release and deploys the site.")
+          f"release.yml then tags v{version} and publishes the GitHub release. It deploys the site only if the owner\n"
+          f"has set the production environment's deploy secret; otherwise its site job warns and skips, and the site\n"
+          f"is deployed by hand from main (CONTRIBUTING.md#releases).")
     return 0
 
 

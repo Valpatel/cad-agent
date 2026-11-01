@@ -87,7 +87,8 @@ Shipping to `main` is part of the development loop, not an occasional event. Whe
 or projects would notice (a command, a check, a fix, a site change), cut a release; while work is landing, at least
 once a day. `main` should never be more than a day behind `dev`. Agents cut and merge releases under the same gates as
 any PR; nobody has to ask for one. Use a patch release (`--patch`) for fixes, docs and the site, and a minor release
-(`--minor`) when projects must change something (the CHANGELOG's "Projects must change").
+(`--minor`) when projects must change something (the CHANGELOG's "Projects must change") or when it adds a feature,
+such as a new command or check, even one that asks nothing of projects.
 1. On a `release/vX.Y.Z` branch from `dev`:
    - bring in `main`'s release merges (`git merge origin/main`), so the release PR is up to date with `main`;
    - run `python3 tools/cut_release.py --patch` (or `--minor`). It bumps `version` in `pyproject.toml`, dates the
@@ -100,7 +101,9 @@ any PR; nobody has to ask for one. Use a patch release (`--patch`) for fixes, do
 3. `release.yml` then:
    - tags `vX.Y.Z` on the merge commit;
    - publishes the GitHub release from the CHANGELOG entry;
-   - deploys cad-agent.valpatel.com from that commit.
+   - deploys cad-agent.valpatel.com from that commit, if the owner has set the `production` secret below. Until then
+     the site job warns "site not deployed" and exits 0: that is a skipped deploy, not a working one. Deploy by hand
+     from `main` and check `https://cad-agent.valpatel.com/version.json`.
 
    The deploy uses the `production` environment, which only `main` may deploy to. It needs that environment's `CLOUDFLARE_API_TOKEN` secret, set by the owner with `gh secret set CLOUDFLARE_API_TOKEN --env production`, and its `CLOUDFLARE_ACCOUNT_ID` variable.
 4. Move the projects' pins (`requirements*.txt`) to the tag, each in its own PR.

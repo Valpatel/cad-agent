@@ -157,7 +157,7 @@ def _step(shape, material, spec: Mapping[str, Any], mesh_mm: float, refine, wind
     m = res["mesh"]
     rec = {"mesh_mm": mesh_mm, "refine": m["refine"], "tets": m["tets"], "nodes": m["nodes"],
            "peak_mpa": res["von_mises_design_mpa"], "max_displacement_mm": res["max_displacement_mm"],
-           "peak": m["peak"], "converge": c, "slivers": m["slivers"],
+           "peak": m["peak"], "converge": c, "finer_peak": st.finer.result["mesh"]["peak"], "slivers": m["slivers"],
            "warnings": sorted({str(w.message) for w in caught if issubclass(w.category, MeshWarning)}),
            "seconds": round(time.perf_counter() - t0, 1), "mesher": m["mesher"]}
     if window is not None:
@@ -360,6 +360,10 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
         body.append(text(px, panel_y - 8, c["name"], f"h c{i} w"))
         body.append(text(px, panel_y - 8, c["name"], f"nb c{i} n"))
         body.append(f'<rect x="{u(px)}" y="{u(panel_y)}" width="{u(side)}" height="{u(side)}" class="fr"/>')
+        # a 1 mm scale bar in the corner's empty quadrant (top right of the window)
+        bx, by = px + side - 10 - k_mm, panel_y + 22
+        body.append(f'<path class="ol" d="M{u(bx)} {u(by - 4)}v{u(4)}h{u(k_mm)}v{u(-4)}"/>'
+                    + text(bx + k_mm / 2, by - 8, "1 mm", "ax", "middle"))
         for k, s in enumerate(c["steps"]):
             fd = s["face"]
             pts = [to(x, z) for x, z in fd["points"]]
@@ -384,7 +388,7 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
                  text(px, below + 30, f"{_mpa(s['peak_mpa'])} MPa", f"big c{i}"),
                  text(px, below + 47, f"{_thousands(s['tets'])} tets", "sm w"),
                  *(text(px, below + 62 + 15 * j, line, "sm w") for j, line in enumerate(_flags(s["peak"]))),
-                 text(px, below + 92, f"a {cv['factor']:g}× finer mesh: {cv['change']:+.1%}", "sm w"),
+                 text(px, below + 92, _finer(s), "sm w"),
                  f'<rect x="{u(px)}" y="{u(below + 100)}" width="{u(side)}" height="{u(21)}" rx="{u(4)}" '
                  f'class="{"ok" if ok else "no"}"/>',
                  text(px + 7, below + 114.5, f"converge(): {word}", "v w"),
@@ -490,6 +494,14 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
     tl.add(".band", frames, lambda d: f"transform:translateX({d}px)", "ease-in-out")
     return S.document(W, H, _fill(present["label"], scene), _fill(present["description"], scene),
                       "".join(css) + tl.stylesheet(), body, S.Theme(light, dark))
+
+
+def _finer(step: Mapping[str, Any]) -> str:
+    """converge()'s finer mesh in words: how far the peak moved there, and whether that mesh resolves it (its wall and
+    radius flags), the two things its verdict needs."""
+    cv, fp = step["converge"], step["finer_peak"]
+    resolved = fp.get("wall_resolved") is not False and fp.get("radius_resolved") is not False
+    return f"{cv['factor']:g}× mesh: {cv['change']:+.1%}, " + ("resolved ✓" if resolved else "unresolved ✗")
 
 
 def _flags(peak: Mapping[str, Any]) -> List[str]:

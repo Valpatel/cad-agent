@@ -70,7 +70,7 @@ domains:
         projects: [gyropup]
         topics:
           - {slug: motor-mounts, title: Motor mounts, scope: "Bolt circles, pilots and load paths for bought actuators and motors.", maturity: idea, priority: [gyropup], issues: [144]}
-          - {slug: linkages, title: Linkages, scope: "Four- and five-bar position, workspace and transmission angle.", maturity: tooling, priority: [gyropup, demo], pages: [docs/linkages.md], issues: [187]}
+          - {slug: linkages, title: Linkages, scope: "Four- and five-bar position, workspace and transmission angle.", maturity: tooling, priority: [gyropup, demo], pages: [docs/linkages.md], api: [cadagent.mechanical.linkages], issues: [187]}
           - {slug: joints-and-bearings, title: Joints and bearings, scope: "Pivots, bearing seats, shafts and their fits.", maturity: idea, priority: [gyropup]}
       - slug: housings-and-enclosures
         title: Housings and enclosures

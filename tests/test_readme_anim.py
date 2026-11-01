@@ -15,7 +15,7 @@ import numpy as np
 import pytest
 
 from cadagent.publish.anim import raster, svg
-from cadagent.publish.anim.linkage import Linkage, circles, ellipse_path
+from cadagent.mechanical.linkages import Linkage, circles, ellipse_path
 
 ROOT = Path(__file__).resolve().parents[1]
 

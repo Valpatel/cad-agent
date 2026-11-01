@@ -7,7 +7,7 @@ One family, shared parts:
   a reduced-motion still, a title, a size budget);
 * ``cad``: STEP solids to visible edges by OpenCASCADE hidden-line removal, and to triangles (needs CadQuery);
 * ``raster``: triangle depth rasters, outlines and simplification, for silhouettes and painter's order;
-* ``linkage``: planar linkage poses by circle intersection;
+* ``linkage``: planar linkage poses by circle intersection (now ``cadagent.mechanical.linkages``, re-exported here);
 * ``field``: an FEA viewer field (``cadagent.simulation.fea``) for stress colours;
 * ``text``: text as outlines, so no web font is needed.
 

@@ -46,6 +46,14 @@ demos:
     cover: docs/img/formulas/fourbar-animator.svg
     url: docs/linkages.md#try-it-the-four-bar-animator
     areas: [linkages]
+  - id: fivebar-sweep
+    title: Five-bar leg sweep
+    what: A five-bar leg's foot driven round a stride, on its map of crank angles with the lock a symmetric sweep runs into.
+    mode: animated
+    cover: docs/img/linkages/fivebar.svg
+    url: docs/linkages.md#sweeping-a-closed-loop-four-bars-and-five-bars
+    still: 0.3
+    areas: [linkages]
   - id: fan-curve-explorer
     title: Fan-curve explorer
     what: A real fan's datasheet curve against your enclosure's system curve, one to four fans, and where it stalls.

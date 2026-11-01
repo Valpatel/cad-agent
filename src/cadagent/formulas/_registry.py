@@ -14,6 +14,11 @@ SOURCES: Dict[str, str] = {
     "norton": "R. L. Norton, Design of Machinery, 5th ed., McGraw-Hill, 2012",
     "freudenstein": "F. Freudenstein, Approximate synthesis of four-bar linkages, Transactions of the ASME 77 (1955) "
                     "853-861",
+    "gosselin": "C. Gosselin and J. Angeles, Singularity analysis of closed-loop kinematic chains, IEEE Transactions "
+                "on Robotics and Automation 6 (1990) 281-290",
+    "goncalves": "R. S. Goncalves, J. C. M. Carvalho and R. R. Santos, A multi-objective optimization design for "
+                 "parallel structures, Proceedings of COBEM 2009, the 20th International Congress of Mechanical "
+                 "Engineering (ABCM, 2009)",
     "incropera": "T. L. Bergman, A. S. Lavine, F. P. Incropera and D. P. DeWitt, Fundamentals of Heat and Mass "
                  "Transfer, 7th ed., Wiley, 2011",
     "white": "F. M. White, Fluid Mechanics, 7th ed., McGraw-Hill, 2011",

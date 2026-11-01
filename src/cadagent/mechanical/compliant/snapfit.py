@@ -222,7 +222,7 @@ def engagement(*, length: float, section: Section, undercut: float, lead_deg: fl
     them: contact (travel 0), the top of the lead, the start and end of the land (if ``land_mm`` > 0, where the push
     falls from the lead's W to the land's mu * P), and released (the same travel, deflection 0). The peak is
     :func:`check_cantilever`'s numbers for the same arm. A self-locking lead (mu * tan(lead) >= 1) gives no push force
-    and sets ``self_locking``. As in the guide, contact stiffness, the drop's dynamics and the hook's turn with the
+    on the lead and sets ``mating_self_locking``, as :func:`check_cantilever` names it. As in the guide, contact stiffness, the drop's dynamics and the hook's turn with the
     arm's tip are not modelled. The turn steepens the face the edge rides (a 15 mm arm lifted 1.3 mm turns its tip
     7.4 deg), so near the top of a steep lead, or on a short arm, this under-states the push to mate: check those with
     FEA or a push test."""
@@ -233,23 +233,24 @@ def engagement(*, length: float, section: Section, undercut: float, lead_deg: fl
     _require(design in DESIGN_K, "design must be 1, 2 or 3")
     lead_travel = undercut / math.tan(math.radians(lead_deg))
     y_max = undercut * share
-    self_locking = friction is not None and math.isinf(mating_force(1.0, friction, lead_deg))
+    locked = friction is not None and math.isinf(mating_force(1.0, friction, lead_deg))
+    angles = {"lead": lead_deg, "land": 0.0}            # the face the edge pushes on; released: none
 
-    def point(phase: str, travel: float, y: float, angle: Optional[float]) -> Dict[str, Any]:
+    def point(phase: str, travel: float, y: float) -> Dict[str, Any]:
         eps = root_strain(section, length, y, design)
         p = deflection_force(section, length, eps, secant_mpa) if secant_mpa is not None else None
         w = None
-        if p is not None and friction is not None and not (angle and self_locking):
-            w = mating_force(p, friction, angle) if angle is not None else 0.0
+        if p is not None and friction is not None and not (phase == "lead" and locked):
+            w = mating_force(p, friction, angles[phase]) if phase in angles else 0.0
         return {"phase": phase, "travel_mm": travel, "deflection_mm": y, "strain": eps, "deflection_force_n": p,
                 "mating_force_n": w}
 
-    points = [point("lead", 0.0, 0.0, lead_deg), point("lead", lead_travel, y_max, lead_deg)]
+    points = [point("lead", 0.0, 0.0), point("lead", lead_travel, y_max)]
     if land_mm > 0:
-        points += [point("land", lead_travel, y_max, 0.0), point("land", lead_travel + land_mm, y_max, 0.0)]
-    points.append(point("released", lead_travel + land_mm, 0.0, None))
+        points += [point("land", lead_travel, y_max), point("land", lead_travel + land_mm, y_max)]
+    points.append(point("released", lead_travel + land_mm, 0.0))
     return {"points": points, "lead_travel_mm": lead_travel, "land_mm": land_mm, "lead_deg": lead_deg,
-            "friction": friction, "secant_mpa": secant_mpa, "self_locking": self_locking,
+            "friction": friction, "secant_mpa": secant_mpa, "mating_self_locking": locked,
             "peak": {k: points[1][k] for k in ("deflection_mm", "strain", "deflection_force_n", "mating_force_n")}}
 
 
@@ -498,6 +499,17 @@ def secant_at(points: Dict[float, float], strain: float) -> float:
     return pts[-1][1]
 
 
+def _friction_basis(spec: Dict[str, Any], friction: Optional[float]) -> Optional[str]:
+    """Where a snap's friction coefficient came from: ``"given"`` (declared), ``"same material"`` (the guide's Table 3
+    value against steel times its factor for the plastic on itself, the default), ``"against steel"``
+    (``same_material: false``), or None when there is none."""
+    if friction is None:
+        return None
+    if spec.get("friction") is not None:
+        return "given"
+    return "same material" if spec.get("same_material", True) else "against steel"
+
+
 def check_spec_entry(spec: Dict[str, Any]) -> Dict[str, Any]:
     """One cantilever snap from a declaration (see docs/compliant.md for the fields). Inputs are range-checked (a
     ValueError names the snap and field). The process must be stated; a layered part needs its orientation (and,
@@ -558,7 +570,7 @@ def check_spec_entry(spec: Dict[str, Any]) -> Dict[str, Any]:
         material = dict(printed.derivation(orientation, repeated), allowable=allow, process=process,
                         process_factor=pf, secant_mpa=secant, secant_basis=secant_basis,
                         retention_secant_mpa=retention_secant, retention_secant_basis=retention_basis,
-                        friction=friction)
+                        friction=friction, friction_basis=_friction_basis(spec, friction))
     else:
         mat = _material(spec, name)
         if not process:
@@ -583,7 +595,8 @@ def check_spec_entry(spec: Dict[str, Any]) -> Dict[str, Any]:
         material = {"name": mat.name, "strain": mat.strain, "source": mat.source, "allowable": allow,
                     "repeated": repeated, "process": process or None, "orientation": spec.get("orientation"),
                     "process_factor": pf, "process_source": spec.get("process_source"), "secant_mpa": secant,
-                    "secant_basis": secant_basis if secant is not None else None, "friction": friction}
+                    "secant_basis": secant_basis if secant is not None else None, "friction": friction,
+                    "friction_basis": _friction_basis(spec, friction)}
     r = check_cantilever(length=length, section=section, undercut=undercut, strain_allow=allow, design=design,
                          secant_mpa=secant, friction=friction,
                          lead_deg=_num(spec, "lead_deg", name, gt=0, lt=90),

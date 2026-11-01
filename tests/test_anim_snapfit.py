@@ -195,7 +195,8 @@ def test_the_figure_states_the_calculators_numbers(scene, built):
     assert built.count("✓ PASS") == 1 and built.count("✗ FAIL") == 1
     assert f">{copa['mating_force_n']:.1f} N<" in built and f"{copa['mating_force_n']:.1f}" == "10.1"
     assert f"PETG-CF: over its allowable {petg_cf['over_from_mm']:.2f} mm up the 2.25 mm lead" in built
-    assert "CoPA: 10.1 N at the top of the lead; μ 0.525 on the land" in built
+    assert "CoPA: 10.1 N at the top of the lead; μ 0.525, CoPA on CoPA" in built       # the guide's PA value x 1.5
+    assert copa["material"]["friction_basis"] == "same material" and built.count(", printed flat<") == 2
     assert "PETG-CF: no friction in the guide's table, so no push force" in built
     assert "a 15 mm arm, 1.6 × 6 mm, R1 root, laid flat on the bed; its hook rides a 30° lead over a 1.3 mm undercut" in built
 
@@ -294,6 +295,29 @@ def test_the_hooks_turn_and_its_push_are_recorded_and_stated(scene):
     assert (f"gives CoPA a push of {copa['turned_mating_force_n']:.1f} N, not {copa['mating_force_n']:.1f} N"
             in page)
     assert "the closed form under-states the push" in page
+
+
+def test_the_push_note_names_its_cause(spec, tmp_path):
+    """The line on the push says where the friction came from, or why there is no push: no friction in the guide's
+    table, no modulus, or a lead that self-locks (0.525 x tan 70° > 1). The gauges follow the print direction."""
+    def note(edit, i=0):
+        sp = copy.deepcopy(spec)
+        for snap in sp["snaps"]:
+            snap.update(edit)
+        sc = F.record(sp, ROOT)
+        return F.push_note(sc["snaps"][i], sc, sp["present"]), sc, sp
+
+    assert note({"same_material": False})[0] == "CoPA: 7.4 N at the top of the lead; μ 0.35, CoPA on steel"
+    assert note({"friction": 0.3}, 1)[0].endswith("μ 0.3, as declared")
+    assert note({"secant_mpa": None}, 1)[0] == "PETG-CF: no friction in the guide's table, so no push force"
+    locked, sc, sp = note({"lead_deg": 70})
+    assert sc["snaps"][0]["engagement"]["mating_self_locking"]
+    assert locked == "CoPA: μ 0.525 × tan 70° ≥ 1, so the lead self-locks: no push force"
+    eng = dict(sc["snaps"][0]["engagement"], secant_mpa=None, mating_self_locking=False)
+    assert F.push_note(dict(sc["snaps"][0], engagement=eng), sc, sp["present"]) == \
+        "CoPA: no modulus, so no push force"
+    _, sc, sp = note({"orientation": "across"})
+    assert F.render(sc, sp["present"]).count(", printed upright<") == 2
 
 
 # ---------------------------------------------------------------------------------------------- refusals

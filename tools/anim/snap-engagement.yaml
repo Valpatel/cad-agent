@@ -56,9 +56,14 @@ present:
   travel_axis: travel after the edge meets the lead (mm)
   crossing: "{short}: over its allowable {travel} mm up the {lead_travel} mm lead"
   peak: "peak {strain}"
-  force_line: "{short}: {force} at the top of the lead; μ {mu} on the land"
+  # the push to mate, by where its friction came from (the material's friction_basis), or why there is none
+  force_line: "{short}: {force} at the top of the lead; μ {mu}, {pair}"
+  pair: {same material: "{short} on {short}", against steel: "{short} on steel", given: "as declared"}
   no_force: "{short}: no friction in the guide's table, so no push force"
-  gauge: "{name}, printed flat"
+  no_modulus: "{short}: no modulus, so no push force"
+  self_locks: "{short}: μ {mu} × tan {lead}° ≥ 1, so the lead self-locks: no push force"
+  gauge: "{name}, {printed}"
+  printed: {along: printed flat, across: printed upright}
   gauge_value: "{ratio} of {allow}"
   part_a: "printed part (fixed); dashed: as made"
   part_b: mating part

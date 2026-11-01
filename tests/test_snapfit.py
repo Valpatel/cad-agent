@@ -420,9 +420,10 @@ def test_engagement_without_friction_or_modulus_gives_no_force_and_a_self_lockin
     e = _example_I_engagement(secant_mpa=None)
     assert all(p["deflection_force_n"] is None and p["mating_force_n"] is None for p in e["points"])
     locked = _example_I_engagement(lead_deg=60, land_mm=1.0)          # 0.6 tan 60 > 1
-    assert locked["self_locking"] and locked["points"][1]["mating_force_n"] is None
+    assert locked["mating_self_locking"] and locked["points"][1]["mating_force_n"] is None
     assert locked["points"][2]["mating_force_n"] == pytest.approx(0.6 * locked["points"][2]["deflection_force_n"])
-    assert not _example_I_engagement()["self_locking"]
+    assert not _example_I_engagement()["mating_self_locking"]
+    assert "self_locking" not in locked          # check_cantilever's self_locking is the return face holding
 
 
 def test_engagement_shares_the_lift_and_refuses_nonsense():
@@ -436,7 +437,8 @@ def test_engagement_shares_the_lift_and_refuses_nonsense():
 
 
 def test_a_checked_snap_names_the_friction_it_used():
-    """check_spec_entry's material says which mu the forces used: the guide's family value, a given one, or none."""
+    """check_spec_entry's material says which mu the forces used and where it came from: the guide's family value
+    for the plastic on itself (the default) or against steel, a given one, or none."""
     base = {"material": "copa-polymaker-dry", "orientation": "along", "length_mm": 15, "undercut_mm": 1.3,
             "section": {"rect": {"width_mm": 6, "thickness_mm": 1.6}}, "root_radius_mm": 1.0, "lead_deg": 30}
     assert sf.check_spec_entry(base)["material"]["friction"] == pytest.approx(0.35 * 1.5)   # PA, same material
@@ -444,3 +446,8 @@ def test_a_checked_snap_names_the_friction_it_used():
     assert sf.check_spec_entry({**base, "material": "petg-cf-bambu"})["material"]["friction"] is None
     assert sf.check_spec_entry({**base, "material": "pc", "process": "moulding"})["material"]["friction"] == \
         pytest.approx(0.6)
+    basis = lambda **k: sf.check_spec_entry({**base, **k})["material"]["friction_basis"]
+    assert (basis(), basis(friction=0.4), basis(same_material=False)) == ("same material", "given", "against steel")
+    assert sf.check_spec_entry({**base, "same_material": False})["material"]["friction"] == pytest.approx(0.35)
+    assert basis(material="petg-cf-bambu") is None and basis(material="petg-cf-bambu", friction=0.3) == "given"
+    assert basis(material="pc", process="moulding") == "same material"

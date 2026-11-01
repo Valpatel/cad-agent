@@ -206,13 +206,14 @@ def sheet(material: Mapping[str, Any]) -> str:
 
 def _fill(template: str, scene: Mapping[str, Any], present: Mapping[str, Any], **more: Any) -> str:
     """A ``present`` string with {placeholders} from the scene: version, commit, the arm's dimensions (length,
-    thickness, width, undercut, lead, root, laid) and the filled ``arm`` line, the peak root strain, each snap's
+    thickness, width, undercut, lead, root, laid, printed) and the filled ``arm`` line, the peak root strain, each snap's
     short name, allowable and ratio (short_0, allow_0, ratio_0, ...) and the data sheets."""
     a, src = scene["arm"], scene["source"]
     words = {"version": src.get("version") or "?", "commit": (src.get("commit") or "?")[:7],
              "length": f"{a['length_mm']:g}", "thickness": f"{a['thickness_mm']:g}", "width": f"{a['width_mm']:g}",
              "undercut": f"{a['undercut_mm']:g}", "lead": f"{a['lead_deg']:g}", "root": f"{a['root_radius_mm']:g}",
-             "laid": present["orientation"][a["orientation"]], "strain": pct(scene["snaps"][0]["strain"]),
+             "laid": present["orientation"][a["orientation"]], "printed": present["printed"][a["orientation"]],
+             "strain": pct(scene["snaps"][0]["strain"]),
              "sheets": " and ".join(sheet(s["material"]) for s in scene["snaps"])}
     for i, s in enumerate(scene["snaps"]):
         words.update({f"short_{i}": present["short"][s["name"]], f"allow_{i}": pct(s["material"]["allowable"]),
@@ -556,14 +557,8 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
         if s["over_from_mm"] is not None:
             notes.append(_fill(present["crossing"], scene, present, short=name, travel=f"{s['over_from_mm']:.2f}",
                                lead_travel=f"{s['engagement']['lead_travel_mm']:.2f}"))
-    for i, s in enumerate(snaps):
-        name = present["short"][s["name"]]
-        top = s["engagement"]["points"][1]
-        if top["mating_force_n"] is None:
-            notes.append(_fill(present["no_force"], scene, present, short=name))
-        else:
-            notes.append(_fill(present["force_line"], scene, present, short=name, force=f"{top['mating_force_n']:.1f} N",
-                               mu=f"{s['engagement']['friction']:.3g}"))
+    for s in snaps:
+        notes.append(push_note(s, scene, present))
     for j, line in enumerate(notes):
         body.append(text(20, 378 + 15 * j, line, "sm w"))
     # ---- the caption: what this is, and what it is not
@@ -571,6 +566,22 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
         body.append(text(20, H - 40 + 15 * j, _fill(line, scene, present), "sm w"))
     return S.document(W, H, _fill(present["label"], scene, present), _fill(present["description"], scene, present),
                       "".join(css) + tl.stylesheet(), body, S.Theme(light, dark))
+
+
+def push_note(snap: Mapping[str, Any], scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
+    """The line under the gauges on a snap's push to mate: its peak and the friction behind it, or why there is none
+    (no friction in the guide's table, no modulus, or a lead that self-locks)."""
+    name, eng = present["short"][snap["name"]], snap["engagement"]
+    mu = f"{eng['friction']:.3g}" if eng["friction"] is not None else None
+    if eng["friction"] is None:
+        return _fill(present["no_force"], scene, present, short=name)
+    if eng["secant_mpa"] is None:
+        return _fill(present["no_modulus"], scene, present, short=name)
+    if eng["mating_self_locking"]:
+        return _fill(present["self_locks"], scene, present, short=name, mu=mu)
+    pair = present["pair"][snap["material"]["friction_basis"]].format(short=name)
+    return _fill(present["force_line"], scene, present, short=name, mu=mu, pair=pair,
+                 force=f"{eng['points'][1]['mating_force_n']:.1f} N")
 
 
 def _moments(points: Sequence[Mapping[str, Any]]) -> List[str]:

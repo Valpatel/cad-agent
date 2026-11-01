@@ -193,18 +193,20 @@ and the guide's allowable shear strain, (1 + ν) ε with ν = 0.35 (Section C).
 One printed arm, laid flat on the bed, in two filaments. As the mating part's edge rides the hook's lead, the arm
 bends and its root strain rises. The same strain passes in one filament and fails in the other.
 
-![A printed snap arm 15 mm long, 1.6 by 6 mm, bends as a mating part's edge rides its hook's 30° lead over a 1.3 mm undercut. Its root strain rises to 1.38 %: 68 % of the 2.02 % allowed for Polymaker PolyMide CoPA (dry), a pass, and 139 % of the 1.00 % allowed for Bambu PETG-CF, a fail. The push to mate peaks at 10.1 N for CoPA](img/compliant/snap-engagement.svg)
+![A printed snap arm 15 mm long, 1.6 by 6 mm, bends as a mating part's edge rides its hook's 30° lead over a 1.3 mm undercut. Its root strain rises to 1.38 %: 68 % of the 2.02 % allowed for Polymaker PolyMide CoPA (dry), a pass, and 139 % of the 1.00 % allowed for Bambu PETG-CF, a fail. The push to mate peaks at 10.1 N for CoPA on CoPA](img/compliant/snap-engagement.svg)
 
 *The toolkit's closed-form calculator (`cadagent.mechanical.compliant.snapfit`, the Covestro method) on the stated
 arm, animated by `tools/readme_anim.py`: not a measurement. Allowables from the data sheets Polymaker PolyMide CoPA
 V5.4 and Bambu Lab PETG-CF V3.0. Printed snaps need a test print.*
 
 - **Strain is geometry.** At a given deflection the root strain depends only on the arm (ε = y h / 0.67 L²). The
-  filament sets the allowable. PETG-CF's V3.0 sheet allows 1.00 % (its V2.0 sheet, 1.7 %): this arm passes it 1.63
+  filament sets the allowable. PETG-CF's V3.0 sheet allows 1.00 % (its V2.0 sheet, 1.7 %): this arm goes over it 1.63
   mm up the 2.25 mm lead, before the hook clears.
 - **The push.** `snapfit.engagement()` gives it along the travel. Up the lead it rises to the guide's W = P (μ +
-  tan α) / (1 − μ tan α), 10.1 N for CoPA. On the land only friction resists (μ P), and then the hook drops. PETG
-  is not in the guide's friction table, so PETG-CF gets no push force; declare `friction` to get one.
+  tan α) / (1 − μ tan α), 10.1 N for CoPA. That μ, 0.525, is the guide's PA value for the plastic on itself
+  (`same_material`, the default), so the mating part is CoPA too; against steel (`same_material: false`) it is
+  0.35. On the land only friction resists (μ P), and then the hook drops. PETG is not in the guide's friction
+  table, so PETG-CF gets no push force; declare `friction` to get one.
 - **The drawing.** It is at true scale, the arm bent along its computed curve. It turns the hook with the arm's tip,
   as a real hook turns; the closed form, like the guide, does not. So the drawn edge tops the lead after 1.95 mm of
   travel, not 2.25 mm, and there it rides a face turned 7.4°: at 37.4°, not 30°. On that face the guide's formula

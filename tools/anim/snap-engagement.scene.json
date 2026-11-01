@@ -5,14 +5,14 @@
   "repo": "https://github.com/Valpatel/cad-agent",
   "name": "cad-agent",
   "licence": "MIT",
-  "commit": "4219d7ba41e0b1a600311696c1e010f803e874fd",
+  "commit": "44a41cd956a4083a9e1338e921bb2395ff2ca87a",
   "version": "0.8.0",
   "inputs": {
    "src/cadagent/formulas/beams.py": "97c6b497853746bc2d1231bd658b31bf4927fe76bbadc9ea7c8f7b7717ede74f",
    "src/cadagent/mechanical/compliant/allowables.py": "be1783b9becefd2cdba0bc1cdc15571ee77db79ac18f8caf614160da20e8ea34",
-   "src/cadagent/mechanical/compliant/snapfit.py": "0fb3235bc6e73f04b213c0e2a402915969c662fc712e7b32ffabe47cae56a5aa",
-   "src/cadagent/publish/anim/snapfit.py": "e2d89f93ba4053f0853a0115c8b7c76345fb4238df67dcb025c64f0d0ffa2f4f",
-   "tools/anim/snap-engagement.yaml": "ae656c3ba6a52b1e1a140f2e8858f06871511fbe468cd75d3584ae7733c655ca"
+   "src/cadagent/mechanical/compliant/snapfit.py": "752e7629f84b5ac817ed1ff67b85761a6e3460db85a64281f0dc6515223dafef",
+   "src/cadagent/publish/anim/snapfit.py": "f0a2ddcc9b34231c76d3d85659eba1977d26d3185367491171e5d86251baedf4",
+   "tools/anim/snap-engagement.yaml": "9f668005a1e181b7ccafe2ef4d0ba121b28c4e544a08d59bda4c61b699a25754"
   }
  },
  "recorded": "2026-11-01",
@@ -167,7 +167,8 @@
     "secant_basis": "datasheet tensile modulus (an upper bound on the secant modulus)",
     "retention_secant_mpa": 2703,
     "retention_secant_basis": "datasheet tensile modulus (an upper bound on the secant modulus)",
-    "friction": 0.525
+    "friction": 0.525,
+    "friction_basis": "same material"
    },
    "engagement": {
     "points": [
@@ -217,7 +218,7 @@
     "lead_deg": 30.0,
     "friction": 0.525,
     "secant_mpa": 2703,
-    "self_locking": false,
+    "mating_self_locking": false,
     "peak": {
      "deflection_mm": 1.3,
      "strain": 0.0137976783,
@@ -293,7 +294,8 @@
     "secant_basis": "datasheet tensile modulus (an upper bound on the secant modulus)",
     "retention_secant_mpa": 2460,
     "retention_secant_basis": "datasheet tensile modulus (an upper bound on the secant modulus)",
-    "friction": null
+    "friction": null,
+    "friction_basis": null
    },
    "engagement": {
     "points": [
@@ -343,7 +345,7 @@
     "lead_deg": 30.0,
     "friction": null,
     "secant_mpa": 2460,
-    "self_locking": false,
+    "mating_self_locking": false,
     "peak": {
      "deflection_mm": 1.3,
      "strain": 0.0137976783,

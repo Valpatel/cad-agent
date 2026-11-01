@@ -6,7 +6,8 @@ name: Supply-chain report
 #
 # Two jobs, so the token that can write issues never sits beside untrusted input:
 # - report (contents: read) fetches and parses every third-party answer and uploads the report as an artifact;
-# - issue (issues: write) downloads that artifact and only runs `issue --post`, which reads our own JSON.
+# - issue (issues: write) downloads that artifact and only runs `issue --post`, which reads our own JSON with the
+#   standard library alone (no pip install in this job).
 # Third-party text reaches the issue only as data, with @mentions and #references broken (no_mentions in the tool).
 #
 # The job's GITHUB_TOKEN cannot read repository settings (secret scanning, Dependabot alerts: they need admin), so this
@@ -60,9 +61,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
         with: {persist-credentials: false}
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0   # v7.1.0
-        with: {python-version: '3.12'}
-      - run: pip install pyyaml
+      # No setup-python and no pip: `issue` needs only the standard library (the runner's python3), so the one job that
+      # can write issues runs no third-party package code.
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333   # v8.0.2
         with: {name: security-report, path: build}
       - name: Open or update the tracking issue

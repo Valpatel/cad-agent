@@ -406,6 +406,16 @@ def test_issue_plan_opens_updates_and_leaves_alone():
     assert plan[-1][0][:3] == ["issue", "close", "7"]
 
 
+def test_the_weekly_comment_does_not_link_what_it_flags():
+    """A new finding's title can hold the flagged URL or host: the comment shows it as code, never as a link."""
+    old = {"number": 7, "author": {"login": "app/github-actions"}, "body": "x\n<!-- cad-supply-chain-report fps= -->"}
+    r = report_with(("medium", "link-dead", "d" * 16))
+    r["findings"][0].update(subject="url:https://dead.example/x", title="https://dead.example/x is gone (HTTP 404)")
+    plan, _ = ra.plan_issue(r, [old], "o/r", "T")
+    comment = next(body for argv, body in plan if argv[:2] == ["issue", "comment"])
+    assert "`https://dead.example/x` is gone" in comment and "\n- **medium** `url:https://dead.example/x`: `https" in comment
+
+
 # --------------------------------------------------------------------------------- the review of #138, point by point
 def test_release_pr_and_main_push_get_the_whole_repo_check_only(repo_with_base, capsys):
     """The blocker: into main, what dev gained since the last release is not "what the change adds". It came through
@@ -442,6 +452,8 @@ def test_ci_job_passes_the_target_branch_and_reads_only():
     assert any("report --online" in r for r in runs) and not any("--repo" in r for r in runs)   # GITHUB_TOKEN can't read settings
     assert [s.get("run", "") for s in issue["steps"] if "resource_audit" in s.get("run", "")] == [
         'python3 tools/resource_audit.py issue --report build/security-report.json --repo "$GITHUB_REPOSITORY" --post']
+    # The job that can write issues runs no package code: no pip, no setup-python (`issue` needs only the stdlib).
+    assert not any("pip" in s.get("run", "") or "setup-python" in s.get("uses", "") for s in issue["steps"])
 
 
 @pytest.mark.parametrize("body,ok", [
@@ -472,6 +484,42 @@ def test_an_unread_advisory_record_fails_closed(tmp_path):
     assert "GHSA-gone" in f["action"] and ra.failing(r, "high")
     note = next(f for f in r["findings"] if f["check"] == "osv-unverified")
     assert note["severity"] == "info" and "GHSA-gone" in note["evidence"]
+
+
+class BatchNet(FakeNet):
+    """OSV's batch endpoint answers 200 with the given body (queries -> JSON); everything else as FakeNet."""
+
+    def __init__(self, body, **kw):
+        super().__init__(osv=lambda q: [], **kw)
+        self.body = body
+
+    def json(self, url, data=None, headers=None):
+        if url.endswith("/querybatch"):
+            return 200, self.body(data["queries"]), ""
+        return super().json(url, data, headers)
+
+
+@pytest.mark.parametrize("answer,paged", [
+    (lambda qs: {"results": [{"vulns": [{"id": "GHSA-x"}]}]}, False),                 # fewer results than queries
+    (lambda qs: {}, False),                                                             # no results at all
+    (lambda qs: {"results": "busy"}, False),                                            # not a list
+    (lambda qs: {"results": [{"vulns": [{"id": "GHSA-x"}], "next_page_token": "t"} for _ in qs]}, True),   # paged
+])
+def test_a_short_or_paged_osv_batch_leaves_packages_unverified_not_clean(tmp_path, answer, paged):
+    """The batch answer is matched to the queries by position: a short or odd one must not let packages pass as clean,
+    and a paged one has not said everything (the review of #220)."""
+    rep = ra.Report(tmp_path, ra.dt.date(2026, 11, 1), True)
+    net = BatchNet(answer, http={f"{ra.OSV}/vulns/GHSA-x": vuln("GHSA-x")})
+    asks = [dict(q={"package": {"ecosystem": "npm", "name": n}, "version": "1.0.0"}, subject=f"npm:{n}") for n in "ab"]
+    out = ra.osv_lookup(rep, net, asks)
+    assert {"npm:a", "npm:b"} <= rep.unverified
+    notes = [f for f in rep.findings if f["check"] == "osv-unverified"]
+    assert len(notes) == 1 and "npm:a" in notes[0]["evidence"] and "npm:b" in notes[0]["evidence"]
+    assert ("paged" in notes[0]["title"]) is paged
+    if paged:                                                  # what OSV did send is kept, and still counts
+        assert [[v["id"] for v in a["vulns"]] for a in out] == [["GHSA-x"], ["GHSA-x"]]
+    else:
+        assert all(a["vulns"] is None for a in out)
 
 
 def test_transitive_python_dependencies_are_checked(tmp_path):

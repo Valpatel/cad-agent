@@ -42,9 +42,10 @@ flowchart TD
 
 What a change adds is judged where new items enter the project, on PRs and pushes into `dev`: each added dependency,
 vendored file or catalogue entry needs its row in the PR description, and none may have a medium or worse finding. A
-release PR into `main` carries only items that passed that gate in their own PRs. Compared with `main`, "what it
-adds" would be everything since the last release, which no release PR can describe, so it and the push after it get
-the whole-checkout check alone: no high or critical finding anywhere.
+release PR into `main` carries items that went through that gate in their own PRs. The job warns rather than blocks,
+so a red result there was the reviewer's call, and items from before the job existed never went through it. Compared
+with `main`, "what it adds" would be everything since the last release, which no release PR can describe, so it and
+the push after it get the whole-checkout check alone: no high or critical finding anywhere.
 
 ### The weekly run
 

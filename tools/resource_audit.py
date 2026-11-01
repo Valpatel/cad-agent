@@ -437,12 +437,18 @@ def osv_lookup(rep, net, asks):
 
     An advisory whose record cannot be read (OSV answered the batch, then failed on /v1/vulns/<id>) fails closed: it
     keeps its id, counts as high (a MAL- id as critical), says its fix is unknown, and an osv-unverified finding names
-    it. A failed read must never make a finding look milder than the record would."""
+    it. A failed read must never make a finding look milder than the record would.
+
+    The batch answer is matched to the queries by position, so a chunk whose `results` is not one result per query
+    (short, empty, not a list) leaves every ask in it unchecked: 'vulns' None, unverified, an osv-unverified finding.
+    A result with `next_page_token` (OSV pages past 1,000 advisories for one query or 3,000 for a batch) keeps the
+    advisories it has and is marked unverified the same way: the rest were not read."""
     if not asks:
         return asks
-    ids = []
+    ids, short, paged = [], [], []
     for start in range(0, len(asks), 500):
-        status, body, err = net.json(f'{OSV}/querybatch', data={'queries': [a['q'] for a in asks[start:start + 500]]})
+        chunk = asks[start:start + 500]
+        status, body, err = net.json(f'{OSV}/querybatch', data={'queries': [a['q'] for a in chunk]})
         if status != 200 or not isinstance(body, dict):
             rep.sources['osv'] = f'not verified: {err or "HTTP " + str(status)}'
             rep.add('osv-unverified', 'info', 'osv.dev', 'OSV could not be queried; advisories were not checked',
@@ -452,9 +458,31 @@ def osv_lookup(rep, net, asks):
                 if a.get('subject'):
                     rep.unverified.add(a['subject'])
             return asks
-        ids += [sorted({v['id'] for v in (r.get('vulns') or [])}) for r in body.get('results', [])]
+        results = body.get('results')
+        if not isinstance(results, list) or len(results) != len(chunk):
+            ids += [None] * len(chunk)
+            short += chunk
+            continue
+        for a, r in zip(chunk, results):
+            r = r if isinstance(r, dict) else {}
+            if r.get('next_page_token'):
+                paged.append(a)
+            ids.append(sorted({v['id'] for v in (r.get('vulns') or []) if isinstance(v, dict) and isinstance(v.get('id'), str)}))
+    for gap, title, action in (
+            (short, 'OSV answered a batch without one result per query; those packages were not checked',
+             'Run the report again with --online later; until then they count as not verified.'),
+            (paged, 'OSV paged its answer; advisories after the first page were not read',
+             'Run again with --online; if it persists, query these packages one at a time (osv.dev, page_token).')):
+        if gap:
+            subjects = sorted({f"{a['q']['package'].get('ecosystem', '')}:{a['q']['package'].get('name', '')}"
+                               if 'package' in a['q'] else f"commit {str(a['q'].get('commit', '?'))[:12]}" for a in gap})
+            for a in gap:
+                if a.get('subject'):
+                    rep.unverified.add(a['subject'])
+            rep.add('osv-unverified', 'info', 'osv.dev', title, ', '.join(subjects[:20]) + (' …' if len(subjects) > 20 else ''),
+                    action, key=('short:' if gap is short else 'paged:') + ','.join(subjects))
     rep.sources.setdefault('osv', 'osv.dev querybatch and vulns')
-    answers = net.map(lambda i: net.json(f'{OSV}/vulns/{i}'), sorted({i for group in ids for i in group}))
+    answers = net.map(lambda i: net.json(f'{OSV}/vulns/{i}'), sorted({i for group in ids if group for i in group}))
     unread = sorted(i for i, (st, body, _err) in answers.items() if st != 200 or not isinstance(body, dict))
     if unread:
         rep.add('osv-unverified', 'info', 'osv.dev', f"{len(unread)} OSV advisory record{'s' if len(unread) > 1 else ''} could not be read",
@@ -462,6 +490,9 @@ def osv_lookup(rep, net, asks):
                 'Run again with --online: until a run reads them they count as high (MAL- ids as critical), fix unknown.',
                 key='records:' + ','.join(unread))
     for a, group in zip(asks, ids):
+        if group is None:                     # no answer for this query: unchecked, never clean
+            a['vulns'] = None
+            continue
         seen, out = set(), []
         for i in group:                       # the same advisory under several ids (GHSA, PYSEC, CVE) counts once
             st, v, _err = answers[i]
@@ -2277,7 +2308,7 @@ def plan_issue(r, issues, repo, title, authors=BOTS):
     rev = f"revision `{(r['revision'] or '')[:12]}`" + (' with uncommitted changes' if r.get('dirty') else '')
     note = '\n'.join([f"Report of {r['as_of']} ({rev}): {len(new)} new, {gone} resolved"
                       + (f", {len(carried)} not re-checked (kept open)" if carried else '') + '.', ''] +
-                     [f"- **{f['severity']}** `{f['subject']}`: {f['title']}" for f in new[:50]]) + '\n'
+                     [f"- **{f['severity']}** `{f['subject']}`: {inert(f['title'])}" for f in new[:50]]) + '\n'
     plan = [(['issue', 'edit', num, '-R', repo, '--body-file', '-'], issue_body(r, tags, carried)),
             (['issue', 'comment', num, '-R', repo, '--body-file', '-'], no_mentions(note))]
     if not keep:

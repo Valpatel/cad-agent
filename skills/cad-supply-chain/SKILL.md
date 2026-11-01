@@ -84,9 +84,9 @@ files bundle and whether its files match the npm package its receipt names; ever
   whose first cell is the item's id in backticks, as `rows` prints it; a mention in prose does not count. Paste the
   table under **Supply chain** in the PR template; "None" when nothing is added.
 
-**A release PR into `main`, and the push to `main` after it,** get the whole-checkout check alone. Every item in them
-came through a PR into `dev` that carried its rows; judged against `main`, "what the change adds" would be everything
-since the last release.
+**A release PR into `main`, and the push to `main` after it,** get the whole-checkout check alone. Their items went
+through this gate in their own PRs into `dev` (it warns rather than blocks, so a red result there was the reviewer's
+call); judged against `main`, "what the change adds" would be everything since the last release.
 
 ```mermaid
 flowchart TD

@@ -2,6 +2,23 @@
 
 A preassembled module needs two separately checked sequences: its internal bench assembly and its insertion into the parent. Treating its components as independent parent steps invents an installation order and can claim tool access in the wrong surrounding geometry.
 
+```mermaid
+flowchart TD
+    M["module members<br/>parts + fasteners"] --> Bench["bench sequence<br/>members only"]
+    Bench -->|"qualified"| Ins["insert as one<br/>rigid step"]
+    Bench -->|"failed or gaps"| X["parent result<br/>not qualified"]
+    Par["parent<br/>sequence"] --> Ins
+    Ins --> Out["parent verdict<br/>inner results<br/>kept apart"]
+    Out ~~~ Svc
+    Svc["service_after<br/>parts assumed out"] --> Wd["service check:<br/>withdraw the module<br/>(conditional)"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class Bench,Ins here
+    class M,Par,Svc near
+    class X,Out,Wd out
+```
+
 Additive Python API (issue #68):
 
 ```python
@@ -22,6 +39,10 @@ assembly_gate(assembly, parent_steps, fasteners=specs, tools=tools,
 The internal plan is executed against only its members, using the same geometry, insertion directions and tool envelopes. Missing coverage, failed checks or unperformed insertion/tool checks prevent a qualified parent result. Scoped qualification therefore rejects `tool_access=False`; all steps need a direction. Internal screws are not driven again at the parent step. The parent treats the module as rigid: every member receives the same translation, and every member, including attached screw solids, participates in collision checks. A module name is not a blanket intended-overlap exemption; existing explicitly declared internal pair overlaps keep their recorded reason. Cross-boundary overlap exemptions are unsupported and rejected.
 
 `service_after` is conditional evidence: listed parent parts/fastener instances are assumed already removed. Unknown, duplicate, target-member or otherwise ambiguous prerequisites are rejected. All external retaining fasteners must be listed. The whole module's reverse insertion path is checked against all remaining final geometry. This does not prove that the listed prerequisites can themselves be removed, that their tools can reach, or that harnesses are disconnected. Those claims need separate evidence. Internal fasteners travel with the module and are not removal prerequisites.
+
+![A preassembled module, a carrier and a board with its screw, checked on its own bench sequence, then inserted into the parent as one rigid body, then withdrawn with the bumper and retainer assumed removed](img/motion/module-insertion.svg)
+
+*The `tests/test_gate_subassembly.py` fixture run through `run_sequence`: the bench plan qualifies the module, the parent moves it as one body, and the withdrawal passes with the bumper and retainer assumed out, which the gate does not verify. An illustration in side view; the step results are the gate's.*
 
 The ordinary `service=True` or `service=[module]` mode cannot silently stand in for module prerequisites: requesting a module that way requires its `service_after` entry. Explicit service targets must resolve to parent parts or modules. Individual module members (including instance-owner aliases), unknown names and fastener-only targets are rejected before geometry; member teardown is outside this API. A module's conditional withdrawal does not answer a request to remove one of its members. Supported parent part aliases are expanded to exact instances, each with its own service check. Other individual parent parts retain their existing service behavior. A conditional pass means only that withdrawal is clear in the stated remaining geometry; it is not an unconditional service-ready claim.
 

@@ -617,11 +617,15 @@ criterion fails a band along the fillet, 55 elements and 2 mm³ (SF 0.94). The m
 
 Which is the more cautious depends on the corner. With one S_s, the combined bond is never below the max-stress one.
 It is up to √2 above it, where tension and shear peak together, as at that fillet. The full von Mises is lower than
-the in-plane one where the layers are squeezed while the layer plane is compressed harder (a gear tooth, a clamped
-boss); elsewhere it is the same or higher. Gyropup's turret checks its parts as `criterion='max-stress'`,
-`bulk_stress='in-plane'` and S_s = S_z / 2 do. On its pan pinion, at one corner where the layers are squeezed, the full von Mises is 20.4 MPa and the
-in-plane one 23.4. So the defaults pass that corner at 2.0, and the turret's check fails it at 1.75. Neither S_s is
-measured: S_z / 2 is 13 % below S_z / √3, so it is the stricter in shear. A coupon settles it.
+the in-plane one where σn has the sign of the in-plane stresses' sum and is smaller, and little shear runs between the
+layers. That is layers squeezed while the layer plane is compressed harder (a gear tooth, a clamped boss), and layers
+pulled while the plane is pulled harder (triaxial tension at a notch root, a pressurised wall). There the in-plane
+check is the more cautious; elsewhere the full one is the same or higher.
+
+Gyropup's turret checks its parts as `criterion='max-stress'`, `bulk_stress='in-plane'` and S_s = S_z / 2 do. On its
+pan pinion, at one corner where the layers are squeezed, the full von Mises is 20.4 MPa and the in-plane one 23.4.
+Against its target safety factor of 2.0, the defaults pass that corner (2.0) and the turret's check fails it (1.75).
+Neither S_s is measured: S_z / 2 is 13 % below S_z / √3, so it is the stricter in shear. A coupon settles it.
 
 **How far past the worst corner** (`stats`, `worst['resolution']`, `render(field=)`). The safety factor comes from
 one element corner, so it cannot tell a peak at one re-entrant edge from a region. `lc.stats` can. For each check, and
@@ -679,7 +683,8 @@ plane's own stress, √(σ11² − σ11σ22 + σ22² + 3σ12²) in any two in-pl
 vm² = vm_in² + σn² − σn(σ11 + σ22) + 3τn²,
 
 so it is the lower exactly where σn(σ11 + σ22 − σn) > 3τn². That needs σn of the same sign as the in-plane sum and
-smaller: layers squeezed while the plane is compressed harder, with little shear between them.
+smaller, with too little shear between the layers to make up the difference. The layers are then squeezed while the
+plane is compressed harder, or pulled while it is pulled harder.
 
 Hand corners, with S_z = 20, S_s = 20 / √3 and S_xy = 30 MPa and the layer normal z (utilisations; `tests/test_fea_layers.py`
 checks each, and that the options reproduce a project's own three maximum-stress checks):
@@ -690,6 +695,7 @@ checks each, and that the options reproduce a project's own three maximum-stress
 | σn 10, τn 5.77: the two terms equal | 0.71 | 0.50 | 0.47 | 0 |
 | σ11 20, τn 5: in-plane tension, interlayer shear | 0.43 | 0.43 | 0.73 | 0.67 |
 | σ11 −32, σn −12: squeezed, the plane compressed harder | 0 | 0 | 0.93 (28 MPa) | 1.07 (32 MPa) |
+| σ11 30, σn 10: pulled, the plane pulled harder | 0.50 | 0.50 | 0.88 (26.5 MPa) | 1.00 (30 MPa) |
 
 S_z is the row's strength, an allowable below the sheet's Z tensile strength. S_xy is that allowable times the sheet's
 X-Y / Z tensile strength ratio, the lowest over the editions read. So in the layer plane it sits at least as far below

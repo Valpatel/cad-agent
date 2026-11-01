@@ -17,7 +17,9 @@ S_s = 20 / sqrt 3 MPa (docs/toolkit.md's table):
 * sigma_n 10, tau_n 10/sqrt 3 (the two terms equal): combined sqrt(1/2) = 0.7071, max-stress 0.5, sqrt 2 apart;
 * sigma_11 20, tau_n 5: combined = max-stress = 0.4330; full sqrt(400 + 75) = 21.79 MPa (0.7265), in-plane 20 (0.6667);
 * sigma_11 -32, sigma_n -12 (layers squeezed, the plane compressed harder): bond 0 either way; full von Mises
-  sqrt(1024 + 144 - 384) = 28 MPa (0.9333, a pass), in-plane 32 MPa (1.0667, a fail).
+  sqrt(1024 + 144 - 384) = 28 MPa (0.9333, a pass), in-plane 32 MPa (1.0667, a fail);
+* sigma_11 30, sigma_n 10 (layers pulled, the plane pulled harder): bond 0.5 either way; full von Mises
+  sqrt(900 + 100 - 300) = 26.46 MPa (0.8819), in-plane 30 MPa (1.0): the full one is the lower in tension too.
 """
 import dataclasses
 import json
@@ -240,6 +242,7 @@ HAND_CORNERS = [
     (tensor(zz=10, xz=10 / math.sqrt(3)), math.sqrt(0.5), (0.5, 0.5), math.sqrt(200) / 30, 0.0),
     (tensor(xx=20, xz=5), 5 * math.sqrt(3) / 20, (0.0, 5 * math.sqrt(3) / 20), math.sqrt(475) / 30, 20 / 30),
     (tensor(xx=-32, zz=-12), 0.0, (0.0, 0.0), 28 / 30, 32 / 30),
+    (tensor(xx=30, zz=10), 0.5, (0.5, 0.0), math.sqrt(700) / 30, 1.0),
 ]
 
 
@@ -275,6 +278,7 @@ def test_which_criterion_is_more_cautious_where():
     lower = sn * (in_plane_sum - sn) > 3 * tau ** 2
     assert lower.any() and (~lower).any()
     assert np.all((full < inp)[lower]) and np.all((full >= inp - 1e-9)[~lower])
+    assert (lower & (sn > 0)).any() and (lower & (sn < 0)).any()      # pulled or squeezed: both halves happen
 
 
 def test_in_plane_von_mises_on_hand_cases_and_in_any_frame():
@@ -424,8 +428,8 @@ def test_stats_say_how_far_past_the_worst_corner_the_stress_reaches():
 
 
 def test_p99_is_weighted_by_volume_so_a_finer_mesh_round_a_peak_does_not_raise_it():
-    """One big element at 0.3 and fifty small ones at a peak, 1.2: half the elements are past 1, but 0.05 % of the
-    volume. By count the 99th percentile would read 1.2; by volume it reads 0.3. The volume past 1 is the same
+    """One big element at 0.3 and fifty small ones at a peak, 1.2: 50 of the 51 elements are past 1, but 0.005 % of
+    the volume. By count the 99th percentile would read 1.2; by volume it reads 0.3. The volume past 1 is the same
     however finely the peak is cut."""
     m = MATERIALS['petg_cf']
     z = m.layer_strengths_mpa[1]

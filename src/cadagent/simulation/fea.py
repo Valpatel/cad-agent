@@ -284,9 +284,11 @@ MATERIALS = {
 #         as plane stress, sqrt(s11^2 - s11 s22 + s22^2 + 3 s12^2); sigma_n and tau_n are the bond check's. The two
 #         differ by  vm_full^2 = vm_in^2 + sigma_n^2 - sigma_n (s11 + s22) + 3 tau_n^2  (expand the von Mises of the
 #         whole tensor in in-plane axes), so the full one is lower exactly where sigma_n (s11 + s22 - sigma_n) >
-#         3 tau_n^2: where the layers are squeezed while the layer plane is compressed harder (a gear tooth, a clamped
-#         boss), with little interlayer shear. Elsewhere (interlayer shear, or layers squeezed while the plane is in
-#         tension) the full one is higher.
+#         3 tau_n^2: where sigma_n has the sign of s11 + s22 and is smaller, and the interlayer shear does not make up
+#         the difference. That is layers squeezed while the layer plane is compressed harder (a gear tooth, a clamped
+#         boss), and layers pulled while the plane is pulled harder (triaxial tension at a notch root, a pressurised
+#         wall), where the in-plane check is the more cautious bulk check. Elsewhere (interlayer shear, or sigma_n
+#         against the sign of the in-plane sum) the full one is the same or higher.
 # S_s, the shear strength of the bond, is on no filament data sheet. Unless given, it is S_z / sqrt(3), the ratio von
 # Mises gives an isotropic solid (shear yield = tensile yield / sqrt 3), and the combined bond reads sqrt(<sigma_n>^2 +
 # 3 tau_n^2) / S_z. That is an assumption, not a measurement: a print's bond may be weaker or stronger in shear than
@@ -1566,9 +1568,10 @@ class Study:
         max(sigma_n, 0) against ``strength_z``, and **shear**, tau_n against the interlayer shear allowable. It is
         never stricter than the combined bond with the same shear allowable, and up to sqrt 2 less strict where
         tension and shear peak together. ``bulk_stress='in-plane'`` takes the bulk's von Mises of the layer plane's
-        stress alone (sigma_n and tau_n are the bond's); the full von Mises is lower than that where the layers are
-        squeezed while the plane is compressed harder, and higher where they carry shear. The defaults give the
-        results this method gave before the options existed.
+        stress alone (sigma_n and tau_n are the bond's); the full von Mises is lower than that where sigma_n has the
+        sign of the in-plane sum and is smaller (layers squeezed while the plane is compressed harder, or pulled while
+        it is pulled harder) and the interlayer shear is small, and the same or higher elsewhere. The defaults give
+        the results this method gave before the options existed.
 
         The strengths (MPa) default to the material's ``layer_strengths_mpa``, which every printed row has; for a
         material without them give both. ``strength_shear`` is the interlayer shear allowable, for either criterion.

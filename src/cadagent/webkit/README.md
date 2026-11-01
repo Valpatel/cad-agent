@@ -33,7 +33,7 @@ cad-agent webkit designer/kit      # copies this kit into your project (re-run t
 | `model.js`, `model.css` | `<cad-model src="model.json">`: a whole assembly in 3D on any page, from a model packed by `cadagent.publish.view.pack_view` (welded, 16-bit, gzip: Gyropup's 58 parts are 312 KB). Put a still `<img class="cad-model-poster">` inside and give the element an `aspect-ratio`: the poster is the first paint, and three.js and the model load only once the page has loaded, the element is near the screen and the browser is idle (behind a button with Save-Data on). Drag to turn, part names on hover, Explode and Pause buttons; it turns slowly unless the reader prefers reduced motion. `snapshot(w, h)` renders a still (the poster); works under a strict CSP (no import map, no inline script) |
 | `gallery.js`, `gallery.css` | `<cad-gallery>`: tabs, facets, search and sorting over cards the page already wrote, for a catalogue or a parts library. Tabs are links upgraded to ARIA tabs (arrow keys); facets are checkboxes or links matched against each card's `data-<name>` tokens, with counts of what each choice would leave; every choice is a URL parameter, so a view can be shared and Back works. The overview shows the first `limit` cards per group (the page marks the rest, so the first paint is final); a filter sheet for small screens (modal, Escape, focus returned); covers that move on hover, focus or in view, never under reduced motion. Without script every card shows, grouped; chips and labels are text, never markup |
 | `hud.css` | The skin: Valpatel design language (dark void, cyan hairlines, monospace telemetry) |
-| `vendor/` | three.js r160 (+ OrbitControls, BufferGeometryUtils), Inter and JetBrains Mono |
+| `vendor/` | three.js r160 (+ OrbitControls, BufferGeometryUtils), Inter and JetBrains Mono; Mermaid 11.17.2 for `diagrams.js` (receipt in `mermaid/SOURCE.json`); the file viewer's parsers: three.js r160 STL and 3MF loaders, fflate 0.8.3, LinkeDOM 0.18.12, occt-import-js 0.0.23 (receipts in `file-viewer-sources.json`, licences in `FILE-VIEWER-NOTICES.md`). The receipts record each file's source and SHA-256, and `tests/webkit-vendor.test.mjs` checks them against the files |
 
 ## Zoom sensitivity
 
@@ -48,3 +48,5 @@ The model viewer and FEA viewer inherit the shared default. Projects with copied
   `sim/web/moxie/face.js`, `sim/web/css/hud.css`), MIT, © 2026 moxie-robot-parent-app contributors.
 - three.js r160 (`three@0.160.0`), MIT, © 2010–2023 three.js authors. Unmodified.
 - Inter (the Inter Project Authors) and JetBrains Mono (JetBrains), SIL Open Font License 1.1. Unmodified.
+- Mermaid 11.17.2 (`mermaid@11.17.2`, `dist/mermaid.min.js`), MIT, © 2014–2022 Knut Sveidqvist. Unmodified.
+- fflate 0.8.3 (`fflate@0.8.3`, `esm/browser.js`), MIT, © 2026 Arjun Barrett. Unmodified; it replaces three.js r160's bundled fflate 0.6.9.

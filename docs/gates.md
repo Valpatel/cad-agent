@@ -162,12 +162,17 @@ search between nearby edges and faces.
 
 ### The pair cache
 
+<details>
+<summary>How the cache keys a pair, where it lives, and why deleting it is safe</summary>
+
 `PairCache(directory)` stores one JSON file per pair, keyed by the sha256 of both items' keys, the tolerances, the
 relation version and the OCP version (a kernel upgrade re-queries everything). An item's key is its content hash
 (`cadagent.review.evidence.shape_content_hash`, shared with the dossier: sha256 of the BREP text without triangulation,
 flag lines stripped) plus its placement matrix rounded to 1e-9. A rebuild that moves or changes one part re-queries
 only that part's pairs, across processes. Keep the cache out of `exports/`: the default is `.cadagent-cache/gates/`,
 which is gitignored; deleting it is always safe.
+
+</details>
 
 ## Verdicts
 

@@ -310,12 +310,16 @@ test('docs/pages.yaml places real outputs on the site page only; the Markdown tw
   for (const [file, page] of Object.entries(spec)) {
     const html = await readFile(path.join(out, file.replace(/\.md$/, '.html')), 'utf8');
     const twin = await readFile(path.join(out, file), 'utf8');
-    for (const v of [...(page.band || []), ...(page.figures || [])]) {
+    for (const v of [...(page.hero ? [page.hero] : []), ...(page.band || []), ...(page.figures || [])]) {
       assert.ok(html.includes(`<img src="/${v.img}" width=`), `${file}: ${v.img} on the page, sized`);
-      assert.ok(html.includes(v.caption.replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;')), `${file}: its caption`);
+      // the caption, after what the picture is: a real output of its tool, or a diagram and the script that drew it
+      const caption = v.caption.replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+      const what = v.shows === 'output' ? `<b class="shows-output">Real output</b> of <code>${v.tool}</code>, on `
+        : `<b class="shows-diagram">Diagram</b> of <code>${v.tool}</code>, drawn by <code>${v.drawn_by}</code>, on `;
+      assert.match(html, new RegExp(`${what.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}[^<]*(?:<a [^>]*>[^<]*</a>[^<]*)?\\.</span> ${caption.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}`), `${file}: ${v.img} says what it is, then its caption`);
       assert.ok(!twin.includes(v.caption), `${file}: the twin does not gain the caption`);
     }
-    assert.doesNotMatch(twin, /page-band|page-figure/);
+    assert.doesNotMatch(twin, /page-band|page-figure|section-cards/);
   }
 });
 

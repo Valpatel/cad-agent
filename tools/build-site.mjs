@@ -19,7 +19,7 @@ import { snapDemo } from './snap-demo.mjs';
 import { buildCatalog } from './site-catalog.mjs';            // the catalogue page, catalog.json, catalog/*.json and covers
 import { sanitize, safeUrl, rewriteUrls, imageSize } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
 import { drawDiagrams } from './site-diagrams.mjs';         // Mermaid blocks drawn into finished figures, at build time
-import { fold, pagePlacer } from './site-pages.mjs';        // docs/pages.yaml: bands, figures, folds
+import { ON, fold, pagePlacer } from './site-pages.mjs';    // docs/pages.yaml: bands, section cards, figures, folds
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
 const rootArg = process.argv.indexOf('--root');
@@ -378,12 +378,8 @@ const homeImg = async (src, at, attrs = '') => {
   if (!size) throw new Error(`docs/home.yaml ${at}: cannot read the size of ${src}`);
   return `<img src="/${esc(src)}" width="${size.width}" height="${size.height}"${attrs}>`;
 };
-// What each output was computed on, said on its tile (#182 review: not every picture is a real part).
-const ON = {
-  gyropup: '<a href="https://gyropup.com">Gyropup</a> · MIT', enclosure: 'a printed enclosure', fixture: 'a test fixture in this repo',
-  'fixture-2d': 'a test fixture, drawn in 2D; tests hold its numbers to the real check', example: 'a worked example',
-  sources: 'published sources',
-};
+// What each output was computed on, said on its tile (#182 review: not every picture is a real part): ON, from
+// tools/site-pages.mjs, which the doc pages' figures use too.
 // A tool on a tile is a cad-agent command, a cadagent module or a script under tools/, and it must exist.
 const commandNames = new Set(commands.map(c => c.name));
 const realTool = (tool, at) => {

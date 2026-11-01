@@ -1,86 +1,158 @@
-# Real outputs placed on doc pages by the site build (tools/build-site.mjs), without touching the Markdown: the .md
-# twins and llms.txt stay exactly as written, and GitHub shows the page as before.
+# Real outputs placed on doc pages by the site build (tools/build-site.mjs, tools/site-pages.mjs), without touching the
+# Markdown: the .md twins and llms.txt stay exactly as written, and GitHub shows the page as before.
 #
 #   docs/<page>.md:
-#     band:                  # two to four tiles under the title and its first paragraph: what this page's tools make
-#       - img: docs/img/...  # a committed picture: a real output of a cad-agent tool, or a drawing of something real
-#         input: STEP assembly          # optional: what goes in, in words
-#         tool: cad-agent gates          # a cad-agent command or a cadagent module (the build checks it exists)
-#         caption: one line, with the number the tool computed
-#         alt: what the picture shows, for a screen reader
-#         href: "#a-heading-on-this-page"   # optional: an anchor on the page, or another published page
-#     figures:               # a picture inside a section, after its first paragraph
-#       - after: running-the-gates-cad-agent-gates   # the heading's id on the site
-#         img: ...; tool: ... (optional); caption: ...; alt: ...
+#     hero:                  # one large figure under the title and its first paragraph
+#       img: docs/img/...    # a committed picture
+#       shows: output        # output: the tool's own (a render, a page it built, a file it wrote);
+#                            # diagram: a drawing of something real, made by the script in drawn_by
+#       drawn_by: tools/...  # diagrams only: the script that drew it
+#       tool: cad-agent site # a cad-agent command, a cadagent module or a script under tools/ (the build checks it exists)
+#       on: fixture          # what it was computed on: gyropup, enclosure, fixture, fixture-2d, example, sources
+#       caption: one or two lines, with the numbers the tool computed
+#       alt: what the picture shows, for a screen reader
+#     band:                  # two to four input → tool → output tiles, under the hero
+#       - img, shows, drawn_by, tool, on, caption, alt as above
+#         input: what goes in, in words
+#         output: what comes out, in words
+#         href: "#a-heading-on-this-page"   # or another published page: docs/x.md, docs/x.md#heading
+#     figures:               # a picture inside a section, after its first paragraph (or right under the heading
+#       - after: heading-id  #   when that paragraph introduces the block after it); several keep their order
+#         img, shows, drawn_by, tool, on, caption, alt as above
+#
+# Every caption starts with what the picture is ("Real output of `cad-agent site`, on a test fixture in this repo."),
+# then says what it shows. A caption never calls a drawing a result, or a seeded failure the design as built.
+# The build stops on an unknown key, an entry that places nothing, a picture that is not committed under docs/img/, a
+# heading the page does not have, or a missing caption, alt text, `shows` or `on`.
 #
 # Owner (2026-10-31): "CAD is graphical, so our site should be too. Not a wall of text." The browser suite measures each
 # page's longest stretch with nothing to look at (tests/site-walls.mjs, #179).
+#
+# The gate bench pictures (docs/img/gates/) come from tools/site-bench-pictures.mjs, which builds the review site with
+# `cad-agent site` from the bench's committed run (tests/fixtures/gate_bench/site_snapshot). The bench as built: six
+# gates, 144 checks (31 + 21 + 28 + 1 + 55 + 8), all pass; its arm sweeps 0 to 40 degrees in 12 poses with no
+# collision and 1.60 mm least clearance (the motion gate's verdict, site_snapshot/gates/motion.json).
 
 docs/gates.md:
+  hero:
+    img: docs/img/gates/bench-review.webp
+    shows: output
+    tool: cad-agent site
+    on: fixture
+    caption: The review site's gates page for the gate bench, the repo's own test assembly. Six gates, 144 checks, all pass, and each says physical fit is not verified.
+    alt: The review site's gates table for the gate bench, with connectivity, containment, fasteners, motion, assembly, wall and dossier-lint, each marked pass with its check counts and links to its verdict files
   band:
     - img: docs/img/motion/hinge-sweep.svg
+      shows: diagram
+      drawn_by: tools/motion_figures.py
+      tool: cadagent.review.gates.motion
+      on: fixture-2d
       input: a joint and its range
-      tool: cadagent.gates.motion
-      caption: A moving arm swept 0 to 60 degrees, then bisected. Contact starts between 44.89 and 44.91 degrees.
-      alt: An arm swept from 0 to 60 degrees; it first shares volume with the frame beam between 44.89 and 44.91 degrees
-      href: "#motion-range-interference-cadagentgatesmotion"
+      output: the first pose that collides
+      caption: The gate bench with a seeded failure (flap_hits_frame), its arm's range raised from 40 to 60 degrees. It first hits the frame between 44.89 and 44.91 degrees.
+      alt: A diagram of the gate bench's arm swept from 0 to 60 degrees; it first shares volume with the frame beam between 44.89 and 44.91 degrees
+      href: "#motion-range-interference-cadagentreviewgatesmotion"
     - img: docs/img/motion/module-insertion.svg
-      input: an assembly order
-      tool: cadagent.gates.assembly
-      caption: A preassembled module checked on its own bench, then inserted into its parent as one rigid body.
-      alt: A preassembled module inserted into its parent as one rigid body, then withdrawn
+      shows: diagram
+      drawn_by: tools/motion_figures.py
+      tool: cadagent.review.gates.assembly
+      on: fixture
+      input: a module and its parent's steps
+      output: bench, insertion and withdrawal verdicts
+      caption: A carrier and its board checked on their own bench, then inserted into the parent as one rigid body and withdrawn again.
+      alt: A diagram of a preassembled module inserted into its parent as one rigid body, then withdrawn
       href: docs/subassembly-insertion.md
   figures:
-    # tools/site-bench-pictures.mjs draws both from the gate bench's committed run (tests/fixtures/gate_bench/site_snapshot)
-    - after: verdicts
-      img: docs/img/gates/bench-review.webp
-      tool: cad-agent site
-      caption: The review site's gates page for the gate bench, the repo's own test assembly. Six gates, 144 checks, all pass, and each says physical fit is not verified.
-      alt: The gates page of the review site, a table with connectivity, containment, fasteners, motion, assembly, wall and dossier-lint, each marked pass with its check counts and links to its verdict files
-    - after: connectivity-and-floating-parts-cadagentgatesconnectivity
+    - after: connectivity-and-floating-parts-cadagentreviewgatesconnectivity
       img: docs/img/gates/bench-connectivity.svg
-      tool: cadagent.gates.connectivity
-      caption: What touches what in the gate bench, from the connectivity gate's verdict. Fasteners are ovals, the dashed boxes are balls allowed to sit free in the hopper, and the arm is its own body on a joint (blue dashed). 31 checks pass.
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: What touches what in the gate bench, drawn from the connectivity gate's verdict (connectivity.dot). Fasteners are ovals, the dashed boxes are balls allowed to sit free in the hopper, and the arm is its own body on a joint (blue dashed). 31 checks pass.
       alt: A graph of the gate bench's parts linked by contacts and fasteners, grouped into the static frame and the arm's body
 
-# The gate bench's review site, from tools/site-bench-pictures.mjs (see docs/gates.md above).
 docs/dossier.md:
+  hero:
+    img: docs/img/gates/bench-sections.webp
+    shows: output
+    tool: cad-agent site
+    on: fixture
+    caption: The gate bench's dossier on its review site. Four sections, all gated and none signed off; three requirements verified; six gates pass; no lint findings.
+    alt: The review site's front page for the gate bench, with counts (0 of 4 sections signed off, 4 of 4 gated, 3 of 3 requirements verified, 6 of 6 gates pass, 0 lint errors) and a table of its four sections with their status, requirements, parts, gates and review state
   figures:
     - after: schema
       img: docs/img/gates/bench-requirements.webp
+      shows: output
       tool: cad-agent site
-      caption: The gate bench's requirements on its review site. Each is traced to the sections that carry it and the gate check that verifies it. All three are verified by analysis.
+      on: fixture
+      caption: The gate bench's requirements, from its project.yaml, on the review site. Each is traced to the sections that carry it and the gate check that verifies it; all three are verified by analysis.
       alt: The review site's requirements table for the gate bench, three requirements marked verified, each with its traced sections, its verifying gate check and its source
+    - after: interface-kinds
+      img: docs/img/gates/bench-section-interfaces.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: The arm section's interfaces and decision on the review site. The pin and the arm are a revolute interface; the rest are contacts.
+      alt: The review site's interfaces table for the gate bench's arm section, six interfaces of kind contact or revolute, then its decision D2, the arm resting on a fixed stop
     - after: the-status-machine
       img: docs/img/gates/bench-section.webp
+      shows: output
       tool: cad-agent site
-      caption: The arm section of the gate bench on its review site. It is gated but not reviewed, and the page says why it is not higher (no reviewer record for its four parts). Below are its requirement, its interfaces and its decision.
-      alt: The review page of the arm section, with its purpose, status chips from draft to signed off with gated marked, the reasons it is not higher, its requirement, its interfaces and its decision
+      on: fixture
+      caption: The arm section on the review site. It is gated but not reviewed, and the page says why it is not higher (no reviewer record for its four parts).
+      alt: The review page of the arm section, with its purpose, status steps from draft to signed off with gated marked, the reasons it is not higher and its requirement
     - after: lint-and-status
-      img: docs/img/gates/bench-review.webp
-      tool: cad-agent gates
-      caption: The dossier lint runs beside the gates and shows on the same review page. On the gate bench it reports no errors and no warnings.
-      alt: The gates page of the review site, the dossier-lint row last with no errors and no warnings
+      img: docs/img/gates/bench-part-card.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: One part card's status, computed by cad-agent dossier and shown on the review site. The arm is gated, with all six gate checks passing, and not higher because no reviewer has recorded it.
+      alt: The review site's card for the gate bench's arm part, with its status steps, function, material, interfaces, six passing gate checks and the reason it is not higher
 
 docs/design-process-plan.md:
+  hero:
+    img: docs/img/gates/bench-sections.webp
+    shows: output
+    tool: cad-agent site
+    on: fixture
+    caption: What this plan built, on the gate bench, the repo's own test assembly. The review site's front page shows four sections gated, three requirements verified and six gates passing.
+    alt: The review site's front page for the gate bench, with its counts and a table of its four sections with their status, requirements, parts, gates and review state
   figures:
+    - after: 32-the-part-spec-card
+      img: docs/img/gates/bench-part-card.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: As built, on the gate bench. The arm's part card on the review site, with its function, material, interfaces and the gate checks that cover it.
+      alt: The review site's card for the gate bench's arm part, with its status steps, function, material, interfaces and six passing gate checks
     - after: 35-rendering-on-the-review-site
       img: docs/img/gates/bench-section.webp
+      shows: output
       tool: cad-agent site
-      caption: As built, on the gate bench. The arm section's page shows its status, why it is not higher, its requirement, its interfaces and its decision.
-      alt: The review page of the arm section, with its purpose, status chips, the reasons it is not higher, its requirement, interfaces and decision
-    - after: 4-integrity-gates-cadagentgates
+      on: fixture
+      caption: As built, on the gate bench. The arm section's page shows its status, why it is not higher and its requirement.
+      alt: The review page of the arm section, with its purpose, status steps, the reasons it is not higher and its requirement
+    - after: 4-integrity-gates-cadagentreviewgates
       img: docs/img/gates/bench-review.webp
-      tool: cad-agent gates
+      shows: output
+      tool: cad-agent site
+      on: fixture
       caption: As built, on the gate bench. Six gates, 144 checks, all pass, and each says physical fit is not verified.
-      alt: The gates page of the review site with six gates and the dossier lint, all pass
+      alt: The gates table of the review site with six gates and the dossier lint, all pass
     - after: 42-connectivity-and-floating-parts-t4
       img: docs/img/gates/bench-connectivity.svg
-      tool: cadagent.gates.connectivity
+      shows: output
+      tool: cad-agent site
+      on: fixture
       caption: As built, the gate bench's connectivity graph. Fasteners are ovals, the dashed boxes are balls allowed to sit free in the hopper, and the arm is its own body on a joint.
       alt: A graph of the gate bench's parts linked by contacts and fasteners, grouped into the static frame and the arm's body
+    # Not the bench as built: as built, its arm sweeps 0 to 40 degrees with no collision and 1.60 mm clearance. This is
+    # the seeded failure the motion gate's tests run, drawn in 2D.
     - after: 45-motion-range-interference-t7
       img: docs/img/motion/hinge-sweep.svg
-      tool: cadagent.gates.motion
-      caption: As built, the gate bench's arm swept 0 to 60 degrees in 12 poses, then bisected. Contact with the frame starts between 44.89 and 44.91 degrees.
-      alt: An arm swept from 0 to 60 degrees; it first shares volume with the frame beam between 44.89 and 44.91 degrees
+      shows: diagram
+      drawn_by: tools/motion_figures.py
+      tool: cadagent.review.gates.motion
+      on: fixture-2d
+      caption: A seeded failure, not the bench as built. With flap_hits_frame, the arm's range is raised from 40 to 60 degrees; swept in 12 poses, then bisected, it first hits the frame between 44.89 and 44.91 degrees. As built, the arm sweeps 0 to 40 degrees with no collision and 1.60 mm clearance.
+      alt: A diagram of the gate bench's arm swept from 0 to 60 degrees with the seeded range; it first shares volume with the frame beam between 44.89 and 44.91 degrees

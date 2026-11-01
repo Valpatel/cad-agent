@@ -92,6 +92,7 @@ def test_cable_spec_reads_the_radius_as_the_data_sheet_states_it():
     ({"measured_to": "outside"}, "measured_to"),
     ({"turn_deg": 200}, "out of range"),
     ({"directions": ["up"]}, "unknown cable direction"),
+    ({"directions": []}, "at least one direction"),
 ])
 def test_cable_spec_refuses_what_it_cannot_read(bad, match):
     with pytest.raises(ValueError, match=match):
@@ -172,8 +173,11 @@ def test_the_figures_port_turns_up_not_down_onto_the_shelf():
     assert r["status"] == "pass" and r["direction"] == "+v" and r["works"] == ["+v", "+u", "-u"]
     text = " ".join(r["assumptions"])
     for said in ("one bend of 90 degrees in one plane", "starting at the boot's end", "a rigid boot",
-                 "measured to the inside", "+v, -v, +u, -u", "wall, shelf"):
+                 "measured to the inside", "+v, -v, +u, -u", "wall, shelf", "not checked past the end of the bend",
+                 "only the minimum radius is tried"):
         assert said in text, said
+    with_run = cn.cable_bend(dict(m, cable=dict(CAT6, run=10)), {"shelf": SHELF})
+    assert "not checked past the end of the run" in " ".join(with_run["assumptions"])
 
 cq = pytest.importorskip("cadquery")
 
@@ -262,6 +266,14 @@ def test_cable_axis_inside_a_compound_is_found():
                                       cq.Solid.makeBox(1, 1, 1, cq.Vector(500, 500, 500))])
     r = cn.cable_bend(box_mate(dict(CAT6, directions=["+u"])), {"block": block}, frame)
     assert r["directions"][0]["axis_inside"] == ["block"] and r["status"] == "fail"
+
+def test_check_ports_refuses_a_panel_frame_box():
+    """A box is in one port's panel frame, and the plug sweep needs a solid: check_ports says so rather than failing
+    the port with a NaN interference."""
+    frame = cn.PanelFrame((0, 0, 0), (1, 0, 0), (0, 0, 1), (0, -1, 0))
+    m = dict(rj45_mate(), cable=CAT6)
+    with pytest.raises(ValueError, match="shelf is a panel-frame box"):
+        cn.check_ports({"lan": m}, {"lan": frame}, {"shelf": SHELF}, {"lan": WALL})
 
 def test_check_ports_runs_the_cable_bend_and_fails_a_port_whose_cable_cannot_turn():
     frame = cn.PanelFrame((0, 0, 0), (1, 0, 0), (0, 0, 1), (0, -1, 0))

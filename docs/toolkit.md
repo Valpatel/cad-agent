@@ -460,6 +460,8 @@ receptacle: a screw-flange terminal plug is 15 mm tall on an 8.4 mm header.
    `draw_ports()` makes the evidence image. Add the check to `checks:` and the review `pass_key`.
 6. **Give each mate its cable** (below), so `check_ports()` also checks that the cable can bend behind the plug.
 
+Worked example: j501-agx `cad/ports.py`, `tools/check_ports.py` and `exports/port-checks.json`.
+
 #### The cable behind the plug
 
 A plug that fits is no use if its cable has no room to turn. Give the mate a `cable` with the diameter and minimum
@@ -484,9 +486,10 @@ form: a 90° turn needs the inside radius plus one diameter, ahead and beside (3
 *An illustration of the check on the RJ45 port in `tests/test_connectors.py`, in section: the clearances are
 `cable_bend`'s.*
 
-Obstacles are CadQuery shapes in assembly position, placed through the port's `PanelFrame`, or boxes in the panel
-frame (`{"u": [..], "v": [..], "w": [..]}`), which need no CAD kernel: use boxes for what the project's CAD does not
-hold, such as the shelf or the cabinet door in front of the port.
+`cable_bend()` takes CadQuery shapes in assembly position, placed through the port's `PanelFrame`, or boxes in the
+panel frame (`{"u": [..], "v": [..], "w": [..]}`), which need no CAD kernel: use boxes for what the project's CAD does
+not hold, such as the shelf or the cabinet door in front of the port. `check_ports()` takes CAD shapes only, and
+refuses a box; place one as a solid through the port's frame.
 
 <details>
 <summary>What it assumes, the optional keys, and where bend radii come from</summary>
@@ -498,7 +501,12 @@ hold, such as the shelf or the cabinet door in front of the port.
   `exit: [u, v]`;
 - the radius is measured to the inside of the bend (`measured_to: centreline` for a data sheet that says otherwise);
 - the cable is a round tube taken as balls of its radius along its axis, so it reaches half a diameter past each end of
-  the bend and a gap is never overstated. Its stiffness, droop and diameter tolerance are not modelled;
+  what is checked, and a gap there is never overstated. Its stiffness, droop and diameter tolerance are not modelled;
+- nothing past the end of the bend is checked, or past the run: a pass is room to turn, not a route. Give `run` to check
+  the length that follows the turn;
+- only the minimum radius is tried. Against a wall, a floor or a door ahead that is the best case, but a gentler bend can
+  clear a part beside the path that the tightest one hits: a fail means the tightest single bend from the boot's end
+  collides;
 - the directions tried are `directions` (names, or angles in degrees from `+u` towards `+v`).
 
 A bend that clears in CAD does not prove that the cable fits: route the real cable at a printed part.
@@ -526,8 +534,6 @@ checks a bend against the parts around it, so this check is built here, on the p
 distance cadquery already uses.
 
 </details>
-
-Worked example: j501-agx `cad/ports.py`, `tools/check_ports.py` and `exports/port-checks.json`.
 
 ### 3D viewer (`cad-agent view` + the web kit)
 

@@ -326,6 +326,8 @@ def cable_spec(mate: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
         else:
             a = math.radians(float(d))
             dirs.append((f"{float(d):g} deg", (math.cos(a), math.sin(a))))
+    if not dirs:
+        raise ValueError("cable directions must list at least one direction")
     return {"od": od, "min_bend_radius": {kind: value}, "radius_mm": radius, "measured_to": measured,
             "centreline_radius_mm": rc, "turn_deg": turn, "run_mm": run, "margin_mm": margin, "directions": dirs,
             "exit": list(c["exit"]) if c.get("exit") else None, "basis": c.get("basis", "")}
@@ -532,7 +534,11 @@ def cable_bend(mate: Mapping[str, Any], obstacles: Mapping[str, Any],
         f"the bend radius {spec['radius_mm']:g} mm is measured to the {spec['measured_to']} of the bend: "
         f"its centreline radius is {rc:g} mm",
         f"the cable is a round {od:g} mm tube taken as balls along its axis, so it reaches {r:g} mm past each end "
-        "of the bend; its stiffness, droop and diameter tolerance are not modelled",
+        "of what is checked; its stiffness, droop and diameter tolerance are not modelled",
+        "the cable is not checked past the end of the " + ("run" if spec["run_mm"] else "bend")
+        + ": a pass is room to turn, not a route",
+        "only the minimum radius is tried: a gentler bend may clear a part beside the path that the tightest one hits, "
+        "so a fail means the tightest single bend from the boot's end collides",
         f"turn directions tried, in the panel frame: {tried}",
         "only the obstacles given are checked: " + (", ".join(obstacles) or "none"),
     ]
@@ -636,6 +642,10 @@ def check_ports(ports: Mapping[str, Mapping[str, Any]], frames: Mapping[str, Pan
     the obstacles and the other ports' mated plugs. The port fails if no turn
     direction clears; a warn does not fail it.
     """
+    boxes = [k for k, s in obstacles.items() if _boxes(s) is not None]
+    if boxes:
+        raise ValueError(f"check_ports takes CAD shapes; {', '.join(boxes)} is a panel-frame box: place it as a solid "
+                         "through the port's PanelFrame, or call cable_bend() for the cable alone")
     rows: Dict[str, Any] = {}
     env: Dict[str, Any] = {}
     for name, mate in ports.items():

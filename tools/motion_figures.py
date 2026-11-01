@@ -1089,7 +1089,7 @@ def cable_svg() -> str:
                        f"{row['nearest']}", INK),
                       (f"{res['status']}: turn {sign(res['direction'])}"
                        + (f" ({' and '.join(others)} clear too)" if others else ""), INK)])
-        short_rows = ([(f"{fmt(-row['clearance_mm'], 1)} mm into shelf", ORANGE), ("fail", ORANGE)] if not clear else
+        short_rows = ([(f"{fmt(-row['clearance_mm'], 2)} mm into shelf", ORANGE), ("fail", ORANGE)] if not clear else
                       [("clear", INK), (res["status"], INK)])
         for j, (line, colour) in enumerate(rows_text):
             narrow = ntext(ox, bottom + 30 + 30 * j, short_rows[j][0], 24 if j == 0 else 26, short_rows[j][1],

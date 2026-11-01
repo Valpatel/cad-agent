@@ -18,6 +18,7 @@
 #         href: "#a-heading-on-this-page"   # or another published page: docs/x.md, docs/x.md#heading
 #     figures:               # a picture inside a section, after its first paragraph (or right under the heading
 #       - after: heading-id  #   when that paragraph introduces the block after it); several keep their order
+#         below: some words  # optional: after the section's first paragraph, list, table or code block with these words
 #         img, shows, drawn_by, tool, on, caption, alt as above
 #
 # Every caption starts with what the picture is ("Real output of `cad-agent site`, on a test fixture in this repo."),
@@ -163,6 +164,7 @@ docs/design-process-plan.md:
 docs/web-parts.md:
   figures:
     - after: tables-and-status
+      below: supplies visible header sort buttons
       img: docs/img/kit/part-table.webp
       shows: output
       tool: kit/part-table.js
@@ -212,6 +214,7 @@ docs/file-viewer.md:
 lessons/review/review-site-ux.md:
   figures:
     - after: keep-a-progress-section-during-long-work
+      below: The progress section is updated at each milestone
       img: docs/img/gates/bench-sections.webp
       shows: output
       tool: cad-agent site
@@ -243,6 +246,7 @@ lessons/review/review-site-ux.md:
 lessons/process/user-intent-and-requirements.md:
   figures:
     - after: capture-each-mid-turn-requirement-verbatim-and-give-it-a-feature
+      below: A requirements table lists each quote
       img: docs/img/gates/bench-requirements.webp
       shows: output
       tool: cad-agent site
@@ -275,6 +279,7 @@ lessons/process/user-intent-and-requirements.md:
 lessons/mechanical/fasteners-and-assembly-access.md:
   figures:
     - after: check-tool-access-for-every-fastener-at-the-step-where-it-is-installed
+      below: Sweep a tool envelope
       img: docs/img/motion/module-insertion.svg
       shows: diagram
       drawn_by: tools/motion_figures.py
@@ -283,6 +288,7 @@ lessons/mechanical/fasteners-and-assembly-access.md:
       caption: The assembly gate runs the steps in their declared order and checks each screw's tool at its own step. Here a module is checked on its own bench, then inserted into its parent as one rigid body.
       alt: A diagram of a preassembled module, a carrier and a board with its screw, checked on its bench, then inserted into its parent as one rigid body
     - after: move-the-head-seat-to-reach-a-standard-screw-length
+      below: Seat Z + stock length
       img: docs/img/motion/rib-in-counterbore.svg
       shows: diagram
       drawn_by: tools/motion_figures.py

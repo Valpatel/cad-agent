@@ -74,7 +74,7 @@ const KEYS = {
   page: ['hero', 'band', 'figures'],
   hero: ['img', 'shows', 'drawn_by', 'on', 'tool', 'caption', 'alt'],
   tile: ['img', 'shows', 'drawn_by', 'on', 'input', 'tool', 'output', 'caption', 'alt', 'href'],
-  figure: ['after', 'img', 'shows', 'drawn_by', 'on', 'tool', 'caption', 'alt'],
+  figure: ['after', 'below', 'img', 'shows', 'drawn_by', 'on', 'tool', 'caption', 'alt'],
 };
 
 /** place(file, html) puts a page's band, section cards and figures (`spec`: docs/pages.yaml, parsed) into its
@@ -134,6 +134,23 @@ export function pagePlacer({ spec, pageFiles, tracked, commandNames, readBuf, pa
     const p = html.slice(end).match(/^\s*<p>([\s\S]*?)<\/p>/);
     return !p || /:\s*$/.test(p[1].replace(/<[^>]+>/g, '')) ? end : end + p[0].length;
   };
+  // `below: some words`: after the section's first block (paragraph, list, table, code, fold) whose text has them, so a
+  // figure can sit beside the part it shows. Blocks are the section's top-level elements, found by tag depth.
+  const VOID = /^(?:img|br|hr|input|source|wbr|col|area|meta|link)$/i;
+  const below = (html, start, words, at) => {
+    const next = html.slice(start).search(/<h[1-4][ >]/), end = next < 0 ? html.length : start + next;
+    const text = s => s.replace(/<[^>]+>/g, '').replace(/&(amp|lt|gt|quot|#39);/g, (m, e) => ({ amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'" }[e])).replace(/\s+/g, ' ');
+    let depth = 0, open = -1;
+    for (const m of html.slice(start, end).matchAll(/<(\/?)([a-z][\w-]*)\b[^>]*?(\/?)>/gi)) {
+      if (VOID.test(m[2]) || m[3]) continue;
+      if (!m[1]) { if (depth++ === 0) open = start + m.index; continue; }
+      if (--depth === 0) {
+        const close = start + m.index + m[0].length;
+        if (text(html.slice(open, close)).includes(words)) return close;
+      }
+    }
+    return fail(at, `no paragraph, list, table or code block in its section has the words "${words}"`);
+  };
   // The band and the cards: after the title and its first paragraph (when the page opens with one).
   const underTitle = html => {
     const h1 = html.match(/<h1\b[^>]*>[\s\S]*?<\/h1>/);
@@ -151,7 +168,8 @@ export function pagePlacer({ spec, pageFiles, tracked, commandNames, readBuf, pa
       need(f, ['after', 'img', 'shows', 'on', 'tool', 'caption', 'alt'], at);
       const head = [...html.matchAll(/<h([2-4]) id="([^"]+)">[\s\S]*?<\/h\1>/g)].find(m => m[2] === f.after);
       if (!head) fail(at, `no heading with id ${f.after} on the page`);
-      inserts.push([inSection(html, head.index + head[0].length), i,
+      const end = head.index + head[0].length;
+      inserts.push([f.below ? below(html, end, String(f.below).replace(/\s+/g, ' '), at) : inSection(html, end), i,
         `<figure class="page-figure">${full(f.img, await picture(f.img, f.alt, at))}<figcaption>${what(f, at)} ${esc(f.caption)}</figcaption></figure>`]);
     }
     for (const [where, , figure] of inserts.sort((a, b) => b[0] - a[0] || b[1] - a[1])) html = html.slice(0, where) + figure + html.slice(where);

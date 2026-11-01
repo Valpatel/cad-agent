@@ -38,6 +38,18 @@ test('figures go after their section\'s first paragraph, in YAML order, or under
   assert.match(html, /<a class="fig-full" href="\/docs\/img\/out\.png" title="Open the full-size picture"><img /, 'each figure opens its full-size picture');
 });
 
+test('below: places a figure after the first block of its section that has the words, lists and code included', async () => {
+  const page = '<h1 id="t">T</h1><h3 id="l">L</h3><ul><li><strong>Rule:</strong> cut &amp; check</li><li><ul><li>nested</li></ul></li></ul><p>Then <img src="/x.png" alt=""> more.</p>' +
+    '<cad-copy><pre><code>a &lt; b\n</code></pre></cad-copy><h3 id="m">M</h3><p>Rule: cut &amp; check</p>';
+  const fig = (below, caption) => ({ ...out({ caption, alt: caption }), after: 'l', below });
+  const html = await pagePlacer({ ...base, spec: { 'docs/a.md': { figures: [fig('Rule: cut & check', 'B1'), fig('a < b', 'B2'), fig('more.', 'B3')] } } })('docs/a.md', page);
+  assert.match(html, /<\/ul><\/li><\/ul><figure class="page-figure">[^]*?B1<\/figcaption><\/figure><p>Then/, 'after the whole list, nested lists and all');
+  assert.match(html, /more\.<\/p><figure class="page-figure">[^]*?B3<\/figcaption><\/figure><cad-copy>/, 'an image in the paragraph does not end it');
+  assert.match(html, /<\/cad-copy><figure class="page-figure">[^]*?B2<\/figcaption><\/figure><h3 id="m">/, 'code is a block too');
+  await assert.rejects(pagePlacer({ ...base, spec: { 'docs/a.md': { figures: [fig('nested', 'X'), { ...fig('no such words', 'Y'), after: 'm' }] } } })('docs/a.md', page),
+    /figures\[1\]: no paragraph, list, table or code block in its section has the words "no such words"/, 'only its own section is searched');
+});
+
 test('section cards: one per section with a picture, linking to it, once a page has CARDS_MIN of them; band pictures are not repeated', async () => {
   const img = (src, w = 640) => `<img src="/docs/img/${src}" width="${w}" height="400" alt="x">`;
   const page = `<h1 id="t">T</h1><p>Lead.</p><h2 id="a-b">A &amp; <code>b</code></h2><p>${img('out.png')}</p><h2 id="c">C</h2><p>Text.</p><h2 id="d">D</h2><p><img src="https://example.com/x.png" alt="badge">${img('two.png')}</p>`;

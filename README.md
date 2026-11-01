@@ -11,8 +11,9 @@ tools and short pages the next agent can use straight away. Every source gets it
 We are not trying to build the one toolkit to rule them all (though we will give it a go where nobody else has).
 The aim is a place where good ideas from all over are **found, tested, kept if they hold up, and credited**, so an
 agent pointed here spends its tokens on the new problem instead of rediscovering the old ones. Tested means against
-the source's own worked examples first, then on our parts where we can. Calculation and simulation narrow a design
-down; they do not prove that a printed part fits or holds. A test print or a measured coupon does.
+the source's own worked examples first, then on our parts where we can. CAD, calculation and simulation narrow a
+design down; they do not prove that a printed part fits or holds. Only a test print of the part does; a measured
+coupon replaces a data-sheet number for one filament and print direction.
 Browse it at [cad-agent.valpatel.com](https://cad-agent.valpatel.com) (every page also as Markdown, plus `llms.txt`
 and `catalog.json`).
 
@@ -60,8 +61,8 @@ flowchart TD
 5. **Credit it.** Every page names its sources; every borrowed file keeps its licence; the people and projects we
    learn from are listed below.
 
-Example: [snap fits](docs/compliant.md) condense the Covestro (Bayer) snap-fit guide, DuPont's design guide and 11
-filament data sheets (13 filaments) into `cad-agent snapfit`, tested against the guide's worked examples and sized by
+Example: [snap fits](docs/compliant.md) condense the Covestro (Bayer) snap-fit guide, DuPont's design guide and the
+data sheets of 11 filaments (13 entries: two have dry and wet values) into `cad-agent snapfit`, tested against the guide's worked examples and sized by
 print direction; no printed coupon has been measured yet. The same loop turned review findings from real builds into
 the [pitfall checks](docs/common-issues.md), like a rib that ran into a counterbore.
 
@@ -188,7 +189,8 @@ described wrongly here, please [tell us](https://github.com/Valpatel/cad-agent/i
 [linkedom](https://github.com/WebReflection/linkedom), and the [Inter](https://rsms.me/inter/) (Rasmus Andersson) and
 [JetBrains Mono](https://www.jetbrains.com/lp/mono/) (JetBrains) typefaces, both SIL OFL. Board checks read reports
 from [KiCad](https://www.kicad.org/)'s `kicad-cli`. OpenFOAM (GPL) and Bambu Studio (AGPL) run only as separate
-programs; gmsh (GPL) is imported, but only by the optional `fea` extra.
+programs, as does the FFmpeg binary that the `sim` extra's imageio-ffmpeg ships (built with GPL options); gmsh (GPL)
+is imported, but only by the optional `fea` extra.
 
 **Tracked, not yet all tried:** the agentic-CAD projects, libraries and benchmarks we follow, with what each says
 it is good at, whether we have tried it, and its licence where we have recorded it: the

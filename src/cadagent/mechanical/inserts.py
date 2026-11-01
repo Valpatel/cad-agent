@@ -196,8 +196,9 @@ SRC = {
                   "edition 04/26, p. 2 (a boss at least 1.5 x the knurl diameter in FDM, full performance from 2 x), "
                   "p. 3 (Figures 8 and 9: PLA, M6, pull-out and torque-out against wall loops at 15 % infill and "
                   "against infill at 2 loops; Figure 10: INS 19 and INS 29 long M6, heat-installed, in printed PETG, "
-                  "PLA, PC and 30 % glass-filled PA6 at 55 % infill, 5 wall loops, 0.16 mm layers), p. 4 (Figure "
-                  "12: the same inserts in printed and in extruded polycarbonate) and p. 5 (wall loops at least the "
+                  "PLA, PC and 30 % glass-filled PA6 at 55 % infill, 5 wall loops, 0.16 mm layers; its footnote: "
+                  "\"Testing of FDM samples was performed at 55% infill and 1.5x wall thickness (5 wall loops)\"), "
+                  "p. 4 (Figure 12: the same inserts in printed and in extruded polycarbonate, the same footnote) and p. 5 (wall loops at least the "
                   "metric size; install at the heat-deflection temperature + 65 degC). The figures are bar charts "
                   "with no values printed: the values here are read off them at 300 dpi, to about one pixel "
                   "(20 N, 0.1 N m): https://www.spirol.com/assets/files/inserts-for-3d-printed-assemblies-us.pdf",
@@ -537,13 +538,23 @@ def capacity(ins: Insert, material: str, axis: str = "upright") -> Dict[str, Any
     fit_on = fam if fam in cal["pull"] else "pooled"
     c, r = cal["pull"][fit_on], cal["torque_ratio"]
     D_m, L_m = D * MM, ins.length_mm * MM
+    fitted = [t for t in TESTS if t.printed and t.stand_in and t.key in c["tests"]]
+    D_fit, L_fit = max(t.outer_mm for t in fitted), max(t.length_mm for t in fitted)
+    confidence = cal["confidence"].get(fit_on, "")
+    outside = ""
+    if D > D_fit + 1e-9 or ins.length_mm > L_fit + 1e-9:
+        outside = (f"larger than any insert c was fitted on ({D_fit:g} x {L_fit:g} mm): the published results fall "
+                   "with size (SPIROL's printed M6 below its M3; its nylon 6/6 table, q 17.6 MPa at M5 and 14.0 at "
+                   "M8), so nothing shows the fit holds here; measure it (coupon_plan)")
+        confidence = "low: " + outside
     pull = {k: fx.insert_shear_force(D_m, L_m, tau, c[k]) for k in ("low", "mid", "high")}
     torque = {k: fx.insert_shear_torque(D_m, L_m, tau, c[k] * r[k]) for k in ("low", "mid", "high")}
     return {"insert": ins.key, "material": material, "family": fam, "axis": axis,
             "pull_out": pull, "push_out": dict(pull), "torque_out": torque,
             "shear_strength_pa": tau, "diameter_mm": D, "diameter_basis": basis, "length_mm": ins.length_mm,
             "c": {k: c[k] for k in ("low", "mid", "high")}, "torque_ratio": {k: r[k] for k in ("low", "mid", "high")},
-            "calibrated_on": fit_on, "confidence": cal["confidence"].get(fit_on, ""),
+            "calibrated_on": fit_on, "confidence": confidence, "outside_fit": outside,
+            "fitted_size_mm": [D_fit, L_fit],
             "aged_share": AGED_SHARE.get(fam),
             "notes": ["push-out: no published test; the pull-out model is taken as is (low confidence)",
                       "lying: no published number; Kastner 2023 found inserts along Z stronger and more predictable"]}
@@ -647,6 +658,7 @@ SCREW_SHARE = fx.PRELOAD_SHARE["reused"]   # the clamp load at most 75 % of the 
 #                                            pp. 3-4: "strongly recommends not to exceed"; Shigley Section 8-9)
 PLASTIC_TOL_MM = 0.1                 # the clamped plastic's +/- when none is given: an assumption, no source
 OWN_LIMITER_TOL_MM = 0.05            # your own limiter's length tolerance when none is given: an assumption
+PRELOAD_KEPT_PASS = 0.9              # the share of the preload a limited joint keeps to pass: an assumption, no source
 PLATE_HUB = 10.0                     # x the knurl: the plastic round a press fit when no outside is given
 CLAMP_PLATE_MM = 5.1                 # the coupon's clamped plate with no limiter
 COUPON_LIMITER_MM = 5.0              # the coupon's limiter (a SPIROL standard length, spirol-cl-2021 p. 14)
@@ -714,11 +726,17 @@ LIMITS = (
     "flagged, not modelled",
     "static, short-term, room temperature: a held load creeps; PLA inserts kept 26-55 % of their pull-out after a "
     "year of natural ageing (Materials 2025)",
-    "the boss is printed as the tests printed it: at least 5 wall loops at 55 % infill (SPIROL), a 1.3-1.9 mm solid "
-    "sleeve in 40 % infill (Laszlo 2026), or solid (CNC Kitchen); fewer walls or sparser infill hold less (SPIROL's "
+    "the boss is printed as the tests printed it: 1.5 x wall thickness, 5 wall loops, at 55 % infill (SPIROL), a "
+    "1.3-1.9 mm solid sleeve in 40 % infill, 1.5-1.75 x the knurl (Laszlo 2026), or solid (CNC Kitchen); a 2 x boss, "
+    "the makers' full performance, is stronger than the tests behind the low end; fewer walls or sparser infill hold "
+    "less (SPIROL's "
     "Figure 8: one wall loop at 15 % infill held about a quarter of eleven; Kastner 2023: 30 to 70 % infill raised "
     "pull-out about 2.5 x)",
-    "the clamped part's face on a flush insert's end is not checked: it shares the clamp with the boss face",
+    "the insert's end takes the whole clamp where the clamped part or a limiter bears on it, brass being far "
+    "stiffer than the boss round it, so its face is held to the softest temper's yield (124 MPa)",
+    "a far-side insert is taken as pressed onto the shoulder in front of it",
+    "a size outside the fitted ones (M3 x 5.7, M6 x 12.7) takes the fit as it is: larger ones are flagged, as the "
+    "published results fall with size",
     "preload relaxation: printed PLA was measured for an hour and printed joints for a week; the long-term figure is "
     "moulded polycarbonate's, and PLA, nearer its glass transition, will keep less",
     "CAD and closed forms do not prove a joint holds: print the coupons and measure",
@@ -966,9 +984,10 @@ def _clamp_rows(rows: List[Dict[str, Any]], thread: str, d_mm: float, p_mm: floa
         k_lo_kept = fx.preload_retained_limited(plastic_load, preload["low"], lo_lt, kb, kl, k_col or 0.0)
         kept = {"basis": "limiter: only the plastic's share relaxes", "low": k_lo_kept, "high": 1.0,
                 "plastic_share": share}
-        v = "pass" if k_lo_kept >= 0.9 else "warn"
-        rows.append(_row("preload kept", round(k_lo_kept, 3), 0.9, v,
-                         f"the plastic carries {share * 100:.1f} % of the preload; if it relaxes to {lo_lt:.2f} "
+        v = "pass" if k_lo_kept >= PRELOAD_KEPT_PASS else "warn"
+        rows.append(_row("preload kept", round(k_lo_kept, 3), PRELOAD_KEPT_PASS, v,
+                         f"at least {PRELOAD_KEPT_PASS:g} to pass (an assumed level: no source gives one). "
+                         f"The plastic carries {share * 100:.1f} % of the preload; if it relaxes to {lo_lt:.2f} "
                          f"(moulded PC over years, Covestro: no printed figure) the joint keeps {k_lo_kept:.3f}: "
                          f"the screw ({kb / 1e6:.0f} N/um at its stiffest) shortens against "
                          + (f"the limiter ({kl / 1e6:.0f} N/um)" if seated else "the plastic alone (the head never "
@@ -1034,7 +1053,23 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
                        "(CNC Kitchen 2026), so the insert has more plastic to push aside and may not seat" if
                        cad_hole < lo else "larger: the knurl bites less; drilled true to size, CNC Kitchen's M3 lost "
                                           "most of its strength between 4.1 and 4.2 mm"))))
-    if not through:
+    if installed_from == "far side":
+        # the insert goes in from the far face and is pressed onto the shoulder in front of it: the pocket from the
+        # far face is as deep as the insert, or deeper with the insert pressed on below the far face
+        depth = ins.length_mm if hole_depth_mm is None else float(hole_depth_mm)
+        gap = depth - ins.length_mm
+        v = "pass" if gap <= 1e-9 else "warn"
+        rows.append(_row("hole depth", round(depth, 3), round(ins.length_mm, 3), v,
+                         ("from the far face, no deeper than the insert: pressed flush with the far face, or proud "
+                          "of it, it lands on the shoulder" if gap <= 1e-9 else
+                          f"{gap:.2f} mm deeper than the insert: pressed flush with the far face (the install note) "
+                          "it stops short of the shoulder, and the screw pulls it through its knurl to close the gap "
+                          "(jack-out). Press it on to the shoulder, below the far face, or make the pocket the "
+                          "insert's length")))
+        rows.append(_row("melt volume", None, None, "pass",
+                         "pressed onto the shoulder, the insert pushes its melt back round itself to the far face, "
+                         "which is open, and some ahead into the shoulder's hole: clear that hole for the screw"))
+    elif not through:
         depth = hd["depth_mm"] if hole_depth_mm is None else float(hole_depth_mm)
         need = hd["depth_mm"]
         v = "pass" if depth >= need - 1e-9 else "warn" if depth > ins.length_mm else "fail"
@@ -1090,8 +1125,11 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
         rows.append(_row("boss wall", round(wall, 3), {"least_wall_mm": bd["least_wall_mm"],
                                                         "least_outside_mm": bd["least_outside_mm"],
                                                         "full_outside_mm": bd["outside_mm"]}, v,
-                         {"pass": "the full-performance boss (2 x the knurl)",
-                          "warn": "above the makers' least wall but under 2 x the knurl: weaker than the tests",
+                         {"pass": "the makers' full-performance boss (2 x the knurl, SPIROL), more than the about "
+                                  "1.5 x the tests that set the low end printed",
+                          "warn": "above the makers' least wall but under their full-performance boss (2 x the knurl, "
+                                  "SPIROL); the tests that set the low end used about 1.5 x (SPIROL: 1.5 x wall "
+                                  "thickness, 5 loops; Laszlo 2026: 1.5-1.75 x)",
                           "fail": "under the makers' least wall (or 1.5 x the knurl): the boss can split"}[v]))
     else:
         rows.append(_row("boss wall", None, bd["least_wall_mm"], "warn",
@@ -1103,6 +1141,9 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
     if fam not in calibration()["pull"]:
         rows.append(_row("calibration", fam, sorted(k for k in calibration()["pull"] if k != "pooled"), "warn",
                          "no published printed test in this family: the lowest c of any family is taken"))
+    if cap["outside_fit"]:
+        rows.append(_row("calibration size", [cap["diameter_mm"], cap["length_mm"]], cap["fitted_size_mm"], "warn",
+                         cap["outside_fit"]))
 
     # the clamp path and the torque
     path = fx.insert_clamp_path(recess_mm * MM, PROUD_OK_MM * MM, installed_from)
@@ -1145,10 +1186,17 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
     if strip / margin > pull_n:
         caps["insert_thread"] = strip / margin - pull_n
     face = None
-    if lim is not None and path["path"] == "seat":
+    if lim is None and path["path"] == "through-insert" and clear and clear < knurl:
+        # the clamped part bears on the insert's end round its hole; brass is far stiffer than the boss round it, so
+        # the ring takes nearly all the clamp, as it does under a limiter
+        area = math.pi / 4.0 * (knurl ** 2 - clear ** 2) * MM ** 2
+        face = {"area_mm2": area / MM ** 2, "on": "brass", "load_pass": BRASS_YIELD_PA[0] * area}
+        caps["insert_face"] = face["load_pass"]
+    elif lim is not None and path["path"] == "seat":
         # a far-side insert: the limiter lands on the shoulder of plastic in front of it, round the shoulder's hole
+        # its whole end: the shoulder is the boss face, wider than the limiter
         hole_sh = clear or ins.diameter_mm
-        area = math.pi / 4.0 * (min(lim.body_mm, knurl) ** 2 - hole_sh ** 2) * MM ** 2
+        area = math.pi / 4.0 * (lim.body_mm ** 2 - max(lim.bore_mm, hole_sh) ** 2) * MM ** 2
         if area > 0:
             face = {"area_mm2": area / MM ** 2, "on": "plastic",
                     "load_pass": bearing_strength(material) / margin * area}
@@ -1190,6 +1238,14 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
                          "screw engages" + (" (all of it: give screw_depth_mm)" if engaged is None else "") +
                          f", against the force that strips it ({strip:.0f} N: the ISO 68 internal shear area at "
                          f"brass's shear yield, {SHEAR_OVER_YIELD} x 124 MPa, the softest temper) / {margin:g}"))
+    if face is not None and lim is None:
+        sigma = preload["high"] / (face["area_mm2"] * MM ** 2)
+        v = _graded(sigma, BRASS_YIELD_PA[0] * (1 + 1e-9), BRASS_YIELD_PA[1])
+        rows.append(_row("insert face", round(sigma / 1e6, 1), round(BRASS_YIELD_PA[0] / 1e6, 1), v,
+                         f"the preload on the ring of the insert's end round the clamped part's hole "
+                         f"({face['area_mm2']:.2f} mm^2, MPa): brass is far stiffer than the boss round it, so the "
+                         "ring takes nearly all the clamp. Against brass's yield (124-310 MPa by temper): over it "
+                         "the face embeds and the preload falls"))
     # service loads on the knurl
     knurl_pull = pull_n + (preload["high"] if path["path"] == "jack-out" else 0.0)
     if path["path"] != "seat" and knurl_pull > 0:

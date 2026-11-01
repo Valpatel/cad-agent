@@ -26,7 +26,7 @@ joints:
 
 ```text
 $ cad-agent inserts joints.yaml --output result.json
-WARN  lid: M3 94459A140 in Bambu PLA Basic, through-insert; tighten to at most 0.70 N m (head bearing)
+WARN  lid: M3 94459A140 in Bambu PLA Basic, through-insert; tighten to at most 0.64 N m (insert face)
       warn: preload kept: the clamped plastic relaxes and takes the preload with it: ...
 WARN  bracket: M4 clamping Bambu PLA Basic; tighten to at most 0.68 N m (head bearing)
       warn: preload kept: the clamped plastic relaxes and takes the preload with it: ...
@@ -43,7 +43,7 @@ from cadagent.mechanical import inserts
 inserts.hole_design(inserts.insert("mcmaster-94459A140"))      # 4.2 mm in CAD (the maker's 4.0 + 0.2), 6.7 mm deep
 r = inserts.check_joint("mcmaster-94459A140", "pla-bambu-basic", boss_outside_mm=9.5, head_mm=7.0,
                         clearance_mm=3.4, clamped={"thickness_mm": 4.0})
-r["verdict"], r["torque"]["allowed_nm"], r["torque"]["governed_by"]   # 'warn', 0.70, 'head_bearing'
+r["verdict"], r["torque"]["allowed_nm"], r["torque"]["governed_by"]   # 'warn', 0.64, 'insert_face'
 r["capacity"]["pull_out"]                                         # low 811, mid 1152, high 1394 N
 inserts.check_clamp("M10", "pa6-cf20-polymaker-wet", 40.0, head_mm=20.0, clearance_mm=12.0, torque_nm=20.0,
                     limiter={"outside_mm": 18.0, "bore_mm": 12.0}, limiter_length_mm=39.8)
@@ -59,7 +59,8 @@ check works out, and it changes every limit after it.
 
 - **Flush, or up to 0.13 mm proud** (PEM, SPIROL). The clamped part bears on the insert's end. The clamp goes through
   the brass, and the knurl carries only what pulls the parts apart. M3 in PLA Basic, clamping metal: tighten to at
-  most **0.65 N·m**, set by the insert's own thread.
+  most **0.40 N·m**, set by the insert's end face: the ring round the clamped part's hole takes nearly all the clamp,
+  held to brass's 124 MPa.
 - **Recessed, even by 0.05 mm.** The screw pulls the insert towards the head until the gap closes. The knurl
   carries the whole preload, so the same joint 0.2 mm recessed may take only **0.13 N·m**.
 - **A clamped part whose hole is as wide as the insert** bears on the plastic round it. That jacks the insert out
@@ -135,12 +136,12 @@ the layers, from the maker's data sheet, and c is fitted to published tests.
 | Row | Pass | Warn | Fail |
 |---|---|---|---|
 | hole diameter | the maker's hole +0.2 to +0.3 mm in CAD (CNC Kitchen) | outside that | at or over the knurl |
-| hole depth | the deepest of the makers' rules (SPIROL: the insert plus two pitches; CNC Kitchen and ruthex: +1 mm; McMaster's least material thickness) | short of it | no deeper than the insert |
+| hole depth | the deepest of the makers' rules (SPIROL: the insert plus two pitches; CNC Kitchen and ruthex: +1 mm; McMaster's least material thickness); from the far face, for a far-side insert, no deeper than the insert, so it lands on the shoulder | short of it; for a far-side insert, deeper | no deeper than the insert |
 | melt volume | the plastic the insert displaces fits the pocket below it | it does not | |
 | screw tip | above the floor and inside the insert | past the insert's end | at or past the floor |
-| boss wall | 2 × the knurl (the tests' boss) | the makers' least wall to 2 × | under the least wall or 1.5 × the knurl |
+| boss wall | 2 × the knurl (the makers' full performance; the tests behind the low end used about 1.5 ×) | the makers' least wall to 2 × | under the least wall or 1.5 × the knurl |
 | insert axis | along the build direction | in the layer plane: no published number | |
-| calibration | a family with printed tests | no printed test in the family | |
+| calibration, calibration size | a family with printed tests, an insert no larger than the fitted ones | no printed test in the family, or a larger insert | |
 | clamp path | flush, proud to 0.13 mm, or a far-side shoulder | recessed or more proud | |
 | tightening torque | at most the lowest ceiling, the screw's at 75 % of its proof load (SPIROL) | within the margin over it | past it |
 | insert thread | the preload and load under its stripping force / 2 (ISO 68 area, brass at 124 MPa) | under the force | over it |
@@ -150,13 +151,14 @@ the layers, from the maker's data sheet, and c is fitted to published tests.
 | limiter length | squeeze at most 5 %, the limiter's own included | 5 to 7 %, past the plastic's compressive strength over its modulus, or proud | over 7 % |
 | seating force | under the preload and 75 % of the proof load, the ring under its strength / 2 | the plastic crushes or creeps before the head lands | the head never lands |
 | head over limiter | the head or washer reaches past it | it covers only the limiter | |
-| limiter on insert, insert face | its end on the insert, the face under brass's 124 MPa | up to 310 MPa | not abutting, or over |
+| limiter on insert | its bore smaller than the insert's face | | not abutting |
+| insert face | the clamped part's or the limiter's end on the insert: the ring under brass's 124 MPa | up to 310 MPa | over it |
 | limiter end (far-side insert) | its end on the shoulder's plastic under its compressive strength / 2 | under the strength | over it |
 | limiter rating | the preload under 75 % of the proof load of the class it is rated for | under the proof load | over it |
 | limiter wall (your own) | the stress in its wall under its yield / 2 | under the yield, or no yield given | over it |
 | limiter press fit | the hoop stress its knurl raises in the hole under the strength along the layers / 2 | under the strength | over it |
 | limiter boss | a wall of at least 0.5 d (Bulten) and the boss 2 × the limiter (SPIROL) | the boss under 2 × | the wall under 0.5 d |
-| preload kept | at least 0.9 of it, the screw, limiter and plastic as springs | plastic in the clamp: it relaxes | |
+| preload kept | at least 0.9 of it (an assumed level), the screw, limiter and plastic as springs | plastic in the clamp: it relaxes | |
 
 The margin is 2.0 throughout (Covestro's least safety factor for plastic parts). Pass `margin` to change it.
 
@@ -170,8 +172,9 @@ printed clamps. Five joints fail:
 
 - two screws reach 2.0 and 3.0 mm past the floor of a blind pilot, so they jack their inserts out;
 - a 4 mm pilot is no deeper than its 5.7 mm insert;
-- an M6 at 8 N·m puts 156 MPa on wet PA6-CF under its head, against the 27 MPa allowed (114 MPa with an 11 mm
-  washer), and an M4 at 2.3 N·m does the same on PETG if what it clamps is printed.
+- an M6 at 8 N·m puts 156 MPa on wet PA6-CF under its 10 mm head, against the 27 MPa allowed (114 MPa with an
+  11 mm washer), and an M4 at 2.3 N·m puts 160 MPa on PETG under a socket head (6.53 mm bearing face) if what it clamps is
+  printed.
 
 The audit found the same problems on its own. The printed clamps pass at the torque the check gives them (0.23 to
 1.24 N·m) and warn only because their plastic relaxes.

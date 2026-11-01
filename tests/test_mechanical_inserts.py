@@ -153,13 +153,17 @@ def test_a_flush_insert_with_a_washer_passes_at_the_torque_it_recommends():
     assert r["clamp"]["path"] == "through-insert"
     assert {k: v["verdict"] for k, v in rows.items() if k != "preload kept"} == {
         "hole diameter": "pass", "hole depth": "pass", "melt volume": "pass", "boss wall": "pass",
-        "clamp path": "pass", "tightening torque": "pass", "insert thread": "pass", "head bearing": "pass"}
-    # the plastic under the washer sets the torque: 78.06 MPa / 2 on pi/4 (7^2 - 3.4^2), at the least nut factor
+        "clamp path": "pass", "tightening torque": "pass", "insert thread": "pass", "head bearing": "pass",
+        "insert face": "pass"}
+    # the plastic under the washer caps the preload at 78.06 MPa / 2 on pi/4 (7^2 - 3.4^2); the insert's end, round
+    # the same hole, at brass's 124 MPa, is lower and sets the torque at the least nut factor
     area = math.pi / 4 * (7.0 ** 2 - 3.4 ** 2) * MM ** 2
+    ring = math.pi / 4 * (I.INSERTS["mcmaster-94459A140"].outer_mm ** 2 - 3.4 ** 2) * MM ** 2
     k_lo = r["torque"]["nut_factor"]["low"]
-    assert r["torque"]["governed_by"] == "head_bearing"
-    assert r["torque"]["allowed_nm"] == pytest.approx(k_lo * 3e-3 * 78.06e6 / 2 * area, rel=1e-9)
-    assert rows["head bearing"]["value"] == pytest.approx(78.06 / 2, abs=0.01)
+    assert r["torque"]["preload_caps_n"]["head_bearing"] == pytest.approx(78.06e6 / 2 * area, rel=1e-9)
+    assert r["torque"]["governed_by"] == "insert_face"
+    assert r["torque"]["allowed_nm"] == pytest.approx(k_lo * 3e-3 * 124e6 * ring, rel=1e-9)
+    assert rows["head bearing"]["value"] < 78.06 / 2 and rows["insert face"]["value"] == pytest.approx(124.0, abs=0.1)
     # without a limiter the plastic in the clamp relaxes: a warning, with the measured figures in it
     assert rows["preload kept"]["verdict"] == "warn" and "Amza" in rows["preload kept"]["detail"]
     assert r["verdict"] == "warn"
@@ -279,16 +283,16 @@ def test_the_screw_tip_bottoming_in_a_blind_hole_fails():
 
 def test_the_inserts_own_thread_caps_the_torque_over_the_length_engaged():
     r = I.check_joint("mcmaster-94459A140", "pla-bambu-basic", boss_outside_mm=9.5, clamped={"material": "metal"},
-                      screw_depth_mm=4.0)
-    # the ISO 68 internal area over 4 mm of M3, at brass's softest shear yield (0.577 x 124 MPa), over the margin
-    strip = 0.875 * math.pi * 3.0 * 4.0 * MM ** 2 * 0.577 * 124e6
+                      screw_depth_mm=3.0)
+    # the ISO 68 internal area over 3 mm of M3, at brass's softest shear yield (0.577 x 124 MPa), over the margin
+    strip = 0.875 * math.pi * 3.0 * 3.0 * MM ** 2 * 0.577 * 124e6
     assert _rows(r)["insert thread"]["limit"] == pytest.approx(strip / 2, abs=0.1)
     assert r["torque"]["preload_caps_n"]["insert_thread"] == pytest.approx(strip / 2, rel=1e-9)
     assert r["torque"]["governed_by"] == "insert_thread"
     assert r["torque"]["allowed_nm"] == pytest.approx(r["torque"]["nut_factor"]["low"] * 3e-3 * strip / 2, rel=1e-9)
     # all of the thread engaged when the tip is not given: more thread, a higher ceiling
     full = I.check_joint("mcmaster-94459A140", "pla-bambu-basic", boss_outside_mm=9.5, clamped={"material": "metal"})
-    assert full["torque"]["preload_caps_n"]["insert_thread"] == pytest.approx(strip / 2 * 5.7 / 4.0, rel=1e-9)
+    assert full["torque"]["preload_caps_n"]["insert_thread"] == pytest.approx(strip / 2 * 5.7 / 3.0, rel=1e-9)
 
 
 def test_a_clamped_hole_as_wide_as_the_insert_jacks_it_out():
@@ -471,6 +475,11 @@ def test_a_far_side_insert_has_no_floor_in_front_of_the_screw_and_its_limiter_la
     rows = _rows(r)
     assert "limiter on insert" not in rows and "insert face" not in rows
     assert rows["limiter end"]["verdict"] == "pass" and "limiter_end" in r["torque"]["preload_caps_n"]
+    # the limiter's whole end lands on the shoulder: its body round the wider of its bore and the shoulder's hole
+    lim = I.limiter("spirol-cl6000-m5")
+    end = math.pi / 4 * (lim.body_mm ** 2 - max(lim.bore_mm, 5.5) ** 2) * MM ** 2
+    assert r["torque"]["preload_caps_n"]["limiter_end"] == pytest.approx(I.bearing_strength("pla-bambu-basic") / 2
+                                                                         * end, rel=1e-9)
     # the shoulder's plastic stays in the clamp path, so the joint relaxes as one with no limiter
     assert rows["preload kept"]["verdict"] == "warn" and "shoulder" in rows["preload kept"]["detail"]
 
@@ -535,3 +544,50 @@ def test_coupon_blocks_are_cad_with_the_designed_hole():
     assert lying.BoundingBox().zlen == pytest.approx(side) and lying.BoundingBox().zmin == pytest.approx(0.0)
     plate = I.clamp_plate(I.CLAMP_PLATE_MM, I.limiter_for(ins)["hole_mm"])
     assert plate.isValid() and plate.BoundingBox().zlen == pytest.approx(I.CLAMP_PLATE_MM)
+
+
+
+def test_the_insert_face_is_held_to_brass_yield_under_a_clamped_part_as_under_a_limiter():
+    m3 = dict(insert="mcmaster-94459A140", material="pla-bambu-basic", boss_outside_mm=9.5)
+    flush = I.check_joint(**m3, clamped={"material": "metal"})
+    knurl = I.INSERTS["mcmaster-94459A140"].outer_mm
+    ring = math.pi / 4 * (knurl ** 2 - 3.4 ** 2) * MM ** 2             # round the ISO 273 medium hole
+    assert flush["torque"]["governed_by"] == "insert_face"
+    assert flush["torque"]["preload_caps_n"]["insert_face"] == pytest.approx(124e6 * ring, rel=1e-9)
+    face = _rows(flush)["insert face"]
+    assert face["verdict"] == "pass" and face["value"] <= 124.0 and "8.42 mm^2" in face["detail"]
+    # over the softest temper's yield it warns, up to the hardest's, then fails
+    hard = _rows(I.check_joint(**m3, clamped={"material": "metal"}, torque_nm=0.9))["insert face"]
+    assert hard["verdict"] == "warn" and 124.0 < hard["value"] <= 310.0
+    # recessed, the clamped part never reaches the brass: no face row
+    assert "insert face" not in _rows(I.check_joint(**m3, recess_mm=0.2, clamped={"material": "metal"}))
+    # a limiter on the insert is held to the same 124 MPa on its own ring
+    with_lim = I.check_joint("mcmaster-94459A775", "pla-bambu-basic", boss_outside_mm=15.0, clamped={"thickness_mm": 6.0},
+                             limiter_key="spirol-cl6000-m5", limiter_length_mm=6.0)
+    assert _rows(with_lim)["insert face"]["limit"] == 124.0
+
+
+def test_a_far_side_insert_is_pressed_onto_its_shoulder_and_its_melt_goes_back_to_the_far_face():
+    base = dict(insert="mcmaster-94459A140", material="pla-bambu-basic", installed_from="far side", recess_mm=3.0,
+                boss_outside_mm=9.5, clamped={"material": "metal"})
+    rows = _rows(I.check_joint(**base))
+    assert rows["hole depth"]["verdict"] == "pass" and rows["hole depth"]["limit"] == 5.7
+    assert rows["melt volume"]["value"] is None and "far face" in rows["melt volume"]["detail"]
+    deep = _rows(I.check_joint(**base, hole_depth_mm=6.7))["hole depth"]
+    assert deep["verdict"] == "warn" and "1.00 mm deeper" in deep["detail"] and "jack-out" in deep["detail"]
+
+
+def test_an_insert_larger_than_any_fitted_is_flagged_and_its_confidence_is_low():
+    big = I.check_joint("mcmaster-94459A778", "pla-bambu-basic", boss_outside_mm=30.0, clamped={"material": "metal"})
+    row = _rows(big)["calibration size"]
+    assert row["verdict"] == "warn" and row["limit"] == [8.76, 12.7] and "14.0 at M8" in row["detail"]
+    assert big["capacity"]["confidence"].startswith("low")
+    m5 = I.check_joint("mcmaster-94459A775", "pla-bambu-basic", boss_outside_mm=15.0, clamped={"material": "metal"})
+    assert "calibration size" not in _rows(m5) and m5["capacity"]["confidence"].startswith("medium")
+
+
+def test_the_preload_kept_level_is_a_named_assumption():
+    r = I.check_clamp("M10", "pa6-cf20-polymaker-wet", 40.0, head_mm=20.0, clearance_mm=12.0, torque_nm=20.0,
+                      limiter={"outside_mm": 18.0, "bore_mm": 12.0}, limiter_length_mm=39.8)
+    kept = _rows(r)["preload kept"]
+    assert kept["limit"] == I.PRELOAD_KEPT_PASS and "assumed level" in kept["detail"]

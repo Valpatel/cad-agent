@@ -41,7 +41,7 @@ def coupons():
             out.append((f"{ins.thread}x{ins.length_mm:g}-plate-limiter",
                         I.clamp_plate(lim["plate_mm"], lim["hole_mm"])))
         out.append((f"{ins.thread}x{ins.length_mm:g}-plate-plastic",
-                    I.clamp_plate(I.CLAMP_PLATE_MM, ins.diameter_mm + 0.4)))
+                    I.clamp_plate(I.CLAMP_PLATE_MM, I.CLEARANCE_MM[ins.thread])))
     return out
 
 

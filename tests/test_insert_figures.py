@@ -37,15 +37,16 @@ def test_the_pages_numbers_are_what_the_module_computes():
     page = (ROOT / "docs" / "inserts.md").read_text()
     m3 = dict(insert="mcmaster-94459A140", material="pla-bambu-basic", boss_outside_mm=9.5)
     lid = I.check_joint(**m3, head_mm=7.0, clearance_mm=3.4, clamped={"thickness_mm": 4.0})
-    assert f"at most {lid['torque']['allowed_nm']:.2f} N m (head bearing)" in page
+    assert f"at most {lid['torque']['allowed_nm']:.2f} N m ({lid['torque']['governed_by'].replace('_', ' ')})" in page
+    assert f"{lid['torque']['allowed_nm']:.2f}, '{lid['torque']['governed_by']}'" in page
     pull = lid["capacity"]["pull_out"]
     assert f"low {pull['low']:.0f}, mid {pull['mid']:.0f}, high {pull['high']:.0f} N" in page
     bracket = I.check_clamp("M4", "pla-bambu-basic", 6.0, head_mm=7.0, clearance_mm=4.5)
     assert f"at most {bracket['torque']['allowed_nm']:.2f} N m (head bearing)" in page
     flush = I.check_joint(**m3, clamped={"material": "metal"})
     sunk = I.check_joint(**m3, recess_mm=0.2, clamped={"material": "metal"})
-    assert f"**{flush['torque']['allowed_nm']:.2f} N·m**, set by the insert's own thread" in page
-    assert flush["torque"]["governed_by"] == "insert_thread"
+    assert f"**{flush['torque']['allowed_nm']:.2f} N·m**, set by the insert's end face" in page
+    assert flush["torque"]["governed_by"] == "insert_face"
     assert f"only **{sunk['torque']['allowed_nm']:.2f} N·m**" in page and sunk["clamp"]["path"] == "jack-out"
     lim = I.check_joint("mcmaster-94459A775", "petg-bambu-basic", boss_outside_mm=15.0, limiter_key="spirol-cl6000-m5",
                         clamped={"thickness_mm": 6.1, "tolerance_mm": 0.05, "outside_mm": 18.0}, limiter_length_mm=6.0)
@@ -75,3 +76,14 @@ def test_the_pages_numbers_are_what_the_module_computes():
         svg = (ROOT / "docs" / "img" / "inserts" / f"{name}.svg").read_text()
         title = re.search(r"<title[^>]*>([^<]*)", svg)[1]
         assert f'alt="{title}"' in page, name
+    # the worked example's two plastic-under-the-head failures, with their inputs
+    wheel = I.check_clamp("M6", "pa6-cf20-polymaker-wet", 20.8, head_mm=10.0, clearance_mm=6.6, torque_nm=8.0)
+    washer = I.check_clamp("M6", "pa6-cf20-polymaker-wet", 20.8, head_mm=11.0, clearance_mm=6.6, torque_nm=8.0)
+    pod = I.check_joint("mcmaster-94459A160", "petg-bambu-basic", hole_mm=5.6, hole_depth_mm=9.1,
+                        boss_outside_mm=10.0, torque_nm=2.3)
+    head = {name: {c["check"]: c for c in r["checks"]}["head bearing"] for name, r in
+            (("wheel", wheel), ("washer", washer), ("pod", pod))}
+    assert f"puts {head['wheel']['value']:.0f} MPa on wet PA6-CF under its 10 mm head" in page
+    assert f"({head['washer']['value']:.0f} MPa with an\n  11 mm washer)" in page
+    assert f"puts {head['pod']['value']:.0f} MPa on PETG under a socket head ({I.HEAD_BEARING_MM['M4']} mm" in page
+    assert all(h["verdict"] == "fail" for h in head.values())

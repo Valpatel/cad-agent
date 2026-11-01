@@ -3,13 +3,15 @@
  * Fails on console errors, CSP violations, failed or third-party requests, sideways scrolling, a phone header without
  * the catalogue link, a hero animation that is not running (or still running under reduced motion), a catalogue
  * filter that hides results without saying so, and a diagram wider than the article column at 1100 px (the narrowest
- * width with the page tree), so no reader has to scroll a diagram sideways on a desktop. */
+ * width with the page tree), so no reader has to scroll a diagram sideways on a desktop, and a wall of text: a stretch
+ * of a page with nothing to look at longer than one and a half screens (tests/site-walls.mjs, #179). */
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { chromium, webkit } from '@playwright/test';
+import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript } from './site-walls.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const dir = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-website-browser-'));
@@ -52,6 +54,25 @@ try {
     if (route === '/') {
       const names = await page.evaluate(() => document.getAnimations().map(a => a.animationName).filter(n => n?.startsWith('snap-')));
       if (names.length < 4) seen.push(`hero animations running: ${names.join(', ') || 'none'}`);
+      // The 3D Gyropup (#179): it becomes the live model, fetches three.js and the model only after the page has
+      // loaded (the poster is all the first paint needs), and nothing moves when it swaps in.
+      const ready = await page.waitForFunction(() => ['ready', 'error'].includes(document.querySelector('cad-model')?.dataset.state), null, { timeout: 20000 })
+        .then(() => page.evaluate(() => { const el = document.querySelector('cad-model'); return el.dataset.state === 'ready' ? 'ready' : el.dataset.error; }))
+        .catch(() => 'never left the poster');
+      if (ready !== 'ready') seen.push(`3D model: ${ready}`);
+      const late = await page.evaluate(() => {
+        const loaded = performance.getEntriesByType('navigation')[0].loadEventStart;
+        return performance.getEntriesByType('resource').filter(r => /three\.module|\/web\/models\//.test(r.name) && !/\.webp$/.test(r.name) && r.startTime < loaded).map(r => r.name);
+      });
+      if (late.length) seen.push(`3D model fetched before the page loaded: ${late.join(', ')}`);
+      const shift = await page.evaluate(() => new Promise(done => {
+        if (!PerformanceObserver.supportedEntryTypes?.includes('layout-shift')) return done(0);
+        let sum = 0;
+        new PerformanceObserver(list => { for (const e of list.getEntries()) if (!e.hadRecentInput) sum += e.value; })
+          .observe({ type: 'layout-shift', buffered: true });
+        setTimeout(() => done(sum), 200);
+      }));
+      if (shift > 0.01) seen.push(`layout shifts on the home page: ${shift.toFixed(3)}`);
     }
     if (route === '/catalog' && width === 1366) {
       await page.fill('#q', 'zzzz-nothing-matches');
@@ -293,6 +314,11 @@ try {
   await reduced.goto(base + '/', { waitUntil: 'networkidle' });
   const still = await reduced.evaluate(() => document.getAnimations().filter(a => a.animationName?.startsWith('snap-')).length);
   if (still) problems.push(`reduced motion: ${still} hero animations still running`);
+  // The model stands still (no turntable, so no Pause button) until the reader drags it.
+  await reduced.waitForFunction(() => document.querySelector('cad-model')?.dataset.state === 'ready', null, { timeout: 20000 })
+    .catch(() => problems.push('reduced motion: the 3D model did not load'));
+  const turning = await reduced.evaluate(() => [...document.querySelectorAll('cad-model .cad-model-ui button')].filter(b => !b.hidden && b.textContent === 'Pause').length);
+  if (turning) problems.push('reduced motion: the 3D model turns by itself');
   await reduced.close();
   // Every page with a diagram, at the narrowest desktop width: each rendered diagram fits its column (#122).
   const diagramPages = [];
@@ -325,6 +351,50 @@ try {
     for (const d of over) problems.push(`1100px ${route}: a diagram is ${d.w}px wide; the column has ${d.room}px, less ${SCROLLBAR}px for a scrollbar (top-down, at most three boxes per row)`);
   }
   await wide.close();
+  // Walls of text (#179): on every page at 1366 x 800, the longest stretch of content with no picture, diagram, demo
+  // or render stays under WALL_LIMIT (1.5 screens). WALLS is the backlog, each page with the issue that breaks it up;
+  // it only shrinks: a page not on it must pass, and one on it that measures under WALL_CLEARED must leave it.
+  const WALLS = new Map([
+    // #174 redraws the catalogue as a gallery.
+    ['/catalog', 174],
+    // #146 adds the snap-arm explorer.
+    ['/docs/compliant', 146],
+    // #179 slice 3: real outputs for the rest. /docs/toolkit splits into area pages once #121's layout lands.
+    ...['/CONTRIBUTING', '/README', '/THIRD_PARTY_NOTICES', '/docs/agent-workflow', '/docs/common-issues', '/docs/design-process-plan',
+      '/docs/dossier', '/docs/explore', '/docs/file-viewer', '/docs/gates', '/docs/pcb', '/docs/review-packet', '/docs/toolkit',
+      '/docs/vision', '/docs/volume-precision', '/docs/web-parts', '/lessons/electronics/pcb-evidence-and-review',
+      '/lessons/mechanical/design-rules', '/lessons/mechanical/enclosure-features', '/lessons/mechanical/fasteners-and-assembly-access',
+      '/lessons/process/agent-process', '/lessons/process/user-intent-and-requirements', '/lessons/process/verify-from-source',
+      '/lessons/review/review-site-ux', '/lessons/review/verification-and-evidence',
+      '/lessons/simulation/simulation-and-material', '/lessons/wiring/cables-connectors-and-routing', '/research/agent-toolkits-2026-10',
+      '/research/compliant-mechanisms', '/research/design-workflows', '/research/fea-and-process-tools', '/research/landscape',
+      '/research/process-profiles', '/research/simulation-tools', '/skills/cad-pr-review/SKILL',
+      '/skills/cad-work-tracking/SKILL', '/skills/design-process/SKILL', '/skills/mcmaster-parts/SKILL'].map(r => [r, 179]),
+  ]);
+  const sitePages = [];
+  for (const e of await readdir(dir, { withFileTypes: true, recursive: true })) {
+    const rel = path.relative(dir, path.join(e.parentPath, e.name));
+    if (e.isFile() && rel.endsWith('.html') && !rel.startsWith('kit') && rel !== '404.html')
+      sitePages.push('/' + rel.replace(/(^|\/)index\.html$|\.html$/, '').split(path.sep).join('/'));
+  }
+  for (const route of WALLS.keys()) if (!sitePages.includes(route)) problems.push(`walls: ${route} is not a page; remove it from WALLS`);
+  const reader = await browser.newPage({ viewport: VIEWPORT });
+  await reader.goto(base + '/docs/compliant', { waitUntil: 'load' });
+  // The measure itself, on planted articles of known geometry, so a broken measure cannot pass every page.
+  for (const [name, { got, want }] of Object.entries(await reader.evaluate(plantedScript())))
+    if (Math.abs(got - want) > 1) problems.push(`walls: the planted "${name}" article measures ${got}px, not ${want}px`);
+  for (const route of sitePages.sort()) {
+    await reader.goto(base + route, { waitUntil: 'load' });
+    await reader.waitForFunction(() => !document.querySelector('pre.mermaid, code.language-mermaid') &&
+      [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'), null, { timeout: 20000 })
+      .catch(() => problems.push(`walls ${route}: diagrams did not finish rendering`));
+    await reader.evaluate(() => document.fonts.ready);
+    const wall = await reader.evaluate(longestStretch, VISUAL);
+    const where = `${wall.worst}px with nothing to look at, ${wall.from}-${wall.to}px into the page, after "${wall.after}"`;
+    if (WALLS.has(route)) { if (wall.worst < WALL_CLEARED) problems.push(`walls ${route}: ${where}, well under ${WALL_LIMIT}px: remove it from WALLS (#${WALLS.get(route)})`); }
+    else if (wall.worst > WALL_LIMIT) problems.push(`walls ${route}: ${where}; the limit is ${WALL_LIMIT}px. Add a real output, diagram or demo there, or fold the long reference parts into <details>`);
+  }
+  await reader.close();
   // Very wide screens: the outline moves to its own column on the right and keeps marking the section being read.
   const wider = await browser.newPage({ viewport: { width: 1600, height: 900 } });
   await wider.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });

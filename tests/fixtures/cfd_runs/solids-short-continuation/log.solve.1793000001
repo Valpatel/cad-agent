@@ -1,0 +1,25 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+Starting time loop
+
+Time = 101
+
+DILUPBiCGStab:  Solving for h, Initial residual = 0.0012, Final residual = 2.4e-05, No Iterations 1
+ExecutionTime = 40.40 s  ClockTime = 41 s
+
+Time = 102
+
+DILUPBiCGStab:  Solving for h, Initial residual = 0.0012, Final residual = 2.4e-05, No Iterations 1
+ExecutionTime = 40.80 s  ClockTime = 41 s
+
+Time = 103
+
+DILUPBiCGStab:  Solving for h, Initial residual = 0.0012, Final residual = 2.4e-05, No Iterations 1
+ExecutionTime = 41.20 s  ClockTime = 42 s
+
+Time = 104
+
+DILUPBiCGStab:  Solving for h, Initial residual = 0.0012, Final residual = 2.4e-05, No Iterations 1
+ExecutionTime = 41.60 s  ClockTime = 42 s
+
+--> FOAM FATAL ERROR: Maximum number of iterations exceeded

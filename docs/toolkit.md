@@ -806,15 +806,17 @@ objects); `run()` runs it natively or in Docker; `results()` returns temperature
 temperature through each fan, the heat leaving with the air against the heat put in (`energy_balance_pct`), the cells
 each fan and fin zone caught, and the limits. Its histories cover the whole run, joined across continuations
 (`restarts`, one entry per continuation; a second solve from the same saved time writes `<kind>_<time>.dat` and is read
-too, and one that crashed at start and logged nothing is left out): residuals, each solid's hottest temperature and
-`monitors` (fin-block and fan air temperatures, fan flow, heat leaving), each with its unit. `converged` needs the
-temperatures, fan flow and heat leaving to have stopped changing *and* the energy balance within 5 %. The change is
-measured over `convergence_window`: the iterations from 80 % of the last one onward, cut to the newest solve (after a
-continuation shorter than a fifth of the run, that is the whole newest solve). `steady` holds each change to its entry
-in `convergence_limits`: under 1 °C for each solid's hottest temperature and the air through each fan, under 2 % for the
-fan flow and the heat leaving, and under 2 °C for a fin block's air (its key, `<block>_T_change_c`, does not end in
-`_c_change`, the suffix that gets 1 °C). Exchanger fin blocks are set to their power by `calibrate_fins()` (secant steps
-on the fin temperature, only once the heat leaving has settled; `calibrated` says whether it got there).
+too, one that crashed at start and logged nothing is left out, and one that stopped before its first temperature
+sample still replaces the rows after its start): residuals, each solid's hottest temperature and `monitors` (fin-block
+and fan air temperatures, fan flow, heat leaving), each with its unit. `converged` needs the temperatures, fan flow and
+heat leaving to have stopped changing *and* the energy balance within 5 %. The change is measured over
+`convergence_window`: the iterations from 80 % of the last one onward, cut to the newest solve (after a continuation
+shorter than a fifth of the run, that is the whole newest solve; after one that logged no temperature rows, there is
+no window and nothing is steady). `steady` holds each change to its entry
+in `convergence_limits`: under 1 °C for every temperature (each solid's hottest, a fin block's air and the air through
+each fan) and under 2 % for the fan flow and the heat leaving. Exchanger fin blocks are set to their power by
+`calibrate_fins()` (secant steps on the fin temperature, only once the heat leaving has settled; `calibrated` says
+whether it got there).
 
 Two choices matter for honest numbers, and both are covered by tests:
 - **The open boundary is hydrostatic** (`p_rgh` uniform): still room air stays still. A uniform *static* pressure

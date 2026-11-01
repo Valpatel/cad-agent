@@ -191,7 +191,7 @@ const lessonCount = pages.filter(p => p.section === 'lessons' && !/(?:^|\/)READM
 await writeFile(path.join(out, 'catalog.json'), JSON.stringify(catalog, null, 2) + '\n');
 
 // ----------------------------------------------------------------------------- HTML frame
-const NAV = [['/catalog', 'Catalogue', true], ['/docs/toolkit', 'Toolkit', true], ['/research/landscape', 'Landscape'],
+const NAV = [['/catalog', 'Catalogue', true], ['/docs/toolkit', 'Tools', true], ['/research/landscape', 'Landscape'],
   ['/docs/common-issues', 'Pitfalls'], ['/docs/agent-workflow', 'For agents']];
 // Feedback goes to GitHub: a short issue form with the page filled in, or an edit of the page's source.
 const feedbackURL = (title, url) => `${REPO}/issues/new?template=feedback.yml&title=${encodeURIComponent(`Feedback: ${title}`)}&page=${encodeURIComponent(ORIGIN + url)}`;
@@ -438,7 +438,7 @@ curl -s ${ORIGIN}/docs/toolkit.md  <b># any page, as .md</b></pre></cad-copy></d
 <p class="fits-key">Maturity: ${areasTree.maturity.map(m => `<b>${esc(m.level)}</b> ${esc(m.means)}`).join('; ')}. From <a href="${REPO}/blob/dev/docs/areas.yaml">docs/areas.yaml</a>.</p></div></section>
 <section class="section" style="padding-top:0"><div class="missions">
 <a class="mission mission-blue" href="/research/landscape"><span class="mission-tag">Map</span><span class="mission-num">${(counts.upstream || 0) + (counts.library || 0) + (counts.benchmark || 0)}</span><p>Agentic-CAD projects, libraries and benchmarks, checked with dates and licences.</p><span class="go">See the landscape <span>→</span></span></a>
-<a class="mission mission-yellow" href="/docs/toolkit"><span class="mission-tag">Demonstrate</span><span class="mission-num">${counts.tool || 0}</span><p>Commands that run on real projects: gates, holes, FEA, CFD, topology, slicing, the 3D viewer.</p><span class="go">Open the toolkit <span>→</span></span></a>
+<a class="mission mission-yellow" href="/docs/toolkit"><span class="mission-tag">Demonstrate</span><span class="mission-num">${counts.tool || 0}</span><p>Commands that run on real projects: gates, holes, FEA, CFD, topology, slicing, the 3D viewer.</p><span class="go">Open the tools <span>→</span></span></a>
 <a class="mission mission-orange" href="/docs/common-issues"><span class="mission-tag">Fill the gaps</span><span class="mission-num">${lessonCount}</span><p>Lessons from real builds, each with the incident behind it and the check that catches it.</p><span class="go">Read the pitfalls <span>→</span></span></a>
 </div></section>
 <section class="section built-with" style="padding-top:0"><div class="lead"><h2>Built with <span>cad-agent.</span></h2><p>Real projects are the test bench: every tool here was needed by one of them first.</p></div>
@@ -469,7 +469,7 @@ tested tools of its own. Every page on this site has a Markdown twin at the same
 ## Start here
 
 - [README](${ORIGIN}/README.md): what cad-agent is and how it grows
-- [Toolkit](${ORIGIN}/docs/toolkit.md): every command, the project contract and the Python API
+- [Tools](${ORIGIN}/docs/toolkit.md): every command, the project contract and the Python API
 - [Agent workflow](${ORIGIN}/docs/agent-workflow.md): skills, subagents, work claims and crash-safe work
 - [Common issues](${ORIGIN}/docs/common-issues.md): recurring CAD mistakes and the checks that catch them
 - [Landscape](${ORIGIN}/research/landscape.md): the agentic-CAD tools we track, verified

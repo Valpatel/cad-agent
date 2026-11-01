@@ -468,8 +468,9 @@ and their areas (`err.point`, `err.faces`, `err.edges`). `faces_near(point)` nam
   2 × (mesh_mm − size_mm). A Min field joins them, under the global `Mesh.MeshSizeMax`. `Mesh.MeshSizeMin` must drop
   to the smallest refine size. It is also the floor of gmsh's curvature sizing, so a size callback keeps the old floor
   (mesh_mm / 4) outside the balls. Without `refine`, a study meshes exactly as it did before.
-- **Wall:** from each surface triangle within two element sizes of the peak corner, a ray goes straight into the
-  material until it leaves, and the shortest is the wall. Elements across is the wall over the mean edge length of the
+- **Wall:** from each surface triangle within two element sizes of the peak corner, a ray goes into the material
+  along its CAD face's normal until it leaves, and the shortest is the wall. A ray that leaves at a grazing angle
+  (more than 60° off head-on) ran along a wall to an edge, so it does not count. Elements across is the wall over the mean edge length of the
   tetrahedra at the peak corner: the layers a structured mesh would put there. A ray through a tet mesh crosses more
   tets than that, so this is the cautious count.
 - **converge(factor=0.75, tolerance=0.05):** a new Study at factor × mesh_mm (and factor × each refine size), with

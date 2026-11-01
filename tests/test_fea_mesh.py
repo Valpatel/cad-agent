@@ -155,6 +155,21 @@ def test_a_peak_in_a_thin_wall_is_flagged(thick, mesh, resolved):
         assert len(flagged) == 1 and 'not a result' in str(flagged[0].message) and 'not a result' in peak['note']
 
 
+def test_the_wall_at_a_hole_edge_is_the_plate_not_a_ray_along_the_hole():
+    """A 12 mm plate bent across four Ø8 holes peaks at a hole's top edge. A ray from a hole-wall facet near that edge
+    tilts with the facet and runs out through the top face 4 mm on; it went along the wall, not across it. The rays go
+    along the CAD face's normal, and a grazing exit does not count, so the wall is the plate's 12 mm."""
+    plate = (cq.Workplane('XY').box(120, 40, 12).faces('>Z').workplane()
+             .pushPoints([(x, 0) for x in (-40, -15, 15, 40)]).hole(8).edges('|Z').fillet(3))
+    st = Study(plate, STEEL, mesh_mm=4.0, name='plate')
+    st.fix(plane_at(0, -60.0)).force(plane_at(0, 60.0), (0, 0, -200.0))
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', MeshWarning)
+        peak = st.solve()['mesh']['peak']
+    assert 'hole' in peak['where'] and abs(peak['at_mm'][2]) == pytest.approx(6.0)
+    assert peak['wall_mm'] == pytest.approx(12.0, rel=0.01)
+
+
 def test_converge_compares_a_finer_mesh():
     """converge(): the same loads on a mesh 0.75 x as fine. The filleted corner holds (converged, no warning); the
     sharp one rises by more than 5 % (not converged, a MeshWarning that names the singular corner)."""

@@ -439,8 +439,10 @@ def _faces_near(point, faces, points, face_tris, k: int = 4) -> List[dict]:
     return sorted(out, key=lambda r: r['distance_mm'])[:k]
 
 
-def _ray_exit(origin, direction, A, E1, E2, skip: float) -> Optional[float]:
-    """Distance along a ray to the nearest triangle it crosses beyond `skip` (Möller-Trumbore), or None."""
+def _ray_exit(origin, direction, A, E1, E2, skip: float, unit=None, head_on: float = 0.5) -> Optional[float]:
+    """Distance along a ray to the nearest triangle it crosses beyond `skip` (Möller-Trumbore), or None. With the
+    triangles' unit normals `unit`, None also when that crossing is grazing (|cos| under `head_on`, more than 60° off
+    head-on): the ray ran along a wall to an edge and out, it did not cross the wall."""
     pv = np.cross(direction, E2)
     det = np.einsum('ij,ij->i', E1, pv)
     ok = np.abs(det) > 1e-14
@@ -451,7 +453,12 @@ def _ray_exit(origin, direction, A, E1, E2, skip: float) -> Optional[float]:
     v = (qv @ direction) * inv
     t = np.einsum('ij,ij->i', E2, qv) * inv
     hit = ok & (u >= -1e-9) & (v >= -1e-9) & (u + v <= 1 + 1e-9) & (t > skip)
-    return float(t[hit].min()) if hit.any() else None
+    if not hit.any():
+        return None
+    first = int(np.flatnonzero(hit)[np.argmin(t[hit])])
+    if unit is not None and abs(float(unit[first] @ direction)) < head_on:
+        return None
+    return float(t[first])
 
 
 @dataclass
@@ -734,8 +741,9 @@ class Study:
         """How many elements lie across the wall at the design peak (the peak the safety factor uses).
 
         The wall is the thinnest one round the peak: from each surface triangle within two element sizes of the peak
-        corner, a ray goes straight into the material to where it leaves it again, and the shortest of those is the
-        wall. Elements across it = wall / the mean edge length of the tetrahedra at the peak corner, which is the number
+        corner, a ray goes into the material along its CAD face's normal (that face's facets round the triangle,
+        averaged) to where it leaves it again, and the shortest of those is the wall. A ray that leaves at a grazing
+        angle (more than 60° off head-on) ran along a wall to an edge, not across it, and does not count. Elements across it = wall / the mean edge length of the tetrahedra at the peak corner, which is the number
         of element layers a structured mesh would put there (a ray through an unstructured mesh crosses more tets than
         that, so this is the cautious count). Under MIN_ELEMENTS_ACROSS the peak is flagged: a peak in a wall one or
         two elements thick is not a result."""
@@ -762,9 +770,22 @@ class Study:
         E1, E2 = P[tri[:, 1]] - A, P[tri[:, 2]] - A
         cen = P[tri].mean(axis=1)
         dist = np.linalg.norm(cen - x, axis=1)
-        near = np.where(dist <= max(2 * h, float(dist.min()) + h))[0]
+        reach = max(2 * h, float(dist.min()) + h)
+        near = np.where(dist <= reach)[0]
         near = near[np.argsort(dist[near])][:24]
-        walls = [w for i in near if (w := _ray_exit(cen[i], -unit[i], A, E1, E2, skip=1e-6 * h)) is not None]
+        # each ray goes along the CAD face's own inward normal there: the facets of that face round the triangle,
+        # averaged (a facet of a curved face tilts, and a tilted ray near an edge runs out through the next face)
+        local = np.where(dist <= reach + 2 * h)[0]
+        face_of = {tuple(sorted(t)): tag for tag, tris in self.face_tris.items() for t in tris.tolist()}
+        ftag = np.array([face_of.get(tuple(sorted(t)), -1) for t in tri[local].tolist()])
+        walls = []
+        for i in near:
+            k = int(np.flatnonzero(local == i)[0])
+            same = np.isin(tri[local], tri[i]).any(axis=1) & ((ftag == ftag[k]) if ftag[k] >= 0 else (local == i))
+            d = -nrm[local[same]].sum(axis=0)
+            w = _ray_exit(cen[i], d / max(float(np.linalg.norm(d)), 1e-30), A, E1, E2, skip=1e-6 * h, unit=unit)
+            if w is not None:
+                walls.append(w)
         wall = min(walls) if walls else None
         vnorm = np.zeros_like(P)
         for k in range(3):

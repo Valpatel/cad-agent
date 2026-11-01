@@ -1,4 +1,4 @@
-# Integrity gates (`cadagent.gates`)
+# Integrity gates (`cadagent.review.gates`)
 
 Assembly-level checks computed from the CAD model, each written as one verdict file. They answer what per-part
 checks cannot: is this part touching the one it should be fastened to, is the ball inside the hopper, is this wall
@@ -36,7 +36,7 @@ the fastener gate (T6), the motion gate (T7), the assembly-access gate (T9), the
 ## The assembly and the relation table
 
 ```python
-from cadagent.gates import Assembly, Tolerances, PairCache, relation_table, relate_pair, relate
+from cadagent.review.gates import Assembly, Tolerances, PairCache, relation_table, relate_pair, relate
 
 asm = Assembly.from_build(build_result)                 # from a dossier build (live or load_geometry): see below
 asm = Assembly()                                        # or by hand:
@@ -67,7 +67,7 @@ offending solid pairs.
 
 ### From a dossier build
 
-`Assembly.from_build(result)` takes a `cadagent.dossier` `BuildResult`, from the build itself or from
+`Assembly.from_build(result)` takes a `cadagent.review.dossier` `BuildResult`, from the build itself or from
 `load_geometry("exports/dossier-geometry.json")` in another process:
 
 - parts and placed fasteners from `assembly_shapes(with_hashes=True)`, already in assembly coordinates, keyed as
@@ -132,7 +132,7 @@ extra `Cut` roughly doubled the cold narrow phase. Real parts with hundreds of f
 
 `PairCache(directory)` stores one JSON file per pair, keyed by the sha256 of both items' keys, the tolerances, the
 relation version and the OCP version (a kernel upgrade re-queries everything). An item's key is its content hash
-(`cadagent.evidence.shape_content_hash`, shared with the dossier: sha256 of the BREP text without triangulation,
+(`cadagent.review.evidence.shape_content_hash`, shared with the dossier: sha256 of the BREP text without triangulation,
 flag lines stripped) plus its placement matrix rounded to 1e-9. A rebuild that moves or changes one part re-queries
 only that part's pairs, across processes. Keep the cache out of `exports/`: the default is `.cadagent-cache/gates/`,
 which is gitignored; deleting it is always safe.
@@ -140,7 +140,7 @@ which is gitignored; deleting it is always safe.
 ## Verdicts
 
 ```python
-from cadagent.gates import Check, verdict, write_verdict
+from cadagent.review.gates import Check, verdict, write_verdict
 
 checks = [Check("wall:hopper", "fail", "thinnest 0.800 mm < 2.4 mm", parts=["hopper"], evidence={...})]
 data = verdict("wall", checks, assumptions=["rays along the inward normal ..."], limits={"tol_mm": 0.01},
@@ -157,7 +157,7 @@ required, every exclusion needs a reason, and the file has no timestamp, so an u
 current:
 
 ```python
-from cadagent.gates.verdict import bind_inputs, stale_reason, geometry_digest, record_hashes
+from cadagent.review.gates.verdict import bind_inputs, stale_reason, geometry_digest, record_hashes
 
 bind_inputs(data, record, record_file="exports/dossier-geometry.json", declarations=decl, options=opts)
 # data["inputs"] = {"geometry": {"file", "digest", "hashes": {key: content hash}}, "declarations": sha256, "options": sha256}
@@ -176,10 +176,10 @@ gate's declarations and its options; `lint()` called without a project compares 
 `out=` argument writes an unbound verdict: a gate run by hand, or a project's own gate writing into
 `exports/gates/`, binds it with `bind_inputs` first, or `check` reports it as stale.
 
-## Minimum wall (`cadagent.gates.wall`)
+## Minimum wall (`cadagent.review.gates.wall`)
 
 ```python
-from cadagent.gates.wall import check_wall, wall_gate, mesh_thickness, brep_thickness, brep_thickness_near
+from cadagent.review.gates.wall import check_wall, wall_gate, mesh_thickness, brep_thickness, brep_thickness_near
 
 check_wall("hopper", 2.4, mesh=shape_or_stl_or_trimesh, shape=brep)           # -> Check
 wall_gate({"hopper": {"wall_mm": 2.4, "mesh": m, "shape": s}, ...}, out="exports/gates/wall.json")
@@ -209,10 +209,10 @@ thin by its chord error (0.03–0.09 mm seen on 2.4 mm shells tessellated at 0.0
 sliver triangle's tilted normal can exit through a neighbouring face (16.7 mm read on a 20 mm filleted block): pass
 the B-rep, or set `tol_mm` to cover it. The threshold is the part's own (the dossier's `material.wall_mm`).
 
-## Containment (`cadagent.gates.containment`)
+## Containment (`cadagent.review.gates.containment`)
 
 ```python
-from cadagent.gates.containment import containment_gate, check_contains, Contains, contains_declarations
+from cadagent.review.gates.containment import containment_gate, check_contains, Contains, contains_declarations
 
 containment_gate(asm, [{"container": "hopper", "cavity": "hopper_cavity", "what": "ball", "count": 8}],
                  out="exports/gates/containment.json")
@@ -278,12 +278,12 @@ prefixed `<pose>/` when `poses` is given):
   9 s cold on a loaded workstation. Every query goes through `cache` (`PairCache`), keyed on the content hashes and
   placements, so an unchanged rerun reads the cache.
 
-## Connectivity and floating parts (`cadagent.gates.connectivity`)
+## Connectivity and floating parts (`cadagent.review.gates.connectivity`)
 
 Does every part hang on something, and is every declared connection really there?
 
 ```python
-from cadagent.gates.connectivity import Declarations, connectivity_gate, connectivity_from_build, analyse, to_dot
+from cadagent.review.gates.connectivity import Declarations, connectivity_gate, connectivity_from_build, analyse, to_dot
 
 decl = Declarations.from_build(result, dossier, extra)     # build record + YAML dossier + plain-data extras
 v = connectivity_gate(Assembly.from_build(result), decl, cache=cache, out="exports/gates/connectivity.json")
@@ -352,7 +352,7 @@ pairs the table skipped. The verdict's other extra keys: `graph` (`nodes` with `
 `via_joint`; `groups`; `missing`: unrealised declarations), `floating`, `undeclared_contacts`, `unrealised` and
 `relation_stats`. `to_dot(verdict)` / `write_dot(verdict, path)` give a Graphviz graph (one cluster per group,
 floating parts red, joints that do not hold and unrealised declarations red); `connectivity_gate(out=...)` writes it
-beside the verdict as `.dot`. The site's gates page draws it as SVG (`cadagent.dotsvg.dot_to_svg`: Graphviz when
+beside the verdict as `.dot`. The site's gates page draws it as SVG (`cadagent.publish.dotsvg.dot_to_svg`: Graphviz when
 installed, else a built-in layout); `dot -Tsvg` renders it by hand. The toolkit does not need Graphviz.
 
 A relation table passed in (`table=`) is read, never changed: witness and joint queries go through `relate_pair`
@@ -373,13 +373,14 @@ connection only within a measured gap; a mechanism interface is realised by its 
 involving a free part are not reported as undeclared; the graph is exported as DOT for the site (T15) to render as
 SVG.
 
-## Fasteners and stacks (`cadagent.gates.fasteners`)
+## Fasteners and stacks (`cadagent.review.gates.fasteners`)
 
 Does every screw seat, clamp, engage and stop where the model says, and can its tool reach it when it goes in?
 
 ```python
-from cadagent.gates.fasteners import (fastener_gate, fastener_gate_from_build, fasteners_from_build, FastenerSpec,
-                                      FastenerOptions, evaluate, measure, table_markdown, tool_envelope)
+from cadagent.review.gates.fasteners import (fastener_gate, fastener_gate_from_build, fasteners_from_build,
+                                             FastenerSpec, FastenerOptions, evaluate, measure, table_markdown,
+                                             tool_envelope)
 
 v = fastener_gate_from_build(result, dossier, extra, out="exports/gates/fasteners.json")   # + fasteners.md beside it
 v = fastener_gate(asm, {"lid_screws": FastenerSpec(name="lid_screws", clamps="lid", into="insert", axes=[...],
@@ -483,12 +484,12 @@ fits are assumed present.
   model and do not fit an axis sweep.
 - An uncommon length warns rather than fails.
 
-## Motion-range interference (`cadagent.gates.motion`)
+## Motion-range interference (`cadagent.review.gates.motion`)
 
 Does anything that moves hit something over its declared range?
 
 ```python
-from cadagent.gates.motion import motion_gate, motion_from_build, run_motion
+from cadagent.review.gates.motion import motion_gate, motion_from_build, run_motion
 
 v = motion_gate(asm, out="exports/gates/motion.json")          # joints from Assembly.from_build (asm.joints)
 v = motion_gate(asm, {"I9": {"kind": "revolute", "moving": "flap", "fixed": "hopper",       # or by hand
@@ -578,12 +579,13 @@ stack, so a clear pose in the model does not prove printed parts clear. Contacts
 table's tolerances (`touch_mm`; the near-tangent blind spot of the boolean kernel applies, see containment). Joint
 limits are the declared ranges; nothing checks that a stop actually ends the motion there.
 
-## Assembly-sequence access (`cadagent.gates.assembly`)
+## Assembly-sequence access (`cadagent.review.gates.assembly`)
 
 Can every part go in, in the declared order, along its declared direction, and can each screw's tool reach it then?
 
 ```python
-from cadagent.gates.assembly import assembly_gate, assembly_from_build, run_sequence, AccessOptions, steps_markdown
+from cadagent.review.gates.assembly import (assembly_gate, assembly_from_build, run_sequence, AccessOptions,
+                                            steps_markdown)
 
 v = assembly_from_build(result, dossier, extra, out="exports/gates/assembly.json")   # + assembly.md beside it
 v = assembly_gate(asm, result.steps, fasteners=fasteners_from_build(result), tools={"hex 2.5": {...}},
@@ -693,7 +695,7 @@ the declarations file's `wall_mm`, or `cad.gates.wall.parts`). A gate with nothi
 applicable and its old verdict files are removed. The dossier lint runs last when the project has a dossier, in the
 same process, because it reads the other verdicts; it writes `exports/dossier-status.json` too.
 
-**Worker processes.** Each geometric gate runs in a process of its own (`python -m cadagent.gates.run <root>
+**Worker processes.** Each geometric gate runs in a process of its own (`python -m cadagent.review.gates.run <root>
 <gate>`, with this interpreter): it loads the geometry with `load_geometry`, runs the gate's `*_from_build`
 function with the dossier and the declarations file, binds the verdict to its inputs and writes
 `exports/gates/<gate>.json` and `<gate>.md` (the findings, exclusions, assumptions and limits, plus the fastener

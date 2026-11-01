@@ -9,7 +9,7 @@ import math
 import numpy as np
 import pytest
 
-from cadagent import cfd
+from cadagent.simulation import cfd
 
 from .cfd_fixtures import recorded
 

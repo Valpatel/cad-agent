@@ -24,6 +24,18 @@ functions that need them; a missing one raises ``MissingDependency`` naming the
 ``cad`` extra instead of quietly skipping work.
 """
 
+import importlib
+
 from cadagent._deps import MissingDependency
+from cadagent import _moved
+
+_moved.install()          # old module paths (cadagent.fea, ...) keep importing; see cadagent._moved
 
 __all__ = ["MissingDependency"]
+
+
+def __getattr__(name):
+    """``cadagent.fea`` after a bare ``import cadagent`` (the attribute appears once the module is imported)."""
+    if name in _moved.MOVED:
+        return importlib.import_module(f"cadagent.{name}")
+    raise AttributeError(f"module 'cadagent' has no attribute {name!r}")

@@ -41,6 +41,13 @@ export function imageSize(buf, name = '') {
   const b = Buffer.from(buf);
   if (b.length >= 24 && b.readUInt32BE(0) === 0x89504e47) return { width: b.readUInt32BE(16), height: b.readUInt32BE(20) };
   if (b.length >= 10 && b.toString('latin1', 0, 3) === 'GIF') return { width: b.readUInt16LE(6), height: b.readUInt16LE(8) };
+  if (b.length >= 30 && b.toString('latin1', 0, 4) === 'RIFF' && b.toString('latin1', 8, 12) === 'WEBP') {
+    const chunk = b.toString('latin1', 12, 16);                         // lossy, lossless or extended
+    if (chunk === 'VP8 ') return { width: b.readUInt16LE(26) & 0x3fff, height: b.readUInt16LE(28) & 0x3fff };
+    if (chunk === 'VP8L') { const v = b.readUInt32LE(21); return { width: (v & 0x3fff) + 1, height: ((v >>> 14) & 0x3fff) + 1 }; }
+    if (chunk === 'VP8X') return { width: b.readUIntLE(24, 3) + 1, height: b.readUIntLE(27, 3) + 1 };
+    return null;
+  }
   if (b.length >= 4 && b[0] === 0xff && b[1] === 0xd8) {               // JPEG: walk the segments to the frame header
     for (let i = 2; i + 9 < b.length;) {
       if (b[i] !== 0xff) { i++; continue; }

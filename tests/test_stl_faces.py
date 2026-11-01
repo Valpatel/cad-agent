@@ -3,7 +3,7 @@ import struct
 
 import pytest
 
-from cadagent.robot import fit_mesh, stl_faces
+from cadagent.simulation.robot import fit_mesh, stl_faces
 
 TRI = struct.pack('<12fH', *([0.0] * 3), 0, 0, 0, 1, 0, 0, 0, 1, 0, 0)
 

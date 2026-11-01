@@ -3,7 +3,7 @@ import math
 
 import pytest
 
-from cadagent.compliant import snapfit as sf
+from cadagent.mechanical.compliant import snapfit as sf
 
 
 def test_example_I_tapered_rectangular_hook():
@@ -124,7 +124,7 @@ def test_spec_file_cli_and_fdm_needs_stated_layer_derating(tmp_path, capsys):
 
 # --------------------------------------------------------------------------- printed (datasheet) allowables
 
-from cadagent.compliant import allowables as al
+from cadagent.mechanical.compliant import allowables as al
 
 
 @pytest.mark.parametrize("name, along, across", [

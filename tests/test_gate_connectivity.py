@@ -10,9 +10,9 @@ import json
 
 import pytest
 
-from cadagent.gates import Relation, Tolerances, verdict
-from cadagent.gates.connectivity import (ASSUMPTIONS, Declarations, Node, analyse, connectivity_gate, owner, to_dot,
-                                         write_dot)
+from cadagent.review.gates import Relation, Tolerances, verdict
+from cadagent.review.gates.connectivity import (ASSUMPTIONS, Declarations, Node, analyse, connectivity_gate, owner,
+                                                to_dot, write_dot)
 
 try:
     import cadquery as cq
@@ -286,8 +286,8 @@ def test_declarations_from_a_geometry_record_and_dossier_without_a_kernel():
                     "fasteners": {"screw_0": {"clamps": "lid", "into": "base"}}}
         joints = {"J": {"kind": "revolute", "moving": "lid", "fixed": "base"}}
 
-    from cadagent.dossier.model import (Containment, Dossier, FreePart, GateConfig, Interface, PairExemption,
-                                        PartCard)
+    from cadagent.review.dossier.model import (Containment, Dossier, FreePart, GateConfig, Interface, PairExemption,
+                                               PartCard)
     d = Dossier(file="project.yaml", gates=GateConfig(grounded=["stand"], free_parts=[FreePart("dust", "lint")],
                                                       intended_overlaps=[PairExemption(("a", "b"), "insert")],
                                                       strict_interfaces=True, touch_tol_mm=0.02),
@@ -315,7 +315,7 @@ def box(x, y, z, at=(0, 0, 0)):
 
 
 def frame_assembly(extra=None):
-    from cadagent.gates import Assembly
+    from cadagent.review.gates import Assembly
     asm = Assembly()
     asm.add("base", box(100, 40, 5))
     asm.add("left", box(5, 40, 50, (0, 0, 5)))
@@ -376,7 +376,7 @@ def test_real_revolute_joint_links_a_part_that_touches_nothing():
 
 @needs_cad
 def test_real_item_hanging_in_a_declared_cavity_is_held():
-    from cadagent.gates import Assembly
+    from cadagent.review.gates import Assembly
     asm = Assembly()
     asm.add("base", box(40, 40, 5))
     cup = box(30, 30, 30, (5, 5, 5)).cut(box(26, 26, 28, (7, 7, 7)))
@@ -480,7 +480,7 @@ def test_review_5_a_bracket_bolted_to_a_moving_arm_moves_with_it():
 
 
 def test_from_build_bodies_are_the_transitive_closure():
-    from cadagent.gates.relations import moving_bodies
+    from cadagent.review.gates.relations import moving_bodies
     joints = {"J": {"kind": "revolute", "moving": "arm", "fixed": "pin"}, "a": {"kind": "fixed", "moving": "y",
                                                                                 "fixed": "x"},
               "b": {"kind": "fixed", "moving": "x", "fixed": "arm"}}
@@ -523,7 +523,7 @@ def test_review_8_minor_items():
 @needs_cad
 def test_review_real_false_passes_now_fail():
     """The reviewer's three real-solid repros: each must fail."""
-    from cadagent.gates import Assembly
+    from cadagent.review.gates import Assembly
 
     def asm_with(parts, joints=None):
         a = Assembly()
@@ -554,7 +554,7 @@ def test_review_real_false_passes_now_fail():
 
 @needs_cad
 def test_review_7_a_table_passed_in_is_not_changed():
-    from cadagent.gates import relation_table
+    from cadagent.review.gates import relation_table
     asm = frame_assembly({"box": (box(10, 10, 10, (40, 10, 20)), {})})
     table = relation_table(asm)
     before = dict(table.relations)
@@ -566,7 +566,7 @@ def test_review_7_a_table_passed_in_is_not_changed():
 
 @needs_cad
 def test_review_8_contains_without_a_container_takes_the_cavity_part():
-    from cadagent.gates import Assembly
+    from cadagent.review.gates import Assembly
     asm = Assembly()
     asm.add("base", box(40, 40, 5))
     asm.add("cup", box(30, 30, 30, (5, 5, 5)).cut(box(26, 26, 28, (7, 7, 7))))

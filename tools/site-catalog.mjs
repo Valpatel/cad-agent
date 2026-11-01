@@ -9,7 +9,7 @@
  * The page is plain semantic HTML that shows every entry, grouped by kind, without script; the kit's <cad-gallery>
  * adds the kind tabs, the area tree, filters, sorting and the URL state (kit/gallery.js).
  */
-import { GLYPHS, DOMAIN_GLYPH, TINT, STATUS_STYLE, FAMILIES, glyphSprite, outsideCover, pageCover, toolCover, chartCover, familyOf, shortNumber, stillFrame, isAnimated } from './catalog-art.mjs';
+import { GLYPHS, DOMAIN_GLYPH, TINT, STATUS_STYLE, FAMILIES, glyphSprite, outsideCover, pageCover, toolCover, chartCover, familyFor, shortNumber, stillFrame, isAnimated } from './catalog-art.mjs';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const slugify = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -107,7 +107,8 @@ const CATALOG_FIELDS = {
   schema_1: 'Kept from cad-agent-catalog/1 with the same values: type (upstream, tool, doc, lesson, research, skill, agent, library, ' +
     'benchmark; new: demo), status, name, url (tools: the toolkit page, as before), summary (outside entries: our notes first, as before), ' +
     'how (tools: the call), policy, license (null when not recorded), stars, last_push, markdown (the Markdown twin), source (the file on GitHub). ' +
-    'A field schema 1 left out is still left out (two additions: tools have markdown, benchmarks have stars where recorded); a null is still null.',
+    'A field schema 1 left out is still left out, with three additions: tools have markdown, benchmarks have stars where recorded, ' +
+    'and our own entries (tools, guides, lessons, research, skills and agents; demos too) have license "MIT". A null is still null.',
   id: 'stable slug, unique: tool-<command>, project-<owner-repo>, library-…, benchmark-…, guide-…, lesson-…, research-…, skill-…, agent-…, demo-…',
   kind: 'demo, tool, project, library, benchmark, guide, lesson, research, skill or agent (the page\'s tabs)',
   areas: 'slugs from docs/areas.yaml (areas or domains; cross-cutting for pages about the whole project; unplaced for an outside entry without areas yet)',
@@ -179,6 +180,7 @@ export async function buildCatalog(ctx) {
 
   // --------------------------------------------------------------------------- covers
   const covers = new Map();                      // cover path on the site → { src, anim, fit }
+  const stills = new Set();                      // still-frame files written so far
   const coverFile = (name, svg) => { files.set(`catalog/covers/${name}`, svg); return `/catalog/covers/${name}`; };
   /** A figure from docs/img as a cover: animated SVGs get a still frame and keep the moving original for hover. */
   async function figureCover(file, still = 0.5) {
@@ -188,12 +190,26 @@ export async function buildCatalog(ctx) {
     let c = { src: '/' + file, anim: null, fit: /\.svg$/i.test(file) ? 'contain' : 'cover', figure: true };
     if (/\.svg$/i.test(file)) {
       const svg = (await ctx.read(file)).toString('utf8');
-      if (isAnimated(svg)) c = { ...c, src: coverFile(`still/${file.replace(/^docs\/img\//, '').replace(/\//g, '-')}`, stillFrame(svg, still)), anim: '/' + file };
+      // The first still of a figure keeps the plain name; another moment of it (a tool's result) gets its own file.
+      const plain = `still/${file.replace(/^docs\/img\//, '').replace(/\//g, '-')}`;
+      const name = stills.has(plain) ? plain.replace(/\.svg$/, `-at-${Math.round(still * 100)}.svg`) : plain;
+      stills.add(name);
+      if (isAnimated(svg)) c = { ...c, src: coverFile(name, stillFrame(svg, still)), anim: '/' + file };
     }
     covers.set(key, c);
     return c;
   }
-  const generated = (id, svg) => ({ src: coverFile(`${id}.svg`, svg), anim: null, fit: 'cover', figure: false });
+  // `figure`: the cover is a picture of a result (a figure, or a chart of a tool's output), which ranks it up in the
+  // overview; covers drawn from an entry's call, outline or metadata are not.
+  const generated = (id, svg, figure = false) => ({ src: coverFile(`${id}.svg`, svg), anim: null, fit: 'cover', figure });
+  /** A tool's chart: `file#key` names a JSON file that a generator wrote from the tool's own output, and its entry. */
+  const chartData = async (ref, where) => {
+    const [file, key] = String(ref).split('#');
+    if (!has.has(file)) return null;                                   // not on this commit yet: the tool keeps its other cover
+    const data = JSON.parse((await ctx.read(file)).toString('utf8'))[key];
+    if (!data?.points?.length || !data.x?.metric || !data.y?.metric) throw new Error(`${where}: ${ref} has no chart (title, x, y, points)`);
+    return data;
+  };
   const tone = it => it.domains?.[0] || (it.areas?.[0] === 'cross-cutting' ? 'cross-cutting' : 'unplaced');
   // An outside entry not placed in an area yet still gets a picture of its subject, guessed from its own words. The
   // guess only picks the cover's glyph: the entry stays in "not yet placed" until upstreams/registry.yaml gives areas.
@@ -285,7 +301,7 @@ export async function buildCatalog(ctx) {
     const what = d.what || oneLine(shown?.alt || '');
     demos.push({ type: 'demo', status: 'ours', name: d.title, summary: what, url: ORIGIN + url, markdown: pageItems.has(pageFile) ? `${ORIGIN}/${pageFile}` : undefined,
       id: `demo-${slugify(d.id)}`, kind: 'demo', mode: d.mode, ...where2, what, notes: null, license: 'MIT', cover, demo: ORIGIN + url,
-      updated: pageItems.get(pageFile)?.updated || null, tools: d.tools || [], figure: d.cover });
+      updated: pageItems.get(pageFile)?.updated || null, tools: d.tools || [], figure: d.cover, still: d.still ?? 0.5 });
   };
   const pick = it => ({ areas: it?.areas || [], domains: it?.domains || [], maturity: it?.maturity || null, gyropup: !!it?.gyropup });
   for (const d of ctx.data.demos || []) await addDemo(d, 'docs/catalog.yaml');
@@ -310,9 +326,15 @@ export async function buildCatalog(ctx) {
   // Figures listed under `dense` (a whole report page, say) are never covers: they read as a grey box at card size.
   const dense = new Set(ctx.data.dense || []);
   const usedFigures = new Set(demos.map(d => d.figure));
-  const takeFigure = async (files, still = 0.5) => {
+  // A tool may also show the animated figure of a demo that names it in `tools`, at another moment (`still` in
+  // docs/catalog.yaml: the tool's result, where the demo shows the process), so it is not a second copy of the demo.
+  const takeFigure = async (files, still = 0.5, cmd = null) => {
     for (const f of files) {
-      if (usedFigures.has(f) || dense.has(f)) continue;
+      if (dense.has(f)) continue;
+      if (usedFigures.has(f)) {
+        const demo = cmd && demos.find(d => d.figure === f && d.tools.includes(cmd));
+        if (!demo || still === demo.still || !/\.svg$/i.test(f) || !isAnimated((await ctx.read(f)).toString('utf8'))) continue;
+      }
       const cover = await figureCover(f, still);
       if (cover) { usedFigures.add(f); return [cover, f]; }
     }
@@ -328,8 +350,9 @@ export async function buildCatalog(ctx) {
     const it = { type: 'tool', status: 'ours', name: `cad-agent ${c.name}`, summary: c.help, url: `${ORIGIN}/docs/toolkit`, how: `cad-agent ${c.name} --help`,
       id: `tool-${c.name}`, kind: 'tool', ...where, what: oneLine(c.help), notes: null, license: 'MIT', updated: cliChanged, command: c.name,
       href, doc: ORIGIN + href, markdown: pageItems.has(docFile) ? `${ORIGIN}/${docFile}` : undefined };
-    if (t.chart) it.cover = generated(it.id, chartCover({ ...t.chart, tint: TINT[tone(it)] || TINT.unplaced, name: it.name }));
-    else [it.cover, it.figure] = await takeFigure(t.figures || []);
+    const chart = t.chart && await chartData(t.chart, `docs/catalog.yaml tools.${c.name}.chart`);
+    if (chart) it.cover = generated(it.id, chartCover({ ...chart, tint: TINT[tone(it)] || TINT.unplaced, name: it.name }), true);
+    else [it.cover, it.figure] = await takeFigure(t.figures || [], t.still ?? 0.5, t.still != null ? c.name : null);
     if (!it.cover) it.cover = generated(it.id, toolCover({ name: c.name, flags: flagsOf(c.name), glyphSlug: glyphOf(it), title: it.name }));
     const d = demos.find(d => d.tools.includes(c.name) || (it.figure && d.figure === it.figure));
     if (d) it.demo = d.demo;
@@ -426,7 +449,7 @@ export async function buildCatalog(ctx) {
   // Outside entries: drawn from their own data (catalog-art.mjs outsideCover).
   for (const it of items.filter(it => !it.cover)) {
     const src = it.raw || {};
-    let family = familyOf(src.kernel) || familyOf([it.name, it.what, src.use, src.role].join(' '));
+    let family = familyFor({ kernel: src.kernel, name: it.name, areas: it.areas, text: [it.what, src.use, src.role].filter(Boolean).join(' ') });
     // A benchmark's glyph is what it scores (KiCad boards, CadQuery code, meshes), else the benchmark's own bars.
     if (it.kind === 'benchmark' && (!family || ['parts', 'agent'].includes(family.key))) family = FAMILIES.find(f => f.key === 'benchmark');
     it.cover = generated(it.id, outsideCover({ kind: it.kind, family, glyphSlug: glyphOf(it), tint: TINT[tone(it)] || TINT.unplaced,
@@ -634,6 +657,7 @@ ${tree}${filters}</div></aside>
 ${panels}
 <p class="cat-empty" data-gallery-empty hidden>No entries match. Try fewer words or clear the filters.</p>
 <p class="cat-empty" data-gallery-empty-scope hidden>Nothing in <b data-gallery-scope-name></b> yet. No tool, guide or outside project is placed here so far; the panel above says what it covers and how far it has come.</p>
+<p class="cat-empty" data-gallery-empty-kind hidden>No <span data-gallery-kind-name></span> in <b data-gallery-scope-name></b> yet. <a href="/catalog?kind=" data-gallery-link>Show every kind in it</a></p>
 ${sections}</div></div>
 </cad-gallery><script type="module" src="/kit/gallery.js"></script>`;
 }

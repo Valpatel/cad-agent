@@ -6,7 +6,7 @@ import math
 
 import pytest
 
-from cadagent.heatsink import AIR, FanCurve, PlateFin, operating_point
+from cadagent.thermal.heatsink import AIR, FanCurve, PlateFin, operating_point
 
 
 def sink(**kw):

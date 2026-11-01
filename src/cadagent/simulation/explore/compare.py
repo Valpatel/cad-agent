@@ -25,12 +25,12 @@ import json
 import math
 import os
 import re
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
 
+from cadagent.project import source_stamp
 from cadagent.simulation.explore import metrics as M
 from cadagent.simulation.explore.catalogue import Catalogue, display_name, is_number, json_default
 from cadagent.simulation.explore.config import ExploreConfig, Objective
@@ -220,7 +220,8 @@ def comparison(evaluations: Iterable[Dict[str, Any]], cfg: ExploreConfig, kind: 
         "schema": SCHEMA,
         "kind": kind,
         "title": title or cfg.title,
-        "generated": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        # SOURCE_DATE_EPOCH or the last commit, not the wall clock: a rebuild writes the same page (#150)
+        "generated": source_stamp(cfg.root, outputs=[cfg.out]),
         "currency": cfg.currency,
         "evaluator": evaluator or (cfg.evaluator.describe() if cfg.evaluator else "none (catalogue cost and mass only)"),
         "objectives": [{"metric": o.metric, "goal": o.goal} for o in cfg.objectives],

@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
 from cadagent._deps import MissingDependency
-from cadagent.project import CadConfigError, CadProject, Step, load_project
+from cadagent.project import CadConfigError, CadProject, SourceDateEpochError, Step, load_project
 
 SUBCOMMANDS = ("build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
                "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet",
@@ -897,7 +897,7 @@ def dispatch(args: argparse.Namespace) -> int:
         if project.unknown_keys:
             _warn(f"unknown cad: keys ignored: {', '.join(project.unknown_keys)}")
         return HANDLERS[sub](project, args)
-    except (CadConfigError, MissingDependency, _Unusable) as exc:
+    except (CadConfigError, MissingDependency, _Unusable, SourceDateEpochError) as exc:
         _err(f"{sub}: {exc}")
         return 2
     except FileNotFoundError as exc:

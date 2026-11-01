@@ -182,6 +182,22 @@ def test_plan_example_builds_and_writes_the_geometry_record(built):
                         "fasteners": ["screw_m4x12"] * 3, "declared_at": steps[0]["declared_at"]}
 
 
+def test_the_record_says_where_its_hashes_were_made(built):
+    """The record's ``hash`` holds the recipe and the platform (#144): a key every release leaves out of the gates'
+    geometry digest, so a record written by this release digests the same under an earlier one."""
+    from cadagent.review import evidence
+    from cadagent.review.dossier.registry import HASH_RECIPE
+    from cadagent.review.gates.verdict import geometry_digest
+    root, result = built
+    geo = json.loads((root / "exports" / "dossier-geometry.json").read_text())
+    assert geo["hash"] == {"recipe": HASH_RECIPE, "platform": evidence.hash_platform()} == result.geometry["hash"]
+    assert evidence.record_hash_platform(geo) == evidence.hash_platform()
+    assert set(geo["hash"]["platform"]) == set(evidence.PLATFORM_KEYS) and geo["hash"]["platform"]["ocp"] != "unknown"
+    assert "hash_platform" not in geo                                    # no new top-level key
+    older = dict(geo, hash=HASH_RECIPE)                                  # as a toolkit before #144 wrote it
+    assert geometry_digest(older) == geometry_digest(geo)
+
+
 def test_shapes_are_content_addressed_and_gitignored(built):
     import hashlib
     import re

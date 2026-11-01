@@ -383,10 +383,11 @@ try {
     if (!(await page.getByRole('combobox', { name: 'Sort' }).count())) fail('phone', 'the sort has no accessible name');
     const stretch = await page.$$eval('.play-text', ts => ts.map(t => t.querySelector('.pill').getBoundingClientRect().width / t.getBoundingClientRect().width));
     if (stretch.some(r => r > 0.7)) fail('phone', `a mode pill spans ${Math.round(Math.max(...stretch) * 100)}% of its tile`);
-    // Tap targets in the toolbar.
+    // Tap targets in the toolbar: 44 CSS px. The 0.01 px allows float rounding while the hover lift (web/site.css) is
+    // still moving after the click: CI read 43.99997 for a button whose layout height is 44 (#199).
     for (const sel of ['[data-gallery-sheet-open]', '#sort']) {
       const b = await page.locator(sel).boundingBox();
-      if (b.height < 44) fail('phone', `${sel} is ${b.height}px tall (44 to tap)`);
+      if (b.height < 44 - 0.01) fail('phone', `${sel} is ${b.height}px tall (44 to tap)`);
     }
     await done();
   }

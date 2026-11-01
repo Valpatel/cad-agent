@@ -4,7 +4,9 @@
     st = Study('exports/thigh.step', MATERIALS['petg_cf'], mesh_mm=3.0)
     st.fix(cylinder_at(center=(0, 0, 0), axis=(0, 1, 0)))                       # bolt holes at the motor flange
     st.force(cylinder_at(center=(0, 0, -200), axis=(0, 1, 0)), (0, 0, 300))     # 300 N at the knee pin
-    res = st.solve()          # dict: max von Mises (MPa), max and probe displacement (mm), stiffness, safety factor
+    res = st.solve()          # dict: max von Mises (MPa), max and probe displacement (mm), stiffness, safety factor,
+                              # and material_data: the constants used and their source (material_changes() compares)
+    lc = st.layer_check((0, 0, 1))                 # printed flat: the stress across and along the layers (bond, bulk)
     st.render('exports/fea/thigh.png')
     st.animate('exports/fea/thigh.mp4')            # the load ramped past first failure (overstressed region black)
     st.export_viewer('exports/fea/thigh.json')     # for the web kit's interactive viewer: kit/fea.html?case=...
@@ -20,6 +22,14 @@ tangential traction that grows with the distance from the axis (like bolts shari
 Solvers: PARDISO (pip install pypardiso) when available, else SciPy's direct solver, or conjugate gradients with a
 smoothed-aggregation multigrid preconditioner (pyamg, with the six rigid-body modes) for big meshes.
 
+Meshing: ``mesh_mm`` is the global element size; ``refine=[(point, radius, size)]`` makes the mesh finer round a spot
+(a fillet, a hole) to converge its peak, and ``converge()`` solves again at 0.75 x the mesh to check one. A sharp
+re-entrant corner is singular: its peak rises with every refinement and never converges, so model the fillet. Every
+result's ``mesh`` records the mesher (gmsh and OCC versions, build, platform) and how many elements lie across the wall
+at the design peak (under MIN_ELEMENTS_ACROSS it is flagged: a MeshWarning), and at an inside fillet or a hole, the
+element size against its radius (larger than the radius is flagged too). Slivers are listed before meshing, and a mesher refusal
+raises a MeshRefusal that names the faces round its point.
+
 Limits, stated in every result: linear and small-deflection; isotropic material. Printed parts are not isotropic, so
 each printed material says which modulus and strength it uses and the print direction of the modulus
 (``Material.note`` and ``Material.direction``); the assumptions line of every result repeats them. The defaults take the
@@ -28,16 +38,21 @@ in-plane values, and a force or a stress taken from the computed stiffness at a 
 below the Z tensile strength, so the safety factor uses the weak direction. Neither is a bound on a print: the mesh is
 the solid CAD and the values come from 100 % infill test bars, so a print with sparse infill or thin walls can be
 softer, and then it deflects more, and pushes back less at a given travel (a clip's retention, a flexure's preload),
-than computed. Contact, bolt preload and buckling are not modelled. No simulation proves that a part will fit or hold:
-check it against a printed coupon or the part itself.
+than computed. ``layer_check()`` resolves the same isotropic stress against a print's layers, with the in-plane and
+across-layer allowables and an assumed interlayer shear strength (none is on a data sheet): it screens a print
+orientation, it does not qualify one. Contact, bolt preload and buckling are not modelled. No simulation proves that a
+part will fit or hold: check it against a printed coupon or the part itself.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import math
+import re
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
@@ -53,9 +68,22 @@ class Material:
     source: str = ''             # the data sheet the numbers come from: its id in research/references.yaml (#118)
     direction: str = ''          # printed parts: the print direction of E ('Z': across the layers; 'X-Y': in the
                                  # layer plane); '' for an isotropic material. Change `note` with it.
+    layer_strengths_mpa: Optional[Tuple[float, float]] = None
+                                 # printed parts: the (X-Y, Z) allowables, in the layer plane and across the layers,
+                                 # that Study.layer_check() defaults to; None for an isotropic material
 
 
 _DIRECTION = {'Z': 'across the layers (Z)', 'X-Y': 'in the layer plane (X-Y)'}
+
+
+def _ksi(v: float) -> float:
+    """ksi to MPa, to 0.1 MPa (the handbooks below give US units)."""
+    return round(v * 6.894757, 1)
+
+
+def _lb_in3(v: float) -> float:
+    """lb/in3 to g/cm3, to 0.01."""
+    return round(v * 27.679905, 2)
 
 
 def _isotropic_basis(mat: Material) -> str:
@@ -91,11 +119,43 @@ def _isotropic_basis(mat: Material) -> str:
 # - Poisson's ratio is not on these sheets; it is a typical value for the polymer. Across 0.35-0.40 it changes a
 #   plate's bending stiffness by about 5 % (1 - nu^2) and a beam's hardly at all.
 # - Density is the sheet's (ISO 1183), for mass estimates.
+# - layer_strengths_mpa, for Study.layer_check(): (X-Y, Z). Z is the row's strength (an allowable below the Z tensile
+#   strength). X-Y is that allowable times the sheet's X-Y / Z tensile strength ratio, the lowest over the editions
+#   read (each ratio from one sheet; _in_plane()), so in the layer plane it sits at least as far below each sheet, as
+#   a ratio, as the row's strength does across the layers. The humid PA6-CF rows share one pair, their two strengths.
+# - Every number here is result-changing: a change to any of them changes the deflections, safety factors or masses of
+#   every study that uses the row (Study.result['material_data'] records them, material_changes() compares two
+#   records), so it needs a **Projects must change** changelog fragment. tests/test_fea_materials.py pins the values
+#   and tests/test_fea_layers.py each row's constants_hash.
 #
 # Before #125 the moduli were 2700 (PLA), 1800 (PETG) and 2900 (PETG-CF): close to the V2.0 sheets' X-Y *bending*
-# moduli (2750, 1790, 2890), not a tensile value. They were 31-116 % above the moduli used now (PAHT-CF 147 %, the
-# humid PA6-CF rows 41 % and 130 %, TPU 305 %), so deflections read 24-54 % low (PAHT-CF 60 %, TPU 75 %).
-_HUMID, _PRINT = 0.6, 0.8   # PA6-CF in use: x0.6 for moisture taken up from the air, x0.8 for a print's voids and seams
+# moduli (2750, 1790, 2890), not a tensile value. They were 31-116 % above the moduli used now (PAHT-CF 147 %, TPU
+# 305 %), so deflections read 24-54 % low (PAHT-CF 60 %, TPU 75 %). The humid PA6-CF rows, 3000 and 2400 MPa then,
+# are 191 % and 392 % above the moduli used since #157 (41 % and 130 % above #125's), so deflections read 66 % and 80 %
+# low.
+#
+# PA6-CF in use (#157): moisture taken up from the air, as Polymaker's Fiberon PA6-CF20 TDS V1.1 (PDF of 2024-12-08,
+# p. 1) gives it, water-saturated / dry: tensile modulus 2508.1 / 8636.5 MPa X-Y and 1056.1 / 3759.5 Z, tensile
+# strength 54.7 / 109.3 and 25.5 / 54.0. https://cdn.shopify.com/s/files/1/0548/7299/7945/files/TDS_FIBERON_PA6-CF20_V1.1_EN.pdf
+# Its wet bars were soaked at 60 degC for 48 h (5.30 % moisture); a part in room air takes up less (Bambu's PA6-CF:
+# 2.35 % at 25 degC / 55 % RH). No sheet read gives a printed CF-PA6 conditioned in room air. Moulded PA6 conditioned
+# at 23 degC / 50 % RH keeps 0.31 of its dry tensile modulus unfilled (BASF Ultramid B3S HP R01, 1000 / 3200 MPa, a
+# preliminary sheet of 2026-08) and 0.58 with 30 % glass (Ultramid B3EG6 SI, 5650 / 9700 MPa); a filled print
+# plausibly sits between. Taking the saturated printed ratios for modulus and strength alike is a judgement for the
+# cautious end: in room air these rows may be up to about 2x too soft, which is cautious for deflection, but a force or
+# stress worked out at a given travel reads low. research/compliant-mechanisms.md section 5 has the links.
+_HUMID_E = {'X-Y': 2508.1 / 8636.5, 'Z': 1056.1 / 3759.5}       # 0.290, 0.281
+_HUMID_S = {'X-Y': 54.7 / 109.3, 'Z': 25.5 / 54.0}              # 0.500, 0.472
+_PRINT = 0.8   # x0.8 for a print's voids and seams: a knock-down the original table applied to these rows only
+_PA6_S = (102 * _HUMID_S['X-Y'] * _PRINT, 48 * _HUMID_S['Z'] * _PRINT)     # humid PA6-CF allowables (X-Y, Z)
+
+
+def _in_plane(z_allowable: float, *uts: Tuple[float, float]) -> float:
+    """A printed row's X-Y allowable: its Z allowable times the lowest (X-Y / Z) tensile strength ratio of the sheet
+    editions read, ``uts`` = (X-Y, Z) per edition."""
+    return z_allowable * min(xy / z for xy, z in uts)
+
+
 MATERIALS = {
     # Bambu PLA Basic TDS V3.0 (Bambu's copy, PDF created 2025-04): E 2580 X-Y / 2060 Z MPa, UTS 35 / 31 MPa,
     # 1.24 g/cm3.
@@ -103,7 +163,8 @@ MATERIALS = {
     # V2.0 (a reseller's copy, PDF created 2023-03) has 2680 / 2160 and 39 / 35: the lower V3.0 values are used.
     'pla': Material('PLA', 2060, 0.35, 25, 1.24,
                     'Bambu PLA Basic TDS V3.0: E is the Z tensile modulus (X-Y 2580 MPa); the strength is an allowable '
-                    'below the Z tensile strength of 31 MPa', source='bambu-pla-basic-tds', direction='Z'),
+                    'below the Z tensile strength of 31 MPa', source='bambu-pla-basic-tds', direction='Z',
+                    layer_strengths_mpa=(_in_plane(25, (35, 31), (39, 35)), 25)),
     # Bambu PETG Basic TDS V2.0 (a reseller's copy, PDF created 2023-06): E 1460 / 1120 MPa, UTS 48 / 39 MPa,
     # 1.25 g/cm3; bars annealed and dried at 65 degC for 8 h.
     # https://www.additive-x.com/shop/mpattachments/file/viewonline/id/580/product_id/2330
@@ -117,12 +178,14 @@ MATERIALS = {
     'petg': Material('PETG', 1120, 0.38, 20, 1.25,
                      'Bambu PETG Basic TDS V2.0: E is the Z tensile modulus (X-Y 1460 MPa; the reformulated V3.0 lists '
                      '2550, not used); the strength is an allowable below the Z tensile strength (39 MPa; 35 in V3.0)',
-                     source='bambu-petg-basic-tds', direction='Z'),
+                     source='bambu-petg-basic-tds', direction='Z',
+                     layer_strengths_mpa=(_in_plane(20, (48, 39), (51, 35)), 20)),
     # Bambu PETG-CF TDS V3.0 (Bambu's copy, PDF created 2023-08): E 2460 / 1340 MPa (as V2.0), UTS 35 / 29 MPa (V2.0:
     # 59 / 38), 1.25 g/cm3. https://store.bblcdn.com/626e4f424bf345ae965ad0ddfcaf2459.pdf
     'petg_cf': Material('PETG-CF', 1340, 0.36, 22, 1.25,
                         'Bambu PETG-CF TDS V3.0: E is the Z tensile modulus (X-Y 2460 MPa); the strength is an '
-                        'allowable below the Z tensile strength of 29 MPa', source='bambu-petg-cf-tds', direction='Z'),
+                        'allowable below the Z tensile strength of 29 MPa', source='bambu-petg-cf-tds', direction='Z',
+                        layer_strengths_mpa=(_in_plane(22, (35, 29), (59, 38)), 22)),
     # Bambu PAHT-CF TDS V3.0 (Bambu's copy, PDF created 2023-08), dry: E 3860 / 2180 MPa, bending modulus 4230 / 1820
     # MPa, UTS 92 / 47 MPa, 1.06 g/cm3. https://store.bblcdn.com/7166b20bc68f4c87b32c972b856eeb4b.pdf
     # The Z bending modulus is the sheet's lowest, so it is used. Named 'PA6-CF' before #125, though its note and
@@ -130,27 +193,25 @@ MATERIALS = {
     'pa_cf': Material('PAHT-CF (dry)', 1820, 0.35, 40, 1.06,
                       'Bambu PAHT-CF TDS V3.0, dry: E is the Z bending modulus, the sheet\'s lowest (Z tensile 2180, '
                       'X-Y 3860 MPa); the strength is an allowable below the Z tensile strength of 47 MPa',
-                      source='bambu-paht-cf-tds', direction='Z'),
+                      source='bambu-paht-cf-tds', direction='Z', layer_strengths_mpa=(_in_plane(40, (92, 47)), 40)),
     # Bambu PA6-CF TDS V3.0 (Bambu's copy, PDF created 2023-08), dry: E 4430 / 2170 MPa, UTS 102 / 48 MPa, 1.09 g/cm3.
     # https://store.bblcdn.com/b2abc59ac250492b979a52f1ce3e61b3.pdf
     # Unlike the rows above (dry test-bar values), these two describe the material as it is in use: humid and as
-    # printed. Their factors are judgement, not data sheet values:
-    # - x0.6 humid is a *strength* ratio: moisture roughly halves CF-nylon strength (Polymaker PA6-CF20 TDS V1.1,
-    #   water-saturated / dry: 0.50 X-Y, 0.47 Z). It is applied to E as well, but that sheet's *modulus* ratios are
-    #   0.29 X-Y and 0.28 Z, so for a part that has taken up water these moduli may be about twice too stiff and its
-    #   deflections about half what they will be. Room humidity is milder than saturation; no sheet read gives E at
-    #   it. Choosing a cited humid stiffness factor is #157.
-    # - x0.8 print, for voids and seams, is a knock-down the original table applied to these rows only. The other
-    #   rows carry none on E, so pa6_cf_z (1042) against petg_cf (1340) sets a derated value against a sheet value.
-    'pa6_cf_xy': Material('PA6-CF along the layers (humid)', 4430 * _HUMID * _PRINT, 0.35, 102 * _HUMID * _PRINT, 1.09,
-                          'Bambu PA6-CF TDS V3.0: dry X-Y tensile modulus 4430 MPa and strength 102 MPa, each x0.6 '
-                          'humid x0.8 print (x0.48); E may be about twice too stiff for a part that has taken up water. '
-                          'For parts printed so their main stress runs in the layers',
-                          source='bambu-pa6-cf-tds', direction='X-Y'),
-    'pa6_cf_z': Material('PA6-CF across the layers (humid)', 2170 * _HUMID * _PRINT, 0.35, 48 * _HUMID * _PRINT, 1.09,
-                         'Bambu PA6-CF TDS V3.0: dry Z tensile modulus 2170 MPa and strength 48 MPa, each x0.6 humid '
-                         'x0.8 print (x0.48); E may be about twice too stiff for a part that has taken up water. The '
-                         'safe strength when the stress crosses the layers', source='bambu-pa6-cf-tds', direction='Z'),
+    # printed, with the factors above: the wet / dry ratios of Polymaker's PA6-CF20 (modulus x0.290 X-Y, x0.281 Z;
+    # strength x0.500, x0.472), applied to Bambu's dry values, and x0.8 print. Two makers' filaments: the ratio is
+    # borrowed, since Bambu's sheet gives no wet values. Before #157 both rows took x0.6 on modulus and strength, a
+    # strength-like ratio, so their moduli were about twice these. The other rows carry no x0.8 on E, so pa6_cf_z
+    # (488) against petg_cf (1340) sets a derated, humid value against a dry sheet value.
+    'pa6_cf_xy': Material('PA6-CF along the layers (humid)', 4430 * _HUMID_E['X-Y'] * _PRINT, 0.35, _PA6_S[0], 1.09,
+                          'Bambu PA6-CF TDS V3.0: dry X-Y tensile modulus 4430 MPa x0.290 humid and strength 102 MPa '
+                          'x0.500 humid (Polymaker PA6-CF20 V1.1 wet / dry), each x0.8 print. For parts printed so '
+                          'their main stress runs in the layers', source='bambu-pa6-cf-tds', direction='X-Y',
+                          layer_strengths_mpa=_PA6_S),
+    'pa6_cf_z': Material('PA6-CF across the layers (humid)', 2170 * _HUMID_E['Z'] * _PRINT, 0.35, _PA6_S[1], 1.09,
+                         'Bambu PA6-CF TDS V3.0: dry Z tensile modulus 2170 MPa x0.281 humid and strength 48 MPa '
+                         'x0.472 humid (Polymaker PA6-CF20 V1.1 wet / dry), each x0.8 print. The safe strength when '
+                         'the stress crosses the layers', source='bambu-pa6-cf-tds', direction='Z',
+                         layer_strengths_mpa=_PA6_S),
     # Bambu TPU 95A HF TDS V1.0 (Bambu's copy, PDF created 2023-11): E 9.8 / 7.4 MPa, UTS 27.3 / 22.3 MPa, 1.22 g/cm3.
     # https://store.bblcdn.com/58df32731eab4c90a7dac9b12e13ba88.pdf
     # Polymaker's PolyFlex TPU95 (TDS V5.4) lists 33.6 MPa in X-Y (ISO 37). The sheets differ about 4x, and TPU is far
@@ -158,18 +219,255 @@ MATERIALS = {
     'tpu95': Material('TPU 95A', 7.4, 0.45, 8, 1.22,
                       'Bambu TPU 95A HF TDS V1.0: E is the Z tensile modulus (X-Y 9.8 MPa); the strength is an '
                       'allowable below the Z tensile strength of 22.3 MPa; flexible, stiffness only indicative',
-                      source='bambu-tpu-95a-hf-tds', direction='Z'),
-    # Metals and the carbon tube: typical handbook values, not tied to a sheet in research/references.yaml. Checked
-    # for #125: Protolabs' CNC data sheet for 6061-T651/T6 (2026) gives yield 276 MPa, E 10.0 Msi (68.9 GPa) and
-    # 2.70 g/cm3. Its 7075-T651/T6 sheet gives only specification ranges: yield 434-476 MPa (T6 sheet) and 372-462 MPa
-    # (T651 plate). Both are below the typical 503 MPa here, so a 7075 safety factor is optimistic.
-    'al6061': Material('Aluminium 6061-T6', 68900, 0.33, 276, 2.70, 'typical yield strength'),
-    'al7075': Material('Aluminium 7075-T6', 71700, 0.33, 503, 2.81,
-                       'typical yield strength (specification minimums are lower)'),
-    'steel': Material('Steel (mild)', 200000, 0.29, 250, 7.85, 'yield strength (ASTM A36 minimum)'),
+                      source='bambu-tpu-95a-hf-tds', direction='Z', layer_strengths_mpa=(_in_plane(8, (27.3, 22.3)), 8)),
+    # Metals (#157): design minimums, not typical values. MIL-HDBK-5J, Metallic Materials and Elements for Aerospace
+    # Vehicle Structures (31 January 2003; public, superseded by MMPDS, which is not free and was not checked):
+    # https://everyspec.com/MIL-HDBK/MIL-HDBK-0001-0099/MIL_HDBK_5J_139/
+    # The strength is the A-basis (or S-basis) tensile yield Fty, in the weaker of the L and LT grain directions;
+    # E is the tension modulus, mu Poisson's ratio. The typical values used before #157 (6061 276 MPa, 7075 503 MPa)
+    # made safety factors read 14 % and 9 % high. Protolabs' CNC data sheets agree: 6061-T651/T6 typical yield
+    # 276 MPa, 2.70 g/cm3; 7075 ranges 434-476 MPa (T6 sheet) and 372-462 MPa (T651 plate to 101.6 mm), over thickness.
+    # - 6061-T6 sheet and T651 plate, 0.010-6.000 in thick, Tables 3.6.2.0(b1) and (b2), pp. 3-264, 3-265: Fty 35 ksi
+    #   (LT; 36 L), E 9.9e3 ksi, mu 0.33. Density from Protolabs (2.70 Mg/m3; the handbook's 0.098 lb/in3 is 2.71).
+    #   Extruded 6061-T6/T6510/T6511 rod, bar and shapes, common CNC stock, are lower across the grain: A-basis Fty
+    #   LT 33 ksi to 1.000 in and 28 ksi (193 MPa) from 1.001 to 6.500 in (35 L), Table 3.6.2.0(g), p. 3-272. The
+    #   solver knows neither the stock form nor the grain direction: replace the row for such stock loaded across it.
+    # - 7075-T6 sheet and T651 plate, 0.012-2.000 in (0.3-50.8 mm) thick, Table 3.7.6.0(b1), p. 3-371: Fty 67 ksi
+    #   (LT, the lowest in that range), E 10.3e3 ksi, mu 0.33, 0.101 lb/in3. Thicker plate is weaker: 64 ksi to
+    #   2.5 in, 54 ksi (372 MPa) at 3.5-4 in, and less again short-transverse; replace the row for such stock.
+    #   7075-T6/T651 rolled or cold-finished bar and rod is lower too: A-basis Fty 66 ksi to 2.000 in, then 63 and
+    #   60 ksi LT to 3 and 4 in, Table 3.7.6.0(d), p. 3-380.
+    # - Mild steel: AISI 1025 sheet, strip, plate, tubing and bar, Table 2.2.1.0(b), p. 2-8: Fty 36 ksi (S-basis, the
+    #   same 36 ksi minimum as ASTM A36 structural steel), E 29.0e3 ksi, mu 0.32, 0.284 lb/in3.
+    # The carbon tube has no cited sheet: typical values, labelled as such; use the supplier's.
+    'al6061': Material('Aluminium 6061-T6', _ksi(9.9e3), 0.33, _ksi(35), 2.70,
+                       'yield strength 35 ksi, the A- or S-basis minimum (LT) of 6061-T6/T651 sheet and plate to '
+                       '6 in (MIL-HDBK-5J Tables 3.6.2.0(b1), (b2)); extruded rod, bar and shapes are lower across '
+                       'the grain (33 ksi to 1 in, 28 ksi to 6.5 in, Table 3.6.2.0(g)); typical yield is 276 MPa',
+                       source='mil-hdbk-5j'),
+    'al7075': Material('Aluminium 7075-T6', _ksi(10.3e3), 0.33, _ksi(67), _lb_in3(0.101),
+                       'yield strength 67 ksi, the A-basis minimum (LT) of 7075-T6/T651 sheet and plate 0.012-2.000 in '
+                       'thick (MIL-HDBK-5J Table 3.7.6.0(b1)); thicker plate is lower (54 ksi at 3.5-4 in), and so '
+                       'is bar and rod (66 ksi to 2 in, 60 ksi at 3-4 in, Table 3.7.6.0(d)); typical yield is 503 MPa',
+                       source='mil-hdbk-5j'),
+    'steel': Material('Steel (mild)', _ksi(29.0e3), 0.32, _ksi(36), _lb_in3(0.284),
+                      'yield strength 36 ksi, the S-basis minimum of AISI 1025 (MIL-HDBK-5J Table 2.2.1.0(b)), as '
+                      'ASTM A36\'s minimum', source='mil-hdbk-5j'),
     'cf_tube': Material('Carbon tube (roll-wrapped)', 64000, 0.3, 650, 1.55,
-                        'axial modulus/strength, typical, not from a sheet: use the supplier\'s; not for local crushing'),
+                        'axial modulus/strength, typical values, not from a sheet and not a minimum: use the '
+                        'supplier\'s; not for local crushing'),
 }
+
+
+# --- the stress against a print's layers (Study.layer_check)
+#
+# A print is transversely isotropic: in the layer plane (X-Y) it is close to the filament's strength, and the bond
+# between layers (Z) is weaker. For a layer normal n (the build direction), the traction on the layer plane is
+# t = sigma . n, the stress across it sigma_n = n . t (tension positive) and the shear along it tau_n = |t - sigma_n n|.
+# Two checks, each a utilisation (stress over allowable, 1 at the allowable):
+#   bond  sqrt((<sigma_n> / S_z)^2 + (tau_n / S_s)^2), <x> = max(x, 0): the quadratic interaction of the opening stress
+#         and the shear on the bond plane, the form of Brewer and Lagace's delamination-onset criterion (J. Compos.
+#         Mater. 22 (1988) 1141-1155), here at a point, without their averaging over a distance. Compression across the
+#         layers closes the bond (their Z_c term is left out) and counts in the bulk check only.
+#   bulk  von Mises / S_xy: the material in the layer plane, checked as the isotropic study checks it.
+# S_s, the shear strength of the bond, is on no filament data sheet. Unless given, it is S_z / sqrt(3), the ratio von
+# Mises gives an isotropic solid (shear yield = tensile yield / sqrt 3), and the bond reads sqrt(<sigma_n>^2 +
+# 3 tau_n^2) / S_z. That is an assumption, not a measurement: a print's bond may be weaker or stronger in shear than
+# that, so pass strength_shear from a coupon (a short-beam or lap-shear test of the same print) when there is one.
+LAYER_SHEAR_ASSUMPTION = ('interlayer shear allowable assumed to be strength_z / sqrt(3), the ratio von Mises gives an '
+                          'isotropic solid: no filament data sheet gives one; pass strength_shear from a coupon')
+LAYER_ASSUMPTIONS = ('the stress of the linear, isotropic solve (one modulus), resolved on the layer plane at every '
+                     'element corner; bond: the opening stress across the layers and the shear along them, in '
+                     'quadratic interaction, against the across-layer and interlayer shear allowables (compression '
+                     'across the layers left out); bulk: von Mises against the in-plane allowable. A screening check '
+                     'for a transversely isotropic print, not a qualification: an anisotropic part can carry its load '
+                     'differently, and walls, seams and infill are not modelled. Test a printed part')
+
+
+def _unit(v) -> np.ndarray:
+    n = np.asarray(v, float).reshape(-1)
+    size = float(np.linalg.norm(n)) if n.shape == (3,) and np.all(np.isfinite(n)) else 0.0
+    if size == 0.0:
+        raise ValueError(f'a layer normal is three finite numbers, not all zero: {v!r}')
+    return n / size
+
+
+def von_mises(sig) -> np.ndarray:
+    """Von Mises stress of stress tensors ``sig`` (..., 3, 3), in their units."""
+    s = np.asarray(sig, float)
+    return np.sqrt(0.5 * ((s[..., 0, 0] - s[..., 1, 1]) ** 2 + (s[..., 1, 1] - s[..., 2, 2]) ** 2
+                          + (s[..., 2, 2] - s[..., 0, 0]) ** 2)
+                   + 3 * (s[..., 0, 1] ** 2 + s[..., 1, 2] ** 2 + s[..., 2, 0] ** 2))
+
+
+def layer_stresses(sig, normal) -> Tuple[np.ndarray, np.ndarray]:
+    """(sigma_n, tau_n) for stress tensors ``sig`` (..., 3, 3) and a layer normal of any length: the stress across the
+    layer plane (tension positive) and the magnitude of the shear along it."""
+    n = _unit(normal)
+    t = np.asarray(sig, float) @ n
+    sn = t @ n
+    return sn, np.linalg.norm(t - sn[..., None] * n, axis=-1)
+
+
+def _positive(name: str, v) -> float:
+    if isinstance(v, bool) or not isinstance(v, (int, float, np.floating, np.integer)) or not (math.isfinite(v) and v > 0):
+        raise ValueError(f'{name} must be a positive number of MPa, not {v!r}')
+    return float(v)
+
+
+def layer_allowables(material: Optional[Material], strength_xy: Optional[float] = None,
+                     strength_z: Optional[float] = None, strength_shear: Optional[float] = None
+                     ) -> Tuple[float, float, float, str]:
+    """(S_xy, S_z, S_s, the shear's basis) for a layer check: the strengths given, else the material's
+    ``layer_strengths_mpa``; S_s = S_z / sqrt(3) unless given (LAYER_SHEAR_ASSUMPTION)."""
+    if strength_xy is None or strength_z is None:
+        pair = getattr(material, 'layer_strengths_mpa', None)
+        if pair is None:
+            name = getattr(material, 'name', 'this material')
+            raise ValueError(f'{name} has no per-direction strengths (layer_strengths_mpa): pass strength_xy and '
+                             'strength_z, the allowables in the layer plane and across the layers, in MPa')
+        strength_xy = pair[0] if strength_xy is None else strength_xy
+        strength_z = pair[1] if strength_z is None else strength_z
+    xy, z = _positive('strength_xy', strength_xy), _positive('strength_z', strength_z)
+    if strength_shear is None:
+        return xy, z, z / math.sqrt(3.0), LAYER_SHEAR_ASSUMPTION
+    return xy, z, _positive('strength_shear', strength_shear), 'interlayer shear allowable given'
+
+
+def layer_utilisation(sig, normal, strength_xy: float, strength_z: float, strength_shear: Optional[float] = None
+                      ) -> Tuple[np.ndarray, np.ndarray]:
+    """(bond, bulk) utilisations, stress over allowable, for stress tensors ``sig`` (..., 3, 3) MPa and a layer normal:
+    bond = sqrt((max(sigma_n, 0) / S_z)^2 + (tau_n / S_s)^2), bulk = von Mises / S_xy (the notes above this function).
+    S_s defaults to S_z / sqrt(3), which makes bond = sqrt(max(sigma_n, 0)^2 + 3 tau_n^2) / S_z. The safety factor is
+    1 / max(bond, bulk)."""
+    xy, z, ss, _ = layer_allowables(None, strength_xy, strength_z, strength_shear)
+    sn, tau = layer_stresses(sig, normal)
+    return np.sqrt((np.maximum(sn, 0.0) / z) ** 2 + (tau / ss) ** 2), von_mises(sig) / xy
+
+
+@dataclass(frozen=True, eq=False)
+class LayerCheck:
+    """Study.layer_check()'s answer. A utilisation is stress over allowable (1 at the allowable); per element it is the
+    highest of the element's four corners, and a safety factor is its inverse."""
+    normal: Tuple[float, float, float]
+    strength_xy_mpa: float
+    strength_z_mpa: float
+    strength_shear_mpa: float
+    shear_basis: str
+    bond: np.ndarray                 # (n elements,) bond utilisation
+    bulk: np.ndarray                 # (n elements,) bulk utilisation
+    judged: np.ndarray               # (n elements,) bool: the elements the summary is taken over
+    worst: Dict[str, Any]            # the judged corner with the highest utilisation: where, its stresses, its mode
+
+    @property
+    def utilisation(self) -> np.ndarray:
+        return np.maximum(self.bond, self.bulk)
+
+    @property
+    def factor(self) -> np.ndarray:
+        """Per-element safety factor, 1 / max(bond, bulk) (inf where unstressed)."""
+        u = self.utilisation
+        with np.errstate(divide='ignore'):
+            return np.where(u > 0, 1.0 / np.where(u > 0, u, 1.0), np.inf)
+
+    @property
+    def mode(self) -> np.ndarray:
+        """Per element, the check that governs it: 'bond' or 'bulk', or 'none' where the element is unstressed."""
+        return np.where(self.utilisation <= 0, 'none', np.where(self.bond >= self.bulk, 'bond', 'bulk'))
+
+    def _sf(self, u: np.ndarray) -> Optional[float]:
+        top = float(u[self.judged].max()) if self.judged.any() else 0.0
+        return 1.0 / top if top > 0 else None
+
+    @property
+    def safety_factor(self) -> Optional[float]:
+        return self._sf(self.utilisation)
+
+    @property
+    def safety_factor_bond(self) -> Optional[float]:
+        return self._sf(self.bond)
+
+    @property
+    def safety_factor_bulk(self) -> Optional[float]:
+        return self._sf(self.bulk)
+
+    @property
+    def governed_by(self) -> Optional[str]:
+        """'bond' or 'bulk' at the worst corner; None when the judged elements carry no stress."""
+        return self.worst['mode']
+
+    def as_dict(self) -> Dict[str, Any]:
+        """The summary for a record (JSON-ready; the per-element arrays left out)."""
+        r = lambda v, k=2: None if v is None else round(float(v), k)
+        return {'normal': [r(v, 6) for v in self.normal],
+                'safety_factor': r(self.safety_factor), 'governed_by': self.governed_by,
+                'safety_factor_bond': r(self.safety_factor_bond), 'safety_factor_bulk': r(self.safety_factor_bulk),
+                'allowables_mpa': {'xy': r(self.strength_xy_mpa, 3), 'z': r(self.strength_z_mpa, 3),
+                                   'shear': r(self.strength_shear_mpa, 3)},
+                'shear_basis': self.shear_basis, 'worst': dict(self.worst),
+                'judged_elements': int(self.judged.sum()), 'assumptions': LAYER_ASSUMPTIONS}
+
+
+# --- the material data a result records
+_CONSTANTS = ('E_mpa', 'E_direction', 'nu', 'strength_mpa', 'strength_xy_mpa', 'strength_z_mpa', 'density_g_cm3')
+
+
+def material_record(material: Material) -> Dict[str, Any]:
+    """The material data a study used, as ``Study.result['material_data']`` records it: ``key``, the built-in row it
+    is (None for a material of your own or a changed copy of a row); the constants (E and the print direction it is
+    for, Poisson's ratio, the strength the safety factor uses, the layer allowables, the density); where they come
+    from (``source``, and ``note``, which names the data sheet and its edition); and ``constants_hash``, the first 16
+    hex digits of the SHA-256 of the constants alone. Two records with one hash used the same numbers;
+    material_changes() lists what differs between two that do not."""
+    m, pair = material, material.layer_strengths_mpa
+    consts = {'E_mpa': float(m.E_mpa), 'E_direction': m.direction or None, 'nu': float(m.nu),
+              'strength_mpa': float(m.strength_mpa),
+              'strength_xy_mpa': float(pair[0]) if pair else None, 'strength_z_mpa': float(pair[1]) if pair else None,
+              'density_g_cm3': float(m.density_g_cm3)}
+    digest = hashlib.sha256(json.dumps(consts, sort_keys=True, separators=(',', ':')).encode()).hexdigest()[:16]
+    return {'key': next((k for k, v in MATERIALS.items() if v == m), None), 'name': m.name, **consts,
+            'source': m.source or None, 'note': m.note or None, 'constants_hash': digest}
+
+
+def _material_data(x, which: str) -> Dict[str, Any]:
+    if isinstance(x, Material):
+        return material_record(x)
+    if isinstance(x, dict):
+        if isinstance(x.get('result'), dict) and 'material_data' in x['result']:   # an export_viewer() file
+            x = x['result']
+        if isinstance(x.get('material_data'), dict):
+            return x['material_data']
+        if 'constants_hash' in x:
+            return x
+        name = x.get('material')
+        name = name.get('name') if isinstance(name, dict) else name
+        raise ValueError(f'the {which} side has no material data: a result made before results recorded the '
+                         f'constants (material_data) names its material ({name!r}) but not its numbers. To compare, '
+                         'pass the material that toolkit used (its MATERIALS row) as a Material, or re-run the study '
+                         'on this toolkit')
+    raise TypeError(f'the {which} side is a study result, its material_data, an export_viewer() file or a Material, '
+                    f'not {type(x).__name__}')
+
+
+def material_changes(recorded: Union[Dict[str, Any], Material], current: Union[Dict[str, Any], Material]
+                     ) -> List[Dict[str, Any]]:
+    """What differs between the material data behind two records, say one made on another toolkit revision and one
+    made now. Each is a study result, its ``material_data``, an export_viewer() file or a Material. One entry per field that differs, the
+    constants first, then ``key``, ``name``, ``source`` and ``note``: ``{'field', 'recorded', 'now'}``, with ``ratio``
+    (now / recorded) for numbers. Under forces and torques a change of E scales the deflections by recorded / now, a
+    change of strength the safety factors by now / recorded, and a change of density the masses by now / recorded.
+    An empty list means the same numbers. Raises ValueError for a result made before results recorded the data."""
+    a, b = _material_data(recorded, 'recorded'), _material_data(current, 'current')
+    out = []
+    for k in _CONSTANTS + ('key', 'name', 'source', 'note'):
+        x, y = a.get(k), b.get(k)
+        if x == y:
+            continue
+        change = {'field': k, 'recorded': x, 'now': y}
+        if isinstance(x, (int, float)) and isinstance(y, (int, float)) and x:
+            change['ratio'] = y / x
+        out.append(change)
+    return out
 
 
 @dataclass
@@ -231,6 +529,204 @@ def any_of(*sels: Selector) -> Selector:
     return lambda f: any(s(f) for s in sels)
 
 
+# --- meshing: refinement, the mesher's identity, slivers and refusals
+MIN_ELEMENTS_ACROSS = 3      # a design peak in a wall thinner than this many elements is flagged: not a result
+MAX_ELEMENT_OVER_RADIUS = 1.0   # at a fillet or a hole, elements larger than its radius are flagged: the peak reads low
+SLIVER_ELONGATION = 3.0   # a narrow sliver face is also elongated (perimeter^2 / (4 pi area)); compact faces are 1.1-1.7
+
+
+class MeshWarning(UserWarning):
+    """A Study's mesh may not carry its result: sliver faces or edges found before meshing, a design peak in a wall
+    under MIN_ELEMENTS_ACROSS elements thick or on a fillet or hole with elements larger than its radius, or a peak that
+    changed on a finer mesh (Study.converge)."""
+
+
+class MeshRefusal(RuntimeError):
+    """gmsh would not mesh the part, or the check before meshing found slivers and the caller asked to stop on them.
+
+    ``what`` names the problem ('segment-facet intersection', 'slivers', ...); ``point`` is where gmsh found it (mm, or
+    None); ``faces`` the faces of the part nearest that point, nearest first (for 'slivers', the sliver faces), and
+    ``edges`` the same for curves: dicts with the gmsh tag, kind, area or length, and distance; ``log`` gmsh's own lines
+    about it."""
+
+    def __init__(self, message: str, what: str, point=None, faces=(), edges=(), log=()):
+        super().__init__(message)
+        self.what, self.point = what, point
+        self.faces, self.edges, self.log = list(faces), list(edges), list(log)
+
+
+_XYZ = r'\(\s*([-+0-9.eE]+)\s*,\s*([-+0-9.eE]+)\s*,\s*([-+0-9.eE]+)\s*\)'
+
+
+# gmsh's boundary-recovery failures, as thrown: the PLC line (gmsh throws on it before printing the point), the summary,
+# and the message it often throws instead for the same failure
+_RECOVERY_ERRORS = ('PLC Error', 'Invalid boundary mesh', 'Could not recover boundary mesh')
+
+
+def parse_gmsh_refusal(log: Sequence[str]) -> Optional[dict]:
+    """The boundary-recovery refusal in a gmsh log (``gmsh.logger.get()`` lines), or None if it has none.
+
+    gmsh's volume mesher (TetGen's boundary recovery, inside gmsh) stops on a surface mesh that cuts through itself
+    with 'PLC Error:  A segment and a facet intersect at point', prints the point on the next line, and then sums it
+    up as 'Invalid boundary mesh (segment-facet intersection) on surface 6, intersection (x,y,z)'. With gmsh's default
+    (throw on the first error) only the first line reaches the caller, without the point, so after such a refusal
+    Study meshes the part once more, in a new gmsh session with errors logged rather than thrown, and reads them here.
+    gmsh often fails the same way with only 'Could not recover boundary mesh: error 2': that is a refusal with no point
+    ('boundary recovery failed'). Its failing runs are not always repeatable, so a point is one of several.
+
+    Returns {'what', 'point' (mm, or None), 'surfaces' and 'curves' (gmsh tags it names), 'message' (the PLC line),
+    'log' (gmsh's lines about it)}."""
+    lines = [str(m) for m in log]
+    bare = [re.sub(r'^(Error|Info|Warning|Progress)\s*:\s?', '', m) for m in lines]
+    plc = next((i for i, m in enumerate(bare) if 'PLC Error' in m), None)
+    summary = next((i for i, m in enumerate(bare) if 'Invalid boundary mesh' in m), None)
+    if plc is None and summary is None:
+        # gmsh's own boundary recovery often fails the same way with only this line, and no point
+        gave_up = next((i for i, m in enumerate(bare) if 'Could not recover boundary mesh' in m), None)
+        if gave_up is None:
+            return None
+        return {'what': 'boundary recovery failed', 'point': None, 'surfaces': [], 'curves': [],
+                'message': bare[gave_up].strip(), 'log': [lines[gave_up]]}
+    what, point, surfaces, curves, about = None, None, [], [], []
+    if plc is not None:
+        about.append(lines[plc])
+        found = re.search(_XYZ, bare[plc])
+        for k in range(plc + 1, min(plc + 4, len(bare))):     # the point, then the segment and the facet, if printed
+            if 'PLC Error' in bare[k] or 'Invalid boundary mesh' in bare[k]:
+                break
+            about.append(lines[k])
+            found = found or re.match(r'\s*' + _XYZ, bare[k])
+            tag = re.search(r'Facet\s*:\s*\[[^\]]*\]\s*#(\d+)', bare[k])
+            if tag and int(tag.group(1)) > 0:
+                surfaces.append(int(tag.group(1)))
+        if found:
+            point = [float(v) for v in found.groups()]
+        what = re.sub(r'\s+', ' ', bare[plc].split('PLC Error:', 1)[1]).strip().rstrip('.')
+        what = re.sub(r'\s*at( point)?\s*(\(.*\))?$', '', what)
+    if summary is not None:
+        about.append(lines[summary])
+        s = bare[summary]
+        head = re.search(r'Invalid boundary mesh \(([^)]*)\) on([^,]*)', s)
+        if head:
+            what = head.group(1)
+            surfaces += [int(v) for v in re.findall(r'surface (\d+)', head.group(2))]
+            curves += [int(v) for v in re.findall(r'curve (\d+)', head.group(2))]
+        found = re.search(r'intersection ' + _XYZ, s)
+        if found:
+            point = [float(v) for v in found.groups()]
+    return {'what': what or 'invalid boundary mesh', 'point': point, 'surfaces': sorted(set(surfaces)),
+            'curves': sorted(set(curves)), 'message': bare[plc if plc is not None else summary].strip(), 'log': about}
+
+
+_MESHER = None
+
+
+def _mesher_identity() -> dict:
+    """Which mesher made the mesh, read from the running gmsh (call inside a gmsh session; cached per process).
+
+    Two builds of one gmsh version can mesh one part differently (the PyPI wheel and conda-forge's 4.15.2 give a
+    Gyropup frame 151,459 and 151,136 tets, and its sharp-corner peak 6 % apart), so a gate read at one mesh size says
+    which build made it: the version, the OpenCASCADE version gmsh was built with, the build's OS and date, a hash of
+    the library file and the platform. Host and packager names stay out (a self-built gmsh would carry a private
+    host name into results that projects commit)."""
+    global _MESHER
+    if _MESHER is not None:
+        return _MESHER
+    import os
+    import platform
+
+    import gmsh
+    info = {}
+    try:
+        for part in gmsh.option.getString('General.BuildInfo').split(';'):
+            key, _, value = part.partition(':')
+            info[key.strip()] = value.strip()
+    except Exception:                                  # an old gmsh without the option: the version alone
+        pass
+    lib = getattr(gmsh, 'libpath', None)
+    digest = None
+    if lib and os.path.isfile(lib):
+        h = hashlib.sha256()
+        with open(lib, 'rb') as fh:
+            for chunk in iter(lambda: fh.read(1 << 20), b''):
+                h.update(chunk)
+        digest = h.hexdigest()[:16]
+    _MESHER = {
+        'gmsh': getattr(gmsh, '__version__', None) or info.get('Version'),
+        'occ': info.get('OCC version'),
+        'build': {'os': info.get('Build OS'), 'date': info.get('Build date')},
+        'library': {'file': os.path.basename(lib) if lib else None, 'sha256_16': digest},
+        'platform': {'system': platform.system(), 'machine': platform.machine(), 'python': platform.python_version()},
+    }
+    return _MESHER
+
+
+def _point_triangle_distance(p, A, B, C) -> np.ndarray:
+    """Distance from point p to each triangle (A[i], B[i], C[i]), (n, 3) arrays."""
+    p = np.asarray(p, float)
+    n = np.cross(B - A, C - A)
+    nn = np.maximum(np.einsum('ij,ij->i', n, n), 1e-300)
+    q = p - (np.einsum('ij,ij->i', p - A, n) / nn)[:, None] * n         # p projected on each triangle's plane
+    # barycentric coordinates of q: inside when all three sub-triangles turn the same way as the triangle
+    inside = np.ones(len(A), dtype=bool)
+    for U, V in ((A, B), (B, C), (C, A)):
+        inside &= np.einsum('ij,ij->i', np.cross(V - U, q - U), n) >= 0
+    def seg(U, V):
+        d = V - U
+        t = np.clip(np.einsum('ij,ij->i', p - U, d) / np.maximum(np.einsum('ij,ij->i', d, d), 1e-300), 0, 1)
+        return np.linalg.norm(p - (U + t[:, None] * d), axis=1)
+    edge = np.minimum(np.minimum(seg(A, B), seg(B, C)), seg(C, A))
+    return np.where(inside, np.linalg.norm(p - q, axis=1), edge)
+
+
+def _faces_near(point, faces, points, face_tris, k: int = 4) -> List[dict]:
+    """The k faces nearest a point, nearest first, measured to each face's surface triangles."""
+    p = np.asarray(point, float)
+    out = []
+    for f in faces:
+        tri = face_tris.get(f.tag)
+        if tri is None or not len(tri):
+            continue
+        d = float(_point_triangle_distance(p, points[tri[:, 0]], points[tri[:, 1]], points[tri[:, 2]]).min())
+        out.append({'tag': f.tag, 'kind': f.kind, 'area_mm2': round(float(f.area), 4), 'distance_mm': round(d, 4),
+                    'center_mm': [round(float(v), 3) for v in f.center],
+                    **({'radius_mm': round(float(f.radius), 3)} if f.radius else {})})
+    return sorted(out, key=lambda r: r['distance_mm'])[:k]
+
+
+def _ball_size(x, zones, mesh_mm: float) -> float:
+    """The target element size at a point: the refine balls' sizes (with their transitions), else mesh_mm. The same
+    formula as gmsh's Ball field (size inside the radius, then linear back to mesh_mm over 2 x (mesh_mm - size))."""
+    size = mesh_mm
+    for c, r, s in zones:
+        d = math.dist(x, c) - r
+        t = 2 * (mesh_mm - s)
+        size = min(size, s if d <= 0 else s + (d / t) * (mesh_mm - s) if d <= t else mesh_mm)
+    return size
+
+
+def _ray_exit(origin, direction, A, E1, E2, skip: float, unit=None, head_on: float = 0.5) -> Optional[float]:
+    """Distance along a ray to the nearest triangle it crosses beyond `skip` (Möller-Trumbore), or None. With the
+    triangles' unit normals `unit`, None also when that crossing is grazing (|cos| under `head_on`, more than 60° off
+    head-on): the ray ran along a wall to an edge and out, it did not cross the wall."""
+    pv = np.cross(direction, E2)
+    det = np.einsum('ij,ij->i', E1, pv)
+    ok = np.abs(det) > 1e-14
+    inv = np.where(ok, 1.0 / np.where(ok, det, 1.0), 0.0)
+    tv = origin - A
+    u = np.einsum('ij,ij->i', tv, pv) * inv
+    qv = np.cross(tv, E1)
+    v = (qv @ direction) * inv
+    t = np.einsum('ij,ij->i', E2, qv) * inv
+    hit = ok & (u >= -1e-9) & (v >= -1e-9) & (u + v <= 1 + 1e-9) & (t > skip)
+    if not hit.any():
+        return None
+    first = int(np.flatnonzero(hit)[np.argmin(t[hit])])
+    if unit is not None and abs(float(unit[first] @ direction)) < head_on:
+        return None
+    return float(t[first])
+
+
 @dataclass
 class _Load:
     faces: List[int]
@@ -239,8 +735,25 @@ class _Load:
 
 
 class Study:
-    def __init__(self, shape, material: Material, mesh_mm: float = 3.0, name: str = 'part'):
+    def __init__(self, shape, material: Material, mesh_mm: float = 3.0, name: str = 'part', refine=None,
+                 slivers: str = 'warn'):
+        """Mesh `shape` (a STEP path or a CadQuery shape) with tetrahedra of about `mesh_mm`.
+
+        refine: ``[(point_mm, radius_mm, size_mm), ...]``, finer elements of `size_mm` inside a ball round each point
+        (a gmsh Ball field each, joined by a Min field under the global size), growing back to `mesh_mm` over a
+        transition 2 x (mesh_mm - size_mm) thick. The rest of the mesh stays as it was. It converges a peak at a
+        fillet or a hole without refining the whole part. A sharp re-entrant corner has no finite peak: its stress
+        rises with every refinement, so refine converges a fillet, never a sharp corner.
+
+        slivers: 'warn' (MeshWarning), 'raise' (MeshRefusal) or 'ignore', for faces under (size/10)^2 and edges under
+        size/10 found before meshing, where size is mesh_mm (or the refine size inside a ball): slivers make the
+        mesher fail or crowd tiny, poor elements there."""
         self.material, self.mesh_mm, self.name = material, mesh_mm, name
+        if slivers not in ('warn', 'raise', 'ignore'):
+            raise ValueError(f"slivers must be 'warn', 'raise' or 'ignore', not {slivers!r}")
+        self.refine = self._refine_zones(refine, mesh_mm)
+        self._slivers_mode = slivers
+        self._shape = shape                            # kept for converge(), which meshes it again, finer
         self.fixed: List[int] = []
         self.loads: List[_Load] = []
         self.probe_faces: List[int] = []
@@ -260,38 +773,43 @@ class Study:
         cq.exporters.export(shape.val() if hasattr(shape, 'val') else shape, str(step))
         return step
 
+    @staticmethod
+    def _refine_zones(refine, mesh_mm: float) -> List[tuple]:
+        zones = []
+        for zone in refine or ():
+            try:
+                point, radius, size = zone
+                point, radius, size = np.asarray(point, float), float(radius), float(size)
+            except (TypeError, ValueError):
+                raise ValueError(f'refine takes (point_mm, radius_mm, size_mm) entries, not {zone!r}') from None
+            if point.shape != (3,) or not np.all(np.isfinite(point)) or not radius > 0 or not size > 0:
+                raise ValueError(f'refine entry {zone!r}: a 3D point, a radius > 0 and a size > 0')
+            if size >= mesh_mm:
+                raise ValueError(f'refine size {size:g} mm is not under mesh_mm {mesh_mm:g} mm: it would change nothing')
+            zones.append((tuple(float(v) for v in point), radius, size))
+        return zones
+
+    def _size_at(self, x) -> float:
+        """The target element size at a point (_ball_size with this study's refine zones)."""
+        return _ball_size(x, self.refine, self.mesh_mm)
+
+    def _size_over(self, box) -> float:
+        """The largest target size anywhere in a bounding box (xmin, ymin, zmin, xmax, ymax, zmax): a ball's size grows
+        with the distance from its centre, and the farthest point of a box from any centre is one of its corners."""
+        lo, hi = box[:3], box[3:]
+        return max(self._size_at((x, y, z)) for x in (lo[0], hi[0]) for y in (lo[1], hi[1]) for z in (lo[2], hi[2]))
+
     def _mesh(self):
-        import gmsh
-        gmsh.initialize()
         try:
-            gmsh.option.setNumber('General.Terminal', 0)
-            gmsh.model.add(self.name)
-            gmsh.model.occ.importShapes(str(self._step))
-            gmsh.model.occ.synchronize()
-            self.faces = []
-            for _, tag in gmsh.model.getEntities(2):
-                kind = gmsh.model.getType(2, tag)
-                self.faces.append(Face(tag, kind, tuple(gmsh.model.getBoundingBox(2, tag)),
-                                       np.array(gmsh.model.occ.getCenterOfMass(2, tag)), gmsh.model.occ.getMass(2, tag),
-                                       self._cylinder_radius(tag) if kind == 'Cylinder' else None))
-            gmsh.option.setNumber('Mesh.MeshSizeMax', self.mesh_mm)
-            gmsh.option.setNumber('Mesh.MeshSizeMin', self.mesh_mm / 4)
-            gmsh.option.setNumber('Mesh.MeshSizeFromCurvature', 10)
-            gmsh.option.setNumber('Mesh.Optimize', 1)
-            gmsh.model.mesh.generate(3)
-            tags, coords, _ = gmsh.model.mesh.getNodes()
-            index = {int(t): i for i, t in enumerate(tags)}
-            self.points = coords.reshape(-1, 3)
-            types, _, nodes = gmsh.model.mesh.getElements(3)
-            tets = np.concatenate([np.asarray(n, dtype=np.int64).reshape(-1, 4) for ty, n in zip(types, nodes) if ty == 4])
-            self.tets = np.vectorize(index.get)(tets)
-            self.face_tris = {}
-            for f in self.faces:
-                ftypes, _, fnodes = gmsh.model.mesh.getElements(2, f.tag)
-                tri = [np.asarray(n, dtype=np.int64).reshape(-1, 3) for ty, n in zip(ftypes, fnodes) if ty == 2]
-                self.face_tris[f.tag] = np.vectorize(index.get)(np.concatenate(tri)) if tri else np.zeros((0, 3), int)
-        finally:
-            gmsh.finalize()
+            self._mesh_once(logged=False)
+        except MeshRefusal:
+            raise
+        except Exception as exc:
+            if not any(k in str(exc) for k in _RECOVERY_ERRORS):
+                raise
+            # gmsh throws on the first line of a boundary-recovery error, before it prints the point, and stays locked
+            # until finalized: mesh once more in a new session with errors logged, not thrown, to say where and why
+            self._mesh_once(logged=True, first=str(exc))
         # drop nodes that only belong to lower-dimensional entities, and orient every tet positively
         used = np.unique(self.tets)
         remap = -np.ones(len(self.points), dtype=np.int64)
@@ -299,10 +817,69 @@ class Study:
         self.points = self.points[used]
         self.tets = remap[self.tets]
         self.face_tris = {k: remap[v] for k, v in self.face_tris.items()}
+        self.edge_segs = {k: remap[v] for k, v in self.edge_segs.items()}
         p = self.points
         a, b, c, d = (p[self.tets[:, i]] for i in range(4))
         neg = np.einsum('ij,ij->i', np.cross(b - a, c - a), d - a) < 0
         self.tets[neg, 2], self.tets[neg, 3] = self.tets[neg, 3], self.tets[neg, 2].copy()
+
+    def _mesh_once(self, logged: bool, first: str = ''):
+        """One gmsh session: read the faces, check for slivers, mesh. `logged`: mesh with errors logged rather than
+        thrown and raise a MeshRefusal from the log (the second run after a refusal; `first` is what gmsh threw)."""
+        import gmsh
+        gmsh.initialize()
+        try:
+            gmsh.option.setNumber('General.Terminal', 0)
+            gmsh.model.add(self.name)
+            gmsh.model.occ.importShapes(str(self._step))
+            gmsh.model.occ.synchronize()
+            self.mesher = _mesher_identity()
+            self.faces = []
+            for _, tag in gmsh.model.getEntities(2):
+                kind = gmsh.model.getType(2, tag)
+                self.faces.append(Face(tag, kind, tuple(gmsh.model.getBoundingBox(2, tag)),
+                                       np.array(gmsh.model.occ.getCenterOfMass(2, tag)), gmsh.model.occ.getMass(2, tag),
+                                       self._cylinder_radius(tag) if kind == 'Cylinder' else None))
+            if not logged:
+                self._check_slivers()
+            gmsh.option.setNumber('Mesh.MeshSizeMax', self.mesh_mm)
+            gmsh.option.setNumber('Mesh.MeshSizeMin', self.mesh_mm / 4)
+            gmsh.option.setNumber('Mesh.MeshSizeFromCurvature', 10)
+            gmsh.option.setNumber('Mesh.Optimize', 1)
+            if self.refine:
+                self._refine_fields()
+            if logged:
+                gmsh.option.setNumber('General.AbortOnError', 0)
+                gmsh.logger.start()
+                try:
+                    gmsh.model.mesh.generate(3)
+                    log = list(gmsh.logger.get())
+                finally:
+                    gmsh.logger.stop()
+                errors = [m for m in log if m.startswith('Error')]
+                types, _, nodes = gmsh.model.mesh.getElements(3)
+                if errors or not any(ty == 4 and len(n) for ty, n in zip(types, nodes)):
+                    self.points, _, self.face_tris, self.edge_segs = self._surface_mesh()
+                    self._refuse(errors or [f'Error: {first}'], log if errors else [f'Error: {first}'])
+                # gmsh meshed it this time: its boundary recovery is not always repeatable on a marginal part
+                import warnings
+                warnings.warn(f"{self.name}: gmsh refused the first mesh ('{first}') and made it on a second try. Its "
+                              'boundary recovery is not always repeatable on a marginal part, so the next run of this '
+                              'study may be refused: look for faces closer together than the mesh size.',
+                              MeshWarning, stacklevel=4)   # _mesh_once < _mesh < __init__ < caller
+            else:
+                gmsh.model.mesh.generate(3)
+            self.points, index, self.face_tris, self.edge_segs = self._surface_mesh()
+            types, _, nodes = gmsh.model.mesh.getElements(3)
+            tets = np.concatenate([np.asarray(n, dtype=np.int64).reshape(-1, 4) for ty, n in zip(types, nodes) if ty == 4])
+            self.tets = np.vectorize(index.get)(tets)
+        finally:
+            if self.refine:
+                try:
+                    gmsh.model.mesh.removeSizeCallback()
+                except Exception:                    # gmsh failed before the callback was set
+                    pass
+            gmsh.finalize()
 
     @staticmethod
     def _cylinder_radius(tag: int) -> Optional[float]:
@@ -314,6 +891,304 @@ class Study:
             return 1.0 / k if k > 1e-9 else None
         except Exception:                            # an odd parametrisation: no radius, the hint just says less
             return None
+
+    def _refine_fields(self):
+        """One gmsh Ball field per refine zone (VIn its size, VOut mesh_mm, a linear transition outside it), the
+        background size their Min; Mesh.MeshSizeMax keeps the global size everywhere else. Mesh.MeshSizeMin has to drop
+        to the smallest refine size, and it is also the floor of the curvature sizing, so a size callback puts the
+        global floor (mesh_mm / 4) back outside the balls: away from them the mesh is the one the study gets without
+        refine."""
+        import gmsh
+        balls = []
+        for (x, y, z), r, s in self.refine:
+            b = gmsh.model.mesh.field.add('Ball')
+            for key, v in (('XCenter', x), ('YCenter', y), ('ZCenter', z), ('Radius', r),
+                           ('Thickness', 2 * (self.mesh_mm - s)), ('VIn', s), ('VOut', self.mesh_mm)):
+                gmsh.model.mesh.field.setNumber(b, key, float(v))
+            balls.append(b)
+        both = gmsh.model.mesh.field.add('Min')
+        gmsh.model.mesh.field.setNumbers(both, 'FieldsList', balls)
+        gmsh.model.mesh.field.setAsBackgroundMesh(both)
+        floor, zones, mesh = self.mesh_mm / 4, tuple(self.refine), self.mesh_mm
+        gmsh.option.setNumber('Mesh.MeshSizeMin', min(floor, min(s for _, _, s in self.refine)))
+        # the callback closes over the zones only: gmsh's Python module keeps it in a global after finalize(), and a
+        # closure over the Study would keep the Study (its mesh, and after solve() its solution) alive with it
+        gmsh.model.mesh.setSizeCallback(lambda dim, tag, x, y, z, lc: max(lc, min(floor, _ball_size((x, y, z), zones, mesh))))
+
+    def _check_slivers(self):
+        """Small faces (area under (size/10)^2), narrow faces (width, 2 x area / perimeter, under size/10, and
+        elongated: perimeter^2 / (4 pi area) over SLIVER_ELONGATION) and short edges (under size/10), read off the CAD
+        before meshing: they make the mesher refuse, or crowd tiny, poor elements there. The size is the largest target
+        size the face or edge sees (mesh_mm unless a refine ball covers all of it), so a ball over part of a long sliver
+        does not excuse the rest. The width is a strip's width; it finds the long, thin faces that area alone misses.
+        The elongation is about L / (pi w) for a strip and 1.1 to 1.7 for a compact face (a square, a chamfer's corner
+        triangle, a blend's corner patch), which mesh normally and are not narrow, however small."""
+        import gmsh
+        faces, edges = [], []
+        self.edge_lengths = {tag: float(gmsh.model.occ.getMass(1, tag)) for _, tag in gmsh.model.getEntities(1)}
+        for f in self.faces:
+            size = self._size_over(f.bbox)
+            bound = {abs(t) for _, t in gmsh.model.getBoundary([(2, f.tag)], combined=False, oriented=False)}
+            perimeter = sum(self.edge_lengths.get(t, 0.0) for t in bound)
+            width = 2 * f.area / perimeter if perimeter > 1e-9 else None
+            elongation = perimeter ** 2 / (4 * math.pi * f.area) if f.area > 1e-12 else math.inf
+            small = f.area < (size / 10) ** 2
+            narrow = width is not None and width < size / 10 and elongation > SLIVER_ELONGATION
+            if small or narrow:
+                faces.append({'tag': f.tag, 'kind': f.kind, 'area_mm2': round(float(f.area), 6),
+                              'width_mm': round(width, 6) if width is not None else None,
+                              'under_mm2': round((size / 10) ** 2, 6), 'under_mm': round(size / 10, 6),
+                              'why': 'small' if small else 'narrow', 'center_mm': [round(float(v), 3) for v in f.center]})
+        for _, tag in gmsh.model.getEntities(1):
+            length = self.edge_lengths[tag]
+            box = np.asarray(gmsh.model.getBoundingBox(1, tag))
+            mid = (box[:3] + box[3:]) / 2
+            cut = self._size_over(box) / 10
+            if 1e-9 < length < cut:                    # zero: a degenerate edge (a cone's tip), which gmsh skips
+                edges.append({'tag': tag, 'length_mm': round(length, 6), 'under_mm': round(cut, 6),
+                              'center_mm': [round(float(v), 3) for v in mid]})
+        self.slivers = {'faces': faces, 'edges': edges}
+        if not (faces or edges) or self._slivers_mode == 'ignore':
+            return
+        listed = [f"face {f['tag']} ({f['kind']}, {f['area_mm2']:g} mm²"
+                  + (f", {f['width_mm']:g} mm wide" if f['why'] == 'narrow' else '') + f" at {tuple(f['center_mm'])})"
+                  for f in faces[:6]]
+        listed += [f"edge {e['tag']} ({e['length_mm']:g} mm at {tuple(e['center_mm'])})" for e in edges[:6]]
+        more = len(faces) + len(edges) - len(listed)
+        msg = (f"{self.name}: {len(faces)} sliver face(s) and {len(edges)} short edge(s) for a {self.mesh_mm:g} mm mesh: "
+               f"{'; '.join(listed)}{f'; and {more} more' if more > 0 else ''}. Slivers come from booleans and fillets "
+               "that meet almost tangentially; the mesher may refuse the part or crowd poor elements there. Remove "
+               "them in the CAD (merge the faces, change a dimension a little), or refine there.")
+        if self._slivers_mode == 'raise':
+            raise MeshRefusal(msg, 'slivers', faces=faces, edges=edges)
+        import warnings
+        warnings.warn(msg, MeshWarning, stacklevel=5)   # _check_slivers < _mesh_once < _mesh < __init__ < caller
+
+    def _surface_mesh(self):
+        """(points, gmsh node tag -> row, face tag -> triangles, edge tag -> segments) in the current gmsh session."""
+        import gmsh
+        tags, coords, _ = gmsh.model.mesh.getNodes()
+        index = {int(t): i for i, t in enumerate(tags)}
+        def rows(dim, tag, kind, n):
+            types, _, nodes = gmsh.model.mesh.getElements(dim, tag)
+            got = [np.asarray(v, dtype=np.int64).reshape(-1, n) for ty, v in zip(types, nodes) if ty == kind]
+            return np.vectorize(index.get)(np.concatenate(got)) if got else np.zeros((0, n), int)
+        face_tris = {f.tag: rows(2, f.tag, 2, 3) for f in self.faces}
+        edge_segs = {tag: rows(1, tag, 1, 2) for _, tag in gmsh.model.getEntities(1)}
+        return coords.reshape(-1, 3), index, face_tris, edge_segs
+
+    def _refuse(self, errors, log):
+        """Raise for a volume mesh gmsh would not make: a MeshRefusal naming the faces and edges round the point gmsh
+        gives, measured on the surface mesh it did make (self.points, self.face_tris, self.edge_segs)."""
+        why = parse_gmsh_refusal(log)
+        if why is None:
+            raise RuntimeError(f'{self.name}: gmsh could not mesh the volume: ' +
+                               '; '.join(re.sub(r'^Error\s*:\s*', '', e) for e in errors[:3]))
+        faces, edges = [], []
+        if why['point'] is not None:
+            p = np.asarray(why['point'], float)
+            faces = _faces_near(p, self.faces, self.points, self.face_tris, k=4)
+            for f in faces:
+                f['named_by_gmsh'] = f['tag'] in why['surfaces']
+            near = []
+            for tag, seg in self.edge_segs.items():
+                if not len(seg):
+                    continue
+                A, B = self.points[seg[:, 0]], self.points[seg[:, 1]]
+                d = B - A
+                t = np.clip(np.einsum('ij,ij->i', p - A, d) / np.maximum(np.einsum('ij,ij->i', d, d), 1e-300), 0, 1)
+                near.append((float(np.linalg.norm(p - (A + t[:, None] * d), axis=1).min()), tag))
+            for dist, tag in sorted(near)[:3]:
+                length = self.edge_lengths.get(tag)
+                edges.append({'tag': tag, 'length_mm': round(length, 4) if length is not None else None,
+                              'distance_mm': round(dist, 4), 'named_by_gmsh': tag in why['curves']})
+        at = f" at ({', '.join(f'{v:.3f}' for v in why['point'])}) mm" if why['point'] is not None else ''
+        listed = ', '.join(f"face {f['tag']} ({f['kind']}, {f['area_mm2']:g} mm², {f['distance_mm']:.3f} mm away"
+                           f"{', named by gmsh' if f['named_by_gmsh'] else ''})" for f in faces)
+        short = [f"edge {e['tag']} ({e['length_mm']:g} mm)" for e in edges
+                 if e['length_mm'] is not None and e['length_mm'] < self.mesh_mm]
+        sliv = len(self.slivers['faces']) + len(self.slivers['edges'])
+        msg = (f"{self.name}: gmsh would not mesh the volume: {why['what']}{at} (gmsh: '{why['message']}')."
+               + (f' Nearest faces: {listed}.' if listed else '')
+               + (f" Short edges near it: {', '.join(short)}." if short else '')
+               + ('' if why['point'] is not None else ' gmsh gave no point for it.')
+               + (f' The check before meshing found {sliv} sliver(s): see Study.slivers.' if sliv else '')
+               + f' Faces closer together than the mesh size ({self.mesh_mm:g} mm), or meeting almost tangentially, '
+               'get surface triangles that cut through each other. Thicken the gap or close it, remove the sliver in '
+               'the CAD, or mesh finer there: refine=[(point, radius, size)].')
+        raise MeshRefusal(msg, why['what'], point=why['point'], faces=faces, edges=edges, log=why['log'])
+
+    def faces_near(self, point: Sequence[float], k: int = 4) -> List[dict]:
+        """The k faces of the part nearest a point (mm), nearest first: {'tag', 'kind', 'area_mm2', 'distance_mm',
+        'center_mm', 'radius_mm' for cylinders}. Distances are to each face's surface triangles (so to the mesh's
+        chords on a curved face). Useful to name what sits at a hot spot or a mesher refusal's point."""
+        return _faces_near(point, self.faces, self.points, self.face_tris, k)
+
+    def _mesh_record(self) -> dict:
+        """The mesh's part of the result: the mesher, the refine zones, the slivers found before meshing, and how well
+        the mesh resolves the design peak (``peak``)."""
+        rec = {'mesher': self.mesher,
+               'refine': [{'at_mm': list(c), 'radius_mm': r, 'size_mm': s} for c, r, s in self.refine],
+               'slivers': self.slivers, 'peak': self._peak_resolution()}
+        if rec['peak']['wall_resolved'] is False or rec['peak']['radius_resolved'] is False:   # None: not measured
+            import warnings
+            warnings.warn(f"{self.name}: {rec['peak']['note']}", MeshWarning, stacklevel=3)
+        return rec
+
+    def _peak_resolution(self) -> dict:
+        """How many elements lie across the wall at the design peak (the peak the safety factor uses).
+
+        The wall is the thinnest one round the peak: from each surface triangle within two element sizes of the peak
+        corner, a ray goes into the material along its CAD face's normal (that face's facets round the triangle,
+        averaged) to where it leaves it again, and the shortest of those is the wall. A ray that leaves at a grazing
+        angle (more than 60° off head-on) ran along a wall to an edge, not across it, and does not count. Elements
+        across it = wall / the mean edge length of the tetrahedra at the peak corner, which is the number of element
+        layers a structured mesh would put there (a ray through an unstructured mesh crosses more tets than that, so
+        this is the cautious count). Under MIN_ELEMENTS_ACROSS the peak is flagged: a peak in a wall one or two
+        elements thick is not a result.
+
+        At an inside fillet or a hole the stress changes over the radius, not the wall: ``radius_mm`` is the smallest
+        radius of the concave cylindrical faces within one element of the peak, and elements larger than it
+        (MAX_ELEMENT_OVER_RADIUS) are flagged too. Convex ones (a rounded outside edge, a pin) do not count: bending
+        stress round them is linear in the distance from the neutral axis, which P2 elements carry. Measured on a stepped bar's R0.5 and R1 inside fillets: elements 1.1 to 3 times the radius read
+        the peak 6 to 17 % low (and on the R0.5 one at 4 mm, a 0.75 x finer mesh moved it only 2.3 %, so converge()
+        alone passed it); elements under the radius read within 2 % of the converged value."""
+        m = self._m
+        P, T = m.p.T, m.t.T
+        free = ~self._touches_bc
+        cand = np.where(free)[0] if free.any() else np.arange(len(T))
+        e = int(cand[np.argmax(self.vm_elem[cand])])
+        node = int(T[e, int(np.argmax(self.vm_corner[e]))])
+        x = P[node]
+        around = np.where((T == node).any(axis=1))[0]
+        h = float(np.mean([np.linalg.norm(P[T[around, i]] - P[T[around, j]], axis=1).mean()
+                           for i in range(4) for j in range(i + 1, 4)]))
+        # the boundary, wound outward (as export_viewer does)
+        bf = m.boundary_facets()
+        tri = m.facets[:, bf].T.copy()
+        opp = T[m.f2t[0, bf]].sum(axis=1) - tri.sum(axis=1)
+        nrm = np.cross(P[tri[:, 1]] - P[tri[:, 0]], P[tri[:, 2]] - P[tri[:, 0]])
+        flip = np.einsum('ij,ij->i', nrm, P[opp] - P[tri[:, 0]]) > 0
+        tri[flip, 1], tri[flip, 2] = tri[flip, 2], tri[flip, 1].copy()
+        nrm[flip] *= -1
+        unit = nrm / np.maximum(np.linalg.norm(nrm, axis=1, keepdims=True), 1e-30)
+        A = P[tri[:, 0]]
+        E1, E2 = P[tri[:, 1]] - A, P[tri[:, 2]] - A
+        cen = P[tri].mean(axis=1)
+        dist = np.linalg.norm(cen - x, axis=1)
+        reach = max(2 * h, float(dist.min()) + h)
+        near = np.where(dist <= reach)[0]
+        near = near[np.argsort(dist[near])][:24]
+        # each ray goes along the CAD face's own inward normal there: the facets of that face round the triangle,
+        # averaged (a facet of a curved face tilts, and a tilted ray near an edge runs out through the next face)
+        local = np.where(dist <= reach + 2 * h)[0]
+        face_of = {tuple(sorted(t)): tag for tag, tris in self.face_tris.items() for t in tris.tolist()}
+        ftag = np.array([face_of.get(tuple(sorted(t)), -1) for t in tri[local].tolist()])
+        walls = []
+        for i in near:
+            k = int(np.flatnonzero(local == i)[0])
+            same = np.isin(tri[local], tri[i]).any(axis=1) & ((ftag == ftag[k]) if ftag[k] >= 0 else (local == i))
+            d = -nrm[local[same]].sum(axis=0)
+            w = _ray_exit(cen[i], d / max(float(np.linalg.norm(d)), 1e-30), A, E1, E2, skip=1e-6 * h, unit=unit)
+            if w is not None:
+                walls.append(w)
+        wall = min(walls) if walls else None
+        vnorm = np.zeros_like(P)
+        for k in range(3):
+            np.add.at(vnorm, tri[:, k], nrm)
+        vnorm /= np.maximum(np.linalg.norm(vnorm, axis=1, keepdims=True), 1e-30)
+        verts = np.unique(tri)
+        sv = int(verts[np.argmin(np.linalg.norm(P[verts] - x, axis=1))])
+        on_surface = float(np.linalg.norm(P[sv] - x)) < 0.5 * h
+        where = (self._hint(sv, tri, nrm, vnorm, P) if on_surface
+                 else f'inside the material, {float(np.linalg.norm(P[sv] - x)):.1f} mm under the surface')
+        radius = None              # the tightest inside fillet or hole within one element of the peak (concave faces only:
+        if on_surface:             # round a convex edge or a pin, bending stress is linear and P2 elements carry it)
+            for f in self.faces:
+                fn = np.unique(self.face_tris.get(f.tag, np.zeros((0, 3), int))) if f.kind == 'Cylinder' and f.radius else []
+                if (len(fn) and float(np.linalg.norm(P[fn] - x, axis=1).min()) <= h and (radius is None or f.radius < radius)
+                        and self._cylinder_shape(f, vnorm, P)[0]):
+                    radius = float(f.radius)
+        rec = {'stress_mpa': round(float(self.vm_elem[e]), 2), 'at_mm': [round(float(v), 3) for v in x], 'where': where,
+               'element_mm': round(h, 3), 'wall_mm': round(wall, 3) if wall is not None else None,
+               'elements_across': round(wall / h, 1) if wall is not None else None,
+               'wall_resolved': bool(wall / h >= MIN_ELEMENTS_ACROSS) if wall is not None else None,
+               'radius_mm': round(radius, 3) if radius is not None else None,
+               'radius_resolved': bool(h <= MAX_ELEMENT_OVER_RADIUS * radius) if radius is not None else None}
+        notes = []
+        if wall is not None and wall / h < MIN_ELEMENTS_ACROSS:
+            notes.append(f'the design peak sits in a {wall:.1f} mm wall only {wall / h:.1f} elements thick: a peak in a '
+                         'wall one or two elements thick is not a result. Mesh finer there (refine=[(point, radius, '
+                         f'size)], a size under {wall / MIN_ELEMENTS_ACROSS:.2g} mm) and check it with converge()')
+        if radius is not None and h > MAX_ELEMENT_OVER_RADIUS * radius:
+            notes.append(f'the design peak sits by an R{radius:.3g} radius with elements of {h:.2g} mm, larger than the '
+                         'radius: the stress there changes over the radius, so this mesh does not resolve it (it '
+                         'usually reads low). Mesh finer there (refine=[(point, radius, size)], a size under '
+                         f'{0.7 * MAX_ELEMENT_OVER_RADIUS * radius:.2g} mm), then refine in steps until the peak settles')
+        if 'sharp inside corner' in where:
+            notes.append('the peak is at a sharp re-entrant corner, which is singular: its stress rises with every '
+                         'refinement and never converges. Model the fillet the part will have')
+        rec['note'] = '; '.join(notes)
+        return rec
+
+    def converge(self, factor: float = 0.75, tolerance: float = 0.05) -> dict:
+        """Solve the study again on a mesh `factor` times finer (mesh_mm and every refine size) and compare.
+
+        The finer study gets the same faces fixed and loaded (the same STEP gives gmsh the same face tags; checked).
+        Records and returns {'mesh_mm', 'tets', 'von_mises_design_mpa', 'max_displacement_mm' (each [this, finer]),
+        'change' (the design peak's relative change), 'peak_moved_mm', 'converged', 'tolerance', 'note'} in
+        ``result['mesh']['convergence']``, and keeps the finer study as ``self.finer``. Converged means the design peak
+        changed by at most `tolerance` and the finer mesh resolves it (``peak``'s wall and radius checks); a peak that
+        moved more than two mesh sizes is noted either way (an artefact when its value changed too, else two spots near
+        the peak value). A sharp re-entrant corner never converges.
+        One step is a check, not a convergence study: for that, refine the peak in steps (refine=) and plot it."""
+        if not 0 < factor < 1:
+            raise ValueError('factor must be between 0 and 1 (0.75: a mesh a quarter finer)')
+        if not hasattr(self, 'result'):
+            self.solve()
+        fine = Study(self._shape, self.material, self.mesh_mm * factor, self.name,
+                     refine=[(c, r, s * factor) for c, r, s in self.refine], slivers='ignore')
+        same = len(fine.faces) == len(self.faces) and all(
+            a.tag == b.tag and a.kind == b.kind and math.isclose(a.area, b.area, rel_tol=1e-6, abs_tol=1e-9)
+            for a, b in zip(self.faces, fine.faces))
+        if not same:
+            raise RuntimeError(f'{self.name}: the finer mesh numbers the faces differently, so the loads cannot be '
+                               'carried over; build the finer Study and its loads by hand')
+        fine.fixed, fine.probe_faces = list(self.fixed), list(self.probe_faces)
+        fine.loads = [_Load(list(ld.faces), ld.force, ld.torque) for ld in self.loads]
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', MeshWarning)  # the finer peak's notes go into this check's own warning
+            r2 = fine.solve()
+        r1 = self.result
+        a, b = r1['von_mises_design_mpa'], r2['von_mises_design_mpa']
+        change = (b - a) / a if a else 0.0
+        moved = math.dist(r1['mesh']['peak']['at_mm'], r2['mesh']['peak']['at_mm'])
+        fine_peak = r2['mesh']['peak']
+        resolved = fine_peak['wall_resolved'] is not False and fine_peak['radius_resolved'] is not False
+        ok = abs(change) <= tolerance and resolved
+        notes = []
+        if abs(change) > tolerance:
+            notes.append(f'the design peak changed {change:+.1%} on a mesh {factor:g} x as fine: it is not converged')
+        elif not resolved:
+            notes.append(f'the design peak changed only {change:+.1%} on a mesh {factor:g} x as fine, but that mesh '
+                         f"does not resolve it either, so it is not converged (two under-resolved meshes can agree): "
+                         f"{fine_peak['note']}")
+        if moved > 2 * self.mesh_mm:                   # a peak that jumps elsewhere: an artefact, or two equal spots
+            notes.append(f'the design peak moved {moved:.1f} mm, to {r2["mesh"]["peak"]["where"]}'
+                         + (': the coarse peak was an artefact of the mesh there' if not ok else
+                            ', at about the same stress (two places near the peak value; check both)'))
+        if 'sharp inside corner' in r2['mesh']['peak']['where']:
+            notes.append('the peak is at a sharp re-entrant corner, which never converges')
+        rec = {'factor': factor, 'mesh_mm': [self.mesh_mm, fine.mesh_mm], 'tets': [r1['mesh']['tets'], r2['mesh']['tets']],
+               'von_mises_design_mpa': [a, b], 'max_displacement_mm': [r1['max_displacement_mm'], r2['max_displacement_mm']],
+               'change': round(change, 4), 'peak_moved_mm': round(moved, 2), 'converged': bool(ok),
+               'tolerance': tolerance, 'note': '; '.join(notes)}
+        self.result['mesh']['convergence'] = rec
+        self.finer = fine
+        if not ok:
+            warnings.warn(f'{self.name}: ' + rec['note'], MeshWarning, stacklevel=2)
+        return rec
 
     def select(self, selector: Selector) -> List[int]:
         tags = [f.tag for f in self.faces if selector(f)]
@@ -423,9 +1298,8 @@ class Study:
         sig = 2 * mu * eps
         for i in range(3):
             sig[i, i] += lam * tr
-        s = sig
-        vm = np.sqrt(0.5 * ((s[0, 0] - s[1, 1]) ** 2 + (s[1, 1] - s[2, 2]) ** 2 + (s[2, 2] - s[0, 0]) ** 2)
-                     + 3 * (s[0, 1] ** 2 + s[1, 2] ** 2 + s[2, 0] ** 2))
+        self.sig_corner = np.moveaxis(sig, (0, 1), (2, 3))   # (n elements, 4 corners, 3, 3) Cauchy stress, MPa
+        vm = von_mises(self.sig_corner)
         self.vm_corner = vm                            # (n elements, 4 corners), corner k at m.t[k]
         self.vm_elem = vm.max(axis=1)
         disp = u[ib.nodal_dofs]                        # (3, n vertices)
@@ -443,6 +1317,7 @@ class Study:
         res = {
             'part': self.name, 'material': mat.name, 'material_note': mat.note,
             'material_source': mat.source or None, 'material_direction': mat.direction or None,
+            'material_data': material_record(mat),
             'mesh': {'nodes': int(self.points.shape[0]), 'tets': int(self.tets.shape[0]), 'size_mm': self.mesh_mm, 'element': 'P2 tetrahedra'},
             'loads': applied,
             'max_displacement_mm': round(float(mag.max()), 4),
@@ -470,6 +1345,7 @@ class Study:
                 ok = n2 > 1e-9
                 ang = float(np.mean(np.einsum('ij,ij->i', disp[:, nodes].T[ok], tang[ok]) / n2[ok]))   # radians
                 res['torsional_stiffness_nm_per_deg'] = round(t / 1000.0 / math.degrees(ang), 2) if ang > 1e-12 else None
+        res['mesh'].update(self._mesh_record())          # the mesher, refine zones, slivers, the peak's resolution
         self.result = res
         return res
 
@@ -527,6 +1403,54 @@ class Study:
         x = x.copy()
         x[I] = sol
         return x
+
+    # --- the stress against a print's layers
+    def layer_check(self, normal: Sequence[float], strength_xy: Optional[float] = None,
+                    strength_z: Optional[float] = None, strength_shear: Optional[float] = None,
+                    judge: Optional[Sequence[bool]] = None) -> LayerCheck:
+        """The solved stress resolved against the layers of a print whose layer normal is ``normal`` (its build
+        direction: (0, 0, 1) for a part printed as modelled on the XY plane), at every element corner, in two checks
+        (the notes above layer_utilisation()):
+
+        - **bond**: sqrt(max(sigma_n, 0)^2 + 3 tau_n^2) against ``strength_z``, the allowable across the layers;
+        - **bulk**: von Mises against ``strength_xy``, the allowable in the layer plane.
+
+        The strengths (MPa) default to the material's ``layer_strengths_mpa``, which every printed row has; for a
+        material without them give both. ``strength_shear`` is the interlayer shear allowable. No data sheet gives one,
+        so unless it is given it is strength_z / sqrt(3), the ratio von Mises gives an isotropic solid: a stated
+        assumption (``shear_basis``) for a coupon to replace. ``judge`` (one bool per element) picks the elements the
+        summary is taken over; by default all but those touching a clamp or a load patch, as for the safety factor.
+
+        Returns a LayerCheck: per-element utilisations (``bond``, ``bulk``), factors (``factor``) and modes (``mode``);
+        the safety factor, its governing mode (``governed_by``) and the worst corner (``worst``). The stress is the
+        isotropic solve's, so a part whose load path depends on its stiffness can carry its load differently as a
+        print; walls, seams and infill are not modelled. It screens a print orientation; it does not qualify one."""
+        if not hasattr(self, 'sig_corner'):
+            raise RuntimeError('solve() the study before layer_check()')
+        n = _unit(normal)
+        xy, z, ss, basis = layer_allowables(self.material, strength_xy, strength_z, strength_shear)
+        sig = self.sig_corner
+        sn, tau = layer_stresses(sig, n)
+        bond = np.sqrt((np.maximum(sn, 0.0) / z) ** 2 + (tau / ss) ** 2)        # (n elements, 4 corners)
+        bulk = self.vm_corner / xy
+        nel = bond.shape[0]
+        if judge is None:
+            keep = ~self._touches_bc if (~self._touches_bc).any() else np.ones(nel, dtype=bool)
+        else:
+            keep = np.asarray(judge, dtype=bool).reshape(-1)
+            if keep.shape != (nel,) or not keep.any():
+                raise ValueError(f'judge is one bool per element ({nel}), with at least one True')
+        u = np.where(keep[:, None], np.maximum(bond, bulk), -1.0)
+        e, k = (int(i) for i in np.unravel_index(int(np.argmax(u)), u.shape))
+        P, T = self._m.p, self._m.t
+        r = lambda v, d=3: round(float(v), d)
+        worst = {'element': e, 'corner_mm': [r(v) for v in P[:, T[k, e]]],
+                 'element_centre_mm': [r(v) for v in P[:, T[:, e]].mean(axis=1)],
+                 'sigma_n_mpa': r(sn[e, k]), 'tau_n_mpa': r(tau[e, k]), 'von_mises_mpa': r(self.vm_corner[e, k]),
+                 'bond': r(bond[e, k], 4), 'bulk': r(bulk[e, k], 4),
+                 'mode': (None if max(bond[e, k], bulk[e, k]) <= 0             # unstressed
+                          else 'bond' if bond[e, k] >= bulk[e, k] else 'bulk')}
+        return LayerCheck(tuple(float(v) for v in n), xy, z, ss, basis, bond.max(axis=1), bulk.max(axis=1), keep, worst)
 
     # --- failure bookkeeping shared by animate() and export_viewer()
     def _element_volumes(self) -> np.ndarray:
@@ -952,10 +1876,12 @@ class Study:
         if len(at) >= 2:
             n = nrm[at] / np.maximum(np.linalg.norm(nrm[at], axis=1, keepdims=True), 1e-30)
             cen = P[tri[at]].mean(axis=1)
-            dots = n @ n.T
-            i, j = np.unravel_index(int(np.argmin(dots)), dots.shape)
-            if dots[i, j] < math.cos(math.radians(40)):
-                if float(n[i] @ (cen[j] - cen[i])) > 0:
+            # any two triangles here at more than 40° to each other make an edge; if one such pair is concave (one
+            # triangle lies on the other's outer side), it is an inside corner, also where it meets an outside edge
+            # (the end of an inside corner on a side face, where three faces meet)
+            I, J = np.nonzero(n @ n.T < math.cos(math.radians(40)))
+            if len(I):
+                if np.any(np.einsum('ij,ij->i', n[I], cen[J] - cen[I]) > 1e-9):
                     return 'sharp inside corner (no fillet: the peak there rises as the mesh is refined)'
                 return 'outside edge'
         kinds = {f.kind for f in on}

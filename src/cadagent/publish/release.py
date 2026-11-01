@@ -60,7 +60,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 from urllib.parse import quote
 
-from cadagent.project import CadConfigError, CadProject
+from cadagent.project import CadConfigError, CadProject, source_date_epoch
 
 DEFAULT_INCLUDE = ["cad/**", "tools/**", "cad-agent.yaml", "requirements*.txt", "README.md", "LICENSE*"]
 DEFAULT_EXCLUDE = ["**/__pycache__/**", "**/*.pyc"]
@@ -343,12 +343,13 @@ def _git_state(root: Path) -> Dict[str, Any]:
 
 
 def _stable_date(explicit: str, git_date: str) -> Tuple[str, bool]:
-    """The release date and whether it is reproducible."""
+    """The release date and whether it is reproducible. A malformed ``SOURCE_DATE_EPOCH`` raises
+    ``SourceDateEpochError`` (it used to be ignored silently, giving the commit's date instead: #150)."""
     if explicit:
         return explicit, True
-    epoch = os.environ.get("SOURCE_DATE_EPOCH")
-    if epoch and epoch.strip().isdigit():
-        return datetime.datetime.fromtimestamp(int(epoch), datetime.timezone.utc).date().isoformat(), True
+    epoch = source_date_epoch()
+    if epoch is not None:
+        return datetime.datetime.fromtimestamp(epoch, datetime.timezone.utc).date().isoformat(), True
     if git_date:
         return git_date, True
     return datetime.date.today().isoformat(), False

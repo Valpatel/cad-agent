@@ -9,12 +9,24 @@
   "three": {
     "tag": "r160",
     "source": "https://github.com/mrdoob/three.js/tree/r160/examples/jsm",
-    "modifications": "Loader imports only: three points to the existing local r160 module; fflate points to the adjacent official vendored module.",
+    "modifications": "Loader imports only: three points to the existing local r160 module; fflate points to the adjacent fflate module (vendored separately from npm, see the fflate entry).",
     "upstream_sha256": {
       "STLLoader.js": "896d006a48b8f125385a485ccae154dadee801a953f0b45ceffe7ddd8a29ca93",
-      "3MFLoader.js": "ab87d6b14e4bfd3290348c0d16a924d44aa44d555f720df9e9d5bd5389fa59ca",
-      "fflate.module.js": "5686c3d02432a47d8e31f16cabc2d725bbf4531a3abb37cc6fd00142256e3730"
+      "3MFLoader.js": "ab87d6b14e4bfd3290348c0d16a924d44aa44d555f720df9e9d5bd5389fa59ca"
     }
+  },
+  "fflate": {
+    "version": "0.8.3",
+    "source": "https://registry.npmjs.org/fflate/-/fflate-0.8.3.tgz",
+    "repository": "https://github.com/101arrowz/fflate/tree/v0.8.3",
+    "npm_integrity": "sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==",
+    "published": "2026-05-16",
+    "license": "MIT",
+    "paths_in_package": {
+      "fflate.module.js": "package/esm/browser.js",
+      "FFLATE-LICENSE.txt": "package/LICENSE"
+    },
+    "modifications": "None: both files are byte-for-byte the npm package's."
   },
   "linkedom": {
     "version": "0.18.12",
@@ -55,10 +67,10 @@
     "linkedom/LICENSE": "dc6d4961d8b6ee747231582ae9c53ce1d66bf76bc9f5a28f554c0e97210953bf",
     "linkedom/worker.js": "196efeb17c260e001979dbc54a3c30e701a881c6e8a3eedaddc5ad83c99ee5ff",
     "file-parsers/3MFLoader.js": "8f05e14fe460b2e1115dfc88de0248f2dfdf1d1bd6a827741deca2f449e075e5",
-    "file-parsers/FFLATE-LICENSE.txt": "62249119bb7df6e54300f37a37145c26a6d4420410aac8881a119c5b427cf751",
+    "file-parsers/FFLATE-LICENSE.txt": "0a1df3a083d0c010560aa342e87959c8c1070e6fd54545741f083f22d0c8b551",
     "file-parsers/STLLoader.js": "5008202cece503fd1ba8c04c0dd9000f6c311e19391b10d6390b90ac42235d6d",
     "file-parsers/THREE-LICENSE.txt": "852e0e8699169bf9f6fdc6bda3e682d078dcbc738b5d33e74df594721bff271d",
-    "file-parsers/fflate.module.js": "5686c3d02432a47d8e31f16cabc2d725bbf4531a3abb37cc6fd00142256e3730",
+    "file-parsers/fflate.module.js": "b7ca4450b19559a1d50eb381adcee94b82449674be4cd17789d9beba7e6122a1",
     "occt-import-js/source/SUBMODULES.gitconfig": "8855dcdbaebd2586adc881db417d5a9a68ac8631f78446d198f38a9a9d6f5482"
   }
 }

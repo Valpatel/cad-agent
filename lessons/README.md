@@ -28,6 +28,8 @@ The [review](review/) area's review-site lessons also include an explicitly attr
 follow-up (2026-10-27). The [electronics](electronics/) lessons come from a different project: the incident notes of a
 CAN breakout PCB and housing designed on 2026-10-26. Their Source lines name those notes, which stay in that
 project's repository.
+The [simulation](simulation/) area's [meshes](simulation/meshes.md) lessons come from Gyropup's hip-frame and
+front-link FEA studies (October 2026, Valpatel/gyropup#29), as written up for the toolkit in #144.
 
 ## Areas
 
@@ -53,7 +55,7 @@ flowchart TD
 | [mechanical/](mechanical/) | [design-rules](mechanical/design-rules.md), [fasteners-and-assembly-access](mechanical/fasteners-and-assembly-access.md), [enclosure-features](mechanical/enclosure-features.md) | Strength and printability, screws and assembly order, what the enclosure carries |
 | [wiring/](wiring/) | [cables-connectors-and-routing](wiring/cables-connectors-and-routing.md) | Mated-plug windows, routes, bend radius, wiring rules |
 | [electronics/](electronics/) | [pcb-evidence-and-review](electronics/pcb-evidence-and-review.md) | KiCad evidence, routing geometry, STEP handedness, release packaging |
-| [simulation/](simulation/) | [simulation-and-material](simulation/simulation-and-material.md) | Bought parts, slicer grams, thinner shells, thermal models, shared compute |
+| [simulation/](simulation/) | [simulation-and-material](simulation/simulation-and-material.md), [meshes](simulation/meshes.md) | Bought parts, slicer grams, thinner shells, thermal models, shared compute, meshes and mesh-dependent peaks |
 | [review/](review/) | [verification-and-evidence](review/verification-and-evidence.md), [review-site-ux](review/review-site-ux.md), [original-file-viewer](review/original-file-viewer.md) | Checks and honest claims, the review site, original-file previews |
 
 The old numbered files (`01-verify-from-source.md` … `12-original-file-viewer.md`) are one-line stubs pointing here

@@ -43,7 +43,7 @@ contributors"), whose full text travels with them in `docs/img/gyropup/LICENSE.t
 
 ## Runtime dependencies and external programs (not vendored)
 
-The simulation modules use these at run time. None of their code is copied into this repository.
+The simulation modules and the site build use these at run time. None of their code is copied into this repository.
 
 | Project | Licence | How cad-agent uses it |
 |---|---|---|
@@ -54,6 +54,7 @@ The simulation modules use these at run time. None of their code is copied into 
 | pyMOTO | MIT | Imported (`sim`, topology optimisation) |
 | PyVista, VTK | MIT, BSD-3-Clause | Imported (`sim`, pictures and animations) |
 | trimesh, manifold3d, Rtree | MIT, Apache-2.0, MIT | Imported (`sim`, mesh booleans and point-in-solid tests) |
+| Playwright, Chromium | Apache-2.0, BSD-3-Clause | The site build draws its Mermaid diagrams in headless Chromium through Playwright, a dev dependency (`tools/site-diagrams.mjs`); the browser tests run in it too |
 | imageio, imageio-ffmpeg (FFmpeg) | BSD-2-Clause (FFmpeg LGPL/GPL binary, run as a process) | Imported (`sim`, MP4 writing) |
 
 ## Web kit (copied into project sites and published on cad-agent.valpatel.com)
@@ -65,8 +66,8 @@ The simulation modules use these at run time. None of their code is copied into 
 |---|---|---|---|
 | three.js (core and the controls, geometry, loader and utility add-ons) | MIT | r160 | header of `three/three.module.min.js`; `file-parsers/THREE-LICENSE.txt` |
 | three.js STL and 3MF loaders | MIT | r160, import paths changed to the local copies | `file-parsers/THREE-LICENSE.txt` |
-| fflate | MIT | as bundled with three.js r160 | `file-parsers/FFLATE-LICENSE.txt` |
-| Mermaid | MIT | 11.4.1 | `mermaid/LICENSE` |
+| fflate (the ZIP reader the 3MF loader imports) | MIT | 0.8.3, from npm | `file-parsers/FFLATE-LICENSE.txt` |
+| Mermaid | MIT | 11.17.2 | `mermaid/LICENSE` |
 | linkedom | ISC | 0.18.12 | `linkedom/LICENSE` |
 | occt-import-js (Open CASCADE Technology compiled to WebAssembly) | LGPL-2.1 with the OCCT exception | 0.0.23 | `occt-import-js/` (four licence files; sources in `occt-import-js/source`) |
 | Inter | SIL Open Font License 1.1 | variable, Latin subset | `fonts/OFL-Inter.txt` |

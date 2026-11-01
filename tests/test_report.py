@@ -54,7 +54,7 @@ TOP_KEYS = {"schema_version", "title", "features", "header_meta", "footer_meta",
             "revision", "physical_fit_verified", "slicer_run", "pass"}
 
 def assert_schema(results):
-    """The schema 1.0 shape that vptest web also renders."""
+    """The results schema 1.0 shape that readers of the file rely on."""
     assert results["schema_version"] == "1.0"
     assert set(results) == TOP_KEYS
     assert [f["feature_id"] for f in results["features"]] == ["cad-parts", "cad-print-files", "cad-holes",

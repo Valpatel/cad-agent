@@ -84,6 +84,12 @@ and it must stay that way.
 
    Playwright: `pip install playwright` into the environment that runs it, plus Google Chrome (then nothing else is
    needed; without Chrome the command stops with an install hint).
+
+   **When McMaster asks for a login** ("Log in to view Product Detail") the tool says so (`LoginRequired`), not that
+   the part number is wrong, and asks for no more pages in that run. Retry once later from a new session. Until then,
+   read the part number and price off McMaster's public search page in a browser (`https://www.mcmaster.com/<trade
+   number or size>/`), take ratings it leaves out (a bearing's static load) from the maker's datasheet, and record
+   both sources in the catalogue entry.
 3. **Record the catalogue entry.** `catalog_entry()` / `--catalog` gives: `mcmaster` (PN), `description`, `url`,
    `price_usd`, `pack_qty`, `dims_mm`, `material`, `mass_g` with `mass_basis` (McMaster's listed weight when the
    page gives one, otherwise CAD volume x density, which it says), `cad` (the normalised STEP path), `frame`, and

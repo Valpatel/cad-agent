@@ -5,6 +5,8 @@
  * Only committed files are published: every source is read from HEAD with `git show`, never from the working tree,
  * so an untracked or uncommitted file cannot reach the site. `--worktree` builds a local draft from tracked files as
  * they are on disk (the footer then says so); `--release` refuses a dirty tree.
+ * Diagrams are drawn here, in headless Chromium (tools/site-diagrams.mjs); `--client-diagrams`, or a machine with no
+ * browser, leaves them to the reader's browser, as before (#132).
  */
 import { readFile, writeFile, mkdir, rm, readdir } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
@@ -16,6 +18,7 @@ import YAML from 'yaml';
 import { snapDemo } from './snap-demo.mjs';
 import { buildCatalog } from './site-catalog.mjs';            // the catalogue page, catalog.json, catalog/*.json and covers
 import { sanitize, safeUrl, rewriteUrls, imageSize } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
+import { drawDiagrams } from './site-diagrams.mjs';         // Mermaid blocks drawn into finished figures, at build time
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
 const rootArg = process.argv.indexOf('--root');
@@ -28,6 +31,7 @@ const TAGLINE = 'Your one stop shop for agentic CAD';
 const LEDE = 'Mapping the best free resources, demonstrating their capabilities, and filling the gaps. Made for AI and people.';
 const WORKTREE = process.argv.includes('--worktree');
 const RELEASE = process.argv.includes('--release');
+const CLIENT_DIAGRAMS = process.argv.includes('--client-diagrams');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const gitRaw = (...a) => execFileSync('git', a, { cwd: root, maxBuffer: 1 << 28 });
 const git = (...a) => gitRaw(...a).toString().trim();
@@ -42,7 +46,7 @@ const revision = head;
 // The content is always HEAD's (or the working tree's with --worktree), but the build tools run from disk (from this
 // checkout, even with --root): say so when they differ from the built commit's, and never release with them.
 const TOOLS = ['tools/build-site.mjs', 'tools/site-html.mjs', 'tools/snap-demo.mjs', 'tools/site-catalog.mjs', 'tools/catalog-art.mjs',
-  'package.json', 'package-lock.json'];
+  'tools/site-diagrams.mjs', 'package.json', 'package-lock.json'];
 const toolsHere = path.join(import.meta.dirname, '..');
 const toolsDirty = TOOLS.filter(t => {
   let committedCopy; try { committedCopy = gitRaw('show', `HEAD:${t}`); } catch { return true; }
@@ -177,7 +181,7 @@ const feedbackBox = (title, url, file) => `<aside class="feedback" aria-label="F
 <div class="feedback-actions"><a class="button" href="${esc(feedbackURL(title, url))}">Give feedback</a>${file ? `<a href="${REPO}/edit/dev/${esc(file)}">Suggest an edit</a>` : ''}</div></aside>`;
 // Pages with one of the kit's interactive demos load its stylesheet in <head> (it reserves the demo's size before the
 // script runs, so nothing moves) and preload its module; web/site.js imports it.
-const KIT_DEMOS = { 'cad-cantilever': 'cantilever' };
+const KIT_DEMOS = { 'cad-cantilever': 'cantilever', 'cad-fourbar': 'fourbar' };
 const kitDemos = body => Object.entries(KIT_DEMOS).filter(([tag]) => body.includes(`<${tag}`))
   .map(([, f]) => `<link rel="stylesheet" href="/kit/${f}.css"><link rel="modulepreload" href="/kit/${f}.js">`).join('');
 function frame({ title, body, md, description = LEDE, current = '', page = 'doc', css = [], updated = committed, url = current || '/' }) {
@@ -239,6 +243,7 @@ const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).m
 // custom elements, so pictures arrive as <img> and diagrams as Mermaid blocks; the browser test checks they render).
 const VISUAL = /<img\b|class="language-mermaid"|<pre class="mermaid"/g;
 const visuals = new Map();
+const docPages = [];                         // [path in out, HTML]: written once their diagrams are drawn, below
 for (const p of pages) {
   const ids = new Map();
   const renderer = new marked.Renderer();
@@ -295,7 +300,8 @@ for (const p of pages) {
   await mkdir(path.dirname(dest), { recursive: true });
   // Long pages: the kit's <cad-nav> on the left (every page, grouped, with this page's outline under it) and, on very
   // wide screens, the outline again in a right-hand column. All written out here, so the first paint is final (the
-  // script only marks the section being read, filters and toggles) and it all works without script.
+  // script only marks the section being read and filters) and it all works without script: on phones the tree folds
+  // into a native <details>, which opens with or without nav.js.
   const heads = [...html.matchAll(/<h([23]) id="([^"]+)">([\s\S]*?)<\/h\1>/g)]
     .map(([, level, id, inner]) => ({ level, id, text: inner.replace(/<[^>]+>/g, '').trim() })).filter(h => h.text);
   // The skip link's target is "main:content": slug() drops ":", so no heading id can take it (a "## Content" is "content").
@@ -307,14 +313,22 @@ for (const p of pages) {
     return `<details class="cad-nav-group"${s.id === p.section ? ' open' : ''}><summary>${esc(s.title)}</summary><ul>${list.map(q =>
       `<li><a href="${esc(pageURL(q.file))}"${q.file === p.file ? ` aria-current="page">${esc(q.title)}</a>${outline('', true)}` : `>${esc(q.title)}</a>`}</li>`).join('')}</ul></details>`;
   }).join('');
-  const nav = `<cad-nav for=".prose" rail=".doc-rail" role="navigation" aria-label="Pages and contents"><button type="button" class="cad-nav-toggle" aria-expanded="false">Pages and contents</button><div class="cad-nav-panel"><input type="search" class="cad-nav-filter" placeholder="Filter pages" aria-label="Filter pages"><p class="cad-nav-empty" role="status"></p>${tree}</div></cad-nav>`;
+  const nav = `<cad-nav for=".prose" rail=".doc-rail" role="navigation" aria-label="Pages and contents"><details class="cad-nav-fold"><summary class="cad-nav-toggle">Pages and contents</summary><div class="cad-nav-panel"><input type="search" class="cad-nav-filter" placeholder="Filter pages" aria-label="Filter pages"><p class="cad-nav-empty" role="status"></p>${tree}</div></details></cad-nav>`;
   const rail = heads.length < 2 ? '' : `<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline(' cad-nav-rail', false)}</nav>`;
-  await writeFile(dest, frame({ title: p.title, body: `<div class="doc-layout">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + p.file, description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/nav.css'] }));
+  docPages.push([dest, frame({ title: p.title, body: `<div class="doc-layout">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + p.file, description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/nav.css'] })]);
   visuals.set(p.file, (html.match(VISUAL) || []).length);
   p.html = html;                                                      // the catalogue takes each page's first figure
   p.updated = lastChange(p.file);
   await writeFile(path.join(out, p.file), rewriteMd(p.file, p.src));   // the Markdown twin, same path
 }
+// Every Mermaid block drawn once, in the site's theme (frame() sets data-diagram-theme="light"), and written into its
+// page as a finished figure. A block left as it is (no browser, or one Mermaid cannot draw) is drawn by kit/diagrams.js
+// in the reader's browser.
+const diagrams = await drawDiagrams(docPages.map(([, html]) => html), {
+  kit: f => readBuf(`src/cadagent/webkit/${f}`), site: f => readBuf(`web/${f}`), theme: 'light', client: CLIENT_DIAGRAMS,
+  cacheDir: process.env.CAD_AGENT_DIAGRAM_CACHE || path.join(toolsHere, '.cache', 'site-diagrams'),
+});
+for (const [dest, html] of docPages) await writeFile(dest, diagrams.draw(html));
 // Images referenced by docs.
 for (const f of tracked.filter(f => /^docs\/img\/.*\.(svg|png|jpe?g|gif|webp)$/i.test(f))) await copyTracked(f, path.join(out, f));
 
@@ -565,4 +579,6 @@ await writeFile(path.join(out, 'version.json'), JSON.stringify({ revision, built
 // For agents and the tests: which pages still have nothing to look at.
 const noVisual = [...visuals].filter(([, n]) => !n).map(([f]) => f).sort();
 await writeFile(path.join(out, 'visuals.json'), JSON.stringify({ pages: Object.fromEntries([...visuals].sort()), without: noVisual }, null, 2) + '\n');
-console.log(`Built ${path.relative(root, out) || out}${WORKTREE ? ' (draft: working tree)' : ''}: ${pages.length} pages (+ Markdown twins), ${catalog.items.length} catalogue entries, ${commands.length} commands. Revision ${revision.slice(0, 12)}. ${noVisual.length} pages have no picture, diagram or demo yet (visuals.json).`);
+console.log(`Built ${path.relative(root, out) || out}${WORKTREE ? ' (draft: working tree)' : ''}: ${pages.length} pages (+ Markdown twins), ${catalog.items.length} catalogue entries, ${commands.length} commands. Revision ${revision.slice(0, 12)}. ${noVisual.length} pages have no picture, diagram or demo yet (visuals.json). ` +
+  `Diagrams: ${diagrams.stats.diagrams} (Mermaid ${diagrams.stats.mermaid}), ${diagrams.stats.cached} from the cache, ${diagrams.stats.drawn} drawn` +
+  `${diagrams.stats.browser ? ` in ${diagrams.stats.browser}` : ''}${diagrams.stats.left ? `, ${diagrams.stats.left} left to the reader's browser` : ''}.`);

@@ -39,9 +39,13 @@ build moves one part at a time.
 Hashes. Every shape's ``sha256`` is ``cadagent.review.evidence.shape_content_hash`` (shared with the gates): sha256 of
 its BREP text (OCCT format version 1, no triangulation) without the shape flag lines. The file
 ``exports/dossier-shapes/<sha256>.brep`` holds that BREP text. The hash is stable across processes and runs; an OCCT
-upgrade may change it, which only invalidates a sign-off, never hides a change. Pass the recorded hashes along
-(``assembly_shapes(with_hashes=True)``); do not re-hash a shape loaded from its file. The shapes directory is build
-output and gets its own ``.gitignore``; the JSON is the record to commit.
+upgrade may change it, and so may building on another CPU architecture (x86-64 and aarch64 agree on few hashes), which
+only invalidates a sign-off, never hides a change. The record's ``hash`` is ``{"recipe": HASH_RECIPE, "platform":
+...}``, the platform (``cadagent.review.evidence.hash_platform``: machine, system, C library, OCP version and package)
+saying where its hashes were made; every release leaves ``hash`` out of the gates' geometry digest, like ``actor``.
+Before #144 ``hash`` was the recipe string. Pass the recorded hashes along (``assembly_shapes(with_hashes=True)``); do
+not re-hash a shape loaded from its file. The shapes directory is build output and gets its own ``.gitignore``; the JSON
+is the record to commit.
 
 Scope. Module-level declarations go to the current registry (``use_registry``, else ``REGISTRY``);
 ``build_module`` gives every build a fresh one. ``root`` is the project root (``project_root``), not the cwd.
@@ -66,7 +70,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
 
-from cadagent.review.evidence import brep_content_hash, shape_brep_text, shape_content_hash
+from cadagent.review.evidence import brep_content_hash, hash_platform, shape_brep_text, shape_content_hash
 from .model import DIRECTION_RE, ID_RE, JOINT_KINDS, Issue, Where
 
 SCHEMA = "cad-agent.dossier-geometry/1"
@@ -78,7 +82,7 @@ _THIS_FILE = os.path.normcase(os.path.abspath(__file__))
 _FASTENER_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_.:\-]*$")
 HASH_RECIPE = ("cadagent.review.evidence.shape_content_hash: sha256 of the OCCT BREP text (format version 1, "
                "no triangles, no normals) with the 7-digit shape flag lines removed")
-CONFIG_NAMES = ("cad-agent.yaml", "vptest.yaml")
+CONFIG_NAME = "cad-agent.yaml"         # the project config that marks the project root (cadagent.project)
 
 
 class RegistryError(ValueError):
@@ -246,14 +250,13 @@ def _check_part(name: str, grounded: bool, free: bool, reason: str) -> str:
 
 
 def project_root(start: Union[str, Path, None] = None) -> Path:
-    """The nearest directory at or above ``start`` (a build script or a directory) that holds ``cad-agent.yaml`` or
-    ``vptest.yaml``; else, for a script in a ``cad/`` directory, that directory's parent; else the current
-    directory."""
+    """The nearest directory at or above ``start`` (a build script or a directory) that holds ``cad-agent.yaml``;
+    else, for a script in a ``cad/`` directory, that directory's parent; else the current directory."""
     if start:
         here = Path(start).resolve()
         first = here if here.is_dir() else here.parent
         for d in (first, *first.parents):
-            if any((d / n).is_file() for n in CONFIG_NAMES):
+            if (d / CONFIG_NAME).is_file():
                 return d
         if first.name == "cad":
             return first.parent
@@ -502,9 +505,9 @@ class Registry:
         ``write`` (default) also writes ``<out_dir>/dossier-geometry.json`` and the BREP of every shape.
 
         ``params``: a mapping, a path to a JSON file, or None for ``<root>/cad/parameters.json`` when it exists
-        (else ``{}``). ``root`` is the project root: by default the nearest directory holding ``cad-agent.yaml`` (or
-        ``vptest.yaml``) above the build script that calls this, else the current directory. Paths in the record are
-        relative to it, and ``out_dir`` must be inside it.
+        (else ``{}``). ``root`` is the project root: by default the nearest directory holding ``cad-agent.yaml`` above
+        the build script that calls this, else the current directory. Paths in the record are relative to it, and
+        ``out_dir`` must be inside it.
         """
         root = Path(root).resolve() if root else project_root(_caller_where().rpartition(":")[0] or None)
         out = (root / out_dir).resolve()
@@ -520,7 +523,8 @@ class Registry:
         result = BuildResult(root=root, out_dir=out)
         actor = build_actor()
         previous = _previous_parts(out / GEOMETRY_FILE)
-        geo: Dict[str, Any] = {"schema": SCHEMA, "units": "mm", "hash": HASH_RECIPE,
+        geo: Dict[str, Any] = {"schema": SCHEMA, "units": "mm",
+                               "hash": {"recipe": HASH_RECIPE, "platform": hash_platform()},
                                "actor": actor,
                                "parameters": param_record, "out_dir": os.path.relpath(out, root), "shapes_dir": "",
                                "parts": {}, "cavities": {}, "joints": {}, "fasteners": {}, "assembly": {"steps": []},

@@ -267,3 +267,51 @@ def test_a_run_for_one_pr_counts_its_pending_posts(monkeypatch, capsys):
     gates.run("o/r", 5, do_post=True)
     assert f"posted {len(fake.posts)} statuses (2 of them pending first)" in capsys.readouterr().out
 
+
+def _git(cwd, *args):
+    return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", "-c", "init.defaultBranch=main",
+                           *args], cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
+
+
+@pytest.fixture
+def origin_with_a_pr(tmp_path):
+    """A local 'origin' with three commits on main and a pull-request head ref, as GitHub serves them."""
+    origin = tmp_path / "origin"
+    origin.mkdir()
+    _git(origin, "init", "-q")
+    for i in range(3):
+        (origin / "f.txt").write_text(str(i))
+        _git(origin, "add", "f.txt")
+        _git(origin, "commit", "-q", "-m", f"c{i}")
+    _git(origin, "update-ref", "refs/pull/7/head", "HEAD")
+    return origin
+
+
+def test_the_release_fetch_keeps_a_full_clone_full(origin_with_a_pr, tmp_path, monkeypatch):
+    """Running the gates locally on a release PR must not make the clone shallow: every worktree shares its history,
+    and the site's --release build refuses a shallow repository (it did so twice on 2026-11-01)."""
+    full = tmp_path / "full"
+    _git(tmp_path, "clone", "-q", f"file://{origin_with_a_pr}", str(full))
+    monkeypatch.chdir(full)
+    assert "--depth=1" not in gates.release_fetch(7)
+    subprocess.run(gates.release_fetch(7), check=True, capture_output=True)
+    assert _git(full, "rev-parse", "--is-shallow-repository") == "false"
+    assert _git(full, "rev-list", "--count", "origin/main") == "3"
+    assert _git(full, "rev-parse", "origin/pr-head") == _git(origin_with_a_pr, "rev-parse", "refs/pull/7/head")
+
+
+def test_the_release_fetch_stays_shallow_in_a_shallow_checkout(origin_with_a_pr, tmp_path, monkeypatch):
+    """CI checks out with fetch-depth: 1; there the fetch stays one commit deep."""
+    ci = tmp_path / "ci"
+    _git(tmp_path, "clone", "-q", "--depth=1", f"file://{origin_with_a_pr}", str(ci))
+    for i in (3, 4):  # main and the PR move on after the checkout, so the fetch has history it could pull
+        (origin_with_a_pr / "f.txt").write_text(str(i))
+        _git(origin_with_a_pr, "commit", "-qam", f"c{i}")
+    _git(origin_with_a_pr, "update-ref", "refs/pull/7/head", "HEAD")
+    monkeypatch.chdir(ci)
+    assert "--depth=1" in gates.release_fetch(7)
+    subprocess.run(gates.release_fetch(7), check=True, capture_output=True)
+    assert _git(ci, "rev-parse", "--is-shallow-repository") == "true"
+    assert _git(ci, "rev-list", "--count", "origin/main") == "1"
+    assert _git(ci, "rev-list", "--count", "origin/pr-head") == "1"
+    assert _git(ci, "rev-parse", "origin/pr-head") == _git(origin_with_a_pr, "rev-parse", "refs/pull/7/head")

@@ -3,13 +3,27 @@
  * Kit rules sit in :where() (zero specificity): the --cad-nav-* custom properties or any page rule win. Narrow layout:
  * below 1100px (override the two media queries below to change it). */
 :where(cad-nav){display:block;font:var(--cad-nav-font,13px/1.5 system-ui,sans-serif);color:var(--cad-nav-fg,#173d3c)}
+/* The fold, <details class="cad-nav-fold">: a native toggle on narrow screens (below), with or without script. On wide
+ * screens it takes no box and its summary hides, so the panel is a column of <cad-nav> itself (and stays sticky), open
+ * whether or not the <details> is (::details-content: Chrome 131, Safari 18.4, Firefox 143). Two rules, not one list: a
+ * browser that does not know ::details-content drops the whole list. */
+:where(cad-nav .cad-nav-fold){display:contents}
+:where(cad-nav .cad-nav-fold)::details-content{display:contents}
+:where(cad-nav .cad-nav-toggle){display:none}
+/* Older browsers hide a closed fold's panel whatever its display, so on a wide screen its summary stays while the fold is
+ * closed: until nav.js opens it, or for good if the script is off, blocked or fails. */
+@supports not selector(::details-content){:where(cad-nav .cad-nav-fold:not([open]) > .cad-nav-toggle){display:block}}
 :where(cad-nav .cad-nav-panel){position:sticky;top:var(--cad-nav-top,96px);max-height:calc(100vh - var(--cad-nav-top,96px) - 16px);
   overflow:auto;padding:4px 10px 24px 4px;scrollbar-width:thin}
+/* Page colour from the panel's top edge to 8px below the filter, behind it and over the links that scroll under it:
+ * square, so no link shows in the corners beside the pill (a shadow on the pill followed its rounded ends). Sticky
+ * insets count from inside the panel's 4px padding, so the band sticks at -4px and the filter, at 4px, sits 8px down.
+ * 1lh + 18px is the filter's height (its line, padding and border); the px pair is for browsers without lh. */
+:where(cad-nav .cad-nav-panel)::before{content:"";position:sticky;top:-4px;z-index:1;display:block;height:53.5px;margin:-4px 0 -49.5px;
+  height:calc(1lh + 18px + 16px);margin:-4px 0 calc(-1lh - 18px - 12px);background:var(--cad-nav-page,#fffdf5)}
 :where(cad-nav .cad-nav-filter){position:sticky;top:4px;z-index:1;display:block;width:100%;box-sizing:border-box;margin:0 0 12px;
   padding:8px 12px;border-radius:999px;font:inherit;border:1px solid var(--cad-nav-input-line,#6f8a80);
-  background:var(--cad-nav-bg,#fff);color:inherit;
-  /* page colour above (the panel's 4px top padding) and below (the 12px margin), so no link shows around the pill */
-  box-shadow:0 -4px 0 4px var(--cad-nav-page,#fffdf5),0 8px 0 4px var(--cad-nav-page,#fffdf5)}
+  background:var(--cad-nav-bg,#fff);color:inherit}
 :where(cad-nav .cad-nav-filter:focus-visible){outline:2px solid var(--cad-nav-accent,#bd3a12);outline-offset:1px}
 :where(cad-nav .cad-nav-empty:not(:empty)){margin:0 0 12px;padding:8px 12px;border-radius:10px;background:var(--cad-nav-current,#f0f5e7)}
 :where(cad-nav details){margin:0 0 6px}
@@ -26,22 +40,26 @@
 :where(.cad-nav-outline a){font-size:.92em;padding:3px 8px;color:var(--cad-nav-muted,#526863)}
 :where(.cad-nav-outline .h3 a){padding-left:20px;font-size:.88em}
 :where(.cad-nav-outline a[aria-current=location]){color:var(--cad-nav-fg,#173d3c);font-weight:650;border-left-color:var(--cad-nav-active,#2e9d5b)}
-:where(cad-nav .cad-nav-toggle){display:none}
 cad-nav [hidden]{display:none!important}
 @media(max-width:1099.98px){
+  :where(cad-nav .cad-nav-fold){display:block;margin:0}
+  :where(cad-nav .cad-nav-fold)::details-content{display:block}
   :where(cad-nav .cad-nav-panel){position:static;max-height:none;overflow:visible;padding:0}
-  :where(cad-nav .cad-nav-filter){position:static;box-shadow:none}
+  :where(cad-nav .cad-nav-panel)::before{display:none}
+  :where(cad-nav .cad-nav-filter){position:static}
   :where(cad-nav .cad-nav-toggle){display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;
     box-sizing:border-box;padding:10px 16px;min-height:44px;border-radius:12px;border:1px solid var(--cad-nav-input-line,#6f8a80);
-    background:var(--cad-nav-current,#f0f5e7);color:inherit;font:inherit;font-weight:700;cursor:pointer;text-align:left}
-  :where(cad-nav .cad-nav-toggle)::after{content:"▾";transition:transform .15s}
-  :where(cad-nav[data-open] .cad-nav-toggle)::after{transform:rotate(180deg)}
-  cad-nav:not([data-open]) .cad-nav-panel{display:none}
-  :where(cad-nav[data-open] .cad-nav-panel){margin-top:10px}
+    background:var(--cad-nav-current,#f0f5e7);color:inherit;font:inherit;font-weight:700;letter-spacing:normal;
+    text-transform:none;list-style:none;cursor:pointer;text-align:left}
+  :where(cad-nav .cad-nav-toggle)::-webkit-details-marker{display:none}
+  :where(cad-nav .cad-nav-toggle:focus-visible){outline:2px solid var(--cad-nav-accent,#bd3a12);outline-offset:2px}
+  :where(cad-nav .cad-nav-toggle)::after{content:"▾";content:"▾"/"";transition:transform .15s}   /* no alt text: not in its name */
+  :where(cad-nav .cad-nav-fold[open] > .cad-nav-toggle)::after{transform:rotate(180deg)}
+  :where(cad-nav .cad-nav-fold[open] > .cad-nav-panel){margin-top:10px}
 }
-/* Without script there is nothing to toggle or filter: show the tree as plain links. */
-@media(scripting:none){
-  cad-nav .cad-nav-toggle,cad-nav .cad-nav-filter{display:none}
-  cad-nav:not([data-open]) .cad-nav-panel{display:block}
-}
+/* Without script there is nothing to filter. The fold still opens and closes natively. */
+@media(scripting:none){cad-nav .cad-nav-filter,cad-nav .cad-nav-panel::before{display:none}}
 @media(prefers-reduced-motion:reduce){:where(cad-nav .cad-nav-toggle)::after{transition:none}}
+/* On paper the tree is no use (and a fold the script opened for a wide window would print in full). A page that lays out
+ * a column for <cad-nav> should drop that column in print too, or its content moves into the empty one. */
+@media print{:where(cad-nav){display:none}}

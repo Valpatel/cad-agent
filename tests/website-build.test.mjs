@@ -211,6 +211,18 @@ test('code samples keep their links as written (no rewriting inside code)', asyn
     assert.ok(!(await readFile(path.join(out, f), 'utf8')).includes('&amp;amp;'), `${f}: an entity encoded twice`);
 });
 
+test('the snap-arm explorer is on its page with its still, and only that page loads its kit files', async () => {
+  const page = await readFile(path.join(out, 'docs/compliant.html'), 'utf8');
+  const demo = page.match(/<cad-cantilever\b[^>]*>([\s\S]*?)<\/cad-cantilever>/);
+  assert.ok(demo, 'no <cad-cantilever> on /docs/compliant');
+  assert.match(demo[1], /<img src="\/docs\/img\/compliant\/cantilever-explorer\.svg" alt="[^"]{40,}" width="640" height="250" ?\/?>/);
+  const head = page.slice(0, page.indexOf('</head>'));
+  assert.match(head, /<link rel="stylesheet" href="\/kit\/cantilever\.css"><link rel="modulepreload" href="\/kit\/cantilever\.js">/);
+  for (const f of ['kit/cantilever.js', 'kit/cantilever.css', 'kit/formulas.js', 'kit/formulas-data.js', 'docs/img/compliant/cantilever-explorer.svg'])
+    assert.ok(files.includes(f), `${f} is not published`);
+  assert.doesNotMatch(await readFile(path.join(out, 'docs/toolkit.html'), 'utf8'), /cantilever\.(css|js)/);
+});
+
 test('an image keeps the size its author gave, and its tag survives any alt text', async () => {
   const wt = path.join(tmp, 'wt-img');
   execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });

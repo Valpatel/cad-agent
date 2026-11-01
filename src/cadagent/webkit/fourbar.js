@@ -549,8 +549,12 @@ export class CadFourbar extends Base {
     const m = chartMarker(s, r, t2);
     set(p['chart-cursor'], { x1: m.x, x2: m.x }); set(p['chart-dot'], { cx: m.x, cy: m.y, r: m.closes ? 4.5 : 0 });
     this.out.mu.textContent = g.mu === null ? '–' : `${g.locked ? 'Locked, ' : ''}${fmt(deg(g.mu))}`;
-    this.play.textContent = this.playing ? 'Pause' : 'Play';
-    this.play.setAttribute('aria-label', `${this.playing ? 'Pause' : 'Play'} the linkage`);
+    // Only when it changes: a label rewritten on every frame makes WebKit drop the click (see cantilever.js render).
+    const label = this.playing ? 'Pause' : 'Play';
+    if (this.play.textContent !== label) {
+      this.play.textContent = label;
+      this.play.setAttribute('aria-label', `${label} the linkage`);
+    }
   }
 
   loop() {

@@ -186,10 +186,15 @@ def test_small_case_runs(tmp_path):
     res = c.results(d)
     assert res['solids']['chip']['max_c'] > res['ambient_c']
     assert 0 < res['fans']['fan']['flow_m3h'] < 20
-    # the fan's inlet and outlet faces were built and logged: the air the fan pushes forward, through both
+    # the fan's inlet and outlet faces are the two ends of its zone's cells: one face per cell at each end (the zone is
+    # one layer of cells), the same area, and the air the fan pushes forward through both. Here 10 mm cells meet the
+    # zone's finer ones at its inlet end, which once put the inlet over the hub (#224 review)
     fan = res['fans']['fan']
-    assert res['zone_faces']['fanInlet'] > 0 and res['zone_faces']['fanOutlet'] > 0
-    assert fan['inlet_kg_s'] > 0 and fan['outlet_kg_s'] > 0 and 'inlet_c' in fan and 'outlet_c' in fan
+    assert res['zone_faces']['fanInlet'] == res['zone_faces']['fanOutlet'] == res['zone_cells']['fan']
+    assert fan['inlet_area_m2'] == pytest.approx(fan['outlet_area_m2'], rel=0.02)
+    assert fan['inlet_kg_s'] > 0 and fan['inlet_kg_s'] == pytest.approx(fan['outlet_kg_s'], rel=0.1)
+    assert fan['inlet_c'] is not None and fan['outlet_c'] is not None
+    assert not [w for w in res['warnings'] if w.startswith('fan')]
     # continue from the last write: a rebuilt case object picks up the processor count from the case
     again = small_case()
     assert again.extend(d, 10) == 0

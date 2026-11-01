@@ -30,8 +30,8 @@ OUT = ROOT / "docs" / "img" / "cfd" / "fan-faces.webp"
 FIXTURES = ROOT / "tests" / "fixtures" / "cfd_runs"
 CASES = {"exhaust-under-opening": False, "exhaust-ducted": True}      # name: ducted
 ITERATIONS, NP = 1500, 6
-KEEP = ("T_inlet_fan", "T_outlet_fan", "mass_inlet_fan", "mass_outlet_fan", "zone_fan", "zone_heater", "flux_T",
-        "flux_mass", "T_max_domain0")
+KEEP = ("T_inlet_fan", "T_outlet_fan", "mass_inlet_fan", "mass_outlet_fan", "massGross_inlet_fan", "massGross_outlet_fan",
+        "zone_fan", "zone_heater", "flux_T", "flux_mass", "T_max_domain0")
 LOG_TAIL = 40
 FACES = "#2a78d6"                                    # simviz's first series colour: the measuring faces
 WALL = "#c9d1c6"

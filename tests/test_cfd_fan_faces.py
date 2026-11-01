@@ -33,6 +33,9 @@ def test_mass_flow_weighting_and_the_volume_average_differ_by_the_hand_computed_
     assert r['energy_conserved'] is True and r['warnings'] == []
     assert r['zone_faces'] == {'fanInlet': 24, 'fanOutlet': 24} and 'error' not in r
     assert r['steady'] is True and r['converged'] is True
+    # every face carries air forward, so nothing flows back; both ends are the 1.65e-3 m² annulus
+    assert f['inlet_backflow_kg_s'] == 0 and f['outlet_backflow_kg_s'] == 0
+    assert f['inlet_area_m2'] == f['outlet_area_m2'] == pytest.approx(math.pi / 4 * (0.05 ** 2 - 0.02 ** 2), rel=1e-8)
 
 
 def test_both_temperatures_are_monitored_and_held_to_1_c_like_every_other(tmp_path):
@@ -117,14 +120,101 @@ def test_too_little_net_flow_to_weight_by_gives_no_temperature(tmp_path):
     # 1 mg/s through the inlet, under 1 % of the fan's free-air flow (30 m3/h x 1.17 kg/m3 = 9.7 g/s): OpenFOAM's
     # weighted average divides by it, so the temperature means nothing
     d = recorded('fan-faces-known-profile', tmp_path)
-    _edit(d / 'postProcessing/domain0/mass_inlet_fan/0/surfaceFieldValue.dat',
-          lambda s: s.replace('4.00000000e-03', '1.00000000e-06'))
+    for kind in ('mass', 'massGross'):                    # all of it forward: none flows back
+        _edit(d / f'postProcessing/domain0/{kind}_inlet_fan/0/surfaceFieldValue.dat',
+              lambda s: s.replace('4.00000000e-03', '1.00000000e-06'))
     r = cfd.read_results(d)
     f = r['fans']['fan']
     assert f['inlet_c'] is None and f['inlet_kg_s'] == pytest.approx(1e-6) and f['outlet_c'] == 37.5
     assert 'fan_inlet_c' not in r['monitors'] and 'fan_inlet_c_change' not in r['convergence']
     assert r['warnings'] == ["fan inlet: the net flow through it, 1e-06 kg/s, is under 1% of the fan's free-air flow, "
                              'too little to weight a temperature by']
+
+
+def _gross(d, side, kg_s):
+    _edit(d / f'postProcessing/domain0/massGross_{side}_fan/0/surfaceFieldValue.dat',
+          lambda s: s.replace('4.00000000e-03', f'{kg_s:.8e}'))
+
+
+def test_a_little_backflow_keeps_the_temperature_and_says_what_it_is(tmp_path):
+    # 5.2 g/s cross the inlet in all, 4 g/s net: (5.2 - 4) / 2 = 0.6 g/s flows back, 15 % of the net. The weighted value
+    # is still exactly the one that carries the heat (Q = m_dot c_p dT), but it is not the temperature of the air
+    d = recorded('fan-faces-known-profile', tmp_path)
+    _gross(d, 'inlet', 0.0052)
+    r = cfd.read_results(d)
+    f = r['fans']['fan']
+    assert f['inlet_c'] == 37.5 and f['inlet_backflow_kg_s'] == pytest.approx(0.0006, rel=1e-9)
+    assert 'fan_inlet_c' in r['monitors']
+    assert r['warnings'] == ['fan inlet: 0.0006 kg/s flows back through it, 15% of the net 0.004 kg/s, so inlet_c is the '
+                             'temperature of the net heat flow (right for ṁ c_p ΔT), not of the air crossing it']
+
+
+def test_backflow_up_to_the_net_flow_gives_no_temperature(tmp_path):
+    # 12 g/s cross the outlet in all, 4 g/s net: 4 g/s flows back, as much as the net. The weighted value is then off
+    # the forward air by at least the gap between the two streams, and can lie outside the air's own range
+    d = recorded('fan-faces-known-profile', tmp_path)
+    _gross(d, 'outlet', 0.012)
+    r = cfd.read_results(d)
+    f = r['fans']['fan']
+    assert f['outlet_c'] is None and f['inlet_c'] == 37.5 and f['outlet_backflow_kg_s'] == pytest.approx(0.004)
+    assert 'fan_outlet_c' not in r['monitors'] and 'fan_outlet_c_change' not in r['convergence']
+    assert f['heat_carried_w'] == 50.25                        # the net heat flow is still exact
+    assert r['warnings'] == ["fan outlet: 0.004 kg/s flows back through it for 0.004 kg/s net, so the mass-flow-weighted "
+                             "value could lie outside the air's own range"]
+
+
+def test_a_net_flow_running_backwards_gives_no_temperature(tmp_path):
+    # the inlet's net flow runs against the axis: no air enters the fan there, whatever the weighting gives
+    d = recorded('fan-faces-known-profile', tmp_path)
+    _edit(d / 'postProcessing/domain0/mass_inlet_fan/0/surfaceFieldValue.dat',
+          lambda s: s.replace('4.00000000e-03', '-3.00000000e-03'))
+    r = cfd.read_results(d)
+    f = r['fans']['fan']
+    assert f['inlet_c'] is None and f['inlet_kg_s'] == pytest.approx(-0.003) and f['inlet_backflow_kg_s'] == pytest.approx(0.0035)
+    assert r['warnings'] == ['fan inlet: the net flow through it runs backwards, -0.003 kg/s along the axis, so it has no '
+                             'temperature of air entering the fan']
+
+
+def test_ends_whose_areas_or_flows_disagree_are_named(tmp_path):
+    # the two ends of a zone are the ends of the same cells: an outlet half again as large means a face missed cells
+    d = recorded('fan-faces-known-profile', tmp_path)
+    for kind in ('T', 'mass', 'massGross'):
+        _edit(d / f'postProcessing/domain0/{kind}_outlet_fan/0/surfaceFieldValue.dat',
+              lambda s: s.replace('# Area          : 1.64933614e-03', '# Area          : 2.47400421e-03'))
+    r = cfd.read_results(d)
+    assert r['fans']['fan']['outlet_area_m2'] == pytest.approx(2.474e-3, rel=1e-5)
+    assert r['warnings'] == ['fan: its inlet and outlet areas differ, 0.00165 against 0.00247 m² (more than 10%): check '
+                             'the mesh at the ends of its zone, where a face may have missed cells']
+    # and net flows 20 % apart mean air crosses the zone's sides
+    d = recorded('fan-faces-known-profile', tmp_path / 'flows')
+    for kind in ('mass', 'massGross'):
+        _edit(d / f'postProcessing/domain0/{kind}_outlet_fan/0/surfaceFieldValue.dat',
+              lambda s: s.replace('4.00000000e-03', '3.20000000e-03'))
+    assert cfd.read_results(d)['warnings'] == [
+        'fan: its inlet and outlet net flows differ, 0.004 against 0.0032 kg/s (more than 10%): air crosses the sides of '
+        'its zone, through the hub or round the rim']
+
+
+def test_the_face_count_is_the_solvers_not_topoSets(tmp_path):
+    # in a parallel run topoSet's log adds each processor's faces, so a face on a processor boundary counts twice; the
+    # solver's own header counts each face once
+    d = recorded('fan-faces-known-profile', tmp_path)
+    _edit(d / 'log.topoSet', lambda s: s.replace('fanInlet now size 24', 'fanInlet now size 30'))
+    assert cfd.read_results(d)['zone_faces'] == {'fanInlet': 24, 'fanOutlet': 24}
+
+
+def test_continuing_a_case_written_before_the_faces_does_not_claim_them(tmp_path):
+    from .test_cfd import small_case                       # needs trimesh, as that module does
+    c = small_case()
+    d = c.write(tmp_path / 'case', np_procs=2)
+    c._continue(d, 10)                                     # a case with the faces keeps saying how they are measured
+    assert cfd.FACE_LIMIT in json.loads((d / 'cadagent-case.json').read_text())['limits']
+    ctl = d / 'system/controlDict'                         # one written before them has no face outputs ...
+    ctl.write_text(re.sub(r'\n    (T|mass|massGross)_(inlet|outlet)_fan\n    \{.*?\n    \}', '', ctl.read_text(), flags=re.S))
+    assert 'T_inlet_fan' not in ctl.read_text() and 'flux_T' in ctl.read_text()
+    c._continue(d, 10)                                     # ... and continuing it adds none, so its limits do not say so
+    limits = json.loads((d / 'cadagent-case.json').read_text())['limits']
+    assert cfd.FACE_LIMIT not in limits and 'fans are actuator discs with a straight-line fan curve, no swirl' in limits
 
 
 def test_runs_recorded_before_the_faces_keep_only_the_volume_average(tmp_path):
@@ -162,15 +252,20 @@ def test_the_case_builds_and_logs_both_faces_of_every_fan(tmp_path):
     d = c.write(tmp_path / 'case', np_procs=2)
     ts = (d / 'system/domain0/topoSetDict').read_text()
     f = c.fans[0]
+    # every face not on the zone's boundary (cellToFace 'outside', synchronised across processors, then inverted) ...
+    off = ('{ name fanOffZoneFaces; type faceSet; action new; source cellToFace; set fanSet; option outside; }\n'
+           '    { name fanOffZoneFaces; type faceSet; action invert; }')
+    assert off in ts and ts.index('name fanSet;') < ts.index(off)
     for side in ('inlet', 'outlet'):
         o = f.faces()[side]
         name = f'fan{side.capitalize()}'
-        block = re.search(rf'\{{ name {name}; type faceZoneSet; action new; source searchableSurfaceToFaceZone;(.*?)\}}', ts, re.S)
-        assert block, name
-        body = block.group(1)
-        assert 'surfaceType disk;' in body and 'normal (0.000000000 0.000000000 -1.000000000);' in body
-        assert f'origin ({o[0]:.9f} {o[1]:.9f} {o[2]:.9f});' in body
-        assert 'radius 0.015000;' in body and 'innerRadius 0.005000;' in body
+        # ... is taken away from the faces that cross the plane just inside each end, oriented along the axis (-z)
+        new = re.search(rf'\{{ name {name}; type faceZoneSet; action new; source planeToFaceZone;(.*?)\}}', ts, re.S)
+        assert new, name
+        assert new.group(1).split() == f'point ({o[0]:.9f} {o[1]:.9f} {o[2]:.9f}); normal (0.000000000 0.000000000 -1.000000000); option all;'.split()
+        sub = f'{{ name {name}; type faceZoneSet; action subtract; source setToFaceZone; faceSet fanOffZoneFaces; }}'
+        assert ts.index(off) < new.start() < ts.index(sub)
+        assert 'searchableSurfaceToFaceZone' not in ts                     # never by where a face lies (#224 review)
     # the zone is z from 38 to 42 mm, pushed down (-z): the inlet just under its top, the outlet just over its bottom
     assert f.faces()['inlet'][2] == pytest.approx(0.042 - 1e-7, abs=1e-12)
     assert f.faces()['outlet'][2] == pytest.approx(0.038 + 1e-7, abs=1e-12)
@@ -181,7 +276,9 @@ def test_the_case_builds_and_logs_both_faces_of_every_fan(tmp_path):
         assert 'empty-surface warn;' in t and 'writeInterval 10;' in t
         m = re.search(rf'mass_{side}_fan\s*\{{(.*?)\}}', cd, re.S).group(1)
         assert f'name {zone};' in m and 'fields (phi); operation sum;' in m and 'empty-surface warn;' in m
-    assert any('mass-flow-weighted' in s for s in json.loads((d / 'cadagent-case.json').read_text())['limits'])
+        g = re.search(rf'massGross_{side}_fan\s*\{{(.*?)\}}', cd, re.S).group(1)
+        assert f'name {zone};' in g and 'fields (phi); operation sumMag;' in g and 'empty-surface warn;' in g
+    assert cfd.FACE_LIMIT in json.loads((d / 'cadagent-case.json').read_text())['limits']
 
 
 def test_the_weighting_is_the_bulk_temperature_that_carries_the_heat():

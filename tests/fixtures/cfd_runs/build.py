@@ -246,6 +246,10 @@ def fan_faces_known_profile(case: Path):
                       [(t, t_weighted) for t in ts], weight=True, region=f'faceZone {zone}', faces=len(faces), area=area)
         surface_field(pp / f'mass_{side}_fan' / '0' / 'surfaceFieldValue.dat', 'sum(phi)',
                       [(t, phi_sum) for t in ts], weight=False, region=f'faceZone {zone}', faces=len(faces), area=area)
+        # every face carries air forward, so the gross flow is the net flow: nothing flows back
+        surface_field(pp / f'massGross_{side}_fan' / '0' / 'surfaceFieldValue.dat', 'sumMag(phi)',
+                      [(t, sum(abs(p) for p, _ in faces)) for t in ts], weight=False, region=f'faceZone {zone}',
+                      faces=len(faces), area=area)
     # all the heat leaves through the fan: 0.004 kg/s x 1005 J/(kg K) x (37.5 - 25) K = 50.25 W, +0.5 % on the 50 W put in
     phi = [rng.normal(0, 2e-8) for _ in ts]
     surface_field(pp / 'flux_mass' / '0' / 'surfaceFieldValue.dat', 'sum(phi)', list(zip(ts, phi)), weight=False)

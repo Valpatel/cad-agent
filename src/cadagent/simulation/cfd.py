@@ -52,13 +52,24 @@ P_ROOM = 1e5                     # Pa: the open boundary's pressure
 # nothing is put in. read_results' `converged` and run_until_balanced's default use the same 5 %.
 ENERGY_TOLERANCE_PCT = 5.0
 ENERGY_TOLERANCE_W = 0.5
-# Each fan's measuring faces sit this far inside the fan zone's end planes. The zone takes the cells whose centres lie
-# strictly between the planes, so a cell centre exactly on a plane is outside it; the inset keeps the face between that
-# cell and the zone's first cell on the face, not the one a cell further out.
+# Each fan's measuring planes sit this far inside the fan zone's end planes. The zone takes the cells whose centres lie
+# strictly between the planes, so a cell centre exactly on an end plane is outside it; the inset puts that cell on the
+# outer side of the measuring plane, with the cells further out.
 FACE_INSET_M = 1e-7
 # Below this fraction of the fan's free-air mass flow, the net flow through a face is too small to weight a temperature
 # by: OpenFOAM's weightedAverage divides by it.
 MIN_NET_FLOW = 0.01
+# A fan's inlet and outlet faces are the two ends of the same columns of cells, so their areas match and, unless much
+# air crosses the zone's sides, so do their net flows. Past this fraction apart, results() warns.
+FACE_MISMATCH = 0.10
+# Air flowing back through a face pulls the mass-flow-weighted temperature away from the air going forward, by the
+# backflow over the net flow times the temperature gap between the two. Past this fraction of the net flow, results()
+# says the value is the temperature of the net heat flow, not of the air; at the net flow or more, the value can lie
+# outside the air's own range and is None.
+BACKFLOW_WARN = 0.10
+FACE_LIMIT = ("a fan's inlet and outlet temperatures are mass-flow-weighted over the faces at each end of its zone "
+              '(face values interpolated between the cells either side); air through the hub is not counted, and air '
+              'flowing back through a face makes its value the temperature of the net heat flow, not of the air')
 
 
 @dataclass(frozen=True)
@@ -122,9 +133,9 @@ class Fan:
         return np.round(c - a * h, 6), np.round(c + a * h, 6), a
 
     def faces(self) -> Dict[str, np.ndarray]:
-        """Where the fan's inlet and outlet temperatures are measured: the centre (m) of the annulus (d_hub to d_outer)
-        across each end plane of the fan zone, FACE_INSET_M inside it. The faces are those whose cell-to-cell line
-        crosses that annulus, oriented along the axis, so a positive mass flow is air the fan pushes forward."""
+        """Where the fan's inlet and outlet temperatures are measured: a point (m) on the plane across each end of the
+        fan zone, FACE_INSET_M inside it, on the axis. Each face is the set of the zone's boundary faces whose two cells
+        lie either side of that plane, oriented along the axis, so a positive mass flow is air the fan pushes forward."""
         up, down, a = self.ends()
         return {'inlet': up + a * FACE_INSET_M, 'outlet': down - a * FACE_INSET_M}
 
@@ -331,9 +342,7 @@ class ThermalCase:
                        'heat put in (energy balance), not that the residuals reached a tolerance',
                        'isotropic solids: heat pipes are an effective conductivity, with no dry-out limit',
                        'obstacles (enclosure, boards) are adiabatic: the heat leaves only with the air',
-                       'fans are actuator discs with a straight-line fan curve, no swirl',
-                       "a fan's inlet and outlet temperatures are mass-flow-weighted over the annulus at each end of its zone "
-                       '(face values interpolated between the cells either side); air through the hub is not counted'],
+                       'fans are actuator discs with a straight-line fan curve, no swirl'] + ([FACE_LIMIT] if self.fans else []),
         }
 
     def heat_input_w(self) -> Optional[float]:
@@ -380,6 +389,12 @@ class ThermalCase:
     {{
         type surfaceFieldValue; libs (fieldFunctionObjects); region {self.fluid}; regionType faceZone; name {zone};
         fields (phi); operation sum; empty-surface warn; writeFields false; log false;
+        writeControl timeStep; writeInterval 10;
+    }}
+    massGross_{side}_{f.name}
+    {{
+        type surfaceFieldValue; libs (fieldFunctionObjects); region {self.fluid}; regionType faceZone; name {zone};
+        fields (phi); operation sumMag; empty-surface warn; writeFields false; log false;
         writeControl timeStep; writeInterval 10;
     }}''')
         # heat leaving with the air, referenced to the room: cp (sum(phi T) - T_amb sum(phi)); robust to a small mass
@@ -496,12 +511,19 @@ mergeTolerance 1e-6;
       point1 ({p1[0]:.6f} {p1[1]:.6f} {p1[2]:.6f}); point2 ({p2[0]:.6f} {p2[1]:.6f} {p2[2]:.6f});
       outerRadius {f.d_outer/2000:.6f}; innerRadius {f.d_hub/2000:.6f}; }}
     {{ name {f.name}; type cellZoneSet; action new; source setToCellZone; set {f.name}Set; }}''')
-            # the inlet and outlet faces: the faces whose cell-to-cell line crosses the annulus at each end of the zone,
-            # flipped to point along the axis (searchableSurfaceToFaceZone with a searchableDisk, OpenFOAM v2512)
+            # the inlet and outlet faces (OpenFOAM v2512 topoSet): the faces between a zone cell and a cell beyond each
+            # end plane. planeToFaceZone takes every face whose two cell centres lie either side of the plane, oriented
+            # from the cell behind it to the cell ahead along the axis; subtracting every face that is not on the zone's
+            # boundary (cellToFace 'outside' of the zone, synchronised across processors, then inverted) leaves the
+            # zone's own end faces. Selecting by the cells, not by where a face lies, keeps the faces right where the
+            # zone's end meets coarser cells, which own the faces and would put their centres over the hub or past the
+            # rim (searchableDisk tests the radius at the owner's centre).
+            acts.append(f'''    {{ name {f.name}OffZoneFaces; type faceSet; action new; source cellToFace; set {f.name}Set; option outside; }}
+    {{ name {f.name}OffZoneFaces; type faceSet; action invert; }}''')
             for side, o in f.faces().items():
-                acts.append(f'''    {{ name {f.name}{side.capitalize()}; type faceZoneSet; action new; source searchableSurfaceToFaceZone;
-      surfaceType disk; surfaceName {f.name}{side.capitalize()}Disk; origin ({o[0]:.9f} {o[1]:.9f} {o[2]:.9f});
-      normal ({a[0]:.9f} {a[1]:.9f} {a[2]:.9f}); radius {f.d_outer/2000:.6f}; innerRadius {f.d_hub/2000:.6f}; }}''')
+                acts.append(f'''    {{ name {f.name}{side.capitalize()}; type faceZoneSet; action new; source planeToFaceZone;
+      point ({o[0]:.9f} {o[1]:.9f} {o[2]:.9f}); normal ({a[0]:.9f} {a[1]:.9f} {a[2]:.9f}); option all; }}
+    {{ name {f.name}{side.capitalize()}; type faceZoneSet; action subtract; source setToFaceZone; faceSet {f.name}OffZoneFaces; }}''')
         return 'actions\n(\n' + '\n'.join(acts) + '\n);\n'
 
     # --- per-region files
@@ -873,6 +895,8 @@ foamToVTK -allRegions -latestTime -noFunctionObjects > log.foamToVTK 2>&1
         self._fluid_files(w)                      # rewrites fvOptions with the new fin temperatures
         meta = json.loads((case / 'cadagent-case.json').read_text())
         meta.update(self.describe())
+        if not re.search(r'^\s*T_inlet_', txt, flags=re.M):   # written before the fan faces: continuing adds none
+            meta['limits'] = [l for l in meta['limits'] if l != FACE_LIMIT]
         (case / 'cadagent-case.json').write_text(json.dumps(meta, indent=2) + '\n')
         n = self.np_procs
         (case / 'Allrun.continue').write_text(f'''#!/bin/bash
@@ -937,6 +961,19 @@ class _Writer:
 def _series(path: Path):
     rows = [l.split() for l in path.read_text().splitlines() if l.strip() and not l.startswith('#')]
     return [[float(x.strip('()')) for x in r] for r in rows]
+
+
+def _header(path: Path) -> dict:
+    """The '# Key : value' lines at the top of a function-object file (surfaceFieldValue writes Faces and Area)."""
+    out = {}
+    with open(path, errors='replace') as fh:
+        for line in fh:
+            if not line.startswith('#'):
+                break
+            k, sep, v = line[1:].partition(':')
+            if sep:
+                out[k.strip()] = v.strip()
+    return out
 
 
 def _has_rows(path: Path) -> bool:
@@ -1038,9 +1075,11 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
     holds each change to.
 
     Each fan has three temperatures. ``fans[<fan>]['inlet_c']`` and ``['outlet_c']`` are mass-flow-weighted,
-    sum(phi T) / sum(phi), over the faces that cross the annulus at each end of its zone, with the net mass flow
-    through each (``inlet_kg_s``, ``outlet_kg_s``, positive along the axis) and ``heat_carried_w``, the heat the
-    outlet stream carries above the room (stream_heat_w). Use these in energy balances. ``air_through_fan_c`` (also
+    sum(phi T) / sum(phi), over the faces at each end of its zone (where a zone cell meets a cell beyond that end),
+    with the net mass flow through each (``inlet_kg_s``, ``outlet_kg_s``, positive along the axis), each face's area
+    (``inlet_area_m2``, ``outlet_area_m2``) and ``heat_carried_w``, the heat the outlet stream carries above the room
+    (stream_heat_w). The two ends of a zone are the ends of the same cells, so a warning names any end whose area or
+    net flow is more than FACE_MISMATCH off the other's. Use these in energy balances. ``air_through_fan_c`` (also
     ``zones[<fan>]['T_c']``) is the volume average over the zone: it weights still and returning air like the air that
     flows. A case written before the faces existed reports only the volume average. ``energy_conserved`` is
     energy_check's verdict, and ``warnings`` says in words what is off."""
@@ -1094,29 +1133,69 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
     t_amb = meta['ambient_c'] + T0
     warn = []
 
-    def face(of, fan, side):                      # [iteration, mass-flow-weighted T (°C), net mass flow (kg/s)]
+    def face(of, fan, side):
+        """[iteration, mass-flow-weighted T (°C), net mass flow (kg/s), backflow (kg/s; NaN where not logged)] and
+        the rows whose temperature means something: enough net flow forward, and less flowing back."""
         m = {r[0]: r[1] for r in of(f'mass_{side}_{fan["name"]}', 'surfaceFieldValue')}
-        rows = np.array([[r[0], r[1] - T0, m[r[0]]] for r in of(f'T_{side}_{fan["name"]}', 'surfaceFieldValue')
-                         if r[0] in m and math.isfinite(r[1]) and math.isfinite(m[r[0]])]).reshape(-1, 3)
-        # where the net flow is too small to weight by (OpenFOAM divides by it), the temperature means nothing
+        g = {r[0]: r[1] for r in of(f'massGross_{side}_{fan["name"]}', 'surfaceFieldValue')}
+        rows = np.array([[r[0], r[1] - T0, m[r[0]], max(g[r[0]] - m[r[0]], 0.0) / 2 if r[0] in g else math.nan]
+                         for r in of(f'T_{side}_{fan["name"]}', 'surfaceFieldValue')
+                         if r[0] in m and math.isfinite(r[1]) and math.isfinite(m[r[0]])]).reshape(-1, 4)
         free = P_ROOM / (AIR_R * t_amb) * fan['q_free_m3h'] / 3600
-        return rows, np.abs(rows[:, 2]) >= MIN_NET_FLOW * free
+        net, back = rows[:, 2], rows[:, 3]
+        return rows, (net >= MIN_NET_FLOW * free) & ~(back >= net)
 
-    # each fan's inlet and outlet: mass-flow-weighted over the annulus at each end of its zone (cases written before
+    def unusable(fan, side, net, back):           # why a face's temperature is None, in words
+        if net < 0:
+            return (f'{fan} {side}: the net flow through it runs backwards, {net:.3g} kg/s along the axis, so it has no '
+                    f'temperature of air {"entering" if side == "inlet" else "leaving"} the fan')
+        if back >= net:
+            return (f'{fan} {side}: {back:.3g} kg/s flows back through it for {net:.3g} kg/s net, so the mass-flow-'
+                    f'weighted value could lie outside the air\'s own range')
+        return (f'{fan} {side}: the net flow through it, {net:.3g} kg/s, is under {MIN_NET_FLOW:.0%} of the fan\'s '
+                f'free-air flow, too little to weight a temperature by')
+
+    # each fan's inlet and outlet: mass-flow-weighted over the faces at each end of its zone (cases written before
     # these outputs existed have none, and keep only the volume average, air_through_fan_c)
+    face_count = {}
     for fan in meta['fans']:
         for side in ('inlet', 'outlet'):
             rows, ok = face(run, fan, side)
             if not len(rows):
                 continue
             f = out['fans'].setdefault(fan['name'], {})
-            f[f'{side}_kg_s'] = float(rows[-1, 2])
-            f[f'{side}_c'] = round(float(rows[-1, 1]), 2) if ok[-1] else None
+            _, t, net, back = rows[-1]
+            f[f'{side}_kg_s'] = float(net)
+            if math.isfinite(back):
+                f[f'{side}_backflow_kg_s'] = float(back)
+            # the solver's own count and area, each face once (topoSet's log counts a processor boundary's twice)
+            head = _header(_outputs(pp, f'T_{side}_{fan["name"]}', 'surfaceFieldValue')[-1])
+            if 'Faces' in head:
+                face_count[f'{fan["name"]}{side.capitalize()}'] = int(float(head['Faces']))
+            if 'Area' in head:
+                f[f'{side}_area_m2'] = float(head['Area'])
+            f[f'{side}_c'] = round(float(t), 2) if ok[-1] else None
             if not ok[-1]:
-                warn.append(f'{fan["name"]} {side}: the net flow through it, {rows[-1, 2]:.3g} kg/s, is under '
-                            f'{MIN_NET_FLOW:.0%} of the fan\'s free-air flow, too little to weight a temperature by')
-            elif side == 'outlet':
-                f['heat_carried_w'] = round(stream_heat_w(rows[-1, 2], rows[-1, 1], meta['ambient_c']), 2)
+                warn.append(unusable(fan['name'], side, net, back))
+            elif back > BACKFLOW_WARN * net:
+                warn.append(f'{fan["name"]} {side}: {back:.3g} kg/s flows back through it, {back / net:.0%} of the net '
+                            f'{net:.3g} kg/s, so {side}_c is the temperature of the net heat flow (right for ṁ c_p ΔT), '
+                            f'not of the air crossing it')
+            if side == 'outlet':                  # the net heat carried along the axis, exact whatever flows back
+                f['heat_carried_w'] = round(stream_heat_w(net, t, meta['ambient_c']), 2)
+        f = out['fans'].get(fan['name'], {})
+        # the two ends of a zone are the ends of the same cells: their areas match, and their net flows unless much air
+        # crosses the zone's sides
+        for key, what, unit in (('area_m2', 'areas', 'm²'), ('kg_s', 'net flows', 'kg/s')):
+            a, b = f.get(f'inlet_{key}'), f.get(f'outlet_{key}')
+            if key == 'kg_s' and (f.get('inlet_c') is None or f.get('outlet_c') is None):
+                continue                          # a face with no temperature has its own warning
+            if a is not None and b is not None and max(abs(a), abs(b)) > 0 and \
+                    abs(a - b) > FACE_MISMATCH * max(abs(a), abs(b)):
+                warn.append(f'{fan["name"]}: its inlet and outlet {what} differ, {a:.3g} against {b:.3g} {unit} '
+                            f'(more than {FACE_MISMATCH:.0%}): '
+                            + ('check the mesh at the ends of its zone, where a face may have missed cells'
+                               if key == 'area_m2' else 'air crosses the sides of its zone, through the hub or round the rim'))
 
     def heat_out(of):                             # [iteration, heat leaving (W), mass flux (kg/s)] where both logged
         phi = {r[0]: r[1] for r in of('flux_mass', 'surfaceFieldValue')}
@@ -1144,7 +1223,9 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
     if ts.exists():
         log_ts = ts.read_text()
         sizes = {m.group(1): int(m.group(2)) for m in re.finditer(r'cellZoneSet (\w+) now size (\d+)', log_ts)}
+        # a faceZoneSet's last size is the one it ended with; the solver's own count replaces it where it logged one
         faces = {m.group(1): int(m.group(2)) for m in re.finditer(r'faceZoneSet (\w+) now size (\d+)', log_ts)}
+        faces.update(face_count)
         out['zone_cells'] = sizes
         if faces:
             out['zone_faces'] = faces

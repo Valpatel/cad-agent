@@ -14,6 +14,7 @@ import path from 'node:path';
 import { marked } from 'marked';
 import YAML from 'yaml';
 import { snapDemo } from './snap-demo.mjs';
+import { buildCatalog } from './site-catalog.mjs';            // the catalogue page, catalog.json, catalog/*.json and covers
 import { sanitize, safeUrl, rewriteUrls, imageSize } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
 import { fold, pagePlacer } from './site-pages.mjs';                          // docs/pages.yaml: bands, figures, folds
 
@@ -41,7 +42,8 @@ const head = git('rev-parse', 'HEAD');
 const revision = head;
 // The content is always HEAD's (or the working tree's with --worktree), but the build tools run from disk (from this
 // checkout, even with --root): say so when they differ from the built commit's, and never release with them.
-const TOOLS = ['tools/build-site.mjs', 'tools/site-html.mjs', 'tools/snap-demo.mjs', 'package.json', 'package-lock.json'];
+const TOOLS = ['tools/build-site.mjs', 'tools/site-html.mjs', 'tools/snap-demo.mjs', 'tools/site-catalog.mjs', 'tools/catalog-art.mjs',
+  'package.json', 'package-lock.json'];
 const toolsHere = path.join(import.meta.dirname, '..');
 const toolsDirty = TOOLS.filter(t => {
   let committedCopy; try { committedCopy = gitRaw('show', `HEAD:${t}`); } catch { return true; }
@@ -164,31 +166,7 @@ const parserCount = (cli.match(/sub\.add_parser\(/g) || []).length;
 const commands = [...cli.matchAll(/sub\.add_parser\("([a-z0-9-]+)",[^)]*?help="((?:[^"\\]|\\.)*)"(?:\s*\n?\s*"((?:[^"\\]|\\.)*)")?/g)]
   .map(m => ({ name: m[1], help: (m[2] + (m[3] || '')).replace(/\\"/g, '"') }));
 if (commands.length !== parserCount) throw new Error(`read ${commands.length} of ${parserCount} cli.py subcommands: fix the pattern`);
-const projectNotes = new Map(landscape.projects.map(p => [p.name, p.notes || '']));
-const catalog = {
-  schema: 'cad-agent-catalog/1', origin: ORIGIN, repo: REPO, revision, built: committed,
-  tagline: TAGLINE, description: LEDE,
-  items: [
-    ...commands.map(c => ({ type: 'tool', status: 'ours', name: `cad-agent ${c.name}`, summary: c.help,
-      url: `${ORIGIN}/docs/toolkit`, how: `cad-agent ${c.name} --help` })),
-    ...upstreams.map(u => ({ type: 'upstream', status: u.status, name: u.name, url: u.url,
-      summary: projectNotes.get(u.name) || u.what || u.policy, policy: u.policy,
-      license: u.license, stars: u.stars, last_push: u.last_push })),
-    // A library is 'used' only when landscape.json says so (a real dependency); otherwise it is tracked for reference.
-    ...landscape.libraries.map(l => ({ type: 'library', status: l.status || 'reference', name: l.name, url: l.url || `https://github.com/${l.name}`,
-      license: l.license_spdx, stars: l.stars, last_push: l.last_push, summary: l.use || l.role || l.notes || '' })),
-    ...landscape.benchmarks.map(b => ({ type: 'benchmark', status: b.status === 'unverified' ? 'unverified' : 'reference', name: b.name, url: b.url,
-      license: b.license_spdx || b.license, summary: [b.tasks || b.notes, b.size, b.venue || b.paper].filter(Boolean).join(' · ')
-        || (b.status === 'unverified' ? 'Listed from its paper or site; tasks, data and licence not yet checked.' : '') })),
-    ...pages.map(p => ({ type: p.section === 'docs' ? 'doc' : p.section.replace(/s$/, ''), status: 'ours', name: p.title,
-      summary: p.summary, url: ORIGIN + pageURL(p.file), markdown: `${ORIGIN}/${p.file}`, source: `${REPO}/blob/dev/${p.file}` })),
-  ],
-};
-const counts = catalog.items.reduce((a, i) => (a[i.type] = (a[i.type] || 0) + 1, a), {});
-// Each ### entry in a lesson file is one lesson (lessons/README.md#lesson-format); the area READMEs are maps, not lessons.
-const lessonCount = pages.filter(p => p.section === 'lessons' && !/(?:^|\/)README\.md$/.test(p.file))
-  .reduce((n, p) => n + (p.body.replace(/```[\s\S]*?```/g, '').match(/^### /gm) || []).length, 0);
-await writeFile(path.join(out, 'catalog.json'), JSON.stringify(catalog, null, 2) + '\n');
+// The catalogue itself is built after the pages (it uses their figures): see `buildCatalog` below.
 
 // ----------------------------------------------------------------------------- HTML frame
 const NAV = [['/catalog', 'Catalogue', true], ['/docs/toolkit', 'Tools', true], ['/research/landscape', 'Landscape'],
@@ -333,30 +311,36 @@ for (const p of pages) {
   const rail = heads.length < 2 ? '' : `<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline(' cad-nav-rail', false)}</nav>`;
   await writeFile(dest, frame({ title: p.title, body: `<div class="doc-layout">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + p.file, description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/nav.css'] }));
   visuals.set(p.file, (html.match(VISUAL) || []).length);
+  p.html = html;                                                      // the catalogue takes each page's first figure
+  p.updated = lastChange(p.file);
   await writeFile(path.join(out, p.file), rewriteMd(p.file, p.src));   // the Markdown twin, same path
 }
 // Images referenced by docs.
 for (const f of tracked.filter(f => /^docs\/img\/.*\.(svg|png|jpe?g|gif|webp)$/i.test(f))) await copyTracked(f, path.join(out, f));
 
-// Catalogue page: cards from catalog.json, filterable in the browser.
-const TYPE_LABEL = { tool: 'cad-agent tools', upstream: 'Agentic CAD projects we track', library: 'Libraries', benchmark: 'Benchmarks',
-  doc: 'Docs', skill: 'Skills', agent: 'Subagents', lesson: 'Lessons (pitfalls)', research: 'Research' };
+// Catalogue: catalog.json, catalog/index.json, catalog/<area>.json, the covers and the page (tools/site-catalog.mjs).
+const SNAP = snapDemo();                 // geometry-driven animation: tools/snap-demo.mjs
+const { catalog, files: catalogFiles, body: catalogBody, counts } = await buildCatalog({
+  ORIGIN, REPO, revision, built: committed, tagline: TAGLINE, description: LEDE, commands, cli, upstreams, landscape, pages, pageURL, safeUrl,
+  areas: YAML.parse(await read('docs/areas.yaml')), data: YAML.parse(await read('docs/catalog.yaml')) || {}, tracked, read: readBuf,
+  snap: SNAP, cliUpdated: lastChange('src/cadagent/cli.py'), draft: WORKTREE,
+});
+for (const [f, text] of catalogFiles) { await mkdir(path.dirname(path.join(out, f)), { recursive: true }); await writeFile(path.join(out, f), text); }
+// Each ### entry in a lesson file is one lesson (lessons/README.md#lesson-format); the area READMEs are maps, not lessons.
+const lessonCount = pages.filter(p => p.section === 'lessons' && !/(?:^|\/)README\.md$/.test(p.file))
+  .reduce((n, p) => n + (p.body.replace(/```[\s\S]*?```/g, '').match(/^### /gm) || []).length, 0);
+await writeFile(path.join(out, 'catalog.html'), frame({ title: 'Catalogue', body: catalogBody, current: '/catalog', page: 'catalog',
+  description: `${catalog.items.length} open-source projects, libraries, benchmarks, demos, tools, guides and lessons for agentic CAD, by area of hardware design.`,
+  css: ['/kit/gallery.css', '/web/catalog.css'] }));
+
+// Cards on the landing page.
 const STATUS_NOTE = { ours: 'built here', adopted: 'adopted', trial: 'in trial', candidate: 'candidate', rejected: 'rejected', used: 'used', reference: 'tracked', unverified: 'unverified' };
 const card = i => `<li class="card" data-type="${esc(i.type)}" data-text="${esc((i.name + ' ' + (i.summary || '') + ' ' + (i.license || '')).toLowerCase())}">
 <a href="${esc(safeUrl(i.url))}"><span class="card-name">${esc(i.name)}</span></a>
 <span class="pill pill-${esc(i.status)}">${esc(STATUS_NOTE[i.status] || i.status)}</span>${i.license ? `<span class="pill">${esc(i.license)}</span>` : ''}${i.stars ? `<span class="pill">★ ${Number(i.stars).toLocaleString('en-US')}</span>` : ''}
 <p>${esc(i.summary || '')}</p>${i.policy && i.policy !== i.summary ? `<p class="policy">${esc(i.policy)}</p>` : ''}${i.markdown ? `<a class="md" href="${esc(i.markdown.replace(ORIGIN, ''))}">.md</a>` : ''}</li>`;
-const groups = Object.keys(TYPE_LABEL).filter(t => counts[t]);
-const catalogBody = `<section class="section" style="padding-bottom:10px"><p class="eyebrow"><span class="status-dot"></span>Catalogue · ${catalog.items.length} entries</p><h1>Everything we map, <span>demonstrate</span> or build.</h1>
-<p class="hero-description">Other people's open-source projects and libraries come first; our own tools only where nothing free fills the gap. Agents read the same list as <a href="/catalog.json">catalog.json</a>.</p>
-<div class="filters"><input id="q" type="search" placeholder="Filter: snap fit, FEA, KiCad, MIT…" aria-label="Filter the catalogue"><p id="filter-status" class="filter-status" role="status" aria-live="polite"></p>
-<div class="chips">${groups.map(t => `<button class="chip" data-type="${t}" aria-pressed="false">${esc(TYPE_LABEL[t])} <small>${counts[t]}</small></button>`).join('')}</div></div></section>
-${groups.map(t => `<section class="group" id="${t === 'doc' ? 'docs' : t === 'skill' ? 'skills' : t === 'agent' ? 'agents' : t === 'lesson' ? 'lessons' : t}" data-group="${t}"><h2>${esc(TYPE_LABEL[t])}</h2><ul class="cards">${catalog.items.filter(i => i.type === t).map(card).join('')}</ul></section>`).join('')}`;
-await writeFile(path.join(out, 'catalog.html'), frame({ title: 'Catalogue', body: catalogBody, current: '/catalog', page: 'catalog' }));
-
 // Landing page: the real model first, then real outputs, then where cad-agent fits (docs/home.yaml), then the map.
 const skillCards = pages.filter(p => p.section === 'skills' || p.section === 'agents');
-const SNAP = snapDemo();                 // geometry-driven animation: tools/snap-demo.mjs
 await writeFile(path.join(out, 'web', 'snap-demo.css'), SNAP.css);
 const home = YAML.parse(await read('docs/home.yaml'));
 const areasTree = YAML.parse(await read('docs/areas.yaml'));
@@ -396,8 +380,10 @@ const gyropupSource = JSON.parse(await read('docs/img/gyropup/SOURCE.json'));
 const checkNumbers = (r, at) => {
   const fea = gyropupSource.pictures[path.basename(r.img).replace(/\.\w+$/, '')];
   if (!r.img.startsWith('docs/img/gyropup/') || !fea?.safety_factor) return;
+  // Whole numbers only: 3.1 does not pass inside 3.15, nor 52,134 inside 152,134.
+  const quotes = n => new RegExp(`(?<![\\d.,])${n.replace(/[.,]/g, '\\$&')}(?![\\d]|[.,]\\d)`).test(r.caption);
   for (const n of [fea.tets.toLocaleString('en-US'), String(fea.safety_factor), Number(fea.target).toFixed(1)])
-    if (!r.caption.includes(n)) throw new Error(`docs/home.yaml ${at}: the caption does not quote ${n} from docs/img/gyropup/SOURCE.json`);
+    if (!quotes(n)) throw new Error(`docs/home.yaml ${at}: the caption does not quote ${n} from docs/img/gyropup/SOURCE.json`);
 };
 const reel = [], homeMd = { reel: [], ours: [] };
 for (const [i, r] of home.reel.entries()) {
@@ -488,7 +474,16 @@ simulation and print releases. It maps the best free tools, demonstrates them on
 tested tools of its own. Every page on this site has a Markdown twin at the same path with a .md extension.
 
 - Source: ${REPO} (MIT). Install: \`pip install -e .\` in a checkout; agent skills: \`cad-agent agents install\`.
-- Machine-readable catalogue: ${ORIGIN}/catalog.json (schema ${catalog.schema}; ${catalog.items.length} entries).
+- Machine-readable catalogue: ${ORIGIN}/catalog.json (schema ${catalog.schema}; ${catalog.items.length} entries, each with an id, kind,
+  areas, maturity, a one-line \`what\`, our \`notes\`, a cover picture, a demo link and related ids; tools also have \`doc\`,
+  the page that documents the command, and \`markdown\`, its twin). Every schema-1 field keeps its schema-1 value: \`summary\`
+  is still our notes first for outside projects, a tool's \`url\` is still ${ORIGIN}/docs/toolkit, and a field that was null
+  is still null. Each file says what its fields mean in \`fields\`.
+- Find your way in two small fetches: ${ORIGIN}/catalog/index.json lists the domains and areas of hardware design
+  (docs/areas.yaml) with counts, maturity and links; ${ORIGIN}/catalog/<area>.json (e.g. catalog/compliant-mechanisms.json)
+  lists every tool, page, lesson, skill, demo and outside project in that area. Outside entries not yet placed in an area:
+  ${ORIGIN}/catalog/unplaced.json. The page takes the same filters as URL parameters, e.g.
+  ${ORIGIN}/catalog?kind=tools&area=compliant-mechanisms&sort=stars.
 - Full text of every page in one file: ${ORIGIN}/llms-full.txt
 - Built from commit ${revision}.
 

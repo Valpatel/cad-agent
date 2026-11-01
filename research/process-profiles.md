@@ -86,7 +86,7 @@ springs, hinges) lies in the build plate's plane, and bending across the layers 
 | Rule | Value | Applies when | Source |
 |---|---|---|---|
 | Expected tolerance | ±0.5 %, floor ±0.5 mm | Desktop (prototyping) FDM | [Protolabs Network][hubs-3dp-dimensional-accuracy] |
-| General tolerance | ±0.5 % (±0.5 mm), as printed; the YAML reads the ±0.5 mm as a floor, which the page does not state | Xometry Europe's standard and industrial machines (up to 900 × 600 × 900 mm) | [Xometry Europe][xometry-eu-fdm-design-tips] |
+| General tolerance | ±0.5 % (±0.5 mm), as printed; the YAML reads the ±0.5 mm as a floor, which Xometry Europe's page does not state | Xometry Europe's standard and industrial machines (up to 900 × 600 × 900 mm) | [Xometry Europe][xometry-eu-fdm-design-tips] |
 | Expected tolerance | ±0.15 %, floor ±0.2 mm | Industrial FDM | [Protolabs Network][hubs-3dp-dimensional-accuracy] |
 | Tolerance the service holds | ±0.127 mm (±0.005 in) | Xometry's industrial FDM; no size dependence stated | Joel Schadegg and Aaron Lichtig, [Xometry][xometry-fdm-mini-guide] |
 | Clearance between mating parts (snap fits) | 0.5 mm | Protolabs Network FDM | [Protolabs Network][hubs-snapfit-3dp] |

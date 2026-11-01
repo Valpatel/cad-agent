@@ -713,3 +713,44 @@ research/compliant-mechanisms.md:
       on: example
       caption: "One of the calculators the toolkit has built since (cadagent.formulas.torsion_snap_bar, Bayer's torsion snap with Saint-Venant torsion): two Bambu PLA Basic bars, 15 mm long and 4 × 1.2 mm, twisted 8° by a 10 mm lever. Peak shear strain 1.11 %, 86 % of the 1.28 % allowed across the layers, a pass; 3.45 N at the lever. The live version is on the snap-fit page."
       alt: "Two PLA torsion bars twisted 8 degrees by a 10 mm lever; peak shear strain 1.11 percent, 86 percent of the 1.28 percent allowed across the layers, a pass; 3.45 N at the lever"
+
+docs/explore.md:
+  figures:
+    - after: what-it-does-and-what-it-does-not
+      below: Physics and product rules.
+      img: docs/img/explore/long-range-checks.webp
+      shows: output
+      tool: cad-agent compare
+      on: example
+      caption: "The worked example's Long range design on the comparison page. Its three failed checks are its evaluator's voltage rules: the 13S pack runs to 54.6 V, more than the wheel motors, leg actuators and computer accept. cad-agent itself knows nothing about voltages."
+      alt: "The comparison page's card for the Long range design: fail, not ranked; three failed checks, the battery's 39 to 54.6 V against what the wheel motors, leg actuators and computer accept; a warning that the depth camera has no price; top speed and lean met"
+    - after: configuration
+      img: docs/img/explore/compare-header.webp
+      shows: output
+      tool: cad-agent compare
+      on: example
+      caption: "The worked example's comparison page, its header: the objectives and constraints from its explore section (minimise cost and mass, maximise runtime, require a top speed of at least 4 km/h and a catchable lean of at least 20°), and the page's own warning that nothing on it is measured."
+      alt: "The comparison page's header: Two-wheel-legged robot options, 4 designs, 3 feasible, 2 on the Pareto front; chips for minimise cost, minimise mass, maximise runtime, require top_speed_kmh at least 4 and catch_lean_deg at least 20; a note that nothing is measured"
+    - after: catalogue
+      img: docs/img/explore/long-range-bom.webp
+      shows: output
+      tool: cad-agent compare
+      on: example
+      caption: "The Long range design's bill of materials: each line's basis (its confidence, the date its price was checked, its source) comes from its catalogue item, and the last line from the evaluator. The depth camera has no public price, so its line shows a dash and the total, ≥ 1,682.08 USD, is a lower bound."
+      alt: "A bill of materials table: wheel motors, leg actuators, a 13S battery, computer, wiring allowance, a depth camera with no price and the evaluator's printed parts, each with quantity, price, mass and basis; total at least 1,682.08 USD and 11.079 kg, estimated"
+    - after: comparison
+      below: Incomplete totals are lower bounds, never savings.
+      img: docs/img/explore/long-range-swaps.webp
+      shows: output
+      tool: cad-agent compare
+      on: example
+      caption: "--swaps on the Long range design: one slot changed at a time and re-evaluated. Only the 10S pack clears the voltage failures, leaving the camera's missing price as a warning, at 90 minutes less runtime; every other swap still fails."
+      alt: "The one-part swaps table for the Long range design: the 10S battery is a warning at 70 USD less, 0.7 kg lighter and 90 minutes less runtime; six other swaps fail on battery voltage"
+    - after: search
+      below: builds each trial from the base
+      img: docs/img/explore/search-trade-off.webp
+      shows: output
+      tool: cad-agent optimise
+      on: example
+      caption: "The search leaderboard's trade-off chart for the worked example: 60 seeded random trials, 49 distinct (the 11 repeats are not evaluated again), by cost and mass. Four are feasible; trials 47 and 1 are the Pareto front over cost, mass and runtime."
+      alt: "A scatter chart of 49 trials by cost and mass: most are infeasible open circles; two feasible grey dots; trials 47 and 1 in blue on the Pareto front"

@@ -174,6 +174,20 @@ catalogue. It exits 1 when there is an error. A design that uses a part with a n
 }
 ```
 
+```mermaid
+flowchart TD
+  S["designs/standard.json<br/>hub-165-36v wheels, qdd-17nm legs,<br/>pack-10s-10ah, computer-small, wiring allowance<br/>params: leg 160 mm, body shell 900 g"]
+  L["designs/long-range.json<br/>extends: standard.json<br/>battery: pack-13s-10ah<br/>camera: depth-camera"]
+  R["Long range, resolved<br/>Standard's parts and params,<br/>the 13S pack in place of the 10S,<br/>a depth camera added"]
+  B["bill of materials<br/>≥ 1,682.08 USD, 11.079 kg<br/>(the camera has no price)"]
+  S --> R
+  L --> R
+  R --> B
+```
+
+*How `extends` resolves the worked example's Long range design: the two files in
+`examples/explore-two-wheel/designs/`, and the design and bill of materials `cad-agent compare` makes of them.*
+
 - A slot holds a catalogue id, `{"part": id, "qty": n}`, an inline `{"custom": {...}}` part (checked like a
   catalogue item), or `null`. The quantity defaults to the slot's `qty`, else 1. One part per slot: use more slots for
   more parts.

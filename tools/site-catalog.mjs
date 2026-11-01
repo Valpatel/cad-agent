@@ -634,6 +634,7 @@ ${tree}${filters}</div></aside>
 ${panels}
 <p class="cat-empty" data-gallery-empty hidden>No entries match. Try fewer words or clear the filters.</p>
 <p class="cat-empty" data-gallery-empty-scope hidden>Nothing in <b data-gallery-scope-name></b> yet. No tool, guide or outside project is placed here so far; the panel above says what it covers and how far it has come.</p>
+<p class="cat-empty" data-gallery-empty-kind hidden>No <span data-gallery-kind-name></span> in <b data-gallery-scope-name></b> yet. <a href="/catalog?kind=" data-gallery-link>Show every kind in it</a></p>
 ${sections}</div></div>
 </cad-gallery><script type="module" src="/kit/gallery.js"></script>`;
 }

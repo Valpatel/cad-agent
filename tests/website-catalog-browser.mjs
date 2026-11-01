@@ -27,19 +27,21 @@ const PHONE_BUDGET = 14000;
 const problems = [];
 const fail = (where, what) => problems.push(`${where}: ${what}`);
 
-async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null } = {}) {
+// `init`: a script to run before the page's own (to break something on purpose); `fails`: a page error it causes.
+async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null, init = null, fails = null } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, javaScriptEnabled: js, reducedMotion: motion });
   const page = await context.newPage();
   const seen = [];
   if (block) await page.route(`**${block}`, r => r.abort());
   page.on('console', m => { if (m.type() === 'error' && !/status of 404/.test(m.text()) && !(block && /gallery\.js|Failed to load|load failed|importing a module/i.test(m.text()))) seen.push(`console: ${m.text()}`); });
-  page.on('pageerror', e => seen.push(`page error: ${e.message}`));
+  page.on('pageerror', e => { if (!(fails && fails.test(e.message))) seen.push(`page error: ${e.message}`); });
   page.on('requestfailed', r => { if (!/ERR_ABORTED|cancelled/i.test(r.failure()?.errorText || '') && !(block && r.url().endsWith(block))) seen.push(`failed: ${r.url()}`); });
   page.on('response', r => { if (r.status() >= 400) seen.push(`HTTP ${r.status()}: ${r.url()}`); });
   page.on('request', r => { if (!r.url().startsWith(base) && !/^(data|blob):/.test(r.url())) seen.push(`third party: ${r.url()}`); });
   if (js) await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
+  if (init) await page.addInitScript(init);
   await page.goto(base + route, { waitUntil: 'networkidle' });
-  if (js && !block) await page.waitForSelector('cad-gallery[data-ready]', { timeout: 10000 }).catch(() => seen.push('the gallery did not start'));
+  if (js && !block && !fails) await page.waitForSelector('cad-gallery[data-ready]', { timeout: 10000 }).catch(() => seen.push('the gallery did not start'));
   const done = async () => { for (const s of seen) fail(`${route} @${width}${js ? '' : ' no-JS'}`, s); await context.close(); };
   return { page, done };
 }
@@ -89,6 +91,28 @@ try {
     if (shown.length !== total) fail('gallery.js blocked', `${shown.length} of ${total} entries visible`);
     for (const sel of ['.cat-search', '#sort', '[data-gallery-more]']) if (await page.locator(sel).first().isVisible()) fail('gallery.js blocked', `${sel} shows but cannot work`);
     if (!(await page.locator('.play').isVisible())) fail('gallery.js blocked', 'the "Play with it" strip is gone');
+    await done();
+  }
+
+  // The first render throws (a data bug, a browser quirk): the gallery is not ready, marks itself failed, and the page
+  // is the no-script page, not 48 of 161 entries with a dead search box (#185).
+  {
+    const init = () => {
+      const toggle = Element.prototype.toggleAttribute;
+      let thrown = false;
+      Element.prototype.toggleAttribute = function (name, force) {
+        if (!thrown && this.localName === 'cad-gallery' && name === 'data-overview') { thrown = true; throw new Error('test: the first render throws'); }
+        return toggle.call(this, name, force);
+      };
+    };
+    const { page, done } = await open('/catalog', { init, fails: /the first render throws/ });
+    await page.waitForSelector('cad-gallery[data-failed]', { timeout: 10000 }).catch(() => fail('first render throws', 'the page did not mark data-failed'));
+    if (await page.locator('cad-gallery[data-ready]').count()) fail('first render throws', 'the gallery still says it is ready');
+    const total = await page.locator('[data-item]').count();
+    const shown = await visible(page);
+    if (shown.length !== total) fail('first render throws', `${shown.length} of ${total} entries visible`);
+    for (const sel of ['.cat-search', '#sort', '[data-gallery-more]']) if (await page.locator(sel).first().isVisible()) fail('first render throws', `${sel} shows but cannot work`);
+    if (await page.locator('.cat-empty:visible').count()) fail('first render throws', 'an empty-state box shows');
     await done();
   }
 
@@ -193,6 +217,42 @@ try {
       if (!(await page.locator('[data-gallery-empty-scope]').isVisible())) fail('empty area', `${empty.slug}: no "nothing here yet" message`);
       else if (!(await page.textContent('[data-gallery-empty-scope]')).includes(empty.title)) fail('empty area', 'the message does not name the area');
       if (await page.locator('[data-gallery-empty]').isVisible()) fail('empty area', 'it also says no entries match the filters');
+      // The status line says the same for screen readers, so it is hidden from view while the box shows (#185).
+      const status = page.locator('[data-gallery-status]');
+      if (!(await status.textContent()).includes(empty.title)) fail('empty area', 'the status line does not say it for screen readers');
+      if (await status.isVisible()) fail('empty area', 'the status line repeats the box on screen');
+      await done();
+    }
+  }
+
+  // An area with entries, but none of the chosen kind, says so too instead of showing blank space (#185).
+  {
+    const catalog = JSON.parse(await readFile(path.join(dir, 'catalog.json'), 'utf8'));
+    const areas = index.domains.flatMap(d => d.areas).filter(a => a.count > 0);
+    let pick = null;
+    for (const a of areas) {
+      const kinds = new Set(catalog.items.filter(i => i.areas.includes(a.slug)).map(i => i.kind));
+      const tab = index.kinds.find(k => !k.kinds.some(x => kinds.has(x)));
+      if (tab) { pick = { area: a, tab }; break; }
+    }
+    if (!pick) fail('area without the kind', 'no area lacks a kind to test with');
+    else {
+      const where = `?area=${pick.area.slug}&kind=${pick.tab.tab}`;
+      const { page, done } = await open(`/catalog${where}`);
+      const box = page.locator('[data-gallery-empty-kind]');
+      if (!(await box.isVisible())) fail(where, 'no message box: blank space');
+      else {
+        const text = await box.textContent();
+        const tabName = await page.$eval(`[data-gallery-tabs] [data-tab="${pick.tab.tab}"]`, t => t.firstChild.textContent.trim().toLowerCase());
+        if (!text.includes(pick.area.title) || !text.includes(tabName)) fail(where, `the box does not name the area and the kind (${tabName}): ${text}`);
+        for (const sel of ['[data-gallery-empty]', '[data-gallery-empty-scope]']) if (await page.locator(sel).isVisible()) fail(where, `${sel} shows as well`);
+        if (await page.locator('[data-gallery-status]').isVisible()) fail(where, 'the status line repeats the box on screen');
+        await box.locator('a').click();
+        await page.waitForFunction(() => document.querySelectorAll('[data-item]:not([hidden])').length > 0);
+        const q = new URLSearchParams(query(page));
+        if (q.get('area') !== pick.area.slug || q.get('kind')) fail(where, `"show every kind" went to ${query(page)}`);
+        if ((await visible(page)).length !== pick.area.count) fail(where, `after "show every kind": ${(await visible(page)).length} entries, the area has ${pick.area.count}`);
+      }
       await done();
     }
   }

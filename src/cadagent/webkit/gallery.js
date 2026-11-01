@@ -34,8 +34,10 @@
  *   view opens scrolled to `[data-gallery-results]`; `[data-gallery-when="area:gears"]` elements show only for that choice;
  * - `[data-gallery-chips]` (removable chips for the active choices), `[data-gallery-status]` (a live count),
  *   `[data-gallery-empty]`, `[data-gallery-empty-scope]` (instead, when a one-value facet alone leaves nothing: an area
- *   with nothing in it yet; `[data-gallery-scope-name]` inside it gets the choice's label), `[data-gallery-clear]`,
- *   `[data-gallery-active]` (how many filters are on);
+ *   with nothing in it yet; `[data-gallery-scope-name]` inside it gets the choice's label), `[data-gallery-empty-kind]`
+ *   (that facet has entries, but none under the chosen tab; `[data-gallery-kind-name]` gets the tab's name),
+ *   `[data-gallery-clear]`, `[data-gallery-active]` (how many filters are on). While one of these boxes shows, the
+ *   status line gets `data-gallery-boxed` (gallery.css hides it from view, not from screen readers);
  * - a sheet for small screens: `[data-gallery-sheet]` opens as a modal dialog from `[data-gallery-sheet-open]` (the
  *   page's CSS decides when that button shows) and closes with `[data-gallery-sheet-close]`, Escape or a click outside;
  * - covers that move: an <img data-anim="moving.svg"> swaps to it while its card is hovered or focused
@@ -111,7 +113,19 @@ export class CadGallery extends Base {
   connectedCallback() {
     if (this.#stop) return;
     this.#stop = new AbortController();
-    const signal = this.#stop.signal;
+    // Ready only once the first view is drawn: if setting up or the first render throws, the element marks itself
+    // failed and puts every card back, so gallery.css shows the page as it is without script.
+    try { this.#start(this.#stop.signal); } catch (err) {
+      this.#stop.abort();
+      for (const a of ['data-ready', 'data-overview', 'data-filtered']) this.removeAttribute(a);
+      for (const el of this.querySelectorAll('[data-item], [data-group]')) el.hidden = false;
+      for (const el of this.querySelectorAll('[data-gallery-empty], [data-gallery-empty-scope], [data-gallery-empty-kind]')) el.hidden = true;
+      this.setAttribute('data-failed', '');
+      throw err;
+    }
+  }
+
+  #start(signal) {
     const $ = s => this.querySelector(s), $$ = s => [...this.querySelectorAll(s)];
     this.tabParam = this.getAttribute('tab-param') || 'tab';
     this.limit = Math.max(1, parseInt(this.getAttribute('limit'), 10) || 6);
@@ -141,8 +155,8 @@ export class CadGallery extends Base {
       const group = target.closest('[data-group]');
       if (group && (target.hasAttribute('data-item') || target.matches('[data-group], .anchor, [data-group] > [id]'))) { this.#state.tab = group.dataset.group; fromHash = true; }
     }
-    this.toggleAttribute('data-ready', true);
     this.#render();
+    this.toggleAttribute('data-ready', true);
     // A tab chosen from an old #anchor goes into the address too, so Back returns to it.
     if (fromHash) history.replaceState(history.state, '', this.#url() + location.hash);
     // A link that carries a view (?kind=, ?area=, ?q=...) opens on its results, not on the page's introduction; not when
@@ -307,18 +321,24 @@ export class CadGallery extends Base {
       el.hidden = !(name === this.tabParam ? s.tab === value : s.facets[name]?.includes(value));
     }
     // Nothing to show: either the words and filters exclude everything, or the chosen area (a single-value facet, with
-    // no words or other filters) simply has nothing in it yet; that gets its own message.
+    // no words or other filters) has nothing in it yet, or nothing of the chosen kind; each gets its own message box.
     const tab = this.tabs.find(t => t.dataset.tab === s.tab && s.tab);
     const tabName = tab ? tab.firstChild.textContent.trim().toLowerCase() : '';
     const scoped = !patterns.length && Object.keys(s.facets).length > 0 && Object.keys(s.facets).every(n => this.single.includes(n));
     const scopeName = scoped ? Object.entries(s.facets).map(([n, v]) => this.#labelOf(n, v[0])).join(', ') : '';
     const scopeEmpty = scoped && !shown && !this.#items.some(it => matches(it, s, patterns, 'tab'));
+    const kindEmpty = scoped && !!s.tab && !shown && !scopeEmpty;
     const empty = this.querySelector('[data-gallery-empty]'), emptyScope = this.querySelector('[data-gallery-empty-scope]');
-    if (empty) empty.hidden = shown > 0 || (scoped && (!!emptyScope || !!s.tab));
+    const emptyKind = this.querySelector('[data-gallery-empty-kind]');
     if (emptyScope) emptyScope.hidden = !scopeEmpty;
+    if (emptyKind) emptyKind.hidden = !kindEmpty;
+    if (empty) empty.hidden = shown > 0 || (scopeEmpty && !!emptyScope) || (kindEmpty && !!emptyKind);
     for (const el of this.querySelectorAll('[data-gallery-scope-name]')) el.textContent = scopeName;
+    for (const el of this.querySelectorAll('[data-gallery-kind-name]')) el.textContent = tabName;
     const status = this.querySelector('[data-gallery-status]');
     if (status) {
+      // While a message box says it, the status line stays for screen readers but is hidden from view.
+      status.toggleAttribute('data-gallery-boxed', [empty, emptyScope, emptyKind].some(b => b && !b.hidden));
       const what = tabName || this.nouns[shown === 1 ? 0 : 1];
       status.textContent = scopeEmpty ? `Nothing in ${scopeName} yet.`
         : !shown && scoped && s.tab ? `No ${tabName} in ${scopeName} yet.`

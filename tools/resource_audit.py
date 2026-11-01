@@ -2,16 +2,19 @@
 """Supply-chain and resource safety report: what cad-agent depends on, vendors and points people to (#117).
 
     python3 tools/resource_audit.py report                       # offline checks only (default; what CI runs)
-    python3 tools/resource_audit.py report --online --repo Valpatel/cad-agent \\
+    python3 tools/resource_audit.py report --online \\
         --json research/security-report.json --md research/security-report.md
     python3 tools/resource_audit.py rows --base origin/dev        # report rows for what this branch adds (for the PR)
-    python3 tools/resource_audit.py gate --base HEAD^1 --pr-body-env PR_BODY   # CI: rows present, no new bad item
+    python3 tools/resource_audit.py gate --base HEAD^1 --into dev --pr-body-env PR_BODY   # CI: rows present, no new bad item
     python3 tools/resource_audit.py issue --report r.json --repo OWNER/REPO [--post]   # weekly: one issue, kept current
+    python3 tools/resource_audit.py figure --report research/security-report.json --svg docs/img/supply-chain/findings.svg
 
 What it reads:
 - Python dependencies (pyproject.toml, every extra), npm dependencies (package.json and package-lock.json);
-- vendored code (vendor/ with vendor/manifest.json, src/cadagent/webkit/vendor/ with its hash records) and the
-  notice files (THIRD_PARTY_NOTICES.md and the kit's own);
+- vendored code (vendor/ with vendor/manifest.json; src/cadagent/webkit/vendor/ with its receipts:
+  file-viewer-sources.json and each folder's SOURCE.json, which name the npm package, its integrity, the path of each
+  file in the package, the SHA-256 of each file and the libraries a file bundles) and the notice files
+  (THIRD_PARTY_NOTICES.md and the kit's own);
 - the external links the site publishes: catalog.json's sources (upstreams/registry.yaml, research/landscape.json),
   and the links in every published Markdown page;
 - the skills and agents we ship or point to, and install advice in published pages (no installing from registries).
@@ -25,13 +28,26 @@ a failure, so the weekly run cannot flake. Online sources, adopted rather than r
   OpenSSF malicious-packages feed (MAL- ids); the same database pip-audit and osv-scanner query;
 - ``npm audit --package-lock-only`` (when npm is installed): the npm registry's advisories for the lockfile;
 - PyPI's JSON API and the npm registry: latest release, release dates, licences, deprecation;
-- deps.dev (Open Source Insights): resolved dependency graphs, for the direct-plus-transitive counts;
+- deps.dev (Open Source Insights): resolved dependency graphs, for the direct-plus-transitive counts and the transitive
+  Python packages OSV is asked about;
+- the npm registry's tarballs named by the web kit receipts: the package integrity and each vendored file's bytes;
 - the GitHub REST API (``gh`` when it is logged in, else GH_TOKEN or GITHUB_TOKEN): archived, deleted or renamed
   repos, licences, push dates, the vendored trees at their pinned commits, published repository advisories;
 - the OpenSSF Scorecard API (``api.securityscorecards.dev``): repository hygiene scores.
 
+The link checks borrow two ideas from lychee (https://github.com/lycheeverse/lychee): fall back from HEAD to GET when a
+server refuses HEAD, and treat 403 and 429 as "not verified" rather than broken.
+
+Everything fetched is data: advisory text, package metadata, tarballs and pages are parsed, never executed or followed
+as instructions, and tarballs are read in memory, never unpacked to disk.
+
 Exit codes: 0 nothing at or above --fail-on (default high) that is not accepted; 1 there is; 2 usage or tool error.
-Findings are fingerprinted; research/security-accepted.yaml lists those read and accepted (check, subject, reason).
+Findings are fingerprinted; research/security-accepted.yaml lists those read and accepted (check, subject, reason,
+and the fingerprint ``fp`` for an advisory). An acceptance never covers a critical finding.
+
+``gate`` judges what a change adds only where new items enter: a PR or push into dev (``--into dev``). A dev -> main
+release PR, and the push to main after it, carry only items that already passed dev's gate in their own PRs, and
+"added since main" would be everything since the last release, so they get the whole-repository check alone.
 
 Limits: a clean report is not proof of safety. Advisory databases only know what has been reported; licences are
 detected from licence files and registry metadata, not by a lawyer; link checks see status codes and redirects, not
@@ -41,6 +57,7 @@ at repository level (a missing file inside a live repo is not seen). Read findin
 from __future__ import annotations
 
 import argparse
+import base64
 import collections
 import concurrent.futures as cf
 import datetime as dt
@@ -67,6 +84,10 @@ SECTIONS = ('python', 'npm', 'vendored', 'webkit', 'links', 'skills', 'repo')
 REPORT_MD = 'research/security-report.md'
 ACCEPTED = 'research/security-accepted.yaml'
 OUR_REPOS = {'valpatel/cad-agent'}
+OUR_MARKETPLACES = {'valpatel'}   # the plugin marketplace name our own repository publishes
+CHANGE_BRANCHES = ('dev',)       # where new items enter: gate checks what a change adds only for these (see gate)
+FP_REQUIRED = {'advisory', 'vendor-upstream-advisory'}   # an acceptance of these names its fingerprint
+TARBALL_LIMIT = 64 << 20         # largest npm tarball read to check a web kit receipt
 OUR_HOSTS = {'cad-agent.valpatel.com'}
 UA = 'cad-agent-resource-audit/1 (+https://github.com/Valpatel/cad-agent)'
 STALE_PUSH_DAYS = 365          # no push for a year: ask whether it is still maintained
@@ -88,15 +109,21 @@ class Report:
         self.root, self.as_of, self.online = Path(root), as_of, online
         self.findings, self.inventory, self.sources, self._fps = [], {s: [] for s in SECTIONS}, {}, set()
         self.extra = {}
+        self.unverified = set()        # subjects some check could not reach this run (their old findings are not "resolved")
 
-    def add(self, check, severity, subject, title, evidence, action, key=''):
-        """One finding. Its fingerprint is the check, the subject and a stable key (not the evidence)."""
+    def add(self, check, severity, subject, title, evidence, action, key='', scope=None):
+        """One finding. Its fingerprint is the check, the subject and a stable key (not the evidence).
+
+        scope: what has to be reachable for the finding to be seen again (default: its subject). When a later run
+        cannot reach it, the weekly issue keeps the finding as "not re-checked" instead of calling it resolved."""
         assert severity in RANK, severity
+        if check.endswith('-unverified'):
+            self.unverified.add(subject)
         fp = hashlib.sha256(f'{check}|{subject}|{key}'.encode()).hexdigest()[:16]
         if fp not in self._fps:
             self._fps.add(fp)
             self.findings.append(dict(severity=severity, check=check, subject=subject, title=title,
-                                      evidence=evidence, action=action, fp=fp))
+                                      evidence=evidence, action=action, fp=fp, **({'scope': scope} if scope else {})))
 
     def item(self, section, **row):
         self.inventory[section].append(row)
@@ -108,7 +135,8 @@ class Report:
         inv = {k: sorted(v, key=lambda r: (r.get('id', ''), json.dumps(r, sort_keys=True))) for k, v in self.inventory.items()}
         return {
             'schema': SCHEMA, 'as_of': self.as_of.isoformat(), 'mode': 'online' if self.online else 'offline',
-            'revision': git(self.root, 'rev-parse', 'HEAD'),
+            'revision': git(self.root, 'rev-parse', 'HEAD'), 'dirty': dirty(self.root),
+            'unverified': sorted(self.unverified),
             'summary': {s: counts.get(s, 0) for s in SEVERITIES} | {
                 'accepted': sum(1 for f in findings if f.get('accepted')),
                 'items': {k: len(v) for k, v in inv.items()}},
@@ -123,6 +151,11 @@ LIMITS = [
     'Link checks see status codes and redirects, not content: a parked or replaced page that answers 200 passes. Domain expiry is not checked.',
     'GitHub links are checked at repository level; a missing file or anchor inside a live repository is not seen.',
     'Python versions are checked at the newest release and the lowest release our range allows, not at every version in between.',
+    'Transitive Python dependencies are checked at the versions deps.dev resolves for our newest direct releases; an '
+    'existing environment may hold other versions, and --installed checks only the installed versions of our direct dependencies.',
+    'Libraries bundled inside a vendored file (DOMPurify and KaTeX inside mermaid.min.js) are checked at the versions its '
+    'receipt records; whether the bundling library reaches the affected code is not assessed.',
+    'Repository settings (secret scanning, Dependabot) are read only with an admin token; the weekly workflow cannot see them.',
     'Offline mode checks only what the checkout shows (pins, hashes, licence files, lockfile, link schemes, install advice).',
 ]
 
@@ -146,6 +179,12 @@ def git(root, *args):
         return subprocess.run(['git', '-C', str(root), *args], capture_output=True, text=True, check=True).stdout.strip()
     except (OSError, subprocess.CalledProcessError):
         return None
+
+
+def dirty(root):
+    """True when the checkout has changes git would commit (the report then describes more than its revision)."""
+    out = git(root, 'status', '--porcelain', '--untracked-files=normal')
+    return bool(out) if out is not None else None
 
 
 def tracked(root: Path, prefix=''):
@@ -278,7 +317,10 @@ class Net:
             if body:
                 req.add_header('Content-Type', 'application/json')
             for k, v in (headers or {}).items():
-                req.add_header(k, v)
+                if k.lower() == 'authorization':    # urllib copies plain headers to a redirect's host; never the token
+                    req.add_unredirected_header(k, v)
+                else:
+                    req.add_header(k, v)
             try:
                 with urllib.request.urlopen(req, timeout=self.timeout) as r:
                     return r.status, r.read(), ''
@@ -332,7 +374,10 @@ class Net:
         return 0, None, 'needs a GitHub token or gh'
 
     def probe(self, url):
-        """Follow redirects by hand: ([(status, url), ...], error). HEAD first; GET when a server refuses HEAD."""
+        """Follow redirects by hand: ([(status, url), ...], error). HEAD first; GET when a server refuses HEAD.
+
+        Both ideas come from lychee (https://github.com/lycheeverse/lychee): many servers refuse HEAD, so a refusal is
+        retried as GET, and judge_link treats 403 and 429 (scripts refused, rate limited) as not verified, not broken."""
         def go():
             opener = urllib.request.build_opener(_NoRedirect)
             chain, cur, method, retried = [], url, 'HEAD', False
@@ -387,7 +432,12 @@ def fixed_in(v, ecosystem, name):
 
 
 def osv_lookup(rep, net, asks):
-    """asks: [{'q': OSV query, ...}] -> each ask gets 'vulns': [canonical advisory dicts] (None when OSV failed)."""
+    """asks: [{'q': OSV query, 'subject': report item, ...}] -> each ask gets 'vulns': [advisory dicts] (None when OSV
+    failed, and its subject is marked unverified).
+
+    An advisory whose record cannot be read (OSV answered the batch, then failed on /v1/vulns/<id>) fails closed: it
+    keeps its id, counts as high (a MAL- id as critical), says its fix is unknown, and an osv-unverified finding names
+    it. A failed read must never make a finding look milder than the record would."""
     if not asks:
         return asks
     ids = []
@@ -399,14 +449,27 @@ def osv_lookup(rep, net, asks):
                     err or f'HTTP {status}', 'Run the report again with --online later.')
             for a in asks:
                 a['vulns'] = None
+                if a.get('subject'):
+                    rep.unverified.add(a['subject'])
             return asks
         ids += [sorted({v['id'] for v in (r.get('vulns') or [])}) for r in body.get('results', [])]
-    rep.sources['osv'] = 'osv.dev querybatch and vulns'
-    details = net.map(lambda i: net.json(f'{OSV}/vulns/{i}')[1], sorted({i for group in ids for i in group}))
+    rep.sources.setdefault('osv', 'osv.dev querybatch and vulns')
+    answers = net.map(lambda i: net.json(f'{OSV}/vulns/{i}'), sorted({i for group in ids for i in group}))
+    unread = sorted(i for i, (st, body, _err) in answers.items() if st != 200 or not isinstance(body, dict))
+    if unread:
+        rep.add('osv-unverified', 'info', 'osv.dev', f"{len(unread)} OSV advisory record{'s' if len(unread) > 1 else ''} could not be read",
+                ', '.join(unread[:20]) + (' …' if len(unread) > 20 else ''),
+                'Run again with --online: until a run reads them they count as high (MAL- ids as critical), fix unknown.',
+                key='records:' + ','.join(unread))
     for a, group in zip(asks, ids):
         seen, out = set(), []
         for i in group:                       # the same advisory under several ids (GHSA, PYSEC, CVE) counts once
-            v = details.get(i) or {'id': i}
+            st, v, _err = answers[i]
+            if i in unread:
+                out.append(dict(id=i, severity='critical' if i.startswith('MAL-') else 'high',
+                                summary='record not read', fixed=[], unread=True))
+                seen.add(i)
+                continue
             names = {i, *(v.get('aliases') or [])}
             if names & seen:
                 continue
@@ -425,9 +488,11 @@ def worst(vulns):
 
 
 def upgrade_hint(vulns, version):
-    """'>= X' clearing every advisory that has a fix above version, and the ids that have none."""
+    """'>= X' clearing every read advisory that has a fix above version, and the read ids that have none."""
     target, nofix = None, []
     for v in vulns:
+        if v.get('unread'):
+            continue
         above = [f for f in v['fixed'] if vkey(f) > vkey(version)]
         if not above:
             nofix.append(v['id'])
@@ -437,24 +502,39 @@ def upgrade_hint(vulns, version):
     return target, nofix
 
 
-def advisory_finding(rep, subject, label, version, vulns, context, action_fix, scope=''):
-    """One finding per package and context, listing every advisory; MAL- (malicious) ids are always critical."""
+def advisory_finding(rep, subject, label, version, vulns, context, action_fix, where='', scope=None):
+    """One finding per package and context, listing every advisory; MAL- (malicious) ids are always critical.
+
+    The lowest release a range allows (context 'floor') is what a fresh install avoids but an existing environment can
+    keep (pip does not upgrade a package that already satisfies the range): low, or medium when that release has a high
+    or critical advisory."""
     if not vulns:
         return
     ids = sorted(v['id'] for v in vulns)
     sev = worst(vulns)
     target, nofix = upgrade_hint(vulns, version)
+    unread = sorted(v['id'] for v in vulns if v.get('unread'))
     if context == 'floor':
-        sev = 'critical' if any(i.startswith('MAL-') for i in ids) else 'low'
+        sev = 'critical' if any(i.startswith('MAL-') for i in ids) else 'medium' if RANK[sev] <= RANK['high'] else 'low'
     def fix(v):
+        if v.get('unread'):
+            return ', record not read'
         above = [f for f in v['fixed'] if vkey(f) > vkey(version)]
         return f', fixed in {min(above, key=vkey)}' if above else ', no fix listed'
     listed = '; '.join(f"{v['id']} ({v['severity']}{fix(v)}): {v['summary']}"
                        for v in sorted(vulns, key=lambda v: (RANK[v['severity']], v['id']))[:8])
     more = f' and {len(vulns) - 8} more' if len(vulns) > 8 else ''
-    action = action_fix.format(target=target) if target else 'No fixed release is known: check whether our use is exposed; pin around it or replace it.'
-    if nofix and target:
-        action += f' No fix yet for {", ".join(nofix)}.'
+    if target:
+        action = action_fix.format(target=target)
+        if nofix:
+            action += f' No fix yet for {", ".join(nofix)}.'
+    elif nofix:
+        action = 'No fixed release is known: check whether our use is exposed; pin around it or replace it.'
+    else:
+        action = ''
+    if unread:
+        action = (action + ' ' if action else '') + (f'Not read: {", ".join(unread)}. Run again to learn their severity '
+                                                    'and fix; until then they count as high.')
     if any(i.startswith('MAL-') for i in ids):
         action = 'Malicious package: remove it now, rotate any secret the environment could read, and tell the owner.'
     n = f"{len(ids)} known {'advisory' if len(ids) == 1 else 'advisories'}"
@@ -463,8 +543,11 @@ def advisory_finding(rep, subject, label, version, vulns, context, action_fix, s
              'installed': f'{label} {version} installed here has {n}',
              'locked': f'{label} {version} in the lockfile has {n}',
              'vendored': f'the vendored {label} {version} has {n}',
+             'bundled': f'{label} {version}, bundled inside a vendored file, has {n}',
+             'transitive': f'{label} {version}, a transitive dependency, has {n}',
              'commit': f'the pinned commit of {label} is affected by {n}'}[context]
-    rep.add('advisory', sev, subject, title + scope, listed + more, action, key=f'{context}|{version}|{",".join(ids)}')
+    rep.add('advisory', sev, subject, title + where, listed + more, action, key=f'{context}|{label}|{version}|{",".join(ids)}',
+            scope=scope)
 
 
 # ----------------------------------------------------------------------------------------------------------- licences
@@ -623,7 +706,8 @@ def check_python(rep, net, installed=False):
                     f"PyPI licence: {row['licence']}", 'Add it to the runtime table with how we use it (imported or external program).')
         for ctx, ver in (('latest', latest), ('floor', row.get('floor_release')), ('installed', row.get('installed'))):
             if ver and not (ctx != 'latest' and ver == latest):
-                asks.append(dict(q={'package': {'ecosystem': 'PyPI', 'name': row['name']}, 'version': ver}, row=row, ctx=ctx, ver=ver))
+                asks.append(dict(q={'package': {'ecosystem': 'PyPI', 'name': row['name']}, 'version': ver}, row=row, ctx=ctx,
+                                 ver=ver, subject=row['id']))
     for a in osv_lookup(rep, net, asks):
         if a.get('vulns') is None:
             continue
@@ -639,16 +723,39 @@ def check_python(rep, net, installed=False):
     graphs = net.map(lambda n: net.json(f"https://api.deps.dev/v3/systems/pypi/packages/{urllib.parse.quote(n)}"
                                         f"/versions/{urllib.parse.quote(by_name[n]['latest'])}:dependencies"),
                      sorted(n for n, r in by_name.items() if r.get('latest')))
-    closure = {}
+    closure, resolved = {}, collections.defaultdict(set)      # resolved[(name, version)] = the direct packages that pull it in
     for name, (status, data, _err) in graphs.items():
         if status == 200 and isinstance(data, dict) and data.get('nodes'):
-            deps = sorted({norm(n['versionKey']['name']) for n in data['nodes'] if n.get('relation') != 'SELF'})
+            nodes = [n['versionKey'] for n in data['nodes'] if n.get('relation') != 'SELF' and n.get('versionKey')]
+            deps = sorted({norm(k['name']) for k in nodes})
             by_name[name]['dependencies'] = len(deps)
             closure[name] = set(deps)
+            for k in nodes:
+                if norm(k['name']) not in by_name and k.get('version'):
+                    resolved[(norm(k['name']), k['version'])].add(name)
+        else:
+            rep.unverified.add('deps.dev')
     rep.extra['python_counts'] = {
         g: {'direct': len(names), 'with_transitive': len(set(names).union(*[closure.get(n, set()) for n in names]))
             if all(n in closure for n in names) else None}
         for g, names in rep.extra['python_groups'].items()}
+    check_transitive(rep, net, resolved)
+
+
+def check_transitive(rep, net, resolved):
+    """OSV for the packages our direct dependencies pull in, at the versions deps.dev resolved for their newest releases.
+
+    Subject pypi:<name>; the finding names the direct packages it comes through. Its scope is deps.dev: when a later run
+    cannot read the graphs, the weekly issue keeps it rather than calling it resolved."""
+    rep.extra['python_transitive'] = [dict(name=n, version=v, via=sorted(via)) for (n, v), via in sorted(resolved.items())]
+    asks = [dict(q={'package': {'ecosystem': 'PyPI', 'name': n}, 'version': v}, name=n, ver=v, via=sorted(via),
+                 subject='deps.dev') for (n, v), via in sorted(resolved.items())]
+    for a in osv_lookup(rep, net, asks):
+        if a.get('vulns'):
+            via = ', '.join(a['via'][:4]) + (' …' if len(a['via']) > 4 else '')
+            advisory_finding(rep, f"pypi:{a['name']}", a['name'], a['ver'], a['vulns'], 'transitive',
+                             'Upgrade it to >={target} (pip install -U ' + a['name'] + '); if a direct dependency pins it, '
+                             'raise or replace that one.', f' (through {via})', scope='deps.dev')
 
 
 # ---------------------------------------------------------------------------------------------------------------- npm
@@ -718,7 +825,7 @@ def check_npm(rep, net, npm_audit=True):
     rep.extra['npm_counts'] = {'direct': len(direct), 'with_transitive': len(rep.inventory['npm'])}
     if not net:
         return
-    asks = [dict(q={'package': {'ecosystem': 'npm', 'name': r['name']}, 'version': r['version']}, row=r)
+    asks = [dict(q={'package': {'ecosystem': 'npm', 'name': r['name']}, 'version': r['version']}, row=r, subject=r['id'])
             for r in rep.inventory['npm'] if r.get('version')]
     osv_lookup(rep, net, asks)
     audit = run_npm_audit(rep) if npm_audit else {}
@@ -741,6 +848,7 @@ def check_npm(rep, net, npm_audit=True):
     for row in rep.inventory['npm']:
         status, data, _err = meta.get(row['name'], (0, None, ''))
         if status != 200 or not isinstance(data, dict):
+            rep.unverified.add(row['id'])
             continue
         row['latest'] = (data.get('dist-tags') or {}).get('latest')
         dep = ((data.get('versions') or {}).get(row['version']) or {}).get('deprecated')
@@ -786,7 +894,11 @@ def github_repo(url):
 
 
 def repo_status(net, slug):
+    """What GitHub says about a repository. A private one (seen only through an owner's token) is reported as gone: a
+    reader cannot open it, and nothing about it may reach a published report."""
     status, data, err = net.github(f'repos/{slug}')
+    if status == 200 and isinstance(data, dict) and data.get('private'):
+        return dict(state='gone', http=404, private=True)
     if status == 200 and isinstance(data, dict):
         lic = (data.get('license') or {}).get('spdx_id')
         return dict(state='ok', full_name=data.get('full_name'), archived=bool(data.get('archived')),
@@ -935,7 +1047,7 @@ def check_vendored(rep, net):
     entries = {e['name']: e for e in man.get('projects') or []}
     slugs = {n: github_repo(r['url']) for n, r in projects.items() if github_repo(r['url'])}
     statuses = net.map(lambda s: repo_status(net, s), sorted(set(slugs.values())))
-    asks = [dict(q={'commit': r['sha']}, row=r) for r in projects.values() if re.fullmatch(r'[0-9a-f]{40}', r['sha'] or '')]
+    asks = [dict(q={'commit': r['sha']}, row=r, subject=r['id']) for r in projects.values() if re.fullmatch(r'[0-9a-f]{40}', r['sha'] or '')]
     for a in osv_lookup(rep, net, asks):
         advisory_finding(rep, a['row']['id'], a['row']['name'], a['row']['sha'][:12], a.get('vulns') or [], 'commit',
                          'Re-import a fixed commit (>= {target}) with tools/vendor_sync.py.')
@@ -947,6 +1059,8 @@ def check_vendored(rep, net):
             continue
         sc = scorecard(net, slug)
         r['scorecard'] = sc
+        if str(sc.get('note', '')).startswith('not verified'):
+            rep.unverified.add(r['id'])
         if sc['score'] is not None and sc['score'] < SCORECARD_MIN:
             rep.add('scorecard-low', 'medium', r['id'], f"OpenSSF Scorecard {sc['score']}/10 for {slug}",
                     f"checks at 0: {', '.join(sc['zero']) or 'none'} ({sc['date']})", 'Read its scan report again before the next import.')
@@ -954,7 +1068,9 @@ def check_vendored(rep, net):
         if status == 200 and isinstance(cmp, dict):
             r['behind'] = cmp.get('ahead_by')
         status, advs, _ = net.github(f'repos/{slug}/security-advisories?state=published&per_page=100')
-        if status == 200 and isinstance(advs, list):
+        if status != 200 or not isinstance(advs, list):
+            rep.unverified.add(r['id'])
+        else:
             for adv in advs:
                 if (adv.get('published_at') or '')[:10] >= (r.get('imported') or ''):
                     rep.add('vendor-upstream-advisory', {'critical': 'critical', 'high': 'high'}.get(adv.get('severity'), 'medium'),
@@ -1000,25 +1116,87 @@ def vendor_drift(rep, net, row, slug, entry):
 
 # ------------------------------------------------------------------------------------------------------------ web kit
 KIT = 'src/cadagent/webkit/vendor'
-RECORD_FILES = {'file-viewer-sources.json', 'mermaid/SOURCE.json', 'FILE-VIEWER-NOTICES.md'}
+VIEWER_RECEIPT = 'file-viewer-sources.json'
+RECORD_FILES = {VIEWER_RECEIPT, 'FILE-VIEWER-NOTICES.md'}       # plus every <folder>/SOURCE.json
+# Where a receipt leaves a repository out, the repository each kit folder comes from.
+KIT_REPOS = {'three': 'mrdoob/three.js', 'file-parsers': 'mrdoob/three.js', 'mermaid': 'mermaid-js/mermaid',
+             'linkedom': 'WebReflection/linkedom', 'occt-import-js': 'kovacsv/occt-import-js'}
+
+
+def kit_receipts(root):
+    """The web kit's receipts (#152, #192): file-viewer-sources.json for the file viewer's libraries, and a SOURCE.json
+    in any folder (mermaid/ today). Returns (viewer receipt, {folder: SOURCE.json}, [unreadable receipt paths])."""
+    bad = []
+
+    def load(rel):
+        text = read_text(root / KIT / rel)
+        try:
+            data = json.loads(text) if text else {}
+        except ValueError:
+            data = None
+        if not isinstance(data, dict):
+            bad.append(rel)
+            return {}
+        return data
+    src = load(VIEWER_RECEIPT)
+    folders = {p.parent.name: load(f'{p.parent.name}/SOURCE.json') for p in sorted((root / KIT).glob('*/SOURCE.json'))}
+    return src, folders, bad
+
+
+def kit_hashes(src, folders):
+    """kit-relative path -> recorded SHA-256, from every receipt."""
+    out = {k: v for k, v in (src.get('sha256') or {}).items() if isinstance(v, str)}
+    for folder, rec in folders.items():
+        out.update({f'{folder}/{k}': v for k, v in (rec.get('files') or {}).items() if isinstance(v, str)})
+    return out
+
+
+def bundled_of(rec):
+    """[(package, version)] a receipt says its file inlines ('bundled': {'dompurify': '3.4.12', 'note': ...})."""
+    return sorted((k, v) for k, v in (rec.get('bundled') or {}).items() if k != 'note')
 
 
 def webkit_components(root):
-    """Each top-level folder of the kit's vendor/ with the npm packages it holds, read from the kit's own records."""
-    src = json.loads(read_text(root / KIT / 'file-viewer-sources.json') or '{}')
-    mer = json.loads(read_text(root / KIT / 'mermaid' / 'SOURCE.json') or '{}')
-    notes = read_text(root / KIT / 'FILE-VIEWER-NOTICES.md') or ''
-    tag = (src.get('three') or {}).get('tag') or ''
-    three = f'0.{tag[1:]}.0' if re.fullmatch(r'r\d+', tag) else None
-    fflate = re.search(r'fflate (\d+\.\d+\.\d+)', notes)
-    return {
-        'three': dict(packages=[('three', three)], repo='mrdoob/three.js'),
-        'file-parsers': dict(packages=[('three', three), ('fflate', fflate.group(1) if fflate else None)], repo='mrdoob/three.js'),
-        'mermaid': dict(packages=[(mer.get('package', 'mermaid'), mer.get('version'))], repo='mermaid-js/mermaid'),
-        'linkedom': dict(packages=[('linkedom', (src.get('linkedom') or {}).get('version'))], repo='WebReflection/linkedom'),
-        'occt-import-js': dict(packages=[('occt-import-js', (src.get('occt') or {}).get('version'))], repo='kovacsv/occt-import-js'),
-        'fonts': dict(packages=[], repo=None),
+    """Each top-level folder of the kit's vendor/: the npm packages it holds, the ones its files bundle, its repositories
+    and its npm receipts, all read from the kit's own receipts. A folder with a SOURCE.json describes itself."""
+    src, folders, _bad = kit_receipts(root)
+
+    def entry(key):
+        return src.get(key) if isinstance(src.get(key), dict) else {}
+
+    def repo(rec, folder):
+        return github_repo(rec.get('repository') or '') or github_repo(rec.get('source') or '') or KIT_REPOS.get(folder)
+    tag = entry('three').get('tag') or ''
+    three = f'0.{tag[1:]}.0' if re.fullmatch(r'r\d+', str(tag)) else None
+    three_repo = repo(entry('three'), 'three')
+    comps = {
+        'three': dict(packages=[('three', three)], repos=[three_repo]),
+        'file-parsers': dict(packages=[('three', three), ('fflate', entry('fflate').get('version'))],
+                             repos=[three_repo, repo(entry('fflate'), 'fflate')], receipts=[('fflate', entry('fflate'))]),
+        'linkedom': dict(packages=[('linkedom', entry('linkedom').get('version'))], repos=[repo(entry('linkedom'), 'linkedom')]),
+        'occt-import-js': dict(packages=[('occt-import-js', entry('occt').get('version'))],
+                               repos=[repo(entry('occt'), 'occt-import-js')]),
+        'fonts': dict(packages=[], repos=[]),
     }
+    for folder, rec in folders.items():
+        comps[folder] = dict(packages=[(rec.get('package') or folder, rec.get('version'))], bundled=bundled_of(rec),
+                             repos=[repo(rec, folder)], receipts=[(rec.get('package') or folder, rec)])
+    for c in comps.values():
+        c['repos'] = sorted({r for r in c['repos'] if r})
+        c.setdefault('bundled', [])
+        c.setdefault('receipts', [])
+    return comps
+
+
+def receipt_problems(name, rec):
+    """Offline: does an npm receipt say exactly which tarball it came from? [(title, evidence)]."""
+    out, src, integ = [], str(rec.get('source') or ''), str(rec.get('npm_integrity') or '')
+    ver = rec.get('version')
+    if src and not re.fullmatch(r'https://registry\.npmjs\.org/(@[^/]+/)?[^/]+/-/[^/]+-' + re.escape(str(ver)) + r'\.tgz', src):
+        out.append((f'the {name} receipt does not name the npm tarball of version {ver}', f'source {src}'))
+    if src.startswith('https://registry.npmjs.org/') and not integ.startswith('sha512-'):
+        out.append((f'the {name} receipt has no sha512 package integrity', f'npm_integrity {integ[:20] or "(none)"}'))
+    return out
 
 
 def check_webkit(rep, net, added_files=()):
@@ -1026,14 +1204,16 @@ def check_webkit(rep, net, added_files=()):
     if not kit.is_dir():
         return
     files = [f[len(KIT) + 1:] for f in tracked(rep.root, KIT)]
-    src = json.loads(read_text(kit / 'file-viewer-sources.json') or '{}')
-    mer = json.loads(read_text(kit / 'mermaid' / 'SOURCE.json') or '{}')
-    hashes = dict(src.get('sha256') or {})
-    hashes.update({f'mermaid/{k}': v for k, v in (mer.get('files') or {}).items()})
+    src, folders, bad = kit_receipts(rep.root)
+    for rel in bad:
+        rep.add('webkit-receipt', 'high', f"webkit:{rel.split('/')[0] if '/' in rel else 'receipts'}", f'{KIT}/{rel} is not a JSON object',
+                'the receipt cannot be read', 'Restore the receipt: without it no file in the folder is checked.', key=rel)
+    hashes = kit_hashes(src, folders)
+    records = RECORD_FILES | {f'{d}/SOURCE.json' for d in folders}
     comps = webkit_components(rep.root)
     unhashed = collections.defaultdict(list)
     for rel in files:
-        if rel in RECORD_FILES:
+        if rel in records:
             continue
         top = rel.split('/')[0] if '/' in rel else '(top)'
         if rel in hashes:
@@ -1053,23 +1233,36 @@ def check_webkit(rep, net, added_files=()):
         if '/' in lic and not lic.startswith(('src/', 'vendor/')) and not (kit / lic.rstrip('/')).exists():
             rep.add('webkit-licence-missing', 'medium', f"webkit:{lic.split('/')[0]}", f'licence file {lic} named in THIRD_PARTY_NOTICES.md is missing',
                     f'{KIT}/{lic}', 'Restore the licence text beside the code.', key=lic)
-    folders = sorted({f.split('/')[0] for f in files if '/' in f})
-    for top in folders:
+    folder_names = sorted({f.split('/')[0] for f in files if '/' in f})
+    for top in folder_names:
         c = comps.get(top)
         row = rep.item('webkit', id=f'webkit:{top}', name=top, files=sum(1 for f in files if f.startswith(top + '/')),
                        hashed=sum(1 for f in files if f.startswith(top + '/') and f in hashes),
-                       packages=[f'{n}@{v}' for n, v in (c or {}).get('packages', [])], repo=(c or {}).get('repo'))
+                       packages=[f'{n}@{v}' for n, v in (c or {}).get('packages', [])],
+                       bundled=[f'{n}@{v}' for n, v in (c or {}).get('bundled', [])], repos=(c or {}).get('repos', []))
         if c is None:
             rep.add('webkit-unknown', 'medium', row['id'], f'{KIT}/{top} is not a component this report knows',
-                    f'{row["files"]} files', 'Add it to webkit_components() in tools/resource_audit.py with its package, version and repo.')
-        for n, v in (c or {}).get('packages', []):
-            if not v:
-                rep.add('webkit-version', 'medium', row['id'], f'no recorded version for {n} in {top}', 'kit records',
-                        'Record the exact version in file-viewer-sources.json or SOURCE.json.', key=n)
+                    f'{row["files"]} files', f'Give it a SOURCE.json receipt (package, version, source, npm_integrity, files), '
+                    f'as mermaid/SOURCE.json has, or add it to webkit_components() in tools/resource_audit.py.')
+        for n, v in (c or {}).get('packages', []) + (c or {}).get('bundled', []):
+            if not v or not isinstance(v, str):
+                rep.add('webkit-version', 'medium', row['id'], f'no recorded version for {n} in {top}', 'kit receipts',
+                        f'Record the exact version in {VIEWER_RECEIPT} or the folder\'s SOURCE.json.', key=n)
+        bundlers = [kit / top / f for _n, rec in (c or {}).get('receipts', []) for f in (rec.get('files') or {}) if f.endswith('.js')]
+        texts = [read_text(f) or '' for f in bundlers if f.exists()]
+        for n, v in (c or {}).get('bundled', []):
+            if texts and isinstance(v, str) and not any(f'"{v}"' in t for t in texts):
+                rep.add('webkit-version', 'medium', row['id'], f'the {top} receipt says it bundles {n} {v}, but no file carries "{v}"',
+                        ', '.join(f.name for f in bundlers), 'Read the bundle\'s version strings and correct the receipt.', key=f'bundled:{n}')
+        for name, rec in (c or {}).get('receipts', []):
+            for title, evidence in receipt_problems(name, rec):
+                rep.add('webkit-receipt', 'medium', row['id'], title, evidence,
+                        'Record the registry tarball and its integrity, as the npm lockfile does, so the files can be checked against it.',
+                        key=f'{name}:{title}')
         new_unhashed = [f for f in unhashed.get(top, []) if f'{KIT}/{f}' in set(added_files)]
         if new_unhashed:
             rep.add('webkit-unhashed', 'medium', row['id'], f'new vendored files in {top} have no recorded hash',
-                    ', '.join(new_unhashed[:6]), 'Record their SHA-256 in file-viewer-sources.json (or the folder\'s SOURCE.json).',
+                    ', '.join(new_unhashed[:6]), f'Record their SHA-256 in {VIEWER_RECEIPT} (or the folder\'s SOURCE.json).',
                     key='new:' + ','.join(new_unhashed))
         elif unhashed.get(top):
             rep.add('webkit-unhashed', 'low', row['id'], f"{len(unhashed[top])} vendored files in {top} have no recorded hash",
@@ -1082,29 +1275,37 @@ def check_webkit(rep, net, added_files=()):
         rep.add('webkit-version', 'medium', 'webkit:three', f'three.module.min.js does not carry revision {want.split(".")[1]}',
                 'REVISION string not found in the file header', 'Check which three.js release the file is.', key='revision')
     mm = kit / 'mermaid' / 'mermaid.min.js'
-    mv = mer.get('version')
+    mv = folders.get('mermaid', {}).get('version')
     if mm.exists() and mv and mv not in (read_text(mm) or ''):
         rep.add('webkit-version', 'medium', 'webkit:mermaid', f'mermaid.min.js does not contain its recorded version {mv}',
                 'version string not found', 'Check which Mermaid release the file is.', key='version')
     if not net:
         return
-    pkgs = sorted({(n, v) for c in comps.values() for n, v in c['packages'] if v})
-    asks = [dict(q={'package': {'ecosystem': 'npm', 'name': n}, 'version': v}, pkg=(n, v)) for n, v in pkgs]
-    osv_lookup(rep, net, asks)
-    for a in asks:
+    rows = {r['name']: r for r in rep.inventory['webkit']}
+    asks, seen = [], set()
+    for top, row in sorted(rows.items()):
+        c = comps.get(top) or {}
+        for ctx, pkgs in (('vendored', c.get('packages', [])), ('bundled', c.get('bundled', []))):
+            for n, v in pkgs:
+                if v and isinstance(v, str) and (n, v) not in seen:      # a package once, on the first folder that carries it
+                    seen.add((n, v))
+                    asks.append(dict(q={'package': {'ecosystem': 'npm', 'name': n}, 'version': v}, pkg=(n, v), ctx=ctx,
+                                     row=row, subject=row['id']))
+    for a in osv_lookup(rep, net, asks):
         n, v = a['pkg']
-        for row in rep.inventory['webkit']:
-            if f'{n}@{v}' in row['packages'] and a.get('vulns'):
-                row.setdefault('advisories', []).extend(x['id'] for x in a['vulns'])
-                advisory_finding(rep, row['id'], n, v, a['vulns'], 'vendored',
-                                 'Update the vendored copy to >={target}: new files, new SHA-256 records and notices, then '
-                                 'the web kit browser suites (it ships to every project site that copies the kit).')
-                break                     # report a package once, on the first folder that carries it
-    meta = net.map(lambda n: net.json(f'https://registry.npmjs.org/{n}', headers={'Accept': 'application/vnd.npm.install-v1+json'}),
-                   sorted({n for n, _ in pkgs}))
+        if a.get('vulns'):
+            a['row'].setdefault('advisories', []).extend(x['id'] for x in a['vulns'])
+            action = ('Update the vendored copy to >={target}: new files, new SHA-256 records and notices, then the web kit '
+                      'browser suites (it ships to every project site that copies the kit).') if a['ctx'] == 'vendored' else \
+                     (f'{n} comes inside another library\'s file: take the first release of that library that bundles '
+                      f'{n} >={{target}}, and say in the receipt whether the affected code is reachable.')
+            advisory_finding(rep, a['row']['id'], n, v, a['vulns'], a['ctx'], action)
+    names = sorted({n for n, v in seen})
+    meta = net.map(lambda n: net.json(f'https://registry.npmjs.org/{urllib.parse.quote(n, safe="@")}',
+                                      headers={'Accept': 'application/vnd.npm.install-v1+json'}), names)
     for row in rep.inventory['webkit']:
         row['latest'] = {}
-        for spec in row['packages']:
+        for spec in row['packages'] + row['bundled']:
             n, v = spec.rsplit('@', 1)
             status, data, _ = meta.get(n, (0, None, ''))
             if status == 200 and isinstance(data, dict):
@@ -1113,21 +1314,89 @@ def check_webkit(rep, net, added_files=()):
                 if dep:
                     rep.add('npm-deprecated', 'medium', row['id'], f'vendored {n} {v} is deprecated', str(dep)[:200],
                             'Move to the replacement its maintainers name.', key=n)
-    slugs = sorted({r['repo'] for r in rep.inventory['webkit'] if r.get('repo')})
+            elif n in meta:
+                rep.unverified.add(row['id'])
+    for top, row in sorted(rows.items()):
+        for name, rec in (comps.get(top) or {}).get('receipts', []):
+            verify_receipt(rep, net, row, top, name, rec)
+    slugs = sorted({s for r in rep.inventory['webkit'] for s in r.get('repos') or []})
     statuses = net.map(lambda s: repo_status(net, s), slugs)
+    reported = set()
     for row in rep.inventory['webkit']:
-        if row.get('repo'):
-            repo_findings(rep, row['id'], row['repo'], statuses[row['repo']], None, 'vendored', rep.as_of)
+        for slug in row.get('repos') or []:
+            if slug not in reported:                 # three.js serves two folders: one finding
+                reported.add(slug)
+                repo_findings(rep, row['id'], slug, statuses[slug], None, 'vendored', rep.as_of)
+
+
+def tar_files(data, wanted):
+    """{path: bytes} for the regular files named in wanted, read from a .tgz in memory (never unpacked to disk)."""
+    import io
+    import tarfile
+    out = {}
+    with tarfile.open(fileobj=io.BytesIO(data), mode='r:gz') as tf:
+        for m in tf:
+            if m.name in wanted and m.isfile() and m.size <= TARBALL_LIMIT:
+                f = tf.extractfile(m)
+                out[m.name] = f.read() if f else b''
+    return out
+
+
+def verify_receipt(rep, net, row, top, name, rec):
+    """Online: fetch the npm tarball a receipt names, check its sha512 integrity, and compare each vendored file with the
+    file at its recorded path in the package. A receipt that declares a modification is compared but not flagged."""
+    src, integ, paths = rec.get('source'), str(rec.get('npm_integrity') or ''), rec.get('paths_in_package') or {}
+    if not (src and str(src).startswith('https://registry.npmjs.org/') and integ.startswith('sha512-') and paths):
+        return
+    status, data, err = net.request(src)
+    if status != 200 or not data or len(data) > TARBALL_LIMIT:
+        rep.add('webkit-receipt-unverified', 'info', row['id'], f'the {name} tarball could not be read',
+                err or (f'HTTP {status}' if status != 200 else f'{len(data or b"")} bytes'), 'Run again later.', key=name)
+        return
+    got = 'sha512-' + base64.b64encode(hashlib.sha512(data).digest()).decode()
+    if got != integ:
+        rep.add('webkit-receipt-integrity', 'high', row['id'], f'the {name} tarball no longer matches the integrity in its receipt',
+                f'{src}: receipt {integ[:24]}…, registry {got[:24]}…',
+                'Stop: the registry now serves different bytes under this version. Tell the owner; do not re-vendor from it.', key=name)
+        return
+    try:
+        members = tar_files(data, set(paths.values()))
+    except Exception as e:                 # tarfile, gzip and zlib raise many kinds on a damaged archive
+        rep.add('webkit-receipt-unverified', 'info', row['id'], f'the {name} tarball could not be opened', str(e)[:160],
+                'Run again later.', key=name)
+        return
+    modified = not str(rec.get('modifications') or 'None').startswith('None')
+    differ, missing = [], []
+    for local, inpkg in sorted(paths.items()):
+        mine = rep.root / KIT / top / local
+        if inpkg not in members:
+            missing.append(inpkg)
+        elif mine.is_file() and hashlib.sha256(mine.read_bytes()).hexdigest() != hashlib.sha256(members[inpkg]).hexdigest():
+            differ.append(local)
+    row.setdefault('receipts', {})[name] = dict(files=len(paths), identical=len(paths) - len(differ) - len(missing),
+                                                differ=differ, missing=missing)
+    if missing:
+        rep.add('webkit-receipt', 'medium', row['id'], f'the {name} receipt names paths its package does not have',
+                ', '.join(missing), 'Correct paths_in_package in the receipt.', key=f'{name}:missing')
+    if differ and not modified:
+        rep.add('webkit-drift', 'high', row['id'], f'{len(differ)} vendored {top} files differ from the {name} package their receipt names',
+                f"{', '.join(differ)} vs {src}", 'Find out who changed them; restore the package\'s files, or record the change '
+                'in the receipt\'s "modifications" and re-review.', key=f'{name}:' + ','.join(differ))
 
 
 # -------------------------------------------------------------------------------------------------------------- links
-def published(f):
-    """The Markdown files tools/build-site.mjs publishes as pages (keep in step with its SECTIONS)."""
-    if re.search(r'(?:^|/)(?:AGENTS|CLAUDE)\.md$', f) or f == REPORT_MD:
+# The Markdown files tools/build-site.mjs publishes as pages: its SECTIONS, in the same order and with the same patterns.
+# tests/test_resource_audit.py reads build-site.mjs and fails when the two disagree.
+PUBLISHED = [re.compile(r'^docs/[^/]+\.md$'), re.compile(r'^skills/[^/]+/SKILL\.md$'), re.compile(r'^agents/[^/]+\.md$'),
+             re.compile(r'^lessons/(?:[a-z0-9-]+/)?[^/]+\.md$'), re.compile(r'^research/[^/]+\.md$')]
+PUBLISHED_FILES = ('README.md', 'CONTRIBUTING.md', 'THIRD_PARTY_NOTICES.md')
+
+
+def published(f, report=False):
+    """Is f a page tools/build-site.mjs publishes? The report page is left out unless asked for (its URLs are findings)."""
+    if re.search(r'(?:^|/)(?:AGENTS|CLAUDE)\.md$', f) or (f == REPORT_MD and not report):
         return False
-    return bool(f in ('README.md', 'CONTRIBUTING.md', 'THIRD_PARTY_NOTICES.md') or re.match(r'^docs/[^/]+\.md$', f)
-                or re.match(r'^skills/[^/]+/SKILL\.md$', f) or re.match(r'^agents/[^/]+\.md$', f)
-                or re.match(r'^lessons/[^/]+\.md$', f) or re.match(r'^research/[^/]+\.md$', f))
+    return f in PUBLISHED_FILES or any(rx.match(f) for rx in PUBLISHED)
 
 
 FENCE = re.compile(r'^(```|~~~)[^\n]*\n.*?^\1[ \t]*$', re.M | re.S)
@@ -1275,6 +1544,8 @@ def check_links(rep, net, catalog=None):
             sc = scores.get(slug)
             if sc:
                 r['scorecard'] = sc['score']
+                if str(sc.get('note', '')).startswith('not verified'):
+                    rep.unverified.add(r['id'])
                 if sc['score'] is not None and sc['score'] < SCORECARD_MIN:
                     rep.add('scorecard-low', 'low', r['id'], f"OpenSSF Scorecard {sc['score']}/10 for {slug}",
                             f"checks at 0: {', '.join(sc['zero'][:8]) or 'none'} ({sc['date']})",
@@ -1327,6 +1598,20 @@ INSTALL_ADVICE = [
      'manager; if it only describes how a project installs, say that it is a risk.'),
 ]
 RUNNER = re.compile(r'\b(npx|uvx|pipx\s+run|bunx)\s+([^\n`|;&]+)')
+# `claude plugin marketplace add Valpatel/cad-agent#v0.8.0` (a tag) or `#<commit>`: our own release, pinned.
+OUR_PINNED_MARKETPLACE = re.compile(r'\bmarketplace\s+add\s+(?:https://github\.com/)?([\w.-]+/[\w.-]+?)(?:\.git)?'
+                                    r'#(v\d+(?:\.\d+)*|[0-9a-f]{7,40})(?![\w.-])', re.I)
+PLUGIN_INSTALL = re.compile(r'\bplugin\s+install\s+[\w.-]+@([\w.-]+)', re.I)
+
+
+def our_pinned_plugin(line, file_pinned):
+    """True for plugin advice about our own marketplace pinned to a release: the `marketplace add` line itself, or a
+    `plugin install <name>@<ours>` line in a file that adds our marketplace pinned (#120's install instructions)."""
+    m = OUR_PINNED_MARKETPLACE.search(line)
+    if m:
+        return m.group(1).lower() in OUR_REPOS
+    m = PLUGIN_INSTALL.search(line)
+    return bool(m and file_pinned and m.group(1).lower() in OUR_MARKETPLACES)
 TAKES_VALUE = {'--python', '-p', '--with', '--from', '--index', '--index-url', '--package', '--spec', '-c', '--call'}
 
 
@@ -1367,13 +1652,17 @@ def check_skills(rep, net=None):
     scan = [f for f in files if f.endswith('.md') and (published(f) or f.startswith(('skills/', 'agents/')))]
     for f in scan:
         text = read_text(rep.root / f) or ''
-        for line0, code in code_spans(text):
+        spans = code_spans(text)
+        file_pinned = any(our_pinned_plugin(ln, False) for _l, code in spans for ln in code.splitlines())
+        for line0, code in spans:
             for off, ln in enumerate(code.splitlines()):
                 where = f'{f}:{line0 + off}'
                 advice = False
                 for check, sev, rx, what, action in INSTALL_ADVICE:
                     if rx.search(ln):
                         advice = True
+                        if check == 'install-from-registry' and our_pinned_plugin(ln, file_pinned):
+                            continue          # our own plugin at a release tag or commit: the advice we want people to follow
                         rep.add(check, sev, f'doc:{f}', f'{f} {what}', f'{where}: {ln.strip()[:160]}', action,
                                 key=' '.join(ln.split()))
                 for m in RUNNER.finditer(ln):
@@ -1401,6 +1690,7 @@ def check_repo(rep, net, repo=None):
         return
     status, data, err = net.github(f'repos/{repo}')
     sa = (data or {}).get('security_and_analysis') if status == 200 and isinstance(data, dict) else None
+    admin = bool(((data or {}).get('permissions') or {}).get('admin')) if isinstance(data, dict) else False
     row = rep.item('repo', id=f'repo:{repo}', settings=sa and {k: (v or {}).get('status') for k, v in sa.items()})
     if sa:
         if (sa.get('secret_scanning') or {}).get('status') != 'enabled':
@@ -1413,9 +1703,13 @@ def check_repo(rep, net, repo=None):
                     'Owner decision: they open fix PRs for alerts (into the default branch, dev).')
     else:
         row['settings'] = f'not visible ({err or "needs admin"})'
+        rep.unverified.add(f'repo:{repo}')
+    # 204 enabled, 404 disabled, but only for a token with admin rights: GitHub answers 404 to anyone else as well.
     status, _, _ = net.github(f'repos/{repo}/vulnerability-alerts')
-    row['dependabot_alerts'] = {204: 'enabled', 404: 'disabled'}.get(status, f'not verified ({status})')
-    if status == 404:
+    row['dependabot_alerts'] = {204: 'enabled', 404: 'disabled' if admin else 'not verified (needs admin)'}.get(status, f'not verified ({status})')
+    if status != 204 and not (status == 404 and admin):
+        rep.unverified.add(f'repo:{repo}')
+    if status == 404 and admin:
         rep.add('repo-dependabot-alerts', 'medium', f'repo:{repo}', 'Dependabot alerts are off', 'vulnerability-alerts: 404',
                 'Owner: turn on Dependabot alerts.')
     owner, name = repo.split('/', 1)
@@ -1450,17 +1744,28 @@ def build(root, as_of=None, net=None, repo=None, installed=False, catalog=None, 
 
 
 def load_accepted(path):
+    """research/security-accepted.yaml: [{check, subject, reason, accepted, fp?}]. An acceptance without fp covers every
+    finding of that check on that subject, so the advisory checks must name the fingerprint: otherwise accepting one
+    moderate advisory would hide every later one on the same package."""
     text = read_text(Path(path)) if path else None
     if not text:
         return []
     items = load_yaml(text) or []
+    if not isinstance(items, list):
+        raise SystemExit(f'{path}: a list of accepted findings')
     for a in items:
-        if not (a.get('check') and a.get('subject') and a.get('reason')):
+        if not (isinstance(a, dict) and a.get('check') and a.get('subject') and a.get('reason')):
             raise SystemExit(f'{path}: every accepted finding needs check, subject and reason')
+        if a['check'] in FP_REQUIRED and not a.get('fp'):
+            raise SystemExit(f"{path}: accepting {a['check']} on {a['subject']} needs its fp (the finding's fingerprint), "
+                             'so a later advisory on the same package is not hidden too')
     return items
 
 
 def accepted_reason(items, f):
+    """The reason f is accepted, or None. Nothing accepts a critical finding (a malicious package, a critical advisory)."""
+    if f['severity'] == 'critical':
+        return None
     for a in items:
         if a['check'] == f['check'] and a['subject'] == f['subject'] and a.get('fp', f['fp']) == f['fp']:
             return f"{a['reason']} ({a.get('accepted', 'undated')})"
@@ -1494,19 +1799,28 @@ def findings_table(fs):
     return lines
 
 
-def to_markdown(r, inventory=True, limit=None):
+def revision_label(r):
+    rev = f"`{(r.get('revision') or 'working tree')[:12]}`"
+    return rev + (' with uncommitted changes' if r.get('dirty') else '')
+
+
+def to_markdown(r, inventory=True, limit=None, figure=None):
+    """The report as one Markdown page. figure: a picture of the findings to show after the lede (a path from the page)."""
     s = r['summary']
     open_ = [f for f in r['findings'] if not f.get('accepted')]
     accepted = [f for f in r['findings'] if f.get('accepted')]
     counts = ', '.join(f'{s[k]} {k}' for k in SEVERITIES if s[k]) or 'none'
     out = ['# Supply-chain and resource report', '',
-           f"What cad-agent depends on, vendors and links to, checked on {r['as_of']} at revision `{(r['revision'] or 'working tree')[:12]}` "
+           f"What cad-agent depends on, vendors and links to, checked on {r['as_of']} at revision {revision_label(r)} "
            f"({r['mode']} checks). Findings: {counts}. Generated by `tools/resource_audit.py`; how to read it and what blocks "
-           "a merge are in the [cad-supply-chain skill](../skills/cad-supply-chain/SKILL.md).", '',
-           '**Limits.** ' + ' '.join(r['limits']), '']
-    if any(s[k] for k in SEVERITIES):
+           "a merge are in the [cad-supply-chain skill](../skills/cad-supply-chain/SKILL.md) and on the "
+           "[supply-chain page](../docs/supply-chain.md).", '']
+    if figure:
+        out += [f'![Open findings by area and severity, from this report: {counts}]({figure})', '']
+    elif any(s[k] for k in SEVERITIES):
         out += ['```mermaid', 'pie showData title Open findings by severity'] + \
                [f'    "{k}" : {s[k]}' for k in SEVERITIES if s[k]] + ['```', '']
+    out += ['**Limits.** ' + ' '.join(r['limits']), '']
     out += ['## Findings', '']
     if not open_:
         out += ['No open findings.', '']
@@ -1524,6 +1838,9 @@ def to_markdown(r, inventory=True, limit=None):
             out += ['| Extra | Direct | With transitive (deps.dev, newest releases) |', '|---|---|---|'] + \
                    [f"| {g} | {c['direct']} | {c['with_transitive'] if c['with_transitive'] is not None else 'unknown'} |"
                     for g, c in counts.items()] + ['']
+        if 'python_transitive' in ex:
+            out += [f"{len(ex['python_transitive'])} transitive packages (at the versions deps.dev resolves) were also checked "
+                    'against OSV; findings on them name the direct dependency they come through.', '']
         out += ['| Package | Extras | Range | Newest | Released | Licence | Lowest allowed | Advisories (newest / lowest) |',
                 '|---|---|---|---|---|---|---|---|']
         for p in inv['python']:
@@ -1538,23 +1855,29 @@ def to_markdown(r, inventory=True, limit=None):
         for p in inv['npm']:
             out.append(f"| `{p['name']}` | {p['version']} | {'yes' if p['direct'] else ''} | {'yes' if p['dev'] else ''} | "
                        f"{p.get('licence') or ''} | {'yes' if p['install_script'] else ''} | {len(p.get('advisories') or [])} |")
+        flagged = {f['subject'] for f in open_}
         out += ['', '### Vendored code (vendor/)', '', '| Project | Pinned | Imported | Licence (manifest / file) | Files | Skills | '
                 'Upstream | Behind | Scorecard | Drift |', '|---|---|---|---|---|---|---|---|---|---|']
         for v in inv['vendored']:
             up, d = v.get('upstream') or {}, v.get('drift')
             drift = f"{d['changed']} changed, {d['added']} added, {d['missing']} missing ({d['compared']} compared)" if d else ''
             score = (v.get('scorecard') or {}).get('score')
-            out.append(f"| [{v['name']}]({v['url']}) | `{(v['sha'] or '')[:12]}` | {v.get('imported') or ''} | {v.get('licence')} / "
+            # linked only while it has no open finding: the page never sends people to what it flags
+            name = f"{cell(v['name'])} ({inert(v['url'])})" if v['id'] in flagged else f"[{cell(v['name'])}]({v['url']})"
+            out.append(f"| {name} | `{(v['sha'] or '')[:12]}` | {v.get('imported') or ''} | {v.get('licence')} / "
                        f"{v.get('licence_detected') or '?'} | {v['files']} | {v['skills']} | "
                        f"{'archived' if up.get('archived') else up.get('state', '')} | {v.get('behind', '')} | "
                        f"{score if score is not None else ''} | {drift} |")
-        out += ['', '### Web kit (src/cadagent/webkit/vendor/)', '', '| Folder | Packages | Files | Hashed | Newest | Advisories |',
-                '|---|---|---|---|---|---|']
+        out += ['', '### Web kit (src/cadagent/webkit/vendor/)', '',
+                '| Folder | Packages | Bundled inside | Files | Hashed | Matches its npm package | Newest | Advisories |',
+                '|---|---|---|---|---|---|---|---|']
         for w in inv['webkit']:
-            out.append(f"| `{w['name']}` | {', '.join(w['packages'])} | {w['files']} | {w['hashed']} | "
-                       f"{', '.join(f'{k} {v}' for k, v in sorted((w.get('latest') or {}).items()))} | {len(set(w.get('advisories') or []))} |")
+            rc = w.get('receipts') or {}
+            match = ', '.join(f"{n}: {c['identical']} of {c['files']}" for n, c in sorted(rc.items()))
+            out.append(f"| `{w['name']}` | {', '.join(w['packages'])} | {', '.join(w.get('bundled') or [])} | {w['files']} | "
+                       f"{w['hashed']} | {match} | {', '.join(f'{k} {v}' for k, v in sorted((w.get('latest') or {}).items()))} | "
+                       f"{len(set(w.get('advisories') or []))} |")
         cat = [l for l in inv['links'] if l['kind'] == 'catalogue']
-        flagged = {f['subject'] for f in open_}
         out += ['', '### Links we send people to', '',
                 f"{len(cat)} catalogue links (catalog.json, upstreams/registry.yaml, research/landscape.json) and "
                 f"{len(inv['links']) - len(cat)} more in published pages; {sum(1 for l in inv['links'] if l['id'] in flagged)} have "
@@ -1566,6 +1889,89 @@ def to_markdown(r, inventory=True, limit=None):
     if limit and len(text) > limit:
         text = text[:limit - 200] + '\n\n…(cut; the full report is in the run\'s artifact)\n'
     return text
+
+
+# The figure: open findings per area, stacked by severity. Severity is ordinal, so one hue (the site's rust) from light
+# (low) to dark (critical), checked with the dataviz palette validator: neighbours at least 15 apart in OKLab for normal
+# and colour-blind vision; the light end is 2.15:1 on the page, so every segment also carries its count as a label.
+SEV_FILL = {'critical': '#5e0000', 'high': '#903517', 'medium': '#c46446', 'low': '#ef9a7f'}
+SEV_TEXT = {'critical': '#ffffff', 'high': '#ffffff', 'medium': '#ffffff', 'low': '#173d3c'}
+FIG_INK, FIG_MUTED, FIG_LINE, FIG_BG = '#173d3c', '#526863', '#d8e0d3', '#fffdf5'
+FIG_FONT = 'system-ui,-apple-system,Segoe UI,Roboto,sans-serif'
+AREAS = [  # (label, subject prefixes, inventory section, what was checked: {n} is the section's item count)
+    ('Python dependencies', ('pypi:',), 'python', '{n} direct, and what they pull in'),
+    ('npm packages', ('npm:',), 'npm', '{n} in the lockfile'),
+    ('Vendored projects', ('vendor:',), 'vendored', '{n} pinned projects'),
+    ('Web kit files', ('webkit:',), 'webkit', '{n} folders and their receipts'),
+    ('Links and catalogue', ('url:', 'catalogue:'), 'links', '{n} links'),
+    ('Install advice in pages', ('doc:', 'skill:', 'agent:'), 'skills', 'every published page'),
+    ('Repository', ('repo:',), 'repo', 'Dependabot; settings need an admin run'),
+]
+
+
+def area_counts(r):
+    """[(label, items checked, what they are, {severity: open findings})], in AREAS order."""
+    out = []
+    for label, prefixes, section, noun in AREAS:
+        fs = [f for f in r['findings'] if not f.get('accepted') and f['severity'] in SEV_FILL and f['subject'].startswith(prefixes)]
+        out.append((label, len(r['inventory'].get(section) or []), noun.format(n=len(r['inventory'].get(section) or [])),
+                    collections.Counter(f['severity'] for f in fs)))
+    return out
+
+
+def findings_svg(r):
+    """The report as one picture (deterministic: the same report gives the same bytes)."""
+    rows = area_counts(r)
+    total = max((sum(c.values()) for *_x, c in rows), default=0)
+    step = 5 if total <= 25 else 10 if total <= 60 else 25
+    vmax = max(step, -(-total // step) * step)
+    w, left, right, top, row_h, bar_h = 720, 236, 40, 92, 44, 22
+    plot = w - left - right
+    h = top + len(rows) * row_h + 44
+    x = lambda v: left + plot * v / vmax
+    e = lambda t: str(t).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
+    open_n = sum(sum(c.values()) for *_x, c in rows)
+    sub = (f"tools/resource_audit.py, {r['mode']} checks, {r['as_of']}: {open_n} open at low or above"
+           + (f", {r['summary'].get('accepted', 0)} accepted" if r['summary'].get('accepted') else '')
+           + (f", {r['summary'].get('info', 0)} not verified (info, not shown)" if r['summary'].get('info') else ''))
+    out = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" role="img" '
+           f'aria-labelledby="t d" font-family="{FIG_FONT}">',
+           '<title id="t">Open supply-chain findings by area and severity</title>',
+           '<desc id="d">' + e('; '.join(f"{label}: " + (', '.join(f'{c[s]} {s}' for s in SEV_FILL if c[s]) or 'none')
+                                         for label, _n, _noun, c in rows)) + '</desc>',
+           f'<rect width="{w}" height="{h}" fill="{FIG_BG}"/>',
+           f'<text x="16" y="28" font-size="17" font-weight="600" fill="{FIG_INK}">Open findings by area and severity</text>',
+           f'<text x="16" y="48" font-size="12" fill="{FIG_MUTED}">{e(sub)}</text>']
+    lx = 16
+    for sev, fill in SEV_FILL.items():                      # legend, in severity order
+        out.append(f'<rect x="{lx}" y="62" width="12" height="12" rx="2" fill="{fill}"/>'
+                   f'<text x="{lx + 17}" y="72" font-size="12" fill="{FIG_INK}">{sev}</text>')
+        lx += 17 + 7.2 * len(sev) + 18
+    for v in range(0, vmax + 1, step):                      # recessive grid
+        out.append(f'<line x1="{x(v):.1f}" y1="{top - 6}" x2="{x(v):.1f}" y2="{top + len(rows) * row_h - 10}" stroke="{FIG_LINE}"/>'
+                   f'<text x="{x(v):.1f}" y="{top + len(rows) * row_h + 6}" font-size="11" fill="{FIG_MUTED}" text-anchor="middle">{v}</text>')
+    for i, (label, n, noun, c) in enumerate(rows):
+        y = top + i * row_h
+        out.append(f'<text x="{left - 12}" y="{y + 10}" font-size="13" fill="{FIG_INK}" text-anchor="end">{e(label)}</text>'
+                   f'<text x="{left - 12}" y="{y + 25}" font-size="11" fill="{FIG_MUTED}" text-anchor="end">'
+                   f'{e(noun)}</text>')
+        at = 0
+        for sev, fill in SEV_FILL.items():
+            k = c[sev]
+            if not k:
+                continue
+            x0, x1 = x(at), x(at + k)
+            out.append(f'<rect x="{x0:.1f}" y="{y}" width="{max(x1 - x0 - 2, 1):.1f}" height="{bar_h}" rx="2" fill="{fill}">'
+                       f'<title>{e(label)}: {k} {sev}</title></rect>')
+            if x1 - x0 >= 18:
+                out.append(f'<text x="{(x0 + x1 - 2) / 2:.1f}" y="{y + 15.5}" font-size="11" fill="{SEV_TEXT[sev]}" '
+                           f'text-anchor="middle">{k}</text>')
+            at += k
+        tail = f'{at}' if at else 'none'
+        out.append(f'<text x="{x(at) + 6:.1f}" y="{y + 15.5}" font-size="12" font-weight="600" fill="{FIG_INK if at else FIG_MUTED}">{tail}</text>')
+    out.append(f'<text x="16" y="{h - 12}" font-size="11" fill="{FIG_MUTED}">A clean bar is not proof of safety: the '
+               'report lists what each check can and cannot see.</text>')
+    return '\n'.join(out) + '\n</svg>\n'
 
 
 def print_summary(r, fail):
@@ -1670,14 +2076,23 @@ def describe(section, row):
 
 def rows_markdown(r, ids):
     lines = ['| Item | What | Version / pin | Licence | Report |', '|---|---|---|---|---|']
+    unverified = set(r.get('unverified') or [])
     for sid in ids:
         section, row = item_row(r, sid)
         what, ver, lic = describe(section, row) if row else ('removed or unknown', '', None)
         fs = [f for f in r['findings'] if f['subject'] == sid and not f.get('accepted')]
         rep = '; '.join(f"{f['severity']}: {f['title']}" for f in sorted(fs, key=lambda f: RANK[f['severity']])) or \
               f"no findings ({r['mode']} checks)"
+        if sid in unverified:          # say so: a quiet row must not read as a clean one
+            rep += '; some online checks did not answer, run again'
         lines.append(f'| `{sid}` | {what} | {cell(ver)} | {cell(lic or "")} | {cell(rep)} |')
     return '\n'.join(lines) + '\n'
+
+
+def has_row(body, sid):
+    """Does the PR description carry the report row for sid: a table row whose first cell is exactly `sid`? A mention
+    elsewhere, or an id that only starts with sid (url:https://github.com/a/b vs .../a/bc), is not a row."""
+    return bool(re.search(r'^[ \t]*\|[ \t]*`' + re.escape(sid) + r'`[ \t]*\|', body or '', re.M))
 
 
 # ----------------------------------------------------------------------------------------------------------- commands
@@ -1694,9 +2109,13 @@ def cmd_report(a):
     if a.json:
         Path(a.json).parent.mkdir(parents=True, exist_ok=True)
         Path(a.json).write_text(json.dumps(r, indent=1, ensure_ascii=False) + '\n', encoding='utf-8')
+    if a.svg:
+        Path(a.svg).parent.mkdir(parents=True, exist_ok=True)
+        Path(a.svg).write_text(findings_svg(r), encoding='utf-8')
     if a.md:
         Path(a.md).parent.mkdir(parents=True, exist_ok=True)
-        Path(a.md).write_text(to_markdown(r), encoding='utf-8')
+        fig = os.path.relpath(Path(a.svg).resolve(), Path(a.md).resolve().parent).replace(os.sep, '/') if a.svg else None
+        Path(a.md).write_text(to_markdown(r, figure=fig), encoding='utf-8')
     fail = failing(r, a.fail_on)
     print_summary(r, fail)
     return 1 if fail else 0
@@ -1713,35 +2132,79 @@ def cmd_rows(a):
     return 0
 
 
+def gate_scope(into):
+    """What gate checks for a change into `into`: 'change' (the whole repository, plus what the change adds and its rows)
+    where new items enter (CHANGE_BRANCHES: dev), else 'repo' (the whole repository only).
+
+    A dev -> main release PR, and the push to main after it, carry only items that came into dev through PRs this gate
+    already judged, each with its rows. Judged against main instead, "what the change adds" is everything since the last
+    release: rows nobody could write in a release PR, and "new" files that were new weeks ago. That failed every release
+    by construction (the review of #138)."""
+    return 'change' if into in CHANGE_BRANCHES else 'repo'
+
+
 def cmd_gate(a):
-    """CI: every item the change adds has its report row in the PR body, and none has a finding at --fail-on or above."""
-    ids, new_files = added_items(Path(a.root), a.base)
+    """CI: nothing at --fail-on-repo anywhere; and, for a change into dev, every item it adds has its report row in the PR
+    body and none has a finding at --fail-on or above."""
+    scope = gate_scope(a.into)
+    ids, new_files = added_items(Path(a.root), a.base) if scope == 'change' else ([], [])
     r = make_report(a, new_files)
     problems = []
     whole = failing(r, a.fail_on_repo)
     if whole:
         problems.append(f'{len(whole)} finding(s) at or above {a.fail_on_repo} in the repository:')
         problems += [f"  {f['severity']} {f['subject']}: {f['title']}" for f in whole]
-    bad = [f for f in failing(r, a.fail_on) if f['subject'] in ids]
-    if bad:
-        problems.append(f'{len(bad)} finding(s) at or above {a.fail_on} on what this change adds:')
-        problems += [f"  {f['severity']} {f['subject']}: {f['title']} -> {f['action']}" for f in bad]
-    body = os.environ.get(a.pr_body_env, '') if a.pr_body_env else (Path(a.pr_body_file).read_text() if a.pr_body_file else None)
-    if body is not None and ids:
-        missing = [i for i in ids if f'`{i}`' not in body and i not in body]
-        if missing:
-            problems.append('the PR description has no report row for: ' + ', '.join(missing) +
-                            f'\n  paste the output of: python3 tools/resource_audit.py rows --base origin/<base> (into "Supply chain")')
-    print(f'supply-chain gate: {len(ids)} item(s) added since {a.base}' + (': ' + ', '.join(ids) if ids else ''))
-    if ids:
-        print(rows_markdown(r, ids))
+    if scope == 'repo':
+        print(f'supply-chain gate into {a.into}: the whole-repository check only (at or above {a.fail_on_repo}). What a '
+              f'change adds, and its rows, are checked where items enter: PRs and pushes into {", ".join(CHANGE_BRANCHES)}.')
+    else:
+        bad = [f for f in failing(r, a.fail_on) if f['subject'] in ids]
+        if bad:
+            problems.append(f'{len(bad)} finding(s) at or above {a.fail_on} on what this change adds:')
+            problems += [f"  {f['severity']} {f['subject']}: {f['title']} -> {f['action']}" for f in bad]
+        body = os.environ.get(a.pr_body_env, '') if a.pr_body_env else (Path(a.pr_body_file).read_text() if a.pr_body_file else None)
+        if body is not None and ids:
+            missing = [i for i in ids if not has_row(body, i)]
+            if missing:
+                problems.append('the PR description has no report row for: ' + ', '.join(missing) +
+                                f'\n  paste the table from: python3 tools/resource_audit.py rows --base origin/{a.into} --online '
+                                '(under "Supply chain"; each row starts with the item\'s id in backticks)')
+        print(f'supply-chain gate into {a.into}: {len(ids)} item(s) added since {a.base}' + (': ' + ', '.join(ids) if ids else ''))
+        if ids:
+            print(rows_markdown(r, ids))
     for p in problems:
         print(p)
     return 1 if problems else 0
 
 
-MARK = re.compile(r'<!-- cad-supply-chain-report fps=([0-9a-f,]*) -->')
+def cmd_figure(a):
+    """Draw the figure from a saved report; --check: exit 1 when the committed SVG is not what the report gives."""
+    svg = findings_svg(json.loads(Path(a.report).read_text(encoding='utf-8')))
+    if a.check:
+        same = Path(a.svg).exists() and Path(a.svg).read_text(encoding='utf-8') == svg
+        print(f"{a.svg}: {'matches' if same else 'differs from'} {a.report}")
+        return 0 if same else 1
+    Path(a.svg).parent.mkdir(parents=True, exist_ok=True)
+    Path(a.svg).write_text(svg, encoding='utf-8')
+    return 0
+
+
+MARK = re.compile(r'<!-- cad-supply-chain-report fps=([0-9a-f~,]*) -->')
 BOTS = ('github-actions[bot]', 'app/github-actions', 'github-actions')
+
+
+def scope_tag(subject):
+    """8 hex digits naming a finding's scope in the issue marker, so a later run knows which old findings it could not
+    re-check (the marker stays short and carries no third-party text)."""
+    return hashlib.sha256(str(subject).encode()).hexdigest()[:8]
+
+
+def no_mentions(text):
+    """Text for a public issue: outside code spans, `@name` and `#123` get a zero-width space, so third-party text
+    (advisory summaries, deprecation notes) never notifies a person or links an unrelated issue."""
+    parts = re.split(r'(`[^`\n]+`)', text)
+    return ''.join(p if len(p) > 1 and p[0] == p[-1] == '`' else
+                   re.sub(r'(?<!&)#(?=\d)', '#\u200b', re.sub(r'(?<![\w&])@(?=[A-Za-z0-9])', '@\u200b', p)) for p in parts)
 
 
 def gh_json(*args):
@@ -1755,28 +2218,44 @@ def plan_issue(r, issues, repo, title, authors=BOTS):
     """The gh commands that bring the one tracking issue in line with a report: [(args, stdin)], and a note.
 
     The issue is the one open issue opened by an allowed author whose body carries the fingerprint marker; anyone can
-    write a marker, so the author check keeps the workflow from editing someone else's issue."""
+    write a marker, so the author check keeps the workflow from editing someone else's issue. A finding this run could
+    not re-check (its scope is in the report's `unverified`: OSV, a repository or a site did not answer) is kept as
+    "not re-checked", not counted as resolved, so a week without an answer does not close and reopen it."""
     live = [f for f in r['findings'] if not f.get('accepted') and RANK[f['severity']] <= RANK['low']
             and not f['check'].endswith('-unverified')]
-    fps = sorted({f['fp'] for f in live})
+    tags = {f['fp']: scope_tag(f.get('scope') or f['subject']) for f in live}
+    unverified = {scope_tag(s) for s in r.get('unverified') or []}
     mine = [i for i in issues or [] if MARK.search(i.get('body') or '') and (i.get('author') or {}).get('login') in set(authors)]
-    body = to_markdown(r, inventory=False, limit=60000) + f"\n<!-- cad-supply-chain-report fps={','.join(fps)} -->\n"
     if not mine:
-        if not fps:
+        if not tags:
             return [], 'no open findings at low or above; no issue needed'
-        return [(['issue', 'create', '-R', repo, '--title', title, '--body-file', '-'], body)], 'open a new issue'
-    num, old = str(mine[0]['number']), set(filter(None, MARK.search(mine[0]['body']).group(1).split(',')))
-    if old == set(fps):
-        return [], f'issue #{num}: findings unchanged'
+        return [(['issue', 'create', '-R', repo, '--title', title, '--body-file', '-'], issue_body(r, tags, {}))], 'open a new issue'
+    num = str(mine[0]['number'])
+    old = dict((e.split('~', 1) + [''])[:2] for e in MARK.search(mine[0]['body']).group(1).split(',') if e)
+    carried = {fp: t for fp, t in old.items() if fp not in tags and t and t in unverified}
+    keep = {**tags, **carried}
+    if set(old) == set(keep) and all(old[fp] == keep[fp] for fp in old if old[fp]):
+        return [], f'issue #{num}: findings unchanged' + (f' ({len(carried)} not re-checked)' if carried else '')
     new = [f for f in live if f['fp'] not in old]
-    gone = len(old - set(fps))
-    note = '\n'.join([f"Report of {r['as_of']} (revision `{(r['revision'] or '')[:12]}`): {len(new)} new, {gone} resolved.", ''] +
+    gone = len(set(old) - set(keep))
+    rev = f"revision `{(r['revision'] or '')[:12]}`" + (' with uncommitted changes' if r.get('dirty') else '')
+    note = '\n'.join([f"Report of {r['as_of']} ({rev}): {len(new)} new, {gone} resolved"
+                      + (f", {len(carried)} not re-checked (kept open)" if carried else '') + '.', ''] +
                      [f"- **{f['severity']}** `{f['subject']}`: {f['title']}" for f in new[:50]]) + '\n'
-    plan = [(['issue', 'edit', num, '-R', repo, '--body-file', '-'], body),
-            (['issue', 'comment', num, '-R', repo, '--body-file', '-'], note)]
-    if not fps:
+    plan = [(['issue', 'edit', num, '-R', repo, '--body-file', '-'], issue_body(r, tags, carried)),
+            (['issue', 'comment', num, '-R', repo, '--body-file', '-'], no_mentions(note))]
+    if not keep:
         plan.append((['issue', 'close', num, '-R', repo, '--comment', 'No open findings at low or above: closing.'], None))
-    return plan, f'update issue #{num}: {len(new)} new, {gone} resolved'
+    return plan, f'update issue #{num}: {len(new)} new, {gone} resolved' + (f', {len(carried)} not re-checked' if carried else '')
+
+
+def issue_body(r, tags, carried):
+    body = to_markdown(r, inventory=False, limit=60000)
+    if carried:
+        body += (f"\n{len(carried)} finding(s) from an earlier report could not be re-checked this time (a service or "
+                 'site did not answer), so they stay open until a run can check them.\n')
+    marker = ','.join(f'{fp}~{t}' for fp, t in sorted({**tags, **carried}.items()))
+    return no_mentions(body) + f"\n<!-- cad-supply-chain-report fps={marker} -->\n"
 
 
 def cmd_issue(a):
@@ -1810,10 +2289,11 @@ def main(argv=None):
         p.add_argument('--no-npm-audit', action='store_true', help='skip npm audit in --online mode')
         p.add_argument('--accepted', help=f'accepted findings (default {ACCEPTED} when it exists)')
         p.add_argument('--as-of', help='the date stale checks count from (YYYY-MM-DD; default today, UTC)')
-    p = sub.add_parser('report', help='run the checks; write JSON and Markdown')
+    p = sub.add_parser('report', help='run the checks; write JSON, Markdown and the figure')
     common(p)
     p.add_argument('--json')
     p.add_argument('--md')
+    p.add_argument('--svg', help='also draw the findings figure here (the Markdown then shows it)')
     p.add_argument('--fail-on', default='high', choices=[*SEVERITIES, 'none'])
     p = sub.add_parser('rows', help='report rows for the items this branch adds since --base (paste into the PR)')
     common(p)
@@ -1821,6 +2301,8 @@ def main(argv=None):
     p = sub.add_parser('gate', help='CI: added items have rows in the PR body and no finding at --fail-on or above')
     common(p)
     p.add_argument('--base', default='origin/dev')
+    p.add_argument('--into', default='dev', help='the branch the change goes into (a PR\'s base, a push\'s branch). Only '
+                   f'{", ".join(CHANGE_BRANCHES)} judges what the change adds; any other gets the whole-repository check alone')
     p.add_argument('--fail-on', default='medium', choices=[*SEVERITIES, 'none'], help='threshold for added items')
     p.add_argument('--fail-on-repo', default='high', choices=[*SEVERITIES, 'none'], help='threshold for the whole repository')
     p.add_argument('--pr-body-env', help='environment variable holding the PR description')
@@ -1831,9 +2313,13 @@ def main(argv=None):
     p.add_argument('--title', default='Supply-chain report: open findings')
     p.add_argument('--author', action='append', help='also accept a tracking issue opened by this login')
     p.add_argument('--post', action='store_true', help='make the changes (default: print what would be done)')
+    p = sub.add_parser('figure', help='draw the findings figure (SVG) from a saved report')
+    p.add_argument('--report', default='research/security-report.json')
+    p.add_argument('--svg', default='docs/img/supply-chain/findings.svg')
+    p.add_argument('--check', action='store_true', help='exit 1 if the SVG is not what the report gives')
     a = ap.parse_args(argv)
     try:
-        return {'report': cmd_report, 'rows': cmd_rows, 'gate': cmd_gate, 'issue': cmd_issue}[a.cmd](a)
+        return {'report': cmd_report, 'rows': cmd_rows, 'gate': cmd_gate, 'issue': cmd_issue, 'figure': cmd_figure}[a.cmd](a)
     except (OSError, ValueError, KeyError) as e:
         print(f'resource_audit: {type(e).__name__}: {e}', file=sys.stderr)
         return 2

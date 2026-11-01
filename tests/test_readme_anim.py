@@ -274,3 +274,44 @@ def test_a_path_out_of_reach_is_an_error():
     link, ref = _five_bar()
     with pytest.raises(ValueError, match="reach"):
         link.sweep("E", [ref["E"], (ref["E"][0], ref["E"][1] - 400)])
+
+
+def test_the_sweep_summary_tells_joint_faces_from_parts_that_pass():
+    from cadagent.publish.anim.hero import summarise_sweep
+
+    part_of = {1: "link", 2: "frame", 3: "pin", 4: "bearing", 5: "spacer", 6: "screw"}
+    results = [
+        (0, [(1, 2, "apart", 4.0, 0, [0, 0, 0], [4, 0, 0]),       # a link passing the frame: its gap changes
+             (3, 4, "touching", 0.0, 0, [0, 0, 0], [0, 0, 0]),    # a pin in its bearing: touching at every pose
+             (5, 4, "apart", 0.1, 0, [0, 0, 0], [0, 0, .1])]),    # a spacer beside it: 0.1 mm at every pose
+        (2, [(1, 2, "apart", 1.5, 0, [1, 0, 0], [2.5, 0, 0]),
+             (3, 4, "touching", 0.0, 0, [0, 0, 0], [0, 0, 0]),
+             (5, 4, "apart", 0.1, 0, [0, 0, 0], [0, 0, .1]),
+             (6, 2, "overlapping", 0.0, 3.2, None, None)]),
+    ]
+    clashes, closest, interfaces, table = summarise_sweep(results, part_of, [0, 2])
+    assert clashes == [{"pose": 2, "a": "screw", "b": "frame", "overlap_mm3": 3.2}]
+    assert closest["part_a"] == "link" and closest["gap_mm"] == 1.5 and closest["pose"] == 2
+    assert interfaces == [["bearing", "pin"], ["bearing", "spacer"]]
+    # a pair measured at only some poses (out of reach at the others) is never a joint interface
+    _, closest, interfaces, _ = summarise_sweep(results[:1], part_of, [0, 2])
+    assert interfaces == [] and closest["gap_mm"] == 0.0
+
+
+def test_painting_breaks_a_cycle_where_it_costs_fewest_cells():
+    from cadagent.publish.anim.hero import painter_order
+
+    # wheel in front of link over 9000 cells; link in front of pin over 50; pin in front of wheel over 40: a cycle.
+    # The cheapest break draws the pin wrong against the wheel (40 cells), never the link over the wheel.
+    front = {("wheel", "link"): 9000, ("link", "pin"): 50, ("pin", "wheel"): 40, ("link", "wheel"): 3}
+    order, wrong = painter_order(["wheel", "link", "pin"], front, {"wheel": 0, "link": 0, "pin": 0})
+    assert order.index("link") < order.index("wheel") and wrong == 43
+    order, wrong = painter_order(["a", "b"], {}, {"a": 1.0, "b": 0.0})    # no overlap: farther first
+    assert order == ["b", "a"] and wrong == 0
+
+
+def test_the_hero_paints_almost_every_overlapping_cell_in_order(tool):
+    scene = json.loads(tool.FIGURES["hero"][2].read_text(encoding="utf-8"))
+    p = scene["painter"]
+    # beyond what interlocking parts force, at most 1 % of the overlapping cells are painted in the wrong order
+    assert p["overlap_cells"] > 0 and p["misordered_cells"] - p["unavoidable_cells"] <= 0.01 * p["overlap_cells"], p

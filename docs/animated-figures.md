@@ -6,7 +6,9 @@ The README's hero is not drawn by hand. `tools/readme_anim.py` makes it from a r
 - clearances from the assembly gates' relation engine;
 - stress bands from the project's own FEA field.
 
-It writes one SVG of about 100 KB that animates with CSS alone, so GitHub shows it in a README `<img>`.
+It writes one SVG of about 130 KB that animates with CSS alone, so GitHub shows it in a README `<img>`.
+
+![Gyropup's five-bar leg drawn from its STEP file, assembled, then checked: the closest passing gap, the hip frame's FEA stress and a stride solved from the link lengths, ending on the cad-agent wordmark](img/hero/gyropup-leg.svg)
 
 The first figure is [Gyropup](https://github.com/Valpatel/gyropup)'s five-bar leg (MIT): `docs/img/hero/gyropup-leg.svg`. The SVGs in `docs/img/hero/` may be reused on the site and elsewhere. Each one names its source in its caption and `<desc>`.
 
@@ -29,7 +31,7 @@ PYTHONPATH=src python3 tools/readme_anim.py --extract hero --source <checkout of
 
 Extraction needs the `cad` extra (CadQuery). Use a clean checkout of the project's published branch, not a working tree with uncommitted changes. The scene records the commit and every input file's sha256.
 
-The clearance sweep is slow, because each pair is an exact `relate()` call (#186). Its result is reused from the committed scene while the assembly, the parts, the linkage and the clearance spec are unchanged. Pass `--fresh` to run it again. Gyropup's leg takes about 25 s without the sweep.
+The clearance sweep is slow, because each pair is an exact `relate()` call (#186). Its result is reused from the committed scene while the assembly, the parts, the linkage and the clearance spec are unchanged. Pass `--fresh` to run it again. `--workers N` measures poses in N processes; each one reads the STEP once and holds the assembly in memory, about 0.5 GB for Gyropup's leg. Gyropup's leg takes about 25 s without the sweep.
 
 ## Make one for another assembly
 
@@ -71,9 +73,9 @@ Both colour schemes are in the one SVG (`prefers-color-scheme`), on its own back
 
 ## What it approximates
 
-- **Hidden lines.** Each solid hides only its own edges. Solids hide each other by their filled silhouettes, painted back to front in an order taken from depth rasters.
+- **Hidden lines.** Each solid hides only its own edges. Solids hide each other by their filled silhouettes, painted back to front. The order is the one that draws the fewest cells wrong on depth rasters of the assembled and exploded states. Interlocking parts, such as a pin through a bore, have no right order, so the scene records how many overlapping cells are drawn wrong.
 - **Motion.** Each moving solid is drawn in slices along the joint axis. Each slice is moved by an exact rotation at its own depth. The scene records the largest error over the visible surface, per part. For Gyropup's leg it is about 1 px. The hidden lines stay those of the reference pose.
-- **Clearance.** It is checked at sampled poses, not as a swept volume.
+- **Clearance.** It is checked at sampled poses, not as a swept volume. A pair of parts whose gap stays the same at every pose is turning about its own shared axis: a flange on its motor, a pin in its bearing, a spacer beside it. Such a pair is listed as a joint interface. The closest gap shown is between parts that move past each other.
 - **Stress.** The colours show the FEA's surface field, capped at its design stress. The numbers shown are the FEA's own.
 
 CAD and simulation narrow a design down. They do not prove that a printed part fits or holds.

@@ -15,9 +15,10 @@ Two stages, so the committed SVG can be checked anywhere:
 
 What the drawing approximates, stated in the scene and its caption:
 
-* Each solid hides only its own edges. Solids hide each other by painting filled silhouettes back to front, an
-  order taken from a depth raster of the assembled and the exploded states. A pair whose order flips inside one
-  state (interlocking parts) is painted by its majority order.
+* Each solid hides only its own edges. Solids hide each other by painting filled silhouettes back to front, in
+  the order that draws the fewest cells wrong, counted on depth rasters of the assembled and the exploded states.
+  Interlocking parts (a pin through a bore) have no right order; the scene records how many overlapping cells
+  are drawn wrong, of how many.
 * The linkage moves each solid as one 2D transform of its drawing: the body's exact rotation in the linkage's
   plane, taken at the middle depth (along the joint axis) of the solid's visible surface. Geometry nearer or farther
   than that depth is off by up to ``motion_error_px`` at the worst pose (the scene records it and the part). The
@@ -66,7 +67,8 @@ def _r(v: float, d: int = 3) -> float:
     return float(round(float(v), d))
 
 
-CLEARANCE_VERSION = 1      # bump when _clearances changes what it measures: cached results are then recomputed
+CLEARANCE_VERSION = 2      # bump when _clearances changes what it measures: cached results are then recomputed
+JOINT_GAP_SPREAD_MM = 0.02  # a pair whose gap changes less than this over the stride is a joint's own interface
 
 
 def _clearance_key(spec: Mapping[str, Any], assembly_sha256: str) -> str:
@@ -79,9 +81,10 @@ def _clearance_key(spec: Mapping[str, Any], assembly_sha256: str) -> str:
 
 
 def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True,
-            previous: Optional[Mapping[str, Any]] = None, log=print) -> Dict[str, Any]:
+            previous: Optional[Mapping[str, Any]] = None, workers: int = 1, log=print) -> Dict[str, Any]:
     """The scene for ``spec`` from the project checkout at ``source``. See the module docstring. ``previous``: an
-    earlier scene whose clearance result is reused if its key still matches."""
+    earlier scene whose clearance result is reused if its key still matches; ``workers``: processes for the
+    clearance sweep."""
     from cadagent.publish.anim import cad
     from cadagent.publish.anim.field import read_viewer_field, triangle_fraction
     from cadagent.publish.anim.text import DEJAVU, DEJAVU_BOLD, find_font, outline
@@ -236,7 +239,7 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True,
     log(f"depth rasters: {time.time() - t0:.1f} s")
     ids = [p["solid"] for p in parts]
     visible = {i: 0 for i in ids}
-    votes: Dict[Tuple[int, int], int] = {}
+    in_front: Dict[Tuple[int, int], int] = {}   # (a, b): cells, over both states, where a is in front of b
     for state in zb.values():
         stack = np.stack([state[i] for i in ids])
         covered = np.isfinite(stack)
@@ -251,25 +254,21 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True,
                     continue
                 a_front = int((stack[a][both] > stack[b][both]).sum())
                 b_front = int(both.sum()) - a_front
-                votes[(ids[a], ids[b])] = votes.get((ids[a], ids[b]), 0) + a_front - b_front
+                in_front[(ids[a], ids[b])] = in_front.get((ids[a], ids[b]), 0) + a_front
+                in_front[(ids[b], ids[a])] = in_front.get((ids[b], ids[a]), 0) + b_front
     min_cells = int(spec.get("min_visible_cells", 6))
     drawn = [i for i in ids if visible[i] >= min_cells]
     hidden = [i for i in ids if visible[i] < min_cells]
-    # painter's order: b before a when a is in front where they overlap; ties by mean depth
-    behind = {i: set() for i in drawn}
-    for (a, b), v in votes.items():
-        if a in behind and b in behind and v:
-            (behind[a].add(b) if v > 0 else behind[b].add(a))
+    # painter's order: back to front by the depth rasters' majority, cycles broken where they cost fewest cells.
+    # Interlocking parts make some cells wrong whatever the order: the scene records how many, of all the cells
+    # where two solids overlap.
     meanz = {i: float(geo[i]["z"].mean()) for i in drawn}
-    order, done, cycles = [], set(), 0
-    while len(order) < len(drawn):
-        ready = [i for i in drawn if i not in done and behind[i] <= done]
-        if not ready:                                     # a cycle: paint the one with fewest unpainted behind it
-            cycles += 1
-            ready = [min((i for i in drawn if i not in done), key=lambda i: (len(behind[i] - done), meanz[i]))]
-        nxt = min(ready, key=lambda i: (meanz[i], i))
-        order.append(nxt)
-        done.add(nxt)
+    order, left = painter_order(drawn, in_front, meanz)
+    overlap_cells = sum(in_front.get((a, b), 0) for a in drawn for b in drawn if a != b)
+    # where two solids each lie in front over some cells (a pin through a bore), one of the two sets is drawn wrong
+    # whatever the order: that much is unavoidable, the rest is the order's own error
+    unavoidable = sum(min(in_front.get((a, b), 0), in_front.get((b, a), 0)) for a in drawn for b in drawn if a < b)
+    log(f"painter's order: {left} of {overlap_cells} overlapping cells drawn wrong, {unavoidable} of them unavoidable")
 
     # ---- depth slabs: a moving solid is drawn in slices along the joint axis, each moved at its own middle depth
     asm = zb["assembled"]
@@ -340,7 +339,7 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True,
                 if e > motion_err:
                     motion_err, worst = e, p["part"]
     n_slabs = sum(len(v) for v in slabs.values())
-    log(f"painter's order: {len(order)} solids drawn, {len(hidden)} never visible, {cycles} cycles broken; "
+    log(f"painter's order: {len(order)} solids drawn, {len(hidden)} never visible; "
         f"{n_slabs} depth slabs; motion error up to {motion_err:.2f} px ({worst})")
 
     # ---- the drawing: per solid and slab, its silhouette and its edges, in units
@@ -412,23 +411,14 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True,
             clear_out = json.loads(json.dumps(old))
             log(f"clearance: reused the previous scene's sweep ({old.get('pairs_queried')} queries, key {key[:12]})")
         else:
-            clear_out = _clearances(spec, solids, parts, link, poses, iaxis, iu, iv, log)
+            clear_out = _clearances(spec, solids, parts, link, poses, iaxis, iu, iv, log, assembly=asm_path,
+                                    workers=workers)
             clear_out["key"] = key
         w = clear_out.get("closest")
         if w:
-            pose = poses[w["pose"]]
-            pts = []
-            for key, pa in (("a", w["point_a"]), ("b", w["point_b"])):
-                body = next(p["body"] for p in parts if p["solid"] == w[key])
-                q = np.array(pa, float)
-                # carry the witness back to the reference pose of its body, where it is drawn
-                if body != "ground":
-                    turn, r0, p0 = link.body_motion(body, pose)
-                    c, s_ = math.cos(-turn), math.sin(-turn)
-                    du, dv = q[iu] - p0[0], q[iv] - p0[1]
-                    q[iu], q[iv] = r0[0] + c * du - s_ * dv, r0[1] + s_ * du + c * dv
-                pts.append([_r(c, 1) for c in to_units(view.project([q])[0][0])])
-            w["drawn"] = pts
+            # the witness points where the closest pose draws them: shown when the stride passes that pose
+            w["drawn"] = [[_r(c, 1) for c in to_units(view.project([np.array(q, float)])[0][0])]
+                          for q in (w["point_a"], w["point_b"])]
 
     # ---- kinematics for the drawing
     def units_pt(uv, depth):
@@ -471,7 +461,7 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True,
         "view": {"direction": list(spec["view"]["direction"]), "up": list(spec["view"].get("up", (0, 0, 1)))},
         "plane_matrix": [_r(lin[0, 0], 6), _r(lin[1, 0], 6), _r(lin[0, 1], 6), _r(lin[1, 1], 6)],
         "camera": {"zoom": _r(zoom, 4), "translate": [_r(cam[0], 1), _r(cam[1], 1)]},
-        "solids": out_solids, "hidden_solids": sorted(hidden), "painter_cycles": cycles,
+        "solids": out_solids, "hidden_solids": sorted(hidden), "painter": {"misordered_cells": left, "unavoidable_cells": unavoidable, "overlap_cells": overlap_cells},
         "linkage": {"lengths_mm": lengths, "samples": samples, "path": path_spec, "dead_point_margin_deg": [_r(d, 1) for d in dead],
                     "bodies": frames, "trace": trace, "trace_depth_mm": _r(trace_depth, 1),
                     "motion_error_px": _r(motion_err, 2), "motion_error_part": worst,
@@ -485,12 +475,16 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True,
     return scene
 
 
-def _clearances(spec, solids, parts, link, poses, iaxis, iu, iv, log) -> Dict[str, Any]:
+def _clearances(spec, solids, parts, link, poses, iaxis, iu, iv, log, *, assembly: Path,
+                workers: int = 1) -> Dict[str, Any]:
     """The closest approach between solids that move relative to each other, over the sampled poses, by the
-    relation engine. Pairs whose extents along the joint axis do not overlap are counted as separated."""
-    from cadagent.gates.relations import Tolerances, relate
-    from cadagent.publish.anim import cad
+    relation engine, per pair of parts.
 
+    Pairs whose extents along the joint axis do not overlap are counted as separated. A pair of parts whose gap is
+    the same at every sampled pose turns about its own shared axis: it is a joint's own interface (a flange on its
+    motor, a pin in its bearing, a spacer beside a bearing). It is listed, and left out of the closest gap, which is
+    about parts that move past each other. ``workers`` > 1 measures poses in parallel processes, each reading the STEP
+    once; the result is the same."""
     cs = spec.get("clearance", {})
     every = int(cs.get("every", 1))
     near = float(cs.get("near_mm", 10.0))
@@ -515,53 +509,139 @@ def _clearances(spec, solids, parts, link, poses, iaxis, iu, iv, log) -> Dict[st
                 continue
             pairs.append((a, b))
 
-    def place(i, pose):
+    def matrix(i, pose) -> List[float]:
         body = named[i]["body"]
         if body == "ground":
-            return solids[i]
+            return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]
         turn, r0, p0 = link.body_motion(body, pose)
         c, s_ = math.cos(turn), math.sin(turn)
-        m = np.eye(3)
         R = np.eye(3)
         R[iu, iu], R[iu, iv], R[iv, iu], R[iv, iv] = c, -s_, s_, c
         r0w, p0w = np.zeros(3), np.zeros(3)
         r0w[iu], r0w[iv], p0w[iu], p0w[iv] = r0[0], r0[1], p0[0], p0[1]
         t = p0w - R @ r0w
-        m = [*R[0], t[0], *R[1], t[1], *R[2], t[2]]
-        return cad.moved(solids[i], m)
+        return [float(v) for v in (*R[0], t[0], *R[1], t[1], *R[2], t[2])]
 
-    tol = Tolerances()
-    checked, queried, clashes, closest = 0, 0, [], None
+    checked = [n for n in range(len(poses) - 1) if n % every == 0]     # the last pose repeats the first
+    jobs = []
+    for n in checked:
+        mine = [(a, b) for a, b in pairs if not (named[a]["body"] == "ground" and named[b]["body"] == "ground")]
+        used = sorted({i for ab in mine for i in ab})
+        jobs.append((str(assembly), n, {i: matrix(i, poses[n]) for i in used}, mine, near))
     t0 = time.time()
-    for n, pose in enumerate(poses[:-1]):                 # the last pose repeats the first
-        if n % every:
+    if workers > 1:
+        from concurrent.futures import ProcessPoolExecutor
+        from multiprocessing import get_context
+
+        with ProcessPoolExecutor(max_workers=workers, mp_context=get_context("spawn")) as ex:
+            results = []
+            for r in ex.map(_sweep_pose, jobs):
+                results.append(r)
+                log(f"  clearance pose {r[0]}: {len(r[1])} queries, {time.time() - t0:.0f} s")
+    else:
+        results = []
+        for job in jobs:
+            results.append(_sweep_pose(job, solids))
+            log(f"  clearance pose {results[-1][0]}: {len(results[-1][1])} queries, {time.time() - t0:.0f} s")
+
+    clashes, closest, interfaces, table = summarise_sweep(results, {i: named[i]["part"] for i in named}, checked)
+    queried = sum(len(rows) for _, rows in results)
+    return {"poses": len(checked), "pairs_queried": queried, "pairs_separated_along_axis": separated,
+            "pairs_in_reach": len(pairs), "clashes": clashes, "closest": closest, "joint_interfaces": interfaces,
+            "pairs": table, "near_mm": near, "seconds": _r(time.time() - t0, 1), "workers": workers,
+            "limits": "sampled poses only (not a swept volume); exact gaps by cadagent.gates.relations.relate; "
+                      f"a pair whose gap varies by at most {JOINT_GAP_SPREAD_MM} mm over every pose is taken as a "
+                      "joint's own interface and left out of the closest gap"}
+
+
+def painter_order(ids: Sequence[int], front: Mapping[Tuple[int, int], int],
+                  depth: Mapping[int, float]) -> Tuple[List[int], int]:
+    """Back to front (``front[(a, b)]``: cells where a is in front of b). Each step paints the solid that is in
+    front, by majority, of the fewest cells of those not yet painted: a solid behind all of them costs nothing, and
+    in a cycle the cheapest majority is broken. Ties by ``depth`` (smaller is farther), then id. Returns the order
+    and how many cells it draws wrong in all."""
+    net = lambda i, j: front.get((i, j), 0) - front.get((j, i), 0)
+    order, done, wrong = [], set(), 0
+    while len(order) < len(ids):
+        todo = [i for i in ids if i not in done]
+        cost = {i: sum(max(0, net(i, j)) for j in todo if j != i) for i in todo}
+        nxt = min(todo, key=lambda i: (cost[i], depth[i], i))
+        wrong += sum(front.get((nxt, j), 0) for j in todo if j != nxt)
+        order.append(nxt)
+        done.add(nxt)
+    return order, wrong
+
+
+def summarise_sweep(results, part_of: Mapping[int, str], checked: Sequence[int]):
+    """The sweep's per-pose rows ``[(pose, [(solid a, solid b, state, gap, overlap, point a, point b)])]`` per pair
+    of parts: (clashes, the closest gap between parts that move past each other, joint interfaces, the table).
+    ``part_of`` names each solid's part; ``checked`` are the poses measured."""
+    by_pair: Dict[Tuple[str, str], Dict[str, Any]] = {}
+    clashes = []
+    for n, rows in results:
+        for a, b, state, gap, overlap, pa, pb in rows:
+            key = tuple(sorted((part_of[a], part_of[b])))
+            e = by_pair.setdefault(key, {"parts": list(key), "poses": set(), "touching": set(), "min_gap_mm": None,
+                                         "gaps": {}})
+            e["poses"].add(n)
+            if state in ("overlapping", "contains"):
+                clashes.append({"pose": n, "a": part_of[a], "b": part_of[b], "overlap_mm3": overlap})
+                continue
+            if state == "touching":
+                e["touching"].add(n)
+            e["gaps"][n] = min(gap, e["gaps"].get(n, math.inf))      # per pose: the closest of the parts' solids
+            if e["min_gap_mm"] is None or gap < e["min_gap_mm"]:
+                e.update(min_gap_mm=gap, pose=n, solids=[a, b], point_a=pa, point_b=pb)
+    table, interfaces, closest, best = [], [], None, math.inf
+    for key in sorted(by_pair):
+        e = by_pair[key]
+        gaps = list(e["gaps"].values())
+        spread = max(gaps) - min(gaps) if gaps else math.inf
+        # the same gap at every pose: the pair turns about its own shared axis, a joint's own interface
+        joint = set(e["gaps"]) == set(checked) and spread <= JOINT_GAP_SPREAD_MM
+        table.append({"parts": e["parts"], "queried_poses": len(e["poses"]), "touching_poses": len(e["touching"]),
+                      "min_gap_mm": None if e["min_gap_mm"] is None else _r(e["min_gap_mm"], 3),
+                      "gap_spread_mm": None if not gaps else _r(spread, 3), "joint_interface": joint})
+        if joint:
+            interfaces.append(e["parts"])
+        elif e["min_gap_mm"] is not None and e["min_gap_mm"] < best:
+            best = e["min_gap_mm"]
+            a, b = e["solids"]
+            closest = {"pose": e["pose"], "a": a, "b": b, "part_a": part_of[a], "part_b": part_of[b],
+                       "gap_mm": _r(best, 3), "point_a": e["point_a"], "point_b": e["point_b"]}
+    return clashes, closest, interfaces, table
+
+
+_WORKER_SOLIDS: Dict[str, list] = {}
+
+
+def _sweep_pose(job, solids=None):
+    """One pose of the clearance sweep: (pose, [(solid a, solid b, state, gap, overlap, point a, point b)]). Runs
+    in a worker process when ``solids`` is None, reading the STEP once per process."""
+    from cadagent.gates.relations import Tolerances, relate
+    from cadagent.publish.anim import cad
+
+    path, n, matrices, pairs, near = job
+    if solids is None:
+        if path not in _WORKER_SOLIDS:
+            _WORKER_SOLIDS[path] = cad.read_solids(Path(path))
+        solids = _WORKER_SOLIDS[path]
+    tol = Tolerances()
+    placed = {i: cad.moved(solids[i], m) for i, m in matrices.items()}
+    rows = []
+    for a, b in pairs:
+        pa, pb = placed[a], placed[b]
+        ba, bb_ = pa.BoundingBox(), pb.BoundingBox()
+        gapbox = max(ba.xmin - bb_.xmax, bb_.xmin - ba.xmax, ba.ymin - bb_.ymax, bb_.ymin - ba.ymax,
+                     ba.zmin - bb_.zmax, bb_.zmin - ba.zmax, 0.0)
+        if gapbox > near:
             continue
-        checked += 1
-        placed = {}
-        for a, b in pairs:
-            if named[a]["body"] == "ground" and named[b]["body"] == "ground":
-                continue
-            pa = placed.setdefault(a, place(a, pose))
-            pb = placed.setdefault(b, place(b, pose))
-            ba, bb_ = pa.BoundingBox(), pb.BoundingBox()
-            gapbox = max(ba.xmin - bb_.xmax, bb_.xmin - ba.xmax, ba.ymin - bb_.ymax, bb_.ymin - ba.ymax,
-                         ba.zmin - bb_.zmax, bb_.zmin - ba.zmax, 0.0)
-            if gapbox > near:
-                continue
-            queried += 1
-            r = relate(pa, pb, tol, names=(named[a]["part"], named[b]["part"]), contact_area=False)
-            if r.state == "unknown":
-                raise RuntimeError(f"relation unknown for {named[a]['part']} / {named[b]['part']}: {r.error}")
-            if r.interferes:
-                clashes.append({"pose": n, "a": named[a]["part"], "b": named[b]["part"], "overlap_mm3": r.overlap_mm3})
-            elif closest is None or r.gap_mm < closest["gap_mm"]:
-                closest = {"pose": n, "a": a, "b": b, "part_a": named[a]["part"], "part_b": named[b]["part"],
-                           "gap_mm": r.gap_mm, "point_a": r.witness.get("point_a"), "point_b": r.witness.get("point_b")}
-        log(f"  clearance pose {n}: {queried} queries so far, {time.time() - t0:.0f} s")
-    return {"poses": checked, "pairs_queried": queried, "pairs_separated_along_axis": separated,
-            "pairs_in_reach": len(pairs), "clashes": clashes, "closest": closest,
-            "near_mm": near, "seconds": _r(time.time() - t0, 1),
-            "limits": "sampled poses only (not a swept volume); exact gaps by cadagent.gates.relations.relate"}
+        r = relate(pa, pb, tol, contact_area=False)
+        if r.state == "unknown":
+            raise RuntimeError(f"relation unknown for solids {a} / {b} at pose {n}: {r.error}")
+        rows.append((a, b, r.state, float(r.gap_mm or 0.0), float(r.overlap_mm3 or 0.0),
+                     r.witness.get("point_a"), r.witness.get("point_b")))
+    return n, rows
 
 
 def read_spec(path: Path) -> Dict[str, Any]:
@@ -728,16 +808,20 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
         tl.opacity(".hl", [(0, 0), (s0 + 0.45, 0), (s0 + 0.65, 1), (ph.fea[0] + 0.5, 1), (ph.fea[0] + 0.8, 0),
                            (P, 0)])
     if closest.get("drawn"):
+        # the gap itself, between its witness points, when the stride passes the pose where it is smallest
         (ax_, ay_), (bx_, by_) = closest["drawn"]
         mx, my = (ax_ + bx_) / 2, (ay_ + by_) / 2
-        lx, ly = mx + 46 * U, my - 40 * U
-        body.append(f'<g class="cl"><path d="M{n_(mx, 0)} {n_(my, 0)}L{n_(lx - 3 * U, 0)} {n_(ly + 5 * U, 0)}"/>'
-                    f'<circle cx="{n_(mx, 0)}" cy="{n_(my, 0)}" r="{6 * U}"/>'
+        lx, ly = mx + 40 * U, my - 34 * U
+        body.append(f'<g class="cl"><path d="M{n_(ax_, 0)} {n_(ay_, 0)}L{n_(bx_, 0)} {n_(by_, 0)}" class="gap"/>'
+                    f'<path d="M{n_(mx, 0)} {n_(my, 0)}L{n_(lx - 3 * U, 0)} {n_(ly + 5 * U, 0)}"/>'
                     f'<text x="{n_(lx, 0)}" y="{n_(ly, 0)}">{_fmt(closest["gap_mm"])} mm</text></g>')
-        css.append(f".cl{{opacity:0}}.cl path,.cl circle{{fill:none;stroke:var(--accent);stroke-width:{1.5 * U}}}"
+        css.append(f".cl{{opacity:0}}.cl path{{fill:none;stroke:var(--accent);stroke-width:{1.5 * U};"
+                   f"stroke-linecap:round}}.cl .gap{{stroke-width:{3 * U}}}"
                    f".cl text{{font-size:{14 * U}px;font-weight:700;fill:var(--accent);paint-order:stroke;"
                    f"stroke:var(--bg);stroke-width:{4 * U}px}}")
-        tl.opacity(".cl", [(0, 0), (s1 - 0.45, 0), (s1 - 0.25, 1), (ph.fea[0] + 0.5, 1), (ph.fea[0] + 0.8, 0), (P, 0)])
+        n_poses = len(scene["linkage"]["trace"]) - 1
+        tc = m0 + (m1 - m0) * closest["pose"] / n_poses
+        tl.opacity(".cl", [(0, 0), (tc - 0.3, 0), (tc - 0.1, 1), (tc + 0.6, 1), (tc + 0.8, 0), (P, 0)])
 
     # ---- the wheel's path, drawn as it is travelled
     trace = scene["linkage"]["trace"]
@@ -769,17 +853,20 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
     rows = _check_rows(scene)
     y0 = present.get("rows_y_px", 186) * U
     narrow = []
-    for i, (label, detail, t_on) in enumerate(rows):
+    for i, (label, detail, t_on, ok) in enumerate(rows):
         yy = y0 + i * 54 * U
         rx, ry = col + 11 * U, yy - 6 * U
-        body.append(f'<g class="r r{i}"><circle class="ring" cx="{rx}" cy="{ry}" r="{11 * U}"/>'
-                    f'<path class="tick t{i}" d="M{rx - 6 * U} {ry}l{4 * U} {4 * U} {8 * U} {-9 * U}"/>'
+        # a tick on green when the check passed, a cross on the accent colour when it did not
+        mark = (f"M{rx - 6 * U} {ry}l{4 * U} {4 * U} {8 * U} {-9 * U}" if ok else
+                f"M{rx - 5 * U} {ry - 5 * U}l{10 * U} {10 * U}m0 {-10 * U}l{-10 * U} {10 * U}")
+        body.append(f'<g class="r r{i}"><circle class="ring{"" if ok else " bad"}" cx="{rx}" cy="{ry}" r="{11 * U}"/>'
+                    f'<path class="tick t{i}" d="{mark}"/>'
                     f'<text x="{col + 32 * U}" y="{yy}" class="rl">{S.attr(label)}</text>'
                     f'<text x="{col + 32 * U}" y="{yy + 21 * U}" class="rd w">{S.attr(detail)}</text></g>')
         tl.opacity(f".r{i}", [(0, 0.28), (t_on - 0.9, 0.28), (t_on - 0.7, 1), (ph.fade[0], 1), (ph.fade[1], 0.28)])
         tl.opacity(f".t{i}", [(0, 0), (t_on, 0), (t_on + 0.2, 1), (ph.fade[0], 1), (ph.fade[1], 0)])
         narrow.append(f".r{i}{{transform-origin:{rx}px {ry}px}}")
-    css.append(f".ring{{fill:var(--good)}}.tick{{fill:none;stroke:var(--bg);stroke-width:{3 * U};"
+    css.append(f".ring{{fill:var(--good)}}.ring.bad{{fill:var(--accent)}}.tick{{fill:none;stroke:var(--bg);stroke-width:{3 * U};"
                f"stroke-linecap:round;stroke-linejoin:round}}.rl{{font-size:{17 * U}px;font-weight:700;fill:var(--ink)}}"
                f".rd{{font-size:{13 * U}px;fill:var(--muted)}}.r{{transform-box:view-box}}")
     if fea:
@@ -811,21 +898,23 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
     return S.document(W, H, present["label"], present["description"], "".join(css) + tl.stylesheet(), body, theme)
 
 
-def _check_rows(scene: Mapping[str, Any]) -> List[Tuple[str, str, float]]:
-    """(name, result, when it ticks) for each check the scene carries."""
+def _check_rows(scene: Mapping[str, Any]) -> List[Tuple[str, str, float, bool]]:
+    """(name, result, when it is marked, passed) for each check the scene carries."""
     ph = Phases
     rows = []
     c = scene.get("clearance")
     if c:
         clash = len(c.get("clashes", []))
         w = c.get("closest") or {}
-        rows.append(("fit", (f"{clash} clashes" if clash else "no clash") + f" in {c['poses']} poses · closest "
-                     f"{_fmt(w.get('gap_mm', 0))} mm", ph.scan[1]))
+        rows.append(("fit", (f"{clash} clashes" if clash else "no clash") + f" in {c['poses']} poses · passing parts "
+                     f"≥ {_fmt(w.get('gap_mm', 0))} mm apart", ph.scan[1], not clash))
     f = scene.get("fea")
     if f:
+        ok = f["first_failure_factor"] is None or f["first_failure_factor"] > 1.0
         rows.append(("strength", f"FEA {f['part'].replace('_', ' ')}: {_fmt(f['design_mpa'])} MPa, "
-                     f"fails at {_fmt(f['first_failure_factor'], 2)}× load", ph.fea[1]))
+                     f"fails at {_fmt(f['first_failure_factor'], 2)}× load", ph.fea[1], ok))
     lk = scene["linkage"]
-    rows.append(("motion", f"five-bar stride · knees ≥ {_fmt(min(lk['dead_point_margin_deg']), 0)}° from a dead point",
-                 ph.motion[1]))
+    margin = min(lk["dead_point_margin_deg"])
+    rows.append(("motion", f"five-bar stride · knees ≥ {_fmt(margin, 0)}° from a dead point", ph.motion[1],
+                 margin > 0))
     return rows

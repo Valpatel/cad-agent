@@ -59,6 +59,7 @@ def main(argv=None) -> int:
     ap.add_argument("--extract", metavar="NAME", help="re-extract this figure's scene (needs CadQuery and --source)")
     ap.add_argument("--source", type=Path, help="checkout of the project the figure's spec draws")
     ap.add_argument("--no-clearance", action="store_true", help="skip the clearance sweep when extracting")
+    ap.add_argument("--workers", type=int, default=1, help="processes for the clearance sweep (each reads the STEP)")
     ap.add_argument("--fresh", action="store_true",
                     help="re-run the clearance sweep even when the committed scene's result still fits the inputs")
     a = ap.parse_args(argv)
@@ -67,7 +68,8 @@ def main(argv=None) -> int:
             ap.error(f"--extract needs one of {', '.join(FIGURES)} and --source")
         kind, spec_path, scene_path, _ = FIGURES[a.extract]
         previous = None if a.fresh or not scene_path.exists() else json.loads(scene_path.read_text(encoding="utf-8"))
-        scene = hero.extract(hero.read_spec(spec_path), a.source, clearance=not a.no_clearance, previous=previous)
+        scene = hero.extract(hero.read_spec(spec_path), a.source, clearance=not a.no_clearance, previous=previous,
+                             workers=a.workers)
         hero.write_scene(scene, scene_path)
         print(f"wrote {_shown(scene_path)} in {scene['extract_seconds']} s")
     bad = 0

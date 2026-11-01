@@ -34,7 +34,7 @@ hub page per area from it (#141). In outline:
 
 | Domain | Areas |
 |---|---|
-| Mechanical design | mechanisms; housings and enclosures; compliant mechanisms; gears; belt and chain drives; wheels and driving; walking; fasteners, bought hardware and assembly; fixtures and jigs (pogo-pin PCBA test fixtures, general fixtures); mould design |
+| Mechanical design | CAD modelling and kernels; mechanisms; housings and enclosures; compliant mechanisms; gears; belt and chain drives; wheels and driving; walking; fasteners, bought hardware and assembly; fixtures and jigs (pogo-pin PCBA test fixtures, general fixtures); mould design |
 | Manufacturing | 3D printing; CNC machining; laser cutting (plastics, metals); sheet metal; mould making (silicone moulds, urethane casting) |
 | Thermal | conduction and heat sinks; airflow and fans; thermal validation |
 | Simulation and validation | structural FEA; CFD; motion and dynamics; topology optimisation; design exploration; results and visuals; physical tests and coupons |

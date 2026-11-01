@@ -1,0 +1,2 @@
+# Solver information
+# Time          	U_solver        	Ux_initial      	Ux_final        	Ux_iters        	Uy_initial      	Uy_final        	Uy_iters        	Uz_initial      	Uz_final        	Uz_iters        	U_converged     	h_solver        	h_initial       	h_final         	h_iters         	h_converged     	k_solver        	k_initial       	k_final         	k_iters         	k_converged     	omega_solver    	omega_initial   	omega_final     	omega_iters     	omega_converged 	p_rgh_solver    	p_rgh_initial   	p_rgh_final     	p_rgh_iters     	p_rgh_converged 

@@ -131,6 +131,17 @@ for (const file of tracked) {
 const pageURL = f => '/' + f.replace(/\.md$/, '');                  // Cloudflare Pages serves x.html at /x
 const pageFile = f => f.replace(/\.md$/, '.html');
 const pageFiles = new Set(pages.map(p => p.file));
+// Permanent redirects (tools/site-redirects.txt): they outlive the stubs, so deleting a stub never drops a 301.
+const redirects = (await read('tools/site-redirects.txt')).split('\n').map(l => l.replace(/#.*/, '').trim()).filter(Boolean)
+  .map(l => l.split(/\s+/));
+for (const [from, to] of redirects) {
+  if (!to || !pageFiles.has(to)) throw new Error(`tools/site-redirects.txt: ${from} -> ${to}, which is not a published page`);
+  if (pageFiles.has(from)) throw new Error(`tools/site-redirects.txt: ${from} is still a published page`);
+}
+for (const [from, to] of moved) {
+  if (!pageFiles.has(to)) throw new Error(`${from} says it moved to ${to}, which is not a published page`);
+  if (!redirects.some(([f, t]) => f === from && t === to)) throw new Error(`${from} moved to ${to}: add "${from} ${to}" to tools/site-redirects.txt`);
+}
 
 // ----------------------------------------------------------------------------- catalogue
 const landscape = JSON.parse(await read('research/landscape.json'));
@@ -300,7 +311,7 @@ curl -s ${ORIGIN}/docs/toolkit.md  <b># any page, as .md</b></pre></cad-copy>
 <div class="missions">
 <a class="mission mission-blue" href="/research/landscape"><span class="mission-icon">🗺️</span><span class="mission-tag">Map</span><span class="mission-num">${(counts.upstream || 0) + (counts.library || 0) + (counts.benchmark || 0)}</span><p>Agentic-CAD projects, libraries and benchmarks, checked with dates, licences and what each is actually good for.</p><span class="go">See the landscape <span>→</span></span></a>
 <a class="mission mission-yellow" href="/docs/toolkit"><span class="mission-icon">🧪</span><span class="mission-tag">Demonstrate</span><span class="mission-num">${counts.tool || 0}</span><p>Commands that run on real projects: integrity gates, hole and fastener checks, FEA, CFD, topology optimisation, slicing, a 3D viewer and review reports.</p><span class="go">Open the toolkit <span>→</span></span></a>
-<a class="mission mission-orange" href="/docs/common-issues"><span class="mission-icon">🧩</span><span class="mission-tag">Fill the gaps</span><span class="mission-num">${lessonCount}</span><p>Lessons from real builds turned into deterministic checks: a rib in a countersink, a screw that bottoms out, a driver that cannot reach.</p><span class="go">Read the pitfalls <span>→</span></span></a>
+<a class="mission mission-orange" href="/docs/common-issues"><span class="mission-icon">🧩</span><span class="mission-tag">Fill the gaps</span><span class="mission-num">${lessonCount}</span><p>Lessons from real builds, each a rule with the incident behind it and how to check it: a rib that ran into a counterbore, a screw that bottoms out, a driver that cannot reach.</p><span class="go">Read the pitfalls <span>→</span></span></a>
 </div></section>
 <section class="section" style="padding-top:0"><div class="lead"><h2>Skills your agents <span>can load.</span></h2><p>Claude Code and Codex install them with <code>cad-agent agents install</code>. Work survives crashes, reviews are independent, heavy runs go to compute hosts.</p></div>
 <ul class="cards">${skillCards.map(p => card({ type: p.section, status: 'ours', name: p.title, summary: p.summary, url: pageURL(p.file), markdown: '/' + p.file })).join('')}</ul></section>
@@ -380,8 +391,8 @@ export const CSP = `default-src 'self'; script-src 'self' ${[...inlineHashes].so
   "img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; " +
   "form-action 'self'; frame-ancestors 'self'";
 // Cloudflare Pages redirects: each moved page and its Markdown twin, to the new path.
-await writeFile(path.join(out, '_redirects'), moved.flatMap(([from, to]) =>
-  [`/${from.replace(/\.md$/, '')} /${to.replace(/\.md$/, '')} 301`, `/${from} /${to} 301`]).join('\n') + (moved.length ? '\n' : ''));
+await writeFile(path.join(out, '_redirects'), redirects.flatMap(([from, to]) =>
+  [`/${from.replace(/\.md$/, '')} /${to.replace(/\.md$/, '')} 301`, `/${from} /${to} 301`]).join('\n') + (redirects.length ? '\n' : ''));
 await writeFile(path.join(out, '_headers'), [
   '/*', '  X-Content-Type-Options: nosniff', '  Referrer-Policy: strict-origin-when-cross-origin', `  Content-Security-Policy: ${CSP}`,
   '  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()', '  Cross-Origin-Opener-Policy: same-origin',

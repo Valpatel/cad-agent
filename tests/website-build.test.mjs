@@ -254,3 +254,46 @@ test('every lesson page has a diagram, and the home page counts lessons, not pag
   assert.ok(rules > 50);
   assert.match(await readFile(path.join(out, 'index.html'), 'utf8'), new RegExp(`Fill the gaps</span><span class="mission-num">${rules}<`));
 });
+
+test('redirects outlive the stubs, and a stub must point at a published page that is listed', async () => {
+  const wt = path.join(tmp, 'wt-redirects');
+  execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });
+  const commit = msg => execFileSync('git', ['-c', 'user.name=test', '-c', 'user.email=test@example.invalid', 'commit', '-qam', msg], { cwd: wt });
+  const buildWt = dir => execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, '--out', dir], { cwd: root, stdio: 'pipe' });
+  const stub = 'lessons/03-mechanical-design-rules.md';
+  try {
+    // v0.6.0 deletes the stubs: the site keeps every 301.
+    execFileSync('git', ['rm', '-q', ...git('grep', '-l', '-e', '^<!-- moved-to:', 'HEAD', '--', '*.md').split('\n').filter(Boolean)
+      .map(l => l.replace(/^HEAD:/, ''))], { cwd: wt });
+    commit('drop the stubs');
+    const after = path.join(tmp, 'no-stubs');
+    buildWt(after);
+    assert.equal(await readFile(path.join(after, '_redirects'), 'utf8'), await readFile(path.join(out, '_redirects'), 'utf8'));
+    execFileSync('git', ['checkout', '-q', 'HEAD~1'], { cwd: wt });
+    // A stub that points at a file the site does not publish, or at another stub, fails the build.
+    for (const [target, why] of [['../CLAUDE.md', 'not a published page'], ['04-fasteners-and-assembly-access.md', 'not a published page']]) {
+      await writeFile(path.join(wt, stub), `<!-- moved-to: ${target} -->\n# Moved\n`);
+      commit(`stub to ${target}`);
+      assert.throws(() => buildWt(path.join(tmp, 'bad')), e => String(e.stderr).includes(why), target);
+      execFileSync('git', ['checkout', '-q', 'HEAD~1'], { cwd: wt });
+    }
+    // A stub missing from tools/site-redirects.txt fails the build too.
+    const list = path.join(wt, 'tools/site-redirects.txt');
+    await writeFile(list, (await readFile(list, 'utf8')).split('\n').filter(l => !l.startsWith(stub)).join('\n'));
+    commit('unlisted stub');
+    assert.throws(() => buildWt(path.join(tmp, 'bad2')), e => String(e.stderr).includes('add "' + stub));
+  } finally {
+    execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
+  }
+});
+
+test('no page refers to a lesson by its old number', () => {
+  // The numbered lessons moved into area folders (#133): "see 04" or "lesson 07" now leads nowhere. Link the page.
+  let hits = '';
+  try {
+    hits = git('grep', '-n', '-E', '-e', String.raw`\blessons? 0[1-9]\b|\(see 0[1-9]\)|; see 0[1-9]\)|\bSee 0[1-9]\.`, 'HEAD', '--',
+      '*.md', '*.json', ':!CHANGELOG.md');
+  } catch (e) { if (e.status !== 1) throw e; }                // git grep exits 1 when nothing matches
+  hits = hits.split('\n').filter(Boolean);
+  assert.deepEqual(hits, []);
+});

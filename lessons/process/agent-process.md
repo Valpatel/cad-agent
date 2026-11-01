@@ -38,7 +38,7 @@ flowchart TD
   out of date.
 - **Incident:** The agent posted lines such as "The build is running in the background; I'll pick up when it finishes"
   and "Some images are still from earlier runs until the full rebuild finishes." The user still asked to see progress,
-  which led to the on-page progress section (see 08).
+  which led to the on-page progress section (see [Review site UX](../review/review-site-ux.md)).
 - **Check:** No silent gap longer than one pipeline stage. Every report says which artefacts are stale.
 - **Source:** 2026-10-24T14:44, 16:46; 2026-10-25T00:36, 01:23.
 

@@ -5,12 +5,14 @@ flowchart TD
     Pw["power budget,<br/>before promising devices"] --> Cfg["configurations:<br/>mount plate, blanking cap"]
     Cfg --> Tr["storage trays from<br/>drive specs, stacked<br/>in any order"]
     Tr --> Th["thin drives without<br/>bottom holes: support"]
-    Base["the base, which<br/>never comes off"] --> Ant["antenna bulkheads;<br/>insert bosses with<br/>filleted load paths"]
+    Base["the base, which<br/>never comes off"] --> Ant["antenna bulkheads"]
+    Bo["insert bosses"] --> Lp["filleted load paths<br/>to floor and wall"]
+    Ant ~~~ Bo
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class Cfg,Tr,Ant here
-    class Pw,Base near
+    class Cfg,Tr,Ant,Lp here
+    class Pw,Base,Bo near
     class Th out
 ```
 
@@ -33,7 +35,7 @@ flowchart TD
   angled at the opening, for a SIM tool or paper clip. A guide tube on the inside of each stops 0.35 mm short of the
   board edge, so the plate still slides straight down.
 - **Check:** A 1 mm pin passes through both bores. A slide-in sweep check confirms that nothing is in the sleeve's
-  path. The label stays provisional ("RST/REC") until the switch identity is confirmed (see 01).
+  path. The label stays provisional ("RST/REC") until the switch identity is confirmed (see [Verify from source](../process/verify-from-source.md)).
 - **Source:** 2026-10-24T16:39, 16:40, 16:53, 17:10.
 
 ### Build storage trays from the drive specs and make them stack in any order
@@ -53,7 +55,7 @@ flowchart TD
   It takes an M3 × 5 through its wall into the drive's side hole (14.0 / 90.6 mm from the connector, 3.0 mm above the
   bottom) and an M3 × 6 from under the tray into a captive nut. It uses the tray's existing bottom-hole pattern, so no
   extra holes are needed.
-- **Check:** The clip stacks report no `drive_clip_overlaps`. Side-screw penetration stays within 2.0 mm (see 04).
+- **Check:** The clip stacks report no `drive_clip_overlaps`. Side-screw penetration stays within 2.0 mm (see [Fasteners and assembly access](fasteners-and-assembly-access.md)).
 - **Source:** 2026-10-25T01:23; `cad/parameters.json` (`ssd_clip`, `bottom_holes_note`).
 
 ### Provide a mount plate and a blanking cap for the configurations

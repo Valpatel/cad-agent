@@ -4,8 +4,8 @@ These rules come from printed-enclosure work (FDM, Bambu P1S bed) around a real 
 
 ```mermaid
 flowchart TD
-    A["add material<br/>columns tied into walls,<br/>landings, supports, grilles"] --> F["true-radius fillets<br/>at bases and steps"]
-    F --> H["cut every hole last<br/>windows sized to the plug,<br/>lead-ins in the cutter"]
+    A["add material<br/>columns tied into walls,<br/>landings, supports"] --> F["true-radius fillets<br/>at bases and steps"]
+    F --> H["cut every hole last<br/>windows sized to the plug,<br/>finger-safe grilles,<br/>lead-ins in the cutter"]
     H --> O["overhang screen:<br/>prints without support?"]
     W["one weak feature found"] -.->|"survey every similar one"| A
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c

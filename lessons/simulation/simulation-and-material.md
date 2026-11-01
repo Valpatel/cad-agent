@@ -5,12 +5,14 @@ flowchart TD
     P["the exact bought part,<br/>identified first"] --> S["the design,<br/>sized around it"]
     S --> G["savings judged<br/>on slicer grams"]
     S --> T["a thinner shell,<br/>re-checked under load"]
-    T --> H["thermal model: steady CHT<br/>converges slowly, so calibrate<br/>on local quantities"]
-    H --> One["one heavy solver<br/>at a time"]
+    T --> H["thermal model:<br/>steady CHT converges<br/>slowly, so calibrate<br/>on local quantities"]
+    H --> Tr{"still air stays still,<br/>energy balance closes,<br/>walls below the HDT?"}
+    Tr -->|"yes"| One["trust the result;<br/>one heavy solver<br/>at a time"]
+    Tr -->|"no"| H
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class S,T,H here
+    class S,T,H,Tr here
     class P near
     class G,One out
 ```

@@ -64,7 +64,7 @@ flowchart TD
   - The plates' slide-in path was checked (0.37 mm front, 0.25 mm rear).
   - A sweep check was added for the button guide sleeves on the way down.
   - Wall-mount screws are checked with a 20 mm driver envelope.
-  - The first stack design failed this kind of reasoning: its standoffs had no tool access (see 04).
+  - The first stack design failed this kind of reasoning: its standoffs had no tool access (see [Fasteners and assembly access](../mechanical/fasteners-and-assembly-access.md)).
 - **Check:** `assembly-paths.json`, `mount-checks.json` `driver_access`, and the sleeve sweep in the clearance run.
 - **Source:** 2026-10-24T07:41, 16:40; 2026-10-25T00:36.
 

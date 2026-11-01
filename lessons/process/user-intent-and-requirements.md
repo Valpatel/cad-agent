@@ -49,7 +49,7 @@ flowchart TD
 - **Incident:** Rev 0.5 asked for "the original screw's length + 19.6 mm". Later the agent asked whether to keep the
   head flush or raise it. The user: "the screw length is basically set by the top of the AGX and the bottom of the
   housing, assuming we just go something like 8 threads into the standoff", then "I can't give you the screw lenght,
-  that depends on your assembly." The agent then made the call itself (M3 × 35 with a raised seat; see 04).
+  that depends on your assembly." The agent then made the call itself (M3 × 35 with a raised seat; see [Fasteners and assembly access](../mechanical/fasteners-and-assembly-access.md)).
 - **Check:** Before asking a question, test whether the answer is computable from `parameters.json` and the STEP. If it
   is, present a decision with its reasoning instead of a question.
 - **Source:** 2026-10-24T07:41; 2026-10-25T00:34, 00:36, 00:37, 00:38.
@@ -93,13 +93,13 @@ flowchart TD
   The answer: yes, 2.5 in drives (SSD or spinning) run from the board, while 3.5 in drives need an added 12 V source. The
   board has only two SATA ports, so "2 of each" only makes sense with an M.2 SATA adapter. The agent recommended the
   2.5 in tray as the standard option and offered to drop the 3.5 in tray.
-- **Check:** Compare the number of drives in each configuration against the port count and the power budget (see 06).
+- **Check:** Compare the number of drives in each configuration against the port count and the power budget (see [Enclosure features](../mechanical/enclosure-features.md)).
 - **Source:** 2026-10-25T01:34, 01:36.
 
 ### Make "show it on the website" part of done
 - **Rule:** For this user, a feature is not done until the review site shows it with evidence.
 - **Incident:** Requests included "Also show them on the website..." (the drive options), "Launch the server again and
   show me how you are making progress", and "Where's the base for stacking with drives?". The last one was answered by
-  stating that P1 is the stacking base and adding a "Which base do I print?" section. See 08.
+  stating that P1 is the stacking base and adding a "Which base do I print?" section. See [Review site UX](../review/review-site-ux.md).
 - **Check:** Every change in the report links to the section or image on the site that shows it.
 - **Source:** 2026-10-25T00:31, 00:40, 01:30, 01:36.

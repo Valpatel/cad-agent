@@ -363,8 +363,8 @@ class LayerCheck:
 
     @property
     def mode(self) -> np.ndarray:
-        """Per element, the check that governs it: 'bond' or 'bulk'."""
-        return np.where(self.bond >= self.bulk, 'bond', 'bulk')
+        """Per element, the check that governs it: 'bond' or 'bulk', or 'none' where the element is unstressed."""
+        return np.where(self.utilisation <= 0, 'none', np.where(self.bond >= self.bulk, 'bond', 'bulk'))
 
     def _sf(self, u: np.ndarray) -> Optional[float]:
         top = float(u[self.judged].max()) if self.judged.any() else 0.0
@@ -383,7 +383,8 @@ class LayerCheck:
         return self._sf(self.bulk)
 
     @property
-    def governed_by(self) -> str:
+    def governed_by(self) -> Optional[str]:
+        """'bond' or 'bulk' at the worst corner; None when the judged elements carry no stress."""
         return self.worst['mode']
 
     def as_dict(self) -> Dict[str, Any]:
@@ -423,20 +424,26 @@ def _material_data(x, which: str) -> Dict[str, Any]:
     if isinstance(x, Material):
         return material_record(x)
     if isinstance(x, dict):
+        if isinstance(x.get('result'), dict) and 'material_data' in x['result']:   # an export_viewer() file
+            x = x['result']
         if isinstance(x.get('material_data'), dict):
             return x['material_data']
         if 'constants_hash' in x:
             return x
-        raise ValueError(f'the {which} record has no material data: it was made before results recorded the '
-                         f'constants (material_data), so it names the material ({x.get("material")!r}) but not its '
-                         'numbers. Re-run it on both toolkits to compare')
-    raise TypeError(f'the {which} record is a study result, its material_data or a Material, not {type(x).__name__}')
+        name = x.get('material')
+        name = name.get('name') if isinstance(name, dict) else name
+        raise ValueError(f'the {which} side has no material data: a result made before results recorded the '
+                         f'constants (material_data) names its material ({name!r}) but not its numbers. To compare, '
+                         'pass the material that toolkit used (its MATERIALS row) as a Material, or re-run the study '
+                         'on this toolkit')
+    raise TypeError(f'the {which} side is a study result, its material_data, an export_viewer() file or a Material, '
+                    f'not {type(x).__name__}')
 
 
 def material_changes(recorded: Union[Dict[str, Any], Material], current: Union[Dict[str, Any], Material]
                      ) -> List[Dict[str, Any]]:
     """What differs between the material data behind two records, say one made on another toolkit revision and one
-    made now. Each is a study result, its ``material_data`` or a Material. One entry per field that differs, the
+    made now. Each is a study result, its ``material_data``, an export_viewer() file or a Material. One entry per field that differs, the
     constants first, then ``key``, ``name``, ``source`` and ``note``: ``{'field', 'recorded', 'now'}``, with ``ratio``
     (now / recorded) for numbers. Under forces and torques a change of E scales the deflections by recorded / now, a
     change of strength the safety factors by now / recorded, and a change of density the masses by now / recorded.
@@ -854,7 +861,8 @@ class Study:
                  'element_centre_mm': [r(v) for v in P[:, T[:, e]].mean(axis=1)],
                  'sigma_n_mpa': r(sn[e, k]), 'tau_n_mpa': r(tau[e, k]), 'von_mises_mpa': r(self.vm_corner[e, k]),
                  'bond': r(bond[e, k], 4), 'bulk': r(bulk[e, k], 4),
-                 'mode': 'bond' if bond[e, k] >= bulk[e, k] else 'bulk'}
+                 'mode': (None if max(bond[e, k], bulk[e, k]) <= 0             # unstressed
+                          else 'bond' if bond[e, k] >= bulk[e, k] else 'bulk')}
         return LayerCheck(tuple(float(v) for v in n), xy, z, ss, basis, bond.max(axis=1), bulk.max(axis=1), keep, worst)
 
     # --- failure bookkeeping shared by animate() and export_viewer()

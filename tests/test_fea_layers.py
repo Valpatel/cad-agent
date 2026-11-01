@@ -182,6 +182,17 @@ def test_study_layer_check_on_known_stresses():
     assert d['judged_elements'] == 2
 
 
+def test_an_unstressed_part_has_no_governing_check():
+    lc = _solved_stand_in(MATERIALS['petg_cf'], [np.zeros((3, 3)), np.zeros((3, 3))]).layer_check((0, 0, 1))
+    assert lc.safety_factor is None and lc.governed_by is None and lc.worst['mode'] is None
+    assert list(lc.mode) == ['none', 'none'] and np.all(np.isinf(lc.factor))
+    d = lc.as_dict()
+    assert d['safety_factor'] is None and d['governed_by'] is None
+    # an element with stress keeps its mode beside an unstressed one
+    lc = _solved_stand_in(MATERIALS['petg_cf'], [np.zeros((3, 3)), uniaxial(10.0)]).layer_check((1, 0, 0))
+    assert list(lc.mode) == ['none', 'bond'] and lc.governed_by == 'bond'
+
+
 def test_study_layer_check_judges_like_the_safety_factor():
     m = MATERIALS['petg_cf']
     # element 0 touches a clamp: its stress is left out, as the safety factor leaves it out
@@ -260,9 +271,16 @@ def test_material_changes_between_two_toolkits():
     assert changes['key'] == {'field': 'key', 'recorded': None, 'now': 'pa6_cf_z'}
     assert material_changes(now, {'material_data': material_record(now)}) == []
     assert material_changes(material_record(now), now) == []
-    # a result from before results recorded the data says so, rather than guessing
-    with pytest.raises(ValueError, match='before results recorded the constants'):
-        material_changes({'material': now.name, 'material_source': now.source}, now)
+    # a whole export_viewer() file keeps the result (and its material_data) under 'result'
+    viewer = {'format': 'cadagent-fea-viewer', 'material': {'name': now.name},
+              'result': {'material': now.name, 'material_data': material_record(before_157)}}
+    assert {c['field'] for c in material_changes(viewer, now)} == {'E_mpa', 'strength_mpa', 'key'}
+    # a result from before results recorded the data says so, rather than guessing, and says what to do instead
+    for old_style in ({'material': now.name, 'material_source': now.source},
+                      {'format': 'cadagent-fea-viewer', 'material': {'name': now.name}, 'result': {'material': now.name}}):
+        with pytest.raises(ValueError, match='before results recorded the constants') as err:
+            material_changes(old_style, now)
+        assert repr(now.name) in str(err.value) and 'as a Material' in str(err.value)
     with pytest.raises(TypeError):
         material_changes('pa6_cf_z', now)
 

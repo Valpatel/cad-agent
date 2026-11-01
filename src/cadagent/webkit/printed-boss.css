@@ -1,0 +1,53 @@
+/* <cad-printed-boss> (kit/printed-boss.js). Link this in <head>: it reserves the element's full size before the script
+   runs (the still image, then the panel's height), so the live figure and controls replace them without moving the
+   page. The panel has a fixed height per layout; tests/website-browser.mjs checks the size and that nothing
+   overflows. The script sets data-theme (light or dark) from the page's color-scheme; override the colours with the
+   --pb-* custom properties. color-scheme is set on the panel, not the element, so the element still reads the page's. */
+cad-printed-boss{--pb-ink:#173d3c;--pb-muted:#526863;--pb-sage:#6f8a80;--pb-mist:#eef1e4;--pb-back:#fffdf5;--pb-peach:#ffe1cc;
+  --pb-rust:#bd3a12;--pb-line:#c9d8ca;--pb-panel:356px;display:block;box-sizing:border-box;margin:28px 0;
+  border:1px solid var(--pb-line);border-radius:16px;background:var(--pb-back);color:var(--pb-ink);overflow:hidden;
+  font-size:14px;line-height:1.35;overflow-wrap:normal}
+cad-printed-boss[data-theme=dark]{--pb-ink:#e6efe9;--pb-muted:#a8bcb5;--pb-sage:#86a499;--pb-mist:#21393a;--pb-back:#11201f;
+  --pb-peach:#4b2b1d;--pb-rust:#ff9466;--pb-line:#355450}
+/* Measured in Chromium and WebKit (WebKit's controls are taller) for the wordiest results, with a few pixels spare. */
+@media(max-width:699.98px){cad-printed-boss{--pb-panel:600px}}
+@media(max-width:359.98px){cad-printed-boss{--pb-panel:630px}}
+cad-printed-boss>img,cad-printed-boss .pb-figure>svg{display:block;width:100%;height:auto;aspect-ratio:640/300;max-width:none;margin:0;border:0}
+/* Until the script defines the element (or if it never loads), the reserved panel says what belongs there. */
+cad-printed-boss:not(:defined)::after{content:"The screw, boss, torque and filament controls and the readouts load here with JavaScript. The figure above is the starting boss.";
+  display:flex;align-items:center;justify-content:center;box-sizing:border-box;height:var(--pb-panel);padding:16px 24px;
+  border-top:1px solid var(--pb-mist);color:var(--pb-muted);font-size:13px;text-align:center}
+@media(scripting:none){cad-printed-boss:not(:defined)::after{display:none}}
+cad-printed-boss .pb-figure{margin:0}
+cad-printed-boss .pb-panel{box-sizing:border-box;height:var(--pb-panel);overflow:hidden;padding:14px 18px 12px;color-scheme:light;
+  border-top:1px solid var(--pb-mist);display:flex;flex-direction:column;gap:12px}
+cad-printed-boss[data-theme=dark] .pb-panel{color-scheme:dark}
+cad-printed-boss .pb-readout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+cad-printed-boss .pb-tile{margin:0;padding:8px 10px;border-radius:12px;background:var(--pb-mist);display:flex;flex-direction:column;min-width:0}
+cad-printed-boss .pb-tile b{font-size:20px;line-height:1.2;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+cad-printed-boss .pb-tile span{font-size:12px;color:var(--pb-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+cad-printed-boss .pb-tile .pb-k{font-weight:650;letter-spacing:.02em;color:var(--pb-ink)}
+cad-printed-boss .pb-tile[data-verdict=fail]{background:var(--pb-peach)}
+cad-printed-boss .pb-tile[data-verdict=fail] b{color:var(--pb-rust)}
+cad-printed-boss .pb-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 24px}
+cad-printed-boss .pb-col{display:flex;flex-direction:column;gap:6px;min-width:0}
+cad-printed-boss .pb-field{display:flex;flex-direction:column;gap:1px}
+cad-printed-boss .pb-field label{display:flex;justify-content:space-between;gap:8px;font-weight:600;font-size:13px}
+cad-printed-boss .pb-value{font-weight:500;font-variant-numeric:tabular-nums;color:var(--pb-muted);white-space:nowrap}
+cad-printed-boss input[type=range]{width:100%;margin:0;height:24px;accent-color:var(--pb-ink)}
+cad-printed-boss select{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--pb-sage);border-radius:8px;background:var(--pb-back);color:var(--pb-ink);min-height:32px;max-width:100%}
+cad-printed-boss fieldset{margin:0;padding:0;border:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 18px;font-size:13px;min-width:0}
+cad-printed-boss legend{float:left;padding:0;margin:0 4px 0 0;font-weight:600}
+cad-printed-boss fieldset label{display:inline-flex;align-items:center;gap:6px;font-size:13px;white-space:nowrap}
+cad-printed-boss input[type=radio]{margin:0;accent-color:var(--pb-ink);width:16px;height:16px}
+cad-printed-boss .pb-note{margin:auto 0 0;font-size:12px;color:var(--pb-muted)}
+cad-printed-boss :is(input,select):focus-visible{outline:3px solid var(--pb-rust);outline-offset:2px}
+cad-printed-boss .pb-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;margin:0}
+@media(max-width:699.98px){
+  cad-printed-boss .pb-panel{padding:12px 12px 10px;gap:10px}
+  cad-printed-boss .pb-readout{gap:6px}cad-printed-boss .pb-tile{padding:6px 8px}
+  cad-printed-boss .pb-tile b{font-size:15px;white-space:normal}cad-printed-boss .pb-tile span{font-size:11px;white-space:normal}
+  cad-printed-boss .pb-controls{grid-template-columns:minmax(0,1fr);gap:8px}
+  cad-printed-boss input[type=range]{height:32px}
+}
+@media(pointer:coarse){cad-printed-boss input[type=radio]{width:20px;height:20px}}

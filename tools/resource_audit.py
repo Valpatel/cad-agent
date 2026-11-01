@@ -1683,7 +1683,7 @@ def rows_markdown(r, ids):
 # ----------------------------------------------------------------------------------------------------------- commands
 def make_report(a, added_files=()):
     net = Net() if a.online else None
-    accepted = load_accepted(a.accepted if a.accepted else (ROOT / ACCEPTED if Path(a.root) == ROOT else None))
+    accepted = load_accepted(a.accepted or Path(a.root) / ACCEPTED)
     as_of = dt.date.fromisoformat(a.as_of) if a.as_of else None
     rep = build(Path(a.root), as_of, net, a.repo, a.installed, a.catalog, not a.no_npm_audit, added_files, accepted)
     return rep.to_json()

@@ -142,9 +142,13 @@ export function timeline() {
     const pct = 8 + k * 0.5, offset = START * (1 - ease(k / 84));
     if (!snapped && offset < snap) {   // the hook drops in: a quick fall with a small overshoot, then rest
       snapped = true;
+      // In two moves, at offsets that survive rounding to 2 places: slide past the corner at the corner's full lift,
+      // then fall where the whole swing is clear. Falling while still moving across the corner would cut into it.
+      const above = Math.ceil((snap + 1e-3) * 100) / 100, below = Math.floor((snap - 0.01) * 100) / 100;
+      const top = Math.max(liftAt(above), liftAt(snap + 1e-4)) + GAP, at = Math.min(offset, below);
       let overshoot = -0.4;            // as far past rest as the parts allow
-      while (overshoot < 0 && !clear(overshoot, offset)) overshoot = Math.min(0, overshoot + 0.05);
-      rows.push([pct - 0.25, snap + 1e-3, liftAt(snap + 1e-3) + GAP, 1], [pct + 0.6, offset, overshoot, 1], [pct + 1.4, offset, 0.15, 1], [pct + 2.2, offset, 0, 1]);
+      while (overshoot < 0 && !clear(overshoot, at)) overshoot = Math.min(0, overshoot + 0.05);
+      rows.push([pct - 0.25, above, top, 1], [pct - 0.1, below, top, 1], [pct + 0.6, at, overshoot, 1], [pct + 1.4, at, 0.15, 1], [pct + 2.2, at, 0, 1]);
       continue;
     }
     if (snapped && rows.at(-1)[0] >= pct) continue;

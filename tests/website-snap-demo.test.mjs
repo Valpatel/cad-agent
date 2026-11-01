@@ -58,16 +58,23 @@ test('the retaining faces lock: a pull-back turns the hook into the catch, not o
   assert.ok(lockMoment(chamfered) < 0, 'control: a chamfered face should cam out');
 });
 
-test('every in-between pose the browser draws is clear, not only the keyframes', () => {
+test('every in-between pose the browser draws is clear, read back from the emitted CSS', () => {
+  // Both tracks are parsed out of the stylesheet (the catch's slide and the arm's swing), so a change to either
+  // one's emitted values is checked, and each segment is sampled finely enough to catch a sub-millisecond overlap.
   const { rows } = timeline();
-  const { css } = snapDemo();                          // the rows are exactly what the stylesheet carries
-  for (const r of rows) assert.ok(css.includes(`${r[0]}%{transform:translateX(${r[1]}px)`), `keyframe ${r} not emitted as is`);
-  for (let i = 1; i < rows.length; i++) assert.ok(rows[i][0] > rows[i - 1][0], `keyframe times not increasing at ${rows[i][0]}%`);
-  for (let i = 1; i < rows.length; i++) for (let k = 1; k < 32; k++) {
-    const t = k / 32, a = rows[i - 1], b = rows[i];
-    if (!a[3] && !b[3]) continue;                      // the reset jump, while the part is invisible
-    const offset = a[1] + (b[1] - a[1]) * t, lift = a[2] + (b[2] - a[2]) * t;
-    assert.ok(clear(lift, offset), `overlap between ${a[0]}% and ${b[0]}% (t=${t})`);
+  const { css } = snapDemo();
+  const frames = name => [...css.match(new RegExp(`@keyframes ${name}\\{(.*?)\\}\\}`))[1].matchAll(/([\d.,%]+)\{([^}]*)/g)]
+    .flatMap(([, pcts, body]) => pcts.split(',').map(p => [parseFloat(p), body]));
+  const slide = frames('snap-catch').map(([p, b]) => [p, parseFloat(b.match(/translateX\(([-\d.]+)px/)[1]), parseFloat(b.match(/opacity:([\d.]+)/)[1])]);
+  const swing = frames('snap-arm').map(([p, b]) => [p, 0 - parseFloat(b.match(/rotate\(([-\d.]+)deg/)[1])]);   // 0 - x: no -0
+  assert.deepEqual(slide.map(r => r[0]), swing.map(r => r[0]), 'the two tracks have different keyframe times');
+  assert.deepEqual(slide.map((r, i) => [r[0], r[1], swing[i][1], r[2]]), rows.map(r => [r[0], r[1], r[2] || 0, r[3]]), 'emitted keyframes differ from the timeline');
+  for (let i = 1; i < slide.length; i++) assert.ok(slide[i][0] > slide[i - 1][0], `keyframe times not increasing at ${slide[i][0]}%`);
+  for (let i = 1; i < slide.length; i++) for (let k = 1; k < 500; k++) {
+    const t = k / 500, a = slide[i - 1], b = slide[i];
+    if (!a[2] && !b[2]) continue;                      // the reset jump, while the part is invisible
+    const offset = a[1] + (b[1] - a[1]) * t, lift = swing[i - 1][1] + (swing[i][1] - swing[i - 1][1]) * t;
+    assert.ok(clear(lift, offset), `overlap between ${a[0]}% and ${b[0]}% (t=${t}, offset ${offset}, lift ${lift})`);
   }
 });
 

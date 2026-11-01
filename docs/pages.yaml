@@ -912,7 +912,7 @@ research/simulation-tools.md:
       caption: "Two recorded chtMultiRegionSimpleFoam runs (OpenFOAM v2512 in Docker), rendered with PyVista as recommended here: a vented 20 W box with an exhaust fan, sections coloured by air temperature, with streamlines. With the fan 3 mm under the opening the air loops back through it: 3.75 g/s, carrying 32.26 W while 19.61 W leave. In a duct it passes once: 2.77 g/s, 17.60 W carried, 17.83 W leaving, though that run's energy balance is 10.9 % off, which the toolkit flags."
       alt: "Two sections through a vented 20 W box with an exhaust fan, coloured by air temperature with streamlines: with the fan under the opening air loops back through it; with the fan in a duct it passes once"
     - after: bambu-studio-tested-here-headless-works
-      below: "Machine: `Bambu Lab P1S"
+      below: "Machine: Bambu Lab P1S"
       img: docs/img/plates/gyropup-plates.svg
       shows: diagram
       drawn_by: tools/plates_figure.py

@@ -603,6 +603,19 @@ none of its checks is that study:
   stress round it is linear, which the elements carry.
 - `refine` and `slivers`: the zones used, and the slivers found before meshing.
 
+The same bracket, step by step: what each result's `mesh` record and `converge()` said as `refine=` halved the
+elements at the corner.
+
+![The L-bracket's front face meshed round its inside corner, sharp and with an R1.5 fillet, as refine= takes the elements there from 2 mm to 0.25 mm: the sharp corner's peak rises from 443 to 1,094 MPa and converge() never passes it; the fillet's stays between 432 and 447 MPa and converge() passes it from the 1 mm step](img/fea/mesh-convergence.svg)
+
+*A recorded run of the toolkit, not a drawing: cad-agent 0.7.0's `Study` and `converge()` on gmsh 4.15.2 with
+OpenCASCADE 7.8.1 (Linux x86-64, 2026-11-01). `tools/readme_anim.py` redraws it from
+`tools/anim/fea-convergence.scene.json` and `--check` fails when it is stale; `--extract convergence` records it again
+(about a minute, under 3 GB). Each step shows the front face's mesh, the design peak (the dot), the result's flags and
+`converge()`'s verdict. The open squares are the whole part meshed that fine, without `refine=`: 11,829 tets at
+0.5 mm for the sharp bracket, against 1,233 refined.
+Linear-elastic FEA: a converged peak does not prove that the part holds.*
+
 **Slivers and refusals.** Before meshing, `Study` lists faces under (mesh_mm/10)² in area, long faces under
 mesh_mm/10 in width (2 × area / perimeter), and edges under mesh_mm/10 (`Study.slivers`; a refine ball's size counts where it covers the
 whole face or edge). It warns by default. With `slivers='raise'` it stops with a

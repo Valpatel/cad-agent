@@ -83,7 +83,7 @@ flowchart TD
 SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A strain is a fraction (0.02 = 2 %).
 
 <details>
-<summary>All 36 functions in <code>catalogue()</code>: what each computes, its source and where it is valid</summary>
+<summary>All 37 functions in <code>catalogue()</code>: what each computes, its source and where it is valid</summary>
 
 | Function | What | Source | Valid within |
 |---|---|---|---|
@@ -107,9 +107,10 @@ SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A 
 | `nut_factor` | K from thread and collar friction | Shigley 10th ed., Section 8-8, Eq. (8-26) | 60° thread |
 | `tensile_stress_area` | As = π/4 (d − 0.9382 p)² | ISO 898-1:2013; Shigley Table 8-1 | ISO metric |
 | `thread_shear_areas`, `thread_strip_force` | 0.75 π D1 Le (screw), 0.875 π d Le (hole) | ISO 68-1:1998 basic profile | even load sharing, no tolerances |
-| `grashof` | Grashof class, whether the input crank turns fully | Norton 5th ed., Chapter 2 | rigid links |
+| `grashof` | Grashof class, whether the input crank turns fully, and the inversion (crank-rocker, double crank, rocker-crank, double rocker, triple rocker) | Norton 5th ed., Chapter 2 | rigid links |
 | `fourbar_angles` | coupler and output angles, open or crossed | Freudenstein (1955); Norton 5th ed., Chapter 4 | position only; a gap under 1e-12 of the longest link counts as closed |
 | `transmission_angle` | angle between coupler and rocker | Norton 5th ed., Chapter 4 | position only; the same closing test |
+| `fourbar_input_limits` | the input angles where coupler and rocker fold or stretch into line and the linkage locks | Norton 5th ed., Chapter 4 (toggle positions) | position only; the same closing test |
 | `wall_resistance`, `film_resistance` | R = L / k A, R = 1 / h A | Incropera 7th ed., Section 3.1.2, Eqs. (3.6), (3.9) | steady, 1-D |
 | `wall_heat_flow` | layers and films in series: heat flow and every face temperature | Incropera 7th ed., Section 3.1.3 | no contact resistance |
 | `fan_curve_line`, `system_coefficient` | the datasheet fan line; k in Δp = k Q² | White 7th ed., Section 11.5 | same air density |

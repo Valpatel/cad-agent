@@ -4,6 +4,7 @@ Each test says which: a published value (with the source), or an independent der
 direct stiffness method, a series solution, loop closure, thread geometry) that the closed form must match.
 """
 import inspect
+import itertools
 import math
 import re
 import subprocess
@@ -458,16 +459,105 @@ def test_fourbar_norton_example_4_1():
 
 def test_grashof_classes():
     # crank-rocker (S + L < P + Q, the crank shortest), the input turns fully: every angle closes
-    assert fx.grashof(40, 120, 80, 100) == {"grashof": True, "kind": "grashof", "crank_rotates": True}
+    assert fx.grashof(40, 120, 80, 100) == {"grashof": True, "kind": "grashof", "crank_rotates": True,
+                                            "inversion": "crank-rocker"}
     assert all(fx.fourbar_angles(40, 120, 80, 100, math.radians(t)) for t in range(360))
     # a double rocker (Grashof, coupler shortest): the input cannot turn fully
     assert fx.grashof(80, 40, 120, 100)["crank_rotates"] is False
     assert any(fx.fourbar_angles(80, 40, 120, 100, math.radians(t)) is None for t in range(360))
     # non-Grashof (S + L > P + Q): no link turns fully
-    assert fx.grashof(100, 80, 70, 60) == {"grashof": False, "kind": "non-grashof", "crank_rotates": False}
+    assert fx.grashof(100, 80, 70, 60) == {"grashof": False, "kind": "non-grashof", "crank_rotates": False,
+                                           "inversion": "triple-rocker"}
     assert any(fx.fourbar_angles(100, 80, 70, 60, math.radians(t)) is None for t in range(360))
     # parallelogram: S + L = P + Q, a change-point linkage
     assert fx.grashof(50, 100, 50, 100)["kind"] == "change-point"
+    assert fx.grashof(50, 100, 50, 100)["inversion"] == "change-point"
+    # the four Grashof inversions, by the shortest link (Norton, Chapter 2): the same four lengths each time
+    for links, name in (((40, 120, 80, 100), "crank-rocker"), ((80, 100, 120, 40), "double-crank"),
+                        ((80, 100, 40, 120), "rocker-crank"), ((80, 40, 120, 100), "double-rocker")):
+        g = fx.grashof(*links)
+        assert g["kind"] == "grashof" and g["inversion"] == name, links
+        assert g["crank_rotates"] == (name in ("crank-rocker", "double-crank")), links
+
+
+def _closes_between(limits, t2):
+    """Whether the input angle t2 lies in the range fourbar_input_limits gives: folded <= |t2| <= stretched."""
+    t = abs(math.remainder(t2, 2 * math.pi))
+    lo = limits["folded"] if limits["folded"] is not None else 0.0
+    hi = limits["stretched"] if limits["stretched"] is not None else math.pi
+    return limits["closes"] and lo <= t <= hi
+
+
+def test_fourbar_input_limits_are_where_the_links_stop_closing():
+    # Every four-bar with whole-number links from 1 to 6 (and a millimetre copy of each, whose lengths binary cannot
+    # hold): the input turns fully exactly when grashof says the crank rotates, and fourbar_angles closes exactly
+    # inside the limits, every 3 degrees, away from the limits themselves.
+    checked = limited = 0
+    for a, b, c, d in itertools.product(range(1, 7), repeat=4):
+        for scale in (1, MM):
+            links = (a * scale, b * scale, c * scale, d * scale)
+            lim = fx.fourbar_input_limits(*links)
+            assert lim["full_turn"] == fx.grashof(*links)["crank_rotates"], links
+            edges = [v for v in (lim["folded"], lim["stretched"]) if v is not None]
+            limited += bool(edges)
+            for deg in range(-180, 180, 3):
+                t2 = math.radians(deg)
+                if any(abs(abs(t2) - e) < 1e-6 for e in edges):
+                    continue
+                want = _closes_between(lim, t2)
+                for crossed in (False, True):
+                    assert (fx.fourbar_angles(*links, t2, crossed=crossed) is not None) == want, (links, deg, lim)
+                assert (fx.transmission_angle(*links, t2) is not None) == want, (links, deg)
+                checked += 1
+    assert checked > 100_000 and limited > 500
+
+
+# The branches meet at a limit to the square root of round-off (a double root), about 1e-8 rad. Across a diagonal of
+# 2e-6 between links of 1 (the last case, folded near 0 degrees) the pin's place is that much less certain.
+@pytest.mark.parametrize("links,meet", [((100, 80, 70, 60), 1e-7), ((80, 40, 120, 100), 1e-7), ((60, 30, 50, 70), 1e-7),
+                                        ((0.05, 0.02, 0.06, 0.04), 1e-7), ((80, 100, 40, 120), 1e-7),
+                                        ((1, 1, 1 - 2.2e-6, 1 + 2e-6), 1e-4)])
+def test_fourbar_input_limits_lock_the_linkage(links, meet):
+    # At each limit coupler and rocker lie in one line: the links close in one position (both branches meet), the
+    # transmission angle is 0, and the circle construction's two intersections meet. 1e-7 rad further out, nothing
+    # closes; 1e-7 rad inside, both branches do. The angle is the law of cosines' acos, in half angles.
+    a, b, c, d = links
+    lim = fx.fourbar_input_limits(*links)
+    assert lim["closes"] and not lim["full_turn"]
+    for name, span, outward in (("folded", abs(b - c), -1), ("stretched", b + c, 1)):
+        t0 = lim[name]
+        if t0 is None:
+            continue
+        assert 0 < t0 < math.pi
+        assert t0 == pytest.approx(math.acos((a * a + d * d - span * span) / (2 * a * d)), abs=1e-7)
+        for sign in (1, -1):
+            t2 = sign * t0
+            both = [fx.fourbar_angles(a, b, c, d, t2, crossed=x) for x in (False, True)]
+            assert all(got is not None and _loop_error(a, b, c, d, t2, *got) < 1e-9 * max(links) for got in both)
+            assert abs(math.remainder(both[0][1] - both[1][1], 2 * math.pi)) < meet
+            assert fx.transmission_angle(a, b, c, d, t2) == pytest.approx(0.0, abs=meet)
+            beyond, inside = sign * (t0 + outward * 1e-7), sign * (t0 - outward * 1e-7)
+            assert all(fx.fourbar_angles(a, b, c, d, beyond, crossed=x) is None for x in (False, True)), (name, sign)
+            assert not _circle_solution(a, b, c, d, beyond) and len(_circle_solution(a, b, c, d, inside)) == 2
+            assert all(fx.fourbar_angles(a, b, c, d, inside, crossed=x) is not None for x in (False, True))
+
+
+def test_fourbar_input_limits_of_the_inversions():
+    # A crank-rocker and a double crank turn fully; a triple rocker stops on one side (its input swings through 0);
+    # a double rocker and a rocker-crank stop on both, so the input has two mirror-image ranges; links that cannot
+    # make a loop at all (one longer than the other three together) close nowhere.
+    assert fx.fourbar_input_limits(40, 120, 80, 100) == {"closes": True, "full_turn": True, "folded": None,
+                                                         "stretched": None}
+    assert fx.fourbar_input_limits(80, 100, 120, 40)["full_turn"]
+    tri = fx.fourbar_input_limits(100, 80, 70, 60)
+    assert tri["folded"] is None and math.degrees(tri["stretched"]) == pytest.approx(137.874, abs=1e-3)
+    dr = fx.fourbar_input_limits(80, 40, 120, 100)
+    assert [round(math.degrees(dr[k]), 3) for k in ("folded", "stretched")] == [51.318, 125.100]
+    assert fx.fourbar_input_limits(1, 1, 1, 10) == {"closes": False, "full_turn": False, "folded": None,
+                                                    "stretched": None}
+    # change points pass their in-line position without stopping: a parallelogram, and a + b = c + d
+    for links in ((5, 2, 5, 2), (0.03, 0.07, 0.03, 0.07), (0.02, 0.05, 0.03, 0.04)):
+        assert fx.fourbar_input_limits(*links)["full_turn"], links
 
 
 # ----------------------------------------------------------------------------- heat and air

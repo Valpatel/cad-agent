@@ -243,7 +243,7 @@ const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).m
 // custom elements, so pictures arrive as <img> and diagrams as Mermaid blocks; the browser test checks they render).
 const VISUAL = /<img\b|class="language-mermaid"|<pre class="mermaid"/g;
 const visuals = new Map();
-const docPages = [];                         // [file, HTML]: written once their diagrams are drawn, below
+const docPages = [];                         // [path in out, HTML]: written once their diagrams are drawn, below
 for (const p of pages) {
   const ids = new Map();
   const renderer = new marked.Renderer();

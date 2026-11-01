@@ -124,14 +124,13 @@ export function observeDiagrams(root = document.body) {
   observer.observe(root, {childList: true, subtree: true});
   return {render: () => renderDiagrams(root), dispose: () => observer.disconnect()};
 }
-/** Draw one diagram ahead of time, for a page that will show it without running Mermaid: the source goes into
- * `parent` as a block, is drawn in `theme` ('light' or 'dark') with `id` as its SVG id and `fontFamily` (a font the page
- * itself serves, already loaded here, so the labels measure the same for every reader) at `fontSize` (CSS, default
- * Mermaid's 16px), and the finished figure is
- * returned, or null when Mermaid cannot draw it. The overflow hint is left to the stylesheet, which knows the
- * drawing's width and the column's. `mermaid` is the Mermaid to draw with (default: the vendored one, loaded once):
- * Mermaid numbers some elements with counters that run on from one drawing to the next, so a drawing that must not
- * depend on what was drawn before gets a fresh instance. */
+/** Draw one diagram ahead of time, for a page that will show it without running Mermaid. The source goes into `parent`
+ * as a block and is drawn in `theme` ('light' or 'dark'), with `id` as its SVG id, in `fontFamily` (a font the page
+ * itself serves, already loaded here, so the labels measure the same for every reader) at `fontSize` (CSS; default
+ * Mermaid's 16px). Returns the finished figure, taken out of `parent`, or null when Mermaid cannot draw it. The
+ * overflow hint is left to the stylesheet, which knows the drawing's width and the column's. `mermaid` is the Mermaid to
+ * draw with (default: the vendored one, loaded once): Mermaid numbers some elements with counters that run on from one
+ * drawing to the next, so a drawing that must not depend on what was drawn before gets a fresh instance. */
 export async function drawDiagram(source, {theme = 'light', id, fontFamily = FONT, fontSize, parent = document.body, mermaid} = {}) {
   const holder = document.createElement('div'); holder.dataset.diagramTheme = theme === 'dark' ? 'dark' : 'light';
   const pre = document.createElement('pre'); pre.className = 'mermaid'; pre.textContent = source;

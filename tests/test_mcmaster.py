@@ -1,4 +1,4 @@
-"""cadagent.mcmaster without the network.
+"""cadagent.mechanical.mcmaster without the network.
 
 The page parsing, part-number checks, download checks, SOURCE.txt, the catalogue helpers and the CLI (with a fake
 Session) need neither Playwright nor CadQuery, so they run in the core CI job. normalise() is tested on synthetic
@@ -11,7 +11,7 @@ import zipfile
 
 import pytest
 
-from cadagent import mcmaster as mc
+from cadagent.mechanical import mcmaster as mc
 from cadagent.cli import main
 
 STEP_TEXT = "ISO-10303-21;\nHEADER;\nENDSEC;\nDATA;\nENDSEC;\nEND-ISO-10303-21;\n"

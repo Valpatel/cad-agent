@@ -20,9 +20,9 @@ flowchart TD
     class Pl out
 ```
 
-The tools: `cadagent.mcmaster` (Python) and `cad-agent mcmaster` (CLI). They read one product page at a time in the
-system Chrome (Playwright), with a pause between pages. That is the same traffic as an engineer choosing parts, and
-it must stay that way.
+The tools: `cadagent.mechanical.mcmaster` (Python) and `cad-agent mcmaster` (CLI). They read one product page at a time
+in the system Chrome (Playwright), with a pause between pages. That is the same traffic as an engineer choosing parts,
+and it must stay that way.
 
 ## Rules
 
@@ -61,9 +61,9 @@ it must stay that way.
 
    This writes `OUT/<PN>/<PN>.step` (the download, kept only if it is a STEP file), `<PN>.page.json` (title, price,
    pack quantity, every spec row, option choices), `<PN>.norm.step`, `<PN>.norm.json` (axis found, how it was
-   seated, bbox, volume, mass) and an entry in `SOURCE.txt`. Kinds and their frames (`cadagent.mcmaster.FRAMES`)
-   all put the axis on +Z, through the origin (the cylinders' axis line, not the centre of mass); which end goes
-   down is decided from the part's shape, not from how the vendor modelled it:
+   seated, bbox, volume, mass) and an entry in `SOURCE.txt`. Kinds and their frames
+   (`cadagent.mechanical.mcmaster.FRAMES`) all put the axis on +Z, through the origin (the cylinders' axis line, not the
+   centre of mass); which end goes down is decided from the part's shape, not from how the vendor modelled it:
    - `bearing`, `washer`, `nut`, `insert`, `standoff`, `spacer`, `pin`, `grommet`, `rod`: the larger end (flange,
      collar, head) at z = 0 and the part on +z; when both ends are the same size, the heavier end down
      (`info["end_down"]` says which rule decided).
@@ -101,7 +101,7 @@ it must stay that way.
 ```python
 import json
 
-from cadagent import mcmaster as mc
+from cadagent.mechanical import mcmaster as mc
 
 with mc.Session(delay_s=3) as s:                    # one browser, one page at a time
     step = s.fetch("5972K82", "references/vendor/mcmaster/5972K82")

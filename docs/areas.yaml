@@ -5,6 +5,7 @@
 #   priority  gyropup (needed for Gyropup to become real) and/or demo (makes a good video or interactive demo)
 #   pages     repo-relative Markdown pages (docs/, research/)       cli      `cad-agent` subcommands
 #   api       cadagent modules (today's import paths)                skills   skills/<name>/SKILL.md
+#   uses      another domain's cadagent modules the node relies on (never one of its own `api`)
 #   agents    agents/<name>.md                                       lessons  a lessons/ folder this node owns (#133)
 #   issues    open cad-agent issues or pull requests                 projects keys of `projects` below
 # A list may name the same item under several nodes. tests/test_areas.py checks that every item exists, that every
@@ -18,8 +19,12 @@
 # judged on its own evidence, and an area is never below its most mature topic. A domain's maturity is the highest of
 # its areas': it says how far the domain's best-developed area has got, and its hub shows every area's level beside it.
 #
-# Module names in `api` are today's import paths. #121 moves most modules into packages (cadagent.sim.fea and so on);
-# when both are on dev, the test rejects an old path, so whichever PR merges second switches them to the new ones.
+# Module names in `api` are import paths. Since #121 the code is laid out by this tree: `cadagent.<domain>.<module>`,
+# with the practice domain's review and publishing areas as `cadagent.review` and `cadagent.publish`, and the shared
+# core (`cadagent.geometry`, `.project`, `.links`, ...) at the top. A domain package's module is listed in `api` under
+# its own domain only, so each module has one home; a node that relies on another domain's module names it in `uses`
+# instead (thermal's airflow uses `cadagent.simulation.cfd`). tests/test_package_areas.py keeps code and tree in step.
+# The old flat paths still import with a warning until v0.7.0, but the tests reject them here.
 version: 1
 
 maturity:
@@ -59,7 +64,7 @@ domains:
         priority: [gyropup, demo]
         pages: [docs/rendered-motion.md]
         cli: [motion-trace]
-        api: [cadagent.motion_trace]
+        api: [cadagent.mechanical.motion_trace]
         skills: [cad-motion-validation]
         projects: [gyropup]
         topics:
@@ -71,7 +76,7 @@ domains:
         scope: Shells, lids, bosses, ribs, port windows and markings around electronics and mechanisms.
         maturity: tooling
         priority: [gyropup]
-        api: [cadagent.connectors, cadagent.markings]
+        api: [cadagent.mechanical.connectors, cadagent.mechanical.markings]
         projects: [j501-enclosure, thor-can-breakout, gyropup]
         topics:
           - {slug: port-windows, title: Port windows, scope: "Panel cut-outs sized from the mating plug, then proven to fit.", maturity: tooling}
@@ -84,7 +89,7 @@ domains:
         priority: [gyropup, demo]
         pages: [docs/compliant.md, research/compliant-mechanisms.md]
         cli: [snapfit]
-        api: [cadagent.compliant]
+        api: [cadagent.mechanical.compliant]
         issues: [94, 95, 137]
         topics:
           - {slug: snap-fits, title: Snap fits, scope: "Cantilever, torsion and annular snaps sized by print direction.", maturity: tooling, priority: [demo], issues: [95]}
@@ -120,7 +125,7 @@ domains:
         priority: [gyropup]
         pages: [docs/subassembly-insertion.md]
         cli: [holes, mcmaster]
-        api: [cadagent.fasteners, cadagent.holes, cadagent.mcmaster]
+        api: [cadagent.mechanical.fasteners, cadagent.mechanical.holes, cadagent.mechanical.mcmaster]
         skills: [mcmaster-parts]
         issues: [46]
         topics:
@@ -157,7 +162,7 @@ domains:
         maturity: tooling
         priority: [gyropup]
         cli: [export-3mf, slice]
-        api: [cadagent.slicer, cadagent.mesh3mf]
+        api: [cadagent.manufacturing.slicer, cadagent.manufacturing.mesh3mf]
         issues: [84, 99]
         projects: [gyropup, j501-enclosure]
         topics:
@@ -199,14 +204,15 @@ domains:
         scope: Heat paths from the chip to the air.
         maturity: tooling
         priority: [gyropup]
-        api: [cadagent.heatsink]
+        api: [cadagent.thermal.heatsink]
         projects: [j501-enclosure]
       - slug: airflow-and-fans
         title: Airflow and fans
         scope: Fans, vents and grilles, and where the air really goes.
         maturity: tooling
         priority: [demo]
-        api: [cadagent.cfd]
+        api: [cadagent.thermal.heatsink]
+        uses: [cadagent.simulation.cfd]
         issues: [47, 137]
         projects: [j501-enclosure]
       - slug: thermal-validation
@@ -227,7 +233,7 @@ domains:
         maturity: tooling
         priority: [gyropup, demo]
         pages: [research/fea-and-process-tools.md]
-        api: [cadagent.fea]
+        api: [cadagent.simulation.fea]
         issues: [125]
         projects: [j501-enclosure, gyropup]
       - slug: cfd
@@ -235,7 +241,7 @@ domains:
         scope: Airflow and conjugate heat transfer.
         maturity: tooling
         priority: [demo]
-        api: [cadagent.cfd]
+        api: [cadagent.simulation.cfd]
         issues: [47]
         projects: [j501-enclosure]
       - slug: motion-and-dynamics
@@ -243,14 +249,14 @@ domains:
         scope: Rigid-body simulation of robots and mechanisms.
         maturity: tooling
         priority: [gyropup, demo]
-        api: [cadagent.robot]
+        api: [cadagent.simulation.robot]
         projects: [gyropup]
       - slug: topology-optimisation
         title: Topology optimisation
         scope: Keeping only the material that carries load.
         maturity: tooling
         priority: [demo]
-        api: [cadagent.topopt]
+        api: [cadagent.simulation.topopt]
         projects: [j501-enclosure]
       - slug: design-exploration
         title: Design exploration
@@ -258,14 +264,14 @@ domains:
         maturity: tooling
         pages: [docs/explore.md]
         cli: [catalogue, compare, optimise]
-        api: [cadagent.explore]
+        api: [cadagent.simulation.explore]
         issues: [107]
       - slug: results-and-visuals
         title: Results and visuals
         scope: Convergence charts, reports and renders of simulation results.
         maturity: tooling
         priority: [demo]
-        api: [cadagent.simviz, cadagent.simreport, cadagent.render]
+        api: [cadagent.simulation.simviz, cadagent.simulation.simreport]
         issues: [136]
       - slug: physical-tests
         title: Physical tests and coupons
@@ -296,7 +302,7 @@ domains:
         priority: [gyropup]
         pages: [docs/pcb.md]
         cli: [pcb-check]
-        api: [cadagent.pcb, cadagent.pcb_routing]
+        api: [cadagent.electrical.pcb, cadagent.electrical.pcb_routing]
         lessons: electronics
         projects: [thor-can-breakout, gyropup]
         topics:
@@ -335,7 +341,7 @@ domains:
         maturity: tooling
         pages: [docs/design-process-plan.md, docs/dossier.md, docs/gates.md, docs/review-packet.md, docs/volume-precision.md, research/design-workflows.md]
         cli: [build, check, report, all, dossier, gates, review-packet, review-section]
-        api: [cadagent.gates, cadagent.dossier, cadagent.packet]
+        api: [cadagent.review.gates, cadagent.review.dossier, cadagent.review.packet]
         skills: [design-process]
         issues: [40, 41, 97]
       - slug: review-and-evidence
@@ -343,17 +349,19 @@ domains:
         scope: Pitfalls, checks and the evidence a reviewer needs.
         maturity: tooling
         pages: [docs/common-issues.md]
-        api: [cadagent.evidence, cadagent.review]
+        api: [cadagent.review.evidence, cadagent.review]
         lessons: review
         issues: [97, 118]
       - slug: publishing
         title: Publishing
         scope: Review sites, viewers, releases and this site.
         maturity: tooling
-        pages: [docs/file-viewer.md, docs/web-diagrams.md, docs/web-parts.md]
+        pages: [docs/file-viewer.md, docs/style-guide.md, docs/web-diagrams.md, docs/web-parts.md, docs/animated-figures.md]
         cli: [package, release, serve, site, view, webkit]
-        api: [cadagent.site, cadagent.release, cadagent.view]
-        issues: [104, 141]
+        api: [cadagent.publish.site, cadagent.publish.site_review, cadagent.publish.report, cadagent.publish.htmlreport,
+              cadagent.publish.render, cadagent.publish.view, cadagent.publish.dotsvg, cadagent.publish.serve,
+              cadagent.publish.release, cadagent.publish.anim]
+        issues: [104, 141, 181]
       - slug: evaluation
         title: Evaluation
         scope: Standard jobs and graders that measure models, harnesses and our tooling.

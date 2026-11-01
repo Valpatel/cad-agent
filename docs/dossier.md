@@ -3,8 +3,9 @@
 The dossier records a design the way a design review needs it: **requirements**, the **sections** the design is
 broken into, a **spec card** for every part, the **interfaces** between parts and sections, the **decisions** with
 the alternatives rejected, and the **assembly sequence**. It is written beside the CAD, in YAML, and joined by id to
-the geometry the build script registers (`cadagent.dossier.registry`, [below](#declaring-geometry-in-the-build-script)).
-The gates and the review site check it; the plan behind it is [`design-process-plan.md`](design-process-plan.md) §3.
+the geometry the build script registers (`cadagent.review.dossier.registry`,
+[below](#declaring-geometry-in-the-build-script)). The gates and the review site check it; the plan behind it is
+[`design-process-plan.md`](design-process-plan.md) §3.
 
 What it does not do: a dossier that loads and lints proves the design is *declared*, not that it is right. The gates
 check the geometry against the declarations; a reviewer checks the declarations against the requirements. Nothing in
@@ -48,7 +49,7 @@ files or inline cards.
 YAML, not JSON: requirements are user quotes and decisions need comments.
 
 ```python
-from cadagent.dossier import load_dossier, load_project_dossier
+from cadagent.review.dossier import load_dossier, load_project_dossier
 d = load_dossier("dossier/project.yaml")             # raises DossierError on any error
 d = load_project_dossier(load_project("."))           # via cad-agent.yaml; None when it has no dossier: key
 d = load_dossier(path, strict=False)                  # errors in d.errors instead of raising (for a lint)
@@ -210,11 +211,11 @@ project root.
 ## Declaring geometry in the build script
 
 Only the build code knows which solid is the cavity, where a joint axis is and where each screw sits, so those
-facts are declared in code, next to the geometry (`cadagent.dossier.registry`). The YAML cards and the code are
+facts are declared in code, next to the geometry (`cadagent.review.dossier.registry`). The YAML cards and the code are
 joined by id.
 
 ```python
-from cadagent.dossier import Axis, part, cavity, joint, fastener, assembly, build
+from cadagent.review.dossier import Axis, part, cavity, joint, fastener, assembly, build
 
 @part("bench_base", section="S1", grounded=True)       # ground for the connectivity gate
 def bench_base(p): ...
@@ -258,7 +259,7 @@ fastener or cavity named like a part is refused, and fastener names (default `ke
 cavity belongs to a single-instance part (the containment gate must know which container it is).
 
 **Which registry.** The module-level `part`, `cavity`, `joint`, `fastener`, `assembly.step` and `build` write to the
-*current* registry: the innermost `with use_registry(reg):` block, else `cadagent.dossier.REGISTRY`.
+*current* registry: the innermost `with use_registry(reg):` block, else `cadagent.review.dossier.REGISTRY`.
 `build_module()` builds every script in a fresh registry of its own, so nothing leaks between two builds in one
 process (a test session, a watch loop, `cad-agent gates`); modules under the project root that the script imports are
 re-imported, so their declarations land in that build too. A tool or test can also use its own `Registry()` and its
@@ -302,7 +303,7 @@ as for decorators (a free part needs a reason; grounded and free together are re
 ```json
 {
  "schema": "cad-agent.dossier-geometry/1", "units": "mm",
- "hash": "cadagent.evidence.shape_content_hash: sha256 of the OCCT BREP text ...",
+ "hash": "cadagent.review.evidence.shape_content_hash: sha256 of the OCCT BREP text ...",
  "actor": "agent-session-12",              # who ran this build
  "parameters": {"file": "cad/parameters.json", "sha256": "..."},
  "out_dir": "exports", "shapes_dir": "exports/dossier-shapes",
@@ -328,9 +329,9 @@ as for decorators (a free part needs a reason; grounded and free together are re
 }
 ```
 
-- **Hashes** are content hashes from one shared function, `cadagent.evidence.shape_content_hash(shape) -> str`
-  (also exported as `cadagent.dossier.shape_content_hash` and `shape_sha256`): sha256 of the shape's BREP text, OCCT
-  format version 1, without triangulation or normals, with the 7-digit per-shape flag lines removed. The registry
+- **Hashes** are content hashes from one shared function, `cadagent.review.evidence.shape_content_hash(shape) -> str`
+  (also exported as `cadagent.review.dossier.shape_content_hash` and `shape_sha256`): sha256 of the shape's BREP text,
+  OCCT format version 1, without triangulation or normals, with the 7-digit per-shape flag lines removed. The registry
   and the gates use the same function, so a recorded hash is a valid gate cache key.
   - The same shape built the same way gives the same hash in any process and run (tested in a subprocess); a changed
     dimension or placement changes it (the location is part of the text, so even `place=(0, 0, 0)` changes it: the
@@ -356,10 +357,10 @@ as for decorators (a free part needs a reason; grounded and free together are re
 
 ### Hand-over to the gates
 
-The gates (`cadagent.gates`, plan §4) consume the registry through two calls and never import the build script:
+The gates (`cadagent.review.gates`, plan §4) consume the registry through two calls and never import the build script:
 
 ```python
-from cadagent.dossier import build_module, load_geometry
+from cadagent.review.dossier import build_module, load_geometry
 
 result = build_module("cad/build.py")                    # in the build process, or
 result = load_geometry("exports/dossier-geometry.json")  # in another process (cad-agent gates): reads the BREPs,
@@ -387,9 +388,9 @@ else `gates.motion_samples`); the assembly gate uses the steps. Pair caches key 
 
 What moves with a joint (settled, final): a joint names one `moving` part, and its body is the transitive closure
 from it over `fixed` joints and fastener declarations (the fastener, what it clamps and what it threads into),
-stopped at grounded parts and at any joint's `fixed` part (`cadagent.gates.relations.moving_bodies`, used by
+stopped at grounded parts and at any joint's `fixed` part (`cadagent.review.gates.relations.moving_bodies`, used by
 `Assembly.from_build`, the connectivity gate and the motion gate). In a chain, a child joint's `fixed` part is
-therefore its parent's moving part itself; see [`gates.md`](gates.md#motion-range-interference-cadagentgatesmotion).
+therefore its parent's moving part itself; see [`gates.md`](gates.md#motion-range-interference-cadagentreviewgatesmotion).
 
 ### Joining cards and geometry
 
@@ -423,7 +424,7 @@ step of `cad-agent gates`, [gates.md](gates.md#running-the-gates-cad-agent-gates
 It needs no CAD kernel: it reads files only.
 
 ```python
-from cadagent.dossier.lint import lint, lint_project, project_evidence, write_outputs, Evidence, RULES
+from cadagent.review.dossier.lint import lint, lint_project, project_evidence, write_outputs, Evidence, RULES
 
 res = lint_project(load_project("."))            # None without a dossier: key
 res = lint(load_dossier(path, strict=False), Evidence(geometry=..., gates={...}, checks={...}, reviews=[...]))
@@ -445,7 +446,7 @@ neither a known gate nor a written verdict) or the `id` of a `cad.checks` entry.
 
 ### Rules
 
-`cadagent.dossier.lint.RULES` is the list; every finding gives its file, line and code. Errors fail
+`cadagent.review.dossier.lint.RULES` is the list; every finding gives its file, line and code. Errors fail
 `cad-agent check`; warnings are reported.
 
 | Code | Severity | What must hold |
@@ -542,8 +543,8 @@ request changes. Records are read in time order
 match decides.
 
 **Stale verdicts.** A gate verdict counts only when it was computed from the current geometry record: its
-`inputs.geometry.digest` must equal the record's (`cadagent.gates.verdict.geometry_digest`). Otherwise, or when it
-has no `inputs`, the lint reports `verdict-stale` with the shapes that changed, the gate's checks read `stale`, and
+`inputs.geometry.digest` must equal the record's (`cadagent.review.gates.verdict.geometry_digest`). Otherwise, or when
+it has no `inputs`, the lint reports `verdict-stale` with the shapes that changed, the gate's checks read `stale`, and
 the parts stay `built` until `cad-agent gates` runs again. Rebuilding the same geometry (another actor, a
 declaration moved to another line) keeps verdicts current. For a project (`lint_project`, `cad-agent dossier`) the
 lint also compares the gate's declarations and options, as `cad-agent check` does ([gates.md](gates.md#verdicts)).
@@ -553,9 +554,9 @@ right (the gates check that) or that it meets its requirements (the reviewer che
 
 ## The reviewer pass
 
-A section is reviewed by an agent or person that did not build it (plan §5.3, task T11; `cadagent.dossier.review`).
-The author hands it over (skill [`design-process`](../skills/design-process/SKILL.md) §7) once the section is
-`gated` and its review packet is rendered ([review-packet.md](review-packet.md)). Then:
+A section is reviewed by an agent or person that did not build it (plan §5.3, task T11;
+`cadagent.review.dossier.review`). The author hands it over (skill [`design-process`](../skills/design-process/SKILL.md)
+§7) once the section is `gated` and its review packet is rendered ([review-packet.md](review-packet.md)). Then:
 
 ```bash
 cad-agent review-section S3                      # writes the bundle; exit 1 while something blocks a sign-off
@@ -567,7 +568,7 @@ cad-agent dossier                                # the section's status: reviewe
 ```
 
 ```python
-from cadagent.dossier.review import write_bundle, submit_record, validate_record, check_record
+from cadagent.review.dossier.review import write_bundle, submit_record, validate_record, check_record
 manifest = write_bundle(project, "S3", bundle_dir=None, since=None)    # -> bundle.json as a dict
 path, record, problems = submit_record(project, "S3", "my-review.json", reviewer=None, write=True)
 problems = validate_record(record)       # [Problem(code, message)]: the record on its own (what the lint runs)
@@ -679,8 +680,8 @@ work.
 
 ## On the review site
 
-`cad-agent site` builds review pages for a project with a `dossier:` or `gates:` key (`cadagent.site_review`), in
-`site/review/`, linked from the overview's "Design review" block and, when the site configures no `nav`, from three
+`cad-agent site` builds review pages for a project with a `dossier:` or `gates:` key (`cadagent.publish.site_review`),
+in `site/review/`, linked from the overview's "Design review" block and, when the site configures no `nav`, from three
 top-bar tabs (Review, Requirements, Gates). A project without either key sees no change.
 
 | Page | Shows |
@@ -688,7 +689,7 @@ top-bar tabs (Review, Requirements, Gates). A project without either key sees no
 | `index.html` | one row per section: status, requirements, part count, gate state (pass / fail / stale / unrun over its parts' gate checks), review state (unreviewed / findings open / reviewed / signed off / void), the reviewer record; the lint findings with their file and line |
 | `section-<id>.html` | the section's requirements (status, verifying checks), its interfaces and those of its parts, section decisions, and each part card: function, material, loads, fasteners, `contains`, decisions with the alternatives rejected and why, checks as pills linked to their evidence, the status ladder draft → built → gated → reviewed → signed_off, what keeps it from the next step, and a **stale** badge when the geometry changed since the last review (`invalidated`). Then every gate finding that names one of its parts (an instance, a fastener that clamps or threads into it, a cavity of it), with the witness, and the lint findings on it; then the review packet |
 | `requirements.html` | id, text and source quote, status, the sections it traces to, its own checks (and the card checks that only satisfy the trace), derived requirements, waivers and their rationale |
-| `gates.html` | one row per gate: state (pass, warn, fail, stale, missing, invalid, not applicable, skipped, from `cadagent.gates.run.gate_rows`), counts and links to the verdict's `.md`, `.json` and `.dot`; the connectivity graph as SVG; each gate's findings with witnesses, exclusions, what it did not check, assumptions and limits |
+| `gates.html` | one row per gate: state (pass, warn, fail, stale, missing, invalid, not applicable, skipped, from `cadagent.review.gates.run.gate_rows`), counts and links to the verdict's `.md`, `.json` and `.dot`; the connectivity graph as SVG; each gate's findings with witnesses, exclusions, what it did not check, assumptions and limits |
 
 **What it reads.** Statuses only from what the pipeline computed: `exports/dossier-status.json`, the verdicts in
 `exports/gates/` and the reviewer records the status file names. The YAML is loaded (`strict=False`) for the words
@@ -697,7 +698,7 @@ than the status file, every page says so ("run `cad-agent dossier`"); with no st
 sections from the YAML, marked "not computed". `cad-agent site --serve` rebuilds the pages when any of these files
 changes, and serves `.md`, `.dot` and `.yaml` files as plain text so the linked verdicts open in the browser.
 
-**The connectivity graph** is drawn from `exports/gates/connectivity.dot` by `cadagent.dotsvg`: Graphviz's `dot`
+**The connectivity graph** is drawn from `exports/gates/connectivity.dot` by `cadagent.publish.dotsvg`: Graphviz's `dot`
 when it is installed, else a built-in layered layout (each cluster laid out on its own, layers by distance from the
 grounded part, left to right). The page says which drew it, and writes `site/review/connectivity.svg` too. The
 built-in drawing takes its colours from the page's theme (light or dark); Graphviz's keeps its own black on clear.

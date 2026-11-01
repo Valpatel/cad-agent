@@ -1,4 +1,4 @@
-/** <cad-model>: a CAD assembly in 3D on any page, from a model packed by `cadagent.view.pack_view` (a `cad-agent view`
+/** <cad-model>: a CAD assembly in 3D on any page, from a model packed by `cadagent.publish.view.pack_view` (a `cad-agent view`
  * export, welded, quantised and gzip-compressed: a 58-part robot is about 300 KB).
  *
  *   <link rel="stylesheet" href="/kit/model.css">

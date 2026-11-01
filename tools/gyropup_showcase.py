@@ -8,11 +8,11 @@
 Gyropup (https://gyropup.com, MIT) is a wheel-legged robot designed with cad-agent. Use a clean checkout of its
 `origin/main` (a worktree or a clone), never a working tree someone is editing.
 
-- **The model** is `cad-agent view`'s export (cadagent.view.export_view: every part's STEP in assembly position) at a
+- **The model** is `cad-agent view`'s export (cadagent.publish.view.export_view: every part's STEP in assembly position) at a
   web tessellation, written to a temporary folder (the project's own exports/view is left alone), then packed by
-  cadagent.view.pack_view: welded, 16-bit positions, gzip. Needs cadquery: run it with the project's own Python.
-- **The pictures** are Gyropup's committed outputs of cad-agent's own tools (cadagent.fea stress maps,
-  cadagent.render renders), cropped to the part and saved as WebP. Which stress map to use is a manual check: its
+  cadagent.publish.view.pack_view: welded, 16-bit positions, gzip. Needs cadquery: run it with the project's own Python.
+- **The pictures** are Gyropup's committed outputs of cad-agent's own tools (cadagent.simulation.fea stress maps,
+  cadagent.publish.render renders), cropped to the part and saved as WebP. Which stress map to use is a manual check: its
   title's numbers were compared by eye with exports/leg/fea/summary.json, because a stale map can sit beside a fresh
   summary (at 77f6d00, leg-E1.png's title says safety factor 0.93; the summary says 2.85). The numbers recorded in
   SOURCE.json come from the summary, and the site build fails when the home page's caption does not quote them.
@@ -61,7 +61,7 @@ def git(checkout: Path, *args: str) -> str:
 
 def model(checkout: Path, revision: str, committed: str) -> dict:
     from cadagent.project import load_project
-    from cadagent.view import export_view, pack_view
+    from cadagent.publish.view import export_view, pack_view
 
     project = load_project(str(checkout))
     with tempfile.TemporaryDirectory() as tmp:
@@ -73,8 +73,8 @@ def model(checkout: Path, revision: str, committed: str) -> dict:
         packed = pack_view(Path(tmp) / "view.json", MODELS / "gyropup", title="Gyropup", colors=GYROPUP_COLOURS, view=VIEW, source={
             "project": "Valpatel/gyropup", "url": "https://gyropup.com", "repo": "https://github.com/Valpatel/gyropup",
             "license": "MIT", "revision": revision, "committed": committed,
-            "export": f"cadagent.view.export_view (cad-agent view), tolerance {TOLERANCE_MM} mm, angular {ANGULAR_RAD} rad",
-            "pack": "cadagent.view.pack_view", "regenerate": "python3 tools/gyropup_showcase.py --gyropup <checkout>",
+            "export": f"cadagent.publish.view.export_view (cad-agent view), tolerance {TOLERANCE_MM} mm, angular {ANGULAR_RAD} rad",
+            "pack": "cadagent.publish.view.pack_view", "regenerate": "python3 tools/gyropup_showcase.py --gyropup <checkout>",
             "recoloured": sorted(GYROPUP_COLOURS),
         })
     print(f"web/models/gyropup: {len(packed['parts'])} parts, {packed['triangles']} triangles, {packed['bytes']} bytes "

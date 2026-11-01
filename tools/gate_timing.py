@@ -33,7 +33,7 @@ ROW_KINDS = ("touching", "overlapping", "apart", "contains", "touching")
 def synthetic_assembly(parts: int = 100):
     """``(Assembly, expected)``: the synthetic assembly and ``{(a, b): state}`` for in-row neighbours."""
     import cadquery as cq
-    from cadagent.gates import Assembly
+    from cadagent.review.gates import Assembly
 
     asm, expected = Assembly(), {}
     for i in range(parts):
@@ -87,14 +87,14 @@ def main(argv=None) -> int:
     ap.add_argument("--json", action="store_true", help="print the stats as JSON only")
     ap.add_argument("--motion", type=int, metavar="SAMPLES", help="time the motion gate, SAMPLES per joint")
     args = ap.parse_args(argv)
-    from cadagent.gates import PairCache, relation_table
+    from cadagent.review.gates import PairCache, relation_table
 
     t0 = time.perf_counter()
     asm, _ = synthetic_assembly(args.parts)
     build_s = time.perf_counter() - t0
     t1 = time.perf_counter()
     if args.motion:
-        from cadagent.gates.motion import motion_gate
+        from cadagent.review.gates.motion import motion_gate
         v = motion_gate(asm, motion_joints(args.motion), cache=PairCache(args.cache) if args.cache else None)
         stats = dict(v["stats"], parts=len(asm), build_s=round(build_s, 3),
                      motion_total_s=round(time.perf_counter() - t1, 3),

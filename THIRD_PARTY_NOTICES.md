@@ -47,8 +47,8 @@ The simulation modules use these at run time. None of their code is copied into 
 
 | Project | Licence | How cad-agent uses it |
 |---|---|---|
-| OpenFOAM v2512 (OpenCFD) | GPL-3.0 | External program (`cadagent.cfd` writes a case and runs it natively or in the `opencfd/openfoam-default` Docker image) |
-| Bambu Studio | AGPL-3.0 | External program (`cadagent.slicer` runs its command line; profiles are read, flattened and passed back as files) |
+| OpenFOAM v2512 (OpenCFD) | GPL-3.0 | External program (`cadagent.simulation.cfd` writes a case and runs it natively or in the `opencfd/openfoam-default` Docker image) |
+| Bambu Studio | AGPL-3.0 | External program (`cadagent.manufacturing.slicer` runs its command line; profiles are read, flattened and passed back as files) |
 | gmsh | GPL-2.0-or-later | Imported by the optional `fea` extra. Our source stays MIT; distributing a bundle that includes gmsh falls under the GPL |
 | scikit-fem | BSD-3-Clause | Imported (`fea`) |
 | pyMOTO | MIT | Imported (`sim`, topology optimisation) |

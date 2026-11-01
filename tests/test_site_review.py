@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pytest
 
-from cadagent import dotsvg, site, site_review
+from cadagent.publish import dotsvg, site, site_review
 from cadagent.cli import main
 from cadagent.links import missing_links
 

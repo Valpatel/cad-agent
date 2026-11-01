@@ -143,7 +143,7 @@ Recommendation: **one taxonomy, kind folders that share its slugs, and generated
 flowchart TD
     T["docs/areas.yaml<br/>domain → area → topic"] --> H["site: a hub page<br/>per area, generated"]
     T --> K["kind folders use<br/>the same slugs"]
-    K --> C["src/cadagent<br/>by job (#121)"]
+    K --> C["src/cadagent<br/>by domain (#121)"]
     K --> L["lessons by area;<br/>docs, research<br/>by domain"]
     K --> E["evals/jobs<br/>by area"]
     class T here
@@ -155,16 +155,20 @@ flowchart TD
 ```
 
 - **The kind folders keep their jobs:**
-  - `src/cadagent` is grouped by job (geometry, sim, make, publish; #121), because one tool serves many areas. FEA
-    checks a leg frame and a lid alike.
+  - `src/cadagent` is grouped by domain, as the tree is (#121): `cadagent.mechanical`, `cadagent.simulation`,
+    `cadagent.review` and so on, with shared helpers such as `cadagent.geometry` at the top. One tool still serves
+    many areas (FEA checks a leg frame and a lid alike), so each module has one home, an `api:` line in its own
+    domain, and a node that relies on another domain's module names it under `uses:` (thermal's airflow area uses
+    `cadagent.simulation.cfd`). `tests/test_package_areas.py` keeps the code and the tree in step.
   - `skills/` and `agents/` stay flat, because harnesses install them by name.
   - `lessons/` is grouped into six folders (#133). They are broader than single areas, so for now the `lessons:`
     field maps each folder to the node that owns it. Renaming them to taxonomy slugs waits for #145's batches, once
     the taxonomy has settled.
   - `docs/` and `research/` gain domain folders once an area has a few pages (#145).
   - `evals/jobs/` is laid out by domain and area from the start.
-- **The taxonomy ties them together.** Each node lists its pages, commands, modules, skills, lessons and issues, and
-  the site generates one hub per area. Browsing by topic costs no file moves.
+- **The taxonomy ties them together.** Each node lists its pages, commands, modules (its own under `api:`, other
+  domains' under `uses:`), skills, lessons and issues, and the site generates one hub per area. Browsing by topic
+  costs no file moves.
 
 **Why not topic-first folders** (`areas/<domain>/<area>/` holding the code, lessons, research and jobs together)?
 

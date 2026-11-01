@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from cadagent.view import _read_stl, _write_stl, export_view
+from cadagent.publish.view import _read_stl, _write_stl, export_view
 
 
 def tetra(path, ascii=False):
@@ -120,7 +120,7 @@ def test_pack_view_writes_the_committed_fixture(tmp_path):
 
 
 def test_pack_view_round_trip_within_one_quantisation_step(tmp_path):
-    from cadagent.view import _weld, unpack_model
+    from cadagent.publish.view import _weld, unpack_model
     fx = _fixture()
     model = fx.pack(tmp_path / "m")
     parts = unpack_model(model, (tmp_path / "m.bin").read_bytes())
@@ -138,7 +138,7 @@ def test_pack_view_round_trip_within_one_quantisation_step(tmp_path):
 
 
 def test_unpack_model_reads_the_decoded_fixture():
-    from cadagent.view import unpack_model
+    from cadagent.publish.view import unpack_model
     fx = _fixture()
     model = json.loads((FIXTURE / "two-parts.json").read_text())
     assert fx.decoded(model, (FIXTURE / "two-parts.bin").read_bytes()) == json.loads((FIXTURE / "two-parts.decoded.json").read_text()), REGEN_MODEL
@@ -148,7 +148,7 @@ def test_unpack_model_reads_the_decoded_fixture():
 def test_pack_view_index_width_at_the_16_bit_edge(tmp_path, n, bits):
     """A strip of n triangles has n + 2 vertices; one more triangle goes back to vertex 0, whose code is the vertex
     count: 16 bits hold it up to 65,535 vertices (#182 review: 65,536 wrapped to 0, read as a new vertex)."""
-    from cadagent.view import pack_view, unpack_model
+    from cadagent.publish.view import pack_view, unpack_model
     xs = np.arange(n + 2, dtype=np.float32)
     pts = np.stack([xs, (np.arange(n + 2) % 2).astype(np.float32), np.zeros(n + 2, np.float32)], axis=1)
     tri = np.concatenate([np.stack([pts[:-2], pts[1:-1], pts[2:]], axis=1), [[pts[0], pts[1], pts[-1] + [0, 0, 1]]]])
@@ -162,7 +162,7 @@ def test_pack_view_index_width_at_the_16_bit_edge(tmp_path, n, bits):
 
 
 def test_pack_view_uses_32_bit_indices_past_65536_vertices(tmp_path):
-    from cadagent.view import pack_view, unpack_model
+    from cadagent.publish.view import pack_view, unpack_model
     n = 70000                                                # a strip of triangles: n + 2 distinct vertices
     xs = np.arange(n + 2, dtype=np.float32)
     pts = np.stack([xs, (np.arange(n + 2) % 2).astype(np.float32), np.zeros(n + 2, np.float32)], axis=1)

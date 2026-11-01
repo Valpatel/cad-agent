@@ -93,11 +93,11 @@ my-cad-project/
    a top-level boolean `"pass"`. A check that cannot compute its answer writes
    `"pass": false` with the reason; it never omits the file or the key.
 4. **Renders** go to `preview/`; `preview/part-<name>.png` is picked up as the
-   evidence image for that part. `cadagent.render.Renderer` renders cadquery
+   evidence image for that part. `cadagent.publish.render.Renderer` renders cadquery
    shapes or STL files offscreen with a caption bar, subtitle, note bar and
    leader labels; set `CAD_AGENT_RENDER_ONLY=a.png,b.png` to re-render a subset.
 5. **A gallery page** (`preview/index.html`) can embed the per-part download
-   table from `cadagent.report.downloads_snippet(project, page_dir=...)`:
+   table from `cadagent.publish.report.downloads_snippet(project, page_dir=...)`:
    thumbnail, STL / 3MF / STEP links and a slicer link.
 
 ### Honest evidence
@@ -243,37 +243,68 @@ skip the work silently.
 
 ## Python API
 
+### Package layout (v0.5.0)
+
+Modules are grouped by domain, as the [topic tree](areas.yaml) groups the work: `cadagent.<domain>.<module>`, with the
+practice domain's review and publishing areas as `cadagent.review` and `cadagent.publish`, and the shared core at the
+top ([`src/cadagent/README.md`](../src/cadagent/README.md)). `tests/test_package_areas.py` keeps each package and its
+domain's `api:` lists in step. The old flat paths (`cadagent.fea`, `from cadagent import report`, ...) still import the
+same module, with a `DeprecationWarning`, until v0.7.0; so do the old package paths and everything under them
+(`cadagent.gates.motion` is `cadagent.review.gates.motion`), and `python -m` through an old path runs the module at its
+new path. Type checkers and IDEs do not see the old paths. Move imports to the new paths:
+
+| New package (domain in `docs/areas.yaml`) | Modules and packages (old path `cadagent.<name>`) |
+|---|---|
+| `cadagent.mechanical` (mechanical) | `holes`, `fasteners`, `mcmaster`, `connectors`, `markings`, `compliant/`, `motion_trace` |
+| `cadagent.manufacturing` (manufacturing) | `slicer`, `mesh3mf` |
+| `cadagent.thermal` (thermal) | `heatsink` |
+| `cadagent.simulation` (simulation) | `fea`, `cfd`, `topopt`, `explore/`, `robot`, `simviz`, `simreport` |
+| `cadagent.electrical` (electrical) | `pcb`, `pcb_routing` |
+| `cadagent.review` (practice: design process, review and evidence) | `gates/`, `dossier/`, `packet`, `evidence` |
+| `cadagent.publish` (practice: publishing) | `report`, `htmlreport`, `site`, `site_review`, `view`, `serve`, `release`, `render`, `dotsvg` |
+| shared core, unchanged | `project`, `cli`, `geometry`, `links`, `package`, `agentkit` |
+
+Two published modules became packages and keep their paths: `cadagent.geometry` is still the shared CAD helpers
+(`export_step` and the rest), and `cadagent.review` is still the review workbench (`review_html`), now also the review
+domain's package.
+
+Patching a name through an old path still reaches the code (`monkeypatch.setattr("cadagent.slicer.shutil.which",
+...)`), because both paths are the same module. Replacing a *whole module* does not: cad-agent's own code imports the
+new paths, so `sys.modules["cadagent.report"] = fake` or `cadagent.report = fake` is not seen. Replace the module at
+its new path instead (`monkeypatch.setitem(sys.modules, "cadagent.publish.report", fake)`).
+
 ```python
 from cadagent.project import load_project    # CadProject, Step, Check, CadConfigError
 from cadagent.geometry import (solid_report, export_print_stl, export_step, step_timestamp, pairwise_intersections,
                                min_gap, downward_area, within_bed)
-from cadagent.mesh3mf import write_3mf, read_3mf, verify_3mf, export_parts_3mf, is_edge_manifold
-from cadagent.render import Renderer
-from cadagent.report import collect, write_report, downloads_snippet, bambu_studio_url
-from cadagent.htmlreport import render_page, canonical_status, SCHEMA_VERSION
+from cadagent.manufacturing.mesh3mf import write_3mf, read_3mf, verify_3mf, export_parts_3mf, is_edge_manifold
+from cadagent.publish.render import Renderer
+from cadagent.publish.report import collect, write_report, downloads_snippet, bambu_studio_url
+from cadagent.publish.htmlreport import render_page, canonical_status, SCHEMA_VERSION
 from cadagent.links import missing_links
-from cadagent.connectors import (PLUG_FAMILIES, plug_segments, window, window_margins, PanelFrame,
-                                 envelope, check_ports, draw_ports)
+from cadagent.mechanical.connectors import (PLUG_FAMILIES, plug_segments, window, window_margins, PanelFrame, envelope,
+                                            check_ports, draw_ports)
 from cadagent.package import build_package
-from cadagent.serve import make_server
-from cadagent.fea import Study, MATERIALS, Material, plane_at, cylinder_at, in_box, near, any_of
-from cadagent.robot import (Body, combine, box_body, cylinder_body, solid_mass_properties, printed_part_body,
-                            Link, Joint, Visual, Collision, Motor, write_urdf, write_mjcf, check_urdf)
-from cadagent.explore import (explore_config, load_configured, check_catalogue, load_design, resolve, bom,
-                              load_evaluator, evaluate_design, compare_designs, comparison, write_comparison, swaps)
-from cadagent.explore.optimise import run_search
-from cadagent.gates import (Assembly, Tolerances, relation_table, relate_pair, relate, solid_interference,
-                            PairCache, shape_content_hash, Check, verdict, write_verdict)
-from cadagent.gates.wall import check_wall, wall_gate, mesh_thickness, brep_thickness, brep_thickness_near
+from cadagent.publish.serve import make_server
+from cadagent.simulation.fea import Study, MATERIALS, Material, plane_at, cylinder_at, in_box, near, any_of
+from cadagent.simulation.robot import (Body, combine, box_body, cylinder_body, solid_mass_properties, printed_part_body,
+                                       Link, Joint, Visual, Collision, Motor, write_urdf, write_mjcf, check_urdf)
+from cadagent.simulation.explore import (explore_config, load_configured, check_catalogue, load_design, resolve, bom,
+                                         load_evaluator, evaluate_design, compare_designs, comparison, write_comparison,
+                                         swaps)
+from cadagent.simulation.explore.optimise import run_search
+from cadagent.review.gates import (Assembly, Tolerances, relation_table, relate_pair, relate, solid_interference,
+                                   PairCache, shape_content_hash, Check, verdict, write_verdict)
+from cadagent.review.gates.wall import check_wall, wall_gate, mesh_thickness, brep_thickness, brep_thickness_near
 ```
 
-### Integrity gates (`cadagent.gates`)
+### Integrity gates (`cadagent.review.gates`)
 
 Assembly-level checks: the pairwise relation table (apart, touching, overlapping, contains, with witnesses and a
 content-hash pair cache), the verdict file every gate writes, and the minimum-wall gate. Reference and limits:
 [gates.md](gates.md).
 
-### Explore and compare designs (`cadagent.explore`)
+### Explore and compare designs (`cadagent.simulation.explore`)
 
 For any product built from bought and made parts. A catalogue of parts (specs, prices with the date checked, sources,
 confidence flags), designs that pick one part per slot plus parameters, and the project's own evaluator (a Python
@@ -283,7 +314,7 @@ design cards for the site; `cad-agent optimise` searches parts and parameters (o
 extra). The physics stays in the project. The full guide is [explore.md](explore.md); a worked example is
 [`examples/explore-two-wheel`](../examples/explore-two-wheel/).
 
-### Mating connectors (`cadagent.connectors`): standard practice for every port
+### Mating connectors (`cadagent.mechanical.connectors`): standard practice for every port
 
 Every external port's window is derived from its **mated plug**, never from the receptacle's bounding box. A bounding
 box includes pins below the board, which pushes the window low, and it misses plugs that are larger than the
@@ -331,7 +362,7 @@ Configuration errors stop the export before anything is written: two parts with 
 glob that matches a part from the parts file, which used to overwrite its mesh silently), an `offset` that is not three
 numbers, and a `categories` entry that is not a list, names a part that does not exist or lists a part twice.
 
-### Stiffness and strength (`cadagent.fea`)
+### Stiffness and strength (`cadagent.simulation.fea`)
 
 `pip install -e ".[cad,fea]"`. `Study(shape_or_step, material, mesh_mm)` meshes any part with gmsh (P2 tetrahedra),
 `fix()`/`force()`/`torque()` pick faces with selectors (`plane_at`, `cylinder_at`, `in_box`, `near`, `any_of`). A `torque()` is a pure couple about the loaded faces' own centroid (no net force, exactly the torque along the axis); its `point` does not move the axis, so a force at a distance needs its own `force()`. Then
@@ -394,7 +425,7 @@ whose peak is past the strength. It counts whole elements, so it is an upper bou
 
 Showing how it fails, for the report:
 
-- `render(png)`: the deformed part coloured by stress.
+- `render(png, scale=None, vmax=None)`: the deformed part coloured by stress. `scale` exaggerates the deformation; `vmax` (MPa) fixes the colour scale, so variants under the same load compare by eye.
 - `animate(mp4)`: the load ramped from zero through the design load to first failure (x safety factor) and past it;
   regions past the strength turn black, and every frame gives the overstressed volume share (an upper bound).
 - `export_viewer(json)`: data for the interactive viewer in the web kit (`fea-viewer.js`, `fea.html`). The boundary
@@ -427,7 +458,7 @@ From your own page, call `mountFeaViewer(element, url, { title, back, panel })`.
 element and returns `setLoad`, `setField`, `setExaggeration`, `setClip`, `flyTo`, `play`, `fit` and `dispose` (call it
 before mounting another viewer on the same page).
 
-### Robot export (`cadagent.robot`, optional)
+### Robot export (`cadagent.simulation.robot`, optional)
 
 Turns CAD parts into a simulator model with real mass properties:
 
@@ -453,17 +484,17 @@ Docker (OpenFOAM runs in the official `opencfd/openfoam-default` image) and Bamb
 1. **Slice it** (`cad-agent slice`): grams and print time per part, with the profile named. This is the number a
    material-reduction claim is judged on, never the CAD volume. The report shows `slicer_run: true` only while the
    sliced 3MF files are unchanged (sha256).
-2. **Load it** (`cadagent.fea`): the real load cases (handling, stacking, mounting shock) with the printed material's
-   layer-direction strength; report the safety factor and deflection, and the overload animation.
-3. **Cool it** (`cadagent.cfd`): a conjugate-heat-transfer case of the enclosure in room air, from the same CAD.
-   Report the hottest part against its limit, the fan's operating point, the air entering the fan (recirculation),
+2. **Load it** (`cadagent.simulation.fea`): the real load cases (handling, stacking, mounting shock) with the printed
+   material's layer-direction strength; report the safety factor and deflection, and the overload animation.
+3. **Cool it** (`cadagent.simulation.cfd`): a conjugate-heat-transfer case of the enclosure in room air, from the same
+   CAD. Report the hottest part against its limit, the fan's operating point, the air entering the fan (recirculation),
    and the wall temperatures against the plastic's heat-deflection temperature.
-4. **Optimise with evidence**: topology optimisation (`cadagent.topopt`) shows where material carries load; the
-   design change is made in the parametric CAD and re-checked by 1-3. Compare revisions side by side.
+4. **Optimise with evidence**: topology optimisation (`cadagent.simulation.topopt`) shows where material carries load;
+   the design change is made in the parametric CAD and re-checked by 1-3. Compare revisions side by side.
 5. **State the limits** in every result (each module writes them): steady RANS, no radiation, compact models,
    linear elastic, isotropic. Simulation does not prove fit, strength or temperature; a test does.
 
-### Airflow and heat (`cadagent.cfd`)
+### Airflow and heat (`cadagent.simulation.cfd`)
 `ThermalCase(name, domain, cell_mm, ambient_c)` takes CAD (CadQuery shapes, trimesh meshes or STL), in mm:
 - `wall(name, shape, level)`: no-slip adiabatic obstacles (enclosure, boards);
 - `solid(name, shape, material, power_w, level)`: a conducting region, optionally a heat source (`SOLIDS` table);
@@ -495,20 +526,20 @@ Two choices matter for honest numbers, and both are covered by tests:
 - **Fan and fin sources are zone totals** (`volumeMode absolute`), so the fan's pressure rise and the fins'
   conductance do not depend on how many cells the zones catch.
 
-### Heatsinks (`cadagent.heatsink`)
+### Heatsinks (`cadagent.thermal.heatsink`)
 `PlateFin(...)` is the analytic plate-fin model (developing laminar channel flow, fin efficiency, spreading resistance,
 entrance and exit losses; sources cited in the module): `resistance(q)`, `pressure_drop(q)`, `operating_point(hs,
 FanCurve)`, and `porous_coefficients()` for the CFD fin block. It runs in microseconds, so it is the tool for heatsink
 studies (fin pitch, thickness, height against a fan curve), with CFD to confirm the chosen design.
 
-### Topology optimisation (`cadagent.topopt`)
+### Topology optimisation (`cadagent.simulation.topopt`)
 `TopOpt(lo, hi, voxel_mm, E_mpa)` with `design()`, `keep(shape)`, `void(shape)`, `fix(lo, hi)`, `load(lo, hi, N)`,
 then `run(volfrac, filter_mm, overhang='+z', maxit)`: minimum compliance with SIMP, a density filter (minimum member
 about twice `filter_mm`) and Langelaar's overhang filter for support-free printing, solved with MMA. `render()`,
 `animate()` (density evolution) and `export_stl()` show the result. It is a design guide: turn it into ribs, pockets
 or vents in the CAD and check that with FEA.
 
-### Pictures and animations (`cadagent.simviz`)
+### Pictures and animations (`cadagent.simulation.simviz`)
 `CFDResult(case)` loads a finished case in mm and °C. `section()`, `flow()` (streamlines), `walls()` (wall temperature
 with the region past a limit in the critical colour, named in the legend), `animate_flow()` (dashes moving at the
 air's speed while the camera turns), `animate_sweep()` (a section sweeping through) and `convergence_chart()` (the
@@ -517,7 +548,7 @@ whole run: the air's residuals, then one panel per monitored quantity with its u
 regions, and a panel with no data says why). Colour follows the job: one-hue ramps for temperature (orange) and speed
 (blue), never a rainbow.
 
-### Real grams (`cadagent.slicer`, `cad-agent slice`)
+### Real grams (`cadagent.manufacturing.slicer`, `cad-agent slice`)
 Slices each part's 3MF with Bambu Studio's command line (an external AGPL program, run as a subprocess). The system
 profiles resolve `inherits`, then ordered `include` templates, then explicit child settings (unresolved profiles
 can report 0 g or retain generic startup G-code). Missing, cyclic, duplicate, malformed or escaping profile

@@ -6,7 +6,7 @@ import math
 import pytest
 
 from cadagent.cli import main
-from cadagent.motion_trace import required_poses, validate_motion_trace
+from cadagent.mechanical.motion_trace import required_poses, validate_motion_trace
 
 
 def contract():

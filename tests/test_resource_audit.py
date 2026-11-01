@@ -185,7 +185,7 @@ def test_report_is_deterministic_and_markdown_is_one_page(tmp_path):
     a, b = run(root), run(root)
     assert json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
     md = ra.to_markdown(a)
-    assert md.count("\n# ") + md.startswith("# ") == 1 and "**Limits.**" in md and "pie showData" in md
+    assert md.count("\n# ") + md.startswith("# ") == 1 and "<strong>Limits.</strong>" in md and "pie showData" in md
     assert "`www.dhondt.de`" in md and "`url:http://www.dhondt.de/`" in md      # flagged links stay unlinked on the site
     assert "/home/" not in md and str(tmp_path) not in json.dumps(a)
 
@@ -723,10 +723,20 @@ def test_figure_is_deterministic_and_says_what_it_leaves_out(tmp_path):
 
 
 
-def test_committed_figure_matches_committed_report():
-    """docs/img/supply-chain/findings.svg is drawn from research/security-report.json; it never disagrees with it."""
-    assert ra.main(["figure", "--report", str(ROOT / "research/security-report.json"),
-                    "--svg", str(ROOT / "docs/img/supply-chain/findings.svg"), "--check"]) == 0
+def test_committed_page_and_figure_match_committed_report():
+    """research/security-report.md and docs/img/supply-chain/findings.svg are rendered from research/security-report.json,
+    so neither can disagree with it."""
+    assert ra.main(["render", "--check"]) == 0
+
+
+def test_the_page_folds_all_but_critical_and_high(tmp_path):
+    r = run(checkout(tmp_path))
+    r["findings"] += [dict(severity=s, check=c, subject="pypi:x", title=c, evidence="", action="", fp=str(i) * 16)
+                      for i, (s, c) in enumerate([("high", "advisory"), ("medium", "link-dead"), ("low", "repo-stale")])]
+    md = ra.to_markdown(r, figure="f.svg")
+    high, medium = md.index("### High (1)"), md.index("### Medium (1)")
+    assert "<details>" not in md[high:medium] and "<details><summary>1 medium: 1 link-dead</summary>" in md
+    assert md.index("<details><summary><strong>Limits.") < md.index("## Findings") and md.count("<details>") == md.count("</details>")
 
 
 def test_committed_report_is_clean_and_dated():

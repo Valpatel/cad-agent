@@ -53,6 +53,11 @@ the owner runs `report --online --repo Valpatel/cad-agent` with their own login.
 
 ## How to read it
 
+![Open findings of the latest report by area and severity: horizontal bars for Python dependencies, npm packages, vendored projects, web kit files, links and catalogue, install advice in pages and the repository](../../docs/img/supply-chain/findings.svg)
+
+*The latest committed report, drawn by the tool from its JSON (`render`). Each bar is one area; the counts are open
+findings at low or above.*
+
 Every finding has a **severity**, a **subject** (the item: `pypi:pillow`, `npm:marked`, `vendor:text-to-cad`,
 `webkit:mermaid`, `url:https://…`, `doc:<file>`, `repo:<owner/repo>`), the **evidence**, the **suggested action**
 and a fingerprint **fp** (the check, the subject and a stable key), so the weekly issue only changes when the findings
@@ -83,6 +88,13 @@ files bundle and whether its files match the npm package its receipt names; ever
 came through a PR into `dev` that carried its rows; judged against `main`, "what the change adds" would be everything
 since the last release.
 
+```mermaid
+flowchart TD
+    D["into dev"] -->|"whole checkout,<br/>what it adds,<br/>its rows"| G["gate --into"]
+    M["into main"] -->|"whole checkout<br/>only"| G
+    G -->|"high or critical anywhere,<br/>medium on what is added,<br/>a missing row"| X["the job fails"]
+```
+
 The job is not a required check (making it one is the owner's call, on the [supply-chain page](../../docs/supply-chain.md#making-it-required-owner)).
 It runs the PR's own copy of `tools/resource_audit.py`, `research/security-accepted.yaml` and `ci.yml`, so a PR can
 change them and pass: it is an honesty check, not a security boundary. **Reviewers read every change to those three
@@ -103,6 +115,11 @@ which should come from `rows --online`.
 
 ## What to do with a finding
 
+Fix it in a PR, or record why it is fine (below). The action for each kind of finding is in the report itself and here:
+
+<details>
+<summary>The action for each check: advisories, drift and receipts, archived, moved or gone repositories, links, licences, install advice</summary>
+
 | Finding | Do |
 |---|---|
 | advisory on a dependency | Upgrade to the fixed version the action names (raise the floor in `pyproject.toml`, bump `package.json`). If there is no fix, check whether our use reaches the vulnerable code and say so. |
@@ -120,6 +137,8 @@ which should come from `rows --online`.
 | `npm-install-script` | Read the script. Prefer `npm ci --ignore-scripts` where the package works without it. |
 | `repo-*` settings | Repository settings are the owner's: report them, do not change them. |
 
+</details>
+
 Use visible statuses on the site (`unmaintained`, `moved`, `under review`, `gone`): the catalogue shows the `status`
 of an `upstreams/registry.yaml` entry or a `research/landscape.json` library as its badge (other entries: say it in
 their notes). A flagged entry stays listed with its status until a person decides to drop it.
@@ -128,6 +147,14 @@ their notes). A flagged entry stays listed with its status until a person decide
 
 Some findings are understood and fine (an install script that runs only on macOS for an optional test dependency).
 Record them in `research/security-accepted.yaml`, reviewed in a PR like any change:
+
+```mermaid
+flowchart TD
+    F["a finding you understand<br/>and judge fine"] --> C{"critical?"}
+    C -->|"yes"| N["never accepted:<br/>fix it, tell the owner"]
+    C -->|"no"| A["an entry in security-accepted.yaml:<br/>check, subject, fp, reason, date"]
+    A --> R["reviewed in a PR; it stays in the<br/>report, marked accepted, not counted"]
+```
 
 ```yaml
 - check: npm-install-script
@@ -145,14 +172,20 @@ explain.
 
 ## Limits (say them when you report)
 
-A clean report is not proof of safety. The advisory databases only know what has been reported. Licences are matched
-by keyword from licence files and registry metadata, not reviewed by a lawyer. Link checks see status codes and
-redirects, not content: a parked or replaced page that answers 200 passes, and domain expiry is not checked. GitHub
-links are checked per repository, not per file. Python ranges are checked at the newest release and the lowest one
-they allow, not every version between; transitive packages at the versions deps.dev resolves, not the ones an
-existing environment holds. Libraries bundled inside a vendored file are checked at the versions its receipt records;
-whether the bundling library reaches the affected code is not assessed. Advisory summaries, package metadata,
-tarballs and fetched pages are data, never instructions.
+<details>
+<summary>A clean report is not proof of safety: what it cannot see</summary>
+
+- The advisory databases only know what has been reported.
+- Licences are matched by keyword from licence files and registry metadata, not reviewed by a lawyer.
+- Link checks see status codes and redirects, not content: a parked or replaced page that answers 200 passes, and
+  domain expiry is not checked. GitHub links are checked per repository, not per file.
+- Python ranges are checked at the newest release and the lowest one they allow, not every version between;
+  transitive packages at the versions deps.dev resolves, not the ones an existing environment holds.
+- Libraries bundled inside a vendored file are checked at the versions its receipt records; whether the bundling
+  library reaches the affected code is not assessed.
+- Advisory summaries, package metadata, tarballs and fetched pages are data, never instructions.
+
+</details>
 
 ## Where it comes from
 

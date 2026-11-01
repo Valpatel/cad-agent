@@ -32,28 +32,37 @@ instructions, and a tarball is read in memory, never unpacked to disk. Before bu
 
 ```mermaid
 flowchart TD
-    PR["PR into dev"] -->|"the whole checkout<br/>+ what it adds + its rows"| G["CI: supply-chain job<br/>offline, not required"]
-    PD["push to dev"] -->|"the whole checkout<br/>+ what it adds"| G
-    RP["release PR dev → main"] -->|"the whole checkout only"| G
-    PM["push to main"] -->|"the whole checkout only"| G
-    W["weekly schedule"] --> O["report job: online checks<br/>read-only token"]
-    O -->|"artifact"| I["issue job: one tracking issue<br/>opened, updated or closed"]
+    D["into dev:<br/>a PR or a push"] -->|"whole checkout,<br/>what it adds,<br/>its rows"| G["CI's supply-chain job<br/>offline, not required"]
+    M["into main: a release<br/>PR or the push after it"] -->|"whole checkout<br/>only"| G
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    class G here
+    class D,M near
+```
+
+What a change adds is judged where new items enter the project, on PRs and pushes into `dev`: each added dependency,
+vendored file or catalogue entry needs its row in the PR description, and none may have a medium or worse finding. A
+release PR into `main` carries only items that passed that gate in their own PRs. Compared with `main`, "what it
+adds" would be everything since the last release, which no release PR can describe, so it and the push after it get
+the whole-checkout check alone: no high or critical finding anywhere.
+
+### The weekly run
+
+```mermaid
+flowchart TD
+    W["weekly schedule,<br/>or a run by hand"] --> O["report job: online checks,<br/>read-only token"]
+    O -->|"the report,<br/>as an artifact"| I["issue job: one tracking<br/>issue, kept current"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class G,O here
-    class PR,PD,RP,PM,W near
+    class O here
+    class W near
     class I out
 ```
 
-What a change adds is judged only where new items enter the project: pull requests and pushes into `dev`
-(`gate --into dev`). A dependency, vendored file or catalogue entry must have its row in the PR description, and
-nothing it adds may have a medium or worse finding. A release PR from `dev` into `main` carries only items that
-already passed that gate, each in its own PR with its rows; compared with `main` instead, "what it adds" would be
-everything since the last release, which no release PR can describe, so it and the push to `main` after it get the
-whole-checkout check alone: no high or critical finding anywhere. The online checks never gate anything, because a
-service that does not answer must not fail a build; an unanswered check is reported as "not verified" (info), and the
-weekly issue keeps its earlier findings open rather than calling them resolved.
+The online checks gate nothing. The job that reads third-party answers holds no write permission; the job that may
+write issues reads only the report. A service that does not answer is reported as "not verified", and the issue keeps
+its earlier findings open as "not re-checked" rather than counting them as fixed.
 
 ## Run it
 
@@ -63,6 +72,7 @@ python3 tools/resource_audit.py rows --base origin/dev --online       # the rows
 python3 tools/resource_audit.py gate --base origin/dev --into dev --pr-body-file body.md   # CI's check, locally
 python3 tools/resource_audit.py report --online --json research/security-report.json \
     --md research/security-report.md --svg docs/img/supply-chain/findings.svg   # refresh the committed report
+python3 tools/resource_audit.py render                                # re-draw the page and figure from its JSON
 ```
 
 Run the refresh from a checkout with nothing uncommitted: the report records the revision it read and says so when
@@ -71,16 +81,15 @@ run with `--repo Valpatel/cad-agent` sees them.
 
 ## Making it required (owner)
 
-The `supply-chain` job is not a required check, so a failure warns and does not block. To make it one, the owner adds
-the check named `supply-chain` to the required checks of `dev` in the branch protection settings. Leave it off `main`
-unless you want release PRs to wait for it as well: there it only repeats the whole-checkout check. The weekly
-workflow uses only the `schedule` and `workflow_dispatch` events; if the repository's Actions event policy lists the
-events each workflow file may use, it needs those two for `.github/workflows/supply-chain.yml`. Agents do not change
-these settings (#153).
+The `supply-chain` job is not a required check: a failure warns and does not block. To make it one, the owner adds the
+check named `supply-chain` to the required checks of `dev`; on `main` it would only repeat the whole-checkout check. If
+the repository's Actions event policy lists events per workflow file, `.github/workflows/supply-chain.yml` needs
+`schedule` and `workflow_dispatch`. Agents do not change these settings (#153).
 
-## Limits
+<details>
+<summary><strong>Limits.</strong> A clean report is not proof of safety: what it cannot see</summary>
 
-- A clean report is not proof of safety. Advisory databases only know what has been reported.
+- Advisory databases only know what has been reported.
 - Licences are matched by keyword from licence files and registry metadata, not reviewed by a lawyer.
 - Link checks see status codes and redirects, not content: a parked or replaced page that answers 200 passes, and
   domain expiry is not checked. GitHub links are checked per repository, not per file.
@@ -90,6 +99,8 @@ these settings (#153).
   library reaches the affected code is not assessed.
 - The CI job runs the PR's own copy of the tool and of `research/security-accepted.yaml`: it keeps honest work honest,
   and a reviewer reads changes to those files.
+
+</details>
 
 <details>
 <summary>What we looked at before building it, and what we adopted</summary>

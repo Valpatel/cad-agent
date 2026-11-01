@@ -4,7 +4,19 @@ What cad-agent depends on, vendors and links to, checked on 2026-11-01 at revisi
 
 ![Open findings by area and severity, from this report: 1 critical, 15 medium, 37 low, 12 info](../docs/img/supply-chain/findings.svg)
 
-**Limits.** A clean report is not proof of safety: advisory databases (OSV, the npm registry) only know what has been reported. Licences come from licence files and registry metadata (GitHub, PyPI, npm), matched by keyword; they are not a legal review. Link checks see status codes and redirects, not content: a parked or replaced page that answers 200 passes. Domain expiry is not checked. GitHub links are checked at repository level; a missing file or anchor inside a live repository is not seen. Python versions are checked at the newest release and the lowest release our range allows, not at every version in between. Transitive Python dependencies are checked at the versions deps.dev resolves for our newest direct releases; an existing environment may hold other versions, and --installed checks only the installed versions of our direct dependencies. Libraries bundled inside a vendored file (DOMPurify and KaTeX inside mermaid.min.js) are checked at the versions its receipt records; whether the bundling library reaches the affected code is not assessed. Repository settings (secret scanning, Dependabot) are read only with an admin token; the weekly workflow cannot see them. Offline mode checks only what the checkout shows (pins, hashes, licence files, lockfile, link schemes, install advice).
+<details><summary><strong>Limits.</strong> A clean report is not proof of safety: what each check can and cannot see</summary>
+
+- A clean report is not proof of safety: advisory databases (OSV, the npm registry) only know what has been reported.
+- Licences come from licence files and registry metadata (GitHub, PyPI, npm), matched by keyword; they are not a legal review.
+- Link checks see status codes and redirects, not content: a parked or replaced page that answers 200 passes. Domain expiry is not checked.
+- GitHub links are checked at repository level; a missing file or anchor inside a live repository is not seen.
+- Python versions are checked at the newest release and the lowest release our range allows, not at every version in between.
+- Transitive Python dependencies are checked at the versions deps.dev resolves for our newest direct releases; an existing environment may hold other versions, and --installed checks only the installed versions of our direct dependencies.
+- Libraries bundled inside a vendored file (DOMPurify and KaTeX inside mermaid.min.js) are checked at the versions its receipt records; whether the bundling library reaches the affected code is not assessed.
+- Repository settings (secret scanning, Dependabot) are read only with an admin token; the weekly workflow cannot see them.
+- Offline mode checks only what the checkout shows (pins, hashes, licence files, lockfile, link schemes, install advice).
+
+</details>
 
 ## Findings
 
@@ -15,6 +27,8 @@ What cad-agent depends on, vendors and links to, checked on 2026-11-01 at revisi
 | critical | `webkit:mermaid` | dompurify 3.4.12, bundled inside a vendored file, has 5 known advisories | GHSA-cg2g-xh64-v4q7 (critical, fixed in 3.4.17): DOMPurify SAFE_FOR_TEMPLATES bypass: split template expressions survive in attached shadow root content on DOM output modes; GHSA-mrv2-3pqr-j5jr (high, fixed in 3.4.17): DOMPurify IN_PLACE: hook that removes a parent or sibling leaves the detached sub | dompurify comes inside another library's file: take the first release of that library that bundles dompurify >=3.4.17, and say in the receipt whether the affected code is reachable. |
 
 ### Medium (15)
+
+<details><summary>15 medium: 4 repo-moved, 2 install-from-registry, 2 link-not-https, 2 repo-archived, 1 advisory, 1 install-pipe-to-shell …</summary>
 
 | Severity | Subject | Finding | Evidence | Action |
 |---|---|---|---|---|
@@ -34,7 +48,11 @@ What cad-agent depends on, vendors and links to, checked on 2026-11-01 at revisi
 | medium | `url:https://github.com/facebook/Ax` | facebook/Ax moved to meta/Ax | `https://github.com/facebook/Ax` redirects to `https://github.com/meta/Ax` | Update the link to the new name (the old name can be registered by someone else); check the new owner is who you expect. |
 | medium | `url:https://github.com/i2cjak/Backplane` | i2cjak/Backplane moved to BackplaneWorks/Backplane | `https://github.com/i2cjak/Backplane` redirects to `https://github.com/BackplaneWorks/Backplane` | Update the link to the new name (the old name can be registered by someone else); check the new owner is who you expect. |
 
+</details>
+
 ### Low (37)
+
+<details><summary>37 low: 21 repo-stale, 3 advisory, 3 install-unpinned, 2 catalogue-no-licence, 2 dependabot-ecosystem, 2 py-no-floor …</summary>
 
 | Severity | Subject | Finding | Evidence | Action |
 |---|---|---|---|---|
@@ -76,7 +94,11 @@ What cad-agent depends on, vendors and links to, checked on 2026-11-01 at revisi
 | low | `webkit:fonts` | 5 vendored files in fonts have no recorded hash | fonts/OFL-Inter.txt, fonts/OFL-JetBrainsMono.txt, fonts/fonts.css, fonts/inter.woff2, fonts/jetbrains-mono.woff2 | Record their SHA-256 and source (as mermaid/SOURCE.json does), so a silent change is caught. |
 | low | `webkit:three` | 5 vendored files in three have no recorded hash | three/addons/controls/OrbitControls.js, three/addons/geometries/RoundedBoxGeometry.js, three/addons/loaders/STLLoader.js, three/addons/utils/BufferGeometryUtils.js, three/three.module.min.js | Record their SHA-256 and source (as mermaid/SOURCE.json does), so a silent change is caught. |
 
+</details>
+
 ### Info (12)
+
+<details><summary>12 info: 11 link-unverified, 1 py-no-floor</summary>
 
 | Severity | Subject | Finding | Evidence | Action |
 |---|---|---|---|---|
@@ -93,7 +115,11 @@ What cad-agent depends on, vendors and links to, checked on 2026-11-01 at revisi
 | info | `url:https://xometry.pro/en/articles/fdm-design-tips/` | xometry.pro answered HTTP 403 | research/process-profiles.md:670 | Many sites refuse scripts; check by hand. |
 | info | `pypi:pytest` | pytest has no lower version bound in dev | pyproject.toml: dev: pytest | Set a floor at a release without known advisories (and the oldest one you are willing to support), so an install with old pins cannot pick something worse. |
 
+</details>
+
 ## What we depend on
+
+<details><summary>22 Python packages (75 more pulled in), 22 npm packages, 6 vendored projects, 6 web kit folders, 418 links, 13 skills and agents</summary>
 
 ### Python dependencies
 
@@ -208,7 +234,11 @@ What cad-agent depends on, vendors and links to, checked on 2026-11-01 at revisi
 | `kicad-mcp-pro` | 30 vendored skills | https://github.com/oaslananka/kicad-mcp-pro | `f03b478f597d` |
 | `text-to-cad` | 13 vendored skills | https://github.com/earthtojake/text-to-cad | `2f793659fb7b` |
 
+</details>
+
 ## Sources
+
+<details><summary>8 sources, with how each was reached</summary>
 
 - **deps.dev:** api.deps.dev v3 dependency graphs (newest releases)
 - **github:** GitHub REST API (gh)
@@ -218,4 +248,6 @@ What cad-agent depends on, vendors and links to, checked on 2026-11-01 at revisi
 - **osv:** osv.dev querybatch and vulns
 - **pypi:** pypi.org JSON API
 - **scorecard:** api.securityscorecards.dev
+
+</details>
 

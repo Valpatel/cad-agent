@@ -7,7 +7,7 @@
     python3 tools/resource_audit.py rows --base origin/dev        # report rows for what this branch adds (for the PR)
     python3 tools/resource_audit.py gate --base HEAD^1 --into dev --pr-body-env PR_BODY   # CI: rows present, no new bad item
     python3 tools/resource_audit.py issue --report r.json --repo OWNER/REPO [--post]   # weekly: one issue, kept current
-    python3 tools/resource_audit.py figure --report research/security-report.json --svg docs/img/supply-chain/findings.svg
+    python3 tools/resource_audit.py render [--check]             # the report page and figure from the saved JSON
 
 What it reads:
 - Python dependencies (pyproject.toml, every extra), npm dependencies (package.json and package-lock.json);
@@ -1804,8 +1804,16 @@ def revision_label(r):
     return rev + (' with uncommitted changes' if r.get('dirty') else '')
 
 
+def fold(summary, lines):
+    """A <details> block: the page shows its summary, and the reader opens it (the site's wall-of-text gate, #179)."""
+    return [f'<details><summary>{summary}</summary>', '', *lines, '', '</details>', '']
+
+
 def to_markdown(r, inventory=True, limit=None, figure=None):
-    """The report as one Markdown page. figure: a picture of the findings to show after the lede (a path from the page)."""
+    """The report as one Markdown page. figure: a picture of the findings to show after the lede (a path from the page).
+
+    Critical and high findings stay open on the page; the rest, the limits and the inventory are folded under a summary
+    that gives their counts, so the page is a picture and a short list, not a wall of tables."""
     s = r['summary']
     open_ = [f for f in r['findings'] if not f.get('accepted')]
     accepted = [f for f in r['findings'] if f.get('accepted')]
@@ -1820,43 +1828,52 @@ def to_markdown(r, inventory=True, limit=None, figure=None):
     elif any(s[k] for k in SEVERITIES):
         out += ['```mermaid', 'pie showData title Open findings by severity'] + \
                [f'    "{k}" : {s[k]}' for k in SEVERITIES if s[k]] + ['```', '']
-    out += ['**Limits.** ' + ' '.join(r['limits']), '']
+    out += fold('<strong>Limits.</strong> A clean report is not proof of safety: what each check can and cannot see',
+                [f'- {limit_}' for limit_ in r['limits']])
     out += ['## Findings', '']
     if not open_:
         out += ['No open findings.', '']
     for sev in SEVERITIES:
         fs = [f for f in open_ if f['severity'] == sev]
-        if fs:
+        if fs and RANK[sev] <= RANK['high']:
             out += [f'### {sev.capitalize()} ({len(fs)})', ''] + findings_table(fs) + ['']
+        elif fs:
+            checks_ = collections.Counter(f['check'] for f in fs)
+            what = ', '.join(f'{n} {c}' for c, n in sorted(checks_.items(), key=lambda x: (-x[1], x[0]))[:6])
+            out += [f'### {sev.capitalize()} ({len(fs)})', ''] + fold(f'{len(fs)} {sev}: {what}' +
+                                                                     (' …' if len(checks_) > 6 else ''), findings_table(fs))
     if accepted:
-        out += [f'### Accepted ({len(accepted)})', '', f'Read and accepted in `{ACCEPTED}`.', ''] + findings_table(accepted) + ['']
+        out += [f'### Accepted ({len(accepted)})', ''] + fold(f'{len(accepted)} read and accepted in <code>{ACCEPTED}</code>',
+                                                               findings_table(accepted))
     if inventory:
         inv, ex = r['inventory'], r.get('extra') or {}
-        out += ['## What we depend on', '', '### Python dependencies', '']
+        out += ['## What we depend on', '']
+        n_tr = len(ex.get('python_transitive') or [])
+        body = ['### Python dependencies', '']
         counts = ex.get('python_counts') or {}
         if counts:
-            out += ['| Extra | Direct | With transitive (deps.dev, newest releases) |', '|---|---|---|'] + \
+            body += ['| Extra | Direct | With transitive (deps.dev, newest releases) |', '|---|---|---|'] + \
                    [f"| {g} | {c['direct']} | {c['with_transitive'] if c['with_transitive'] is not None else 'unknown'} |"
                     for g, c in counts.items()] + ['']
         if 'python_transitive' in ex:
-            out += [f"{len(ex['python_transitive'])} transitive packages (at the versions deps.dev resolves) were also checked "
+            body += [f"{len(ex['python_transitive'])} transitive packages (at the versions deps.dev resolves) were also checked "
                     'against OSV; findings on them name the direct dependency they come through.', '']
-        out += ['| Package | Extras | Range | Newest | Released | Licence | Lowest allowed | Advisories (newest / lowest) |',
+        body += ['| Package | Extras | Range | Newest | Released | Licence | Lowest allowed | Advisories (newest / lowest) |',
                 '|---|---|---|---|---|---|---|---|']
         for p in inv['python']:
             adv = p.get('advisories') or {}
-            out.append(f"| `{p['name']}` | {', '.join(p['groups'])} | {cell(', '.join(sorted(set(p['range'].values()))))} | "
+            body.append(f"| `{p['name']}` | {', '.join(p['groups'])} | {cell(', '.join(sorted(set(p['range'].values()))))} | "
                        f"{p.get('latest') or ''} | {p.get('last_release') or ''} | {cell(p.get('licence') or '')} | "
                        f"{p.get('floor_release') or ''} | {len(adv.get('latest', []))} / {len(adv.get('floor', []))} |")
         nc = ex.get('npm_counts') or {}
-        out += ['', '### npm (site build and browser tests)', '', f"{nc.get('direct', 0)} direct, {nc.get('with_transitive', 0)} "
+        body += ['', '### npm (site build and browser tests)', '', f"{nc.get('direct', 0)} direct, {nc.get('with_transitive', 0)} "
                 'packages in the lockfile including transitive.', '',
                 '| Package | Version | Direct | Dev | Licence | Install script | Advisories |', '|---|---|---|---|---|---|---|']
         for p in inv['npm']:
-            out.append(f"| `{p['name']}` | {p['version']} | {'yes' if p['direct'] else ''} | {'yes' if p['dev'] else ''} | "
+            body.append(f"| `{p['name']}` | {p['version']} | {'yes' if p['direct'] else ''} | {'yes' if p['dev'] else ''} | "
                        f"{p.get('licence') or ''} | {'yes' if p['install_script'] else ''} | {len(p.get('advisories') or [])} |")
         flagged = {f['subject'] for f in open_}
-        out += ['', '### Vendored code (vendor/)', '', '| Project | Pinned | Imported | Licence (manifest / file) | Files | Skills | '
+        body += ['', '### Vendored code (vendor/)', '', '| Project | Pinned | Imported | Licence (manifest / file) | Files | Skills | '
                 'Upstream | Behind | Scorecard | Drift |', '|---|---|---|---|---|---|---|---|---|---|']
         for v in inv['vendored']:
             up, d = v.get('upstream') or {}, v.get('drift')
@@ -1864,27 +1881,32 @@ def to_markdown(r, inventory=True, limit=None, figure=None):
             score = (v.get('scorecard') or {}).get('score')
             # linked only while it has no open finding: the page never sends people to what it flags
             name = f"{cell(v['name'])} ({inert(v['url'])})" if v['id'] in flagged else f"[{cell(v['name'])}]({v['url']})"
-            out.append(f"| {name} | `{(v['sha'] or '')[:12]}` | {v.get('imported') or ''} | {v.get('licence')} / "
+            body.append(f"| {name} | `{(v['sha'] or '')[:12]}` | {v.get('imported') or ''} | {v.get('licence')} / "
                        f"{v.get('licence_detected') or '?'} | {v['files']} | {v['skills']} | "
                        f"{'archived' if up.get('archived') else up.get('state', '')} | {v.get('behind', '')} | "
                        f"{score if score is not None else ''} | {drift} |")
-        out += ['', '### Web kit (src/cadagent/webkit/vendor/)', '',
+        body += ['', '### Web kit (src/cadagent/webkit/vendor/)', '',
                 '| Folder | Packages | Bundled inside | Files | Hashed | Matches its npm package | Newest | Advisories |',
                 '|---|---|---|---|---|---|---|---|']
         for w in inv['webkit']:
             rc = w.get('receipts') or {}
             match = ', '.join(f"{n}: {c['identical']} of {c['files']}" for n, c in sorted(rc.items()))
-            out.append(f"| `{w['name']}` | {', '.join(w['packages'])} | {', '.join(w.get('bundled') or [])} | {w['files']} | "
+            body.append(f"| `{w['name']}` | {', '.join(w['packages'])} | {', '.join(w.get('bundled') or [])} | {w['files']} | "
                        f"{w['hashed']} | {match} | {', '.join(f'{k} {v}' for k, v in sorted((w.get('latest') or {}).items()))} | "
                        f"{len(set(w.get('advisories') or []))} |")
         cat = [l for l in inv['links'] if l['kind'] == 'catalogue']
-        out += ['', '### Links we send people to', '',
+        body += ['', '### Links we send people to', '',
                 f"{len(cat)} catalogue links (catalog.json, upstreams/registry.yaml, research/landscape.json) and "
                 f"{len(inv['links']) - len(cat)} more in published pages; {sum(1 for l in inv['links'] if l['id'] in flagged)} have "
                 'findings above.', '', '### Skills and agents', '', '| Item | Kind | Source | Version |', '|---|---|---|---|']
         for k in inv['skills']:
-            out.append(f"| `{k['name']}` | {k['kind']} | {cell(k['source'])} | `{k['version']}` |")
-        out += ['', '## Sources', ''] + [f'- **{k}:** {v}' for k, v in r['sources'].items()] + ['']
+            body.append(f"| `{k['name']}` | {k['kind']} | {cell(k['source'])} | `{k['version']}` |")
+        summary = (f"{len(inv['python'])} Python packages{f' ({n_tr} more pulled in)' if n_tr else ''}, "
+                   f"{len(inv['npm'])} npm packages, {len(inv['vendored'])} vendored projects, {len(inv['webkit'])} web kit "
+                   f"folders, {len(inv['links'])} links, {len(inv['skills'])} skills and agents")
+        out += fold(summary, body)
+        out += ['## Sources', ''] + fold(f"{len(r['sources'])} sources, with how each was reached",
+                                         [f'- **{k}:** {v}' for k, v in r['sources'].items()])
     text = '\n'.join(out) + '\n'
     if limit and len(text) > limit:
         text = text[:limit - 200] + '\n\n…(cut; the full report is in the run\'s artifact)\n'
@@ -2109,13 +2131,13 @@ def cmd_report(a):
     if a.json:
         Path(a.json).parent.mkdir(parents=True, exist_ok=True)
         Path(a.json).write_text(json.dumps(r, indent=1, ensure_ascii=False) + '\n', encoding='utf-8')
-    if a.svg:
-        Path(a.svg).parent.mkdir(parents=True, exist_ok=True)
-        Path(a.svg).write_text(findings_svg(r), encoding='utf-8')
-    if a.md:
-        Path(a.md).parent.mkdir(parents=True, exist_ok=True)
-        fig = os.path.relpath(Path(a.svg).resolve(), Path(a.md).resolve().parent).replace(os.sep, '/') if a.svg else None
-        Path(a.md).write_text(to_markdown(r, figure=fig), encoding='utf-8')
+    if a.md or a.svg:
+        with tempfile.TemporaryDirectory() as td:          # the page and figure come from the JSON, as `render` makes them
+            saved = Path(td) / 'report.json'
+            saved.write_text(json.dumps(r), encoding='utf-8')
+            for path, text in rendered(saved, a.md, a.svg).items():
+                Path(path).parent.mkdir(parents=True, exist_ok=True)
+                Path(path).write_text(text, encoding='utf-8')
     fail = failing(r, a.fail_on)
     print_summary(r, fail)
     return 1 if fail else 0
@@ -2177,16 +2199,30 @@ def cmd_gate(a):
     return 1 if problems else 0
 
 
-def cmd_figure(a):
-    """Draw the figure from a saved report; --check: exit 1 when the committed SVG is not what the report gives."""
-    svg = findings_svg(json.loads(Path(a.report).read_text(encoding='utf-8')))
-    if a.check:
-        same = Path(a.svg).exists() and Path(a.svg).read_text(encoding='utf-8') == svg
-        print(f"{a.svg}: {'matches' if same else 'differs from'} {a.report}")
-        return 0 if same else 1
-    Path(a.svg).parent.mkdir(parents=True, exist_ok=True)
-    Path(a.svg).write_text(svg, encoding='utf-8')
-    return 0
+def rendered(report_path, md, svg):
+    """{path: text} for the page and the figure a saved report gives (no network: a layout change re-renders them)."""
+    r = json.loads(Path(report_path).read_text(encoding='utf-8'))
+    out = {}
+    if svg:
+        out[svg] = findings_svg(r)
+    if md:
+        fig = os.path.relpath(Path(svg).resolve(), Path(md).resolve().parent).replace(os.sep, '/') if svg else None
+        out[md] = to_markdown(r, figure=fig)
+    return out
+
+
+def cmd_render(a):
+    """Write the page and the figure from a saved report; --check: exit 1 when a committed file is not what it gives."""
+    bad = 0
+    for path, text in rendered(a.report, a.md, a.svg).items():
+        if a.check:
+            same = Path(path).exists() and Path(path).read_text(encoding='utf-8') == text
+            print(f"{path}: {'matches' if same else 'differs from'} {a.report}")
+            bad += not same
+        else:
+            Path(path).parent.mkdir(parents=True, exist_ok=True)
+            Path(path).write_text(text, encoding='utf-8')
+    return 1 if bad else 0
 
 
 MARK = re.compile(r'<!-- cad-supply-chain-report fps=([0-9a-f~,]*) -->')
@@ -2313,13 +2349,14 @@ def main(argv=None):
     p.add_argument('--title', default='Supply-chain report: open findings')
     p.add_argument('--author', action='append', help='also accept a tracking issue opened by this login')
     p.add_argument('--post', action='store_true', help='make the changes (default: print what would be done)')
-    p = sub.add_parser('figure', help='draw the findings figure (SVG) from a saved report')
-    p.add_argument('--report', default='research/security-report.json')
-    p.add_argument('--svg', default='docs/img/supply-chain/findings.svg')
-    p.add_argument('--check', action='store_true', help='exit 1 if the SVG is not what the report gives')
+    p = sub.add_parser('render', help='write the report page and its figure from a saved report (no network)')
+    p.add_argument('--report', default=str(ROOT / 'research/security-report.json'))
+    p.add_argument('--md', default=str(ROOT / REPORT_MD))
+    p.add_argument('--svg', default=str(ROOT / 'docs/img/supply-chain/findings.svg'))
+    p.add_argument('--check', action='store_true', help='exit 1 if a file is not what the report gives')
     a = ap.parse_args(argv)
     try:
-        return {'report': cmd_report, 'rows': cmd_rows, 'gate': cmd_gate, 'issue': cmd_issue, 'figure': cmd_figure}[a.cmd](a)
+        return {'report': cmd_report, 'rows': cmd_rows, 'gate': cmd_gate, 'issue': cmd_issue, 'render': cmd_render}[a.cmd](a)
     except (OSError, ValueError, KeyError) as e:
         print(f'resource_audit: {type(e).__name__}: {e}', file=sys.stderr)
         return 2

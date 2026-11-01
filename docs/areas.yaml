@@ -93,7 +93,7 @@ domains:
         api: [cadagent.mechanical.compliant]
         issues: [94, 95, 137]
         topics:
-          - {slug: snap-fits, title: Snap fits, scope: "Cantilever, torsion and annular snaps sized by print direction.", maturity: tooling, priority: [demo], issues: [95, 161]}
+          - {slug: snap-fits, title: Snap fits, scope: "Cantilever, torsion and annular snaps sized by print direction.", maturity: tooling, priority: [demo], issues: [95, 161, 165]}
           - {slug: flexures, title: Flexures, scope: "Flexure hinges and stages: stiffness, stroke and fatigue.", maturity: surveyed, issues: [95]}
           - {slug: living-hinges, title: Living hinges, scope: "Thin hinges in printed and moulded plastics.", maturity: surveyed}
       - slug: gears

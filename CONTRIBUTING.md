@@ -65,7 +65,8 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
 3. **Open a PR into `dev`** early, as a draft if it is unfinished (`gh pr create --draft --base dev`), with `Closes #<issue>`; fill in the template, including what projects using
    cad-agent must change.
 4. **CI** (`.github/workflows/ci.yml`) runs `core` on Python 3.10 and 3.12 (required dependencies only; optional
-   features must skip cleanly) and `full` (CAD, FEA, robot and site extras, imported loudly before the tests);
+   features must skip cleanly) and `full` on 3.12 (CAD, FEA, robot and site extras, imported loudly before the tests;
+   the `cad` and `sim` extras need 3.11 or newer);
    `webkit.yml` runs the browser suites and `gates.yml` the [gates](#gates). CI's `supply-chain` job runs the offline
    [supply-chain report](skills/cad-supply-chain/SKILL.md): a PR that adds a dependency, vendored file or catalogue
    entry pastes its rows (`python3 tools/resource_audit.py rows --base origin/dev --online`) under "Supply chain".

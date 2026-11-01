@@ -58,7 +58,7 @@ not "bad".
 | [WifiLast/freecad-mcp](https://github.com/WifiLast/freecad-mcp) | **none** | 2 commits (10-17) | FreeCAD FEM + gmsh + CalculiX statics; SIMP topology optimisation keeping mounting faces exact; dimension optimisation | **Binds `0.0.0.0:2022` by default** (streamable HTTP) | Skip |
 | [V0v1kkk/freecad-engineering](https://github.com/V0v1kkk/freecad-engineering) | MIT | 3★, 2026-08 | Skills: `fdm-structural-review` (cites ASTM F3489/F3529, ISO; a material-profile validator script), `mechanical-strength-review`, `freecad-fem-check`, `mechanical-constraint-analysis` | — | **Vendor ideas** for the compliant-mechanism agent's evidence checklist |
 | [n3r/AgentCAD](https://github.com/n3r/AgentCAD) `fem-workflow` skill | Apache-2.0 | 7★, 100 commits, macOS-first | gmsh + FEM workflow; says contact and nonlinearity are out of scope | — | Watch |
-| [google/feabench](https://github.com/google/feabench) ([arXiv 2504.06260](https://arxiv.org/abs/2504.06260)) | Apache-2.0 | — | LLM agents on FEA problems; **needs a COMSOL licence**; no agent fully solved a problem (s) | — | Skip (COMSOL); cite as prior art |
+| [google/feabench](https://github.com/google/feabench) (archived, read-only; [arXiv 2504.06260](https://arxiv.org/abs/2504.06260)) | Apache-2.0 | — | LLM agents on FEA problems; **needs a COMSOL licence**; no agent fully solved a problem (s) | — | Skip (COMSOL); cite as prior art |
 
 ### 2e. DFM / DFA
 

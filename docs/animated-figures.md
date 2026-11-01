@@ -57,6 +57,33 @@ It also keeps the mesher (`result['mesh']['mesher']`), the toolkit's version and
 that made it. `tests/test_anim_convergence.py` checks that the figure states the record's numbers and that the record
 shows what the docs say. On the recorded gmsh build, it runs the 2 mm steps again and compares.
 
+## A snap fit engaging
+
+The third figure is a calculation, not a study: `cad-agent snapfit`'s closed form for one printed arm in two
+filaments, as the mating part's edge rides the hook.
+
+![A printed snap arm bends as a mating part's edge rides its hook's lead. Its root strain rises to 1.38 %: 68 % of the 2.02 % allowed for Polymaker PolyMide CoPA (dry), a pass, and 139 % of the 1.00 % allowed for Bambu PETG-CF, a fail](img/compliant/snap-engagement.svg)
+
+*The toolkit's closed-form calculator (`cadagent.mechanical.compliant.snapfit`) on the stated arm: not a measurement.
+Allowables from the data sheets Polymaker PolyMide CoPA V5.4 and Bambu Lab PETG-CF V3.0. Printed snaps need a test
+print.*
+
+```bash
+PYTHONPATH=src python3 tools/readme_anim.py --extract snapfit    # run the calculator again: core only, under a second
+```
+
+`tools/anim/snap-engagement.yaml` names the arm, as a `cad-agent snapfit` declaration, and the words.
+`tools/anim/snap-engagement.scene.json` keeps, for each filament:
+- what `check_spec_entry` says: the verdict, the rows, the material derivation and the data-sheet editions;
+- the closed form along the insertion (`snapfit.engagement()`);
+- the travel where the root strain reaches the allowable.
+
+It also keeps the arm's bent shape at the drawn slices, the toolkit's version and commit, and the sha256 of the files
+that made it. The arm is drawn in slices, each moved and turned by the shape at its middle. Both are linear in the
+deflection, so every keyframe is exact and the arm bends smoothly. The still is the top of the lead, where the strain
+peaks. `tests/test_anim_snapfit.py` runs the calculator again and compares every number, works the closed form by
+hand, and checks the still and the pages that show the figure.
+
 ## Make one for another assembly
 
 Copy `tools/anim/gyropup-leg.yaml`, then add the figure to `FIGURES` in `tools/readme_anim.py`.
@@ -82,7 +109,7 @@ Copy `tools/anim/gyropup-leg.yaml`, then add the figure to `FIGURES` in `tools/r
 
 </details>
 
-A different kind of figure (a board into its enclosure, print layers) gets its own scene module next to `cadagent.publish.anim.hero`, as the convergence study has (`cadagent.publish.anim.convergence`). It reuses the shared parts:
+A different kind of figure (a board into its enclosure, print layers) gets its own scene module next to `cadagent.publish.anim.hero`, as the convergence study and the snap fit have (`cadagent.publish.anim.convergence`, `cadagent.publish.anim.snapfit`). It reuses the shared parts:
 - edge projection: `cad`;
 - the rasteriser and outlines: `raster`;
 - paths, timeline, theme and the embed rules: `svg`;
@@ -116,7 +143,8 @@ flowchart TD
 - no `href`, `src`, `url()` or `@import` pointing outside the document;
 - `role="img"` with an `aria-label`, and a `<title>`;
 - CSS animation only, no SMIL;
-- a `prefers-reduced-motion` rule that stops every animation. The still it leaves is the final frame.
+- a `prefers-reduced-motion` rule that stops every animation. The still it leaves is the final frame (the snap fit's
+  is the top of the lead, where the strain peaks).
 
 </details>
 

@@ -1,0 +1,361 @@
+{
+ "schema": "cadagent.anim.snapfit/1",
+ "name": "snap-engagement",
+ "source": {
+  "repo": "https://github.com/Valpatel/cad-agent",
+  "name": "cad-agent",
+  "licence": "MIT",
+  "commit": "a3f584882da725d78543abbc33df4f0cb3a4f67a",
+  "version": "0.8.0",
+  "inputs": {
+   "src/cadagent/formulas/beams.py": "97c6b497853746bc2d1231bd658b31bf4927fe76bbadc9ea7c8f7b7717ede74f",
+   "src/cadagent/mechanical/compliant/allowables.py": "be1783b9becefd2cdba0bc1cdc15571ee77db79ac18f8caf614160da20e8ea34",
+   "src/cadagent/mechanical/compliant/snapfit.py": "b76a0a506be9d2d5845248593fa5f88877fcfc4fee65daa90da78d3a17cb3618",
+   "src/cadagent/publish/anim/snapfit.py": "5c8603b509d291d92b79859bf30a42ce00c63359385abe57b03c2966b9f00299",
+   "tools/anim/snap-engagement.yaml": "9f668005a1e181b7ccafe2ef4d0ba121b28c4e544a08d59bda4c61b699a25754"
+  }
+ },
+ "recorded": "2026-11-01",
+ "method": "Covestro, Snap-Fit Joints for Plastics - A Design Guide",
+ "arm": {
+  "length_mm": 15.0,
+  "thickness_mm": 1.6,
+  "width_mm": 6.0,
+  "design": 1,
+  "undercut_mm": 1.3,
+  "lead_deg": 30.0,
+  "root_radius_mm": 1.0,
+  "orientation": "along"
+ },
+ "drawing": {
+  "land_mm": 1.2,
+  "approach_mm": 1.6,
+  "clearance_mm": 0.25,
+  "slices": 18
+ },
+ "shape": {
+  "xi": [
+   0.0277777778,
+   0.0833333333,
+   0.138888889,
+   0.194444444,
+   0.25,
+   0.305555556,
+   0.361111111,
+   0.416666667,
+   0.472222222,
+   0.527777778,
+   0.583333333,
+   0.638888889,
+   0.694444444,
+   0.75,
+   0.805555556,
+   0.861111111,
+   0.916666667,
+   0.972222222,
+   1.0
+  ],
+  "deflection": [
+   0.001147,
+   0.010127,
+   0.027596,
+   0.053037,
+   0.085938,
+   0.125782,
+   0.172057,
+   0.224248,
+   0.281839,
+   0.344318,
+   0.411169,
+   0.481878,
+   0.555931,
+   0.632812,
+   0.712009,
+   0.793006,
+   0.875289,
+   0.958344,
+   1.0
+  ],
+  "slope": [
+   0.082176,
+   0.239583,
+   0.387731,
+   0.52662,
+   0.65625,
+   0.77662,
+   0.887731,
+   0.989583,
+   1.082176,
+   1.165509,
+   1.239583,
+   1.304398,
+   1.359954,
+   1.40625,
+   1.443287,
+   1.471065,
+   1.489583,
+   1.498843,
+   1.5
+  ]
+ },
+ "turn": {
+  "tip_deg": 7.40691213,
+  "lead_face_deg": 37.4069121
+ },
+ "snaps": [
+  {
+   "name": "copa-latch",
+   "pass": true,
+   "strain": 0.0137976783,
+   "deflection_mm": 1.3,
+   "deflection_force_n": 6.36503456,
+   "mating_force_n": 10.0682839,
+   "warnings": [],
+   "rows": [
+    {
+     "check": "root strain",
+     "value": 0.0137976783,
+     "limit": 0.020199778,
+     "pass": true,
+     "detail": "1.38 % at 1.300 mm deflection vs 2.02 % allowed"
+    },
+    {
+     "check": "root radius",
+     "value": 1.0,
+     "limit": 0.381,
+     "pass": true,
+     "detail": "R 1.00 mm (minimum 0.38 mm); R/h 0.62"
+    }
+   ],
+   "material": {
+    "material": "Polymaker PolyMide CoPA (dry)",
+    "source": "Polymaker PolyMide CoPA Technical Data Sheet V5.4 (PDF of 2024-04-14), p. 4, Mechanical Properties (Dry Status): https://cdn.shopify.com/s/files/1/0548/7299/7945/files/PolyMide_CoPA_TDS_V5.4.pdf",
+    "condition": "dry, annealed 80 degC / 6 h",
+    "orientation": "along",
+    "repeated": false,
+    "editions": [
+     "Polymaker PolyMide CoPA Technical Data Sheet V5.4"
+    ],
+    "note": null,
+    "xy": {
+     "strain": 0.020199778,
+     "governed_by": "0.7 x UTS/E",
+     "sheet": "Polymaker PolyMide CoPA Technical Data Sheet V5.4"
+    },
+    "z": {
+     "strain": 0.0065,
+     "governed_by": "0.5 x elongation at break",
+     "sheet": "Polymaker PolyMide CoPA Technical Data Sheet V5.4"
+    },
+    "modulus": {
+     "mating": {
+      "mpa": 2703,
+      "sheet": "Polymaker PolyMide CoPA Technical Data Sheet V5.4"
+     },
+     "retention": {
+      "mpa": 2703,
+      "sheet": "Polymaker PolyMide CoPA Technical Data Sheet V5.4"
+     }
+    },
+    "moulded_cap": 0.04,
+    "cap_source": "DuPont, General Design Principles - Module I, Table 10.06 (Zytel 101 PA66), dry",
+    "allowable": 0.020199778,
+    "status": "derived from the datasheet; a hypothesis until a printed coupon is measured",
+    "process": "fdm",
+    "process_factor": null,
+    "secant_mpa": 2703,
+    "secant_basis": "datasheet tensile modulus (an upper bound on the secant modulus)",
+    "retention_secant_mpa": 2703,
+    "retention_secant_basis": "datasheet tensile modulus (an upper bound on the secant modulus)",
+    "friction": 0.525,
+    "friction_basis": "same material"
+   },
+   "engagement": {
+    "points": [
+     {
+      "phase": "lead",
+      "travel_mm": 0.0,
+      "deflection_mm": 0.0,
+      "strain": 0.0,
+      "deflection_force_n": 0.0,
+      "mating_force_n": 0.0
+     },
+     {
+      "phase": "lead",
+      "travel_mm": 2.25166605,
+      "deflection_mm": 1.3,
+      "strain": 0.0137976783,
+      "deflection_force_n": 6.36503456,
+      "mating_force_n": 10.0682839
+     },
+     {
+      "phase": "land",
+      "travel_mm": 2.25166605,
+      "deflection_mm": 1.3,
+      "strain": 0.0137976783,
+      "deflection_force_n": 6.36503456,
+      "mating_force_n": 3.34164314
+     },
+     {
+      "phase": "land",
+      "travel_mm": 3.45166605,
+      "deflection_mm": 1.3,
+      "strain": 0.0137976783,
+      "deflection_force_n": 6.36503456,
+      "mating_force_n": 3.34164314
+     },
+     {
+      "phase": "released",
+      "travel_mm": 3.45166605,
+      "deflection_mm": 0.0,
+      "strain": 0.0,
+      "deflection_force_n": 0.0,
+      "mating_force_n": 0.0
+     }
+    ],
+    "lead_travel_mm": 2.25166605,
+    "land_mm": 1.2,
+    "lead_deg": 30.0,
+    "friction": 0.525,
+    "secant_mpa": 2703,
+    "mating_self_locking": false,
+    "peak": {
+     "deflection_mm": 1.3,
+     "strain": 0.0137976783,
+     "deflection_force_n": 6.36503456,
+     "mating_force_n": 10.0682839
+    }
+   },
+   "over_from_mm": null,
+   "turned_mating_force_n": 13.7162954
+  },
+  {
+   "name": "petg-cf-latch",
+   "pass": false,
+   "strain": 0.0137976783,
+   "deflection_mm": 1.3,
+   "deflection_force_n": 5.79281725,
+   "mating_force_n": null,
+   "warnings": [],
+   "rows": [
+    {
+     "check": "root strain",
+     "value": 0.0137976783,
+     "limit": 0.00995934959,
+     "pass": false,
+     "detail": "1.38 % at 1.300 mm deflection vs 1.00 % allowed"
+    },
+    {
+     "check": "root radius",
+     "value": 1.0,
+     "limit": 0.381,
+     "pass": true,
+     "detail": "R 1.00 mm (minimum 0.38 mm); R/h 0.62"
+    }
+   ],
+   "material": {
+    "material": "Bambu PETG-CF",
+    "source": "Bambu Lab PETG-CF Technical Data Sheet V3.0 (PDF of 2023-08-29), p. 2, Mechanical Properties: https://store.bblcdn.com/626e4f424bf345ae965ad0ddfcaf2459.pdf; Bambu Lab PETG-CF Technical Data Sheet V2.0 (PDF of 2023-03-11), p. 2, Mechanical Properties: https://www.additive-x.com/shop/mpattachments/file/viewonline/id/596/product_id/2346",
+    "condition": "",
+    "orientation": "along",
+    "repeated": false,
+    "editions": [
+     "Bambu Lab PETG-CF Technical Data Sheet V3.0",
+     "Bambu Lab PETG-CF Technical Data Sheet V2.0"
+    ],
+    "note": null,
+    "xy": {
+     "strain": 0.00995934959,
+     "governed_by": "0.7 x UTS/E",
+     "sheet": "Bambu Lab PETG-CF Technical Data Sheet V3.0"
+    },
+    "z": {
+     "strain": 0.0151492537,
+     "governed_by": "0.7 x UTS/E",
+     "sheet": "Bambu Lab PETG-CF Technical Data Sheet V3.0"
+    },
+    "modulus": {
+     "mating": {
+      "mpa": 2460,
+      "sheet": "Bambu Lab PETG-CF Technical Data Sheet V3.0"
+     },
+     "retention": {
+      "mpa": 2460,
+      "sheet": "Bambu Lab PETG-CF Technical Data Sheet V3.0"
+     }
+    },
+    "moulded_cap": null,
+    "cap_source": null,
+    "allowable": 0.00995934959,
+    "status": "derived from the datasheet; a hypothesis until a printed coupon is measured",
+    "process": "fdm",
+    "process_factor": null,
+    "secant_mpa": 2460,
+    "secant_basis": "datasheet tensile modulus (an upper bound on the secant modulus)",
+    "retention_secant_mpa": 2460,
+    "retention_secant_basis": "datasheet tensile modulus (an upper bound on the secant modulus)",
+    "friction": null,
+    "friction_basis": null
+   },
+   "engagement": {
+    "points": [
+     {
+      "phase": "lead",
+      "travel_mm": 0.0,
+      "deflection_mm": 0.0,
+      "strain": 0.0,
+      "deflection_force_n": 0.0,
+      "mating_force_n": null
+     },
+     {
+      "phase": "lead",
+      "travel_mm": 2.25166605,
+      "deflection_mm": 1.3,
+      "strain": 0.0137976783,
+      "deflection_force_n": 5.79281725,
+      "mating_force_n": null
+     },
+     {
+      "phase": "land",
+      "travel_mm": 2.25166605,
+      "deflection_mm": 1.3,
+      "strain": 0.0137976783,
+      "deflection_force_n": 5.79281725,
+      "mating_force_n": null
+     },
+     {
+      "phase": "land",
+      "travel_mm": 3.45166605,
+      "deflection_mm": 1.3,
+      "strain": 0.0137976783,
+      "deflection_force_n": 5.79281725,
+      "mating_force_n": null
+     },
+     {
+      "phase": "released",
+      "travel_mm": 3.45166605,
+      "deflection_mm": 0.0,
+      "strain": 0.0,
+      "deflection_force_n": 0.0,
+      "mating_force_n": null
+     }
+    ],
+    "lead_travel_mm": 2.25166605,
+    "land_mm": 1.2,
+    "lead_deg": 30.0,
+    "friction": null,
+    "secant_mpa": 2460,
+    "mating_self_locking": false,
+    "peak": {
+     "deflection_mm": 1.3,
+     "strain": 0.0137976783,
+     "deflection_force_n": 5.79281725,
+     "mating_force_n": null
+    }
+   },
+   "over_from_mm": 1.62528281,
+   "turned_mating_force_n": null
+  }
+ ],
+ "record_seconds": 0.0
+}

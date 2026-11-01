@@ -73,7 +73,8 @@ test('schema-1 fields keep their schema-1 values: summary, licence (null stays n
       else if (!ADDED[w.type]?.includes(k)) assert.ok(!(k in got), `${w.name}: ${k} was not in schema 1`);
     }
   }
-  assert.ok(want.some(w => w.license === null), 'the data still has a null licence to keep');
+  // No entry has a null licence any more: #151 recorded "none" for the last one (CADPrompt), as the supply-chain
+  // report's catalogue-no-licence check asks. The loop above still fails if schema 2 drops or changes a null.
   // Our own entries: schema 1 wrote these fields and no others; the additions are the ones fields.schema_1 lists.
   const OWN = { tool: ['summary', 'how'], doc: ['summary', 'markdown', 'source'] };
   const OWN_ADDED = { tool: ['license', 'markdown'], doc: ['license'] };
@@ -93,6 +94,19 @@ test('schema-1 fields keep their schema-1 values: summary, licence (null stays n
     // New: the page that documents it, and that page's Markdown twin.
     assert.ok(t.doc?.startsWith(`${ORIGIN}/`), `${t.id}: doc ${t.doc}`);
     assert.ok(t.markdown && existsSync(local(t.markdown)) && t.markdown === `${t.doc.split('#')[0]}.md`, `${t.id}: markdown ${t.markdown} for ${t.doc}`);
+  }
+});
+
+test("an outside entry's licence note reaches its card, benchmarks included", () => {
+  const landscape = JSON.parse(show('research/landscape.json'));
+  const noted = [...landscape.projects.map(p => ['upstream', p]), ...landscape.libraries.map(l => ['library', l]),
+    ...landscape.benchmarks.map(b => ['benchmark', b])].filter(([, e]) => e.license_note);
+  assert.ok(noted.some(([type]) => type === 'benchmark'), 'a benchmark with a licence note to check');
+  for (const [type, e] of noted) {
+    const got = catalog.items.find(i => i.type === type && i.name === e.name);
+    if (!got) continue;                                  // a landscape project that is not an upstream has no card
+    assert.ok(got.notes?.includes(e.license_note.split(':')[0]), `${e.name}: notes ${got.notes}`);
+    if (type === 'benchmark' && got.status === 'unverified') assert.ok(!/licence not yet checked/.test(got.notes), `${e.name}: ${got.notes}`);
   }
 });
 

@@ -1,0 +1,73 @@
+# A printed cantilever snap engaging, computed by cadagent.mechanical.compliant.snapfit (#165). Record it again with
+#   PYTHONPATH=src python3 tools/readme_anim.py --extract snapfit      # pure Python: no CAD kernel, under a second
+# and render or check the SVG (tools/readme_anim.py, --check). The `snaps` list is a cad-agent snapfit declaration, so
+#   cad-agent snapfit tools/anim/snap-engagement.yaml
+# prints the same verdicts: the CoPA arm passes, the PETG-CF arm fails on root strain.
+name: snap-engagement
+source:
+  repo: https://github.com/Valpatel/cad-agent
+  name: cad-agent
+  licence: MIT
+# One arm, laid flat on the bed (bending along the layers), in two filaments. The same geometry gives the same root
+# strain in both: the material's allowable decides the verdict, and its modulus and friction the force.
+snaps:
+  - name: copa-latch
+    material: copa-polymaker-dry
+    orientation: along
+    length_mm: 15
+    undercut_mm: 1.3
+    design: 1
+    section: {rect: {width_mm: 6, thickness_mm: 1.6}}
+    root_radius_mm: 1.0
+    lead_deg: 30
+  - name: petg-cf-latch
+    material: petg-cf-bambu
+    orientation: along
+    length_mm: 15
+    undercut_mm: 1.3
+    design: 1
+    section: {rect: {width_mm: 6, thickness_mm: 1.6}}
+    root_radius_mm: 1.0
+    lead_deg: 30
+# The drawing: the mating edge slides land_mm along the hook's tip before it drops behind it (snapfit.engagement), and
+# the figure's panels. Lengths in mm; the hook stands clearance_mm proud of the edge it rides over.
+drawing: {land_mm: 1.2, approach_mm: 1.6, clearance_mm: 0.25, slices: 18}
+present:
+  width: 720
+  height: 482
+  label: >-
+    A printed snap arm engaging, computed by cad-agent's snap-fit calculator: as the mating edge rides the hook's
+    {lead}° lead, the root strain rises to {strain}. That is {ratio_0} of the {allow_0} allowed for {short_0} ({verdict_0}) and
+    {ratio_1} of the {allow_1} allowed for {short_1} ({verdict_1})
+  description: >-
+    cad-agent {version} (commit {commit}), cadagent.mechanical.compliant.snapfit on the stated arm: {arm}. The Covestro
+    closed form, small deflection, one part rigid. Allowables from the data sheets: {sheets}. Not a measurement:
+    printed snaps need a test print.
+  short: {copa-latch: CoPA, petg-cf-latch: PETG-CF}
+  orientation: {along: laid flat on the bed, across: built upright}
+  arm: >-
+    a {length} mm arm, {thickness} × {width} mm, R{root} root, {laid}; its hook rides a {lead}° lead over a {undercut}
+    mm undercut
+  title: "A printed snap arm engaging: root strain against the allowable"
+  short_title: Snap arm engaging
+  subtitle: "{arm}"
+  strain_axis: root strain (%)
+  force_axis: push to mate (N)
+  travel_axis: travel after the edge meets the lead (mm)
+  crossing: "{short}: over its allowable {travel} mm up the {lead_travel} mm lead"
+  peak: "peak {strain}"
+  # the push to mate, by where its friction came from (the material's friction_basis), or why there is none
+  force_line: "{short}: {force} at the top of the lead; μ {mu}, {pair}"
+  pair: {same material: "{short} on {short}", against steel: "{short} on steel", given: "as declared"}
+  no_force: "{short}: no friction in the guide's table, so no push force"
+  no_modulus: "{short}: no modulus, so no push force"
+  self_locks: "{short}: μ {mu} × tan {lead}° ≥ 1, so the lead self-locks: no push force"
+  gauge: "{name}, {printed}"
+  printed: {along: printed flat, across: printed upright}
+  gauge_value: "{ratio} of {allow}"
+  part_a: "printed part (fixed); dashed: as made"
+  part_b: mating part
+  root: root, tension side
+  caption:
+    - "The toolkit's closed-form calculator (cadagent.mechanical.compliant.snapfit, Covestro method) on the stated arm,"
+    - "not a measurement. Allowables from {sheets}. Printed snaps need a test print."

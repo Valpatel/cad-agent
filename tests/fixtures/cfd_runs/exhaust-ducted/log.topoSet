@@ -1,0 +1,10 @@
+cellSet heaterSet now size 500
+cellZoneSet heater now size 500
+cellSet fanSet now size 1176
+cellZoneSet fan now size 1176
+faceSet fanOffZoneFaces now size 1072
+faceSet fanOffZoneFaces now size 227545
+faceZoneSet fanInlet now size 2244
+faceZoneSet fanInlet now size 392
+faceZoneSet fanOutlet now size 2438
+faceZoneSet fanOutlet now size 392

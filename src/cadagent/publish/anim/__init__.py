@@ -11,9 +11,10 @@ One family, shared parts:
 * ``field``: an FEA viewer field (``cadagent.simulation.fea``) for stress colours;
 * ``text``: text as outlines, so no web font is needed.
 
-Scenes build on them, one per subject: ``hero`` (an assembly drawn in, assembled and checked) and ``convergence``
-(an FEA mesh-convergence study at an inside corner, recorded from a real run). Each scene has an ``extract`` (or
-``record``) step that needs the CAD kernel (and, for a study, the mesher and solver) and writes a JSON scene, and a
-``render`` step that is plain Python, so a committed SVG can be regenerated and compared anywhere
+Scenes build on them, one per subject: ``hero`` (an assembly drawn in, assembled and checked), ``convergence``
+(an FEA mesh-convergence study at an inside corner, recorded from a real run) and ``snapfit`` (a printed snap arm
+engaging, from the snap-fit calculator). Each scene has an ``extract`` (or ``record``) step that writes a JSON
+scene: the hero's needs the CAD kernel, the study's the mesher and solver too, and the snap fit's only the core. Each
+has a ``render`` step that is plain Python, so a committed SVG can be regenerated and compared anywhere
 (``tools/readme_anim.py --check``).
 """

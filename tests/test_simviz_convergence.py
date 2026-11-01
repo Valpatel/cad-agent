@@ -66,7 +66,7 @@ def test_a_case_without_solids_has_no_solids_panel_and_shows_the_whole_run(tmp_p
     assert [p[t].get_ylabel() for t in ('Air temperature', 'Fan flow', 'Heat leaving with the air')] == \
         ['temperature (°C)', 'flow (m³/h)', 'heat (W)']
     air = p['Air temperature']
-    assert {ln.get_label() for ln in air.get_lines()} >= {'fins: mean in the block', 'fan: air through the fan'}
+    assert {ln.get_label() for ln in air.get_lines()} >= {'fins: mean in the block', 'fan: mean over the fan zone (by volume)'}
     assert 'Change over the shaded window: fins' in _words(air)
     assert f"fins {r['zones']['fins']['T_c']:.1f} °C" in _words(air)       # each line named at its end, with its unit
     # each change with the limit steady holds it to: 1 °C for the block's air and the fan's intake air alike
@@ -76,6 +76,24 @@ def test_a_case_without_solids_has_no_solids_panel_and_shows_the_whole_run(tmp_p
     assert 'heat put in, 40 W' in [ln.get_label() for ln in heat.get_lines()]
     assert 'energy balance' in _words(heat) and '(limit ±5 %)' in _words(heat)
     assert 'not that the answer is right' in head
+    matplotlib.pyplot.close(fig)
+
+
+def test_a_fan_draws_its_volume_average_and_its_inlet_and_outlet_each_named(tmp_path):
+    # #47: the fan zone's volume average (35.0 °C) and the mass-flow-weighted inlet and outlet (37.5 °C), each its own
+    # line and colour, named at its end, each change held to 1 °C
+    r = cfd.read_results(recorded('fan-faces-known-profile', tmp_path))
+    fig = _figure(r)
+    air = _panels(fig)['Air temperature']
+    lines = {ln.get_label(): ln for ln in air.get_lines()}
+    want = {'fan: mean over the fan zone (by volume)': 35.0, 'fan: air entering (mass-flow-weighted)': 37.5,
+            'fan: air leaving (mass-flow-weighted)': 37.5}
+    assert set(want) <= set(lines)
+    assert {k: lines[k].get_ydata()[-1] for k in want} == want
+    assert len({lines[k].get_color() for k in want}) == 3
+    words = _words(air)
+    assert 'fan 35.0 °C' in words and 'fan inlet 37.5 °C' in words and 'fan outlet 37.5 °C' in words
+    assert 'fan inlet +0.00 °C (limit ±1 °C)' in words and 'fan outlet +0.00 °C (limit ±1 °C)' in words
     matplotlib.pyplot.close(fig)
 
 

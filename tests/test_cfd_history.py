@@ -161,6 +161,35 @@ def test_a_continuation_that_stopped_before_its_first_sample_still_replaces_the_
     assert r['steady'] is False and r['converged'] is False
 
 
+def test_a_short_continuation_then_a_full_one_from_the_same_saved_time(tmp_path):
+    # the first solve saved 100, diverged and logged to 150; a continuation from 100 stopped at 104, before its first
+    # temperature sample; the next one starts from 100 again (nothing was saved after it) and finishes at 300, writing
+    # <kind>_100.dat beside the stopped one's files. Each continuation replaces the rows after 100: the result is the
+    # first solve to 100, then the full one, with the short one's residuals gone too (#193 follow-up)
+    d = recorded('solids-short-then-full-continuation', tmp_path)
+    r = cfd.read_results(d)
+    assert r['solver_finished'] is True and r['solver_log'] == 'log.solve.1793000002'
+    assert r['iterations'] == 300 and r['restarts'] == [100, 100]          # one entry per continuation
+    res = r['residuals']
+    assert res['iteration'] == [float(i) for i in range(1, 301)]
+    full = {int(t): v for t, v in cfd._residual_rows(d / 'postProcessing/domain0/residuals/100/solverInfo_100.dat')}
+    short = {int(t): v for t, v in cfd._residual_rows(d / 'postProcessing/domain0/residuals/100/solverInfo.dat')}
+    assert sorted(short) == [101, 102, 103, 104]
+    for i in range(101, 105):                                  # the full solve's, not the short one's
+        assert all(res[k][i - 1] == full[i][k] for k in FIELDS) and any(full[i][k] != short[i][k] for k in FIELDS)
+    for solid, h in r['T_max_history'].items():
+        its = [p[0] for p in h]
+        assert its == [float(t) for t in range(10, 301, 10)]   # 10-100 from the first solve, 110-300 from the full one
+        assert max(p[1] for p in h) < 100                       # the first solve's diverged rows after 100 are gone
+        assert h[-1][1] == pytest.approx(r['solids'][solid]['max_c'], abs=0.01)
+    assert r['monitors']['heat_out_w']['points'][-1] == [300, pytest.approx(r['heat_out_w'], abs=0.01)]
+    # judged on the full solve's rows, from 80 % of its last iteration
+    newest = np.array(cfd._series(d / 'postProcessing/chip/T_max_chip/100/volFieldValue_100.dat'))
+    tail = newest[newest[:, 0] >= 240]
+    assert r['convergence']['chip_max_c_change'] == round(float(tail[-1, 1] - tail[0, 1]), 2)
+    assert r['convergence_window'] == [240, 300]
+
+
 def test_a_long_residual_history_keeps_the_largest_value_of_each_run(tmp_path, monkeypatch):
     d = recorded('fins-no-solids', tmp_path)
     monkeypatch.setattr(cfd, 'RESIDUAL_POINTS', 50)

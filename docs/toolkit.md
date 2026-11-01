@@ -387,9 +387,11 @@ Docker (OpenFOAM runs in the official `opencfd/openfoam-default` image) and Bamb
 - `refine(lo, hi, level)`.
 `write()` produces a complete OpenFOAM case (snappyHexMesh, splitMeshRegions, chtMultiRegionSimpleFoam, function
 objects); `run()` runs it natively or in Docker; `results()` returns temperatures, fan flow and pressure, the air
-temperature through each fan, residual and temperature histories, the heat leaving with the air against the heat put
-in (`energy_balance_pct`), the cells each fan and fin zone caught, and the limits. `converged` needs the temperatures,
-fan flow and heat leaving to have stopped changing *and* the energy balance within 5 %. Exchanger fin blocks are set
+temperature through each fan, the heat leaving with the air against the heat put in (`energy_balance_pct`), the cells
+each fan and fin zone caught, and the limits. Its histories cover the whole run, joined across continuations
+(`restarts`): residuals, each solid's hottest temperature and `monitors` (fin-block and fan air temperatures, fan flow,
+heat leaving), each with its unit. `converged` needs the temperatures, fan flow and heat leaving to have stopped
+changing over the last fifth of the newest solve (`convergence_window`) *and* the energy balance within 5 %. Exchanger fin blocks are set
 to their power by `calibrate_fins()` (secant steps on the fin temperature, only once the heat leaving has settled;
 `calibrated` says whether it got there).
 
@@ -416,8 +418,11 @@ or vents in the CAD and check that with FEA.
 ### Pictures and animations (`cadagent.simviz`)
 `CFDResult(case)` loads a finished case in mm and °C. `section()`, `flow()` (streamlines), `walls()` (wall temperature
 with the region past a limit in the critical colour, named in the legend), `animate_flow()` (dashes moving at the
-air's speed while the camera turns), `animate_sweep()` (a section sweeping through) and `convergence_chart()`. Colour
-follows the job: one-hue ramps for temperature (orange) and speed (blue), never a rainbow.
+air's speed while the camera turns), `animate_sweep()` (a section sweeping through) and `convergence_chart()` (the
+whole run: the air's residuals, then one panel per monitored quantity with its unit, restarts marked, the window
+`convergence` measured shaded and its change stated, a run that stopped early said so; no solids panel without solid
+regions, and a panel with no data says why). Colour follows the job: one-hue ramps for temperature (orange) and speed
+(blue), never a rainbow.
 
 ### Real grams (`cadagent.slicer`, `cad-agent slice`)
 Slices each part's 3MF with Bambu Studio's command line (an external AGPL program, run as a subprocess). The system

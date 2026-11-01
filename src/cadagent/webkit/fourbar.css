@@ -1,0 +1,58 @@
+/* <cad-fourbar> (kit/fourbar.js). Link this in <head>: it reserves the element's full size before the script runs (the
+   still image, then the panel's height), so the live figure and controls replace them without moving the page. The
+   panel has a fixed height per layout; tests/website-browser.mjs checks the size and that nothing overflows. The
+   script sets data-theme (light or dark) from the page's color-scheme; override the colours with the --fb-* custom
+   properties. color-scheme is set on the panel, not the element, so the element still reads the page's. */
+cad-fourbar{--fb-ink:#173d3c;--fb-muted:#526863;--fb-sage:#6f8a80;--fb-mist:#eef1e4;--fb-back:#fffdf5;--fb-peach:#ffe1cc;
+  --fb-rust:#bd3a12;--fb-line:#c9d8ca;--fb-field:#fff;--fb-panel:372px;display:block;box-sizing:border-box;margin:28px 0;
+  border:1px solid var(--fb-line);border-radius:16px;background:var(--fb-back);color:var(--fb-ink);overflow:hidden;
+  font-size:14px;line-height:1.35;overflow-wrap:normal}
+cad-fourbar[data-theme=dark]{--fb-ink:#e6efe9;--fb-muted:#a8bcb5;--fb-sage:#86a499;--fb-mist:#21393a;--fb-back:#11201f;
+  --fb-peach:#4b2b1d;--fb-rust:#ff9466;--fb-line:#355450;--fb-field:#182c2b}
+@media(max-width:699.98px){cad-fourbar{--fb-panel:604px}}
+@media(max-width:479.98px){cad-fourbar{--fb-panel:676px}}         /* the tiles' words wrap more */
+cad-fourbar>img,cad-fourbar .fb-figure>svg{display:block;width:100%;height:auto;aspect-ratio:640/320;max-width:none;margin:0;border:0}
+/* Until the script defines the element (or if it never loads), the reserved panel says what belongs there. */
+cad-fourbar:not(:defined)::after{content:"The sliders, readouts and the transmission-angle chart load here with JavaScript. The figure above is the starting linkage.";
+  display:flex;align-items:center;justify-content:center;box-sizing:border-box;height:var(--fb-panel);padding:16px 24px;
+  border-top:1px solid var(--fb-mist);color:var(--fb-muted);font-size:13px;text-align:center}
+@media(scripting:none){cad-fourbar:not(:defined)::after{display:none}}
+cad-fourbar .fb-figure{margin:0}
+cad-fourbar .fb-panel{box-sizing:border-box;height:var(--fb-panel);overflow:hidden;padding:14px 18px 12px;color-scheme:light;
+  border-top:1px solid var(--fb-mist);display:flex;flex-direction:column;gap:12px}
+cad-fourbar[data-theme=dark] .fb-panel{color-scheme:dark}
+cad-fourbar .fb-readout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+cad-fourbar .fb-tile{margin:0;padding:8px 10px;border-radius:12px;background:var(--fb-mist);display:flex;flex-direction:column;min-width:0}
+cad-fourbar .fb-tile b{font-size:20px;line-height:1.2;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+cad-fourbar .fb-tile span{font-size:12px;color:var(--fb-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+cad-fourbar .fb-tile .fb-k{font-weight:650;letter-spacing:.02em;color:var(--fb-ink)}
+cad-fourbar .fb-tile[data-verdict=poor]{background:var(--fb-peach)}
+cad-fourbar .fb-tile[data-verdict=poor] b{color:var(--fb-rust)}
+cad-fourbar .fb-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px 24px;min-height:0}
+cad-fourbar .fb-chart svg{display:block;width:100%;height:auto;aspect-ratio:320/150}
+cad-fourbar .fb-controls{display:flex;flex-direction:column;gap:5px;min-width:0}
+cad-fourbar .fb-field{display:flex;flex-direction:column;gap:1px}
+cad-fourbar .fb-field label{display:flex;justify-content:space-between;gap:8px;font-weight:600;font-size:13px}
+cad-fourbar .fb-value{font-weight:500;font-variant-numeric:tabular-nums;color:var(--fb-muted)}
+cad-fourbar input[type=range]{width:100%;margin:0;height:24px;accent-color:var(--fb-ink)}
+cad-fourbar fieldset{margin:2px 0 0;padding:0;border:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 18px;font-size:13px;min-width:0}
+cad-fourbar legend{float:left;padding:0;margin:0 4px 0 0;font-weight:600}
+cad-fourbar fieldset label{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+cad-fourbar input[type=radio]{margin:0;accent-color:var(--fb-ink);width:16px;height:16px}
+cad-fourbar .fb-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto}
+cad-fourbar .fb-note{margin:0;font-size:12px;color:var(--fb-muted)}
+cad-fourbar .fb-play{flex:none;font:inherit;font-size:13px;font-weight:650;min-height:32px;min-width:72px;padding:4px 14px;border-radius:999px;
+  border:1px solid var(--fb-ink);background:var(--fb-field);color:var(--fb-ink);cursor:pointer}
+cad-fourbar :is(input,button):focus-visible{outline:3px solid var(--fb-rust);outline-offset:2px}
+cad-fourbar .fb-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;margin:0}
+@media(max-width:699.98px){
+  cad-fourbar .fb-panel{padding:12px 12px 10px;gap:10px}
+  cad-fourbar .fb-readout{gap:6px}cad-fourbar .fb-tile{padding:6px 8px}
+  cad-fourbar .fb-tile b{font-size:15px;white-space:normal}cad-fourbar .fb-tile span{font-size:11px;white-space:normal}
+  cad-fourbar .fb-body{grid-template-columns:minmax(0,1fr);gap:8px}
+  cad-fourbar .fb-chart svg{height:150px;aspect-ratio:auto}
+  cad-fourbar .fb-foot{align-items:flex-end}
+  cad-fourbar .fb-play{min-height:44px}
+  cad-fourbar input[type=range]{height:32px}
+}
+@media(pointer:coarse){cad-fourbar input[type=radio]{width:20px;height:20px}}

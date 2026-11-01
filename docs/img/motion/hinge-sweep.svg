@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 350" width="680" height="350" role="img" aria-label="The gate bench arm swept from 0 to 60 degrees in 12 sampled poses. It collides with the frame beam from 49.09 degrees, and the onset is bisected to between 44.89 and 44.91 degrees." font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="12" fill="#173d3c">
+<style>.m10,.m11{fill:#526863}.m10{font-size:10px}.m11{font-size:11px}@keyframes k0{0%,4%,5.7%,8%,98%,100%{transform:rotate(0deg)}9.7%,12%{transform:rotate(-5.45deg)}13.7%,16%{transform:rotate(-10.91deg)}17.7%,20%{transform:rotate(-16.36deg)}21.7%,24%{transform:rotate(-21.82deg)}25.7%,28%{transform:rotate(-27.27deg)}29.7%,32%{transform:rotate(-32.73deg)}33.7%,36%{transform:rotate(-38.18deg)}37.7%,40%,55%,57.3%{transform:rotate(-43.64deg)}41.7%,44%{transform:rotate(-49.09deg)}45.7%,48%{transform:rotate(-54.55deg)}49.7%,52%{transform:rotate(-60deg)}58.7%,60.5%{transform:rotate(-46.36deg)}61.9%,63.7%{transform:rotate(-45deg)}65.1%,66.9%{transform:rotate(-44.32deg)}68.3%,70.1%{transform:rotate(-44.66deg)}71.5%,73.3%{transform:rotate(-44.83deg)}74.7%,76.5%{transform:rotate(-44.91deg)}77.9%,79.7%{transform:rotate(-44.87deg)}81.1%,82.9%,92.7%{transform:rotate(-44.89deg)}}@keyframes k1{0%,5.7%,94.7%,100%{opacity:0}7.7%,92.7%{opacity:1}}@keyframes k2{0%,9.7%,94.7%,100%{opacity:0}11.7%,92.7%{opacity:1}}@keyframes k3{0%,13.7%,94.7%,100%{opacity:0}15.7%,92.7%{opacity:1}}@keyframes k4{0%,17.7%,94.7%,100%{opacity:0}19.7%,92.7%{opacity:1}}@keyframes k5{0%,21.7%,94.7%,100%{opacity:0}23.7%,92.7%{opacity:1}}@keyframes k6{0%,25.7%,94.7%,100%{opacity:0}27.7%,92.7%{opacity:1}}@keyframes k7{0%,29.7%,94.7%,100%{opacity:0}31.7%,92.7%{opacity:1}}@keyframes k8{0%,33.7%,94.7%,100%{opacity:0}35.7%,92.7%{opacity:1}}@keyframes k9{0%,37.7%,94.7%,100%{opacity:0}39.7%,92.7%{opacity:1}}@keyframes k10{0%,41.7%,94.7%,100%{opacity:0}43.7%,92.7%{opacity:1}}@keyframes k11{0%,45.7%,94.7%,100%{opacity:0}47.7%,92.7%{opacity:1}}@keyframes k12{0%,49.7%,94.7%,100%{opacity:0}51.7%,92.7%{opacity:1}}@keyframes k13{0%,4%,5.7%,8%,98%,100%{transform:translateX(0px)}9.7%,12%{transform:translateX(27.8px)}13.7%,16%{transform:translateX(55.6px)}17.7%,20%{transform:translateX(83.5px)}21.7%,24%{transform:translateX(111.3px)}25.7%,28%{transform:translateX(139.1px)}29.7%,32%{transform:translateX(166.9px)}33.7%,36%{transform:translateX(194.7px)}37.7%,40%,55%,57.3%{transform:translateX(222.5px)}41.7%,44%{transform:translateX(250.4px)}45.7%,48%{transform:translateX(278.2px)}49.7%,52%{transform:translateX(306px)}58.7%,60.5%{transform:translateX(236.5px)}61.9%,63.7%{transform:translateX(229.5px)}65.1%,66.9%{transform:translateX(226px)}68.3%,70.1%{transform:translateX(227.8px)}71.5%,73.3%{transform:translateX(228.6px)}74.7%,76.5%{transform:translateX(229.1px)}77.9%,79.7%{transform:translateX(228.8px)}81.1%,82.9%,92.7%{transform:translateX(229px)}}@keyframes k14{0%,57.3%,94.7%,100%{opacity:0}59.3%,92.7%{opacity:1}}@keyframes k15{0%,58.7%,94.7%,100%{opacity:0}60.7%,92.7%{opacity:1}}@keyframes k16{0%,61.9%,94.7%,100%{opacity:0}63.9%,92.7%{opacity:1}}@keyframes k17{0%,65.1%,94.7%,100%{opacity:0}67.1%,92.7%{opacity:1}}@keyframes k18{0%,68.3%,94.7%,100%{opacity:0}70.3%,92.7%{opacity:1}}@keyframes k19{0%,71.5%,94.7%,100%{opacity:0}73.5%,92.7%{opacity:1}}@keyframes k20{0%,74.7%,94.7%,100%{opacity:0}76.7%,92.7%{opacity:1}}@keyframes k21{0%,77.9%,94.7%,100%{opacity:0}79.9%,92.7%{opacity:1}}@keyframes k22{0%,81.1%,94.7%,100%{opacity:0}83.1%,92.7%{opacity:1}}@keyframes k23{0%,55%,94.7%,100%{opacity:0}57%,92.7%{opacity:1}}@keyframes k24{0%,82.9%,94.7%,100%{opacity:0}84.9%,92.7%{opacity:1}}.arm{transform-origin:74.6px 242.8px;transform-box:view-box;transform:rotate(-44.89deg)}.cur{transform:translateX(229px)}.arm{animation:k0 15s ease-in-out infinite}#g0,#d0{animation:k1 15s linear infinite}#g1,#d1{animation:k2 15s linear infinite}#g2,#d2{animation:k3 15s linear infinite}#g3,#d3{animation:k4 15s linear infinite}#g4,#d4{animation:k5 15s linear infinite}#g5,#d5{animation:k6 15s linear infinite}#g6,#d6{animation:k7 15s linear infinite}#g7,#d7{animation:k8 15s linear infinite}#g8,#d8{animation:k9 15s linear infinite}#g9,#d9,#o9,#t0{animation:k10 15s linear infinite}#g10,#d10,#o10{animation:k11 15s linear infinite}#g11,#d11,#o11,#t3{animation:k12 15s linear infinite}.cur{animation:k13 15s ease-in-out infinite}#r0{animation:k14 15s linear infinite}#r1{animation:k15 15s linear infinite}#r2{animation:k16 15s linear infinite}#r3{animation:k17 15s linear infinite}#r4{animation:k18 15s linear infinite}#r5{animation:k19 15s linear infinite}#r6{animation:k20 15s linear infinite}#r7{animation:k21 15s linear infinite}#r8{animation:k22 15s linear infinite}#t1{animation:k23 15s linear infinite}#t2{animation:k24 15s linear infinite}@media (prefers-reduced-motion:reduce){*{animation:none!important}}</style>
+<rect width="680" height="350" rx="14" fill="#fffdf5" stroke="#d8e0d3"/>
+<text x="20" y="30" font-size="15" font-weight="700">Motion gate: the arm swept through its sampled poses</text>
+<text x="20" y="47" class="m11">gate bench, seed flap_hits_frame: the stop raised to 60°; up to 4.32 mm of travel between samples</text>
+<path d="M20 326.8 309.8 326.8 309.8 310 20 310Z" fill="#eef1e4" stroke="#6f8a80"/>
+<path d="M49.4 310 99.8 310 99.8 217.6 49.4 217.6Z" fill="#eef1e4" stroke="#6f8a80" stroke-dasharray="3 2"/>
+<path d="M221.6 310 263.6 310 263.6 268 221.6 268Z" fill="#eef1e4" stroke="#6f8a80"/>
+<path d="M272 310 288.8 310 288.8 74.8 104 74.8 104 91.6 272 91.6Z" fill="#eef1e4" stroke="#173d3c" stroke-width="1.5"/>
+<path id="g0" d="M53.6 268 263.6 268 263.6 217.6 53.6 217.6Z" fill="none" stroke="#6f8a80" stroke-opacity=".75"/>
+<path id="g1" d="M56.1 269.9 265.1 249.9 260.3 199.7 51.3 219.7Z" fill="none" stroke="#6f8a80" stroke-opacity=".75"/>
+<path id="g2" d="M58.7 271.5 265 231.8 255.4 182.3 49.2 222Z" fill="none" stroke="#6f8a80" stroke-opacity=".75"/>
+<path id="g3" d="M61.6 272.9 263 213.7 248.8 165.4 47.4 224.5Z" fill="none" stroke="#6f8a80" stroke-opacity=".75"/>
+<path id="g4" d="M64.5 274 259.4 196 240.7 149.2 45.7 227.2Z" fill="none" stroke="#6f8a80" stroke-opacity=".75"/>
+<path id="g5" d="M67.5 274.8 254.1 178.6 231 133.8 44.4 230Z" fill="none" stroke="#6f8a80" stroke-opacity=".75"/>
+<path id="g6" d="M70.6 275.4 247.2 161.8 220 119.4 43.3 233Z" fill="none" stroke="#6f8a80" stroke-opacity=".75"/>
+<path id="g7" d="M73.7 275.6 238.7 145.8 207.6 106.2 42.5 236Z" fill="none" stroke="#6f8a80" stroke-opacity=".75"/>
+<path id="g8" d="M76.8 275.5 228.8 130.6 194 94.1 42 239.1Z" fill="none" stroke="#6f8a80" stroke-opacity=".75"/>
+<path id="g9" d="M79.9 275.2 217.4 116.5 179.3 83.5 41.8 242.2Z" fill="none" stroke="#bd3a12" stroke-opacity=".75"/>
+<path id="g10" d="M82.9 274.5 204.8 103.5 163.7 74.2 41.9 245.3Z" fill="none" stroke="#bd3a12" stroke-opacity=".75"/>
+<path id="g11" d="M85.9 273.6 190.9 91.7 147.3 66.5 42.3 248.4Z" fill="none" stroke="#bd3a12" stroke-opacity=".75"/>
+<path class="arm" d="M53.6 268 263.6 268 263.6 217.6 53.6 217.6Z" fill="#fffdf5" stroke="#173d3c" stroke-width="2" stroke-linejoin="round"/>
+<path id="o9" d="M188.7 91.6 179.3 83.5 172.3 91.6Z" fill="#bd3a12"/>
+<path id="o10" d="M188.1 91.6 164.5 74.8 163.3 74.8 151.3 91.6Z" fill="#bd3a12"/>
+<path id="o11" d="M190.7 91.6 161.6 74.8 142.5 74.8 132.8 91.6Z" fill="#bd3a12"/>
+<circle cx="74.6" cy="242.8" r="10.5" fill="#173d3c"/>
+<text x="196.4" y="69.8" class="m11" text-anchor="middle">frame beam</text>
+<text x="242.6" y="292.8" class="m11" text-anchor="middle">stop</text>
+<text x="334" y="92" font-weight="600">12 samples, 0–60°, 5.45° apart</text>
+<path d="M344 118H650" stroke="#d8e0d3" stroke-width="3"/>
+<text x="344" y="138" class="m10" text-anchor="middle">0°</text>
+<text x="420.5" y="138" class="m10" text-anchor="middle">15°</text>
+<text x="497" y="138" class="m10" text-anchor="middle">30°</text>
+<text x="573.5" y="138" class="m10" text-anchor="middle">45°</text>
+<text x="650" y="138" class="m10" text-anchor="middle">60°</text>
+<circle id="d0" cx="344" cy="118" r="4.5" fill="#6f8a80"/>
+<circle id="d1" cx="371.8" cy="118" r="4.5" fill="#6f8a80"/>
+<circle id="d2" cx="399.6" cy="118" r="4.5" fill="#6f8a80"/>
+<circle id="d3" cx="427.5" cy="118" r="4.5" fill="#6f8a80"/>
+<circle id="d4" cx="455.3" cy="118" r="4.5" fill="#6f8a80"/>
+<circle id="d5" cx="483.1" cy="118" r="4.5" fill="#6f8a80"/>
+<circle id="d6" cx="510.9" cy="118" r="4.5" fill="#6f8a80"/>
+<circle id="d7" cx="538.7" cy="118" r="4.5" fill="#6f8a80"/>
+<circle id="d8" cx="566.5" cy="118" r="4.5" fill="#6f8a80"/>
+<circle id="d9" cx="594.4" cy="118" r="4.5" fill="#bd3a12"/>
+<circle id="d10" cx="622.2" cy="118" r="4.5" fill="#bd3a12"/>
+<circle id="d11" cx="650" cy="118" r="4.5" fill="#bd3a12"/>
+<path class="cur" d="M344 110l-4.5 -7h9z" fill="#173d3c"/>
+<text x="334" y="166" font-weight="600">onset bisected 8 times</text>
+<rect id="r0" x="344" y="176" width="306" height="5" rx="1" fill="#6f8a80"/>
+<rect id="r1" x="344" y="183" width="153" height="5" rx="1" fill="#6f8a80"/>
+<rect id="r2" x="344" y="190" width="76.5" height="5" rx="1" fill="#6f8a80"/>
+<rect id="r3" x="382.2" y="197" width="38.3" height="5" rx="1" fill="#6f8a80"/>
+<rect id="r4" x="401.4" y="204" width="19.1" height="5" rx="1" fill="#6f8a80"/>
+<rect id="r5" x="410.9" y="211" width="9.6" height="5" rx="1" fill="#6f8a80"/>
+<rect id="r6" x="410.9" y="218" width="4.8" height="5" rx="1" fill="#6f8a80"/>
+<rect id="r7" x="413.3" y="225" width="2.4" height="5" rx="1" fill="#6f8a80"/>
+<rect id="r8" x="414.5" y="232" width="1.2" height="5" rx="1" fill="#bd3a12"/>
+<text x="344" y="251" class="m10">43.64° clear</text>
+<text x="650" y="251" class="m10" text-anchor="end">49.09° hit</text>
+<g id="t0"><text x="334" y="277" fill="#bd3a12">collision:arm|frame from 49.09°, 15.2 mm³ shared</text></g>
+<g id="t1"><text x="334" y="296">last clear 43.64°, gap 0.60 mm</text></g>
+<g id="t2"><text x="334" y="315">onset between 44.89° and 44.91°</text></g>
+<g id="t3"><text x="334" y="334" fill="#526863">worst 60°: 146.7 mm³; 3 of 12 poses hit</text></g>
+</svg>

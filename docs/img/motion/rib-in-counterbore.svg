@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 352" width="680" height="352" role="img" aria-label="Section through a screw hole in two build orders. When the rib is unioned after the clearance hole and counterbore are cut, it refills both, and the hole check finds 24.2 and 18.2 cubic millimetres of rib inside them. When the holes are cut last, both are clear." font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="12" fill="#173d3c">
+<style>.m10,.m11{fill:#526863}.m10{font-size:10px}.m11{font-size:11px}@keyframes k0{0%,0%,10%,100%{opacity:0}1.8%,8.2%{opacity:1}}@keyframes k1{0%,10.9%,31.8%,100%{opacity:0}12.7%,30%{opacity:1}}@keyframes k2{0%,32.7%,91.8%,100%{opacity:0}34.5%,90%{opacity:1}}@keyframes k3{0%,10.9%,100%{transform:translateY(-14px);opacity:0}19.1%,90%{transform:translateY(0px);opacity:1}93.6%{transform:translateY(0px);opacity:0}}@keyframes k4{0%,20%,92.7%,100%{opacity:0}23.6%,35.5%{opacity:0.85}40%,50.9%,90%{opacity:1}45.5%{opacity:0.7}}@keyframes k5{0%,32.7%,92.7%,100%{opacity:0}35.5%,90%{opacity:1}}@keyframes k6{0%,38.2%,92.7%,100%{opacity:0}40.9%,90%{opacity:1}}@keyframes k7{0%,40.9%,92.7%,100%{opacity:0}43.6%,90%{opacity:1}}@keyframes k8{0%,43.6%,92.7%,100%{opacity:0}46.4%,90%{opacity:1}}@keyframes k9{0%,19.1%,93.6%,100%{opacity:1}22.7%,90%{opacity:0}}@keyframes k10{0%,10.9%,22.7%,100%{opacity:0}13.6%,19.1%{opacity:1}}#s00,#s10{animation:k0 11s linear infinite}#s01,#s11{animation:k1 11s linear infinite}#s02,#s12{animation:k2 11s linear infinite}.rib{animation:k3 11s ease-out infinite}#f{animation:k4 11s ease-in-out infinite}#p0,#p1{animation:k5 11s linear infinite}#v00,#v10{animation:k6 11s linear infinite}#v01,#v11{animation:k7 11s linear infinite}#v02{animation:k8 11s linear infinite}#u{animation:k9 11s linear infinite}#x{animation:k10 11s linear infinite}@media (prefers-reduced-motion:reduce){*{animation:none!important}}</style>
+<rect width="680" height="352" rx="14" fill="#fffdf5" stroke="#d8e0d3"/>
+<text x="20" y="28" font-size="15" font-weight="700">A rib added after the holes refills them: section through the screw hole</text>
+<clipPath id="c0"><rect x="26" y="84" width="264.5" height="184"/></clipPath>
+<text x="26" y="54" font-size="13" font-weight="600">Holes cut, then the rib unioned</text>
+<g id="s00" opacity="0"><text x="26" y="72" class="m11">1 · cut the hole and counterbore</text></g>
+<g id="s01" opacity="0"><text x="26" y="72" class="m11">2 · union the rib: it runs to the hole's centre</text></g>
+<g id="s02"><text x="26" y="72" class="m11">3 · cad-agent holes probes each bore</text></g>
+<g clip-path="url(#c0)">
+<path d="M-89 256.5 121.5 256.5 121.5 187.5 104.2 187.5 104.2 141.5 -89 141.5Z" fill="#eef1e4" stroke="#173d3c" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M160.5 256.5 371 256.5 371 141.5 177.8 141.5 177.8 187.5 160.5 187.5Z" fill="#eef1e4" stroke="#173d3c" stroke-width="1.5" stroke-linejoin="round"/>
+<path class="rib" d="M-112 256.5 141 256.5 141 95.5 -112 95.5Z" fill="#eef1e4" stroke="#173d3c" stroke-width="1.5" stroke-linejoin="round"/>
+<path id="f" d="M141 256.5 121.5 256.5 121.5 187.5 104.2 187.5 104.2 141.5 141 141.5Z" fill="#bd3a12"/>
+<path id="p0" d="M104.8 186.9 177.2 186.9 177.2 142.1 104.8 142.1ZM122 255.9 160 255.9 160 188.1 122 188.1Z" fill="none" stroke="#bd3a12" stroke-width="1.3" stroke-dasharray="4 3"/>
+</g>
+<text x="188.2" y="170.2" class="m10">counterbore D6.4 × 4</text>
+<text x="170.9" y="231.2" class="m10">clearance hole D3.4</text>
+<text x="69.7" y="116.2" class="m11" text-anchor="middle">rib</text>
+<g id="v00"><text x="26" y="298" fill="#bd3a12">D6.4 counterbore: 24.2 mm³ of rib inside</text></g>
+<g id="v01"><text x="26" y="316" fill="#bd3a12">D3.4 hole: 18.2 mm³ of rib inside</text></g>
+<g id="v02"><text x="26" y="334" fill="#bd3a12" font-weight="600">fail: over 0.05 mm³ in 2 bores</text></g>
+<clipPath id="c1"><rect x="362" y="84" width="264.5" height="184"/></clipPath>
+<text x="362" y="54" font-size="13" font-weight="600">The rib unioned, then the holes cut last</text>
+<g id="s10" opacity="0"><text x="362" y="72" class="m11">1 · union the rib</text></g>
+<g id="s11" opacity="0"><text x="362" y="72" class="m11">2 · cut the hole and counterbore last</text></g>
+<g id="s12"><text x="362" y="72" class="m11">3 · cad-agent holes probes each bore</text></g>
+<g clip-path="url(#c1)">
+<path d="M224 256.5 457.4 256.5 457.4 187.5 440.2 187.5 440.2 95.5 224 95.5Z" fill="#eef1e4" stroke="#173d3c" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M496.5 256.5 707 256.5 707 141.5 513.8 141.5 513.8 187.5 496.5 187.5Z" fill="#eef1e4" stroke="#173d3c" stroke-width="1.5" stroke-linejoin="round"/>
+<path id="u" d="M224 256.5 707 256.5 707 141.5 477 141.5 477 95.5 224 95.5Z" fill="#eef1e4" stroke="#173d3c" stroke-width="1.5" stroke-linejoin="round" opacity="0"/>
+<path id="x" d="M457.4 256.5 496.5 256.5 496.5 187.5 513.8 187.5 513.8 141.5 477 141.5 477 95.5 440.2 95.5 440.2 187.5 457.4 187.5Z" fill="#ffe1cc" stroke="#bd3a12" stroke-dasharray="3 2" opacity="0"/>
+<path id="p1" d="M440.8 186.9 513.2 186.9 513.2 96.1 440.8 96.1ZM458 255.9 496 255.9 496 188.1 458 188.1Z" fill="none" stroke="#173d3c" stroke-width="1.3" stroke-dasharray="4 3"/>
+</g>
+<text x="524.1" y="170.2" class="m10">counterbore D6.4 × 4</text>
+<text x="506.9" y="231.2" class="m10">clearance hole D3.4</text>
+<g id="v10"><text x="362" y="298">both bores: 0 mm³ inside</text></g>
+<g id="v11"><text x="362" y="316" font-weight="600">pass</text></g>
+</svg>

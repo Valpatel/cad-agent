@@ -25,6 +25,10 @@ it. Once a check exists, move the entry from "review" to the check.
 | Slender columns or insert bosses not tied into a wall | They crack or wobble when the screw is driven | Review: every boss and column has a load path; FEA | [03](../lessons/03-mechanical-design-rules.md) |
 | One weak feature fixed, its siblings left as they were | The same failure on the other three corners | Review: survey all similar features when one is found | [03](../lessons/03-mechanical-design-rules.md) |
 
+![Section through a screw hole in two build orders: a rib unioned after the clearance hole and counterbore were cut refills both, and the hole check finds rib inside each; with the holes cut last, both are clear](img/motion/rib-in-counterbore.svg)
+
+*Why every hole is cut last: a rib unioned after the holes runs into the counterbore and the clearance hole, and `cad-agent holes` finds it inside both. An illustration of the counterbore plate in `tests/test_holes.py`, in section; the volumes match the hole check's.*
+
 ## Bought parts, sources and assumptions
 
 | Issue | How it shows up | Caught by | Lesson |
@@ -34,6 +38,10 @@ it. Once a check exists, move the entry from "review" to the check.
 | Connector windows sized from a bounding box or the board connector, not the mating plug | The cable's overmould does not fit | `cadagent.connectors`: windows from the modelled mating plug, plus a sweep check | [03](../lessons/03-mechanical-design-rules.md), [05](../lessons/05-cables-connectors-and-routing.md) |
 | A vendor model used as if it were measured data | Hidden errors in mounting holes or heights | Review: say which bodies are proxies | [01](../lessons/01-verify-from-source.md) |
 | Vendor files committed or redistributed | A licence problem; a leak that cannot be undone | Review the package and release include lists; fetch references with a script | [agent workflow](agent-workflow.md) |
+
+![An RJ45 plug pushed in along its mating axis through two panel windows: through a window sized from the jack's bounding box the latch sweeps into the wall; through the window derived from the mated plug it clears by the 0.5 mm clearance](img/motion/connector-window.svg)
+
+*`cadagent.connectors` sizes the window from the mated plug and sweeps the plug in along its mating axis. A window sized from the jack's bounding box is too short where the latch passes. An illustration of the RJ45 port in `tests/test_connectors.py`, in section; the swept volumes match the connector check's.*
 
 ## Fasteners and assembly
 

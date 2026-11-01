@@ -289,6 +289,10 @@ express it; grid goes through the combinations in order.
 
 Exit code 0 when the run finished with at least one feasible trial, 1 otherwise.
 
+![The worked example's 60 seeded random trials plotted by cost and mass as they arrive: 4 are feasible, and trials 1 and 47 form the Pareto front over cost, mass and runtime](img/motion/search-front.svg)
+
+*`cad-agent optimise` on `examples/explore-two-wheel`: the trials arrive, a repeated combination is not evaluated again, and the front over cost, mass and runtime is redrawn as trials join it. An illustration drawn from the example's own seeded run; its parts and prices are made up.*
+
 ## Python API
 
 ```python

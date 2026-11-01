@@ -111,6 +111,8 @@ def write_verdict(path: Any, data: Mapping[str, Any]) -> Path:
 # what in the geometry record says who built it or where, not what was built: left out of the digest, so a rebuild of
 # the same geometry by another actor, or a declaration moved to another line, keeps verdicts current. Only these
 # fields are dropped, at these places: a part, joint or fastener *named* like one of them is still digested.
+# ``hash`` holds the hash recipe and, since #144, the platform the hashes were made on ({"recipe", "platform"}):
+# where they were made, not what was built. The hashes themselves are in the parts and stay in the digest.
 VOLATILE_TOP = frozenset({"actor", "parameters", "shapes_dir", "out_dir", "hash"})
 VOLATILE_ENTRY = frozenset({"declared_at", "file", "actor"})  # in an entry of parts, cavities, joints, fasteners,
                                                                # steps (``actor``: who built a part, plan T11)

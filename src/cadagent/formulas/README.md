@@ -39,7 +39,7 @@ flowchart TD
 | `torsion.py` | Torsion constants and shear stress of round and rectangular bars, torsion-bar twist and stiffness |
 | `springs.py` | Coil-spring index, Bergsträsser factor, rate and shear stress |
 | `screws.py` | Tensile stress area, nut factor, preload from torque and back, thread shear areas and strip force |
-| `linkages.py` | Grashof class, four-bar angles from the input angle, transmission angle |
+| `linkages.py` | Grashof class and inversion, four-bar angles from the input angle, transmission angle, the input's limits |
 | `thermal.py` | Wall and film resistance, wall heat flow, straight-line fan curve, system coefficient, fan operating point |
 
 A closed form is not proof of fit or strength. Each result holds only within the limits it states, and a printed part

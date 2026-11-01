@@ -36,7 +36,9 @@ How each state is decided (all tolerances absolute; see ``Tolerances``):
    arguments' tolerances in place). More than ``overlap_mm3`` shared is an overlap; a part with
    no more than ``contain_mm3`` outside the other is inside it.
 3. **Distance** (``BRepExtrema_DistShapeShape``) when nothing is shared: ``touching`` at or below
-   ``touch_mm``, else ``apart``.
+   ``touch_mm``, else ``apart``. On solids it skips BRepExtrema's inner-solution test when the same test
+   (one classifier, not one per chunk of vertices) finds nothing and the faces are clear of each other:
+   the same gap and points, most of the time of a many-faced apart pair saved (``_solid_distance``, #186).
 
 Fail-safe rules. OCP 7.9 binds no error report on ``BRepAlgoAPI_Common`` (``HasErrors`` is
 absent and ``DSFiller()`` crashes the interpreter at exit), and ``IsDone()`` stays true when an
@@ -669,6 +671,69 @@ def _distance(a, b):
     return float(dist.Value()), _pt(dist.PointOnShape1(1)), _pt(dist.PointOnShape2(1))
 
 
+_INNER_TOL = 0.001   # BRepExtrema_DistShapeShape's inner-solution classification tolerance (OCCT 7.9)
+
+
+def _loose(topods) -> bool:
+    """Whether ``topods`` has an edge outside every face, a vertex outside every edge or a face outside every
+    solid: sub-shapes a distance between faces would not see."""
+    topexp = require("OCP.TopExp", "loose sub-shapes")
+    abs_ = require("OCP.TopAbs", "loose sub-shapes")
+    return any(topexp.TopExp_Explorer(topods, what, outside).More()
+               for what, outside in ((abs_.TopAbs_EDGE, abs_.TopAbs_FACE), (abs_.TopAbs_VERTEX, abs_.TopAbs_EDGE),
+                                     (abs_.TopAbs_FACE, abs_.TopAbs_SOLID)))
+
+
+def _inner_vertex(solid, other) -> bool:
+    """BRepExtrema_DistShapeShape's inner-solution test, one way round: whether a vertex of ``other`` classifies IN
+    ``solid`` at its tolerance, with anything but OUT counted as a yes (the caller then asks BRepExtrema itself).
+    BRepExtrema runs it only when ``solid`` is a SOLID or COMPSOLID, so for any other shape the answer is no.
+
+    The same test, done once: OCCT 7.9 (``BRepExtrema_DistShapeShape::SolidTreatment``) splits the vertices into
+    about ten chunks per thread, of at least three each, and builds a new ``BRepClass3d_SolidClassifier`` for every
+    chunk; that construction is most of its time. It classifies at the same tolerance and looks only for IN.
+    It is not a bit-for-bit copy. A reused classifier carries its choice of ray from point to point, and OCCT's
+    chunks depend on the thread count. The two agree wherever the answer does not depend on the ray: every vertex
+    clear of the other's boundary, which is what the clearance in ``_solid_distance`` is for. Anything but OUT
+    counts as inside, so any doubt goes to BRepExtrema itself."""
+    abs_ = require("OCP.TopAbs", "inner-solution test")
+    if solid.ShapeType() not in (abs_.TopAbs_SOLID, abs_.TopAbs_COMPSOLID):
+        return False
+    classifier = require("OCP.BRepClass3d", "inner-solution test")
+    topexp = require("OCP.TopExp", "inner-solution test")
+    toptools = require("OCP.TopTools", "inner-solution test")
+    brep = require("OCP.BRep", "inner-solution test")
+    ds = require("OCP.TopoDS", "inner-solution test")
+    vertices = toptools.TopTools_IndexedMapOfShape()
+    topexp.TopExp.MapShapes_s(other, abs_.TopAbs_VERTEX, vertices)
+    region = classifier.BRepClass3d_SolidClassifier(solid)
+    for i in range(1, vertices.Extent() + 1):
+        region.Perform(brep.BRep_Tool.Pnt_s(ds.TopoDS.Vertex_s(vertices.FindKey(i))), _INNER_TOL)
+        if region.State() != abs_.TopAbs_OUT:
+            return True
+    return False
+
+
+def _solid_distance(a, b, tol: Tolerances):
+    """``_distance(a, b)``, the same gap and points, without BRepExtrema's slow inner-solution test (#186).
+
+    ``BRepExtrema_DistShapeShape`` on two solids first classifies every vertex of each against the other
+    (``_inner_vertex``). Only if none is IN does it measure between their vertices, edges and faces, and those are
+    the sub-shapes of the faces when nothing is loose (``_loose``), met in the same order (``_faces`` keeps the
+    shape's own), so its ties break the same way and the points match too. So when the faces are more than
+    ``max(touch_mm, 10 x the classification tolerance)`` apart, no vertex is anywhere near the other boundary, and
+    ``_inner_vertex`` finds none either way round, the distance between the faces is the call's answer. Otherwise,
+    or on any kernel error, ``_distance(a, b)`` itself decides, as before."""
+    if not (_loose(a) or _loose(b)):
+        try:
+            gap, pa, pb = _distance(_faces(a), _faces(b))
+            if gap > max(tol.touch_mm, 10 * _INNER_TOL) and not _inner_vertex(a, b) and not _inner_vertex(b, a):
+                return gap, pa, pb
+        except Exception:  # _distance(a, b) below runs the same kernel calls and reports the failure
+            pass
+    return _distance(a, b)
+
+
 def _shape_list(shapes):
     toptools = require("OCP.TopTools", "boolean arguments")
     out = toptools.TopTools_ListOfShape()
@@ -771,7 +836,7 @@ def relate(a: Any, b: Any, tol: Tolerances = Tolerances(), *, names: Tuple[str, 
                 return Relation(names[0], names[1], "contains", contained=contained, wall_mm=round(wall, 6),
                                 witness=witness, **fields)
             return Relation(names[0], names[1], "overlapping", witness=witness, **fields)
-        gap, pa, pb = _distance(sa, sb)
+        gap, pa, pb = _solid_distance(sa, sb, tol)
         witness = {"point_a": pa, "point_b": pb, "volume_integration": integration}
         if gap <= tol.touch_mm:
             area = None

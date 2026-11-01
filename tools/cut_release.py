@@ -37,6 +37,21 @@ PROJECT_VERSION = re.compile(r'^(version\s*=\s*")([0-9]+(?:\.[0-9]+)*)("\s*)$', 
 FRAGMENTS = "changelog.d"
 SECTIONS = ("New", "Changed", "Fixed", "Projects must change")
 _SECTION = re.compile(r"^\*\*(?P<name>[^*\n]+?):?\*\*:?[ \t]*$", re.M)
+# A section opened by a paragraph, "**Projects must change:** write STEP files ...": the form the CHANGELOG used up to
+# v0.5.0. Only a known section name counts, so a bold lead-in such as "**Note:** ..." stays part of its section.
+_SECTION_LEAD = re.compile(r"^\*\*(?P<name>[^*\n]+?):?\*\*:?[ \t]+\S")
+
+
+_HEADING = re.compile(r"^ {0,3}#{1,6}(?:[ \t]|$)")  # an ATX heading; "#175 and #176" or indented code is not one
+
+
+def _opens(line: str) -> Optional[str]:
+    """The section a line of the Unreleased entry opens: a heading line, or a known section's lead-in paragraph."""
+    m = _SECTION.match(line)
+    if m:
+        return m.group("name").strip()
+    m = _SECTION_LEAD.match(line)
+    return m.group("name").strip() if m and m.group("name").strip() in SECTIONS else None
 
 
 def read_fragment(name: str, text: str) -> Dict[str, List[str]]:
@@ -51,6 +66,12 @@ def read_fragment(name: str, text: str) -> Dict[str, List[str]]:
             if section not in SECTIONS:
                 raise ValueError(f"{name}: unknown section **{section}** (use {', '.join(SECTIONS)})")
             found.setdefault(section, [])
+        elif _HEADING.match(line):
+            raise ValueError(f"{name}: a Markdown heading ({line.strip()[:40]!r}) breaks the CHANGELOG entry (a '## ' "
+                             "line ends it); use **New**, **Changed**, **Fixed** or **Projects must change**")
+        elif _SECTION_LEAD.match(line) and _opens(line):
+            raise ValueError(f"{name}: '{line.strip()[:40]}' is a lead-in paragraph; in a fragment, put the heading "
+                             f"on its own line (**{_opens(line)}**) and the text in bullets under it")
         elif line.strip():
             if section is None:
                 raise ValueError(f"{name}: text before the first section heading (**New**, **Fixed**, ...)")
@@ -83,17 +104,18 @@ def fold_fragments(changelog: str, fragments: Sequence[Tuple[str, str]]) -> str:
     for section in SECTIONS:
         if section not in adds:
             continue
-        heads = [i for i, line in enumerate(lines)
-                 if (m := _SECTION.match(line)) and m.group("name").strip() == section]
+        heads = [i for i, line in enumerate(lines) if _opens(line) == section]
         if heads:
             start = heads[0] + 1
-            stop = next((i for i in range(start, len(lines)) if _SECTION.match(lines[i])), len(lines))
+            stop = next((i for i in range(start, len(lines)) if _opens(lines[i])), len(lines))
             while stop > start and not lines[stop - 1].strip():
                 stop -= 1
-            lines[stop:stop] = adds[section]
+            # after a paragraph (a lead-in, or prose under the heading), a blank line starts the list
+            prev = lines[stop - 1]
+            in_list = prev.lstrip().startswith("- ") or prev.startswith("  ") or bool(_SECTION.match(prev))
+            lines[stop:stop] = ([] if in_list else [""]) + adds[section]
         else:
-            later = [i for i, line in enumerate(lines) if (m := _SECTION.match(line))
-                     and m.group("name").strip() in SECTIONS[SECTIONS.index(section) + 1:]]
+            later = [i for i, line in enumerate(lines) if _opens(line) in SECTIONS[SECTIONS.index(section) + 1:]]
             at = later[0] if later else len(lines)
             block = [f"**{section}**"] + adds[section]
             block = ([""] if at and lines[at - 1].strip() else []) + block + ([""] if at < len(lines) else [])

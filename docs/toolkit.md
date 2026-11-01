@@ -428,6 +428,61 @@ so), the mesh is coarse for that gradient. `overstressed_share(load_factor)` is 
 whose peak is past the strength. It counts whole elements, so it is an upper bound on the overstressed volume.
 `animate()` and the viewer both report it.
 
+**Meshing** (`refine`, `converge`, `result['mesh']`). `mesh_mm` is one size for the whole part. A sharp re-entrant
+corner has no finite peak, so a finer mesh only raises it; a fillet's peak settles. `refine=[(point_mm, radius_mm,
+size_mm)]` makes the mesh fine round one spot and leaves the rest as it was, so one corner converges without the whole
+part paying 8x the elements for each halving:
+
+```python
+st = Study(part, MATERIALS['petg_cf'], mesh_mm=4, refine=[((12, 0, 30), 3, 0.5)])   # 0.5 mm within 3 mm of a fillet
+res = st.solve()
+res['mesh']['peak']    # where the design peak sits, the wall round it and how many elements lie across that wall
+st.converge()          # the same loads on a mesh 0.75x as fine: the peak's change, and whether it moved
+```
+
+![Peak stress at an L-bracket's inside corner as refine= takes the mesh there from 2 mm to 0.125 mm: sharp, it rises from 443 to 1448 MPa, about 1.37 times per halving as Williams' corner solution says; with an R1.5 fillet it stays between 432 and 447 MPa](img/fea/corner-convergence.svg)
+
+The chart is a real study (`tools/fea_mesh_figure.py` regenerates it). Sharp, the corner's peak grows about 1.37x
+for each halving of the elements there, the rate of Williams' corner solution, and never settles. With an R1.5 fillet
+it stays within 3.4 %. Model the fillet the part will have, then refine it. Every result's `mesh` says how far to
+trust it:
+
+- `mesher`: the gmsh and OpenCASCADE versions, the build's OS and date, a hash of the gmsh library and the platform.
+  Two builds of one gmsh version can mesh a part differently. Gyropup's hip frame got 151,459 and 151,136 tets, and
+  its sharp-corner peak came out 6 % apart. So a gate read at one mesh size names the build, and before and after
+  are compared on one build.
+- `peak`: the design peak's place (`where`, read off the CAD faces), the thinnest wall round it, the element size
+  there and `elements_across`, the wall over the element size. Under 3 it is flagged (`wall_resolved` false, a
+  `MeshWarning`): a peak in a wall one or two elements thick is not a result.
+- `refine` and `slivers`: the zones used, and the slivers found before meshing.
+
+**Slivers and refusals.** Before meshing, `Study` lists faces under (mesh_mm/10)² and edges under mesh_mm/10
+(`Study.slivers`; inside a refine ball, its size counts). It warns by default. With `slivers='raise'` it stops with a
+`MeshRefusal` in seconds, before a long mesh, which suits an optimiser's evaluator. When gmsh refuses a part ("PLC
+Error: A segment and a facet intersect at point"), `Study` raises a `MeshRefusal` with the point and the nearest faces
+and their areas (`err.point`, `err.faces`, `err.edges`). `faces_near(point)` names the faces round any point.
+
+<details><summary>How the refinement, the wall count, the convergence check and the refusal work</summary>
+
+- **Refinement:** each entry is a gmsh Ball field: size_mm inside the radius, growing linearly back to mesh_mm over
+  2 × (mesh_mm − size_mm). A Min field joins them, under the global `Mesh.MeshSizeMax`. `Mesh.MeshSizeMin` must drop
+  to the smallest refine size. It is also the floor of gmsh's curvature sizing, so a size callback keeps the old floor
+  (mesh_mm / 4) outside the balls. Without `refine`, a study meshes exactly as it did before.
+- **Wall:** from each surface triangle within two element sizes of the peak corner, a ray goes straight into the
+  material until it leaves, and the shortest is the wall. Elements across is the wall over the mean edge length of the
+  tetrahedra at the peak corner: the layers a structured mesh would put there. A ray through a tet mesh crosses more
+  tets than that, so this is the cautious count.
+- **converge(factor=0.75, tolerance=0.05):** a new Study at factor × mesh_mm (and factor × each refine size), with
+  the same faces fixed and loaded. It is converged when the design peak changes by at most the tolerance. A peak that
+  moves more than two mesh sizes is noted: an artefact when its value changed too, else two places near the peak value.
+  One step is a check, not a convergence study.
+- **Refusal:** gmsh's volume mesher (TetGen's boundary recovery) throws on the first line of its report, before it
+  prints the point, and stays locked until gmsh is finalized. So `Study` meshes once more in a new session with errors
+  logged, not thrown, and `parse_gmsh_refusal()` reads the point and the surfaces gmsh names. Distances are measured to
+  the surface mesh, so to its chords on a curved face.
+
+</details>
+
 Showing how it fails, for the report:
 
 - `render(png, scale=None, vmax=None)`: the deformed part coloured by stress. `scale` exaggerates the deformation; `vmax` (MPa) fixes the colour scale, so variants under the same load compare by eye.

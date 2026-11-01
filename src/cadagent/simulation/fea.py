@@ -20,6 +20,13 @@ tangential traction that grows with the distance from the axis (like bolts shari
 Solvers: PARDISO (pip install pypardiso) when available, else SciPy's direct solver, or conjugate gradients with a
 smoothed-aggregation multigrid preconditioner (pyamg, with the six rigid-body modes) for big meshes.
 
+Meshing: ``mesh_mm`` is the global element size; ``refine=[(point, radius, size)]`` makes the mesh finer round a spot
+(a fillet, a hole) to converge its peak, and ``converge()`` solves again at 0.75 x the mesh to check one. A sharp
+re-entrant corner is singular: its peak rises with every refinement and never converges, so model the fillet. Every
+result's ``mesh`` records the mesher (gmsh and OCC versions, build, platform) and how many elements lie across the wall
+at the design peak (under MIN_ELEMENTS_ACROSS it is flagged: a MeshWarning). Slivers are listed before meshing, and a
+mesher refusal raises a MeshRefusal that names the faces round its point.
+
 Limits, stated in every result: linear and small-deflection; isotropic material. Printed parts are not isotropic, so
 each printed material says which modulus and strength it uses and the print direction of the modulus
 (``Material.note`` and ``Material.direction``); the assumptions line of every result repeats them. The defaults take the

@@ -136,6 +136,59 @@ def test_command_evaluator_failures_are_design_errors(tmp_path, script, fragment
     assert ev["verdict"] == "error" and fragment in ev["errors"][0]
 
 
+NATIVE = textwrap.dedent("""\
+    import json, subprocess, sys
+    reply = json.dumps({"metrics": {"temp_rise_c": 1.5, "noise_dba": 20}})
+    if sys.argv[1] == "stdout":
+        print(reply, flush=True)
+    # what gmsh does from C: write to file descriptor 1 directly, past sys.stdout (a child inherits fd 1)
+    subprocess.run([sys.executable, "-c", "import os; os.write(1, b'Info    : Done meshing 3D (Wall 0.1s)')"], check=True)
+    if sys.argv[1] == "file":
+        open(sys.argv[2], "w").write(reply)
+    """)
+
+
+def test_native_output_on_fd_1_breaks_a_stdout_reply_but_not_a_result_file(tmp_path):
+    root = write_enclosure(tmp_path)
+    (root / "tools" / "native.py").write_text(NATIVE)
+    on_stdout = load_evaluator(EvaluatorSpec(command=["{python}", "tools/native.py", "stdout"]), root, sys.executable)
+    ev = _evaluate(root, "base", on_stdout)
+    assert ev["verdict"] == "error" and "stdout is not a JSON object" in ev["errors"][0]
+    assert "Done meshing" in ev["errors"][0] and "pass {result} in the argv" in ev["errors"][0]
+    to_file = load_evaluator(EvaluatorSpec(command=["{python}", "tools/native.py", "file", "{result}"]), root, sys.executable)
+    ev = _evaluate(root, "base", to_file)
+    assert ev["verdict"] == "warn" and ev["metrics"]["temp_rise_c"]["value"] == 1.5, ev["errors"]
+
+
+@pytest.mark.parametrize("script, fragment", [
+    ("print('{\"metrics\": {}}')", "exited without writing its result to the {result} file"),
+    ("import sys; open(sys.argv[1], 'w').write('Info: half a reply')", "the {result} file is not JSON: 'Info: half a reply'"),
+    ("import sys; open(sys.argv[1], 'w').write('{}'); sys.exit(2)", "exit code 2"),
+])
+def test_result_file_failures_are_design_errors(tmp_path, script, fragment):
+    root = write_enclosure(tmp_path)
+    (root / "tools" / "bad.py").write_text(script)
+    fn = load_evaluator(EvaluatorSpec(command=[sys.executable, "tools/bad.py", "{result}"]), root)
+    ev = _evaluate(root, "base", fn)
+    assert ev["verdict"] == "error" and fragment in ev["errors"][0], ev["errors"]
+
+
+@pytest.mark.parametrize("design_id", ["result", "request"])
+def test_a_design_named_like_the_reply_or_request_file_keeps_its_own_file(tmp_path, design_id):
+    """{design} is <id>.json in the same private folder as the request and the reply: a design called "result" or
+    "request" must not share a file with either (it once read its own design back as the reply)."""
+    root = write_enclosure(tmp_path)
+    (root / "designs" / f"{design_id}.json").write_text(json.dumps({"extends": "base.json"}))
+    (root / "tools" / "check.py").write_text(textwrap.dedent("""\
+        import json, sys
+        design, request = json.load(open(sys.argv[1])), json.load(sys.stdin)
+        assert "bom" in request and "bom" not in design, "the design file holds the request"
+        """))                                          # and writes no reply
+    fn = load_evaluator(EvaluatorSpec(command=["{python}", "tools/check.py", "{design}", "{result}"]), root, sys.executable)
+    ev = _evaluate(root, design_id, fn)
+    assert ev["verdict"] == "error" and "exited without writing its result" in ev["errors"][0], ev["errors"]
+
+
 def test_loading_evaluators(tmp_path):
     root = write_enclosure(tmp_path)
     (root / "evalpkg").mkdir()

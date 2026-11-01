@@ -258,7 +258,8 @@ def _pick(slot: str, value: Any, spec: Optional[SlotSpec], catalogue: Catalogue)
     else:
         item = catalogue.get(str(ref))
         if item is None:
-            errors.append(f"slot {slot}: unknown part id {ref!r}")
+            empty = " (the catalogue is empty: configure cad.explore.catalogue)" if not len(catalogue) else ""
+            errors.append(f"slot {slot}: unknown part id {ref!r}{empty}")
             return None, errors, checks
         bad = [f"{path} = {value}" for path, value in non_finite(item)]
         if bad:

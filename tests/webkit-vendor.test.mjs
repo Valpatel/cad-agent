@@ -1,8 +1,9 @@
 /** The web kit's vendored libraries match their receipts, and the fflate copy has the ZIP64 fix (#152).
- * Receipts: vendor/mermaid/SOURCE.json and vendor/file-viewer-sources.json record each file's SHA-256 and source. */
+ * Receipts: each folder's SOURCE.json (mermaid/, three/, fonts/) and vendor/file-viewer-sources.json record each
+ * file's SHA-256 and source; every vendored file has one (#151). */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { Worker } from 'node:worker_threads';
@@ -14,11 +15,42 @@ const json = async (rel) => JSON.parse(await readFile(path.join(vendor, rel), 'u
 const sha256 = async (file) => createHash('sha256').update(await readFile(file)).digest('hex');
 const fflateURL = pathToFileURL(path.join(vendor, 'file-parsers/fflate.module.js')).href;
 
-test('every vendored file matches the SHA-256 in its receipt', async () => {
-  const mermaid = await json('mermaid/SOURCE.json'), viewer = await json('file-viewer-sources.json');
-  for (const [rel, want] of Object.entries(mermaid.files)) assert.equal(await sha256(path.join(vendor, 'mermaid', rel)), want, rel);
-  for (const [rel, want] of Object.entries(viewer.sha256)) assert.equal(await sha256(path.join(vendor, rel)), want, rel);
+/** kit-relative path -> recorded SHA-256, from every receipt (the same records tools/resource_audit.py reads). */
+async function recordedHashes() {
+  const out = { ...(await json('file-viewer-sources.json')).sha256 };
+  for (const entry of await readdir(vendor, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const receipt = await json(`${entry.name}/SOURCE.json`).catch((e) => { if (e.code === 'ENOENT') return null; throw e; });
+    for (const [rel, want] of Object.entries(receipt?.files || {})) out[`${entry.name}/${rel}`] = want;
+  }
+  return out;
+}
+
+test('every vendored file matches the SHA-256 in its receipt, and every vendored file has one', async () => {
+  const hashes = await recordedHashes();
+  for (const [rel, want] of Object.entries(hashes)) assert.equal(await sha256(path.join(vendor, rel)), want, rel);
+  const viewer = await json('file-viewer-sources.json');
   assert.ok(viewer.sha256['file-parsers/fflate.module.js'] && viewer.sha256['file-parsers/FFLATE-LICENSE.txt']);
+  const records = new Set(['file-viewer-sources.json', 'FILE-VIEWER-NOTICES.md']);
+  const files = (await readdir(vendor, { recursive: true, withFileTypes: true })).filter((e) => e.isFile())
+    .map((e) => path.relative(vendor, path.join(e.parentPath ?? e.path, e.name)).split(path.sep).join('/'))
+    .filter((rel) => !records.has(rel) && !rel.endsWith('/SOURCE.json'));
+  assert.deepEqual(files.filter((rel) => !hashes[rel]), [], 'vendored files without a recorded SHA-256');
+});
+
+test('the one patched three.js file says so, and the rest of three/ is the npm package byte for byte', async () => {
+  const three = await json('three/SOURCE.json');
+  assert.equal(three.source, `https://registry.npmjs.org/three/-/three-${three.version}.tgz`);
+  assert.deepEqual(Object.keys(three.patched), ['addons/controls/OrbitControls.js']);
+  assert.ok(three.modifications.startsWith('None'));            // every other file is checked against the tarball
+  const orbit = await readFile(path.join(vendor, 'three/addons/controls/OrbitControls.js'), 'utf8');
+  assert.match(orbit, /^\t+const normalized_delta = Math\.abs\( delta \) \/ 100;$/m);
+  assert.notEqual(three.patched['addons/controls/OrbitControls.js'].upstream_sha256, three.files['addons/controls/OrbitControls.js']);
+  const notices = await readFile(path.join(root, 'THIRD_PARTY_NOTICES.md'), 'utf8');
+  assert.match(notices, new RegExp(`^\\| three\\.js .*\\| MIT \\| r${three.version.split('.')[1]}\\b`, 'm'));
+  const fonts = await json('fonts/SOURCE.json');
+  assert.ok(!fonts.package && fonts.sources['inter.woff2'].url.startsWith('https://fonts.gstatic.com/'));   // not from npm
+  assert.match(notices, /^\| Inter \| SIL Open Font License 1\.1 \| 4\.001, .*`fonts\/SOURCE\.json`/m);
 });
 
 test('receipts, notices and the source URLs name the same versions', async () => {

@@ -1,0 +1,30 @@
+# Findings of tools/resource_audit.py that were read and judged fine (the cad-supply-chain skill, "Accepting a
+# finding"). Each one stays in the report, marked accepted, and no longer counts. Nothing accepts a critical finding.
+# Reviewers read every change to this file, above all an acceptance added in the same PR as the finding it hides.
+
+- check: npm-install-script
+  subject: npm:fsevents
+  fp: 0cf2576d5c5533dc
+  reason: >-
+    Optional, macOS-only dependency of Playwright (os: darwin), so CI and Linux machines never install it. Read on
+    2026-11-01 (#151): the registry's manifest for 2.3.2 lists install "node-gyp rebuild" (gypfile), but the tarball
+    the lockfile pins (its sha512 matches) has no binding.gyp and its package.json has no install script; it ships a
+    prebuilt fsevents.node, so npm runs nothing at install. The fingerprint is 2.3.2's: when Playwright moves to
+    another fsevents, the finding comes back to be read again.
+  accepted: 2026-11-01
+
+- check: repo-archived
+  subject: url:https://github.com/google/feabench
+  fp: c4a72a8d6b857b3c
+  reason: >-
+    Shown as archived where we name it: its catalogue card (research/landscape.json notes) and
+    research/agent-toolkits-2026-10.md. Prior art only (it needs COMSOL); we use none of its code.
+  accepted: 2026-11-01
+
+- check: repo-archived
+  subject: url:https://github.com/microsoft/CADFusion
+  fp: dd5331c16c5f9fe0
+  reason: >-
+    Shown as archived where we name it (research/design-workflows.md and design-workflows.json). Cited for its
+    paper's results; ideas only, we use none of its code.
+  accepted: 2026-11-01

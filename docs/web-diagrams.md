@@ -56,6 +56,6 @@ Before, 53 of the 106 page-and-width cases with a diagram scored 0.1 or more. Af
 - **Themes:** the build draws in the page's `data-diagram-theme` (the site is light). If the page's theme turns out different, `observeDiagrams` draws that figure again in the right theme. A dark or HUD page drawn in the browser works as before.
 - **Cached:** figures are kept in `.cache/site-diagrams/` under that hash (`CAD_AGENT_DIAGRAM_CACHE` moves it). A rebuild draws only what changed, and a warm cache needs no browser. The browser build is not in the hash, which is why a warm cache needs none: after a browser upgrade, empty the cache to draw everything again.
 - **Safe:** Mermaid draws in strict mode, and a drawing with a script, an event handler or a `javascript:` link is refused. The pages keep the site's CSP: no inline script, and inline styles are allowed as before.
-- **Never fatal:** with no Chromium (`npx playwright install chromium`, or Google Chrome), or with `--client-diagrams`, the build says so and leaves the blocks for `observeDiagrams`, as before. The same happens to a diagram Mermaid cannot draw. `npm run deploy:site` deploys either way.
+- **Never fatal:** with no Chromium (`npx --no-install playwright install chromium`, which uses the Playwright that `package-lock.json` pins, or Google Chrome), or with `--client-diagrams`, the build says so and leaves the blocks for `observeDiagrams`, as before. The same happens to a diagram Mermaid cannot draw. `npm run deploy:site` deploys either way.
 
 </details>

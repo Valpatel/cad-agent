@@ -39,13 +39,13 @@ Clients: **CC** = Claude Code plugin/skill, **MCP** = MCP server, **Cx** = Codex
 | [faust-machines/fusion360-mcp-server](https://github.com/faust-machines/fusion360-mcp-server) | MIT | 131 | 10-06 | MCP (CC, Cu, Cx docs) | Fusion (closed) | general | No | No | (u) | (u) | none | none |
 | [ahujasid/mcp-for-blender](https://github.com/ahujasid/mcp-for-blender) | MIT | 32,261 | 10-24 | MCP, Cx plugin | Blender (mesh, not B-rep) | visual only | No | No | Yes | No | Poly Haven, Sketchfab, paid generators | none |
 | [mixelpixx/KiCAD-MCP-Server](https://github.com/mixelpixx/KiCAD-MCP-Server) | MIT | 2,933 | 10-26 | MCP | KiCad 9+ (kicad-python + SWIG `pcbnew`) | PCB | KiCad DRC | JLCPCB parts + prices | Snapshots | No | JLCPCB, DigiKey, Freerouting | none |
-| [mixelpixx/Konnect](https://github.com/mixelpixx/Konnect) (archived 2026-10-26; [obhox/kicad-mcp](https://github.com/obhox/kicad-mcp) is a fork) | **AGPL-3.0** | 1,399 | 10-26 | KiCad plugin + MCP, CC skills | KiCad 10 IPC (Rust) | PCB | design-review audits (u) | (u) | (u) | No | Freerouting | none |
+| [mixelpixx/Konnect](https://github.com/mixelpixx/Konnect) (archived 2026-10-26, unarchived again by 2026-11-01; [obhox/kicad-mcp](https://github.com/obhox/kicad-mcp) is a fork) | **AGPL-3.0** | 1,399 | 10-26 | KiCad plugin + MCP, CC skills | KiCad 10 IPC (Rust) | PCB | design-review audits (u) | (u) | (u) | No | Freerouting | none |
 | [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro) | MIT | 149 | 10-25 | MCP, CC plugin skills, Cx/VS Code config | KiCad 10.0.x (kicad-cli/IPC; no SWIG) | PCB | 8 fab profiles with source URLs | Fab pricing coefficients | 3D render PNG | No | JLCPCB; Nexar/DigiKey/Mouser with keys | `evals/`, `benchmarks/` dirs |
 | [Seeed-Studio/kicad-mcp-server](https://github.com/Seeed-Studio/kicad-mcp-server) | **No LICENSE file** (MIT only in pyproject) | 168 | 10-22 | MCP | KiCad 8-10 (`pcbnew`) | PCB analysis, device tree | KiCad ERC/DRC | PartReel registry | No | No | PartReel | none |
 | [lamaalrajih/kicad-mcp](https://github.com/lamaalrajih/kicad-mcp) | MIT | 529 | 2025-10-17 | MCP | KiCad 9 | PCB | DRC | BOM | (u) | No | none | none; stale |
 | [aklofas/kicad-happy](https://github.com/aklofas/kicad-happy) | MIT | 1,499 | 10-25 | CC plugin, Cx, Copilot, Gemini/Antigravity, GitHub Action | KiCad file parsing, SPICE | PCB review, EMC, Gerber | EMC rules ref | BOM, distributors | No | No | JLCPCB, PCBWay, DigiKey, Mouser, LCSC, element14 | none |
-| [American-Embedded/kistack](https://github.com/American-Embedded/kistack) | MIT text (GitHub: NOASSERTION) | 411 | 10-24 | skills.sh | KiCad | schematic, layout, Gerber review | prose | No | No | No | none | none |
-| [i2cjak/Backplane](https://github.com/i2cjak/Backplane) | MIT (ships a KiCad fork) | 731 | 10-25 | App; multi-harness agents | KiCad fork + FreeCAD viewers | PCB + case | No | No | Yes | No | none | none |
+| [BackplaneWorks/kistack](https://github.com/BackplaneWorks/kistack) (moved from American-Embedded) | MIT text (GitHub: NOASSERTION) | 411 | 10-24 | skills.sh | KiCad | schematic, layout, Gerber review | prose | No | No | No | none | none |
+| [BackplaneWorks/Backplane](https://github.com/BackplaneWorks/Backplane) (moved from i2cjak) | MIT (ships a KiCad fork) | 731 | 10-25 | App; multi-harness agents | KiCad fork + FreeCAD viewers | PCB + case | No | No | Yes | No | none | none |
 | [copperheadhq/copperhead](https://github.com/copperheadhq/copperhead) | Apache-2.0 | 627 | 10-24 | CLI, agent-install prompt | KiCad s-expr + kicad-cli | PCB | ERC/DRC | parts (u) | (u) | No | none | none |
 | [punkfab/circuit-skills](https://github.com/punkfab/circuit-skills) | **No licence** | 10 | 10-06 | CC skills, Cx plugin | kipy, build123d, ngspice | PCB + `pcb-enclosure-fit` | No | No | Blender renders | No | Freerouting | PCBWorld harness |
 
@@ -79,8 +79,10 @@ commits, then bots and a few contributors.
 | bambu-labs | Hands off to Bambu Connect (`bambu-connect://` link) or Bambu Studio; never controls the printer | none |
 | urdf / srdf / sdf | Robot and simulator descriptions, with validation | cadgen |
 
-**Install (Claude Code):** `claude plugin marketplace add earthtojake/text-to-cad#latest` then
-`claude plugin install text-to-cad@earthtojake`. The `latest` branch holds only the plugin, one commit per release.
+**How upstream installs it:** from the Claude Code plugin marketplace, tracking the repository's `latest` branch,
+which holds only the plugin (one commit per release) and moves with every release. We do not install it that way:
+cad-agent vendors a pinned, scanned commit in `vendor/text-to-cad` (`vendor/manifest.json`), and agents never install
+skills or plugins from registries.
 
 **Security review.**
 - `.claude-plugin/plugin.json` declares only `skills` and `mcpServers`. It has **no hooks, commands or agents**.
@@ -93,7 +95,8 @@ commits, then bots and a few contributors.
 - **Telemetry is on by default.** It sends counts, a random install ID, the OS and agent app, and crash types to
   `api.texttocad.dev`, which stores them in PostHog; the server derives country from IP. The README says names,
   paths, contents and prompts are never sent; I did not audit the payload code line by line. Turn it off with
-  `uvx cadgen telemetry off`, `DO_NOT_TRACK=1` or `CADGEN_TELEMETRY=0`.
+  `uvx --from cadgen==0.7.26 cadgen telemetry off` (the version the MCP server pins), `DO_NOT_TRACK=1` or
+  `CADGEN_TELEMETRY=0`.
 - **Daily update check** to `api.texttocad.dev/v1/versions`. Turn it off with `CADGEN_UPDATE_CHECK=0`.
 - The viewer binds 127.0.0.1 with **no authentication** (per its SECURITY.md). Any local process can read files under
   the opened folder and trigger builds.
@@ -129,7 +132,7 @@ export and print-handoff engine; cad-agent's checks, simulation and calculations
 
 | | kicad-mcp-pro | mixelpixx KiCAD-MCP-Server | Seeed kicad-mcp-server | kicad-happy (skills) |
 |---|---|---|---|---|
-| Install | `uvx kicad-mcp-pro`. The shipped `.mcp.json` is **unpinned**, so each launch runs latest PyPI | `git clone`; `npm install` runs `prepare` → `npm run build`; pip requirements | `pip install -e .` into KiCad's Python | CC marketplace plugin |
+| Install | upstream runs it through `uvx` with no version: the shipped `.mcp.json` is **unpinned**, so each launch runs the latest PyPI release. Pin it: `uvx kicad-mcp-pro@4.4.0` | `git clone`; `npm install` runs `prepare` → `npm run build`; pip requirements | `pip install -e .` into KiCad's Python | CC marketplace plugin |
 | KiCad | 10.0.x primary (10.0.7 verified), 8.x deprecated, 9 dropped, 11 preview; SWIG forbidden by test | 9.0+; mixes kicad-python IPC and SWIG `pcbnew` | 8-10, `pcbnew` | file parsing |
 | Tools | 387 public; default profile = 24 read-only; writes need a profile | 244 registered | analysis, ERC/DRC, device-tree code | review scripts |
 | Network | JLCPCB public catalog by default; other distributors only with keys; telemetry **off** by default (opt-in OpenTelemetry) | JLCPCB, DigiKey; README advertises paid "Nimrod" service | PartReel downloads (host allowlist) | datasheets, distributors |
@@ -158,7 +161,9 @@ no longer a candidate; KiCAD-MCP-Server is still maintained under MIT.)
   exactly our pattern.
 - **punkfab/circuit-skills:** a `pcb-enclosure-fit` skill co-registers the board STEP with a build123d shell and gates
   placement on connectors, cutouts and holes. It has no licence, so ideas only.
-- **Backplane:** KiCad and FreeCAD viewers that show a case assembly beside the agent. MIT; install is `curl | sh`.
+- **Backplane:** KiCad and FreeCAD viewers that show a case assembly beside the agent. MIT. Its installer is a script
+  piped from the network straight into a shell, which runs whatever the server sends at that moment, unpinned and
+  unchecked: a risk. Read the script first, or build from a pinned commit.
 - **Amagine3D:** designs the enclosure around internal components from requirements. It does not read KiCad files.
 - **kicadStepUp** (AGPL per its README): FreeCAD workbench that syncs board outlines and models both ways. External only.
 - **Gap:** no project closes the loop from KiCad outline, connectors and holes, to enclosure, to clearance report, and

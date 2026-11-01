@@ -140,7 +140,11 @@ for (const [from, to] of redirects) {
   // Pages keeps the first rule for a path and the preview server the last, so a duplicate would make them disagree.
   if (seenFrom.has(from)) throw new Error(`${at} is listed twice`);
   seenFrom.add(from);
-  if (!/^(?!\/)[^\s]+\.md$/.test(from)) throw new Error(`${at}: a source is a repo path to a .md file, without a leading slash`);
+  // Pages reads * as a splat and :name as a placeholder, so `lessons/*.md` would redirect every lesson page, the
+  // target included, into a loop; the preview server matches exact paths and would never show it. Plain paths only.
+  if (!/^[\w-][\w.\/-]*\.md$/.test(from) || path.posix.normalize(from) !== from)
+    throw new Error(`${at}: a source is a plain repo path to a .md file (letters, digits, - _ . /), without a leading slash, ` +
+      '`..`, `//`, `*` or `:`');
   if (tracked.includes(from) && !stubFiles.has(from)) throw new Error(`${at} is still a file in the repo (only its stub may remain)`);
   if (!to || !pageFiles.has(to)) throw new Error(`${at} -> ${to}, which is not a published page`);
 }

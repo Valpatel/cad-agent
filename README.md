@@ -62,9 +62,10 @@ flowchart TD
    learn from are listed below.
 
 Example: [snap fits](docs/compliant.md) condense the Covestro (Bayer) snap-fit guide, DuPont's design guide and the
-data sheets of 11 filaments (13 entries: two have dry and wet values) into `cad-agent snapfit`, tested against the guide's worked examples and sized by
-print direction; no printed coupon has been measured yet. The same loop turned review findings from real builds into
-the [pitfall checks](docs/common-issues.md), like a rib that ran into a counterbore.
+data sheets of 11 filaments (13 entries: two have dry and wet values) into `cad-agent snapfit`, tested against the
+guide's worked examples and sized by print direction; no printed coupon has been measured yet. The same loop turned
+review findings from real builds into the [pitfall checks](docs/common-issues.md), like a rib that ran into a
+counterbore.
 
 ## What's here today
 
@@ -118,7 +119,7 @@ flowchart TD
 | ✏️ | `gates` | Integrity gates on the assembly: floating parts and unrealised interfaces, items outside their cavity, fastener seat, engagement, tip and tool reach, motion-range collisions, assembly order and access, minimum walls. `cad-agent gates` runs them in parallel processes, writes verdicts bound to the geometry they checked, and `check` fails on a failing or stale one ([guide](docs/gates.md)) |
 | ✏️ | `explore` | Part catalogues with prices and sources, designs that pick a part per slot, the project's own evaluator, Pareto ranking of the trade-offs, one-part swaps and a search over parts and parameters ([guide](docs/explore.md)) |
 | 🧪 | `fea` | gmsh + scikit-fem linear elasticity with printed-material allowables, checked against textbook cases |
-| 🧪 | `compliant` | Snap-fit sizing and checks (cantilever, torsion, annular) by the Covestro/Bayer method, tested against the guide's worked examples; allowable strain for moulded resins and, by print direction, for 13 filaments from their datasheets ([guide](docs/compliant.md)) |
+| 🧪 | `compliant` | Snap-fit sizing and checks (cantilever, torsion, annular) by the Covestro/Bayer method, tested against the guide's worked examples; allowable strain for moulded resins and, by print direction, for 11 filaments from their data sheets (13 entries: two have dry and wet values) ([guide](docs/compliant.md)) |
 | 🧪 | `cfd` | Conjugate heat transfer cases for OpenFOAM written from CAD: fans, fin blocks, heat sources |
 | 🧪 | `heatsink` | Plate-fin correlations, fan operating point and porous-block coefficients for CFD |
 | 🧪 | `topopt` | pyMOTO topology optimisation (SIMP, MMA, overhang filter) to cut filament where it does no work |

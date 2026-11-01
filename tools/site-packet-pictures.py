@@ -93,7 +93,13 @@ def _versions() -> dict:
 
 
 def _commit() -> str:
-    """The cad-agent commit the pictures were made from (uncommitted changes are not recorded: commit first)."""
+    """The cad-agent commit the pictures were made from. A record cannot name uncommitted changes, so a tree with any
+    in what draws the pictures (src/, the gate bench, this script) is refused: commit first."""
+    dirty = subprocess.run(["git", "status", "--porcelain", "--", "src", "tests/fixtures/gate_bench",
+                            "tools/site-packet-pictures.py"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+    if dirty:
+        raise SystemExit("uncommitted changes in src/, the gate bench or this script; commit first, so SOURCE.json's "
+                         "commit says what drew the pictures:\n" + dirty)
     return subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
 
 
@@ -104,6 +110,7 @@ def make(tmp: Path, only: list[str] | None = None) -> dict:
     from cadagent.publish.render import review_packet
 
     seeds = _seeds()
+    _commit()                                          # refuse a dirty tree before rendering anything
     record: dict = {"regenerate": "PYTHONPATH=src python3 tools/site-packet-pictures.py", "size": list(SIZE),
                     **_versions(), "scenarios": {}, "pictures": {}}
     if only:                                           # keep the other scenarios' pictures and records as they are

@@ -90,7 +90,7 @@ docs/gates.md:
       shows: output
       tool: cad-agent review-packet
       on: fixture
-      caption: "Two states on the gate bench as built, in a plan cut through the hopper's cavity: every ball is contains against the cavity, and the balls against its walls are touching the hopper, which still counts as inside (0 mm³ outside). The containment gate's 21 checks pass."
+      caption: "Two states on the gate bench as built, in a plan cut through the hopper's cavity, with four balls clear of its side walls. Every ball contains against the cavity. The four lower balls rest on its floor and are touching the hopper, which still counts as inside (0 mm³ outside); the four above them are 4.33 mm clear. The containment gate's 21 checks pass."
       alt: A plan section through the gate bench's hopper, its walls a blue ring round four orange balls, all inside the cavity
     - after: verdicts
       img: docs/img/packets/ball_through_wall-store-findings.webp
@@ -167,7 +167,7 @@ docs/gates.md:
       tool: cad-agent review-packet
       on: fixture
       caption: "A seeded failure (screw_too_long): screw_0 made 4 mm longer. Its tip runs 3.00 mm into the hopper and its 12 mm length is outside the 4.5 to 8.5 mm the stack takes, so tip and length fail."
-      alt: A section along two screws of the gate bench; the left screw is longer and its tip runs below the insert into the hopper's post
+      alt: A section along two screws of the gate bench; the right screw is longer and its tip runs past its insert into the hopper
     - after: fasteners-and-stacks-cadagentreviewgatesfasteners
       below: Bodies and poses.
       img: docs/img/packets/gusset_over_screw-store-access-from-top.webp
@@ -599,7 +599,7 @@ research/design-workflows.md:
       tool: cad-agent review-packet
       on: fixture
       caption: "A hidden-interior fault, the kind renders miss: a seeded failure (screw_too_long) makes screw_0 4 mm longer. From outside the bench looks the same; a cut along the screw shows its tip past the insert, and the fastener gate measured it 3.00 mm into the hopper, at a length outside the 4.5 to 8.5 mm the stack takes."
-      alt: A section along two screws of the gate bench; the left screw is longer and its tip runs below the insert into the hopper's post
+      alt: A section along two screws of the gate bench; the right screw is longer and its tip runs past its insert into the hopper
     - after: 3-professional-mechanical-design-practice-an-agent-can-execute
       img: docs/img/gates/bench-requirements.webp
       shows: output
@@ -780,7 +780,7 @@ docs/toolkit.md:
       tool: cadagent.publish.render
       on: fixture
       caption: "A render by cadagent.publish.render, as cad-agent review-packet draws one for the gate bench's store section: the caption bar holds the title and a subtitle (section hash, part and fastener counts, the build's geometry digest), the note bar what the picture is for."
-      alt: "A render of the gate bench's store section in place: grey hopper and base, a lid with four screws, under a dark caption bar with the section hash and counts and a note bar below"
+      alt: "A render of the gate bench's store section in place: a blue hopper with a green lid and four screws on the grey base, under a dark caption bar with the section hash and counts and a note bar below"
     - after: honest-evidence
       below: CAD checks never claim physical fit
       img: docs/img/gates/bench-review.webp
@@ -833,7 +833,7 @@ docs/toolkit.md:
       shows: output
       tool: cadagent.simulation.fea
       on: gyropup
-      caption: "A study with the table's pa6_cf_xy row: Gyropup's wheel link in a turn (case E1), 52,134 P2 tetrahedra, PA6-CF along the layers (humid). Safety factor 3.15 against a target of 2.0."
+      caption: "A study with the table's pa6_cf_xy row: Gyropup's wheel link in a turn (case E1), 52,134 P2 tetrahedra, PA6-CF along the layers (humid). Safety factor 3.15 against a target of 2.0, scored against the in-plane strength, 40.8 MPa. The layer check, against 18.1 MPa across the layers, was not run for this picture. A prediction from the CAD, not a test."
       alt: Von Mises stress in Gyropup's wheel link, highest beside the axle bore, with a colour bar from 0 to 15 MPa
     - after: stiffness-and-strength-cadagentsimulationfea
       below: render(png, scale=None

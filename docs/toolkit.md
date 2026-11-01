@@ -1060,22 +1060,23 @@ cells each fan and fin zone caught, and the limits. With adiabatic walls every w
 when the heat leaving is more than 5 % off (`energy_check()`; 0.5 W when nothing is put in), `energy_conserved` is
 False and `warnings` says so, and the temperatures are not an answer yet.
 
+**When a result is an answer.** `converged` needs the temperatures, fan flow and heat leaving to have stopped
+changing *and* the energy balance within 5 %. `steady` holds each change, over `convergence_window`, to its entry in
+`convergence_limits`: under 1 °C for every temperature (each solid's hottest, a fin block's air, and each fan's zone,
+inlet and outlet) and under 2 % for the fan flow and the heat leaving.
+
 <details>
-<summary>Histories, convergence and steadiness, and how fin blocks are calibrated</summary>
+<summary>How the histories are joined across continuations, the convergence window, and how fin blocks are calibrated</summary>
 
 Its histories cover the whole run, joined across continuations
 (`restarts`, one entry per continuation; a second solve from the same saved time writes `<kind>_<time>.dat` and is read
 too, one that crashed at start and logged nothing is left out, and one that stopped before its first temperature
 sample still replaces the rows after its start): residuals, each solid's hottest temperature and `monitors` (fin-block
-and fan air temperatures, fan flow, heat leaving), each with its unit. `converged` needs the temperatures, fan flow and
-heat leaving to have stopped changing *and* the energy balance within 5 %. The change is measured over
-`convergence_window`: the iterations from 80 % of the last one onward, cut to the newest solve (after a continuation
-shorter than a fifth of the run, that is the whole newest solve; after one that logged no temperature rows, there is
-no window and nothing is steady). `steady` holds each change to its entry
-in `convergence_limits`: under 1 °C for every temperature (each solid's hottest, a fin block's air, and each fan's
-zone, inlet and outlet) and under 2 % for the fan flow and the heat leaving. Exchanger fin blocks are set to their power by
-`calibrate_fins()` (secant steps on the fin temperature, only once the heat leaving has settled; `calibrated` says
-whether it got there).
+and fan air temperatures, fan flow, heat leaving), each with its unit. The window is the iterations from 80 % of the
+last one onward, cut to the newest solve (after a continuation shorter than a fifth of the run, that is the whole
+newest solve; after one that logged no temperature rows, there is no window and nothing is steady). Exchanger fin
+blocks are set to their power by `calibrate_fins()` (secant steps on the fin temperature, only once the heat leaving
+has settled; `calibrated` says whether it got there).
 
 </details>
 

@@ -127,14 +127,20 @@ flowchart TD
     C -->|"yes"| V{"shared over<br/>overlap_mm3?"}
     V -->|"no"| D["BRepExtrema gap<br/>up to touch_mm:<br/>touching, else apart"]
     V -->|"yes"| I["contains if at most<br/>contain_mm3 outside,<br/>else overlapping"]
+    D -.->|"touching"| X["boundaries meeting:<br/>the crossing probe<br/>(below) may make<br/>it unknown"]
+    I -.->|"contains"| X
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
     class P,C,V here
     class A1,U,D,I out
+    class X near
 ```
 
-*How `relate` decides a pair's state, drawn from the rules on this page; the states are those in the table above.*
+*How a pair in the relation table gets its state, drawn from the rules on this page; the states are those in the
+table above. The box test is the table's broad phase: `relate(a, b)` on two bare shapes skips it and starts at
+Common and Cut. A `touching` or `contains` whose boundaries meet goes on to the
+[near-tangent probe](#near-tangent-crossings-46).*
 
 On solids, `BRepExtrema_DistShapeShape` first runs an inner-solution test: does any vertex of one lie inside the
 other? OCCT 7.9 builds a new point classifier for each small chunk of vertices (about ten chunks per thread, at
@@ -400,6 +406,9 @@ prefixed `<pose>/` when `poses` is given):
 - **Poses.** `poses={name: {body: location}}` applies `Assembly.posed` per body. A container that turns while its
   contents are modelled in fixed positions (the incident) fails in the pose where they part.
 
+**Limits of mesh-only items.** An item given only as a mesh is sampled, not solved: its outside and wall volumes are
+Monte Carlo estimates with a standard error, and it gets no interpenetration or support check.
+
 <details>
 <summary>Mesh-only items, and what the gate costs</summary>
 
@@ -481,13 +490,15 @@ holds a grounded part, or a held moving instance whose `fixed` part is in a grou
 | `relation:<a>\|<b>` | the kernel could not decide the pair (`unknown`) |
 | `tolerances` | (warning) the declarations' `touch_mm` differs from the given table's, which is used |
 
-<details>
-<summary>What the gate could not check, the verdict's other keys, and the graph as DOT and SVG</summary>
+**Limits.** The verdict's `not_checked` lists what the gate could not check: non-geometric interfaces (`electrical`,
+`thermal`, `fluid`, `other`), fasteners that could not be measured, `contains` whose cavity is not registered,
+interfaces whose pairs are all ignored, and pairs the table skipped.
 
-An island made only of allowed-free parts is an `exclusion` with their reasons. `not_checked` lists what the gate
-could not check: non-geometric interfaces (`electrical`, `thermal`, `fluid`, `other`), fasteners without a solid
-that could not be measured, `contains` whose cavity is not registered, interfaces whose pairs are all ignored, and
-pairs the table skipped. The verdict's other extra keys: `graph` (`nodes` with `group`, `body_given`, component,
+<details>
+<summary>The verdict's other keys, and the graph as DOT and SVG</summary>
+
+An island made only of allowed-free parts is an `exclusion` with their reasons. The fasteners in `not_checked` are
+those without a solid that could not be measured. The verdict's other extra keys: `graph` (`nodes` with `group`, `body_given`, component,
 `grounded`, `free`, `held`, `floating`; `edges` with `rigid` and `declared_by`; `components` with `grounded` and
 `via_joint`; `groups`; `missing`: unrealised declarations), `floating`, `undeclared_contacts`, `unrealised` and
 `relation_stats`. `to_dot(verdict)` / `write_dot(verdict, path)` give a Graphviz graph (one cluster per group,

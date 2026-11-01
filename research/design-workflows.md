@@ -61,16 +61,18 @@ Twelve practices, numbered as the rest of this page cites them, grouped by the k
 flowchart TD
     P["Spec Planner<br/>prompt and images → CADBrief"] --> A["Geometric Architect<br/>→ ArchitectPlan"]
     A --> T["deterministic translator<br/>plan steps → build123d"]
-    T --> X["execute<br/>retried up to 3 times on errors"]
-    X --> Q["QA engines<br/>STEP topology, STL mesh"]
-    Q --> J["QA Judge<br/>measurements first, renders optional"]
+    T --> X["execute, retried<br/>up to 3 times<br/>on errors"]
+    X --> Q["QA engines<br/>STEP topology,<br/>STL mesh"]
+    Q -->|"round 1"| B["blind repair,<br/>no judge"]
+    B --> X
+    Q -->|"later"| J["QA Judge<br/>measurements first,<br/>renders optional"]
     J -->|"accept"| D["done"]
-    J -->|"repair, up to 5 rounds"| R["repair agent"]
+    J -->|"repair, up<br/>to 5 rounds"| R["repair<br/>agent"]
     R --> X
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class P,A,T,X,Q,R near
+    class P,A,T,X,Q,B,R near
     class J out
     class D here
 ```

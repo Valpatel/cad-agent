@@ -41,11 +41,13 @@ try {
     page.on('response', r => { if (r.status() >= 400 && route !== '/missing-page') seen.push(`HTTP ${r.status()}: ${r.url()}`); });
     page.on('request', r => { if (!r.url().startsWith(base) && !/^(data|blob):/.test(r.url())) seen.push(`third party: ${r.url()}`); });
     await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
-    // The home page's 3D model: its box as first laid out, around the poster, before any script has run.
-    if (route === '/') await page.addInitScript(() => document.addEventListener('DOMContentLoaded', () => {
+    // The home page's 3D model: its box around the poster when the page has loaded (its stylesheets with it: WebKit can
+    // fire DOMContentLoaded before they arrive and lay out an unstyled box no reader sees). three.js and the model only
+    // start after the load event, so this is still the poster.
+    if (route === '/') await page.addInitScript(() => addEventListener('load', () => {
       const r = document.querySelector('cad-model')?.getBoundingClientRect();
       window.__posterBox = r && [r.width, r.height];
-    }));
+    }, { once: true }));
     const res = await page.goto(base + route, { waitUntil: 'networkidle' });
     if (route === '/missing-page') { if (res.status() !== 404) seen.push(`status ${res.status()}`); }
     else if (res.status() !== 200) seen.push(`status ${res.status()}`);
@@ -75,14 +77,22 @@ try {
       const box = await page.evaluate(() => { const r = document.querySelector('cad-model').getBoundingClientRect(); return { now: [r.width, r.height], first: window.__posterBox }; });
       if (!box.first || Math.abs(box.now[0] - box.first[0]) > 0.5 || Math.abs(box.now[1] - box.first[1]) > 0.5)
         seen.push(`the 3D model's box changed from ${box.first?.map(Math.round)} to ${box.now.map(Math.round)}`);
-      const shift = await page.evaluate(() => new Promise(done => {
-        if (!PerformanceObserver.supportedEntryTypes?.includes('layout-shift')) return done(0);
-        let sum = 0;
-        new PerformanceObserver(list => { for (const e of list.getEntries()) if (!e.hadRecentInput) sum += e.value; })
-          .observe({ type: 'layout-shift', buffered: true });
-        setTimeout(() => done(sum), 200);
+      // Each shift with what moved, so a CI log says where any shift comes from.
+      const { shift, moved } = await page.evaluate(() => new Promise(done => {
+        if (!PerformanceObserver.supportedEntryTypes?.includes('layout-shift')) return done({ shift: 0, moved: [] });
+        let sum = 0; const moved = [];
+        const name = n => !n ? '?' : n.nodeType !== 1 ? `${n.parentElement?.localName || '?'} text` : n.localName + (n.id ? '#' + n.id : '') + (n.classList[0] ? '.' + n.classList[0] : '');
+        const rect = r => [r.x, r.y, r.width, r.height].map(Math.round).join(',');
+        new PerformanceObserver(list => {
+          for (const e of list.getEntries()) if (!e.hadRecentInput) {
+            sum += e.value;
+            moved.push(`${e.value.toFixed(3)} at ${Math.round(e.startTime)} ms: ${e.sources.map(x => `${name(x.node)} ${rect(x.previousRect)} -> ${rect(x.currentRect)}`).join('; ')}`);
+          }
+        }).observe({ type: 'layout-shift', buffered: true });
+        setTimeout(() => done({ shift: sum, moved }), 200);
       }));
-      if (shift > 0.05) seen.push(`layout shifts on the home page: ${shift.toFixed(3)}`);
+      if (shift > 0.05) seen.push(`layout shifts on the home page: ${shift.toFixed(3)} (${moved.join(' | ')})`);
+      else if (shift > 0.01) console.log(`  note: ${width}px /: layout shift ${shift.toFixed(3)}, under the 0.05 limit: ${moved.join(' | ')}`);
       // Scrolled away, it draws nothing, even when the tab is hidden and shown again (#182 review).
       if (ready === 'ready') {
         await page.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, document.body.scrollHeight); });
@@ -374,8 +384,6 @@ try {
   // or render stays under WALL_LIMIT (1.5 screens). WALLS is the backlog, each page with the issue that breaks it up;
   // it only shrinks: a page not on it must pass, and one on it that measures under WALL_CLEARED must leave it.
   const WALLS = new Map([
-    // #174 redraws the catalogue as a gallery.
-    ['/catalog', 174],
     // #146 adds the snap-arm explorer.
     ['/docs/compliant', 146],
     // #179 slice 3: real outputs for the rest. /docs/toolkit splits into area pages once #121's layout lands.
@@ -392,7 +400,7 @@ try {
   ]);
   // The list only shrinks: its length is pinned here, so a page can join it only with a visible edit to this number,
   // and each page that leaves it brings the number down with it.
-  const WALLS_LEFT = 40;
+  const WALLS_LEFT = 39;
   if (WALLS.size !== WALLS_LEFT) problems.push(`walls: WALLS has ${WALLS.size} pages and WALLS_LEFT says ${WALLS_LEFT}: ${WALLS.size < WALLS_LEFT ? `lower WALLS_LEFT to ${WALLS.size}` : 'the backlog only shrinks; fix the page instead'}`);
   const sitePages = [];
   for (const e of await readdir(dir, { withFileTypes: true, recursive: true })) {

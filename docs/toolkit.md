@@ -1,11 +1,15 @@
-# cad-agent toolkit: verification and review reports for 3D-printed CAD projects
+# cad-agent toolkit: tools for mechanical and electrical design
 
-`cad-agent` runs a CAD project's build and checks, verifies its print files,
-and turns the results into a standalone HTML report and a review package. It is
-generic. The geometry and the design-specific checks stay in the project;
-the toolkit (Python package `cadagent`) provides the runner, the 3MF writer,
-shared geometry screens, the renderer, link validation, the report, packaging
-and a local server.
+`cad-agent` is a toolkit for designing hardware with agents, in mechanical and electrical design: parts and
+assemblies, manufacturing (3D printing, CNC, sheet metal, laser cutting, moulds), thermal design, simulation and
+validation, wiring, panels and circuit boards. Each area of the [topic tree](vision.md) has its own sub-toolkit: the
+commands and Python APIs that [`docs/areas.yaml`](areas.yaml) lists for it, at the maturity that area has reached
+(several are still ideas, with no tool yet).
+
+This page covers the shared core every area uses. `cad-agent` runs a project's build and checks, verifies its
+manufacturing files, and turns the results into a standalone HTML report and a review package. The geometry and the
+design-specific checks stay in the project; the toolkit (Python package `cadagent`) provides the runner, the 3MF
+writer, shared geometry screens, the renderer, link validation, the report, packaging and a local server.
 
 <table><tr>
 <td width="33%"><img src="img/viewer.jpg" alt="The 3D viewer and review site: every part of an assembly in place"><br><b>Site.</b> Every part in place, with explode and section, and one top bar linking every report.</td>

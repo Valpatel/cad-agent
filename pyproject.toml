@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "cad-agent"
 version = "0.4.2"
-description = "CAD design verification and review reports for 3D-printed parts"
+description = "Agent toolkit for mechanical and electrical design: CAD checks, simulation, manufacturing files and review reports"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}

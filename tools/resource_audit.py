@@ -1478,9 +1478,12 @@ def cell(s):
     return str(s if s is not None else '').replace('|', '\\|').replace('\n', ' ')
 
 
+LINKY = re.compile(URL.pattern + r'|(?<![/\w.@-])www\.[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+[^\s|<>]*')   # GFM autolinks www. too
+
+
 def inert(s):
     """Text for a published table: URLs in code spans, so the report page never links people to what it flags."""
-    return URL.sub(lambda m: f'`{m.group(0)}`', cell(str(s).replace('`', "'")))
+    return LINKY.sub(lambda m: f'`{m.group(0)}`', cell(str(s).replace('`', "'")))
 
 
 def findings_table(fs):

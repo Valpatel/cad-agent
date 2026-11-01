@@ -186,6 +186,7 @@ def test_report_is_deterministic_and_markdown_is_one_page(tmp_path):
     assert json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
     md = ra.to_markdown(a)
     assert md.count("\n# ") + md.startswith("# ") == 1 and "**Limits.**" in md and "pie showData" in md
+    assert "`www.dhondt.de`" in md and "`url:http://www.dhondt.de/`" in md      # flagged links stay unlinked on the site
     assert "/home/" not in md and str(tmp_path) not in json.dumps(a)
 
 

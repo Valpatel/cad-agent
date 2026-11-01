@@ -18,16 +18,17 @@ Rotation = Tuple[Tuple[float, float, float], float]
 
 # The FILE_NAME time stamp export_step writes when SOURCE_DATE_EPOCH is not set: a fixed date, not the write time.
 STEP_DATE = "2000-01-01T00:00:00"
-# The STEP writer settings export_step sets on every call, because they are process-wide and earlier code may have
+# The STEP writer settings export_step uses on every call, because they are process-wide and earlier code may have
 # changed them: cadquery's exportStep defaults (pcurves, precision mode 0, millimetres) and the schema, AP214 (OCCT's
-# default; cadquery never sets it, but project code may choose AP242).
+# default; cadquery never sets it, but project code may choose AP242). The previous values are put back afterwards.
 STEP_SETTINGS = (("write.surfacecurve.mode", 1), ("write.precision.mode", 0), ("xstep.cascade.unit", "MM"),
                  ("write.step.unit", "MM"), ("write.step.schema", "AP214IS"))
-# OCCT's STEP reader ends a string early at a doubled quote followed by spaces and then ',' or ')': it reads
-# 'post (6'')' back as no name at all, although Part 21 allows it. The vendored text-to-cad step_export documents
-# the same (_MISREAD_QUOTE) and rewrites the quote as \X\27 in the text; through the API that is not possible,
-# because OCCT doubles the backslash, so such names are refused.
-_MISREAD_QUOTE = re.compile(r"' *[,)]")
+# OCCT's STEP reader ends a string early at a doubled quote followed by spaces or double quotes and then ',' or ')':
+# it reads 'post (6'')' or 'a''")' back as no name at all, although Part 21 allows both. The rule matched the reader
+# on 1,572 probes (review of #149). The vendored text-to-cad step_export documents the space case (_MISREAD_QUOTE)
+# and rewrites the quote as \X\27 in the text; through the API that is not possible, because OCCT doubles the
+# backslash, so such names are refused.
+_MISREAD_QUOTE = re.compile(r"'[ \"]*[,)]")
 
 class GeometryError(RuntimeError):
     """A part failed a hard geometry requirement (e.g. a non-watertight STL)."""
@@ -110,12 +111,13 @@ def step_timestamp() -> str:
 
 def _step_string(value: str, what: str, fix: str) -> str:
     """``value`` if it can go in a STEP string as it is and read back the same: printable ASCII, and no quote
-    followed by ``,`` or ``)`` (``_MISREAD_QUOTE``). OCCT doubles quotes and backslashes. ``fix`` ends the error."""
+    followed by ``,`` or ``)`` with only spaces or double quotes between (``_MISREAD_QUOTE``). OCCT doubles quotes
+    and backslashes. ``fix`` ends the error."""
     if not value or not all(" " <= c <= "~" for c in value):
         raise ValueError(f"{what} {value!r} is not printable ASCII; {fix}")
     if _MISREAD_QUOTE.search(value):
-        raise ValueError(f"{what} {value!r} has a quote followed by ',' or ')', which OCCT's STEP reader misreads "
-                         f"(it loses the name); {fix}")
+        raise ValueError(f"{what} {value!r} has a quote followed by ',' or ')', with only spaces or double quotes "
+                         f"between, which OCCT's STEP reader misreads (it loses the name); {fix}")
     return value
 
 def export_step(shape: Any, path: Path, name: Optional[str] = None) -> Path:
@@ -134,25 +136,21 @@ def export_step(shape: Any, path: Path, name: Optional[str] = None) -> Path:
     * assembly-link ids: 1, 2, ... in file order.
 
     OCCT writes the name as a STEP string, doubling quotes and backslashes. The name and the file's name must be
-    printable ASCII with no quote followed by ``,`` or ``)``, which OCCT's reader misreads (``ValueError``).
+    printable ASCII with no quote followed by ``,`` or ``)`` (spaces or double quotes between count), which OCCT's
+    reader misreads (``ValueError``).
     ``shape`` is a cadquery Shape or Workplane (several objects become one compound, as ``cadquery.exporters.export``
     does), a build123d shape or an OCP ``TopoDS_Shape``. A cadquery ``Assembly`` is refused (``TypeError``): it
     needs the XCAF writer, which this does not make reproducible (#150).
 
     Limits: the other header fields stay as OCCT writes them (placeholder author and organisation, OCCT's version as
-    preprocessor and originating system). The writer settings in ``STEP_SETTINGS`` are set on every call; other
-    process-wide ones that cadquery never sets (``write.step.nonmanifold``, ``write.precision.val``, ...) still
-    apply if project code changes them. Another OCCT version can write different bytes for the same geometry.
+    preprocessor and originating system). The writer settings in ``STEP_SETTINGS`` are set for the call and put
+    back after it, so later ``cadquery.exporters.export`` calls keep the project's own. Other process-wide ones that
+    cadquery never sets (``write.step.nonmanifold``, ``write.precision.val``, ...) still apply if project code
+    changes them. Another OCCT version can write different bytes for the same geometry.
     The file is written next to ``path`` and renamed into place. Returns ``path``.
     """
     cq = require("cadquery", "STEP export")
-    from OCP.APIHeaderSection import APIHeaderSection_MakeHeader
-    from OCP.IFSelect import IFSelect_ReturnStatus
-    from OCP.Interface import Interface_Static
-    from OCP.STEPControl import STEPControl_AsIs, STEPControl_Writer
-    from OCP.StepBasic import StepBasic_Product
-    from OCP.StepRepr import StepRepr_NextAssemblyUsageOccurrence
-    from OCP.TCollection import TCollection_HAsciiString
+    from OCP.STEPControl import STEPControl_Writer
 
     path = Path(path)
     _step_string(path.name, "STEP file name", "rename the file (the header's FILE_NAME is the file's own name)")
@@ -166,11 +164,40 @@ def export_step(shape: Any, path: Path, name: Optional[str] = None) -> Path:
             raise ValueError(f"{path.name}: the Workplane holds no shapes")
         shape = objs[0] if len(objs) == 1 else cq.Compound.makeCompound(objs)
 
-    writer = STEPControl_Writer()
-    for key, value in STEP_SETTINGS:                          # after the writer exists, which registers them
-        if not (Interface_Static.SetIVal_s if isinstance(value, int) else Interface_Static.SetCVal_s)(key, value):
+    writer = STEPControl_Writer()                         # registers the settings swapped in below
+    previous = _swap_step_settings(STEP_SETTINGS)
+    try:
+        _transfer_and_write(writer, getattr(shape, "wrapped", shape), path, name)
+    finally:
+        _swap_step_settings(previous)                     # the process keeps the project's own settings
+    return path
+
+def _swap_step_settings(settings: Sequence[Tuple[str, Any]]) -> List[Tuple[str, Any]]:
+    """Set OCCT's process-wide writer ``settings`` ((key, value) pairs; an int value is set as an integer) and return
+    the values they replaced, last first, to pass back. If OCCT refuses one, those already set are put back and
+    ``GeometryError`` is raised."""
+    from OCP.Interface import Interface_Static
+
+    previous: List[Tuple[str, Any]] = []
+    for key, value in settings:
+        integer = isinstance(value, int)
+        old = Interface_Static.IVal_s(key) if integer else Interface_Static.CVal_s(key)
+        if not (Interface_Static.SetIVal_s if integer else Interface_Static.SetCVal_s)(key, value):
+            _swap_step_settings(previous[::-1])
             raise GeometryError(f"OCCT refused the STEP writer setting {key}={value}")
-    if writer.Transfer(getattr(shape, "wrapped", shape), STEPControl_AsIs) != IFSelect_ReturnStatus.IFSelect_RetDone:
+        previous.append((key, old))
+    return previous[::-1]
+
+def _transfer_and_write(writer: Any, topo: Any, path: Path, name: str) -> None:
+    """``export_step``'s work once the settings are in place: transfer, fix the header, products and links, write."""
+    from OCP.APIHeaderSection import APIHeaderSection_MakeHeader
+    from OCP.IFSelect import IFSelect_ReturnStatus
+    from OCP.STEPControl import STEPControl_AsIs
+    from OCP.StepBasic import StepBasic_Product
+    from OCP.StepRepr import StepRepr_NextAssemblyUsageOccurrence
+    from OCP.TCollection import TCollection_HAsciiString
+
+    if writer.Transfer(topo, STEPControl_AsIs) != IFSelect_ReturnStatus.IFSelect_RetDone:
         raise GeometryError(f"{path.name}: OCCT could not transfer the shape to STEP")
     model = writer.Model()
 
@@ -222,7 +249,6 @@ def export_step(shape: Any, path: Path, name: Optional[str] = None) -> Path:
         os.replace(part, path)
     finally:
         part.unlink(missing_ok=True)
-    return path
 
 def pairwise_intersections(
     named_shapes: Mapping[str, Any],

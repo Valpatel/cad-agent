@@ -54,7 +54,6 @@ present:
   strain_axis: root strain (%)
   force_axis: push to mate (N)
   travel_axis: travel after the edge meets the lead (mm)
-  allowed: "{short}: {allow} allowed"
   crossing: "{short}: over its allowable {travel} mm up the {lead_travel} mm lead"
   peak: "peak {strain}"
   force_line: "{short}: {force} at the top of the lead; μ {mu} on the land"

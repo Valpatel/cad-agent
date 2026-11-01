@@ -305,7 +305,7 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
            f".gr{{stroke:var(--line);stroke-width:{U}}}.ok{{fill:var(--good)}}.no{{fill:var(--accent)}}"
            f".cv{{fill:none;stroke:var(--ink);stroke-width:{2 * U};stroke-linejoin:round;stroke-dasharray:1}}"
            f".al{{stroke-width:{1.6 * U};stroke-dasharray:{6 * U} {4 * U}}}"
-           f".m0s{{stroke:var(--m0)}}.m1s{{stroke:var(--m1)}}.m0f{{fill:var(--m0)}}.m1f{{fill:var(--m1)}}"]
+           f".m0s{{stroke:var(--m0)}}.m1s{{stroke:var(--m1)}}"]
 
     # ---- title
     body.append(text(20, 30, present["title"], "t w"))
@@ -316,8 +316,7 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
     L, h, ud = a["length_mm"], a["thickness_mm"], a["undercut_mm"]
     c, R = dr["clearance_mm"], a["root_radius_mm"]
     x_root, y_mid = 56.0, 128.0                         # the root, on the arm's centre line, CSS px
-    X = lambda mm: x_root + K_MM * mm
-    Z = lambda mm: y_mid - K_MM * mm                    # z up in mm, to px down
+    X = lambda mm: x_root + K_MM * mm                   # mm along the arm from its root, to px
     ht, rr = h * K_MM / 2, R * K_MM
     wall_top, wall_bot = 74.0, 204.0
     # the wall and the root's fillets, one part with the arm: no line where the arm leaves the wall

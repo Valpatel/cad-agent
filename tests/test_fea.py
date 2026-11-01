@@ -24,6 +24,28 @@ def test_cantilever_tip_deflection_and_root_stress():
     assert r['stiffness_n_per_mm'] == pytest.approx(F / tip, rel=0.03)
 
 
+def test_printed_material_deflects_at_its_data_sheet_modulus(tmp_path):
+    """#125: a PETG cantilever deflects as the data sheet's modulus across the layers says (1120 MPa), not the 1800 MPa
+    the table used before; the result and the viewer data name the sheet and the print direction."""
+    import json
+
+    from cadagent.sim.fea import MATERIALS
+
+    petg = MATERIALS['petg']
+    L, b, h, F = 100.0, 10.0, 10.0, 5.0
+    st = Study(cq.Workplane('XY').box(L, b, h).translate((L / 2, 0, 0)), petg, mesh_mm=4.0, name='petg beam')
+    st.fix(plane_at(0, 0.0)).force(plane_at(0, L), (0, 0, -F))
+    r = st.solve()
+    I, G = b * h ** 3 / 12, petg.E_mpa / (2 * (1 + petg.nu))
+    tip = F * L ** 3 / (3 * 1120 * I) + F * L / (G * b * h * 5 / 6)
+    assert r['probe_displacement_mm'][2] == pytest.approx(-tip, rel=0.03)
+    assert r['material_source'] == 'bambu-petg-basic-tds' and r['material_direction'] == 'Z'
+    assert 'across the layers (Z)' in r['assumptions']
+    d = json.loads(st.export_viewer(tmp_path / 'petg.json').read_text())
+    assert d['material']['E_mpa'] == 1120 and d['material']['direction'] == 'Z'
+    assert d['material']['source'] == 'bambu-petg-basic-tds'
+
+
 def test_study_leaves_no_temp_step(tmp_path, monkeypatch):
     # a shape is exported to a temporary STEP to mesh it; the export goes once it is meshed, and when meshing fails;
     # a STEP path the caller passes (str or Path) is theirs and stays. The test's own temp folder keeps other

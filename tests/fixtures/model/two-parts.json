@@ -16,7 +16,7 @@
  "encoding": "gzip",
  "bytes": 114,
  "raw_bytes": 168,
- "sha256": "3a58a601a327f3c8bfa191f0c95c5b89c8f0eb39ef5f81b2bd6e363e05cca176",
+ "sha256": "15c00c1ec38d3ef5d9c5a0a8d09c1f64a232ba05bf0c8ed5a85643b290cfe544",
  "triangles": 16,
  "source": {
   "fixture": "tests/fixtures/model/make_fixture.py"

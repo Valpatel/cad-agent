@@ -548,8 +548,22 @@ class Study:
         return float(vol[hit].sum() / vol.sum())
 
     # --- picture
-    def render(self, path, scale: Optional[float] = None, view=(25, -60), title: Optional[str] = None):
-        """Boundary of the deformed mesh coloured by von Mises stress; the deformation is exaggerated (scale)."""
+    def render(self, path, scale: Optional[float] = None, view=(25, -60), title: Optional[str] = None,
+               vmax: Optional[float] = None):
+        """Boundary of the deformed mesh coloured by von Mises stress, with the deformation exaggerated.
+
+        ``scale`` is the deformation's exaggeration. When it is None, it is chosen so the largest displacement shows
+        as 6 % of the part's size; that differs between studies.
+
+        ``vmax`` (MPa) is the top of the colour scale. When it is None, the colour bar runs from 0 to this study's
+        design stress (``result['von_mises_design_mpa']``, else the 99.5th percentile of the element stress), so two
+        studies' renders use different colour scales. To compare variants, give every render the same ``vmax`` and
+        the same ``scale``, for example the larger design stress of the pair, rounded up. Stress above ``vmax`` is
+        drawn in the top colour. The colour bar then says the scale is fixed, and it names this study's design stress.
+        Its top is drawn as an arrow only when that stress goes past ``vmax``. Colours are absolute MPa, so compare
+        renders only under the same load case.
+
+        Raises ValueError when ``vmax`` is not a positive, finite number."""
         import matplotlib
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
@@ -565,7 +579,12 @@ class Study:
             scale = 0.06 * size / dmax if dmax > 0 else 1.0
         P = self.points + scale * self.disp.T
         vm = self.vm_elem[elem]
-        vmax = float(self.result.get('von_mises_design_mpa') or np.percentile(self.vm_elem, 99.5)) or 1.0
+        fixed = vmax is not None
+        if fixed and not (math.isfinite(vmax) and vmax > 0):
+            raise ValueError(f'vmax must be a positive number of MPa, not {vmax!r}')
+        own = float(self.result.get('von_mises_design_mpa') or np.percentile(self.vm_elem, 99.5)) or 1.0
+        if not fixed:
+            vmax = own
         cmap = plt.get_cmap('turbo')
         fig = plt.figure(figsize=(8, 6), dpi=110)
         ax = fig.add_subplot(111, projection='3d')
@@ -578,7 +597,10 @@ class Study:
         ax.view_init(*view)
         ax.set_axis_off()
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(0, vmax))
-        fig.colorbar(sm, ax=ax, shrink=0.6, label='von Mises stress (MPa)')
+        clipped = fixed and own > vmax
+        fig.colorbar(sm, ax=ax, shrink=0.6, extend='max' if clipped else 'neither',
+                     label=(f'von Mises stress (MPa), fixed scale 0-{vmax:g}; this design {own:.3g}' if fixed
+                            else 'von Mises stress (MPa)'))
         res = getattr(self, 'result', {})
         ax.set_title(title or f"{self.name}: {res.get('material', '')}, SF {res.get('safety_factor')}, "
                      f"max {res.get('max_displacement_mm')} mm (deformation ×{scale:.0f})", fontsize=9)

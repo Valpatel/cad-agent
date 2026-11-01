@@ -190,7 +190,7 @@ const lessonCount = pages.filter(p => p.section === 'lessons' && !/(?:^|\/)READM
 await writeFile(path.join(out, 'catalog.json'), JSON.stringify(catalog, null, 2) + '\n');
 
 // ----------------------------------------------------------------------------- HTML frame
-const NAV = [['/catalog', 'Catalogue', true], ['/docs/toolkit', 'Toolkit', true], ['/research/landscape', 'Landscape'],
+const NAV = [['/catalog', 'Catalogue', true], ['/docs/toolkit', 'Tools', true], ['/research/landscape', 'Landscape'],
   ['/docs/common-issues', 'Pitfalls'], ['/docs/agent-workflow', 'For agents']];
 // Feedback goes to GitHub: a short issue form with the page filled in, or an edit of the page's source.
 const feedbackURL = (title, url) => `${REPO}/issues/new?template=feedback.yml&title=${encodeURIComponent(`Feedback: ${title}`)}&page=${encodeURIComponent(ORIGIN + url)}`;
@@ -365,7 +365,7 @@ const landing = `<div class="wrap"><section class="hero"><div class="hero-copy">
 <h1>Your one stop shop for <span>agentic CAD.</span></h1>
 <p class="intro">Mapping the best free resources, demonstrating their capabilities, and filling the gaps.</p>
 <p class="hero-description">cad-agent is the toolkit and field guide our agents use to design real hardware: which open-source tools to reach for, what each one is good at, the checks that catch the mistakes, and our own tools where nothing free does the job yet.</p>
-<div class="actions"><a class="button primary" href="/catalog">Browse the catalogue <span>→</span></a><a class="button" href="/docs/toolkit">Read the toolkit</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div>
+<div class="actions"><a class="button primary" href="/catalog">Browse the catalogue <span>→</span></a><a class="button" href="/docs/toolkit">See the tools</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div>
 <cad-copy class="agent-copy" label="Copy"><pre class="agent-box" aria-label="How an agent reads this site"><b># point any coding agent here</b>
 curl -s ${ORIGIN}/llms.txt
 curl -s ${ORIGIN}/catalog.json
@@ -377,7 +377,7 @@ curl -s ${ORIGIN}/docs/toolkit.md  <b># any page, as .md</b></pre></cad-copy>
 <section class="section"><div class="lead"><h2>Three jobs, <span>one place.</span></h2><p>We are not attached to our own code. If someone else's tool, skill or agent does a job better, it goes in the catalogue and we use it. What is left, we build and test.</p></div>
 <div class="missions">
 <a class="mission mission-blue" href="/research/landscape"><span class="mission-icon">🗺️</span><span class="mission-tag">Map</span><span class="mission-num">${(counts.upstream || 0) + (counts.library || 0) + (counts.benchmark || 0)}</span><p>Agentic-CAD projects, libraries and benchmarks, checked with dates, licences and what each is actually good for.</p><span class="go">See the landscape <span>→</span></span></a>
-<a class="mission mission-yellow" href="/docs/toolkit"><span class="mission-icon">🧪</span><span class="mission-tag">Demonstrate</span><span class="mission-num">${counts.tool || 0}</span><p>Commands that run on real projects: integrity gates, hole and fastener checks, FEA, CFD, topology optimisation, slicing, a 3D viewer and review reports.</p><span class="go">Open the toolkit <span>→</span></span></a>
+<a class="mission mission-yellow" href="/docs/toolkit"><span class="mission-icon">🧪</span><span class="mission-tag">Demonstrate</span><span class="mission-num">${counts.tool || 0}</span><p>Commands that run on real projects: integrity gates, hole and fastener checks, FEA, CFD, topology optimisation, slicing, a 3D viewer and review reports.</p><span class="go">Open the tools <span>→</span></span></a>
 <a class="mission mission-orange" href="/docs/common-issues"><span class="mission-icon">🧩</span><span class="mission-tag">Fill the gaps</span><span class="mission-num">${lessonCount}</span><p>Lessons from real builds, each a rule with the incident behind it and how to check it: a rib that ran into a counterbore, a screw that bottoms out, a driver that cannot reach.</p><span class="go">Read the pitfalls <span>→</span></span></a>
 </div></section>
 <section class="section" style="padding-top:0"><div class="lead"><h2>Skills your agents <span>can load.</span></h2><p>Claude Code and Codex install them with <code>cad-agent agents install</code>. Work survives crashes, reviews are independent, heavy runs go to compute hosts.</p></div>
@@ -417,7 +417,7 @@ tested tools of its own. Every page on this site has a Markdown twin at the same
 ## Start here
 
 - [README](${ORIGIN}/README.md): what cad-agent is and how it grows
-- [Toolkit](${ORIGIN}/docs/toolkit.md): every command, the project contract and the Python API
+- [Tools](${ORIGIN}/docs/toolkit.md): every command, the project contract and the Python API
 - [Agent workflow](${ORIGIN}/docs/agent-workflow.md): skills, subagents, work claims and crash-safe work
 - [Common issues](${ORIGIN}/docs/common-issues.md): recurring CAD mistakes and the checks that catch them
 - [Landscape](${ORIGIN}/research/landscape.md): the agentic-CAD tools we track, verified

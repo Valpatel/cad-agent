@@ -2,6 +2,8 @@
 import('/kit/diagrams.js').then(m => m.observeDiagrams()).catch(() => {});
 // One-click copy buttons on code blocks (the build wraps them in <cad-copy>).
 import('/kit/copy.js').catch(() => {});
+// Page tree and outline beside long pages (the build writes the tree into <cad-nav>).
+import('/kit/nav.js').catch(() => {});
 // Catalogue filter: text search plus type chips. Works without JS (everything is shown). Each term matches the start
 // of a word, so "mit" finds the MIT licence but not "commit".
 const q = document.getElementById('q');

@@ -616,7 +616,6 @@ def _mesher_identity() -> dict:
     global _MESHER
     if _MESHER is not None:
         return _MESHER
-    import hashlib
     import os
     import platform
 

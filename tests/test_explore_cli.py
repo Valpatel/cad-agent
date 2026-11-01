@@ -10,7 +10,7 @@ import pytest
 
 from cadagent.cli import main
 
-from .explore_fixtures import restore_sys_path, write_enclosure  # noqa: F401 (a fixture)
+from .explore_fixtures import BRACKET, restore_sys_path, write_bracket, write_enclosure  # noqa: F401 (a fixture)
 
 pytestmark = pytest.mark.usefixtures("restore_sys_path")
 EXAMPLE = Path(__file__).resolve().parents[1] / "examples" / "explore-two-wheel"
@@ -73,7 +73,7 @@ def test_compare_exit_codes(tmp_path, capsys):
 @pytest.mark.parametrize("config, fragment", [
     ("cad:\n  name: x\n", "no explore: section"),
     ("cad:\n  explore: {evaluator: tools/missing.py:evaluate, catalogue: [catalogue/*.json]}\n", "evaluator file not found"),
-    ("cad:\n  explore: {designs: [designs/*.json]}\n", "lists no catalogue files"),
+    ("cad:\n  explore: {designs: [designs/*.json], slots: {fan: fan}}\n", "lists no catalogue files, but slots are declared (fan)"),
     ("cad:\n  explore: {catalogue: [catalogue/*.json], objectives: [{metric: x, goal: up}]}\n", "goal min or max"),
 ])
 def test_unusable_explore_config_exits_2(tmp_path, capsys, config, fragment):
@@ -111,3 +111,29 @@ def test_absolute_catalogue_patterns(tmp_path, capsys):
     (root / "cad-agent.yaml").write_text(cfg)
     assert main(["catalogue", "--project", str(root)]) == 0
     assert "7 parts in 1 file(s)" in capsys.readouterr().out
+
+
+def test_a_parameter_search_needs_no_catalogue(tmp_path, capsys):
+    """No catalogue and no slots: the designs differ only in their parameters, their BOMs are empty, and catalogue,
+    compare and optimise (with its confirm stage) all run."""
+    root = write_bracket(tmp_path)
+    assert main(["catalogue", "--project", str(root)]) == 0
+    assert "catalogue: none configured and no slots" in capsys.readouterr().out
+    assert main(["compare", "--project", str(root)]) == 0
+    comp = json.loads((root / "exports" / "explore" / "comparison.json").read_text())
+    assert comp["designs"][0]["bom"]["lines"] == [] and comp["designs"][0]["verdict"] == "ok"
+    assert list(comp["metrics"]) == ["safety_factor", "mesh_mm"], "no cost and mass columns when nothing is bought"
+    assert "Bill of materials" not in (root / "exports" / "explore" / "compare.html").read_text()
+    assert main(["optimise", "--project", str(root), "--trials", "6"]) == 0
+    out = capsys.readouterr().out
+    assert "search (grid): 6 new trial(s)" in out and "confirm (" in out and "--mesh 3): 3 evaluated this run" in out
+    assert "2 of the top 2 feasible confirmed" in out and "flagged: trial " in out and "-18.5 %" in out
+    assert main(["optimise", "--project", str(root), "--trials", "1", "--no-confirm"]) == 0
+    out = capsys.readouterr().out
+    assert "0 new trial(s)" in out and "0 evaluated this run (--no-confirm); 2 of the top 2" in out, "kept from before"
+    (root / "designs" / "part.json").write_text(json.dumps({"parts": {"lid": "lid-1"}, "params": {"wall_mm": 3}}))
+    assert main(["catalogue", "--project", str(root)]) == 1
+    assert "unknown part id 'lid-1' (the catalogue is empty" in capsys.readouterr().out
+    (root / "cad-agent.yaml").write_text(BRACKET.replace("space: [", "space: [{slot: lid}, "))
+    assert main(["optimise", "--project", str(root), "--fresh"]) == 2
+    assert "slot lid draws its parts from the catalogue, and none is configured" in capsys.readouterr().err

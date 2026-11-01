@@ -234,7 +234,7 @@ Unquoted, the title is cut at the comma and the rest becomes a stray key.
 | `cad-agent all` | build, export-3mf, holes, gates and the dossier lint (when `cad: dossier:` or `cad: gates:` is set), check + report, package | 1 if anything failed |
 | `cad-agent catalogue [--json] [--errors-only]` | checks the part catalogue and every design against it (config `cad: explore:`, [explore.md](explore.md)) | 1 on an error |
 | `cad-agent compare [DESIGN ...] [--swaps] [--workers N] [--json] [--open]` | evaluates the designs with the project's evaluator, ranks them (Pareto fronts over the objectives) and writes `comparison.json`, `compare.html` and site design cards; `--swaps` tries every one-part swap | 1 if a design could not be evaluated |
-| `cad-agent optimise [--trials N] [--workers N] [--sampler S] [--fresh]` | searches slots and parameters (random, grid; NSGA-II and TPE with optuna) and keeps a leaderboard | 1 if no trial is feasible |
+| `cad-agent optimise [--trials N] [--workers N] [--sampler S] [--fresh] [--no-confirm]` | searches slots and parameters (random, grid; NSGA-II and TPE with optuna), keeps a leaderboard, and re-evaluates the leaders at a higher fidelity (`search.confirm`) | 1 if no trial is feasible |
 
 `--project PATH` (default: cwd), before or after the subcommand, selects the
 project. Exit code 2 means the project or environment is unusable: a missing or

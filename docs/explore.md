@@ -3,7 +3,8 @@
 For any product built from bought and made parts (an enclosure, a robot, a board, a jig): pick parts from a
 catalogue for each slot of a design, evaluate every design with the project's own model, and rank the trade-offs.
 cad-agent provides the catalogue checks, the bill of materials, the ranking, the pages and a search loop. The project
-provides the parts, the designs and, optionally, an evaluator with its physics.
+provides the parts, the designs and, optionally, an evaluator with its physics. A search that changes only parameters
+(a wall thickness, a fillet radius) needs no catalogue at all.
 
 ```bash
 cad-agent catalogue               # check the catalogue, and every design against it
@@ -88,7 +89,7 @@ cad:
 
 | Key | Default | Meaning |
 |---|---|---|
-| `catalogue` | none (required) | globs or paths of catalogue files, relative to the project root or absolute (`**` works); a pattern that matches nothing is an error |
+| `catalogue` | none | globs or paths of catalogue files, relative to the project root or absolute (`**` works); a pattern that matches nothing is an error; required only when `slots` are declared (without it, designs differ only in `params` and their BOMs are empty) |
 | `categories` | any | allowed categories |
 | `currency` | `usd` | three-letter code; prices are read from `price_<currency>` |
 | `max_price_age_days` | `90` | warn about prices checked longer ago; `null` turns it off |
@@ -220,14 +221,30 @@ mass. A metric with the same name as a BOM metric replaces it (`mass_kg` from CA
 plain numbers. The evaluator's folder is appended to `sys.path`, so it can import its neighbours without shadowing a
 library. Each part the evaluator gets is its own copy; `candidate.catalogue` is shared, so read it only.
 
-In any language, `evaluator: {command: [node, tools/evaluate.mjs], timeout_s: 120}`: the request arrives as JSON on
-stdin (`{id, name, file, design, params, currency, parts: {slot: {item, qty, custom}}, bom}`), the result above is
-printed as JSON on stdout (log lines before it are fine; the last line is tried too). In the argv `{design}` becomes a
-temporary JSON file with the resolved design (in a private temporary folder), `{id}` the design's id as a plain file
-name for a folder of per-design outputs (letters, digits and `. _ + -` only, such as `trial-00007`; an id with other
-characters, like `designs/a/std`, has them replaced and gets a short hash) and `{python}` the project's python. It
-runs in the project root with `CAD_AGENT_PROJECT` set, in its own process group: a timeout kills the evaluator and
-everything it started, anything it leaves running when it exits is killed too, and Ctrl-C stops them.
+In any language, `evaluator: {command: [node, tools/evaluate.mjs, "{result}"], timeout_s: 120}`: the request arrives
+as JSON on stdin, and the evaluator writes the result above as JSON to the file `{result}` names; cad-agent reads it
+once the command exits. Without `{result}` the reply is the JSON on stdout. **Use `{result}` whenever the evaluation
+runs native code:** gmsh, OpenCASCADE and most solvers write to file descriptor 1 from C, past Python's `sys.stdout`,
+so `contextlib.redirect_stdout` does not catch them, and their lines land in the reply, which is then not JSON.
+
+<details>
+<summary>The command's placeholders, its stdin, a stdout reply, and how it is stopped</summary>
+
+| In the argv | Becomes |
+|---|---|
+| `{result}` | a file path (in a private temporary folder) the evaluator writes its JSON result to; stdout is then only a log |
+| `{design}` | a temporary JSON file with the resolved design |
+| `{id}` | the design's id as a plain file name for a folder of per-design outputs (letters, digits and `. _ + -` only, such as `trial-00007`; an id with other characters, like `designs/a/std`, has them replaced and gets a short hash) |
+| `{python}` | the project's python |
+
+The request on stdin is `{id, name, file, design, params, currency, parts: {slot: {item, qty, custom}}, bom}`. A reply
+on stdout may have log lines before the JSON (the last line is tried too), but nothing after it. An evaluator that
+must reply on stdout can keep it clean with `os.dup2`: copy fd 1 for the reply, point fd 1 at stderr
+(`os.dup2(2, 1)`), and write the JSON to the copy. The command runs in the project root with `CAD_AGENT_PROJECT` set,
+in its own process group: a timeout kills the evaluator and everything it started, anything it leaves running when it
+exits is killed too, and Ctrl-C stops them.
+
+</details>
 
 An exception, a non-zero exit, a timeout, output that is not JSON or a number that is not finite (NaN or infinity in
 `metrics`, `lines` or `data`) makes that one design an `error` with the reason; the other designs are still evaluated,
@@ -283,7 +300,7 @@ catalogue failed to load, 2 when the configuration or the evaluator is unusable.
         - {param: frame.material, choices: [pla, petg]}
 ```
 
-`cad-agent optimise [--trials N] [--workers N] [--sampler S] [--seed N] [--fresh]` builds each trial from the base
+`cad-agent optimise [--trials N] [--workers N] [--sampler S] [--seed N] [--fresh] [--no-confirm]` builds each trial from the base
 design, writes it to `out/search/trials/trial-00007.json`, evaluates it exactly as `compare` would, and writes
 `out/search/trials.jsonl` (one record per trial, with its full evaluation) and `leaderboard.json` +
 `leaderboard.html` (refreshed while it runs, at most a tenth of the time; the JSON keeps metrics, checks and BOM
@@ -315,6 +332,70 @@ Exit code 0 when the run finished with at least one feasible trial, 1 otherwise.
 
 *`cad-agent optimise` on `examples/explore-two-wheel`: the trials arrive, a repeated combination is not evaluated again, and the front over cost, mass and runtime is redrawn as trials join it. An illustration drawn from the example's own seeded run; its parts and prices are made up.*
 
+### Confirm the leaders
+
+A search judges every trial with one evaluator, at one fidelity: a coarse mesh, a short simulation. Some leaders are
+artefacts of it. In Gyropup's hip-frame sweep, the leader's safety factor fell from about 2.1 at the 4 mm mesh it was
+ranked on to 1.81 at 3 mm, because its peak sat at a sharp corner, where the stress never converges. `confirm` evaluates the leaders again
+at a higher fidelity once the trials are done, and ranks them on what that says:
+
+```yaml
+    search:
+      ...
+      confirm:
+        top: 3                    # the first 3 feasible trials of the leaderboard (default 3)
+        args: [--mesh, "3"]       # appended to the evaluator's command
+        tolerance_pct: 5          # flag a change of more than 5 % (the default)
+```
+
+```mermaid
+flowchart TD
+    S["trials<br/>screening evaluator"] --> R["leaderboard<br/>ranked"]
+    R --> T["the top N feasible<br/>not yet confirmed"]
+    T -->|"evaluator + args<br/>(--mesh 3)"| C["confirm.jsonl"]
+    C -->|"re-rank;<br/>flag > 5 %"| R
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class R,T here
+    class S near
+    class C out
+```
+
+- **Ranking.** A confirmed trial is ranked on its confirmed evaluation (metrics, checks, verdict); the others keep
+  their screening values. When that brings an unconfirmed trial into the top N, it is confirmed too, up to `limit`
+  evaluations a run, so the top N of the leaderboard end up confirmed.
+- **Both values are kept.** `leaderboard.json` gives each confirmed trial a `confirm` block (`values: {metric:
+  {screen, confirmed, change_pct}}`, `flag`, `reasons`); the page adds a Confirmed column, the screening value under
+  each changed one ("was …"), and a table per trial.
+- **Flags.** A change of more than `tolerance_pct` in an objective or constraint, a value that appears or goes, a
+  trial that becomes infeasible, or a confirmation that fails is flagged with a `warn` check. 5 % is a
+  common bar for a converged mesh; tighten it where a gate has little margin. A failed confirmation leaves the trial
+  ranked on its screening values, and it is tried again on the next run.
+
+<details>
+<summary>Every <code>confirm</code> key, and how confirmations are reused</summary>
+
+| Key | Default | Meaning |
+|---|---|---|
+| `top` | `3` | how many of the first feasible trials to confirm |
+| `args` | none | appended to the evaluator's command (a command evaluator only); placeholders such as `{id}` work |
+| `evaluator` | the search's | a different evaluator for the confirmation (a Python function or a command); `args` are appended to it |
+| `timeout_s` | the evaluator's | the confirmation's timeout: a finer mesh takes longer |
+| `tolerance_pct` | `5` | flag a change of more than this, in percent of the screening value |
+| `limit` | `3 × top` | confirmations per run, at most |
+| `workers` | the search's | confirmations at the same time: a finer mesh needs more memory each (a 3 mm mesh has about 2.4 times the elements of a 4 mm one) |
+
+Either `args` or `evaluator` is needed: the same evaluator again would only repeat each trial. A confirmation's `{id}`
+is the trial's id with `-confirm` added (`trial-00007-confirm`), so its outputs do not overwrite the screening ones.
+Confirmations are kept in `out/search/confirm.jsonl` and reused while the confirm evaluator's argv, its files and its
+timeout are unchanged. A new `tolerance_pct` re-flags them without running anything, other `args` run them again, and
+`--fresh` deletes them with the trials. `--no-confirm` skips the stage for one run, and the leaderboard keeps the
+confirmations made before. The sampler (optuna's included) only ever learns the screening values, so the search
+itself stays at one fidelity.
+
+</details>
+
 ## Python API
 
 ```python
@@ -331,4 +412,8 @@ from cadagent.simulation.explore.optimise import run_search, search_config
   here is measured: weigh, test and price the real parts before deciding.
 - The search finds the best trade-offs of the model, not of the product. Check a winning trial with CAD, FEA and a
   prototype before building on it.
+- A confirmation is a second evaluation, not proof of convergence. Two meshes that agree within 5 % can both be wrong
+  at a singular corner, and an unconfirmed trial's screening values may be off by as much as the confirmed ones moved.
+  Only feasible trials are confirmed: one the screening fidelity judged infeasible is never re-checked, though a finer
+  evaluation might pass it.
 - A Pareto front with many objectives can be large; add constraints, or fewer objectives, to narrow it.

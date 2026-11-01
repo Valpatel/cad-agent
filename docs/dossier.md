@@ -267,6 +267,9 @@ if __name__ == "__main__":
     build()            # parameters from cad/parameters.json; writes exports/dossier-geometry.json
 ```
 
+<details>
+<summary>Each declaration's arguments: part, cavity, joint, fastener, assembly step</summary>
+
 | Declaration | Arguments | Notes |
 |---|---|---|
 | `@part(name, section="", *, place=None, grounded=False, free=False, reason="")` | function `(p)` or `()` returning a CadQuery shape, Workplane, Assembly, build123d object or `TopoDS_Shape`; a list for several instances | `place`: a `cq.Location`, an `(x, y, z)` translation, or a list of them (instances); then the function returns the shape in its own frame |
@@ -275,11 +278,16 @@ if __name__ == "__main__":
 | `fastener(key, *, clamps, into, at, name="", via="", tool="", length_mm, diameter_mm, thread_start_mm, thread_depth_mm, min_engagement_mm, shape=None)` | `at`: one `Axis` per screw, from the head seat in the direction the screw advances | `thread_start_mm`: seat to first engaged thread; numbers may be functions; `shape` is placed at every axis (McMaster frame: origin on the seat, +Z out of the hole) |
 | `assembly.step(order, fit, onto=None, *, direction="", tool="", fasteners=(), access_check="", note="")` | `direction`: `+X`..`-Z` or `(x, y, z)` | steps may also be written in `project.yaml`; when both exist with the same order they must agree |
 
+</details>
+
 Declarations are checked when they are made (a free part without a reason, a part both grounded and free, a revolute
 joint without a range, an unknown kind, a bad id raise `RegistryError`). The same declaration run twice (a re-import)
 replaces itself; the same name declared at two places raises. Parts, fasteners and cavities are separate kinds: a
 fastener or cavity named like a part is refused, and fastener names (default `key:clamps-into`) never contain `#`. A
 cavity belongs to a single-instance part (the containment gate must know which container it is).
+
+<details>
+<summary>Which registry a declaration lands in, what build() and build_module() do, and one record per out_dir</summary>
 
 **Which registry.** The module-level `part`, `cavity`, `joint`, `fastener`, `assembly.step` and `build` write to the
 *current* registry: the innermost `with use_registry(reg):` block, else `cadagent.review.dossier.REGISTRY`.
@@ -299,6 +307,8 @@ is recorded by its file name only, so the committed record carries no machine pa
 
 One `out_dir` holds one geometry record: a project with several build scripts gives each its own `out_dir`
 (a second build into the same directory replaces the record and removes the first build's shape files).
+
+</details>
 
 ### Migrating an existing build: `dossier_items()`
 
@@ -357,32 +367,7 @@ as for decorators (a free part needs a reason; grounded and free together are re
 - **Hashes** are content hashes from one shared function, `cadagent.review.evidence.shape_content_hash(shape) -> str`
   (also exported as `cadagent.review.dossier.shape_content_hash` and `shape_sha256`): sha256 of the shape's BREP text,
   OCCT format version 1, without triangulation or normals, with the 7-digit per-shape flag lines removed. The registry
-  and the gates use the same function, so a recorded hash is a valid gate cache key.
-  - The same shape built the same way gives the same hash in any process and run (tested in a subprocess); a changed
-    dimension or placement changes it (the location is part of the text, so even `place=(0, 0, 0)` changes it: the
-    safe direction). Queries (`Volume`, `BoundingBox`, `isValid`, `fix`) and tessellation do not.
-  - Two different constructions of the same geometry may hash differently: a cache miss, never a false match. An OCCT
-    upgrade may change every hash, which only invalidates sign-offs.
-  - **The CPU architecture changes hashes too.** With the same cadquery-ocp 7.9.3.1.1 release (its x86-64 and
-    aarch64 wheels from PyPI), an x86-64 and an aarch64 host agreed on 4 of 43 solids of a vendor STEP, and on 4 of
-    12 public test solids (the filleted, lofted, swept and Boolean ones differed; #144). So the platform
-    (`evidence.hash_platform()`: machine, system, C library, OCP version and package) is recorded with the hashes, in
-    `hash.platform`; before #144 `hash` was the recipe string, and every release leaves `hash` out of the gates'
-    geometry digest. A reviewer's record keeps the platform of the bundle it was written against in
-    `bundle.hash_platform`, and a stale-hashes refusal or `review-stale` finding names both platforms when they
-    differ. Equal platform records do not promise equal hashes: not everything the kernel's arithmetic depends on is
-    named.
-  - To tell a platform's mismatch from a change, compare `evidence.geometry_identity(shape)` records with
-    `evidence.identity_mismatches(a, b)`: volume, centre of mass, inertia and principal moments, rounded, matched within
-    the stated tolerance (relative 1e-6 by default, of the volume, of its cube root, of the largest moment for the
-    tensor, and of each principal moment for itself, floored at a thousandth of the largest). All 43 and all 12 matched
-    across the two hosts, with the earlier tolerance (the largest moment's for every moment; not re-run since), while
-    the differences seen were about 1e-13 relative. It is not a hash: different solids can share one, and a change below
-    the tolerance is not seen, so it explains a mismatch and never signs anything off.
-  - A shape **read back** from its BREP file may hash differently, because the reader recomputes frame directions
-    and location matrices (last-digit noise, signed zeros). Keep the recorded hash with the shape
-    (`assembly_shapes(with_hashes=True)`, `content_hashes()`); never re-hash a loaded shape to identify it.
-    `evidence.brep_content_hash(file_bytes)` checks a stored file against its record.
+  and the gates use the same function, so a recorded hash is a valid gate cache key (details below the list).
 - **`actor`** (top level) is `CAD_AGENT_ACTOR` from the environment (an agent or session id, or a person), `unknown`
   when unset: who ran this build. **`parts.<name>.actor`** is who built that part's current geometry: the actor of
   the build that first produced its content hash. A rebuild that gives a part the same hash keeps the earlier actor
@@ -396,9 +381,43 @@ as for decorators (a free part needs a reason; grounded and free together are re
 - Numbers are rounded to 1e-6 mm so the JSON diffs cleanly; `bbox` is the tight OCCT box.
 - Instance keys are `name` for a single instance and `name#0`, `name#1`, ... for several.
 
+<details>
+<summary>Hashes in detail: what changes them, the CPU architecture, identity records, shapes read back</summary>
+
+- The same shape built the same way gives the same hash in any process and run (tested in a subprocess); a changed
+  dimension or placement changes it (the location is part of the text, so even `place=(0, 0, 0)` changes it: the
+  safe direction). Queries (`Volume`, `BoundingBox`, `isValid`, `fix`) and tessellation do not.
+- Two different constructions of the same geometry may hash differently: a cache miss, never a false match. An OCCT
+  upgrade may change every hash, which only invalidates sign-offs.
+- **The CPU architecture changes hashes too.** With the same cadquery-ocp 7.9.3.1.1 release (its x86-64 and
+  aarch64 wheels from PyPI), an x86-64 and an aarch64 host agreed on 4 of 43 solids of a vendor STEP, and on 4 of
+  12 public test solids (the filleted, lofted, swept and Boolean ones differed; #144). So the platform
+  (`evidence.hash_platform()`: machine, system, C library, OCP version and package) is recorded with the hashes, in
+  `hash.platform`; before #144 `hash` was the recipe string, and every release leaves `hash` out of the gates'
+  geometry digest. A reviewer's record keeps the platform of the bundle it was written against in
+  `bundle.hash_platform`, and a stale-hashes refusal or `review-stale` finding names both platforms when they
+  differ. Equal platform records do not promise equal hashes: not everything the kernel's arithmetic depends on is
+  named.
+- To tell a platform's mismatch from a change, compare `evidence.geometry_identity(shape)` records with
+  `evidence.identity_mismatches(a, b)`: volume, centre of mass, inertia and principal moments, rounded, matched within
+  the stated tolerance (relative 1e-6 by default, of the volume, of its cube root, of the largest moment for the
+  tensor, and of each principal moment for itself, floored at a thousandth of the largest). All 43 and all 12 matched
+  across the two hosts, with the earlier tolerance (the largest moment's for every moment; not re-run since), while
+  the differences seen were about 1e-13 relative. It is not a hash: different solids can share one, and a change below
+  the tolerance is not seen, so it explains a mismatch and never signs anything off.
+- A shape **read back** from its BREP file may hash differently, because the reader recomputes frame directions
+  and location matrices (last-digit noise, signed zeros). Keep the recorded hash with the shape
+  (`assembly_shapes(with_hashes=True)`, `content_hashes()`); never re-hash a loaded shape to identify it.
+  `evidence.brep_content_hash(file_bytes)` checks a stored file against its record.
+
+</details>
+
 ### Hand-over to the gates
 
 The gates (`cadagent.review.gates`, plan §4) consume the registry through two calls and never import the build script:
+
+<details>
+<summary>The BuildResult API: shapes and their hashes, owners and kinds, cavities, joints, fastener axes</summary>
 
 ```python
 from cadagent.review.dossier import build_module, load_geometry
@@ -420,6 +439,8 @@ result.joints["I9"]                        # {"kind", "moving", "fixed", "axis":
 result.fastener_axes[name]                 # [Axis(origin=seat, direction=advance), ...]
 result.geometry                            # the JSON above: grounded / free flags, hashes for cache keys
 ```
+
+</details>
 
 What each gate reads: connectivity uses `assembly_shapes()`, `grounded` and `free` (union of the code flags,
 `gates.grounded`/`gates.free_parts` and `contains[].free` in the YAML), the joints and the dossier interfaces;
@@ -565,6 +586,25 @@ build (`built` if not), the status file shows the voided record under `invalidat
 the lint warns `review-stale`. A card that still says `status: signed_off` in its YAML is then `status-not-earned`:
 statuses are computed, so leave `status:` out of the cards.
 
+```mermaid
+flowchart TD
+    D["draft<br/>the card exists"] -->|"lint-clean, shape and hash built"| B["built"]
+    B -->|"every check and gate that applies passes"| G["gated"]
+    G -->|"a separate reviewer's record<br/>matches every part's hash"| R["reviewed"]
+    R -->|"signed off, no open decision"| S["signed_off"]
+    R -.->|"a part rebuilt with new geometry"| G
+    S -.->|"a part rebuilt with new geometry"| G
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class D,B near
+    class G,R here
+    class S out
+```
+
+*The status machine above, drawn: each step needs the one before it, and a rebuild that changes a part's geometry
+drops a reviewed or signed-off section back to `gated` (or `built`, if its gates no longer pass).*
+
 The status uses the newest record whose hashes match, so a revert to reviewed geometry restores its sign-off.
 
 **Reviewer records** (`dossier/reviews/*.json`, [the reviewer pass](#the-reviewer-pass)) are validated whole; an
@@ -621,6 +661,9 @@ problems = check_record(record, dossier=d, geometry=geo, packet=manifest, packet
 `exports/review-bundle/<section>/` (or `--bundle-dir`; a directory that is not empty and holds no `bundle.json` is
 refused, never wiped). It needs no CAD kernel: the packet must have been rendered before.
 
+<details>
+<summary>The nine files in a bundle and what each holds</summary>
+
 | File | What it holds |
 |---|---|
 | `PROMPT.md` | the reviewer's instructions: who they are not, what to read first, how to answer, how to submit, what blocks a sign-off now |
@@ -632,6 +675,8 @@ refused, never wiped). It needs no CAD kernel: the packet must have been rendere
 | `checklist.json` | the packet's checklist (questions, `measured_only`, instructions), the decisions to judge and the requirements to trace |
 | `diff.patch` | the section's sources (the dossier directory without `reviews/`, the build scripts that declared its geometry, the parameters file, `cad-agent.yaml`) in the working tree against the base: the commit the last sign-off names (`commit`), else the commit that added that record, or `--since`; untracked files under those paths are listed in `bundle.json`. No earlier sign-off: no diff, review all of it |
 | `record-template.json` | the record to fill in: the current hashes and where they were made (`bundle.hash_platform`), one entry per question, decision and requirement, every answer `null` |
+
+</details>
 
 `blockers` (and exit 1) name what would refuse a sign-off today: a missing, unrendered or stale packet, a section
 below `gated`, an open decision, a part whose builder is `unknown`. The bundle is written anyway: a reviewer can still
@@ -671,6 +716,9 @@ the rest.
 }
 ```
 
+<details>
+<summary>What validate_record requires of each field, of a sign-off and of a change request</summary>
+
 | Field | Rule (`validate_record`) |
 |---|---|
 | top level | `schema`, `section`, `date` (YYYY-MM-DD), `timestamp` (ISO 8601 with a zone), `actor`, `verdict`, `signed_off`, `hashes` (part → sha256 hex), `checklist`, `decisions`, `requirements`, `findings` are required; `build_actors`, `commit`, `packet`, `bundle` (an object; its `hash_platform`, if given, an object of strings), `summary`, `toolkit`, `physical_fit_verified` (false only) may be given; any other key is refused (a typo such as `signed-off` must not pass silently) |
@@ -681,7 +729,12 @@ the rest.
 | a sign-off | answers at least one question; no `critical` or `major` finding; no answer `unclear` or equal to its `bad_answer`; no decision `missing_alternative`; every requirement `traced: yes` |
 | changes requested | at least one finding |
 
+</details>
+
 `check_record` (run by `--submit` and `--check`) then compares the record with the project now:
+
+<details>
+<summary>The codes check_record refuses a record with</summary>
 
 | Code | Refused when |
 |---|---|
@@ -694,6 +747,8 @@ the rest.
 | `open-decision` | a sign-off while a decision of the section is `open` |
 | `below-gated` | a sign-off of a section that is `draft` or `built` |
 | `section`, `geometry`, `unbuilt` | the section is not in the dossier; nothing is built; a part has no shape |
+
+</details>
 
 The lint runs `validate_record` on every record, and `check_record` on a record that matches the build, against the
 dossier and the packet on disk (`review-incomplete`; without a packet on disk the questions cannot be checked),
@@ -727,12 +782,17 @@ work.
 in `site/review/`, linked from the overview's "Design review" block and, when the site configures no `nav`, from three
 top-bar tabs (Review, Requirements, Gates). A project without either key sees no change.
 
+<details>
+<summary>The four review pages and what each shows</summary>
+
 | Page | Shows |
 |---|---|
 | `index.html` | one row per section: status, requirements, part count, gate state (pass / fail / stale / unrun over its parts' gate checks), review state (unreviewed / findings open / reviewed / signed off / void), the reviewer record; the lint findings with their file and line |
 | `section-<id>.html` | the section's requirements (status, verifying checks), its interfaces and those of its parts, section decisions, and each part card: function, material, loads, fasteners, `contains`, decisions with the alternatives rejected and why, checks as pills linked to their evidence, the status ladder draft → built → gated → reviewed → signed_off, what keeps it from the next step, and a **stale** badge when the geometry changed since the last review (`invalidated`). Then every gate finding that names one of its parts (an instance, a fastener that clamps or threads into it, a cavity of it), with the witness, and the lint findings on it; then the review packet |
 | `requirements.html` | id, text and source quote, status, the sections it traces to, its own checks (and the card checks that only satisfy the trace), derived requirements, waivers and their rationale |
 | `gates.html` | one row per gate: state (pass, warn, fail, stale, missing, invalid, not applicable, skipped, from `cadagent.review.gates.run.gate_rows`), counts and links to the verdict's `.md`, `.json` and `.dot`; the connectivity graph as SVG; each gate's findings with witnesses, exclusions, what it did not check, assumptions and limits |
+
+</details>
 
 **What it reads.** Statuses only from what the pipeline computed: `exports/dossier-status.json`, the verdicts in
 `exports/gates/` and the reviewer records the status file names. The YAML is loaded (`strict=False`) for the words

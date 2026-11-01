@@ -279,13 +279,20 @@ docs/dossier.md:
       caption: "The packet's findings view, on a seeded failure (ball_through_wall): each gate finding numbered at its witness point. The review site lists a reviewer's own findings beside the view each one names."
       alt: An x-ray view of the gate bench's store with callouts F1 to F3 pointing at one ball in the hopper's wall
     - after: on-the-review-site
-      below: The connectivity graph
       img: docs/img/gates/bench-connectivity.svg
       shows: output
       tool: cad-agent site
       on: fixture
       caption: "The connectivity graph as the gates page draws it, for the gate bench as built: parts linked by contacts and fasteners (ovals), the balls declared free (dashed boxes), the arm its own body on a joint (blue dashed). 31 checks pass."
       alt: A graph of the gate bench's parts linked by contacts and fasteners, grouped into the static frame and the arm's body
+    - after: the-bundle
+      below: blockers (and exit 1)
+      img: docs/img/packets/clean-arm-pose-I-pin-arm-max.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "One of the images a bundle carries in packet/: the gate bench's arm, as built, at the top of its declared range (40 degrees), rendered by the review packet with the section hash it was made from."
+      alt: The gate bench's arm raised to 40 degrees, its purple beam below the grey frame, under a caption bar with the section hash
 
 docs/design-process-plan.md:
   hero:

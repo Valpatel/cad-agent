@@ -48,8 +48,8 @@ SCENARIOS: dict[str, dict] = {
     "screw_too_long": {"seed": "screw_too_long", "views": {"S-store": ["cut-fastener-screw_0"]}},
     "flap_hits_frame": {"seed": "flap_hits_frame", "views": {"S-arm": ["pose-I-pin-arm-max"]}},
     "lid_before_board": {"seed": "lid_before_board", "views": {"S-store": ["findings"]}},
-    "bracket_floats": {"seed": "bracket_floats", "views": {"S-bracket": ["findings", "xray-iso"]}},
-    "gusset_over_screw": {"seed": "gusset_over_screw", "views": {"S-store": ["findings", "access-from-top"]}},
+    "bracket_floats": {"seed": "bracket_floats", "views": {"S-bracket": ["findings"]}},
+    "gusset_over_screw": {"seed": "gusset_over_screw", "views": {"S-store": ["access-from-top"]}},
 }
 
 

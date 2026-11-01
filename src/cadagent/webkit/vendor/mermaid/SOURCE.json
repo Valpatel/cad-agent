@@ -1,10 +1,16 @@
 {
   "package": "mermaid",
-  "version": "11.4.1",
-  "source": "https://registry.npmjs.org/mermaid/-/mermaid-11.4.1.tgz",
+  "version": "11.17.2",
+  "source": "https://registry.npmjs.org/mermaid/-/mermaid-11.17.2.tgz",
+  "npm_integrity": "sha512-V6K3C8EBdEsPFZXSKMJe6ppQOENxuHARr9GvHX4hh47lAbhMRD9qf4oEK7LoaRQxULMa80/qt5gHO73aCleBBg==",
+  "published": "2026-08-25",
   "license": "MIT",
   "files": {
-    "mermaid.min.js": "a43bc1afd446f9c4cc66ac5dd45d02e8d65e26fc5344ec0ef787f88d6ddb6f9e",
+    "mermaid.min.js": "581ed7d74bd9048d0e3a91363927d72ef22942d7722546b27f7cc29e35390eb8",
     "LICENSE": "ec9fb67dcb25eccc416ed56e1aab819222c805a2a4bfe4cb19e7556bf2ffde80"
+  },
+  "paths_in_package": {
+    "mermaid.min.js": "package/dist/mermaid.min.js",
+    "LICENSE": "package/LICENSE"
   }
 }

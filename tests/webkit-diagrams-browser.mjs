@@ -45,5 +45,18 @@ try{
  await page.getByText('Diagram source',{exact:true}).last().click();assert.ok((await page.locator('details[open]').innerText()).includes('not a supported diagram'));
  const retry=await page.getByRole('button',{name:'Retry diagram'}).boundingBox();assert.ok(retry.height>=44);
  cases.push({loading:true,failedRuntimeRetry:true,invalidSourceIsolated:true});await page.close();
- assert.deepEqual(errors,[]);await writeFile(`${out}/${engine.name()}-report.json`,JSON.stringify({cases,errors},null,2));console.log(`${engine.name()}: static, dynamic, phone, themes, loading, retry and invalid-source cases PASS`);
+ // Hostile labels from the advisories fixed in Mermaid 11.10.0 stay inert: a KaTeX sequence label measured through
+ // innerHTML (GHSA-7rqq-prvp-x9jh) and architecture iconText passed to html() (GHSA-8gwm-58g9-j8pw). Mermaid 11.4.1 ran both.
+ const hostile=await browser.newPage();hostile.on('pageerror',e=>errors.push(e.message));
+ await hostile.goto(site.url+'/light');await ready(hostile,2);
+ await hostile.evaluate(()=>{const hook='<img src="x" onerror="window.cadXss=(window.cadXss||0)+1">';
+  for(const source of [`sequenceDiagram\n    participant A as Alice${hook}$$\\text{Alice}$$\n    A->>John: Hello John`,
+    `architecture-beta\n    group api(cloud)[API]\n    service db "${hook}" [Database] in api`]){
+   const p=document.createElement('pre');p.className='mermaid';p.textContent=source;document.getElementById('dynamic').append(p);}});
+ await hostile.waitForFunction(()=>document.querySelectorAll('.cad-diagram').length===4&&!document.querySelector('.cad-diagram:not([data-state=ready]):not([data-state=error])'));
+ await hostile.waitForLoadState('networkidle');await hostile.waitForTimeout(500);
+ const injected=await hostile.evaluate(()=>({ran:window.cadXss||0,handlers:document.querySelectorAll('[onerror]').length,states:[...document.querySelectorAll('.cad-diagram')].map(f=>f.dataset.state)}));
+ assert.equal(injected.ran,0,'a hostile diagram label ran script');assert.equal(injected.handlers,0,'a hostile diagram label left an event handler in the page');
+ cases.push({hostileLabelsInert:injected});await hostile.close();
+ assert.deepEqual(errors,[]);await writeFile(`${out}/${engine.name()}-report.json`,JSON.stringify({cases,errors},null,2));console.log(`${engine.name()}: static, dynamic, phone, themes, loading, retry, invalid-source and hostile-label cases PASS`);
 }finally{await browser.close();await site.close();}

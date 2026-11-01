@@ -163,7 +163,7 @@
   url: https://github.com/mixelpixx/KiCAD-MCP-Server
   license: MIT
   stars: 2933
-  last_push: 2026-10-01
+  last_push: 2026-10-26
   status: candidate
   policy: may incorporate with attribution
 - name: mixelpixx/Konnect
@@ -172,9 +172,9 @@
   url: https://github.com/mixelpixx/Konnect
   license: AGPL-3.0
   stars: 1399
-  last_push: 2026-10-25
-  status: candidate
-  policy: external program only (AGPL-3.0)
+  last_push: 2026-10-26
+  status: rejected
+  policy: archived 2026-10-26 (read-only; its AGPL-3.0 releases stay up); continues as Konnect-EDA, commercial and closed source
 - name: oaslananka/kicad-mcp-pro
   what: "MCP server for KiCad schematic, PCB, ERC/DRC, DFM and manufacturing-export work, read-only by default"
   areas: [circuit-boards]

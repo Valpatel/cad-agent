@@ -390,7 +390,7 @@
    "url": "https://github.com/mixelpixx/KiCAD-MCP-Server",
    "license_spdx": "MIT",
    "stars": 2933,
-   "last_push": "2026-10-01",
+   "last_push": "2026-10-26",
    "clients": [
     "mcp"
    ],
@@ -404,14 +404,14 @@
    "drawings": "no",
    "vendor_integration": "JLCPCB, DigiKey, Freerouting",
    "evals": "none",
-   "notes": "244 tools registered; runtime dep pymupdf (AGPL); new work moved to Konnect"
+   "notes": "244 tools registered; runtime dep pymupdf (AGPL); still maintained under MIT after Konnect was archived"
   },
   {
    "name": "mixelpixx/Konnect",
    "url": "https://github.com/mixelpixx/Konnect",
    "license_spdx": "AGPL-3.0",
    "stars": 1399,
-   "last_push": "2026-10-25",
+   "last_push": "2026-10-26",
    "clients": [
     "kicad-plugin",
     "mcp",
@@ -427,7 +427,7 @@
    "drawings": "no",
    "vendor_integration": "Freerouting",
    "evals": "none",
-   "notes": "obhox/kicad-mcp is a fork (8 stars, AGPL-3.0); external use only"
+   "notes": "archived 2026-10-26; continues as Konnect-EDA (commercial, closed source, free during its beta), so no longer a candidate; obhox/kicad-mcp is a fork (8 stars, AGPL-3.0)"
   },
   {
    "name": "oaslananka/kicad-mcp-pro",
@@ -685,7 +685,7 @@
    "license_spdx": "Apache-2.0",
    "stars": 7,
    "last_push": "2026-10-31",
-   "notes": "named feature changes, before/after pictures, volume/area/bbox per PR",
+   "notes": "main job: writes AP242 semantic PMI (material, hole purposes, datums, fits, finish) into STEP parts from an interview; its step-diff action posts named feature changes, before/after pictures and volume/area/bbox per PR",
    "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
   },
   {
@@ -815,7 +815,7 @@
    "license_spdx": "Apache-2.0",
    "stars": 112,
    "last_push": "2026-10-18",
-   "use": "ISO fasteners, threads"
+   "use": "ISO fasteners and threads, plus parametric bearings, gears, sprockets, pipes, flanges and O-rings"
   },
   {
    "name": "partcad/partcad",
@@ -873,7 +873,7 @@
    "license_spdx": "MIT",
    "stars": 72,
    "last_push": "2026-10-24",
-   "use": "licence-annotated KiCad tool survey in README"
+   "use": "agent tools and the kct CLI that parse, check, place and route KiCad files; its README also keeps a licence-annotated survey of KiCad AI tools"
   },
   {
    "name": "kicad-python (PyPI)",

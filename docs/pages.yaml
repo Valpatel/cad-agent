@@ -1,0 +1,32 @@
+# Real outputs placed on doc pages by the site build (tools/build-site.mjs), without touching the Markdown: the .md
+# twins and llms.txt stay exactly as written, and GitHub shows the page as before.
+#
+#   docs/<page>.md:
+#     band:                  # two to four tiles under the title and its first paragraph: what this page's tools make
+#       - img: docs/img/...  # a committed picture: a real output of a cad-agent tool, or a drawing of something real
+#         input: STEP assembly          # optional: what goes in, in words
+#         tool: cad-agent gates          # a cad-agent command or a cadagent module (the build checks it exists)
+#         caption: one line, with the number the tool computed
+#         alt: what the picture shows, for a screen reader
+#         href: "#a-heading-on-this-page"   # optional: an anchor on the page, or another published page
+#     figures:               # a picture inside a section, after its first paragraph
+#       - after: running-the-gates-cad-agent-gates   # the heading's id on the site
+#         img: ...; tool: ... (optional); caption: ...; alt: ...
+#
+# Owner (2026-10-31): "CAD is graphical, so our site should be too. Not a wall of text." The browser suite measures each
+# page's longest stretch with nothing to look at (tests/site-walls.mjs, #179).
+
+docs/gates.md:
+  band:
+    - img: docs/img/motion/hinge-sweep.svg
+      input: a joint and its range
+      tool: cadagent.gates.motion
+      caption: A moving arm swept 0 to 60 degrees, then bisected. Contact starts between 44.89 and 44.91 degrees.
+      alt: An arm swept from 0 to 60 degrees; it first shares volume with the frame beam between 44.89 and 44.91 degrees
+      href: "#motion-range-interference-cadagentgatesmotion"
+    - img: docs/img/motion/module-insertion.svg
+      input: an assembly order
+      tool: cadagent.gates.assembly
+      caption: A preassembled module checked on its own bench, then inserted into its parent as one rigid body.
+      alt: A preassembled module inserted into its parent as one rigid body, then withdrawn
+      href: docs/subassembly-insertion.md

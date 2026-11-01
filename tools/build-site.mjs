@@ -15,6 +15,7 @@ import { marked } from 'marked';
 import YAML from 'yaml';
 import { snapDemo } from './snap-demo.mjs';
 import { sanitize, safeUrl, rewriteUrls, imageSize } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
+import { fold, pagePlacer } from './site-pages.mjs';                          // docs/pages.yaml: bands, figures, folds
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
 const rootArg = process.argv.indexOf('--root');
@@ -256,6 +257,9 @@ const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).m
 // custom elements, so pictures arrive as <img> and diagrams as Mermaid blocks; the browser test checks they render).
 const VISUAL = /<img\b|class="language-mermaid"|<pre class="mermaid"/g;
 const visuals = new Map();
+// Visual-first pages (#179): real outputs placed from docs/pages.yaml, long reference parts folded (tools/site-pages.mjs).
+const placeVisuals = pagePlacer({ spec: YAML.parse(await read('docs/pages.yaml')) || {}, pageFiles, tracked,
+  commandNames: new Set(commands.map(c => c.name)), readBuf, pageURL });
 for (const p of pages) {
   const ids = new Map();
   const renderer = new marked.Renderer();
@@ -307,6 +311,7 @@ for (const p of pages) {
   html = html.replace(/<table>/g, '<div class="table-scroll"><table>').replace(/<\/table>/g, '</table></div>');
   // One-click copy on every code block (not on diagram sources, which render as pictures).
   html = html.replace(/<pre>(<code(?! class="language-mermaid")[\s\S]*?<\/pre>)/g, '<cad-copy><pre>$1</cad-copy>');
+  html = await placeVisuals(p.file, fold(html));
   const crumbs = `<p class="crumbs"><a href="/catalog#${p.section}">${esc(SECTIONS.find(s => s.id === p.section).title)}</a> · <a href="${REPO}/blob/dev/${esc(p.file)}">${esc(p.file)}</a> · <a href="/${esc(p.file)}">Markdown</a></p>`;
   const dest = path.join(out, pageFile(p.file));
   await mkdir(path.dirname(dest), { recursive: true });

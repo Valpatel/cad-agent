@@ -143,8 +143,8 @@ for (const [from, to] of redirects) {
   // Pages reads * as a splat and :name as a placeholder, so `lessons/*.md` would redirect every lesson page, the
   // target included, into a loop; the preview server matches exact paths and would never show it. Plain paths only.
   if (!/^[\w-][\w.\/-]*\.md$/.test(from) || path.posix.normalize(from) !== from)
-    throw new Error(`${at}: a source is a plain repo path to a .md file (letters, digits, - _ . /), without a leading slash, ` +
-      '`..`, `//`, `*` or `:`');
+    throw new Error(`${at}: a source is a plain repo path to a .md file (letters, digits, - _ . /), without a leading slash ` +
+      'or dot, `.` or `..` segments, `//`, `*` or `:`');
   if (tracked.includes(from) && !stubFiles.has(from)) throw new Error(`${at} is still a file in the repo (only its stub may remain)`);
   if (!to || !pageFiles.has(to)) throw new Error(`${at} -> ${to}, which is not a published page`);
 }
@@ -339,7 +339,7 @@ const TYPE_LABEL = { tool: 'cad-agent tools', upstream: 'Agentic CAD projects we
 const STATUS_NOTE = { ours: 'built here', adopted: 'adopted', trial: 'in trial', candidate: 'candidate', rejected: 'rejected', used: 'used', reference: 'tracked', unverified: 'unverified' };
 // Living pages: one per topic. Sources, the condensed method, examples, and the tested tool agents call.
 const LIVING = [
-  { file: 'docs/compliant.md', name: 'Snap fits', summary: 'Covestro and DuPont guides plus 13 filament datasheets, condensed into cad-agent snapfit: tested against the guide\'s worked examples, with allowable strain by print direction.' },
+  { file: 'docs/compliant.md', name: 'Snap fits', summary: 'Covestro and DuPont guides plus 11 filament data sheets, condensed into cad-agent snapfit: tested against the guide\'s worked examples, with allowable strain by print direction.' },
   { file: 'docs/common-issues.md', name: 'CAD pitfalls and their checks', summary: 'Recurring review findings from Gyropup and J501 (a rib that ran into a counterbore, blocked holes, bridges), each with the automated check that catches it.' },
 ];
 const card = i => `<li class="card" data-type="${esc(i.type)}" data-text="${esc((i.name + ' ' + (i.summary || '') + ' ' + (i.license || '')).toLowerCase())}">

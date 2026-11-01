@@ -19,8 +19,8 @@ material value names its source.
   Example II section is computed exactly).
 - **Deterministic pass/fail rows** for a declared snap: root strain against the allowable, root radius (at least
   0.38 mm; R/h below 0.6 concentrates strain), mating force against a limit, retention force against a minimum.
-- **Allowable strain with its source**: moulded resins from the Covestro Table 2 and DuPont Table 10.06; 13 printed
-  filaments from their manufacturers' datasheets **by print direction**
+- **Allowable strain with its source**: moulded resins from the Covestro Table 2 and DuPont Table 10.06; 11 printed
+  filaments (13 entries: two have dry and wet values) from their manufacturers' data sheets **by print direction**
   ([`allowables.py`](../src/cadagent/compliant/allowables.py)).
 - **Figures**: `tools/snapfit_figures.py` draws the cantilever with its dimensions (`docs/img/compliant/`).
 

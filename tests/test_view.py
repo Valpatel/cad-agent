@@ -101,13 +101,21 @@ def _fixture():
     return module
 
 
-def test_pack_view_writes_the_committed_fixture_byte_for_byte(tmp_path):
+def test_pack_view_writes_the_committed_fixture(tmp_path):
+    import gzip
     fx = _fixture()
     model = fx.pack(tmp_path / "two-parts")
-    assert (tmp_path / "two-parts.bin").read_bytes() == (FIXTURE / "two-parts.bin").read_bytes(), REGEN_MODEL
-    assert (tmp_path / "two-parts.json").read_text() == (FIXTURE / "two-parts.json").read_text(), REGEN_MODEL
-    again = fx.pack(tmp_path / "again")                     # deterministic: gzip without a timestamp
-    assert (tmp_path / "again.bin").read_bytes() == (tmp_path / "two-parts.bin").read_bytes()
+    packed, committed = (tmp_path / "two-parts.bin").read_bytes(), (FIXTURE / "two-parts.bin").read_bytes()
+    # The payload exactly; the gzip stream may differ with the zlib build (zlib-ng compresses differently), so the
+    # manifest is compared without the stream's size and checksum
+    assert gzip.decompress(packed) == gzip.decompress(committed), REGEN_MODEL
+    fresh, kept = json.loads((tmp_path / "two-parts.json").read_text()), json.loads((FIXTURE / "two-parts.json").read_text())
+    assert {k: v for k, v in fresh.items() if k not in ("bytes", "sha256")} == {k: v for k, v in kept.items() if k not in ("bytes", "sha256")}, REGEN_MODEL
+    # The header is the same on every Python: no timestamp, maximum compression, OS "unknown" (gzip.compress on
+    # 3.11+ would write the OS byte of the machine instead)
+    assert packed[:10] == bytes.fromhex("1f8b08000000000002ff")
+    again = fx.pack(tmp_path / "again")                     # deterministic
+    assert (tmp_path / "again.bin").read_bytes() == packed
     assert again["sha256"] == model["sha256"]
 
 
@@ -134,6 +142,23 @@ def test_unpack_model_reads_the_decoded_fixture():
     fx = _fixture()
     model = json.loads((FIXTURE / "two-parts.json").read_text())
     assert fx.decoded(model, (FIXTURE / "two-parts.bin").read_bytes()) == json.loads((FIXTURE / "two-parts.decoded.json").read_text()), REGEN_MODEL
+
+
+@pytest.mark.parametrize("n, bits", [(65533, 16), (65534, 32), (65535, 32)])
+def test_pack_view_index_width_at_the_16_bit_edge(tmp_path, n, bits):
+    """A strip of n triangles has n + 2 vertices; one more triangle goes back to vertex 0, whose code is the vertex
+    count: 16 bits hold it up to 65,535 vertices (#182 review: 65,536 wrapped to 0, read as a new vertex)."""
+    from cadagent.view import pack_view, unpack_model
+    xs = np.arange(n + 2, dtype=np.float32)
+    pts = np.stack([xs, (np.arange(n + 2) % 2).astype(np.float32), np.zeros(n + 2, np.float32)], axis=1)
+    tri = np.concatenate([np.stack([pts[:-2], pts[1:-1], pts[2:]], axis=1), [[pts[0], pts[1], pts[-1] + [0, 0, 1]]]])
+    tri[-1, 2] = pts[-1]                                     # back to vertices 0 and 1 and the last one
+    _write_stl(tmp_path / "strip.stl", tri)
+    (tmp_path / "view.json").write_text(json.dumps({"parts": [{"name": "strip", "file": "strip.stl", "color": "#888888"}]}))
+    model = pack_view(tmp_path / "view.json", tmp_path / "strip")
+    assert model["parts"][0]["vertices"] == n + 2 and model["parts"][0]["index_bits"] == bits
+    (vertices, faces), = unpack_model(model, (tmp_path / "strip.bin").read_bytes())
+    assert faces.max() == n + 1 and faces[-1].tolist() == [0, 1, n + 1]
 
 
 def test_pack_view_uses_32_bit_indices_past_65536_vertices(tmp_path):

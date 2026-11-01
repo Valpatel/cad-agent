@@ -242,6 +242,7 @@ def pack_view(manifest: Path, out: Path, *, title: Optional[str] = None, colors:
     so 90 looks at the +x face). Deterministic: the same input gives the same bytes. Returns the manifest written."""
     import gzip
     import hashlib
+    import io
 
     manifest = Path(manifest)
     exported = json.loads(manifest.read_text())
@@ -256,7 +257,7 @@ def pack_view(manifest: Path, out: Path, *, title: Optional[str] = None, colors:
         steps = np.diff(q, axis=0, prepend=np.zeros((1, 3), np.int64)) & 0xFFFF
         corners = faces.reshape(-1)
         fresh = np.maximum.accumulate(np.concatenate([[-1], corners]))[:-1] + 1     # the next new vertex at each corner
-        bits = 16 if len(vertices) <= 0x10000 else 32
+        bits = 16 if len(vertices) < 0x10000 else 32       # a corner's code reaches the vertex count
         entry = {k: part[k] for k in ("name", "id", "category", "visible", "explode", "bounds_mm") if part.get(k) not in (None, "")}
         entry.update(color=(colors or {}).get(part["name"], part["color"]), vertices=len(vertices), triangles=len(faces),
                      offset=len(blob), index_bits=bits)
@@ -264,7 +265,12 @@ def pack_view(manifest: Path, out: Path, *, title: Optional[str] = None, colors:
             blob += _planes(steps[:, axis], 2)
         blob += _planes(fresh - corners, bits // 8)
         parts.append(entry)
-    packed = gzip.compress(bytes(blob), compresslevel=9, mtime=0)
+    # GzipFile writes the same header on every Python (gzip.compress hands it to zlib from 3.11, which stamps its own
+    # OS byte), so the same model gives the same bytes on 3.10 and 3.12
+    buffer = io.BytesIO()
+    with gzip.GzipFile(fileobj=buffer, mode="wb", compresslevel=9, mtime=0) as stream:
+        stream.write(bytes(blob))
+    packed = buffer.getvalue()
     out = Path(out)
     bin_path, json_path = out.parent / f"{out.name}.bin", out.parent / f"{out.name}.json"     # names may hold dots
     out.parent.mkdir(parents=True, exist_ok=True)

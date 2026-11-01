@@ -18,7 +18,7 @@
  * Attributes: src (required), label, azimuth and elevation (the opening view in degrees; default the model's own
  * `view`, else 35 and 18; azimuth 0 looks from the CAD -y side, 90 from +x), turn
  * (degrees per second, default 10; 0 for none), loading="eager" (start without waiting for the page to load).
- * Properties: ready (a promise), snapshot(width, height, type, quality) (a data: URL of one frame at that size;
+ * Properties: ready (a promise), frames (how many the loop has drawn), snapshot(width, height, type, quality) (a data: URL of one frame at that size;
  * tools/site-model-poster.mjs makes the poster with it), setExplode(0..1), view(azimuth, elevation).
  * three.js is imported from ./vendor/three/ next to this file, without an import map, so pages with a strict
  * Content-Security-Policy (no inline script) can use it.
@@ -266,7 +266,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     const label = document.createElement('p');
     label.className = 'cad-model-label';
     label.textContent = 'Drag to turn';
-    const pause = BUTTON('Pause', false), apart = BUTTON('Explode', false);
+    const pause = BUTTON('Pause'), apart = BUTTON('Explode', false);   // Pause's label changes; Explode is a toggle
     if (!turning) pause.hidden = true;
     ui.append(label, apart, pause);
     const ray = new THREE.Raycaster(), pointer = new THREE.Vector2();
@@ -315,7 +315,6 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     canvas.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !drag) highlight(null); });
     pause.addEventListener('click', () => {
       paused = !paused;
-      pause.setAttribute('aria-pressed', String(paused));
       pause.textContent = paused ? 'Turn' : 'Pause';
       lastInput = -1e9;
       request();
@@ -338,8 +337,10 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       request();
     };
     let last = performance.now();
+    this.frames = 0;                      // frames drawn by the loop (the browser suite checks it stops off screen)
     const tick = now => {
       frame = 0;
+      this.frames++;
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       let more = false;
@@ -356,14 +357,14 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     };
     function request() { if (!frame && visible) { last = performance.now(); frame = requestAnimationFrame(tick); } }
     new ResizeObserver(resize).observe(this);
-    new IntersectionObserver(es => {
-      visible = es.some(e => e.isIntersecting) && document.visibilityState === 'visible';
+    // Frames only while the element is on screen and the tab is showing: either one changing re-decides.
+    let onScreen = true;
+    const show = () => {
+      visible = onScreen && document.visibilityState === 'visible';
       if (visible) request(); else if (frame) { cancelAnimationFrame(frame); frame = 0; }
-    }).observe(this);
-    document.addEventListener('visibilitychange', () => {
-      visible = document.visibilityState === 'visible';
-      if (visible) request();
-    });
+    };
+    new IntersectionObserver(es => { onScreen = es.at(-1).isIntersecting; show(); }).observe(this);
+    document.addEventListener('visibilitychange', show);
     matchMedia('(prefers-reduced-motion: reduce)').addEventListener?.('change', () => { turning = !reduced() && speed !== 0; pause.hidden = !turning; request(); });
 
     this.append(canvas, ui);

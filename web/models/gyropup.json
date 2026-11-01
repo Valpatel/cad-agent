@@ -16,7 +16,7 @@
  "encoding": "gzip",
  "bytes": 319842,
  "raw_bytes": 779466,
- "sha256": "ea7ec800c20bb18023653a68375e8bc4122708b9b717c3f49f4de6393958307f",
+ "sha256": "f4541a6c47350136ef91ec189c687215dc56ab18fe1f7ebb55322f18ef12a365",
  "triangles": 87002,
  "source": {
   "project": "Valpatel/gyropup",

@@ -666,3 +666,33 @@ def test_the_demo_on_docs_compliant_starts_from_what_the_python_computes():
     assert f"{flat['strain'] * 100:.2f} %" in tag.group(2) and f"{flat['force']:.2f} N" in tag.group(2)
     assert f"{round(flat['ratio'] * 100)} %" in page and f"{round(upright['ratio'] * 100)} %" in page
     assert 'src="img/compliant/cantilever-explorer.svg"' in tag.group(2)          # the still before the script loads
+
+
+def test_the_fourbar_demo_and_its_pages_say_what_the_python_computes():
+    # docs/linkages.md and docs/formulas.md show <cad-fourbar>: its attributes, run through cadagent.formulas, give the
+    # class and the lowest transmission angle the still's alt text quotes (tools/fourbar-still.mjs checks the same from
+    # the browser side), and the page's worked numbers (the limits of the linkages it suggests) are the Python's.
+    def deg(rad):
+        return f"{round(math.degrees(rad), 1):g}°"
+
+    linkages = (ROOT / "docs" / "linkages.md").read_text()
+    for page in (linkages, (ROOT / "docs" / "formulas.md").read_text()):
+        tag = re.search(r"^<cad-fourbar\b([^>]*)>([\s\S]*?)</cad-fourbar>", page, re.M)
+        assert tag, "no <cad-fourbar> demo"
+        attrs = dict(re.findall(r'(\w+)="([^"]*)"', tag.group(1)))
+        links = [float(attrs[k]) for k in ("crank", "coupler", "rocker", "ground")]
+        assert links == [40, 120, 80, 100] and fx.grashof(*links)["inversion"] == "crank-rocker"
+        alt = tag.group(2)
+        lowest = min(fx.transmission_angle(*links, math.radians(t)) for t in range(-180, 180))
+        assert lowest == fx.transmission_angle(*links, 0.0)                            # lowest at 0 degrees
+        assert f"{deg(lowest)} at 0°" in alt and "crank-rocker" in alt
+        assert f"is {deg(fx.transmission_angle(*links, math.radians(float(attrs['angle']))))}" in alt.replace("°;", "°")
+        assert 'src="img/formulas/fourbar-animator.svg"' in alt
+    assert f"falls to {deg(fx.transmission_angle(40, 120, 80, 100, 0.0))} at" in linkages
+    tri = fx.fourbar_input_limits(100, 80, 70, 60)
+    assert fx.grashof(100, 80, 70, 60)["inversion"] == "triple-rocker" and f"±{deg(tri['stretched'])}" in linkages
+    dr = fx.fourbar_input_limits(80, 40, 120, 100)
+    assert fx.grashof(80, 40, 120, 100)["inversion"] == "double-rocker"
+    assert f"locks at {deg(dr['folded'])} and at {deg(dr['stretched'])}" in linkages
+    angles = fx.fourbar_angles(0.040, 0.120, 0.080, 0.100, math.radians(40))
+    assert f"{deg(angles[0])} and {deg(angles[1])}" in linkages

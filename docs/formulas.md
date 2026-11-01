@@ -17,6 +17,18 @@ against the filament's allowable strain.
 <img src="img/compliant/cantilever-explorer.svg" alt="Snap-arm explorer, before its controls load: a CoPA arm 20 mm long, 1.6 mm thick at the root and 6 mm wide, bent 1.5 mm at the hook along its computed curve; root strain 0.90 %, 44 % of the 2.02 % allowed along the layers, a pass; force 3.10 N" width="640" height="250">
 </cad-cantilever>
 
+## Try it: the four-bar animator
+
+The animator (`<cad-fourbar>`, also on [Four-bar linkages](linkages.md#try-it-the-four-bar-animator)) runs the browser
+port of `grashof`, `fourbar_input_limits`, `fourbar_angles` and `transmission_angle`. Sliders set the four links. The
+crank turns, or rocks and stops where the linkage locks, on the assembly you pick, with the other assembly dashed. The
+chart plots the transmission angle over a turn of the input against the 40° guideline. Rigid links on ideal pins,
+position only.
+
+<cad-fourbar crank="40" coupler="120" rocker="80" ground="100" branch="open" angle="40">
+<img src="img/formulas/fourbar-animator.svg" alt="Four-bar animator, before its controls load: Norton's Example 4-1 (crank 40, coupler 120, rocker 80 and ground 100 mm) on its open assembly at an input angle of 40°, where the transmission angle is 37°; a crank-rocker whose lowest transmission angle, 26.4° at 0°, is below the 40° guideline" width="640" height="320">
+</cad-fourbar>
+
 ## Limits
 
 - **A closed form is not proof of fit or strength.** Each result holds only inside the limits it states. A printed
@@ -69,7 +81,7 @@ flowchart TD
     P --> A["agents<br/>catalogue() · snap_arm() …"]
     P --> V["tools/formula_vectors.py<br/>golden vectors · demo materials"]
     V --> J["kit/formulas.js<br/>(browser port)"]
-    J --> D["&lt;cad-cantilever&gt;<br/>on Snap fits"]
+    J --> D["&lt;cad-cantilever&gt; on Snap fits<br/>&lt;cad-fourbar&gt; on Four-bar linkages"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -131,7 +143,7 @@ fx.fan_operating_point(fx.fan_curve_line(15.2, 0.0108), k=2e6)   # flow, pressur
 ```
 
 In the browser, `kit/formulas.js` exports the functions the demos use (`snapArm`, `cantileverShape`,
-`cantileverStrainProfile` and the others in the golden vectors) in the same SI units.
+`cantileverStrainProfile`, `fourbarAngles` and the others in the golden vectors) in the same SI units.
 
 ## Tests that keep it honest
 
@@ -163,6 +175,8 @@ in the test.
     where the two branches meet and round-off can push the discriminant below 0. Each branch must be the one
     asked for.
   - The input's limit angles on linkages whose crank cannot turn fully, where the linkage closes in one position.
+  - `fourbar_input_limits` on every four-bar with links 1 to 6: the input turns fully exactly when `grashof` says so,
+    and `fourbar_angles` closes exactly inside the limits.
   - Norton's Example 4-1.
 - **Heat and air.**
   - The composite wall face by face.

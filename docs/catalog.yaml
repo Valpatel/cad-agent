@@ -39,6 +39,13 @@ demos:
     url: docs/compliant.md#try-it-the-snap-arm-explorer
     areas: [compliant-mechanisms]
     tools: [snapfit]
+  - id: fourbar-animator
+    title: Four-bar linkage animator
+    what: Set four link lengths and watch the crank turn or lock, both assemblies and the transmission angle against 40°.
+    mode: interactive
+    cover: docs/img/formulas/fourbar-animator.svg
+    url: docs/linkages.md#try-it-the-four-bar-animator
+    areas: [linkages]
   - id: fea-lid
     title: FEA of a ribbed lid
     what: A 300 N press on an enclosure lid, coloured by stress as a fraction of the material's strength.

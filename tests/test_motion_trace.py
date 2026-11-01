@@ -208,3 +208,264 @@ def test_installed_copy_retains_the_capture_protocol(tmp_path):
     assert not result["conflicts"]
     skill = tmp_path / ".codex/skills/cad-motion-validation"
     assert (skill / "references/trace-protocol.md").read_text() == (root / "skills/cad-motion-validation/references/trace-protocol.md").read_text()
+
+
+# ----------------------------------------------------------------------------- closed loops (#187)
+# A five-bar leg in the x-y plane: hips 40 mm apart, cranks 30 mm hanging at -120 and -60 degrees, shins 45 mm meeting
+# at the foot pin below. hip_b turns about -z (its axis is flipped), the knees sit 5 mm deeper and the pin 10 mm, so
+# the loop is solved in its plane whatever the joints' depths and directions. A toe rides on the left shin.
+
+def _leg_home():
+    A, B = (-20.0, 0.0), (20.0, 0.0)
+    c1 = (A[0] + 30 * math.cos(math.radians(-120)), 30 * math.sin(math.radians(-120)))
+    c2 = (B[0] + 30 * math.cos(math.radians(-60)), 30 * math.sin(math.radians(-60)))
+    foot = (0.0, c1[1] - math.sqrt(45 ** 2 - 35 ** 2))
+    return A, B, c1, c2, foot
+
+
+def _box(cx, cy, z):
+    return [[cx, cy, z], [cx + 2, cy, z], [cx, cy + 2, z], [cx, cy, z + 2]]
+
+
+def leg_contract():
+    A, B, c1, c2, foot = _leg_home()
+    mid = lambda p, q: ((p[0] + q[0]) / 2, (p[1] + q[1]) / 2)        # noqa: E731
+    return {"schema_version": 1, "length_unit": "mm", "frame": "assembly-home",
+            "reference": "synthetic five-bar leg: hips (-20,0) and (20,0), cranks 30, shins 45",
+            "joints": {"hip_a": {"parent": None, "pivot": [*A, 0], "axis": [0, 0, 1], "range_deg": [-60, 60]},
+                       "knee_c": {"parent": "hip_a", "pivot": [*c1, 5], "axis": [0, 0, 1], "range_deg": [-180, 180]},
+                       "hip_b": {"parent": None, "pivot": [*B, 0], "axis": [0, 0, -1], "range_deg": [-60, 60]},
+                       "knee_d": {"parent": "hip_b", "pivot": [*c2, 5], "axis": [0, 0, 1], "range_deg": [-180, 180]},
+                       "toe": {"parent": "knee_c", "pivot": [*foot, 10], "axis": [0, 0, 1], "range_deg": [-30, 30]}},
+            "components": {"frame": {"joint": None, "points": _box(0, 10, 0)},
+                           "crank_a": {"joint": "hip_a", "points": _box(*mid(A, c1), 0)},
+                           "shin_c": {"joint": "knee_c", "points": _box(*mid(c1, foot), 5)},
+                           "crank_b": {"joint": "hip_b", "points": _box(*mid(B, c2), 0)},
+                           "shin_d": {"joint": "knee_d", "points": _box(*mid(c2, foot), 5)},
+                           "toe": {"joint": "toe", "points": _box(foot[0], foot[1] - 5, 10)}},
+            "loops": {"leg": {"closes": ["knee_c", "knee_d"], "pin": [*foot, 10], "inputs": ["hip_a", "hip_b"]}}}
+
+
+def _turn(p, about, rad):
+    x, y = p[0] - about[0], p[1] - about[1]
+    return (about[0] + x * math.cos(rad) - y * math.sin(rad), about[1] + x * math.sin(rad) + y * math.cos(rad))
+
+
+def leg_render(inputs, defect=None):
+    """An independent renderer: it solves the leg itself (two circles of 45 about the knees, the foot below them) and
+    returns the angles it posed and every component's points. ``defect``: 'serial' leaves the knees at home as a serial
+    chain would, 'other-branch' takes the foot above the knees."""
+    A, B, c1, c2, foot = _leg_home()
+    ha, hb = math.radians(inputs["hip_a"]), -math.radians(inputs["hip_b"])     # hip_b turns about -z
+    k1, k2 = _turn(c1, A, ha), _turn(c2, B, hb)
+    dx, dy = k2[0] - k1[0], k2[1] - k1[1]
+    s = math.hypot(dx, dy)
+    h = math.sqrt(max(45 ** 2 - (s / 2) ** 2, 0.0))          # out of reach it draws the shins in line
+    below = (k1[0] + dx / 2 + h * dy / s, k1[1] + dy / 2 - h * dx / s)
+    above = (k1[0] + dx / 2 - h * dy / s, k1[1] + dy / 2 + h * dx / s)
+    p = below if below[1] < above[1] else above
+    if defect == "other-branch":
+        p = above if p is below else below
+    turn_c = math.atan2(p[1] - k1[1], p[0] - k1[0]) - math.atan2(foot[1] - c1[1], foot[0] - c1[0])
+    turn_d = math.atan2(p[1] - k2[1], p[0] - k2[0]) - math.atan2(foot[1] - c2[1], foot[0] - c2[0])
+    if defect == "serial":
+        turn_c, turn_d = ha, hb
+    angles = {"hip_a": inputs["hip_a"], "hip_b": inputs["hip_b"],
+              "knee_c": math.degrees(math.remainder(turn_c - ha, 2 * math.pi)),
+              "knee_d": math.degrees(math.remainder(turn_d - hb, 2 * math.pi)), "toe": inputs.get("toe", 0.0)}
+    c = leg_contract()
+
+    def move(points, steps):
+        out = []
+        for x, y, z in points:
+            q = (x, y)
+            for about, rad in steps:
+                q = _turn(q, about, rad)
+            out.append([q[0], q[1], z])
+        return out
+
+    # each body: its own turn about its pivot, then its parent's, outwards in
+    shin_c = [(c1, turn_c - ha), (A, ha)]
+    comps = {"frame": c["components"]["frame"]["points"],
+             "crank_a": move(c["components"]["crank_a"]["points"], [(A, ha)]),
+             "shin_c": move(c["components"]["shin_c"]["points"], shin_c),
+             "crank_b": move(c["components"]["crank_b"]["points"], [(B, hb)]),
+             "shin_d": move(c["components"]["shin_d"]["points"], [(c2, turn_d - hb), (B, hb)]),
+             "toe": move(c["components"]["toe"]["points"], [(foot, math.radians(angles["toe"]))] + shin_c)}
+    return angles, comps
+
+
+def leg_trace(defect=None, extra=()):
+    c = leg_contract()
+    samples = []
+    for i, pose in enumerate(list(required_poses(c)) + list(extra)):
+        angles, comps = leg_render(pose, defect)
+        samples.append({"id": str(i), "angles_deg": angles, "components": comps})
+    return {"schema_version": 1, "length_unit": "mm", "frame": "assembly-home",
+            "capture_source": "independent analytic five-bar renderer", "samples": samples}
+
+
+def test_a_five_bar_leg_samples_its_inputs_and_solves_its_knees():
+    c = leg_contract()
+    poses = required_poses(c)
+    hips = {(p["hip_a"], p["hip_b"]) for p in poses}
+    # every hip sample against every other, except where the shins cannot reach: both cranks out at -60 put the knees
+    # 100 mm apart, more than the shins' 90
+    assert (-60, -60) not in hips and (60, 60) in hips and (0, 0) in hips
+    assert 15 < len(hips) < 25
+    for p in poses:
+        angles, _ = leg_render(p)
+        assert p["knee_c"] == pytest.approx(angles["knee_c"], abs=1e-9)
+        assert p["knee_d"] == pytest.approx(angles["knee_d"], abs=1e-9)
+    # the toe is exercised with the leg away from home, not with one knee turned alone
+    toe = [p for p in poses if p["toe"] and p["hip_a"]]
+    assert toe and all(abs(leg_render(p)[0]["knee_c"] - p["knee_c"]) < 1e-9 for p in toe)
+
+
+def test_an_independent_loop_renderer_passes():
+    report = validate_motion_trace(leg_contract(), leg_trace())
+    assert report["status"] == "pass", report["failures"]
+    row = report["loops"]["leg"]
+    assert row["kind"] == "five-bar" and row["max_pose_error_mm"] < 1e-9 and not row["unreachable_samples"]
+    assert {"hip_a": -60.0, "hip_b": -60.0, "why": "cannot close"} in row["skipped_inputs_deg"]
+    assert row["inputs_span_deg"] == {"hip_a": [-60, 60], "hip_b": [-60, 60]} and not row["off_circuit_samples"]
+    assert row["links_mm"] == [pytest.approx({"crank": 30, "link": 45}), pytest.approx({"crank": 30, "link": 45})]
+    assert report["components"]["shin_d"]["max_error_mm"] < 1e-9
+
+
+@pytest.mark.parametrize("defect", ["serial", "other-branch"])
+def test_a_renderer_that_breaks_the_loop_fails(defect):
+    # Its landmarks agree with the angles it reports, so only the loop check sees that the leg came apart ('serial')
+    # or assembled the other way ('other-branch').
+    report = validate_motion_trace(leg_contract(), leg_trace(defect))
+    assert report["status"] == "fail"
+    assert [f["check"] for f in report["failures"]] == ["loop-pose"]
+    assert report["failures"][0]["max_pose_error_mm"] > 10
+
+
+def test_a_sample_whose_inputs_cannot_close_fails():
+    report = validate_motion_trace(leg_contract(), leg_trace(extra=[{"hip_a": -60, "hip_b": -60}]))
+    assert report["status"] == "fail"
+    assert report["loops"]["leg"]["unreachable_samples"] == [str(len(required_poses(leg_contract())))]
+    json.dumps(report, allow_nan=False)                 # the CLI writes it strictly: no inf for the open sample
+
+
+@pytest.mark.parametrize("order", [1, -1])
+def test_a_four_bar_driven_from_either_end(order):
+    # Norton's Example 4-1 (40, 120, 80, 100 mm) at 40 degrees, as a tree from the crank (crank, coupler, rocker) and
+    # from the rocker (rocker, coupler, crank): either way the rocker's angles are cadagent.formulas'. The closing
+    # joints are listed both ways round (order), so the one-joint chain comes first or second.
+    from cadagent import formulas as fx
+    t3, t4 = fx.fourbar_angles(40, 120, 80, 100, math.radians(40))
+    B = (40 * math.cos(math.radians(40)), 40 * math.sin(math.radians(40)))
+    C = (100 + 80 * math.cos(t4), 80 * math.sin(t4))
+    pts = lambda x, y: _box(x, y, 0)                                    # noqa: E731
+    base = {"schema_version": 1, "length_unit": "mm", "frame": "assembly-home", "reference": "Norton Example 4-1"}
+    crank = dict(base, joints={
+        "crank": {"parent": None, "pivot": [0, 0, 0], "axis": [0, 0, 1], "range_deg": [-180, 180]},
+        "coupler": {"parent": "crank", "pivot": [*B, 0], "axis": [0, 0, 1], "range_deg": [-180, 180]},
+        "rocker": {"parent": None, "pivot": [100, 0, 0], "axis": [0, 0, 1], "range_deg": [-180, 180]}},
+        components={"a": {"joint": "coupler", "points": pts(60, 70)}, "b": {"joint": "rocker", "points": pts(110, 30)},
+                    "c": {"joint": "crank", "points": pts(10, 10)}},
+        loops={"x": {"closes": ["coupler", "rocker"][::order], "pin": [*C, 0], "inputs": ["crank"]}})
+    poses = required_poses(crank)
+    assert sorted(p["crank"] for p in poses) == [-180, -90, 0, 90, 180]        # home, and every 90 degrees
+    for p in poses:
+        want = fx.fourbar_angles(40, 120, 80, 100, math.radians(40 + p["crank"]))[1]
+        assert math.remainder(math.radians(p["rocker"]) - (want - t4), 2 * math.pi) == pytest.approx(0, abs=1e-12)
+    rocker = dict(base, joints={
+        "rocker": {"parent": None, "pivot": [100, 0, 0], "axis": [0, 0, 1], "range_deg": [-20, 20]},
+        "coupler": {"parent": "rocker", "pivot": [*C, 0], "axis": [0, 0, 1], "range_deg": [-180, 180]},
+        "crank": {"parent": None, "pivot": [0, 0, 0], "axis": [0, 0, 1], "range_deg": [-180, 180]}},
+        components=crank["components"],
+        loops={"x": {"closes": ["coupler", "crank"][::order], "pin": [*B, 0], "inputs": ["rocker"]}})
+    for p in required_poses(rocker):
+        # the crank pin is a from the crank pivot and b from the coupler's pivot, the rocker's tip
+        t = math.radians(p["rocker"])
+        tip = _turn(C, (100, 0), t)
+        pin = _turn(B, (0, 0), math.radians(p["crank"]))
+        assert math.dist(pin, tip) == pytest.approx(120, abs=1e-9)
+
+
+@pytest.mark.parametrize("mutation,match", [
+    (lambda c: c["loops"]["leg"].update(closes=["knee_c", "knee_c"]), "two different joints"),
+    (lambda c: c["loops"]["leg"].update(inputs=["hip_a"]), "first joint of each two-joint chain"),
+    (lambda c: c["loops"]["leg"].update(closes=["knee_c", "toe"]), "carries the other"),
+    (lambda c: c["joints"]["knee_d"].update(axis=[0, 1, 0]), "not parallel"),
+    (lambda c: c["loops"].update(again={"closes": ["knee_c", "knee_d"], "pin": [0, 0, 0],
+                                        "inputs": ["hip_a", "hip_b"]}), "one loop per joint"),
+    (lambda c: c["joints"]["knee_c"].update(range_deg=[-5, 5]), "outside its range"),
+    (lambda c: c["joints"]["hip_b"].update(parent="knee_d"), "cycle at .*declare the closed loop under loops"),
+])
+def test_bad_loops_are_rejected(mutation, match):
+    c = leg_contract()
+    mutation(c)
+    with pytest.raises(ValueError, match=match):
+        required_poses(c)
+
+
+def test_a_loop_at_a_lock_at_home_is_rejected():
+    c = leg_contract()
+    A, B, c1, c2, foot = _leg_home()
+    c["loops"]["leg"]["pin"] = [0.0, c1[1], 10]                     # the pin between the knees: shins in one line
+    with pytest.raises(ValueError, match="in one line"):
+        required_poses(c)
+
+
+def test_a_double_rocker_is_sampled_on_the_circuit_it_reaches_from_home():
+    # Grashof with the coupler shortest (80, 40, 120, 100 mm): the crank rocks between 51.3 and 125.1 degrees, and the
+    # same assembly closes again in the mirror-image range below the ground link, which the linkage cannot reach
+    # without coming apart. Built at 90 degrees with the crank's range a full turn, the required poses stay in
+    # 51.3..125.1, and a capture of the mirror range fails.
+    from cadagent import formulas as fx
+    a, b, c, d, home = 80, 40, 120, 100, 90.0
+    lim = fx.fourbar_input_limits(a, b, c, d)
+    t3h, t4h = fx.fourbar_angles(a, b, c, d, math.radians(home))
+    B = (a * math.cos(math.radians(home)), a * math.sin(math.radians(home)))
+    C = (d + c * math.cos(t4h), c * math.sin(t4h))
+    contract = {"schema_version": 1, "length_unit": "mm", "frame": "assembly-home", "reference": "double rocker",
+                "joints": {"crank": {"parent": None, "pivot": [0, 0, 0], "axis": [0, 0, 1], "range_deg": [-180, 180]},
+                           "coupler": {"parent": "crank", "pivot": [*B, 0], "axis": [0, 0, 1], "range_deg": [-360, 360]},
+                           "rocker": {"parent": None, "pivot": [d, 0, 0], "axis": [0, 0, 1], "range_deg": [-360, 360]}},
+                "components": {"crank": {"joint": "crank", "points": _box(5, 30, 0)},
+                               "coupler": {"joint": "coupler", "points": _box(*((B[0] + C[0]) / 2, (B[1] + C[1]) / 2), 0)},
+                               "rocker": {"joint": "rocker", "points": _box(d + 10, 40, 0)}},
+                "loops": {"x": {"closes": ["coupler", "rocker"], "pin": [*C, 0], "inputs": ["crank"]}}}
+    poses = required_poses(contract)
+    cranks = sorted(home + p["crank"] for p in poses)
+    assert math.degrees(lim["folded"]) < cranks[0] < math.degrees(lim["folded"]) + 1.5
+    assert math.degrees(lim["stretched"]) - 1.5 < cranks[-1] < math.degrees(lim["stretched"])
+    assert len(cranks) >= 5 and max(b - a for a, b in zip(cranks, cranks[1:])) <= 90
+
+    def pose(crank_abs):
+        t3, t4 = fx.fourbar_angles(a, b, c, d, math.radians(crank_abs))
+        rel = math.radians(crank_abs - home)
+        return {"crank": crank_abs - home, "coupler": math.degrees(math.remainder(t3 - t3h - rel, 2 * math.pi)),
+                "rocker": math.degrees(math.remainder(t4 - t4h, 2 * math.pi))}
+
+    def render(p):
+        q1, q2, q3 = (math.radians(p[k]) for k in ("crank", "coupler", "rocker"))
+        move = lambda pts, steps: [[*_chain(x, y, steps), z] for x, y, z in pts]          # noqa: E731
+        comps = contract["components"]
+        return {"crank": move(comps["crank"]["points"], [((0, 0), q1)]),
+                "coupler": move(comps["coupler"]["points"], [(B, q2), ((0, 0), q1)]),
+                "rocker": move(comps["rocker"]["points"], [((d, 0), q3)])}
+
+    samples = [{"id": str(i), "angles_deg": p, "components": render(p)} for i, p in enumerate(poses)]
+    trace = {"schema_version": 1, "length_unit": "mm", "frame": "assembly-home", "capture_source": "analytic",
+             "samples": samples}
+    report = validate_motion_trace(contract, trace)
+    assert report["status"] == "pass", report["failures"]
+    row = report["loops"]["x"]
+    assert row["inputs_span_deg"]["crank"] == [cranks[0] - home, cranks[-1] - home] and not row["skipped_inputs_deg"]
+    mirror = pose(-home)                                      # closes on the same assembly, on the other circuit
+    trace["samples"].append({"id": "mirror", "angles_deg": mirror, "components": render(mirror)})
+    report = validate_motion_trace(contract, trace)
+    assert [f["check"] for f in report["failures"]] == ["loop-pose"]
+    assert report["loops"]["x"]["off_circuit_samples"] == ["mirror"]
+
+
+def _chain(x, y, steps):
+    for about, rad in steps:
+        x, y = _turn((x, y), about, rad)
+    return x, y

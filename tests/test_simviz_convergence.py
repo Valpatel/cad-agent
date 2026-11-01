@@ -69,8 +69,8 @@ def test_a_case_without_solids_has_no_solids_panel_and_shows_the_whole_run(tmp_p
     assert {ln.get_label() for ln in air.get_lines()} >= {'fins: mean in the block', 'fan: air through the fan'}
     assert 'Change over the shaded window: fins' in _words(air)
     assert f"fins {r['zones']['fins']['T_c']:.1f} °C" in _words(air)       # each line named at its end, with its unit
-    # each change with the limit steady holds it to (a fin block's air 2 °C, the fan's intake air 1 °C)
-    assert '(limit ±2 °C)' in _words(air) and '(limit ±1 °C)' in _words(air)
+    # each change with the limit steady holds it to: 1 °C for the block's air and the fan's intake air alike
+    assert _words(air).count('(limit ±1 °C)') == 2 and '(limit ±2 °C)' not in _words(air)
     assert '(limit ±2 %)' in _words(p['Fan flow'])
     heat = p['Heat leaving with the air']
     assert 'heat put in, 40 W' in [ln.get_label() for ln in heat.get_lines()]
@@ -139,6 +139,23 @@ def test_a_crashed_continuation_shades_rows_the_lines_show(tmp_path):
         assert _shaded(ax) == [120, 150]
         ends = [ln.get_xdata()[-1] for ln in ax.get_lines() if len(ln.get_xdata()) > 2]
         assert ends and max(ends) == 150
+    matplotlib.pyplot.close(fig)
+
+
+def test_a_continuation_that_stopped_before_its_first_sample_shades_nothing(tmp_path):
+    # the continuation from 100 stopped at 104, before its first temperature sample: the lines stop at 100, where it
+    # began, and the solve before it is not shaded as if it were the newest one
+    r = cfd.read_results(recorded('solids-short-continuation', tmp_path))
+    fig = _figure(r)
+    p = _panels(fig)
+    head = _words(fig)
+    assert 'Iterations 1–104 in 2 solves (thin lines: continuations from 100).' in head and 'Shaded' not in head
+    assert 'Stopped early at iteration 104 of 300 planned' in head
+    assert 'Change over the shaded window' not in head
+    for title, ax in p.items():
+        assert _vlines(ax, simviz.ACCENT) == [104] and _vlines(ax, simviz.MUTED) == [100] and _shaded(ax) is None
+        ends = [ln.get_xdata()[-1] for ln in ax.get_lines() if len(ln.get_xdata()) > 2]
+        assert ends and max(ends) == (104 if title.startswith('Initial residuals') else 100)
     matplotlib.pyplot.close(fig)
 
 

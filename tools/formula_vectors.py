@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Golden test vectors for the browser port of cadagent.formulas, and the demos' material and fan tables, from the
-Python.
+"""Golden test vectors for the browser port of cadagent.formulas, and the demos' material, fan and screw tables, from
+the Python.
 
     python3 tools/formula_vectors.py            # write tests/fixtures/formula-vectors.json and webkit/formulas-data.js
     python3 tools/formula_vectors.py --check    # exit 1 if either committed file differs (the tests run this)
@@ -20,6 +20,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from cadagent import formulas as fx                                  # noqa: E402  (this checkout's package)
 from cadagent.mechanical.compliant.allowables import DIRECTIONS, PRINTED        # noqa: E402
 from cadagent.thermal.fans import FANS                                            # noqa: E402
+from cadagent.mechanical import bosses                                            # noqa: E402
 
 VECTORS = ROOT / "tests" / "fixtures" / "formula-vectors.json"
 DATA = ROOT / "src" / "cadagent" / "webkit" / "formulas-data.js"
@@ -27,7 +28,9 @@ DATA = ROOT / "src" / "cadagent" / "webkit" / "formulas-data.js"
 PORTED = ("snap_root_strain", "snap_deflection_force", "snap_arm", "cantilever_shape", "cantilever_strain_profile",
           "cantilever_thickness_profile", "grashof", "fourbar_angles", "transmission_angle", "fourbar_input_limits",
           "fan_curve_line", "system_coefficient", "fans_in_series", "fans_in_parallel", "fan_stall_flow",
-          "fan_operating_point")
+          "fan_operating_point", "torsion_constant_rect", "torsion_shear_stress_rect", "torsion_shear_strain_rect",
+          "torsion_bar_stiffness", "torsion_snap_bar", "nut_factor", "preload_from_torque", "torque_for_preload",
+          "thread_shear_areas", "thread_strip_force", "thread_radial_pressure", "boss_hoop_stress", "screw_boss")
 TOLERANCE = {"rel": 1e-12, "abs": 1e-15}
 
 
@@ -86,6 +89,8 @@ def cases():
         add("snap_arm", 20 * mm, 1.6 * mm, 6 * mm, 0.0, 2703e6, 0.02, design)
     fourbar_cases(add)
     fan_cases(add, refuse)
+    torsion_cases(add, refuse)
+    boss_cases(add, refuse)
     # What the Python refuses: xi outside 0..1, and a design that is not 1, 2 or 3 (including a string, a fraction
     # and an inherited key of a JS object).
     for xi in (-0.1, 1.2):
@@ -216,6 +221,100 @@ def fan_cases(add, refuse):
     refuse("fan_curve_line", 10.0, -0.01)
 
 
+def torsion_cases(add, refuse):
+    """Rectangles from a square to a thin strip, either way round; the torsion-snap explorer's default and each demo
+    material at it, one bar and two, at rest, at the permissible twist and far past it."""
+    import math
+    mm = 1e-3
+    for w, t in [(2, 2), (3, 2), (4, 1.2), (6, 1), (20, 0.8), (1.2, 4), (10, 0.5)]:
+        add("torsion_constant_rect", w * mm, t * mm)
+        add("torsion_shear_stress_rect", 0.02, w * mm, t * mm)
+        for twist in (0.0, 0.05, math.radians(8), math.radians(30)):
+            add("torsion_shear_strain_rect", twist, 15 * mm, w * mm, t * mm)
+    for L, G in [(15 * mm, 9.9e8), (8 * mm, 2.7e8), (30 * mm, 3.2e9)]:
+        add("torsion_bar_stiffness", L, G, fx.torsion_constant_rect(4 * mm, 1.2 * mm))
+    for key, m in PRINTED.items():                    # each demo material at the demo's default bar
+        for bars in (1, 2):
+            for repeated in (False, True):
+                add("torsion_snap_bar", 15 * mm, 4 * mm, 1.2 * mm, math.radians(8), m.secant_upper_bound("along") * 1e6,
+                    m.allowable("across", repeated), 10 * mm, bars)
+    for twist in (0.0, math.radians(2), math.radians(20), math.radians(45)):
+        for w, t in [(4, 1.2), (2, 2), (12, 0.8)]:
+            add("torsion_snap_bar", 15 * mm, w * mm, t * mm, twist, 2.68e9, 0.0095, 10 * mm, 1)
+    add("torsion_snap_bar", 15 * mm, 4 * mm, 1.2 * mm, 0.1, 2.68e9, 0.0095, 10 * mm, 2, 0.4)
+    add("torsion_snap_bar", 30 * mm, 12 * mm, 0.6 * mm, math.radians(30), 3.0e9, 0.02, 10 * mm)   # a large twist
+    good = [15 * mm, 4 * mm, 1.2 * mm, 0.1, 2.68e9, 0.0095, 10 * mm, 1]
+    for i, bad in [(0, 0.0), (1, -1 * mm), (3, -0.1), (4, 0.0), (5, 0.0), (6, 0.0), (7, 3), (7, 1.5), (7, True),
+                   (0, "15"), (3, None)]:
+        refuse("torsion_snap_bar", *good[:i], bad, *good[i + 1:])
+    refuse("torsion_snap_bar", *good, 0.5)
+
+
+def boss_cases(add, refuse):
+    """The flank's push and the Lame wall alone; the screw-boss explorer's default; every DELTA PT size the explorer
+    offers in every demo material, upright and lying, across its boss, engagement and torque sliders; and refusals."""
+    import math
+    mm = 1e-3
+    for d, P, mu in [(3 * mm, 0.5 * mm, 0.15), (3 * mm, 1.12 * mm, 0.2), (4 * mm, 1.46 * mm, 0.65), (8 * mm, 1.25 * mm, 0.1)]:
+        add("nut_factor", d, P, mu, mu)
+        add("nut_factor", d, P, mu, mu, math.radians(30))
+        add("nut_factor", d, P, mu, 0.0, math.radians(40))
+    for T, d, K in [(0.5, 3 * mm, 0.2), (0.3, 3 * mm, 0.2675), (2.0, 8 * mm, 0.18)]:
+        add("preload_from_torque", T, d, K)
+        add("torque_for_preload", 400.0, d, K)
+    add("preload_from_torque", 0.5, 3 * mm)
+    add("torque_for_preload", 400.0, 3 * mm)
+    for d, P, Le in [(3 * mm, 0.5 * mm, 6 * mm), (3 * mm, 1.12 * mm, 6 * mm), (5 * mm, 1.8 * mm, 12 * mm)]:
+        add("thread_shear_areas", d, P, Le)
+        add("thread_strip_force", d, P, Le, 15.5e6)
+        add("thread_strip_force", d, P, Le, 15.5e6, "external")
+    for F, d, Le in [(400.0, 3 * mm, 6 * mm), (0.0, 3 * mm, 6 * mm), (1500.0, 5 * mm, 9 * mm)]:
+        add("thread_radial_pressure", F, d, Le)
+        add("thread_radial_pressure", F, d, Le, math.radians(30))
+    for p, d, D in [(3e6, 3 * mm, 6 * mm), (3e6, 3 * mm, 3.75 * mm), (0.0, 3 * mm, 6 * mm), (1e6, 4 * mm, 4.1 * mm)]:
+        add("boss_hoop_stress", p, d, D)
+    add("screw_boss", 3 * mm, 1.12 * mm, 6 * mm, 6 * mm, 0.3, 15.5e6, 35e6)
+    add("screw_boss", 3 * mm, 1.12 * mm, 6 * mm, 6 * mm, 0.3, 15.5e6, 35e6, 0.2, 0.65)
+    for key, m in PRINTED.items():
+        shear = bosses.SHEAR_FROM_TENSILE * m.strength("across") * 1e6
+        for size in BOSS_SIZES:
+            s = bosses.DELTA_PT[size]
+            d, P = s["diameter_mm"] * mm, s["pitch_mm"] * mm
+            for axis, direction in bosses.AXES.items():
+                hoop = m.strength(direction) * 1e6
+                for k_out, k_len, torque in [(2.0, 2.0, 0.3), (1.5, 1.5, 0.2), (2.5, 3.0, 0.8), (1.3, 2.4, 0.05)]:
+                    add("screw_boss", d, P, k_len * d, k_out * d, torque, shear, hoop, *bosses.FRICTION_BAND)
+    for dd in (2.2, 2.5, 3.5, 4.5):                   # exactly 2 d, from millimetres
+        add("screw_boss", dd * mm, 1.12 * mm, 2 * dd * mm, 2 * dd * mm, 0.1, 15.5e6, 35e6)
+    for drive in (0.0, 0.1, 0.2, 0.25, 0.3, 0.5):     # a measured drive torque: inside, at and past the window
+        add("screw_boss", 3 * mm, 1.12 * mm, 6 * mm, 6 * mm, 0.3, 15.5e6, 35e6, 0.2, 0.65, math.radians(30), drive)
+    add("screw_boss", 3 * mm, 1.12 * mm, 6 * mm, 6 * mm, 0.3, 15.5e6, 35e6, 0.2, 0.65, math.radians(30), None)
+    good = [3 * mm, 1.12 * mm, 6 * mm, 6 * mm, 0.3, 15.5e6, 35e6, 0.2, 0.65]
+    for i, bad in [(0, 0.0), (1, -1 * mm), (2, -6 * mm), (3, 3 * mm), (3, 2 * mm), (4, 0.0), (5, -1.0), (6, 0.0),
+                   (7, -0.1), (8, 0.1), (4, "0.3")]:
+        refuse("screw_boss", *good[:i], bad, *good[i + 1:])
+    refuse("screw_boss", *good, math.radians(30), -0.1)
+    refuse("screw_boss", *good, math.radians(30), "0.1")
+    refuse("thread_radial_pressure", -1.0, 3 * mm, 6 * mm)
+    refuse("thread_radial_pressure", 400.0, 0.0, 6 * mm)
+    refuse("thread_radial_pressure", 400.0, 3 * mm, 6 * mm, 0.0)
+    refuse("boss_hoop_stress", 1e6, 3 * mm, 3 * mm)
+    refuse("boss_hoop_stress", -1.0, 3 * mm, 6 * mm)
+    refuse("thread_strip_force", 3 * mm, 0.5 * mm, 6 * mm, 1e7, "both")
+
+
+# The screw-boss explorer's screw sizes (DELTA PT 20 to 50: 2 to 5 mm).
+BOSS_SIZES = ("20", "25", "30", "35", "40", "50")
+
+
+def screws():
+    """The explorer's screws: DELTA PT sizes in SI, with the friction band, the boss guide and their sources."""
+    return {"source": bosses.DELTA_PT_SOURCE, "friction": list(bosses.FRICTION_BAND),
+            "frictionSource": bosses.FRICTION_SOURCE, "shearFromTensile": bosses.SHEAR_FROM_TENSILE,
+            "sizes": [{"key": k, "diameter": bosses.DELTA_PT[k]["diameter_mm"] * 1e-3,
+                       "pitch": bosses.DELTA_PT[k]["pitch_mm"] * 1e-3} for k in BOSS_SIZES]}
+
+
 def fans():
     """The explorer's fans: each datasheet curve in SI (m^3/s, Pa), with its name, voltage, speed and source."""
     return [{"key": f.key, "name": f.name, "voltage": f.voltage, "speed": f.speed, "density": f.density,
@@ -227,6 +326,7 @@ def materials():
     for key, m in PRINTED.items():
         rows.append({"key": key, "name": m.name, "condition": m.condition, "source": m.source,
                      "modulus": {d: m.secant_upper_bound(d) * 1e6 for d in DIRECTIONS},
+                     "strength": {d: m.strength(d) * 1e6 for d in DIRECTIONS},
                      "allowable": {d: {"single": m.allowable(d), "repeated": m.allowable(d, repeated=True)}
                                    for d in DIRECTIONS}})
     return rows
@@ -247,15 +347,19 @@ def vectors_text() -> str:
 def data_text() -> str:
     body = json.dumps(materials(), indent=1, ensure_ascii=False)
     fan_rows = ",\n".join(" " + json.dumps(f, ensure_ascii=False) for f in fans())
-    return ("/* Generated by tools/formula_vectors.py from cadagent.mechanical.compliant.allowables and\n"
-            " * cadagent.thermal.fans: do not edit by hand.\n"
-            " * MATERIALS: printed filaments for the kit's demos: datasheet tensile modulus (Pa) and allowable snap-fit\n"
-            " * strain (fraction) by print direction, single joining and repeated (x0.6). Each allowable is derived from\n"
-            " * the datasheet named in `source` and is a hypothesis until a printed coupon is measured.\n"
+    return ("/* Generated by tools/formula_vectors.py from cadagent.mechanical.compliant.allowables,\n"
+            " * cadagent.thermal.fans and cadagent.mechanical.bosses: do not edit by hand.\n"
+            " * MATERIALS: printed filaments for the kit's demos: the highest datasheet tensile modulus (Pa), the lowest\n"
+            " * tensile strength (Pa) and the allowable snap-fit strain (fraction) by print direction, single joining\n"
+            " * and repeated (x0.6). Each is derived from the datasheets named in `source` and is a hypothesis until a\n"
+            " * printed coupon is measured.\n"
             " * FANS: fan curves read from the datasheet named in `source`, in SI ([flow m^3/s, pressure Pa]), at the\n"
-            " * air density `density` (kg/m^3) and the voltage `voltage` (V), on the maker's test rig. */\n"
+            " * air density `density` (kg/m^3) and the voltage `voltage` (V), on the maker's test rig.\n"
+            " * SCREWS: DELTA PT thread-forming screw sizes in SI (m), the steel-on-plastic friction band and the\n"
+            " * shear strength as a fraction of the tensile one, with their sources. */\n"
             f"export const MATERIALS = {body};\n"
-            f"export const FANS = [\n{fan_rows}\n];\n")
+            f"export const FANS = [\n{fan_rows}\n];\n"
+            f"export const SCREWS = {json.dumps(screws(), indent=1, ensure_ascii=False)};\n")
 
 
 def main(argv) -> int:

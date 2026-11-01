@@ -208,13 +208,21 @@ def mating_force(deflection_force_n: float, friction: float, angle_deg: float) -
 
 # ----------------------------------------------------------------------------- torsion
 
+def torsion_allowable_shear(strain: float, poisson: float = POISSON_PLASTICS) -> float:
+    """Section C: the permissible shear strain of a torsion bar from the permissible (tensile) strain, gamma_pm ~
+    (1 + nu) eps_pm. It is the maximum-shear-stress (Tresca) criterion written in strain: tau_pm = E eps_pm / 2 and
+    gamma = tau / G with G = E / 2(1 + nu)."""
+    return (1.0 + poisson) * strain
+
+
 def torsion_snap(bar_length: float, bar_radius: float, strain: float, secant_mpa: float, lever_mm: float,
                  bars: int = 2, poisson: float = POISSON_PLASTICS) -> Dict[str, float]:
     """Section C, circular torsion bar(s): permissible twist and the force at a lever arm.
 
     gamma_pm ~ (1 + nu) eps_pm; phi_pm = 180/pi * gamma_pm * l / r; G = Es / (2 (1 + nu)); Ip = pi r^4 / 2;
-    P * lever = bars * G * Ip * gamma / r. The guide's factor 2 is for two bars (Fig. 21)."""
-    gamma = (1.0 + poisson) * strain
+    P * lever = bars * G * Ip * gamma / r. The guide's factor 2 is for two bars (Fig. 21). For a rectangular bar and
+    a given twist, see :func:`cadagent.formulas.torsion_snap_bar`."""
+    gamma = torsion_allowable_shear(strain, poisson)
     phi_deg = math.degrees(gamma * bar_length / bar_radius)
     g = secant_mpa / (2.0 * (1.0 + poisson))
     ip = math.pi * bar_radius ** 4 / 2.0

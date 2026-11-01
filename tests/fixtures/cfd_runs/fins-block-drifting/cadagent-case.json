@@ -1,0 +1,95 @@
+{
+  "name": "fins-block-drifting",
+  "solver": "chtMultiRegionSimpleFoam (OpenFOAM v2512)",
+  "ambient_c": 25.0,
+  "domain_mm": [
+    [
+      -30,
+      -25,
+      -3
+    ],
+    [
+      236,
+      216,
+      152
+    ]
+  ],
+  "base_cell_mm": 10.0,
+  "iterations": 100,
+  "ground": "adiabatic no-slip floor (a table)",
+  "solids": [],
+  "walls": [
+    {
+      "name": "enclosure",
+      "cell_mm": 2.5
+    }
+  ],
+  "contacts": [],
+  "fans": [
+    {
+      "name": "fan",
+      "centre_mm": [
+        105,
+        105,
+        67
+      ],
+      "axis": [
+        0,
+        0,
+        -1
+      ],
+      "d_outer_mm": 76.0,
+      "d_hub_mm": 33.0,
+      "dp0_pa": 15.2,
+      "q_free_m3h": 38.9,
+      "q_free_cfm": 22.9,
+      "note": "an 80 mm fan, straight-line curve",
+      "model": "actuator disc, linear fan curve"
+    }
+  ],
+  "porous": [
+    {
+      "name": "fins",
+      "lo_mm": [
+        55,
+        63,
+        45
+      ],
+      "hi_mm": [
+        155,
+        148,
+        59
+      ],
+      "d": [
+        7600000.0,
+        7600000000.0,
+        7600000.0
+      ],
+      "f": [
+        15.9,
+        0,
+        15.9
+      ],
+      "e1": [
+        1,
+        0,
+        0
+      ],
+      "e2": [
+        0,
+        1,
+        0
+      ],
+      "heat_w": 0.0,
+      "ha_w_k": 3.3,
+      "fin_temperature_c": 61.8,
+      "target_w": 40.0,
+      "note": "compact fin block"
+    }
+  ],
+  "heat_input_w": 40.0,
+  "limits": [
+    "steady RANS (k-omega SST): natural-convection plumes really fluctuate",
+    "converged means the temperatures, fan flow and heat leaving stopped changing and the heat leaving matches the heat put in (energy balance), not that the residuals reached a tolerance"
+  ]
+}

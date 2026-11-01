@@ -3,6 +3,7 @@ two in step), old paths keep importing, the top level stays tidy."""
 import importlib
 import importlib.util
 import pkgutil
+import re
 import subprocess
 import sys
 import types
@@ -80,6 +81,94 @@ MOVED_PACKAGES = sorted(old for old, new in MOVED.items() if _is_package(new))
 
 def test_the_moved_packages_are_the_published_ones():
     assert MOVED_PACKAGES == ["compliant", "dossier", "explore", "gates"]
+
+
+# Every old path v0.5.0 published (#114). Downstream projects hash their source folders in evidence receipts, so moving
+# an import changes a receipt; an old path goes only in the release _moved.REMOVED_IN names, after a CHANGELOG entry
+# has announced it at least one minor release ahead.
+PUBLISHED_OLD_PATHS = {
+    "holes", "fasteners", "mcmaster", "connectors", "markings", "compliant", "motion_trace", "slicer", "mesh3mf",
+    "heatsink", "fea", "cfd", "topopt", "explore", "robot", "simviz", "simreport", "pcb", "pcb_routing", "gates",
+    "dossier", "packet", "evidence", "report", "htmlreport", "site", "site_review", "view", "serve", "release",
+    "render", "dotsvg"}
+ROOT = PKG.parents[1]
+
+
+def _release(text: str):
+    return tuple(int(p) for p in text.split("."))
+
+
+_NAMES_THE_PATHS = re.compile(r"\bold\b(?:\s+[\w`.-]+){0,3}?\s+paths?\b|\b(?:import|package|module) paths\b"
+                              r"|cadagent\._moved")
+_BULLET = re.compile(r"^- .*(?:\n[ \t]+(?![-*] )\S.*)*", re.M)        # a bullet and its wrapped lines, not sub-bullets
+
+
+def _announced(changelog: str, removed_in: str) -> list:
+    """The released entries whose **Projects must change** block has a bullet that names the old paths ("old
+    paths", "old flat import paths", "the new package paths", ``cadagent._moved``) and v<removed_in>, as release
+    tuples."""
+    out = []
+    for v, body in re.findall(r"^## v([0-9.]+) \([0-9-]+\)\n(.*?)(?=^## |\Z)", changelog, re.M | re.S):
+        block = re.search(r"^\*\*Projects must change:?\*\*:?[ \t]*\n(.*?)(?=^\*\*[^*\n]+\*\*|\Z)", body, re.M | re.S)
+        bullets = [" ".join(b.split()) for b in _BULLET.findall(block.group(1))] if block else []
+        if any(_NAMES_THE_PATHS.search(b) and re.search(rf"\bv{re.escape(removed_in)}\b", b) for b in bullets):
+            out.append(_release(v))
+    return out
+
+
+def test_the_announcement_check_reads_a_projects_must_change_bullet():
+    log = ("## Unreleased\n\n## v0.10.0 (2027-01-02)\n\n**New**\n- the old paths go in v0.11.0 (not here)\n\n"
+           "**Projects must change**\n- Move imports: the old flat import paths go in\n  v0.11.0, wrapped (#1).\n\n"
+           "## v0.9.0 (2026-12-01)\n\n**Projects must change:**\n- A folder threshold for v0.11.0 holds.\n"
+           "- The old paths stay.\n  - v0.11.0 is another bullet's.\n")
+    assert _announced(log, "0.11.0") == [(0, 10, 0)]
+    assert _announced(log, "0.12.0") == []
+    assert _announced(log.replace("**Projects must change**\n- Move", "**Fixed**\n- Move"), "0.11.0") == []
+    # v0.5.0 announced v0.7.0 in its own words ("Move imports to the new package paths before v0.7.0")
+    assert (0, 5, 0) in _announced((ROOT / "CHANGELOG.md").read_text(encoding="utf-8"), "0.7.0")
+
+
+def test_no_old_path_goes_unannounced():
+    current = _release(cadagent.__version__.split("+")[0])
+    removed = _release(_moved.REMOVED_IN) if _moved.REMOVED_IN else None
+    if removed is None or current < removed:
+        assert set(MOVED) == PUBLISHED_OLD_PATHS, (
+            "an old import path was removed or added without an announced release: set _moved.REMOVED_IN and "
+            "announce it in the CHANGELOG at least one minor release ahead")
+    if removed is not None:
+        assert removed > current, f"REMOVED_IN names v{_moved.REMOVED_IN}, which has shipped: update the plan"
+        announced = _announced((ROOT / "CHANGELOG.md").read_text(encoding="utf-8"), _moved.REMOVED_IN)
+        assert any(a[:2] < removed[:2] for a in announced), (
+            f"no released CHANGELOG entry before v{removed[0]}.{removed[1]} announces the removal in "
+            f"v{_moved.REMOVED_IN} under **Projects must change**")
+
+
+def test_the_warning_says_to_move_the_import_and_when_the_old_path_goes():
+    msg = _moved._message("cadagent.fea", "cadagent.simulation.fea")
+    assert msg.startswith("cadagent.fea moved to cadagent.simulation.fea: import it from there")
+    assert "docs/toolkit.md, Package layout" in msg
+    assert "### Package layout" in (ROOT / "docs" / "toolkit.md").read_text(encoding="utf-8")
+    if _moved.REMOVED_IN is None:
+        assert "a release that the CHANGELOG announces a minor release ahead" in msg
+        assert not re.search(r"v[0-9]+\.[0-9]", msg)                 # names no release, and none that has shipped
+
+
+STATES_THE_PLAN = [PKG / d / "__init__.py" for d in sorted(DOMAINS)] + [
+    PKG / "README.md", PKG / "_moved.py", ROOT / "docs" / "toolkit.md", ROOT / "docs" / "areas.yaml",
+    ROOT / "tests" / "test_package_areas.py", ROOT / "tests" / "test_areas.py"]
+
+
+@pytest.mark.parametrize("path", STATES_THE_PLAN, ids=lambda p: str(p.relative_to(ROOT)))
+def test_every_page_states_the_same_plan_for_the_old_paths(path):
+    """v0.7.0 shipped with every old path while these still said it removed them (#144)."""
+    text = " ".join(path.read_text(encoding="utf-8").split())
+    if _moved.REMOVED_IN is None:
+        assert "announces a minor release ahead" in text or "at least one minor release ahead" in text, path
+    else:
+        assert f"v{_moved.REMOVED_IN}" in text, path
+    current = _release(cadagent.__version__.split("+")[0])
+    for v in re.findall(r"(?:until|goes in|go in|removed in) v([0-9]+\.[0-9]+\.[0-9]+)", text, re.I):
+        assert _release(v) > current, f"{path.name} says the old paths go in v{v}, which has shipped"
 
 
 @pytest.mark.parametrize("old", MOVED_PACKAGES)
@@ -193,8 +282,7 @@ def test_python_m_through_an_old_path_runs_the_new_module(old, new, status, tmp_
            for name in (old, new)}
     assert run[old].returncode == run[new].returncode == status, run[old].stderr
     assert run[old].stdout == run[new].stdout
-    warning = (f"<python -m {old}>:1: DeprecationWarning: {old} moved to {new}; the old path goes in "
-               f"v{_moved.REMOVED_IN}")
+    warning = f"<python -m {old}>:1: DeprecationWarning: {_moved._message(old, new)}"
     rest = [line for line in run[old].stderr.splitlines() if line != warning]
     if status == 1:
         assert f"'{old}' is a package and cannot be directly executed" in run[old].stderr, run[old].stderr

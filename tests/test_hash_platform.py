@@ -1,10 +1,11 @@
 """Content hashes are bound to the platform that made them (#144): ``cadagent.review.evidence``.
 
-``hash_platform`` names that platform and the geometry record carries it, outside the gates' digest, so recording it
-voided no verdict. ``geometry_identity`` is the optional platform-stable identity (volume, centre of mass, inertia,
-rounded, with its tolerance), checked here against closed forms, against placement and against golden values that an
-x86-64 and an aarch64 host both produced while their content hashes for the same solids differed. The tests without
-CadQuery run in the core CI job.
+``hash_platform`` names that platform and the geometry record carries it under ``hash``, a key every release leaves
+out of the gates' digest, so recording it voids no verdict, under this release or an earlier one.
+``geometry_identity`` is the optional platform-stable identity (volume, centre of mass, inertia, rounded, with its
+tolerance), checked here against closed forms, against placement and against golden values that an x86-64 and an
+aarch64 host both produced while their content hashes for the same solids differed. The tests without CadQuery run in
+the core CI job.
 """
 
 from __future__ import annotations
@@ -17,9 +18,10 @@ import types
 import pytest
 
 from cadagent.review import evidence as ev
-from cadagent.review.gates.verdict import bind_inputs, geometry_digest, stale_reason, verdict
+from cadagent.review.gates.verdict import VOLATILE_TOP, bind_inputs, geometry_digest, stale_reason, verdict
 
-X86 = {"machine": "x86_64", "system": "Linux", "ocp": "7.9.3.1", "ocp_package": "cadquery-ocp 7.9.3.1.1"}
+X86 = {"machine": "x86_64", "system": "Linux", "libc": "glibc 2.39", "ocp": "7.9.3.1",
+       "ocp_package": "cadquery-ocp 7.9.3.1.1"}
 ARM = dict(X86, machine="aarch64")
 
 
@@ -29,6 +31,7 @@ def test_hash_platform_names_the_machine_and_the_ocp_build(monkeypatch):
     monkeypatch.setitem(sys.modules, "OCP", types.SimpleNamespace(__version__="7.9.3.1"))
     monkeypatch.setattr(ev.platform, "machine", lambda: "aarch64")
     monkeypatch.setattr(ev.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(ev.platform, "libc_ver", lambda: ("glibc", "2.39"))
     found = {"cadquery-ocp-novtk": "7.9.3.1.1"}
 
     def version(name):
@@ -37,40 +40,57 @@ def test_hash_platform_names_the_machine_and_the_ocp_build(monkeypatch):
         return found[name]
 
     monkeypatch.setattr(ev, "version", version)
-    assert ev.hash_platform() == {"machine": "aarch64", "system": "Linux", "ocp": "7.9.3.1",
+    assert ev.hash_platform() == {"machine": "aarch64", "system": "Linux", "libc": "glibc 2.39", "ocp": "7.9.3.1",
                                   "ocp_package": "cadquery-ocp-novtk 7.9.3.1.1"}
     found.clear()                                           # a conda or source build: no distribution to name
     assert ev.hash_platform()["ocp_package"] == "unknown"
     monkeypatch.setitem(sys.modules, "OCP", None)            # no OCP at all: import fails
     assert ev.hash_platform()["ocp"] == "unknown"
+    monkeypatch.setattr(ev.platform, "libc_ver", lambda: ("", ""))     # e.g. a musl or non-Linux system
+    assert ev.hash_platform()["libc"] == "unknown"
     assert tuple(ev.hash_platform()) == ev.PLATFORM_KEYS
 
 
-def test_the_note_says_when_two_platforms_differ():
+def test_a_geometry_record_says_where_its_hashes_were_made():
+    assert ev.record_hash_platform({"hash": {"recipe": "r", "platform": X86}}) == X86
+    for older in ({"hash": "r"}, {}, {"hash": {"recipe": "r"}}, None, "x"):     # before #144, or not a record
+        assert ev.record_hash_platform(older) == {}
+
+
+def test_the_note_says_when_two_platforms_differ(monkeypatch):
+    monkeypatch.setattr(ev, "hash_platform", lambda: pytest.fail("the note must not ask this process"))
     assert ev.hash_platform_note(X86, dict(X86)) is None
     for legacy in (None, {}, "x86_64"):                       # a record written before hash_platform existed
         assert ev.hash_platform_note(legacy, X86) is None
-        assert ev.hash_platform_note(X86, legacy or {}) is None
+        assert ev.hash_platform_note(X86, legacy) is None     # never falls back to the host running the check
     note = ev.hash_platform_note(ARM, X86)
-    assert note.startswith("the recorded hashes were made on aarch64 Linux, OCP 7.9.3.1 (cadquery-ocp 7.9.3.1.1) "
-                           "and the current ones on x86_64 Linux")
+    assert note.startswith("the recorded hashes were made on aarch64 Linux (glibc 2.39), OCP 7.9.3.1 "
+                           "(cadquery-ocp 7.9.3.1.1) and the current ones on x86_64 Linux (glibc 2.39)")
     assert "need not be a change of geometry" in note
     assert ev.hash_platform_note(X86, dict(X86, ocp_package="unknown"))     # another OCP build counts too
+    assert ev.hash_platform_note(X86, dict(X86, libc="glibc 2.35"))         # and another C library
 
 
 # --------------------------------------------------------------- recording it changes no digest and voids no verdict
 
 def _record(platform=None):
+    """A geometry record as a toolkit before #144 wrote it (``hash`` the recipe string), or with ``platform``."""
     rec = {"schema": "cad-agent.dossier-geometry/1", "units": "mm", "hash": "recipe", "actor": "a",
            "parts": {"p": {"sha256": "a" * 64, "count": 1,
                            "instances": [{"key": "p", "sha256": "a" * 64, "volume_mm3": 1.0}]}},
            "cavities": {}, "joints": {}, "fasteners": {}, "assembly": {"steps": []}, "physical_fit_verified": False}
     if platform is not None:
-        rec["hash_platform"] = platform
+        rec["hash"] = {"recipe": "recipe", "platform": platform}
     return rec
 
 
-def test_the_platform_is_outside_the_geometry_digest():
+# VOLATILE_TOP before #144: what an earlier release leaves out of the digest. Nothing #144 records may be outside it.
+EARLIER_VOLATILE_TOP = frozenset({"actor", "parameters", "shapes_dir", "out_dir", "hash"})
+
+
+def test_the_platform_is_outside_the_geometry_digest_of_every_release():
+    assert VOLATILE_TOP == EARLIER_VOLATILE_TOP           # no new key: an earlier release digests the record the same
+    assert set(_record(X86)) == set(_record())             # the platform added no top-level key
     before = _record()                                     # written by a toolkit without hash_platform
     assert geometry_digest(_record(X86)) == geometry_digest(before) == geometry_digest(_record(ARM))
     v = bind_inputs(verdict("wall", [], assumptions=["a"]), before)
@@ -86,7 +106,8 @@ def _identity(**changes):
     rec = {"schema": ev.IDENTITY_SCHEMA, "volume_mm3": 6000.0, "centre_mm": [1.0, 2.0, 3.0],
            "inertia_mm5": [[650000.0, 0.0, 0.0], [0.0, 500000.0, 0.0], [0.0, 0.0, 250000.0]],
            "principal_mm5": [250000.0, 500000.0, 650000.0],
-           "tolerance": {"relative": 1e-6, "volume_mm3": 0.006, "length_mm": 1.82e-05, "inertia_mm5": 0.65},
+           "tolerance": {"relative": 1e-6, "volume_mm3": 0.006, "length_mm": 1.82e-05, "inertia_mm5": 0.65,
+                         "principal_mm5": [0.25, 0.5, 0.65]},
            "method": ev.IDENTITY_METHOD}
     rec.update(changes)
     return rec
@@ -104,6 +125,9 @@ def test_identities_match_within_the_looser_tolerance():
     turned = copy.deepcopy(a)
     turned["inertia_mm5"][0][1] = turned["inertia_mm5"][1][0] = 3.0     # same moments, other axes
     assert ev.identity_mismatches(a, turned) == ["inertia_mm5[0][1]: 0.0 and 3.0 differ by 3, more than 0.65"]
+    small = copy.deepcopy(a)                               # each principal moment against its own tolerance
+    small["principal_mm5"][0] = 250000.3
+    assert ev.identity_mismatches(a, small) == ["principal_mm5[0]: 250000.0 and 250000.3 differ by 0.3, more than 0.25"]
 
 
 @pytest.mark.parametrize("other, says", [
@@ -111,6 +135,7 @@ def test_identities_match_within_the_looser_tolerance():
     (_identity(centre_mm=[1.0, 2.0]), "not three numbers"),
     (_identity(inertia_mm5=[[1.0, 0.0], [0.0, 1.0], [0.0, 0.0]]), "not three numbers"),
     (_identity(tolerance={}), "malformed geometry identity"),
+    (_identity(tolerance={**_identity()["tolerance"], "principal_mm5": [1.0]}), "not three numbers"),
     (_identity(volume_mm3="big"), "malformed geometry identity"),
     (_identity(volume_mm3=float("nan")), "volume_mm3"),
     ("not a record", "not a geometry identity"),
@@ -138,18 +163,20 @@ def _solids(cq):
 
 
 # geometry_identity of _solids() on an x86-64 and an aarch64 host, 2026-11-01, cadquery 2.8.0 and cadquery-ocp
-# 7.9.3.1.1 from PyPI on both: the same values on both, while both solids' content hashes differed between them
+# 7.9.3.1.1 from PyPI on both: the same values on both, while both solids' content hashes differed between them.
+# The per-moment tolerances (principal_mm5) came later; they round these moments to the same places as before.
 GOLDEN = {
     "plate": {"volume_mm3": 13904.731, "centre_mm": [0.0, 0.0, -0.006901],
               "inertia_mm5": [[1873710.9, 0.0, 0.0], [0.0, 4103999.3, 0.0], [0.0, 0.0, 5894622.4]],
               "principal_mm5": [1873710.9, 4103999.3, 5894622.4],
-              "tolerance": {"relative": 1e-06, "volume_mm3": 0.0139, "length_mm": 2.4e-05, "inertia_mm5": 5.89}},
+              "tolerance": {"relative": 1e-06, "volume_mm3": 0.0139, "length_mm": 2.4e-05, "inertia_mm5": 5.89,
+                            "principal_mm5": [1.87, 4.1, 5.89]}},
     "ball_placed": {"volume_mm3": 5607.0538, "centre_mm": [123.4, -56.7, 89.01],
                     "inertia_mm5": [[365766.36, 8930.82, -14356.27], [8930.82, 362083.23, -837.04],
                                     [-14356.27, -837.04, 333670.02]],
                     "principal_mm5": [328006.93, 357031.87, 376480.82],
                     "tolerance": {"relative": 1e-06, "volume_mm3": 0.00561, "length_mm": 1.78e-05,
-                                  "inertia_mm5": 0.376}},
+                                  "inertia_mm5": 0.376, "principal_mm5": [0.328, 0.357, 0.376]}},
 }
 
 
@@ -163,7 +190,8 @@ def test_identity_of_closed_forms(cq):
                                   [0.0, pytest.approx(m * (a * a + c * c) / 12, rel=1e-9), 0.0],
                                   [0.0, 0.0, pytest.approx(m * (a * a + b * b) / 12, rel=1e-9)]]
     assert box["principal_mm5"] == sorted(box["principal_mm5"])
-    assert box["tolerance"] == {"relative": 1e-6, "volume_mm3": 0.006, "length_mm": 1.82e-05, "inertia_mm5": 0.65}
+    assert box["tolerance"] == {"relative": 1e-6, "volume_mm3": 0.006, "length_mm": 1.82e-05, "inertia_mm5": 0.65,
+                                "principal_mm5": [0.25, 0.5, 0.65]}
     r, h = 4.0, 25.0
     cyl = ev.geometry_identity(cq.Workplane().circle(r).extrude(h).val())
     m = math.pi * r * r * h
@@ -189,6 +217,23 @@ def test_identity_moves_with_placement_and_geometry_but_not_with_noise(cq):
         {"inertia_mm5[0][0]", "inertia_mm5[0][1]", "inertia_mm5[1][1]"}         # same moments, turned axes
     longer = ev.geometry_identity(cq.Workplane().box(10, 20, 30.01).edges("|Z").fillet(2).val())
     assert "volume_mm3" in ev.identity_mismatches(here, longer)[0]
+
+
+def test_a_slender_part_is_told_apart_by_its_own_small_moment(cq):
+    """A 1 x 1 x 1000 mm square rod and a round one of the same area: the same volume and centre, long moments
+    5e-8 apart (inside their tolerance), the moment about the axis 4.5 % apart. Compared against a tolerance set by
+    the largest moment (83 mm^5, as every inertia term was before), they would match; that moment's own tolerance is
+    the floor, a thousandth of that (0.083 mm^5), and tells them apart."""
+    square = ev.geometry_identity(cq.Workplane().box(1, 1, 1000).val())
+    round_ = ev.geometry_identity(cq.Workplane().circle(math.sqrt(1 / math.pi)).extrude(1000)
+                                  .translate((0, 0, -500)).val())
+    assert square["principal_mm5"][0] == pytest.approx(1000 / 6, abs=1e-3)          # m a^2 / 6, a = 1 mm
+    assert round_["principal_mm5"][0] == pytest.approx(1000 / (2 * math.pi), abs=1e-3)   # m r^2 / 2
+    assert [m.split(":")[0] for m in ev.identity_mismatches(square, round_)] == ["principal_mm5[0]"]
+    t = square["tolerance"]
+    assert t["inertia_mm5"] == 83.3 and t["principal_mm5"] == [0.0833, 83.3, 83.3]      # the floor, then its own
+    box = ev.geometry_identity(cq.Workplane().box(10, 20, 30).val())     # moments within 1000x: each its own
+    assert box["tolerance"]["principal_mm5"] == [round(1e-6 * v, 9) for v in (250000, 500000, 650000)]
 
 
 def test_identity_survives_a_read_back_that_need_not_keep_the_hash(cq, tmp_path):

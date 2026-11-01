@@ -40,10 +40,11 @@ Hashes. Every shape's ``sha256`` is ``cadagent.review.evidence.shape_content_has
 its BREP text (OCCT format version 1, no triangulation) without the shape flag lines. The file
 ``exports/dossier-shapes/<sha256>.brep`` holds that BREP text. The hash is stable across processes and runs; an OCCT
 upgrade may change it, and so may building on another CPU architecture (x86-64 and aarch64 agree on few hashes), which
-only invalidates a sign-off, never hides a change. The record's ``hash_platform`` (``cadagent.review.evidence
-.hash_platform``: machine, system, OCP version and package) says where its hashes were made; it is left out of the
-gates' geometry digest, like ``actor``. Pass the recorded hashes along (``assembly_shapes(with_hashes=True)``); do not
-re-hash a shape loaded from its file. The shapes directory is build output and gets its own ``.gitignore``; the JSON
+only invalidates a sign-off, never hides a change. The record's ``hash`` is ``{"recipe": HASH_RECIPE, "platform":
+...}``, the platform (``cadagent.review.evidence.hash_platform``: machine, system, C library, OCP version and package)
+saying where its hashes were made; every release leaves ``hash`` out of the gates' geometry digest, like ``actor``.
+Before #144 ``hash`` was the recipe string. Pass the recorded hashes along (``assembly_shapes(with_hashes=True)``); do
+not re-hash a shape loaded from its file. The shapes directory is build output and gets its own ``.gitignore``; the JSON
 is the record to commit.
 
 Scope. Module-level declarations go to the current registry (``use_registry``, else ``REGISTRY``);
@@ -522,7 +523,8 @@ class Registry:
         result = BuildResult(root=root, out_dir=out)
         actor = build_actor()
         previous = _previous_parts(out / GEOMETRY_FILE)
-        geo: Dict[str, Any] = {"schema": SCHEMA, "units": "mm", "hash": HASH_RECIPE, "hash_platform": hash_platform(),
+        geo: Dict[str, Any] = {"schema": SCHEMA, "units": "mm",
+                               "hash": {"recipe": HASH_RECIPE, "platform": hash_platform()},
                                "actor": actor,
                                "parameters": param_record, "out_dir": os.path.relpath(out, root), "shapes_dir": "",
                                "parts": {}, "cavities": {}, "joints": {}, "fasteners": {}, "assembly": {"steps": []},

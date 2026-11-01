@@ -303,9 +303,9 @@ as for decorators (a free part needs a reason; grounded and free together are re
 ```json
 {
  "schema": "cad-agent.dossier-geometry/1", "units": "mm",
- "hash": "cadagent.review.evidence.shape_content_hash: sha256 of the OCCT BREP text ...",
- "hash_platform": {"machine": "x86_64", "system": "Linux", "ocp": "7.9.3.1",
-                   "ocp_package": "cadquery-ocp 7.9.3.1.1"},   # where the hashes were made
+ "hash": {"recipe": "cadagent.review.evidence.shape_content_hash: sha256 of the OCCT BREP text ...",
+          "platform": {"machine": "x86_64", "system": "Linux", "libc": "glibc 2.39", "ocp": "7.9.3.1",
+                       "ocp_package": "cadquery-ocp 7.9.3.1.1"}},   # how and where the hashes were made
  "actor": "agent-session-12",              # who ran this build
  "parameters": {"file": "cad/parameters.json", "sha256": "..."},
  "out_dir": "exports", "shapes_dir": "exports/dossier-shapes",
@@ -340,14 +340,21 @@ as for decorators (a free part needs a reason; grounded and free together are re
     safe direction). Queries (`Volume`, `BoundingBox`, `isValid`, `fix`) and tessellation do not.
   - Two different constructions of the same geometry may hash differently: a cache miss, never a false match. An OCCT
     upgrade may change every hash, which only invalidates sign-offs.
-  - **The CPU architecture changes hashes too.** With the same cadquery-ocp 7.9.3.1.1 wheel, an x86-64 and an aarch64
-    host agreed on 4 of 43 solids of a vendor STEP, and on 4 of 12 public test solids (the filleted, lofted, swept
-    and Boolean ones differed; #144). So `hash_platform` (`evidence.hash_platform()`: machine, system, OCP version
-    and package) is recorded with the hashes, outside the gates' geometry digest. To tell a platform's mismatch from
-    a change, compare `evidence.geometry_identity(shape)` records with `evidence.identity_mismatches(a, b)`: volume,
-    centre of mass and inertia, rounded, matched within a stated tolerance (relative 1e-6 by default). All 43 and
-    all 12 matched across the two hosts. It is not a hash: different solids can share one, so it explains a
-    mismatch and never signs anything off.
+  - **The CPU architecture changes hashes too.** With the same cadquery-ocp 7.9.3.1.1 release (its x86-64 and
+    aarch64 wheels from PyPI), an x86-64 and an aarch64 host agreed on 4 of 43 solids of a vendor STEP, and on 4 of
+    12 public test solids (the filleted, lofted, swept and Boolean ones differed; #144). So the platform
+    (`evidence.hash_platform()`: machine, system, C library, OCP version and package) is recorded with the hashes, in
+    `hash.platform`; before #144 `hash` was the recipe string, and every release leaves `hash` out of the gates'
+    geometry digest. A reviewer's record keeps the platform of the bundle it was written against in
+    `bundle.hash_platform`, and a stale-hashes refusal or `review-stale` finding names both platforms when they
+    differ. Equal platform records do not promise equal hashes: not everything the kernel's arithmetic depends on is
+    named.
+  - To tell a platform's mismatch from a change, compare `evidence.geometry_identity(shape)` records with
+    `evidence.identity_mismatches(a, b)`: volume, centre of mass, inertia and principal moments, rounded, matched
+    within the stated tolerance (relative 1e-6 by default, of the volume, of its cube root, of the largest moment
+    for the tensor, and of each principal moment for itself, floored at a thousandth of the largest). All 43 and all
+    12 matched across the two hosts. It is not a hash: different solids can share one, and a change below the
+    tolerance is not seen, so it explains a mismatch and never signs anything off.
   - A shape **read back** from its BREP file may hash differently, because the reader recomputes frame directions
     and location matrices (last-digit noise, signed zeros). Keep the recorded hash with the shape
     (`assembly_shapes(with_hashes=True)`, `content_hashes()`); never re-hash a loaded shape to identify it.
@@ -600,7 +607,7 @@ refused, never wiped). It needs no CAD kernel: the packet must have been rendere
 | `packet/` | the review packet's `manifest.json` and every image it names |
 | `checklist.json` | the packet's checklist (questions, `measured_only`, instructions), the decisions to judge and the requirements to trace |
 | `diff.patch` | the section's sources (the dossier directory without `reviews/`, the build scripts that declared its geometry, the parameters file, `cad-agent.yaml`) in the working tree against the base: the commit the last sign-off names (`commit`), else the commit that added that record, or `--since`; untracked files under those paths are listed in `bundle.json`. No earlier sign-off: no diff, review all of it |
-| `record-template.json` | the record to fill in: the current hashes, one entry per question, decision and requirement, every answer `null` |
+| `record-template.json` | the record to fill in: the current hashes and where they were made (`bundle.hash_platform`), one entry per question, decision and requirement, every answer `null` |
 
 `blockers` (and exit 1) name what would refuse a sign-off today: a missing, unrendered or stale packet, a section
 below `gated`, an open decision, a part whose builder is `unknown`. The bundle is written anyway: a reviewer can still
@@ -610,7 +617,8 @@ request changes.
 
 `dossier/reviews/<section>-<date>.json` (`-2`, `-3`, ... for another record the same day). Written by `--submit`,
 which fills in `actor` (from `CAD_AGENT_ACTOR`), `date`, `timestamp`, `signed_off` (from `verdict`), `commit`,
-`build_actors`, `packet` and `toolkit`; the reviewer writes the rest.
+`build_actors`, `packet` and `toolkit`, and `bundle.hash_platform` when the template's is missing; the reviewer writes
+the rest.
 
 ```jsonc
 {
@@ -622,6 +630,7 @@ which fills in `actor` (from `CAD_AGENT_ACTOR`), `date`, `timestamp`, `signed_of
  "build_actors": {"hopper": "agent-12", "hopper_flap": "agent-12"},
  "commit": "<git HEAD when submitted: the next bundle diffs from here>",
  "packet": {"manifest": "exports/review/S3/manifest.json", "sha256": "...", "section_hash": "...", "stale": null},
+ "bundle": {"hash_platform": {"machine": "x86_64", "...": "..."}},  // where `hashes` were made (geometry hash.platform)
  "checklist": [
   {"id": "contained-inside:hopper_cavity:ball", "question": "In the cut through hopper_cavity, ...",
    "bad_answer": "no", "answer": "yes", "evidence": "every ball is inside the wall in both cuts; containment passes",
@@ -640,7 +649,7 @@ which fills in `actor` (from `CAD_AGENT_ACTOR`), `date`, `timestamp`, `signed_of
 
 | Field | Rule (`validate_record`) |
 |---|---|
-| top level | `schema`, `section`, `date` (YYYY-MM-DD), `timestamp` (ISO 8601 with a zone), `actor`, `verdict`, `signed_off`, `hashes` (part → sha256 hex), `checklist`, `decisions`, `requirements`, `findings` are required; `build_actors`, `commit`, `packet`, `bundle`, `summary`, `toolkit`, `physical_fit_verified` (false only) may be given; any other key is refused (a typo such as `signed-off` must not pass silently) |
+| top level | `schema`, `section`, `date` (YYYY-MM-DD), `timestamp` (ISO 8601 with a zone), `actor`, `verdict`, `signed_off`, `hashes` (part → sha256 hex), `checklist`, `decisions`, `requirements`, `findings` are required; `build_actors`, `commit`, `packet`, `bundle` (an object; its `hash_platform`, if given, an object of strings), `summary`, `toolkit`, `physical_fit_verified` (false only) may be given; any other key is refused (a typo such as `signed-off` must not pass silently) |
 | `checklist[]` | `id`; `answer` `yes`, `no` or `unclear`; `evidence` (non-empty); `views` (view ids); `image_only`: `true` when the answer rests on the images alone (then `views` is not empty and `measurements` is), `false` when a measurement backs it (then `measurements` lists it: `gate:<name>`, a check id or a packet finding id) |
 | `decisions[]` | `id`; `verdict` `justified`, `weak` or `missing_alternative`; `evidence` |
 | `requirements[]` | `id`; `traced` `yes`, `no` or `unclear`; `evidence` |

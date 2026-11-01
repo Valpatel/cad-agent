@@ -11,7 +11,6 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
-import platform
 import subprocess
 import sys
 import time
@@ -26,11 +25,13 @@ def sha(path):
 
 def identity():
     import OCP
+    from cadagent.review.evidence import hash_platform
     from cadagent.review.gates import relations
     return {"toolkit_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
             "relations_source_sha256": sha(Path(relations.__file__)), "probe_source_sha256": sha(Path(__file__)),
             "ocp_version": OCP.__version__, "python": sys.version.split()[0],
-            "machine": platform.machine()}      # BREP bytes, like content hashes, differ by CPU architecture (#144)
+            # BREP bytes, like content hashes, differ between platforms (#144): machine, C library, OCP build
+            "hash_platform": hash_platform()}
 
 
 def write_json(path, value):

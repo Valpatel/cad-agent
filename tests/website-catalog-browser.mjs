@@ -470,7 +470,11 @@ try {
     else {
       const route = `/catalog?area=${pick.d.slug}&kind=${pick.tab.tab}`;
       const { page, done } = await open(route);
-      const text = (await page.textContent('[data-gallery-empty-kind]')).replace(/\s+/g, ' ');
+      // Every message box gets the scope's name, so read the text of the box that shows, and only that one.
+      const box = page.locator('[data-gallery-empty-kind]');
+      if (!(await box.isVisible())) fail(route, 'the "none of this kind" box is not the one shown');
+      for (const sel of ['[data-gallery-empty-scope]', '[data-gallery-empty]']) if (await page.locator(sel).isVisible()) fail(route, `${sel} shows instead or as well`);
+      const text = (await box.textContent()).replace(/\s+/g, ' ');
       if (!text.includes(` in ${pick.d.title} yet`) || /All in/.test(text)) fail(route, `the message says "${text.slice(0, 90)}"`);
       await done();
     }

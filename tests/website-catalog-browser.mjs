@@ -6,8 +6,9 @@
  * shown twice in the overview, a phone page over its height budget, not in two columns or with pills under 11px, a
  * filter sheet that traps or loses focus, covers that move under prefers-reduced-motion, and an area rail whose domain
  * panels lack their tone, whose bars and counts do not line up, whose bars do not fill to their level, whose chosen row
- * looks like a hovered one or reads under 4.5:1, whose maturity key does not explain itself, or whose phone rows are
- * under 44 px. */
+ * looks like a hovered one or reads under 4.5:1, whose maturity key does not explain itself, whose phone rows are
+ * under 44 px, or whose bars and chosen row lose their difference under forced colours; and a status line whose noun
+ * does not agree with its number. */
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
@@ -30,9 +31,10 @@ const PHONE_BUDGET = 14000;
 const problems = [];
 const fail = (where, what) => problems.push(`${where}: ${what}`);
 
-// `init`: a script to run before the page's own (to break something on purpose); `fails`: a page error it causes.
-async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null, init = null, fails = null } = {}) {
-  const context = await browser.newContext({ viewport: { width, height }, javaScriptEnabled: js, reducedMotion: motion });
+// `init`: a script to run before the page's own (to break something on purpose); `fails`: a page error it causes;
+// `forced`: 'active' emulates forced colours (Windows High Contrast and the like).
+async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null, init = null, fails = null, forced = 'none' } = {}) {
+  const context = await browser.newContext({ viewport: { width, height }, javaScriptEnabled: js, reducedMotion: motion, forcedColors: forced });
   const page = await context.newPage();
   const seen = [];
   if (block) await page.route(`**${block}`, r => r.abort());
@@ -443,6 +445,59 @@ try {
     await page.locator('.key-scale li').nth(2).focus();
     if (!(await shown())) fail(where, 'focusing a level in the key does not show what it means');
     if ((await means.textContent()).trim() !== `: ${index.maturity[2].means}`) fail(where, `the key's tooling says ${await means.textContent()}`);
+    await done();
+  }
+
+  // Forced colours (Windows High Contrast and the like) put the user's few system colours in place of ours and drop
+  // gradients. The bars' filled and empty steps, a hovered row and the chosen row must still differ (#104). Colours are
+  // compared as painted, each background composited over its ancestors': a forced background keeps the author's alpha,
+  // so before the fix a chosen row (opaque Canvas) and a row at rest (transparent Canvas) computed differently but
+  // painted the same white.
+  {
+    const where = 'forced colours';
+    const { page, done } = await open('/catalog', { forced: 'active' });
+    if (!(await page.evaluate(() => matchMedia('(forced-colors: active)').matches))) console.log(`${where}: ${engine.name()} does not emulate them here, so they are checked in Chrome`);
+    else {
+      await page.evaluate(() => {
+        const rgba = c => { const [r, g, b, a = 1] = c.match(/[\d.]+/g).map(Number); return [r, g, b, a]; };
+        // What a reader sees behind an element (or its pseudo-element): its background over its ancestors', over white.
+        window.paintOf = (el, pseudo) => {
+          const layers = [rgba(getComputedStyle(el, pseudo).backgroundColor)];
+          for (let e = pseudo ? el : el.parentElement; e && layers.at(-1)[3] < 1; e = e.parentElement) layers.push(rgba(getComputedStyle(e).backgroundColor));
+          return layers.reverse().reduce((under, [r, g, b, a]) => [r, g, b].map((v, i) => v * a + under[i] * (1 - a)), [255, 255, 255]).map(Math.round).join();
+        };
+        const lum = c => c.map(v => v / 255).map(v => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
+        window.contrastOn = (el, bgEl = el) => { const [hi, lo] = [lum(rgba(getComputedStyle(el).color).slice(0, 3)), lum(paintOf(bgEl).split(',').map(Number))].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
+      });
+      // The key's top level shows the filled colour and its lowest level ends in the empty one; every bar fills its level.
+      const [on, off, fills] = await page.evaluate(n => {
+        const key = [...document.querySelectorAll('.key-scale .mat-dots')];
+        const [on, off] = [paintOf(key.at(-1).querySelector('i')), paintOf(key[0].querySelector('i:last-child'))];
+        return [on, off, [...document.querySelectorAll('.area-tree .mat-dots')].map(b => { const ps = [...b.querySelectorAll('i')].map(i => paintOf(i));
+          return [b.dataset.level, ps.length === n && ps.every(p => p === on || p === off) ? ps.filter(p => p === on).length : -1]; })];
+      }, index.maturity.length);
+      if (on === off) fail(where, `filled and empty steps are both painted ${on}`);
+      else for (const [level, n] of fills) if (Number(level) !== n) fail(where, `a level-${level} bar shows ${n} filled steps`);
+      // A row at rest, hovered (its edge bar shows) and chosen (the system's selection colours, its bar still readable).
+      const row = '.area-link[data-value="gears"]';
+      const look = () => page.$eval(row, a => ({ row: paintOf(a), bar: paintOf(a, '::before'), text: contrastOn(a.querySelector('.area-name'), a),
+        count: contrastOn(a.querySelector('.count')), steps: [...new Set([...a.querySelectorAll('.mat-dots i')].map(i => paintOf(i)))].length }));
+      await page.mouse.move(1300, 880);
+      const rest = await look();
+      await page.hover(row);
+      await page.waitForFunction(s => getComputedStyle(document.querySelector(s), '::before').transform === 'none', row, { timeout: 3000 })
+        .catch(() => fail(where, 'hovering a row does not grow its edge bar'));
+      const hovered = await look();
+      if (hovered.bar === hovered.row) fail(where, `a hovered row's edge bar is painted like the row (${hovered.row}), so hover shows nothing`);
+      await page.click(row);
+      await page.waitForFunction(s => document.querySelector(s).getAttribute('aria-current') === 'true', row, { timeout: 5000 }).catch(() => fail(where, 'Gears is not chosen after a click'));
+      await page.mouse.move(1300, 880);
+      await page.waitForFunction(s => !document.querySelector(s).getAnimations({ subtree: true }).length, row, { timeout: 3000 }).catch(() => {});
+      const chosen = await look();
+      if (chosen.row === rest.row) fail(where, `the chosen row is painted like one at rest (${rest.row})`);
+      if (chosen.text < 4.5 || chosen.count < 4.5) fail(where, `chosen row: name ${chosen.text.toFixed(2)}:1, count ${chosen.count.toFixed(2)}:1`);
+      if (chosen.steps < 2) fail(where, 'the chosen row\'s bar shows filled and empty steps alike');
+    }
     await done();
   }
 

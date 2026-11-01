@@ -64,13 +64,30 @@ it. Once a check exists, move the entry from "review" to the check.
 |---|---|---|---|
 | Screw length from the wrong datum, or too little thread engagement | Strips, or bottoms out | The fastener gate; compute the stack plus the engagement; print a coupon | [fasteners](../lessons/mechanical/fasteners-and-assembly-access.md) |
 | No tool access at the step where a fastener goes in | It cannot be assembled in the documented order | The assembly-access gate; the assembly-step renders | [fasteners](../lessons/mechanical/fasteners-and-assembly-access.md) |
-| Inserts, countersinks or D-holes sized without a test print | Loose inserts; bulkheads that turn | Coupons printed before the big parts | [fasteners](../lessons/mechanical/fasteners-and-assembly-access.md) |
+| Inserts, countersinks or D-holes sized without a test print | Loose inserts; bulkheads that turn | Coupons printed before the big parts (`fit_coupons` makes them for round holes) | [fasteners](../lessons/mechanical/fasteners-and-assembly-access.md) |
 | Cable routes at an impossible bend radius | The plug fits, but its cable has no room to turn: it kinks at the boot, or presses on a wall, a shelf or the next plug | [`cable_bend`](toolkit.md#the-cable-behind-the-plug) in `cadagent.mechanical.connectors`, run by `check_ports()` for every mate with a `cable` (its diameter and the data sheet's minimum bend radius): the cable leaves the boot along the mating axis and turns at that radius each way across it; pass, warn or fail, with the clearance and the direction that works. It checks the first bend behind the plug; review the rest of the route | [cables](../lessons/wiring/cables-connectors-and-routing.md) |
 | Tie anchors in a cable's path | A cable that cannot pass, or is pinched under an anchor | Review: put anchors beside the route, against a wall. Where one sits behind a plug, give it to `cable_bend` as an obstacle; review the rest of the route | [cables](../lessons/wiring/cables-connectors-and-routing.md) |
 
 ![An RJ45 plug seated in its jack, and its Cat6 cable leaving the boot and turning at its 25 mm minimum bend radius: turned down, it runs 1.35 mm into the shelf the enclosure stands on; turned up, it clears](img/motion/cable-bend.svg)
 
 *`cable_bend` turns the cable behind the plug at its data sheet's minimum bend radius, each way across the mating axis, and finds the way it fits. An illustration of the RJ45 port in `tests/test_connectors.py` with a Cat6 patch cord (Belden's data sheet: 6.1 mm across, 25 mm minimum bend radius) and the shelf the enclosure stands on, in section; the clearances are the check's.*
+
+## Printed load-bearing parts
+
+These are usually found only after printing. Each has a check in `cadagent.mechanical.printed_joints` or
+`cadagent.manufacturing.fit_coupons` ([printed joints](printed-joints.md)): pass, warn or fail with its margin.
+
+| Issue | How it shows up | Caught by | Lesson |
+|---|---|---|---|
+| A pin bears on a bare printed eye, too near its end, or with the eye printed on its side | The hole wears or creeps oval and the joint goes slack; the end tears out or splits along a layer through the hole | `pin_eye`: bearing, shear-out and net tension resolved on the layers, the failure mode from e/D and w/D (bearing first from 3 and 6), the pin's tilt from the build direction, a pin turning in plastic; with and without a metal bushing | [mechanical rules](../lessons/mechanical/design-rules.md) |
+| A boss or rib built upright and loaded from the side | It snaps off at its root along a layer line, often after many load cycles | `root_peel`: the root's bending stress across the layers, and the preload a through-bolt (threaded rod and nuts) must keep to hold the seam closed without crushing the boss | [mechanical rules](../lessons/mechanical/design-rules.md) |
+| A screw in a vibrating printed joint, held by friction, a spring washer or threadlocker | It backs out; threadlocker stress-cracks the plastic round it | `thread_locking`: transverse slip against friction on the kept preload (Junker), the locking element against the thread it is in, preload held by plastic | [fasteners](../lessons/mechanical/fasteners-and-assembly-access.md) |
+| Pin, bushing, bearing and insert holes drawn at nominal size | The pin will not go in or the bearing falls out, found on the finished part | `fit_coupons`: a coupon per fit, holes swept round nominal + allowance + the process profile's undersize, and a measurement sheet; the hole that fits sets the part's size | [fasteners](../lessons/mechanical/fasteners-and-assembly-access.md) |
+
+![Layer stress at the root of an upright 16 mm PLA boss against a side load: without a rod the tension side rises to 10 MPa at 200 N; an M5 rod's kept preload holds the seam closed to about 110 N, and its most preload squeezes the other side past the limit](img/joints/peel.svg)
+
+*`root_peel` on a worked example: the tension side's layer stress without a rod and with a rod's kept preload, and
+the compression side at the rod's most preload, against the side load.*
 
 ## Evidence, simulation and release
 

@@ -161,7 +161,8 @@ def test_the_evaluator_refuses_anything_but_arithmetic():
     assert evaluate("max(0.005*L, 0.5)", {"L": 200}) == pytest.approx(1.0)
     assert evaluate("1.574 if T <= 0.914 else 3.175", {"T": 1.0}) == pytest.approx(3.175)
     assert evaluate(0.8, {}) == 0.8
-    for bad in ("__import__('os')", "T**2", "foo", "T.real", "[T]", "lambda: 1", "min()", "True", "'a'"):
+    for bad in ("__import__('os')", "T**2", "foo", "T.real", "[T]", "lambda: 1", "min()", "True", "'a'",
+                "1 if T < 1 else (2 if T < 2 else 3)", "max(1 if T < 1 else 2, 3 if T > 2 else 4)", "T/(T-T)"):
         with pytest.raises(ValueError):
             evaluate(bad, {"T": 1.0})
 

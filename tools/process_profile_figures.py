@@ -38,8 +38,9 @@ _FUN = {"min": min, "max": max}
 
 def evaluate(expr: float | int | str, env: dict[str, float]) -> float:
     """A rule's min/max/value as a number. Numbers pass through; a string may use the names in ``env``, numbers,
-    + - * / ( ), unary minus, min(), max(), pi, and one ``a if <comparison> else b``. Anything else raises ValueError,
-    so a typo in the data file fails the tests instead of being skipped."""
+    + - * / ( ), unary minus, min(), max(), pi, and one ``a if <comparison> else b`` (not nested, not two). Anything
+    else raises ValueError, as does dividing by zero, so a typo in the data file fails the tests instead of being
+    skipped and a caller needs to catch only ValueError."""
     if isinstance(expr, bool):
         raise ValueError(f"{expr!r} is not a number")
     if isinstance(expr, (int, float)):
@@ -72,7 +73,12 @@ def evaluate(expr: float | int | str, env: dict[str, float]) -> float:
         tree = ast.parse(str(expr), mode="eval")
     except SyntaxError as e:
         raise ValueError(f"{expr!r}: {e.msg}") from None
-    return ev(tree)
+    if sum(isinstance(n, ast.IfExp) for n in ast.walk(tree)) > 1:
+        raise ValueError(f"{expr!r}: only one `a if <comparison> else b` is allowed")
+    try:
+        return ev(tree)
+    except ZeroDivisionError:
+        raise ValueError(f"{expr!r}: division by zero at {env}") from None
 
 
 # ----------------------------------------------------------------------------- data

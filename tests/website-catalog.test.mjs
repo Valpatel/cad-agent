@@ -117,12 +117,13 @@ test('compare and optimise draw what the tools printed: the front over every obj
     assert.ok(!/<path d="M[^"]*L[^"]*" fill="none" stroke="#[0-9a-f]+" stroke-width="4"/.test(svg), `${cmd}: front points are not joined (it is not a front on these two axes)`);
     const front = d.points.filter(p => p.front);
     assert.equal((svg.match(/<circle [^>]*r="(?:10|8)" fill="#[0-9a-f]+" stroke="#fff"/g) || []).length >= front.length, true, `${cmd}: a filled mark per front point`);
-    for (const p of front) assert.ok(svg.includes(`>${p.lower_bound.length ? '≥ ' : ''}${p.label}<`), `${cmd}: ${p.label} is labelled`);
+    for (const p of front) assert.ok(svg.includes(`>${p.label}${p.lower_bound.length ? ' ≥ ' : '<'}`), `${cmd}: ${p.label} is labelled`);
   }
   const compare = await readFile(local(catalog.items.find(i => i.id === 'tool-compare').cover), 'utf8');
   for (const p of data.compare.points) {
-    assert.ok(compare.includes(`>${p.lower_bound.length ? '≥ ' : ''}${p.label}<`), `compare labels ${p.label}${p.lower_bound.length ? ' with ≥' : ''}`);
+    assert.ok(compare.includes(`>${p.label}${p.lower_bound.length ? ' ≥ ' : '<'}`), `compare labels ${p.label}${p.lower_bound.length ? ' with ≥' : ''}`);
   }
+  assert.ok(compare.includes('>Long range ≥ $1,682<'), 'the lower bound keeps its ≥ on the chart');
   assert.ok(data.compare.points.some(p => p.lower_bound.includes('cost_usd')), 'the data still has a lower bound to keep');
   assert.match(compare, /aria-label="[^"]*Long range: at least \$1,682/, 'the label reads the lower bound as "at least"');
   // A chart of a tool's result is a picture: it ranks like one in the overview (#185).

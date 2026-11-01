@@ -226,8 +226,8 @@ const fmtValue = (v, unit) => unit === 'USD' ? `$${Math.round(v).toLocaleString(
 /** A chart of one of our tools' results (docs/img/explore/two-wheel-charts.json, written from the tool's own output):
  * each design or trial on two axes. Filled accent: on the Pareto front, which the tool computes over every objective
  * (so a front point can look dominated on these two axes; the legend says over what). Grey: meets the constraints.
- * Hollow: fails one. A total that is only a lower bound (a part without a price or mass) gets "≥" and an arrow
- * pointing the way the real value lies. Points are labelled when there are few; with many, only the front is. */
+ * Hollow: fails one. A total that is only a lower bound (a part without a price or mass) is labelled "≥ value" and
+ * gets an arrow pointing the way the real value lies. Points are labelled when there are few; with many, only the front is. */
 export function chartCover({ title, x, y, points = [], front_over: frontOver = [], tint, name, what }) {
   const L = 66, R = 372, T = 70, B = 228;
   const xs = points.map(p => p.x), ys = points.map(p => p.y);
@@ -236,30 +236,57 @@ export function chartCover({ title, x, y, points = [], front_over: frontOver = [
   const px = v => L + (v - x0) / (x1 - x0) * (R - L), py = v => B - (v - y0) / (y1 - y0) * (B - T);
   const grid = [0.25, 0.5, 0.75].map(f => `M${L} ${r1(T + f * (B - T))}H${R}M${r1(L + f * (R - L))} ${T}V${B}`).join('');
   const few = points.length <= 6, xb = p => (p.lower_bound || []).includes(x.metric), yb = p => (p.lower_bound || []).includes(y.metric);
-  // Draw the front last, so it sits on top.
+  const at = p => ({ cx: r1(px(p.x)), cy: r1(py(p.y)), r: few ? (p.front ? 10 : 8) : (p.front ? 8 : 5) });
+  // Marks: the front last, so it sits on top.
   const order = [...points].sort((a, b) => (a.front - b.front) || (a.feasible - b.feasible));
   const marks = order.map(p => {
-    const cx = r1(px(p.x)), cy = r1(py(p.y)), r = few ? (p.front ? 10 : 8) : (p.front ? 8 : 5);
+    const { cx, cy, r } = at(p);
     const arrow = (xb(p) ? `<path d="M${cx + r + 3} ${cy}h16m-6-6 6 6-6 6" fill="none" stroke="${MUTED}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` : '') +
       (yb(p) ? `<path d="M${cx} ${cy - r - 3}v-16m-6 6 6-6 6 6" fill="none" stroke="${MUTED}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` : '');
     const dot = !p.feasible ? `<circle cx="${cx}" cy="${cy}" r="${r - 1}" fill="#fff" stroke="${MUTED}" stroke-width="${few ? 3 : 2}"/>`
       : `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${p.front ? ACCENT : MUTED}" stroke="#fff" stroke-width="${few ? 2.5 : 1.5}"/>`;
-    if (!few && !p.front) return arrow + dot;
-    const right = px(p.x) < (L + R) / 2, dx = right ? r + 6 + (xb(p) ? 22 : 0) : -(r + 6);
-    const tag = `${xb(p) ? '≥ ' : ''}${p.label}`;
-    return arrow + dot + `<text x="${r1(px(p.x) + dx)}" y="${r1(py(p.y) + 6)}" text-anchor="${right ? 'start' : 'end'}" font-family="${esc(SANS)}" font-size="${few ? 17 : 15}" font-weight="700" fill="${p.feasible ? INK : MUTED}">${esc(tag)}</text>`;
+    return arrow + dot;
+  }).join('');
+  // Labels (every point when there are few, else the front), each where it overlaps no mark, arrow or earlier label:
+  // right of the point, then left, above, below.
+  const fs = few ? 17 : 15, taken = [];
+  for (const p of points) {
+    const { cx, cy, r } = at(p);
+    taken.push([cx - r - 2, cy - r - 2, cx + r + 2 + (xb(p) ? 24 : 0), cy + r + 2]);
+    if (yb(p)) taken.push([cx - 7, cy - r - 22, cx + 7, cy - r]);
+  }
+  const hits = (b, c) => b[0] < c[2] && c[0] < b[2] && b[1] < c[3] && c[1] < b[3];
+  const labels = [...points].filter(p => few || p.front).sort((a, b) => b.front - a.front).map(p => {
+    // A lower bound says so in the label: "Long range ≥ $1,682" (it costs at least that).
+    const bound = [xb(p) && fmtValue(p.x, x.unit), yb(p) && fmtValue(p.y, y.unit)].filter(Boolean).join(', ');
+    const { cx, cy, r } = at(p), tag = bound ? `${p.label} ≥ ${bound}` : p.label, w = tag.length * fs * 0.6, h = fs;
+    const gap = r + 6 + (xb(p) ? 22 : 0);
+    const spots = [[cx + gap, cy + 6, 'start'], [cx - r - 6, cy + 6, 'end'], [cx, cy - r - 8 - (yb(p) ? 20 : 0), 'middle'], [cx, cy + r + fs + 2, 'middle']];
+    const box = ([tx, ty, anchor]) => { const x0 = anchor === 'start' ? tx : anchor === 'end' ? tx - w : tx - w / 2; return [x0, ty - h + 3, x0 + w, ty + 3]; };
+    const inside = b => b[0] >= 18 && b[2] <= W - 18 && b[1] >= T - 6 && b[3] <= B - 2;
+    const own = taken.filter(t => !(t[0] <= cx && cx <= t[2] && t[1] <= cy && cy <= t[3]));
+    const spot = spots.find(sp => inside(box(sp)) && !own.some(t => hits(box(sp), t))) || spots.find(sp => inside(box(sp))) || spots[0];
+    taken.push(box(spot));
+    return `<text x="${r1(spot[0])}" y="${r1(spot[1])}" text-anchor="${spot[2]}" font-family="${esc(SANS)}" font-size="${fs}" font-weight="700" fill="${p.feasible ? INK : MUTED}">${esc(tag)}</text>`;
   }).join('');
   const axisName = a => `${a.label}${a.unit ? ` (${a.unit})` : ''}`;
-  const key = `<g font-family="${esc(MONO)}" font-size="11" font-weight="700" fill="${MUTED}">` +
-    `<circle cx="34" cy="54" r="5" fill="${ACCENT}"/><text x="43" y="58" fill="${ACCENT}">FRONT${frontOver.length ? ` (${esc(frontOver.join(', ').toUpperCase())})` : ''}</text>` +
-    `<circle cx="${frontOver.length > 2 ? 290 : 220}" cy="54" r="5" fill="#fff" stroke="${MUTED}" stroke-width="2"/><text x="${frontOver.length > 2 ? 299 : 229}" y="58">FAILS</text></g>`;
+  // The key: only the marks this chart uses.
+  const keys = [[`FRONT${frontOver.length ? ` (${frontOver.join(', ').toUpperCase()})` : ''}`, `fill="${ACCENT}"`, ACCENT, points.some(p => p.front)],
+    ['MEETS', `fill="${MUTED}"`, MUTED, points.some(p => p.feasible && !p.front)],
+    ['FAILS', `fill="#fff" stroke="${MUTED}" stroke-width="2"`, MUTED, points.some(p => !p.feasible)]].filter(k => k[3]);
+  let kx = 34;
+  const key = `<g font-family="${esc(MONO)}" font-size="11" font-weight="700">` + keys.map(([t, style, color]) => {
+    const g = `<circle cx="${kx}" cy="54" r="5" ${style}/><text x="${kx + 9}" y="58" fill="${color}">${esc(t)}</text>`;
+    kx += 9 + t.length * 6.7 + 16;
+    return g;
+  }).join('') + '</g>';
   const body = `<rect x="12" y="12" width="${W - 24}" height="${H - 24}" rx="14" fill="#ffffff" fill-opacity=".93" stroke="${INK}" stroke-opacity=".15"/>` +
     `<text x="28" y="38" font-family="${esc(SANS)}" font-size="17" font-weight="800" fill="${INK}">${esc(title)}</text>` + key +
     `<path d="${grid}" stroke="${INK}" stroke-opacity=".08" stroke-width="1.5"/><path d="M${L} ${T}V${B}H${R}" fill="none" stroke="${INK}" stroke-width="2"/>` +
-    marks +
-    `<text x="${R}" y="${B + 24}" text-anchor="end" font-family="${esc(SANS)}" font-size="14" font-weight="600" fill="${MUTED}">${esc(axisName(x))} →</text>` +
+    marks + labels +
+    `<text x="${R}" y="${B + 22}" text-anchor="end" font-family="${esc(SANS)}" font-size="14" font-weight="600" fill="${MUTED}">${esc(axisName(x))} →</text>` +
     `<text transform="translate(${L - 14} ${B}) rotate(-90)" font-family="${esc(SANS)}" font-size="14" font-weight="600" fill="${MUTED}">${esc(axisName(y))} →</text>` +
-    (what ? `<text x="${L}" y="${B + 24}" font-family="${esc(MONO)}" font-size="11" font-weight="700" fill="${MUTED}">${esc(what.toUpperCase())}</text>` : '');
+    (what ? `<text x="28" y="${B + 44}" font-family="${esc(MONO)}" font-size="11" font-weight="700" fill="${MUTED}">${esc(what.toUpperCase())}</text>` : '');
   const describe = p => `${xb(p) ? 'at least ' : ''}${fmtValue(p.x, x.unit)}, ${yb(p) ? 'at least ' : ''}${fmtValue(p.y, y.unit)}`;
   const listed = few ? points : points.filter(p => p.front);
   const label = `${name}: ${title}, ${axisName(x)} against ${axisName(y)}${what ? `, ${what}` : ''}. ` +

@@ -273,7 +273,7 @@ const STATUS_NOTE = { ours: 'built here', adopted: 'adopted', trial: 'in trial',
 // Living pages: one per topic. Sources, the condensed method, examples, and the tested tool agents call.
 const LIVING = [
   { file: 'docs/compliant.md', name: 'Snap fits', summary: 'Covestro and DuPont guides plus 13 filament datasheets, condensed into cad-agent snapfit: tested against the guide\'s worked examples, with allowable strain by print direction.' },
-  { file: 'docs/common-issues.md', name: 'CAD pitfalls and their checks', summary: 'Recurring review findings from Gyropup and J501 (a rib inside a countersink, blocked holes, bridges), each with the automated check that catches it.' },
+  { file: 'docs/common-issues.md', name: 'CAD pitfalls and their checks', summary: 'Recurring review findings from Gyropup and J501 (a rib that ran into a counterbore, blocked holes, bridges), each with the automated check that catches it.' },
 ];
 const card = i => `<li class="card" data-type="${esc(i.type)}" data-text="${esc((i.name + ' ' + (i.summary || '') + ' ' + (i.license || '')).toLowerCase())}">
 <a href="${esc(safeUrl(i.url))}"><span class="card-name">${esc(i.name)}</span></a>
@@ -311,7 +311,7 @@ curl -s ${ORIGIN}/docs/toolkit.md  <b># any page, as .md</b></pre></cad-copy>
 <div class="missions">
 <a class="mission mission-blue" href="/research/landscape"><span class="mission-icon">🗺️</span><span class="mission-tag">Map</span><span class="mission-num">${(counts.upstream || 0) + (counts.library || 0) + (counts.benchmark || 0)}</span><p>Agentic-CAD projects, libraries and benchmarks, checked with dates, licences and what each is actually good for.</p><span class="go">See the landscape <span>→</span></span></a>
 <a class="mission mission-yellow" href="/docs/toolkit"><span class="mission-icon">🧪</span><span class="mission-tag">Demonstrate</span><span class="mission-num">${counts.tool || 0}</span><p>Commands that run on real projects: integrity gates, hole and fastener checks, FEA, CFD, topology optimisation, slicing, a 3D viewer and review reports.</p><span class="go">Open the toolkit <span>→</span></span></a>
-<a class="mission mission-orange" href="/docs/common-issues"><span class="mission-icon">🧩</span><span class="mission-tag">Fill the gaps</span><span class="mission-num">${counts.lesson || 0}</span><p>Lessons from real builds turned into deterministic checks: a rib in a countersink, a screw that bottoms out, a driver that cannot reach.</p><span class="go">Read the pitfalls <span>→</span></span></a>
+<a class="mission mission-orange" href="/docs/common-issues"><span class="mission-icon">🧩</span><span class="mission-tag">Fill the gaps</span><span class="mission-num">${counts.lesson || 0}</span><p>Lessons from real builds turned into deterministic checks: a rib that ran into a counterbore, a screw that bottoms out, a driver that cannot reach.</p><span class="go">Read the pitfalls <span>→</span></span></a>
 </div></section>
 <section class="section" style="padding-top:0"><div class="lead"><h2>Skills your agents <span>can load.</span></h2><p>Claude Code and Codex install them with <code>cad-agent agents install</code>. Work survives crashes, reviews are independent, heavy runs go to compute hosts.</p></div>
 <ul class="cards">${skillCards.map(p => card({ type: p.section, status: 'ours', name: p.title, summary: p.summary, url: pageURL(p.file), markdown: '/' + p.file })).join('')}</ul></section>

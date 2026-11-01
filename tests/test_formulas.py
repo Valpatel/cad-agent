@@ -216,7 +216,7 @@ def test_spring_rate_from_the_wire_as_a_torsion_bar():
 
 @pytest.mark.parametrize("C", [4, 6, 8, 10, 12])
 def test_bergstrasser_and_wahl_agree_within_two_percent(C):
-    # Cross-check against the Wahl factor (4C - 1) / (4C - 4) + 0.615 / C (Shigley 10th ed., Section 10-3, Eq. 10-4):
+    # Cross-check against the Wahl factor (4C - 1) / (4C - 4) + 0.615 / C (Shigley 10th ed., Section 10-2, Eq. 10-4):
     # the two curvature corrections agree within 1.5 % over the recommended range, Bergstrasser's slightly lower.
     wahl = (4 * C - 1) / (4 * C - 4) + 0.615 / C
     assert fx.bergstrasser_factor(C) == pytest.approx(wahl, rel=0.015)

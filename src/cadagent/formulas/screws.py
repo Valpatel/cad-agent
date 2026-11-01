@@ -31,7 +31,7 @@ _STRIP = ("ISO 68-1 basic profile, full depth, no tolerances, load spread evenly
 
 @formula(units={"torque": "N m", "diameter": "m (nominal)", "nut_factor": "dimensionless (see NUT_FACTORS)"},
          returns="preload, N", limits=(_TORQUE,),
-         source=cite("shigley", "Section 8-8 (Bolt Torque and Bolt Tension), Eq. (8-27) and Table 8-15"))
+         source=cite("shigley", "Section 8-8 (Relating Bolt Torque to Bolt Tension), Eq. (8-27) and Table 8-15"))
 def preload_from_torque(torque: float, diameter: float, nut_factor: float = NUT_FACTORS["unstated"]) -> float:
     """Clamp force from tightening torque: Fi = T / (K d). K = 0.2 when the condition is not stated."""
     return torque / (nut_factor * diameter)

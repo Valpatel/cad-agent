@@ -1037,7 +1037,7 @@ async function fourbarProblems() {
         }                                                                               // ends on the page's linkage
         // the other assembly, on the page's crank-rocker, paused: the coupler moves to where the ghost was. Not on a
         // rocking input, which dwells at its limits, where the two assemblies meet: paused there, nothing moves.
-        await hold(page, demo.locator('.fb-play'));                                     // pause, so the frames compare
+        await demo.evaluate(d => d.querySelector('.fb-play').click());     // pause, so the frames compare (the press: below)
         const coupler = await demo.locator('[data-part=coupler]').getAttribute('points');
         await page.getByLabel('Crossed').check();
         const ghost = await demo.locator('[data-part=ghost]').getAttribute('points');

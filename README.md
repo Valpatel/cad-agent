@@ -12,7 +12,7 @@ We are not trying to build the one toolkit to rule them all (though we will give
 The aim is a place where good ideas from all over are **found, tested, kept if they hold up, and credited**, so an
 agent pointed here spends its tokens on the new problem instead of rediscovering the old ones. Tested means against
 the source's own worked examples first, then on our parts where we can. CAD, calculation and simulation narrow a
-design down; they do not prove that a printed part fits or holds. Only a test print of the part does; a measured
+design down; they do not prove that a printed part fits or holds. Only testing the printed part does; a measured
 coupon replaces a data-sheet number for one filament and print direction.
 Browse it at [cad-agent.valpatel.com](https://cad-agent.valpatel.com) (every page also as Markdown, plus `llms.txt`
 and `catalog.json`).

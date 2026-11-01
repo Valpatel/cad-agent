@@ -1,7 +1,7 @@
 // Build cad-agent.valpatel.com into a temporary folder from HEAD and check what would be published.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import os from 'node:os';
@@ -72,9 +72,9 @@ test('code samples keep their text, and every code block has a copy button', asy
 
 test('pages say when they were last updated and how to give feedback', async () => {
   const commitDay = git('show', '-s', '--format=%cs', 'HEAD').trim();
-  const lessonDay = git('log', '-1', '--format=%cs', 'HEAD', '--', 'lessons/01-verify-from-source.md').trim();
+  const lessonDay = git('log', '-1', '--format=%cs', 'HEAD', '--', 'lessons/process/verify-from-source.md').trim();
   assert.match(await readFile(path.join(out, 'index.html'), 'utf8'), new RegExp(`Last updated <time datetime="${commitDay}">`));
-  const lesson = await readFile(path.join(out, 'lessons/01-verify-from-source.html'), 'utf8');
+  const lesson = await readFile(path.join(out, 'lessons/process/verify-from-source.html'), 'utf8');
   assert.match(lesson, new RegExp(`Last updated <time datetime="${lessonDay}">`), 'a page shows its own last change');
   const fb = lesson.match(/<aside class="feedback"[\s\S]*?<\/aside>/)?.[0];
   assert.ok(fb, 'doc pages end with the feedback box');
@@ -82,8 +82,8 @@ test('pages say when they were last updated and how to give feedback', async () 
   const u = new URL(href);
   assert.equal(u.origin + u.pathname, 'https://github.com/Valpatel/cad-agent/issues/new');
   assert.equal(u.searchParams.get('template'), 'feedback.yml');
-  assert.equal(u.searchParams.get('page'), 'https://cad-agent.valpatel.com/lessons/01-verify-from-source');
-  assert.match(fb, /edit\/dev\/lessons\/01-verify-from-source\.md/);
+  assert.equal(u.searchParams.get('page'), 'https://cad-agent.valpatel.com/lessons/process/verify-from-source');
+  assert.match(fb, /edit\/dev\/lessons\/process\/verify-from-source\.md/);
   const form = await readFile(path.join(root, '.github/ISSUE_TEMPLATE/feedback.yml'), 'utf8');
   assert.match(form, /id: page\b/, 'the issue form has the field the link fills in');
 });
@@ -126,7 +126,7 @@ test('pages have one h1 and heading ids follow GitHub anchors', async () => {
       if (/[’'&]/.test(inner) || /&#39;|&amp;|&quot;/.test(inner)) assert.doesNotMatch(id, /\d{2}/.test(inner) ? /^$/ : /39/, `${f}: ${id}`);
     }
   }
-  assert.ok((await ids('lessons/01-verify-from-source.html')).has('01--verify-from-source'), 'runs of spaces are not merged');
+  assert.ok((await ids('lessons/process/README.html')).has('lessons--process'), 'runs of spaces are not merged');
 });
 
 test('Markdown twins and llms-full.txt carry working links', async () => {
@@ -206,4 +206,119 @@ test('code samples keep their links as written (no rewriting inside code)', asyn
   assert.match(viewer, /<code[^>]*>[^<]*href="kit\/file-viewer\.html\?file=/, 'the file-viewer snippet was rewritten');
   for (const f of files.filter(f => f.endsWith('.html') && !f.startsWith('kit/')))
     assert.ok(!(await readFile(path.join(out, f), 'utf8')).includes('&amp;amp;'), `${f}: an entity encoded twice`);
+});
+
+test('a moved page leaves a stub on GitHub and a 301 on the site', async () => {
+  const stubs = git('grep', '-l', '-e', '^<!-- moved-to:', 'HEAD', '--', '*.md').split('\n').filter(Boolean).map(l => l.replace(/^HEAD:/, ''));
+  assert.ok(stubs.length >= 12, 'the twelve numbered lessons are stubs');
+  const redirects = new Map((await readFile(path.join(out, '_redirects'), 'utf8')).trim().split('\n').map(l => l.split(' ')).map(([f, ...r]) => [f, r]));
+  const catalog = await readFile(path.join(out, 'catalog.json'), 'utf8');
+  for (const stub of stubs) {
+    const from = '/' + stub.replace(/\.md$/, '');
+    assert.ok(!files.includes(stub.replace(/\.md$/, '.html')) && !files.includes(stub), `${stub} is not published`);
+    assert.ok(!catalog.includes(`"${stub.replace(/\.md$/, '')}"`) && !catalog.includes(from + '"'), `${stub} is not catalogued`);
+    const [to, code] = redirects.get(from) || [];
+    assert.equal(code, '301', from);
+    assert.ok(resolve(to)?.endsWith('.html'), `${from} → ${to}, a page`);
+    assert.deepEqual(redirects.get('/' + stub), [to + '.md', '301'], 'its Markdown twin moves too');
+    assert.ok(files.includes(to.slice(1) + '.md'));
+  }
+  // The preview server answers the way Pages does, keeping the query.
+  const server = spawn(process.execPath, ['tools/preview-site.mjs', '--dir', out, '--port', '0'], { cwd: root });
+  try {
+    const base = await new Promise((ok, fail) => {
+      server.stdout.on('data', d => { const m = String(d).match(/http:\/\/[\d.]+:\d+/); if (m) ok(m[0]); });
+      server.on('exit', c => fail(new Error(`preview server exited ${c}`)));
+    });
+    const res = await fetch(`${base}/lessons/03-mechanical-design-rules?x=1`, { redirect: 'manual' });
+    assert.equal(res.status, 301);
+    assert.equal(res.headers.get('location'), '/lessons/mechanical/design-rules?x=1');
+    assert.equal((await fetch(`${base}/lessons/mechanical/design-rules`)).status, 200);
+  } finally { server.kill(); }
+});
+
+test('a link to a folder opens its README page', async () => {
+  const index = await readFile(path.join(out, 'lessons/README.html'), 'utf8');
+  for (const area of ['process', 'mechanical', 'wiring', 'electronics', 'simulation', 'review']) {
+    assert.match(index, new RegExp(`href="/lessons/${area}/README"`), area);
+    assert.doesNotMatch(index, new RegExp(`href="https://github.com/[^"]*/tree/dev/lessons/${area}/?"`), area);
+  }
+  assert.match(await readFile(path.join(out, 'lessons/README.md'), 'utf8'), /\]\(process\/README\.md\)/, 'the Markdown twin too');
+});
+
+test('every lesson page has a diagram, and the home page counts lessons, not pages', async () => {
+  const lessons = files.filter(f => /^lessons\/.+\.html$/.test(f));
+  assert.ok(lessons.length >= 19, 'the index, six area READMEs and twelve lesson files');
+  for (const f of lessons) assert.match(await readFile(path.join(out, f), 'utf8'), /class="language-mermaid"|<img\b/, `${f} has no diagram or picture`);
+  const rules = git('grep', '-h', '-e', '^### ', 'HEAD', '--', 'lessons/*/*.md', ':!lessons/*/README.md').split('\n').filter(Boolean).length;
+  assert.ok(rules > 50);
+  assert.match(await readFile(path.join(out, 'index.html'), 'utf8'), new RegExp(`Fill the gaps</span><span class="mission-num">${rules}<`));
+});
+
+test('redirects outlive the stubs, and a stub must point at a published page that is listed', async () => {
+  const wt = path.join(tmp, 'wt-redirects');
+  execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });
+  const commit = msg => execFileSync('git', ['-c', 'user.name=test', '-c', 'user.email=test@example.invalid', 'commit', '-qam', msg], { cwd: wt });
+  const buildWt = dir => execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, '--out', dir], { cwd: root, stdio: 'pipe' });
+  const stub = 'lessons/03-mechanical-design-rules.md';
+  try {
+    // v0.6.0 deletes the stubs: the site keeps every 301.
+    execFileSync('git', ['rm', '-q', ...git('grep', '-l', '-e', '^<!-- moved-to:', 'HEAD', '--', '*.md').split('\n').filter(Boolean)
+      .map(l => l.replace(/^HEAD:/, ''))], { cwd: wt });
+    commit('drop the stubs');
+    const after = path.join(tmp, 'no-stubs');
+    buildWt(after);
+    assert.equal(await readFile(path.join(after, '_redirects'), 'utf8'), await readFile(path.join(out, '_redirects'), 'utf8'));
+    execFileSync('git', ['checkout', '-q', 'HEAD~1'], { cwd: wt });
+    // A stub that points at a file the site does not publish, or at another stub, fails the build.
+    for (const [target, why] of [['../CLAUDE.md', 'not a published page'], ['04-fasteners-and-assembly-access.md', 'not a published page']]) {
+      await writeFile(path.join(wt, stub), `<!-- moved-to: ${target} -->\n# Moved\n`);
+      commit(`stub to ${target}`);
+      assert.throws(() => buildWt(path.join(tmp, 'bad')), e => String(e.stderr).includes(why), target);
+      execFileSync('git', ['checkout', '-q', 'HEAD~1'], { cwd: wt });
+    }
+    // Bad lines in the list fail the build: a source listed twice (Pages keeps the first, the preview server the last),
+    // a leading slash, a source that is not a .md path or not a plain path (a splat, a placeholder, `..`, `//`, `./`),
+    // a file that is still in the repo, and a stub listed elsewhere.
+    const list = path.join(wt, 'tools/site-redirects.txt');
+    const original = await readFile(list, 'utf8');
+    for (const [line, why] of [
+      [`${stub} lessons/README.md`, 'is listed twice'],
+      ['/lessons/gone.md lessons/README.md', 'without a leading slash'],
+      ['lessons/gone lessons/README.md', 'without a leading slash'],
+      ['web/site.css lessons/README.md', 'without a leading slash'],
+      ['lessons/*.md lessons/README.md', 'without a leading slash'],          // a Pages splat: every lesson would loop
+      ['lessons/:name.md lessons/README.md', 'without a leading slash'],      // a Pages placeholder
+      ['lessons/../gone.md lessons/README.md', 'without a leading slash'],
+      ['lessons//gone.md lessons/README.md', 'without a leading slash'],
+      ['lessons/./gone.md lessons/README.md', 'without a leading slash'],
+      ['docs/toolkit.md lessons/README.md', 'is still a file in the repo'],
+    ]) {
+      await writeFile(list, original + line + '\n');
+      commit(`bad line ${line}`);
+      assert.throws(() => buildWt(path.join(tmp, 'bad-line')), e => String(e.stderr).includes(why), line);
+      execFileSync('git', ['checkout', '-q', 'HEAD~1'], { cwd: wt });
+    }
+    await writeFile(list, original.replace(`${stub} lessons/mechanical/design-rules.md`, `${stub} lessons/README.md`));
+    commit('stub listed elsewhere');
+    assert.throws(() => buildWt(path.join(tmp, 'bad3')), e => String(e.stderr).includes('change its line'));
+    execFileSync('git', ['checkout', '-q', 'HEAD~1'], { cwd: wt });
+    // A stub missing from tools/site-redirects.txt fails the build too.
+    await writeFile(list, original.split('\n').filter(l => !l.startsWith(stub)).join('\n'));
+    commit('unlisted stub');
+    assert.throws(() => buildWt(path.join(tmp, 'bad2')), e => String(e.stderr).includes('add "' + stub));
+  } finally {
+    execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
+  }
+});
+
+test('no page refers to a lesson by its old number', () => {
+  // The numbered lessons moved into area folders (#133): "see 04" or "lesson 07" now leads nowhere. Link the page.
+  let hits = '';
+  try {
+    hits = git('grep', '-n', '-E', '-e', String.raw`\b[Ll]essons? (0[1-9]|1[0-2])\b|\b[Ss]ee (0[1-9]|1[0-2])\b`, 'HEAD', '--',
+      '*.md', '*.json', ':!CHANGELOG.md');
+  } catch (e) { if (e.status !== 1) throw e; }                // git grep exits 1 when nothing matches
+  hits = hits.split('\n').filter(Boolean);
+  assert.deepEqual(hits, []);
 });

@@ -245,10 +245,15 @@ def sheet_metal() -> str:
 SHORT = {"E. I. du Pont de Nemours and Company": "DuPont", "Covestro LLC": "Covestro"}   # names too long for a row
 
 
-def _span_row(rule: dict, sources: dict, envs: list[dict], prefix: str = "") -> Row:
+def _span_row(rule: dict, sources: dict, envs: list[dict], prefix: str = "", per: str | None = None) -> Row:
     """A rule as one row, evaluated in each of ``envs``: a value that changes between them (a rule that steps with the
-    feature's area, say) becomes the range it spans, drawn as a bar (the limit varies)."""
-    rows = [_row(rule, sources, env) for env in envs]
+    feature's area, say) becomes the range it spans, drawn as a bar (the limit varies). With ``per``, each value is
+    divided by that variable first, so a rule in proportion to it reads the same in every setting."""
+    def scaled(env: dict) -> Row:
+        name, lo, hi, colour, window = _row(rule, sources, env)
+        k = env[per] if per else 1.0
+        return name, None if lo is None else lo / k, None if hi is None else hi / k, colour, window
+    rows = [scaled(env) for env in envs]
     name, _, _, colour, window = rows[0]
     los = [r[1] for r in rows if r[1] is not None]
     his = [r[2] for r in rows if r[2] is not None]
@@ -270,7 +275,7 @@ def _scale(groups: list[tuple[str, list[Row]]], step: float) -> tuple[float, lis
 
 
 def compared(title: str, subtitle: str, groups: list[tuple[str, str, str | None]], *, envs: list[dict] | None = None,
-             unit: str, step: float, note: str, kinds: dict[str, str] | None = None) -> str:
+             unit: str, step: float, note: str, kinds: dict[str, str] | None = None, per: str | None = None) -> str:
     """A chart of the rules that share a compare key: ``groups`` is (heading, compare key, process or None), the
     rules read from the YAML in file order and evaluated in ``envs`` (one or more variable settings). With ``kinds``
     (compare key -> a word), a group holds every key in it and each row says which ("hole · Xometry")."""
@@ -280,7 +285,7 @@ def compared(title: str, subtitle: str, groups: list[tuple[str, str, str | None]
     out = []
     for heading, key, process in groups:
         keys = list(kinds) if key == "*" else [key]
-        rows = [_span_row(r, sources, envs, f"{kinds[r['compare']]} · " if kinds else "")
+        rows = [_span_row(r, sources, envs, f"{kinds[r['compare']]} · " if kinds else "", per)
                 for k in keys for r in data["rules"]
                 if r.get("compare") == k and r.get("status") == "read" and (process is None or r["process"] == process)]
         if rows:
@@ -342,11 +347,17 @@ def moulding_draft() -> str:
 RIB = 0.6     # a rule given in rib thickness is drawn at a rib of 0.6 x wall, the most common ceiling
 
 
+def moulding_corners() -> str:
+    groups = [("Boss wall", "im-boss-wall", None), ("Inside corner radius", "im-corner", None)]
+    return compared("Injection moulding: boss walls and inside corners as multiples of the wall",
+                    "{n} rules as multiples of the wall. A bar: it varies (DuPont's boss wall steps down past 3.175 mm).", groups, envs=[{"wall": 1.0}, {"wall": 4.0}], unit="× wall",
+                    step=0.5, note=READ, per="wall")
+
+
 def moulding_ratios() -> str:
     groups = [("Rib thickness", "im-rib-thickness", None), ("Rib height", "im-rib-height", None),
-              ("Fillet at the rib's base", "im-rib-fillet", None), ("Boss wall", "im-boss-wall", None),
-              ("Inside corner radius", "im-corner", None)]
-    return compared("Injection moulding: ribs, bosses and corners as multiples of the wall",
+              ("Fillet at the rib's base", "im-rib-fillet", None)]
+    return compared("Injection moulding: ribs as multiples of the wall",
                     "{n} rules, at a nominal wall of 1 (so each reads as × wall); a rule given in rib thickness takes "
                     f"a rib of {RIB} × wall.", groups, envs=[{"wall": 1.0, "rib": RIB}], unit="× nominal wall",
                     step=0.5, note=READ)
@@ -368,6 +379,23 @@ def cnc_depths() -> str:
     return compared("CNC: how deep a tool, hole or thread can go, as multiples of its diameter",
                     "{n} rules, at a diameter (or cavity width) of 1, so each reads as × D. ≤: a ceiling.",
                     groups, envs=[{"D": 1.0, "width": 1.0}], unit="× diameter", step=5, note=READ)
+
+
+POWDER_L = 25.0
+
+
+def powder_tolerance() -> str:
+    return compared(f"Powder bed: tolerance (±) on a {POWDER_L:g} mm dimension, by source",
+                    "{n} rules (compare: tolerance) for SLS and MJF, each evaluated at L = 25 mm (inside every "
+                    "rule's size band).", [(PROCESS_TITLES[p], "tolerance", p) for p in ("sls", "mjf")],
+                    envs=[{"L": POWDER_L}], unit="± mm", step=0.1, note=READ)
+
+
+def cnc_tolerance() -> str:
+    return compared(f"Machined and moulded parts: default tolerance (±) on a {POWDER_L:g} mm dimension",
+                    "{n} rules (compare: tolerance), each evaluated at L = 25 mm.",
+                    [(PROCESS_TITLES[p], "tolerance", p) for p in ("cnc", "injection-moulding")],
+                    envs=[{"L": POWDER_L}], unit="± mm", step=0.05, note=READ)
 
 
 def resin_overhangs() -> str:
@@ -425,7 +453,9 @@ FIGURES = {"process-min-wall.svg": min_wall, "process-sheet-metal.svg": sheet_me
            "process-moulding-draft.svg": moulding_draft, "process-moulding-ratios.svg": moulding_ratios,
            "process-sheet-holes.svg": sheet_holes, "process-cnc-depths.svg": cnc_depths,
            "process-resin-overhangs.svg": resin_overhangs, "process-moulding-bosses.svg": moulding_bosses,
-           "process-sheet-shop.svg": sheet_shop, "process-cnc-corners.svg": cnc_corners, "process-cnc-walls.svg": cnc_walls}
+           "process-sheet-shop.svg": sheet_shop, "process-cnc-corners.svg": cnc_corners, "process-cnc-walls.svg": cnc_walls,
+           "process-moulding-corners.svg": moulding_corners, "process-powder-tolerance.svg": powder_tolerance,
+           "process-cnc-tolerance.svg": cnc_tolerance}
 
 
 def main(argv: list[str]) -> int:

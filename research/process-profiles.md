@@ -166,6 +166,10 @@ shows how much a resin rule depends on the machine:
 | Test resin and layer | Clear, 100 µm | Clear, 100 µm | Grey, 50 µm |
 | Source | [Formlabs, Form 2][formlabs-form2-design-specs] | [Formlabs, Form 3][formlabs-form3-design-specs] | [Formlabs, Form 4 guide][formlabs-form4-design-guide] |
 
+<img src="../docs/img/research/process-resin-overhangs.svg" alt="Range chart of the longest unsupported overhang and bridge each resin printer or service allows: overhangs of 2 to 5 mm, bridges of 21 to 29 mm on Formlabs printers" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from the `compare: overhang-length-max` and `compare: bridge-max` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
+
 | Rule | Value | Applies when | Source |
 |---|---|---|---|
 | Tolerance, by feature size | ±0.15 % to 30 mm (floor ±0.02 mm); ±0.2 % to 80 mm (floor ±0.06); ±0.3 % to 150 mm (floor ±0.15) | Form 4 generation, Grey resin at 100 µm, three printers | [Formlabs][formlabs-form4-design-guide] |
@@ -198,6 +202,9 @@ shows how much a resin rule depends on the machine:
 
 From Protolabs Network's [SLA guide][hubs-sla-design]:
 
+<details>
+<summary>Protolabs Network's SLA rules: walls, holes, hollowing, clearance, detail, bridges and tolerance</summary>
+
 | Rule | Value | Applies when | Source |
 |---|---|---|---|
 | Minimum wall, supported / unsupported | ≥ 0.4 mm / ≥ 0.6 mm (fillet the base) | Supported: joined on at least two sides | [Protolabs Network][hubs-sla-design] |
@@ -210,14 +217,9 @@ From Protolabs Network's [SLA guide][hubs-sla-design]:
 | Embossed detail; engraved detail | ≥ 0.1 mm high; ≥ 0.4 mm wide and deep | | [Protolabs Network][hubs-sla-design] |
 | Longest wide bridge | < 21 mm | Wide bridges peel harder | [Protolabs Network][hubs-sla-design] |
 | Expected tolerance | ±0.5 %, floor ±0.10 mm (desktop); ±0.15 %, floor ±0.01 mm (industrial) | | [Protolabs Network][hubs-3dp-dimensional-accuracy] |
-
-
-<img src="../docs/img/research/process-resin-overhangs.svg" alt="Range chart of the longest unsupported overhang and bridge each resin printer or service allows: overhangs of 2 to 5 mm, bridges of 21 to 29 mm on Formlabs printers" width="680">
-
-*Diagram drawn by `tools/process_profile_figures.py` from the `compare: overhang-length-max` and `compare: bridge-max` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
-
-
 ### Where the resin sources disagree
+
+</details>
 
 - **Protolabs Network's numbers are Formlabs' Form 2 numbers.** Its 19° overhang, 21 mm bridge, 0.4 mm engraving and
   0.8 mm hole all match the Form 2 sheet (and so do its 3.5 mm drain hole and 0.4 mm supported wall); Form 3 and
@@ -271,6 +273,9 @@ From Protolabs Network's [SLA guide][hubs-sla-design]:
 
 From Protolabs Network:
 
+<details>
+<summary>Protolabs Network's SLS rules: walls, holes, clearance, detail, radii, living hinges and tolerance</summary>
+
 | Rule | Value | Applies when | Source |
 |---|---|---|---|
 | Minimum wall | 0.8 mm (PA 12) to 2.0 mm (carbon-filled PA) | | [Protolabs Network][hubs-sls-design] |
@@ -282,6 +287,8 @@ From Protolabs Network:
 | Living hinge | 0.3–0.8 mm thick, at least 5 mm long; anneal and flex | SLS nylon | [Protolabs Network][hubs-sls-design] |
 | Scale applied before printing | 3–3.5 % | Done by the service | [Protolabs Network][hubs-sls-design] |
 | Expected tolerance | ±0.3 %, floor ±0.3 mm | SLS and MJF | [Protolabs Network][hubs-3dp-dimensional-accuracy] |
+
+</details>
 
 <img src="../docs/img/research/process-fine-detail.svg" alt="Range chart of the smallest embossed and engraved detail each source prints, by process: 0.1 mm on Formlabs resin printers to 1 mm on powder" width="680">
 
@@ -339,6 +346,11 @@ From Protolabs Network:
 | Snap-fit base thickness and hook depth; clip width | ≥ 1 mm; ≥ 5 mm | | [Protolabs Network][hubs-snapfit-3dp] |
 | Strain to failure across the layers | 0.53–0.70 of XY (strength the same) | PA 12, PA 11, PP on the Jet Fusion 5200 | [HP][hp-mjf-5200-properties] |
 | Expected tolerance | ±0.3 %, floor ±0.3 mm | SLS and MJF | [Protolabs Network][hubs-3dp-dimensional-accuracy] |
+
+<img src="../docs/img/research/process-powder-tolerance.svg" alt="Chart of the tolerance each SLS and MJF source gives on a 25 mm dimension: 0.2 to 0.42 mm, with HP's own Z figure the widest" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from the SLS and MJF `compare: tolerance` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31, each evaluated at 25 mm. A test redraws it and fails if the committed chart differs.*
+
 
 ### Where the MJF sources disagree
 
@@ -404,9 +416,9 @@ online bureaus (Fictiv, and the Boothroyd Dewhurst checklist for screening). T b
 | Fillet at the rib base | 0.5 × the rib (DuPont); 0.125 T (Covestro); 0.25–0.5 T but at most 0.254 mm (Fictiv) | | [DuPont][dupont-design-module-1]; [Covestro][covestro-part-mold-design]; [Fictiv][fictiv-im-design-guide] |
 | Gusset thickness | 0.5–0.67 T where sink matters | | [Covestro][covestro-part-mold-design] |
 
-<img src="../docs/img/research/process-moulding-ratios.svg" alt="Range chart of rib thickness, rib height, rib fillet, boss wall and inside corner radius as multiples of the nominal wall, by source" width="680">
+<img src="../docs/img/research/process-moulding-ratios.svg" alt="Range chart of rib thickness, rib height and the fillet at the rib base as multiples of the nominal wall, by source: ribs 0.4 to 0.66 of the wall" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the rib, boss and corner `compare` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31, at a nominal wall of 1 so each reads as a multiple of it. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/process_profile_figures.py` from the rib `compare` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31, at a nominal wall of 1 so each reads as a multiple of it. A test redraws it and fails if the committed chart differs.*
 
 
 ### Bosses and inserts
@@ -441,6 +453,11 @@ online bureaus (Fictiv, and the Boothroyd Dewhurst checklist for screening). T b
 | Strippable undercut | ≤ 2 % (Apec high-heat PC, filled grades); TPU about 5 %, up to 10 %; avoid in stiff PC and PC/ABS | | [Covestro][covestro-part-mold-design] |
 | Tolerance | ±0.08 mm machining, plus at least ±0.002 mm/mm for the resin | Protolabs aluminium tooling | [Protolabs][protolabs-injection-molding] |
 | Part depth from the parting line | ≤ 101.6 mm (203.2 mm if the parting line runs through the middle) | Protolabs | [Protolabs][protolabs-injection-molding] |
+
+<img src="../docs/img/research/process-moulding-corners.svg" alt="Range chart of boss wall, 0.4 to 0.6 of the nominal wall, and inside corner radius, 0.15 to 0.5 of it, by source" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from the `compare: im-boss-wall` and `compare: im-corner` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31, as multiples of the nominal wall. A test redraws it and fails if the committed chart differs.*
+
 
 ### Where the moulding sources disagree
 
@@ -625,6 +642,11 @@ D below is the tool or hole diameter. Two pages here are by named engineers at X
 | Default tolerance | ±0.125 mm or better | When none is given | [Protolabs Network][hubs-cnc-cost-tips] |
 | Machining tolerance | ±0.13 mm (±0.005 in), otherwise ISO 2768-1 medium or fine | Protolabs' automated milling | [Protolabs][protolabs-cnc-milling] |
 | Tolerance the shop may loosen | tighter than ±0.05 mm | | [Fictiv][fictiv-cnc-design-guide] |
+
+<img src="../docs/img/research/process-cnc-tolerance.svg" alt="Chart of the default tolerance on a 25 mm dimension for machined parts, 0.1 to 0.13 mm, and for a part moulded in Protolabs' aluminium tooling, 0.13 mm" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from the CNC and moulding `compare: tolerance` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31, each evaluated at 25 mm. A test redraws it and fails if the committed chart differs.*
+
 
 ### Where the CNC sources disagree
 

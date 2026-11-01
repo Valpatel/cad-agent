@@ -120,17 +120,6 @@ None of the good options is permissive. **Recommendation:**
 
 ### Recommended primary path: steady CHT, a few M cells, 24 cores
 
-**ESI OpenFOAM v2606 in Docker (`opencfd/openfoam-run:2606`; use `openfoam-default:2512` for tutorials), `chtMultiRegionSimpleFoam`, starting from `cpuCabinet`.** Rationale:
-- It's a near-identical tutorial.
-- It has the richest fan options: `fan` BC in `volumeFlowRate` mode, or `fanMomentumSource`, both driven by the datasheet P–Q curve; MRF if the blades are modelled.
-- Official Docker images exist and don't need sudo. The Foundation route would need apt (sudo) or a source build.
-
-Pipeline:
-1. CadQuery exports one STL per region: fluid = enclosure interior minus solids; solids = TTP/module block with a volumetric heat source, heatsink fins + base, and heatpipes as high-k solids; optionally the PLA walls as a solid region so wall temperature is resolved.
-2. `blockMesh` → `surfaceFeatureExtract` → `snappyHexMesh` → `splitMeshRegions -cellZones` → `decomposePar -allRegions` → `mpirun -np 24 chtMultiRegionSimpleFoam -parallel`. This is the cpuCabinet `Allrun` / `Allrun.pre` sequence.
-3. Model heatpipes as anisotropic or effective high-conductivity solids. This is my engineering assumption and needs calibration; no source verified.
-4. Run time for 2–5 M cells on 24 cores is unmeasured; plan on hours, not minutes.
-
 ```mermaid
 flowchart TD
     C["CadQuery shapes<br/>air, walls, solids, fans"] --> W["ThermalCase.write()<br/>the case and its Allrun"]
@@ -144,6 +133,17 @@ flowchart TD
 *The pipeline as `cadagent.simulation.cfd` now runs it (its `Allrun`, natively or in the Docker image): it decomposes
 before meshing, so snappyHexMesh runs in parallel too, and it stops when splitMeshRegions makes a region the case
 does not define.*
+
+**ESI OpenFOAM v2606 in Docker (`opencfd/openfoam-run:2606`; use `openfoam-default:2512` for tutorials), `chtMultiRegionSimpleFoam`, starting from `cpuCabinet`.** Rationale:
+- It's a near-identical tutorial.
+- It has the richest fan options: `fan` BC in `volumeFlowRate` mode, or `fanMomentumSource`, both driven by the datasheet P–Q curve; MRF if the blades are modelled.
+- Official Docker images exist and don't need sudo. The Foundation route would need apt (sudo) or a source build.
+
+Pipeline:
+1. CadQuery exports one STL per region: fluid = enclosure interior minus solids; solids = TTP/module block with a volumetric heat source, heatsink fins + base, and heatpipes as high-k solids; optionally the PLA walls as a solid region so wall temperature is resolved.
+2. `blockMesh` → `surfaceFeatureExtract` → `snappyHexMesh` → `splitMeshRegions -cellZones` → `decomposePar -allRegions` → `mpirun -np 24 chtMultiRegionSimpleFoam -parallel`. This is the cpuCabinet `Allrun` / `Allrun.pre` sequence.
+3. Model heatpipes as anisotropic or effective high-conductivity solids. This is my engineering assumption and needs calibration; no source verified.
+4. Run time for 2–5 M cells on 24 cores is unmeasured; plan on hours, not minutes.
 
 ### Fast low-fidelity path for optimisation loops
 
@@ -205,6 +205,13 @@ From the source option table ([PrintConfig.cpp](https://github.com/prusa3d/Prusa
 
 ## 6. Thermal reference data
 
+![Bar chart of the printed-material table below: for PLA Basic, PETG Basic and PETG HF, the glass transition and the heat deflection temperatures at 0.45 and 1.8 MPa, all between 54 and 69 degrees C, against a dashed line at the module's 80 degree C TTP limit](../docs/img/research/thermal-limits.svg)
+
+*Drawn by `tools/research_figures.py` from the printed-material table below, with the TTP limit read from the module's
+bullet (a test keeps them in step). All three filaments soften 11–26 °C below the 80 °C the module's thermal plate
+may reach. The plate is not the air at a printed wall: the wall's own temperature, from a CHT run or a thermocouple,
+decides.*
+
 **Jetson AGX Orin module.** Sources: [datasheet DS-10662-001 v1.8, Sep 2025, mirror](https://static.generation-robots.com/media/Jetson-AGX-Orin-Data-Sheet.pdf) and [Jetson Linux r36.4 power/thermal page](https://docs.nvidia.com/jetson/archives/r36.4/DeveloperGuide/SD/PlatformPowerAndPerformance/JetsonOrinNanoSeriesJetsonOrinNxSeriesAndJetsonAgxOrinSeries.html).
 - **Module power (datasheet):**
   - JAO 64GB: 15 W / 30 W / 50 W, "up to 60 W"
@@ -234,12 +241,6 @@ From the source option table ([PrintConfig.cpp](https://github.com/prusa3d/Prusa
 | PETG Basic (V2.0) | 68 °C | 69 °C | 65 °C | [TDS](https://www.additive-x.com/shop/mpattachments/file/viewonline/id/580/product_id/2330) |
 | PETG HF (V1.0) | 66 °C | 69 °C | 62 °C | [TDS](https://botland.com.pl/img/art/inne/25540_karta_produktu.pdf) |
 
-![Bar chart of the table above: for PLA Basic, PETG Basic and PETG HF, the glass transition and the heat deflection temperatures at 0.45 and 1.8 MPa, all between 54 and 69 degrees C, against a dashed line at the module's 80 degree C TTP limit](../docs/img/research/thermal-limits.svg)
-
-*Drawn from the table above by `tools/research_figures.py`, with the TTP limit read from the module's bullet (a test
-keeps them in step). All three filaments soften 11–26 °C below the 80 °C the module's thermal plate may reach. The
-plate is not the air at a printed wall: the wall's own temperature, from a CHT run or a thermocouple, decides.*
-
 With the TTP allowed up to 80 °C and the fan exhausting warm air, PLA within a few cm of the heatsink, the exhaust path or the cooler clamp is marginal. Use PETG (or better) for parts that carry the cooler, and treat **~50 °C PLA / ~60 °C PETG sustained wall temperature under load** as design limits. Those limits are my margin choice, not a datasheet value. Creep under clamp load is a separate, unmodelled risk.
 
 ## Existing projects combining CAD + TO + CFD for 3D printing
@@ -251,6 +252,19 @@ There is no single mature FOSS project that does CadQuery → topology optimisat
 - **pyMOTO**: thermal and structural topology optimisation with an AM overhang filter.
 
 Reuse the ESI `cpuCabinet` case, pyMOTO examples and Optuna as templates, rather than adopting a framework.
+
+```mermaid
+flowchart TD
+    C["CadQuery solids"] --> S["slice: Bambu Studio CLI<br/>cad-agent slice"]
+    C --> L["load: scikit-fem P2 tets<br/>simulation.fea"]
+    C --> K["cool: OpenFOAM CHT<br/>simulation.cfd"]
+    S & L & K --> O["optimise: pyMOTO, Optuna<br/>topopt, cad-agent optimise"]
+    O -->|"the change is made in the CAD"| C
+```
+
+*What cad-agent did instead: the blocks this survey chose, each run from its own module, joined by the standard
+practice in [the toolkit page](../docs/toolkit.md). The AGPL and GPL programs (the slicer, OpenFOAM) run as separate
+processes. Each result states its limits; none proves fit, strength or temperature.*
 
 ## Could not verify
 

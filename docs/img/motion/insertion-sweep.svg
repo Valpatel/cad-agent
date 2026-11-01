@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 540" width="680" height="540" role="img" aria-label="Three pairs from the assembly gate's box-world tests, each part moved in along a straight line. A card 3 mm off a block: the box it sweeps stays 3 mm from the block's, so it is clear with no kernel query. A card into a cover fitted first: it hits, and the first contact is bisected to 25.00 mm before its seat. A part passing a block's corner: sampled near it, and between samples h apart the gap is at least (g1 + g2 - h) / 2, here 1.85 mm." font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="12" fill="#173d3c">
+<style>.m10,.m11{fill:#526863}.m10{font-size:10px}.m11{font-size:11px}.n{visibility:hidden}@media (max-width:400px){text:not(.n),.w{visibility:hidden}.n{visibility:visible}}@keyframes k0{0%,2.5%,96.2%,100%{transform:scaleY(0)}10%,93.8%{transform:scaleY(1)}}@keyframes k1{0%,10.6%,95.6%,100%{opacity:0}12.5%,93.8%{opacity:1}}@keyframes k2{0%,11.9%,95.6%,100%{opacity:0}13.7%,93.8%{opacity:1}}@keyframes k3{0%,23.8%,25.6%,28.1%,96.2%,100%{transform:translateY(-67.6px)}30%,32.5%{transform:translateY(-65px)}34.4%,93.8%{transform:translateY(-62.4px)}}@keyframes k4{0%,34.4%,95.6%,100%{opacity:0}36.2%,93.8%{opacity:1}}@keyframes k5{0%,21.2%,95.6%,100%{opacity:0}23.1%,93.8%{opacity:1}}@keyframes k6{0%,25.6%,95.6%,100%{opacity:0}27.5%,93.8%{opacity:1}}@keyframes k7{0%,30%,95.6%,100%{opacity:0}31.9%,93.8%{opacity:1}}@keyframes k8{0%,37.5%,96.2%,100%{transform:scaleX(1)}38.2%{transform:scaleX(0.5)}39%{transform:scaleX(0.25)}39.8%{transform:scaleX(0.125)}40.5%{transform:scaleX(0.0625)}41.2%{transform:scaleX(0.0312)}42%{transform:scaleX(0.0156)}42.8%{transform:scaleX(0.0078)}43.5%{transform:scaleX(0.0039)}44.2%{transform:scaleX(0.002)}45%{transform:scaleX(0.001)}45.8%{transform:scaleX(0.0005)}46.5%,93.8%{transform:scaleX(0.0002)}}@keyframes k9{0%,35.6%,95.6%,100%{opacity:0}37.5%,93.8%{opacity:1}}@keyframes k10{0%,48.4%,95.6%,100%{opacity:0}50.2%,93.8%{opacity:1}}@keyframes k11{0%,58.1%,95.6%,100%{opacity:0}60%,93.8%{opacity:1}}@keyframes k12{0%,62.5%,95.6%,100%{opacity:0}64.4%,93.8%{opacity:1}}@keyframes k13{0%,66.9%,95.6%,100%{opacity:0}68.8%,93.8%{opacity:1}}@keyframes k14{0%,71.2%,95.6%,100%{opacity:0}73.1%,93.8%{opacity:1}}@keyframes k15{0%,75.6%,95.6%,100%{opacity:0}77.5%,93.8%{opacity:1}}@keyframes k16{0%,56.2%,58.1%,60.6%,96.2%,100%{transform:translate(-84.6px,-84.6px)}62.5%,65%{transform:translate(-56.6px,-56.6px)}66.9%,69.4%{transform:translate(-46px,-46px)}71.2%,73.8%{transform:translate(-35.4px,-35.4px)}75.6%,78.1%{transform:translate(-18px,-18px)}80%,93.8%{transform:translate(0px,0px)}}@keyframes k17{0%,53.8%,95.6%,100%{opacity:0}55.6%,93.8%{opacity:1}}@keyframes k18{0%,80%,95.6%,100%{opacity:0}81.9%,93.8%{opacity:1}}@keyframes k19{0%,82.5%,95.6%,100%{opacity:0}84.4%,93.8%{opacity:1}}@keyframes k20{0%,85%,95.6%,100%{opacity:0}86.9%,93.8%{opacity:1}}@keyframes k21{0%,86.2%,95.6%,100%{opacity:0}88.1%,93.8%{opacity:1}}.sw{transform-origin:0 100.5px;transform-box:view-box}.cd{transform:translateY(-62.4px)}.br{transform-origin:452px 0;transform-box:view-box;transform:scaleX(0.0002)}.mv{transform:translate(0px,0px)}.h{font-weight:700;stroke:#fffdf5;stroke-width:3px;paint-order:stroke}.sw{animation:k0 16s ease-in-out infinite}#d1{animation:k1 16s linear infinite}#l1{animation:k2 16s linear infinite}.cd{animation:k3 16s ease-in-out infinite}#ov,#q3{animation:k4 16s linear infinite}#q0{animation:k5 16s linear infinite}#q1{animation:k6 16s linear infinite}#q2{animation:k7 16s linear infinite}.br{animation:k8 16s steps(1,end) infinite}#bb{animation:k9 16s linear infinite}#l2{animation:k10 16s linear infinite}#p0,#g0{animation:k11 16s linear infinite}#p1,#g1,#v1{animation:k12 16s linear infinite}#p2,#g2,#v2{animation:k13 16s linear infinite}#p3,#g3,#v3{animation:k14 16s linear infinite}#p4,#g4,#v4{animation:k15 16s linear infinite}.mv{animation:k16 16s ease-in-out infinite}#g5{animation:k17 16s linear infinite}#v5{animation:k18 16s linear infinite}#lb{animation:k19 16s linear infinite}#ex{animation:k20 16s linear infinite}#l3{animation:k21 16s linear infinite}@media (prefers-reduced-motion:reduce){*{animation:none!important}}</style>
+<rect width="680" height="540" rx="14" fill="#fffdf5" stroke="#d8e0d3"/>
+<text x="20" y="28" font-size="15" font-weight="700">Assembly gate: one part moved in along a straight line, against one other part</text>
+<text x="20" y="46" class="m11">sweep_pair on the box world of tests/test_gate_assembly.py, seen from the side. s: how far the part is from its seat</text>
+<text x="20" y="38" font-size="28" font-weight="700" class="n">Insertion sweep</text>
+<text x="20" y="72" font-size="13" font-weight="600">1 · Far: the swept box is enough</text>
+<text x="20" y="78" font-size="26" font-weight="700" class="n">Far</text>
+<text x="20" y="88" class="m11">the card, 3 mm off the block, in along −Z</text>
+<rect x="39" y="148.5" width="60" height="60" fill="#eef1e4" stroke="#6f8a80"/>
+<text x="69" y="184.5" class="m11" text-anchor="middle">block</text>
+<rect x="108" y="100.5" width="6" height="108" class="sw" fill="#ffe1cc" stroke="#bd3a12" stroke-dasharray="4 3"/>
+<rect x="108" y="163.5" width="6" height="45" fill="#fffdf5" stroke="#173d3c" stroke-width="1.5"/>
+<rect x="108" y="100.5" width="6" height="45" fill="none" stroke="#173d3c" stroke-dasharray="3 2"/>
+<path d="M123 208.5V145.5m-3 5l3 -5 3 5" fill="none" stroke="#526863"/>
+<text x="128" y="151.5" class="m10">start</text>
+<text x="128" y="208.5" class="m10">seat</text>
+<text x="128" y="181" class="m10">travel 21</text>
+<g id="d1"><path d="M99 196.5H108M99 192.5v8M108 192.5v8" stroke="#bd3a12"/><text x="96" y="200.5" font-size="10" fill="#bd3a12" text-anchor="end" font-weight="700">3.00</text></g>
+<g id="l1"><text x="20" y="240" class="m11">it starts 1 mm past the block: travel 21 mm</text><text x="20" y="256" font-size="11">its swept box stays 3.00 mm from the block's</text><text x="20" y="272" font-weight="600">clear, ≥ 3.00 mm, with 0 queries</text></g>
+<text x="20" y="252" font-size="24" class="n">clear, 0 queries</text>
+<text x="352" y="72" font-size="13" font-weight="600">2 · Blocked: the contact bisected</text>
+<text x="352" y="78" font-size="26" font-weight="700" class="n">Blocked</text>
+<text x="352" y="88" class="m11">the card, with the cover fitted first</text>
+<rect x="356" y="146.2" width="72.8" height="13" fill="#eef1e4" stroke="#6f8a80"/>
+<text x="376.8" y="155.8" class="m10" text-anchor="middle">cover</text>
+<rect x="402.8" y="172.2" width="5.2" height="39" fill="none" stroke="#173d3c" stroke-dasharray="3 2"/>
+<text x="405.4" y="225.5" class="m10" text-anchor="middle">seat</text>
+<rect x="402.8" y="172.2" width="5.2" height="39" class="cd" fill="#fffdf5" stroke="#173d3c" stroke-width="1.5"/>
+<g id="ov"><rect x="402.8" y="146.2" width="5.2" height="2.6" fill="#bd3a12"/></g>
+<text x="452" y="112" font-size="11" id="q0">seat first: gap 5.00</text>
+<text x="452" y="128" font-size="11" id="q1">s 26: gap 1.00</text>
+<text x="452" y="144" font-size="11" id="q2">s 25: touching</text>
+<text x="452" y="160" font-size="11" fill="#bd3a12" id="q3">s 24: 40 mm³ shared, a hit</text>
+<g id="bb" class="w"><text x="452" y="196" font-size="11">[25, 24] halved 12 times</text><path d="M452 208H602" stroke="#d8e0d3" stroke-width="8"/><rect class="br" x="452" y="204" width="150" height="8" fill="#bd3a12"/><path d="M452 201v14" stroke="#173d3c" stroke-width="1.5"/><text x="452" y="225" class="m10" text-anchor="middle">s 25</text><text x="602" y="225" class="m10" text-anchor="middle">24</text></g>
+<g id="l2"><text x="352" y="240" class="m11">its swept box meets the cover's, so it is sampled</text><text x="352" y="256" font-size="11">first contact between s 24.9998 and 25.0000</text><text x="352" y="272" fill="#bd3a12" font-weight="600">blocked 25.00 mm before its seat, 16 queries</text></g>
+<text x="352" y="252" font-size="24" fill="#bd3a12" font-weight="700" class="n">hits 25 mm out</text>
+<text x="20" y="298" font-size="13" font-weight="600">3 · Near: sampled, with a bound between samples</text>
+<text x="20" y="304" font-size="26" font-weight="700" class="n">Near</text>
+<text x="20" y="314" class="m11">a part past a block's corner, in along (1, 0, −1); max_step_mm = 5</text>
+<rect x="28.5" y="401.5" width="30" height="30" fill="#eef1e4" stroke="#6f8a80"/>
+<text x="43.5" y="442.3" class="m10" text-anchor="middle">block</text>
+<g id="p0"><rect x="33.9" y="331.9" width="30" height="30" fill="none" stroke="#6f8a80"/><path d="M46.2 361.9L46.2 401.5" stroke="#bd3a12" stroke-width="1.5"/></g>
+<g id="p1"><rect x="61.9" y="359.9" width="30" height="30" fill="none" stroke="#6f8a80"/><path d="M61.9 389.9L58.5 401.5" stroke="#bd3a12" stroke-width="1.5"/></g>
+<g id="p2"><rect x="72.5" y="370.5" width="30" height="30" fill="none" stroke="#6f8a80"/><path d="M72.5 400.5L58.5 401.5" stroke="#bd3a12" stroke-width="1.5"/></g>
+<g id="p3"><rect x="83.1" y="381.1" width="30" height="30" fill="none" stroke="#6f8a80" stroke-dasharray="3 2"/><path d="M83.1 406.3L58.5 406.3" stroke="#6f8a80" stroke-width="1.5" stroke-dasharray="3 2"/></g>
+<g id="p4"><rect x="100.5" y="398.5" width="30" height="30" fill="none" stroke="#6f8a80" stroke-dasharray="3 2"/><path d="M100.5 415L58.5 415" stroke="#6f8a80" stroke-width="1.5" stroke-dasharray="3 2"/></g>
+<rect x="118.5" y="416.5" width="30" height="30" fill="none" stroke="#173d3c" stroke-dasharray="3 2"/>
+<text x="133.5" y="457.3" class="m10" text-anchor="middle">seat</text>
+<rect x="118.5" y="416.5" width="30" height="30" class="mv" fill="none" stroke="#173d3c" stroke-width="2"/>
+<g fill="none" stroke="#6f8a80"><path id="v5" d="M545.6 372.4L559.4 379.1L640 340"/><path id="v1" d="M196 376.7L320.6 437.1L343 426.2"/><path id="v2" d="M343 426.2L367.2 438L398.7 422.7"/><path id="v3" d="M398.7 422.7L406.9 426.7L454.3 403.7"/><path id="v4" d="M454.3 403.7L467.7 410.2L545.6 372.4"/></g>
+<g id="g5"><circle cx="640" cy="340" r="2.8"/><text x="640" y="333" font-size="10" text-anchor="end" class="h">20.00 seat</text></g>
+<g id="g0"><circle cx="196" cy="376.7" r="2.8"/><text x="196" y="369.7" font-size="10" text-anchor="middle" class="h">13.21</text></g>
+<g id="g1"><circle cx="343" cy="426.2" r="2.8"/><text x="343" y="419.2" font-size="10" text-anchor="middle" class="h">4.03</text></g>
+<g id="g2"><circle cx="398.7" cy="422.7" r="2.8"/><text x="398.7" y="415.7" font-size="10" text-anchor="middle" class="h">4.68</text></g>
+<g id="g3"><circle cx="454.3" cy="403.7" r="2.8" fill="#fffdf5" stroke="#6f8a80"/><text x="454.3" y="396.7" font-size="10" fill="#6f8a80" text-anchor="middle" class="h">8.20</text></g>
+<g id="g4"><circle cx="545.6" cy="372.4" r="2.8" fill="#fffdf5" stroke="#6f8a80"/><text x="545.6" y="365.4" font-size="10" fill="#6f8a80" text-anchor="middle" class="h">14.00</text></g>
+<g id="lb"><circle cx="367.2" cy="438" r="3.4" fill="#bd3a12"/><path class="w" d="M367.2 433L350.7 360.2" stroke="#bd3a12"/><text x="320.7" y="356.2" font-size="11" fill="#bd3a12" class="h">≥ (4.03 + 4.68 − 5) / 2 = 1.85</text><path class="w" d="M343 453v4H398.7v-4" fill="none" stroke="#526863"/><text x="370.8" y="467" class="m10" text-anchor="middle">h 5</text></g>
+<g id="ex"><path d="M196 376.7 214.5 383 233 389.4 251.5 395.7 270 402.1 288.5 408.4 307 414.8 325.5 421.1 344 426.5 362.5 428.9 364.5 428.9 381 427.3 399.5 422.5 418 416.2 436.5 409.8 455 403.5 473.5 397.1 492 390.8 510.5 384.4 529 378.1 547.5 371.7 566 365.4 584.5 359 603 352.7 621.5 346.3 640 340" fill="none" stroke="#526863" stroke-dasharray="2 2"/><text x="402.4" y="444" class="m10">exact, least 3.54</text></g>
+<path d="M196 448H640" stroke="#526863"/><text x="196" y="467" class="m10" text-anchor="middle">s 39.9</text><text x="640" y="467" class="m10" text-anchor="middle">0</text><text x="188" y="332" class="m10">gap, mm</text>
+<g id="l3"><text x="20" y="490" class="m11">A step is the gap, and at least max_step_mm. After the first sample, a box gap ≥ max_step_mm stands in for the query (○).</text><text x="20" y="506" class="m11">A move of h changes the gap by at most h, so between two samples it stays ≥ (g1 + g2 − h) / 2. Dashed: exact.</text><text x="20" y="522" font-weight="600">clear: the closest approach lies between 1.85 and 4.03 mm; 4 queries</text></g>
+<text x="20" y="502" font-size="24" fill="#bd3a12" font-weight="700" class="n">≥ 1.85 mm between samples</text>
+</svg>

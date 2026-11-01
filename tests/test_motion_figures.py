@@ -13,6 +13,7 @@ With CadQuery they also check each 2D model against the real code it stands for:
 """
 import ast
 import importlib.util
+import math
 import re
 import sys
 from pathlib import Path
@@ -147,6 +148,87 @@ def test_search_figure_ranks_trials_as_the_leaderboard_does():
     s = h["summary"]
     assert len(h["records"]) == s["trials"] and len(h["fronts"][-1]) == s["pareto"]
     assert sum(1 for r in h["records"] if not r.get("duplicate_of")) == s["evaluated"]
+
+
+def test_motion_trace_figure_runs_the_validator_on_the_tests_shaft():
+    from cadagent.mechanical.motion_trace import required_poses, validate_motion_trace
+    from tests.test_motion_trace import contract, observation, trace
+    c = contract()
+    assert c == mf.MT_CONTRACT and "48 if defect == \"offset-pivot\"" in (ROOT / "tests" / "test_motion_trace.py").read_text()
+    h = mf.motion_trace_numbers()
+    assert h["poses"] == required_poses(c)
+    for i, pose in enumerate(h["poses"]):         # the figure's renderers are the test's, landmark for landmark
+        for drawn, defect in ((h["A"]["points"][i], None), (h["B"]["points"][i], "offset-pivot")):
+            want = observation(c, pose, defect)
+            assert drawn.keys() == want.keys()
+            for name in want:
+                assert max(math.dist(p, q) for p, q in zip(drawn[name], want[name])) < 1e-12, (pose, name)
+    assert h["A"]["report"] == validate_motion_trace(c, trace(c))
+    assert h["B"]["report"] == validate_motion_trace(c, trace(c, "offset-pivot"))
+    a, b = h["A"]["report"], h["B"]["report"]
+    assert a["status"] == "pass" and b["status"] == "fail" and h["nested"] == [len(h["poses"]) - 1]
+    rotor = b["components"]["rotor"]
+    assert rotor["max_error_mm"] == pytest.approx(2 * mf.MT_OFFSET) == pytest.approx(rotor["max_anchor_error_mm"])
+    # each pose's worst error is the distance from the drawn landmark to the reference ring around it
+    for i, ref in enumerate(h["reference"]):
+        for key in ("A", "B"):
+            far = max(math.dist(p, q) for n in ref for p, q in zip(ref[n], h[key]["points"][i][n]))
+            assert h[key]["per_pose_mm"][i] == pytest.approx(far, abs=1e-9)
+    assert max(h["A"]["per_pose_mm"]) < h["tolerance_mm"] == 0.01
+    assert [round(e, 1) for e in h["B"]["per_pose_mm"]] == [0, 0, 0, 0, 0, 67.9, 96.0, 67.9, 0, 96.0]
+    assert h["without_nested"]["status"] == "fail"
+    s = (mf.OUT / "motion-trace.svg").read_text(encoding="utf-8")
+    for said in ("A: pass. At all 10 poses, every landmark is within 0.01 mm",
+                 "B: fail (rendered-landmarks). Its rotor is 96.0 mm off at spin 180°, and its pivot 96.0 mm off.",
+                 "yaw −90° with spin 180° is missing", ">67.9<", "pivot 48 mm off the shaft"):
+        assert said in s, said
+
+
+def test_sweep_figure_runs_the_gate_on_the_tests_boxes():
+    from cadagent.review.gates.assembly import AccessOptions, direction_vector, sweep_pair
+    from tests.test_gate_assembly import BOXES, BoxWorld
+    source = (ROOT / "tests" / "test_gate_assembly.py").read_text(encoding="utf-8")
+    assert BOXES == mf.GATE_BOXES and f"card={mf.GATE_NEAR_CARD})" in source
+    assert f"BoxWorld({mf.GATE_DIAGONAL})".replace("'", '"') in source
+    assert f"direction_vector({mf.GATE_DIAGONAL_DIRECTION}), \"block\", options=AccessOptions(max_step_mm=" \
+           f"{mf.GATE_DIAGONAL_STEP_MM:g}))" in source
+    h = mf.sweep_numbers()
+    # watched, the gate returns what the tests' own world gets from it: the spy changes nothing
+    near, blocked, diag = h["near"]["result"], h["blocked"]["result"], h["diagonal"]["result"]
+    assert near == sweep_pair(BoxWorld(dict(BOXES, card=mf.GATE_NEAR_CARD)), "card", direction_vector("-Z"), "block")
+    assert blocked == sweep_pair(BoxWorld(BOXES), "card", direction_vector("-Z"), "cover")
+    assert diag == sweep_pair(BoxWorld(mf.GATE_DIAGONAL), "part", direction_vector(mf.GATE_DIAGONAL_DIRECTION), "block",
+                              options=AccessOptions(max_step_mm=mf.GATE_DIAGONAL_STEP_MM))
+    # 1: the swept box alone decides it
+    assert near["state"] == "clear" and near["samples"] == 0 and near["gap_lower_bound_mm"] == h["near"]["swept_gap"] == 3
+    assert near["travel_mm"] == 21 and h["near"]["visits"] == []
+    # 3: the samples the figure draws are the gate's: the seat, then each exact one; the bound is the least V
+    d = h["diagonal"]
+    assert d["swept_gap"] == 0 and diag["samples"] == 1 + sum(v["exact"] for v in d["visits"])
+    assert [v["exact"] for v in d["visits"]] == [True, True, True, False, False]
+    assert all(v["box_gap"] >= mf.GATE_DIAGONAL_STEP_MM for v in d["visits"] if not v["exact"])
+    for (s1, g1), (s2, _) in zip(h["line"], h["line"][1:]):
+        assert s1 - s2 == pytest.approx(max(g1, mf.GATE_DIAGONAL_STEP_MM)) or s2 == 0      # each step: the gap
+    low = min(b for *_, b in h["bounds"])
+    assert diag["gap_lower_bound_mm"] == round(low, 4) and diag["min_gap_mm"] == round(
+        min([d["seat_gap"]] + [v["gap"] for v in d["visits"] if v["exact"]]), 4)
+    cs, cg = h["closest"]
+    assert cg == pytest.approx(2.5 * math.sqrt(2)) and cs == pytest.approx(17.5 * math.sqrt(2), abs=1e-6)
+    assert low <= cg <= diag["min_gap_mm"] and all(g >= low for _, g in h["true"])
+    for s1, s2, g1, g2, b in h["bounds"]:         # the exact gap never dips under the V between two samples
+        assert all(g >= b - 1e-9 for s, g in h["true"] if s2 <= s <= s1)
+    # 2: the hit, and its contact bisected refine_steps times
+    k = h["blocked"]
+    assert blocked["state"] == "blocked" and blocked["first_contact_mm"] == [25.0, 24.9998]
+    assert [(v["s"], v["gap"], v["overlap_mm3"]) for v in k["visits"]] == [(26, 1, None), (25, 0, None), (24, None, 40)]
+    assert len(k["bisect"]) == AccessOptions().refine_steps and k["seat_gap"] == 5
+    assert blocked["samples"] == 1 + len(k["visits"]) + len(k["bisect"]) == 16
+    s = (mf.OUT / "insertion-sweep.svg").read_text(encoding="utf-8")
+    for said in ("clear, ≥ 3.00 mm, with 0 queries", "seat first: gap 5.00", "s 24: 40 mm³ shared, a hit",
+                 "[25, 24] halved 12 times", "first contact between s 24.9998 and 25.0000",
+                 "blocked 25.00 mm before its seat, 16 queries", "≥ (4.03 + 4.68 − 5) / 2 = 1.85",
+                 "clear: the closest approach lies between 1.85 and 4.03 mm; 4 queries", "exact, least 3.54"):
+        assert said in s, said
 
 
 # ----------------------------------------------------------------------------- against the real code (CadQuery)

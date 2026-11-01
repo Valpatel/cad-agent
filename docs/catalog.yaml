@@ -152,6 +152,22 @@ demos:
     url: docs/toolkit.md#the-cable-behind-the-plug
     still: 0.8
     areas: [housings-and-enclosures, wiring-harnesses]
+  - id: motion-trace
+    title: Rendered motion against the CAD
+    what: What a renderer drew at every required pose, checked against the CAD; one that spins a rotor about the wrong pivot fails.
+    mode: animated
+    cover: docs/img/motion/motion-trace.svg
+    url: docs/rendered-motion.md
+    still: 0.56
+    tools: [motion-trace]
+  - id: insertion-sweep
+    title: Insertion sweep
+    what: A part moved in along a straight line; clear on its swept box, sampled near an obstacle with a bound between samples, or blocked and its contact bisected.
+    mode: animated
+    cover: docs/img/motion/insertion-sweep.svg
+    url: docs/gates.md#assembly-sequence-access-cadagentreviewgatesassembly
+    still: 0.9
+    tools: [gates]
 
 tools:
   snapfit: {page: docs/compliant.md, figures: [docs/img/compliant/example-1.svg]}

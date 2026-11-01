@@ -167,14 +167,14 @@
   status: candidate
   policy: may incorporate with attribution
 - name: mixelpixx/Konnect
-  what: "Archived KiCad 10 plugin for AI-assisted schematic and PCB design; it continues as Konnect-EDA"
+  what: "KiCad 10 plugin for AI-assisted schematic and PCB design; it continues as Konnect-EDA, commercial and closed source"
   areas: [circuit-boards]
   url: https://github.com/mixelpixx/Konnect
   license: AGPL-3.0
   stars: 1399
   last_push: 2026-10-26
   status: rejected
-  policy: external program only (AGPL-3.0); archived 2026-10-26 (read-only; its AGPL-3.0 releases stay up); continues as Konnect-EDA, commercial and closed source
+  policy: external program only (AGPL-3.0); archived 2026-10-26, and GitHub showed it unarchived again on 2026-11-01 (last commit 2026-10-25); its AGPL-3.0 releases stay up; continues as Konnect-EDA, commercial and closed source
 - name: oaslananka/kicad-mcp-pro
   what: "MCP server for KiCad schematic, PCB, ERC/DRC, DFM and manufacturing-export work, read-only by default"
   areas: [circuit-boards]
@@ -211,19 +211,19 @@
   last_push: 2026-10-25
   status: trial
   policy: may incorporate with attribution
-- name: American-Embedded/kistack
+- name: BackplaneWorks/kistack
   what: "Hand-written agent skills for KiCad: schematic work, PCB and Gerber review, parts, BOM and exports"
   areas: [circuit-boards]
-  url: https://github.com/American-Embedded/kistack
+  url: https://github.com/BackplaneWorks/kistack
   license: MIT
   stars: 411
   last_push: 2026-10-24
   status: candidate
   policy: may incorporate with attribution
-- name: i2cjak/Backplane
+- name: BackplaneWorks/Backplane
   what: "Agent workspace for hardware on a KiCad fork, with KiCad and FreeCAD viewers that show each agent step"
   areas: [circuit-boards, agent-workflow]
-  url: https://github.com/i2cjak/Backplane
+  url: https://github.com/BackplaneWorks/Backplane
   license: MIT
   stars: 731
   last_push: 2026-10-25

@@ -1,0 +1,40 @@
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0045211079, Final residual = 0.0001920032, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0030796402, Final residual = 0.00011095431, No Iterations 1
+DILUPBiCGStab:  Solving for h, Initial residual = 0.002588317, Final residual = 0.0001187186, No Iterations 1
+Min/max T:298.14426 311.95019
+GAMG:  Solving for p_rgh, Initial residual = 7.8469927e-05, Final residual = 4.4910554e-07, No Iterations 3
+GAMG:  Solving for p_rgh, Initial residual = 5.7610149e-06, Final residual = 3.6845991e-08, No Iterations 3
+time step continuity errors : sum local = 3.4570761e-05, global = 4.8808912e-06, cumulative = 0.021411756
+Min/max rho:1.1164653 1.1682322
+DILUPBiCGStab:  Solving for omega, Initial residual = 0.0012615787, Final residual = 0.00010273223, No Iterations 1
+DILUPBiCGStab:  Solving for k, Initial residual = 0.0029698558, Final residual = 0.00021023548, No Iterations 1
+ExecutionTime = 109.59 s  ClockTime = 111 s
+
+wallHeatFlux wallHeatFlux_domain0 execute:
+    min/max/integ(ground) = 0, 0, 0
+    min/max/integ(box) = 0, 0, 0
+Time = 1500
+
+
+Solving for fluid region domain0
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.0040066327, Final residual = 0.00015883964, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0045293112, Final residual = 0.00019493346, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.003079706, Final residual = 0.0001106846, No Iterations 1
+DILUPBiCGStab:  Solving for h, Initial residual = 0.0026033148, Final residual = 0.0001180963, No Iterations 1
+Min/max T:298.14426 311.94696
+GAMG:  Solving for p_rgh, Initial residual = 7.6784422e-05, Final residual = 4.429955e-07, No Iterations 3
+GAMG:  Solving for p_rgh, Initial residual = 5.8108819e-06, Final residual = 3.8068818e-08, No Iterations 3
+time step continuity errors : sum local = 3.5615249e-05, global = 5.4972314e-06, cumulative = 0.021417254
+Min/max rho:1.1164766 1.1682322
+DILUPBiCGStab:  Solving for omega, Initial residual = 0.0012600132, Final residual = 0.00010280179, No Iterations 1
+DILUPBiCGStab:  Solving for k, Initial residual = 0.0029579569, Final residual = 0.00020903664, No Iterations 1
+ExecutionTime = 109.67 s  ClockTime = 111 s
+
+wallHeatFlux wallHeatFlux_domain0 execute:
+    min/max/integ(ground) = 0, 0, 0
+    min/max/integ(box) = 0, 0, 0
+wallHeatFlux wallHeatFlux_domain0 write:
+    writing field wallHeatFlux
+End
+
+Finalising parallel run

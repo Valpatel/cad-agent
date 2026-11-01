@@ -30,6 +30,8 @@ const ROUTES = ['/', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', 
 // /kit/viewer is the kit's project viewer: it needs a project's exports/view/view.json, so it is not a site page.
 // The most a page with a diagram may move while it loads (#132; Google calls a page good under 0.1).
 const DIAGRAM_SHIFT = 0.05;
+// The kit scripts web/site.js starts on every page.
+const SITE_KIT = ['/kit/diagrams.js', '/kit/copy.js', '/kit/nav.js'];
 /** The torsion-snap and screw-boss explorers (#161): what each one's page must show, and how to drive it. */
 const EXPLORERS = [
   { tag: 'cad-torsion-snap', prefix: 'ts', route: '/docs/compliant', script: 'torsion-snap', still: 'docs/img/compliant/torsion-snap-explorer.svg',
@@ -247,7 +249,8 @@ try {
         else { await toggle.click(); if (!(await nav.locator('a[aria-current=page]').isVisible())) seen.push('toggle does not open the page tree'); }
       }
       // Keyboard users skip the header and the tree in one key press: after it, the next Tab is inside the article.
-      await page.goto(base + route, { waitUntil: 'networkidle' });
+      await page.goto(base + route);
+      await settled(page);
       await page.keyboard.press('Tab');
       if ((await page.evaluate(() => document.activeElement?.className)) !== 'skip-link') seen.push('the first Tab stop is not "Skip to content"');
       await page.keyboard.press('Enter');
@@ -385,7 +388,8 @@ try {
     await context.close();
   }
   const reduced = await browser.newPage({ reducedMotion: 'reduce' });
-  await reduced.goto(base + '/', { waitUntil: 'networkidle' });
+  await reduced.goto(base + '/');
+  await settled(reduced);
   const still = await reduced.evaluate(() => document.getAnimations().filter(a => a.animationName?.startsWith('snap-')).length);
   if (still) problems.push(`reduced motion: ${still} hero animations still running`);
   // The model stands still (no turntable, so no Pause button) until the reader drags it.
@@ -408,7 +412,8 @@ try {
   const SCROLLBAR = 17;
   const wide = await browser.newPage({ viewport: { width: 1100, height: 900 } });
   for (const [route, sources] of diagramPages.sort()) {
-    await wide.goto(base + route, { waitUntil: 'networkidle' });
+    await wide.goto(base + route);
+    await settled(wide);
     await wide.waitForFunction(n => document.querySelectorAll('.cad-diagram').length >= n &&
       [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'),
       sources, { timeout: 20000 }).catch(() => problems.push(`1100px ${route}: diagrams did not finish rendering`));
@@ -485,7 +490,8 @@ try {
   await reader.close();
   // Very wide screens: the outline moves to its own column on the right and keeps marking the section being read.
   const wider = await browser.newPage({ viewport: { width: 1600, height: 900 } });
-  await wider.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
+  await wider.goto(base + '/docs/toolkit');
+  await settled(wider);
   await wider.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, document.body.scrollHeight / 2); });
   await wider.waitForTimeout(300);
   if (!(await wider.locator('.doc-rail').isVisible())) problems.push('1600px: no "On this page" column');
@@ -495,7 +501,8 @@ try {
   // A big screen, where several last sections cannot reach the reading line: each outline link followed with the
   // site's smooth scrolling marks its own section once the scroll settles (#123 review: 21 of 59 were wrong).
   const big = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
-  await big.goto(base + '/docs/explore', { waitUntil: 'networkidle' });
+  await big.goto(base + '/docs/explore');
+  await settled(big);
   const rail = big.locator('.doc-rail a');
   const n = await rail.count();
   for (let i = Math.max(0, n - 4); i < n; i++) {
@@ -532,7 +539,8 @@ try {
   // The same jumps through the tree's own outline, in a window tall enough that several sections cannot reach the
   // reading line (review 3: at 1366x900 only the last one cannot, and the bottom rule marks it anyway).
   const tall = await browser.newPage({ viewport: { width: 1366, height: 1600 } });
-  await tall.goto(base + '/docs/explore', { waitUntil: 'networkidle' });
+  await tall.goto(base + '/docs/explore');
+  await settled(tall);
   const unreachable = await tall.evaluate(() => {
     const line = Math.min(innerHeight / 3, 220), max = document.documentElement.scrollHeight - innerHeight;
     return [...document.querySelectorAll('cad-nav .cad-nav-outline a')].map((a, i) => [i, document.getElementById(decodeURIComponent(a.hash.slice(1)))])
@@ -557,7 +565,8 @@ try {
   // number of pages. The open Docs group alone outgrew 1080 px when the vision page arrived (#148); from 1500 px the
   // tree leaves out the page's outline.
   const desk = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
-  await desk.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
+  await desk.goto(base + '/docs/toolkit');
+  await settled(desk);
   const panel = await desk.locator('cad-nav .cad-nav-panel').evaluate(p => {
     for (const group of p.querySelectorAll('details')) group.open = false;
     const r = p.getBoundingClientRect(), cs = getComputedStyle(p);
@@ -576,6 +585,28 @@ try {
   await browser.close();
   server.kill();
   await rm(dir, { recursive: true, force: true });
+}
+
+/** Wait for the page as its reader sees it, the state the checks read: loaded, the site's kit scripts and `modules` (a
+ * page's own, such as its demo's) run or failed, then painted. Not for a quiet network: Playwright discourages
+ * networkidle, and WebKit on CI once waited 30 s for it on a page that had loaded (/docs/vision, #154). Importing a
+ * module the page has already asked for makes no second request and settles once the module has run. The page's own
+ * .then on it (site.js starting the diagrams) may still be queued then in Chrome, where the load event does not wait
+ * for dynamic imports (#225 review), so a task turn and the two frames of painted() follow. */
+async function settled(page, ...modules) {
+  const kit = await page.evaluate(urls => Promise.race([Promise.allSettled(urls.map(u => import(u))).then(() => 'ran'),
+    new Promise(ok => setTimeout(ok, 15000, 'stuck'))]).then(r => new Promise(ok => setTimeout(ok, 0, r))), [...SITE_KIT, ...modules]);
+  if (kit !== 'ran') throw new Error(`${page.url()}: the kit scripts neither ran nor failed within 15 s`);
+  await painted(page);
+}
+
+/** Stylesheets and fonts in, then two frames. With JavaScript off, Playwright can still run code in the page, but not
+ * wait on a promise there. In WebKit, document.fonts.ready waits for the load event, which there waits for the page's
+ * dynamic imports (nav.js, held back in foldProblems), so the fonts' status is what counts. */
+function painted(page, js = true) {
+  return !js ? page.waitForTimeout(150) :
+    page.waitForFunction(() => [...document.querySelectorAll('link[rel=stylesheet]')].every(l => l.sheet) && document.fonts.status === 'loaded',
+      null, { timeout: 10000 }).then(() => page.evaluate(() => new Promise(ok => requestAnimationFrame(() => requestAnimationFrame(ok)))));
 }
 
 /** The fan-curve explorer (the kit's <cad-fan-curve>) on /docs/fans, at phone and desktop widths, under the site CSP:
@@ -628,7 +659,8 @@ async function fanCurveProblems() {
       page.on('pageerror', e => say(`page error: ${e.message}`));
       await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
       if (!script) await page.route('**/kit/fan-curve.js', r => r.abort());
-      await page.goto(base + route, { waitUntil: 'networkidle' });
+      await page.goto(base + route);
+      await settled(page, '/kit/fan-curve.js');
       const demo = page.locator('cad-fan-curve');
       await demo.scrollIntoViewIfNeeded();
       height[script] = (await demo.boundingBox())?.height;
@@ -719,7 +751,8 @@ async function fanCurveProblems() {
   }
   // Over 700 ms (the announcement delay) with no input, the polite live region stays empty on page load.
   const quiet = await browser.newPage();
-  await quiet.goto(base + route, { waitUntil: 'networkidle' });
+  await quiet.goto(base + route);
+  await settled(quiet, '/kit/fan-curve.js');
   await quiet.waitForTimeout(800);
   if (await quiet.locator('cad-fan-curve .fc-status').textContent()) out.push('the fan-curve status line spoke on page load');
   await quiet.close();
@@ -773,7 +806,8 @@ async function explorerProblems(x) {
       page.on('pageerror', e => say(`page error: ${e.message}`));
       await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
       if (!script) await page.route(`**/kit/${x.script}.js`, r => r.abort());
-      await page.goto(base + route, { waitUntil: 'networkidle' });
+      await page.goto(base + route);
+      await settled(page, `/kit/${x.script}.js`);
       const demo = page.locator(tag);
       await demo.scrollIntoViewIfNeeded();
       height[script] = (await demo.boundingBox())?.height;
@@ -857,7 +891,8 @@ async function explorerProblems(x) {
     if (!(Math.abs(height.true - height.false) < 0.5)) out.push(`${width}px ${name}: ${height.false}px tall before its script, ${height.true}px after`);
   }
   const quiet = await browser.newPage();
-  await quiet.goto(base + route, { waitUntil: 'networkidle' });
+  await quiet.goto(base + route);
+  await settled(quiet, `/kit/${x.script}.js`);
   await quiet.waitForTimeout(800);
   if (await quiet.locator(`${tag} .${px}-status`).textContent()) out.push(`the ${name} status line spoke on page load`);
   await quiet.close();
@@ -899,8 +934,13 @@ async function drawnDiagramProblems() {
         new PerformanceObserver(list => { for (const e of list.getEntries()) if (!e.hadRecentInput) window.__shift += e.value; })
           .observe({ type: 'layout-shift', buffered: true });
     });
-    await page.goto(base + route, { waitUntil: 'networkidle' });
-    await page.evaluate(() => document.fonts.ready.then(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))));
+    // Measured once the kit has adopted every drawn figure and none is being drawn again, so a Mermaid download, if
+    // any, has happened (not at networkidle: in WebKit on CI it never came on /docs/vision, #154).
+    await page.goto(base + route);
+    await settled(page);
+    await page.waitForFunction(() => !document.querySelector('pre.mermaid, code.language-mermaid') &&
+      [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'), null, { timeout: 20000 })
+      .catch(() => out.push(`${where}: diagrams did not finish drawing`));
     const after = await boxes(page), shift = await page.evaluate(() => window.__shift);
     await context.close();
     if (!before.length) { out.push(`${where}: no diagram on the page`); continue; }
@@ -954,7 +994,8 @@ async function cantileverProblems() {
       await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
       await page.addInitScript(firstFrame);
       if (!script) await page.route('**/kit/cantilever.js', r => r.abort());
-      await page.goto(base + '/docs/compliant', { waitUntil: 'networkidle' });
+      await page.goto(base + '/docs/compliant');
+      await settled(page, '/kit/cantilever.js');
       const demo = page.locator('cad-cantilever');
       await demo.scrollIntoViewIfNeeded();
       height[script] = (await demo.boundingBox())?.height;
@@ -1022,14 +1063,16 @@ async function cantileverProblems() {
   const late = await browser.newPage({ viewport: { width: 1366, height: 900 } });
   await late.addInitScript(firstFrame);
   await late.route('**/kit/cantilever.js', async r => { await new Promise(ok => setTimeout(ok, 2600)); await r.continue(); });
-  await late.goto(base + '/docs/compliant', { waitUntil: 'networkidle' });
+  await late.goto(base + '/docs/compliant');
+  await settled(late, '/kit/cantilever.js');
   const lateJump = await firstFrameProblem(late);
   if (lateJump) out.push(`1366px /docs/compliant demo, its script 2.6 s late: ${lateJump}`);
   await late.close();
   const reduced = await browser.newPage({ reducedMotion: 'reduce' });
-  await reduced.goto(base + '/docs/compliant', { waitUntil: 'networkidle' });
+  await reduced.goto(base + '/docs/compliant');
+  await settled(reduced, '/kit/cantilever.js');
   const first = await beam(reduced);
-  await reduced.waitForTimeout(500);
+  await reduced.waitForTimeout(800);                 // past the status line's 700 ms announcement delay (below)
   if (!first || (await beam(reduced)) !== first || (await reduced.locator('cad-cantilever .cc-play').textContent()) !== 'Play')
     out.push('reduced motion: the demo is animating');
   // Over 700 ms (the announcement delay) since the element drew, with no input: the polite live region stays empty,
@@ -1059,11 +1102,20 @@ async function fourbarProblems() {
     return !first ? 'the first live frame was not seen' :
       first.still !== first.live ? 'the first live frame is not the still: the crank jumps when the script takes over' : null;
   };
-  const frames = page => page.evaluate(() => new Promise(done => {
+  const frames = (page, count = 10) => page.evaluate(count => new Promise(done => {
     let n = 0;
-    const next = () => (++n >= 10 ? done() : requestAnimationFrame(next));
+    const next = () => (++n >= count ? done() : requestAnimationFrame(next));
     requestAnimationFrame(next);
-  }));
+  }), count);
+  // Pause the way a person does, with a press that lasts a few frames: WebKit drops the click of a press whose node the
+  // page replaces before the release, and the demo used to rewrite the button's label on every frame (#211; the
+  // compliant block says more). A quick click passes then, unless a frame falls inside it.
+  const hold = async (page, locator) => {
+    await locator.hover();
+    await page.mouse.down();
+    await frames(page, 3);
+    await page.mouse.up();
+  };
   // WCAG contrast of an element's text against the element's background (the nearest one that is not transparent)
   const contrast = (page, selector, attr = 'color') => page.evaluate(([sel, at]) => {
     const rgb = c => (c.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
@@ -1087,7 +1139,8 @@ async function fourbarProblems() {
       await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
       await page.addInitScript(firstFrame);
       if (!script) await page.route('**/kit/fourbar.js', r => r.abort());
-      await page.goto(base + route, { waitUntil: 'networkidle' });
+      await page.goto(base + route);
+      await settled(page, '/kit/fourbar.js');
       const demo = page.locator('cad-fourbar');
       await demo.scrollIntoViewIfNeeded();
       height[script] = (await demo.boundingBox())?.height;
@@ -1152,6 +1205,16 @@ async function fourbarProblems() {
           }, links);
           if (cut.length) say(`${links}: tile text cut off: ${cut.join('; ')}`);
         }                                                                               // ends on the page's linkage
+        // the other assembly, on the page's crank-rocker, paused: the coupler moves to where the ghost was. Not on a
+        // rocking input, which dwells at its limits, where the two assemblies meet: paused there, nothing moves.
+        await demo.evaluate(d => d.querySelector('.fb-play').click());     // pause, so the frames compare (the press: below)
+        if ((await demo.locator('.fb-play').textContent()) !== 'Play') say('the demo was not playing before the assembly switch, so a click started it');
+        const coupler = await demo.locator('[data-part=coupler]').getAttribute('points');
+        await page.getByLabel('Crossed').check();
+        const ghost = await demo.locator('[data-part=ghost]').getAttribute('points');
+        if ((await demo.locator('[data-part=coupler]').getAttribute('points')) === coupler || !ghost) say('switching the assembly changed nothing');
+        await demo.getByRole('radio', { name: 'Open', exact: true }).check();
+        await demo.locator('.fb-play').click();                                         // play again
         // the keyboard: the crank to its longest makes the linkage non-Grashof, and the input then rocks between limits
         const slider = page.getByRole('slider', { name: /^Crank a/ });
         await slider.focus();
@@ -1180,26 +1243,22 @@ async function fourbarProblems() {
           }));
           if (beyond > 104.5) say(`the input went to ${beyond}°, past its limit`);
         }
-        // the other assembly: the coupler moves to where the ghost was
-        const coupler = await demo.locator('[data-part=coupler]').getAttribute('points');
-        await demo.locator('.fb-play').click();                                         // pause, so the frames compare
-        await page.getByLabel('Crossed').check();
-        const ghost = await demo.locator('[data-part=ghost]').getAttribute('points');
-        if ((await demo.locator('[data-part=coupler]').getAttribute('points')) === coupler || !ghost) say('switching the assembly changed nothing');
-        await demo.locator('.fb-play').click();                                         // play again
         await frames(page);
-        await demo.locator('.fb-play').click();
+        await hold(page, demo.locator('.fb-play'));
+        // The click handler pauses and draws the paused frame itself, so the label reads Play once the click lands.
         const stopped = await page.waitForFunction(() => document.querySelector('cad-fourbar .fb-play')?.textContent === 'Play',
           null, { timeout: 3000 }).then(() => true, () => false);
         const paused = await crank(page);
         await frames(page);
-        if (!stopped || (await crank(page)) !== paused) say('the pause button does not stop it');
-        const resumed = await page.evaluate(() => {
+        if (!stopped) say('the pause button does not stop it: a press held for 3 frames was not a click');
+        else if ((await crank(page)) !== paused) say('the pause button does not stop it: the crank moves while paused');
+        // Not paused, the click below would pause it instead: that failure is already reported once.
+        const resumed = stopped && await page.evaluate(() => {
           const d = document.querySelector('cad-fourbar');
           d.querySelector('.fb-play').click();
           return d.querySelector('[data-part=crank]').getAttribute('points');
         });
-        if (resumed !== paused) say('Play does not carry on from the paused frame');
+        if (stopped && resumed !== paused) say('Play does not carry on from the paused frame');
         await page.waitForFunction(() => document.querySelector('cad-fourbar .fb-status')?.textContent,
           null, { timeout: 3000 }).catch(() => say('the status line does not announce the result after an input'));
       }
@@ -1211,14 +1270,16 @@ async function fourbarProblems() {
   const late = await browser.newPage({ viewport: { width: 1366, height: 900 } });
   await late.addInitScript(firstFrame);
   await late.route('**/kit/fourbar.js', async r => { await new Promise(ok => setTimeout(ok, 2600)); await r.continue(); });
-  await late.goto(base + route, { waitUntil: 'networkidle' });
+  await late.goto(base + route);
+  await settled(late, '/kit/fourbar.js');
   const lateJump = await firstFrameProblem(late);
   if (lateJump) out.push(`1366px ${route} four-bar, its script 2.6 s late: ${lateJump}`);
   await late.close();
   const reduced = await browser.newPage({ reducedMotion: 'reduce' });
-  await reduced.goto(base + route, { waitUntil: 'networkidle' });
+  await reduced.goto(base + route);
+  await settled(reduced, '/kit/fourbar.js');
   const first = await crank(reduced);
-  await reduced.waitForTimeout(500);
+  await reduced.waitForTimeout(800);                 // past the status line's 700 ms announcement delay
   if (!first || (await crank(reduced)) !== first || (await reduced.locator('cad-fourbar .fb-play').textContent()) !== 'Play')
     out.push('reduced motion: the four-bar is moving');
   if (await reduced.locator('cad-fourbar .fb-status').textContent()) out.push('the four-bar status line spoke on page load');
@@ -1258,12 +1319,6 @@ async function foldProblems() {
     const r = el.getBoundingClientRect(), hit = document.elementFromPoint(r.left + Math.min(r.width / 2, 24), r.top + r.height / 2);
     return !!hit && (hit === el || el.contains(hit));
   };
-  // Stylesheets and fonts in, then two frames. With JavaScript off, Playwright can still run code in the page, but not
-  // wait on a promise there. WebKit holds document.fonts.ready while any request is pending (nav.js, held back), so
-  // the fonts' status is what counts.
-  const painted = (page, js = true) => !js ? page.waitForTimeout(150) :
-    page.waitForFunction(() => [...document.querySelectorAll('link[rel=stylesheet]')].every(l => l.sheet) && document.fonts.status === 'loaded',
-      null, { timeout: 10000 }).then(() => page.evaluate(() => new Promise(ok => requestAnimationFrame(() => requestAnimationFrame(ok)))));
   for (const width of [360, 1366]) for (const mode of ['script', 'slow', 'blocked', 'failing', 'none']) {
     const context = await browser.newContext({ viewport: { width, height: 800 }, javaScriptEnabled: mode !== 'none' });
     const page = await context.newPage();
@@ -1273,9 +1328,11 @@ async function foldProblems() {
     if (mode === 'slow') await page.route('**/kit/nav.js', async r => { await held; await r.continue(); });
     if (mode === 'blocked') await page.route('**/kit/nav.js', r => r.abort());
     if (mode === 'failing') await page.route('**/kit/nav.js', r => r.fulfill({ contentType: 'text/javascript', body: 'throw new Error("nav.js fails on purpose")' }));
-    await page.goto(base + '/docs/toolkit', { waitUntil: mode === 'slow' ? 'domcontentloaded' : 'networkidle' });
+    await page.goto(base + '/docs/toolkit', { waitUntil: mode === 'slow' ? 'domcontentloaded' : 'load' });
     const js = mode !== 'none';
-    // The rest of the page settles first (its diagrams render while nav.js is held back; networkidle never comes then).
+    // nav.js has run or failed (with JavaScript off, Playwright cannot wait on a promise in the page; held back, it
+    // has not arrived, and the rest of the page settles first: its diagrams render while nav.js is held back).
+    if (js && mode !== 'slow') await settled(page);
     if (mode === 'slow') await page.waitForFunction(() => !document.querySelector('pre.mermaid, code.language-mermaid') &&
       [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'), null, { timeout: 20000 })
       .catch(() => say('diagrams did not finish rendering'));
@@ -1343,7 +1400,8 @@ async function foldProblems() {
   // The window crossing the breakpoint: the fold the script opened for a wide window closes again on a phone, and one
   // the reader opened on a phone stays open through a wide window and back.
   const turn = await browser.newPage({ viewport: { width: 1366, height: 800 } });
-  await turn.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
+  await turn.goto(base + '/docs/toolkit');
+  await settled(turn);
   const isOpen = () => turn.locator('details.cad-nav-fold').evaluate(d => d.open, null, { timeout: 2000 }).catch(() => null);
   await turn.setViewportSize({ width: 360, height: 800 });
   await turn.waitForFunction(() => !document.querySelector('details.cad-nav-fold')?.open, null, { timeout: 2000 }).catch(() => {});
@@ -1370,7 +1428,8 @@ async function foldProblems() {
   // No link text around the filter pill while the tree is scrolled (#134): with a link under the filter's top edge, the
   // points just inside the pill's box at its rounded corners, and in the strips above and below it, hit the panel's cover.
   const desk = await browser.newPage({ viewport: { width: 1366, height: 800 } });
-  await desk.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
+  await desk.goto(base + '/docs/toolkit');
+  await settled(desk);
   const corners = await desk.locator('cad-nav .cad-nav-panel').evaluate(panel => {
     for (const g of panel.querySelectorAll('details')) g.open = true;
     const f = panel.querySelector('.cad-nav-filter');
@@ -1398,7 +1457,8 @@ async function foldProblems() {
 async function jumpProblems() {
   const out = [];
   const page = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
-  await page.goto(base + '/docs/explore', { waitUntil: 'networkidle' });
+  await page.goto(base + '/docs/explore');
+  await settled(page);
   const settle = () => page.evaluate(() => new Promise(done => {
     let last = -1, still = 0;
     const tick = () => { if (scrollY === last) { if (++still > 15) return done(); } else { still = 0; last = scrollY; } requestAnimationFrame(tick); };

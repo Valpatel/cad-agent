@@ -1,0 +1,95 @@
+{
+  "name": "fan-faces-known-profile",
+  "solver": "chtMultiRegionSimpleFoam (OpenFOAM v2512)",
+  "ambient_c": 25.0,
+  "domain_mm": [
+    [
+      -50,
+      -50,
+      0
+    ],
+    [
+      130,
+      130,
+      170
+    ]
+  ],
+  "base_cell_mm": 8.0,
+  "iterations": 100,
+  "ground": "adiabatic no-slip floor (a table)",
+  "solids": [],
+  "walls": [
+    {
+      "name": "box",
+      "cell_mm": 2.0
+    }
+  ],
+  "contacts": [],
+  "fans": [
+    {
+      "name": "fan",
+      "centre_mm": [
+        40,
+        40,
+        60
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "d_outer_mm": 50.0,
+      "d_hub_mm": 20.0,
+      "dp0_pa": 20.0,
+      "q_free_m3h": 30.0,
+      "q_free_cfm": 17.7,
+      "note": "exhaust fan, the box's only way out",
+      "model": "actuator disc, linear fan curve"
+    }
+  ],
+  "porous": [
+    {
+      "name": "heater",
+      "lo_mm": [
+        20,
+        20,
+        24
+      ],
+      "hi_mm": [
+        60,
+        60,
+        44
+      ],
+      "d": [
+        200000.0,
+        200000.0,
+        200000.0
+      ],
+      "f": [
+        0,
+        0,
+        0
+      ],
+      "e1": [
+        1,
+        0,
+        0
+      ],
+      "e2": [
+        0,
+        1,
+        0
+      ],
+      "heat_w": 50.0,
+      "ha_w_k": null,
+      "fin_temperature_c": null,
+      "target_w": 50.0,
+      "note": "evenly heated block"
+    }
+  ],
+  "heat_input_w": 50.0,
+  "limits": [
+    "steady RANS (k-omega SST): natural-convection plumes really fluctuate",
+    "converged means the temperatures, fan flow and heat leaving stopped changing and the heat leaving matches the heat put in (energy balance), not that the residuals reached a tolerance"
+  ]
+}

@@ -1,0 +1,33 @@
+**Changed**
+- `pyproject.toml` floors: `pillow>=13.0` (every older release has critical advisories), `vtk>=9.5.2` (past three
+  advisories fixed in 9.5.1; the lowest VTK that cadquery-ocp 7.9.3 pins), so `cadquery>=2.8`, `markdown>=3.8.1`,
+  `numpy>=1.22`, `pyyaml>=6.0` and `pytest>=9.0.3` (they had none). The package still runs on Python 3.10, but the
+  `cad` and `sim` extras now need 3.11 or newer: Pillow 13 and CadQuery 2.8 dropped 3.10, and every Pillow for 3.10
+  has critical advisories. CI now also runs the core suite at the numpy, PyYAML and pytest floors, and the site and
+  release tests at markdown 3.8.1 (#151).
+- The web kit's `three/` and `fonts/` folders have SHA-256 receipts (`SOURCE.json`), so a silent change to any of them
+  fails `tests/webkit-vendor.test.mjs` and the supply-chain report; every vendored kit file now has one. The receipt
+  for three.js names its npm tarball and records the one local patch to OrbitControls; the fonts' receipt names the
+  Google Fonts and licence URLs the files came from (#151).
+- `tools/resource_audit.py`: a web kit receipt can list a `patched` file (expected to differ from its package, and
+  it must record the SHA-256 of the package's file it was made against) while every other file must still match byte
+  for byte; a receipt for files not from npm says `"npm": false` and names a source for every file (a receipt that
+  just leaves out its package, or says `"npm": false` beside npm fields, is flagged and still checked as npm); an
+  install-script finding is per version, and accepting one needs its fingerprint, so the next version's script is
+  read again; `npx --no-install` counts as pinned, since it runs only what the lockfile installed (#151).
+- Catalogue and pages: moved repositories point at their new owners (BackplaneWorks/kistack,
+  BackplaneWorks/Backplane, the-dual-space/pymoo, meta/Ax), the OpenFOAM starter script's dead link points at its
+  new GitLab home, the plain-HTTP CalculiX links are fixed, install advice no longer tells readers to install from a
+  plugin marketplace or run `uvx` unpinned, and a `curl | sh` installer is described as the risk it is. The
+  supply-chain report's open findings fall from 1 critical, 15 medium, 37 low and 12 info to 1 critical, 0 medium,
+  24 low and 9 info, with 3 read and accepted in `research/security-accepted.yaml`. What is left: DOMPurify and
+  KaTeX inside Mermaid (#154), repositories with no push for a year (#154's automatic badges), Dependabot (owner,
+  #153), and sites that refuse scripts or did not answer (info).
+
+**Projects must change**
+- A project environment holding pillow below 13.0, vtk below 9.5.2 or markdown below 3.8.1 must upgrade them
+  (`pip install -U pillow vtk markdown`) before installing this cad-agent with the `cad`, `sim` or `site` extra. A
+  project that pins cadquery 2.6 or 2.7 (cadquery-ocp 7.8, which pins vtk 9.3.1) must move to cadquery 2.8 (#151).
+- A project that installs the `cad` or `sim` extra on Python 3.10 (for example a JetPack 6 system Python) must use a
+  Python 3.11 or newer virtual environment; the core package and its required dependencies still install on 3.10
+  (#151).

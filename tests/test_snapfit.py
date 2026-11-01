@@ -129,9 +129,10 @@ from cadagent.mechanical.compliant import allowables as al
 
 @pytest.mark.parametrize("name, along, across", [
     # research/compliant-mechanisms.md section 6, single joining, to its rounding
-    ("pla-polymaker", 0.011, 0.009), ("pla-bambu-basic", 0.010, 0.010), ("petg-polymaker", 0.017, 0.016),
-    ("petg-bambu-basic", 0.023, 0.023), ("petg-bambu-hf", 0.013, 0.010), ("asa-polymaker", 0.013, 0.008),
-    ("asa-bambu", 0.015, 0.012), ("copa-polymaker-dry", 0.020, 0.0065), ("copa-polymaker-wet", 0.033, 0.0085),
+    ("pla-polymaker", 0.011, 0.009), ("pla-bambu-basic", 0.0095, 0.0095), ("pla-bambu-matte", 0.0107, 0.0092),
+    ("petg-polymaker", 0.017, 0.016), ("petg-bambu-basic", 0.0128, 0.0096), ("petg-bambu-hf", 0.013, 0.010),
+    ("petg-cf-bambu", 0.0100, 0.0100), ("asa-polymaker", 0.013, 0.008), ("asa-bambu", 0.0106, 0.0102),
+    ("copa-polymaker-dry", 0.020, 0.0065), ("copa-polymaker-wet", 0.033, 0.0085),
     ("pa6-cf20-polymaker-dry", 0.008, 0.008),           # capped at moulded glass-filled PA66 (0.89 % derived)
 ])
 def test_printed_allowables_match_the_derived_table(name, along, across):
@@ -148,7 +149,9 @@ def test_printed_rule_and_cap():
     assert d["z"]["governed_by"] == "0.5 x elongation at break" and d["z"]["strain"] == pytest.approx(0.0065)
     assert d["xy"]["governed_by"] == "0.7 x UTS/E"
     assert d["status"].startswith("derived")
-    capped = al.PrintedMaterial("x", "test", (100, 100), (50, 50), (100, 100), moulded_cap=0.04)
+    sheet = al.Sheet("m", "test sheet", "V1", "2026-10-31", "p. 1", "https://example.org", (100, 100), (50, 50),
+                     (100, 100))
+    capped = al.PrintedMaterial("x", (sheet,), moulded_cap=0.04)
     assert capped.single("along") == 0.04                     # 0.7*0.5 = 35 % would exceed the moulded PA66 value
     with pytest.raises(ValueError):
         copa.allowable("z")
@@ -314,9 +317,9 @@ def test_docs_ranges_match_the_datasheets():
     # the living page's stated across/along ranges for PLA, PETG, ASA and CoPA come from the PRINTED rows
     from pathlib import Path
     doc = (Path(__file__).resolve().parents[1] / "docs" / "compliant.md").read_text()
-    rows = [v for k, v in al.PRINTED.items() if not k.startswith("pa6-cf")]
-    strength = [v.uts_mpa[1] / v.uts_mpa[0] for v in rows]
-    elong = [v.break_pct[1] / v.break_pct[0] for v in rows]
+    rows = [v.sheets[0] for k, v in al.PRINTED.items() if not k.startswith("pa6-cf")]     # the current editions
+    strength = [s.uts_mpa[1] / s.uts_mpa[0] for s in rows]
+    elong = [s.break_pct[1] / s.break_pct[0] for s in rows]
     stated = f"{round(min(strength) * 100)}–{round(max(strength) * 100)} % of the in-plane strength but only " \
              f"{round(min(elong) * 100)}–{round(max(elong) * 100)} % of the elongation"
     assert " ".join(doc.split()).count(stated) == 1, stated

@@ -103,48 +103,69 @@ PE flexible 0.55–0.60 (×1.2) · PVC 0.55–0.60 (×1.0).
 
 ## 5. FDM anisotropy: in-plane (X-Y) vs inter-layer (Z) data from manufacturer TDS (read)
 
-All specimens were 100 % infill, ISO 527 / GB/T 1040. Z means pulled across the layers.
+All specimens were 100 % infill, ISO 527 / GB/T 1040. Z means pulled across the layers. Each row is the maker's current
+edition, read on 2026-10-31 (#156). Where an earlier edition differs, `cadagent.mechanical.compliant.allowables` keeps both
+and takes the cautious one per quantity (§6); the earlier values are under the chart.
 
 | Material (TDS version) | E XY / Z (MPa) | UTS XY / Z (MPa) | Elong. at break XY / Z (%) | Z/XY strength | Z/XY strain | Source |
 |---|---|---|---|---|---|---|
-| PLA Basic, Bambu (V2.0) | 2680 / 2160 | 39 / 35 | 12.2 / 7.5 | 0.90 | 0.61 | [BBL-PLA] |
-| PLA Matte, Bambu (V2.0) | 1960 / 1670 | 32 / 25 | 32.8 / 4.8 | 0.78 | 0.15 | [BBL-PLAM] |
+| PLA Basic, Bambu (V3.0) | 2580 / 2060 | 35 / 31 | 12.2 / 7.5 | 0.89 | 0.61 | [BBL-PLA] |
+| PLA Matte, Bambu (V3.0) | 1960 / 1670 | 30 / 22 | 14.8 / 4.8 | 0.73 | 0.32 | [BBL-PLAM] |
 | PolyLite PLA, Polymaker (V5.4) | 3427 / 3065 | 52.3 / 40.5 | 6.3 / 1.8 | 0.77 | 0.29 | [PM-PLA] |
-| PETG Basic, Bambu (V2.0) | 1460 / 1120 | 48 / 39 | 11.2 / 5.7 | 0.81 | 0.51 | [BBL-PETG] |
+| PETG Basic V3.0, Bambu (the reformulated filament; bars not said to be annealed) | 2780 / 2550 | 51 / 35 | 9.5 / 5.2 | 0.69 | 0.55 | [BBL-PETG3] |
+| PETG Basic V2.0, Bambu (the earlier filament; annealed and dried 65 °C/8 h) | 1460 / 1120 | 48 / 39 | 11.2 / 5.7 | 0.81 | 0.51 | [BBL-PETG] |
 | PETG HF, Bambu (V1.0) | 1810 / 1540 | 34 / 23 | 8.6 / 5.1 | 0.68 | 0.59 | [BBL-PETGHF] |
-| PETG-CF, Bambu (V2.0) | 2460 / 1340 | 59 / 38 | 10.4 / 4.7 | 0.64 | 0.45 | [BBL-PETGCF] |
+| PETG-CF, Bambu (V3.0) | 2460 / 1340 | 35 / 29 | 10.4 / 4.7 | 0.83 | 0.45 | [BBL-PETGCF] |
 | PolyLite PETG, Polymaker (V5.4) | 2117 / 1899 | 50.8 / 42.8 | 8.4 / 3.3 | 0.84 | 0.39 | [PM-PETG] |
-| ASA, Bambu (V2.0; annealed and dried 80 °C/12 h) | 2450 / 2120 | 52 / 35 | 9.2 / 4.6 | 0.67 | 0.50 | [BBL-ASA] |
-| PolyLite ASA, Polymaker (V5.4) | 2379 / 1965 | 43.8 / 32 | 6.7 / 1.65 | 0.73 | 0.25 | [PM-ASA] |
+| ASA, Bambu (V3.0; annealed and dried 80 °C/12 h) | 2450 / 2120 | 37 / 31 | 9.2 / 4.6 | 0.84 | 0.50 | [BBL-ASA] |
+| PolyLite ASA, Polymaker (V6.0, the same values as V5.4) | 2379 / 1965 | 43.8 / 32 | 6.7 / 1.65 | 0.73 | 0.25 | [PM-ASA] |
 | PolyMide CoPA, dry (annealed 80 °C/6 h) | 2703 / 2209 | 78.0 / 45.8 | 12.7 / 1.3 | 0.59 | 0.10 | [PM-COPA] |
 | PolyMide CoPA, wet (6.16 % moisture) | 724 / 660 | 34.3 / 13.7 | 13.2 / 1.7 | 0.40 | 0.13 | [PM-COPA] |
 | Fiberon PA6-CF20, dry (annealed 100 °C/16 h; V1.1) | 8637 / 3760 | 109.3 / 54.0 | 2.1 / 1.9 | 0.49 | 0.90 | [PM-PA6CF] |
 | Fiberon PA6-CF20, wet | 2508 / 1056 | 54.7 / 25.5 | 7.0 / 6.7 | 0.47 | 0.96 | [PM-PA6CF] |
-| PA6-CF, Bambu | — | — | 5.8 / 3.7 | — | 0.64 | [BBL-PA6CF] (s; the PDF now returns 404) |
+| PA6-CF, Bambu (V3.0, dry; annealed and dried 80 °C/12 h) | 4430 / 2170 | 102 / 48 | 5.8 / 3.7 | 0.47 | 0.64 | [BBL-PA6CF] |
 | TPU 95A HF, Bambu (V1.0) | 9.8 / 7.4 | 27.3 / 22.3 | >650 / >480 | 0.82 | — (both lower bounds) | [BBL-TPU] |
 | PolyFlex TPU95, Polymaker (V5.4) | 33.6 XY (ISO 37) | — | 551 XY | — | no Z data | [PM-TPU] |
 
-![Bar chart: for each filament, the strength and the strain to failure pulled across the layers, as a fraction of the in-plane value. Strength keeps 0.40 to 0.90; strain to failure keeps 0.10 to 0.61 for PLA, PETG, ASA and CoPA, and 0.90 to 0.96 for carbon-filled PA6; TPU's is not known](../docs/img/research/fdm-anisotropy.svg)
+![Bar chart: for each filament, the strength and the strain to failure pulled across the layers, as a fraction of the in-plane value. Strength keeps 0.40 to 0.89; strain to failure keeps 0.10 to 0.61 for PLA, PETG, ASA and CoPA, 0.64 for Bambu's carbon-filled PA6 and 0.90 to 0.96 for Polymaker's; TPU's is not known](../docs/img/research/fdm-anisotropy.svg)
 
 *Drawn from the table above by `tools/research_figures.py` (a test keeps the two in step). Pulled across the layers,
-most filaments keep 60–90 % of their strength but much less of their stretch; carbon-filled PA6 is the exception. TPU's
-strain ratio is not drawn: both its samples outlasted the test (>650 / >480 %), and a ratio of two lower bounds says
-nothing.*
+most filaments keep 60–90 % of their strength but much less of their stretch; Polymaker's carbon-filled PA6 is the
+exception. TPU's strain ratio is not drawn: both its samples outlasted the test (>650 / >480 %), and a ratio of two
+lower bounds says nothing.*
+
+**Earlier editions.** Bambu's V2.0 sheets (a reseller's copies: [BBL-PLA-V2], [BBL-PLAM-V2], [BBL-PETGCF-V2],
+[BBL-ASA-V2]) tested the same filaments and gave higher strengths: PLA Basic E 2680 / 2160 MPa and UTS 39 / 35 MPa;
+PLA Matte UTS 32 / 25 MPa and elongation 32.8 / 4.8 %; PETG-CF UTS 59 / 38 MPa; ASA UTS 52 / 35 MPa (the other values
+as V3.0). PETG Basic is two filaments, both in the table: V3.0's text calls it "the all-new Bambu Lab PETG Basic … The
+refined formula", and its bars are not said to be annealed (it advises against annealing PETG Basic), where V2.0's
+were annealed and dried at 65 °C for 8 h. A spool does not say which it is.
 
 Reading the table:
 - **Strain to failure across the layers falls far more than strength.** For PLA, PETG, ASA and CoPA the Z/XY strength
-  ratio is 0.40–0.90 (0.59–0.90 without wet CoPA), but the Z/XY elongation ratio is 0.10–0.61. How much of the
+  ratio is 0.40–0.89 (0.59–0.89 without wet CoPA), but the Z/XY elongation ratio is 0.10–0.61. How much of the
   *allowable* this costs depends on which limit governs in §6. Where 0.7·UTS/E governs, or the two limits are close
-  (PLA, PETG, Bambu ASA), the allowable across the layers is 78–100 % of the in-plane value. Where half the elongation
+  (PLA, PETG, Bambu ASA), the allowable across the layers is 75–100 % of the in-plane value. Where half the elongation
   at break governs across the layers (Polymaker ASA, CoPA) it falls to 26–64 %. The orientation rule below applies
   either way: the notch effect of layer lines is not in a tensile test.
 - **Allum et al. 2020** found that the bond between layers has bulk strength in printed PLA. Their explanation for the
   anisotropy is the extruded-filament geometry: grooves and voids concentrate strain, not incomplete bonding [ALL]. So
   layer lines act like notches, and Bayer's "half the elongation at break" rule for materials without a yield point is
   the right model for Z.
-- **Carbon fibre lowers in-plane strain** (PA6-CF20: 2.1 % XY dry), so CF grades are poor for snap fits even though they
-  are strong. Moisture roughly halves CF-nylon strength [PM-PA6CF]. That matches `cadagent.simulation.fea`'s ×0.6 humid
-  factor.
+- **Carbon fibre lowers in-plane strain** (PA6-CF20: 2.1 % XY dry; Bambu PA6-CF 5.8 %), so CF grades are poor for snap
+  fits even though they are strong. Bambu's PA6-CF keeps 64 % of its elongation across the layers, against 90–96 % for
+  Polymaker's PA6-CF20, so the fibre's levelling effect is not general.
+- **Moisture.** Water-saturated PA6-CF20 bars (5.30 % moisture) keep 0.50 / 0.47 of the dry strength but only
+  0.29 / 0.28 of the dry modulus (XY / Z) [PM-PA6CF]. No sheet read gives a printed CF-PA6 in room air. BASF's moulded PA6
+  datasheets give dry / conditioned values ("cond."; equilibrium moisture at 23 °C / 50 % r.h. is 2.7–3.2 % unfilled,
+  1.9–2.3 % with 30 % glass): unfilled PA6 keeps 0.31 of its tensile modulus (Ultramid B3S HP R01, 1000 / 3200 MPa, a
+  preliminary sheet) and 0.50 of its yield stress; 30 % glass-filled PA6 keeps 0.58 of its modulus and 0.57 of its
+  strength (Ultramid B3EG6 SI, 5650 / 9700 MPa, 105 / 185 MPa at break) [BASF-B3S][BASF-B3EG6]. Bambu's PA6-CF takes
+  up 2.35 % at 25 °C / 55 % RH [BBL-PA6CF]. So `cadagent.simulation.fea`'s humid PA6-CF rows take Polymaker's
+  saturated ratios for both modulus and strength. That is a judgement for the cautious end, not a measured room-air
+  value: a filled print plausibly sits between the unfilled and glass-filled moulded ratios (0.31–0.58), so in room
+  air these rows may be up to about 2x too soft. That is cautious for deflection, but a force or stress worked out at
+  a given travel reads low (#157).
 - **Orientation rule.** Lay the flexing member in XY and keep the joining direction independent of the bending
   direction. A cantilever built along Z is "poor", and the stair-step notches add stress concentration [KLA]. Hubs:
   avoid Z-built cantilevers; MJF root at least 1 mm thick; fillet ≥ 0.5×root thickness; width ≥ 5 mm [HUBS-SF].
@@ -175,16 +196,22 @@ Rule:
 3. Never exceed the moulded value for the same polymer family (§3).
 4. In Z, use min(Z, XY).
 5. Bayer's own example designs at ½ε_pm, which is a factor of 2.
+6. Where a filament has more than one edition of its sheet, apply rules 1–4 to each edition's own values and take the
+   lowest allowable; take the mating force from the highest modulus and the retention force from the lowest (each
+   the cautious side; both above the secant modulus at the design strain, so retention stays optimistic) (#156).
 
 | Material (TDS) | XY single / repeat | Z single / repeat | static74 skill, in-plane single / repeat / across layers [S74] | AgentCAD table, design value before its printing derate [AGCAD] |
 |---|---|---|---|---|
 | PLA (Polymaker) | 1.1 / 0.6 % | 0.9 / 0.5 % | 2.0 / 1.2 / ≤0.5 % | 1.2 % |
-| PLA Basic (Bambu) | 1.0 / 0.6 % | 1.0 / 0.6 % | — | — |
+| PLA Basic (Bambu V3.0; V2.0 gave 1.0 %) | 0.95 / 0.57 % | 0.95 / 0.57 % | — | — |
+| PLA Matte (Bambu V3.0; V2.0 gave 1.1 / 1.0 %) | 1.1 / 0.64 % | 0.92 / 0.55 % | — | — |
 | PETG (Polymaker) | 1.7 / 1.0 % | 1.6 / 0.95 % | 3.6 / 2.1 / ≤1.0 % | 3.0 % |
-| PETG Basic (Bambu) | 2.3 / 1.4 % | 2.3 / 1.4 % | — | — |
-| PETG HF (Bambu) | 1.3 / 0.8 % | 1.0 / 0.6 % | — | — |
+| PETG Basic (Bambu V3.0, the reformulated filament: used) | 1.3 / 0.77 % | 0.96 / 0.58 % | — | — |
+| PETG Basic (Bambu V2.0, the earlier filament) | 2.3 / 1.4 % | 2.3 / 1.4 % | — | — |
+| PETG HF (Bambu V1.0) | 1.3 / 0.8 % | 1.0 / 0.6 % | — | — |
+| PETG-CF (Bambu V3.0; V2.0 gave 1.7 %) | 1.0 / 0.60 % | 1.0 / 0.60 % | — | — |
 | ASA (Polymaker) | 1.3 / 0.8 % | 0.8 / 0.5 % | 2.0 / 1.2 / 0.3–1.0 % | — |
-| ASA (Bambu) | 1.5 / 0.9 % | 1.2 / 0.7 % | — | — |
+| ASA (Bambu V3.0; V2.0 gave 1.5 / 1.2 %) | 1.1 / 0.63 % | 1.0 / 0.61 % | — | — |
 | CoPA, dry (Polymaker) | 2.0 / 1.2 % | 0.65 / 0.4 % | 3–4 / 2 / ≤0.4 % | PA 6 % (moulded basis) |
 | CoPA, wet | 3.3 / 2.0 % | 0.85 / 0.5 % | — | — |
 | PA6-CF20, dry | 0.9 / 0.5 % | 0.9 / 0.5 % | — | — |
@@ -264,24 +291,41 @@ cases are its tests.
 - **[ALL]** Allum et al., *Addit. Manuf.* 34 (2020) 101297:
   https://hull-repository.worktribe.com/output/4511720/interlayer-bonding-has-bulk-material-strength-in-extrusion-additive-manufacturing-new-understanding-of-anisotropy
   (abstract)
-- **Bambu TDS mirrors**
-  - [BBL-PLA] https://www.additive-x.com/shop/mpattachments/file/viewonline/id/494/product_id/2236
-  - [BBL-PLAM] …/id/513/product_id/2261
-  - [BBL-PETG] …/id/580/product_id/2330
-  - [BBL-PETGCF] …/id/596/product_id/2346
-  - [BBL-ASA] …/id/612/product_id/2399
-  - [BBL-TPU] …/id/823/product_id/2584
-  - [BBL-PETGHF] https://botland.com.pl/img/art/inne/25540_karta_produktu.pdf
-  - [BBL-PA6CF] https://polyalkemi.no/wp-content/uploads/2024/01/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf (404 on
-    2026-10-31)
-- **Polymaker TDS** (wiki; append `.md` for the text)
-  - [PM-PLA]
-    https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/pla/polylite-tm-pla
-  - [PM-PETG] …/petg-pet/polylite-tm-petg
-  - [PM-ASA] …/abs-asa/polylite-tm-asa
-  - [PM-COPA] …/nylon/polymide-tm-copa
-  - [PM-TPU] …/tpu/polyflex-tm-tpu95
-  - [PM-PA6CF] https://cdn.shopify.com/s/files/1/0548/7299/7945/files/TDS_FIBERON_PA6-CF20_V1.1_EN.pdf
+- **Bambu Lab technical data sheets**, Bambu's own copies (linked from each product page on its store), read on
+  2026-10-31: the mechanical properties are on p. 2 of each. Dates are the PDFs' creation dates; the sheets carry none.
+  - [BBL-PLA] PLA Basic V3.0 (2025-04-25):
+    https://store.bblcdn.com/s1/default/58b85d0f3db94878854a28fdb8a0006e/Bambu_PLA_Basic_Technical_Data_Sheet.pdf
+  - [BBL-PLAM] PLA Matte V3.0 (2025-04-25):
+    https://store.bblcdn.com/s7/default/5b061f2feeac4ba88f355a33248bbda7/Bambu_PLA_Matte_Technical_Data_Sheet.pdf
+  - [BBL-PETG3] PETG Basic V3.0, the reformulated filament (2026-01-25):
+    https://store.bblcdn.com/s1/default/cb94589bf7994fdcbfa833badefae9cd/Bambu_PETG_Basic_Technical_Data_Sheet.pdf
+  - [BBL-PETGHF] PETG HF V1.0 (2024-07-18): https://store.bblcdn.com/3a230e260a3a47c2b0db0156e07eef91.pdf (the same file
+    a reseller serves at https://botland.com.pl/img/art/inne/25540_karta_produktu.pdf)
+  - [BBL-PETGCF] PETG-CF V3.0 (2023-08-29): https://store.bblcdn.com/626e4f424bf345ae965ad0ddfcaf2459.pdf
+  - [BBL-ASA] ASA V3.0 (2023-09-19): https://store.bblcdn.com/ad7b08230c164e72856cffbe06bb7dc9.pdf
+  - [BBL-PA6CF] PA6-CF V3.0 (2023-08-30): https://store.bblcdn.com/b2abc59ac250492b979a52f1ce3e61b3.pdf
+  - [BBL-TPU] TPU 95A HF V1.0 (2023-11-15): https://store.bblcdn.com/58df32731eab4c90a7dac9b12e13ba88.pdf
+- **Bambu Lab V2.0 sheets**, a reseller's copies (Additive-X; Bambu no longer serves them), p. 2:
+  - [BBL-PLA-V2] PLA Basic V2.0 (2023-03-11): https://www.additive-x.com/shop/mpattachments/file/viewonline/id/494/product_id/2236
+  - [BBL-PLAM-V2] PLA Matte V2.0 (2023-05-10): …/id/513/product_id/2261
+  - [BBL-PETG] PETG Basic V2.0, the earlier filament (2023-06-26): …/id/580/product_id/2330
+  - [BBL-PETGCF-V2] PETG-CF V2.0 (2023-03-11): …/id/596/product_id/2346
+  - [BBL-ASA-V2] ASA V2.0 (2023-07-26): …/id/612/product_id/2399
+- **Polymaker technical data sheets** (PDFs linked from Polymaker's wiki pages), read on 2026-10-31:
+  - [PM-PLA] PolyLite PLA V5.4 (2024-04-29), p. 4: https://cdn.shopify.com/s/files/1/0548/7299/7945/files/PolyLite_PLA_TDS_EN_V5.4.pdf
+  - [PM-PETG] PolyLite PETG V5.4 (2024-04-22), p. 4: …/files/PolyLite_PETG_TDS_EN_V5.4.pdf
+  - [PM-ASA] Polymaker ASA V6.0 (2025-12-02; "based on testing with Polymaker PolyLite ASA"), p. 1, served at
+    …/files/PolyLite_ASA_TDS_EN_V5.4.pdf; its mechanical values are V5.4's
+  - [PM-COPA] PolyMide CoPA V5.4 (2024-04-14), p. 4: …/files/PolyMide_CoPA_TDS_V5.4.pdf
+  - [PM-TPU]
+    https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/tpu/polyflex-tm-tpu95
+  - [PM-PA6CF] Fiberon PA6-CF20 V1.1 (2024-12-08), p. 1 (dry and wet tables):
+    https://cdn.shopify.com/s/files/1/0548/7299/7945/files/TDS_FIBERON_PA6-CF20_V1.1_EN.pdf
+- **BASF moulded PA6 datasheets** (dry / cond.), read on 2026-10-31:
+  - [BASF-B3S] Ultramid B3S HP R01, preliminary product datasheet (PDF of 2026-08-31), p. 1:
+    https://download.basf.com/p1/8a80825f8ec1f32b018ee0f5a5bf6e14/en/Ultramid%25C2%25AE_B3S_HP_R01_UNCOLORED
+  - [BASF-B3EG6] Ultramid B3EG6 SI (PDF of 2026-08-31), p. 1:
+    https://download.basf.com/p1/8a8082587fd4b608017fd65d64045a34/en/ULTRAMID%25C2%25AE_B3EG6_SI_UNCOLORED
 - **[HP]** HP white paper, Jet Fusion 5200 mechanical properties:
   https://info.sculpteo.com/hubfs/Material%20documentation/PA11%20HP/TDS%20HP%20pa12%20pa12gb%20pa11%20pp%20(1).pdf
   (read)

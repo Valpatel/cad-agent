@@ -7,7 +7,7 @@ two are tested against one set of golden vectors, so a demo never shows a number
 function states its SI units and its validity limits, and cites its source by author, title, edition and section.
 
 ```mermaid
-flowchart LR
+flowchart TD
     S["Books, guides, standards<br/>Roark · Shigley · Covestro · Norton<br/>Incropera · White · ISO 68-1, 898-1"] --> P["cadagent.formulas<br/>(Python, SI, cited)"]
     C["cadagent.compliant<br/>snapfit · allowables"] --> P
     P --> A["agents<br/>catalogue() · snap_arm() …"]

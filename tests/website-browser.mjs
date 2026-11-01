@@ -312,10 +312,15 @@ try {
   // A wheel over the page tree scrolls the page when the tree has nothing to scroll (review 3: the panel trapped it).
   const desk = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
   await desk.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
-  const panel = await desk.locator('cad-nav .cad-nav-panel').evaluate(p => {
-    const r = p.getBoundingClientRect(); return { fits: p.scrollHeight <= p.clientHeight + 1, x: r.left + r.width / 2, y: r.top + 200 };
+  const measure = () => desk.locator('cad-nav .cad-nav-panel').evaluate(p => {
+    const r = p.getBoundingClientRect();
+    return { over: p.scrollHeight - p.clientHeight, fits: p.scrollHeight <= p.clientHeight + 1, x: r.left + r.width / 2, y: r.top + 200 };
   });
-  if (!panel.fits) problems.push('1920px /docs/toolkit: the tree overflows its panel; pick a page where it fits');
+  let panel = await measure();
+  // The tree grows with the site (at this width the outline is in the right-hand rail, so every page's tree is the
+  // same height): make the window taller until the tree has nothing to scroll, which is the case under test.
+  if (!panel.fits) { await desk.setViewportSize({ width: 1920, height: 1080 + panel.over + 40 }); panel = await measure(); }
+  if (!panel.fits) problems.push('1920px /docs/toolkit: the tree overflows its panel even in a taller window');
   await desk.mouse.move(panel.x, panel.y);
   await desk.mouse.wheel(0, 300);
   await desk.waitForTimeout(400);

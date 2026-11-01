@@ -285,11 +285,14 @@ from cadagent.publish.htmlreport import render_page, canonical_status, SCHEMA_VE
 from cadagent.links import missing_links
 from cadagent.mechanical.connectors import (PLUG_FAMILIES, plug_segments, window, window_margins, PanelFrame, envelope,
                                             check_ports, draw_ports)
+from cadagent.mechanical.linkages import (sweep_fourbar, sweep_fivebar, sweep_fivebar_tip, fivebar_workspace,
+                                          fivebar_reach, Linkage)
 from cadagent.package import build_package
 from cadagent.publish.serve import make_server
 from cadagent.simulation.fea import Study, MATERIALS, Material, plane_at, cylinder_at, in_box, near, any_of
 from cadagent.simulation.robot import (Body, combine, box_body, cylinder_body, solid_mass_properties, printed_part_body,
-                                       Link, Joint, Visual, Collision, Motor, write_urdf, write_mjcf, check_urdf)
+                                       Link, Joint, Visual, Collision, Motor, LoopClosure, write_urdf, write_mjcf,
+                                       check_urdf)
 from cadagent.simulation.explore import (explore_config, load_configured, check_catalogue, load_design, resolve, bom,
                                          load_evaluator, evaluate_design, compare_designs, comparison, write_comparison,
                                          swaps)
@@ -573,7 +576,10 @@ Turns CAD parts into a simulator model with real mass properties:
 - `box_body`, `cylinder_body` and `point_body` model bought parts from their catalogue mass. `Body` objects add with
   the parallel-axis theorem, so a link is the sum of everything bolted to it.
 - `write_urdf` and `write_mjcf` write the same link tree. The MJCF adds motors, joint armature and friction, an IMU
-  site and a floor. Both refuse a closed loop: model a four-bar or five-bar leg as an equivalent serial chain.
+  site and a floor. A tree cannot hold a closed loop, such as a four-bar or a five-bar leg. Cut it at one pin and
+  pass that pin to `write_mjcf` as a `LoopClosure`: MuJoCo holds it with an equality constraint. Build the model in a
+  pose where the loop closes (give `other_anchor` and it is checked). URDF has no way to close the loop, so keep it
+  in the controller. `cadagent.mechanical.linkages` solves the loop's poses ([Linkages](linkages.md)).
 - `check_urdf` checks the tree, inertias (positive definite, triangle inequality), mesh files and joint limits.
   text-to-cad's `cadgen urdf validate` is a second, independent validator.
 

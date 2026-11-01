@@ -31,7 +31,7 @@ flowchart TD
 | `fea.py` | Linear-elastic stiffness and strength studies for any CAD part; a printed part's stress against its layers (`layer_check`); the material data each result used; exports the interactive FEA viewer's data |
 | `cfd.py` | Steady conjugate heat transfer cases for OpenFOAM, written from CAD |
 | `topopt.py` | Topology optimisation with [pyMOTO](https://github.com/aatmdelissen/pyMOTO) (Arnoud Delissen, MIT) |
-| `robot.py` | Mass properties from CAD, links and joints, URDF writing and checking |
+| `robot.py` | Mass properties from CAD, links and joints, URDF writing and checking; MJCF with closed loops (`LoopClosure`) |
 | [`explore/`](explore/__init__.py) | Pick parts from catalogues, evaluate whole designs, rank the trade-offs (`cad-agent catalogue`, `compare`, `optimise`) |
 | `simviz.py` | Pictures and animations of results with [PyVista](https://github.com/pyvista/pyvista) / VTK, off screen |
 | `simreport.py` | A standalone HTML page: before/after metrics, figures, videos, limits |

@@ -48,6 +48,7 @@ svg.glyph{flex:none;width:20px;height:20px;fill:none;stroke:currentColor;stroke-
 .play-cover img{display:block;width:100%;height:100%;object-fit:cover}
 .play-cover[data-fit=contain] img{object-fit:contain;padding:14px 18px}
 .play-text{display:flex;flex-direction:column;gap:4px;padding:14px 16px 16px}
+.play-text .pill{align-self:flex-start;margin:0}
 .play-name{font-weight:750;font-size:17px;letter-spacing:-.3px;margin-top:4px}
 .play-what{font-size:13px;line-height:1.55;color:#4c6260}
 .pill-mode{border-color:#173d3c40}.pill-interactive{background:#ffe1cc;border-color:#f3c3a3}.pill-animated{background:#ffedab;border-color:#ecd67f}.pill-render{background:#e2f0f5;border-color:#c3dbe4}
@@ -71,6 +72,8 @@ svg.glyph{flex:none;width:20px;height:20px;fill:none;stroke:currentColor;stroke-
 .cat-side{position:sticky;top:calc(var(--bar-top) + 70px);max-height:calc(100vh - var(--bar-top) - 86px);overflow:auto;scrollbar-width:thin;padding:0 6px 24px 0}
 .sheet-head{display:none}
 .side-title{font:700 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:4px 0 8px}
+.tree-key{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:-2px 0 10px;font-size:12px;color:#405f5c}
+.tree-key .gyro{margin-left:8px}
 .area-tree,.area-tree ul{list-style:none;margin:0;padding:0}
 .area-tree summary{display:flex;align-items:center;gap:9px;min-height:38px;padding:4px 8px;border-radius:10px;cursor:pointer;font-weight:700;font-size:14px;list-style:none}
 .area-tree summary::-webkit-details-marker{display:none}
@@ -129,13 +132,13 @@ cad-gallery:not([data-overview]) .cat-section-head p,cad-gallery:not([data-overv
 /* the strip is for browsing: a search, a filter or a kind brings the results up under the search box */
 cad-gallery[data-filtered] .play,cad-gallery:not([data-overview]) .play{display:none}
 /* the overview shows the demos in the strip above; they come back as a group when filtering or on their tab */
-@media(scripting:enabled){cad-gallery[data-overview]:not([data-filtered]) [data-group=demos]{display:none}}
+@media(scripting:enabled){cad-gallery[data-overview]:not([data-filtered]):not([data-failed]) [data-group=demos]{display:none}}
 #cat-results{scroll-margin-top:calc(var(--bar-top) + 64px)}
 .cat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 .cat-card{display:flex;flex-direction:column;padding:0 0 14px;overflow:hidden;background:#fff;border-color:#d4ded4;scroll-margin-top:calc(var(--bar-top) + 70px)}
 .cat-card:target{box-shadow:0 0 0 3px var(--orange)}
 .cat-card p{display:block;-webkit-line-clamp:unset;overflow:visible;margin:0}
-.card-cover{order:-1;display:block;aspect-ratio:4/3;margin:0 0 2px;background:linear-gradient(145deg,var(--tint-a,#f6f6f0),var(--tint-b,#e4e6dc));border-bottom:1px solid #173d3c14}
+.card-cover{order:-1;display:block;aspect-ratio:4/3;min-height:0;overflow:hidden;margin:0 0 2px;background:linear-gradient(145deg,var(--tint-a,#f6f6f0),var(--tint-b,#e4e6dc));border-bottom:1px solid #173d3c14}
 .card-cover img{display:block;width:100%;height:100%;object-fit:cover}
 .card-cover[data-fit=contain] img{object-fit:contain;padding:12px}
 .cat-card h3{margin:12px 16px 0;font-size:16px;line-height:1.3;letter-spacing:-.3px;overflow-wrap:anywhere}
@@ -147,6 +150,8 @@ cad-gallery[data-filtered] .play,cad-gallery:not([data-overview]) .play{display:
 .cat-card[data-kind=tools] h3{font-family:var(--mono);font-size:15px;letter-spacing:-.4px}
 .cat-card .card-kicker{display:flex;flex-wrap:wrap;gap:4px;margin:8px 16px 0}
 .card-kicker .pill{margin:0}
+/* pills on cards and tiles: 11px, readable on a phone */
+.cat-card .pill,.play-text .pill{font-size:11px;letter-spacing:.02em;padding:4px 8px}
 .cat-card .card-what{margin:8px 16px 0;font-size:13px;line-height:1.55;color:#4c6260;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .cat-card .card-facts{display:flex;flex-wrap:wrap;gap:4px 10px;margin:9px 16px 0;font:600 11px var(--mono);color:#3f5652}
 .lic{padding:1px 7px;border-radius:999px;border:1px solid}.lic-permissive{background:#e9f6dc;border-color:#9fca7e}.lic-copyleft{background:#ffefe3;border-color:#ebb08d}.lic-other{background:#fff;border-color:#9aa9a3;border-style:dashed}
@@ -171,6 +176,7 @@ cad-gallery[data-filtered] .play,cad-gallery:not([data-overview]) .play{display:
 /* narrow cards (two or three columns on smaller screens): the copy button takes the row, maturity shows as its bar */
 .cat-card{container-type:inline-size}
 @container (max-width:270px){
+  .card-kicker .pill-kind{display:none}
   .card-call code{display:none}
   .card-call>.cad-copy-btn{flex:1;justify-content:center}
   .card-meta .mat{font-size:0;gap:0}
@@ -215,7 +221,7 @@ cad-gallery[data-filtered] .play,cad-gallery:not([data-overview]) .play{display:
   .cat-toolbar{gap:10px}
   .cat-toolbar .filter-status{order:3;flex-basis:100%}
   .sort{margin-left:auto}
-  .sort span{display:none}
+  .sort .sort-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
   .sort select{min-height:44px}
   .area-panel{padding:16px;gap:14px}.area-panel svg.glyph{width:48px;height:48px}.area-panel h2{font-size:21px}
   .cat-section{margin-top:22px}
@@ -228,7 +234,6 @@ cad-gallery[data-filtered] .play,cad-gallery:not([data-overview]) .play{display:
   .cat-card[data-kind=tools] h3{font-size:13px}
   .cat-card h3 a::before{border-radius:14px}
   .cat-card .card-kicker{margin:6px 10px 0}
-  .cat-card .pill{font-size:8px;padding:4px 6px}
   .cat-card .card-what{margin:6px 10px 0;font-size:12px;line-height:1.5}
   .cat-card .card-facts{margin:6px 10px 0;font-size:10px;gap:3px 8px}
   .cat-card .card-facts>span:last-child{display:none}

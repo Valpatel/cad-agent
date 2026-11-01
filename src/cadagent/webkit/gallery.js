@@ -30,14 +30,21 @@
  *   the page writes `data-over` on the cards past the limit in its own order, so the first paint already matches;
  * - the URL: every choice is a parameter (?kind=tools&area=gears&sort=stars), history works, `[data-gallery-link]`
  *   links merge their parameters into the current view (and their href is kept as the view they lead to), a #hash
- *   inside a group opens that group's tab; `[data-gallery-when="area:gears"]` elements show only for that choice;
+ *   inside a group opens that group's tab (and is written into the URL, so Back returns to it); a link that carries a
+ *   view opens scrolled to `[data-gallery-results]`; `[data-gallery-when="area:gears"]` elements show only for that choice;
  * - `[data-gallery-chips]` (removable chips for the active choices), `[data-gallery-status]` (a live count),
- *   `[data-gallery-empty]`, `[data-gallery-clear]`, `[data-gallery-active]` (how many filters are on);
+ *   `[data-gallery-empty]`, `[data-gallery-empty-scope]` (instead, when a one-value facet alone leaves nothing: an area
+ *   with nothing in it yet; `[data-gallery-scope-name]` inside it gets the choice's label), `[data-gallery-clear]`,
+ *   `[data-gallery-active]` (how many filters are on);
  * - a sheet for small screens: `[data-gallery-sheet]` opens as a modal dialog from `[data-gallery-sheet-open]` (the
  *   page's CSS decides when that button shows) and closes with `[data-gallery-sheet-close]`, Escape or a click outside;
  * - covers that move: an <img data-anim="moving.svg"> swaps to it while its card is hovered or focused
  *   (`data-anim-view`: while it is in view), and back; never under prefers-reduced-motion.
  * Labels and chips are text, never markup. No dependencies.
+ *
+ * If this module does not start (blocked, or an error), the page should set `data-failed` on the element; gallery.css
+ * then shows every card and hides `[data-gallery-js]` controls, as without script:
+ *   import('/kit/gallery.js').catch(() => {}).finally(() => el.hasAttribute('data-ready') || el.setAttribute('data-failed', ''));
  */
 
 const words = s => String(s || '').toLowerCase().split(/\s+/).filter(Boolean);
@@ -129,13 +136,21 @@ export class CadGallery extends Base {
     this.#setupTabs(signal);
     this.#state = this.#fromLocation();
     const target = this.#hashTarget();
+    let fromHash = false;
     if (target && !new URLSearchParams(location.search).has(this.tabParam)) {
       const group = target.closest('[data-group]');
-      if (group && (target.hasAttribute('data-item') || target.matches('[data-group], .anchor, [data-group] > [id]'))) this.#state.tab = group.dataset.group;
+      if (group && (target.hasAttribute('data-item') || target.matches('[data-group], .anchor, [data-group] > [id]'))) { this.#state.tab = group.dataset.group; fromHash = true; }
     }
     this.toggleAttribute('data-ready', true);
     this.#render();
+    // A tab chosen from an old #anchor goes into the address too, so Back returns to it.
+    if (fromHash) history.replaceState(history.state, '', this.#url() + location.hash);
+    // A link that carries a view (?kind=, ?area=, ?q=...) opens on its results, not on the page's introduction; not when
+    // the browser is restoring a scroll position (Back, reload).
+    const how = globalThis.performance?.getEntriesByType?.('navigation')[0]?.type;
     if (target && this.#state.tab) requestAnimationFrame(() => target.scrollIntoView({ block: 'start' }));
+    else if (!target && this.#url() !== location.pathname && how !== 'back_forward' && how !== 'reload')
+      requestAnimationFrame(() => this.results?.scrollIntoView({ block: 'start', behavior: 'instant' }));
 
     this.search?.addEventListener('input', () => { this.#state.q = this.search.value; this.#render(); this.#remember(true); }, { signal });
     this.search?.addEventListener('keydown', e => { if (e.key === 'Escape' && this.search.value) { this.search.value = ''; this.#state.q = ''; this.#render(); this.#remember(true); } }, { signal });
@@ -291,14 +306,24 @@ export class CadGallery extends Base {
       const [name, value] = el.dataset.galleryWhen.split(':');
       el.hidden = !(name === this.tabParam ? s.tab === value : s.facets[name]?.includes(value));
     }
-    const empty = this.querySelector('[data-gallery-empty]');
-    if (empty) empty.hidden = shown > 0;
+    // Nothing to show: either the words and filters exclude everything, or the chosen area (a single-value facet, with
+    // no words or other filters) simply has nothing in it yet; that gets its own message.
+    const tab = this.tabs.find(t => t.dataset.tab === s.tab && s.tab);
+    const tabName = tab ? tab.firstChild.textContent.trim().toLowerCase() : '';
+    const scoped = !patterns.length && Object.keys(s.facets).length > 0 && Object.keys(s.facets).every(n => this.single.includes(n));
+    const scopeName = scoped ? Object.entries(s.facets).map(([n, v]) => this.#labelOf(n, v[0])).join(', ') : '';
+    const scopeEmpty = scoped && !shown && !this.#items.some(it => matches(it, s, patterns, 'tab'));
+    const empty = this.querySelector('[data-gallery-empty]'), emptyScope = this.querySelector('[data-gallery-empty-scope]');
+    if (empty) empty.hidden = shown > 0 || (scoped && (!!emptyScope || !!s.tab));
+    if (emptyScope) emptyScope.hidden = !scopeEmpty;
+    for (const el of this.querySelectorAll('[data-gallery-scope-name]')) el.textContent = scopeName;
     const status = this.querySelector('[data-gallery-status]');
     if (status) {
-      const tab = this.tabs.find(t => t.dataset.tab === s.tab && s.tab);
-      const what = tab ? tab.firstChild.textContent.trim().toLowerCase() : this.nouns[shown === 1 ? 0 : 1];
-      status.textContent = !shown ? `No ${this.nouns[1]} match. Try fewer words or clear the filters.`
-        : filtered ? `${shown} of ${this.#items.filter(it => !s.tab || it.tab === s.tab).length} ${what}` : `${shown} ${what}`;
+      const what = tabName || this.nouns[shown === 1 ? 0 : 1];
+      status.textContent = scopeEmpty ? `Nothing in ${scopeName} yet.`
+        : !shown && scoped && s.tab ? `No ${tabName} in ${scopeName} yet.`
+          : !shown ? `No ${this.nouns[1]} match. Try fewer words or clear the filters.`
+            : filtered ? `${shown} of ${this.#items.filter(it => !s.tab || it.tab === s.tab).length} ${what}` : `${shown} ${what}`;
     }
     const active = Object.values(s.facets).reduce((n, v) => n + v.length, 0);
     for (const el of this.querySelectorAll('[data-gallery-active]')) el.textContent = active ? String(active) : '';
@@ -328,16 +353,20 @@ export class CadGallery extends Base {
     for (const el of this.querySelectorAll('[data-count-of]')) { const [n, v] = el.dataset.countOf.split(':'); set(el, facetCount(n, v)); }
   }
 
+  /** A choice's label, as its control shows it (text only). */
+  #labelOf(name, value) {
+    const el = this.facetLinks.find(a => a.dataset.facet === name && a.dataset.value === value) || this.boxes.find(b => b.name === name && b.value === value)?.closest('label');
+    return (el?.querySelector('.area-name, span:not([data-count]):not(.sr)') || el)?.textContent.trim() || value;
+  }
+
   /** One removable chip per active choice; its label is the control's own text, never markup. */
   #chips(s) {
     const box = this.querySelector('[data-gallery-chips]');
     if (!box) return;
     const chips = [];
-    const label = el => (el?.querySelector('.area-name, span:not([data-count]):not(.sr)') || el)?.textContent.trim() || '';
     if (s.q.trim()) chips.push([`“${s.q.trim()}”`, () => { this.#state.q = ''; if (this.search) this.search.value = ''; }]);
     for (const [name, values] of Object.entries(s.facets)) for (const v of values) {
-      const el = this.facetLinks.find(a => a.dataset.facet === name && a.dataset.value === v) || this.boxes.find(b => b.name === name && b.value === v)?.closest('label');
-      chips.push([label(el) || v, () => {
+      chips.push([this.#labelOf(name, v), () => {
         const rest = this.#state.facets[name].filter(x => x !== v);
         if (rest.length) this.#state.facets[name] = rest; else delete this.#state.facets[name];
       }]);
@@ -378,6 +407,9 @@ export class CadGallery extends Base {
       openers.forEach(b => b.setAttribute('aria-expanded', 'true'));
       (sheet.querySelector('[data-gallery-sheet-close]') || sheet).focus();
     };
+    // On a small screen (the sheet's button shows) the tree starts folded but for the chosen branch; wide screens keep
+    // the page's open tree as the map beside the results.
+    if (openers.some(o => o.offsetParent)) for (const d of sheet.querySelectorAll('details[open]')) if (!d.querySelector('[aria-current="true"]')) d.open = false;
     for (const o of openers) o.addEventListener('click', () => (sheet.hasAttribute('data-open') ? close() : open(o)), { signal });
     sheet.addEventListener('click', e => { if (e.target.closest('[data-gallery-sheet-close]') || e.target === sheet) close(); }, { signal });
     addEventListener('keydown', e => { if (e.key === 'Escape' && sheet.hasAttribute('data-open')) { e.preventDefault(); close(); } }, { signal });

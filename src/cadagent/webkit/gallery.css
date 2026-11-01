@@ -5,10 +5,12 @@
 cad-gallery [hidden]{display:none!important}
 /* The overview shows the first `limit` cards of each group (the page marks the rest data-over), and a "see all" link
    only where a group has more. With scripting off nothing is cut and the links are not needed. */
-@media(scripting:enabled){cad-gallery[data-overview] [data-item][data-over]{display:none}}
+@media(scripting:enabled){cad-gallery[data-overview]:not([data-failed]) [data-item][data-over]{display:none}}
 cad-gallery[data-ready][data-overview] [data-item][data-over]{display:none}
 cad-gallery:not([data-overview]) [data-gallery-more],cad-gallery [data-group]:not([data-more]) [data-gallery-more]{display:none}
 @media(scripting:none){cad-gallery [data-gallery-js]{display:none!important}}
+/* The page marks data-failed when gallery.js did not start (see the import in the kit README): the same as no script. */
+cad-gallery[data-failed] [data-gallery-js]{display:none!important}
 /* a choice that would leave nothing: muted, still readable (4.5:1 on light backgrounds) and still usable */
 :where(cad-gallery [data-empty]){color:var(--cad-gallery-muted,#5d716c)}
 :where(.cad-gallery-chip){display:inline-flex;align-items:center;gap:.4em;min-height:32px;padding:.25em .8em;border-radius:999px;cursor:pointer;

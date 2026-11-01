@@ -2,7 +2,9 @@
 - `cadagent.geometry.export_step` writes a cadquery `Assembly` too, with the same bytes on every export: the file
   `Assembly.save` writes (colours, names, placements), with a fixed header date, link ids 1, 2, ... in file order,
   each node added without a name called `<parent>.<k>` instead of a random uuid, and the colour records in one order
-  (OCCT writes them in heap-address order). Sub-shape names and colours (`Assembly.addSubshape`) are refused (#150).
+  (OCCT writes them in heap-address order). Sub-shape names and colours (`Assembly.addSubshape`) are refused, and
+  so are written names cadquery's reader would refuse or misread: two children of one node with one name, or a node
+  with the root's name (an unnamed root takes the file's name; pass `name=`) (#150).
 - `cadagent.project.source_date_epoch`, `source_time` and `source_stamp`: the date a build output records instead of
   the wall clock, `SOURCE_DATE_EPOCH` ([reproducible-builds.org](https://reproducible-builds.org/specs/source-date-epoch/)),
   else the last commit that changed the project outside its outputs (#150).
@@ -13,8 +15,12 @@
 - Report time stamps are the source date, never the build time, shown with where it came from
   (`2026-10-30 12:00 UTC (last commit)`): `header_meta.generated` in the results JSON and the report page,
   `simreport`'s `Generated`, the site's footer, the explore comparison's `generated` and the review bundle's
-  `created`. The site's document cards show each page's last commit date, not its file time. A project that commits
-  these pages no longer gets a diff on every rebuild, and committing them does not move their date (#150).
+  `created`. The site's document cards show each page's last commit date, not its file time. A `simreport` page is
+  dated by the project that holds it, wherever the script runs from. A project that commits these pages no longer
+  gets a diff on every rebuild, and committing them does not change them (#150).
+- The site's "Recent changes" table lists the commits that changed the project's sources: a commit of only its
+  outputs (exports, previews, the site, the release folder, the report page) is left out, and so are commits outside
+  the project's folder, so committing the site does not change the site again (#150).
 - `cad-agent release` and `step_timestamp` share one `SOURCE_DATE_EPOCH` parser: a malformed value stops the command
   with exit 2 (`release` used to ignore it and take the commit's date) (#150).
 

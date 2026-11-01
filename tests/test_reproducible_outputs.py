@@ -158,13 +158,12 @@ def test_a_real_change_still_changes_the_outputs_and_committing_them_does_not(tm
     pytest.importorskip("yaml")
     root = _project(tmp_path)
     before = _build(root, tmp_path)
-    # Committing the outputs themselves (a project that keeps its report in git) does not move their date. The
-    # site's "Recent changes" table lists the new commit: the history is one of its inputs.
+    # Committing the outputs themselves (a project that keeps its report and site in git) changes none of them: not
+    # their date, and not the site's "Recent changes" table, which lists the commits that changed a source.
     _commit(root, "outputs", LATER, *OUTPUTS)
     again = _build(root, tmp_path)
-    assert {k: v for k, v in again.items() if k != "site/index.html"} == \
-        {k: v for k, v in before.items() if k != "site/index.html"}
-    assert b"<td>outputs</td>" in again["site/index.html"] and b"as of 2001-02-03 04:05 UTC" in again["site/index.html"]
+    assert again == before
+    assert b"<td>first</td>" in again["site/index.html"] and b"<td>outputs</td>" not in again["site/index.html"]
 
     (root / "exports" / "box.stl").write_text("a changed mesh")              # an input changes, uncommitted
     changed = _build(root, tmp_path)
@@ -182,6 +181,7 @@ def test_a_real_change_still_changes_the_outputs_and_committing_them_does_not(tm
     for rel in OUTPUTS:                     # a rendered Markdown page shows no date; the manifest: build.py's hash
         if rel != "site/pages/readme-md.html":
             assert after[rel] != changed[rel], f"{rel} kept the old commit's date"
+    assert b"<td>bigger box</td>" in after["site/index.html"]
 
 
 def P_sha256(data: bytes) -> str:
@@ -258,6 +258,51 @@ def test_a_malformed_source_date_epoch_stops_package_report_and_release(tmp_path
         assert main([command, "--project", str(root)]) == 2, command
         assert "SOURCE_DATE_EPOCH='1.5' is not a whole number" in capsys.readouterr().err
     assert not (root / "exports" / "demo-review.zip").exists()
+    assert not (root / "exports" / "demo-review-manifest.json").exists()
+
+
+def test_a_malformed_source_date_epoch_leaves_the_package_and_site_as_they_were(tmp_path, monkeypatch):
+    """The date is read before anything is written: no manifest that no longer matches its zip, no half a site."""
+    pytest.importorskip("markdown")
+    from cadagent.publish import site
+
+    root = _project(tmp_path)
+    assert main(["package", "--project", str(root)]) == 0
+    built = {rel: (root / rel).read_bytes() for rel in ("exports/demo-review.zip", "exports/demo-review-manifest.json")}
+    (root / "README.md").write_text("# Demo\n\nA bigger box.\n")
+    monkeypatch.setenv("SOURCE_DATE_EPOCH", "1.5")
+    assert main(["package", "--project", str(root)]) == 2
+    assert {rel: (root / rel).read_bytes() for rel in built} == built
+    with pytest.raises(P.SourceDateEpochError):
+        site.build_site(root, {"title": "Demo", "pages": ["README.md"]}, "Demo")
+    assert not (root / "site").exists()
+
+
+def test_a_document_card_dates_a_page_whose_name_is_not_ascii(tmp_path):
+    """git quotes such paths in its output unless told not to (core.quotePath)."""
+    from cadagent.publish import site
+
+    root = _project(tmp_path)
+    (root / "docs" / "Gehäuse.md").write_text("# Gehäuse\n")
+    _commit(root, "housing", LATER, "docs/Gehäuse.md")
+    assert site.committed_dates(root, ["docs/Gehäuse.md", "docs/plan.md", "docs/none.md"]) == \
+        {"docs/Gehäuse.md": "2002-03-04", "docs/plan.md": "2001-02-03"}
+
+
+def test_a_simulation_page_is_dated_by_its_project_wherever_the_script_runs(tmp_path, monkeypatch):
+    from cadagent.simulation.simreport import write_report
+
+    root = _project(tmp_path)
+    (root / "sim").mkdir()
+    (root / "sim" / "run.py").write_text("print('run')\n")
+    _commit(root, "simulation", LATER, "sim/run.py")
+    (root / "cad" / "build.py").write_text("print('a bigger box')\n")
+    _commit(root, "bigger box", "2003-01-01T00:00:00+00:00", "cad/build.py")   # sim/'s own history ends earlier
+    pages = []
+    for where in (root, root / "sim", tmp_path):                                # root, a subfolder, outside it
+        monkeypatch.chdir(where)
+        pages.append(write_report(root / "preview" / "sim.html", "Sim", [{"id": "a", "title": "A"}]).read_bytes())
+    assert pages[0] == pages[1] == pages[2] and b"2003-01-01 00:00 UTC (last commit)" in pages[0]
 
 
 def test_the_comparison_and_the_review_bundle_are_dated_by_the_source(tmp_path, monkeypatch):

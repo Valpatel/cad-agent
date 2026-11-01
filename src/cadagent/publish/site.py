@@ -39,7 +39,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 from urllib.parse import unquote
 
 from cadagent._deps import require
-from cadagent.project import source_stamp
+from cadagent.project import source_pathspecs, source_stamp
 
 SITE_DIR = "site"
 KIT_URL = "/_cadagent/kit/"
@@ -123,9 +123,12 @@ def sources(root: Path, cfg: SiteConfig) -> List[Path]:
     return files
 
 
-def git_log(root: Path, n: int = 15) -> List[Dict[str, str]]:
+def git_log(root: Path, n: int = 15, outputs: Sequence[Path] = ()) -> List[Dict[str, str]]:
+    """The last ``n`` commits that changed the project's sources (``cadagent.project.source_pathspecs``: not a
+    commit of only its outputs, such as this site), so committing the site does not change the site (#150)."""
     try:
-        out = subprocess.run(["git", "log", f"-{n}", "--date=short", "--pretty=format:%h%x1f%ad%x1f%s"],
+        out = subprocess.run(["git", "log", f"-{n}", "--date=short", "--pretty=format:%h%x1f%ad%x1f%s", "--",
+                              *source_pathspecs(root, outputs)],
                              cwd=root, capture_output=True, text=True, timeout=10)
     except (OSError, subprocess.TimeoutExpired):
         return []
@@ -145,7 +148,8 @@ def committed_dates(root: Path, rels: Sequence[str]) -> Dict[str, str]:
     if not rels:
         return {}
     try:
-        out = subprocess.run(["git", "log", "--relative", "--format=%x01%ct", "--name-only", "--", *rels],
+        out = subprocess.run(["git", "-c", "core.quotePath=false", "log", "--relative", "--format=%x01%ct",
+                              "--name-only", "--", *rels],
                              cwd=root, capture_output=True, text=True, timeout=30)
     except (OSError, subprocess.SubprocessError):
         return {}
@@ -349,6 +353,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
     if not cfg.nav and auto_nav:
         cfg.nav = auto_nav()
     out = root / SITE_DIR
+    stamp = source_stamp(root, outputs=[out])          # first: a bad SOURCE_DATE_EPOCH writes nothing
     (out / "pages").mkdir(parents=True, exist_ok=True)
     # Ship the renderer with generated HTML; published sites must not depend on a CDN.
     for rel in ("diagrams.js", "diagrams.css", "vendor/mermaid/mermaid.min.js",
@@ -381,7 +386,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
     milestones = _load(root, cfg.milestones) or []
     decisions = _load(root, cfg.decisions) or []
     designs = (_load(root, cfg.designs) or {}).get("designs", [])
-    log = git_log(root)
+    log = git_log(root, outputs=[out])
 
     done = sum(1 for m in milestones if m.get("status") == "done")
     pct = round(100 * done / len(milestones)) if milestones else 0
@@ -483,7 +488,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
             + section("Decisions", "".join(decision(d) for d in decs), "No decisions recorded yet.")
             + section("Documents", f'<div class="docs">{doc_cards}</div>' if doc_cards else "", "No documents configured.")
             + section("Recent changes", f'<div class="tablewrap"><table class="log">{log_rows}</table></div>' if log_rows else "", "No git history.")
-            + f'<footer>Built by cad-agent from the project files as of {_e(source_stamp(root, outputs=[out]))}. '
+            + f'<footer>Built by cad-agent from the project files as of {_e(stamp)}. '
             'Refresh to rebuild.</footer></main>')
     review_css = ""
     if review_summary is not None:

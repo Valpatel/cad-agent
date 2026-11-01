@@ -19,7 +19,7 @@ import html
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
-from cadagent.project import source_stamp
+from cadagent.project import project_root_of, source_stamp
 
 _CSS = """
 :root{color-scheme:light dark;--bg:#f4f6f8;--surface:#fff;--surface-2:#eef2f5;--text:#16212b;--muted:#5a6873;
@@ -115,11 +115,14 @@ def _media(items, video=False):
 def render(title: str, sections: List[dict], subtitle: str = '', meta: Optional[Dict[str, str]] = None, footer: str = '',
            written_to: Optional[Path] = None) -> str:
     """The page. Without a ``Generated`` entry in ``meta`` it is dated by ``cadagent.project.source_stamp`` for the
-    current folder (the project, when the script runs from its root): ``SOURCE_DATE_EPOCH``, else the last commit
-    that changed the folder other than ``written_to``, never the wall clock, so a rebuild writes the same bytes (#150)."""
+    project that holds ``written_to`` (the nearest folder above it with ``cad-agent.yaml``; without ``written_to``,
+    the one above the current folder; else the current folder): ``SOURCE_DATE_EPOCH``, else the last commit that
+    changed the project other than its outputs, never the wall clock, so a rebuild writes the same bytes wherever
+    the script runs from (#150)."""
     meta = dict(meta or {})
     if 'Generated' not in meta:
-        meta['Generated'] = source_stamp(Path.cwd(), outputs=[written_to] if written_to else ())
+        root = project_root_of(written_to if written_to else Path.cwd()) or Path.cwd()
+        meta['Generated'] = source_stamp(root, outputs=[written_to] if written_to else ())
     li = ''.join(f'<li><b>{html.escape(k)}</b> {html.escape(str(v))}</li>' for k, v in meta.items())
     toc = ''.join(f'<a href="#{html.escape(s["id"])}">{html.escape(s["title"])}</a>' for s in sections)
     body = []

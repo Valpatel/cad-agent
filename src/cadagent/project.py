@@ -295,6 +295,15 @@ def find_config(root: Path) -> Optional[Path]:
     config = root / CONFIG_NAME
     return config if config.is_file() else None
 
+def project_root_of(path: Union[str, Path]) -> Optional[Path]:
+    """The nearest folder at or above ``path`` (a file's own folder for a file) that holds ``cad-agent.yaml``, or
+    None: the project a file belongs to, wherever the script that writes it runs from."""
+    here = Path(path).resolve()
+    for folder in ([here] if here.is_dir() else []) + list(here.parents):
+        if find_config(folder):
+            return folder
+    return None
+
 def other_cad_configs(root: Path) -> List[str]:
     """Names of the other ``*.yaml`` / ``*.yml`` files in ``root`` with a top-level ``cad:`` key, sorted.
 
@@ -387,6 +396,22 @@ def generated_paths(root: Union[str, Path]) -> List[Path]:
             pass
     return [exports, preview, *(root / g for g in GENERATED), docs / REPORT_PAGE]
 
+def source_pathspecs(root: Union[str, Path], outputs: Iterable[Union[str, Path]] = ()) -> List[str]:
+    """The ``git log`` pathspecs of ``root``'s sources: ``.`` less ``outputs`` (relative to ``root`` or absolute)
+    and ``generated_paths(root)``. A commit that changed only outputs matches none of them."""
+    root = Path(root).resolve()
+    specs = ["."]
+    for out in [*outputs, *generated_paths(root)]:
+        path = Path(out) if Path(out).is_absolute() else root / out
+        try:
+            rel = path.resolve().relative_to(root).as_posix()
+        except ValueError:
+            continue                                  # outside root: not in the history read anyway
+        spec = f":(exclude,literal){rel}"
+        if rel != "." and spec not in specs:
+            specs.append(spec)
+    return specs
+
 def source_time(root: Union[str, Path], outputs: Iterable[Union[str, Path]] = ()
                 ) -> Optional[Tuple[datetime.datetime, str]]:
     """The time a build output records in place of the wall clock, and where it came from; never the current time.
@@ -409,16 +434,7 @@ def source_time(root: Union[str, Path], outputs: Iterable[Union[str, Path]] = ()
     root = Path(root).resolve()
     if not root.is_dir():
         return None
-    specs = ["."]
-    for out in [*outputs, *generated_paths(root)]:
-        path = Path(out) if Path(out).is_absolute() else root / out
-        try:
-            rel = path.resolve().relative_to(root).as_posix()
-        except ValueError:
-            continue                                  # outside root: not in the history read anyway
-        spec = f":(exclude,literal){rel}"
-        if rel != "." and spec not in specs:
-            specs.append(spec)
+    specs = source_pathspecs(root, outputs)
     try:
         r = subprocess.run(["git", "-C", str(root), "log", "-1", "--format=%ct", "--", *specs],
                            capture_output=True, text=True, timeout=60)

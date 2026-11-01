@@ -66,10 +66,10 @@ def build_package(project: CadProject) -> PackageResult:
         files.extend(p for p in matched if p not in files)
     if not files:
         raise FileNotFoundError(f"no files matched cad.package.include {project.package.include}")
+    found = source_time(project.root, outputs=[zip_path, manifest_path])    # first: a bad SOURCE_DATE_EPOCH stops here
+    date = zip_date(found[0] if found else None)
     manifest = {p.relative_to(project.root).as_posix(): sha256(p) for p in files}
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
-    found = source_time(project.root, outputs=[zip_path, manifest_path])
-    date = zip_date(found[0] if found else None)
     entries = sorted([(p.relative_to(project.root).as_posix(), p) for p in files]
                      + [(manifest_path.relative_to(project.root).as_posix(), manifest_path)])
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:

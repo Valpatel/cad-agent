@@ -145,14 +145,16 @@ flowchart TD
 
 The outputs left out of that history are `exports_dir`, `preview_dir`, `site/`, `release/`, the report page and the
 file being written (`cadagent.project.source_time`), so a project that commits its report or site does not move
-their date by committing them. `SOURCE_DATE_EPOCH` is the
+their date by committing them. The site's "Recent changes" table leaves out the same commits. A `simreport` page is
+dated by the project that holds it (the nearest folder above it with `cad-agent.yaml`), wherever the script runs
+from. `SOURCE_DATE_EPOCH` is the
 [reproducible-builds](https://reproducible-builds.org/specs/source-date-epoch/) convention: seconds since
 1970-01-01 UTC, for example `SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)`.
 
 | Output | What is fixed |
 |---|---|
 | part STEP (`export_step`) | header date `2000-01-01T00:00:00` (or `SOURCE_DATE_EPOCH`), product named after the file, link ids |
-| assembly STEP (`export_step(assy)`) | the same, plus unnamed nodes named `<parent>.<k>` and the colour records in one order |
+| assembly STEP (`export_step(assy)`) | the same, plus unnamed nodes named `<parent>.<k>` and the colour records in one order; names cadquery's reader would refuse or misread (two children of one node with one name, a node with the root's name) are refused |
 | `exports/<part>.3mf`, the release zip | sorted entries, fixed date (1980-01-01), mode and host |
 | review package (`cad-agent package`) | sorted entries; the source date, mode `rw-r--r--` and a Unix host on every entry |
 | results JSON (`header_meta.generated`), report page, `simreport` pages (`Generated`), the site's footer, the explore comparison (`generated`), the review bundle (`created`) | the source date, shown with where it came from: `2026-10-30 12:00 UTC (last commit)` |

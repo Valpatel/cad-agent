@@ -239,6 +239,53 @@ docs/dossier.md:
       on: fixture
       caption: One part card's status, computed by cad-agent dossier and shown on the review site. The arm is gated, with all six gate checks passing, and not higher because no reviewer has recorded it.
       alt: The review site's card for the gate bench's arm part, with its status steps, function, material, interfaces, six passing gate checks and the reason it is not higher
+    - after: declaring-geometry-in-the-build-script
+      below: Only the build code knows
+      img: docs/img/packets/clean-store-xray-iso.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "What a build script declares, drawn by the review packet for the gate bench's store: its registered parts translucent, and inside them the free balls (one part, eight instances, declared loose with a reason), the four placed screws and the cavity the containment gate tests against."
+      alt: "An x-ray view of the gate bench's store: translucent hopper and lid with eight orange balls and four screws inside"
+    - after: exportsdossier-geometryjson
+      below: cad-agent.dossier-geometry/1
+      img: docs/img/packets/clean-store-exploded.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: The parts and placed fasteners a geometry record lists for the gate bench's store, exploded along its assembly steps. The caption bar names the section hash, a sha256 over these parts' content hashes, and the record's digest, so a picture of older geometry shows itself.
+      alt: "An exploded view of the gate bench's store: the hopper at the bottom, a board and the balls above it, then the lid and four screws on top, under a caption bar with the section hash and geometry digest"
+    - after: hand-over-to-the-gates
+      below: What each gate reads
+      img: docs/img/gates/bench-review.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: "What the gates hand back, on the gate bench's review site: one verdict per gate, read by the lint and the status of every card. Six gates, 144 checks, all pass, and each says physical fit is not verified."
+      alt: The review site's gates table for the gate bench, each gate marked pass with its check counts and links to its verdict files
+    - after: the-reviewer-pass
+      img: docs/img/packets/clean-store-cut-cavity-hopper_cavity.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A view a reviewer answers from: the gate bench's cut through hopper_cavity, the view its containment question names. The question is answered with the containment gate's measurement beside it, never from the image alone."
+      alt: A vertical section through the gate bench's hopper, four orange balls in two rows inside the blue walls, the lid on top
+    - after: the-record-cad-agentreview1
+      below: contained-inside:hopper_cavity:ball
+      img: docs/img/packets/ball_through_wall-store-findings.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "The packet's findings view, on a seeded failure (ball_through_wall): each gate finding numbered at its witness point. The review site lists a reviewer's own findings beside the view each one names."
+      alt: An x-ray view of the gate bench's store with callouts F1 to F3 pointing at one ball in the hopper's wall
+    - after: on-the-review-site
+      below: The connectivity graph
+      img: docs/img/gates/bench-connectivity.svg
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: "The connectivity graph as the gates page draws it, for the gate bench as built: parts linked by contacts and fasteners (ovals), the balls declared free (dashed boxes), the arm its own body on a joint (blue dashed). 31 checks pass."
+      alt: A graph of the gate bench's parts linked by contacts and fasteners, grouped into the static frame and the arm's body
 
 docs/design-process-plan.md:
   hero:

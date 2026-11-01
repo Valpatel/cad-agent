@@ -58,16 +58,15 @@ Twelve practices, numbered as the rest of this page cites them, grouped by the k
   blind repair; inner loop of 3 for execution failures.
 
 ```mermaid
-flowchart LR
-    P["Spec Planner<br/>prompt, images → CADBrief"] --> A["Geometric Architect<br/>ArchitectPlan"]
-    A --> T["translator<br/>plan steps → build123d"]
-    T --> X["execute"]
+flowchart TD
+    P["Spec Planner<br/>prompt and images → CADBrief"] --> A["Geometric Architect<br/>→ ArchitectPlan"]
+    A --> T["deterministic translator<br/>plan steps → build123d"]
+    T --> X["execute<br/>retried up to 3 times on errors"]
     X --> Q["QA engines<br/>STEP topology, STL mesh"]
-    Q --> J["QA Judge<br/>measurements first,<br/>renders optional"]
+    Q --> J["QA Judge<br/>measurements first, renders optional"]
     J -->|"accept"| D["done"]
-    J -->|"repair, up to 5"| R["repair agent"]
+    J -->|"repair, up to 5 rounds"| R["repair agent"]
     R --> X
-    X -.->|"fails: retry, up to 3"| X
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

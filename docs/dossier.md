@@ -42,6 +42,29 @@ exports/dossier-status.json    every item's computed status and the lint finding
 exports/gates/dossier-lint.json  the lint as a gate verdict
 ```
 
+Who writes which file:
+
+```mermaid
+flowchart TD
+    Y["dossier/*.yaml<br/>written by hand"] --> D["cad-agent dossier<br/>the lint"]
+    B["build()<br/>in the build script"] --> G["exports/dossier-geometry.json"]
+    G --> T["cad-agent gates"]
+    T --> V["exports/gates/*.json"]
+    G --> D
+    V --> D
+    D --> St["exports/dossier-status.json"]
+    St --> R["cad-agent review-section"]
+    R --> Bu["exports/review-bundle/"]
+    Bu -->|"the reviewer's record, --submit"| Rec["dossier/reviews/*.json"]
+    Rec --> D
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class Y,Rec here
+    class B,T,D,R near
+    class G,V,St,Bu out
+```
+
 Paths inside the dossier are relative to the directory of `project.yaml`. `sections:` entries may be globs
 (`"sections/*.yaml"`, loaded in sorted order) or inline mappings; a section's `parts:` entries may be paths to card
 files or inline cards.

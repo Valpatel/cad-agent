@@ -658,11 +658,11 @@ D below is the tool or hole diameter. Two pages here are by named engineers at X
 What reads the YAML today (solid) and what is planned to (dashed):
 
 ```mermaid
-flowchart LR
-    Y["process-profiles.yaml<br/>rules, sources,<br/>a shop table"] --> E["evaluate()<br/>tools/process_profile_figures.py"]
+flowchart TD
+    Y["process-profiles.yaml<br/>rules, sources, a shop table"] --> E["evaluate()<br/>tools/process_profile_figures.py"]
     E --> C["the charts on this page<br/>redrawn by the tests"]
     Y -.->|"planned, #99"| P["cadagent.process<br/>a profile per process"]
-    P -.->|"planned"| K["checks that cite a rule id:<br/>sheet metal S1–S8, pitfalls #97"]
+    P -.->|"planned"| K["checks that cite a rule id<br/>sheet metal S1–S8, pitfalls #97"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

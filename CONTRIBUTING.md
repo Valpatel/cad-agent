@@ -83,11 +83,17 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
 A project that needs a new toolkit feature opens a cad-agent PR for it; it does not patch its local copy.
 
 ## Releases
-Releases are cut when the user asks for one.
+Shipping to `main` is part of the development loop, not an occasional event. When `dev` has merged work that people
+or projects would notice (a command, a check, a fix, a site change), cut a release; while work is landing, at least
+once a day. `main` should never be more than a day behind `dev`. Agents cut and merge releases under the same gates as
+any PR; nobody has to ask for one. Use a patch release (`--patch`) for fixes, docs and the site, and a minor release
+(`--minor`) when projects must change something (the CHANGELOG's "Projects must change").
 1. On a `release/vX.Y.Z` branch from `dev`:
    - bring in `main`'s release merges (`git merge origin/main`), so the release PR is up to date with `main`;
-   - bump `version` in `pyproject.toml`;
-   - date the CHANGELOG entry (`## vX.Y.Z (YYYY-MM-DD)`, with what projects must change).
+   - run `python3 tools/cut_release.py --patch` (or `--minor`). It bumps `version` in `pyproject.toml`, dates the
+     CHANGELOG's `## Unreleased` entry as `## vX.Y.Z (YYYY-MM-DD)`, opens a new empty `## Unreleased`, and checks the
+     result against CI's release gate;
+   - check that the entry covers every PR merged since the last release, with what projects must change.
 
    PR it into `dev` and merge.
 2. Open a PR from `dev` into `main` titled `Release vX.Y.Z`. It needs CI, `cad-gates/main/release`, and a review whose pass verdict is on the PR's head commit. Merge it with a **merge commit** (not squash or rebase), so `main` and `dev` keep a common history.

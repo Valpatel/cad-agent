@@ -1,11 +1,14 @@
 # Changelog
 
-Every release of cad-agent: what projects using it gain and what they must change. A release PR (`dev` → `main`)
-dates its entry as `## vX.Y.Z (YYYY-MM-DD)`, which the `cad-gates/main/release` check requires
-([CONTRIBUTING.md](CONTRIBUTING.md#gates)); merging it tags the release and deploys the site. Releases up to v0.4.2
+Every release of cad-agent: what projects using it gain and what they must change. New work goes under
+`## Unreleased`. Releasing is part of the development loop ([CONTRIBUTING.md](CONTRIBUTING.md#releases)):
+`tools/cut_release.py` dates that entry as `## vX.Y.Z (YYYY-MM-DD)`, which the `cad-gates/main/release` check
+requires, and merging the release PR (`dev` → `main`) tags the release and deploys the site. Releases up to v0.4.2
 are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
-## v0.5.0 (unreleased)
+## Unreleased
+
+## v0.5.0 (2026-11-01)
 
 **New**
 - `cad-agent snapfit`: cantilever, torsion and annular snap-fit sizing by the Covestro method, with allowable strain
@@ -17,6 +20,20 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   and a one-build total (#89).
 - Merge gates: `cad-gates/<base>/branch-flow`, `…/review` and `cad-gates/main/release` statuses, run from the default
   branch's (dev's) copy of the gates, on every push and every 15 minutes; tagged releases and the site deploy from `main` (#112).
+- The website, [cad-agent.valpatel.com](https://cad-agent.valpatel.com), built from this repo: every page also as
+  Markdown, plus `llms.txt` and `catalog.json` for agents (#108). Long pages get a page tree and outline (#123); every
+  page has a diagram, chart, render or animation, and a test keeps it so (#124); animated figures are drawn by the code
+  they explain (`tools/motion_figures.py`, #158); copy buttons never cover the code (#130).
+- The catalogue as a gallery: demos first, then every entry by kind and by topic-tree area, with our own covers for
+  the 50 outside projects and a JSON file per area for agents (`catalog/index.json`, `catalog/<area>.json`).
+  `catalog.json` moves to schema 2, which only adds fields (#174). Every outside entry says what it does and which
+  areas it serves (#173).
+- The topic tree: [docs/vision.md](docs/vision.md) and [docs/areas.yaml](docs/areas.yaml) map six domains and 35
+  areas, each at its maturity; a test keeps every page, command, skill and agent on the map (#148).
+- [Manufacturing-process profiles](research/process-profiles.md): design limits for FDM, SLA, SLS, MJF, injection
+  moulding, sheet metal and CNC in one table, every rule credited to its source, with charts (#162).
+- `tools/cut_release.py`: cuts a release (dates the Unreleased entry, bumps the version) and checks the result against
+  CI's release gate.
 
 **Fixed**
 - Bambu slicer templates that include other templates are resolved before profiles are flattened (#93).
@@ -30,9 +47,17 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   E (`direction`); results repeat them in their assumptions line, and the viewer shows the direction. Densities follow
   the sheets, and `pa_cf` is named PAHT-CF, as its values always were (#125).
 
+- The convergence chart shows the whole run and the monitored values, and no longer draws an empty solids panel
+  (#155).
+- The gates sweep no longer re-posts an unchanged status (#129).
+
 **Docs and research**
+- The README says what cad-agent is: agents that find, test, condense and credit the best published CAD techniques
+  (#115). The toolkit page is now [Tools](docs/toolkit.md), the reference for the `cad-agent` command and the
+  `cadagent` package; cad-agent itself is the whole toolkit (#178).
 - Work-claim comments for sharing issues between agents (#102); the 2026-10-31 survey of agent toolkits, compliant
-  mechanisms and FEA/process tools, and its catalogue entries (#109, #110).
+  mechanisms and FEA/process tools, and its catalogue entries (#109, #110). Corrected since: OrcaSlicer's own MCP server,
+  slicing included, is in development on its `feature/mcp` branch, not yet in a release (#177).
 - Lessons grouped by area (`lessons/process/`, `mechanical/`, `wiring/`, `electronics/`, `simulation/`, `review/`),
   with a diagram on every page (#133). The site redirects every old page for good (`tools/site-redirects.txt`).
 

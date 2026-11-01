@@ -39,4 +39,4 @@ flowchart TD
 | `simreport.py` | A standalone HTML page: before/after metrics, figures, videos, limits |
 
 Related: [package map](../README.md) · [simulation tools research](../../../research/simulation-tools.md) ·
-[lesson: simulation and material](../../../lessons/10-simulation-and-material.md)
+[lesson: simulation and material](../../../lessons/simulation/simulation-and-material.md)

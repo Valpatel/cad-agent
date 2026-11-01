@@ -145,12 +145,13 @@ def svg(w: int, h: int, label: str, body: list, anim: Anim) -> str:
     """The figure: a sized, labelled SVG with its own background. Under reduced motion every animation stops, and
     each element shows its own style: the still frame. Drawn ``NARROW_PX`` wide or less (a media query inside an
     SVG follows the ``<img>``'s own width), every label hides except the large ``ntext`` ones, and so does any
-    element of class ``w``."""
+    element of class ``w``. They hide with ``visibility``, not ``display``: WebKit lays an SVG image out at more
+    than one size, and re-laying the text out each time stalled a smooth scroll past the figure by about 150 ms."""
     return "\n".join([
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" role="img" '
         f'aria-label="{attr(label)}" font-family="{FONT}" font-size="12" fill="{INK}">',
-        f"<style>.m10,.m11{{fill:{MUTED}}}.m10{{font-size:10px}}.m11{{font-size:11px}}.n{{display:none}}"
-        f"@media (max-width:{NARROW_PX}px){{text:not(.n),.w{{display:none}}.n{{display:inline}}}}"
+        f"<style>.m10,.m11{{fill:{MUTED}}}.m10{{font-size:10px}}.m11{{font-size:11px}}.n{{visibility:hidden}}"
+        f"@media (max-width:{NARROW_PX}px){{text:not(.n),.w{{visibility:hidden}}.n{{visibility:visible}}}}"
         f"{anim.stylesheet()}</style>",
         f'<rect width="{w}" height="{h}" rx="14" fill="{BG}" stroke="{LINE}"/>',
         *body, "</svg>"]) + "\n"

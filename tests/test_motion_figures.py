@@ -56,7 +56,7 @@ def test_each_figure_stands_alone_is_labelled_sized_and_has_a_still(name):
     assert "@media (prefers-reduced-motion:reduce){*{animation:none!important}}" in s
     assert "@keyframes" in s
     # narrow: drawn 400 px wide or less (a 360 px phone), every label hides except large ones that still read
-    assert f"@media (max-width:{mf.NARROW_PX}px){{text:not(.n),.w{{display:none}}.n{{display:inline}}}}" in s
+    assert f"@media (max-width:{mf.NARROW_PX}px){{text:not(.n),.w{{visibility:hidden}}.n{{visibility:visible}}}}" in s
     narrow = re.findall(r'<text [^>]*class="n"[^>]*>', s)
     assert len(narrow) >= 3, name
     for tag in narrow:

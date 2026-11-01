@@ -19,6 +19,8 @@ the YAML (`as_printed`). Paid standards are cited by number and title only.
 
 <img src="../docs/img/research/process-min-wall.svg" alt="Range chart of the minimum wall thickness each source recommends, grouped by process" width="680">
 
+*Diagram drawn by `tools/process_profile_figures.py` from the `compare: min-wall` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
+
 ## 1. Reading the rules
 
 - **A shop's own table beats every generic rule.** Sheet-metal radius, K-factor and minimum flange come from the
@@ -57,6 +59,11 @@ springs, hinges) lies in the build plate's plane, and bending across the layers 
 | Longest bridge without sag or support marks | ≤ 5 mm | Horizontal bridges and roofs | [Protolabs Network][hubs-fdm-design]; [Xometry Europe][xometry-eu-fdm-design-tips] |
 | Chamfer rather than fillet an edge facing the bed | qualitative | A fillet facing down is a steep overhang | [Prusa Research][prusa-modeling-for-3dp] |
 
+<img src="../docs/img/research/process-overhangs.svg" alt="Range chart of the steepest FDM overhang each source prints without support, in degrees from vertical: 45 from two services, 45 to 60 and up to 75 with full cooling from Prusa" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from the `compare: overhang-max` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
+
+
 ### Walls, holes, pins and corners
 
 | Rule | Value | Applies when | Source |
@@ -72,6 +79,11 @@ springs, hinges) lies in the build plate's plane, and bending across the layers 
 | Outside corners in the layer plane | radius = nozzle diameter | Never sharp | [Protolabs Network][hubs-fdm-design] |
 | Minimum rib | ≥ 1.5 mm (0.06 in) | Several extrusions per rib | Joel Schadegg and Aaron Lichtig, [Xometry][xometry-fdm-mini-guide] |
 | Embossed text stroke / engraved text stroke | ≥ 0.8 mm (0.5 mm high) / ≥ 1.0 mm (0.5 mm deep) | Top faces read best | [Xometry Europe][xometry-eu-fdm-design-tips] |
+
+<img src="../docs/img/research/process-holes-pins.svg" alt="Range chart of the smallest hole and pin each source prints, grouped by FDM, resin, SLS and MJF: holes from 0.5 to 1.5 mm, pins from 0.8 to 5 mm" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from the `compare: min-hole` and `compare: min-pin` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
+
 
 ### Elephant's foot and warping
 
@@ -92,6 +104,11 @@ springs, hinges) lies in the build plate's plane, and bending across the layers 
 | Clearance between mating parts (snap fits) | 0.5 mm | Protolabs Network FDM | [Protolabs Network][hubs-snapfit-3dp] |
 | Clearance for parts that move or snap | ≥ 0.3 mm to start | Original Prusa printers, accurate to at least 0.2 mm; test-print | [Prusa Research][prusa-modeling-for-3dp] |
 | Clearance for a sliding fit | 0.2–0.3 mm | Mating faces printed vertical | [Xometry Europe][xometry-eu-fdm-design-tips] |
+
+<img src="../docs/img/research/process-fits.svg" alt="Range chart of the clearance between mating printed parts each source recommends, by process: 0.1 to 0.76 mm, with powder parts printed together needing the most" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from the `compare: clearance-fit` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31; Formlabs' Fuse rules step with the mating area and are drawn from 10 to 30 mm². A test redraws it and fails if the committed chart differs.*
+
 
 ### Threads and inserts
 
@@ -181,6 +198,11 @@ From Protolabs Network's [SLA guide][hubs-sla-design]:
 | Longest wide bridge | < 21 mm | Wide bridges peel harder | [Protolabs Network][hubs-sla-design] |
 | Expected tolerance | ±0.5 %, floor ±0.10 mm (desktop); ±0.15 %, floor ±0.01 mm (industrial) | | [Protolabs Network][hubs-3dp-dimensional-accuracy] |
 
+<img src="../docs/img/research/process-escape-holes.svg" alt="Range chart of the smallest drain or escape hole for a hollow print each source asks for: 0.75 mm on a Form 4 to 3.5 mm at most services, and 10 mm to pull supports out" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from the `compare: escape-hole` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
+
+
 ### Where the resin sources disagree
 
 - **Protolabs Network's numbers are Formlabs' Form 2 numbers.** Its 19° overhang, 21 mm bridge, 0.4 mm engraving and
@@ -246,6 +268,11 @@ From Protolabs Network:
 | Living hinge | 0.3–0.8 mm thick, at least 5 mm long; anneal and flex | SLS nylon | [Protolabs Network][hubs-sls-design] |
 | Scale applied before printing | 3–3.5 % | Done by the service | [Protolabs Network][hubs-sls-design] |
 | Expected tolerance | ±0.3 %, floor ±0.3 mm | SLS and MJF | [Protolabs Network][hubs-3dp-dimensional-accuracy] |
+
+<img src="../docs/img/research/process-fine-detail.svg" alt="Range chart of the smallest embossed and engraved detail each source prints, by process: 0.1 mm on Formlabs resin printers to 1 mm on powder" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from the `compare: emboss-min` and `compare: engrave-min` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
+
 
 ### Where the SLS sources disagree
 
@@ -329,6 +356,11 @@ online bureaus (Fictiv, and the Boothroyd Dewhurst checklist for screening). T b
 | Variation of the nominal wall | up to about 25 % | Low-shrinkage resins (most amorphous and filled grades) | [Covestro][covestro-part-mold-design] |
 | Critical thickness of polycarbonate | about 4.76 mm (3/16 in); thicker walls can fail brittle on impact | Medium-viscosity PC at room temperature; less when cold | [Covestro][covestro-part-mold-design] |
 
+<img src="../docs/img/research/process-moulding-wall.svg" alt="Range chart of the wall thickness Protolabs recommends for moulding ABS, polycarbonate, polypropylene, nylon and acetal, about 0.8 to 3.8 mm, and its stable window of 1.5 to 2.5 mm" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from the `compare: im-wall` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
+
+
 ### Draft
 
 | Rule | Value | Applies when | Source |
@@ -338,6 +370,11 @@ online bureaus (Fictiv, and the Boothroyd Dewhurst checklist for screening). T b
 | Draft | 1–2° smooth; 3° light texture; 5° or more heavy texture | | [Fictiv][fictiv-im-design-guide] |
 | Draft, Table 3.01 | Delrin 0–¼° under 25.4 mm deep (½° deeper); reinforced nylons ¼–½° (½–1° deeper) | DuPont resins, smooth finish | [DuPont][dupont-design-module-1] |
 | Extra draft for texture | 1° per 0.001 in of depth (DuPont); 1° plus 1° per 0.001 in (Covestro); 1.5° per 0.001 in (Fictiv) | | [DuPont][dupont-design-module-1]; [Covestro][covestro-part-mold-design]; [Fictiv][fictiv-im-design-guide] |
+
+<img src="../docs/img/research/process-moulding-draft.svg" alt="Range chart of the draft each source asks for on moulded faces: 0 to 0.25 degrees for shallow acetal, 0.5 to 2 for most, 3 to 5 for high-heat polycarbonate and TPU" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from the `compare: im-draft` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
+
 
 ### Ribs and gussets
 
@@ -352,6 +389,11 @@ online bureaus (Fictiv, and the Boothroyd Dewhurst checklist for screening). T b
 | Rib spacing; rib draft | ≥ 2 T between short ribs; ≥ 0.5° per side | | [Covestro][covestro-part-mold-design] |
 | Fillet at the rib base | 0.5 × the rib (DuPont); 0.125 T (Covestro); 0.25–0.5 T but at most 0.254 mm (Fictiv) | | [DuPont][dupont-design-module-1]; [Covestro][covestro-part-mold-design]; [Fictiv][fictiv-im-design-guide] |
 | Gusset thickness | 0.5–0.67 T where sink matters | | [Covestro][covestro-part-mold-design] |
+
+<img src="../docs/img/research/process-moulding-ratios.svg" alt="Range chart of rib thickness, rib height, rib fillet, boss wall and inside corner radius as multiples of the nominal wall, by source" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from the rib, boss and corner `compare` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31, at a nominal wall of 1 so each reads as a multiple of it. A test redraws it and fails if the committed chart differs.*
+
 
 ### Bosses and inserts
 
@@ -409,6 +451,8 @@ beats all of them: SendCutSend publishes its tooling per stock size, and ten 505
 
 <img src="../docs/img/research/process-sheet-metal.svg" alt="The same sheet-metal rule from different sources, evaluated at 1.5 mm thickness and radius, with one shop's real tooling" width="680">
 
+*Diagram drawn by `tools/process_profile_figures.py` from the sheet-metal `compare` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31, with SendCutSend's tooling table in orange. A test redraws it and fails if the committed chart differs.*
+
 ### Bend radius and K-factor
 
 | Rule | Value | Applies when | Source |
@@ -457,6 +501,11 @@ beats all of them: SendCutSend publishes its tooling per stock size, and ten 505
 | Bend-to-hole tolerance | ±0.38 mm under 0.13 in stock, ±0.635 mm above | Across 3+ bends ±0.76 / ±1.016 mm | [Protolabs][protolabs-sheet-metal] |
 | Laser kerf | about 0.3 mm (waterjet 0.5–1 mm); split it between mating parts | | [Protolabs Network][hubs-sheet-metal] |
 
+<img src="../docs/img/research/process-sheet-holes.svg" alt="Range chart of sheet-metal bend radius, smallest hole, hole to edge, hole to hole and hem return at 1.5 mm thickness, by source" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from the sheet-metal hole, edge, bend and hem `compare` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31, at a sheet thickness of 1.5 mm. A test redraws it and fails if the committed chart differs.*
+
+
 ### Where the sheet-metal sources disagree
 
 At T = R = 1.5 mm (the chart above) [derived]:
@@ -497,6 +546,11 @@ D below is the tool or hole diameter. Two pages here are by named engineers at X
 | End-mill cutting length | 3–4 × D standard | | [Protolabs Network][hubs-cnc-design] |
 | Length of cut, long-reach miniature end mills | 3 × D standard flute; ≥ 5 × D long flute | A tool maker's catalogue, for comparison | [Harvey Tool][harvey-tool-long-reach] |
 | Deepest milled feature from each side | ≤ 50.8 mm (2 in) | Protolabs | [Protolabs][protolabs-cnc-milling] |
+
+<img src="../docs/img/research/process-cnc-depths.svg" alt="Range chart of how deep an end mill can cut, a cavity can go, a hole can be drilled and a thread can run, as multiples of the diameter, by source" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from the CNC depth `compare` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31, at a diameter of 1 so each reads as a multiple of it. A test redraws it and fails if the committed chart differs.*
+
 
 ### Walls and small features
 
@@ -568,6 +622,9 @@ D below is the tool or hole diameter. Two pages here are by named engineers at X
 ## 10. Sources
 
 People and organisations whose published rules this page uses. Each entry in the YAML says what was read and when.
+
+<details>
+<summary>Every source, by process: the articles, guides, data sheets and standards behind the rules</summary>
 
 **3D printing**
 - Protolabs Network (formerly Hubs): [How to design parts for FDM 3D printing][hubs-fdm-design];
@@ -644,6 +701,8 @@ YAML under `standards`)
   (its abstract says it gives no process- or material-specific data).
 - [ISO/ASTM 52911-2][iso-astm-52911-2] Additive manufacturing, design, Part 2: laser-based powder bed fusion of
   polymers.
+
+</details>
 
 ## 11. Not verified, and next
 

@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 552" width="680" height="552" role="img" aria-label="Sheet metal: holes, edges, bends and hems at T = 1.5 mm" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif">
+<rect width="680" height="552" rx="14" fill="#fffdf5" stroke="#d8e0d3"/>
+<text x="18" y="30" font-size="15" font-weight="700" fill="#173d3c">Sheet metal: holes, edges, bends and hems at T = 1.5 mm</text>
+<text x="18" y="50" font-size="12" fill="#526863">15 rules evaluated from research/process-profiles.yaml at T = 1.5 mm. ≥: a floor; a bar: it varies with the alloy.</text>
+<line x1="300.0" y1="70" x2="300.0" y2="506" stroke="#d8e0d3"/>
+<text x="300.0" y="521" font-size="11" fill="#526863" text-anchor="middle">0</text>
+<line x1="353.0" y1="70" x2="353.0" y2="506" stroke="#d8e0d3"/>
+<text x="353.0" y="521" font-size="11" fill="#526863" text-anchor="middle">2</text>
+<line x1="406.0" y1="70" x2="406.0" y2="506" stroke="#d8e0d3"/>
+<text x="406.0" y="521" font-size="11" fill="#526863" text-anchor="middle">4</text>
+<line x1="459.0" y1="70" x2="459.0" y2="506" stroke="#d8e0d3"/>
+<text x="459.0" y="521" font-size="11" fill="#526863" text-anchor="middle">6</text>
+<line x1="512.0" y1="70" x2="512.0" y2="506" stroke="#d8e0d3"/>
+<text x="512.0" y="521" font-size="11" fill="#526863" text-anchor="middle">8</text>
+<line x1="565.0" y1="70" x2="565.0" y2="506" stroke="#d8e0d3"/>
+<text x="565.0" y="521" font-size="11" fill="#526863" text-anchor="middle">10</text>
+<line x1="618.0" y1="70" x2="618.0" y2="506" stroke="#d8e0d3"/>
+<text x="618.0" y="521" font-size="11" fill="#526863" text-anchor="middle">12</text>
+<text x="618.0" y="536" font-size="11" fill="#526863" text-anchor="end">mm</text>
+<text x="18" y="93" font-size="12.5" font-weight="700" fill="#173d3c">Smallest inside bend radius</text>
+<text x="290" y="116.0" font-size="12" fill="#173d3c" text-anchor="end">Protolabs Network (Hubs)</text>
+<rect x="339.8" y="110.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="339.8" cy="112.0" r="5" fill="#6f8a80"/>
+<text x="392.8" y="116.0" font-size="11" fill="#173d3c" text-anchor="start">≥ 1.5</text>
+<text x="290" y="136.0" font-size="12" fill="#173d3c" text-anchor="end">Greg Paulsen</text>
+<rect x="339.8" y="130.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="339.8" cy="132.0" r="5" fill="#6f8a80"/>
+<text x="392.8" y="136.0" font-size="11" fill="#173d3c" text-anchor="start">≥ 1.5</text>
+<text x="290" y="156.0" font-size="12" fill="#173d3c" text-anchor="end">Boothroyd Dewhurst</text>
+<rect x="339.8" y="150.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="339.8" cy="152.0" r="5" fill="#6f8a80"/>
+<text x="392.8" y="156.0" font-size="11" fill="#173d3c" text-anchor="start">≥ 1.5</text>
+<text x="290" y="176.0" font-size="12" fill="#173d3c" text-anchor="end">Gerald Davis</text>
+<rect x="339.8" y="170.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="339.8" cy="172.0" r="5" fill="#6f8a80"/>
+<text x="392.8" y="176.0" font-size="11" fill="#173d3c" text-anchor="start">≥ 1.5</text>
+<text x="290" y="196.0" font-size="12" fill="#173d3c" text-anchor="end">Gerald Davis</text>
+<rect x="459.0" y="188.0" width="159.0" height="8" rx="4" fill="#6f8a80"/>
+<text x="625.0" y="196.0" font-size="11" fill="#173d3c" text-anchor="start">6–12</text>
+<text x="18" y="217" font-size="12.5" font-weight="700" fill="#173d3c">Smallest hole</text>
+<text x="290" y="240.0" font-size="12" fill="#173d3c" text-anchor="end">Protolabs</text>
+<rect x="339.8" y="234.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="339.8" cy="236.0" r="5" fill="#6f8a80"/>
+<text x="392.8" y="240.0" font-size="11" fill="#173d3c" text-anchor="start">≥ 1.5</text>
+<text x="290" y="260.0" font-size="12" fill="#173d3c" text-anchor="end">Gerald Davis</text>
+<rect x="339.8" y="254.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="339.8" cy="256.0" r="5" fill="#6f8a80"/>
+<text x="392.8" y="260.0" font-size="11" fill="#173d3c" text-anchor="start">≥ 1.5</text>
+<text x="18" y="281" font-size="12.5" font-weight="700" fill="#173d3c">Hole to the edge</text>
+<text x="290" y="304.0" font-size="12" fill="#173d3c" text-anchor="end">Protolabs</text>
+<rect x="384.1" y="298.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="384.1" cy="300.0" r="5" fill="#6f8a80"/>
+<text x="375.1" y="304.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 3.17</text>
+<text x="290" y="324.0" font-size="12" fill="#173d3c" text-anchor="end">Boothroyd Dewhurst</text>
+<rect x="379.5" y="318.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="379.5" cy="320.0" r="5" fill="#6f8a80"/>
+<text x="370.5" y="324.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 3</text>
+<text x="290" y="344.0" font-size="12" fill="#173d3c" text-anchor="end">Protolabs Network (Hubs)</text>
+<rect x="339.8" y="338.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="339.8" cy="340.0" r="5" fill="#6f8a80"/>
+<text x="392.8" y="344.0" font-size="11" fill="#173d3c" text-anchor="start">≥ 1.5</text>
+<text x="290" y="364.0" font-size="12" fill="#173d3c" text-anchor="end">Century Tywood</text>
+<rect x="384.1" y="358.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="384.1" cy="360.0" r="5" fill="#6f8a80"/>
+<text x="375.1" y="364.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 3.17</text>
+<text x="18" y="385" font-size="12.5" font-weight="700" fill="#173d3c">Hole to hole</text>
+<text x="290" y="408.0" font-size="12" fill="#173d3c" text-anchor="end">Protolabs Network (Hubs)</text>
+<rect x="379.5" y="402.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="379.5" cy="404.0" r="5" fill="#6f8a80"/>
+<text x="370.5" y="408.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 3</text>
+<text x="290" y="428.0" font-size="12" fill="#173d3c" text-anchor="end">Greg Paulsen</text>
+<rect x="538.5" y="422.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="538.5" cy="424.0" r="5" fill="#6f8a80"/>
+<text x="529.5" y="428.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 9</text>
+<text x="18" y="449" font-size="12.5" font-weight="700" fill="#173d3c">Hem return</text>
+<text x="290" y="472.0" font-size="12" fill="#173d3c" text-anchor="end">Protolabs</text>
+<rect x="538.5" y="466.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="538.5" cy="468.0" r="5" fill="#6f8a80"/>
+<text x="529.5" y="472.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 9</text>
+<text x="290" y="492.0" font-size="12" fill="#173d3c" text-anchor="end">Greg Paulsen</text>
+<rect x="459.0" y="486.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="459.0" cy="488.0" r="5" fill="#6f8a80"/>
+<text x="450.0" y="492.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 6</text>
+<text x="18" y="540" font-size="11" fill="#526863">Each source's own wording and conditions are in the YAML file and on the page. Read 2026-10-31.</text>
+</svg>

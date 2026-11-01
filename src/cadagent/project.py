@@ -20,16 +20,22 @@ names any other YAML file there that has a ``cad:`` section. Example (see
 Only ``cad:`` is read: other top-level sections are ignored, so the file can carry
 other tools' settings too. Unknown keys inside ``cad:`` are kept in ``CadProject.unknown_keys``
 so a typo is reportable instead of fatal.
+
+``source_date_epoch``, ``source_time`` and ``source_stamp`` give the date a build output records instead of the
+wall clock (``SOURCE_DATE_EPOCH``, else the last commit's time), so a rebuild at the same commit writes the same bytes.
 """
 
 from __future__ import annotations
 
+import datetime
 import json
+import os
 import re
+import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 CONFIG_NAME = "cad-agent.yaml"
 
@@ -335,3 +341,100 @@ def load_project(root: Union[str, Path, None] = None) -> CadProject:
     if not isinstance(data, dict) or "cad" not in data:
         raise CadConfigError(f"{config} has no cad: section")
     return from_dict(root, data["cad"])
+
+
+# ------------------------------------------------------------------------- the date a build output records (#150)
+
+class SourceDateEpochError(ValueError):
+    """``SOURCE_DATE_EPOCH`` is set but is not a whole number of seconds since 1970-01-01."""
+
+def source_date_epoch() -> Optional[int]:
+    """``SOURCE_DATE_EPOCH`` as whole seconds since 1970-01-01 UTC, or None when it is unset or empty.
+
+    The reproducible-builds convention (https://reproducible-builds.org/specs/source-date-epoch/): a build that is
+    given this time writes it wherever it would write the current time. A value that is not a whole number of seconds
+    (``-1``, ``1.5``, ``soon``, one too large for a date) raises ``SourceDateEpochError``, as the convention asks,
+    rather than being ignored.
+    """
+    raw = os.environ.get("SOURCE_DATE_EPOCH", "").strip()
+    if not raw:
+        return None
+    try:
+        if not (raw.isascii() and raw.isdigit()):
+            raise ValueError
+        datetime.datetime.fromtimestamp(int(raw), datetime.timezone.utc)
+    except (ValueError, OverflowError, OSError):
+        raise SourceDateEpochError(f"SOURCE_DATE_EPOCH={raw!r} is not a whole number of seconds since "
+                                   "1970-01-01") from None
+    return int(raw)
+
+# Folders and files cad-agent and a project's build write, besides exports_dir and preview_dir: `cad-agent site`'s
+# folder, `cad-agent release`'s default folder and `cad-agent report`'s page in docs_dir.
+GENERATED = ("site", "release")
+REPORT_PAGE = "cad-agent-report.html"
+
+def generated_paths(root: Union[str, Path]) -> List[Path]:
+    """The outputs under ``root`` that never date an output (``source_time``): ``exports_dir``, ``preview_dir``,
+    ``site/``, ``release/`` and ``<docs_dir>/cad-agent-report.html``, from ``root``'s ``cad-agent.yaml`` when it reads,
+    else at their default places."""
+    root = Path(root)
+    exports, preview, docs = root / "exports", root / "preview", root / "docs"
+    if find_config(root) is not None:
+        try:
+            p = load_project(root)
+            exports, preview, docs = p.exports_dir, p.preview_dir, p.docs_dir
+        except CadConfigError:
+            pass
+    return [exports, preview, *(root / g for g in GENERATED), docs / REPORT_PAGE]
+
+def source_time(root: Union[str, Path], outputs: Iterable[Union[str, Path]] = ()
+                ) -> Optional[Tuple[datetime.datetime, str]]:
+    """The time a build output records in place of the wall clock, and where it came from; never the current time.
+
+    1. ``SOURCE_DATE_EPOCH`` when it is set (``source_date_epoch``): ``(time, "SOURCE_DATE_EPOCH")``;
+    2. else the committer time of the last commit that changed a file under ``root`` other than an output:
+       ``(time, "last commit")``. Outputs are ``outputs`` (the files or folders being written, relative to ``root``
+       or absolute) and ``generated_paths(root)``, so a project that commits its report, site or exports does not
+       move their date by committing them (each rebuild after a commit would change them again);
+    3. else None: ``root`` is not in a git checkout, or nothing under it is committed. Callers then write no date.
+
+    The time is in UTC, to the second. A shallow clone can see a later commit than a full one (its first commit
+    holds every file), so CI that compares outputs with a full clone's should set ``SOURCE_DATE_EPOCH``. Two pages
+    a project writes outside ``generated_paths`` and commits each count the other as a source: keep generated pages
+    in ``exports_dir`` or ``preview_dir``, or set ``SOURCE_DATE_EPOCH``.
+    """
+    epoch = source_date_epoch()
+    if epoch is not None:
+        return datetime.datetime.fromtimestamp(epoch, datetime.timezone.utc), "SOURCE_DATE_EPOCH"
+    root = Path(root).resolve()
+    if not root.is_dir():
+        return None
+    specs = ["."]
+    for out in [*outputs, *generated_paths(root)]:
+        path = Path(out) if Path(out).is_absolute() else root / out
+        try:
+            rel = path.resolve().relative_to(root).as_posix()
+        except ValueError:
+            continue                                  # outside root: not in the history read anyway
+        spec = f":(exclude,literal){rel}"
+        if rel != "." and spec not in specs:
+            specs.append(spec)
+    try:
+        r = subprocess.run(["git", "-C", str(root), "log", "-1", "--format=%ct", "--", *specs],
+                           capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    stamp = r.stdout.strip()
+    if r.returncode != 0 or not stamp.isdigit():
+        return None
+    return datetime.datetime.fromtimestamp(int(stamp), datetime.timezone.utc), "last commit"
+
+def source_stamp(root: Union[str, Path], outputs: Iterable[Union[str, Path]] = (),
+                 fmt: str = "%Y-%m-%d %H:%M UTC") -> str:
+    """``source_time`` as text for a page: ``2026-10-30 12:00 UTC (last commit)``, ``... (SOURCE_DATE_EPOCH)``, or
+    ``undated (no commit; set SOURCE_DATE_EPOCH)``. The same project at the same commit always gives the same text."""
+    found = source_time(root, outputs)
+    if found is None:
+        return "undated (no commit; set SOURCE_DATE_EPOCH)"
+    when, origin = found
+    return f"{when.strftime(fmt)} ({origin})"

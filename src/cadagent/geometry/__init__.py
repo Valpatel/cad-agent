@@ -96,18 +96,15 @@ def step_timestamp() -> str:
     ``SOURCE_DATE_EPOCH`` when it is set: the reproducible-builds convention
     (https://reproducible-builds.org/specs/source-date-epoch/), seconds since 1970-01-01 UTC, written in UTC as
     ``YYYY-MM-DDThh:mm:ss``. Otherwise ``STEP_DATE``, a fixed date. A value that is not a whole number of
-    seconds raises ``ValueError``, as the convention asks, rather than being ignored.
+    seconds raises ``ValueError`` (``cadagent.project.SourceDateEpochError``), as the convention asks, rather than
+    being ignored.
     """
-    raw = os.environ.get("SOURCE_DATE_EPOCH", "").strip()
-    if not raw:
+    from cadagent.project import source_date_epoch
+
+    epoch = source_date_epoch()
+    if epoch is None:
         return STEP_DATE
-    try:
-        if not (raw.isascii() and raw.isdigit()):
-            raise ValueError
-        stamp = datetime.datetime.fromtimestamp(int(raw), datetime.timezone.utc)
-    except (ValueError, OverflowError, OSError):
-        raise ValueError(f"SOURCE_DATE_EPOCH={raw!r} is not a whole number of seconds since 1970-01-01") from None
-    return stamp.strftime("%Y-%m-%dT%H:%M:%S")
+    return datetime.datetime.fromtimestamp(epoch, datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
 
 def _step_string(value: str, what: str, fix: str) -> str:
     """``value`` if it can go in a STEP string as it is and read back the same: printable ASCII, and no quote

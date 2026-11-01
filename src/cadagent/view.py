@@ -105,13 +105,16 @@ def _write_stl(path: Path, tri) -> None:
         f.write(rec.tobytes())
 
 
-def export_view(project, tolerance: float = 0.1, angular: float = 0.2) -> Dict[str, Any]:
-    """Write the meshes and the manifest. Parts without a STEP (or STL) are listed as skipped, not errors."""
+def export_view(project, tolerance: float = 0.1, angular: float = 0.2, out: Optional[Path] = None) -> Dict[str, Any]:
+    """Write the meshes and the manifest. Parts without a STEP (or STL) are listed as skipped, not errors.
+
+    ``tolerance`` (mm) and ``angular`` (radians) set the STEP tessellation; ``out`` writes somewhere other than
+    ``exports/view`` (a coarser copy for a web page, without touching the project's own export)."""
     cfg = dict(project.view or {})
     colors: Dict[str, str] = cfg.get("colors", {})
     hidden = set(cfg.get("hidden", []))
     explode: Dict[str, List[float]] = cfg.get("explode", {})
-    out = project.exports_dir / "view"
+    out = Path(out) if out is not None else project.exports_dir / "view"
 
     # (name, file, colour, offset, category, hidden)
     sources = ([(name, project.exports_dir / f"{name}.step", None, None, cfg.get("parts_category"), False)
@@ -192,3 +195,108 @@ def export_view(project, tolerance: float = 0.1, angular: float = 0.2) -> Dict[s
     for identifier, group in groups.items():
         (out / f"{identifier}.json").write_text(json.dumps(group, indent=1) + "\n")
     return {"manifest": str(out / "view.json"), "parts": len(parts), "skipped": skipped, "groups": list(groups)}
+
+
+MODEL_SCHEMA = "cad-agent-model/1"
+QUANT = 65535                    # positions are 16-bit steps across the assembly's box
+
+
+def _weld(tri):
+    """(vertices (m, 3) float32, triangles (k, 3) int) from STL triangles: equal corners become one vertex, vertices
+    are numbered in the order the triangles first use them, and triangles with two corners at the same point are
+    dropped (an STL writer's slivers; a thin triangle with three distinct corners is kept)."""
+    flat = np.ascontiguousarray(tri.reshape(-1, 3), dtype=np.float32)
+    unique, inverse = np.unique(flat, axis=0, return_inverse=True)
+    faces = inverse.reshape(-1, 3)
+    faces = faces[(faces[:, 0] != faces[:, 1]) & (faces[:, 1] != faces[:, 2]) & (faces[:, 0] != faces[:, 2])]
+    order, first = np.unique(faces.reshape(-1), return_index=True)
+    used = order[np.argsort(first)]                    # vertex ids by first use
+    renumber = np.empty(len(unique), dtype=np.int64)
+    renumber[used] = np.arange(len(used))
+    return unique[used], renumber[faces]
+
+
+def _planes(values, width: int) -> bytes:
+    """Unsigned integers as byte planes: every value's lowest byte, then every value's next byte, and so on."""
+    return np.ascontiguousarray(values.astype(f"<u{width}").view(np.uint8).reshape(-1, width).T).tobytes()
+
+
+def pack_view(manifest: Path, out: Path, *, title: Optional[str] = None, colors: Optional[Dict[str, str]] = None,
+              source: Optional[Dict[str, Any]] = None, view: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
+    """Pack a ``cad-agent view`` export (view.json and its STLs) into one small model for a web page.
+
+    Writes ``<out>.json`` (the parts, their colours and where each lives in the binary) and ``<out>.bin``, gzip-
+    compressed here so it arrives small from any static host (the kit's ``<cad-model>``, ``kit/model.js``, inflates it
+    with the browser's DecompressionStream). Each part's triangles are welded into shared vertices, numbered in the
+    order the triangles first use them. Per part, at ``offset`` in the inflated binary:
+
+    - positions: 16-bit steps across the whole assembly's box (``box_mm``; 0.012 mm on a 0.8 m robot), each
+      coordinate stored as the difference from the previous vertex's (modulo 2^16), x then y then z, each as a plane
+      of low bytes then a plane of high bytes: ``6 * vertices`` bytes;
+    - triangles: each corner as ``next new vertex - vertex`` (0 for a vertex not used before), in ``index_bits``
+      16 or 32 bits, as byte planes: ``3 * triangles * index_bits / 8`` bytes.
+
+    The differences and byte planes make the gzip stream about a third smaller than plain arrays. ``colors``
+    overrides colours by part name; ``source`` is recorded as given (what was exported, from which revision, how);
+    ``view`` is the opening view, ``{"azimuth": deg, "elevation": deg}`` (azimuth from the CAD -y axis towards +x,
+    so 90 looks at the +x face). Deterministic: the same input gives the same bytes. Returns the manifest written."""
+    import gzip
+    import hashlib
+
+    manifest = Path(manifest)
+    exported = json.loads(manifest.read_text())
+    meshes = [(part, *_weld(_read_stl(manifest.parent / part["file"]))) for part in exported["parts"]]
+    used = [v for _, v, _ in meshes if len(v)]
+    every = np.concatenate(used) if used else np.zeros((1, 3), np.float32)
+    lo, hi = every.min(axis=0).astype(np.float64), every.max(axis=0).astype(np.float64)
+    span = np.where(hi - lo > 0, hi - lo, 1.0)
+    blob, parts = bytearray(), []
+    for part, vertices, faces in meshes:
+        q = np.rint((vertices - lo) / span * QUANT).astype(np.int64)
+        steps = np.diff(q, axis=0, prepend=np.zeros((1, 3), np.int64)) & 0xFFFF
+        corners = faces.reshape(-1)
+        fresh = np.maximum.accumulate(np.concatenate([[-1], corners]))[:-1] + 1     # the next new vertex at each corner
+        bits = 16 if len(vertices) <= 0x10000 else 32
+        entry = {k: part[k] for k in ("name", "id", "category", "visible", "explode", "bounds_mm") if part.get(k) not in (None, "")}
+        entry.update(color=(colors or {}).get(part["name"], part["color"]), vertices=len(vertices), triangles=len(faces),
+                     offset=len(blob), index_bits=bits)
+        for axis in range(3):
+            blob += _planes(steps[:, axis], 2)
+        blob += _planes(fresh - corners, bits // 8)
+        parts.append(entry)
+    packed = gzip.compress(bytes(blob), compresslevel=9, mtime=0)
+    out = Path(out)
+    bin_path, json_path = out.parent / f"{out.name}.bin", out.parent / f"{out.name}.json"     # names may hold dots
+    out.parent.mkdir(parents=True, exist_ok=True)
+    bin_path.write_bytes(packed)
+    model = {"schema": MODEL_SCHEMA, "title": title or exported.get("title", ""), "units": exported.get("units", "mm"),
+             "up": exported.get("up", "z"), "box_mm": [round(float(x), 4) for x in (*lo, *hi)], "quant": QUANT,
+             "bin": bin_path.name, "encoding": "gzip", "bytes": len(packed), "raw_bytes": len(blob),
+             "sha256": hashlib.sha256(packed).hexdigest(), "triangles": sum(p["triangles"] for p in parts),
+             "source": source or {}, **({"view": dict(view)} if view else {}), "parts": parts}
+    json_path.write_text(json.dumps(model, indent=1) + "\n")
+    return model
+
+
+def unpack_model(model: Dict[str, Any], packed: bytes) -> List[tuple]:
+    """[(vertices (m, 3) float mm, triangles (k, 3) int)] per part from a pack_view model and its binary: the
+    reference decoder (kit/model.js does the same in the browser; the tests hold the two to each other)."""
+    import gzip
+    raw = np.frombuffer(gzip.decompress(packed) if packed[:2] == b"\x1f\x8b" else packed, dtype=np.uint8)
+    lo, hi = np.array(model["box_mm"][:3]), np.array(model["box_mm"][3:])
+    span = np.where(hi - lo > 0, hi - lo, 1.0)
+    result = []
+    for part in model["parts"]:
+        n, m, at, width = part["vertices"], 3 * part["triangles"], part["offset"], part["index_bits"] // 8
+        q = np.empty((n, 3), np.int64)
+        for axis in range(3):
+            plane = raw[at + 2 * n * axis: at + 2 * n * (axis + 1)].astype(np.int64)
+            q[:, axis] = np.cumsum(plane[:n] | plane[n:] << 8) & 0xFFFF
+        at += 6 * n
+        codes = sum(raw[at + m * b: at + m * (b + 1)].astype(np.int64) << (8 * b) for b in range(width)) if m else np.zeros(0, np.int64)
+        corners, fresh = np.empty(m, np.int64), 0
+        for i, code in enumerate(codes.tolist()):     # sequential by nature: each corner may introduce the next vertex
+            corners[i] = fresh - code
+            fresh += corners[i] == fresh
+        result.append((lo + q * span / model["quant"], corners.reshape(-1, 3)))
+    return result

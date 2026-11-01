@@ -83,3 +83,69 @@ def test_bad_config_rejected_before_writing(tmp_path, bad):
     with pytest.raises(CadConfigError):
         export_view(project(tmp_path, dict(bad, parts=False)))
     assert not (tmp_path / 'exports/view').exists()
+
+
+# ---- pack_view: the compact model the site's <cad-model> loads (kit/model.js decodes it; #179) ----
+
+import importlib.util
+from pathlib import Path
+
+FIXTURE = Path(__file__).parent / "fixtures" / "model"
+REGEN_MODEL = "refresh it with `python tests/fixtures/model/make_fixture.py`"
+
+
+def _fixture():
+    spec = importlib.util.spec_from_file_location("model_fixture", FIXTURE / "make_fixture.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_pack_view_writes_the_committed_fixture_byte_for_byte(tmp_path):
+    fx = _fixture()
+    model = fx.pack(tmp_path / "two-parts")
+    assert (tmp_path / "two-parts.bin").read_bytes() == (FIXTURE / "two-parts.bin").read_bytes(), REGEN_MODEL
+    assert (tmp_path / "two-parts.json").read_text() == (FIXTURE / "two-parts.json").read_text(), REGEN_MODEL
+    again = fx.pack(tmp_path / "again")                     # deterministic: gzip without a timestamp
+    assert (tmp_path / "again.bin").read_bytes() == (tmp_path / "two-parts.bin").read_bytes()
+    assert again["sha256"] == model["sha256"]
+
+
+def test_pack_view_round_trip_within_one_quantisation_step(tmp_path):
+    from cadagent.view import _weld, unpack_model
+    fx = _fixture()
+    model = fx.pack(tmp_path / "m")
+    parts = unpack_model(model, (tmp_path / "m.bin").read_bytes())
+    box = np.array(model["box_mm"])
+    step = (box[3:] - box[:3]) / model["quant"]
+    for (vertices, faces), source in zip(parts, (fx.TETRA, fx.BOX)):
+        want_v, want_f = _weld(source)
+        assert np.array_equal(faces, want_f)                 # the triangles exactly, in order
+        assert np.abs(vertices - want_v).max(axis=0).tolist() <= (step / 2 + 1e-4).tolist()
+    assert [p["triangles"] for p in model["parts"]] == [4, 12]       # the tetra's sliver is dropped
+    assert model["parts"][1]["name"] == "box.v2" and (tmp_path / "m.bin").exists()   # a dotted name keeps its dot
+    assert model["parts"][0]["color"] == "#9cc9e8" and model["parts"][1]["color"] == "#5a5f68"
+    assert model["view"] == {"azimuth": 30, "elevation": 20}
+    assert {k: model["parts"][1][k] for k in ("id", "category", "explode")} == {"id": "B-1", "category": "Frame", "explode": [1, 0, 0]}
+
+
+def test_unpack_model_reads_the_decoded_fixture():
+    from cadagent.view import unpack_model
+    fx = _fixture()
+    model = json.loads((FIXTURE / "two-parts.json").read_text())
+    assert fx.decoded(model, (FIXTURE / "two-parts.bin").read_bytes()) == json.loads((FIXTURE / "two-parts.decoded.json").read_text()), REGEN_MODEL
+
+
+def test_pack_view_uses_32_bit_indices_past_65536_vertices(tmp_path):
+    from cadagent.view import pack_view, unpack_model
+    n = 70000                                                # a strip of triangles: n + 2 distinct vertices
+    xs = np.arange(n + 2, dtype=np.float32)
+    pts = np.stack([xs, (np.arange(n + 2) % 2).astype(np.float32), np.zeros(n + 2, np.float32)], axis=1)
+    tri = np.stack([pts[:-2], pts[1:-1], pts[2:]], axis=1)
+    _write_stl(tmp_path / "strip.stl", tri)
+    (tmp_path / "view.json").write_text(json.dumps({"parts": [{"name": "strip", "file": "strip.stl", "color": "#888888"}]}))
+    model = pack_view(tmp_path / "view.json", tmp_path / "strip")
+    assert model["parts"][0]["index_bits"] == 32 and model["parts"][0]["vertices"] == n + 2
+    (vertices, faces), = unpack_model(model, (tmp_path / "strip.bin").read_bytes())
+    step = (n + 1) / model["quant"]                         # 70 m of strip in 16 bits: about 1.07 mm a step
+    assert faces.shape == (n, 3) and faces.max() == n + 1 and np.abs(vertices[:, 0] - xs).max() <= step / 2 + 1e-3

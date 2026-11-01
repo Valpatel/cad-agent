@@ -221,23 +221,30 @@ mass. A metric with the same name as a BOM metric replaces it (`mass_kg` from CA
 plain numbers. The evaluator's folder is appended to `sys.path`, so it can import its neighbours without shadowing a
 library. Each part the evaluator gets is its own copy; `candidate.catalogue` is shared, so read it only.
 
-In any language, `evaluator: {command: [node, tools/evaluate.mjs], timeout_s: 120}`: the request arrives as JSON on
-stdin (`{id, name, file, design, params, currency, parts: {slot: {item, qty, custom}}, bom}`), and the result above is
-the reply. It runs in the project root with `CAD_AGENT_PROJECT` set, in its own process group: a timeout kills the
-evaluator and everything it started, anything it leaves running when it exits is killed too, and Ctrl-C stops them.
+In any language, `evaluator: {command: [node, tools/evaluate.mjs, "{result}"], timeout_s: 120}`: the request arrives
+as JSON on stdin, and the evaluator writes the result above as JSON to the file `{result}` names; cad-agent reads it
+once the command exits. Without `{result}` the reply is the JSON on stdout. **Use `{result}` whenever the evaluation
+runs native code:** gmsh, OpenCASCADE and most solvers write to file descriptor 1 from C, past Python's `sys.stdout`,
+so `contextlib.redirect_stdout` does not catch them, and their lines land in the reply, which is then not JSON.
+
+<details>
+<summary>The command's placeholders, its stdin, a stdout reply, and how it is stopped</summary>
 
 | In the argv | Becomes |
 |---|---|
-| `{result}` | a file path (in a private temporary folder) the evaluator writes its JSON result to; cad-agent reads it after the command exits, and stdout is then only a log |
+| `{result}` | a file path (in a private temporary folder) the evaluator writes its JSON result to; stdout is then only a log |
 | `{design}` | a temporary JSON file with the resolved design |
 | `{id}` | the design's id as a plain file name for a folder of per-design outputs (letters, digits and `. _ + -` only, such as `trial-00007`; an id with other characters, like `designs/a/std`, has them replaced and gets a short hash) |
 | `{python}` | the project's python |
 
-Without `{result}` the reply is the JSON on stdout: log lines before it are fine (the last line is tried too), and
-anything after it is not. **Use `{result}` whenever the evaluation runs native code.** gmsh, OpenCASCADE and most
-solvers write to file descriptor 1 from C, past Python's `sys.stdout`, so `contextlib.redirect_stdout` does not catch
-them, and their lines end up in the reply, which is then not JSON. An evaluator that must reply on stdout can keep it
-clean with `os.dup2`: copy fd 1 for the reply, point fd 1 at stderr (`os.dup2(2, 1)`), and write the JSON to the copy.
+The request on stdin is `{id, name, file, design, params, currency, parts: {slot: {item, qty, custom}}, bom}`. A reply
+on stdout may have log lines before the JSON (the last line is tried too), but nothing after it. An evaluator that
+must reply on stdout can keep it clean with `os.dup2`: copy fd 1 for the reply, point fd 1 at stderr
+(`os.dup2(2, 1)`), and write the JSON to the copy. The command runs in the project root with `CAD_AGENT_PROJECT` set,
+in its own process group: a timeout kills the evaluator and everything it started, anything it leaves running when it
+exits is killed too, and Ctrl-C stops them.
+
+</details>
 
 An exception, a non-zero exit, a timeout, output that is not JSON or a number that is not finite (NaN or infinity in
 `metrics`, `lines` or `data`) makes that one design an `error` with the reason; the other designs are still evaluated,

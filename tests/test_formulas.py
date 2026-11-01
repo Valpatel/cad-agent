@@ -49,6 +49,8 @@ def test_sources_are_cited_by_edition_not_quoted():
     for key, ref in fx.SOURCES.items():
         if key.startswith("iso"):
             assert re.search(r"ISO \d+-1:\d{4}", ref), key
+        elif key in ("covestro-screws", "covestro-joining", "bulten"):      # a maker's document: its dated edition
+            assert re.search(r"\b20\d\d-\d\d(-\d\d)?\b", ref), key
         elif key not in ("covestro", "freudenstein"):
             assert re.search(r"\d+(st|nd|rd|th) ed\.", ref) and re.search(r"\b(19|20)\d\d\b", ref), key
 

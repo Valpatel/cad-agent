@@ -5,6 +5,8 @@
                 allowable_strain=0.023)                     # root strain, force, stiffness, pass/fail
     fx.spring_rate(wire_diameter=0.8e-3, mean_diameter=6e-3, active_coils=8, shear_modulus=79.3e9)
     fx.preload_from_torque(torque=0.6, diameter=3e-3)       # N, with the nut factor 0.2
+    fx.torsion_snap_bar(length=0.015, width=0.004, thickness=0.0012, twist=0.14, modulus=2.68e9,
+                        allowable_strain=0.0095, lever=0.010, bars=2)   # shear strain, torque, force at the lever
     fx.catalogue()                                          # every formula: units, limits, source
 
 Agents call these instead of re-deriving them; the website's demonstrations call the browser port of the same
@@ -17,14 +19,17 @@ from cadagent.formulas.beams import (DESIGNS, SUPPORTS, beam_stiffness, cantilev
                                      cantilever_taper_factor, cantilever_thickness_profile, cantilever_tip_deflection,
                                      rect_second_moment, snap_arm, snap_deflection_force, snap_root_strain)
 from cadagent.formulas.linkages import fourbar_angles, fourbar_input_limits, grashof, transmission_angle
-from cadagent.formulas.screws import (NUT_FACTORS, nut_factor, preload_from_torque, tensile_stress_area,
-                                      thread_shear_areas, thread_strip_force, torque_for_preload)
+from cadagent.formulas.screws import (BOSS_ENGAGEMENT, BOSS_HOLE, BOSS_OUTSIDE, NUT_FACTORS, TIGHTEN_OVER_DRIVE,
+                                      TIGHTEN_OVER_STRIP, boss_hoop_stress, nut_factor, preload_from_torque,
+                                      screw_boss, tensile_stress_area, thread_radial_pressure, thread_shear_areas,
+                                      thread_strip_force, torque_for_preload)
 from cadagent.formulas.springs import bergstrasser_factor, spring_index, spring_rate, spring_shear_stress
 from cadagent.formulas.thermal import (fan_curve_line, fan_operating_point, fan_stall_flow, fans_in_parallel,
                                        fans_in_series, film_resistance, system_coefficient, wall_heat_flow,
                                        wall_resistance)
 from cadagent.formulas.torsion import (shear_modulus, torsion_bar_stiffness, torsion_bar_twist,
-                                       torsion_constant_rect, torsion_constant_round, torsion_shear_stress_rect,
-                                       torsion_shear_stress_round)
+                                       torsion_constant_rect, torsion_constant_round, torsion_shear_strain_rect,
+                                       torsion_shear_stress_rect, torsion_shear_stress_round, torsion_snap_bar)
 
-__all__ = sorted(REGISTRY) + ["DESIGNS", "NUT_FACTORS", "REGISTRY", "SOURCES", "SUPPORTS", "Formula", "catalogue"]
+__all__ = sorted(REGISTRY) + ["BOSS_ENGAGEMENT", "BOSS_HOLE", "BOSS_OUTSIDE", "DESIGNS", "NUT_FACTORS", "REGISTRY",
+                              "SOURCES", "SUPPORTS", "TIGHTEN_OVER_DRIVE", "TIGHTEN_OVER_STRIP", "Formula", "catalogue"]

@@ -48,6 +48,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from cadagent._deps import MissingDependency, require
+from cadagent.geometry import export_step
 
 BASE_URL = "https://www.mcmaster.com"
 USER_AGENT = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -715,7 +716,8 @@ def _seat_rod_end(shape, cyls, info: Dict[str, Any]):
 
 def normalise(step_path, kind: str, density: Optional[float] = None, out_path=None,
               material: str = "") -> Tuple[Path, Dict[str, Any]]:
-    """Move a part into the frame for its kind (``FRAMES``) and write ``<name>.norm.step`` next to it.
+    """Move a part into the frame for its kind (``FRAMES``) and write ``<name>.norm.step`` next to it
+    (``geometry.export_step``: the same bytes on every run).
 
     The axis comes from the cylindrical faces (the direction carrying the most cylinder area, through the line of
     the largest coaxial set), or from the principal axes of inertia when there are none; the part is centred on
@@ -758,7 +760,7 @@ def normalise(step_path, kind: str, density: Optional[float] = None, out_path=No
     info["density_g_cm3"] = rho
     info["mass_g_est"] = round(vol * rho / 1000.0, 3) if rho else None
     out = Path(out_path) if out_path else step_path.with_name(step_path.stem.split(".")[0] + ".norm.step")
-    cq.exporters.export(cq.Workplane(obj=moved), str(out), exportType="STEP")
+    export_step(moved, out)                               # same bytes for the same part on every run (#91)
     info["norm"] = out.name
     return out, info
 

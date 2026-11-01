@@ -49,7 +49,7 @@ it. Once a check exists, move the entry from "review" to the check.
 | Issue | How it shows up | Caught by | Lesson |
 |---|---|---|---|
 | Stale evidence: reports, renders or results from before the last change | A pass for geometry that no longer exists | Hash-bound results (slice report, hole check, gates, CI parameter check); rerun `cad-agent all` after every geometry change | [07](../lessons/07-verification-and-evidence.md) |
-| Exports that change bytes on every rebuild | The slice report goes stale with no geometry change | Reproducible 3MF writer; check `git diff` after a rebuild with no change | [07](../lessons/07-verification-and-evidence.md) |
+| Exports that change bytes on every rebuild | The slice report, hole check or fit review goes stale with no geometry change; noisy diffs | Reproducible 3MF writer; `cadagent.geometry.export_step` for STEP (fixed header date or `SOURCE_DATE_EPOCH`, product named after the file); check `git diff` after a rebuild with no change | [07](../lessons/07-verification-and-evidence.md) |
 | A simulation trusted before it converged, balanced and was calibrated | Confident but wrong temperatures or stresses | The project's simulation checks: steady, energy balance, calibrated, and inputs that match the design (fan axis and position) | [10](../lessons/10-simulation-and-material.md) |
 | Material savings judged on CAD volume | The slicer disagrees by tens of percent | `cad-agent slice` | [10](../lessons/10-simulation-and-material.md) |
 | A render or report published without being looked at | Wrong colours, clipped views, a stale picture | Review: open every image before it is shown | [07](../lessons/07-verification-and-evidence.md) |

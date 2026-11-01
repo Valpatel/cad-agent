@@ -151,12 +151,11 @@ def draw(work: Path):
     bar.outline.set_edgecolor(MUTED)
     fig.text(0.015, 0.965, "A 20 W box with an exhaust fan: where the air through the fan goes", ha="left", va="top",
              color=INK, fontsize=13)
-    lo = min(f["heat_out_window_w"][0] for _, f in got.values())
-    hi = max(f["heat_out_window_w"][1] for _, f in got.values())
+    (lo1, hi1), (lo2, hi2) = (f["heat_out_window_w"] for _, f in got.values())
     foot = (f"Recorded runs of cadagent.simulation.cfd (OpenFOAM v2512, steady RANS, {ITERATIONS} iterations), a section "
             "through the fan's axis. Blue: the fan's inlet and outlet faces; dashed: its zone, either side of the hub. "
-            f"Neither run is steady: over the last fifth of the run the plume above the box swings the heat leaving it "
-            f"between {lo:g} and {hi:g} W.")
+            "The plume above the box swings: over the last fifth of each run the heat leaving it ranges "
+            f"{lo1:g}\u2013{hi1:g} W (left) and {lo2:g}\u2013{hi2:g} W (right), and the numbers are the last iteration's.")
     fig.text(0.015, 0.06, textwrap.fill(foot, 160), ha="left", va="top", color=MUTED, fontsize=7.8, linespacing=1.35)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     png = io.BytesIO()                            # a field section is a picture: WebP, a tenth of the size of an SVG

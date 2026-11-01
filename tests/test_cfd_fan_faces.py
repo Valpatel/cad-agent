@@ -295,36 +295,45 @@ def test_the_weighting_is_the_bulk_temperature_that_carries_the_heat():
 # Two real runs (OpenFOAM v2512 in its official image, 1500 iterations), recorded by tools/cfd_fan_figure.py: a vented
 # 20 W box with an exhaust fan, once just under its opening and once in a duct with its hub plugged.
 
-def test_a_recorded_ducted_fan_carries_the_heat_put_in(tmp_path):
+def test_a_recorded_ducted_fan_carries_the_heat_that_leaves(tmp_path):
     # the duct is the box's only way out and the plug shuts the hub, so all the air the fan moves was heated once and
-    # leaves: it carries the 20 W put in. Nothing crosses the zone's sides, so the two faces see the same mass flow, and
-    # the fan adds no heat, so the same temperature
+    # leaves: at any iteration it carries the heat leaving the room. Nothing crosses the zone's sides, so both ends see
+    # the same mass flow through the same area, and the fan adds no heat, so the same temperature
     r = cfd.read_results(recorded('exhaust-ducted', tmp_path))
     f = r['fans']['fan']
     assert r['zone_faces'] == {'fanInlet': 392, 'fanOutlet': 392} and 'error' not in r
+    assert f['inlet_area_m2'] == pytest.approx(f['outlet_area_m2'], rel=1e-3)
     assert f['inlet_kg_s'] == pytest.approx(f['outlet_kg_s'], rel=1e-4)
+    assert f['inlet_backflow_kg_s'] < 1e-3 * f['inlet_kg_s'] and f['outlet_backflow_kg_s'] < 1e-3 * f['outlet_kg_s']
     assert abs(f['inlet_c'] - f['outlet_c']) <= 0.05
-    assert f['heat_carried_w'] == pytest.approx(r['heat_input_w'], rel=0.02)
-    assert r['energy_conserved'] is True and r['warnings'] == []
-    # as recorded: 2.81 g/s at 32.06 °C, 19.94 W; the zone's volume average 32.13 °C
-    assert (f['inlet_c'], f['outlet_c'], f['air_through_fan_c'], f['heat_carried_w']) == (32.06, 32.06, 32.13, 19.94)
-    assert f['outlet_kg_s'] == pytest.approx(0.00280931034, rel=1e-9)
+    assert f['heat_carried_w'] == pytest.approx(r['heat_out_w'], rel=0.03)
+    # as recorded: 2.77 g/s at 31.32 / 31.33 °C, 17.60 W; the zone's volume average 31.23 °C. The run ends on a swing of
+    # its plume, 17.83 W leaving for 20 W put in (-10.9 %), and the energy check says so
+    assert (f['inlet_c'], f['outlet_c'], f['air_through_fan_c'], f['heat_carried_w']) == (31.32, 31.33, 31.23, 17.6)
+    assert f['outlet_kg_s'] == pytest.approx(0.00276766409, rel=1e-9)
     assert cfd.stream_heat_w(f['outlet_kg_s'], f['outlet_c'], r['ambient_c']) == pytest.approx(f['heat_carried_w'], abs=0.02)
+    assert r['energy_balance_pct'] == -10.9 and r['energy_conserved'] is False and r['converged'] is False
+    assert len(r['warnings']) == 1 and r['warnings'][0].startswith('energy not conserved: 17.83 W leave')
 
 
-def test_a_recorded_fan_under_its_opening_carries_more_heat_than_is_put_in(tmp_path):
+def test_a_recorded_fan_under_its_opening_carries_more_heat_than_leaves(tmp_path):
     # 3 mm under its opening, the fan takes back air it has pushed out, down through its dead hub and round its rim: that
-    # air is counted each time it passes, so the fan's stream carries 32.65 W above the room for 20 W put in. Its ṁ is
-    # not the flow through the box, and T_fan - Q / (ṁ c_p) would not give the air upstream
+    # air is counted each time it passes, so the fan's stream carries 32.26 W above the room while 19.61 W leave it. Its
+    # m_dot is not the flow through the box, and T_fan - Q / (m_dot c_p) would not give the air upstream
     r = cfd.read_results(recorded('exhaust-under-opening', tmp_path))
     f = r['fans']['fan']
-    assert f['heat_carried_w'] == 32.65 and f['heat_carried_w'] > 1.5 * r['heat_input_w']
-    assert (f['inlet_c'], f['outlet_c'], f['air_through_fan_c']) == (33.03, 33.0, 33.02)
-    # air also crosses the zone's open rim and hub, so the two faces' mass flows differ (by 1.3 % here)
-    assert f['inlet_kg_s'] / f['outlet_kg_s'] == pytest.approx(1.0136, abs=1e-4)
-    # its last iterate sits on a swing of the plume: 21.15 W leave, +5.7 %, and the check says so
-    assert r['energy_balance_pct'] == 5.7 and r['energy_conserved'] is False and r['converged'] is False
-    assert r['warnings'][0].startswith('energy not conserved: 21.15 W leave with the air for 20 W put in (+5.7 %')
+    assert f['heat_carried_w'] == 32.26 and r['heat_out_w'] == 19.61
+    assert f['heat_carried_w'] > 1.5 * r['heat_out_w'] and f['heat_carried_w'] > 1.5 * r['heat_input_w']
+    assert (f['inlet_c'], f['outlet_c'], f['air_through_fan_c']) == (33.64, 33.57, 33.56)
+    # air also crosses the zone's open rim, so the two ends differ, but by under 10 %: 408 and 424 faces, 2.8 % apart in
+    # area and 3.7 % in net flow. 0.05 g/s flows back through the outlet, 1.3 % of the net, too little to warn about
+    assert r['zone_faces'] == {'fanInlet': 408, 'fanOutlet': 424}
+    assert f['outlet_area_m2'] / f['inlet_area_m2'] == pytest.approx(1.0284, abs=1e-4)
+    assert f['inlet_kg_s'] / f['outlet_kg_s'] == pytest.approx(0.9630, abs=1e-4)
+    assert f['outlet_backflow_kg_s'] == pytest.approx(4.7458e-05, rel=1e-4)
+    # its last iteration happens to balance: 19.61 W leave for 20 W put in, -2.0 %
+    assert r['energy_balance_pct'] == -2.0 and r['energy_conserved'] is True and r['converged'] is True
+    assert r['warnings'] == []
 
 
 def test_the_docs_figure_states_what_the_recorded_runs_say(tmp_path):

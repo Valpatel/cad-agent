@@ -160,8 +160,9 @@ def test_fragments_fill_an_empty_entry_and_keep_a_colon_heading():
     ("**Removed**\n- gone\n", "unknown section"),
     ("**Fixed**\nprose only\n", "has no '- ' bullet"),
     ("\n\n", "no section heading"),
-    ("**Fixed**\n- a\n## v9.9.9 (2099-01-01)\n", "would split the CHANGELOG entry"),
-    ("### Fixed\n- a\n", "would split the CHANGELOG entry"),
+    ("**Fixed**\n- a\n## v9.9.9 (2099-01-01)\n", "breaks the CHANGELOG entry"),
+    ("### Fixed\n- a\n", "breaks the CHANGELOG entry"),
+    ("**Fixed**\n- a\n**Projects must change:** re-run it.\n", "is a lead-in paragraph"),
 ])
 def test_refuses_a_malformed_fragment(text, message):
     with pytest.raises(ValueError, match=message):
@@ -189,6 +190,25 @@ def test_a_lead_in_paragraph_opens_its_section():
     note = CHANGELOG.replace("- A thing (#1).\n", "- A thing (#1).\n\n**Note:** read this.\n")
     assert "**Note:** read this.\n\n- Another (#9).\n" in cut_release.fold_fragments(
         note, [("changelog.d/9.md", "**New**\n- Another (#9).\n")])
+
+
+def test_hashes_that_are_not_headings_stay_in_a_fragment():
+    text = "**Fixed**\n- Two CFD fixes, closing\n  #175 and #176.\n- Code:\n\n      # a comment in indented code\n"
+    assert cut_release.read_fragment("x.md", text)["Fixed"] == ["- Two CFD fixes, closing", "  #175 and #176.",
+                                                               "- Code:", "      # a comment in indented code"]
+
+
+@pytest.mark.parametrize("before, gap", [
+    ("**Fixed**\nSome prose.\n", True),          # prose under a heading: a blank line starts the list
+    ("**Fixed**\n- a bullet\n", False),          # after a bullet: the list goes on
+    ("**Fixed**\n- a bullet\n  continued\n", False),
+    ("**Fixed**\n", False),                       # right under the heading
+])
+def test_a_blank_line_goes_before_new_bullets_only_after_prose(before, gap):
+    cl = CHANGELOG.replace("**New**\n- A thing (#1).\n", before)
+    folded = cut_release.fold_fragments(cl, [FIX])
+    last = before.rstrip("\n")
+    assert (last + ("\n\n" if gap else "\n") + "- CFD settles within 1 °C (#175).") in folded
 
 
 def test_cli_folds_and_deletes_fragments_but_not_on_a_dry_run(tmp_path):

@@ -42,6 +42,9 @@ _SECTION = re.compile(r"^\*\*(?P<name>[^*\n]+?):?\*\*:?[ \t]*$", re.M)
 _SECTION_LEAD = re.compile(r"^\*\*(?P<name>[^*\n]+?):?\*\*:?[ \t]+\S")
 
 
+_HEADING = re.compile(r"^ {0,3}#{1,6}(?:[ \t]|$)")  # an ATX heading; "#175 and #176" or indented code is not one
+
+
 def _opens(line: str) -> Optional[str]:
     """The section a line of the Unreleased entry opens: a heading line, or a known section's lead-in paragraph."""
     m = _SECTION.match(line)
@@ -63,9 +66,12 @@ def read_fragment(name: str, text: str) -> Dict[str, List[str]]:
             if section not in SECTIONS:
                 raise ValueError(f"{name}: unknown section **{section}** (use {', '.join(SECTIONS)})")
             found.setdefault(section, [])
-        elif line.lstrip().startswith("#"):
-            raise ValueError(f"{name}: a Markdown heading ({line.strip()[:40]!r}) would split the CHANGELOG entry; "
-                             "use **New**, **Changed**, **Fixed** or **Projects must change**")
+        elif _HEADING.match(line):
+            raise ValueError(f"{name}: a Markdown heading ({line.strip()[:40]!r}) breaks the CHANGELOG entry (a '## ' "
+                             "line ends it); use **New**, **Changed**, **Fixed** or **Projects must change**")
+        elif _SECTION_LEAD.match(line) and _opens(line):
+            raise ValueError(f"{name}: '{line.strip()[:40]}' is a lead-in paragraph; in a fragment, put the heading "
+                             f"on its own line (**{_opens(line)}**) and the text in bullets under it")
         elif line.strip():
             if section is None:
                 raise ValueError(f"{name}: text before the first section heading (**New**, **Fixed**, ...)")

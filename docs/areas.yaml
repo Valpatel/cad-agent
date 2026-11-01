@@ -132,6 +132,7 @@ domains:
         title: Mould design
         scope: Parts designed for moulding, and the moulds themselves.
         maturity: idea
+        pages: [research/process-profiles.md]
         issues: [99]
         topics:
           - {slug: moulded-part-design, title: Moulded-part design, scope: "Walls, draft, ribs, bosses, gates and sink.", maturity: idea, issues: [99]}
@@ -141,6 +142,7 @@ domains:
     title: Manufacturing
     scope: Turning a design into a part, process by process.
     maturity: tooling
+    pages: [research/process-profiles.md]
     issues: [99]
     areas:
       - slug: 3d-printing

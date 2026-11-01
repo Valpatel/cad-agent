@@ -30,8 +30,8 @@ cad-agent serve --port 8000      # needed for "Open in Bambu Studio" links
 ```
 
 Without the console script, `python -m cadagent.cli <subcommand>` does the same.
-The toolkit started as `vptest cad` in the vptest framework; projects set up for
-it keep working (see [Coming from vptest](#coming-from-vptest)).
+The file names and environment variables it uses are listed in
+[File names and environment variables](#file-names-and-environment-variables).
 
 The toolkit's pipeline, in order. `cad-agent all` runs it through `package`: build, export-3mf, holes, gates (only
 when the project enables them), report (which runs `check` first) and package. `site` and `release` are commands of
@@ -128,11 +128,12 @@ served (`cad-agent serve`); from `file://` the link downloads the 3MF instead.
 
 ## The `cad:` section of `cad-agent.yaml`
 
-`cad-agent` reads `<project>/cad-agent.yaml` when it exists, otherwise
-`<project>/vptest.yaml`. Only the `cad:` section is read; other top-level
-sections (such as vptest's `project:` and `projects:`) are ignored. The first
-file found is the config: a `cad-agent.yaml` without a `cad:` section is an
-error even if `vptest.yaml` has one.
+`cad-agent` reads `<project>/cad-agent.yaml`. Only the `cad:` section is read;
+other top-level sections are ignored, so the file can carry other tools'
+settings too. A `cad-agent.yaml` without a `cad:` section is an error. With no
+`cad-agent.yaml` at all, commands exit 2, and the error names any other
+`*.yaml` file in the project root with a top-level `cad:` key, so it can be
+renamed: no other file name is read.
 
 | Key | Default | Meaning |
 |-----|---------|---------|
@@ -218,7 +219,7 @@ Unquoted, the title is cut at the comma and the rest becomes a stray key.
 | `cad-agent export-3mf` | `<part>.stl` -> verified, bed-centred `<part>.3mf` for every part in the parts file | 1 on a read-back mismatch |
 | `cad-agent holes [PART ...]` | checks every hole in every part is clear of material: finds the cylindrical holes and countersinks in `exports/<part>.step` (concave, at least 200° of wall, up to 30 mm across), probes each with a cylinder or cone just inside its wall, and writes `exports/hole-checks.json` bound to each STEP's sha256; `all` runs it and the report's "Holes clear" rows fail on material in a hole, a stale result or a check that did not run (config `cad: holes:`, [below](#holes-clear)) | 1 if a hole has material inside |
 | `cad-agent check [--json]` | collects results (no build), prints a table or the results JSON | 1 if any row fails |
-| `cad-agent report [--open]` | writes `exports/cad-agent-results.json` (schema 1.0, the vptest web shape, so `vptest web validate` and its renderer still accept it) and a standalone `docs/cad-agent-report.html` with inline styles (light and dark) that opens from `file://` | 1 if any row fails |
+| `cad-agent report [--open]` | writes `exports/cad-agent-results.json` (results schema 1.0) and a standalone `docs/cad-agent-report.html` with inline styles (light and dark) that opens from `file://` | 1 if any row fails |
 | `cad-agent package` | zip + sha256 manifest from `package.include` | |
 | `cad-agent release [--out DIR] [--no-zip] [--revision TEXT] [--date D]` | the print release: `release/<name>-rev<revision>/index.html` (parts with thumbnails, print settings, slicer mass and time, STEP/STL/3MF links; assembly pages; hardware; source) and a reproducible zip next to it ([below](#the-print-release-cad-agent-release)) | 2 on a bad config (a path outside the project), a missing part file or a foreign `--out` folder |
 | `cad-agent serve [--port N] [--host H]` | serves the project root; writes the URL to `preview/server-url.txt` | |
@@ -643,20 +644,17 @@ PYTHONPATH=src /path/to/project/.venv/bin/python -m pytest tests -q
 
 The geometry and render tests skip unless cadquery and vtk are importable.
 
-## Coming from vptest
+## File names and environment variables
 
-| vptest cad | cad-agent |
-|------------|-----------|
-| `vptest cad <subcommand>` | `cad-agent <subcommand>` (same subcommands, options and exit codes) |
-| `vptest.yaml` | `cad-agent.yaml`; `vptest.yaml` is still read when `cad-agent.yaml` is absent |
-| `exports/vptest-cad-results.json` | `exports/cad-agent-results.json` (same schema) |
-| `docs/vptest-cad-report.html` | `docs/cad-agent-report.html` |
-| `VPTEST_CAD_PROJECT` (set for steps) | `CAD_AGENT_PROJECT`; the old name is still set |
-| `VPTEST_CAD_RENDER_ONLY` | `CAD_AGENT_RENDER_ONLY`; the old name is read when the new one is unset |
-| `from vptest.cad.x import ...` | `from cadagent.x import ...` |
-
-Pages that link to the old report or results file names need their links
-updated, or `html_pages` will report them as broken.
+| Name | What it is |
+|------|------------|
+| `cad-agent.yaml` | the project config at the project root; only its `cad:` section is read ([above](#the-cad-section-of-cad-agentyaml)) |
+| `cad-agent <subcommand>` | the commands ([above](#commands)); `python -m cadagent.cli <subcommand>` without the console script |
+| `exports/cad-agent-results.json` | the results, schema 1.0, written by `cad-agent report` |
+| `docs/cad-agent-report.html` | the standalone report page (in `docs_dir`), written by `cad-agent report` with the results |
+| `CAD_AGENT_PROJECT` | set to the project root for every build step and design evaluator |
+| `CAD_AGENT_RENDER_ONLY` | comma-separated picture names: a `Renderer` made without `only=` renders just those |
+| `from cadagent.<package> import ...` | the Python API ([package layout](#package-layout-v050)) |
 
 ## Holes clear
 

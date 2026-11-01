@@ -14,11 +14,12 @@
 @supports not selector(::details-content){@media(scripting:none){:where(cad-nav .cad-nav-toggle){display:block}}}
 :where(cad-nav .cad-nav-panel){position:sticky;top:var(--cad-nav-top,96px);max-height:calc(100vh - var(--cad-nav-top,96px) - 16px);
   overflow:auto;padding:4px 10px 24px 4px;scrollbar-width:thin}
-/* Page colour from the panel's top edge to just below the filter, behind it and over the links that scroll under it: square,
- * so no link shows in the corners beside the pill (a shadow on the pill follows its rounded ends). 18px = the filter's
- * padding and border; the 8px below it is most of its 12px margin (the px pair: for browsers without the lh unit). */
-:where(cad-nav .cad-nav-panel)::before{content:"";position:sticky;top:0;z-index:1;display:block;height:53.5px;margin:-4px 0 -45.5px;
-  height:calc(4px + 1lh + 18px + 8px);margin:-4px 0 calc(-1lh - 18px - 8px);background:var(--cad-nav-page,#fffdf5)}
+/* Page colour from the panel's top edge to 8px below the filter, behind it and over the links that scroll under it:
+ * square, so no link shows in the corners beside the pill (a shadow on the pill followed its rounded ends). Sticky
+ * insets count from inside the panel's 4px padding, so the band sticks at -4px and the filter, at 4px, sits 8px down.
+ * 1lh + 18px is the filter's height (its line, padding and border); the px pair is for browsers without lh. */
+:where(cad-nav .cad-nav-panel)::before{content:"";position:sticky;top:-4px;z-index:1;display:block;height:53.5px;margin:-4px 0 -49.5px;
+  height:calc(1lh + 18px + 16px);margin:-4px 0 calc(-1lh - 18px - 12px);background:var(--cad-nav-page,#fffdf5)}
 :where(cad-nav .cad-nav-filter){position:sticky;top:4px;z-index:1;display:block;width:100%;box-sizing:border-box;margin:0 0 12px;
   padding:8px 12px;border-radius:999px;font:inherit;border:1px solid var(--cad-nav-input-line,#6f8a80);
   background:var(--cad-nav-bg,#fff);color:inherit}

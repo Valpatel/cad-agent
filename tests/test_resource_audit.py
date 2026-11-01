@@ -788,11 +788,22 @@ def test_a_receipt_that_names_no_package_must_say_it_is_not_from_npm(tmp_path):
     r = run(root)
     f = next(f for f in r["findings"] if f["subject"] == "webkit:widget" and f["check"] == "webkit-receipt")
     assert f["severity"] == "medium" and f["title"] == "the widget receipt names no npm package" and '"npm": false' in f["action"]
-    root = kit_folder_checkout(tmp_path / "b", {"widget/lib.js": lib}, dict(receipt, npm=False))
+    root = kit_folder_checkout(tmp_path / "b", {"widget/lib.js": lib}, {"npm": False, "files": receipt["files"]})
     f = next(f for f in run(root)["findings"] if f["subject"] == "webkit:widget" and f["check"] == "webkit-receipt")
     assert f["title"] == "the widget receipt names no source for 1 files" and f["evidence"] == "lib.js"
     root = kit_folder_checkout(tmp_path / "c", {"widget/lib.js": lib}, dict(receipt, npm=False, sources={"lib.js": "ours"}))
+    f = next(f for f in run(root)["findings"] if f["subject"] == "webkit:widget")      # "version" is an npm field
+    assert f["title"] == 'the widget receipt says "npm": false but names npm fields' and f["evidence"] == "version"
+    plain = {"npm": False, "files": receipt["files"], "sources": {"lib.js": "ours"}}
+    root = kit_folder_checkout(tmp_path / "d", {"widget/lib.js": lib}, plain)
     assert not [f for f in run(root)["findings"] if f["subject"] == "webkit:widget"]
+    # "npm": false beside a package does not switch the package's checks off
+    root = kit_folder_checkout(tmp_path / "e", {"widget/lib.js": lib}, dict(plain, package="widget", version="1.0.0",
+                                                                          bundled={"dompurify": "3.4.12"}))
+    comp = ra.webkit_components(root)["widget"]
+    assert comp["packages"] == [("widget", "1.0.0")] and comp["bundled"] == [("dompurify", "3.4.12")]
+    f = next(f for f in run(root)["findings"] if f["subject"] == "webkit:widget" and f["check"] == "webkit-receipt")
+    assert f["evidence"] == "package, version, bundled"
 
 
 ORBIT = b"const normalized_delta = Math.abs( delta ) / ( 100 * ( window.devicePixelRatio | 0 ) );"

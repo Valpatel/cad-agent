@@ -1219,7 +1219,7 @@ def webkit_components(root):
         'fonts': dict(packages=[], repos=[]),
     }
     for folder, rec in folders.items():
-        if rec.get('npm') is False:
+        if rec.get('npm') is False and not npm_fields(rec):    # npm fields beside "npm": false: checked, and flagged
             comps.setdefault(folder, dict(packages=[], repos=[]))
             continue
         comps[folder] = dict(packages=[(rec.get('package') or folder, rec.get('version'))], bundled=bundled_of(rec),
@@ -1257,9 +1257,21 @@ def receipt_problems(name, rec):
     return out
 
 
+NPM_FIELDS = ('package', 'version', 'source', 'npm_integrity', 'bundled', 'paths_in_package', 'patched')
+
+
+def npm_fields(rec):
+    """The npm fields a receipt fills in: those a receipt that says "npm": false must not have."""
+    return [k for k in NPM_FIELDS if rec.get(k)]
+
+
 def non_npm_problems(folder, rec):
     """Offline: a SOURCE.json with no npm package. It must say so ("npm": false; otherwise the advisory, bundle and
-    tarball checks would be skipped without a word) and name a source for every file it hashes. [(title, evidence, action)]."""
+    tarball checks would be skipped without a word), carry none of the npm fields (a receipt that says both is still
+    checked as npm), and name a source for every file it hashes. [(title, evidence, action)]."""
+    if rec.get('npm') is False and npm_fields(rec):
+        return [(f'the {folder} receipt says "npm": false but names npm fields', ', '.join(npm_fields(rec)),
+                 'Remove "npm": false if the files come from that npm package; otherwise remove the npm fields.')]
     if rec.get('package'):
         return []
     if rec.get('npm') is not False:

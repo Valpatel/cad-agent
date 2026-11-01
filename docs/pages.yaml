@@ -299,6 +299,13 @@ lessons/mechanical/fasteners-and-assembly-access.md:
 
 docs/common-issues.md:
   figures:
+    - after: geometry-and-modelling
+      img: docs/img/gates/bench-review.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: Gates this table names, at work on the gate bench. The wall gate checks each part's minimum wall; connectivity, containment, fasteners, motion and assembly read one table of how every pair of parts relates. 144 checks, all pass, and each says physical fit is not verified.
+      alt: The review site's gates table for the gate bench, six gates and the dossier lint, all pass, each marked physical fit not verified
     - after: fasteners-and-assembly
       img: docs/img/motion/module-insertion.svg
       shows: diagram
@@ -308,9 +315,10 @@ docs/common-issues.md:
       caption: The assembly-access gate runs the steps in order. A module is checked on its own bench, then inserted into its parent as one rigid body, then withdrawn.
       alt: A diagram of a preassembled module inserted into its parent as one rigid body, then withdrawn
     - after: evidence-simulation-and-release
-      img: docs/img/gates/bench-review.webp
-      shows: output
-      tool: cad-agent site
-      on: fixture
-      caption: Evidence with its limits on the page. The gate bench's six gates run 144 checks and all pass, and each says physical fit is not verified.
-      alt: The review site's gates table for the gate bench, six gates and the dossier lint, all pass, each marked physical fit not verified
+      img: docs/img/fea/corner-convergence.svg
+      shows: diagram
+      drawn_by: tools/fea_mesh_figure.py
+      tool: cadagent.simulation.fea
+      on: example
+      caption: A result that never converges. Refining the mesh at a steel L-bracket's sharp inside corner from 2 mm to 0.125 mm raises its peak stress from 443 to 1448 MPa; with an R1.5 fillet it stays between 432 and 447 MPa. Model the fillet the part will have, then refine until the peak settles.
+      alt: Peak stress at an L-bracket's inside corner against mesh size; the sharp corner's peak keeps rising as the mesh is refined, the filleted corner's stays flat

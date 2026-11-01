@@ -191,14 +191,14 @@ MATERIALS = {
     # 276 MPa, 2.70 g/cm3; 7075 ranges 434-476 MPa (T6 sheet) and 372-462 MPa (T651 plate to 101.6 mm), over thickness.
     # - 6061-T6 sheet and T651 plate, 0.010-6.000 in thick, Tables 3.6.2.0(b1) and (b2), pp. 3-264, 3-265: Fty 35 ksi
     #   (LT; 36 L), E 9.9e3 ksi, mu 0.33. Density from Protolabs (2.70 Mg/m3; the handbook's 0.098 lb/in3 is 2.71).
-#   Extruded 6061-T6/T6510/T6511 rod, bar and shapes, common CNC stock, are lower across the grain: A-basis Fty LT
-#   33 ksi to 1.000 in and 28 ksi (193 MPa) from 1.001 to 6.500 in (35 L), Table 3.6.2.0(g), p. 3-272. The solver
-#   knows neither the stock form nor the grain direction: replace the row for such stock loaded across its length.
+    #   Extruded 6061-T6/T6510/T6511 rod, bar and shapes, common CNC stock, are lower across the grain: A-basis Fty
+    #   LT 33 ksi to 1.000 in and 28 ksi (193 MPa) from 1.001 to 6.500 in (35 L), Table 3.6.2.0(g), p. 3-272. The
+    #   solver knows neither the stock form nor the grain direction: replace the row for such stock loaded across it.
     # - 7075-T6 sheet and T651 plate, 0.012-2.000 in (0.3-50.8 mm) thick, Table 3.7.6.0(b1), p. 3-371: Fty 67 ksi
     #   (LT, the lowest in that range), E 10.3e3 ksi, mu 0.33, 0.101 lb/in3. Thicker plate is weaker: 64 ksi to
-    #   2.5 in, 54 ksi (372 MPa) at 3.5-4 in, and less again short-transverse; replace the row for such stock. So is
-#   7075-T6/T651 rolled or cold-finished bar and rod: A-basis Fty 66 ksi to 2.000 in, then 63 and 60 ksi LT to 3 and
-#   4 in, Table 3.7.6.0(d), p. 3-380.
+    #   2.5 in, 54 ksi (372 MPa) at 3.5-4 in, and less again short-transverse; replace the row for such stock.
+    #   7075-T6/T651 rolled or cold-finished bar and rod is lower too: A-basis Fty 66 ksi to 2.000 in, then 63 and
+    #   60 ksi LT to 3 and 4 in, Table 3.7.6.0(d), p. 3-380.
     # - Mild steel: AISI 1025 sheet, strip, plate, tubing and bar, Table 2.2.1.0(b), p. 2-8: Fty 36 ksi (S-basis, the
     #   same 36 ksi minimum as ASTM A36 structural steel), E 29.0e3 ksi, mu 0.32, 0.284 lb/in3.
     # The carbon tube has no cited sheet: typical values, labelled as such; use the supplier's.

@@ -213,6 +213,10 @@ may reach. The plate is not the air at a printed wall: the wall's own temperatur
 decides.*
 
 **Jetson AGX Orin module.** Sources: [datasheet DS-10662-001 v1.8, Sep 2025, mirror](https://static.generation-robots.com/media/Jetson-AGX-Orin-Data-Sheet.pdf) and [Jetson Linux r36.4 power/thermal page](https://docs.nvidia.com/jetson/archives/r36.4/DeveloperGuide/SD/PlatformPowerAndPerformance/JetsonOrinNanoSeriesJetsonOrinNxSeriesAndJetsonAgxOrinSeries.html).
+
+<details>
+<summary>The module's power, power modes, plate and SoC limits, and its design guide</summary>
+
 - **Module power (datasheet):**
   - JAO 64GB: 15 W / 30 W / 50 W, "up to 60 W"
   - JAO 32GB: 15 W / 30 W / 40 W, "up to 40 W"
@@ -224,7 +228,13 @@ decides.*
 - **SoC thresholds (r36.4):** SW throttle 99 °C, HW throttle 103 °C, SW shutdown 104.5 °C, HW shutdown 105 °C. The devkit fan "cool" profile tops out at 2900 RPM.
 - **Thermal Design Guide (TDG-10943-001):** v1.1 is at [Mouser](https://www.mouser.com/pdfDocs/Jetson_AGX_Orin_Series_TDG-10943-001_v11.pdf), but it is **bot-protected and I could not read Table 2-1 or its figures**. Forum posts reference v1.2 and v1.3, and confirm that θ_jp is given for 32GB/64GB but "TBD" for Industrial ([forum](https://forums.developer.nvidia.com/t/agx-orin-industrial-missing-thermal-resistance-values-in-tdg/278394)). **Unverified:** a third-party claim of a 60 W "MAXN SUPER" mode for the 32GB module.
 
+</details>
+
 **Seeed J501 cooler.** The reference cooler in the repo README is [Seeed p-5970](https://www.seeedstudio.com/Aluminum-heatsink-with-Fan-for-Jetson-AGX-Orin-p-5970.html). The page publishes no numeric specs and it 403s to scripts. Seeed hosts a vendor datasheet under the J501 wiki ([WS-RDN-601, 100×87×34 mm](https://files.seeedstudio.com/wiki/reComputer-Jetson/J501/323011387Jetson_AGX_Orin_Heatsink_100x87x34mm-datasheet.pdf)); the repo has a saved copy:
+
+<details>
+<summary>The cooler's datasheet: fan, airflow, PWM curve, heat sink, and a height to measure</summary>
+
 - **Fan:** 8015 PWM fan (80×80×15 mm), ball bearing, 5 V, 0.16 A, 2300 RPM ±10 %, 27.4 dB(A).
 - **Airflow:** **22.90 CFM** at zero static pressure. **Max static pressure 1.55 mmH₂O (≈15.2 Pa)**; the datasheet swaps the two row labels.
 - **PWM curve:** 25/50/75/100 % → 700/1380/1920/2300 RPM.
@@ -232,6 +242,8 @@ decides.*
 - **Heatpipe count is not stated.**
 - **Height caveat:** the repo models the cooler top 50 mm above the seat (Z40.758 → Z90.758), but the datasheet says 34 mm. Possibly 34 mm of heatsink plus the 15 mm fan on top; measure it.
 - **Other coolers:** the different Mini J501 heatsink is listed at 110×100×50 mm and 14.1–55.26 CFM ([openelab](https://openelab.io/products/seeed-studio-recomputer-mini-j501-heatsink)). It is not ours.
+
+</details>
 
 **Printed-material limits (Bambu TDS; third-party-hosted copies; values read with pdftotext):**
 
@@ -245,13 +257,7 @@ With the TTP allowed up to 80 °C and the fan exhausting warm air, PLA within a 
 
 ## Existing projects combining CAD + TO + CFD for 3D printing
 
-There is no single mature FOSS project that does CadQuery → topology optimisation → CHT CFD → slicer. The closest building blocks:
-- **FreeCAD** (LGPL-2.1) + **CfdOF** (LGPL-3), plus FreeCAD FEM + **beso** (LGPL-3): a GUI-centric equivalent.
-- **DAFoam** (GPL-3) + OpenMDAO: adjoint CFD shape optimisation.
-- **ESI `adjointOptimisationFoam`**: fluid topology optimisation.
-- **pyMOTO**: thermal and structural topology optimisation with an AM overhang filter.
-
-Reuse the ESI `cpuCabinet` case, pyMOTO examples and Optuna as templates, rather than adopting a framework.
+There is no single mature FOSS project that does CadQuery → topology optimisation → CHT CFD → slicer.
 
 ```mermaid
 flowchart TD
@@ -263,8 +269,17 @@ flowchart TD
 ```
 
 *What cad-agent did instead: the blocks this survey chose, each run from its own module, joined by the standard
-practice in [the toolkit page](../docs/toolkit.md). The AGPL and GPL programs (the slicer, OpenFOAM) run as separate
-processes. Each result states its limits; none proves fit, strength or temperature.*
+practice in [the toolkit page](../docs/toolkit.md). The slicer (AGPL) and OpenFOAM (GPL) run as separate processes;
+gmsh (GPL), which meshes for the FEA, is imported, as the note at the top says. Each result states its limits; none
+proves fit, strength or temperature.*
+
+The closest existing building blocks:
+- **FreeCAD** (LGPL-2.1) + **CfdOF** (LGPL-3), plus FreeCAD FEM + **beso** (LGPL-3): a GUI-centric equivalent.
+- **DAFoam** (GPL-3) + OpenMDAO: adjoint CFD shape optimisation.
+- **ESI `adjointOptimisationFoam`**: fluid topology optimisation.
+- **pyMOTO**: thermal and structural topology optimisation with an AM overhang filter.
+
+Reuse the ESI `cpuCabinet` case, pyMOTO examples and Optuna as templates, rather than adopting a framework.
 
 ## Could not verify
 

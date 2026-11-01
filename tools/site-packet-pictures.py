@@ -39,8 +39,8 @@ QUALITY = 82
 # scenario: the bench's seed (None: the bench as built), and per section the packet views to keep
 SCENARIOS: dict[str, dict] = {
     "clean": {"seed": None, "views": {
-        "S-store": ["xray-iso", "cut-cavity-hopper_cavity", "cut-cavity-hopper_cavity-plan", "cut-fastener-screw_0",
-                    "access-from-top", "exploded"],
+        "S-store": ["solid-iso", "xray-iso", "cut-cavity-hopper_cavity", "cut-cavity-hopper_cavity-plan",
+                    "cut-fastener-screw_0", "access-from-top", "exploded"],
         "S-arm": ["solid-iso", "pose-I-pin-arm-min", "pose-I-pin-arm-max", "cut-joint-I-pin-arm"],
     }},
     "ball_through_wall": {"seed": "ball_through_wall", "views": {
@@ -48,7 +48,7 @@ SCENARIOS: dict[str, dict] = {
     "thin_wall": {"seed": "thin_wall", "views": {"S-store": ["cut-cavity-hopper_cavity-plan"]}},
     "screw_too_long": {"seed": "screw_too_long", "views": {"S-store": ["cut-fastener-screw_0"]}},
     "flap_hits_frame": {"seed": "flap_hits_frame", "views": {"S-arm": ["pose-I-pin-arm-max"]}},
-    "lid_before_board": {"seed": "lid_before_board", "views": {"S-store": ["findings"]}},
+    "lid_before_board": {"seed": "lid_before_board", "views": {"S-store": ["findings", "exploded"]}},
     "bracket_floats": {"seed": "bracket_floats", "views": {"S-bracket": ["findings"]}},
     "gusset_over_screw": {"seed": "gusset_over_screw", "views": {"S-store": ["access-from-top"]}},
 }

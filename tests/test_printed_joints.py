@@ -178,9 +178,14 @@ def test_a_boss_lying_in_the_layer_plane_has_no_seam_to_close():
                      bolt=pj.through_bolt(5, 0.8, preload_n=1200))
     assert rows(r)["layers closed"]["verdict"] == "pass" and "no layer seam" in rows(r)["layers closed"]["detail"]
     assert "lying in the layer plane" in rows(r)["orientation"]["detail"]
+    # and the advice sizes no rod against a seam that is not there: only the crush end of the window is left
+    assert r["advice"]["seam"] is False and r["advice"]["preload_to_close_n"] is None
+    assert r["advice"]["preload_window_n"][0] is None and r["advice"]["preload_window_n"][1] > 0
+    assert r["advice"]["torque_window_nm"][0] is None and r["advice"]["torque_window_nm"][1] > 0
     # the same boss upright, the same 600 N kept: below the 1102 N that closes the seam
     upright = pj.root_peel(PLA, 100, 20, pj.tube(12, 5.5), bolt=pj.through_bolt(5, 0.8, preload_n=1200))
-    assert rows(upright)["layers closed"]["verdict"] == "warn"
+    assert rows(upright)["layers closed"]["verdict"] == "warn" and upright["advice"]["seam"] is True
+    assert upright["advice"]["preload_to_close_n"] == pytest.approx(1102, abs=1)
 
 
 @pytest.mark.parametrize("bad", [dict(section={"shape": "star"}), dict(load_dir=(0, 0, 1)), dict(retained=0),

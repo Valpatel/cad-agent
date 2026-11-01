@@ -436,18 +436,21 @@ def root_peel(material: str, side_load_n: float, height_mm: float, section: Dict
                  + ("" if bolt is None else "; 'kept' is the least preload after the plastic relaxes, 'tightened' "
                                             "the most as tightened, which squeezes the compression side hardest"),
                  "shigley-beam", "gere", "fea-layer", "printed")]
-    # the clamp window: enough kept to hold the seam closed, not so much as tightened that the column is crushed
-    advice: Dict[str, Any] = {"preload_to_close_n": close_n, "kept_share": retained,
-                              "preload_window_n": (close_n / retained, max(crush_n, 0.0))}
     tilt = _angle(a, n)
     across = tilt < 90.0 - FLAT_DEG       # the bending crosses the layers, so there is a seam to hold closed
+    # the clamp window: enough kept to hold the seam closed, not so much as tightened that the column is crushed; with
+    # no seam across the bending (the feature lying in the layer plane) only the crush end applies
+    least_n = close_n / retained if across else None
+    advice: Dict[str, Any] = {"seam": across, "preload_to_close_n": close_n if across else None, "kept_share": retained,
+                              "preload_window_n": (least_n, max(crush_n, 0.0))}
     if bolt is not None:
         kept = retained * bolt["preload_n"]["low"]
         d, (k_lo, k_hi) = bolt["diameter_mm"] * 1e-3, bolt["nut_factor"]
-        t_lo = fx.torque_for_preload(close_n / retained, d, k_hi)
+        t_lo = fx.torque_for_preload(least_n, d, k_hi) if across else None
         t_hi = fx.torque_for_preload(max(crush_n, 0.0), d, k_lo)
         advice["torque_window_nm"] = (t_lo, t_hi)
-        window = (f"tighten to {t_lo:.2f} N m or more to keep it closed, and to at most {t_hi:.2f} N m so the most "
+        window = ("" if not across else
+                  f"tighten to {t_lo:.2f} N m or more to keep it closed, and to at most {t_hi:.2f} N m so the most "
                   "preload does not overload the compression side" if t_lo <= t_hi else
                   f"no torque does both: keeping it closed takes {t_lo:.2f} N m, and the compression side takes at "
                   f"most {t_hi:.2f} N m. Widen the boss (more area at the root) or shorten the lever")

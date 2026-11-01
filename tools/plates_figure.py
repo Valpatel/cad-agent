@@ -11,7 +11,8 @@ its print plan (exports/print-plan.json). Each material is named by the Bambu St
 print it with, and the P1S's bed exclusion corner is a keep-out area, as export-3mf adds it from the printer profile
 when Bambu Studio is installed. Bambu Studio is not run here: the figure needs only the layout.
 
-The checkout's revision, the settings and the plate summary are recorded in docs/img/plates/SOURCE.json.
+The checkout's revision, the settings and the plate summary are recorded in docs/img/plates/SOURCE.json, next to
+Gyropup's licence (LICENSE.txt).
 """
 from __future__ import annotations
 
@@ -70,6 +71,7 @@ def main() -> int:
                    for p in rec["plates"]],
     }
     (OUT / "SOURCE.json").write_text(json.dumps(source, indent=1, ensure_ascii=False) + "\n")
+    shutil.copy(src / "LICENSE", OUT / "LICENSE.txt")       # Gyropup's MIT licence travels with its picture
     print(f"{source['copies']} copies on {len(rec['plates'])} plates -> {OUT / 'gyropup-plates.svg'}")
     return 0
 

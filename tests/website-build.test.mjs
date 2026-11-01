@@ -278,7 +278,8 @@ test('redirects outlive the stubs, and a stub must point at a published page tha
       execFileSync('git', ['checkout', '-q', 'HEAD~1'], { cwd: wt });
     }
     // Bad lines in the list fail the build: a source listed twice (Pages keeps the first, the preview server the last),
-    // a leading slash, a source that is not a .md path, a file that is still in the repo, and a stub listed elsewhere.
+    // a leading slash, a source that is not a .md path or not a plain path (a splat, a placeholder, `..`, `//`, `./`),
+    // a file that is still in the repo, and a stub listed elsewhere.
     const list = path.join(wt, 'tools/site-redirects.txt');
     const original = await readFile(list, 'utf8');
     for (const [line, why] of [
@@ -286,6 +287,11 @@ test('redirects outlive the stubs, and a stub must point at a published page tha
       ['/lessons/gone.md lessons/README.md', 'without a leading slash'],
       ['lessons/gone lessons/README.md', 'without a leading slash'],
       ['web/site.css lessons/README.md', 'without a leading slash'],
+      ['lessons/*.md lessons/README.md', 'without a leading slash'],          // a Pages splat: every lesson would loop
+      ['lessons/:name.md lessons/README.md', 'without a leading slash'],      // a Pages placeholder
+      ['lessons/../gone.md lessons/README.md', 'without a leading slash'],
+      ['lessons//gone.md lessons/README.md', 'without a leading slash'],
+      ['lessons/./gone.md lessons/README.md', 'without a leading slash'],
       ['docs/toolkit.md lessons/README.md', 'is still a file in the repo'],
     ]) {
       await writeFile(list, original + line + '\n');

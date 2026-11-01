@@ -3989,7 +3989,7 @@ rules:
     quantity: gap between two flanges meeting at a corner
     min: 0.4
     units: mm
-    applies: SendCutSend corner reliefs
+    applies: SendCutSend corner reliefs; the article prints .015 in (0.4 mm), and 0.015 in is 0.381 mm. The printed 0.4 mm is kept
     as_printed: 0.015 in
     source: sendcutsend-bend-relief
     status: read
@@ -4932,7 +4932,9 @@ rules:
     quantity: smallest hole or cavity diameter with micro-machining tools
     min: 0.05
     units: mm
-    applies: feasible; most shops work down to 2.5 mm. The same page says holes are feasible above 1 mm
+    applies: >-
+      feasible; most shops work down to 2.5 mm. The same page says holes are feasible above 1 mm. The table prints
+      "0.05 mm (0.005 inches)", which disagree: 0.005 in is 0.127 mm, 2.5 times the mm value. The mm value is kept
     source: hubs-cnc-design
     as_printed: 0.005 in
     status: read

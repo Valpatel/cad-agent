@@ -508,7 +508,7 @@ D below is the tool or hole diameter. Two pages here are by named engineers at X
 | Feature thickness; nominal part thickness | > 0.51 mm; > 1.02 mm | Milling | [Protolabs][protolabs-cnc-milling] |
 | Turned wall; smallest turned diameter | ≥ 0.51 mm; ≥ 0.76 mm (points steeper than 30°) | Turning | [Protolabs][protolabs-cnc-turning] |
 | Slender feature | height ≤ 4 × width | | [Protolabs Network][hubs-cnc-cost-tips] |
-| Smallest tool or cavity | 2.5 mm on most machines; 0.05 mm with micro-machining tools | | [Protolabs Network][hubs-cnc-design]; Joel Schadegg and Greg Paulsen, [Xometry][xometry-cnc-10-tips] |
+| Smallest tool or cavity | 2.5 mm on most machines; 0.05 mm with micro-machining tools (printed beside 0.005 in, which is 0.127 mm) | | [Protolabs Network][hubs-cnc-design]; Joel Schadegg and Greg Paulsen, [Xometry][xometry-cnc-10-tips] |
 | Engraved text stroke | ≥ 0.457 mm, 0.3 mm deep | Plastics and soft metals | [Protolabs][protolabs-cnc-milling] |
 
 ### Holes and threads
@@ -551,7 +551,8 @@ D below is the tool or hole diameter. Two pages here are by named engineers at X
   engagement (Fictiv). The run-out at the bottom of a tapped blind hole is 1.5 × D (Protolabs Network) or 0.5 × D
   (Xometry).
 - **Protolabs Network against itself:** holes are feasible above 1 mm in one row and features down to 0.05 mm with
-  micro tools in another.
+  micro tools in another. That 0.05 mm is printed beside 0.005 in, which is 0.127 mm, so one of the two is a slip;
+  the YAML keeps the mm value and says so.
 - **Standards.** Protolabs names ISO 2768-1 (general tolerances) as its default. It is paid and was not read.
 
 ## 9. What this changes in cad-agent

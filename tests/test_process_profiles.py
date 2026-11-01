@@ -137,6 +137,24 @@ def test_the_shop_table_converts_inches_exactly(data):
                 assert row[cols.index(col)] == pytest.approx(round(value * 25.4, 3), abs=1e-9), (row[0], col)
 
 
+def test_a_rule_printed_in_inches_converts_or_says_why_not(data):
+    """Where `as_printed` is one inch value, the rule's number is its conversion (within the 3 % that sources round
+    to), or `applies` gives the exact conversion, so an inch slip in a source is flagged and not silently taken."""
+    one_inch_value = re.compile(r"±?(\d*\.?\d+) in")
+    checked = 0
+    for r in data["rules"]:
+        m = one_inch_value.fullmatch(str(r.get("as_printed", "")).strip())
+        numbers = [r[k] for k in ("min", "max", "value") if isinstance(r.get(k), (int, float))]
+        if not m or len(numbers) != 1:
+            continue
+        checked += 1
+        exact = float(m.group(1)) * 25.4
+        if abs(numbers[0] - exact) > 0.03 * exact:
+            assert f"{round(exact, 3):g} mm" in r["applies"], \
+                f"{r['id']}: {numbers[0]} mm is not {r['as_printed']} ({exact:.3f} mm); say so in applies"
+    assert checked >= 20
+
+
 def test_the_evaluator_refuses_anything_but_arithmetic():
     evaluate = _figures().evaluate
     assert evaluate("2*T + R", {"T": 1.5, "R": 1.5}) == pytest.approx(4.5)

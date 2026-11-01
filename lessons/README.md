@@ -30,6 +30,11 @@ CAN breakout PCB and housing designed on 2026-10-26. Their Source lines name tho
 project's repository.
 The [simulation](simulation/) area's [meshes](simulation/meshes.md) lessons come from Gyropup's hip-frame and
 front-link FEA studies (October 2026, Valpatel/gyropup#29), as written up for the toolkit in #144.
+The mechanical area's [printing-without-supports](mechanical/printing-without-supports.md) lessons, and the last two
+[agent-process](process/agent-process.md) lessons, come from a Claude Code session on 2026-11-01 that designed a 1/8
+Cat 323 excavator (46 parts for a Prusa XL 5T) and sliced every part with no supports and no stability warning
+(#253). That project is in the user's private repository; its Source lines name its files. It was not printed in the
+session either.
 
 ## Areas
 
@@ -52,7 +57,7 @@ flowchart TD
 | Area | Files | Lessons on |
 |---|---|---|
 | [process/](process/) | [verify-from-source](process/verify-from-source.md), [user-intent-and-requirements](process/user-intent-and-requirements.md), [agent-process](process/agent-process.md) | Facts from the board's sources, the user's requirements, how a long session runs |
-| [mechanical/](mechanical/) | [design-rules](mechanical/design-rules.md), [fasteners-and-assembly-access](mechanical/fasteners-and-assembly-access.md), [enclosure-features](mechanical/enclosure-features.md) | Strength and printability, screws and assembly order, what the enclosure carries |
+| [mechanical/](mechanical/) | [design-rules](mechanical/design-rules.md), [fasteners-and-assembly-access](mechanical/fasteners-and-assembly-access.md), [enclosure-features](mechanical/enclosure-features.md), [printing-without-supports](mechanical/printing-without-supports.md) | Strength and printability, screws and assembly order, what the enclosure carries, printing without supports and reading slicer warnings |
 | [wiring/](wiring/) | [cables-connectors-and-routing](wiring/cables-connectors-and-routing.md) | Mated-plug windows, routes, bend radius, wiring rules |
 | [electronics/](electronics/) | [pcb-evidence-and-review](electronics/pcb-evidence-and-review.md) | KiCad evidence, routing geometry, STEP handedness, release packaging |
 | [simulation/](simulation/) | [simulation-and-material](simulation/simulation-and-material.md), [meshes](simulation/meshes.md) | Bought parts, slicer grams, thinner shells, thermal models, shared compute, meshes and mesh-dependent peaks |

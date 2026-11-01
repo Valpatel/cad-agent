@@ -93,12 +93,12 @@ a range the lower end is used.
 | Name | Along | Across | Name | Along | Across |
 |---|---|---|---|---|---|
 | `pla-polymaker` | 1.1 % | 0.9 % | `asa-polymaker` | 1.3 % | 0.8 % |
-| `pla-bambu-basic` | 1.0 % | 1.0 % | `asa-bambu` | 1.5 % | 1.2 % |
-| `pla-bambu-matte` | 1.1 % | 1.0 % | `copa-polymaker-dry` | 2.0 % | 0.65 % |
+| `pla-bambu-basic` | 0.95 % | 0.95 % | `asa-bambu` | 1.06 % | 1.02 % |
+| `pla-bambu-matte` | 1.07 % | 0.92 % | `copa-polymaker-dry` | 2.0 % | 0.65 % |
 | `petg-polymaker` | 1.7 % | 1.6 % | `copa-polymaker-wet` | 3.3 % | 0.85 % |
-| `petg-bambu-basic` | 2.3 % | 2.3 % | `pa6-cf20-polymaker-dry` | 0.8 % | 0.8 % |
+| `petg-bambu-basic` | 1.28 % | 0.96 % | `pa6-cf20-polymaker-dry` | 0.8 % | 0.8 % |
 | `petg-bambu-hf` | 1.3 % | 1.0 % | `pa6-cf20-polymaker-wet` | 1.5 % | 1.5 % |
-| `petg-cf-bambu` | 1.7 % | 1.7 % | | | |
+| `petg-cf-bambu` | 1.0 % | 1.0 % | | | |
 
 The rule, per direction: `min(0.7 × UTS / E, 0.5 × elongation at break)` — the guide's 70 %-of-yield rule for
 amorphous resin with UTS/E as a lower bound on the yield strain, and its half-the-elongation rule for materials without
@@ -106,11 +106,32 @@ a yield point. Across the layers the smaller of the Z and XY values is used. Nyl
 its family: CoPA at PA66 (the cap never binds), carbon-filled PA6 at DuPont's glass-filled PA66 (0.8 % dry, 1.5 % at
 50 % RH; both bind, from derived 0.89 % and 1.53 %). The "wet" rows are water-saturated datasheet specimens.
 **The direction matters more than strength suggests**: across the layers the PLA, PETG, ASA and CoPA datasheets keep
-40–90 % of the in-plane strength but only 10–61 % of the elongation at break, and snap fits are limited by strain.
-(Carbon-filled PA6 keeps 90–96 % of its elongation: the fibre already limits it in-plane.)
+40–89 % of the in-plane strength but only 10–61 % of the elongation at break, and snap fits are limited by strain.
+(Polymaker's carbon-filled PA6 keeps 90–96 % of its elongation: the fibre already limits it in-plane.)
 
-What this costs in allowable strain depends on which limit governs. Across the layers the allowable is 80–100 %
-of the in-plane value for PLA and PETG, 78 % for Bambu ASA, 64 % for Polymaker ASA and 26–32 % for CoPA, where half
+<details>
+<summary>Which data-sheet edition each value comes from (#156)</summary>
+
+Makers reissue their sheets. Bambu's current V3.0 sheets, served from its store, give lower strengths than the V2.0
+copies resellers still serve: PETG-CF's tensile strength falls from 59 / 38 MPa to 35 / 29 MPa, so its allowable falls
+from 1.7 % to 1.0 %. V3.0 PETG Basic is a reformulated filament sold under the same name, and a spool does not say
+which it is. So every edition read is kept, each as a complete set of values, and the cautious one is taken per
+quantity:
+
+- **allowable strain**: the lowest any edition gives;
+- **modulus for forces**: the highest any edition gives, so mating forces stay upper bounds. The root strain at a
+  given deflection does not depend on E.
+
+`petg-bambu-basic` takes both from V3.0 (1.28 / 0.96 % and 2780 / 2550 MPa; V2.0 would allow 2.3 %).
+`pla-bambu-basic` takes its allowable from V3.0 and its modulus from V2.0 (2680 / 2160 MPa, 4–5 % above V3.0's). The
+`--output` JSON names the edition behind each number (`xy.sheet`, `z.sheet`, `modulus.sheet`), and
+[research/compliant-mechanisms.md](../research/compliant-mechanisms.md) §5 and §10 list every sheet with its date and
+link.
+
+</details>
+
+What this costs in allowable strain depends on which limit governs. Across the layers the allowable is 75–100 %
+of the in-plane value for PLA and PETG, 97 % for Bambu ASA, 64 % for Polymaker ASA and 26–32 % for CoPA, where half
 the elongation at break governs: 2.0 % with the arm lying in the bed plane against 0.65 % built upright. Layer lines
 also act as notches, which no tensile test shows, so lay flexing arms in the bed plane whatever the numbers say.
 

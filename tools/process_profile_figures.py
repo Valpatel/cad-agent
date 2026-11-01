@@ -370,12 +370,62 @@ def cnc_depths() -> str:
                     groups, envs=[{"D": 1.0, "width": 1.0}], unit="× diameter", step=5, note=READ)
 
 
+def resin_overhangs() -> str:
+    groups = [("Unsupported overhang length", "overhang-length-max", "sla"), ("Bridge between supports", "bridge-max", "sla")]
+    return compared("Resin: how far an overhang or a bridge may reach, by printer and service",
+                    "{n} rules (compare: overhang-length-max, bridge-max). ≤: a ceiling.",
+                    groups, unit="mm", step=5, note=READ)
+
+
+def moulding_bosses() -> str:
+    groups = [("Boss outside diameter", "im-boss-od", None), ("Depth of a blind cored hole", "im-hole-depth", None)]
+    return compared("Injection moulding: bosses and cored holes as multiples of the hole diameter",
+                    "{n} rules (compare: im-boss-od, im-hole-depth), at a hole diameter of 1, so each reads as × D.",
+                    groups, envs=[{"D": 1.0}], unit="× D", step=0.5, note=READ)
+
+
+def sheet_shop() -> str:
+    data = load()
+    sources = {s["id"]: s for s in data["sources"]}
+    shop = data["shop_tables"][0]
+    cols = shop["columns"]
+    groups = []
+    for material in dict.fromkeys(r[cols.index("material")] for r in shop["rows"]):
+        rows = [(f"{r[0]} · T {r[cols.index('T')]:.2f} mm · K {r[cols.index('K')]:.2f}", r[cols.index("R")],
+                 r[cols.index("R")], ORANGE, False) for r in shop["rows"] if r[cols.index("material")] == material]
+        groups.append((material[0].upper() + material[1:], rows))
+    vmax, ticks = _scale(groups, 0.5)
+    who = credit(sources[shop["source"]])
+    return ranges_svg(f"Sheet metal: one shop's inside bend radius and K-factor, by sheet ({who})",
+                      f"{sum(len(r) for _, r in groups)} rows of the shop's own tooling table (shop_tables), not a "
+                      "generic rule: R is not simply T.", groups, vmax, ticks, "R, mm",
+                      "Converted from inches at 25.4 mm; the printed values are in the YAML (as_printed). Read 2026-10-31.")
+
+
+CORNER = {"D": 6.0, "depth": 12.0}
+
+
+def cnc_corners() -> str:
+    return compared(f"CNC: inside corner radius for a {CORNER['D']:g} mm end mill cutting {CORNER['depth']:g} mm deep",
+                    "{n} rules (compare: cnc-corner-radius), evaluated at D = 6 mm and a pocket 12 mm deep. "
+                    "≥: a floor; a bar: it varies.", [("Inside vertical corner", "cnc-corner-radius", None)],
+                    envs=[CORNER], unit="mm", step=1, note=READ)
+
+
+def cnc_walls() -> str:
+    groups = [("Minimum wall", "min-wall", "cnc"), ("Smallest tool or cavity", "cnc-small-tool", None)]
+    return compared("CNC: the thinnest wall and the smallest tool, by source",
+                    "{n} rules (compare: min-wall, cnc-small-tool). ≥: a floor.", groups, unit="mm", step=0.5, note=READ)
+
+
 FIGURES = {"process-min-wall.svg": min_wall, "process-sheet-metal.svg": sheet_metal, "process-fits.svg": fits,
            "process-holes-pins.svg": holes_pins,
            "process-overhangs.svg": overhangs, "process-escape-holes.svg": escape_holes,
            "process-fine-detail.svg": fine_detail, "process-moulding-wall.svg": moulding_wall,
            "process-moulding-draft.svg": moulding_draft, "process-moulding-ratios.svg": moulding_ratios,
-           "process-sheet-holes.svg": sheet_holes, "process-cnc-depths.svg": cnc_depths}
+           "process-sheet-holes.svg": sheet_holes, "process-cnc-depths.svg": cnc_depths,
+           "process-resin-overhangs.svg": resin_overhangs, "process-moulding-bosses.svg": moulding_bosses,
+           "process-sheet-shop.svg": sheet_shop, "process-cnc-corners.svg": cnc_corners, "process-cnc-walls.svg": cnc_walls}
 
 
 def main(argv: list[str]) -> int:

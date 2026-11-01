@@ -19,6 +19,7 @@ import { snapDemo } from './snap-demo.mjs';
 import { buildCatalog } from './site-catalog.mjs';            // the catalogue page, catalog.json, catalog/*.json and covers
 import { sanitize, safeUrl, rewriteUrls, imageSize } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
 import { drawDiagrams } from './site-diagrams.mjs';         // Mermaid blocks drawn into finished figures, at build time
+import { fold, pagePlacer } from './site-pages.mjs';        // docs/pages.yaml: bands, figures, folds
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
 const rootArg = process.argv.indexOf('--root');
@@ -46,7 +47,7 @@ const revision = head;
 // The content is always HEAD's (or the working tree's with --worktree), but the build tools run from disk (from this
 // checkout, even with --root): say so when they differ from the built commit's, and never release with them.
 const TOOLS = ['tools/build-site.mjs', 'tools/site-html.mjs', 'tools/snap-demo.mjs', 'tools/site-catalog.mjs', 'tools/catalog-art.mjs',
-  'tools/site-diagrams.mjs', 'package.json', 'package-lock.json'];
+  'tools/site-diagrams.mjs', 'tools/site-pages.mjs', 'package.json', 'package-lock.json'];
 const toolsHere = path.join(import.meta.dirname, '..');
 const toolsDirty = TOOLS.filter(t => {
   let committedCopy; try { committedCopy = gitRaw('show', `HEAD:${t}`); } catch { return true; }
@@ -244,6 +245,9 @@ const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).m
 const VISUAL = /<img\b|class="language-mermaid"|<pre class="mermaid"/g;
 const visuals = new Map();
 const docPages = [];                         // [path in out, HTML]: written once their diagrams are drawn, below
+// Visual-first pages (#179): real outputs placed from docs/pages.yaml, long reference parts folded (tools/site-pages.mjs).
+const placeVisuals = pagePlacer({ spec: YAML.parse(await read('docs/pages.yaml')) || {}, pageFiles, tracked,
+  commandNames: new Set(commands.map(c => c.name)), readBuf, pageURL });
 for (const p of pages) {
   const ids = new Map();
   const renderer = new marked.Renderer();
@@ -295,6 +299,7 @@ for (const p of pages) {
   html = html.replace(/<table>/g, '<div class="table-scroll"><table>').replace(/<\/table>/g, '</table></div>');
   // One-click copy on every code block (not on diagram sources, which render as pictures).
   html = html.replace(/<pre>(<code(?! class="language-mermaid")[\s\S]*?<\/pre>)/g, '<cad-copy><pre>$1</cad-copy>');
+  html = await placeVisuals(p.file, fold(html));
   const crumbs = `<p class="crumbs"><a href="/catalog#${p.section}">${esc(SECTIONS.find(s => s.id === p.section).title)}</a> · <a href="${REPO}/blob/dev/${esc(p.file)}">${esc(p.file)}</a> · <a href="/${esc(p.file)}">Markdown</a></p>`;
   const dest = path.join(out, pageFile(p.file));
   await mkdir(path.dirname(dest), { recursive: true });

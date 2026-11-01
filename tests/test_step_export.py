@@ -129,6 +129,41 @@ def test_the_product_is_named_after_the_file_or_the_name_given(tmp_path, cq):
     assert _read_back(named) == (["it's a \\ part"], [])                 # and read back as given
 
 
+@pytest.mark.parametrize("name", ["6'", "x'y,z", "q' x)", "(a,b)"])
+def test_a_quote_not_followed_by_a_comma_or_bracket_reads_back(tmp_path, cq, name):
+    out = geometry.export_step(cq.Workplane().box(1, 1, 1), tmp_path / "part.step", name=name)
+    assert _read_back(out) == ([name], [])
+
+
+@pytest.mark.parametrize("name", ["post (6')", "a', b", "rod 1/4' ,x", "a')"])
+def test_a_name_that_occts_reader_would_lose_is_refused(tmp_path, cq, name):
+    """OCCT's reader reads these back as no name at all (a doubled quote, spaces, then ',' or ')')."""
+    with pytest.raises(ValueError, match="misreads.*another name="):
+        geometry.export_step(cq.Workplane().box(1, 1, 1), tmp_path / "part.step", name=name)
+    with pytest.raises(ValueError, match="misreads.*rename the file"):
+        geometry.export_step(cq.Workplane().box(1, 1, 1), tmp_path / f"{name.replace('/', '-')}.step", name="part")
+    assert not list(tmp_path.iterdir())
+
+
+def test_writer_settings_left_by_earlier_code_do_not_change_the_bytes(tmp_path, cq):
+    from OCP.Interface import Interface_Static
+
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+    first = geometry.export_step(_two_boxes(cq), tmp_path / "a" / "pair.step").read_bytes()
+    # Process-wide settings that an earlier export, or project code, can leave behind.
+    cq.exporters.export(cq.Workplane().box(2, 3, 4), str(tmp_path / "other.step"),
+                        opt={"write_pcurves": False, "precision_mode": 1})
+    assert Interface_Static.SetCVal_s("write.step.schema", "AP242DIS")
+    assert Interface_Static.SetCVal_s("write.step.unit", "M")
+    try:
+        again = geometry.export_step(_two_boxes(cq), tmp_path / "b" / "pair.step").read_bytes()
+    finally:
+        for key, value in geometry.STEP_SETTINGS:                 # leave the process as export_step leaves it
+            (Interface_Static.SetIVal_s if isinstance(value, int) else Interface_Static.SetCVal_s)(key, value)
+    assert again == first
+
+
 def test_a_multi_solid_shape_numbers_its_products_and_links_within_the_file(tmp_path, cq):
     for i in range(2):                                    # earlier multi-solid exports in this process
         cq.exporters.export(_two_boxes(cq), str(tmp_path / f"warm{i}.step"))
@@ -159,10 +194,11 @@ def test_the_geometry_is_what_cadquery_writes(tmp_path, cq):
 def test_an_assembly_or_a_name_that_is_not_ascii_is_refused(tmp_path, cq):
     with pytest.raises(TypeError, match="Assembly"):
         geometry.export_step(cq.Assembly(cq.Workplane().box(1, 1, 1), name="asm"), tmp_path / "asm.step")
-    with pytest.raises(ValueError, match="printable ASCII"):
+    with pytest.raises(ValueError, match="printable ASCII.*another name="):
         geometry.export_step(cq.Workplane().box(1, 1, 1), tmp_path / "part.step", name="Gehäuse")
-    with pytest.raises(ValueError, match="printable ASCII"):
-        geometry.export_step(cq.Workplane().box(1, 1, 1), tmp_path / "Gehäuse.step")
+    for name in (None, "housing"):              # a name= does not help: the header carries the file's own name
+        with pytest.raises(ValueError, match="printable ASCII.*rename the file"):
+            geometry.export_step(cq.Workplane().box(1, 1, 1), tmp_path / "Gehäuse.step", name=name)
     with pytest.raises(ValueError, match="no shapes"):
         geometry.export_step(cq.Workplane(), tmp_path / "empty.step")
     assert not list(tmp_path.iterdir())

@@ -319,7 +319,7 @@ export class CadGallery extends Base {
     const set = (el, n) => {
       const c = el.matches('[data-count], [data-count-of]') ? el : el.querySelector('[data-count]') || el.closest('label')?.querySelector('[data-count]');
       if (c) c.textContent = n;
-      (el.closest('label') || el).toggleAttribute('data-empty', n === 0);
+      (el.closest('label, summary') || el).toggleAttribute('data-empty', n === 0);
     };
     for (const t of this.tabs) set(t, this.#items.filter(it => (!t.dataset.tab || it.tab === t.dataset.tab) && matches(it, s, patterns, 'tab')).length);
     const facetCount = (name, value) => this.#items.filter(it => (!value || it.facets[name]?.has(value)) && matches(it, s, patterns, name)).length;

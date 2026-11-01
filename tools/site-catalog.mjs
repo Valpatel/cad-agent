@@ -530,7 +530,7 @@ ${tree}${filters}</div></aside>
 <div class="cat-toolbar"><button type="button" class="button sheet-open" aria-controls="cat-side" aria-expanded="false" data-gallery-sheet-open data-gallery-js>Areas and filters <span class="count" data-gallery-active></span></button>
 <p id="filter-status" class="filter-status" role="status" aria-live="polite" data-gallery-status>${items.length} entries</p>
 <label class="sort" data-gallery-js><span>Sort</span><select id="sort" name="sort" data-gallery-sort>${SORTS.map(([v, l]) => `<option value="${v}"${v === 'recent' || v === 'stars' || v === 'maturity' ? ' data-dir="desc"' : ''}>${l}</option>`).join('')}</select></label></div>
-<div class="cat-chips" data-gallery-chips aria-label="Active filters"></div>
+<div class="cat-chips" role="group" data-gallery-chips aria-label="Active filters"></div>
 ${panels}
 <p class="cat-empty" data-gallery-empty hidden>No entries match. Try fewer words or clear the filters.</p>
 ${sections}</div></div>

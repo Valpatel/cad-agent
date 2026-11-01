@@ -9,7 +9,8 @@ cad-gallery [hidden]{display:none!important}
 cad-gallery[data-ready][data-overview] [data-item][data-over]{display:none}
 cad-gallery:not([data-overview]) [data-gallery-more],cad-gallery [data-group]:not([data-more]) [data-gallery-more]{display:none}
 @media(scripting:none){cad-gallery [data-gallery-js]{display:none!important}}
-:where(cad-gallery [data-empty]){opacity:.55}
+/* a choice that would leave nothing: muted, still readable (4.5:1 on light backgrounds) and still usable */
+:where(cad-gallery [data-empty]){color:var(--cad-gallery-muted,#5d716c)}
 :where(.cad-gallery-chip){display:inline-flex;align-items:center;gap:.4em;min-height:32px;padding:.25em .8em;border-radius:999px;cursor:pointer;
   font:inherit;font-size:.85em;color:inherit;background:var(--cad-gallery-chip-bg,#eef1e4);border:1px solid var(--cad-gallery-line,#6f8a80)}
 :where(.cad-gallery-chip)::after{content:"×";font-size:1.2em;line-height:1}

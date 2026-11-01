@@ -1,6 +1,7 @@
-"""Write the two recorded-format CFD runs the convergence tests read. No solver runs: the numbers are synthetic, laid
-out exactly as OpenFOAM v2512 writes them for a cadagent.simulation.cfd case (cadagent-case.json, the solver logs and
-postProcessing/<region>/<function>/<start time>/*.dat, one start-time folder per solve). Deterministic; rebuild with
+"""Write the recorded-format CFD runs the convergence tests read, listed below. No solver runs: the numbers are
+synthetic, laid out exactly as OpenFOAM v2512 writes them for a cadagent.simulation.cfd case (cadagent-case.json, the
+solver logs and postProcessing/<region>/<function>/<start time>/*.dat, one start-time folder per solve).
+Deterministic; rebuild with
 
     python tests/fixtures/cfd_runs/build.py
 

@@ -45,7 +45,7 @@ import numpy as np
 
 from cadagent.publish.anim import raster
 from cadagent.publish.anim import svg as S
-from cadagent.publish.anim.linkage import Linkage, ellipse_path
+from cadagent.mechanical.linkages import Linkage, ellipse_path
 
 SCHEMA = "cadagent.anim.hero/1"
 AXES = {"x": 0, "y": 1, "z": 2}

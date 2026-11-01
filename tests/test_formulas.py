@@ -49,7 +49,9 @@ def test_sources_are_cited_by_edition_not_quoted():
     for key, ref in fx.SOURCES.items():
         if key.startswith("iso"):
             assert re.search(r"ISO \d+-1:\d{4}", ref), key
-        elif key not in ("covestro", "freudenstein"):
+        elif key in ("freudenstein", "gosselin", "goncalves"):                 # papers: a journal or proceedings, a year
+            assert re.search(r"Transactions|Proceedings", ref) and re.search(r"\b(19|20)\d\d\b", ref), key
+        elif key != "covestro":
             assert re.search(r"\d+(st|nd|rd|th) ed\.", ref) and re.search(r"\b(19|20)\d\d\b", ref), key
 
 
@@ -641,7 +643,8 @@ def test_docs_page_lists_every_formula_and_its_source():
     page = (ROOT / "docs" / "formulas.md").read_text()
     for name in fx.REGISTRY:
         assert f"`{name}`" in page, f"docs/formulas.md does not list {name}"
-    for ref in ("Roark", "Shigley", "Covestro", "Norton", "Freudenstein", "Incropera", "White", "ISO 68-1", "ISO 898-1"):
+    for ref in ("Roark", "Shigley", "Covestro", "Norton", "Freudenstein", "Gosselin", "COBEM", "Incropera", "White",
+                "ISO 68-1", "ISO 898-1"):
         assert ref in page
 
 

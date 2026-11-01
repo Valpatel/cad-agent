@@ -1,7 +1,7 @@
 # Engineering formulas
 
 `cadagent.formulas` holds the closed-form equations that 3D-printed mechanisms keep needing: beams and snap arms,
-torsion bars, springs, screws, four-bar linkages, wall conduction and fan operating points. Agents call it from Python
+torsion bars, springs, screws, four-bar and five-bar linkages, wall conduction and fan operating points. Agents call it from Python
 instead of re-deriving the equations. The website's demonstrations call a browser port of the same functions, and the
 two are tested against one set of golden vectors, so a demo never shows a number an agent would not get. Every
 function states its SI units and its validity limits, and cites its source by author, title, edition and section.
@@ -95,7 +95,7 @@ flowchart TD
 SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A strain is a fraction (0.02 = 2 %).
 
 <details>
-<summary>All 37 functions in <code>catalogue()</code>: what each computes, its source and where it is valid</summary>
+<summary>All 40 functions in <code>catalogue()</code>: what each computes, its source and where it is valid</summary>
 
 | Function | What | Source | Valid within |
 |---|---|---|---|
@@ -123,6 +123,9 @@ SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A 
 | `fourbar_angles` | coupler and output angles, open or crossed | Freudenstein (1955); Norton 5th ed., Chapter 4 | position only; a gap under 1e-12 of the longest link counts as closed |
 | `transmission_angle` | angle between coupler and rocker | Norton 5th ed., Chapter 4 | position only; the same closing test |
 | `fourbar_input_limits` | the input angles where coupler and rocker fold or stretch into line and the linkage locks | Norton 5th ed., Chapter 4 (toggle positions) | position only; the same closing test |
+| `fivebar_point` | a five-bar's tip from its two crank angles, on either assembly | Gonçalves, Carvalho and Santos (COBEM 2009), Section 2.2, after Liu, Wang and Zheng (2006) | position only; a crank of 0 makes it a four-bar |
+| `fivebar_inputs` | the two crank angles that put the tip at a point, on any of the four working modes | Gonçalves et al. (2009), Section 2.1 | position only; the tip inside both arms' reach |
+| `fivebar_jacobians` | how near the five-bar is to a lock (distal links in line) or an arm's edge (crank and distal link in line), and the transmission angle | Gosselin and Angeles (1990) | first order: where a singularity is, not a force |
 | `wall_resistance`, `film_resistance` | R = L / k A, R = 1 / h A | Incropera 7th ed., Section 3.1.2, Eqs. (3.6), (3.9) | steady, 1-D |
 | `wall_heat_flow` | layers and films in series: heat flow and every face temperature | Incropera 7th ed., Section 3.1.3 | no contact resistance |
 | `fan_curve_line`, `system_coefficient` | the datasheet fan line; k in Δp = k Q² | White 7th ed., Section 11.5 | same air density |
@@ -178,6 +181,10 @@ in the test.
   - `fourbar_input_limits` on every four-bar with links 1 to 6: the input turns fully exactly when `grashof` says so,
     and `fourbar_angles` closes exactly inside the limits.
   - Norton's Example 4-1.
+  - The five-bar (`tests/test_linkages.py`) against Liu, Wang and Zheng's direct and inverse kinematics as Gonçalves
+    et al. print them, a line and a quadratic rather than two circles, on two symmetric 5Rs every 15 degrees; the
+    tip's reach against the two annuli; the Jacobians against finite differences; and a four-bar as a five-bar
+    without a second crank against `fourbar_angles`.
 - **Heat and air.**
   - The composite wall face by face.
   - The fan point against the quadratic root and against `cadagent.thermal.heatsink.operating_point`.

@@ -36,6 +36,7 @@ flowchart TD
 | `connectors.py` | Mating-connector envelopes: panel windows from the plug, then proof that the plug fits |
 | `markings.py` | One XY drawing for engraved markings and a matching SVG proof |
 | [`compliant/`](compliant/__init__.py) | Compliant features that replace parts: snap fits now, hinges and flexures next |
+| `linkages.py` | Four-bars and five-bars swept over their inputs: joint angles, locks, edges of reach, branch flips; the dyad solver for linkages measured from CAD |
 | `motion_trace.py` | Compares rendered landmarks with CAD joint intent, without a CAD kernel |
 
 Related: [package map](../README.md) · [mcmaster-parts skill](../../../skills/mcmaster-parts/SKILL.md) ·

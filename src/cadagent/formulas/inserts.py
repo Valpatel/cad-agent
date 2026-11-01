@@ -102,14 +102,15 @@ def insert_shear_torque(outer_diameter: float, length: float, shear_strength: fl
 
 
 @formula(units={"recess": "m (the insert's head-side end below the joint face; below 0: proud of it)",
-                "tolerance": "m (how far either way still counts as flush)",
+                "tolerance": "m (how far proud still counts as flush; any recess jacks out)",
                 "installed_from": "'joint face' (pressed in from the face the clamped part sits on) or 'far side' "
                                   "(pressed in from the back, with boss material between it and the joint face)"},
          returns="dict: path ('seat', 'through-insert' or 'jack-out'), knurl_preload (the share of the preload the "
                  "knurl carries, 0 or 1), why and instead (what to do about it)",
          limits=("the screw's tension pulls the insert towards the head; a face in front of the insert carries it "
-                 "only when it touches. Flush within the tolerance counts as touching the clamped part: a slightly "
-                 "recessed insert jacks out until the gap closes, then carries the clamp",),
+                 "only when it touches. A recess of any depth jacks the insert out until the gap closes, as the "
+                 "insert makers warn (installed below the surface, an insert is subjected to jack-out); proud by up "
+                 "to the tolerance counts as flush (the makers allow 0.13 mm)",),
          source=cite("shigley", "Section 8-7 (Tension Joints: the clamp follows the stiff path between the head and "
                      "the thread)"))
 def insert_clamp_path(recess: float, tolerance: float = 0.0, installed_from: str = "joint face") -> Dict[str, Any]:
@@ -130,7 +131,7 @@ def insert_clamp_path(recess: float, tolerance: float = 0.0, installed_from: str
                        "shoulder carries the clamp in bearing, and the knurl only keeps the insert from turning",
                 "instead": "check the shoulder against being punched through, and that the hole in it clears the "
                            "screw"}
-    if recess <= tol:
+    if recess <= 0.0:
         proud = recess < -tol
         return {"path": "through-insert", "knurl_preload": 0.0,
                 "why": ("the insert stands proud, so the clamped part bears on it and not on the boss: the clamp "

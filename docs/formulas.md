@@ -111,7 +111,7 @@ flowchart TD
 SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A strain is a fraction (0.02 = 2 %).
 
 <details>
-<summary>All 48 functions in <code>catalogue()</code>: what each computes, its source and where it is valid</summary>
+<summary>All 62 functions in <code>catalogue()</code>: what each computes, its source and where it is valid</summary>
 
 | Function | What | Source | Valid within |
 |---|---|---|---|
@@ -140,6 +140,16 @@ SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A 
 | `thread_radial_pressure` | the flanks' outward push, p = F tan(α / 2) / π d Le | Shigley 10th ed., Section 8-2 | frictionless flank, even load |
 | `boss_hoop_stress` | hoop stress at the bore, p (D² + d²) / (D² − d²) | Shigley 10th ed., Section 3-14 | Lamé cylinder, isotropic |
 | `screw_boss` | a thread-forming screw in a boss: clamp band, strip force and torque, the tightening window, hoop stress, boss proportions | Covestro, *Self-tapping screws for thermoplastics* (2016-04), Section A; Bulten, DELTA PT brochure (2025), p. 7 | the drive torque is measured, not computed, and makes no clamp: unmeasured, the clamp band allows for up to T / 1.2 of it |
+| `proof_load` | Fp = At Sp, a property class's proof strength on the stress area | Shigley 10th ed., Section 8-9 and Table 8-11 | the class minimum: a floor, not one screw's strength |
+| `annulus_stress` | F / (π/4 (D² − d²)): a limiter's wall, the pressure under a head | Shigley 10th ed., Section 3-9 | uniform over full contact; no buckling |
+| `limiter_stack` | a compression limiter's standout over the plastic it goes through, worst case either way: proud, short or either | Shigley 10th ed., Section 1-14 (worst-case tolerance stack) | rigid parts, the tolerances given |
+| `limiter_plastic_load` | the plastic's share of the preload before the head lands on a short limiter, min(k s, F) | Shigley 10th ed., Section 8-7 | the plastic as a linear spring |
+| `press_fit_pressure`, `press_fit_force` | the contact pressure of a press fit (a limiter in its hole), and the force that pushes it out | Shigley 10th ed., Section 3-16 | smooth, elastic, long fit; a knurl cuts in instead |
+| `preload_retained`, `preload_retained_limited` | the preload left when the plastic in the clamp relaxes to a measured ratio, without and with a limiter | Shigley 10th ed., Sections 8-7 and 8-9 | the relaxation ratio is measured, not computed |
+| `insert_displaced_volume`, `overflow_volume` | the plastic a heat-set insert pushes aside, and the pocket below it in a blind hole | Shigley 10th ed., Section 1-14 (a volume balance) | incompressible melt, none lost to the iron |
+| `insert_shear_force`, `insert_shear_torque` | an insert's pull-out (push-out) and torque-out: c τ π D L and c τ π D² L / 2 on the knurl's cylinder | Shigley 10th ed., Section 3-9; c fitted to published tests (`cadagent.mechanical.inserts.calibration`) | near the tests c came from: M3 x 5.7 in PLA and PETG |
+| `insert_clamp_path` | where the screw's tension goes: into a shoulder (seat), through a flush insert, or into the knurl (jack-out) | Shigley 10th ed., Section 8-7; the makers' flush rule (PEM bulletin SI, SPIROL) | any recess jacks out; proud by 0.13 mm still counts as flush |
+| `insert_limited_torque` | the most to tighten into an insert: the screw's proof, the insert's torque-out through the thread's share, and jack-out | Shigley 10th ed., Sections 8-8 and 8-9 | thread torque turns the insert; jack-out combined linearly |
 | `grashof` | Grashof class, whether the input crank turns fully, and the inversion (crank-rocker, double crank, rocker-crank, double rocker, triple rocker) | Norton 5th ed., Chapter 2 | rigid links |
 | `fourbar_angles` | coupler and output angles, open or crossed | Freudenstein (1955); Norton 5th ed., Chapter 4 | position only; a gap under 1e-12 of the longest link counts as closed |
 | `transmission_angle` | angle between coupler and rocker | Norton 5th ed., Chapter 4 | position only; the same closing test |

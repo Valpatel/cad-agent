@@ -134,7 +134,8 @@ def test_shear_force_and_torque_are_the_cylinder_times_c():
 @pytest.mark.parametrize("recess,tol,frm,path", [
     (0.3 * MM, 0.05 * MM, "joint face", "jack-out"),
     (0.0, 0.05 * MM, "joint face", "through-insert"),
-    (0.04 * MM, 0.05 * MM, "joint face", "through-insert"),
+    (0.04 * MM, 0.05 * MM, "joint face", "jack-out"),        # any recess jacks out: the tolerance is proud only
+    (-0.04 * MM, 0.05 * MM, "joint face", "through-insert"),
     (-0.2 * MM, 0.05 * MM, "joint face", "through-insert"),
     (1.0 * MM, 0.0, "far side", "seat"),
 ])

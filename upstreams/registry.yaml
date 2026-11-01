@@ -294,14 +294,14 @@
   status: candidate
   policy: "external program only (AGPL-3.0); the 2.5.0 beta (2026-10-27) has an experimental, off-by-default MCP control socket for its Design tab, and a general MCP server is a draft PR: revisit as an external process once one ships"
 - name: OrcaSlicer/orcaslicer-mcp-skills
-  what: "OrcaSlicer's own agent skills for driving the slicer through its built-in MCP server, from setup to slicing"
+  what: "OrcaSlicer's own agent skills for driving the slicer through an MCP server that 2.5 has not shipped yet"
   areas: [3d-printing]
   url: https://github.com/OrcaSlicer/orcaslicer-mcp-skills
   license: AGPL-3.0
   stars: 2
   last_push: 2026-10-29
   status: candidate
-  policy: install as a plugin with Orca 2.5; never copy its text (AGPL-3.0)
+  policy: "install as a plugin once an OrcaSlicer release ships the general MCP server it expects (OrcaSlicer's PR #12667 is a draft); never copy its text (AGPL-3.0)"
 - name: MaxEllis/orcaslicer-mcp
   what: "Third-party MCP server that drives a running OrcaSlicer: settings, presets, slicing and results as numbers"
   areas: [3d-printing]
@@ -310,7 +310,7 @@
   stars: 86
   last_push: 2026-10-12
   status: rejected
-  policy: superseded by Orca's built-in MCP server
+  policy: "skip for now: an official OrcaSlicer MCP server is in draft (OrcaSlicer's PR #12667); revisit if it does not ship"
 - name: KD5RYN/b123d-print
   what: "MCP server, CLI and plugin that design build123d parts for printing, check them and export for the slicer"
   areas: [3d-printing]

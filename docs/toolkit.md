@@ -398,7 +398,7 @@ from cadagent.publish.report import collect, write_report, downloads_snippet, ba
 from cadagent.publish.htmlreport import render_page, canonical_status, SCHEMA_VERSION
 from cadagent.links import missing_links
 from cadagent.mechanical.connectors import (PLUG_FAMILIES, plug_segments, window, window_margins, PanelFrame, envelope,
-                                            check_ports, draw_ports)
+                                            check_ports, draw_ports, cable_spec, cable_bend, bend_reach)
 from cadagent.mechanical.linkages import (sweep_fourbar, sweep_fivebar, sweep_fivebar_tip, fivebar_workspace,
                                           fivebar_reach, Linkage)
 from cadagent.package import build_package
@@ -458,8 +458,82 @@ receptacle: a screw-flange terminal plug is 15 mm tall on an 8.4 mm header.
    * no plug-to-plug clash.
 
    `draw_ports()` makes the evidence image. Add the check to `checks:` and the review `pass_key`.
+6. **Give each mate its cable** (below), so `check_ports()` also checks that the cable can bend behind the plug.
 
 Worked example: j501-agx `cad/ports.py`, `tools/check_ports.py` and `exports/port-checks.json`.
+
+#### The cable behind the plug
+
+A plug that fits is no use if its cable has no room to turn. Give the mate a `cable` with the diameter and minimum
+bend radius from the cable's data sheet, in the form the data sheet uses: millimetres, as here, or a multiple of the
+diameter, `{"x_od": 5}`:
+
+```json
+"cable": {"od": 6.1, "min_bend_radius": {"mm": 25}, "basis": "Belden CAT6+ UTP PVC patch cord, rev 0.202: 6.1 mm, 25 mm"}
+```
+
+`cable_bend(mate, obstacles, frame)` lets the cable leave the boot straight along the mating axis, then turns it 90°
+at that radius towards `+v`, `-v`, `+u` and `-u` in turn. For each direction it measures the clearance to every
+obstacle: the distance from the cable's centreline less its radius, negative where it runs into a part. It returns
+`pass` when some direction clears by at least `margin` (1 mm by default), `warn` when the best one clears by less,
+and `fail` when none clears, with the clearance, the direction that works (`direction`, and every one in `works`)
+and the assumptions it made. `check_ports()` runs it for every mate with a cable, against the printed parts and the
+other ports' plugs, and fails a port whose cable cannot turn. `bend_reach()` gives the room a bend needs, in closed
+form: a 90° turn needs the inside radius plus one diameter, ahead and beside (31.1 mm for the cable above).
+
+![An RJ45 plug seated in its jack, and its Cat6 cable leaving the boot and turning at its 25 mm minimum bend radius: turned down, it runs 1.35 mm into the shelf the enclosure stands on; turned up, it clears](img/motion/cable-bend.svg)
+
+*An illustration of the check on the RJ45 port in `tests/test_connectors.py`, in section: the clearances are
+`cable_bend`'s.*
+
+`cable_bend()` takes CadQuery shapes in assembly position, placed through the port's `PanelFrame`, or boxes in the
+panel frame (`{"u": [..], "v": [..], "w": [..]}`), which need no CAD kernel: use boxes for what the project's CAD does
+not hold, such as the shelf or the cabinet door in front of the port. `check_ports()` takes CAD shapes only, and
+refuses a box; place one as a solid through the port's frame.
+
+<details>
+<summary>What it assumes, the optional keys, and where bend radii come from</summary>
+
+**Assumptions** (each result lists them):
+- one bend in one plane, starting at the boot's end, `turn_deg` degrees (90 by default), then `run` mm straight
+  (0 by default);
+- a rigid boot: the cable leaves it straight along the mating axis, from the centre of the plug's far end, or from
+  `exit: [u, v]`;
+- the radius is measured to the inside of the bend (`measured_to: centreline` for a data sheet that says otherwise);
+- the cable is a round tube taken as balls of its radius along its axis, so it reaches half a diameter past each end of
+  what is checked, and a gap there is never overstated. Its stiffness, droop and diameter tolerance are not modelled;
+- nothing past the end of the bend is checked, or past the run: a pass is room to turn, not a route. Give `run` to check
+  the length that follows the turn;
+- only the minimum radius is tried. Against a wall, a floor or a door ahead that is the best case, but a gentler bend can
+  clear a part beside the path that the tightest one hits: a fail means the tightest single bend from the boot's end
+  collides;
+- the directions tried are `directions` (names, or angles in degrees from `+u` towards `+v`).
+
+A bend that clears in CAD does not prove that the cable fits: route the real cable at a printed part.
+
+**Where the radius comes from.** Take it from the data sheet of the cable you will use, and record it in `basis`.
+These are examples; the check has no default radius:
+
+| Cable | Data sheet | Minimum bend radius |
+|---|---|---|
+| Ethernet patch cord | Belden CAT6+ UTP PVC patch cord, technical data rev 0.202 (2025-02-07) | 25 mm (overall cable), 6.1 mm nominal diameter |
+| Ethernet patch cord | Belden C602106010 CAT6+ patch cord, technical data rev 0 (2011-07-14) | 26.416 mm, 6.045 mm nominal diameter |
+| USB 2.0, A to B | Phoenix Contact VS-04-C-SDA/SDB/1,8, item 1405578 (online catalogue, 2013-11-12) | 5 × D fixed and flexible, 6.7 mm diameter |
+| Power and control, 300/500 V | LAPP ÖLFLEX CLASSIC 100 300/500V, data sheet DB00100004EN version 06 (valid from 2024-05-21) | 4 × outer diameter fixed, 15 × occasional flexing |
+
+A cable that is plugged and unplugged flexes at the boot: when the data sheet gives a flexing radius as well, check
+with that one. For harnesses, IPC/WHMA-A-620C (January 2017), section 14.3.2 *Bend Radius* and Table 14-1 *Minimum
+Bend Radius Requirements*, sets workmanship minimums by cable type and product class; take the multiple from your
+copy of the standard, as `{"x_od": k}`.
+
+**Survey (adopt or build).** [WireViz](https://github.com/wireviz/WireViz) (GPL-3.0) documents harnesses as diagrams
+and bills of materials; its cables carry gauge, length, colours and part numbers, but no diameter, bend radius or
+geometry. The FreeCAD [Cables workbench](https://github.com/sargo-devel/Cables) (LGPL-3.0) routes cables as 3D
+solids and reports the smallest radius along a drawn route, but checks it against no limit and needs FreeCAD. Neither
+checks a bend against the parts around it, so this check is built here, on the plug model and the OpenCASCADE
+distance cadquery already uses.
+
+</details>
 
 ### 3D viewer (`cad-agent view` + the web kit)
 

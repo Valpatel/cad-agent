@@ -292,7 +292,7 @@
   stars: 16253
   last_push: 2026-10-31
   status: candidate
-  policy: "external program only (AGPL-3.0); the 2.5.0 beta (2026-10-27) has an experimental, off-by-default MCP control socket for its Design tab, and a general MCP server is a draft PR: revisit as an external process once one ships"
+  policy: "external program only (AGPL-3.0); the 2.5.0 beta (2026-10-27) has an experimental, off-by-default MCP control socket for its Design tab, and a general MCP server, slicing included, is in development on its feature/mcp branch: revisit as an external process once a release ships it"
 - name: OrcaSlicer/orcaslicer-mcp-skills
   what: "OrcaSlicer's own agent skills for driving the slicer through an MCP server that 2.5 has not shipped yet"
   areas: [3d-printing]

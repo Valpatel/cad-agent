@@ -98,6 +98,27 @@ def _release(text: str):
     return tuple(int(p) for p in text.split("."))
 
 
+def _announced(changelog: str, removed_in: str) -> list:
+    """The released entries whose **Projects must change** block has a bullet saying the old paths go in
+    v<removed_in>, as release tuples."""
+    out = []
+    for v, body in re.findall(r"^## v([0-9.]+) \([0-9-]+\)\n(.*?)(?=^## |\Z)", changelog, re.M | re.S):
+        block = re.search(r"^\*\*Projects must change:?\*\*:?[ \t]*\n(.*?)(?=^\*\*[^*\n]+\*\*|\Z)", body, re.M | re.S)
+        bullet = rf"^- [^\n]*\bold (?:import |module )?paths\b[^\n]*\bv{re.escape(removed_in)}\b"
+        if block and re.search(bullet, block.group(1), re.M):
+            out.append(_release(v))
+    return out
+
+
+def test_the_announcement_check_reads_a_projects_must_change_bullet():
+    log = ("## Unreleased\n\n## v0.10.0 (2027-01-02)\n\n**New**\n- the old paths go in v0.11.0 (not here)\n\n"
+           "**Projects must change**\n- Move imports: the old import paths go in v0.11.0.\n\n"
+           "## v0.9.0 (2026-12-01)\n\n**Projects must change:**\n- A folder threshold for v0.11.0 holds.\n")
+    assert _announced(log, "0.11.0") == [(0, 10, 0)]
+    assert _announced(log, "0.12.0") == []
+    assert _announced(log.replace("**Projects must change**\n- Move", "**Fixed**\n- Move"), "0.11.0") == []
+
+
 def test_no_old_path_goes_unannounced():
     current = _release(cadagent.__version__.split("+")[0])
     removed = _release(_moved.REMOVED_IN) if _moved.REMOVED_IN else None
@@ -107,12 +128,10 @@ def test_no_old_path_goes_unannounced():
             "announce it in the CHANGELOG at least one minor release ahead")
     if removed is not None:
         assert removed > current, f"REMOVED_IN names v{_moved.REMOVED_IN}, which has shipped: update the plan"
-        changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-        announced = [_release(v) for v, body in re.findall(r"^## v([0-9.]+) \([0-9-]+\)\n(.*?)(?=^## |\Z)",
-                                                          changelog, re.M | re.S)
-                     if f"v{_moved.REMOVED_IN}" in body and "old" in body]
+        announced = _announced((ROOT / "CHANGELOG.md").read_text(encoding="utf-8"), _moved.REMOVED_IN)
         assert any(a[:2] < removed[:2] for a in announced), (
-            f"no released CHANGELOG entry before v{removed[0]}.{removed[1]} announces the removal in v{_moved.REMOVED_IN}")
+            f"no released CHANGELOG entry before v{removed[0]}.{removed[1]} announces the removal in "
+            f"v{_moved.REMOVED_IN} under **Projects must change**")
 
 
 def test_the_warning_says_to_move_the_import_and_when_the_old_path_goes():
@@ -125,8 +144,9 @@ def test_the_warning_says_to_move_the_import_and_when_the_old_path_goes():
         assert not re.search(r"v[0-9]+\.[0-9]", msg)                 # names no release, and none that has shipped
 
 
-STATES_THE_PLAN = [PKG / d / "__init__.py" for d in sorted(DOMAINS)] + [PKG / "README.md", PKG / "_moved.py",
-                                                                         ROOT / "docs" / "toolkit.md"]
+STATES_THE_PLAN = [PKG / d / "__init__.py" for d in sorted(DOMAINS)] + [
+    PKG / "README.md", PKG / "_moved.py", ROOT / "docs" / "toolkit.md", ROOT / "docs" / "areas.yaml",
+    ROOT / "tests" / "test_package_areas.py", ROOT / "tests" / "test_areas.py"]
 
 
 @pytest.mark.parametrize("path", STATES_THE_PLAN, ids=lambda p: str(p.relative_to(ROOT)))

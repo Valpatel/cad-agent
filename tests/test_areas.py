@@ -167,7 +167,8 @@ def test_uses_repeats_are_found():
 
 
 def test_modules_are_named_by_their_current_paths(tree):
-    """Once #121's package layout is on dev, old module paths only warn and go at v0.7.0: name the new ones."""
+    """Once #121's package layout is on dev, old module paths only warn (until a release that the CHANGELOG announces
+    a minor release ahead): name the new ones."""
     moved = pytest.importorskip("cadagent._moved", reason="old paths are current until #121 lands").MOVED
     old = sorted({m for m in placed(tree, "api") if m.split(".", 1)[1] in moved})   # a module may sit in two areas
     assert not old, f"use the new paths in docs/areas.yaml: {[(m, moved[m.split('.', 1)[1]]) for m in old]}"

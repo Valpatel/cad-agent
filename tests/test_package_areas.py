@@ -84,8 +84,8 @@ def unlisted(root: Path, tree) -> list:
 
 
 def unimportable(tree, load=importlib.import_module) -> list:
-    """Rule 2: api and uses entries that do not import, or name an old path (which imports, with a warning, until
-    v0.7.0)."""
+    """Rule 2: api and uses entries that do not import, or name an old path (which imports, with a warning, until a
+    release that the CHANGELOG announces a minor release ahead; cadagent._moved)."""
     bad = []
     for entry in sorted(set(placements(tree)) | set(placements(tree, "uses"))):
         if _moved.new_name(entry):

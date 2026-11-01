@@ -12,8 +12,10 @@ Gyropup (https://gyropup.com, MIT) is a wheel-legged robot designed with cad-age
   web tessellation, written to a temporary folder (the project's own exports/view is left alone), then packed by
   cadagent.view.pack_view: welded, 16-bit positions, gzip. Needs cadquery: run it with the project's own Python.
 - **The pictures** are Gyropup's committed outputs of cad-agent's own tools (cadagent.fea stress maps,
-  cadagent.render renders), cropped to the part and saved as WebP. Only results whose numbers agree with the
-  project's own summary are used (a stress map whose title disagrees with exports/leg/fea/summary.json is stale).
+  cadagent.render renders), cropped to the part and saved as WebP. Which stress map to use is a manual check: its
+  title's numbers were compared by eye with exports/leg/fea/summary.json, because a stale map can sit beside a fresh
+  summary (at 77f6d00, leg-E1.png's title says safety factor 0.93; the summary says 2.85). The numbers recorded in
+  SOURCE.json come from the summary, and the site build fails when the home page's caption does not quote them.
 
 The checkout's revision and the settings are recorded in the model's `source` and in docs/img/gyropup/SOURCE.json.
 """
@@ -32,7 +34,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 MODELS = ROOT / "web" / "models"
 PICTURES = ROOT / "docs" / "img" / "gyropup"
-# 0.3 mm chord and 0.5 rad (29 degrees) per facet: 87k triangles and ~320 KB for Gyropup's 58 parts, against 198k and
+# 0.3 mm chord and 0.5 rad (29 degrees) per facet: 87k triangles and 312 KB for Gyropup's 58 parts, against 198k and
 # ~690 KB at the viewer's default 0.1 mm / 0.2 rad. The kit's creased normals keep curved faces reading round.
 TOLERANCE_MM, ANGULAR_RAD = 0.3, 0.5
 VIEW = {"azimuth": 55, "elevation": 16}       # front three-quarter: the face, the turret's barrel and a whole leg

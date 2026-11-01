@@ -370,19 +370,44 @@ const homeImg = async (src, at, attrs = '') => {
   if (!size) throw new Error(`docs/home.yaml ${at}: cannot read the size of ${src}`);
   return `<img src="/${esc(src)}" width="${size.width}" height="${size.height}"${attrs}>`;
 };
-const CREDIT = { gyropup: '<a href="https://gyropup.com">Gyropup</a> · MIT' };
-const reel = [];
+// What each output was computed on, said on its tile (#182 review: not every picture is a real part).
+const ON = {
+  gyropup: '<a href="https://gyropup.com">Gyropup</a> · MIT', enclosure: 'a printed enclosure', fixture: 'a test fixture in this repo',
+  'fixture-2d': 'a test fixture, drawn in 2D; tests hold its numbers to the real check', example: 'a worked example',
+  sources: 'published sources',
+};
+// A tool on a tile is a cad-agent command, a cadagent module or a script under tools/, and it must exist.
+const commandNames = new Set(commands.map(c => c.name));
+const realTool = (tool, at) => {
+  const cmd = tool.match(/^cad-agent ([a-z0-9-]+)$/)?.[1], mod = tool.match(/^cadagent(?:\.[a-z_]+)+$/)?.[0];
+  const ok = cmd ? commandNames.has(cmd) : mod ? [`src/${mod.replace(/\./g, '/')}.py`, `src/${mod.replace(/\./g, '/')}/__init__.py`].some(f => tracked.includes(f))
+    : /^tools\/[\w./-]+$/.test(tool) && tracked.includes(tool);
+  if (!ok) throw new Error(`docs/home.yaml ${at}: ${tool} is not a cad-agent command, a cadagent module or a script under tools/`);
+  return tool;
+};
+// Gyropup's FEA numbers come from its summary (docs/img/gyropup/SOURCE.json, written by tools/gyropup_showcase.py):
+// a caption that does not quote them fails the build, so a new export cannot leave an old number on the page.
+const gyropupSource = JSON.parse(await read('docs/img/gyropup/SOURCE.json'));
+const checkNumbers = (r, at) => {
+  const fea = gyropupSource.pictures[path.basename(r.img).replace(/\.\w+$/, '')];
+  if (!r.img.startsWith('docs/img/gyropup/') || !fea?.safety_factor) return;
+  for (const n of [fea.tets.toLocaleString('en-US'), String(fea.safety_factor), Number(fea.target).toFixed(1)])
+    if (!r.caption.includes(n)) throw new Error(`docs/home.yaml ${at}: the caption does not quote ${n} from docs/img/gyropup/SOURCE.json`);
+};
+const reel = [], homeMd = { reel: [], ours: [] };
 for (const [i, r] of home.reel.entries()) {
   const at = `reel[${i}]`;
-  for (const k of ['img', 'tool', 'title', 'caption', 'alt', 'href']) if (!r[k]) throw new Error(`docs/home.yaml ${at} has no ${k}`);
-  if (r.credit && !CREDIT[r.credit]) throw new Error(`docs/home.yaml ${at}: unknown credit ${r.credit}`);
+  for (const k of ['img', 'tool', 'title', 'caption', 'alt', 'href', 'on']) if (!r[k]) throw new Error(`docs/home.yaml ${at} has no ${k}`);
+  if (!ON[r.on]) throw new Error(`docs/home.yaml ${at}: on is one of ${Object.keys(ON).join(', ')}`);
+  checkNumbers(r, at);
+  homeMd.reel.push(`- [${r.title}](${/^https:/.test(r.href) ? r.href : ORIGIN + pageURL(r.href)}): ${r.caption} (\`${r.tool}\`, on ${ON[r.on].replace(/<[^>]+>/g, '')})`);
   reel.push(`<li class="reel-tile${r.fit === 'cover' ? ' reel-cover' : ''}"><a class="reel-media" href="${esc(homeHref(r.href, at))}" tabindex="-1" aria-hidden="true">${await homeImg(r.img, at, ` alt="" loading="lazy" decoding="async"`)}</a>
-<p class="reel-tool"><code>${esc(r.tool)}</code></p><h3><a href="${esc(homeHref(r.href, at))}">${esc(r.title)}</a></h3><p>${esc(r.caption)}</p>${r.credit ? `<p class="reel-credit">${CREDIT[r.credit]}</p>` : ''}
+<p class="reel-tool"><code>${esc(realTool(r.tool, at))}</code></p><h3><a href="${esc(homeHref(r.href, at))}">${esc(r.title)}</a></h3><p>${esc(r.caption)}</p><p class="reel-credit">On ${ON[r.on]}</p>
 <span class="visually-hidden">${esc(r.alt)}</span></li>`);
 }
 // The snap-fit demo is drawn from its geometry in this build (tools/snap-demo.mjs), so it joins the reel inline.
 reel.splice(3, 0, `<li class="reel-tile reel-snap"><a class="reel-media" href="/docs/compliant" tabindex="-1" aria-hidden="true">${SNAP.svg}</a>
-<p class="reel-tool"><code>cad-agent snapfit</code></p><h3><a href="/docs/compliant">One part, no screws</a></h3><p>A cantilever snap fit animated from its own geometry: contact and root strain computed against the material and the print's layer direction.</p></li>`);
+<p class="reel-tool"><code>cad-agent snapfit</code></p><h3><a href="/docs/compliant">One part, no screws</a></h3><p>A cantilever snap fit animated from its own geometry: contact and root strain computed against the material and the print's layer direction.</p><p class="reel-credit">Drawn by this site's build from the snap-fit geometry</p></li>`);
 const fitsTile = async (t, i) => {
   const at = `fits.ours[${i}]`;
   const levels = t.maturity ? [t.maturity] : (t.areas || []).map(a => {
@@ -392,6 +417,7 @@ const fitsTile = async (t, i) => {
   if (!levels.length || levels.some(l => !LADDER.includes(l))) throw new Error(`docs/home.yaml ${at}: a maturity on the ladder (${LADDER.join(', ')}), from areas or stated with a why`);
   if (t.maturity && !t.why) throw new Error(`docs/home.yaml ${at}: a stated maturity needs its why`);
   const level = levels.reduce((lo, l) => LADDER.indexOf(l) < LADDER.indexOf(lo) ? l : lo);      // the least mature area decides
+  homeMd.ours.push(`- [${t.title}](${/^https:/.test(t.href) ? t.href : ORIGIN + pageURL(t.href)}) (${level}): ${t.does}`);
   const step = LADDER.indexOf(level);
   return `<li class="fit-tile"><a href="${esc(homeHref(t.href, at))}">${t.img ? `<span class="fit-media">${await homeImg(t.img, at, ' alt="" loading="lazy" decoding="async"')}</span>`
   : t.cmd ? `<span class="fit-media fit-cmd"><code>$ ${esc(t.cmd)}</code></span>`
@@ -403,7 +429,7 @@ const upstreamByName = new Map(upstreams.map(u => [u.name, u]));
 const makeChip = (m, i) => {
   const u = m.upstream && upstreamByName.get(m.upstream);
   if (m.upstream && !u) throw new Error(`docs/home.yaml fits.make[${i}]: ${m.upstream} is not in upstreams/registry.yaml`);
-  return `<li><span class="make-name"><a href="${esc(homeHref(m.href, `fits.make[${i}]`))}"><b>${esc(m.name)}</b></a>${u ? ` <span class="pill">${esc(u.license)}</span><span class="pill" title="GitHub stars when surveyed">★ ${Number(u.stars).toLocaleString('en-US')}</span>` : ''}</span><span>${esc(m.does)}</span>${m.note ? `<small>${esc(m.note)}</small>` : ''}</li>`;
+  return `<li><span class="make-name"><a href="${esc(homeHref(m.href, `fits.make[${i}]`))}"><b>${esc(m.name)}</b></a>${u ? ` <span class="pill pill-${esc(u.status)}">${esc(STATUS_NOTE[u.status] || u.status)}</span><span class="pill">${esc(u.license)}</span><span class="pill" title="GitHub stars when surveyed">★ ${Number(u.stars).toLocaleString('en-US')}</span>` : ''}</span><span>${esc(m.does)}</span>${m.note ? `<small>${esc(m.note)}</small>` : ''}</li>`;
 };
 const testCount = git('grep', '-c', '-E', '^\\s*def test_', 'HEAD', '--', 'tests/*.py').split('\n').filter(Boolean)
   .reduce((n, l) => n + Number(l.split(':').pop()), 0);
@@ -424,10 +450,10 @@ curl -s ${ORIGIN}/llms.txt
 curl -s ${ORIGIN}/catalog.json
 curl -s ${ORIGIN}/docs/toolkit.md  <b># any page, as .md</b></pre></cad-copy></div>
 </section></div>
-<section class="reel-band" id="outputs"><div class="wrap"><div class="lead"><h2>What the code <span>computes.</span></h2><p>Real outputs of cad-agent's tools on real parts, with the numbers they computed. Each opens the page that explains it.</p></div>
+<section class="reel-band" id="outputs"><div class="wrap"><div class="lead"><h2>What the code <span>computes.</span></h2><p>Outputs of cad-agent's tools with the numbers they computed: on Gyropup, on a printed enclosure, on this repo's test fixtures and on worked examples. Each tile says which, and opens the page that explains it.</p></div>
 <ul class="reel">${reel.join('')}</ul></div></section>
-<div class="wrap"><section class="section fits" aria-labelledby="fits-title"><div class="lead"><h2 id="fits-title">Where cad-agent <span>fits.</span></h2><p>Other people's tools make the model, and we use them: text-to-cad writes and exports it, but <a href="/research/landscape#2-deep-dive-earthtojaketext-to-cad-v0726-2026-10-20">its code computes no stress, fatigue or safety factor</a>. cad-agent's engineering is Python with ${testCount.toLocaleString('en-US')} test functions in CI. Each block shows how far it has got.</p></div>
-<div class="fits-make"><p class="fits-label">Make: other people's tools we use, credited</p><ul>${home.fits.make.map(makeChip).join('')}</ul></div>
+<div class="wrap"><section class="section fits" aria-labelledby="fits-title"><div class="lead"><h2 id="fits-title">Where cad-agent <span>fits.</span></h2><p>Other people's tools make the model. text-to-cad, which we are trialling, writes and exports models, but <a href="/research/landscape#2-deep-dive-earthtojaketext-to-cad-v0726-2026-10-20">its code computes no stress, fatigue or safety factor</a>. cad-agent's engineering is Python with ${testCount.toLocaleString('en-US')} test functions in CI. Each block shows how far it has got.</p></div>
+<div class="fits-make"><p class="fits-label">Make: other people's tools we build on or are trialling, credited</p><ul>${home.fits.make.map(makeChip).join('')}</ul></div>
 <p class="fits-arrow" aria-hidden="true"><span>STEP, 3MF, boards</span></p>
 <div class="fits-ours"><p class="fits-label">Check, simulate, explain, measure: cad-agent</p><ul>${(await Promise.all(home.fits.ours.map(fitsTile))).join('')}</ul>
 <p class="fits-key">Maturity: ${areasTree.maturity.map(m => `<b>${esc(m.level)}</b> ${esc(m.means)}`).join('; ')}. From <a href="${REPO}/blob/dev/docs/areas.yaml">docs/areas.yaml</a>.</p></div></section>
@@ -476,7 +502,25 @@ ${SECTIONS.map(s => `## ${s.title}\n\n${bySection(s.id).map(p => `- [${p.title}]
 ${commands.map(c => `- \`cad-agent ${c.name}\`: ${c.help}`).join('\n')}
 `;
 await writeFile(path.join(out, 'llms.txt'), llms);
-await writeFile(path.join(out, 'index.md'), llms);
+// The home page's twin: llms.txt, then what the page shows beside it (the reel and where cad-agent fits), in words.
+const fitsMake = home.fits.make.map(m => { const u = m.upstream && upstreamByName.get(m.upstream); return `- ${m.name}${u ? ` (${u.license}, ${STATUS_NOTE[u.status] || u.status})` : ''}: ${m.does}`; });
+await writeFile(path.join(out, 'index.md'), `${llms.replace(/\n*$/, '\n')}
+## On the home page
+
+### What the code computes
+
+${homeMd.reel.join('\n')}
+
+### Where cad-agent fits
+
+Other people's tools make the model (we build on them or are trialling them):
+
+${fitsMake.join('\n')}
+
+cad-agent checks, simulates, explains and measures around it (maturity: ${LADDER.join(' → ')}, from docs/areas.yaml):
+
+${homeMd.ours.join('\n')}
+`);
 await writeFile(path.join(out, 'llms-full.txt'), `# cad-agent: full text\n\n> ${TAGLINE}. ${LEDE}\n\n` +
   pages.map(p => `\n\n---\n\nSource: ${ORIGIN}/${p.file}\n\n${rewriteMd(p.file, p.body, true).trim()}\n`).join(''));
 // Cloudflare Pages joins the values of a header set by more than one matching rule, so each header is set by one rule

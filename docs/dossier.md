@@ -459,6 +459,9 @@ therefore its parent's moving part itself; see [`gates.md`](gates.md#motion-rang
 `join(dossier, geometry)` (geometry: a `BuildResult` or the JSON mapping, so the lint needs no CAD kernel) returns
 `Issue`s with `file:line` (the card's YAML line, or the build script's declaration line):
 
+<details>
+<summary>The join's eleven issue codes, their severity and when each is raised</summary>
+
 | Code | Severity | When |
 |---|---|---|
 | `card-without-shape` | error | a part card no `@part` or `print_parts()` registers |
@@ -472,6 +475,8 @@ therefore its parent's moving part itself; see [`gates.md`](gates.md#motion-rang
 | `fastener-count` | error | a card's `fasteners[].qty` differs from the axes `fastener()` places |
 | `fastener-not-registered`, `step-fastener-unregistered` | warning | declared in the card or a step, not yet in code |
 | `step-conflict` | error | a step in `project.yaml` and in code with the same order disagree |
+
+</details>
 
 The dossier lint runs this with its own checks; every code in this table is an error or warning of the lint under
 the same name.

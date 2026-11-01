@@ -167,8 +167,12 @@ flowchart TD
   nor `overlapping` can be stated. `witness["crossing_probe"]` names the surface, the point, its depth (a lower
   bound) and the other part's nearest point; the containment gate turns it into an escape. If the probe itself
   fails, the pair is `unknown` too.
-- **What it costs.** Only pairs whose boundaries meet pay: 0.03–0.06 s per ball pair here. The README hero's
-  811-call sweep and the gate bench: see PR #46's body for the measurements.
+- **What it costs.** Only pairs whose boundaries meet pay: 0.03–0.06 s per ball pair above. On the README hero's
+  clearance sweep (811 calls on Gyropup's leg), it ran on the 168 touching calls and took 1.4 s in all, against
+  755 s for the sweep, with every relation unchanged. Those are face contacts: their section edges come from
+  coincident faces, which carry no face pair and are not sampled, since coincident faces cannot cross. Sampling
+  every one of their 912 edges anyway (145,441 samples) found no point on the wrong side. On the gate bench it
+  runs on the table's 31 touching pairs, 0.12 s of its 1.4–1.5 s.
 - **Limits.** A safety net, not a proof. A crossing the section also misses, one whose samples all lie within the
   floor, or one between samples is not seen. The depth is that of the deepest sample, so at most the true depth.
   `apart` rests on `BRepExtrema_DistShapeShape`, which read 0 at every crossing tried. A fuzzy boolean does not

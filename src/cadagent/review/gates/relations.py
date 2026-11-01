@@ -780,11 +780,12 @@ def _probe_floor(tol: Tolerances) -> float:
 
 
 def _section_patches(a, b) -> List[Tuple[Any, Any, List[Any]]]:
-    """Where the boundaries of ``a`` and ``b`` meet: ``[(face of a, face of b, points along the curves between
-    them)]``, one entry per pair of faces (either face None when the kernel names none), from a non-destructive
-    ``BRepAlgoAPI_Section``.
+    """Where the faces of ``a`` and ``b`` cross: ``[(face of a, face of b, points along the curves between them)]``,
+    one entry per pair of faces (either face None when the kernel names only one), from a non-destructive
+    ``BRepAlgoAPI_Section``. The kernel names the faces of a curve where two faces intersect. An edge that comes
+    from coincident faces (a face contact) has none and is left out: coincident faces cannot cross.
 
-    The section finds the curves the boolean misses (#46): on a 4 mm ball crossing a cone wall by 0.02-0.23 mm,
+    The section finds the curves the boolean misses (#46): on a 4 mm ball crossing a cone wall by 0.011-0.23 mm,
     where Common and Cut read no crossing, it returned the whole closed intersection curve every time."""
     occ = {m: require(f"OCP.{m}", "the crossing probe") for m in
            ("BRepAlgoAPI", "BRepAdaptor", "TopExp", "TopAbs", "TopoDS", "TopTools")}
@@ -812,6 +813,8 @@ def _section_patches(a, b) -> List[Tuple[Any, Any, List[Any]]]:
         fa, fb = ds.TopoDS_Shape(), ds.TopoDS_Shape()
         ia = maps[0].FindIndex(fa) if op.HasAncestorFaceOn1(edge, fa) else 0
         ib = maps[1].FindIndex(fb) if op.HasAncestorFaceOn2(edge, fb) else 0
+        if not (ia or ib):
+            continue
         curve = occ["BRepAdaptor"].BRepAdaptor_Curve(ds.TopoDS.Edge_s(edge))
         t0, t1 = curve.FirstParameter(), curve.LastParameter()
         patches.setdefault((ia, ib), []).extend(curve.Value(t0 + (t1 - t0) * k / _PROBE_PER_EDGE)

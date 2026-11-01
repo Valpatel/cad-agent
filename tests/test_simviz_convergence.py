@@ -66,7 +66,7 @@ def test_a_case_without_solids_has_no_solids_panel_and_shows_the_whole_run(tmp_p
     assert [p[t].get_ylabel() for t in ('Air temperature', 'Fan flow', 'Heat leaving with the air')] == \
         ['temperature (°C)', 'flow (m³/h)', 'heat (W)']
     air = p['Air temperature']
-    assert {ln.get_label() for ln in air.get_lines()} >= {'fins: mean in the block', 'fan: air through the fan'}
+    assert {ln.get_label() for ln in air.get_lines()} >= {'fins: mean in the block', 'fan: mean over the fan zone (by volume)'}
     assert 'Change over the shaded window: fins' in _words(air)
     assert f"fins {r['zones']['fins']['T_c']:.1f} °C" in _words(air)       # each line named at its end, with its unit
     # each change with the limit steady holds it to: 1 °C for the block's air and the fan's intake air alike

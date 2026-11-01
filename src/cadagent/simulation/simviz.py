@@ -377,7 +377,8 @@ def _judged(key, v, limits) -> str:
 
 
 _CONV_WORDS = (('_max_c_change', ' hottest'), ('_T_change_c', ' air in the block'), ('_flow_change_pct', ' flow'),
-               ('_intake_c_change', ' air through the fan'), ('heat_out_change_pct', 'heat leaving'))
+               ('_intake_c_change', ' air in the fan zone (by volume)'), ('_inlet_c_change', ' air entering (mass-flow-weighted)'),
+               ('_outlet_c_change', ' air leaving (mass-flow-weighted)'), ('heat_out_change_pct', 'heat leaving'))
 
 
 def _conv_name(key: str) -> str:

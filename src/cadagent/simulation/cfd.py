@@ -46,6 +46,19 @@ _WHY = 'the CFD case writer'
 IMAGE = 'opencfd/openfoam-default:2512'
 T0 = 273.15
 AIR_CP = 1005.0
+AIR_R = 8314.462618 / 28.96      # J/(kg K): the case's air, a perfect gas of molar mass 28.96 g/mol
+P_ROOM = 1e5                     # Pa: the open boundary's pressure
+# The heat leaving with the air must match the heat put in within this (energy_check): 5 % of it, or 0.5 W when
+# nothing is put in. read_results' `converged` and run_until_balanced's default use the same 5 %.
+ENERGY_TOLERANCE_PCT = 5.0
+ENERGY_TOLERANCE_W = 0.5
+# Each fan's measuring faces sit this far inside the fan zone's end planes. The zone takes the cells whose centres lie
+# strictly between the planes, so a cell centre exactly on a plane is outside it; the inset keeps the face between that
+# cell and the zone's first cell on the face, not the one a cell further out.
+FACE_INSET_M = 1e-7
+# Below this fraction of the fan's free-air mass flow, the net flow through a face is too small to weight a temperature
+# by: OpenFOAM's weightedAverage divides by it.
+MIN_NET_FLOW = 0.01
 
 
 @dataclass(frozen=True)
@@ -98,6 +111,22 @@ class Fan:
         a = a / np.linalg.norm(a)
         v_free = self.q_free_m3h / 3600 / self.area_m2
         return a * self.dp0_pa * self.area_m2, self.dp0_pa * self.area_m2 / v_free
+
+    def ends(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """The fan zone's upstream and downstream end planes, as their centres (m, to the micrometre the case file
+        writes), and the unit axis."""
+        c = np.asarray(self.centre, float) / 1000
+        a = np.asarray(self.axis, float)
+        a = a / np.linalg.norm(a)
+        h = self.thickness / 2000
+        return np.round(c - a * h, 6), np.round(c + a * h, 6), a
+
+    def faces(self) -> Dict[str, np.ndarray]:
+        """Where the fan's inlet and outlet temperatures are measured: the centre (m) of the annulus (d_hub to d_outer)
+        across each end plane of the fan zone, FACE_INSET_M inside it. The faces are those whose cell-to-cell line
+        crosses that annulus, oriented along the axis, so a positive mass flow is air the fan pushes forward."""
+        up, down, a = self.ends()
+        return {'inlet': up + a * FACE_INSET_M, 'outlet': down - a * FACE_INSET_M}
 
 
 @dataclass
@@ -302,7 +331,9 @@ class ThermalCase:
                        'heat put in (energy balance), not that the residuals reached a tolerance',
                        'isotropic solids: heat pipes are an effective conductivity, with no dry-out limit',
                        'obstacles (enclosure, boards) are adiabatic: the heat leaves only with the air',
-                       'fans are actuator discs with a straight-line fan curve, no swirl'],
+                       'fans are actuator discs with a straight-line fan curve, no swirl',
+                       "a fan's inlet and outlet temperatures are mass-flow-weighted over the annulus at each end of its zone "
+                       '(face values interpolated between the cells either side); air through the hub is not counted'],
         }
 
     def heat_input_w(self) -> Optional[float]:
@@ -333,6 +364,23 @@ class ThermalCase:
         type volFieldValue; libs (fieldFunctionObjects); region {self.fluid}; fields (U T);
         regionType cellZone; name {f}; operation volAverage;
         writeFields false; log false; writeControl timeStep; writeInterval 10;
+    }}''')
+        # each fan's inlet and outlet faces (see _zone_sets): the mass-flow-weighted temperature, sum(phi T) / sum(phi),
+        # and the net mass flow, sum(phi) in kg/s along the axis. A face with no faces writes NaN, not a crash.
+        for f in self.fans:
+            for side in ('inlet', 'outlet'):
+                zone = f'{f.name}{side.capitalize()}'
+                fos.append(f'''    T_{side}_{f.name}
+    {{
+        type surfaceFieldValue; libs (fieldFunctionObjects); region {self.fluid}; regionType faceZone; name {zone};
+        fields (T); operation weightedAverage; weightField phi; empty-surface warn; writeFields false; log false;
+        writeControl timeStep; writeInterval 10;
+    }}
+    mass_{side}_{f.name}
+    {{
+        type surfaceFieldValue; libs (fieldFunctionObjects); region {self.fluid}; regionType faceZone; name {zone};
+        fields (phi); operation sum; empty-surface warn; writeFields false; log false;
+        writeControl timeStep; writeInterval 10;
     }}''')
         # heat leaving with the air, referenced to the room: cp (sum(phi T) - T_amb sum(phi)); robust to a small mass
         # imbalance and to any enthalpy reference
@@ -443,15 +491,17 @@ mergeTolerance 1e-6;
       box ({lo[0]:.6f} {lo[1]:.6f} {lo[2]:.6f}) ({hi[0]:.6f} {hi[1]:.6f} {hi[2]:.6f}); }}
     {{ name {z['name']}; type cellZoneSet; action new; source setToCellZone; set {z['name']}Set; }}''')
         for f in self.fans:
-            c = np.asarray(f.centre, float) / 1000
-            a = np.asarray(f.axis, float)
-            a = a / np.linalg.norm(a)
-            h = f.thickness / 2000
-            p1, p2 = c - a * h, c + a * h
+            p1, p2, a = f.ends()
             acts.append(f'''    {{ name {f.name}Set; type cellSet; action new; source cylinderAnnulusToCell;
       point1 ({p1[0]:.6f} {p1[1]:.6f} {p1[2]:.6f}); point2 ({p2[0]:.6f} {p2[1]:.6f} {p2[2]:.6f});
       outerRadius {f.d_outer/2000:.6f}; innerRadius {f.d_hub/2000:.6f}; }}
     {{ name {f.name}; type cellZoneSet; action new; source setToCellZone; set {f.name}Set; }}''')
+            # the inlet and outlet faces: the faces whose cell-to-cell line crosses the annulus at each end of the zone,
+            # flipped to point along the axis (searchableSurfaceToFaceZone with a searchableDisk, OpenFOAM v2512)
+            for side, o in f.faces().items():
+                acts.append(f'''    {{ name {f.name}{side.capitalize()}; type faceZoneSet; action new; source searchableSurfaceToFaceZone;
+      surfaceType disk; surfaceName {f.name}{side.capitalize()}Disk; origin ({o[0]:.9f} {o[1]:.9f} {o[2]:.9f});
+      normal ({a[0]:.9f} {a[1]:.9f} {a[2]:.9f}); radius {f.d_outer/2000:.6f}; innerRadius {f.d_hub/2000:.6f}; }}''')
         return 'actions\n(\n' + '\n'.join(acts) + '\n);\n'
 
     # --- per-region files
@@ -836,6 +886,36 @@ foamToVTK -allRegions -latestTime -noFunctionObjects > log.foamToVTK 2>&1
         (case / 'Allrun.continue').chmod(0o755)
 
 
+def stream_heat_w(mass_flow_kg_s: float, temperature_c: float, ambient_c: float, cp: float = AIR_CP) -> float:
+    """The heat a stream of air carries above the room, Q = m_dot c_p (T - T_room) in W, with T its mass-flow-weighted
+    (bulk) temperature: the only temperature for which m_dot c_p T is the enthalpy the stream carries. A volume
+    average weights stagnant and recirculating air like the air that flows, so it does not give the heat."""
+    return float(mass_flow_kg_s) * cp * (float(temperature_c) - float(ambient_c))
+
+
+def energy_check(heat_input_w: Optional[float], heat_out_w: Optional[float], tolerance_pct: float = ENERGY_TOLERANCE_PCT,
+                 tolerance_w: float = ENERGY_TOLERANCE_W) -> dict:
+    """Does a result conserve energy? In a steady case with adiabatic walls every watt put in leaves with the air, so
+    the heat leaving (W, rounded to 0.01 W as read_results reports it) must match the heat put in: within
+    ``tolerance_pct`` of it, or within ``tolerance_w`` of nothing when nothing is put in. A result outside that has not
+    settled (or lost heat to the numerics), and its temperatures are not an answer yet. ``conserved`` is None when either
+    side is unknown, with ``why``."""
+    out = {'heat_input_w': heat_input_w, 'heat_out_w': heat_out_w, 'conserved': None}
+    if heat_input_w is None:
+        return dict(out, why='not checked: an exchanger block has no target power, so the heat put in is unknown')
+    if heat_out_w is None:
+        return dict(out, why='not checked: no heat-leaving output (flux_T, flux_mass) was found')
+    out['difference_w'] = round(heat_out_w - heat_input_w, 2)
+    if heat_input_w > 0:
+        out['difference_pct'] = round(100 * (heat_out_w - heat_input_w) / heat_input_w, 1)
+        out['tolerance'] = f'±{tolerance_pct:g} %'
+        out['conserved'] = abs(out['difference_pct']) <= tolerance_pct
+    else:
+        out['tolerance'] = f'±{tolerance_w:g} W'
+        out['conserved'] = abs(out['difference_w']) <= tolerance_w
+    return out
+
+
 def exchanger_terms(ha_w_k: float, fin_temperature_c: float) -> Tuple[float, float]:
     """Explicit (W) and implicit (kg/s) totals of an isothermal-fin source on sensible enthalpy (hConst, Tstd 298.15 K)."""
     return ha_w_k * (fin_temperature_c + T0 - 298.15), -ha_w_k / AIR_CP
@@ -1004,6 +1084,31 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
             out['fans'][fan['name']] = {'flow_m3h': round(q, 2), 'flow_cfm': round(q / 1.699, 2), 'pressure_rise_pa': round(dp, 2),
                                         'fraction_of_free_air': round(q / fan['q_free_m3h'], 3), 'air_through_fan_c': z['T_c']}
     t_amb = meta['ambient_c'] + T0
+    warn = []
+
+    def face(of, fan, side):                      # [iteration, mass-flow-weighted T (°C), net mass flow (kg/s)]
+        m = {r[0]: r[1] for r in of(f'mass_{side}_{fan["name"]}', 'surfaceFieldValue')}
+        rows = np.array([[r[0], r[1] - T0, m[r[0]]] for r in of(f'T_{side}_{fan["name"]}', 'surfaceFieldValue')
+                         if r[0] in m and math.isfinite(r[1]) and math.isfinite(m[r[0]])]).reshape(-1, 3)
+        # where the net flow is too small to weight by (OpenFOAM divides by it), the temperature means nothing
+        free = P_ROOM / (AIR_R * t_amb) * fan['q_free_m3h'] / 3600
+        return rows, np.abs(rows[:, 2]) >= MIN_NET_FLOW * free
+
+    # each fan's inlet and outlet: mass-flow-weighted over the annulus at each end of its zone (cases written before
+    # these outputs existed have none, and keep only the volume average, air_through_fan_c)
+    for fan in meta['fans']:
+        for side in ('inlet', 'outlet'):
+            rows, ok = face(run, fan, side)
+            if not len(rows):
+                continue
+            f = out['fans'].setdefault(fan['name'], {})
+            f[f'{side}_kg_s'] = float(rows[-1, 2])
+            f[f'{side}_c'] = round(float(rows[-1, 1]), 2) if ok[-1] else None
+            if not ok[-1]:
+                warn.append(f'{fan["name"]} {side}: the net flow through it, {rows[-1, 2]:.3g} kg/s, is under '
+                            f'{MIN_NET_FLOW:.0%} of the fan\'s free-air flow, too little to weight a temperature by')
+            elif side == 'outlet':
+                f['heat_carried_w'] = round(stream_heat_w(rows[-1, 2], rows[-1, 1], meta['ambient_c']), 2)
 
     def heat_out(of):                             # [iteration, heat leaving (W), mass flux (kg/s)] where both logged
         phi = {r[0]: r[1] for r in of('flux_mass', 'surfaceFieldValue')}
@@ -1013,18 +1118,29 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
     if len(heat_run):
         out['heat_out_w'] = round(float(heat_run[-1, 1]), 2)
         out['mass_imbalance_kg_s'] = float(heat_run[-1, 2])
-    q_in = meta.get('heat_input_w')
-    if q_in is not None and out.get('heat_out_w') is not None:
-        out['heat_input_w'] = q_in
-        if q_in > 0:
-            out['energy_balance_pct'] = round(100 * (out['heat_out_w'] - q_in) / q_in, 1)
-        out['energy_balance_w'] = round(out['heat_out_w'] - q_in, 2)
-    # cells each fan and fin zone actually caught (an empty zone silently does nothing)
+    # is energy conserved? the heat leaving with the air against the heat put in (energy_check)
+    energy = energy_check(meta.get('heat_input_w'), out.get('heat_out_w'))
+    if energy['conserved'] is not None:
+        out['heat_input_w'] = energy['heat_input_w']
+        if 'difference_pct' in energy:
+            out['energy_balance_pct'] = energy['difference_pct']
+        out['energy_balance_w'] = energy['difference_w']
+    out['energy_conserved'] = energy['conserved']
+    if energy['conserved'] is False:
+        off = (f'{energy["difference_pct"]:+.1f} %' if 'difference_pct' in energy else f'{energy["difference_w"]:+.2f} W')
+        warn.append(f'energy not conserved: {energy["heat_out_w"]:g} W leave with the air for {energy["heat_input_w"]:g} W '
+                    f'put in ({off}; tolerance {energy["tolerance"]}). The temperatures are not an answer yet: continue the '
+                    'run (run_until_balanced) or refine the mesh')
+    # cells each fan and fin zone, and faces each fan's inlet and outlet, actually caught (an empty zone does nothing)
     ts = cd / 'log.topoSet'
     if ts.exists():
-        sizes = {m.group(1): int(m.group(2)) for m in re.finditer(r'cellZoneSet (\w+) now size (\d+)', ts.read_text())}
+        log_ts = ts.read_text()
+        sizes = {m.group(1): int(m.group(2)) for m in re.finditer(r'cellZoneSet (\w+) now size (\d+)', log_ts)}
+        faces = {m.group(1): int(m.group(2)) for m in re.finditer(r'faceZoneSet (\w+) now size (\d+)', log_ts)}
         out['zone_cells'] = sizes
-        empty = [k for k, v in sizes.items() if v == 0]
+        if faces:
+            out['zone_faces'] = faces
+        empty = [k for k, v in {**sizes, **faces}.items() if v == 0]
         if empty:
             out['error'] = f'empty zone(s): {empty}; refine the mesh around them'
     # residuals of the air over the whole run, joined across continuations (each writes its own start-time folder)
@@ -1065,8 +1181,12 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
                 f'{z["name"]}_T_change_c', [(r[0], r[4] - T0) for r in a])
     for fan in meta['fans']:
         a = run(f'zone_{fan["name"]}')
-        monitor(f'{fan["name"]}_intake_c', fan['name'], f'{fan["name"]}: air through the fan', 'Air temperature', '°C',
-                f'{fan["name"]}_intake_c_change', [(r[0], r[4] - T0) for r in a])
+        monitor(f'{fan["name"]}_intake_c', fan['name'], f'{fan["name"]}: mean over the fan zone (by volume)', 'Air temperature',
+                '°C', f'{fan["name"]}_intake_c_change', [(r[0], r[4] - T0) for r in a])
+        for side, words in (('inlet', 'entering'), ('outlet', 'leaving')):
+            rows, ok = face(run, fan, side)
+            monitor(f'{fan["name"]}_{side}_c', f'{fan["name"]} {side}', f'{fan["name"]}: air {words} (mass-flow-weighted)',
+                    'Air temperature', '°C', f'{fan["name"]}_{side}_c_change', rows[ok][:, :2].tolist())
         monitor(f'{fan["name"]}_flow_m3h', fan['name'], f'{fan["name"]}: flow through the fan', 'Fan flow', 'm³/h',
                 f'{fan["name"]}_flow_change_pct', [(r[0], flow_m3h(fan, r[1:4])) for r in a])
     monitor('heat_out_w', 'heat out', 'heat leaving with the air', 'Heat leaving with the air', 'W', 'heat_out_change_pct',
@@ -1099,6 +1219,11 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
             u0, u1 = float(t[0, 1:4] @ ax), float(t[-1, 1:4] @ ax)
             conv[f'{fan["name"]}_flow_change_pct'] = round(100 * (u1 - u0) / u1, 1) if u1 else None
             conv[f'{fan["name"]}_intake_c_change'] = round(float(t[-1, 4] - t[0, 4]), 2)
+        for side in ('inlet', 'outlet'):
+            rows, ok = face(newest, fan, side)
+            if ok.sum() > 5:
+                t = tail(rows[ok])
+                conv[f'{fan["name"]}_{side}_c_change'] = round(float(t[-1, 1] - t[0, 1]), 2)
     heat_series = heat_out(newest)
     if len(heat_series) > 5:
         t = tail(heat_series)
@@ -1108,15 +1233,12 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
         out['convergence_window'] = [int(min(w[0] for w in window)), int(max(w[1] for w in window))]
     limit = out['convergence_limits'] = {k: _change_limit(k) for k in conv}      # what the chart's captions show, too
     steady = bool(conv) and all(abs(v) < limit[k] for k, v in conv.items() if v is not None)
-    # within 5 % of the heat put in (or 0.5 W of nothing, for an airflow-only case); not checkable when an exchanger
-    # block has no target power, and then said so
-    if out.get('energy_balance_pct') is not None:
-        balanced = abs(out['energy_balance_pct']) <= 5
-    elif out.get('energy_balance_w') is not None:
-        balanced = abs(out['energy_balance_w']) <= 0.5
-    else:
-        balanced = True
-        out['energy_balance'] = 'not checked: an exchanger block has no target power'
+    # within 5 % of the heat put in (or 0.5 W of nothing, for an airflow-only case); not checkable when the heat put in
+    # (an exchanger block without a target power) or the heat leaving is unknown, and then said so
+    balanced = energy['conserved'] is not False
+    if energy['conserved'] is None:
+        out['energy_balance'] = energy['why']
     out['steady'] = steady
     out['converged'] = steady and balanced and not out.get('error')
+    out['warnings'] = warn
     return out

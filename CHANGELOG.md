@@ -18,6 +18,12 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 - Merge gates: `cad-gates/<base>/branch-flow`, `…/review` and `cad-gates/main/release` statuses, run from the default
   branch's (dev's) copy of the gates, on every push and every 15 minutes; tagged releases and the site deploy from `main` (#112).
 
+- Site home page: Gyropup in 3D, its 58 parts exported from STEP by `cad-agent view`, packed small with
+  `cadagent.view.pack_view` and shown by the kit's new `<cad-model>` (`kit/model.js`); a reel of real outputs with
+  the numbers they computed; and "where cad-agent fits", the tools we build on beside what cad-agent adds, each with
+  its maturity from `docs/areas.yaml` (#179). The browser suite fails a page with more than one and a half screens of
+  text and nothing to look at; the pages still over are listed with their issues and the list only shrinks.
+
 **Fixed**
 - Bambu slicer templates that include other templates are resolved before profiles are flattened (#93).
 - Reproducible STEP files: `cadagent.geometry.export_step(shape, path)` writes the same bytes for the same model, with

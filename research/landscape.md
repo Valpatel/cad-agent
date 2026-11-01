@@ -119,6 +119,12 @@ commits, then bots and a few contributors.
 
 Kernel note: text-to-cad uses build123d. Our J501 code is CadQuery. Both use OCP, so shapes interoperate through `.wrapped`.
 
+**What it does not compute** (checked 2026-10-31 in the vendored copy, `vendor/text-to-cad` at v0.7.26: its `packages/`,
+`skills/` and `apps/` code). No stress, fatigue, FEA or safety-factor code: no file mentions von Mises, fatigue, stress
+or a safety factor. Bearings and bolts appear only as catalogue parts to download (`step-parts`), and gears only as
+kinematic couplings and URDF/SDF joints (`cadgen.kinematics`, `sdf_validation`), never sized. It is a modelling,
+export and print-handoff engine; cad-agent's checks, simulation and calculations sit around models like its output.
+
 ## 3. KiCad MCP servers: install and security, then a recommendation
 
 | | kicad-mcp-pro | mixelpixx KiCAD-MCP-Server | Seeed kicad-mcp-server | kicad-happy (skills) |

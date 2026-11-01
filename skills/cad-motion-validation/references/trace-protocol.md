@@ -40,6 +40,22 @@ child axes as the parent turns; child pivots are not parent-local offsets. Matri
 pose. Rotations are right-handed degrees; axes are normalized. `parent` and component `joint` are explicit,
 including `null`. Every joint must carry captured components, directly or through descendants.
 
+**Closed loops** (a four-bar, a five-bar leg) cannot be a tree, and sampling each of their joints alone gives poses
+the linkage cannot reach. Cut the loop at one pin and give the joints a tree of parents. Then declare the loop:
+
+```json
+"loops": {"leg": {"closes": ["knee_c", "knee_d"], "pin": [0, -54.27, 10], "inputs": ["hip_a", "hip_b"]}}
+```
+
+`closes` names the two joints whose links meet at `pin` (home frame). Each runs back through its parents to where
+the two chains meet: one or two joints each, so three in a four-bar and four in a five-bar. The first joint of a
+two-joint chain is an input. The loop's axes must be parallel. Its other joints follow from the link lengths
+(`cadagent.mechanical.linkages`), on the assembly the loop has at home. Required poses sample every input against
+every other and skip the combinations that cannot close. A solved angle outside its joint's range is a contract error.
+Each sample's angles must put both chains' ends on the solved pin to the position tolerance: the `loop-pose` check.
+A renderer that leaves the loop open, or assembles it the other way, fails there even if its landmarks match the
+angles it reported. A sample whose inputs cannot close fails too.
+
 Each component needs at least four affinely independent (noncoplanar) ordered landmarks. For a solid, select
 actual mesh vertices spanning three dimensions and include extreme/shaft-adjacent points. Four landmarks identify
 a rigid transform; additional vertices expose geometry/deformation errors. A zero-thickness surface needs
@@ -103,6 +119,7 @@ continuous collision clearance, dynamic forces, speed, timing, physical fit, or 
 ## Regression proof
 
 Break the renderer deliberately and demonstrate the check fails: offset a pivot while preserving home placement,
-change an axis/sign, lose a parent, spin a stationary housing, and introduce a unit/basis mismatch. Restore the
+change an axis/sign, lose a parent, spin a stationary housing, and introduce a unit/basis mismatch. For a loop, also
+pose its joints as a serial chain and on the other assembly. Restore the
 correct implementation and retain the negative test. `tests/test_motion_trace.py` exercises these classes with an
 independent analytic fixture; product tests must also capture their actual exported geometry and renderer.

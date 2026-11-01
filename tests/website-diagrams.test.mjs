@@ -89,6 +89,14 @@ test('no browser: every block is left as it was, the build is told why, and noth
   assert.equal(client.draw(page), page);
 });
 
+test('a drawing that takes too long is given up and left for the reader\'s browser', async () => {
+  const { said, log } = quiet(), page = block(FLOW) + block(FLOW.replace('Test', 'Ship'));
+  const { draw, stats } = await drawDiagrams([page], { kit, site, cacheDir: cache(), log, timeout: 1 });
+  assert.deepEqual([stats.drawn, stats.left], [0, 2]);
+  assert.equal(draw(page), page);
+  assert.match(said.join('\n'), /it took more than 0\.001 s/);
+});
+
 test('hostile labels stay inert when drawn at build time', async () => {
   // The labels from the advisories fixed in Mermaid 11.10.0 (tests/webkit-diagrams-browser.mjs draws them in the page).
   const hook = '<img src="x" onerror="window.cadXss=1">';

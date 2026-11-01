@@ -34,7 +34,7 @@ const KIT_FILES = ['diagrams.js', 'diagrams.css', 'vendor/mermaid/mermaid.min.js
 const TYPES = { '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.html': 'text/html' };
 const ORIGIN = 'http://cad-agent-diagrams.invalid';      // routed in the page, never fetched
 const sha = x => createHash('sha256').update(x).digest('hex');
-const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: '\u00a0' };
 /** HTML text back to the characters a browser's parser gives (what kit/diagrams.js reads as textContent). */
 export const unescapeHtml = s => s.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (m, e) => e[0] === '#'
   ? String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10)) : (ENT[e] ?? m));
@@ -53,9 +53,10 @@ export async function launchChromium() {
 
 /** Draw every block in `htmls` (strings of page HTML) and return { draw(html) → html with each block replaced, stats }.
  * `kit(rel)` and `site(rel)` read a committed file of the web kit and of web/ (the build's readBuf). `theme` is the
- * pages' data-diagram-theme; `css` the stylesheets the pages load, which the drawing page loads too. */
+ * pages' data-diagram-theme; `css` the stylesheets the pages load, which the drawing page loads too; `timeout` the ms
+ * one diagram may take. */
 export async function drawDiagrams(htmls, { kit, site, theme = 'light', css = ['/web/site.css', '/kit/diagrams.css'], cacheDir,
-  client = false, launch = launchChromium, log = console } = {}) {
+  client = false, launch = launchChromium, log = console, timeout = 20000 } = {}) {
   const files = new Map();
   for (const f of KIT_FILES) files.set(`/kit/${f}`, await kit(f));
   for (const c of css) if (c.startsWith('/web/')) files.set(c, await site(c.slice('/web/'.length)));
@@ -84,9 +85,15 @@ export async function drawDiagrams(htmls, { kit, site, theme = 'light', css = ['
     } else {
       stats.browser = `${why} ${browser.version()}`;
       try {
-        let out;
-        try { out = await drawInBrowser(browser, todo, { files, theme, css }); }
-        catch (e) { warn(`${todo.length} diagrams will be drawn in the reader's browser: the drawing page failed (${e.message.split('\n')[0]})`); out = []; stats.left = todo.length; }
+        let out = [];
+        try {
+          const run = await drawInBrowser(browser, todo, { files, theme, css, timeout });
+          out = run.out;
+          if (run.errors.length) warn(`the drawing page reported: ${[...new Set(run.errors)].join('; ')}`);
+        } catch (e) {
+          warn(`${todo.length} diagrams will be drawn in the reader's browser: the drawing page failed (${e.message.split('\n')[0]})`);
+          stats.left = todo.length;
+        }
         await mkdir(cacheDir, { recursive: true });
         for (const [key, result] of out) {
           if (result.error) { warn(`a diagram is left to the reader's browser: ${result.error} (it starts "${sources.get(key).split('\n')[0].slice(0, 60)}")`); stats.left++; continue; }
@@ -111,10 +118,14 @@ export async function drawDiagrams(htmls, { kit, site, theme = 'light', css = ['
 }
 const idOf = key => `cad-diagram-s${key.slice(0, 12)}`;
 
-/** Draw [key, source] pairs in one page that serves the kit from memory; each result is { html } or { error }. */
-async function drawInBrowser(browser, todo, { files, theme, css }) {
-  const context = await browser.newContext({ viewport: { width: 1366, height: 800 }, colorScheme: theme === 'dark' ? 'dark' : 'light', serviceWorkers: 'block' });
-  try {
+/** Draw [key, source] pairs in a page that serves the kit from memory. Returns [key, { html } or { error }] pairs and
+ * the page's own errors. A drawing that takes longer than `timeout` ms (Mermaid has had infinite loops) is given up
+ * and the page started again for the rest. */
+async function drawInBrowser(browser, todo, { files, theme, css, timeout = 20000 }) {
+  let context, page;
+  const errors = [];
+  const start = async () => {
+    context = await browser.newContext({ viewport: { width: 1366, height: 800 }, colorScheme: theme === 'dark' ? 'dark' : 'light', serviceWorkers: 'block' });
     // Nothing leaves the page: the kit and the stylesheets come from the committed files, anything else is refused.
     await context.route('**/*', route => {
       const url = new URL(route.request().url());
@@ -131,11 +142,10 @@ async function drawInBrowser(browser, todo, { files, theme, css }) {
       window.__cadSeed = n => { s = n >>> 0; };
       Math.random = () => { s = (s + 0x6d2b79f5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
     });
-    const page = await context.newPage();
-    const errors = [];
-    page.on('pageerror', e => errors.push(e.message));
+    page = await context.newPage();
+    page.on('pageerror', e => errors.push(e.message.split('\n')[0]));
     await page.goto(`${ORIGIN}/draw.html`);
-    const results = await page.evaluate(async ({ items, theme, font, fontSize }) => {
+    await page.evaluate(async ({ theme, font, fontSize }) => {
       await document.fonts.load(`${fontSize} ${font.split(',')[0]}`);
       await document.fonts.ready;
       const { drawDiagram } = await import('/kit/diagrams.js');
@@ -156,8 +166,8 @@ async function drawInBrowser(browser, todo, { files, theme, css }) {
         }
         return null;
       };
-      const out = [];
-      for (const { key, source, id } of items) {
+      // Drawn twice, each time with a fresh Mermaid and the same seed: kept only if both drawings are the same bytes.
+      window.__cadDraw = async ({ key, source, id }) => {
         const twice = [];
         for (let run = 0; run < 2; run++) {
           window.__cadSeed(parseInt(key.slice(0, 8), 16));
@@ -165,12 +175,24 @@ async function drawInBrowser(browser, todo, { files, theme, css }) {
           twice.push(figure && { html: figure.outerHTML, unsafe: unsafe(figure) });
         }
         const [a, b] = twice;
-        out.push([key, !a ? { error: 'Mermaid could not draw it' } : a.unsafe ? { error: `the drawing has ${a.unsafe}` }
-          : a.html !== b?.html ? { error: 'two drawings of it differ' } : { html: a.html }]);
-      }
-      return out;
-    }, { items: todo.map(([key, source]) => ({ key, source, id: idOf(key) })), theme, font: FONT, fontSize: FONT_SIZE });
-    if (errors.length) throw new Error(`the drawing page failed: ${errors.join('; ')}`);
-    return results;
-  } finally { await context.close(); }
+        return !a ? { error: 'Mermaid could not draw it' } : a.unsafe ? { error: `the drawing has ${a.unsafe}` }
+          : a.html !== b?.html ? { error: 'two drawings of it differ' } : { html: a.html };
+      };
+    }, { theme, font: FONT, fontSize: FONT_SIZE });
+  };
+  const out = [];
+  try {
+    await start();
+    for (const [key, source] of todo) {
+      let timer;
+      const late = new Promise(ok => { timer = setTimeout(() => ok({ error: `it took more than ${timeout / 1000} s` }), timeout); });
+      const drawing = page.evaluate(item => window.__cadDraw(item), { key, source, id: idOf(key) })
+        .catch(e => ({ error: `the drawing page failed (${e.message.split('\n')[0]})` }));
+      const result = await Promise.race([drawing, late]);
+      clearTimeout(timer);
+      out.push([key, result]);
+      if (result.error && !/^(Mermaid could not|the drawing has|two drawings)/.test(result.error)) { await context.close(); await start(); }
+    }
+  } finally { await context?.close(); }
+  return { out, errors };
 }

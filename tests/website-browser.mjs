@@ -3,8 +3,9 @@
  * Fails on console errors, CSP violations, failed or third-party requests, sideways scrolling, a phone header without
  * the catalogue link, a hero animation that is not running (or still running under reduced motion), a catalogue
  * filter that hides results without saying so, and a diagram wider than the article column at 1100 px (the narrowest
- * width with the page tree), so no reader has to scroll a diagram sideways on a desktop, and a wall of text: a stretch
- * of a page with nothing to look at longer than one and a half screens (tests/site-walls.mjs, #179). */
+ * width with the page tree), so no reader has to scroll a diagram sideways on a desktop, a wall of text: a stretch
+ * of a page with nothing to look at longer than one and a half screens (tests/site-walls.mjs, #179), and diagrams that
+ * move the page while it loads or need script to show (#132: the build draws them). */
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
@@ -26,10 +27,13 @@ const browser = await engine.launch(engine === chromium ? { channel: process.env
 const ROUTES = ['/', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', '/research/landscape', '/agents/cad-resume',
   '/lessons/mechanical/design-rules', '/kit/file-viewer', '/missing-page'];
 // /kit/viewer is the kit's project viewer: it needs a project's exports/view/view.json, so it is not a site page.
+// The most a page with a diagram may move while it loads (#132; Google calls a page good under 0.1).
+const DIAGRAM_SHIFT = 0.05;
 const problems = [];
 try {
   problems.push(...await cantileverProblems());          // the snap-arm explorer on /docs/compliant (#137), below
   problems.push(...await fourbarProblems());             // the four-bar animator on /docs/linkages (#159), below
+  problems.push(...await drawnDiagramProblems());        // diagrams drawn by the build: no shift, no script (#132), below
   for (const width of [360, 1366]) for (const route of ROUTES) {
     const context = await browser.newContext({ viewport: { width, height: 800 } });
     if (engine === chromium) await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: base });
@@ -356,7 +360,7 @@ try {
   for (const e of await readdir(dir, { withFileTypes: true, recursive: true })) {
     const rel = path.relative(dir, path.join(e.parentPath, e.name));
     if (!e.isFile() || !rel.endsWith('.html') || rel.startsWith('kit')) continue;
-    const sources = ((await readFile(path.join(dir, rel), 'utf8')).match(/class="language-mermaid"|<pre class="mermaid"/g) || []).length;
+    const sources = ((await readFile(path.join(dir, rel), 'utf8')).match(/class="language-mermaid"|<pre class="mermaid"|<figure class="cad-diagram"/g) || []).length;
     if (sources) diagramPages.push(['/' + rel.replace(/\.html$/, '').split(path.sep).join('/'), sources]);
   }
   // Pages whose diagrams are being redrawn in an open PR. One that fits again fails the test, so it leaves this list.
@@ -412,6 +416,14 @@ try {
   }
   for (const route of WALLS.keys()) if (!sitePages.includes(route)) problems.push(`walls: ${route} is not a page; remove it from WALLS`);
   const reader = await browser.newPage({ viewport: VIEWPORT });
+  // Layout shifts while each page loads, for the pages with a diagram (#132): Chrome reports them, WebKit does not.
+  await reader.addInitScript(() => {
+    window.__shift = 0;
+    if (PerformanceObserver.supportedEntryTypes?.includes('layout-shift'))
+      new PerformanceObserver(list => { for (const e of list.getEntries()) if (!e.hadRecentInput) window.__shift += e.value; })
+        .observe({ type: 'layout-shift', buffered: true });
+  });
+  const withDiagrams = new Set(diagramPages.map(([r]) => r));
   await reader.goto(base + '/docs/compliant', { waitUntil: 'load' });
   // The measure itself, on planted articles of known geometry, so a broken measure cannot pass every page.
   for (const [name, { got, want }] of Object.entries(await reader.evaluate(plantedScript())))
@@ -422,6 +434,10 @@ try {
       [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'), null, { timeout: 20000 })
       .catch(() => problems.push(`walls ${route}: diagrams did not finish rendering`));
     await reader.evaluate(() => document.fonts.ready);
+    if (withDiagrams.has(route)) {
+      const shift = await reader.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(() => done(window.__shift)))));
+      if (shift > DIAGRAM_SHIFT) problems.push(`1366px ${route}: the page moved by ${shift.toFixed(3)} while it loaded (limit ${DIAGRAM_SHIFT}; diagrams are drawn by the build)`);
+    }
     const wall = await reader.evaluate(longestStretch, VISUAL);
     const where = `${wall.worst}px with nothing to look at, ${wall.from}-${wall.to}px into the page, after "${wall.after}"`;
     if (WALLS.has(route)) { if (wall.worst < WALL_CLEARED) problems.push(`walls ${route}: ${where}, well under ${WALL_LIMIT}px: remove it from WALLS (#${WALLS.get(route)})`); }
@@ -521,6 +537,60 @@ try {
   await browser.close();
   server.kill();
   await rm(dir, { recursive: true, force: true });
+}
+
+/** Diagrams drawn by the build (#132, tools/site-diagrams.mjs). Drawn in the reader's browser, a diagram near the top
+ * moved the page twice as it loaded (0.58 on /lessons/process/agent-process at 360 px, 0.10 on /docs/style-guide at
+ * 1366 px); Google calls a page good under 0.1. On the pages below, at phone and desktop widths: the layout shift while
+ * the page loads stays under DIAGRAM_SHIFT (Chrome; WebKit does not report shifts), the diagrams show with script off,
+ * each the same size as with script on (so the script changes no diagram, anywhere on the page, in either engine), the
+ * sideways-scroll hint shows exactly when its diagram overflows, without script too, and no page downloads Mermaid
+ * (DIAGRAM_SHIFT is set at the top, with the routes). */
+async function drawnDiagramProblems() {
+  const out = [];
+  const PAGES = ['/docs/toolkit', '/docs/style-guide', '/docs/vision', '/lessons/process/agent-process'];
+  const boxes = page => page.$$eval('.cad-diagram', figs => figs.map(f => {
+    const r = f.getBoundingClientRect(), svg = f.querySelector('.cad-diagram-view svg')?.getBoundingClientRect();
+    const view = f.querySelector('.cad-diagram-view'), hint = f.querySelector('.cad-diagram-hint');
+    return { state: f.dataset.state, box: [r.width, r.height].map(n => Math.round(n * 2) / 2), svg: svg && [svg.width, svg.height],
+      overflows: view.scrollWidth > view.clientWidth + 1, hint: hint.getBoundingClientRect().height > 0 && getComputedStyle(hint).display !== 'none',
+      clipped: hint.scrollHeight > hint.clientHeight + 1 };
+  }));
+  for (const width of [320, 360, 1366]) for (const route of PAGES) {
+    const where = `${width}px ${route}`;
+    const still = await browser.newContext({ viewport: { width, height: 800 }, javaScriptEnabled: false });
+    const off = await still.newPage();
+    await off.goto(base + route, { waitUntil: 'load' });
+    await off.evaluate(() => document.fonts.ready);
+    const before = await boxes(off);
+    await still.close();
+    const context = await browser.newContext({ viewport: { width, height: 800 } });
+    const page = await context.newPage();
+    const runtime = [];
+    page.on('request', r => { if (/mermaid\.min\.js/.test(r.url())) runtime.push(r.url()); });
+    await page.addInitScript(() => {
+      window.__shift = 0;
+      if (PerformanceObserver.supportedEntryTypes?.includes('layout-shift'))
+        new PerformanceObserver(list => { for (const e of list.getEntries()) if (!e.hadRecentInput) window.__shift += e.value; })
+          .observe({ type: 'layout-shift', buffered: true });
+    });
+    await page.goto(base + route, { waitUntil: 'networkidle' });
+    await page.evaluate(() => document.fonts.ready.then(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))));
+    const after = await boxes(page), shift = await page.evaluate(() => window.__shift);
+    await context.close();
+    if (!before.length) { out.push(`${where}: no diagram on the page`); continue; }
+    if (shift > DIAGRAM_SHIFT) out.push(`${where}: the page moved by ${shift.toFixed(3)} while it loaded (limit ${DIAGRAM_SHIFT})`);
+    if (runtime.length) out.push(`${where}: downloaded Mermaid (${runtime.length}x), though the build drew every diagram`);
+    before.forEach((b, i) => {
+      if (b.state !== 'ready' || !b.svg || b.svg[0] < 100 || b.svg[1] < 30) out.push(`${where}: diagram ${i + 1} does not show without script (${JSON.stringify(b)})`);
+      const a = after[i];
+      if (!a || a.box.join() !== b.box.join()) out.push(`${where}: diagram ${i + 1} is ${b.box.join(' x ')} px without script and ${a?.box.join(' x ')} px with it`);
+      for (const [label, m] of [['without script', b], ['with script', a]])
+        if (m && m.hint !== m.overflows) out.push(`${where}: diagram ${i + 1} ${m.overflows ? 'overflows' : 'fits'} but its scroll hint is ${m.hint ? 'shown' : 'hidden'} ${label}`);
+        else if (m?.hint && m.clipped) out.push(`${where}: diagram ${i + 1}'s scroll hint is cut off ${label}`);
+    });
+  }
+  return out;
 }
 
 /** The snap-arm explorer (the kit's <cad-cantilever>) on /docs/compliant, at phone and desktop widths, under the site

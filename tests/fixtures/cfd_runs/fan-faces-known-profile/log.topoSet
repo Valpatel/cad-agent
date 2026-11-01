@@ -1,0 +1,4 @@
+    cellZoneSet heater now size 354
+    cellZoneSet fan now size 1232
+    faceZoneSet fanInlet now size 24
+    faceZoneSet fanOutlet now size 24

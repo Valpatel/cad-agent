@@ -1,0 +1,55 @@
+{
+ "figure": "fan-faces.webp",
+ "regenerate": "PYTHONPATH=src python3 tools/cfd_fan_figure.py <work dir>",
+ "cad_agent_revision": "924e206c96c11b6bf76f2bda169d385c9b650e7d",
+ "solver": "chtMultiRegionSimpleFoam (OpenFOAM v2512)",
+ "image": "opencfd/openfoam-default:2512",
+ "iterations": 1500,
+ "processes": 6,
+ "recorded_runs": [
+  "tests/fixtures/cfd_runs/exhaust-under-opening",
+  "tests/fixtures/cfd_runs/exhaust-ducted"
+ ],
+ "facts": {
+  "exhaust-under-opening": {
+   "mass_flow_g_s": 3.75,
+   "inlet_c": 33.64,
+   "outlet_c": 33.57,
+   "zone_by_volume_c": 33.56,
+   "heat_carried_w": 32.26,
+   "heat_input_w": 20.0,
+   "heat_out_w": 19.61,
+   "energy_balance_pct": -2.0,
+   "heat_out_window_w": [
+    18.9,
+    21.5
+   ],
+   "window": [
+    1200,
+    1500
+   ],
+   "energy_conserved": true,
+   "steady": true
+  },
+  "exhaust-ducted": {
+   "mass_flow_g_s": 2.77,
+   "inlet_c": 31.32,
+   "outlet_c": 31.33,
+   "zone_by_volume_c": 31.23,
+   "heat_carried_w": 17.6,
+   "heat_input_w": 20.0,
+   "heat_out_w": 17.83,
+   "energy_balance_pct": -10.9,
+   "heat_out_window_w": [
+    15.9,
+    23.3
+   ],
+   "window": [
+    1200,
+    1500
+   ],
+   "energy_conserved": false,
+   "steady": false
+  }
+ }
+}

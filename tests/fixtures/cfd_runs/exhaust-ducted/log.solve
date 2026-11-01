@@ -1,0 +1,40 @@
+DILUPBiCGStab:  Solving for h, Initial residual = 0.0086954676, Final residual = 0.00048511848, No Iterations 1
+Min/max T:298.13982 315.36523
+GAMG:  Solving for p_rgh, Initial residual = 8.5541873e-05, Final residual = 4.9265456e-07, No Iterations 3
+GAMG:  Solving for p_rgh, Initial residual = 7.1841665e-06, Final residual = 4.1100828e-08, No Iterations 3
+time step continuity errors : sum local = 6.1022812e-05, global = -4.0894575e-06, cumulative = -2.203019e-05
+Min/max rho:1.1043075 1.1682322
+DILUPBiCGStab:  Solving for omega, Initial residual = 0.0029560074, Final residual = 0.00022068043, No Iterations 1
+DILUPBiCGStab:  Solving for k, Initial residual = 0.013208083, Final residual = 0.0011780246, No Iterations 1
+ExecutionTime = 102.53 s  ClockTime = 103 s
+
+wallHeatFlux wallHeatFlux_domain0 execute:
+    min/max/integ(ground) = 0, 0, 0
+    min/max/integ(box) = 0, 0, 0
+    min/max/integ(hub) = 0, 0, 0
+Time = 1500
+
+
+Solving for fluid region domain0
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.0093781116, Final residual = 0.00033716891, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.013263055, Final residual = 0.00047548036, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0079128804, Final residual = 0.00028796669, No Iterations 1
+DILUPBiCGStab:  Solving for h, Initial residual = 0.0089048244, Final residual = 0.00050180276, No Iterations 1
+Min/max T:298.13979 315.5584
+GAMG:  Solving for p_rgh, Initial residual = 8.7474875e-05, Final residual = 5.1183463e-07, No Iterations 3
+GAMG:  Solving for p_rgh, Initial residual = 7.125519e-06, Final residual = 4.5385505e-08, No Iterations 3
+time step continuity errors : sum local = 6.7328124e-05, global = -4.8686974e-06, cumulative = -2.6898887e-05
+Min/max rho:1.1036318 1.1682322
+DILUPBiCGStab:  Solving for omega, Initial residual = 0.0030132807, Final residual = 0.0002226825, No Iterations 1
+DILUPBiCGStab:  Solving for k, Initial residual = 0.013347355, Final residual = 0.0011740248, No Iterations 1
+ExecutionTime = 102.61 s  ClockTime = 103 s
+
+wallHeatFlux wallHeatFlux_domain0 execute:
+    min/max/integ(ground) = 0, 0, 0
+    min/max/integ(box) = 0, 0, 0
+    min/max/integ(hub) = 0, 0, 0
+wallHeatFlux wallHeatFlux_domain0 write:
+    writing field wallHeatFlux
+End
+
+Finalising parallel run

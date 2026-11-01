@@ -71,6 +71,7 @@ domains:
         topics:
           - {slug: motor-mounts, title: Motor mounts, scope: "Bolt circles, pilots and load paths for bought actuators and motors.", maturity: idea, issues: [144]}
           - {slug: linkages, title: Linkages, scope: "Four- and five-bar position, workspace and transmission angle.", maturity: tooling, priority: [demo], pages: [docs/linkages.md], api: [cadagent.mechanical.linkages], issues: [187]}
+          - {slug: range-of-motion, title: Range-of-motion clearance, scope: "Moving parts that do not hit each other at any sampled pose, and swept-volume cutters that clear them.", maturity: tooling, pages: [docs/toolkit.md], api: [cadagent.mechanical.clearance], issues: [251]}
           - {slug: joints-and-bearings, title: Joints and bearings, scope: "Pivots, bearing seats, shafts and their fits.", maturity: tooling, pages: [docs/printed-joints.md], api: [cadagent.mechanical.printed_joints], uses: [cadagent.simulation.fea], issues: [97]}
       - slug: housings-and-enclosures
         title: Housings and enclosures

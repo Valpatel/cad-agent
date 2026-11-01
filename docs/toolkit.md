@@ -453,6 +453,7 @@ from cadagent.mechanical.connectors import (PLUG_FAMILIES, plug_segments, window
                                             check_ports, draw_ports, cable_spec, cable_bend, bend_reach)
 from cadagent.mechanical.linkages import (sweep_fourbar, sweep_fivebar, sweep_fivebar_tip, fivebar_workspace,
                                           fivebar_reach, Linkage)
+from cadagent.mechanical.clearance import collisions, sweep, swept_envelope, envelope_profile
 from cadagent.package import build_package
 from cadagent.publish.serve import make_server
 from cadagent.simulation.fea import Study, MATERIALS, Material, plane_at, cylinder_at, in_box, near, any_of
@@ -473,6 +474,55 @@ from cadagent.review.gates.wall import check_wall, wall_gate, mesh_thickness, br
 Assembly-level checks: the pairwise relation table (apart, touching, overlapping, contains, with witnesses and a
 content-hash pair cache), the verdict file every gate writes, and the minimum-wall gate. Reference and limits:
 [gates.md](gates.md).
+
+### Range-of-motion clearance (`cadagent.mechanical.clearance`)
+
+`cad-agent motion-trace` checks that rendered pivots sit where the CAD says; this checks that the moving parts do not
+*hit* each other anywhere over their range. Give it the solids placed at each pose, and it intersects every pair whose
+bounding boxes overlap.
+
+```python
+from cadagent.mechanical.clearance import collisions, sweep, swept_envelope
+
+def place(q):                       # the project's own kinematics: {instance: (part, placed cadquery shape)}
+    q1, q2 = q
+    return {"link1": ("link", link1.rotate((0, 0, 0), (0, 0, 1), q1)),
+            "link2": ("link", link2.rotate((0, 0, 0), (0, 0, 1), q1 + q2).translate(tip(q1))),
+            "barrel": ("cyl_barrel", barrel_at(q)), "rod": ("cyl_rod", rod_at(q)),
+            "base": ("base", base)}
+
+poses = {f"q1={a}_q2={b}": (a, b) for a in range(0, 91, 15) for b in range(-120, 1, 15)}
+report = sweep(poses, place, out_path="exports/clearance-checks.json",
+               tolerance_mm3=2.0, skip={("cyl_rod", "cyl_barrel")})   # the rod is meant to run inside its barrel
+assert report["pass"], [(p, r.get("collisions") or r.get("error"))
+                        for p, r in report["poses"].items() if not r.get("pass")]
+```
+
+- **`collisions(instances, tolerance_mm3=2.0, skip=None, only=None)`** returns one row per pair that overlaps by more
+  than the tolerance: `{"a", "b", "part_a", "part_b", "volume_mm3"}`. `instances` maps a name to `(part, shape)` or to
+  a bare shape. `skip` is pairs of instance or part names that are meant to overlap, or a callable
+  `skip((name_a, part_a), (name_b, part_b))`. `only(name)` limits the check to pairs with at least one selected
+  instance (the arm against everything, not the track against itself). A boolean that raises, or returns a volume
+  that is not a number, is a row with `"error"`: an error is never a pass.
+- **`sweep(poses, place_fn, out_path=None, **collisions_args)`** runs `collisions` at every pose. A `place_fn` that
+  raises (an unreachable pose) is that pose's error. The check has a row per pose (its parameters, the pairs it
+  intersected, its collisions), and a top-level `pass` that is true only when at least one pose was checked and none
+  has a collision or an error. `physical_fit_verified` is always `false`.
+- **`swept_envelope(pieces, step=0.5, max_slope_deg=45.0, taper_ends=False)`** makes the cutter that clears a
+  neighbour. Describe the moving part's radius along its own axis as pieces `(x0, x1, r0, r1)` (a barrel, then a rod,
+  then an eye), and get a cadquery `Solid` of revolution about +x. Its radius is the largest piece at each x, raised so
+  it never changes faster than `max_slope_deg` from the axis: a step becomes a 45° cone, not a flat shoulder that
+  prints as a ceiling. `taper_ends=True` closes the ends with cones too. The profile is one polygon revolved once:
+  place one envelope per pose and cut them from the neighbour, rather than fusing many small tools, which is where OCC
+  booleans fail. `envelope_profile` gives the same `(xs, rs)` profile without a CAD kernel.
+
+**Limits.** The poses are samples, not a continuous sweep: two parts can pass through each other between two poses
+and no pose sees it, so sample densely where parts come close (the ends of each stroke, and where the arm folds).
+Only the solids passed in are checked: a pin, bolt or hose left out of the model is not. Parts meant to touch on a
+face intersect with near-zero volume and pass the tolerance; a part sunk into another by more than the tolerance is
+a hit unless `skip` names it. CAD clearance does not prove physical fit: tolerances, deflection under load and wear
+are not modelled. `swept_envelope` samples the profile every `step` mm (and at every piece's ends), so a cone's foot
+between samples is placed to within a fraction of a step.
 
 ### Explore and compare designs (`cadagent.simulation.explore`)
 

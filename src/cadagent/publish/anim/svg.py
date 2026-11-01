@@ -160,7 +160,7 @@ class Timeline:
     def __init__(self, period: float):
         self.period = period
         self.keyframes: Dict[str, str] = {}
-        self.rules: Dict[Tuple[str, str], List[str]] = {}
+        self.anims: Dict[str, List[Tuple[str, str]]] = {}      # selector -> [(keyframes name, timing)]
         self.css: List[str] = []
 
     def pct(self, t: float) -> str:
@@ -178,7 +178,7 @@ class Timeline:
             groups.setdefault(decl(v), []).append(self.pct(min(t, self.period)))
         body = "".join(f"{','.join(p)}{{{d}}}" for d, p in groups.items())
         name = self.keyframes.setdefault(body, _name(len(self.keyframes)))
-        self.rules.setdefault((name, timing), []).append(selector)
+        self.anims.setdefault(selector, []).append((name, timing))
 
     def opacity(self, selector: str, points: Sequence[Tuple[float, float]], timing: str = "linear") -> None:
         self.add(selector, points, lambda o: f"opacity:{num(o, 2)}", timing)
@@ -192,9 +192,15 @@ class Timeline:
         self.opacity(selector, pts + [(self.period, end)])
 
     def stylesheet(self) -> str:
+        """Keyframes, then one ``animation`` list per element (selectors with the same list share a rule: a second
+        rule for one element would replace the first, not add to it)."""
         out = [f"@keyframes {name}{{{body}}}" for body, name in self.keyframes.items()] + self.css
-        for (name, timing), selectors in self.rules.items():
-            out.append(f"{','.join(selectors)}{{animation:{name} {num(self.period, 2)}s {timing} infinite}}")
+        by_list: Dict[str, List[str]] = {}
+        for selector, anims in self.anims.items():
+            decl = ",".join(f"{name} {num(self.period, 2)}s {timing} infinite" for name, timing in anims)
+            by_list.setdefault(decl, []).append(selector)
+        for decl, selectors in by_list.items():
+            out.append(f"{','.join(selectors)}{{animation:{decl}}}")
         return "".join(out) + REDUCED_MOTION
 
 
@@ -252,8 +258,10 @@ _EXTERNAL = re.compile(r"""(?:href|src)\s*=\s*["'](?!#)""", re.I)
 _URL = re.compile(r"""url\(\s*["']?(?!#)""", re.I)
 
 
-def problems(svg: str, budget: int = BUDGET_BYTES) -> List[str]:
-    """Why ``svg`` is not safe to embed as a GitHub README ``<img>``: an empty list when it is."""
+def problems(svg: str, budget: Optional[int] = None) -> List[str]:
+    """Why ``svg`` is not safe to embed as a GitHub README ``<img>``: an empty list when it is. ``budget`` is the
+    size limit in bytes (default ``BUDGET_BYTES``)."""
+    budget = BUDGET_BYTES if budget is None else budget
     out = []
     size = len(svg.encode("utf-8"))
     if size > budget:

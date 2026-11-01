@@ -178,12 +178,13 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True, lo
 
     explode_vec = {p["solid"]: a_axis * p["explode"] for p in parts}
 
-    # ---- layout: fit every state (assembled, exploded, every pose) into the stage
+    # ---- layout: the assembled leg and every pose fill the stage; the exploded start is fitted by a camera zoom
     stage = spec["stage"]
-    pts_all = []
+    pts_all, pts_ex = [], []
     for p in parts:
         xy = geo[p["solid"]]["xy"]
-        pts_all += [xy, xy + explode_vec[p["solid"]]]
+        pts_all.append(xy)
+        pts_ex.append(xy + explode_vec[p["solid"]])
         if p["body"] != "ground":
             for pose in poses:
                 A = motion2d(p["body"], pose, solid_depth[p["solid"]])
@@ -195,7 +196,14 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True, lo
     off = np.array([stage["x"] * U + (stage["w"] * U - (hi[0] - lo[0]) * k) / 2 - lo[0] * k,
                     stage["y"] * U + (stage["h"] * U - (hi[1] - lo[1]) * k) / 2 - lo[1] * k])
     to_units = lambda xy: np.asarray(xy) * k + off
-    log(f"scale {k / U:.3f} px/mm")
+    ex = to_units(np.concatenate(pts_ex))
+    elo, ehi = ex.min(axis=0), ex.max(axis=0)
+    room = spec.get("explode_room", stage)
+    rlo = np.array([room["x"], room["y"]]) * U
+    rsz = np.array([room["w"], room["h"]]) * U
+    zoom = float(min(1.0, *(rsz / (ehi - elo))))
+    cam = (rlo + rsz / 2) - zoom * (elo + ehi) / 2
+    log(f"scale {k / U:.3f} px/mm; exploded start zoomed to {zoom:.2f}")
 
     # ---- depth rasters: assembled and exploded, one cell per unit (half a pixel)
     W, H = int(spec["width"] * U), int(spec["height"] * U)
@@ -369,9 +377,13 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True, lo
     texts = {}
     for key, t in spec.get("text", {}).items():
         font = find_font(DEJAVU_BOLD if t.get("weight") == "bold" else DEJAVU)
-        o = outline(t["text"], font, t["size"] * U, t.get("tracking", 0.0))
-        texts[key] = {"text": t["text"], "d": S.polygon_d(o["loops"]), "width": _r(o["width"], 1),
-                      "size": t["size"], "font": font.name}
+        size = float(t["size"])
+        o = outline(t["text"], font, size * U, t.get("tracking", 0.0))
+        if t.get("max_width") and o["width"] > t["max_width"] * U:          # shrink to fit its column
+            size *= t["max_width"] * U / o["width"]
+            o = outline(t["text"], font, size * U, t.get("tracking", 0.0))
+        texts[key] = {"text": t["text"], "d": S.polygon_d(o["loops"]), "width": _r(o["width"] / U, 1),
+                      "size": _r(size, 2), "font": font.name}
 
     lin = M2
     scene = {
@@ -382,6 +394,7 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True, lo
         "width": spec["width"], "height": spec["height"], "units_per_px": U, "px_per_mm": _r(k / U, 4),
         "view": {"direction": list(spec["view"]["direction"]), "up": list(spec["view"].get("up", (0, 0, 1)))},
         "plane_matrix": [_r(lin[0, 0], 6), _r(lin[1, 0], 6), _r(lin[0, 1], 6), _r(lin[1, 1], 6)],
+        "camera": {"zoom": _r(zoom, 4), "translate": [_r(cam[0], 1), _r(cam[1], 1)]},
         "solids": out_solids, "hidden_solids": sorted(hidden), "painter_cycles": cycles,
         "linkage": {"lengths_mm": lengths, "samples": samples, "path": path_spec, "dead_point_margin_deg": [_r(d, 1) for d in dead],
                     "bodies": frames, "trace": trace, "trace_depth_mm": _r(trace_depth, 1),
@@ -485,28 +498,28 @@ def write_scene(scene: Mapping[str, Any], path: Path) -> None:
 
 # ----------------------------------------------------------------------------------------------------- render
 
-# style -> fill colour variable; every style's edges use --edge
+# style -> fill colour; every style's edges use --edge
 FILLS = {"frame": "fill", "link": "linkf", "metal": "metal", "dark": "dark", "tyre": "dark", "hub": "metal",
          "stop": "stop", "plain": "fill"}
+# (light, dark) colours the hero adds to the shared theme. Stress bands run cold to hot, as FEA plots do.
 HERO_COLOURS = {
-    # light, dark
-    "linkf": ("#fbe6b8", "#4a3a17"), "stop": ("#e9a48a", "#7a3422"), "scan": ("#2f7d5b", "#5cc8a0"),
-    "b0": ("#eef3df", "#22312b"), "b1": ("#d9ebb6", "#2f4a2e"), "b2": ("#f6e27a", "#6b6a1e"), "b3": ("#f7b74a", "#9a6614"),
-    "b4": ("#ef7d36", "#c45a1c"), "b5": ("#d4471f", "#e0552a"), "b6": ("#9e2312", "#ff6a3d"),
+    "linkf": ("#fbe3ad", "#5a4518"), "stop": ("#e38f72", "#8c3a24"), "scan": ("#2f7d5b", "#5cc8a0"),
+    "tyreedge": ("#8c9a96", "#7f8e8a"),
 }
+STRESS = ["#2c6fbb", "#1f9fd0", "#22c0b4", "#8bd88f", "#e9e46a", "#f5b744", "#ef7d2d", "#d8401f", "#a8170f"]
 
 
 class Phases:
     """The loop's timeline in seconds."""
     period = 10.5
-    draw = (0.2, 2.2)            # edges draw in (each solid takes ``stroke``); fills follow
+    draw = (0.25, 2.3)           # edges draw in, solid by solid in painter's order; each takes ``stroke``
     stroke = 0.9
-    fills = (1.3, 2.3)
-    assemble = (2.3, 3.3)
-    scan = (3.4, 4.4)            # clearance
-    fea = (4.4, 5.7)
-    motion = (5.8, 8.2)
-    words = (8.0, 8.6)
+    fills = (1.4, 2.4)
+    assemble = (2.4, 3.4)
+    scan = (3.5, 4.5)            # clearance
+    fea = (4.5, 5.8)
+    motion = (5.9, 8.3)
+    words = (8.1, 8.7)
     fade = (10.1, 10.5)          # everything out, before the loop restarts
 
 
@@ -514,190 +527,225 @@ def _fmt(v: float, d: int = 1) -> str:
     return f"{v:.{d}f}"
 
 
-def render(scene: Mapping[str, Any]) -> str:
-    """The SVG for a hero scene. Deterministic: the same scene gives the same bytes."""
+def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
+    """The SVG for a hero ``scene`` with the words in ``present`` (the spec's ``present`` section). Deterministic:
+    the same inputs give the same bytes."""
     if scene.get("schema") != SCHEMA:
         raise ValueError(f"not a {SCHEMA} scene")
     U = scene["units_per_px"]
     W, H = scene["width"], scene["height"]
     ph = Phases
-    tl = S.Timeline(ph.period)
+    P = ph.period
+    tl = S.Timeline(P)
     css: List[str] = []
     body: List[str] = []
     light = dict(S.THEME.light, **{k: v[0] for k, v in HERO_COLOURS.items()})
     dark = dict(S.THEME.dark, **{k: v[1] for k, v in HERO_COLOURS.items()})
     theme = S.Theme(light, dark)
+    n_ = lambda v, d=1: S.num(v, d)
 
-    # every element of the drawing fades out at the loop's end and in at its start
     css.append(".e{fill:none;stroke:var(--edge);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round;"
-               "stroke-dasharray:1 1}")
+               "stroke-dasharray:1 1}.ty .e{stroke:var(--tyreedge)}")
     for style, var in FILLS.items():
         css.append(f".s{style[:2]}{{fill:var(--{var})}}")
     css.append(".m{transform-box:view-box;transform-origin:0 0}")
 
-    # ---- the drawing, in painter's order
-    solids = scene["solids"]
-    bodies = scene["linkage"]["bodies"]
+    # ---- the camera: the exploded start is zoomed out to fit, and zooms in as the parts come together
+    cam = scene["camera"]
+    z0, (cx, cy) = cam["zoom"], cam["translate"]
+    a0, a1 = ph.assemble
+    cam_tf = lambda v: (f"transform:translate({n_(cx * v)}px,{n_(cy * v)}px) "
+                        f"scale({n_(1 + (z0 - 1) * v, 4)})")
+    tl.add(".cam", [(0, 1), (a0, 1), (a1, 0), (P, 0)], cam_tf, "ease-in-out")
+    css.append(f".cam{{{cam_tf(0)}}}")
+
+    # ---- each body's motion along the path: translate, then the plane's rotation, about its pivot at depth 0
     a, b_, c, d = scene["plane_matrix"]
     det = a * d - b_ * c
     inv = (d / det, -b_ / det, -c / det, a / det)
     mat = lambda m: "matrix(" + ",".join(S.num(v, 5) for v in m) + ",0,0)"
-    for name, bd in bodies.items():
+    m0, m1 = ph.motion
+    body_cls = {}
+    for i, (name, bd) in enumerate(sorted(scene["linkage"]["bodies"].items())):
+        body_cls[name] = f"k{i}"
         px, py = bd["pivot"]
-        cls = "k" + name.replace("_", "")[:6]
-        start, end = ph.motion
-        n = len(bd["frames"]) - 1
-        frames = [(0, bd["frames"][0])]
-        for i, f in enumerate(bd["frames"]):
-            frames.append((start + (end - start) * i / n, f))
-        frames.append((ph.period, bd["frames"][0]))
+        rows = bd["frames"]
+        n = len(rows) - 1
+        frames = [(0, rows[0])] + [(m0 + (m1 - m0) * j / n, f) for j, f in enumerate(rows)] + [(P, rows[0])]
 
         def tf(f, px=px, py=py):
-            return (f"transform:translate({S.num(px + f[0], 2)}px,{S.num(py + f[1], 2)}px) {mat((a, b_, c, d))} "
-                    f"rotate({S.num(f[2], 3)}deg) {mat(inv)} translate({S.num(-px, 2)}px,{S.num(-py, 2)}px)")
-        css.append(f".{cls}{{{tf(bd['frames'][0])[len('transform:'):] and tf(bd['frames'][0])}}}")
-        tl.add(f".{cls}", frames, tf, "linear")
+            return (f"transform:translate({n_(px + f[0], 2)}px,{n_(py + f[1], 2)}px) {mat((a, b_, c, d))} "
+                    f"rotate({n_(f[2], 3)}deg) {mat(inv)} translate({n_(-px, 2)}px,{n_(-py, 2)}px)")
+        css.append(f".k{i}{{{tf(rows[0])}}}")
+        tl.add(f".k{i}", frames, tf, "linear")
 
-    explode_classes: Dict[Tuple[float, float], str] = {}
-    order_rank = sorted({s_["explode"][0] ** 2 + s_["explode"][1] ** 2 for s_ in solids})
+    # ---- explode: each distinct offset is a class; outer parts start moving last
+    solids = scene["solids"]
+    mags = sorted({math.hypot(*s_["explode"]) for s_ in solids})
+    ex_cls: Dict[Tuple[float, float], str] = {}
     for s_ in solids:
         key = tuple(s_["explode"])
-        if key not in explode_classes:
-            name = f"x{len(explode_classes)}"
-            explode_classes[key] = name
-            ex, ey = key
-            a0, a1 = ph.assemble
-            frac = order_rank.index(ex * ex + ey * ey) / max(1, len(order_rank) - 1)
-            t_go = a0 + 0.35 * (a1 - a0) * frac
-            t_in = min(a1, t_go + 0.65 * (a1 - a0))
-            tr = lambda v, ex=ex, ey=ey: f"transform:translate({S.num(ex * v, 1)}px,{S.num(ey * v, 1)}px)"
-            tl.add(f".{name}", [(0, 1), (t_go, 1), (t_in, 0), (ph.period, 0)], tr, "ease-in-out")
-    body.append('<g class="draw">')
+        if key in ex_cls:
+            continue
+        name = f"x{len(ex_cls)}"
+        ex_cls[key] = name
+        frac = mags.index(math.hypot(*key)) / max(1, len(mags) - 1)
+        go = a0 + 0.3 * (a1 - a0) * frac
+        arrive = min(a1, go + 0.7 * (a1 - a0))
+        tr = lambda v, ex=key[0], ey=key[1]: f"transform:translate({n_(ex * v)}px,{n_(ey * v)}px)"
+        tl.add(f".{name}", [(0, 1), (go, 1), (arrive, 0), (P, 0)], tr, "ease-in-out")
+
+    # ---- the drawing, in painter's order; the FEA bands sit on their part, under its edges
     fea = scene.get("fea")
+    clear = scene.get("clearance") or {}
+    closest = clear.get("closest") or {}
+    pair = {closest.get("a"), closest.get("b")} - {None}
+    highlight: List[str] = []
+    body.append('<g class="cam m"><g class="draw">')
     for n, s_ in enumerate(solids):
         sx, sy = s_["shift"]
-        mv = s_["body"] != "ground"
-        open_ = ""
-        close = ""
-        if mv:
-            k_ = "k" + s_["body"].replace("_", "")[:6]
-            open_ += (f'<g transform="translate({S.num(sx, 1)} {S.num(sy, 1)})"><g class="m {k_}">'
-                      f'<g transform="translate({S.num(-sx, 1)} {S.num(-sy, 1)})">')
-            close = "</g></g></g>" + close
-        open_ += f'<g class="m {explode_classes[tuple(s_["explode"])]}">'
+        open_, close = "", ""
+        if s_["body"] != "ground":
+            open_ += (f'<g transform="translate({n_(sx)} {n_(sy)})"><g class="m {body_cls[s_["body"]]}">'
+                      f'<g transform="translate({n_(-sx)} {n_(-sy)})">')
+            close = "</g></g></g>"
+        cls = " ty" if s_["style"] == "tyre" else ""
+        open_ += f'<g class="m {ex_cls[tuple(s_["explode"])]}{cls}">'
         close = "</g>" + close
         inner = f'<path class="f s{s_["style"][:2]}" fill-rule="evenodd" d="{s_["fill"]}"/>'
         if fea and s_["solid"] == fea["solid"]:
-            for band in fea["bands"]:
-                inner += f'<path class="fb fb{band["band"]}" style="fill:var(--b{band["band"]})" d="{band["d"]}"/>'
+            inner += "".join(f'<path class="fb fb{bd["band"]}" d="{bd["d"]}"/>' for bd in fea["bands"])
         inner += f'<path class="e d{n}" pathLength="1" d="{s_["edges"]}"/>'
         body.append(open_ + inner + close)
-        # draw-in: edges by explode distance (inner layers first)
+        if s_["solid"] in pair:
+            highlight.append(s_["edges"])
         t0 = ph.draw[0] + (ph.draw[1] - ph.stroke - ph.draw[0]) * n / max(1, len(solids) - 1)
-        tl.add(f".d{n}", [(0, 1), (t0, 1), (t0 + ph.stroke, 0), (ph.period, 0)],
-               lambda v: f"stroke-dashoffset:{S.num(v, 2)}", "ease-out")
+        tl.add(f".d{n}", [(0, 1), (t0, 1), (t0 + ph.stroke, 0), (P, 0)],
+               lambda v: f"stroke-dashoffset:{n_(v, 2)}", "ease-out")
     body.append("</g>")
-    tl.opacity(".f", [(0, 0), (ph.fills[0], 0), (ph.fills[1], 1), (ph.period, 1)])
+    tl.opacity(".f", [(0, 0), (ph.fills[0], 0), (ph.fills[1], 1), (P, 1)])
     tl.opacity(".draw", [(0, 1), (ph.fade[0], 1), (ph.fade[1], 0)])
     if fea:
         f0, f1 = ph.fea
         nb = len(fea["bands"])
-        for i, band in enumerate(fea["bands"]):
-            on = f0 + (f1 - f0 - 0.3) * i / max(1, nb - 1)
-            tl.opacity(f".fb{band['band']}", [(0, 0), (on, 0), (on + 0.3, 1), (ph.period, 1)])
+        for i, bd in enumerate(fea["bands"]):
+            css.append(f".fb{bd['band']}{{fill:{STRESS[min(bd['band'], len(STRESS) - 1)]}}}")
+            on = f0 + 0.15 + (f1 - f0 - 0.6) * i / max(1, nb - 1)
+            tl.opacity(f".fb{bd['band']}", [(0, 0), (on, 0), (on + 0.35, 1), (P, 1)])
+
+    # ---- the clearance check: a scan across the drawing, the closest pair lit, its gap marked
+    s0, s1 = ph.scan
+    sx0, sx1 = 6 * U, (W // 2 + 30) * U
+    body.append(f'<g class="sc"><rect x="{sx0 - 36 * U}" y="0" width="{36 * U}" height="{H * U}" class="scb"/>'
+                f'<path d="M{sx0} 0V{H * U}" class="scl"/></g>')
+    css.append(f".scb{{fill:var(--scan);opacity:.12}}.scl{{stroke:var(--scan);stroke-width:{2 * U}}}.sc{{opacity:0}}")
+    tl.add(".sc", [(0, 0), (s0, 0), (s1 - 0.2, sx1 - sx0), (P, sx1 - sx0)],
+           lambda v: f"transform:translateX({n_(v, 0)}px)", "ease-in-out")
+    tl.opacity(".sc", [(0, 0), (s0, 0), (s0 + 0.12, 1), (s1 - 0.35, 1), (s1 - 0.15, 0)])
+    if highlight:
+        body.append('<g class="hl">' + "".join(f'<path d="{d_}"/>' for d_ in highlight) + "</g>")
+        css.append(f".hl{{fill:none;stroke:var(--accent);stroke-width:{1.6 * U};stroke-linejoin:round;opacity:0}}")
+        tl.opacity(".hl", [(0, 0), (s0 + 0.45, 0), (s0 + 0.65, 1), (ph.fea[0] + 0.5, 1), (ph.fea[0] + 0.8, 0),
+                           (P, 0)])
+    if closest.get("drawn"):
+        (ax_, ay_), (bx_, by_) = closest["drawn"]
+        mx, my = (ax_ + bx_) / 2, (ay_ + by_) / 2
+        lx, ly = mx + 46 * U, my - 40 * U
+        body.append(f'<g class="cl"><path d="M{n_(mx, 0)} {n_(my, 0)}L{n_(lx - 3 * U, 0)} {n_(ly + 5 * U, 0)}"/>'
+                    f'<circle cx="{n_(mx, 0)}" cy="{n_(my, 0)}" r="{6 * U}"/>'
+                    f'<text x="{n_(lx, 0)}" y="{n_(ly, 0)}">{_fmt(closest["gap_mm"])} mm</text></g>')
+        css.append(f".cl{{opacity:0}}.cl path,.cl circle{{fill:none;stroke:var(--accent);stroke-width:{1.5 * U}}}"
+                   f".cl text{{font-size:{14 * U}px;font-weight:700;fill:var(--accent);paint-order:stroke;"
+                   f"stroke:var(--bg);stroke-width:{4 * U}px}}")
+        tl.opacity(".cl", [(0, 0), (s1 - 0.45, 0), (s1 - 0.25, 1), (ph.fea[0] + 0.5, 1), (ph.fea[0] + 0.8, 0), (P, 0)])
 
     # ---- the wheel's path, drawn as it is travelled
     trace = scene["linkage"]["trace"]
     tb = S.PathBuilder()
     tb.polyline([tuple(p) for p in trace])
-    lengths = [0.0]
+    run = [0.0]
     for p, q in zip(trace, trace[1:]):
-        lengths.append(lengths[-1] + math.dist(p, q))
-    total = lengths[-1]
+        run.append(run[-1] + math.dist(p, q))
+    total = run[-1]
     body.append(f'<path class="tr" d="{tb.d()}"/>')
-    css.append(".tr{fill:none;stroke:var(--trace);stroke-width:3;stroke-linecap:round;"
-               f"stroke-dasharray:{S.num(total, 0)} {S.num(total, 0)};stroke-dashoffset:0}}")
-    m0, m1 = ph.motion
+    css.append(f".tr{{fill:none;stroke:var(--trace);stroke-width:{1.5 * U};stroke-linecap:round;"
+               f"stroke-dasharray:{n_(total, 0)} {n_(total, 0)}}}")
     n = len(trace) - 1
-    tr_frames = [(0, total), (m0, total)] + [(m0 + (m1 - m0) * i / n, total - lengths[i]) for i in range(n + 1)] + \
-        [(ph.fade[0], 0), (ph.period, 0)]
-    tl.add(".tr", tr_frames, lambda v: f"stroke-dashoffset:{S.num(v, 1)}", "linear")
+    tl.add(".tr", [(0, total), (m0, total)] + [(m0 + (m1 - m0) * i / n, total - run[i]) for i in range(n + 1)]
+           + [(P, 0)], lambda v: f"stroke-dashoffset:{n_(v, 1)}", "linear")
     tl.opacity(".tr", [(0, 0), (m0, 0), (m0 + 0.2, 1), (ph.fade[0], 1), (ph.fade[1], 0)])
+    body.append("</g>")
 
-    # ---- the clearance check: a scan across the drawing, then the closest gap
-    clear = scene.get("clearance") or {}
-    s0, s1 = ph.scan
-    x0, x1 = 10 * U, (scene["width"] // 2 + 20) * U
-    body.append(f'<path class="sc" d="M{x0} {6 * U}V{(H - 6) * U}"/>')
-    css.append(".sc{stroke:var(--scan);stroke-width:3;opacity:0}")
-    tl.add(".sc", [(0, 0), (s0, 0), (s1 - 0.25, x1 - x0), (ph.period, x1 - x0)],
-           lambda v: f"transform:translateX({S.num(v, 0)}px)", "ease-in-out")
-    tl.opacity(".sc", [(0, 0), (s0, 0), (s0 + 0.15, 0.9), (s1 - 0.35, 0.9), (s1 - 0.2, 0)])
-    w = clear.get("closest")
-    if w and w.get("drawn"):
-        (ax_, ay_), (bx_, by_) = w["drawn"]
-        mx, my = (ax_ + bx_) / 2, (ay_ + by_) / 2
-        lx, ly = mx - 70 * U, my - 46 * U
-        body.append(f'<g class="cl"><path class="cll" d="M{S.num(mx, 0)} {S.num(my, 0)}L{S.num(lx + 4 * U, 0)} '
-                    f'{S.num(ly + 4 * U, 0)}"/><circle cx="{S.num(mx, 0)}" cy="{S.num(my, 0)}" r="{5 * U}"/>'
-                    f'<text x="{S.num(lx, 0)}" y="{S.num(ly, 0)}" class="lab">{_fmt(w["gap_mm"])} mm</text></g>')
-        css.append(".cl circle{fill:none;stroke:var(--accent);stroke-width:3}.cll{stroke:var(--accent);stroke-width:2}"
-                   f".lab{{font-size:{13 * U}px;font-weight:700;fill:var(--accent);text-anchor:end;"
-                   "paint-order:stroke;stroke:var(--bg);stroke-width:6px}")
-        tl.opacity(".cl", [(0, 0), (s1 - 0.5, 0), (s1 - 0.3, 1), (ph.fea[0] + 0.6, 1), (ph.fea[0] + 0.9, 0), (ph.period, 0)])
-
-    # ---- the right column: checks, then the wordmark
-    col = (W // 2 + 50) * U
+    # ---- the right column: a caption per phase, the checks, then the wordmark and tagline
+    col = present.get("column_px", W // 2 + 54) * U
+    words = scene["text"]
+    spans = {"draw": (0.3, ph.assemble[0]), "assemble": (ph.assemble[0] + 0.25, ph.scan[0]),
+             "checks": (ph.scan[0] + 0.25, ph.words[0] - 0.25)}
+    for i, (key, cap) in enumerate(present.get("captions", {}).items()):
+        t_on, t_off = spans[key]
+        body.append(f'<text x="{col}" y="{98 * U}" class="cap w c{i}">{S.attr(cap)}</text>')
+        tl.opacity(f".c{i}", [(0, 0), (t_on, 0), (t_on + 0.25, 1), (t_off, 1), (t_off + 0.25, 0), (P, 0)])
+    css.append(f".cap{{font-size:{15 * U}px;fill:var(--muted);opacity:0}}")
     rows = _check_rows(scene)
-    y = 178 * U
+    y0 = present.get("rows_y_px", 186) * U
+    narrow = []
     for i, (label, detail, t_on) in enumerate(rows):
-        yy = y + i * 52 * U
-        body.append(f'<g class="r{i}"><circle class="ring" cx="{col + 11 * U}" cy="{yy - 5 * U}" r="{11 * U}"/>'
-                    f'<path class="tick" d="M{col + 5 * U} {yy - 5 * U}l{4 * U} {4 * U} {8 * U} {-9 * U}"/>'
+        yy = y0 + i * 54 * U
+        rx, ry = col + 11 * U, yy - 6 * U
+        body.append(f'<g class="r r{i}"><circle class="ring" cx="{rx}" cy="{ry}" r="{11 * U}"/>'
+                    f'<path class="tick t{i}" d="M{rx - 6 * U} {ry}l{4 * U} {4 * U} {8 * U} {-9 * U}"/>'
                     f'<text x="{col + 32 * U}" y="{yy}" class="rl">{S.attr(label)}</text>'
-                    f'<text x="{col + 32 * U}" y="{yy + 20 * U}" class="rd w">{S.attr(detail)}</text></g>')
-        tl.opacity(f".r{i}", [(0, 0.25), (t_on - 0.9, 0.25), (t_on - 0.6, 1), (ph.fade[0], 1), (ph.fade[1], 0.25)])
-        tl.opacity(f".r{i} .tick", [(0, 0), (t_on, 0), (t_on + 0.2, 1), (ph.fade[0], 1), (ph.fade[1], 0)])
-    css.append(f".ring{{fill:var(--good)}}.tick{{fill:none;stroke:var(--bg);stroke-width:{3 * U};stroke-linecap:round;"
-               f"stroke-linejoin:round}}.rl{{font-size:{17 * U}px;font-weight:700;fill:var(--ink)}}"
-               f".rd{{font-size:{13 * U}px;fill:var(--muted)}}")
-    wm = scene["text"]["wordmark"]
-    body.append(f'<g class="wm"><path transform="translate({col} {96 * U})" style="fill:var(--ink)" d="{wm["d"]}"/>'
-                f'<text x="{col}" y="{126 * U}" class="tg">{S.attr(scene.get("tagline", ""))}</text></g>')
-    css.append(f".tg{{font-size:{15 * U}px;fill:var(--muted)}}")
+                    f'<text x="{col + 32 * U}" y="{yy + 21 * U}" class="rd w">{S.attr(detail)}</text></g>')
+        tl.opacity(f".r{i}", [(0, 0.28), (t_on - 0.9, 0.28), (t_on - 0.7, 1), (ph.fade[0], 1), (ph.fade[1], 0.28)])
+        tl.opacity(f".t{i}", [(0, 0), (t_on, 0), (t_on + 0.2, 1), (ph.fade[0], 1), (ph.fade[1], 0)])
+        narrow.append(f".r{i}{{transform-origin:{rx}px {ry}px}}")
+    css.append(f".ring{{fill:var(--good)}}.tick{{fill:none;stroke:var(--bg);stroke-width:{3 * U};"
+               f"stroke-linecap:round;stroke-linejoin:round}}.rl{{font-size:{17 * U}px;font-weight:700;fill:var(--ink)}}"
+               f".rd{{font-size:{13 * U}px;fill:var(--muted)}}.r{{transform-box:view-box}}")
+    if fea:
+        k_row = [r[0] for r in rows].index("strength")
+        lx0, ly0 = col + 128 * U, y0 + k_row * 54 * U - 16 * U
+        sw = 14 * U
+        ramp = "".join(f'<rect x="{lx0 + j * sw}" y="{ly0}" width="{sw}" height="{9 * U}" fill="{STRESS[j]}"/>'
+                       for j in range(len(fea["band_edges"])))
+        body.append(f'<g class="lg w">{ramp}<text x="{lx0 + len(fea["band_edges"]) * sw + 6 * U}" y="{ly0 + 9 * U}" '
+                    f'class="lgt">0–{_fmt(fea["band_edges"][-1])}+ of strength</text></g>')
+        css.append(f".lgt{{font-size:{11 * U}px;fill:var(--muted)}}.lg{{opacity:0}}")
+        tl.opacity(".lg", [(0, 0), (ph.fea[0], 0), (ph.fea[0] + 0.3, 1), (ph.fade[0], 1), (ph.fade[1], 0)])
+    wm, tg = words["wordmark"], words.get("tagline")
+    group = f'<path transform="translate({col} {98 * U})" class="wmp" d="{wm["d"]}"/>'
+    if tg:
+        group += f'<path transform="translate({col + 2 * U} {130 * U})" class="tgp w" d="{tg["d"]}"/>'
+    body.append(f'<g class="wm">{group}</g>')
+    css.append(".wmp{fill:var(--ink)}.tgp{fill:var(--muted)}")
     w0, w1 = ph.words
-    tl.add(".wm", [(0, 0), (w0, 0), (w1, 1), (ph.fade[0], 1), (ph.fade[1], 0)],
-           lambda v: f"opacity:{S.num(v, 2)};transform:translateY({S.num((1 - v) * 12 * U, 0)}px)", "ease-out")
-    cap = scene.get("caption", "")
-    body.append(f'<text x="{col}" y="{96 * U}" class="cap w">{S.attr(cap)}</text>')
-    css.append(f".cap{{font-size:{14 * U}px;fill:var(--muted);opacity:0}}")
-    tl.opacity(".cap", [(0, 0), (0.3, 0), (0.6, 1), (w0, 1), (w0 + 0.3, 0)])
-    credit = f'{scene["source"]["name"]} · {scene["source"]["repo"].replace("https://github.com/", "")} ({scene["source"]["licence"]})'
+    tl.add(".wm", [(0, 0), (w0, 0), (w1, 1), (ph.fade[0], 1), (ph.fade[1], 0), (P, 0)],
+           lambda v: f"opacity:{n_(v, 2)};transform:translateY({n_((1 - v) * 14 * U, 0)}px)", "ease-out")
+    src = scene["source"]
+    credit = present.get("credit") or f'{src["name"]} · {src["repo"].replace("https://github.com/", "")} · {src["licence"]}'
     body.append(f'<text x="{(W - 16) * U}" y="{(H - 14) * U}" class="cr w">{S.attr(credit)}</text>')
     css.append(f".cr{{font-size:{11 * U}px;fill:var(--muted);text-anchor:end}}")
-
-    css.append(f"@media (max-width:520px){{.w{{visibility:hidden}}.rl{{font-size:{30 * U}px}}}}")
-    label = scene.get("label") or "cad-agent"
-    desc = scene.get("description", "")
-    return S.document(W, H, label, desc, "".join(css) + tl.stylesheet(), body, theme)
+    # narrow (a phone): only the drawing, the wordmark and the check names, larger
+    css.append("@media (max-width:520px){.w{visibility:hidden}" + "".join(narrow).replace("}", ";transform:scale(1.8)}")
+               + "}")
+    return S.document(W, H, present["label"], present["description"], "".join(css) + tl.stylesheet(), body, theme)
 
 
 def _check_rows(scene: Mapping[str, Any]) -> List[Tuple[str, str, float]]:
+    """(name, result, when it ticks) for each check the scene carries."""
     ph = Phases
     rows = []
-    c = scene.get("clearance") or {}
+    c = scene.get("clearance")
     if c:
         clash = len(c.get("clashes", []))
         w = c.get("closest") or {}
         rows.append(("fit", (f"{clash} clashes" if clash else "no clash") + f" in {c['poses']} poses · closest "
                      f"{_fmt(w.get('gap_mm', 0))} mm", ph.scan[1]))
-    else:
-        rows.append(("fit", "clearance not extracted", ph.scan[1]))
     f = scene.get("fea")
     if f:
         rows.append(("strength", f"FEA {f['part'].replace('_', ' ')}: {_fmt(f['design_mpa'])} MPa, "
                      f"fails at {_fmt(f['first_failure_factor'], 2)}× load", ph.fea[1]))
     lk = scene["linkage"]
-    rows.append(("motion", f"five-bar stride · knees ≥ {_fmt(min(lk['dead_point_margin_deg']), 0)}° from dead point",
+    rows.append(("motion", f"five-bar stride · knees ≥ {_fmt(min(lk['dead_point_margin_deg']), 0)}° from a dead point",
                  ph.motion[1]))
     return rows

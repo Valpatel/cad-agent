@@ -69,3 +69,16 @@ fea:
   bands: [0.0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5]   # stress as a fraction of strength
 text:
   wordmark: {text: cad-agent, size: 50, weight: bold}
+  tagline: {text: "Tells an AI agent whether its design is right.", size: 16, max_width: 372}
+# the words, read when the SVG is rendered (change them without re-extracting)
+present:
+  label: "cad-agent: Gyropup's five-bar leg drawn from its real CAD, assembled, then checked for fit, strength and motion"
+  description: >-
+    The leg's edges draw in from its STEP file with hidden lines removed, its parts slide together along the motor
+    axes, a scan checks the clearance between the moving parts, the hip frame fills with stress from Gyropup's own
+    FEA, and the five-bar steps through a stride solved from its real link lengths. It ends on the cad-agent wordmark
+    with the three checks passed. Geometry and results from github.com/Valpatel/gyropup (MIT).
+  captions:
+    draw: "Gyropup's leg, drawn from its STEP file"
+    assemble: "the parts slide into place"
+    checks: "checking the design"

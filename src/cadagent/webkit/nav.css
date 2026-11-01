@@ -4,7 +4,7 @@
  * below 1100px (override the two media queries below to change it). */
 :where(cad-nav){display:block;font:var(--cad-nav-font,13px/1.5 system-ui,sans-serif);color:var(--cad-nav-fg,#173d3c)}
 :where(cad-nav .cad-nav-panel){position:sticky;top:var(--cad-nav-top,96px);max-height:calc(100vh - var(--cad-nav-top,96px) - 16px);
-  overflow:auto;padding:4px 10px 24px 4px;overscroll-behavior:contain;scrollbar-width:thin}
+  overflow:auto;padding:4px 10px 24px 4px;scrollbar-width:thin}
 :where(cad-nav .cad-nav-filter){position:sticky;top:4px;z-index:1;display:block;width:100%;box-sizing:border-box;margin:0 0 12px;
   padding:8px 12px;border-radius:999px;font:inherit;border:1px solid var(--cad-nav-input-line,#6f8a80);
   background:var(--cad-nav-bg,#fff);color:inherit;

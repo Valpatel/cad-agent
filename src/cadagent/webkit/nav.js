@@ -166,8 +166,12 @@ export class CadNav extends HTMLElement {
     const release = () => { if (pinned) { pinned = null; schedule(); } };
     addEventListener('scroll', () => { if (pinned && settled) release(); else if (pinned) quiet(); schedule(); }, { passive: true, signal });
     addEventListener('resize', schedule, { passive: true, signal });
-    for (const type of ['wheel', 'touchmove']) addEventListener(type, release, { passive: true, signal });
-    addEventListener('keydown', e => { if (/^(?:Arrow(?:Up|Down)|Page(?:Up|Down)|Home|End| )$/.test(e.key)) release(); }, { signal });
+    // Input that scrolls the page releases a jump; input aimed at the tree, a rail or a form field (typing in the
+    // filter, a wheel over the tree) does not. A page scroll it causes still releases it, through the scroll listener.
+    const elsewhere = e => this.contains(e.target) || rails.some(r => r.contains(e.target)) ||
+      !!e.target?.closest?.('input, textarea, select, [contenteditable]:not([contenteditable=false])');
+    for (const type of ['wheel', 'touchmove']) addEventListener(type, e => { if (!elsewhere(e)) release(); }, { passive: true, signal });
+    addEventListener('keydown', e => { if (!elsewhere(e) && /^(?:Arrow(?:Up|Down)|Page(?:Up|Down)|Home|End| )$/.test(e.key)) release(); }, { signal });
     addEventListener('hashchange', () => pin(decodeURIComponent(location.hash.slice(1))), { signal });
     for (const a of links) a.addEventListener('click', () => pin(decodeURIComponent(a.hash.slice(1))), { signal });
     if (location.hash) pin(decodeURIComponent(location.hash.slice(1)));

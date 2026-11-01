@@ -217,7 +217,7 @@ try {
     if (sources) diagramPages.push(['/' + rel.replace(/\.html$/, '').split(path.sep).join('/'), sources]);
   }
   // Pages whose diagrams are being redrawn in an open PR. One that fits again fails the test, so it leaves this list.
-  const KNOWN_WIDE = new Map([['/README', '#115 rewrites the README and its diagrams']]);
+  const KNOWN_WIDE = new Map();
   // Headless Chrome hides scrollbars; a desktop browser with classic ones has up to 17px less, so keep that much spare.
   const SCROLLBAR = 17;
   const wide = await browser.newPage({ viewport: { width: 1100, height: 900 } });
@@ -266,7 +266,60 @@ try {
     const want = await rail.nth(i).textContent();
     if (marked.join() !== want) problems.push(`2560px /docs/explore: following "${want}" marks "${marked.join()}"`);
   }
+  // Typing in the filter does not move the page, so it must not release a jump (the space used to). Jump to a section
+  // that cannot reach the reading line and is not the last: released, the mark would fall to the last one on screen.
+  for (const i of [n - 2, n - 3]) {
+    await big.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+    await rail.nth(i).click();
+    await big.evaluate(() => new Promise(done => {
+      let last = -1, still = 0;
+      const tick = () => { if (scrollY === last) { if (++still > 15) return done(); } else { still = 0; last = scrollY; } requestAnimationFrame(tick); };
+      tick(); setTimeout(done, 10000);
+    }));
+    const kept = await rail.nth(i).textContent();
+    await big.locator('.cad-nav-filter').fill('');
+    await big.locator('.cad-nav-filter').pressSequentially('vi e');
+    await big.waitForTimeout(150);
+    const after = await big.locator('.doc-rail a[aria-current=location]').allTextContents();
+    if (after.join() !== kept) problems.push(`2560px /docs/explore: typing in the filter moved the mark from "${kept}" to "${after}"`);
+    await big.locator('.cad-nav-filter').press('Escape');
+  }
   await big.close();
+  // The same jumps through the tree's own outline, in a window tall enough that several sections cannot reach the
+  // reading line (review 3: at 1366x900 only the last one cannot, and the bottom rule marks it anyway).
+  const tall = await browser.newPage({ viewport: { width: 1366, height: 1600 } });
+  await tall.goto(base + '/docs/explore', { waitUntil: 'networkidle' });
+  const unreachable = await tall.evaluate(() => {
+    const line = Math.min(innerHeight / 3, 220), max = document.documentElement.scrollHeight - innerHeight;
+    return [...document.querySelectorAll('cad-nav .cad-nav-outline a')].map((a, i) => [i, document.getElementById(decodeURIComponent(a.hash.slice(1)))])
+      .filter(([, h]) => h && h.getBoundingClientRect().top + scrollY - line > max).map(([i]) => i);
+  });
+  if (unreachable.length < 2) problems.push(`1366x1600 /docs/explore: only ${unreachable.length} section(s) cannot reach the reading line; pick a page where several cannot`);
+  const outline = tall.locator('cad-nav .cad-nav-outline a');
+  for (const i of unreachable) {
+    await tall.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+    await outline.nth(i).click();
+    await tall.evaluate(() => new Promise(done => {
+      let last = -1, still = 0;
+      const tick = () => { if (scrollY === last) { if (++still > 15) return done(); } else { still = 0; last = scrollY; } requestAnimationFrame(tick); };
+      tick(); setTimeout(done, 10000);
+    }));
+    if ((await outline.nth(i).getAttribute('aria-current')) !== 'location')
+      problems.push(`1366x1600 /docs/explore: following "${await outline.nth(i).textContent()}" (smooth scroll) does not mark it`);
+  }
+  await tall.close();
+  // A wheel over the page tree scrolls the page when the tree has nothing to scroll (review 3: the panel trapped it).
+  const desk = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
+  await desk.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
+  const panel = await desk.locator('cad-nav .cad-nav-panel').evaluate(p => {
+    const r = p.getBoundingClientRect(); return { fits: p.scrollHeight <= p.clientHeight + 1, x: r.left + r.width / 2, y: r.top + 200 };
+  });
+  if (!panel.fits) problems.push('1920px /docs/toolkit: the tree overflows its panel; pick a page where it fits');
+  await desk.mouse.move(panel.x, panel.y);
+  await desk.mouse.wheel(0, 300);
+  await desk.waitForTimeout(400);
+  if ((await desk.evaluate(() => scrollY)) < 100) problems.push('1920px /docs/toolkit: a wheel over the page tree does not scroll the page');
+  await desk.close();
   assert.deepEqual(problems, []);
   console.log(`${engine.name()}: ${ROUTES.length} routes at 360 and 1366 px under the site CSP PASS`);
 } finally {

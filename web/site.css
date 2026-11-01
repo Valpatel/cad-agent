@@ -6,6 +6,8 @@
 font-family:var(--font);color:var(--ink);background:var(--cream);scroll-behavior:smooth;scroll-padding-top:90px}
 *{box-sizing:border-box}body{margin:0;overflow-wrap:break-word}a{color:inherit;text-underline-offset:5px}
 a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #187a79;outline-offset:4px}
+/* inside the page tree and the right-hand column, rings sit inside the element: those boxes scroll, and would cut them off */
+cad-nav :focus-visible,.doc-rail :focus-visible{outline-offset:-3px}
 img,svg,video{max-width:100%}
 .wrap{width:min(1240px,calc(100% - 96px));margin:auto}
 /* header */

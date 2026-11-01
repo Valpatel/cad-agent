@@ -1,4 +1,4 @@
-"""cadagent.explore.catalogue: layouts, loading problems and per-item checks."""
+"""cadagent.simulation.explore.catalogue: layouts, loading problems and per-item checks."""
 
 from __future__ import annotations
 
@@ -7,9 +7,10 @@ from datetime import date
 
 import pytest
 
-from cadagent.explore.catalogue import (Catalogue, check_catalogue, check_item, display_name, in_stock, is_estimate,
-                                        link_url, load_catalogue, load_configured, mass_of, normal_confidence, price_of)
-from cadagent.explore.config import explore_config
+from cadagent.simulation.explore.catalogue import (Catalogue, check_catalogue, check_item, display_name, in_stock,
+                                                   is_estimate, link_url, load_catalogue, load_configured, mass_of,
+                                                   normal_confidence, price_of)
+from cadagent.simulation.explore.config import explore_config
 
 TODAY = date(2026, 10, 26)
 GOOD = {"id": "fan-60", "category": "fan", "name": "60 mm fan", "price_usd": 9.0, "price_checked": "2026-10-01",

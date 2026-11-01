@@ -56,7 +56,7 @@ def test_skill_commands_gates_and_names_exist(path):
             assert "until" in text or "T11" in text
             continue
         assert cmd in SUBCOMMANDS, f"`cad-agent {cmd}` is not a command"
-    from cadagent.dossier.lint import KNOWN_GATES
+    from cadagent.review.dossier.lint import KNOWN_GATES
     for gate in re.findall(r"gate:([a-z-]+)", text):
         assert gate in KNOWN_GATES, f"gate:{gate} is not a gate"
     for dotted in sorted(set(re.findall(r"`(cadagent(?:\.[A-Za-z_]\w*)+)", text))):

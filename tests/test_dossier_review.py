@@ -1,4 +1,4 @@
-"""The reviewer pass and its hash-bound sign-off (plan T11, ``cadagent.dossier.review``).
+"""The reviewer pass and its hash-bound sign-off (plan T11, ``cadagent.review.dossier.review``).
 
 A record with stale hashes never signs off; a sign-off by the section's builder or author is refused while separate
 review is required (a YAML key); an open decision blocks a sign-off; the bundle holds what the reviewer needs; the
@@ -19,12 +19,12 @@ from typing import Any, Dict
 import pytest
 import yaml
 
-from cadagent import packet as pk
+from cadagent.review import packet as pk
 from cadagent.cli import main
-from cadagent.dossier.lint import lint_project
-from cadagent.dossier.registry import _previous_parts, part_actor
-from cadagent.dossier.review import (RECORD_SCHEMA, actor_refusal, check_record, submit_record, validate_record,
-                                     write_bundle)
+from cadagent.review.dossier.lint import lint_project
+from cadagent.review.dossier.registry import _previous_parts, part_actor
+from cadagent.review.dossier.review import (RECORD_SCHEMA, actor_refusal, check_record, submit_record, validate_record,
+                                            write_bundle)
 from cadagent.project import load_project
 
 from .test_dossier_lint import base_files, base_geometry, make_project, write
@@ -206,7 +206,7 @@ def test_part_actor_survives_a_rebuild_of_unchanged_geometry(tmp_path):
 def test_registry_records_the_build_actor_per_part(tmp_path, monkeypatch):
     pytest.importorskip("cadquery")
     import cadquery as cq
-    from cadagent.dossier.registry import Registry
+    from cadagent.review.dossier.registry import Registry
 
     def build(width: float):
         reg = Registry()
@@ -222,14 +222,14 @@ def test_registry_records_the_build_actor_per_part(tmp_path, monkeypatch):
     geo2 = build(10)                                                       # the reviewer rebuilds: no change
     assert geo2["actor"] == "reviewer"
     assert {p: v["actor"] for p, v in geo2["parts"].items()} == {"plate": "author", "lid": "author"}
-    from cadagent.gates.verdict import geometry_digest
+    from cadagent.review.gates.verdict import geometry_digest
     assert geometry_digest(geo2) == geometry_digest(geo)                    # who built it is not a gate input
     geo3 = build(12)                                                       # the reviewer changes the plate
     assert geo3["parts"]["plate"]["actor"] == "reviewer" and geo3["parts"]["lid"]["actor"] == "author"
 
 
 def _dossier(tmp_path, files=None):
-    from cadagent.dossier import load_dossier
+    from cadagent.review.dossier import load_dossier
     return load_dossier(write(tmp_path, files or base_files()), strict=False, root=tmp_path)
 
 
@@ -291,7 +291,7 @@ def test_the_bundle_holds_what_the_reviewer_needs(project):
     write_bundle(project, "S1", other)                                    # a bundle is rewritten in place
     (root / "notes").mkdir()
     (root / "notes" / "mine.txt").write_text("keep")
-    from cadagent.dossier.review import ReviewError
+    from cadagent.review.dossier.review import ReviewError
     with pytest.raises(ReviewError, match="not empty"):
         write_bundle(project, "S1", root / "notes")
     assert (root / "notes" / "mine.txt").read_text() == "keep"
@@ -500,7 +500,7 @@ def test_a_sign_off_needs_a_current_packet_and_every_question(project):
 
 
 def test_check_record_without_a_packet(project):
-    from cadagent.dossier import load_project_dossier
+    from cadagent.review.dossier import load_project_dossier
     d = load_project_dossier(project, strict=False)
     rec = valid_record(hashes={p: v["sha256"] for p, v in geometry()["parts"].items()})
     rec["decisions"] = [{"id": i, "verdict": "justified", "evidence": "ok"} for i in ("D1", "D2")]
@@ -624,8 +624,8 @@ def test_an_inspection_requirement_needs_the_review_to_trace_it(tmp_path):
 
 
 def test_the_separate_review_switch_is_not_a_gate_input(tmp_path):
-    from cadagent.gates import run as gr
-    from cadagent.gates.verdict import digest_of
+    from cadagent.review.gates import run as gr
+    from cadagent.review.gates.verdict import digest_of
     root = setup_project(tmp_path)
 
     def digest() -> str:
@@ -651,7 +651,7 @@ def test_the_diff_covers_the_section_s_own_sources(tmp_path):
     for f in ("cad/build.py", "cad/lid.py", "cad/other.py"):
         (root / f).parent.mkdir(exist_ok=True)
         (root / f).write_text("# build\n")
-    from cadagent.dossier.review import _load, _diff_paths
+    from cadagent.review.dossier.review import _load, _diff_paths
     paths = _diff_paths(_load(load_project(root), "S1"), "S1")
     assert paths == ["cad-agent.yaml", "cad/build.py", "cad/lid.py", "dossier"]      # not another section's joint
 

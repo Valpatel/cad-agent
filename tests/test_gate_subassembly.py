@@ -1,9 +1,9 @@
 """Rigid modules must pass their own sequence before they enter a different surrounding assembly."""
 import pytest
 
-from cadagent.gates.assembly import AccessOptions, assembly_gate, run_sequence, steps_markdown
-from cadagent.gates.fasteners import FastenerSpec
-from cadagent.gates.relations import Assembly, Relation
+from cadagent.review.gates.assembly import AccessOptions, assembly_gate, run_sequence, steps_markdown
+from cadagent.review.gates.fasteners import FastenerSpec
+from cadagent.review.gates.relations import Assembly, Relation
 from tests.test_gate_assembly import BoxWorld
 
 
@@ -277,7 +277,7 @@ def test_brep_rigid_module_and_real_tool_scope(tmp_path):
     assert v["limits"]["conditional_service"] is True
     assert v["limits"]["prerequisite_removal_verified"] is False
     # Running the same internal screw's real tool against the parent base fails: scoping is consequential.
-    from cadagent.gates.fasteners import tool_access
+    from cadagent.review.gates.fasteners import tool_access
     tool = tool_access(asm, specs["board_screw"], 0, "hex", {"envelope_d":.2,"length":10},
                        list(asm.names), {"order":2,"fit":"board"})
     assert not tool["clear"] and "base" in {b["part"] for b in tool["blocked"]}

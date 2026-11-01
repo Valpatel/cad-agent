@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""The packed-model fixture both decoders are held to: two small parts packed by cadagent.view.pack_view.
+"""The packed-model fixture both decoders are held to: two small parts packed by cadagent.publish.view.pack_view.
 
     python tests/fixtures/model/make_fixture.py      # rewrites two-parts.{json,bin} and two-parts.decoded.json
 
-tests/test_view.py checks that pack_view still writes these exact bytes and that cadagent.view.unpack_model reads
+tests/test_view.py checks that pack_view still writes these exact bytes and that cadagent.publish.view.unpack_model reads
 back two-parts.decoded.json; tests/webkit-model.test.mjs checks that kit/model.js's decodeModel reads back the same.
 The parts: a tetrahedron (with one triangle whose corners meet, which the packer drops) and a box offset in x,
 so the delta coding, the vertex numbering and the assembly-wide quantisation are all exercised."""
@@ -19,7 +19,7 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[2] / "src"))
 
-from cadagent.view import _write_stl, pack_view, unpack_model  # noqa: E402
+from cadagent.publish.view import _write_stl, pack_view, unpack_model  # noqa: E402
 
 TETRA = np.array([[[0, 0, 0], [10, 0, 0], [0, 10, 0]], [[0, 0, 0], [0, 10, 0], [0, 0, 10]],
                   [[0, 0, 0], [0, 0, 10], [10, 0, 0]], [[10, 0, 0], [0, 0, 10], [0, 10, 0]],

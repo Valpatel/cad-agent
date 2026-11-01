@@ -70,9 +70,10 @@ cad-agent motion-trace reference.json capture.json --tolerance-mm 0.01 --output 
 ```
 
 The command needs no project config or CAD extra. Python callers use
-`cadagent.motion_trace.required_poses(contract)` and `cadagent.motion_trace.validate_motion_trace(contract, trace)`.
-Exit 0 means all supplied landmarks match and required poses are present; exit 1 means mismatches or incomplete
-coverage; exit 2 means malformed/unreadable evidence. A failed/malformed command must fail the calling build step.
+`cadagent.mechanical.motion_trace.required_poses(contract)` and
+`cadagent.mechanical.motion_trace.validate_motion_trace(contract, trace)`. Exit 0 means all supplied landmarks match and
+required poses are present; exit 1 means mismatches or incomplete coverage; exit 2 means malformed/unreadable evidence.
+A failed/malformed command must fail the calling build step.
 
 Convert observations explicitly from renderer units and world coordinates to reference mm and assembly-home
 coordinates. Remove only the known scene placement/basis conversion, retaining all articulated movement. Use

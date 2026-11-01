@@ -86,8 +86,8 @@ def enclosure_config(root: Path):
     """The parsed explore config and catalogue of a written enclosure project."""
     import yaml
 
-    from cadagent.explore.catalogue import load_configured
-    from cadagent.explore.config import explore_config
+    from cadagent.simulation.explore.catalogue import load_configured
+    from cadagent.simulation.explore.config import explore_config
 
     cfg = explore_config(root, yaml.safe_load((root / "cad-agent.yaml").read_text())["cad"]["explore"], "Enclosure")
     catalogue, issues = load_configured(cfg)

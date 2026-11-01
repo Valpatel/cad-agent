@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from cadagent.gates import relations as rel
+from cadagent.review.gates import relations as rel
 
 cq = pytest.importorskip("cadquery")
 
@@ -154,7 +154,7 @@ def test_invalid_integration_results_cannot_become_relations(monkeypatch, value,
 
 def test_uncertainty_consumes_conservation_budget_and_near_threshold_stays_unknown(monkeypatch, tmp_path):
     from dataclasses import replace
-    from cadagent.gates import PairCache, relation_table
+    from cadagent.review.gates import PairCache, relation_table
     real = rel._measure_volume
     boxes = {"a": cq.Solid.makeBox(1, 1, 1), "b": cq.Solid.makeBox(1, 1, 1, cq.Vector(0.5, 0, 0))}
     asm = rel.Assembly(boxes)
@@ -172,7 +172,7 @@ def test_uncertainty_consumes_conservation_budget_and_near_threshold_stays_unkno
 
 
 def test_measurement_algorithm_version_invalidates_previous_relation_cache(monkeypatch, tmp_path):
-    from cadagent.gates import PairCache, relation_table
+    from cadagent.review.gates import PairCache, relation_table
     asm = rel.Assembly({"a": cq.Solid.makeBox(1, 1, 1), "b": cq.Solid.makeBox(1, 1, 1, cq.Vector(1, 0, 0))})
     cache = PairCache(tmp_path)
     current = rel.RELATIONS_VERSION

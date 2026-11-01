@@ -8,7 +8,7 @@ One family, shared parts:
 * ``cad``: STEP solids to visible edges by OpenCASCADE hidden-line removal, and to triangles (needs CadQuery);
 * ``raster``: triangle depth rasters, outlines and simplification, for silhouettes and painter's order;
 * ``linkage``: planar linkage poses by circle intersection;
-* ``field``: an FEA viewer field (``cadagent.fea``) for stress colours;
+* ``field``: an FEA viewer field (``cadagent.simulation.fea``) for stress colours;
 * ``text``: text as outlines, so no web font is needed.
 
 Scenes build on them, one per subject: ``hero`` (an assembly drawn in, assembled and checked). Each scene has an

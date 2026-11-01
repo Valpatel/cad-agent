@@ -57,8 +57,8 @@ flowchart TD
   routing and fabrication reports showed STALE. The standalone report had the opposite gap: it trusted `pass: true`
   without checking hashes, so a changed solid still passed. Later, the design card and the workbench disagreed about
   a bundle whose source path left the project root.
-- **Check:** `cadagent.evidence.hashes_are_current`; regression tests change one source byte and expect STALE in the
-  workbench, the report row and the design card.
+- **Check:** `cadagent.review.evidence.hashes_are_current`; regression tests change one source byte and expect STALE in
+  the workbench, the report row and the design card.
 - **Source:** `.agents/inbox/2026-10-26-report-freshness-formats.md`; cad-agent PR #1 review.
 
 ### Measure routing geometry and the return plane; DRC does not
@@ -68,8 +68,8 @@ flowchart TD
   trace. Route constrained pairs first and reserve the plane beneath them before routing anything else.
 - **Incident:** boards that passed ERC, DRC and parity had separated pair conductors, and an auxiliary track left a
   19.3 mm gap in the reference plane under one pair. A total-copper-length sum hid it by adding the termination branch.
-- **Check:** `cadagent.pcb_routing` graph/path and paired-spacing measurements, with project-defined limits. They do not
-  establish impedance, data rate, EMC or transient immunity.
+- **Check:** `cadagent.electrical.pcb_routing` graph/path and paired-spacing measurements, with project-defined limits.
+  They do not establish impedance, data rate, EMC or transient immunity.
 - **Source:** `.agents/inbox/2026-10-26-can-routing-is-not-connectivity.md`.
 
 ### Prove a stitching via joins the main plane, not another island
@@ -87,8 +87,8 @@ flowchart TD
   the same connector family.
 - **Incident:** exact connector pad geometry replaced a generic footprint of the same family and changed clearances,
   which needed a fresh DRC. A TVS part was referred to by a short family name that matches several products.
-- **Check:** BOM rows carry exact C-codes (`cadagent.pcb.check_jlc_files`), and a C-code is still not proof of stock or
-  orientation.
+- **Check:** BOM rows carry exact C-codes (`cadagent.electrical.pcb.check_jlc_files`), and a C-code is still not proof
+  of stock or orientation.
 - **Source:** `.agents/inbox/2026-10-26-pcb-evidence.md`, `.agents/domains/pcb.md` (cad-agent PR #1).
 
 ### Align a PCB STEP with a rotation, never a mirror
@@ -121,7 +121,7 @@ flowchart TD
   polyline's own stroke and cap solids, and validate the final solid count and the exported mesh.
 - **Incident:** one aggregate subtraction ran for more than twelve minutes without finishing; the staged cuts finished a
   probe in about 109 s with one valid solid.
-- **Check:** `cadagent.markings.PanelMarkings.engrave`; timing depends on the artwork and is not guaranteed.
+- **Check:** `cadagent.mechanical.markings.PanelMarkings.engrave`; timing depends on the artwork and is not guaranteed.
 - **Source:** `.agents/inbox/2026-10-26-panel-engraving-overlap-cost.md` (cad-agent PR #1).
 
 ### Package releases from the validated manifest, not a folder glob

@@ -14,14 +14,14 @@ from typing import Any, Callable, Dict, Optional
 import pytest
 import yaml
 
-from cadagent.dossier import load_dossier
-from cadagent.dossier.lint import (RULES, CheckState, Evidence, Review, lint, lint_project, load_reviews,
-                                   write_outputs)
+from cadagent.review.dossier import load_dossier
+from cadagent.review.dossier.lint import (RULES, CheckState, Evidence, Review, lint, lint_project, load_reviews,
+                                          write_outputs)
 
 
 def _verdict(gate: str, ok: bool = True, parts=(), geometry: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """A verdict bound to ``geometry`` (default ``base_geometry()``), as ``cad-agent gates`` writes it."""
-    from cadagent.gates.verdict import bind_inputs
+    from cadagent.review.gates.verdict import bind_inputs
     findings = [] if ok else [{"id": f"{gate}:x", "status": "fail", "message": "bad", "parts": list(parts)}]
     return bind_inputs({"schema": "cadagent.gate/1", "gate": gate, "pass": ok, "status": "pass" if ok else "fail",
                         "findings": findings}, geometry if geometry is not None else base_geometry())
@@ -99,7 +99,7 @@ def write(root: Path, files: Dict[str, Any]) -> Path:
 def rebind(ev: Evidence) -> Evidence:
     """Bind every verdict made for ``base_geometry()`` to ``ev.geometry``: the gates were run again after the build
     that the test's change stands for. A verdict bound to another geometry on purpose stays stale."""
-    from cadagent.gates.verdict import bind_inputs, geometry_digest
+    from cadagent.review.gates.verdict import bind_inputs, geometry_digest
     base = geometry_digest(base_geometry())
     for v in ev.gates.values():
         if ev.geometry is not None and ((v.get("inputs") or {}).get("geometry") or {}).get("digest") == base:
@@ -345,7 +345,7 @@ def _review(section="S1", date="2026-10-28", actor="reviewer", signed_off=True, 
 
 
 def record_json(section="S1", actor="reviewer", signed_off=True, hashes=None, date="2026-10-28") -> Dict[str, Any]:
-    """A complete reviewer record (cadagent.dossier.review.validate_record) as a file holds it."""
+    """A complete reviewer record (cadagent.review.dossier.review.validate_record) as a file holds it."""
     return {"schema": "cad-agent.review/1", "section": section, "date": date, "timestamp": f"{date}T10:00:00Z",
             "actor": actor, "verdict": "sign_off" if signed_off else "changes_requested", "signed_off": signed_off,
             "hashes": hashes if hashes is not None else {p: v["sha256"] for p, v in base_geometry()["parts"].items()},
@@ -474,8 +474,8 @@ def make_project(root: Path, files=None, geometry=None, gates=None, checks_yaml=
     (exports / "gates").mkdir(parents=True)
     if geometry is not False:
         (exports / "dossier-geometry.json").write_text(json.dumps(geometry or base_geometry()))
-    from cadagent.gates import run as gr
-    from cadagent.gates.verdict import bind_inputs
+    from cadagent.review.gates import run as gr
+    from cadagent.review.gates.verdict import bind_inputs
     from cadagent.project import load_project
     project = load_project(root)
     cfg = gr.gates_config(project)
@@ -542,7 +542,7 @@ def test_unreadable_inputs_are_findings(tmp_path):
 def test_the_lint_imports_no_cad_kernel():
     import subprocess
     import sys
-    code = ("import sys; import cadagent.dossier.lint, cadagent.cli, cadagent.report; "
+    code = ("import sys; import cadagent.review.dossier.lint, cadagent.cli, cadagent.publish.report; "
             "print(any(m in sys.modules for m in ('cadquery', 'OCP')))")
     src = str(Path(__file__).resolve().parents[1] / "src")
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,

@@ -76,7 +76,7 @@ the gates and checks that verify it. Leave `status:` out: it is computed. The li
 Only the code knows which solid is the cavity, where an axis is, where each screw sits:
 
 ```python
-from cadagent.dossier import Axis, part, cavity, joint, fastener, assembly, build
+from cadagent.review.dossier import Axis, part, cavity, joint, fastener, assembly, build
 
 @part("hopper", section="S3")
 def hopper(p): ...

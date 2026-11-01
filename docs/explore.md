@@ -1,4 +1,4 @@
-# Explore and compare designs (`cadagent.explore`)
+# Explore and compare designs (`cadagent.simulation.explore`)
 
 For any product built from bought and made parts (an enclosure, a robot, a board, a jig): pick parts from a
 catalogue for each slot of a design, evaluate every design with the project's own model, and rank the trade-offs.
@@ -41,11 +41,11 @@ flowchart TD
 
 | Piece | Module | What it gives you |
 |---|---|---|
-| Catalogue | `cadagent.explore.catalogue` | Part lists (JSON or YAML) with specs, prices with the date checked, sources and confidence flags; loading and per-item checks |
-| Designs | `cadagent.explore.design` | One catalogue part per slot (or an inline custom part) plus free-form parameters; `extends` for variants; the bill of materials with cost and mass totals |
-| Evaluator | `cadagent.explore.evaluate` | Runs the project's evaluator (a Python function, or a command in any language that speaks JSON) and turns its output into metrics, checks and extra BOM lines |
-| Comparison | `cadagent.explore.compare`, `page` | Objectives and constraints, Pareto ranking, one-part swaps, `comparison.json`, a standalone HTML page and design cards for `cad-agent site` |
-| Search | `cadagent.explore.optimise` | Tries many designs: random and grid sampling built in, NSGA-II and TPE through optuna (`pip install -e ".[explore]"`); leaderboard and resumable records |
+| Catalogue | `cadagent.simulation.explore.catalogue` | Part lists (JSON or YAML) with specs, prices with the date checked, sources and confidence flags; loading and per-item checks |
+| Designs | `cadagent.simulation.explore.design` | One catalogue part per slot (or an inline custom part) plus free-form parameters; `extends` for variants; the bill of materials with cost and mass totals |
+| Evaluator | `cadagent.simulation.explore.evaluate` | Runs the project's evaluator (a Python function, or a command in any language that speaks JSON) and turns its output into metrics, checks and extra BOM lines |
+| Comparison | `cadagent.simulation.explore.compare`, `page` | Objectives and constraints, Pareto ranking, one-part swaps, `comparison.json`, a standalone HTML page and design cards for `cad-agent site` |
+| Search | `cadagent.simulation.explore.optimise` | Tries many designs: random and grid sampling built in, NSGA-II and TPE through optuna (`pip install -e ".[explore]"`); leaderboard and resumable records |
 
 Not included, on purpose:
 
@@ -198,7 +198,7 @@ leaves out in `missing`; a total that includes an estimate is marked **est.**.
 The evaluator is the project's model. In Python, `evaluator: tools/evaluate.py:evaluate` (or `package.module:function`):
 
 ```python
-def evaluate(candidate):                                  # cadagent.explore.design.Candidate
+def evaluate(candidate):                                  # cadagent.simulation.explore.design.Candidate
     motor = candidate.part("wheel_motor")                 # the catalogue item (a dict), or None
     torque = candidate.spec("wheel_motor", "peak_torque_nm")
     wheels = candidate.qty("wheel_motor")
@@ -318,9 +318,10 @@ Exit code 0 when the run finished with at least one feasible trial, 1 otherwise.
 ## Python API
 
 ```python
-from cadagent.explore import (explore_config, load_configured, check_catalogue, load_design, resolve, bom,
-                              load_evaluator, evaluate_design, compare_designs, comparison, write_comparison, swaps)
-from cadagent.explore.optimise import run_search, search_config
+from cadagent.simulation.explore import (explore_config, load_configured, check_catalogue, load_design, resolve, bom,
+                                         load_evaluator, evaluate_design, compare_designs, comparison, write_comparison,
+                                         swaps)
+from cadagent.simulation.explore.optimise import run_search, search_config
 ```
 
 ## Limits

@@ -12,9 +12,9 @@ import math
 
 import pytest
 
-from cadagent.gates import Relation
-from cadagent.gates.motion import (IDENTITY, Joint, World, box_distance, moved_box, rotation, run_motion,
-                                   translation)
+from cadagent.review.gates import Relation
+from cadagent.review.gates.motion import (IDENTITY, Joint, World, box_distance, moved_box, rotation, run_motion,
+                                          translation)
 
 
 # ----------------------------------------------------------------------------- a kernel-free world
@@ -74,7 +74,7 @@ RAIL = {"rail": (0, 0, -2, 100, 10, 0), "carriage": (0, 0, 0, 10, 10, 10), "wall
 
 def test_rotation_is_right_handed_about_an_offset_axis():
     m = rotation((1, 0, 0), (0, 0, 1), 90)
-    from cadagent.gates.motion import _apply
+    from cadagent.review.gates.motion import _apply
     assert _apply(m, (2, 0, 0)) == pytest.approx((1, 1, 0))
     assert _apply(translation((0, 0, 2), 5), (1, 1, 1)) == pytest.approx((1, 1, 6))
     assert moved_box((0, 0, 0, 2, 1, 1), rotation((0, 0, 0), (0, 0, 1), 90)) == pytest.approx((-1, 0, 0, 0, 2, 1))
@@ -322,7 +322,7 @@ def flap_wall():
     """The flap at 0 deg rests on the stop; a wall above it whose underside at z = 30 the flap's top far corner
     meets at the angle ``hit``."""
     cq = _cq()
-    from cadagent.gates import Assembly
+    from cadagent.review.gates import Assembly
     asm = Assembly()
     asm.add("base", cq.Solid.makeBox(60, 20, 2, cq.Vector(-10, -5, -2)))
     asm.add("pin", cq.Solid.makeCylinder(1.5, 20, cq.Vector(0, -5, 4), cq.Vector(0, 1, 0)))
@@ -337,7 +337,7 @@ def flap_wall():
 
 
 def test_flap_clears_at_0_and_hits_the_wall_on_its_way_to_60(flap_wall):
-    from cadagent.gates.motion import motion_gate
+    from cadagent.review.gates.motion import motion_gate
     asm, hit = flap_wall
     assert 40 < hit < 50
     ok = motion_gate(asm, {"I1": revolute((0, 40), intended_contacts=[("flap", "stop")])})
@@ -356,8 +356,8 @@ def test_flap_clears_at_0_and_hits_the_wall_on_its_way_to_60(flap_wall):
 def test_stop_contact_at_the_range_end_passes_and_driving_past_it_fails():
     """A flap hinged at the origin swings down (positive about +Y) and lands flat on a stop face at 90 deg."""
     cq = _cq()
-    from cadagent.gates import Assembly
-    from cadagent.gates.motion import motion_gate
+    from cadagent.review.gates import Assembly
+    from cadagent.review.gates.motion import motion_gate
     asm = Assembly()
     asm.add("post", cq.Solid.makeBox(4, 6, 4, cq.Vector(-2, -6, -2)))        # the hinge, beside the flap
     asm.add("flap", cq.Solid.makeBox(20, 10, 2, cq.Vector(0, 0, 0)))
@@ -374,8 +374,8 @@ def test_stop_contact_at_the_range_end_passes_and_driving_past_it_fails():
 
 
 def test_the_pair_cache_makes_a_rerun_free(tmp_path, flap_wall):
-    from cadagent.gates import PairCache
-    from cadagent.gates.motion import motion_gate
+    from cadagent.review.gates import PairCache
+    from cadagent.review.gates.motion import motion_gate
     asm, _ = flap_wall
     joints = {"I1": revolute((0, 60), intended_contacts=[("flap", "stop")])}
     cold = motion_gate(asm, joints, cache=PairCache(tmp_path))
@@ -389,8 +389,8 @@ def test_the_pair_cache_makes_a_rerun_free(tmp_path, flap_wall):
 def test_containment_is_checked_per_pose_when_a_joint_moves_the_container(tmp_path):
     """A cup on a slider carries its cavity away from a ball that stays where it was modelled."""
     cq = _cq()
-    from cadagent.gates import Assembly
-    from cadagent.gates.motion import motion_gate
+    from cadagent.review.gates import Assembly
+    from cadagent.review.gates.motion import motion_gate
     asm = Assembly()
     asm.add("rail", cq.Solid.makeBox(80, 20, 2, cq.Vector(-10, -10, -2)))
     cup = cq.Solid.makeBox(20, 20, 12, cq.Vector(-10, -10, 0)).cut(cq.Solid.makeBox(16, 16, 10, cq.Vector(-8, -8, 2)))
@@ -426,7 +426,7 @@ def _bench():
 
 
 def test_bench_seed_7_onset_brackets_the_analytic_contact_angle():
-    from cadagent.gates.motion import motion_gate
+    from cadagent.review.gates.motion import motion_gate
     gb = _bench()
     clean = motion_gate(gb.build().assembly)
     assert clean["pass"] and clean["findings"] == []
@@ -446,7 +446,7 @@ def test_bench_seed_7_onset_brackets_the_analytic_contact_angle():
 
 def test_motion_from_build_reads_the_dossier_gates_and_lists_unmoved_contents():
     from types import SimpleNamespace
-    from cadagent.gates.motion import motion_from_build
+    from cadagent.review.gates.motion import motion_from_build
     gb = _bench()
     bench = gb.build()
     gates = SimpleNamespace(motion_samples=5, intended_overlaps=[], ignore_pairs=[], touch_tol_mm=0.01)

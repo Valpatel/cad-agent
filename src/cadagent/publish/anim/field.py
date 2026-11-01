@@ -1,5 +1,5 @@
 """FEA results for drawing: the surface field cad-agent's FEA viewer reads (``"format": "cadagent-fea-viewer"``,
-written by ``cadagent.fea``), decoded to numpy.
+written by ``cadagent.simulation.fea``), decoded to numpy.
 
 The field's surface triangles carry nodal von Mises stress. A drawing colours them by stress as a fraction of the
 material's strength, capped at the design stress the FEA reports. That cap leaves out the artificial spikes at

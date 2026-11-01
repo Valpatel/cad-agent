@@ -25,8 +25,8 @@
   "license": "MIT",
   "revision": "77f6d00bdb262f0f75a18fa0ddf0075058a649d8",
   "committed": "2026-10-31",
-  "export": "cadagent.view.export_view (cad-agent view), tolerance 0.3 mm, angular 0.5 rad",
-  "pack": "cadagent.view.pack_view",
+  "export": "cadagent.publish.view.export_view (cad-agent view), tolerance 0.3 mm, angular 0.5 rad",
+  "pack": "cadagent.publish.view.pack_view",
   "regenerate": "python3 tools/gyropup_showcase.py --gyropup <checkout>",
   "recoloured": [
    "barrel",

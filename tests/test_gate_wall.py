@@ -9,7 +9,7 @@ import pytest
 cq = pytest.importorskip("cadquery")
 trimesh = pytest.importorskip("trimesh")
 
-from cadagent.gates import wall  # noqa: E402
+from cadagent.review.gates import wall  # noqa: E402
 
 
 def plate(t=2.4):

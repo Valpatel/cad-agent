@@ -32,7 +32,7 @@
     el.querySelector('.hud-note').textContent = msg;
   };
   if (!q.has('case')) {
-    fail('Open a case with fea.html?case=<url of the JSON>. Write one with Study.export_viewer(path) (cadagent.fea) after solve().');
+    fail('Open a case with fea.html?case=<url of the JSON>. Write one with Study.export_viewer(path) (cadagent.simulation.fea) after solve().');
   } else if (!caseUrl) {
     fail('The case must be a JSON file on this site (a relative URL or this origin).');
   } else {

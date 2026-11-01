@@ -131,7 +131,7 @@ def test_serve_binds_and_records_the_url(tmp_path):
     import threading
 
     from cadagent.project import load_project
-    from cadagent.serve import make_server
+    from cadagent.publish.serve import make_server
 
     root = make_project(tmp_path)
     server, url = make_server(load_project(root), port=0)
@@ -161,7 +161,8 @@ def test_module_runs_as_a_script(tmp_path):
 
 
 def test_slice_reports_a_part_without_a_print_time(tmp_path, monkeypatch, capsys):
-    from cadagent import cli, slicer
+    from cadagent import cli
+    from cadagent.manufacturing import slicer
     monkeypatch.setattr(slicer, "executable", lambda: "/bin/true")
     monkeypatch.setattr(slicer, "slice_project", lambda project, parts=None: {
         "parts": {"box": {"grams": 5.0, "minutes": None}}, "total_grams": 5.0, "total_hours": 0.0,

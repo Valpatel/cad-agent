@@ -13,7 +13,7 @@ The mechanism (millimetres, Z up, everything in assembly coordinates):
   ``I-pin-arm`` about Y, resting on the stop at 0 deg and declared to lift to 40 deg;
 * ``frame``: a post and an overhead beam that the arm clears at 40 deg and would hit near 45 deg.
 
-``build(seed=None)`` declares everything on a fresh ``cadagent.dossier.Registry`` (parts, the cavity,
+``build(seed=None)`` declares everything on a fresh ``cadagent.review.dossier.Registry`` (parts, the cavity,
 the joint, the fasteners with their placed shapes and stack numbers, the assembly steps), builds it
 without writing files, and returns a ``Bench``: the ``BuildResult``, ``Assembly.from_build`` of it,
 and the declarations that belong in the YAML dossier rather than the build script (interfaces,
@@ -32,9 +32,9 @@ from typing import Any, Dict, Optional
 
 import cadquery as cq
 
-from cadagent import dossier
-from cadagent.fasteners import insert_envelope, socket_head_envelope
-from cadagent.gates import Assembly
+from cadagent.review import dossier
+from cadagent.mechanical.fasteners import insert_envelope, socket_head_envelope
+from cadagent.review.gates import Assembly
 
 PARAMS: Dict[str, Any] = {
     "wall": 2.4,
@@ -98,7 +98,7 @@ PRINTED = ("base", "hopper", "lid", "bracket", "hinge_block", "arm", "stop", "fr
 
 @dataclass
 class Bench:
-    result: Any                                  # cadagent.dossier.BuildResult
+    result: Any                                  # cadagent.review.dossier.BuildResult
     assembly: Assembly
     declarations: Dict[str, Any]
     params: Dict[str, Any]

@@ -1,4 +1,4 @@
-/** kit/model.js, the <cad-model> element's decoder, against the reference (cadagent.view.unpack_model): the packed
+/** kit/model.js, the <cad-model> element's decoder, against the reference (cadagent.publish.view.unpack_model): the packed
  * fixture decodes to what Python decodes, and the site's committed Gyropup model decodes whole and in place (#179). */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';

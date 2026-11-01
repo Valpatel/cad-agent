@@ -44,7 +44,7 @@ demos:
     what: A 300 N press on an enclosure lid, coloured by stress as a fraction of the material's strength.
     mode: render
     cover: docs/img/fea.jpg
-    url: docs/toolkit.md#stiffness-and-strength-cadagentfea
+    url: docs/toolkit.md#stiffness-and-strength-cadagentsimulationfea
     areas: [structural-fea]
   - id: snap-fit
     title: Cantilever snap fit
@@ -60,7 +60,7 @@ demos:
     what: Topology optimisation of an enclosure floor keeps only the material that carries load.
     mode: render
     cover: docs/img/topology.jpg
-    url: docs/toolkit.md#topology-optimisation-cadagenttopopt
+    url: docs/toolkit.md#topology-optimisation-cadagentsimulationtopopt
     areas: [topology-optimisation]
   - id: hinge-sweep
     title: Hinge sweep and collision onset
@@ -118,7 +118,7 @@ tools:
   compare: {page: docs/explore.md, chart: "docs/img/explore/two-wheel-charts.json#compare"}
   catalogue: {page: docs/explore.md}
   view: {page: "docs/toolkit.md#3d-viewer-cad-agent-view--the-web-kit", figures: [docs/img/viewer.jpg]}
-  slice: {page: docs/toolkit.md#real-grams-cadagentslicer-cad-agent-slice}
+  slice: {page: docs/toolkit.md#real-grams-cadagentmanufacturingslicer-cad-agent-slice}
   release: {page: docs/toolkit.md#the-print-release-cad-agent-release}
   pcb-check: {page: docs/pcb.md}
   motion-trace: {page: docs/rendered-motion.md}

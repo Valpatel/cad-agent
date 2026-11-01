@@ -143,7 +143,8 @@ Reading the table:
   layer lines act like notches, and Bayer's "half the elongation at break" rule for materials without a yield point is
   the right model for Z.
 - **Carbon fibre lowers in-plane strain** (PA6-CF20: 2.1 % XY dry), so CF grades are poor for snap fits even though they
-  are strong. Moisture roughly halves CF-nylon strength [PM-PA6CF]. That matches `cadagent.fea`'s ×0.6 humid factor.
+  are strong. Moisture roughly halves CF-nylon strength [PM-PA6CF]. That matches `cadagent.simulation.fea`'s ×0.6 humid
+  factor.
 - **Orientation rule.** Lay the flexing member in XY and keep the joining direction independent of the bending
   direction. A cantilever built along Z is "poor", and the stair-step notches add stress concentration [KLA]. Hubs:
   avoid Z-built cantilevers; MJF root at least 1 mm thick; fillet ≥ 0.5×root thickness; width ≥ 5 mm [HUBS-SF].
@@ -194,8 +195,8 @@ Rule:
   the layers) it agrees with this table.
 - Rule 3 has no moulded value to compare PLA, PETG or ASA with: none of the guides read here lists them. Treat every row
   as a hypothesis until the cad-agent coupon (#94 item 5) measures it.
-- The repo's existing `cadagent.fea.MATERIALS` already uses weak-direction strengths for printed materials, which is
-  consistent.
+- The repo's existing `cadagent.simulation.fea.MATERIALS` already uses weak-direction strengths for printed materials,
+  which is consistent.
 
 ## 7. How the process changes each feature
 

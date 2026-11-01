@@ -6,7 +6,7 @@ Two stages, so the committed SVG can be checked anywhere:
 * ``extract(spec, source)`` needs CadQuery and a checkout of the project the spec names. It reads the assembly STEP,
   draws every solid's visible edges by hidden-line removal (``cad.hlr_segments``) and its filled silhouette,
   orders the solids for painting, solves the linkage along its path (``linkage``), measures clearances between
-  moving solids with the assembly gates' relation engine (``cadagent.gates.relations.relate``), bands the FEA field
+  moving solids with the assembly gates' relation engine (``cadagent.review.gates.relations.relate``), bands the FEA field
   (``field``) and writes a scene: plain JSON with the drawing in SVG units, the numbers and where they came from
   (the source commit and every input file's sha256).
 * ``render(scene, present)`` is plain Python. It writes the SVG, with CSS keyframes and both colour schemes, and
@@ -84,7 +84,7 @@ def _clearance_key(spec: Mapping[str, Any], assembly_sha256: str) -> str:
     import dataclasses
     import inspect
 
-    from cadagent.gates import relations
+    from cadagent.review.gates import relations
 
     # the relation engine too: its code and default tolerances (a faster or stricter relate() reruns the sweep)
     engine = hashlib.sha256(inspect.getsource(relations).encode()).hexdigest()
@@ -626,7 +626,7 @@ def _clearances(spec, solids, parts, link, poses, iaxis, iu, iv, log, *, assembl
     return {"poses": len(checked), "pairs_queried": queried, "pairs_separated_along_axis": separated,
             "pairs_in_reach": len(pairs), **summary, "near_mm": near, "seconds": _r(time.time() - t0, 1),
             "workers": workers,
-            "limits": "sampled poses only (not a swept volume); exact gaps by cadagent.gates.relations.relate, per "
+            "limits": "sampled poses only (not a swept volume); exact gaps by cadagent.review.gates.relations.relate, per "
                       "pair of solids; a pair touching at every pose is a designed contact and has no gap to state; "
                       f"a pair apart at every pose by a gap that varies by at most {JOINT_GAP_SPREAD_MM} mm is a "
                       "running gap about a shared axis; the rest pass each other"}
@@ -715,7 +715,7 @@ _WORKER_SOLIDS: Dict[str, list] = {}
 def _sweep_pose(job, solids=None):
     """One pose of the clearance sweep: (pose, [(solid a, solid b, state, gap, overlap, point a, point b)]). Runs
     in a worker process when ``solids`` is None, reading the STEP once per process."""
-    from cadagent.gates.relations import Tolerances, relate
+    from cadagent.review.gates.relations import Tolerances, relate
     from cadagent.publish.anim import cad
 
     path, n, matrices, pairs, near = job

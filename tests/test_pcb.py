@@ -1,5 +1,5 @@
 import json
-from cadagent.pcb import kicad_report,evidence_bundle,evidence_is_current,check_jlc_files
+from cadagent.electrical.pcb import kicad_report,evidence_bundle,evidence_is_current,check_jlc_files
 
 def test_missing_and_empty_reports_fail_closed(tmp_path):
     p=tmp_path/'report.json'

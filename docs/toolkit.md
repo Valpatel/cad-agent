@@ -595,6 +595,55 @@ material of your own needs `strength_xy` and `strength_z`. `judge` (one bool per
 default that is all but the clamp and load patches, as for the safety factor. `st.sig_corner` keeps the corner stress
 tensors (elements × 4 corners × 3 × 3, MPa) for checks of your own.
 
+**Which bond criterion** (`criterion`, `bulk_stress`). The bond check weighs the opening stress and the shear
+together. A maximum-stress check weighs each on its own, and some projects use one. Both are options, and the defaults
+give the results `layer_check` gave before the options existed:
+
+- `criterion='combined'` (the default): the bond check above, one check.
+- `criterion='max-stress'`: `tension`, ⟨σn⟩ against S_z, and `shear`, τn against S_s, as two separate checks.
+- `bulk_stress='full'` (the default): von Mises of the whole stress tensor, against S_xy.
+- `bulk_stress='in-plane'`: von Mises of the stress in the layer plane alone, against S_xy; σn and τn are the bond's.
+
+```python
+lc = st.layer_check((0, 0, 1), criterion='max-stress', bulk_stress='in-plane', strength_shear=11)
+lc.modes['tension'], lc.modes['shear'], lc.modes['bulk']    # per element; lc.mode names the one that governs
+```
+
+![One PETG-CF L bracket printed as modelled, pushed back with 27 N, coloured by its layer check: under the combined criterion a band along the root fillet is past the allowable (SF 0.94, p99 0.59, 55 elements, 2 cubic mm); under the maximum-stress criterion nothing is (SF 1.07, p99 0.58)](img/fea/layer-criteria.png)
+
+The figure is one solved bracket under the two criteria (`tools/fea_layer_figure.py` regenerates it). Its upright is
+printed standing, so the push makes its R2 root fillet pull across the layers while they carry shear. The combined
+criterion fails a band along the fillet, 55 elements and 2 mm³ (SF 0.94). The maximum-stress one passes it (1.07).
+
+Which is the more cautious depends on the corner. With one S_s, the combined bond is never below the max-stress one.
+It is up to √2 above it, where tension and shear peak together, as at that fillet. The full von Mises is lower than
+the in-plane one where the layers are squeezed while the layer plane is compressed harder (a gear tooth, a clamped
+boss); elsewhere it is higher. Gyropup's turret uses `criterion='max-stress'`, `bulk_stress='in-plane'` and
+S_s = S_z / 2. On its pan pinion, at one corner where the layers are squeezed, the full von Mises is 20.4 MPa and the
+in-plane one 23.4. So the defaults pass that corner at 2.0, and the turret's check fails it at 1.75. Neither S_s is
+measured: S_z / 2 is 13 % below S_z / √3, so it is the stricter in shear. A coupon settles it.
+
+**How far past the worst corner** (`stats`, `worst['resolution']`, `render(field=)`). The safety factor comes from
+one element corner, so it cannot tell a peak at one re-entrant edge from a region. `lc.stats` can. For each check, and
+for the governing one (`utilisation`), it gives:
+
+- `max`, the peak utilisation;
+- `p99`, the utilisation 99 % of the judged volume stays at or below;
+- `over_1`, the number of judged elements past the allowable, and their volume (`over_1_volume_mm3`, and its share
+  of the judged volume).
+
+The p99 is weighted by volume, so a mesh made finer round the peak with `refine=` does not pull it up. A count of
+elements past 1 grows with such a mesh; their volume settles. Each element counts whole, from its highest corner, so
+the volume is an upper bound. `lc.worst['resolution']` measures the mesh at the worst corner, as `result['mesh']['peak']`
+does at the design peak. A corner at a sharp re-entrant edge, or in a wall one or two elements thick, is not a
+result. `st.render(path, field=lc)` draws the check, as in the figure: black past the allowable, grey where not judged.
+
+```python
+lc.stats['utilisation']    # {'max': 1.06, 'p99': 0.59, 'over_1': 55, 'over_1_volume_mm3': 1.98, ...}
+lc.worst['resolution']     # where that corner sits, the wall round it, elements across, an inside radius
+st.render('exports/fea/bracket-layers.png', field=lc, vmax=1.0)    # or field=lc.modes['shear']
+```
+
 Its limits:
 
 - It is a screening check, not a qualification.
@@ -603,7 +652,7 @@ Its limits:
 - Walls, seams and infill are not modelled.
 - Test a printed part.
 
-<details><summary>Where the bond check comes from, and the in-plane allowables</summary>
+<details><summary>Where the checks come from, hand corners, and the in-plane allowables</summary>
 
 The traction on a plane with normal n is t = σ·n; σn = n·t, and τn = |t − σn n|. The bond check is the quadratic
 interaction of the opening stress and the shear on the bond plane, (⟨σn⟩ / S_z)² + (τn / S_s)² = 1 at failure. This is
@@ -611,8 +660,29 @@ the form of Brewer and Lagace's delamination-onset criterion (J. Compos. Mater. 
 here, without their averaging over a distance. Compression across the layers closes the bond, so it is left out of the
 bond check, and stays in the bulk check. With S_s = S_z / √3 it reads √(⟨σn⟩² + 3τn²) / S_z.
 
+The maximum-stress criterion takes each stress against its own strength, with no interaction (R. M. Jones, *Mechanics
+of Composite Materials*, 2nd ed., 1999, chapter 2): here ⟨σn⟩ / S_z and τn / S_s. For one S_s,
+√(a² + b²) ≥ max(a, b), so the combined bond is never below it; the two are equal where either term is zero, and √2
+apart where the terms are equal.
+
 The bulk check is the study's own von Mises check, against the in-plane allowable. Gyropup used both checks for its
-hip frame before they were in the toolkit (#144).
+hip frame before they were in the toolkit (#144). The in-plane one takes the plane-stress von Mises of the layer
+plane's own stress, √(σ11² − σ11σ22 + σ22² + 3σ12²) in any two in-plane axes. Written in those axes, the full one is
+
+vm² = vm_in² + σn² − σn(σ11 + σ22) + 3τn²,
+
+so it is the lower exactly where σn(σ11 + σ22 − σn) > 3τn². That needs σn of the same sign as the in-plane sum and
+smaller: layers squeezed while the plane is compressed harder, with little shear between them.
+
+Hand corners, with S_z = 20, S_s = 20 / √3 and S_xy = 30 MPa and the layer normal z (utilisations; `tests/test_fea_layers.py`
+checks each, and that the options reproduce a project's own three maximum-stress checks):
+
+| Corner (MPa) | Bond, combined | Bond, max-stress | Bulk, full | Bulk, in-plane |
+|---|---:|---:|---:|---:|
+| σn 10, τn 5: tension and shear together | 0.66 | 0.50 | 0.44 | 0 |
+| σn 10, τn 5.77: the two terms equal | 0.71 | 0.50 | 0.47 | 0 |
+| σ11 20, τn 5: in-plane tension, interlayer shear | 0.43 | 0.43 | 0.73 | 0.67 |
+| σ11 −32, σn −12: squeezed, the plane compressed harder | 0 | 0 | 0.93 (28 MPa) | 1.07 (32 MPa) |
 
 S_z is the row's strength, an allowable below the sheet's Z tensile strength. S_xy is that allowable times the sheet's
 X-Y / Z tensile strength ratio, the lowest over the editions read. So in the layer plane it sits at least as far below

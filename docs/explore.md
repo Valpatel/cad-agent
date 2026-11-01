@@ -89,7 +89,7 @@ cad:
 
 | Key | Default | Meaning |
 |---|---|---|
-| `catalogue` | none | globs or paths of catalogue files, relative to the project root or absolute (`**` works); a pattern that matches nothing is an error. Required when `slots` are declared; without slots it may be left out, and the designs differ only in their `params` (their BOMs are empty, so cost and mass are 0 unless the evaluator adds lines or returns them) |
+| `catalogue` | none | globs or paths of catalogue files, relative to the project root or absolute (`**` works); a pattern that matches nothing is an error; required only when `slots` are declared (without it, designs differ only in `params` and their BOMs are empty) |
 | `categories` | any | allowed categories |
 | `currency` | `usd` | three-letter code; prices are read from `price_<currency>` |
 | `max_price_age_days` | `90` | warn about prices checked longer ago; `null` turns it off |

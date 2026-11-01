@@ -18,7 +18,8 @@
  * a rectangle (Roark, Table 10.1) and the Covestro guide's allowable shear strain (1 + nu) eps (Section C). The
  * allowable is the filament's across the layers whichever way the bar lies: lying flat, its short sides still shear
  * the layer interfaces at 74 to 100 % of the peak. The force uses G from the highest datasheet modulus, so it is an
- * upper bound. `drawTorsionSnap()` is pure, so tools/torsion-snap-still.mjs draws the still from the same code. Nothing
+ * upper bound at small twist; past it (the trapeze effect adds more than a tenth to the torque) the note says so.
+ * `drawTorsionSnap()` is pure, so tools/torsion-snap-still.mjs draws the still from the same code. Nothing
  * moves on its own. No dependencies, no shadow DOM, no inline script. Each change fires `cad-torsion-snap-change` with
  * `{ state, result }`.
  */
@@ -83,8 +84,14 @@ export function summary(s, r) {
   return `Torsion-snap explorer: ${s.bars === 2 ? `two bars of ${r.material.name}, each` : `one bar of ${r.material.name},`} ${mm(s.length)} long, ` +
     `${Number(s.width.toFixed(2))} × ${mm(s.thickness)}, twisted ${deg(s.twist)} by a ${mm(s.lever)} lever: peak shear strain ` +
     `${pct(r.shearStrain)}, ${Math.round(r.ratio * 100)} % of the ${pct(r.allowableShearStrain)} allowed across the layers, ` +
-    `${r.passes ? 'a pass' : 'a fail'}; ${num(r.force, 'N')} at the lever. The allowable is reached at ${deg(r.permissibleTwist / DEG)}.`;
+    `${r.passes ? 'a pass' : 'a fail'}; ${num(r.force, 'N')} at the lever. The allowable is reached at ${deg(r.permissibleTwist / DEG)}.` +
+    (r.smallTwist ? '' : ` ${largeTwist(r)}`);
 }
+
+/** The warning for a twist past the closed form's reach (the trapeze effect adds more than a tenth to the torque). */
+export const largeTwist = r => `Twisted far: the edges stretch (the trapeze effect), adding ${Math.round(r.trapezeRatio * 100)} % to the ` +
+  `torque and ${pct(r.edgeAxialStrain)} strain along them. The check leaves that out.`;
+const NOTE = 'Saint-Venant torsion with the Covestro allowable (1 + ν) ε across the layers. A closed form, not proof: print a test bar and measure.';
 
 const hex = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
 const mix = (a, b, t) => '#' + hex(a).map((v, i) => Math.round(v + (hex(b)[i] - v) * t).toString(16).padStart(2, '0')).join('');
@@ -286,7 +293,7 @@ export class CadTorsionSnap extends Base {
 <div class="ts-field"><label for="${id('material')}">Filament</label><select id="${id('material')}" name="material">${MATERIALS.map(m =>
   `<option value="${esc(m.key)}">${esc(m.name)}</option>`).join('')}</select></div>
 <label class="ts-check"><input type="checkbox" name="repeated"> Opened often (60 % of the allowable)</label></div></div>
-<p class="ts-note">Saint-Venant torsion with the Covestro allowable (1 + ν) ε across the layers. A closed form, not proof: print a test bar and measure.</p>
+<p class="ts-note" data-out="note">${esc(NOTE)}</p>
 <p class="ts-status" role="status" aria-live="polite"></p></div>`);
     this.figure = this.querySelector('.ts-figure');
     this.out = Object.fromEntries([...this.querySelectorAll('[data-out]')].map(n => [n.dataset.out, n]));
@@ -337,6 +344,8 @@ export class CadTorsionSnap extends Base {
     this.out['verdict-tile'].dataset.verdict = r.passes ? 'pass' : 'fail';
     this.out.force.textContent = num(r.force, 'N');
     this.out.torque.textContent = `torque ${num(r.torque * 1e3, 'N·mm')}`;
+    this.out.note.textContent = r.smallTwist ? NOTE : largeTwist(r);
+    if (r.smallTwist) delete this.out.note.dataset.warn; else this.out.note.dataset.warn = '';
     this.said = summary(s, r);
     this.paint();
     if (announce) {
@@ -345,7 +354,8 @@ export class CadTorsionSnap extends Base {
     }
     this.dispatchEvent(new CustomEvent('cad-torsion-snap-change', { bubbles: true, detail: { state: { ...s }, result: {
       shearStrain: r.shearStrain, allowableShearStrain: r.allowableShearStrain, ratio: r.ratio, passes: r.passes, torque: r.torque,
-      force: r.force, stiffness: r.stiffness, permissibleTwist: r.permissibleTwist, material: r.material.key } } }));
+      force: r.force, stiffness: r.stiffness, permissibleTwist: r.permissibleTwist, trapezeRatio: r.trapezeRatio,
+      smallTwist: r.smallTwist, material: r.material.key } } }));
   }
 }
 

@@ -18,6 +18,8 @@ from typing import Any, Dict
 from cadagent.formulas._registry import cite, formula
 from cadagent.mechanical.compliant import snapfit
 
+# torsion_snap_bar flags a twist as large when the trapeze effect adds more than this share to the torque
+SMALL_TWIST_TRAPEZE = 0.1
 _SV = "Saint-Venant torsion: linear elastic, isotropic, small twist, ends free to warp, away from ends and steps"
 
 
@@ -111,9 +113,13 @@ def _positive(**values: float) -> None:
                 "bars": "1 (the lever at the free end of one bar) or 2 (a rocker between two bars, Fig. 21)",
                 "poisson": "dimensionless"},
          returns="dict: shear_strain, allowable_shear_strain, ratio, passes, shear_modulus (Pa), stiffness (N m/rad, "
-                 "all bars), torque (N m), force (N at the lever), travel (m at the lever) and permissible_twist (rad)",
+                 "all bars), torque (N m), force (N at the lever), travel (m at the lever), permissible_twist (rad), "
+                 "and for large twist: trapeze_ratio, edge_axial_strain and small_twist",
          limits=(_SV, "the guide's allowable shear strain (1 + nu) eps: the maximum-shear-stress criterion, in strain",
-                 "small twist: a thin strip twisted far stiffens (the trapeze effect), which is ignored",
+                 "small twist: twisted far, a wide thin bar's edges stretch along it (the trapeze effect). Its torque "
+                 "gains E t b^5 (theta / L)^3 / 360 and its edges an axial strain (theta / L)^2 b^2 / 12, which the "
+                 "torque, the force and the shear check leave out; trapeze_ratio is that torque over the Saint-Venant "
+                 "torque, and small_twist is false above 0.1",
                  "isotropic G = E / 2(1 + nu) from the tensile modulus: a printed bar is not isotropic, and the secant "
                  "modulus at the design strain is lower, so the force is an upper bound",
                  "a pass has no extra margin: the strain is within the allowable, nothing more"),
@@ -139,6 +145,15 @@ def torsion_snap_bar(length: float, width: float, thickness: float, twist: float
     g = shear_modulus(modulus, poisson)
     stiffness = bars * torsion_bar_stiffness(length, g, torsion_constant_rect(width, thickness))
     torque = stiffness * twist
+    # The trapeze (Buckley) effect: twisted, the fibres off the axis run as helices and stretch, and with no net
+    # axial force the edges are in tension, eps(y) = (theta')^2 (y^2 - b^2 / 12) / 2 across the long side b. Their
+    # pull, leaning at y theta', adds a torque integral of E eps y^2 theta' t dy = E t b^5 theta'^3 / 360 (derived in
+    # tests/test_torsion_snap_boss.py). A thin-strip result, used as a flag for when the closed form stops holding.
+    long_side, short_side, rate = max(width, thickness), min(width, thickness), twist / length
+    b2 = long_side * long_side
+    trapeze = modulus * short_side * b2 * b2 * long_side * rate * rate / (360.0 * torsion_constant_rect(width, thickness) * g)
     return {"shear_strain": strain, "allowable_shear_strain": allowable, "ratio": strain / allowable,
             "passes": strain <= allowable, "shear_modulus": g, "stiffness": stiffness, "torque": torque,
-            "force": torque / lever, "travel": lever * math.sin(twist), "permissible_twist": allowable / per_radian}
+            "force": torque / lever, "travel": lever * math.sin(twist), "permissible_twist": allowable / per_radian,
+            "trapeze_ratio": trapeze, "edge_axial_strain": rate * rate * long_side * long_side / 12.0,
+            "small_twist": trapeze <= SMALL_TWIST_TRAPEZE}

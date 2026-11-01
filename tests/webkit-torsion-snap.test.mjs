@@ -35,6 +35,11 @@ test('the page\'s lessons hold: 86 % at 8°, fails past 9.3°, opened often it f
   assert.ok(at({ material: 'petg-polymaker' }).passes && !at({ material: 'copa-polymaker-dry' }).passes);
   assert.match(summary(DEFAULTS, at({})), /^Torsion-snap explorer: two bars of Bambu PLA Basic, each 15 mm long, 4 × 1\.2 mm, twisted 8° by a 10 mm lever: peak shear strain 1\.11 %/);
   assert.match(summary({ ...DEFAULTS, bars: 1 }, at({ bars: 1 })), /^Torsion-snap explorer: one bar of Bambu PLA Basic, 15 mm long/);
+  // twisted far, a wide thin bar's trapeze effect is flagged (the page's 30 × 12 × 0.6 mm bar at 30°); the default is not
+  assert.ok(at({}).smallTwist && !/trapeze/.test(summary(DEFAULTS, at({}))));
+  const far = { ...DEFAULTS, length: 30, width: 12, thickness: 0.6, twist: 30 };
+  assert.ok(!at(far).smallTwist);
+  assert.match(summary(far, at(far)), /Twisted far: the edges stretch \(the trapeze effect\), adding 41 % to the torque and 0\.37 % strain along them\./);
 });
 
 test('every corner of the controls draws inside the figure, in both themes and layouts', () => {

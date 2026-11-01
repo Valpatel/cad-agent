@@ -102,8 +102,9 @@ export function summary(s, r) {
   const d = r.screw.diameter * 1e3;
   return `Screw-boss explorer: a DELTA PT ${s.size} screw (${mm(d)}) in a ${mm(s.outside)} boss of ${r.material.name}, ` +
     `${s.axis === 'upright' ? 'printed upright' : 'printed lying on its side'}, ${mm(s.engagement)} of thread, tightened to ${nm(s.torque)}: ` +
-    `clamp ${r.preload.low.toFixed(0)} to ${newtons(r.preload.high)}; the thread strips at ${newtons(r.stripForce)} ` +
-    `(${nm(r.stripTorque.low)} to ${nm(r.stripTorque.high)}), so tighten to at most ${nm(r.torqueCeiling)} and only if the ` +
+    `clamp ${r.preload.low.toFixed(0)} to ${newtons(r.preload.high)} (the low end if the drive torque, which makes no clamp, is the ` +
+    `most the window allows); the thread strips at ${newtons(r.stripForce)}, at ${nm(r.stripTorque.low)} to ${nm(r.stripTorque.high)} ` +
+    `over the drive torque, so tighten to at most ${nm(r.torqueCeiling)} and only if the ` +
     `measured drive torque is below ${nm(r.driveTorqueLimit)}; hoop stress ${mpa(r.hoopStress)}, ${Math.round(r.hoopRatio * 100)} % ` +
     `of the strength. ${r.passes ? 'A pass' : 'A fail'}: ${verdict(r)}. A starting point to test, not a rating.`;
 }
@@ -170,7 +171,7 @@ export function drawPrintedBoss(s, r, { still = false, label = summary(s, r), pa
   // ---- the torque window: a ladder from 0 N m up, with its marks labelled on the right
   const tMax = Math.max(r.stripTorque.high, s.torque) * 1.06, T = t => LADDER.y1 - (LADDER.y1 - LADDER.y0) * t / tMax;
   const marks = [
-    { key: 'strip', y: (T(r.stripTorque.low) + T(r.stripTorque.high)) / 2, text: compact ? `strips ≥ ${nm(r.stripTorque.low)}` : `thread strips: ${r.stripTorque.low.toFixed(2)} to ${nm(r.stripTorque.high)}`, colour: P.rust, weight: 600 },
+    { key: 'strip', y: (T(r.stripTorque.low) + T(r.stripTorque.high)) / 2, text: compact ? `strips ≥ ${nm(r.stripTorque.low)}` : `strips: drive + ${r.stripTorque.low.toFixed(2)} to ${nm(r.stripTorque.high)}`, colour: P.rust, weight: 600 },
     { key: 'ceiling', y: T(r.torqueCeiling), text: compact ? `max ${nm(r.torqueCeiling)}` : `tighten at most ${nm(r.torqueCeiling)}`, colour: P.ink, weight: 600 },
     { key: 'torque', y: T(s.torque), text: compact ? `you ${nm(s.torque)}` : `your torque ${nm(s.torque)}`, colour: r.torqueOk ? P.ink : P.rust, weight: 700 },
     { key: 'drive', y: T(r.driveTorqueLimit / 2), text: compact ? `drive < ${nm(r.driveTorqueLimit)}` : `drive must measure < ${nm(r.driveTorqueLimit)}`, colour: P.muted, weight: 500 },
@@ -332,9 +333,9 @@ ${slider('outside', CONTROLS.outside)}${slider('engagement', CONTROLS.engagement
       this.querySelector(`input[name="${k}"]`).setAttribute('aria-valuetext', k === 'torque' ? `${value} newton metres` : `${value} millimetres`);
     }
     this.out.clamp.textContent = `${r.preload.low.toFixed(0)}–${newtons(r.preload.high)}`;
-    this.out['clamp-note'].textContent = `friction ${SCREWS.friction[0].toFixed(2)}–${SCREWS.friction[1].toFixed(2)}`;
+    this.out['clamp-note'].textContent = 'less the drive torque';
     this.out.strip.textContent = newtons(r.stripForce);
-    this.out['strip-note'].textContent = `by ${nm(r.stripTorque.low)}–${nm(r.stripTorque.high)}`;
+    this.out['strip-note'].textContent = `drive + ${nm(r.stripTorque.low)}–${nm(r.stripTorque.high)}`;
     this.out.verdict.textContent = r.passes ? 'PASS' : 'FAIL';
     this.out['verdict-note'].textContent = r.passes ? `tighten ≤ ${nm(r.torqueCeiling)}` : verdict(r, false);
     this.out['verdict-tile'].dataset.verdict = r.passes ? 'pass' : 'fail';

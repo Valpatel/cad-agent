@@ -27,6 +27,8 @@
 export const DESIGN_K_RECT = Object.freeze({ 1: 0.67, 2: 1.09, 3: 0.86 });
 export const DESIGNS = Object.freeze({ 1: 'constant section', 2: 'thickness tapered to h/2 at the tip', 3: 'width tapered to b/4 at the tip' });
 export const SMALL_DEFLECTION = 0.1;
+/** torsionSnapBar flags a twist as large when the trapeze effect adds more than this share to the torque. */
+export const SMALL_TWIST_TRAPEZE = 0.1;
 const THICKNESS_TIP_RATIO = 0.5, WIDTH_TIP_RATIO = 0.25;
 
 // A whole number that names a design, as the Python's `design in DESIGNS` (so "2", 2.5 and inherited keys such as
@@ -306,7 +308,9 @@ export function torsionBarStiffness(length, shearModulus, constant) {
 
 /** A rectangular torsion bar twisted by a lever (torsion.py, torsion_snap_bar): { shearStrain, allowableShearStrain
  * ((1 + nu) eps, the Covestro guide's), ratio, passes, shearModulus, stiffness (all bars), torque, force (at the
- * lever), travel (lever sin theta), permissibleTwist }. Two bars take the same twist and double the torque. */
+ * lever), travel (lever sin theta), permissibleTwist, and for large twist trapezeRatio (the trapeze effect's torque
+ * over the Saint-Venant torque, E t b^5 theta'^3 / 360 over K G theta'), edgeAxialStrain (theta'^2 b^2 / 12) and
+ * smallTwist }. Two bars take the same twist and double the torque. */
 export function torsionSnapBar(length, width, thickness, twist, modulus, allowableStrain, lever, bars = 1, poisson = POISSON_PLASTICS) {
   for (const [name, v] of [['length', length], ['width', width], ['thickness', thickness], ['modulus', modulus],
     ['allowable_strain', allowableStrain], ['lever', lever]]) positive(name, v);
@@ -319,8 +323,12 @@ export function torsionSnapBar(length, width, thickness, twist, modulus, allowab
   const shearModulus = modulus / (2 * (1 + poisson));
   const stiffness = bars * torsionBarStiffness(length, shearModulus, torsionConstantRect(width, thickness));
   const torque = stiffness * twist;
+  const longSide = Math.max(width, thickness), shortSide = Math.min(width, thickness), rate = twist / length;
+  const b2 = longSide * longSide;
+  const trapezeRatio = modulus * shortSide * b2 * b2 * longSide * rate * rate / (360 * torsionConstantRect(width, thickness) * shearModulus);
   return { shearStrain, allowableShearStrain, ratio: shearStrain / allowableShearStrain, passes: shearStrain <= allowableShearStrain,
-    shearModulus, stiffness, torque, force: torque / lever, travel: lever * Math.sin(twist), permissibleTwist: allowableShearStrain / perRadian };
+    shearModulus, stiffness, torque, force: torque / lever, travel: lever * Math.sin(twist), permissibleTwist: allowableShearStrain / perRadian,
+    trapezeRatio, edgeAxialStrain: rate * rate * longSide * longSide / 12, smallTwist: trapezeRatio <= SMALL_TWIST_TRAPEZE };
 }
 
 // ----------------------------------------------------------------------------- screws (screws.py)
@@ -377,31 +385,37 @@ export function bossHoopStress(pressure, innerDiameter, outerDiameter) {
 }
 
 /** A thread-forming screw tightened in a plastic boss (screws.py, screw_boss): { nutFactor, preload, stripTorque as
- * {low, high}; stripForce, margin {low, high}, torqueCeiling, driveTorqueLimit, radialPressure, hoopStress,
- * hoopRatio, outsideRatio, engagementRatio, torqueOk, outsideOk, engagementOk, hoopOk, passes }. */
+ * {low, high}; stripForce, margin {low, high}, torqueCeiling, driveTorqueLimit, driveTorque, radialPressure,
+ * hoopStress, hoopRatio, outsideRatio, engagementRatio, torqueOk, outsideOk, engagementOk, hoopOk, passes }. The drive
+ * torque forms the thread and makes no clamp: measured, it comes off the torque and adds to the stripping torque; not
+ * measured (null), the clamp band runs from the most drive torque the window allows (T / 1.2) to none, and the
+ * stripping torque is the clamp's share alone. */
 export function screwBoss(diameter, pitch, engagement, outsideDiameter, torque, shearStrength, hoopStrength,
-  frictionLow = 0.2, frictionHigh = 0.5, flankAngle = FORMING_FLANK) {
+  frictionLow = 0.2, frictionHigh = 0.5, flankAngle = FORMING_FLANK, driveTorque = null) {
   for (const [name, v] of [['diameter', diameter], ['pitch', pitch], ['engagement', engagement], ['torque', torque],
     ['shear_strength', shearStrength], ['hoop_strength', hoopStrength]]) positive(name, v);
   positive('friction_low', frictionLow, false);
   if (!isNum(frictionHigh) || !(frictionHigh >= frictionLow)) throw new RangeError(`friction_high must be finite and at least friction_low, not ${frictionHigh}`);
   if (!isNum(outsideDiameter) || !(outsideDiameter > diameter)) throw new RangeError(`outside_diameter must be finite and above the screw's diameter, not ${outsideDiameter}`);
+  if (driveTorque !== null) positive('drive_torque', driveTorque, false);
   const kLow = nutFactor(diameter, pitch, frictionLow, frictionLow, flankAngle);
   const kHigh = nutFactor(diameter, pitch, frictionHigh, frictionHigh, flankAngle);
   const strip = threadStripForce(diameter, pitch, engagement, shearStrength, 'internal');
-  const stripLow = torqueForPreload(strip, diameter, kLow), stripHigh = torqueForPreload(strip, diameter, kHigh);
-  const preloadHigh = preloadFromTorque(torque, diameter, kLow);
+  const drive = driveTorque === null ? 0 : driveTorque;
+  const driveMost = driveTorque === null ? torque / BOSS.tightenOverDrive : driveTorque;
+  const stripLow = drive + torqueForPreload(strip, diameter, kLow), stripHigh = drive + torqueForPreload(strip, diameter, kHigh);
+  const preloadHigh = preloadFromTorque(Math.max(torque - drive, 0), diameter, kLow);
   const pressure = threadRadialPressure(preloadHigh, diameter, engagement, flankAngle);
   const hoop = bossHoopStress(pressure, diameter, outsideDiameter);
   const ceiling = BOSS.tightenOverStrip * stripLow;
   const out = { nutFactor: { low: kLow, high: kHigh },
-    preload: { low: preloadFromTorque(torque, diameter, kHigh), high: preloadHigh },
+    preload: { low: preloadFromTorque(Math.max(torque - driveMost, 0), diameter, kHigh), high: preloadHigh },
     stripForce: strip, stripTorque: { low: stripLow, high: stripHigh },
     margin: { low: stripLow / torque, high: stripHigh / torque },
-    torqueCeiling: ceiling, driveTorqueLimit: torque / BOSS.tightenOverDrive,
+    torqueCeiling: ceiling, driveTorqueLimit: torque / BOSS.tightenOverDrive, driveTorque,
     radialPressure: pressure, hoopStress: hoop, hoopRatio: hoop / hoopStrength,
     outsideRatio: outsideDiameter / diameter, engagementRatio: engagement / diameter };
-  out.torqueOk = torque <= ceiling;
+  out.torqueOk = torque <= ceiling && (driveTorque === null || torque >= BOSS.tightenOverDrive * driveTorque);
   out.outsideOk = out.outsideRatio >= BOSS.outside * (1 - RATIO_SLACK);
   out.engagementOk = out.engagementRatio >= BOSS.engagement * (1 - RATIO_SLACK);
   out.hoopOk = out.hoopRatio < 1;

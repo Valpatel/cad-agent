@@ -3,7 +3,8 @@ one of the datasheet filaments of :data:`cadagent.mechanical.compliant.allowable
 
     from cadagent.mechanical.bosses import printed_boss
     printed_boss("pla-bambu-basic", size="30", outside_mm=6, engagement_mm=6, torque_nm=0.3)
-    # clamp 132-374 N; the boss's thread strips at 767 N (0.62-1.74 N m); tighten to at most 0.31 N m
+    # clamp 22-374 N (the drive torque unmeasured); the boss's thread strips at 767 N (0.62-1.74 N m) over the
+    # drive torque; tighten to at most 0.31 N m, if the drive torque measures under 0.25 N m
 
 The closed forms are :func:`cadagent.formulas.screw_boss` and the functions it calls (Shigley's torque-preload
 relation and thread statics, the ISO 68-1 stripping area, Lame's thick-walled cylinder), with Covestro's tightening
@@ -14,18 +15,19 @@ window and the screw maker's boss proportions. This module picks the numbers for
   screw, and in a printed boss that cylinder crosses the layers whichever way the boss stands.
 * **Hoop strength**: the lowest datasheet tensile strength along the layers for an upright boss (its hoop stress runs
   round the perimeters, in the layer plane), across them for a boss lying on its side (the hoop stress crosses the
-  layers at its top and bottom).
+  layers at the sides of the bore).
 * **Friction**, steel on plastic, under the head and on the flanks: 0.20 to 0.65, the span of the Covestro snap-fit
   guide's Table 3 (PTFE aside). PLA and PETG are not in that table, and no printed surface was measured.
 
 **What is missing.** No published pull-out or stripping data for thread-forming screws in FDM bosses was found
 (2026-11-01). The datasheets' strengths are for 100 % infill bars; a boss is a few perimeters round a hole, the thread
 is formed across layer seams, and the drive torque that forms it is not computed here. So a result is a starting
-point for a test boss (drive torque, stripping torque and pull-out, measured), not a rating.
+point for a test boss (drive torque, stripping torque and pull-out, measured), not a rating. The drive torque makes
+no clamp, so until it is measured the clamp is a wide band; pass the measured value as ``drive_torque_nm``.
 """
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from cadagent import formulas as fx
 from cadagent.mechanical.compliant.allowables import PRINTED, STATUS
@@ -62,9 +64,10 @@ LIMITS = (
 
 
 def printed_boss(material: str, size: str, outside_mm: float, engagement_mm: float, torque_nm: float,
-                 axis: str = "upright") -> Dict[str, Any]:
+                 axis: str = "upright", drive_torque_nm: Optional[float] = None) -> Dict[str, Any]:
     """One DELTA PT screw of ``size`` in a printed boss: :func:`cadagent.formulas.screw_boss` with the filament's
-    strengths and the friction band, its inputs and where each number came from, and the limits."""
+    strengths and the friction band, its inputs and where each number came from, and the limits. ``drive_torque_nm``
+    is the torque measured to drive the screw into a test boss before its head seats; None until it is measured."""
     if material not in PRINTED:
         raise ValueError(f"material must be one of {sorted(PRINTED)}, not {material!r}")
     if size not in DELTA_PT:
@@ -75,9 +78,10 @@ def printed_boss(material: str, size: str, outside_mm: float, engagement_mm: flo
     shear = SHEAR_FROM_TENSILE * m.strength("across") * 1e6
     hoop = m.strength(AXES[axis]) * 1e6
     result = fx.screw_boss(screw["diameter_mm"] * 1e-3, screw["pitch_mm"] * 1e-3, engagement_mm * 1e-3,
-                           outside_mm * 1e-3, torque_nm, shear, hoop, *FRICTION_BAND)
+                           outside_mm * 1e-3, torque_nm, shear, hoop, *FRICTION_BAND, drive_torque=drive_torque_nm)
     return {**result, "inputs": {"material": material, "size": size, "outside_mm": outside_mm,
-                                 "engagement_mm": engagement_mm, "torque_nm": torque_nm, "axis": axis},
+                                 "engagement_mm": engagement_mm, "torque_nm": torque_nm, "axis": axis,
+                                 "drive_torque_nm": drive_torque_nm},
             "screw": {**screw, "source": DELTA_PT_SOURCE},
             "material": {"name": m.name, "shear_strength": shear, "hoop_strength": hoop,
                          "shear_sheet": m.strength_sheet("across").label,

@@ -221,7 +221,7 @@ def torsion_snap(bar_length: float, bar_radius: float, strain: float, secant_mpa
 
     gamma_pm ~ (1 + nu) eps_pm; phi_pm = 180/pi * gamma_pm * l / r; G = Es / (2 (1 + nu)); Ip = pi r^4 / 2;
     P * lever = bars * G * Ip * gamma / r. The guide's factor 2 is for two bars (Fig. 21). For a rectangular bar and
-    a given twist, see :func:`cadagent.formulas.torsion_snap`."""
+    a given twist, see :func:`cadagent.formulas.torsion_snap_bar`."""
     gamma = torsion_allowable_shear(strain, poisson)
     phi_deg = math.degrees(gamma * bar_length / bar_radius)
     g = secant_mpa / (2.0 * (1.0 + poisson))

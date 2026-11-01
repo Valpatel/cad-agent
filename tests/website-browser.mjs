@@ -39,7 +39,9 @@ const EXPLORERS = [
     radio: { label: 'One bar', changes: 'force', check: (before, after) => Math.abs(parseFloat(after) - parseFloat(before) / 2) < 0.011 },
     contrast: ['.ts-tile b', '.ts-note', '.ts-tile span:not(.ts-k)', ['[data-part=label-force]', 'fill']],
     shapes: [{ bars: '1', twist: '30', lever: '30', width: '12', thickness: '0.6' }, { length: '4', width: '12', thickness: '4', twist: '30', lever: '3' },
-      { material: 'copa-polymaker-wet', repeated: '', twist: '0' }, {}] },
+      { material: 'copa-polymaker-wet', repeated: '', twist: '0' }, {}],
+    // the note for each shape: the first two twist far enough for the trapeze effect to matter
+    notes: [/trapeze effect/, /trapeze effect/, /^Saint-Venant/, /^Saint-Venant/] },
   { tag: 'cad-printed-boss', prefix: 'pb', route: '/docs/screw-bosses', script: 'printed-boss', still: 'docs/img/fasteners/screw-boss-explorer.svg',
     part: 'torque', attr: 'd', vectors: /^(screwBoss|nutFactor|thread|bossHoop|preload|torqueFor)/, start: { verdict: 'PASS', strip: '767 N' },
     // the torque from 0.30 to 0.40 N m: past half the stripping torque
@@ -815,7 +817,7 @@ async function explorerProblems(x) {
         await page.emulateMedia({ colorScheme: 'light' });
         // the panel holds and the tiles' words fit for extreme settings (the last is the page's own)
         const original = await demo.evaluate(d => Object.fromEntries([...d.attributes].map(a => [a.name, a.value])));
-        for (const shape of x.shapes) {
+        for (const [i, shape] of x.shapes.entries()) {
           const cut = await demo.evaluate((d, [a, o]) => {
             for (const k of d.constructor.observedAttributes) if (k !== 'theme') {
               if (k in a) d.setAttribute(k, a[k]); else if (k in o) d.setAttribute(k, o[k]); else d.removeAttribute(k);
@@ -823,6 +825,8 @@ async function explorerProblems(x) {
             return [...d.querySelectorAll('[class$=-tile] b, [class$=-tile] span')].filter(n => n.scrollWidth > n.clientWidth + 1).map(n => n.textContent);
           }, [shape, original]);
           if (cut.length) say(`${JSON.stringify(shape)}: tile text cut off: ${cut.join('; ')}`);
+          const note = x.notes?.[i] && await demo.locator(`.${px}-note`).textContent();
+          if (note && !x.notes[i].test(note)) say(`${JSON.stringify(shape)}: the note reads "${note}", not ${x.notes[i]}`);
           const after = await overflow(demo);
           if (after.over > 0 || after.out) say(`${JSON.stringify(shape)}: the panel overflows (${after.over}px, ${after.out} elements)`);
         }

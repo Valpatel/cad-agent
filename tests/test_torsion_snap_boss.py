@@ -32,7 +32,7 @@ def _series(aspect, terms=200):
 
 @pytest.mark.parametrize("aspect", [1, 1.136, 1.5, 2, 3, 4, 6, 10, 50])
 def test_peak_shear_strain_against_the_series(aspect):
-    # Roark's polynomial for the peak stress is furthest from the series at aspect 1.136, 0.75 % high (scanned from 1
+    # Roark's polynomial for the peak stress is furthest from the series at aspect 1.136, 0.75 % low (scanned from 1
     # to 50 in steps of 0.001); the page says "within 0.8 %".
     long, _ = _series(aspect)
     got = fx.torsion_shear_strain_rect(1.0, 1.0, 2 * aspect, 2.0)
@@ -93,6 +93,33 @@ def test_torsion_snap_bar_matches_the_guides_round_bar_where_both_apply():
     assert strip["permissible_twist"] == pytest.approx(gamma * 10 / 1, rel=0.002)
     round_bar = snapfit.torsion_snap(bar_length=10, bar_radius=1.0, strain=0.02, secant_mpa=2000, lever_mm=8)
     assert math.radians(round_bar["twist_deg"]) == pytest.approx(gamma * 10 / 1.0, rel=1e-12)
+
+
+def test_the_trapeze_effect_and_when_the_closed_form_stops_holding():
+    # Derivation: twisted at theta' = theta / L, a fibre at y across the long side b runs as a helix and stretches by
+    # (theta' y)^2 / 2. With no net axial force the strain is eps(y) = theta'^2 (y^2 - b^2 / 12) / 2, and each fibre's
+    # pull, leaning at theta' y, has a moment about the axis: dT = E eps(y) (theta' y) y t dy. Integrated here.
+    L, b, t, theta, E = 30 * MM, 12 * MM, 0.6 * MM, math.radians(30), 3.0e9
+    rate, n = theta / L, 20000
+    ys = [-b / 2 + b * (i + 0.5) / n for i in range(n)]
+    eps = [rate * rate * (y * y - b * b / 12) / 2 for y in ys]
+    assert abs(sum(eps)) * b / n < 1e-12                                                    # no net axial force
+    torque = sum(E * e * rate * y * y * t for e, y in zip(eps, ys)) * b / n
+    assert torque == pytest.approx(E * t * b ** 5 * rate ** 3 / 360, rel=1e-6)              # the trapeze term
+    r = fx.torsion_snap_bar(L, b, t, theta, E, 0.02, 10 * MM)
+    assert r["trapeze_ratio"] == pytest.approx(torque / (r["stiffness"] * theta), rel=1e-6)
+    assert r["edge_axial_strain"] == pytest.approx(rate * rate * (b * b / 4 - b * b / 12) / 2, rel=1e-12)
+    # the compliant page's example: 41 % more torque and 0.37 % along the edges, flagged
+    assert not r["small_twist"] and round(100 * r["trapeze_ratio"]) == 41 and f"{100 * r['edge_axial_strain']:.2f}" == "0.37"
+    page = (ROOT / "docs" / "compliant.md").read_text()
+    assert "at 30° gains 41 %, with 0.37 % strain along its edges" in page
+    # either way round the section, and the page's default bar is far inside the closed form's reach
+    assert fx.torsion_snap_bar(L, t, b, theta, E, 0.02, 10 * MM)["trapeze_ratio"] == r["trapeze_ratio"]
+    default = fx.torsion_snap_bar(15 * MM, 4 * MM, 1.2 * MM, math.radians(8), 2.68e9, 0.0095, 10 * MM, 2)
+    assert default["small_twist"] and default["trapeze_ratio"] < 1e-3
+    # a square bar barely warps its edges out of line: the term stays small at the same twist rate
+    assert fx.torsion_snap_bar(L, 2 * MM, 2 * MM, theta, E, 0.02, 10 * MM)["small_twist"]
+    assert fx.SMALL_TWIST_TRAPEZE == 0.1
 
 
 @pytest.mark.parametrize("bad", [dict(length=0), dict(width=-1e-3), dict(thickness=math.nan), dict(twist=-0.1),
@@ -157,12 +184,14 @@ def test_screw_boss_is_its_parts_and_covestros_window():
     k_lo = fx.nut_factor(d, P, 0.2, 0.2, math.radians(30))
     k_hi = fx.nut_factor(d, P, 0.5, 0.5, math.radians(30))
     assert r["nut_factor"] == {"low": k_lo, "high": k_hi}
-    assert r["preload"]["high"] * k_lo * d == pytest.approx(T, rel=1e-12)              # T = K F d
-    assert r["preload"]["low"] * k_hi * d == pytest.approx(T, rel=1e-12)
+    assert r["preload"]["high"] * k_lo * d == pytest.approx(T, rel=1e-12)              # T = K F d, no drive torque
+    # the drive torque makes no clamp: unmeasured, the low end takes the most the window allows, T / 1.2
+    assert r["preload"]["low"] * k_hi * d == pytest.approx(T - T / 1.2, rel=1e-12)
+    assert r["drive_torque"] is None
     assert r["strip_force"] == fx.thread_strip_force(d, P, Le, tau)                     # 0.875 pi d Le tau
     assert r["strip_force"] == pytest.approx(0.875 * math.pi * d * Le * tau, rel=1e-12)
     assert r["strip_torque"]["low"] == pytest.approx(k_lo * r["strip_force"] * d, rel=1e-12)
-    # the margin is the strip torque over the applied torque, and equally the strip force over the clamp
+    # the margin is the strip torque over the applied torque, and (with no drive torque) the strip force over the clamp
     assert r["margin"]["low"] == pytest.approx(r["strip_force"] / r["preload"]["high"], rel=1e-12)
     # Covestro: tighten to at most half the stripping torque (taken at the low end of the band), and at least 1.2 x
     # the drive torque, so this tightening torque allows a measured drive torque of up to T / 1.2
@@ -182,8 +211,34 @@ def test_screw_boss_is_its_parts_and_covestros_window():
         assert fx.screw_boss(dd * MM, P, 2 * dd * MM, 2 * dd * MM, 0.1, tau, hoop)["outside_ok"]
 
 
+def test_screw_boss_takes_off_a_measured_drive_torque():
+    # The drive torque forms the thread and makes no clamp: the clamp is (T - drive) / K d, the thread strips at the
+    # drive torque plus K F d, and Covestro's window runs from 1.2 x the drive torque to half that stripping torque.
+    d, P, Le, D, tau, hoop, f = 3 * MM, 1.12 * MM, 6 * MM, 6 * MM, 15.5e6, 35e6, (0.2, 0.65, math.radians(30))
+    none = fx.screw_boss(d, P, Le, D, 0.3, tau, hoop, *f)
+    zero = fx.screw_boss(d, P, Le, D, 0.3, tau, hoop, *f, drive_torque=0.0)
+    most = fx.screw_boss(d, P, Le, D, 0.3, tau, hoop, *f, drive_torque=0.3 / 1.2)
+    # unmeasured, the clamp band spans no drive torque (the high end) to the most the window allows (the low end)
+    assert none["preload"] == {"low": most["preload"]["low"], "high": zero["preload"]["high"]}
+    assert none["strip_torque"] == zero["strip_torque"] and none["hoop_stress"] == zero["hoop_stress"]
+    r = fx.screw_boss(d, P, Le, D, 0.3, tau, hoop, *f, drive_torque=0.2)
+    k_lo, k_hi = r["nut_factor"]["low"], r["nut_factor"]["high"]
+    assert r["preload"]["high"] * k_lo * d == pytest.approx(0.1, rel=1e-12)
+    assert r["preload"]["low"] * k_hi * d == pytest.approx(0.1, rel=1e-12)
+    assert r["strip_torque"]["low"] == pytest.approx(0.2 + k_lo * r["strip_force"] * d, rel=1e-12)
+    assert r["torque_ceiling"] == pytest.approx(0.5 * r["strip_torque"]["low"], rel=1e-12)
+    assert r["hoop_stress"] < none["hoop_stress"] and r["torque_ok"] and r["passes"]
+    # under 1.2 x the drive torque the screw may not seat: the torque check fails though the ceiling is above it
+    low = fx.screw_boss(d, P, Le, D, 0.3, tau, hoop, *f, drive_torque=0.3)
+    assert not low["torque_ok"] and low["torque_ceiling"] > 0.3 and low["preload"] == {"low": 0.0, "high": 0.0}
+    # the printed boss passes it through
+    pb = bosses.printed_boss("pla-bambu-basic", "30", 6, 6, 0.3, drive_torque_nm=0.2)
+    assert pb["inputs"]["drive_torque_nm"] == 0.2 and pb["preload"] == r["preload"]
+
+
 @pytest.mark.parametrize("bad", [dict(diameter=0), dict(torque=0), dict(shear_strength=-1), dict(friction_low=-0.1),
-                                 dict(friction_high=0.1), dict(outside_diameter=3 * MM), dict(engagement=math.inf)])
+                                 dict(friction_high=0.1), dict(outside_diameter=3 * MM), dict(engagement=math.inf),
+                                 dict(drive_torque=-0.1), dict(drive_torque=math.nan), dict(drive_torque="0.1")])
 def test_screw_boss_refuses_what_it_cannot_compute(bad):
     args = dict(diameter=3 * MM, pitch=1.12 * MM, engagement=6 * MM, outside_diameter=6 * MM, torque=0.3,
                 shear_strength=15.5e6, hoop_strength=35e6, friction_low=0.2, friction_high=0.5)
@@ -269,12 +324,16 @@ def test_the_boss_explorer_on_its_page_quotes_the_python():
     r = bosses.printed_boss(attrs["material"], attrs["size"], float(attrs["outside"]), float(attrs["engagement"]),
                             float(attrs["torque"]), attrs["axis"])
     assert f"clamp {r['preload']['low']:.0f} to {r['preload']['high']:.0f} N" in alt
-    assert f"the thread strips at {r['strip_force']:.0f} N ({r['strip_torque']['low']:.2f} to {r['strip_torque']['high']:.2f} N·m)" in alt
+    assert f"the thread strips at {r['strip_force']:.0f} N, at {r['strip_torque']['low']:.2f} to {r['strip_torque']['high']:.2f} N·m over the drive torque" in alt
+    assert r["drive_torque"] is None and "makes no clamp" in alt
+    measured = bosses.printed_boss(attrs["material"], attrs["size"], float(attrs["outside"]), float(attrs["engagement"]),
+                                   float(attrs["torque"]), attrs["axis"], drive_torque_nm=0.2)
+    text = (ROOT / "docs" / "screw-bosses.md").read_text()
+    assert f"measured: {measured['preload']['low']:.0f} to {measured['preload']['high']:.0f} N" in text
     assert f"at most {r['torque_ceiling']:.2f} N·m" in alt and f"below {r['drive_torque_limit']:.2f} N·m" in alt
     assert f"hoop stress {r['hoop_stress'] / 1e6:.2f} MPa, {100 * r['hoop_ratio']:.0f} %" in alt
     assert ("a pass" if r["passes"] else "a fail") in alt
     # the page's "try these" numbers
-    text = (ROOT / "docs" / "screw-bosses.md").read_text()
     at = dict(attrs, outside=float(attrs["outside"]), engagement=float(attrs["engagement"]), torque=float(attrs["torque"]))
     run = lambda **k: bosses.printed_boss(**{"material": at["material"], "size": at["size"], "outside_mm": at["outside"],  # noqa: E731
                                             "engagement_mm": at["engagement"], "torque_nm": at["torque"], "axis": at["axis"], **k})

@@ -27,9 +27,10 @@ from cadagent.formulas.springs import bergstrasser_factor, spring_index, spring_
 from cadagent.formulas.thermal import (fan_curve_line, fan_operating_point, fan_stall_flow, fans_in_parallel,
                                        fans_in_series, film_resistance, system_coefficient, wall_heat_flow,
                                        wall_resistance)
-from cadagent.formulas.torsion import (shear_modulus, torsion_bar_stiffness, torsion_bar_twist,
-                                       torsion_constant_rect, torsion_constant_round, torsion_shear_strain_rect,
+from cadagent.formulas.torsion import (SMALL_TWIST_TRAPEZE, shear_modulus, torsion_bar_stiffness,
+                                       torsion_bar_twist, torsion_constant_rect, torsion_constant_round, torsion_shear_strain_rect,
                                        torsion_shear_stress_rect, torsion_shear_stress_round, torsion_snap_bar)
 
 __all__ = sorted(REGISTRY) + ["BOSS_ENGAGEMENT", "BOSS_HOLE", "BOSS_OUTSIDE", "DESIGNS", "NUT_FACTORS", "REGISTRY",
-                              "SOURCES", "SUPPORTS", "TIGHTEN_OVER_DRIVE", "TIGHTEN_OVER_STRIP", "Formula", "catalogue"]
+                              "SMALL_TWIST_TRAPEZE", "SOURCES", "SUPPORTS", "TIGHTEN_OVER_DRIVE", "TIGHTEN_OVER_STRIP",
+                              "Formula", "catalogue"]

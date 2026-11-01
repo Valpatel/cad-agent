@@ -242,6 +242,7 @@ def torsion_cases(add, refuse):
         for w, t in [(4, 1.2), (2, 2), (12, 0.8)]:
             add("torsion_snap_bar", 15 * mm, w * mm, t * mm, twist, 2.68e9, 0.0095, 10 * mm, 1)
     add("torsion_snap_bar", 15 * mm, 4 * mm, 1.2 * mm, 0.1, 2.68e9, 0.0095, 10 * mm, 2, 0.4)
+    add("torsion_snap_bar", 30 * mm, 12 * mm, 0.6 * mm, math.radians(30), 3.0e9, 0.02, 10 * mm)   # a large twist
     good = [15 * mm, 4 * mm, 1.2 * mm, 0.1, 2.68e9, 0.0095, 10 * mm, 1]
     for i, bad in [(0, 0.0), (1, -1 * mm), (3, -0.1), (4, 0.0), (5, 0.0), (6, 0.0), (7, 3), (7, 1.5), (7, True),
                    (0, "15"), (3, None)]:
@@ -285,10 +286,15 @@ def boss_cases(add, refuse):
                     add("screw_boss", d, P, k_len * d, k_out * d, torque, shear, hoop, *bosses.FRICTION_BAND)
     for dd in (2.2, 2.5, 3.5, 4.5):                   # exactly 2 d, from millimetres
         add("screw_boss", dd * mm, 1.12 * mm, 2 * dd * mm, 2 * dd * mm, 0.1, 15.5e6, 35e6)
+    for drive in (0.0, 0.1, 0.2, 0.25, 0.3, 0.5):     # a measured drive torque: inside, at and past the window
+        add("screw_boss", 3 * mm, 1.12 * mm, 6 * mm, 6 * mm, 0.3, 15.5e6, 35e6, 0.2, 0.65, math.radians(30), drive)
+    add("screw_boss", 3 * mm, 1.12 * mm, 6 * mm, 6 * mm, 0.3, 15.5e6, 35e6, 0.2, 0.65, math.radians(30), None)
     good = [3 * mm, 1.12 * mm, 6 * mm, 6 * mm, 0.3, 15.5e6, 35e6, 0.2, 0.65]
     for i, bad in [(0, 0.0), (1, -1 * mm), (2, -6 * mm), (3, 3 * mm), (3, 2 * mm), (4, 0.0), (5, -1.0), (6, 0.0),
                    (7, -0.1), (8, 0.1), (4, "0.3")]:
         refuse("screw_boss", *good[:i], bad, *good[i + 1:])
+    refuse("screw_boss", *good, math.radians(30), -0.1)
+    refuse("screw_boss", *good, math.radians(30), "0.1")
     refuse("thread_radial_pressure", -1.0, 3 * mm, 6 * mm)
     refuse("thread_radial_pressure", 400.0, 0.0, 6 * mm)
     refuse("thread_radial_pressure", 400.0, 3 * mm, 6 * mm, 0.0)

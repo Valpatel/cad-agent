@@ -178,7 +178,10 @@ and the guide's allowable shear strain, (1 + ν) ε with ν = 0.35 (Section C).
 
 - **Across the layers, always.** However the bar lies, it shears its layer interfaces at 74 to 100 % of the peak
   (lying flat, its short sides do), so the check uses the filament's allowable across the layers.
-- **Force.** From the highest datasheet modulus, so it is an upper bound. The lever is taken as rigid.
+- **Force.** From the highest datasheet modulus, so at small twist it is an upper bound. The lever is taken as rigid.
+- **Small twist.** Twisted far, a wide thin bar's edges stretch along it (the trapeze effect), which stiffens it and
+  strains its edges. The explorer warns when that would add more than a tenth to the torque: a 30 × 12 × 0.6 mm bar
+  at 30° gains 41 %, with 0.37 % strain along its edges, which the check leaves out.
 - **Short bars.** The ends are taken as free to warp. A short bar held at both ends is stiffer and more strained
   near them than this says.
 

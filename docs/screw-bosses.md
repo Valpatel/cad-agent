@@ -16,12 +16,12 @@ and the peach band is where the boss's thread strips. The default is a DELTA PT 
 (outside 2 d, engagement 2 d). Tightened to 0.30 N·m, it sits just inside the window, whose top is 0.31 N·m.
 
 <cad-printed-boss material="pla-bambu-basic" size="30" outside="6" engagement="6" torque="0.3" axis="upright">
-<img src="img/fasteners/screw-boss-explorer.svg" alt="Screw-boss explorer, before its controls load: a DELTA PT 30 screw in a 6 mm PLA boss printed upright with 6 mm of thread, tightened to 0.30 N·m; clamp 132 to 374 N, the thread strips at 767 N (0.62 to 1.74 N·m), so tighten to at most 0.31 N·m, and only if the measured drive torque is below 0.25 N·m; hoop stress 2.95 MPa, 8 % of the strength; a pass" width="640" height="300">
+<img src="img/fasteners/screw-boss-explorer.svg" alt="Screw-boss explorer, before its controls load: a DELTA PT 30 screw in a 6 mm PLA boss printed upright with 6 mm of thread, tightened to 0.30 N·m; clamp 22 to 374 N (the low end if the drive torque, which makes no clamp, is the most the window allows); the thread strips at 767 N, at 0.62 to 1.74 N·m over the drive torque, so tighten to at most 0.31 N·m, and only if the measured drive torque is below 0.25 N·m; hoop stress 2.95 MPa, 8 % of the strength; a pass" width="640" height="300">
 </cad-printed-boss>
 
 Try these:
 - **Tighten to 0.40 N·m.** That is past half the lowest stripping torque, so it fails. The thread itself strips
-  somewhere from 0.62 to 1.74 N·m: the band is that wide because the friction of steel on plastic spans 0.20 to 0.65.
+  somewhere from 0.62 to 1.74 N·m over the drive torque: the band is that wide because the friction of steel on plastic spans 0.20 to 0.65.
 - **Cut the engagement to 3 mm (1 d).** The thread strips at half the force (383 N), and the most you should tighten
   to falls to 0.15 N·m.
 - **Change the filament.** PETG HF is weaker across the layers (23 MPa), so the same boss strips at 569 N and 0.30 N·m
@@ -35,7 +35,8 @@ Try these:
 ## How it works
 
 - **Clamp.** Torque gives clamp through the nut factor, T = K F d (Shigley, Eq. 8-27), with K from the friction on the
-  thread's 30° flanks and under the head. The low friction gives the high clamp.
+  thread's 30° flanks and under the head. The low friction gives the high clamp. Only the torque over the drive
+  torque clamps. Until the drive torque is measured, the low end takes the most the window allows (T / 1.2).
 - **Stripping.** The boss's thread shears along a cylinder at the screw's crest, of area 0.875 π d Le (the ISO 68-1
   internal-thread area). The shear strength is half the lowest tensile strength across the layers, since that cylinder
   crosses the layers whichever way the boss stands.
@@ -46,7 +47,7 @@ Try these:
 
 ```mermaid
 flowchart TD
-    T["tightening torque T"] --> F["clamp band<br/>F = T / K d"]
+    T["tightening torque T"] --> F["clamp band<br/>F = (T - drive) / K d"]
     S["filament strength<br/>across the layers"] --> X["thread strips at its<br/>shear area × UTS / 2"]
     F --> H["hoop stress<br/>Lamé, at the bore"]
     X --> W{"window: T from 1.2 × drive<br/>to 0.5 × strip torque"}
@@ -68,10 +69,11 @@ flowchart TD
 from cadagent.mechanical.bosses import printed_boss
 
 r = printed_boss("pla-bambu-basic", size="30", outside_mm=6, engagement_mm=6, torque_nm=0.3)
-r["preload"]          # clamp band, N: {'low': 132.0, 'high': 373.9}
+r["preload"]          # clamp band, N: {'low': 22.0, 'high': 373.9}, the drive torque unmeasured
 r["strip_force"]      # 766.9 N
 r["torque_ceiling"]   # 0.308 N m: tighten to at most this
 r["passes"], r["limits"], r["material"]["source"]
+printed_boss("pla-bambu-basic", "30", 6, 6, 0.3, drive_torque_nm=0.2)["preload"]   # measured: 44 to 125 N
 ```
 
 `printed_boss` returns the inputs, the screw and its source, the filament's strengths and the datasheet editions they
@@ -86,6 +88,7 @@ The explorer runs the browser port of `screw_boss`, which is tested against the 
   perimeters round a hole, and its thread is formed across layer seams. Print a test boss and measure the drive
   torque, the stripping torque and the pull-out force.
 - **The drive torque is not computed.** It depends on the hole, the filament and the screw, so it must be measured.
+  It makes no clamp, so the clamp band stays wide until it is: pass it as `drive_torque_nm`.
 - **The hoop stress is the clamp's share only.** Forming the thread pushes the wall out further, and the maker's hole
   and boss proportions keep that in check.
 - **Held clamp.** A printed boss creeps, so the clamp relaxes over time, faster in PLA and when warm. Nothing here

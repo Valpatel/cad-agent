@@ -35,7 +35,9 @@ test('the page\'s lessons hold', () => {
   assert.equal(verdict(r), 'inside the guide and the torque window');
   assert.equal(verdict(at({ engagement: 3 })), 'tightened past half the strip torque +1 more');
   assert.equal(verdict(at({ engagement: 3 }), false), 'over-tightened +1');
-  assert.match(summary(DEFAULTS, r), /clamp 132 to 374 N; the thread strips at 767 N \(0\.62 N·m to 1\.74 N·m\), so tighten to at most 0\.31 N·m/);
+  // the drive torque makes no clamp: unmeasured, the band's low end takes the most the window allows (T / 1.2)
+  assert.match(summary(DEFAULTS, r), /clamp 22 to 374 N \(the low end if the drive torque, which makes no clamp, is the most the window allows\); /);
+  assert.match(summary(DEFAULTS, r), /the thread strips at 767 N, at 0\.62 N·m to 1\.74 N·m over the drive torque, so tighten to at most 0\.31 N·m/);
   assert.match(summary(DEFAULTS, r), /A starting point to test, not a rating\.$/);
 });
 

@@ -135,8 +135,12 @@ test('the demo screws are DELTA PT sizes in SI, with the friction band and the s
   const t = vectors.cases.filter(c => c.js === 'screwBoss' && !c.raises);
   assert.ok(t.some(c => c.expected.passes) && t.some(c => !c.expected.torqueOk) && t.some(c => !c.expected.outsideOk) &&
     t.some(c => !c.expected.engagementOk) && t.some(c => !c.expected.hoopOk), 'the boss vectors reach every verdict');
+  assert.ok(t.some(c => c.expected.driveTorque === null) && t.some(c => c.expected.driveTorque > 0 && c.expected.torqueOk) &&
+    t.some(c => c.expected.driveTorque > 0 && !c.expected.torqueOk && c.expected.torqueCeiling > c.args[4]),
+  'with and without a measured drive torque, and a torque under 1.2 x the drive torque');
   const bars = vectors.cases.filter(c => c.js === 'torsionSnapBar' && !c.raises);
-  assert.ok(bars.some(c => c.expected.passes) && bars.some(c => !c.expected.passes) && bars.some(c => c.args[7] === 2), 'the torsion vectors pass, fail and use two bars');
+  assert.ok(bars.some(c => c.expected.passes) && bars.some(c => !c.expected.passes) && bars.some(c => c.args[7] === 2) &&
+    bars.some(c => c.expected.smallTwist) && bars.some(c => !c.expected.smallTwist), 'the torsion vectors pass, fail, use two bars and twist far');
 });
 
 

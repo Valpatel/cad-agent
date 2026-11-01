@@ -6,7 +6,8 @@ SI units: metres, newtons, pascals; torque in N m.
 A thread-forming screw in a plastic boss (:func:`screw_boss`) joins these with the boss's own checks: the radial
 push of the loaded flanks (:func:`thread_radial_pressure`), the hoop stress it raises in the boss wall
 (:func:`boss_hoop_stress`), the makers' boss proportions and Covestro's tightening window, between 1.2 x the drive
-torque and half the stripping torque.
+torque and half the stripping torque. The drive torque, which forms the thread, makes no clamp: only the torque above
+it does.
 
 The nut factor lumps thread and head friction, so torque gives preload only to about +/- 25 % even with a known
 factor, and much worse in plastic, where it is rarely measured. The stripping estimate takes the ISO 68-1 basic
@@ -17,7 +18,7 @@ preload. It ranks designs and finds the weaker side; it is not a rating. Test th
 from __future__ import annotations
 
 import math
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from cadagent.formulas._registry import cite, formula
 
@@ -171,13 +172,17 @@ def boss_hoop_stress(pressure: float, inner_diameter: float, outer_diameter: flo
                 "hoop_strength": "Pa (the boss material's tensile strength in the hoop direction)",
                 "friction_low": "dimensionless (steel on the plastic: the low end)",
                 "friction_high": "dimensionless (the high end)",
-                "flank_angle": "rad (included)"},
+                "flank_angle": "rad (included)",
+                "drive_torque": "N m (measured on a test boss), or None when not measured"},
          returns="dict: nut_factor, preload and strip_torque as {low, high}; strip_force (N), margin {low, high} "
                  "(strip torque over the tightening torque), torque_ceiling (N m), drive_torque_limit (N m), "
-                 "radial_pressure and hoop_stress (Pa), hoop_ratio, outside_ratio, engagement_ratio, and the checks "
-                 "torque_ok, outside_ok, engagement_ok, hoop_ok and passes",
+                 "drive_torque (as given), radial_pressure and hoop_stress (Pa), hoop_ratio, outside_ratio, "
+                 "engagement_ratio, and the checks torque_ok, outside_ok, engagement_ok, hoop_ok and passes",
          limits=(_TORQUE, _STRIP, _FLANK, _LAME,
-                 "the drive (forming) torque is not computed: measure it, and tighten to at least 1.2 x it",
+                 "the drive (forming) torque is not computed: measure it, and tighten to at least 1.2 x it. It makes "
+                 "no clamp: the clamp is (T - drive) / (K d), and the thread strips at the drive torque plus K F d. "
+                 "Not measured, the clamp band runs from the most drive torque the window allows (T / 1.2) to none, "
+                 "and the stripping torque is the clamp's share alone, a lower bound",
                  "the hoop stress is the clamp's share only: forming the thread pushes the wall out further, which "
                  "the makers' hole and boss proportions keep in check and which no closed form here predicts",
                  "no published pull-out or stripping data for thread-forming screws in printed bosses was found "
@@ -186,10 +191,11 @@ def boss_hoop_stress(pressure: float, inner_diameter: float, outer_diameter: flo
                      "the stripping torque), with the boss proportions of Bulten's DELTA PT brochure, p. 7"))
 def screw_boss(diameter: float, pitch: float, engagement: float, outside_diameter: float, torque: float,
                shear_strength: float, hoop_strength: float, friction_low: float = 0.2, friction_high: float = 0.5,
-               flank_angle: float = FORMING_FLANK_ANGLE) -> Dict[str, Any]:
-    """A thread-forming screw tightened in a plastic boss: the clamp from the torque (a band, from the friction
-    band), the force and torque that strip the boss's thread, Covestro's tightening window against them, the hoop
-    stress the clamp raises at the wall's inside, and the boss proportions against the maker's."""
+               flank_angle: float = FORMING_FLANK_ANGLE, drive_torque: Optional[float] = None) -> Dict[str, Any]:
+    """A thread-forming screw tightened in a plastic boss: the clamp from the torque above the drive torque (a band,
+    from the friction band, and from the drive torque's range when it was not measured), the force and torque that
+    strip the boss's thread, Covestro's tightening window against them, the hoop stress the most clamp raises at the
+    wall's inside, and the boss proportions against the maker's."""
     for name, v in (("diameter", diameter), ("pitch", pitch), ("engagement", engagement), ("torque", torque),
                     ("shear_strength", shear_strength), ("hoop_strength", hoop_strength)):
         _finite(name, v)
@@ -198,24 +204,33 @@ def screw_boss(diameter: float, pitch: float, engagement: float, outside_diamete
         raise ValueError(f"friction_high must be finite and at least friction_low, not {friction_high!r}")
     if not (_number(outside_diameter) and outside_diameter > diameter):
         raise ValueError(f"outside_diameter must be finite and above the screw's diameter, not {outside_diameter!r}")
+    if drive_torque is not None:
+        _finite("drive_torque", drive_torque, strict=False)
     k_low = nut_factor(diameter, pitch, friction_low, friction_low, flank_angle)
     k_high = nut_factor(diameter, pitch, friction_high, friction_high, flank_angle)
     strip = thread_strip_force(diameter, pitch, engagement, shear_strength, "internal")
-    strip_low, strip_high = torque_for_preload(strip, diameter, k_low), torque_for_preload(strip, diameter, k_high)
-    preload_high = preload_from_torque(torque, diameter, k_low)          # least friction: the most clamp
+    # The drive torque forms the thread and makes no clamp. Measured, it comes off the torque and adds to the
+    # stripping torque. Not measured, it lies anywhere from none to the most the window allows (T / 1.2): the clamp
+    # band spans both, and the stripping torque is the clamp's share alone, the low end of what it can be.
+    drive = 0.0 if drive_torque is None else drive_torque
+    drive_most = torque / TIGHTEN_OVER_DRIVE if drive_torque is None else drive_torque
+    strip_low = drive + torque_for_preload(strip, diameter, k_low)
+    strip_high = drive + torque_for_preload(strip, diameter, k_high)
+    preload_high = preload_from_torque(max(torque - drive, 0.0), diameter, k_low)     # least friction: the most clamp
     pressure = thread_radial_pressure(preload_high, diameter, engagement, flank_angle)
     hoop = boss_hoop_stress(pressure, diameter, outside_diameter)
     ceiling = TIGHTEN_OVER_STRIP * strip_low
     out = {"nut_factor": {"low": k_low, "high": k_high},
-           "preload": {"low": preload_from_torque(torque, diameter, k_high), "high": preload_high},
+           "preload": {"low": preload_from_torque(max(torque - drive_most, 0.0), diameter, k_high), "high": preload_high},
            "strip_force": strip, "strip_torque": {"low": strip_low, "high": strip_high},
            "margin": {"low": strip_low / torque, "high": strip_high / torque},
-           "torque_ceiling": ceiling, "drive_torque_limit": torque / TIGHTEN_OVER_DRIVE,
+           "torque_ceiling": ceiling, "drive_torque_limit": torque / TIGHTEN_OVER_DRIVE, "drive_torque": drive_torque,
            "radial_pressure": pressure, "hoop_stress": hoop, "hoop_ratio": hoop / hoop_strength,
            "outside_ratio": outside_diameter / diameter, "engagement_ratio": engagement / diameter}
     # the ratios are compared with a part in a billion to spare, so a boss drawn at exactly 2 d is not failed by
     # rounding in d and D
-    out.update(torque_ok=torque <= ceiling, outside_ok=out["outside_ratio"] >= BOSS_OUTSIDE * (1 - _RATIO_SLACK),
+    out.update(torque_ok=torque <= ceiling and (drive_torque is None or torque >= TIGHTEN_OVER_DRIVE * drive_torque),
+               outside_ok=out["outside_ratio"] >= BOSS_OUTSIDE * (1 - _RATIO_SLACK),
                engagement_ok=out["engagement_ratio"] >= BOSS_ENGAGEMENT * (1 - _RATIO_SLACK),
                hoop_ok=out["hoop_ratio"] < 1.0)
     out["passes"] = out["torque_ok"] and out["outside_ok"] and out["engagement_ok"] and out["hoop_ok"]

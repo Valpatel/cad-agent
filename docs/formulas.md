@@ -130,7 +130,7 @@ SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A 
 | `torsion_shear_stress_round`, `torsion_shear_stress_rect` | peak shear stress | Roark 8th ed., Table 10.1 | away from ends and steps |
 | `torsion_bar_twist`, `torsion_bar_stiffness` | θ = T L / K G, T / θ = K G / L | Roark 8th ed., Section 10.1 | constant section |
 | `torsion_shear_strain_rect` | peak shear strain from the twist, γ = θ K (τ / T) / L: the section alone sets it | Roark 8th ed., Table 10.1 | within 0.8 % of the series |
-| `torsion_snap_bar` | a rectangular torsion snap: shear strain against the guide's (1 + ν) ε, torque, force at the lever, permissible twist | Covestro guide, Section C; Roark 8th ed., Table 10.1 | small twist; isotropic G, so the force is an upper bound |
+| `torsion_snap_bar` | a rectangular torsion snap: shear strain against the guide's (1 + ν) ε, torque, force at the lever, permissible twist | Covestro guide, Section C; Roark 8th ed., Table 10.1 | small twist (it flags the trapeze effect past a tenth of the torque); isotropic G, so the force is an upper bound |
 | `spring_index`, `spring_rate` | C = D / d, k = G d⁴ / 8 D³ Na | Shigley 10th ed., Sections 10-1, 10-3, Eqs. (10-1), (10-9) | 4 ≤ C ≤ 12; 15–85 % of travel |
 | `bergstrasser_factor`, `spring_shear_stress` | K_B = (4C + 2)/(4C − 3), τ = K_B 8 F D / π d³ | Shigley 10th ed., Sections 10-1, 10-2, Eqs. (10-5), (10-7) | static, round wire |
 | `preload_from_torque`, `torque_for_preload` | F = T / K d, with `NUT_FACTORS` | Shigley 10th ed., Section 8-8, Eq. (8-27), Table 8-15 | ±25 % at best |
@@ -139,7 +139,7 @@ SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A 
 | `thread_shear_areas`, `thread_strip_force` | 0.75 π D1 Le (screw), 0.875 π d Le (hole) | ISO 68-1:1998 basic profile | even load sharing, no tolerances |
 | `thread_radial_pressure` | the flanks' outward push, p = F tan(α / 2) / π d Le | Shigley 10th ed., Section 8-2 | frictionless flank, even load |
 | `boss_hoop_stress` | hoop stress at the bore, p (D² + d²) / (D² − d²) | Shigley 10th ed., Section 3-14 | Lamé cylinder, isotropic |
-| `screw_boss` | a thread-forming screw in a boss: clamp band, strip force and torque, the tightening window, hoop stress, boss proportions | Covestro, *Self-tapping screws for thermoplastics* (2016-04), Section A; Bulten, DELTA PT brochure (2025), p. 7 | the drive torque is measured, not computed |
+| `screw_boss` | a thread-forming screw in a boss: clamp band, strip force and torque, the tightening window, hoop stress, boss proportions | Covestro, *Self-tapping screws for thermoplastics* (2016-04), Section A; Bulten, DELTA PT brochure (2025), p. 7 | the drive torque is measured, not computed, and makes no clamp: unmeasured, the clamp band allows for up to T / 1.2 of it |
 | `grashof` | Grashof class, whether the input crank turns fully, and the inversion (crank-rocker, double crank, rocker-crank, double rocker, triple rocker) | Norton 5th ed., Chapter 2 | rigid links |
 | `fourbar_angles` | coupler and output angles, open or crossed | Freudenstein (1955); Norton 5th ed., Chapter 4 | position only; a gap under 1e-12 of the longest link counts as closed |
 | `transmission_angle` | angle between coupler and rocker | Norton 5th ed., Chapter 4 | position only; the same closing test |

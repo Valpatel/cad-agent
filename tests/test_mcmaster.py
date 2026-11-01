@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import zipfile
+from pathlib import Path
 
 import pytest
 
@@ -175,6 +176,100 @@ def test_chrome_missing_stops_the_driver_and_explains(monkeypatch):
     assert stopped == [True]
 
 
+# ----------------------------------------------------------------------------------- not a product page
+
+PAGES = Path(__file__).parent / "fixtures" / "mcmaster"          # hand-written pages, never fetched
+GATE_HTML = (PAGES / "login-gate.html").read_text()
+OTHER_HTML = (PAGES / "not-a-product.html").read_text()
+
+
+def test_the_login_gate_is_read_from_the_text_a_reader_sees():
+    assert mc.login_gate(GATE_HTML) == "Log in to view Product Detail"   # across tags, spaces and &nbsp;
+    assert "in a script" not in mc.page_text(GATE_HTML)
+    # the header's "Log in" link, a script, a hidden login dialog, aria-hidden, display:none and a textarea: none count
+    assert mc.login_gate(OTHER_HTML) is None
+    assert mc.page_text(OTHER_HTML) == "Log in Order history\nNo results. Check the part number and try again."
+    # a browser's rendered text, when there is one, decides instead of the HTML
+    assert mc.login_gate(OTHER_HTML, text="Log in\nLog in to view Product Detail") == "Log in to view Product Detail"
+    assert mc.login_gate(GATE_HTML, text="Log in\tOrder history\n\nNothing here") is None
+
+
+@pytest.mark.parametrize("text, prompt", [
+    ("<p>Login to view Product Detail.</p>", "Login to view Product Detail"),
+    ("<p>SIGN IN TO SEE pricing</p>", "SIGN IN TO SEE pricing"),
+    ("<p>Please log in to continue</p>", "log in to continue"),
+    ("<a>Log in</a> <p>Log in or create an account</p>", None),
+    ("<p>Our blog in to view-only mode</p>", None),
+    ("<div hidden>Log in to view Product Detail</div>", None),
+    ("<div style='visibility:hidden'><p>Log in to view</p></div><p>Product</p>", None),
+    ("<div hidden><br><img src=x><p>Log in to view</p></div><p>Log in to view Product Detail</p>",
+     "Log in to view Product Detail"),                              # a void element inside does not leave it open
+    ("<div hidden><p>gone</div><p>Login to see the part</p>", "Login to see the part"),   # an unclosed child
+    ("", None),
+])
+def test_login_gate_phrases(text, prompt):
+    assert mc.login_gate(text) == prompt
+
+
+def test_a_login_gate_says_the_part_number_may_be_fine():
+    url = mc.product_url("5972K86")
+    err = mc.page_error("5972K86", url, GATE_HTML)
+    assert isinstance(err, mc.LoginRequired) and isinstance(err, RuntimeError)
+    msg = str(err)
+    assert msg.startswith("5972K86: McMaster asked for a login (\"Log in to view Product Detail\" at " + url)
+    assert "the part number may be fine" in msg and "not a product page" not in msg
+    assert "https://www.mcmaster.com/6301-2RS/" in msg and "datasheet" in msg    # where to look instead
+    for html in (OTHER_HTML, ""):                 # no prompt: the old message, not a login
+        plain = mc.page_error("5972K86", url, html)
+        assert type(plain) is RuntimeError
+        assert str(plain) == f"5972K86: {url} is not a product page (no specification table)"
+
+
+class FakePage:
+    """The Playwright page calls Session._open makes, on a saved page that has no specification table. ``text`` is
+    what ``inner_text("body")`` gives (None: it fails, so Session falls back to the HTML)."""
+
+    def __init__(self, html=None, text=None):
+        self.html, self.text, self.url, self.visited = html, text, "", []
+
+    def inner_text(self, selector, timeout=None):
+        assert selector == "body" and timeout
+        if self.text is None:
+            raise RuntimeError("no rendered text")
+        return self.text
+
+    def goto(self, url, **kw):
+        self.url = url
+        self.visited.append(url)
+
+    def wait_for_selector(self, selector):
+        raise TimeoutError(f"Timeout waiting for {selector}")
+
+    def content(self):
+        if self.html is None:
+            raise RuntimeError("page crashed")
+        return self.html
+
+    def wait_for_timeout(self, ms):
+        pass
+
+
+@pytest.mark.parametrize("html, text, login", [
+    (GATE_HTML, None, True), (OTHER_HTML, None, False), (None, None, False),        # from the HTML
+    (OTHER_HTML, "Log in\nLog in to view Product Detail", True),                     # the rendered text decides
+    (GATE_HTML, "Log in\nNo results", False),                     # e.g. the prompt is hidden by a stylesheet
+])
+def test_session_tells_a_login_gate_from_a_missing_page(html, text, login):
+    s = mc.Session()
+    s.page = FakePage(html, text)
+    with pytest.raises(RuntimeError) as caught:
+        s.read("5972K86")
+    assert isinstance(caught.value, mc.LoginRequired) is login
+    assert ("part number may be fine" in str(caught.value)) is login
+    assert caught.value.__suppress_context__                 # no Playwright timeout traceback behind it
+    assert s.page.visited == ["https://www.mcmaster.com/5972K86/"]
+
+
 # ----------------------------------------------------------------------------------- the CLI, offline
 
 PAGE = {"pn": "", "url": "", "description": "Thing", "price_text": "$1.00 each", "price_usd": 1.0, "pack_qty": 1,
@@ -237,6 +332,24 @@ def test_cli_choose_per_part_and_before_the_part_numbers(tmp_path, fake):
     fake.fetched.clear()
     assert main(["mcmaster", "--choose", "Left Hand", "59935K73", "--out", out]) == 0
     assert fake.fetched == [("59935K73", ["Left Hand"])]
+
+
+def test_cli_after_a_login_gate_asks_for_no_more_pages(tmp_path, fake, monkeypatch, capsys):
+    out = tmp_path / "v"
+    FakeSession().fetch("91290A242", out / "91290A242")         # already here: still reported, offline
+    fake.fetched.clear()
+
+    def gated(self, pn, out_dir, choose=None):
+        fake.fetched.append((pn, choose))
+        raise mc.page_error(pn, mc.product_url(pn), GATE_HTML)
+
+    monkeypatch.setattr(FakeSession, "fetch", gated)
+    assert main(["mcmaster", "5972K86", "5972K82", "91290A242", "--out", str(out)]) == 1
+    assert [p for p, _ in fake.fetched] == ["5972K86"]         # one gated page, then no more requests
+    cap = capsys.readouterr()
+    assert "mcmaster 5972K86: 5972K86: McMaster asked for a login" in cap.err
+    assert "mcmaster 5972K82: not fetched: McMaster asked for a login at 5972K86 in this run" in cap.err
+    assert "91290A242: already here" in cap.out
 
 
 def test_cli_low_delay_is_raised_to_the_floor(tmp_path, fake, capsys):

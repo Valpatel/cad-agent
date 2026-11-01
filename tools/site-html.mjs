@@ -11,12 +11,13 @@ export const safeUrl = u => SAFE_URL.test(String(u ?? '').trim()) ? String(u ?? 
 export const SANITIZE = {
   allowedTags: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'a', 'img', 'ul', 'ol', 'li', 'pre', 'code', 'blockquote', 'em',
     'strong', 'del', 's', 'b', 'i', 'kbd', 'sub', 'sup', 'br', 'hr', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
-    'details', 'summary', 'div', 'span', 'input', 'cad-cantilever'],
+    'details', 'summary', 'div', 'span', 'input', 'cad-cantilever', 'cad-fourbar'],
   allowedAttributes: { a: ['href', 'title', 'id', 'name'], img: ['src', 'alt', 'title', 'width', 'height'],
     '*': ['id', 'align'], code: ['class'], pre: ['class'], div: ['class'], span: ['class'], td: ['align', 'width'],
     th: ['align', 'width'], input: ['type', 'checked', 'disabled'], ol: ['start'],
-    // the kit's interactive demos (kit/cantilever.js): its own data attributes only, no style, no handlers
-    'cad-cantilever': ['material', 'direction', 'design', 'repeated', 'length', 'thickness', 'width', 'deflection'] },
+    // the kit's interactive demos (kit/cantilever.js, kit/fourbar.js): their own attributes only, no style, no handlers
+    'cad-cantilever': ['material', 'direction', 'design', 'repeated', 'length', 'thickness', 'width', 'deflection'],
+    'cad-fourbar': ['crank', 'coupler', 'rocker', 'ground', 'branch', 'angle', 'theme'] },
   allowedClasses: { code: ['language-*'], pre: ['mermaid'], div: ['table-scroll', 'cad-table-scroll'], span: [] },
   allowedSchemes: ['http', 'https', 'mailto'], allowedSchemesByTag: { img: ['http', 'https', 'data'] },
   allowProtocolRelative: false, disallowedTagsMode: 'discard',

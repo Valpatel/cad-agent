@@ -223,6 +223,20 @@ test('the snap-arm explorer is on its page with its still, and only that page lo
   assert.doesNotMatch(await readFile(path.join(out, 'docs/toolkit.html'), 'utf8'), /cantilever\.(css|js)/);
 });
 
+test('the four-bar animator is on its pages with its still, and only those pages load its kit files', async () => {
+  for (const name of ['linkages', 'formulas']) {
+    const page = await readFile(path.join(out, `docs/${name}.html`), 'utf8');
+    const demo = page.match(/<cad-fourbar crank="40" coupler="120" rocker="80" ground="100" branch="open" angle="40">([\s\S]*?)<\/cad-fourbar>/);
+    assert.ok(demo, `no <cad-fourbar> on /docs/${name}`);
+    assert.match(demo[1], /<img src="\/docs\/img\/formulas\/fourbar-animator\.svg" alt="[^"]{40,}" width="640" height="320" ?\/?>/);
+    const head = page.slice(0, page.indexOf('</head>'));
+    assert.match(head, /<link rel="stylesheet" href="\/kit\/fourbar\.css"><link rel="modulepreload" href="\/kit\/fourbar\.js">/);
+  }
+  for (const f of ['kit/fourbar.js', 'kit/fourbar.css', 'kit/formulas.js', 'docs/img/formulas/fourbar-animator.svg'])
+    assert.ok(files.includes(f), `${f} is not published`);
+  assert.doesNotMatch(await readFile(path.join(out, 'docs/compliant.html'), 'utf8'), /fourbar\.(css|js)/);
+});
+
 test('an image keeps the size its author gave, and its tag survives any alt text', async () => {
   const wt = path.join(tmp, 'wt-img');
   execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });

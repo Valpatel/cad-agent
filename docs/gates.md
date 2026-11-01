@@ -114,6 +114,13 @@ shared volume and `BRepAlgoAPI_Cut` for each item's volume outside the other, al
 raises the arguments' tolerances in place, changing the caller's shapes), then `BRepExtrema_DistShapeShape` for the
 gap when nothing is shared.
 
+On solids, `BRepExtrema_DistShapeShape` first runs an inner-solution test: does any vertex of one lie inside the
+other? OCCT 7.9 builds a new point classifier for each small chunk of vertices (about ten chunks per thread, at
+least three vertices each), and that is most of a many-faced pair's time. So the gates run the same test once
+(`_inner_vertex`, one classifier per solid). When no vertex is inside and the faces are clear of each other, they
+take BRepExtrema's distance between the faces: the same gap and points (#186). Anything else (a vertex inside or
+near, free edges or vertices, a kernel error) goes to BRepExtrema on the whole shapes, as before.
+
 OCP 7.9 binds no error report on these operations (`HasErrors` is absent; `DSFiller()` reports warnings but crashes
 the interpreter at exit), and `IsDone()` stays true on invalid input. So every answer is cross-checked:
 `vol(a) = common + cut(a, b)`, and the same for `b` when they overlap. A mismatch, an exception, a missing solid or a
@@ -121,7 +128,11 @@ self-interfering compound gives `unknown`, never `touching`, `apart` or `contain
 
 Measured with `tools/gate_timing.py` on the synthetic 100-part assembly (4,950 pairs, 90 candidates), on a workstation
 at load average 11: broad phase 0.006 s, narrow phase 1.9 s cold, 0.03 s warm from the cache. The cross-check's
-extra `Cut` roughly doubled the cold narrow phase. Real parts with hundreds of faces cost 10–100× more per pair.
+extra `Cut` roughly doubled the cold narrow phase. Real parts with hundreds of faces cost 10–100× more per pair. On
+Gyropup's leg (the README hero's clearance sweep, 811 pairs, PR #198) on a 24-core workstation, the single
+inner-solution test cut the time from 951 s to 685 s of calls, every relation byte-identical. It saves less on fewer
+cores, since OCCT's own test builds about ten classifiers per thread. Most of what remains is BRepExtrema's own
+search between nearby edges and faces.
 
 ### Pairs the table did not examine
 

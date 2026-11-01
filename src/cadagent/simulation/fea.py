@@ -4,7 +4,9 @@
     st = Study('exports/thigh.step', MATERIALS['petg_cf'], mesh_mm=3.0)
     st.fix(cylinder_at(center=(0, 0, 0), axis=(0, 1, 0)))                       # bolt holes at the motor flange
     st.force(cylinder_at(center=(0, 0, -200), axis=(0, 1, 0)), (0, 0, 300))     # 300 N at the knee pin
-    res = st.solve()          # dict: max von Mises (MPa), max and probe displacement (mm), stiffness, safety factor
+    res = st.solve()          # dict: max von Mises (MPa), max and probe displacement (mm), stiffness, safety factor,
+                              # and material_data: the constants used and their source (material_changes() compares)
+    lc = st.layer_check((0, 0, 1))                 # printed flat: the stress across and along the layers (bond, bulk)
     st.render('exports/fea/thigh.png')
     st.animate('exports/fea/thigh.mp4')            # the load ramped past first failure (overstressed region black)
     st.export_viewer('exports/fea/thigh.json')     # for the web kit's interactive viewer: kit/fea.html?case=...
@@ -28,16 +30,20 @@ in-plane values, and a force or a stress taken from the computed stiffness at a 
 below the Z tensile strength, so the safety factor uses the weak direction. Neither is a bound on a print: the mesh is
 the solid CAD and the values come from 100 % infill test bars, so a print with sparse infill or thin walls can be
 softer, and then it deflects more, and pushes back less at a given travel (a clip's retention, a flexure's preload),
-than computed. Contact, bolt preload and buckling are not modelled. No simulation proves that a part will fit or hold:
-check it against a printed coupon or the part itself.
+than computed. ``layer_check()`` resolves the same isotropic stress against a print's layers, with the in-plane and
+across-layer allowables and an assumed interlayer shear strength (none is on a data sheet): it screens a print
+orientation, it does not qualify one. Contact, bolt preload and buckling are not modelled. No simulation proves that a
+part will fit or hold: check it against a printed coupon or the part itself.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
@@ -53,6 +59,9 @@ class Material:
     source: str = ''             # the data sheet the numbers come from: its id in research/references.yaml (#118)
     direction: str = ''          # printed parts: the print direction of E ('Z': across the layers; 'X-Y': in the
                                  # layer plane); '' for an isotropic material. Change `note` with it.
+    layer_strengths_mpa: Optional[Tuple[float, float]] = None
+                                 # printed parts: the (X-Y, Z) allowables, in the layer plane and across the layers,
+                                 # that Study.layer_check() defaults to; None for an isotropic material
 
 
 _DIRECTION = {'Z': 'across the layers (Z)', 'X-Y': 'in the layer plane (X-Y)'}
@@ -101,6 +110,14 @@ def _isotropic_basis(mat: Material) -> str:
 # - Poisson's ratio is not on these sheets; it is a typical value for the polymer. Across 0.35-0.40 it changes a
 #   plate's bending stiffness by about 5 % (1 - nu^2) and a beam's hardly at all.
 # - Density is the sheet's (ISO 1183), for mass estimates.
+# - layer_strengths_mpa, for Study.layer_check(): (X-Y, Z). Z is the row's strength (an allowable below the Z tensile
+#   strength). X-Y is that allowable times the sheet's X-Y / Z tensile strength ratio, the lowest over the editions
+#   read (each ratio from one sheet; _in_plane()), so in the layer plane it sits at least as far below each sheet, as
+#   a ratio, as the row's strength does across the layers. The humid PA6-CF rows share one pair, their two strengths.
+# - Every number here is result-changing: a change to any of them changes the deflections, safety factors or masses of
+#   every study that uses the row (Study.result['material_data'] records them, material_changes() compares two
+#   records), so it needs a **Projects must change** changelog fragment. tests/test_fea_materials.py pins the values
+#   and tests/test_fea_layers.py each row's constants_hash.
 #
 # Before #125 the moduli were 2700 (PLA), 1800 (PETG) and 2900 (PETG-CF): close to the V2.0 sheets' X-Y *bending*
 # moduli (2750, 1790, 2890), not a tensile value. They were 31-116 % above the moduli used now (PAHT-CF 147 %, TPU
@@ -121,6 +138,15 @@ def _isotropic_basis(mat: Material) -> str:
 _HUMID_E = {'X-Y': 2508.1 / 8636.5, 'Z': 1056.1 / 3759.5}       # 0.290, 0.281
 _HUMID_S = {'X-Y': 54.7 / 109.3, 'Z': 25.5 / 54.0}              # 0.500, 0.472
 _PRINT = 0.8   # x0.8 for a print's voids and seams: a knock-down the original table applied to these rows only
+_PA6_S = (102 * _HUMID_S['X-Y'] * _PRINT, 48 * _HUMID_S['Z'] * _PRINT)     # humid PA6-CF allowables (X-Y, Z)
+
+
+def _in_plane(z_allowable: float, *uts: Tuple[float, float]) -> float:
+    """A printed row's X-Y allowable: its Z allowable times the lowest (X-Y / Z) tensile strength ratio of the sheet
+    editions read, ``uts`` = (X-Y, Z) per edition."""
+    return z_allowable * min(xy / z for xy, z in uts)
+
+
 MATERIALS = {
     # Bambu PLA Basic TDS V3.0 (Bambu's copy, PDF created 2025-04): E 2580 X-Y / 2060 Z MPa, UTS 35 / 31 MPa,
     # 1.24 g/cm3.
@@ -128,7 +154,8 @@ MATERIALS = {
     # V2.0 (a reseller's copy, PDF created 2023-03) has 2680 / 2160 and 39 / 35: the lower V3.0 values are used.
     'pla': Material('PLA', 2060, 0.35, 25, 1.24,
                     'Bambu PLA Basic TDS V3.0: E is the Z tensile modulus (X-Y 2580 MPa); the strength is an allowable '
-                    'below the Z tensile strength of 31 MPa', source='bambu-pla-basic-tds', direction='Z'),
+                    'below the Z tensile strength of 31 MPa', source='bambu-pla-basic-tds', direction='Z',
+                    layer_strengths_mpa=(_in_plane(25, (35, 31), (39, 35)), 25)),
     # Bambu PETG Basic TDS V2.0 (a reseller's copy, PDF created 2023-06): E 1460 / 1120 MPa, UTS 48 / 39 MPa,
     # 1.25 g/cm3; bars annealed and dried at 65 degC for 8 h.
     # https://www.additive-x.com/shop/mpattachments/file/viewonline/id/580/product_id/2330
@@ -142,12 +169,14 @@ MATERIALS = {
     'petg': Material('PETG', 1120, 0.38, 20, 1.25,
                      'Bambu PETG Basic TDS V2.0: E is the Z tensile modulus (X-Y 1460 MPa; the reformulated V3.0 lists '
                      '2550, not used); the strength is an allowable below the Z tensile strength (39 MPa; 35 in V3.0)',
-                     source='bambu-petg-basic-tds', direction='Z'),
+                     source='bambu-petg-basic-tds', direction='Z',
+                     layer_strengths_mpa=(_in_plane(20, (48, 39), (51, 35)), 20)),
     # Bambu PETG-CF TDS V3.0 (Bambu's copy, PDF created 2023-08): E 2460 / 1340 MPa (as V2.0), UTS 35 / 29 MPa (V2.0:
     # 59 / 38), 1.25 g/cm3. https://store.bblcdn.com/626e4f424bf345ae965ad0ddfcaf2459.pdf
     'petg_cf': Material('PETG-CF', 1340, 0.36, 22, 1.25,
                         'Bambu PETG-CF TDS V3.0: E is the Z tensile modulus (X-Y 2460 MPa); the strength is an '
-                        'allowable below the Z tensile strength of 29 MPa', source='bambu-petg-cf-tds', direction='Z'),
+                        'allowable below the Z tensile strength of 29 MPa', source='bambu-petg-cf-tds', direction='Z',
+                        layer_strengths_mpa=(_in_plane(22, (35, 29), (59, 38)), 22)),
     # Bambu PAHT-CF TDS V3.0 (Bambu's copy, PDF created 2023-08), dry: E 3860 / 2180 MPa, bending modulus 4230 / 1820
     # MPa, UTS 92 / 47 MPa, 1.06 g/cm3. https://store.bblcdn.com/7166b20bc68f4c87b32c972b856eeb4b.pdf
     # The Z bending modulus is the sheet's lowest, so it is used. Named 'PA6-CF' before #125, though its note and
@@ -155,7 +184,7 @@ MATERIALS = {
     'pa_cf': Material('PAHT-CF (dry)', 1820, 0.35, 40, 1.06,
                       'Bambu PAHT-CF TDS V3.0, dry: E is the Z bending modulus, the sheet\'s lowest (Z tensile 2180, '
                       'X-Y 3860 MPa); the strength is an allowable below the Z tensile strength of 47 MPa',
-                      source='bambu-paht-cf-tds', direction='Z'),
+                      source='bambu-paht-cf-tds', direction='Z', layer_strengths_mpa=(_in_plane(40, (92, 47)), 40)),
     # Bambu PA6-CF TDS V3.0 (Bambu's copy, PDF created 2023-08), dry: E 4430 / 2170 MPa, UTS 102 / 48 MPa, 1.09 g/cm3.
     # https://store.bblcdn.com/b2abc59ac250492b979a52f1ce3e61b3.pdf
     # Unlike the rows above (dry test-bar values), these two describe the material as it is in use: humid and as
@@ -164,16 +193,16 @@ MATERIALS = {
     # borrowed, since Bambu's sheet gives no wet values. Before #157 both rows took x0.6 on modulus and strength, a
     # strength-like ratio, so their moduli were about twice these. The other rows carry no x0.8 on E, so pa6_cf_z
     # (488) against petg_cf (1340) sets a derated, humid value against a dry sheet value.
-    'pa6_cf_xy': Material('PA6-CF along the layers (humid)', 4430 * _HUMID_E['X-Y'] * _PRINT, 0.35,
-                          102 * _HUMID_S['X-Y'] * _PRINT, 1.09,
+    'pa6_cf_xy': Material('PA6-CF along the layers (humid)', 4430 * _HUMID_E['X-Y'] * _PRINT, 0.35, _PA6_S[0], 1.09,
                           'Bambu PA6-CF TDS V3.0: dry X-Y tensile modulus 4430 MPa x0.290 humid and strength 102 MPa '
                           'x0.500 humid (Polymaker PA6-CF20 V1.1 wet / dry), each x0.8 print. For parts printed so '
-                          'their main stress runs in the layers', source='bambu-pa6-cf-tds', direction='X-Y'),
-    'pa6_cf_z': Material('PA6-CF across the layers (humid)', 2170 * _HUMID_E['Z'] * _PRINT, 0.35,
-                         48 * _HUMID_S['Z'] * _PRINT, 1.09,
+                          'their main stress runs in the layers', source='bambu-pa6-cf-tds', direction='X-Y',
+                          layer_strengths_mpa=_PA6_S),
+    'pa6_cf_z': Material('PA6-CF across the layers (humid)', 2170 * _HUMID_E['Z'] * _PRINT, 0.35, _PA6_S[1], 1.09,
                          'Bambu PA6-CF TDS V3.0: dry Z tensile modulus 2170 MPa x0.281 humid and strength 48 MPa '
                          'x0.472 humid (Polymaker PA6-CF20 V1.1 wet / dry), each x0.8 print. The safe strength when '
-                         'the stress crosses the layers', source='bambu-pa6-cf-tds', direction='Z'),
+                         'the stress crosses the layers', source='bambu-pa6-cf-tds', direction='Z',
+                         layer_strengths_mpa=_PA6_S),
     # Bambu TPU 95A HF TDS V1.0 (Bambu's copy, PDF created 2023-11): E 9.8 / 7.4 MPa, UTS 27.3 / 22.3 MPa, 1.22 g/cm3.
     # https://store.bblcdn.com/58df32731eab4c90a7dac9b12e13ba88.pdf
     # Polymaker's PolyFlex TPU95 (TDS V5.4) lists 33.6 MPa in X-Y (ISO 37). The sheets differ about 4x, and TPU is far
@@ -181,7 +210,7 @@ MATERIALS = {
     'tpu95': Material('TPU 95A', 7.4, 0.45, 8, 1.22,
                       'Bambu TPU 95A HF TDS V1.0: E is the Z tensile modulus (X-Y 9.8 MPa); the strength is an '
                       'allowable below the Z tensile strength of 22.3 MPa; flexible, stiffness only indicative',
-                      source='bambu-tpu-95a-hf-tds', direction='Z'),
+                      source='bambu-tpu-95a-hf-tds', direction='Z', layer_strengths_mpa=(_in_plane(8, (27.3, 22.3)), 8)),
     # Metals (#157): design minimums, not typical values. MIL-HDBK-5J, Metallic Materials and Elements for Aerospace
     # Vehicle Structures (31 January 2003; public, superseded by MMPDS, which is not free and was not checked):
     # https://everyspec.com/MIL-HDBK/MIL-HDBK-0001-0099/MIL_HDBK_5J_139/
@@ -219,6 +248,217 @@ MATERIALS = {
                         'axial modulus/strength, typical values, not from a sheet and not a minimum: use the '
                         'supplier\'s; not for local crushing'),
 }
+
+
+# --- the stress against a print's layers (Study.layer_check)
+#
+# A print is transversely isotropic: in the layer plane (X-Y) it is close to the filament's strength, and the bond
+# between layers (Z) is weaker. For a layer normal n (the build direction), the traction on the layer plane is
+# t = sigma . n, the stress across it sigma_n = n . t (tension positive) and the shear along it tau_n = |t - sigma_n n|.
+# Two checks, each a utilisation (stress over allowable, 1 at the allowable):
+#   bond  sqrt((<sigma_n> / S_z)^2 + (tau_n / S_s)^2), <x> = max(x, 0): the quadratic interaction of the opening stress
+#         and the shear on the bond plane, the form of Brewer and Lagace's delamination-onset criterion (J. Compos.
+#         Mater. 22 (1988) 1141-1155), here at a point, without their averaging over a distance. Compression across the
+#         layers closes the bond (their Z_c term is left out) and counts in the bulk check only.
+#   bulk  von Mises / S_xy: the material in the layer plane, checked as the isotropic study checks it.
+# S_s, the shear strength of the bond, is on no filament data sheet. Unless given, it is S_z / sqrt(3), the ratio von
+# Mises gives an isotropic solid (shear yield = tensile yield / sqrt 3), and the bond reads sqrt(<sigma_n>^2 +
+# 3 tau_n^2) / S_z. That is an assumption, not a measurement: a print's bond may be weaker or stronger in shear than
+# that, so pass strength_shear from a coupon (a short-beam or lap-shear test of the same print) when there is one.
+LAYER_SHEAR_ASSUMPTION = ('interlayer shear allowable assumed to be strength_z / sqrt(3), the ratio von Mises gives an '
+                          'isotropic solid: no filament data sheet gives one; pass strength_shear from a coupon')
+LAYER_ASSUMPTIONS = ('the stress of the linear, isotropic solve (one modulus), resolved on the layer plane at every '
+                     'element corner; bond: the opening stress across the layers and the shear along them, in '
+                     'quadratic interaction, against the across-layer and interlayer shear allowables (compression '
+                     'across the layers left out); bulk: von Mises against the in-plane allowable. A screening check '
+                     'for a transversely isotropic print, not a qualification: an anisotropic part can carry its load '
+                     'differently, and walls, seams and infill are not modelled. Test a printed part')
+
+
+def _unit(v) -> np.ndarray:
+    n = np.asarray(v, float).reshape(-1)
+    size = float(np.linalg.norm(n)) if n.shape == (3,) and np.all(np.isfinite(n)) else 0.0
+    if size == 0.0:
+        raise ValueError(f'a layer normal is three finite numbers, not all zero: {v!r}')
+    return n / size
+
+
+def von_mises(sig) -> np.ndarray:
+    """Von Mises stress of stress tensors ``sig`` (..., 3, 3), in their units."""
+    s = np.asarray(sig, float)
+    return np.sqrt(0.5 * ((s[..., 0, 0] - s[..., 1, 1]) ** 2 + (s[..., 1, 1] - s[..., 2, 2]) ** 2
+                          + (s[..., 2, 2] - s[..., 0, 0]) ** 2)
+                   + 3 * (s[..., 0, 1] ** 2 + s[..., 1, 2] ** 2 + s[..., 2, 0] ** 2))
+
+
+def layer_stresses(sig, normal) -> Tuple[np.ndarray, np.ndarray]:
+    """(sigma_n, tau_n) for stress tensors ``sig`` (..., 3, 3) and a layer normal of any length: the stress across the
+    layer plane (tension positive) and the magnitude of the shear along it."""
+    n = _unit(normal)
+    t = np.asarray(sig, float) @ n
+    sn = t @ n
+    return sn, np.linalg.norm(t - sn[..., None] * n, axis=-1)
+
+
+def _positive(name: str, v) -> float:
+    if isinstance(v, bool) or not isinstance(v, (int, float, np.floating, np.integer)) or not (math.isfinite(v) and v > 0):
+        raise ValueError(f'{name} must be a positive number of MPa, not {v!r}')
+    return float(v)
+
+
+def layer_allowables(material: Optional[Material], strength_xy: Optional[float] = None,
+                     strength_z: Optional[float] = None, strength_shear: Optional[float] = None
+                     ) -> Tuple[float, float, float, str]:
+    """(S_xy, S_z, S_s, the shear's basis) for a layer check: the strengths given, else the material's
+    ``layer_strengths_mpa``; S_s = S_z / sqrt(3) unless given (LAYER_SHEAR_ASSUMPTION)."""
+    if strength_xy is None or strength_z is None:
+        pair = getattr(material, 'layer_strengths_mpa', None)
+        if pair is None:
+            name = getattr(material, 'name', 'this material')
+            raise ValueError(f'{name} has no per-direction strengths (layer_strengths_mpa): pass strength_xy and '
+                             'strength_z, the allowables in the layer plane and across the layers, in MPa')
+        strength_xy = pair[0] if strength_xy is None else strength_xy
+        strength_z = pair[1] if strength_z is None else strength_z
+    xy, z = _positive('strength_xy', strength_xy), _positive('strength_z', strength_z)
+    if strength_shear is None:
+        return xy, z, z / math.sqrt(3.0), LAYER_SHEAR_ASSUMPTION
+    return xy, z, _positive('strength_shear', strength_shear), 'interlayer shear allowable given'
+
+
+def layer_utilisation(sig, normal, strength_xy: float, strength_z: float, strength_shear: Optional[float] = None
+                      ) -> Tuple[np.ndarray, np.ndarray]:
+    """(bond, bulk) utilisations, stress over allowable, for stress tensors ``sig`` (..., 3, 3) MPa and a layer normal:
+    bond = sqrt((max(sigma_n, 0) / S_z)^2 + (tau_n / S_s)^2), bulk = von Mises / S_xy (the notes above this function).
+    S_s defaults to S_z / sqrt(3), which makes bond = sqrt(max(sigma_n, 0)^2 + 3 tau_n^2) / S_z. The safety factor is
+    1 / max(bond, bulk)."""
+    xy, z, ss, _ = layer_allowables(None, strength_xy, strength_z, strength_shear)
+    sn, tau = layer_stresses(sig, normal)
+    return np.sqrt((np.maximum(sn, 0.0) / z) ** 2 + (tau / ss) ** 2), von_mises(sig) / xy
+
+
+@dataclass(frozen=True, eq=False)
+class LayerCheck:
+    """Study.layer_check()'s answer. A utilisation is stress over allowable (1 at the allowable); per element it is the
+    highest of the element's four corners, and a safety factor is its inverse."""
+    normal: Tuple[float, float, float]
+    strength_xy_mpa: float
+    strength_z_mpa: float
+    strength_shear_mpa: float
+    shear_basis: str
+    bond: np.ndarray                 # (n elements,) bond utilisation
+    bulk: np.ndarray                 # (n elements,) bulk utilisation
+    judged: np.ndarray               # (n elements,) bool: the elements the summary is taken over
+    worst: Dict[str, Any]            # the judged corner with the highest utilisation: where, its stresses, its mode
+
+    @property
+    def utilisation(self) -> np.ndarray:
+        return np.maximum(self.bond, self.bulk)
+
+    @property
+    def factor(self) -> np.ndarray:
+        """Per-element safety factor, 1 / max(bond, bulk) (inf where unstressed)."""
+        u = self.utilisation
+        with np.errstate(divide='ignore'):
+            return np.where(u > 0, 1.0 / np.where(u > 0, u, 1.0), np.inf)
+
+    @property
+    def mode(self) -> np.ndarray:
+        """Per element, the check that governs it: 'bond' or 'bulk', or 'none' where the element is unstressed."""
+        return np.where(self.utilisation <= 0, 'none', np.where(self.bond >= self.bulk, 'bond', 'bulk'))
+
+    def _sf(self, u: np.ndarray) -> Optional[float]:
+        top = float(u[self.judged].max()) if self.judged.any() else 0.0
+        return 1.0 / top if top > 0 else None
+
+    @property
+    def safety_factor(self) -> Optional[float]:
+        return self._sf(self.utilisation)
+
+    @property
+    def safety_factor_bond(self) -> Optional[float]:
+        return self._sf(self.bond)
+
+    @property
+    def safety_factor_bulk(self) -> Optional[float]:
+        return self._sf(self.bulk)
+
+    @property
+    def governed_by(self) -> Optional[str]:
+        """'bond' or 'bulk' at the worst corner; None when the judged elements carry no stress."""
+        return self.worst['mode']
+
+    def as_dict(self) -> Dict[str, Any]:
+        """The summary for a record (JSON-ready; the per-element arrays left out)."""
+        r = lambda v, k=2: None if v is None else round(float(v), k)
+        return {'normal': [r(v, 6) for v in self.normal],
+                'safety_factor': r(self.safety_factor), 'governed_by': self.governed_by,
+                'safety_factor_bond': r(self.safety_factor_bond), 'safety_factor_bulk': r(self.safety_factor_bulk),
+                'allowables_mpa': {'xy': r(self.strength_xy_mpa, 3), 'z': r(self.strength_z_mpa, 3),
+                                   'shear': r(self.strength_shear_mpa, 3)},
+                'shear_basis': self.shear_basis, 'worst': dict(self.worst),
+                'judged_elements': int(self.judged.sum()), 'assumptions': LAYER_ASSUMPTIONS}
+
+
+# --- the material data a result records
+_CONSTANTS = ('E_mpa', 'E_direction', 'nu', 'strength_mpa', 'strength_xy_mpa', 'strength_z_mpa', 'density_g_cm3')
+
+
+def material_record(material: Material) -> Dict[str, Any]:
+    """The material data a study used, as ``Study.result['material_data']`` records it: ``key``, the built-in row it
+    is (None for a material of your own or a changed copy of a row); the constants (E and the print direction it is
+    for, Poisson's ratio, the strength the safety factor uses, the layer allowables, the density); where they come
+    from (``source``, and ``note``, which names the data sheet and its edition); and ``constants_hash``, the first 16
+    hex digits of the SHA-256 of the constants alone. Two records with one hash used the same numbers;
+    material_changes() lists what differs between two that do not."""
+    m, pair = material, material.layer_strengths_mpa
+    consts = {'E_mpa': float(m.E_mpa), 'E_direction': m.direction or None, 'nu': float(m.nu),
+              'strength_mpa': float(m.strength_mpa),
+              'strength_xy_mpa': float(pair[0]) if pair else None, 'strength_z_mpa': float(pair[1]) if pair else None,
+              'density_g_cm3': float(m.density_g_cm3)}
+    digest = hashlib.sha256(json.dumps(consts, sort_keys=True, separators=(',', ':')).encode()).hexdigest()[:16]
+    return {'key': next((k for k, v in MATERIALS.items() if v == m), None), 'name': m.name, **consts,
+            'source': m.source or None, 'note': m.note or None, 'constants_hash': digest}
+
+
+def _material_data(x, which: str) -> Dict[str, Any]:
+    if isinstance(x, Material):
+        return material_record(x)
+    if isinstance(x, dict):
+        if isinstance(x.get('result'), dict) and 'material_data' in x['result']:   # an export_viewer() file
+            x = x['result']
+        if isinstance(x.get('material_data'), dict):
+            return x['material_data']
+        if 'constants_hash' in x:
+            return x
+        name = x.get('material')
+        name = name.get('name') if isinstance(name, dict) else name
+        raise ValueError(f'the {which} side has no material data: a result made before results recorded the '
+                         f'constants (material_data) names its material ({name!r}) but not its numbers. To compare, '
+                         'pass the material that toolkit used (its MATERIALS row) as a Material, or re-run the study '
+                         'on this toolkit')
+    raise TypeError(f'the {which} side is a study result, its material_data, an export_viewer() file or a Material, '
+                    f'not {type(x).__name__}')
+
+
+def material_changes(recorded: Union[Dict[str, Any], Material], current: Union[Dict[str, Any], Material]
+                     ) -> List[Dict[str, Any]]:
+    """What differs between the material data behind two records, say one made on another toolkit revision and one
+    made now. Each is a study result, its ``material_data``, an export_viewer() file or a Material. One entry per field that differs, the
+    constants first, then ``key``, ``name``, ``source`` and ``note``: ``{'field', 'recorded', 'now'}``, with ``ratio``
+    (now / recorded) for numbers. Under forces and torques a change of E scales the deflections by recorded / now, a
+    change of strength the safety factors by now / recorded, and a change of density the masses by now / recorded.
+    An empty list means the same numbers. Raises ValueError for a result made before results recorded the data."""
+    a, b = _material_data(recorded, 'recorded'), _material_data(current, 'current')
+    out = []
+    for k in _CONSTANTS + ('key', 'name', 'source', 'note'):
+        x, y = a.get(k), b.get(k)
+        if x == y:
+            continue
+        change = {'field': k, 'recorded': x, 'now': y}
+        if isinstance(x, (int, float)) and isinstance(y, (int, float)) and x:
+            change['ratio'] = y / x
+        out.append(change)
+    return out
 
 
 @dataclass
@@ -472,9 +712,8 @@ class Study:
         sig = 2 * mu * eps
         for i in range(3):
             sig[i, i] += lam * tr
-        s = sig
-        vm = np.sqrt(0.5 * ((s[0, 0] - s[1, 1]) ** 2 + (s[1, 1] - s[2, 2]) ** 2 + (s[2, 2] - s[0, 0]) ** 2)
-                     + 3 * (s[0, 1] ** 2 + s[1, 2] ** 2 + s[2, 0] ** 2))
+        self.sig_corner = np.moveaxis(sig, (0, 1), (2, 3))   # (n elements, 4 corners, 3, 3) Cauchy stress, MPa
+        vm = von_mises(self.sig_corner)
         self.vm_corner = vm                            # (n elements, 4 corners), corner k at m.t[k]
         self.vm_elem = vm.max(axis=1)
         disp = u[ib.nodal_dofs]                        # (3, n vertices)
@@ -492,6 +731,7 @@ class Study:
         res = {
             'part': self.name, 'material': mat.name, 'material_note': mat.note,
             'material_source': mat.source or None, 'material_direction': mat.direction or None,
+            'material_data': material_record(mat),
             'mesh': {'nodes': int(self.points.shape[0]), 'tets': int(self.tets.shape[0]), 'size_mm': self.mesh_mm, 'element': 'P2 tetrahedra'},
             'loads': applied,
             'max_displacement_mm': round(float(mag.max()), 4),
@@ -576,6 +816,54 @@ class Study:
         x = x.copy()
         x[I] = sol
         return x
+
+    # --- the stress against a print's layers
+    def layer_check(self, normal: Sequence[float], strength_xy: Optional[float] = None,
+                    strength_z: Optional[float] = None, strength_shear: Optional[float] = None,
+                    judge: Optional[Sequence[bool]] = None) -> LayerCheck:
+        """The solved stress resolved against the layers of a print whose layer normal is ``normal`` (its build
+        direction: (0, 0, 1) for a part printed as modelled on the XY plane), at every element corner, in two checks
+        (the notes above layer_utilisation()):
+
+        - **bond**: sqrt(max(sigma_n, 0)^2 + 3 tau_n^2) against ``strength_z``, the allowable across the layers;
+        - **bulk**: von Mises against ``strength_xy``, the allowable in the layer plane.
+
+        The strengths (MPa) default to the material's ``layer_strengths_mpa``, which every printed row has; for a
+        material without them give both. ``strength_shear`` is the interlayer shear allowable. No data sheet gives one,
+        so unless it is given it is strength_z / sqrt(3), the ratio von Mises gives an isotropic solid: a stated
+        assumption (``shear_basis``) for a coupon to replace. ``judge`` (one bool per element) picks the elements the
+        summary is taken over; by default all but those touching a clamp or a load patch, as for the safety factor.
+
+        Returns a LayerCheck: per-element utilisations (``bond``, ``bulk``), factors (``factor``) and modes (``mode``);
+        the safety factor, its governing mode (``governed_by``) and the worst corner (``worst``). The stress is the
+        isotropic solve's, so a part whose load path depends on its stiffness can carry its load differently as a
+        print; walls, seams and infill are not modelled. It screens a print orientation; it does not qualify one."""
+        if not hasattr(self, 'sig_corner'):
+            raise RuntimeError('solve() the study before layer_check()')
+        n = _unit(normal)
+        xy, z, ss, basis = layer_allowables(self.material, strength_xy, strength_z, strength_shear)
+        sig = self.sig_corner
+        sn, tau = layer_stresses(sig, n)
+        bond = np.sqrt((np.maximum(sn, 0.0) / z) ** 2 + (tau / ss) ** 2)        # (n elements, 4 corners)
+        bulk = self.vm_corner / xy
+        nel = bond.shape[0]
+        if judge is None:
+            keep = ~self._touches_bc if (~self._touches_bc).any() else np.ones(nel, dtype=bool)
+        else:
+            keep = np.asarray(judge, dtype=bool).reshape(-1)
+            if keep.shape != (nel,) or not keep.any():
+                raise ValueError(f'judge is one bool per element ({nel}), with at least one True')
+        u = np.where(keep[:, None], np.maximum(bond, bulk), -1.0)
+        e, k = (int(i) for i in np.unravel_index(int(np.argmax(u)), u.shape))
+        P, T = self._m.p, self._m.t
+        r = lambda v, d=3: round(float(v), d)
+        worst = {'element': e, 'corner_mm': [r(v) for v in P[:, T[k, e]]],
+                 'element_centre_mm': [r(v) for v in P[:, T[:, e]].mean(axis=1)],
+                 'sigma_n_mpa': r(sn[e, k]), 'tau_n_mpa': r(tau[e, k]), 'von_mises_mpa': r(self.vm_corner[e, k]),
+                 'bond': r(bond[e, k], 4), 'bulk': r(bulk[e, k], 4),
+                 'mode': (None if max(bond[e, k], bulk[e, k]) <= 0             # unstressed
+                          else 'bond' if bond[e, k] >= bulk[e, k] else 'bulk')}
+        return LayerCheck(tuple(float(v) for v in n), xy, z, ss, basis, bond.max(axis=1), bulk.max(axis=1), keep, worst)
 
     # --- failure bookkeeping shared by animate() and export_viewer()
     def _element_volumes(self) -> np.ndarray:

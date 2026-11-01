@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" class="dotgraph" viewBox="0 0 556 682" width="556" height="682" role="img" aria-label="connectivity graph">
+<svg xmlns="http://www.w3.org/2000/svg" class="dotgraph" viewBox="14 176 512 384" width="512" height="384" role="img" aria-label="connectivity graph"><rect x="14" y="176" width="512" height="384" fill="#fff"/>
 <title>connectivity graph</title>
 <style>.dotgraph text{font:11px system-ui,-apple-system,'Segoe UI',sans-serif;fill:var(--ink,#202227)}.dotgraph .el{font-size:9px;fill:var(--muted,#686c75);paint-order:stroke;stroke:var(--card,#fff);stroke-width:3px}.dotgraph .cl{font-size:10px;fill:var(--muted,#686c75)}</style>
 <defs><marker id="dotarrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="var(--muted,#686c75)"/></marker></defs>

@@ -9,22 +9,26 @@
 Every figure is a tool's real output on a project in this repo, made in a scratch copy:
 
 * ``gates-connectivity.svg`` (cad-agent gates): the connectivity gate's graph of the gate bench
-  (tests/fixtures/gate_bench), as ``cad-agent site`` draws it from ``exports/gates/connectivity.dot``. It is built from
-  the bench's committed gate output (``site_snapshot/``, refreshed by ``site_snapshot.py``), with the built-in layout
-  (Graphviz is hidden from the run, so every machine draws the same SVG), and ``--check`` compares it byte for byte.
+  (tests/fixtures/gate_bench), as ``cad-agent site`` draws it from ``exports/gates/connectivity.dot``, framed 4:3 on
+  its hub (the static frame's parts around the hopper; the whole graph is tall and would be a thin strip on a card).
+  It is built from the bench's committed gate output (``site_snapshot/``, refreshed by ``site_snapshot.py``) with
+  the built-in layout (Graphviz is hidden from the run, so every machine draws the same SVG), and ``--check``
+  compares it byte for byte.
 * ``review-packet-store.jpg`` (cad-agent review-packet) and ``review-section-arm.jpg`` (cad-agent review-section,
   whose reviewer bundle carries the packet): renders of the gate bench's Store and Arm sections, after
   ``cad-agent gates --build``. VTK's pixels differ between machines and versions, so these are not compared; rerun
   ``--renders`` after a change to the bench or the renderer.
 * ``site-designs.jpg`` (cad-agent site) and ``dossier-review.jpg`` (cad-agent dossier): ``cad-agent site`` for
   examples/explore-two-wheel (its design cards, after ``cad-agent compare``) and the review page it builds for the
-  gate bench from ``cad-agent dossier``'s statuses, photographed by tools/page-shot.mjs at 1200 x 900.
+  gate bench from ``cad-agent dossier``'s statuses, photographed by tools/page-shot.mjs in an 800 x 600 window (the
+  site page scrolled to its designs).
 
 The tools run as ``python -m cadagent.cli``, the same entry point as the ``cad-agent`` command.
 """
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -62,11 +66,21 @@ def bench_copy(tmp: Path, snapshot: bool) -> Path:
     return dst / "project"
 
 
+HUB = (14, 176, 512, 384)          # the gates cover's frame in the graph's own units: x, y, width, height (4:3)
+
+
 def connectivity() -> str:
     with tempfile.TemporaryDirectory(prefix="tool-figures-") as tmp:
         project = bench_copy(Path(tmp), snapshot=True)
         cli(project, "site", "--project", str(project), no_graphviz=True)
-        return (project / "site" / "review" / "connectivity.svg").read_text(encoding="utf-8")
+        svg = (project / "site" / "review" / "connectivity.svg").read_text(encoding="utf-8")
+    # Frame the hub: the same drawing with a 4:3 viewBox on it (and a white ground, as on the review page).
+    head = re.match(r'<svg [^>]*>', svg)
+    if not head or 'viewBox="0 0 ' not in head.group(0):
+        raise SystemExit("cad-agent site's connectivity.svg has no viewBox to frame: update tools/tool_figures.py")
+    x, y, w, h = HUB
+    root = re.sub(r'viewBox="[^"]*" width="[^"]*" height="[^"]*"', f'viewBox="{x} {y} {w} {h}" width="{w}" height="{h}"', head.group(0))
+    return root + f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="#fff"/>' + svg[head.end():]
 
 
 def jpeg(src: Path, dst: Path, width: int = 960) -> None:
@@ -88,9 +102,10 @@ def renders() -> None:
 
 
 def shots() -> None:
-    def shot(page: Path, dst: Path) -> None:
+    def shot(page: Path, dst: Path, selector: str = "") -> None:
         png = dst.with_suffix(".png")
-        subprocess.run(["node", str(ROOT / "tools" / "page-shot.mjs"), str(page), str(png), "1200", "900"], check=True, cwd=ROOT)
+        subprocess.run(["node", str(ROOT / "tools" / "page-shot.mjs"), str(page), str(png), "800", "600", selector],
+                       check=True, cwd=ROOT)
         jpeg(png, dst)
         png.unlink()
     with tempfile.TemporaryDirectory(prefix="tool-figures-") as tmp:
@@ -98,7 +113,7 @@ def shots() -> None:
         shutil.copytree(EXPLORE, ex, ignore=SKIP)
         cli(ex, "compare", ok=(0, 1))                     # exit 1: a design fails, which the page shows
         cli(ex, "site")
-        shot(ex / "site" / "index.html", OUT / "site-designs.jpg")
+        shot(ex / "site" / "index.html", OUT / "site-designs.jpg", 'h2:has-text("Designs")')
         project = bench_copy(Path(tmp), snapshot=True)
         cli(project, "site", "--project", str(project), no_graphviz=True)
         shot(project / "site" / "review" / "index.html", OUT / "dossier-review.jpg")

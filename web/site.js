@@ -13,3 +13,6 @@ if (gallery) import('/kit/gallery.js').catch(() => {}).finally(() => {
 // Header gets its rule once the page scrolls.
 const header = document.querySelector('.site-header');
 if (header) { const f = () => header.classList.toggle('scrolled', scrollY > 8); addEventListener('scroll', f, { passive: true }); f(); }
+// A 3D model (the home page's Gyropup): the element waits for the page to load and come into view before it fetches
+// three.js and the model, so the poster is all the first paint needs.
+if (document.querySelector('cad-model')) import('/kit/model.js').catch(() => {});

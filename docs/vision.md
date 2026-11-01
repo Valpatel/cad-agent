@@ -64,10 +64,19 @@ flowchart TD
 Most areas start at `idea` on purpose. A hub page that says "idea, nothing built yet" with its issue is more useful
 than an area nobody can find.
 
+Areas and topics are judged on their own evidence, and an area is never rated below its most mature topic. A domain
+takes the highest level among its areas. That says how far its best-developed area has got, not the domain as a whole,
+so its hub shows every area's level beside it. `tests/test_areas.py` checks both rules.
+
 ## Confidence on tools and rules
 
-Every tool and rule gets a confidence level and the evidence behind it (#143). It is stored with the rule in the
-reference registry (#118, #119) and the process profiles (#99), and with each tool in the catalogue.
+This is planned, not built (#143). Every tool and rule will get a confidence level and the evidence behind it. The
+level will be stored with each rule, in the reference registry (#118, draft PR #119) and the process profiles (#99),
+and with each tool in the catalogue.
+
+The estimate is the chance that the tool or rule gives a right answer, within its stated tolerance, for inputs inside
+its stated limits. It rates one tool or rule. It is not a probability to multiply or average along a chain of tools,
+because their errors are not independent.
 
 | Level | Rough estimate | Evidence |
 |---|---|---|
@@ -95,15 +104,22 @@ flowchart TD
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
 ```
 
-- **Jobs** live at `evals/jobs/<domain>/<area>/<job>/`: the task as the user would write it, input files, a time and
-  token budget, and a reference solution that passes.
-- **Graders** are code, not opinions. They measure geometry, read `cad-agent` check results, or compare numbers within
-  a stated tolerance. Each says what it cannot see.
-- **The runner** tries a job with a harness (Claude Code, Codex, Hermes and others) and a model (hosted, or local
+Nothing here exists yet: no `evals/` folder and no runner. This is the plan #142 builds from.
+
+- **Survey first.** Before building a runner, #142 will survey existing evaluation harnesses and CAD benchmarks (some
+  are already listed in `research/landscape.json`) and record adopt-vs-build, as for any new capability.
+- **Jobs** will live at `evals/jobs/<domain>/<area>/<job>/`: the task as the user would write it, input files, a time
+  and token budget, and a reference solution that passes.
+- **Graders** will be code, not opinions. They measure geometry, read `cad-agent` check results, or compare numbers
+  within a stated tolerance. Each says what it cannot see.
+- **The runner** will try a job with a harness (Claude Code, Codex, Hermes and others) and a model (hosted, or local
   through a configurable endpoint). It runs in two modes: `bare` (no cad-agent) and `kit` (cad-agent and its skills
-  installed). Each run gets a fresh sandbox with no credentials.
-- **Results** are one JSON line per run, summarised as pass rates with intervals over repeated runs. The same runner
-  measures discovery: how many calls and tokens it takes to reach the right tool.
+  installed).
+- **Credentials:** each run gets a fresh sandbox holding only what the model needs. That is the hosted model's API
+  key, passed in for that run alone, or a local endpoint's address. Repository and GitHub tokens, deploy keys and any
+  other secrets stay out.
+- **Results** will be one JSON line per run, summarised as pass rates with intervals over repeated runs. The same
+  runner will measure discovery: how many calls and tokens it takes to reach the right tool.
 
 ## Discovery
 
@@ -142,7 +158,9 @@ flowchart TD
   - `src/cadagent` is grouped by job (geometry, sim, make, publish; #121), because one tool serves many areas. FEA
     checks a leg frame and a lid alike.
   - `skills/` and `agents/` stay flat, because harnesses install them by name.
-  - `lessons/` is grouped by area (#133).
+  - `lessons/` is grouped into six folders (#133). They are broader than single areas, so for now the `lessons:`
+    field maps each folder to the node that owns it. Renaming them to taxonomy slugs waits for #145's batches, once
+    the taxonomy has settled.
   - `docs/` and `research/` gain domain folders once an area has a few pages (#145).
   - `evals/jobs/` is laid out by domain and area from the start.
 - **The taxonomy ties them together.** Each node lists its pages, commands, modules, skills, lessons and issues, and
@@ -162,16 +180,21 @@ The hubs give the topic-first view without those costs.
 
 Existing content moves in small batches, never in one big reorganisation (#145):
 
-1. **Now:** the taxonomy places every existing page, command, skill and lesson area. A test fails when a new page,
-   command or skill is not placed, so the map cannot fall behind.
+1. **Now:** the taxonomy places every existing page, command, skill, agent and lesson folder. A test fails when a new
+   one is not placed, so the map cannot fall behind. A PR that adds one adds its line to `docs/areas.yaml` (the rule is
+   in CONTRIBUTING.md, AGENTS.md and the PR template). When two open PRs cross, the one that merges second adds it,
+   after merging dev and re-running its CI, because dev does not require branches to be up to date.
 2. **After #123, #124 and #133:** the site generates the area hubs and `areas.json` (#141).
-3. **Then, batch by batch:** `docs/` and `research/` pages move into domain folders when their area has three or more
+3. **Before the first move:** `tools/build-site.mjs` publishes only top-level `docs/` and `research/` pages today. Its
+   docs and research sections must be widened by one domain level, as #133 widened the lessons section, or a moved
+   page would get no site page and its redirect would point at nothing.
+4. **Then, batch by batch:** `docs/` and `research/` pages move into domain folders when their area has three or more
    pages, or when a page is being edited anyway. Each move follows the #133 pattern:
    - a `<!-- moved-to: … -->` stub at the old path, kept for one minor release;
    - a line in the site's permanent redirect list, kept for good;
    - every reference updated;
    - a README and map for the new folder (#113).
-4. **As jobs land:** `evals/jobs/` fills in area by area, starting with areas at `tooling`, since those have something
+5. **As jobs land:** `evals/jobs/` fills in area by area, starting with areas at `tooling`, since those have something
    to measure.
 
 ## Priorities

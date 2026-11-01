@@ -5,11 +5,21 @@
 #   priority  gyropup (needed for Gyropup to become real) and/or demo (makes a good video or interactive demo)
 #   pages     repo-relative Markdown pages (docs/, research/)       cli      `cad-agent` subcommands
 #   api       cadagent modules (today's import paths)                skills   skills/<name>/SKILL.md
-#   agents    agents/<name>.md                                       lessons  a lessons/<area>/ folder name (#133)
-#   issues    open cad-agent issues                                  projects keys of `projects` below
+#   agents    agents/<name>.md                                       lessons  a lessons/ folder this node owns (#133)
+#   issues    open cad-agent issues or pull requests                 projects keys of `projects` below
 # A list may name the same item under several nodes. tests/test_areas.py checks that every item exists, that every
-# docs/ and research/ page and every skill is placed somewhere, and that every lessons/<area>/ folder is claimed.
-# Maturity values are first estimates; correct them when evidence says otherwise, and only then.
+# docs/ and research/ page, command, skill and agent is placed somewhere, and that every lessons/ folder is claimed.
+#
+# Keep the map whole: a PR that adds a docs or research page, a `cad-agent` command, a skill or an agent adds its line
+# here. When two open PRs cross, the one that merges second adds it, after merging dev and re-running its CI (dev does
+# not require branches to be up to date, so an older green run proves nothing about the map).
+#
+# Maturity values are first estimates; correct them when evidence says otherwise, and only then. An area or topic is
+# judged on its own evidence, and an area is never below its most mature topic. A domain's maturity is the highest of
+# its areas': it says how far the domain's best-developed area has got, and its hub shows every area's level beside it.
+#
+# Module names in `api` are today's import paths. #121 moves most modules into packages (cadagent.sim.fea and so on);
+# when both are on dev, the test rejects an old path, so whichever PR merges second switches them to the new ones.
 version: 1
 
 maturity:
@@ -72,8 +82,8 @@ domains:
         issues: [94, 95, 137]
         topics:
           - {slug: snap-fits, title: Snap fits, scope: "Cantilever, torsion and annular snaps sized by print direction.", maturity: tooling, priority: [demo], issues: [95]}
-          - {slug: flexures, title: Flexures, scope: "Flexure hinges and stages: stiffness, stroke and fatigue.", maturity: idea, issues: [95]}
-          - {slug: living-hinges, title: Living hinges, scope: "Thin hinges in printed and moulded plastics.", maturity: idea}
+          - {slug: flexures, title: Flexures, scope: "Flexure hinges and stages: stiffness, stroke and fatigue.", maturity: surveyed, issues: [95]}
+          - {slug: living-hinges, title: Living hinges, scope: "Thin hinges in printed and moulded plastics.", maturity: surveyed}
       - slug: gears
         title: Gears
         scope: Spur, helical, planetary and printed gear trains.
@@ -97,9 +107,9 @@ domains:
         projects: [gyropup]
         topics:
           - {slug: five-bar-legs, title: Five-bar legs, scope: "Two-motor parallel legs: kinematics, workspace, loads.", maturity: idea, priority: [gyropup, demo], issues: [144]}
-      - slug: assembly-and-hardware
-        title: Assembly and bought hardware
-        scope: Screws, inserts, bought parts, and getting them in and out.
+      - slug: fasteners-and-hardware
+        title: Fasteners, bought hardware and assembly
+        scope: Screws, inserts and other bought parts, and getting them in and out.
         maturity: tooling
         priority: [gyropup]
         pages: [docs/subassembly-insertion.md]
@@ -160,9 +170,9 @@ domains:
       - slug: sheet-metal
         title: Sheet metal
         scope: Bent metal parts.
-        maturity: idea
-        priority: [gyropup]
-        issues: [99, 119]
+        maturity: surveyed
+        pages: [research/fea-and-process-tools.md]
+        issues: [99, 118, 119]
       - slug: mould-making
         title: Mould making
         scope: Short-run moulds made in the shop.
@@ -180,6 +190,7 @@ domains:
         title: Conduction and heat sinks
         scope: Heat paths from the chip to the air.
         maturity: tooling
+        priority: [gyropup]
         api: [cadagent.heatsink]
         projects: [j501-enclosure]
       - slug: airflow-and-fans
@@ -274,11 +285,12 @@ domains:
         title: Circuit boards
         scope: PCBs by job, with their evidence (ERC, DRC, routing, assembly).
         maturity: tooling
+        priority: [gyropup]
         pages: [docs/pcb.md]
         cli: [pcb-check]
         api: [cadagent.pcb, cadagent.pcb_routing]
         lessons: electronics
-        projects: [thor-can-breakout]
+        projects: [thor-can-breakout, gyropup]
         topics:
           - {slug: breakout-boards, title: Breakout boards, scope: "A connector or part broken out to headers or spring terminals.", maturity: idea}
           - {slug: adapter-boards, title: Adapter boards, scope: "Adapting one connector or part to another.", maturity: idea}
@@ -300,8 +312,8 @@ domains:
     maturity: tooling
     areas:
       - slug: agent-workflow
-        title: Agent workflow
-        scope: Issues, worktrees, reviews and long runs for parallel agents.
+        title: Agent process and workflow
+        scope: How agents work here, in parallel - issues, worktrees, reviews and long runs.
         maturity: tooling
         pages: [docs/agent-workflow.md, research/agent-toolkits-2026-10.md]
         cli: [agents]
@@ -311,7 +323,7 @@ domains:
         issues: [111, 112]
       - slug: design-process
         title: Design process
-        scope: The dossier, integrity gates and section reviews that carry a design to release.
+        scope: Requirements and the dossier that holds them, integrity gates and section reviews, through to release.
         maturity: tooling
         pages: [docs/design-process-plan.md, docs/dossier.md, docs/gates.md, docs/review-packet.md, docs/volume-precision.md, research/design-workflows.md]
         cli: [build, check, report, all, dossier, gates, review-packet, review-section]

@@ -15,7 +15,11 @@ LEVELS = ["idea", "surveyed", "tooling", "validated", "proven"]
 PRIORITIES = {"gyropup", "demo"}
 SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 LIST_KEYS = ("priority", "pages", "cli", "api", "skills", "agents", "issues", "projects")
-NODE_KEYS = {"slug", "title", "scope", "maturity", "lessons", "areas", "topics", *LIST_KEYS}
+NODE_KEYS = {"slug", "title", "scope", "maturity", "lessons", *LIST_KEYS}
+# What each depth may hold: a key at the wrong depth (a mis-indented node) is an error, not silently skipped.
+DEPTH_KEYS = {1: NODE_KEYS | {"areas"}, 2: NODE_KEYS | {"topics"}, 3: NODE_KEYS}
+TOP_KEYS = {"version", "maturity", "projects", "cross_cutting", "domains"}
+CROSS_KEYS = {"pages", "api", "issues"}
 
 
 @pytest.fixture(scope="module")
@@ -47,9 +51,11 @@ def test_the_maturity_levels_are_the_documented_ladder(tree):
 
 
 def test_every_node_has_the_core_fields_and_known_keys(tree):
+    assert set(tree) <= TOP_KEYS, f"unknown top-level keys {set(tree) - TOP_KEYS}"
+    assert set(tree.get("cross_cutting", {})) <= CROSS_KEYS, f"unknown cross_cutting keys {set(tree['cross_cutting']) - CROSS_KEYS}"
     for path, n in nodes(tree):
-        where = "/".join(path)
-        assert NODE_KEYS >= set(n), f"{where}: unknown keys {set(n) - NODE_KEYS}"
+        where, allowed = "/".join(path), DEPTH_KEYS[len(path)]
+        assert allowed >= set(n), f"{where}: keys {sorted(set(n) - allowed)} do not belong at this depth"
         assert SLUG.match(n["slug"]), f"{where}: slug must be lower-case words joined by hyphens"
         assert n["title"].strip() and n["scope"].strip(), f"{where}: needs a title and a one-line scope"
         assert "\n" not in n["scope"].strip(), f"{where}: scope is one line"
@@ -57,6 +63,17 @@ def test_every_node_has_the_core_fields_and_known_keys(tree):
         assert set(n.get("priority", [])) <= PRIORITIES, f"{where}: priority flags are {sorted(PRIORITIES)}"
         for key in LIST_KEYS:
             assert isinstance(n.get(key, []), list), f"{where}: {key} is a list"
+
+
+def test_maturity_follows_the_written_rules(tree):
+    """docs/areas.yaml header: an area is never below its most mature topic; a domain is the highest of its areas."""
+    rank = LEVELS.index
+    for d in tree["domains"]:
+        for a in d.get("areas", []):
+            top = max((rank(t["maturity"]) for t in a.get("topics", [])), default=0)
+            assert rank(a["maturity"]) >= top, f"{d['slug']}/{a['slug']}: below its most mature topic"
+        best = max(rank(a["maturity"]) for a in d.get("areas", []))
+        assert rank(d["maturity"]) == best, f"{d['slug']}: a domain's maturity is the highest of its areas' ({LEVELS[best]})"
 
 
 def test_slugs_are_unique_among_siblings_and_areas_unique_overall(tree):
@@ -90,6 +107,13 @@ def test_every_named_command_and_module_exists(tree):
         assert cmd in SUBCOMMANDS, f"`cad-agent {cmd}` is not a command"
     for mod in placed(tree, "api"):
         assert mod.startswith("cadagent.") and importlib.util.find_spec(mod), f"{mod} is not a cadagent module"
+
+
+def test_modules_are_named_by_their_current_paths(tree):
+    """Once #121's package layout is on dev, old module paths only warn and go at v0.7.0: name the new ones."""
+    moved = pytest.importorskip("cadagent._moved", reason="old paths are current until #121 lands").MOVED
+    old = sorted(m for m in placed(tree, "api") if m.split(".", 1)[1] in moved)
+    assert not old, f"use the new paths in docs/areas.yaml: {[(m, moved[m.split('.', 1)[1]]) for m in old]}"
 
 
 def test_every_command_skill_and_agent_is_placed(tree):

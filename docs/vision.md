@@ -214,4 +214,5 @@ Existing content moves in small batches, never in one big reorganisation (#145):
    FEA, CFD and topology renders.
 3. **Everything else** grows in parallel at its own maturity, from the issues filed against its area.
 
-The `priority` flags in [`docs/areas.yaml`](areas.yaml) mark these areas, so hubs and tools can sort by them.
+The `demo` priority flag in [`docs/areas.yaml`](areas.yaml) marks the areas for item 2, so hubs and tools can sort by
+it. The catalogue singles out no project: an area's `projects` lists every real project that used it, alike.

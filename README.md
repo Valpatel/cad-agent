@@ -150,6 +150,9 @@ cad-agent site --serve --project path/to/your-project
 | `site` | Markdown, for the review site |
 | `explore` | optuna, for the NSGA-II and TPE searches of `cad-agent optimise` (random and grid need nothing) |
 
+The package runs on Python 3.10 or newer; the `cad` and `sim` extras need 3.11 or newer, because every Pillow release
+for 3.10 has critical advisories and CadQuery 2.8 needs 3.11.
+
 ## Projects it learns from
 
 | Project | What it is |
@@ -180,7 +183,7 @@ described wrongly here, please [tell us](https://github.com/Valpatel/cad-agent/i
 [bd_warehouse](https://github.com/gumyr/bd_warehouse) by Roger Maitland (Apache-2.0).
 
 **Libraries and programs we run on:** [CadQuery](https://github.com/CadQuery/cadquery) on
-[Open CASCADE](https://dev.opencascade.org/) (shapes from [build123d](https://github.com/gumyr/build123d) work too),
+[Open CASCADE](https://occt3d.com/open-cascade-technology/) (shapes from [build123d](https://github.com/gumyr/build123d) work too),
 [trimesh](https://github.com/mikedh/trimesh), [manifold3d](https://github.com/elalish/manifold),
 [gmsh](https://gmsh.info/), [scikit-fem](https://github.com/kinnala/scikit-fem),
 [pyMOTO](https://github.com/aatmdelissen/pyMOTO), [PyVista](https://github.com/pyvista/pyvista) and

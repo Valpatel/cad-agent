@@ -23,9 +23,22 @@ solids-short-continuation
                     residuals (every iteration) but left header-only temperature and heat files (logged every 10).
 solids-one-step-continuation
                     the same, but the continuation from 100 crashed after its first iteration, at 101.
+solids-short-then-full-continuation
+                    solids-short-continuation continued again from the same saved time, 100: the stopped solve saved
+                    nothing, so this one starts from 100 too and finishes at 300. Its 100/ folders already hold
+                    <kind>.dat (residual rows, and header-only temperature and heat files), so it writes
+                    <kind>_100.dat beside them.
 fins-block-drifting air only, the fin-block case in one 100-iteration solve: the fan flow, the air through the fan and
                     the heat leaving have settled, the heat leaving within 1 % of the 40 W put in, but the block's
-                    mean air is still rising, by 1.5 °C over the convergence window (80-100).
+                    mean air is still rising, by 1.5 °C over the convergence window (80-100). Planted to test the
+                    drift check, not a realistic run: with the fins at 61.8 °C and hA 3.3 W/K, the block's heat falls
+                    from 38.9 W to 34.0 W over that window while the heat leaving stays at 39.7 W.
+fan-faces-known-profile
+                    air only, a vented box whose only way out is an exhaust fan, 50 W put in, in one settled
+                    100-iteration solve. The fan's annulus carries a known profile, the same at both ends of its
+                    zone: its inner half (by area) 1 g/s of air at 30 °C, its outer half 3 g/s at 40 °C. By volume
+                    the zone averages (30 + 40) / 2 = 35.0 °C; by mass flow (1 x 30 + 3 x 40) / 4 = 37.5 °C. The
+                    face rows are computed face by face, sum(phi T) / sum(phi), as surfaceFieldValue does.
 """
 from __future__ import annotations
 
@@ -89,8 +102,8 @@ def vol_field(path: Path, region: str, columns: str, rows, cells: int, volume: f
     path.write_text('\n'.join(head + body) + '\n')
 
 
-def surface_field(path: Path, column: str, rows, weight: bool):
-    head = ['# Region type : patch ambient', '# Faces         : 2280', '# Area          : 2.21275997e-01',
+def surface_field(path: Path, column: str, rows, weight: bool, region='patch ambient', faces=2280, area=2.21275997e-01):
+    head = [f'# Region type : {region}', f'# Faces         : {faces}', f'# Area          : {_num(area)}',
             '# Scale factor  : 1.00000000e+00'] + (['# Weight field  : phi'] if weight else []) + ['# Time          \t' + column]
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text('\n'.join(head + [str(t).ljust(16) + '\t' + _num(v) for t, v in rows]) + '\n')
@@ -204,6 +217,57 @@ def fins_block_drifting(case: Path):
     (case / 'cadagent-case.json').write_text(json.dumps(fins_meta('fins-block-drifting', 100), indent=2) + '\n')
 
 
+def fan_faces_known_profile(case: Path):
+    """An exhaust fan carrying a known two-band profile through both ends of its zone, settled (see the list above)."""
+    rng = np.random.default_rng(53)
+    d_outer, d_hub = 50.0, 20.0
+    meta = {'name': 'fan-faces-known-profile', 'solver': 'chtMultiRegionSimpleFoam (OpenFOAM v2512)', 'ambient_c': 25.0,
+            'domain_mm': [[-50, -50, 0], [130, 130, 170]], 'base_cell_mm': 8.0, 'iterations': 100,
+            'ground': 'adiabatic no-slip floor (a table)', 'solids': [], 'walls': [{'name': 'box', 'cell_mm': 2.0}],
+            'contacts': [], 'fans': [{'name': 'fan', 'centre_mm': [40, 40, 60], 'axis': [0, 0, 1], 'd_outer_mm': d_outer,
+                                      'd_hub_mm': d_hub, 'dp0_pa': 20.0, 'q_free_m3h': 30.0, 'q_free_cfm': 17.7,
+                                      'note': 'exhaust fan, the box\'s only way out', 'model': 'actuator disc, linear fan curve'}],
+            'porous': [{'name': 'heater', 'lo_mm': [20, 20, 24], 'hi_mm': [60, 60, 44], 'd': [2e5, 2e5, 2e5], 'f': [0, 0, 0],
+                        'e1': [1, 0, 0], 'e2': [0, 1, 0], 'heat_w': 50.0, 'ha_w_k': None, 'fin_temperature_c': None,
+                        'target_w': 50.0, 'note': 'evenly heated block'}],
+            'heat_input_w': 50.0, 'limits': LIMITS}
+    # each half of the annulus (by area) as 12 faces of equal area and flux: phi in kg/s, T in K
+    area = math.pi / 4 * ((d_outer / 1000) ** 2 - (d_hub / 1000) ** 2)
+    faces = [(0.001 / 12, T0 + 30.0)] * 12 + [(0.003 / 12, T0 + 40.0)] * 12
+    phi_sum = sum(p for p, _ in faces)                                         # 0.004 kg/s
+    t_weighted = sum(p * t for p, t in faces) / phi_sum                         # 310.65 K, 37.5 °C
+    t_volume = T0 + (30.0 + 40.0) / 2                                           # equal volumes: 35.0 °C
+    rho = 1e5 / (8314.462618 / 28.96 * (25 + T0))
+    uz = phi_sum / (rho * area)                                                 # the zone's mean axial velocity
+    pp = case / 'postProcessing' / 'domain0'
+    solver_info(pp / 'residuals' / '0' / 'solverInfo.dat', [(t, residuals(rng, t, [], 20)) for t in range(1, 101)])
+    ts = range(10, 101, 10)
+    vol_field(pp / 'zone_fan' / '0' / 'volFieldValue.dat', 'cellZone fan', 'volAverage(U)\tvolAverage(T)',
+              [(t, (0.0, 0.0, uz), t_volume) for t in ts], 1232, 9.9e-6)
+    vol_field(pp / 'zone_heater' / '0' / 'volFieldValue.dat', 'cellZone heater', 'volAverage(U)\tvolAverage(T)',
+              [(t, (0.0, 0.0, 0.8), T0 + 41.0) for t in ts], 354, 3.2e-5)
+    vol_field(pp / 'T_max_domain0' / '0' / 'volFieldValue.dat', 'all domain0', 'max(T)', [(t, T0 + 48.0) for t in ts],
+              70583, 5.2e-3)
+    for side, zone in (('inlet', 'fanInlet'), ('outlet', 'fanOutlet')):
+        surface_field(pp / f'T_{side}_fan' / '0' / 'surfaceFieldValue.dat', 'weightedAverage(T)',
+                      [(t, t_weighted) for t in ts], weight=True, region=f'faceZone {zone}', faces=len(faces), area=area)
+        surface_field(pp / f'mass_{side}_fan' / '0' / 'surfaceFieldValue.dat', 'sum(phi)',
+                      [(t, phi_sum) for t in ts], weight=False, region=f'faceZone {zone}', faces=len(faces), area=area)
+        # every face carries air forward, so the gross flow is the net flow: nothing flows back
+        surface_field(pp / f'massGross_{side}_fan' / '0' / 'surfaceFieldValue.dat', 'sumMag(phi)',
+                      [(t, sum(abs(p) for p, _ in faces)) for t in ts], weight=False, region=f'faceZone {zone}',
+                      faces=len(faces), area=area)
+    # all the heat leaves through the fan: 0.004 kg/s x 1005 J/(kg K) x (37.5 - 25) K = 50.25 W, +0.5 % on the 50 W put in
+    phi = [rng.normal(0, 2e-8) for _ in ts]
+    surface_field(pp / 'flux_mass' / '0' / 'surfaceFieldValue.dat', 'sum(phi)', list(zip(ts, phi)), weight=False)
+    surface_field(pp / 'flux_T' / '0' / 'surfaceFieldValue.dat', 'weightedSum(T)',
+                  [(t, phi_sum * (t_weighted - (25 + T0)) + (25 + T0) * p) for t, p in zip(ts, phi)], weight=True)
+    log(case / 'log.solve', 1, 100, finished=True)
+    (case / 'log.topoSet').write_text('    cellZoneSet heater now size 354\n    cellZoneSet fan now size 1232\n'
+                                      '    faceZoneSet fanInlet now size 24\n    faceZoneSet fanOutlet now size 24\n')
+    (case / 'cadagent-case.json').write_text(json.dumps(meta, indent=2) + '\n')
+
+
 DIVERGED = '--> FOAM FATAL ERROR: Maximum number of iterations exceeded'
 
 
@@ -269,12 +333,18 @@ def solids_one_step_continuation(case: Path):
                                                       (100, 101, False, '--> FOAM FATAL ERROR: Floating point exception')])
 
 
+def solids_short_then_full_continuation(case: Path):
+    solids_run(case, 'solids-short-then-full-continuation', [(0, 150, False, DIVERGED), (100, 104, False, DIVERGED),
+                                                             (100, 300, True, '')])
+
+
 if __name__ == '__main__':
     for name, make in (('fins-no-solids', fins_no_solids), ('solids-ended-early', solids_ended_early),
                        ('solids-continued-again', solids_continued_again), ('solids-crashed-restart', solids_crashed_restart),
                        ('solids-short-continuation', solids_short_continuation),
                        ('solids-one-step-continuation', solids_one_step_continuation),
-                       ('fins-block-drifting', fins_block_drifting)):
+                       ('solids-short-then-full-continuation', solids_short_then_full_continuation),
+                       ('fins-block-drifting', fins_block_drifting), ('fan-faces-known-profile', fan_faces_known_profile)):
         shutil.rmtree(HERE / name, ignore_errors=True)
         (HERE / name).mkdir()
         make(HERE / name)

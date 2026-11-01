@@ -42,7 +42,8 @@ const KIND = Object.fromEntries(KINDS.map(k => [k.kind, k]));
 const tabOf = kind => (KIND[kind] || KIND.skill).tab;                       // subagents share the skills tab
 const KIND_LABEL = { demo: 'Demo', tool: 'Tool', project: 'Project', library: 'Library', benchmark: 'Benchmark', guide: 'Guide',
   lesson: 'Lessons', research: 'Research', skill: 'Skill', agent: 'Subagent' };
-const LEVELS = ['idea', 'surveyed', 'tooling', 'validated', 'proven'];
+/** The maturity levels, lowest first, from docs/areas.yaml: the bars, the key and the filters follow it. */
+const levelsOf = areas => areas.maturity.map(m => m.level);
 const STATUS_ORDER = ['ours', 'adopted', 'used', 'trial', 'candidate', 'reference', 'unverified', 'rejected'];
 const LICENCES = { permissive: 'Permissive', copyleft: 'Copyleft', other: 'None or restricted' };
 const MODE_LABEL = { interactive: 'Interactive', animated: 'Animated', render: 'Render' };
@@ -122,17 +123,16 @@ const CATALOG_FIELDS = {
   mode: 'demos: interactive, animated or render',
   related: 'ids of up to six entries that share an area (another kind first), else the domain',
   licence_family: 'permissive, copyleft or other (other: none recorded, non-commercial, source-available or custom)',
-  gyropup: 'true when one of its areas is needed for Gyropup',
   updated: 'the last change: last push (outside entries) or last commit (ours), as YYYY-MM-DD, or null',
 };
 const INDEX_FIELDS = {
   count: 'entries in catalog.json', kinds: 'the page\'s tabs: tab, the kinds it holds, label, count, page',
   maturity: 'the maturity levels, lowest first, and what each means',
-  domains: 'slug, title, scope, maturity, count, json (its file), page; areas: the same per area plus priority (gyropup, demo), kinds (count per kind), issues',
+  domains: 'slug, title, scope, maturity, count, json (its file), page; areas: the same per area plus priority (demo: a good demo), projects (keys of areas_source projects: real projects that used it), kinds (count per kind), issues',
   buckets: 'entries outside the areas: cross-cutting (about the whole project) and unplaced (outside entries without areas yet; 0 when all are placed)',
 };
 const AREA_FIELDS = {
-  level: 'domain, area or bucket', domain: 'areas: the domain it belongs to', priority: 'gyropup (needed for Gyropup), demo (a good demo)',
+  level: 'domain, area or bucket', domain: 'areas: the domain it belongs to', priority: 'demo (a good demo)', projects: 'areas: keys of the projects in docs/areas.yaml (areas_source) that used it',
   issues: 'GitHub issues for work in this area', topics: 'areas: its topics, with scope, maturity and issues', areas: 'domains: its areas',
   count: 'entries here', kinds: 'count per kind',
   items: 'every entry placed here (a domain holds its areas\' entries): the fields of catalog.json without summary and related',
@@ -140,6 +140,7 @@ const AREA_FIELDS = {
 
 export async function buildCatalog(ctx) {
   const { ORIGIN, REPO, pageURL, tracked } = ctx;
+  const LEVELS = levelsOf(ctx.areas);
   const has = new Set(tracked);
   const files = new Map();
   const abs = u => (u && u.startsWith('/') ? ORIGIN + u : u);
@@ -161,10 +162,10 @@ export async function buildCatalog(ctx) {
   for (const v of ctx.areas.cross_cutting?.pages || []) put('pages', v, 'cross-cutting');
   // Pages about the whole repository (README, CONTRIBUTING, licence notices, the lessons index) are cross-cutting too.
   for (const f of ['README.md', 'CONTRIBUTING.md', 'THIRD_PARTY_NOTICES.md', 'lessons/README.md']) if (!placed.pages.has(f)) put('pages', f, 'cross-cutting');
-  /** Area and domain slugs for a list of node slugs (a topic counts for its area), with maturity, Gyropup and domains. */
+  /** Area and domain slugs for a list of node slugs (a topic counts for its area), with maturity and domains. */
   const place = (slugs, where) => {
     const areas = [], domains = [];
-    let level = -1, gyropup = false;
+    let level = -1;
     for (const s of slugs || []) {
       if (BUCKETS[s]) { if (!areas.includes(s)) areas.push(s); continue; }
       const n = nodes.get(s);
@@ -173,9 +174,8 @@ export async function buildCatalog(ctx) {
       if (!areas.includes(at.slug)) areas.push(at.slug);
       if (!domains.includes(n.domain)) domains.push(n.domain);
       level = Math.max(level, LEVELS.indexOf(at.maturity));
-      if ((n.priority || []).includes('gyropup') || (at.priority || []).includes('gyropup')) gyropup = true;
     }
-    return { areas, domains, maturity: level >= 0 ? LEVELS[level] : null, gyropup };
+    return { areas, domains, maturity: level >= 0 ? LEVELS[level] : null };
   };
 
   // --------------------------------------------------------------------------- covers
@@ -306,7 +306,7 @@ export async function buildCatalog(ctx) {
       id: `demo-${slugify(d.id)}`, kind: 'demo', mode: d.mode, ...where2, what, notes: null, license: 'MIT', cover, demo: ORIGIN + url,
       updated: pageItems.get(pageFile)?.updated || null, tools: d.tools || [], figure: d.cover, still: d.still ?? 0.5 });
   };
-  const pick = it => ({ areas: it?.areas || [], domains: it?.domains || [], maturity: it?.maturity || null, gyropup: !!it?.gyropup });
+  const pick = it => ({ areas: it?.areas || [], domains: it?.domains || [], maturity: it?.maturity || null });
   for (const d of ctx.data.demos || []) await addDemo(d, 'docs/catalog.yaml');
   const listed = new Set((ctx.data.demos || []).map(d => d.cover));
   for (const [src, s] of shownFigures) {
@@ -388,7 +388,8 @@ export async function buildCatalog(ctx) {
     const unverified = b.status === 'unverified';
     const what = plainText(b.what || [b.tasks, b.size, b.venue || b.paper].filter(Boolean).join(' · ')) || null;
     const notes = [b.notes, b.ground_truth && `Ground truth: ${b.ground_truth}.`, b.data_license && `Data licence: ${b.data_license}.`,
-      unverified && 'Listed from its paper or site; tasks, data and licence not yet checked.'].filter(Boolean).map(plainText).join(' ') || null;
+      b.license_note && `Licence: ${b.license_note}.`,
+      unverified && `Listed from its paper or site; tasks${b.license_note ? ' and data' : ', data and licence'} not yet checked.`].filter(Boolean).map(plainText).join(' ') || null;
     items.push({ type: 'benchmark', status: unverified ? 'unverified' : 'reference', name: b.name, url: b.url, license: b.license_spdx || b.license,
       stars: b.stars, summary: [b.tasks || b.notes, b.size, b.venue || b.paper].filter(Boolean).join(' · ') || (unverified ? 'Listed from its paper or site; tasks, data and licence not yet checked.' : ''),
       id: `benchmark-${slugify(b.name)}`, kind: 'benchmark', ...where, what, notes, updated: b.last_push || null, raw: b });
@@ -461,7 +462,7 @@ export async function buildCatalog(ctx) {
   // Featured: a fixed score, so the order is the same on every build and agents can rely on it.
   const STATUS_SCORE = { adopted: 12, used: 12, trial: 8, ours: 6, candidate: 2, reference: 1, unverified: -4, rejected: -12 };
   for (const it of items) {
-    it.score = (it.cover.figure ? 20 : 0) + (it.demo ? 14 : 0) + (it.gyropup ? 8 : 0) + 5 * (LEVELS.indexOf(it.maturity) + 1) +
+    it.score = (it.cover.figure ? 20 : 0) + (it.demo ? 14 : 0) + 5 * (LEVELS.indexOf(it.maturity) + 1) +
       (STATUS_SCORE[it.status] || 0) + 3 * Math.log10((it.stars || 0) + 1) + (it.page && BOOST.has(it.page.file) ? 30 : 0);
   }
   const kindIndex = Object.fromEntries(KINDS.map((k, i) => [k.kind, i]));
@@ -483,7 +484,7 @@ export async function buildCatalog(ctx) {
     for (const k of ['summary', 'how', 'policy', 'license', 'stars', 'last_push', 'markdown', 'source']) if (it[k] !== undefined) o[k] = it[k];
     if (it.doc) o.doc = it.doc;
     Object.assign(o, { id: it.id, kind: it.kind, areas: it.areas, maturity: it.maturity, what: it.what || null, notes: it.notes || null,
-      cover: abs(it.cover.src), demo: it.demo || null, related: it.related, licence_family: it.family, gyropup: it.gyropup, updated: it.updated || null });
+      cover: abs(it.cover.src), demo: it.demo || null, related: it.related, licence_family: it.family, updated: it.updated || null });
     if (it.mode) o.mode = it.mode;
     if (it.cover.anim) o.cover_animated = abs(it.cover.anim);
     return o;
@@ -511,7 +512,7 @@ export async function buildCatalog(ctx) {
   const index = {
     schema: 'cad-agent-catalog-index/1', origin: ORIGIN, revision: ctx.revision, built: ctx.built, fields: INDEX_FIELDS,
     how: 'Pick a domain or area, fetch its json (every entry placed there, with its url, its Markdown twin for our pages and tools, the call for tools, and its cover), then open the entry. ' +
-      'catalog.json has every entry. The page takes the same filters as URL parameters: kind, area, q, status, licence, maturity, gyropup, demo, sort.',
+      'catalog.json has every entry. The page takes the same filters as URL parameters: kind, area, q, status, licence, maturity, demo, sort.',
     catalog: `${ORIGIN}/catalog.json`, page: `${ORIGIN}/catalog`, areas_source: `${REPO}/blob/dev/docs/areas.yaml`,
     count: items.length, kinds: KINDS.map(k => ({ tab: k.tab, kinds: k.kind === 'skill' ? ['skill', 'agent'] : [k.kind], label: k.label,
       count: items.filter(it => tabOf(it.kind) === k.tab).length, page: `${ORIGIN}/catalog?kind=${k.tab}` })),
@@ -520,9 +521,9 @@ export async function buildCatalog(ctx) {
       count: writeNode(d.slug, { slug: d.slug, title: d.title, scope: d.scope, maturity: d.maturity, level: 'domain',
         areas: (d.areas || []).map(a => ({ slug: a.slug, title: a.title, maturity: a.maturity, json: nodeJson(a.slug) })) }),
       json: nodeJson(d.slug), page: nodeUrl(d.slug),
-      areas: (d.areas || []).map(a => ({ slug: a.slug, title: a.title, scope: a.scope, maturity: a.maturity, priority: a.priority || [],
+      areas: (d.areas || []).map(a => ({ slug: a.slug, title: a.title, scope: a.scope, maturity: a.maturity, priority: a.priority || [], projects: a.projects || [],
         count: writeNode(a.slug, { slug: a.slug, title: a.title, scope: a.scope, maturity: a.maturity, level: 'area', domain: d.slug,
-          priority: a.priority || [], issues: issueLinks(a), topics: (a.topics || []).map(t => ({ slug: t.slug, title: t.title, scope: t.scope, maturity: t.maturity, issues: issueLinks(t) })) }),
+          priority: a.priority || [], projects: a.projects || [], issues: issueLinks(a), topics: (a.topics || []).map(t => ({ slug: t.slug, title: t.title, scope: t.scope, maturity: t.maturity, issues: issueLinks(t) })) }),
         kinds: countKinds(inNode(a.slug)), json: nodeJson(a.slug), page: nodeUrl(a.slug), issues: issueLinks(a) })),
     })),
     buckets: Object.entries(BUCKETS).map(([slug, b]) => ({ slug, ...b, count: writeNode(slug, { slug, ...b, level: 'bucket' }), json: nodeJson(slug), page: nodeUrl(slug) })),
@@ -530,7 +531,10 @@ export async function buildCatalog(ctx) {
   files.set('catalog/index.json', JSON.stringify(index, null, 2) + '\n');
 
   // --------------------------------------------------------------------------- the page
-  const body = catalogPage({ ...ctx, items, demos, nodes, index });
+  // The rail's maturity key links to the page that explains the levels.
+  const levelsHref = pageLink('docs/vision.md#maturity-how-an-area-grows', 'the catalogue\'s maturity key');
+  if (!levelsHref) throw new Error('the catalogue\'s maturity key links to docs/vision.md, which is not on the site');
+  const body = catalogPage({ ...ctx, items, demos, nodes, index, levelsHref });
   const counts = items.reduce((a, it) => (a[it.type] = (a[it.type] || 0) + 1, a), {});
   return { catalog, files, body, counts, items };
 }
@@ -540,14 +544,19 @@ const fmtMonth = iso => iso ? new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocale
 const fmtDay = iso => iso ? new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '';
 const plural = (n, one, many) => `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`;
 
-function catalogPage({ ORIGIN, items, demos, nodes, index, areas, safeUrl }) {
+function catalogPage({ ORIGIN, items, demos, nodes, index, areas, safeUrl, levelsHref }) {
+  const LEVELS = levelsOf(areas), levelNo = m => LEVELS.indexOf(m) + 1;
   const site = u => (u?.startsWith(ORIGIN) ? u.slice(ORIGIN.length) || '/' : u);
   const title = it => it.kind === 'tool' ? `<span class="cmd-prefix">cad-agent </span>${esc(it.command)}`
     : it.kind === 'project' || it.kind === 'library' ? (it.name.includes('/') ? `<span class="owner">${esc(it.name.split('/')[0])}/</span>${esc(it.name.split('/').slice(1).join('/'))}` : esc(it.name))
       : esc(it.name);
   const areaTitle = s => BUCKETS[s]?.title || nodes.get(s)?.title || s;
   const statusText = s => (STATUS_STYLE[s] || STATUS_STYLE.reference)[2];
-  const maturity = m => m ? `<span class="mat" data-level="${LEVELS.indexOf(m) + 1}" title="Maturity: ${esc(m)}"><i aria-hidden="true"></i>${esc(m)}</span>` : '';
+  /** A maturity bar: a segment per level, the first `level` of them filled, so a reader can count the steps. `sr`: its
+   * words for screen readers; left out (and the bar hidden from them) where the level's word is printed beside it. */
+  const bar = (m, sr = true) => `<span class="mat-dots" data-level="${levelNo(m)}"${sr ? ` title="Maturity ${levelNo(m)} of ${LEVELS.length}: ${esc(m)}"` : ' aria-hidden="true"'}>${
+    LEVELS.map((_, i) => `<i${i < levelNo(m) ? ' class="on"' : ''}></i>`).join('')}${sr ? `<span class="sr">maturity ${levelNo(m)} of ${LEVELS.length}, ${esc(m)}</span>` : ''}</span>`;
+  const maturity = m => m ? `<span class="mat" data-level="${levelNo(m)}" title="Maturity ${levelNo(m)} of ${LEVELS.length}: ${esc(m)}">${bar(m, false)}${esc(m)}</span>` : '';
   const img = (c, w = 400, h = 300, load = 'lazy') => `<img src="${esc(c.src)}"${c.anim ? ` data-anim="${esc(c.anim)}"` : ''} width="${w}" height="${h}" alt="" loading="${load}" decoding="async">`;
   const tokens = it => [...it.areas, ...it.domains].join(' ');
 
@@ -568,9 +577,9 @@ function catalogPage({ ORIGIN, items, demos, nodes, index, areas, safeUrl }) {
     const call = it.how ? `<cad-copy class="card-call" text="${esc(it.how)}" label="Copy call"><code>${esc(it.how)}</code></cad-copy>` : '';
     const notes = it.notes || (outside && it.policy) ? `<details class="card-notes"><summary>Our notes</summary>${it.notes ? `<p>${esc(it.notes)}</p>` : ''}${it.policy ? `<p class="policy">Licence policy: ${esc(it.policy)}.</p>` : ''}</details>` : '';
     const badge = it.mode ? `<span class="pill pill-mode pill-${esc(it.mode)}">${esc(MODE_LABEL[it.mode])}</span>` : '';
-    return `<li class="card cat-card" id="${esc(it.id)}" data-item data-type="${esc(it.type)}" data-kind="${esc(k.tab)}" data-tone="${esc(it.domains[0] || it.areas[0])}" data-area="${esc(tokens(it))}" data-status="${esc(it.status)}" data-licence="${esc(it.family)}" data-maturity="${esc(it.maturity || 'none')}"${it.gyropup ? ' data-gyropup="1"' : ''}${it.demo ? ' data-demo="1"' : ''} data-sort-recent="${esc(it.updated || '')}" data-sort-stars="${esc(it.stars ?? '')}" data-sort-maturity="${it.maturity ? LEVELS.indexOf(it.maturity) + 1 : ''}" data-sort-az="${esc(azKey)}" data-text="${esc(text)}"${i >= LIMIT ? ' data-over' : ''}>
+    return `<li class="card cat-card" id="${esc(it.id)}" data-item data-type="${esc(it.type)}" data-kind="${esc(k.tab)}" data-tone="${esc(it.domains[0] || it.areas[0])}" data-area="${esc(tokens(it))}" data-status="${esc(it.status)}" data-licence="${esc(it.family)}" data-maturity="${esc(it.maturity || 'none')}"${it.demo ? ' data-demo="1"' : ''} data-sort-recent="${esc(it.updated || '')}" data-sort-stars="${esc(it.stars ?? '')}" data-sort-maturity="${it.maturity ? LEVELS.indexOf(it.maturity) + 1 : ''}" data-sort-az="${esc(azKey)}" data-text="${esc(text)}"${i >= LIMIT ? ' data-over' : ''}>
 <h3 class="card-name"><a href="${esc(site(safeUrl(it.doc || it.url)))}">${title(it)}</a></h3>
-<p class="card-kicker"><span class="pill pill-kind">${esc(KIND_LABEL[it.kind])}</span>${badge}<span class="pill pill-${esc(it.status)}">${esc(statusText(it.status))}</span>${it.gyropup ? '<span class="pill pill-gyropup" title="Needed for Gyropup to become real">Gyropup</span>' : ''}</p>
+<p class="card-kicker"><span class="pill pill-kind">${esc(KIND_LABEL[it.kind])}</span>${badge}<span class="pill pill-${esc(it.status)}">${esc(statusText(it.status))}</span></p>
 ${it.what ? `<p class="card-what">${esc(it.what)}</p>` : ''}${facts}${meta}${call}${notes}
 <div class="card-cover" data-fit="${it.cover.fit}">${img(it.cover)}</div></li>`;
   };
@@ -587,21 +596,23 @@ ${it.what ? `<p class="card-what">${esc(it.what)}</p>` : ''}${facts}${meta}${cal
   const tabs = `<nav class="cat-tabs" aria-label="Kinds" data-gallery-tabs><a href="#cat-results" data-tab="">All <span class="count" data-count>${items.length}</span></a>${KINDS.map(k =>
     `<a href="#${k.tab}" data-tab="${k.tab}">${esc(k.label)} <span class="count" data-count>${byTab(k.tab).length}</span></a>`).join('')}</nav>`;
 
-  // Area tree: domains fold; each area shows its glyph, maturity, Gyropup flag and count.
-  const areaLink = (slug, label, n, extra = '') => `<a class="area-link" href="/catalog?area=${esc(slug)}" data-gallery-link data-facet="area" data-value="${esc(slug)}"${extra}>${label}<span class="count" data-count>${n}</span></a>`;
+  // Area tree: domains fold; each area shows its glyph, maturity and count. data-tone gives each panel and row its
+  // domain's tints and ink (web/catalog.css).
+  const areaLink = (slug, label, n, extra = '', cls = '') => `<a class="area-link${cls ? ' ' + cls : ''}" href="/catalog?area=${esc(slug)}" data-gallery-link data-facet="area" data-value="${esc(slug)}"${extra}>${label}<span class="count" data-count>${n}</span></a>`;
   const glyphUse = slug => `<svg class="glyph" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><use href="#g-${esc(GLYPHS[slug] ? slug : DOMAIN_GLYPH[slug] || 'unplaced')}"/></svg>`;
-  const dots = m => `<span class="mat-dots" data-level="${LEVELS.indexOf(m) + 1}" title="Maturity: ${esc(m)}"><span class="sr">maturity ${esc(m)}</span></span>`;
-  const gyro = n => (n.priority || []).includes('gyropup') ? '<span class="gyro" title="Needed for Gyropup"><span class="sr">needed for Gyropup</span></span>' : '';
   const count = slug => items.filter(it => it.areas.includes(slug) || it.domains.includes(slug)).length;
   // Domains with entries start open: on a wide screen the tree is the page's map. (The sheet on small screens folds
   // them again, except the chosen one: kit/gallery.js.)
+  // The key: each level's bar and word, lowest first; hovering or focusing a word shows what the level means.
+  const key = `<div class="tree-key"><p class="key-head"><span id="key-title">Maturity</span> <a href="${esc(levelsHref)}">What the levels mean</a></p>
+<ol class="key-scale" aria-labelledby="key-title">${areas.maturity.map(({ level, means }) => `<li tabindex="0">${bar(level, false)}<span class="key-word">${esc(level)}</span><span class="key-means"><span class="sr">: </span>${esc(means)}</span></li>`).join('')}</ol></div>`;
   const tree = `<nav class="cat-areas" aria-labelledby="areas-title"><h2 class="side-title" id="areas-title">Areas</h2>
-<p class="tree-key"><span class="mat-dots" data-level="3" aria-hidden="true"></span> maturity <span class="gyro" aria-hidden="true"></span> needed for Gyropup</p><ul class="area-tree">
-<li>${areaLink('', `${glyphUse('cross-cutting')}<span class="area-name">All areas</span>`, items.length, ' aria-current="true"')}</li>
-${areas.domains.map(d => `<li><details class="dom" data-domain="${esc(d.slug)}"${count(d.slug) ? ' open' : ''}><summary>${glyphUse(d.slug)}<span class="area-name">${esc(d.title)}</span><span class="count" data-count-of="area:${esc(d.slug)}">${count(d.slug)}</span></summary><ul>
-<li>${areaLink(d.slug, `<span class="area-name">Everything in ${esc(d.title.replace(/^./, c => c.toLowerCase()))}</span>`, count(d.slug))}</li>
-${(d.areas || []).map(a => `<li>${areaLink(a.slug, `${glyphUse(a.slug)}<span class="area-name">${esc(a.title)}</span>${gyro(a)}${dots(a.maturity)}`, count(a.slug), ` data-maturity="${esc(a.maturity)}"`)}</li>`).join('')}</ul></details></li>`).join('')}
-${Object.entries(BUCKETS).filter(([slug]) => count(slug)).map(([slug, b]) => `<li class="bucket">${areaLink(slug, `${glyphUse(slug)}<span class="area-name">${esc(b.title)}</span>`, count(slug))}</li>`).join('')}
+${key}<ul class="area-tree">
+<li data-tone="cross-cutting">${areaLink('', `${glyphUse('cross-cutting')}<span class="area-name">All areas</span>`, items.length, ' aria-current="true"')}</li>
+${areas.domains.map(d => `<li><details class="dom" data-domain="${esc(d.slug)}" data-tone="${esc(d.slug)}"${count(d.slug) ? ' open' : ''}><summary>${glyphUse(d.slug)}<span class="area-name">${esc(d.title)}</span><span class="count" data-count-of="area:${esc(d.slug)}">${count(d.slug)}</span></summary><ul>
+<li>${areaLink(d.slug, `<span class="area-name">All<span class="sr"> in ${esc(d.title.replace(/^./, c => c.toLowerCase()))}</span></span>`, count(d.slug), ` data-label="${esc(d.title)}"`, 'dom-all')}</li>
+${(d.areas || []).map(a => `<li>${areaLink(a.slug, `${glyphUse(a.slug)}<span class="area-name">${esc(a.title)}</span>${bar(a.maturity)}`, count(a.slug), ` data-maturity="${esc(a.maturity)}"`)}</li>`).join('')}</ul></details></li>`).join('')}
+${Object.entries(BUCKETS).filter(([slug]) => count(slug)).map(([slug, b]) => `<li class="bucket" data-tone="${esc(slug)}">${areaLink(slug, `${glyphUse(slug)}<span class="area-name">${esc(b.title)}</span>`, count(slug))}</li>`).join('')}
 </ul></nav>`;
 
   const option = (name, value, label, n) => `<label class="opt"><input type="checkbox" name="${name}" value="${esc(value)}"><span>${label}</span><span class="count" data-count>${n}</span></label>`;
@@ -609,15 +620,15 @@ ${Object.entries(BUCKETS).filter(([slug]) => count(slug)).map(([slug, b]) => `<l
   const filters = `<form class="cat-filters" data-gallery-filters aria-labelledby="filters-title"><h2 class="side-title" id="filters-title">Filters</h2>
 <fieldset><legend>Status</legend>${statuses.map(s => option('status', s, esc(statusText(s).replace(/^./, c => c.toUpperCase())), items.filter(it => it.status === s).length)).join('')}</fieldset>
 <fieldset><legend>Licence</legend>${Object.entries(LICENCES).map(([f, l]) => option('licence', f, l, items.filter(it => it.family === f).length)).join('')}</fieldset>
-<fieldset><legend>Maturity of its area</legend>${LEVELS.map(m => option('maturity', m, `${dots(m)}${esc(m.replace(/^./, c => c.toUpperCase()))}`, items.filter(it => it.maturity === m).length)).join('')}</fieldset>
-<fieldset><legend>Only</legend>${option('gyropup', '1', 'Needed for Gyropup', items.filter(it => it.gyropup).length)}${option('demo', '1', 'Has a demo', items.filter(it => it.demo).length)}</fieldset>
+<fieldset><legend>Maturity of its area</legend>${LEVELS.map(m => option('maturity', m, `${bar(m, false)}${esc(m.replace(/^./, c => c.toUpperCase()))}`, items.filter(it => it.maturity === m).length)).join('')}</fieldset>
+<fieldset><legend>Only</legend>${option('demo', '1', 'Has a demo', items.filter(it => it.demo).length)}</fieldset>
 <button type="button" class="button clear-all" data-gallery-clear>Clear all filters</button></form>`;
 
   // One panel per domain, area and bucket, shown above the results when it is the chosen area: what it covers, how
   // mature it is and where to help. An area with nothing yet says so.
   const nodePanel = (slug, n, level) => {
     const issues = (n.issues || []).map(i => `<a href="https://github.com/Valpatel/cad-agent/issues/${esc(i)}">#${esc(i)}</a>`).join(', ');
-    const priority = (n.priority || []).map(p => p === 'gyropup' ? '<span class="pill pill-gyropup">Gyropup</span>' : '<span class="pill pill-mode">Good demo</span>').join('');
+    const priority = (n.priority || []).includes('demo') ? '<span class="pill pill-mode">Good demo</span>' : '';
     return `<div class="area-panel" data-gallery-when="area:${esc(slug)}" data-tone="${esc(n.domain || slug)}" hidden>${glyphUse(slug)}<div><p class="eyebrow">${esc(level)}${n.maturity ? ` · ${esc(n.maturity)}` : ''}</p>
 <h2>${esc(n.title)} ${priority}</h2><p>${esc(n.scope)}</p>${n.maturity ? `<p class="area-maturity">${maturity(n.maturity)} ${esc(areas.maturity.find(m => m.level === n.maturity)?.means || '')}.</p>` : ''}
 ${issues ? `<p class="area-issues">Work on it: ${issues}.</p>` : ''}<p class="area-json">For agents: <a href="/catalog/${esc(slug)}.json">catalog/${esc(slug)}.json</a></p></div></div>`;

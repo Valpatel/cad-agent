@@ -1,0 +1,30 @@
+{
+  "package": "three",
+  "version": "0.160.0",
+  "source": "https://registry.npmjs.org/three/-/three-0.160.0.tgz",
+  "repository": "https://github.com/mrdoob/three.js/tree/r160",
+  "npm_integrity": "sha512-DLU8lc0zNIPkM7rH5/e1Ks1Z8tWCGRq6g8mPowdDJpw1CFBJMU7UoJjC6PefXW7z//SSl0b2+GCw14LB+uDhng==",
+  "published": "2023-12-22",
+  "license": "MIT",
+  "files": {
+    "three.module.min.js": "3e690ac7d180b0aadf0891bea39eec643e29e2d3e75c99b18689518665f69ba6",
+    "addons/controls/OrbitControls.js": "a861339c938d6ce76a8bd37d0b66679ba296be3de930811e864a041768bac9fe",
+    "addons/geometries/RoundedBoxGeometry.js": "d20aeaf7077c459a8d952d215738d7b44fba028440bb862d84b622a34f0c80bb",
+    "addons/loaders/STLLoader.js": "896d006a48b8f125385a485ccae154dadee801a953f0b45ceffe7ddd8a29ca93",
+    "addons/utils/BufferGeometryUtils.js": "9be041e96308775d00e2695cc607645b9a9b64fd7c0e759dd8f7c00a8d92becb"
+  },
+  "paths_in_package": {
+    "three.module.min.js": "package/build/three.module.min.js",
+    "addons/controls/OrbitControls.js": "package/examples/jsm/controls/OrbitControls.js",
+    "addons/geometries/RoundedBoxGeometry.js": "package/examples/jsm/geometries/RoundedBoxGeometry.js",
+    "addons/loaders/STLLoader.js": "package/examples/jsm/loaders/STLLoader.js",
+    "addons/utils/BufferGeometryUtils.js": "package/examples/jsm/utils/BufferGeometryUtils.js"
+  },
+  "patched": {
+    "addons/controls/OrbitControls.js": {
+      "upstream_sha256": "5a44a9e86a2a0fb11933eed69bc2cd33c76a496854c1aed6ed776efa87d7b064",
+      "change": "One line in the wheel handler: the wheel delta is divided by 100, not by 100 * (window.devicePixelRatio | 0), which is 0 below a ratio of 1 (at 90 % browser zoom every wheel step jumped to the zoom limit) and halves the step on HiDPI screens. Newer three.js releases normalise by 100 alone. A comment above the line says so."
+    }
+  },
+  "modifications": "None except the patched file above: the other four files are byte for byte the package's. The licence is the header of three.module.min.js (and file-parsers/THREE-LICENSE.txt)."
+}

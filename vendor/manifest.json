@@ -44,6 +44,8 @@
       "exclude": [
         ".githooks",
         ".github",
+        ".mcp.json",
+        ".vscode",
         "scripts/check-review-threads.mjs",
         "scripts/check_github_repository_settings.py",
         "src-tauri"
@@ -53,7 +55,7 @@
       "sha": "f03b478f597d4b3e8c6d99827a2152b73077a122",
       "imported": "2026-10-24",
       "report": "vendor/reports/kicad-mcp-pro-f03b478f59.md",
-      "exclude_reason": "maintainer scripts reading gh auth token; Tauri desktop wrapper"
+      "exclude_reason": "maintainer scripts reading gh auth token; Tauri desktop wrapper; editor and MCP-client settings (.mcp.json, .vscode/), which the tree's own .gitignore kept out of the import: local configuration, not part of the server"
     },
     {
       "name": "build123d-mcp",

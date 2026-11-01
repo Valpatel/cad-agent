@@ -2,15 +2,13 @@
  "schema": "cad-agent-supply-chain/1",
  "as_of": "2026-11-01",
  "mode": "online",
- "revision": "3c0a609b205be48059fcffc641193acf745ed876",
+ "revision": "88ff87ffc2531d17bb2269de0eb2d4b45ee055c6",
  "dirty": false,
  "unverified": [
-  "url:https://develop.openfoam.com/Development/openfoam",
+  "url:https://github.com/pzfreo/cadgenbench-build123d",
   "url:https://help.solidworks.com/2022/English/SolidWorks/sldworks/c_K_Factor.htm",
   "url:https://hull-repository.worktribe.com/output/4511720/interlayer-bonding-has-bulk-material-strength-in-extrusion-additive-manufacturing-new-understanding-of-anisotropy",
-  "url:https://openelab.io/products/seeed-studio-recomputer-mini-j501-heatsink",
   "url:https://www.autodesk.com/products/fusion-360/blog/fusion-compute-mcp/",
-  "url:https://www.elegoo.com/blogs/3d-printer-user-guide/mastering-hollowing-and-adding-holes-in-elegoo-satellite",
   "url:https://www.iso.org/standard/67289.html",
   "url:https://www.iso.org/standard/7748.html",
   "url:https://www.mouser.com/pdfDocs/Jetson_AGX_Orin_Series_TDG-10943-001_v11.pdf",
@@ -20,16 +18,16 @@
  "summary": {
   "critical": 1,
   "high": 0,
-  "medium": 15,
-  "low": 37,
-  "info": 12,
-  "accepted": 0,
+  "medium": 0,
+  "low": 24,
+  "info": 9,
+  "accepted": 3,
   "items": {
    "python": 22,
    "npm": 22,
    "vendored": 6,
    "webkit": 6,
-   "links": 418,
+   "links": 419,
    "skills": 13,
    "repo": 1
   }
@@ -723,84 +721,13 @@
   },
   {
    "severity": "medium",
-   "check": "advisory",
-   "subject": "pypi:pillow",
-   "title": "our range allows pillow 10.0.0, which has 53 known advisories",
-   "evidence": "GHSA-332p-7hrc-92wf (critical, fixed in 13.0.0): Pillow: Heap buffer overflow in _tiffWriteProc when saving TIFF to BytesIO; GHSA-3f63-hfp8-52jq (critical, fixed in 10.2.0): Arbitrary Code Execution in Pillow; GHSA-5x8w-8jj5-q52h (critical, fixed in 13.0.0): Pillow: Heap buffer overflow in FlashPix (FPX) JPEG decoding leads to code execution; GHSA-8g5g-8vmr-9782 (critical, fixed in 13.0.0): Pillow: Heap buffer overflow in ImagingJpegDecode; GHSA-w889-685w-c8fh (critical, fixed in 13.0.0): Pillow: Argument Injection in Ghostscript call, potentially leading into RCE; GHSA-22hg-r758-rrw9 (high, fixed in 13.0.0): Pillow: Infinite loop in MIC n_frames when the embedded TIFF; GHSA-27h8-gf7j-v5hc (high, fixed in 13.0.0): Pillow: NULL dereference in ImagingExpand via rank filters on zero-size images; GHSA-3j72-p6qg-6xp7 (high, fixed in 13.0.0): Pillow: TarIO negative size field causes infinite CPU-spin loop and 45 more",
-   "action": "Raise the floor to >=13.0.0 in pyproject.toml.",
-   "fp": "0a2c69f6c9c778b3"
-  },
-  {
-   "severity": "medium",
-   "check": "install-from-registry",
-   "subject": "doc:research/landscape.md",
-   "title": "research/landscape.md installs a plugin from a marketplace",
-   "evidence": "research/landscape.md:82: `claude plugin marketplace add earthtojake/text-to-cad#latest`",
-   "action": "Standing rule: never install skills or plugins from registries. Vendor a pinned commit (tools/vendor_sync.py) or point at a reviewed release by commit, and say so.",
-   "fp": "18d63ad8bdf1424e"
-  },
-  {
-   "severity": "medium",
-   "check": "install-from-registry",
-   "subject": "doc:research/landscape.md",
-   "title": "research/landscape.md installs a plugin from a marketplace",
-   "evidence": "research/landscape.md:83: `claude plugin install text-to-cad@earthtojake`",
-   "action": "Standing rule: never install skills or plugins from registries. Vendor a pinned commit (tools/vendor_sync.py) or point at a reviewed release by commit, and say so.",
-   "fp": "7fa62dc9261e6173"
-  },
-  {
-   "severity": "medium",
-   "check": "install-pipe-to-shell",
-   "subject": "doc:research/landscape.md",
-   "title": "research/landscape.md pipes a download into a shell",
-   "evidence": "research/landscape.md:161: `curl | sh`",
-   "action": "If this is advice, replace it with a pinned, checksummed download or a package manager; if it only describes how a project installs, say that it is a risk.",
-   "fp": "926c27703cdfd3ac"
-  },
-  {
-   "severity": "medium",
-   "check": "link-dead",
-   "subject": "url:https://dl.openfoam.com/source/latest/openfoam-docker",
-   "title": "https://dl.openfoam.com/source/latest/openfoam-docker is gone (HTTP 404)",
-   "evidence": "research/simulation-tools.md:77",
-   "action": "Replace it with a live source (or an archive.org copy, marked as such), or remove it.",
-   "fp": "c40ca70e3b370ea5"
-  },
-  {
-   "severity": "medium",
-   "check": "link-not-https",
-   "subject": "url:http://www.dhondt.de/",
-   "title": "www.dhondt.de is linked over plain HTTP",
-   "evidence": "research/fea-and-process-tools.md:24",
-   "action": "Link the https:// address; if the site has none, say so next to the link.",
-   "fp": "da125adb0e05d69f"
-  },
-  {
-   "severity": "medium",
-   "check": "link-not-https",
-   "subject": "url:http://www.dhondt.de/ccx_2.23.pdf",
-   "title": "www.dhondt.de is linked over plain HTTP",
-   "evidence": "research/fea-and-process-tools.md:24",
-   "action": "Link the https:// address; if the site has none, say so next to the link.",
-   "fp": "c3a432b0f477bfe4"
-  },
-  {
-   "severity": "medium",
-   "check": "link-redirect-domain",
-   "subject": "url:https://dev.opencascade.org/",
-   "title": "dev.opencascade.org now redirects to occt3d.com",
-   "evidence": "https://dev.opencascade.org/ -> https://occt3d.com/open-cascade-technology/index.html (README.md:183)",
-   "action": "Check the new site belongs to the same owner and is what we meant; link it directly, or drop the link.",
-   "fp": "b514530a43c0067e"
-  },
-  {
-   "severity": "medium",
    "check": "npm-install-script",
    "subject": "npm:fsevents",
    "title": "fsevents runs an install script (only on darwin)",
    "evidence": "node_modules/fsevents 2.3.2: hasInstallScript, optional",
    "action": "Read the script; in CI prefer npm ci --ignore-scripts where the package works without it.",
-   "fp": "ebf02989b46d4603"
+   "fp": "0cf2576d5c5533dc",
+   "accepted": "Optional, macOS-only dependency of Playwright (os: darwin), so CI and Linux machines never install it. Read on 2026-11-01 (#151): the registry's manifest for 2.3.2 lists install \"node-gyp rebuild\" (gypfile), but the tarball the lockfile pins (its sha512 matches) has no binding.gyp and its package.json has no install script; it ships a prebuilt fsevents.node, so npm runs nothing at install. The fingerprint is 2.3.2's: when Playwright moves to another fsevents, the finding comes back to be read again. (2026-11-01)"
   },
   {
    "severity": "medium",
@@ -809,7 +736,8 @@
    "title": "google/feabench is archived (read-only, no fixes)",
    "evidence": "last push 2025-05-07",
    "action": "Show it as \"unmaintained\" (status or note) instead of removing it; plan a replacement if we use its code.",
-   "fp": "c4a72a8d6b857b3c"
+   "fp": "c4a72a8d6b857b3c",
+   "accepted": "Shown as archived where we name it: its catalogue card (research/landscape.json notes) and research/agent-toolkits-2026-10.md. Prior art only (it needs COMSOL); we use none of its code. (2026-11-01)"
   },
   {
    "severity": "medium",
@@ -818,61 +746,8 @@
    "title": "microsoft/CADFusion is archived (read-only, no fixes)",
    "evidence": "last push 2026-07-02",
    "action": "Show it as \"unmaintained\" (status or note) instead of removing it; plan a replacement if we use its code.",
-   "fp": "dd5331c16c5f9fe0"
-  },
-  {
-   "severity": "medium",
-   "check": "repo-moved",
-   "subject": "url:https://github.com/American-Embedded/kistack",
-   "title": "American-Embedded/kistack moved to BackplaneWorks/kistack",
-   "evidence": "https://github.com/American-Embedded/kistack redirects to https://github.com/BackplaneWorks/kistack",
-   "action": "Update the link to the new name (the old name can be registered by someone else); check the new owner is who you expect.",
-   "fp": "a22034176893e7eb"
-  },
-  {
-   "severity": "medium",
-   "check": "repo-moved",
-   "subject": "url:https://github.com/anyoptimization/pymoo",
-   "title": "anyoptimization/pymoo moved to the-dual-space/pymoo",
-   "evidence": "https://github.com/anyoptimization/pymoo redirects to https://github.com/the-dual-space/pymoo",
-   "action": "Update the link to the new name (the old name can be registered by someone else); check the new owner is who you expect.",
-   "fp": "3124c1e1ec8b4f2f"
-  },
-  {
-   "severity": "medium",
-   "check": "repo-moved",
-   "subject": "url:https://github.com/facebook/Ax",
-   "title": "facebook/Ax moved to meta/Ax",
-   "evidence": "https://github.com/facebook/Ax redirects to https://github.com/meta/Ax",
-   "action": "Update the link to the new name (the old name can be registered by someone else); check the new owner is who you expect.",
-   "fp": "b25b4de8e79d948f"
-  },
-  {
-   "severity": "medium",
-   "check": "repo-moved",
-   "subject": "url:https://github.com/i2cjak/Backplane",
-   "title": "i2cjak/Backplane moved to BackplaneWorks/Backplane",
-   "evidence": "https://github.com/i2cjak/Backplane redirects to https://github.com/BackplaneWorks/Backplane",
-   "action": "Update the link to the new name (the old name can be registered by someone else); check the new owner is who you expect.",
-   "fp": "985224a99d226b1a"
-  },
-  {
-   "severity": "low",
-   "check": "advisory",
-   "subject": "pypi:markdown",
-   "title": "our range allows markdown 3.5, which has 1 known advisory",
-   "evidence": "GHSA-5wmx-573v-2qwq (medium, fixed in 3.8.1): Python-Markdown has an Uncaught Exception",
-   "action": "Raise the floor to >=3.8.1 in pyproject.toml.",
-   "fp": "804703db85e6cbfe"
-  },
-  {
-   "severity": "low",
-   "check": "advisory",
-   "subject": "pypi:vtk",
-   "title": "our range allows vtk 9.2.2, which has 3 known advisories",
-   "evidence": "PYSEC-2025-224 (medium, fixed in 9.5.1): Kitware VTK (Visualization Toolkit) up to 9.5.0 is vulnerable to Buffer Overflow in vtkGLTFDocumentLoader. The vulnerability occurs in the BufferDataExtractionW; PYSEC-2025-225 (medium, fixed in 9.5.1): Kitware VTK (Visualization Toolkit) through 9.5.0 contains a heap buffer overflow vulnerability in vtkGLTFDocumentLoader. When processing specially crafted GLTF; PYSEC-2025-226 (medium, fixed in 9.5.1): Kitware VTK (Visualization Toolkit) through 9.5.0 contains a heap use-after-free vulnerability in vtkGLTFDocumentLoader. The vulnerability manifests during mesh",
-   "action": "Raise the floor to >=9.5.1 in pyproject.toml.",
-   "fp": "d4e2e7d620711364"
+   "fp": "dd5331c16c5f9fe0",
+   "accepted": "Shown as archived where we name it (research/design-workflows.md and design-workflows.json). Cited for its paper's results; ideas only, we use none of its code. (2026-11-01)"
   },
   {
    "severity": "low",
@@ -882,24 +757,6 @@
    "evidence": "GHSA-238p-pmpm-9mq7 (low, fixed in 0.18.2): KaTeX: Existing prototype pollution can bypass trust restrictions",
    "action": "katex comes inside another library's file: take the first release of that library that bundles katex >=0.18.2, and say in the receipt whether the affected code is reachable.",
    "fp": "57223a16737a81bc"
-  },
-  {
-   "severity": "low",
-   "check": "catalogue-no-licence",
-   "subject": "url:https://cadarena.dev/",
-   "title": "no licence recorded for CAD Arena",
-   "evidence": "research/landscape.json benchmarks; research/landscape.md:194",
-   "action": "Record the licence (or \"none\": ideas only).",
-   "fp": "4bc4120cb500179e"
-  },
-  {
-   "severity": "low",
-   "check": "catalogue-no-licence",
-   "subject": "url:https://github.com/Kamel773/CAD_Code_Generation",
-   "title": "no licence recorded for CADPrompt/CADCodeVerify",
-   "evidence": "research/landscape.json benchmarks",
-   "action": "Record the licence (or \"none\": ideas only).",
-   "fp": "f23c1038a8199b04"
   },
   {
    "severity": "low",
@@ -918,60 +775,6 @@
    "evidence": ".github/dependabot.yml ecosystems: github-actions",
    "action": "Add a weekly pip entry targeting dev (owner decision: it opens PRs).",
    "fp": "b8c4dd692ce86b5e"
-  },
-  {
-   "severity": "low",
-   "check": "install-unpinned",
-   "subject": "doc:docs/web-diagrams.md",
-   "title": "docs/web-diagrams.md runs playwright without a version",
-   "evidence": "docs/web-diagrams.md:59: `npx playwright install chromium`",
-   "action": "Pin it (playwright==X or playwright@X), so a later release cannot change what runs.",
-   "fp": "49ec180a2c8acfd1"
-  },
-  {
-   "severity": "low",
-   "check": "install-unpinned",
-   "subject": "doc:research/landscape.md",
-   "title": "research/landscape.md runs cadgen without a version",
-   "evidence": "research/landscape.md:96: `uvx cadgen telemetry off`",
-   "action": "Pin it (cadgen==X or cadgen@X), so a later release cannot change what runs.",
-   "fp": "088f765ec4785a1a"
-  },
-  {
-   "severity": "low",
-   "check": "install-unpinned",
-   "subject": "doc:research/landscape.md",
-   "title": "research/landscape.md runs kicad-mcp-pro without a version",
-   "evidence": "research/landscape.md:132: `uvx kicad-mcp-pro`",
-   "action": "Pin it (kicad-mcp-pro==X or kicad-mcp-pro@X), so a later release cannot change what runs.",
-   "fp": "706b0dd51618c34b"
-  },
-  {
-   "severity": "low",
-   "check": "licence-none",
-   "subject": "url:https://github.com/Kamel773/CAD_Code_Generation",
-   "title": "Kamel773/CAD_Code_Generation has no licence GitHub can detect",
-   "evidence": "https://github.com/Kamel773/CAD_Code_Generation",
-   "action": "Without a licence it is all rights reserved: ideas only, never copied code.",
-   "fp": "a869e4c8ec527310"
-  },
-  {
-   "severity": "low",
-   "check": "py-no-floor",
-   "subject": "pypi:numpy",
-   "title": "numpy has no lower version bound in cad, required",
-   "evidence": "pyproject.toml: cad: numpy, required: numpy",
-   "action": "Set a floor at a release without known advisories (and the oldest one you are willing to support), so an install with old pins cannot pick something worse.",
-   "fp": "bc30ada49488a67d"
-  },
-  {
-   "severity": "low",
-   "check": "py-no-floor",
-   "subject": "pypi:pyyaml",
-   "title": "pyyaml has no lower version bound in required",
-   "evidence": "pyproject.toml: required: pyyaml",
-   "action": "Set a floor at a release without known advisories (and the oldest one you are willing to support), so an install with old pins cannot pick something worse.",
-   "fp": "cb98b4e24608a717"
   },
   {
    "severity": "low",
@@ -1163,42 +966,6 @@
    "fp": "bdabae3be11f6e41"
   },
   {
-   "severity": "low",
-   "check": "vendor-incomplete",
-   "subject": "vendor:kicad-mcp-pro",
-   "title": "3 upstream files of kicad-mcp-pro are neither vendored nor excluded",
-   "evidence": ".mcp.json, .vscode/extensions.json, .vscode/mcp.example.json (3 of them ignored by a .gitignore, so never committed)",
-   "action": "Add them to the manifest exclude list with a reason (or commit them), so the record says what was left out.",
-   "fp": "50547c8ca1d2e98b"
-  },
-  {
-   "severity": "low",
-   "check": "webkit-unhashed",
-   "subject": "webkit:fonts",
-   "title": "5 vendored files in fonts have no recorded hash",
-   "evidence": "fonts/OFL-Inter.txt, fonts/OFL-JetBrainsMono.txt, fonts/fonts.css, fonts/inter.woff2, fonts/jetbrains-mono.woff2",
-   "action": "Record their SHA-256 and source (as mermaid/SOURCE.json does), so a silent change is caught.",
-   "fp": "5ccb4fc1613ee18c"
-  },
-  {
-   "severity": "low",
-   "check": "webkit-unhashed",
-   "subject": "webkit:three",
-   "title": "5 vendored files in three have no recorded hash",
-   "evidence": "three/addons/controls/OrbitControls.js, three/addons/geometries/RoundedBoxGeometry.js, three/addons/loaders/STLLoader.js, three/addons/utils/BufferGeometryUtils.js, three/three.module.min.js",
-   "action": "Record their SHA-256 and source (as mermaid/SOURCE.json does), so a silent change is caught.",
-   "fp": "1337b28f633067a6"
-  },
-  {
-   "severity": "info",
-   "check": "link-unverified",
-   "subject": "url:https://develop.openfoam.com/Development/openfoam",
-   "title": "develop.openfoam.com did not answer",
-   "evidence": "The read operation timed out (upstreams/registry.yaml)",
-   "action": "Check by hand; run again later.",
-   "fp": "67e6fa623e1087fd"
-  },
-  {
    "severity": "info",
    "check": "link-unverified",
    "subject": "url:https://help.solidworks.com/2022/English/SolidWorks/sldworks/c_K_Factor.htm",
@@ -1219,29 +986,11 @@
   {
    "severity": "info",
    "check": "link-unverified",
-   "subject": "url:https://openelab.io/products/seeed-studio-recomputer-mini-j501-heatsink",
-   "title": "openelab.io answered HTTP 429",
-   "evidence": "research/simulation-tools.md:198",
-   "action": "Many sites refuse scripts; check by hand.",
-   "fp": "17dc89bae628ffaa"
-  },
-  {
-   "severity": "info",
-   "check": "link-unverified",
    "subject": "url:https://www.autodesk.com/products/fusion-360/blog/fusion-compute-mcp/",
    "title": "www.autodesk.com answered HTTP 403",
    "evidence": "research/agent-toolkits-2026-10.md:49",
    "action": "Many sites refuse scripts; check by hand.",
    "fp": "04a6672cbc0b6587"
-  },
-  {
-   "severity": "info",
-   "check": "link-unverified",
-   "subject": "url:https://www.elegoo.com/blogs/3d-printer-user-guide/mastering-hollowing-and-adding-holes-in-elegoo-satellite",
-   "title": "www.elegoo.com answered HTTP 429",
-   "evidence": "research/process-profiles.md:704",
-   "action": "Many sites refuse scripts; check by hand.",
-   "fp": "4241f203e1ffc7ab"
   },
   {
    "severity": "info",
@@ -1290,12 +1039,12 @@
   },
   {
    "severity": "info",
-   "check": "py-no-floor",
-   "subject": "pypi:pytest",
-   "title": "pytest has no lower version bound in dev",
-   "evidence": "pyproject.toml: dev: pytest",
-   "action": "Set a floor at a release without known advisories (and the oldest one you are willing to support), so an install with old pins cannot pick something worse.",
-   "fp": "2adc490aac3e2397"
+   "check": "repo-unverified",
+   "subject": "url:https://github.com/pzfreo/cadgenbench-build123d",
+   "title": "pzfreo/cadgenbench-build123d could not be checked",
+   "evidence": "Get \"https://api.github.com/repos/pzfreo/cadgenbench-build123d\": dial tcp 20.29.134.17:443: i/o timeout",
+   "action": "Run again later.",
+   "fp": "f7af9087697e9418"
   }
  ],
  "inventory": {
@@ -1307,16 +1056,15 @@
      "cad"
     ],
     "range": {
-     "cad": ">=2.4"
+     "cad": ">=2.8"
     },
-    "floor": ">=2.4",
+    "floor": ">=2.8",
     "latest": "2.8.0",
     "last_release": "2026-06-21",
     "licence": "Apache Public License 2.0",
-    "floor_release": "2.4.0",
+    "floor_release": "2.8.0",
     "advisories": {
-     "latest": [],
-     "floor": []
+     "latest": []
     },
     "dependencies": 43
    },
@@ -1407,18 +1155,16 @@
      "site"
     ],
     "range": {
-     "site": ">=3.5"
+     "site": ">=3.8.1"
     },
-    "floor": ">=3.5",
+    "floor": ">=3.8.1",
     "latest": "3.11.2",
     "last_release": "2026-10-19",
     "licence": "BSD-3-Clause",
-    "floor_release": "3.5",
+    "floor_release": "3.8.1",
     "advisories": {
      "latest": [],
-     "floor": [
-      "GHSA-5wmx-573v-2qwq"
-     ]
+     "floor": []
     },
     "dependencies": 0
    },
@@ -1474,15 +1220,17 @@
      "required"
     ],
     "range": {
-     "cad": "any",
-     "required": "any"
+     "cad": ">=1.22",
+     "required": ">=1.22"
     },
-    "floor": null,
+    "floor": ">=1.22",
     "latest": "2.5.4",
     "last_release": "2026-10-10",
     "licence": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+    "floor_release": "1.22.0",
     "advisories": {
-     "latest": []
+     "latest": [],
+     "floor": []
     },
     "dependencies": 0
    },
@@ -1514,71 +1262,16 @@
      "sim"
     ],
     "range": {
-     "cad": ">=10.0",
-     "sim": ">=10.0"
+     "cad": ">=13.0",
+     "sim": ">=13.0"
     },
-    "floor": ">=10.0",
+    "floor": ">=13.0",
     "latest": "13.0.0",
     "last_release": "2026-10-16",
     "licence": "MIT-CMU",
-    "floor_release": "10.0.0",
+    "floor_release": "13.0.0",
     "advisories": {
-     "latest": [],
-     "floor": [
-      "GHSA-22hg-r758-rrw9",
-      "GHSA-24rc-8hj2-v98c",
-      "GHSA-254f-3936-288h",
-      "GHSA-27h8-gf7j-v5hc",
-      "GHSA-332p-7hrc-92wf",
-      "GHSA-3f63-hfp8-52jq",
-      "GHSA-3j72-p6qg-6xp7",
-      "GHSA-44wm-f244-xhp3",
-      "GHSA-4558-3h8r-v8xp",
-      "GHSA-45hq-cxwh-f6vc",
-      "GHSA-462x-pgg6-55fp",
-      "GHSA-4rm8-3hmm-39fg",
-      "GHSA-4x4j-2g7c-83w6",
-      "GHSA-58r4-6rv3-gfh8",
-      "GHSA-5x8w-8jj5-q52h",
-      "GHSA-5x94-69rx-g8h2",
-      "GHSA-5xm2-6676-qcp9",
-      "GHSA-62p4-gmf7-7g93",
-      "GHSA-65qm-jvmh-6pqg",
-      "GHSA-6r8x-57c9-28j4",
-      "GHSA-74r2-7ff9-mjj2",
-      "GHSA-7mwm-ghpf-9vrm",
-      "GHSA-8g5g-8vmr-9782",
-      "GHSA-8v84-f9pq-wr9x",
-      "GHSA-9hw9-ch79-4vh6",
-      "GHSA-9v9v-9qvf-h2hj",
-      "GHSA-c6hw-5grf-ff96",
-      "GHSA-f2g6-542v-9j58",
-      "GHSA-fc9g-5qg7-mf45",
-      "GHSA-fj7v-r99m-22gq",
-      "GHSA-g7cr-3p24-7wf7",
-      "GHSA-g842-9rc4-69pw",
-      "GHSA-gg2r-wvfm-q9rx",
-      "GHSA-j4m9-6w36-pw47",
-      "GHSA-j7hp-h8jx-5ppr",
-      "GHSA-jg86-v3jv-hrpm",
-      "GHSA-jjj6-mw9f-p565",
-      "GHSA-mrfp-p49p-3hf2",
-      "GHSA-p4wg-p73j-c528",
-      "GHSA-p8hx-v2p6-rp84",
-      "GHSA-pchr-8j38-3x4p",
-      "GHSA-phj9-mv4w-65pm",
-      "GHSA-q45j-58j2-45rg",
-      "GHSA-r73j-pqj5-w3x7",
-      "GHSA-rfgq-q3w2-pmv2",
-      "GHSA-vjc4-5qp5-m44j",
-      "GHSA-vx6w-vv9f-6gvg",
-      "GHSA-w889-685w-c8fh",
-      "GHSA-wjx4-4jcj-g98j",
-      "GHSA-xgh8-jp6q-p5x8",
-      "GHSA-xj96-63gp-2gmr",
-      "GHSA-xvh5-g6gv-559v",
-      "PYSEC-2023-175"
-     ]
+     "latest": []
     },
     "dependencies": 0
    },
@@ -1649,14 +1342,16 @@
      "dev"
     ],
     "range": {
-     "dev": "any"
+     "dev": ">=9.0.3"
     },
-    "floor": null,
+    "floor": ">=9.0.3",
     "latest": "9.2.0",
     "last_release": "2026-10-27",
     "licence": "MIT",
+    "floor_release": "9.0.3",
     "advisories": {
-     "latest": []
+     "latest": [],
+     "floor": []
     },
     "dependencies": 4
    },
@@ -1687,14 +1382,16 @@
      "required"
     ],
     "range": {
-     "required": "any"
+     "required": ">=6.0"
     },
-    "floor": null,
+    "floor": ">=6.0",
     "latest": "6.0.3",
     "last_release": "2025-09-25",
     "licence": "MIT",
+    "floor_release": "6.0",
     "advisories": {
-     "latest": []
+     "latest": [],
+     "floor": []
     },
     "dependencies": 0
    },
@@ -1787,20 +1484,16 @@
      "cad"
     ],
     "range": {
-     "cad": ">=9.2"
+     "cad": ">=9.5.2"
     },
-    "floor": ">=9.2",
+    "floor": ">=9.5.2",
     "latest": "9.7.1",
     "last_release": "2026-09-28",
     "licence": "BSD",
-    "floor_release": "9.2.2",
+    "floor_release": "9.5.2",
     "advisories": {
      "latest": [],
-     "floor": [
-      "PYSEC-2025-224",
-      "PYSEC-2025-225",
-      "PYSEC-2025-226"
-     ]
+     "floor": []
     },
     "dependencies": 12
    }
@@ -2229,7 +1922,7 @@
      "compared": 2088,
      "changed": 0,
      "added": 0,
-     "missing": 3
+     "missing": 0
     }
    },
    {
@@ -2292,7 +1985,8 @@
       "files": 2,
       "identical": 2,
       "differ": [],
-      "missing": []
+      "missing": [],
+      "patched": []
      }
     }
    },
@@ -2300,7 +1994,7 @@
     "id": "webkit:fonts",
     "name": "fonts",
     "files": 5,
-    "hashed": 0,
+    "hashed": 5,
     "packages": [],
     "bundled": [],
     "repos": [],
@@ -2325,7 +2019,7 @@
    {
     "id": "webkit:mermaid",
     "name": "mermaid",
-    "files": 3,
+    "files": 2,
     "hashed": 2,
     "packages": [
      "mermaid@11.17.2"
@@ -2355,7 +2049,8 @@
       "files": 2,
       "identical": 2,
       "differ": [],
-      "missing": []
+      "missing": [],
+      "patched": []
      }
     }
    },
@@ -2379,7 +2074,7 @@
     "id": "webkit:three",
     "name": "three",
     "files": 5,
-    "hashed": 0,
+    "hashed": 5,
     "packages": [
      "three@0.160.0"
     ],
@@ -2389,40 +2084,21 @@
     ],
     "latest": {
      "three": "0.187.0"
+    },
+    "receipts": {
+     "three": {
+      "files": 5,
+      "identical": 4,
+      "differ": [],
+      "missing": [],
+      "patched": [
+       "addons/controls/OrbitControls.js"
+      ]
+     }
     }
    }
   ],
   "links": [
-   {
-    "id": "url:http://www.dhondt.de/",
-    "url": "http://www.dhondt.de/",
-    "kind": "docs",
-    "names": [],
-    "where": [
-     "research/fea-and-process-tools.md:24"
-    ],
-    "licence": null,
-    "status": null,
-    "http": [
-     200
-    ],
-    "final": null
-   },
-   {
-    "id": "url:http://www.dhondt.de/ccx_2.23.pdf",
-    "url": "http://www.dhondt.de/ccx_2.23.pdf",
-    "kind": "docs",
-    "names": [],
-    "where": [
-     "research/fea-and-process-tools.md:24"
-    ],
-    "licence": null,
-    "status": null,
-    "http": [
-     200
-    ],
-    "final": null
-   },
    {
     "id": "url:https://anaconda.org/conda-forge/paraview",
     "url": "https://anaconda.org/conda-forge/paraview",
@@ -2490,7 +2166,7 @@
     "names": [],
     "where": [
      "research/design-workflows.md:113",
-     "research/landscape.md:190"
+     "research/landscape.md:195"
     ],
     "licence": null,
     "status": null,
@@ -2783,7 +2459,7 @@
     ],
     "where": [
      "research/landscape.json benchmarks",
-     "research/landscape.md:193"
+     "research/landscape.md:198"
     ],
     "licence": [
      "unverified"
@@ -2913,9 +2589,11 @@
     ],
     "where": [
      "research/landscape.json benchmarks",
-     "research/landscape.md:194"
+     "research/landscape.md:199"
     ],
-    "licence": null,
+    "licence": [
+     "none"
+    ],
     "status": null,
     "http": [
      200
@@ -2943,7 +2621,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "research/landscape.md:172",
+     "research/landscape.md:177",
      "research/process-profiles.md:728"
     ],
     "licence": null,
@@ -3065,8 +2743,8 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "docs/supply-chain.md:105",
-     "skills/cad-supply-chain/SKILL.md:161"
+     "docs/supply-chain.md:117",
+     "skills/cad-supply-chain/SKILL.md:194"
     ],
     "licence": null,
     "status": null,
@@ -3081,7 +2759,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "research/landscape.md:153"
+     "research/landscape.md:156"
     ],
     "licence": null,
     "status": null,
@@ -3089,22 +2767,6 @@
      200
     ],
     "final": null
-   },
-   {
-    "id": "url:https://dev.opencascade.org/",
-    "url": "https://dev.opencascade.org/",
-    "kind": "docs",
-    "names": [],
-    "where": [
-     "README.md:183"
-    ],
-    "licence": null,
-    "status": null,
-    "http": [
-     301,
-     200
-    ],
-    "final": "https://occt3d.com/open-cascade-technology/index.html"
    },
    {
     "id": "url:https://develop.openfoam.com/Development/openfoam",
@@ -3122,22 +2784,11 @@
     "status": [
      "adopted"
     ],
-    "http": null
-   },
-   {
-    "id": "url:https://dl.openfoam.com/source/latest/openfoam-docker",
-    "url": "https://dl.openfoam.com/source/latest/openfoam-docker",
-    "kind": "docs",
-    "names": [],
-    "where": [
-     "research/simulation-tools.md:77"
-    ],
-    "licence": null,
-    "status": null,
     "http": [
-     404
+     302,
+     200
     ],
-    "final": null
+    "final": "https://develop.openfoam.com/users/sign_in"
    },
    {
     "id": "url:https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes",
@@ -3160,7 +2811,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "research/landscape.md:154"
+     "research/landscape.md:157"
     ],
     "licence": null,
     "status": null,
@@ -3462,7 +3113,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:190"
+     "README.md:193"
     ],
     "licence": null,
     "status": null,
@@ -3498,33 +3149,6 @@
      "archived": false,
      "licence": "GPL-3.0",
      "pushed": "2026-10-15"
-    },
-    "scorecard": null
-   },
-   {
-    "id": "url:https://github.com/American-Embedded/kistack",
-    "url": "https://github.com/American-Embedded/kistack",
-    "kind": "catalogue",
-    "names": [
-     "American-Embedded/kistack"
-    ],
-    "where": [
-     "upstreams/registry.yaml",
-     "research/landscape.json projects",
-     "research/landscape.md:47"
-    ],
-    "licence": [
-     "MIT"
-    ],
-    "status": [
-     "candidate"
-    ],
-    "github": {
-     "state": "ok",
-     "full_name": "BackplaneWorks/kistack",
-     "archived": false,
-     "licence": "NOASSERTION",
-     "pushed": "2026-10-26"
     },
     "scorecard": null
    },
@@ -3565,6 +3189,60 @@
     }
    },
    {
+    "id": "url:https://github.com/BackplaneWorks/Backplane",
+    "url": "https://github.com/BackplaneWorks/Backplane",
+    "kind": "catalogue",
+    "names": [
+     "BackplaneWorks/Backplane"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:48"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "BackplaneWorks/Backplane",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-11-01"
+    },
+    "scorecard": null
+   },
+   {
+    "id": "url:https://github.com/BackplaneWorks/kistack",
+    "url": "https://github.com/BackplaneWorks/kistack",
+    "kind": "catalogue",
+    "names": [
+     "BackplaneWorks/kistack"
+    ],
+    "where": [
+     "upstreams/registry.yaml",
+     "research/landscape.json projects",
+     "research/landscape.md:47"
+    ],
+    "licence": [
+     "MIT"
+    ],
+    "status": [
+     "candidate"
+    ],
+    "github": {
+     "state": "ok",
+     "full_name": "BackplaneWorks/kistack",
+     "archived": false,
+     "licence": "NOASSERTION",
+     "pushed": "2026-10-26"
+    },
+    "scorecard": null
+   },
+   {
     "id": "url:https://github.com/BelfrySCAD/BOSL2",
     "url": "https://github.com/BelfrySCAD/BOSL2",
     "kind": "docs",
@@ -3592,7 +3270,7 @@
     ],
     "where": [
      "research/landscape.json libraries",
-     "README.md:182",
+     "README.md:185",
      "research/landscape.md:53"
     ],
     "licence": [
@@ -3617,7 +3295,7 @@
     "names": [],
     "where": [
      "docs/fans.md:97",
-     "docs/formulas.md:65",
+     "docs/formulas.md:70",
      "research/simulation-tools.md:121"
     ],
     "licence": null,
@@ -3636,7 +3314,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "docs/formulas.md:65",
+     "docs/formulas.md:70",
      "research/simulation-tools.md:121"
     ],
     "licence": null,
@@ -3808,7 +3486,7 @@
      "full_name": "FreeCAD/FreeCAD",
      "archived": false,
      "licence": "LGPL-2.1",
-     "pushed": "2026-10-31"
+     "pushed": "2026-11-01"
     }
    },
    {
@@ -3826,7 +3504,7 @@
      "full_name": "FreeCAD/FreeCAD",
      "archived": false,
      "licence": "LGPL-2.1",
-     "pushed": "2026-10-31"
+     "pushed": "2026-11-01"
     }
    },
    {
@@ -3844,7 +3522,7 @@
      "full_name": "FreeCAD/FreeCAD",
      "archived": false,
      "licence": "LGPL-2.1",
-     "pushed": "2026-10-31"
+     "pushed": "2026-11-01"
     }
    },
    {
@@ -3909,7 +3587,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "docs/formulas.md:74",
+     "docs/formulas.md:79",
      "docs/linkages.md:86"
     ],
     "licence": null,
@@ -4016,7 +3694,9 @@
     "where": [
      "research/landscape.json benchmarks"
     ],
-    "licence": null,
+    "licence": [
+     "none"
+    ],
     "status": null,
     "github": {
      "state": "ok",
@@ -4154,7 +3834,7 @@
     ],
     "where": [
      "research/landscape.json benchmarks",
-     "research/landscape.md:195"
+     "research/landscape.md:200"
     ],
     "licence": [
      "BSD-3-Clause"
@@ -4737,7 +4417,7 @@
     ],
     "where": [
      "research/landscape.json benchmarks",
-     "research/landscape.md:189"
+     "research/landscape.md:194"
     ],
     "licence": [
      "CC-BY-NC-SA-4.0"
@@ -4867,7 +4547,7 @@
     "names": [],
     "where": [
      "README.md:21",
-     "README.md:157",
+     "README.md:160",
      "THIRD_PARTY_NOTICES.md:40",
      "docs/animated-figures.md:13",
      "docs/vision.md:9"
@@ -4916,7 +4596,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:191"
+     "README.md:194"
     ],
     "licence": null,
     "status": null,
@@ -4982,7 +4662,7 @@
     ],
     "where": [
      "upstreams/registry.yaml",
-     "README.md:186",
+     "README.md:189",
      "research/compliant-mechanisms.md:260",
      "research/simulation-tools.md:32"
     ],
@@ -5128,7 +4808,7 @@
     "where": [
      "upstreams/registry.yaml",
      "research/landscape.json projects",
-     "README.md:176",
+     "README.md:179",
      "THIRD_PARTY_NOTICES.md:25",
      "research/landscape.md:46"
     ],
@@ -5238,24 +4918,6 @@
     }
    },
    {
-    "id": "url:https://github.com/anyoptimization/pymoo",
-    "url": "https://github.com/anyoptimization/pymoo",
-    "kind": "docs",
-    "names": [],
-    "where": [
-     "research/simulation-tools.md:56"
-    ],
-    "licence": null,
-    "status": null,
-    "github": {
-     "state": "ok",
-     "full_name": "the-dual-space/pymoo",
-     "archived": false,
-     "licence": "Apache-2.0",
-     "pushed": "2026-07-07"
-    }
-   },
-   {
     "id": "url:https://github.com/artofscience/flexures",
     "url": "https://github.com/artofscience/flexures",
     "kind": "docs",
@@ -5309,7 +4971,7 @@
     ],
     "where": [
      "upstreams/registry.yaml",
-     "README.md:188",
+     "README.md:191",
      "research/simulation-tools.md:140"
     ],
     "licence": [
@@ -5391,7 +5053,7 @@
     ],
     "where": [
      "research/landscape.json benchmarks",
-     "research/landscape.md:192"
+     "research/landscape.md:197"
     ],
     "licence": [
      "Apache-2.0"
@@ -5526,7 +5188,7 @@
     "where": [
      "upstreams/registry.yaml",
      "research/landscape.json projects",
-     "README.md:175",
+     "README.md:178",
      "THIRD_PARTY_NOTICES.md:24",
      "research/agent-toolkits-2026-10.md:16",
      "…"
@@ -5606,7 +5268,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "research/landscape.md:118"
+     "research/landscape.md:121"
     ],
     "licence": null,
     "status": null,
@@ -5624,7 +5286,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "research/landscape.md:107"
+     "research/landscape.md:110"
     ],
     "licence": null,
     "status": null,
@@ -5642,8 +5304,8 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "research/landscape.md:109",
-     "research/landscape.md:155"
+     "research/landscape.md:112",
+     "research/landscape.md:158"
     ],
     "licence": null,
     "status": null,
@@ -5684,7 +5346,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:184"
+     "README.md:187"
     ],
     "licence": null,
     "status": null,
@@ -5693,24 +5355,6 @@
      "full_name": "elalish/manifold",
      "archived": false,
      "licence": "Apache-2.0",
-     "pushed": "2026-11-01"
-    }
-   },
-   {
-    "id": "url:https://github.com/facebook/Ax",
-    "url": "https://github.com/facebook/Ax",
-    "kind": "docs",
-    "names": [],
-    "where": [
-     "research/simulation-tools.md:57"
-    ],
-    "licence": null,
-    "status": null,
-    "github": {
-     "state": "ok",
-     "full_name": "meta/Ax",
-     "archived": false,
-     "licence": "MIT",
      "pushed": "2026-11-01"
     }
    },
@@ -5750,7 +5394,7 @@
     ],
     "where": [
      "research/landscape.json benchmarks",
-     "research/landscape.md:191"
+     "research/landscape.md:196"
     ],
     "licence": [
      "CC-BY-NC-4.0"
@@ -5861,7 +5505,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:187"
+     "README.md:190"
     ],
     "licence": null,
     "status": null,
@@ -5903,7 +5547,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "docs/supply-chain.md:99"
+     "docs/supply-chain.md:111"
     ],
     "licence": null,
     "status": null,
@@ -5924,7 +5568,7 @@
     ],
     "where": [
      "research/landscape.json libraries",
-     "README.md:180",
+     "README.md:183",
      "THIRD_PARTY_NOTICES.md:29",
      "research/landscape.md:54"
     ],
@@ -5950,7 +5594,7 @@
     ],
     "where": [
      "research/landscape.json libraries",
-     "README.md:183",
+     "README.md:186",
      "research/agent-toolkits-2026-10.md:17",
      "research/landscape.md:52"
     ],
@@ -6019,7 +5663,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "docs/formulas.md:70"
+     "docs/formulas.md:75"
     ],
     "licence": null,
     "status": null,
@@ -6041,7 +5685,7 @@
     "where": [
      "research/landscape.json benchmarks",
      "research/design-workflows.md:126",
-     "research/landscape.md:188"
+     "research/landscape.md:193"
     ],
     "licence": [
      "Apache-2.0"
@@ -6053,33 +5697,6 @@
      "archived": false,
      "licence": "Apache-2.0",
      "pushed": "2026-10-22"
-    },
-    "scorecard": null
-   },
-   {
-    "id": "url:https://github.com/i2cjak/Backplane",
-    "url": "https://github.com/i2cjak/Backplane",
-    "kind": "catalogue",
-    "names": [
-     "i2cjak/Backplane"
-    ],
-    "where": [
-     "upstreams/registry.yaml",
-     "research/landscape.json projects",
-     "research/landscape.md:48"
-    ],
-    "licence": [
-     "MIT"
-    ],
-    "status": [
-     "candidate"
-    ],
-    "github": {
-     "state": "ok",
-     "full_name": "BackplaneWorks/Backplane",
-     "archived": false,
-     "licence": "MIT",
-     "pushed": "2026-11-01"
     },
     "scorecard": null
    },
@@ -6111,7 +5728,7 @@
     "where": [
      "upstreams/registry.yaml",
      "research/landscape.json projects",
-     "README.md:179",
+     "README.md:182",
      "THIRD_PARTY_NOTICES.md:28",
      "research/agent-toolkits-2026-10.md:18",
      "…"
@@ -6200,7 +5817,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:185",
+     "README.md:188",
      "research/simulation-tools.md:40"
     ],
     "licence": null,
@@ -6237,7 +5854,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:190"
+     "README.md:193"
     ],
     "licence": null,
     "status": null,
@@ -6318,8 +5935,8 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "docs/supply-chain.md:108",
-     "skills/cad-supply-chain/SKILL.md:162"
+     "docs/supply-chain.md:120",
+     "skills/cad-supply-chain/SKILL.md:195"
     ],
     "licence": null,
     "status": null,
@@ -6355,7 +5972,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:189"
+     "README.md:192"
     ],
     "licence": null,
     "status": null,
@@ -6386,6 +6003,24 @@
     }
    },
    {
+    "id": "url:https://github.com/meta/Ax",
+    "url": "https://github.com/meta/Ax",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:57"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "meta/Ax",
+     "archived": false,
+     "licence": "MIT",
+     "pushed": "2026-11-01"
+    }
+   },
+   {
     "id": "url:https://github.com/microsoft/CADFusion",
     "url": "https://github.com/microsoft/CADFusion",
     "kind": "docs",
@@ -6409,7 +6044,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:184"
+     "README.md:187"
     ],
     "licence": null,
     "status": null,
@@ -6499,7 +6134,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:189"
+     "README.md:192"
     ],
     "licence": null,
     "status": null,
@@ -6518,7 +6153,7 @@
     "names": [],
     "where": [
      "README.md:51",
-     "README.md:158"
+     "README.md:161"
     ],
     "licence": null,
     "status": null,
@@ -6537,7 +6172,7 @@
     "names": [],
     "where": [
      "README.md:52",
-     "README.md:159"
+     "README.md:162"
     ],
     "licence": null,
     "status": null,
@@ -6723,7 +6358,7 @@
     "where": [
      "upstreams/registry.yaml",
      "research/landscape.json projects",
-     "README.md:177",
+     "README.md:180",
      "THIRD_PARTY_NOTICES.md:26",
      "research/landscape.md:43"
     ],
@@ -6769,7 +6404,7 @@
     ],
     "where": [
      "upstreams/registry.yaml",
-     "README.md:188",
+     "README.md:191",
      "research/simulation-tools.md:55"
     ],
     "licence": [
@@ -6916,7 +6551,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "docs/supply-chain.md:101"
+     "docs/supply-chain.md:113"
     ],
     "licence": null,
     "status": null,
@@ -6937,7 +6572,7 @@
     ],
     "where": [
      "upstreams/registry.yaml",
-     "README.md:186",
+     "README.md:189",
      "research/simulation-tools.md:129"
     ],
     "licence": [
@@ -6983,7 +6618,7 @@
     "where": [
      "upstreams/registry.yaml",
      "research/landscape.json projects",
-     "README.md:178",
+     "README.md:181",
      "THIRD_PARTY_NOTICES.md:27",
      "research/agent-toolkits-2026-10.md:20",
      "…"
@@ -7014,11 +6649,11 @@
     "licence": null,
     "status": null,
     "github": {
-     "state": "ok",
-     "full_name": "pzfreo/cadgenbench-build123d",
-     "archived": false,
-     "licence": "Apache-2.0",
-     "pushed": "2026-10-21"
+     "state": "unverified",
+     "full_name": null,
+     "archived": null,
+     "licence": null,
+     "pushed": null
     }
    },
    {
@@ -7397,6 +7032,24 @@
     }
    },
    {
+    "id": "url:https://github.com/the-dual-space/pymoo",
+    "url": "https://github.com/the-dual-space/pymoo",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:56"
+    ],
+    "licence": null,
+    "status": null,
+    "github": {
+     "state": "ok",
+     "full_name": "the-dual-space/pymoo",
+     "archived": false,
+     "licence": "Apache-2.0",
+     "pushed": "2026-07-07"
+    }
+   },
+   {
     "id": "url:https://github.com/topopt/TopOpt_in_PETSc",
     "url": "https://github.com/topopt/TopOpt_in_PETSc",
     "kind": "docs",
@@ -7514,6 +7167,36 @@
     "final": null
    },
    {
+    "id": "url:https://gitlab.com/openfoam/core/openfoam/-/wikis/precompiled/docker",
+    "url": "https://gitlab.com/openfoam/core/openfoam/-/wikis/precompiled/docker",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:77"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://gitlab.com/openfoam/packaging/containers",
+    "url": "https://gitlab.com/openfoam/packaging/containers",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/simulation-tools.md:77"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
     "id": "url:https://gitlab.com/openlb/release/-/blob/master/LICENSE",
     "url": "https://gitlab.com/openlb/release/-/blob/master/LICENSE",
     "kind": "docs",
@@ -7549,7 +7232,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:185"
+     "README.md:188"
     ],
     "licence": null,
     "status": null,
@@ -7775,7 +7458,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "research/landscape.md:188"
+     "research/landscape.md:193"
     ],
     "licence": null,
     "status": null,
@@ -7921,6 +7604,21 @@
     "final": null
    },
    {
+    "id": "url:https://occt3d.com/open-cascade-technology/",
+    "url": "https://occt3d.com/open-cascade-technology/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "README.md:186"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
     "id": "url:https://openelab.io/products/seeed-studio-recomputer-mini-j501-heatsink",
     "url": "https://openelab.io/products/seeed-studio-recomputer-mini-j501-heatsink",
     "kind": "docs",
@@ -7931,7 +7629,7 @@
     "licence": null,
     "status": null,
     "http": [
-     429
+     200
     ],
     "final": null
    },
@@ -7956,8 +7654,8 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "docs/supply-chain.md:97",
-     "skills/cad-supply-chain/SKILL.md:159"
+     "docs/supply-chain.md:109",
+     "skills/cad-supply-chain/SKILL.md:192"
     ],
     "licence": null,
     "status": null,
@@ -8160,7 +7858,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "docs/formulas.md:76"
+     "docs/formulas.md:81"
     ],
     "licence": null,
     "status": null,
@@ -8221,7 +7919,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:191"
+     "README.md:194"
     ],
     "licence": null,
     "status": null,
@@ -8268,8 +7966,8 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "docs/supply-chain.md:107",
-     "skills/cad-supply-chain/SKILL.md:162"
+     "docs/supply-chain.md:119",
+     "skills/cad-supply-chain/SKILL.md:195"
     ],
     "licence": null,
     "status": null,
@@ -8495,7 +8193,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:187"
+     "README.md:190"
     ],
     "licence": null,
     "status": null,
@@ -8683,6 +8381,36 @@
     "final": null
    },
    {
+    "id": "url:https://www.dhondt.de/",
+    "url": "https://www.dhondt.de/",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:24"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
+    "id": "url:https://www.dhondt.de/ccx_2.23.pdf",
+    "url": "https://www.dhondt.de/ccx_2.23.pdf",
+    "kind": "docs",
+    "names": [],
+    "where": [
+     "research/fea-and-process-tools.md:24"
+    ],
+    "licence": null,
+    "status": null,
+    "http": [
+     200
+    ],
+    "final": null
+   },
+   {
     "id": "url:https://www.dinmedia.de/en/standard/din-16742/192658755",
     "url": "https://www.dinmedia.de/en/standard/din-16742/192658755",
     "kind": "docs",
@@ -8731,7 +8459,7 @@
      302,
      200
     ],
-    "final": "https://link.springer.com/chapter/10.1007/978-3-030-90700-6_31?error=cookies_not_supported&code=f7e02f91-ec50-4748-85a7-805aecaabcf9"
+    "final": "https://link.springer.com/chapter/10.1007/978-3-030-90700-6_31?error=cookies_not_supported&code=c1c49312-5dc7-40e6-bdb3-1e790fb13640"
    },
    {
     "id": "url:https://www.doi.org/10.1007/BF02120338",
@@ -8753,7 +8481,7 @@
      302,
      200
     ],
-    "final": "https://link.springer.com/article/10.1007/BF02120338?error=cookies_not_supported&code=fc6bcb75-89e0-44ea-bf8b-f8d96952c53f"
+    "final": "https://link.springer.com/article/10.1007/BF02120338?error=cookies_not_supported&code=30b0c18e-a2b7-4914-92b0-1e7a878adfd3"
    },
    {
     "id": "url:https://www.elegoo.com/blogs/3d-printer-user-guide/mastering-hollowing-and-adding-holes-in-elegoo-satellite",
@@ -8766,7 +8494,7 @@
     "licence": null,
     "status": null,
     "http": [
-     429
+     200
     ],
     "final": null
    },
@@ -8913,7 +8641,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "research/landscape.md:173",
+     "research/landscape.md:178",
      "research/process-profiles.md:721"
     ],
     "licence": null,
@@ -9098,7 +8826,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:192"
+     "README.md:195"
     ],
     "licence": null,
     "status": null,
@@ -9113,7 +8841,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:193"
+     "README.md:196"
     ],
     "licence": null,
     "status": null,
@@ -9275,7 +9003,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "README.md:187"
+     "README.md:190"
     ],
     "licence": null,
     "status": null,
@@ -9594,7 +9322,7 @@
     "where": [
      "research/compliant-mechanisms.md:338",
      "research/fea-and-process-tools.md:169",
-     "research/landscape.md:173",
+     "research/landscape.md:178",
      "research/process-profiles.md:720"
     ],
     "licence": null,
@@ -9671,7 +9399,7 @@
     "kind": "docs",
     "names": [],
     "where": [
-     "docs/formulas.md:72"
+     "docs/formulas.md:77"
     ],
     "licence": null,
     "status": null,
@@ -9900,7 +9628,7 @@
     "kind": "agent",
     "source": "this repository",
     "file": "agents/cad-pr-reviewer.md",
-    "version": "3c0a609b205b"
+    "version": "88ff87ffc253"
    },
    {
     "id": "agent:cad-resume",
@@ -9908,7 +9636,7 @@
     "kind": "agent",
     "source": "this repository",
     "file": "agents/cad-resume.md",
-    "version": "3c0a609b205b"
+    "version": "88ff87ffc253"
    },
    {
     "id": "skill:cad-motion-validation",
@@ -9916,7 +9644,7 @@
     "kind": "skill",
     "source": "this repository",
     "file": "skills/cad-motion-validation/SKILL.md",
-    "version": "3c0a609b205b"
+    "version": "88ff87ffc253"
    },
    {
     "id": "skill:cad-pr-review",
@@ -9924,7 +9652,7 @@
     "kind": "skill",
     "source": "this repository",
     "file": "skills/cad-pr-review/SKILL.md",
-    "version": "3c0a609b205b"
+    "version": "88ff87ffc253"
    },
    {
     "id": "skill:cad-remote-runs",
@@ -9932,7 +9660,7 @@
     "kind": "skill",
     "source": "this repository",
     "file": "skills/cad-remote-runs/SKILL.md",
-    "version": "3c0a609b205b"
+    "version": "88ff87ffc253"
    },
    {
     "id": "skill:cad-supply-chain",
@@ -9940,7 +9668,7 @@
     "kind": "skill",
     "source": "this repository",
     "file": "skills/cad-supply-chain/SKILL.md",
-    "version": "3c0a609b205b"
+    "version": "88ff87ffc253"
    },
    {
     "id": "skill:cad-work-tracking",
@@ -9948,7 +9676,7 @@
     "kind": "skill",
     "source": "this repository",
     "file": "skills/cad-work-tracking/SKILL.md",
-    "version": "3c0a609b205b"
+    "version": "88ff87ffc253"
    },
    {
     "id": "skill:design-process",
@@ -9956,7 +9684,7 @@
     "kind": "skill",
     "source": "this repository",
     "file": "skills/design-process/SKILL.md",
-    "version": "3c0a609b205b"
+    "version": "88ff87ffc253"
    },
    {
     "id": "skill:mcmaster-parts",
@@ -9964,7 +9692,7 @@
     "kind": "skill",
     "source": "this repository",
     "file": "skills/mcmaster-parts/SKILL.md",
-    "version": "3c0a609b205b"
+    "version": "88ff87ffc253"
    },
    {
     "id": "vendored-skills:build123d-mcp",

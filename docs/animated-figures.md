@@ -8,7 +8,7 @@ The README's hero is not drawn by hand. `tools/readme_anim.py` makes it from a r
 
 It writes one SVG of about 140 KB that animates with CSS alone, so GitHub shows it in a README `<img>`.
 
-![Gyropup's five-bar leg drawn from its STEP file, assembled, then checked: the closest passing gap, the hip frame's FEA stress and a stride solved from the link lengths, ending on the cad-agent wordmark](img/hero/gyropup-leg.svg)
+![Gyropup's five-bar leg drawn from its STEP file, assembled, then checked: its running and passing gaps, the hip frame's FEA stress and a stride solved from the link lengths, ending on the cad-agent wordmark](img/hero/gyropup-leg.svg)
 
 The first figure is [Gyropup](https://github.com/Valpatel/gyropup)'s five-bar leg (MIT): `docs/img/hero/gyropup-leg.svg`. The SVGs in `docs/img/hero/` may be reused on the site and elsewhere. Each one names its source in its caption and `<desc>`.
 
@@ -75,7 +75,14 @@ Both colour schemes are in the one SVG (`prefers-color-scheme`), on its own back
 
 - **Hidden lines.** Each solid hides only its own edges. Solids hide each other by their filled silhouettes, painted back to front. The order is the one that draws the fewest cells wrong on depth rasters of the assembled and exploded states. Interlocking parts, such as a pin through a bore, have no right order, so the scene records how many overlapping cells are drawn wrong.
 - **Motion.** Each moving solid is drawn in slices along the joint axis. Each slice is moved by an exact rotation at its own depth, and edges are cut where they pass into the next slice. The scene records the largest error per part, over the visible mesh vertices and over the visible edges. For Gyropup's leg both are about 1 px. The hidden lines stay those of the reference pose.
-- **Clearance.** It is checked at sampled poses, not as a swept volume. A pair of parts whose gap stays the same at every pose is turning about its own shared axis: a flange on its motor, a pin in its bearing, a spacer beside it. Such a pair is listed as a joint interface. The closest gap shown is between parts that move past each other.
+- **Clearance.** It is checked at sampled poses, not as a swept volume. Each pair of solids, not of parts, is one of four kinds. The fit row states the closest running gap ("joints ≥ 0.1 mm" on Gyropup's leg) and the closest passing gap ("passing ≥ 7.3 mm"), each rounded down, and the figure marks the passing one.
+
+  | kind | what it is | example |
+  |---|---|---|
+  | clash | it overlaps at some pose | none on Gyropup |
+  | contact | it touches at every pose; a designed contact, with no gap to state | a flange on its motor, a pin in its bearing |
+  | running gap | it stays apart by the same gap at every pose, so it turns about a shared axis | links stacked on a joint, a spacer beside a bearing, an adapter disc beside the frame |
+  | passing | its gap changes as the parts move past each other | a link swinging past a hard-stop sleeve |
 - **Stress.** The colours show the FEA's surface field, capped at its design stress. The load factor shown is the FEA's own prediction of first failure, made under its assumptions (linear-elastic, weakest print direction, idealised clamps).
 
 CAD and simulation narrow a design down. They do not prove that a printed part fits or holds.

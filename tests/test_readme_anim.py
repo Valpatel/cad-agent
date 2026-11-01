@@ -111,7 +111,16 @@ def test_the_hero_states_its_checks_from_the_scene(tool, built):
     assert f"first failure predicted at {scene['fea']['first_failure_factor']:.2f}× load" in text
     assert lk["edge_error_px"] < 2, "drawn edges stray too far from the exact 3D motion"
     if scene.get("clearance"):
-        assert f"{scene['clearance']['poses']} poses" in text
+        c = scene["clearance"]
+        assert f"{c['poses']} poses" in text
+        # the stated gaps are the smallest of their kind in the per-solid table, rounded down
+        for kind, key, words in (("running", "closest_running", "joints ≥ {} mm"),
+                                 ("passing", "closest", "passing ≥ {} mm")):
+            gaps = [p["min_gap_mm"] for p in c["pairs"] if p["kind"] == kind]
+            assert (c[key] or {}).get("gap_mm") == (min(gaps) if gaps else None)
+            if gaps:
+                assert words.format(f"{math.floor(min(gaps) * 10 + 1e-9) / 10:.1f}") in text
+        assert bool(c["clashes"]) == any(p["kind"] == "clash" for p in c["pairs"])
 
 
 def test_the_readme_embeds_the_hero():
@@ -301,26 +310,47 @@ def test_a_path_out_of_reach_is_an_error():
         link.sweep("E", [ref["E"], (ref["E"][0], ref["E"][1] - 400)])
 
 
-def test_the_sweep_summary_tells_joint_faces_from_parts_that_pass():
+def test_the_sweep_summary_tells_contacts_running_gaps_and_passing_parts_apart():
     from cadagent.publish.anim.hero import summarise_sweep
 
-    part_of = {1: "link", 2: "frame", 3: "pin", 4: "bearing", 5: "spacer", 6: "screw"}
+    part_of = {1: "link", 2: "frame", 3: "pin", 4: "bearing", 5: "spacer", 6: "screw", 7: "link"}
     results = [
         (0, [(1, 2, "apart", 4.0, 0, [0, 0, 0], [4, 0, 0]),       # a link passing the frame: its gap changes
              (3, 4, "touching", 0.0, 0, [0, 0, 0], [0, 0, 0]),    # a pin in its bearing: touching at every pose
-             (5, 4, "apart", 0.1, 0, [0, 0, 0], [0, 0, .1])]),    # a spacer beside it: 0.1 mm at every pose
+             (5, 4, "apart", 0.1, 0, [0, 0, 0], [0, 0, .1]),      # a spacer beside it: 0.1 mm at every pose
+             (7, 2, "apart", 1.0, 0, [0, 0, 0], [0, 0, 1])]),     # the link's other solid turns 1 mm from the frame
         (2, [(1, 2, "apart", 1.5, 0, [1, 0, 0], [2.5, 0, 0]),
              (3, 4, "touching", 0.0, 0, [0, 0, 0], [0, 0, 0]),
              (5, 4, "apart", 0.1, 0, [0, 0, 0], [0, 0, .1]),
+             (2, 7, "apart", 1.0, 0, [0, 0, 1], [0, 0, 0]),
              (6, 2, "overlapping", 0.0, 3.2, None, None)]),
     ]
-    clashes, closest, interfaces, table = summarise_sweep(results, part_of, [0, 2])
-    assert clashes == [{"pose": 2, "a": "screw", "b": "frame", "overlap_mm3": 3.2}]
-    assert closest["part_a"] == "link" and closest["gap_mm"] == 1.5 and closest["pose"] == 2
-    assert interfaces == [["bearing", "pin"], ["bearing", "spacer"]]
-    # a pair measured at only some poses (out of reach at the others) is never a joint interface
-    _, closest, interfaces, _ = summarise_sweep(results[:1], part_of, [0, 2])
-    assert interfaces == [] and closest["gap_mm"] == 0.0
+    s = summarise_sweep(results, part_of, [0, 2])
+    assert s["clashes"] == [{"pose": 2, "a": "frame", "b": "screw", "overlap_mm3": 3.2}]
+    # per solid: the link's passing solid is not hidden by its other solid's constant 1 mm
+    assert s["closest"]["part_a"] == "link" and s["closest"]["gap_mm"] == 1.5 and s["closest"]["pose"] == 2
+    assert {s["closest_running"]["part_a"], s["closest_running"]["part_b"]} == {"spacer", "bearing"}
+    assert s["closest_running"]["gap_mm"] == 0.1
+    assert s["contacts"] == [["bearing", "pin"]]
+    assert s["kinds"] == {"clash": 1, "contact": 1, "running": 2, "passing": 1}
+    # a pair measured at only some poses (out of reach at the others) passes; it is never running or a contact
+    s = summarise_sweep(results[:1], part_of, [0, 2])
+    assert s["contacts"] == [] and s["closest_running"] is None and s["closest"]["gap_mm"] == 0.0
+
+
+def test_the_fit_row_states_running_and_passing_gaps_and_never_overstates():
+    from cadagent.publish.anim.hero import _check_rows
+
+    def fit(**c):
+        scene = {"clearance": {"poses": 12, "clashes": [], "near_mm": 10.0, **c},
+                 "linkage": {"samples": 24, "dead_point_margin_deg": []}}
+        return _check_rows(scene)[0]
+
+    run, pas = {"gap_mm": 0.098}, {"gap_mm": 7.308}
+    assert fit(closest_running=run, closest=pas)[1] == "no clash in 12 poses · joints ≥ 0.0 mm, passing ≥ 7.3 mm"
+    assert fit(closest_running=None, closest=pas)[1] == "no clash in 12 poses · passing parts ≥ 7.3 mm apart"
+    assert fit(closest_running=None, closest=None)[1] == "no clash in 12 poses · nothing passes within 10.0 mm"
+    assert fit(clashes=[{"pose": 1}], closest=pas)[3] is False
 
 
 def test_painting_breaks_a_cycle_where_it_costs_fewest_cells():

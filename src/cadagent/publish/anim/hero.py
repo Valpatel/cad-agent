@@ -26,9 +26,11 @@ What the drawing approximates, stated in the scene and its caption:
   part. The hidden lines stay those of the
   reference pose.
 * Clearance is checked at the sampled poses only. A pair of solids whose extents along the joint axes do not
-  overlap can never meet while every joint turns about that axis. Such pairs are counted, not queried. The sweep
-  is slow (#186), so a previous scene's result is reused when its key (the assembly's sha256 and the parts,
-  linkage and clearance specs) is unchanged.
+  overlap can never meet while every joint turns about that axis. Such pairs are counted, not queried. Each
+  measured pair of solids is a clash, a designed contact (touching at every pose), a running gap (the same gap at
+  every pose, turning about a shared axis) or passing; the fit row states the closest running and passing gaps.
+  The sweep is slow (#186), so a previous scene's result is reused when its key (the assembly's sha256, the parts,
+  linkage and clearance specs, and the relation engine's source and tolerances) is unchanged.
 """
 from __future__ import annotations
 
@@ -69,8 +71,8 @@ def _r(v: float, d: int = 3) -> float:
     return float(round(float(v), d))
 
 
-CLEARANCE_VERSION = 2      # bump when _clearances changes what it measures: cached results are then recomputed
-JOINT_GAP_SPREAD_MM = 0.02  # a pair whose gap changes less than this over the stride is a joint's own interface
+CLEARANCE_VERSION = 3      # bump when _clearances changes what it measures: cached results are then recomputed
+JOINT_GAP_SPREAD_MM = 0.02  # a pair apart by a gap that changes less than this over the stride is a running gap
 
 
 def _clearance_key(spec: Mapping[str, Any], assembly_sha256: str) -> str:
@@ -555,13 +557,11 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True,
 def _clearances(spec, solids, parts, link, poses, iaxis, iu, iv, log, *, assembly: Path,
                 workers: int = 1) -> Dict[str, Any]:
     """The closest approach between solids that move relative to each other, over the sampled poses, by the
-    relation engine, per pair of parts.
+    relation engine, per pair of solids, summarised by ``summarise_sweep``: designed contacts, running gaps about a
+    shared axis, and parts that pass each other.
 
-    Pairs whose extents along the joint axis do not overlap are counted as separated. A pair of parts whose gap is
-    the same at every sampled pose turns about its own shared axis: it is a joint's own interface (a flange on its
-    motor, a pin in its bearing, a spacer beside a bearing). It is listed, and left out of the closest gap, which is
-    about parts that move past each other. ``workers`` > 1 measures poses in parallel processes, each reading the STEP
-    once; the result is the same."""
+    Pairs whose extents along the joint axis do not overlap are counted as separated. ``workers`` > 1 measures poses
+    in parallel processes, each reading the STEP once; the result is the same."""
     cs = spec.get("clearance", {})
     every = int(cs.get("every", 1))
     near = float(cs.get("near_mm", 10.0))
@@ -621,14 +621,15 @@ def _clearances(spec, solids, parts, link, poses, iaxis, iu, iv, log, *, assembl
             results.append(_sweep_pose(job, solids))
             log(f"  clearance pose {results[-1][0]}: {len(results[-1][1])} queries, {time.time() - t0:.0f} s")
 
-    clashes, closest, interfaces, table = summarise_sweep(results, {i: named[i]["part"] for i in named}, checked)
+    summary = summarise_sweep(results, {i: named[i]["part"] for i in named}, checked)
     queried = sum(len(rows) for _, rows in results)
     return {"poses": len(checked), "pairs_queried": queried, "pairs_separated_along_axis": separated,
-            "pairs_in_reach": len(pairs), "clashes": clashes, "closest": closest, "joint_interfaces": interfaces,
-            "pairs": table, "near_mm": near, "seconds": _r(time.time() - t0, 1), "workers": workers,
-            "limits": "sampled poses only (not a swept volume); exact gaps by cadagent.gates.relations.relate; "
-                      f"a pair whose gap varies by at most {JOINT_GAP_SPREAD_MM} mm over every pose is taken as a "
-                      "joint's own interface and left out of the closest gap"}
+            "pairs_in_reach": len(pairs), **summary, "near_mm": near, "seconds": _r(time.time() - t0, 1),
+            "workers": workers,
+            "limits": "sampled poses only (not a swept volume); exact gaps by cadagent.gates.relations.relate, per "
+                      "pair of solids; a pair touching at every pose is a designed contact and has no gap to state; "
+                      f"a pair apart at every pose by a gap that varies by at most {JOINT_GAP_SPREAD_MM} mm is a "
+                      "running gap about a shared axis; the rest pass each other"}
 
 
 def painter_order(ids: Sequence[int], front: Mapping[Tuple[int, int], int],
@@ -649,44 +650,63 @@ def painter_order(ids: Sequence[int], front: Mapping[Tuple[int, int], int],
     return order, wrong
 
 
-def summarise_sweep(results, part_of: Mapping[int, str], checked: Sequence[int]):
-    """The sweep's per-pose rows ``[(pose, [(solid a, solid b, state, gap, overlap, point a, point b)])]`` per pair
-    of parts: (clashes, the closest gap between parts that move past each other, joint interfaces, the table).
-    ``part_of`` names each solid's part; ``checked`` are the poses measured."""
-    by_pair: Dict[Tuple[str, str], Dict[str, Any]] = {}
+def summarise_sweep(results, part_of: Mapping[int, str], checked: Sequence[int]) -> Dict[str, Any]:
+    """The sweep's per-pose rows ``[(pose, [(solid a, solid b, state, gap, overlap, point a, point b)])]``, per pair of
+    solids (not per part, so one solid of a part cannot hide another's gap). Each pair is one kind:
+
+    * ``clash``: overlapping or containing at some pose;
+    * ``contact``: touching at every checked pose, a designed contact (a flange on its motor, a pin in its bearing);
+      listed, with no gap to state;
+    * ``running``: apart at every checked pose by a gap that changes by at most ``JOINT_GAP_SPREAD_MM``: parts
+      turning about a shared axis (links stacked on a joint, a spacer beside a bearing, a disc beside a frame);
+    * ``passing``: the rest, parts whose gap changes as they move past each other.
+
+    Returns the clashes, the closest running and passing pairs, the part pairs in designed contact, the table and
+    the count of each kind. ``part_of`` names each solid's part; ``checked`` are the poses measured."""
+    by_pair: Dict[Tuple[int, int], Dict[str, Any]] = {}
     clashes = []
     for n, rows in results:
         for a, b, state, gap, overlap, pa, pb in rows:
-            key = tuple(sorted((part_of[a], part_of[b])))
-            e = by_pair.setdefault(key, {"parts": list(key), "poses": set(), "touching": set(), "min_gap_mm": None,
-                                         "gaps": {}})
+            if b < a:
+                a, b, pa, pb = b, a, pb, pa
+            e = by_pair.setdefault((a, b), {"poses": set(), "touching": set(), "gaps": {}, "clash": False})
             e["poses"].add(n)
             if state in ("overlapping", "contains"):
+                e["clash"] = True
                 clashes.append({"pose": n, "a": part_of[a], "b": part_of[b], "overlap_mm3": overlap})
                 continue
             if state == "touching":
                 e["touching"].add(n)
-            e["gaps"][n] = min(gap, e["gaps"].get(n, math.inf))      # per pose: the closest of the parts' solids
-            if e["min_gap_mm"] is None or gap < e["min_gap_mm"]:
-                e.update(min_gap_mm=gap, pose=n, solids=[a, b], point_a=pa, point_b=pb)
-    table, interfaces, closest, best = [], [], None, math.inf
-    for key in sorted(by_pair):
-        e = by_pair[key]
+            e["gaps"][n] = gap
+            if "gap" not in e or gap < e["gap"]:
+                e.update(gap=gap, pose=n, point_a=pa, point_b=pb)
+    table, contacts, best = [], set(), {"running": None, "passing": None}
+    counts = {"clash": 0, "contact": 0, "running": 0, "passing": 0}
+    everywhere = set(checked)
+    for (a, b) in sorted(by_pair, key=lambda ab: (sorted((part_of[ab[0]], part_of[ab[1]])), ab)):
+        e = by_pair[(a, b)]
         gaps = list(e["gaps"].values())
-        spread = max(gaps) - min(gaps) if gaps else math.inf
-        # the same gap at every pose: the pair turns about its own shared axis, a joint's own interface
-        joint = set(e["gaps"]) == set(checked) and spread <= JOINT_GAP_SPREAD_MM
-        table.append({"parts": e["parts"], "queried_poses": len(e["poses"]), "touching_poses": len(e["touching"]),
-                      "min_gap_mm": None if e["min_gap_mm"] is None else _r(e["min_gap_mm"], 3),
-                      "gap_spread_mm": None if not gaps else _r(spread, 3), "joint_interface": joint})
-        if joint:
-            interfaces.append(e["parts"])
-        elif e["min_gap_mm"] is not None and e["min_gap_mm"] < best:
-            best = e["min_gap_mm"]
-            a, b = e["solids"]
-            closest = {"pose": e["pose"], "a": a, "b": b, "part_a": part_of[a], "part_b": part_of[b],
-                       "gap_mm": _r(best, 3), "point_a": e["point_a"], "point_b": e["point_b"]}
-    return clashes, closest, interfaces, table
+        spread = max(gaps) - min(gaps) if gaps else None
+        if e["clash"]:
+            kind = "clash"
+        elif e["touching"] == everywhere:
+            kind = "contact"
+        elif set(e["gaps"]) == everywhere and spread <= JOINT_GAP_SPREAD_MM:
+            kind = "running"
+        else:
+            kind = "passing"
+        counts[kind] += 1
+        table.append({"solids": [a, b], "parts": [part_of[a], part_of[b]], "kind": kind,
+                      "queried_poses": len(e["poses"]), "touching_poses": len(e["touching"]),
+                      "min_gap_mm": _r(e["gap"], 3) if "gap" in e else None,
+                      "gap_spread_mm": None if spread is None else _r(spread, 3)})
+        if kind == "contact":
+            contacts.add(tuple(sorted((part_of[a], part_of[b]))))
+        elif kind in best and (best[kind] is None or e["gap"] < best[kind]["gap_mm"]):
+            best[kind] = {"pose": e["pose"], "a": a, "b": b, "part_a": part_of[a], "part_b": part_of[b],
+                          "gap_mm": _r(e["gap"], 3), "point_a": e["point_a"], "point_b": e["point_b"]}
+    return {"clashes": clashes, "closest": best["passing"], "closest_running": best["running"],
+            "contacts": [list(c) for c in sorted(contacts)], "pairs": table, "kinds": counts}
 
 
 _WORKER_SOLIDS: Dict[str, list] = {}
@@ -759,6 +779,11 @@ class Phases:
 
 def _fmt(v: float, d: int = 1) -> str:
     return f"{v:.{d}f}"
+
+
+def _at_least(v: float, d: int = 1) -> str:
+    """``v`` rounded down to ``d`` decimals, for a "≥" statement that must stay true (0.098 is not ≥ 0.1)."""
+    return f"{math.floor(v * 10 ** d + 1e-9) / 10 ** d:.{d}f}"
 
 
 def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
@@ -977,7 +1002,11 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
 
 # what each check row says, with the scene's numbers; a spec's ``present.checks`` may replace any of them
 CHECK_WORDS = {
-    "fit": "{clashes} in {poses} poses · passing parts ≥ {gap} mm apart",
+    "fit": "{clashes} in {poses} poses · {gaps}",
+    "fit_running": "joints ≥ {gap} mm",
+    "fit_passing": "passing ≥ {gap} mm",
+    "fit_passing_only": "passing parts ≥ {gap} mm apart",
+    "fit_none": "nothing passes within {near} mm",
     "strength": "FEA {part}: first failure predicted at {factor}× load",
     "motion": "a {samples}-step stride solved from the link lengths",
     "motion_margin": "stride solved from the link lengths · ≥ {margin}° from a dead point",
@@ -993,9 +1022,16 @@ def _check_rows(scene: Mapping[str, Any], words: Mapping[str, str] = None) -> Li
     c = scene.get("clearance")
     if c:
         clash = len(c.get("clashes", []))
-        w = c.get("closest") or {}
+        run, pas = c.get("closest_running"), c.get("closest")
+        gaps = []
+        if run:
+            gaps.append(w_["fit_running"].format(gap=_at_least(run["gap_mm"])))
+        if pas:
+            gaps.append(w_["fit_passing" if run else "fit_passing_only"].format(gap=_at_least(pas["gap_mm"])))
+        else:
+            gaps.append(w_["fit_none"].format(near=_fmt(c.get("near_mm", 0))))
         rows.append(("fit", w_["fit"].format(clashes=f"{clash} clashes" if clash else "no clash", poses=c["poses"],
-                                             gap=_fmt(w.get("gap_mm", 0))), ph.scan[1], not clash))
+                                             gaps=", ".join(gaps)), ph.scan[1], not clash))
     f = scene.get("fea")
     if f:
         factor = f["first_failure_factor"]

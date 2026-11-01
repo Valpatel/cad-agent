@@ -1908,54 +1908,36 @@
     ]
    ]
   },
-  "joint_interfaces": [
-   [
-    "adapter_front",
-    "hip_frame"
+  "closest_running": {
+   "pose": 0,
+   "a": 11,
+   "b": 32,
+   "part_a": "apex_spacer",
+   "part_b": "apex_bearings",
+   "gap_mm": 0.1,
+   "point_a": [
+    33.0,
+    34.9,
+    -300.0
    ],
+   "point_b": [
+    33.0,
+    35.0,
+    -300.0
+   ]
+  },
+  "contacts": [
    [
     "adapter_front",
     "motors"
    ],
    [
-    "adapter_front",
-    "stop_sleeves"
-   ],
-   [
-    "adapter_rear",
-    "hip_frame"
-   ],
-   [
     "adapter_rear",
     "motors"
-   ],
-   [
-    "adapter_rear",
-    "stop_sleeves"
-   ],
-   [
-    "apex_bearings",
-    "apex_spacer"
-   ],
-   [
-    "apex_bearings",
-    "circlip"
    ],
    [
     "apex_bearings",
     "wheel_link"
-   ],
-   [
-    "apex_spacer",
-    "front_link"
-   ],
-   [
-    "circlip",
-    "front_link"
-   ],
-   [
-    "eye_sleeves_front",
-    "front_link"
    ],
    [
     "eye_sleeves_front",
@@ -1966,46 +1948,6 @@
     "knee_rear"
    ],
    [
-    "eye_sleeves_rear",
-    "wheel_link"
-   ],
-   [
-    "front_link",
-    "knee_pin_front"
-   ],
-   [
-    "front_link",
-    "upper_link_front"
-   ],
-   [
-    "front_link",
-    "wheel_hub"
-   ],
-   [
-    "front_link",
-    "wheel_link"
-   ],
-   [
-    "front_link",
-    "wheel_screws"
-   ],
-   [
-    "hip_frame",
-    "screws_front"
-   ],
-   [
-    "hip_frame",
-    "screws_rear"
-   ],
-   [
-    "hip_frame",
-    "upper_link_front"
-   ],
-   [
-    "hip_frame",
-    "upper_link_rear"
-   ],
-   [
     "knee_front",
     "knee_pin_front"
    ],
@@ -2018,498 +1960,1283 @@
     "knee_rear"
    ],
    [
-    "knee_pin_rear",
-    "wheel_link"
-   ],
-   [
     "knee_rear",
     "upper_link_rear"
-   ],
-   [
-    "upper_link_rear",
-    "wheel_link"
    ]
   ],
   "pairs": [
    {
+    "solids": [
+     1,
+     5
+    ],
     "parts": [
      "adapter_front",
      "front_link"
     ],
+    "kind": "passing",
     "queried_poses": 3,
     "touching_poses": 0,
     "min_gap_mm": 77.532,
-    "gap_spread_mm": 15.881,
-    "joint_interface": false
+    "gap_spread_mm": 15.881
    },
    {
-    "parts": [
-     "adapter_front",
-     "hip_frame"
+    "solids": [
+     0,
+     1
     ],
+    "parts": [
+     "hip_frame",
+     "adapter_front"
+    ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 7.0,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
+    "solids": [
+     1,
+     12
+    ],
     "parts": [
      "adapter_front",
      "motors"
     ],
+    "kind": "contact",
     "queried_poses": 12,
     "touching_poses": 12,
     "min_gap_mm": 0.0,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
+    "solids": [
+     1,
+     7
+    ],
     "parts": [
      "adapter_front",
      "stop_sleeves"
     ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 14.0,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
-    "parts": [
-     "adapter_rear",
-     "hip_frame"
+    "solids": [
+     1,
+     9
     ],
+    "parts": [
+     "adapter_front",
+     "stop_sleeves"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 14.0,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     0,
+     2
+    ],
+    "parts": [
+     "hip_frame",
+     "adapter_rear"
+    ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 7.0,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
+    "solids": [
+     2,
+     14
+    ],
     "parts": [
      "adapter_rear",
      "motors"
     ],
+    "kind": "contact",
     "queried_poses": 12,
     "touching_poses": 12,
     "min_gap_mm": 0.0,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
+    "solids": [
+     2,
+     8
+    ],
     "parts": [
      "adapter_rear",
      "stop_sleeves"
     ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 14.0,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
+    "solids": [
+     2,
+     10
+    ],
+    "parts": [
+     "adapter_rear",
+     "stop_sleeves"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 14.0,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     2,
+     6
+    ],
     "parts": [
      "adapter_rear",
      "wheel_link"
     ],
+    "kind": "passing",
     "queried_poses": 3,
     "touching_poses": 0,
     "min_gap_mm": 89.824,
-    "gap_spread_mm": 12.475,
-    "joint_interface": false
+    "gap_spread_mm": 12.475
    },
    {
-    "parts": [
-     "apex_bearings",
-     "apex_spacer"
+    "solids": [
+     11,
+     32
     ],
+    "parts": [
+     "apex_spacer",
+     "apex_bearings"
+    ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 0.1,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
+    "solids": [
+     11,
+     33
+    ],
+    "parts": [
+     "apex_spacer",
+     "apex_bearings"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 0.1,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     33,
+     34
+    ],
     "parts": [
      "apex_bearings",
      "circlip"
     ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 0.15,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
-    "parts": [
-     "apex_bearings",
-     "wheel_link"
+    "solids": [
+     6,
+     32
     ],
+    "parts": [
+     "wheel_link",
+     "apex_bearings"
+    ],
+    "kind": "contact",
     "queried_poses": 12,
     "touching_poses": 12,
     "min_gap_mm": 0.0,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
-    "parts": [
-     "apex_spacer",
-     "front_link"
+    "solids": [
+     6,
+     33
     ],
+    "parts": [
+     "wheel_link",
+     "apex_bearings"
+    ],
+    "kind": "contact",
+    "queried_poses": 12,
+    "touching_poses": 12,
+    "min_gap_mm": 0.0,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     5,
+     11
+    ],
+    "parts": [
+     "front_link",
+     "apex_spacer"
+    ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 3.0,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
-    "parts": [
-     "circlip",
-     "front_link"
+    "solids": [
+     5,
+     34
     ],
+    "parts": [
+     "front_link",
+     "circlip"
+    ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 6.02,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
-    "parts": [
-     "eye_sleeves_front",
-     "front_link"
+    "solids": [
+     5,
+     28
     ],
+    "parts": [
+     "front_link",
+     "eye_sleeves_front"
+    ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 7.299,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
-    "parts": [
-     "eye_sleeves_front",
-     "knee_front"
+    "solids": [
+     20,
+     28
     ],
+    "parts": [
+     "knee_front",
+     "eye_sleeves_front"
+    ],
+    "kind": "contact",
     "queried_poses": 12,
     "touching_poses": 12,
     "min_gap_mm": 0.0,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
-    "parts": [
-     "eye_sleeves_rear",
-     "knee_rear"
+    "solids": [
+     26,
+     30
     ],
+    "parts": [
+     "knee_rear",
+     "eye_sleeves_rear"
+    ],
+    "kind": "contact",
     "queried_poses": 12,
     "touching_poses": 12,
     "min_gap_mm": 0.0,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
-    "parts": [
-     "eye_sleeves_rear",
-     "wheel_link"
+    "solids": [
+     6,
+     30
     ],
+    "parts": [
+     "wheel_link",
+     "eye_sleeves_rear"
+    ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 7.299,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
+    "solids": [
+     5,
+     18
+    ],
     "parts": [
      "front_link",
      "knee_pin_front"
     ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 7.299,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
+    "solids": [
+     5,
+     59
+    ],
     "parts": [
      "front_link",
      "screws_front"
     ],
+    "kind": "passing",
+    "queried_poses": 2,
+    "touching_poses": 0,
+    "min_gap_mm": 75.621,
+    "gap_spread_mm": 6.14
+   },
+   {
+    "solids": [
+     5,
+     60
+    ],
+    "parts": [
+     "front_link",
+     "screws_front"
+    ],
+    "kind": "passing",
     "queried_poses": 3,
     "touching_poses": 0,
     "min_gap_mm": 71.269,
-    "gap_spread_mm": 17.441,
-    "joint_interface": false
+    "gap_spread_mm": 17.441
    },
    {
+    "solids": [
+     5,
+     61
+    ],
+    "parts": [
+     "front_link",
+     "screws_front"
+    ],
+    "kind": "passing",
+    "queried_poses": 3,
+    "touching_poses": 0,
+    "min_gap_mm": 81.96,
+    "gap_spread_mm": 22.667
+   },
+   {
+    "solids": [
+     5,
+     62
+    ],
+    "parts": [
+     "front_link",
+     "screws_front"
+    ],
+    "kind": "passing",
+    "queried_poses": 3,
+    "touching_poses": 0,
+    "min_gap_mm": 94.141,
+    "gap_spread_mm": 23.365
+   },
+   {
+    "solids": [
+     5,
+     9
+    ],
     "parts": [
      "front_link",
      "stop_sleeves"
     ],
+    "kind": "passing",
     "queried_poses": 5,
     "touching_poses": 0,
     "min_gap_mm": 91.747,
-    "gap_spread_mm": 43.675,
-    "joint_interface": false
+    "gap_spread_mm": 43.675
    },
    {
+    "solids": [
+     5,
+     10
+    ],
     "parts": [
      "front_link",
-     "upper_link_front"
+     "stop_sleeves"
     ],
+    "kind": "passing",
+    "queried_poses": 2,
+    "touching_poses": 0,
+    "min_gap_mm": 111.525,
+    "gap_spread_mm": 14.363
+   },
+   {
+    "solids": [
+     3,
+     5
+    ],
+    "parts": [
+     "upper_link_front",
+     "front_link"
+    ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 2.0,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
-    "parts": [
-     "front_link",
-     "upper_link_rear"
+    "solids": [
+     4,
+     5
     ],
+    "parts": [
+     "upper_link_rear",
+     "front_link"
+    ],
+    "kind": "passing",
     "queried_poses": 3,
     "touching_poses": 0,
     "min_gap_mm": 129.909,
-    "gap_spread_mm": 43.606,
-    "joint_interface": false
+    "gap_spread_mm": 43.606
    },
    {
+    "solids": [
+     5,
+     99
+    ],
     "parts": [
      "front_link",
      "wheel_hub"
     ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 26.936,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
+    "solids": [
+     5,
+     6
+    ],
     "parts": [
      "front_link",
      "wheel_link"
     ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 2.0,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
+    "solids": [
+     5,
+     93
+    ],
     "parts": [
      "front_link",
      "wheel_screws"
     ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 16.02,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
+    "solids": [
+     5,
+     94
+    ],
+    "parts": [
+     "front_link",
+     "wheel_screws"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 16.02,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     5,
+     95
+    ],
+    "parts": [
+     "front_link",
+     "wheel_screws"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 16.02,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     5,
+     96
+    ],
+    "parts": [
+     "front_link",
+     "wheel_screws"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 16.02,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     0,
+     59
+    ],
     "parts": [
      "hip_frame",
      "screws_front"
     ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 9.5,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
+    "solids": [
+     0,
+     60
+    ],
+    "parts": [
+     "hip_frame",
+     "screws_front"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 9.5,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     0,
+     61
+    ],
+    "parts": [
+     "hip_frame",
+     "screws_front"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 9.5,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     0,
+     62
+    ],
+    "parts": [
+     "hip_frame",
+     "screws_front"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 9.5,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     0,
+     63
+    ],
+    "parts": [
+     "hip_frame",
+     "screws_front"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 9.5,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     0,
+     64
+    ],
+    "parts": [
+     "hip_frame",
+     "screws_front"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 9.5,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     0,
+     65
+    ],
+    "parts": [
+     "hip_frame",
+     "screws_front"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 9.5,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     0,
+     66
+    ],
+    "parts": [
+     "hip_frame",
+     "screws_front"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 9.5,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     0,
+     67
+    ],
     "parts": [
      "hip_frame",
      "screws_rear"
     ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 9.5,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
+    "solids": [
+     0,
+     68
+    ],
+    "parts": [
+     "hip_frame",
+     "screws_rear"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 9.5,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     0,
+     69
+    ],
+    "parts": [
+     "hip_frame",
+     "screws_rear"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 9.5,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     0,
+     70
+    ],
+    "parts": [
+     "hip_frame",
+     "screws_rear"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 9.5,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     0,
+     71
+    ],
+    "parts": [
+     "hip_frame",
+     "screws_rear"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 9.5,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     0,
+     72
+    ],
+    "parts": [
+     "hip_frame",
+     "screws_rear"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 9.5,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     0,
+     73
+    ],
+    "parts": [
+     "hip_frame",
+     "screws_rear"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 9.5,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     0,
+     74
+    ],
+    "parts": [
+     "hip_frame",
+     "screws_rear"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 9.5,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     0,
+     3
+    ],
     "parts": [
      "hip_frame",
      "upper_link_front"
     ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 1.0,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
+    "solids": [
+     0,
+     4
+    ],
     "parts": [
      "hip_frame",
      "upper_link_rear"
     ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 1.0,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
+    "solids": [
+     0,
+     6
+    ],
     "parts": [
      "hip_frame",
      "wheel_link"
     ],
+    "kind": "passing",
     "queried_poses": 7,
     "touching_poses": 0,
     "min_gap_mm": 61.991,
-    "gap_spread_mm": 10.907,
-    "joint_interface": false
+    "gap_spread_mm": 10.907
    },
    {
+    "solids": [
+     16,
+     18
+    ],
     "parts": [
      "knee_front",
      "knee_pin_front"
     ],
+    "kind": "contact",
     "queried_poses": 12,
     "touching_poses": 12,
     "min_gap_mm": 0.0,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
+    "solids": [
+     17,
+     18
+    ],
     "parts": [
      "knee_front",
-     "upper_link_front"
+     "knee_pin_front"
     ],
+    "kind": "contact",
     "queried_poses": 12,
     "touching_poses": 12,
     "min_gap_mm": 0.0,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
+    "solids": [
+     18,
+     19
+    ],
+    "parts": [
+     "knee_pin_front",
+     "knee_front"
+    ],
+    "kind": "contact",
+    "queried_poses": 12,
+    "touching_poses": 12,
+    "min_gap_mm": 0.0,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     18,
+     20
+    ],
+    "parts": [
+     "knee_pin_front",
+     "knee_front"
+    ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 0.5,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     3,
+     20
+    ],
+    "parts": [
+     "upper_link_front",
+     "knee_front"
+    ],
+    "kind": "contact",
+    "queried_poses": 12,
+    "touching_poses": 12,
+    "min_gap_mm": 0.0,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     22,
+     24
+    ],
+    "parts": [
+     "knee_rear",
+     "knee_pin_rear"
+    ],
+    "kind": "contact",
+    "queried_poses": 12,
+    "touching_poses": 12,
+    "min_gap_mm": 0.0,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     23,
+     24
+    ],
+    "parts": [
+     "knee_rear",
+     "knee_pin_rear"
+    ],
+    "kind": "contact",
+    "queried_poses": 12,
+    "touching_poses": 12,
+    "min_gap_mm": 0.0,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     24,
+     25
+    ],
     "parts": [
      "knee_pin_rear",
      "knee_rear"
     ],
+    "kind": "contact",
     "queried_poses": 12,
     "touching_poses": 12,
     "min_gap_mm": 0.0,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
+    "solids": [
+     24,
+     26
+    ],
     "parts": [
      "knee_pin_rear",
-     "wheel_link"
+     "knee_rear"
     ],
+    "kind": "running",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 0.5,
+    "gap_spread_mm": 0.0
+   },
+   {
+    "solids": [
+     6,
+     24
+    ],
+    "parts": [
+     "wheel_link",
+     "knee_pin_rear"
+    ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 7.299,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
-    "parts": [
-     "knee_rear",
-     "upper_link_rear"
+    "solids": [
+     4,
+     26
     ],
+    "parts": [
+     "upper_link_rear",
+     "knee_rear"
+    ],
+    "kind": "contact",
     "queried_poses": 12,
     "touching_poses": 12,
     "min_gap_mm": 0.0,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    },
    {
-    "parts": [
-     "screws_front",
-     "stop_sleeves"
+    "solids": [
+     7,
+     64
     ],
-    "queried_poses": 8,
+    "parts": [
+     "stop_sleeves",
+     "screws_front"
+    ],
+    "kind": "passing",
+    "queried_poses": 3,
+    "touching_poses": 0,
+    "min_gap_mm": 18.952,
+    "gap_spread_mm": 1.441
+   },
+   {
+    "solids": [
+     7,
+     65
+    ],
+    "parts": [
+     "stop_sleeves",
+     "screws_front"
+    ],
+    "kind": "passing",
+    "queried_poses": 3,
     "touching_poses": 0,
     "min_gap_mm": 16.476,
-    "gap_spread_mm": 2.991,
-    "joint_interface": false
+    "gap_spread_mm": 0.785
    },
    {
-    "parts": [
-     "screws_rear",
-     "stop_sleeves"
+    "solids": [
+     9,
+     62
     ],
-    "queried_poses": 9,
+    "parts": [
+     "stop_sleeves",
+     "screws_front"
+    ],
+    "kind": "passing",
+    "queried_poses": 5,
+    "touching_poses": 0,
+    "min_gap_mm": 17.249,
+    "gap_spread_mm": 3.738
+   },
+   {
+    "solids": [
+     8,
+     69
+    ],
+    "parts": [
+     "stop_sleeves",
+     "screws_rear"
+    ],
+    "kind": "passing",
+    "queried_poses": 3,
+    "touching_poses": 0,
+    "min_gap_mm": 16.476,
+    "gap_spread_mm": 0.785
+   },
+   {
+    "solids": [
+     8,
+     70
+    ],
+    "parts": [
+     "stop_sleeves",
+     "screws_rear"
+    ],
+    "kind": "passing",
+    "queried_poses": 6,
     "touching_poses": 0,
     "min_gap_mm": 15.767,
-    "gap_spread_mm": 3.063,
-    "joint_interface": false
+    "gap_spread_mm": 5.505
    },
    {
-    "parts": [
-     "screws_rear",
-     "wheel_link"
+    "solids": [
+     10,
+     72
     ],
+    "parts": [
+     "stop_sleeves",
+     "screws_rear"
+    ],
+    "kind": "passing",
+    "queried_poses": 5,
+    "touching_poses": 0,
+    "min_gap_mm": 16.488,
+    "gap_spread_mm": 5.723
+   },
+   {
+    "solids": [
+     6,
+     67
+    ],
+    "parts": [
+     "wheel_link",
+     "screws_rear"
+    ],
+    "kind": "passing",
+    "queried_poses": 2,
+    "touching_poses": 0,
+    "min_gap_mm": 80.255,
+    "gap_spread_mm": 5.759
+   },
+   {
+    "solids": [
+     6,
+     72
+    ],
+    "parts": [
+     "wheel_link",
+     "screws_rear"
+    ],
+    "kind": "passing",
+    "queried_poses": 2,
+    "touching_poses": 0,
+    "min_gap_mm": 110.855,
+    "gap_spread_mm": 9.054
+   },
+   {
+    "solids": [
+     6,
+     73
+    ],
+    "parts": [
+     "wheel_link",
+     "screws_rear"
+    ],
+    "kind": "passing",
+    "queried_poses": 3,
+    "touching_poses": 0,
+    "min_gap_mm": 86.708,
+    "gap_spread_mm": 21.593
+   },
+   {
+    "solids": [
+     6,
+     74
+    ],
+    "parts": [
+     "wheel_link",
+     "screws_rear"
+    ],
+    "kind": "passing",
     "queried_poses": 3,
     "touching_poses": 0,
     "min_gap_mm": 78.599,
-    "gap_spread_mm": 19.376,
-    "joint_interface": false
+    "gap_spread_mm": 19.376
    },
    {
-    "parts": [
-     "stop_sleeves",
-     "upper_link_front"
+    "solids": [
+     3,
+     7
     ],
+    "parts": [
+     "upper_link_front",
+     "stop_sleeves"
+    ],
+    "kind": "passing",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 7.308,
-    "gap_spread_mm": 0.759,
-    "joint_interface": false
+    "gap_spread_mm": 0.759
    },
    {
-    "parts": [
-     "stop_sleeves",
-     "upper_link_rear"
+    "solids": [
+     3,
+     9
     ],
+    "parts": [
+     "upper_link_front",
+     "stop_sleeves"
+    ],
+    "kind": "passing",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 8.0,
+    "gap_spread_mm": 0.077
+   },
+   {
+    "solids": [
+     4,
+     8
+    ],
+    "parts": [
+     "upper_link_rear",
+     "stop_sleeves"
+    ],
+    "kind": "passing",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 7.308,
-    "gap_spread_mm": 0.759,
-    "joint_interface": false
+    "gap_spread_mm": 0.759
    },
    {
-    "parts": [
-     "stop_sleeves",
-     "wheel_link"
+    "solids": [
+     4,
+     10
     ],
+    "parts": [
+     "upper_link_rear",
+     "stop_sleeves"
+    ],
+    "kind": "passing",
+    "queried_poses": 12,
+    "touching_poses": 0,
+    "min_gap_mm": 8.0,
+    "gap_spread_mm": 0.077
+   },
+   {
+    "solids": [
+     6,
+     9
+    ],
+    "parts": [
+     "wheel_link",
+     "stop_sleeves"
+    ],
+    "kind": "passing",
+    "queried_poses": 2,
+    "touching_poses": 0,
+    "min_gap_mm": 118.164,
+    "gap_spread_mm": 13.844
+   },
+   {
+    "solids": [
+     6,
+     10
+    ],
+    "parts": [
+     "wheel_link",
+     "stop_sleeves"
+    ],
+    "kind": "passing",
     "queried_poses": 5,
     "touching_poses": 0,
     "min_gap_mm": 98.896,
-    "gap_spread_mm": 41.315,
-    "joint_interface": false
+    "gap_spread_mm": 41.315
    },
    {
+    "solids": [
+     3,
+     6
+    ],
     "parts": [
      "upper_link_front",
      "wheel_link"
     ],
+    "kind": "passing",
     "queried_poses": 3,
     "touching_poses": 0,
     "min_gap_mm": 135.059,
-    "gap_spread_mm": 41.82,
-    "joint_interface": false
+    "gap_spread_mm": 41.82
    },
    {
+    "solids": [
+     4,
+     6
+    ],
     "parts": [
      "upper_link_rear",
      "wheel_link"
     ],
+    "kind": "running",
     "queried_poses": 12,
     "touching_poses": 0,
     "min_gap_mm": 2.0,
-    "gap_spread_mm": 0.0,
-    "joint_interface": true
+    "gap_spread_mm": 0.0
    }
   ],
+  "kinds": {
+   "clash": 0,
+   "contact": 14,
+   "running": 43,
+   "passing": 27
+  },
   "near_mm": 10.0,
-  "seconds": 194.5,
+  "seconds": 173.5,
   "workers": 6,
-  "limits": "sampled poses only (not a swept volume); exact gaps by cadagent.gates.relations.relate; a pair whose gap varies by at most 0.02 mm over every pose is taken as a joint's own interface and left out of the closest gap",
-  "key": "ebb6f89a866d7652e3e95102c85a1e218250790532fd866d46f418bdd2544202"
+  "limits": "sampled poses only (not a swept volume); exact gaps by cadagent.gates.relations.relate, per pair of solids; a pair touching at every pose is a designed contact and has no gap to state; a pair apart at every pose by a gap that varies by at most 0.02 mm is a running gap about a shared axis; the rest pass each other",
+  "key": "5e3a90bf667b6c10166cd70228ec18d7d1e21741b099eee1ec1256d887164981"
  },
  "text": {
   "wordmark": {
@@ -2527,5 +3254,5 @@
    "font": "DejaVuSans.ttf"
   }
  },
- "extract_seconds": 25.1
+ "extract_seconds": 193.5
 }

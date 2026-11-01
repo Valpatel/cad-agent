@@ -40,8 +40,8 @@ projects:
   thor-can-breakout: {title: AGX Thor CAN breakout, url: "https://github.com/mvalancy/pcb-agx-thor-can-breakout"}
 
 cross_cutting:
-  pages: [docs/vision.md, docs/toolkit.md, research/landscape.md]
-  api: [cadagent.geometry, cadagent.project, cadagent.links]
+  pages: [docs/vision.md, docs/toolkit.md, docs/formulas.md, research/landscape.md]
+  api: [cadagent.geometry, cadagent.project, cadagent.links, cadagent.formulas]
   issues: [106, 113, 139]
 
 domains:

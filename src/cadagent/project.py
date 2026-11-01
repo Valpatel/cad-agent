@@ -383,7 +383,7 @@ def generated_paths(root: Union[str, Path]) -> List[Path]:
         try:
             p = load_project(root)
             exports, preview, docs = p.exports_dir, p.preview_dir, p.docs_dir
-        except CadConfigError:
+        except (ValueError, TypeError, OSError):      # CadConfigError and odd values: the default places
             pass
     return [exports, preview, *(root / g for g in GENERATED), docs / REPORT_PAGE]
 

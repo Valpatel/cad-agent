@@ -622,7 +622,7 @@
    "license_spdx": "AGPL-3.0",
    "stars": 16253,
    "last_push": "2026-10-31",
-   "notes": "2.5 beta: experimental Design (CAD) tab, off by default, with an MCP control socket for that tab (Unix, ORCA_CAD_MCP set, GUI running); a general MCP server is a draft PR",
+   "notes": "2.5 beta: experimental Design (CAD) tab, off by default, with an MCP control socket for that tab (Unix, ORCA_CAD_MCP set, GUI running); a general MCP server, slicing included, is in development on the feature/mcp branch (no release yet)",
    "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
   },
   {
@@ -631,7 +631,7 @@
    "license_spdx": "AGPL-3.0",
    "stars": 2,
    "last_push": "2026-10-29",
-   "notes": "official Claude Code / Codex skills for the Orca MCP server; no code",
+   "notes": "official Claude Code / Codex skills for the MCP server on OrcaSlicer's feature/mcp branch (General > AI features > MCP server; off by default, loopback only); no release ships it yet; no code",
    "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
   },
   {

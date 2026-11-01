@@ -860,6 +860,8 @@ swing, and the numbers are the last iteration's. The ducted run ends on a low sw
   empty one is an `error`).
 - **The fluxes are exact for the zone.** Σφ on the inlet is the air entering the zone's cells from beyond that end.
   On a snapped mesh the faces step with the cells, so their area can differ from the annulus by the mesh's own error.
+  Where a cell beyond an end flanks the zone's rim, the side face between them counts too. In the run under the
+  opening, 16 such faces at the rim give the outlet 2.8 % more area than the inlet's 408 faces.
 - **Face values are interpolated** between the two cells either side. The solver's own energy flux is upwind, so the
   two can differ slightly where the temperature changes sharply across a cell.
 - **The hub is not counted.** Air that returns through the hub of an actuator disc crosses neither face. Under the

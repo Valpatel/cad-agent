@@ -325,8 +325,9 @@ def test_a_recorded_fan_under_its_opening_carries_more_heat_than_leaves(tmp_path
     assert f['heat_carried_w'] == 32.26 and r['heat_out_w'] == 19.61
     assert f['heat_carried_w'] > 1.5 * r['heat_out_w'] and f['heat_carried_w'] > 1.5 * r['heat_input_w']
     assert (f['inlet_c'], f['outlet_c'], f['air_through_fan_c']) == (33.64, 33.57, 33.56)
-    # air also crosses the zone's open rim, so the two ends differ, but by under 10 %: 408 and 424 faces, 2.8 % apart in
-    # area and 3.7 % in net flow. 0.05 g/s flows back through the outlet, 1.3 % of the net, too little to warn about
+    # the outlet has the inlet's 408 faces across the zone's end plus 16 at its rim, where cells beyond that end flank
+    # it: 2.8 % more area. Air crosses the zone's sides, so the net flows differ by 3.7 %; both under the 10 % that
+    # warns. 0.05 g/s flows back through the outlet, 1.3 % of the net, too little to warn about
     assert r['zone_faces'] == {'fanInlet': 408, 'fanOutlet': 424}
     assert f['outlet_area_m2'] / f['inlet_area_m2'] == pytest.approx(1.0284, abs=1e-4)
     assert f['inlet_kg_s'] / f['outlet_kg_s'] == pytest.approx(0.9630, abs=1e-4)

@@ -1,9 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 360" width="680" height="360" role="img" aria-label="An RJ45 plug pushed in along its mating axis through two panel windows. Through a window sized from the jack's bounding box, the latch sweeps 17.55 cubic millimetres of wall. Through the window derived from the mated plug, it clears with the 0.5 mm clearance." font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="12" fill="#173d3c">
-<style>.m10,.m11{fill:#526863}.m10{font-size:10px}.m11{font-size:11px}@keyframes k0{0%,91.7%,100%{transform:translateX(206.4px);opacity:0}3.3%,8.9%{transform:translateX(206.4px);opacity:1}53.3%,86.7%{transform:translateX(0px);opacity:1}91.1%{transform:translateX(0px);opacity:0}}@keyframes k1{0%,45%,91.1%,100%{transform:scaleX(0)}50.6%,86.7%{transform:scaleX(1)}}@keyframes k2{0%,55.6%,90%,100%{opacity:0}58.9%,86.7%{opacity:1}}@keyframes k3{0%,58.9%,90%,100%{opacity:0}62.2%,86.7%{opacity:1}}.band{transform-origin:98.5px 0;transform-box:view-box}.plug0,.plug1{animation:k0 9s linear infinite}.band{animation:k1 9s linear infinite}#v00,#v10{animation:k2 9s linear infinite}#v01,#v11{animation:k3 9s linear infinite}@media (prefers-reduced-motion:reduce){*{animation:none!important}}</style>
+<style>.m10,.m11{fill:#526863}.m10{font-size:10px}.m11{font-size:11px}.n{display:none}@media (max-width:400px){text:not(.n),.w{display:none}.n{display:inline}}@keyframes k0{0%,91.7%,100%{transform:translateX(206.4px);opacity:0}3.3%,8.9%{transform:translateX(206.4px);opacity:1}53.3%,86.7%{transform:translateX(0px);opacity:1}91.1%{transform:translateX(0px);opacity:0}}@keyframes k1{0%,45%,91.1%,100%{transform:scaleX(0)}50.6%,86.7%{transform:scaleX(1)}}@keyframes k2{0%,55.6%,90%,100%{opacity:0}58.9%,86.7%{opacity:1}}@keyframes k3{0%,58.9%,90%,100%{opacity:0}62.2%,86.7%{opacity:1}}.band{transform-origin:98.5px 0;transform-box:view-box}.plug0,.plug1{animation:k0 9s linear infinite}.band{animation:k1 9s linear infinite}#v00,#v10{animation:k2 9s linear infinite}#v01,#v11{animation:k3 9s linear infinite}@media (prefers-reduced-motion:reduce){*{animation:none!important}}</style>
 <rect width="680" height="360" rx="14" fill="#fffdf5" stroke="#d8e0d3"/>
 <text x="20" y="28" font-size="15" font-weight="700">Connector window: the mated plug swept in along its mating axis</text>
+<text x="20" y="32" font-size="28" font-weight="700" class="n">Connector window sweep</text>
 <clipPath id="c0"><rect x="34" y="82" width="223.6" height="206.4"/></clipPath>
 <text x="34" y="54" font-size="13" font-weight="600">Window from the jack's bounding box</text>
+<text x="34" y="70" font-size="24" font-weight="700" class="n">From jack's box</text>
 <text x="34" y="72" class="m11">window v −3.0 to 14.0 mm; the latch reaches 14.5</text>
 <g clip-path="url(#c0)">
 <path d="M59.8 241.1V125" stroke="#6f8a80" stroke-width="3"/>
@@ -22,10 +24,11 @@
 </g>
 <text x="34" y="303.4" class="m10">← inside</text>
 <text x="257.6" y="303.4" class="m10" text-anchor="end">outside →</text>
-<g id="v00"><text x="34" y="326.4" fill="#bd3a12">the sweep shares 17.55 mm³ with the wall</text></g>
-<g id="v01"><text x="34" y="344.4" fill="#bd3a12" font-weight="600">top margin −0.50 mm: fail</text></g>
+<g id="v00"><text x="34" y="326.4" fill="#bd3a12">the sweep shares 17.55 mm³ with the wall</text><text x="34" y="318.4" font-size="24" fill="#bd3a12" class="n">17.6 mm³ in wall</text></g>
+<g id="v01"><text x="34" y="344.4" fill="#bd3a12" font-weight="600">top margin −0.50 mm: fail</text><text x="34" y="348.4" font-size="26" fill="#bd3a12" font-weight="700" class="n">fail</text></g>
 <clipPath id="c1"><rect x="374" y="82" width="223.6" height="206.4"/></clipPath>
 <text x="374" y="54" font-size="13" font-weight="600">Window from the mated plug</text>
+<text x="374" y="70" font-size="24" font-weight="700" class="n">From mated plug</text>
 <text x="374" y="72" class="m11">window v −0.5 to 15.0 mm; the latch reaches 14.5</text>
 <g clip-path="url(#c1)">
 <path d="M399.8 241.1V125" stroke="#6f8a80" stroke-width="3"/>
@@ -46,6 +49,6 @@
 </g>
 <text x="374" y="303.4" class="m10">← inside</text>
 <text x="597.6" y="303.4" class="m10" text-anchor="end">outside →</text>
-<g id="v10"><text x="374" y="326.4">the sweep shares 0 mm³ with the wall</text></g>
-<g id="v11"><text x="374" y="344.4" font-weight="600">smallest margin 0.50 mm, clearance 0.5: pass</text></g>
+<g id="v10"><text x="374" y="326.4">the sweep shares 0 mm³ with the wall</text><text x="374" y="318.4" font-size="24" class="n">clears by 0.5 mm</text></g>
+<g id="v11"><text x="374" y="344.4" font-weight="600">smallest margin 0.50 mm, clearance 0.5: pass</text><text x="374" y="348.4" font-size="26" font-weight="700" class="n">pass</text></g>
 </svg>

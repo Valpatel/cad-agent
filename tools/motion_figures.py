@@ -78,6 +78,17 @@ def text(x, y, s, size=12, fill=INK, anchor=None, weight=None, extra="", halo=Fa
     return f'<text x="{num(x)}" y="{num(y)}"{z}{f}{a}{w}{h}{extra}>{escape(s)}</text>'
 
 
+NARROW_PX = 400            # an <img> this wide or narrower shows the narrow labels (the SVG's own media query)
+NARROW_MIN_SIZE = 23       # user units: at least 11 CSS px on a 360 px phone, whose docs column is 324 px wide
+
+
+def ntext(x, y, s, size=24, fill=INK, anchor=None, weight=None, halo=False) -> str:
+    """A label for the narrow layout only: shown, instead of every other label, when the figure is drawn
+    ``NARROW_PX`` wide or less, where the 680-unit figure is scaled to about half and its small labels can't be read."""
+    assert size >= NARROW_MIN_SIZE, s
+    return text(x, y, s, size, fill, anchor, weight, ' class="n"', halo)
+
+
 class View:
     """World (x right, z up, mm) to SVG user units (y down): ``k`` units per mm, world (x0, z_top) at (ox, oy)."""
 
@@ -132,11 +143,15 @@ class Anim:
 
 def svg(w: int, h: int, label: str, body: list, anim: Anim) -> str:
     """The figure: a sized, labelled SVG with its own background. Under reduced motion every animation stops, and
-    each element shows its own style: the still frame."""
+    each element shows its own style: the still frame. Drawn ``NARROW_PX`` wide or less (a media query inside an
+    SVG follows the ``<img>``'s own width), every label hides except the large ``ntext`` ones, and so does any
+    element of class ``w``."""
     return "\n".join([
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" role="img" '
         f'aria-label="{attr(label)}" font-family="{FONT}" font-size="12" fill="{INK}">',
-        f"<style>.m10,.m11{{fill:{MUTED}}}.m10{{font-size:10px}}.m11{{font-size:11px}}{anim.stylesheet()}</style>",
+        f"<style>.m10,.m11{{fill:{MUTED}}}.m10{{font-size:10px}}.m11{{font-size:11px}}.n{{display:none}}"
+        f"@media (max-width:{NARROW_PX}px){{text:not(.n),.w{{display:none}}.n{{display:inline}}}}"
+        f"{anim.stylesheet()}</style>",
         f'<rect width="{w}" height="{h}" rx="14" fill="{BG}" stroke="{LINE}"/>',
         *body, "</svg>"]) + "\n"
 
@@ -191,7 +206,7 @@ def gap(a, b) -> float:
 BENCH = {"pivot": (105.0, 20.0), "pin_r": 2.5, "arm": (100.0, 14.0, 150.0, 26.0), "arm_thickness": 4.0,
          "hinge_block": (99.0, 4.0, 111.0, 26.0), "stop": (140.0, 4.0, 150.0, 14.0),
          "post": (152.0, 4.0, 156.0, 60.0), "beam": (112.0, 56.0, 156.0, 60.0), "base": (0.0, 0.0, 160.0, 4.0),
-         "seed": "flap_hits_frame", "range_deg": (0.0, 60.0)}
+         "seed": "flap_hits_frame", "range_deg": (0.0, 60.0), "default_range_deg": (0.0, 40.0)}
 
 
 def arm_at(deg: float, b=BENCH):
@@ -260,10 +275,15 @@ def hinge_svg() -> str:
     frames += [(end, still), (end + 0.8, 0.0), (an.period, 0.0)]
 
     body = [text(20, 30, "Motion gate: the arm swept through its sampled poses", 15, INK, weight="700"),
-            text(20, 47, f"gate bench, seed {b['seed']}: the stop raised to {fmt(b['range_deg'][1], 0)}°; up to "
-                         f"{fmt(h['max_travel_per_step_mm'], 2)} mm of travel between samples", 11, MUTED)]
-    # the parts: base, hinge block (behind the arm), stop, frame
-    body.append(f'<path d="{path(v.rect(92, 0, 161, 4))}" fill="{PALE}" stroke="{GREEN}"/>')
+            text(20, 47, f"gate bench, seed {b['seed']}: the joint's range raised from {fmt(b['default_range_deg'][1], 0)}° "
+                         f"to {fmt(b['range_deg'][1], 0)}°; up to {fmt(h['max_travel_per_step_mm'], 2)} mm of travel "
+                         "between samples", 11, MUTED),
+            ntext(20, 40, "Motion gate sweep", 28, weight="700")]
+    # the parts: base (cut away at the left: it starts at x = 0), hinge block (behind the arm), stop, frame
+    bx0, bz0, bx1, bz1 = b["base"]
+    cut = v.x0                                           # the drawing's left edge: a break line
+    zig = [(cut + dx, bz1 - i * (bz1 - bz0) / 4) for i, dx in enumerate((0, 0.7, -0.7, 0.7))]
+    body.append(f'<path d="{path(v.poly([(cut, bz0), (bx1, bz0), (bx1, bz1)] + zig))}" fill="{PALE}" stroke="{GREEN}"/>')
     body.append(f'<path d="{path(v.rect(*b["hinge_block"]))}" fill="{PALE}" stroke="{GREEN}" stroke-dasharray="3 2"/>')
     body.append(f'<path d="{path(v.rect(*b["stop"]))}" fill="{PALE}" stroke="{GREEN}"/>')
     px, pz = b["post"][0::2], b["post"][1::2]
@@ -293,6 +313,7 @@ def hinge_svg() -> str:
     x_of = lambda d: 344 + d * 306 / (b["range_deg"][1] - b["range_deg"][0])
     body.append(text(334, 92, f"{len(h['samples'])} samples, {fmt(b['range_deg'][0], 0)}–{fmt(b['range_deg'][1], 0)}°, "
                               f"{fmt(h['step_deg'], 2)}° apart", 12, INK, weight="600"))
+    body.append(ntext(334, 90, f"{len(h['samples'])} poses, {fmt(b['range_deg'][0], 0)}–{fmt(b['range_deg'][1], 0)}°"))
     body.append(f'<path d="M{num(x_of(0))} 118H{num(x_of(60))}" stroke="{LINE}" stroke-width="3"/>')
     for d in range(0, 61, 15):
         body.append(text(x_of(d), 138, f"{d}°", 10, MUTED, "middle"))
@@ -306,6 +327,7 @@ def hinge_svg() -> str:
     lo0, hi0 = h["brackets"][0]
     z_of = lambda d: 344 + (d - lo0) * 306 / (hi0 - lo0)
     body.append(text(334, 166, f"onset bisected {h['refine_steps']} times", 12, INK, weight="600"))
+    body.append(ntext(334, 166, f"{h['refine_steps']} bisections"))
     for j, (lo_, hi_) in enumerate(h["brackets"]):
         body.append(f'<rect id="r{j}" x="{num(z_of(lo_))}" y="{176 + 7 * j}" width="{num(max(z_of(hi_) - z_of(lo_), 1.2))}" '
                     f'height="5" rx="1" fill="{ORANGE if j == len(h["brackets"]) - 1 else GREEN}"/>')
@@ -319,8 +341,11 @@ def hinge_svg() -> str:
              (done, INK, f"onset between {fmt(h['onset'][0], 2)}° and {fmt(h['onset'][1], 2)}°"),
              (arrive[h["samples"].index(h["worst"])], MUTED,
               f"worst {fmt(h['worst'], 0)}°: {fmt(h['worst_mm3'], 1)} mm³; {len(h['hits'])} of {len(h['samples'])} poses hit")]
+    short = [f"hits from {fmt(h['first'], 2)}°", f"last clear {fmt(h['last_clear'], 2)}°",
+             f"onset {fmt(h['onset'][0], 2)}–{fmt(h['onset'][1], 2)}°"]
     for i, (on, colour, s) in enumerate(lines):
-        body.append(f'<g id="t{i}">{text(334, y + 26 + 19 * i, s, 12, colour)}</g>')
+        narrow = ntext(334, 272 + 32 * i, short[i], fill=colour) if i < len(short) else ""
+        body.append(f'<g id="t{i}">{text(334, y + 26 + 19 * i, s, 12, colour)}{narrow}</g>')
         an.show(f"#t{i}", on, end)
     label = (f"The gate bench arm swept from 0 to {fmt(b['range_deg'][1], 0)} degrees in {len(h['samples'])} sampled "
              f"poses. It collides with the frame beam from {fmt(h['first'], 2)} degrees, and the onset is bisected to "
@@ -370,85 +395,147 @@ def counterbore_numbers(c=CBORE) -> dict:
             "probe_last": {"D6.4": (floor, rib_top), "D3.4": (0.0, floor)}}
 
 
+def hatch(pid: str, base: str, line: str, gap: float = 7.0) -> str:
+    """Section lining: a ``<pattern>`` of 45° lines on a solid base, used as ``fill="url(#pid)"``."""
+    return (f'<pattern id="{pid}" width="{num(gap)}" height="{num(gap)}" patternUnits="userSpaceOnUse" '
+            f'patternTransform="rotate(45)"><rect width="{num(gap)}" height="{num(gap)}" fill="{base}"/>'
+            f'<path d="M{num(gap / 2)} 0V{num(gap)}" stroke="{line}" stroke-width="1.4"/></pattern>')
+
+
 def counterbore_svg() -> str:
     c, h = CBORE, counterbore_numbers()
-    an = Anim(11.0)
+    an = Anim(12.0)
     r1, r2, fl, top, rt = c["hole_r"], c["cbore_r"], h["floor"], h["top"], h["rib_top"]
     rx0, rx1 = c["rib"][0], c["rib"][3]
-    right = [(r1, 0), (20, 0), (20, top), (r2, top), (r2, fl), (r1, fl)]          # the plate right of the axis, cut
-    left_cut = [(-20, 0), (-r1, 0), (-r1, fl), (-r2, fl), (-r2, top), (-20, top)]
-    refilled = [(rx1, 0), (-r1, 0), (-r1, fl), (-r2, fl), (-r2, top), (rx1, top)]  # the rib inside the holes
-    uncut = [(rx0, 0), (20, 0), (20, top), (rx1, top), (rx1, rt), (rx0, rt)]
-    left_last = [(rx0, 0), (-r1, 0), (-r1, fl), (-r2, fl), (-r2, rt), (rx0, rt)]
-    removed = [(-r1, 0), (r1, 0), (r1, fl), (r2, fl), (r2, top), (rx1, top), (rx1, rt), (-r2, rt), (-r2, fl), (-r1, fl)]
+    px0, _, px1, _ = c["plate"]
     tol = h["tol_mm"]
-    body = [text(20, 28, "A rib added after the holes refills them: section through the screw hole", 15, INK, weight="700")]
-    t_rib, t_probe, end = 1.2, 3.6, 9.9
-    k, span = 11.5, 23
-    panels = [(26, "Holes cut, then the rib unioned", "after"), (362, "The rib unioned, then the holes cut last", "last")]
-    for n, (ox, title, case) in enumerate(panels):
-        v = View(-10, 15, k, ox, 84)
-        body.append(f'<clipPath id="c{n}"><rect x="{ox}" y="84" width="{num(span * k)}" height="{num(16 * k)}"/></clipPath>')
-        body.append(text(ox, 54, title, 13, INK, weight="600"))
-        steps = (["1 · cut the hole and counterbore", "2 · union the rib: it runs to the hole's centre"] if case == "after"
-                 else ["1 · union the rib", "2 · cut the hole and counterbore last"])
-        steps.append("3 · cad-agent holes probes each bore")
-        for j, s in enumerate(steps):
-            hidden = "" if j == 2 else ' opacity="0"'
-            body.append(f'<g id="s{n}{j}"{hidden}>{text(ox, 72, s, 11, MUTED)}</g>')
-        an.show(f"#s{n}0", 0.0, t_rib - 0.3, 0.2)
-        an.show(f"#s{n}1", t_rib, t_probe - 0.3, 0.2)
-        an.show(f"#s{n}2", t_probe, end, 0.2)
-        g = [f'<g clip-path="url(#c{n})">']
-        solid = f'fill="{PALE}" stroke="{INK}" stroke-width="1.5" stroke-linejoin="round"'
-        if case == "after":
-            g.append(f'<path d="{path(v.poly(left_cut))}" {solid}/>')
-            g.append(f'<path d="{path(v.poly(right))}" {solid}/>')
-            g.append(f'<path class="rib" d="{path(v.rect(rx0, 0, rx1, rt))}" {solid}/>')
-            an.add(".rib", [(0, (-14, 0)), (t_rib, (-14, 0)), (t_rib + 0.9, (0, 1)), (end, (0, 1)), (end + 0.4, (0, 0)),
-                            (an.period, (-14, 0))],
-                   lambda s: f"transform:translateY({s[0]}px);opacity:{s[1]}", "ease-out")
-            g.append(f'<path id="f" d="{path(v.poly(refilled))}" fill="{ORANGE}"/>')
-            an.add("#f", [(0, 0), (t_rib + 1.0, 0), (t_rib + 1.4, 0.85), (t_probe + 0.3, 0.85), (t_probe + 0.8, 1),
-                          (t_probe + 1.4, 0.7), (t_probe + 2.0, 1), (end, 1), (end + 0.3, 0), (an.period, 0)],
-                   lambda o: f"opacity:{o}", "ease-in-out")
-        else:
-            g.append(f'<path d="{path(v.poly(left_last))}" {solid}/>')
-            g.append(f'<path d="{path(v.poly(right))}" {solid}/>')
-            g.append(f'<path id="u" d="{path(v.poly(uncut))}" {solid} opacity="0"/>')
-            an.add("#u", [(0, 1), (t_rib + 0.9, 1), (t_rib + 1.3, 0), (end, 0), (end + 0.4, 1), (an.period, 1)],
+    # the section window (mm): the plate and the rib run on past its sides, so their cut-off ends are drawn as edges
+    X0, X1, Z0, Z1, k, oy = -7.0, 9.0, -2.4, 14.6, 15.0, 66
+    window = (X0, Z0, X1, Z1)
+    bore = [(-r1, 0), (r1, 0), (r1, fl), (r2, fl), (r2, top), (-r2, top), (-r2, fl), (-r1, fl)]
+    shape = {
+        "plate": [(px0, 0), (px1, 0), (px1, top), (px0, top)],
+        "rib": [(rx0, 0), (rx1, 0), (rx1, rt), (rx0, rt)],
+        "union": [(rx0, 0), (px1, 0), (px1, top), (rx1, top), (rx1, rt), (rx0, rt)],
+        # holes cut first: the plate either side of them; the rib then refills the part of them left of the axis
+        "after": [[(px0, 0), (-r1, 0), (-r1, fl), (-r2, fl), (-r2, top), (px0, top)],
+                  [(r1, 0), (px1, 0), (px1, top), (r2, top), (r2, fl), (r1, fl)]],
+        "refilled": [(rx1, 0), (-r1, 0), (-r1, fl), (-r2, fl), (-r2, top), (rx1, top)],
+        # holes cut last: they also cut the rib, so the counterbore runs up through it to the rib's top
+        "last": [[(rx0, 0), (-r1, 0), (-r1, fl), (-r2, fl), (-r2, rt), (rx0, rt)],
+                 [(r1, 0), (px1, 0), (px1, top), (r2, top), (r2, fl), (r1, fl)]],
+        "cutter_after": bore,
+        "cutter_last": bore[:5] + [(rx1, top), (rx1, rt), (-r2, rt)] + bore[6:],
+    }
+    end, gone = 10.6, 11.0                           # the result holds to ``end``; both panels have faded by ``gone``
+    steps_at = [(0.3, 2.6), (2.6, 4.9), (4.9, end)]
+    t_probe = steps_at[2][0] + 0.2
+    solid = f'fill="url(#hs)" stroke="{INK}" stroke-width="1.6" stroke-linejoin="round"'
+    body = [f"<defs>{hatch('hs', GREEN, '#9ab0a4')}{hatch('hr', ORANGE, '#dc6d43')}</defs>",
+            text(20, 28, "A rib added after the holes refills them: section through the screw hole", 15, INK, weight="700")]
+    panels = [(30, "Holes cut, then the rib unioned", "Rib after holes", "after",
+               ["1 · cut the hole and counterbore", "2 · union the rib: it runs to the hole's centre"],
+               ["1 · cut holes", "2 · add rib"]),
+              (370, "The rib unioned, then the holes cut last", "Holes cut last", "last",
+               ["1 · union the rib", "2 · cut the hole and counterbore last"], ["1 · add rib", "2 · cut holes"])]
+    an.add(".pg", [(0, 0), (0.3, 1), (end, 1), (gone, 0), (an.period, 0)], lambda o: f"opacity:{o}", "linear")
+    for n, (ox, title, short, case, steps, short_steps) in enumerate(panels):
+        v = View(X0, Z1, k, ox, oy)
+        poly = lambda pts: path(v.poly(clip(pts, window)))
+        t_cut, t_rib = (0.6, 2.8) if case == "after" else (2.8, 0.6)
+        swap = t_cut + 0.45                          # under the opaque cutter, the uncut solid becomes the cut one
+        t_holes = t_cut + 0.8                        # the cutter fades: the holes are there from now on
+        seat = t_rib + 1.0
+        off = (Z1 + 0.6) * k                         # the rib starts above the window, out of sight
+        g = [f'<g class="pg">', text(ox, 54, title, 13, INK, weight="600"), ntext(ox, 50, short, 26, weight="700"),
+             f'<clipPath id="c{n}"><rect x="{ox}" y="{oy}" width="{num((X1 - X0) * k)}" '
+             f'height="{num((Z1 - Z0) * k)}"/></clipPath><g clip-path="url(#c{n})">']
+        # the solid before the cut (the plate, and in the right panel the rib unioned onto it), then after it
+        plate_until = swap if case == "after" else seat
+        g.append(f'<path id="a{n}" d="{poly(shape["plate"])}" {solid} opacity="0"/>')
+        an.add(f"#a{n}", [(0, 1), (plate_until, 1), (plate_until + 0.05, 0), (an.period, 0)],
+               lambda o: f"opacity:{o}", "linear")
+        if case == "last":
+            # the rib slides down onto the plate; seated, the two are one solid with one outline, until the cut
+            g.append(f'<path id="r{n}" d="{poly(shape["rib"])}" {solid} opacity="0"/>')
+            an.add(f"#r{n}", [(0, (off, 1)), (t_rib, (off, 1)), (seat, (0, 1)), (seat + 0.05, (0, 0)),
+                              (an.period, (0, 0))], lambda s: f"transform:translateY({num(-s[0])}px);opacity:{s[1]}")
+            g.append(f'<path id="u{n}" d="{poly(shape["union"])}" {solid} opacity="0"/>')
+            an.add(f"#u{n}", [(0, 0), (seat, 0), (seat + 0.05, 1), (swap, 1), (swap + 0.05, 0), (an.period, 0)],
                    lambda o: f"opacity:{o}", "linear")
-            g.append(f'<path id="x" d="{path(v.poly(removed))}" fill="{PEACH}" stroke="{ORANGE}" stroke-dasharray="3 2" '
-                     f'opacity="0"/>')
-            an.add("#x", [(0, 0), (t_rib, 0), (t_rib + 0.3, 1), (t_rib + 0.9, 1), (t_rib + 1.3, 0), (an.period, 0)],
-                   lambda o: f"opacity:{o}", "linear")
-        probes = []
-        for name, r in (("D6.4", r2), ("D3.4", r1)):
-            z0, z1 = h["probe_after" if case == "after" else "probe_last"][name]
-            probes.append(path(v.rect(-(r - tol), z0 + tol, r - tol, z1 - tol)))
-        g.append(f'<path id="p{n}" d="{"".join(probes)}" fill="none" stroke="{ORANGE if case == "after" else INK}" '
-                 f'stroke-width="1.3" stroke-dasharray="4 3"/>')
+        g.append(f'<path id="b{n}" d="{"".join(poly(p) for p in shape[case])}" {solid}/>')
+        an.add(f"#b{n}", [(0, 0), (swap, 0), (swap + 0.05, 1), (an.period, 1)], lambda o: f"opacity:{o}", "linear")
+        # what the hole check probes: each bore, its radius and length less the tolerance. Drawn under the rib and
+        # its refill, it shades the void it probes, and what refills the bore covers it
+        probes = "".join(path(v.rect(-(r - tol), z0 + tol, r - tol, z1 - tol)) for name, r in (("D6.4", r2), ("D3.4", r1))
+                         for z0, z1 in [h["probe_" + case][name]])
+        g.append(f'<path id="p{n}" d="{probes}" fill="{INK}" fill-opacity=".16"/>')
         an.show(f"#p{n}", t_probe, end)
-        g.append("</g>")
-        body += g
-        body.append(text(*v(r2 + 0.9, fl + 1.5), "counterbore D6.4 × 4", 10, MUTED))
-        body.append(text(*v(r1 + 0.9, 2.2), "clearance hole D3.4", 10, MUTED))
         if case == "after":
-            body.append(text(*v(-6.2, 12.2), "rib", 11, MUTED, "middle"))
+            # the rib slides down onto the plate, opaque, and fills the half of each hole left of the axis
+            g.append(f'<path id="r{n}" d="{poly(shape["rib"])}" {solid}/>')
+            an.add(f"#r{n}", [(0, off), (t_rib, off), (seat, 0), (gone, 0), (gone + 0.05, off), (an.period, off)],
+                   lambda d: f"transform:translateY({num(-d)}px)")
+            walls = path(v.poly([(-r2, top), (-r2, fl), (-r1, fl), (-r1, 0)]))[:-1]
+            g.append(f'<g id="f"><path d="{poly(shape["refilled"])}" fill="url(#hr)" stroke="{ORANGE}" stroke-width="1.6"/>'
+                     f'<path d="{walls}" fill="none" stroke="{BG}" stroke-width="1.6" stroke-dasharray="5 3"/></g>')
+            an.add("#f", [(0, 0), (seat, 0), (seat + 0.3, 1), (t_probe + 0.4, 1), (t_probe + 0.9, 0.55),
+                          (t_probe + 1.4, 1), (t_probe + 1.9, 0.55), (t_probe + 2.4, 1), (an.period, 1)],
+                   lambda o: f"opacity:{o}")
+        # the hole's centreline, from the cut on
+        cx, cz0 = v(0, -1.1)
+        g.append(f'<path id="cl{n}" d="M{num(cx)} {num(cz0)}V{num(v(0, top + 1.2)[1])}" stroke="{INK}" stroke-width="1" '
+                 f'stroke-dasharray="10 3 2 3"/>')
+        # the cutter: shown over the uncut solid, held while the solid changes under it, then gone
+        g.append(f'<path id="x{n}" d="{poly(shape["cutter_" + case])}" fill="{PEACH}" stroke="{ORANGE}" stroke-width="2" '
+                 f'opacity="0"/>')
+        an.add(f"#x{n}", [(0, 0), (t_cut, 0), (t_cut + 0.2, 1), (t_holes - 0.1, 1), (t_holes + 0.3, 0), (an.period, 0)],
+               lambda o: f"opacity:{o}", "linear")
+        g.append("</g>")
+        an.show(f"#cl{n}", t_holes, an.period - 0.3)
+        # the holes' names, outside the section, with leaders into the void; shown once the holes exist
+        lx = 2.3
+        g.append(f'<g id="l{n}">{text(*v(1.3, 12.5), "counterbore D6.4 × 4", 11, INK)}'
+                 f'{text(*v(-1.6, -2.0), "clearance hole D3.4", 11, INK)}<g class="w" stroke="{INK}" fill="{INK}">'
+                 f'<path d="M{num(v(lx, 11.8)[0])} {num(v(lx, 11.8)[1])}V{num(v(lx, 8.0)[1])}"/>'
+                 f'<circle cx="{num(v(lx, 8.0)[0])}" cy="{num(v(lx, 8.0)[1])}" r="2.2"/>'
+                 f'<path d="M{num(v(0.9, -1.1)[0])} {num(v(0.9, -1.1)[1])}V{num(v(0.9, 3.0)[1])}"/>'
+                 f'<circle cx="{num(v(0.9, 3.0)[0])}" cy="{num(v(0.9, 3.0)[1])}" r="2.2"/></g></g>')
+        an.show(f"#l{n}", t_holes, end)
+        g.append(f'<g id="rl{n}">{text(*v(-4.6, 12.0), "rib", 12, BG, "middle", "700")}</g>')
+        an.show(f"#rl{n}", seat, end)
+        # the build order, the current step lit, and the hole check's findings once it has run
+        y0 = oy + (Z1 - Z0) * k + 22
+        steps = steps + ["3 · cad-agent holes probes each bore (shaded)"]
+        short_steps = short_steps + ["3 · probe"]
+        for j, (s, (t0, t1)) in enumerate(zip(steps, steps_at)):
+            hidden = "" if j == 2 else ' opacity="0"'
+            g.append(f'<rect id="h{n}{j}" class="w" x="{ox - 6}" y="{num(y0 + 19 * j - 13)}" width="300" height="18" rx="4" '
+                     f'fill="{PEACH}"{hidden}/>')
+            g.append(text(ox, y0 + 19 * j, s, 12, INK))
+            g.append(f'<g id="ns{n}{j}"{hidden}>{ntext(ox, y0 + 30, short_steps[j])}</g>')
+            an.show(f"#h{n}{j},#ns{n}{j}", t0, t1, 0.2)
         found = h[case]
         bad = [name for name, vol in found.items() if vol > h["min_volume_mm3"]]
-        rows = ([(f"{name} {'counterbore' if name == 'D6.4' else 'hole'}: {fmt(found[name], 1)} mm³ of rib inside", ORANGE)
-                 for name in found] + [(f"fail: over {fmt(h['min_volume_mm3'], 2)} mm³ in {len(bad)} bores", ORANGE)]
-                if bad else [("both bores: 0 mm³ inside", INK), ("pass", INK)])
+        names = {"D6.4": "D6.4 counterbore", "D3.4": "D3.4 hole"}
+        rows = [(f"{names[b]}: {fmt(vol, 1) + ' mm³ of rib' if vol else 'nothing'} inside", ORANGE if vol else INK)
+                for b, vol in found.items()]
+        rows.append((f"fail: over {fmt(h['min_volume_mm3'], 2)} mm³ in {len(bad)} bores", ORANGE) if bad else ("pass", INK))
+        verdict = ntext(ox, y0 + 76, f"fail: rib in {len(bad)} bores" if bad else "pass: bores clear", 26,
+                        ORANGE if bad else INK, weight="700")
+        g.append(f'<g id="w{n}" opacity="0">{text(ox, y0 + 66, "the hole check has not run yet", 12, MUTED)}</g>')
+        an.show(f"#w{n}", 0.3, t_probe + 0.2)
         for j, (s, colour) in enumerate(rows):
-            weight = "600" if j == len(rows) - 1 else None
-            body.append(f'<g id="v{n}{j}">{text(ox, 298 + 18 * j, s, 12, colour, weight=weight)}</g>')
-            an.show(f"#v{n}{j}", t_probe + 0.6 + 0.3 * j, end)
+            last = j == len(rows) - 1
+            g.append(f'<g id="v{n}{j}">{text(ox, y0 + 66 + 19 * j, s, 12, colour, weight="700" if last else None)}'
+                     f'{verdict if last else ""}</g>')
+            an.show(f"#v{n}{j}", t_probe + 0.5 + 0.3 * j, end)
+        body += g + ["</g>"]
     label = ("Section through a screw hole in two build orders. When the rib is unioned after the clearance hole and "
              "counterbore are cut, it refills both, and the hole check finds "
              f"{fmt(h['after']['D6.4'], 1)} and {fmt(h['after']['D3.4'], 1)} cubic millimetres of rib inside them. "
              "When the holes are cut last, both are clear.")
-    return svg(680, 352, label, body, an)
+    return svg(680, 460, label, body, an)
 
 
 # ----------------------------------------------------------------------------- 3. connectors: plug through window
@@ -493,7 +580,8 @@ def connector_numbers() -> dict:
 def connector_svg() -> str:
     h = connector_numbers()
     an = Anim(9.0)
-    body = [text(20, 28, "Connector window: the mated plug swept in along its mating axis", 15, INK, weight="700")]
+    body = [text(20, 28, "Connector window: the mated plug swept in along its mating axis", 15, INK, weight="700"),
+            ntext(20, 32, "Connector window sweep", 28, weight="700")]
     plug_body, boot = h["segments"]
     start, t_in, t_mated, end = 24.0, 0.8, 4.8, 7.8
     speed = start / (t_mated - t_in)
@@ -501,14 +589,16 @@ def connector_svg() -> str:
     frames = [(0, (start, 0)), (0.3, (start, 1)), (t_in, (start, 1)), (t_mated, (0, 1)), (end, (0, 1)),
               (end + 0.4, (0, 0)), (end + 0.45, (start, 0)), (an.period, (start, 0))]
     k, w0, w1, v0, v1 = 8.6, -1.0, 25.0, -5.0, 19.0
-    panels = [(34, "Window from the jack's bounding box", "bad"), (374, "Window from the mated plug", "good")]
-    for n, (ox, title, case) in enumerate(panels):
+    panels = [(34, "Window from the jack's bounding box", "From jack's box", "bad"),
+              (374, "Window from the mated plug", "From mated plug", "good")]
+    for n, (ox, title, short, case) in enumerate(panels):
         v = View(w0, v1, k, ox, 82)
         win = h[case]
         bottom = 82 + (v1 - v0) * k
         body.append(f'<clipPath id="c{n}"><rect x="{ox}" y="82" width="{num((w1 - w0) * k)}" '
                     f'height="{num((v1 - v0) * k)}"/></clipPath>')
         body.append(text(ox, 54, title, 13, INK, weight="600"))
+        body.append(ntext(ox, 70, short, 24, weight="700"))
         body.append(text(ox, 72, f"window v {fmt(win[1])} to {fmt(win[3])} mm; the latch reaches "
                                  f"{fmt(plug_body['v'][1])}", 11, MUTED))
         g = [f'<g clip-path="url(#c{n})">']
@@ -553,8 +643,13 @@ def connector_svg() -> str:
                  (f"top margin {fmt(m['margins_mm']['top'], 2)} mm: fail", ORANGE)] if vol > 0 else
                 [("the sweep shares 0 mm³ with the wall", INK),
                  (f"smallest margin {fmt(m['min_margin_mm'], 2)} mm, clearance {fmt(h['clearance'], 1)}: pass", INK)])
+        short_rows = ([(f"{fmt(vol, 1)} mm³ in wall", ORANGE), ("fail", ORANGE)] if vol > 0 else
+                      [(f"clears by {fmt(m['min_margin_mm'], 1)} mm", INK), ("pass", INK)])
         for j, (s, colour) in enumerate(rows):
-            body.append(f'<g id="v{n}{j}">{text(ox, bottom + 38 + 18 * j, s, 12, colour, weight="600" if j else None)}</g>')
+            narrow = ntext(ox, bottom + 30 + 30 * j, short_rows[j][0], 24 if j == 0 else 26, short_rows[j][1],
+                           weight="700" if j else None)
+            body.append(f'<g id="v{n}{j}">{text(ox, bottom + 38 + 18 * j, s, 12, colour, weight="600" if j else None)}'
+                        f'{narrow}</g>')
             an.show(f"#v{n}{j}", t_mated + 0.2 + 0.3 * j, end, 0.3)
     label = ("An RJ45 plug pushed in along its mating axis through two panel windows. Through a window sized from the "
              f"jack's bounding box, the latch sweeps {fmt(h['interference_mm3']['bad'], 2)} cubic millimetres of wall. "
@@ -636,7 +731,8 @@ def subassembly_svg() -> str:
          "removed": (10.4, 10.8), "withdraw": (11.2, 12.4)}
     body = [text(20, 28, "A rigid module: its bench sequence first, then one parent step", 15, INK, weight="700"),
             text(20, 46, "the tests/test_gate_subassembly.py fixture through the assembly gate's own core (run_sequence)",
-                 11, MUTED)]
+                 11, MUTED),
+            ntext(20, 38, "A rigid module", 28, weight="700")]
 
     def rect(key, fill, stroke, w=1.5, dash=""):
         x0, _, z0, x1, _, z1 = SUB_BOXES[key]
@@ -684,12 +780,13 @@ def subassembly_svg() -> str:
     body.append(f'<g id="gone" opacity="0">{rect("bumper", "none", ORANGE, 1.5, "4 3")}'
                 f'{rect("retainer", "none", ORANGE, 1.2, "3 2")}{name("bumper")}</g>')
     an.show("#gone", T["removed"][0], end)
-    phases = [("On the bench: the module's members only", 0.4, T["bench_out"][1]),
-              ("In the parent: the module moves as one body", T["base"][0], T["removed"][0]),
-              ("Service: withdrawn with bumper and retainer assumed out", T["removed"][0], end)]
-    for i, (s, t0, t1) in enumerate(phases):
+    phases = [("On the bench: the module's members only", "1 · on the bench", 0.4, T["bench_out"][1]),
+              ("In the parent: the module moves as one body", "2 · in the parent", T["base"][0], T["removed"][0]),
+              ("Service: withdrawn with bumper and retainer assumed out", "3 · service", T["removed"][0], end)]
+    for i, (s, short, t0, t1) in enumerate(phases):
         hidden = "" if i == 1 else ' opacity="0"'
-        body.append(f'<g id="ph{i}"{hidden}>{text(24, 76, s, 12, INK, weight="600")}</g>')
+        body.append(f'<g id="ph{i}"{hidden}>{text(24, 76, s, 12, INK, weight="600")}'
+                    f'{ntext(24, 86, short, 26, weight="700")}</g>')
         an.show(f"#ph{i}", t0, t1)
     # the right column: the steps as the gate reports them, lit in turn
     rows = [("Bench: the members only", None, None, 0),
@@ -711,10 +808,19 @@ def subassembly_svg() -> str:
             y += 8 if i else 0
             body.append(text(434, y, s, 12, INK, weight="700"))
         else:
-            body.append(f'<rect id="h{i}" x="428" y="{y - 13}" width="238" height="18" rx="4" fill="{PEACH}" opacity="0"/>')
+            body.append(f'<rect id="h{i}" class="w" x="428" y="{y - 13}" width="238" height="18" rx="4" fill="{PEACH}" '
+                        'opacity="0"/>')
             an.show(f"#h{i}", t0, t1, 0.2)
             body.append(text(434 + 16 * indent, y, s, 11.5, INK))
         y += 19
+    # the narrow layout: the gate's three findings, large, each from the moment it is established
+    findings = [(f"bench: {h['qualified']}", INK, T["qualified"]),
+                (f"fitted, ≥ {fmt(steps[2]['clearance_at_least_mm'], 1)} mm", INK, T["retainer"][1]),
+                (f"withdraws: {svc['status']}", ORANGE, T["withdraw"][1]),
+                (f"with {len(svc['assumed_removed'])} parts out", ORANGE, T["withdraw"][1])]
+    for i, (s, colour, t0) in enumerate(findings):
+        body.append(f'<g id="nf{i}">{ntext(434, 132 + 40 * i + (0 if i < 3 else -8), s, fill=colour)}</g>')
+        an.show(f"#nf{i}", t0, end)
     label = ("A preassembled module, a carrier and a board with its screw, is first checked on its own bench sequence. "
              "It then goes into the parent as one rigid body along minus X, and the retainer and bumper follow. "
              "With the bumper and retainer assumed removed, the module withdraws along plus X.")
@@ -775,7 +881,9 @@ def search_svg() -> str:
     feasible = {r["trial"] for r in unique if r["evaluation"].get("verdict") in ("ok", "warn")}
     body = [text(20, 28, "Search: the worked example's trials arriving, and the Pareto front they form", 15, INK, weight="700"),
             text(20, 46, f"examples/explore-two-wheel, cad-agent optimise: {len(recs)} {h['sampler']} trials, seed "
-                         f"{h['seed']}; illustrative parts and prices", 11, MUTED)]
+                         f"{h['seed']}; illustrative parts and prices", 11, MUTED),
+            ntext(20, 40, f"Search: {len(recs)} trials", 28, weight="700"),
+            ntext(x0 + 8, y1 + 26, "↑ mass", fill=MUTED), ntext(x1, y0 + 34, "cost →", fill=MUTED, anchor="end")]
     for c in range(math.ceil(c_lo / 500) * 500, int(c_hi) + 1, 500):
         body.append(f'<path d="M{num(X(c))} {y1}V{y0}" stroke="{LINE}"/>')
         body.append(text(X(c), y0 + 16, f"{c:,}", 10, MUTED, "middle"))
@@ -809,25 +917,29 @@ def search_svg() -> str:
     an.css.append("@keyframes rep{0%{opacity:.9;transform:scale(.45)}5%{opacity:0;transform:scale(1)}100%{opacity:0}}"
                   f".rep circle{{opacity:0;transform-box:fill-box;transform-origin:center;"
                   f"animation:rep {num(an.period)}s ease-out infinite}}")
-    # the front as it stood after each trial: a dashed line through it, and each member marked
+    # the front as it stood after each trial: each member marked with what it is best at among the feasible trials.
+    # The front is over three objectives and the plot shows two, so no line joins the members: one can be on the
+    # front for runtime alone, beside a cheaper and lighter design
     changes = [(i, f) for i, f in enumerate(fronts) if i == 0 or f != fronts[i - 1]]
     at = lambda j: arrive[recs[changes[j][0]]["trial"]] + 0.1 if j < len(changes) else end
     spans = [(at(j), at(j + 1), f) for j, (_, f) in enumerate(changes)]
-    for j, (on, off, f) in enumerate(spans):
-        line = sorted((X(value(by_trial[t], "cost_usd")), Y(value(by_trial[t], "mass_kg"))) for t in f)
-        if len(line) > 1:
-            body.append(f'<path id="fl{j}" d="M{" ".join(f"{num(x)} {num(y)}" for x, y in line)}" fill="none" '
-                        f'stroke="{ORANGE}" stroke-width="2" stroke-dasharray="6 4"/>')
-            an.show(f"#fl{j}", on, off)
+    names = {"cost_usd": "cost", "mass_kg": "mass", "runtime_min": "runtime"}
+    best = {m: (min if goal == "min" else max)(value(by_trial[t], m) for t in feasible) for m, goal in h["objectives"]}
+
+    def best_at(t):
+        won = [m for m, _ in h["objectives"] if value(by_trial[t], m) == best[m]]
+        return " and ".join(names.get(m, m) for m in won) or "a trade-off"
     for t in sorted({t for f in fronts for t in f}):
         member = [(on, off) for on, off, f in spans if t in f]
         if any(a[1] != b[0] for a, b in zip(member, member[1:])):
             raise ValueError(f"trial {t} left the front and came back: the figure draws one stretch per trial")
         r = by_trial[t]
         cx, cy = X(value(r, "cost_usd")), Y(value(r, "mass_kg"))
+        won = best_at(t)
+        detail = (f", {fmt(value(r, 'runtime_min'), 0)} min" if "runtime" in won else "")
         body.append(f'<g id="ff{t}"><circle cx="{num(cx)}" cy="{num(cy)}" r="7" fill="{ORANGE}" stroke="{BG}" stroke-width="2"/>'
-                    + text(cx + 11, cy - 9, f"trial {t}: {fmt(value(r, 'runtime_min'), 0)} min runtime", 11, ORANGE,
-                           weight="600", halo=True) + "</g>")
+                    + text(cx + 11, cy - 9, f"trial {t}: best {won}{detail}", 11, ORANGE, weight="600", halo=True)
+                    + ntext(cx + 12, cy + 8, f"{t}: best {won}", fill=ORANGE, weight="700", halo=True) + "</g>")
         an.show(f"#ff{t}", member[0][0], member[-1][1])
     # progress, legend and the run's summary
     an.css.append(".bar{transform-box:fill-box;transform-origin:left}")
@@ -838,16 +950,17 @@ def search_svg() -> str:
     ly = 340
     legend = [(f'<circle cx="0" cy="0" r="4" fill="{BG}" stroke="{GREEN}" stroke-width="1.4"/>', "infeasible"),
               (f'<circle cx="0" cy="0" r="4.5" fill="{INK}"/>', "feasible, dominated"),
-              (f'<circle cx="0" cy="0" r="6" fill="{ORANGE}"/>', "front: cost, mass, runtime"),
+              (f'<circle cx="0" cy="0" r="6" fill="{ORANGE}"/>', "front over cost, mass, runtime"),
               (f'<circle cx="0" cy="0" r="6" fill="none" stroke="{MUTED}" stroke-width="1.2"/>', "a repeat")]
     lx = x0
     for mark, s in legend:
-        body.append(f'<g transform="translate({lx} {ly})">{mark}{text(10, 4, s, 11, MUTED)}</g>')
+        body.append(f'<g class="w" transform="translate({lx} {ly})">{mark}{text(10, 4, s, 11, MUTED)}</g>')
         lx += 26 + 6.1 * len(s)
     n_rep = len(recs) - len(unique)
     summary = (f"{len(recs)} trials ({len(unique)} evaluated, {n_rep} repeats), {len(feasible)} feasible, "
                f"{len(fronts[-1])} on the front")
-    body.append(f'<g id="sum">{text(x1, ly + 22, summary, 12, INK, "end", "600")}</g>')
+    body.append(f'<g id="sum">{text(x1, ly + 22, summary, 12, INK, "end", "600")}'
+                f'{ntext(x1, ly + 14, f"{len(feasible)} feasible, {len(fronts[-1])} on the front", anchor="end", weight="700")}</g>')
     an.show("#sum", last_arrival + 0.2, end)
     label = (f"The worked example's {len(recs)} seeded random trials plotted by cost and mass as they arrive. "
              f"{len(feasible)} are feasible and {len(fronts[-1])} form the Pareto front over cost, mass and runtime: "

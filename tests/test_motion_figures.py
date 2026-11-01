@@ -55,6 +55,13 @@ def test_each_figure_stands_alone_is_labelled_sized_and_has_a_still(name):
     assert f'<rect width="680" height="' in s and f'fill="{mf.BG}"' in s           # its own light background
     assert "@media (prefers-reduced-motion:reduce){*{animation:none!important}}" in s
     assert "@keyframes" in s
+    # narrow: drawn 400 px wide or less (a 360 px phone), every label hides except large ones that still read
+    assert f"@media (max-width:{mf.NARROW_PX}px){{text:not(.n),.w{{display:none}}.n{{display:inline}}}}" in s
+    narrow = re.findall(r'<text [^>]*class="n"[^>]*>', s)
+    assert len(narrow) >= 3, name
+    for tag in narrow:
+        size = float(re.search(r'font-size="([\d.]+)"', tag).group(1))
+        assert size >= mf.NARROW_MIN_SIZE and size * 324 / 680 >= 11, (name, tag)
     # an <img> loads nothing else and runs no script: no scripts, links, outside images or fonts
     assert not re.search(r"<script|<foreignObject|<image|href=|@import|@font-face|url\((?!#)", s, re.I)
 
@@ -73,6 +80,7 @@ def test_every_figure_is_shown_on_a_page_with_a_caption():
 
 def test_hinge_figure_draws_the_bench_seed():
     assert literal(BENCH_PY, "PIVOT") == mf.BENCH["pivot"]
+    assert tuple(literal(BENCH_PY, "PARAMS")["flap_range_deg"]) == mf.BENCH["default_range_deg"]
     seed = literal(BENCH_PY, "SEEDS")[mf.BENCH["seed"]]
     assert seed["gate"] == "motion" and tuple(seed["params"]["flap_range_deg"]) == mf.BENCH["range_deg"]
 
@@ -135,13 +143,17 @@ def test_hinge_numbers_are_the_motion_gates():
     from cadagent.gates.motion import motion_gate
     bench = gb.build(mf.BENCH["seed"])
     assert gb.PIVOT == mf.BENCH["pivot"]
-    for part in ("arm", "stop", "hinge_block", "frame"):
-        bb = cq.Shape.cast(bench.shape(part)).BoundingBox()
+    arm = cq.Shape.cast(bench.shape("arm")).BoundingBox()
+    assert arm.ymax - arm.ymin == pytest.approx(mf.BENCH["arm_thickness"])
+    # the figure is the section through the arm; the hinge block, just behind it, is drawn dashed. The base is cut
+    # to the arm's Y band: its boss, which carries another part, lies outside it
+    band = cq.Solid.makeBox(400, arm.ymax - arm.ymin, 400, cq.Vector(-100, arm.ymin, -100))
+    for part in ("arm", "stop", "hinge_block", "frame", "base"):
+        shape = cq.Shape.cast(bench.shape(part))
+        bb = (shape.intersect(band) if part == "base" else shape).BoundingBox()
         want = mf.BENCH[part] if part != "frame" else (mf.BENCH["beam"][0], mf.BENCH["post"][1], mf.BENCH["post"][2],
                                                         mf.BENCH["beam"][3])
         assert (bb.xmin, bb.zmin, bb.xmax, bb.zmax) == pytest.approx(want, abs=1e-6), part
-    arm = cq.Shape.cast(bench.shape("arm")).BoundingBox()
-    assert arm.ymax - arm.ymin == pytest.approx(mf.BENCH["arm_thickness"])
     v = motion_gate(bench.assembly, intended_overlaps=bench.declarations["intended_overlaps"])
     ev = next(c for c in v["checks"] if c["id"] == "collision:arm|frame")["evidence"]
     h = mf.hinge_numbers()

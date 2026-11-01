@@ -90,6 +90,11 @@ test('the kit demo element survives with its own attributes only (no handlers, s
   const hostile = sanitize('<cad-cantilever onmouseover="alert(1)" style="position:fixed" id="x" data-x="1" is="a-b">' +
     '<script>alert(1)</script><svg onload="alert(1)"></svg></cad-cantilever>');
   assert.equal(hostile, '<cad-cantilever id="x"></cad-cantilever>');
+  const fourbar = '<cad-fourbar crank="40" coupler="120" rocker="80" ground="100" branch="crossed" angle="-30" theme="dark">' +
+    '<img src="img/x.svg" alt="still" width="640" height="320"></cad-fourbar>';
+  assert.equal(sanitize(fourbar), fourbar.replace('height="320">', 'height="320" />'));
+  assert.equal(sanitize('<cad-fourbar onclick="alert(1)" style="x" material="pla" length="3"><script>alert(1)</script></cad-fourbar>'),
+    '<cad-fourbar></cad-fourbar>', "one demo's attributes are not another's");
 });
 
 test('image sizes come from the file, so pages keep the space before images load', () => {

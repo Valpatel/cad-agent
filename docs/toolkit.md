@@ -66,10 +66,20 @@ my-cad-project/
    `{part: {cad_valid, solid_count, watertight, print_bounds_mm, ...}}`.
    `cadagent.geometry` does the generic part:
    ```python
-   from cadagent.geometry import export_print_stl, solid_report, pairwise_intersections
+   from cadagent.geometry import export_print_stl, export_step, solid_report, pairwise_intersections
    report = {n: export_print_stl(s, OUT / f"{n}.stl", rotation=PRINT_ROTATION.get(n))
              for n, s in print_parts().items()}          # raises on a non-watertight STL
+   for n, s in print_parts().items():
+       export_step(s, OUT / f"{n}.step")                 # the same bytes for the same model
    ```
+   Write STEP with `export_step`, not `cadquery.exporters.export`: OCCT stamps the write time into the header,
+   names the product `Open CASCADE STEP translator <version> <n>` by export order and numbers assembly links
+   across the process, so every rebuild would change every STEP file and stale every check bound to its sha256.
+   `export_step` writes the same geometry with a fixed header date (`SOURCE_DATE_EPOCH` when set, the
+   [reproducible-builds](https://reproducible-builds.org/specs/source-date-epoch/) convention, else
+   2000-01-01T00:00:00), the product named after the file (or `name=`), and links numbered from 1 within the file.
+   Another OCCT version can still write different bytes for the same geometry, and a cadquery `Assembly` is not
+   covered (it is refused; `Assembly.save` is not reproducible yet, #150).
 3. **Each check is a script** in `tools/` that writes `exports/<name>.json` with
    a top-level boolean `"pass"`. A check that cannot compute its answer writes
    `"pass": false` with the reason; it never omits the file or the key.
@@ -226,7 +236,7 @@ skip the work silently.
 
 ```python
 from cadagent.project import load_project    # CadProject, Step, Check, CadConfigError
-from cadagent.geometry import (solid_report, export_print_stl, pairwise_intersections,
+from cadagent.geometry import (solid_report, export_print_stl, export_step, step_timestamp, pairwise_intersections,
                                min_gap, downward_area, within_bed)
 from cadagent.mesh3mf import write_3mf, read_3mf, verify_3mf, export_parts_3mf, is_edge_manifold
 from cadagent.render import Renderer

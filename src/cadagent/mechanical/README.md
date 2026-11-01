@@ -12,7 +12,7 @@ alone.
 ```mermaid
 flowchart TD
     G["cadagent.geometry<br/>export_step"] --> MC["mcmaster.py<br/>bought parts"]
-    G ~~~ FK["fasteners.py · bosses.py<br/>markings.py"]
+    G ~~~ FK["fasteners.py · bosses.py<br/>inserts.py · markings.py"]
     G ~~~ CC["connectors.py<br/>compliant/"]
     MC & FK & CC --> B["build script<br/>the project's CadQuery"]
     B -->|"STEP, parts file"| X["exports/<br/>STEP · parts file"]
@@ -33,6 +33,7 @@ flowchart TD
 | `holes.py` | Every hole in a part is empty of material (`cad-agent holes`); countersinks and drill points are probed as cones |
 | `fasteners.py` | Dimension-driven fastener envelopes and axial stack checks |
 | `bosses.py` | A thread-forming screw (DELTA PT sizes) in a printed boss: clamp, stripping force and torque, Covestro's torque window and the wall, from datasheet strengths ([screw bosses](../../../docs/screw-bosses.md)); a starting point to test, not a rating |
+| `inserts.py` | Heat-set inserts and compression limiters in printed parts: the makers' hole and boss, where the screw's clamp goes, pull-out, torque-out and the insert's thread calibrated to published tests, the plastic under the head, limiters (catalogue or your own) and the preload kept; `cad-agent inserts` checks a file of joints, and the coupon plan says what to print and measure ([threaded inserts](../../../docs/inserts.md)); a starting point to test, not a rating |
 | `mcmaster.py` | McMaster-Carr parts: the manufacturer's STEP and product data for a part number, normalised into a known frame |
 | `connectors.py` | Mating-connector envelopes: panel windows from the plug, then proof that the plug fits |
 | `markings.py` | One XY drawing for engraved markings and a matching SVG proof |

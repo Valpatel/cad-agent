@@ -27,7 +27,7 @@ from cadagent.mechanical import inserts as I                          # noqa: E4
 from cadagent.publish.anim import svg as S                            # noqa: E402
 
 FIGURE = ROOT / "docs" / "img" / "inserts" / "coupons.svg"
-PROJECTION = (1.0, -1.6, 1.1)
+PROJECTION = (1.0, -1.0, 0.8)       # from above a front corner: +Z comes out up
 
 
 def coupons():
@@ -57,40 +57,59 @@ def write(out_dir: Path) -> None:
     print(f"wrote {len(coupons())} coupons and plan.json to {out_dir}")
 
 
-def figure() -> str:
-    """The upright and lying coupons of three inserts (M3, M5, M8), side by side, as CadQuery projects them."""
+def _projected(solid):
+    """One solid's visible edges as CadQuery projects them (its HLR, isometric): a list of path strings in model mm,
+    y up, and their bounding box (x0, y0, x1, y1)."""
     import cadquery as cq
+    raw = cq.exporters.getSVG(cq.Compound.makeCompound([solid]),
+                              opts={"projectionDir": PROJECTION, "showHidden": False, "showAxes": False})
+    visible = raw.split("<!-- solid lines -->", 1)[1]
+    paths = re.findall(r'<path d="([^"]+)"', visible)
+    nums = [float(v) for d in paths for v in re.findall(r"-?\d+(?:\.\d+)?(?:e-?\d+)?", d)]
+    xs, ys = nums[0::2], nums[1::2]
+    return paths, (min(xs), min(ys), max(xs), max(ys))
+
+
+def _moved(d: str, dx: float, dy: float, k: float) -> str:
+    """A path's points scaled by k and moved by (dx, dy). For this projection CadQuery's path y already runs down
+    the picture, as SVG's does."""
+    vals = iter(re.findall(r"[ML]|-?\d+(?:\.\d+)?(?:e-?\d+)?", d))
+    out = []
+    for tok in vals:
+        if tok in "ML":
+            out.append(tok)
+            continue
+        x, y = float(tok), float(next(vals))
+        out.append(f"{S.num((dx + k * x) * S.UNITS_PER_PX, 1)},{S.num((dy + k * y) * S.UNITS_PER_PX, 1)}")
+    return " ".join(out)
+
+
+def figure() -> str:
+    """The upright and lying coupons of three inserts (M3, M5, M8), side by side, each as CadQuery projects it."""
     keys = ["mcmaster-94459A140", "mcmaster-94459A775", "mcmaster-94459A778"]
-    solids, x = [], 0.0
-    labels = []
+    views = []
     for key in keys:
         ins = I.insert(key)
         for axis in I.AXES:
-            s = I.coupon_block(ins, axis)
-            bb = s.BoundingBox()
-            solids.append(s.translate(cq.Vector(x - bb.xmin, 0, 0)))
-            labels.append((x + bb.xlen / 2, f"{ins.thread} {axis}"))
-            x += bb.xlen + 8.0
-    raw = cq.exporters.getSVG(cq.Compound.makeCompound(solids),
-                              opts={"width": 820, "height": 230, "marginLeft": 20, "marginTop": 20,
-                                    "projectionDir": PROJECTION, "showHidden": False, "showAxes": False,
-                                    "strokeWidth": 0.25})
-    transform = re.search(r'<g transform="([^"]+)"', raw).group(1)
-    visible = raw.split("<!-- solid lines -->", 1)[1]
-    paths = re.findall(r'<path d="([^"]+)"', visible)
-    w, h = 860, 300
+            views.append((f"{ins.thread} {axis}", *_projected(I.coupon_block(ins, axis))))
+    w, h, gap, left, base = 880, 300, 24.0, 20.0, 220.0
+    widest = sum(b[2] - b[0] for _, _, b in views)
+    k = (w - 2 * left - gap * (len(views) - 1)) / widest           # one scale for all: sizes compare
     U = S.UNITS_PER_PX
-    body = [f'<g transform="scale({U}) translate(10 20)"><g transform="{transform}" class="cad">']
-    body += [f'<path d="{d}"/>' for d in paths]
-    body.append("</g></g>")
-    css = (".cad{fill:none;stroke:var(--edge);stroke-width:.25;stroke-linejoin:round}"
-           f"text{{fill:var(--ink);font-size:{12 * U}px}}")
-    body.append(f'<text x="{20 * U}" y="{(h - 16) * U}">CadQuery\'s projection of the coupon solids '
-                f'(cadagent.mechanical.inserts.coupon_block), each in its print orientation: upright then lying, '
-                f'for M3, M5 and M8</text>')
-    title = ("Insert test coupons as CAD: for each insert a block printed upright (the insert's axis along the build "
-             "direction) and one printed lying (its axis in the layer plane), each with the maker's hole; M3, M5 "
-             "and M8 shown")
+    body, x = [], left
+    for label, paths, (x0, y0, x1, y1) in views:
+        dx, dy = x - k * x0, base - k * y1
+        body += [f'<path class="cad" d="{_moved(d, dx, dy, k)}"/>' for d in paths]
+        body.append(f'<text x="{S.num((x + k * (x1 - x0) / 2) * U, 1)}" y="{S.num((base + 26) * U, 1)}" '
+                    f'text-anchor="middle">{label}</text>')
+        x += k * (x1 - x0) + gap
+    css = (f".cad{{fill:none;stroke:var(--edge);stroke-width:{1.1 * U};stroke-linejoin:round}}"
+           f"text{{fill:var(--ink);font-size:{13 * U}px}}.small{{fill:var(--muted);font-size:{11 * U}px}}")
+    body.append(f'<text class="small" x="{S.num(left * U, 0)}" y="{S.num((h - 18) * U, 0)}">CadQuery\'s projection of '
+                f'the coupon solids (cadagent.mechanical.inserts.coupon_block), to one scale, each in its print '
+                f'orientation</text>')
+    title = ("Insert test coupons as CAD: for M3, M5 and M8, a block printed upright (the insert's axis along the "
+             "build direction) and one printed lying (its axis in the layer plane), each with its designed hole")
     return S.document(w, h, title, title, css, body)
 
 

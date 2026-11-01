@@ -182,7 +182,8 @@ const feedbackBox = (title, url, file) => `<aside class="feedback" aria-label="F
 <div class="feedback-actions"><a class="button" href="${esc(feedbackURL(title, url))}">Give feedback</a>${file ? `<a href="${REPO}/edit/dev/${esc(file)}">Suggest an edit</a>` : ''}</div></aside>`;
 // Pages with one of the kit's interactive demos load its stylesheet in <head> (it reserves the demo's size before the
 // script runs, so nothing moves) and preload its module; web/site.js imports it.
-const KIT_DEMOS = { 'cad-cantilever': 'cantilever', 'cad-fourbar': 'fourbar', 'cad-fan-curve': 'fan-curve' };
+const KIT_DEMOS = { 'cad-cantilever': 'cantilever', 'cad-fourbar': 'fourbar', 'cad-fan-curve': 'fan-curve',
+  'cad-torsion-snap': 'torsion-snap', 'cad-printed-boss': 'printed-boss' };
 const kitDemos = body => Object.entries(KIT_DEMOS).filter(([tag]) => body.includes(`<${tag}`))
   .map(([, f]) => `<link rel="stylesheet" href="/kit/${f}.css"><link rel="modulepreload" href="/kit/${f}.js">`).join('');
 function frame({ title, body, md, description = LEDE, current = '', page = 'doc', css = [], updated = committed, url = current || '/' }) {

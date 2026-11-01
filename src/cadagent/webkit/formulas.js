@@ -4,24 +4,31 @@
  *   snapArm(0.020, 0.0016, 0.006, 0.0015, 2.703e9, 0.02, 1);   // SI: m, Pa, strain as a fraction
  *   fourbarAngles(40, 120, 80, 100, 40 * Math.PI / 180);       // [theta3, theta4] in rad, or null
  *   fanOperatingPoint([[0, 83], [0.0548, 0]], 1.5e4);          // flow m^3/s, pressure Pa, stable, stall
+ *   torsionSnapBar(0.015, 0.004, 0.0012, 0.14, 2.68e9, 0.0095, 0.010, 2);   // shear strain, torque, lever force
+ *   screwBoss(0.003, 0.00112, 0.006, 0.006, 0.3, 15.5e6, 35e6, 0.2, 0.65); // clamp band, strip, window, hoop
  *
  * The Python package is the reference. tests/webkit-formulas.test.mjs runs every function here on the golden vectors
  * that tools/formula_vectors.py writes from the Python, so the two agree to 1e-12. Change the Python first, then
  * this file, then regenerate the vectors. Units, limits and sources are documented on the Python functions
- * (cadagent/formulas/beams.py, linkages.py and thermal.py) and in docs/formulas.md.
+ * (cadagent/formulas/beams.py, linkages.py, thermal.py, torsion.py and screws.py) and in docs/formulas.md.
  *
  * In short: Euler-Bernoulli small-deflection beam theory. The snap-fit functions use the Covestro (Bayer) guide's
  * Table 1 factors, as `cad-agent snapfit` does. A closed form is not proof of strength: print a coupon and measure.
  * The four-bar functions are position analysis of rigid links on ideal pins (Norton's Design of Machinery, after
  * Freudenstein): no velocity, force, dynamics or joint clearance. The fan functions match a fan curve (the datasheet's
  * points joined by straight lines) to a system curve r Q + k Q^2 at one air density (White's Fluid Mechanics,
- * Section 11.5): steady flow, identical fans, no interaction losses.
+ * Section 11.5): steady flow, identical fans, no interaction losses. The torsion functions are Saint-Venant torsion of
+ * a rectangle (Roark Table 10.1) with the Covestro guide's allowable shear strain (1 + nu) eps. The screw functions are
+ * Shigley's torque-preload relation and thread statics, the ISO 68-1 stripping area and Lame's thick-walled cylinder,
+ * with Covestro's tightening window and the DELTA PT maker's boss proportions.
  */
 
 // Covestro Table 1, rectangular section: y = k eps l^2 / h (1 constant, 2 thickness to h/2, 3 width to b/4).
 export const DESIGN_K_RECT = Object.freeze({ 1: 0.67, 2: 1.09, 3: 0.86 });
 export const DESIGNS = Object.freeze({ 1: 'constant section', 2: 'thickness tapered to h/2 at the tip', 3: 'width tapered to b/4 at the tip' });
 export const SMALL_DEFLECTION = 0.1;
+/** torsionSnapBar flags a twist as large when the trapeze effect adds more than this share to the torque. */
+export const SMALL_TWIST_TRAPEZE = 0.1;
 const THICKNESS_TIP_RATIO = 0.5, WIDTH_TIP_RATIO = 0.25;
 
 // A whole number that names a design, as the Python's `design in DESIGNS` (so "2", 2.5 and inherited keys such as
@@ -260,4 +267,158 @@ export function fanOperatingPoint(curve, k, r = 0) {
   found.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const [q, p] = found.at(-1), peak = fanStallFlow(pts);
   return { flow: q, pressure: p, intersections: found, stable: found.length === 1, stall: peak !== null && q < peak };
+}
+
+// ----------------------------------------------------------------------------- torsion (torsion.py)
+// SI: metres, pascals, radians; torque in N m.
+
+// A finite number above 0 (or at least 0), as the Python's checks: booleans, strings and null are refused.
+const isNum = x => typeof x === 'number' && Number.isFinite(x);
+function positive(name, v, strict = true) {
+  if (!isNum(v) || (strict ? !(v > 0) : !(v >= 0))) throw new RangeError(`${name} must be a finite number ${strict ? 'above' : 'of at least'} 0, not ${v}`);
+  return v;
+}
+const POISSON_PLASTICS = 0.35;            // snapfit.POISSON_PLASTICS (Covestro Section C)
+
+/** Torsion constant of a solid rectangle: K = a b^3 [16/3 - 3.36 (b/a)(1 - b^4 / 12 a^4)], a and b half the sides. */
+export function torsionConstantRect(width, thickness) {
+  const a = Math.max(width, thickness) / 2, b = Math.min(width, thickness) / 2;
+  // products, not powers: Math.pow differs in the last bit between engines (WebKit's from V8's and CPython's)
+  const b3 = b * b * b, a4 = a * a * a * a;
+  return a * b3 * (16 / 3 - 3.36 * b / a * (1 - b3 * b / (12 * a4)));
+}
+
+/** Peak shear stress in a twisted solid rectangle (at the middle of the long sides): 3T / (8 a b^2) times Roark's
+ * polynomial in b/a. */
+export function torsionShearStressRect(torque, width, thickness) {
+  const a = Math.max(width, thickness) / 2, b = Math.min(width, thickness) / 2, q = b / a;
+  const q2 = q * q;
+  return 3 * torque / (8 * a * b * b) * (1 + 0.6095 * q + 0.8865 * q2 - 1.8023 * q2 * q + 0.9100 * q2 * q2);
+}
+
+/** Peak shear strain of a rectangular bar twisted through `twist` over `length`: theta K (tau / T) / L. */
+export function torsionShearStrainRect(twist, length, width, thickness) {
+  return twist * torsionConstantRect(width, thickness) * torsionShearStressRect(1, width, thickness) / length;
+}
+
+/** Torsional stiffness of a uniform bar, T / theta = K G / L (N m / rad). */
+export function torsionBarStiffness(length, shearModulus, constant) {
+  return constant * shearModulus / length;
+}
+
+/** A rectangular torsion bar twisted by a lever (torsion.py, torsion_snap_bar): { shearStrain, allowableShearStrain
+ * ((1 + nu) eps, the Covestro guide's), ratio, passes, shearModulus, stiffness (all bars), torque, force (at the
+ * lever), travel (lever sin theta), permissibleTwist, and for large twist trapezeRatio (the trapeze effect's torque
+ * over the Saint-Venant torque, E t b^5 theta'^3 / 360 over K G theta'), edgeAxialStrain (theta'^2 b^2 / 12) and
+ * smallTwist }. Two bars take the same twist and double the torque. */
+export function torsionSnapBar(length, width, thickness, twist, modulus, allowableStrain, lever, bars = 1, poisson = POISSON_PLASTICS) {
+  for (const [name, v] of [['length', length], ['width', width], ['thickness', thickness], ['modulus', modulus],
+    ['allowable_strain', allowableStrain], ['lever', lever]]) positive(name, v);
+  positive('twist', twist, false);
+  if (bars !== 1 && bars !== 2) throw new RangeError(`bars must be 1 or 2, not ${bars}`);
+  if (!isNum(poisson) || !(poisson > -1 && poisson < 0.5)) throw new RangeError(`poisson must be between -1 and 0.5, not ${poisson}`);
+  const perRadian = torsionShearStrainRect(1, length, width, thickness);
+  const shearStrain = perRadian * twist;
+  const allowableShearStrain = (1 + poisson) * allowableStrain;
+  const shearModulus = modulus / (2 * (1 + poisson));
+  const stiffness = bars * torsionBarStiffness(length, shearModulus, torsionConstantRect(width, thickness));
+  const torque = stiffness * twist;
+  const longSide = Math.max(width, thickness), shortSide = Math.min(width, thickness), rate = twist / length;
+  const b2 = longSide * longSide;
+  const trapezeRatio = modulus * shortSide * b2 * b2 * longSide * rate * rate / (360 * torsionConstantRect(width, thickness) * shearModulus);
+  return { shearStrain, allowableShearStrain, ratio: shearStrain / allowableShearStrain, passes: shearStrain <= allowableShearStrain,
+    shearModulus, stiffness, torque, force: torque / lever, travel: lever * Math.sin(twist), permissibleTwist: allowableShearStrain / perRadian,
+    trapezeRatio, edgeAxialStrain: rate * rate * longSide * longSide / 12, smallTwist: trapezeRatio <= SMALL_TWIST_TRAPEZE };
+}
+
+// ----------------------------------------------------------------------------- screws (screws.py)
+// SI: metres, newtons, pascals; torque in N m; flank angles in rad (the included angle: 60 degrees ISO).
+
+const PITCH_DIAMETER = 0.649519, MINOR_DIAMETER = 1.082532;      // ISO 68-1 basic profile
+const DEG = Math.PI / 180;                                        // Python's math.radians multiplies by pi / 180
+const ISO_FLANK = 60 * DEG;
+/** Boss proportions over the nominal diameter (Bulten, DELTA PT, p. 7) and Covestro's tightening window. */
+export const BOSS = Object.freeze({ hole: 0.8, outside: 2.0, engagement: 2.0, tightenOverDrive: 1.2, tightenOverStrip: 0.5 });
+const FORMING_FLANK = 30 * DEG, RATIO_SLACK = 1e-9;
+
+/** Nut factor from friction: K = (dm / 2d)(tan lambda + f sec alpha) / (1 - f tan lambda sec alpha) + 0.625 fc. */
+export function nutFactor(diameter, pitch, threadFriction, collarFriction, flankAngle = ISO_FLANK) {
+  const dm = diameter - PITCH_DIAMETER * pitch;
+  const tanLead = pitch / (Math.PI * dm);
+  const sec = 1 / Math.cos(flankAngle / 2);
+  const thread = dm / (2 * diameter) * (tanLead + threadFriction * sec) / (1 - threadFriction * tanLead * sec);
+  return thread + 0.625 * collarFriction;
+}
+
+/** Clamp force from tightening torque, Fi = T / (K d). */
+export function preloadFromTorque(torque, diameter, k = 0.2) { return torque / (k * diameter); }
+
+/** Tightening torque for a clamp force, T = K Fi d. */
+export function torqueForPreload(preload, diameter, k = 0.2) { return k * preload * diameter; }
+
+/** Shear areas that strip a thread: { external: 0.75 pi D1 Le, internal: 0.875 pi d Le }. */
+export function threadShearAreas(diameter, pitch, engagement) {
+  const d1 = diameter - MINOR_DIAMETER * pitch;
+  return { external: 0.75 * Math.PI * d1 * engagement, internal: 0.875 * Math.PI * diameter * engagement };
+}
+
+/** The force that strips one side of a thread: its shear area times the shear strength. */
+export function threadStripForce(diameter, pitch, engagement, shearStrength, side = 'internal') {
+  const areas = threadShearAreas(diameter, pitch, engagement);
+  if (side !== 'internal' && side !== 'external') throw new RangeError("side must be 'internal' or 'external'");
+  return areas[side] * shearStrength;
+}
+
+/** The radial pressure an axially loaded thread puts on the boss: p = F tan(alpha) / (pi d Le). */
+export function threadRadialPressure(load, diameter, engagement, flankAngle = ISO_FLANK) {
+  positive('load', load, false); positive('diameter', diameter); positive('engagement', engagement);
+  if (!isNum(flankAngle) || !(flankAngle > 0 && flankAngle < Math.PI)) throw new RangeError(`flank_angle must be between 0 and pi radians, not ${flankAngle}`);
+  return load * Math.tan(flankAngle / 2) / (Math.PI * diameter * engagement);
+}
+
+/** Hoop stress at the bore of a thick-walled cylinder under internal pressure: p (D^2 + d^2) / (D^2 - d^2). */
+export function bossHoopStress(pressure, innerDiameter, outerDiameter) {
+  positive('pressure', pressure, false); positive('inner_diameter', innerDiameter);
+  if (!isNum(outerDiameter) || !(outerDiameter > innerDiameter)) throw new RangeError(`outer_diameter must be finite and above the inner diameter, not ${outerDiameter}`);
+  const d2 = innerDiameter * innerDiameter, o2 = outerDiameter * outerDiameter;
+  return pressure * (o2 + d2) / (o2 - d2);
+}
+
+/** A thread-forming screw tightened in a plastic boss (screws.py, screw_boss): { nutFactor, preload, stripTorque as
+ * {low, high}; stripForce, margin {low, high}, torqueCeiling, driveTorqueLimit, driveTorque, radialPressure,
+ * hoopStress, hoopRatio, outsideRatio, engagementRatio, torqueOk, outsideOk, engagementOk, hoopOk, passes }. The drive
+ * torque forms the thread and makes no clamp: measured, it comes off the torque and adds to the stripping torque; not
+ * measured (null), the clamp band runs from the most drive torque the window allows (T / 1.2) to none, and the
+ * stripping torque is the clamp's share alone. */
+export function screwBoss(diameter, pitch, engagement, outsideDiameter, torque, shearStrength, hoopStrength,
+  frictionLow = 0.2, frictionHigh = 0.5, flankAngle = FORMING_FLANK, driveTorque = null) {
+  for (const [name, v] of [['diameter', diameter], ['pitch', pitch], ['engagement', engagement], ['torque', torque],
+    ['shear_strength', shearStrength], ['hoop_strength', hoopStrength]]) positive(name, v);
+  positive('friction_low', frictionLow, false);
+  if (!isNum(frictionHigh) || !(frictionHigh >= frictionLow)) throw new RangeError(`friction_high must be finite and at least friction_low, not ${frictionHigh}`);
+  if (!isNum(outsideDiameter) || !(outsideDiameter > diameter)) throw new RangeError(`outside_diameter must be finite and above the screw's diameter, not ${outsideDiameter}`);
+  if (driveTorque !== null) positive('drive_torque', driveTorque, false);
+  const kLow = nutFactor(diameter, pitch, frictionLow, frictionLow, flankAngle);
+  const kHigh = nutFactor(diameter, pitch, frictionHigh, frictionHigh, flankAngle);
+  const strip = threadStripForce(diameter, pitch, engagement, shearStrength, 'internal');
+  const drive = driveTorque === null ? 0 : driveTorque;
+  const driveMost = driveTorque === null ? torque / BOSS.tightenOverDrive : driveTorque;
+  const stripLow = drive + torqueForPreload(strip, diameter, kLow), stripHigh = drive + torqueForPreload(strip, diameter, kHigh);
+  const preloadHigh = preloadFromTorque(Math.max(torque - drive, 0), diameter, kLow);
+  const pressure = threadRadialPressure(preloadHigh, diameter, engagement, flankAngle);
+  const hoop = bossHoopStress(pressure, diameter, outsideDiameter);
+  const ceiling = BOSS.tightenOverStrip * stripLow;
+  const out = { nutFactor: { low: kLow, high: kHigh },
+    preload: { low: preloadFromTorque(Math.max(torque - driveMost, 0), diameter, kHigh), high: preloadHigh },
+    stripForce: strip, stripTorque: { low: stripLow, high: stripHigh },
+    margin: { low: stripLow / torque, high: stripHigh / torque },
+    torqueCeiling: ceiling, driveTorqueLimit: torque / BOSS.tightenOverDrive, driveTorque,
+    radialPressure: pressure, hoopStress: hoop, hoopRatio: hoop / hoopStrength,
+    outsideRatio: outsideDiameter / diameter, engagementRatio: engagement / diameter };
+  out.torqueOk = torque <= ceiling && (driveTorque === null || torque >= BOSS.tightenOverDrive * driveTorque);
+  out.outsideOk = out.outsideRatio >= BOSS.outside * (1 - RATIO_SLACK);
+  out.engagementOk = out.engagementRatio >= BOSS.engagement * (1 - RATIO_SLACK);
+  out.hoopOk = out.hoopRatio < 1;
+  out.passes = out.torqueOk && out.outsideOk && out.engagementOk && out.hoopOk;
+  return out;
 }

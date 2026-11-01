@@ -446,9 +446,10 @@ class LoopClosure:
     MuJoCo takes the matching point on ``other`` from the model's home pose, so that pose must close the loop, as a
     CAD assembly built in one closed pose does. Give ``other_anchor`` (the same pin in ``other``'s frame) and
     ``write_mjcf`` checks that it does, to ``tolerance`` m, in the model as given. The file then carries 6
-    significant digits, which leave the pin open by up to a few millionths of the links' size (2e-6 m at 1.2 m
-    links); MuJoCo's constraint pulls that closed in its first steps. It holds the pin with a soft constraint, so the
-    pin also opens a little under load."""
+    significant digits. MuJoCo places the pin on ``other`` from the file's own home pose, so the pin starts closed,
+    but the rounding moves it from ``other_anchor`` by up to a few millionths of the links' size (2.4e-6 m at 1.2 m
+    links): in effect that link is a few millionths longer or shorter. MuJoCo holds the pin with a soft constraint,
+    so the pin opens a little under load."""
 
     link: str
     other: str
@@ -485,9 +486,10 @@ def home_frames(links: Sequence[Link], joints: Sequence[Joint]) -> Dict[str, Tup
 
 
 def loop_gaps(links: Sequence[Link], joints: Sequence[Joint], loops: Sequence["LoopClosure"]) -> Dict[str, float]:
-    """How far apart each loop closure's two anchors are at home, in m, in the model as given (the written file adds
-    up to a few millionths of the links' size: see ``LoopClosure``). Keyed by the closure's name, else
-    ``link-other``; only closures that give ``other_anchor`` are measured. Two closures with one key are refused."""
+    """How far apart each loop closure's two anchors are at home, in m, in the model as given (the written file moves
+    the pin on ``other`` by up to a few millionths of the links' size: see ``LoopClosure``). Keyed by the closure's
+    name, else ``link-other``; only closures that give ``other_anchor`` are measured. Two closures with one key are
+    refused."""
     keys = _loop_keys(loops)
     frames = home_frames(links, joints)
     out = {}

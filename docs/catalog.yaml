@@ -61,6 +61,20 @@ demos:
     cover: docs/img/thermal/fan-curve-explorer.svg
     url: docs/fans.md#try-it-the-fan-curve-explorer
     areas: [airflow-and-fans]
+  - id: torsion-snap-explorer
+    title: Torsion-snap explorer
+    what: Twist a printed bar with a lever and see its shear strain against the filament's allowable, and the force.
+    mode: interactive
+    cover: docs/img/compliant/torsion-snap-explorer.svg
+    url: docs/compliant.md#try-it-the-torsion-snap-explorer
+    areas: [compliant-mechanisms]
+  - id: screw-boss-explorer
+    title: Screw-boss explorer
+    what: A thread-forming screw in a printed boss, its clamp, where the thread strips, and the torque window.
+    mode: interactive
+    cover: docs/img/fasteners/screw-boss-explorer.svg
+    url: docs/screw-bosses.md#try-it-the-screw-boss-explorer
+    areas: [fasteners-and-hardware]
   - id: fea-lid
     title: FEA of a ribbed lid
     what: A 300 N press on an enclosure lid, coloured by stress as a fraction of the material's strength.

@@ -192,7 +192,8 @@ export class CadNav extends HTMLElement {
     const quiet = () => { clearTimeout(settle); settle = setTimeout(() => { settled = true; }, 600); };
     const pin = id => {
       const h = byId.has(id) && document.getElementById(id);   // only outline headings: not the skip link's target
-      if (!h || h === pinned) return;                           // the hashchange after a link's click: the same jump
+      // The hashchange after a link's click is the same jump; the same link again after a jump stopped short is a new one.
+      if (!h || (h === pinned && (!settled || arrived()))) return;
       pinned = h; steered = false; settled = arrived();
       if (settled) clearTimeout(settle); else quiet();
       schedule();

@@ -771,8 +771,8 @@ async function foldProblems() {
   await turn.waitForTimeout(100);
   if ((await isOpen()) !== true) out.push('360 -> 1366 -> 360px: the fold the reader opened was closed');
   await turn.close();
-  // No link text in the corners beside the filter pill while the tree is scrolled (#134): with a link under the
-  // filter's top edge, the points just inside the pill's box at its rounded top corners hit the panel's cover.
+  // No link text around the filter pill while the tree is scrolled (#134): with a link under the filter's top edge, the
+  // points just inside the pill's box at its rounded corners, and in the strips above and below it, hit the panel's cover.
   const desk = await browser.newPage({ viewport: { width: 1366, height: 800 } });
   await desk.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
   const corners = await desk.locator('cad-nav .cad-nav-panel').evaluate(panel => {
@@ -781,10 +781,11 @@ async function foldProblems() {
     const under = () => { const r = f.getBoundingClientRect(); return [...panel.querySelectorAll('a')].find(a => { const q = a.getBoundingClientRect(); return q.top < r.top + 2 && q.bottom > r.top + 2; }); };
     for (panel.scrollTop = 40; !under() && panel.scrollTop < panel.scrollHeight - panel.clientHeight; panel.scrollTop += 7);
     if (!under()) return 'no link ever scrolls under the filter, so this check tests nothing';
-    const r = f.getBoundingClientRect();
-    const hits = [[r.left + 1.5, r.top + 1.5], [r.right - 1.5, r.top + 1.5], [r.left + 1.5, r.bottom - 1.5], [r.right - 1.5, r.bottom - 1.5]]
+    const r = f.getBoundingClientRect(), top = panel.getBoundingClientRect().top;
+    const hits = [[r.left + 1.5, r.top + 1.5], [r.right - 1.5, r.top + 1.5], [r.left + 1.5, r.bottom - 1.5], [r.right - 1.5, r.bottom - 1.5],
+      [r.left + r.width / 2, top + 1.5], [r.left + r.width / 2, r.bottom + 4]]          // and the strips above and below it
       .map(([x, y]) => document.elementFromPoint(x, y)).filter(h => h?.closest('a'));
-    return hits.length ? `link text shows in ${hits.length} corner(s) beside the filter: ${hits.map(h => h.closest('a').textContent).join(', ')}` : '';
+    return hits.length ? `link text shows in ${hits.length} place(s) around the filter: ${hits.map(h => h.closest('a').textContent).join(', ')}` : '';
   });
   if (corners) out.push(`1366px /docs/toolkit, the tree scrolled: ${corners}`);
   await desk.close();

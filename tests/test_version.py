@@ -1,8 +1,9 @@
 """cadagent.__version__ (#144): the version of the files that run, from a checkout, an editable install or a wheel.
 
-Each case runs in a fresh interpreter (``python -I``-like: an explicit PYTHONPATH and nothing else), because the
-version is read once, at import.
+Each case runs in a fresh interpreter (``python -S``: no site-packages, an explicit PYTHONPATH and nothing else),
+because the version is read once, at import.
 """
+import importlib.util
 import shutil
 import subprocess
 import sys
@@ -14,8 +15,10 @@ import cadagent
 
 PKG = Path(cadagent.__file__).resolve().parent
 ROOT = PKG.parents[1]
-sys.path.insert(0, str(ROOT / "tools"))
-from ci_gates import parse_version  # noqa: E402  (the release gate's own reader of pyproject.toml)
+_spec = importlib.util.spec_from_file_location("ci_gates", ROOT / "tools" / "ci_gates.py")
+_gates = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_gates)
+parse_version = _gates.parse_version          # the release gate's own reader of pyproject.toml
 
 HEAVY = {"numpy", "yaml", "cadquery", "OCP", "trimesh", "vtk", "matplotlib", "PIL", "gmsh", "skfem", "scipy"}
 

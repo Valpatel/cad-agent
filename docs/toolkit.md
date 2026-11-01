@@ -30,8 +30,8 @@ cad-agent serve --port 8000      # needed for "Open in Bambu Studio" links
 ```
 
 Without the console script, `python -m cadagent.cli <subcommand>` does the same.
-The toolkit started as `vptest cad` in the vptest framework; projects set up for
-it keep working (see [Coming from vptest](#coming-from-vptest)).
+The file names and environment variables it uses are listed in
+[File names and environment variables](#file-names-and-environment-variables).
 
 The toolkit's pipeline, in order. `cad-agent all` runs it through `package`: build, export-3mf, holes, gates (only
 when the project enables them), report (which runs `check` first) and package. `site` and `release` are commands of
@@ -128,11 +128,12 @@ served (`cad-agent serve`); from `file://` the link downloads the 3MF instead.
 
 ## The `cad:` section of `cad-agent.yaml`
 
-`cad-agent` reads `<project>/cad-agent.yaml` when it exists, otherwise
-`<project>/vptest.yaml`. Only the `cad:` section is read; other top-level
-sections (such as vptest's `project:` and `projects:`) are ignored. The first
-file found is the config: a `cad-agent.yaml` without a `cad:` section is an
-error even if `vptest.yaml` has one.
+`cad-agent` reads `<project>/cad-agent.yaml`. Only the `cad:` section is read;
+other top-level sections are ignored, so the file can carry other tools'
+settings too. A `cad-agent.yaml` without a `cad:` section is an error. With no
+`cad-agent.yaml` at all, commands exit 2, and the error names any other
+`*.yaml` or `*.yml` file in the project root with a top-level `cad:` key, so it
+can be renamed: no other file name is read.
 
 | Key | Default | Meaning |
 |-----|---------|---------|
@@ -218,7 +219,7 @@ Unquoted, the title is cut at the comma and the rest becomes a stray key.
 | `cad-agent export-3mf` | `<part>.stl` -> verified, bed-centred `<part>.3mf` for every part in the parts file | 1 on a read-back mismatch |
 | `cad-agent holes [PART ...]` | checks every hole in every part is clear of material: finds the cylindrical holes and countersinks in `exports/<part>.step` (concave, at least 200° of wall, up to 30 mm across), probes each with a cylinder or cone just inside its wall, and writes `exports/hole-checks.json` bound to each STEP's sha256; `all` runs it and the report's "Holes clear" rows fail on material in a hole, a stale result or a check that did not run (config `cad: holes:`, [below](#holes-clear)) | 1 if a hole has material inside |
 | `cad-agent check [--json]` | collects results (no build), prints a table or the results JSON | 1 if any row fails |
-| `cad-agent report [--open]` | writes `exports/cad-agent-results.json` (schema 1.0, the vptest web shape, so `vptest web validate` and its renderer still accept it) and a standalone `docs/cad-agent-report.html` with inline styles (light and dark) that opens from `file://` | 1 if any row fails |
+| `cad-agent report [--open]` | writes `exports/cad-agent-results.json` (results schema 1.0) and a standalone `docs/cad-agent-report.html` with inline styles (light and dark) that opens from `file://` | 1 if any row fails |
 | `cad-agent package` | zip + sha256 manifest from `package.include` | |
 | `cad-agent release [--out DIR] [--no-zip] [--revision TEXT] [--date D]` | the print release: `release/<name>-rev<revision>/index.html` (parts with thumbnails, print settings, slicer mass and time, STEP/STL/3MF links; assembly pages; hardware; source) and a reproducible zip next to it ([below](#the-print-release-cad-agent-release)) | 2 on a bad config (a path outside the project), a missing part file or a foreign `--out` folder |
 | `cad-agent serve [--port N] [--host H]` | serves the project root; writes the URL to `preview/server-url.txt` | |
@@ -378,19 +379,23 @@ result's `assumptions` line repeats the modulus, the strength and the note, and 
 | Key | E (MPa) | Direction | Strength (MPa) | Data sheet |
 |---|---:|---|---:|---|
 | `pla` | 2060 | Z | 25 | Bambu PLA Basic V3.0 (X-Y 2580; Z tensile strength 31) |
-| `petg` | 1120 | Z | 20 | Bambu PETG Basic V2.0 (X-Y 1460). V3.0 is a reformulated filament whose bars are not said to be annealed (2780 / 2550): not used |
+| `petg` | 1120 | Z | 20 | Bambu PETG Basic V2.0 (X-Y 1460). V3.0 is a reformulated filament whose bars are not said to be annealed (2780 / 2550): a spool does not say which it is, and the lower modulus is the cautious one for deflection (`cad-agent snapfit` takes V3.0's, the cautious one for forces) |
 | `petg_cf` | 1340 | Z | 22 | Bambu PETG-CF V3.0 (X-Y 2460; Z tensile strength 29) |
 | `pa_cf` | 1820 | Z | 40 | Bambu PAHT-CF V3.0, dry (Z bending, the sheet's lowest; Z tensile 2180, X-Y 3860) |
-| `pa6_cf_xy` | 2126 | X-Y | 49 | Bambu PA6-CF V3.0, dry X-Y x0.6 humid x0.8 print. Uncertain: the x0.6 is a strength ratio, and a part that takes up water may be about half this stiff (#157) |
-| `pa6_cf_z` | 1042 | Z | 23 | Bambu PA6-CF V3.0, dry Z x0.6 humid x0.8 print. Uncertain in the same way |
+| `pa6_cf_xy` | 1029 | X-Y | 40.8 | Bambu PA6-CF V3.0, dry X-Y, humid (modulus x0.290, strength x0.500: Polymaker PA6-CF20 V1.1, water-saturated / dry) x0.8 print (#157) |
+| `pa6_cf_z` | 488 | Z | 18.1 | Bambu PA6-CF V3.0, dry Z, humid (x0.281, x0.472) x0.8 print |
 | `tpu95` | 7.4 | Z | 8 | Bambu TPU 95A HF V1.0 (X-Y 9.8; Polymaker lists 33.6): indicative only |
 
 The modulus is the sheet's lowest, across the layers, because the solver is isotropic and does not know how the part
 was printed, so deflections come out higher than with the sheet's in-plane values. They are not an upper bound on a
 print. The mesh is the solid CAD, and a print with sparse infill or thin walls can be softer still. The isotropic shear
 modulus does not bound a print's shear stiffness between layers either, which matters for short, thick parts. The
-two humid PA6-CF rows may be too stiff (table). Under forces and torques the stress does not depend on E, so only
-deflection and stiffness change with it.
+two humid PA6-CF rows take the modulus ratio of a water-saturated print (0.28–0.29 of dry). That is a judgement for
+the cautious end: no sheet gives a print conditioned in room air, where moulded PA6 keeps 0.31–0.58 of its dry
+modulus (unfilled to 30 % glass), so in room air these rows may be up to about 2x too soft, and a force at a given
+travel reads low ([research](../research/compliant-mechanisms.md), section 5). Under
+forces and torques the stress does not depend on E, so only deflection and stiffness change with it. The metals
+(`al6061`, `al7075`, `steel`) use design minimums from MIL-HDBK-5J, not typical values (#157); `cf_tube` is typical.
 
 At a given travel it is different. `stiffness_n_per_mm` is lower than with the in-plane modulus. So a force worked out
 from it at a given travel (a clip's retention, a flexure's preload, a spring rate) reads lower than for a solid part
@@ -643,20 +648,17 @@ PYTHONPATH=src /path/to/project/.venv/bin/python -m pytest tests -q
 
 The geometry and render tests skip unless cadquery and vtk are importable.
 
-## Coming from vptest
+## File names and environment variables
 
-| vptest cad | cad-agent |
-|------------|-----------|
-| `vptest cad <subcommand>` | `cad-agent <subcommand>` (same subcommands, options and exit codes) |
-| `vptest.yaml` | `cad-agent.yaml`; `vptest.yaml` is still read when `cad-agent.yaml` is absent |
-| `exports/vptest-cad-results.json` | `exports/cad-agent-results.json` (same schema) |
-| `docs/vptest-cad-report.html` | `docs/cad-agent-report.html` |
-| `VPTEST_CAD_PROJECT` (set for steps) | `CAD_AGENT_PROJECT`; the old name is still set |
-| `VPTEST_CAD_RENDER_ONLY` | `CAD_AGENT_RENDER_ONLY`; the old name is read when the new one is unset |
-| `from vptest.cad.x import ...` | `from cadagent.x import ...` |
-
-Pages that link to the old report or results file names need their links
-updated, or `html_pages` will report them as broken.
+| Name | What it is |
+|------|------------|
+| `cad-agent.yaml` | the project config at the project root; only its `cad:` section is read ([above](#the-cad-section-of-cad-agentyaml)) |
+| `cad-agent <subcommand>` | the commands ([above](#commands)); `python -m cadagent.cli <subcommand>` without the console script |
+| `exports/cad-agent-results.json` | the results, schema 1.0, written by `cad-agent report` |
+| `docs/cad-agent-report.html` | the standalone report page (in `docs_dir`), written by `cad-agent report` with the results |
+| `CAD_AGENT_PROJECT` | set to the project root for every build step and design evaluator |
+| `CAD_AGENT_RENDER_ONLY` | comma-separated picture names: a `Renderer` made without `only=` renders just those |
+| `from cadagent.<package> import ...` | the Python API ([package layout](#package-layout-v050)) |
 
 ## Holes clear
 

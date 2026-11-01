@@ -47,7 +47,10 @@ def test_only_filter_skips_other_names(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match="unknown view"):
         Renderer(tmp_path, only=["c.png"]).render("c.png", meshes=[(stl, (1, 0, 0))], view="diagonal")
 
-def test_only_filter_reads_the_legacy_variable(tmp_path, monkeypatch):
+def test_only_filter_reads_only_the_named_variable(tmp_path, monkeypatch):
     monkeypatch.delenv("CAD_AGENT_RENDER_ONLY", raising=False)
-    monkeypatch.setenv("VPTEST_CAD_RENDER_ONLY", "b.png")
-    assert Renderer(tmp_path, size=(200, 150)).only == {"b.png"}
+    assert Renderer(tmp_path, size=(200, 150)).only is None
+    monkeypatch.setenv("MY_RENDER_ONLY", " b.png, c.png")
+    assert Renderer(tmp_path, size=(200, 150)).only is None
+    assert Renderer(tmp_path, size=(200, 150), only_env="MY_RENDER_ONLY").only == {"b.png", "c.png"}
+    assert Renderer(tmp_path, size=(200, 150), only=[], only_env="MY_RENDER_ONLY").only == set()

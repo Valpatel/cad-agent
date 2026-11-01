@@ -34,6 +34,8 @@ Name the file `<issue>-<short-slug>.md`. Write bullets under one or more of thes
 - **What it refuses:**
   - a fragment with text before its first heading;
   - an unknown heading;
-  - a heading with no bullet.
+  - a heading with no bullet;
+  - a Markdown heading (`## …`, `### …`), which would break the entry;
+  - a one-line lead-in such as `**Projects must change:** text`: put the heading on its own line and the text in bullets.
 
   `tests/test_cut_release.py` parses every fragment in this folder, so a malformed one fails CI.

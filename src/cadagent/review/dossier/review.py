@@ -609,9 +609,8 @@ def _diff_paths(p: _Project, section: str) -> List[str]:
     params = (geo.get("parameters") or {}).get("file")
     if isinstance(params, str) and params:
         paths.add(params)
-    for name in ("cad-agent.yaml", "vptest.yaml"):
-        if (root / name).is_file():
-            paths.add(name)
+    if (root / "cad-agent.yaml").is_file():
+        paths.add("cad-agent.yaml")
     return sorted(x for x in paths if x and (root / x).exists())
 
 

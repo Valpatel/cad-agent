@@ -49,9 +49,18 @@ adjacent copy. The worker cannot inherit the document's import map. The applicat
 wrapper validates geometry and applies the file's declared units; it does not
 modify the loaders' tessellation or substitute another file.
 
-`file-parsers/fflate.module.js` is Three r160's unmodified fflate 0.6.9 copy.
-Its MIT license is `file-parsers/FFLATE-LICENSE.txt`.
-Source: https://github.com/101arrowz/fflate/tree/v0.6.9
+## ZIP reader: fflate 0.8.3
+
+`file-parsers/fflate.module.js` is the unmodified ES module build (`esm/browser.js`)
+of https://registry.npmjs.org/fflate/-/fflate-0.8.3.tgz , and its MIT license,
+`file-parsers/FFLATE-LICENSE.txt`, is the package's `LICENSE`.
+Source: https://github.com/101arrowz/fflate/tree/v0.8.3 .
+It replaces the fflate 0.6.9 copy that Three r160 bundles, because `unzipSync` in
+0.6.9 can loop forever on a crafted ZIP64 directory entry (GHSA-px8p-9vwx-vf98,
+fixed in 0.8.3). The 3MF loader and the worker call only `unzipSync` and `strFromU8`,
+which keep their signatures in 0.8. Since 0.7 fflate throws `Error` objects, not strings,
+so the worker turns any fflate or loader failure into its one generic message rather
+than showing fflate's internal text.
 
 ## Worker XML DOM: LinkeDOM 0.18.12
 

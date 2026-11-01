@@ -15,6 +15,10 @@ function zipBudget(bytes){
   }
   if(at!==end)throw new Error('The 3MF ZIP directory is damaged.');
 }
+const UNDECODABLE='The model file could not be decoded.';
+// fflate (Error objects since 0.7: "invalid block type") and the 3MF loader (a TypeError after its own unzip fails) throw
+// internal text. Readers see one plain message; the checks written for them below keep their own words.
+function decoded(read){try{return read();}catch{throw new Error(UNDECODABLE);}}
 function materialData(material){return{color:material.color?.toArray()||[.68,.73,.77],opacity:material.opacity??1};}
 onmessage=async({data})=>{
   try{
@@ -35,11 +39,11 @@ onmessage=async({data})=>{
       // The official loader still constructs texture-backed surfaces; maps are omitted
       // from our geometry packet, with a visible limitation whenever one is present.
       TextureLoader.prototype.load=function(url,onLoad){const texture=new Texture();if(onLoad)onLoad(texture);return texture;};
-      let zip=unzipSync(new Uint8Array(data.buffer),{filter:file=>/\.model$/i.test(file.name)});
+      let zip=decoded(()=>unzipSync(new Uint8Array(data.buffer),{filter:file=>/\.model$/i.test(file.name)}));
       const names=Object.keys(zip).filter(name=>/\.model$/i.test(name));if(!names.length)throw new Error('The 3MF archive has no model document.');
       const units=new Set();
       for(const name of names){
-        const xml=new DOMParser().parseFromString(strFromU8(zip[name]),'application/xml'),model=xml.querySelector('model');
+        const xml=decoded(()=>new DOMParser().parseFromString(strFromU8(zip[name]),'application/xml')),model=xml.querySelector('model');
         if(!model)throw new Error('The 3MF model XML is invalid.');
         units.add(model.getAttribute('unit')||'millimeter');
         const required=model.getAttribute('requiredextensions');
@@ -49,7 +53,7 @@ onmessage=async({data})=>{
       zip=null;
       if(units.size!==1)throw new Error('This 3MF contains mixed model units; use its authoring tool to inspect it.');
       unit=[...units][0];const scale=UNITS_MM[unit];if(!scale)throw new Error('This 3MF declares an unsupported unit: '+unit+'.');
-      const group=new ThreeMFLoader().parse(data.buffer);if(!group)throw new Error('The 3MF reader could not build this file.');
+      const group=decoded(()=>new ThreeMFLoader().parse(data.buffer));if(!group)throw new Error('The 3MF reader could not build this file.');
       group.updateMatrixWorld(true);meshes=[];
       group.traverse(object=>{
         if(!object.isMesh)return;
@@ -71,5 +75,5 @@ onmessage=async({data})=>{
     }
     const model=validateModel({meshes,format:data.format.toUpperCase(),unit,unitNote,warnings:[...new Set(warnings)]});
     postMessage({model},transferBuffers(model));
-  }catch(error){postMessage({error:error?.message||'The model file could not be decoded.'});}
+  }catch(error){postMessage({error:error?.message||UNDECODABLE});}
 };

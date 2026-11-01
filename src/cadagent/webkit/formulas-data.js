@@ -7,19 +7,19 @@ export const MATERIALS = [
   "key": "pla-bambu-basic",
   "name": "Bambu PLA Basic",
   "condition": "",
-  "source": "Bambu Lab TDS V2.0 https://www.additive-x.com/shop/mpattachments/file/viewonline/id/494/product_id/2236",
+  "source": "Bambu Lab PLA Basic Technical Data Sheet V3.0 (PDF of 2025-04-25), p. 2, Mechanical Properties: https://store.bblcdn.com/s1/default/58b85d0f3db94878854a28fdb8a0006e/Bambu_PLA_Basic_Technical_Data_Sheet.pdf; Bambu Lab PLA Basic Technical Data Sheet V2.0 (PDF of 2023-03-11), p. 2, Mechanical Properties: https://www.additive-x.com/shop/mpattachments/file/viewonline/id/494/product_id/2236",
   "modulus": {
    "along": 2680000000.0,
    "across": 2160000000.0
   },
   "allowable": {
    "along": {
-    "single": 0.010186567164179103,
-    "repeated": 0.0061119402985074615
+    "single": 0.009496124031007752,
+    "repeated": 0.005697674418604651
    },
    "across": {
-    "single": 0.010186567164179103,
-    "repeated": 0.0061119402985074615
+    "single": 0.009496124031007752,
+    "repeated": 0.005697674418604651
    }
   }
  },
@@ -27,19 +27,19 @@ export const MATERIALS = [
   "key": "pla-bambu-matte",
   "name": "Bambu PLA Matte",
   "condition": "",
-  "source": "Bambu Lab TDS V2.0 https://www.additive-x.com/shop/mpattachments/file/viewonline/id/513/product_id/2261",
+  "source": "Bambu Lab PLA Matte Technical Data Sheet V3.0 (PDF of 2025-04-25), p. 2, Mechanical Properties: https://store.bblcdn.com/s7/default/5b061f2feeac4ba88f355a33248bbda7/Bambu_PLA_Matte_Technical_Data_Sheet.pdf; Bambu Lab PLA Matte Technical Data Sheet V2.0 (PDF of 2023-05-10), p. 2, Mechanical Properties: https://www.additive-x.com/shop/mpattachments/file/viewonline/id/513/product_id/2261",
   "modulus": {
    "along": 1960000000.0,
    "across": 1670000000.0
   },
   "allowable": {
    "along": {
-    "single": 0.011428571428571429,
-    "repeated": 0.006857142857142857
+    "single": 0.010714285714285714,
+    "repeated": 0.0064285714285714285
    },
    "across": {
-    "single": 0.010479041916167664,
-    "repeated": 0.006287425149700598
+    "single": 0.009221556886227543,
+    "repeated": 0.005532934131736526
    }
   }
  },
@@ -47,15 +47,15 @@ export const MATERIALS = [
   "key": "pla-polymaker",
   "name": "Polymaker PolyLite PLA",
   "condition": "",
-  "source": "Polymaker TDS V5.4 https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/pla/polylite-tm-pla",
+  "source": "Polymaker PolyLite PLA Technical Data Sheet V5.4 (PDF of 2024-04-29), p. 4, Mechanical Properties: https://cdn.shopify.com/s/files/1/0548/7299/7945/files/PolyLite_PLA_TDS_EN_V5.4.pdf",
   "modulus": {
-   "along": 3427000000.0,
-   "across": 3065000000.0
+   "along": 3426900000.0,
+   "across": 3064900000.0
   },
   "allowable": {
    "along": {
-    "single": 0.010682812955938136,
-    "repeated": 0.006409687773562881
+    "single": 0.010683124689953017,
+    "repeated": 0.00640987481397181
    },
    "across": {
     "single": 0.009000000000000001,
@@ -67,19 +67,19 @@ export const MATERIALS = [
   "key": "petg-bambu-basic",
   "name": "Bambu PETG Basic",
   "condition": "",
-  "source": "Bambu Lab TDS V2.0 https://www.additive-x.com/shop/mpattachments/file/viewonline/id/580/product_id/2330",
+  "source": "Bambu Lab PETG Basic Technical Data Sheet V3.0 (PDF of 2026-01-25), p. 2, Mechanical Properties: https://store.bblcdn.com/s1/default/cb94589bf7994fdcbfa833badefae9cd/Bambu_PETG_Basic_Technical_Data_Sheet.pdf; Bambu Lab PETG Basic Technical Data Sheet V2.0 (PDF of 2023-06-26), p. 2, Mechanical Properties: https://www.additive-x.com/shop/mpattachments/file/viewonline/id/580/product_id/2330",
   "modulus": {
-   "along": 1460000000.0,
-   "across": 1120000000.0
+   "along": 2780000000.0,
+   "across": 2550000000.0
   },
   "allowable": {
    "along": {
-    "single": 0.023013698630136983,
-    "repeated": 0.01380821917808219
+    "single": 0.012841726618705035,
+    "repeated": 0.00770503597122302
    },
    "across": {
-    "single": 0.023013698630136983,
-    "repeated": 0.01380821917808219
+    "single": 0.009607843137254901,
+    "repeated": 0.005764705882352941
    }
   }
  },
@@ -87,7 +87,7 @@ export const MATERIALS = [
   "key": "petg-bambu-hf",
   "name": "Bambu PETG HF",
   "condition": "",
-  "source": "Bambu Lab TDS V1.0 https://botland.com.pl/img/art/inne/25540_karta_produktu.pdf",
+  "source": "Bambu Lab PETG HF Technical Data Sheet V1.0 (PDF of 2024-07-18), p. 2, Mechanical Properties: https://store.bblcdn.com/3a230e260a3a47c2b0db0156e07eef91.pdf",
   "modulus": {
    "along": 1810000000.0,
    "across": 1540000000.0
@@ -107,19 +107,19 @@ export const MATERIALS = [
   "key": "petg-cf-bambu",
   "name": "Bambu PETG-CF",
   "condition": "",
-  "source": "Bambu Lab TDS V2.0 https://www.additive-x.com/shop/mpattachments/file/viewonline/id/596/product_id/2346",
+  "source": "Bambu Lab PETG-CF Technical Data Sheet V3.0 (PDF of 2023-08-29), p. 2, Mechanical Properties: https://store.bblcdn.com/626e4f424bf345ae965ad0ddfcaf2459.pdf; Bambu Lab PETG-CF Technical Data Sheet V2.0 (PDF of 2023-03-11), p. 2, Mechanical Properties: https://www.additive-x.com/shop/mpattachments/file/viewonline/id/596/product_id/2346",
   "modulus": {
    "along": 2460000000.0,
    "across": 1340000000.0
   },
   "allowable": {
    "along": {
-    "single": 0.01678861788617886,
-    "repeated": 0.010073170731707317
+    "single": 0.009959349593495936,
+    "repeated": 0.005975609756097561
    },
    "across": {
-    "single": 0.01678861788617886,
-    "repeated": 0.010073170731707317
+    "single": 0.009959349593495936,
+    "repeated": 0.005975609756097561
    }
   }
  },
@@ -127,19 +127,19 @@ export const MATERIALS = [
   "key": "petg-polymaker",
   "name": "Polymaker PolyLite PETG",
   "condition": "",
-  "source": "Polymaker TDS V5.4 https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/petg-pet/polylite-tm-petg",
+  "source": "Polymaker PolyLite PETG Technical Data Sheet V5.4 (PDF of 2024-04-22), p. 4, Mechanical Properties: https://cdn.shopify.com/s/files/1/0548/7299/7945/files/PolyLite_PETG_TDS_EN_V5.4.pdf",
   "modulus": {
-   "along": 2117000000.0,
-   "across": 1899000000.0
+   "along": 2116800000.0000002,
+   "across": 1898700000.0
   },
   "allowable": {
    "along": {
-    "single": 0.01679735474728389,
-    "repeated": 0.010078412848370334
+    "single": 0.016798941798941796,
+    "repeated": 0.010079365079365077
    },
    "across": {
-    "single": 0.015776724591890466,
-    "repeated": 0.00946603475513428
+    "single": 0.015779217359245798,
+    "repeated": 0.009467530415547478
    }
   }
  },
@@ -147,19 +147,19 @@ export const MATERIALS = [
   "key": "asa-bambu",
   "name": "Bambu ASA",
   "condition": "annealed and dried 80 degC / 12 h",
-  "source": "Bambu Lab TDS V2.0 https://www.additive-x.com/shop/mpattachments/file/viewonline/id/612/product_id/2399",
+  "source": "Bambu Lab ASA Technical Data Sheet V3.0 (PDF of 2023-09-19), p. 2, Mechanical Properties: https://store.bblcdn.com/ad7b08230c164e72856cffbe06bb7dc9.pdf; Bambu Lab ASA Technical Data Sheet V2.0 (PDF of 2023-07-26), p. 2, Mechanical Properties: https://www.additive-x.com/shop/mpattachments/file/viewonline/id/612/product_id/2399",
   "modulus": {
    "along": 2450000000.0,
    "across": 2120000000.0
   },
   "allowable": {
    "along": {
-    "single": 0.014857142857142857,
-    "repeated": 0.008914285714285713
+    "single": 0.01057142857142857,
+    "repeated": 0.006342857142857142
    },
    "across": {
-    "single": 0.011556603773584905,
-    "repeated": 0.0069339622641509426
+    "single": 0.010235849056603774,
+    "repeated": 0.006141509433962264
    }
   }
  },
@@ -167,7 +167,7 @@ export const MATERIALS = [
   "key": "asa-polymaker",
   "name": "Polymaker PolyLite ASA",
   "condition": "",
-  "source": "Polymaker TDS V5.4 https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/abs-asa/polylite-tm-asa",
+  "source": "Polymaker ASA Technical Data Sheet V6.0 (PDF of 2025-12-02), p. 1, Mechanical Properties: https://cdn.shopify.com/s/files/1/0548/7299/7945/files/PolyLite_ASA_TDS_EN_V5.4.pdf",
   "modulus": {
    "along": 2379000000.0,
    "across": 1965000000.0
@@ -187,7 +187,7 @@ export const MATERIALS = [
   "key": "copa-polymaker-dry",
   "name": "Polymaker PolyMide CoPA (dry)",
   "condition": "dry, annealed 80 degC / 6 h",
-  "source": "Polymaker TDS V5.4 https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/nylon/polymide-tm-copa",
+  "source": "Polymaker PolyMide CoPA Technical Data Sheet V5.4 (PDF of 2024-04-14), p. 4, Mechanical Properties (Dry Status): https://cdn.shopify.com/s/files/1/0548/7299/7945/files/PolyMide_CoPA_TDS_V5.4.pdf",
   "modulus": {
    "along": 2703000000.0,
    "across": 2209000000.0
@@ -207,7 +207,7 @@ export const MATERIALS = [
   "key": "copa-polymaker-wet",
   "name": "Polymaker PolyMide CoPA (wet)",
   "condition": "water-saturated (6.16 % moisture)",
-  "source": "Polymaker TDS V5.4 https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/nylon/polymide-tm-copa",
+  "source": "Polymaker PolyMide CoPA Technical Data Sheet V5.4 (PDF of 2024-04-14), p. 4, Mechanical Properties (Wet Status): https://cdn.shopify.com/s/files/1/0548/7299/7945/files/PolyMide_CoPA_TDS_V5.4.pdf",
   "modulus": {
    "along": 724000000.0,
    "across": 660000000.0
@@ -227,10 +227,10 @@ export const MATERIALS = [
   "key": "pa6-cf20-polymaker-dry",
   "name": "Polymaker Fiberon PA6-CF20 (dry)",
   "condition": "dry, annealed 100 degC / 16 h",
-  "source": "Polymaker TDS V1.1 https://cdn.shopify.com/s/files/1/0548/7299/7945/files/TDS_FIBERON_PA6-CF20_V1.1_EN.pdf",
+  "source": "Polymaker Fiberon PA6-CF20 Technical Data Sheet V1.1 (PDF of 2024-12-08), p. 1, Mechanical Properties - Dry Status: https://cdn.shopify.com/s/files/1/0548/7299/7945/files/TDS_FIBERON_PA6-CF20_V1.1_EN.pdf",
   "modulus": {
-   "along": 8637000000.0,
-   "across": 3760000000.0
+   "along": 8636500000.0,
+   "across": 3759500000.0
   },
   "allowable": {
    "along": {
@@ -247,10 +247,10 @@ export const MATERIALS = [
   "key": "pa6-cf20-polymaker-wet",
   "name": "Polymaker Fiberon PA6-CF20 (wet)",
   "condition": "water-saturated",
-  "source": "Polymaker TDS V1.1 https://cdn.shopify.com/s/files/1/0548/7299/7945/files/TDS_FIBERON_PA6-CF20_V1.1_EN.pdf",
+  "source": "Polymaker Fiberon PA6-CF20 Technical Data Sheet V1.1 (PDF of 2024-12-08), p. 1, Mechanical Properties - Wet Status: https://cdn.shopify.com/s/files/1/0548/7299/7945/files/TDS_FIBERON_PA6-CF20_V1.1_EN.pdf",
   "modulus": {
-   "along": 2508000000.0,
-   "across": 1056000000.0
+   "along": 2508100000.0,
+   "across": 1056099999.9999999
   },
   "allowable": {
    "along": {

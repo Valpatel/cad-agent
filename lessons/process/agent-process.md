@@ -46,7 +46,8 @@ flowchart TD
 - **Rule:** Before committing, pushing, opening PRs, publishing repos or installing third-party plugins, ask and wait
   for a clear yes. Build locally first.
 - **Incident:**
-  - The `vptest cad` work stayed uncommitted in a separate worktree: "I'll ask before committing or opening a PR."
+  - The first CAD report tooling stayed uncommitted in a separate worktree: "I'll ask before committing or opening a
+    PR."
   - For the proposed public repo, the agent proposed building locally first and publishing only after review, because
     public content may be copied or indexed.
   - Installing text-to-cad or a KiCad MCP server "runs their code on your machine", so the agent asked for a go-ahead
@@ -95,8 +96,8 @@ flowchart TD
   the main thread, resume agents after interruptions, and verify their claims before relaying them.
 - **Incident:**
   - The roughly 15-minute build-and-check pipeline ran in the background while the agent edited docs and the site.
-  - The user asked to "standardize the tooling for the report under some vptest repo sub-folder for CAD designs". One
-    sub-agent first mapped vptest's conventions read-only. A second built `vptest cad` in a separate worktree.
+  - The user asked to standardize the report tooling for CAD designs inside an existing test repo. One sub-agent first
+    mapped that repo's conventions read-only. A second built the CAD tooling in a separate worktree.
   - The second agent was cut off by a session restart before it wrote anything, and was restarted.
   - Its report included a fixed fallback-parser bug with a test that catches it, failing tests compared against a
     clean HEAD before being called pre-existing, and a tracked file the test suite had rewritten, which it restored.

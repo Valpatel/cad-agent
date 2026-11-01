@@ -131,7 +131,7 @@ active. Pin its version (`kicad-mcp-pro==4.4.0`) and keep the default profile un
 only if KiCad 9 is required. Treat Seeed as all-rights-reserved until it commits a LICENSE file. obhox/kicad-mcp is
 AGPL: run it only as an external program.
 
-(Updated 2026-11-01: Konnect was archived on 2026-10-26 and continues as a commercial, closed-source product, so it is
+(Updated 2026-10-31: Konnect was archived on 2026-10-26 and continues as a commercial, closed-source product, so it is
 no longer a candidate; KiCAD-MCP-Server is still maintained under MIT.)
 
 ## 4. Mechanical + PCB co-design (ECAD to MCAD)

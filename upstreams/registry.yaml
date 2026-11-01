@@ -87,7 +87,7 @@
   policy: ideas only (PolyForm Noncommercial)
 - name: Svetlana-DAO-LLC/cad-agent
   what: "Docker server where an agent sends build123d code over HTTP or MCP and gets back PNG renders and exports"
-  areas: [3d-printing]
+  areas: [cad-modelling, 3d-printing]
   url: https://github.com/Svetlana-DAO-LLC/cad-agent
   license: LicenseRef-CAD-Agent-License
   stars: 53
@@ -114,7 +114,7 @@
   policy: may incorporate with attribution
 - name: jhacksman/OpenSCAD-MCP-Server
   what: "MCP server that builds OpenSCAD source or primitive dimensions into SCAD, STL and four PNG previews"
-  areas: [cad-modelling]
+  areas: [cad-modelling, 3d-printing]
   url: https://github.com/jhacksman/OpenSCAD-MCP-Server
   license: MIT
   stars: 208
@@ -123,7 +123,7 @@
   policy: may incorporate with attribution
 - name: RobertCoop/openscad-mcp
   what: "MCP server for designing printable parts in OpenSCAD: renders, measures, checks interference and exports"
-  areas: [3d-printing]
+  areas: [cad-modelling, 3d-printing]
   url: https://github.com/RobertCoop/openscad-mcp
   license: MIT
   stars: 164
@@ -174,7 +174,7 @@
   stars: 1399
   last_push: 2026-10-26
   status: rejected
-  policy: archived 2026-10-26 (read-only; its AGPL-3.0 releases stay up); continues as Konnect-EDA, commercial and closed source
+  policy: external program only (AGPL-3.0); archived 2026-10-26 (read-only; its AGPL-3.0 releases stay up); continues as Konnect-EDA, commercial and closed source
 - name: oaslananka/kicad-mcp-pro
   what: "MCP server for KiCad schematic, PCB, ERC/DRC, DFM and manufacturing-export work, read-only by default"
   areas: [circuit-boards]
@@ -248,51 +248,51 @@
   status: candidate
   policy: ideas only (no licence)
 - name: OpenFOAM (OpenCFD v2512)
-  what: "Open-source CFD toolbox; cad-agent writes conjugate heat-transfer cases for it from CAD"
+  what: "Open-source CFD toolbox: solvers for fluid flow and heat transfer, with meshing and post-processing"
   areas: [cfd, airflow-and-fans]
   url: https://develop.openfoam.com/Development/openfoam
   license: GPL-3.0
   last_push: 2026-01-23
   status: adopted
-  policy: external program only (GPL-3.0); run in the opencfd/openfoam-default Docker image
+  policy: external program only (GPL-3.0); run in the opencfd/openfoam-default Docker image; cad-agent writes conjugate heat-transfer cases for it from CAD
 - name: aatmdelissen/pyMOTO
-  what: "Modular Python framework for topology optimisation; cad-agent topopt runs SIMP with MMA on it"
+  what: "Modular Python framework for topology optimisation, with semi-automatic sensitivities and an MMA optimiser"
   areas: [topology-optimisation]
   url: https://github.com/aatmdelissen/pyMOTO
   license: MIT
   last_push: 2026-05-01
   status: adopted
-  policy: may incorporate with attribution (imported as a dependency)
+  policy: may incorporate with attribution (imported as a dependency); cad-agent topopt runs SIMP with MMA on it
 - name: pyvista/pyvista
-  what: "3D visualisation and mesh analysis on VTK; cad-agent renders stress and flow pictures and animations with it"
+  what: "3D plotting and mesh analysis through a streamlined interface to VTK"
   areas: [results-and-visuals]
   url: https://github.com/pyvista/pyvista
   license: MIT
   status: adopted
-  policy: may incorporate with attribution (imported as a dependency)
+  policy: may incorporate with attribution (imported as a dependency); cad-agent renders stress and flow pictures and animations with it
 - name: bambulab/BambuStudio
-  what: "Slicer for Bambu Lab and other printers; cad-agent runs its command line for real grams and print times"
+  what: "Open-source slicer for Bambu Lab and other printers, with a command line for slicing without the app"
   areas: [3d-printing]
   url: https://github.com/bambulab/BambuStudio
   license: AGPL-3.0
   status: adopted
-  policy: external program only (AGPL-3.0); command-line slicing for filament grams
+  policy: external program only (AGPL-3.0); cad-agent runs its command line for real filament grams and print times
 - name: optuna/optuna
-  what: "Hyperparameter optimisation framework; cad-agent optimise uses its NSGA-II and TPE samplers"
+  what: "Hyperparameter optimisation framework with define-by-run search spaces and samplers such as TPE and NSGA-II"
   areas: [design-exploration]
   url: https://github.com/optuna/optuna
   license: MIT
   status: adopted
   policy: optional dependency (the explore extra, optuna>=3.4); runs the NSGA-II and TPE samplers of cad-agent optimise
 - name: OrcaSlicer/OrcaSlicer
-  what: "Open-source FDM slicer for many printer brands; the 2.5 beta adds a built-in MCP server and a CAD tab"
+  what: "Open-source FDM slicer for many printer brands; the 2.5 beta adds an experimental Design (CAD) tab, off by default"
   areas: [3d-printing]
   url: https://github.com/OrcaSlicer/OrcaSlicer
   license: AGPL-3.0
   stars: 16253
   last_push: 2026-10-31
   status: candidate
-  policy: "external program only (AGPL-3.0); built-in MCP server in 2.5.0 (beta 2026-10-27): adopt as an external process once stable"
+  policy: "external program only (AGPL-3.0); the 2.5.0 beta (2026-10-27) has an experimental, off-by-default MCP control socket for its Design tab, and a general MCP server is a draft PR: revisit as an external process once one ships"
 - name: OrcaSlicer/orcaslicer-mcp-skills
   what: "OrcaSlicer's own agent skills for driving the slicer through its built-in MCP server, from setup to slicing"
   areas: [3d-printing]
@@ -412,7 +412,7 @@
   policy: "may incorporate with attribution: the selection table and evals are the ideas to take for #94, after recomputing its strain values (about 2x the datasheet-derived ones); nothing vendored yet"
 - name: MP-AI-20/mechanical-engineering-skills
   what: "Library of 647 prompt-style mechanical-engineering skills, from strength of materials to GD&T"
-  areas: [cad-modelling]
+  areas: [mechanical]
   url: https://github.com/MP-AI-20/mechanical-engineering-skills
   license: MIT
   stars: 10

@@ -50,7 +50,7 @@ domains:
         title: CAD modelling and kernels
         scope: Code-CAD kernels and libraries, parametric modelling, and CAD-program bridges for agents (MCP servers).
         maturity: tooling
-        pages: [research/landscape.md]
+        pages: [docs/toolkit.md, research/landscape.md]
         api: [cadagent.geometry]
       - slug: mechanisms
         title: Mechanisms

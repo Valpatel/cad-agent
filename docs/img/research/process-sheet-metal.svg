@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 608" width="680" height="608" role="img" aria-label="Sheet metal: the same rule from different sources, at T = 1.5 mm, R = 1.5 mm" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif">
+<rect width="680" height="608" rx="14" fill="#fffdf5" stroke="#d8e0d3"/>
+<text x="18" y="30" font-size="15" font-weight="700" fill="#173d3c">Sheet metal: the same rule from different sources, at T = 1.5 mm, R = 1.5 mm</text>
+<text x="18" y="50" font-size="12" fill="#526863">Generic rules evaluated from research/process-profiles.yaml; orange is one shop's real tooling.</text>
+<line x1="300.0" y1="70" x2="300.0" y2="562" stroke="#d8e0d3"/>
+<text x="300.0" y="577" font-size="11" fill="#526863" text-anchor="middle">0</text>
+<line x1="353.0" y1="70" x2="353.0" y2="562" stroke="#d8e0d3"/>
+<text x="353.0" y="577" font-size="11" fill="#526863" text-anchor="middle">2</text>
+<line x1="406.0" y1="70" x2="406.0" y2="562" stroke="#d8e0d3"/>
+<text x="406.0" y="577" font-size="11" fill="#526863" text-anchor="middle">4</text>
+<line x1="459.0" y1="70" x2="459.0" y2="562" stroke="#d8e0d3"/>
+<text x="459.0" y="577" font-size="11" fill="#526863" text-anchor="middle">6</text>
+<line x1="512.0" y1="70" x2="512.0" y2="562" stroke="#d8e0d3"/>
+<text x="512.0" y="577" font-size="11" fill="#526863" text-anchor="middle">8</text>
+<line x1="565.0" y1="70" x2="565.0" y2="562" stroke="#d8e0d3"/>
+<text x="565.0" y="577" font-size="11" fill="#526863" text-anchor="middle">10</text>
+<line x1="618.0" y1="70" x2="618.0" y2="562" stroke="#d8e0d3"/>
+<text x="618.0" y="577" font-size="11" fill="#526863" text-anchor="middle">12</text>
+<text x="618.0" y="592" font-size="11" fill="#526863" text-anchor="end">mm</text>
+<text x="18" y="93" font-size="12.5" font-weight="700" fill="#173d3c">Minimum flange length</text>
+<text x="290" y="116.0" font-size="12" fill="#173d3c" text-anchor="end">Protolabs</text>
+<rect x="459.0" y="110.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="459.0" cy="112.0" r="5" fill="#6f8a80"/>
+<text x="450.0" y="116.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 6</text>
+<text x="290" y="136.0" font-size="12" fill="#173d3c" text-anchor="end">Gerald Davis</text>
+<rect x="459.0" y="130.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="459.0" cy="132.0" r="5" fill="#6f8a80"/>
+<text x="450.0" y="136.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 6</text>
+<text x="290" y="156.0" font-size="12" fill="#173d3c" text-anchor="end">Century Tywood</text>
+<rect x="578.2" y="150.5" width="39.8" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="578.2" cy="152.0" r="5" fill="#6f8a80"/>
+<text x="569.2" y="156.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 10.5</text>
+<text x="290" y="176.0" font-size="12" fill="#173d3c" text-anchor="end">Protolabs Network (Hubs)</text>
+<rect x="419.2" y="170.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="419.2" cy="172.0" r="5" fill="#6f8a80"/>
+<text x="410.2" y="176.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 4.5</text>
+<text x="290" y="196.0" font-size="12" fill="#173d3c" text-anchor="end">SendCutSend tooling · CRS-059</text>
+<circle cx="508.0" cy="192.0" r="5" fill="#bd3a12"/>
+<text x="517.0" y="196.0" font-size="11" fill="#173d3c" text-anchor="start">7.85</text>
+<text x="18" y="217" font-size="12.5" font-weight="700" fill="#173d3c">Hole to bend (each source's own datum)</text>
+<text x="290" y="240.0" font-size="12" fill="#173d3c" text-anchor="end">Protolabs Network (Hubs)</text>
+<rect x="379.5" y="234.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="379.5" cy="236.0" r="5" fill="#6f8a80"/>
+<text x="370.5" y="240.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 3</text>
+<text x="290" y="260.0" font-size="12" fill="#173d3c" text-anchor="end">Gerald Davis</text>
+<rect x="379.5" y="254.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="379.5" cy="256.0" r="5" fill="#6f8a80"/>
+<text x="370.5" y="260.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 3</text>
+<text x="290" y="280.0" font-size="12" fill="#173d3c" text-anchor="end">Boothroyd Dewhurst</text>
+<rect x="419.2" y="274.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="419.2" cy="276.0" r="5" fill="#6f8a80"/>
+<text x="410.2" y="280.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 4.5</text>
+<text x="290" y="300.0" font-size="12" fill="#173d3c" text-anchor="end">Greg Paulsen</text>
+<rect x="439.1" y="294.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="439.1" cy="296.0" r="5" fill="#6f8a80"/>
+<text x="430.1" y="300.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 5.25</text>
+<text x="290" y="320.0" font-size="12" fill="#173d3c" text-anchor="end">Century Tywood</text>
+<rect x="419.2" y="314.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="419.2" cy="316.0" r="5" fill="#6f8a80"/>
+<text x="410.2" y="320.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 4.5</text>
+<text x="290" y="340.0" font-size="12" fill="#173d3c" text-anchor="end">Protolabs</text>
+<rect x="459.0" y="334.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="459.0" cy="336.0" r="5" fill="#6f8a80"/>
+<text x="450.0" y="340.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 6</text>
+<text x="18" y="361" font-size="12.5" font-weight="700" fill="#173d3c">Bend relief depth</text>
+<text x="290" y="384.0" font-size="12" fill="#173d3c" text-anchor="end">Gerald Davis</text>
+<rect x="379.5" y="378.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="379.5" cy="380.0" r="5" fill="#6f8a80"/>
+<text x="370.5" y="384.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 3</text>
+<text x="290" y="404.0" font-size="12" fill="#173d3c" text-anchor="end">Century Tywood</text>
+<rect x="379.5" y="398.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="379.5" cy="400.0" r="5" fill="#6f8a80"/>
+<text x="370.5" y="404.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 3</text>
+<text x="290" y="424.0" font-size="12" fill="#173d3c" text-anchor="end">SendCutSend</text>
+<rect x="392.8" y="418.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="392.8" cy="420.0" r="5" fill="#6f8a80"/>
+<text x="383.8" y="424.0" font-size="11" fill="#173d3c" text-anchor="end">≥ 3.5</text>
+<text x="290" y="444.0" font-size="12" fill="#173d3c" text-anchor="end">Greg Paulsen</text>
+<rect x="339.8" y="438.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="339.8" cy="440.0" r="5" fill="#6f8a80"/>
+<text x="392.8" y="444.0" font-size="11" fill="#173d3c" text-anchor="start">≥ 1.5</text>
+<text x="290" y="464.0" font-size="12" fill="#173d3c" text-anchor="end">SendCutSend tooling · CRS-059</text>
+<circle cx="395.6" cy="460.0" r="5" fill="#bd3a12"/>
+<text x="404.6" y="464.0" font-size="11" fill="#173d3c" text-anchor="start">3.61</text>
+<text x="18" y="485" font-size="12.5" font-weight="700" fill="#173d3c">Bend relief width</text>
+<text x="290" y="508.0" font-size="12" fill="#173d3c" text-anchor="end">SendCutSend</text>
+<rect x="319.9" y="502.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="319.9" cy="504.0" r="5" fill="#6f8a80"/>
+<text x="372.9" y="508.0" font-size="11" fill="#173d3c" text-anchor="start">≥ 0.75</text>
+<text x="290" y="528.0" font-size="12" fill="#173d3c" text-anchor="end">Protolabs Network (Hubs)</text>
+<rect x="339.8" y="522.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="339.8" cy="524.0" r="5" fill="#6f8a80"/>
+<text x="392.8" y="528.0" font-size="11" fill="#173d3c" text-anchor="start">≥ 1.5</text>
+<text x="290" y="548.0" font-size="12" fill="#173d3c" text-anchor="end">Greg Paulsen</text>
+<rect x="339.8" y="542.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="339.8" cy="544.0" r="5" fill="#6f8a80"/>
+<text x="392.8" y="548.0" font-size="11" fill="#173d3c" text-anchor="start">≥ 1.5</text>
+<text x="18" y="596" font-size="11" fill="#526863">Shop row: SendCutSend's specs file, cold-rolled mild steel CRS-059 (T 1.50, R 1.60 mm). Read 2026-10-31.</text>
+</svg>

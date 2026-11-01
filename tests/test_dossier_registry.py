@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from cadagent.dossier import REGISTRY, Axis, Registry, RegistryError, join, load_dossier
+from cadagent.review.dossier import REGISTRY, Axis, Registry, RegistryError, join, load_dossier
 
 # ------------------------------------------------------------------------------------------------ fixtures
 
@@ -19,7 +19,7 @@ from cadagent.dossier import REGISTRY, Axis, Registry, RegistryError, join, load
 # a revolute joint, a pan bolted to a grounded bench, and the assembly steps.
 BUILD = textwrap.dedent('''\
     import cadquery as cq
-    from cadagent.dossier import Axis, part, cavity, joint, fastener, assembly
+    from cadagent.review.dossier import Axis, part, cavity, joint, fastener, assembly
 
     def hopper_shell_inner(p):
         w = p["wall"]
@@ -139,7 +139,7 @@ def make_project(root: Path, *, s3: str = S3, build: str = BUILD) -> Path:
 @pytest.fixture
 def built(tmp_path):
     pytest.importorskip("cadquery")
-    from cadagent.dossier import build_module
+    from cadagent.review.dossier import build_module
     root = make_project(tmp_path)
     result = build_module(root / "cad" / "build.py", root=root)
     return root, result
@@ -208,7 +208,7 @@ def test_assembly_shapes_is_the_gate_hand_over(built):
 
 
 def test_load_geometry_reads_shapes_back_and_checks_hashes(built):
-    from cadagent.dossier import load_geometry
+    from cadagent.review.dossier import load_geometry
     root, result = built
     again = load_geometry(root / "exports" / "dossier-geometry.json")
     hopper, original = again.parts["hopper"][0], result.parts["hopper"][0]
@@ -224,13 +224,13 @@ def test_load_geometry_reads_shapes_back_and_checks_hashes(built):
 
 def test_hash_is_stable_across_processes_and_ignores_meshing(tmp_path):
     cq = pytest.importorskip("cadquery")
-    from cadagent.dossier import shape_sha256
+    from cadagent.review.dossier import shape_sha256
     box = cq.Workplane().box(10, 20, 30).edges("|Z").fillet(2).val()
     here = shape_sha256(box)
     box.tessellate(0.1)
     assert shape_sha256(box) == here
     assert shape_sha256(box.moved(cq.Location(cq.Vector(0.001, 0, 0)))) != here
-    code = ("import cadquery as cq; from cadagent.dossier import shape_sha256; "
+    code = ("import cadquery as cq; from cadagent.review.dossier import shape_sha256; "
             "print(shape_sha256(cq.Workplane().box(10, 20, 30).edges('|Z').fillet(2).val()))")
     src = str(Path(__file__).resolve().parents[1] / "src")
     other = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True,
@@ -239,7 +239,7 @@ def test_hash_is_stable_across_processes_and_ignores_meshing(tmp_path):
 
 
 def test_rebuild_with_same_parameters_is_identical(built):
-    from cadagent.dossier import build_module
+    from cadagent.review.dossier import build_module
     root, first = built
     again = build_module(root / "cad" / "build.py", root=root, write=False)
     strip = lambda g: {k: v for k, v in g.items() if k != "shapes_dir"}
@@ -301,7 +301,7 @@ def test_join_reports_declaration_mismatches(built):
 
 LEGACY = textwrap.dedent('''\
     import cadquery as cq
-    from cadagent.dossier import Axis, part
+    from cadagent.review.dossier import Axis, part
 
     def _plate(p):
         return cq.Workplane().box(100, 100, 10, centered=(True, True, False)).val()
@@ -331,7 +331,7 @@ LEGACY = textwrap.dedent('''\
 
 def test_dossier_items_migration_path(tmp_path):
     pytest.importorskip("cadquery")
-    from cadagent.dossier import build_module
+    from cadagent.review.dossier import build_module
     root = make_project(tmp_path, build=LEGACY)
     result = build_module(root / "cad" / "build.py", root=root)
     geo = result.geometry
@@ -345,7 +345,7 @@ def test_dossier_items_migration_path(tmp_path):
 
 
 def test_dossier_items_needs_print_parts():
-    from cadagent.dossier import build_module
+    from cadagent.review.dossier import build_module
     import types
     mod = types.ModuleType("m")
     mod.dossier_items = lambda: {}
@@ -501,7 +501,7 @@ def _project(root: Path, build: str, params=None) -> Path:
 
 def test_second_build_records_the_new_print_parts_shapes(tmp_path):
     pytest.importorskip("cadquery")
-    from cadagent.dossier import build_module
+    from cadagent.review.dossier import build_module
     script = _project(tmp_path, PARAM_BUILD)
     first = build_module(script, write=False)
     (tmp_path / "cad" / "parameters.json").write_text(json.dumps({"width": 40}))
@@ -518,13 +518,13 @@ def test_second_build_records_the_new_print_parts_shapes(tmp_path):
 
 def test_builds_do_not_leak_between_projects(tmp_path):
     pytest.importorskip("cadquery")
-    from cadagent.dossier import build_module
-    helper = "import cadquery as cq\nfrom cadagent.dossier import part\n\n@part('{name}')\ndef {name}(p):\n" \
+    from cadagent.review.dossier import build_module
+    helper = "import cadquery as cq\nfrom cadagent.review.dossier import part\n\n@part('{name}')\ndef {name}(p):\n" \
              "    return cq.Workplane().box(1, 1, 1).val()\n"
-    a = _project(tmp_path / "a", "import lid_part\nfrom cadagent.dossier import part\nimport cadquery as cq\n\n"
+    a = _project(tmp_path / "a", "import lid_part\nfrom cadagent.review.dossier import part\nimport cadquery as cq\n\n"
                                  "@part('base')\ndef base(p):\n    return cq.Workplane().box(5, 5, 1).val()\n")
     (tmp_path / "a" / "cad" / "lid_part.py").write_text(helper.format(name="lid"))
-    b = _project(tmp_path / "b", "from cadagent.dossier import part\nimport cadquery as cq\n\n"
+    b = _project(tmp_path / "b", "from cadagent.review.dossier import part\nimport cadquery as cq\n\n"
                                  "@part('bracket')\ndef bracket(p):\n    return cq.Workplane().box(2, 2, 2).val()\n")
     assert set(build_module(a, write=False).parts) == {"lid", "base"}
     assert set(build_module(b, write=False).parts) == {"bracket"}
@@ -535,10 +535,10 @@ def test_builds_do_not_leak_between_projects(tmp_path):
 
 def test_dossier_items_with_fasteners_and_steps_builds_twice(tmp_path):
     pytest.importorskip("cadquery")
-    from cadagent.dossier import build_module
+    from cadagent.review.dossier import build_module
     script = _project(tmp_path, textwrap.dedent('''\
         import cadquery as cq
-        from cadagent.dossier import Axis
+        from cadagent.review.dossier import Axis
 
         def print_parts():
             return {"lid": cq.Workplane().box(10, 10, 2).translate((0, 0, 1)).val(),
@@ -607,9 +607,9 @@ def test_part_flags_are_checked_on_every_path():
 
 def test_root_is_the_project_and_records_hold_no_machine_paths(tmp_path, monkeypatch):
     cq = pytest.importorskip("cadquery")
-    from cadagent.dossier import build_module, load_geometry
-    script = _project(tmp_path / "proj", PARAM_BUILD.replace("def print_parts", "from cadagent.dossier import part\n\n"
-                                                             "@part('tag')\ndef tag(p):\n"
+    from cadagent.review.dossier import build_module, load_geometry
+    script = _project(tmp_path / "proj", PARAM_BUILD.replace("def print_parts", "from cadagent.review.dossier "
+                                                             "import part\n\n@part('tag')\ndef tag(p):\n"
                                                              "    return cq.Workplane().box(1, 1, 1).val()\n\n"
                                                              "def print_parts"))
     elsewhere = tmp_path / "elsewhere"
@@ -636,7 +636,7 @@ def test_root_is_the_project_and_records_hold_no_machine_paths(tmp_path, monkeyp
 
 
 def test_use_registry_scopes_the_module_level_declarations():
-    from cadagent.dossier import current_registry, part, use_registry
+    from cadagent.review.dossier import current_registry, part, use_registry
     with use_registry() as reg:
         assert current_registry() is reg
 
@@ -647,8 +647,8 @@ def test_use_registry_scopes_the_module_level_declarations():
 
 def test_shared_content_hash_and_hand_over_with_hashes(built):
     import cadquery as cq
-    from cadagent import evidence
-    from cadagent.dossier import load_geometry, shape_sha256
+    from cadagent.review import evidence
+    from cadagent.review.dossier import load_geometry, shape_sha256
     root, result = built
     assert shape_sha256 is evidence.shape_content_hash
     pairs = result.assembly_shapes(with_hashes=True)

@@ -3,6 +3,22 @@
 Code under `vendor/` is copied from the projects below at the pinned commit. Each directory keeps its
 upstream LICENSE/NOTICE files; those terms apply to that code. Our changes are listed as patches in `vendor/patches/`.
 
+```mermaid
+flowchart TD
+    P["a project we found"] --> L{"its licence"}
+    L -->|"MIT, BSD,<br/>Apache"| V["vendor or adapt<br/>pinned, credited,<br/>LICENSE kept"]
+    L -->|"copyleft"| C{"which?"}
+    C -->|"LGPL"| Lg["vendored unmodified,<br/>licences and<br/>sources kept"]
+    C -->|"GPL, AGPL"| X["never copied: run as<br/>its own program, or an<br/>optional import (gmsh)"]
+    L -->|"none, non-commercial,<br/>custom"| I["ideas only<br/>credited"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class L,C here
+    class P near
+    class V,Lg,X,I out
+```
+
 | Project | Licence | Upstream | Pinned commit | Imported |
 |---|---|---|---|---|
 | text-to-cad | MIT | https://github.com/earthtojake/text-to-cad | `2f793659fb7b` | 2026-10-24 |
@@ -12,17 +28,46 @@ upstream LICENSE/NOTICE files; those terms apply to that code. Our changes are l
 | agentcad | Apache-2.0 | https://github.com/jdilla1277/agentcad | `52af472ddade` | 2026-10-24 |
 | bd_warehouse | Apache-2.0 | https://github.com/gumyr/bd_warehouse | `e6ae6e7bae74` | 2026-10-24 |
 
+## Showcase on the site (Gyropup)
+
+The home page shows [Gyropup](https://gyropup.com), a robot designed with cad-agent. Its model and pictures are
+copies of Gyropup's CAD exports and results, under its MIT licence ("Copyright (c) 2026 mvalancy and Gyropup
+contributors"), whose full text travels with them in `docs/img/gyropup/LICENSE.txt`.
+`tools/gyropup_showcase.py` regenerates them and records the revision in each file's source record.
+
+| Files | From | Revision |
+|---|---|---|
+| `web/models/gyropup.json`, `.bin`, `.webp` (the 3D model and its poster) | every part's STEP in [Valpatel/gyropup](https://github.com/Valpatel/gyropup), exported with `cad-agent view` | `77f6d00` |
+| `docs/img/gyropup/wheel-link-fea.webp`, `leg-render.webp` | Gyropup's `exports/leg/fea/wheel_link-E1.png` and `exports/leg/leg-stand-iso.png`, cropped | `77f6d00` |
+| `docs/img/gyropup.jpg` | a Gyropup render | earlier, not recorded |
+
 ## Runtime dependencies and external programs (not vendored)
 
 The simulation modules use these at run time. None of their code is copied into this repository.
 
 | Project | Licence | How cad-agent uses it |
 |---|---|---|
-| OpenFOAM v2512 (OpenCFD) | GPL-3.0 | External program (`cadagent.cfd` writes a case and runs it natively or in the `opencfd/openfoam-default` Docker image) |
-| Bambu Studio | AGPL-3.0 | External program (`cadagent.slicer` runs its command line; profiles are read, flattened and passed back as files) |
+| OpenFOAM v2512 (OpenCFD) | GPL-3.0 | External program (`cadagent.simulation.cfd` writes a case and runs it natively or in the `opencfd/openfoam-default` Docker image) |
+| Bambu Studio | AGPL-3.0 | External program (`cadagent.manufacturing.slicer` runs its command line; profiles are read, flattened and passed back as files) |
 | gmsh | GPL-2.0-or-later | Imported by the optional `fea` extra. Our source stays MIT; distributing a bundle that includes gmsh falls under the GPL |
 | scikit-fem | BSD-3-Clause | Imported (`fea`) |
 | pyMOTO | MIT | Imported (`sim`, topology optimisation) |
 | PyVista, VTK | MIT, BSD-3-Clause | Imported (`sim`, pictures and animations) |
 | trimesh, manifold3d, Rtree | MIT, Apache-2.0, MIT | Imported (`sim`, mesh booleans and point-in-solid tests) |
 | imageio, imageio-ffmpeg (FFmpeg) | BSD-2-Clause (FFmpeg LGPL/GPL binary, run as a process) | Imported (`sim`, MP4 writing) |
+
+## Web kit (copied into project sites and published on cad-agent.valpatel.com)
+
+`src/cadagent/webkit/vendor/` holds these files unchanged unless noted; each keeps its licence text beside it, and
+`cad-agent site` copies the licence files with the code.
+
+| Project | Licence | Version | Licence file in the kit |
+|---|---|---|---|
+| three.js (core and the controls, geometry, loader and utility add-ons) | MIT | r160 | header of `three/three.module.min.js`; `file-parsers/THREE-LICENSE.txt` |
+| three.js STL and 3MF loaders | MIT | r160, import paths changed to the local copies | `file-parsers/THREE-LICENSE.txt` |
+| fflate | MIT | as bundled with three.js r160 | `file-parsers/FFLATE-LICENSE.txt` |
+| Mermaid | MIT | 11.4.1 | `mermaid/LICENSE` |
+| linkedom | ISC | 0.18.12 | `linkedom/LICENSE` |
+| occt-import-js (Open CASCADE Technology compiled to WebAssembly) | LGPL-2.1 with the OCCT exception | 0.0.23 | `occt-import-js/` (four licence files; sources in `occt-import-js/source`) |
+| Inter | SIL Open Font License 1.1 | variable, Latin subset | `fonts/OFL-Inter.txt` |
+| JetBrains Mono | SIL Open Font License 1.1 | variable, Latin subset | `fonts/OFL-JetBrainsMono.txt` |

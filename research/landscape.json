@@ -36,7 +36,7 @@
    "drawings": "yes: PDF engineering drawings",
    "vendor_integration": "OrcaSlicer, Bambu Connect/Studio, SendCutSend, step.parts",
    "evals": "none in repo",
-   "notes": "v0.7.26 2026-10-20; telemetry on by default; viewer loopback unauthenticated; PCB in open PR #518"
+   "notes": "v0.7.26 2026-10-20; telemetry on by default; viewer loopback unauthenticated; PCB in open PR #518; v0.8.0 (2026-10-27) replaces the 0.7 pipeline with no compatibility layer (v0.8.4 on 10-30): pin 0.7.26 or 0.8.4 deliberately; telemetry still on by default; PR #518 closed unmerged"
   },
   {
    "name": "amagine-ai/Amagine3D",
@@ -390,7 +390,7 @@
    "url": "https://github.com/mixelpixx/KiCAD-MCP-Server",
    "license_spdx": "MIT",
    "stars": 2933,
-   "last_push": "2026-10-01",
+   "last_push": "2026-10-26",
    "clients": [
     "mcp"
    ],
@@ -404,14 +404,14 @@
    "drawings": "no",
    "vendor_integration": "JLCPCB, DigiKey, Freerouting",
    "evals": "none",
-   "notes": "244 tools registered; runtime dep pymupdf (AGPL); new work moved to Konnect"
+   "notes": "244 tools registered; runtime dep pymupdf (AGPL); still maintained under MIT after Konnect was archived"
   },
   {
    "name": "mixelpixx/Konnect",
    "url": "https://github.com/mixelpixx/Konnect",
    "license_spdx": "AGPL-3.0",
    "stars": 1399,
-   "last_push": "2026-10-25",
+   "last_push": "2026-10-26",
    "clients": [
     "kicad-plugin",
     "mcp",
@@ -427,7 +427,7 @@
    "drawings": "no",
    "vendor_integration": "Freerouting",
    "evals": "none",
-   "notes": "obhox/kicad-mcp is a fork (8 stars, AGPL-3.0); external use only"
+   "notes": "archived 2026-10-26; continues as Konnect-EDA (commercial, closed source, free during its beta), so no longer a candidate; obhox/kicad-mcp is a fork (8 stars, AGPL-3.0)"
   },
   {
    "name": "oaslananka/kicad-mcp-pro",
@@ -456,7 +456,7 @@
   {
    "name": "Seeed-Studio/kicad-mcp-server",
    "url": "https://github.com/Seeed-Studio/kicad-mcp-server",
-   "license_spdx": null,
+   "license_spdx": "none",
    "stars": 168,
    "last_push": "2026-10-22",
    "clients": [
@@ -595,7 +595,7 @@
   {
    "name": "punkfab/circuit-skills",
    "url": "https://github.com/punkfab/circuit-skills",
-   "license_spdx": null,
+   "license_spdx": "none",
    "stars": 10,
    "last_push": "2026-10-06",
    "clients": [
@@ -615,37 +615,226 @@
    "evals": "PCBWorld harness",
    "notes": "",
    "license_note": "No licence: ideas only"
+  },
+  {
+   "name": "OrcaSlicer/OrcaSlicer",
+   "url": "https://github.com/OrcaSlicer/OrcaSlicer",
+   "license_spdx": "AGPL-3.0",
+   "stars": 16253,
+   "last_push": "2026-10-31",
+   "notes": "2.5 beta: experimental Design (CAD) tab, off by default, with an MCP control socket for that tab (Unix, ORCA_CAD_MCP set, GUI running); a general MCP server, slicing included, is in development on the feature/mcp branch (no release yet)",
+   "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
+  },
+  {
+   "name": "OrcaSlicer/orcaslicer-mcp-skills",
+   "url": "https://github.com/OrcaSlicer/orcaslicer-mcp-skills",
+   "license_spdx": "AGPL-3.0",
+   "stars": 2,
+   "last_push": "2026-10-29",
+   "notes": "official Claude Code / Codex skills for the MCP server on OrcaSlicer's feature/mcp branch (General > AI features > MCP server; off by default, loopback only); no release ships it yet; no code",
+   "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
+  },
+  {
+   "name": "MaxEllis/orcaslicer-mcp",
+   "url": "https://github.com/MaxEllis/orcaslicer-mcp",
+   "license_spdx": "AGPL-3.0",
+   "stars": 86,
+   "last_push": "2026-10-12",
+   "notes": "third-party Orca MCP",
+   "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
+  },
+  {
+   "name": "KD5RYN/b123d-print",
+   "url": "https://github.com/KD5RYN/b123d-print",
+   "license_spdx": "MIT",
+   "stars": 2,
+   "last_push": "2026-10-31",
+   "notes": "build123d print checks via MCP + CLI + plugin",
+   "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
+  },
+  {
+   "name": "ballerabdude/agent-cad-works",
+   "url": "https://github.com/ballerabdude/agent-cad-works",
+   "license_spdx": "Apache-2.0",
+   "stars": 1,
+   "last_push": "2026-10-26",
+   "notes": "build123d motion sweep, watertight/mid-air checks, Orca times, BOM",
+   "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
+  },
+  {
+   "name": "gjaloyan/print3d-designer",
+   "url": "https://github.com/gjaloyan/print3d-designer",
+   "license_spdx": "MIT",
+   "stars": 1,
+   "last_push": "2026-10-29",
+   "notes": "skill: reference-photo silhouette IoU >= 0.92, G-code readback",
+   "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
+  },
+  {
+   "name": "SiddhuYen/eitri",
+   "url": "https://github.com/SiddhuYen/eitri",
+   "license_spdx": "FSL-1.1-MIT",
+   "stars": 1,
+   "last_push": "2026-10-31",
+   "notes": "local build123d agent with a geometry report; Functional Source License 1.1 (MIT after two years): ideas only",
+   "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
+  },
+  {
+   "name": "pzfreo/specify-core",
+   "url": "https://github.com/pzfreo/specify-core",
+   "license_spdx": "Apache-2.0",
+   "stars": 7,
+   "last_push": "2026-10-31",
+   "notes": "main job: writes AP242 semantic PMI (material, hole purposes, datums, fits, finish) into STEP parts from an interview; its step-diff action posts named feature changes, before/after pictures and volume/area/bbox per PR",
+   "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
+  },
+  {
+   "name": "heartland-eng/bd_hardware",
+   "url": "https://github.com/heartland-eng/bd_hardware",
+   "license_spdx": "none",
+   "stars": 0,
+   "last_push": "2026-10-28",
+   "notes": "claims a build123d snap-fit feature library; no code yet",
+   "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
+  },
+  {
+   "name": "novasolver/novasolver-studio",
+   "url": "https://github.com/novasolver/novasolver-studio",
+   "license_spdx": "GPL-3.0",
+   "stars": 1,
+   "last_push": "2026-10-31",
+   "notes": "local CAE with MCP: CalculiX, OpenFOAM; result gates incl. GCI mesh convergence",
+   "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
+  },
+  {
+   "name": "WifiLast/freecad-mcp",
+   "url": "https://github.com/WifiLast/freecad-mcp",
+   "license_spdx": "none",
+   "stars": 0,
+   "last_push": "2026-10-18",
+   "notes": "FreeCAD FEM + topology optimisation over MCP",
+   "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
+  },
+  {
+   "name": "V0v1kkk/freecad-engineering",
+   "url": "https://github.com/V0v1kkk/freecad-engineering",
+   "license_spdx": "MIT",
+   "stars": 3,
+   "last_push": "2026-08-12",
+   "notes": "skills: fdm-structural-review, mechanical-strength-review, freecad-fem-check",
+   "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
+  },
+  {
+   "name": "n3r/AgentCAD",
+   "url": "https://github.com/n3r/AgentCAD",
+   "license_spdx": "Apache-2.0",
+   "stars": 7,
+   "last_push": "2026-08-26",
+   "notes": "skills incl. snap-fits and fem-workflow; macOS-first",
+   "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
+  },
+  {
+   "name": "static74/3dp-compliant-mechanisms",
+   "url": "https://github.com/static74/3dp-compliant-mechanisms",
+   "license_spdx": "MIT",
+   "stars": 0,
+   "last_push": "2026-10-26",
+   "notes": "FDM compliant-mechanism skill; prompt-only; candidate: take the selection table and evals with attribution after recomputing its strains",
+   "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
+  },
+  {
+   "name": "MP-AI-20/mechanical-engineering-skills",
+   "url": "https://github.com/MP-AI-20/mechanical-engineering-skills",
+   "license_spdx": "MIT",
+   "stars": 10,
+   "last_push": "2026-06-09",
+   "notes": "647 generic mechanical skills",
+   "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
+  },
+  {
+   "name": "dwragon/Fusion360SnapFitGenerator",
+   "url": "https://github.com/dwragon/Fusion360SnapFitGenerator",
+   "license_spdx": "MPL-2.0",
+   "stars": 5,
+   "last_push": "2026-10-29",
+   "notes": "5 snap types with strain and force calculation",
+   "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
+  },
+  {
+   "name": "Vivek-Boora/dfm-agent",
+   "url": "https://github.com/Vivek-Boora/dfm-agent",
+   "license_spdx": "none",
+   "stars": 0,
+   "last_push": "2026-08-18",
+   "notes": "STEP moulding DFM analysis with a Three.js view",
+   "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
+  },
+  {
+   "name": "naman113/Designstudio",
+   "url": "https://github.com/naman113/Designstudio",
+   "license_spdx": "MIT",
+   "stars": 8,
+   "last_push": "2026-10-23",
+   "notes": "\"Buildcore\": STEP to auto-dimensioned PDF drawings, grouped BOM, GLB viewer, parts catalogue (Docker, local port 8800)",
+   "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
   }
  ],
  "libraries": [
   {
    "name": "gumyr/build123d",
+   "what": "Python B-rep CAD library on Open Cascade with builder and algebra-style APIs for 2D and 3D parts",
+   "areas": [
+    "cad-modelling"
+   ],
    "license_spdx": "Apache-2.0",
    "stars": 3519,
-   "last_push": "2026-10-23"
+   "last_push": "2026-10-23",
+   "use": "Python B-rep CAD library on OpenCascade with builder and algebra APIs, which grew out of the CadQuery community; many agentic-CAD projects generate it"
   },
   {
    "name": "CadQuery/cadquery",
+   "what": "Python library for parametric 3D CAD scripts on the OCCT kernel, usable without a GUI",
+   "areas": [
+    "cad-modelling"
+   ],
    "license_spdx": "Apache-2.0",
    "stars": 5990,
    "last_push": "2026-10-24",
-   "license_note": "GitHub shows NOASSERTION; LICENSE text is Apache 2.0"
+   "license_note": "GitHub shows NOASSERTION; LICENSE text is Apache 2.0",
+   "use": "Python B-rep CAD on OpenCascade; the `cad` extra builds, measures and exports parts with it",
+   "status": "used"
   },
   {
    "name": "gumyr/bd_warehouse",
+   "what": "Parametric part collection for build123d: fasteners, threads, bearings, gears, sprockets, pipes, flanges",
+   "areas": [
+    "fasteners-and-hardware",
+    "gears",
+    "belt-and-chain-drives"
+   ],
    "license_spdx": "Apache-2.0",
    "stars": 112,
    "last_push": "2026-10-18",
-   "use": "ISO fasteners, threads"
+   "use": "ISO fasteners and threads, plus parametric bearings, gears, sprockets, pipes, flanges and O-rings"
   },
   {
    "name": "partcad/partcad",
+   "what": "Package format and manager for CAD parts and assemblies, with BOMs, sourcing and assembly instructions",
+   "areas": [
+    "fasteners-and-hardware",
+    "design-process"
+   ],
    "license_spdx": "Apache-2.0",
    "stars": 509,
-   "last_push": "2026-10-24"
+   "last_push": "2026-10-24",
+   "use": "package manager and registry for CAD parts and assemblies"
   },
   {
    "name": "sargo-devel/Cables",
+   "what": "FreeCAD workbench for drawing cables and wires, mainly for electrical installations in BIM models",
+   "areas": [
+    "wiring-harnesses"
+   ],
    "license_spdx": "LGPL-3.0",
    "stars": 103,
    "last_push": "2026-10-23",
@@ -653,6 +842,10 @@
   },
   {
    "name": "wireviz/WireViz",
+   "what": "Draws cable, harness and connector pinout diagrams (SVG, PNG) from plain YAML via GraphViz",
+   "areas": [
+    "wiring-harnesses"
+   ],
    "license_spdx": "GPL-3.0",
    "stars": 5310,
    "last_push": "2026-06-06",
@@ -660,29 +853,60 @@
   },
   {
    "name": "easyw/kicadStepUpMod",
+   "what": "FreeCAD workbench that moves KiCad boards and part models to and from FreeCAD and exports STEP",
+   "areas": [
+    "circuit-boards",
+    "housings-and-enclosures"
+   ],
    "license_spdx": "AGPL-3.0",
    "stars": 699,
    "last_push": "2026-09-04",
-   "license_note": "per README; no LICENSE detected by GitHub"
+   "license_note": "per README; no LICENSE detected by GitHub",
+   "use": "FreeCAD workbench for KiCad ECAD-MCAD work: loads a board with its 3D models, syncs the board outline and keep-outs both ways, places and aligns footprint models, and exports colored STEP and VRML (external only)"
   },
   {
    "name": "rjwalters/kicad-tools",
+   "what": "Python tools and a CLI that let agents parse, check, place and route KiCad schematics and boards",
+   "areas": [
+    "circuit-boards"
+   ],
    "license_spdx": "MIT",
    "stars": 72,
    "last_push": "2026-10-24",
-   "use": "licence-annotated KiCad tool survey in README"
+   "use": "agent tools and the kct CLI that parse, check, place and route KiCad files; its README also keeps a licence-annotated survey of KiCad AI tools"
   },
   {
    "name": "kicad-python (PyPI)",
+   "what": "Official Python bindings for KiCad's IPC API, for scripts and add-ons that talk to a running KiCad",
+   "areas": [
+    "circuit-boards"
+   ],
    "license_spdx": "MIT",
    "version": "0.8.0",
    "released": "2026-08-30",
-   "url": "https://pypi.org/project/kicad-python/"
+   "url": "https://pypi.org/project/kicad-python/",
+   "use": "KiCad's official Python bindings for its IPC API (KiCad 9 and later)"
+  },
+  {
+   "name": "CalculiX 2.23 (conda-forge)",
+   "what": "Free 3D finite-element program for linear and non-linear static, dynamic and thermal analysis",
+   "areas": [
+    "structural-fea"
+   ],
+   "license_spdx": "GPL-2.0-or-later",
+   "url": "https://www.calculix.de/",
+   "notes": "planned external solver for large-deflection snap force-travel with contact; apt ships 2.21",
+   "source": "research/fea-and-process-tools.md",
+   "status": "candidate"
   }
  ],
  "benchmarks": [
   {
    "name": "CADGenBench",
+   "what": "Benchmark that scores AI-made STEP parts from engineering drawings and STEP edits on a hosted leaderboard",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://github.com/huggingface/cadgenbench",
    "license_spdx": "Apache-2.0",
    "stars": 146,
@@ -691,12 +915,20 @@
   },
   {
    "name": "Text2CAD",
+   "what": "Beginner-to-expert text prompts for DeepCAD models, and a model that generates CAD construction sequences",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://github.com/SadilKhan/Text2CAD",
    "license": "CC-BY-NC-SA-4.0",
    "venue": "NeurIPS 2024"
   },
   {
    "name": "CADPrompt/CADCodeVerify",
+   "what": "200 text prompts with expert CAD code and STL targets, and a VLM loop that checks and fixes generated code",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://github.com/Kamel773/CAD_Code_Generation",
    "license": null,
    "venue": "ICLR 2025",
@@ -704,52 +936,102 @@
   },
   {
    "name": "CAD-Recode",
+   "what": "Model that reverse-engineers point clouds into CadQuery Python code, fine-tuned from Qwen2-1.5B",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://github.com/filaPro/cad-recode",
    "license": "CC-BY-NC-4.0",
    "venue": "ICCV 2025"
   },
   {
    "name": "cadrille",
+   "what": "Model that reconstructs CAD code from point clouds, images or text, trained with online RL",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://github.com/col14m/cadrille",
    "license_spdx": "Apache-2.0"
   },
   {
    "name": "Text2CAD-Bench",
+   "what": "600 curated text-to-CAD tasks in four levels, from basic features to freeform and non-mechanical parts",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://arxiv.org/abs/2605.18430",
    "size": "600 examples, 4 levels",
    "data_license": "unverified"
   },
   {
    "name": "P3D-Bench",
+   "what": "Text-to-3D, image-to-3D and assembly tasks for parametric 3D programs, scored on geometry and structure",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://arxiv.org/abs/2606.11152",
    "status": "unverified"
   },
   {
    "name": "CADBench",
+   "what": "18,000 samples testing CAD program generation from meshes and renders across six families and six metrics",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://arxiv.org/abs/2605.10873",
    "status": "unverified"
   },
   {
    "name": "BenchCAD",
+   "what": "17,900 checked CadQuery programs over 106 industrial part families, for CAD QA, image-to-code and editing",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://arxiv.org/abs/2605.10865",
    "status": "unverified"
   },
   {
    "name": "RealCADBench",
+   "what": "12,632 tasks from real factory-automation design intents; models write FreeCAD Python for parts and assemblies",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://arxiv.org/abs/2609.03773",
    "status": "unverified"
   },
   {
    "name": "CAD Arena",
+   "what": "Side-by-side comparison of text-to-CAD models on 20 prompts in four difficulty tiers, with 3D outputs",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://cadarena.dev/",
    "status": "unverified"
   },
   {
    "name": "PCBWorld",
+   "what": "KiCad push-and-shove router as a Gymnasium environment, with 679 real boards and DRC-checked metrics",
+   "areas": [
+    "evaluation",
+    "circuit-boards"
+   ],
    "url": "https://github.com/LGAI-Research/PCBWorld",
    "license_spdx": "BSD-3-Clause",
    "paper": "arXiv 2607.05915",
    "size": "679 real KiCad boards, 8 metrics"
+  },
+  {
+   "name": "FEABench",
+   "what": "Benchmark of FEA problems that LLM agents solve by driving COMSOL Multiphysics through its API",
+   "areas": [
+    "evaluation",
+    "structural-fea"
+   ],
+   "url": "https://github.com/google/feabench",
+   "license_spdx": "Apache-2.0",
+   "paper": "arXiv 2504.06260",
+   "notes": "LLM agents on FEA problems; needs a COMSOL licence; prior art only; the repo is archived"
   }
- ]
+ ],
+ "refreshed_on": "2026-10-31"
 }

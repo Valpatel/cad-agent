@@ -8,6 +8,17 @@ description: Use when implementing or reviewing articulated CAD viewers and robo
 A CAD interference sweep does not validate a browser's scene graph. Establish independent mechanical intent,
 capture the actual rendered transforms, and compare them before claiming the simulation is correct.
 
+```mermaid
+flowchart TD
+    I["1 inventory joints + parts<br/>from CAD, not the animation"] --> Ref["2 reference landmarks;<br/>capture the real renderer"]
+    Ref --> T["3 motion-trace<br/>worst point, pivot, radial error"]
+    T --> E["4 more events; a planted<br/>wrong pivot must fail"]
+    E --> P["5 pair with the CAD gates,<br/>record the limits"]
+    class Ref,T,E here
+    class I near
+    class P out
+```
+
 1. Inventory all moving joints and components, including shafts/rotors, stationary housings, feed mechanisms,
    helper geometry and scene attachments. Record ownership, units, axis handedness, home datums and parent chains
    from CAD source or inspected geometry. Do not take the expected pivots from the suspect animation manifest.

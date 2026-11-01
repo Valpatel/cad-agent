@@ -1,0 +1,26 @@
+{
+ "project": "Valpatel/gyropup",
+ "license": "MIT",
+ "revision": "77f6d00bdb262f0f75a18fa0ddf0075058a649d8",
+ "regenerate": "python3 tools/gyropup_showcase.py --gyropup <checkout>",
+ "pictures": {
+  "wheel-link-fea": {
+   "source": "exports/leg/fea/wheel_link-E1.png",
+   "part": "wheel_link",
+   "case": "E1",
+   "safety_factor": 3.15,
+   "target": 2.0,
+   "ok": true,
+   "material": "PA6-CF along the layers (humid)",
+   "tets": 52134,
+   "element": "P2 tetrahedra",
+   "width": 526,
+   "height": 345
+  },
+  "leg-render": {
+   "source": "exports/leg/leg-stand-iso.png",
+   "width": 601,
+   "height": 861
+  }
+ }
+}

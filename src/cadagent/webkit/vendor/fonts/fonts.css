@@ -1,5 +1,6 @@
 /* Vendored fonts (self-sufficiency — no CDN). Inter + JetBrains Mono, variable,
-   latin subset, from Google Fonts (SIL/OFL licensed). See docs/design/style-guide.md */
+   latin subset, from Google Fonts. Both are under the SIL Open Font License 1.1: the full
+   licence and copyright travel with the files (OFL-Inter.txt, OFL-JetBrainsMono.txt). See docs/design/style-guide.md */
 @font-face {
   font-family: 'Inter'; font-style: normal; font-weight: 100 900; font-display: swap;
   src: url('./inter.woff2') format('woff2');

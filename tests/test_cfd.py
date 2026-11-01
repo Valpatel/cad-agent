@@ -1,4 +1,4 @@
-"""cadagent.cfd writes a complete OpenFOAM case; running it needs OpenFOAM (or Docker) and is opt-in."""
+"""cadagent.simulation.cfd writes a complete OpenFOAM case; running it needs OpenFOAM (or Docker) and is opt-in."""
 
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ import numpy as np
 import pytest
 
 trimesh = pytest.importorskip("trimesh")
-from cadagent import cfd  # noqa: E402
-from cadagent.cfd import SOLIDS, Fan, ThermalCase  # noqa: E402
+from cadagent.simulation import cfd  # noqa: E402
+from cadagent.simulation.cfd import SOLIDS, Fan, ThermalCase  # noqa: E402
 
 
 def box(lo, hi):

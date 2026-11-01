@@ -13,6 +13,24 @@ render with a checklist. The toolkit checks parts; it does not check the design.
 
 What is missing is a process, and the tools that make the process cheap:
 
+```mermaid
+flowchart TD
+    Req["requirements"] --> Dos["§3 dossier<br/>sections, cards,<br/>interfaces, decisions"]
+    Dos --> Gates["§4 gates<br/>connectivity, containment,<br/>fasteners, motion, access"]
+    CAD["CAD build"] --> Gates
+    Ev["§6 evaluation<br/>seeded defects"] -.-> Gates
+    Gates --> Pk["§5 review packet<br/>renders + measurements"]
+    Pk --> Rv["§5 independent reviewer<br/>checklist, sign-off record"]
+    Rv --> Site["review site<br/>section by section"]
+    Rv -->|"changes"| Dos
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class Dos,Gates,Pk here
+    class Req,CAD,Ev near
+    class Rv,Site out
+```
+
 | Missing | Today | After this plan |
 |---|---|---|
 | Decomposition | one `build.py` per product, interfaces in the author's head or a loose JSON | a **dossier**: requirements → sections → parts and interfaces, declared beside the CAD |
@@ -37,7 +55,7 @@ decades: interface control documents, requirement traces, decision records, DFME
    checklist-driven, and is never the only evidence for a claim (DW §5).
 3. **A missing declaration fails.** A part without a spec card, a section without requirements, an interface with
    one side only: all are failures in `cad-agent check`, the same as a missing check file today.
-4. **Explained exclusions, never loosened thresholds** (lesson 07). Intended overlaps (inserts, press fits) and
+4. **Explained exclusions, never loosened thresholds** ([Verification and evidence](../lessons/review/verification-and-evidence.md)). Intended overlaps (inserts, press fits) and
    intended floating parts (loose balls, a lid shown exploded) are declared with a reason and reported in their own list.
 5. **Generic.** Sections, parts, interfaces, joints and cavities are the vocabulary of any mechanical assembly. Nothing
    in `cadagent` knows what a turret or an enclosure is.
@@ -116,7 +134,7 @@ Fields and where they are checked:
   exclusions, `physical_fit_verified: false`).
 
 YAML, not JSON, for the hand-written files: comments and quotes matter in a dossier (requirements are user quotes,
-lesson 02). `cad-agent.yaml` gains one key: `dossier: dossier/project.yaml`.
+[User intent and requirements](../lessons/process/user-intent-and-requirements.md)). `cad-agent.yaml` gains one key: `dossier: dossier/project.yaml`.
 
 ### 3.4 Declaration from build scripts with minimal boilerplate
 
@@ -124,7 +142,7 @@ Build scripts keep returning shapes. They declare the geometric facts the gates 
 knows which solid is the cavity and where a joint axis is:
 
 ```python
-from cadagent.dossier import part, cavity, joint, fastener, assembly
+from cadagent.review.dossier import part, cavity, joint, fastener, assembly
 
 @part("hopper", section="S3")                 # registers the shape and its dossier card
 def hopper(p): ...                            # returns a cq Shape as today
@@ -139,17 +157,17 @@ def flap_pivot(p): ...                        # optional body; the joint is what
 assembly.step(1, fit="pan_base", onto="bench_base", direction="-Z", tool="hex_2.5", fasteners=["screw_m4x12"] * 3)
 ```
 
-The registry (`cadagent.dossier.REGISTRY`) collects parts, cavities, joints, fasteners and assembly steps at import
-time; `build()` runs them with `parameters.json` and writes `exports/dossier-geometry.json` (content hashes of every
-shape as defined in 4.1, bounding boxes, cavity and joint frames, and the `actor` that ran the build, from the
+The registry (`cadagent.review.dossier.REGISTRY`) collects parts, cavities, joints, fasteners and assembly steps at
+import time; `build()` runs them with `parameters.json` and writes `exports/dossier-geometry.json` (content hashes of
+every shape as defined in 4.1, bounding boxes, cavity and joint frames, and the `actor` that ran the build, from the
 `CAD_AGENT_ACTOR` environment variable, see 5.3) next to the STEP files. A project that does not use decorators can instead return a
 dict from `print_parts()` as today plus `dossier_items()`, so existing builds migrate one part at a time. The YAML
 cards and the code registry are joined by id; a card without a registered shape, or a shape without a card, is a
 lint finding.
 
-Fasteners come from the existing McMaster catalogue entries (`skills/mcmaster-parts`) or `cadagent.fasteners`
+Fasteners come from the existing McMaster catalogue entries (`skills/mcmaster-parts`) or `cadagent.mechanical.fasteners`
 envelopes; a `fastener` declaration names the catalogue key, the head seat face and the part it threads into, which
-is what the stack gate needs (lesson 04).
+is what the stack gate needs ([Fasteners and assembly access](../lessons/mechanical/fasteners-and-assembly-access.md)).
 
 ### 3.5 Rendering on the review site
 
@@ -173,7 +191,7 @@ gates page has a row per gate and each gate's findings with witnesses rather tha
 motion tables, and the connectivity graph follows the DOT the gate writes (undeclared contacts orange, unrealised
 declarations red dashed).
 
-## 4. Integrity gates (`cadagent.gates`)
+## 4. Integrity gates (`cadagent.review.gates`)
 
 All gates take the same input: `Assembly` = `{part_name: shape in assembly coordinates}` plus the dossier geometry
 (cavities, joints, fasteners, assembly steps) and the dossier declarations. All write the existing check JSON shape.
@@ -191,12 +209,12 @@ The CLI `cad-agent gates [--only NAME]` runs them after `build`; `cad-agent chec
   can take seconds per pair. T3's acceptance therefore includes one real, filleted and shelled pair, and the budget in
   4.9 is a target to be measured, not a claim.
 - **Shape identity (content hash).** OCP's `TopoDS_Shape` hash is identity plus location, not content, and is not
-  stable across processes, so it is never used as a key. A shape's id is `cadagent.evidence.shape_content_hash`: the
-  sha256 of its BREP text (`BRepTools.Write_s`, format version 1, without triangulation or normals, so meshing does
+  stable across processes, so it is never used as a key. A shape's id is `cadagent.review.evidence.shape_content_hash`:
+  the sha256 of its BREP text (`BRepTools.Write_s`, format version 1, without triangulation or normals, so meshing does
   not change it) with the per-shape flag lines removed (the kernel flips them on its own). The shape's assembly
   location is part of that text. Shown deterministic across processes in the registry's tests. A shape read back
   from BREP may hash differently (the reader recomputes frames), so the hash recorded at build time travels with the
-  shape and is never recomputed from a loaded copy. This is the same byte-hash discipline as `cadagent.evidence`,
+  shape and is never recomputed from a loaded copy. This is the same byte-hash discipline as `cadagent.review.evidence`,
   which hashes files with sha256. The same hash is what `dossier-geometry.json` records per part and what sign-off
   records (5.3) are bound to.
 - **Pair cache.** Results are cached by the two content hashes (and, for the motion gate, the pose transform of the
@@ -250,19 +268,19 @@ The CLI `cad-agent gates [--only NAME]` runs them after `build`; `cad-agent chec
 
 ### 4.4 Fastener and stack consistency (T6)
 
-Extends `cadagent.fasteners.blind_insert_stack` from numbers to geometry:
+Extends `cadagent.mechanical.fasteners.blind_insert_stack` from numbers to geometry:
 
 - For each dossier fastener: locate the screw solid (catalogue STEP placed by the build, or envelope), the head seat
   face on the clamped part, the thread-start on the mating part (insert top or tapped hole start, from the declaration),
   and compute seat Z, grip, engagement, tip clearance in the fastener's own axis frame; compare with the stocked
-  length and the required engagement; flag uncommon lengths (lesson 04).
+  length and the required engagement; flag uncommon lengths ([Fasteners and assembly access](../lessons/mechanical/fasteners-and-assembly-access.md)).
 - The screw's shank must not overlap the clamped part (the clearance hole must be at least shank + declared clearance,
   checked as a hole diameter), and its only overlap with the mating part must lie inside that part's declared thread
   region (an insert or tapped hole); any overlap elsewhere is a finding.
 - **Tool access**: at the assembly step that installs the fastener, sweep the declared tool envelope (driver
   diameter × length, or hex key with swing) from the head along the axis; it must not overlap any part present at that
-  step. Reuses the plug-sweep machinery of `cadagent.connectors.check_ports`.
-- Output `exports/gates/fasteners.json`: a table per fastener, as lesson 04 asks for; fails on engagement below the
+  step. Reuses the plug-sweep machinery of `cadagent.mechanical.connectors.check_ports`.
+- Output `exports/gates/fasteners.json`: a table per fastener, as [Fasteners and assembly access](../lessons/mechanical/fasteners-and-assembly-access.md) asks for; fails on engagement below the
   declared minimum, tip collision, or no tool access.
 - Tests: the existing `test_fasteners` cases turned into geometry; a screw whose driver is blocked by a gusset.
 
@@ -293,7 +311,7 @@ Extends `cadagent.fasteners.blind_insert_stack` from numbers to geometry:
 
 - For each assembly step: the parts present are the union of earlier steps; the fitted part is swept along its declared
   direction from outside the present set's bounding box to its final position; any overlap with a present part is a
-  finding (the slide-in path check of lesson 07, generalised). Fastener tool sweeps (4.4) run at the step that installs
+  finding (the slide-in path check of [Verification and evidence](../lessons/review/verification-and-evidence.md), generalised). Fastener tool sweeps (4.4) run at the step that installs
   them, with only the parts present then.
 - Every part in the dossier must appear in exactly one step; every fastener in the step that installs it.
 - Output `exports/gates/assembly.json`: steps, swept clearances, blocked steps.
@@ -317,13 +335,13 @@ them only when geometry changed (the cache keys make an unchanged assembly free)
 ### 5.1 Skill `skills/design-process/SKILL.md` (T10)
 
 Built: [`skills/design-process/SKILL.md`](../skills/design-process/SKILL.md), the packet and the checklist in
-[`review-packet.md`](review-packet.md) (`cadagent.render.review_packet`, `cad-agent review-packet`).
+[`review-packet.md`](review-packet.md) (`cadagent.publish.render.review_packet`, `cad-agent review-packet`).
 
 Tells an agent building or changing a design to work in this order, per section:
 
 1. **Frame the section**: write (or update) its YAML: purpose, requirements it serves (quote the user), interfaces to
    neighbouring sections with datums, the parts it needs. No geometry yet. Open questions become `open` decisions, and
-   the agent decides them itself where the model can answer (lesson 02), recording the alternatives rejected.
+   the agent decides them itself where the model can answer ([User intent and requirements](../lessons/process/user-intent-and-requirements.md)), recording the alternatives rejected.
 2. **Write the spec card with the geometry**: function, loads, material, fasteners, `contains`, decisions, in the same
    commit as the build code; declare cavities, joints, fasteners and assembly steps in code.
 3. **Build and gate**: `cad-agent build && cad-agent gates`. Fix every finding or declare the exclusion with a reason.
@@ -350,7 +368,7 @@ image; the gates answer those, and the checklist says so.
 
 ### 5.3 Reviewer pass and sign-off (T11)
 
-Built: `cadagent.dossier.review`, `cad-agent review-section` ([`dossier.md`](dossier.md#the-reviewer-pass)). The
+Built: `cadagent.review.dossier.review`, `cad-agent review-section` ([`dossier.md`](dossier.md#the-reviewer-pass)). The
 separate-reviewer switch is the dossier's `gates: require_separate_reviewer`, and the build actor is recorded per
 part (`parts.<name>.actor`).
 
@@ -427,32 +445,32 @@ Each is one implementer, one PR into `dev`, with tests. Dependencies in brackets
 | # | Task | Files | Acceptance | Deps |
 |---|---|---|---|---|
 | **Wave 1** | | | | |
-| T1 | Dossier schema and loader: `cadagent.dossier` dataclasses (Requirement, Section, PartCard, Interface, Decision, AssemblyStep, GateConfig), YAML loading with id resolution, `cad-agent.yaml` `dossier:` key, `docs/dossier.md` with the schema | `src/cadagent/dossier/{__init__,model,load}.py`, `tests/test_dossier_load.py`, `docs/dossier.md` | round-trips the example in 3.2; unknown keys reported; bad ids raise with the file and line | none |
-| T3 | Gate machinery: `Assembly` container, AABB broad phase, pairwise relations (apart/touching/overlapping/contains) with witnesses and absolute tolerances (4.1), content hashing of shapes, pair cache in `.cad-agent/cache/gates/` keyed by content hashes (and pose), verdict JSON writer; `research/bench/gate_timing.py` folded in as a benchmark | `src/cadagent/gates/{__init__,relations,cache,hashing,verdict}.py`, `tests/test_gate_relations.py`, `tests/test_gate_hashing.py` | the synthetic 100-part run under 5 s and one real filleted, shelled pair timed and reported; the content hash is identical across two processes and changes when the shape changes; cache hit skips the kernel; relation states match build123d-mcp's definitions on the four textbook pairs plus tangent contact | none |
-| T8 | Minimum wall gate on print meshes (ray-cast) plus B-rep negative-offset probe, threshold from the card's `material.wall_mm` | `src/cadagent/gates/wall.py`, `tests/test_gate_wall.py` | a 2.4 mm box passes at 2.4, fails at 2.5; a 0.8 mm rib is found (seed 8) | T1 (the card field; the gate itself can start with a plain threshold argument) |
-| T13 | Build-script registry: `@part`, `@cavity`, `@joint`, `fastener()`, `assembly.step()`, `exports/dossier-geometry.json` with content hashes and `actor`, and the `dossier_items()` migration path | `src/cadagent/dossier/registry.py`, `tests/test_dossier_registry.py`, `docs/dossier.md` | the example in 3.4 builds; a card without a shape and a shape without a card are lint findings | T1 (same implementer as T1 is the natural split) |
+| T1 | Dossier schema and loader: `cadagent.review.dossier` dataclasses (Requirement, Section, PartCard, Interface, Decision, AssemblyStep, GateConfig), YAML loading with id resolution, `cad-agent.yaml` `dossier:` key, `docs/dossier.md` with the schema | `src/cadagent/review/dossier/{__init__,model,load}.py`, `tests/test_dossier_load.py`, `docs/dossier.md` | round-trips the example in 3.2; unknown keys reported; bad ids raise with the file and line | none |
+| T3 | Gate machinery: `Assembly` container, AABB broad phase, pairwise relations (apart/touching/overlapping/contains) with witnesses and absolute tolerances (4.1), content hashing of shapes, pair cache in `.cad-agent/cache/gates/` keyed by content hashes (and pose), verdict JSON writer; `research/bench/gate_timing.py` folded in as a benchmark | `src/cadagent/review/gates/{__init__,relations,cache,hashing,verdict}.py`, `tests/test_gate_relations.py`, `tests/test_gate_hashing.py` | the synthetic 100-part run under 5 s and one real filleted, shelled pair timed and reported; the content hash is identical across two processes and changes when the shape changes; cache hit skips the kernel; relation states match build123d-mcp's definitions on the four textbook pairs plus tangent contact | none |
+| T8 | Minimum wall gate on print meshes (ray-cast) plus B-rep negative-offset probe, threshold from the card's `material.wall_mm` | `src/cadagent/review/gates/wall.py`, `tests/test_gate_wall.py` | a 2.4 mm box passes at 2.4, fails at 2.5; a 0.8 mm rib is found (seed 8) | T1 (the card field; the gate itself can start with a plain threshold argument) |
+| T13 | Build-script registry: `@part`, `@cavity`, `@joint`, `fastener()`, `assembly.step()`, `exports/dossier-geometry.json` with content hashes and `actor`, and the `dossier_items()` migration path | `src/cadagent/review/dossier/registry.py`, `tests/test_dossier_registry.py`, `docs/dossier.md` | the example in 3.4 builds; a card without a shape and a shape without a card are lint findings | T1 (same implementer as T1 is the natural split) |
 | T12 | Gate-bench fixture (20 synthetic parts declaring cavities, joints, fasteners and steps through the T13 registry) and the seeded-defect harness | `tests/fixtures/gate_bench/build.py`, `tests/gate_bench.py` | the fixture builds under the `full` CI job and the test skips cleanly under `core` (no `cad` extra); every seed in 6 is a parametrised case that the matching gate must catch once that gate exists | T13 (until it lands, the fixture declares its items in a plain dict with the same keys) |
 | **Wave 2** | | | | |
-| T2 | Dossier lint and `cad-agent dossier` (compile to `exports/dossier-status.json`, status machine, content-hash invalidation, the YAML-to-registry join) | `src/cadagent/dossier/lint.py`, `cli.py`, `tests/test_dossier_lint.py` | the 3.2 table's rules each have a failing and passing test; seed 10 caught; `cad-agent check` picks the lint up | T1, T13, T3 (hashing) |
-| T4 | Connectivity and floating-parts gate, with the declared-vs-actual diff and the graph export | `src/cadagent/gates/connectivity.py`, `tests/test_gate_connectivity.py` | 4.2's tests; seeds 2 and 3 caught | T1, T3, T13 (joints and `grounded` come from the registry) |
-| T5 | Containment gate (registered cavity only; mesh `sample-only` fallback for mesh items) | `src/cadagent/gates/containment.py`, `tests/test_gate_containment.py` | 4.3's tests; seed 1 caught with the right outside volume; tangent contact passes | T1, T3, T13 (`@cavity`) |
+| T2 | Dossier lint and `cad-agent dossier` (compile to `exports/dossier-status.json`, status machine, content-hash invalidation, the YAML-to-registry join) | `src/cadagent/review/dossier/lint.py`, `cli.py`, `tests/test_dossier_lint.py` | the 3.2 table's rules each have a failing and passing test; seed 10 caught; `cad-agent check` picks the lint up | T1, T13, T3 (hashing) |
+| T4 | Connectivity and floating-parts gate, with the declared-vs-actual diff and the graph export | `src/cadagent/review/gates/connectivity.py`, `tests/test_gate_connectivity.py` | 4.2's tests; seeds 2 and 3 caught | T1, T3, T13 (joints and `grounded` come from the registry) |
+| T5 | Containment gate (registered cavity only; mesh `sample-only` fallback for mesh items) | `src/cadagent/review/gates/containment.py`, `tests/test_gate_containment.py` | 4.3's tests; seed 1 caught with the right outside volume; tangent contact passes | T1, T3, T13 (`@cavity`) |
 | **Wave 3** | | | | |
-| T6 | Fastener and stack gate with tool-access sweep | `src/cadagent/gates/fasteners.py`, `tests/test_gate_fasteners.py` | seeds 4–6 caught; the lesson-04 table is the output | T3, T13 |
-| T7 | Motion-range gate | `src/cadagent/gates/motion.py`, `tests/test_gate_motion.py` | seed 7 caught; sample density reported; intended stop contact passes | T3, T13 |
-| T9 | Assembly-sequence access gate | `src/cadagent/gates/assembly.py`, `tests/test_gate_assembly.py` | seed 9 caught; every part in exactly one step | T3, T13 |
+| T6 | Fastener and stack gate with tool-access sweep | `src/cadagent/review/gates/fasteners.py`, `tests/test_gate_fasteners.py` | seeds 4–6 caught; the lesson-04 table is the output | T3, T13 |
+| T7 | Motion-range gate | `src/cadagent/review/gates/motion.py`, `tests/test_gate_motion.py` | seed 7 caught; sample density reported; intended stop contact passes | T3, T13 |
+| T9 | Assembly-sequence access gate | `src/cadagent/review/gates/assembly.py`, `tests/test_gate_assembly.py` | seed 9 caught; every part in exactly one step | T3, T13 |
 | T14 | `cad-agent gates` command, step integration, report rows, `exports/gates/*.json` collected by `check` | `cli.py`, `report.py`, `tests/test_cli.py` | `cad-agent all` runs every gate after build; a failing gate fails `check` | T4, T5, T6, T7, T8, T9 (the command can land after T4/T5 with the others registered as they merge) |
 | **Wave 4** | | | | |
-| T10 | Skill `skills/design-process/SKILL.md` with the section workflow, the render packet spec and the checklist; `cadagent.render.review_packet(section)` helper | `skills/design-process/SKILL.md`, `src/cadagent/render.py`, `tests/test_render.py` | the packet renders the fixture's sections with captions and hashes; the skill passes the repo's skill lint if any | T13, T14 |
-| T11 | Reviewer pass: `cad-agent review-section <id>` prompt bundle (YAML, gates, renders, checklist, diff) and the sign-off record schema and validator; `actor` from `CAD_AGENT_ACTOR` in build and review records; status invalidation on hash change | `src/cadagent/dossier/review.py`, `cli.py`, `tests/test_dossier_review.py` | a record with stale hashes does not sign off; a record whose actor equals the build actor, or is `unknown`, is refused while `require_separate_reviewer` is on | T2, T10 |
-| T15 | Site: section review page, requirements table, gates page with the connectivity SVG | `src/cadagent/site.py`, `webkit/`, `tests/test_site.py` | pages built from the fixture; every link resolves (`html_pages`) | T2, T14 |
+| T10 | Skill `skills/design-process/SKILL.md` with the section workflow, the render packet spec and the checklist; `cadagent.publish.render.review_packet(section)` helper | `skills/design-process/SKILL.md`, `src/cadagent/publish/render.py`, `tests/test_render.py` | the packet renders the fixture's sections with captions and hashes; the skill passes the repo's skill lint if any | T13, T14 |
+| T11 | Reviewer pass: `cad-agent review-section <id>` prompt bundle (YAML, gates, renders, checklist, diff) and the sign-off record schema and validator; `actor` from `CAD_AGENT_ACTOR` in build and review records; status invalidation on hash change | `src/cadagent/review/dossier/review.py`, `cli.py`, `tests/test_dossier_review.py` | a record with stale hashes does not sign off; a record whose actor equals the build actor, or is `unknown`, is refused while `require_separate_reviewer` is on | T2, T10 |
+| T15 | Site: section review page, requirements table, gates page with the connectivity SVG | `src/cadagent/publish/site.py`, `webkit/`, `tests/test_site.py` | pages built from the fixture; every link resolves (`html_pages`) | T2, T14 |
 | **Wave 5** | | | | |
 | T16 | Evaluation: before/after on the two real projects (in their own repos, results summarised generically in `docs/design-process-eval.md`), labelled render set for the checklist, CI job for the seeded set | `docs/design-process-eval.md`, `.github/workflows/ci.yml` | 10/10 seeds, 0 false positives on the control; the eval doc states what the visual review got wrong | all |
 
 | **Wave 6 (stage 2, lower value for the effort; after the gates have run on a real project)** | | | | |
-| T17 | DFMEA rows in the dossier (`fmea:` per part: function, failure mode, effect, cause, S/O/D, action priority from a declared simplified band table), lint for completeness, and geometric prevention controls that resolve to gate ids | `src/cadagent/dossier/fmea.py`, `docs/dossier.md`, tests | every H-priority row has an action; a control naming a gate fails when the gate fails | T2 |
-| T18 | DFA worksheet derived from the contact graph and mates: part and fastener counts, insertion directions, symmetry classes from principal inertia, the three necessity criteria with criterion 3 left to a human; a declared simplified time table (DW §3.6: no open Boothroyd tables exist) | `src/cadagent/dossier/dfa.py`, site section, tests | the fixture's worksheet matches a hand count; the table's source is printed on the page | T4, T13 |
-| T19 | Tolerance stack-up helper: loops along a named direction from the mate graph, nominals from the model, tolerances from the dossier or a general class or the process table (Hubs FDM figures, DW §3.7), worst-case and RSS, flagged when only RSS passes | `src/cadagent/dossier/stackup.py`, tests | the textbook three-plate example reproduces the WC and RSS results | T13 |
-| T20 | Drawing coverage: title block from the dossier, every critical dimension in the card appears on the drawing, datums declared, revision equals the model revision; drawings by the vendored text-to-cad `engineering-drawing` skill (MIT), never draftwright (AGPL) in-process | `src/cadagent/dossier/drawings.py`, skill update, tests | coverage report for the fixture; a missing critical dimension fails | T2, T13 |
+| T17 | DFMEA rows in the dossier (`fmea:` per part: function, failure mode, effect, cause, S/O/D, action priority from a declared simplified band table), lint for completeness, and geometric prevention controls that resolve to gate ids | `src/cadagent/review/dossier/fmea.py`, `docs/dossier.md`, tests | every H-priority row has an action; a control naming a gate fails when the gate fails | T2 |
+| T18 | DFA worksheet derived from the contact graph and mates: part and fastener counts, insertion directions, symmetry classes from principal inertia, the three necessity criteria with criterion 3 left to a human; a declared simplified time table (DW §3.6: no open Boothroyd tables exist) | `src/cadagent/review/dossier/dfa.py`, site section, tests | the fixture's worksheet matches a hand count; the table's source is printed on the page | T4, T13 |
+| T19 | Tolerance stack-up helper: loops along a named direction from the mate graph, nominals from the model, tolerances from the dossier or a general class or the process table (Hubs FDM figures, DW §3.7), worst-case and RSS, flagged when only RSS passes | `src/cadagent/review/dossier/stackup.py`, tests | the textbook three-plate example reproduces the WC and RSS results | T13 |
+| T20 | Drawing coverage: title block from the dossier, every critical dimension in the card appears on the drawing, datums declared, revision equals the model revision; drawings by the vendored text-to-cad `engineering-drawing` skill (MIT), never draftwright (AGPL) in-process | `src/cadagent/review/dossier/drawings.py`, skill update, tests | coverage report for the fixture; a missing critical dimension fails | T2, T13 |
 
 **Parallelism.** Wave 1 has two independent roots, T1 and T3; T13 follows T1 on the same branch, T8 needs only the
 card field from T1, and T12 needs T13's registry (or a plain-dict stand-in until it lands). Wave 2's gates share T3's

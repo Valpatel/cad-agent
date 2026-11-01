@@ -1,0 +1,129 @@
+# The catalogue's demos and the pictures of our commands: cad-agent.valpatel.com/catalog, /catalog.json and
+# /catalog/index.json are built from this file, docs/areas.yaml, upstreams/registry.yaml, research/landscape.json,
+# cli.py and the site's own pages (tools/site-catalog.mjs). Every picture is one of our own figures in docs/img or is
+# drawn by the build from data; the catalogue never shows an outside image (licences, and the site's CSP).
+#
+# demos: the "Play with it" strip and the Demos tab, in this order (a wide screen shows the first four in the strip). An entry appears once every file it names exists
+#   on the built commit, so a demo can be listed before the PR that adds its figure merges.
+#     id      stable slug (the catalogue entry is demo-<id>)
+#     title   what people see; what: one plain line
+#     mode    interactive (you drive it), animated (it plays) or render (a still result from our tools)
+#     cover   a figure in docs/img, or snap-demo (the landing page's animation, computed by tools/snap-demo.mjs)
+#     url     where it lives: a page (docs/x.md, with an optional #anchor that must exist). Without one: the page that
+#             shows the cover, at the heading above it
+#     still   animated covers: the moment the still frame shows, as a fraction of the loop (default 0.5)
+#     areas   slugs from docs/areas.yaml (default: the areas of the page it lives on)
+#     tools   cad-agent commands this demo shows (their entries link to it)
+#   An animated SVG in docs/img that a page shows and that is not listed here joins the strip by itself, titled from
+#   its file name and described by the first sentence of its alt text.
+#
+# tools: `cad-agent <command>` → page (where it is documented; default docs/toolkit.md#commands) and figures (the
+#   pictures of the check it runs; the first one that exists and is not already a cover is its cover), or chart
+#   (file.json#key: the tool's own result, written by a generator with --check, drawn at card size). A command
+#   without either gets a cover drawn from its call and real flags.
+#     still   with an animated figure that a demo naming this tool already shows: the moment the tool's cover shows
+#             (its result, where the demo shows the process); it must differ from the demo's
+#
+# Every figure is a cover once: the demos take theirs first, then the tools, then our pages (the main guides first);
+# a page whose figures are all taken gets a cover drawn from its outline.
+#
+# dense: figures that are never covers, because at card size (300 px, 170 on a phone) they read as a grey box.
+dense:
+  - docs/img/explore/two-wheel-compare.png      # a whole comparison page: title, chart and leaderboard
+demos:
+  - id: snap-arm-explorer
+    title: Snap-arm explorer
+    what: Size a cantilever snap arm and watch it bend, coloured by strain, with pass or fail for the print direction.
+    mode: interactive
+    cover: docs/img/compliant/cantilever-explorer.svg
+    url: docs/compliant.md#try-it-the-snap-arm-explorer
+    areas: [compliant-mechanisms]
+    tools: [snapfit]
+  - id: fea-lid
+    title: FEA of a ribbed lid
+    what: A 300 N press on an enclosure lid, coloured by stress as a fraction of the material's strength.
+    mode: render
+    cover: docs/img/fea.jpg
+    url: docs/toolkit.md#stiffness-and-strength-cadagentsimulationfea
+    areas: [structural-fea]
+  - id: snap-fit
+    title: Cantilever snap fit
+    what: The hook rides up the catch's lead-in, drops in behind it and holds when pulled back, computed from the outlines.
+    mode: animated
+    cover: snap-demo
+    url: docs/compliant.md
+    still: 0.56
+    areas: [compliant-mechanisms]
+    tools: [snapfit]
+  - id: topology-floor
+    title: Topology-optimised floor
+    what: Topology optimisation of an enclosure floor keeps only the material that carries load.
+    mode: render
+    cover: docs/img/topology.jpg
+    url: docs/toolkit.md#topology-optimisation-cadagentsimulationtopopt
+    areas: [topology-optimisation]
+  - id: hinge-sweep
+    title: Hinge sweep and collision onset
+    what: A gate arm swept through its range; the first pose that hits the frame is bisected to a hundredth of a degree.
+    mode: animated
+    cover: docs/img/motion/hinge-sweep.svg
+    still: 0.62
+    areas: [mechanisms, design-process]
+    tools: [gates]
+  - id: review-viewer
+    title: 3D viewer and review site
+    what: Every part in place, with explode and section, and one top bar that links every report.
+    mode: render
+    cover: docs/img/viewer.jpg
+    url: docs/toolkit.md#3d-viewer-cad-agent-view--the-web-kit
+    areas: [publishing]
+    tools: [view, site]
+  - id: search-front
+    title: Design search front
+    what: Seeded trials arrive one by one and the cost and mass front is redrawn as they join it.
+    mode: animated
+    cover: docs/img/motion/search-front.svg
+    areas: [design-exploration]
+    tools: [optimise]
+  - id: rib-in-counterbore
+    title: Rib in a counterbore
+    what: Why every hole is cut last; a rib added after the holes refills the counterbore, and the hole check finds it.
+    mode: animated
+    cover: docs/img/motion/rib-in-counterbore.svg
+    areas: [fasteners-and-hardware, review-and-evidence]
+    tools: [holes]
+  - id: module-insertion
+    title: Module insertion
+    what: A preassembled module checked on its bench, then inserted into its parent as one body and withdrawn.
+    mode: animated
+    cover: docs/img/motion/module-insertion.svg
+    areas: [fasteners-and-hardware]
+    tools: [gates]
+  - id: connector-window
+    title: Connector window
+    what: A panel window sized from the mated plug, with the latch swept along its mating axis.
+    mode: animated
+    cover: docs/img/motion/connector-window.svg
+    areas: [housings-and-enclosures]
+
+tools:
+  snapfit: {page: docs/compliant.md, figures: [docs/img/compliant/example-1.svg]}
+  # holes, gates and optimise: the verdicts their demos build up to (the hole check's fail and pass, the module's
+  # bench, fit and withdrawal results, the search's front).
+  holes: {page: docs/toolkit.md#holes-clear, figures: [docs/img/motion/rib-in-counterbore.svg], still: 0.8}
+  gates: {page: docs/gates.md, figures: [docs/img/motion/module-insertion.svg], still: 0.85}
+  optimise: {page: docs/explore.md, figures: [docs/img/motion/search-front.svg], still: 0.9}
+  # compare: what `cad-agent compare --json` printed for examples/explore-two-wheel (tools/explore_charts.py writes
+  # the JSON; tests run it with --check).
+  compare: {page: docs/explore.md, chart: "docs/img/explore/two-wheel-charts.json#compare"}
+  catalogue: {page: docs/explore.md}
+  view: {page: "docs/toolkit.md#3d-viewer-cad-agent-view--the-web-kit", figures: [docs/img/viewer.jpg]}
+  slice: {page: docs/toolkit.md#real-grams-cadagentmanufacturingslicer-cad-agent-slice}
+  release: {page: docs/toolkit.md#the-print-release-cad-agent-release}
+  pcb-check: {page: docs/pcb.md}
+  motion-trace: {page: docs/rendered-motion.md}
+  dossier: {page: docs/dossier.md}
+  review-packet: {page: docs/review-packet.md}
+  review-section: {page: docs/review-packet.md}
+  agents: {page: docs/agent-workflow.md}
+  mcmaster: {page: skills/mcmaster-parts/SKILL.md}

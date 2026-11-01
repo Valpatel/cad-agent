@@ -1,4 +1,4 @@
-"""cadagent.mcmaster without the network.
+"""cadagent.mechanical.mcmaster without the network.
 
 The page parsing, part-number checks, download checks, SOURCE.txt, the catalogue helpers and the CLI (with a fake
 Session) need neither Playwright nor CadQuery, so they run in the core CI job. normalise() is tested on synthetic
@@ -11,7 +11,7 @@ import zipfile
 
 import pytest
 
-from cadagent import mcmaster as mc
+from cadagent.mechanical import mcmaster as mc
 from cadagent.cli import main
 
 STEP_TEXT = "ISO-10303-21;\nHEADER;\nENDSEC;\nDATA;\nENDSEC;\nEND-ISO-10303-21;\n"
@@ -270,6 +270,9 @@ def test_bearing_ring_lands_on_z0_centred(tmp_path, cq):
     p = _step(tmp_path, cq, "ring", _odd_frame(ring))
     out, info = mc.normalise(p, "bearing", density=7.85)
     assert out.name == "ring.norm.step" and out.exists()
+    first = out.read_bytes()
+    assert b"= PRODUCT('ring.norm','ring.norm'," in first                    # named after the file (#91)
+    assert mc.normalise(p, "bearing", density=7.85)[0].read_bytes() == first  # and the same bytes again
     b = info["bbox_mm"]
     assert b["min"][2] == pytest.approx(0, abs=1e-3) and b["max"][2] == pytest.approx(8, abs=1e-3)
     assert b["min"][0] == pytest.approx(-14, abs=1e-3) and b["max"][1] == pytest.approx(14, abs=1e-3)

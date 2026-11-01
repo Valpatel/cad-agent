@@ -16,9 +16,32 @@ You review a pull request you did not write. Follow the `cad-pr-review` skill (r
 4. For CAD and simulation work, check the physical assumptions as hard as the code: directions (fan flow, loads,
    gravity), units, orientation and datum of photo or drawing fits, which numbers are measured and which assumed,
    and that nothing claims more than CAD or simulation can show.
-5. Post inline comments on exact lines with severity (blocking / minor / nit) via
+5. For any change to part geometry, walk cad-agent's common-issues index
+   ([docs/common-issues.md](https://github.com/Valpatel/cad-agent/blob/dev/docs/common-issues.md)), every row:
+   - Every automatic check row must be in the committed report (`exports/cad-agent-results.json`) and pass, bound to
+     the current files. If "Holes clear" is missing or stale, run it without touching the checkout:
+     `cad-agent holes --out /tmp/<scratch>/holes.json` (about 10 s for a large part). A missing, stale or failing row
+     is a blocking finding. Also look at its listed ledges and the blind holes in a section view: they are the check's
+     known misses.
+   - For each review row, look at the geometry (sections, renders, the STEP) and say in the summary what you checked.
+   - When you find a mistake the index does not list, say so: it belongs in the index.
+6. Post inline comments on exact lines with severity (blocking / minor / nit) via
    `gh api repos/<owner>/<repo>/pulls/<n>/comments` (`commit_id` = head SHA, `path`, `line`, `side=RIGHT`), then one
-   summary review with `gh pr review <n> --comment` that states plainly whether anything blocks the merge. Do not
-   approve or merge.
-6. Final message: each finding as `file:line, severity, one sentence`, plus what you checked and found fine, and the
+   summary review with `gh pr review <n> --comment` that states plainly whether anything blocks the merge. End the summary with the verdict marker on its own line, for the head commit you reviewed:
+   `<!-- cad-review verdict=pass sha=<full 40-character head sha> -->` when nothing blocking is left, otherwise
+   `verdict=block`. Repos with merge gates read it (cad-agent: the latest verdict must be pass, on the PR's head
+   commit); then re-run them: `gh workflow run gates.yml -R <owner>/<repo> -f pr=<n>`.
+   Do not approve or merge.
+7. Final message: each finding as `file:line, severity, one sentence`, plus what you checked and found fine, and the
    links to the review and comments.
+
+```mermaid
+flowchart TD
+    Rd["read the PR, issue, diff,<br/>the repo's rules"] --> V["verify the claims<br/>tests, small scripts"]
+    V --> C["inline comments<br/>+ summary review"]
+    C --> M["verdict marker<br/>as the last line"]
+    N["never edits, approves<br/>or merges"] -.- C
+    class V,C here
+    class Rd,N near
+    class M out
+```

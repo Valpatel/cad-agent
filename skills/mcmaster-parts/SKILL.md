@@ -9,9 +9,20 @@ Bought hardware is a real part: a part number, its manufacturer's model, its spe
 a STEP model and a full specification table (material, finish, strength class, thread, dimensions and tolerances,
 load and speed ratings, temperature range, compliance) for almost everything it sells. Use them.
 
-The tools: `cadagent.mcmaster` (Python) and `cad-agent mcmaster` (CLI). They read one product page at a time in the
-system Chrome (Playwright), with a pause between pages. That is the same traffic as an engineer choosing parts, and
-it must stay that way.
+```mermaid
+flowchart TD
+    P["pick the part like an engineer<br/>category page, spec table"] --> D["download the STEP,<br/>normalise its frame"]
+    D --> C["catalogue entry<br/>PN, specs, price, mass"]
+    C --> K["check the model<br/>bounding box vs the page"]
+    K --> Pl["place it at its seat"]
+    class D,C,K here
+    class P near
+    class Pl out
+```
+
+The tools: `cadagent.mechanical.mcmaster` (Python) and `cad-agent mcmaster` (CLI). They read one product page at a time
+in the system Chrome (Playwright), with a pause between pages. That is the same traffic as an engineer choosing parts,
+and it must stay that way.
 
 ## Rules
 
@@ -29,7 +40,7 @@ it must stay that way.
 - **Strong, but few parts.** Prefer one family per fastener type: for example, black-oxide alloy steel class 12.9
   socket head screws (91290A) with a minimal set of lengths; 18-8 stainless where corrosion matters; class 10 nyloc
   nuts; one washer family per size. When a computed length is not stocked, move the seat or the pilot depth so a
-  stocked length fits (lesson 04) before adding another SKU. Report the number of distinct SKUs and the total part
+  stocked length fits ([Fasteners and assembly access](../../lessons/mechanical/fasteners-and-assembly-access.md)) before adding another SKU. Report the number of distinct SKUs and the total part
   count.
 - **Size from the CAD, then check against the page.** The stack comes from the CAD: grip, thread depth, insert pilot
   depth. Thread engagement is length minus grip. Check the chosen length against the depth actually available, and
@@ -50,9 +61,9 @@ it must stay that way.
 
    This writes `OUT/<PN>/<PN>.step` (the download, kept only if it is a STEP file), `<PN>.page.json` (title, price,
    pack quantity, every spec row, option choices), `<PN>.norm.step`, `<PN>.norm.json` (axis found, how it was
-   seated, bbox, volume, mass) and an entry in `SOURCE.txt`. Kinds and their frames (`cadagent.mcmaster.FRAMES`)
-   all put the axis on +Z, through the origin (the cylinders' axis line, not the centre of mass); which end goes
-   down is decided from the part's shape, not from how the vendor modelled it:
+   seated, bbox, volume, mass) and an entry in `SOURCE.txt`. Kinds and their frames
+   (`cadagent.mechanical.mcmaster.FRAMES`) all put the axis on +Z, through the origin (the cylinders' axis line, not the
+   centre of mass); which end goes down is decided from the part's shape, not from how the vendor modelled it:
    - `bearing`, `washer`, `nut`, `insert`, `standoff`, `spacer`, `pin`, `grommet`, `rod`: the larger end (flange,
      collar, head) at z = 0 and the part on +z; when both ends are the same size, the heavier end down
      (`info["end_down"]` says which rule decided).
@@ -83,14 +94,14 @@ it must stay that way.
    the head, a rod end's centre-to-end length). A mismatch means the wrong frame or the wrong part.
 5. **Place it in the assembly.** Import `<PN>.norm.step` and move it to the seat: for a screw, origin on the seat face
    and +Z out of the hole; for a bearing, the bottom face on the shoulder. Run the clash and tool-access checks
-   (lesson 04) with the real heads, nuts and washers in place, not envelopes.
+   ([Fasteners and assembly access](../../lessons/mechanical/fasteners-and-assembly-access.md)) with the real heads, nuts and washers in place, not envelopes.
 
 ## Python
 
 ```python
 import json
 
-from cadagent import mcmaster as mc
+from cadagent.mechanical import mcmaster as mc
 
 with mc.Session(delay_s=3) as s:                    # one browser, one page at a time
     step = s.fetch("5972K82", "references/vendor/mcmaster/5972K82")

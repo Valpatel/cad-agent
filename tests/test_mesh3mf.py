@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 from cadagent import MissingDependency
-from cadagent import mesh3mf
+from cadagent.manufacturing import mesh3mf
 
 def cube(size=10.0, origin=(0.0, 0.0, 0.0)):
     v = np.array(

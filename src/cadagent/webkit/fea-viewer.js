@@ -1,4 +1,4 @@
-// FEA results viewer: the solved part from cadagent.fea Study.export_viewer(), deformed and coloured by a chosen field,
+// FEA results viewer: the solved part from cadagent.simulation.fea Study.export_viewer(), deformed and coloured by a chosen field,
 // with the load ramped live from zero, past the design load, to where the part first reaches its strength and beyond
 // (regions past the strength turn black). Hot spots (click to fly there), held faces, load arrows, a section cut,
 // and a readout of the value under the pointer. Linear elastic results, so every field scales with the load factor.
@@ -363,7 +363,7 @@ export async function mountFeaViewer(element, url, opts = {}) {
   // --- panel
   const info = readouts(section(panel, 'Result', { note: String(data.name ?? '') }));
   const vol = F.overstressed_volume || {};
-  const rows = [['material', String(mat.name ?? '')], ['strength', `${fmt(S, 1)} MPa`], ['modulus E', `${fmt(num(mat.E_mpa), 0)} MPa`],
+  const rows = [['material', String(mat.name ?? '')], ['strength', `${fmt(S, 1)} MPa`], ['modulus E', `${fmt(num(mat.E_mpa), 0)} MPa${mat.direction ? ` (${String(mat.direction)})` : ''}`],
     ['design stress', `${fmt(vmDesign, 1)} MPa`], ['safety factor', fmt(res.safety_factor), res.safety_factor < 1 ? 'fail' : res.safety_factor < 1.5 ? 'warn' : 'ok'],
     ['max displacement', `${fmt(dmax, 3)} mm`]];
   if (res.stiffness_n_per_mm) rows.push(['stiffness', `${fmt(res.stiffness_n_per_mm, 1)} N/mm`]);

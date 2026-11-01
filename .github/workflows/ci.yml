@@ -18,12 +18,13 @@ jobs:
   # 3.10 is the oldest supported Python (and what JetPack 6 ships on Jetson).
   core:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     strategy:
       matrix:
         python: ['3.10', '3.12']
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0   # v7.1.0
         with: {python-version: '${{ matrix.python }}'}
       - run: pip install -e ".[dev]"
       - run: python -m pytest -q
@@ -33,12 +34,23 @@ jobs:
   # tests run instead of skipping.
   full:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30          # usually 4-7 minutes; a hung step must not hold a PR for GitHub's default six hours
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0   # v7.1.0
         with: {python-version: '3.12', cache: pip}
+      # A mirror can hang: each try is time-boxed, and three tries fit inside the step's limit.
       - name: System libraries for the gmsh, VTK and MuJoCo wheels
-        run: sudo apt-get update -q && sudo apt-get install -yq --no-install-recommends libglu1-mesa libxrender1 libxcursor1 libxft2 libxinerama1 libgl1 libegl1
+        timeout-minutes: 14   # worst case 3 x (90 + 90 + 10 + 60) s = 12.5 min
+        run: |
+          for try in 1 2 3; do
+            sudo timeout 90 apt-get update -q &&
+              sudo timeout 90 apt-get install -yq --no-install-recommends libglu1-mesa libxrender1 libxcursor1 libxft2 libxinerama1 libgl1 libegl1 &&
+              exit 0
+            echo "apt try $try failed or timed out; retrying"; sleep 10
+            sudo timeout 60 dpkg --configure -a || true   # a timeout inside dpkg leaves it "interrupted": finish it first
+          done
+          exit 1
       - run: pip install -e ".[cad,fea,robot,site,sim,explore,dev]"
       # importorskip would turn a broken heavy install into silent skips: import them all first, loudly
       - run: python -c "import cadquery, OCP, trimesh, vtk, matplotlib, PIL, gmsh, skfem, mujoco, markdown, pymoto, pyvista, imageio, manifold3d, rtree, optuna; print('extras import ok')"

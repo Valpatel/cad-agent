@@ -1,0 +1,53 @@
+/* <cad-cantilever> (kit/cantilever.js). Link this in <head>: it reserves the element's full size before the script
+   runs (the still image, then the panel's height), so the live figure and controls replace them without moving the
+   page. The panel has a fixed height per layout; tests/website-browser.mjs checks the size and that nothing
+   overflows. Override the colours with the --cc-* custom properties. */
+cad-cantilever{--cc-ink:#173d3c;--cc-muted:#526863;--cc-sage:#6f8a80;--cc-mist:#eef1e4;--cc-cream:#fffdf5;--cc-peach:#ffe1cc;
+  --cc-rust:#bd3a12;--cc-panel:388px;display:block;box-sizing:border-box;margin:28px 0;border:1px solid #c9d8ca;
+  border-radius:16px;background:var(--cc-cream);color:var(--cc-ink);overflow:hidden;font-size:14px;line-height:1.35;
+  overflow-wrap:normal}
+@media(max-width:699.98px){cad-cantilever{--cc-panel:664px}}
+cad-cantilever>img,cad-cantilever .cc-figure>svg{display:block;width:100%;height:auto;aspect-ratio:640/250;max-width:none;margin:0;border:0}
+/* Until the script defines the element (or if it never loads), the reserved panel says what belongs there. */
+cad-cantilever:not(:defined)::after{content:"The sliders and readouts load here with JavaScript. The figure above is the starting arm.";
+  display:flex;align-items:center;justify-content:center;box-sizing:border-box;height:var(--cc-panel);padding:16px 24px;
+  border-top:1px solid var(--cc-mist);color:var(--cc-muted);font-size:13px;text-align:center}
+@media(scripting:none){cad-cantilever:not(:defined)::after{display:none}}
+cad-cantilever .cc-figure{margin:0}
+cad-cantilever .cc-panel{box-sizing:border-box;height:var(--cc-panel);overflow:hidden;padding:14px 18px 12px;
+  border-top:1px solid var(--cc-mist);display:flex;flex-direction:column;gap:12px}
+cad-cantilever .cc-readout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+cad-cantilever .cc-tile{margin:0;padding:8px 10px;border-radius:12px;background:var(--cc-mist);display:flex;flex-direction:column;min-width:0}
+cad-cantilever .cc-tile b{font-size:20px;line-height:1.2;font-variant-numeric:tabular-nums;white-space:nowrap}
+cad-cantilever .cc-tile span{font-size:12px;color:var(--cc-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+cad-cantilever .cc-tile .cc-k{font-weight:650;letter-spacing:.02em;color:var(--cc-ink)}
+cad-cantilever .cc-tile[data-verdict=fail]{background:var(--cc-peach)}
+cad-cantilever .cc-tile[data-verdict=fail] b{color:var(--cc-rust)}
+cad-cantilever .cc-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px 24px}
+cad-cantilever .cc-sliders,cad-cantilever .cc-choices{display:flex;flex-direction:column;gap:6px;min-width:0}
+cad-cantilever .cc-field{display:flex;flex-direction:column;gap:2px}
+cad-cantilever .cc-field label{display:flex;justify-content:space-between;gap:8px;font-weight:600;font-size:13px}
+cad-cantilever .cc-value{font-weight:500;font-variant-numeric:tabular-nums;color:var(--cc-muted)}
+cad-cantilever input[type=range]{width:100%;margin:0;height:24px;accent-color:var(--cc-ink)}
+cad-cantilever select{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--cc-sage);border-radius:8px;background:#fff;color:var(--cc-ink);min-height:32px;max-width:100%}
+cad-cantilever fieldset{margin:0;padding:0;border:0;display:flex;flex-direction:column;gap:2px;font-size:13px;min-width:0}
+cad-cantilever legend{padding:0;margin-bottom:2px;font-weight:600}
+cad-cantilever fieldset label,cad-cantilever .cc-check{display:inline-flex;align-items:center;gap:6px;font-size:13px;white-space:nowrap}
+cad-cantilever input[type=radio],cad-cantilever input[type=checkbox]{margin:0;accent-color:var(--cc-ink);width:16px;height:16px}
+cad-cantilever .cc-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto}
+cad-cantilever .cc-note{margin:0;font-size:12px;color:var(--cc-muted)}
+cad-cantilever .cc-play{flex:none;font:inherit;font-size:13px;font-weight:650;min-height:32px;min-width:72px;padding:4px 14px;border-radius:999px;
+  border:1px solid var(--cc-ink);background:#fff;color:var(--cc-ink);cursor:pointer}
+cad-cantilever :is(input,select,button):focus-visible{outline:3px solid var(--cc-rust);outline-offset:2px}
+cad-cantilever .cc-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;margin:0}
+@media(max-width:699.98px){
+  cad-cantilever .cc-panel{padding:12px 12px 10px;gap:10px}
+  cad-cantilever .cc-readout{gap:6px}cad-cantilever .cc-tile{padding:6px 8px}
+  cad-cantilever .cc-tile b{font-size:16px}cad-cantilever .cc-tile span{font-size:11px;white-space:normal}
+  cad-cantilever .cc-controls{grid-template-columns:minmax(0,1fr);gap:8px}
+  cad-cantilever .cc-foot{align-items:flex-end}
+  cad-cantilever .cc-play{min-height:44px}
+  cad-cantilever .cc-figure text{font-size:19px}
+  cad-cantilever input[type=range]{height:32px}
+}
+@media(pointer:coarse){cad-cantilever input[type=radio],cad-cantilever input[type=checkbox]{width:20px;height:20px}}

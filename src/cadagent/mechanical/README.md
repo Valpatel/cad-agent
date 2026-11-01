@@ -1,0 +1,43 @@
+# cadagent.mechanical
+
+The mechanical domain of the [topic tree](../../../docs/areas.yaml): the features a part is built from and the checks
+that they work, from holes and fasteners to bought hardware, connector windows, markings and compliant features.
+
+Arrows follow the data. A project's build script imports the modules in the second row to make its parts
+(`cad-agent mcmaster` and `cad-agent snapfit` run two of them from the command line too), and `mcmaster.py` imports
+`export_step` from the shared [`geometry`](../geometry/README.md) helpers. `holes.py` reads the exported STEP files and
+the parts file (through `publish/report.py`'s `load_parts`). `motion_trace.py` (`cad-agent motion-trace`) stands
+alone.
+
+```mermaid
+flowchart TD
+    G["cadagent.geometry<br/>export_step"] --> MC["mcmaster.py<br/>bought parts"]
+    G ~~~ FK["fasteners.py<br/>markings.py"]
+    G ~~~ CC["connectors.py<br/>compliant/"]
+    MC & FK & CC --> B["build script<br/>the project's CadQuery"]
+    B -->|"STEP, parts file"| X["exports/<br/>STEP · parts file"]
+    X --> H["holes.py<br/>cad-agent holes"]
+    H --> HJ["exports/<br/>hole-checks.json"]
+    HJ --> R["publish/report.py<br/>results JSON"]
+    HJ ~~~ MT["motion_trace.py<br/>renders vs joints"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class MC,FK,CC,H,MT here
+    class G,B,R near
+    class X,HJ out
+```
+
+| Module | What it does |
+|---|---|
+| `holes.py` | Every hole in a part is empty of material (`cad-agent holes`); countersinks and drill points are probed as cones |
+| `fasteners.py` | Dimension-driven fastener envelopes and axial stack checks |
+| `mcmaster.py` | McMaster-Carr parts: the manufacturer's STEP and product data for a part number, normalised into a known frame |
+| `connectors.py` | Mating-connector envelopes: panel windows from the plug, then proof that the plug fits |
+| `markings.py` | One XY drawing for engraved markings and a matching SVG proof |
+| [`compliant/`](compliant/__init__.py) | Compliant features that replace parts: snap fits now, hinges and flexures next |
+| `motion_trace.py` | Compares rendered landmarks with CAD joint intent, without a CAD kernel |
+
+Related: [package map](../README.md) · [mcmaster-parts skill](../../../skills/mcmaster-parts/SKILL.md) ·
+[compliant mechanisms](../../../docs/compliant.md) · [common issues](../../../docs/common-issues.md) (the mistakes
+these catch)

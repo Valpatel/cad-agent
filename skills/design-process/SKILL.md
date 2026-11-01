@@ -11,6 +11,20 @@ looked. This process makes the design *declared* (what touches, holds, moves and
 gates), *justified* (a decision with the alternatives rejected for each part) and *reviewed* (a separate reviewer
 with a checklist), one section at a time.
 
+```mermaid
+flowchart TD
+    F["1 frame the section<br/>no geometry yet"] --> Cd["2 a card per part<br/>with its geometry"]
+    Cd --> G["3 declare geometry facts<br/>in the build script"]
+    G --> B["4 build, gate, lint,<br/>fix in order"]
+    B --> P["5–6 review packet,<br/>self-critique, measurements first"]
+    P --> Rv["7 a separate reviewer"]
+    Rv -->|"changes"| Cd
+    Rv --> Rp["8 report"]
+    class Cd,G,B,P here
+    class F near
+    class Rv,Rp out
+```
+
 References: [`docs/dossier.md`](../../docs/dossier.md) (the YAML and the build-script declarations),
 [`docs/gates.md`](../../docs/gates.md) (what each gate measures), [`docs/review-packet.md`](../../docs/review-packet.md)
 (the packet and the checklist), [`docs/design-process-plan.md`](../../docs/design-process-plan.md) §5 (why).
@@ -62,7 +76,7 @@ the gates and checks that verify it. Leave `status:` out: it is computed. The li
 Only the code knows which solid is the cavity, where an axis is, where each screw sits:
 
 ```python
-from cadagent.dossier import Axis, part, cavity, joint, fastener, assembly, build
+from cadagent.review.dossier import Axis, part, cavity, joint, fastener, assembly, build
 
 @part("hopper", section="S3")
 def hopper(p): ...
@@ -95,6 +109,10 @@ Fix in this order, rerunning after each group (a fix early in the list often cle
 5. **Assembly access**: coverage, then blocked insertions and tools at their steps.
 6. **Motion**: collisions over each joint's range.
 7. **Wall**, then the **lint's status rules** (decisions, traces, checks).
+
+Then the standard part checks, which every project runs whether or not it has a dossier: `cad-agent holes` (every
+hole in every part clear of material: build features first and cut holes last) and the rest of `cad-agent all`. Walk
+[docs/common-issues.md](../../docs/common-issues.md) for the issues no check covers yet.
 
 Never lower a threshold or widen a tolerance to pass. A finding that is not a defect becomes an explained
 exclusion: `gates.free_parts` (a loose item), `gates.intended_overlaps` (a heat-set insert, a press fit, a screw's

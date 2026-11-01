@@ -44,13 +44,32 @@ that session wrote.
 `design-process` has its own *design* reviewer pass with sign-off (`cad-agent review-section`); `cad-pr-reviewer`
 reviews the pull request (code, evidence, docs), which is a different job.
 
+Reviews of geometry also walk [common-issues.md](common-issues.md): the mistakes that recur in CAD designs, each
+with the check that catches it, or that it needs a look.
+
 ## The workflow in one page
 
 Assume the session ends within 30 minutes: tokens run out, the workstation crashes or is reformatted. GitHub is the
 record; a fresh agent on another computer continues from it alone.
 
-1. **Issue first.** One per piece of work, with a checklist: done, next, running, how to resume. A big job gets a
-   tracking issue linking smaller ones.
+```mermaid
+flowchart TD
+    I["issue + work claim"] --> B["branch + draft PR<br/>pushed at once"]
+    B --> C["commit + push<br/>in clean chunks"]
+    C <--> K["checkpoint every ~30 min<br/>heavy runs on a compute host"]
+    C --> R["independent review<br/>every thread resolved"]
+    R --> M["merge under the repo's rules"]
+    X["session ends"] -.-> Z["a fresh agent resumes<br/>from GitHub alone"] -.-> C
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class B,C,K here
+    class I,X,Z near
+    class R,M out
+```
+
+1. **Issue first, then claim it.** One per piece of work, with a checklist: done, next, running, how to resume. A big
+   job gets a tracking issue linking smaller ones. Post a work-claim comment before starting (below).
 2. **Branch and push at once**, per the repo's rules (cad-agent: `feat/<topic>` worktree from `origin/dev`; product
    repos say in their AGENTS.md).
 3. **Draft PR early**, `Closes #<issue>` in its body, listing what is still missing.
@@ -60,6 +79,24 @@ record; a fresh agent on another computer continues from it alone.
 6. **Heavy runs on a compute host**, detached, recorded in the issue, results pulled back and committed.
 7. **Independent review** by `cad-pr-reviewer` (or a separate Codex session); answer and resolve every thread.
 8. **Merge under the repo's rules**, then check the issues closed and tick the tracking issue.
+
+### Work claims
+
+Agents on different tools and machines share issues with comments whose first line is machine-readable:
+
+```markdown
+<!-- work v1 claim agent=a-7kq2m4xw lease=2026-11-01T19:00Z -->
+**Claimed** by agent `a-7kq2m4xw` until 2026-11-01T19:00Z UTC.
+
+Scope: …
+Branch: …
+```
+
+Actions are `claim`, `checkpoint` (renews the lease), `release` and `done`. A lease lasts at most 24 h; a claim not
+refreshed in time has expired and the issue is open for anyone. Of the active claims, the one whose unbroken run of
+claims and checkpoints started first holds. Tags are pseudonymous (`a-` + 8 of `[a-z2-7]`; one per tool and machine,
+so sibling sessions share it): no host or user names in public repos. Full rules in
+[cad-work-tracking](../skills/cad-work-tracking/SKILL.md#work-claims-sharing-issues-between-agents).
 
 Things that must not live only locally: decisions and reasons, the user's measurements and observations, run
 commands and results, lessons. Licensed or large inputs stay out of git, but the repo says where they come from and

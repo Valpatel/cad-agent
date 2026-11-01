@@ -22,7 +22,7 @@ import pytest
 
 from cadagent import cli
 from cadagent.cli import main
-from cadagent.gates import run as gr
+from cadagent.review.gates import run as gr
 from cadagent.project import load_project
 
 from .test_dossier_lint import make_project
@@ -45,10 +45,11 @@ def bind_verdicts(root: Path, gates: Optional[Iterable[str]] = None, failing: It
 
 
 FAKE_WORKER = textwrap.dedent('''
-    """A stand-in for `python -m cadagent.gates.run <root> <gate>`: writes the verdict run_one would, no kernel."""
+    """A stand-in for `python -m cadagent.review.gates.run <root> <gate>`: writes the verdict run_one would, no
+    kernel."""
     import os, sys, time
     from pathlib import Path
-    from cadagent.gates import run as gr
+    from cadagent.review.gates import run as gr
     from cadagent.project import load_project
     root, gate = sys.argv[1], sys.argv[2]
     mode = os.environ.get("FAKE_GATE_MODE", "pass")
@@ -139,7 +140,7 @@ def test_without_dossier_or_gates_key_nothing_changes(tmp_path, capsys):
     (tmp_path / "cad-agent.yaml").write_text("cad:\n  name: plain\n")
     assert main(["gates", "--project", str(tmp_path)]) == 2
     assert "no dossier: or gates: key" in capsys.readouterr().err
-    from cadagent.report import collect
+    from cadagent.publish.report import collect
     features = [f["feature_id"] for f in collect(load_project(tmp_path))["features"]]
     assert "cad-gates" not in features and "cad-dossier" not in features
 
@@ -310,8 +311,8 @@ def test_check_after_a_dossier_declaration_changes(project, capsys):
 
 def test_check_and_report_need_no_cad_kernel(project):
     bind_verdicts(project)
-    code = ("import sys; from cadagent.project import load_project; from cadagent.report import collect; "
-            "from cadagent.gates.run import gates_config, plan; "
+    code = ("import sys; from cadagent.project import load_project; from cadagent.publish.report import collect; "
+            "from cadagent.review.gates.run import gates_config, plan; "
             f"r = collect(load_project({str(project)!r})); "
             "assert any(f['feature_id'] == 'cad-gates' for f in r['features']); "
             "print(any(m in sys.modules for m in ('cadquery', 'OCP', 'trimesh')))")
@@ -327,12 +328,13 @@ def test_all_runs_the_gates_after_the_build(project, capsys, monkeypatch):
     calls = []
     monkeypatch.setattr(cli, "cmd_build", lambda p, a: calls.append("build") or 0)
     monkeypatch.setattr(cli, "cmd_export_3mf", lambda p, a: calls.append("3mf") or 0)
+    monkeypatch.setattr(cli, "cmd_holes", lambda p, a: calls.append("holes") or 0)
     monkeypatch.setattr(cli, "cmd_report", lambda p, a: calls.append("report") or 0)
     monkeypatch.setattr(cli, "cmd_package", lambda p, a: calls.append("package") or 0)
     real = cli.cmd_gates
     monkeypatch.setattr(cli, "cmd_gates", lambda p, a: calls.append("gates") or real(p, a))
     assert main(["all", "--project", str(project)]) == 0
-    assert calls == ["build", "3mf", "gates", "report", "package"]
+    assert calls == ["build", "3mf", "holes", "gates", "report", "package"]
     assert (project / "exports" / "gates" / "wall.json").is_file()
     assert (project / "exports" / "dossier-status.json").is_file()
 
@@ -347,7 +349,7 @@ def test_all_without_a_geometry_record_still_lints(tmp_path, capsys, monkeypatch
 
 
 def test_site_overview_counts_current_passing_gates(project):
-    from cadagent.site import build_site
+    from cadagent.publish.site import build_site
     bind_verdicts(project, failing=["wall"])
     build_site(project, {}, "Demo")
     assert "integrity gates" not in (project / "site" / "index.html").read_text()   # only for a gates project
@@ -365,7 +367,7 @@ def test_site_overview_counts_current_passing_gates(project):
 # ----------------------------------------------------------------------------------------------- review fixes
 
 def test_a_part_named_like_a_volatile_field_is_still_digested():
-    from cadagent.gates.verdict import geometry_digest
+    from cadagent.review.gates.verdict import geometry_digest
     rec = {"actor": "a", "parts": {"file": {"sha256": "1" * 64, "declared_at": "x:1"}},
            "joints": {"hash": {"kind": "revolute", "range": [0, 10]}}}
     moved = {**rec, "actor": "b", "parts": {"file": {"sha256": "1" * 64, "declared_at": "x:9"}}}
@@ -407,7 +409,7 @@ def test_a_configured_skip_removes_the_verdict_the_lint_would_read(project, caps
 
 
 def test_the_lint_compares_declarations_and_options_for_a_project(project):
-    from cadagent.dossier.lint import lint_project
+    from cadagent.review.dossier.lint import lint_project
     bind_verdicts(project)
     assert "verdict-stale" not in lint_project(load_project(project)).codes()
     _config(project, "gates:\n  assembly: {max_step_mm: 2}\n")

@@ -105,7 +105,7 @@
    "evidence": "practice",
    "sources": [
     "MIL-HDBK-470A, MIL-STD-1472 (listings only)",
-    "cad-agent lesson 04"
+    "cad-agent lessons/mechanical/fasteners-and-assembly-access.md"
    ]
   },
   {
@@ -113,7 +113,7 @@
    "practice": "sign-off bound to a geometry hash",
    "evidence": "practice",
    "sources": [
-    "cadagent.evidence",
+    "cadagent.review.evidence",
     "text-to-cad document_hash"
    ]
   }

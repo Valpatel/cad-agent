@@ -1,0 +1,9 @@
+# Keeps the SHA-pinned workflow actions current: weekly PRs into dev (branch dependabot/...), reviewed like any other.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: dev
+    schedule: {interval: weekly}
+    groups:
+      actions: {patterns: ["*"]}

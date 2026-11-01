@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from cadagent.dossier import DossierError, dump_yaml, load_dossier, load_project_dossier
+from cadagent.review.dossier import DossierError, dump_yaml, load_dossier, load_project_dossier
 from cadagent.project import load_project
 
 # The part spec card example from docs/design-process-plan.md §3.2, verbatim.
@@ -326,7 +326,7 @@ def test_fastener_entries_carry_their_line(dossier_path):
 
 def test_evidence_shape_content_hash():
     cq = pytest.importorskip("cadquery")
-    from cadagent.evidence import brep_content_hash, shape_brep_text, shape_content_hash
+    from cadagent.review.evidence import brep_content_hash, shape_brep_text, shape_content_hash
     box = cq.Workplane().box(10, 20, 30).edges("|Z").fillet(2).val()
     h = shape_content_hash(box)
     box.tessellate(0.1)

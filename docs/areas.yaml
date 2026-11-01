@@ -1,0 +1,369 @@
+# The topic tree: domain → area → topic (#139, #140). The one place that names an area; the site's area hubs (#141),
+# the evaluation jobs (#142) and folder names (#145) use these slugs. Read docs/vision.md first.
+#
+# Every node: slug, title, scope (one line), maturity, and optionally:
+#   priority  gyropup (needed for Gyropup to become real) and/or demo (makes a good video or interactive demo)
+#   pages     repo-relative Markdown pages (docs/, research/)       cli      `cad-agent` subcommands
+#   api       cadagent modules (today's import paths)                skills   skills/<name>/SKILL.md
+#   uses      another domain's cadagent modules the node relies on (never one of its own `api`)
+#   agents    agents/<name>.md                                       lessons  a lessons/ folder this node owns (#133)
+#   issues    open cad-agent issues or pull requests                 projects keys of `projects` below
+# A list may name the same item under several nodes. tests/test_areas.py checks that every item exists, that every
+# docs/ and research/ page, command, skill and agent is placed somewhere, and that every lessons/ folder is claimed.
+#
+# Keep the map whole: a PR that adds a docs or research page, a `cad-agent` command, a skill or an agent adds its line
+# here. When two open PRs cross, the one that merges second adds it, after merging dev and re-running its CI (dev does
+# not require branches to be up to date, so an older green run proves nothing about the map).
+#
+# Maturity values are first estimates; correct them when evidence says otherwise, and only then. An area or topic is
+# judged on its own evidence, and an area is never below its most mature topic. A domain's maturity is the highest of
+# its areas': it says how far the domain's best-developed area has got, and its hub shows every area's level beside it.
+#
+# Module names in `api` are import paths. Since #121 the code is laid out by this tree: `cadagent.<domain>.<module>`,
+# with the practice domain's review and publishing areas as `cadagent.review` and `cadagent.publish`, and the shared
+# core (`cadagent.geometry`, `.project`, `.links`, ...) at the top. A domain package's module is listed in `api` under
+# its own domain only, so each module has one home; a node that relies on another domain's module names it in `uses`
+# instead (thermal's airflow uses `cadagent.simulation.cfd`). tests/test_package_areas.py keeps code and tree in step.
+# The old flat paths still import with a warning until v0.7.0, but the tests reject them here.
+version: 1
+
+maturity:
+  - {level: idea, means: "named here so work has a place to land; nothing built yet"}
+  - {level: surveyed, means: "open-source tools and published sources found and compared; adopt-vs-build recorded"}
+  - {level: tooling, means: "deterministic tools or checks with tests, and a page that states their limits"}
+  - {level: validated, means: "several independent sources agree, confidence recorded, standard jobs pass"}
+  - {level: proven, means: "used on a real project, with a measured physical result"}
+
+projects:
+  gyropup: {title: Gyropup, url: "https://github.com/Valpatel/gyropup"}
+  j501-enclosure: {title: J501 AGX enclosure, url: "https://github.com/mvalancy/j501-agx-orin"}
+  thor-can-breakout: {title: AGX Thor CAN breakout, url: "https://github.com/mvalancy/pcb-agx-thor-can-breakout"}
+
+cross_cutting:
+  pages: [docs/vision.md, docs/toolkit.md, docs/formulas.md, research/landscape.md]
+  api: [cadagent.geometry, cadagent.project, cadagent.links, cadagent.formulas]
+  issues: [106, 113, 139]
+
+domains:
+  - slug: mechanical
+    title: Mechanical design
+    scope: Parts and assemblies that move, hold, enclose and fasten.
+    maturity: tooling
+    lessons: mechanical
+    areas:
+      - slug: cad-modelling
+        title: CAD modelling and kernels
+        scope: Code-CAD kernels and libraries, parametric modelling, and CAD-program bridges for agents (MCP servers).
+        maturity: tooling
+        pages: [docs/toolkit.md, research/landscape.md]
+        api: [cadagent.geometry]
+      - slug: mechanisms
+        title: Mechanisms
+        scope: Joints, linkages, motor mounts and the motion between parts.
+        maturity: tooling
+        priority: [gyropup, demo]
+        pages: [docs/rendered-motion.md]
+        cli: [motion-trace]
+        api: [cadagent.mechanical.motion_trace]
+        skills: [cad-motion-validation]
+        projects: [gyropup]
+        topics:
+          - {slug: motor-mounts, title: Motor mounts, scope: "Bolt circles, pilots and load paths for bought actuators and motors.", maturity: idea, priority: [gyropup], issues: [144]}
+          - {slug: linkages, title: Linkages, scope: "Four- and five-bar position, workspace and transmission angle.", maturity: idea, priority: [gyropup, demo], issues: [137]}
+          - {slug: joints-and-bearings, title: Joints and bearings, scope: "Pivots, bearing seats, shafts and their fits.", maturity: idea, priority: [gyropup]}
+      - slug: housings-and-enclosures
+        title: Housings and enclosures
+        scope: Shells, lids, bosses, ribs, port windows and markings around electronics and mechanisms.
+        maturity: tooling
+        priority: [gyropup]
+        api: [cadagent.mechanical.connectors, cadagent.mechanical.markings]
+        projects: [j501-enclosure, thor-can-breakout, gyropup]
+        topics:
+          - {slug: port-windows, title: Port windows, scope: "Panel cut-outs sized from the mating plug, then proven to fit.", maturity: tooling}
+          - {slug: ribs-and-bosses, title: Ribs and bosses, scope: "Stiffening and insert bosses that never block a hole.", maturity: tooling}
+          - {slug: markings, title: Markings, scope: "Engraved and embossed labels with a matching proof drawing.", maturity: tooling}
+      - slug: compliant-mechanisms
+        title: Compliant mechanisms
+        scope: One-piece parts that flex instead of sliding or screwing.
+        maturity: tooling
+        priority: [gyropup, demo]
+        pages: [docs/compliant.md, research/compliant-mechanisms.md]
+        cli: [snapfit]
+        api: [cadagent.mechanical.compliant]
+        issues: [94, 95, 137]
+        topics:
+          - {slug: snap-fits, title: Snap fits, scope: "Cantilever, torsion and annular snaps sized by print direction.", maturity: tooling, priority: [demo], issues: [95]}
+          - {slug: flexures, title: Flexures, scope: "Flexure hinges and stages: stiffness, stroke and fatigue.", maturity: surveyed, issues: [95]}
+          - {slug: living-hinges, title: Living hinges, scope: "Thin hinges in printed and moulded plastics.", maturity: surveyed}
+      - slug: gears
+        title: Gears
+        scope: Spur, helical, planetary and printed gear trains.
+        maturity: idea
+        priority: [demo]
+      - slug: belt-and-chain-drives
+        title: Belt and chain drives
+        scope: Timing belts, chains, pulleys, sprockets and tensioning.
+        maturity: idea
+      - slug: wheels-and-driving
+        title: Wheels and driving
+        scope: Wheels, hubs, tyres and the drivetrain that turns them.
+        maturity: idea
+        priority: [gyropup, demo]
+        projects: [gyropup]
+      - slug: walking
+        title: Walking
+        scope: Legged mechanisms, from linkage legs to gaits.
+        maturity: idea
+        priority: [gyropup, demo]
+        projects: [gyropup]
+        topics:
+          - {slug: five-bar-legs, title: Five-bar legs, scope: "Two-motor parallel legs: kinematics, workspace, loads.", maturity: idea, priority: [gyropup, demo], issues: [144]}
+      - slug: fasteners-and-hardware
+        title: Fasteners, bought hardware and assembly
+        scope: Screws, inserts and other bought parts, and getting them in and out.
+        maturity: tooling
+        priority: [gyropup]
+        pages: [docs/subassembly-insertion.md]
+        cli: [holes, mcmaster]
+        api: [cadagent.mechanical.fasteners, cadagent.mechanical.holes, cadagent.mechanical.mcmaster]
+        skills: [mcmaster-parts]
+        issues: [46]
+        topics:
+          - {slug: fasteners, title: Fasteners, scope: "Screw stacks, engagement, bottoming and hole clearance.", maturity: tooling, priority: [gyropup]}
+          - {slug: bought-parts, title: Bought parts, scope: "Real catalogue parts with their manufacturer models.", maturity: tooling}
+          - {slug: assembly-access, title: Assembly access, scope: "Tool reach, insertion paths and subassembly order.", maturity: tooling}
+      - slug: fixtures-and-jigs
+        title: Fixtures and jigs
+        scope: Holding, locating and testing parts and boards.
+        maturity: idea
+        topics:
+          - {slug: pogo-pin-test-fixtures, title: Pogo-pin test fixtures, scope: "Bed-of-nails fixtures that test a PCBA through its test points.", maturity: idea}
+          - {slug: general-fixtures-and-jigs, title: General fixtures and jigs, scope: "Locating, clamping and drilling aids.", maturity: idea}
+      - slug: mould-design
+        title: Mould design
+        scope: Parts designed for moulding, and the moulds themselves.
+        maturity: idea
+        pages: [research/process-profiles.md]
+        issues: [99]
+        topics:
+          - {slug: moulded-part-design, title: Moulded-part design, scope: "Walls, draft, ribs, bosses, gates and sink.", maturity: idea, issues: [99]}
+          - {slug: mould-tools, title: Mould tools, scope: "Parting lines, cores, cavities and ejection.", maturity: idea}
+
+  - slug: manufacturing
+    title: Manufacturing
+    scope: Turning a design into a part, process by process.
+    maturity: tooling
+    pages: [research/process-profiles.md]
+    issues: [99]
+    areas:
+      - slug: 3d-printing
+        title: 3D printing
+        scope: FDM, SLA, SLS and MJF parts, from orientation to slicing.
+        maturity: tooling
+        priority: [gyropup]
+        cli: [export-3mf, slice]
+        api: [cadagent.manufacturing.slicer, cadagent.manufacturing.mesh3mf]
+        issues: [84, 99]
+        projects: [gyropup, j501-enclosure]
+        topics:
+          - {slug: fdm, title: FDM, scope: "Orientation, layer anisotropy, overhangs and slicer evidence.", maturity: tooling, priority: [gyropup]}
+          - {slug: resin-and-powder, title: Resin and powder, scope: "SLA/MSLA, SLS and MJF design rules.", maturity: idea, issues: [99]}
+      - slug: cnc-machining
+        title: CNC machining
+        scope: Milled and turned parts.
+        maturity: idea
+        issues: [99]
+      - slug: laser-cutting
+        title: Laser cutting
+        scope: Flat parts cut from plastics and metals.
+        maturity: idea
+        topics:
+          - {slug: plastics, title: Plastics, scope: "Acrylic and other sheet plastics: kerf, joints, edges.", maturity: idea}
+          - {slug: metals, title: Metals, scope: "Laser-cut steel and aluminium blanks.", maturity: idea}
+      - slug: sheet-metal
+        title: Sheet metal
+        scope: Bent metal parts.
+        maturity: surveyed
+        pages: [research/fea-and-process-tools.md]
+        issues: [99, 118, 119]
+      - slug: mould-making
+        title: Mould making
+        scope: Short-run moulds made in the shop.
+        maturity: idea
+        topics:
+          - {slug: silicone-moulds, title: Silicone moulds, scope: "Printed masters and silicone moulds.", maturity: idea}
+          - {slug: urethane-casting, title: Urethane casting, scope: "Casting urethane parts in silicone moulds.", maturity: idea}
+
+  - slug: thermal
+    title: Thermal
+    scope: Keeping parts and electronics within their temperature limits.
+    maturity: tooling
+    areas:
+      - slug: heat-sinks
+        title: Conduction and heat sinks
+        scope: Heat paths from the chip to the air.
+        maturity: tooling
+        priority: [gyropup]
+        api: [cadagent.thermal.heatsink]
+        projects: [j501-enclosure]
+      - slug: airflow-and-fans
+        title: Airflow and fans
+        scope: Fans, vents and grilles, and where the air really goes.
+        maturity: tooling
+        priority: [demo]
+        api: [cadagent.thermal.heatsink]
+        uses: [cadagent.simulation.cfd]
+        issues: [47, 137]
+        projects: [j501-enclosure]
+      - slug: thermal-validation
+        title: Thermal validation
+        scope: Proving a thermal result, from energy balance to measured temperatures.
+        maturity: idea
+
+  - slug: simulation
+    title: Simulation and validation
+    scope: Predicting how designs behave, and checking the predictions.
+    maturity: tooling
+    lessons: simulation
+    pages: [research/simulation-tools.md]
+    areas:
+      - slug: structural-fea
+        title: Structural FEA
+        scope: Stiffness and strength of printed and machined parts.
+        maturity: tooling
+        priority: [gyropup, demo]
+        pages: [research/fea-and-process-tools.md]
+        api: [cadagent.simulation.fea]
+        issues: [125]
+        projects: [j501-enclosure, gyropup]
+      - slug: cfd
+        title: CFD
+        scope: Airflow and conjugate heat transfer.
+        maturity: tooling
+        priority: [demo]
+        api: [cadagent.simulation.cfd]
+        issues: [47]
+        projects: [j501-enclosure]
+      - slug: motion-and-dynamics
+        title: Motion and dynamics
+        scope: Rigid-body simulation of robots and mechanisms.
+        maturity: tooling
+        priority: [gyropup, demo]
+        api: [cadagent.simulation.robot]
+        projects: [gyropup]
+      - slug: topology-optimisation
+        title: Topology optimisation
+        scope: Keeping only the material that carries load.
+        maturity: tooling
+        priority: [demo]
+        api: [cadagent.simulation.topopt]
+        projects: [j501-enclosure]
+      - slug: design-exploration
+        title: Design exploration
+        scope: Comparing and optimising whole designs built from parts.
+        maturity: tooling
+        pages: [docs/explore.md]
+        cli: [catalogue, compare, optimise]
+        api: [cadagent.simulation.explore]
+        issues: [107]
+      - slug: results-and-visuals
+        title: Results and visuals
+        scope: Convergence charts, reports and renders of simulation results.
+        maturity: tooling
+        priority: [demo]
+        api: [cadagent.simulation.simviz, cadagent.simulation.simreport]
+        issues: [136]
+      - slug: physical-tests
+        title: Physical tests and coupons
+        scope: Printed coupons, drop tests and bench measurements that settle a prediction.
+        maturity: idea
+        priority: [gyropup]
+
+  - slug: electrical
+    title: Electrical design
+    scope: Boards, harnesses, panels and test systems.
+    maturity: tooling
+    areas:
+      - slug: electrical-panels
+        title: Electrical panels
+        scope: Panels with terminal blocks, relays and wiring ducts.
+        maturity: idea
+      - slug: wiring-harnesses
+        title: Wiring harnesses
+        scope: Cables, connectors, routing and strain relief.
+        maturity: idea
+        priority: [gyropup]
+        lessons: wiring
+        projects: [gyropup]
+      - slug: circuit-boards
+        title: Circuit boards
+        scope: PCBs by job, with their evidence (ERC, DRC, routing, assembly).
+        maturity: tooling
+        priority: [gyropup]
+        pages: [docs/pcb.md]
+        cli: [pcb-check]
+        api: [cadagent.electrical.pcb, cadagent.electrical.pcb_routing]
+        lessons: electronics
+        projects: [thor-can-breakout, gyropup]
+        topics:
+          - {slug: breakout-boards, title: Breakout boards, scope: "A connector or part broken out to headers or spring terminals.", maturity: idea}
+          - {slug: adapter-boards, title: Adapter boards, scope: "Adapting one connector or part to another.", maturity: idea}
+          - {slug: pass-through-tap-boards, title: Pass-through tap boards, scope: "1:1 pass-through that exposes signals for probing.", maturity: idea}
+          - {slug: power-converters, title: Power converters, scope: "Regulators and DC-DC boards.", maturity: idea}
+          - {slug: relay-boards, title: Relay boards, scope: "Switching loads under control.", maturity: idea}
+          - {slug: daq-and-signal-conditioning, title: DAQ and signal conditioning, scope: "Boards that condition and consolidate signals for PXI and similar DAQ systems, replacing terminal-block panels.", maturity: idea}
+      - slug: test-systems
+        title: Test systems
+        scope: Test benches and HIL simulators that combine software and hardware.
+        maturity: idea
+        topics:
+          - {slug: hil-simulators, title: HIL simulators, scope: "Hardware-in-the-loop rigs for controllers and firmware.", maturity: idea}
+          - {slug: test-benches, title: Test benches, scope: "Benches built on aluminium-extrusion frames.", maturity: idea}
+
+  - slug: practice
+    title: Practice
+    scope: How agents and people work here, cutting across every domain.
+    maturity: tooling
+    areas:
+      - slug: agent-workflow
+        title: Agent process and workflow
+        scope: How agents work here, in parallel - issues, worktrees, reviews and long runs.
+        maturity: tooling
+        pages: [docs/agent-workflow.md, research/agent-toolkits-2026-10.md]
+        cli: [agents]
+        skills: [cad-work-tracking, cad-pr-review, cad-remote-runs]
+        agents: [cad-pr-reviewer, cad-resume]
+        lessons: process
+        issues: [111, 112]
+      - slug: design-process
+        title: Design process
+        scope: Requirements and the dossier that holds them, integrity gates and section reviews, through to release.
+        maturity: tooling
+        pages: [docs/design-process-plan.md, docs/dossier.md, docs/gates.md, docs/review-packet.md, docs/volume-precision.md, research/design-workflows.md]
+        cli: [build, check, report, all, dossier, gates, review-packet, review-section]
+        api: [cadagent.review.gates, cadagent.review.dossier, cadagent.review.packet]
+        skills: [design-process]
+        issues: [40, 41, 97]
+      - slug: review-and-evidence
+        title: Review and evidence
+        scope: Pitfalls, checks and the evidence a reviewer needs.
+        maturity: tooling
+        pages: [docs/common-issues.md]
+        api: [cadagent.review.evidence, cadagent.review]
+        lessons: review
+        issues: [97, 118]
+      - slug: publishing
+        title: Publishing
+        scope: Review sites, viewers, releases and this site.
+        maturity: tooling
+        pages: [docs/file-viewer.md, docs/style-guide.md, docs/web-diagrams.md, docs/web-parts.md, docs/animated-figures.md]
+        cli: [package, release, serve, site, view, webkit]
+        api: [cadagent.publish.site, cadagent.publish.site_review, cadagent.publish.report, cadagent.publish.htmlreport,
+              cadagent.publish.render, cadagent.publish.view, cadagent.publish.dotsvg, cadagent.publish.serve,
+              cadagent.publish.release, cadagent.publish.anim]
+        issues: [104, 141, 181]
+      - slug: evaluation
+        title: Evaluation
+        scope: Standard jobs and graders that measure models, harnesses and our tooling.
+        maturity: idea
+        issues: [39, 142, 143]

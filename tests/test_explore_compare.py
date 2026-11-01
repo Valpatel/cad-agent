@@ -1,4 +1,5 @@
-"""cadagent.explore.compare and page: Pareto ranking, swaps, the JSON, the HTML page and the site's design cards."""
+"""cadagent.simulation.explore.compare and page: Pareto ranking, swaps, the JSON, the HTML page and the site's design
+cards."""
 
 from __future__ import annotations
 
@@ -6,12 +7,12 @@ import json
 
 import pytest
 
-from cadagent.explore.compare import (anchor, compare_designs, comparison, dominates, pareto_ranks, rank, site_cards,
-                                      swap_options, swaps, with_part, write_comparison)
-from cadagent.explore.config import Objective
-from cadagent.explore.design import load_design
-from cadagent.explore.evaluate import evaluate_design, load_evaluator
-from cadagent.explore.page import render_page
+from cadagent.simulation.explore.compare import (anchor, compare_designs, comparison, dominates, pareto_ranks, rank,
+                                                 site_cards, swap_options, swaps, with_part, write_comparison)
+from cadagent.simulation.explore.config import Objective
+from cadagent.simulation.explore.design import load_design
+from cadagent.simulation.explore.evaluate import evaluate_design, load_evaluator
+from cadagent.simulation.explore.page import render_page
 
 from .explore_fixtures import enclosure_config, restore_sys_path, write_enclosure  # noqa: F401 (a fixture)
 
@@ -100,7 +101,7 @@ def test_write_comparison_writes_json_page_and_site_cards(tmp_path):
 
 def test_site_shows_the_cards(tmp_path):
     pytest.importorskip("markdown")
-    from cadagent.site import build_site
+    from cadagent.publish.site import build_site
     root = write_enclosure(tmp_path)
     cfg, cat, fn, comp = _compare(root)
     write_comparison(comp, cfg.out, cfg=cfg)
@@ -176,7 +177,7 @@ def test_site_cards_mark_errors_and_ranks(tmp_path):
 
 
 def test_swaps_and_search_respect_narrowed_slots(tmp_path):
-    from cadagent.explore.optimise import search_config
+    from cadagent.simulation.explore.optimise import search_config
     from cadagent.project import CadConfigError
 
     root = write_enclosure(tmp_path)
@@ -191,7 +192,7 @@ def test_swaps_and_search_respect_narrowed_slots(tmp_path):
 
 
 def test_the_site_top_bar_lists_the_comparison(tmp_path):
-    from cadagent import site
+    from cadagent.publish import site
 
     root = write_enclosure(tmp_path)
     cfg, cat, fn, comp = _compare(root)
@@ -201,8 +202,8 @@ def test_the_site_top_bar_lists_the_comparison(tmp_path):
 
 
 def test_tick_labels_and_links_on_the_page():
-    from cadagent.explore.catalogue import link_url
-    from cadagent.explore.page import _nice_ticks, _tick_label
+    from cadagent.simulation.explore.catalogue import link_url
+    from cadagent.simulation.explore.page import _nice_ticks, _tick_label
 
     lo, hi, ticks = _nice_ticks(1, 12)
     assert [_tick_label(t, ticks[1] - ticks[0]) for t in ticks] == ["0", "2.5", "5", "7.5", "10", "12.5"]
@@ -225,7 +226,7 @@ def test_a_javascript_source_is_shown_as_text(tmp_path):
 
 
 def test_design_ids_are_never_absolute_and_never_clash(tmp_path):
-    from cadagent.explore.compare import design_ids
+    from cadagent.simulation.explore.compare import design_ids
 
     root = tmp_path / "root"
     paths = [root / "a" / "v.json", root / "b" / "v.json", tmp_path / "elsewhere" / "v.json", root / "w.json"]
@@ -237,7 +238,7 @@ def test_design_ids_are_never_absolute_and_never_clash(tmp_path):
 
 def test_a_part_without_a_price_never_reads_as_a_saving(tmp_path):
     """The reviewer's case: a supply identical to psu-60w but with no price."""
-    from cadagent.explore.config import Constraint
+    from cadagent.simulation.explore.config import Constraint
 
     root = write_enclosure(tmp_path)
     cat_file = root / "catalogue" / "parts.json"

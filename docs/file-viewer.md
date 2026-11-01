@@ -16,6 +16,23 @@ The runtime WASM is 7,604,031 bytes (below Cloudflare's 25 MB asset limit).
 exact source revisions, licenses, hashes, build instructions and library replacement
 instructions. Keep these notices with copies of the viewer.
 
+```mermaid
+flowchart TD
+    U["?file= URL<br/>same origin only"] --> F["fetch the original<br/>30 s, 128 MiB"]
+    U -.-> DL["download link<br/>original, unchanged"]
+    F --> STEP["STEP<br/>OCCT, WASM"]
+    F --> MF["3MF<br/>three.js"]
+    F --> STL["STL<br/>mm default"]
+    STEP & MF & STL --> CK["geometry checks<br/>finite, valid, bounded"]
+    CK --> V["stage: Z-up to Y-up,<br/>on the floor, fitted"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class F,STEP,MF,STL,CK here
+    class U near
+    class V,DL out
+```
+
 ## Behavior and limits
 
 - Mouse drag orbits; touch uses the standard OrbitControls pan/pinch gestures.

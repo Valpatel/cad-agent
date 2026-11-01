@@ -43,9 +43,9 @@ def test_parser_exposes_every_subcommand():
     parser = build_parser()
     assert parser.prog == "cad-agent"
     sub = next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction))
-    assert set(sub.choices) == {"build", "export-3mf", "check", "report", "package", "serve", "site", "view", "slice", "webkit",
+    assert set(sub.choices) == {"build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "webkit",
                                 "pcb-check", "all", "mcmaster", "catalogue", "compare", "optimise", "dossier",
-                                "gates", "review-packet", "review-section", "agents", "motion-trace"}
+                                "gates", "review-packet", "review-section", "agents", "motion-trace", "release", "snapfit"}
     assert set(sub.choices) == set(SUBCOMMANDS)
     args = parser.parse_args(["build", "--project", "/p", "--from", "two", "--only", "two", "three"])
     assert (args.cad_command, args.project, args.from_step, args.only) == ("build", "/p", "two", ["two", "three"])
@@ -131,7 +131,7 @@ def test_serve_binds_and_records_the_url(tmp_path):
     import threading
 
     from cadagent.project import load_project
-    from cadagent.serve import make_server
+    from cadagent.publish.serve import make_server
 
     root = make_project(tmp_path)
     server, url = make_server(load_project(root), port=0)
@@ -161,7 +161,8 @@ def test_module_runs_as_a_script(tmp_path):
 
 
 def test_slice_reports_a_part_without_a_print_time(tmp_path, monkeypatch, capsys):
-    from cadagent import cli, slicer
+    from cadagent import cli
+    from cadagent.manufacturing import slicer
     monkeypatch.setattr(slicer, "executable", lambda: "/bin/true")
     monkeypatch.setattr(slicer, "slice_project", lambda project, parts=None: {
         "parts": {"box": {"grams": 5.0, "minutes": None}}, "total_grams": 5.0, "total_hours": 0.0,
@@ -221,6 +222,8 @@ def test_check_runs_the_dossier_lint(tmp_path, capsys):
     (root / "exports" / "geometry-checks.json").write_text(json.dumps({"box": GOOD}))
     for ext in ("stl", "3mf", "step"):
         (root / "exports" / f"box.{ext}").write_text("x")
+    from .test_report import bind_holes
+    bind_holes(root, ["box"])
     from .test_gates_cli import bind_verdicts
     bind_verdicts(root)                       # as `cad-agent gates` writes them: bound to the current inputs
     assert main(["check", "--project", str(root), "--json"]) == 0

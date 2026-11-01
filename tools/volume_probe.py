@@ -25,7 +25,7 @@ def sha(path):
 
 def identity():
     import OCP
-    from cadagent.gates import relations
+    from cadagent.review.gates import relations
     return {"toolkit_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
             "relations_source_sha256": sha(Path(relations.__file__)), "probe_source_sha256": sha(Path(__file__)),
             "ocp_version": OCP.__version__, "python": sys.version.split()[0]}
@@ -39,7 +39,7 @@ def write_json(path, value):
 def prepare(args):
     import cadquery as cq
     from OCP.TopLoc import TopLoc_Location
-    from cadagent.gates.relations import _boolean, _trsf, _matrix, _validate_volume_shape
+    from cadagent.review.gates.relations import _boolean, _trsf, _matrix, _validate_volume_shape
     args.directory.mkdir(parents=True, exist_ok=False)
     inputs, shapes = {}, {}
     for name in ("a", "b"):
@@ -72,7 +72,7 @@ def measure(args):
     import cadquery as cq
     from OCP.BRepGProp import BRepGProp
     from OCP.GProp import GProp_GProps
-    from cadagent.gates.relations import _measure_volume, _validate_volume_shape
+    from cadagent.review.gates.relations import _measure_volume, _validate_volume_shape
     bundle = json.loads((args.directory / "inputs.json").read_text())
     out = {"schema": "cadagent.volume-probe/1", "runtime": identity(), "inputs": bundle["inputs"],
            "breps": bundle["breps"], "preparation_runtime": bundle["runtime"], "method": args.method,

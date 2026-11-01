@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from cadagent.project import load_project
-from cadagent import report
+from cadagent.publish import report
 
 GOOD = {"cad_valid": True, "solid_count": 1, "watertight": True, "print_bounds_mm": [100, 80, 40]}
 
@@ -32,7 +32,19 @@ def make_project(root: Path, parts=None, checks_yaml="") -> Path:
             (root / "exports" / f"{name}.{ext}").write_text("x")
     (root / "preview" / "part-box.png").write_bytes(b"\x89PNG")
     (root / "preview" / "index.html").write_text('<a href="part-box.png">box</a>')
+    bind_holes(root, parts)
     return root
+
+def bind_holes(root: Path, parts) -> None:
+    """A passing hole check bound to the placeholder STEP files, as `cad-agent holes` writes it."""
+    import hashlib
+    rows = {n: {"pass": True, "holes": 0, "findings": [], "excepted": [], "step": f"{n}.step",
+                "sha256": hashlib.sha256((root / "exports" / f"{n}.step").read_bytes()).hexdigest()} for n in parts}
+    from cadagent.mechanical.holes import VERSION, config, config_key
+    from cadagent.project import load_project
+    key = config_key(config(load_project(root)))
+    (root / "exports" / "hole-checks.json").write_text(json.dumps({"version": VERSION, "config_key": key, "parts": rows,
+                                                                  "pass": True}))
 
 def rows(results, feature_id):
     feature = next(f for f in results["features"] if f["feature_id"] == feature_id)
@@ -45,8 +57,8 @@ def assert_schema(results):
     """The schema 1.0 shape that vptest web also renders."""
     assert results["schema_version"] == "1.0"
     assert set(results) == TOP_KEYS
-    assert [f["feature_id"] for f in results["features"]] == ["cad-parts", "cad-print-files", "cad-checks",
-                                                              "cad-links"]
+    assert [f["feature_id"] for f in results["features"]] == ["cad-parts", "cad-print-files", "cad-holes",
+                                                              "cad-checks", "cad-links"]
     assert {"project", "revision", "generated"} == set(results["header_meta"])
     assert {"checks", "physical_fit", "slicer"} == set(results["footer_meta"])
     for feature in results["features"]:
@@ -186,7 +198,7 @@ def test_slicer_run_only_for_current_slices(tmp_path):
     root = make_project(tmp_path)
     project = load_project(root)
     sha = {n: hashlib.sha256((root / "exports" / f"{n}.3mf").read_bytes()).hexdigest() for n in ("box", "lid")}
-    from cadagent.slicer import _settings
+    from cadagent.manufacturing.slicer import _settings
     rep = {"slicer": "Bambu Studio (command line)", **_settings(project), "total_grams": 12.5,
            "total_hours": 1.2, "parts": {n: {"grams": 6.0, "minutes": 30, "sha256": sha[n]} for n in sha}}
     path = root / "exports" / "slice-report.json"

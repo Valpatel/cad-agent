@@ -301,7 +301,7 @@
   stars: 2
   last_push: 2026-10-29
   status: candidate
-  policy: "install as a plugin once an OrcaSlicer release ships the MCP server it expects (General › AI features › MCP server); no release has one yet. Never copy its text (AGPL-3.0)"
+  policy: "install as a plugin once an OrcaSlicer release ships the MCP server it expects (General › AI features › MCP server). It is in development on OrcaSlicer's feature/mcp branch; no release has it yet. Never copy its text (AGPL-3.0)"
 - name: MaxEllis/orcaslicer-mcp
   what: "Third-party MCP server that drives a running OrcaSlicer: settings, presets, slicing and results as numbers"
   areas: [3d-printing]
@@ -310,7 +310,7 @@
   stars: 86
   last_push: 2026-10-12
   status: rejected
-  policy: "skip for now: third-party, and OrcaSlicer's own direction is unsettled (the 2.5 beta's CAD-only control socket; an outside contributor's draft PR #12667); revisit when an OrcaSlicer release ships an MCP server"
+  policy: "skip for now: third-party, and OrcaSlicer's own MCP server (slicing included) is in development on its feature/mcp branch; revisit if that does not reach a release"
 - name: KD5RYN/b123d-print
   what: "MCP server, CLI and plugin that design build123d parts for printing, check them and export for the slicer"
   areas: [3d-printing]

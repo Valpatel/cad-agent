@@ -818,7 +818,7 @@ def subassembly_svg() -> str:
     findings = [(f"bench: {h['qualified']}", INK, T["qualified"]),
                 (f"fitted, ≥ {fmt(steps[2]['clearance_at_least_mm'], 1)} mm", INK, T["retainer"][1]),
                 (f"withdraws: {svc['status']}", ORANGE, T["withdraw"][1]),
-                (f"with {len(svc['assumed_removed'])} parts out", ORANGE, T["withdraw"][1])]
+                (f"if {len(svc['assumed_removed'])} parts out", ORANGE, T["withdraw"][1])]
     for i, (s, colour, t0) in enumerate(findings):
         body.append(f'<g id="nf{i}">{ntext(434, 132 + 40 * i + (0 if i < 3 else -8), s, fill=colour)}</g>')
         an.show(f"#nf{i}", t0, end)

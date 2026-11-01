@@ -394,7 +394,8 @@ def counterbore_svg() -> str:
                  else ["1 · union the rib", "2 · cut the hole and counterbore last"])
         steps.append("3 · cad-agent holes probes each bore")
         for j, s in enumerate(steps):
-            body.append(f'<g id="s{n}{j}"{"" if j == 2 else " opacity=\"0\""}>{text(ox, 72, s, 11, MUTED)}</g>')
+            hidden = "" if j == 2 else ' opacity="0"'
+            body.append(f'<g id="s{n}{j}"{hidden}>{text(ox, 72, s, 11, MUTED)}</g>')
         an.show(f"#s{n}0", 0.0, t_rib - 0.3, 0.2)
         an.show(f"#s{n}1", t_rib, t_probe - 0.3, 0.2)
         an.show(f"#s{n}2", t_probe, end, 0.2)
@@ -687,7 +688,8 @@ def subassembly_svg() -> str:
               ("In the parent: the module moves as one body", T["base"][0], T["removed"][0]),
               ("Service: withdrawn with bumper and retainer assumed out", T["removed"][0], end)]
     for i, (s, t0, t1) in enumerate(phases):
-        body.append(f'<g id="ph{i}"{"" if i == 1 else " opacity=\"0\""}>{text(24, 76, s, 12, INK, weight="600")}</g>')
+        hidden = "" if i == 1 else ' opacity="0"'
+        body.append(f'<g id="ph{i}"{hidden}>{text(24, 76, s, 12, INK, weight="600")}</g>')
         an.show(f"#ph{i}", t0, t1)
     # the right column: the steps as the gate reports them, lit in turn
     rows = [("Bench: the members only", None, None, 0),

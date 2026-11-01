@@ -34,23 +34,65 @@ def _diagonal_closes(a: float, b: float, c: float, d: float, theta2: float) -> b
 
 @formula(units={"a": "length (input crank)", "b": "length (coupler)", "c": "length (output rocker)",
                 "d": "length (ground)"},
-         returns="dict: grashof (bool), kind ('grashof', 'non-grashof', 'change-point'), crank_rotates (bool)",
+         returns="dict: grashof (bool), kind ('grashof', 'non-grashof', 'change-point'), crank_rotates (bool), "
+                 "inversion ('crank-rocker', 'double-crank', 'rocker-crank', 'double-rocker', 'triple-rocker' or "
+                 "'change-point')",
          limits=(_RIGID,),
-         source=cite("norton", "Chapter 2, the Grashof condition (S + L <= P + Q)"))
+         source=cite("norton", "Chapter 2, the Grashof condition (S + L <= P + Q) and its inversions"))
 def grashof(a: float, b: float, c: float, d: float) -> Dict[str, object]:
     """Grashof class: with S and L the shortest and longest links, S + L < P + Q lets at least one link turn fully;
     equality is a change-point linkage. The input crank turns fully when it is the shortest link and the linkage is
-    Grashof (a crank-rocker, or a double crank when the ground is shortest too)."""
+    Grashof (a crank-rocker, or a double crank when the ground is shortest too).
+
+    ``inversion`` names a Grashof linkage by its shortest link, which is the one that turns fully against its
+    neighbours: the input (a crank-rocker), the ground (a double crank), the output (a rocker-crank: the output turns
+    fully and the input rocks) or the coupler (a double rocker). Every non-Grashof linkage is a triple rocker."""
     links = sorted((a, b, c, d))
     s_l, p_q = links[0] + links[3], links[1] + links[2]
     if math.isclose(s_l, p_q, rel_tol=1e-12):
         kind = "change-point"
     else:
         kind = "grashof" if s_l < p_q else "non-grashof"
+    if kind == "grashof":
+        # S + L < P + Q leaves one shortest link: two equal ones (S = P) would need L < Q
+        inversion = ("crank-rocker" if links[0] == a else "double-crank" if links[0] == d
+                     else "rocker-crank" if links[0] == c else "double-rocker")
+    else:
+        inversion = "triple-rocker" if kind == "non-grashof" else "change-point"
     # the shortest link turns fully: the input crank does when it is the shortest (crank-rocker) or the ground is
     # (double crank)
     return {"grashof": kind != "non-grashof", "kind": kind,
-            "crank_rotates": kind != "non-grashof" and links[0] in (a, d)}
+            "crank_rotates": kind != "non-grashof" and links[0] in (a, d), "inversion": inversion}
+
+
+@formula(units={"a": "length (input crank)", "b": "length (coupler)", "c": "length (output rocker)",
+                "d": "length (ground)"},
+         returns="dict: closes (bool: at some input angle), full_turn (bool), folded and stretched (rad, 0..pi, or "
+                 "None): |theta2| where coupler and rocker fold or stretch into one line",
+         limits=(_RIGID, "the input closes where folded <= |theta2| <= stretched, reading a None folded as 0 and a "
+                 "None stretched as pi; with both limits that is two mirror-image ranges, one each side of the ground",
+                 f"the same {_CLOSE:g} closing test as fourbar_angles: a linkage that closes at 0 or pi to within it "
+                 "has no limit there"),
+         source=cite("norton", "Chapter 4, the toggle positions of the four-bar (law of cosines)"))
+def fourbar_input_limits(a: float, b: float, c: float, d: float) -> Dict[str, object]:
+    """The input angles where a four-bar locks: coupler and rocker fall into one line, so the diagonal e from the crank
+    pin to the output pivot is |b - c| (folded) or b + c (stretched). There the transmission angle is 0, both
+    assemblies meet, and the input cannot turn further. A limit is None when the input passes that side freely."""
+    tol = _CLOSE * max(a, b, c, d)
+    near, far = abs(a - d), a + d                    # the diagonal at theta2 = 0 and at pi: its shortest and longest
+    fold, stretch = abs(b - c), b + c
+    closes = near <= stretch + tol and fold - tol <= far
+
+    def toggle(span: float) -> float:
+        # e = span by the law of cosines, in half angles so it keeps its digits near 0 and pi:
+        # sin^2(theta2 / 2) = (span^2 - (a - d)^2) / 4ad and cos^2(theta2 / 2) = ((a + d)^2 - span^2) / 4ad
+        return 2.0 * math.atan2(math.sqrt(max((span - near) * (span + near), 0.0)),
+                                math.sqrt(max((far - span) * (far + span), 0.0)))
+
+    folded = toggle(fold) if closes and near < fold - tol else None
+    stretched = toggle(stretch) if closes and far > stretch + tol else None
+    return {"closes": closes, "full_turn": closes and folded is None and stretched is None,
+            "folded": folded, "stretched": stretched}
 
 
 @formula(units={"a": "length (input crank)", "b": "length (coupler)", "c": "length (output rocker)",

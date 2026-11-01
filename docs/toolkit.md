@@ -371,6 +371,35 @@ numbers, and a `categories` entry that is not a list, names a part that does not
 are artefacts of the idealised support, so the design stress and every failure view leave them out ("support
 patches": capped at the design stress, never shown as failed, their share of the surface reported).
 
+<details>
+<summary>On aarch64 Linux (ARM compute hosts), gmsh does not install from PyPI</summary>
+
+PyPI has no aarch64 Linux wheel and no source package for gmsh 4.15.2 (nor for any gmsh release), so `pip install
+gmsh`, and with it the `fea` extra, stops with "No matching distribution". pypardiso cannot install there either: it
+needs Intel MKL, which has no aarch64 wheel. conda-forge builds gmsh for aarch64. Put it in its own environment with
+micromamba and link its Python module into the project's venv:
+
+```bash
+micromamba create -y -p <gmsh-env> -c conda-forge python-gmsh=4.15.2   # gmsh.py, and libgmsh built for aarch64
+pip install -e "<cad-agent>[cad]" scikit-fem pyamg       # the fea extra without gmsh and pypardiso
+ln -s <gmsh-env>/lib/python3.*/site-packages/gmsh.py \
+      "$(python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')/"
+python -c "import hashlib, gmsh; gmsh.initialize(); print(gmsh.__version__)"   # the check
+```
+
+`gmsh.py` looks for `libgmsh` relative to its own real path (in the environment's `lib/`), so the link is enough. If the
+check fails with an `OSError` saying version `OPENSSL_3.4.0` was not found, the venv's Python has already loaded the
+system OpenSSL (anything that imports `hashlib` or `ssl` first does), and a library in the gmsh environment needs a
+newer one. Preload the environment's own OpenSSL in the run's launcher:
+`LD_PRELOAD=<gmsh-env>/lib/libcrypto.so.3:<gmsh-env>/lib/libssl.so.3`.
+
+Without pypardiso the solver falls back to SciPy, and to pyamg for big meshes, which is slower. pyamg has no aarch64
+wheel, so pip builds it from source; that needs a C++ compiler. A conda-forge gmsh is a different build from the PyPI
+wheel and can mesh a part slightly differently, so compare before and after on one build. gmsh reads the STEP with
+its own OCCT: the newest conda-forge build of 4.15.2 (build 11) links OCCT 8.0.1, and one of the two build-10 variants
+links 8.0.0, while cadquery-ocp 7.9.3.1.1, builds 0 to 9 and the other build-10 variant use OCCT 7.9.3.
+</details>
+
 **Printed materials** (`pla`, `petg`, `petg_cf`, `pa_cf`, `pa6_cf_xy`, `pa6_cf_z`, `tpu95`) take their numbers from the
 filament maker's data sheet (100 % infill test bars). Each names its sheet (`source`, an id in the reference registry),
 says in `note` which sheet value E and the strength come from, and gives the print direction of E (`direction`). The

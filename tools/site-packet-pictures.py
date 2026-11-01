@@ -41,7 +41,7 @@ SCENARIOS: dict[str, dict] = {
     "clean": {"seed": None, "views": {
         "S-store": ["solid-iso", "xray-iso", "cut-cavity-hopper_cavity", "cut-cavity-hopper_cavity-plan",
                     "cut-fastener-screw_0", "access-from-top", "exploded"],
-        "S-arm": ["solid-iso", "pose-I-pin-arm-min", "pose-I-pin-arm-max", "cut-joint-I-pin-arm"],
+        "S-arm": ["solid-iso", "pose-I-pin-arm-min", "pose-I-pin-arm-max", "cut-joint-I-pin-arm", "exploded"],
     }},
     "ball_through_wall": {"seed": "ball_through_wall", "views": {
         "S-store": ["findings", "cut-cavity-hopper_cavity-plan"]}},

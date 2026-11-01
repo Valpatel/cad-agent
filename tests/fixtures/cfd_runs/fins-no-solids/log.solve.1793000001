@@ -1,0 +1,32 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+Starting time loop
+
+Time = 201
+
+DILUPBiCGStab:  Solving for h, Initial residual = 0.0012, Final residual = 2.4e-05, No Iterations 1
+ExecutionTime = 80.40 s  ClockTime = 81 s
+
+Time = 215
+
+DILUPBiCGStab:  Solving for h, Initial residual = 0.0012, Final residual = 2.4e-05, No Iterations 1
+ExecutionTime = 86.00 s  ClockTime = 86 s
+
+Time = 229
+
+DILUPBiCGStab:  Solving for h, Initial residual = 0.0012, Final residual = 2.4e-05, No Iterations 1
+ExecutionTime = 91.60 s  ClockTime = 92 s
+
+Time = 243
+
+DILUPBiCGStab:  Solving for h, Initial residual = 0.0012, Final residual = 2.4e-05, No Iterations 1
+ExecutionTime = 97.20 s  ClockTime = 98 s
+
+Time = 257
+
+DILUPBiCGStab:  Solving for h, Initial residual = 0.0012, Final residual = 2.4e-05, No Iterations 1
+ExecutionTime = 102.80 s  ClockTime = 103 s
+
+End
+
+Finalising parallel run

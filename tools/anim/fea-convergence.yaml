@@ -1,0 +1,42 @@
+# An FEA mesh-convergence study, recorded from a real run of cadagent.simulation.fea (#167). Record it again with
+#   PYTHONPATH=src python3 tools/readme_anim.py --extract convergence      # needs cadquery, gmsh and scikit-fem
+# and render or check the SVG without them (tools/readme_anim.py, --check).
+name: fea-convergence
+source:
+  repo: https://github.com/Valpatel/cad-agent
+  name: cad-agent
+  licence: MIT
+# A steel L-bracket in the XZ plane, extruded 2 mm along +Y: legs 20 mm, 4 mm thick. Its inside corner is studied
+# sharp, then with a fillet (the same bracket as tools/fea_mesh_figure.py's chart).
+part: {leg_mm: 20, thickness_mm: 4, width_mm: 2, fillets_mm: [0, 1.5]}
+material: {name: steel, E_mpa: 200000, nu: 0.3, strength_mpa: 250, density_g_cm3: 7.85}
+fix: {axis: 0, at_mm: 0}                            # the upright leg's outer face (x = 0), clamped
+load: {axis: 0, at_mm: 20, force_n: [0, 0, -100]}   # 100 N down on the free leg's end face (x = 20)
+mesh_mm: 2                                          # the coarse mesh every step starts from
+refine: {radius_mm: 1.5, sizes_mm: [1, 0.5, 0.25, 0.125]}   # a ball at the corner: each step halves its size
+uniform_mm: [1, 0.5]                                # the whole part meshed at that size, no refine= (cost and check)
+converge: {factor: 0.75, tolerance: 0.05}           # Study.converge() after every step
+window_mm: [0.5, 0.5, 7.5, 7.5]                     # the front face (y = 0) drawn round the corner: x0, z0, x1, z1
+present:
+  width: 720
+  height: 470
+  label: >-
+    A recorded cad-agent study of a steel L-bracket's inside corner, meshed finer step by step from 2 mm to 0.125 mm:
+    sharp, the peak stress keeps rising; with an R1.5 fillet it settles and converge() passes it
+  description: >-
+    Recorded with cad-agent {version} (commit {commit}) on gmsh {gmsh} with OpenCASCADE {occ}, {platform}, on
+    {recorded}. Each step is Study(refine=...) at the inside corner, solved and checked with converge(). Linear-elastic
+    FEA: a converged peak does not prove that a part holds.
+  title: "Mesh convergence at an inside corner: a recorded run"
+  short_title: Mesh convergence
+  subtitle: "steel L-bracket, 100 N on its free leg; refine= halves the elements at the corner each step"
+  x_axis: element size at the corner (mm)
+  y_axis: design peak, von Mises (MPa)
+  uniform_legend: whole part at that size
+  williams_legend: Williams' sharp-corner rate
+  step_line: "step {step} of {steps}: {size} mm at the corner"
+  sharp_claim: "sharp: x{per_halving} per halving (Williams: x{rate}); it never settles"
+  fillet_claim: "R1.5 fillet: within {spread} % over all {steps} steps; converge() passes it"
+  caption:
+    - "A recorded run of cad-agent {version}: gmsh {gmsh}, OpenCASCADE {occ}, {platform}, {recorded}."
+    - "Linear-elastic FEA: a converged peak is a better number, not proof that the part holds."

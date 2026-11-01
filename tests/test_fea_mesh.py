@@ -254,6 +254,20 @@ def test_converge_compares_a_finer_mesh():
         sharp.converge(factor=1.5)
 
 
+def test_converge_never_passes_a_sharp_corner_whose_two_meshes_agree():
+    """Refined to 0.25 mm, the L-bracket's sharp corner read 1094 MPa, and 1114 MPa (+1.8 %) at 0.1875 mm on gmsh
+    4.15.2: within the 5 % tolerance, by chance (at 0.125 mm it reads 1448). Recorded for the convergence figure
+    (#167), converge() called it converged. The peak is singular, so converge() never passes it, whatever the change."""
+    st = Study(_bracket(), STEEL, mesh_mm=2.0, name='bracket', refine=[((4.0, 1.0, 4.0), 1.5, 0.25)])
+    st.fix(plane_at(0, 0.0)).force(plane_at(0, 20.0), (0, 0, -100.0))
+    with pytest.warns(MeshWarning, match='sharp re-entrant corner'):
+        rec = st.converge()
+    assert 'sharp inside corner' in st.result['mesh']['peak']['where']
+    assert not rec['converged']
+    if abs(rec['change']) <= rec['tolerance']:          # this build agrees by chance: the note says why it fails
+        assert 'by chance' in rec['note']
+
+
 # --- slivers before meshing
 def test_sliver_faces_and_edges_are_found_before_meshing():
     """Two 20 mm blocks stacked 0.003 mm out of line leave 0.003 mm wide strip faces (0.06 mm², under (3/10)² = 0.09)

@@ -1140,7 +1140,8 @@ class Study:
         ``result['mesh']['convergence']``, and keeps the finer study as ``self.finer``. Converged means the design peak
         changed by at most `tolerance` and the finer mesh resolves it (``peak``'s wall and radius checks); a peak that
         moved more than two mesh sizes is noted either way (an artefact when its value changed too, else two spots near
-        the peak value). A sharp re-entrant corner never converges.
+        the peak value). A peak at a sharp re-entrant corner (on either mesh) never converges, even when the two
+        meshes happen to agree.
         One step is a check, not a convergence study: for that, refine the peak in steps (refine=) and plot it."""
         if not 0 < factor < 1:
             raise ValueError('factor must be between 0 and 1 (0.75: a mesh a quarter finer)')
@@ -1166,7 +1167,10 @@ class Study:
         moved = math.dist(r1['mesh']['peak']['at_mm'], r2['mesh']['peak']['at_mm'])
         fine_peak = r2['mesh']['peak']
         resolved = fine_peak['wall_resolved'] is not False and fine_peak['radius_resolved'] is not False
-        ok = abs(change) <= tolerance and resolved
+        # a peak at a sharp re-entrant corner is singular: two meshes can still agree by chance (an L-bracket's corner
+        # refined to 0.25 mm moved only 1.8 % at 0.1875 mm, then rose 32 % at 0.125 mm), so it never passes
+        singular = any('sharp inside corner' in r['mesh']['peak']['where'] for r in (r1, r2))
+        ok = abs(change) <= tolerance and resolved and not singular
         notes = []
         if abs(change) > tolerance:
             notes.append(f'the design peak changed {change:+.1%} on a mesh {factor:g} x as fine: it is not converged')
@@ -1174,11 +1178,14 @@ class Study:
             notes.append(f'the design peak changed only {change:+.1%} on a mesh {factor:g} x as fine, but that mesh '
                          f"does not resolve it either, so it is not converged (two under-resolved meshes can agree): "
                          f"{fine_peak['note']}")
+        elif singular:
+            notes.append(f'the design peak changed only {change:+.1%} on a mesh {factor:g} x as fine, but a peak at a '
+                         'sharp corner agrees between two meshes by chance, so it is not converged')
         if moved > 2 * self.mesh_mm:                   # a peak that jumps elsewhere: an artefact, or two equal spots
             notes.append(f'the design peak moved {moved:.1f} mm, to {r2["mesh"]["peak"]["where"]}'
                          + (': the coarse peak was an artefact of the mesh there' if not ok else
                             ', at about the same stress (two places near the peak value; check both)'))
-        if 'sharp inside corner' in r2['mesh']['peak']['where']:
+        if singular:
             notes.append('the peak is at a sharp re-entrant corner, which never converges')
         rec = {'factor': factor, 'mesh_mm': [self.mesh_mm, fine.mesh_mm], 'tets': [r1['mesh']['tets'], r2['mesh']['tets']],
                'von_mises_design_mpa': [a, b], 'max_displacement_mm': [r1['max_displacement_mm'], r2['max_displacement_mm']],

@@ -42,7 +42,7 @@ export function readState(get) {
   const s = { ...DEFAULTS };
   const material = get('material');
   if (MATERIALS.some(m => m.key === material)) s.material = material;
-  if (get('direction') in DIRECTIONS) s.direction = get('direction');
+  if (Object.hasOwn(DIRECTIONS, get('direction') ?? '')) s.direction = get('direction');   // not inherited keys
   if (Number(get('design')) in SECTIONS) s.design = Number(get('design'));
   const repeated = get('repeated');
   if (repeated !== null && repeated !== undefined) s.repeated = repeated !== 'false';

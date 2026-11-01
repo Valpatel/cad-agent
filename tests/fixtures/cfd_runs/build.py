@@ -1,6 +1,7 @@
-"""Write the two recorded-format CFD runs the convergence tests read. No solver runs: the numbers are synthetic, laid
-out exactly as OpenFOAM v2512 writes them for a cadagent.simulation.cfd case (cadagent-case.json, the solver logs and
-postProcessing/<region>/<function>/<start time>/*.dat, one start-time folder per solve). Deterministic; rebuild with
+"""Write the recorded-format CFD runs the convergence tests read, listed below. No solver runs: the numbers are
+synthetic, laid out exactly as OpenFOAM v2512 writes them for a cadagent.simulation.cfd case (cadagent-case.json, the
+solver logs and postProcessing/<region>/<function>/<start time>/*.dat, one start-time folder per solve).
+Deterministic; rebuild with
 
     python tests/fixtures/cfd_runs/build.py
 
@@ -17,6 +18,14 @@ solids-continued-again
 solids-crashed-restart
                     the same first solve (saved 100, diverged, stopped at 150); the continuation from 100 crashed at
                     start and left header-only files in every 100/ folder.
+solids-short-continuation
+                    the same first solve; the continuation from 100 diverged after 4 iterations, at 104. It logged
+                    residuals (every iteration) but left header-only temperature and heat files (logged every 10).
+solids-one-step-continuation
+                    the same, but the continuation from 100 crashed after its first iteration, at 101.
+fins-block-drifting air only, the fin-block case in one 100-iteration solve: the fan flow, the air through the fan and
+                    the heat leaving have settled, the heat leaving within 1 % of the 40 W put in, but the block's
+                    mean air is still rising, by 1.5 °C over the convergence window (80-100).
 """
 from __future__ import annotations
 
@@ -125,12 +134,10 @@ def approach(t, pieces, tau):
     return pieces[0][1]
 
 
-def fins_no_solids(case: Path):
-    rng = np.random.default_rng(50)
-    solves = [(0, 200), (200, 260), (260, 320)]
-    restarts = [s for s, _ in solves[1:]]
-    meta = {'name': 'fins-no-solids', 'solver': 'chtMultiRegionSimpleFoam (OpenFOAM v2512)', 'ambient_c': 25.0,
-            'domain_mm': [[-30, -25, -3], [236, 216, 152]], 'base_cell_mm': 10.0, 'iterations': 320,
+def fins_meta(name: str, iterations: int) -> dict:
+    """cadagent-case.json of the air-only case: a fan blowing into an exchanger fin block (a porous zone), 40 W."""
+    return {'name': name, 'solver': 'chtMultiRegionSimpleFoam (OpenFOAM v2512)', 'ambient_c': 25.0,
+            'domain_mm': [[-30, -25, -3], [236, 216, 152]], 'base_cell_mm': 10.0, 'iterations': iterations,
             'ground': 'adiabatic no-slip floor (a table)', 'solids': [], 'walls': [{'name': 'enclosure', 'cell_mm': 2.5}],
             'contacts': [], 'fans': [{'name': 'fan', 'centre_mm': [105, 105, 67], 'axis': [0, 0, -1], 'd_outer_mm': 76.0,
                                       'd_hub_mm': 33.0, 'dp0_pa': 15.2, 'q_free_m3h': 38.9, 'q_free_cfm': 22.9,
@@ -139,6 +146,13 @@ def fins_no_solids(case: Path):
                         'f': [15.9, 0, 15.9], 'e1': [1, 0, 0], 'e2': [0, 1, 0], 'heat_w': 0.0, 'ha_w_k': 3.3,
                         'fin_temperature_c': 61.8, 'target_w': 40.0, 'note': 'compact fin block'}],
             'heat_input_w': 40.0, 'limits': LIMITS}
+
+
+def fins_no_solids(case: Path):
+    rng = np.random.default_rng(50)
+    solves = [(0, 200), (200, 260), (260, 320)]
+    restarts = [s for s, _ in solves[1:]]
+    meta = fins_meta('fins-no-solids', 320)
     fin_air = [(0, 80.0, 62.0), (200, None, 50.0), (260, None, 49.2)]       # each fin-temperature step moves the target
     heat = [(0, 0.0, 34.0), (200, None, 39.0), (260, None, 39.4)]
     for pieces, tau in ((fin_air, 70), (heat, 90)):
@@ -168,13 +182,36 @@ def fins_no_solids(case: Path):
     (case / 'cadagent-case.json').write_text(json.dumps(meta, indent=2) + '\n')
 
 
+def fins_block_drifting(case: Path):
+    rng = np.random.default_rng(52)
+    pp = case / 'postProcessing' / 'domain0'
+    solver_info(pp / 'residuals' / '0' / 'solverInfo.dat', [(t, residuals(rng, t, [], 20)) for t in range(1, 101)])
+    ts = range(10, 101, 10)
+    u = (0.003, -0.002, -0.98)
+    vol_field(pp / 'zone_fan' / '0' / 'volFieldValue.dat', 'cellZone fan', 'volAverage(U)\tvolAverage(T)',
+              [(t, u, T0 + 37.6) for t in ts], 11910, 2.27e-5)
+    vol_field(pp / 'zone_fins' / '0' / 'volFieldValue.dat', 'cellZone fins', 'volAverage(U)\tvolAverage(T)',
+              [(t, (0.0004, 0.0, 0.2 * u[2]), T0 + 44.0 + 0.075 * t) for t in ts], 66096, 1.19e-4)   # 50.0 at 80, 51.5 at 100
+    vol_field(pp / 'T_max_domain0' / '0' / 'volFieldValue.dat', 'all domain0', 'max(T)', [(t, T0 + 61.8) for t in ts],
+              1362340, 9.04e-3)
+    phi = [-4e-7 + rng.normal(0, 5e-8) for _ in ts]
+    q = [39.6 + rng.normal(0, 0.05) for _ in ts]
+    surface_field(pp / 'flux_mass' / '0' / 'surfaceFieldValue.dat', 'sum(phi)', list(zip(ts, phi)), weight=False)
+    surface_field(pp / 'flux_T' / '0' / 'surfaceFieldValue.dat', 'weightedSum(T)',
+                  [(t, qq / CP + (25 + T0) * p) for t, qq, p in zip(ts, q, phi)], weight=True)
+    log(case / 'log.solve', 1, 100, finished=True)
+    (case / 'log.topoSet').write_text('cellZoneSet fins now size 66096\ncellZoneSet fan now size 11910\n')
+    (case / 'cadagent-case.json').write_text(json.dumps(fins_meta('fins-block-drifting', 100), indent=2) + '\n')
+
+
 DIVERGED = '--> FOAM FATAL ERROR: Maximum number of iterations exceeded'
 
 
 def solids_run(case: Path, name: str, solves):
     """Air and two solids (a 5 W chip on an aluminium plate). solves: (start, last logged, finished, how it stopped), in
-    the order they ran; a solve that crashed at start (last == start) leaves header-only files. The first solve
-    diverges after its save at 100."""
+    the order they ran; a solve that crashed at start (last == start) leaves header-only files, and one that stopped
+    within 9 iterations leaves residual rows beside header-only temperature and heat files. The first solve diverges
+    after its save at 100."""
     rng = np.random.default_rng(51)
     restarts = sorted({s for s, *_ in solves[1:]})
     meta = {'name': name, 'solver': 'chtMultiRegionSimpleFoam (OpenFOAM v2512)', 'ambient_c': 25.0,
@@ -223,9 +260,21 @@ def solids_crashed_restart(case: Path):
                                                 (100, 100, False, '--> FOAM FATAL ERROR: Floating point exception')])
 
 
+def solids_short_continuation(case: Path):
+    solids_run(case, 'solids-short-continuation', [(0, 150, False, DIVERGED), (100, 104, False, DIVERGED)])
+
+
+def solids_one_step_continuation(case: Path):
+    solids_run(case, 'solids-one-step-continuation', [(0, 150, False, DIVERGED),
+                                                      (100, 101, False, '--> FOAM FATAL ERROR: Floating point exception')])
+
+
 if __name__ == '__main__':
     for name, make in (('fins-no-solids', fins_no_solids), ('solids-ended-early', solids_ended_early),
-                       ('solids-continued-again', solids_continued_again), ('solids-crashed-restart', solids_crashed_restart)):
+                       ('solids-continued-again', solids_continued_again), ('solids-crashed-restart', solids_crashed_restart),
+                       ('solids-short-continuation', solids_short_continuation),
+                       ('solids-one-step-continuation', solids_one_step_continuation),
+                       ('fins-block-drifting', fins_block_drifting)):
         shutil.rmtree(HERE / name, ignore_errors=True)
         (HERE / name).mkdir()
         make(HERE / name)

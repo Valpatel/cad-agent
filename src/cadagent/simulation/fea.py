@@ -7,7 +7,8 @@
     res = st.solve()          # dict: max von Mises (MPa), max and probe displacement (mm), stiffness, safety factor,
                               # and material_data: the constants used and their source (material_changes() compares)
     lc = st.layer_check((0, 0, 1))                 # printed flat: the stress across and along the layers (bond, bulk)
-    st.render('exports/fea/thigh.png')
+    lc.stats                                       # how far past the worst corner: p99, elements and volume past 1
+    st.render('exports/fea/thigh.png')             # coloured by von Mises; field=lc colours by the layer check
     st.animate('exports/fea/thigh.mp4')            # the load ramped past first failure (overstressed region black)
     st.export_viewer('exports/fea/thigh.json')     # for the web kit's interactive viewer: kit/fea.html?case=...
 
@@ -39,8 +40,8 @@ below the Z tensile strength, so the safety factor uses the weak direction. Neit
 the solid CAD and the values come from 100 % infill test bars, so a print with sparse infill or thin walls can be
 softer, and then it deflects more, and pushes back less at a given travel (a clip's retention, a flexure's preload),
 than computed. ``layer_check()`` resolves the same isotropic stress against a print's layers, with the in-plane and
-across-layer allowables and an assumed interlayer shear strength (none is on a data sheet): it screens a print
-orientation, it does not qualify one. Contact, bolt preload and buckling are not modelled. No simulation proves that a
+across-layer allowables and an assumed interlayer shear strength (none is on a data sheet), under a combined or a
+maximum-stress bond criterion: it screens a print orientation, it does not qualify one. Contact, bolt preload and buckling are not modelled. No simulation proves that a
 part will fit or hold: check it against a printed coupon or the part itself.
 """
 from __future__ import annotations
@@ -264,14 +265,32 @@ MATERIALS = {
 # A print is transversely isotropic: in the layer plane (X-Y) it is close to the filament's strength, and the bond
 # between layers (Z) is weaker. For a layer normal n (the build direction), the traction on the layer plane is
 # t = sigma . n, the stress across it sigma_n = n . t (tension positive) and the shear along it tau_n = |t - sigma_n n|.
-# Two checks, each a utilisation (stress over allowable, 1 at the allowable):
-#   bond  sqrt((<sigma_n> / S_z)^2 + (tau_n / S_s)^2), <x> = max(x, 0): the quadratic interaction of the opening stress
-#         and the shear on the bond plane, the form of Brewer and Lagace's delamination-onset criterion (J. Compos.
-#         Mater. 22 (1988) 1141-1155), here at a point, without their averaging over a distance. Compression across the
-#         layers closes the bond (their Z_c term is left out) and counts in the bulk check only.
-#   bulk  von Mises / S_xy: the material in the layer plane, checked as the isotropic study checks it.
+# Each check is a utilisation (stress over allowable, 1 at the allowable). The bond between the layers is judged by one
+# of two criteria (criterion=):
+#   'combined' (the default)  bond = sqrt((<sigma_n> / S_z)^2 + (tau_n / S_s)^2), <x> = max(x, 0): the quadratic
+#         interaction of the opening stress and the shear on the bond plane, the form of Brewer and Lagace's
+#         delamination-onset criterion (J. Compos. Mater. 22 (1988) 1141-1155), here at a point, without their
+#         averaging over a distance. Compression across the layers closes the bond (their Z_c term is left out) and
+#         counts in the bulk check only.
+#   'max-stress'  two checks with no interaction, the maximum-stress criterion (each stress against its own strength;
+#         R. M. Jones, Mechanics of Composite Materials, 2nd ed. (1999), ch. 2) on the bond plane:
+#         tension = <sigma_n> / S_z and shear = tau_n / S_s; the bond is the larger of the two.
+#   With one S_s, sqrt(a^2 + b^2) >= max(a, b): the combined bond is never below the max-stress one. It is up to
+#   sqrt(2) above it, where the two terms are equal (tension and shear peak together), and equal to it where either
+#   is zero.
+# The bulk check is the material in the layer plane, against S_xy (bulk_stress=):
+#   'full' (the default)  von Mises of the whole tensor, as the isotropic study checks it.
+#   'in-plane'  von Mises of the stress in the layer plane alone: sigma_11, sigma_22, sigma_12 in any two in-plane axes,
+#         as plane stress, sqrt(s11^2 - s11 s22 + s22^2 + 3 s12^2); sigma_n and tau_n are the bond check's. The two
+#         differ by  vm_full^2 = vm_in^2 + sigma_n^2 - sigma_n (s11 + s22) + 3 tau_n^2  (expand the von Mises of the
+#         whole tensor in in-plane axes), so the full one is lower exactly where sigma_n (s11 + s22 - sigma_n) >
+#         3 tau_n^2: where sigma_n has the sign of s11 + s22 and is smaller, and the interlayer shear does not make up
+#         the difference. That is layers squeezed while the layer plane is compressed harder (a gear tooth, a clamped
+#         boss), and layers pulled while the plane is pulled harder (triaxial tension at a notch root, a pressurised
+#         wall), where the in-plane check is the more cautious bulk check. Elsewhere (interlayer shear, or sigma_n
+#         against the sign of the in-plane sum) the full one is the same or higher.
 # S_s, the shear strength of the bond, is on no filament data sheet. Unless given, it is S_z / sqrt(3), the ratio von
-# Mises gives an isotropic solid (shear yield = tensile yield / sqrt 3), and the bond reads sqrt(<sigma_n>^2 +
+# Mises gives an isotropic solid (shear yield = tensile yield / sqrt 3), and the combined bond reads sqrt(<sigma_n>^2 +
 # 3 tau_n^2) / S_z. That is an assumption, not a measurement: a print's bond may be weaker or stronger in shear than
 # that, so pass strength_shear from a coupon (a short-beam or lap-shear test of the same print) when there is one.
 LAYER_SHEAR_ASSUMPTION = ('interlayer shear allowable assumed to be strength_z / sqrt(3), the ratio von Mises gives an '
@@ -282,6 +301,26 @@ LAYER_ASSUMPTIONS = ('the stress of the linear, isotropic solve (one modulus), r
                      'across the layers left out); bulk: von Mises against the in-plane allowable. A screening check '
                      'for a transversely isotropic print, not a qualification: an anisotropic part can carry its load '
                      'differently, and walls, seams and infill are not modelled. Test a printed part')
+_LAYER_LIMITS = ('A screening check for a transversely isotropic print, not a qualification: an anisotropic part can '
+                 'carry its load differently, and walls, seams and infill are not modelled. Test a printed part')
+LAYER_CRITERIA = ('combined', 'max-stress')
+BULK_STRESSES = ('full', 'in-plane')
+LAYER_MODES = {'combined': ('bond', 'bulk'), 'max-stress': ('tension', 'shear', 'bulk')}
+
+
+def _layer_assumptions(criterion: str, bulk_stress: str) -> str:
+    """The assumptions line of a layer check; the defaults' is LAYER_ASSUMPTIONS, word for word."""
+    if (criterion, bulk_stress) == ('combined', 'full'):
+        return LAYER_ASSUMPTIONS
+    bond = ('bond: the opening stress across the layers and the shear along them, in quadratic interaction, against '
+            'the across-layer and interlayer shear allowables' if criterion == 'combined' else
+            'tension across the layers against the across-layer allowable, and the shear along them against the '
+            'interlayer shear allowable, as separate maximum-stress checks')
+    bulk = ('von Mises' if bulk_stress == 'full' else
+            'von Mises of the in-plane stress alone (sigma_n and tau_n left to the bond checks)')
+    return ('the stress of the linear, isotropic solve (one modulus), resolved on the layer plane at every element '
+            f'corner; {bond} (compression across the layers left out); bulk: {bulk} against the in-plane allowable. '
+            + _LAYER_LIMITS)
 
 
 def _unit(v) -> np.ndarray:
@@ -292,12 +331,30 @@ def _unit(v) -> np.ndarray:
     return n / size
 
 
+def _layer_option(name: str, value, allowed: Tuple[str, ...]) -> str:
+    if not isinstance(value, str) or value not in allowed:
+        raise ValueError(f"{name} is one of {', '.join(map(repr, allowed))}, not {value!r}")
+    return value
+
+
 def von_mises(sig) -> np.ndarray:
     """Von Mises stress of stress tensors ``sig`` (..., 3, 3), in their units."""
     s = np.asarray(sig, float)
     return np.sqrt(0.5 * ((s[..., 0, 0] - s[..., 1, 1]) ** 2 + (s[..., 1, 1] - s[..., 2, 2]) ** 2
                           + (s[..., 2, 2] - s[..., 0, 0]) ** 2)
                    + 3 * (s[..., 0, 1] ** 2 + s[..., 1, 2] ** 2 + s[..., 2, 0] ** 2))
+
+
+def in_plane_von_mises(sig, normal) -> np.ndarray:
+    """Von Mises of the stress in the layer plane alone, for stress tensors ``sig`` (..., 3, 3) and a layer normal of
+    any length: sqrt(s11^2 - s11 s22 + s22^2 + 3 s12^2) in any two axes of the plane (plane stress), with the stress
+    across the layers and the shear along them left out. Computed frame-free from B = P sig P, P = I - n n^T (the
+    in-plane part, whose third principal value is 0): sqrt(1.5 tr(B^2) - 0.5 tr(B)^2)."""
+    n = _unit(normal)
+    p = np.eye(3) - np.outer(n, n)
+    b = p @ np.asarray(sig, float) @ p
+    tr = np.trace(b, axis1=-2, axis2=-1)
+    return np.sqrt(np.maximum(1.5 * np.einsum('...ij,...ji->...', b, b) - 0.5 * tr ** 2, 0.0))
 
 
 def layer_stresses(sig, normal) -> Tuple[np.ndarray, np.ndarray]:
@@ -334,21 +391,58 @@ def layer_allowables(material: Optional[Material], strength_xy: Optional[float] 
     return xy, z, _positive('strength_shear', strength_shear), 'interlayer shear allowable given'
 
 
-def layer_utilisation(sig, normal, strength_xy: float, strength_z: float, strength_shear: Optional[float] = None
-                      ) -> Tuple[np.ndarray, np.ndarray]:
-    """(bond, bulk) utilisations, stress over allowable, for stress tensors ``sig`` (..., 3, 3) MPa and a layer normal:
-    bond = sqrt((max(sigma_n, 0) / S_z)^2 + (tau_n / S_s)^2), bulk = von Mises / S_xy (the notes above this function).
-    S_s defaults to S_z / sqrt(3), which makes bond = sqrt(max(sigma_n, 0)^2 + 3 tau_n^2) / S_z. The safety factor is
-    1 / max(bond, bulk)."""
+def _layer_checks(sn, tau, vm, xy: float, z: float, ss: float, criterion: str) -> Dict[str, np.ndarray]:
+    """The checks of one criterion by name (LAYER_MODES), from sigma_n, tau_n and the bulk's von Mises."""
+    across, along = np.maximum(sn, 0.0) / z, tau / ss
+    if criterion == 'combined':
+        return {'bond': np.sqrt(across ** 2 + along ** 2), 'bulk': vm / xy}
+    return {'tension': across, 'shear': along, 'bulk': vm / xy}
+
+
+def layer_modes(sig, normal, strength_xy: float, strength_z: float, strength_shear: Optional[float] = None,
+                criterion: str = 'combined', bulk_stress: str = 'full') -> Dict[str, np.ndarray]:
+    """Each check's utilisation, stress over allowable, by name, for stress tensors ``sig`` (..., 3, 3) MPa and a layer
+    normal (the notes above): ``criterion='combined'`` gives ``bond`` and ``bulk``, ``'max-stress'`` gives ``tension``,
+    ``shear`` and ``bulk``. ``bulk_stress`` is ``'full'`` (von Mises of the whole tensor) or ``'in-plane'`` (of the
+    layer plane's stress alone). The safety factor is 1 / the largest."""
+    crit = _layer_option('criterion', criterion, LAYER_CRITERIA)
+    bulk = _layer_option('bulk_stress', bulk_stress, BULK_STRESSES)
     xy, z, ss, _ = layer_allowables(None, strength_xy, strength_z, strength_shear)
     sn, tau = layer_stresses(sig, normal)
-    return np.sqrt((np.maximum(sn, 0.0) / z) ** 2 + (tau / ss) ** 2), von_mises(sig) / xy
+    vm = von_mises(sig) if bulk == 'full' else in_plane_von_mises(sig, normal)
+    return _layer_checks(sn, tau, vm, xy, z, ss, crit)
+
+
+def layer_utilisation(sig, normal, strength_xy: float, strength_z: float, strength_shear: Optional[float] = None,
+                      criterion: str = 'combined', bulk_stress: str = 'full') -> Tuple[np.ndarray, np.ndarray]:
+    """(bond, bulk) utilisations, stress over allowable, for stress tensors ``sig`` (..., 3, 3) MPa and a layer normal:
+    by default bond = sqrt((max(sigma_n, 0) / S_z)^2 + (tau_n / S_s)^2), bulk = von Mises / S_xy (the notes above
+    this function). S_s defaults to S_z / sqrt(3), which makes bond = sqrt(max(sigma_n, 0)^2 + 3 tau_n^2) / S_z. With
+    ``criterion='max-stress'`` the bond is the larger of max(sigma_n, 0) / S_z and tau_n / S_s (layer_modes() gives
+    each). The safety factor is 1 / max(bond, bulk)."""
+    checks = layer_modes(sig, normal, strength_xy, strength_z, strength_shear, criterion, bulk_stress)
+    bond = checks['bond'] if 'bond' in checks else np.maximum(checks['tension'], checks['shear'])
+    return bond, checks['bulk']
+
+
+def _weighted_percentile(values: np.ndarray, weights: np.ndarray, q: float) -> float:
+    """The smallest value with at least q % of the weight at or below it (the inverted-CDF percentile; with equal
+    weights it is numpy's ``method='inverted_cdf'``)."""
+    order = np.argsort(values, kind='stable')
+    cum = np.cumsum(weights[order])
+    k = int(np.searchsorted(cum, q / 100.0 * cum[-1] * (1 - 1e-12), side='left'))
+    return float(values[order][min(k, len(order) - 1)])
 
 
 @dataclass(frozen=True, eq=False)
 class LayerCheck:
     """Study.layer_check()'s answer. A utilisation is stress over allowable (1 at the allowable); per element it is the
-    highest of the element's four corners, and a safety factor is its inverse."""
+    highest of the element's four corners, and a safety factor is its inverse.
+
+    ``bond`` is the layers' bond under the criterion (with ``'max-stress'``, the larger of ``tension`` and ``shear``);
+    ``modes`` has each check by name (LAYER_MODES), and ``mode`` names the one that governs each element. ``stats``
+    says how far past one corner the stress reaches: per check, the 99th percentile over the judged volume and the
+    elements, and their volume, past the allowable."""
     normal: Tuple[float, float, float]
     strength_xy_mpa: float
     strength_z_mpa: float
@@ -358,6 +452,14 @@ class LayerCheck:
     bulk: np.ndarray                 # (n elements,) bulk utilisation
     judged: np.ndarray               # (n elements,) bool: the elements the summary is taken over
     worst: Dict[str, Any]            # the judged corner with the highest utilisation: where, its stresses, its mode
+    criterion: str = 'combined'      # the bond's criterion: 'combined' or 'max-stress'
+    bulk_stress: str = 'full'        # the bulk check's von Mises: 'full' (the whole tensor) or 'in-plane'
+    modes: Optional[Dict[str, np.ndarray]] = None   # (n elements,) per check, by name; None: bond and bulk
+    volume: Optional[np.ndarray] = None             # (n elements,) mm^3, for the volume past the allowable
+
+    def __post_init__(self):
+        if self.modes is None:
+            object.__setattr__(self, 'modes', {'bond': self.bond, 'bulk': self.bulk})
 
     @property
     def utilisation(self) -> np.ndarray:
@@ -372,8 +474,11 @@ class LayerCheck:
 
     @property
     def mode(self) -> np.ndarray:
-        """Per element, the check that governs it: 'bond' or 'bulk', or 'none' where the element is unstressed."""
-        return np.where(self.utilisation <= 0, 'none', np.where(self.bond >= self.bulk, 'bond', 'bulk'))
+        """Per element, the check that governs it (a name in ``modes``: 'bond' or 'bulk', or with 'max-stress'
+        'tension', 'shear' or 'bulk'; on a tie the earlier), or 'none' where the element is unstressed."""
+        names = list(self.modes)
+        pick = np.asarray(names)[np.argmax(np.stack([self.modes[k] for k in names]), axis=0)]
+        return np.where(self.utilisation <= 0, 'none', pick)
 
     def _sf(self, u: np.ndarray) -> Optional[float]:
         top = float(u[self.judged].max()) if self.judged.any() else 0.0
@@ -393,19 +498,47 @@ class LayerCheck:
 
     @property
     def governed_by(self) -> Optional[str]:
-        """'bond' or 'bulk' at the worst corner; None when the judged elements carry no stress."""
+        """The check that governs at the worst corner (a name in ``modes``); None when the judged elements carry no
+        stress."""
         return self.worst['mode']
+
+    def _spread(self, u: np.ndarray) -> Dict[str, Any]:
+        v = u[self.judged]
+        w = self.volume[self.judged] if self.volume is not None else np.ones(len(v))
+        past = v > 1.0
+        total = float(w.sum())
+        return {'max': float(v.max()), 'p99': _weighted_percentile(v, w, 99.0), 'over_1': int(past.sum()),
+                'over_1_volume_mm3': float(w[past].sum()) if self.volume is not None else None,
+                'over_1_volume_share': float(w[past].sum()) / total if self.volume is not None and total > 0 else None}
+
+    @property
+    def stats(self) -> Dict[str, Dict[str, Any]]:
+        """How far the stress reaches past the worst corner, over the judged elements: for ``utilisation`` (the
+        governing check per element) and for each check in ``modes``, ``max``; ``p99``, the utilisation 99 % of the
+        judged volume stays at or below (weighted by element volume, so a mesh made finer round a peak with
+        refine= does not pull it up; by count without ``volume``); ``over_1``, the elements past the allowable; and
+        their volume (``over_1_volume_mm3``) and its share of the judged volume. Whole elements count, from their
+        highest corner, so the volume is an upper bound, as in Study.overstressed_share(). A p99 far below the max
+        with a few elements past 1 is a corner peak (check ``worst['resolution']``); a p99 near it is a region."""
+        out = {'utilisation': self._spread(self.utilisation)}
+        out.update((k, self._spread(u)) for k, u in self.modes.items())
+        return out
 
     def as_dict(self) -> Dict[str, Any]:
         """The summary for a record (JSON-ready; the per-element arrays left out)."""
         r = lambda v, k=2: None if v is None else round(float(v), k)
+        stats = {k: {'max': r(s['max'], 4), 'p99': r(s['p99'], 4), 'over_1': s['over_1'],
+                     'over_1_volume_mm3': r(s['over_1_volume_mm3'], 3),
+                     'over_1_volume_share': r(s['over_1_volume_share'], 6)} for k, s in self.stats.items()}
         return {'normal': [r(v, 6) for v in self.normal],
                 'safety_factor': r(self.safety_factor), 'governed_by': self.governed_by,
                 'safety_factor_bond': r(self.safety_factor_bond), 'safety_factor_bulk': r(self.safety_factor_bulk),
                 'allowables_mpa': {'xy': r(self.strength_xy_mpa, 3), 'z': r(self.strength_z_mpa, 3),
                                    'shear': r(self.strength_shear_mpa, 3)},
                 'shear_basis': self.shear_basis, 'worst': dict(self.worst),
-                'judged_elements': int(self.judged.sum()), 'assumptions': LAYER_ASSUMPTIONS}
+                'judged_elements': int(self.judged.sum()),
+                'assumptions': _layer_assumptions(self.criterion, self.bulk_stress),
+                'criterion': self.criterion, 'bulk_stress': self.bulk_stress, 'stats': stats}
 
 
 # --- the material data a result records
@@ -1053,12 +1186,20 @@ class Study:
         stress round them is linear in the distance from the neutral axis, which P2 elements carry. Measured on a stepped bar's R0.5 and R1 inside fillets: elements 1.1 to 3 times the radius read
         the peak 6 to 17 % low (and on the R0.5 one at 4 mm, a 0.75 x finer mesh moved it only 2.3 %, so converge()
         alone passed it); elements under the radius read within 2 % of the converged value."""
-        m = self._m
-        P, T = m.p.T, m.t.T
+        T = self._m.t.T
         free = ~self._touches_bc
         cand = np.where(free)[0] if free.any() else np.arange(len(T))
         e = int(cand[np.argmax(self.vm_elem[cand])])
         node = int(T[e, int(np.argmax(self.vm_corner[e]))])
+        return {'stress_mpa': round(float(self.vm_elem[e]), 2), **self._resolution_at(node, 'the design peak')}
+
+    def _resolution_at(self, node: int, what: str) -> dict:
+        """How well the mesh resolves the stress at a mesh node (an element's corner): where it sits, the wall round it, the
+        element size there and the elements across that wall, the nearest inside radius, and a note when either is
+        flagged (``what`` names the corner in it). _peak_resolution() gives it for the design peak, layer_check() for
+        its worst corner."""
+        m = self._m
+        P, T = m.p.T, m.t.T
         x = P[node]
         around = np.where((T == node).any(axis=1))[0]
         h = float(np.mean([np.linalg.norm(P[T[around, i]] - P[T[around, j]], axis=1).mean()
@@ -1109,7 +1250,7 @@ class Study:
                 if (len(fn) and float(np.linalg.norm(P[fn] - x, axis=1).min()) <= h and (radius is None or f.radius < radius)
                         and self._cylinder_shape(f, vnorm, P)[0]):
                     radius = float(f.radius)
-        rec = {'stress_mpa': round(float(self.vm_elem[e]), 2), 'at_mm': [round(float(v), 3) for v in x], 'where': where,
+        rec = {'at_mm': [round(float(v), 3) for v in x], 'where': where,
                'element_mm': round(h, 3), 'wall_mm': round(wall, 3) if wall is not None else None,
                'elements_across': round(wall / h, 1) if wall is not None else None,
                'wall_resolved': bool(wall / h >= MIN_ELEMENTS_ACROSS) if wall is not None else None,
@@ -1117,11 +1258,11 @@ class Study:
                'radius_resolved': bool(h <= MAX_ELEMENT_OVER_RADIUS * radius) if radius is not None else None}
         notes = []
         if wall is not None and wall / h < MIN_ELEMENTS_ACROSS:
-            notes.append(f'the design peak sits in a {wall:.1f} mm wall only {wall / h:.1f} elements thick: a peak in a '
+            notes.append(f'{what} sits in a {wall:.1f} mm wall only {wall / h:.1f} elements thick: a peak in a '
                          'wall one or two elements thick is not a result. Mesh finer there (refine=[(point, radius, '
                          f'size)], a size under {wall / MIN_ELEMENTS_ACROSS:.2g} mm) and check it with converge()')
         if radius is not None and h > MAX_ELEMENT_OVER_RADIUS * radius:
-            notes.append(f'the design peak sits by an R{radius:.3g} radius with elements of {h:.2g} mm, larger than the '
+            notes.append(f'{what} sits by an R{radius:.3g} radius with elements of {h:.2g} mm, larger than the '
                          'radius: the stress there changes over the radius, so this mesh does not resolve it (it '
                          'usually reads low). Mesh finer there (refine=[(point, radius, size)], a size under '
                          f'{0.7 * MAX_ELEMENT_OVER_RADIUS * radius:.2g} mm), then refine in steps until the peak settles')
@@ -1414,32 +1555,50 @@ class Study:
     # --- the stress against a print's layers
     def layer_check(self, normal: Sequence[float], strength_xy: Optional[float] = None,
                     strength_z: Optional[float] = None, strength_shear: Optional[float] = None,
-                    judge: Optional[Sequence[bool]] = None) -> LayerCheck:
+                    judge: Optional[Sequence[bool]] = None, criterion: str = 'combined',
+                    bulk_stress: str = 'full') -> LayerCheck:
         """The solved stress resolved against the layers of a print whose layer normal is ``normal`` (its build
-        direction: (0, 0, 1) for a part printed as modelled on the XY plane), at every element corner, in two checks
-        (the notes above layer_utilisation()):
+        direction: (0, 0, 1) for a part printed as modelled on the XY plane), at every element corner (the notes above
+        layer_utilisation()). By default, two checks:
 
         - **bond**: sqrt(max(sigma_n, 0)^2 + 3 tau_n^2) against ``strength_z``, the allowable across the layers;
         - **bulk**: von Mises against ``strength_xy``, the allowable in the layer plane.
 
-        The strengths (MPa) default to the material's ``layer_strengths_mpa``, which every printed row has; for a
-        material without them give both. ``strength_shear`` is the interlayer shear allowable. No data sheet gives one,
-        so unless it is given it is strength_z / sqrt(3), the ratio von Mises gives an isotropic solid: a stated
-        assumption (``shear_basis``) for a coupon to replace. ``judge`` (one bool per element) picks the elements the
-        summary is taken over; by default all but those touching a clamp or a load patch, as for the safety factor.
+        ``criterion='max-stress'`` judges the bond as two separate checks instead, with no interaction: **tension**,
+        max(sigma_n, 0) against ``strength_z``, and **shear**, tau_n against the interlayer shear allowable. It is
+        never stricter than the combined bond with the same shear allowable, and up to sqrt 2 less strict where
+        tension and shear peak together. ``bulk_stress='in-plane'`` takes the bulk's von Mises of the layer plane's
+        stress alone (sigma_n and tau_n are the bond's); the full von Mises is lower than that where sigma_n has the
+        sign of the in-plane sum and is smaller (layers squeezed while the plane is compressed harder, or pulled while
+        it is pulled harder) and the interlayer shear is small, and the same or higher elsewhere. The defaults give
+        the results this method gave before the options existed.
 
-        Returns a LayerCheck: per-element utilisations (``bond``, ``bulk``), factors (``factor``) and modes (``mode``);
-        the safety factor, its governing mode (``governed_by``) and the worst corner (``worst``). The stress is the
-        isotropic solve's, so a part whose load path depends on its stiffness can carry its load differently as a
-        print; walls, seams and infill are not modelled. It screens a print orientation; it does not qualify one."""
+        The strengths (MPa) default to the material's ``layer_strengths_mpa``, which every printed row has; for a
+        material without them give both. ``strength_shear`` is the interlayer shear allowable, for either criterion.
+        No data sheet gives one, so unless it is given it is strength_z / sqrt(3), the ratio von Mises gives an
+        isotropic solid: a stated assumption (``shear_basis``) for a coupon to replace. ``judge`` (one bool per
+        element) picks the elements the summary is taken over; by default all but those touching a clamp or a load
+        patch, as for the safety factor.
+
+        Returns a LayerCheck: per-element utilisations (``bond``, ``bulk``, and each check in ``modes``), factors
+        (``factor``) and modes (``mode``); the safety factor, its governing check (``governed_by``), the worst corner
+        (``worst``, with ``resolution``: how well the mesh resolves that corner, as ``result['mesh']['peak']`` does
+        the design peak), and ``stats``: how far past that corner the stress reaches (the 99th percentile, the
+        elements and the volume past the allowable). ``render(path, field=lc)`` draws it. The stress is the isotropic
+        solve's, so a part whose load path depends on its stiffness can carry its load differently as a print; walls,
+        seams and infill are not modelled. It screens a print orientation; it does not qualify one."""
         if not hasattr(self, 'sig_corner'):
             raise RuntimeError('solve() the study before layer_check()')
+        crit = _layer_option('criterion', criterion, LAYER_CRITERIA)
+        bulk_kind = _layer_option('bulk_stress', bulk_stress, BULK_STRESSES)
         n = _unit(normal)
         xy, z, ss, basis = layer_allowables(self.material, strength_xy, strength_z, strength_shear)
         sig = self.sig_corner
         sn, tau = layer_stresses(sig, n)
-        bond = np.sqrt((np.maximum(sn, 0.0) / z) ** 2 + (tau / ss) ** 2)        # (n elements, 4 corners)
-        bulk = self.vm_corner / xy
+        vm = self.vm_corner if bulk_kind == 'full' else in_plane_von_mises(sig, n)
+        checks = _layer_checks(sn, tau, vm, xy, z, ss, crit)          # each (n elements, 4 corners)
+        bond = checks['bond'] if crit == 'combined' else np.maximum(checks['tension'], checks['shear'])
+        bulk = checks['bulk']
         nel = bond.shape[0]
         if judge is None:
             keep = ~self._touches_bc if (~self._touches_bc).any() else np.ones(nel, dtype=bool)
@@ -1451,13 +1610,41 @@ class Study:
         e, k = (int(i) for i in np.unravel_index(int(np.argmax(u)), u.shape))
         P, T = self._m.p, self._m.t
         r = lambda v, d=3: round(float(v), d)
+        at = {name: float(c[e, k]) for name, c in checks.items()}
+        top = max(at.values())
         worst = {'element': e, 'corner_mm': [r(v) for v in P[:, T[k, e]]],
                  'element_centre_mm': [r(v) for v in P[:, T[:, e]].mean(axis=1)],
                  'sigma_n_mpa': r(sn[e, k]), 'tau_n_mpa': r(tau[e, k]), 'von_mises_mpa': r(self.vm_corner[e, k]),
                  'bond': r(bond[e, k], 4), 'bulk': r(bulk[e, k], 4),
-                 'mode': (None if max(bond[e, k], bulk[e, k]) <= 0             # unstressed
-                          else 'bond' if bond[e, k] >= bulk[e, k] else 'bulk')}
-        return LayerCheck(tuple(float(v) for v in n), xy, z, ss, basis, bond.max(axis=1), bulk.max(axis=1), keep, worst)
+                 'mode': (None if top <= 0                                       # unstressed
+                          else next(name for name, v in at.items() if v == top))}
+        if crit == 'max-stress':
+            worst.update(tension=r(at['tension'], 4), shear=r(at['shear'], 4))
+        if bulk_kind == 'in-plane':
+            worst['in_plane_von_mises_mpa'] = r(vm[e, k])
+        # how well the mesh resolves this corner, as result['mesh']['peak'] says for the design peak (a study that
+        # was meshed has its faces; a stand-in built from stresses alone does not)
+        worst['resolution'] = (self._resolution_at(int(T[k, e]), "the layer check's worst corner")
+                               if hasattr(self, 'face_tris') else None)
+        modes = {name: c.max(axis=1) for name, c in checks.items()}
+        return LayerCheck(tuple(float(v) for v in n), xy, z, ss, basis, bond.max(axis=1), bulk.max(axis=1), keep,
+                          worst, crit, bulk_kind, modes, self._element_volumes())
+
+    def _utilisation_field(self, field) -> Tuple[np.ndarray, np.ndarray, str]:
+        """(per-element utilisation, the judged elements, what it is) for render(field=...)."""
+        nel = self._m.t.shape[1]
+        if isinstance(field, LayerCheck):
+            if np.shape(field.utilisation) != (nel,) or np.shape(field.judged) != (nel,):
+                raise ValueError(f'field is a LayerCheck of another mesh ({np.size(field.utilisation)} elements, this '
+                                 f'study has {nel}): take it from this study\'s layer_check()')
+            what = (f"layer check ({field.criterion}" + (', in-plane bulk' if field.bulk_stress == 'in-plane' else '')
+                    + ')')
+            return np.asarray(field.utilisation, float), np.asarray(field.judged, bool), what
+        u = np.asarray(field, float).reshape(-1)
+        if u.shape != (nel,) or not np.all(np.isfinite(u)) or (u < 0).any():
+            raise ValueError(f'field is a LayerCheck or one utilisation (a number >= 0) per element ({nel})')
+        free = ~self._touches_bc
+        return u, free if free.any() else np.ones(nel, dtype=bool), 'utilisation'
 
     # --- failure bookkeeping shared by animate() and export_viewer()
     def _element_volumes(self) -> np.ndarray:
@@ -1480,8 +1667,15 @@ class Study:
 
     # --- picture
     def render(self, path, scale: Optional[float] = None, view=(25, -60), title: Optional[str] = None,
-               vmax: Optional[float] = None):
+               vmax: Optional[float] = None, field: Union[None, 'LayerCheck', Sequence[float]] = None):
         """Boundary of the deformed mesh coloured by von Mises stress, with the deformation exaggerated.
+
+        ``field`` colours it by a utilisation (stress over allowable) instead: a LayerCheck (its per-element
+        ``utilisation``, over its judged elements), or one number per element (``lc.modes['shear']``, say, judged as
+        the safety factor is). The colour bar then runs from 0 to the judged peak, or to 1 when the peak is past it;
+        elements past 1, the allowable, are black, and elements not judged are grey, so a corner past the allowable
+        reads apart from a region past it. ``vmax`` sets the top of the scale; above 1, the band from 1 to ``vmax``
+        stays unused, since everything past 1 is black. A LayerCheck from another study's mesh raises ValueError.
 
         ``scale`` is the deformation's exaggeration. When it is None, it is chosen so the largest displacement shows
         as 6 % of the part's size; that differs between studies.
@@ -1513,13 +1707,26 @@ class Study:
         fixed = vmax is not None
         if fixed and not (math.isfinite(vmax) and vmax > 0):
             raise ValueError(f'vmax must be a positive number of MPa, not {vmax!r}')
-        own = float(self.result.get('von_mises_design_mpa') or np.percentile(self.vm_elem, 99.5)) or 1.0
-        if not fixed:
-            vmax = own
         cmap = plt.get_cmap('turbo')
+        if field is None:
+            own = float(self.result.get('von_mises_design_mpa') or np.percentile(self.vm_elem, 99.5)) or 1.0
+            if not fixed:
+                vmax = own
+            colours = cmap(np.clip(vm / vmax, 0, 1))
+        else:
+            u_el, judged, what = self._utilisation_field(field)
+            own = float(u_el[judged].max())
+            if not fixed:
+                vmax = min(own, 1.0) if own > 0 else 1.0
+            u = u_el[elem]
+            # turbo without its near-black ends, so black (past the allowable) reads apart from 0 and from just under 1
+            cmap = matplotlib.colors.ListedColormap(cmap(np.linspace(0.1, 0.9, 256)))
+            colours = cmap(np.clip(u / vmax, 0, 1))
+            colours[u > 1.0] = (0.0, 0.0, 0.0, 1.0)                  # past the allowable, as animate() draws failure
+            colours[~judged[elem]] = (0.80, 0.80, 0.78, 1.0)         # not judged (by default: clamp and load patches)
         fig = plt.figure(figsize=(8, 6), dpi=110)
         ax = fig.add_subplot(111, projection='3d')
-        pc = Poly3DCollection(P[tris], facecolors=cmap(np.clip(vm / vmax, 0, 1)), edgecolors='none', linewidths=0)
+        pc = Poly3DCollection(P[tris], facecolors=colours, edgecolors='none', linewidths=0)
         ax.add_collection3d(pc)
         lo, hi = P.min(axis=0), P.max(axis=0)
         c, r = (lo + hi) / 2, (hi - lo).max() / 2
@@ -1528,13 +1735,24 @@ class Study:
         ax.view_init(*view)
         ax.set_axis_off()
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(0, vmax))
-        clipped = fixed and own > vmax
-        fig.colorbar(sm, ax=ax, shrink=0.6, extend='max' if clipped else 'neither',
-                     label=(f'von Mises stress (MPa), fixed scale 0-{vmax:g}; this design {own:.3g}' if fixed
-                            else 'von Mises stress (MPa)'))
         res = getattr(self, 'result', {})
-        ax.set_title(title or f"{self.name}: {res.get('material', '')}, SF {res.get('safety_factor')}, "
-                     f"max {res.get('max_displacement_mm')} mm (deformation ×{scale:.0f})", fontsize=9)
+        if field is None:
+            clipped = fixed and own > vmax
+            fig.colorbar(sm, ax=ax, shrink=0.6, extend='max' if clipped else 'neither',
+                         label=(f'von Mises stress (MPa), fixed scale 0-{vmax:g}; this design {own:.3g}' if fixed
+                                else 'von Mises stress (MPa)'))
+            title = title or (f"{self.name}: {res.get('material', '')}, SF {res.get('safety_factor')}, "
+                              f"max {res.get('max_displacement_mm')} mm (deformation ×{scale:.0f})")
+        else:
+            vol, uj = self._element_volumes()[judged], u_el[judged]
+            past = uj > 1.0
+            fig.colorbar(sm, ax=ax, shrink=0.6, extend='max' if own > vmax else 'neither',
+                         label=f'{what}: stress over allowable, 0-{vmax:.3g}; black: past 1, grey: not judged')
+            title = title or (f"{self.name}: {what}, SF {1 / own if own > 0 else float('inf'):.2f}, p99 "
+                              f"{_weighted_percentile(uj, vol, 99.0):.2f}; {int(past.sum())} element"
+                              f"{'s' * (int(past.sum()) != 1)} past the allowable ({float(vol[past].sum()):.3g} mm³) "
+                              f"(deformation ×{scale:.0f})")
+        ax.set_title(title, fontsize=9)
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(path, bbox_inches='tight')
         plt.close(fig)

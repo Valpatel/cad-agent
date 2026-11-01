@@ -22,3 +22,7 @@ flowchart TD
 
 Two independent paths meet only in the comparison: the reference comes from the CAD, the observation from the
 renderer that people actually look at, so a pivot error in either shows up.
+
+A closed loop, such as a four-bar or a five-bar leg, is declared under `loops` on top of the joint tree. Its inputs are
+sampled together, its other joints are solved, and each sample's loop must close where the solver closes it. See the
+protocol, and [Linkages](linkages.md) for the solver.

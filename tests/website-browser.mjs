@@ -32,6 +32,28 @@ const ROUTES = ['/', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', 
 const DIAGRAM_SHIFT = 0.05;
 // The kit scripts web/site.js starts on every page.
 const SITE_KIT = ['/kit/diagrams.js', '/kit/copy.js', '/kit/nav.js'];
+/** The torsion-snap and screw-boss explorers (#161): what each one's page must show, and how to drive it. */
+const EXPLORERS = [
+  { tag: 'cad-torsion-snap', prefix: 'ts', route: '/docs/compliant', script: 'torsion-snap', still: 'docs/img/compliant/torsion-snap-explorer.svg',
+    part: 'end', attr: 'points', vectors: /^torsion/, start: { verdict: 'PASS', strain: '1.11 %' },
+    // the twist from 8° to 10°: past the 9.3° limit
+    slider: { name: /^Twist at the lever/, presses: 4, spoken: /degrees/, verdict: 'FAIL', tile: ['strain', '1.38 %'] },
+    radio: { label: 'One bar', changes: 'force', check: (before, after) => Math.abs(parseFloat(after) - parseFloat(before) / 2) < 0.011 },
+    contrast: ['.ts-tile b', '.ts-note', '.ts-tile span:not(.ts-k)', ['[data-part=label-force]', 'fill']],
+    shapes: [{ bars: '1', twist: '30', lever: '30', width: '12', thickness: '0.6' }, { length: '4', width: '12', thickness: '4', twist: '30', lever: '3' },
+      { material: 'copa-polymaker-wet', repeated: '', twist: '0' }, {}],
+    // the note for each shape: the first two twist far enough for the trapeze effect to matter
+    notes: [/trapeze effect/, /trapeze effect/, /^Saint-Venant/, /^Saint-Venant/] },
+  { tag: 'cad-printed-boss', prefix: 'pb', route: '/docs/screw-bosses', script: 'printed-boss', still: 'docs/img/fasteners/screw-boss-explorer.svg',
+    part: 'torque', attr: 'd', vectors: /^(screwBoss|nutFactor|thread|bossHoop|preload|torqueFor)/, start: { verdict: 'PASS', strip: '767 N' },
+    // the torque from 0.30 to 0.40 N m: past half the stripping torque
+    slider: { name: /^Tightening torque/, presses: 10, spoken: /newton metres/, verdict: 'FAIL', tile: ['verdict-note', 'over-tightened'] },
+    radio: { label: 'Lying on its side', part: 'layers', check: (before, after) => before !== after },
+    contrast: ['.pb-tile b', '.pb-note', '.pb-tile span:not(.pb-k)', ['[data-part=label-strip]', 'fill']],
+    shapes: [{ size: '50', outside: '20', engagement: '25', torque: '3', material: 'petg-bambu-hf' }, { size: '20', outside: '2.4', engagement: '1', torque: '0.02' },
+      { size: '35', outside: '4', engagement: '3', torque: '2.5', axis: 'lying', material: 'pa6-cf20-polymaker-wet' }, {}] },
+];
+
 const problems = [];
 try {
   problems.push(...await cantileverProblems());          // the snap-arm explorer on /docs/compliant (#137), below
@@ -39,6 +61,7 @@ try {
   problems.push(...await jumpProblems());                // outline jumps: released by the reader's wheel, not by a stall
   problems.push(...await fourbarProblems());             // the four-bar animator on /docs/linkages (#159), below
   problems.push(...await fanCurveProblems());            // the fan-curve explorer on /docs/fans (#160), below
+  for (const spec of EXPLORERS) problems.push(...await explorerProblems(spec));   // torsion snap and screw boss (#161), below
   problems.push(...await drawnDiagramProblems());        // diagrams drawn by the build: no shift, no script (#132), below
   for (const width of [360, 1366]) for (const route of ROUTES) {
     const context = await browser.newContext({ viewport: { width, height: 800 } });
@@ -732,6 +755,146 @@ async function fanCurveProblems() {
   await settled(quiet, '/kit/fan-curve.js');
   await quiet.waitForTimeout(800);
   if (await quiet.locator('cad-fan-curve .fc-status').textContent()) out.push('the fan-curve status line spoke on page load');
+  await quiet.close();
+  return out;
+}
+
+/** One of EXPLORERS on its page, at phone and desktop widths, under the site CSP: its golden vectors run again in this
+ * engine; it replaces its still at exactly the reserved size (no layout shift), and on a desktop its live figure has
+ * the still's geometry; its panel never overflows and its tile text fits, for the default and for extreme settings;
+ * every control has a label; the keyboard on a slider changes the verdict; a radio pressed and held the way a person
+ * presses it (#211) changes the result; its colours keep their contrast in light and dark, and it stays light on the
+ * light site; its status line speaks after an input but not on page load; no console or CSP errors. */
+async function explorerProblems(x) {
+  const out = [], { tag, prefix: px, route } = x, name = tag.replace(/^cad-/, '');
+  const frames = (page, count = 3) => page.evaluate(count => new Promise(done => {
+    let n = 0;
+    const next = () => (++n >= count ? done() : requestAnimationFrame(next));
+    requestAnimationFrame(next);
+  }), count);
+  const hold = async (page, locator) => {
+    await locator.hover();
+    await page.mouse.down();
+    await frames(page, 3);
+    await page.mouse.up();
+  };
+  const contrast = (page, selector, attr = 'color') => page.evaluate(([sel, at]) => {
+    const rgb = c => (c.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+    const lum = c => { const [r, g, b] = rgb(c).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+    const el = document.querySelector(sel);
+    let bg = el, back = 'rgba(0, 0, 0, 0)';
+    while (bg && /rgba\(.*, 0\)|transparent/.test(back = getComputedStyle(bg).backgroundColor)) bg = bg.parentElement;
+    const fore = at === 'color' ? getComputedStyle(el).color : getComputedStyle(el).fill;
+    const [l1, l2] = [lum(fore), lum(back)].sort((a, b) => b - a);
+    return (l1 + 0.05) / (l2 + 0.05);
+  }, [selector, attr]);
+  const overflow = demo => demo.locator(`.${px}-panel`).evaluate(p => {
+    const box = p.getBoundingClientRect();
+    return { over: p.scrollHeight - p.clientHeight, out: [...p.querySelectorAll('*')].filter(n => n.getClientRects().length &&
+      n.getBoundingClientRect().bottom > box.bottom + 0.5 && getComputedStyle(n).position !== 'absolute').length };
+  });
+  const vectors = JSON.parse(await readFile(path.join(root, 'tests/fixtures/formula-vectors.json'), 'utf8'));
+  const cases = vectors.cases.filter(c => x.vectors.test(c.js) && !c.raises);
+  const still = await readFile(path.join(root, x.still), 'utf8');
+  const stillPart = still.match(new RegExp(`data-part="${x.part}" ${x.attr}="([^"]*)"`))?.[1];
+  for (const width of [360, 1366]) {
+    const height = {};
+    for (const script of [false, true]) {
+      const page = await browser.newPage({ viewport: { width, height: 900 } });
+      const seen = [], say = s => seen.push(s);
+      page.on('console', m => { if (m.type() === 'error' && script) say(`console: ${m.text()}`); });
+      page.on('pageerror', e => say(`page error: ${e.message}`));
+      await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
+      if (!script) await page.route(`**/kit/${x.script}.js`, r => r.abort());
+      await page.goto(base + route);
+      await settled(page, `/kit/${x.script}.js`);
+      const demo = page.locator(tag);
+      await demo.scrollIntoViewIfNeeded();
+      height[script] = (await demo.boundingBox())?.height;
+      if (!script) {
+        const img = await demo.locator(':scope > img').evaluate(i => i.complete && i.naturalWidth > 0).catch(() => false);
+        if (!img) say('no still image before the script loads');
+      } else if (!(await demo.locator(`svg [data-part=${x.part}]`).count())) say('the live figure did not render');
+      else {
+        if (width === 1366) {
+          // the port in this engine, on its golden vectors (the Node test runs them in V8 only): bit for bit
+          const wrong = await page.evaluate(async cs => {
+            const fx = await import('/kit/formulas.js');
+            return cs.filter(c => JSON.stringify(fx[c.js](...c.args)) !== JSON.stringify(c.expected)).map(c => c.js);
+          }, cases);
+          if (cases.length < 20) say(`only ${cases.length} vectors`);
+          if (wrong.length) say(`the port differs from the Python in this engine on ${wrong.length} vectors: ${wrong.slice(0, 3).join('; ')}`);
+          const live = await demo.locator(`[data-part=${x.part}]`).getAttribute(x.attr);
+          if (live !== stillPart) say(`the live figure's ${x.part} (${live}) is not the still's (${stillPart})`);
+        }
+        const panel = await overflow(demo);
+        if (panel.over > 0 || panel.out) say(`the panel overflows (${panel.over}px, ${panel.out} elements)`);
+        const unlabelled = await demo.evaluate(d => [...d.querySelectorAll('input, select')].filter(i => !i.labels?.length).map(i => i.name));
+        if (unlabelled.length) say(`controls without a label: ${unlabelled.join(', ')}`);
+        const tile = k => demo.locator(`[data-out=${k}]`).textContent();
+        const status = () => demo.locator(`.${px}-status`).textContent();
+        if (await status()) say('the status line spoke before anyone touched the demo');
+        for (const [k, want] of Object.entries(x.start)) if ((await tile(k)) !== want) say(`the default reads ${k} ${await tile(k)}, not ${want}`);
+        // the site is light, whatever the reader prefers; the element follows the page
+        await page.emulateMedia({ colorScheme: 'dark' });
+        if ((await demo.getAttribute('data-theme')) !== 'light') say('the demo turned dark on a light page');
+        for (const theme of ['light', 'dark']) {
+          await demo.evaluate((d, t) => d.setAttribute('theme', t), theme);
+          if ((await demo.getAttribute('data-theme')) !== theme) say(`theme="${theme}" is not applied`);
+          for (const c of x.contrast) {
+            const [sel, at] = Array.isArray(c) ? c : [c, 'color'];
+            const ratio = await contrast(page, `${tag} ${sel}`, at);
+            if (!(ratio >= 4.5)) say(`${theme}: ${sel} has a contrast of ${ratio.toFixed(2)}, under 4.5`);
+          }
+        }
+        await demo.evaluate(d => d.removeAttribute('theme'));
+        await page.emulateMedia({ colorScheme: 'light' });
+        // the panel holds and the tiles' words fit for extreme settings (the last is the page's own)
+        const original = await demo.evaluate(d => Object.fromEntries([...d.attributes].map(a => [a.name, a.value])));
+        for (const [i, shape] of x.shapes.entries()) {
+          const cut = await demo.evaluate((d, [a, o]) => {
+            for (const k of d.constructor.observedAttributes) if (k !== 'theme') {
+              if (k in a) d.setAttribute(k, a[k]); else if (k in o) d.setAttribute(k, o[k]); else d.removeAttribute(k);
+            }
+            return [...d.querySelectorAll('[class$=-tile] b, [class$=-tile] span')].filter(n => n.scrollWidth > n.clientWidth + 1).map(n => n.textContent);
+          }, [shape, original]);
+          if (cut.length) say(`${JSON.stringify(shape)}: tile text cut off: ${cut.join('; ')}`);
+          const note = x.notes?.[i] && await demo.locator(`.${px}-note`).textContent();
+          if (note && !x.notes[i].test(note)) say(`${JSON.stringify(shape)}: the note reads "${note}", not ${x.notes[i]}`);
+          const after = await overflow(demo);
+          if (after.over > 0 || after.out) say(`${JSON.stringify(shape)}: the panel overflows (${after.over}px, ${after.out} elements)`);
+        }
+        // the keyboard on a slider changes the verdict
+        const slider = page.getByRole('slider', { name: x.slider.name });
+        await slider.focus();
+        for (let i = 0; i < x.slider.presses; i++) await slider.press('ArrowRight');
+        if (!x.slider.spoken.test(await slider.getAttribute('aria-valuetext') || '')) say('the slider has no spoken value');
+        if ((await tile('verdict')) !== x.slider.verdict || (await tile(x.slider.tile[0])) !== x.slider.tile[1])
+          say(`after the slider: ${await tile('verdict')}, ${x.slider.tile[0]} ${await tile(x.slider.tile[0])}`);
+        if ((await demo.locator('[data-out=verdict-tile]').getAttribute('data-verdict')) !== 'fail') say('the fail is not marked');
+        // a radio, pressed and held
+        const read = () => x.radio.changes ? tile(x.radio.changes) : demo.locator(`[data-part=${x.radio.part}]`).getAttribute('d');
+        const before = await read();
+        await hold(page, demo.locator('label', { hasText: x.radio.label }));
+        if (!(await page.getByRole('radio', { name: x.radio.label }).isChecked()) || !x.radio.check(before, await read()))
+          say(`pressing "${x.radio.label}" did not change the result (${before}, then ${await read()})`);
+        const moved = await overflow(demo);
+        if (moved.over > 0 || moved.out) say(`after the controls changed, the panel overflows (${moved.over}px, ${moved.out} elements)`);
+        await page.waitForFunction(sel => document.querySelector(sel)?.textContent, `${tag} .${px}-status`, { timeout: 3000 })
+          .catch(() => say('the status line does not announce the result after an input'));
+        const after = (await demo.boundingBox())?.height;
+        if (!(Math.abs(after - height[script]) < 0.5)) say(`the explorer changed height with its controls (${height[script]}px, then ${after}px)`);
+      }
+      for (const s of seen) out.push(`${width}px ${route} ${name}${script ? '' : ' (before its script)'}: ${s}`);
+      await page.close();
+    }
+    if (!(Math.abs(height.true - height.false) < 0.5)) out.push(`${width}px ${name}: ${height.false}px tall before its script, ${height.true}px after`);
+  }
+  const quiet = await browser.newPage();
+  await quiet.goto(base + route);
+  await settled(quiet, `/kit/${x.script}.js`);
+  await quiet.waitForTimeout(800);
+  if (await quiet.locator(`${tag} .${px}-status`).textContent()) out.push(`the ${name} status line spoke on page load`);
   await quiet.close();
   return out;
 }

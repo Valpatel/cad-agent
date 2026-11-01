@@ -5,8 +5,15 @@
 ``monkeypatch.setattr("cadagent.fea.X", ...)`` all give the module now at ``cadagent.simulation.fea``: the same
 object, not a copy, so patching a name through either path reaches the code, and module state is shared. A moved
 package takes its submodules with it: ``cadagent.gates.motion`` is ``cadagent.review.gates.motion``. The first import
-of an old path warns (DeprecationWarning) with the new one, reported at the line that imported it. Old paths are
-removed in v0.7.0; move imports before then (the table below, or CHANGELOG.md).
+of an old path warns (DeprecationWarning) with the new one, reported at the line that imported it, and says to move the
+import (the table below, or docs/toolkit.md, Package layout).
+
+When the old paths go: not yet. They stay until a release whose CHANGELOG announces their removal at least one minor
+release ahead, under **Projects must change** (announced in vX.Y.0, removed no earlier than vX.(Y+1).0), and
+``REMOVED_IN`` then names that release, so the warning does too. Downstream projects hash their source folders in
+evidence receipts, so moving an import changes a receipt: a project needs the warning to plan that. Up to v0.8.0 this
+said v0.7.0, which shipped with every old path. ``tests/test_package_layout.py`` pins the table, so a path cannot go
+unannounced.
 
 Two published modules became packages and keep their paths, so they need nothing here: ``cadagent.geometry`` (the
 shared CAD helpers) and ``cadagent.review`` (the review workbench, now also the review domain's package).
@@ -83,7 +90,8 @@ MOVED = {                                     # old name under cadagent -> the m
     "render": "cadagent.publish.render",
     "dotsvg": "cadagent.publish.dotsvg",
 }
-REMOVED_IN = "0.7.0"
+REMOVED_IN = None   # the release that removes the old paths, once a CHANGELOG has announced it a minor release ahead
+PACKAGE_LAYOUT = "docs/toolkit.md, Package layout"     # where the warning sends a project for every move
 
 
 _IMPORTLIB = os.path.dirname(importlib.__file__) + os.sep
@@ -123,7 +131,9 @@ def new_name(fullname: str):
 
 
 def _message(old: str, new: str) -> str:
-    return f"{old} moved to {new}; the old path goes in v{REMOVED_IN}"
+    when = (f"the old path goes in v{REMOVED_IN}" if REMOVED_IN else
+            "the old path stays until a release that the CHANGELOG announces a minor release ahead")
+    return f"{old} moved to {new}: import it from there (every move: {PACKAGE_LAYOUT}); {when}"
 
 
 def _alias_submodules(old: str, package) -> None:

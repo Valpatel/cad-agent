@@ -9,8 +9,10 @@ Mass properties come from the CAD solids, so a simulator (Isaac Sim, MuJoCo, Gaz
 - ``Body`` holds mass, centre of mass and inertia about the centre of mass, in kg, m and kg m^2. Bodies add with the
   parallel-axis theorem, so a link is the sum of everything bolted to it.
 
-URDF cannot describe closed kinematic loops (a five-bar leg). Export such a leg as an equivalent serial chain and
-keep the loop in the controller's actuator mapping, or add the loop in the simulator.
+URDF cannot describe closed kinematic loops (a five-bar leg). Write the leg's links as a tree (cut the loop at one
+pin) and close it with a ``LoopClosure``: ``write_mjcf`` writes it as a MuJoCo ``<equality><connect>``, which holds
+the pin in simulation. For URDF, export the tree and keep the loop in the controller's actuator mapping.
+``cadagent.mechanical.linkages`` solves the loop's poses (#187).
 
 All lengths taken from CAD are in mm and converted here; everything written out is SI.
 """
@@ -359,7 +361,8 @@ def tree_problems(links: Sequence[str], edges: Sequence[Tuple[str, str, str]]) -
             if n not in names:
                 out.append(f"joint {j} names unknown link {n}")
         if c in parent_of:
-            out.append(f"link {c} has two parents ({parent_of[c]}, {p}); URDF cannot hold a closed loop")
+            out.append(f"link {c} has two parents ({parent_of[c]}, {p}); URDF cannot hold a closed loop (cut it at "
+                       "one pin and close it with a LoopClosure in write_mjcf)")
         parent_of[c] = p
     roots = [n for n in links if n not in parent_of]
     if len(roots) != 1:
@@ -434,6 +437,80 @@ def check_urdf(path: Path) -> Dict[str, Any]:
 
 # --------------------------------------------------------------------------- MJCF (MuJoCo)
 
+@dataclass(frozen=True)
+class LoopClosure:
+    """A pin that closes a kinematic loop, which a tree of links cannot hold: ``anchor`` (a point in ``link``'s frame,
+    m) stays on ``other``. ``write_mjcf`` writes it as a MuJoCo ``<equality><connect>`` (a point constraint, which
+    closes a planar loop because its hinges keep the links in their plane).
+
+    MuJoCo takes the matching point on ``other`` from the model's home pose, so that pose must close the loop, as a
+    CAD assembly built in one closed pose does. Give ``other_anchor`` (the same pin in ``other``'s frame) and
+    ``write_mjcf`` checks that it does, to ``tolerance`` m, in the model as given. The file then carries 6
+    significant digits. MuJoCo places the pin on ``other`` from the file's own home pose, so the pin starts closed,
+    but the rounding moves it from ``other_anchor`` by up to a few millionths of the links' size (2.4e-6 m at 1.2 m
+    links): in effect that link is a few millionths longer or shorter. MuJoCo holds the pin with a soft constraint,
+    so the pin opens a little under load."""
+
+    link: str
+    other: str
+    anchor: Vec
+    other_anchor: Optional[Vec] = None
+    name: str = ""
+    tolerance: float = 1e-6
+
+
+def home_frames(links: Sequence[Link], joints: Sequence[Joint]) -> Dict[str, Tuple[Mat, Vec]]:
+    """Each link's frame at home (every joint at 0) in the root link's frame: (rotation, origin). A joint places its
+    child at ``xyz`` and ``rpy`` in its parent's frame, as URDF and ``write_mjcf`` do."""
+    problems = tree_problems([l.name for l in links], [(j.parent, j.child, j.name) for j in joints])
+    if problems:
+        raise ValueError("; ".join(problems))
+    by_child = {j.child: j for j in joints}
+    out: Dict[str, Tuple[Mat, Vec]] = {}
+
+    def frame(name: str) -> Tuple[Mat, Vec]:
+        if name not in out:
+            j = by_child.get(name)
+            if j is None:
+                out[name] = (((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)), (0.0, 0.0, 0.0))
+            else:
+                rp, op = frame(j.parent)
+                roll, pitch, yaw = (math.degrees(v) for v in j.rpy)
+                local = _mm(rot_z(yaw), _mm(rot_y(pitch), rot_x(roll)))      # URDF: fixed axes x, then y, then z
+                out[name] = (_mm(rp, local), _add(op, _mv(rp, tuple(j.xyz))))
+        return out[name]
+
+    for l in links:
+        frame(l.name)
+    return out
+
+
+def loop_gaps(links: Sequence[Link], joints: Sequence[Joint], loops: Sequence["LoopClosure"]) -> Dict[str, float]:
+    """How far apart each loop closure's two anchors are at home, in m, in the model as given (the written file moves
+    the pin on ``other`` by up to a few millionths of the links' size: see ``LoopClosure``). Keyed by the closure's
+    name, else ``link-other``; only closures that give ``other_anchor`` are measured. Two closures with one key are
+    refused."""
+    keys = _loop_keys(loops)
+    frames = home_frames(links, joints)
+    out = {}
+    for key, lc in zip(keys, loops):
+        if lc.other_anchor is None:
+            continue
+        (ra, oa), (rb, ob) = frames[lc.link], frames[lc.other]
+        pa, pb = _add(oa, _mv(ra, tuple(lc.anchor))), _add(ob, _mv(rb, tuple(lc.other_anchor)))
+        out[key] = math.dist(pa, pb)
+    return out
+
+
+def _loop_keys(loops: Sequence["LoopClosure"]) -> List[str]:
+    keys = [lc.name or f"{lc.link}-{lc.other}" for lc in loops]
+    repeated = sorted({k for k in keys if keys.count(k) > 1})
+    if repeated:
+        raise ValueError(f"loop closures {', '.join(repeated)}: each needs its own name (MuJoCo refuses a repeated "
+                         "name, and the home check must tell them apart)")
+    return keys
+
+
 @dataclass
 class Motor:
     """A torque motor on a joint. ``effort`` (N m) becomes the control range; the controller applies the
@@ -453,15 +530,29 @@ class Motor:
 
 def write_mjcf(path: Path, robot: str, links: Sequence[Link], joints: Sequence[Joint], motors: Sequence[Motor] = (),
                floating: bool = True, floor: bool = True, timestep: float = 0.002, imu_link: Optional[str] = None,
-               ground_friction: Tuple[float, float, float] = (1.0, 0.005, 0.0001), comment: str = "") -> Path:
+               ground_friction: Tuple[float, float, float] = (1.0, 0.005, 0.0001), comment: str = "",
+               loops: Sequence[LoopClosure] = ()) -> Path:
     """Write a MuJoCo model of the same tree ``write_urdf`` writes, with motors, an IMU and an optional floor.
 
     Collision primitives become geoms; visual meshes become non-colliding geoms in group 1. Joint ``armature``,
-    ``damping`` and ``friction`` (as frictionloss) carry over, which URDF cannot express.
+    ``damping`` and ``friction`` (as frictionloss) carry over, which URDF cannot express. ``loops`` close kinematic
+    loops the tree cannot hold (``LoopClosure``), as equality constraints.
     """
     problems = tree_problems([l.name for l in links], [(j.parent, j.child, j.name) for j in joints])
+    names = {l.name for l in links}
+    for lc in loops:
+        for n in (lc.link, lc.other):
+            if n not in names:
+                problems.append(f"loop closure {lc.name or lc.link}: unknown link {n}")
+        if lc.link == lc.other:
+            problems.append(f"loop closure {lc.name or lc.link}: a link cannot close a loop with itself")
     if problems:
         raise ValueError("; ".join(problems))
+    by_loop = dict(zip(_loop_keys(loops), loops))
+    for key, gap in loop_gaps(links, joints, loops).items():
+        if gap > by_loop[key].tolerance:
+            raise ValueError(f"loop closure {key}: its anchors are {gap * 1e3:.4g} mm apart at home; MuJoCo would hold "
+                             "them that far apart. Build the model in a pose where the loop closes")
     by_name = {l.name: l for l in links}
     children: Dict[str, List[Joint]] = {}
     for j in joints:
@@ -555,6 +646,13 @@ def write_mjcf(path: Path, robot: str, links: Sequence[Link], joints: Sequence[J
             add_body(el, by_name[cj.child], cj)
 
     add_body(world, by_name[root_name], None)
+    if loops:
+        eq = ET.SubElement(m, "equality")
+        for lc in loops:
+            attrs = {"body1": lc.link, "body2": lc.other, "anchor": _fmt(lc.anchor)}
+            if lc.name:
+                attrs["name"] = lc.name
+            ET.SubElement(eq, "connect", **attrs)
     if motors:
         coupled = [mo for mo in motors if mo.coupling]
         if coupled:
@@ -596,6 +694,8 @@ def rpy_to_quat(rpy: Vec) -> Tuple[float, float, float, float]:
 
 def _fmt(v: Iterable[float]) -> str:
     return " ".join(f"{x:.6g}" for x in v)
+
+
 
 
 def _add(a: Vec, b: Vec) -> Vec:

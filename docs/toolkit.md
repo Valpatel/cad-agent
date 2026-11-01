@@ -358,7 +358,7 @@ Modules are grouped by domain, as the [topic tree](areas.yaml) groups the work: 
 practice domain's review and publishing areas as `cadagent.review` and `cadagent.publish`, and the shared core at the
 top ([`src/cadagent/README.md`](../src/cadagent/README.md)). `tests/test_package_areas.py` keeps each package and its
 domain's `api:` lists in step. The old flat paths (`cadagent.fea`, `from cadagent import report`, ...) still import the
-same module, with a `DeprecationWarning`, until v0.7.0; so do the old package paths and everything under them
+same module, with a `DeprecationWarning`; so do the old package paths and everything under them
 (`cadagent.gates.motion` is `cadagent.review.gates.motion`), and `python -m` through an old path runs the module at its
 new path. Type checkers and IDEs do not see the old paths. Move imports to the new paths:
 
@@ -372,6 +372,12 @@ new path. Type checkers and IDEs do not see the old paths. Move imports to the n
 | `cadagent.review` (practice: design process, review and evidence) | `gates/`, `dossier/`, `packet`, `evidence` |
 | `cadagent.publish` (practice: publishing) | `report`, `htmlreport`, `site`, `site_review`, `view`, `serve`, `release`, `render`, `dotsvg` |
 | shared core, unchanged | `project`, `cli`, `geometry`, `links`, `package`, `agentkit` |
+
+**When the old paths go:** not yet. Up to v0.8.0 the docs and the warning said v0.7.0, which shipped with every old
+path. They stay until a release whose CHANGELOG announces their removal at least one minor release ahead, under
+**Projects must change** (announced in vX.Y.0, removed no earlier than vX.(Y+1).0). The warning then names that
+release. A project that hashes its source folders in evidence receipts can move its imports when it next regenerates
+them. `tests/test_package_layout.py` pins the old paths, so none can go unannounced.
 
 Two published modules became packages and keep their paths: `cadagent.geometry` is still the shared CAD helpers
 (`export_step` and the rest), and `cadagent.review` is still the review workbench (`review_html`), now also the review
@@ -393,11 +399,14 @@ from cadagent.publish.htmlreport import render_page, canonical_status, SCHEMA_VE
 from cadagent.links import missing_links
 from cadagent.mechanical.connectors import (PLUG_FAMILIES, plug_segments, window, window_margins, PanelFrame, envelope,
                                             check_ports, draw_ports)
+from cadagent.mechanical.linkages import (sweep_fourbar, sweep_fivebar, sweep_fivebar_tip, fivebar_workspace,
+                                          fivebar_reach, Linkage)
 from cadagent.package import build_package
 from cadagent.publish.serve import make_server
 from cadagent.simulation.fea import Study, MATERIALS, Material, plane_at, cylinder_at, in_box, near, any_of
 from cadagent.simulation.robot import (Body, combine, box_body, cylinder_body, solid_mass_properties, printed_part_body,
-                                       Link, Joint, Visual, Collision, Motor, write_urdf, write_mjcf, check_urdf)
+                                       Link, Joint, Visual, Collision, Motor, LoopClosure, write_urdf, write_mjcf,
+                                       check_urdf)
 from cadagent.simulation.explore import (explore_config, load_configured, check_catalogue, load_design, resolve, bom,
                                          load_evaluator, evaluate_design, compare_designs, comparison, write_comparison,
                                          swaps)
@@ -589,6 +598,66 @@ material of your own needs `strength_xy` and `strength_z`. `judge` (one bool per
 default that is all but the clamp and load patches, as for the safety factor. `st.sig_corner` keeps the corner stress
 tensors (elements × 4 corners × 3 × 3, MPa) for checks of your own.
 
+**Which bond criterion** (`criterion`, `bulk_stress`). The bond check weighs the opening stress and the shear
+together. A maximum-stress check weighs each on its own, and some projects use one. Both are options, and the defaults
+give the results `layer_check` gave before the options existed:
+
+- `criterion='combined'` (the default): the bond check above, one check.
+- `criterion='max-stress'`: `tension`, ⟨σn⟩ against S_z, and `shear`, τn against S_s, as two separate checks.
+- `bulk_stress='full'` (the default): von Mises of the whole stress tensor, against S_xy.
+- `bulk_stress='in-plane'`: von Mises of the stress in the layer plane alone, against S_xy; σn and τn are the bond's.
+
+```python
+lc = st.layer_check((0, 0, 1), criterion='max-stress', bulk_stress='in-plane', strength_shear=11)
+lc.modes['tension'], lc.modes['shear'], lc.modes['bulk']    # per element; lc.mode names the one that governs
+```
+
+![One PETG-CF L bracket printed as modelled, pushed back with 27 N, coloured by its layer check: under the combined criterion a band along the root fillet is past the allowable (SF 0.94, p99 0.59, 55 elements, 2 cubic mm); under the maximum-stress criterion nothing is (SF 1.07, p99 0.58)](img/fea/layer-criteria.png)
+
+The figure is one solved bracket under the two criteria (`tools/fea_layer_figure.py` regenerates it). Its upright is
+printed standing, so the push makes its R2 root fillet pull across the layers while they carry shear. The combined
+criterion fails a band along the fillet, 55 elements and 2 mm³ (SF 0.94). The maximum-stress one passes it (1.07).
+
+Which is the more cautious depends on the corner. With one S_s, the combined bond is never below the max-stress one.
+It is up to √2 above it, where tension and shear peak together, as at that fillet. The full von Mises is lower than
+the in-plane one where σn has the sign of the in-plane stresses' sum and is smaller, and little shear runs between the
+layers. That is layers squeezed while the layer plane is compressed harder (a gear tooth, a clamped boss), and layers
+pulled while the plane is pulled harder (triaxial tension at a notch root, a pressurised wall). There the in-plane
+check is the more cautious; elsewhere the full one is the same or higher.
+
+Gyropup's turret checks its parts as `criterion='max-stress'`, `bulk_stress='in-plane'` and S_s = S_z / 2 do. On its
+pan pinion, at one corner where the layers are squeezed, the full von Mises is 20.4 MPa and the in-plane one 23.4.
+Against its target safety factor of 2.0, the defaults pass that corner (2.0) and the turret's check fails it (1.75).
+Neither S_s is measured: S_z / 2 is 13 % below S_z / √3, so it is the stricter in shear. A coupon settles it.
+
+**How far past the worst corner** (`stats`, `worst['resolution']`, `render(field=)`). The safety factor comes from
+one element corner, so it cannot tell a peak at one re-entrant edge from a region. `lc.stats` can. For each check, and
+for the governing one (`utilisation`), it gives:
+
+- `max`, the peak utilisation;
+- `p99`, the utilisation 99 % of the judged volume stays at or below;
+- `over_1`, the number of judged elements past the allowable, and their volume (`over_1_volume_mm3`, and its share
+  of the judged volume).
+
+```python
+lc.stats['utilisation']    # {'max': 1.06, 'p99': 0.59, 'over_1': 55, 'over_1_volume_mm3': 1.98, ...}
+lc.worst['resolution']     # where that corner sits, the wall round it, elements across, an inside radius
+st.render('exports/fea/bracket-layers.png', field=lc, vmax=1.0)    # or field=lc.modes['shear']
+```
+
+The p99 is weighted by volume, so a mesh made finer round the peak with `refine=` does not pull it up. A count of
+elements past 1 grows with such a mesh; their volume settles. Each element counts whole, from its highest corner, so
+the volume is an upper bound. `lc.worst['resolution']` measures the mesh at the worst corner, as `result['mesh']['peak']`
+does at the design peak. A corner at a sharp re-entrant edge, or in a wall one or two elements thick, is not a
+result. `st.render(path, field=lc)` draws the check, as in the bracket figure: black past the allowable, grey where
+not judged.
+
+![The bracket's judged volume above each utilisation, on a log scale: under the combined criterion 0.04 % of it is past the allowable (55 elements, 2 cubic mm, max 1.06) and 1 % is above 0.59; under the maximum-stress criterion the max is 0.93; both curves fall to a plateau near 0.55, the base bent evenly in its layer plane](img/fea/layer-spread.svg)
+
+The chart is the bracket's two checks as `stats` sees them. Left of 1 %, round the root fillet, the combined curve
+sits above the max-stress one, where tension and shear meet. The plateau near 0.55 is the base, bent evenly in its
+layer plane: a region.
+
 Its limits:
 
 - It is a screening check, not a qualification.
@@ -597,7 +666,7 @@ Its limits:
 - Walls, seams and infill are not modelled.
 - Test a printed part.
 
-<details><summary>Where the bond check comes from, and the in-plane allowables</summary>
+<details><summary>Where the checks come from, hand corners, and the in-plane allowables</summary>
 
 The traction on a plane with normal n is t = σ·n; σn = n·t, and τn = |t − σn n|. The bond check is the quadratic
 interaction of the opening stress and the shear on the bond plane, (⟨σn⟩ / S_z)² + (τn / S_s)² = 1 at failure. This is
@@ -605,8 +674,31 @@ the form of Brewer and Lagace's delamination-onset criterion (J. Compos. Mater. 
 here, without their averaging over a distance. Compression across the layers closes the bond, so it is left out of the
 bond check, and stays in the bulk check. With S_s = S_z / √3 it reads √(⟨σn⟩² + 3τn²) / S_z.
 
+The maximum-stress criterion takes each stress against its own strength, with no interaction (R. M. Jones, *Mechanics
+of Composite Materials*, 2nd ed., 1999, chapter 2): here ⟨σn⟩ / S_z and τn / S_s. For one S_s,
+√(a² + b²) ≥ max(a, b), so the combined bond is never below it; the two are equal where either term is zero, and √2
+apart where the terms are equal.
+
 The bulk check is the study's own von Mises check, against the in-plane allowable. Gyropup used both checks for its
-hip frame before they were in the toolkit (#144).
+hip frame before they were in the toolkit (#144). The in-plane one takes the plane-stress von Mises of the layer
+plane's own stress, √(σ11² − σ11σ22 + σ22² + 3σ12²) in any two in-plane axes. Written in those axes, the full one is
+
+vm² = vm_in² + σn² − σn(σ11 + σ22) + 3τn²,
+
+so it is the lower exactly where σn(σ11 + σ22 − σn) > 3τn². That needs σn of the same sign as the in-plane sum and
+smaller, with too little shear between the layers to make up the difference. The layers are then squeezed while the
+plane is compressed harder, or pulled while it is pulled harder.
+
+Hand corners, with S_z = 20, S_s = 20 / √3 and S_xy = 30 MPa and the layer normal z (utilisations; `tests/test_fea_layers.py`
+checks each, and that the options reproduce a project's own three maximum-stress checks):
+
+| Corner (MPa) | Bond, combined | Bond, max-stress | Bulk, full | Bulk, in-plane |
+|---|---:|---:|---:|---:|
+| σn 10, τn 5: tension and shear together | 0.66 | 0.50 | 0.44 | 0 |
+| σn 10, τn 5.77: the two terms equal | 0.71 | 0.50 | 0.47 | 0 |
+| σ11 20, τn 5: in-plane tension, interlayer shear | 0.43 | 0.43 | 0.73 | 0.67 |
+| σ11 −32, σn −12: squeezed, the plane compressed harder | 0 | 0 | 0.93 (28 MPa) | 1.07 (32 MPa) |
+| σ11 30, σn 10: pulled, the plane pulled harder | 0.50 | 0.50 | 0.88 (26.5 MPa) | 1.00 (30 MPa) |
 
 S_z is the row's strength, an allowable below the sheet's Z tensile strength. S_xy is that allowable times the sheet's
 X-Y / Z tensile strength ratio, the lowest over the editions read. So in the layer plane it sits at least as far below
@@ -765,7 +857,10 @@ Turns CAD parts into a simulator model with real mass properties:
 - `box_body`, `cylinder_body` and `point_body` model bought parts from their catalogue mass. `Body` objects add with
   the parallel-axis theorem, so a link is the sum of everything bolted to it.
 - `write_urdf` and `write_mjcf` write the same link tree. The MJCF adds motors, joint armature and friction, an IMU
-  site and a floor. Both refuse a closed loop: model a four-bar or five-bar leg as an equivalent serial chain.
+  site and a floor. A tree cannot hold a closed loop, such as a four-bar or a five-bar leg. Cut it at one pin and
+  pass that pin to `write_mjcf` as a `LoopClosure`: MuJoCo holds it with an equality constraint. Build the model in a
+  pose where the loop closes (give `other_anchor` and it is checked). URDF has no way to close the loop, so keep it
+  in the controller. `cadagent.mechanical.linkages` solves the loop's poses ([Linkages](linkages.md)).
 - `check_urdf` checks the tree, inertias (positive definite, triangle inequality), mesh files and joint limits.
   text-to-cad's `cadgen urdf validate` is a second, independent validator.
 
@@ -806,15 +901,17 @@ objects); `run()` runs it natively or in Docker; `results()` returns temperature
 temperature through each fan, the heat leaving with the air against the heat put in (`energy_balance_pct`), the cells
 each fan and fin zone caught, and the limits. Its histories cover the whole run, joined across continuations
 (`restarts`, one entry per continuation; a second solve from the same saved time writes `<kind>_<time>.dat` and is read
-too, and one that crashed at start and logged nothing is left out): residuals, each solid's hottest temperature and
-`monitors` (fin-block and fan air temperatures, fan flow, heat leaving), each with its unit. `converged` needs the
-temperatures, fan flow and heat leaving to have stopped changing *and* the energy balance within 5 %. The change is
-measured over `convergence_window`: the iterations from 80 % of the last one onward, cut to the newest solve (after a
-continuation shorter than a fifth of the run, that is the whole newest solve). `steady` holds each change to its entry
-in `convergence_limits`: under 1 °C for each solid's hottest temperature and the air through each fan, under 2 % for the
-fan flow and the heat leaving, and under 2 °C for a fin block's air (its key, `<block>_T_change_c`, does not end in
-`_c_change`, the suffix that gets 1 °C). Exchanger fin blocks are set to their power by `calibrate_fins()` (secant steps
-on the fin temperature, only once the heat leaving has settled; `calibrated` says whether it got there).
+too, one that crashed at start and logged nothing is left out, and one that stopped before its first temperature
+sample still replaces the rows after its start): residuals, each solid's hottest temperature and `monitors` (fin-block
+and fan air temperatures, fan flow, heat leaving), each with its unit. `converged` needs the temperatures, fan flow and
+heat leaving to have stopped changing *and* the energy balance within 5 %. The change is measured over
+`convergence_window`: the iterations from 80 % of the last one onward, cut to the newest solve (after a continuation
+shorter than a fifth of the run, that is the whole newest solve; after one that logged no temperature rows, there is
+no window and nothing is steady). `steady` holds each change to its entry
+in `convergence_limits`: under 1 °C for every temperature (each solid's hottest, a fin block's air and the air through
+each fan) and under 2 % for the fan flow and the heat leaving. Exchanger fin blocks are set to their power by
+`calibrate_fins()` (secant steps on the fin temperature, only once the heat leaving has settled; `calibrated` says
+whether it got there).
 
 Two choices matter for honest numbers, and both are covered by tests:
 - **The open boundary is hydrostatic** (`p_rgh` uniform): still room air stays still. A uniform *static* pressure

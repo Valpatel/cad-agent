@@ -252,7 +252,7 @@ export class CadCantilever extends Base {
     else if (name === 'repeated') this.state.repeated = t.checked;
     else if (name === 'material' || name === 'direction') this.state[name] = t.value;
     else return;
-    this.update();
+    this.update({ announce: true });
   }
 
   setPlaying(on) {
@@ -262,7 +262,9 @@ export class CadCantilever extends Base {
     this.render();
   }
 
-  update() {
+  // Only what the user does is announced, once the slider stops moving: the first draw and attribute changes are not
+  // (the figure's aria-label carries the same summary). An announcement still pending speaks the latest result.
+  update({ announce = false } = {}) {
     const s = this.state, r = this.result = compute(s);
     for (const [k, c] of Object.entries(CONTROLS)) {
       this.out[k].textContent = mm(s[k]);
@@ -275,10 +277,12 @@ export class CadCantilever extends Base {
     this.out['verdict-tile'].dataset.verdict = r.passes ? 'pass' : 'fail';
     this.out.force.textContent = num(r.force, 'N');
     this.out.stiffness.textContent = `at the hook · ${num(r.stiffness / 1e3, 'N/mm')}`;
-    const text = summary(s, r);
-    this.svg.setAttribute('aria-label', text);
-    clearTimeout(this.announce);                 // screen readers hear the result once the slider stops moving
-    this.announce = setTimeout(() => { this.status.textContent = text; }, 700);
+    this.said = summary(s, r);
+    this.svg.setAttribute('aria-label', this.said);
+    if (announce) {
+      clearTimeout(this.announce);
+      this.announce = setTimeout(() => { this.status.textContent = this.said; }, 700);
+    }
     this.render();
     this.dispatchEvent(new CustomEvent('cad-cantilever-change', { bubbles: true, detail: { state: { ...s }, result: { ...r, material: r.material.key } } }));
   }

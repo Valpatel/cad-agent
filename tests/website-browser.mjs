@@ -424,7 +424,8 @@ try {
  * CSP: it replaces its still at exactly the reserved size (no layout shift) and its first live frame is the still,
  * however late the script arrives, its panel never overflows, every control has a label, the keyboard moves a slider
  * and the strain follows, the print direction flips the verdict, it animates, pauses on request and carries on from
- * there, and holds still under reduced motion, with no console errors. */
+ * there, holds still under reduced motion, and its status line speaks after an input but not on page load, with no
+ * console errors. */
 async function cantileverProblems() {
   const out = [];
   const beam = page => page.locator('cad-cantilever [data-part=beam]').getAttribute('points');
@@ -478,6 +479,8 @@ async function cantileverProblems() {
         await page.waitForFunction(p => document.querySelector('cad-cantilever [data-part=beam]').getAttribute('points') !== p,
           before, { timeout: 3000 }).catch(() => say('the beam is not animating'));
         const strain = async () => parseFloat(await demo.locator('[data-out=strain]').textContent());
+        const status = () => demo.locator('.cc-status').textContent();
+        if (await status()) say('the status line spoke before anyone touched the demo');
         const s0 = await strain();
         const slider = page.getByRole('slider', { name: /^Deflection at the hook/ });
         await slider.focus();
@@ -502,6 +505,8 @@ async function cantileverProblems() {
           return d.querySelector('[data-part=beam]').getAttribute('points');
         });
         if (resumed !== paused) say('Play does not carry on from the paused frame');
+        await page.waitForFunction(() => document.querySelector('cad-cantilever .cc-status')?.textContent,
+          null, { timeout: 3000 }).catch(() => say('the status line does not announce the result after an input'));
       }
       for (const s of seen) out.push(`${width}px /docs/compliant demo${script ? '' : ' (before its script)'}: ${s}`);
       await page.close();
@@ -522,6 +527,10 @@ async function cantileverProblems() {
   await reduced.waitForTimeout(500);
   if (!first || (await beam(reduced)) !== first || (await reduced.locator('cad-cantilever .cc-play').textContent()) !== 'Play')
     out.push('reduced motion: the demo is animating');
+  // Over 700 ms (the announcement delay) since the element drew, with no input: the polite live region stays empty,
+  // so a screen reader does not read the result out of context on page load.
+  if (await reduced.locator('cad-cantilever .cc-status').textContent())
+    out.push('the status line spoke on page load, with nobody touching the demo');
   await reduced.close();
   return out;
 }

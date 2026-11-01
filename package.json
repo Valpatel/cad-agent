@@ -11,7 +11,7 @@
     "preview:site": "node tools/build-site.mjs --worktree && node tools/preview-site.mjs",
     "deploy:site": "node tools/build-site.mjs --release && npx --yes wrangler@4.86.0 pages deploy dist --project-name cad-agent --branch main --commit-dirty=false",
     "build:site:draft": "node tools/build-site.mjs --worktree",
-    "test:site": "node --test tests/website-*.test.mjs && node tests/website-browser.mjs"
+    "test:site": "node --test tests/website-*.test.mjs && node tests/website-browser.mjs && node tests/website-catalog-browser.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",

@@ -1,7 +1,7 @@
 # Agentic hardware-design landscape (verified 2026-10-24)
 
 > **Refreshed 2026-10-31** (issue #96): [agent toolkits since 10-24](agent-toolkits-2026-10.md) (text-to-cad 0.8 break,
-> OrcaSlicer 2.5 MCP, build123d sheet metal, snap-fit skills), [compliant mechanisms](compliant-mechanisms.md) (snap
+> OrcaSlicer 2.5's Design tab, build123d sheet metal, snap-fit skills), [compliant mechanisms](compliant-mechanisms.md) (snap
 > fits, flexures, allowable strains, FDM anisotropy from datasheets) and [FEA and process tools](fea-and-process-tools.md)
 > (large-deflection contact solvers, orientation optimisers, sheet metal, 37 candidate deterministic checks).
 
@@ -38,7 +38,7 @@ Clients: **CC** = Claude Code plugin/skill, **MCP** = MCP server, **Cx** = Codex
 | [altendky/onshape-mcp](https://github.com/altendky/onshape-mcp) | Apache-2.0 | 20 | 10-24 | MCP | Onshape (closed SaaS) | general | No | No | (u) | (u) | none | none |
 | [faust-machines/fusion360-mcp-server](https://github.com/faust-machines/fusion360-mcp-server) | MIT | 131 | 10-06 | MCP (CC, Cu, Cx docs) | Fusion (closed) | general | No | No | (u) | (u) | none | none |
 | [ahujasid/mcp-for-blender](https://github.com/ahujasid/mcp-for-blender) | MIT | 32,261 | 10-24 | MCP, Cx plugin | Blender (mesh, not B-rep) | visual only | No | No | Yes | No | Poly Haven, Sketchfab, paid generators | none |
-| [mixelpixx/KiCAD-MCP-Server](https://github.com/mixelpixx/KiCAD-MCP-Server) | MIT | 2,933 | 10-01 | MCP | KiCad 9+ (kicad-python + SWIG `pcbnew`) | PCB | KiCad DRC | JLCPCB parts + prices | Snapshots | No | JLCPCB, DigiKey, Freerouting | none |
+| [mixelpixx/KiCAD-MCP-Server](https://github.com/mixelpixx/KiCAD-MCP-Server) | MIT | 2,933 | 10-26 | MCP | KiCad 9+ (kicad-python + SWIG `pcbnew`) | PCB | KiCad DRC | JLCPCB parts + prices | Snapshots | No | JLCPCB, DigiKey, Freerouting | none |
 | [mixelpixx/Konnect](https://github.com/mixelpixx/Konnect) (archived 2026-10-26; [obhox/kicad-mcp](https://github.com/obhox/kicad-mcp) is a fork) | **AGPL-3.0** | 1,399 | 10-26 | KiCad plugin + MCP, CC skills | KiCad 10 IPC (Rust) | PCB | design-review audits (u) | (u) | (u) | No | Freerouting | none |
 | [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro) | MIT | 149 | 10-25 | MCP, CC plugin skills, Cx/VS Code config | KiCad 10.0.x (kicad-cli/IPC; no SWIG) | PCB | 8 fab profiles with source URLs | Fab pricing coefficients | 3D render PNG | No | JLCPCB; Nexar/DigiKey/Mouser with keys | `evals/`, `benchmarks/` dirs |
 | [Seeed-Studio/kicad-mcp-server](https://github.com/Seeed-Studio/kicad-mcp-server) | **No LICENSE file** (MIT only in pyproject) | 168 | 10-22 | MCP | KiCad 8-10 (`pcbnew`) | PCB analysis, device tree | KiCad ERC/DRC | PartReel registry | No | No | PartReel | none |

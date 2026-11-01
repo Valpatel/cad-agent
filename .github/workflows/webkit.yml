@@ -25,6 +25,10 @@ jobs:
         env:
           PLAYWRIGHT_CHANNEL: chromium
           PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
+      - run: node tests/website-catalog-browser.mjs
+        env:
+          PLAYWRIGHT_CHANNEL: chromium
+          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
       - run: npm run test:part-table
         env:
           PLAYWRIGHT_CHANNEL: chromium

@@ -32,7 +32,8 @@
  *   links merge their parameters into the current view (and their href is kept as the view they lead to), a #hash
  *   inside a group opens that group's tab (and is written into the URL, so Back returns to it); a link that carries a
  *   view opens scrolled to `[data-gallery-results]`; `[data-gallery-when="area:gears"]` elements show only for that choice;
- * - `[data-gallery-chips]` (removable chips for the active choices), `[data-gallery-status]` (a live count),
+ * - `[data-gallery-chips]` (removable chips for the active choices, each named by its control's `data-label` if it has
+ *   one, else by its text), `[data-gallery-status]` (a live count),
  *   `[data-gallery-empty]`, `[data-gallery-empty-scope]` (instead, when a one-value facet alone leaves nothing: an area
  *   with nothing in it yet; `[data-gallery-scope-name]` inside it gets the choice's label), `[data-gallery-empty-kind]`
  *   (that facet has entries, but none under the chosen tab; `[data-gallery-kind-name]` gets the tab's name),
@@ -386,10 +387,10 @@ export class CadGallery extends Base {
     for (const el of this.querySelectorAll('[data-count-of]')) { const [n, v] = el.dataset.countOf.split(':'); set(el, facetCount(n, v)); }
   }
 
-  /** A choice's label, as its control shows it (text only). */
+  /** A choice's label: the control's `data-label`, else its text as shown (text only). */
   #labelOf(name, value) {
     const el = this.facetLinks.find(a => a.dataset.facet === name && a.dataset.value === value) || this.boxes.find(b => b.name === name && b.value === value)?.closest('label');
-    return (el?.querySelector('.area-name, span:not([data-count]):not(.sr)') || el)?.textContent.trim() || value;
+    return el?.dataset.label || (el?.querySelector('.area-name, span:not([data-count]):not(.sr)') || el)?.textContent.trim() || value;
   }
 
   /** One removable chip per active choice; its label is the control's own text, never markup. */

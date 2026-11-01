@@ -52,10 +52,27 @@ in, so the window must clear that segment's whole section, not only the part
 that sits in the wall once mated. Segments that start beyond the wall, such as
 a boot or a cable, never pass through it. They are still checked in 3D
 against everything outside, including neighbouring plugs.
+
+The cable behind the plug
+-------------------------
+A mate may carry a ``cable``: its outer diameter and minimum bend radius, as
+the cable's data sheet states them::
+
+    "cable": {"od": 6.1,                          # outer diameter, mm
+              "min_bend_radius": {"mm": 25},      # or {"x_od": 4}: a multiple of the OD
+              "basis": "Belden CAT6+ UTP PVC patch cord, technical data rev 0.202: 6.1 mm, 25 mm"}
+
+``cable_bend()`` then checks that the cable, leaving the boot straight along
+the mating axis, can turn at that radius before it meets a wall or a part. It
+tries each turn direction across the axis (``+v``, ``-v``, ``+u``, ``-u`` by
+default) and returns ``pass``, ``warn`` or ``fail`` with the clearance, the
+direction that works and the assumptions it made. ``check_ports()`` runs it for
+every mate that has a cable.
 """
 
 from __future__ import annotations
 
+import math
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from cadagent._deps import require
@@ -247,6 +264,295 @@ def window_margins(mate: Mapping[str, Any], win: Sequence[float], wall_w: Sequen
         out["window_centre_minus_face_centre_mm"] = [round(wc[0] - (face[0] + face[2]) / 2, 3), round(wc[1] - (face[1] + face[3]) / 2, 3)]
     return out
 
+# ----------------------------------------------------------------------------- the cable behind the plug
+
+# Turn directions across the mating axis, as (u, v) in the panel frame. A spec may also give an angle in degrees,
+# measured from +u towards +v.
+CABLE_DIRECTIONS: Dict[str, Tuple[float, float]] = {"+v": (0.0, 1.0), "-v": (0.0, -1.0), "+u": (1.0, 0.0),
+                                                   "-u": (-1.0, 0.0)}
+CABLE_DEFAULTS = {"turn_deg": 90.0, "run": 0.0, "margin": 1.0, "measured_to": "inside",
+                  "directions": ["+v", "-v", "+u", "-u"]}
+_TOUCH = 1e-6     # mm: a gap this small counts as touching
+
+def cable_spec(mate: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
+    """The mate's ``cable``, resolved to millimetres, or None when the mate has none.
+
+    Keys of ``mate['cable']``:
+
+    * ``od``: outer diameter, mm.
+    * ``min_bend_radius``: ``{"mm": r}`` or ``{"x_od": k}``, the two ways data
+      sheets state it (LAPP: "fixed installation: 4 x outer diameter"; Belden:
+      "Min Bend Radius (Overall Cable): 25 mm"). A bare number is refused,
+      because the two readings differ by a factor of the diameter.
+    * ``measured_to``: ``inside`` (default) or ``centreline``. Data sheets
+      rarely say which; reading the radius as the inside one asks for the most
+      room, so it is the default.
+    * ``turn_deg``: the turn the cable makes (default 90, at most 180).
+    * ``run``: a straight length after the bend to check too (default 0).
+    * ``margin``: a bend that clears by less than this many mm is a warn
+      (default 1.0: a default, not a standard; real cables bend less evenly
+      than an arc and vary in diameter).
+    * ``directions``: names from ``CABLE_DIRECTIONS`` or angles in degrees from
+      +u towards +v (default ``+v``, ``-v``, ``+u``, ``-u``).
+    * ``exit``: ``[u, v]`` where the cable leaves the boot (default: the centre
+      of the section of the plug's farthest segments).
+    * ``basis``: where the numbers came from.
+    """
+    c = mate.get("cable")
+    if not c:
+        return None
+    od = float(c["od"])
+    given = c.get("min_bend_radius")
+    if not isinstance(given, Mapping) or len(given) != 1 or next(iter(given)) not in ("mm", "x_od"):
+        raise ValueError('cable min_bend_radius must be {"mm": r} or {"x_od": k}, as the data sheet states it, '
+                         f"not {given!r}")
+    (kind, value), = given.items()
+    radius = float(value) * od if kind == "x_od" else float(value)
+    measured = c.get("measured_to", CABLE_DEFAULTS["measured_to"])
+    if measured not in ("inside", "centreline"):
+        raise ValueError(f"cable measured_to must be 'inside' or 'centreline', not {measured!r}")
+    rc = radius + od / 2 if measured == "inside" else radius
+    turn = float(c.get("turn_deg", CABLE_DEFAULTS["turn_deg"]))
+    run, margin = float(c.get("run", CABLE_DEFAULTS["run"])), float(c.get("margin", CABLE_DEFAULTS["margin"]))
+    if od <= 0 or radius <= 0 or rc < od / 2 or not 0 < turn <= 180 or run < 0 or margin < 0:
+        raise ValueError(f"cable spec out of range: od {od}, radius {radius} ({measured}), turn {turn}, run {run}, "
+                         f"margin {margin}")
+    dirs = []
+    for d in c.get("directions", CABLE_DEFAULTS["directions"]):
+        if isinstance(d, str):
+            if d not in CABLE_DIRECTIONS:
+                raise ValueError(f"unknown cable direction {d!r}; known: {sorted(CABLE_DIRECTIONS)} or an angle")
+            dirs.append((d, CABLE_DIRECTIONS[d]))
+        else:
+            a = math.radians(float(d))
+            dirs.append((f"{float(d):g} deg", (math.cos(a), math.sin(a))))
+    if not dirs:
+        raise ValueError("cable directions must list at least one direction")
+    return {"od": od, "min_bend_radius": {kind: value}, "radius_mm": radius, "measured_to": measured,
+            "centreline_radius_mm": rc, "turn_deg": turn, "run_mm": run, "margin_mm": margin, "directions": dirs,
+            "exit": list(c["exit"]) if c.get("exit") else None, "basis": c.get("basis", "")}
+
+def cable_exit(mate: Mapping[str, Any]) -> Tuple[float, float, float]:
+    """Where the cable leaves the plug, ``(u, v, w)`` in the panel frame: the far end of the plug.
+
+    ``(u, v)`` is the cable spec's ``exit``, or the centre of the section of the
+    segments that reach the plug's far end (an RJ45's boot, an overmold).
+    """
+    segs = mate_segments(mate)
+    far = max(s["w"][1] for s in segs)
+    spec = mate.get("cable") or {}
+    if spec.get("exit"):
+        u, v = spec["exit"]
+    else:
+        r = _union(seg_rect(s) for s in segs if abs(s["w"][1] - far) < 1e-9)
+        u, v = (r[0] + r[2]) / 2, (r[1] + r[3]) / 2
+    return (float(u), float(v), float(far))
+
+def bend_path(start: Sequence[float], direction: Sequence[float], centreline_radius: float, turn_deg: float = 90.0,
+              run: float = 0.0) -> Dict[str, Any]:
+    """The cable's centreline in the panel frame: an arc that turns from +w towards ``direction``, then a line.
+
+    ``start`` is the exit ``(u, v, w)`` and ``direction`` a ``(u, v)`` vector
+    (normalised here). The arc's centre is ``centreline_radius`` from the start
+    along ``direction``. ``point(s)`` gives the centreline ``s`` mm along it.
+    """
+    du, dv = direction
+    n = math.hypot(du, dv)
+    du, dv = du / n, dv / n
+    th = math.radians(turn_deg)
+    rc = centreline_radius
+    u0, v0, w0 = start
+
+    def arc(a: float) -> Tuple[float, float, float]:
+        k = rc * (1 - math.cos(a))
+        return (u0 + k * du, v0 + k * dv, w0 + rc * math.sin(a))
+
+    end = arc(th)
+    tangent = (math.sin(th) * du, math.sin(th) * dv, math.cos(th))
+    arc_len = rc * th
+
+    def point(s: float) -> Tuple[float, float, float]:
+        if s <= arc_len:
+            return arc(s / rc)
+        t = s - arc_len
+        return tuple(e + t * c for e, c in zip(end, tangent))
+
+    return {"start": tuple(start), "direction": (du, dv), "centre": (u0 + rc * du, v0 + rc * dv, w0),
+            "centreline_radius": rc, "turn_deg": turn_deg, "run": run, "arc": arc, "end": end, "tangent": tangent,
+            "arc_length": arc_len, "length": arc_len + run, "point": point}
+
+def bend_reach(od: float, centreline_radius: float, turn_deg: float = 90.0, run: float = 0.0) -> Dict[str, float]:
+    """How far the bent cable reaches from its exit, in closed form: the room it needs.
+
+    The cable is taken as balls of its radius along the centreline (as
+    ``cable_bend`` does), so it reaches half a diameter past each end.
+
+    * ``ahead``: along the mating axis, beyond the exit;
+    * ``beside``: along the turn direction, from the exit's axis;
+    * ``behind``: against the turn direction, from the axis (half the diameter).
+
+    A 90-degree turn needs ``R + D/2 + D/2`` both ahead and beside: a 6.1 mm
+    cable at a 25 mm inside radius needs 31.1 mm.
+    """
+    r, rc, th = od / 2, centreline_radius, math.radians(turn_deg)
+    ahead = (rc if th >= math.pi / 2 else rc * math.sin(th)) + max(run * math.cos(th), 0.0)
+    beside = rc * (1 - math.cos(th)) + run * math.sin(th)
+    return {"ahead": ahead + r, "beside": beside + r, "behind": r}
+
+def _box_distance(p: Sequence[float], box: Sequence[float]) -> float:
+    """Distance from a point to an axis-aligned box ``(u0, v0, w0, u1, v1, w1)``: 0 inside it."""
+    return math.sqrt(sum(max(lo - x, 0.0, x - hi) ** 2 for x, lo, hi in zip(p, box[:3], box[3:])))
+
+def _minimum(f: Callable[[float], float], a: float, b: float, n: int, speed: float) -> float:
+    """The smallest value of ``f`` on ``[a, b]``.
+
+    ``f`` is a distance from a point that moves at most ``speed`` mm per unit
+    of the parameter, so between two samples it cannot fall below the mean of
+    the two less half the distance moved. ``f`` is sampled ``n + 1`` times; a
+    golden-section search then runs in every step whose bound is below the best
+    value so far, which leaves the minimum within about 1e-9 mm wherever it is
+    unimodal over one step (a 0.25-degree step of the arc).
+    """
+    if b <= a:
+        return f(a)
+    ts = [a + (b - a) * i / n for i in range(n + 1)]
+    fs = [f(t) for t in ts]
+    best = min(fs)
+    slack = speed * (b - a) / n
+    g = (math.sqrt(5) - 1) / 2
+    for i in range(n):
+        if best <= 0:
+            return 0.0
+        if (fs[i] + fs[i + 1] - slack) / 2 >= best:
+            continue
+        lo, hi = ts[i], ts[i + 1]
+        x1, x2 = hi - g * (hi - lo), lo + g * (hi - lo)
+        f1, f2 = f(x1), f(x2)
+        for _ in range(50):
+            if f1 <= f2:
+                hi, x2, f2 = x2, x1, f1
+                x1 = hi - g * (hi - lo)
+                f1 = f(x1)
+            else:
+                lo, x1, f1 = x1, x2, f2
+                x2 = lo + g * (hi - lo)
+                f2 = f(x2)
+        best = min(best, f1, f2)
+    return max(best, 0.0)
+
+def _boxes(obstacle: Any) -> Optional[List[Tuple[float, ...]]]:
+    """A panel-frame obstacle as boxes, or None for a CAD shape. A box is ``{"u": [..], "v": [..], "w": [..]}``."""
+    items = obstacle if isinstance(obstacle, (list, tuple)) else [obstacle]
+    if not all(isinstance(b, Mapping) and {"u", "v", "w"} <= set(b) for b in items):
+        return None
+    return [tuple(min(b[k]) for k in "uvw") + tuple(max(b[k]) for k in "uvw") for b in items]
+
+def _axis_distance(path: Mapping[str, Any], obstacle: Any, frame: Optional["PanelFrame"]) -> float:
+    """Shortest distance from the cable's centreline to an obstacle: 0 when the centreline meets or enters it."""
+    boxes = _boxes(obstacle)
+    if boxes is not None:
+        arc, th = path["arc"], math.radians(path["turn_deg"])
+        n = max(8, int(math.ceil(path["turn_deg"] * 4)))
+        best = math.inf
+        for box in boxes:
+            best = min(best, _minimum(lambda a: _box_distance(arc(a), box), 0.0, th, n, path["centreline_radius"]))
+            if path["run"] > 0:
+                end, tg = path["end"], path["tangent"]
+                best = min(best, _minimum(lambda t: _box_distance([e + t * c for e, c in zip(end, tg)], box),
+                                          0.0, path["run"], 8, 1.0))
+        return best
+    if frame is None:
+        raise ValueError("a CAD-shape obstacle needs the port's PanelFrame to place the cable")
+    cq = require("cadquery", _WHY)
+    arc, th = path["arc"], math.radians(path["turn_deg"])
+    world = lambda p: cq.Vector(*frame.point(*p))     # noqa: E731
+    edges = [cq.Edge.makeThreePointArc(world(arc(0.0)), world(arc(th / 2)), world(arc(th)))]
+    if path["run"] > 0:
+        far = [e + path["run"] * c for e, c in zip(path["end"], path["tangent"])]
+        edges.append(cq.Edge.makeLine(world(path["end"]), world(far)))
+    # Solid by solid: OCC reports 0 for a curve inside a solid, but not inside a compound of solids.
+    solids = list(obstacle.Solids()) if hasattr(obstacle, "Solids") else []
+    return min(e.distance(s) for e in edges for s in (solids or [obstacle]))
+
+def cable_bend(mate: Mapping[str, Any], obstacles: Mapping[str, Any],
+               frame: Optional["PanelFrame"] = None) -> Optional[Dict[str, Any]]:
+    """Can the cable behind the plug turn at its minimum bend radius before it meets a wall or a part?
+
+    ``mate`` carries the ``cable`` spec (``cable_spec``); without one this
+    returns None. ``obstacles`` maps a name to the walls and parts the cable
+    must miss: CadQuery shapes in assembly position (placed with ``frame``, as
+    in ``check_ports``), or panel-frame boxes ``{"u": [..], "v": [..], "w": [..]}``
+    (or lists of them), which need no CAD kernel.
+
+    For each turn direction the cable leaves the boot along +w and bends at its
+    minimum radius. Its clearance to each obstacle is the distance from its
+    centreline less its radius: negative is the depth it runs into the part.
+    When the centreline itself meets the part the depth is at least the radius,
+    and the part is listed under ``axis_inside``.
+
+    ``status``: ``pass`` when some direction clears by at least the margin,
+    ``warn`` when the best one clears by less, ``fail`` when none clears.
+    ``direction`` names the best direction (the largest clearance, the first
+    tried on a tie), or None on a fail; ``clearance_mm`` is the best
+    direction's, so on a fail it says how far the least bad one runs in.
+    ``works`` lists every direction that clears, and ``directions`` has a row
+    for each: its clearance to every obstacle, the nearest, and the ``end`` of
+    the cable checked. ``assumptions`` says what the check took as given.
+    """
+    spec = cable_spec(mate)
+    if spec is None:
+        return None
+    exit_ = cable_exit(mate)
+    od, rc, r = spec["od"], spec["centreline_radius_mm"], spec["od"] / 2
+    rows = []
+    for name, d in spec["directions"]:
+        path = bend_path(exit_, d, rc, spec["turn_deg"], spec["run_mm"])
+        by_part, inside = {}, []
+        for k, obstacle in obstacles.items():
+            dist = _axis_distance(path, obstacle, frame)
+            if dist <= _TOUCH:
+                inside.append(k)
+            by_part[k] = dist - r
+        nearest = min(by_part, key=by_part.get) if by_part else None
+        gap = by_part[nearest] if by_part else math.inf
+        rows.append({"direction": name, "uv": [round(c, 6) for c in path["direction"]],
+                     "clear": gap >= -_TOUCH, "clearance_mm": round(gap, 3) if by_part else None,
+                     "nearest": nearest, "axis_inside": inside,
+                     "clearance_by_part_mm": {k: round(v, 3) for k, v in by_part.items()},
+                     "end": [round(c, 3) for c in path["point"](path["length"])]})
+    key = lambda row: math.inf if row["clearance_mm"] is None else row["clearance_mm"]     # noqa: E731
+    best = max(rows, key=key)          # max() keeps the first of equals: the order tried breaks a tie
+    works = [row["direction"] for row in rows if row["clear"]]
+    status = "fail" if not works else "warn" if key(best) < spec["margin_mm"] - _TOUCH else "pass"
+    tried = ", ".join(name for name, _ in spec["directions"])
+    exit_from = "the spec's exit" if spec["exit"] else "the centre of the plug's far end"
+    assumptions = [
+        f"one bend of {spec['turn_deg']:g} degrees in one plane, starting at the boot's end (w = {exit_[2]:g} mm)"
+        + (f", then {spec['run_mm']:g} mm straight" if spec["run_mm"] else ""),
+        f"a rigid boot: the cable leaves it straight along the mating axis, from {exit_from} "
+        f"(u = {exit_[0]:g}, v = {exit_[1]:g})",
+        f"the bend radius {spec['radius_mm']:g} mm is measured to the {spec['measured_to']} of the bend: "
+        f"its centreline radius is {rc:g} mm",
+        f"the cable is a round {od:g} mm tube taken as balls along its axis, so it reaches {r:g} mm past each end "
+        "of what is checked; its stiffness, droop and diameter tolerance are not modelled",
+        "the cable is not checked past the end of the " + ("run" if spec["run_mm"] else "bend")
+        + ": a pass is room to turn, not a route",
+        "only the minimum radius is tried: a gentler bend may clear a part beside the path that the tightest one hits, "
+        "so a fail means the tightest single bend from the boot's end collides",
+        f"turn directions tried, in the panel frame: {tried}",
+        "only the obstacles given are checked: " + (", ".join(obstacles) or "none"),
+    ]
+    return {"status": status, "pass": status != "fail", "direction": best["direction"] if works else None,
+            "clearance_mm": best["clearance_mm"], "works": works, "directions": rows,
+            "cable": {k: spec[k] for k in ("od", "min_bend_radius", "radius_mm", "measured_to",
+                                           "centreline_radius_mm", "basis")},
+            "exit": [round(c, 3) for c in exit_], "turn_deg": spec["turn_deg"], "run_mm": spec["run_mm"],
+            "margin_mm": spec["margin_mm"],
+            "reach_mm": {k: round(v, 3) for k, v in bend_reach(od, rc, spec["turn_deg"], spec["run_mm"]).items()},
+            "assumptions": assumptions,
+            "limits": "A bend that clears in CAD is not proof that the cable fits: route the real cable at a "
+                      "printed part."}
+
 # ----------------------------------------------------------------------------- 3D
 
 class PanelFrame:
@@ -331,7 +637,15 @@ def check_ports(ports: Mapping[str, Mapping[str, Any]], frames: Mapping[str, Pan
     * the 2D window margins and centring offsets.
 
     Plug-to-plug interference between ports is reported too.
+
+    A mate with a ``cable`` also gets ``cable_bend``: ``cable_bend()`` against
+    the obstacles and the other ports' mated plugs. The port fails if no turn
+    direction clears; a warn does not fail it.
     """
+    boxes = [k for k, s in obstacles.items() if _boxes(s) is not None]
+    if boxes:
+        raise ValueError(f"check_ports takes CAD shapes; {', '.join(boxes)} is a panel-frame box: place it as a solid "
+                         "through the port's PanelFrame, or call cable_bend() for the cable alone")
     rows: Dict[str, Any] = {}
     env: Dict[str, Any] = {}
     for name, mate in ports.items():
@@ -350,6 +664,12 @@ def check_ports(ports: Mapping[str, Mapping[str, Any]], frames: Mapping[str, Pan
         row["pass"] = all(v == 0 for v in hits.values()) and all(v == 0 for v in near.values()) \
             and row["min_margin_mm"] >= c - 1e-3
         rows[name] = row
+    for name, mate in ports.items():
+        if mate.get("cable"):
+            others = {f"plug {k}": e for k, e in env.items() if k != name}
+            bend = cable_bend(mate, {**obstacles, **others}, frames[name])
+            rows[name]["cable_bend"] = bend
+            rows[name]["pass"] = rows[name]["pass"] and bend["pass"]
     names = list(env)
     pairs = []
     for i, a in enumerate(names):

@@ -4,7 +4,10 @@
  * old /catalog#anchors that no longer land (or that Back cannot return to), a shared view that opens on the hero, counts
  * that disagree with catalog/index.json, markup from the URL, a page that hides entries when gallery.js fails, a cover
  * shown twice in the overview, a phone page over its height budget, not in two columns or with pills under 11px, a
- * filter sheet that traps or loses focus, and covers that move under prefers-reduced-motion. */
+ * filter sheet that traps or loses focus, covers that move under prefers-reduced-motion, and an area rail whose domain
+ * panels lack their tone, whose bars and counts do not line up, whose bars do not fill to their level, whose chosen row
+ * looks like a hovered one or reads under 4.5:1, whose maturity key does not explain itself, or whose phone rows are
+ * under 44 px. */
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
@@ -356,6 +359,131 @@ try {
     await page.waitForFunction(() => location.search === '?kind=tools', null, { timeout: 5000 }).catch(() => fail('#tool', `Back went to ${page.url().slice(base.length)}`));
     const sel = await page.getAttribute('[data-gallery-tabs] [aria-selected="true"]', 'data-tab');
     if (sel !== 'tools') fail('#tool', `Back shows the ${sel || 'All'} tab, not Tools`);
+    await done();
+  }
+
+  // The area rail (#104): a panel per domain in its tone, bars and counts in columns, hover and the chosen row that look
+  // different from a row at rest, readable text, and a maturity key that explains each level.
+  {
+    const where = 'rail';
+    const { page, done } = await open('/catalog');
+    const tones = await page.$$eval('details.dom', ds => ds.map(d => [d.dataset.domain, getComputedStyle(d).getPropertyValue('--tone').trim()]));
+    if (tones.length !== index.domains.length) fail(where, `${tones.length} domain panels for ${index.domains.length} domains`);
+    for (const [slug, tone] of tones) if (!tone) fail(where, `${slug}: its panel has no --tone`);
+    // In each open domain, the counts end at one x and the maturity bars start at one x.
+    const columns = await page.$$eval('details.dom[open]', ds => ds.map(d => {
+      const rows = [...d.querySelectorAll(':scope > ul .area-link')];
+      const edge = (sel, side) => rows.map(r => r.querySelector(sel)).filter(Boolean).map(e => e.getBoundingClientRect()[side]);
+      return [d.dataset.domain, edge(':scope > .count', 'right'), edge(':scope > .mat-dots', 'left')];
+    }));
+    if (columns.length < 3) fail(where, `only ${columns.length} open domains to measure`);
+    const spread = xs => Math.max(...xs) - Math.min(...xs);
+    for (const [slug, rights, lefts] of columns) {
+      if (rights.length < 2 || spread(rights) > 1) fail(where, `${slug}: the counts' right edges spread over ${spread(rights).toFixed(1)}px`);
+      if (!lefts.length || spread(lefts) > 1) fail(where, `${slug}: the maturity bars' left edges spread over ${spread(lefts).toFixed(1)}px`);
+    }
+    // Each bar fills as many steps as its level: as many segments in the filled colour (the key's top level shows it)
+    // as the level, the rest in the empty one (the key's lowest level ends in it).
+    const bars = await page.$$eval('.area-tree .mat-dots', (bs, n) => {
+      const paint = i => getComputedStyle(i).backgroundColor;
+      const key = [...document.querySelectorAll('.key-scale .mat-dots')];
+      const [on, off] = [paint(key.at(-1).querySelector('i')), paint(key[0].querySelector('i:last-child'))];
+      return [on !== off, bs.map(b => { const ps = [...b.querySelectorAll('i')].map(paint);
+        return [b.dataset.level, ps.length === n && ps.every(p => p === on || p === off) ? ps.filter(p => p === on).length : -1]; })];
+    }, index.maturity.length);
+    if (!bars[0]) fail(where, 'filled and empty steps look the same');
+    for (const [level, on] of bars[1]) if (Number(level) !== on) fail(where, `a level-${level} bar fills ${on} steps`);
+    // WCAG contrast of an element's text against a background colour, composited over white.
+    const contrastOf = (sel, bgSel = sel) => page.evaluate(([sel, bgSel]) => {
+      const rgb = c => { const [r, g, b, a = 1] = c.match(/[\d.]+/g).map(Number); return [r, g, b].map(v => v * a + 255 * (1 - a)); };
+      const lum = c => rgb(c).map(v => v / 255).map(v => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
+      const [fg, bg] = [getComputedStyle(document.querySelector(sel)).color, getComputedStyle(document.querySelector(bgSel)).backgroundColor];
+      const [hi, lo] = [lum(fg), lum(bg)].sort((x, y) => y - x);
+      return (hi + 0.05) / (lo + 0.05);
+    }, [sel, bgSel]);
+    const chosenAll = '.area-tree > li > .area-link[aria-current="true"]';
+    if (!(await page.locator(chosenAll).count())) fail(where, '"All areas" is not the chosen row on /catalog');
+    else if ((await contrastOf(`${chosenAll} .area-name`, chosenAll)) < 4.5) fail(where, `"All areas", chosen: text contrast ${(await contrastOf(`${chosenAll} .area-name`, chosenAll)).toFixed(2)}`);
+    const idea = '.area-link[data-maturity="idea"]:not([aria-current]) .area-name';
+    if ((await contrastOf(idea, 'details.dom')) < 4.5) fail(where, `an idea-level name: contrast ${(await contrastOf(idea, 'details.dom')).toFixed(2)} on its panel`);
+    // At rest, hovered and chosen are three different looks.
+    const row = '.area-link[data-value="gears"]';
+    const look = () => page.$eval(row, a => { const s = getComputedStyle(a); return `${s.backgroundColor} | ${s.backgroundImage} | ${s.backgroundSize}`; });
+    await page.mouse.move(1300, 880);
+    const rest = await look();
+    // Read the hovered row once its sweep has run: the transition can start a frame or two after :hover applies
+    // (WebKit, under load), and a read before it ends gets a value between rest and hovered.
+    await page.hover(row);
+    await page.waitForFunction(([s, before]) => {
+      const a = document.querySelector(s), st = getComputedStyle(a);
+      return !a.getAnimations().length && `${st.backgroundColor} | ${st.backgroundImage} | ${st.backgroundSize}` !== before;
+    }, [row, rest], { timeout: 3000 }).catch(() => {});
+    const hovered = await look();
+    await page.click(row);
+    await page.waitForFunction(s => document.querySelector(s).getAttribute('aria-current') === 'true', row, { timeout: 5000 }).catch(() => fail(where, 'Gears is not chosen after a click'));
+    await page.mouse.move(1300, 880);
+    await page.waitForFunction(s => !document.querySelector(s).getAnimations().length, row, { timeout: 3000 }).catch(() => {});
+    const chosen = await look();
+    if (hovered === rest) fail(where, `hovering a row does not change it (${rest})`);
+    if (chosen === rest || chosen === hovered) fail(where, `the chosen row looks like one at rest or hovered (${chosen})`);
+    for (const [part, bg] of [[`${row} .area-name`, row], [`${row} .count`, `${row} .count`]]) {
+      const c = await contrastOf(part, bg);
+      if (c < 4.5) fail(where, `chosen row: ${part.slice(row.length + 1)} contrast ${c.toFixed(2)}`);
+    }
+    // The key: a word per level, in order, inside the rail (.cat-side clips anything past its edges); focusing one
+    // shows what it means.
+    const [lo, hi] = await page.$eval('.key-scale', k => { const box = k.getBoundingClientRect(), lis = [...k.children].map(l => l.getBoundingClientRect());
+      return [lis[0].left - box.left, box.right - lis.at(-1).right]; });
+    if (lo < -0.5 || hi < -0.5) fail(where, `the key's words reach past the rail: ${(-lo).toFixed(1)}px left, ${(-hi).toFixed(1)}px right`);
+    const words = await page.$$eval('.key-scale .key-word', ws => ws.map(w => w.textContent));
+    if (words.join() !== index.maturity.map(m => m.level).join()) fail(where, `the key says ${words}`);
+    const means = page.locator('.key-scale li').nth(2).locator('.key-means');
+    const shown = () => means.evaluate(m => getComputedStyle(m).clipPath === 'none' && m.getBoundingClientRect().height > 20);
+    if (await shown()) fail(where, 'a level\'s meaning shows before it is asked for');
+    await page.locator('.key-scale li').nth(2).focus();
+    if (!(await shown())) fail(where, 'focusing a level in the key does not show what it means');
+    if ((await means.textContent()).trim() !== `: ${index.maturity[2].means}`) fail(where, `the key's tooling says ${await means.textContent()}`);
+    await done();
+  }
+
+  // A chip names what it filters: a domain's "All" row by its domain, a maturity box by its word (not its bar's
+  // screen-reader words), and the retired ?gyropup=1 filters nothing.
+  for (const [route, want] of [['/catalog?area=mechanical', 'Mechanical design'], ['/catalog?maturity=tooling', 'Tooling'], ['/catalog?gyropup=1', '']]) {
+    const { page, done } = await open(route);
+    const chips = await page.$$eval('[data-gallery-chips] > *', cs => cs.map(c => c.textContent).join());
+    if (chips !== want) fail(route, `chips say "${chips}", want "${want}"`);
+    const status = (await page.textContent('[data-gallery-status]')).trim();
+    if (!want && status !== `${index.count} entries`) fail(route, `status "${status}": it filters`);
+    await done();
+  }
+
+  // A domain with entries but none of the chosen kind says so by the domain's name, not its row's "All in …" (#233).
+  {
+    const catalog = JSON.parse(await readFile(path.join(dir, 'catalog.json'), 'utf8'));
+    const pick = index.domains.filter(d => d.count > 0).flatMap(d => {
+      const slugs = new Set([d.slug, ...d.areas.map(a => a.slug)]);
+      const kinds = new Set(catalog.items.filter(i => i.areas.some(a => slugs.has(a))).map(i => i.kind));
+      const tab = index.kinds.find(k => !k.kinds.some(x => kinds.has(x)));
+      return tab ? [{ d, tab }] : [];
+    })[0];
+    if (!pick) fail('domain without the kind', 'no domain lacks a kind to test with');
+    else {
+      const route = `/catalog?area=${pick.d.slug}&kind=${pick.tab.tab}`;
+      const { page, done } = await open(route);
+      const text = (await page.textContent('[data-gallery-empty-kind]')).replace(/\s+/g, ' ');
+      if (!text.includes(` in ${pick.d.title} yet`) || /All in/.test(text)) fail(route, `the message says "${text.slice(0, 90)}"`);
+      await done();
+    }
+  }
+
+  // The phone sheet: every row in the area tree, the domain's "All" included, is a 44 px tap target.
+  {
+    const { page, done } = await open('/catalog?area=cfd', { width: 390, height: 844 });
+    await page.click('[data-gallery-sheet-open]');
+    const short = await page.$$eval('[data-gallery-sheet] .area-tree :is(.area-link, summary)', els => els.filter(e => e.checkVisibility())
+      .map(e => [e.dataset.value ?? e.textContent.trim().slice(0, 20), e.getBoundingClientRect().height]).filter(([, h]) => h < 44 - 0.01));
+    if (short.length) fail('phone sheet', `rows under 44px: ${short.map(([n, h]) => `${n} ${h.toFixed(1)}`).join(', ')}`);
+    if (!(await page.locator('[data-gallery-sheet] .area-link.dom-all[data-value="simulation"]').isVisible())) fail('phone sheet', 'the chosen area\'s domain is folded');
     await done();
   }
 

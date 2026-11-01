@@ -35,7 +35,7 @@ flowchart TD
 | `bosses.py` | A thread-forming screw (DELTA PT sizes) in a printed boss: clamp, stripping force and torque, Covestro's torque window and the wall, from datasheet strengths ([screw bosses](../../../docs/screw-bosses.md)); a starting point to test, not a rating |
 | `inserts.py` | Heat-set inserts and compression limiters in printed parts: the makers' hole and boss, where the screw's clamp goes, pull-out, torque-out and the insert's thread calibrated to published tests, the plastic under the head, limiters (catalogue or your own) and the preload kept; `cad-agent inserts` checks a file of joints, and the coupon plan says what to print and measure ([threaded inserts](../../../docs/inserts.md)); a starting point to test, not a rating |
 | `mcmaster.py` | McMaster-Carr parts: the manufacturer's STEP and product data for a part number, normalised into a known frame |
-| `connectors.py` | Mating-connector envelopes: panel windows from the plug, then proof that the plug fits |
+| `connectors.py` | Mating-connector envelopes: panel windows from the plug, then proof that the plug fits and that its cable can bend behind it at the data sheet's radius |
 | `markings.py` | One XY drawing for engraved markings and a matching SVG proof |
 | [`compliant/`](compliant/README.md) | Compliant features that replace parts: snap fits now, hinges and flexures next |
 | `linkages.py` | Four-bars and five-bars swept over their inputs: joint angles, locks, edges of reach, branch flips; the dyad solver for linkages measured from CAD |

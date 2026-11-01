@@ -10,6 +10,118 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.10.0 (2026-11-01)
+
+**New**
+- `kit/gallery.js`: a facet link, or a checkbox's label, can carry `data-label`: the name its chip and the empty-state
+  messages use when its own text would not say it (#104).
+- `cadagent.mechanical.compliant.snapfit.engagement()`: a cantilever snap's closed form along the insertion. It gives
+  the root strain, the deflection force and the push to mate as the mating edge rides the hook's lead, slides along its
+  land and drops off. Its peak is `check_cantilever`'s numbers, the guide's Example I among them (P 32.5 N, W 58.5 N).
+  `travel_at_strain()` gives where the strain first reaches an allowable (#165).
+- An animated figure of a printed snap arm engaging, on the snap-fit page, the new `compliant/` README and the animated
+  figures page (`docs/img/compliant/snap-engagement.svg`). One arm laid flat in two filaments: its root strain rises to
+  1.38 %, a pass at 68 % of Polymaker PolyMide CoPA's 2.02 % and a fail at 139 % of Bambu PETG-CF's 1.00 % (the V3.0
+  sheet), with CoPA's push to mate peaking at 10.1 N into a CoPA part. It is the calculator's output on stated inputs,
+  recorded in `tools/anim/snap-engagement.scene.json`, not a measurement. The scene also records the hook's 7.4° turn
+  with the tip, which the closed form ignores, and the push on the turned face (13.7 N for CoPA): near the top of a
+  steep lead the closed form under-states the push. `tools/readme_anim.py --extract snapfit` records it again, and
+  `--check` fails when the SVG is stale (#165).
+- `cadagent.simulation.cfd`: each fan's inlet and outlet air temperatures, mass-flow-weighted over the faces at each end
+  of its zone and computed by the solver (`surfaceFieldValue`, `weightedAverage` with `weightField phi`). They come with
+  the net mass flows, the backflow, each face's area and the heat the outlet stream carries above the room:
+  `fans[<fan>]['inlet_c']`, `['outlet_c']`, `['inlet_kg_s']`, `['outlet_kg_s']`, `['inlet_backflow_kg_s']`,
+  `['outlet_backflow_kg_s']`, `['inlet_area_m2']`, `['outlet_area_m2']` and `['heat_carried_w']`. Use them in energy
+  balances (Q = ṁ c_p ΔT). `air_through_fan_c` stays the fan zone's volume average. `warnings` names a face whose
+  backflow passes 10 % of its net flow, and ends whose areas or net flows are more than 10 % apart. A face with as much
+  backflow as net flow, a reversed net flow, or a net flow under 1 % of the fan's free-air flow (`MIN_NET_FLOW`) has no
+  temperature (#47).
+- `cadagent.simulation.cfd.energy_check()` and `results()['energy_conserved']`: a result whose heat leaving is more than
+  5 % off the heat put in (0.5 W when nothing is put in) says so in `warnings`. `stream_heat_w()` gives ṁ c_p (T −
+  T_room) (#47).
+- `tools/cfd_fan_figure.py`: two real runs of a 20 W box with an exhaust fan, recorded for the tests and drawn in the
+  toolkit docs. A fan just under its opening carries more heat than leaves the room, because air goes round it again; a
+  ducted fan with its hub plugged carries what leaves (#47).
+
+**Changed**
+- The site is also served at cad-agent.gyropup.com, a second custom domain on the same Cloudflare Pages project. Every
+  published page now names its cad-agent.valpatel.com address as canonical, so search engines index one copy: site pages
+  with `<link rel="canonical">`, and the web kit's own pages (`/kit/viewer`, `/kit/fea`, `/kit/file-viewer`), which are
+  copied byte for byte from the kit, with a `Link` header. The 404 page names none. `llms.txt`, `catalog.json` and the
+  sitemap already give cad-agent.valpatel.com addresses (#104).
+- Catalogue (`/catalog`): the area index on the left is easier to read. Each domain is an outlined panel with a header
+  in its colours and a line between rows, and the bars and counts line up in columns. Hovering a row (on screens that
+  hover) or focusing it sweeps the domain's colour in from the left; the chosen row is dark, with an orange edge and
+  count (#104).
+- Catalogue: each domain's first row reads "All" instead of "Everything in mechanical design". Screen readers hear "All
+  in mechanical design", and the filter chip and the "nothing here" messages name the domain: "Mechanical design"
+  (#104).
+- Catalogue: maturity bars have five steps with gaps, one per level in `docs/areas.yaml`, in the area index, the
+  filters, the cards and the area panels. A key above the index shows each level's bar and word, says what a level means
+  on hover or focus, and links to "What the levels mean" in the vision. Screen readers hear "maturity 3 of 5, tooling"
+  (#104).
+- Catalogue: no project is singled out. The Gyropup dots, the card badge, the area panel's Gyropup pill, the "Needed for
+  Gyropup" filter and its boost in the featured order are gone; cad-agent is a general toolkit, and Gyropup stays as an
+  example and a project that used an area. Entries from areas Gyropup marked move down the featured order of their tab
+  (#104).
+- `pyproject.toml` floors: `pillow>=13.0` (every older release has critical advisories), `vtk>=9.5.2` (past three
+  advisories fixed in 9.5.1; the lowest VTK that cadquery-ocp 7.9.3 pins), so `cadquery>=2.8`, `markdown>=3.8.1`,
+  `numpy>=1.22`, `pyyaml>=6.0` and `pytest>=9.0.3` (they had none). The package still runs on Python 3.10, but the `cad`
+  and `sim` extras now need 3.11 or newer: Pillow 13 and CadQuery 2.8 dropped 3.10, and every Pillow for 3.10 has
+  critical advisories. CI now also runs the core suite at the numpy, PyYAML and pytest floors, and the site and release
+  tests at markdown 3.8.1 (#151).
+- The web kit's `three/` and `fonts/` folders have SHA-256 receipts (`SOURCE.json`), so a silent change to any of them
+  fails `tests/webkit-vendor.test.mjs` and the supply-chain report; every vendored kit file now has one. The receipt for
+  three.js names its npm tarball and records the one local patch to OrbitControls; the fonts' receipt names the Google
+  Fonts and licence URLs the files came from (#151).
+- `tools/resource_audit.py`: a web kit receipt can list a `patched` file (expected to differ from its package, and it
+  must record the SHA-256 of the package's file it was made against) while every other file must still match byte for
+  byte; a receipt for files not from npm says `"npm": false` and names a source for every file (a receipt that just
+  leaves out its package, or says `"npm": false` beside npm fields, is flagged and still checked as npm); an
+  install-script finding is per version, and accepting one needs its fingerprint, so the next version's script is read
+  again; `npx --no-install` counts as pinned, since it runs only what the lockfile installed (#151).
+- Catalogue and pages: moved repositories point at their new owners (BackplaneWorks/kistack, BackplaneWorks/Backplane,
+  the-dual-space/pymoo, meta/Ax), the OpenFOAM starter script's dead link points at its new GitLab home, the plain-HTTP
+  CalculiX links are fixed, install advice no longer tells readers to install from a plugin marketplace or run `uvx`
+  unpinned, and a `curl | sh` installer is described as the risk it is. The supply-chain report's open findings fall
+  from 1 critical, 15 medium, 37 low and 12 info to 1 critical, 0 medium, 24 low and 9 info, with 3 read and accepted in
+  `research/security-accepted.yaml`. What is left: DOMPurify and KaTeX inside Mermaid (#154), repositories with no push
+  for a year (#154's automatic badges), Dependabot (owner, #153), and sites that refuse scripts or did not answer
+  (info).
+- `cad-agent snapfit --output` and `check_spec_entry()`: each snap's `material` names the `friction` its forces used, or
+  `null` where the guide's table has none (PLA, PETG) and none was declared, and its `friction_basis`: `given`,
+  `same material` (the default: the plastic on itself) or `against steel` (#165).
+- `steady` now also holds each fan's inlet and outlet temperatures to 1 °C, like every other temperature, in cases
+  written from this release on. The convergence chart draws them, and labels the volume-average line "mean over the fan
+  zone (by volume)" (#47).
+- `cad-agent motion-trace`: every report's `limits` list has a fourth entry, on how a declared loop is solved (rigid
+  links on ideal pins in one plane, on the home assembly and circuit), even for a contract with no `loops`. It came with
+  v0.9.0's closed loops and was not in that entry. A project that stores reports and compares them whole will see the
+  extra entry (#187).
+
+**Fixed**
+- Catalogue: the chip for a maturity filter reads "Tooling", not "maturity toolingTooling" (#104).
+
+**Projects must change**
+- `catalog.json` and `catalog/<area>.json` no longer have a `gyropup` field on entries, and `priority` lists only `demo`
+  (`docs/areas.yaml` too). `/catalog?gyropup=1` is ignored. An agent that filtered on it should read `projects` on the
+  area instead: `catalog/index.json` and each area's file now list the projects that used it (#104).
+- A project that pins pillow below 13.0, vtk below 9.5.2 or markdown below 3.8.1 must raise those pins before installing
+  this cad-agent with the `cad`, `sim` or `site` extra (pip stops with `ResolutionImpossible`); pip upgrades unpinned
+  ones as it installs. A project that pins cadquery 2.6 or 2.7 (cadquery-ocp 7.8, which pins vtk 9.3.1) must move to
+  cadquery 2.8 (#151).
+- A project that installs the `cad` or `sim` extra on Python 3.10 (for example a JetPack 6 system Python) must use a
+  Python 3.11 or newer virtual environment; the core package and its required dependencies still install on 3.10 (#151).
+- To get the weighted temperatures, write the case again (`ThermalCase.write`) and run it. A case written before this
+  has no inlet or outlet faces, and continuing it does not add them, so its results keep only `air_through_fan_c`.
+  Re-reading an old run moves no number (#47).
+- Replace energy balances that use `air_through_fan_c` or `zones[<fan>]['T_c']` with `inlet_c` or `outlet_c` and that
+  face's mass flow. A back-calculated temperature such as T_fan − Q/(ṁ c_p) moves by the gap between the two averages:
+  #47 expects about 1 K with a dead hub and tip recirculation, and it is 0.1 K or less in the two recorded runs. Check
+  `heat_carried_w` against the heat leaving (`heat_out_w`): more means the fan moves recirculated air, and its ṁ is not
+  the flow through the parts upstream (#47).
+- New runs judge two more temperatures per fan for `steady`, so `run_until_balanced` may continue a case longer (#47).
+
 ## v0.9.0 (2026-11-01)
 
 **New**

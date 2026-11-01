@@ -39,6 +39,12 @@ How each state is decided (all tolerances absolute; see ``Tolerances``):
    ``touch_mm``, else ``apart``. On solids it skips BRepExtrema's inner-solution test when the same test
    (one classifier, not one per chunk of vertices) finds nothing and the faces are clear of each other:
    the same gap and points, most of the time of a many-faced apart pair saved (``_solid_distance``, #186).
+4. **Crossing probe** (#46) where a ``touching`` or ``contains`` answer has the two boundaries meeting (gap or
+   wall within ``touch_mm / 10``): OCCT's boolean can miss a shallow near-tangent crossing, and then Common and Cut
+   agree with each other and read none. ``BRepAlgoAPI_Section`` still finds the curves where the faces meet; points
+   of each face around them are classified against the other solid (``_crossing_probe``). One on the wrong side by
+   more than ``touch_mm / 10`` that the kernel's own common or cut does not hold makes the pair ``unknown``. A
+   section edge with no face pair lies along an existing edge; the faces next to it get a coarse pass first.
 
 Fail-safe rules. OCP 7.9 binds no error report on ``BRepAlgoAPI_Common`` (``HasErrors`` is
 absent and ``DSFiller()`` crashes the interpreter at exit), and ``IsDone()`` stays true when an
@@ -49,7 +55,9 @@ argument is invalid (a compound of interfering solids gives an *empty* common). 
 * every narrow-phase answer is cross-checked: ``vol(a) = common + cut(a, b)`` (and the same for
   ``b`` when they overlap) within ``volume_check_mm3`` plus 1e-6 of the larger volume; a mismatch
   is ``unknown``, never ``touching``, ``apart`` or ``contains``;
-* any exception from the kernel is ``unknown`` with the error.
+* any exception from the kernel is ``unknown`` with the error;
+* a crossing the probe finds and the booleans missed is ``unknown`` (its volume is not measured), with the point,
+  its depth and the surface in ``witness["crossing_probe"]``; so is a probe that fails.
 
 Witnesses, so a reviewer can look at the right place:
 
@@ -62,7 +70,11 @@ Witnesses, so a reviewer can look at the right place:
 
 Limits. Exact B-rep queries on the model as given: no tolerance stack, no deflection, no print
 shrink. ``touching`` means the model puts the surfaces within ``touch_mm``; it does not prove the
-printed parts meet, and ``apart`` by 0.2 mm does not prove a printed clearance.
+printed parts meet, and ``apart`` by 0.2 mm does not prove a printed clearance. The crossing probe
+is a safety net, not a proof: a crossing the section also misses, one no deeper than ``touch_mm / 10``,
+one between its samples, or, next to an edge with no face pair, one the coarse pass steps over is not
+seen; its depth is that of the deepest sample (a lower bound).
+``apart`` rests on ``BRepExtrema_DistShapeShape``, which read 0 at every crossing tried.
 """
 
 from __future__ import annotations
@@ -81,7 +93,7 @@ from cadagent.review.gates.cache import PairCache, digest, matrix_key
 STATES = ("apart", "touching", "overlapping", "contains", "unknown", "unchecked")
 CONTACT_STATES = ("touching", "overlapping", "contains")
 INTERFERENCE_STATES = ("overlapping", "contains")
-RELATIONS_VERSION = "4"   # validated BREP + aggregate GK errors; invalidate earlier volume estimates
+RELATIONS_VERSION = "5"   # 5: the crossing probe (#46) turns crossings the boolean missed into unknown
 _IDENTITY = (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
 
 
@@ -756,6 +768,238 @@ def _boolean(kind: str, a, b):
     return op.Shape()
 
 
+# ----------------------------------------------------------------------------- the crossing probe (#46)
+
+_PROBE_GRID = 12      # samples per direction over each section patch's UV box, plus one cell of margin each side
+_PROBE_COARSE = 2     # the first pass on a face next to a section edge that has no face pair (see _section_patches)
+_PROBE_CONFIRM = 8    # wrong-side samples per surface confirmed by an exact distance, farthest from the curve first
+_PROBE_PER_EDGE = 24  # points taken along each section edge
+
+
+def _probe_floor(tol: Tolerances) -> float:
+    """The depth a point must reach on the wrong side before the crossing probe counts it: a tenth of ``touch_mm``,
+    at least 1e-6 mm. Exact tangent contacts are coincident to about 1e-7 mm, so they never count."""
+    return max(tol.touch_mm / 10, 1e-6)
+
+
+def _section_patches(a, b) -> List[Tuple[Any, Any, List[Any], bool]]:
+    """Where the boundaries of ``a`` and ``b`` meet: ``[(face of a, face of b, points along the curves there,
+    along an edge)]``, from a non-destructive ``BRepAlgoAPI_Section``.
+
+    * Where two faces intersect, the kernel names both: one entry per pair of faces (either face None when it
+      names only one), ``along an edge`` False.
+    * A section edge with no face named lies along an existing edge of ``a`` or ``b``: the rim of a face
+      contact, or a face split exactly at the other part's surface, which a crossing can still go through (the
+      review of #228: a ball split at a plate's face and sunk 0.02 mm into it). The section's history names that
+      edge (``Modified``), and each face next to it gets an entry (the other face None), ``along an edge`` True.
+
+    The section finds the curves the boolean misses (#46): on a 4 mm ball crossing a cone wall by 0.011-0.23 mm,
+    where Common and Cut read no crossing, it returned the whole closed intersection curve every time."""
+    occ = {m: require(f"OCP.{m}", "the crossing probe") for m in
+           ("BRepAlgoAPI", "BRepAdaptor", "TopExp", "TopAbs", "TopoDS", "TopTools")}
+    op = occ["BRepAlgoAPI"].BRepAlgoAPI_Section()
+    op.SetNonDestructive(True)
+    op.ComputePCurveOn1(False)
+    op.ComputePCurveOn2(False)
+    op.Approximation(False)
+    op.SetArguments(_shape_list([a]))
+    op.SetTools(_shape_list([b]))
+    op.Build()
+    if not op.IsDone():
+        raise RuntimeError("BRepAlgoAPI_Section did not finish")
+    abs_, ds, topexp = occ["TopAbs"], occ["TopoDS"], occ["TopExp"].TopExp
+    maps = []
+    for s in (a, b):
+        m = occ["TopTools"].TopTools_IndexedMapOfShape()
+        topexp.MapShapes_s(s, abs_.TopAbs_FACE, m)
+        maps.append(m)
+    patches: Dict[Tuple[int, int, bool], List[Any]] = {}
+    unnamed = occ["TopTools"].TopTools_IndexedMapOfShape()
+    unnamed_points: List[List[Any]] = []
+    ex = occ["TopExp"].TopExp_Explorer(op.Shape(), abs_.TopAbs_EDGE)
+    while ex.More():
+        edge = ex.Current()
+        ex.Next()
+        curve = occ["BRepAdaptor"].BRepAdaptor_Curve(ds.TopoDS.Edge_s(edge))
+        t0, t1 = curve.FirstParameter(), curve.LastParameter()
+        points = [curve.Value(t0 + (t1 - t0) * k / _PROBE_PER_EDGE) for k in range(_PROBE_PER_EDGE + 1)]
+        fa, fb = ds.TopoDS_Shape(), ds.TopoDS_Shape()
+        ia = maps[0].FindIndex(fa) if op.HasAncestorFaceOn1(edge, fa) else 0
+        ib = maps[1].FindIndex(fb) if op.HasAncestorFaceOn2(edge, fb) else 0
+        if ia or ib:
+            patches.setdefault((ia, ib, False), []).extend(points)
+        elif unnamed.Add(edge) > len(unnamed_points):
+            unnamed_points.append(points)
+    for side, s in enumerate((a, b) if unnamed_points else ()):
+        faces_of = occ["TopTools"].TopTools_IndexedDataMapOfShapeListOfShape()
+        topexp.MapShapesAndAncestors_s(s, abs_.TopAbs_EDGE, abs_.TopAbs_FACE, faces_of)
+        for i in range(1, faces_of.Extent() + 1):
+            own = faces_of.FindKey(i)
+            split = op.Modified(own)                    # iterating an empty list costs more than the lookup
+            for piece in (own, *split) if split.Size() else (own,):     # the edge itself when left whole
+                k = unnamed.FindIndex(piece)
+                for face in faces_of.FindFromIndex(i) if k else ():
+                    j = maps[side].FindIndex(face)
+                    patches.setdefault((j, 0, True) if side == 0 else (0, j, True), []).extend(unnamed_points[k - 1])
+    return [(ds.TopoDS.Face_s(maps[0].FindKey(i)) if i else None, ds.TopoDS.Face_s(maps[1].FindKey(j)) if j else None,
+             pts, along) for (i, j, along), pts in sorted(patches.items())]
+
+
+def _patch_grid(face, curve: Sequence[Any], n: int, boundary: bool = True) -> List[Any]:
+    """Points of ``face`` on an (n + 2) x (n + 2) grid over the UV box of the ``curve`` points (projected onto the
+    face), one cell of margin each side, and their UV centroid, kept where the face is; plus, with ``boundary``,
+    points along the face's edges in that box and every vertex of the face.
+
+    The box follows the crossing: a 0.03 mm cap on a 4 mm ball is about 1 mm across, so the grid's spacing is
+    about 0.1 mm there, where a fixed grid over the face would step over it. Where the curve is an iso-line of
+    the face (a circle on a cylinder, a latitude on a sphere) the box has no height across it; there the rows
+    run from the curve at the face's width halved again and again, and evenly across the face. A corner is the
+    deepest point of a tilted box's crossing, so the vertices are taken as they are."""
+    occ = {m: require(f"OCP.{m}", "the crossing probe") for m in
+           ("BRep", "BRepAdaptor", "BRepTools", "BRepTopAdaptor", "ShapeAnalysis", "TopAbs", "TopExp", "TopoDS",
+            "gp")}
+    surf = occ["BRep"].BRep_Tool.Surface_s(face)            # with the face's location applied
+    project = occ["ShapeAnalysis"].ShapeAnalysis_Surface(surf)
+    uv = [project.ValueOfUV(p, 1e-7) for p in curve]
+    us, vs = [q.X() for q in uv], [q.Y() for q in uv]
+    lo = occ["BRepTools"].BRepTools.UVBounds_s(face)
+    periods = (surf.UPeriod() if surf.IsUPeriodic() else None, surf.VPeriod() if surf.IsVPeriodic() else None)
+
+    def unwrap(x, ref, period):     # across the seam, to within half a period of ``ref``
+        return ref + ((x - ref + period / 2) % period) - period / 2 if period else x
+    us, vs = [unwrap(x, us[0], periods[0]) for x in us], [unwrap(x, vs[0], periods[1]) for x in vs]
+    boxes, rows = [], []
+    for vals, (first, last) in zip((us, vs), (lo[:2], lo[2:])):
+        low, high = min(vals), max(vals)
+        if high - low <= 1e-6 * (last - first):
+            # An iso-line: rows at the face's width halved again and again from the curve, each side, for a thin
+            # band along it (a cylinder 0.02 mm into a plate), and n + 2 across the whole face, for a face split
+            # exactly at the other part's surface (the review of #228).
+            width = last - first
+            rows.append(sorted({low, *(low + sign * width / 2 ** k for k in range(1, n + 1) for sign in (-1, 1)),
+                                *(first + width * i / (n + 1) for i in range(n + 2))}))
+            boxes.append((low - width, low + width))
+            continue
+        step = (high - low) / (n - 1)
+        period = periods[len(rows)]
+        if period and high - low + 2 * step > period:
+            # A curve round a periodic face (a circle round a cylinder): once round, evenly and half a step off
+            # the face's seam (``on_face`` wraps into [first, first + period)), not the box's few rows a period
+            # apart (the coarse pass's 4 would land within 45 degrees).
+            boxes.append((-math.inf, math.inf))
+            rows.append([first + period * (i + 0.5) / (n + 2) for i in range(n + 2)])
+            continue
+        boxes.append((low - step, high + step))
+        rows.append([boxes[-1][0] + (boxes[-1][1] - boxes[-1][0]) * i / (n + 1) for i in range(n + 2)])
+    inside = occ["BRepTopAdaptor"].BRepTopAdaptor_FClass2d(face, 1e-7)
+
+    def on_face(u, v):
+        if periods[0]:
+            u = lo[0] + (u - lo[0]) % periods[0]
+        if periods[1]:
+            v = lo[2] + (v - lo[2]) % periods[1]
+        if inside.Perform(occ["gp"].gp_Pnt2d(u, v)) == occ["TopAbs"].TopAbs_IN:
+            return surf.Value(u, v)
+        return None
+
+    (u0, u1), (v0, v1) = boxes
+    uvs = [(u, v) for u in rows[0] for v in rows[1]]
+    uvs.append((sum(us) / len(us), sum(vs) / len(vs)))
+    points = [p for p in (on_face(u, v) for u, v in uvs) if p is not None]
+    if not boundary:
+        return points
+    # The face's own boundary in the box (a tilted cylinder's rim), and every vertex: a crossing can run from the
+    # curve to the face's edge, and a corner is the deepest point of a tilted box's crossing.
+    ex = occ["TopExp"].TopExp_Explorer(face, occ["TopAbs"].TopAbs_EDGE)
+    while ex.More():
+        edge = occ["TopoDS"].TopoDS.Edge_s(ex.Current())
+        ex.Next()
+        if occ["BRep"].BRep_Tool.Degenerated_s(edge):        # a pole: its vertex is taken below
+            continue
+        pcurve = occ["BRepAdaptor"].BRepAdaptor_Curve2d(edge, face)
+        line = occ["BRepAdaptor"].BRepAdaptor_Curve(edge)
+        t0, t1 = pcurve.FirstParameter(), pcurve.LastParameter()
+        for k in range(4 * n + 1):
+            t = t0 + (t1 - t0) * k / (4 * n)
+            uv = pcurve.Value(t)
+            if u0 <= unwrap(uv.X(), us[0], periods[0]) <= u1 and v0 <= unwrap(uv.Y(), vs[0], periods[1]) <= v1:
+                points.append(line.Value(t))
+    ex = occ["TopExp"].TopExp_Explorer(face, occ["TopAbs"].TopAbs_VERTEX)
+    while ex.More():
+        points.append(occ["BRep"].BRep_Tool.Pnt_s(occ["TopoDS"].TopoDS.Vertex_s(ex.Current())))
+        ex.Next()
+    return points
+
+
+def _has_faces(topods) -> bool:
+    topexp = require("OCP.TopExp", "the crossing probe")
+    abs_ = require("OCP.TopAbs", "the crossing probe")
+    return topods is not None and not topods.IsNull() and topexp.TopExp_Explorer(topods, abs_.TopAbs_FACE).More()
+
+
+def _crossing_probe(a, b, looks: Sequence[Tuple[int, str]], piece, floor: float) -> Optional[Dict[str, Any]]:
+    """An independent check of a ``touching`` or ``contains`` answer where the two boundaries meet (#46).
+
+    OCCT's boolean can miss a shallow near-tangent crossing: Common and Cut then agree with each other
+    (``vol = common + cut`` holds) and read no crossing at all. ``BRepAlgoAPI_Section`` finds the intersection
+    curves in those cases. So sample each surface on a grid over the box of each patch of curve
+    (``_patch_grid``) and classify the samples against the other solid (``BRepClass3d_SolidClassifier``, a ray
+    test with no surface intersection). ``looks`` names which surface must not be on which side: ``(0, "in")``
+    means no point of ``a``'s surface inside ``b``; ``(1, "out")`` no point of ``b``'s surface outside ``a``.
+
+    A sample on the wrong side is confirmed by its exact distance to the other's faces (more than ``floor``),
+    then checked against ``piece``, the kernel's own result for that region (the common for ``touching``, the
+    inner part's cut for ``contains``): a sample on ``piece`` is a crossing the kernel saw and measured (a sharp
+    corner 0.02 mm in, with 7e-6 mm3 shared, is ``touching`` by the tolerances). The deepest sample that is
+    not on ``piece`` is returned (``None`` when there is none): the kernel missed a crossing at least that deep.
+
+    A safety net, not a proof: a crossing the section also misses, or one whose samples all lie within ``floor``
+    of the other's boundary, is not seen."""
+    occ = {m: require(f"OCP.{m}", "the crossing probe") for m in ("BRepClass3d", "BRepBuilderAPI", "TopAbs")}
+    np = require("numpy", "the crossing probe")
+    patches = _section_patches(a, b)
+    if not patches:
+        return None
+    target = {"in": occ["TopAbs"].TopAbs_IN, "out": occ["TopAbs"].TopAbs_OUT}
+    on_piece = _has_faces(piece)
+    found: Optional[Dict[str, Any]] = None
+    for side, want in looks:
+        other = b if side == 0 else a
+        classifier = occ["BRepClass3d"].BRepClass3d_SolidClassifier(other)
+        wrong = []
+        def off(points):
+            for p in points:
+                classifier.Perform(p, floor)
+                if classifier.State() == target[want]:
+                    yield p
+        for face_a, face_b, along, along_edge in patches:
+            face = face_a if side == 0 else face_b
+            if face is None:
+                continue
+            # A face next to a section edge with no face pair is mostly a face contact's (its samples on the
+            # other's boundary or outside it): a coarse pass first, the full grid only when that finds a point
+            # on the wrong side.
+            if along_edge and next(off(_patch_grid(face, along, _PROBE_COARSE, boundary=False)), None) is None:
+                continue
+            curve = np.array([(q.X(), q.Y(), q.Z()) for q in along])
+            for p in off(_patch_grid(face, along, _PROBE_GRID)):   # farthest from the curve first: a cap's middle
+                far = float(np.min(np.linalg.norm(curve - (p.X(), p.Y(), p.Z()), axis=1)))
+                wrong.append((-far, len(wrong), p))
+        if not wrong:
+            continue
+        other_faces = _faces(other)
+        for _, _, p in sorted(wrong)[:_PROBE_CONFIRM]:
+            vertex = occ["BRepBuilderAPI"].BRepBuilderAPI_MakeVertex(p).Vertex()
+            depth, _, near = _distance(vertex, other_faces)
+            if depth <= floor or (found is not None and depth <= found["depth_mm"]):
+                continue
+            if on_piece and _distance(vertex, piece)[0] <= floor:
+                continue            # the kernel's own result has this point: a crossing it saw and measured
+            found = {"surface": side, "lies": f"{want}side", "point": _pt(p), "depth_mm": round(depth, 6),
+                     "nearest_point": near, "floor_mm": floor, "section_patches": len(patches)}
+    return found
+
+
 def _kernel_version() -> str:
     try:
         import OCP
@@ -793,8 +1037,23 @@ def relate(a: Any, b: Any, tol: Tolerances = Tolerances(), *, names: Tuple[str, 
         integration["max_refinement_delta_mm3"] = max(integration["max_refinement_delta_mm3"], m.refinement_delta)
         return m
 
-    def unknown(why: str) -> Relation:
-        return Relation(names[0], names[1], "unknown", error=why, witness={"volume_integration": integration})
+    def unknown(why: str, **witness) -> Relation:
+        return Relation(names[0], names[1], "unknown", error=why,
+                        witness={**witness, "volume_integration": integration})
+
+    def crossing(state: str, looks, piece) -> Optional[Relation]:
+        """``unknown`` when the crossing probe finds a crossing the kernel's ``state`` answer leaves out (#46)."""
+        try:
+            hit = _crossing_probe(sa, sb, looks, piece, _probe_floor(tol))
+        except Exception as exc:  # the cross-check could not run: the answer is not checked, so not given
+            return unknown(f"crossing probe failed on a {state} pair: {type(exc).__name__}: {exc}")
+        if hit is None:
+            return None
+        surface, other = names[hit["surface"]], names[1 - hit["surface"]]
+        hit.update(surface=surface, other=other)
+        return unknown(f"crossing probe: a point of {surface}'s surface lies {hit['depth_mm']:.3g} mm {hit['lies']} "
+                       f"{other} at {hit['point']}, which the boolean's {state} answer leaves out (a near-tangent "
+                       "crossing the kernel missed, #46; its volume is not measured)", crossing_probe=hit)
 
     try:
         if not validated:
@@ -810,13 +1069,15 @@ def relate(a: Any, b: Any, tol: Tolerances = Tolerances(), *, names: Tuple[str, 
         common = _boolean("common", sa, sb)
         mc = measure(common)
         vc = mc.value
-        mac = measure(_boolean("cut", sa, sb))
+        cut_a = _boolean("cut", sa, sb)
+        mac = measure(cut_a)
         a_out = mac.value
         # Uncertainty consumes the existing conservation budget; it never enlarges it.
         if abs(va - vc - a_out) + ma.error + mc.error + mac.error > check:
             return unknown(f"volumes disagree: vol(a) {va:.6g} != common {vc:.6g} + cut {a_out:.6g} mm3")
         if _above_volume(vc, mc.error, tol.overlap_mm3):
-            mbc = measure(_boolean("cut", sb, sa))
+            cut_b = _boolean("cut", sb, sa)
+            mbc = measure(cut_b)
             b_out = mbc.value
             if abs(vb - vc - b_out) + mb.error + mc.error + mbc.error > check:
                 return unknown(f"volumes disagree: vol(b) {vb:.6g} != common {vc:.6g} + cut {b_out:.6g} mm3")
@@ -832,6 +1093,12 @@ def relate(a: Any, b: Any, tol: Tolerances = Tolerances(), *, names: Tuple[str, 
                 contained = "both" if a_in and b_in else ("a_in_b" if a_in else "b_in_a")
                 inner, outer = (sa, sb) if contained != "b_in_a" else (sb, sa)
                 wall, p_in, p_out = _distance(_faces(inner), _faces(outer))
+                if contained != "both" and wall <= _probe_floor(tol):    # the boundaries meet: check for a crossing
+                    looks, piece = (((0, "out"), (1, "in")), cut_a) if contained == "a_in_b" else \
+                        (((1, "out"), (0, "in")), cut_b)
+                    missed = crossing("contains", looks, piece)
+                    if missed is not None:
+                        return missed
                 witness.update(inner_point=p_in, outer_point=p_out)
                 return Relation(names[0], names[1], "contains", contained=contained, wall_mm=round(wall, 6),
                                 witness=witness, **fields)
@@ -839,6 +1106,10 @@ def relate(a: Any, b: Any, tol: Tolerances = Tolerances(), *, names: Tuple[str, 
         gap, pa, pb = _solid_distance(sa, sb, tol)
         witness = {"point_a": pa, "point_b": pb, "volume_integration": integration}
         if gap <= tol.touch_mm:
+            if gap <= _probe_floor(tol):         # the boundaries meet: check for a crossing the booleans missed
+                missed = crossing("touching", ((0, "in"), (1, "in")), common)
+                if missed is not None:
+                    return missed
             area = None
             if contact_area:
                 try:
@@ -931,7 +1202,8 @@ class RelationTable:
                 "relations": [r.to_dict() for r in self.relations.values()],
                 "skipped_pairs": [list(p) for p in self.skipped],
                 "method": "AABB broad phase (near_mm), then non-destructive BRepAlgoAPI Common and Cut volumes "
-                          "(cross-checked) and BRepExtrema_DistShapeShape",
+                          "(cross-checked) and BRepExtrema_DistShapeShape, with a section-guided crossing probe "
+                          "where the boundaries meet",
                 "kernel": f"OCP {_kernel_version()}",
                 "physical_fit_verified": False}
 

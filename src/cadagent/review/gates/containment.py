@@ -477,6 +477,15 @@ def _inside_check(ctx: _Ctx, d: Contains, inst: str) -> Check:
     ev: Dict[str, Any] = {"relation": _rel_evidence(rel)}
     cid = ctx.cid(d.cavity, inst, "inside")
     if rel.state == "unknown":
+        hit = rel.witness.get("crossing_probe")
+        if hit:     # the relation's own probe found the boundaries crossing where the boolean saw none (#46)
+            where = ({"furthest_outside_point": hit["point"], "nearest_cavity_point": hit["nearest_point"]}
+                     if hit["surface"] == inst and hit["lies"] == "outside" else {"crossing_point": hit["point"]})
+            ev.update(outside_mm3=None, depth_mm=hit["depth_mm"], kernel_missed_crossing=True, **where)
+            return Check(cid, "fail", f"{inst} escapes {d.cavity}: the boolean read no crossing, but a point of "
+                                      f"{hit['surface']}'s surface lies {hit['depth_mm']:.3g} mm {hit['lies']} "
+                                      f"{hit['other']} at {hit['point']} (a near-tangent crossing the kernel missed; "
+                                      "volume not measured)", [inst, d.container], ev)
         return Check(cid, "fail", f"{inst} vs {d.cavity}: the kernel could not decide ({rel.error})",
                      [inst, d.container], ev)
     if rel.state == "contains" and rel.contained in ("a_in_b", "both"):

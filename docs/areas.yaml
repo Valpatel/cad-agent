@@ -24,7 +24,8 @@
 # core (`cadagent.geometry`, `.project`, `.links`, ...) at the top. A domain package's module is listed in `api` under
 # its own domain only, so each module has one home; a node that relies on another domain's module names it in `uses`
 # instead (thermal's airflow uses `cadagent.simulation.cfd`). tests/test_package_areas.py keeps code and tree in step.
-# The old flat paths still import with a warning until v0.7.0, but the tests reject them here.
+# The old flat paths still import with a warning, until a release that the CHANGELOG announces a minor release ahead
+# (cadagent._moved), but the tests reject them here.
 version: 1
 
 maturity:

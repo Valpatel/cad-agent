@@ -1,6 +1,9 @@
 """The stiffness/strength solver against textbook answers: a cantilever and a twisted round shaft."""
+import dataclasses
 import math
+from pathlib import Path
 
+import numpy as np
 import pytest
 
 cq = pytest.importorskip('cadquery')
@@ -91,6 +94,58 @@ def test_layer_check_on_a_printed_bar_across_and_along_the_layers(tmp_path):
     d = json.loads(st.export_viewer(tmp_path / 'bar.json').read_text())
     assert d['result']['material_data'] == rec
     assert material_changes(d['result'], r) == []
+
+
+def test_layer_criteria_and_spread_on_a_printed_bar(tmp_path):
+    """#144 round 2, on the same solved bar: at a 30 degree tilt, sigma_n = sigma cos^2 and tau_n = sigma sin cos make
+    the two terms of the combined bond equal under the assumed S_s = S_z / sqrt 3 (tan 30 = 1 / sqrt 3), so it reads
+    exactly sqrt 2 times the max-stress bond, the most the two can differ. The in-plane stress is sigma sin^2. Over the
+    uniform middle every element is alike, so the 99th percentile is the peak; worst['resolution'] measures the mesh at
+    the worst corner as result['mesh']['peak'] does at the design peak; render(field=) draws the check."""
+    from cadagent.simulation.fea import MATERIALS
+
+    m = MATERIALS['petg_cf']
+    xy, z = m.layer_strengths_mpa
+    L, b, F = 100.0, 10.0, 1000.0
+    st = Study(cq.Workplane('XY').box(L, b, b).translate((L / 2, 0, 0)), m, mesh_mm=4.0, name='printed bar')
+    st.fix(plane_at(0, 0.0)).force(plane_at(0, L), (F, 0, 0))
+    r = st.solve()
+    sigma = F / b ** 2
+    centre = st.points[st.tets].mean(axis=1)
+    mid = (centre[:, 0] > L / 4) & (centre[:, 0] < 3 * L / 4)
+    t = math.radians(30)
+    n = (math.cos(t), 0, math.sin(t))
+    comb = st.layer_check(n, judge=mid)
+    most = st.layer_check(n, judge=mid, criterion='max-stress', bulk_stress='in-plane')
+    assert comb.safety_factor_bond == pytest.approx(z / (sigma * math.sqrt(9 / 8)), rel=1e-3)
+    assert most.safety_factor_bond == pytest.approx(math.sqrt(2) * comb.safety_factor_bond, rel=1e-3)
+    tension, shear = most.stats['tension'], most.stats['shear']
+    assert tension['max'] == pytest.approx(sigma * math.cos(t) ** 2 / z, rel=1e-3)
+    assert shear['max'] == pytest.approx(sigma * math.sin(t) * math.cos(t) / (z / math.sqrt(3)), rel=1e-3)
+    assert most.stats['bulk']['max'] == pytest.approx(sigma * math.sin(t) ** 2 / xy, rel=1e-3)
+    assert most.worst['in_plane_von_mises_mpa'] == pytest.approx(sigma * math.sin(t) ** 2, rel=1e-3)
+    # per element, everywhere (not only the uniform middle): the combined bond within [1, sqrt 2] x the max-stress one
+    every = st.layer_check(n, criterion='max-stress')
+    whole = st.layer_check(n)
+    assert np.all(whole.bond >= every.bond - 1e-9) and np.all(whole.bond <= math.sqrt(2) * every.bond + 1e-9)
+    # the spread: in the uniform middle the 99th percentile is the peak, and nothing is past the allowable
+    s = comb.stats['utilisation']
+    assert s['p99'] == pytest.approx(s['max'], rel=1e-3) and s['over_1'] == 0 and s['over_1_volume_mm3'] == 0
+    assert comb.as_dict()['stats']['bond']['over_1_volume_share'] == 0
+    over = st.layer_check(n, strength_z=0.4 * z, judge=mid).stats['bond']   # 0.4 x S_z: every element past 1
+    assert over['over_1'] == int(mid.sum()) and over['over_1_volume_share'] == pytest.approx(1.0)
+    assert over['over_1_volume_mm3'] == pytest.approx(L / 2 * b * b, rel=0.1)
+    res, peak = whole.worst['resolution'], r['mesh']['peak']
+    assert set(res) == set(peak) - {'stress_mpa'} and res['at_mm'] == whole.worst['corner_mm']
+    assert res['elements_across'] == pytest.approx(res['wall_mm'] / res['element_mm'], abs=0.06)
+    png = st.render(tmp_path / 'layers.png', field=whole)
+    assert Path(png).stat().st_size > 10000
+    st.render(tmp_path / 'shear.png', field=every.modes['shear'], vmax=1.0)
+    with pytest.raises(ValueError, match='one utilisation'):
+        st.render(tmp_path / 'bad.png', field=every.modes['shear'][:-1])
+    other = dataclasses.replace(whole, bond=whole.bond[:-1], bulk=whole.bulk[:-1], judged=whole.judged[:-1], modes=None)
+    with pytest.raises(ValueError, match='another mesh'):
+        st.render(tmp_path / 'bad.png', field=other)
 
 
 def test_study_leaves_no_temp_step(tmp_path, monkeypatch):

@@ -131,7 +131,9 @@ self-interfering compound gives `unknown`, never `touching`, `apart` or `contain
 
 Measured with `tools/gate_timing.py` on the synthetic 100-part assembly (4,950 pairs, 90 candidates), on a workstation
 at load average 11: broad phase 0.006 s, narrow phase 1.9 s cold, 0.03 s warm from the cache. The cross-check's
-extra `Cut` roughly doubled the cold narrow phase. Real parts with hundreds of faces cost 10–100× more per pair.
+extra `Cut` roughly doubled the cold narrow phase. Real parts with hundreds of faces cost 10–100× more per pair. On
+Gyropup's leg (the README hero's clearance sweep, 811 pairs, PR #198), distance first cut the time from 935 s to 608 s
+of calls with every answer unchanged. Most of what remains is BRepExtrema's own search between nearby edges and faces.
 
 ### Pairs the table did not examine
 

@@ -1,12 +1,13 @@
 **New**
 - `cadagent.review.evidence.geometry_identity(shape)`: an optional identity of a solid that does not depend on the
   platform. It holds the volume, the centre of mass and the inertia (tensor and principal moments), rounded, with the
-  tolerances it matches to (relative 1e-6 by default) in the record. Each principal moment has its own tolerance,
-  never below a thousandth of the largest moment's, so a slender part's small moment is compared to itself, not to
-  its length. Compare two identities with `identity_mismatches(a, b)`. An x86-64 and an aarch64 host gave matching
-  identities for all 43 solids of a vendor STEP and for 12 public test solids, while they shared 4 of 43 and 4 of 12
-  content hashes. It is not a hash: different solids can share one, and a change below the tolerance is not seen, so
-  it explains a hash mismatch and never signs anything off (#144).
+  tolerances it matches to (relative 1e-6 by default) in the record. Each principal moment has its own tolerance, never
+  below a thousandth of the largest moment's, so a slender part's small moment is compared to itself, not to its length.
+  Compare two identities with `identity_mismatches(a, b)`. An x86-64 and an aarch64 host gave matching identities for
+  all 43 solids of a vendor STEP and for 12 public test solids, while they shared 4 of 43 and 4 of 12 content hashes.
+  Those counts were made with the earlier, looser tolerance on the small moments, and were not re-run; the differences
+  seen were about 1e-13 relative. It is not a hash: different solids can share one, and a change below the tolerance is
+  not seen, so it explains a hash mismatch and never signs anything off (#144).
 - `cadagent.review.evidence.hash_platform()` names what a content hash depends on besides the shape: the CPU
   architecture, the system, the C library, and the OCP version and package. `record_hash_platform(record)` reads it
   from a geometry record. `hash_platform_note(recorded, current)` says when two records differ. Equal records do not

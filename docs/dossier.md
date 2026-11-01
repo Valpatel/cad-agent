@@ -350,11 +350,12 @@ as for decorators (a free part needs a reason; grounded and free together are re
     differ. Equal platform records do not promise equal hashes: not everything the kernel's arithmetic depends on is
     named.
   - To tell a platform's mismatch from a change, compare `evidence.geometry_identity(shape)` records with
-    `evidence.identity_mismatches(a, b)`: volume, centre of mass, inertia and principal moments, rounded, matched
-    within the stated tolerance (relative 1e-6 by default, of the volume, of its cube root, of the largest moment
-    for the tensor, and of each principal moment for itself, floored at a thousandth of the largest). All 43 and all
-    12 matched across the two hosts. It is not a hash: different solids can share one, and a change below the
-    tolerance is not seen, so it explains a mismatch and never signs anything off.
+    `evidence.identity_mismatches(a, b)`: volume, centre of mass, inertia and principal moments, rounded, matched within
+    the stated tolerance (relative 1e-6 by default, of the volume, of its cube root, of the largest moment for the
+    tensor, and of each principal moment for itself, floored at a thousandth of the largest). All 43 and all 12 matched
+    across the two hosts, with the earlier tolerance (the largest moment's for every moment; not re-run since), while
+    the differences seen were about 1e-13 relative. It is not a hash: different solids can share one, and a change below
+    the tolerance is not seen, so it explains a mismatch and never signs anything off.
   - A shape **read back** from its BREP file may hash differently, because the reader recomputes frame directions
     and location matrices (last-digit noise, signed zeros). Keep the recorded hash with the shape
     (`assembly_shapes(with_hashes=True)`, `content_hashes()`); never re-hash a loaded shape to identify it.

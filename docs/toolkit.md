@@ -396,8 +396,8 @@ newer one. Preload the environment's own OpenSSL in the run's launcher:
 Without pypardiso the solver falls back to SciPy, and to pyamg for big meshes, which is slower. pyamg has no aarch64
 wheel, so pip builds it from source; that needs a C++ compiler. A conda-forge gmsh is a different build from the PyPI
 wheel and can mesh a part slightly differently, so compare before and after on one build. gmsh reads the STEP with
-its own OCCT: the newest conda-forge build of 4.15.2 (build 11) links OCCT 8.0.1, while cadquery-ocp 7.9.3.1.1 and
-the earlier 4.15.2 builds use OCCT 7.9.3.
+its own OCCT: the newest conda-forge build of 4.15.2 (build 11) links OCCT 8.0.1, and one of the two build-10 variants
+links 8.0.0, while cadquery-ocp 7.9.3.1.1, builds 0 to 9 and the other build-10 variant use OCCT 7.9.3.
 </details>
 
 **Printed materials** (`pla`, `petg`, `petg_cf`, `pa_cf`, `pa6_cf_xy`, `pa6_cf_z`, `tpu95`) take their numbers from the

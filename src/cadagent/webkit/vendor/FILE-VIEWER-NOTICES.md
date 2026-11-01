@@ -58,7 +58,9 @@ Source: https://github.com/101arrowz/fflate/tree/v0.8.3 .
 It replaces the fflate 0.6.9 copy that Three r160 bundles, because `unzipSync` in
 0.6.9 can loop forever on a crafted ZIP64 directory entry (GHSA-px8p-9vwx-vf98,
 fixed in 0.8.3). The 3MF loader and the worker call only `unzipSync` and `strFromU8`,
-which keep the same interface in 0.8.
+which keep their signatures in 0.8. Since 0.7 fflate throws `Error` objects, not strings,
+so the worker turns any fflate or loader failure into its one generic message rather
+than showing fflate's internal text.
 
 ## Worker XML DOM: LinkeDOM 0.18.12
 

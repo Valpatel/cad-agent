@@ -25,6 +25,9 @@ test('receipts, notices and the source URLs name the same versions', async () =>
   const mermaid = await json('mermaid/SOURCE.json'), { fflate } = await json('file-viewer-sources.json');
   assert.equal(mermaid.source, `https://registry.npmjs.org/mermaid/-/mermaid-${mermaid.version}.tgz`);
   assert.equal(fflate.source, `https://registry.npmjs.org/fflate/-/fflate-${fflate.version}.tgz`);
+  // The single-file bundle inlines DOMPurify and KaTeX; the receipt names the versions inside it.
+  const bundle = await readFile(path.join(vendor, 'mermaid/mermaid.min.js'), 'utf8');
+  assert.ok(bundle.includes(`DOMPurify ${mermaid.bundled.dompurify}`) && bundle.includes(`"${mermaid.bundled.katex}"`));
   const notices = await readFile(path.join(root, 'THIRD_PARTY_NOTICES.md'), 'utf8');
   assert.match(notices, new RegExp(`^\\| Mermaid \\| MIT \\| ${mermaid.version.replaceAll('.', '\\.')} \\|`, 'm'));
   assert.match(notices, new RegExp(`^\\| fflate .*\\| MIT \\| ${fflate.version.replaceAll('.', '\\.')}, from npm \\|`, 'm'));
@@ -69,18 +72,64 @@ test('the vendored unzipSync rejects a malformed ZIP64 directory instead of loop
   assert.deepEqual(await unzipInWorker(malformedZip64()), { error: 'invalid zip data', code: 13 });
 });
 
-test('the file viewer rejects that archive before any parser runs', async () => {
+/** The shipped 3MF worker's answer for these bytes: {error} or {model}, through the test-only Node adapter. */
+async function viewer3MF(bytes) {
   const worker = new Worker(new URL('./webkit-file-worker-node.mjs', import.meta.url), { workerData: { format: '3mf' } });
   try {
-    const buffer = malformedZip64().buffer;
-    const reply = await new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('the 3MF worker did not answer in 5 s')), 5000);
+    const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    return await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('the 3MF worker did not answer in 10 s')), 10000);
       worker.on('message', (m) => { if (m.error || m.model) { clearTimeout(timer); resolve(m); } });
       worker.once('error', reject);
-      worker.postMessage({ format: '3mf', buffer, name: 'malformed.3mf', unit: 'millimeter' }, [buffer]);
+      worker.postMessage({ format: '3mf', buffer, name: 'test.3mf', unit: 'millimeter' }, [buffer]);
     });
-    assert.equal(reply.error, 'This 3MF uses an unsupported ZIP layout.');
   } finally { await worker.terminate(); }
+}
+
+test('the file viewer rejects that archive before any parser runs', async () => {
+  assert.equal((await viewer3MF(malformedZip64())).error, 'This 3MF uses an unsupported ZIP layout.');
+});
+
+/** A one-triangle 3MF: content types, relationships, the model, and optionally a thumbnail part. */
+async function small3MF({ thumbnail = false, level = 6 } = {}) {
+  const { zipSync, strToU8 } = await import(fflateURL);
+  const model = '<?xml version="1.0"?><model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">'
+    + '<resources><object id="1" type="model"><mesh><vertices><vertex x="0" y="0" z="0"/><vertex x="10" y="0" z="0"/>'
+    + '<vertex x="0" y="10" z="0"/></vertices><triangles><triangle v1="0" v2="1" v3="2"/></triangles></mesh></object>'
+    + '</resources><build><item objectid="1"/></build></model>';
+  const files = {
+    '[Content_Types].xml': strToU8('<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>'),
+    '_rels/.rels': strToU8('<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>'),
+    '3D/3dmodel.model': [strToU8(model), { level }],
+  };
+  if (thumbnail) files['Metadata/thumbnail.png'] = [strToU8('x'.repeat(4000)), { level: 6 }];
+  return zipSync(files);
+}
+
+/** Overwrite the first bytes of `name`'s compressed data, or its compression method, in place. */
+function damage(zip, name, { method } = {}) {
+  const d = new DataView(zip.buffer, zip.byteOffset, zip.byteLength), want = new TextEncoder().encode(name);
+  for (let at = 0; at + 30 < zip.length; at++) {
+    if (d.getUint32(at, true) !== 0x04034b50) continue;
+    const nameLength = d.getUint16(at + 26, true), extra = d.getUint16(at + 28, true);
+    if (nameLength !== want.length || !want.every((b, i) => zip[at + 30 + i] === b)) continue;
+    if (method !== undefined) {   // the local header and the central directory both name the method
+      d.setUint16(at + 8, method, true);
+      for (let c = 0; c + 46 < zip.length; c++) if (d.getUint32(c, true) === 0x02014b50 && d.getUint32(c + 42, true) === at) d.setUint16(c + 10, method, true);
+    } else zip.fill(0xff, at + 30 + nameLength + extra, at + 30 + nameLength + extra + 4);
+    return zip;
+  }
+  throw new Error('no local header for ' + name);
+}
+
+test('a damaged 3MF shows the generic message, not fflate or loader internals', async () => {
+  assert.equal((await viewer3MF(await small3MF())).model?.triangles, 1, 'the undamaged fixture reads');
+  const generic = 'The model file could not be decoded.';
+  // fflate 0.8 throws Error objects ("invalid block type", "unknown compression type 12") where 0.6 threw strings.
+  assert.equal((await viewer3MF(damage(await small3MF(), '3D/3dmodel.model'))).error, generic);
+  assert.equal((await viewer3MF(damage(await small3MF(), '3D/3dmodel.model', { method: 12 }))).error, generic);
+  // A damaged part beside the model passes the worker's model-only unzip; the loader's own unzip then fails.
+  assert.equal((await viewer3MF(damage(await small3MF({ thumbnail: true }), 'Metadata/thumbnail.png'))).error, generic);
 });
 
 test('unzipSync keeps the interface the 3MF worker relies on, and honours its model filter', async () => {

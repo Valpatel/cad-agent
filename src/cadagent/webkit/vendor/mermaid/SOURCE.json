@@ -12,5 +12,10 @@
   "paths_in_package": {
     "mermaid.min.js": "package/dist/mermaid.min.js",
     "LICENSE": "package/LICENSE"
+  },
+  "bundled": {
+    "dompurify": "3.4.12",
+    "katex": "0.16.47",
+    "note": "mermaid.min.js inlines these, so an OSV query on mermaid does not see them. OSV lists five advisories for DOMPurify 3.4.12 (its IN_PLACE, SAFE_FOR_TEMPLATES and XHTML-parser paths; fixed by 3.4.17) and one for KaTeX 0.16.47 (a prototype-pollution precondition; fixed in 0.18.2). No Mermaid release bundles fixed versions yet: 12.2.0 still inlines DOMPurify 3.4.12. Whether Mermaid reaches those paths is not assessed here."
   }
 }

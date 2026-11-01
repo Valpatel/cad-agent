@@ -26,6 +26,8 @@ const rootArg = process.argv.indexOf('--root');
 const root = path.resolve(rootArg > 0 ? process.argv[rootArg + 1] : path.join(import.meta.dirname, '..'));
 const outArg = process.argv.indexOf('--out');
 const out = outArg > 0 ? path.resolve(process.argv[outArg + 1]) : path.join(root, 'dist');
+// The site's one address. It is also served at cad-agent.gyropup.com, a second custom domain on the same Pages project;
+// every page names this origin as canonical, so search engines index one copy, and agents' links all use it.
 const ORIGIN = 'https://cad-agent.valpatel.com';
 const REPO = 'https://github.com/Valpatel/cad-agent';
 const TAGLINE = 'Your one stop shop for agentic CAD';
@@ -189,7 +191,7 @@ const kitDemos = body => Object.entries(KIT_DEMOS).filter(([tag]) => body.includ
 function frame({ title, body, md, description = LEDE, current = '', page = 'doc', css = [], updated = committed, url = current || '/' }) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title === TAGLINE ? 'cad-agent · ' + TAGLINE : title + ' · cad-agent')}</title>
-<meta name="description" content="${esc(description)}">
+<meta name="description" content="${esc(description)}">${current ? `<link rel="canonical" href="${esc(ORIGIN + current)}">` : ''}
 <link rel="icon" href="/web/icon.svg"><link rel="preload" href="/kit/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/kit/vendor/fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}${kitDemos(body)}
 ${md ? `<link rel="alternate" type="text/markdown" href="${esc(md)}" title="Markdown for agents">` : ''}
 <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt"></head>

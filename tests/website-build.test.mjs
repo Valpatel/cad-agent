@@ -588,3 +588,21 @@ test('no page refers to a lesson by its old number', () => {
   hits = hits.split('\n').filter(Boolean);
   assert.deepEqual(hits, []);
 });
+
+test('every page names its cad-agent.valpatel.com address as canonical, and the 404 page names none', async () => {
+  // The same build is served on two custom domains (cad-agent.valpatel.com and cad-agent.gyropup.com).
+  const origin = 'https://cad-agent.valpatel.com';
+  const checked = [];
+  for (const f of html) {
+    const text = await readFile(path.join(out, f), 'utf8');
+    if (!text.includes('<header class="site-header">')) continue;  // only pages built with the site's frame
+    const canon = [...text.matchAll(/<link rel="canonical" href="([^"]+)">/g)].map(m => m[1]);
+    if (f === '404.html') { assert.deepEqual(canon, [], '404.html must not name a canonical page'); continue; }
+    assert.equal(canon.length, 1, `${f}: ${canon.length} canonical links`);
+    const want = origin + (f === 'index.html' ? '/' : '/' + f.replace(/\.html$/, ''));
+    assert.equal(canon[0], want, f);
+    assert.ok(resolve(canon[0].slice(origin.length)), `${f}: its canonical ${canon[0]} is not a published page`);
+    checked.push(f);
+  }
+  assert.ok(checked.includes('index.html') && checked.includes('catalog.html') && checked.length > 40, `checked ${checked.length} pages`);
+});

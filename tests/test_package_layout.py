@@ -98,25 +98,34 @@ def _release(text: str):
     return tuple(int(p) for p in text.split("."))
 
 
+_NAMES_THE_PATHS = re.compile(r"\bold\b(?:\s+[\w`.-]+){0,3}?\s+paths?\b|\b(?:import|package|module) paths\b"
+                              r"|cadagent\._moved")
+_BULLET = re.compile(r"^- .*(?:\n[ \t]+(?![-*] )\S.*)*", re.M)        # a bullet and its wrapped lines, not sub-bullets
+
+
 def _announced(changelog: str, removed_in: str) -> list:
-    """The released entries whose **Projects must change** block has a bullet saying the old paths go in
-    v<removed_in>, as release tuples."""
+    """The released entries whose **Projects must change** block has a bullet that names the old paths ("old
+    paths", "old flat import paths", "the new package paths", ``cadagent._moved``) and v<removed_in>, as release
+    tuples."""
     out = []
     for v, body in re.findall(r"^## v([0-9.]+) \([0-9-]+\)\n(.*?)(?=^## |\Z)", changelog, re.M | re.S):
         block = re.search(r"^\*\*Projects must change:?\*\*:?[ \t]*\n(.*?)(?=^\*\*[^*\n]+\*\*|\Z)", body, re.M | re.S)
-        bullet = rf"^- [^\n]*\bold (?:import |module )?paths\b[^\n]*\bv{re.escape(removed_in)}\b"
-        if block and re.search(bullet, block.group(1), re.M):
+        bullets = [" ".join(b.split()) for b in _BULLET.findall(block.group(1))] if block else []
+        if any(_NAMES_THE_PATHS.search(b) and re.search(rf"\bv{re.escape(removed_in)}\b", b) for b in bullets):
             out.append(_release(v))
     return out
 
 
 def test_the_announcement_check_reads_a_projects_must_change_bullet():
     log = ("## Unreleased\n\n## v0.10.0 (2027-01-02)\n\n**New**\n- the old paths go in v0.11.0 (not here)\n\n"
-           "**Projects must change**\n- Move imports: the old import paths go in v0.11.0.\n\n"
-           "## v0.9.0 (2026-12-01)\n\n**Projects must change:**\n- A folder threshold for v0.11.0 holds.\n")
+           "**Projects must change**\n- Move imports: the old flat import paths go in\n  v0.11.0, wrapped (#1).\n\n"
+           "## v0.9.0 (2026-12-01)\n\n**Projects must change:**\n- A folder threshold for v0.11.0 holds.\n"
+           "- The old paths stay.\n  - v0.11.0 is another bullet's.\n")
     assert _announced(log, "0.11.0") == [(0, 10, 0)]
     assert _announced(log, "0.12.0") == []
     assert _announced(log.replace("**Projects must change**\n- Move", "**Fixed**\n- Move"), "0.11.0") == []
+    # v0.5.0 announced v0.7.0 in its own words ("Move imports to the new package paths before v0.7.0")
+    assert (0, 5, 0) in _announced((ROOT / "CHANGELOG.md").read_text(encoding="utf-8"), "0.7.0")
 
 
 def test_no_old_path_goes_unannounced():

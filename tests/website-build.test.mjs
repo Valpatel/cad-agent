@@ -24,7 +24,9 @@ const resolve = url => {
   const p = decodeURIComponent(url.split('#')[0].split('?')[0]).replace(/^\//, '');
   return [p, p + '.html', p.replace(/\/?$/, '/index.html').replace(/^\//, '')].find(c => files.includes(c));
 };
-const ids = async f => new Set([...(await readFile(path.join(out, f), 'utf8')).matchAll(/\bid="([^"]+)"/g)].map(m => m[1]));
+// Anchor targets from real tags only: `<h2 id="x">` shown in a code sample is text, not a target.
+const idsIn = text => new Set([...text.matchAll(/<[a-z][^>]*>/gi)].flatMap(([tag]) => [...tag.matchAll(/\sid="([^"]+)"/gi)].map(m => m[1])));
+const ids = async f => idsIn(await readFile(path.join(out, f), 'utf8'));
 
 test('only committed files are published, byte for byte', async () => {
   const webTracked = git('ls-tree', '-r', '--name-only', 'HEAD', 'web/').split('\n').filter(Boolean);
@@ -95,6 +97,7 @@ test('builds are reproducible: two builds of the same commit are identical', asy
 });
 
 test('every internal link and anchor in the HTML resolves', async () => {
+  assert.deepEqual([...idsIn('<h2 id="real">x</h2><pre><code>&lt;h2 id="in-code"&gt;</code></pre>')], ['real']);
   const missing = [];
   for (const f of html) {
     if (f.startsWith('kit/')) continue;                                // the kit's own pages are tested with the kit

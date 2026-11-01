@@ -25,9 +25,26 @@ NEVER_SHIPPED = ["cadagent.sim", "cadagent.make", "cadagent.geometry.holes", "ca
                  "cadagent.publish.review"]
 
 
+def _leftover(folder: Path) -> bool:
+    """A folder git left behind: it holds only ``__pycache__`` (a checkout from before the move removed its files)."""
+    files = (f for f in folder.rglob("*") if f.is_file())
+    return folder.is_dir() and all("__pycache__" in f.relative_to(folder).parts for f in files)
+
+
+def test_no_folder_is_left_over_from_before_the_move():
+    """After pulling the move, git leaves compliant/, dossier/, explore/ and gates/ holding their __pycache__. The old
+    paths still import (the finder claims them first), but the folder is clutter, and a leftover sim/ or make/ (this
+    PR's first layout) imports as an empty namespace package."""
+    leftovers = sorted(p for p in PKG.iterdir() if _leftover(p))
+    assert not leftovers, "\n".join(
+        f"{p.relative_to(PKG.parents[1])}/ holds only __pycache__, left by a checkout from before the move (#121): "
+        f"delete it (rm -r {p.relative_to(PKG.parents[1])})" for p in leftovers)
+
+
 def test_top_level_stays_tidy():
     modules = {p.stem for p in PKG.glob("*.py")}
-    packages = {p.name for p in PKG.iterdir() if p.is_dir() and not p.name.startswith(("_", "."))}
+    packages = {p.name for p in PKG.iterdir()
+                if p.is_dir() and not p.name.startswith(("_", ".")) and not _leftover(p)}   # leftovers: the test above
     assert modules == TOP_MODULES, (
         f"new top-level modules {sorted(modules - TOP_MODULES)}: put them in the package for their domain "
         f"({', '.join(sorted(DOMAINS))}; see docs/areas.yaml), or agree a new shared module and add it here")
@@ -43,7 +60,8 @@ def test_old_paths_are_the_same_module(old, new):
     assert getattr(cadagent, old) is module
     assert module.__name__ == new and module.__spec__.name == new, "the old path replaced the real module's spec"
     assert not (PKG / f"{old}.py").exists(), f"cadagent/{old}.py is back next to its new home {new}"
-    assert not (PKG / old).is_dir(), f"cadagent/{old}/ is back next to its new home {new} (a stale folder imports)"
+    assert not (PKG / old).is_dir() or _leftover(PKG / old), (
+        f"cadagent/{old}/ is back next to its new home {new}: move its files to {new.replace('.', '/')}/")
 
 
 def _submodules(package):
@@ -100,9 +118,11 @@ assert cadagent.geometry.__path__ and cadagent.review.__path__
 @pytest.mark.parametrize("name", NEVER_SHIPPED)
 def test_the_job_layout_paths_are_gone(name):
     assert importlib.util.find_spec(name.rsplit(".", 1)[0]) is not None
+    folder = PKG.parent.joinpath(*name.split("."))
     assert importlib.util.find_spec(name) is None, (
-        f"{name} still resolves: a stale folder under src/cadagent (delete it), or a shim for a path that never "
-        f"shipped")
+        f"{name} still resolves: {folder.relative_to(PKG.parents[1])}/ holds only __pycache__ from a checkout before "
+        f"the move (delete it)" if _leftover(folder) else
+        f"{name} still resolves: a folder or module under src/cadagent, or a shim for a path that never shipped")
 
 
 # Each form that reaches a moved module, as the last line of a script. dotsvg needs only the standard library.
@@ -117,15 +137,14 @@ IMPORT_FORMS = {
     "new path loaded first": "import cadagent.publish.dotsvg\nfrom cadagent import dotsvg",
 }
 # The same through a moved package (cadagent.gates is now cadagent.review.gates): each line, the warnings it raises.
+# Importing the old package brings its submodules under their old names, so its one warning covers them.
 PACKAGE_FORMS = {
-    "import": ("import cadagent.gates.verdict", ["cadagent.gates", "cadagent.gates.verdict"]),
-    "from module import name": ("from cadagent.gates.verdict import SCHEMA",
-                                ["cadagent.gates", "cadagent.gates.verdict"]),
+    "import": ("import cadagent.gates.verdict", ["cadagent.gates"]),
+    "from module import name": ("from cadagent.gates.verdict import SCHEMA", ["cadagent.gates"]),
     "from package import module": ("from cadagent.gates import verdict", ["cadagent.gates"]),
-    "import_module": ("import importlib\nimportlib.import_module('cadagent.gates.verdict')",
-                      ["cadagent.gates", "cadagent.gates.verdict"]),
+    "import_module": ("import importlib\nimportlib.import_module('cadagent.gates.verdict')", ["cadagent.gates"]),
     "new path loaded first": ("import cadagent.review.gates.verdict\nimport cadagent.gates.verdict",
-                              ["cadagent.gates", "cadagent.gates.verdict"]),
+                              ["cadagent.gates"]),
 }
 
 
@@ -156,6 +175,80 @@ def test_an_old_package_path_warns_at_the_importing_line(form, tmp_path):
         expected = f"{script}:{line}: DeprecationWarning: {old} moved to {_moved.new_name(old)}"
         assert out.stderr.count(expected) == 1, out.stderr
     assert out.stderr.count("DeprecationWarning") == len(warned), out.stderr
+
+
+# python -m through an old path, and the same through the new one: (old, new, exit status). The gate worker was
+# `python -m cadagent.gates.run` in v0.4's docs/gates.md; with no arguments it prints its usage line.
+PYTHON_M = [("cadagent.gates.run", "cadagent.review.gates.run", 2),
+            ("cadagent.dotsvg", "cadagent.publish.dotsvg", 0),
+            ("cadagent.gates", "cadagent.review.gates", 1)]
+
+
+@pytest.mark.parametrize("old,new,status", PYTHON_M)
+def test_python_m_through_an_old_path_runs_the_new_module(old, new, status, tmp_path):
+    """As on dev before the move, with one DeprecationWarning that Python's default filters show. A package gives
+    runpy's own error, naming the path that was asked for."""
+    env = {"PYTHONPATH": str(PKG.parent), "PATH": ""}
+    run = {name: subprocess.run([sys.executable, "-m", name], capture_output=True, text=True, cwd=tmp_path, env=env)
+           for name in (old, new)}
+    assert run[old].returncode == run[new].returncode == status, run[old].stderr
+    assert run[old].stdout == run[new].stdout
+    warning = (f"<python -m {old}>:1: DeprecationWarning: {old} moved to {new}; the old path goes in "
+               f"v{_moved.REMOVED_IN}")
+    rest = [line for line in run[old].stderr.splitlines() if line != warning]
+    if status == 1:
+        assert f"'{old}' is a package and cannot be directly executed" in run[old].stderr, run[old].stderr
+        assert rest == [line.replace(new, old) for line in run[new].stderr.splitlines()]
+    else:
+        assert run[old].stderr.count(warning) == 1, run[old].stderr
+        assert rest == run[new].stderr.splitlines(), run[old].stderr
+        assert "RuntimeWarning" not in run[old].stderr
+
+
+def test_an_old_package_brings_its_submodules_whatever_finder_comes_first():
+    """Importing cadagent.gates puts every submodule into sys.modules under its old name too, so a finder another
+    tool puts in front of ours (one that resolves cadagent.* through the path finder, as instrumenting hooks do)
+    cannot load a second copy from the package's folder."""
+    code = """
+import importlib.abc, importlib.machinery, pkgutil, sys, warnings
+warnings.simplefilter("ignore", DeprecationWarning)
+import cadagent
+
+class Front(importlib.abc.MetaPathFinder):
+    def find_spec(self, name, path=None, target=None):
+        return importlib.machinery.PathFinder.find_spec(name, path, target) if name.startswith("cadagent.") else None
+
+sys.meta_path.insert(0, Front())
+import cadagent.gates.motion
+import cadagent.review.gates as real
+assert sys.modules["cadagent.gates.motion"] is sys.modules["cadagent.review.gates.motion"]
+for info in pkgutil.walk_packages(real.__path__, "cadagent.review.gates."):
+    old = "cadagent.gates" + info.name[len("cadagent.review.gates"):]
+    assert sys.modules[old] is sys.modules[info.name], old
+modules = {id(m): m for m in list(sys.modules.values())}.values()   # an alias is the same object twice
+files = [m.__file__ for m in modules if getattr(m, "__file__", None)]
+assert len(files) == len(set(files)), "a file is behind two module objects"
+"""
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                         env={"PYTHONPATH": str(PKG.parent), "PATH": ""})
+    assert out.returncode == 0, out.stderr
+
+
+def test_reloading_the_shim_keeps_one_finder():
+    code = """
+import importlib, sys, warnings
+warnings.simplefilter("ignore", DeprecationWarning)
+import cadagent, cadagent._moved as moved
+importlib.reload(moved)
+moved.install()
+mine = [f for f in sys.meta_path if type(f).__qualname__ == "_MovedFinder"]
+assert len(mine) == 1 and isinstance(mine[0], moved._MovedFinder), sys.meta_path
+import cadagent.dotsvg, cadagent.publish.dotsvg
+assert cadagent.dotsvg is cadagent.publish.dotsvg
+"""
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                         env={"PYTHONPATH": str(PKG.parent), "PATH": ""})
+    assert out.returncode == 0, out.stderr
 
 
 def test_old_path_leaves_the_real_modules_spec_and_reload_alone():

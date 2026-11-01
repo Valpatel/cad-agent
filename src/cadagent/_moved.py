@@ -21,9 +21,16 @@ the import machinery made, so the ``find_spec`` → ``module_from_spec`` → ``e
 holding an empty module, and ``importlib.util.LazyLoader`` refuses the swap (``ValueError``). Every import statement,
 ``importlib.import_module`` and ``__import__`` get the real module.
 
+``python -m cadagent.<old>`` (the gate worker was ``python -m cadagent.gates.run`` in v0.4) warns and runs the module
+at its new path, as ``python -m <new>`` would.
+
 One finder instead of a shim file per module, so the package's top level stays as tidy as the move made it. It sits
 first in ``sys.meta_path``: an old package's submodule (``cadagent.gates.motion``) is looked up in the real package's
-folder, where the standard finder would find the file and load a second copy under the old name.
+folder, where the standard finder would find the file and load a second copy under the old name. Importing an old
+package also puts each of its submodules into ``sys.modules`` under its old name, so a finder that a later tool puts
+in front of this one cannot load such a copy either (it costs 10-30 ms on the deprecated path only, and imports no
+optional dependency). It also keeps a leftover ``gates/__pycache__/`` from a checkout before the move from importing
+as an empty namespace package.
 """
 from __future__ import annotations
 
@@ -31,6 +38,7 @@ import importlib
 import importlib.abc
 import importlib.util
 import os
+import pkgutil
 import sys
 import warnings
 
@@ -114,6 +122,25 @@ def new_name(fullname: str):
     return MOVED[head] + dot + rest if head in MOVED else None
 
 
+def _message(old: str, new: str) -> str:
+    return f"{old} moved to {new}; the old path goes in v{REMOVED_IN}"
+
+
+def _alias_submodules(old: str, package) -> None:
+    """Every submodule of a moved package under its old name too (``cadagent.gates.motion``), so no finder in front
+    of this one can load a second copy from the package's folder. Best effort: a submodule that fails to import is
+    left out, and importing it later raises its own error. Skipped while Python locates a ``python -m`` module
+    (``sys.argv[0]`` is ``"-m"`` then): runpy imports the parent first and would warn that the module it is about to
+    run was imported already."""
+    if sys.argv[:1] == ["-m"]:
+        return
+    for info in pkgutil.walk_packages(package.__path__, package.__name__ + ".", onerror=lambda name: None):
+        try:
+            sys.modules.setdefault(old + info.name[len(package.__name__):], importlib.import_module(info.name))
+        except Exception:                         # noqa: BLE001 - see the docstring
+            continue
+
+
 class _MovedFinder(importlib.abc.MetaPathFinder, importlib.abc.Loader):
     """Resolves ``cadagent.<old>`` (and ``cadagent.<old package>.<module>``) to the module at its new path."""
 
@@ -121,26 +148,62 @@ class _MovedFinder(importlib.abc.MetaPathFinder, importlib.abc.Loader):
         new = new_name(fullname)
         if new is None:
             return None
-        # The real file as the origin, so find_spec(old).origin names it before the first import too. Finding the
-        # new module's spec imports only its parent package, not the module. No real module, no spec: the import
-        # fails as it would for any missing module.
+        # The real file as the origin, so find_spec(old).origin names it before the first import too, and a moved
+        # package's folders, so it reads as a package (runpy, pkgutil). Finding the new module's spec imports only its
+        # parent package, not the module. No real module, no spec: the import fails as for any missing module.
         real = importlib.util.find_spec(new)
-        return importlib.util.spec_from_loader(fullname, self, origin=real.origin) if real else None
+        if real is None:
+            return None
+        spec = importlib.util.spec_from_loader(fullname, self, origin=real.origin,
+                                               is_package=real.submodule_search_locations is not None)
+        if real.submodule_search_locations is not None:
+            spec.submodule_search_locations = list(real.submodule_search_locations)
+        return spec
+
+    def is_package(self, fullname):
+        real = importlib.util.find_spec(new_name(fullname))
+        return real is not None and real.submodule_search_locations is not None
+
+    def get_code(self, fullname):
+        """For ``python -m cadagent.<old>``: runpy runs this code in ``__main__``. It warns from there, where Python's
+        default filters show a DeprecationWarning, then runs the new module's code in the same namespace under the
+        new module's spec, as ``python -m <new>`` would: its relative imports, usage line and exit status are the new
+        module's. runpy has imported the old parent package by then; that warning names runpy, so it stays hidden."""
+        new = new_name(fullname)
+        source = (f"import importlib.util as _u, warnings as _w; _w.warn({_message(fullname, new)!r}, "
+                  f"DeprecationWarning, stacklevel=1)\n"
+                  f"__spec__ = _u.find_spec({new!r}); __package__ = __spec__.parent; __loader__ = __spec__.loader\n"
+                  f"__file__ = __spec__.origin; __cached__ = __spec__.cached; del _u, _w\n"
+                  f"exec(__spec__.loader.get_code({new!r}), globals())\n")
+        return compile(source, f"<python -m {fullname}>", "exec")
 
     def create_module(self, spec):
         return None                               # a throwaway module: exec_module puts the real one in its place
 
     def exec_module(self, module):
-        new = new_name(module.__name__)
-        warnings.warn(f"{module.__name__} moved to {new}; the old path goes in v{REMOVED_IN}", DeprecationWarning,
-                      stacklevel=_importer_stacklevel())
+        old = module.__name__
+        new = new_name(old)
+        warnings.warn(_message(old, new), DeprecationWarning, stacklevel=_importer_stacklevel())
         # The import machinery hands back whatever sys.modules holds for the old name once exec_module returns, and
         # binds that as the parent's attribute. Swapping here (instead of returning the real module from
         # create_module) keeps the real module's own __spec__: the machinery sets __spec__ on the module it is
         # given, so the real one used to end up with the shim's spec (no origin; reload renamed it).
-        sys.modules[module.__name__] = importlib.import_module(new)
+        real = sys.modules[old] = importlib.import_module(new)
+        if hasattr(real, "__path__"):
+            _alias_submodules(old, real)
+
+
+def _ours(finder) -> bool:
+    """A finder this module installed, including one from before an ``importlib.reload`` of it (another class)."""
+    kind = type(finder)
+    return kind.__module__ == __name__ and kind.__qualname__ == "_MovedFinder"
 
 
 def install() -> None:
-    if not any(isinstance(f, _MovedFinder) for f in sys.meta_path):
-        sys.meta_path.insert(0, _MovedFinder())   # first: see the module docstring
+    """Puts the finder first in ``sys.meta_path`` (see the module docstring). Once: after a reload of this module the
+    new finder takes the old one's place instead of joining it."""
+    for i, finder in enumerate(sys.meta_path):
+        if _ours(finder):
+            sys.meta_path[i] = _MovedFinder()
+            return
+    sys.meta_path.insert(0, _MovedFinder())

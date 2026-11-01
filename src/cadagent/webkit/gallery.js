@@ -139,7 +139,10 @@ export class CadGallery extends Base {
     this.single = [...new Set(this.facetLinks.map(a => a.dataset.facet))];
     this.facetNames = [...this.single, ...new Set(this.boxes.map(b => b.name).filter(n => !this.single.includes(n)))];
     this.defaultSort = this.sortSelect?.options[0]?.value || '';
+    // Each link is a choice applied to the current view; its href is rewritten to that view on every render, so the
+    // choice as written (which may clear something: ?kind= is every kind) is kept in data-gallery-to.
     this.links = $$('a[data-gallery-link]');
+    for (const a of this.links) a.dataset.galleryTo ??= a.getAttribute('href');
     this.results = $('[data-gallery-results]');
     this.#items = $$('[data-item]').map((el, index) => ({
       el, index, tab: el.closest('[data-group]')?.dataset.group || '', list: el.parentElement,
@@ -180,7 +183,7 @@ export class CadGallery extends Base {
       if (link && this.contains(link)) {
         e.preventDefault();
         if (link.matches('[data-tab]')) this.#state.tab = link.dataset.tab;
-        else this.#merge(new URL(link.getAttribute('href'), location.href).searchParams);
+        else this.#merge(new URL(link.dataset.galleryTo ?? link.getAttribute('href'), location.href).searchParams);
         this.#render(); this.#remember(); this.#reveal();
         return;
       }
@@ -352,7 +355,7 @@ export class CadGallery extends Base {
     for (const a of this.links) {                                // each link's href is the view it leads to
       const next = structuredClone(s);
       const before = this.#state; this.#state = next;
-      this.#merge(new URL(a.getAttribute('href'), location.href).searchParams);
+      this.#merge(new URL(a.dataset.galleryTo, location.href).searchParams);
       this.#state = before;
       a.setAttribute('href', this.#url(next));
     }

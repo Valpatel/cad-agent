@@ -3,21 +3,26 @@
 Showing the work: results files, reports, renders, 3D views, review packets and the project site. Every page states
 what was checked and what was not (CAD never proves physical fit).
 
+Arrows follow the data, and each one between modules here is an import. `view.py` (STEP files to the 3D viewer's
+data) and `serve.py` (the project over http, so pages can hand 3MF files to a slicer) stand alone.
+
 ```mermaid
-flowchart LR
-    X["check outputs<br/>exports/*.json"] --> R["report<br/>results JSON"]
-    R --> H["htmlreport<br/>standalone page"]
-    S["shapes · meshes"] --> RN["render<br/>captioned images"]
-    S --> V["view<br/>3D viewer data"]
-    D["dossier sections"] --> PK["packet · review<br/>review pages"]
-    R & RN & V & PK --> SITE["site · site_review<br/>project dashboard"]
-    SITE --> SV["serve<br/>local http"]
+flowchart TD
+    X["exports/*.json<br/>check outputs"] -->|"collect()"| R["report.py<br/>results JSON"]
+    R -->|"render_page()"| H["htmlreport.py<br/>report page"]
+    D["dossier/<br/>gates/<br/>intent, verdicts"] --> PK["packet.py<br/>section packet"]
+    PK -->|"views"| RN["render.py<br/>captioned PNGs"]
+    D --> ST["site.py<br/>site_review.py"]
+    DR["dotsvg.py<br/>review.py"] -->|"graph, workbench"| ST
+    ST --> O["site/<br/>project site"]
+    H ~~~ V["view.py<br/>3D viewer data"]
+    O ~~~ SV["serve.py<br/>local http"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class R,H,RN,V,PK,SV here
-    class X,S,D near
-    class SITE out
+    class R,H,PK,RN,ST,DR,V,SV here
+    class X,D near
+    class O out
 ```
 
 | Module | What it does |

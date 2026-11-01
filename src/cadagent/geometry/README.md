@@ -1,22 +1,30 @@
 # cadagent.geometry
 
-Measuring and checking part geometry. `from cadagent.geometry import ...` is the measuring API (bounding boxes,
-sections, clearances, mesh checks); the submodules check specific features.
+Measuring and checking part geometry. `from cadagent.geometry import ...` is the measuring API (solid validity and
+bounds, print STLs, intersections and gaps, downward area, bed fit); the submodules check specific features.
+
+Arrows follow the data. The three helpers at the top are imported by a project's build script, not by cad-agent;
+`holes.py` reads the exported STEP files and part list, and `publish/report.py` imports `holes.py` and `within_bed` from
+the API.
 
 ```mermaid
-flowchart LR
-    B["build script<br/>CadQuery · STEP · STL"] --> M["geometry<br/>bounds · sections · clearance"]
-    M --> H["holes<br/>empty of material"]
-    M --> F["fasteners<br/>envelopes · stacks"]
-    M --> C["connectors<br/>panel windows · fit"]
-    M --> K["markings<br/>engraving + SVG proof"]
-    H & F & C & K --> R["check JSON<br/>→ publish"]
+flowchart TD
+    F["fasteners.py<br/>envelopes"] --> B
+    K["markings.py<br/>engraving"] --> B
+    C["connectors.py<br/>panel windows"] --> B
+    B["build script<br/>the project's CadQuery"] -->|"shapes"| G["cadagent.geometry<br/>solids · STL · gaps"]
+    G -->|"STL"| X["exports/<br/>STEP · STL · parts file"]
+    B -->|"STEP, parts file"| X
+    X --> H["holes.py<br/>cad-agent holes"]
+    H --> HJ["exports/<br/>hole-checks.json"]
+    HJ --> R["publish/report.py<br/>results JSON"]
+    G --> R
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class M,H,F,C,K here
-    class B near
-    class R out
+    class F,K,C,G,H here
+    class B,R near
+    class X,HJ out
 ```
 
 | Module | What it does |

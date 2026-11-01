@@ -3,31 +3,31 @@
 The Python package behind the `cad-agent` command: it builds a CAD project, checks it, simulates it, makes the files
 to print and order, and publishes what it found.
 
+`cli.py` imports every package. `publish/` reads what the checks and `make/` wrote; `sim/`, `explore/` and
+`compliant/` write their own pages and JSON. The site build copies the kit's diagram renderer from `webkit/`.
+
 ```mermaid
-flowchart LR
-    Y["cad-agent.yaml<br/>the project"] --> CLI["cli"]
-    D["dossier<br/>requirements · sections"] --> GA
-    CLI --> G["geometry<br/>measure · holes · fasteners"]
-    CLI --> GA["gates<br/>assembly integrity"]
-    CLI --> C["compliant<br/>snap fits"]
-    CLI --> S["sim<br/>FEA · CFD · topopt"]
-    CLI --> MK["make<br/>3MF · slicer · release · parts"]
-    CLI --> E["explore<br/>compare designs"]
-    G & GA & C & S & MK & E --> P["publish<br/>reports · renders · site"]
-    P --> W["webkit<br/>browser viewers"]
+flowchart TD
+    Y["cad-agent.yaml<br/>read by project.py"] --> CLI["cli.py<br/>a handler per command"]
+    CLI --> CHK["geometry/<br/>gates/ · dossier/<br/>the checks"]
+    CLI --> MK["make/<br/>3MF, slicer,<br/>release"]
+    CLI --> OWN["sim/ · explore/<br/>compliant/<br/>own outputs"]
+    CHK & MK -->|"results"| P["publish/<br/>report · site · packets"]
+    P --> O["exports/ · site/<br/>results and pages"]
+    W["webkit/<br/>browser viewers"] -->|"copied in"| O
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class CLI,G,GA,C,S,MK,E,D here
+    class CLI,CHK,MK,OWN,P,W here
     class Y near
-    class P,W out
+    class O out
 ```
 
 ## What's here
 
 | Package or module | What it is for |
 |---|---|
-| [`geometry/`](geometry/README.md) | Measuring and checking part geometry: bounds, sections, clearances, holes, fasteners, connectors, markings |
+| [`geometry/`](geometry/README.md) | Measuring and checking part geometry: solids, gaps, bed fit, holes, fasteners, connectors, markings |
 | [`gates/`](gates/__init__.py) | Assembly integrity gates (access order, containment, fasteners, motion, walls), each written as a verdict |
 | [`compliant/`](compliant/__init__.py) | Compliant features that replace parts: snap fits now, hinges and flexures next |
 | [`sim/`](sim/README.md) | FEA, CFD, heat sinks, topology optimisation, robot export, motion traces, and their pictures and reports |

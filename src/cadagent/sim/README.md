@@ -3,22 +3,28 @@
 Simulation and what it produces: stiffness and strength, airflow and heat, optimised material layouts, robot
 descriptions, and the pictures and pages that show the results honestly (assumptions and limits included).
 
+Arrows follow the data. Only `topopt.py` imports its neighbours (`cfd.py`'s mesher and `simviz.py`'s drawing
+helpers); the other arrows are objects and files that a project's script passes on. `robot.py` and `motion_trace.py`
+stand alone.
+
 ```mermaid
-flowchart LR
-    P["part or assembly<br/>STEP · CadQuery"] --> FEA["fea<br/>stiffness · strength"]
-    P --> CFD["cfd<br/>OpenFOAM cases"]
-    P --> T["topopt<br/>material layout"]
-    P --> RB["robot<br/>URDF · mass"]
-    HS["heatsink<br/>fins · fan point"] --> CFD
-    MT["motion_trace<br/>render vs CAD intent"]
-    FEA & CFD & T --> V["simviz<br/>pictures · animations"]
-    V --> SR["simreport<br/>HTML page"]
+flowchart TD
+    P["part or assembly<br/>STEP · CadQuery"] --> FEA["fea.py<br/>stiffness, strength"]
+    P --> CFD["cfd.py<br/>air and heat"]
+    HS["heatsink.py<br/>fins · fan point"] -->|"porous zone"| CFD
+    CFD -->|"mesher"| T["topopt.py<br/>material layout"]
+    P --> T
+    FEA -->|"export_viewer"| W["webkit/fea.html<br/>FEA viewer"]
+    FEA & T & CFD --> V["simviz.py<br/>pictures, videos"]
+    V -->|"PNG · MP4"| SR["simreport.py<br/>results page"]
+    W ~~~ RB["robot.py<br/>URDF, MJCF"]
+    RB ~~~ MT["motion_trace.py<br/>renders vs joints"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class FEA,CFD,T,RB,HS,MT here
+    class FEA,CFD,HS,RB,MT,T,V,SR here
     class P near
-    class V,SR out
+    class W out
 ```
 
 | Module | What it does |

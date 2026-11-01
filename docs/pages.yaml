@@ -258,7 +258,7 @@ lessons/process/user-intent-and-requirements.md:
       shows: output
       tool: cad-agent site
       on: fixture
-      caption: Interfaces as named records the gates check. The gate bench's arm section lists each one, the two parts it joins and its kind.
+      caption: Each interface as a named record. The gate bench's arm section lists the two parts each one joins, its kind and its datum; the dossier lint checks that both parts declare it alike.
       alt: The review site's interfaces table for the gate bench's arm section, six interfaces of kind contact or revolute, then its decision D2
     - after: treat-doesnt-block-disassembly-as-a-hard-requirement
       img: docs/img/motion/module-insertion.svg

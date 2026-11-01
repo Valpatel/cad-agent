@@ -111,15 +111,17 @@ export function pagePlacer({ spec, pageFiles, tracked, commandNames, readBuf, pa
   const need = (o, keys, at) => { for (const k of keys) if (!o?.[k]) fail(at, `no ${k}`); };
   // What the picture is, said first in its caption: "Real output of `cad-agent site`, on a test fixture in this repo."
   // or "Diagram of `cadagent.review.gates.motion`, drawn by `tools/motion_figures.py`, on a test fixture, drawn in 2D…".
-  // A real output is the tool's own (it wrote or drew the picture); a diagram names the script that drew it.
-  const what = (v, at) => {
+  // A real output is the tool's own (it wrote or drew the picture); a diagram names the script that drew it. Inside a
+  // link (a band tile is one), the "on" credit drops its own link: a link in a link would split the tile.
+  const what = (v, at, inLink = false) => {
     if (!SHOWS[v.shows]) fail(at, `shows is one of ${Object.keys(SHOWS).join(', ')} (a real output of the tool, or a diagram of something real)`);
     if (!ON[v.on]) fail(at, `on is one of ${Object.keys(ON).join(', ')}`);
     if (v.on === 'fixture-2d' && v.shows !== 'diagram') fail(at, 'a 2D drawing of a fixture is a diagram, not a real output');
     if (v.shows === 'diagram' && !v.drawn_by) fail(at, 'a diagram says which script drew it (drawn_by)');
     if (v.shows === 'output' && v.drawn_by) fail(at, 'a real output is drawn by its tool: drop drawn_by, or make it a diagram');
     const by = v.shows === 'diagram' ? `, drawn by ${tool(v.drawn_by, at)}` : '';
-    return `<span class="fig-what"><b class="shows-${v.shows}">${SHOWS[v.shows]}</b> of ${tool(v.tool, at)}${by}, on ${ON[v.on]}.</span>`;
+    const on = inLink ? ON[v.on].replace(/<[^>]+>/g, '') : ON[v.on];
+    return `<span class="fig-what"><b class="shows-${v.shows}">${SHOWS[v.shows]}</b> of ${tool(v.tool, at)}${by}, on ${on}.</span>`;
   };
   // A tile links to a heading on its page (#id, which must exist) or to another published page (docs/x.md#id).
   const link = (href, at, html) => {
@@ -193,7 +195,7 @@ export function pagePlacer({ spec, pageFiles, tracked, commandNames, readBuf, pa
         banded.add('/' + t.img);
         // input → tool → output: what goes in and what comes out, in words (the reader's), the tool, and the picture
         const flow = `<span class="band-flow"><span class="band-input">${esc(t.input)}</span><span class="band-arrow" aria-hidden="true">→</span>${tool(t.tool, at)}<span class="band-arrow" aria-hidden="true">→</span><span class="band-output">${esc(t.output)}</span></span>`;
-        tiles.push(`<li><a href="${esc(link(t.href, at, html))}">${await picture(t.img, t.alt, at)}${flow}<span class="band-caption">${what(t, at)} ${esc(t.caption)}</span></a></li>`);
+        tiles.push(`<li><a href="${esc(link(t.href, at, html))}">${await picture(t.img, t.alt, at)}${flow}<span class="band-caption">${what(t, at, true)} ${esc(t.caption)}</span></a></li>`);
       }
       band += `<ul class="band-tiles">${tiles.join('')}</ul>`;
     }

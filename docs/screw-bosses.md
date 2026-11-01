@@ -47,9 +47,9 @@ Try these:
 ```mermaid
 flowchart TD
     T["tightening torque T"] --> F["clamp band<br/>F = T / K d"]
-    S["filament strength<br/>across the layers"] --> X["thread strips at<br/>0.875 π d Le × UTS / 2"]
+    S["filament strength<br/>across the layers"] --> X["thread strips at its<br/>shear area × UTS / 2"]
     F --> H["hoop stress<br/>Lamé, at the bore"]
-    X --> W{"window<br/>1.2 drive ≤ T ≤ 0.5 strip"}
+    X --> W{"window: T from 1.2 × drive<br/>to 0.5 × strip torque"}
     H --> G{"pass, with the<br/>maker's 2 d boss?"}
     W --> G
     G -->|"yes"| P["print a test boss<br/>and measure it"]

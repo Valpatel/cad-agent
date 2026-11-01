@@ -24,7 +24,7 @@ cad-cantilever .cc-controls{display:grid;grid-template-columns:minmax(0,1fr) min
 cad-cantilever .cc-sliders,cad-cantilever .cc-choices{display:flex;flex-direction:column;gap:6px;min-width:0}
 cad-cantilever .cc-field{display:flex;flex-direction:column;gap:2px}
 cad-cantilever .cc-field label{display:flex;justify-content:space-between;gap:8px;font-weight:600;font-size:13px}
-cad-cantilever output{font-weight:500;font-variant-numeric:tabular-nums;color:var(--cc-muted)}
+cad-cantilever .cc-value{font-weight:500;font-variant-numeric:tabular-nums;color:var(--cc-muted)}
 cad-cantilever input[type=range]{width:100%;margin:0;height:24px;accent-color:var(--cc-ink)}
 cad-cantilever select{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--cc-sage);border-radius:8px;background:#fff;color:var(--cc-ink);min-height:32px;max-width:100%}
 cad-cantilever fieldset{margin:0;padding:0;border:0;display:flex;flex-direction:column;gap:2px;font-size:13px;min-width:0}

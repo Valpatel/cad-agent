@@ -199,7 +199,9 @@ export class CadCantilever extends Base {
   build() {
     const id = n => `${this.uid}-${n}`;
     const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    const slider = (k, c) => `<div class="cc-field"><label for="${id(k)}">${c.label} <output for="${id(k)}" data-out="${k}"></output></label>` +
+    // The visible value is a plain span, not an <output> (an implicit live region): the slider speaks its own value
+    // (aria-valuetext), and only the debounced .cc-status line announces results.
+    const slider = (k, c) => `<div class="cc-field"><label for="${id(k)}">${c.label} <span class="cc-value" data-out="${k}" aria-hidden="true"></span></label>` +
       `<input id="${id(k)}" type="range" name="${k}" min="${c.min}" max="${c.max}" step="${c.step}"></div>`;
     const radios = (name, options) => Object.entries(options).map(([v, text]) =>
       `<label><input type="radio" name="${id(name)}" value="${v}" data-name="${name}"> ${esc(text)}</label>`).join('');

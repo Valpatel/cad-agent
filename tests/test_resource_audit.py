@@ -503,6 +503,8 @@ class BatchNet(FakeNet):
     (lambda qs: {"results": [{"vulns": [{"id": "GHSA-x"}]}]}, False),                 # fewer results than queries
     (lambda qs: {}, False),                                                             # no results at all
     (lambda qs: {"results": "busy"}, False),                                            # not a list
+    (lambda qs: {"results": [None, None]}, False),                                      # an entry that is not an object
+    (lambda qs: {"results": [{"vulns": "GHSA-x"}, {"vulns": [{"no": "id"}]}]}, False),  # vulns not a list of advisories
     (lambda qs: {"results": [{"vulns": [{"id": "GHSA-x"}], "next_page_token": "t"} for _ in qs]}, True),   # paged
 ])
 def test_a_short_or_paged_osv_batch_leaves_packages_unverified_not_clean(tmp_path, answer, paged):
@@ -520,6 +522,14 @@ def test_a_short_or_paged_osv_batch_leaves_packages_unverified_not_clean(tmp_pat
         assert [[v["id"] for v in a["vulns"]] for a in out] == [["GHSA-x"], ["GHSA-x"]]
     else:
         assert all(a["vulns"] is None for a in out)
+
+
+def test_an_empty_osv_result_means_no_advisories(tmp_path):
+    """OSV leaves 'vulns' out when it knows of none: that entry is a real answer, clean, not unverified."""
+    rep = ra.Report(tmp_path, ra.dt.date(2026, 11, 1), True)
+    asks = [dict(q={"package": {"ecosystem": "npm", "name": "a"}, "version": "1.0.0"}, subject="npm:a")]
+    assert ra.osv_lookup(rep, BatchNet(lambda qs: {"results": [{}]}), asks)[0]["vulns"] == []
+    assert not rep.unverified and not rep.findings
 
 
 def test_transitive_python_dependencies_are_checked(tmp_path):

@@ -441,6 +441,7 @@ def osv_lookup(rep, net, asks):
 
     The batch answer is matched to the queries by position, so a chunk whose `results` is not one result per query
     (short, empty, not a list) leaves every ask in it unchecked: 'vulns' None, unverified, an osv-unverified finding.
+    So does a single entry that cannot be read (not an object, or 'vulns' not a list of advisories with ids).
     A result with `next_page_token` (OSV pages past 1,000 advisories for one query or 3,000 for a batch) keeps the
     advisories it has and is marked unverified the same way: the rest were not read."""
     if not asks:
@@ -464,12 +465,16 @@ def osv_lookup(rep, net, asks):
             short += chunk
             continue
         for a, r in zip(chunk, results):
-            r = r if isinstance(r, dict) else {}
+            vulns = r.get('vulns', []) if isinstance(r, dict) else None     # no 'vulns' key: OSV knows of none
+            if not isinstance(vulns, list) or not all(isinstance(v, dict) and isinstance(v.get('id'), str) for v in vulns):
+                ids.append(None)                                             # an entry we cannot read: unchecked
+                short.append(a)
+                continue
             if r.get('next_page_token'):
                 paged.append(a)
-            ids.append(sorted({v['id'] for v in (r.get('vulns') or []) if isinstance(v, dict) and isinstance(v.get('id'), str)}))
+            ids.append(sorted({v['id'] for v in vulns}))
     for gap, title, action in (
-            (short, 'OSV answered a batch without one result per query; those packages were not checked',
+            (short, 'OSV gave no readable result for some queries; those packages were not checked',
              'Run the report again with --online later; until then they count as not verified.'),
             (paged, 'OSV paged its answer; advisories after the first page were not read',
              'Run again with --online; if it persists, query these packages one at a time (osv.dev, page_token).')):

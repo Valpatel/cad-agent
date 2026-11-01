@@ -456,7 +456,11 @@ try {
   {
     const where = 'forced colours';
     const { page, done } = await open('/catalog', { forced: 'active' });
-    if (!(await page.evaluate(() => matchMedia('(forced-colors: active)').matches))) console.log(`${where}: ${engine.name()} does not emulate them here, so they are checked in Chrome`);
+    // WebKit's emulation matches the media query but forces no colour (it has no forced-color-adjust): the page keeps its
+    // own palette and paints no backplate, and its Highlight is a fixed light blue. So these checks run where colours are
+    // really forced: Chrome (and Edge, on Windows).
+    const forcing = await page.evaluate(() => matchMedia('(forced-colors: active)').matches && CSS.supports('forced-color-adjust', 'none'));
+    if (!forcing) console.log(`${where}: ${engine.name()} does not force colours, so they are checked in Chrome`);
     else {
       await page.evaluate(() => {
         const rgba = c => { const [r, g, b, a = 1] = c.match(/[\d.]+/g).map(Number); return [r, g, b, a]; };

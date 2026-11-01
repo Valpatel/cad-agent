@@ -53,7 +53,9 @@ AXES = {"upright": "along", "lying": "across"}    # the boss's axis -> the layer
 LIMITS = (
     "closed forms (cadagent.formulas.screw_boss): torque to clamp through a nut factor from the friction band, even "
     "load sharing over the engaged thread, a frictionless flank for the radial push, a Lame cylinder for the wall",
-    "the drive (forming) torque is not computed: measure it on a test boss and tighten to at least 1.2 x it",
+    "the drive (forming) torque is not computed: measure it on a test boss and tighten to at least 1.2 x it. It makes "
+    "no clamp and adds to the stripping torque; until it is measured (drive_torque_nm), the clamp band's low end takes "
+    "the most the window allows (T / 1.2) and the stripping torque is the clamp's share alone",
     "the hoop stress is the clamp's share only; forming the thread pushes the wall out further, which the maker's hole "
     "and boss proportions keep in check",
     "datasheet strengths are short-term, for 100 % infill bars: a boss of a few perimeters is weaker, and a held clamp "

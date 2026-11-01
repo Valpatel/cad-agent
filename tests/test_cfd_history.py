@@ -49,10 +49,32 @@ def test_convergence_is_still_measured_within_the_newest_solve(tmp_path):
     tail = newest[newest[:, 0] >= newest[-1, 0] * 0.8]
     assert r['convergence']['fins_T_change_c'] == round(float(tail[-1, 4] - tail[0, 4]), 2)
     assert r['convergence_window'] == [int(tail[0, 0]), 320] and r['convergence_window'][0] > 260
-    # what steady holds each change to; a fin block's air is held to 2 °C, the other temperatures to 1 °C (its key does
-    # not end _c_change). Pinned so the numbers calibrate_fins and run_until_balanced rely on cannot change unnoticed
-    assert r['convergence_limits'] == {'fins_T_change_c': 2.0, 'fan_flow_change_pct': 2.0, 'fan_intake_c_change': 1.0,
+    # what steady holds each change to: every temperature to 1 °C, the fin block's air too, and the changes in % to 2.
+    # Pinned so the numbers calibrate_fins and run_until_balanced rely on cannot change unnoticed
+    assert r['convergence_limits'] == {'fins_T_change_c': 1.0, 'fan_flow_change_pct': 2.0, 'fan_intake_c_change': 1.0,
                                        'heat_out_change_pct': 2.0}
+
+
+def test_every_temperature_change_is_held_to_1_c_and_every_percentage_to_2():
+    # by unit, the rule the chart's captions use (a key ending _pct is in %, any other in °C); a fin block's key ends
+    # _T_change_c, not _c_change, and once got 2 °C (#175)
+    assert {k: cfd._change_limit(k) for k in ('chip_max_c_change', 'fins_T_change_c', 'fan_intake_c_change',
+                                              'fan_flow_change_pct', 'heat_out_change_pct')} == \
+        {'chip_max_c_change': 1.0, 'fins_T_change_c': 1.0, 'fan_intake_c_change': 1.0, 'fan_flow_change_pct': 2.0,
+         'heat_out_change_pct': 2.0}
+
+
+def test_a_fin_block_whose_air_still_drifts_by_1_5_c_is_not_steady(tmp_path):
+    # the fan flow, the air through the fan and the heat leaving have settled and the heat balances, but the block's
+    # mean air still rose 1.5 °C over the window: past its 1 °C, so neither steady nor converged (#175)
+    r = cfd.read_results(recorded('fins-block-drifting', tmp_path))
+    assert r['convergence_window'] == [80, 100] and r['convergence']['fins_T_change_c'] == 1.5
+    assert r['convergence_limits']['fins_T_change_c'] == 1.0
+    others = {k: v for k, v in r['convergence'].items() if k != 'fins_T_change_c'}
+    assert set(others) == {'fan_flow_change_pct', 'fan_intake_c_change', 'heat_out_change_pct'}
+    assert all(abs(v) < r['convergence_limits'][k] for k, v in others.items())
+    assert abs(r['energy_balance_pct']) <= 5 and 'error' not in r
+    assert r['steady'] is False and r['converged'] is False
 
 
 def test_multi_region_run_that_ended_early(tmp_path):
@@ -110,6 +132,32 @@ def test_a_continuation_that_crashed_at_start_replaces_nothing(tmp_path):
         assert h[-1][1] > 500                                   # the divergence is shown, not cut off at the save
     assert r['monitors']['heat_out_w']['points'][-1] == [150, pytest.approx(r['heat_out_w'], abs=0.01)]
     assert r['convergence_window'] == [120, 150]
+    assert r['steady'] is False and r['converged'] is False
+
+
+@pytest.mark.parametrize('name, last', [('solids-short-continuation', 104), ('solids-one-step-continuation', 101)])
+def test_a_continuation_that_stopped_before_its_first_sample_still_replaces_the_rows_after_its_start(tmp_path, name, last):
+    # the first solve saved 100, diverged and logged to 150; the continuation from 100 stopped at `last`, before its first
+    # temperature and heat sample at 110, so it logged residuals and nothing else. It still replaces whatever the first
+    # solve logged after 100: the histories and the headline values end at 100, before the divergence, and the newest
+    # solve measured no change, so there is no window and nothing is claimed steady (#176)
+    r = cfd.read_results(recorded(name, tmp_path))
+    assert r['solver_finished'] is False and r['solver_log'] == 'log.solve.1793000001'
+    assert r['iterations'] == last and r['restarts'] == [100]
+    res = r['residuals']
+    assert res['iteration'] == [float(i) for i in range(1, last + 1)]
+    assert max(v for k in FIELDS for t, v in zip(res['iteration'], res[k]) if t > 100) < 0.5    # the continuation's
+    assert set(r['T_max_history']) == {'chip', 'plate'}
+    for solid, h in r['T_max_history'].items():
+        its = [p[0] for p in h]
+        assert its[0] == 10 and its[-1] == 100 and its == sorted(set(its))
+        assert max(p[1] for p in h) < 100                       # the diverged rows the first solve logged after 100 are gone
+        assert h[-1][1] == pytest.approx(r['solids'][solid]['max_c'], abs=0.01)
+        assert r['solids'][solid]['mean_c'] < r['solids'][solid]['max_c']
+    assert r['air_max_c'] < 100
+    assert set(r['monitors']) == {'heat_out_w'}
+    assert r['monitors']['heat_out_w']['points'][-1] == [100, pytest.approx(r['heat_out_w'], abs=0.01)]
+    assert r['convergence'] == {} and 'convergence_window' not in r and r['convergence_limits'] == {}
     assert r['steady'] is False and r['converged'] is False
 
 

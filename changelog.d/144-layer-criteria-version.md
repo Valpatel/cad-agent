@@ -10,8 +10,9 @@
   so it can keep one implementation. `layer_modes()` and `in_plane_von_mises()` give the same for stress tensors
   (#144).
 - `LayerCheck.stats`: how far past the worst corner the stress reaches. Per check it gives the 99th percentile over
-  the judged volume and the elements past the allowable, with their volume. `LayerCheck.modes` gives each check per
-  element. `worst['resolution']` measures the mesh at the worst corner, as `result['mesh']['peak']` does at the design
+  the judged volume and the elements past the allowable, with their volume. The percentile is weighted by volume, so
+  a finer mesh round a peak does not raise it; a project's own p99 over element count reads differently on the same
+  field. `LayerCheck.modes` gives each check per element. `worst['resolution']` measures the mesh at the worst corner, as `result['mesh']['peak']` does at the design
   peak (#144).
 - `Study.render(path, field=lc)` colours a part by its layer check, or by any per-element utilisation. Elements past
   the allowable are black, and the ones not judged are grey (#144).

@@ -1,4 +1,5 @@
 """The stiffness/strength solver against textbook answers: a cantilever and a twisted round shaft."""
+import dataclasses
 import math
 from pathlib import Path
 
@@ -142,6 +143,9 @@ def test_layer_criteria_and_spread_on_a_printed_bar(tmp_path):
     st.render(tmp_path / 'shear.png', field=every.modes['shear'], vmax=1.0)
     with pytest.raises(ValueError, match='one utilisation'):
         st.render(tmp_path / 'bad.png', field=every.modes['shear'][:-1])
+    other = dataclasses.replace(whole, bond=whole.bond[:-1], bulk=whole.bulk[:-1], judged=whole.judged[:-1], modes=None)
+    with pytest.raises(ValueError, match='another mesh'):
+        st.render(tmp_path / 'bad.png', field=other)
 
 
 def test_study_leaves_no_temp_step(tmp_path, monkeypatch):

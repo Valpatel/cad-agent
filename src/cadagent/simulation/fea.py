@@ -1632,12 +1632,15 @@ class Study:
 
     def _utilisation_field(self, field) -> Tuple[np.ndarray, np.ndarray, str]:
         """(per-element utilisation, the judged elements, what it is) for render(field=...)."""
+        nel = self._m.t.shape[1]
         if isinstance(field, LayerCheck):
+            if np.shape(field.utilisation) != (nel,) or np.shape(field.judged) != (nel,):
+                raise ValueError(f'field is a LayerCheck of another mesh ({np.size(field.utilisation)} elements, this '
+                                 f'study has {nel}): take it from this study\'s layer_check()')
             what = (f"layer check ({field.criterion}" + (', in-plane bulk' if field.bulk_stress == 'in-plane' else '')
                     + ')')
             return np.asarray(field.utilisation, float), np.asarray(field.judged, bool), what
         u = np.asarray(field, float).reshape(-1)
-        nel = self._m.t.shape[1]
         if u.shape != (nel,) or not np.all(np.isfinite(u)) or (u < 0).any():
             raise ValueError(f'field is a LayerCheck or one utilisation (a number >= 0) per element ({nel})')
         free = ~self._touches_bc
@@ -1671,7 +1674,8 @@ class Study:
         ``utilisation``, over its judged elements), or one number per element (``lc.modes['shear']``, say, judged as
         the safety factor is). The colour bar then runs from 0 to the judged peak, or to 1 when the peak is past it;
         elements past 1, the allowable, are black, and elements not judged are grey, so a corner past the allowable
-        reads apart from a region past it. ``vmax`` sets the top of the scale.
+        reads apart from a region past it. ``vmax`` sets the top of the scale; above 1, the band from 1 to ``vmax``
+        stays unused, since everything past 1 is black. A LayerCheck from another study's mesh raises ValueError.
 
         ``scale`` is the deformation's exaggeration. When it is None, it is chosen so the largest displacement shows
         as 6 % of the part's size; that differs between studies.

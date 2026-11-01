@@ -21,6 +21,7 @@ The project says what may change and what "better" means; cad-agent runs the loo
         top: 3                              # the first 3 feasible trials of the leaderboard
         args: [--mesh, "3"]                 # appended to the evaluator's command; or `evaluator:` (its own)
         tolerance_pct: 5                    # flag a change of more than 5 % in an objective or constraint
+        workers: 1                          # confirmations at the same time (default: the search's workers)
 
 Every trial is written as a design (``<out>/search/trials/trial-00007.json``) and evaluated exactly like a design in
 ``cad-agent compare``. ``trials.jsonl`` records each trial (one JSON object per line) and ``leaderboard.json`` +
@@ -73,7 +74,7 @@ from cadagent.project import CadConfigError
 SAMPLERS = ("random", "grid", "nsga2", "tpe")
 OPTUNA_HINT = "the nsga2 and tpe samplers (pip install -e '.[explore]' in the cad-agent checkout, or pip install optuna)"
 _SEARCH_KEYS = {"base", "sampler", "trials", "workers", "seed", "population", "space", "name", "confirm"}
-_CONFIRM_KEYS = {"top", "args", "evaluator", "timeout_s", "tolerance_pct", "limit"}
+_CONFIRM_KEYS = {"top", "args", "evaluator", "timeout_s", "tolerance_pct", "limit", "workers"}
 # A screening value that moves by more than this when confirmed is flagged. 5 % is a common bar for a converged mesh
 # (a peak that changes less between two meshes is taken as settled); tighten it where a gate has little margin.
 DEFAULT_TOLERANCE_PCT = 5.0
@@ -137,6 +138,7 @@ class ConfirmConfig:
     top: int = 3                           # the first ``top`` feasible trials of the leaderboard
     tolerance_pct: float = DEFAULT_TOLERANCE_PCT
     limit: int = 9                         # confirmations per run, at most (default 3 x top)
+    workers: Optional[int] = None          # at the same time; None: the search's workers (a finer mesh needs more memory)
 
     def describe(self) -> str:
         return self.spec.describe()
@@ -161,6 +163,7 @@ def confirm_config(raw: Any, cfg: ExploreConfig) -> Optional[ConfirmConfig]:
         raise CadConfigError(f"{where}: unknown keys {unknown}")
     top = _whole(raw.get("top", 3), f"{where}.top", 1)
     limit = _whole(raw.get("limit", 3 * top), f"{where}.limit", top)
+    workers = _whole(raw["workers"], f"{where}.workers", 1) if raw.get("workers") is not None else None
     tolerance = raw.get("tolerance_pct", DEFAULT_TOLERANCE_PCT)
     if not is_number(tolerance) or tolerance < 0:
         raise CadConfigError(f"{where}.tolerance_pct must be a number ≥ 0 (a percentage), got {tolerance!r}")
@@ -184,7 +187,7 @@ def confirm_config(raw: Any, cfg: ExploreConfig) -> Optional[ConfirmConfig]:
     if not is_number(timeout) or timeout <= 0:
         raise CadConfigError(f"{where}.timeout_s must be a number of seconds > 0, got {timeout!r}")
     spec = EvaluatorSpec(python=base.python, command=list(base.command) + args, timeout_s=float(timeout))
-    return ConfirmConfig(spec=spec, top=top, tolerance_pct=float(tolerance), limit=limit)
+    return ConfirmConfig(spec=spec, top=top, tolerance_pct=float(tolerance), limit=limit, workers=workers)
 
 
 @dataclass
@@ -749,9 +752,10 @@ def write_leaderboard(cfg: ExploreConfig, records: List[Dict[str, Any]], out: Pa
                            "leaders_confirmed": sum(1 for d in leaders if d.get("confirm") and not d["confirm"]["errors"])}
         comp["summary"].update(confirmed=len(done), flagged=comp["confirm"]["flagged"])
         comp["notes"].append(
-            f"The first {confirm.top} feasible trials are evaluated again with {confirm.describe()} and ranked on those "
-            f"confirmed values; the others keep their screening values, which may be off by as much as the confirmed "
-            f"ones moved. A change of more than {confirm.tolerance_pct:g} % in an objective or constraint is flagged.")
+            f"{comp['confirm']['leaders_confirmed']} of the first {confirm.top} feasible trials "
+            f"({len(done)} trial(s) in all) are confirmed with {confirm.describe()} and ranked on those values; the "
+            f"others keep their screening values, which may be off by as much as the confirmed ones moved. A change of "
+            f"more than {confirm.tolerance_pct:g} % in an objective or constraint is flagged.")
     write_comparison(comp, out, "leaderboard.json", "leaderboard.html", cards=False, slim_json=True)
     return comp
 
@@ -787,8 +791,9 @@ def confirmed_evaluation(screen: Dict[str, Any], confirmed: Dict[str, Any], cfg:
     """The trial as the leaderboard ranks it once confirmed: the confirmed evaluation (its metrics, checks and verdict)
     under the trial's own id and name, or the screening one when the confirmation could not be evaluated. ``confirm``
     holds both values of every objective and constraint metric, their change in percent, and ``flag`` with its
-    ``reasons``: a change of more than ``tolerance_pct``, a value that appeared or went, a trial that became feasible
-    or infeasible, or a confirmation that failed. A flag adds a ``warn`` check."""
+    ``reasons``: a change of more than ``tolerance_pct``, a value that appeared or went, a change of feasibility (in
+    practice a trial that became infeasible, as only feasible trials are confirmed), or a confirmation that failed. A
+    flag adds a ``warn`` check."""
     names = list(dict.fromkeys([o.metric for o in cfg.objectives] + [c.metric for c in cfg.constraints]))
     failed = confirmed.get("verdict") == "error"
     values: Dict[str, Dict[str, Any]] = {}
@@ -841,7 +846,7 @@ def confirm_leaders(cfg: ExploreConfig, catalogue: Catalogue, sc: SearchConfig, 
     base_name = sc.base.relative_to(cfg.root).as_posix() if sc.base.is_relative_to(cfg.root) else str(sc.base)
     tried: set = set()                           # this run: a failed confirmation is not retried until the next one
     new = 0
-    pool = ThreadPoolExecutor(max_workers=sc.workers)
+    pool = ThreadPoolExecutor(max_workers=cc.workers or sc.workers)
     futures: Dict[Future, Dict[str, Any]] = {}
     try:
         while new < cc.limit:

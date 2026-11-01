@@ -74,7 +74,8 @@ CONFIG = textwrap.dedent("""\
 
 # A parameter-only project: no catalogue, no slots. A bracket's wall and its inner corner are searched; a fake FEA
 # command evaluator reads the safety factor, and a sharp corner's peak is a mesh artefact (it is singular, so a coarse
-# mesh under-reads the stress and the factor drops as the mesh refines), as the hip-frame study met (#144).
+# mesh under-reads the stress and the factor keeps dropping as the mesh refines: it has no converged value), as the
+# hip-frame study met (#144).
 FEA = textwrap.dedent('''\
     import argparse, json, sys
     ap = argparse.ArgumentParser()
@@ -84,7 +85,7 @@ FEA = textwrap.dedent('''\
     req = json.load(sys.stdin)
     wall, corner = req["params"]["wall_mm"], req["params"]["corner"]
     if corner == "sharp":
-        sf = 0.4 * wall + 0.6 + 0.5 * (a.mesh - 3.0)          # 0.5 too high at 4 mm, right at 3 mm
+        sf = 0.4 * wall + 0.6 + 0.5 * (a.mesh - 3.0)          # 0.5 higher at 4 mm than at 3 mm, and still falling
     else:
         sf = (0.4 * wall + 0.8) * (1 - 0.002 * (4.0 - a.mesh))  # a filleted corner converges: 0.2 % per mm
     json.dump({"metrics": {"safety_factor": round(sf, 4), "mesh_mm": a.mesh}, "summary": req["id"]}, open(a.result, "w"))

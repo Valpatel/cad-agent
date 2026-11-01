@@ -173,6 +173,22 @@ def test_result_file_failures_are_design_errors(tmp_path, script, fragment):
     assert ev["verdict"] == "error" and fragment in ev["errors"][0], ev["errors"]
 
 
+@pytest.mark.parametrize("design_id", ["result", "request"])
+def test_a_design_named_like_the_reply_or_request_file_keeps_its_own_file(tmp_path, design_id):
+    """{design} is <id>.json in the same private folder as the request and the reply: a design called "result" or
+    "request" must not share a file with either (it once read its own design back as the reply)."""
+    root = write_enclosure(tmp_path)
+    (root / "designs" / f"{design_id}.json").write_text(json.dumps({"extends": "base.json"}))
+    (root / "tools" / "check.py").write_text(textwrap.dedent("""\
+        import json, sys
+        design, request = json.load(open(sys.argv[1])), json.load(sys.stdin)
+        assert "bom" in request and "bom" not in design, "the design file holds the request"
+        """))                                          # and writes no reply
+    fn = load_evaluator(EvaluatorSpec(command=["{python}", "tools/check.py", "{design}", "{result}"]), root, sys.executable)
+    ev = _evaluate(root, design_id, fn)
+    assert ev["verdict"] == "error" and "exited without writing its result" in ev["errors"][0], ev["errors"]
+
+
 def test_loading_evaluators(tmp_path):
     root = write_enclosure(tmp_path)
     (root / "evalpkg").mkdir()

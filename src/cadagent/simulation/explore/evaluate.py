@@ -159,9 +159,10 @@ def _command_evaluator(spec: EvaluatorSpec, root: Path, python: str) -> Evaluato
         with tempfile.TemporaryDirectory(prefix="cadagent-eval-") as tmp:
             design_file = Path(tmp) / f"{name}.json"
             design_file.write_text(json.dumps(candidate.design, indent=1, default=json_default) + "\n")
-            request = Path(tmp) / "request.json"
+            # dot names: safe_name never starts with a dot, so no design id ("request", "result") can name these
+            request = Path(tmp) / ".request.json"
             request.write_text(json.dumps(candidate.request(), default=json_default))
-            result_file = Path(tmp) / "result.json"
+            result_file = Path(tmp) / ".result.json"
             argv = [a.replace("{design}", str(design_file)).replace("{python}", python).replace("{id}", name)
                     .replace("{result}", str(result_file)) for a in spec.command]
             to_file = any("{result}" in a for a in spec.command)

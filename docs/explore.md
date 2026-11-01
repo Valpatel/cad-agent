@@ -335,8 +335,8 @@ Exit code 0 when the run finished with at least one feasible trial, 1 otherwise.
 ### Confirm the leaders
 
 A search judges every trial with one evaluator, at one fidelity: a coarse mesh, a short simulation. Some leaders are
-artefacts of it. In Gyropup's hip-frame sweep, the leader read a safety factor of 2.06 at a 4 mm mesh and 1.81 at
-3 mm, because its peak sat at a sharp corner, where the stress never converges. `confirm` evaluates the leaders again
+artefacts of it. In Gyropup's hip-frame sweep, the leader's safety factor fell from about 2.1 at the 4 mm mesh it was
+ranked on to 1.81 at 3 mm, because its peak sat at a sharp corner, where the stress never converges. `confirm` evaluates the leaders again
 at a higher fidelity once the trials are done, and ranks them on what that says:
 
 ```yaml
@@ -367,9 +367,9 @@ flowchart TD
   evaluations a run, so the top N of the leaderboard end up confirmed.
 - **Both values are kept.** `leaderboard.json` gives each confirmed trial a `confirm` block (`values: {metric:
   {screen, confirmed, change_pct}}`, `flag`, `reasons`); the page adds a Confirmed column, the screening value under
-  each changed one ("was 2.06"), and a table per trial.
+  each changed one ("was …"), and a table per trial.
 - **Flags.** A change of more than `tolerance_pct` in an objective or constraint, a value that appears or goes, a
-  trial that becomes feasible or infeasible, or a confirmation that fails is flagged with a `warn` check. 5 % is a
+  trial that becomes infeasible, or a confirmation that fails is flagged with a `warn` check. 5 % is a
   common bar for a converged mesh; tighten it where a gate has little margin. A failed confirmation leaves the trial
   ranked on its screening values, and it is tried again on the next run.
 
@@ -384,6 +384,7 @@ flowchart TD
 | `timeout_s` | the evaluator's | the confirmation's timeout: a finer mesh takes longer |
 | `tolerance_pct` | `5` | flag a change of more than this, in percent of the screening value |
 | `limit` | `3 × top` | confirmations per run, at most |
+| `workers` | the search's | confirmations at the same time: a finer mesh needs more memory each (a 3 mm mesh has about 2.4 times the elements of a 4 mm one) |
 
 Either `args` or `evaluator` is needed: the same evaluator again would only repeat each trial. A confirmation's `{id}`
 is the trial's id with `-confirm` added (`trial-00007-confirm`), so its outputs do not overwrite the screening ones.
@@ -413,4 +414,6 @@ from cadagent.simulation.explore.optimise import run_search, search_config
   prototype before building on it.
 - A confirmation is a second evaluation, not proof of convergence. Two meshes that agree within 5 % can both be wrong
   at a singular corner, and an unconfirmed trial's screening values may be off by as much as the confirmed ones moved.
+  Only feasible trials are confirmed: one the screening fidelity judged infeasible is never re-checked, though a finer
+  evaluation might pass it.
 - A Pareto front with many objectives can be large; add constraints, or fewer objectives, to narrow it.

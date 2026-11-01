@@ -279,12 +279,13 @@ def _confirm_cell(ev: Dict[str, Any]) -> str:
     c = ev.get("confirm")
     if not c:
         return '<td class="num dim" data-v="">—</td>'
-    changes = [v["change_pct"] for v in (c.get("values") or {}).values() if v.get("change_pct") is not None]
+    values = c.get("values") or {}
+    changes = [v["change_pct"] for v in values.values() if v.get("change_pct") is not None]
     worst = max(changes, key=abs) if changes else 0.0
     if c.get("errors"):
         text, sort = "failed", 1e9
-    elif c.get("flag") and not changes:
-        text, sort = "changed", 1e8
+    elif any((values.get(m) or {}).get("change_pct") is None for m in c.get("flagged") or []) or (c.get("flag") and not changes):
+        text, sort = "changed", 1e8           # flagged on a metric no percentage describes (from 0, or gone)
     else:
         text, sort = f"{worst:+.1f} %".replace("-", "−"), abs(worst)
     tip = "; ".join(c.get("reasons") or []) or f"every objective and constraint within {c.get('tolerance_pct', 0):g} %"
@@ -368,10 +369,11 @@ def _leaderboard(comp: Dict[str, Any]) -> str:
             '≥ marks a total that leaves out parts without a price or mass. Such a total is a lower bound and never counts as '
             'better than a value it might exceed (unless both leave out the same parts), so a ≥ beside a rank means the rank '
             'rests on one. est. marks a value that rests on estimates.</p>'
-            + (f'<p class="meta">Confirmed: the first {conf["top"]} feasible trials were evaluated again with '
-               f'<code>{_e(conf["evaluator"])}</code> and are ranked on those values; "was" is the screening value. '
-               f'The column shows the largest change of an objective or constraint, flagged over '
-               f'{conf["tolerance_pct"]:g} %. Unconfirmed trials keep their screening values.</p>' if conf else ""))
+            + (f'<p class="meta">Confirmed: {conf.get("leaders_confirmed", 0)} of the first {conf["top"]} feasible '
+               f'trials ({conf["confirmed"]} in all) were evaluated again with <code>{_e(conf["evaluator"])}</code> '
+               f'and are ranked on those values; "was" is the screening value. The column shows the largest change '
+               f'of an objective or constraint, flagged over {conf["tolerance_pct"]:g} %. Unconfirmed trials keep '
+               f'their screening values.</p>' if conf else ""))
 
 
 def _source(url: Any) -> str:

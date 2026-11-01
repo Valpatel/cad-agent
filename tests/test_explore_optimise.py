@@ -73,6 +73,7 @@ def test_dimensions():
     ({"confirm": {"tolerance_pct": -1, "evaluator": "tools/evaluate.py:evaluate"}}, "tolerance_pct must be"),
     ({"confirm": {"args": [["x"]], "evaluator": {"command": ["x"]}}}, "args must be a list"),
     ({"confirm": [3]}, "confirm must be a mapping"),
+    ({"confirm": {"workers": 0, "evaluator": "tools/evaluate.py:evaluate"}}, "workers must be a whole number ≥ 1"),
 ])
 def test_search_config_errors(tmp_path, search, fragment):
     root, cfg, cat, fn = _setup(tmp_path, **search)
@@ -306,6 +307,7 @@ def test_confirm_reranks_the_leaders_on_a_finer_mesh_and_flags_the_artefacts(tmp
     assert not fallen["feasible"] and fallen["confirm"]["reasons"][-1] == "infeasible once confirmed (fail)"
     assert "confirm" not in by[(3, "round")] and by[(3, "round")]["rank"] == 3, "unconfirmed: screening values"
     assert board["confirm"]["confirmed"] == 3 and board["summary"]["flagged"] == 2
+    assert any(n.startswith("2 of the first 2 feasible trials (3 trial(s) in all) are confirmed") for n in board["notes"])
     assert any(m.startswith("  confirm trial") and "-18.5 %" in m for m in seen)
     page = (cfg.out / "search" / "leaderboard.html").read_text()
     assert ">Confirmed</button>" in page and "was 2.7" in page and "<h3>Confirmation</h3>" in page
@@ -318,9 +320,11 @@ def test_confirm_reranks_the_leaders_on_a_finer_mesh_and_flags_the_artefacts(tmp
     board, by = _board(cfg)
     assert r["confirm"]["new"] == 0 and not by[(4, "sharp")]["confirm"]["flag"], "the tolerance applies without a rerun"
     assert by[(3, "sharp")]["confirm"]["flag"], "a trial that became infeasible stays flagged"
-    cfg.search["confirm"]["args"] = ["--mesh", 2.5]
+    cfg.search["confirm"].update(args=["--mesh", 2.5], workers=2)
     r = run_search(cfg, cat, fn, trials=5, confirm=False, progress=lambda m: None)
     assert r["confirm"]["new"] == 0 and r["confirm"]["confirmed"] == 0, "made with other args: not used, not rerun"
+    assert any(n.startswith("0 of the first 2 feasible trials (0 trial(s) in all)") for n in _board(cfg)[0]["notes"])
+    assert "Confirmed: 0 of the first 2 feasible trials" in (cfg.out / "search" / "leaderboard.html").read_text()
     r = run_search(cfg, cat, fn, trials=5, progress=lambda m: None)
     board, by = _board(cfg)
     assert r["confirm"]["new"] == 4 and by[(4, "round")]["metrics"]["mesh_mm"]["value"] == 2.5
@@ -355,3 +359,8 @@ def test_change_pct_and_flags_at_the_edges(tmp_path):
     assert from_zero["confirm"]["flagged"] == ["safety_factor"] and from_zero["confirm"]["reasons"] == ["safety_factor 0 → 0.1"]
     gone = confirmed_evaluation(ev(2.0), ev(None), cfg, 5.0, "fine")
     assert gone["confirm"]["flagged"] == ["safety_factor"] and gone["confirm"]["values"]["safety_factor"]["confirmed"] is None
+    from cadagent.simulation.explore.page import _confirm_cell
+    block = {"flag": True, "flagged": ["margin"], "values": {"margin": {"screen": 0, "confirmed": 0.4, "change_pct": None},
+                                                             "safety_factor": {"screen": 2, "confirmed": 1.99, "change_pct": -0.5}}}
+    assert ">changed</span>" in _confirm_cell({"confirm": block}), "not the other metric's -0.5 %"
+    assert "−0.5 %" in _confirm_cell({"confirm": {**block, "flag": False, "flagged": []}})

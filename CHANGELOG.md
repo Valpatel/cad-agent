@@ -10,6 +10,114 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.9.0 (2026-11-01)
+
+**New**
+- `tools/resource_audit.py`: a deterministic supply-chain and resource report of what cad-agent depends on, vendors and
+  links to: OSV advisories and malicious packages for Python (newest and lowest allowed releases, and the transitive
+  packages deps.dev resolves) and npm, pins and recorded hashes, vendored files against upstream at the pinned commit,
+  web kit files against the npm tarballs their receipts name, licences, and links that died, moved or redirect
+  elsewhere. The latest run is `research/security-report.md`, with a figure, and `docs/supply-chain.md` explains it
+  (#117).
+- CI's new `supply-chain` job (offline, not required) fails a PR into `dev` that adds a dependency, vendored file or
+  catalogue entry without its report row in the description, or with a medium or worse finding; every event also fails
+  on a high finding anywhere. Release PRs into `main` get only that whole-checkout check (#117).
+- A weekly `supply-chain.yml` workflow runs the online checks and keeps one "Supply-chain report: open findings" issue
+  current; its report job reads only, and only its issue job can write issues (#117).
+- The `cad-supply-chain` skill: when to run the report, how to read it, and what blocks a merge or an adoption (#117).
+- `cadagent.__version__`: the toolkit's version, for a record of what made a result. It reads the checkout's
+  `pyproject.toml` when the package sits in a source tree (a checkout run with `PYTHONPATH=src`, or an editable install,
+  whose installed metadata can be stale), else the installed metadata, else `0+unknown`. It imports nothing heavy
+  (#144).
+- `Study.layer_check(..., criterion='max-stress')`: the layers' bond as two separate checks, `tension` (max(σn, 0)
+  against S_z) and `shear` (τn against S_s), instead of the combined quadratic one. `bulk_stress='in-plane'` takes the
+  bulk check's von Mises of the layer plane's own stress, leaving σn and τn to the bond. With `strength_shear=S_z / 2`
+  the two options give a project's own three maximum-stress checks, such as Gyropup's turret, so it can keep one
+  implementation. `layer_modes()` and `in_plane_von_mises()` give the same for stress tensors (#144).
+- `LayerCheck.stats`: how far past the worst corner the stress reaches. Per check it gives the 99th percentile over the
+  judged volume and the elements past the allowable, with their volume. The percentile is weighted by volume, so a finer
+  mesh round a peak does not raise it; a project's own p99 over element count reads differently on the same field.
+  `LayerCheck.modes` gives each check per element. `worst['resolution']` measures the mesh at the worst corner, as
+  `result['mesh']['peak']` does at the design peak (#144).
+- `Study.render(path, field=lc)` colours a part by its layer check, or by any per-element utilisation. Elements past the
+  allowable are black, and the ones not judged are grey (#144).
+- `cadagent.formulas`: `torsion_shear_strain_rect` and `torsion_snap_bar` (a rectangular bar twisted by a lever, one bar
+  or a rocker on two, against the Covestro allowable shear strain (1 + ν) ε), checked against Saint-Venant's series
+  solution. It flags a twist large enough for the trapeze effect to add more than a tenth to the torque (#161).
+- `cadagent.formulas`: `thread_radial_pressure`, `boss_hoop_stress` and `screw_boss` (a thread-forming screw in a
+  plastic boss: the clamp band from a friction band, the stripping force and torque, Covestro's tightening window, the
+  hoop stress at the bore and the DELTA PT maker's 2 d proportions) (#161). The drive torque makes no clamp: pass a
+  measured `drive_torque`, or the clamp band allows for as much as the window permits.
+- `cadagent.mechanical.bosses.printed_boss`: the same check for a boss printed in a datasheet filament, upright or
+  lying, with DELTA PT sizes and where each number comes from. No published pull-out data for printed bosses was found,
+  so it says the result is a starting point to test, not a rating (#161).
+- Two site demos: the torsion-snap explorer, `<cad-torsion-snap>`, on Snap fits, and the screw-boss explorer,
+  `<cad-printed-boss>`, on the new Screw bosses page. Both run the browser port of the Python, tested on shared vectors
+  (#161).
+- An animated figure of a recorded FEA mesh-convergence study, in the toolkit's meshing section and the simulation
+  README (`docs/img/fea/mesh-convergence.svg`). An L-bracket's sharp and R1.5-filleted inside corner are refined step by
+  step with `refine=`. It shows the mesh at the corner, the design peak, the result's flags and `converge()`'s verdict.
+  The sharp peak keeps rising; the fillet's settles. It is drawn from a committed record of a real run
+  (`tools/anim/fea-convergence.scene.json`) that names the gmsh and OpenCASCADE versions. `tools/readme_anim.py
+  --extract convergence` records it again, and `--check` fails when the SVG is stale (#167).
+- `cadagent.publish.anim.convergence`: `record()` runs this study from its spec (the bracket's size, the material, the
+  load, the sizes asked for at the corner) and `render()` draws two corners' records (#167).
+- `cadagent.mechanical.linkages`: sweep a closed loop through its inputs. It handles a four-bar from its crank, and a
+  five-bar from both cranks or along a tip path. Each step reports the joint angles, the pins, the transmission angle
+  and the Jacobian determinants. Locks, cranks falling in line, the edge of reach and assembly flips are bisected
+  between samples. Each report has a pass, warn or fail status, its reachable range and its stated limits.
+  `fivebar_workspace` maps a grid of crank angles (#187).
+- `cadagent.formulas`: the five-bar's closed forms `fivebar_point`, `fivebar_inputs` and `fivebar_jacobians`. Their
+  positions are checked against the closed forms of Gonçalves, Carvalho and Santos (COBEM 2009). The Jacobians follow
+  Gosselin and Angeles (1990) and are checked against finite differences (#187).
+- `cadagent.simulation.robot.write_mjcf(..., loops=[LoopClosure(...)])` closes a loop in MuJoCo with an equality
+  constraint. It first checks that the two links' pins meet at home (`loop_gaps`, `home_frames`) (#187).
+- `cad-agent motion-trace`: a contract can declare closed loops under `loops`. Their inputs are sampled together and
+  their other joints solved, on the circuit the loop reaches from home. A new `loop-pose` check fails a renderer that
+  leaves a loop open, assembles it the other way or shows another circuit (#187).
+- Linkages page: sweeping four- and five-bars, with an animated five-bar figure generated from the solver (#187).
+
+**Changed**
+- The old flat import paths (`cadagent.fea` and the rest) are no longer said to go in v0.7.0, which shipped with them.
+  They stay until a release whose CHANGELOG announces their removal at least one minor release ahead, under **Projects
+  must change**. Their `DeprecationWarning` now says to move the import and points to the table in docs/toolkit.md
+  (Package layout). No old path is removed (#144).
+- `nut_factor` takes the thread's flank angle (default 60°, the ISO thread), for 30° thread-forming screws (#161).
+- `PrintedMaterial` gains `strength(direction)`: the lowest datasheet tensile strength along or across the layers
+  (#161).
+- `Linkage`, `circles` and `ellipse_path` (the README hero's linkage helpers) moved to `cadagent.mechanical.linkages`.
+  `cadagent.publish.anim.linkage` still re-exports them (#187).
+
+**Fixed**
+- `cadagent.simulation.fea.Study.converge()` no longer passes a peak at a sharp inside corner when the two meshes happen
+  to agree. An L-bracket's corner refined to 0.25 mm moved only +1.8 % on the finer mesh and was called converged, while
+  its own note said the corner never converges (#167).
+- `cadagent.simulation.cfd.read_results`: a fin block's air temperature now has to settle within 1 °C, like every other
+  temperature, not 2 °C. `steady` takes its limits from `convergence_limits`, the same numbers the chart's captions show
+  (#175).
+- `cadagent.simulation.cfd.read_results`: a continuation that stopped before its first temperature sample (within 9
+  iterations) now replaces what the solve before it logged after its start. The histories, the headline values and the
+  chart stop where it began, and it gets no convergence window, so nothing is judged steady on the solve before (#176).
+- Release notes: the v0.8.0 entry read as if every site doc page opens with a picture band. At v0.8.0 three pages had
+  one (Gates, Dossier and the design-process plan), one of them with input → tool → output tiles, and nine had placed
+  pictures. The v0.8.0 GitHub release notes were corrected the same day (#179).
+
+**Projects must change**
+- Nothing for existing layer checks: the defaults (`criterion='combined'`, `bulk_stress='full'`) give the same numbers
+  as before. `LayerCheck.as_dict()` adds `criterion`, `bulk_stress`, `stats` and `worst['resolution']`, and every key it
+  had keeps its value. A test that compares the whole dict must allow the new keys (#144).
+- A project that hashes its source folders in evidence receipts can move its old-path imports when it next regenerates
+  them: no removal release is set yet (#144).
+- The old paths' warning text changed. It still starts `cadagent.<old> moved to cadagent.<new>`, but no longer says "the
+  old path goes in v0.7.0". A warnings filter or a test that matches the old ending must match the start instead (#144).
+- `converge()` on a peak at a sharp inside corner now always returns `converged: False` with a `MeshWarning`, even when
+  the change is within the tolerance. Model the fillet the part will have, or filter `MeshWarning` where warnings are
+  errors (#167).
+- Cases with an exchanger fin block whose air still moves by 1–2 °C over the window no longer count as `steady` or
+  `converged`, and `run_until_balanced` keeps going there. Re-read such results; none of 13 recorded runs flips (#175).
+- When the newest solve stopped within 9 iterations, `convergence` is now empty, `convergence_window` is absent and
+  `steady` is False. Continue the case to judge it (#176).
+
 ## v0.8.0 (2026-11-01)
 
 **New**

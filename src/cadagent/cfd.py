@@ -924,14 +924,26 @@ RESIDUAL_POINTS = 2000          # a whole-run residual history longer than this 
 
 
 def _thin_max(its: list, cols: dict, most: int):
-    """At most ``most`` points: each the largest value over ``every`` consecutive iterations (never hides a spike)."""
-    every = max(1, math.ceil(len(its) / most))
-    if every == 1:
+    """At most ``most`` points: the first iteration as it is, then each point the largest value over ``every``
+    consecutive iterations, at the last of them (never hides a spike; the line starts at the first iteration and ends
+    at the last)."""
+    if len(its) <= most:
         return its, cols, 1
-    starts = range(0, len(its), every)
-    return ([its[min(i + every, len(its)) - 1] for i in starts],
-            {k: [max((x for x in v[i:i + every] if x is not None), default=None) for i in starts] for k, v in cols.items()},
+    every = math.ceil((len(its) - 1) / max(most - 1, 1))
+    starts = range(1, len(its), every)
+    return ([its[0]] + [its[min(i + every, len(its)) - 1] for i in starts],
+            {k: [v[0]] + [max((x for x in v[i:i + every] if x is not None), default=None) for i in starts]
+             for k, v in cols.items()},
             every)
+
+
+def _change_limit(key: str) -> float:
+    """How far one ``convergence`` change may go and still count as ``steady`` (strictly less, either sign). Keys ending
+    ``_c_change`` (each solid's hottest temperature and the air through each fan) get 1 °C. Everything else gets 2: the
+    fan flow and the heat leaving in %, and a fin block's mean air temperature in °C, because its key,
+    ``<block>_T_change_c``, does not end ``_c_change``. calibrate_fins applies its own, tighter 0.5 °C to the block and
+    intake air before each fin-temperature step."""
+    return 1.0 if key.endswith('_c_change') else 2.0
 
 
 def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
@@ -1093,7 +1105,8 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
     out['convergence'] = conv
     if window:
         out['convergence_window'] = [int(min(w[0] for w in window)), int(max(w[1] for w in window))]
-    steady = bool(conv) and all(abs(v) < (1.0 if k.endswith('_c_change') else 2.0) for k, v in conv.items() if v is not None)
+    out['convergence_limits'] = {k: _change_limit(k) for k in conv}
+    steady = bool(conv) and all(abs(v) < _change_limit(k) for k, v in conv.items() if v is not None)
     # within 5 % of the heat put in (or 0.5 W of nothing, for an airflow-only case); not checkable when an exchanger
     # block has no target power, and then said so
     if out.get('energy_balance_pct') is not None:

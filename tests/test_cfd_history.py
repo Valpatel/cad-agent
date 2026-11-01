@@ -49,6 +49,10 @@ def test_convergence_is_still_measured_within_the_newest_solve(tmp_path):
     tail = newest[newest[:, 0] >= newest[-1, 0] * 0.8]
     assert r['convergence']['fins_T_change_c'] == round(float(tail[-1, 4] - tail[0, 4]), 2)
     assert r['convergence_window'] == [int(tail[0, 0]), 320] and r['convergence_window'][0] > 260
+    # what steady holds each change to; a fin block's air is held to 2 °C, the other temperatures to 1 °C (its key does
+    # not end _c_change). Pinned so the numbers calibrate_fins and run_until_balanced rely on cannot change unnoticed
+    assert r['convergence_limits'] == {'fins_T_change_c': 2.0, 'fan_flow_change_pct': 2.0, 'fan_intake_c_change': 1.0,
+                                       'heat_out_change_pct': 2.0}
 
 
 def test_multi_region_run_that_ended_early(tmp_path):
@@ -114,11 +118,12 @@ def test_a_long_residual_history_keeps_the_largest_value_of_each_run(tmp_path, m
     monkeypatch.setattr(cfd, 'RESIDUAL_POINTS', 50)
     r = cfd.read_results(d)
     every = r['residuals_every']
-    assert every == math.ceil(320 / 50)
+    assert every == math.ceil(319 / 49)                         # iteration 1 kept, then runs of `every`
     raw = cfd._whole_run(cfd._outputs(d / 'postProcessing', 'residuals', 'solverInfo'), cfd._residual_rows)
     its = r['residuals']['iteration']
-    assert len(its) == math.ceil(320 / every) and its[-1] == 320
-    for j, i in enumerate(range(0, 320, every)):
+    assert its[0] == 1 and r['residuals']['p_rgh'][0] == raw[0][1]['p_rgh']     # the first iteration, exact
+    assert len(its) == 1 + math.ceil(319 / every) <= 50 and its[-1] == 320
+    for j, i in enumerate(range(1, 320, every), start=1):
         rows = raw[i:i + every]
         assert its[j] == rows[-1][0]
         assert r['residuals']['p_rgh'][j] == max(row[1]['p_rgh'] for row in rows)    # a spike is never thinned away

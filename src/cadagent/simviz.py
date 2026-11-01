@@ -370,6 +370,12 @@ def _change(key, v) -> str:
     return 'n/a' if v is None else (f'{v:+.1f} %' if key.endswith('_pct') else f'{v:+.2f} °C').replace('-', '−')
 
 
+def _judged(key, v, limits) -> str:
+    """A convergence change and, when the results carry it, the limit ``steady`` holds it to."""
+    lim = (limits or {}).get(key)
+    return _change(key, v) + ('' if lim is None else f' (limit ±{lim:g} {"%" if key.endswith("_pct") else "°C"})')
+
+
 _CONV_WORDS = (('_max_c_change', ' hottest'), ('_T_change_c', ' air in the block'), ('_flow_change_pct', ' flow'),
                ('_intake_c_change', ' air through the fan'), ('heat_out_change_pct', 'heat leaving'))
 
@@ -389,9 +395,23 @@ def _say(ax, title, text):
             bbox=dict(boxstyle='round,pad=0.9', fc=PANEL, ec='none'))
 
 
+def _wrap_items(text, width):
+    """Lines of at most ``width`` characters, broken between the ' · '-separated items (inside one only if it is longer)."""
+    lines = []
+    for item in text.split(' · '):
+        if lines and len(lines[-1]) + 3 + len(item) <= width:
+            lines[-1] += ' · ' + item
+        else:
+            lines += textwrap.wrap(item, width) or ['']
+    return '\n'.join(lines)
+
+
 def _style(ax, title, caption, ylabel, xlabel='iteration'):
     ax.set_facecolor(PAPER)
-    ax.set_title(title, loc='left', fontsize=10.5, color=INK, pad=16 if caption else 6)
+    if caption:                                   # a half-width panel's caption wraps within its column
+        ss = ax.get_subplotspec()
+        caption = _wrap_items(caption, 170 if ss and len(ss.colspan) == ss.get_gridspec().ncols else 84)
+    ax.set_title(title, loc='left', fontsize=10.5, color=INK, pad=6 + 10.5 * (1 + caption.count('\n')) if caption else 6)
     if caption:
         ax.text(0, 1.015, caption, transform=ax.transAxes, fontsize=8.5, color=MUTED, va='bottom')
     ax.set_xlabel(xlabel, fontsize=9, color=INK)
@@ -454,9 +474,10 @@ def convergence_chart(results: dict, path, title='Solver convergence'):
     residuals, then one panel per quantity the convergence claim rests on (the hottest temperature of each solid
     region, air temperatures in the fan and fin zones, fan flow, the heat leaving against the heat put in), each on
     its own axis. Restarts are marked, the window ``convergence`` measured is shaded and each panel states that
-    window's change; a run that stopped early is marked and said so. A panel with nothing to plot says why, and a
-    case with no solid regions has no solids panel. Results read before whole-run histories were kept are drawn as
-    they are, with the iterations they cover stated. Residuals settling does not show the answer is right."""
+    window's change and the limit ``steady`` holds it to; a run that stopped early is marked and said so. A panel with
+    nothing to plot says why, and a case with no solid regions has no solids panel. Results read before whole-run
+    histories were kept are drawn as they are, with the iterations they cover stated. Residuals settling does not show
+    the answer is right."""
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
@@ -477,6 +498,7 @@ def _convergence_figure(results: dict, title: str):
     restarts = results.get('restarts') or []
     window = results.get('convergence_window')
     conv = results.get('convergence') or {}
+    limits = results.get('convergence_limits')
     last = results.get('iterations') or (int(its[-1]) if its else None)
     planned = results.get('planned_iterations')
     stopped = results.get('solver_finished') is False and last is not None
@@ -489,7 +511,7 @@ def _convergence_figure(results: dict, title: str):
     colour = {e: SERIES[i] if i < len(SERIES) else MUTED for i, e in enumerate(entities)}
 
     def deltas(pairs):
-        got = [f'{name} {_change(key, conv[key])}' for name, key in pairs if key in conv]
+        got = [f'{name} {_judged(key, conv[key], limits)}' for name, key in pairs if key in conv]
         return 'Change over the shaded window: ' + ' · '.join(got) if got and window else ''
 
     def since(points):                            # older results may start part-way through the run
@@ -543,7 +565,7 @@ def _convergence_figure(results: dict, title: str):
 
     if monitors is None:                          # results read before monitored histories were kept
         def old_monitor_panel(ax):
-            got = [f'{_conv_name(k)} {_change(k, v)}' for k, v in conv.items()]
+            got = [f'{_conv_name(k)} {_judged(k, v, limits)}' for k, v in conv.items()]
             _say(ax, 'Monitored values', 'Their histories are not in these results. ' +
                  ('Change over the last fifth of the newest solve (convergence): ' + '; '.join(got) if got else
                   'No monitored values are recorded either.'))
@@ -560,7 +582,7 @@ def _convergence_figure(results: dict, title: str):
                 q_in = results.get('heat_input_w')
                 heat = unit == 'W'
                 if heat and results.get('energy_balance_pct') is not None:
-                    cap += (' · ' if cap else '') + f'energy balance {_change("_pct", results["energy_balance_pct"])} (within 5 % needed)'
+                    cap += (' · ' if cap else '') + f'energy balance {_change("_pct", results["energy_balance_pct"])} (limit ±5 %)'
                 elif heat and q_in is None:
                     cap += (' · ' if cap else '') + 'heat put in unknown (an exchanger block has no target power): balance not checked'
                 _style(ax, quantity, cap, f'{ {"°C": "temperature", "m³/h": "flow", "W": "heat"}.get(unit, quantity.lower())} ({unit})')

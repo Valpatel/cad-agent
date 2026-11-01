@@ -24,6 +24,13 @@ def _figure(results):
         warnings.simplefilter('error', UserWarning)          # a missing glyph (° ³ −) or a layout that does not fit
         fig = simviz._convergence_figure(results, 'Solver convergence')
         fig.canvas.draw()
+    box = fig.bbox
+    ticks = {id(lb) for ax in fig.findobj(Axes) for axis in (ax.xaxis, ax.yaxis)
+             for tk in axis.get_major_ticks() + axis.get_minor_ticks() for lb in (tk.label1, tk.label2)}
+    for txt in fig.findobj(Text):                            # every caption and label fits on the page
+        if txt.get_visible() and txt.get_text().strip() and id(txt) not in ticks:
+            e = txt.get_window_extent(fig.canvas.get_renderer())
+            assert box.x0 - 1 <= e.x0 and e.x1 <= box.x1 + 1 and box.y0 - 1 <= e.y0 and e.y1 <= box.y1 + 1, txt.get_text()
     return fig
 
 
@@ -62,9 +69,12 @@ def test_a_case_without_solids_has_no_solids_panel_and_shows_the_whole_run(tmp_p
     assert {ln.get_label() for ln in air.get_lines()} >= {'fins: mean in the block', 'fan: air through the fan'}
     assert 'Change over the shaded window: fins' in _words(air)
     assert f"fins {r['zones']['fins']['T_c']:.1f} °C" in _words(air)       # each line named at its end, with its unit
+    # each change with the limit steady holds it to (a fin block's air 2 °C, the fan's intake air 1 °C)
+    assert '(limit ±2 °C)' in _words(air) and '(limit ±1 °C)' in _words(air)
+    assert '(limit ±2 %)' in _words(p['Fan flow'])
     heat = p['Heat leaving with the air']
     assert 'heat put in, 40 W' in [ln.get_label() for ln in heat.get_lines()]
-    assert 'energy balance' in _words(heat)
+    assert 'energy balance' in _words(heat) and '(limit ±5 %)' in _words(heat)
     assert 'not that the answer is right' in head
     matplotlib.pyplot.close(fig)
 
@@ -112,6 +122,7 @@ def test_a_continuation_from_the_same_saved_time_is_drawn(tmp_path):
             assert ln.get_xdata()[-1] == 300
     for ax in p.values():
         assert _vlines(ax, simviz.ACCENT) == [] and _shaded(ax) == [240, 300]
+    assert f"chip {simviz._change('chip_max_c_change', r['convergence']['chip_max_c_change'])} (limit ±1 °C)" in _words(solids)
     matplotlib.pyplot.close(fig)
 
 

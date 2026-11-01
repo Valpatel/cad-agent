@@ -237,6 +237,21 @@ test('the four-bar animator is on its pages with its still, and only those pages
   assert.doesNotMatch(await readFile(path.join(out, 'docs/compliant.html'), 'utf8'), /fourbar\.(css|js)/);
 });
 
+test('the fan-curve explorer is on its pages with its still, and only those pages load its kit files', async () => {
+  for (const name of ['fans', 'formulas']) {
+    const page = await readFile(path.join(out, `docs/${name}.html`), 'utf8');
+    const demo = page.match(/<cad-fan-curve fan="12" system="12" count="1" arrangement="parallel">([\s\S]*?)<\/cad-fan-curve>/);
+    assert.ok(demo, `no <cad-fan-curve> on /docs/${name}`);
+    assert.match(demo[1], /<img src="\/docs\/img\/thermal\/fan-curve-explorer\.svg" alt="[^"]{40,}" width="640" height="340" ?\/?>/);
+    const head = page.slice(0, page.indexOf('</head>'));
+    assert.match(head, /<link rel="stylesheet" href="\/kit\/fan-curve\.css"><link rel="modulepreload" href="\/kit\/fan-curve\.js">/);
+  }
+  for (const f of ['kit/fan-curve.js', 'kit/fan-curve.css', 'kit/formulas.js', 'kit/formulas-data.js', 'docs/img/thermal/fan-curve-explorer.svg'])
+    assert.ok(files.includes(f), `${f} is not published`);
+  for (const other of ['compliant', 'linkages'])
+    assert.doesNotMatch(await readFile(path.join(out, `docs/${other}.html`), 'utf8'), /fan-curve\.(css|js)/);
+});
+
 test('an image keeps the size its author gave, and its tag survives any alt text', async () => {
   const wt = path.join(tmp, 'wt-img');
   execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });

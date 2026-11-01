@@ -211,9 +211,10 @@ domains:
         scope: Fans, vents and grilles, and where the air really goes.
         maturity: tooling
         priority: [demo]
-        api: [cadagent.thermal.heatsink]
+        pages: [docs/fans.md]
+        api: [cadagent.thermal.heatsink, cadagent.thermal.fans]
         uses: [cadagent.simulation.cfd]
-        issues: [47, 137]
+        issues: [47, 137, 160]
         projects: [j501-enclosure]
       - slug: thermal-validation
         title: Thermal validation

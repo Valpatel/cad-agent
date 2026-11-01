@@ -29,6 +29,17 @@ position only.
 <img src="img/formulas/fourbar-animator.svg" alt="Four-bar animator, before its controls load: Norton's Example 4-1 (crank 40, coupler 120, rocker 80 and ground 100 mm) on its open assembly at an input angle of 40°, where the transmission angle is 37°; a crank-rocker whose lowest transmission angle, 26.4° at 0°, is below the 40° guideline" width="640" height="320">
 </cad-fourbar>
 
+## Try it: the fan-curve explorer
+
+The explorer (`<cad-fan-curve>`, also on [Airflow and fans](fans.md#try-it-the-fan-curve-explorer)) runs the browser
+port of `fans_in_parallel`, `fans_in_series`, `system_coefficient`, `fan_operating_point` and `fan_stall_flow` on a
+real fan's datasheet curve. Set the supply voltage, the pressure the enclosure needs at 100 m³/h, and one to four
+fans in parallel or in series. The dot marks the operating point; the shaded band is the fan's stall region.
+
+<cad-fan-curve fan="12" system="12" count="1" arrangement="parallel">
+<img src="img/thermal/fan-curve-explorer.svg" alt="Fan-curve explorer, before its controls load: the datasheet curve of one ebm-papst W2G115-AD15-13 fan at 12 V against a system that needs 12 Pa at 100 m³/h; they cross at 150 m³/h at 26.9 Pa, clear of the stall region below 132 m³/h, which is shaded" width="640" height="340">
+</cad-fan-curve>
+
 ## Limits
 
 - **A closed form is not proof of fit or strength.** Each result holds only inside the limits it states. A printed
@@ -81,7 +92,7 @@ flowchart TD
     P --> A["agents<br/>catalogue() · snap_arm() …"]
     P --> V["tools/formula_vectors.py<br/>golden vectors · demo materials"]
     V --> J["kit/formulas.js<br/>(browser port)"]
-    J --> D["&lt;cad-cantilever&gt; on Snap fits<br/>&lt;cad-fourbar&gt; on Four-bar linkages"]
+    J --> D["&lt;cad-cantilever&gt; · &lt;cad-fourbar&gt;<br/>&lt;cad-fan-curve&gt; on their pages"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -95,7 +106,7 @@ flowchart TD
 SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A strain is a fraction (0.02 = 2 %).
 
 <details>
-<summary>All 37 functions in <code>catalogue()</code>: what each computes, its source and where it is valid</summary>
+<summary>All 40 functions in <code>catalogue()</code>: what each computes, its source and where it is valid</summary>
 
 | Function | What | Source | Valid within |
 |---|---|---|---|
@@ -126,7 +137,9 @@ SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A 
 | `wall_resistance`, `film_resistance` | R = L / k A, R = 1 / h A | Incropera 7th ed., Section 3.1.2, Eqs. (3.6), (3.9) | steady, 1-D |
 | `wall_heat_flow` | layers and films in series: heat flow and every face temperature | Incropera 7th ed., Section 3.1.3 | no contact resistance |
 | `fan_curve_line`, `system_coefficient` | the datasheet fan line; k in Δp = k Q² | White 7th ed., Section 11.5 | same air density |
-| `fan_operating_point` | fan curve against Δp = r Q + k Q², solved exactly per segment; flags a stall dip | White 7th ed., Section 11.5 | steady flow |
+| `fans_in_series`, `fans_in_parallel` | identical fans: pressures add at one flow, flows add at one pressure | White 7th ed., Section 11.5 | no interaction losses |
+| `fan_stall_flow` | the flow at the peak that ends the curve's last rise: below it, the stall region | White 7th ed., Section 11.5 | read from the curve's points |
+| `fan_operating_point` | fan curve against Δp = r Q + k Q², solved exactly per segment; flags more than one crossing (unstable) and a point in the stall region | White 7th ed., Section 11.5 | steady flow |
 
 </details>
 
@@ -143,7 +156,9 @@ fx.fan_operating_point(fx.fan_curve_line(15.2, 0.0108), k=2e6)   # flow, pressur
 ```
 
 In the browser, `kit/formulas.js` exports the functions the demos use (`snapArm`, `cantileverShape`,
-`cantileverStrainProfile`, `fourbarAngles` and the others in the golden vectors) in the same SI units.
+`cantileverStrainProfile`, `fourbarAngles`, `fanOperatingPoint` and the others in the golden vectors) in the same SI
+units. `kit/formulas-data.js` carries the demos' data: the printed filaments, and the fan curves of
+`cadagent.thermal.fans`.
 
 ## Tests that keep it honest
 
@@ -181,7 +196,9 @@ in the test.
 - **Heat and air.**
   - The composite wall face by face.
   - The fan point against the quadratic root and against `cadagent.thermal.heatsink.operating_point`.
-  - A stall dip flagged unstable.
+  - A stall dip flagged unstable, and the stall region's edge on dips and flat tops.
+  - One fan, two in series and two in parallel solved by hand, and where series and parallel give the same air.
+  - Every operating point the ebm-papst datasheet tabulates, found again from its curves and system curves.
 
 </details>
 

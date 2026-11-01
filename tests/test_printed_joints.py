@@ -180,6 +180,7 @@ def test_a_boss_lying_in_the_layer_plane_has_no_seam_to_close():
     assert "lying in the layer plane" in rows(r)["orientation"]["detail"]
     # and the advice sizes no rod against a seam that is not there: only the crush end of the window is left
     assert r["advice"]["seam"] is False and r["advice"]["preload_to_close_n"] is None
+    assert rows(r)["layers closed"]["limit"] is None
     assert r["advice"]["preload_window_n"][0] is None and r["advice"]["preload_window_n"][1] > 0
     assert r["advice"]["torque_window_nm"][0] is None and r["advice"]["torque_window_nm"][1] > 0
     # the same boss upright, the same 600 N kept: below the 1102 N that closes the seam

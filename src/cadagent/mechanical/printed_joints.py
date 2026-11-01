@@ -465,7 +465,7 @@ def root_peel(material: str, side_load_n: float, height_mm: float, section: Dict
             closed = ("warn", f"the kept preload, {kept:.0f} N ({retained:g} of the least, {bolt['basis']}), is below "
                               f"the {close_n:.0f} N that holds the tension side closed: the layer seam opens each time "
                               f"the load comes, and a bond that opens and closes fatigues; {window}")
-        rows.append(_row("layers closed", closed[0], round(kept, 3), round(close_n, 3), closed[1],
+        rows.append(_row("layers closed", closed[0], round(kept, 3), round(close_n, 3) if across else None, closed[1],
                          "shigley-beam", "shigley-torque"))
     if tilt <= FLAT_DEG:
         why = ("built upright: the root's bending stress crosses the layers, so the bond peels first" +
@@ -540,7 +540,8 @@ def _locking_row(thread_in: str, locking: str, vibration: bool) -> Dict[str, Any
         return _row("locking", "pass", locking, "captive", "the screw is held by wire or a pin and cannot turn out",
                     "nasa-1228")
     if not vibration:
-        return _row("locking", "pass", locking, "none needed", "no vibration declared: preload alone holds", "nasa-1228")
+        return _row("locking", "pass", locking, "none needed", "no vibration declared: preload alone holds",
+                    "nasa-1228")
     return _row("locking", "warn", locking, "a locking element",
                 "nothing locks the screw and the joint vibrates: it relies on its preload alone" +
                 (", held by a plastic thread" if plastic else ""), "nasa-1228", "junker-1969")
@@ -634,5 +635,6 @@ def bearing_mode_ratios(material: str) -> Tuple[Dict[str, float], str]:
 
 
 def sources() -> Dict[str, str]:
-    """Every outside document these checks take a number or a rule from, by key; ``judgement`` marks a rule with none."""
+    """Every outside document these checks take a number or a rule from, by key (``judgement`` marks a rule with
+    none)."""
     return dict(SRC)

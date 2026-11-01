@@ -34,36 +34,33 @@ Try these:
 
 ## How it works
 
-```mermaid
-flowchart TD
-    T["tightening torque T"] --> K["nut factor K, steel on plastic<br/>friction 0.20 to 0.65"]
-    K --> F["clamp F = T / (K d)"]
-    S["strength across the layers<br/>(datasheet, lowest edition)"] --> X["thread strips at<br/>0.875 π d Le × UTS / 2"]
-    X --> W{"Covestro's window<br/>1.2 drive ≤ T ≤ 0.5 strip"}
-    F --> H["hoop stress at the bore<br/>(Lamé cylinder)"]
-    T --> W
-    D["DELTA PT boss<br/>hole 0.8 d, outside 2 d, Le 2 d"] --> G{"pass or fail"}
-    W --> G
-    H --> G
-    G -->|"pass"| P["print a test boss: measure the<br/>drive, stripping and pull-out"]
-    G -->|"fail"| B["longer or wider boss, larger<br/>screw, lower torque, another filament"]
-    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
-    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class K,F,X,W,H,G here
-    class T,S,D near
-    class P,B out
-```
-
 - **Clamp.** Torque gives clamp through the nut factor, T = K F d (Shigley, Eq. 8-27), with K from the friction on the
   thread's 30° flanks and under the head. The low friction gives the high clamp.
 - **Stripping.** The boss's thread shears along a cylinder at the screw's crest, of area 0.875 π d Le (the ISO 68-1
   internal-thread area). The shear strength is half the lowest tensile strength across the layers, since that cylinder
   crosses the layers whichever way the boss stands.
-- **Window.** Covestro's joining guide asks for a tightening torque at least 1.2 times the drive torque (to form the
+- **Window.** Covestro's guides ask for a tightening torque at least 1.2 times the drive torque (to form the
   thread) and at most half the stripping torque. The drive torque is not computed, so measure it on a test boss.
 - **Wall.** The flanks push the wall out under the clamp, and a Lamé cylinder gives the hoop stress at the bore. It
   is checked against the strength in the layers for an upright boss and across them for one lying on its side.
+
+```mermaid
+flowchart TD
+    T["tightening torque T"] --> F["clamp band<br/>F = T / K d"]
+    S["filament strength<br/>across the layers"] --> X["thread strips at<br/>0.875 π d Le × UTS / 2"]
+    F --> H["hoop stress<br/>Lamé, at the bore"]
+    X --> W{"window<br/>1.2 drive ≤ T ≤ 0.5 strip"}
+    H --> G{"pass, with the<br/>maker's 2 d boss?"}
+    W --> G
+    G -->|"yes"| P["print a test boss<br/>and measure it"]
+    G -->|"no"| B["longer or wider boss,<br/>lower torque"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class F,X,H,W,G here
+    class T,S near
+    class P,B out
+```
 
 ## From Python
 
@@ -98,13 +95,17 @@ The explorer runs the browser port of `screw_boss`, which is tested against the 
 
 ## Sources and survey
 
+<details>
+<summary>The guides, the screw maker's data, the relations and what the survey of 2026-11-01 found</summary>
+
 - Screw sizes and boss proportions: Bulten AB, *DELTA PT: a superior thread-former for plastics*, brochure version
   250422, p. 4 (sizes and pitches) and p. 7 (hole 0.8 d, outside 2.0 d, engagement 2.0 d, a counterbore of d + 0.2 mm,
   0.3 to 0.4 d deep). Bulten makes DELTA PT under licence from EJOT. EJOT's own PDFs could not be downloaded on
   2026-11-01.
-- Tightening window: Covestro, *Engineering Polymers: Joining Techniques* (2015), Fig. 6 (tighten to at least 1.2
-  times the drive torque and at most half the stripping torque; it also asks for an engagement of 2.3 D). Boss
-  outside diameter 1.8 to 2.5 D: Covestro, *Self-tapping screws for thermoplastics* (2016), Fig. 3.
+- Tightening window: Covestro, *Self-tapping screws for thermoplastics* (2016), Section A and Fig. 1, and
+  *Engineering Polymers: Joining Techniques* (2015), Fig. 6: tighten to at least 1.2 times the drive torque and at
+  most half the stripping torque. Covestro also gives a boss outside diameter of 1.8 to 2.5 D (the former, Fig. 3)
+  and asks for an engagement of 2.3 D (the latter), a little more than the screw maker's 2 d.
 - Friction: Covestro, *Snap-Fit Joints for Plastics: A Design Guide*, Table 3 (plastic on steel).
 - Relations: Shigley's *Mechanical Engineering Design*, 10th ed., Section 8-2 (thread statics), Eq. 8-27 (torque and
   clamp), Section 3-14 (thick-walled cylinders), Section 5-4 (maximum shear stress); ISO 68-1 (thread profile).
@@ -116,6 +117,8 @@ The explorer runs the browser port of `screw_boss`, which is tested against the 
   No published test of thread-forming screws in FDM bosses was found. Bambu Lab sells self-tapping screws for printed
   parts and describes torque tests on its store pages, but those pages could not be read on 2026-11-01, so none of
   their numbers are used.
+
+</details>
 
 ## Tests that keep it honest
 

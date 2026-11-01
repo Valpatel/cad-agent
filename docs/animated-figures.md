@@ -38,7 +38,7 @@ The clearance sweep is slow, because each pair is an exact `relate()` call (#186
 The second figure is not an assembly. It is a mesh-convergence study at an inside corner, run with this checkout's
 own `cadagent.simulation.fea` and drawn from what the results said.
 
-![An L-bracket's inside corner meshed finer step by step: sharp, the peak stress keeps rising and converge() never passes it; with an R1.5 fillet it settles and converge() passes it](img/fea/mesh-convergence.svg)
+![An L-bracket's inside corner refined step by step: sharp, the peak stress keeps rising and converge() never passes it; with an R1.5 fillet it settles and converge() passes it](img/fea/mesh-convergence.svg)
 
 *A recorded run of the toolkit (cad-agent 0.7.0 on gmsh 4.15.2 with OpenCASCADE 7.8.1, 2026-11-01). Linear-elastic
 FEA: a converged peak does not prove that the part holds.*
@@ -48,7 +48,7 @@ PYTHONPATH=src python3 tools/readme_anim.py --extract convergence    # record it
 ```
 
 `tools/anim/fea-convergence.yaml` names the study: the bracket, the load, the element sizes at the corner and the
-words. Recording takes about a minute and under 3 GB. `tools/anim/fea-convergence.scene.json` keeps, for each step:
+words. Recording takes about a minute and about 3 GB. `tools/anim/fea-convergence.scene.json` keeps, for each step:
 - the tets, the design peak and where it sits;
 - the peak's flags (`result['mesh']['peak']`) and `converge()`'s verdict;
 - the front face's mesh round the corner.

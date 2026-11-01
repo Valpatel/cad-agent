@@ -1,12 +1,12 @@
 **New**
 - An animated figure of a recorded FEA mesh-convergence study, in the toolkit's meshing section and the simulation
   README (`docs/img/fea/mesh-convergence.svg`). An L-bracket's sharp and R1.5-filleted inside corner are refined step
-  by step with `refine=`; it shows the mesh at the corner, the design peak, the result's flags and `converge()`'s
+  by step with `refine=`. It shows the mesh at the corner, the design peak, the result's flags and `converge()`'s
   verdict. The sharp peak keeps rising; the fillet's settles. It is drawn from a committed record of a real run
   (`tools/anim/fea-convergence.scene.json`) that names the gmsh and OpenCASCADE versions.
   `tools/readme_anim.py --extract convergence` records it again, and `--check` fails when the SVG is stale (#167).
-- `cadagent.publish.anim.convergence`: `record()` runs such a study and `render()` draws it, for a study of your own
-  (#167).
+- `cadagent.publish.anim.convergence`: `record()` runs this study from its spec (the bracket's size, the material, the
+  load, the sizes asked for at the corner) and `render()` draws two corners' records (#167).
 
 **Fixed**
 - `cadagent.simulation.fea.Study.converge()` no longer passes a peak at a sharp inside corner when the two meshes

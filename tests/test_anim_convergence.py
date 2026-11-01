@@ -59,7 +59,8 @@ def _tiny_scene() -> dict:
                                    "element_mm": size, "wall_mm": 2.0, "elements_across": round(2 / size, 1),
                                    "wall_resolved": 2 / size >= 3, "radius_mm": 1.5 if i else None,
                                    "radius_resolved": (size <= 1.5) if i else None},
-                          "converge": {"factor": 0.75, "change": 0.1 if not ok else 0.01, "converged": ok},
+                          "converge": {"factor": 0.75, "change": 0.1 if not ok else 0.01, "converged": ok,
+                                       "von_mises_design_mpa": [v, v * (1.1 if not ok else 1.01)]},
                           "finer_peak": {"wall_resolved": k > 0, "radius_resolved": True if i else None},
                           "face": face})
         corners.append({"name": name, "fillet_mm": 1.5 * i, "steps": steps,
@@ -68,7 +69,7 @@ def _tiny_scene() -> dict:
             "source": {"repo": "https://github.com/Valpatel/cad-agent", "name": "cad-agent", "licence": "MIT",
                        "commit": "0" * 40, "version": "0.0.0", "inputs": {}},
             "mesher": {"gmsh": "9.9.9", "occ": "8.8.8", "platform": {"system": "Linux", "machine": "x86_64"}},
-            "study": {"window_mm": [0, 0, 8, 8]},
+            "study": {"window_mm": [0, 0, 8, 8], "converge": {"factor": 0.75, "tolerance": 0.05}},
             "williams": {"lambda": C.williams_lambda(), "per_halving": 2 ** (1 - C.williams_lambda())},
             "corners": corners}
 
@@ -120,7 +121,11 @@ def test_the_figure_states_every_step_from_the_record(scene, built):
             cv = s["converge"]
             assert f"{s['peak_mpa']:,.0f} MPa" in built
             assert f">{s['tets']:,} tets<" in built
-            assert C._finer(s) in built and f"{cv['factor']:g}× mesh: {cv['change']:+.1%}, " in built
+            assert C._finer(s) in built
+            # the change as converge()'s own note words it (its rounded `change` can differ in the last digit)
+            said = re.search(r"changed (?:only )?([+-]\d+\.\d)%", cv["note"])
+            if said:
+                assert f"{cv['factor']:g}× mesh: {said.group(1)}%, " in built, cv["note"]
             assert all(line in built for line in C._flags(s["peak"]))
     passed = sum(s["converge"]["converged"] for c in scene["corners"] for s in c["steps"])
     total = sum(len(c["steps"]) for c in scene["corners"])
@@ -130,7 +135,45 @@ def test_the_figure_states_every_step_from_the_record(scene, built):
     assert f"gmsh {m['gmsh']}" in built and f"OpenCASCADE {m['occ']}" in built
     assert "Linear-elastic FEA" in built and "not proof that the part holds" in built
     a = C.summary(scene)[scene["corners"][0]["name"]]
-    assert f"×{a['per_halving']:.2f} per halving" in built
+    assert f"×{a['per_halving']:.2f} per halving of the elements at the peak" in built
+    assert f"±{100 * scene['study']['converge']['tolerance']:g} %" in built      # the tolerance converge() used
+    # the x axis is the size asked for: where gmsh already meshed the fillet that fine, the figure says so
+    f0, f1 = (s["peak"]["element_mm"] for s in scene["corners"][1]["steps"][:2])
+    assert ("already meshes the R1.5 arc" in built) == (abs(f1 / f0 - 1) < 0.1)
+    assert "size asked for at the corner" in built and "halves the elements" not in built
+
+
+# a width per character, as a share of the font size, a little over what Chrome measured on this figure's words with
+# Noto Sans (Linux's system-ui): 0.48 em on average for the 11 px words, 0.45 for the subtitle, 0.52 for the title,
+# 0.59 for the large numbers
+EM = {"t": (16, 0.56), "st": (12, 0.5), "h": (13, 0.56), "big": (22, 0.62), "sm": (11, 0.52), "ax": (10.5, 0.55),
+      "v": (11, 0.56), "nb": (22, 0.62)}
+
+
+def test_every_label_fits_its_column(scene, present, built):
+    """No label runs off the figure, and the words under each mesh panel stay inside its column (the step lines
+    once ran past the right edge for a few seconds of the loop)."""
+    import xml.etree.ElementTree as ET
+
+    U = svg.UNITS_PER_PX
+    W = present["width"]
+    root = ET.fromstring(built)
+    checked = 0
+    for el in root.iter("{http://www.w3.org/2000/svg}text"):
+        cls = (el.get("class") or "").split()
+        if "n" in cls or el.get("text-anchor") or el.get("transform"):
+            continue                                   # phone-only words, and centred or right-aligned ones
+        size, em = next(EM[c] for c in cls if c in EM)
+        m = re.search(r"font-size:([\d.]+)px", el.get("style") or "")
+        if m:
+            size = float(m.group(1)) / U
+        x, y = float(el.get("x")) / U, float(el.get("y")) / U
+        right = x + em * size * len(el.text or "")
+        under_panel = 266 < y < 400
+        column = 210 if x < 200 and under_panel else 410 if 200 < x < 400 and under_panel else W - 8
+        assert right <= column, (el.text, round(right), column)
+        checked += 1
+    assert checked > 40
 
 
 def test_the_figure_is_safe_themed_and_still_under_reduced_motion(built):
@@ -218,7 +261,7 @@ def test_the_docs_show_the_figure_and_say_what_it_is(scene):
         text = page.read_text(encoding="utf-8")
         at = text.index(f"]({src})")
         alt = text[text.rindex("![", 0, at):at]
-        caption = text[at:at + 900]
+        caption = text[at:at + 1400]
         assert "recorded run" in caption, page
         assert f"gmsh {m['gmsh']}" in caption and f"OpenCASCADE {m['occ']}" in caption, page
         assert "does not prove" in caption, page

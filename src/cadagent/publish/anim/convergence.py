@@ -252,16 +252,20 @@ class Phases:
 
 
 def summary(scene: Mapping[str, Any]) -> Dict[str, Any]:
-    """The figure's claims, computed from the scene alone: the sharp corner's mean growth per halving and the
-    filleted one's spread over the refined steps, each corner's first and last peak, and which steps converge()
-    passed."""
+    """The figure's claims, computed from the scene alone, per corner: the first and last peak and their range, the
+    spread (max / min - 1), the growth per halving of the element size at the peak (a least-squares fit of log peak
+    against log ``peak['element_mm']`` over the steps: the elements gmsh made, not the size asked for), and which
+    steps converge() passed."""
     out = {}
     for c in scene["corners"]:
         v = [s["peak_mpa"] for s in c["steps"]]
-        sizes = [s["size_mm"] for s in c["steps"]]
-        halvings = math.log2(sizes[0] / sizes[-1])
+        x = [math.log2(s["peak"]["element_mm"]) for s in c["steps"]]
+        y = [math.log2(p) for p in v]
+        mx, my = sum(x) / len(x), sum(y) / len(y)
+        sxx = sum((a - mx) ** 2 for a in x)
+        slope = sum((a - mx) * (b - my) for a, b in zip(x, y)) / sxx if sxx > 0 else None
         out[c["name"]] = {"first": v[0], "last": v[-1], "lo": min(v), "hi": max(v),
-                          "per_halving": (v[-1] / v[0]) ** (1 / halvings) if halvings else None,
+                          "per_halving": 2 ** -slope if slope is not None else None,
                           "spread": max(v) / min(v) - 1,
                           "converged": [bool(s["converge"]["converged"]) for s in c["steps"]]}
     return out
@@ -442,35 +446,49 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
                          f"sm c{i} p{n - 1}", "end", ' style="font-weight:700"'))
     # the legend, under the chart
     ly, lx = y1 + 52, 420.0
+    conv = scene["study"]["converge"]
     legend = [(lx, ly, f'<path class="ln0" d="M0 0h{u(16)}"/>', corners[0]["name"]),
               (lx + 140, ly, f'<path class="ln1" d="M0 0h{u(16)}"/>', corners[1]["name"]),
               (lx, ly + 16, f'<rect x="{u(3)}" y="{u(-5)}" width="{u(10)}" height="{u(10)}" '
                f'style="fill:none;stroke:var(--muted);stroke-width:{1.4 * U}px"/>', present["uniform_legend"]),
               (lx, ly + 32, f'<path class="wl" d="M0 0h{u(16)}"/>',
-               present["williams_legend"].format(exponent=f"{w['lambda'] - 1:.2f}".replace("-", "−")))]
+               present["williams_legend"].format(exponent=f"{w['lambda'] - 1:.2f}".replace("-", "−"))),
+              (lx, ly + 48, f'<rect x="{u(1)}" y="{u(-5)}" width="{u(14)}" height="{u(10)}" rx="{u(2)}" class="ok"/>',
+               present["converge_legend"].format(tolerance=f"±{100 * conv['tolerance']:g} %",
+                                                 factor=f"{conv['factor']:g}"))]
     for gx, gy, mark, words in legend:
         body.append(f'<g class="w" transform="translate({u(gx)} {u(gy)})">{mark}{text(22, 4, words, "sm")}</g>')
 
     # ---- under everything, per step: what this step is and what it cost, against meshing the whole part that fine
+    yb = 418.0
     for k, size in enumerate(sizes):
         tets = present["tets_pair"].format(*(_thousands(c["steps"][k]["tets"]) for c in corners))
         key = "step_first" if k == 0 else "step_line"
-        line = present[key].format(step=k + 1, steps=n, size=f"{size:g}", tets=tets)
+        lines = [present[key].format(step=k + 1, steps=n, size=f"{size:g}", tets=tets)]
         whole = [next((u_ for u_ in c["uniform"] if u_["size_mm"] == size), None) for c in corners]
         if k and all(whole):
-            line += present["step_cost"].format(size=f"{size:g}", whole=present["tets_pair"].format(
-                *(_thousands(u_["tets"]) for u_ in whole)))
-        body.append(f'<g class="s{k} w"{per_step(k)}>{text(20, 418, line, "sm")}</g>')
+            lines.append(present["step_cost"].format(size=f"{size:g}", whole=present["tets_pair"].format(
+                *(_thousands(u_["tets"]) for u_ in whole))))
+        body.append(f'<g class="s{k} w"{per_step(k)}>'
+                    + "".join(text(20, yb + 15 * j, line, "sm") for j, line in enumerate(lines)) + "</g>")
     # the end state's claims, from the scene
     sm = summary(scene)
     a, b = sm[corners[0]["name"]], sm[corners[1]["name"]]
-    claims = [present["sharp_claim"].format(per_halving=f"{a['per_halving']:.2f}", rate=f"{w['per_halving']:.2f}"),
-              present["fillet_claim"].format(spread=f"{100 * b['spread']:.1f}", steps=n)]
-    for j, words in enumerate(claims):
-        body.append(f'<g class="p{n - 1} w">{text(20, 438 + 16 * j, words, f"sm c{j}")}</g>')
+    fsteps = corners[1]["steps"]
+    first_pass = next((k + 1 for k, s in enumerate(fsteps) if s["converge"]["converged"]), None)
+    claims = [(present["sharp_claim"].format(per_halving=f"{a['per_halving']:.2f}", rate=f"{w['per_halving']:.2f}"), 0),
+              (present["fillet_claim"].format(spread=f"{100 * b['spread']:.1f}", steps=n, first_pass=first_pass,
+                                              factor=f"{conv['factor']:g}"), 1)]
+    e0, e1 = (s["peak"]["element_mm"] for s in fsteps[:2])
+    if abs(e1 / e0 - 1) < 0.1:                         # gmsh's curvature sizing already made the first refine's size
+        claims.append((present["fillet_note"].format(element=f"{e0:.2g}", size=f"{sizes[1]:g}",
+                                                     tets_before=_thousands(fsteps[0]["tets"]),
+                                                     tets_after=_thousands(fsteps[1]["tets"])), 1))
+    for j, (words, i) in enumerate(claims):
+        body.append(f'<g class="p{n - 1} w">{text(20, yb + 36 + 16 * j, words, f"sm c{i}")}</g>')
     # ---- the caption: what this is, and what it is not
     for j, line in enumerate(present["caption"]):
-        body.append(text(20, H - 27 + 15 * j, _fill(line, scene), "sm w"))
+        body.append(text(20, H - 26 + 15 * j, _fill(line, scene), "sm w"))
 
     # ---- the timeline
     for k in range(n):
@@ -496,12 +514,19 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
                       "".join(css) + tl.stylesheet(), body, S.Theme(light, dark))
 
 
+def _change(cv: Mapping[str, Any]) -> float:
+    """converge()'s change, from its two peaks unrounded, as its own note words it (its ``change`` is rounded to four
+    places, which can turn +9.746 % into +9.8 %)."""
+    a, b = cv["von_mises_design_mpa"]
+    return (b - a) / a if a else 0.0
+
+
 def _finer(step: Mapping[str, Any]) -> str:
     """converge()'s finer mesh in words: how far the peak moved there, and whether that mesh resolves it (its wall and
     radius flags), the two things its verdict needs."""
     cv, fp = step["converge"], step["finer_peak"]
     resolved = fp.get("wall_resolved") is not False and fp.get("radius_resolved") is not False
-    return f"{cv['factor']:g}× mesh: {cv['change']:+.1%}, " + ("resolved ✓" if resolved else "unresolved ✗")
+    return f"{cv['factor']:g}× mesh: {_change(cv):+.1%}, " + ("resolved ✓" if resolved else "unresolved ✗")
 
 
 def _flags(peak: Mapping[str, Any]) -> List[str]:
@@ -509,7 +534,7 @@ def _flags(peak: Mapping[str, Any]) -> List[str]:
     fillet's radius (or, at a sharp corner, that the peak is singular)."""
     out = []
     if peak.get("elements_across") is not None:
-        out.append(f"wall {peak['wall_mm']:.3g} mm: {peak['elements_across']:g} elements across "
+        out.append(f"wall {peak['wall_mm']:.2g} mm: {peak['elements_across']:.2g} elements across "
                    + ("✓" if peak["wall_resolved"] else "✗"))
     if peak.get("radius_mm") is not None:
         out.append(f"R{peak['radius_mm']:g}: elements {peak['element_mm']:.2g} mm "

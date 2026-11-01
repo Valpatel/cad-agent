@@ -39,7 +39,7 @@ flowchart TD
 A peak is only as good as the mesh under it. `fea.py` refines round a peak (`refine=`), says how well each mesh
 resolves it (`result['mesh']['peak']`) and checks it on a finer mesh (`converge()`):
 
-![An L-bracket's inside corner meshed finer step by step from 2 mm to 0.25 mm: sharp, the peak stress rises from 443 to 1,094 MPa and converge() never passes it; with an R1.5 fillet it stays between 432 and 447 MPa and converge() passes it](../../../docs/img/fea/mesh-convergence.svg)
+![An L-bracket's inside corner refined step by step, refine= asking for 2 mm down to 0.25 mm there: sharp, the peak stress rises from 443 to 1,094 MPa and converge() never passes it; with an R1.5 fillet it stays between 432 and 447 MPa and converge() passes it from the 1 mm step](../../../docs/img/fea/mesh-convergence.svg)
 
 *A recorded run of the toolkit (cad-agent 0.7.0 on gmsh 4.15.2 with OpenCASCADE 7.8.1, 2026-11-01), redrawn from
 [its record](../../../tools/anim/fea-convergence.scene.json) by `tools/readme_anim.py`; the

@@ -603,16 +603,18 @@ none of its checks is that study:
   stress round it is linear, which the elements carry.
 - `refine` and `slivers`: the zones used, and the slivers found before meshing.
 
-The same bracket, step by step: what each result's `mesh` record and `converge()` said as `refine=` halved the
-elements at the corner.
+The same bracket, step by step: what each result's `mesh` record and `converge()` said as each step halved the
+element size `refine=` asks for at the corner.
 
-![The L-bracket's front face meshed round its inside corner, sharp and with an R1.5 fillet, as refine= takes the elements there from 2 mm to 0.25 mm: the sharp corner's peak rises from 443 to 1,094 MPa and converge() never passes it; the fillet's stays between 432 and 447 MPa and converge() passes it from the 1 mm step](img/fea/mesh-convergence.svg)
+![The L-bracket's front face meshed round its inside corner, sharp and with an R1.5 fillet, as refine= asks for elements from 2 mm down to 0.25 mm there: the sharp corner's peak rises from 443 to 1,094 MPa and converge() never passes it; the fillet's stays between 432 and 447 MPa and converge() passes it from the 1 mm step](img/fea/mesh-convergence.svg)
 
 *A recorded run of the toolkit, not a drawing: cad-agent 0.7.0's `Study` and `converge()` on gmsh 4.15.2 with
 OpenCASCADE 7.8.1 (Linux x86-64, 2026-11-01). `tools/readme_anim.py` redraws it from
 `tools/anim/fea-convergence.scene.json` and `--check` fails when it is stale; `--extract convergence` records it again
-(about a minute, under 3 GB). Each step shows the front face's mesh, the design peak (the dot), the result's flags and
-`converge()`'s verdict. The open squares are the whole part meshed that fine, without `refine=`: 11,829 tets at
+(about a minute, about 3 GB). Each step shows the front face's mesh, the design peak (the dot), the result's flags and
+`converge()`'s verdict, which judges the 0.75x finer mesh's flags, not this mesh's. The chart's x axis is the size
+asked for; gmsh's curvature sizing already meshes the R1.5 arc at about 0.95 mm, so the fillet's first two steps are
+nearly one mesh. The open squares are the whole part meshed that fine, without `refine=`: 11,829 tets at
 0.5 mm for the sharp bracket, against 1,233 refined.
 Linear-elastic FEA: a converged peak does not prove that the part holds.*
 
@@ -637,7 +639,9 @@ gives a point. `faces_near(point)` names the faces round any point.
   tets than that, so this is the cautious count.
 - **converge(factor=0.75, tolerance=0.05):** a new Study at factor × mesh_mm (and factor × each refine size), with
   the same faces fixed and loaded. It is converged when the design peak changes by at most the tolerance and the
-  finer mesh resolves it (its wall and radius checks pass): two under-resolved meshes can agree. A peak that moves
+  finer mesh resolves it (its wall and radius checks pass): two under-resolved meshes can agree. A peak at a sharp
+  inside corner (on either mesh) is never converged, whatever the change: two meshes of a singular corner can agree
+  by chance (the bracket's sharp corner at 0.25 mm moved +1.8 %, then rose 32 % at 0.125 mm). A peak that moves
   more than two mesh sizes is noted: an artefact when its value changed too, else two places near the peak value. One
   step is a check, not a convergence study.
 - **Radius:** the smallest radius of the cylindrical faces within one element of the peak. On a stepped bar's R0.5

@@ -417,7 +417,7 @@ tested tools of its own. Every page on this site has a Markdown twin at the same
 ## Start here
 
 - [README](${ORIGIN}/README.md): what cad-agent is and how it grows
-- [Toolkit](${ORIGIN}/docs/toolkit.md): every command, the project contract and the Python API
+- [Tools](${ORIGIN}/docs/toolkit.md): every command, the project contract and the Python API
 - [Agent workflow](${ORIGIN}/docs/agent-workflow.md): skills, subagents, work claims and crash-safe work
 - [Common issues](${ORIGIN}/docs/common-issues.md): recurring CAD mistakes and the checks that catch them
 - [Landscape](${ORIGIN}/research/landscape.md): the agentic-CAD tools we track, verified

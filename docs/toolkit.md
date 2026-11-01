@@ -378,19 +378,21 @@ result's `assumptions` line repeats the modulus, the strength and the note, and 
 | Key | E (MPa) | Direction | Strength (MPa) | Data sheet |
 |---|---:|---|---:|---|
 | `pla` | 2060 | Z | 25 | Bambu PLA Basic V3.0 (X-Y 2580; Z tensile strength 31) |
-| `petg` | 1120 | Z | 20 | Bambu PETG Basic V2.0 (X-Y 1460). V3.0 is a reformulated filament whose bars are not said to be annealed (2780 / 2550): not used |
+| `petg` | 1120 | Z | 20 | Bambu PETG Basic V2.0 (X-Y 1460). V3.0 is a reformulated filament whose bars are not said to be annealed (2780 / 2550): a spool does not say which it is, and the lower modulus is the cautious one for deflection (`cad-agent snapfit` takes V3.0's, the cautious one for forces) |
 | `petg_cf` | 1340 | Z | 22 | Bambu PETG-CF V3.0 (X-Y 2460; Z tensile strength 29) |
 | `pa_cf` | 1820 | Z | 40 | Bambu PAHT-CF V3.0, dry (Z bending, the sheet's lowest; Z tensile 2180, X-Y 3860) |
-| `pa6_cf_xy` | 2126 | X-Y | 49 | Bambu PA6-CF V3.0, dry X-Y x0.6 humid x0.8 print. Uncertain: the x0.6 is a strength ratio, and a part that takes up water may be about half this stiff (#157) |
-| `pa6_cf_z` | 1042 | Z | 23 | Bambu PA6-CF V3.0, dry Z x0.6 humid x0.8 print. Uncertain in the same way |
+| `pa6_cf_xy` | 1029 | X-Y | 40.8 | Bambu PA6-CF V3.0, dry X-Y, humid (modulus x0.290, strength x0.500: Polymaker PA6-CF20 V1.1, water-saturated / dry) x0.8 print (#157) |
+| `pa6_cf_z` | 488 | Z | 18.1 | Bambu PA6-CF V3.0, dry Z, humid (x0.281, x0.472) x0.8 print |
 | `tpu95` | 7.4 | Z | 8 | Bambu TPU 95A HF V1.0 (X-Y 9.8; Polymaker lists 33.6): indicative only |
 
 The modulus is the sheet's lowest, across the layers, because the solver is isotropic and does not know how the part
 was printed, so deflections come out higher than with the sheet's in-plane values. They are not an upper bound on a
 print. The mesh is the solid CAD, and a print with sparse infill or thin walls can be softer still. The isotropic shear
 modulus does not bound a print's shear stiffness between layers either, which matters for short, thick parts. The
-two humid PA6-CF rows may be too stiff (table). Under forces and torques the stress does not depend on E, so only
-deflection and stiffness change with it.
+two humid PA6-CF rows take the modulus ratio of a water-saturated print (0.28–0.29 of dry), the cautious end: room air
+takes a nylon's modulus most of the way there ([research](../research/compliant-mechanisms.md), section 5). Under
+forces and torques the stress does not depend on E, so only deflection and stiffness change with it. The metals
+(`al6061`, `al7075`, `steel`) use design minimums from MIL-HDBK-5J, not typical values (#157); `cf_tube` is typical.
 
 At a given travel it is different. `stiffness_n_per_mm` is lower than with the in-plane modulus. So a force worked out
 from it at a given travel (a clip's retention, a flexure's preload, a spring rate) reads lower than for a solid part

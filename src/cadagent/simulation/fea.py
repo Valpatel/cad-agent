@@ -58,6 +58,16 @@ class Material:
 _DIRECTION = {'Z': 'across the layers (Z)', 'X-Y': 'in the layer plane (X-Y)'}
 
 
+def _ksi(v: float) -> float:
+    """ksi to MPa, to 0.1 MPa (the handbooks below give US units)."""
+    return round(v * 6.894757, 1)
+
+
+def _lb_in3(v: float) -> float:
+    """lb/in3 to g/cm3, to 0.01."""
+    return round(v * 27.679905, 2)
+
+
 def _isotropic_basis(mat: Material) -> str:
     """For the assumptions line: the modulus and strength a printed material uses everywhere, and their basis."""
     if not mat.direction:
@@ -95,7 +105,18 @@ def _isotropic_basis(mat: Material) -> str:
 # Before #125 the moduli were 2700 (PLA), 1800 (PETG) and 2900 (PETG-CF): close to the V2.0 sheets' X-Y *bending*
 # moduli (2750, 1790, 2890), not a tensile value. They were 31-116 % above the moduli used now (PAHT-CF 147 %, the
 # humid PA6-CF rows 41 % and 130 %, TPU 305 %), so deflections read 24-54 % low (PAHT-CF 60 %, TPU 75 %).
-_HUMID, _PRINT = 0.6, 0.8   # PA6-CF in use: x0.6 for moisture taken up from the air, x0.8 for a print's voids and seams
+#
+# PA6-CF in use (#157): moisture taken up from the air, as Polymaker's Fiberon PA6-CF20 TDS V1.1 (PDF of 2024-12-08,
+# p. 1) gives it, water-saturated / dry: tensile modulus 2508.1 / 8636.5 MPa X-Y and 1056.1 / 3759.5 Z, tensile
+# strength 54.7 / 109.3 and 25.5 / 54.0. https://cdn.shopify.com/s/files/1/0548/7299/7945/files/TDS_FIBERON_PA6-CF20_V1.1_EN.pdf
+# Its wet bars were soaked at 60 degC for 48 h (5.30 % moisture); a part in room air takes up less (Bambu's PA6-CF:
+# 2.35 % at 25 degC / 55 % RH). But a nylon's modulus falls most of the way by then: BASF's moulded PA6 keeps 0.31 of
+# its dry tensile modulus conditioned (Ultramid B3S HP R01, 1000 / 3200 MPa, a preliminary sheet of 2026-08) and 30 %
+# glass-filled PA6 keeps 0.58 (Ultramid B3EG6 SI, 5650 / 9700 MPa). The saturated printed ratios are the cautious end
+# and are used for modulus and strength alike; research/compliant-mechanisms.md section 5 has the links.
+_HUMID_E = {'X-Y': 2508.1 / 8636.5, 'Z': 1056.1 / 3759.5}       # 0.290, 0.281
+_HUMID_S = {'X-Y': 54.7 / 109.3, 'Z': 25.5 / 54.0}              # 0.500, 0.472
+_PRINT = 0.8   # x0.8 for a print's voids and seams: a knock-down the original table applied to these rows only
 MATERIALS = {
     # Bambu PLA Basic TDS V3.0 (Bambu's copy, PDF created 2025-04): E 2580 X-Y / 2060 Z MPa, UTS 35 / 31 MPa,
     # 1.24 g/cm3.
@@ -134,23 +155,21 @@ MATERIALS = {
     # Bambu PA6-CF TDS V3.0 (Bambu's copy, PDF created 2023-08), dry: E 4430 / 2170 MPa, UTS 102 / 48 MPa, 1.09 g/cm3.
     # https://store.bblcdn.com/b2abc59ac250492b979a52f1ce3e61b3.pdf
     # Unlike the rows above (dry test-bar values), these two describe the material as it is in use: humid and as
-    # printed. Their factors are judgement, not data sheet values:
-    # - x0.6 humid is a *strength* ratio: moisture roughly halves CF-nylon strength (Polymaker PA6-CF20 TDS V1.1,
-    #   water-saturated / dry: 0.50 X-Y, 0.47 Z). It is applied to E as well, but that sheet's *modulus* ratios are
-    #   0.29 X-Y and 0.28 Z, so for a part that has taken up water these moduli may be about twice too stiff and its
-    #   deflections about half what they will be. Room humidity is milder than saturation; no sheet read gives E at
-    #   it. Choosing a cited humid stiffness factor is #157.
-    # - x0.8 print, for voids and seams, is a knock-down the original table applied to these rows only. The other
-    #   rows carry none on E, so pa6_cf_z (1042) against petg_cf (1340) sets a derated value against a sheet value.
-    'pa6_cf_xy': Material('PA6-CF along the layers (humid)', 4430 * _HUMID * _PRINT, 0.35, 102 * _HUMID * _PRINT, 1.09,
-                          'Bambu PA6-CF TDS V3.0: dry X-Y tensile modulus 4430 MPa and strength 102 MPa, each x0.6 '
-                          'humid x0.8 print (x0.48); E may be about twice too stiff for a part that has taken up water. '
-                          'For parts printed so their main stress runs in the layers',
-                          source='bambu-pa6-cf-tds', direction='X-Y'),
-    'pa6_cf_z': Material('PA6-CF across the layers (humid)', 2170 * _HUMID * _PRINT, 0.35, 48 * _HUMID * _PRINT, 1.09,
-                         'Bambu PA6-CF TDS V3.0: dry Z tensile modulus 2170 MPa and strength 48 MPa, each x0.6 humid '
-                         'x0.8 print (x0.48); E may be about twice too stiff for a part that has taken up water. The '
-                         'safe strength when the stress crosses the layers', source='bambu-pa6-cf-tds', direction='Z'),
+    # printed, with the factors above: the wet / dry ratios of Polymaker's PA6-CF20 (modulus x0.290 X-Y, x0.281 Z;
+    # strength x0.500, x0.472), applied to Bambu's dry values, and x0.8 print. Two makers' filaments: the ratio is
+    # borrowed, since Bambu's sheet gives no wet values. Before #157 both rows took x0.6 on modulus and strength, a
+    # strength-like ratio, so their moduli were about twice these. The other rows carry no x0.8 on E, so pa6_cf_z
+    # (488) against petg_cf (1340) sets a derated, humid value against a dry sheet value.
+    'pa6_cf_xy': Material('PA6-CF along the layers (humid)', 4430 * _HUMID_E['X-Y'] * _PRINT, 0.35,
+                          102 * _HUMID_S['X-Y'] * _PRINT, 1.09,
+                          'Bambu PA6-CF TDS V3.0: dry X-Y tensile modulus 4430 MPa x0.290 humid and strength 102 MPa '
+                          'x0.500 humid (Polymaker PA6-CF20 V1.1 wet / dry), each x0.8 print. For parts printed so '
+                          'their main stress runs in the layers', source='bambu-pa6-cf-tds', direction='X-Y'),
+    'pa6_cf_z': Material('PA6-CF across the layers (humid)', 2170 * _HUMID_E['Z'] * _PRINT, 0.35,
+                         48 * _HUMID_S['Z'] * _PRINT, 1.09,
+                         'Bambu PA6-CF TDS V3.0: dry Z tensile modulus 2170 MPa x0.281 humid and strength 48 MPa '
+                         'x0.472 humid (Polymaker PA6-CF20 V1.1 wet / dry), each x0.8 print. The safe strength when '
+                         'the stress crosses the layers', source='bambu-pa6-cf-tds', direction='Z'),
     # Bambu TPU 95A HF TDS V1.0 (Bambu's copy, PDF created 2023-11): E 9.8 / 7.4 MPa, UTS 27.3 / 22.3 MPa, 1.22 g/cm3.
     # https://store.bblcdn.com/58df32731eab4c90a7dac9b12e13ba88.pdf
     # Polymaker's PolyFlex TPU95 (TDS V5.4) lists 33.6 MPa in X-Y (ISO 37). The sheets differ about 4x, and TPU is far
@@ -159,16 +178,34 @@ MATERIALS = {
                       'Bambu TPU 95A HF TDS V1.0: E is the Z tensile modulus (X-Y 9.8 MPa); the strength is an '
                       'allowable below the Z tensile strength of 22.3 MPa; flexible, stiffness only indicative',
                       source='bambu-tpu-95a-hf-tds', direction='Z'),
-    # Metals and the carbon tube: typical handbook values, not tied to a sheet in research/references.yaml. Checked
-    # for #125: Protolabs' CNC data sheet for 6061-T651/T6 (2026) gives yield 276 MPa, E 10.0 Msi (68.9 GPa) and
-    # 2.70 g/cm3. Its 7075-T651/T6 sheet gives only specification ranges: yield 434-476 MPa (T6 sheet) and 372-462 MPa
-    # (T651 plate). Both are below the typical 503 MPa here, so a 7075 safety factor is optimistic.
-    'al6061': Material('Aluminium 6061-T6', 68900, 0.33, 276, 2.70, 'typical yield strength'),
-    'al7075': Material('Aluminium 7075-T6', 71700, 0.33, 503, 2.81,
-                       'typical yield strength (specification minimums are lower)'),
-    'steel': Material('Steel (mild)', 200000, 0.29, 250, 7.85, 'yield strength (ASTM A36 minimum)'),
+    # Metals (#157): design minimums, not typical values. MIL-HDBK-5J, Metallic Materials and Elements for Aerospace
+    # Vehicle Structures (31 January 2003; public, superseded by MMPDS, which is not free and was not checked):
+    # https://everyspec.com/MIL-HDBK/MIL-HDBK-0001-0099/MIL_HDBK_5J_139/
+    # The strength is the A-basis (or S-basis) tensile yield Fty, in the weaker of the L and LT grain directions;
+    # E is the tension modulus, mu Poisson's ratio. The typical values used before #157 (6061 276 MPa, 7075 503 MPa)
+    # made safety factors read 14 % and 9 % high. Protolabs' CNC data sheets agree: 6061-T651/T6 typical yield
+    # 276 MPa, 2.70 g/cm3; 7075 ranges 434-476 MPa (T6 sheet) and 372-462 MPa (T651 plate to 101.6 mm), over thickness.
+    # - 6061-T6 sheet and T651 plate, 0.010-6.000 in thick, Tables 3.6.2.0(b1) and (b2), pp. 3-264, 3-265: Fty 35 ksi
+    #   (LT; 36 L), E 9.9e3 ksi, mu 0.33. Density from Protolabs (2.70 Mg/m3; the handbook's 0.098 lb/in3 is 2.71).
+    # - 7075-T6 sheet and T651 plate, 0.012-2.000 in (0.3-50.8 mm) thick, Table 3.7.6.0(b1), p. 3-371: Fty 67 ksi
+    #   (LT, the lowest in that range), E 10.3e3 ksi, mu 0.33, 0.101 lb/in3. Thicker plate is weaker: 64 ksi to
+    #   2.5 in, 54 ksi (372 MPa) at 3.5-4 in, and less again short-transverse; replace the row for such stock.
+    # - Mild steel: AISI 1025 sheet, strip, plate, tubing and bar, Table 2.2.1.0(b), p. 2-8: Fty 36 ksi (S-basis, the
+    #   same 36 ksi minimum as ASTM A36 structural steel), E 29.0e3 ksi, mu 0.32, 0.284 lb/in3.
+    # The carbon tube has no cited sheet: typical values, labelled as such; use the supplier's.
+    'al6061': Material('Aluminium 6061-T6', _ksi(9.9e3), 0.33, _ksi(35), 2.70,
+                       'yield strength 35 ksi, the A- or S-basis minimum (LT) of 6061-T6/T651 sheet and plate to '
+                       '6 in (MIL-HDBK-5J Tables 3.6.2.0(b1), (b2)); typical yield is 276 MPa', source='mil-hdbk-5j'),
+    'al7075': Material('Aluminium 7075-T6', _ksi(10.3e3), 0.33, _ksi(67), _lb_in3(0.101),
+                       'yield strength 67 ksi, the A-basis minimum (LT) of 7075-T6/T651 sheet and plate 0.012-2.000 in '
+                       'thick (MIL-HDBK-5J Table 3.7.6.0(b1)); thicker plate is lower (54 ksi at 3.5-4 in); typical '
+                       'yield is 503 MPa', source='mil-hdbk-5j'),
+    'steel': Material('Steel (mild)', _ksi(29.0e3), 0.32, _ksi(36), _lb_in3(0.284),
+                      'yield strength 36 ksi, the S-basis minimum of AISI 1025 (MIL-HDBK-5J Table 2.2.1.0(b)), as '
+                      'ASTM A36\'s minimum', source='mil-hdbk-5j'),
     'cf_tube': Material('Carbon tube (roll-wrapped)', 64000, 0.3, 650, 1.55,
-                        'axial modulus/strength, typical, not from a sheet: use the supplier\'s; not for local crushing'),
+                        'axial modulus/strength, typical values, not from a sheet and not a minimum: use the '
+                        'supplier\'s; not for local crushing'),
 }
 
 

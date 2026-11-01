@@ -206,7 +206,7 @@ V5.4 and Bambu Lab PETG-CF V3.0. Printed snaps need a test print.*
   tan α) / (1 − μ tan α), 10.1 N for CoPA. On the land only friction resists (μ P), and then the hook drops. PETG
   is not in the guide's friction table, so PETG-CF gets no push force; declare `friction` to get one.
 - **The drawing.** It is at true scale, the arm bent along its computed curve. It turns the hook with the arm's tip,
-  as a real hook turns; the closed form does not, so the drawn edge tops the lead 0.3 mm earlier.
+  as a real hook turns; the closed form does not, so the drawn edge tops the lead after 1.95 mm of travel, not 2.25 mm.
 
 The figure's spec, `tools/anim/snap-engagement.yaml`, is a snap declaration too: `cad-agent snapfit
 tools/anim/snap-engagement.yaml` prints the same two verdicts. `tests/test_anim_snapfit.py` runs the calculator

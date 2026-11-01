@@ -261,15 +261,17 @@ def test_the_loop_is_in_step_with_the_calculator(scene):
 
 def test_the_drawn_edge_stays_on_the_drawn_hook(scene):
     """The drawing turns the hook with the tip, which the closed form does not: the edge meets the lead where the
-    calculator says at contact, stays on the drawn lead face up to its top, and reaches the top less than 0.35 mm of
-    travel away from the calculator's (the figure's docstring says 0.3 mm)."""
+    calculator says at contact, moves in all the way up the drawn lead face, and reaches its top after 1.95 mm of
+    travel against the calculator's 2.25 mm, as docs/compliant.md says."""
     a, sh, c = scene["arm"], scene["shape"], scene["drawing"]["clearance_mm"]
     t = math.tan(math.radians(a["lead_deg"]))
     lead = scene["snaps"][0]["engagement"]["lead_travel_mm"]
     assert F.edge_x(a, sh, c, 0.0) == pytest.approx(a["length_mm"] + a["undercut_mm"] / t)
     y_top = a["undercut_mm"]
     drawn = F.edge_x(a, sh, c, 0.0) - F.edge_x(a, sh, c, y_top)
-    assert 0 < lead - drawn < 0.35
+    assert (round(drawn, 2), round(lead, 2)) == (1.95, 2.25)
+    assert "tops the lead after 1.95 mm of travel, not 2.25 mm" in " ".join(
+        (ROOT / "docs" / "compliant.md").read_text(encoding="utf-8").split())
     xs = [F.edge_x(a, sh, c, y_top * k / 8) for k in range(9)]
     assert all(b < x for x, b in zip(xs, xs[1:]))                       # the edge only moves in
 

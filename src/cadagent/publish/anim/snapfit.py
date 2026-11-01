@@ -17,8 +17,9 @@ Two stages, as for the other figures, so the committed SVG can be checked anywhe
 
 The figure is the guide's closed form on stated inputs, drawn: small-deflection beam theory with the mating part rigid,
 and allowables derived from data sheets. It is not a measurement: printed snaps need a test print. The drawing turns the
-hook with the arm's tip, as a real hook turns; the closed form, like the guide, does not, so the drawn edge reaches the
-top of the lead about ``sin(tip slope) x hook depth`` (0.3 mm here) further along than the chart's travel says.
+hook with the arm's tip, as a real hook turns; the closed form, like the guide, does not. Turned, the hook's lowest
+point sits about ``sin(tip slope) x hook depth`` further out, so the drawn edge reaches the top of the lead after that
+much less travel (1.95 mm, against the calculator's 2.25 mm here). The drawing and the charts meet at the same moments.
 """
 from __future__ import annotations
 

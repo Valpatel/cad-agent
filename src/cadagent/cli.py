@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
 from cadagent._deps import MissingDependency
-from cadagent.project import CadConfigError, CadProject, Step, load_project
+from cadagent.project import CadConfigError, CadProject, SourceDateEpochError, Step, load_project
 
 SUBCOMMANDS = ("build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
                "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet",
@@ -545,6 +545,7 @@ def cmd_mcmaster(args: argparse.Namespace) -> int:
     rc = 0
     with contextlib.ExitStack() as stack:
         session = None
+        gated = ""                                          # the first part McMaster asked a login for
 
         def browser():
             nonlocal session
@@ -558,8 +559,17 @@ def cmd_mcmaster(args: argparse.Namespace) -> int:
             try:
                 if step.exists() and page_file.exists() and not args.force:
                     _say(f"{pn}: already here ({step}); --force downloads it again")
+                elif gated:                                 # the next page would meet the same login: do not ask
+                    _err(f"mcmaster {pn}: not fetched: McMaster asked for a login at {gated} in this run; "
+                         "the part number may be fine")
+                    rc = 1
+                    continue
                 else:
-                    browser().fetch(pn, folder, choose=choices[pn] or None)
+                    try:
+                        browser().fetch(pn, folder, choose=choices[pn] or None)
+                    except mc.LoginRequired:
+                        gated = pn
+                        raise
                     _say(f"{pn}: downloaded -> {step}")
                 page = json.loads(page_file.read_text())
                 _say(f"{pn}: {page.get('description')} | {page.get('price_text')}")
@@ -887,7 +897,7 @@ def dispatch(args: argparse.Namespace) -> int:
         if project.unknown_keys:
             _warn(f"unknown cad: keys ignored: {', '.join(project.unknown_keys)}")
         return HANDLERS[sub](project, args)
-    except (CadConfigError, MissingDependency, _Unusable) as exc:
+    except (CadConfigError, MissingDependency, _Unusable, SourceDateEpochError) as exc:
         _err(f"{sub}: {exc}")
         return 2
     except FileNotFoundError as exc:

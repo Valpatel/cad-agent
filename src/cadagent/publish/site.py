@@ -31,14 +31,15 @@ import re
 import shutil
 import subprocess
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 from urllib.parse import unquote
 
 from cadagent._deps import require
+from cadagent.project import source_pathspecs, source_stamp
 
 SITE_DIR = "site"
 KIT_URL = "/_cadagent/kit/"
@@ -122,9 +123,12 @@ def sources(root: Path, cfg: SiteConfig) -> List[Path]:
     return files
 
 
-def git_log(root: Path, n: int = 15) -> List[Dict[str, str]]:
+def git_log(root: Path, n: int = 15, outputs: Sequence[Path] = ()) -> List[Dict[str, str]]:
+    """The last ``n`` commits that changed the project's sources (``cadagent.project.source_pathspecs``: not a
+    commit of only its outputs, such as this site), so committing the site does not change the site (#150)."""
     try:
-        out = subprocess.run(["git", "log", f"-{n}", "--date=short", "--pretty=format:%h%x1f%ad%x1f%s"],
+        out = subprocess.run(["git", "log", f"-{n}", "--date=short", "--pretty=format:%h%x1f%ad%x1f%s", "--",
+                              *source_pathspecs(root, outputs)],
                              cwd=root, capture_output=True, text=True, timeout=10)
     except (OSError, subprocess.TimeoutExpired):
         return []
@@ -135,6 +139,29 @@ def git_log(root: Path, n: int = 15) -> List[Dict[str, str]]:
         h, d, s = (line.split("\x1f") + ["", "", ""])[:3]
         rows.append({"hash": h, "date": d, "subject": s})
     return rows
+
+
+def committed_dates(root: Path, rels: Sequence[str]) -> Dict[str, str]:
+    """``{path: YYYY-MM-DD}``: the date (UTC) of the last commit that changed each of ``rels`` (paths relative to
+    ``root``), in one ``git log``. A path that was never committed is left out. Unlike a file's modification time,
+    this is the same in every checkout of the same commit (#150)."""
+    if not rels:
+        return {}
+    try:
+        out = subprocess.run(["git", "-c", "core.quotePath=false", "log", "--relative", "--format=%x01%ct",
+                              "--name-only", "--", *rels],
+                             cwd=root, capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    if out.returncode != 0:
+        return {}
+    wanted, dates, stamp = set(rels), {}, None
+    for line in out.stdout.splitlines():
+        if line.startswith("\x01"):
+            stamp = line[1:].strip()
+        elif line in wanted and line not in dates and stamp and stamp.isdigit():
+            dates[line] = datetime.fromtimestamp(int(stamp), timezone.utc).strftime("%Y-%m-%d")
+    return dates
 
 
 # ----------------------------------------------------------------------------- markdown pages
@@ -326,6 +353,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
     if not cfg.nav and auto_nav:
         cfg.nav = auto_nav()
     out = root / SITE_DIR
+    stamp = source_stamp(root, outputs=[out])          # first: a bad SOURCE_DATE_EPOCH writes nothing
     (out / "pages").mkdir(parents=True, exist_ok=True)
     # Ship the renderer with generated HTML; published sites must not depend on a CDN.
     for rel in ("diagrams.js", "diagrams.css", "vendor/mermaid/mermaid.min.js",
@@ -336,12 +364,13 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
     pages = page_files(root, cfg.pages)
     page_map = {p.relative_to(root).as_posix(): f"{slug(p.relative_to(root).as_posix())}.html" for p in pages}
     docs = []
+    changed = committed_dates(root, list(page_map))
     for p in pages:
         rel = p.relative_to(root).as_posix()
         text = p.read_text()
         title = _title_of(text, rel)
         docs.append({"rel": rel, "title": title, "summary": _summary_of(text), "href": f"pages/{page_map[rel]}",
-                     "mtime": datetime.fromtimestamp(p.stat().st_mtime).strftime("%Y-%m-%d")})
+                     "mtime": changed.get(rel, "not committed")})
         body = (nav_html(cfg, "docs", "../../") + f'<header class="top"><div class="wrap"><a href="../index.html">← {_e(cfg.title)}</a>'
                 f'<p class="tag"><code>{_e(rel)}</code></p></div></header>'
                 f'<main class="wrap"><article class="doc">{render_markdown(text, p, root, page_map)}</article></main>')
@@ -357,7 +386,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
     milestones = _load(root, cfg.milestones) or []
     decisions = _load(root, cfg.decisions) or []
     designs = (_load(root, cfg.designs) or {}).get("designs", [])
-    log = git_log(root)
+    log = git_log(root, outputs=[out])
 
     done = sum(1 for m in milestones if m.get("status") == "done")
     pct = round(100 * done / len(milestones)) if milestones else 0
@@ -459,7 +488,8 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
             + section("Decisions", "".join(decision(d) for d in decs), "No decisions recorded yet.")
             + section("Documents", f'<div class="docs">{doc_cards}</div>' if doc_cards else "", "No documents configured.")
             + section("Recent changes", f'<div class="tablewrap"><table class="log">{log_rows}</table></div>' if log_rows else "", "No git history.")
-            + f'<footer>Built {datetime.now().strftime("%Y-%m-%d %H:%M")} by cad-agent from the project files. Refresh to rebuild.</footer></main>')
+            + f'<footer>Built by cad-agent from the project files as of {_e(stamp)}. '
+            'Refresh to rebuild.</footer></main>')
     review_css = ""
     if review_summary is not None:
         from cadagent.publish.site_review import CSS as review_css

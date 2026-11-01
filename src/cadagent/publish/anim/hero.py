@@ -29,7 +29,7 @@ What the drawing approximates, stated in the scene and its caption:
   overlap can never meet while every joint turns about that axis. Such pairs are counted, not queried. Each
   measured pair of solids is a clash, a designed contact (touching at every pose), a running gap (the same gap at
   every pose, turning about a shared axis) or passing; the fit row states the closest running and passing gaps.
-  The sweep is slow (#186), so a previous scene's result is reused when its key (the assembly's sha256, the parts,
+  The sweep takes minutes, so a previous scene's result is reused when its key (the assembly's sha256, the parts,
   linkage and clearance specs, and the relation engine's source and tolerances) is unchanged.
 """
 from __future__ import annotations

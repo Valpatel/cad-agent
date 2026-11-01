@@ -23,7 +23,7 @@ VECTORS = ROOT / "tests" / "fixtures" / "formula-vectors.json"
 DATA = ROOT / "src" / "cadagent" / "webkit" / "formulas-data.js"
 # Every function the browser port has, by its Python name (the JS name is the camelCase of it).
 PORTED = ("snap_root_strain", "snap_deflection_force", "snap_arm", "cantilever_shape", "cantilever_strain_profile",
-          "cantilever_thickness_profile")
+          "cantilever_thickness_profile", "grashof", "fourbar_angles", "transmission_angle", "fourbar_input_limits")
 TOLERANCE = {"rel": 1e-12, "abs": 1e-15}
 
 
@@ -44,8 +44,9 @@ def jsonable(value):
 def cases():
     out = []
 
-    def add(name, *args):
-        out.append({"py": name, "js": camel(name), "args": list(args), "expected": jsonable(getattr(fx, name)(*args))})
+    def add(name, *args, **extra):
+        out.append({"py": name, "js": camel(name), "args": list(args), "expected": jsonable(getattr(fx, name)(*args)),
+                    **extra})
 
     def refuse(name, *args):
         """An input the Python refuses with ValueError: the port must refuse it too (with RangeError)."""
@@ -79,6 +80,7 @@ def cases():
                 m.allowable(direction), 1)
     for design in fx.DESIGNS:                         # an arm at rest: no strain or force, the same stiffness
         add("snap_arm", 20 * mm, 1.6 * mm, 6 * mm, 0.0, 2703e6, 0.02, design)
+    fourbar_cases(add)
     # What the Python refuses: xi outside 0..1, and a design that is not 1, 2 or 3 (including a string, a fraction
     # and an inherited key of a JS object).
     for xi in (-0.1, 1.2):
@@ -91,6 +93,53 @@ def cases():
         refuse("snap_root_strain", 20 * mm, 1.6 * mm, 1.5 * mm, bad)
         refuse("snap_arm", 20 * mm, 1.6 * mm, 6 * mm, 1.5 * mm, 2703e6, 0.02, bad)
     return out
+
+
+# Four-bars (a crank, b coupler, c rocker, d ground): each Grashof inversion, a triple rocker, change points
+# (parallelograms, a kite, a + b = c + d in lengths binary cannot hold), a near-degenerate one and links that never close.
+FOURBARS = [(40, 120, 80, 100),            # Norton's Example 4-1, a crank-rocker (the demo's default)
+            (80, 100, 120, 40),            # double crank
+            (80, 100, 40, 120),            # rocker-crank: two input ranges
+            (80, 40, 120, 100),            # double rocker: two input ranges
+            (100, 80, 70, 60),             # triple rocker: one range, through 0
+            (60, 30, 50, 70),
+            (0.05, 0.02, 0.06, 0.04),
+            (5, 2, 5, 2), (0.03, 0.07, 0.03, 0.07), (3, 3, 4, 4), (0.02, 0.05, 0.03, 0.04),     # change points
+            (1, 1, 1 - 2.2e-6, 1 + 2e-6),  # open by 2e-7 at 0 degrees: a folded limit near 0
+            (1, 1, 1, 10)]                 # one link longer than the other three: closes nowhere
+
+
+# Where the two assemblies meet (an input limit, or 0 and 180 degrees on a change-point linkage) the angles are a double
+# root: one ulp of difference in cos theta2 between two maths libraries moves them by about its square root (1e-8), so
+# the port must agree there to 1e-7, not 1e-12. Beside it (1e-9 to 1e-6 rad away) the error grows only by a few
+# thousand, so 1e-10 is enough. Whether the links close at all must still agree exactly. Measured on these vectors:
+# Chrome and WebKit match the Python bit for bit, and Node 20 differs by at most 1.2e-12 (one ulp in Math.cos).
+DOUBLE_ROOT = {"rel": 1e-7, "abs": 1e-7, "why": "where the branches meet: a double root"}
+NEAR_DOUBLE_ROOT = {"rel": 1e-10, "abs": 1e-10, "why": "within 1e-6 rad of where the branches meet: near a double root"}
+
+
+def fourbar_cases(add):
+    """Both branches every 15 degrees, the change points and just beside them, and each input limit with points
+    1e-7 rad either side (the open side closes nowhere, the inside on both branches). Output angles are compared
+    as angles (pi and -pi are one position)."""
+    import math
+    for links in FOURBARS:
+        add("grashof", *links)
+        add("fourbar_input_limits", *links)
+        angles = [math.radians(deg) for deg in range(-180, 181, 15)]
+        angles += [0.0, math.pi, -math.pi, 1e-9, -1e-9, math.pi - 1e-9]
+        lim = fx.fourbar_input_limits(*links)
+        meet = [e for e in (lim["folded"], lim["stretched"]) if e is not None]
+        for edge in meet:
+            angles += [edge, -edge, edge - 1e-7, edge + 1e-7]
+        if fx.grashof(*links)["kind"] == "change-point":
+            meet += [0.0, math.pi]
+        for t2 in angles:
+            gap = min((abs(abs(t2) - m) for m in meet), default=1.0)
+            near = {"tolerance": DOUBLE_ROOT} if gap == 0 else {"tolerance": NEAR_DOUBLE_ROOT} if gap < 1e-6 else {}
+            for crossed in (False, True):
+                add("fourbar_angles", *links, t2, crossed, angles=True, **near)
+            add("transmission_angle", *links, t2, angles=True, **near)
 
 
 def materials():

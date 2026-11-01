@@ -20,7 +20,9 @@ What it gives you
     Opens ``https://www.mcmaster.com/<PN>/``, reads the page (title, price and pack quantity, every row of the
     specification table, the option choices the page offers) into ``<PN>.page.json``, then picks "3-D STEP" in the
     CAD menu and saves the download as ``<PN>.step`` once it has checked that it is a STEP file. Returns the STEP
-    path. ``Session`` does the same for several part numbers with one browser.
+    path. ``Session`` does the same for several part numbers with one browser. A page with no specification table
+    raises RuntimeError; when McMaster showed a login prompt instead (``login_gate``), it raises ``LoginRequired``,
+    whose message says the part number may be fine and where else to read the part's data.
 ``normalise(step_path, kind)``
     Finds the part's axis from its cylindrical faces and moves it into the frame for its kind (``FRAMES``), writes
     ``<PN>.norm.step`` and returns ``(path, info)`` with the axis found, the bounding box, the volume and a mass.
@@ -44,6 +46,7 @@ import re
 import shutil
 import time
 import zipfile
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
@@ -107,6 +110,100 @@ def validate_pn(pn: str) -> str:
 
 def product_url(pn: str) -> str:
     return f"{BASE_URL}/{validate_pn(pn)}/"
+
+
+# ----------------------------------------------------------------------------------- pages that are not product pages
+
+# What McMaster shows in place of the product detail when it wants the session to sign in ("Log in to view Product
+# Detail", seen 2026-10-29 and 2026-10-31). Only the phrase in the text a reader sees counts: every McMaster page has a
+# "Log in" link in its header, so a page that merely links to the login is not a login gate, and neither is a hidden
+# login dialog.
+LOGIN_GATE_RE = re.compile(r"\b(?:log ?in|sign ?in) to (?:view|see|continue)\b[^.!?\n]{0,40}", re.I)
+
+
+class LoginRequired(RuntimeError):
+    """McMaster showed a login prompt instead of the product page. The part number may be fine; this session cannot
+    read the page."""
+
+
+class _Text(HTMLParser):
+    """The text a reader sees in an HTML page, a line per block element. Left out: ``<title>`` (the tab's, not the
+    page's), ``<script>``, ``<style>``, ``<noscript>``, ``<template>`` and ``<textarea>``, and every element marked
+    hidden (the ``hidden`` attribute, ``aria-hidden="true"``, an inline ``display: none`` or ``visibility: hidden``),
+    with what is inside it. A stylesheet that hides an element is not read: in a browser, ``Session`` uses the
+    rendered text instead."""
+    _SKIP = {"title", "script", "style", "noscript", "template", "textarea"}
+    _VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track",
+             "wbr"}
+    _BLOCK = {"address", "article", "aside", "blockquote", "br", "button", "dd", "dialog", "div", "dl", "dt",
+              "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "header",
+              "hr", "li", "main", "nav", "ol", "option", "p", "pre", "section", "table", "td", "th", "tr", "ul"}
+    _HIDDEN_STYLE = re.compile(r"display\s*:\s*none|visibility\s*:\s*hidden", re.I)
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.parts: List[str] = []
+        self._open: List[Tuple[str, bool]] = []         # open elements, and whether each hides what is inside it
+
+    def handle_starttag(self, tag, attrs) -> None:
+        if tag in self._BLOCK:
+            self.parts.append("\n")
+        if tag in self._VOID:
+            return
+        a = {k.lower(): (v or "") for k, v in attrs}
+        hidden = (tag in self._SKIP or "hidden" in a or a.get("aria-hidden", "").lower() == "true"
+                  or bool(self._HIDDEN_STYLE.search(a.get("style", ""))))
+        self._open.append((tag, hidden))
+
+    def handle_endtag(self, tag) -> None:
+        if tag in self._BLOCK:
+            self.parts.append("\n")
+        for i in range(len(self._open) - 1, -1, -1):        # close it and anything left open inside it
+            if self._open[i][0] == tag:
+                del self._open[i:]
+                break
+
+    def handle_data(self, data) -> None:
+        if not any(hidden for _, hidden in self._open):
+            self.parts.append(re.sub(r"\s+", " ", data))      # a line break in the source is a space
+
+
+def _lines(text: str) -> str:
+    lines = (re.sub(r"[ \t\r\f\v\u00a0]+", " ", line).strip() for line in (text or "").split("\n"))
+    return "\n".join(line for line in lines if line)
+
+
+def page_text(html: str) -> str:
+    """The text a reader sees in a page's HTML (``_Text``): one line per block element, spaces collapsed. No browser
+    needed; a browser's own rendered text (``page.inner_text("body")``) is better where there is one."""
+    parser = _Text()
+    parser.feed(html or "")
+    parser.close()
+    return _lines("".join(parser.parts))
+
+
+def login_gate(html: str = "", text: Optional[str] = None) -> Optional[str]:
+    """The login prompt a page shows in place of the product detail (e.g. "Log in to view Product Detail"), or None.
+    ``text`` is the page's rendered text (from a browser); without it, the text a reader sees in ``html``
+    (``page_text``: hidden elements, scripts and styles left out)."""
+    m = LOGIN_GATE_RE.search(_lines(text) if text is not None else page_text(html))
+    return m.group(0).strip(" ,;:-") if m else None
+
+
+def page_error(pn: str, url: str, html: str = "", text: Optional[str] = None) -> RuntimeError:
+    """Why the page at ``url`` is not a product page this session can read, as the exception to raise: a
+    ``LoginRequired`` when McMaster asked for a login (``login_gate`` of ``text`` or ``html``; the part number may be
+    fine), else a plain RuntimeError saying there is no specification table (a wrong or retired part number, or a
+    page that did not load)."""
+    prompt = login_gate(html, text)
+    if prompt:
+        return LoginRequired(
+            f"{pn}: McMaster asked for a login (\"{prompt}\" at {url}) instead of showing the product page, so the "
+            "part number may be fine; nothing was read or downloaded. Retry later from a new session, once. By hand, "
+            f"McMaster's public search page ({BASE_URL}/<trade number or size>/, e.g. {BASE_URL}/6301-2RS/) gives "
+            "the part number and price, and the maker's datasheet gives the ratings and dimensions the search table "
+            "leaves out (such as a bearing's static load rating).")
+    return RuntimeError(f"{pn}: {url} is not a product page (no specification table)")
 
 
 def parse_price(text: str) -> Tuple[Optional[float], Optional[int]]:
@@ -361,8 +458,20 @@ class Session:
         try:
             self.page.wait_for_selector('tr[class*="product-detail-spec-table-row"]')
         except Exception:
-            raise RuntimeError(f"{pn}: {self.page.url} is not a product page (no specification table)")
+            raise page_error(pn, self.page.url, *self._page_texts()) from None
         self.page.wait_for_timeout(1500)
+
+    def _page_texts(self) -> Tuple[str, Optional[str]]:
+        """``(html, text)`` of the open page for ``page_error``: the rendered text when the browser gives it (what a
+        reader sees, with CSS applied), else only the HTML; empty when the page gives neither."""
+        try:
+            return "", self.page.inner_text("body", timeout=5000)
+        except Exception:
+            pass
+        try:
+            return self.page.content(), None
+        except Exception:
+            return "", None
 
     def read(self, pn: str, reload: bool = True) -> Dict[str, Any]:
         """The product page's data (title, price, pack, every spec row, the option choices)."""

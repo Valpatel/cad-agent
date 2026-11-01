@@ -489,7 +489,8 @@ try {
   await tall.close();
   // A wheel over the page tree scrolls the page when the tree has nothing to scroll (review 3: the panel trapped it).
   // Every group is folded first, so the panel is still a scroll container but has nothing to scroll whatever the
-  // number of pages (the open Docs group and this page's outline outgrew 1080 px when the vision page arrived, #148).
+  // number of pages. The open Docs group alone outgrew 1080 px when the vision page arrived (#148); from 1500 px the
+  // tree leaves out the page's outline.
   const desk = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
   await desk.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
   const panel = await desk.locator('cad-nav .cad-nav-panel').evaluate(p => {

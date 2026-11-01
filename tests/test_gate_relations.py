@@ -8,6 +8,7 @@ import math
 import subprocess
 import sys
 import time
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -475,6 +476,11 @@ def test_a_curve_along_an_iso_line_gets_samples_across_it():
     zs = sorted({round(p.Z(), 9) for p in relations_mod._patch_grid(side.wrapped, circle, 12, boundary=False)})
     assert [z for z in zs if z < 0] == pytest.approx([-10 / 2 ** k for k in (9, 10, 11, 12)], abs=1e-9)
     assert zs[-1] == pytest.approx(-0.02 + 10 * 12 / 13, abs=1e-9)      # and evenly up the 10 mm face
+    # The circle goes once round the periodic face: the coarse pass's 4 columns are a quarter turn apart.
+    coarse = relations_mod._patch_grid(side.wrapped, circle, relations_mod._PROBE_COARSE, boundary=False)
+    counts = Counter(round(math.degrees(math.atan2(p.Y(), p.X())) % 360, 6) for p in coarse)
+    turns = sorted(t for t, k in counts.items() if k > 1)          # columns, not the one centroid sample
+    assert len(turns) == 4 and all(b - a == pytest.approx(90) for a, b in zip(turns, turns[1:]))
 
 
 @needs_cad

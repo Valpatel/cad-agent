@@ -18,6 +18,12 @@
  * - Never fatal: with no browser, or for a diagram Mermaid cannot draw, the block is left as it is, the build says so,
  *   and kit/diagrams.js draws it in the reader's browser as before. `client: true` (build-site's --client-diagrams)
  *   leaves every block so, cache or not.
+ *
+ * Adopted vs built: the approach (Mermaid in Playwright's Chromium at build time, inline SVG, the block kept when no
+ * browser is there) is mermaid-isomorphic's, behind rehype-mermaid (MIT, Remco Haszing). mermaid-cli (MIT) does the same
+ * through Puppeteer. Neither is a dependency here: both bring their own Mermaid from npm, not the vendored, hash-checked
+ * one; both return a bare SVG, not the kit's figure that kit/diagrams.js knows; and this site's Markdown goes through
+ * marked, not rehype. Playwright and Chromium themselves are credited in THIRD_PARTY_NOTICES.md.
  */
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';

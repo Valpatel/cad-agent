@@ -29,7 +29,7 @@ flowchart TD
 | You are about to | Run |
 |---|---|
 | add a Python or npm dependency, or raise or drop a pin | `rows --online` before you push; paste the rows into the PR |
-| vendor a project or a web kit file, or update one | `rows --online`, plus the vendor scan (`tools/vendor_sync.py import`); a web kit folder gets a `SOURCE.json` receipt |
+| vendor a project or a web kit file, or update one | `rows --online`, plus the vendor scan (`tools/vendor_sync.py import`); a web kit folder gets a `SOURCE.json` receipt: the npm tarball, its integrity and each file's SHA-256 (`three/SOURCE.json`), or each file's URL when it is not from npm (`fonts/SOURCE.json`) |
 | add a catalogue entry (`upstreams/registry.yaml`, `research/landscape.json`) or a link in a published page | `rows --online` |
 | recommend a tool, skill, plugin or MCP server to someone | `report --online` and read its row; check it is not installed from a registry |
 | act on the weekly "Supply-chain report" issue | `report --online` to confirm, then fix in a PR |
@@ -126,7 +126,7 @@ Fix it in a PR, or record why it is fine (below). The action for each kind of fi
 | advisory on a transitive Python package | Upgrade it; if a direct dependency pins it, raise or replace that one. The finding names the direct dependencies it comes through. |
 | advisory on a vendored web kit library | Re-vendor a fixed release: new files, a new receipt (`SOURCE.json` or `file-viewer-sources.json`), notices, then the web kit browser suites. It ships to every project site that copies the kit. |
 | advisory on a library bundled inside a vendored file | Take the first release of the bundling library that bundles a fixed one, and say in its receipt's `bundled` note whether the affected code is reachable. |
-| `vendor-drift`, `webkit-hash`, `webkit-drift` | Someone changed vendored code. Find out who and why; restore it, or record the change (a patch in `vendor/patches/`, or the receipt's `modifications`) and re-run the scan. |
+| `vendor-drift`, `webkit-hash`, `webkit-drift` | Someone changed vendored code. Find out who and why; restore it, or record the change (a patch in `vendor/patches/`; in a web kit receipt, `patched` with the upstream file's SHA-256 and what changed, as `three/SOURCE.json` does for OrbitControls) and re-run the scan. |
 | `webkit-receipt-integrity` | The registry serves different bytes for that version than when we vendored it. Stop and tell the owner; do not re-vendor from it. |
 | `repo-archived`, `repo-stale` | Keep the entry and show it: set `status: unmaintained` (or a note in `research/landscape.json`). Never remove it silently. |
 | `repo-moved` | Check the new owner is who you expect, then update the URL. The old name can be registered by someone else. |

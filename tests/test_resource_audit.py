@@ -106,6 +106,10 @@ def test_versions_floors_and_lowest_release():
     ("npx", "pkg@latest", "pkg@latest"),
     ("uvx", "--no-config --python 3.13 --from cadgen==0.7.26 cadgen mcp", None),
     ("uvx", "kicad-mcp-pro", "kicad-mcp-pro"),
+    ("uvx", "kicad-mcp-pro@4.4.0", None),
+    ("npx", "--no-install playwright install chromium", None),     # runs the lockfile's copy, never installs (#151)
+    ("npx", "--no playwright install chromium", None),
+    ("bunx", "--no-install playwright install", "playwright"),      # only npx is known to refuse
     ("uvx", "ruff==0.6.0 check", None),
     ("pipx run", "./local.py", None),
 ])
@@ -705,7 +709,7 @@ def test_bundled_libraries_are_asked_about_and_files_checked_against_their_packa
     f = next(f for f in r["findings"] if f["check"] == "advisory" and f["subject"] == "webkit:mermaid")
     assert "dompurify 3.4.12, bundled inside a vendored file" in f["title"] and "dompurify >=3.4.17" in f["action"]
     row = next(w for w in r["inventory"]["webkit"] if w["name"] == "mermaid")
-    assert row["receipts"]["mermaid"] == {"files": 2, "identical": 2, "differ": [], "missing": []}
+    assert row["receipts"]["mermaid"] == {"files": 2, "identical": 2, "differ": [], "missing": [], "patched": []}
     assert not [f for f in r["findings"] if f["check"].startswith("webkit-") and f["severity"] != "info"]
 
 
@@ -721,12 +725,89 @@ def test_a_file_that_differs_from_its_package_is_drift(tmp_path):
 
 
 def test_the_repo_receipts_match_their_files_offline():
-    """The real kit: every receipt reads, every bundled version is in its file, every receipt names its tarball."""
+    """The real kit: every receipt reads, every bundled version is in its file, every receipt names its tarball, and
+    every vendored file has a recorded SHA-256 (three/ and fonts/ since #151)."""
     r = ra.build(ROOT, AS_OF, None, npm_audit=False).to_json()
-    bad = [f for f in r["findings"] if f["check"] in ("webkit-receipt", "webkit-version", "webkit-hash", "webkit-hash-missing")]
+    bad = [f for f in r["findings"] if f["check"] in ("webkit-receipt", "webkit-version", "webkit-hash", "webkit-hash-missing",
+                                                      "webkit-unhashed", "webkit-unknown")]
     assert not bad, bad
     mer = next(w for w in r["inventory"]["webkit"] if w["name"] == "mermaid")
     assert mer["bundled"] and all("@" in b for b in mer["bundled"])
+    assert all(w["hashed"] == w["files"] for w in r["inventory"]["webkit"]), r["inventory"]["webkit"]
+    three = json.loads((ROOT / ra.KIT / "three/SOURCE.json").read_text())
+    patch = three["patched"]["addons/controls/OrbitControls.js"]
+    assert set(three["patched"]) <= set(three["files"]) and patch["upstream_sha256"] != three["files"]["addons/controls/OrbitControls.js"]
+
+
+def kit_folder_checkout(root, files, receipt):
+    """The fixture plus one kit folder with its own SOURCE.json receipt."""
+    checkout(root)
+    for rel, data in files.items():
+        write(root, f"{ra.KIT}/{rel}", data)
+    write(root, f"{ra.KIT}/{rel.split('/')[0]}/SOURCE.json", json.dumps(receipt))
+    return root
+
+
+def test_a_receipt_with_no_npm_package_records_hashes_only(tmp_path):
+    """fonts/ comes from Google Fonts by URL, not npm: its receipt hashes the files and is asked nothing about npm."""
+    font, css = b"wOF2 font bytes", b"@font-face {}"
+    root = kit_folder_checkout(tmp_path, {"fonts/a.woff2": font, "fonts/fonts.css": css}, {
+        "license": "OFL-1.1", "files": {"a.woff2": hashlib.sha256(font).hexdigest(), "fonts.css": hashlib.sha256(css).hexdigest()},
+        "sources": {"a.woff2": {"url": "https://fonts.gstatic.com/s/a/v1/a.woff2"}}})
+    assert ra.webkit_components(root)["fonts"] == {"packages": [], "repos": [], "bundled": [], "receipts": []}
+    r = run(root)
+    row = next(w for w in r["inventory"]["webkit"] if w["name"] == "fonts")
+    assert row["hashed"] == row["files"] == 2 and row["packages"] == []
+    assert not [f for f in r["findings"] if f["severity"] != "info"], r["findings"]
+    r = run(root, online_net(tmp_path))                      # nothing to ask OSV or the npm registry about
+    assert not [f for f in r["findings"] if f["subject"] == "webkit:fonts"], r["findings"]
+    write(root, f"{ra.KIT}/fonts/a.woff2", font + b"!")
+    assert ("webkit-hash", "webkit:fonts") in checks(run(root), "high")
+
+
+ORBIT = b"const normalized_delta = Math.abs( delta ) / ( 100 * ( window.devicePixelRatio | 0 ) );"
+ORBIT_PATCHED = b"const normalized_delta = Math.abs( delta ) / 100;"
+CORE = b'const REVISION = "160";'
+
+
+def three_checkout(root, local_orbit=ORBIT_PATCHED, upstream_sha=None, core=CORE):
+    """three/ as #151 records it: two files from the npm tarball, one of them patched here."""
+    pkg = tgz({"package/build/three.module.min.js": CORE, "package/examples/jsm/controls/OrbitControls.js": ORBIT})
+    url = "https://registry.npmjs.org/three/-/three-0.160.0.tgz"
+    files = {"three/three.module.min.js": core, "three/addons/controls/OrbitControls.js": local_orbit}
+    kit_folder_checkout(root, files, {
+        "package": "three", "version": "0.160.0", "source": url, "npm_integrity": integrity(pkg), "license": "MIT",
+        "repository": "https://github.com/mrdoob/three.js/tree/r160",
+        "files": {rel.split("/", 1)[1]: hashlib.sha256(data).hexdigest() for rel, data in files.items()},
+        "paths_in_package": {"three.module.min.js": "package/build/three.module.min.js",
+                             "addons/controls/OrbitControls.js": "package/examples/jsm/controls/OrbitControls.js"},
+        "patched": {"addons/controls/OrbitControls.js": {"upstream_sha256": upstream_sha or hashlib.sha256(ORBIT).hexdigest(),
+                                                         "change": "wheel delta divided by 100"}},
+        "modifications": "None except the patched file"})
+    return root, url, pkg
+
+
+def test_a_patched_file_is_expected_to_differ_and_the_rest_must_not(tmp_path):
+    root, url, pkg = three_checkout(tmp_path / "a")
+    r = run(root, online_net(tmp_path, files={url: pkg}, gh={"repos/mrdoob/three.js": repo("mrdoob/three.js")}))
+    row = next(w for w in r["inventory"]["webkit"] if w["name"] == "three")
+    assert row["receipts"]["three"] == {"files": 2, "identical": 1, "differ": [], "missing": [],
+                                        "patched": ["addons/controls/OrbitControls.js"]}
+    assert not [f for f in r["findings"] if f["check"].startswith("webkit-") and f["severity"] != "info"], r["findings"]
+    assert "three: 1 of 2 (1 patched)" in ra.to_markdown(r)
+    # the patch was lost: the file is the package's again
+    root, url, pkg = three_checkout(tmp_path / "b", local_orbit=ORBIT)
+    r = run(root, online_net(tmp_path, files={url: pkg}))
+    assert any(f["check"] == "webkit-receipt" and "is patched, but it is the package's file" in f["title"] for f in r["findings"])
+    # the package's file is not the one the patch was made against
+    root, url, pkg = three_checkout(tmp_path / "c", upstream_sha="0" * 64)
+    r = run(root, online_net(tmp_path, files={url: pkg}))
+    assert any(f["check"] == "webkit-receipt" and "not the file its patch was made against" in f["title"] for f in r["findings"])
+    # a file that is not recorded as patched still has to be the package's byte for byte
+    root, url, pkg = three_checkout(tmp_path / "d", core=CORE + b" // changed")
+    r = run(root, online_net(tmp_path, files={url: pkg}))
+    drift = next(f for f in r["findings"] if f["check"] == "webkit-drift")
+    assert drift["severity"] == "high" and drift["evidence"].startswith("three.module.min.js vs")
 
 
 # --------------------------------------------------------------------------------------------- the weekly issue

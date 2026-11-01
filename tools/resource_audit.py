@@ -1194,7 +1194,8 @@ def bundled_of(rec):
 
 def webkit_components(root):
     """Each top-level folder of the kit's vendor/: the npm packages it holds, the ones its files bundle, its repositories
-    and its npm receipts, all read from the kit's own receipts. A folder with a SOURCE.json describes itself."""
+    and its npm receipts, all read from the kit's own receipts. A folder with a SOURCE.json describes itself; one whose
+    SOURCE.json names no npm package (fonts/, fetched from Google Fonts by URL) records hashes and sources only."""
     src, folders, _bad = kit_receipts(root)
 
     def entry(key):
@@ -1215,6 +1216,9 @@ def webkit_components(root):
         'fonts': dict(packages=[], repos=[]),
     }
     for folder, rec in folders.items():
+        if not rec.get('package'):
+            comps.setdefault(folder, dict(packages=[], repos=[]))
+            continue
         comps[folder] = dict(packages=[(rec.get('package') or folder, rec.get('version'))], bundled=bundled_of(rec),
                              repos=[repo(rec, folder)], receipts=[(rec.get('package') or folder, rec)])
     for c in comps.values():
@@ -1272,7 +1276,7 @@ def check_webkit(rep, net, added_files=()):
     folder_names = sorted({f.split('/')[0] for f in files if '/' in f})
     for top in folder_names:
         c = comps.get(top)
-        row = rep.item('webkit', id=f'webkit:{top}', name=top, files=sum(1 for f in files if f.startswith(top + '/')),
+        row = rep.item('webkit', id=f'webkit:{top}', name=top, files=sum(1 for f in files if f.startswith(top + '/') and f not in records),
                        hashed=sum(1 for f in files if f.startswith(top + '/') and f in hashes),
                        packages=[f'{n}@{v}' for n, v in (c or {}).get('packages', [])],
                        bundled=[f'{n}@{v}' for n, v in (c or {}).get('bundled', [])], repos=(c or {}).get('repos', []))
@@ -1380,7 +1384,11 @@ def tar_files(data, wanted):
 
 def verify_receipt(rep, net, row, top, name, rec):
     """Online: fetch the npm tarball a receipt names, check its sha512 integrity, and compare each vendored file with the
-    file at its recorded path in the package. A receipt that declares a modification is compared but not flagged."""
+    file at its recorded path in the package. A receipt that declares a modification is compared but not flagged.
+
+    A receipt can instead name the files it patches ("patched": {file: {"upstream_sha256": ..., "change": ...}}): those
+    must differ from the package, and the package's file must be the one the patch was made against; every other file
+    must still be byte for byte the package's."""
     src, integ, paths = rec.get('source'), str(rec.get('npm_integrity') or ''), rec.get('paths_in_package') or {}
     if not (src and str(src).startswith('https://registry.npmjs.org/') and integ.startswith('sha512-') and paths):
         return
@@ -1402,22 +1410,38 @@ def verify_receipt(rep, net, row, top, name, rec):
                 'Run again later.', key=name)
         return
     modified = not str(rec.get('modifications') or 'None').startswith('None')
-    differ, missing = [], []
+    patched = rec.get('patched') if isinstance(rec.get('patched'), dict) else {}
+    differ, missing, as_patched, unpatched, other_base = [], [], [], [], []
     for local, inpkg in sorted(paths.items()):
         mine = rep.root / KIT / top / local
         if inpkg not in members:
             missing.append(inpkg)
-        elif mine.is_file() and hashlib.sha256(mine.read_bytes()).hexdigest() != hashlib.sha256(members[inpkg]).hexdigest():
-            differ.append(local)
-    row.setdefault('receipts', {})[name] = dict(files=len(paths), identical=len(paths) - len(differ) - len(missing),
-                                                differ=differ, missing=missing)
+        elif mine.is_file():
+            upstream = hashlib.sha256(members[inpkg]).hexdigest()
+            same = hashlib.sha256(mine.read_bytes()).hexdigest() == upstream
+            if local in patched:
+                base = (patched[local] or {}).get('upstream_sha256') if isinstance(patched[local], dict) else None
+                (unpatched if same else other_base if base and base != upstream else as_patched).append(local)
+            elif not same:
+                differ.append(local)
+    changed = differ + as_patched + other_base
+    row.setdefault('receipts', {})[name] = dict(files=len(paths), identical=len(paths) - len(changed) - len(missing),
+                                                differ=differ, missing=missing, patched=as_patched + other_base)
+    if unpatched:
+        rep.add('webkit-receipt', 'medium', row['id'], f'the {name} receipt says {", ".join(unpatched)} is patched, but it is '
+                'the package\'s file', f'{src}: identical to {", ".join(paths[f] for f in unpatched)}',
+                'The patch was lost (restore it) or the record is stale (remove the file from "patched").', key=f'{name}:unpatched')
+    if other_base:
+        rep.add('webkit-receipt', 'medium', row['id'], f'the {name} package\'s {", ".join(other_base)} is not the file its '
+                'patch was made against', 'upstream_sha256 in the receipt differs from the file in the tarball',
+                'Re-read the patch against the package\'s file and correct upstream_sha256.', key=f'{name}:base')
     if missing:
         rep.add('webkit-receipt', 'medium', row['id'], f'the {name} receipt names paths its package does not have',
                 ', '.join(missing), 'Correct paths_in_package in the receipt.', key=f'{name}:missing')
     if differ and not modified:
         rep.add('webkit-drift', 'high', row['id'], f'{len(differ)} vendored {top} files differ from the {name} package their receipt names',
                 f"{', '.join(differ)} vs {src}", 'Find out who changed them; restore the package\'s files, or record the change '
-                'in the receipt\'s "modifications" and re-review.', key=f'{name}:' + ','.join(differ))
+                'in the receipt ("patched" for a file, "modifications" for all of them) and re-review.', key=f'{name}:' + ','.join(differ))
 
 
 # -------------------------------------------------------------------------------------------------------------- links
@@ -1659,6 +1683,8 @@ def unpinned_runner(tool, args):
         if t in ('--from', '--package', '--spec') and i + 1 < len(toks):
             v = toks[i + 1]
             return None if ('==' in v or re.search(r'.@\d', v)) else v
+        if tool.startswith('npx') and t in ('--no-install', '--no'):
+            return None             # never installs: it runs what is installed (the lockfile's version), or stops
         if t.startswith('-'):
             i += 2 if t in TAKES_VALUE else 1
             continue
@@ -1926,7 +1952,8 @@ def to_markdown(r, inventory=True, limit=None, figure=None):
                 '|---|---|---|---|---|---|---|---|']
         for w in inv['webkit']:
             rc = w.get('receipts') or {}
-            match = ', '.join(f"{n}: {c['identical']} of {c['files']}" for n, c in sorted(rc.items()))
+            match = ', '.join(f"{n}: {c['identical']} of {c['files']}" + (f" ({len(c['patched'])} patched)" if c.get('patched') else '')
+                              for n, c in sorted(rc.items()))
             body.append(f"| `{w['name']}` | {', '.join(w['packages'])} | {', '.join(w.get('bundled') or [])} | {w['files']} | "
                        f"{w['hashed']} | {match} | {', '.join(f'{k} {v}' for k, v in sorted((w.get('latest') or {}).items()))} | "
                        f"{len(set(w.get('advisories') or []))} |")

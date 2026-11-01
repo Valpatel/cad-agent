@@ -1,0 +1,35 @@
+{
+  "license": "OFL-1.1",
+  "note": "Not from npm: the latin subsets Google Fonts serves for two variable fonts, saved from fonts.gstatic.com, and the licence texts from each font's own repository at a pinned commit. fonts.css is ours: the two @font-face rules. On 2026-11-01 each url below served exactly these bytes (SHA-256 in files).",
+  "files": {
+    "inter.woff2": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62",
+    "jetbrains-mono.woff2": "83c005d49d8a6a50474c73a5a36ac0468076e9c4a29da7bdb14995d80560a5be",
+    "OFL-Inter.txt": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a",
+    "OFL-JetBrainsMono.txt": "a76abf002c49097d146e86740a3105a5d00450b1592e820a1109a8c5680cd697",
+    "fonts.css": "bcaa41f32baa31b5569c1db21b43a091d9006863cf84bc45a044c9aa5a40aa6b"
+  },
+  "sources": {
+    "inter.woff2": {
+      "url": "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2",
+      "requested": "https://fonts.googleapis.com/css2?family=Inter:wght@100..900 (the latin block)",
+      "font": "Inter, Version 4.001;git-66647c0bb, variable weight 100-900, 518 glyphs",
+      "project": "https://github.com/rsms/inter"
+    },
+    "jetbrains-mono.woff2": {
+      "url": "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxDcwg.woff2",
+      "requested": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400..800 (the latin block)",
+      "font": "JetBrains Mono, Version 2.211, variable weight 400-800, 394 glyphs. fonts.css declares 100 800, so weights below 400 render at 400.",
+      "project": "https://github.com/JetBrains/JetBrainsMono"
+    },
+    "OFL-Inter.txt": {
+      "url": "https://raw.githubusercontent.com/rsms/inter/e3a3d4c57d5ecc01453a575621882a384c1995a3/LICENSE.txt",
+      "note": "LICENSE.txt at the v4.1 tag (Inter 4.001)"
+    },
+    "OFL-JetBrainsMono.txt": {
+      "url": "https://raw.githubusercontent.com/JetBrains/JetBrainsMono/61cf0cedc2d9d29efcab968e97707d6899133e68/OFL.txt"
+    },
+    "fonts.css": {
+      "note": "written here: the @font-face rules for the two files"
+    }
+  }
+}

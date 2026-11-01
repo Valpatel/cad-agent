@@ -64,11 +64,11 @@ The simulation modules and the site build use these at run time. None of their c
 
 | Project | Licence | Version | Licence file in the kit |
 |---|---|---|---|
-| three.js (core and the controls, geometry, loader and utility add-ons) | MIT | r160 | header of `three/three.module.min.js`; `file-parsers/THREE-LICENSE.txt` |
+| three.js (core and the controls, geometry, loader and utility add-ons) | MIT | r160 (npm 0.160.0); OrbitControls carries one local patch to its wheel step, recorded in `three/SOURCE.json` | header of `three/three.module.min.js`; `file-parsers/THREE-LICENSE.txt` |
 | three.js STL and 3MF loaders | MIT | r160, import paths changed to the local copies | `file-parsers/THREE-LICENSE.txt` |
 | fflate (the ZIP reader the 3MF loader imports) | MIT | 0.8.3, from npm | `file-parsers/FFLATE-LICENSE.txt` |
 | Mermaid | MIT | 11.17.2 | `mermaid/LICENSE` |
 | linkedom | ISC | 0.18.12 | `linkedom/LICENSE` |
 | occt-import-js (Open CASCADE Technology compiled to WebAssembly) | LGPL-2.1 with the OCCT exception | 0.0.23 | `occt-import-js/` (four licence files; sources in `occt-import-js/source`) |
-| Inter | SIL Open Font License 1.1 | variable, Latin subset | `fonts/OFL-Inter.txt` |
-| JetBrains Mono | SIL Open Font License 1.1 | variable, Latin subset | `fonts/OFL-JetBrainsMono.txt` |
+| Inter | SIL Open Font License 1.1 | 4.001, variable, Latin subset from Google Fonts (sources in `fonts/SOURCE.json`) | `fonts/OFL-Inter.txt` |
+| JetBrains Mono | SIL Open Font License 1.1 | 2.211, variable, Latin subset from Google Fonts (sources in `fonts/SOURCE.json`) | `fonts/OFL-JetBrainsMono.txt` |

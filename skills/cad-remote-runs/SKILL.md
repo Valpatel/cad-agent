@@ -31,6 +31,22 @@ flowchart TD
 - **Give it its own environment** (a virtualenv from the project's pinned requirements, `pip install -e` of the
   cad-agent checkout or version the project uses). Record which cad-agent commit it runs.
 
+  <details>
+  <summary>An aarch64 host cannot pip-install gmsh, so the FEA needs conda-forge's</summary>
+
+  PyPI has no aarch64 Linux wheel for gmsh (4.15.2 or any other release), so the `fea` extra does not install
+  there; nor does pypardiso, whose MKL is x86-64 only. Install `cad-agent[cad]` with `scikit-fem pyamg`, then link
+  conda-forge's gmsh into the venv:
+
+      micromamba create -y -p <gmsh-env> -c conda-forge python-gmsh=4.15.2
+      ln -s <gmsh-env>/lib/python3.*/site-packages/gmsh.py <venv site-packages>/
+
+  If `import gmsh` then fails because version `OPENSSL_3.4.0` is not found (the venv's Python loaded the system
+  OpenSSL first), start the run with `LD_PRELOAD=<gmsh-env>/lib/libcrypto.so.3:<gmsh-env>/lib/libssl.so.3`. Record
+  which gmsh build the run used: two builds of one version can mesh a part differently. The FEA section of
+  `docs/toolkit.md` in cad-agent has the details.
+  </details>
+
 ## Starting it
 
 Detach it from the ssh session and the agent, and make the log say when it is done:

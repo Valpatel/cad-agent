@@ -721,3 +721,18 @@ def test_figure_is_deterministic_and_says_what_it_leaves_out(tmp_path):
     assert "Links and catalogue: none" in a                     # the accepted finding is not drawn
     assert "/home/" not in a and str(tmp_path) not in a
 
+
+
+def test_committed_figure_matches_committed_report():
+    """docs/img/supply-chain/findings.svg is drawn from research/security-report.json; it never disagrees with it."""
+    assert ra.main(["figure", "--report", str(ROOT / "research/security-report.json"),
+                    "--svg", str(ROOT / "docs/img/supply-chain/findings.svg"), "--check"]) == 0
+
+
+def test_committed_report_is_clean_and_dated():
+    """The committed report came from a committed tree (no uncommitted changes) and has no private details."""
+    r = json.loads((ROOT / "research/security-report.json").read_text())
+    assert r["schema"] == ra.SCHEMA and r["dirty"] is False and r["mode"] == "online"
+    text = (ROOT / "research/security-report.json").read_text() + (ROOT / "research/security-report.md").read_text()
+    home = str(Path.home())          # whichever machine runs it: no account name is written down here
+    assert not any(p in text for p in ("/home/", "/Users/")) and (len(home) < 2 or home not in text)

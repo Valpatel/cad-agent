@@ -28,7 +28,8 @@
 #   datum      optional: where a distance is measured from, when the source says (or "not stated")
 #   source     a source id below, or dataset:<id> for numbers kept on another research page (see `datasets`)
 #   as_printed optional: the value in the source's own units when it was converted (1 in = 25.4 mm)
-#   status     read: seen in the source's own text on the date in `verified`; u: not verified (never enforce)
+#   status     read: seen in the source's own text (or its rendered figure, where `applies` says so) on the date in
+#              `verified`; u: not verified (never enforce)
 #   verified   ISO date the value was read
 #   note       optional: caveats, and where sources disagree
 #
@@ -924,7 +925,8 @@ sources:
     verified: >-
       2026-10-31: opened the 136-page PDF (a distributor's copy, copyright 2000); read the text of chapter 3 (fillets
       and radii, Table 3.01 draft, bosses, blind holes, undercuts, moulded-in inserts) and the rib text in chapter 4.
-      Figures 3.10 (boss proportions) and 4.07 (rib proportions) have no text layer; their values are status u.
+      Figures 3.10 (boss proportions) and 4.07 (rib proportions) have no text layer, so on review PDF pages 12 and 30
+      were rendered and their values read from the figures.
 
   - id: covestro-part-mold-design
     title: "Engineering Polymers: Part and Mold Design - Thermoplastics, A Design Guide"
@@ -4513,9 +4515,13 @@ rules:
     min: "0.4*wall"
     max: "0.6*wall"
     units: mm
-    applies: read from Figure 4.07, which is an image; not verified in text
+    applies: >-
+      read from the rendered Figure 4.07 (PDF page 30), whose labels have no text layer: rib T = 0.4W "design for
+      appearance" (¼–½° draft) and 0.6W "design for structure"; W, the wall, is this file's `wall`. The figure's third
+      case, T = W "for foam-molding", is not used
     source: dupont-design-module-1
-    status: u
+    as_printed: T=0.4W (appearance), T=0.6W (structure)
+    status: read
     verified: 2026-10-31
   - id: im-rib-height-fictiv
     process: injection-moulding
@@ -4636,10 +4642,12 @@ rules:
     quantity: boss wall thickness
     value: "0.6*wall if wall < 3.175 else 0.4*wall"
     units: mm
-    applies: read from Figure 3.10, an image; not verified in text
+    applies: >-
+      read from the rendered Figure 3.10 (PDF page 12), whose labels have no text layer; T, the wall, is this file's
+      `wall`. The same figure shows OD = 2D and H = 2.5D
     source: dupont-design-module-1
-    as_printed: 0.6T for T < 1/8 in, 0.4T above
-    status: u
+    as_printed: t = 0.6T for T < 1/8 in, t = 0.4T for T > 1/8 in
+    status: read
     verified: 2026-10-31
   - id: im-boss-od-dupont
     process: injection-moulding

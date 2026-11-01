@@ -11,7 +11,8 @@ highlighting experts, not taking credit for their tips: every rule names its sou
 copied.
 
 **How this was checked.** "Read" means the number was seen in the source's own text on 2026-10-31 (the page's HTML,
-the PDF through `pdftotext`, or an Internet Archive copy where the live page blocks scripts; the YAML says which).
+the PDF through `pdftotext`, an Internet Archive copy where the live page blocks scripts, or, for two DuPont figures
+with no text layer, the rendered figure; the YAML says which).
 **(u)** marks anything not verified, and the YAML gives it `status: u` so no check enforces it. **[derived]** means we
 calculated it from cited numbers; the method is stated. Inches are converted at 25.4 mm and the printed value kept in
 the YAML (`as_printed`). Paid standards are cited by number and title only.
@@ -345,7 +346,7 @@ online bureaus (Fictiv, and the Boothroyd Dewhurst checklist for screening). T b
 | Rib or gusset thickness | ≤ 0.6 T | Avoids sink where the rib meets the wall | [Protolabs][protolabs-im-ribs-gussets]; [Boothroyd Dewhurst][dfma-dfm-checklist] |
 | Rib thickness | 0.5–0.6 T | | [Fictiv][fictiv-im-design-guide] |
 | Rib base thickness (Table 2-1) | 0.5 T for minimal sink (0.4 T on high gloss; filled grades 0.55–0.6 T); 0.66 T if slight sink is acceptable | Covestro PC, PC/ABS, PC/PET and TPU | [Covestro][covestro-part-mold-design] |
-| Rib thickness **(u)** | 0.4–0.6 T | Figure 4.07, an image without text | [DuPont][dupont-design-module-1] |
+| Rib thickness | 0.4 T for appearance to 0.6 T for structure | Figure 4.07, read from the rendered figure (no text layer) | [DuPont][dupont-design-module-1] |
 | Rib height | ≤ 2.5 T | Several short ribs if taller | [Fictiv][fictiv-im-design-guide] |
 | Rib height | ≤ 3 × the rib base | Fill, venting and ejection | [Covestro][covestro-part-mold-design] |
 | Rib spacing; rib draft | ≥ 2 T between short ribs; ≥ 0.5° per side | | [Covestro][covestro-part-mold-design] |
@@ -358,7 +359,7 @@ online bureaus (Fictiv, and the Boothroyd Dewhurst checklist for screening). T b
 |---|---|---|---|
 | Boss wall | 0.4–0.6 × the wall it rises from | Add gussets rather than thicken | [Protolabs][protolabs-im-bosses] |
 | Boss wall | ≤ 0.6 T | | [Fictiv][fictiv-im-design-guide] |
-| Boss wall **(u)** | 0.6 T under 3.175 mm walls, 0.4 T above | Figure 3.10, an image | [DuPont][dupont-design-module-1] |
+| Boss wall | 0.6 T under 3.175 mm walls, 0.4 T above | Figure 3.10, read from the rendered figure (no text layer) | [DuPont][dupont-design-module-1] |
 | Boss outside diameter | 2–2.5 × the hole (DuPont); 2.0–2.4 × the screw or insert (Covestro) | | [DuPont][dupont-design-module-1]; [Covestro][covestro-part-mold-design] |
 | Boss draft | 0.5–3°, by height; or mould solid and drill | | [Protolabs][protolabs-im-bosses] |
 | Boss height | over 5 × its outside diameter is tall (thick base, sink) | | [Covestro][covestro-part-mold-design] |
@@ -651,11 +652,11 @@ YAML under `standards`)
   copy; not used. Xometry's US MJF guide is an e-mail-gated e-book, and its European MJF pages returned 403.
 - HP's MJF Handbook chapters other than "Design for accuracy" (best practices, design for cleaning, tolerancing,
   hinges) sit behind a sign-up form; HP's own escape-hole size was not found.
-- DuPont's rib and boss proportions (Figures 4.07 and 3.10) and EOS's gap-against-wall chart are images; their rows
-  are marked **(u)**.
+- EOS's gap-against-wall chart is an image; its row is marked **(u)**. DuPont's rib and boss proportions (Figures
+  4.07 and 3.10) have no text layer either, so they were read from the rendered figures and are marked read.
 - VDI 3405 Blatt 3 (design rules for laser sintering and melting) could not be opened; it is not cited.
 - Next, filed as issues: a `cadagent.process` loader with one check that reads this file, and re-reading the **(u)**
-  rows from the figures.
+  row from EOS's chart.
 
 [hubs-fdm-design]: https://www.hubs.com/knowledge-base/how-design-parts-fdm-3d-printing/
 [hubs-3dp-geometry-limits]: https://www.hubs.com/knowledge-base/3d-printing-geometry-restrictions/

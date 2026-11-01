@@ -206,11 +206,12 @@ def test_the_sweep_posts_only_changes_and_never_pending(monkeypatch):
     assert len(fake.posts) == 3
 
 
-@pytest.mark.parametrize("store", [lambda d: d, str.strip, lambda d: " ".join(d.split()), lambda d: d.replace("  ", " ")],
-                         ids=["verbatim", "trimmed", "collapsed", "double-spaces"])
+@pytest.mark.parametrize("store", [lambda d: d, str.strip, lambda d: " ".join(d.split())],
+                         ids=["verbatim", "trimmed", "collapsed"])
 def test_the_sweep_is_not_fooled_by_how_github_stores_descriptions(monkeypatch, store):
-    """Review 4 of #116: a description cut at 139 characters on a space, or with doubled spaces, may come back changed;
-    the sweep must still see it as current, or it re-posts every time and the 1000-status limit returns."""
+    """Review 4 of #116: a description cut at 139 characters on a space may come back changed; the sweep must still
+    see it as current, or it re-posts every time and the 1000-status limit returns. (Doubled spaces can't occur in what
+    _status posts; statuses stored raw, from before describe(), are the raw-text test's job.)"""
     # a branch name whose failure text, cut at 139 characters, ends on a space; no verdict yet on the review gate
     ref = next("x" * n for n in range(5, 120) if gates.branch_flow("dev", "x" * n, True)[1][:139].endswith(" "))
     fake = FakeGitHub({5: pr(5, ref=ref)}, [], store=store)
@@ -242,6 +243,7 @@ def test_describe_collapses_whitespace_cuts_at_139_and_is_stable():
     assert gates.describe("  x\u00a0\u2003y  ") == "x y"                    # any Unicode whitespace
     long = ("word " * 60).strip()
     assert len(gates.describe(long)) <= 139 and not gates.describe(long).endswith(" ")
+    assert len(gates.describe("x" * 300)) == 139                         # the cut is at 139, not merely within it
     for text in ("a  b\nc", long, " lead", "trail ", "x" * 300, "é\u0301  ü"):
         assert gates.describe(gates.describe(text)) == gates.describe(text)
 

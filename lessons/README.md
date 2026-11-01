@@ -24,27 +24,40 @@ trays, SATA cable routing and a review website. No other session histories were 
   - Where the brief for this mining run mentioned an incident that could not be found in the transcript or the project
     files, the lesson says so rather than inventing details.
 
-File 08 also includes an explicitly attributed later CAN-project wheel-zoom follow-up (2026-10-27).
+The [review](review/) area's review-site lessons also include an explicitly attributed later CAN-project wheel-zoom
+follow-up (2026-10-27). The [electronics](electronics/) lessons come from a different project: the incident notes of a
+CAN breakout PCB and housing designed on 2026-10-26. Their Source lines name those notes, which stay in that
+project's repository.
 
-File 11 comes from a different project: the incident notes of a CAN breakout PCB and housing designed on
-2026-10-26. Its Source lines name those notes, which stay in that project's repository.
+## Areas
 
-## Index
+The lessons are grouped by the part of the work they apply to. Each area has a README with its own map; a new area
+(sheet metal, printing) starts when its first lessons arrive.
 
-| File | Topic |
-|---|---|
-| [01-verify-from-source.md](01-verify-from-source.md) | Confirm board facts from schematics, photos and models, not from assumptions |
-| [02-user-intent-and-requirements.md](02-user-intent-and-requirements.md) | How the requirements evolved, and the user's corrections |
-| [03-mechanical-design-rules.md](03-mechanical-design-rules.md) | Strength, printability, landings, reliefs, windows, grilles, shell |
-| [04-fasteners-and-assembly-access.md](04-fasteners-and-assembly-access.md) | Tool access, assembly order, screw length, inserts, drive screws |
-| [05-cables-connectors-and-routing.md](05-cables-connectors-and-routing.md) | Mated-plug port windows (standard practice), SATA routing, plug lengths, bend radius, wiring rules |
-| [06-enclosure-features.md](06-enclosure-features.md) | Antennas, service pins, storage trays, mount plate, cap, power budget |
-| [07-verification-and-evidence.md](07-verification-and-evidence.md) | Checks that caught bugs, false positives, honest claims, stale outputs |
-| [08-review-site-ux.md](08-review-site-ux.md) | What the user wanted to see on the review site, and why |
-| [09-agent-process.md](09-agent-process.md) | Mid-turn messages, status, consent, prior art, scope, delegation |
-| [10-simulation-and-material.md](10-simulation-and-material.md) | Exact bought parts, slicer grams, re-checking thinner shells, thermal models of printed enclosures, shared compute |
-| [11-pcb-evidence-and-review.md](11-pcb-evidence-and-review.md) | KiCad report severities and waivers, parity, source hashes, routing geometry, STEP handedness, readback renders, release allowlists (from a second project; see below) |
-| [12-original-file-viewer.md](12-original-file-viewer.md) | Original-file identity, parser units/frames, cancellable loading, dependency and wheel evidence |
+```mermaid
+flowchart TD
+    P["process/<br/>sources, intent, the session"] --> D["designing"]
+    D --> M["mechanical/<br/>printed parts"] & W["wiring/<br/>cables"] & E["electronics/<br/>PCBs"]
+    M & W & E --> C["checking"]
+    C --> S["simulation/<br/>load, heat"] & R["review/<br/>evidence, site"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class P,M,W,E,S,R here
+    class D,C near
+```
+
+| Area | Files | Lessons on |
+|---|---|---|
+| [process/](process/) | [verify-from-source](process/verify-from-source.md), [user-intent-and-requirements](process/user-intent-and-requirements.md), [agent-process](process/agent-process.md) | Facts from the board's sources, the user's requirements, how a long session runs |
+| [mechanical/](mechanical/) | [design-rules](mechanical/design-rules.md), [fasteners-and-assembly-access](mechanical/fasteners-and-assembly-access.md), [enclosure-features](mechanical/enclosure-features.md) | Strength and printability, screws and assembly order, what the enclosure carries |
+| [wiring/](wiring/) | [cables-connectors-and-routing](wiring/cables-connectors-and-routing.md) | Mated-plug windows, routes, bend radius, wiring rules |
+| [electronics/](electronics/) | [pcb-evidence-and-review](electronics/pcb-evidence-and-review.md) | KiCad evidence, routing geometry, STEP handedness, release packaging |
+| [simulation/](simulation/) | [simulation-and-material](simulation/simulation-and-material.md) | Bought parts, slicer grams, thinner shells, thermal models, shared compute |
+| [review/](review/) | [verification-and-evidence](review/verification-and-evidence.md), [review-site-ux](review/review-site-ux.md), [original-file-viewer](review/original-file-viewer.md) | Checks and honest claims, the review site, original-file previews |
+
+The old numbered files (`01-verify-from-source.md` … `12-original-file-viewer.md`) are one-line stubs pointing here
+until v0.6.0, and the site redirects their pages.
 
 ## Lesson format
 

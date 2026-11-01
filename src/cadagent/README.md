@@ -5,14 +5,14 @@ to print and order, and publishes what it found. Its packages mirror the domains
 [topic tree](../../docs/areas.yaml), so the code for a topic is where the map puts it.
 
 `cli.py` imports every package, and `mechanical/` and `publish/` import the shared helpers in `geometry/` (a project's
-build script uses them most). `publish/` reads what the domain packages' checks and `review/` wrote (simulation results
+build script uses them most). `formulas/` holds the closed-form equations any domain can call. `publish/` reads what the domain packages' checks and `review/` wrote (simulation results
 arrive as check outputs, and `simulation/` also writes its own pages). The site build copies the kit's diagram
 renderer from `webkit/`.
 
 ```mermaid
 flowchart TD
     Y["cad-agent.yaml<br/>read by project.py"] --> CLI["cli.py<br/>a handler per command"]
-    Y ~~~ G["geometry/<br/>shared CAD helpers"]
+    Y ~~~ G["geometry/ · formulas/<br/>shared helpers, equations"]
     CLI & G --> DOM["mechanical/ · thermal/<br/>manufacturing/<br/>simulation/<br/>electrical/"]
     CLI --> RV["review/<br/>dossier, gates, packets"]
     DOM & RV -->|"results"| P["publish/<br/>report, site, release"]
@@ -31,6 +31,7 @@ flowchart TD
 | Package or module | What it is for (its place in docs/areas.yaml) |
 |---|---|
 | [`geometry/`](geometry/README.md) | Shared CAD helpers: solids, print STLs, reproducible STEP, gaps, downward area, bed fit |
+| [`formulas/`](formulas/README.md) | Closed-form engineering equations with units, limits and sources: beams, snap arms, torsion, springs, screws, four-bars, heat flow and fans (shared core) |
 | [`mechanical/`](mechanical/README.md) | Holes, fasteners, McMaster-Carr parts, connector windows, markings, compliant features, motion traces (mechanical) |
 | [`manufacturing/`](manufacturing/README.md) | 3MF print files and slicer numbers (manufacturing) |
 | [`thermal/`](thermal/README.md) | Plate-fin heat sinks and fan operating points (thermal) |

@@ -135,6 +135,27 @@ of the in-plane value for PLA and PETG, 97 % for Bambu ASA, 64 % for Polymaker A
 the elongation at break governs: 2.0 % with the arm lying in the bed plane against 0.65 % built upright. Layer lines
 also act as notches, which no tensile test shows, so lay flexing arms in the bed plane whatever the numbers say.
 
+## Try it: the snap-arm explorer
+
+Size a rectangular cantilever arm and see where it fails. The arm bends along its computed curve, coloured by
+strain. The panel shows the root strain, the force at the hook and pass or fail against the filament's allowable
+strain for the print direction you choose. The default arm is CoPA laid flat on the bed, and it passes at 44 % of
+its allowable. Print the same arm upright and it fails at 138 %.
+
+<cad-cantilever material="copa-polymaker-dry" direction="along" design="1" length="20" thickness="1.6" width="6" deflection="1.5">
+<img src="img/compliant/cantilever-explorer.svg" alt="Snap-arm explorer, before its controls load: a CoPA arm 20 mm long, 1.6 mm thick at the root and 6 mm wide, bent 1.5 mm at the hook along its computed curve; root strain 0.90 %, 44 % of the 2.02 % allowed along the layers, a pass; force 3.10 N" width="640" height="250">
+</cad-cantilever>
+
+The numbers come from `cadagent.formulas.snap_arm`, which uses the Covestro method exactly as `cad-agent snapfit`
+does. The browser runs a port of it that is tested against the Python on shared vectors (see
+[Engineering formulas](formulas.md)). The curve is the exact small-deflection shape for the section you choose.
+
+- **Force.** It uses the datasheet modulus, which is higher than the secant modulus at the design strain, so the
+  force shown is an upper bound.
+- **Small deflection.** When the deflection passes a tenth of the length, the verdict says so: the arm is then
+  outside small deflection.
+- **Root radius.** The explorer does not check the root radius. `cad-agent snapfit` does.
+
 ## Limits
 
 - **A pass has no extra margin.** It means the root strain is within the allowable; the guide's own examples design

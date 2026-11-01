@@ -10,6 +10,137 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.7.0 (2026-11-01)
+
+**New**
+- cad-agent's own website (not yet sites made with `cad-agent site`, which still draw diagrams in the reader's browser):
+  the build draws every Mermaid diagram itself, in headless Chromium through Playwright, and writes the finished
+  `<figure class="cad-diagram" data-state="ready">` into the page (`tools/site-diagrams.mjs`). Pages no longer move
+  while they load: the worst layout shift on a page with a diagram falls from 0.58 to 0.012, against Google's "good"
+  limit of 0.1. Diagrams show without script, and no page downloads Mermaid to draw them. On one machine and browser
+  build, output is the same bytes for the same source, theme, Mermaid and kit, and is cached in `.cache/site-diagrams/`;
+  the build log names label characters the site's font lacks, which another machine measures differently. A gantt chart
+  is drawn without its "today" line. With no browser, or with `--client-diagrams`, the build warns and leaves the
+  diagrams to the reader's browser; `npm run deploy:site` still deploys (#132).
+- Web kit: `drawDiagram(source, {theme, id, fontFamily, fontSize, mermaid})` in `diagrams.js` draws one diagram ahead
+  of time and returns the finished figure. `observeDiagrams` keeps such figures as they are, and draws one again only
+  when the page's theme is not the one it was drawn in (#132).
+- `cadagent.review.evidence.geometry_identity(shape)`: an optional identity of a solid that does not depend on the
+  platform. It holds the volume, the centre of mass and the inertia (tensor and principal moments), rounded, with the
+  tolerances it matches to (relative 1e-6 by default) in the record. Each principal moment has its own tolerance, never
+  below a thousandth of the largest moment's, so a slender part's small moment is compared to itself, not to its length.
+  Compare two identities with `identity_mismatches(a, b)`. An x86-64 and an aarch64 host gave matching identities for
+  all 43 solids of a vendor STEP and for 12 public test solids, while they shared 4 of 43 and 4 of 12 content hashes.
+  Those counts were made with the earlier, looser tolerance on the small moments, and were not re-run; the differences
+  seen were about 1e-13 relative. It is not a hash: different solids can share one, and a change below the tolerance is
+  not seen, so it explains a hash mismatch and never signs anything off (#144).
+- `cadagent.review.evidence.hash_platform()` names what a content hash depends on besides the shape: the CPU
+  architecture, the system, the C library, and the OCP version and package. `record_hash_platform(record)` reads it
+  from a geometry record. `hash_platform_note(recorded, current)` says when two records differ. Equal records do not
+  promise equal hashes, since not everything the kernel's arithmetic depends on is named (#144).
+- `cadagent.geometry.export_step` writes a cadquery `Assembly` too, with the same bytes on every export: the file
+  `Assembly.save` writes (colours, names, placements), with a fixed header date, link ids 1, 2, ... in file order,
+  each node added without a name called `<parent>.<k>` instead of a random uuid, and the colour records in one order
+  (OCCT writes them in heap-address order). Sub-shape names and colours (`Assembly.addSubshape`) are refused, and
+  so are written names cadquery's reader would refuse or misread: a child with its parent's name or a sibling's (an
+  unnamed root takes the file's name, so `frame.step` with a child `frame` needs `name=`) (#150).
+- `cadagent.project.source_date_epoch`, `source_time` and `source_stamp`: the date a build output records instead of the
+  wall clock, `SOURCE_DATE_EPOCH` ([reproducible-builds.org](https://reproducible-builds.org/specs/source-date-epoch/)),
+  else the last commit that changed the project outside its outputs (#150).
+- `cadagent.formulas.fourbar_input_limits(a, b, c, d)`: the input angles where a four-bar locks (coupler and rocker in
+  one line, Norton's toggle positions), whether the input turns fully, and whether the links close at all (#159).
+- `cadagent.formulas.grashof` also returns `inversion`: crank-rocker, double-crank, rocker-crank, double-rocker,
+  triple-rocker or change-point (#159).
+- `kit/formulas.js` ports `grashof`, `fourbarAngles`, `transmissionAngle` and `fourbarInputLimits`, tested against the
+  Python on golden vectors that cover both branches, change points and the input limits (#159).
+- `<cad-fourbar>` (`kit/fourbar.js`, `kit/fourbar.css`): a four-bar linkage animator with link-length sliders, both
+  assemblies, the coupler curve, the Grashof class, and the transmission angle charted against 40°. A linkage whose
+  input cannot turn fully stops at its limits. On the new Four-bar linkages page and on Engineering formulas (#159).
+
+**Changed**
+- Web kit: the sideways-scroll hint is shown or folded away by `diagrams.css`, from the drawing's width
+  (`--cad-diagram-w`) and the figure's, so it shows when it should without script and nothing moves when the script
+  runs. A hint that wraps keeps both lines. `.cad-diagram` is now a size container (`container-type: inline-size`), and
+  the source in the disclosure is `pre.cad-diagram-source` (#132).
+- `exports/dossier-geometry.json`: `hash` is now `{"recipe": ..., "platform": hash_platform()}`, where it was the
+  recipe string. Every release, this one and earlier ones, leaves `hash` out of the gates' geometry digest, so a
+  record rebuilt with this release has the same digest and no verdict or packet goes stale. Committed records show
+  the change once, and the platform differs between builders on different machines, like `actor` (#144).
+- Reviewer records (`dossier/reviews/*.json`) carry the platform of the bundle they were written against, in
+  `bundle.hash_platform`. Earlier releases accept and ignore it. When a review goes stale (`review-stale`,
+  `stale-hashes`) and the geometry was rebuilt on another platform, the message names both platforms: the hashes may
+  have changed with the platform, not the geometry. A geometry or reviewer record from before this release names no
+  platform, and the message stays as it was (#144).
+- `shape_content_hash`'s docstring says the hash is tied to the CPU architecture as well as to the OCCT version.
+  `tools/volume_probe.py` receipts record `hash_platform` (#144).
+- `cad-agent mcmaster`: after McMaster asks for a login, the run asks for no more product pages. Each part still to
+  download is reported as not fetched, and the command exits 1 (#144).
+- The FEA docs (`docs/toolkit.md`) and the `cad-remote-runs` skill explain how to run the FEA on aarch64 Linux.
+  PyPI has no aarch64 wheel for gmsh 4.15.2 (nor for pypardiso's MKL). Use conda-forge's gmsh, from micromamba,
+  linked into the venv, and preload that environment's OpenSSL if `import gmsh` asks for `OPENSSL_3.4.0` (#144).
+- `cad-agent package`: the same files give the same zip on every rebuild and in every checkout. Entries are sorted by
+  path and carry the source date, mode `rw-r--r--` and a Unix host, not each file's own time and mode (#150).
+- Report time stamps are the source date, never the build time, shown with where it came from
+  (`2026-10-30 12:00 UTC (last commit)`): `header_meta.generated` in the results JSON and the report page,
+  `simreport`'s `Generated`, the site's footer, the explore comparison's `generated` and the review bundle's
+  `created`. The site's document cards show each page's last commit date, not its file time. A `simreport` page is
+  dated by the project that holds it, wherever the script runs from. A project that commits these pages no longer
+  gets a diff on every rebuild, and committing them does not change them (#150).
+- The site's "Recent changes" table lists the commits that changed the project's sources: a commit of only its
+  outputs (exports, previews, the site, the release folder, the report page) is left out, and so are commits outside
+  the project's folder, so committing the site does not change the site again (#150).
+- `cad-agent release` and `step_timestamp` share one `SOURCE_DATE_EPOCH` parser: a malformed value stops the command
+  with exit 2 (`release` used to ignore it and take the commit's date) (#150).
+- `cadagent.review.gates.relations.relate` and the relation table measure the distance between two solids faster (#186).
+  On solids, `BRepExtrema_DistShapeShape` first checks whether any vertex of one lies inside the other. OCCT 7.9 builds
+  a new point classifier for each small chunk of vertices, which was most of the time of an apart pair of many-faced
+  parts. The gates now run that check once, with one classifier per solid. When no vertex is inside, neither part has a
+  free edge or vertex and the faces are clear of each other, they take BRepExtrema's distance between the faces, which
+  gives the same gap and points. Every relation, witness included, is byte-identical to before on the 811 pairs of the
+  README hero's clearance sweep on Gyropup's leg. On a 24-core workstation the sweep takes 685 s of calls instead of
+  951 s (183 s to 134 s on 6 workers). Pairs of many-faced links run up to 2.7× faster, and a synthetic pocketed
+  block 2–5×. Machines with fewer cores gain less, because OCCT builds about ten classifiers per thread. Pairs whose
+  time is BRepExtrema's own search gain little. Cached relations stay valid.
+
+**Fixed**
+- `cadagent.mechanical.mcmaster`: a product page that shows McMaster's login prompt ("Log in to view Product Detail")
+  raises `LoginRequired`, a `RuntimeError`. Its message says McMaster asked for a login and the part number may be
+  fine. It points to the public search page for the price and to the maker's datasheet for the ratings. It used to
+  say "not a product page (no specification table)", which read as a wrong part number. The prompt is read from the
+  text a reader sees: the browser's rendered text, or, from saved HTML, the text outside scripts, styles and hidden
+  elements. So neither the header's "Log in" link nor a hidden login dialog counts (#144).
+- `<cad-cantilever>` and `<cad-fourbar>` (`kit/cantilever.js`, `kit/fourbar.js`): Pause works in WebKit. The demos
+  rewrote the button's label on every animation frame, and WebKit drops the click of a press that started on the old
+  text, so a press of a few frames never paused them. In Playwright's WebKit it failed on every one of 20 presses.
+  Safari uses the same engine; it was not tried on a Mac. The label is now written only when it changes (#211).
+
+**Projects must change**
+- A `.cad-diagram` placed where its width depends on its content (a float, an inline-block, a shrink-to-fit cell) now
+  needs a width of its own, because a size container does not take its width from its children. Projects with a
+  copied kit can rerun `cad-agent webkit <dir>` to get `drawDiagram` (#132).
+- Code that reads `hash` in `exports/dossier-geometry.json` as the recipe string reads `hash["recipe"]` now (a
+  record from an earlier release still has the string). No shape content hash, geometry digest or verdict changes,
+  under this release or an earlier one; the committed geometry record shows the new `hash` object once (#144).
+- A receipt that pins `shape_content_hash` values (a vendor-solid probe, for example) can be checked only on the
+  platform that made it. Record `hash_platform()` with it, and match solids by `geometry_identity` where a check
+  must pass on any host (#144).
+- Hashes that change once, then stay the same for the same files at the same commit: the review package zip
+  (`exports/<name>.zip`; its `-manifest.json` is unchanged), `exports/cad-agent-results.json`,
+  `docs/cad-agent-report.html`, `site/index.html`, `simreport` pages, `comparison.json` / `leaderboard.json`,
+  `compare.html` / `leaderboard.html` and review `bundle.json`. Re-record any sha256 of these (an evidence record's
+  `artifact_sha256` or `report_sha256`, a release note), and commit the regenerated pages once (#150).
+- Code that reads `header_meta.generated`, `comparison.json`'s `generated` or a `Generated` meta entry as a date: it
+  now ends in `(last commit)` or `(SOURCE_DATE_EPOCH)`, is UTC (the comparison's was local time), and reads
+  `undated (...)` outside git; `bundle.json`'s `created` can be `null` (#150).
+- Write assembly STEP files with `export_step(assy, path)` instead of `assy.save(path)` or `assy.export(path)` (#150).
+- Set `SOURCE_DATE_EPOCH` to a whole number of seconds, or leave it unset. A malformed value now stops `report`,
+  `site`, `package`, `compare` and `release` with exit 2, and nothing is written; v0.6.0 ignored a malformed value
+  (#150).
+- Code that compares `grashof()`'s whole result with a dict: add the `inversion` key. Code that reads `kind` or
+  `crank_rotates` is unchanged (#159).
+- Projects with a copied kit: rerun `cad-agent webkit <dir>` (and rebuild sites made with `cad-agent site`) to ship the
+  fixed `cantilever.js` and `fourbar.js` (#211).
+
 ## v0.6.0 (2026-11-01)
 
 **New**

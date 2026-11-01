@@ -5,7 +5,8 @@
  * filter that hides results without saying so, and a diagram wider than the article column at 1100 px (the narrowest
  * width with the page tree), so no reader has to scroll a diagram sideways on a desktop, a wall of text: a stretch
  * of a page with nothing to look at longer than one and a half screens (tests/site-walls.mjs, #179), and diagrams that
- * move the page while it loads or need script to show (#132: the build draws them). */
+ * move the page while it loads or need script to show (#132: the build draws them). Also the page tree's fold on
+ * phones with nav.js loaded, late, blocked, failing or off, and outline jumps (foldProblems and jumpProblems, below). */
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
@@ -32,6 +33,8 @@ const DIAGRAM_SHIFT = 0.05;
 const problems = [];
 try {
   problems.push(...await cantileverProblems());          // the snap-arm explorer on /docs/compliant (#137), below
+  problems.push(...await foldProblems());                // the page tree's fold on phones, with and without nav.js (#134)
+  problems.push(...await jumpProblems());                // outline jumps: released by the reader's wheel, not by a stall
   problems.push(...await fourbarProblems());             // the four-bar animator on /docs/linkages (#159), below
   problems.push(...await drawnDiagramProblems());        // diagrams drawn by the build: no shift, no script (#132), below
   for (const width of [360, 1366]) for (const route of ROUTES) {
@@ -249,6 +252,18 @@ try {
         return r;
       });
       if (bare.hidden !== 1 || bare.empty) seen.push(`a bare tree does not filter: ${JSON.stringify(bare)}`);
+      // A flat tree (no groups): the script opens the current page's group, never the fold itself, so on a phone it
+      // stays closed (#209 review).
+      const flat = await page.evaluate(() => {
+        const el = document.createElement('cad-nav');
+        el.innerHTML = '<ul><li><a href="/a">Alpha</a></li><li><a href="/b" aria-current="page">Beta</a></li></ul>';
+        document.body.append(el);
+        const open = el.querySelector(':scope > details.cad-nav-fold')?.open;
+        el.remove();
+        return open;
+      });
+      if (flat === undefined) seen.push('a flat tree gets no fold');
+      else if (flat !== width >= 1100) seen.push(`a flat tree's fold is ${flat ? 'open' : 'closed'} at ${width}px`);
     }
     if (route === '/docs/compliant') {
       const href = await page.locator('.feedback a.button').getAttribute('href').catch(() => null);
@@ -614,11 +629,11 @@ async function cantileverProblems() {
       first.still !== first.live ? 'the first live frame is not the still: the beam jumps when the script takes over' : null;
   };
   // A run of animation frames, not a wait: a throttled runner can sit 300 ms without one.
-  const frames = page => page.evaluate(() => new Promise(done => {
+  const frames = (page, count = 10) => page.evaluate(count => new Promise(done => {
     let n = 0;
-    const next = () => (++n >= 10 ? done() : requestAnimationFrame(next));
+    const next = () => (++n >= count ? done() : requestAnimationFrame(next));
     requestAnimationFrame(next);
-  }));
+  }), count);
   for (const width of [360, 1366]) {
     const height = {};
     for (const script of [false, true]) {
@@ -663,21 +678,28 @@ async function cantileverProblems() {
         if ((await demo.locator('[data-out=verdict]').textContent()) !== 'PASS') say('the default arm does not pass flat on the bed');
         await page.getByLabel('Upright (across the layers)').check();
         if ((await demo.locator('[data-out=verdict]').textContent()) !== 'FAIL') say('printing the arm upright does not fail it');
-        await demo.locator('.cc-play').click();
-        // Wait for the pause to take effect before reading the frame, then let frames run (the click can land
-        // between two of them on a slow runner).
+        // Pause the way a person does, with a press that lasts a few frames. WebKit drops the click of a press whose
+        // node the page replaces before the release. The demo used to rewrite the button's label on every frame, so in
+        // WebKit a held press never paused it, and a quick test click failed only when a frame fell inside it (#211).
+        await demo.locator('.cc-play').hover();
+        await page.mouse.down();
+        await frames(page, 3);
+        await page.mouse.up();
+        // The click handler pauses and draws the paused frame itself, so the label reads Play once the click lands.
         const stopped = await page.waitForFunction(() => document.querySelector('cad-cantilever .cc-play')?.textContent === 'Play',
           null, { timeout: 3000 }).then(() => true, () => false);
         const paused = await beam(page);
         await frames(page);
-        if (!stopped || (await beam(page)) !== paused) say('the pause button does not stop it');
+        if (!stopped) say('the pause button does not stop it: a press held for 3 frames was not a click');
+        else if ((await beam(page)) !== paused) say('the pause button does not stop it: the beam moves while paused');
         // Play carries on from the frame on screen (full deflection), not from wherever a page clock has got to.
-        const resumed = await page.evaluate(() => {
+        // Not paused, the click below would pause it instead: that failure is already reported once.
+        const resumed = stopped && await page.evaluate(() => {
           const d = document.querySelector('cad-cantilever');
           d.querySelector('.cc-play').click();                    // renders in the click handler, before any frame
           return d.querySelector('[data-part=beam]').getAttribute('points');
         });
-        if (resumed !== paused) say('Play does not carry on from the paused frame');
+        if (stopped && resumed !== paused) say('Play does not carry on from the paused frame');
         await page.waitForFunction(() => document.querySelector('cad-cantilever .cc-status')?.textContent,
           null, { timeout: 3000 }).catch(() => say('the status line does not announce the result after an input'));
       }
@@ -891,5 +913,262 @@ async function fourbarProblems() {
     out.push('reduced motion: the four-bar is moving');
   if (await reduced.locator('cad-fourbar .fb-status').textContent()) out.push('the four-bar status line spoke on page load');
   await reduced.close();
+  return out;
+}
+
+/** The page tree's fold (#134) on /docs/toolkit, at phone and desktop widths, with nav.js as it is, slow (held back until
+ * the first paint is measured), blocked, failing (it throws) and with no script at all. Phones: a closed native
+ * <details> that a click, Enter or Space opens and closes, before or without the script. Wide screens: no toggle, and
+ * the tree on screen (hit-tested: Playwright's own WebKit visibility check calls anything inside a closed <details>
+ * hidden), staying in view as the page scrolls, so the <details> does not box the sticky panel in. Nothing moves when
+ * the script arrives, and the script never closes a fold the reader opened. */
+async function foldProblems() {
+  const out = [];
+  // Every box the fold could move, in page coordinates (inside the panel, relative to its content: on a wide screen the
+  // script may scroll the panel to show this page, which moves nothing).
+  const boxes = () => {
+    const panel = document.querySelector('cad-nav .cad-nav-panel'), p = panel.getBoundingClientRect();
+    // The nav and the article grow with the article's diagrams as they render: their place and width, not height.
+    const box = (sel, inPanel, sized = true) => {
+      const el = document.querySelector(sel);
+      if (!el || !el.getClientRects().length) return null;
+      const r = el.getBoundingClientRect(), y = inPanel ? r.top - p.top + panel.scrollTop : r.top + scrollY;
+      return [r.left, y, r.width, ...sized ? [r.height] : []].map(v => Math.round(v * 2) / 2).join(',');
+    };
+    return { nav: box('cad-nav', false, false), toggle: box('cad-nav .cad-nav-toggle'), panel: box('cad-nav .cad-nav-panel'),
+      filter: box('cad-nav .cad-nav-filter'), group: box('cad-nav .cad-nav-group > summary', true),
+      current: box('cad-nav a[aria-current=page]', true), title: box('.prose h1'), article: box('.doc-main', false, false) };
+  };
+  // On screen for a reader: it has a box and is what the point at its middle hits (after scrolling it into the panel's
+  // view, away from the filter at the top).
+  const shows = sel => {
+    const el = document.querySelector(sel);
+    if (!el?.getClientRects().length) return false;
+    el.scrollIntoView({ block: 'center', behavior: 'instant' });
+    const r = el.getBoundingClientRect(), hit = document.elementFromPoint(r.left + Math.min(r.width / 2, 24), r.top + r.height / 2);
+    return !!hit && (hit === el || el.contains(hit));
+  };
+  // Stylesheets and fonts in, then two frames. With JavaScript off, Playwright can still run code in the page, but not
+  // wait on a promise there. WebKit holds document.fonts.ready while any request is pending (nav.js, held back), so
+  // the fonts' status is what counts.
+  const painted = (page, js = true) => !js ? page.waitForTimeout(150) :
+    page.waitForFunction(() => [...document.querySelectorAll('link[rel=stylesheet]')].every(l => l.sheet) && document.fonts.status === 'loaded',
+      null, { timeout: 10000 }).then(() => page.evaluate(() => new Promise(ok => requestAnimationFrame(() => requestAnimationFrame(ok)))));
+  for (const width of [360, 1366]) for (const mode of ['script', 'slow', 'blocked', 'failing', 'none']) {
+    const context = await browser.newContext({ viewport: { width, height: 800 }, javaScriptEnabled: mode !== 'none' });
+    const page = await context.newPage();
+    const seen = [], say = s => seen.push(s);
+    let arrive;
+    const held = new Promise(ok => { arrive = ok; });
+    if (mode === 'slow') await page.route('**/kit/nav.js', async r => { await held; await r.continue(); });
+    if (mode === 'blocked') await page.route('**/kit/nav.js', r => r.abort());
+    if (mode === 'failing') await page.route('**/kit/nav.js', r => r.fulfill({ contentType: 'text/javascript', body: 'throw new Error("nav.js fails on purpose")' }));
+    await page.goto(base + '/docs/toolkit', { waitUntil: mode === 'slow' ? 'domcontentloaded' : 'networkidle' });
+    const js = mode !== 'none';
+    // The rest of the page settles first (its diagrams render while nav.js is held back; networkidle never comes then).
+    if (mode === 'slow') await page.waitForFunction(() => !document.querySelector('pre.mermaid, code.language-mermaid') &&
+      [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'), null, { timeout: 20000 })
+      .catch(() => say('diagrams did not finish rendering'));
+    await painted(page, js);
+    const nav = page.locator('cad-nav'), toggle = nav.locator('.cad-nav-toggle'), fold = nav.locator('details.cad-nav-fold');
+    const open = () => fold.evaluate(d => d.open);
+    if (!(await fold.count())) say('no <details class="cad-nav-fold"> around the tree');
+    else if (width < 1100) {
+      if (!(await toggle.isVisible())) say('no "Pages and contents" toggle');
+      else if (await open() || await page.evaluate(shows, 'cad-nav a[aria-current=page]')) say('the tree is open before the toggle is pressed');
+      else {
+        await toggle.click();
+        if (!(await open()) || !(await page.evaluate(shows, 'cad-nav a[aria-current=page]'))) say('a tap on the toggle does not open the tree');
+        await toggle.click();
+        if (await open()) say('a second tap does not close it');
+        await toggle.focus();
+        await page.keyboard.press('Enter');
+        if (!(await open()) || !(await page.evaluate(shows, 'cad-nav a[aria-current=page]'))) say('Enter on the toggle does not open the tree');
+        await page.keyboard.press('Space');
+        if (await open()) say('Space on the toggle does not close it');
+        await page.keyboard.press('Space');
+        if (!(await open())) say('Space on the toggle does not open it');
+      }
+    } else {
+      if ((await toggle.isVisible()) || (await toggle.evaluate(t => t.getClientRects().length))) say('a toggle shows on a wide screen');
+      if (!(await page.evaluate(shows, 'cad-nav .cad-nav-group > summary'))) say('the tree is not on screen');
+      if (!(await page.evaluate(shows, 'cad-nav a[aria-current=page]'))) say('this page is not on screen in the tree');
+      const filter = await page.evaluate(shows, 'cad-nav .cad-nav-filter');
+      if (filter !== (mode !== 'none')) say(filter ? 'a filter shows that cannot work without script' : 'the filter is not on screen');
+      await page.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, document.body.scrollHeight / 2); });
+      await painted(page, js);
+      const y = await nav.locator('.cad-nav-panel').evaluate(p => p.getBoundingClientRect().top);
+      if (!(y >= 0 && y <= 200)) say(`the tree scrolls away with the page (its top at ${Math.round(y)}px), so the fold boxes the sticky panel in`);
+      await page.evaluate(() => { scrollTo(0, 0); document.documentElement.style.scrollBehavior = ''; });
+    }
+    if (mode === 'slow' && await fold.count()) {
+      // The reader opens the tree on a phone before the script has arrived; when it does, the tree stays open and
+      // nothing on the page moves (the boxes from the first paint, with the fold as the reader left it).
+      if (width < 1100) {
+        if (!(await open())) await toggle.click();
+        if (!(await open())) say('the toggle does not open the tree before the script arrives');
+      }
+      await page.evaluate(() => scrollTo(0, 0));
+      const before = await page.evaluate(boxes);
+      arrive();
+      await page.waitForFunction(() => customElements.get('cad-nav'), null, { timeout: 10000 });
+      await painted(page);
+      await page.evaluate(() => scrollTo(0, 0));
+      const after = await page.evaluate(boxes);
+      for (const k of Object.keys(before)) if (before[k] !== after[k]) say(`the ${k} moved when the script arrived: ${before[k]} -> ${after[k]}`);
+      if (width < 1100 && !(await open())) say('the script closed the tree the reader had opened');
+      if (width >= 1100 && !(await open())) say('the script did not open the fold on a wide screen (browsers without ::details-content need it)');
+      // Chrome's own measure over the whole load, the reader's taps excluded (hadRecentInput).
+      const shift = await page.evaluate(() => new Promise(done => {
+        if (!PerformanceObserver.supportedEntryTypes?.includes('layout-shift')) return done(0);
+        let sum = 0;
+        new PerformanceObserver(list => { for (const e of list.getEntries()) if (!e.hadRecentInput) sum += e.value; }).observe({ type: 'layout-shift', buffered: true });
+        setTimeout(() => done(sum), 200);
+      }));
+      if (shift > 0.05) say(`layout shift ${shift.toFixed(3)} with the script late (the limit is 0.05)`);
+    }
+    for (const s of seen) out.push(`${width}px /docs/toolkit fold, nav.js ${{ script: 'loaded', slow: 'late', blocked: 'blocked', failing: 'failing', none: 'off (no script)' }[mode]}: ${s}`);
+    await context.close();
+  }
+  // The window crossing the breakpoint: the fold the script opened for a wide window closes again on a phone, and one
+  // the reader opened on a phone stays open through a wide window and back.
+  const turn = await browser.newPage({ viewport: { width: 1366, height: 800 } });
+  await turn.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
+  const isOpen = () => turn.locator('details.cad-nav-fold').evaluate(d => d.open, null, { timeout: 2000 }).catch(() => null);
+  await turn.setViewportSize({ width: 360, height: 800 });
+  await turn.waitForFunction(() => !document.querySelector('details.cad-nav-fold')?.open, null, { timeout: 2000 }).catch(() => {});
+  if ((await isOpen()) !== false) out.push('1366 -> 360px: the fold the script opened for the wide window stays open on the phone');
+  await turn.locator('.cad-nav-toggle').click();
+  await turn.setViewportSize({ width: 1366, height: 800 });
+  await turn.waitForTimeout(100);                               // a frame at each width, so the script sees both
+  await turn.setViewportSize({ width: 360, height: 800 });
+  await turn.waitForTimeout(100);
+  if ((await isOpen()) !== true) out.push('360 -> 1366 -> 360px: the fold the reader opened was closed');
+  // Printed from a wide window, where the script opened the fold: the tree does not print, and on paper wide enough for
+  // the site's grid (landscape A3, 1500 px) the article keeps the width, not the tree's empty column (#209 review).
+  for (const w of [1366, 1500]) {
+    await turn.setViewportSize({ width: w, height: 800 });
+    await turn.emulateMedia({ media: 'print' });
+    const paper = await turn.evaluate(() => ({ nav: getComputedStyle(document.querySelector('cad-nav')).display,
+      article: document.querySelector('.doc-main').getBoundingClientRect().width, rail: document.querySelector('.doc-rail')?.getClientRects().length || 0 }));
+    if (paper.nav !== 'none') out.push(`print at ${w}px: the page tree prints`);
+    if (paper.article < 600) out.push(`print at ${w}px: the article prints ${Math.round(paper.article)}px wide`);
+    if (paper.rail) out.push(`print at ${w}px: the "On this page" column prints`);
+    await turn.emulateMedia({ media: 'screen' });
+  }
+  await turn.close();
+  // No link text around the filter pill while the tree is scrolled (#134): with a link under the filter's top edge, the
+  // points just inside the pill's box at its rounded corners, and in the strips above and below it, hit the panel's cover.
+  const desk = await browser.newPage({ viewport: { width: 1366, height: 800 } });
+  await desk.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
+  const corners = await desk.locator('cad-nav .cad-nav-panel').evaluate(panel => {
+    for (const g of panel.querySelectorAll('details')) g.open = true;
+    const f = panel.querySelector('.cad-nav-filter');
+    const under = () => { const r = f.getBoundingClientRect(); return [...panel.querySelectorAll('a')].find(a => { const q = a.getBoundingClientRect(); return q.top < r.top + 2 && q.bottom > r.top + 2; }); };
+    for (panel.scrollTop = 40; !under() && panel.scrollTop < panel.scrollHeight - panel.clientHeight; panel.scrollTop += 7);
+    if (!under()) return 'no link ever scrolls under the filter, so this check tests nothing';
+    const r = f.getBoundingClientRect(), top = panel.getBoundingClientRect().top;
+    const hits = [[r.left + 1.5, r.top + 1.5], [r.right - 1.5, r.top + 1.5], [r.left + 1.5, r.bottom - 1.5], [r.right - 1.5, r.bottom - 1.5],
+      [r.left + r.width / 2, top + 1.5], [r.left + r.width / 2, r.bottom + 4]]          // and the strips above and below it
+      .map(([x, y]) => document.elementFromPoint(x, y)).filter(h => h?.closest('a'));
+    return hits.length ? `link text shows in ${hits.length} place(s) around the filter: ${hits.map(h => h.closest('a').textContent).join(', ')}` : '';
+  });
+  if (corners) out.push(`1366px /docs/toolkit, the tree scrolled: ${corners}`);
+  await desk.close();
+  return out;
+}
+
+/** Jumps through the outline on a big screen (2560 x 1440, /docs/explore, the site's smooth scrolling), with the input
+ * a desktop browser would give simulated, since headless browsers will not let a real wheel interrupt a smooth scroll
+ * (#123 review 4):
+ * - a wheel over the rail or the tree partway through the jump, and the page scroll it makes, releases it: the mark
+ *   follows the reading line, not the heading the reader turned away from;
+ * - a wheel that only scrolls the tree (it can still scroll that way) leaves the jump marked;
+ * - a jump whose scroll stalls for 300 ms partway (a frame slow to paint, #158) still marks its heading once it lands. */
+async function jumpProblems() {
+  const out = [];
+  const page = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
+  await page.goto(base + '/docs/explore', { waitUntil: 'networkidle' });
+  const settle = () => page.evaluate(() => new Promise(done => {
+    let last = -1, still = 0;
+    const tick = () => { if (scrollY === last) { if (++still > 15) return done(); } else { still = 0; last = scrollY; } requestAnimationFrame(tick); };
+    tick(); setTimeout(done, 10000);
+  }));
+  const partway = () => page.evaluate(() => new Promise(ok => { const go = () => scrollY > 2000 ? ok() : requestAnimationFrame(go); go(); setTimeout(ok, 3000); }));
+  const marked = async () => (await page.locator('.doc-rail a[aria-current=location]').allTextContents()).join();
+  // What the nav marks with no jump: the last outline heading above the reading line, or at the very bottom the last on screen.
+  const reading = () => page.evaluate(() => {
+    const line = Math.min(innerHeight / 3, 220), root = document.documentElement;
+    const heads = [...document.querySelectorAll('.doc-rail a')].map(a => document.getElementById(decodeURIComponent(a.hash.slice(1))));
+    let h = heads.filter(x => x.getBoundingClientRect().top <= line).at(-1);
+    if (root.scrollTop + innerHeight >= root.scrollHeight - 2) h = heads.filter(x => { const t = x.getBoundingClientRect().top; return t >= -2 && t < innerHeight - 8; }).at(-1) || h;
+    return h?.textContent.trim() ?? '';
+  });
+  // Where a jump to the heading ends: below the page's 90 px scroll padding, as far as the page scrolls.
+  const end = id => page.evaluate(i => { const r = document.documentElement; return Math.min(r.scrollHeight - r.clientHeight, scrollY + document.getElementById(i).getBoundingClientRect().top - 90); }, id);
+  const rail = page.locator('.doc-rail a'), n = await rail.count();
+  // A heading far enough down that "partway" (2000 px) is well before the jump ends.
+  const far = await page.evaluate(() => [...document.querySelectorAll('.doc-rail a')].findIndex(a =>
+    document.getElementById(decodeURIComponent(a.hash.slice(1))).getBoundingClientRect().top + scrollY > 5000));
+  if (far < 0) { await page.close(); return ['2560px /docs/explore: no heading 5000 px down, so the jump checks test nothing']; }
+  const target = rail.nth(far), id = decodeURIComponent((await target.getAttribute('href')).slice(1)), name = await target.textContent();
+  for (const [where, sel] of [['rail', '.doc-rail a[href="#' + encodeURIComponent(id) + '"]'], ['tree', 'cad-nav a[aria-current=page]']]) {
+    await page.evaluate(() => { scrollTo({ top: 0, behavior: 'instant' }); document.querySelector('cad-nav .cad-nav-panel').scrollTop = 0; });
+    await settle();
+    await target.click();
+    await partway();
+    await page.evaluate(s => {
+      document.querySelector(s).dispatchEvent(new WheelEvent('wheel', { deltaY: -800, bubbles: true, cancelable: true }));
+      scrollBy({ top: -800, behavior: 'instant' });            // the scroll the wheel makes, which stops the smooth one
+    }, sel);
+    await settle();
+    if (Math.abs((await page.evaluate(() => scrollY)) - (await end(id))) < 200) out.push(`2560px /docs/explore: the wheel over the ${where} did not stop the jump to "${name}", so this check tests nothing`);
+    else if ((await marked()) !== (await reading())) out.push(`2560px /docs/explore: a wheel over the ${where} during the jump to "${name}" leaves "${await marked()}" marked, not "${await reading()}"`);
+  }
+  // A wheel the tree takes: every group open so the tree scrolls, and scrolled halfway so it can scroll up.
+  await page.evaluate(() => {
+    scrollTo({ top: 0, behavior: 'instant' });
+    const p = document.querySelector('cad-nav .cad-nav-panel');
+    for (const g of p.querySelectorAll('details')) g.open = true;
+    p.scrollTop = (p.scrollHeight - p.clientHeight) / 2;
+  });
+  await settle();
+  if (!(await page.evaluate(() => { const p = document.querySelector('cad-nav .cad-nav-panel'); return p.scrollTop > 100; })))
+    out.push('2560px /docs/explore: the tree cannot scroll with every group open, so the wheel-over-the-tree check tests nothing');
+  await target.click();
+  await partway();
+  await page.evaluate(() => {
+    const p = document.querySelector('cad-nav .cad-nav-panel'), b = p.getBoundingClientRect();
+    const a = [...p.querySelectorAll('a')].find(x => { const r = x.getBoundingClientRect(); return r.top > b.top + 80 && r.bottom < b.bottom; });
+    a.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, bubbles: true, cancelable: true }));
+    p.scrollTop -= 100;                                         // it scrolls the tree; the page's jump goes on
+  });
+  await settle();
+  if ((await marked()) !== name) out.push(`2560px /docs/explore: a wheel that only scrolls the tree releases the jump to "${name}" ("${await marked()}" marked)`);
+  // A stalled jump, to a heading that cannot reach the reading line (released, the mark would fall to the last one on
+  // screen): partway, the scroll stops for 300 ms while timers run, then goes on a frame at a time to where it ends.
+  const unreachable = [];
+  for (let i = 0; i < n - 1; i++) {
+    const h = decodeURIComponent((await rail.nth(i).getAttribute('href')).slice(1));
+    if (await page.evaluate(x => { const r = document.documentElement; return scrollY + document.getElementById(x).getBoundingClientRect().top - Math.min(innerHeight / 3, 220) > r.scrollHeight - r.clientHeight; }, h)) unreachable.push(i);
+  }
+  if (!unreachable.length) out.push('2560px /docs/explore: every heading but the last reaches the reading line; pick a page where some cannot');
+  for (const i of unreachable) {
+    const link = rail.nth(i), h = decodeURIComponent((await link.getAttribute('href')).slice(1)), want = await link.textContent();
+    await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+    await settle();
+    await link.click();
+    await partway();
+    await page.evaluate(async x => {
+      scrollTo({ top: scrollY, behavior: 'instant' });          // the smooth scroll stops here
+      const from = scrollY;
+      await new Promise(r => setTimeout(r, 300));               // the stall
+      const r = document.documentElement, to = Math.min(r.scrollHeight - r.clientHeight, scrollY + document.getElementById(x).getBoundingClientRect().top - 90);
+      for (let k = 1; k <= 8; k++) { scrollTo({ top: from + (to - from) * k / 8, behavior: 'instant' }); await new Promise(f => requestAnimationFrame(f)); }
+    }, h);
+    await settle();
+    if ((await marked()) !== want) out.push(`2560px /docs/explore: the jump to "${want}", stalled 300 ms partway, marks "${await marked()}"`);
+  }
+  await page.close();
   return out;
 }

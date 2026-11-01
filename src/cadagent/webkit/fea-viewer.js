@@ -1,4 +1,4 @@
-// FEA results viewer: the solved part from cadagent.fea Study.export_viewer(), deformed and coloured by a chosen field,
+// FEA results viewer: the solved part from cadagent.sim.fea Study.export_viewer(), deformed and coloured by a chosen field,
 // with the load ramped live from zero, past the design load, to where the part first reaches its strength and beyond
 // (regions past the strength turn black). Hot spots (click to fly there), held faces, load arrows, a section cut,
 // and a readout of the value under the pointer. Linear elastic results, so every field scales with the load factor.

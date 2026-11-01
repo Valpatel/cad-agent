@@ -90,7 +90,7 @@ it must stay that way.
 ```python
 import json
 
-from cadagent import mcmaster as mc
+from cadagent.make import mcmaster as mc
 
 with mc.Session(delay_s=3) as s:                    # one browser, one page at a time
     step = s.fetch("5972K82", "references/vendor/mcmaster/5972K82")

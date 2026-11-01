@@ -1,6 +1,6 @@
 // Reusable local review panels; each workbench keeps its own selected views.
 // Progressive enhancement: the page renders every panel visible; this script turns them into tabs. It is inlined
-// into the generated page (cadagent.review) so a static copy works without the local server.
+// into the generated page (cadagent.publish.review) so a static copy works without the local server.
 for (const root of document.querySelectorAll('.review-workbench')) {
   if (root.dataset.reviewReady) continue;
   root.dataset.reviewReady = '1';

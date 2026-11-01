@@ -100,6 +100,16 @@ test('the kit demo element survives with its own attributes only (no handlers, s
   assert.equal(sanitize(fan), fan.replace('height="340">', 'height="340" />'));
   assert.equal(sanitize('<cad-fan-curve onpointermove="alert(1)" style="x" crank="40" material="pla"><svg onload="alert(1)"></svg></cad-fan-curve>'),
     '<cad-fan-curve></cad-fan-curve>', "the fan curve's attributes only");
+  const snap = '<cad-torsion-snap material="petg-polymaker" bars="1" repeated length="20" width="5" thickness="1" twist="12" lever="15" theme="light">' +
+    '<img src="img/x.svg" alt="still" width="640" height="280"></cad-torsion-snap>';
+  assert.equal(sanitize(snap), snap.replace('height="280">', 'height="280" />'));
+  const boss = '<cad-printed-boss material="petg-bambu-hf" size="40" outside="9" engagement="8" torque="0.8" axis="lying" theme="dark">' +
+    '<img src="img/x.svg" alt="still" width="640" height="300"></cad-printed-boss>';
+  assert.equal(sanitize(boss), boss.replace('height="300">', 'height="300" />'));
+  assert.equal(sanitize('<cad-torsion-snap onfocus="alert(1)" fan="12" size="30"><script>alert(1)</script></cad-torsion-snap>'),
+    '<cad-torsion-snap></cad-torsion-snap>', "the torsion snap's attributes only");
+  assert.equal(sanitize('<cad-printed-boss onclick="alert(1)" style="x" twist="8" bars="2"><svg onload="alert(1)"></svg></cad-printed-boss>'),
+    '<cad-printed-boss></cad-printed-boss>', "the boss's attributes only");
 });
 
 test('image sizes come from the file, so pages keep the space before images load', () => {

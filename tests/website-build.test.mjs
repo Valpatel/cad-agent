@@ -253,6 +253,24 @@ test('the fan-curve explorer is on its pages with its still, and only those page
     assert.doesNotMatch(await readFile(path.join(out, `docs/${other}.html`), 'utf8'), /fan-curve\.(css|js)/);
 });
 
+test('the torsion-snap and screw-boss explorers are on their pages with their stills, and only there load their kit files', async () => {
+  for (const [name, tag, attrs, still, height, file] of [
+    ['compliant', 'cad-torsion-snap', 'material="pla-bambu-basic" bars="2" length="15" width="4" thickness="1.2" twist="8" lever="10"',
+      'compliant/torsion-snap-explorer', 280, 'torsion-snap'],
+    ['screw-bosses', 'cad-printed-boss', 'material="pla-bambu-basic" size="30" outside="6" engagement="6" torque="0.3" axis="upright"',
+      'fasteners/screw-boss-explorer', 300, 'printed-boss']]) {
+    const page = await readFile(path.join(out, `docs/${name}.html`), 'utf8');
+    const demo = page.match(new RegExp(`<${tag} ${attrs}>([\\s\\S]*?)</${tag}>`));
+    assert.ok(demo, `no <${tag}> on /docs/${name}`);
+    assert.match(demo[1], new RegExp(`<img src="/docs/img/${still}\\.svg" alt="[^"]{40,}" width="640" height="${height}" ?/?>`));
+    const head = page.slice(0, page.indexOf('</head>'));
+    assert.ok(head.includes(`<link rel="stylesheet" href="/kit/${file}.css"><link rel="modulepreload" href="/kit/${file}.js">`), `${name}: ${file} kit files`);
+    for (const f of [`kit/${file}.js`, `kit/${file}.css`, `docs/img/${still}.svg`]) assert.ok(files.includes(f), `${f} is not published`);
+    for (const other of ['fans', 'linkages', name === 'compliant' ? 'screw-bosses' : 'compliant'])
+      assert.doesNotMatch(await readFile(path.join(out, `docs/${other}.html`), 'utf8'), new RegExp(`${file}\\.(css|js)`));
+  }
+});
+
 test('an image keeps the size its author gave, and its tag survives any alt text', async () => {
   const wt = path.join(tmp, 'wt-img');
   execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });

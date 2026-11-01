@@ -44,7 +44,7 @@ flowchart TD
 | `project.py` | The `cad:` section of a project's `cad-agent.yaml`; the date build outputs record (`source_time`: `SOURCE_DATE_EPOCH`, else the last commit) |
 | `links.py`, `package.py` | Local link checks, the review zip (reproducible: the same files give the same bytes) |
 | `agentkit.py` | `cad-agent agents install`: the skills and subagents for Claude Code and Codex |
-| `_deps.py`, `_moved.py` | Lazy optional dependencies; old module paths (`cadagent.fea` → `cadagent.simulation.fea`) until v0.7.0 |
+| `_deps.py`, `_moved.py` | Lazy optional dependencies; old module paths (`cadagent.fea` → `cadagent.simulation.fea`), with a warning, until a release that the CHANGELOG announces a minor release ahead |
 
 New modules go into the package for their domain in [docs/areas.yaml](../../docs/areas.yaml), with a line in that
 domain's `api:` list. `tests/test_package_layout.py` keeps this top level short, and `tests/test_package_areas.py`

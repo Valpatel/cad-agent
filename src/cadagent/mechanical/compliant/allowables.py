@@ -147,6 +147,20 @@ class PrintedMaterial:
             return None
         return self.friction * (self.friction_same_factor if same_material else 1.0)
 
+    def strength_sheet(self, direction: str) -> Sheet:
+        """The edition with the lowest tensile strength for the direction (across: the lower of its X-Y and Z values),
+        which :meth:`strength` is taken from. On a tie, the current one."""
+        d = self._direction(direction)
+        return min(self.sheets, key=lambda s: s.uts_mpa[0] if d == 0 else min(s.uts_mpa))
+
+    def strength(self, direction: str) -> float:
+        """The lowest datasheet tensile strength (MPa) any edition gives for the direction: along the layers the X-Y
+        value, across them the lower of X-Y and Z, as the allowable strain is taken. For a screw boss: the thread's
+        shear and a lying boss's hoop stress cross the layers, an upright boss's hoop stress runs along them
+        (cadagent.mechanical.bosses). A short-term strength of 100 % infill bars; a held load creeps below it."""
+        s = self.strength_sheet(direction)
+        return s.uts_mpa[0] if self._direction(direction) == 0 else min(s.uts_mpa)
+
     def derivation(self, direction: str, repeated: bool = False) -> Dict[str, Any]:
         xy, xy_by, xy_sheet = self.rule(0)
         z, z_by, z_sheet = self.rule(1)

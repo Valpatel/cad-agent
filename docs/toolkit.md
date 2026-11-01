@@ -554,17 +554,19 @@ none of its checks is that study:
   are compared on one build.
 - `peak`: the design peak's place (`where`, read off the CAD faces), the thinnest wall round it, the element size
   there and `elements_across`, the wall over the element size. Under 3 it is flagged (`wall_resolved` false, a
-  `MeshWarning`): a peak in a wall one or two elements thick is not a result. At a fillet or a hole, elements larger
-  than its radius (`radius_mm`) are flagged too (`radius_resolved` false). A stepped bar's R0.5 fillet had 5 elements
-  across its wall at a 4 mm mesh and read 9 % low.
+  `MeshWarning`): a peak in a wall one or two elements thick is not a result. At an inside fillet or a hole,
+  elements larger than its radius (`radius_mm`) are flagged too (`radius_resolved` false). A stepped bar's R0.5 fillet
+  had 5 elements across its wall at a 4 mm mesh and read 9 % low. A rounded outside edge does not count: bending
+  stress round it is linear, which the elements carry.
 - `refine` and `slivers`: the zones used, and the slivers found before meshing.
 
-**Slivers and refusals.** Before meshing, `Study` lists faces under (mesh_mm/10)² in area or mesh_mm/10 in width
-(2 × area / perimeter), and edges under mesh_mm/10 (`Study.slivers`; a refine ball's size counts where it covers the
+**Slivers and refusals.** Before meshing, `Study` lists faces under (mesh_mm/10)² in area, long faces under
+mesh_mm/10 in width (2 × area / perimeter), and edges under mesh_mm/10 (`Study.slivers`; a refine ball's size counts where it covers the
 whole face or edge). It warns by default. With `slivers='raise'` it stops with a
 `MeshRefusal` in seconds, before a long mesh, which suits an optimiser's evaluator. When gmsh refuses a part ("PLC
-Error: A segment and a facet intersect at point"), `Study` raises a `MeshRefusal` with the point and the nearest faces
-and their areas (`err.point`, `err.faces`, `err.edges`). `faces_near(point)` names the faces round any point.
+Error: A segment and a facet intersect at point", or "Could not recover boundary mesh"), `Study` raises a
+`MeshRefusal` with the point and the nearest faces and their areas (`err.point`, `err.faces`, `err.edges`), when gmsh
+gives a point. `faces_near(point)` names the faces round any point.
 
 <details><summary>How the refinement, the wall count, the convergence check and the refusal work</summary>
 
@@ -587,7 +589,9 @@ and their areas (`err.point`, `err.faces`, `err.edges`). `faces_near(point)` nam
 - **Refusal:** gmsh's volume mesher (TetGen's boundary recovery) throws on the first line of its report, before it
   prints the point, and stays locked until gmsh is finalized. So `Study` meshes once more in a new session with errors
   logged, not thrown, and `parse_gmsh_refusal()` reads the point and the surfaces gmsh names. Distances are measured to
-  the surface mesh, so to its chords on a curved face.
+  the surface mesh, so to its chords on a curved face. gmsh's failing runs are not always repeatable: the point is one
+  of several, "Could not recover boundary mesh" often comes with none, and a second try that meshes is used, with a
+  `MeshWarning`.
 
 </details>
 

@@ -201,6 +201,19 @@ def test_a_peak_on_a_fillet_with_elements_larger_than_its_radius_is_flagged():
     assert not [w for w in got if w.category is MeshWarning]
 
 
+def test_a_rounded_outside_edge_is_not_a_radius_to_resolve():
+    """Round a convex edge the bending stress is linear in the distance from the neutral axis, which P2 elements carry:
+    a cantilever with R1 rounded edges at a 4 mm mesh (1.2 mm elements on them) peaks on a rounded edge and is not
+    flagged."""
+    beam = cq.Workplane('XY').box(30, 8, 8).translate((15, 0, 0)).edges('|X').fillet(1.0)
+    st = Study(beam, STEEL, mesh_mm=4.0, name='beam').fix(plane_at(0, 0.0)).force(plane_at(0, 30.0), (0, 0, -100.0))
+    with warnings.catch_warnings(record=True) as got:
+        warnings.simplefilter('always')
+        peak = st.solve()['mesh']['peak']
+    assert 'rounded edge' in peak['where'] and peak['radius_mm'] is None and peak['radius_resolved'] is None
+    assert not [w for w in got if w.category is MeshWarning]
+
+
 def test_the_wall_at_a_hole_edge_is_the_plate_not_a_ray_along_the_hole():
     """A 12 mm plate bent across four Ø8 holes peaks at a hole's top edge. A ray from a hole-wall facet near that edge
     tilts with the facet and runs out through the top face 4 mm on; it went along the wall, not across it. The rays go
@@ -290,6 +303,14 @@ def test_a_narrow_face_is_a_sliver_too():
     assert ring['width_mm'] == pytest.approx(0.02, rel=0.01) and '0.02 mm wide' in str(caught.value)
 
 
+def test_a_small_compact_face_is_not_narrow():
+    """Narrow means thin and long (perimeter² / 4π·area over 3). The corner triangles of 0.5 mm chamfers on every edge
+    are 0.22 mm² (over the 0.09 mm² cut at 3 mm) and 0.2 mm "wide", but compact (1.65): they mesh normally, so the
+    part is clean, even with slivers='raise'."""
+    st = Study(cq.Workplane('XY').box(40, 20, 10).edges().chamfer(0.5), STEEL, mesh_mm=3.0, name='box', slivers='raise')
+    assert st.slivers == {'faces': [], 'edges': []} and len(st.tets) > 0
+
+
 # --- the mesher's refusals
 RECORDED = [   # gmsh 4.15.2 (PyPI, x86-64) on _slit(0.02) at a 3 mm mesh, with errors logged rather than thrown
     'Info:  - Recovering boundary',
@@ -316,6 +337,9 @@ def test_the_refusal_parser_reads_gmsh_logs():
     assert both['what'] == 'overlapping facets' and both['surfaces'] == [3, 8] and both['curves'] == [12]
     assert both['point'] is None
     assert parse_gmsh_refusal(['Info: Meshing 3D...', 'Error: Unable to recover the edge 4']) is None
+    gave_up = parse_gmsh_refusal(['Info:  - Recovering boundary', 'Error: Could not recover boundary mesh: error 2'])
+    assert gave_up['what'] == 'boundary recovery failed' and gave_up['point'] is None
+    assert gave_up['message'] == 'Could not recover boundary mesh: error 2' and len(gave_up['log']) == 1
 
 
 def test_a_recorded_refusal_names_the_nearest_faces():
@@ -361,3 +385,30 @@ def test_a_live_refusal_names_the_two_walls():
         pytest.skip(f'gmsh {gmsh.__version__} fails the 0.02 mm slit another way: {str(exc)[:120]}')
     else:
         pytest.skip(f'gmsh {gmsh.__version__} meshes the 0.02 mm slit on this build')
+
+
+def test_a_shelled_box_too_thin_for_its_mesh_is_a_refusal():
+    """A 2 mm shell with R1 inside corners at a 4 mm mesh: gmsh 4.15.2 throws 'Could not recover boundary mesh: error
+    2' (sometimes the PLC line instead), which used to reach the caller as gmsh's bare Exception. It is a MeshRefusal
+    now, with the faces when gmsh gives a point. A build that meshes it skips."""
+    box = cq.Workplane('XY').box(60, 40, 30).edges().fillet(3).faces('>Z').shell(-2)
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', MeshWarning)
+            Study(box, STEEL, mesh_mm=4.0, name='shell')
+    except MeshRefusal as err:
+        assert 'would not mesh the volume' in str(err) and 'mesh finer there' in str(err)
+        assert (err.point is None) == (err.faces == []) and err.log
+    else:
+        pytest.skip(f'gmsh {gmsh.__version__} meshes the 2 mm shell at 4 mm on this build')
+
+
+def test_a_retry_that_meshes_is_used_with_a_warning(tmp_path):
+    """gmsh's boundary recovery is not always repeatable on a marginal part: when the logged second try meshes, the
+    study uses that mesh and says so. (A STEP path of the caller's stays, so the part can be meshed again.)"""
+    step = tmp_path / 'cube.step'
+    cq.exporters.export(cq.Workplane('XY').box(10, 10, 10), str(step))
+    st = Study(step, STEEL, mesh_mm=5.0, name='cube')
+    with pytest.warns(MeshWarning, match='second try'):
+        st._mesh_once(logged=True, first='Could not recover boundary mesh: error 2')
+    assert len(st.tets) > 0

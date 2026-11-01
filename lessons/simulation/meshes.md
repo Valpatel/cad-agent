@@ -38,8 +38,8 @@ These lessons come from Gyropup's hip frame and front link (Valpatel/gyropup#29)
 
 ### A peak in a wall one or two elements thick is not a result
 - **Rule:** count the elements across the wall at the peak. Under 3, refine there and solve again before reading a
-  safety factor, or comparing two designs, off it. At a fillet or a hole, the elements must also be smaller than its
-  radius: the stress there changes over the radius, not the wall.
+  safety factor, or comparing two designs, off it. At an inside fillet or a hole, the elements must also be smaller
+  than its radius: the stress there changes over the radius, not the wall.
 - **Incident:** at a 4 mm mesh, the front link's peak sat in the 6 mm wall of its apex bearing ring, one or two elements
   thick. It read SF 1.69 before a knee change and 1.53 after, which looked like a regression. At 3.5 and 3 mm the peak
   moved to the knee boss, and the change went the other way: 1.82 / 1.87 before, 2.04 / 1.96 after.
@@ -68,8 +68,8 @@ These lessons come from Gyropup's hip frame and front link (Valpatel/gyropup#29)
   valid. gmsh stopped with "PLC Error: A segment and a facet intersect at point" in all three runs, after the CAD build,
   and named no faces. The cause was slivers where the fillet ring met the outline almost tangentially. The variant
   was dropped as a failed trial.
-- **Check:** `Study.slivers` lists faces under (mesh_mm/10)² in area or under mesh_mm/10 in width (2 × area /
-  perimeter), and edges under mesh_mm/10. `slivers='raise'` fails the trial in seconds. It reads the CAD's faces one at
+- **Check:** `Study.slivers` lists faces under (mesh_mm/10)² in area, long faces under mesh_mm/10 in width (2 ×
+  area / perimeter), and edges under mesh_mm/10. `slivers='raise'` fails the trial in seconds. It reads the CAD's faces one at
   a time, so it misses two faces that are each fine but come closer than the mesh size: then gmsh refuses, and
   `MeshRefusal` gives the point and the nearest faces and their areas.
 - **Source:** Gyropup #29 study notes (the `ear_boss_fillet` variant).

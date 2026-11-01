@@ -26,8 +26,8 @@ Meshing: ``mesh_mm`` is the global element size; ``refine=[(point, radius, size)
 (a fillet, a hole) to converge its peak, and ``converge()`` solves again at 0.75 x the mesh to check one. A sharp
 re-entrant corner is singular: its peak rises with every refinement and never converges, so model the fillet. Every
 result's ``mesh`` records the mesher (gmsh and OCC versions, build, platform) and how many elements lie across the wall
-at the design peak (under MIN_ELEMENTS_ACROSS it is flagged: a MeshWarning), and at a fillet or a hole, the element size
-against its radius (larger than the radius is flagged too). Slivers are listed before meshing, and a mesher refusal
+at the design peak (under MIN_ELEMENTS_ACROSS it is flagged: a MeshWarning), and at an inside fillet or a hole, the
+element size against its radius (larger than the radius is flagged too). Slivers are listed before meshing, and a mesher refusal
 raises a MeshRefusal that names the faces round its point.
 
 Limits, stated in every result: linear and small-deflection; isotropic material. Printed parts are not isotropic, so
@@ -532,6 +532,7 @@ def any_of(*sels: Selector) -> Selector:
 # --- meshing: refinement, the mesher's identity, slivers and refusals
 MIN_ELEMENTS_ACROSS = 3      # a design peak in a wall thinner than this many elements is flagged: not a result
 MAX_ELEMENT_OVER_RADIUS = 1.0   # at a fillet or a hole, elements larger than its radius are flagged: the peak reads low
+SLIVER_ELONGATION = 3.0   # a narrow sliver face is also elongated (perimeter^2 / (4 pi area)); compact faces are 1.1-1.7
 
 
 class MeshWarning(UserWarning):
@@ -557,6 +558,11 @@ class MeshRefusal(RuntimeError):
 _XYZ = r'\(\s*([-+0-9.eE]+)\s*,\s*([-+0-9.eE]+)\s*,\s*([-+0-9.eE]+)\s*\)'
 
 
+# gmsh's boundary-recovery failures, as thrown: the PLC line (gmsh throws on it before printing the point), the summary,
+# and the message it often throws instead for the same failure
+_RECOVERY_ERRORS = ('PLC Error', 'Invalid boundary mesh', 'Could not recover boundary mesh')
+
+
 def parse_gmsh_refusal(log: Sequence[str]) -> Optional[dict]:
     """The boundary-recovery refusal in a gmsh log (``gmsh.logger.get()`` lines), or None if it has none.
 
@@ -565,6 +571,8 @@ def parse_gmsh_refusal(log: Sequence[str]) -> Optional[dict]:
     up as 'Invalid boundary mesh (segment-facet intersection) on surface 6, intersection (x,y,z)'. With gmsh's default
     (throw on the first error) only the first line reaches the caller, without the point, so after such a refusal
     Study meshes the part once more, in a new gmsh session with errors logged rather than thrown, and reads them here.
+    gmsh often fails the same way with only 'Could not recover boundary mesh: error 2': that is a refusal with no point
+    ('boundary recovery failed'). Its failing runs are not always repeatable, so a point is one of several.
 
     Returns {'what', 'point' (mm, or None), 'surfaces' and 'curves' (gmsh tags it names), 'message' (the PLC line),
     'log' (gmsh's lines about it)}."""
@@ -573,7 +581,12 @@ def parse_gmsh_refusal(log: Sequence[str]) -> Optional[dict]:
     plc = next((i for i, m in enumerate(bare) if 'PLC Error' in m), None)
     summary = next((i for i, m in enumerate(bare) if 'Invalid boundary mesh' in m), None)
     if plc is None and summary is None:
-        return None
+        # gmsh's own boundary recovery often fails the same way with only this line, and no point
+        gave_up = next((i for i, m in enumerate(bare) if 'Could not recover boundary mesh' in m), None)
+        if gave_up is None:
+            return None
+        return {'what': 'boundary recovery failed', 'point': None, 'surfaces': [], 'curves': [],
+                'message': bare[gave_up].strip(), 'log': [lines[gave_up]]}
     what, point, surfaces, curves, about = None, None, [], [], []
     if plc is not None:
         about.append(lines[plc])
@@ -792,7 +805,7 @@ class Study:
         except MeshRefusal:
             raise
         except Exception as exc:
-            if 'PLC Error' not in str(exc) and 'Invalid boundary mesh' not in str(exc):
+            if not any(k in str(exc) for k in _RECOVERY_ERRORS):
                 raise
             # gmsh throws on the first line of a boundary-recovery error, before it prints the point, and stays locked
             # until finalized: mesh once more in a new session with errors logged, not thrown, to say where and why
@@ -843,10 +856,19 @@ class Study:
                     log = list(gmsh.logger.get())
                 finally:
                     gmsh.logger.stop()
-                self.points, _, self.face_tris, self.edge_segs = self._surface_mesh()
                 errors = [m for m in log if m.startswith('Error')]
-                self._refuse(errors or [f'Error: {first}'], log if errors else [f'Error: {first}'])
-            gmsh.model.mesh.generate(3)
+                types, _, nodes = gmsh.model.mesh.getElements(3)
+                if errors or not any(ty == 4 and len(n) for ty, n in zip(types, nodes)):
+                    self.points, _, self.face_tris, self.edge_segs = self._surface_mesh()
+                    self._refuse(errors or [f'Error: {first}'], log if errors else [f'Error: {first}'])
+                # gmsh meshed it this time: its boundary recovery is not always repeatable on a marginal part
+                import warnings
+                warnings.warn(f"{self.name}: gmsh refused the first mesh ('{first}') and made it on a second try. Its "
+                              'boundary recovery is not always repeatable on a marginal part, so the next run of this '
+                              'study may be refused: look for faces closer together than the mesh size.',
+                              MeshWarning, stacklevel=5)   # _mesh_once < _mesh < __init__ < caller
+            else:
+                gmsh.model.mesh.generate(3)
             self.points, index, self.face_tris, self.edge_segs = self._surface_mesh()
             types, _, nodes = gmsh.model.mesh.getElements(3)
             tets = np.concatenate([np.asarray(n, dtype=np.int64).reshape(-1, 4) for ty, n in zip(types, nodes) if ty == 4])
@@ -894,11 +916,13 @@ class Study:
         gmsh.model.mesh.setSizeCallback(lambda dim, tag, x, y, z, lc: max(lc, min(floor, _ball_size((x, y, z), zones, mesh))))
 
     def _check_slivers(self):
-        """Small faces (area under (size/10)^2), narrow faces (width, 2 x area / perimeter, under size/10) and short
-        edges (under size/10), read off the CAD before meshing: they make the mesher refuse, or crowd tiny, poor
-        elements there. The size is the largest target size the face or edge sees (mesh_mm unless a refine ball covers
-        all of it), so a ball over part of a long sliver does not excuse the rest. The width is a strip's width, half
-        a square's side and a disc's radius; it finds the long, thin faces that area alone misses."""
+        """Small faces (area under (size/10)^2), narrow faces (width, 2 x area / perimeter, under size/10, and
+        elongated: perimeter^2 / (4 pi area) over SLIVER_ELONGATION) and short edges (under size/10), read off the CAD
+        before meshing: they make the mesher refuse, or crowd tiny, poor elements there. The size is the largest target
+        size the face or edge sees (mesh_mm unless a refine ball covers all of it), so a ball over part of a long sliver
+        does not excuse the rest. The width is a strip's width; it finds the long, thin faces that area alone misses.
+        The elongation is about L / (pi w) for a strip and 1.1 to 1.7 for a compact face (a square, a chamfer's corner
+        triangle, a blend's corner patch), which mesh normally and are not narrow, however small."""
         import gmsh
         faces, edges = [], []
         self.edge_lengths = {tag: float(gmsh.model.occ.getMass(1, tag)) for _, tag in gmsh.model.getEntities(1)}
@@ -907,7 +931,9 @@ class Study:
             bound = {abs(t) for _, t in gmsh.model.getBoundary([(2, f.tag)], combined=False, oriented=False)}
             perimeter = sum(self.edge_lengths.get(t, 0.0) for t in bound)
             width = 2 * f.area / perimeter if perimeter > 1e-9 else None
-            small, narrow = f.area < (size / 10) ** 2, width is not None and width < size / 10
+            elongation = perimeter ** 2 / (4 * math.pi * f.area) if f.area > 1e-12 else math.inf
+            small = f.area < (size / 10) ** 2
+            narrow = width is not None and width < size / 10 and elongation > SLIVER_ELONGATION
             if small or narrow:
                 faces.append({'tag': f.tag, 'kind': f.kind, 'area_mm2': round(float(f.area), 6),
                               'width_mm': round(width, 6) if width is not None else None,
@@ -985,6 +1011,7 @@ class Study:
         msg = (f"{self.name}: gmsh would not mesh the volume: {why['what']}{at} (gmsh: '{why['message']}')."
                + (f' Nearest faces: {listed}.' if listed else '')
                + (f" Short edges near it: {', '.join(short)}." if short else '')
+               + ('' if why['point'] is not None else ' gmsh gave no point for it.')
                + (f' The check before meshing found {sliv} sliver(s): see Study.slivers.' if sliv else '')
                + f' Faces closer together than the mesh size ({self.mesh_mm:g} mm), or meeting almost tangentially, '
                'get surface triangles that cut through each other. Thicken the gap or close it, remove the sliver in '
@@ -1020,9 +1047,10 @@ class Study:
         this is the cautious count). Under MIN_ELEMENTS_ACROSS the peak is flagged: a peak in a wall one or two
         elements thick is not a result.
 
-        At a fillet or a hole the stress changes over the radius, not the wall: ``radius_mm`` is the smallest radius of
-        the cylindrical faces within one element of the peak, and elements larger than it (MAX_ELEMENT_OVER_RADIUS) are
-        flagged too. Measured on a stepped bar's R0.5 and R1 inside fillets: elements 1.1 to 3 times the radius read
+        At an inside fillet or a hole the stress changes over the radius, not the wall: ``radius_mm`` is the smallest
+        radius of the concave cylindrical faces within one element of the peak, and elements larger than it
+        (MAX_ELEMENT_OVER_RADIUS) are flagged too. Convex ones (a rounded outside edge, a pin) do not count: bending
+        stress round them is linear in the distance from the neutral axis, which P2 elements carry. Measured on a stepped bar's R0.5 and R1 inside fillets: elements 1.1 to 3 times the radius read
         the peak 6 to 17 % low (and on the R0.5 one at 4 mm, a 0.75 x finer mesh moved it only 2.3 %, so converge()
         alone passed it); elements under the radius read within 2 % of the converged value."""
         m = self._m
@@ -1074,11 +1102,12 @@ class Study:
         on_surface = float(np.linalg.norm(P[sv] - x)) < 0.5 * h
         where = (self._hint(sv, tri, nrm, vnorm, P) if on_surface
                  else f'inside the material, {float(np.linalg.norm(P[sv] - x)):.1f} mm under the surface')
-        radius = None                                  # the tightest fillet or hole within one element of the peak
-        if on_surface:
+        radius = None              # the tightest inside fillet or hole within one element of the peak (concave faces only:
+        if on_surface:             # round a convex edge or a pin, bending stress is linear and P2 elements carry it)
             for f in self.faces:
                 fn = np.unique(self.face_tris.get(f.tag, np.zeros((0, 3), int))) if f.kind == 'Cylinder' and f.radius else []
-                if len(fn) and float(np.linalg.norm(P[fn] - x, axis=1).min()) <= h and (radius is None or f.radius < radius):
+                if (len(fn) and float(np.linalg.norm(P[fn] - x, axis=1).min()) <= h and (radius is None or f.radius < radius)
+                        and self._cylinder_shape(f, vnorm, P)[0]):
                     radius = float(f.radius)
         rec = {'stress_mpa': round(float(self.vm_elem[e]), 2), 'at_mm': [round(float(v), 3) for v in x], 'where': where,
                'element_mm': round(h, 3), 'wall_mm': round(wall, 3) if wall is not None else None,

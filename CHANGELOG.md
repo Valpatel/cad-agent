@@ -73,13 +73,16 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 - Web kit: vendored Mermaid 11.4.1 → 11.17.2, which clears its nine OSV advisories, among them the two label XSS
   (sequence-diagram KaTeX labels, GHSA-7rqq-prvp-x9jh; architecture `iconText`, GHSA-8gwm-58g9-j8pw), CSS injection,
   prototype pollution and the XY and Gantt chart infinite loops. A browser test now renders both XSS payloads and fails
-  if either runs (it does on 11.4.1) (#152).
+  if either runs (it does on 11.4.1). Still open: the DOMPurify 3.4.12 and KaTeX 0.16.47 that `mermaid.min.js`
+  bundles have five and one advisories of their own (fixed in DOMPurify 3.4.17 and KaTeX 0.18.2), which a check on
+  Mermaid does not show. No Mermaid release bundles a fixed DOMPurify yet; `SOURCE.json` records them (#152).
 - Web kit file viewer: the 3MF loader's fflate 0.6.9 (three.js r160's copy) → fflate 0.8.3 from npm. 0.6.9's
   `unzipSync` loops forever on a crafted ZIP64 directory entry (GHSA-px8p-9vwx-vf98); a unit test feeds it that archive
   and requires an error within 5 s. The viewer's own ZIP layout check already refused that archive before the parser saw
   it; the fix covers any other code that imports the kit's `fflate.module.js`. Unzip filters now work as documented (#152).
-- `vendor/mermaid/SOURCE.json` and `vendor/file-viewer-sources.json` record each package's npm URL, integrity and file
-  SHA-256s; `tests/webkit-vendor.test.mjs` checks the files and the notices against them (#152).
+- `src/cadagent/webkit/vendor/mermaid/SOURCE.json` and `src/cadagent/webkit/vendor/file-viewer-sources.json`
+  record each package's npm URL, integrity and file SHA-256s; `tests/webkit-vendor.test.mjs` checks the files and
+  the notices against them (#152).
 - Printed snap-fit allowables (`cadagent.mechanical.compliant.allowables`) come from Bambu's current V3.0 data sheets,
   which give lower strengths than the V2.0 copies cited before. Single joining, along / across the layers: PETG-CF
   1.68 → 1.00 % (the old value was too generous: a snap sized with it can crack), PLA Basic 1.02 → 0.95 %, PLA Matte
@@ -94,14 +97,14 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   18.13 MPa (#157).
 - FEA metals use design minimums from MIL-HDBK-5J instead of typical values: `al6061` yield 276 → 241.3 MPa (E 68900 →
   68258 MPa); `al7075` 503 → 461.9 MPa for sheet and plate up to 2 in thick (E 71700 → 71016 MPa, density 2.81 →
-  2.80); `steel` 250 → 248.2 MPa (AISI 1025, the same 36 ksi minimum as ASTM A36; ν 0.29 → 0.32, density 7.86). Each
-  note names its table and the weaker stock the row does not cover (extruded 6061 rod, bar and shapes across the
-  grain, 33 / 28 ksi; 7075 bar and rod, 66–60 ksi; 7075 plate over 2 in); `cf_tube` is labelled a typical value
-  (#157).
+  2.80); `steel` 250 → 248.2 MPa (AISI 1025, the same 36 ksi minimum as ASTM A36; E 200000 → 199948 MPa,
+  ν 0.29 → 0.32, so the shear modulus falls 2.3 %, density 7.85 → 7.86). Each note names its table and the weaker
+  stock the row does not cover (extruded 6061 rod, bar and shapes across the grain, 33 / 28 ksi; 7075 bar and rod,
+  66–60 ksi; 7075 plate over 2 in); `cf_tube` is labelled a typical value (#157).
 
 **Projects must change**
 - A project whose `cad:` section is in a config file under any other name: rename that file to `cad-agent.yaml`.
-  Every command exits 2 until then, and its error names the file (#135).
+  Every command that reads the project exits 2 until then, and its error names the file (#135).
 - A build step that reads the project root from the older variable: read `CAD_AGENT_PROJECT`. A script that sets the
   older render-subset variable: set `CAD_AGENT_RENDER_ONLY` (#135).
 - Code that imported `cadagent.project.CONFIG_NAMES`, `cadagent.publish.render.LEGACY_ONLY_ENV` or
@@ -110,14 +113,16 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   `cad-agent optimise` refuses to continue those trials: run it once with `--fresh`. Adding or changing `confirm` does
   not (#144).
 - Projects with a copied kit: rerun `cad-agent webkit <dir>` (and rebuild sites made with `cad-agent site`) to ship the
-  fixed files. Diagrams keep Mermaid 11's layout and theme; Mermaid 12 (ELK layout and a new default look) is not taken
-  (#152).
+  fixed files: the new Mermaid and fflate (#152), and the V3.0 snap-fit data in `formulas-data.js` that the
+  `<cad-cantilever>` widget reads (#156). Diagrams keep Mermaid 11's layout and theme; Mermaid 12 (ELK layout and a new
+  default look) is not taken.
 - Re-run `cad-agent snapfit` for printed snaps in `petg-cf-bambu` (allowable −41 %), `petg-bambu-basic` (−44 % along,
   −58 % across), `asa-bambu` (−29 % / −11 %), `pla-bambu-matte` (−6 % / −12 %) and `pla-bambu-basic` (−7 %): a snap
   whose root strain sits between the old and new allowable now fails. PETG Basic's mating force reads 1.9x (along) and
   2.3x (across) higher, its retention force as before; PLA Basic's retention force reads 4 % / 5 % lower (#156).
 - Code that built `PrintedMaterial(name, source, e_mpa, uts_mpa, break_pct, ...)` passes `sheets=(Sheet(...), ...)`
-  instead, and reads the values from `material.sheets[i]` (#156).
+  instead, and reads the values from `material.sheets[i]`. `PrintedMaterial.rule(axis)` returns three values,
+  `(strain, limit, sheet)`, not two: code that unpacks two raises `ValueError` (#156).
 - Re-run FEA with `pa6_cf_xy` and `pa6_cf_z`: deflections read 2.07x and 2.14x larger than with v0.5.0 (2.9x and 4.9x
   than with v0.4.2; stiffness the inverse), and safety factors 0.83x and 0.79x; a force or stress worked out at a
   given travel falls with E (#157).

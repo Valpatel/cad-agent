@@ -159,8 +159,8 @@ Reading the table:
   0.29 / 0.28 of the dry modulus (XY / Z) [PM-PA6CF]. Room humidity costs nearly as much modulus. BASF's moulded PA6
   datasheets give dry / conditioned values ("cond."; equilibrium moisture at 23 °C / 50 % r.h. is 2.7–3.2 % unfilled,
   1.9–2.3 % with 30 % glass): unfilled PA6 keeps 0.31 of its tensile modulus (Ultramid B3S HP R01, 1000 / 3200 MPa, a
-  preliminary sheet) and 0.50 of its yield stress; 30 % glass-filled PA6 keeps 0.58 of each (Ultramid B3EG6 SI,
-  5650 / 9700 MPa) [BASF-B3S][BASF-B3EG6]. Bambu's PA6-CF takes up 2.35 % at 25 °C / 55 % RH [BBL-PA6CF]. So
+  preliminary sheet) and 0.50 of its yield stress; 30 % glass-filled PA6 keeps 0.58 of its modulus and 0.57 of its
+  strength (Ultramid B3EG6 SI, 5650 / 9700 MPa, 105 / 185 MPa at break) [BASF-B3S][BASF-B3EG6]. Bambu's PA6-CF takes up 2.35 % at 25 °C / 55 % RH [BBL-PA6CF]. So
   `cadagent.simulation.fea`'s humid PA6-CF rows take Polymaker's saturated ratios for both modulus and strength: a
   printed part's matrix-dominated stiffness sits near the unfilled ratio, and the saturated bars are the cautious
   end (#157).

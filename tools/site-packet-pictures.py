@@ -39,8 +39,9 @@ QUALITY = 82
 # scenario: the bench's seed (None: the bench as built), and per section the packet views to keep
 SCENARIOS: dict[str, dict] = {
     "clean": {"seed": None, "views": {
-        "S-store": ["xray-iso", "cut-cavity-hopper_cavity", "cut-fastener-screw_0", "access-from-top", "exploded"],
-        "S-arm": ["pose-I-pin-arm-min", "pose-I-pin-arm-max", "cut-joint-I-pin-arm"],
+        "S-store": ["xray-iso", "cut-cavity-hopper_cavity", "cut-cavity-hopper_cavity-plan", "cut-fastener-screw_0",
+                    "access-from-top", "exploded"],
+        "S-arm": ["solid-iso", "pose-I-pin-arm-min", "pose-I-pin-arm-max", "cut-joint-I-pin-arm"],
     }},
     "ball_through_wall": {"seed": "ball_through_wall", "views": {
         "S-store": ["findings", "cut-cavity-hopper_cavity-plan"]}},

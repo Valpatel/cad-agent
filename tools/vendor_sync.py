@@ -3,7 +3,7 @@
     python tools/vendor_sync.py check                 # which upstreams moved (no code downloaded)
     python tools/vendor_sync.py import <name> [--sha SHA] [--initial]
     python tools/vendor_sync.py accept <name>         # after review: record the current findings as the baseline
-    python tools/vendor_sync.py notices               # regenerate THIRD_PARTY_NOTICES.md
+    python tools/vendor_sync.py notices               # rebuild the vendored table in THIRD_PARTY_NOTICES.md
 
 Safety rules this script enforces:
 - Pins are full commit SHAs from vendor/manifest.json; a branch or tag is never trusted.
@@ -121,14 +121,37 @@ def cmd_accept(a):
     print(f'baseline for {a.name}: {len(fps)} reviewed findings')
 
 
+TABLE_HEAD = '| Project | Licence | Upstream | Pinned commit | Imported |'
+NOTICES_HEAD = ['# Third-party notices', '', 'Code under `vendor/` is copied from the projects below at the pinned commit. Each directory keeps its',
+                "upstream LICENSE/NOTICE files; those terms apply to that code. Our changes are listed as patches in `vendor/patches/`.", '']
+
+
+def vendored_table(projects):
+    """The vendored-projects table, one row per manifest entry, in manifest order."""
+    return [TABLE_HEAD, '|---|---|---|---|---|'] + [
+        f"| {e['name']} | {e['license']} | {e['url']} | `{(e.get('sha') or '-')[:12]}` | {e.get('imported', '-')} |" for e in projects]
+
+
+def notices_text(text, projects):
+    """THIRD_PARTY_NOTICES.md with only the vendored table rebuilt from the manifest. Every other line is kept as it is:
+    the showcase, runtime-dependency and web kit sections are hand-kept licence records the manifest knows nothing
+    about. Exits, leaving the file as it is, unless it has exactly one vendored table (its header line)."""
+    lines = text.split('\n')
+    heads = [i for i, line in enumerate(lines) if line.rstrip() == TABLE_HEAD]
+    if len(heads) != 1:
+        sys.exit(f'THIRD_PARTY_NOTICES.md: expected one vendored table headed "{TABLE_HEAD}", found {len(heads)}; '
+                 'left it unchanged')
+    start = end = heads[0]
+    while end < len(lines) and lines[end].startswith('|'):
+        end += 1
+    return '\n'.join(lines[:start] + vendored_table(projects) + lines[end:])
+
+
 def cmd_notices(_):
-    m = manifest()
-    lines = ['# Third-party notices', '', 'Code under `vendor/` is copied from the projects below at the pinned commit. Each directory keeps its',
-             "upstream LICENSE/NOTICE files; those terms apply to that code. Our changes are listed as patches in `vendor/patches/`.", '',
-             '| Project | Licence | Upstream | Pinned commit | Imported |', '|---|---|---|---|---|']
-    for e in m['projects']:
-        lines.append(f"| {e['name']} | {e['license']} | {e['url']} | `{(e.get('sha') or '-')[:12]}` | {e.get('imported', '-')} |")
-    (ROOT / 'THIRD_PARTY_NOTICES.md').write_text('\n'.join(lines) + '\n')
+    path = ROOT / 'THIRD_PARTY_NOTICES.md'
+    projects = manifest()['projects']
+    text = notices_text(path.read_text(), projects) if path.exists() else '\n'.join(NOTICES_HEAD + vendored_table(projects)) + '\n'
+    path.write_text(text)
 
 
 def main():

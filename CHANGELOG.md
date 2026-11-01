@@ -19,14 +19,19 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   branch's (dev's) copy of the gates, on every push and every 15 minutes; tagged releases and the site deploy from `main` (#112).
 
 **Changed**
-- `src/cadagent/` is grouped into packages by job: `cadagent.geometry` (`holes`, `fasteners`, `connectors`,
-  `markings`), `cadagent.sim` (`fea`, `cfd`, `heatsink`, `topopt`, `simviz`, `simreport`, `robot`, `motion_trace`),
-  `cadagent.make` (`slicer`, `mesh3mf`, `release`, `mcmaster`, `pcb`, `pcb_routing`) and `cadagent.publish` (`report`,
-  `htmlreport`, `review`, `packet`, `render`, `view`, `dotsvg`, `site`, `site_review`, `serve`) (#114; the table is in
-  [docs/toolkit.md](docs/toolkit.md#package-layout-v050)). The old paths (`import cadagent.fea`,
-  `from cadagent import mcmaster`, ...) still work: each gives the same module object, so patching a name through it
-  reaches the code. The first import through an old path raises a `DeprecationWarning` naming the new path, reported
-  at the line that imported it. **The old paths are removed in v0.7.0.**
+- `src/cadagent/` is laid out by domain, as the topic tree ([docs/areas.yaml](docs/areas.yaml)) groups the work:
+  `cadagent.mechanical` (`holes`, `fasteners`, `mcmaster`, `connectors`, `markings`, `compliant`, `motion_trace`),
+  `cadagent.manufacturing` (`slicer`, `mesh3mf`), `cadagent.thermal` (`heatsink`), `cadagent.simulation` (`fea`, `cfd`,
+  `topopt`, `explore`, `robot`, `simviz`, `simreport`), `cadagent.electrical` (`pcb`, `pcb_routing`), and for the
+  practice domain `cadagent.review` (`gates`, `dossier`, `packet`, `evidence`) and `cadagent.publish` (`report`,
+  `htmlreport`, `site`, `site_review`, `view`, `serve`, `release`, `render`, `dotsvg`). `project`, `cli`, `geometry`,
+  `links`, `package` and `agentkit` stay at the top (#114; the table is in
+  [docs/toolkit.md](docs/toolkit.md#package-layout-v050)). `cadagent.geometry` and `cadagent.review` were modules and
+  are now packages at the same paths, unchanged for code that imports them. The old paths (`import cadagent.fea`,
+  `from cadagent import mcmaster`, `cadagent.gates.motion`, ...) still work: each gives the same module object, so
+  patching a name through it reaches the code. The first import through an old path raises a `DeprecationWarning`
+  naming the new path, reported at the line that imported it. **The old paths are removed in v0.7.0.**
+  `tests/test_package_areas.py` keeps the packages and the tree's `api:` lists in step.
 
 **Fixed**
 - Bambu slicer templates that include other templates are resolved before profiles are flattened (#93).
@@ -62,10 +67,12 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 - A test that replaces a *whole module* through its old path (`sys.modules["cadagent.report"] = fake`, or
   `cadagent.report = fake`) no longer reaches cad-agent's own code, which imports the new paths. Replace it at the new
   path: `monkeypatch.setitem(sys.modules, "cadagent.publish.report", fake)`.
-- 16 of the 29 moved library files changed bytes: their imports, two paths to `webkit/`, and text that names module
+- 44 of the 61 moved library files changed bytes: their imports, two paths to `webkit/`, and text that names module
   paths, including what they write into outputs (the slicer's work-folder marker, the CFD case headers, the
-  simulation report's footer and a line on the site's review pages). A project that binds evidence to a library
-  file's sha256 (`Path(cadagent.slicer.__file__)`) gets new hashes for those 16 from the move alone, and must measure
-  again. The move leaves the other 13 byte for byte (`geometry`, `fasteners`, `connectors`, `markings`, `robot`,
-  `motion_trace`, `mesh3mf`, `mcmaster`, `pcb`, `pcb_routing`, `view`, `dotsvg`, `serve`); `geometry` and `mcmaster`
-  change in this release anyway, for `export_step` (#91).
+  simulation report's and the design comparison's footers, the gate worker's command line, the dossier lint's rule
+  titles, a line on the site's review pages, and the geometry record's `hash` line, which gate inputs leave out, so
+  verdicts stay current). A project that binds evidence to a library file's sha256 (`Path(cadagent.slicer.__file__)`)
+  gets new hashes for those 44 from the move alone, and must measure again. The move leaves the other 17 byte for
+  byte (`geometry`, `fasteners`, `connectors`, `markings`, `mcmaster`, `motion_trace`, `compliant/__init__`,
+  `compliant/allowables`, `compliant/figures`, `mesh3mf`, `robot`, `pcb_routing`, `evidence`, `dossier/load`,
+  `gates/verdict`, `view`, `serve`); `geometry` and `mcmaster` change in this release anyway, for `export_step` (#91).

@@ -55,7 +55,7 @@ Design cards can reference `pcb_evidence: exports/pcb-evidence.json`; they show 
 
 ## JLC assembly files
 
-`cadagent.make.pcb.check_jlc_files(bom, cpl)` checks required columns, exact C-codes, duplicate references, finite coordinates, layers and BOM/CPL set equality. Build separate explicit populations for SMT-only versus SMT+THT assembly, and keep manual/consigned components visible in another file. CSV parity does not verify part availability, library zero-angle convention, solder process, panelization or quoted pricing.
+`cadagent.electrical.pcb.check_jlc_files(bom, cpl)` checks required columns, exact C-codes, duplicate references, finite coordinates, layers and BOM/CPL set equality. Build separate explicit populations for SMT-only versus SMT+THT assembly, and keep manual/consigned components visible in another file. CSV parity does not verify part availability, library zero-angle convention, solder process, panelization or quoted pricing.
 
 ## Mechanical enclosure checks
 
@@ -65,7 +65,7 @@ Generic lessons from the first PCB and enclosure project that used this workflow
 
 ### Enclosure fasteners
 
-Import `cadagent.geometry.fasteners` for dimension-driven screw and insert envelopes and
+Import `cadagent.mechanical.fasteners` for dimension-driven screw and insert envelopes and
 `blind_insert_stack` for recessed-head axial checks. Supply sourced dimensions;
 there is no implicit vendor catalog. Check screw-tip clearance and minimum thread
 engagement across tolerances. A heat-set knurl deliberately intersects the

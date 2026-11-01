@@ -10,7 +10,7 @@ Read-only installed-profile inspection (`json.loads` of the BBL machine JSONs)
 found that `Bambu Lab P1S 0.4 nozzle` inherits `fdm_bbl_3dp_001_common` and includes
 five G-code templates. The generic ancestor contains `M109 S205`; the start
 template contains a wait using `nozzle_temperature_initial_layer`. The released
-`cadagent.make.slicer.flatten` followed only `inherits` and discarded the include
+`cadagent.manufacturing.slicer.flatten` followed only `inherits` and discarded the include
 semantics. A filament label, positive mass/time or successful slicer exit did not
 establish the executed heater commands.
 

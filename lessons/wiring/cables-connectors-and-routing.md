@@ -24,7 +24,7 @@ flowchart TD
 
   Never size a window from a receptacle bounding box. Then sweep each plug in along its axis against every printed part
   and require zero overlap, the stated clearance all round (corner radii included) and no plug-to-plug clash. Use
-  `cadagent.geometry.connectors`: plug families, `window()`, `check_ports()` and the `draw_ports()` evidence image.
+  `cadagent.mechanical.connectors`: plug families, `window()`, `check_ports()` and the `draw_ports()` evidence image.
 - **Incident:** On 2026-10-25 the user reported: "The DC input connectors, ethernet connectors, and audio connector cutouts do not appear centered properly. … The DC input connector is not able to fit and mate properly." Then: "connector cutouts need to move up a bit, away from the bottom of the PCB." The cause had two parts.
   - Windows were "solid face bbox + 0.5". A bbox includes the through-hole pins about 2.3 mm below the PCB, so the
     RJ45 and DC windows sat about 2 mm low. The audio windows sat 0.5 mm low because they used the shell's centre, not

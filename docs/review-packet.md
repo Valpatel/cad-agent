@@ -45,12 +45,12 @@ cad-agent review-packet S3 --view solid-iso exploded     # re-render these; the 
 ```
 
 It reads, from the project at `root`: the geometry record (`exports/dossier-geometry.json` and its BREP shapes, via
-`cadagent.dossier.load_geometry`), the YAML dossier (`cad: dossier:`), every gate verdict in `exports/gates/`, and
-`exports/dossier-status.json` when it exists. It needs CadQuery, VTK and Pillow (the `cad` extra); without them it
+`cadagent.review.dossier.load_geometry`), the YAML dossier (`cad: dossier:`), every gate verdict in `exports/gates/`,
+and `exports/dossier-status.json` when it exists. It needs CadQuery, VTK and Pillow (the `cad` extra); without them it
 raises `MissingDependency`. Run `cad-agent gates` first: a packet made from stale or missing verdicts says so in
 its measurements, it does not hide it.
 
-`cadagent.publish.packet` has the kernel-free half: `plan_packet(section, record, dossier=None, verdicts=None,
+`cadagent.review.packet` has the kernel-free half: `plan_packet(section, record, dossier=None, verdicts=None,
 status=None, lint=None, expected=None, ...)` works out the views, cut planes, framing, explode offsets, poses,
 findings, witness points and the checklist from the JSON alone and returns the manifest without image hashes;
 `plan_project_packet(section, root=...)` does the same from a project's files; `project_sections(root)` lists the
@@ -168,7 +168,7 @@ Field notes:
   `hashes`. `section_hash` changes when any of them does.
 - **`measurements`** comes before the views on purpose: a reviewer (and the site) reads it first. Per gate:
   `sha256` is `verdict_digest` of the verdict quoted (its canonical JSON), `status` and `pass` its own, `checks` how
-  many it has; `stale` is null for a current verdict, else the reason (`cadagent.gates.verdict.stale_reason`
+  many it has; `stale` is null for a current verdict, else the reason (`cadagent.review.gates.verdict.stale_reason`
   against the geometry record and, for a project, the gate's declarations and options, as `cad-agent check` judges
   it: an old verdict is shown as stale, not as a pass). `section_checks` are the verdict's checks that name a
   section part, an instance of one, a fastener of the section, or a cavity of a section part. `missing_gates` lists
@@ -197,8 +197,8 @@ Field notes:
   per applicable item and target, each naming the views that answer it.
 - **`context[]`**: each context item's assembly key, its section (empty for a fastener), `kind` (`part` or
   `fastener`) and content hash.
-- **Staleness.** `cadagent.publish.packet.packet_stale(manifest, record, verdicts=None, expected=None, lint=None)` is None
-  while the packet is current evidence, else the reason: the geometry record changed; the packet quoted a verdict
+- **Staleness.** `cadagent.review.packet.packet_stale(manifest, record, verdicts=None, expected=None, lint=None)` is
+  None while the packet is current evidence, else the reason: the geometry record changed; the packet quoted a verdict
   that was already stale, or a lint read from a file; or, given the current verdicts (with each gate's expected
   declarations and options) and lint, one of them was rewritten, added or removed, or is stale now (a dossier edit
   that changes a gate's declarations makes the quoted verdicts stale without touching the geometry).
@@ -208,7 +208,7 @@ Field notes:
   all of that for a project, kernel-free. A packet is evidence only
   for the hashes and verdicts it lists.
 
-## The render checklist (`cadagent.publish.packet.CHECKLIST`)
+## The render checklist (`cadagent.review.packet.CHECKLIST`)
 
 Specific yes/no questions, each tied to a view kind (plan §5.2). `per` says what an item is asked for: once per
 section, or once per cavity and contents (from the cards' `contains`), joint, fastener group, access direction or

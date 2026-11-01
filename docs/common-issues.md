@@ -50,13 +50,13 @@ it. Once a check exists, move the entry from "review" to the check.
 |---|---|---|---|
 | **The wrong bought part**: a similar model, a guessed size, another revision | A printed lid 15 mm too short for the cooler that was actually fitted | Review: identify the exact part (vendor, part number, datasheet, photos) before sizing anything around it; record it | [simulation](../lessons/simulation/simulation-and-material.md) |
 | A photo read in the wrong orientation, or a flow direction assumed | Features on the wrong side; a CFD with the fan blowing the wrong way | Review: record the user's observations (measurements, "the fan blows up") with the date, and check assumptions against them | [verify from source](../lessons/process/verify-from-source.md) |
-| Connector windows sized from a bounding box or the board connector, not the mating plug | The cable's overmould does not fit | `cadagent.geometry.connectors`: windows from the modelled mating plug, plus a sweep check | [mechanical rules](../lessons/mechanical/design-rules.md), [cables](../lessons/wiring/cables-connectors-and-routing.md) |
+| Connector windows sized from a bounding box or the board connector, not the mating plug | The cable's overmould does not fit | `cadagent.mechanical.connectors`: windows from the modelled mating plug, plus a sweep check | [mechanical rules](../lessons/mechanical/design-rules.md), [cables](../lessons/wiring/cables-connectors-and-routing.md) |
 | A vendor model used as if it were measured data | Hidden errors in mounting holes or heights | Review: say which bodies are proxies | [verify from source](../lessons/process/verify-from-source.md) |
 | Vendor files committed or redistributed | A licence problem; a leak that cannot be undone | Review the package and release include lists; fetch references with a script | [agent workflow](agent-workflow.md) |
 
 ![An RJ45 plug pushed in along its mating axis through two panel windows: through a window sized from the jack's bounding box the latch sweeps into the wall; through the window derived from the mated plug it clears by the 0.5 mm clearance](img/motion/connector-window.svg)
 
-*`cadagent.geometry.connectors` sizes the window from the mated plug and sweeps the plug in along its mating axis. A window sized from the jack's bounding box is too short where the latch passes. An illustration of the RJ45 port in `tests/test_connectors.py`, in section; the swept volumes match the connector check's.*
+*`cadagent.mechanical.connectors` sizes the window from the mated plug and sweeps the plug in along its mating axis. A window sized from the jack's bounding box is too short where the latch passes. An illustration of the RJ45 port in `tests/test_connectors.py`, in section; the swept volumes match the connector check's.*
 
 ## Fasteners and assembly
 

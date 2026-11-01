@@ -86,7 +86,7 @@ flowchart TD
 
 - **Rule:** A cable-clamp insert should have a continuous load path through its boss to the floor and nearby wall. Use broad ribs with filleted roots and positive boolean overlap. Check the remaining material after pilots, counterbores and seam grooves, not just the uncut wall or boss diameter. State a project-specific structural minimum; cosmetic engraving strokes are a different feature class.
 - **Incident:** The Thor clamp's central 2 mm blade did not brace the two inserts to the rear wall. Its 10 mm bar depth left only 1.8 mm beside a 6.4 mm counterbore; a 3 mm wall around a 1.4 mm tongue plus 0.25 mm clearance left 1.35 mm outside the groove. The revised project uses two 3.2 mm ribs with R1.6 roots, a 40 × 12 mm clamp and a 4.5 mm wall around a 2 mm tongue. Two side mounting ears use R2 roots and recessed M3 clearance holes.
-- **Tool:** `cadagent.geometry.fasteners.filleted_wall_rib` builds explicit curved roots and wall overlap. Supply actual dimensions, then fuse to the boss/floor/wall and check one valid solid, insertion, driver, cable and board clearances. The regression test checks curved edges and nonzero overlap with the receiving wall.
+- **Tool:** `cadagent.mechanical.fasteners.filleted_wall_rib` builds explicit curved roots and wall overlap. Supply actual dimensions, then fuse to the boss/floor/wall and check one valid solid, insertion, driver, cable and board clearances. The regression test checks curved edges and nonzero overlap with the receiving wall.
 - **Limits:** CAD connectivity and nominal web width do not prove insert pull-out, fatigue, print anisotropy, creep or safe tightening torque. Print coupons and perform the project's load tests before setting ratings.
 - **Source:** 2026-10-26, Thor adapter prototype/mounting iteration; `tests/test_fasteners.py` reports three passing checks.
 
@@ -98,7 +98,7 @@ flowchart TD
   kerned glyph solids (0.6 mm extrusion). Cutting the raw glyph compound gave a non-watertight STL although the
   lettering looked right.
 - **Check:** `tests/test_markings.py::test_kerned_bold_letters_export_as_a_watertight_engraving` failed before the fix
-  (`GeometryError: non-watertight STL`); `cadagent.geometry.markings` now fuses each item's glyphs, as it already did for a
-  line's overlapping stroke caps.
+  (`GeometryError: non-watertight STL`); `cadagent.mechanical.markings` now fuses each item's glyphs, as it already did
+  for a line's overlapping stroke caps.
 - **Source:** 2026-10-26, Thor adapter lid rebuild.
 

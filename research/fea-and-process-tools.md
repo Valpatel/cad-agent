@@ -5,9 +5,9 @@ For Valpatel/cad-agent #96 (items 3–5), #94 (FEA step), #97 (pitfall catalogue
 CLIs. Notation: **(s)** search snippet only · **(u)** unverified · **[derived]** my calculation · "read" = text read on
 this date.
 
-## 0. What `cadagent.sim.fea` does today
+## 0. What `cadagent.simulation.fea` does today
 
-From the module docstring, read from `origin/dev:src/cadagent/fea.py` (now `src/cadagent/sim/fea.py`):
+From the module docstring, read from `origin/dev:src/cadagent/fea.py` (now `src/cadagent/simulation/fea.py`):
 - gmsh tetrahedra and scikit-fem P2 linear elasticity.
 - Solvers: PARDISO, SciPy direct, or CG with pyamg.
 - "linear and small-deflection; isotropic", with weak-direction strengths for printed materials.

@@ -32,7 +32,7 @@ a diagram inside that and readable on GitHub.
   it carries when that helps.
 - **At most three boxes per rank.** Mermaid puts each node at least one rank below the nodes that point at it, so a
   fan-out of four lands four abreast. Push one down with an invisible link: `A ~~~ E` draws nothing and puts `E` at least one
-  rank below `A`. Or group: one box can name several folders (`sim/ · explore/`).
+  rank below `A`. Or group: one box can name several folders (`mechanical/ · thermal/`).
 - **Labels:** the real file or folder name on the first line, plain words after it. Split lines at about 24
   characters with `<br/>`. Three boxes of 24 characters still overflow, so keep lines shorter in a full rank, and
   avoid long edges that skip ranks: each one takes a lane of its own.

@@ -18,7 +18,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      # The site build draws its diagrams in headless Chromium (tools/site-diagrams.mjs, #132), so both engines' jobs
+      # need it: the WebKit job then tests the drawn pages in WebKit.
+      - run: npx playwright install --with-deps chromium ${{ matrix.engine == 'webkit' && 'webkit' || '' }}
       - run: npm run test:webkit-unit
       - run: node --test tests/website-*.test.mjs
       - run: node tests/website-browser.mjs

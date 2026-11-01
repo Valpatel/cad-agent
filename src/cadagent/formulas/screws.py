@@ -161,7 +161,7 @@ def boss_hoop_stress(pressure: float, inner_diameter: float, outer_diameter: flo
     _finite("inner_diameter", inner_diameter)
     if not (_number(outer_diameter) and outer_diameter > inner_diameter):
         raise ValueError(f"outer_diameter must be finite and above the inner diameter, not {outer_diameter!r}")
-    d2, o2 = inner_diameter ** 2, outer_diameter ** 2
+    d2, o2 = inner_diameter * inner_diameter, outer_diameter * outer_diameter
     return pressure * (o2 + d2) / (o2 - d2)
 
 

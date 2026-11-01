@@ -4,14 +4,14 @@
    overflows. The script sets data-theme (light or dark) from the page's color-scheme; override the colours with the
    --pb-* custom properties. color-scheme is set on the panel, not the element, so the element still reads the page's. */
 cad-printed-boss{--pb-ink:#173d3c;--pb-muted:#526863;--pb-sage:#6f8a80;--pb-mist:#eef1e4;--pb-back:#fffdf5;--pb-peach:#ffe1cc;
-  --pb-rust:#bd3a12;--pb-line:#c9d8ca;--pb-panel:356px;display:block;box-sizing:border-box;margin:28px 0;
+  --pb-rust:#bd3a12;--pb-line:#c9d8ca;--pb-panel:316px;display:block;box-sizing:border-box;margin:28px 0;
   border:1px solid var(--pb-line);border-radius:16px;background:var(--pb-back);color:var(--pb-ink);overflow:hidden;
   font-size:14px;line-height:1.35;overflow-wrap:normal}
 cad-printed-boss[data-theme=dark]{--pb-ink:#e6efe9;--pb-muted:#a8bcb5;--pb-sage:#86a499;--pb-mist:#21393a;--pb-back:#11201f;
   --pb-peach:#4b2b1d;--pb-rust:#ff9466;--pb-line:#355450}
 /* Measured in Chromium and WebKit (WebKit's controls are taller) for the wordiest results, with a few pixels spare. */
-@media(max-width:699.98px){cad-printed-boss{--pb-panel:600px}}
-@media(max-width:359.98px){cad-printed-boss{--pb-panel:630px}}
+@media(max-width:699.98px){cad-printed-boss{--pb-panel:518px}}
+@media(max-width:359.98px){cad-printed-boss{--pb-panel:552px}}
 cad-printed-boss>img,cad-printed-boss .pb-figure>svg{display:block;width:100%;height:auto;aspect-ratio:640/300;max-width:none;margin:0;border:0}
 /* Until the script defines the element (or if it never loads), the reserved panel says what belongs there. */
 cad-printed-boss:not(:defined)::after{content:"The screw, boss, torque and filament controls and the readouts load here with JavaScript. The figure above is the starting boss.";

@@ -47,7 +47,9 @@ def torsion_constant_rect(width: float, thickness: float) -> float:
     """Torsion constant of a solid rectangle: K = a b^3 [16/3 - 3.36 (b/a)(1 - b^4 / 12 a^4)], a and b half the long
     and short sides."""
     a, b = max(width, thickness) / 2.0, min(width, thickness) / 2.0
-    return a * b ** 3 * (16.0 / 3.0 - 3.36 * b / a * (1.0 - b ** 4 / (12.0 * a ** 4)))
+    # products, not powers: pow() differs in the last bit between engines, and the browser port must agree exactly
+    b3, a4 = b * b * b, a * a * a * a
+    return a * b3 * (16.0 / 3.0 - 3.36 * b / a * (1.0 - b3 * b / (12.0 * a4)))
 
 
 @formula(units={"torque": "N m", "width": "m", "thickness": "m"},
@@ -58,7 +60,8 @@ def torsion_shear_stress_rect(torque: float, width: float, thickness: float) -> 
     """Peak shear stress in a twisted solid rectangle: 3T / (8 a b^2) times Roark's polynomial in b/a."""
     a, b = max(width, thickness) / 2.0, min(width, thickness) / 2.0
     q = b / a
-    return 3.0 * torque / (8.0 * a * b * b) * (1.0 + 0.6095 * q + 0.8865 * q ** 2 - 1.8023 * q ** 3 + 0.9100 * q ** 4)
+    q2 = q * q                                     # products, not powers, as in torsion_constant_rect
+    return 3.0 * torque / (8.0 * a * b * b) * (1.0 + 0.6095 * q + 0.8865 * q2 - 1.8023 * q2 * q + 0.9100 * q2 * q2)
 
 
 @formula(units={"torque": "N m", "outer_radius": "m", "inner_radius": "m (0 for a solid bar)"},

@@ -281,14 +281,17 @@ const POISSON_PLASTICS = 0.35;            // snapfit.POISSON_PLASTICS (Covestro 
 /** Torsion constant of a solid rectangle: K = a b^3 [16/3 - 3.36 (b/a)(1 - b^4 / 12 a^4)], a and b half the sides. */
 export function torsionConstantRect(width, thickness) {
   const a = Math.max(width, thickness) / 2, b = Math.min(width, thickness) / 2;
-  return a * b ** 3 * (16 / 3 - 3.36 * b / a * (1 - b ** 4 / (12 * a ** 4)));
+  // products, not powers: Math.pow differs in the last bit between engines (WebKit's from V8's and CPython's)
+  const b3 = b * b * b, a4 = a * a * a * a;
+  return a * b3 * (16 / 3 - 3.36 * b / a * (1 - b3 * b / (12 * a4)));
 }
 
 /** Peak shear stress in a twisted solid rectangle (at the middle of the long sides): 3T / (8 a b^2) times Roark's
  * polynomial in b/a. */
 export function torsionShearStressRect(torque, width, thickness) {
   const a = Math.max(width, thickness) / 2, b = Math.min(width, thickness) / 2, q = b / a;
-  return 3 * torque / (8 * a * b * b) * (1 + 0.6095 * q + 0.8865 * q ** 2 - 1.8023 * q ** 3 + 0.9100 * q ** 4);
+  const q2 = q * q;
+  return 3 * torque / (8 * a * b * b) * (1 + 0.6095 * q + 0.8865 * q2 - 1.8023 * q2 * q + 0.9100 * q2 * q2);
 }
 
 /** Peak shear strain of a rectangular bar twisted through `twist` over `length`: theta K (tau / T) / L. */
@@ -369,7 +372,7 @@ export function threadRadialPressure(load, diameter, engagement, flankAngle = IS
 export function bossHoopStress(pressure, innerDiameter, outerDiameter) {
   positive('pressure', pressure, false); positive('inner_diameter', innerDiameter);
   if (!isNum(outerDiameter) || !(outerDiameter > innerDiameter)) throw new RangeError(`outer_diameter must be finite and above the inner diameter, not ${outerDiameter}`);
-  const d2 = innerDiameter ** 2, o2 = outerDiameter ** 2;
+  const d2 = innerDiameter * innerDiameter, o2 = outerDiameter * outerDiameter;
   return pressure * (o2 + d2) / (o2 - d2);
 }
 

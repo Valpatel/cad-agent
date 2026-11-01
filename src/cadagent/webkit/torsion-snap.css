@@ -11,7 +11,7 @@ cad-torsion-snap[data-theme=dark]{--ts-ink:#e6efe9;--ts-muted:#a8bcb5;--ts-sage:
   --ts-peach:#4b2b1d;--ts-rust:#ff9466;--ts-line:#355450}
 /* Measured in Chromium and WebKit (WebKit's controls are taller) for the wordiest results, with a few pixels spare. */
 @media(max-width:699.98px){cad-torsion-snap{--ts-panel:600px}}
-@media(max-width:359.98px){cad-torsion-snap{--ts-panel:630px}}
+@media(max-width:359.98px){cad-torsion-snap{--ts-panel:608px}}
 cad-torsion-snap>img,cad-torsion-snap .ts-figure>svg{display:block;width:100%;height:auto;aspect-ratio:640/280;max-width:none;margin:0;border:0}
 /* Until the script defines the element (or if it never loads), the reserved panel says what belongs there. */
 cad-torsion-snap:not(:defined)::after{content:"The bar, twist and filament controls and the readouts load here with JavaScript. The figure above is the starting bar.";

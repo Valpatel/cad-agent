@@ -969,8 +969,145 @@ def search_svg() -> str:
     return svg(680, 376, label, body, an)
 
 
+# ----------------------------------------------------------------------------- 6. connectors: the cable behind the plug
+
+# tests/test_connectors.py: the same RJ45 port and wall, a Cat6 patch cord (Belden's data sheet: 6.1 mm, minimum bend
+# radius 25 mm) and the shelf the enclosure stands on. The figure runs the real check: the obstacles are boxes in the
+# panel frame, which cable_bend measures without a CAD kernel.
+CAT6 = {"od": 6.1, "min_bend_radius": {"mm": 25.0},
+        "basis": "Belden CAT6+ UTP PVC patch cord, technical data rev 0.202 (2025-02-07): nominal diameter 6.1 mm, "
+                 "min bend radius (overall cable) 25 mm"}
+SHELF = {"u": [-60.0, 80.0], "v": [-30.0, -20.0], "w": [-40.0, 120.0]}
+
+
+def cable_numbers() -> dict:
+    """``cable_bend`` on the port of the connector figure, with the window derived from the plug cut in the wall."""
+    from cadagent.mechanical import connectors as cn
+    mate = dict(RJ45, cable=CAT6)
+    u0, v0, u1, v1 = cn.window(RJ45, WALL)
+    su0, sv0, su1, sv1 = SLAB
+    wall = [{"u": [su0, su1], "v": [sv0, v0], "w": list(WALL)}, {"u": [su0, su1], "v": [v1, sv1], "w": list(WALL)},
+            {"u": [su0, u0], "v": [v0, v1], "w": list(WALL)}, {"u": [u1, su1], "v": [v0, v1], "w": list(WALL)}]
+    result = cn.cable_bend(mate, {"wall": wall, "shelf": SHELF})
+    spec = cn.cable_spec(mate)
+    rows = {r["direction"]: r for r in result["directions"]}
+    paths = {name: cn.bend_path(result["exit"], rows[name]["uv"], spec["centreline_radius_mm"], spec["turn_deg"])
+             for name in ("-v", "+v")}
+    return {"mate": mate, "segments": cn.mate_segments(mate), "window": [u0, v0, u1, v1], "result": result,
+            "rows": rows, "paths": paths, "spec": spec}
+
+
+def cable_svg() -> str:
+    h = cable_numbers()
+    res, spec, rows = h["result"], h["spec"], h["rows"]
+    od, rc, radius = spec["od"], spec["centreline_radius_mm"], spec["radius_mm"]
+    reach = res["reach_mm"]["beside"]
+    ue, ve, we = res["exit"]
+    plug_body, boot = h["segments"]
+    shelf_top = SHELF["v"][1]
+    an = Anim(10.0)
+    body = [text(20, 28, "Cable bend: the cable behind the plug turned at its minimum radius", 15, INK, weight="700"),
+            ntext(20, 32, "Cable bend radius", 28, weight="700")]
+    k, w0, w1, v0, v1, oy = 3.8, -2.0, 76.0, -26.0, 43.0, 86
+    t_seat, t_grow, t_grown, end = 1.4, 1.8, 4.6, 9.0
+    length = rc * math.radians(spec["turn_deg"]) * k + 1          # the arc on the page, and a little more
+    an.add(".pl", [(0, (10, 0)), (0.3, (10, 1)), (t_seat, (0, 1)), (end, (0, 1)), (end + 0.4, (0, 0)),
+                   (an.period, (10, 0))], lambda s: f"transform:translateX({num(s[0] * k)}px);opacity:{s[1]}")
+    an.add(".cb", [(0, length), (t_grow, length), (t_grown, 0), (end + 0.4, 0), (end + 0.45, length),
+                   (an.period, length)], lambda s: f"stroke-dashoffset:{num(s)}", "linear")
+    panels = [(34, "-v", "Turned down, towards the shelf", "Turned down",
+               f"needs {fmt(reach, 1)} mm below its axis; the shelf is {fmt(ve - shelf_top, 2)} below"),
+              (366, "+v", "Turned up", "Turned up", f"needs {fmt(reach, 1)} mm above its axis; nothing is there")]
+    for n, (ox, name, title, short, sub) in enumerate(panels):
+        v = View(w0, v1, k, ox, oy)
+        row, p = rows[name], h["paths"][name]
+        width, height = (w1 - w0) * k, (v1 - v0) * k
+        body.append(f'<clipPath id="c{n}"><rect x="{ox}" y="{oy}" width="{num(width)}" height="{num(height)}"/></clipPath>')
+        body.append(text(ox, 56, title, 13, INK, weight="600"))
+        body.append(ntext(ox, 68, short, 24, weight="700"))
+        body.append(text(ox, 74, sub, 11, MUTED))
+        g = [f'<g clip-path="url(#c{n})">']
+        g.append(f'<path d="{path(v.rect(w0, v0, w1, shelf_top))}" fill="{PALE}" stroke="{INK}" stroke-width="1.5"/>')
+        g.append(text(*v(w0 + 1.2, shelf_top - 4.6), "shelf", 10, MUTED))
+        wall = f'fill="{PALE}" stroke="{INK}" stroke-width="1.5"'
+        g.append(f'<path d="{path(v.rect(WALL[0], SLAB[1], WALL[1], h["window"][1]))}" {wall}/>')
+        g.append(f'<path d="{path(v.rect(WALL[0], h["window"][3], WALL[1], SLAB[3]))}" {wall}/>')
+        g.append(text(*v(WALL[1] + 0.7, v1 - 2.6), "wall", 10, MUTED))
+        fx = v(RJ45["face_w"], 0)[0]
+        g.append(f'<path d="M{num(fx)} {num(v(0, RJ45["face"][1])[1])}V{num(v(0, RJ45["face"][3])[1])}" '
+                 f'stroke="{GREEN}" stroke-width="3"/>')
+        # the plug and its cable, one group, so they fade as one. The cable comes first: the boot hides the round end
+        # that the check's balls give it inside the boot. It is drawn along its bend by its dash offset.
+        sx, sy = v(*p["start"][2:0:-1])
+        ex, ey = v(p["end"][2], p["end"][1])
+        arc = f'M{num(sx)} {num(sy)}A{num(rc * k)} {num(rc * k)} 0 0 {1 if name == "-v" else 0} {num(ex)} {num(ey)}'
+        dash = f'fill="none" stroke-linecap="round" stroke-dasharray="{num(length)} {num(length)}" class="cb"'
+        g += ['<g class="pl">', f'<path d="{arc}" stroke="{INK}" stroke-width="{num(od * k + 2.4)}" {dash}/>',
+              f'<path d="{arc}" stroke="#c9d6cc" stroke-width="{num(od * k)}" {dash}/>']
+        if not row["clear"]:
+            body.append(f'<clipPath id="s{n}"><path d="{path(v.rect(w0, v0, w1, shelf_top))}"/></clipPath>')
+            g.append(f'<path d="{arc}" stroke="{ORANGE}" stroke-width="{num(od * k)}" {dash} '
+                     f'clip-path="url(#s{n})"/>')
+        g += [f'<path d="{path(v.rect(boot["w"][0], boot["v"][0], boot["w"][1], boot["v"][1]))}" fill="{PALE}" '
+              f'stroke="{GREEN}"/>',
+              text(*v((boot["w"][0] + boot["w"][1]) / 2, ve - 1.2), "boot", 10, MUTED, "middle"),
+              f'<path d="{path(v.rect(plug_body["w"][0], plug_body["v"][0], plug_body["w"][1], plug_body["v"][1]))}" '
+              f'fill="{BG}" stroke="{INK}" stroke-width="1.5"/>', "</g>"]
+        # the bend's centre and its inside radius, which the data sheet states
+        cx, cy = v(p["centre"][2], p["centre"][1])
+        s = -p["direction"][1]                                    # from the centre, the arc lies against the turn
+        at = lambda f, deg: v(p["centre"][2] + f * radius * math.cos(math.radians(deg)),          # noqa: E731
+                              p["centre"][1] + s * f * radius * math.sin(math.radians(deg)))
+        ix, iy = at(1, 45)
+        mx, my = at(0.5, 45)
+        lx, ly = mx - 6, my + (6 if s < 0 else -2) * 1.0
+        g.append(f'<g id="r{n}"><path d="M{num(cx - 4)} {num(cy)}h8M{num(cx)} {num(cy - 4)}v8M{num(cx)} {num(cy)}'
+                 f'L{num(ix)} {num(iy)}" stroke="{INK}" stroke-width="1.2"/>'
+                 f'{text(lx, ly + 4, f"R {fmt(radius, 0)} inside", 10, MUTED, "end")}</g>')
+        an.show(f"#r{n}", t_grown + 0.2, end)
+        if not row["clear"]:
+            depth = -row["clearance_mm"]
+            g.append(f'<g id="d{n}">{text(*v(p["end"][2] - 4.4, shelf_top + 1.4), f"{fmt(depth, 2)} mm in", 10, ORANGE, "end")}</g>')
+            an.show(f"#d{n}", t_grown, end)
+        else:
+            # its nearest part: the shelf, under the cable where it leaves the boot (tests check this is the gap)
+            x, ya = v(we, ve - od / 2)
+            yb = v(we, shelf_top)[1]
+            g.append(f'<g id="d{n}"><path d="M{num(x)} {num(ya)}V{num(yb)}M{num(x - 4)} {num(ya)}h8M{num(x - 4)} '
+                     f'{num(yb)}h8" stroke="{ORANGE}"/>'
+                     f'{text(x + 4, (ya + yb) / 2 + 4, fmt(row["clearance_mm"], 1), 10, ORANGE)}</g>')
+            an.show(f"#d{n}", t_grown, end)
+        g.append("</g>")
+        body += g
+        bottom = oy + height
+        clear = row["clear"]
+        sign = lambda d: d.replace("-", "−")                     # noqa: E731
+        others = [sign(d) for d in res["works"] if d != res["direction"]]
+        rows_text = ([(f"turned {short.split()[1]} ({sign(name)}): {fmt(-row['clearance_mm'], 2)} mm into the "
+                       f"{row['nearest']}", ORANGE), ("fail: this way it does not fit", ORANGE)] if not clear else
+                     [(f"turned {short.split()[1]} ({sign(name)}): clear, {fmt(row['clearance_mm'], 1)} mm from the "
+                       f"{row['nearest']}", INK),
+                      (f"{res['status']}: turn {sign(res['direction'])}"
+                       + (f" ({' and '.join(others)} clear too)" if others else ""), INK)])
+        short_rows = ([(f"{fmt(-row['clearance_mm'], 2)} mm into shelf", ORANGE), ("fail", ORANGE)] if not clear else
+                      [("clear", INK), (res["status"], INK)])
+        for j, (line, colour) in enumerate(rows_text):
+            narrow = ntext(ox, bottom + 30 + 30 * j, short_rows[j][0], 24 if j == 0 else 26, short_rows[j][1],
+                           weight="700" if j else None)
+            body.append(f'<g id="v{n}{j}">{text(ox, bottom + 22 + 18 * j, line, 12, colour, weight="600" if j else None)}'
+                        f'{narrow}</g>')
+            an.show(f"#v{n}{j}", t_grown + 0.4 + 0.3 * j, end)
+    down, up = rows["-v"], rows["+v"]
+    label = (f"An RJ45 plug seated in its jack, and its Cat6 cable, {fmt(od, 1)} mm across, leaving the boot and turning "
+             f"at its {fmt(radius, 0)} mm minimum bend radius. Turned down, it needs {fmt(reach, 1)} mm below its axis "
+             f"and the shelf is {fmt(ve - shelf_top, 2)} mm below, so it runs {fmt(-down['clearance_mm'], 2)} mm into "
+             f"the shelf. Turned up, it clears; the nearest part is the shelf, {fmt(up['clearance_mm'], 1)} mm away. "
+             f"The check passes, turning {res['direction']}.")
+    return svg(680, oy + int(round((v1 - v0) * k)) + 66, label, body, an)
+
+
 FIGURES = {"hinge-sweep.svg": hinge_svg, "rib-in-counterbore.svg": counterbore_svg,
-           "connector-window.svg": connector_svg, "module-insertion.svg": subassembly_svg,
+           "connector-window.svg": connector_svg, "cable-bend.svg": cable_svg, "module-insertion.svg": subassembly_svg,
            "search-front.svg": search_svg}
 
 

@@ -144,6 +144,14 @@ demos:
     mode: animated
     cover: docs/img/motion/connector-window.svg
     areas: [housings-and-enclosures]
+  - id: cable-bend
+    title: Cable bend radius
+    what: The cable behind a seated plug turned at its minimum bend radius; turned down it hits the shelf, turned up it clears.
+    mode: animated
+    cover: docs/img/motion/cable-bend.svg
+    url: docs/toolkit.md#the-cable-behind-the-plug
+    still: 0.8
+    areas: [housings-and-enclosures, wiring-harnesses]
 
 tools:
   snapfit: {page: docs/compliant.md, figures: [docs/img/compliant/example-1.svg]}

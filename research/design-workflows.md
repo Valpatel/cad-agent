@@ -16,20 +16,34 @@ says which practices would have caught it.
 
 ## 1. Summary: the practices that have evidence
 
+Twelve practices, numbered as the rest of this page cites them, grouped by the kind of evidence behind them.
+
+**Measured in papers** (an ablation or a controlled comparison):
+
 | # | Practice | Evidence grade | Source |
 |---|---|---|---|
 | 1 | **Kernel checks and a hard validity gate before any render** (invalid solid = fail, score 0), with the judge reading measurements before images | strong: the largest gains in every ablation that separates them | CADSmith Table I (median IoU 0.81→0.96 with the judge given kernel metrics and no render; the render adds 0.96→0.963); CADGenBench scoring; Embodied CAD; CAD-Coder RL reward (§2.4) |
 | 2 | **Decide interfaces, joints and connectors before geometry** (assembly-level decomposition) | strong for assemblies: the largest single ablation effect found | ArtiCAD (late assembly prediction: motion 3.82→3.16, success −11 pt); AssemCAD typed spec, text-to-CAD setting: assembly preservation 87.5 % vs 66.7 % for the best code-centric baseline (§2.4) |
+| 6 | **Visual review as diagnosis, not proof**: few views chosen for the question, specific yes/no questions, "unclear" allowed, every visual concern converted to a deterministic check | moderate: +18 % point-cloud distance in CADCodeVerify, removes catastrophic outliers in CADSmith, no gain in median accuracy; documented failure modes on gaps and hidden interiors | CADCodeVerify Tables; CADSmith; CADReview; text-to-cad snapshot policy; MAC judge prompt (§2.5, §5) |
+
+**Practice in open tools** (no ablation; the tools that do it are named):
+
+| # | Practice | Evidence grade | Source |
+|---|---|---|---|
 | 3 | **Containment and interpenetration as first-class relations** (`apart / touching / containing / interpenetrating`), not only overlap volume | practice, no ablation; it is exactly the incident's missing check | build123d-mcp `clearance`; AssemCAD port checks via `BRepClass3d_SolidClassifier` (§2.2, §4.2) |
 | 4 | **Author-declared structure expectations** (expected solid count, parts allowed to float, named intended fits) diffed against the built geometry | practice; vendored, Apache-2.0 | agentcad `expect_solids` / `floating`; text-to-cad "intended fits must be named" (§2.2, §4.6) |
 | 5 | **Spec-driven conformance with evidence tiers** (measured / structural / recognised / unverified; a spec that verifies nothing never conforms) | practice; vendored, Apache-2.0 | build123d-mcp `verify_spec` (§2.2) |
-| 6 | **Visual review as diagnosis, not proof**: few views chosen for the question, specific yes/no questions, "unclear" allowed, every visual concern converted to a deterministic check | moderate: +18 % point-cloud distance in CADCodeVerify, removes catastrophic outliers in CADSmith, no gain in median accuracy; documented failure modes on gaps and hidden interiors | CADCodeVerify Tables; CADSmith; CADReview; text-to-cad snapshot policy; MAC judge prompt (§2.5, §5) |
 | 7 | **A judge that did not write the code, given measurements first and images second, with anti-hallucination rules** (accept/halt need a hard data point; hedged language is not evidence; no image ⇒ `unverified`) | practice; MIT | MAC `qa_judge.md`; CADSmith's stronger-model validator (§2.1) |
+| 11 | **Assembly-sequence and tool-access checks at the step that installs each part** | practice; already partly in cad-agent ([Fasteners and assembly access](../lessons/mechanical/fasteners-and-assembly-access.md)) | §3.9 |
+| 12 | **Sign-off invalidated by a geometry hash** (review bound to the bytes it reviewed) | practice; cad-agent already does it for PCB evidence | `cadagent.review.evidence`, text-to-cad `document_hash` (§2.2) |
+
+**Professional standards:**
+
+| # | Practice | Evidence grade | Source |
+|---|---|---|---|
 | 8 | **Interface control documents and requirement traces** (requirement → feature → verification method) | professional standard; automatable as a lint | NASA SE Handbook, INCOSE, 29148 (§3.1–§3.2) |
 | 9 | **Decision records with alternatives rejected**, written with the design | professional standard (ADR/MADR, QOC); evidence on use is thin but the artefact is cheap | §3.4 |
 | 10 | **DFMEA rows and the DFA part-count questions** as the review checklist for each part | professional standard | AIAG-VDA, Boothroyd-Dewhurst (§3.5–§3.6) |
-| 11 | **Assembly-sequence and tool-access checks at the step that installs each part** | practice; already partly in cad-agent ([Fasteners and assembly access](../lessons/mechanical/fasteners-and-assembly-access.md)) | §3.9 |
-| 12 | **Sign-off invalidated by a geometry hash** (review bound to the bytes it reviewed) | practice; cad-agent already does it for PCB evidence | `cadagent.review.evidence`, text-to-cad `document_hash` (§2.2) |
 
 ## 2. Agentic and AI CAD systems: workflow and method
 
@@ -42,6 +56,30 @@ says which practices would have caught it.
   steps to build123d (unsupported steps become `TODO` markers for a repair agent) → execution → two QA engines (STEP
   topology; STL mesh) → **QA Judge** → Aider-based repair. Outer loop of 5 retries; the judge engages only after one
   blind repair; inner loop of 3 for execution failures.
+
+```mermaid
+flowchart TD
+    P["Spec Planner<br/>prompt and images → CADBrief"] --> A["Geometric Architect<br/>→ ArchitectPlan"]
+    A --> T["deterministic translator<br/>plan steps → build123d"]
+    T --> X["execute, retried<br/>up to 3 times<br/>on errors"]
+    X --> Q["QA engines<br/>STEP topology,<br/>STL mesh"]
+    Q -->|"round 1"| B["blind repair,<br/>no judge"]
+    B --> X
+    Q -->|"later"| J["QA Judge<br/>measurements first,<br/>renders optional"]
+    J -->|"accept"| D["done"]
+    J -->|"repair, up<br/>to 5 rounds"| R["repair<br/>agent"]
+    R --> X
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class P,A,T,X,Q,B,R near
+    class J out
+    class D here
+```
+
+*Diagram of MAC's pipeline as its `README.md` and `WORKFLOW.md` describe it (V), drawn here in Mermaid. The judge
+(orange) is the step this survey borrows from.*
+
 - **What the judge sees (V):** the user request as ground truth, the planner's `special_features`, per-feature
   bounding boxes measured *before* booleans (white-box instrumentation), the QA engines' error list, the retry count,
   and, only with `JUDGE_MULTIMODAL`, four 512×512 isometric renders covering all octants. The prompt says: *"You never
@@ -72,6 +110,9 @@ says which practices would have caught it.
   raises and *"has shown nothing about the design"*. A scene is bound to a `document_hash`; selector ids are
   revision-scoped. **No plan-before-build step exists (V)**: the brief says a simple part may need a sentence and a
   complex assembly a dimension/interface checklist, with no required format.
+
+<!-- the site places a figure here (docs/pages.yaml) -->
+
 - **build123d-mcp** ([repo](https://github.com/pzfreo/build123d-mcp), **Apache-2.0 (V, LICENSE)**). Its system prompt
   (V, `default_prompt.md`) orders the loop: `measure` after every `execute` (faces and volume must change as expected
   after a boolean), `clearance` between mates before any render (`touching` or `apart`, never `interpenetrating`),
@@ -82,6 +123,9 @@ says which practices would have caught it.
   tiers `measured | structural | recognised | unverified`, and *"conforms = no FAILs and ≥1 requirement actually
   checked"*; `lint_drawing` must return zero violations before a drawing is done. CADGenBench: a build123d-MCP entry
   leads the leaderboard at 86.9 % (u, via a 2026-10-25 third-party snapshot; the HF Space did not render).
+
+<!-- the site places a figure here (docs/pages.yaml) -->
+
 - **agentcad** ([repo](https://github.com/jdilla1277/agentcad), **Apache-2.0 (V, LICENSE)**). Validation layers (V,
   `validation.py`): BRepCheck, shell closure (free edges), mesh manifold, structure, advisory (sliver faces, loose
   tolerances). Authors declare `expect_solids`, `expect_shells` and `floating: true` per shown object (V,
@@ -158,6 +202,9 @@ For each practice: the canonical reference, the artefact, what an agent can prod
 model plus a YAML dossier, and the honest limit. NPR 7123.1D was read from the published PDF. Paywalled standards are cited, not read. Access failures: DTIC
 (MIL-STD-1472 tables), ANSI previews, ecss.nl (ESA outage), PTC and FreeCAD wiki pages; values from those are (u).
 
+<details>
+<summary>The eleven practices: canonical reference, artefact, what an agent produces or verifies, and what it cannot</summary>
+
 | § | Practice | Canonical reference | Artefact | Agent produces / verifies | Not automatable |
 |---|---|---|---|---|---|
 | 3.1 | Top-down, skeleton and interface control documents | NASA SE Handbook SP-2016-6105 Rev 2 App. L, [IRD outline](https://www.nasa.gov/reference/appendix-l-interface-requirements-document-outline/) (V): interface description, responsibilities, coordinate systems, units and tolerances, mass, structural/mechanical (attachment, stiffness, envelope), fluid, power, signal, data, environments; ECSS-E-ST-10-24C ICD DRD (V listing); Onshape *modelling in context*: contexts are snapshots, never auto-updated (V); PTC skeleton models (V, Toolkit docs) | a skeleton part (datums, axes, envelopes, layout dimensions) and one ICD row per interface pair: id, parties, owner, frame, units, pattern, envelope, loads, change authority | every ICD row has a named entity in the skeleton; child parts reference the skeleton, never each other; the mating envelope lies inside the ICD envelope; "ICDs ready to baseline" is a literal PDR entrance item (NPR 7123.1D G-6 6.m, V) | what counts as an interface and who owns it |
@@ -171,6 +218,8 @@ model plus a YAML dossier, and the honest limit. NPR 7123.1D was read from the p
 | 3.9 | Assembly access and serviceability | MIL-STD-1472 access-opening tables and MIL-HDBK-470A §2.4, §2.11 (V listings; tables **not read**, DTIC 403); ISO 15534-2 / EN 547-2 openings sized for the 95th percentile, reach for the 5th (V listing); ISO 2936 hex-key dimensions (paywalled); Unbrako Engineering Guide counterbore and clearance table: M3 Ø6.5, M4 Ø8.25, M5 Ø9.75, M6 Ø11.25 (V) | the serviceability matrix: item, task, opening, body part, tool, sweep ok, swing available, fastener visible, removal order, captive | the strongest area: sweep a modelled tool along the fastener axis and through its swing arc; line of sight from the opening; opening size against the body-part table; removal-order graph from the contact graph; [Fasteners and assembly access](../lessons/mechanical/fasteners-and-assembly-access.md) already does the driver sweep | which tasks are service tasks; posture and strength |
 | 3.10 | Configuration management | SAE/ANSI EIA-649C (V listing); five functions (V, NDIA slides): planning, identification, change management, status accounting, verification and audit; functional / allocated / product baselines | configuration index (CI, part number, revision, baseline, change id, approver), change log, as-built audit | baseline = annotated tag; revision string stamped in every artefact (cad-agent does this); PR template lists affected items; CI re-exports from the tag and diffs hashes; LFS for binaries with locks (u) | what is a CI; the change board |
 | 3.11 | Part numbers, BOM, assembly tree, mates | ASME Y14.34-2013 associated and indentured lists (V listing); Onshape mates: fastened 0 DOF, slider 1 translation, revolute 1 rotation, planar, cylindrical, pin slot, ball, parallel, tangent, width (V) | indented BOM: level, item, part number, revision, description, qty, material, make/buy, vendor PN, mass, parent; assembly tree; mate list with DOF | BOM ↔ bodies bijective; qty = instance count; mass roll-up against budget; every bought part has a vendor PN and a STEP matching the fitted geometry (the McMaster skill); every instance fully constrained unless declared a mechanism with the declared joint type | numbering policy, make/buy |
+
+</details>
 
 ## 4. Model-integrity verification: algorithms, APIs, licences, performance
 
@@ -263,6 +312,9 @@ No published "components must lie inside their cavity" validator was found (gap)
   pass/fail", mesh only) and Casys `mcp-dfm` (MIT) do; the documented weakness is that thin *diagonal* walls are
   undersampled when the ray follows the normal (V, mcp-dfm). libigl's `shape_diameter_function` (MPL-2.0) averages a cone
   of rays, which mitigates it.
+
+<!-- the site places a figure here (docs/pages.yaml) -->
+
 - **Medial-axis / inscribed-sphere** methods are exact: Attene et al., *ε-shapes*, Computers & Graphics 2017
   ([arXiv 1704.08049](https://arxiv.org/abs/1704.08049), V): finds thin walls *and* thin gaps; O(n²) worst case per
   vertex (2,720 s complete vs 45 s thresholded map in the paper); no code release found.
@@ -337,6 +389,9 @@ flowchart LR
 
 ## 7. Licences before borrowing
 
+<details>
+<summary>Each project's licence and what may be taken from it, and the code not to copy</summary>
+
 | Project | Licence | What may be taken |
 |---|---|---|
 | earthtojake/text-to-cad (vendored, pinned) | MIT (V) | snapshot policy wording, inspection recipes, dfam-check approach, with attribution |
@@ -351,6 +406,8 @@ flowchart LR
 | trimesh, python-fcl, manifold3d, gpytoolbox | MIT, BSD, Apache-2.0, MIT (V) | collision manager for the motion gate; mesh containment fallback |
 | MADR | MIT or CC0 (V) | the decision-record template |
 | **Do not copy code from:** CADCodeVerify and CADReview repos (no licence file, V); CAD-Assistant, Text2CAD, CAD-Recode (custom or NC licences); JoinABLe *dataset* (non-commercial research only, V); draftwright (AGPL-3.0, V: run as a separate program only); CADSmith, ArtiCAD, AssemCAD, CADDesigner, Idea-to-CAD (no code licence stated); the swept-volumes code (MIT but patent-pending per its README); the AIAG-VDA AP table and Boothroyd penalty tables (copyrighted: declare simplified tables of our own) | | |
+
+</details>
 
 Standards (NASA SP-2016-6105, NPR 7123.1D) are US government works and may be quoted; ASME, ISO, SAE, AIAG and
 ECSS documents are cited by number only.

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 276" width="680" height="276" role="img" aria-label="Injection moulding: draft on faces in the line of draw" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif">
+<rect width="680" height="276" rx="14" fill="#fffdf5" stroke="#d8e0d3"/>
+<text x="18" y="30" font-size="15" font-weight="700" fill="#173d3c">Injection moulding: draft on faces in the line of draw</text>
+<text x="18" y="50" font-size="12" fill="#526863">6 rules (compare: im-draft), in degrees. ≥: a floor; a bar: it varies with resin or texture.</text>
+<line x1="300.0" y1="70" x2="300.0" y2="230" stroke="#d8e0d3"/>
+<text x="300.0" y="245" font-size="11" fill="#526863" text-anchor="middle">0</text>
+<line x1="363.6" y1="70" x2="363.6" y2="230" stroke="#d8e0d3"/>
+<text x="363.6" y="245" font-size="11" fill="#526863" text-anchor="middle">1</text>
+<line x1="427.2" y1="70" x2="427.2" y2="230" stroke="#d8e0d3"/>
+<text x="427.2" y="245" font-size="11" fill="#526863" text-anchor="middle">2</text>
+<line x1="490.8" y1="70" x2="490.8" y2="230" stroke="#d8e0d3"/>
+<text x="490.8" y="245" font-size="11" fill="#526863" text-anchor="middle">3</text>
+<line x1="554.4" y1="70" x2="554.4" y2="230" stroke="#d8e0d3"/>
+<text x="554.4" y="245" font-size="11" fill="#526863" text-anchor="middle">4</text>
+<line x1="618.0" y1="70" x2="618.0" y2="230" stroke="#d8e0d3"/>
+<text x="618.0" y="245" font-size="11" fill="#526863" text-anchor="middle">5</text>
+<text x="618.0" y="260" font-size="11" fill="#526863" text-anchor="end">degrees</text>
+<text x="18" y="93" font-size="12.5" font-weight="700" fill="#173d3c">By resin and finish</text>
+<text x="290" y="116.0" font-size="12" fill="#173d3c" text-anchor="end">Protolabs · vertical faces</text>
+<rect x="331.8" y="110.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="331.8" cy="112.0" r="5" fill="#6f8a80"/>
+<text x="384.8" y="116.0" font-size="11" fill="#173d3c" text-anchor="start">≥ 0.5</text>
+<text x="290" y="136.0" font-size="12" fill="#173d3c" text-anchor="end">Protolabs · most situations</text>
+<circle cx="427.2" cy="132.0" r="5" fill="#6f8a80"/>
+<text x="436.2" y="136.0" font-size="11" fill="#173d3c" text-anchor="start">2</text>
+<text x="290" y="156.0" font-size="12" fill="#173d3c" text-anchor="end">Covestro · PC</text>
+<rect x="331.8" y="150.5" width="48.0" height="3" rx="1.5" fill="#6f8a80" fill-opacity="0.35"/>
+<circle cx="331.8" cy="152.0" r="5" fill="#6f8a80"/>
+<text x="384.8" y="156.0" font-size="11" fill="#173d3c" text-anchor="start">≥ 0.5</text>
+<text x="290" y="176.0" font-size="12" fill="#173d3c" text-anchor="end">Covestro · high-heat PC, TPU</text>
+<rect x="490.8" y="168.0" width="127.2" height="8" rx="4" fill="#6f8a80"/>
+<text x="625.0" y="176.0" font-size="11" fill="#173d3c" text-anchor="start">3–5</text>
+<text x="290" y="196.0" font-size="12" fill="#173d3c" text-anchor="end">Fictiv · smooth</text>
+<rect x="363.6" y="188.0" width="63.6" height="8" rx="4" fill="#6f8a80"/>
+<text x="434.2" y="196.0" font-size="11" fill="#173d3c" text-anchor="start">1–2</text>
+<text x="290" y="216.0" font-size="12" fill="#173d3c" text-anchor="end">DuPont · Delrin, shallow</text>
+<rect x="300.0" y="208.0" width="15.9" height="8" rx="4" fill="#6f8a80"/>
+<text x="322.9" y="216.0" font-size="11" fill="#173d3c" text-anchor="start">0–0.25</text>
+<text x="18" y="264" font-size="11" fill="#526863">Each source's own wording and conditions are in the YAML file and on the page. Read 2026-10-31.</text>
+</svg>

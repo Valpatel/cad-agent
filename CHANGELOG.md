@@ -13,7 +13,8 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 ## v0.7.0 (2026-11-01)
 
 **New**
-- Site: the build draws every Mermaid diagram itself, in headless Chromium through Playwright, and writes the finished
+- cad-agent's own website (not yet sites made with `cad-agent site`, which still draw diagrams in the reader's browser):
+  the build draws every Mermaid diagram itself, in headless Chromium through Playwright, and writes the finished
   `<figure class="cad-diagram" data-state="ready">` into the page (`tools/site-diagrams.mjs`). Pages no longer move
   while they load: the worst layout shift on a page with a diagram falls from 0.58 to 0.012, against Google's "good"
   limit of 0.1. Diagrams show without script, and no page downloads Mermaid to draw them. On one machine and browser
@@ -97,9 +98,9 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   free edge or vertex and the faces are clear of each other, they take BRepExtrema's distance between the faces, which
   gives the same gap and points. Every relation, witness included, is byte-identical to before on the 811 pairs of the
   README hero's clearance sweep on Gyropup's leg. On a 24-core workstation the sweep takes 685 s of calls instead of
-  951 s (183 s to 134 s on 6 workers). Pairs of many-faced links run up to 2.7× faster, and a synthetic pocketed block 2–5×.
-  Machines with fewer cores gain less, because OCCT builds about ten classifiers per thread. Pairs whose time is
-  BRepExtrema's own search gain little. Cached relations stay valid.
+  951 s (183 s to 134 s on 6 workers). Pairs of many-faced links run up to 2.7× faster, and a synthetic pocketed
+  block 2–5×. Machines with fewer cores gain less, because OCCT builds about ten classifiers per thread. Pairs whose
+  time is BRepExtrema's own search gain little. Cached relations stay valid.
 
 **Fixed**
 - `cadagent.mechanical.mcmaster`: a product page that shows McMaster's login prompt ("Log in to view Product Detail")
@@ -118,21 +119,23 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   needs a width of its own, because a size container does not take its width from its children. Projects with a
   copied kit can rerun `cad-agent webkit <dir>` to get `drawDiagram` (#132).
 - Code that reads `hash` in `exports/dossier-geometry.json` as the recipe string reads `hash["recipe"]` now (a
-  record from an earlier release still has the string). No hash, digest, record or verdict changes, under this
-  release or an earlier one (#144).
+  record from an earlier release still has the string). No shape content hash, geometry digest or verdict changes,
+  under this release or an earlier one; the committed geometry record shows the new `hash` object once (#144).
 - A receipt that pins `shape_content_hash` values (a vendor-solid probe, for example) can be checked only on the
   platform that made it. Record `hash_platform()` with it, and match solids by `geometry_identity` where a check
   must pass on any host (#144).
 - Hashes that change once, then stay the same for the same files at the same commit: the review package zip
   (`exports/<name>.zip`; its `-manifest.json` is unchanged), `exports/cad-agent-results.json`,
-  `docs/cad-agent-report.html`, `site/index.html`, `simreport` pages, `comparison.json` / `leaderboard.json` and
-  review `bundle.json`. Re-record any sha256 of these (an evidence record's `artifact_sha256` or `report_sha256`, a
-  release note), and commit the regenerated pages once (#150).
+  `docs/cad-agent-report.html`, `site/index.html`, `simreport` pages, `comparison.json` / `leaderboard.json`,
+  `compare.html` / `leaderboard.html` and review `bundle.json`. Re-record any sha256 of these (an evidence record's
+  `artifact_sha256` or `report_sha256`, a release note), and commit the regenerated pages once (#150).
 - Code that reads `header_meta.generated`, `comparison.json`'s `generated` or a `Generated` meta entry as a date: it
   now ends in `(last commit)` or `(SOURCE_DATE_EPOCH)`, is UTC (the comparison's was local time), and reads
   `undated (...)` outside git; `bundle.json`'s `created` can be `null` (#150).
-- Write assembly STEP files with `export_step(assy, path)` instead of `assy.save(path)` or `assy.export(path)`, and set
-  `SOURCE_DATE_EPOCH` to a whole number of seconds or leave it unset (#150).
+- Write assembly STEP files with `export_step(assy, path)` instead of `assy.save(path)` or `assy.export(path)` (#150).
+- Set `SOURCE_DATE_EPOCH` to a whole number of seconds, or leave it unset. A malformed value now stops `report`,
+  `site`, `package`, `compare` and `release` with exit 2, and nothing is written; v0.6.0 ignored a malformed value
+  (#150).
 - Code that compares `grashof()`'s whole result with a dict: add the `inversion` key. Code that reads `kind` or
   `crank_rotates` is unchanged (#159).
 - Projects with a copied kit: rerun `cad-agent webkit <dir>` (and rebuild sites made with `cad-agent site`) to ship the

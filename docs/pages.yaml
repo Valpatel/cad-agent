@@ -875,3 +875,48 @@ docs/toolkit.md:
       on: fixture-2d
       caption: "Why every hole is cut last: a rib unioned after the holes runs into the counterbore and the clearance hole, and cad-agent holes finds it inside both. The counterbore plate in tests/test_holes.py, in section; the volumes match the hole check's."
       alt: "Section through a screw hole in two build orders: a rib unioned after the clearance hole and counterbore were cut refills both, and the hole check finds rib inside each; with the holes cut last, both are clear"
+
+research/simulation-tools.md:
+  figures:
+    - after: 1-3d-topology-optimisation-from-python
+      below: Non-design regions
+      img: docs/img/topology.jpg
+      shows: output
+      tool: cadagent.simulation.topopt
+      on: enclosure
+      caption: "What this recommendation became: cadagent.simulation.topopt, pyMOTO on voxels with an overhang filter. An enclosure floor with its mounting posts under load; only the material that carries load is kept. A design guide, to be turned into ribs in the CAD and checked with FEA."
+      alt: Topology optimisation of an enclosure floor, with the remaining load paths between the mounting posts
+    - after: 2-parametric-shapesize-optimisation-drivers-expensive-multi-objective
+      below: "Objectives:"
+      img: docs/img/explore/search-trade-off.webp
+      shows: output
+      tool: cad-agent optimise
+      on: example
+      caption: "What the toolkit built since: cad-agent optimise, a search over parts and parameters with built-in random and grid sampling, and optuna's NSGA-II and TPE (not GPSampler). Here 60 seeded random trials of a worked example with made-up parts, by cost and mass; trials 47 and 1 are the Pareto front."
+      alt: "A scatter chart of 49 trials by cost and mass: most are infeasible open circles; two feasible grey dots; trials 47 and 1 in blue on the Pareto front"
+    - after: fast-low-fidelity-path-for-optimisation-loops
+      below: Thermal resistance network + fan operating point
+      img: docs/img/thermal/fan-curve-explorer.svg
+      shows: diagram
+      drawn_by: tools/fan-curve-still.mjs
+      tool: kit/fan-curve.js
+      on: example
+      caption: "A fan operating point from a datasheet curve, as (a) needs it, drawn by the fans page's explorer: one ebm-papst W2G115-AD15-13 at 12 V against a system needing 12 Pa at 100 m³/h. They cross at 150 m³/h and 26.9 Pa, clear of the stall region below 132 m³/h."
+      alt: "A fan's datasheet pressure-flow curve against a system curve: they cross at 150 cubic metres per hour and 26.9 Pa, clear of the shaded stall region below 132"
+    - after: 4-post-processing-visualisation-animation
+      below: for all scripted images and animations
+      img: docs/img/cfd/fan-faces.webp
+      shows: output
+      tool: cadagent.simulation.cfd
+      on: example
+      caption: "Two recorded chtMultiRegionSimpleFoam runs (OpenFOAM v2512 in Docker), rendered with PyVista as recommended here: a vented 20 W box with an exhaust fan, sections coloured by air temperature, with streamlines. With the fan 3 mm under the opening the air loops back through it: 3.75 g/s, carrying 32.26 W while 19.61 W leave. In a duct it passes once: 2.77 g/s, 17.60 W carried, 17.83 W leaving, though that run's energy balance is 10.9 % off, which the toolkit flags."
+      alt: "Two sections through a vented 20 W box with an exhaust fan, coloured by air temperature with streamlines: with the fan under the opening air loops back through it; with the fan in a duct it passes once"
+    - after: bambu-studio-tested-here-headless-works
+      below: "Machine: `Bambu Lab P1S"
+      img: docs/img/plates/gyropup-plates.svg
+      shows: diagram
+      drawn_by: tools/plates_figure.py
+      tool: cadagent.manufacturing.plates
+      on: gyropup
+      caption: "What the toolkit built on this command line: cad-agent export-3mf packs every printed part onto plates in one Bambu Studio project, which the CLI slices plate by plate with each plate's filament. Gyropup's 45 printed parts on 19 plates of 256 mm: 14 of PA6-CF, 3 of PETG and 2 of TPU."
+      alt: "Gyropup's 45 printed parts on 19 Bambu Studio plates of 256 mm, grouped by filament: 14 plates of PA6-CF, 3 of PETG and 2 of TPU, with every plate's wiper corner kept clear"

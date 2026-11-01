@@ -27,6 +27,9 @@ flowchart TD
 
 ## 1. 3D topology optimisation from Python
 
+<details>
+<summary>The eleven candidates: licence, maintenance, install and fit</summary>
+
 | Candidate | Licence (verified) | Maintenance | Install | Fit |
 |---|---|---|---|---|
 | **pyMOTO** | MIT ([repo](https://github.com/aatmdelissen/pyMOTO)) | v2.0.1, 2026-05-07; last commit 2026-06-02 ([releases](https://github.com/aatmdelissen/pyMOTO/releases)) | `pip install pymoto[fast]` or `conda install -c aatmdelissen pymoto` ([README](https://github.com/aatmdelissen/pyMOTO#quick-start-installation)) | Best fit. Voxel `VoxelDomain` in 2D and 3D; density filter; robust (eroded/dilated) formulation for minimum length scale; **`OverhangFilter`** (Langelaar AM filter, [example](https://github.com/aatmdelissen/pyMOTO/blob/master/examples/topology_optimization/ex_compliance_overhang.py)); OC, MMA and GCMMA; multigrid-preconditioned CG for 3D; stress constraints; thermal and thermo-mechanical modules (`ex_showcase_thermal.py`, `ex_thermo_mech.py`); `WriteToVTI` to dump the density field every iteration ([io.py](https://github.com/aatmdelissen/pyMOTO/blob/master/pymoto/modules/io.py)). Modules carry their own sensitivities, so non-design regions are just a mask or mapping on the design vector. |
@@ -40,6 +43,8 @@ flowchart TD
 | scikit-fem topopt example | BSD-3 ([repo](https://github.com/kinnala/scikit-fem)) | Active (12.0.2, 2026-06) | Already installed | **None found**: docs/examples ex01–ex56 contain no topology-optimisation example. We would have to write SIMP + MMA ourselves on top of our existing P2-tet FEA. |
 | OpenFOAM adjoint (ESI) | GPL-3 | v2606 | Docker (see §3) | `adjointOptimisationFoam` has `topologyOptimisation` tutorials for **fluid** topology ([tree](https://gitlab.com/openfoam/core/openfoam/-/tree/master/tutorials/incompressible/adjointOptimisationFoam)). This could later shape vents and ducts; it's not for structure. |
 | SU2 | LGPL-2.1 | v8.5.0 | — | Has a `fea_topology` test case ([TestCases](https://github.com/su2code/SU2/tree/master/TestCases)). Niche. |
+
+</details>
 
 **Recommendation:** use **pyMOTO** (MIT, importable) as the structural and thermal topology engine on a voxel domain built from our CadQuery solids:
 - **Non-design regions:** fix them to solid (bosses, insert pockets, port frames, the cooler seat) or to void (cooler, board, connector keep-outs, airflow paths).
@@ -115,6 +120,20 @@ Pipeline:
 2. `blockMesh` → `surfaceFeatureExtract` → `snappyHexMesh` → `splitMeshRegions -cellZones` → `decomposePar -allRegions` → `mpirun -np 24 chtMultiRegionSimpleFoam -parallel`. This is the cpuCabinet `Allrun` / `Allrun.pre` sequence.
 3. Model heatpipes as anisotropic or effective high-conductivity solids. This is my engineering assumption and needs calibration; no source verified.
 4. Run time for 2–5 M cells on 24 cores is unmeasured; plan on hours, not minutes.
+
+```mermaid
+flowchart TD
+    C["CadQuery shapes<br/>air, walls, solids, fans"] --> W["ThermalCase.write()<br/>the case and its Allrun"]
+    W --> M["blockMesh, decomposePar,<br/>snappyHexMesh, checkMesh"]
+    M --> S{"splitMeshRegions:<br/>only the regions<br/>the case defines?"}
+    S -->|"no: sealed air,<br/>a solid in pieces"| X["stop, exit 3"]
+    S -->|"yes"| F["chtMultiRegionSimpleFoam<br/>in parallel"]
+    F --> R["reconstructPar, foamToVTK;<br/>results() reads it back"]
+```
+
+*The pipeline as `cadagent.simulation.cfd` runs it since (its `Allrun`, natively or in the Docker image): it decomposes
+before meshing, so snappyHexMesh runs in parallel too, and it stops when splitMeshRegions makes a region the case
+does not define.*
 
 ### Fast low-fidelity path for optimisation loops
 
@@ -204,6 +223,12 @@ From the source option table ([PrintConfig.cpp](https://github.com/prusa3d/Prusa
 | PLA Basic (TDS V2.0) | 60 °C | 57 °C | 54 °C | [TDS](https://www.additive-x.com/shop/mpattachments/file/viewonline/id/494/product_id/2236) |
 | PETG Basic (V2.0) | 68 °C | 69 °C | 65 °C | [TDS](https://www.additive-x.com/shop/mpattachments/file/viewonline/id/580/product_id/2330) |
 | PETG HF (V1.0) | 66 °C | 69 °C | 62 °C | [TDS](https://botland.com.pl/img/art/inne/25540_karta_produktu.pdf) |
+
+![Bar chart of the table above: for PLA Basic, PETG Basic and PETG HF, the glass transition and the heat deflection temperatures at 0.45 and 1.8 MPa, all between 54 and 69 degrees C, against a dashed line at the module's 80 degree C TTP limit](../docs/img/research/thermal-limits.svg)
+
+*Drawn from the table above by `tools/research_figures.py`, with the TTP limit read from the module's bullet (a test
+keeps them in step). All three filaments soften 11–26 °C below the 80 °C the module's thermal plate may reach. The
+plate is not the air at a printed wall: the wall's own temperature, from a CHT run or a thermocouple, decides.*
 
 With the TTP allowed up to 80 °C and the fan exhausting warm air, PLA within a few cm of the heatsink, the exhaust path or the cooler clamp is marginal. Use PETG (or better) for parts that carry the cooler, and treat **~50 °C PLA / ~60 °C PETG sustained wall temperature under load** as design limits. Those limits are my margin choice, not a datasheet value. Creep under clamp load is a separate, unmodelled risk.
 

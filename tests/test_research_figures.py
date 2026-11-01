@@ -81,3 +81,15 @@ def test_strain_charts_draw_every_row_and_ranges_as_ranges():
     assert printed.count('text-anchor="end"') == 13                       # every row but TPU, which strain does not govern
     assert ">CoPA, dry, Polymaker</text>" in printed and ">3.3 %</text>" in printed
     assert "TPU 95A not drawn" in printed
+
+
+def test_thermal_chart_draws_the_table_against_the_modules_limit():
+    md = (ROOT / "research" / "simulation-tools.md").read_text()
+    assert md.index("**Printed-material limits") < md.index("docs/img/research/thermal-limits.svg") < md.index("## Existing")
+    svg = (ROOT / "docs" / "img" / "research" / "thermal-limits.svg").read_text()
+    assert svg.count('text-anchor="end">PLA Basic<') == svg.count('text-anchor="end">PETG HF<') == 1
+    assert ">TTP max 80 °C</text>" in svg and 'stroke-dasharray="5 4"' in svg     # the limit, read from the page
+    assert svg.count("<rect") == 1 + 3 + 3 * 3                                    # frame, legend, three bars a row
+    import pytest
+    with pytest.raises(ValueError, match="not a temperature"):
+        _figures().celsius("60 C", "t")

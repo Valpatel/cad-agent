@@ -53,9 +53,9 @@ def number(cell: str, where: str) -> tuple[float, str] | None:
 
 
 def bars_svg(title: str, rows: list[tuple[str, list[tuple[float, str] | None]]], series: list[tuple[str, str]],
-             vmax: float, ticks: list[float], fmt, note: str) -> str:
+             vmax: float, ticks: list[float], fmt, note: str, mark: tuple[float, str] | None = None) -> str:
     """Horizontal grouped bars: one group per row, one bar per series, the value printed at the bar's end; a missing
-    value (None) gets "—" and no bar."""
+    value (None) gets "—" and no bar. ``mark`` (value, label) draws a dashed reference line across every group."""
     w, label_w, pad = 680, 210, 18
     bar_h, gap, group_gap = 13, 3, 14
     group_h = len(series) * bar_h + (len(series) - 1) * gap
@@ -76,6 +76,11 @@ def bars_svg(title: str, rows: list[tuple[str, list[tuple[float, str] | None]]],
     for t in ticks:                                  # grid
         out.append(f'<line x1="{x(t):.1f}" y1="{top - 6}" x2="{x(t):.1f}" y2="{bottom}" stroke="{LINE}"/>')
         out.append(f'<text x="{x(t):.1f}" y="{bottom + 16}" font-size="11" fill="{MUTED}" text-anchor="middle">{fmt(t)}</text>')
+    if mark:                                         # a reference value, labelled at the top of its line
+        out.append(f'<line x1="{x(mark[0]):.1f}" y1="{top - 10}" x2="{x(mark[0]):.1f}" y2="{bottom}" stroke="{INK}" '
+                   f'stroke-width="1.5" stroke-dasharray="5 4"/>')
+        out.append(f'<text x="{x(mark[0]) - 4:.1f}" y="{top - 14}" font-size="11" fill="{INK}" '
+                   f'text-anchor="end">{escape(mark[1])}</text>')
     y = top
     for label, values in rows:
         out.append(f'<text x="{label_w - 10}" y="{y + group_h / 2 + 4:.1f}" font-size="12" fill="{INK}" '
@@ -193,7 +198,33 @@ def printed_strain() -> str:
                     [i * 0.5 for i in range(steps + 1)], per_cent, note)
 
 
-FIGURES = {"fdm-anisotropy.svg": anisotropy, "landscape-stars.svg": stars,
+def celsius(cell: str, where: str) -> tuple[float, str]:
+    """A temperature cell, ``60 °C``; anything else is an error."""
+    m = re.match(r"^([0-9]+(?:\.[0-9]+)?)\s*°C$", cell.strip())
+    if not m:
+        raise ValueError(f"{where}: {cell!r} is not a temperature in °C; fix the table or the chart's reader")
+    return float(m.group(1)), ""
+
+
+def thermal_limits() -> str:
+    """§6: the printed materials' glass transition and heat deflection temperatures against the module's TTP limit."""
+    md = (ROOT / "research" / "simulation-tools.md").read_text(encoding="utf-8")
+    ttp = re.search(r"\*\*TTP \(datasheet\):\*\* operating range −25 to \*\*([0-9]+) °C max\*\*", md)
+    if not ttp:
+        raise ValueError("simulation-tools.md §6: the TTP's maximum is not where the chart reads it")
+    rows = []
+    for cells in table(md, "**Printed-material limits"):
+        where = f"simulation-tools.md §6, {cells[0]}"
+        rows.append((re.sub(r"\s*\([^)]*\)\s*$", "", cells[0]), [celsius(c, where) for c in cells[1:4]]))
+    limit = float(ttp.group(1))
+    return bars_svg("Printed materials soften below the module's thermal plate limit", rows,
+                    [("glass transition (DSC)", GREEN), ("HDT at 0.45 MPa", ORANGE), ("HDT at 1.8 MPa", INK)],
+                    100.0, [0, 20, 40, 60, 80, 100], lambda v: f"{v:g} °C",
+                    "Bambu data sheets (research/simulation-tools.md §6). The plate is not the air at a wall: "
+                    "a wall's own temperature decides.", mark=(limit, f"TTP max {limit:g} °C"))
+
+
+FIGURES = {"fdm-anisotropy.svg": anisotropy, "landscape-stars.svg": stars, "thermal-limits.svg": thermal_limits,
            "moulded-strain.svg": moulded_strain, "printed-strain.svg": printed_strain}
 
 

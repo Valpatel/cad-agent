@@ -375,8 +375,10 @@ const gyropupSource = JSON.parse(await read('docs/img/gyropup/SOURCE.json'));
 const checkNumbers = (r, at) => {
   const fea = gyropupSource.pictures[path.basename(r.img).replace(/\.\w+$/, '')];
   if (!r.img.startsWith('docs/img/gyropup/') || !fea?.safety_factor) return;
+  // Whole numbers only: 3.1 does not pass inside 3.15, nor 52,134 inside 152,134.
+  const quotes = n => new RegExp(`(?<![\\d.,])${n.replace(/[.,]/g, '\\$&')}(?![\\d]|[.,]\\d)`).test(r.caption);
   for (const n of [fea.tets.toLocaleString('en-US'), String(fea.safety_factor), Number(fea.target).toFixed(1)])
-    if (!r.caption.includes(n)) throw new Error(`docs/home.yaml ${at}: the caption does not quote ${n} from docs/img/gyropup/SOURCE.json`);
+    if (!quotes(n)) throw new Error(`docs/home.yaml ${at}: the caption does not quote ${n} from docs/img/gyropup/SOURCE.json`);
 };
 const reel = [], homeMd = { reel: [], ours: [] };
 for (const [i, r] of home.reel.entries()) {

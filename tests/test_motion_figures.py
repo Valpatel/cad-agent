@@ -177,9 +177,13 @@ def test_motion_trace_figure_runs_the_validator_on_the_tests_shaft():
     assert max(h["A"]["per_pose_mm"]) < h["tolerance_mm"] == 0.01
     assert [round(e, 1) for e in h["B"]["per_pose_mm"]] == [0, 0, 0, 0, 0, 67.9, 96.0, 67.9, 0, 96.0]
     assert h["without_nested"]["status"] == "fail"
+    # the checks the figure names, and the pose it says is missing, are the reports'
+    assert [(f["check"], f["missing_poses_deg"]) for f in h["without_nested"]["failures"]] == \
+        [("pose-coverage", [h["poses"][h["nested"][0]]])]
+    assert [(f["check"], f["component"]) for f in b["failures"]] == [("rendered-landmarks", "rotor")]
     s = (mf.OUT / "motion-trace.svg").read_text(encoding="utf-8")
     for said in ("A: pass. At all 10 poses, every landmark is within 0.01 mm",
-                 "B: fail (rendered-landmarks). Its rotor is 96.0 mm off at spin 180°, and its pivot 96.0 mm off.",
+                 "B: fail (rendered-landmarks). Its rotor is 96.0 mm off at spin 180°: twice its pivot's 48 mm offset.",
                  "yaw −90° with spin 180° is missing", ">67.9<", "pivot 48 mm off the shaft"):
         assert said in s, said
 
@@ -224,10 +228,11 @@ def test_sweep_figure_runs_the_gate_on_the_tests_boxes():
     assert len(k["bisect"]) == AccessOptions().refine_steps and k["seat_gap"] == 5
     assert blocked["samples"] == 1 + len(k["visits"]) + len(k["bisect"]) == 16
     s = (mf.OUT / "insertion-sweep.svg").read_text(encoding="utf-8")
-    for said in ("clear, ≥ 3.00 mm, with 0 queries", "seat first: gap 5.00", "s 24: 40 mm³ shared, a hit",
+    assert h["options"].margin_mm == 1 and near["travel_mm"] == 20 + h["options"].margin_mm   # the block's top is 20 up
+    for said in ("it starts 1 mm past the block: travel 21 mm", "clear, ≥ 3.00 mm, with 0 queries", "seat first: gap 5.00", "s 24: 40 mm³ shared, a hit",
                  "[25, 24] halved 12 times", "first contact between s 24.9998 and 25.0000",
-                 "blocked 25.00 mm before its seat, 16 queries", "≥ (4.03 + 4.68 − 5) / 2 = 1.85",
-                 "clear: the closest approach lies between 1.85 and 4.03 mm; 4 queries", "exact, least 3.54"):
+                 "blocked 25.00 mm before its seat, 16 queries", "≥ (4.030 + 4.679 − 5) / 2 ≈ 1.85",
+                 "clear: the closest approach lies between 1.85 and 4.03 mm; 4 queries", "dotted: the exact gap (not computed), least 3.54"):
         assert said in s, said
 
 

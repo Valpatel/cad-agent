@@ -1355,17 +1355,22 @@ def motion_trace_svg() -> str:
         cells = "".join(f'<tspan x="{num(xs[i])}"' + (f' fill="{ORANGE}" font-weight="700"' if j == 3 and
                         h["B"]["per_pose_mm"][i] > tol else "") + f">{escape(s_)}</tspan>" for i, s_ in enumerate(vals))
         body.append(f'<text y="{num(y)}" font-size="11" text-anchor="middle">{cells}</text>')
-    # the errors are covered until their pose is reached: a cover over the two rows, shrinking to the right
+    # the errors are covered until their pose is reached: a cover over the two rows, shrinking to the right. It steps
+    # as the highlight sets off for the next pose, so it never covers part of the highlight
     right = cx0 + cw * n
     an.css.append(f".cov{{transform-origin:{num(right)}px 0;transform-box:view-box}}")
-    timeline(".cov", [(n - 1 - i) / n for i in range(n)], lambda f: f"transform:scaleX({num(f, 3)})", "steps(1,end)",
+    timeline(".cov", [(n - 1 - i) / n for i in range(n)], lambda f: f"transform:scaleX({num(f, 3)})", "steps(1,start)",
              rest=0)
     body.append(f'<rect class="w cov" x="{num(cx0)}" y="{num(ty + 38)}" width="{num(cw * n)}" height="33" fill="{BG}"/>')
+    # the checks that fail, and the poses missing, as the reports give them
+    b_checks = ", ".join(sorted({f["check"] for f in h["B"]["report"]["failures"]}))
+    gap = h["without_nested"]["failures"]
+    missing = [f"yaw {fmt(p['yaw'], 0)}° with spin {fmt(p['spin'], 0)}°" for f in gap for p in f.get("missing_poses_deg", [])]
     lines = [(INK, f"A: pass. At all {n} poses, every landmark is within {fmt(tol, 2)} mm of where the CAD puts it."),
-             (ORANGE, f"B: fail (rendered-landmarks). Its rotor is {fmt(bad['max_error_mm'], 1)} mm off at spin "
-                      f"{fmt(poses[still]['spin'], 0)}°, and its pivot {fmt(bad['max_anchor_error_mm'], 1)} mm off."),
-             (MUTED, "Without the nested pose, A fails too (pose-coverage): yaw "
-                     f"{fmt(poses[nest]['yaw'], 0)}° with spin {fmt(poses[nest]['spin'], 0)}° is missing.")]
+             (ORANGE, f"B: fail ({b_checks}). Its rotor is {fmt(bad['max_error_mm'], 1)} mm off at spin "
+                      f"{fmt(poses[still]['spin'], 0)}°: twice its pivot's {fmt(MT_OFFSET, 0)} mm offset."),
+             (MUTED, f"Without the nested pose, A fails too ({', '.join(sorted({f['check'] for f in gap}))}): "
+                     f"{' and '.join(missing)} {'is' if len(missing) == 1 else 'are'} missing.")]
     vy = ty + 104
     for i, (colour, s_) in enumerate(lines):
         body.append(f'<g id="v{i}">{text(20, vy + 19 * i, s_, 12, colour, weight="600" if i < 2 else None)}</g>')
@@ -1524,7 +1529,8 @@ def sweep_svg() -> str:
     body.append(f'<g id="d1"><path d="M{num(gx0)} {num(gy)}H{num(gx1)}M{num(gx0)} {num(gy - 4)}v8M{num(gx1)} {num(gy - 4)}v8" '
                 f'stroke="{ORANGE}"/>{text(gx0 - 3, gy + 4, fmt(near["swept_gap"], 2), 10, ORANGE, "end", "700")}</g>')
     an.show("#d1", 1.7, end)
-    lines("l1", 20, 240, [(f"it starts 1 mm past the block: travel {fmt(travel, 0)} mm", MUTED, False),
+    lines("l1", 20, 240, [(f"it starts {fmt(h['options'].margin_mm, 0)} mm past the block: travel {fmt(travel, 0)} mm",
+                           MUTED, False),
                     (f"its swept box stays {fmt(near['swept_gap'], 2)} mm from the block's", INK, False),
                     (f"clear, ≥ {fmt(near['result']['gap_lower_bound_mm'], 2)} mm, with "
                      f"{near['result']['samples']} queries", INK, True)], 1.9)
@@ -1632,23 +1638,24 @@ def sweep_svg() -> str:
     cx_, cy_ = P(low[0] + 2, 17)
     body.append(f'<g id="lb"><circle cx="{num(lb[0])}" cy="{num(lb[1])}" r="3.4" fill="{ORANGE}"/>'
                 f'<path class="w" d="M{num(lb[0])} {num(lb[1] - 5)}L{num(cx_ + 30)} {num(cy_ + 4)}" stroke="{ORANGE}"/>'
-                + text(cx_, cy_, f"≥ ({fmt(low[2], 2)} + {fmt(low[3], 2)} − {fmt(low[0] - low[1], 0)}) / 2 = {fmt(low[4], 2)}",
+                + text(cx_, cy_, f"≥ ({fmt(low[2], 3)} + {fmt(low[3], 3)} − {fmt(low[0] - low[1], 0)}) / 2 ≈ {fmt(low[4], 2)}",
                        11, ORANGE, extra=' class="h"')
                 + f'<path class="w" d="M{num(hx0)} {base + 5}v4H{num(hx1)}v-4" fill="none" stroke="{MUTED}"/>'
                 + text((hx0 + hx1) / 2, base + 19, f"h {fmt(low[0] - low[1], 0)}", 10, MUTED, "middle") + "</g>")
     an.show("#lb", t2[-1] + 0.4, end)
     curve = " ".join(pt(s_, g) for s_, g in h["true"])
     cs, cg = h["closest"]
-    body.append(f'<g id="ex"><path d="M{curve}" fill="none" stroke="{MUTED}" stroke-dasharray="2 2"/>'
-                + text(P(cs - 3.4, 0)[0], base - 4, f"exact, least {fmt(cg, 2)}", 10, MUTED) + "</g>")
+    body.append(f'<g id="ex"><path d="M{curve}" fill="none" stroke="{MUTED}" stroke-dasharray="1 2"/>'
+                + text(P(cs - 3.4, 0)[0], base - 4, f"dotted: the exact gap (not computed), least {fmt(cg, 2)}", 10,
+                       MUTED) + "</g>")
     an.show("#ex", t2[-1] + 0.8, end)
     body.append(f'<path d="M{px0} {base}H{px1}" stroke="{MUTED}"/>'
                 + text(px0, base + 19, f"s {fmt(s_max, 1)}", 10, MUTED, "middle") + text(px1, base + 19, "0", 10, MUTED, "middle")
                 + text(px0 - 8, y + 34, "gap, mm", 10, MUTED))
     lines("l3", 20, y + 192, [("A step is the gap, and at least max_step_mm. After the first sample, a box gap ≥ max_step_mm "
                          "stands in for the query (○).", MUTED, False),
-                        ("A move of h changes the gap by at most h, so between two samples it stays ≥ (g1 + g2 − h) / 2. "
-                         "Dashed: exact.", MUTED, False),
+                        ("A move of h changes the gap by at most h, so between two samples it stays ≥ (g1 + g2 − h) / 2.",
+                         MUTED, False),
                         (f"clear: the closest approach lies between {fmt(dg['result']['gap_lower_bound_mm'], 2)} and "
                          f"{fmt(dg['result']['min_gap_mm'], 2)} mm; {dg['result']['samples']} queries", INK, True)],
           t2[-1] + 1.0)

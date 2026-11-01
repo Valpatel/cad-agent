@@ -479,9 +479,9 @@ PEM, the CAD tools), is in #119; the rows here are the profile values, with the 
 beats all of them: SendCutSend publishes its tooling per stock size, and ten 5052 and mild-steel rows are in the YAML
 (`shop_tables`).
 
-<img src="../docs/img/research/process-sheet-metal.svg" alt="The same sheet-metal rule from different sources, evaluated at 1.5 mm thickness and radius, with one shop's real tooling" width="680">
+<img src="../docs/img/research/process-sheet-shop.svg" alt="Chart of SendCutSend's inside bend radius for each 5052 aluminium and mild-steel sheet it stocks, with the K-factor in each label: 0.61 to 3.17 mm, not simply the thickness" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the sheet-metal `compare` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31, with SendCutSend's tooling table in orange. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/process_profile_figures.py` from the SendCutSend tooling table in [`process-profiles.yaml`](process-profiles.yaml) (`shop_tables`), read 2026-10-31. A test redraws it and fails if the committed chart differs.*
 
 ### Bend radius and K-factor
 
@@ -495,10 +495,6 @@ beats all of them: SendCutSend publishes its tooling per stock size, and ten 505
 | K-factor, air bending, R ≤ T / T–3T / > 3T | soft 0.33 / 0.40 / 0.50; steel 0.38 / 0.43 / 0.50; stainless 0.40 / 0.45 / 0.50 | Generic table (bottoming and coining rows in the guide) | [Protolabs Network][hubs-sheet-metal] |
 | K-factor | 0.33–0.50, per SKU in the specs file | SendCutSend's tooling | [SendCutSend][sendcutsend-ordering-guide], [specs][sendcutsend-specs] |
 | Bend allowance | BA = π(R + K·T)·A/180, K from the inside face | Any CAD | [SOLIDWORKS help][solidworks-k-factor] |
-
-<img src="../docs/img/research/process-sheet-shop.svg" alt="Chart of SendCutSend's inside bend radius for each 5052 aluminium and mild-steel sheet it stocks, with the K-factor in each label: 0.61 to 3.17 mm, not simply the thickness" width="680">
-
-*Diagram drawn by `tools/process_profile_figures.py` from the SendCutSend tooling table in [`process-profiles.yaml`](process-profiles.yaml) (`shop_tables`), read 2026-10-31. A test redraws it and fails if the committed chart differs.*
 
 ### Flanges, holes and the bend
 
@@ -517,6 +513,10 @@ beats all of them: SendCutSend publishes its tooling per stock size, and ten 505
 | Hole to edge | ≥ 2T; ≥ T | | [Boothroyd Dewhurst][dfma-dfm-checklist]; [Protolabs Network][hubs-sheet-metal] |
 | Hole to edge | 1/16 in for T ≤ 1/32 in, else max(2T, 1/8 in) | Punched holes | [Century Tywood][century-tywood-sheet-metal-reference] |
 | Hole spacing | ≥ 2T; ≥ 6T | | [Protolabs Network][hubs-sheet-metal]; Greg Paulsen, [Machine Design][paulsen-2017-machine-design-sheet-metal] |
+
+<img src="../docs/img/research/process-sheet-metal.svg" alt="The same sheet-metal rule from different sources, evaluated at 1.5 mm thickness and radius, with one shop's real tooling" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from the sheet-metal `compare` rules in [`process-profiles.yaml`](process-profiles.yaml), on published sources read 2026-10-31, with SendCutSend's tooling table in orange. A test redraws it and fails if the committed chart differs.*
 
 ### Reliefs, hems and small features
 

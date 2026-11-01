@@ -144,4 +144,5 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   gets new hashes for those 44 from the move alone, and must measure again. The move leaves the other 17 byte for
   byte (`geometry`, `fasteners`, `connectors`, `markings`, `mcmaster`, `motion_trace`, `compliant/__init__`,
   `compliant/allowables`, `compliant/figures`, `mesh3mf`, `robot`, `pcb_routing`, `evidence`, `dossier/load`,
-  `gates/verdict`, `view`, `serve`); `geometry` and `mcmaster` change in this release anyway, for `export_step` (#91).
+  `gates/verdict`, `view`, `serve`); `geometry` and `mcmaster` change in this release anyway, for `export_step` (#91),
+  and so does `view`, for the home page's 3D model (`pack_view`, #182).

@@ -29,7 +29,8 @@ export const ON = {
 export const SHOWS = { output: 'Real output', diagram: 'Diagram' };
 
 // A table of more than FOLD_ROWS body rows, or a code block of more than FOLD_LINES lines, folds into a <details>
-// whose summary says what is inside. Find-in-page still finds folded text, and the Markdown twin has it all.
+// whose summary says what is inside. Chrome's find-in-page opens a fold with a match (other browsers may not search a
+// closed one); the Markdown twin has it all.
 export const FOLD_ROWS = 12, FOLD_LINES = 24;
 // Section cards appear on a page with at least this many sections (h2) that have a picture.
 export const CARDS_MIN = 2;
@@ -92,6 +93,9 @@ export function pagePlacer({ spec, pageFiles, tracked, commandNames, readBuf, pa
     if (!pageFiles.has(file)) fail(file, 'is not a published page');
     only(page, KEYS.page, file);
     if (!page.hero && !page.band?.length && !page.figures?.length) fail(file, 'places nothing (give it a hero, a band or figures)');
+    // A key that is there is used: an empty hero, band or figures list is a mistake, not nothing.
+    if ('hero' in page && (!page.hero || typeof page.hero !== 'object' || Array.isArray(page.hero))) fail(`${file} hero`, 'is not a mapping');
+    if ('figures' in page && (!Array.isArray(page.figures) || !page.figures.length)) fail(`${file} figures`, 'is a list of figures');
   }
   const picture = async (src, alt, at, attrs = ' loading="lazy" decoding="async"') => {
     if (!tracked.includes(src) || !/^docs\/img\/.*\.(svg|png|jpe?g|webp)$/.test(src)) fail(at, `${src} is not a committed picture under docs/img/`);
@@ -117,17 +121,21 @@ export function pagePlacer({ spec, pageFiles, tracked, commandNames, readBuf, pa
     if (!SHOWS[v.shows]) fail(at, `shows is one of ${Object.keys(SHOWS).join(', ')} (a real output of the tool, or a diagram of something real)`);
     if (!ON[v.on]) fail(at, `on is one of ${Object.keys(ON).join(', ')}`);
     if (v.on === 'fixture-2d' && v.shows !== 'diagram') fail(at, 'a 2D drawing of a fixture is a diagram, not a real output');
-    if (v.shows === 'diagram' && !v.drawn_by) fail(at, 'a diagram says which script drew it (drawn_by)');
+    if (v.shows === 'diagram' && !/^tools\//.test(v.drawn_by || '')) fail(at, 'a diagram says which script under tools/ drew it (drawn_by)');
     if (v.shows === 'output' && v.drawn_by) fail(at, 'a real output is drawn by its tool: drop drawn_by, or make it a diagram');
     const by = v.shows === 'diagram' ? `, drawn by ${tool(v.drawn_by, at)}` : '';
     const on = inLink ? ON[v.on].replace(/<[^>]+>/g, '') : ON[v.on];
     return `<span class="fig-what"><b class="shows-${v.shows}">${SHOWS[v.shows]}</b> of ${tool(v.tool, at)}${by}, on ${on}.</span>`;
   };
   // A tile links to a heading on its page (#id, which must exist) or to another published page (docs/x.md#id).
+  const heading = (html, id) => html.includes(` id="${id}"`) && new RegExp(`<h[1-6] id="${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`).test(html);
+  const elsewhere = [];                       // [at, page, heading id]: checked by place.checkLinks once all pages exist
   const link = (href, at, html) => {
     const [target, hash] = href.split('#');
-    if (!target) return html.includes(` id="${hash}"`) ? href : fail(at, `no heading with id ${hash} on the page`);
-    return pageFiles.has(target) ? pageURL(target) + (hash ? '#' + hash : '') : fail(at, `${href} is not a published page or an anchor`);
+    if (!target) return heading(html, hash) ? href : fail(at, `no heading with id ${hash} on the page`);
+    if (!pageFiles.has(target)) fail(at, `${href} is not a published page or an anchor`);
+    if (hash) elsewhere.push([at, target, hash]);
+    return pageURL(target) + (hash ? '#' + hash : '');
   };
   const full = (src, img) => `<a class="fig-full" href="/${esc(src)}" title="Open the full-size picture">${img}</a>`;
   // Where a figure goes in a section: after its first paragraph, unless that paragraph introduces the block after it
@@ -153,13 +161,13 @@ export function pagePlacer({ spec, pageFiles, tracked, commandNames, readBuf, pa
     }
     return fail(at, `no paragraph, list, table or code block in its section has the words "${words}"`);
   };
-  // The band and the cards: after the title and its first paragraph (when the page opens with one).
+  // The band and the cards: after the title and its first paragraph, as a figure in a section (so not between a lead
+  // that ends with ":" and the list it introduces).
   const underTitle = html => {
     const h1 = html.match(/<h1\b[^>]*>[\s\S]*?<\/h1>/);
-    const end = h1 ? h1.index + h1[0].length : 0;
-    return end + (html.slice(end).match(/^\s*<p>[\s\S]*?<\/p>/)?.[0].length || 0);
+    return inSection(html, h1 ? h1.index + h1[0].length : 0);
   };
-  return async (file, html) => {
+  const place = async (file, html) => {
     const page = spec?.[file] || {};
     // Figures first, all at once from the original positions (last first, so the earlier positions hold), each
     // heading's figures in their YAML order.
@@ -171,6 +179,7 @@ export function pagePlacer({ spec, pageFiles, tracked, commandNames, readBuf, pa
       const head = [...html.matchAll(/<h([2-4]) id="([^"]+)">[\s\S]*?<\/h\1>/g)].find(m => m[2] === f.after);
       if (!head) fail(at, `no heading with id ${f.after} on the page`);
       const end = head.index + head[0].length;
+      if ('below' in f && (typeof f.below !== 'string' || !f.below.trim())) fail(at, 'below is the words of the block to place it after');
       inserts.push([f.below ? below(html, end, String(f.below).replace(/\s+/g, ' '), at) : inSection(html, end), i,
         `<figure class="page-figure">${full(f.img, await picture(f.img, f.alt, at))}<figcaption>${what(f, at)} ${esc(f.caption)}</figcaption></figure>`]);
     }
@@ -185,7 +194,7 @@ export function pagePlacer({ spec, pageFiles, tracked, commandNames, readBuf, pa
       banded.add('/' + page.hero.img);
       band += `<figure class="band-hero">${full(page.hero.img, await picture(page.hero.img, page.hero.alt, at, ' decoding="async"'))}<figcaption>${what(page.hero, at)} ${esc(page.hero.caption)}</figcaption></figure>`;
     }
-    if (page.band) {
+    if ('band' in page) {
       if (!Array.isArray(page.band) || page.band.length < 2 || page.band.length > 4) fail(file, 'a band has two to four tiles');
       const tiles = [];
       for (const [i, t] of page.band.entries()) {
@@ -204,4 +213,9 @@ export function pagePlacer({ spec, pageFiles, tracked, commandNames, readBuf, pa
     const where = underTitle(html);
     return html.slice(0, where) + top + html.slice(where);
   };
+  /** After every page is placed: a tile's link to a heading on another page finds it (htmlOf(file): its final HTML). */
+  place.checkLinks = htmlOf => {
+    for (const [at, target, hash] of elsewhere) if (!heading(htmlOf(target) || '', hash)) fail(at, `no heading with id ${hash} on ${target}`);
+  };
+  return place;
 }

@@ -17,8 +17,8 @@
  *
  * Each crop is one part of a page, captured at the docs column's width (DOCS_COLUMN) at twice the pixel density, so
  * on the docs page its text is the size it is on the review site: readable on a desktop, and a tap away on a phone
- * (each figure links to its full-size picture). Everything after the crop's last element is hidden, so a crop never
- * ends partway through a line.
+ * (each figure links to its full-size picture). Everything before the crop's first element and after its last is
+ * hidden, so a crop never ends partway through a line or shows the edge of its neighbour.
  */
 import { chromium } from '@playwright/test';
 import { execFileSync, spawn } from 'node:child_process';
@@ -68,8 +68,12 @@ try {
     const box = await page.evaluate(([first, last]) => {
       const [a, z] = [first, last].map(s => document.querySelector(s));
       if (!a || !z) throw new Error(`no element ${a ? last : first}`);
-      // Hide whatever comes after the crop (the next element would otherwise show its first line at the edge).
-      for (const el of document.querySelectorAll('main *')) if (z.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING && !z.contains(el)) el.style.visibility = 'hidden';
+      // Hide whatever comes before or after the crop (a neighbour would otherwise show its edge in the padding).
+      for (const el of document.querySelectorAll('main *')) {
+        const after = z.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING && !z.contains(el);
+        const before = a.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_PRECEDING && !el.contains(a);
+        if (after || before) el.style.visibility = 'hidden';
+      }
       document.querySelector('footer')?.style.setProperty('visibility', 'hidden');
       const [ra, rz] = [a, z].map(e => e.getBoundingClientRect());
       return { top: Math.max(0, Math.floor(ra.top + scrollY - 16)), bottom: Math.ceil(rz.bottom + scrollY + 16) };

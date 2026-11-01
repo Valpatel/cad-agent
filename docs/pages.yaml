@@ -116,7 +116,7 @@ docs/design-process-plan.md:
     shows: output
     tool: cad-agent site
     on: fixture
-    caption: What this plan built, on the gate bench, the repo's own test assembly. The review site's front page shows four sections gated, three requirements verified and six gates passing.
+    caption: Built since this plan was written (its status line above is from 2026-10-27). The review site it describes, on the gate bench, the repo's own test assembly. Its front page shows four sections gated, three requirements verified and six gates passing.
     alt: The review site's front page for the gate bench, with its counts and a table of its four sections with their status, requirements, parts, gates and review state
   figures:
     - after: 32-the-part-spec-card
@@ -169,15 +169,15 @@ docs/web-parts.md:
       shows: output
       tool: kit/part-table.js
       on: fixture
-      caption: The part table and tracker on the gate bench's 19 parts, from its dossier cards and committed geometry record, sorted by size. Nothing is marked ordered or printed; a mark stays in the reader's browser until exported.
+      caption: The part table and tracker on the gate bench's 26 parts, one row per entry in its committed geometry record (19 rows; the eight balls share one), with the words of its dossier cards, sorted by size. A cell the bench does not declare says so. Nothing is marked ordered or printed; a mark stays in the reader's browser until exported.
       alt: A sortable table of the gate bench's parts with columns for part, section, what it does, size and count, and Ordered and Printed checkboxes, above export and import buttons, a search box and a sort menu showing 19 of 19 parts
     - after: validation
       img: docs/img/kit/part-table-search.webp
       shows: output
       tool: kit/part-table.js
       on: fixture
-      caption: The same table searched for "screw". It keeps 9 of 19 parts (the lid, the four inserts and the four screws whose text names a screw), says so beside the box, and keeps the sort.
-      alt: The gate bench's part table filtered by the search "screw", showing 9 of 19 parts, the lid, four heat-set inserts and four M3 screws
+      caption: The same table searched for "screw". It keeps the 9 of its 19 rows whose text names a screw (the lid, the four inserts and the four screws), says so beside the box (the kit counts rows as parts), and keeps the sort.
+      alt: The gate bench's part table filtered by the search "screw", showing 9 of 19 rows, the lid, four heat-set inserts and four M3 screws
 
 docs/file-viewer.md:
   figures:
@@ -233,7 +233,7 @@ lessons/review/review-site-ux.md:
       shows: output
       tool: kit/part-table.js
       on: fixture
-      caption: The kit's part table on the gate bench's parts. Each part is one row, sortable and searchable, with what it does and its size.
+      caption: The kit's part table on the gate bench's parts. Each kind of part is one row with its count, sortable and searchable, with what it does and its size.
       alt: A sortable table of the gate bench's parts with columns for part, section, what it does, size and count, and Ordered and Printed checkboxes
     - after: make-wheel-zoom-fine-enough-to-inspect-small-features
       img: docs/img/kit/file-viewer-front.webp

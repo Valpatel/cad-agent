@@ -23,6 +23,9 @@ test('a band (hero and tiles) goes under the title and its first paragraph, each
   assert.match(html, /<a href="#one"><img [^>]*loading="lazy"[^>]*><span class="band-flow"><span class="band-input">a STEP &amp; its joints<\/span><span class="band-arrow" aria-hidden="true">→<\/span><code>cad-agent site<\/code><span class="band-arrow" aria-hidden="true">→<\/span><span class="band-output">a verdict<\/span><\/span>/);
   assert.match(html, /<a href="\/docs\/b#x">[^]*?<b class="shows-diagram">Diagram<\/b> of <code>cadagent\.review\.gates\.motion<\/code>, drawn by <code>tools\/draw\.py<\/code>, on a test fixture, drawn in 2D; tests hold its numbers to the real check\.<\/span> Contact at 44\.9 degrees\./);
   assert.match(html, /<\/section><p>More\.<\/p>/);
+  // A lead that ends with ":" keeps the list it introduces: the band goes right under the title (#217 review).
+  const colon = await place('docs/a.md', '<h1 id="a">A</h1><p>Every review walks this list:</p><ol><li>x</li></ol>' + PAGE.slice(PAGE.indexOf('<h2')));
+  assert.match(colon, /^<h1 id="a">A<\/h1><section class="page-band"[^]*?<\/section><p>Every review walks this list:<\/p><ol>/);
   assert.equal(await place('docs/b.md', PAGE), PAGE, 'a page without an entry or pictures is untouched');
   const kit = await pagePlacer({ ...base, spec: { 'docs/b.md': { hero: out({ tool: 'kit/part-table.js' }) } } })('docs/b.md', PAGE);
   assert.match(kit, /<b class="shows-output">Real output<\/b> of <code>kit\/part-table\.js<\/code>/, 'a web kit file is a tool, as the site publishes it');
@@ -91,7 +94,8 @@ test('the build stops on anything a reader could not trust', async () => {
   await fails({ 'docs/a.md': { hero: out({ shows: 'render' }) } }, /shows is one of output, diagram/);
   await fails({ 'docs/a.md': { hero: out({ on: 'somewhere' }) } }, /on is one of gyropup/);
   await fails({ 'docs/a.md': { hero: out({ on: 'fixture-2d' }) } }, /a 2D drawing of a fixture is a diagram, not a real output/);
-  await fails({ 'docs/a.md': { hero: drawn({ drawn_by: undefined }) } }, /a diagram says which script drew it/);
+  await fails({ 'docs/a.md': { hero: drawn({ drawn_by: undefined }) } }, /a diagram says which script under tools\/ drew it/);
+  await fails({ 'docs/a.md': { hero: drawn({ drawn_by: 'cad-agent site' }) } }, /a diagram says which script under tools\/ drew it/);
   await fails({ 'docs/a.md': { hero: out({ drawn_by: 'tools/draw.py' }) } }, /a real output is drawn by its tool/);
   await fails({ 'docs/a.md': { band: [tile({ href: 'docs/z.md' }), tile()] } }, /not a published page or an anchor/);
   await fails({ 'docs/a.md': { band: [tile({ href: '#nowhere' }), tile()] } }, /no heading with id nowhere on the page/);
@@ -99,6 +103,22 @@ test('the build stops on anything a reader could not trust', async () => {
   await fails({ 'docs/a.md': { band: [tile()] } }, /two to four tiles/);
   await fails({ 'docs/a.md': { figures: [out({ after: 'nope' })] } }, /no heading with id nope/);
   await fails({ 'docs/a.md': { figures: [out({ after: 'one', caption: '' })] } }, /no caption/);
+  // #217 review: a key that is there is used, and a link names a heading.
+  await fails({ 'docs/a.md': { hero: out(), figures: { after: 'one' } } }, /docs\/a\.md figures: is a list of figures/);
+  await fails({ 'docs/a.md': { hero: out(), figures: 'one' } }, /docs\/a\.md figures: is a list of figures/);
+  await fails({ 'docs/a.md': { hero: null, figures: [out({ after: 'one' })] } }, /docs\/a\.md hero: is not a mapping/);
+  await fails({ 'docs/a.md': { hero: out(), band: null } }, /two to four tiles/);
+  await fails({ 'docs/a.md': { figures: [out({ after: 'one', below: '' })] } }, /figures\[0\]: below is the words of the block/);
+  await fails({ 'docs/a.md': { band: [tile({ href: '#fig' }), tile()] } }, /no heading with id fig on the page/);
+});
+
+test('a tile linking a heading on another page is checked once every page is placed', async () => {
+  const place = pagePlacer({ ...base, spec: { 'docs/a.md': { band: [tile({ href: 'docs/b.md#x' }), tile({ href: 'docs/b.md#nope' })] } } });
+  await place('docs/a.md', PAGE + '<p id="fig">A figure</p>');
+  const pages = { 'docs/b.md': '<h1 id="b">B</h1><h2 id="x">X</h2><p id="nope">not a heading</p>' };
+  assert.throws(() => place.checkLinks(f => pages[f]), /docs\/a\.md band\[1\]: no heading with id nope on docs\/b\.md/);
+  pages['docs/b.md'] += '<h3 id="nope">Nope</h3>';
+  place.checkLinks(f => pages[f]);
 });
 
 test('long tables and code blocks fold, with a summary of what is inside; short ones stay open', () => {

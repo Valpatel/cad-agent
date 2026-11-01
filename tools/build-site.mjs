@@ -326,6 +326,7 @@ for (const p of pages) {
   p.updated = lastChange(p.file);
   await writeFile(path.join(out, p.file), rewriteMd(p.file, p.src));   // the Markdown twin, same path
 }
+placeVisuals.checkLinks(file => pages.find(q => q.file === file)?.html);   // band tiles' links to other pages' headings
 // Every Mermaid block drawn once, in the site's theme (frame() sets data-diagram-theme="light"), and written into its
 // page as a finished figure. A block left as it is (no browser, or one Mermaid cannot draw) is drawn by kit/diagrams.js
 // in the reader's browser.

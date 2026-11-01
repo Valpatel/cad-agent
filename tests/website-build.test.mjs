@@ -323,6 +323,27 @@ test('docs/pages.yaml places real outputs on the site page only; the Markdown tw
   }
 });
 
+test('a catalogue demo opens at the section that shows it, not at a copy under the page title', async () => {
+  // Section cards and band tiles repeat a section's picture under the title; a demo that found its figure there
+  // opened the top of the page (#217 review: Connector window, on /docs/common-issues).
+  const ORIGIN = 'https://cad-agent.valpatel.com';
+  const catalog = JSON.parse(await readFile(path.join(out, 'catalog.json'), 'utf8'));
+  // A demo pinned with url: in docs/catalog.yaml links where it says; the others link where their figure is shown.
+  const pinned = new Set((YAML.parse(git('show', 'HEAD:docs/catalog.yaml')).demos || []).filter(d => d.url).map(d => d.title));
+  const demos = catalog.items.filter(i => i.type === 'demo' && !pinned.has(i.name) && i.url.startsWith(ORIGIN + '/') && i.url.includes('#'));
+  assert.ok(demos.length >= 3, 'demos found by their figure');
+  for (const d of demos) {
+    const [route, id] = d.url.slice(ORIGIN.length).split('#');
+    const page = (await readFile(path.join(out, resolve(route)), 'utf8'))
+      .replace(/<nav class="section-cards"[^>]*>[\s\S]*?<\/nav>|<ul class="band-tiles">[\s\S]*?<\/ul>/g, '');
+    const at = page.search(new RegExp(`<h[1-6] id="${id}"`));
+    assert.ok(at >= 0, `${d.name}: ${d.url} has no heading ${id}`);
+    const section = page.slice(at).split(/<h[1-6] id="/)[1];
+    assert.match(section, /<img\b|<cad-(?!copy|nav)[a-z]/, `${d.name}: the section at ${d.url} shows no picture or demo of its own`);
+  }
+  assert.match(catalog.items.find(i => i.name === 'Connector window').url, /\/docs\/common-issues#bought-parts-sources-and-assumptions$/);
+});
+
 test('a moved page leaves a stub on GitHub and a 301 on the site', async () => {
   const stubs = git('grep', '-l', '-e', '^<!-- moved-to:', 'HEAD', '--', '*.md').split('\n').filter(Boolean).map(l => l.replace(/^HEAD:/, ''));
   assert.ok(stubs.length >= 12, 'the twelve numbered lessons are stubs');

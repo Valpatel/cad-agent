@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 460" width="680" height="460" role="img" aria-label="Powder bed: tolerance (±) on a 25 mm dimension, by source" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif">
+<rect width="680" height="460" rx="14" fill="#fffdf5" stroke="#d8e0d3"/>
+<text x="18" y="30" font-size="15" font-weight="700" fill="#173d3c">Powder bed: tolerance (±) on a 25 mm dimension, by source</text>
+<text x="18" y="50" font-size="12" fill="#526863">14 rules (compare: tolerance) for SLS and MJF, each evaluated at L = 25 mm (inside every rule's size band).</text>
+<line x1="300.0" y1="70" x2="300.0" y2="414" stroke="#d8e0d3"/>
+<text x="300.0" y="429" font-size="11" fill="#526863" text-anchor="middle">0</text>
+<line x1="363.6" y1="70" x2="363.6" y2="414" stroke="#d8e0d3"/>
+<text x="363.6" y="429" font-size="11" fill="#526863" text-anchor="middle">0.1</text>
+<line x1="427.2" y1="70" x2="427.2" y2="414" stroke="#d8e0d3"/>
+<text x="427.2" y="429" font-size="11" fill="#526863" text-anchor="middle">0.2</text>
+<line x1="490.8" y1="70" x2="490.8" y2="414" stroke="#d8e0d3"/>
+<text x="490.8" y="429" font-size="11" fill="#526863" text-anchor="middle">0.3</text>
+<line x1="554.4" y1="70" x2="554.4" y2="414" stroke="#d8e0d3"/>
+<text x="554.4" y="429" font-size="11" fill="#526863" text-anchor="middle">0.4</text>
+<line x1="618.0" y1="70" x2="618.0" y2="414" stroke="#d8e0d3"/>
+<text x="618.0" y="429" font-size="11" fill="#526863" text-anchor="middle">0.5</text>
+<text x="618.0" y="444" font-size="11" fill="#526863" text-anchor="end">± mm</text>
+<text x="18" y="93" font-size="12.5" font-weight="700" fill="#173d3c">SLS (powder bed)</text>
+<text x="290" y="116.0" font-size="12" fill="#173d3c" text-anchor="end">Protolabs Network (Hubs)</text>
+<circle cx="490.8" cy="112.0" r="5" fill="#6f8a80"/>
+<text x="499.8" y="116.0" font-size="11" fill="#173d3c" text-anchor="start">0.3</text>
+<text x="290" y="136.0" font-size="12" fill="#173d3c" text-anchor="end">Protolabs</text>
+<circle cx="474.9" cy="132.0" r="5" fill="#6f8a80"/>
+<text x="483.9" y="136.0" font-size="11" fill="#173d3c" text-anchor="start">0.28</text>
+<text x="290" y="156.0" font-size="12" fill="#173d3c" text-anchor="end">Niko Mroncz</text>
+<circle cx="490.8" cy="152.0" r="5" fill="#6f8a80"/>
+<text x="499.8" y="156.0" font-size="11" fill="#173d3c" text-anchor="start">0.3</text>
+<text x="290" y="176.0" font-size="12" fill="#173d3c" text-anchor="end">Xometry · US service</text>
+<circle cx="542.3" cy="172.0" r="5" fill="#6f8a80"/>
+<text x="551.3" y="176.0" font-size="11" fill="#173d3c" text-anchor="start">0.38</text>
+<text x="290" y="196.0" font-size="12" fill="#173d3c" text-anchor="end">Materialise</text>
+<circle cx="490.8" cy="192.0" r="5" fill="#6f8a80"/>
+<text x="499.8" y="196.0" font-size="11" fill="#173d3c" text-anchor="start">0.3</text>
+<text x="18" y="217" font-size="12.5" font-weight="700" fill="#173d3c">HP Multi Jet Fusion</text>
+<text x="290" y="240.0" font-size="12" fill="#173d3c" text-anchor="end">Protolabs Network (Hubs)</text>
+<circle cx="490.8" cy="236.0" r="5" fill="#6f8a80"/>
+<text x="499.8" y="240.0" font-size="11" fill="#173d3c" text-anchor="start">0.3</text>
+<text x="290" y="260.0" font-size="12" fill="#173d3c" text-anchor="end">HP · PA 11, XY</text>
+<circle cx="490.8" cy="256.0" r="5" fill="#6f8a80"/>
+<text x="499.8" y="260.0" font-size="11" fill="#173d3c" text-anchor="start">0.3</text>
+<text x="290" y="280.0" font-size="12" fill="#173d3c" text-anchor="end">HP · PA 11, Z</text>
+<circle cx="567.1" cy="276.0" r="5" fill="#6f8a80"/>
+<text x="576.1" y="280.0" font-size="11" fill="#173d3c" text-anchor="start">0.42</text>
+<text x="290" y="300.0" font-size="12" fill="#173d3c" text-anchor="end">Protolabs</text>
+<circle cx="506.7" cy="296.0" r="5" fill="#6f8a80"/>
+<text x="515.7" y="300.0" font-size="11" fill="#173d3c" text-anchor="start">0.33</text>
+<text x="290" y="320.0" font-size="12" fill="#173d3c" text-anchor="end">Xometry Asia</text>
+<circle cx="427.2" cy="316.0" r="5" fill="#6f8a80"/>
+<text x="436.2" y="320.0" font-size="11" fill="#173d3c" text-anchor="start">0.2</text>
+<text x="290" y="340.0" font-size="12" fill="#173d3c" text-anchor="end">Xometry · engineered, XY</text>
+<circle cx="459.0" cy="336.0" r="5" fill="#6f8a80"/>
+<text x="468.0" y="340.0" font-size="11" fill="#173d3c" text-anchor="start">0.25</text>
+<text x="290" y="360.0" font-size="12" fill="#173d3c" text-anchor="end">Materialise</text>
+<circle cx="490.8" cy="356.0" r="5" fill="#6f8a80"/>
+<text x="499.8" y="360.0" font-size="11" fill="#173d3c" text-anchor="start">0.3</text>
+<text x="290" y="380.0" font-size="12" fill="#173d3c" text-anchor="end">Stratasys Direct</text>
+<circle cx="459.0" cy="376.0" r="5" fill="#6f8a80"/>
+<text x="468.0" y="380.0" font-size="11" fill="#173d3c" text-anchor="start">0.25</text>
+<text x="290" y="400.0" font-size="12" fill="#173d3c" text-anchor="end">JLC3DP</text>
+<circle cx="490.8" cy="396.0" r="5" fill="#6f8a80"/>
+<text x="499.8" y="400.0" font-size="11" fill="#173d3c" text-anchor="start">0.3</text>
+<text x="18" y="448" font-size="11" fill="#526863">Each source's own wording and conditions are in the YAML file and on the page. Read 2026-10-31.</text>
+</svg>

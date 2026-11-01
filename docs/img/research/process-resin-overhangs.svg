@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 340" width="680" height="340" role="img" aria-label="Resin: how far an overhang or a bridge may reach, by printer and service" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif">
+<rect width="680" height="340" rx="14" fill="#fffdf5" stroke="#d8e0d3"/>
+<text x="18" y="30" font-size="15" font-weight="700" fill="#173d3c">Resin: how far an overhang or a bridge may reach, by printer and service</text>
+<text x="18" y="50" font-size="12" fill="#526863">8 rules (compare: overhang-length-max, bridge-max). ≤: a ceiling.</text>
+<line x1="300.0" y1="70" x2="300.0" y2="294" stroke="#d8e0d3"/>
+<text x="300.0" y="309" font-size="11" fill="#526863" text-anchor="middle">0</text>
+<line x1="353.0" y1="70" x2="353.0" y2="294" stroke="#d8e0d3"/>
+<text x="353.0" y="309" font-size="11" fill="#526863" text-anchor="middle">5</text>
+<line x1="406.0" y1="70" x2="406.0" y2="294" stroke="#d8e0d3"/>
+<text x="406.0" y="309" font-size="11" fill="#526863" text-anchor="middle">10</text>
+<line x1="459.0" y1="70" x2="459.0" y2="294" stroke="#d8e0d3"/>
+<text x="459.0" y="309" font-size="11" fill="#526863" text-anchor="middle">15</text>
+<line x1="512.0" y1="70" x2="512.0" y2="294" stroke="#d8e0d3"/>
+<text x="512.0" y="309" font-size="11" fill="#526863" text-anchor="middle">20</text>
+<line x1="565.0" y1="70" x2="565.0" y2="294" stroke="#d8e0d3"/>
+<text x="565.0" y="309" font-size="11" fill="#526863" text-anchor="middle">25</text>
+<line x1="618.0" y1="70" x2="618.0" y2="294" stroke="#d8e0d3"/>
+<text x="618.0" y="309" font-size="11" fill="#526863" text-anchor="middle">30</text>
+<text x="618.0" y="324" font-size="11" fill="#526863" text-anchor="end">mm</text>
+<text x="18" y="93" font-size="12.5" font-weight="700" fill="#173d3c">Unsupported overhang length</text>
+<text x="290" y="116.0" font-size="12" fill="#173d3c" text-anchor="end">Formlabs · Form 2 (laser)</text>
+<line x1="300" y1="112.0" x2="331.8" y2="112.0" stroke="#6f8a80" stroke-width="2" stroke-dasharray="3 3"/>
+<circle cx="331.8" cy="112.0" r="5" fill="#6f8a80"/>
+<text x="340.8" y="116.0" font-size="11" fill="#173d3c" text-anchor="start">≤ 3</text>
+<text x="290" y="136.0" font-size="12" fill="#173d3c" text-anchor="end">Formlabs · Form 3 / 3B (laser)</text>
+<line x1="300" y1="132.0" x2="353.0" y2="132.0" stroke="#6f8a80" stroke-width="2" stroke-dasharray="3 3"/>
+<circle cx="353.0" cy="132.0" r="5" fill="#6f8a80"/>
+<text x="362.0" y="136.0" font-size="11" fill="#173d3c" text-anchor="start">≤ 5</text>
+<text x="290" y="156.0" font-size="12" fill="#173d3c" text-anchor="end">Formlabs · Form 4 (MSLA)</text>
+<line x1="300" y1="152.0" x2="353.0" y2="152.0" stroke="#6f8a80" stroke-width="2" stroke-dasharray="3 3"/>
+<circle cx="353.0" cy="152.0" r="5" fill="#6f8a80"/>
+<text x="362.0" y="156.0" font-size="11" fill="#173d3c" text-anchor="start">≤ 5</text>
+<text x="290" y="176.0" font-size="12" fill="#173d3c" text-anchor="end">Niko Mroncz</text>
+<line x1="300" y1="172.0" x2="321.2" y2="172.0" stroke="#6f8a80" stroke-width="2" stroke-dasharray="3 3"/>
+<circle cx="321.2" cy="172.0" r="5" fill="#6f8a80"/>
+<text x="330.2" y="176.0" font-size="11" fill="#173d3c" text-anchor="start">≤ 2</text>
+<text x="290" y="196.0" font-size="12" fill="#173d3c" text-anchor="end">Materialise</text>
+<line x1="300" y1="192.0" x2="321.2" y2="192.0" stroke="#6f8a80" stroke-width="2" stroke-dasharray="3 3"/>
+<circle cx="321.2" cy="192.0" r="5" fill="#6f8a80"/>
+<text x="330.2" y="196.0" font-size="11" fill="#173d3c" text-anchor="start">≤ 2</text>
+<text x="18" y="217" font-size="12.5" font-weight="700" fill="#173d3c">Bridge between supports</text>
+<text x="290" y="240.0" font-size="12" fill="#173d3c" text-anchor="end">Formlabs · Form 2 (laser)</text>
+<line x1="300" y1="236.0" x2="522.6" y2="236.0" stroke="#6f8a80" stroke-width="2" stroke-dasharray="3 3"/>
+<circle cx="522.6" cy="236.0" r="5" fill="#6f8a80"/>
+<text x="531.6" y="240.0" font-size="11" fill="#173d3c" text-anchor="start">≤ 21</text>
+<text x="290" y="260.0" font-size="12" fill="#173d3c" text-anchor="end">Formlabs · Form 3 / 3B (laser)</text>
+<line x1="300" y1="256.0" x2="607.4" y2="256.0" stroke="#6f8a80" stroke-width="2" stroke-dasharray="3 3"/>
+<circle cx="607.4" cy="256.0" r="5" fill="#6f8a80"/>
+<text x="616.4" y="260.0" font-size="11" fill="#173d3c" text-anchor="start">≤ 29</text>
+<text x="290" y="280.0" font-size="12" fill="#173d3c" text-anchor="end">Formlabs · Form 4 (MSLA)</text>
+<line x1="300" y1="276.0" x2="607.4" y2="276.0" stroke="#6f8a80" stroke-width="2" stroke-dasharray="3 3"/>
+<circle cx="607.4" cy="276.0" r="5" fill="#6f8a80"/>
+<text x="616.4" y="280.0" font-size="11" fill="#173d3c" text-anchor="start">≤ 29</text>
+<text x="18" y="328" font-size="11" fill="#526863">Each source's own wording and conditions are in the YAML file and on the page. Read 2026-10-31.</text>
+</svg>

@@ -15,6 +15,9 @@ def test_committed_charts_match_their_tables():
 def test_charts_are_embedded_where_their_tables_are():
     assert "docs/img/research/fdm-anisotropy.svg" in (ROOT / "research" / "compliant-mechanisms.md").read_text()
     assert "docs/img/research/landscape-stars.svg" in (ROOT / "research" / "landscape.md").read_text()
+    md = (ROOT / "research" / "compliant-mechanisms.md").read_text()
+    assert md.index("## 3. Allowable") < md.index("docs/img/research/moulded-strain.svg") < md.index("**Bayer Table 2**")
+    assert md.index("## 6. Printed") < md.index("docs/img/research/printed-strain.svg") < md.index("| Material (TDS) |")
 
 
 def test_every_row_with_ratios_is_drawn():
@@ -56,3 +59,37 @@ def test_a_cell_is_a_number_or_an_explicit_gap():
     for odd in ("0.61[^1]", "~0.6", "32.3k", "(u) 0.5", "0.5 (est.)"):
         with pytest.raises(ValueError, match="neither a number nor a gap"):
             number(odd, "t")
+
+
+def test_a_strain_cell_is_a_percentage_a_range_or_a_pair():
+    import pytest
+    percent = _figures().percent
+    assert percent("4 %", "t") == (4.0, "")
+    assert percent("0.8–1.2 %", "t") == (0.8, "", 1.2)
+    assert percent("1.1 / 0.6 %", "t") == (1.1, "")              # single / repeat: the single-use value
+    for odd in ("4", "~4 %", "4 % (u)", "strain does not govern"):
+        with pytest.raises(ValueError, match="not a strain in per cent"):
+            percent(odd, "t")
+
+
+def test_strain_charts_draw_every_row_and_ranges_as_ranges():
+    moulded = (ROOT / "docs" / "img" / "research" / "moulded-strain.svg").read_text()
+    assert moulded.count('text-anchor="end"') == 6 + 9                    # Bayer's six resins and DuPont's nine
+    assert ">2–4 %</text>" in moulded and ">0.8–1.2 %</text>" in moulded   # a range keeps both ends
+    assert moulded.count('fill-opacity="0.35"') == 5                       # the five ranges in DuPont's table
+    printed = (ROOT / "docs" / "img" / "research" / "printed-strain.svg").read_text()
+    assert printed.count('text-anchor="end"') == 13                       # every row but TPU, which strain does not govern
+    assert ">CoPA, dry, Polymaker</text>" in printed and ">3.3 %</text>" in printed
+    assert "TPU 95A not drawn" in printed
+
+
+def test_thermal_chart_draws_the_table_against_the_modules_limit():
+    md = (ROOT / "research" / "simulation-tools.md").read_text()
+    assert md.index("## 6. Thermal") < md.index("docs/img/research/thermal-limits.svg") < md.index("**Jetson AGX Orin")
+    svg = (ROOT / "docs" / "img" / "research" / "thermal-limits.svg").read_text()
+    assert svg.count('text-anchor="end">PLA Basic<') == svg.count('text-anchor="end">PETG HF<') == 1
+    assert ">TTP max 80 °C</text>" in svg and 'stroke-dasharray="5 4"' in svg     # the limit, read from the page
+    assert svg.count("<rect") == 1 + 3 + 3 * 3                                    # frame, legend, three bars a row
+    import pytest
+    with pytest.raises(ValueError, match="not a temperature"):
+        _figures().celsius("60 C", "t")

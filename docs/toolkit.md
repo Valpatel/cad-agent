@@ -99,6 +99,9 @@ my-cad-project/
    evidence image for that part. `cadagent.publish.render.Renderer` renders cadquery
    shapes or STL files offscreen with a caption bar, subtitle, note bar and
    leader labels; set `CAD_AGENT_RENDER_ONLY=a.png,b.png` to re-render a subset.
+
+<!-- the site places a figure here (docs/pages.yaml) -->
+
 5. **A gallery page** (`preview/index.html`) can embed the per-part download
    table from `cadagent.publish.report.downloads_snippet(project, page_dir=...)`:
    thumbnail, STL / 3MF / STEP links and a slicer link.
@@ -156,7 +159,8 @@ plate and slice. This is Gyropup's print set, from its committed STLs and print 
   each plate with its own filament (`tests/test_plates.py` does this wherever Bambu Studio is installed). Its window
   opens the file on its plates, with the printer, filaments and process set and no errors.
 
-`cad.plates` (all keys optional; `cad.plates: false` writes no plates file):
+<details>
+<summary>The <code>cad.plates</code> keys (all optional; <code>cad.plates: false</code> writes no plates file)</summary>
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -167,6 +171,8 @@ plate and slice. This is Gyropup's print set, from its committed STLs and print 
 | `rotate` | true | false keeps every part as modelled |
 | `keep_out` | the printer's exclusion area (a P1S: its wiper corner), read from Bambu Studio's printer profile, so only where it is installed | more `[x0, y0, x1, y1]` areas in bed mm that every footprint stays the gap clear of. Without Bambu Studio there is no exclusion area, and the same project packs differently: list the corner here for the same layout on every machine |
 | `bed_type` | the plate the printer ships with (a P1S: Textured PEI) | `Cool Plate`, `Engineering Plate`, `High Temp Plate`, `Textured PEI Plate` or `Supertack Plate`. A plate whose filament has no temperature for that surface gets the first one it has, with a warning (Bambu Studio will not slice PETG on the Cool Plate) |
+
+</details>
 
 `export-3mf` exits 1 when a part fits no plate (too large or too tall at any turn) or the parts need more than the 36
 plates Bambu Studio holds.
@@ -215,6 +221,9 @@ from. `SOURCE_DATE_EPOCH` is the
 [reproducible-builds](https://reproducible-builds.org/specs/source-date-epoch/) convention: seconds since
 1970-01-01 UTC, for example `SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)`.
 
+<details>
+<summary>What each output fixes</summary>
+
 | Output | What is fixed |
 |---|---|
 | part STEP (`export_step`) | header date `2000-01-01T00:00:00` (or `SOURCE_DATE_EPOCH`), product named after the file, link ids |
@@ -223,6 +232,8 @@ from. `SOURCE_DATE_EPOCH` is the
 | review package (`cad-agent package`) | sorted entries; the source date, mode `rw-r--r--` and a Unix host on every entry |
 | results JSON (`header_meta.generated`), report page, `simreport` pages (`Generated`), the site's footer, the explore comparison (`generated`), the review bundle (`created`) | the source date, shown with where it came from: `2026-10-30 12:00 UTC (last commit)` |
 | the site's document cards | each page's last commit date, not its file time (which a fresh checkout resets) |
+
+</details>
 
 Limits: another OCCT, cadquery or zlib build (stock zlib or zlib-ng) can write different bytes for the same model;
 a shallow clone sees a later commit than a full one (set `SOURCE_DATE_EPOCH` in CI that compares outputs); two pages
@@ -321,6 +332,22 @@ Unquoted, the title is cut at the comma and the rest becomes a stray key.
 
 ## Commands
 
+```mermaid
+flowchart TD
+    B["build<br/>the project's steps, in order"] --> E["export-3mf<br/>a verified 3MF per part,<br/>then the build plates"]
+    B -->|"a step fails"| X["stop: exit 1"]
+    E -->|"fails"| X
+    E --> H["holes<br/>exports/hole-checks.json"]
+    H --> Q{"cad: dossier: or<br/>cad: gates: set?"}
+    Q -->|"yes"| G["gates, then the<br/>dossier lint"]
+    Q -->|"no"| R
+    G --> R["report<br/>the check rows, the results JSON,<br/>the HTML report"]
+    R --> P["package<br/>written even when a check failed,<br/>for review; exit 1 if anything failed"]
+```
+
+*What `cad-agent all` runs, in order (`cmd_all` in `src/cadagent/cli.py`): a failed build step or 3MF export stops it;
+after that every step runs, and the exit code says whether anything failed.*
+
 | Command | Does | Exit code |
 |---------|------|-----------|
 | `cad-agent build [--from STEP] [--only STEP ...]` | runs steps in order with the project python; per-step timing; stops at the first failure and prints the log tail | 1 on a failed step |
@@ -362,6 +389,26 @@ same module, with a `DeprecationWarning`; so do the old package paths and everyt
 (`cadagent.gates.motion` is `cadagent.review.gates.motion`), and `python -m` through an old path runs the module at its
 new path. Type checkers and IDEs do not see the old paths. Move imports to the new paths:
 
+```mermaid
+flowchart TD
+    Y["cad-agent.yaml<br/>read by project.py"] --> CLI["cli.py<br/>a handler per command"]
+    Y ~~~ G["geometry/ · formulas/<br/>shared helpers, equations"]
+    CLI & G --> DOM["mechanical/ · thermal/<br/>manufacturing/<br/>simulation/<br/>electrical/"]
+    CLI --> RV["review/<br/>dossier, gates, packets"]
+    DOM & RV -->|"results"| P["publish/<br/>report, site, release"]
+    RV ~~~ W["webkit/<br/>browser viewers"]
+    P & W --> O["exports/ · site/<br/>results and pages"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class CLI,G,DOM,RV,P,W here
+    class Y near
+    class O out
+```
+
+*The packages and how a command runs through them (the same diagram as
+[`src/cadagent/README.md`](../src/cadagent/README.md)); the table maps each old path to its package.*
+
 | New package (domain in `docs/areas.yaml`) | Modules and packages (old path `cadagent.<name>`) |
 |---|---|
 | `cadagent.mechanical` (mechanical) | `holes`, `fasteners`, `mcmaster`, `connectors`, `markings`, `compliant/`, `motion_trace` |
@@ -372,6 +419,9 @@ new path. Type checkers and IDEs do not see the old paths. Move imports to the n
 | `cadagent.review` (practice: design process, review and evidence) | `gates/`, `dossier/`, `packet`, `evidence` |
 | `cadagent.publish` (practice: publishing) | `report`, `htmlreport`, `site`, `site_review`, `view`, `serve`, `release`, `render`, `dotsvg` |
 | shared core, unchanged | `project`, `cli`, `geometry`, `links`, `package`, `agentkit` |
+
+<details>
+<summary>When the old paths go, which modules became packages, and patching through an old path</summary>
 
 **When the old paths go:** not yet. Up to v0.8.0 the docs and the warning said v0.7.0, which shipped with every old
 path. They stay until a release whose CHANGELOG announces their removal at least one minor release ahead, under
@@ -387,6 +437,8 @@ Patching a name through an old path still reaches the code (`monkeypatch.setattr
 ...)`), because both paths are the same module. Replacing a *whole module* does not: cad-agent's own code imports the
 new paths, so `sys.modules["cadagent.report"] = fake` or `cadagent.report = fake` is not seen. Replace the module at
 its new path instead (`monkeypatch.setitem(sys.modules, "cadagent.publish.report", fake)`).
+
+</details>
 
 ```python
 from cadagent.project import load_project    # CadProject, Step, Check, CadConfigError
@@ -596,6 +648,9 @@ filament maker's data sheet (100 % infill test bars). Each names its sheet (`sou
 says in `note` which sheet value E and the strength come from, and gives the print direction of E (`direction`). The
 result's `assumptions` line repeats the modulus, the strength and the note, and the viewer shows the direction:
 
+<details>
+<summary>The printed materials: modulus, direction, strength, layer allowables and data sheet</summary>
+
 | Key | E (MPa) | Direction | Strength (MPa) | Layer check X-Y / Z (MPa) | Data sheet |
 |---|---:|---|---:|---:|---|
 | `pla` | 2060 | Z | 25 | 27.9 / 25 | Bambu PLA Basic V3.0 (X-Y 2580; Z tensile strength 31) |
@@ -605,6 +660,8 @@ result's `assumptions` line repeats the modulus, the strength and the note, and 
 | `pa6_cf_xy` | 1029 | X-Y | 40.8 | 40.8 / 18.1 | Bambu PA6-CF V3.0, dry X-Y, humid (modulus x0.290, strength x0.500: Polymaker PA6-CF20 V1.1, water-saturated / dry) x0.8 print (#157) |
 | `pa6_cf_z` | 488 | Z | 18.1 | 40.8 / 18.1 | Bambu PA6-CF V3.0, dry Z, humid (x0.281, x0.472) x0.8 print |
 | `tpu95` | 7.4 | Z | 8 | 9.8 / 8 | Bambu TPU 95A HF V1.0 (X-Y 9.8; Polymaker lists 33.6): indicative only |
+
+</details>
 
 The modulus is the sheet's lowest, across the layers, because the solver is isotropic and does not know how the part
 was printed, so deflections come out higher than with the sheet's in-plane values. They are not an upper bound on a
@@ -628,6 +685,9 @@ snapfit`, uses strain allowables and its own moduli by direction, so it does not
 infill or thin walls is softer than either, and then the force at a given travel reads high: a retention check
 needs a measured part.
 
+<details>
+<summary>Giving a part the in-plane modulus, and the moduli before v0.5.0</summary>
+
 A part whose bending stays in the layer plane is stiffer. Give it the X-Y modulus, keep the weak-direction strength,
 and say so in the note, so the assumptions line stays true:
 
@@ -640,6 +700,8 @@ Before v0.5.0 the printed moduli were 31-305 % higher (PLA 2700, PETG 1800, PETG
 2400, TPU 30), so deflections computed with them read 24-75 % low (#125). A real print, with walls, seams and sparse
 infill, is softer and weaker than a test bar, and no simulation proves that a part fits or holds: check it against a
 printed coupon.
+
+</details>
 
 **Across the layers or along them** (`layer_check`). The study is isotropic, so its safety factor uses one strength
 everywhere: across the layers, the weak one, for every default printed row. `layer_check(normal)` resolves the same stress against the layers of a print whose
@@ -781,6 +843,9 @@ each sheet, as a ratio, as the row's strength does across the layers. The humid 
 
 </details>
 
+<details>
+<summary>What a result records about its material, and checking a record on another toolkit</summary>
+
 **What a result used** (`material_data`). `solve()` records the material data in `result['material_data']`:
 
 - `key`, the built-in row (None for a material of your own or a changed copy);
@@ -794,6 +859,8 @@ that differs, with now / recorded. Under forces and torques, deflections scale b
 factors by the strength ratio and masses by the density ratio. A built-in material's numbers are result-changing. A
 change to any of them needs a `**Projects must change**` fragment in [`changelog.d/`](../changelog.d/README.md), and
 `tests/test_fea_layers.py` pins every row's hash so it cannot slip through.
+
+</details>
 
 Stresses are element corner peaks, never averaged. The P2 strain is linear in a tetrahedron, so its extremes sit at the
 corners; the safety factor, the hot spots and the per-vertex colours all use the highest corner stress there. The
@@ -930,6 +997,9 @@ Turns CAD parts into a simulator model with real mass properties:
   sparse infill, with the inertia scaled to that mass. It is an estimate, so weigh the printed part.
 - `box_body`, `cylinder_body` and `point_body` model bought parts from their catalogue mass. `Body` objects add with
   the parallel-axis theorem, so a link is the sum of everything bolted to it.
+
+<!-- the site places a figure here (docs/pages.yaml) -->
+
 - `write_urdf` and `write_mjcf` write the same link tree. The MJCF adds motors, joint armature and friction, an IMU
   site and a floor. A tree cannot hold a closed loop, such as a four-bar or a five-bar leg. Cut it at one pin and
   pass that pin to `write_mjcf` as a `LoopClosure`: MuJoCo holds it with an equality constraint. Build the model in a
@@ -960,6 +1030,19 @@ Docker (OpenFOAM runs in the official `opencfd/openfoam-default` image) and Bamb
 5. **State the limits** in every result (each module writes them): steady RANS, no radiation, compact models,
    linear elastic, isotropic. Simulation does not prove fit, strength or temperature; a test does.
 
+```mermaid
+flowchart TD
+    C["the parametric CAD"] --> S["1. slice<br/>grams, time"]
+    C --> L["2. load<br/>safety factor"]
+    C --> K["3. cool<br/>hottest part"]
+    S & L & K --> O["4. optimise<br/>with evidence"]
+    O --> C
+    S & L & K --> R["5. limits<br/>stated"]
+```
+
+*The standard practice above as a loop: a change found by optimising is made in the parametric CAD, and steps 1-3 run
+again on it.*
+
 ### Airflow and heat (`cadagent.simulation.cfd`)
 `ThermalCase(name, domain, cell_mm, ambient_c)` takes CAD (CadQuery shapes, trimesh meshes or STL), in mm:
 - `wall(name, shape, level)`: no-slip adiabatic obstacles (enclosure, boards);
@@ -975,33 +1058,32 @@ objects); `run()` runs it natively or in Docker; `results()` returns temperature
 temperatures for each fan (below), the heat leaving with the air against the heat put in (`energy_balance_pct`), the
 cells each fan and fin zone caught, and the limits. With adiabatic walls every watt put in must leave with the air:
 when the heat leaving is more than 5 % off (`energy_check()`; 0.5 W when nothing is put in), `energy_conserved` is
-False and `warnings` says so, and the temperatures are not an answer yet. Its histories cover the whole run, joined across continuations
+False and `warnings` says so, and the temperatures are not an answer yet.
+
+**When a result is an answer.** `converged` needs the temperatures, fan flow and heat leaving to have stopped
+changing *and* the energy balance within 5 %. `steady` holds each change, over `convergence_window`, to its entry in
+`convergence_limits`: under 1 °C for every temperature (each solid's hottest, a fin block's air, and each fan's zone,
+inlet and outlet) and under 2 % for the fan flow and the heat leaving.
+
+<details>
+<summary>How the histories are joined across continuations, the convergence window, and how fin blocks are calibrated</summary>
+
+Its histories cover the whole run, joined across continuations
 (`restarts`, one entry per continuation; a second solve from the same saved time writes `<kind>_<time>.dat` and is read
 too, one that crashed at start and logged nothing is left out, and one that stopped before its first temperature
 sample still replaces the rows after its start): residuals, each solid's hottest temperature and `monitors` (fin-block
-and fan air temperatures, fan flow, heat leaving), each with its unit. `converged` needs the temperatures, fan flow and
-heat leaving to have stopped changing *and* the energy balance within 5 %. The change is measured over
-`convergence_window`: the iterations from 80 % of the last one onward, cut to the newest solve (after a continuation
-shorter than a fifth of the run, that is the whole newest solve; after one that logged no temperature rows, there is
-no window and nothing is steady). `steady` holds each change to its entry
-in `convergence_limits`: under 1 °C for every temperature (each solid's hottest, a fin block's air, and each fan's
-zone, inlet and outlet) and under 2 % for the fan flow and the heat leaving. Exchanger fin blocks are set to their power by
-`calibrate_fins()` (secant steps on the fin temperature, only once the heat leaving has settled; `calibrated` says
-whether it got there).
+and fan air temperatures, fan flow, heat leaving), each with its unit. The window is the iterations from 80 % of the
+last one onward, cut to the newest solve (after a continuation shorter than a fifth of the run, that is the whole
+newest solve; after one that logged no temperature rows, there is no window and nothing is steady). Exchanger fin
+blocks are set to their power by `calibrate_fins()` (secant steps on the fin temperature, only once the heat leaving
+has settled; `calibrated` says whether it got there).
+
+</details>
 
 **A fan's three temperatures.** Each fan has an inlet and an outlet face: the faces where its zone's cells meet the
 cells beyond each end, oriented along its axis. The solver logs three values on each face every 10 iterations: the
 mass-flow-weighted temperature, Σφ T / Σφ (`surfaceFieldValue`, `operation weightedAverage; weightField phi;`), the
 net mass flow, Σφ, and the gross flow, Σ|φ|.
-
-| In `fans[<fan>]` | What it is | Use it for |
-|---|---|---|
-| `inlet_c`, `outlet_c` | Mass-flow-weighted (bulk) temperature on each face: the one whose ṁ c_p ΔT is the heat the air carries through it | Energy balances, Q = ṁ c_p ΔT |
-| `inlet_kg_s`, `outlet_kg_s` | Net mass flow through each face, along the axis | The ṁ in that balance |
-| `inlet_backflow_kg_s`, `outlet_backflow_kg_s` | Mass flow back through each face, against the axis | Whether the temperature is of the air or only of its net heat flow |
-| `inlet_area_m2`, `outlet_area_m2` | Each face's area, as the solver summed it | A check that both ends caught the same cells |
-| `heat_carried_w` | ṁ c_p (`outlet_c` − room), from `stream_heat_w()`: the net heat carried along the axis, exact whatever flows back | A check against the heat leaving (`heat_out_w`): more means the fan moves its own air again |
-| `air_through_fan_c` | Volume average over the fan zone (also `zones[<fan>]['T_c']`) | How warm the fan sits, not heat: it counts still and returning air like air that flows |
 
 ![Two sections through a vented 20 W box with an exhaust fan, coloured by air temperature with streamlines. With the fan 3 mm under the opening, air loops back through the fan's hub and round its rim: the fan moves 3.75 g/s and carries 32.26 W above the room while 19.61 W leave it. With the fan in a duct and its hub plugged, the air passes once: 2.77 g/s, carrying 17.60 W while 17.83 W leave. In both runs the inlet, outlet and volume-average temperatures agree within 0.1 K.](img/cfd/fan-faces.webp)
 
@@ -1012,6 +1094,15 @@ counts that air each time it passes, so `heat_carried_w` is more than the heat l
 through the parts upstream, and T<sub>fan</sub> − Q / (ṁ c<sub>p</sub>) does not give the air there. Both plumes
 swing, and the numbers are the last iteration's. The ducted run ends on a low swing (−10.9 %), which
 `energy_conserved` flags.*
+
+| In `fans[<fan>]` | What it is | Use it for |
+|---|---|---|
+| `inlet_c`, `outlet_c` | Mass-flow-weighted (bulk) temperature on each face: the one whose ṁ c_p ΔT is the heat the air carries through it | Energy balances, Q = ṁ c_p ΔT |
+| `inlet_kg_s`, `outlet_kg_s` | Net mass flow through each face, along the axis | The ṁ in that balance |
+| `inlet_backflow_kg_s`, `outlet_backflow_kg_s` | Mass flow back through each face, against the axis | Whether the temperature is of the air or only of its net heat flow |
+| `inlet_area_m2`, `outlet_area_m2` | Each face's area, as the solver summed it | A check that both ends caught the same cells |
+| `heat_carried_w` | ṁ c_p (`outlet_c` − room), from `stream_heat_w()`: the net heat carried along the axis, exact whatever flows back | A check against the heat leaving (`heat_out_w`): more means the fan moves its own air again |
+| `air_through_fan_c` | Volume average over the fan zone (also `zones[<fan>]['T_c']`) | How warm the fan sits, not heat: it counts still and returning air like air that flows |
 
 <details>
 <summary>How the faces are built, and their limits</summary>
@@ -1097,6 +1188,9 @@ What someone who wants to *print and build* the design downloads, as opposed to 
 [--date YYYY-MM-DD]` writes `release/<name>-rev<revision>/` (or `DIR`) and `<folder>.zip` next to it (with `--out
 DIR`, the zip is `DIR.zip`):
 
+<details>
+<summary>What the release folder holds</summary>
+
 | Path | Content |
 |---|---|
 | `index.html` | one standalone page (inline CSS, light and dark, no scripts, opens from `file://`): the release's parts and totals, the recommended print settings (`cad.slicer`, else those of a current slice report; with neither, the page says no slicer settings are configured), then each group of parts (with its own count, mass and time) as cards: thumbnail, quantity, material, notes, mass and time per copy, and the STEP, STL and 3MF; then the assembly pages, the hardware table and the source |
@@ -1106,7 +1200,22 @@ DIR`, the zip is `DIR.zip`):
 | `source/<project path>` | the files matched by `include` minus `exclude` |
 | `manifest.json` | `format: cad-agent.release/1`, `revision`, `date`, `git` (`commit`, `dirty`, `modified`, `untracked_released`), `slicer`, `parts` (`part`, `group`, `optional`, `pick_one`, `quantity`, `grams`, `minutes`), `build` (`title`, `parts`, `grams`, `minutes`; null without one; `grams` and `minutes` are null while any of its parts is not sliced), `warnings`, and `files` (the sha256 of every file) |
 
-Rules the command enforces:
+</details>
+
+```mermaid
+flowchart TD
+    P["a part in the release"] --> S{"slice report made with the<br/>settings cad.slicer names now?"}
+    S -->|"no"| N["not sliced:<br/>left out of the totals"]
+    S -->|"yes"| H{"the part's 3MF still has<br/>the sha256 the report recorded?"}
+    H -->|"no"| N
+    H -->|"yes"| M["its filament and print time,<br/>counted in the totals"]
+```
+
+*When the release page shows a part's slicer numbers: the rule "slicer numbers only while current" below. A stale
+slice is never shown as a weight.*
+
+<details>
+<summary>Rules the command enforces: inside the project only, no hidden files, current slicer numbers, honest counts, what was built</summary>
 
 - **Inside the project only.** Every configured path and glob must be relative, without `..`; a file that resolves
   outside the project (a symlink) is skipped with a warning, and nothing is written outside the release folder.
@@ -1132,6 +1241,11 @@ Rules the command enforces:
   non-empty folder that is not an earlier release is refused); the zip has sorted entries with fixed dates, so the
   same files give the same bytes.
 
+</details>
+
+<details>
+<summary>A full <code>cad.release</code> section</summary>
+
 ```yaml
 cad:
   release:
@@ -1156,6 +1270,8 @@ cad:
     date: 2026-10-29
 ```
 
+</details>
+
 **Publishing.** The default `release/` folder is inside the project: add `release/` to `.gitignore`. Attach the
 **zip** to the GitHub release: GitHub serves release assets as downloads and does not render an attached
 `index.html`, and on its own that page's `images/`, `cad/` and `docs/` links would not resolve. Say in the release
@@ -1174,6 +1290,9 @@ The geometry and render tests skip unless cadquery and vtk are importable.
 
 ## File names and environment variables
 
+<details>
+<summary>Every file name and environment variable</summary>
+
 | Name | What it is |
 |------|------------|
 | `cad-agent.yaml` | the project config at the project root; only its `cad:` section is read ([above](#the-cad-section-of-cad-agentyaml)) |
@@ -1184,6 +1303,8 @@ The geometry and render tests skip unless cadquery and vtk are importable.
 | `CAD_AGENT_RENDER_ONLY` | comma-separated picture names: a `Renderer` made without `only=` renders just those |
 | `SOURCE_DATE_EPOCH` | seconds since 1970-01-01 UTC: the date STEP headers, zips and report pages record ([reproducible outputs](#reproducible-outputs)); a value that is not a whole number stops the command |
 | `from cadagent.<package> import ...` | the Python API ([package layout](#package-layout-v050)) |
+
+</details>
 
 ## Holes clear
 

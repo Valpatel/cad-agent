@@ -469,9 +469,10 @@ try {
       const lum = c => c.map(v => v / 255).map(v => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
       const ratio = (x, y) => { const [hi, lo] = [lum(x), lum(y)].sort((p, q) => q - p); return (hi + 0.05) / (lo + 0.05); };
       window.contrastOn = (el, bgEl = el) => ratio(rgba(getComputedStyle(el).color).slice(0, 3), paintOf(bgEl).split(',').map(Number));
-      // A focus ring drawn inside its row (outline-offset -3px): its colour over the row's, against the row's.
-      window.ringOn = a => { const row = paintOf(a).split(',').map(Number), [r, g, b, al] = rgba(getComputedStyle(a).outlineColor);
-        return ratio([r, g, b].map((v, i) => v * al + row[i] * (1 - al)), row); };
+      // A focus ring drawn inside its row: its colour over the row's, against the row's; and how far inside the row's
+      // edge it stays (a ring on the edge merges with the panel around a chosen row, so it reads as the band shrinking).
+      window.ringOn = a => { const s = getComputedStyle(a), row = paintOf(a).split(',').map(Number), [r, g, b, al] = rgba(s.outlineColor);
+        return { contrast: ratio([r, g, b].map((v, i) => v * al + row[i] * (1 - al)), row), inset: -parseFloat(s.outlineOffset) - parseFloat(s.outlineWidth) }; };
       // Chrome paints a Canvas backplate behind text left to forced-color-adjust:auto, so that text must not be
       // Canvas-coloured itself: the chosen row's name in HighlightText (white, like Canvas here) showed as a blank bar.
       const probe = document.body.appendChild(document.createElement('i'));
@@ -525,7 +526,11 @@ try {
       if (chosen.steps < 2) fail(where, 'the chosen row\'s bar shows filled and empty steps alike');
       if (chosen.lost.length) fail(where, `chosen row: ${chosen.lost} is Canvas-coloured on Chrome's Canvas backplate, so it does not show`);
       if (chosen.ring === null) fail(where, 'keyboard focus is not on the row just chosen with Enter');
-      else if (chosen.ring < 3) fail(where, `the focus ring on the chosen row is ${chosen.ring.toFixed(2)}:1 against it (3:1 needed)`);
+      else {
+        if (chosen.ring.contrast < 3) fail(where, `the focus ring on the chosen row is ${chosen.ring.contrast.toFixed(2)}:1 against it (3:1 needed)`);
+        // The same offset holds in normal colours: the forced rule changes only the ring's colour.
+        if (chosen.ring.inset < 2) fail(where, `the focus ring on the chosen row leaves ${chosen.ring.inset}px of band outside it (2px needed to read as a ring)`);
+      }
     }
     await done();
     // A domain's own row, chosen: its "All" and its arrow show.

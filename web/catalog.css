@@ -152,7 +152,9 @@ svg.glyph{flex:none;width:20px;height:20px;fill:none;stroke:currentColor;stroke-
 .area-link[aria-current=true]>.mat-dots{--on:#9fe0d4;--off:#ffffff40}
 .area-link.dom-all[aria-current=true]::after{color:#ffb595}
 .area-tree>li>.area-link[aria-current=true]{border-color:var(--ink);background-color:var(--ink)}
-.area-link[aria-current=true]:focus-visible{outline-color:#fffdf5}
+/* the chosen row's ring sits inside its band, with band showing outside it: at the tree's -3px it covered the band's
+   outer edge and merged with the white panel, so focus read as the band shrinking (#239 review) */
+.area-link[aria-current=true]:focus-visible{outline-color:#fffdf5;outline-offset:-6px}
 /* Forced colours (Windows High Contrast and the like) swap the palette above for a few system colours and drop the
    gradients, which left every bar step and the chosen row the same Canvas. In system colours instead: a filled step is
    CanvasText, an empty one an outlined Canvas; the hover and focus bar is CanvasText; the chosen row is the system's

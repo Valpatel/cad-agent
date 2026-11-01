@@ -468,6 +468,13 @@ try {
         };
         const lum = c => c.map(v => v / 255).map(v => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
         window.contrastOn = (el, bgEl = el) => { const [hi, lo] = [lum(rgba(getComputedStyle(el).color).slice(0, 3)), lum(paintOf(bgEl).split(',').map(Number))].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
+        // Chrome paints a Canvas backplate behind text left to forced-color-adjust:auto, so that text must not be
+        // Canvas-coloured itself: the chosen row's name in HighlightText (white, like Canvas here) showed as a blank bar.
+        const probe = document.body.appendChild(document.createElement('i'));
+        probe.style.background = 'Canvas';
+        const canvas = rgba(getComputedStyle(probe).backgroundColor).slice(0, 3).join();
+        probe.remove();
+        window.onBackplate = el => getComputedStyle(el).forcedColorAdjust !== 'none' && rgba(getComputedStyle(el).color).slice(0, 3).join() === canvas;
       });
       // The key's top level shows the filled colour and its lowest level ends in the empty one; every bar fills its level.
       const [on, off, fills] = await page.evaluate(n => {
@@ -481,7 +488,8 @@ try {
       // A row at rest, hovered (its edge bar shows) and chosen (the system's selection colours, its bar still readable).
       const row = '.area-link[data-value="gears"]';
       const look = () => page.$eval(row, a => ({ row: paintOf(a), bar: paintOf(a, '::before'), text: contrastOn(a.querySelector('.area-name'), a),
-        count: contrastOn(a.querySelector('.count')), steps: [...new Set([...a.querySelectorAll('.mat-dots i')].map(i => paintOf(i)))].length }));
+        count: contrastOn(a.querySelector('.count')), steps: [...new Set([...a.querySelectorAll('.mat-dots i')].map(i => paintOf(i)))].length,
+        lost: [...a.querySelectorAll('.area-name, .count')].filter(onBackplate).map(e => e.className) }));
       await page.mouse.move(1300, 880);
       const rest = await look();
       await page.hover(row);
@@ -497,6 +505,7 @@ try {
       if (chosen.row === rest.row) fail(where, `the chosen row is painted like one at rest (${rest.row})`);
       if (chosen.text < 4.5 || chosen.count < 4.5) fail(where, `chosen row: name ${chosen.text.toFixed(2)}:1, count ${chosen.count.toFixed(2)}:1`);
       if (chosen.steps < 2) fail(where, 'the chosen row\'s bar shows filled and empty steps alike');
+      if (chosen.lost.length) fail(where, `chosen row: ${chosen.lost} is Canvas-coloured on Chrome's Canvas backplate, so it does not show`);
     }
     await done();
   }

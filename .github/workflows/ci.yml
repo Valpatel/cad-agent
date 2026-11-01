@@ -45,3 +45,27 @@ jobs:
       - run: python -m pytest -q -rs
       # the optimiser's adapter for optuna below 5 (constraints_func instead of Trial.set_constraint)
       - run: pip install "optuna==3.4.0" && python -m pytest -q tests/test_explore_optimise.py
+
+  # Supply chain (tools/resource_audit.py, skills/cad-supply-chain/SKILL.md): offline checks only, so the network can
+  # never make it flaky (the weekly supply-chain.yml runs the online ones). Fails on a high finding anywhere, on a
+  # medium one in what the change adds, and, on a PR, when the description has no report row for an added dependency,
+  # vendored file or catalogue entry (paste `python3 tools/resource_audit.py rows` under "Supply chain").
+  supply-chain:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09   # v5
+        # depth 2: on a PR the checkout is the merge commit, whose first parent is the base branch
+        with: {fetch-depth: 2, persist-credentials: false}
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1   # v6
+        with: {python-version: '3.12'}
+      - run: pip install -e .
+      - name: Gate what this change adds
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            python3 tools/resource_audit.py gate --base HEAD^1 --pr-body-env PR_BODY
+          else
+            python3 tools/resource_audit.py gate --base HEAD^1
+          fi

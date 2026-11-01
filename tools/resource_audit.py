@@ -457,12 +457,13 @@ def advisory_finding(rep, subject, label, version, vulns, context, action_fix, s
         action += f' No fix yet for {", ".join(nofix)}.'
     if any(i.startswith('MAL-') for i in ids):
         action = 'Malicious package: remove it now, rotate any secret the environment could read, and tell the owner.'
-    title = {'floor': f'our range allows {label} {version}, which has {len(ids)} known advisories',
-             'latest': f'the newest release, {label} {version}, has {len(ids)} known advisories',
-             'installed': f'{label} {version} installed here has {len(ids)} known advisories',
-             'locked': f'{label} {version} in the lockfile has {len(ids)} known advisories',
-             'vendored': f'the vendored {label} {version} has {len(ids)} known advisories',
-             'commit': f'the pinned commit of {label} is inside {len(ids)} advisories'}[context]
+    n = f"{len(ids)} known {'advisory' if len(ids) == 1 else 'advisories'}"
+    title = {'floor': f'our range allows {label} {version}, which has {n}',
+             'latest': f'the newest release, {label} {version}, has {n}',
+             'installed': f'{label} {version} installed here has {n}',
+             'locked': f'{label} {version} in the lockfile has {n}',
+             'vendored': f'the vendored {label} {version} has {n}',
+             'commit': f'the pinned commit of {label} is affected by {n}'}[context]
     rep.add('advisory', sev, subject, title + scope, listed + more, action, key=f'{context}|{version}|{",".join(ids)}')
 
 
@@ -1312,15 +1313,18 @@ def judge_link(rep, row, chain, err):
 
 
 # ------------------------------------------------------------------------------------------------------------- skills
+REGISTRY_ACTION = ('Standing rule: never install skills or plugins from registries. Vendor a pinned commit '
+                   '(tools/vendor_sync.py) or point at a reviewed release by commit, and say so.')
 INSTALL_ADVICE = [
     ('install-from-registry', 'medium', re.compile(r'\b(?:npx|bunx|pnpm\s+dlx)\s+(?:-y\s+|--yes\s+)?skills\s+(?:add|install)\b', re.I),
-     'installs a skill from a registry'),
+     'installs a skill from a registry', REGISTRY_ACTION),
     ('install-from-registry', 'medium', re.compile(r'\b(?:claude\s+plugin|/plugin)\s+(?:install|marketplace\s+add)\b', re.I),
-     'installs a plugin from a marketplace'),
+     'installs a plugin from a marketplace', REGISTRY_ACTION),
     ('install-from-registry', 'medium', re.compile(r'\b(?:smithery|clawhub|skillsmp)\b[^\n`]*\b(?:install|add)\b', re.I),
-     'installs from a skill registry'),
+     'installs from a skill registry', REGISTRY_ACTION),
     ('install-pipe-to-shell', 'medium', re.compile(r'(?:curl|wget)[^\n|`]*\|\s*(?:sudo\s+)?(?:ba|z)?sh\b', re.I),
-     'pipes a download into a shell'),
+     'pipes a download into a shell', 'If this is advice, replace it with a pinned, checksummed download or a package '
+     'manager; if it only describes how a project installs, say that it is a risk.'),
 ]
 RUNNER = re.compile(r'\b(npx|uvx|pipx\s+run|bunx)\s+([^\n`|;&]+)')
 TAKES_VALUE = {'--python', '-p', '--with', '--from', '--index', '--index-url', '--package', '--spec', '-c', '--call'}
@@ -1367,12 +1371,10 @@ def check_skills(rep, net=None):
             for off, ln in enumerate(code.splitlines()):
                 where = f'{f}:{line0 + off}'
                 advice = False
-                for check, sev, rx, what in INSTALL_ADVICE:
+                for check, sev, rx, what, action in INSTALL_ADVICE:
                     if rx.search(ln):
                         advice = True
-                        rep.add(check, sev, f'doc:{f}', f'{f} {what}', f'{where}: {ln.strip()[:160]}',
-                                'Standing rule: never install skills or plugins from registries. Vendor a pinned commit '
-                                '(tools/vendor_sync.py) or point at a reviewed release by commit, and say so.',
+                        rep.add(check, sev, f'doc:{f}', f'{f} {what}', f'{where}: {ln.strip()[:160]}', action,
                                 key=' '.join(ln.split()))
                 for m in RUNNER.finditer(ln):
                     pkg = unpinned_runner(m.group(1), m.group(2))
@@ -1476,11 +1478,16 @@ def cell(s):
     return str(s if s is not None else '').replace('|', '\\|').replace('\n', ' ')
 
 
+def inert(s):
+    """Text for a published table: URLs in code spans, so the report page never links people to what it flags."""
+    return URL.sub(lambda m: f'`{m.group(0)}`', cell(str(s).replace('`', "'")))
+
+
 def findings_table(fs):
     lines = ['| Severity | Subject | Finding | Evidence | Action |', '|---|---|---|---|---|']
     for f in fs:
-        lines.append(f"| {f['severity']} | `{cell(f['subject'])}` | {cell(f['title'])} | {cell(f['evidence'][:300])} | "
-                     f"{cell(f['action'])}{' **Accepted:** ' + cell(f['accepted']) if f.get('accepted') else ''} |")
+        lines.append(f"| {f['severity']} | `{cell(f['subject'])}` | {inert(f['title'])} | {inert(f['evidence'][:300])} | "
+                     f"{inert(f['action'])}{' **Accepted:** ' + inert(f['accepted']) if f.get('accepted') else ''} |")
     return lines
 
 

@@ -63,7 +63,9 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
    cad-agent must change.
 4. **CI** (`.github/workflows/ci.yml`) runs `core` on Python 3.10 and 3.12 (required dependencies only; optional
    features must skip cleanly) and `full` (CAD, FEA, robot and site extras, imported loudly before the tests);
-   `webkit.yml` runs the browser suites and `gates.yml` the [gates](#gates).
+   `webkit.yml` runs the browser suites and `gates.yml` the [gates](#gates). CI's `supply-chain` job runs the offline
+   [supply-chain report](skills/cad-supply-chain/SKILL.md): a PR that adds a dependency, vendored file or catalogue
+   entry pastes its rows (`python3 tools/resource_audit.py rows --base origin/dev --online`) under "Supply chain".
 5. **Review.** Every PR gets a review from a person or from a separate review agent that did not write the change,
    posted as PR comments (the `cad-pr-reviewer` subagent, or a separate Codex session with that skill), ending with
    the verdict marker that the `review` gate reads. The author answers or fixes each comment and resolves it.

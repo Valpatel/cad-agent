@@ -8,6 +8,7 @@ is traced and simplified. At a cell of half a drawn pixel the outline is within 
 """
 from __future__ import annotations
 
+import math
 from typing import Dict, List, Sequence, Tuple
 
 import numpy as np
@@ -174,3 +175,31 @@ def region(mask: np.ndarray, grid: Grid, tol: float, min_area: float = 0.0) -> L
         if len(s) >= 3:
             out.append(s)
     return out
+
+
+def dilate(mask: np.ndarray) -> np.ndarray:
+    """``mask`` grown by one cell in the four directions."""
+    m = np.asarray(mask, bool)
+    out = m.copy()
+    out[1:, :] |= m[:-1, :]
+    out[:-1, :] |= m[1:, :]
+    out[:, 1:] |= m[:, :-1]
+    out[:, :-1] |= m[:, 1:]
+    return out
+
+
+def nearest(labels: np.ndarray, x: float, y: float, empty: int, radius: int = 4) -> int:
+    """The label of the cell nearest the point (x, y) in cell coordinates (cell (row j, col i) spans i..i+1,
+    j..j+1) among cells within ``radius`` that are not ``empty``; ``empty`` when there are none."""
+    rows, cols = labels.shape
+    ci, cj = int(math.floor(x)), int(math.floor(y))
+    j0, j1, i0, i1 = max(0, cj - radius), min(rows, cj + radius + 1), max(0, ci - radius), min(cols, ci + radius + 1)
+    if j0 >= j1 or i0 >= i1:
+        return empty
+    win = labels[j0:j1, i0:i1]
+    jj, ii = np.nonzero(win != empty)
+    if not len(jj):
+        return empty
+    d = (ii + i0 + 0.5 - x) ** 2 + (jj + j0 + 0.5 - y) ** 2
+    n = int(np.lexsort((ii, jj, d))[0])                 # nearest; ties broken by position, so the result is stable
+    return int(win[jj[n], ii[n]])

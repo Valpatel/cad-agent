@@ -9,20 +9,23 @@ Two stages, so the committed SVG can be checked anywhere:
   moving solids with the assembly gates' relation engine (``cadagent.gates.relations.relate``), bands the FEA field
   (``field``) and writes a scene: plain JSON with the drawing in SVG units, the numbers and where they came from
   (the source commit and every input file's sha256).
-* ``render(scene)`` is plain Python. It writes the SVG, with CSS keyframes and both colour schemes. The same scene
-  always gives the same bytes.
+* ``render(scene, present)`` is plain Python. It writes the SVG, with CSS keyframes and both colour schemes, and
+  the words from the spec's ``present`` section (labels, captions), which can change without re-extracting. The
+  same inputs always give the same bytes.
 
 What the drawing approximates, stated in the scene and its caption:
 
 * Each solid hides only its own edges. Solids hide each other by painting filled silhouettes back to front, an
   order taken from a depth raster of the assembled and the exploded states. A pair whose order flips inside one
   state (interlocking parts) is painted by its majority order.
-* The linkage moves each body as one 2D transform of its drawing: an exact rotation in the linkage's plane, at a
-  depth chosen as the mean depth of the body's visible surface. Geometry nearer or farther than that depth is off
-  by up to ``motion_error_px`` at the pose farthest from the reference (the scene records it). The hidden lines
-  stay those of the reference pose.
+* The linkage moves each solid as one 2D transform of its drawing: the body's exact rotation in the linkage's
+  plane, taken at the middle depth (along the joint axis) of the solid's visible surface. Geometry nearer or farther
+  than that depth is off by up to ``motion_error_px`` at the worst pose (the scene records it and the part). The
+  hidden lines stay those of the reference pose.
 * Clearance is checked at the sampled poses only. A pair of solids whose extents along the joint axes do not
-  overlap can never meet while every joint turns about that axis. Such pairs are counted, not queried.
+  overlap can never meet while every joint turns about that axis. Such pairs are counted, not queried. The sweep
+  is slow (#186), so a previous scene's result is reused when its key (the assembly's sha256 and the parts,
+  linkage and clearance specs) is unchanged.
 """
 from __future__ import annotations
 
@@ -63,8 +66,22 @@ def _r(v: float, d: int = 3) -> float:
     return float(round(float(v), d))
 
 
-def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True, log=print) -> Dict[str, Any]:
-    """The scene for ``spec`` from the project checkout at ``source``. See the module docstring."""
+CLEARANCE_VERSION = 1      # bump when _clearances changes what it measures: cached results are then recomputed
+
+
+def _clearance_key(spec: Mapping[str, Any], assembly_sha256: str) -> str:
+    """What the clearance sweep depends on, hashed: a previous result with the same key can be reused."""
+    import hashlib
+
+    basis = {"version": CLEARANCE_VERSION, "assembly": assembly_sha256, "parts": spec["parts"],
+             "linkage": spec["linkage"], "clearance": spec.get("clearance", {})}
+    return hashlib.sha256(json.dumps(basis, sort_keys=True).encode()).hexdigest()
+
+
+def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True,
+            previous: Optional[Mapping[str, Any]] = None, log=print) -> Dict[str, Any]:
+    """The scene for ``spec`` from the project checkout at ``source``. See the module docstring. ``previous``: an
+    earlier scene whose clearance result is reused if its key still matches."""
     from cadagent.publish.anim import cad
     from cadagent.publish.anim.field import read_viewer_field, triangle_fraction
     from cadagent.publish.anim.text import DEJAVU, DEJAVU_BOLD, find_font, outline
@@ -254,28 +271,58 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True, lo
         order.append(nxt)
         done.add(nxt)
 
-    # refine each solid's depth: the mean, along the joint axis, of its vertices seen in the assembled state
+    # ---- depth slabs: a moving solid is drawn in slices along the joint axis, each moved at its own middle depth
     asm = zb["assembled"]
     stack = np.stack([asm[i] for i in ids])
     front_id = np.array(ids)[np.argmax(stack, axis=0)]
     front_z = stack.max(axis=0)
+    slab_mm = float(spec.get("slab_mm", 12.0))
+    max_slabs = int(spec.get("max_slabs", 6))
     seen_v: Dict[int, np.ndarray] = {}
+    slabs: Dict[int, List[Tuple[float, float, float]]] = {}       # solid -> [(from, to, depth)] along the axis
+    axis_depth: Dict[int, np.ndarray] = {}
     for p in parts:
-        g = geo[p["solid"]]
+        i = p["solid"]
+        g = geo[i]
         q = np.round(to_units(g["xy"])).astype(int)
         ok = (q[:, 0] >= 0) & (q[:, 1] >= 0) & (q[:, 0] < W) & (q[:, 1] < H)
         seen = np.zeros(len(q), bool)
-        seen[ok] = (front_id[q[ok, 1], q[ok, 0]] == p["solid"]) & (g["z"][ok] >= front_z[q[ok, 1], q[ok, 0]] - 1.0)
-        seen_v[p["solid"]] = g["v"][seen]
-        if seen.sum() >= 3:
-            solid_depth[p["solid"]] = float(g["v"][seen][:, iaxis].mean())
+        seen[ok] = (front_id[q[ok, 1], q[ok, 0]] == i) & (g["z"][ok] >= front_z[q[ok, 1], q[ok, 0]] - 1.0)
+        seen_v[i] = g["v"][seen]
+        if p["body"] == "ground":
+            slabs[i] = [(-math.inf, math.inf, solid_depth[i])]
+            continue
+        # the depth along the axis of the solid's front surface, per cell (each triangle's mean)
+        tri = to_units(g["xy"])[g["t"]]
+        axis_depth[i] = raster.zbuffer(tri, g["z"][g["t"]], grid, (H, W),
+                                       values=g["v"][:, iaxis][g["t"]].mean(axis=1))[1]
+        visible_depths = np.concatenate([axis_depth[i][(front_id == i) & np.isfinite(asm[i])], seen_v[i][:, iaxis]])
+        if not len(visible_depths):
+            slabs[i] = [(-math.inf, math.inf, solid_depth[i])]      # hidden when assembled: its mean depth
+            continue
+        # the visible depths, cut into slices no deeper than slab_mm; each slice's middle depth minimises the
+        # largest error over it
+        lo_d, hi_d = float(visible_depths.min()), float(visible_depths.max())
+        n = max(1, min(max_slabs, math.ceil((hi_d - lo_d) / slab_mm - 1e-9)))
+        cuts = np.linspace(lo_d, hi_d, n + 1)
+        slabs[i] = [(-math.inf if j == 0 else float(cuts[j]), math.inf if j == n - 1 else float(cuts[j + 1]),
+                     float(cuts[j] + cuts[j + 1]) / 2) for j in range(n)]
+        solid_depth[i] = (lo_d + hi_d) / 2
+
+    def slab_of(i: int, depth: np.ndarray) -> np.ndarray:
+        edges_ = np.array([b for _, b, _ in slabs[i][:-1]])
+        return np.searchsorted(edges_, depth, side="right")
+
     # how far the drawn motion is from the exact 3D one, over each moving solid's visible vertices, at every pose
     motion_err, worst = 0.0, None
+    err_by_part: Dict[str, float] = {}
     for p in parts:
-        if p["body"] == "ground" or not len(seen_v[p["solid"]]):
+        i = p["solid"]
+        if p["body"] == "ground" or not len(seen_v[i]):
             continue
-        v = seen_v[p["solid"]]
+        v = seen_v[i]
         xy = view.project(v)[0]
+        which = slab_of(i, v[:, iaxis])
         for pose in poses:
             turn, r0, p0 = link.body_motion(p["body"], pose)
             c, s_ = math.cos(turn), math.sin(turn)
@@ -283,23 +330,45 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True, lo
             du, dv = v[:, iu] - r0[0], v[:, iv] - r0[1]
             w[:, iu], w[:, iv] = p0[0] + c * du - s_ * dv, p0[1] + s_ * du + c * dv
             exact = view.project(w)[0]
-            A = motion2d(p["body"], pose, solid_depth[p["solid"]])
-            e = float(np.abs(exact - (xy @ A[:2, :2].T + A[:2, 2])).max()) * k / U
-            if e > motion_err:
-                motion_err, worst = e, p["part"]
+            for j, (_, _, depth) in enumerate(slabs[i]):
+                m = which == j
+                if not m.any():
+                    continue
+                A = motion2d(p["body"], pose, depth)
+                e = float(np.linalg.norm(exact[m] - (xy[m] @ A[:2, :2].T + A[:2, 2]), axis=1).max()) * k / U
+                err_by_part[p["part"]] = max(err_by_part.get(p["part"], 0.0), e)
+                if e > motion_err:
+                    motion_err, worst = e, p["part"]
+    n_slabs = sum(len(v) for v in slabs.values())
     log(f"painter's order: {len(order)} solids drawn, {len(hidden)} never visible, {cycles} cycles broken; "
-        f"motion error up to {motion_err:.2f} px ({worst})")
+        f"{n_slabs} depth slabs; motion error up to {motion_err:.2f} px ({worst})")
 
-    # ---- the drawing: per solid, its silhouette and its edges, in units
+    # ---- the drawing: per solid and slab, its silhouette and its edges, in units
     out_solids = []
     for i in order:
         p = next(q for q in parts if q["solid"] == i)
-        loops = raster.region(np.isfinite(asm[i]), grid, float(spec.get("outline_tol", 0.6)), min_area=2.0)
+        mask = np.isfinite(asm[i])
         segs = cad.transform_segments(geo[i]["seg"], k, tuple(off))
+        if len(slabs[i]) == 1:
+            masks, seg_groups = [mask], [segs]
+        else:
+            # each cell and edge goes to the slab of its depth along the axis
+            cell_slab = np.where(mask, slab_of(i, np.nan_to_num(axis_depth[i], nan=0.0)), -1)
+            # one cell of overlap between neighbouring slabs, so no seam shows between their fills
+            masks = [raster.dilate(cell_slab == j) & mask for j in range(len(slabs[i]))]
+            seg_groups = [[] for _ in slabs[i]]
+            for sg in segs:
+                ends = [(sg[1], sg[2]), (sg[-2], sg[-1])] if sg[0] != "A" else [(sg[1], sg[2]), (sg[3], sg[4])]
+                found = [raster.nearest(cell_slab, x, y, -1) for x, y in ends]
+                found = [f for f in found if f >= 0]
+                seg_groups[int(round(sum(found) / len(found))) if found else 0].append(sg)
+        out = []
+        for (_, _, depth), m, sg in zip(slabs[i], masks, seg_groups):
+            loops = raster.region(m, grid, float(spec.get("outline_tol", 0.6)), min_area=2.0)
+            out.append({"shift": [_r(c, 2) for c in a_axis * depth * k], "depth_mm": _r(depth, 1),
+                        "fill": S.polygon_d(loops), "edges": S.segments_d(sg)})
         out_solids.append({"solid": i, "part": p["part"], "body": p["body"], "style": p["style"],
-                           "explode": [_r(c, 1) for c in explode_vec[i] * k],
-                           "shift": [_r(c, 2) for c in a_axis * solid_depth[i] * k], "depth_mm": _r(solid_depth[i], 1),
-                           "fill": S.polygon_d(loops), "edges": S.segments_d(segs)})
+                           "explode": [_r(c, 1) for c in explode_vec[i] * k], "slabs": out})
 
     # ---- the FEA field on its part
     fea_out = None
@@ -337,7 +406,14 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True, lo
     # ---- clearance between moving solids along the path
     clear_out = None
     if clearance:
-        clear_out = _clearances(spec, solids, parts, link, poses, iaxis, iu, iv, log)
+        key = _clearance_key(spec, inputs[spec["assembly"]])
+        old = (previous or {}).get("clearance") or {}
+        if old.get("key") == key:
+            clear_out = json.loads(json.dumps(old))
+            log(f"clearance: reused the previous scene's sweep ({old.get('pairs_queried')} queries, key {key[:12]})")
+        else:
+            clear_out = _clearances(spec, solids, parts, link, poses, iaxis, iu, iv, log)
+            clear_out["key"] = key
         w = clear_out.get("closest")
         if w:
             pose = poses[w["pose"]]
@@ -399,6 +475,7 @@ def extract(spec: Mapping[str, Any], source: Path, *, clearance: bool = True, lo
         "linkage": {"lengths_mm": lengths, "samples": samples, "path": path_spec, "dead_point_margin_deg": [_r(d, 1) for d in dead],
                     "bodies": frames, "trace": trace, "trace_depth_mm": _r(trace_depth, 1),
                     "motion_error_px": _r(motion_err, 2), "motion_error_part": worst,
+                    "motion_error_px_by_part": {n: _r(e, 2) for n, e in sorted(err_by_part.items())},
                     "reach_mm": [_r(min(math.dist(p[driven], (0, 0)) for p in poses), 1),
                                  _r(max(math.dist(p[driven], (0, 0)) for p in poses), 1)]},
         "fea": fea_out, "clearance": clear_out, "text": texts,
@@ -603,22 +680,25 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
     highlight: List[str] = []
     body.append('<g class="cam m"><g class="draw">')
     for n, s_ in enumerate(solids):
-        sx, sy = s_["shift"]
-        open_, close = "", ""
-        if s_["body"] != "ground":
-            open_ += (f'<g transform="translate({n_(sx)} {n_(sy)})"><g class="m {body_cls[s_["body"]]}">'
-                      f'<g transform="translate({n_(-sx)} {n_(-sy)})">')
-            close = "</g></g></g>"
+        moving = s_["body"] != "ground"
+
+        def slab(sl, inner, body_=s_["body"]):
+            """A slab moves with its body, exactly at its own depth: shift to that depth, move, shift back."""
+            if not moving:
+                return inner
+            sx, sy = sl["shift"]
+            return (f'<g transform="translate({n_(sx)} {n_(sy)})"><g class="m {body_cls[body_]}">'
+                    f'<g transform="translate({n_(-sx)} {n_(-sy)})">{inner}</g></g></g>')
+        fea_here = fea and s_["solid"] == fea["solid"]
+        fills = "".join(slab(sl, f'<path class="f s{s_["style"][:2]}" fill-rule="evenodd" d="{sl["fill"]}"/>'
+                             + ("".join(f'<path class="fb fb{bd["band"]}" d="{bd["d"]}"/>' for bd in fea["bands"])
+                                if fea_here else "")) for sl in s_["slabs"] if sl["fill"])
+        edges = "".join(slab(sl, f'<path class="e d{n}" pathLength="1" d="{sl["edges"]}"/>')
+                        for sl in s_["slabs"] if sl["edges"])
         cls = " ty" if s_["style"] == "tyre" else ""
-        open_ += f'<g class="m {ex_cls[tuple(s_["explode"])]}{cls}">'
-        close = "</g>" + close
-        inner = f'<path class="f s{s_["style"][:2]}" fill-rule="evenodd" d="{s_["fill"]}"/>'
-        if fea and s_["solid"] == fea["solid"]:
-            inner += "".join(f'<path class="fb fb{bd["band"]}" d="{bd["d"]}"/>' for bd in fea["bands"])
-        inner += f'<path class="e d{n}" pathLength="1" d="{s_["edges"]}"/>'
-        body.append(open_ + inner + close)
+        body.append(f'<g class="m {ex_cls[tuple(s_["explode"])]}{cls}">{fills}{edges}</g>')
         if s_["solid"] in pair:
-            highlight.append(s_["edges"])
+            highlight += [sl["edges"] for sl in s_["slabs"] if sl["edges"]]
         t0 = ph.draw[0] + (ph.draw[1] - ph.stroke - ph.draw[0]) * n / max(1, len(solids) - 1)
         tl.add(f".d{n}", [(0, 1), (t0, 1), (t0 + ph.stroke, 0), (P, 0)],
                lambda v: f"stroke-dashoffset:{n_(v, 2)}", "ease-out")
@@ -710,7 +790,7 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
                        for j in range(len(fea["band_edges"])))
         body.append(f'<g class="lg w">{ramp}<text x="{lx0 + len(fea["band_edges"]) * sw + 6 * U}" y="{ly0 + 9 * U}" '
                     f'class="lgt">0–{_fmt(fea["band_edges"][-1])}+ of strength</text></g>')
-        css.append(f".lgt{{font-size:{11 * U}px;fill:var(--muted)}}.lg{{opacity:0}}")
+        css.append(f".lgt{{font-size:{11 * U}px;fill:var(--muted)}}")
         tl.opacity(".lg", [(0, 0), (ph.fea[0], 0), (ph.fea[0] + 0.3, 1), (ph.fade[0], 1), (ph.fade[1], 0)])
     wm, tg = words["wordmark"], words.get("tagline")
     group = f'<path transform="translate({col} {98 * U})" class="wmp" d="{wm["d"]}"/>'

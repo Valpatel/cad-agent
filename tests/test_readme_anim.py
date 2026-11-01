@@ -105,7 +105,8 @@ def test_the_hero_states_its_checks_from_the_scene(tool, built):
     lk = scene["linkage"]
     for pair, got in lk["lengths_mm"].items():                       # the CAD's link lengths, checked at extraction
         assert got > 0
-    assert lk["motion_error_px"] < 10, "the drawn motion strays too far from the exact 3D motion"
+    assert lk["motion_error_px"] < 2, "the drawn motion strays too far from the exact 3D motion"
+    assert max(lk["motion_error_px_by_part"].values()) == lk["motion_error_px"]
     text = built["hero"]
     assert f"{scene['fea']['design_mpa']:.1f} MPa" in text
     assert f"{scene['fea']['first_failure_factor']:.2f}× load" in text
@@ -218,6 +219,17 @@ def test_outlines_follow_the_cells_and_holes_are_separate_loops():
     assert areas == pytest.approx([0.5, 24.5])                    # 5 x 5 less the cut corners; the hole a diamond
     xs = [p[0] for p in max(loops, key=len)]
     assert min(xs) == pytest.approx(1) and max(xs) == pytest.approx(6)
+
+
+def test_dilate_grows_by_one_cell_and_nearest_finds_the_closest_label():
+    m = np.zeros((5, 5), bool)
+    m[2, 2] = True
+    assert raster.dilate(m).sum() == 5 and raster.dilate(m)[1, 2] and not raster.dilate(m)[1, 1]
+    labels = np.full((8, 8), -1)
+    labels[1, 1], labels[1, 6] = 3, 7
+    assert raster.nearest(labels, 2.0, 2.0, -1) == 3              # point (x 2, y 2): cell (1, 1) is nearest
+    assert raster.nearest(labels, 6.2, 1.5, -1) == 7
+    assert raster.nearest(labels, 4.0, 7.5, -1, radius=2) == -1   # nothing within reach
 
 
 def test_simplify_keeps_corners_and_drops_collinear_points():

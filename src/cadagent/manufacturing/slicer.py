@@ -214,6 +214,81 @@ def _sha(path: Path) -> str:
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+_CUBE_STL = (b"solid cube\n" + b"".join(
+    b"facet normal 0 0 0\nouter loop\n" + b"".join(b"vertex %d %d %d\n" % v for v in tri) + b"endloop\nendfacet\n"
+    for tri in (((0, 0, 0), (10, 10, 0), (10, 0, 0)), ((0, 0, 0), (0, 10, 0), (10, 10, 0)),
+                ((0, 0, 10), (10, 0, 10), (10, 10, 10)), ((0, 0, 10), (10, 10, 10), (0, 10, 10)),
+                ((0, 0, 0), (10, 0, 0), (10, 0, 10)), ((0, 0, 0), (10, 0, 10), (0, 0, 10)),
+                ((0, 10, 0), (10, 10, 10), (10, 10, 0)), ((0, 10, 0), (0, 10, 10), (10, 10, 10)),
+                ((0, 0, 0), (0, 0, 10), (0, 10, 10)), ((0, 0, 0), (0, 10, 10), (0, 10, 0)),
+                ((10, 0, 0), (10, 10, 0), (10, 10, 10)), ((10, 0, 0), (10, 10, 10), (10, 0, 10))))
+    + b"endsolid cube\n")
+
+
+def project_settings(workdir, printer: str = PRINTER, process: str = PROCESS, filaments=('pla',),
+                     overrides: Optional[dict] = None, colours=(), timeout: float = 300) -> bytes:
+    """Bambu Studio's own project configuration for these presets: the ``Metadata/project_settings.config`` it writes
+    into a project 3MF (every printer, process and filament setting, with ``overrides`` applied to the process as
+    ``slice_part`` applies them). A project 3MF needs it for Bambu Studio to keep its plates
+    (``cadagent.manufacturing.plates``). Made by running the command line once on a 10 mm cube in ``workdir``, which
+    must be a normal folder under your home directory (the snap package's limit) and is cleared first if this
+    function wrote it. The bytes are the same for the same presets and Bambu Studio version.
+
+    With more than one filament, Bambu Studio's command line writes the per-project lists for one: one colour
+    (``filament_colour``, which is how Bambu Studio counts the filaments when it loads the file), one filament map
+    entry, and a 4 x 4 purge matrix (``flush_volumes_matrix``; slicing stops unless it holds filaments² values per
+    nozzle). Those three are sized to the filaments: the colours from ``colours`` (else Bambu's green), the map to
+    the one nozzle, and the matrix with no purge on its diagonal and the command line's own purge volume elsewhere.
+    Checked by slicing a two-filament project with the command line (each plate with its own filament)."""
+    exe = executable()
+    if not exe:
+        raise RuntimeError('Bambu Studio is not installed (snap install bambu-studio); no project settings')
+    filaments = [FILAMENTS.get(f, f) for f in filaments] or [FILAMENTS['pla']]
+    work = Path(workdir).resolve()
+    if work.exists():
+        if not (work / _MARK).exists() and any(work.iterdir()):
+            raise FileExistsError(f'{work} exists and is not a slicer work folder; choose an empty or new folder')
+        shutil.rmtree(work)
+    work.mkdir(parents=True)
+    (work / _MARK).write_text('cadagent.manufacturing.slicer work folder: safe to delete\n')
+    mach, proc = flatten('machine', printer), flatten('process', process)
+    for k, v in (overrides or {}).items():
+        proc[k] = v if isinstance(v, list) or k not in proc or not isinstance(proc[k], list) else [str(v)] * len(proc[k])
+    (work / 'machine.json').write_text(json.dumps(mach, indent=1))
+    (work / 'process.json').write_text(json.dumps(proc, indent=1))
+    names = []
+    for i, f in enumerate(filaments):
+        names.append(str(work / f'filament{i + 1}.json'))
+        Path(names[-1]).write_text(json.dumps(flatten('filament', f), indent=1))
+    (work / 'cube.stl').write_bytes(_CUBE_STL)
+    out = work / 'out'
+    out.mkdir()
+    cmd = [exe, '--load-settings', f"{work / 'machine.json'};{work / 'process.json'}", '--load-filaments', ';'.join(names),
+           '--outputdir', str(out), '--export-3mf', 'project.3mf', str(work / 'cube.stl')]
+    p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    try:
+        with zipfile.ZipFile(out / 'project.3mf') as z:
+            raw = z.read('Metadata/project_settings.config')
+    except (OSError, KeyError, zipfile.BadZipFile):
+        raise RuntimeError(f'Bambu Studio wrote no project settings (exit {p.returncode}): '
+                           f'{(p.stdout + p.stderr)[-500:]}') from None
+    n = len(filaments)
+    if n == 1:
+        return raw
+    data = json.loads(raw)
+    if len(data.get('filament_settings_id') or []) != n:
+        raise RuntimeError(f"Bambu Studio's project settings list {data.get('filament_settings_id')}, not the "
+                           f"{n} filaments asked for")
+    colours = [str(c) for c in colours][:n]
+    data['filament_colour'] = colours + ['#00AE42'] * (n - len(colours))
+    data['filament_map'] = [str((data.get('filament_map') or ['1'])[0])] * n
+    heads = max(1, len(data.get('flush_multiplier') or ['1']))
+    matrix = data.get('flush_volumes_matrix') or ['0', '280']
+    purge = str(matrix[1] if len(matrix) > 1 else '280')
+    data['flush_volumes_matrix'] = ['0' if i == j else purge for _ in range(heads) for i in range(n) for j in range(n)]
+    return (json.dumps(data, indent=4, sort_keys=True) + '\n').encode()
+
+
 def _settings(project) -> dict:
     cfg = dict(project.slicer or {})
     fil = cfg.get('filament', 'pla')

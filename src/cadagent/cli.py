@@ -119,6 +119,24 @@ def cmd_export_3mf(project: CadProject, args: argparse.Namespace) -> int:
     for r in reports:
         _say(f"  {r['part']}.3mf  {r['triangles']} triangles  watertight  {r['volume_mm3']:.1f} mm3")
     _say(f"{len(reports)} 3MF file(s) written and read back")
+    return _export_plates(project, list(parts))
+
+def _export_plates(project: CadProject, parts: List[str]) -> int:
+    """The build plates file after the per-part 3MFs; 1 when the parts cannot be laid out."""
+    from cadagent.manufacturing.plates import PlatesError, export_plates
+
+    try:
+        rec = export_plates(project, parts)
+    except PlatesError as exc:
+        _say(f"plates: FAILED: {exc}")
+        return 1
+    if rec is None:
+        return 0
+    for p in rec["plates"]:
+        _say(f"  plate {p['plate']}  {p['name']:<28} {len(p['parts'])} part(s)  {p['covered'] * 100:.0f} % covered")
+    for w in rec["warnings"]:
+        _say(f"  note: {w}")
+    _say(f"{sum(rec['quantities'].values())} copies on {len(rec['plates'])} plate(s), read back -> {rec['file']}")
     return 0
 
 def cmd_slice(project: CadProject, args: argparse.Namespace) -> int:
@@ -930,7 +948,7 @@ def build_parser() -> argparse.ArgumentParser:
     build_p = sub.add_parser("build", parents=[common], help="Run the configured build steps in order")
     build_p.add_argument("--from", dest="from_step", metavar="STEP", help="Start at this step")
     build_p.add_argument("--only", nargs="+", metavar="STEP", help="Run only these steps (config order)")
-    sub.add_parser("export-3mf", parents=[common], help="Write a bed-centred 3MF per part STL and verify it")
+    sub.add_parser("export-3mf", parents=[common], help="Write a bed-centred 3MF per part STL, and every part on build plates in one Bambu Studio project 3MF; verify both")
     holes_p = sub.add_parser("holes", parents=[common], help="Check every hole of every part (exports/<part>.step) is "
                                                              "clear of material: ribs or bosses added after the holes")
     holes_p.add_argument("parts", nargs="*", help="only these parts (default: every part in the parts file); the other "

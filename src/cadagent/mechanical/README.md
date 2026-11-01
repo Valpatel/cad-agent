@@ -6,8 +6,8 @@ that they work, from holes and fasteners to bought hardware, connector windows, 
 Arrows follow the data. A project's build script imports the modules in the second row to make its parts
 (`cad-agent mcmaster` and `cad-agent snapfit` run two of them from the command line too), and `mcmaster.py` imports
 `export_step` from the shared [`geometry`](../geometry/README.md) helpers. `holes.py` reads the exported STEP files and
-the parts file (through `publish/report.py`'s `load_parts`). `motion_trace.py` (`cad-agent motion-trace`) stands
-alone.
+the parts file (through `publish/report.py`'s `load_parts`). `motion_trace.py` (`cad-agent motion-trace`) and
+`clearance.py` (placed solids at each pose, from the build script) stand alone.
 
 ```mermaid
 flowchart TD
@@ -39,6 +39,7 @@ flowchart TD
 | [`compliant/`](compliant/README.md) | Compliant features that replace parts: snap fits now, hinges and flexures next |
 | `linkages.py` | Four-bars and five-bars swept over their inputs: joint angles, locks, edges of reach, branch flips; the dyad solver for linkages measured from CAD |
 | `motion_trace.py` | Compares rendered landmarks with CAD joint intent, without a CAD kernel |
+| `clearance.py` | Range-of-motion collision check: placed parts intersected pairwise at each sampled pose, and revolved swept-volume cutters with slopes capped at 45° ([toolkit](../../../docs/toolkit.md#range-of-motion-clearance-cadagentmechanicalclearance)) |
 
 Related: [package map](../README.md) · [mcmaster-parts skill](../../../skills/mcmaster-parts/SKILL.md) ·
 [compliant mechanisms](../../../docs/compliant.md) · [common issues](../../../docs/common-issues.md) (the mistakes

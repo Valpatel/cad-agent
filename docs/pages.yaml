@@ -704,3 +704,12 @@ research/compliant-mechanisms.md:
       on: example
       caption: "The first row below as a working check: a dry CoPA arm 20 mm long, 1.6 mm at the root and 6 mm wide, bent 1.5 mm at the hook along its computed curve. Its root strain is 0.90 %, 44 % of the 2.02 % allowed along the layers, a pass; the push is 3.10 N. The live version is on the snap-fit page."
       alt: "A CoPA snap arm 20 mm long bent 1.5 mm at the hook along its computed curve; root strain 0.90 percent, 44 percent of the 2.02 percent allowed along the layers, a pass; force 3.10 N"
+    - after: 9-open-source-calculators-and-libraries
+      below: No maintained Python or JS library
+      img: docs/img/compliant/torsion-snap-explorer.svg
+      shows: diagram
+      drawn_by: tools/torsion-snap-still.mjs
+      tool: cadagent.formulas
+      on: example
+      caption: "One of the calculators the toolkit has built since (cadagent.formulas.torsion_snap_bar, Bayer's torsion snap with Saint-Venant torsion): two Bambu PLA Basic bars, 15 mm long and 4 × 1.2 mm, twisted 8° by a 10 mm lever. Peak shear strain 1.11 %, 86 % of the 1.28 % allowed across the layers, a pass; 3.45 N at the lever. The live version is on the snap-fit page."
+      alt: "Two PLA torsion bars twisted 8 degrees by a 10 mm lever; peak shear strain 1.11 percent, 86 percent of the 1.28 percent allowed across the layers, a pass; 3.45 N at the lever"

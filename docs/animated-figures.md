@@ -35,7 +35,11 @@ The clearance sweep is slow, because each pair is an exact `relate()` call (#186
 
 ## Make one for another assembly
 
-Copy `tools/anim/gyropup-leg.yaml`, then add the figure to `FIGURES` in `tools/readme_anim.py`. The spec names:
+Copy `tools/anim/gyropup-leg.yaml`, then add the figure to `FIGURES` in `tools/readme_anim.py`.
+
+<details>
+<summary>What the spec names: the assembly, parts, linkage, view, FEA field and words</summary>
+
 - **the assembly**: one STEP, one solid per part.
 - **the parts**: solids by their number in the STEP. Each part has:
   - the body it moves with;
@@ -51,15 +55,35 @@ Copy `tools/anim/gyropup-leg.yaml`, then add the figure to `FIGURES` in `tools/r
 - **the FEA field**: optional, a `cadagent-fea-viewer` v1 file (what `cadagent.simulation.fea` writes for the viewer), with the stress bands as fractions of strength.
 - **the words**: the wordmark and tagline, drawn as outlines because an `<img>` loads no fonts. Labels, captions and the check rows' wording (`present.checks`, with `{placeholders}` filled from the scene) sit under `present`, so they can change without re-extracting.
 
+</details>
+
 A different kind of figure (a board into its enclosure, print layers, a convergence chart) gets its own scene module next to `cadagent.publish.anim.hero`. It reuses the shared parts:
 - edge projection: `cad`;
 - the rasteriser and outlines: `raster`;
 - paths, timeline, theme and the embed rules: `svg`;
 - text outlines: `text`.
 
+The two stages, and what each reads and writes:
+
+```mermaid
+flowchart TD
+    S["assembly STEP<br/>the project's CAD"] --> X["--extract<br/>CadQuery: edges, gaps"]
+    F["spec YAML + FEA field<br/>linkage, view, stress"] --> X
+    X --> J["tools/anim/*.scene.json<br/>poses, sha256 of inputs"]
+    J --> R["render<br/>pure Python, no CAD"]
+    R --> O["docs/img/hero/*.svg<br/>CSS animation, 250 KB max"]
+    class S,F near
+    class X,J,R here
+    class O out
+```
+
 ## What a figure must pass
 
-`cadagent.publish.anim.svg.problems()` lists what makes an SVG unsafe or unfit to embed. Each rule has a test that breaks it:
+`cadagent.publish.anim.svg.problems()` lists what makes an SVG unsafe or unfit to embed. Each rule has a test that breaks it.
+
+<details>
+<summary>The embed rules: size, XML, no scripts or outside references, accessibility, CSS only, reduced motion</summary>
+
 - at most 250 KB;
 - well-formed XML;
 - no `<script>`, `<foreignObject>`, `<iframe>`, `<image>`, `<use>` or `<a>`;
@@ -68,6 +92,8 @@ A different kind of figure (a board into its enclosure, print layers, a converge
 - `role="img"` with an `aria-label`, and a `<title>`;
 - CSS animation only, no SMIL;
 - a `prefers-reduced-motion` rule that stops every animation. The still it leaves is the final frame.
+
+</details>
 
 Both colour schemes are in the one SVG (`prefers-color-scheme`), on its own background. It was checked on github.com in WebKit and Chrome at 1440 and 390 px. At phone widths the words beside the drawing are hidden and the check marks are enlarged.
 

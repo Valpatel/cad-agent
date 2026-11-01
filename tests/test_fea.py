@@ -270,3 +270,47 @@ def test_viewer_draws_the_torque_about_the_faces_not_the_given_point(tmp_path):
     st.solve()
     d, _ = _viewer(st, tmp_path / 'bar.json')
     assert d['loads'][0]['center'] == pytest.approx([L, 0, 0], abs=1e-6)
+
+
+def test_render_at_a_fixed_colour_scale(tmp_path, monkeypatch):
+    """Two variants compare by eye only at one colour scale: render(vmax=...) sets the colour bar's top, whatever the
+    study's own design stress, and leaves the result alone; stress past it takes the top colour, with an arrow."""
+    import matplotlib.figure
+    import numpy as np
+    from mpl_toolkits.mplot3d import art3d
+
+    st = Study(cq.Workplane('XY').box(100, 10, 10).translate((50, 0, 0)), STEEL, mesh_mm=5.0, name='beam')
+    st.fix(plane_at(0, 0.0)).force(plane_at(0, 100), (0, 0, -100))
+    r = st.solve()
+    before = dict(r)
+    seen = []
+    real = matplotlib.figure.Figure.colorbar
+
+    def spy(self, mappable, *a, **k):
+        seen.append((mappable.norm.vmin, mappable.norm.vmax, k.get('label'), k.get('extend')))
+        return real(self, mappable, *a, **k)
+
+    monkeypatch.setattr(matplotlib.figure.Figure, 'colorbar', spy)
+    top = np.asarray(matplotlib.colormaps['turbo'](1.0))
+    shares = []                                               # the share of the drawn faces in the top colour
+    real_poly = art3d.Poly3DCollection.__init__
+
+    def spy_faces(self, verts, *a, **k):
+        fc = np.asarray(k.get('facecolors'))
+        shares.append(float(np.all(np.isclose(fc, top), axis=1).mean()))
+        return real_poly(self, verts, *a, **k)
+
+    monkeypatch.setattr(art3d.Poly3DCollection, '__init__', spy_faces)
+    assert st.render(tmp_path / 'own.png').stat().st_size > 0
+    assert st.render(tmp_path / 'fixed.png', vmax=250.0, scale=40).stat().st_size > 0
+    low = r['von_mises_design_mpa'] / 2                       # below the beam's own peak: clipped to the top colour
+    assert st.render(tmp_path / 'clipped.png', vmax=low, scale=40).stat().st_size > 0
+    assert seen[0][1] == pytest.approx(r['von_mises_design_mpa']) and seen[0][3] == 'neither'
+    assert seen[1][:2] == (0, 250.0) and 'fixed scale 0-250' in seen[1][2] and seen[1][3] == 'neither'
+    assert seen[2][1] == pytest.approx(low) and seen[2][3] == 'max' and 'this design' in seen[2][2]
+    assert shares[1] == 0.0                                   # nothing in the beam reaches 250 MPa
+    assert shares[0] < shares[2] < 1.0                        # half its design stress: more of it at the top, not all
+    assert st.result == before
+    for bad in (0, -1, float('nan')):
+        with pytest.raises(ValueError):
+            st.render(tmp_path / 'bad.png', vmax=bad)

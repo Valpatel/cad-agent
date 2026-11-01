@@ -21,6 +21,10 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   and a one-build total (#89).
 - Merge gates: `cad-gates/<base>/branch-flow`, `…/review` and `cad-gates/main/release` statuses, run from the default
   branch's (dev's) copy of the gates, on every push and every 15 minutes; tagged releases and the site deploy from `main` (#112).
+- `Study.render(..., vmax=)` draws at a fixed colour scale (MPa), so the renders of two variants compare by eye
+  (before, each render ran from 0 to its own design stress). The colour bar says the scale is fixed and names the
+  study's own design stress; stress above `vmax` takes the top colour, with an arrow when the study goes past it.
+  `scale` remains the deformation exaggeration (#191).
 
 - Site home page: Gyropup in 3D, its 58 parts exported from STEP by `cad-agent view`, packed small with
   `cadagent.publish.view.pack_view` and shown by the kit's new `<cad-model>` (`kit/model.js`); a reel of real outputs with

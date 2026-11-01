@@ -33,7 +33,9 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 - The catalogue as a gallery: demos first, then every entry by kind and by topic-tree area, with our own covers for
   the 50 outside projects and a JSON file per area for agents (`catalog/index.json`, `catalog/<area>.json`).
   `catalog.json` moves to schema 2, which only adds fields (#174). Every outside entry says what it does and which
-  areas it serves (#173).
+  areas it serves (#173). If the gallery's script fails, the page falls back to its no-script form. Outside covers
+  pick their family from the entry's kernel and tools first. Tool covers show a committed still of their result, and
+  the design comparison's chart is drawn from `cad-agent compare --json`, which a `--check` keeps current (#189).
 - The topic tree: [docs/vision.md](docs/vision.md) and [docs/areas.yaml](docs/areas.yaml) map six domains and 35
   areas, each at its maturity; a test keeps every page, command, skill and agent on the map (#148).
 - [Manufacturing-process profiles](research/process-profiles.md): design limits for FDM, SLA, SLS, MJF, injection
@@ -50,6 +52,10 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   the numbers they computed; and "where cad-agent fits", the tools we build on beside what cad-agent adds, each with
   its maturity from `docs/areas.yaml` (#179). The browser suite fails a page with more than one and a half screens of
   text and nothing to look at; the pages still over are listed with their issues and the list only shrinks.
+- The README's animated hero, drawn from Gyropup's real CAD by `tools/readme_anim.py` (`cadagent.publish.anim`): the
+  five-bar leg as hidden-line edges from its STEP, assembled, its stride solved from link lengths measured in the CAD,
+  its gaps from the assembly gates' relation engine and its hip frame's FEA stress. One CSS-only SVG under 250 KB that
+  GitHub shows in an `<img>`, with rules a test enforces ([docs/animated-figures.md](docs/animated-figures.md), #183).
 
 **Changed**
 - `src/cadagent/` is laid out by domain, as the topic tree ([docs/areas.yaml](docs/areas.yaml)) groups the work:

@@ -134,13 +134,21 @@ const pageFiles = new Set(pages.map(p => p.file));
 // Permanent redirects (tools/site-redirects.txt): they outlive the stubs, so deleting a stub never drops a 301.
 const redirects = (await read('tools/site-redirects.txt')).split('\n').map(l => l.replace(/#.*/, '').trim()).filter(Boolean)
   .map(l => l.split(/\s+/));
+const stubFiles = new Set(moved.map(([from]) => from)), seenFrom = new Set();
 for (const [from, to] of redirects) {
-  if (!to || !pageFiles.has(to)) throw new Error(`tools/site-redirects.txt: ${from} -> ${to}, which is not a published page`);
-  if (pageFiles.has(from)) throw new Error(`tools/site-redirects.txt: ${from} is still a published page`);
+  const at = `tools/site-redirects.txt: ${from}`;
+  // Pages keeps the first rule for a path and the preview server the last, so a duplicate would make them disagree.
+  if (seenFrom.has(from)) throw new Error(`${at} is listed twice`);
+  seenFrom.add(from);
+  if (!/^(?!\/)[^\s]+\.md$/.test(from)) throw new Error(`${at}: a source is a repo path to a .md file, without a leading slash`);
+  if (tracked.includes(from) && !stubFiles.has(from)) throw new Error(`${at} is still a file in the repo (only its stub may remain)`);
+  if (!to || !pageFiles.has(to)) throw new Error(`${at} -> ${to}, which is not a published page`);
 }
 for (const [from, to] of moved) {
   if (!pageFiles.has(to)) throw new Error(`${from} says it moved to ${to}, which is not a published page`);
-  if (!redirects.some(([f, t]) => f === from && t === to)) throw new Error(`${from} moved to ${to}: add "${from} ${to}" to tools/site-redirects.txt`);
+  const listed = redirects.find(([f]) => f === from);
+  if (!listed) throw new Error(`${from} moved to ${to}: add "${from} ${to}" to tools/site-redirects.txt`);
+  if (listed[1] !== to) throw new Error(`${from} moved to ${to}: change its line in tools/site-redirects.txt (it says ${listed[1]})`);
 }
 
 // ----------------------------------------------------------------------------- catalogue

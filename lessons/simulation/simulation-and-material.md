@@ -6,13 +6,15 @@ flowchart TD
     S --> G["savings judged<br/>on slicer grams"]
     S --> T["a thinner shell,<br/>re-checked under load"]
     T --> H["thermal model:<br/>steady CHT converges<br/>slowly, so calibrate<br/>on local quantities"]
-    H --> Tr{"still air stays still,<br/>energy balance closes,<br/>walls below the HDT?"}
-    Tr -->|"yes"| One["trust the result;<br/>one heavy solver<br/>at a time"]
+    H --> Tr{"still air stays still,<br/>energy balance closes?"}
     Tr -->|"no"| H
+    Tr -->|"yes"| W{"walls below<br/>the HDT?"}
+    W -->|"no"| S
+    W -->|"yes"| One["a prediction to measure<br/>on the print; one heavy<br/>solver at a time"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class S,T,H,Tr here
+    class S,T,H,Tr,W here
     class P near
     class G,One out
 ```

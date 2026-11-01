@@ -277,9 +277,28 @@ test('redirects outlive the stubs, and a stub must point at a published page tha
       assert.throws(() => buildWt(path.join(tmp, 'bad')), e => String(e.stderr).includes(why), target);
       execFileSync('git', ['checkout', '-q', 'HEAD~1'], { cwd: wt });
     }
-    // A stub missing from tools/site-redirects.txt fails the build too.
+    // Bad lines in the list fail the build: a source listed twice (Pages keeps the first, the preview server the last),
+    // a leading slash, a source that is not a .md path, a file that is still in the repo, and a stub listed elsewhere.
     const list = path.join(wt, 'tools/site-redirects.txt');
-    await writeFile(list, (await readFile(list, 'utf8')).split('\n').filter(l => !l.startsWith(stub)).join('\n'));
+    const original = await readFile(list, 'utf8');
+    for (const [line, why] of [
+      [`${stub} lessons/README.md`, 'is listed twice'],
+      ['/lessons/gone.md lessons/README.md', 'without a leading slash'],
+      ['lessons/gone lessons/README.md', 'without a leading slash'],
+      ['web/site.css lessons/README.md', 'without a leading slash'],
+      ['docs/toolkit.md lessons/README.md', 'is still a file in the repo'],
+    ]) {
+      await writeFile(list, original + line + '\n');
+      commit(`bad line ${line}`);
+      assert.throws(() => buildWt(path.join(tmp, 'bad-line')), e => String(e.stderr).includes(why), line);
+      execFileSync('git', ['checkout', '-q', 'HEAD~1'], { cwd: wt });
+    }
+    await writeFile(list, original.replace(`${stub} lessons/mechanical/design-rules.md`, `${stub} lessons/README.md`));
+    commit('stub listed elsewhere');
+    assert.throws(() => buildWt(path.join(tmp, 'bad3')), e => String(e.stderr).includes('change its line'));
+    execFileSync('git', ['checkout', '-q', 'HEAD~1'], { cwd: wt });
+    // A stub missing from tools/site-redirects.txt fails the build too.
+    await writeFile(list, original.split('\n').filter(l => !l.startsWith(stub)).join('\n'));
     commit('unlisted stub');
     assert.throws(() => buildWt(path.join(tmp, 'bad2')), e => String(e.stderr).includes('add "' + stub));
   } finally {
@@ -291,7 +310,7 @@ test('no page refers to a lesson by its old number', () => {
   // The numbered lessons moved into area folders (#133): "see 04" or "lesson 07" now leads nowhere. Link the page.
   let hits = '';
   try {
-    hits = git('grep', '-n', '-E', '-e', String.raw`\blessons? 0[1-9]\b|\(see 0[1-9]\)|; see 0[1-9]\)|\bSee 0[1-9]\.`, 'HEAD', '--',
+    hits = git('grep', '-n', '-E', '-e', String.raw`\b[Ll]essons? (0[1-9]|1[0-2])\b|\b[Ss]ee (0[1-9]|1[0-2])\b`, 'HEAD', '--',
       '*.md', '*.json', ':!CHANGELOG.md');
   } catch (e) { if (e.status !== 1) throw e; }                // git grep exits 1 when nothing matches
   hits = hits.split('\n').filter(Boolean);

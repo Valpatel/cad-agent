@@ -119,9 +119,9 @@ def _chains(edges: Sequence[Tuple[int, int]]) -> List[List[int]]:
 
 
 def _face_drawing(st, window: Sequence[float], plane_y: float = 0.0) -> Dict[str, Any]:
-    """The front face's (y = ``plane_y``) surface mesh round the corner, in mm (x, z): its points, its edges as
-    polylines (``chains``) and its outline (edges of one triangle). Edges that cannot reach the window are left out;
-    the renderer clips the rest to it."""
+    """The front face's (y = ``plane_y``) surface mesh round the corner, in mm (x, z): its points, its inner edges
+    as polylines (``chains``) and its whole outline (the edges of one triangle, a closed loop). Inner edges that
+    cannot reach the window are left out; the renderer clips the rest to it."""
     import numpy as np
 
     from cadagent.simulation.fea import plane_at
@@ -133,14 +133,13 @@ def _face_drawing(st, window: Sequence[float], plane_y: float = 0.0) -> Dict[str
     xz = st.points[:, [0, 2]]
     x0, z0, x1, z1 = window
     lo, hi = xz[uniq].min(axis=1), xz[uniq].max(axis=1)
-    keep = (hi[:, 0] >= x0) & (lo[:, 0] <= x1) & (hi[:, 1] >= z0) & (lo[:, 1] <= z1)
-    uniq, count = uniq[keep], count[keep]
-    nodes = np.unique(uniq)
+    reach = (hi[:, 0] >= x0) & (lo[:, 0] <= x1) & (hi[:, 1] >= z0) & (lo[:, 1] <= z1)
+    inner, outline = uniq[reach & (count > 1)], uniq[count == 1]
+    nodes = np.unique(np.concatenate([inner, outline]))
     index = {int(n): i for i, n in enumerate(nodes)}
-    pts = [[round(float(x), 3), round(float(z), 3)] for x, z in xz[nodes]]
-    as_rows = lambda sel: [(index[int(a)], index[int(b)]) for a, b in uniq[sel]]
-    return {"plane_y_mm": plane_y, "points": pts, "edges": len(uniq),
-            "chains": _chains(as_rows(count > 1)), "outline": _chains(as_rows(count == 1))}
+    rows = lambda e: [(index[int(a)], index[int(b)]) for a, b in e]
+    return {"plane_y_mm": plane_y, "points": [[round(float(x), 3), round(float(z), 3)] for x, z in xz[nodes]],
+            "edges": len(inner) + len(outline), "chains": _chains(rows(inner)), "outline": _chains(rows(outline))}
 
 
 def _step(shape, material, spec: Mapping[str, Any], mesh_mm: float, refine, window=None) -> Dict[str, Any]:
@@ -277,135 +276,132 @@ def _mpa(v: float) -> str:
 
 
 def _fill(template: str, scene: Mapping[str, Any]) -> str:
-    """A ``present`` string with {placeholders} from the scene: version, commit, gmsh, occ, recorded, platform."""
+    """A ``present`` string with {placeholders} from the scene: version, commit, gmsh, occ, recorded, platform, and
+    the coarsest and finest element sizes at the corner (coarse, fine)."""
     m, src = scene["mesher"], scene["source"]
     plat = m.get("platform") or {}
+    sizes = [s["size_mm"] for s in scene["corners"][0]["steps"]]
     return template.format(version=src.get("version") or "?", commit=(src.get("commit") or "?")[:7],
                            gmsh=m.get("gmsh") or "?", occ=m.get("occ") or "?", recorded=scene["recorded"],
-                           platform=f"{plat.get('system', '?')} {plat.get('machine', '?')}".strip())
+                           platform=f"{plat.get('system', '?')} {plat.get('machine', '?')}".strip(),
+                           coarse=f"{sizes[0]:g}", fine=f"{sizes[-1]:g}")
 
 
 def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
     """The SVG for a convergence ``scene`` with the words in ``present``. Deterministic: the same inputs give the same
-    bytes. Every animated element's own style is the final frame (the finest mesh, the whole chart), which is what a
-    reader who asked for reduced motion sees; the loop starts on the coarsest mesh."""
+    bytes. The loop starts on the coarsest mesh and adds a step every ``Phases.step`` seconds. Every animated element's
+    own style is the final frame (the finest mesh, the whole chart, the claims), which is what a reader who asked for
+    reduced motion sees."""
     if scene.get("schema") != SCHEMA:
         raise ValueError(f"not a {SCHEMA} scene")
-    U = S.UNITS_PER_PX
-    W, H = present["width"], present["height"]
     corners = scene["corners"]
     n = len(corners[0]["steps"])
-    if any(len(c["steps"]) != n for c in corners) or len(corners) != 2:
-        raise ValueError("the figure draws two corners with the same steps")
+    if len(corners) != 2 or any(len(c["steps"]) != n for c in corners) or n < 2:
+        raise ValueError("the figure draws two corners with the same steps (two or more)")
     sizes = [s["size_mm"] for s in corners[0]["steps"]]
+    if any([s["size_mm"] for s in c["steps"]] != sizes for c in corners):
+        raise ValueError("the figure draws two corners with the same steps (two or more)")
+    U = S.UNITS_PER_PX
+    W, H = present["width"], present["height"]
     ph = Phases
-    P = ph.period
+    P, f = ph.period, ph.fade
     t_on = [ph.start + ph.step * k for k in range(n)]
-    if t_on[-1] + ph.fade >= ph.out:
+    if t_on[-1] + f >= ph.out:
         raise ValueError("too many steps for the loop")
     tl = S.Timeline(P)
-    css: List[str] = []
-    body: List[str] = []
     light = dict(S.THEME.light, **{k: v[0] for k, v in COLOURS.items()})
     dark = dict(S.THEME.dark, **{k: v[1] for k, v in COLOURS.items()})
     colour = ["accent", "fillet"]
     u = lambda v: S.num(v * U, 0)                      # CSS px to whole units
-    f = ph.fade
+    body: List[str] = []
 
     def text(x, y, s, cls, anchor=None, extra=""):
         a = f' text-anchor="{anchor}"' if anchor else ""
         return f'<text x="{u(x)}" y="{u(y)}" class="{cls}"{a}{extra}>{escape(s)}</text>'
 
-    # text styles: sizes in units; .w hides on a phone, .n shows only there
-    css.append(f".t{{font-size:{16 * U}px;font-weight:700;fill:var(--ink)}}"
-               f".st{{font-size:{12 * U}px;fill:var(--muted)}}"
-               f".h{{font-size:{13 * U}px;font-weight:700}}"
-               f".big{{font-size:{22 * U}px;font-weight:700}}"
-               f".sm{{font-size:{11 * U}px;fill:var(--muted)}}"
-               f".ax{{font-size:{10.5 * U}px;fill:var(--muted)}}"
-               f".v{{font-size:{11 * U}px;font-weight:600;fill:var(--bg)}}"
-               f".c0{{fill:var(--accent)}}.c1{{fill:var(--fillet)}}"
-               f".n{{visibility:hidden}}"
-               f"@media (max-width:480px){{.w{{visibility:hidden}}.n{{visibility:visible}}}}")
-    css.append(f".me{{fill:none;stroke:var(--mesh);stroke-width:{0.55 * U};stroke-linejoin:round}}"
-               f".ol{{fill:none;stroke:var(--ink);stroke-width:{1.6 * U};stroke-linejoin:round}}"
-               f".fc{{fill:var(--panel)}}.fr{{fill:none;stroke:var(--line);stroke-width:{U}}}"
-               f".gr{{stroke:var(--line);stroke-width:{U}}}"
-               f".ln0,.ln1{{fill:none;stroke-width:{2.2 * U};stroke-linecap:round}}"
-               f".ln0{{stroke:var(--accent)}}.ln1{{stroke:var(--fillet)}}"
-               f".wl{{fill:none;stroke:var(--muted);stroke-width:{1.3 * U};stroke-dasharray:{5 * U} {4 * U}}}"
-               f".ok{{fill:var(--good)}}.no{{fill:var(--accent)}}")
+    # text sizes are in units (U per CSS px). On a phone (the <img> 480 px wide or less) the small words (.w) hide
+    # and a few large ones (.n) show instead
+    css = [f".t{{font-size:{16 * U}px;font-weight:700;fill:var(--ink)}}.st{{font-size:{12 * U}px;fill:var(--muted)}}"
+           f".h{{font-size:{13 * U}px;font-weight:700}}.big{{font-size:{22 * U}px;font-weight:700}}"
+           f".sm{{font-size:{11 * U}px;fill:var(--muted)}}.ax{{font-size:{10.5 * U}px;fill:var(--muted)}}"
+           f".v{{font-size:{11 * U}px;font-weight:600;fill:var(--bg)}}.nb{{font-size:{22 * U}px;font-weight:700}}"
+           f".c0{{fill:var(--accent)}}.c1{{fill:var(--fillet)}}.n{{visibility:hidden}}"
+           f"@media (max-width:480px){{.w{{visibility:hidden}}.n{{visibility:visible}}}}",
+           f".me{{fill:none;stroke:var(--mesh);stroke-width:{0.55 * U};stroke-linejoin:round}}"
+           f".ol{{fill:none;stroke:var(--ink);stroke-width:{1.6 * U};stroke-linejoin:round}}"
+           f".fc{{fill:var(--panel)}}.fr{{fill:none;stroke:var(--line);stroke-width:{U}}}"
+           f".gr{{stroke:var(--line);stroke-width:{U}}}"
+           f".ln0,.ln1{{fill:none;stroke-width:{2.2 * U};stroke-linecap:round}}"
+           f".ln0{{stroke:var(--accent)}}.ln1{{stroke:var(--fillet)}}"
+           f".wl{{fill:none;stroke:var(--muted);stroke-width:{1.3 * U};stroke-dasharray:{5 * U} {4 * U}}}"
+           f".ok{{fill:var(--good)}}.no{{fill:var(--accent)}}"]
+
+    def per_step(k: int) -> str:
+        """Shown only during step k: the final step's elements are drawn, the others start hidden."""
+        return "" if k == n - 1 else ' opacity="0"'
 
     # ---- title
     body.append(text(20, 30, present["title"], "t w"))
     body.append(text(20, 49, _fill(present["subtitle"], scene), "st w"))
-    body.append(text(20, 36, present["short_title"], "t n", extra=f' style="font-size:{26 * U}px"'))
+    body.append(text(20, 38, present["short_title"], "t n", extra=f' style="font-size:{26 * U}px"'))
 
     # ---- the two mesh panels: the front face round the corner, one drawing per step
     wx0, wz0, wx1, wz1 = scene["study"]["window_mm"]
-    side = 164.0
-    k_mm = side / max(wx1 - wx0, wz1 - wz0)
-    panel_y = 82.0
+    side, panel_y = 180.0, 86.0
     panel_x = [20.0, 20.0 + side + 12.0]
+    k_mm = side / max(wx1 - wx0, wz1 - wz0)
     body.append("<defs>" + "".join(
         f'<clipPath id="cp{i}"><rect x="{u(px)}" y="{u(panel_y)}" width="{u(side)}" height="{u(side)}"/></clipPath>'
         for i, px in enumerate(panel_x)) + "</defs>")
-
-    def to_panel(i):
-        px = panel_x[i]
-        return lambda x, z: ((px + (x - wx0) * k_mm) * U, (panel_y + (wz1 - z) * k_mm) * U)
-
-    groups: List[Tuple[str, str]] = []                # (selector, step) for the per-step windows
+    below = panel_y + side
     for i, c in enumerate(corners):
         px = panel_x[i]
-        body.append(text(px, panel_y - 8, c["name"], f"h c{i}"))
+        to = lambda x, z, px=px: ((px + (x - wx0) * k_mm) * U, (panel_y + (wz1 - z) * k_mm) * U)
+        body.append(text(px, panel_y - 8, c["name"], f"h c{i} w"))
+        body.append(text(px, panel_y - 8, c["name"], f"nb c{i} n"))
         body.append(f'<rect x="{u(px)}" y="{u(panel_y)}" width="{u(side)}" height="{u(side)}" class="fr"/>')
-        P_ = to_panel(i)
         for k, s in enumerate(c["steps"]):
             fd = s["face"]
-            pts = [P_(x, z) for x, z in fd["points"]]
-            outline = [[pts[j] for j in ch] for ch in fd["outline"]]
-            mesh = S.PathBuilder()
+            pts = [to(x, z) for x, z in fd["points"]]
+            mesh, ol = S.PathBuilder(), S.PathBuilder()
             for ch in fd["chains"]:
-                mesh.at = None if not mesh.parts else mesh.at
                 mesh.polyline([pts[j] for j in ch])
-            ol = S.PathBuilder()
-            for ch in outline:
-                ol.polyline(ch)
-            # the face, filled: its outline loops, closed (one loop for an L-bracket's face, cut by the window)
-            fill = S.polygon_d([ch for ch in outline if len(ch) > 2 and ch[0] == ch[-1]])
+            loops = [[pts[j] for j in ch] for ch in fd["outline"]]
+            for loop in loops:
+                ol.polyline(loop)
+            fill = S.polygon_d([lp[:-1] for lp in loops if len(lp) > 3 and lp[0] == lp[-1]])
             pk = s["peak"]["at_mm"]
-            dx, dy = P_(pk[0], pk[2])
-            cls = f"g{i}{k}"
-            hidden = "" if k == n - 1 else ' opacity="0"'
-            g = [f'<g id="{cls}" class="s{k}"{hidden}><g clip-path="url(#cp{i})">',
-                 f'<path class="fc" d="{fill}"/>' if fill else "",
-                 f'<path class="me" d="{mesh.d()}"/><path class="ol" d="{ol.d()}"/>',
-                 f'<circle cx="{S.num(dx, 0)}" cy="{S.num(dy, 0)}" r="{u(4.5)}" class="c{i}" '
-                 f'style="stroke:var(--bg);stroke-width:{1.5 * U}px"/></g>']
-            # under the panel: the peak, the mesh and its flags, and converge()'s verdict
-            y0 = panel_y + side
-            g.append(text(px, y0 + 28, f"{_mpa(s['peak_mpa'])} MPa", f"big c{i}"))
-            g.append(text(px, y0 + 45, f"{_thousands(s['tets'])} tets · {s['size_mm']:g} mm at the corner", "sm w"))
-            g.append(text(px, y0 + 60, _flags(s["peak"]), "sm w"))
+            dx, dy = to(pk[0], pk[2])
             cv = s["converge"]
             ok = bool(cv["converged"])
             word = "converged" if ok else "not converged"
-            g.append(f'<rect x="{u(px)}" y="{u(y0 + 68)}" width="{u(side)}" height="{u(19)}" rx="{u(4)}" '
-                     f'class="{"ok" if ok else "no"}"/>')
-            g.append(text(px + 6, y0 + 81.5, f"converge(): {cv['change']:+.1%}, {word}", "v w"))
-            g.append(text(px + side / 2, y0 + 84, word, "v n", "middle", f' style="font-size:{19 * U}px"'))
-            g.append("</g>")
+            g = [f'<g class="s{k}"{per_step(k)}><g clip-path="url(#cp{i})">',
+                 f'<path class="fc" d="{fill}"/>' if fill else "",
+                 f'<path class="me" d="{mesh.d()}"/><path class="ol" d="{ol.d()}"/>',
+                 f'<circle cx="{S.num(dx, 0)}" cy="{S.num(dy, 0)}" r="{u(4.5)}" class="c{i}" '
+                 f'style="stroke:var(--bg);stroke-width:{1.5 * U}px"/></g>',
+                 # under the panel: the peak, the mesh and its flags, and converge()'s verdict
+                 text(px, below + 30, f"{_mpa(s['peak_mpa'])} MPa", f"big c{i}"),
+                 text(px, below + 47, f"{_thousands(s['tets'])} tets", "sm w"),
+                 *(text(px, below + 62 + 15 * j, line, "sm w") for j, line in enumerate(_flags(s["peak"]))),
+                 text(px, below + 92, f"a {cv['factor']:g}× finer mesh: {cv['change']:+.1%}", "sm w"),
+                 f'<rect x="{u(px)}" y="{u(below + 100)}" width="{u(side)}" height="{u(21)}" rx="{u(4)}" '
+                 f'class="{"ok" if ok else "no"}"/>',
+                 text(px + 7, below + 114.5, f"converge(): {word}", "v w"),
+                 text(px + side / 2, below + 117, word, "v n", "middle", f' style="font-size:{18 * U}px"'),
+                 "</g>"]
             body.append("".join(g))
-            groups.append((f".s{k}", k))
 
     # ---- the chart: the design peak against the element size at the corner (log scale, finer to the right)
-    x0, x1, y0, y1 = 404.0, 700.0, 82.0, 300.0
+    x0, x1, y0, y1 = 470.0, 704.0, 86.0, 300.0
     lo, hi = math.log2(sizes[0]), math.log2(sizes[-1])
-    X = lambda size: x0 + 8 + (x1 - x0 - 16) * (math.log2(size) - lo) / (hi - lo)
+    X = lambda size: x0 + 12 + (x1 - x0 - 24) * (math.log2(size) - lo) / (hi - lo)
     vals = [s["peak_mpa"] for c in corners for s in c["steps"] + c["uniform"]]
     top = 250 * math.ceil(max(vals) * 1.1 / 250)
     Y = lambda v: y1 - (y1 - y0) * v / top
+    band_w = 28.0
+    body.append(f'<rect class="band" x="{u(X(sizes[0]) - band_w / 2)}" y="{u(y0 - 4)}" width="{u(band_w)}" '
+                f'height="{u(y1 - y0 + 8)}" rx="{u(5)}" style="fill:var(--soft);opacity:.6"/>')
     for v in range(0, int(top) + 1, 250):
         body.append(f'<path class="gr" d="M{u(x0)} {u(Y(v))}H{u(x1)}"/>')
         body.append(text(x0 - 6, Y(v) + 3.5, f"{v:,}", "ax w", "end"))
@@ -413,92 +409,64 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
         body.append(text(X(size), y1 + 16, f"{size:g}", "ax w", "middle"))
     body.append(text((x0 + x1) / 2, y1 + 32, present["x_axis"], "ax w", "middle"))
     ym = (y0 + y1) / 2
-    body.append(text(x0 - 40, ym, present["y_axis"], "ax w", "middle",
-                     f' transform="rotate(-90 {u(x0 - 40)} {u(ym)})"'))
-    # Williams' rate through the sharp corner's second-finest step, fixed: what a singular corner does
+    body.append(text(426, ym, present["y_axis"], "ax w", "middle", f' transform="rotate(-90 {u(426)} {u(ym)})"'))
+    # Williams' rate, fixed, through the sharp corner's finest step: what a singular corner does
     w = scene["williams"]
-    sharp = corners[0]["steps"]
-    ref = sharp[-2]
+    ref = corners[0]["steps"][-1]
     span = [sizes[1] * 2 ** (-j / 4) for j in range(4 * (n - 2) + 1)]
-    pts = [(X(s_), Y(ref["peak_mpa"] * (s_ / ref["size_mm"]) ** (w["lambda"] - 1))) for s_ in span]
     wl = S.PathBuilder()
-    wl.polyline([(a * U, b * U) for a, b in pts])
+    wl.polyline([(X(s_) * U, Y(ref["peak_mpa"] * (s_ / ref["size_mm"]) ** (w["lambda"] - 1)) * U) for s_ in span])
     body.append(f'<path class="wl w" d="{wl.d()}"/>')
-    # each corner's line and dots appear step by step, and stay to the end of the loop
+    # each corner's line and dots appear step by step and stay to the end of the loop; the whole part meshed at a
+    # size (no refine=) shows as an open square with the step of that size
     for i, c in enumerate(corners):
         steps = c["steps"]
-        for k, s in enumerate(steps):
-            cx, cy = X(s["size_mm"]), Y(s["peak_mpa"])
-            if k:
-                px_, py_ = X(steps[k - 1]["size_mm"]), Y(steps[k - 1]["peak_mpa"])
-                body.append(f'<path class="ln{i} p{k}" d="M{u(px_)} {u(py_)}L{u(cx)} {u(cy)}"/>')
-            body.append(f'<circle class="p{k}" cx="{u(cx)}" cy="{u(cy)}" r="{u(4.5)}" '
-                        f'style="fill:var(--bg);stroke:var(--{colour[i]});stroke-width:{2 * U}px"/>')
-        # the whole part meshed at a size (no refine=), at the step with that size: an open square
         for s in c["uniform"]:
             k = sizes.index(s["size_mm"]) if s["size_mm"] in sizes else n - 1
             cx, cy = X(s["size_mm"]), Y(s["peak_mpa"])
-            body.append(f'<rect class="p{k} w" x="{u(cx - 6)}" y="{u(cy - 6)}" width="{u(12)}" height="{u(12)}" '
+            body.append(f'<rect class="p{k}" x="{u(cx - 6)}" y="{u(cy - 6)}" width="{u(12)}" height="{u(12)}" '
                         f'style="fill:none;stroke:var(--{colour[i]});stroke-width:{1.4 * U}px"/>')
+        for k, s in enumerate(steps):
+            cx, cy = X(s["size_mm"]), Y(s["peak_mpa"])
+            if k:
+                bx, by = X(steps[k - 1]["size_mm"]), Y(steps[k - 1]["peak_mpa"])
+                body.append(f'<path class="ln{i} p{k}" d="M{u(bx)} {u(by)}L{u(cx)} {u(cy)}"/>')
+            body.append(f'<circle class="p{k}" cx="{u(cx)}" cy="{u(cy)}" r="{u(4.5)}" '
+                        f'style="fill:var(--bg);stroke:var(--{colour[i]});stroke-width:{2 * U}px"/>')
         last = steps[-1]
-        dy = -10 if i == 0 else 20
-        body.append(text(X(last["size_mm"]) - 4, Y(last["peak_mpa"]) + dy, f"{_mpa(last['peak_mpa'])}",
-                         f"sm c{i} p{n - 1}", "end", f' style="font-weight:700"'))
-    # the current step: a band behind the chart's column
-    band_w = 26.0
-    css.append(f".band{{transform:translateX({u(X(sizes[-1]) - X(sizes[0]))}px)}}")
-    frames = []
-    for k in range(n):
-        dxk = u(X(sizes[k]) - X(sizes[0]))
-        frames += [(t_on[k], dxk), (min(t_on[k] + ph.step - 0.5, ph.out) if k < n - 1 else ph.out, dxk)]
-    frames = [(0, frames[0][1])] + frames[1:] + [(ph.out + f, u(0)), (P, u(0))]
-    tl.add(".band", frames, lambda d: f"transform:translateX({d}px)", "ease-in-out")
-    band = (f'<rect class="band" x="{u(X(sizes[0]) - band_w / 2)}" y="{u(y0 - 4)}" width="{u(band_w)}" '
-            f'height="{u(y1 - y0 + 8)}" rx="{u(5)}" style="fill:var(--soft);opacity:.55"/>')
-    # draw the band under the chart's lines: before the first gridline
-    first_grid = next(j for j, b in enumerate(body) if b.startswith('<path class="gr"'))
-    body.insert(first_grid, band)
-
-    # ---- the legend, over the chart
-    ly = 64.0
-    lx = x0 - 34
-    legend = [(f'<path class="ln0" d="M0 0h{u(16)}"/>', corners[0]["name"]),
-              (f'<path class="ln1" d="M0 0h{u(16)}"/>', corners[1]["name"]),
-              (f'<rect x="{u(3)}" y="{u(-5)}" width="{u(10)}" height="{u(10)}" '
+        body.append(text(X(last["size_mm"]) - 9, Y(last["peak_mpa"]) + (-9 if i == 0 else 19), _mpa(last["peak_mpa"]),
+                         f"sm c{i} p{n - 1}", "end", ' style="font-weight:700"'))
+    # the legend, under the chart
+    ly, lx = y1 + 52, 420.0
+    legend = [(lx, ly, f'<path class="ln0" d="M0 0h{u(16)}"/>', corners[0]["name"]),
+              (lx + 140, ly, f'<path class="ln1" d="M0 0h{u(16)}"/>', corners[1]["name"]),
+              (lx, ly + 16, f'<rect x="{u(3)}" y="{u(-5)}" width="{u(10)}" height="{u(10)}" '
                f'style="fill:none;stroke:var(--muted);stroke-width:{1.4 * U}px"/>', present["uniform_legend"]),
-              (f'<path class="wl" d="M0 0h{u(16)}"/>', present["williams_legend"])]
-    for mark, words in legend:
-        body.append(f'<g class="w" transform="translate({u(lx)} {u(ly)})">{mark}'
-                    f'{text(21, 4, words, "sm")}</g>')
-        lx += 30 + 5.6 * len(words)
+              (lx, ly + 32, f'<path class="wl" d="M0 0h{u(16)}"/>',
+               present["williams_legend"].format(exponent=f"{w['lambda'] - 1:.2f}".replace("-", "−")))]
+    for gx, gy, mark, words in legend:
+        body.append(f'<g class="w" transform="translate({u(gx)} {u(gy)})">{mark}{text(22, 4, words, "sm")}</g>')
 
-    # ---- per step, under the chart: what refine= saved against meshing the whole part that fine
-    for k in range(n):
-        size = sizes[k]
-        words = []
-        for i, c in enumerate(corners):
-            uni = next((s for s in c["uniform"] if s["size_mm"] == size), None)
-            if k == 0:
-                uni = None
-            if uni is not None:
-                words.append(f"{c['name']}: {_thousands(c['steps'][k]['tets'])} tets refined, "
-                             f"{_thousands(uni['tets'])} meshed whole")
-        line = (present["step_line"].format(step=k + 1, steps=n, size=f"{size:g}")
-                + ("; " + "; ".join(words) if words else ""))
-        hidden = "" if k == n - 1 else ' opacity="0"'
-        body.append(f'<g class="s{k} w"{hidden}>{text(x0 - 34, y1 + 52, line, "sm")}</g>')
-
-    # ---- the end state's claims, from the scene
+    # ---- under everything, per step: what this step is and what it cost, against meshing the whole part that fine
+    for k, size in enumerate(sizes):
+        tets = present["tets_pair"].format(*(_thousands(c["steps"][k]["tets"]) for c in corners))
+        key = "step_first" if k == 0 else "step_line"
+        line = present[key].format(step=k + 1, steps=n, size=f"{size:g}", tets=tets)
+        whole = [next((u_ for u_ in c["uniform"] if u_["size_mm"] == size), None) for c in corners]
+        if k and all(whole):
+            line += present["step_cost"].format(size=f"{size:g}", whole=present["tets_pair"].format(
+                *(_thousands(u_["tets"]) for u_ in whole)))
+        body.append(f'<g class="s{k} w"{per_step(k)}>{text(20, 418, line, "sm")}</g>')
+    # the end state's claims, from the scene
     sm = summary(scene)
     a, b = sm[corners[0]["name"]], sm[corners[1]["name"]]
-    claims = [(present["sharp_claim"].format(per_halving=f"{a['per_halving']:.2f}", rate=f"{w['per_halving']:.2f}"), 0),
-              (present["fillet_claim"].format(spread=f"{100 * b['spread']:.1f}", steps=n), 1)]
-    for j, (words, i) in enumerate(claims):
-        body.append(f'<g class="p{n - 1} w">{text(x0 - 34, y1 + 70 + 16 * j, words, f"sm c{i}", extra="")}</g>')
-
+    claims = [present["sharp_claim"].format(per_halving=f"{a['per_halving']:.2f}", rate=f"{w['per_halving']:.2f}"),
+              present["fillet_claim"].format(spread=f"{100 * b['spread']:.1f}", steps=n)]
+    for j, words in enumerate(claims):
+        body.append(f'<g class="p{n - 1} w">{text(20, 438 + 16 * j, words, f"sm c{j}")}</g>')
     # ---- the caption: what this is, and what it is not
     for j, line in enumerate(present["caption"]):
-        body.append(text(20, H - 30 + 15 * j, _fill(line, scene), "sm w"))
+        body.append(text(20, H - 27 + 15 * j, _fill(line, scene), "sm w"))
 
     # ---- the timeline
     for k in range(n):
@@ -513,20 +481,27 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
         tl.opacity(f".s{k}", pts)
         if k:                                          # the chart's step-k marks: from their step to the loop's end
             tl.opacity(f".p{k}", [(0, 0), (on, 0), (on + f, 1), (ph.out, 1), (ph.out + f, 0), (P, 0)])
-    label = _fill(present["label"], scene)
-    return S.document(W, H, label, _fill(present["description"], scene), "".join(css) + tl.stylesheet(), body,
-                      S.Theme(light, dark))
+    shift = lambda k: u(X(sizes[k]) - X(sizes[0]))
+    frames = [(0, shift(0))]
+    for k in range(1, n):
+        frames += [(t_on[k] - 0.45, shift(k - 1)), (t_on[k], shift(k))]
+    frames += [(ph.out, shift(n - 1)), (ph.out + f, shift(0)), (P, shift(0))]
+    css.append(f".band{{transform:translateX({shift(n - 1)}px)}}")
+    tl.add(".band", frames, lambda d: f"transform:translateX({d}px)", "ease-in-out")
+    return S.document(W, H, _fill(present["label"], scene), _fill(present["description"], scene),
+                      "".join(css) + tl.stylesheet(), body, S.Theme(light, dark))
 
 
-def _flags(peak: Mapping[str, Any]) -> str:
-    """The peak's resolution flags in words: elements across the wall, and elements against the fillet's radius."""
-    parts = []
+def _flags(peak: Mapping[str, Any]) -> List[str]:
+    """The peak's resolution flags in words, a line each: elements across the wall, and the elements against the
+    fillet's radius (or, at a sharp corner, that the peak is singular)."""
+    out = []
     if peak.get("elements_across") is not None:
-        parts.append(f"{peak['elements_across']:g} across the {peak['wall_mm']:g} mm wall "
-                     + ("✓" if peak["wall_resolved"] else "✗"))
+        out.append(f"wall {peak['wall_mm']:.3g} mm: {peak['elements_across']:g} elements across "
+                   + ("✓" if peak["wall_resolved"] else "✗"))
     if peak.get("radius_mm") is not None:
-        parts.append(f"{peak['element_mm']:.2g} mm on the R{peak['radius_mm']:g} "
-                     + ("✓" if peak["radius_resolved"] else "✗"))
+        out.append(f"R{peak['radius_mm']:g}: elements {peak['element_mm']:.2g} mm "
+                   + ("✓" if peak["radius_resolved"] else "✗"))
     elif "sharp inside corner" in (peak.get("where") or ""):
-        parts.append("singular")
-    return " · ".join(parts)
+        out.append("sharp corner: singular ✗")
+    return out

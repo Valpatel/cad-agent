@@ -353,7 +353,7 @@ flowchart TD
     S["trials<br/>screening evaluator"] --> R["leaderboard<br/>ranked"]
     R --> T["the top N feasible<br/>not yet confirmed"]
     T -->|"evaluator + args<br/>(--mesh 3)"| C["confirm.jsonl"]
-    C -->|"confirmed values rank;<br/>a change over 5 % is flagged"| R
+    C -->|"re-rank;<br/>flag > 5 %"| R
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

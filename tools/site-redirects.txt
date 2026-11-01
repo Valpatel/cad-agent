@@ -1,0 +1,15 @@
+# Permanent site redirects for pages that moved: one "old.md new.md" per line, paths from the repo root.
+# The site serves each (and its Markdown twin) as a 301. These outlive the GitHub stubs at the old paths, which go
+# at v0.6.0; the build fails if a target is not a published page or a stub is missing here.
+lessons/01-verify-from-source.md lessons/process/verify-from-source.md
+lessons/02-user-intent-and-requirements.md lessons/process/user-intent-and-requirements.md
+lessons/03-mechanical-design-rules.md lessons/mechanical/design-rules.md
+lessons/04-fasteners-and-assembly-access.md lessons/mechanical/fasteners-and-assembly-access.md
+lessons/05-cables-connectors-and-routing.md lessons/wiring/cables-connectors-and-routing.md
+lessons/06-enclosure-features.md lessons/mechanical/enclosure-features.md
+lessons/07-verification-and-evidence.md lessons/review/verification-and-evidence.md
+lessons/08-review-site-ux.md lessons/review/review-site-ux.md
+lessons/09-agent-process.md lessons/process/agent-process.md
+lessons/10-simulation-and-material.md lessons/simulation/simulation-and-material.md
+lessons/11-pcb-evidence-and-review.md lessons/electronics/pcb-evidence-and-review.md
+lessons/12-original-file-viewer.md lessons/review/original-file-viewer.md

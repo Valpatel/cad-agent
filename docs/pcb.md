@@ -2,6 +2,24 @@
 
 cad-agent supports electronics and mechanical evidence in the same local project site. KiCad remains the electrical source of truth; cad-agent consumes its native reports and displays the files. The same embedded review groups work for a PCB, printed housing, robot assembly or any combination.
 
+```mermaid
+flowchart TD
+    K["KiCad project<br/>source of truth"] --> E["ERC + DRC<br/>all severities"]
+    K --> J["JLC BOM + CPL"]
+    K --> S["board STEP"]
+    E --> M["evidence manifest"] --> C["pcb-check<br/>exit 0 only if all pass"]
+    J --> JC["check_jlc_files"]
+    S --> En["enclosure<br/>checks"]
+    C --> R["review site, via review.json<br/>and the design cards"]
+    JC & En -.-> R
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class E,M,C,JC,En here
+    class K,J,S near
+    class R out
+```
+
 ## Embedded review pattern
 
 Set `cad.site.review: exports/review.json` in `cad-agent.yaml`:
@@ -43,7 +61,7 @@ Design cards can reference `pcb_evidence: exports/pcb-evidence.json`; they show 
 
 Import the native PCB STEP in the documented coordinate frame, and also check the nominal PCB outline and holes. Include connector mating envelopes, screws, captive nuts, cable paths and tool access. A board-only collision proxy misses components. Use measured/manufacturer dimensions when available and flag generic geometry. For ribbon relief, model hard stops, actual jacket thickness, compliant pads and a physical pull-test target; a cable hole alone is not strain relief.
 
-Generic lessons from the first PCB and enclosure project that used this workflow are in [lessons/11-pcb-evidence-and-review.md](../lessons/11-pcb-evidence-and-review.md). Board-specific incident notes stay in that product's repository.
+Generic lessons from the first PCB and enclosure project that used this workflow are in [lessons/electronics/pcb-evidence-and-review.md](../lessons/electronics/pcb-evidence-and-review.md). Board-specific incident notes stay in that product's repository.
 
 ### Enclosure fasteners
 

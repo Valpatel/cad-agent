@@ -20,6 +20,8 @@ and allowables derived from data sheets. It is not a measurement: printed snaps 
 hook with the arm's tip, as a real hook turns; the closed form, like the guide, does not. Turned, the hook's lowest
 point sits about ``sin(tip slope) x hook depth`` further out, so the drawn edge reaches the top of the lead after that
 much less travel (1.95 mm, against the calculator's 2.25 mm here). The drawing and the charts meet at the same moments.
+The turned face is steeper too, so the closed form under-states the push near the top of the lead: the scene records
+the turn (:func:`turned_lead`) and the guide's push on the turned face (:func:`turned_push`), and the docs state both.
 """
 from __future__ import annotations
 
@@ -120,17 +122,21 @@ def record(spec: Mapping[str, Any], root: Path, spec_path: Optional[Path] = None
     geo = arm(spec)
     draw = dict(spec["drawing"])
     section = sf.rect_section(geo["width_mm"], geo["thickness_mm"])
+    sh = shape(geo["design"], int(draw["slices"]))
     snaps = []
+    turn = None
     for entry in spec["snaps"]:
         r = sf.check_spec_entry(dict(entry))
         m = r["material"]
         curve = sf.engagement(length=geo["length_mm"], section=section, undercut=geo["undercut_mm"],
                               lead_deg=geo["lead_deg"], design=geo["design"], secant_mpa=m["secant_mpa"],
                               friction=m.get("friction"), land_mm=float(draw["land_mm"]))
+        turn = turned_lead(geo, sh, curve["peak"]["deflection_mm"])
         snaps.append({"name": r["name"], "pass": r["pass"], "strain": r["strain"], "deflection_mm": r["deflection_mm"],
                       "deflection_force_n": r.get("deflection_force_n"), "mating_force_n": r.get("mating_force_n"),
                       "warnings": r["warnings"], "rows": r["rows"], "material": m, "engagement": curve,
-                      "over_from_mm": sf.travel_at_strain(curve, m["allowable"])})
+                      "over_from_mm": sf.travel_at_strain(curve, m["allowable"]),
+                      "turned_mating_force_n": turned_push(curve, turn["lead_face_deg"])})
     inputs = {rel: _sha256(root / rel) for rel in CODE}
     if spec_path is not None:
         try:
@@ -146,10 +152,32 @@ def record(spec: Mapping[str, Any], root: Path, spec_path: Optional[Path] = None
         "recorded": time.strftime("%Y-%m-%d", time.gmtime()),
         "method": sf.GUIDE,
         "arm": geo, "drawing": draw,
-        "shape": shape(geo["design"], int(draw["slices"])),
+        "shape": sh,
+        "turn": turn,
         "snaps": snaps,
         "record_seconds": round(time.perf_counter() - t0, 2),
     })
+
+
+def turned_lead(geo: Mapping[str, Any], sh: Mapping[str, Any], y: float) -> Dict[str, float]:
+    """How far the hook has turned with the arm's tip at tip deflection ``y`` (degrees), and so the angle of the lead
+    face the mating edge rides then: the lead angle plus that turn. The closed form, like the guide, keeps the lead at
+    its as-made angle; the figure draws the turn, and records what it does to the push (:func:`turned_push`)."""
+    tip = math.degrees(math.atan(y * sh["slope"][-1] / geo["length_mm"]))
+    return {"tip_deg": tip, "lead_face_deg": geo["lead_deg"] + tip}
+
+
+def turned_push(curve: Mapping[str, Any], face_deg: float) -> Optional[float]:
+    """The guide's push to mate at the top of the lead, W = P (mu + tan a) / (1 - mu tan a), with the turned face's
+    angle ``face_deg`` instead of the as-made lead: a check on how much the closed form under-states the peak push.
+    None without a friction or a deflection force, or when the turned face would self-lock."""
+    from cadagent.mechanical.compliant import snapfit as sf
+
+    p, mu = curve["peak"]["deflection_force_n"], curve["friction"]
+    if p is None or mu is None:
+        return None
+    w = sf.mating_force(p, mu, face_deg)
+    return None if math.isinf(w) else w
 
 
 def write_scene(scene: Mapping[str, Any], path: Path) -> None:

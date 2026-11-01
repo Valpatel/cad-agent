@@ -5,13 +5,13 @@
   "repo": "https://github.com/Valpatel/cad-agent",
   "name": "cad-agent",
   "licence": "MIT",
-  "commit": "f08aba3c9452fc4398f5d8d49725c4b78b62fc94",
+  "commit": "4219d7ba41e0b1a600311696c1e010f803e874fd",
   "version": "0.8.0",
   "inputs": {
    "src/cadagent/formulas/beams.py": "97c6b497853746bc2d1231bd658b31bf4927fe76bbadc9ea7c8f7b7717ede74f",
    "src/cadagent/mechanical/compliant/allowables.py": "be1783b9becefd2cdba0bc1cdc15571ee77db79ac18f8caf614160da20e8ea34",
-   "src/cadagent/mechanical/compliant/snapfit.py": "a562b79b6ff5612f77935fa83bd20b728b0209ec5a3aaaaadc1a80bee78cf20f",
-   "src/cadagent/publish/anim/snapfit.py": "b1850caf7263a7e40495b7e880eb7adb9ae975bc6f78c636bf357f23911b4546",
+   "src/cadagent/mechanical/compliant/snapfit.py": "0fb3235bc6e73f04b213c0e2a402915969c662fc712e7b32ffabe47cae56a5aa",
+   "src/cadagent/publish/anim/snapfit.py": "e2d89f93ba4053f0853a0115c8b7c76345fb4238df67dcb025c64f0d0ffa2f4f",
    "tools/anim/snap-engagement.yaml": "ae656c3ba6a52b1e1a140f2e8858f06871511fbe468cd75d3584ae7733c655ca"
   }
  },
@@ -97,6 +97,10 @@
    1.498843,
    1.5
   ]
+ },
+ "turn": {
+  "tip_deg": 7.40691213,
+  "lead_face_deg": 37.4069121
  },
  "snaps": [
   {
@@ -221,7 +225,8 @@
      "mating_force_n": 10.0682839
     }
    },
-   "over_from_mm": null
+   "over_from_mm": null,
+   "turned_mating_force_n": 13.7162954
   },
   {
    "name": "petg-cf-latch",
@@ -346,8 +351,9 @@
      "mating_force_n": null
     }
    },
-   "over_from_mm": 1.62528281
+   "over_from_mm": 1.62528281,
+   "turned_mating_force_n": null
   }
  ],
- "record_seconds": 0.01
+ "record_seconds": 0.0
 }

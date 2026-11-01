@@ -276,6 +276,26 @@ def test_the_drawn_edge_stays_on_the_drawn_hook(scene):
     assert all(b < x for x, b in zip(xs, xs[1:]))                       # the edge only moves in
 
 
+def test_the_hooks_turn_and_its_push_are_recorded_and_stated(scene):
+    """The closed form keeps the lead at 30°; the drawn hook turns with the tip, atan(y * 1.5 / L) for a uniform arm.
+    The scene records the turn and the guide's push on the turned face, and docs/compliant.md states both: the
+    closed form under-states the push near the top of the lead."""
+    a, copa, petg_cf = scene["arm"], *scene["snaps"]
+    tip = math.degrees(math.atan(a["undercut_mm"] * 1.5 / a["length_mm"]))
+    assert scene["shape"]["slope"][-1] == pytest.approx(1.5)
+    assert scene["turn"] == pytest.approx({"tip_deg": tip, "lead_face_deg": a["lead_deg"] + tip})
+    p, mu, t = copa["engagement"]["peak"]["deflection_force_n"], copa["engagement"]["friction"], \
+        math.tan(math.radians(a["lead_deg"] + tip))
+    assert copa["turned_mating_force_n"] == pytest.approx(p * (mu + t) / (1 - mu * t))
+    assert copa["turned_mating_force_n"] > copa["mating_force_n"]
+    assert petg_cf["turned_mating_force_n"] is None                     # no friction, no push
+    page = " ".join((ROOT / "docs" / "compliant.md").read_text(encoding="utf-8").split())
+    assert f"rides a face turned {tip:.1f}°: at {a['lead_deg'] + tip:.1f}°, not {a['lead_deg']:g}°" in page
+    assert (f"gives CoPA a push of {copa['turned_mating_force_n']:.1f} N, not {copa['mating_force_n']:.1f} N"
+            in page)
+    assert "the closed form under-states the push" in page
+
+
 # ---------------------------------------------------------------------------------------------- refusals
 
 def test_the_figure_draws_one_arm(spec):

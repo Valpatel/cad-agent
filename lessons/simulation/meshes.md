@@ -2,19 +2,17 @@
 
 ```mermaid
 flowchart TD
-    S["a stress peak<br/>from one mesh"] --> W{"3 or more elements<br/>across its wall?"}
+    S["a stress peak<br/>from one mesh"] --> W{"3+ elements across<br/>the wall, each under<br/>the fillet's radius?"}
     W -->|"no"| R["refine there,<br/>solve again"]
     W -->|"yes"| C{"a sharp<br/>inside corner?"}
     C -->|"yes"| F["model the fillet:<br/>it never converges"]
-    C -->|"no"| E{"elements under the<br/>fillet or hole radius?"}
-    E -->|"no"| Q["refine to elements<br/>under the radius"]
-    E -->|"yes"| V{"refined in steps,<br/>does it settle?"}
+    C -->|"no"| V{"refined in steps,<br/>does it settle?"}
     V -->|"yes"| G["a result, with<br/>its mesher named"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class W,C,E,V here
-    class S,R,F,Q near
+    class W,C,V here
+    class S,R,F near
     class G out
 ```
 

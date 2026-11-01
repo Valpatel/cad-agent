@@ -15,6 +15,8 @@ colour and named in the legend, never by colour alone.
 from __future__ import annotations
 
 import json
+import math
+import textwrap
 from pathlib import Path
 from typing import Dict, Optional, Sequence
 
@@ -357,39 +359,294 @@ def animate_sweep(r: CFDResult, path, normal='x', seconds=6, fps=30, size=(1280,
 
 
 # --- charts ------------------------------------------------------------------------------------------------------
+# Chart colours: the site palette for paper, ink and chrome; series in a fixed categorical order (adjacent pairs
+# checked for colour-vision deficiency on this paper), never cycled: past seven, lines are muted and named directly.
+# The accent is kept for a run that stopped early.
+PAPER, INK, PANEL, MUTED, WINDOW, ACCENT = '#fffdf5', '#173d3c', '#eef1e4', '#6f8a80', '#ffe1cc', '#bd3a12'
+SERIES = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6']
+
+
+def _change(key, v) -> str:
+    return 'n/a' if v is None else (f'{v:+.1f} %' if key.endswith('_pct') else f'{v:+.2f} °C').replace('-', '−')
+
+
+def _judged(key, v, limits) -> str:
+    """A convergence change and, when the results carry it, the limit ``steady`` holds it to."""
+    lim = (limits or {}).get(key)
+    return _change(key, v) + ('' if lim is None else f' (limit ±{lim:g} {"%" if key.endswith("_pct") else "°C"})')
+
+
+_CONV_WORDS = (('_max_c_change', ' hottest'), ('_T_change_c', ' air in the block'), ('_flow_change_pct', ' flow'),
+               ('_intake_c_change', ' air through the fan'), ('heat_out_change_pct', 'heat leaving'))
+
+
+def _conv_name(key: str) -> str:
+    for end, words in _CONV_WORDS:
+        if key.endswith(end):
+            return key[:-len(end)] + words
+    return key
+
+
+def _say(ax, title, text):
+    """A panel with nothing to plot says why, instead of drawing an empty frame."""
+    ax.set_axis_off()
+    ax.set_title(title, loc='left', fontsize=10.5, color=INK)
+    ax.text(0.5, 0.5, textwrap.fill(text, 60), ha='center', va='center', fontsize=9.5, color=INK, transform=ax.transAxes,
+            bbox=dict(boxstyle='round,pad=0.9', fc=PANEL, ec='none'))
+
+
+def _wrap_items(text, width):
+    """Lines of at most ``width`` characters, broken between the ' · '-separated items (inside one only if it is longer)."""
+    lines = []
+    for item in text.split(' · '):
+        if lines and len(lines[-1]) + 3 + len(item) <= width:
+            lines[-1] += ' · ' + item
+        else:
+            lines += textwrap.wrap(item, width) or ['']
+    return '\n'.join(lines)
+
+
+def _style(ax, title, caption, ylabel, xlabel='iteration'):
+    ax.set_facecolor(PAPER)
+    if caption:                                   # a half-width panel's caption wraps within its column
+        ss = ax.get_subplotspec()
+        caption = _wrap_items(caption, 170 if ss and len(ss.colspan) == ss.get_gridspec().ncols else 84)
+    ax.set_title(title, loc='left', fontsize=10.5, color=INK, pad=6 + 10.5 * (1 + caption.count('\n')) if caption else 6)
+    if caption:
+        ax.text(0, 1.015, caption, transform=ax.transAxes, fontsize=8.5, color=MUTED, va='bottom')
+    ax.set_xlabel(xlabel, fontsize=9, color=INK)
+    ax.set_ylabel(ylabel, fontsize=9, color=INK)
+    ax.grid(color=PANEL, lw=0.8)
+    ax.set_axisbelow(True)
+    ax.margins(x=0.01)
+    ax.tick_params(colors=MUTED, labelcolor=INK, labelsize=8.5)
+    for s in ('top', 'right'):
+        ax.spines[s].set_visible(False)
+    for s in ('left', 'bottom'):
+        ax.spines[s].set_color(MUTED)
+
+
+def _marks(ax, restarts, window, stopped_at):
+    """Shared x-axis furniture: the convergence window shaded, restarts as thin lines, a stop in the accent colour."""
+    if window:
+        ax.axvspan(window[0], window[1], color=WINDOW, lw=0, zorder=0)
+    for r in restarts:
+        ax.axvline(r, color=MUTED, lw=0.7, alpha=0.55, zorder=1)
+    if stopped_at is not None:
+        ax.axvline(stopped_at, color=ACCENT, lw=1.3, zorder=3)
+
+
+def _spread(ys, gap, lo, hi):
+    """Label positions at least ``gap`` apart, each run of crowded labels centred on its lines, inside [lo, hi]."""
+    groups = [[y] for y in ys]                    # ys sorted; a group's labels sit evenly around its mean
+    merged = True
+    while merged:
+        merged, out = False, []
+        for g in groups:
+            if out and (np.mean(g) - (len(g) - 1) * gap / 2) - (np.mean(out[-1]) + (len(out[-1]) - 1) * gap / 2) < gap:
+                out[-1] = out[-1] + g
+                merged = True
+            else:
+                out.append(g)
+        groups = out
+    pos = [float(np.mean(g)) + (k - (len(g) - 1) / 2) * gap for g in groups for k in range(len(g))]
+    shift = max(0.0, lo + gap / 2 - pos[0]) - max(0.0, pos[-1] - (hi - gap / 2))
+    return [p + shift for p in pos]
+
+
+def _end_labels(ax, ends, log=False, gap=0.075):
+    """Name each line just outside the plot's right edge: ink text on a short leader in the line's colour, spread so
+    no two overlap."""
+    if not ends:
+        return
+    f, g = (np.log10, lambda y: 10 ** y) if log else ((lambda y: y), (lambda y: y))
+    lo, hi = (f(v) for v in ax.get_ylim())
+    ends = sorted(ends, key=lambda e: f(e[1]))
+    ys = _spread([f(e[1]) for e in ends], (hi - lo) * gap, lo, hi)
+    for (x, y, text, col), yl in zip(ends, ys):
+        ax.annotate(text, (x, y), xytext=(1.02, g(yl)), textcoords=('axes fraction', 'data'), va='center', fontsize=8.5,
+                    color=INK, annotation_clip=False,
+                    arrowprops=dict(arrowstyle='-', color=col, lw=1.1, shrinkA=0, shrinkB=1))
+
+
 def convergence_chart(results: dict, path, title='Solver convergence'):
-    """Initial residuals and the hottest temperature of each solid against iteration: one chart each (no dual axis)."""
+    """The convergence of a cadagent.cfd run (the dict read_results returns), over the whole run: the air's initial
+    residuals, then one panel per quantity the convergence claim rests on (the hottest temperature of each solid
+    region, air temperatures in the fan and fin zones, fan flow, the heat leaving against the heat put in), each on
+    its own axis. Restarts are marked, the window ``convergence`` measured is shaded and each panel states that
+    window's change and the limit ``steady`` holds it to; a run that stopped early is marked and said so. A panel with
+    nothing to plot says why, and a case with no solid regions has no solids panel. Results read before whole-run
+    histories were kept are drawn as they are, with the iterations they cover stated. Residuals settling does not show
+    the answer is right."""
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
-    series = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300']
-    fig, axs = plt.subplots(1, 2, figsize=(12, 4.2), dpi=120)
-    res = results.get('residuals') or {}
-    it = res.get('iteration', [])
-    for (k, v), col in zip([(k, v) for k, v in res.items() if k != 'iteration'], series):
-        y = [np.nan if x is None else x for x in v]
-        axs[0].semilogy(it, y, color=col, lw=1.6, label=k)
-    axs[0].set_title('Initial residuals (air)', loc='left', fontsize=11)
-    axs[0].set_xlabel('iteration')
-    axs[0].legend(frameon=False, fontsize=9, ncol=3)
-    hist = results.get('T_max_history') or {}
-    for (k, v), col in zip(hist.items(), series):
-        a = np.array(v)
-        axs[1].plot(a[:, 0], a[:, 1], color=col, lw=2, label=k)
-        axs[1].annotate(f'{k} {a[-1, 1]:.1f} °C', (a[-1, 0], a[-1, 1]), xytext=(4, 0), textcoords='offset points', fontsize=9, color='#26323a')
-    axs[1].set_title('Hottest temperature in each solid (°C)', loc='left', fontsize=11)
-    axs[1].set_xlabel('iteration')
-    if hist:
-        axs[1].legend(frameon=False, fontsize=9)
-    for ax in axs:
-        ax.grid(alpha=0.25, lw=0.6)
-        for s in ('top', 'right'):
-            ax.spines[s].set_visible(False)
-    fig.suptitle(title, x=0.01, ha='left', fontsize=13)
-    fig.tight_layout()
-    fig.savefig(path)
+    fig = _convergence_figure(results, title)
+    fig.savefig(path, facecolor=PAPER)
     plt.close(fig)
     return path
+
+
+def _convergence_figure(results: dict, title: str):
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    res = results.get('residuals') or {}
+    its = [float(x) for x in res.get('iteration') or []]
+    fields = [k for k in res if k != 'iteration']
+    whole = 'restarts' in results                 # whole-run histories (older results kept the newest solve only)
+    restarts = results.get('restarts') or []
+    window = results.get('convergence_window')
+    conv = results.get('convergence') or {}
+    limits = results.get('convergence_limits')
+    last = results.get('iterations') or (int(its[-1]) if its else None)
+    planned = results.get('planned_iterations')
+    stopped = results.get('solver_finished') is False and last is not None
+    stopped_at = last if stopped else None
+    solids = list(results.get('solids') or {})
+    hist = results.get('T_max_history') or {}
+    monitors = results.get('monitors')
+
+    entities = solids + list(dict.fromkeys(m.get('name', k) for k, m in (monitors or {}).items()))
+    colour = {e: SERIES[i] if i < len(SERIES) else MUTED for i, e in enumerate(entities)}
+
+    def deltas(pairs):
+        got = [f'{name} {_judged(key, conv[key], limits)}' for name, key in pairs if key in conv]
+        return 'Change over the shaded window: ' + ' · '.join(got) if got and window else ''
+
+    def since(points):                            # older results may start part-way through the run
+        first = points[0][0] if len(points) else None
+        if whole or first is None or first <= 10:
+            return ''
+        return f' ({first:g}–{points[-1][0]:g} only: earlier iterations are not in these results)'
+
+    panels = []                                   # (draw(ax), full width)
+
+    def residual_panel(ax):
+        t = 'Initial residuals of the air solution'
+        if not its or not fields:
+            return _say(ax, t, 'No residual output found (postProcessing/<air region>/residuals): the solver may not have started.')
+        every = results.get('residuals_every', 1)
+        cap = 'Log scale. Air region only: solid regions\' energy residuals are not recorded.'
+        if every > 1:
+            cap += f' Each point is the largest residual over {every} iterations.'
+        _style(ax, t, cap, 'initial residual (no unit)', 'iteration' + since([[its[0]], [its[-1]]]))
+        _marks(ax, restarts, window, stopped_at)
+        ends = []
+        for i, k in enumerate(fields):
+            y = np.array([np.nan if v is None else v for v in res[k]], float)
+            col = SERIES[i] if i < len(SERIES) else MUTED
+            ax.semilogy(its, y, color=col, lw=1.3, label=k, zorder=2)
+            ok = np.flatnonzero(np.isfinite(y) & (y > 0))
+            if len(ok):
+                ends.append((its[ok[-1]], y[ok[-1]], k, col))
+        ax.legend(loc='upper right', ncol=min(len(fields), 7), fontsize=8.5, labelcolor=INK, handlelength=1.4,
+                  columnspacing=1.0, facecolor=PAPER, edgecolor='none', framealpha=0.9)
+        if stopped:
+            ax.text(stopped_at, ax.get_ylim()[0], 'stopped ', color=ACCENT, fontsize=8.5, va='bottom', ha='right')
+        _end_labels(ax, ends, log=True, gap=0.055)
+    panels.append((residual_panel, True))
+
+    if solids:
+        def solid_panel(ax):
+            t = 'Hottest temperature in each solid region'
+            have = {k: np.array(v, float) for k, v in hist.items() if len(v)}
+            if not have:
+                return _say(ax, t, f'No temperature history for the solid regions ({", ".join(solids)}): no T_max output was found.')
+            _style(ax, t, deltas([(k, f'{k}_max_c_change') for k in have]), 'temperature (°C)',
+                   'iteration' + since(next(iter(have.values()))))
+            _marks(ax, restarts, window, stopped_at)
+            for k, a in have.items():
+                ax.plot(a[:, 0], a[:, 1], color=colour.get(k, MUTED), lw=1.6, label=k, zorder=2)
+            if len(have) > 1:
+                ax.legend(frameon=False, fontsize=8.5, labelcolor=INK, loc='best')
+            _end_labels(ax, [(a[-1, 0], a[-1, 1], f'{k} {a[-1, 1]:.1f} °C', colour.get(k, MUTED)) for k, a in have.items()])
+        panels.append((solid_panel, False))
+
+    if monitors is None:                          # results read before monitored histories were kept
+        def old_monitor_panel(ax):
+            got = [f'{_conv_name(k)} {_judged(k, v, limits)}' for k, v in conv.items()]
+            _say(ax, 'Monitored values', 'Their histories are not in these results. ' +
+                 ('Change over the newest solve\'s iterations from 80 % of the last one on (convergence): ' + '; '.join(got)
+                  if got else
+                  'No monitored values are recorded either.'))
+        panels.append((old_monitor_panel, False))
+    elif not monitors:
+        panels.append((lambda ax: _say(ax, 'Monitored values', 'No fan-zone, fin-zone or heat-flux output was found.'), False))
+    else:
+        groups = {}
+        for k, m in monitors.items():
+            groups.setdefault((m['quantity'], m['unit']), []).append(m)
+        for (quantity, unit), ms in groups.items():
+            def monitor_panel(ax, quantity=quantity, unit=unit, ms=ms):
+                cap = deltas([(m.get('name', m['label']), m['change']) for m in ms])
+                q_in = results.get('heat_input_w')
+                heat = unit == 'W'
+                if heat and results.get('energy_balance_pct') is not None:
+                    cap += (' · ' if cap else '') + f'energy balance {_change("_pct", results["energy_balance_pct"])} (limit ±5 %)'
+                elif heat and q_in is None:
+                    cap += (' · ' if cap else '') + 'heat put in unknown (an exchanger block has no target power): balance not checked'
+                _style(ax, quantity, cap, f'{ {"°C": "temperature", "m³/h": "flow", "W": "heat"}.get(unit, quantity.lower())} ({unit})')
+                _marks(ax, restarts, window, stopped_at)
+                if heat and q_in is not None:
+                    band = 0.05 * q_in if q_in else 0.5
+                    ax.axhspan(q_in - band, q_in + band, color=MUTED, alpha=0.14, lw=0, zorder=1,
+                               label=f'within {"5 %" if q_in else "0.5 W"} of the heat put in')
+                    ax.axhline(q_in, color=INK, lw=1, zorder=1, label=f'heat put in, {q_in:g} W')
+                ends = []
+                for m in ms:
+                    a = np.array(m['points'], float)
+                    name = m.get('name', m['label'])
+                    ax.plot(a[:, 0], a[:, 1], color=colour.get(name, MUTED), lw=1.6, label=m['label'], zorder=2)
+                    ends.append((a[-1, 0], a[-1, 1], f'{name} {a[-1, 1]:.1f} {unit}', colour.get(name, MUTED)))
+                if len(ms) > 1 or heat:
+                    ax.legend(frameon=False, fontsize=8.5, labelcolor=INK, loc='best')
+                _end_labels(ax, ends)
+            panels.append((monitor_panel, False))
+
+    # layout: the residuals across the top, then two panels a row (the last one wide when the count is odd)
+    small = [p for p in panels if not p[1]]
+    rows = 1 + math.ceil(len(small) / 2)
+    head = [(title, 14, INK)]
+    if whole:
+        span = f'Iterations 1–{last}' if last else 'No iterations'
+        if restarts:
+            n = {}                                # two continuations can start from the same saved time
+            for r in restarts:
+                n[r] = n.get(r, 0) + 1
+            at = [f'{r} ({k}×)' if k > 1 else str(r) for r, k in n.items()]
+            shown = ', '.join(at[:8]) + (', …' if len(at) > 8 else '')
+            span += f' in {len(restarts) + 1} solves (thin lines: continuations from {shown})'
+        if window:
+            span += f'. Shaded: the window the convergence check measured, iterations {window[0]}–{window[1]}'
+        head.append((span + '.', 9.5, INK))
+    elif its:
+        head.append((f'These results hold iterations {its[0]:g}–{its[-1]:g} only, from the newest solve: read the case again '
+                     'with cadagent.cfd.read_results for the whole run.', 9.5, INK))
+    if stopped:
+        of = f' of {planned} planned' if planned and planned > last else ''
+        head.append((f'Stopped early at iteration {last}{of}: the newest solve did not finish ({results.get("solver_log", "its log")} '
+                     'has no End). The last values are not a converged answer.', 9.5, ACCENT))
+    lines = [(textwrap.fill(t, 150 if s < 12 else 90), s, c) for t, s, c in head]
+    head_in = 0.25 + sum(0.23 * (1 + t.count('\n')) * s / 9.5 for t, s, c in lines)
+    foot = ('Settled residuals and monitored values show the solver stopped changing, not that the answer is right: check a '
+            'finer mesh, the energy balance and the case\'s stated limits.')
+    body_in = 3.4 + 2.7 * (rows - 1)
+    fig = plt.figure(figsize=(12, head_in + body_in + 0.4), dpi=120, facecolor=PAPER, layout='constrained')
+    top, body, bottom = fig.subfigures(3, 1, height_ratios=[head_in, body_in, 0.4])
+    for sf in (top, body, bottom):
+        sf.set_facecolor(PAPER)
+    y = 0.12
+    for t, s, c in lines:
+        top.text(0.008, 1 - y / head_in, t, fontsize=s, color=c, ha='left', va='top')
+        y += 0.23 * (1 + t.count('\n')) * s / 9.5 + (0.06 if s > 12 else 0)
+    bottom.text(0.008, 0.5, foot, fontsize=8.5, color=MUTED, ha='left', va='center')
+    gs = body.add_gridspec(rows, 2, height_ratios=[3.4] + [2.7] * (rows - 1))
+    panels[0][0](body.add_subplot(gs[0, :]))
+    for i, (draw, _) in enumerate(small):
+        r, c = 1 + i // 2, i % 2
+        draw(body.add_subplot(gs[r, :] if (i == len(small) - 1 and len(small) % 2) else gs[r, c]))
+    return fig
 
 
 # --- structural results (cadagent.fea.Study) -------------------------------------------------------------------

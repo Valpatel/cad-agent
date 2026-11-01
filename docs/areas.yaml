@@ -46,6 +46,12 @@ domains:
     maturity: tooling
     lessons: mechanical
     areas:
+      - slug: cad-modelling
+        title: CAD modelling and kernels
+        scope: Code-CAD kernels and libraries, parametric modelling, and CAD-program bridges for agents (MCP servers).
+        maturity: tooling
+        pages: [docs/toolkit.md, research/landscape.md]
+        api: [cadagent.geometry]
       - slug: mechanisms
         title: Mechanisms
         scope: Joints, linkages, motor mounts and the motion between parts.
@@ -132,6 +138,7 @@ domains:
         title: Mould design
         scope: Parts designed for moulding, and the moulds themselves.
         maturity: idea
+        pages: [research/process-profiles.md]
         issues: [99]
         topics:
           - {slug: moulded-part-design, title: Moulded-part design, scope: "Walls, draft, ribs, bosses, gates and sink.", maturity: idea, issues: [99]}
@@ -141,6 +148,7 @@ domains:
     title: Manufacturing
     scope: Turning a design into a part, process by process.
     maturity: tooling
+    pages: [research/process-profiles.md]
     issues: [99]
     areas:
       - slug: 3d-printing
@@ -228,7 +236,7 @@ domains:
         maturity: tooling
         priority: [demo]
         api: [cadagent.cfd]
-        issues: [47, 50]
+        issues: [47]
         projects: [j501-enclosure]
       - slug: motion-and-dynamics
         title: Motion and dynamics
@@ -258,7 +266,7 @@ domains:
         maturity: tooling
         priority: [demo]
         api: [cadagent.simviz, cadagent.simreport, cadagent.render]
-        issues: [50, 136]
+        issues: [136]
       - slug: physical-tests
         title: Physical tests and coupons
         scope: Printed coupons, drop tests and bench measurements that settle a prediction.

@@ -66,10 +66,20 @@ my-cad-project/
    `{part: {cad_valid, solid_count, watertight, print_bounds_mm, ...}}`.
    `cadagent.geometry` does the generic part:
    ```python
-   from cadagent.geometry import export_print_stl, solid_report, pairwise_intersections
+   from cadagent.geometry import export_print_stl, export_step, solid_report, pairwise_intersections
    report = {n: export_print_stl(s, OUT / f"{n}.stl", rotation=PRINT_ROTATION.get(n))
              for n, s in print_parts().items()}          # raises on a non-watertight STL
+   for n, s in print_parts().items():
+       export_step(s, OUT / f"{n}.step")                 # the same bytes for the same model
    ```
+   Write STEP with `export_step`, not `cadquery.exporters.export`: OCCT stamps the write time into the header,
+   names the product `Open CASCADE STEP translator <version> <n>` by export order and numbers assembly links
+   across the process, so every rebuild would change every STEP file and stale every check bound to its sha256.
+   `export_step` writes the same geometry with a fixed header date (`SOURCE_DATE_EPOCH` when set, the
+   [reproducible-builds](https://reproducible-builds.org/specs/source-date-epoch/) convention, else
+   2000-01-01T00:00:00), the product named after the file (or `name=`), and links numbered from 1 within the file.
+   Another OCCT version can still write different bytes for the same geometry, and a cadquery `Assembly` is not
+   covered (it is refused; `Assembly.save` is not reproducible yet, #150).
 3. **Each check is a script** in `tools/` that writes `exports/<name>.json` with
    a top-level boolean `"pass"`. A check that cannot compute its answer writes
    `"pass": false` with the reason; it never omits the file or the key.
@@ -226,7 +236,7 @@ skip the work silently.
 
 ```python
 from cadagent.project import load_project    # CadProject, Step, Check, CadConfigError
-from cadagent.geometry import (solid_report, export_print_stl, pairwise_intersections,
+from cadagent.geometry import (solid_report, export_print_stl, export_step, step_timestamp, pairwise_intersections,
                                min_gap, downward_area, within_bed)
 from cadagent.mesh3mf import write_3mf, read_3mf, verify_3mf, export_parts_3mf, is_edge_manifold
 from cadagent.render import Renderer
@@ -345,11 +355,13 @@ deflection and stiffness change with it.
 At a given travel it is different. `stiffness_n_per_mm` is lower than with the in-plane modulus. So a force worked out
 from it at a given travel (a clip's retention, a flexure's preload, a spring rate) reads lower than for a solid part
 bent in the layer plane, and so does the stress at that travel, which scales with E (a cantilever pushed to a tip
-travel δ has σ = 3Ecδ/L²). That stress is low by E_Z / E_XY for a part loaded in the layer plane, which makes a strength
-check at a given travel unconservative: check a flexure's or a clip's strength at its travel with the in-plane modulus,
-or with a coupon, not with this one. (The snap-fit tool, `cad-agent snapfit`, uses strain allowables and its own
-moduli by direction, so it does not depend on this E.) A print with sparse infill or thin walls is softer than either,
-and then the force at a given travel reads high: a retention check needs a measured part.
+travel δ has σ = 3Ecδ/L²). For a part loaded in the layer plane that stress is E_Z / E_XY of what the in-plane modulus
+gives: multiply by E_XY / E_Z (1.84 for PETG-CF, 1.25 for PLA) to get the in-plane figure, which is itself an estimate
+for an isotropic solid. So a strength check at a given travel is unconservative with this modulus: check a flexure's
+or a clip's strength at its travel with the in-plane modulus, or with a coupon. (The snap-fit tool, `cad-agent
+snapfit`, uses strain allowables and its own moduli by direction, so it does not depend on this E.) A print with sparse
+infill or thin walls is softer than either, and then the force at a given travel reads high: a retention check
+needs a measured part.
 
 A part whose bending stays in the layer plane is stiffer. Give it the X-Y modulus, keep the weak-direction strength,
 and say so in the note, so the assumptions line stays true:
@@ -454,11 +466,18 @@ Docker (OpenFOAM runs in the official `opencfd/openfoam-default` image) and Bamb
 - `refine(lo, hi, level)`.
 `write()` produces a complete OpenFOAM case (snappyHexMesh, splitMeshRegions, chtMultiRegionSimpleFoam, function
 objects); `run()` runs it natively or in Docker; `results()` returns temperatures, fan flow and pressure, the air
-temperature through each fan, residual and temperature histories, the heat leaving with the air against the heat put
-in (`energy_balance_pct`), the cells each fan and fin zone caught, and the limits. `converged` needs the temperatures,
-fan flow and heat leaving to have stopped changing *and* the energy balance within 5 %. Exchanger fin blocks are set
-to their power by `calibrate_fins()` (secant steps on the fin temperature, only once the heat leaving has settled;
-`calibrated` says whether it got there).
+temperature through each fan, the heat leaving with the air against the heat put in (`energy_balance_pct`), the cells
+each fan and fin zone caught, and the limits. Its histories cover the whole run, joined across continuations
+(`restarts`, one entry per continuation; a second solve from the same saved time writes `<kind>_<time>.dat` and is read
+too, and one that crashed at start and logged nothing is left out): residuals, each solid's hottest temperature and
+`monitors` (fin-block and fan air temperatures, fan flow, heat leaving), each with its unit. `converged` needs the
+temperatures, fan flow and heat leaving to have stopped changing *and* the energy balance within 5 %. The change is
+measured over `convergence_window`: the iterations from 80 % of the last one onward, cut to the newest solve (after a
+continuation shorter than a fifth of the run, that is the whole newest solve). `steady` holds each change to its entry
+in `convergence_limits`: under 1 °C for each solid's hottest temperature and the air through each fan, under 2 % for the
+fan flow and the heat leaving, and under 2 °C for a fin block's air (its key, `<block>_T_change_c`, does not end in
+`_c_change`, the suffix that gets 1 °C). Exchanger fin blocks are set to their power by `calibrate_fins()` (secant steps
+on the fin temperature, only once the heat leaving has settled; `calibrated` says whether it got there).
 
 Two choices matter for honest numbers, and both are covered by tests:
 - **The open boundary is hydrostatic** (`p_rgh` uniform): still room air stays still. A uniform *static* pressure
@@ -483,8 +502,11 @@ or vents in the CAD and check that with FEA.
 ### Pictures and animations (`cadagent.simviz`)
 `CFDResult(case)` loads a finished case in mm and °C. `section()`, `flow()` (streamlines), `walls()` (wall temperature
 with the region past a limit in the critical colour, named in the legend), `animate_flow()` (dashes moving at the
-air's speed while the camera turns), `animate_sweep()` (a section sweeping through) and `convergence_chart()`. Colour
-follows the job: one-hue ramps for temperature (orange) and speed (blue), never a rainbow.
+air's speed while the camera turns), `animate_sweep()` (a section sweeping through) and `convergence_chart()` (the
+whole run: the air's residuals, then one panel per monitored quantity with its unit, restarts marked, the window
+`convergence` measured shaded and its change stated, a run that stopped early said so; no solids panel without solid
+regions, and a panel with no data says why). Colour follows the job: one-hue ramps for temperature (orange) and speed
+(blue), never a rainbow.
 
 ### Real grams (`cadagent.slicer`, `cad-agent slice`)
 Slices each part's 3MF with Bambu Studio's command line (an external AGPL program, run as a subprocess). The system

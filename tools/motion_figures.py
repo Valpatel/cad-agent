@@ -7,7 +7,9 @@
 Nothing is keyframed by eye. Each figure draws one fixture or worked example from this repo:
 
 * where the real code runs without CadQuery, the figure runs it:
-  - the assembly-sequence core (``run_sequence``) on the subassembly fixture;
+  - the assembly-sequence core (``run_sequence``) on the subassembly fixture, and its insertion sweep
+    (``sweep_pair``) on the box world of the assembly gate's tests;
+  - the motion-trace validator (``validate_motion_trace``) on its tests' analytic shaft and renderer;
   - the connector windows and margins (``cadagent.mechanical.connectors``);
   - the worked example's seeded search (``run_search``);
 * where the real check needs the kernel, a 2D model of the same fixture stands in:
@@ -676,43 +678,52 @@ SUB_STEPS = [{"order": 1, "fit": "base", "direction": "-Z"},
 SUB_SERVICE = {"electronics": ["bumper", "retainer"]}
 
 
-def subassembly_numbers() -> dict:
-    from cadagent.review.gates.assembly import AccessOptions, SequenceWorld, run_sequence
-    from cadagent.review.gates.fasteners import FastenerSpec
+def box_world(boxes: dict):
+    """A ``SequenceWorld`` of axis-aligned boxes (x0, y0, z0, x1, y1, z1) whose relations are exact, as
+    tests/test_gate_assembly.py's ``BoxWorld``. ``queries`` records each exact query: (key, shift, other, relation)."""
+    from cadagent.review.gates.assembly import SequenceWorld
     from cadagent.review.gates.relations import Relation, Tolerances
 
     class Boxes(SequenceWorld):
-        """Exact relations of boxes (as tests/test_gate_assembly.py's BoxWorld), recording the exact queries."""
-
-        def __init__(self, boxes, tol=Tolerances()):
+        def __init__(self, tol=Tolerances()):
             self.boxes, self.tol, self.names, self.queries = dict(boxes), tol, list(boxes), []
 
         def box(self, key):
             return self.boxes[key]
 
         def relate_at(self, key, shift, other):
-            self.queries.append((key, other))
             a = [c + shift[i % 3] for i, c in enumerate(self.boxes[key])]
             b = self.boxes[other]
             span = [min(a[i + 3], b[i + 3]) - max(a[i], b[i]) for i in range(3)]
             if all(x > 0 for x in span) and math.prod(span) > self.tol.overlap_mm3:
-                return Relation(key, other, "overlapping", gap_mm=0.0, overlap_mm3=math.prod(span))
-            g = math.sqrt(sum(max(0.0, -x) ** 2 for x in span))
-            return Relation(key, other, "touching" if g <= self.tol.touch_mm else "apart", gap_mm=g,
-                            witness={"point_a": [0, 0, 0], "point_b": [0, 0, 0]})
+                lo = [max(a[i], b[i]) for i in range(3)]
+                rel = Relation(key, other, "overlapping", gap_mm=0.0, overlap_mm3=math.prod(span),
+                               witness={"overlap_centroid": [lo[i] + span[i] / 2 for i in range(3)]})
+            else:
+                g = math.sqrt(sum(max(0.0, -x) ** 2 for x in span))
+                rel = Relation(key, other, "touching" if g <= self.tol.touch_mm else "apart", gap_mm=g,
+                               witness={"point_a": [0, 0, 0], "point_b": [0, 0, 0]})
+            self.queries.append((key, tuple(shift), other, rel))
+            return rel
 
         def tool(self, spec, i, tool_name, decl, present, step, later=()):
             return {"tool": tool_name, "step": step["order"], "present": list(present), "blocked": [], "clear": True}
+    return Boxes()
+
+
+def subassembly_numbers() -> dict:
+    from cadagent.review.gates.assembly import AccessOptions, run_sequence
+    from cadagent.review.gates.fasteners import FastenerSpec
 
     specs = {k: FastenerSpec(k, f["clamps"], f["into"], axes=f["axes"], tool="hex", head_h_mm=.2)
              for k, f in SUB_FASTENERS.items()}
-    world = Boxes(SUB_BOXES)
+    world = box_world(SUB_BOXES)
     res = run_sequence(world, [dict(s) for s in SUB_STEPS], specs, subassemblies=json.loads(json.dumps(SUB_MODULE)),
                        tools={"hex": {"envelope_d": .2, "length": 10}}, service_after=SUB_SERVICE)
     checks = {c.id: c for c in res["checks"]}
     inner = res["subassemblies"]["electronics"]
     inner_step_2 = next(c for c in inner["checks"] if c["id"] == "step:2:insert")["message"]
-    return {"result": res, "queries": world.queries, "margin_mm": AccessOptions().margin_mm,
+    return {"result": res, "queries": [(q[0], q[2]) for q in world.queries], "margin_mm": AccessOptions().margin_mm,
             "failed": [i for i, c in checks.items() if c.status == "fail"],
             "qualified": checks["subassembly:electronics:qualified"].status, "bench_step_2": inner_step_2,
             "steps": res["steps"], "service": res["service_after"]["electronics"]}
@@ -1106,9 +1117,560 @@ def cable_svg() -> str:
     return svg(680, oy + int(round((v1 - v0) * k)) + 66, label, body, an)
 
 
+# ----------------------------------------------------------------------------- 7. motion trace: captures against the CAD
+
+# tests/test_motion_trace.py, contract(): the analytic shaft. The yaw joint turns the housing about Z through
+# (10, 20, 30); the spin joint rides on it and turns the rotor about X through (40, 20, 30); the base stands still.
+# MT_OFFSET is its 'offset-pivot' defect: the renderer spins the rotor about a pivot 48 mm off the shaft, in +Y.
+MT_CONTRACT = {"schema_version": 1, "length_unit": "mm", "frame": "assembly-home",
+               "reference": "synthetic analytic shaft: yaw datum (10,20,30), rotor datum (40,20,30)",
+               "joints": {"yaw": {"parent": None, "pivot": [10, 20, 30], "axis": [0, 0, 1], "range_deg": [-90, 90]},
+                          "spin": {"parent": "yaw", "pivot": [40, 20, 30], "axis": [1, 0, 0], "range_deg": [0, 360]}},
+               "components": {
+                   "rotor": {"joint": "spin", "points": [[40, 20, 30], [41, 20, 30], [40, 22, 30], [40, 20, 33]]},
+                   "housing": {"joint": "yaw", "points": [[35, 20, 30], [35, 25, 30], [35, 20, 35], [45, 20, 30]]},
+                   "base": {"joint": None, "points": [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]]}}}
+MT_OFFSET = 48.0
+
+
+def mt_render(angles: dict, offset: float = 0.0) -> dict:
+    """The test's independent renderer (``observation()``): the points it draws for each component at ``angles``.
+    It spins the rotor about the shaft, moved ``offset`` mm in +Y (its 'offset-pivot' defect at 48), then turns
+    the rotor and housing about the yaw axis. It reads no matrix from the validator."""
+    (yx, yy, _), (_, sy, sz) = MT_CONTRACT["joints"]["yaw"]["pivot"], MT_CONTRACT["joints"]["spin"]["pivot"]
+    out = {}
+    for name, comp in MT_CONTRACT["components"].items():
+        pts = []
+        for x, y, z in comp["points"]:
+            if name == "rotor":
+                a, py = math.radians(angles["spin"]), sy + offset
+                y, z = py + (y - py) * math.cos(a) - (z - sz) * math.sin(a), sz + (y - py) * math.sin(a) + (z - sz) * math.cos(a)
+            if comp["joint"] is not None:
+                a, cx, cy = math.radians(angles["yaw"]), x - yx, y - yy
+                x, y = yx + cx * math.cos(a) - cy * math.sin(a), yy + cx * math.sin(a) + cy * math.cos(a)
+            pts.append([x, y, z])
+        out[name] = pts
+    return out
+
+
+def motion_trace_numbers() -> dict:
+    """``validate_motion_trace`` on the required poses as two renderers capture them: as built (A) and with the
+    rotor's pivot 48 mm off (B); each sample alone too (its coverage fails, its landmark errors are the validator's),
+    and A without the nested pose. The reference points are the validator's own: each joint's matrix applied to the
+    home landmarks."""
+    from cadagent.mechanical import motion_trace as mt
+    c = json.loads(json.dumps(MT_CONTRACT))
+    poses = mt.required_poses(c)
+    joints, comps, order = mt._contract(c)
+
+    def reference(p):
+        mats = mt._matrices(joints, order, p)
+        return {n: mt._apply(mats[comp["joint"]], comp["points"]).tolist() for n, comp in comps.items()}
+
+    def trace(offset, keep=lambda p: True):
+        return {"schema_version": 1, "length_unit": "mm", "frame": "assembly-home",
+                "capture_source": "independent analytic test renderer",
+                "samples": [{"id": str(i), "angles_deg": p, "components": mt_render(p, offset)}
+                            for i, p in enumerate(poses) if keep(p)]}
+    out = {"poses": poses, "reference": [reference(p) for p in poses], "tolerance_mm": inspect.signature(
+        mt.validate_motion_trace).parameters["tolerance_mm"].default}
+    for key, offset in (("A", 0.0), ("B", MT_OFFSET)):
+        t = trace(offset)
+        out[key] = {"report": mt.validate_motion_trace(c, t), "points": [s["components"] for s in t["samples"]],
+                    "per_pose_mm": [max(r["max_error_mm"] for r in mt.validate_motion_trace(
+                        c, dict(t, samples=[s]))["components"].values()) for s in t["samples"]]}
+    nested = [i for i, p in enumerate(poses) if all(p.values())]
+    out["nested"] = nested
+    out["without_nested"] = mt.validate_motion_trace(c, trace(0.0, lambda p: not all(p.values())))
+    return out
+
+
+class Ortho:
+    """An orthographic view of the home frame (SVG x right, y down): looking down at ``el`` degrees from the +X side,
+    so the shaft (X) runs down the page, Y across it and Z up, ``k`` units per mm, (0, 0, 0) at (ox, oy)."""
+
+    def __init__(self, el: float, k: float, ox: float = 0.0, oy: float = 0.0):
+        self.s, self.c, self.k, self.ox, self.oy = math.sin(math.radians(el)), math.cos(math.radians(el)), k, ox, oy
+
+    def __call__(self, p):
+        return self.ox + self.k * p[1], self.oy + self.k * (self.s * p[0] - self.c * p[2])
+
+
+def motion_trace_svg() -> str:
+    h = motion_trace_numbers()
+    poses, n, tol = h["poses"], len(h["poses"]), h["tolerance_mm"]
+    bad = h["B"]["report"]["components"]["rotor"]
+    still, nest = int(bad["worst_sample"]), h["nested"][0]          # the still frame: renderer B's worst sample
+    yaw, spin = MT_CONTRACT["joints"]["yaw"], MT_CONTRACT["joints"]["spin"]
+    px, py, pz = yaw["pivot"]
+    turn = [p["yaw"] for p in poses]
+    an = Anim(15.0)
+    T = [0.75 + 1.2 * i for i in range(n)]                          # each pose is reached at T[i], after a move
+    end, move, k, el, top = 14.1, 0.3, 4.2, 64, 84                  # (whole percentages of the 15 s loop)
+    # the window: every landmark, drawn and expected, at every pose but B's nested one, which runs off the bottom
+    pts = [Ortho(el, k)(q) for i in range(n) for key in ("A", "B") for comp in h[key]["points"][i].values() for q in comp
+           if not (key == "B" and i == nest)]
+    x0, x1, y0, y1 = (f(p[j] for p in pts) for j in (0, 1) for f in (min, max))
+    v = Ortho(el, k, 340 - (x0 + x1) / 2, top + 14 - y0)
+    bottom = top + 14 + (y1 - y0) + 12
+    P = v((px, py, pz))
+
+    def timeline(selector, values, decl, timing="ease-in-out", rest=None):
+        """``selector`` takes ``values[i]`` at pose i, moving over the ``move`` before T[i]. Its own style, the still
+        frame, is ``rest`` if given, else its value at the still pose."""
+        if len(set(values)) == 1:
+            return
+        frames = [(0, values[0])]
+        for i, val in enumerate(values):
+            frames += [(max(T[i] - move, 0), values[i - 1] if i else val), (T[i], val)]
+        frames += [(end, values[-1]), (end + 0.6, values[0]), (an.period, values[0])]
+        # a keyframe between two with its own value changes nothing
+        frames = [f for j, f in enumerate(frames) if j in (0, len(frames) - 1) or not
+                  frames[j - 1][1] == f[1] == frames[j + 1][1]]
+        an.add(selector, frames, decl, timing)
+        if rest is not None or decl(values[still]) != decl(0 if not isinstance(values[0], tuple) else (0, 0)):
+            an.css.append(f"{selector}{{{decl(values[still] if rest is None else rest)}}}")
+    # the yaw, as a turn of everything it carries about its axis: drawn in the yaw's own frame (u across, w down the
+    # shaft, from the pivot, unforeshortened), foreshortened by sin(el) and set on the page at the pivot's height
+    timeline(".yw", [-t for t in turn], lambda d: f"transform:rotate({num(d)}deg)")
+
+    def frame(z):
+        return f'matrix(1 0 0 {num(v.s, 4)} {num(P[0])} {num(P[1] - v.c * k * (z - pz))})'
+
+    def uw(q):
+        return k * (q[1] - py), k * (q[0] - px)
+    layers = {"r": {}, "a": {}, "b": {}}
+
+    def mark(key, ident, where, carried, r):
+        """One landmark: ``where`` its point at each pose. A carried one is turned back by the pose's yaw into the
+        yaw's frame, where it moves only as the spin moves it; its height, which the yaw does not change, moves
+        outside the turn."""
+        if not carried:
+            x, y = v(where[still])
+            layers[key].setdefault(None, []).append(f'<circle cx="{num(x)}" cy="{num(y)}" r="{r}"/>')
+            return
+        q = [(*rotate(p[:2], -t, (px, py)), p[2]) for p, t in zip(where, turn)]
+        u0, w0 = uw(q[still])
+        moves = [(round(uw(p)[0] - u0, 1) + 0.0, round(uw(p)[1] - w0, 1) + 0.0) for p in q]
+        lift = [round(-v.c * k * (p[2] - q[still][2]), 1) + 0.0 for p in q]
+        own = f' id="{ident}"' if len(set(moves)) > 1 else ""
+        circle = f'<circle{own} cx="{num(u0)}" cy="{num(w0)}" r="{r}"/>'
+        timeline(f"#{ident}", moves, lambda d: f"transform:translate({num(d[0])}px,{num(d[1])}px)")
+        outer = f"z{ident}" if len(set(lift)) > 1 else None
+        timeline(f"#z{ident}", lift, lambda d: f"transform:translateY({num(d)}px)")
+        layers[key].setdefault((outer, frame(q[still][2])), []).append(circle)
+    for name, comp in MT_CONTRACT["components"].items():
+        for j in range(len(comp["points"])):
+            for key, src, r in (("r", h["reference"], 4.6), ("a", h["A"]["points"], 2.6), ("b", h["B"]["points"], 1.7)):
+                mark(key, f"{key}{name[0]}{j}", [s_[name][j] for s_ in src], comp["joint"] is not None, r)
+
+    def draw(groups):
+        out = []
+        for key, circles in groups.items():
+            if key is None:
+                out += circles
+                continue
+            outer, mat = key
+            g = f'<g transform="{mat}"><g class="yw">{"".join(circles)}</g></g>'
+            out.append(f'<g id="{outer}">{g}</g>' if outer else g)
+        return "".join(out)
+
+    body = [text(20, 28, "Motion trace: what a renderer draws, against the CAD, at every required pose", 15, INK,
+                 weight="700"),
+            text(20, 46, "the analytic shaft of tests/test_motion_trace.py through validate_motion_trace, with two "
+                         "renderers capturing the same poses", 11, MUTED),
+            ntext(20, 38, "Motion trace", 28, weight="700"),
+            f'<clipPath id="sc"><rect x="20" y="{top - 24}" width="640" height="{num(bottom - top + 24)}"/></clipPath>',
+            f'<rect x="20" y="{top - 24}" width="640" height="{num(bottom - top + 24)}" rx="8" fill="none" '
+            f'stroke="{LINE}"/>']
+    legend = [(f'<circle cx="0" cy="-4" r="4.6" fill="none" stroke="{GREEN}" stroke-width="1.4"/>',
+               "where the CAD puts a landmark"),
+              (f'<circle cx="0" cy="-4" r="2.6" fill="{INK}"/>', "where renderer A drew it"),
+              (f'<circle cx="0" cy="-4" r="1.7" fill="{ORANGE}"/>', f"renderer B: its spin pivot {fmt(MT_OFFSET, 0)} mm "
+                                                                     "off the shaft")]
+    lx = 34
+    for mk, s_ in legend:
+        body.append(f'<g class="w" transform="translate({num(lx)} {top - 4})">{mk}{text(9, 0, s_, 11, MUTED)}</g>')
+        lx += 22 + 5.9 * len(s_)
+    body.append('<g clip-path="url(#sc)">')
+    # the arc the housing's far end sweeps over the yaw's range, and the yaw axis
+    far = MT_CONTRACT["components"]["housing"]["points"][3]
+    R = k * math.dist(far[:2], (px, py))
+    body.append(f'<path d="M{num(P[0] - R)} {num(P[1])}A{num(R)} {num(R * v.s)} 0 0 0 {num(P[0] + R)} {num(P[1])}" '
+                f'fill="none" stroke="{LINE}" stroke-width="2"/>')
+    body.append(f'<path d="M{num(P[0] - 7)} {num(P[1])}h14M{num(P[0])} {num(P[1] - 7 - v.c * k * 8)}v{num(14 + v.c * k * 8)}" '
+                f'stroke="{MUTED}"/>')
+    body.append(text(P[0] + 9, P[1] - 6, "yaw axis", 10, MUTED))
+    # in the yaw's frame: the housing joined up through its landmarks at the pivot's height, on its arm, and the shaft
+    hp = [uw(q) for q in MT_CONTRACT["components"]["housing"]["points"] if q[2] == pz]
+    s0, s1 = uw((spin["pivot"][0] - 9, py)), uw((spin["pivot"][0] + 9, py))
+    body.append(f'<g transform="{frame(pz)}"><g class="yw" fill="none">'
+                f'<path d="M0 0L{num(hp[0][0])} {num(hp[0][1])}" stroke="{LINE}" stroke-width="3"/>'
+                f'<path d="{path(hp)}" fill="{PALE}" stroke="{GREEN}"/>'
+                f'<path d="M{num(s0[0])} {num(s0[1])}V{num(s1[1])}" stroke="{INK}" stroke-dasharray="7 2 1.5 2"/></g></g>')
+    # B's pivot, and the circle it puts the rotor on (across the shaft: seen from this angle, an ellipse)
+    bp = (spin["pivot"][0], spin["pivot"][1] + MT_OFFSET, spin["pivot"][2])
+    c = v(bp)
+    l0, l1 = v((bp[0] - 9, bp[1], bp[2])), v((bp[0] + 9, bp[1], bp[2]))
+    spins = [i for i, p in enumerate(poses) if p["spin"] and not p["yaw"]]
+    body.append(f'<g id="bp" opacity="0"><g fill="none" stroke="{ORANGE}"><ellipse cx="{num(c[0])}" cy="{num(c[1])}" '
+                f'rx="{num(MT_OFFSET * k)}" ry="{num(MT_OFFSET * k * v.c)}" stroke-dasharray="4 4"/>'
+                f'<path d="M{num(l0[0])} {num(l0[1])}V{num(l1[1])}" stroke-width="1.5" stroke-dasharray="7 2 1.5 2"/></g>'
+                + text(l0[0] + 6, l0[1] + 8, f"B's spin pivot, {fmt(MT_OFFSET, 0)} mm off the shaft", 10, ORANGE)
+                + ntext(l0[0] + 8, l0[1] + 16, "B's pivot", 24, ORANGE) + "</g>")
+    timeline("#bp", [1 if i in spins else 0 for i in range(n)], lambda o: f"opacity:{o}", "linear")
+    # names, while the yaw is home
+    hx, hy = v(MT_CONTRACT["components"]["housing"]["points"][1])
+    rx, ry = v(spin["pivot"])
+    body.append(f'<g id="nm">{text(hx + 9, hy + 4, "housing (on the yaw)", 10, MUTED)}'
+                f'{text(rx - 16, ry + 4, "rotor (spins on the housing)", 10, MUTED, "end")}</g>')
+    timeline("#nm", [0 if t else 1 for t in turn], lambda o: f"opacity:{o}", "linear")
+    bx, by = v(MT_CONTRACT["components"]["base"]["points"][0])
+    body.append(text(bx + 10, by + 4, "base", 10, MUTED))
+    body += [f'<g fill="none" stroke="{GREEN}" stroke-width="1.4">{draw(layers["r"])}</g>',
+             f'<g fill="{INK}">{draw(layers["a"])}</g>', f'<g fill="{ORANGE}">{draw(layers["b"])}</g>']
+    # B's rotor at the nested pose is off the bottom of the window
+    nb = v(h["B"]["points"][nest]["rotor"][0])
+    off = fmt(h["B"]["per_pose_mm"][nest], 1)
+    note = text(max(nb[0] - 12, 30), bottom - 8, f"↓ B draws the rotor {off} mm off, below this view", 11, ORANGE,
+                weight="700", halo=True)
+    body.append(f'<g id="nb" opacity="0">{note}</g>')
+    timeline("#nb", [1 if i == nest else 0 for i in range(n)], lambda o: f"opacity:{o}", "linear")
+    body.append("</g>")
+
+    # the required poses as a table, the current one lit, each renderer's worst landmark shown once it is reached
+    ty, cw, cx0 = bottom + 26, 52.0, 140.0
+    xs = [cx0 + cw * i + cw / 2 for i in range(n)]
+    rows = [("yaw, °", [fmt(p["yaw"], 0) for p in poses]), ("spin, °", [fmt(p["spin"], 0) for p in poses]),
+            ("A: worst, mm", [fmt(e, 1) for e in h["A"]["per_pose_mm"]]),
+            ("B: worst, mm", [fmt(e, 1) for e in h["B"]["per_pose_mm"]])]
+    body.append(f'<rect class="w cur" x="{num(cx0 + 1)}" y="{num(ty - 13)}" width="{num(cw - 2)}" height="83" rx="4" '
+                f'fill="{PEACH}"/>')
+    timeline(".cur", [cw * i for i in range(n)], lambda d: f"transform:translateX({num(d)}px)")
+    body.append(text(20, ty, f"the {n} required poses", 12, INK, weight="600"))
+    body.append(text(xs[nest], ty, "nested", 11, INK, "middle", "700"))
+    for j, (label, vals) in enumerate(rows):
+        y = ty + 18 + 16 * j
+        body.append(text(20, y, label, 11, ORANGE if j == 3 else MUTED))
+        cells = "".join(f'<tspan x="{num(xs[i])}"' + (f' fill="{ORANGE}" font-weight="700"' if j == 3 and
+                        h["B"]["per_pose_mm"][i] > tol else "") + f">{escape(s_)}</tspan>" for i, s_ in enumerate(vals))
+        body.append(f'<text y="{num(y)}" font-size="11" text-anchor="middle">{cells}</text>')
+    # the errors are covered until their pose is reached: a cover over the two rows, shrinking to the right. It steps
+    # as the highlight sets off for the next pose, so it never covers part of the highlight
+    right = cx0 + cw * n
+    an.css.append(f".cov{{transform-origin:{num(right)}px 0;transform-box:view-box}}")
+    timeline(".cov", [(n - 1 - i) / n for i in range(n)], lambda f: f"transform:scaleX({num(f, 3)})", "steps(1,start)",
+             rest=0)
+    body.append(f'<rect class="w cov" x="{num(cx0)}" y="{num(ty + 38)}" width="{num(cw * n)}" height="33" fill="{BG}"/>')
+    # the checks that fail, and the poses missing, as the reports give them
+    b_checks = ", ".join(sorted({f["check"] for f in h["B"]["report"]["failures"]}))
+    gap = h["without_nested"]["failures"]
+    missing = [f"yaw {fmt(p['yaw'], 0)}° with spin {fmt(p['spin'], 0)}°" for f in gap for p in f.get("missing_poses_deg", [])]
+    lines = [(INK, f"A: pass. At all {n} poses, every landmark is within {fmt(tol, 2)} mm of where the CAD puts it."),
+             (ORANGE, f"B: fail ({b_checks}). Its rotor is {fmt(bad['max_error_mm'], 1)} mm off at spin "
+                      f"{fmt(poses[still]['spin'], 0)}°: twice its pivot's {fmt(MT_OFFSET, 0)} mm offset."),
+             (MUTED, f"Without the nested pose, A fails too ({', '.join(sorted({f['check'] for f in gap}))}): "
+                     f"{' and '.join(missing)} {'is' if len(missing) == 1 else 'are'} missing.")]
+    vy = ty + 104
+    for i, (colour, s_) in enumerate(lines):
+        body.append(f'<g id="v{i}">{text(20, vy + 19 * i, s_, 12, colour, weight="600" if i < 2 else None)}</g>')
+        an.show(f"#v{i}", T[-1] + 0.45 + 0.3 * i, end)
+    for i, (s_, colour) in enumerate([(f"{n} poses, 1 nested", INK), ("A: pass", INK),
+                                      (f"B: fail, {fmt(bad['max_error_mm'], 0)} mm off", ORANGE)]):
+        body.append(ntext(20, ty + 16 + 36 * i, s_, 26, colour, weight="700" if i else None))
+    label = (f"The analytic shaft from the motion-trace tests at its {n} required poses: the yaw turns the housing, the "
+             "spin turns the rotor on it, and one nested pose has both turned. Rings mark where the CAD puts each "
+             "landmark. Renderer A's points sit in them at every pose, and it passes. Renderer B spins the rotor about "
+             f"a pivot {fmt(MT_OFFSET, 0)} mm off the shaft, so its rotor is up to {fmt(bad['max_error_mm'], 0)} mm "
+             "off, and it fails.")
+    return svg(680, int(vy + 19 * 2 + 20), label, body, an)
+
+
+# ----------------------------------------------------------------------------- 8. assembly: one insertion, swept
+
+# tests/test_gate_assembly.py: BOXES (a base, a block on it, a card standing against the block's side, a cover over
+# both), the card moved 3 mm off the block (the clearance test's ``near``), and the clearance test's diagonal
+# approach past a block, which it also runs with max_step_mm = 5. Boxes (x0, y0, z0, x1, y1, z1), mm.
+GATE_BOXES = {"base": (0, 0, 0, 100, 100, 5), "block": (10, 10, 5, 30, 30, 25), "card": (30, 10, 5, 32, 30, 20),
+              "cover": (0, 0, 25, 40, 40, 30)}
+GATE_NEAR_CARD = (33, 10, 5, 35, 30, 20)
+GATE_DIAGONAL = {"part": (0, 0, 0, 10, 10, 10), "block": (-30, 0, 5, -20, 10, 15)}
+GATE_DIAGONAL_DIRECTION, GATE_DIAGONAL_STEP_MM = (1, 0, -1), 5.0
+
+
+def sweep_watch(boxes: dict, key: str, direction, other: str, **options) -> dict:
+    """``sweep_pair`` on a box world, watched. A spy on its ``box_distance`` sees the swept box (the first call)
+    and each position it steps to on the line (``s``, from the part's shift); the world records its exact queries:
+    the seat first, then the positions within reach, then the bisection. Nothing in the gate is replaced."""
+    from unittest import mock
+    from cadagent.review.gates import assembly as ga
+    world, real, boxes_seen = box_world(boxes), ga.box_distance, []
+
+    def spy(a, b):
+        g = real(a, b)
+        boxes_seen.append((tuple(a), g))
+        return g
+    d = ga.direction_vector(direction)
+    back = tuple(-c for c in d)
+    with mock.patch.object(ga, "box_distance", spy):
+        res = ga.sweep_pair(world, key, d, other, options=ga.AccessOptions(**options))
+    pb = boxes[key]
+    exact = {tuple(round(c, 9) for c in q[1]): q[3] for q in world.queries}
+    visits = []
+    for box, g in boxes_seen[1:]:
+        shift = tuple(box[i] - pb[i] for i in range(3))
+        rel = exact.get(tuple(round(c, 9) for c in shift))
+        visits.append({"s": sum(a * b for a, b in zip(shift, back)), "box_gap": g, "exact": rel is not None,
+                       "gap": rel.gap_mm if rel is not None and not rel.interferes else (None if rel else g),
+                       "overlap_mm3": rel.overlap_mm3 if rel is not None and rel.interferes else None})
+    seat = world.queries[0][3] if world.queries and not any(world.queries[0][1]) else None
+    n_loop = sum(v["exact"] for v in visits)
+    bisect = [(sum(a * b for a, b in zip(q[1], back)), q[3].interferes) for q in world.queries[(seat is not None) + n_loop:]]
+    return {"result": res, "swept": boxes_seen[0][0], "swept_gap": boxes_seen[0][1], "visits": visits,
+            "seat_gap": seat.gap_mm if seat is not None else None, "bisect": bisect, "direction": d, "back": back,
+            "queries": len(world.queries)}
+
+
+def sweep_numbers() -> dict:
+    """The three pairs the figure draws, and what the gate reads from them. For the sampled pair, the bound between
+    each two neighbouring positions h apart, (g1 + g2 - h) / 2, whose least is the gate's ``gap_lower_bound_mm``;
+    and the exact gap all along the line, which the gate does not compute, to show the bound holds."""
+    from cadagent.review.gates.assembly import AccessOptions
+    from cadagent.review.gates.relations import Tolerances
+    near = sweep_watch(dict(GATE_BOXES, card=GATE_NEAR_CARD), "card", "-Z", "block")
+    blocked = sweep_watch(GATE_BOXES, "card", "-Z", "cover")
+    diag = sweep_watch(GATE_DIAGONAL, "part", GATE_DIAGONAL_DIRECTION, "block", max_step_mm=GATE_DIAGONAL_STEP_MM)
+    line = [(v["s"], v["gap"]) for v in diag["visits"]] + [(0.0, diag["seat_gap"])]
+    bounds = [(s1, s2, g1, g2, max(0.0, (g1 + g2 - (s1 - s2)) / 2)) for (s1, g1), (s2, g2) in zip(line, line[1:])]
+    world, travel = box_world(GATE_DIAGONAL), diag["visits"][0]["s"]
+
+    def gap(s):
+        return world.relate_at("part", tuple(s * c for c in diag["back"]), "block").gap_mm
+    # the gap between convex parts is convex in the shift, so a ternary search finds the closest approach
+    lo, hi = 0.0, travel
+    for _ in range(200):
+        a, b = lo + (hi - lo) / 3, hi - (hi - lo) / 3
+        lo, hi = (lo, b) if gap(a) < gap(b) else (a, hi)
+    closest = ((lo + hi) / 2, gap((lo + hi) / 2))
+    true = sorted([(s, gap(s)) for s in (travel * i / 24 for i in range(25))] + [closest], reverse=True)
+    return {"near": near, "blocked": blocked, "diagonal": diag, "line": line, "bounds": bounds, "true": true,
+            "closest": closest, "touch_mm": Tolerances().touch_mm, "options": AccessOptions()}
+
+
+def _closest(a, b):
+    """The closest points of two disjoint boxes, in X and Z (their Y spans overlap in every pair drawn here)."""
+    pa, pb = [], []
+    for i in (0, 2):
+        if a[i + 3] < b[i]:
+            pa.append(a[i + 3]), pb.append(b[i])
+        elif b[i + 3] < a[i]:
+            pa.append(a[i]), pb.append(b[i + 3])
+        else:
+            m = (max(a[i], b[i]) + min(a[i + 3], b[i + 3])) / 2
+            pa.append(m), pb.append(m)
+    return pa, pb
+
+
+def sweep_svg() -> str:
+    h = sweep_numbers()
+    near, blk, dg = h["near"], h["blocked"], h["diagonal"]
+    an = Anim(16.0)
+    end = 15.0
+    body = [text(20, 28, "Assembly gate: one part moved in along a straight line, against one other part", 15, INK,
+                 weight="700"),
+            text(20, 46, "sweep_pair on the box world of tests/test_gate_assembly.py, seen from the side. s: how far "
+                         "the part is from its seat", 11, MUTED),
+            ntext(20, 38, "Insertion sweep", 28, weight="700")]
+    solid = f'fill="{PALE}" stroke="{GREEN}"'
+
+    def moved(box, s, back):
+        return tuple(box[i] + s * back[i % 3] for i in range(6))
+
+    def rect(v, box, attrs):
+        (a, b), (c, d) = v(box[0], box[5]), v(box[3], box[2])
+        return f'<rect x="{num(a)}" y="{num(b)}" width="{num(c - a)}" height="{num(d - b)}" {attrs}/>'
+
+    def panel(ox, y, title, short, sub):
+        body.extend([text(ox, y, title, 13, INK, weight="600"), ntext(ox, y + 6, short, 26, weight="700"),
+                     text(ox, y + 16, sub, 11, MUTED)])
+
+    def lines(ident, ox, y, rows, t0):
+        body.append(f'<g id="{ident}">' + "".join(text(ox, y + 16 * i, s_, 12 if bold else 11, colour, weight="600" if bold
+                                                       else None) for i, (s_, colour, bold) in enumerate(rows)) + "</g>")
+        an.show(f"#{ident}", t0, end)
+
+    def steps(selector, offsets, times, decl):
+        """``selector`` moves to ``offsets[i]`` over the 0.3 s before ``times[i]``, holds the last, and returns."""
+        frames = [(0, offsets[0])]
+        for i, o in enumerate(offsets):
+            frames += [(times[i] - 0.3, offsets[max(i - 1, 0)]), (times[i], o)]
+        an.add(selector, frames + [(end, offsets[-1]), (end + 0.4, offsets[0]), (an.period, offsets[0])], decl)
+        an.css.append(f"{selector}{{{decl(offsets[-1])}}}")
+
+    # 1. the near card: the box it sweeps from its start to its seat stays 3 mm from the block's: no query
+    y = 72
+    v = View(5, 42.5, 3.0, 24, y + 24)
+    card, block = GATE_NEAR_CARD, GATE_BOXES["block"]
+    travel = near["result"]["travel_mm"]
+    start, sw = moved(card, travel, (0, 0, 1)), near["swept"]
+    panel(20, y, "1 · Far: the swept box is enough", "Far", "the card, 3 mm off the block, in along −Z")
+    an.css.append(f".sw{{transform-origin:0 {num(v(0, sw[5])[1])}px;transform-box:view-box}}")
+    an.add(".sw", [(0, 0), (0.4, 0), (1.6, 1), (end, 1), (end + 0.4, 0), (an.period, 0)],
+           lambda f: f"transform:scaleY({num(f, 3)})")
+    (tx, ty0), (_, ty1) = v(38, card[2]), v(38, start[2])
+    body += [rect(v, block, solid), text(*v(20, 13), "block", 11, MUTED, "middle"),
+             rect(v, sw, f'class="sw" fill="{PEACH}" stroke="{ORANGE}" stroke-dasharray="4 3"'),
+             rect(v, card, f'fill="{BG}" stroke="{INK}" stroke-width="1.5"'),
+             rect(v, start, f'fill="none" stroke="{INK}" stroke-dasharray="3 2"'),
+             f'<path d="M{num(tx)} {num(ty0)}V{num(ty1)}m-3 5l3 -5 3 5" fill="none" stroke="{MUTED}"/>',
+             text(tx + 5, ty1 + 6, "start", 10, MUTED), text(tx + 5, ty0, "seat", 10, MUTED),
+             text(tx + 5, (ty0 + ty1) / 2 + 4, f"travel {fmt(travel, 0)}", 10, MUTED)]
+    (gx0, gy), (gx1, _) = v(block[3], 9), v(sw[0], 9)
+    body.append(f'<g id="d1"><path d="M{num(gx0)} {num(gy)}H{num(gx1)}M{num(gx0)} {num(gy - 4)}v8M{num(gx1)} {num(gy - 4)}v8" '
+                f'stroke="{ORANGE}"/>{text(gx0 - 3, gy + 4, fmt(near["swept_gap"], 2), 10, ORANGE, "end", "700")}</g>')
+    an.show("#d1", 1.7, end)
+    lines("l1", 20, 240, [(f"it starts {fmt(h['options'].margin_mm, 0)} mm past the block: travel {fmt(travel, 0)} mm",
+                           MUTED, False),
+                    (f"its swept box stays {fmt(near['swept_gap'], 2)} mm from the block's", INK, False),
+                    (f"clear, ≥ {fmt(near['result']['gap_lower_bound_mm'], 2)} mm, with "
+                     f"{near['result']['samples']} queries", INK, True)], 1.9)
+    body.append(ntext(20, 252, f"clear, {near['result']['samples']} queries", 24))
+
+    # 2. the card into the cover fitted first: exact samples, the hit, and the first contact bisected
+    ox = 352
+    v = View(12, 47, 2.6, ox + 4, y + 30)
+    card, cover = GATE_BOXES["card"], GATE_BOXES["cover"]
+    panel(ox, y, "2 · Blocked: the contact bisected", "Blocked", "the card, with the cover fitted first")
+    hits = blk["visits"]
+    t3 = [3.4 + 0.7 * i for i in range(len(hits) + 1)]
+    hit = moved(card, hits[-1]["s"], (0, 0, 1))
+    body += [rect(v, (12, 0, cover[2], cover[3], 0, cover[5]), solid), text(*v(20, 26.3), "cover", 10, MUTED, "middle"),
+             rect(v, card, f'fill="none" stroke="{INK}" stroke-dasharray="3 2"'), text(*v(31, -0.5), "seat", 10, MUTED, "middle")]
+    steps(".cd", [v(0, vis["s"])[1] - v(0, 0)[1] for vis in hits], t3[1:], lambda o: f"transform:translateY({num(o)}px)")
+    body.append(rect(v, card, f'class="cd" fill="{BG}" stroke="{INK}" stroke-width="1.5"'))
+    shared = rect(v, (hit[0], 0, hit[2], hit[3], 0, cover[5]), f'fill="{ORANGE}"')
+    body.append(f'<g id="ov">{shared}</g>')
+    an.show("#ov", t3[-1], end)
+    said = [f"seat first: gap {fmt(blk['seat_gap'], 2)}"] + [
+        f"s {fmt(vis['s'], 0)}: " + (f"{fmt(vis['overlap_mm3'], 0)} mm³ shared, a hit" if vis["overlap_mm3"] else
+                                    "touching" if vis["gap"] <= h["touch_mm"] else f"gap {fmt(vis['gap'], 2)}")
+        for vis in hits]
+    lx = ox + 100
+    for i, s_ in enumerate(said):
+        body.append(text(lx, y + 40 + 16 * i, s_, 11, ORANGE if i == len(hits) else INK, extra=f' id="q{i}"'))
+        an.show(f"#q{i}", t3[i], end)
+    # the bracket [last clear, first hit], halved refine_steps times towards the contact; s falls to the right
+    s_hit, s_clear = hits[-1]["s"], hits[-2]["s"]
+    widths, lo, hi = [], s_hit, s_clear
+    for mid, inside in blk["bisect"]:
+        lo, hi = (mid, hi) if inside else (lo, mid)
+        widths.append((hi - lo) / (s_clear - s_hit))
+    bx0, bx1, by = lx, lx + 150, y + 136
+    tb = t3[-1] + 0.5
+    an.css.append(f".br{{transform-origin:{num(bx0)}px 0;transform-box:view-box;transform:scaleX({num(widths[-1], 4)})}}")
+    an.add(".br", [(0, 1), (tb, 1)] + [(tb + 0.12 * (j + 1), w) for j, w in enumerate(widths)]
+           + [(end, widths[-1]), (end + 0.4, 1), (an.period, 1)], lambda w: f"transform:scaleX({num(w, 4)})", "steps(1,end)")
+    body.append(f'<g id="bb" class="w">{text(bx0, by - 12, f"[{fmt(s_clear, 0)}, {fmt(s_hit, 0)}] halved {len(widths)} times", 11, INK)}'
+                f'<path d="M{bx0} {by}H{bx1}" stroke="{LINE}" stroke-width="8"/>'
+                f'<rect class="br" x="{bx0}" y="{by - 4}" width="{bx1 - bx0}" height="8" fill="{ORANGE}"/>'
+                f'<path d="M{bx0} {by - 7}v14" stroke="{INK}" stroke-width="1.5"/>'
+                + text(bx0, by + 17, f"s {fmt(s_clear, 0)}", 10, MUTED, "middle") + text(bx1, by + 17, fmt(s_hit, 0), 10, MUTED, "middle")
+                + "</g>")
+    an.show("#bb", tb - 0.3, end)
+    first = blk["result"]["first_contact_mm"]
+    lines("l2", ox, 240, [("its swept box meets the cover's, so it is sampled", MUTED, False),
+                    (f"first contact between s {fmt(first[1], 4)} and {fmt(first[0], 4)}", INK, False),
+                    (f"blocked {fmt(first[0], 2)} mm before its seat, {blk['result']['samples']} queries", ORANGE, True)],
+          tb + 0.12 * len(widths) + 0.3)
+    body.append(ntext(ox, 252, f"hits {fmt(first[0], 0)} mm out", 24, ORANGE, weight="700"))
+
+    # 3. the diagonal approach: steps of the gap, exact samples within max_step_mm, the bound between neighbours
+    y = 298
+    v = View(-31.5, 39.5, 3.0, 24, y + 30)
+    part, other = GATE_DIAGONAL["part"], GATE_DIAGONAL["block"]
+    panel(20, y, "3 · Near: sampled, with a bound between samples", "Near",
+          f"a part past a block's corner, in along (1, 0, −1); max_step_mm = {fmt(GATE_DIAGONAL_STEP_MM, 0)}")
+    visits = dg["visits"]
+    t2 = [8.6 + 0.7 * i for i in range(len(visits) + 2)]       # the seat (queried first), the visits, the seat again
+    ghosts, dots, vees = [], [], []
+    for i, vis in enumerate(visits):
+        box = moved(part, vis["s"], dg["back"])
+        pa, pb = _closest(box, other)
+        (ax, ay), (bx, by) = v(*pa), v(*pb)
+        dash = "" if vis["exact"] else ' stroke-dasharray="3 2"'
+        ghosts.append(f'<g id="p{i}">' + rect(v, box, f'fill="none" stroke="{GREEN}"{dash}')
+                      + f'<path d="M{num(ax)} {num(ay)}L{num(bx)} {num(by)}" stroke="{ORANGE if vis["exact"] else GREEN}" '
+                        f'stroke-width="1.5"{dash}/></g>')
+        an.show(f"#p{i}", t2[i + 1], end)
+    body += [rect(v, other, solid), text(*v(-25, 1.4), "block", 10, MUTED, "middle"), *ghosts,
+             rect(v, part, f'fill="none" stroke="{INK}" stroke-dasharray="3 2"'), text(*v(5, -3.6), "seat", 10, MUTED, "middle")]
+    sx, sy = v(part[0], part[5])
+    pos = [moved(part, vis["s"], dg["back"]) for vis in visits] + [part]
+    steps(".mv", [(v(b[0], b[5])[0] - sx, v(b[0], b[5])[1] - sy) for b in pos], t2[1:],
+          lambda o: f"transform:translate({num(o[0])}px,{num(o[1])}px)")
+    body.append(rect(v, part, f'class="mv" fill="none" stroke="{INK}" stroke-width="2"'))
+    # the gap along the way: each position's gap, the bound between neighbours (the V under each pair), and the
+    # exact gap all along, which the gate never computes (dashed), staying between the bound and the least sample
+    s_max, px0, px1, base, ky = visits[0]["s"], 196, 640, y + 150, 5.4
+    kx = (px1 - px0) / s_max
+    P = lambda s_, g: (px0 + (s_max - s_) * kx, base - g * ky)      # noqa: E731
+    pt = lambda s_, g: f"{num(P(s_, g)[0])} {num(P(s_, g)[1])}"     # noqa: E731
+    order = [len(visits)] + list(range(len(visits)))                # h["line"] runs start to seat; the seat came first
+    for j, i in enumerate(order):
+        s_, g = h["line"][i]
+        exact = i == len(visits) or visits[i]["exact"]
+        x_, y_ = P(s_, g)
+        c = INK if exact else GREEN
+        dot = f'<circle cx="{num(x_)}" cy="{num(y_)}" r="2.8"' + ("" if exact else f' fill="{BG}" stroke="{GREEN}"') + "/>"
+        label = text(x_, y_ - 7, fmt(g, 2) + (" seat" if i == len(visits) else ""), 10, c,
+                     "end" if x_ > px1 - 20 else "middle", extra=' class="h"')
+        dots.append(f'<g id="g{i}">{dot}{label}</g>')
+        an.show(f"#g{i}", t2[0] if j == 0 else t2[i + 1], end)
+        if i:       # the bound between this position and the one before; the seat's last, once the loop is done
+            s1, s2, g1, g2, b = h["bounds"][i - 1]
+            vees.append(f'<path id="v{i}" d="M{pt(s1, g1)}L{pt((s1 + s2 + g2 - g1) / 2, b)}L{pt(s2, g2)}"/>')
+            an.show(f"#v{i}", t2[i + 1], end)
+    body += [f'<g fill="none" stroke="{GREEN}">{"".join(vees)}</g>', *dots]
+    low = min(h["bounds"], key=lambda r: r[4])
+    lb = P((low[0] + low[1] + low[3] - low[2]) / 2, low[4])
+    an.css.append(f".h{{font-weight:700;stroke:{BG};stroke-width:3px;paint-order:stroke}}")
+    (hx0, _), (hx1, _) = P(low[0], 0), P(low[1], 0)
+    cx_, cy_ = P(low[0] + 2, 17)
+    body.append(f'<g id="lb"><circle cx="{num(lb[0])}" cy="{num(lb[1])}" r="3.4" fill="{ORANGE}"/>'
+                f'<path class="w" d="M{num(lb[0])} {num(lb[1] - 5)}L{num(cx_ + 30)} {num(cy_ + 4)}" stroke="{ORANGE}"/>'
+                + text(cx_, cy_, f"≥ ({fmt(low[2], 3)} + {fmt(low[3], 3)} − {fmt(low[0] - low[1], 0)}) / 2 ≈ {fmt(low[4], 2)}",
+                       11, ORANGE, extra=' class="h"')
+                + f'<path class="w" d="M{num(hx0)} {base + 5}v4H{num(hx1)}v-4" fill="none" stroke="{MUTED}"/>'
+                + text((hx0 + hx1) / 2, base + 19, f"h {fmt(low[0] - low[1], 0)}", 10, MUTED, "middle") + "</g>")
+    an.show("#lb", t2[-1] + 0.4, end)
+    curve = " ".join(pt(s_, g) for s_, g in h["true"])
+    cs, cg = h["closest"]
+    body.append(f'<g id="ex"><path d="M{curve}" fill="none" stroke="{MUTED}" stroke-dasharray="1 2"/>'
+                + text(P(cs - 3.4, 0)[0], base - 4, f"dotted: the exact gap (not computed), least {fmt(cg, 2)}", 10,
+                       MUTED) + "</g>")
+    an.show("#ex", t2[-1] + 0.8, end)
+    body.append(f'<path d="M{px0} {base}H{px1}" stroke="{MUTED}"/>'
+                + text(px0, base + 19, f"s {fmt(s_max, 1)}", 10, MUTED, "middle") + text(px1, base + 19, "0", 10, MUTED, "middle")
+                + text(px0 - 8, y + 34, "gap, mm", 10, MUTED))
+    lines("l3", 20, y + 192, [("A step is the gap, and at least max_step_mm. After the first sample, a box gap ≥ max_step_mm "
+                         "stands in for the query (○).", MUTED, False),
+                        ("A move of h changes the gap by at most h, so between two samples it stays ≥ (g1 + g2 − h) / 2.",
+                         MUTED, False),
+                        (f"clear: the closest approach lies between {fmt(dg['result']['gap_lower_bound_mm'], 2)} and "
+                         f"{fmt(dg['result']['min_gap_mm'], 2)} mm; {dg['result']['samples']} queries", INK, True)],
+          t2[-1] + 1.0)
+    body.append(ntext(20, y + 204, f"≥ {fmt(low[4], 2)} mm between samples", 24, ORANGE, weight="700"))
+    label = (f"Three pairs from the assembly gate's box-world tests, each part moved in along a straight line. A card 3 mm "
+             f"off a block: the box it sweeps stays {fmt(near['swept_gap'], 0)} mm from the block's, so it is clear with "
+             f"no kernel query. A card into a cover fitted first: it hits, and the first contact is bisected to "
+             f"{fmt(first[0], 2)} mm before its seat. A part passing a block's corner: sampled near it, and between "
+             f"samples h apart the gap is at least (g1 + g2 - h) / 2, here {fmt(low[4], 2)} mm.")
+    return svg(680, y + 242, label, body, an)
+
+
 FIGURES = {"hinge-sweep.svg": hinge_svg, "rib-in-counterbore.svg": counterbore_svg,
            "connector-window.svg": connector_svg, "cable-bend.svg": cable_svg, "module-insertion.svg": subassembly_svg,
-           "search-front.svg": search_svg}
+           "search-front.svg": search_svg, "motion-trace.svg": motion_trace_svg, "insertion-sweep.svg": sweep_svg}
 
 
 def main(argv: list) -> int:

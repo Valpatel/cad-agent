@@ -6,8 +6,9 @@
  * shown twice in the overview, a phone page over its height budget, not in two columns or with pills under 11px, a
  * filter sheet that traps or loses focus, covers that move under prefers-reduced-motion, and an area rail whose domain
  * panels lack their tone, whose bars and counts do not line up, whose bars do not fill to their level, whose chosen row
- * looks like a hovered one or reads under 4.5:1, whose maturity key does not explain itself, or whose phone rows are
- * under 44 px. */
+ * looks like a hovered one or reads under 4.5:1, whose maturity key does not explain itself, whose phone rows are
+ * under 44 px, or whose bars and chosen row lose their difference under forced colours; and a status line whose noun
+ * does not agree with its number. */
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
@@ -30,9 +31,10 @@ const PHONE_BUDGET = 14000;
 const problems = [];
 const fail = (where, what) => problems.push(`${where}: ${what}`);
 
-// `init`: a script to run before the page's own (to break something on purpose); `fails`: a page error it causes.
-async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null, init = null, fails = null } = {}) {
-  const context = await browser.newContext({ viewport: { width, height }, javaScriptEnabled: js, reducedMotion: motion });
+// `init`: a script to run before the page's own (to break something on purpose); `fails`: a page error it causes;
+// `forced`: 'active' emulates forced colours (Windows High Contrast and the like).
+async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null, init = null, fails = null, forced = 'none' } = {}) {
+  const context = await browser.newContext({ viewport: { width, height }, javaScriptEnabled: js, reducedMotion: motion, forcedColors: forced });
   const page = await context.newPage();
   const seen = [];
   if (block) await page.route(`**${block}`, r => r.abort());
@@ -446,6 +448,101 @@ try {
     await done();
   }
 
+  // Forced colours (Windows High Contrast and the like) put the user's few system colours in place of ours and drop
+  // gradients. The bars' filled and empty steps, a hovered row and the chosen row must still differ, the chosen row's
+  // text must show, and so must the focus ring on it (#104). Colours are compared as painted, each background
+  // composited over its ancestors': a forced background keeps the author's alpha, so before the fix a chosen row (opaque
+  // Canvas) and a row at rest (transparent Canvas) computed differently but painted the same white.
+  // WebKit's emulation matches the media query but forces no colour (it has no forced-color-adjust): the page keeps its
+  // own palette and paints no backplate, and its Highlight is a fixed light blue. So these checks run where colours are
+  // really forced: Chrome (and Edge, on Windows). In Chrome a page that is not forced fails: the checks would not run.
+  {
+    const where = 'forced colours';
+    const helpers = page => page.evaluate(() => {
+      const rgba = c => { const [r, g, b, a = 1] = c.match(/[\d.]+/g).map(Number); return [r, g, b, a]; };
+      // What a reader sees behind an element (or its pseudo-element): its background over its ancestors', over white.
+      window.paintOf = (el, pseudo) => {
+        const layers = [rgba(getComputedStyle(el, pseudo).backgroundColor)];
+        for (let e = pseudo ? el : el.parentElement; e && layers.at(-1)[3] < 1; e = e.parentElement) layers.push(rgba(getComputedStyle(e).backgroundColor));
+        return layers.reverse().reduce((under, [r, g, b, a]) => [r, g, b].map((v, i) => v * a + under[i] * (1 - a)), [255, 255, 255]).map(Math.round).join();
+      };
+      const lum = c => c.map(v => v / 255).map(v => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
+      const ratio = (x, y) => { const [hi, lo] = [lum(x), lum(y)].sort((p, q) => q - p); return (hi + 0.05) / (lo + 0.05); };
+      window.contrastOn = (el, bgEl = el) => ratio(rgba(getComputedStyle(el).color).slice(0, 3), paintOf(bgEl).split(',').map(Number));
+      // A focus ring drawn inside its row: its colour over the row's, against the row's; and how far inside the row's
+      // edge it stays (a ring on the edge merges with the panel around a chosen row, so it reads as the band shrinking).
+      window.ringOn = a => { const s = getComputedStyle(a), row = paintOf(a).split(',').map(Number), [r, g, b, al] = rgba(s.outlineColor);
+        return { contrast: ratio([r, g, b].map((v, i) => v * al + row[i] * (1 - al)), row), inset: -parseFloat(s.outlineOffset) - parseFloat(s.outlineWidth) }; };
+      // Chrome paints a Canvas backplate behind text left to forced-color-adjust:auto, so that text must not be
+      // Canvas-coloured itself: the chosen row's name in HighlightText (white, like Canvas here) showed as a blank bar.
+      const probe = document.body.appendChild(document.createElement('i'));
+      probe.style.background = 'Canvas';
+      const canvas = rgba(getComputedStyle(probe).backgroundColor).slice(0, 3).join();
+      probe.remove();
+      const onBackplate = (el, pseudo) => getComputedStyle(el, pseudo).forcedColorAdjust !== 'none' && rgba(getComputedStyle(el, pseudo).color).slice(0, 3).join() === canvas;
+      // A row's text that would not show: its name, its count and a pseudo-element with words (a domain row's arrow).
+      window.lostText = a => [...[...a.querySelectorAll('.area-name, .count')].filter(e => onBackplate(e)).map(e => e.className),
+        ...['::before', '::after'].filter(p => /"[^"]/.test(getComputedStyle(a, p).content) && onBackplate(a, p))];
+    });
+    const { page, done } = await open('/catalog', { forced: 'active' });
+    const forcing = await page.evaluate(() => matchMedia('(forced-colors: active)').matches && CSS.supports('forced-color-adjust', 'none'));
+    if (!forcing && engine === chromium) fail(where, 'Chrome did not force colours, so none of these checks ran');
+    else if (!forcing) console.log(`${where}: ${engine.name()} does not force colours, so they are checked in Chrome`);
+    else {
+      await helpers(page);
+      // The key's top level shows the filled colour and its lowest level ends in the empty one; every bar fills its level.
+      const [on, off, fills] = await page.evaluate(n => {
+        const key = [...document.querySelectorAll('.key-scale .mat-dots')];
+        const [on, off] = [paintOf(key.at(-1).querySelector('i')), paintOf(key[0].querySelector('i:last-child'))];
+        return [on, off, [...document.querySelectorAll('.area-tree .mat-dots')].map(b => { const ps = [...b.querySelectorAll('i')].map(i => paintOf(i));
+          return [b.dataset.level, ps.length === n && ps.every(p => p === on || p === off) ? ps.filter(p => p === on).length : -1]; })];
+      }, index.maturity.length);
+      if (on === off) fail(where, `filled and empty steps are both painted ${on}`);
+      else for (const [level, n] of fills) if (Number(level) !== n) fail(where, `a level-${level} bar shows ${n} filled steps`);
+      // "All areas", chosen on /catalog, shows its name and count.
+      const allLost = await page.$eval('.area-tree > li > .area-link[aria-current="true"]', a => lostText(a));
+      if (allLost.length) fail(where, `"All areas", chosen: ${allLost} is Canvas-coloured on Chrome's Canvas backplate, so it does not show`);
+      // A row at rest, hovered (its edge bar shows), then chosen from the keyboard: the system's selection colours, its
+      // text and bar readable, and the focus ring, still on it, visible against it.
+      const row = '.area-link[data-value="gears"]';
+      const look = () => page.$eval(row, a => ({ row: paintOf(a), bar: paintOf(a, '::before'), text: contrastOn(a.querySelector('.area-name'), a),
+        count: contrastOn(a.querySelector('.count')), steps: [...new Set([...a.querySelectorAll('.mat-dots i')].map(i => paintOf(i)))].length,
+        lost: lostText(a), ring: a.matches(':focus-visible') ? ringOn(a) : null }));
+      await page.mouse.move(1300, 880);
+      const rest = await look();
+      await page.hover(row);
+      await page.waitForFunction(s => getComputedStyle(document.querySelector(s), '::before').transform === 'none', row, { timeout: 3000 })
+        .catch(() => fail(where, 'hovering a row does not grow its edge bar'));
+      const hovered = await look();
+      if (hovered.bar === hovered.row) fail(where, `a hovered row's edge bar is painted like the row (${hovered.row}), so hover shows nothing`);
+      await page.mouse.move(1300, 880);
+      await page.focus(row);
+      await page.keyboard.press('Enter');
+      await page.waitForFunction(s => document.querySelector(s).getAttribute('aria-current') === 'true', row, { timeout: 5000 }).catch(() => fail(where, 'Gears is not chosen after Enter'));
+      await page.waitForFunction(s => !document.querySelector(s).getAnimations({ subtree: true }).length, row, { timeout: 3000 }).catch(() => {});
+      const chosen = await look();
+      if (chosen.row === rest.row) fail(where, `the chosen row is painted like one at rest (${rest.row})`);
+      if (chosen.text < 4.5 || chosen.count < 4.5) fail(where, `chosen row: name ${chosen.text.toFixed(2)}:1, count ${chosen.count.toFixed(2)}:1`);
+      if (chosen.steps < 2) fail(where, 'the chosen row\'s bar shows filled and empty steps alike');
+      if (chosen.lost.length) fail(where, `chosen row: ${chosen.lost} is Canvas-coloured on Chrome's Canvas backplate, so it does not show`);
+      if (chosen.ring === null) fail(where, 'keyboard focus is not on the row just chosen with Enter');
+      else {
+        if (chosen.ring.contrast < 3) fail(where, `the focus ring on the chosen row is ${chosen.ring.contrast.toFixed(2)}:1 against it (3:1 needed)`);
+        // The same offset holds in normal colours: the forced rule changes only the ring's colour.
+        if (chosen.ring.inset < 2) fail(where, `the focus ring on the chosen row leaves ${chosen.ring.inset}px of band outside it (2px needed to read as a ring)`);
+      }
+    }
+    await done();
+    // A domain's own row, chosen: its "All" and its arrow show.
+    if (forcing) {
+      const dom = await open('/catalog?area=mechanical', { forced: 'active' });
+      await helpers(dom.page);
+      const lost = await dom.page.$eval('.area-link.dom-all[aria-current="true"]', a => lostText(a)).catch(() => ['(no chosen domain row)']);
+      if (lost.length) fail(where, `?area=mechanical, its "All" row: ${lost} is Canvas-coloured on Chrome's Canvas backplate, so it does not show`);
+      await dom.done();
+    }
+  }
+
   // A chip names what it filters: a domain's "All" row by its domain, a maturity box by its word (not its bar's
   // screen-reader words), and the retired ?gyropup=1 filters nothing.
   for (const [route, want] of [['/catalog?area=mechanical', 'Mechanical design'], ['/catalog?maturity=tooling', 'Tooling'], ['/catalog?gyropup=1', '']]) {
@@ -455,6 +552,37 @@ try {
     const status = (await page.textContent('[data-gallery-status]')).trim();
     if (!want && status !== `${index.count} entries`) fail(route, `status "${status}": it filters`);
     await done();
+  }
+
+  // The status line's noun agrees with the number it follows: the total, when filtered. One entry shown of 181 read
+  // "1 of 181 entry" (#233 review). A tab names its cards by its own nouns; nothing shown gets a sentence, not a count.
+  {
+    const catalog = JSON.parse(await readFile(path.join(dir, 'catalog.json'), 'utf8'));
+    const allAreas = index.domains.flatMap(d => d.areas);
+    const inArea = (k, a) => catalog.items.filter(i => i.areas.includes(a.slug) && k.kinds.includes(i.kind)).length;
+    const one = allAreas.find(a => a.count === 1), many = index.domains.find(d => d.count > 1);
+    const tab = index.kinds.find(k => k.count > 1 && allAreas.some(a => inArea(k, a) === 1));
+    const tabArea = tab && allAreas.find(a => inArea(tab, a) === 1);
+    if (!one || !tab) fail('status', 'no area with a single entry (of one kind) to test with');
+    else {
+      const first = await open('/catalog');
+      const [oneNoun, manyNoun] = await first.page.$eval(`[data-gallery-tabs] [data-tab="${tab.tab}"]`, t => [t.dataset.itemNoun, t.dataset.itemsNoun]);
+      await first.done();
+      if (!oneNoun || !manyNoun || oneNoun === manyNoun) fail('status', `the ${tab.tab} tab's nouns: "${oneNoun}", "${manyNoun}"`);
+      for (const [route, want] of [
+        ['/catalog', `${index.count} entries`],
+        [`/catalog?area=${one.slug}`, `1 of ${index.count} entries`],
+        [`/catalog?area=${many.slug}`, `${many.count} of ${index.count} entries`],
+        ['/catalog?q=zzqxv', 'No entries match. Try fewer words or clear the filters.'],
+        [`/catalog?kind=${tab.tab}`, `${tab.count} ${manyNoun}`],
+        [`/catalog?kind=${tab.tab}&area=${tabArea.slug}`, `1 of ${tab.count} ${manyNoun}`],
+      ]) {
+        const { page, done } = await open(route);
+        const status = (await page.textContent('[data-gallery-status]')).trim();
+        if (status !== want) fail(route, `status "${status}", want "${want}"`);
+        await done();
+      }
+    }
   }
 
   // A domain with entries but none of the chosen kind says so by the domain's name, not its row's "All in …" (#233).
@@ -470,7 +598,11 @@ try {
     else {
       const route = `/catalog?area=${pick.d.slug}&kind=${pick.tab.tab}`;
       const { page, done } = await open(route);
-      const text = (await page.textContent('[data-gallery-empty-kind]')).replace(/\s+/g, ' ');
+      // Every message box gets the scope's name, so read the text of the box that shows, and only that one.
+      const box = page.locator('[data-gallery-empty-kind]');
+      if (!(await box.isVisible())) fail(route, 'the "none of this kind" box is not the one shown');
+      for (const sel of ['[data-gallery-empty-scope]', '[data-gallery-empty]']) if (await page.locator(sel).isVisible()) fail(route, `${sel} shows instead or as well`);
+      const text = (await box.textContent()).replace(/\s+/g, ' ');
       if (!text.includes(` in ${pick.d.title} yet`) || /All in/.test(text)) fail(route, `the message says "${text.slice(0, 90)}"`);
       await done();
     }

@@ -2,7 +2,7 @@
 // The element itself is driven in real browsers by tests/website-catalog-browser.mjs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { compareBy, matches, parseState, searchPatterns, stateToSearch } from '../src/cadagent/webkit/gallery.js';
+import { compareBy, countLine, matches, parseState, searchPatterns, stateToSearch } from '../src/cadagent/webkit/gallery.js';
 
 const opts = { tabParam: 'kind', facets: ['area', 'status', 'licence'], single: ['area'], defaultSort: 'featured' };
 
@@ -46,4 +46,16 @@ test('sorting: numbers and text, either direction, empty values last, ties in th
   assert.deepEqual([...list].reverse().sort(compareBy('')).map(x => x.index), [0, 1, 2, 3, 4]);
   const names = ['beta', 'Alpha', 'gamma'].map((v, index) => ({ index, sort: { name: v } }));
   assert.deepEqual(names.sort(compareBy('name')).map(x => x.sort.name), ['Alpha', 'beta', 'gamma']);
+});
+
+test('the status count: its noun agrees with the number it follows, the total when filtered', () => {
+  const nouns = ['entry', 'entries'];
+  assert.equal(countLine(1, 179, nouns, true), '1 of 179 entries', 'one shown of many (it read "1 of 179 entry")');
+  assert.equal(countLine(12, 179, nouns, true), '12 of 179 entries');
+  assert.equal(countLine(1, 1, nouns, true), '1 of 1 entry', 'a total of one (a tab with one card)');
+  assert.equal(countLine(0, 179, nouns, true), '0 of 179 entries');
+  assert.equal(countLine(1, 1, nouns, false), '1 entry');
+  assert.equal(countLine(179, 179, nouns, false), '179 entries');
+  assert.equal(countLine(0, 0, nouns, false), '0 entries');
+  assert.equal(countLine(1, 8, ['research page', 'research pages'], true), '1 of 8 research pages');
 });

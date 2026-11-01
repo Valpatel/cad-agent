@@ -142,5 +142,6 @@ def test_the_not_found_hint_names_only_top_level_cad_sections(tmp_path):
     (tmp_path / "notes.txt").write_text("cad:\n")
     (tmp_path / "dir.yaml").mkdir()
     assert other_cad_configs(tmp_path) == ["a.yaml", "b.yml"]
-    with pytest.raises(CadConfigError, match="a.yaml, b.yml have a cad: section"):
+    with pytest.raises(CadConfigError, match="a.yaml, b.yml have a cad: section but only cad-agent.yaml is read: "
+                                             "rename the one that holds the project config to cad-agent.yaml"):
         load_project(tmp_path)

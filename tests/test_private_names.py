@@ -33,17 +33,19 @@ def checkout():
 
 
 def _hits() -> dict:
-    """``{path: [hit, ...]}`` for every tracked file whose path or content matches, binary files included."""
+    """``{path: ["line 12", ...]}`` for every tracked file whose path or content matches, binary files included.
+
+    Locations only, never the matched text, so a failing run does not write the name into the CI log."""
     proc = _git("grep", "-a", "-n", "-i", "-E", "-e", PATTERN, "--", ".")
     if proc.returncode not in (0, 1):
         raise RuntimeError(f"git grep failed: {proc.stderr.strip()}")
     hits: dict = {}
     for line in proc.stdout.splitlines():
         path, _, rest = line.partition(":")
-        hits.setdefault(path, []).append(rest[:160])
+        hits.setdefault(path, []).append(f"line {rest.partition(':')[0]}")
     for path in _git("ls-files", "-z").stdout.split("\0"):
         if path and re.search(PATTERN, path, re.IGNORECASE):
-            hits.setdefault(path, []).insert(0, "(the path itself)")
+            hits.setdefault(path, []).insert(0, "the path itself")
     return hits
 
 
@@ -58,11 +60,13 @@ def test_the_pattern_catches_every_form_and_skips_this_file():
 
 def test_no_tracked_file_names_the_private_tool(checkout):
     hits = {p: h for p, h in _hits().items() if p not in ALLOWED}
-    report = "\n".join(f"  {p}: {h[0]}" + (f" (+{len(h) - 1} more)" if len(h) > 1 else "") for p, h in sorted(hits.items()))
-    assert not hits, ("a private predecessor tool's name is back in tracked files; reword the passage without it "
-                      f"(or, with a reason, add the path to ALLOWED):\n{report}")
+    if hits:                                 # pytest.fail, not assert: the assertion rewrite would echo the dict
+        report = "\n".join(f"  {p}: {', '.join(h)}" for p, h in sorted(hits.items()))
+        pytest.fail("a private predecessor tool's name is back in tracked files; reword each passage without it "
+                    f"(or, with a reason, add the path to ALLOWED):\n{report}", pytrace=False)
 
 
 def test_every_allowed_path_still_matches(checkout):
-    hits = _hits()
-    assert all(path in hits for path in ALLOWED), sorted(set(ALLOWED) - set(hits))
+    stale = sorted(set(ALLOWED) - set(_hits()))
+    if stale:
+        pytest.fail(f"ALLOWED lists paths that no longer match; remove them: {stale}", pytrace=False)

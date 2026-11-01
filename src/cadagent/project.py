@@ -312,8 +312,13 @@ def load_project(root: Union[str, Path, None] = None) -> CadProject:
     config = find_config(root)
     if config is None:
         others = other_cad_configs(root)
-        hint = (f"; {', '.join(others)} {'has' if len(others) == 1 else 'have'} a cad: section but only "
-                f"{CONFIG_NAME} is read: rename it to {CONFIG_NAME}") if others else ""
+        if len(others) == 1:
+            hint = f"; {others[0]} has a cad: section but only {CONFIG_NAME} is read: rename it to {CONFIG_NAME}"
+        elif others:
+            hint = (f"; {', '.join(others)} have a cad: section but only {CONFIG_NAME} is read: rename the one "
+                    f"that holds the project config to {CONFIG_NAME}")
+        else:
+            hint = ""
         raise CadConfigError(
             f"{CONFIG_NAME} not found in {root}; a CAD project needs one with a cad: section{hint}"
         )

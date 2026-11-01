@@ -132,8 +132,8 @@ served (`cad-agent serve`); from `file://` the link downloads the 3MF instead.
 other top-level sections are ignored, so the file can carry other tools'
 settings too. A `cad-agent.yaml` without a `cad:` section is an error. With no
 `cad-agent.yaml` at all, commands exit 2, and the error names any other
-`*.yaml` file in the project root with a top-level `cad:` key, so it can be
-renamed: no other file name is read.
+`*.yaml` or `*.yml` file in the project root with a top-level `cad:` key, so it
+can be renamed: no other file name is read.
 
 | Key | Default | Meaning |
 |-----|---------|---------|

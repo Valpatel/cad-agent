@@ -95,6 +95,11 @@ test('the kit demo element survives with its own attributes only (no handlers, s
   assert.equal(sanitize(fourbar), fourbar.replace('height="320">', 'height="320" />'));
   assert.equal(sanitize('<cad-fourbar onclick="alert(1)" style="x" material="pla" length="3"><script>alert(1)</script></cad-fourbar>'),
     '<cad-fourbar></cad-fourbar>', "one demo's attributes are not another's");
+  const fan = '<cad-fan-curve fan="16" system="25" count="2" arrangement="series" theme="dark">' +
+    '<img src="img/x.svg" alt="still" width="640" height="340"></cad-fan-curve>';
+  assert.equal(sanitize(fan), fan.replace('height="340">', 'height="340" />'));
+  assert.equal(sanitize('<cad-fan-curve onpointermove="alert(1)" style="x" crank="40" material="pla"><svg onload="alert(1)"></svg></cad-fan-curve>'),
+    '<cad-fan-curve></cad-fan-curve>', "the fan curve's attributes only");
 });
 
 test('image sizes come from the file, so pages keep the space before images load', () => {

@@ -19,6 +19,7 @@ import { snapDemo } from './snap-demo.mjs';
 import { buildCatalog } from './site-catalog.mjs';            // the catalogue page, catalog.json, catalog/*.json and covers
 import { sanitize, safeUrl, rewriteUrls, imageSize } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
 import { drawDiagrams } from './site-diagrams.mjs';         // Mermaid blocks drawn into finished figures, at build time
+import { ON, fold, pagePlacer } from './site-pages.mjs';    // docs/pages.yaml: bands, section cards, figures, folds
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
 const rootArg = process.argv.indexOf('--root');
@@ -46,7 +47,7 @@ const revision = head;
 // The content is always HEAD's (or the working tree's with --worktree), but the build tools run from disk (from this
 // checkout, even with --root): say so when they differ from the built commit's, and never release with them.
 const TOOLS = ['tools/build-site.mjs', 'tools/site-html.mjs', 'tools/snap-demo.mjs', 'tools/site-catalog.mjs', 'tools/catalog-art.mjs',
-  'tools/site-diagrams.mjs', 'package.json', 'package-lock.json'];
+  'tools/site-diagrams.mjs', 'tools/site-pages.mjs', 'package.json', 'package-lock.json'];
 const toolsHere = path.join(import.meta.dirname, '..');
 const toolsDirty = TOOLS.filter(t => {
   let committedCopy; try { committedCopy = gitRaw('show', `HEAD:${t}`); } catch { return true; }
@@ -181,14 +182,14 @@ const feedbackBox = (title, url, file) => `<aside class="feedback" aria-label="F
 <div class="feedback-actions"><a class="button" href="${esc(feedbackURL(title, url))}">Give feedback</a>${file ? `<a href="${REPO}/edit/dev/${esc(file)}">Suggest an edit</a>` : ''}</div></aside>`;
 // Pages with one of the kit's interactive demos load its stylesheet in <head> (it reserves the demo's size before the
 // script runs, so nothing moves) and preload its module; web/site.js imports it.
-const KIT_DEMOS = { 'cad-cantilever': 'cantilever', 'cad-fourbar': 'fourbar' };
+const KIT_DEMOS = { 'cad-cantilever': 'cantilever', 'cad-fourbar': 'fourbar', 'cad-fan-curve': 'fan-curve' };
 const kitDemos = body => Object.entries(KIT_DEMOS).filter(([tag]) => body.includes(`<${tag}`))
   .map(([, f]) => `<link rel="stylesheet" href="/kit/${f}.css"><link rel="modulepreload" href="/kit/${f}.js">`).join('');
 function frame({ title, body, md, description = LEDE, current = '', page = 'doc', css = [], updated = committed, url = current || '/' }) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title === TAGLINE ? 'cad-agent · ' + TAGLINE : title + ' · cad-agent')}</title>
 <meta name="description" content="${esc(description)}">
-<link rel="icon" href="/web/icon.svg"><link rel="preload" href="/kit/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}${kitDemos(body)}
+<link rel="icon" href="/web/icon.svg"><link rel="preload" href="/kit/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/kit/vendor/fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}${kitDemos(body)}
 ${md ? `<link rel="alternate" type="text/markdown" href="${esc(md)}" title="Markdown for agents">` : ''}
 <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt"></head>
 <body class="${page}-page" data-diagram-theme="light"><a class="skip-link" href="#main:content">Skip to content</a><header class="site-header"><div class="wrap"><a class="wordmark" href="/"><img src="/web/icon.svg" alt="" width="34" height="34">cad-agent<b>.</b></a>
@@ -244,6 +245,9 @@ const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).m
 const VISUAL = /<img\b|class="language-mermaid"|<pre class="mermaid"/g;
 const visuals = new Map();
 const docPages = [];                         // [path in out, HTML]: written once their diagrams are drawn, below
+// Visual-first pages (#179): real outputs placed from docs/pages.yaml, long reference parts folded (tools/site-pages.mjs).
+const placeVisuals = pagePlacer({ spec: YAML.parse(await read('docs/pages.yaml')) || {}, pageFiles, tracked,
+  commandNames: new Set(commands.map(c => c.name)), readBuf, pageURL });
 for (const p of pages) {
   const ids = new Map();
   const renderer = new marked.Renderer();
@@ -295,12 +299,14 @@ for (const p of pages) {
   html = html.replace(/<table>/g, '<div class="table-scroll"><table>').replace(/<\/table>/g, '</table></div>');
   // One-click copy on every code block (not on diagram sources, which render as pictures).
   html = html.replace(/<pre>(<code(?! class="language-mermaid")[\s\S]*?<\/pre>)/g, '<cad-copy><pre>$1</cad-copy>');
+  html = await placeVisuals(p.file, fold(html));
   const crumbs = `<p class="crumbs"><a href="/catalog#${p.section}">${esc(SECTIONS.find(s => s.id === p.section).title)}</a> · <a href="${REPO}/blob/dev/${esc(p.file)}">${esc(p.file)}</a> · <a href="/${esc(p.file)}">Markdown</a></p>`;
   const dest = path.join(out, pageFile(p.file));
   await mkdir(path.dirname(dest), { recursive: true });
   // Long pages: the kit's <cad-nav> on the left (every page, grouped, with this page's outline under it) and, on very
   // wide screens, the outline again in a right-hand column. All written out here, so the first paint is final (the
-  // script only marks the section being read, filters and toggles) and it all works without script.
+  // script only marks the section being read and filters) and it all works without script: on phones the tree folds
+  // into a native <details>, which opens with or without nav.js.
   const heads = [...html.matchAll(/<h([23]) id="([^"]+)">([\s\S]*?)<\/h\1>/g)]
     .map(([, level, id, inner]) => ({ level, id, text: inner.replace(/<[^>]+>/g, '').trim() })).filter(h => h.text);
   // The skip link's target is "main:content": slug() drops ":", so no heading id can take it (a "## Content" is "content").
@@ -312,7 +318,7 @@ for (const p of pages) {
     return `<details class="cad-nav-group"${s.id === p.section ? ' open' : ''}><summary>${esc(s.title)}</summary><ul>${list.map(q =>
       `<li><a href="${esc(pageURL(q.file))}"${q.file === p.file ? ` aria-current="page">${esc(q.title)}</a>${outline('', true)}` : `>${esc(q.title)}</a>`}</li>`).join('')}</ul></details>`;
   }).join('');
-  const nav = `<cad-nav for=".prose" rail=".doc-rail" role="navigation" aria-label="Pages and contents"><button type="button" class="cad-nav-toggle" aria-expanded="false">Pages and contents</button><div class="cad-nav-panel"><input type="search" class="cad-nav-filter" placeholder="Filter pages" aria-label="Filter pages"><p class="cad-nav-empty" role="status"></p>${tree}</div></cad-nav>`;
+  const nav = `<cad-nav for=".prose" rail=".doc-rail" role="navigation" aria-label="Pages and contents"><details class="cad-nav-fold"><summary class="cad-nav-toggle">Pages and contents</summary><div class="cad-nav-panel"><input type="search" class="cad-nav-filter" placeholder="Filter pages" aria-label="Filter pages"><p class="cad-nav-empty" role="status"></p>${tree}</div></details></cad-nav>`;
   const rail = heads.length < 2 ? '' : `<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline(' cad-nav-rail', false)}</nav>`;
   docPages.push([dest, frame({ title: p.title, body: `<div class="doc-layout">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + p.file, description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/nav.css'] })]);
   visuals.set(p.file, (html.match(VISUAL) || []).length);
@@ -320,6 +326,7 @@ for (const p of pages) {
   p.updated = lastChange(p.file);
   await writeFile(path.join(out, p.file), rewriteMd(p.file, p.src));   // the Markdown twin, same path
 }
+placeVisuals.checkLinks(file => pages.find(q => q.file === file)?.html);   // band tiles' links to other pages' headings
 // Every Mermaid block drawn once, in the site's theme (frame() sets data-diagram-theme="light"), and written into its
 // page as a finished figure. A block left as it is (no browser, or one Mermaid cannot draw) is drawn by kit/diagrams.js
 // in the reader's browser.
@@ -372,12 +379,8 @@ const homeImg = async (src, at, attrs = '') => {
   if (!size) throw new Error(`docs/home.yaml ${at}: cannot read the size of ${src}`);
   return `<img src="/${esc(src)}" width="${size.width}" height="${size.height}"${attrs}>`;
 };
-// What each output was computed on, said on its tile (#182 review: not every picture is a real part).
-const ON = {
-  gyropup: '<a href="https://gyropup.com">Gyropup</a> · MIT', enclosure: 'a printed enclosure', fixture: 'a test fixture in this repo',
-  'fixture-2d': 'a test fixture, drawn in 2D; tests hold its numbers to the real check', example: 'a worked example',
-  sources: 'published sources',
-};
+// What each output was computed on, said on its tile (#182 review: not every picture is a real part): ON, from
+// tools/site-pages.mjs, which the doc pages' figures use too.
 // A tool on a tile is a cad-agent command, a cadagent module or a script under tools/, and it must exist.
 const commandNames = new Set(commands.map(c => c.name));
 const realTool = (tool, at) => {
@@ -443,7 +446,7 @@ const poster = imageSize(await readBuf('web/models/gyropup.webp'), 'gyropup.webp
 if (!poster) throw new Error('web/models/gyropup.webp: run node tools/site-model-poster.mjs');
 const kb = n => `${Math.round(n / 1024)} KB`;
 const landing = `<div class="wrap"><section class="hero hero-3d">
-<div class="hero-head"><p class="eyebrow"><span class="status-dot"></span>Open source · for AI agents and people</p>
+<div class="hero-head"><p class="eyebrow"><span class="status-dot"></span>Open source · for agents and people</p>
 <h1>Your one stop shop for <span>agentic CAD.</span></h1>
 <p class="intro">Checks, simulation and cited engineering for the hardware agents design, in tested code.</p></div>
 <figure class="hero-model"><cad-model src="/web/models/gyropup.json" label="Gyropup" style="aspect-ratio:${poster.width}/${poster.height}"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="${poster.width}" height="${poster.height}" fetchpriority="high" alt="Gyropup, a wheel-legged robot with a foam-ball turret, assembled from its ${heroModel.parts.length} parts"></cad-model>

@@ -239,10 +239,13 @@ export async function buildCatalog(ctx) {
     return pageURL(file) + (hash ? '#' + hash : '');
   };
   /** Figures a page shows, in order: { src (repo path), alt, anchor (the heading above it) }. */
+  // The doc template's copies under a page's title (section cards and band tiles, tools/site-pages.mjs) repeat pictures
+  // shown in a section: a figure is where its section shows it, so a demo opens at that section, not the page's top.
   const figuresOf = p => {
     const out = [];
     let anchor = '';
-    for (const m of p.html.matchAll(/<h[1-6] id="([^"]+)"|<img\b[^>]*>/g)) {
+    const html = p.html.replace(/<nav class="section-cards"[^>]*>[\s\S]*?<\/nav>|<ul class="band-tiles">[\s\S]*?<\/ul>/g, '');
+    for (const m of html.matchAll(/<h[1-6] id="([^"]+)"|<img\b[^>]*>/g)) {
       if (m[1]) { anchor = m[1]; continue; }
       const src = m[0].match(/\ssrc="\/([^"#?]+)"/)?.[1];
       if (src && has.has(src) && src.startsWith('docs/img/')) out.push({ src, alt: (m[0].match(/\salt="([^"]*)"/)?.[1] || '').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&'), anchor });

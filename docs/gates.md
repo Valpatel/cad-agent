@@ -556,7 +556,7 @@ rerun reads only the cache.
 | `combination:<g1>+<g2>`, `density:<g>` | (warnings) see above | |
 | `containment@<group>/<pose>/...` | with `contains=`: the containment gate's checks at every pose of a group that moves the container's cavity or the contents | as the containment gate |
 
-![The gate bench arm swept from 0 to 60 degrees in 12 sampled poses: it shares volume with the frame beam from 49.09 degrees, the last clear pose is 43.64 degrees, and the onset is bisected to between 44.89 and 44.91 degrees](img/motion/hinge-sweep.svg)
+![The gate bench's arm with the flap_hits_frame seed, swept from 0 to 60 degrees in 12 sampled poses: it shares volume with the frame beam from 49.09 degrees, the last clear pose is 43.64 degrees, and the onset is bisected to between 44.89 and 44.91 degrees](img/motion/hinge-sweep.svg)
 
 *The `collision:` check on the gate bench's `flap_hits_frame` seed, in section: the sampled poses, the ones that hit, the last clear pose and the onset bisected between them. An illustration drawn from a 2D model of the bench; `tests/test_motion_figures.py` checks its numbers against the gate's verdict.*
 

@@ -162,7 +162,7 @@ domains:
         maturity: tooling
         priority: [gyropup]
         cli: [export-3mf, slice]
-        api: [cadagent.manufacturing.slicer, cadagent.manufacturing.mesh3mf]
+        api: [cadagent.manufacturing.slicer, cadagent.manufacturing.mesh3mf, cadagent.manufacturing.plates]
         issues: [84, 99]
         projects: [gyropup, j501-enclosure]
         topics:
@@ -211,9 +211,10 @@ domains:
         scope: Fans, vents and grilles, and where the air really goes.
         maturity: tooling
         priority: [demo]
-        api: [cadagent.thermal.heatsink]
+        pages: [docs/fans.md]
+        api: [cadagent.thermal.heatsink, cadagent.thermal.fans]
         uses: [cadagent.simulation.cfd]
-        issues: [47, 137]
+        issues: [47, 137, 160]
         projects: [j501-enclosure]
       - slug: thermal-validation
         title: Thermal validation

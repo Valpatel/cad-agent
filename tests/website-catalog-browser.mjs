@@ -392,18 +392,23 @@ try {
     await done();
   }
 
-  // Moving covers play while seen, and never under reduced motion.
-  for (const motion of ['no-preference', 'reduce']) {
-    const { page, done } = await open('/catalog', { motion });
-    const img = page.locator('img[data-anim]').first();
-    if (await img.count()) {
+  // Moving covers play while seen, and never under reduced motion. Under 1000 px the strip holds every demo and
+  // swipes, so its first moving cover plays once in view. Wider, the strip shows only its first four demos, which need
+  // not include a moving one, so the desktop pass hovers the first card a reader can see with a moving cover.
+  for (const width of [900, 1366]) for (const motion of ['no-preference', 'reduce']) {
+    const { page, done } = await open('/catalog', { motion, width });
+    const strip = width < 1000;
+    const img = strip ? page.locator('img[data-anim]').first() : page.locator('[data-item] img[data-anim]:visible').first();
+    if (!(await img.count())) fail('motion', `${width}px: no moving cover to check`);
+    else {
       const moving = await img.getAttribute('data-anim');
       await img.scrollIntoViewIfNeeded();
-      await img.hover();
+      // a card's title link covers the card, so the pointer goes to the card, as a reader's does
+      await (strip ? img : img.locator('xpath=ancestor::*[@data-item][1]')).hover();
       await page.waitForTimeout(300);
       const now = await img.getAttribute('src');
-      if (motion === 'reduce' && now === moving) fail('motion', 'a cover moves under reduced motion');
-      if (motion !== 'reduce' && now !== moving) fail('motion', 'an animated cover did not start');
+      if (motion === 'reduce' && now === moving) fail('motion', `${width}px: a cover moves under reduced motion`);
+      if (motion !== 'reduce' && now !== moving) fail('motion', `${width}px: an animated cover did not start`);
     }
     await done();
   }

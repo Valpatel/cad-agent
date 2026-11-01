@@ -10,6 +10,119 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.8.0 (2026-11-01)
+
+**New**
+- `cadagent.simulation.fea.Study(refine=[(point_mm, radius_mm, size_mm), ...])`: a finer mesh round a spot (a gmsh
+  Ball field each, under a Min field). The rest of the mesh stays as it was, so one fillet or hole converges without
+  refining the whole part (#144).
+- `Study.converge(factor=0.75)`: the same loads on a finer mesh; it gives the design peak's change and whether it
+  moved. Past 5 %, or when the finer mesh does not resolve the peak either, it is not converged (a `MeshWarning`)
+  (#144).
+- `result['mesh']` records the mesher (`mesher`: the gmsh and OpenCASCADE versions, the build's OS and date, a hash of
+  the gmsh library, the platform) and the design peak's resolution (`peak`: where it sits, the thinnest wall round it,
+  the element size there and `elements_across`). Under 3 elements across, it is flagged (`wall_resolved` false, a
+  `MeshWarning`): a peak in a wall one or two elements thick is not a result. At an inside fillet or a hole,
+  elements larger than its radius are flagged too (`radius_mm`, `radius_resolved`) (#144).
+- A check before meshing lists faces under (mesh_mm/10)² in area, long faces under mesh_mm/10 in width, and edges under
+  mesh_mm/10 (`Study.slivers`). It warns by default; `slivers='raise'` stops in seconds with a `MeshRefusal`, before a
+  long mesh (#144).
+- When gmsh refuses a part ("PLC Error: A segment and a facet intersect at point", or "Could not recover boundary
+  mesh"), `Study` raises a `MeshRefusal` with the point and the nearest faces with their areas when gmsh gives a
+  point, not gmsh's bare message (`parse_gmsh_refusal()` reads the log). A second try that meshes is used, with a
+  `MeshWarning`. `Study.faces_near(point)` names the faces round any point (#144).
+- `cadagent.formulas`: `fans_in_series` and `fans_in_parallel` (identical fans: pressures add at one flow, flows add
+  at one pressure) and `fan_stall_flow` (the peak that ends the curve's last rise; below it, the stall region), with
+  hand-solved tests (#160).
+- `cadagent.thermal.fans`: the ebm-papst W2G115-AD15-13's curves at 8, 12 and 16 V, read from the datasheet's vector
+  chart. Solved on the datasheet's own system curves, they give back every operating point it tabulates, within the
+  table's rounding and the chart reading (the test allows 3.5 m³/h and 1 Pa) (#160).
+- The fan-curve explorer, `<cad-fan-curve>`, on the new Airflow and fans page and on Engineering formulas. Pick the
+  voltage, the pressure your enclosure needs at 100 m³/h, and one to four fans in parallel or in series. It marks the
+  operating point and the stall region, and warns when the point lands in it (#160).
+- Site doc pages open with a picture band: a hero figure and, where a page has them, input → tool → output tiles, then
+  cards for the sections that have pictures. `docs/pages.yaml` places them and figures inside sections, on the site
+  only; the Markdown twins and `llms.txt` are unchanged (#179).
+- Every placed picture says what it is, above its caption: "Real output of `<tool>`" or "Diagram of `<tool>`, drawn by
+  `<script>`", and what it was computed on (Gyropup, a test fixture, a worked example, published sources). A figure
+  opens its full-size image; a tile links to the section that explains it (#179).
+- The build refuses a `docs/pages.yaml` entry with an unknown or misspelled key, an entry that places nothing, a picture
+  that is not committed under `docs/img/`, a tool that is not a `cad-agent` command, a `cadagent` module, a web kit file
+  or a script under `tools/`, a diagram without the `tools/` script that drew it, and a tile link or `below:` target
+  that is not there (#179).
+- `tools/site-bench-pictures.mjs` captures the review site that `cad-agent site` builds for the gate bench, cropped to
+  whole lines. `tools/site-kit-pictures.mjs` captures the web kit at work: the part table and tracker on the gate
+  bench's parts, and the file viewer on a Gyropup STEP file in its default, front, themed and broken-file states (#179).
+- `cad-agent export-3mf` also writes `exports/<name>-plates.3mf`: every printed part at its quantity, in print
+  orientation, packed onto as many build plates as the bed needs, in one Bambu Studio project. Where Bambu Studio is
+  installed at export time, the file carries its project settings, opens with the plates laid out and slices plate
+  by plate; without it, Bambu Studio opens the parts on one plate. Parts with different filaments never share a
+  plate. Next to it, `<name>-plates.svg` shows the plates from above and `<name>-plates.json` records the layout
+  (#84).
+- `cadagent.manufacturing.plates`: `pack` (MaxRects over footprints, with gap, margin, keep-out areas, quarter turns
+  and the diagonal turn a long part needs), `check_plates`, `write_plates_3mf` and `read_plates_3mf` (read back and
+  verified; the same bytes for the same parts, settings and Bambu Studio version), `plates_svg` and `export_plates`
+  (#84).
+- `cadagent.manufacturing.slicer.project_settings`: Bambu Studio's own project settings for a printer, process and
+  filaments, and `default_bed_type`: the plate surface a printer ships with (#84).
+- `cad.plates` in `cad-agent.yaml`: `parts` (with each part's `quantity` and `filament`), `gap_mm`, `margin_mm`,
+  `rotate`, `keep_out` and `bed_type`. Parts and quantities default to `cad.release` (#84).
+
+**Changed**
+- Kit `<cad-nav>` (`webkit/nav.js`, `nav.css`): on narrow screens the "Pages and contents" toggle is a native `<details
+  class="cad-nav-fold"><summary class="cad-nav-toggle">` around the panel, so the tree opens with a tap, Enter or Space
+  even when `nav.js` is slow, blocked or fails, and without script. On wide screens the fold takes no box and its
+  summary hides, so the panel stays a sticky column; `nav.js` keeps the fold open there for browsers without
+  `::details-content`, and never closes a fold the reader opened (#134).
+- The site's doc pages write that fold; phones without script now get it too, in place of the tree moved below the
+  article (#134).
+- `fan_operating_point` also returns `stall`, true when the point is below `fan_stall_flow` (#160).
+- `fan_operating_point`, `fan_curve_line` and `system_coefficient` refuse what has no answer with `ValueError`: NaN or
+  infinite losses, a system point at zero or negative flow or with a negative pressure drop, and a shut-off pressure
+  or free-air flow of 0 or less (#160).
+- On the site, a table of more than 12 rows or a code block of more than 24 lines folds into a `<details>` that says
+  what is inside. Chrome's find-in-page opens a fold that has a match, and the Markdown twin keeps it all open (#179).
+- The pictures of the hinge sweep say they show the gate bench with a seeded fault (`flap_hits_frame`, its arm's range
+  raised to 60 degrees). As built, the arm sweeps 0 to 40 degrees with 1.60 mm clearance (#179, #184 review).
+- The "Hinge sweep" and "Module insertion" demos link to their sections in `docs/catalog.yaml` (#179).
+- The site preloads its mono font, so the home page no longer shifts at 360 px when the font arrives (#179).
+- The wall-of-text backlog is down from 39 pages to 33. The longest stretch without a picture is down from 20,202 px
+  (`/docs/dossier`) to 12,296 px (`/research/design-workflows`), in Chrome at 1366 × 800 (#179).
+
+**Fixed**
+- `<cad-nav>`: a wheel over the rail or the tree while an outline jump is still scrolling releases the jump again, so
+  the section being read is marked, not the heading the reader turned away from; a wheel that only scrolls the tree
+  still keeps it (#134, #123 review 4).
+- `<cad-nav>`: a jump ends when the page shows its heading, not after 150 ms without a scroll, so a frame slow to paint
+  no longer drops the mark to another section partway through (#134, #158).
+- `<cad-nav>`: no link text shows in the corners beside the filter pill while the tree is scrolled (#134).
+- The FEA hot-spot hint reads "sharp inside corner" where an inside corner meets a side face; it could read "outside
+  edge" there (#144).
+
+**Projects must change**
+- Pages that write `<cad-nav>` markup with the old `<button class="cad-nav-toggle">` should write the `<details
+  class="cad-nav-fold">` fold instead (the markup is in the `nav.js` header). The script wraps the old button into a
+  fold when it runs, but until then, or without it, the button does nothing and the tree shows open on narrow screens
+  (#134).
+- `Study()` now warns (`MeshWarning`) when the part has sliver faces or edges, and `Study.solve()` when the design
+  peak's wall is under 3 elements thick or its inside fillet or hole is smaller than the elements there. A study that
+  treats warnings as errors fails on them: mesh finer there (`refine=`), remove the sliver, or filter `MeshWarning`.
+  Without `refine=`, meshes and computed values are unchanged, bit for bit, apart from the hot-spot hint fix above.
+  Every result gains `result['mesh']` keys (`mesher`, `refine`, `slivers`, `peak`), so committed result and viewer
+  JSON changes, and differs between machines: `mesher` records the gmsh library hash and the Python version (#144).
+- Code that compares the whole result of `fan_operating_point` with a dict must add the `stall` key (#160).
+- Code that caught `ZeroDivisionError` from `system_coefficient` at zero flow must catch `ValueError`. A negative
+  flow or pressure drop, which used to return a coefficient, now raises it too (#160).
+- `export-3mf` (and `all`) now exits 1 when a part fits no build plate or the parts need more than 36 plates. Set
+  `cad.plates.parts` to the parts you print, or `cad.plates: false` to write no plates file. Where Bambu Studio is
+  installed, it also exits 1 when `cad.printer.bed_mm` is larger than the printable area of the `cad.slicer.printer`
+  profile (the P1S's 256 × 256 mm when `cad.slicer.printer` is not set): set `cad.slicer.printer` to your printer, or
+  `cad.plates: false` (#84).
+- `exports/` gains three files per project, deleted again by a run that fails or by `cad.plates: false`. A part
+  named `<name>-plates` must be renamed, or plates turned off (#84).
+- A `cad.slicer` printer, process or filament (or a `cad.plates` filament) that Bambu Studio has no profile for now
+  stops `export-3mf` with a config error (exit 2) where Bambu Studio is installed (#84).
+
 ## v0.7.0 (2026-11-01)
 
 **New**

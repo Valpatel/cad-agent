@@ -41,7 +41,20 @@ Short beats complete: details live in docstrings and the docs.
 
 The site's diagram check (#123) draws every page at a 1100 px window, the narrowest that shows the page tree, and
 fails any diagram wider than the article column: 641 px, keeping 17 px spare for a classic scrollbar. These rules keep
-a diagram inside that and readable on GitHub.
+a diagram inside that and readable on GitHub. The rule that matters most, at most three boxes per rank, looks like
+this: four boxes come from one input, and an invisible link (`B ~~~ E`) moves the fourth a rank down.
+
+```mermaid
+flowchart TD
+    A["one input"] --> B["first output"]
+    A --> C["second output"]
+    A --> D["third output"]
+    A --> E["fourth output<br/>pushed a rank down"]
+    B ~~~ E
+    class A near
+    class B,C,D here
+    class E out
+```
 
 - **`flowchart TD`**, at most 12 nodes. Inputs at the top, outputs at the bottom; label an edge with a verb or the file
   it carries when that helps.

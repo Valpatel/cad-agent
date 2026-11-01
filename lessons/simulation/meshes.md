@@ -3,14 +3,11 @@
 ```mermaid
 flowchart TD
     S["a stress peak<br/>from one mesh"] --> W{"3 or more elements<br/>across its wall?"}
-    W -->|"no"| R["refine there<br/>or mesh finer"]
-    R --> S
-    W -->|"yes"| C{"a sharp inside<br/>corner?"}
-    C -->|"yes"| F["model the fillet:<br/>a sharp corner<br/>never converges"]
-    F --> S
-    C -->|"no"| V{"same on a mesh<br/>0.75x as fine?"}
-    V -->|"no"| R
-    V -->|"yes"| G["a result, recorded<br/>with the mesher<br/>that made it"]
+    W -->|"no"| R["refine there,<br/>solve again"]
+    W -->|"yes"| C{"a sharp<br/>inside corner?"}
+    C -->|"yes"| F["model the fillet:<br/>it never converges"]
+    C -->|"no"| V{"the same at<br/>0.75x the mesh?"}
+    V -->|"yes"| G["a result, with<br/>its mesher named"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

@@ -724,11 +724,19 @@ docs/explore.md:
       caption: "The worked example's comparison page, its header: the objectives and constraints from its explore section (minimise cost and mass, maximise runtime, require a top speed of at least 4 km/h and a catchable lean of at least 20°), and the page's own warning that nothing on it is measured."
       alt: "The comparison page's header: Two-wheel-legged robot options, 4 designs, 3 feasible, 2 on the Pareto front; chips for minimise cost, minimise mass, maximise runtime, require top_speed_kmh at least 4 and catch_lean_deg at least 20; a note that nothing is measured"
     - after: catalogue
+      img: docs/img/explore/light-bom.webp
+      shows: output
+      tool: cad-agent compare
+      on: example
+      caption: "The worked example's Light design, its bill of materials on the comparison page: a line per filled slot, each with its catalogue item's price, mass and basis (its confidence, the date its price was checked, its source), and the evaluator's own line for the printed parts. Every part in the example is made up and marked estimate."
+      alt: "A bill of materials table for the Light design: 24 V hub motors, 8 N·m leg actuators, a 6S battery, computer, wiring allowance and the evaluator's printed parts, each with quantity, price, mass and basis; total 848.56 USD and 5.688 kg, estimated"
+    - after: designs
+      below: A slot holds a catalogue id
       img: docs/img/explore/long-range-bom.webp
       shows: output
       tool: cad-agent compare
       on: example
-      caption: "The Long range design's bill of materials: each line's basis (its confidence, the date its price was checked, its source) comes from its catalogue item, and the last line from the evaluator. The depth camera has no public price, so its line shows a dash and the total, ≥ 1,682.08 USD, is a lower bound."
+      caption: "The Long range design's bill of materials, as the diagram above resolves it: Standard's parts with the 13S pack and the depth camera. The camera has no public price, so its line shows a dash and the total, ≥ 1,682.08 USD, is a lower bound (see the bill of materials below)."
       alt: "A bill of materials table: wheel motors, leg actuators, a 13S battery, computer, wiring allowance, a depth camera with no price and the evaluator's printed parts, each with quantity, price, mass and basis; total at least 1,682.08 USD and 11.079 kg, estimated"
     - after: evaluator
       below: Every key is optional; an unknown key is reported
@@ -739,7 +747,7 @@ docs/explore.md:
       caption: "The worked example's Long range design on the comparison page. Its three failed checks are its evaluator's voltage rules: the 13S pack runs to 54.6 V, more than the wheel motors, leg actuators and computer accept. cad-agent itself knows nothing about voltages; the last two checks are the configured constraints."
       alt: "The comparison page's card for the Long range design: fail, not ranked; three failed checks, the battery's 39 to 54.6 V against what the wheel motors, leg actuators and computer accept; a warning that the depth camera has no price; top speed and lean met"
     - after: comparison
-      below: Incomplete totals are lower bounds, never savings.
+      below: A design is feasible when its verdict
       img: docs/img/explore/long-range-swaps.webp
       shows: output
       tool: cad-agent compare

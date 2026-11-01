@@ -8,8 +8,9 @@
  * crops of the two pages into docs/img/explore/:
  *
  * - compare-header.webp: the comparison page's header: what is minimised, maximised and required, and its caveat;
+ * - light-bom.webp: the Light design's bill of materials, each line with its basis;
  * - long-range-checks.webp: the Long range design's card and the checks its evaluator wrote;
- * - long-range-bom.webp: the same card's bill of materials, each line with its basis;
+ * - long-range-bom.webp: the same card's bill of materials, with a part that has no price;
  * - long-range-swaps.webp: the same card's one-part swaps;
  * - search-trade-off.webp: the search leaderboard's trade-off chart of the trials.
  *
@@ -44,6 +45,7 @@ const pages = { compare: path.join(project, 'exports/explore/compare.html'),
 // the first element's top to the last one's bottom; a closed card on the way is opened.
 const SHOTS = [
   ['compare-header.webp', 'compare', '.wrap > header', '.wrap > header'],
+  ['light-bom.webp', 'compare', '#d-light > ul.checks + h3', '#d-light > .chips'],
   ['long-range-checks.webp', 'compare', '#d-long-range > summary', '#d-long-range > ul.checks'],
   ['long-range-bom.webp', 'compare', '#d-long-range > ul.checks + h3', '#d-long-range > .chips'],
   ['long-range-swaps.webp', 'compare', '#d-long-range > pre + h3', '#d-long-range > pre + h3 + p + .tablewrap'],

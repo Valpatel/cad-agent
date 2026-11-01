@@ -30,3 +30,15 @@ docs/gates.md:
       caption: A preassembled module checked on its own bench, then inserted into its parent as one rigid body.
       alt: A preassembled module inserted into its parent as one rigid body, then withdrawn
       href: docs/subassembly-insertion.md
+  figures:
+    # tools/site-bench-pictures.mjs draws both from the gate bench's committed run (tests/fixtures/gate_bench/site_snapshot)
+    - after: verdicts
+      img: docs/img/gates/bench-review.webp
+      tool: cad-agent site
+      caption: The review site's gates page for the gate bench, the repo's own test assembly. Six gates, 144 checks, all pass, and each says physical fit is not verified.
+      alt: The gates page of the review site, a table with connectivity, containment, fasteners, motion, assembly, wall and dossier-lint, each marked pass with its check counts and links to its verdict files
+    - after: connectivity-and-floating-parts-cadagentgatesconnectivity
+      img: docs/img/gates/bench-connectivity.svg
+      tool: cadagent.gates.connectivity
+      caption: What touches what in the gate bench, from the connectivity gate's verdict. Fasteners are ovals, the dashed boxes are balls allowed to sit free in the hopper, and the arm is its own body on a joint (blue dashed). 31 checks pass.
+      alt: A graph of the gate bench's parts linked by contacts and fasteners, grouped into the static frame and the arm's body

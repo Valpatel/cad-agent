@@ -345,12 +345,13 @@ deflection and stiffness change with it.
 At a given travel it is different. `stiffness_n_per_mm` is lower than with the in-plane modulus. So a force worked out
 from it at a given travel (a clip's retention, a flexure's preload, a spring rate) reads lower than for a solid part
 bent in the layer plane, and so does the stress at that travel, which scales with E (a cantilever pushed to a tip
-travel δ has σ = 3Ecδ/L²). For a part loaded in the layer plane that stress is E_Z / E_XY of the true value (multiply
-by E_XY / E_Z to correct it: 1.84 for PETG-CF, 1.25 for PLA), which makes a strength check at a given travel
-unconservative: check a flexure's or a clip's strength at its travel with the in-plane modulus,
-or with a coupon, not with this one. (The snap-fit tool, `cad-agent snapfit`, uses strain allowables and its own
-moduli by direction, so it does not depend on this E.) A print with sparse infill or thin walls is softer than either,
-and then the force at a given travel reads high: a retention check needs a measured part.
+travel δ has σ = 3Ecδ/L²). For a part loaded in the layer plane that stress is E_Z / E_XY of what the in-plane modulus
+gives: multiply by E_XY / E_Z (1.84 for PETG-CF, 1.25 for PLA) to get the in-plane figure, which is itself an estimate
+for an isotropic solid. So a strength check at a given travel is unconservative with this modulus: check a flexure's
+or a clip's strength at its travel with the in-plane modulus, or with a coupon. (The snap-fit tool, `cad-agent
+snapfit`, uses strain allowables and its own moduli by direction, so it does not depend on this E.) A print with sparse
+infill or thin walls is softer than either, and then the force at a given travel reads high: a retention check
+needs a measured part.
 
 A part whose bending stays in the layer plane is stiffer. Give it the X-Y modulus, keep the weak-direction strength,
 and say so in the note, so the assumptions line stays true:

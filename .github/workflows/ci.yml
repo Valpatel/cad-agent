@@ -41,13 +41,14 @@ jobs:
         with: {python-version: '3.12', cache: pip}
       # A mirror can hang: each try is time-boxed, and three tries fit inside the step's limit.
       - name: System libraries for the gmsh, VTK and MuJoCo wheels
-        timeout-minutes: 10
+        timeout-minutes: 14   # worst case 3 x (90 + 90 + 10 + 60) s = 12.5 min
         run: |
           for try in 1 2 3; do
             sudo timeout 90 apt-get update -q &&
               sudo timeout 90 apt-get install -yq --no-install-recommends libglu1-mesa libxrender1 libxcursor1 libxft2 libxinerama1 libgl1 libegl1 &&
               exit 0
             echo "apt try $try failed or timed out; retrying"; sleep 10
+            sudo timeout 60 dpkg --configure -a || true   # a timeout inside dpkg leaves it "interrupted": finish it first
           done
           exit 1
       - run: pip install -e ".[cad,fea,robot,site,sim,explore,dev]"

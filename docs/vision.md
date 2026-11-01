@@ -34,12 +34,12 @@ hub page per area from it (#141). In outline:
 
 | Domain | Areas |
 |---|---|
-| Mechanical design | mechanisms, housings and enclosures, compliant mechanisms, gears, belt and chain drives, wheels and driving, walking, fasteners, bought hardware and assembly, fixtures and jigs (pogo-pin PCBA test fixtures, general fixtures), mould design |
-| Manufacturing | 3D printing, CNC machining, laser cutting (plastics, metals), sheet metal, mould making (silicone moulds, urethane casting) |
-| Thermal | conduction and heat sinks, airflow and fans, thermal validation |
-| Simulation and validation | structural FEA, CFD, motion and dynamics, topology optimisation, design exploration, results and visuals, physical tests and coupons |
-| Electrical design | electrical panels, wiring harnesses, circuit boards (breakout, adapter, pass-through tap, power converters, relay boards, DAQ and signal conditioning), test systems (HIL simulators, test benches on extrusion frames) |
-| Practice | agent process and workflow, design process, review and evidence, publishing, evaluation |
+| Mechanical design | mechanisms; housings and enclosures; compliant mechanisms; gears; belt and chain drives; wheels and driving; walking; fasteners, bought hardware and assembly; fixtures and jigs (pogo-pin PCBA test fixtures, general fixtures); mould design |
+| Manufacturing | 3D printing; CNC machining; laser cutting (plastics, metals); sheet metal; mould making (silicone moulds, urethane casting) |
+| Thermal | conduction and heat sinks; airflow and fans; thermal validation |
+| Simulation and validation | structural FEA; CFD; motion and dynamics; topology optimisation; design exploration; results and visuals; physical tests and coupons |
+| Electrical design | electrical panels; wiring harnesses; circuit boards (breakout, adapter, pass-through tap, power converters, relay boards, DAQ and signal conditioning); test systems (HIL simulators, test benches on extrusion frames) |
+| Practice | agent process and workflow; design process; review and evidence; publishing; evaluation |
 
 Practice cuts across every domain: how agents work, review and publish here.
 

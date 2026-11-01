@@ -38,15 +38,23 @@ def load_areas(text):
     return yaml.load(text, Loader=_Strict)
 
 
+def read_tree(text=None):
+    """The tree every test here checks: docs/areas.yaml (or planted text) through the strict loader."""
+    return load_areas(AREAS.read_text(encoding="utf-8") if text is None else text)
+
+
 @pytest.fixture(scope="module")
 def tree():
-    return load_areas(AREAS.read_text(encoding="utf-8"))
+    return read_tree()
 
 
 def test_a_duplicate_key_is_refused_not_silently_dropped():
     with pytest.raises(yaml.constructor.ConstructorError, match=r"duplicate keys \['issues', 'maturity'\]"):
-        load_areas("{issues: [1, 2], maturity: tooling, issues: [3], maturity: idea}")
-    assert load_areas("{issues: [1], maturity: idea}") == {"issues": [1], "maturity": "idea"}
+        read_tree("{issues: [1, 2], maturity: tooling, issues: [3], maturity: idea}")
+    assert read_tree("{issues: [1], maturity: idea}") == {"issues": [1], "maturity": "idea"}
+    # The real file with a second `domains:` (a pasted block, say): the first would be dropped without a word.
+    with pytest.raises(yaml.constructor.ConstructorError, match=r"duplicate keys \['domains'\]"):
+        read_tree(AREAS.read_text(encoding="utf-8") + "\ndomains: []\n")
 
 
 def nodes(tree):

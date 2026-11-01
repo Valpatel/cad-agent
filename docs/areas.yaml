@@ -353,6 +353,13 @@ domains:
         api: [cadagent.review.evidence, cadagent.review]
         lessons: review
         issues: [97, 118]
+      - slug: supply-chain
+        title: Supply chain and resource safety
+        scope: What we depend on, vendor and link to - advisories, pins and receipts, drift, licences and links, checked the same way every time.
+        maturity: tooling
+        pages: [docs/supply-chain.md, research/security-report.md]
+        skills: [cad-supply-chain]
+        issues: [117, 151, 153, 154]
       - slug: publishing
         title: Publishing
         scope: Review sites, viewers, releases and this site.

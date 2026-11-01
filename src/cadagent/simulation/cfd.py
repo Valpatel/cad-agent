@@ -34,7 +34,6 @@ import re
 import shutil
 import subprocess
 import warnings
-from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -855,11 +854,6 @@ class _Writer:
         p.write_text(head + body)
 
 
-def _last_row(path: Path):
-    rows = [l.split() for l in path.read_text().splitlines() if l.strip() and not l.startswith('#')]
-    return rows[-1] if rows else None
-
-
 def _series(path: Path):
     rows = [l.split() for l in path.read_text().splitlines() if l.strip() and not l.startswith('#')]
     return [[float(x.strip('()')) for x in r] for r in rows]
@@ -870,31 +864,38 @@ def _has_rows(path: Path) -> bool:
         return any(l.strip() and not l.startswith('#') for l in fh)
 
 
+def _solve_of(path: Path) -> tuple:
+    """The solve that wrote one function-object file, as a key that sorts in the order the solves ran: its start time
+    (the folder), then <kind>.dat before the <kind>_<t>.dat a later solve from the same time writes beside it. Every
+    file one solve writes has the same key (OpenFOAM's output kinds have no underscore)."""
+    sfx = path.stem.partition('_')[2]
+    try:
+        return float(path.parent.name), bool(sfx), float(sfx) if sfx else 0.0
+    except ValueError:
+        return float(path.parent.name), True, math.inf
+
+
 def _outputs(pp: Path, name: str, kind: str = 'volFieldValue') -> list:
     """Every file one function object logged rows to, oldest solve first. Each solve (the first, then each
     continuation from the latest saved time) writes postProcessing/<region>/<name>/<start time>/<kind>.dat. A solve
     that starts from a time an earlier one already started from (a run that stopped before its next save, continued)
-    finds that file there and writes <kind>_<start time>.dat beside it. A solve that crashed at start leaves a file
-    with only its header: it logged nothing, so it is left out, as if it had not run (it replaces no rows and is not a
-    restart)."""
+    finds that file there and writes <kind>_<start time>.dat beside it. A file with only its header is left out, as
+    its solve logged nothing to it: either the solve crashed at start (it logged nothing anywhere, so it is not a
+    restart and replaces no rows), or it stopped before this output's first sample (every 10 iterations for all but the
+    residuals), and then _whole_run still replaces the earlier rows from its start."""
     pat = re.compile(rf'{re.escape(kind)}(?:_(.+))?\.dat')
-
-    def order(p):                                 # by start time; within a folder, <kind>.dat before <kind>_<t>.dat
-        sfx = pat.fullmatch(p.name).group(1)
-        try:
-            return float(p.parent.name), sfx is not None, float(sfx) if sfx else 0.0
-        except ValueError:
-            return float(p.parent.name), True, math.inf
-    return sorted((p for p in pp.glob(f'**/{name}/*/{kind}*.dat') if pat.fullmatch(p.name) and _has_rows(p)), key=order)
+    return sorted((p for p in pp.glob(f'**/{name}/*/{kind}*.dat') if pat.fullmatch(p.name) and _has_rows(p)), key=_solve_of)
 
 
-def _whole_run(files, rows_of=_series) -> list:
+def _whole_run(files, rows_of=_series, solves=()) -> list:
     """One function object's rows across every solve, in order. A continuation from time T replaces whatever an
-    earlier solve logged after T (a solve that stops between saves has logged past the time the next one starts from)."""
+    earlier solve logged after T (a solve that stops between saves has logged past the time the next one starts from),
+    even when it logged nothing to this function object itself: ``solves`` are the keys (_solve_of) of every solve that
+    logged anything, residuals included, so one that stopped before its first sample still cuts at its start."""
+    own = {_solve_of(f): f for f in files}
     rows = []
-    for f in files:
-        start = float(f.parent.name)
-        rows = [r for r in rows if r[0] <= start] + rows_of(f)
+    for key in sorted(set(own) | set(solves)):
+        rows = [r for r in rows if r[0] <= key[0]] + (rows_of(own[key]) if key in own else [])
     return rows
 
 
@@ -939,48 +940,54 @@ def _thin_max(its: list, cols: dict, most: int):
 
 
 def _change_limit(key: str) -> float:
-    """How far one ``convergence`` change may go and still count as ``steady`` (strictly less, either sign). Keys ending
-    ``_c_change`` (each solid's hottest temperature and the air through each fan) get 1 °C. Everything else gets 2: the
-    fan flow and the heat leaving in %, and a fin block's mean air temperature in °C, because its key,
-    ``<block>_T_change_c``, does not end ``_c_change``. calibrate_fins applies its own, tighter 0.5 °C to the block and
-    intake air before each fin-temperature step."""
-    return 1.0 if key.endswith('_c_change') else 2.0
+    """How far one ``convergence`` change may go and still count as ``steady`` (strictly less, either sign): 2 % for a
+    change in % (a key ending ``_pct``: the fan flow and the heat leaving) and 1 °C for every temperature (each solid's
+    hottest, a fin block's mean air and the air through each fan), by the same unit rule the chart's captions use.
+    calibrate_fins applies its own, tighter 0.5 °C to the block and intake air before each fin-temperature step."""
+    return 2.0 if key.endswith('_pct') else 1.0
 
 
 def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
     """Temperatures (°C), fan flows and residual history from a finished case's postProcessing output.
 
     The histories (``residuals``, ``T_max_history``, ``monitors``) cover the whole run, joined across continuations
-    (``restarts`` lists where each began). ``convergence`` is how much each monitored value changed over
-    ``convergence_window``: the iterations from 80 % of the last one onward, cut to the newest solve (so after a
-    continuation shorter than a fifth of the run, the whole newest solve). ``convergence_limits`` is what ``steady``
+    (``restarts`` lists where each began), and the headline values are their last rows. ``convergence`` is how much
+    each monitored value changed over ``convergence_window``: the iterations from 80 % of the last one onward, cut to
+    the newest solve (so after a continuation shorter than a fifth of the run, the whole newest solve; after one that
+    stopped before its first temperature sample, nothing, and no window). ``convergence_limits`` is what ``steady``
     holds each change to."""
     cd = Path(case_dir)
     meta = json.loads((cd / 'cadagent-case.json').read_text())
     pp = cd / 'postProcessing'
     out = {'case': meta['name'], 'ambient_c': meta['ambient_c'], 'solids': {}, 'fans': {}, 'limits': meta['limits']}
 
-    def fo(name, kind='volFieldValue'):           # the newest solve's file (one that crashed at start is left out)
+    # every solve that logged anything, residuals included (a solve logs them every iteration, the rest every 10)
+    res = _outputs(pp, 'residuals', 'solverInfo')
+    solves = sorted({_solve_of(f) for f in res + _outputs(pp, 'flux_T', 'surfaceFieldValue')})
+
+    def run(name, kind='volFieldValue'):          # one output's rows over the whole run; the headline is the last
+        return _whole_run(_outputs(pp, name, kind), solves=solves)
+
+    def newest(name, kind='volFieldValue'):       # its rows from the newest solve, none if it logged none there
         hits = _outputs(pp, name, kind)
-        return hits[-1] if hits else None
+        return _series(hits[-1]) if hits and (not solves or _solve_of(hits[-1]) >= solves[-1]) else []
 
     for s in meta['solids']:
         row = {}
         for op, key in (('max', 'max_c'), ('volAverage', 'mean_c')):
-            f = fo(f'T_{op}_{s["name"]}')
-            if f:
-                r = _last_row(f)
-                row[key] = round(float(r[1]) - T0, 2)
+            a = run(f'T_{op}_{s["name"]}')
+            if a:
+                row[key] = round(a[-1][1] - T0, 2)
         row.update(power_w=s['power_w'], material=s['material'])
         out['solids'][s['name']] = row
-    f = fo(f'T_max_{case.fluid if case else "domain0"}')
-    if f:
-        out['air_max_c'] = round(float(_last_row(f)[1]) - T0, 2)
+    a = run(f'T_max_{case.fluid if case else "domain0"}')
+    if a:
+        out['air_max_c'] = round(a[-1][1] - T0, 2)
     zones = {}
     for zn in [f['name'] for f in meta['fans']] + [z['name'] for z in meta.get('porous', [])]:
-        f = fo(f'zone_{zn}')
-        if f:
-            r = [float(x.strip('()')) for x in _last_row(f)]
+        a = run(f'zone_{zn}')
+        if a:
+            r = a[-1]
             zones[zn] = {'U_m_s': r[1:4], 'T_c': round(r[4] - T0, 2)}
     out['zones'] = zones
 
@@ -997,14 +1004,15 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
             out['fans'][fan['name']] = {'flow_m3h': round(q, 2), 'flow_cfm': round(q / 1.699, 2), 'pressure_rise_pa': round(dp, 2),
                                         'fraction_of_free_air': round(q / fan['q_free_m3h'], 3), 'air_through_fan_c': z['T_c']}
     t_amb = meta['ambient_c'] + T0
-    ft, fm = fo('flux_T', 'surfaceFieldValue'), fo('flux_mass', 'surfaceFieldValue')
-    heat_series = None
-    if ft and fm:
-        a, m = np.array(_series(ft)), np.array(_series(fm))
-        n = min(len(a), len(m))
-        heat_series = np.stack([a[:n, 0], AIR_CP * (a[:n, 1] - t_amb * m[:n, 1])], 1)
-        out['heat_out_w'] = round(float(heat_series[-1, 1]), 2)
-        out['mass_imbalance_kg_s'] = float(m[n - 1, 1])
+
+    def heat_out(of):                             # [iteration, heat leaving (W), mass flux (kg/s)] where both logged
+        phi = {r[0]: r[1] for r in of('flux_mass', 'surfaceFieldValue')}
+        return np.array([[r[0], AIR_CP * (r[1] - t_amb * phi[r[0]]), phi[r[0]]]
+                         for r in of('flux_T', 'surfaceFieldValue') if r[0] in phi]).reshape(-1, 3)
+    heat_run = heat_out(run)
+    if len(heat_run):
+        out['heat_out_w'] = round(float(heat_run[-1, 1]), 2)
+        out['mass_imbalance_kg_s'] = float(heat_run[-1, 2])
     q_in = meta.get('heat_input_w')
     if q_in is not None and out.get('heat_out_w') is not None:
         out['heat_input_w'] = q_in
@@ -1020,20 +1028,15 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
         if empty:
             out['error'] = f'empty zone(s): {empty}; refine the mesh around them'
     # residuals of the air over the whole run, joined across continuations (each writes its own start-time folder)
-    res = _outputs(pp, 'residuals', 'solverInfo')
     if res:
-        rows = _whole_run(res, _residual_rows)
+        rows = _whole_run(res, _residual_rows, solves)
         fields = list(dict.fromkeys(k for _, r in rows for k in r))
         its, cols, every = _thin_max([t for t, _ in rows], {k: [r.get(k) for _, r in rows] for k in fields}, RESIDUAL_POINTS)
         out['residuals'] = {'iteration': its, **cols}
         out['residuals_every'] = every            # each point is the largest residual over this many iterations
         out['iterations'] = int(rows[-1][0]) if rows else 0
-    # where each continuation began, one entry per solve after the first (two can start from the same saved time);
-    # from whichever of the residual and heat-flux outputs holds more solves at that time
-    starts = Counter()
-    for files in (res, _outputs(pp, 'flux_T', 'surfaceFieldValue')):
-        starts |= Counter(float(f.parent.name) for f in files)
-    out['restarts'] = [int(s) for s in sorted(starts.elements())[1:]]
+    # where each continuation began, one entry per solve after the first (two can start from the same saved time)
+    out['restarts'] = [int(k[0]) for k in solves[1:]]
     out['planned_iterations'] = meta.get('iterations')
     logs = sorted(cd.glob('log.solve*'), key=lambda p: p.stat().st_mtime)
     if logs:                                  # the newest solve (a calibration restart writes its own log)
@@ -1045,7 +1048,7 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
             out['wall_time_s'] = float(m[-1])
     hist = {}
     for s in meta['solids']:
-        rows = _whole_run(_outputs(pp, f'T_max_{s["name"]}'))
+        rows = run(f'T_max_{s["name"]}')
         if rows:
             hist[s['name']] = [[r[0], r[1] - T0] for r in rows]
     out['T_max_history'] = hist
@@ -1057,21 +1060,21 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
             monitors[key] = {'name': name, 'label': label, 'quantity': quantity, 'unit': unit, 'change': change,
                              'points': [[int(round(t)), round(float(v), 4)] for t, v in points]}
     for z in meta.get('porous', []):
-        a = _whole_run(_outputs(pp, f'zone_{z["name"]}'))
+        a = run(f'zone_{z["name"]}')
         monitor(f'{z["name"]}_air_c', z['name'], f'{z["name"]}: mean in the block', 'Air temperature', '°C',
                 f'{z["name"]}_T_change_c', [(r[0], r[4] - T0) for r in a])
     for fan in meta['fans']:
-        a = _whole_run(_outputs(pp, f'zone_{fan["name"]}'))
+        a = run(f'zone_{fan["name"]}')
         monitor(f'{fan["name"]}_intake_c', fan['name'], f'{fan["name"]}: air through the fan', 'Air temperature', '°C',
                 f'{fan["name"]}_intake_c_change', [(r[0], r[4] - T0) for r in a])
         monitor(f'{fan["name"]}_flow_m3h', fan['name'], f'{fan["name"]}: flow through the fan', 'Fan flow', 'm³/h',
                 f'{fan["name"]}_flow_change_pct', [(r[0], flow_m3h(fan, r[1:4])) for r in a])
-    phi = {r[0]: r[1] for r in _whole_run(_outputs(pp, 'flux_mass', 'surfaceFieldValue'))}
     monitor('heat_out_w', 'heat out', 'heat leaving with the air', 'Heat leaving with the air', 'W', 'heat_out_change_pct',
-            [(r[0], AIR_CP * (r[1] - t_amb * phi[r[0]])) for r in _whole_run(_outputs(pp, 'flux_T', 'surfaceFieldValue')) if r[0] in phi])
+            heat_run[:, :2].tolist())
     out['monitors'] = monitors
     # how much the answer still moved over the iterations from 80 % of the last one on, cut to the newest solve: a
-    # continuation (after a fin-temperature step, say) starts a new window, so calibrate_fins judges each step on its own
+    # continuation (after a fin-temperature step, say) starts a new window, so calibrate_fins judges each step on its own,
+    # and one that logged no temperature or heat rows (it stopped within 9 iterations) measured nothing: no window
     conv, window = {}, []
 
     def tail(a):
@@ -1079,37 +1082,32 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
         window.append((float(t[0, 0]), float(t[-1, 0])))
         return t
     for s in meta['solids']:
-        f = fo(f'T_max_{s["name"]}')
-        if f:
-            a = np.array(_series(f))
-            if len(a) > 5:
-                t = tail(a)
-                conv[f'{s["name"]}_max_c_change'] = round(float(t[-1, 1] - t[0, 1]), 2)
+        a = np.array(newest(f'T_max_{s["name"]}'))
+        if len(a) > 5:
+            t = tail(a)
+            conv[f'{s["name"]}_max_c_change'] = round(float(t[-1, 1] - t[0, 1]), 2)
     for z in meta.get('porous', []):
-        f = fo(f'zone_{z["name"]}')
-        if f:
-            a = np.array(_series(f))
-            if len(a) > 5:
-                t = tail(a)
-                conv[f'{z["name"]}_T_change_c'] = round(float(t[-1, 4] - t[0, 4]), 2)
+        a = np.array(newest(f'zone_{z["name"]}'))
+        if len(a) > 5:
+            t = tail(a)
+            conv[f'{z["name"]}_T_change_c'] = round(float(t[-1, 4] - t[0, 4]), 2)
     for fan in meta['fans']:
-        f = fo(f'zone_{fan["name"]}')
-        if f:
-            a = np.array(_series(f))
-            if len(a) > 5:
-                t = tail(a)
-                ax = np.asarray(fan['axis'], float) / np.linalg.norm(fan['axis'])
-                u0, u1 = float(t[0, 1:4] @ ax), float(t[-1, 1:4] @ ax)
-                conv[f'{fan["name"]}_flow_change_pct'] = round(100 * (u1 - u0) / u1, 1) if u1 else None
-                conv[f'{fan["name"]}_intake_c_change'] = round(float(t[-1, 4] - t[0, 4]), 2)
-    if heat_series is not None and len(heat_series) > 5:
+        a = np.array(newest(f'zone_{fan["name"]}'))
+        if len(a) > 5:
+            t = tail(a)
+            ax = np.asarray(fan['axis'], float) / np.linalg.norm(fan['axis'])
+            u0, u1 = float(t[0, 1:4] @ ax), float(t[-1, 1:4] @ ax)
+            conv[f'{fan["name"]}_flow_change_pct'] = round(100 * (u1 - u0) / u1, 1) if u1 else None
+            conv[f'{fan["name"]}_intake_c_change'] = round(float(t[-1, 4] - t[0, 4]), 2)
+    heat_series = heat_out(newest)
+    if len(heat_series) > 5:
         t = tail(heat_series)
         conv['heat_out_change_pct'] = round(100 * (t[-1, 1] - t[0, 1]) / t[-1, 1], 1) if t[-1, 1] else None
     out['convergence'] = conv
     if window:
         out['convergence_window'] = [int(min(w[0] for w in window)), int(max(w[1] for w in window))]
-    out['convergence_limits'] = {k: _change_limit(k) for k in conv}
-    steady = bool(conv) and all(abs(v) < _change_limit(k) for k, v in conv.items() if v is not None)
+    limit = out['convergence_limits'] = {k: _change_limit(k) for k in conv}      # what the chart's captions show, too
+    steady = bool(conv) and all(abs(v) < limit[k] for k, v in conv.items() if v is not None)
     # within 5 % of the heat put in (or 0.5 W of nothing, for an airflow-only case); not checkable when an exchanger
     # block has no target power, and then said so
     if out.get('energy_balance_pct') is not None:

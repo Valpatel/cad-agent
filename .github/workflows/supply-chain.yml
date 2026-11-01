@@ -1,0 +1,71 @@
+name: Supply-chain report
+# Weekly online run of tools/resource_audit.py (#117; skills/cad-supply-chain/SKILL.md, docs/supply-chain.md). It reads
+# OSV.dev, npm audit, PyPI, the npm registry and its tarballs, deps.dev, the GitHub API and the OpenSSF Scorecard API,
+# then opens, updates or closes ONE issue ("Supply-chain report: open findings") when the findings change. It never
+# pushes, never opens a PR and never merges. Fixes go through normal PRs.
+#
+# Two jobs, so the token that can write issues never sits beside untrusted input:
+# - report (contents: read) fetches and parses every third-party answer and uploads the report as an artifact;
+# - issue (issues: write) downloads that artifact and only runs `issue --post`, which reads our own JSON with the
+#   standard library alone (no pip install in this job).
+# Third-party text reaches the issue only as data, with @mentions and #references broken (no_mentions in the tool).
+#
+# The job's GITHUB_TOKEN cannot read repository settings (secret scanning, Dependabot alerts: they need admin), so this
+# run leaves --repo out; the owner checks those with their own login (the skill says how). Network answers vary, so
+# this workflow never gates anything; CI's supply-chain job runs the offline checks instead.
+on:
+  schedule:
+    - cron: "41 6 * * 1"         # Mondays 06:41 UTC
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: supply-chain-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    # This repository only; a dispatch runs the copy on the branch it names, so only the default branch's copy runs.
+    if: github.repository == 'Valpatel/cad-agent' && (github.event_name != 'workflow_dispatch' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0   # v7.1.0
+        with: {python-version: '3.12'}
+      - run: pip install pyyaml        # the tool is stdlib plus pyyaml
+      - name: Run the report (online)
+        env:
+          GH_TOKEN: ${{ github.token }}      # read-only here; it only raises the GitHub API rate limit
+        run: |
+          mkdir -p build
+          python3 tools/resource_audit.py report --online \
+            --json build/security-report.json --md build/security-report.md --fail-on none
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9   # v7.0.2
+        with:
+          name: security-report
+          path: build/security-report.*
+          retention-days: 30
+
+  issue:
+    needs: report
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+        with: {persist-credentials: false}
+      # No setup-python and no pip: `issue` needs only the standard library (the runner's python3), so the one job that
+      # can write issues runs no third-party package code.
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333   # v8.0.2
+        with: {name: security-report, path: build}
+      - name: Open or update the tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/resource_audit.py issue --report build/security-report.json --repo "$GITHUB_REPOSITORY" --post

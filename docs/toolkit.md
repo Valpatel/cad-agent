@@ -1,14 +1,15 @@
 # Tools: the cad-agent command and Python package
 
 cad-agent is a toolkit for agents doing hardware design, in the six domains of the [topic tree](vision.md):
-mechanical design, manufacturing, thermal, simulation and validation, electrical design, and practice (review,
-evidence and publishing). It is made of [subagents and skills](agent-workflow.md), the references behind every rule
+mechanical design, manufacturing, thermal, simulation and validation, electrical design, and practice (how agents
+work, design process, review and evidence, publishing, evaluation). It is made of [subagents and skills](agent-workflow.md), the references behind every rule
 (cited on each page), code, calculators such as the [snap-fit calculator](compliant.md),
 [lessons learned](../lessons/README.md) and a [catalogue of outside tools](https://cad-agent.valpatel.com/catalog).
 This page is the reference for its code: the `cad-agent` command and the Python package `cadagent`.
 
 [`docs/areas.yaml`](areas.yaml) lists each area's commands and APIs, at the maturity that area has reached; several
-areas are still ideas, with no tool yet. The pipeline commands work on any project: `cad-agent` runs a project's build
+areas are still ideas, with no tool yet. The pipeline commands work on any project set up by
+[the project contract](#the-project-contract): `cad-agent` runs a project's build
 and checks, verifies its 3MF print files, and turns the results into a standalone HTML report and a review package.
 The geometry and the design-specific checks stay in the project; the package provides the runner, the 3MF writer,
 shared geometry screens, the renderer, link validation, the report, packaging and a local server.

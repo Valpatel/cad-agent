@@ -350,10 +350,10 @@ domains:
         title: Publishing
         scope: Review sites, viewers, releases and this site.
         maturity: tooling
-        pages: [docs/file-viewer.md, docs/web-diagrams.md, docs/web-parts.md]
+        pages: [docs/file-viewer.md, docs/web-diagrams.md, docs/web-parts.md, docs/animated-figures.md]
         cli: [package, release, serve, site, view, webkit]
-        api: [cadagent.site, cadagent.release, cadagent.view]
-        issues: [104, 141]
+        api: [cadagent.site, cadagent.release, cadagent.view, cadagent.publish.anim]
+        issues: [104, 141, 181]
       - slug: evaluation
         title: Evaluation
         scope: Standard jobs and graders that measure models, harnesses and our tooling.

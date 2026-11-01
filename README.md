@@ -17,7 +17,8 @@ coupon replaces a data-sheet number for one filament and print direction.
 Browse it at [cad-agent.valpatel.com](https://cad-agent.valpatel.com) (every page also as Markdown, plus `llms.txt`
 and `catalog.json`).
 
-<p align="center"><img src="docs/img/gyropup.jpg" alt="Gyropup, a self-balancing wheel-legged robot designed with cad-agent" width="100%"></p>
+<p align="center"><img src="docs/img/hero/gyropup-leg.svg" alt="Gyropup's five-bar leg drawn from its real CAD, assembled, then checked for fit, strength and motion by cad-agent" width="100%"><br>
+<sub>Drawn from the real CAD and results of <a href="https://github.com/Valpatel/gyropup">Gyropup</a> (MIT), a self-balancing wheel-legged robot designed with cad-agent: its leg's STEP file, the hip frame's FEA and the five-bar's link lengths. Made by <a href="tools/readme_anim.py"><code>tools/readme_anim.py</code></a>.</sub></p>
 
 <table>
 <tr>

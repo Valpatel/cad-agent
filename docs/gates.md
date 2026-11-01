@@ -179,6 +179,9 @@ flowchart TD
     class U out
 ```
 
+<details>
+<summary>How the probe samples: the section's curves, edges with no face pair, and the kernel's own piece</summary>
+
 - **Why the section.** It finds the intersection curve where the boolean misses it: a closed curve around every
   missed crossing in the tests. The samples are a grid over each curve's box on each face (so a 1 mm cap gets
   0.1 mm spacing), the face's edges in that box and its vertices. Where the curve is an iso-line of the face (a
@@ -191,8 +194,11 @@ flowchart TD
   next to it get a coarse pass first (4 × 4), then the full grid if any sample is on the wrong side.
 - **Why the kernel's piece.** A sample inside the kernel's own common (for `touching`) or cut (for `contains`) is a
   crossing the kernel saw and measured: a box corner 0.02 mm into a plate shares 7e-6 mm³ and stays `touching`.
-- **The answer.** A crossing outside that piece is `unknown`: its volume is not measured, so neither `touching`
-  nor `overlapping` can be stated. `witness["crossing_probe"]` names the surface, the point, its depth (a lower
+
+</details>
+
+- **The answer.** A crossing outside the kernel's own piece is `unknown`: its volume is not measured, so neither
+  `touching` nor `overlapping` can be stated. `witness["crossing_probe"]` names the surface, the point, its depth (a lower
   bound) and the other part's nearest point; the containment gate turns it into an escape. If the probe itself
   fails, the pair is `unknown` too.
 - **What it costs.** Only pairs whose boundaries meet pay: 0.03–0.06 s per ball pair above. On the README hero's

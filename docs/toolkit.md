@@ -215,6 +215,11 @@ until v0.7.0. Move imports to the new paths:
 
 `cadagent.geometry` keeps its own API; its feature checks are now submodules (`cadagent.geometry.holes`, ...).
 
+Patching a name through an old path still reaches the code (`monkeypatch.setattr("cadagent.slicer.shutil.which",
+...)`), because both paths are the same module. Replacing a *whole module* does not: cad-agent's own code imports the
+new paths, so `sys.modules["cadagent.report"] = fake` or `cadagent.report = fake` is not seen. Replace the module at
+its new path instead (`monkeypatch.setitem(sys.modules, "cadagent.publish.report", fake)`).
+
 ```python
 from cadagent.project import load_project    # CadProject, Step, Check, CadConfigError
 from cadagent.geometry import (solid_report, export_print_stl, pairwise_intersections,

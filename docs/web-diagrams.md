@@ -31,6 +31,20 @@ flowchart TD
 
 Drawn in the reader's browser, a diagram near the top of a page moved the text twice as it loaded: once when its placeholder went in, again when the drawing settled. The layout shift was up to 0.58 on a phone (`/lessons/process/agent-process`), against Google's "good" limit of 0.1. So the site build draws every diagram itself, with the kit's own `drawDiagram`, in the headless Chromium the browser tests use. Each page then arrives with `<figure class="cad-diagram" data-state="ready">`: the SVG, sized, with its source in the disclosure. Nothing moves while it loads, it shows without script, and no page downloads Mermaid. The Markdown twin keeps the Mermaid fence for agents.
 
+Measured in Chrome, once every diagram had finished: the sum of the layout shifts while the page loaded, median of three loads. WebKit does not report layout shifts.
+
+| Page | 360 px before | 360 px after | 1366 px before | 1366 px after |
+|---|---|---|---|---|
+| `/lessons/process/agent-process` | 0.576 | 0 | 0.272 | 0 |
+| `/docs/style-guide` (3 diagrams) | 0.088 | 0 | 0.098 | 0 |
+| `/docs/vision` (3 diagrams) | 0 | 0 | 0 | 0 |
+| `/docs/toolkit` | 0 | 0 | 0 | 0 |
+
+Before, 53 of the 106 page-and-width cases with a diagram scored 0.1 or more. After, the worst of all 106 is 0.012. On `/docs/toolkit` and `/docs/vision` the diagrams sit below the first screen, so their shift no longer counts: a layout shift only counts what moves on screen. The browser test holds every page with a diagram under 0.05 at 1366 px, and these four at 360 px as well. On them it also checks that each diagram shows without script, at the same size as with script.
+
+<details>
+<summary>How the build keeps each drawing the same, themed, cached, safe and never fatal</summary>
+
 - **The same bytes every time, on one machine and browser build:**
   - The SVG id is a hash of the source, theme, Mermaid build, kit, font and drawing code.
   - Each drawing gets a fresh Mermaid instance, because sequence and class diagrams number their elements with counters that run on from one drawing to the next. Math.random is seeded.
@@ -44,13 +58,4 @@ Drawn in the reader's browser, a diagram near the top of a page moved the text t
 - **Safe:** Mermaid draws in strict mode, and a drawing with a script, an event handler or a `javascript:` link is refused. The pages keep the site's CSP: no inline script, and inline styles are allowed as before.
 - **Never fatal:** with no Chromium (`npx playwright install chromium`, or Google Chrome), or with `--client-diagrams`, the build says so and leaves the blocks for `observeDiagrams`, as before. The same happens to a diagram Mermaid cannot draw. `npm run deploy:site` deploys either way.
 
-Measured in Chrome, once every diagram had finished: the sum of the layout shifts while the page loaded, median of three loads. WebKit does not report layout shifts.
-
-| Page | 360 px before | 360 px after | 1366 px before | 1366 px after |
-|---|---|---|---|---|
-| `/lessons/process/agent-process` | 0.576 | 0 | 0.272 | 0 |
-| `/docs/style-guide` (3 diagrams) | 0.088 | 0 | 0.098 | 0 |
-| `/docs/vision` (3 diagrams) | 0 | 0 | 0 | 0 |
-| `/docs/toolkit` | 0 | 0 | 0 | 0 |
-
-Before, 53 of the 106 page-and-width cases with a diagram scored 0.1 or more. After, the worst of all 106 is 0.012. On `/docs/toolkit` and `/docs/vision` the diagrams sit below the first screen, so their shift no longer counts: a layout shift only counts what moves on screen. The browser test holds every page with a diagram under 0.05 at 1366 px, and these four at 360 px as well. On them it also checks that each diagram shows without script, at the same size as with script.
+</details>

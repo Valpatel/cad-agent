@@ -24,11 +24,12 @@ Limits, stated in every result: linear and small-deflection; isotropic material.
 each printed material says which modulus and strength it uses and the print direction of the modulus
 (``Material.note`` and ``Material.direction``); the assumptions line of every result repeats them. The defaults take the
 lowest modulus the data sheet gives across the layers (Z), so deflections come out higher than with the sheet's
-in-plane values, and a strength below the Z tensile strength, so the safety factor uses the weak direction. The mesh is
-the solid CAD and the data sheet values come from 100 % infill test bars: a print with sparse infill or thin walls can
-be softer still, and a force taken from the computed stiffness at a given travel (a clip's retention, a flexure's
-preload) then reads low. Contact, bolt preload and buckling are not modelled. No simulation proves that a part will
-fit or hold: check it against a printed coupon or the part itself.
+in-plane values, and a force or a stress taken from the computed stiffness at a given travel lower; and a strength
+below the Z tensile strength, so the safety factor uses the weak direction. Neither is a bound on a print: the mesh is
+the solid CAD and the values come from 100 % infill test bars, so a print with sparse infill or thin walls can be
+softer, and then it deflects more, and pushes back less at a given travel (a clip's retention, a flexure's preload),
+than computed. Contact, bolt preload and buckling are not modelled. No simulation proves that a part will fit or hold:
+check it against a printed coupon or the part itself.
 """
 from __future__ import annotations
 
@@ -78,8 +79,10 @@ def _isotropic_basis(mat: Material) -> str:
 #   solid CAD, a print with sparse infill or thin walls is softer still, and the isotropic shear modulus does not bound
 #   a print's shear stiffness between layers (short, thick parts). The humid PA6-CF rows are an exception (below).
 # - These studies apply forces and torques only, so the stresses do not depend on E; the deflections and stiffnesses
-#   do (they scale with 1/E). A low E makes the stiffness low, so a force taken from it at a given travel (a clip's
-#   retention, a flexure's preload, a spring rate) reads low too.
+#   do (they scale with 1/E). Against a solid part bent in the layer plane, the low E makes the stiffness low, so a
+#   force taken from it at a given travel (a clip's retention, a flexure's preload, a spring rate) reads low, and so
+#   does the stress at that travel (it scales with E): check strength at a travel with the in-plane modulus or a
+#   coupon. A sparser print is softer still, and then that force reads high.
 # - A part whose bending stays in the layer plane is stiffer. Give it the X-Y modulus from the comment and say so in
 #   the note, keeping the weak-direction strength:
 #   dataclasses.replace(MATERIALS['petg_cf'], E_mpa=2460, direction='X-Y',
@@ -153,8 +156,9 @@ MATERIALS = {
     # Polymaker's PolyFlex TPU95 (TDS V5.4) lists 33.6 MPa in X-Y (ISO 37). The sheets differ about 4x, and TPU is far
     # from linear, so a linear study of it is indicative only.
     'tpu95': Material('TPU 95A', 7.4, 0.45, 8, 1.22,
-                      'Bambu TPU 95A HF TDS V1.0: E is the Z tensile modulus (X-Y 9.8 MPa); flexible, stiffness only '
-                      'indicative', source='bambu-tpu-95a-hf-tds', direction='Z'),
+                      'Bambu TPU 95A HF TDS V1.0: E is the Z tensile modulus (X-Y 9.8 MPa); the strength is an '
+                      'allowable below the Z tensile strength of 22.3 MPa; flexible, stiffness only indicative',
+                      source='bambu-tpu-95a-hf-tds', direction='Z'),
     # Metals and the carbon tube: typical handbook values, not tied to a sheet in research/references.yaml. Checked
     # for #125: Protolabs' CNC data sheet for 6061-T651/T6 (2026) gives yield 276 MPa, E 10.0 Msi (68.9 GPa) and
     # 2.70 g/cm3. Its 7075-T651/T6 sheet gives only specification ranges: yield 434-476 MPa (T6 sheet) and 372-462 MPa

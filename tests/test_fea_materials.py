@@ -195,6 +195,8 @@ def test_assumptions_say_which_modulus_and_strength(key):
     line = _isotropic_basis(m)
     assert f"E {m.E_mpa:g} MPa" in line and f"strength {m.strength_mpa:g} MPa" in line
     assert m.note in line and "not isotropic" in line
+    # the note itself must say what the modulus and the strength are taken from
+    assert "modulus" in m.note and "strength" in m.note, key
 
 
 def test_assumptions_name_the_print_direction_and_factors():

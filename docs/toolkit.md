@@ -316,8 +316,16 @@ was printed, so deflections come out higher than with the sheet's in-plane value
 print. The mesh is the solid CAD, and a print with sparse infill or thin walls can be softer still. The isotropic shear
 modulus does not bound a print's shear stiffness between layers either, which matters for short, thick parts. The
 two humid PA6-CF rows may be too stiff (table). Under forces and torques the stress does not depend on E, so only
-deflection and stiffness change with it. A low modulus also means `stiffness_n_per_mm` is a low estimate, so a force
-worked out from it at a given travel (a clip's retention, a flexure's preload, a spring rate) reads low too.
+deflection and stiffness change with it.
+
+At a given travel it is different. `stiffness_n_per_mm` is lower than with the in-plane modulus. So a force worked out
+from it at a given travel (a clip's retention, a flexure's preload, a spring rate) reads lower than for a solid part
+bent in the layer plane, and so does the stress at that travel, which scales with E (a cantilever pushed to a tip
+travel δ has σ = 3Ecδ/L²). That stress is low by E_Z / E_XY for a part loaded in the layer plane, which makes a strength
+check at a given travel unconservative: check a flexure's or a clip's strength at its travel with the in-plane modulus,
+or with a coupon, not with this one. (The snap-fit tool, `cad-agent snapfit`, uses strain allowables and its own
+moduli by direction, so it does not depend on this E.) A print with sparse infill or thin walls is softer than either,
+and then the force at a given travel reads high: a retention check needs a measured part.
 
 A part whose bending stays in the layer plane is stiffer. Give it the X-Y modulus, keep the weak-direction strength,
 and say so in the note, so the assumptions line stays true:

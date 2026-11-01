@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Golden test vectors for the browser port of cadagent.formulas, and the demo's material table, from the Python.
+"""Golden test vectors for the browser port of cadagent.formulas, and the demos' material and fan tables, from the
+Python.
 
     python3 tools/formula_vectors.py            # write tests/fixtures/formula-vectors.json and webkit/formulas-data.js
     python3 tools/formula_vectors.py --check    # exit 1 if either committed file differs (the tests run this)
@@ -18,12 +19,15 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from cadagent import formulas as fx                                  # noqa: E402  (this checkout's package)
 from cadagent.mechanical.compliant.allowables import DIRECTIONS, PRINTED        # noqa: E402
+from cadagent.thermal.fans import FANS                                            # noqa: E402
 
 VECTORS = ROOT / "tests" / "fixtures" / "formula-vectors.json"
 DATA = ROOT / "src" / "cadagent" / "webkit" / "formulas-data.js"
 # Every function the browser port has, by its Python name (the JS name is the camelCase of it).
 PORTED = ("snap_root_strain", "snap_deflection_force", "snap_arm", "cantilever_shape", "cantilever_strain_profile",
-          "cantilever_thickness_profile", "grashof", "fourbar_angles", "transmission_angle", "fourbar_input_limits")
+          "cantilever_thickness_profile", "grashof", "fourbar_angles", "transmission_angle", "fourbar_input_limits",
+          "fan_curve_line", "system_coefficient", "fans_in_series", "fans_in_parallel", "fan_stall_flow",
+          "fan_operating_point")
 TOLERANCE = {"rel": 1e-12, "abs": 1e-15}
 
 
@@ -81,6 +85,7 @@ def cases():
     for design in fx.DESIGNS:                         # an arm at rest: no strain or force, the same stiffness
         add("snap_arm", 20 * mm, 1.6 * mm, 6 * mm, 0.0, 2703e6, 0.02, design)
     fourbar_cases(add)
+    fan_cases(add, refuse)
     # What the Python refuses: xi outside 0..1, and a design that is not 1, 2 or 3 (including a string, a fraction
     # and an inherited key of a JS object).
     for xi in (-0.1, 1.2):
@@ -142,6 +147,80 @@ def fourbar_cases(add):
             add("transmission_angle", *links, t2, angles=True, **near)
 
 
+# The fan-curve explorer's system slider: the pressure the enclosure needs at this flow (m^3/s), 100 m^3/h.
+FAN_REFERENCE_FLOW = 100 / 3600
+# A synthetic axial curve with a deep stall dip, which a linear (laminar) system crosses three times (unstable).
+DIP = [(0.0, 20.0), (0.004, 8.0), (0.005, 14.0), (0.010, 6.0), (0.012, 0.0)]
+
+
+def fan_cases(add, refuse):
+    """Hand-solved straight-line fans (one, two in series, two in parallel), the stall-dip curve with its three
+    crossings, systems exactly through a datasheet point (a root on a breakpoint), the datasheet's own published
+    system curves, and the explorer's slider across its range, for every datasheet fan, one to four fans, both ways."""
+    line = fx.fan_curve_line(40.0, 0.02)
+    add("fan_curve_line", 40.0, 0.02)
+    add("fan_curve_line", 15.2, 38.9 / 3600)
+    for k in (4e5, 1.5e5, 1e4):                       # k qf^2 / p0 = 4 (restrictive), 1.5 (series = parallel), 0.1
+        add("fan_operating_point", line, k)
+        for n in (2, 3):
+            add("fan_operating_point", fx.fans_in_series(line, n), k)
+            add("fan_operating_point", fx.fans_in_parallel(line, n), k)
+    add("fan_stall_flow", line)
+    add("fan_stall_flow", DIP)
+    add("fan_stall_flow", [(0.0, 5.0), (1.0, 6.0)])                          # a curve that only rises
+    add("fan_stall_flow", [(0.0, 9.0), (1.0, 7.0), (2.0, 8.0), (3.0, 8.0), (4.0, 8.0), (5.0, 0.0)])   # a flat top
+    add("fan_stall_flow", [(0.0, 9.0), (1.0, 9.0), (2.0, 4.0)])            # flat at shut-off: no rise, no stall
+    add("fan_operating_point", DIP, 0.0, 2500.0)                             # three crossings: unstable
+    add("fan_operating_point", DIP, 5.3e5)                                   # a quadratic system crosses it three times
+    add("fan_operating_point", DIP, 3e5, 500.0)
+    add("fan_operating_point", DIP, 1e6)
+    for n in (2, 3):
+        add("fans_in_series", DIP, n)
+        add("fans_in_parallel", DIP, n)
+    add("system_coefficient", 12.0, FAN_REFERENCE_FLOW)
+    add("system_coefficient", 0.0, 0.01)
+    # the datasheet's three published system curves (Pa per (m3/h)^2, read from the same chart), in SI
+    published = [k * 3600 ** 2 for k in (0.00030214, 0.00075427, 0.0015352)]
+    for fan in FANS.values():
+        curve = fan.curve()
+        add("fan_stall_flow", curve)
+        for n in (1, 2, 3, 4):
+            add("fans_in_series", curve, n)
+            add("fans_in_parallel", curve, n)
+        for k in published:
+            add("fan_operating_point", curve, k)
+        for q, p in curve[1:-1]:                     # through a marked point exactly: a root on a breakpoint
+            add("fan_operating_point", curve, fx.system_coefficient(p, q))
+        for dp in (2, 5, 8, 12, 16, 20, 25, 30, 40, 50, 65, 80):
+            k = fx.system_coefficient(dp, FAN_REFERENCE_FLOW)
+            for n in (1, 2, 3, 4):
+                add("fan_operating_point", fx.fans_in_series(curve, n), k)
+                add("fan_operating_point", fx.fans_in_parallel(curve, n), k)
+    # What the Python refuses: too few points, flow not increasing, no loss, a negative loss, a curve the system never
+    # crosses, a count that is not a whole number of at least 1, and a system point without a flow.
+    refuse("fan_operating_point", [(0.0, 10.0)], 1e6)
+    refuse("fan_operating_point", [(0.0, 10.0), (0.0, 5.0), (0.01, 0.0)], 1e6)
+    refuse("fan_operating_point", [(0.01, 10.0), (0.0, 0.0)], 1e6)
+    refuse("fan_operating_point", line, 0.0, 0.0)
+    refuse("fan_operating_point", line, -1e5)
+    refuse("fan_operating_point", line, 1e5, -10.0)
+    refuse("fan_operating_point", [(0.0, 10.0), (0.01, 9.0)], 1.0)
+    for bad in (0, -1, 2.5, True, "2"):
+        refuse("fans_in_series", line, bad)
+        refuse("fans_in_parallel", line, bad)
+    refuse("fan_stall_flow", [(0.0, 1.0)])
+    refuse("fans_in_series", [(0.0, 10.0)], 2)
+    refuse("system_coefficient", 10.0, 0.0)
+    refuse("system_coefficient", -1.0, 0.01)
+    refuse("fan_curve_line", 0.0, 0.01)
+    refuse("fan_curve_line", 10.0, -0.01)
+
+
+def fans():
+    """The explorer's fans: each datasheet curve in SI (m^3/s, Pa), with its name, voltage, speed and source."""
+    return [{"key": f.key, "name": f.name, "voltage": f.voltage, "speed": f.speed, "density": f.density,
+             "source": f.source, "curve": [list(pt) for pt in f.curve()]} for f in FANS.values()]
+
 def materials():
     """The demo's materials: printed filaments with their modulus and allowable strain by print direction."""
     rows = []
@@ -167,11 +246,16 @@ def vectors_text() -> str:
 
 def data_text() -> str:
     body = json.dumps(materials(), indent=1, ensure_ascii=False)
-    return ("/* Generated by tools/formula_vectors.py from cadagent.mechanical.compliant.allowables: do not edit by hand.\n"
-            " * Printed filaments for the kit's demos: datasheet tensile modulus (Pa) and allowable snap-fit strain\n"
-            " * (fraction) by print direction, single joining and repeated (x0.6). Each allowable is derived from the\n"
-            " * datasheet named in `source` and is a hypothesis until a printed coupon is measured. */\n"
-            f"export const MATERIALS = {body};\n")
+    fan_rows = ",\n".join(" " + json.dumps(f, ensure_ascii=False) for f in fans())
+    return ("/* Generated by tools/formula_vectors.py from cadagent.mechanical.compliant.allowables and\n"
+            " * cadagent.thermal.fans: do not edit by hand.\n"
+            " * MATERIALS: printed filaments for the kit's demos: datasheet tensile modulus (Pa) and allowable snap-fit\n"
+            " * strain (fraction) by print direction, single joining and repeated (x0.6). Each allowable is derived from\n"
+            " * the datasheet named in `source` and is a hypothesis until a printed coupon is measured.\n"
+            " * FANS: fan curves read from the datasheet named in `source`, in SI ([flow m^3/s, pressure Pa]), at the\n"
+            " * air density `density` (kg/m^3) and the voltage `voltage` (V), on the maker's test rig. */\n"
+            f"export const MATERIALS = {body};\n"
+            f"export const FANS = [\n{fan_rows}\n];\n")
 
 
 def main(argv) -> int:

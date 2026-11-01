@@ -29,9 +29,11 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   [docs/toolkit.md](docs/toolkit.md#package-layout-v050)). `cadagent.geometry` and `cadagent.review` were modules and
   are now packages at the same paths, unchanged for code that imports them. The old paths (`import cadagent.fea`,
   `from cadagent import mcmaster`, `cadagent.gates.motion`, ...) still work: each gives the same module object, so
-  patching a name through it reaches the code. The first import through an old path raises a `DeprecationWarning`
+  patching a name through it reaches the code, and so does `python -m` (`python -m cadagent.gates.run`, the v0.4 gate
+  worker, runs `cadagent.review.gates.run`). The first import through an old path raises a `DeprecationWarning`
   naming the new path, reported at the line that imported it. **The old paths are removed in v0.7.0.**
-  `tests/test_package_areas.py` keeps the packages and the tree's `api:` lists in step.
+  `tests/test_package_areas.py` keeps the packages and the tree in step: a module has one home, an `api:` line in its
+  own domain, and a node that relies on another domain's module names it in the new optional `uses:` list.
 
 **Fixed**
 - Bambu slicer templates that include other templates are resolved before profiles are flattened (#93).
@@ -63,7 +65,18 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   safety factors do not change (the PA6-CF rows' strengths are now computed exactly, 48.96 and 23.04 MPa instead of 49
   and 23). A force or a stress worked out at a given travel (a clip's retention, a flexure at full travel) falls with
   E, so re-check strength at travel too, with the in-plane modulus or a coupon.
-- Move imports to the new package paths before v0.7.0 (#114).
+- Move imports to the new package paths before v0.7.0 (#114). The old → new list:
+  `python -c "from cadagent._moved import MOVED; print(*(f'cadagent.{o} -> {n}' for o, n in MOVED.items()), sep='\n')"`
+  (an old package's submodules move with it: `cadagent.gates.motion` → `cadagent.review.gates.motion`).
+- Run the gate worker, and any module run with `python -m`, at its new path: `python -m cadagent.review.gates.run`
+  instead of `python -m cadagent.gates.run`. The old one still runs, with a warning, until v0.7.0.
+- Type checkers and IDEs do not run import finders, so they report the old paths as missing modules at once (mypy:
+  `Cannot find implementation or library stub for module named "cadagent.fea"`), though they still run. A
+  type-checked project moves its imports when it upgrades.
+- After pulling, a git checkout keeps `src/cadagent/compliant/`, `dossier/`, `explore/` and `gates/` holding only
+  their `__pycache__`; `tests/test_package_layout.py` names each one. Delete them (this removes only caches and the
+  folders they leave empty):
+  `find src/cadagent -name __pycache__ -type d -prune -exec rm -rf {} + && find src/cadagent -type d -empty -delete`
 - A test that replaces a *whole module* through its old path (`sys.modules["cadagent.report"] = fake`, or
   `cadagent.report = fake`) no longer reaches cad-agent's own code, which imports the new paths. Replace it at the new
   path: `monkeypatch.setitem(sys.modules, "cadagent.publish.report", fake)`.

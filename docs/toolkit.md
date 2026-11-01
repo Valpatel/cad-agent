@@ -250,7 +250,8 @@ practice domain's review and publishing areas as `cadagent.review` and `cadagent
 top ([`src/cadagent/README.md`](../src/cadagent/README.md)). `tests/test_package_areas.py` keeps each package and its
 domain's `api:` lists in step. The old flat paths (`cadagent.fea`, `from cadagent import report`, ...) still import the
 same module, with a `DeprecationWarning`, until v0.7.0; so do the old package paths and everything under them
-(`cadagent.gates.motion` is `cadagent.review.gates.motion`). Move imports to the new paths:
+(`cadagent.gates.motion` is `cadagent.review.gates.motion`), and `python -m` through an old path runs the module at its
+new path. Type checkers and IDEs do not see the old paths. Move imports to the new paths:
 
 | New package (domain in `docs/areas.yaml`) | Modules and packages (old path `cadagent.<name>`) |
 |---|---|

@@ -330,12 +330,30 @@ try {
 }
 
 /** The snap-arm explorer (the kit's <cad-cantilever>) on /docs/compliant, at phone and desktop widths, under the site
- * CSP: it replaces its still at exactly the reserved size (no layout shift), its panel never overflows, every control
- * has a label, the keyboard moves a slider and the strain follows, the print direction flips the verdict, it animates,
- * pauses on request and holds still under reduced motion, with no console errors. */
+ * CSP: it replaces its still at exactly the reserved size (no layout shift) and its first live frame is the still,
+ * however late the script arrives, its panel never overflows, every control has a label, the keyboard moves a slider
+ * and the strain follows, the print direction flips the verdict, it animates, pauses on request and carries on from
+ * there, and holds still under reduced motion, with no console errors. */
 async function cantileverProblems() {
   const out = [];
   const beam = page => page.locator('cad-cantilever [data-part=beam]').getAttribute('points');
+  // The beam the script first draws (the still's shape, from drawCantilever) and the first frame it renders over it.
+  // Both happen in the same task, so the observer sees them before any animation frame.
+  const firstFrame = () => new MutationObserver((records, observer) => {
+    const r = records.find(m => m.attributeName === 'points' && m.target.dataset?.part === 'beam');
+    if (r) { window.ccFirstFrame = { still: r.oldValue, live: r.target.getAttribute('points') }; observer.disconnect(); }
+  }).observe(document, { subtree: true, attributes: true, attributeOldValue: true, attributeFilter: ['points'] });
+  const firstFrameProblem = async page => {
+    const first = await page.evaluate(() => window.ccFirstFrame);
+    return !first ? 'the first live frame was not seen' :
+      first.still !== first.live ? 'the first live frame is not the still: the beam jumps when the script takes over' : null;
+  };
+  // A run of animation frames, not a wait: a throttled runner can sit 300 ms without one.
+  const frames = page => page.evaluate(() => new Promise(done => {
+    let n = 0;
+    const next = () => (++n >= 10 ? done() : requestAnimationFrame(next));
+    requestAnimationFrame(next);
+  }));
   for (const width of [360, 1366]) {
     const height = {};
     for (const script of [false, true]) {
@@ -344,6 +362,7 @@ async function cantileverProblems() {
       page.on('console', m => { if (m.type() === 'error' && script) say(`console: ${m.text()}`); });   // without the script: its blocked load
       page.on('pageerror', e => say(`page error: ${e.message}`));
       await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
+      await page.addInitScript(firstFrame);
       if (!script) await page.route('**/kit/cantilever.js', r => r.abort());
       await page.goto(base + '/docs/compliant', { waitUntil: 'networkidle' });
       const demo = page.locator('cad-cantilever');
@@ -354,6 +373,8 @@ async function cantileverProblems() {
         if (!img) say('no still image before the script loads');
       } else if (!(await demo.locator('svg [data-part=beam]').count())) say('the live figure did not render');
       else {
+        const jump = await firstFrameProblem(page);
+        if (jump) say(jump);
         const panel = await demo.locator('.cc-panel').evaluate(p => {
           const box = p.getBoundingClientRect();
           return { over: p.scrollHeight - p.clientHeight, out: [...p.querySelectorAll('*')].filter(n => n.getClientRects().length &&
@@ -376,15 +397,34 @@ async function cantileverProblems() {
         await page.getByLabel('Upright (across the layers)').check();
         if ((await demo.locator('[data-out=verdict]').textContent()) !== 'FAIL') say('printing the arm upright does not fail it');
         await demo.locator('.cc-play').click();
+        // Wait for the pause to take effect before reading the frame, then let frames run (the click can land
+        // between two of them on a slow runner).
+        const stopped = await page.waitForFunction(() => document.querySelector('cad-cantilever .cc-play')?.textContent === 'Play',
+          null, { timeout: 3000 }).then(() => true, () => false);
         const paused = await beam(page);
-        await page.waitForTimeout(300);
-        if ((await beam(page)) !== paused || (await demo.locator('.cc-play').textContent()) !== 'Play') say('the pause button does not stop it');
+        await frames(page);
+        if (!stopped || (await beam(page)) !== paused) say('the pause button does not stop it');
+        // Play carries on from the frame on screen (full deflection), not from wherever a page clock has got to.
+        const resumed = await page.evaluate(() => {
+          const d = document.querySelector('cad-cantilever');
+          d.querySelector('.cc-play').click();                    // renders in the click handler, before any frame
+          return d.querySelector('[data-part=beam]').getAttribute('points');
+        });
+        if (resumed !== paused) say('Play does not carry on from the paused frame');
       }
       for (const s of seen) out.push(`${width}px /docs/compliant demo${script ? '' : ' (before its script)'}: ${s}`);
       await page.close();
     }
     if (!(Math.abs(height.true - height.false) < 0.5)) out.push(`${width}px demo: ${height.false}px tall before its script, ${height.true}px after`);
   }
+  // The script arriving late (after the hold of a cycle timed from navigation) still takes over without a jump.
+  const late = await browser.newPage({ viewport: { width: 1366, height: 900 } });
+  await late.addInitScript(firstFrame);
+  await late.route('**/kit/cantilever.js', async r => { await new Promise(ok => setTimeout(ok, 2600)); await r.continue(); });
+  await late.goto(base + '/docs/compliant', { waitUntil: 'networkidle' });
+  const lateJump = await firstFrameProblem(late);
+  if (lateJump) out.push(`1366px /docs/compliant demo, its script 2.6 s late: ${lateJump}`);
+  await late.close();
   const reduced = await browser.newPage({ reducedMotion: 'reduce' });
   await reduced.goto(base + '/docs/compliant', { waitUntil: 'networkidle' });
   const first = await beam(reduced);

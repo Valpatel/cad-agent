@@ -145,10 +145,11 @@ export function drawCantilever(s, r, { phase = 1, id = 'cc', still = false, labe
 const Base = globalThis.HTMLElement ?? class {};
 let instances = 0;
 const SLOW = 3200;                         // ms per cycle: bend, hold, release, rest
+const HOLD = 0.3;                          // where the hold at full deflection starts, as a fraction of the cycle
 
 function phaseAt(t) {                      // 0 at rest, 1 at full deflection; eased
   const u = (t % SLOW) / SLOW, ease = v => v < 0.5 ? 2 * v * v : 1 - (-2 * v + 2) ** 2 / 2;
-  if (u < 0.3) return ease(u / 0.3);
+  if (u < HOLD) return ease(u / HOLD);
   if (u < 0.72) return 1;
   if (u < 0.92) return 1 - ease((u - 0.72) / 0.2);
   return 0;
@@ -164,6 +165,10 @@ export class CadCantilever extends Base {
       this.uid = `cc${++instances}`;
       this.state = readState(n => this.getAttribute(n));
       this.playing = !this.reduced.matches;
+      // The animation's own clock, in ms into the cycle. It starts in the hold at full deflection, which is the
+      // still, so the first live frame is the still however late the script arrives; it stops while the
+      // animation does and carries on from the frame on screen.
+      this.elapsed = HOLD * SLOW;
       this.visible = true;
       this.build();
       this.update();
@@ -178,7 +183,7 @@ export class CadCantilever extends Base {
   }
 
   disconnectedCallback() {
-    cancelAnimationFrame(this.frame); this.frame = 0;
+    this.loop();                                 // not connected: stops, keeping the clock
     this.seen?.disconnect();
     this.reduced?.removeEventListener?.('change', this.onMotion);
     clearTimeout(this.announce);
@@ -249,6 +254,7 @@ export class CadCantilever extends Base {
   }
 
   setPlaying(on) {
+    if (on && !this.playing) this.elapsed = HOLD * SLOW;     // paused shows full deflection: carry on from there
     this.playing = on;
     this.loop();
     this.render();
@@ -275,7 +281,9 @@ export class CadCantilever extends Base {
     this.dispatchEvent(new CustomEvent('cad-cantilever-change', { bubbles: true, detail: { state: { ...s }, result: { ...r, material: r.material.key } } }));
   }
 
-  render(phase = this.playing ? phaseAt(performance.now()) : 1) {
+  clock() { return this.frame ? performance.now() - this.t0 : this.elapsed; }
+
+  render(phase = this.playing ? phaseAt(this.clock()) : 1) {
     const s = this.state, r = this.result, g = geometry(s, r, phase), p = this.parts, set = (n, a) => { for (const k in a) n.setAttribute(k, a[k]); };
     set(p.rest, { points: g.rest }); set(p.beam, { points: g.beam }); set(p.hook, { points: g.hook }); set(p.catch, { points: g.catch });
     set(p.root, { fill: g.rootColour });
@@ -297,9 +305,11 @@ export class CadCantilever extends Base {
   loop() {
     const run = this.playing && this.visible && this.isConnected;
     if (run && !this.frame) {
+      this.t0 = performance.now() - this.elapsed;
       const tick = () => { this.render(); this.frame = requestAnimationFrame(tick); };
       this.frame = requestAnimationFrame(tick);
     } else if (!run && this.frame) {
+      this.elapsed = this.clock();
       cancelAnimationFrame(this.frame); this.frame = 0;
     }
   }

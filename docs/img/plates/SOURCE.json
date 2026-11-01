@@ -1,0 +1,194 @@
+{
+ "project": "Valpatel/gyropup",
+ "license": "MIT",
+ "revision": "77f6d00bdb262f0f75a18fa0ddf0075058a649d8",
+ "regenerate": "python3 tools/plates_figure.py --gyropup <checkout>",
+ "inputs": [
+  "exports/<part>.stl",
+  "exports/geometry-checks.json",
+  "exports/print-plan.json (qty, material)"
+ ],
+ "bed_mm": [
+  256.0,
+  256.0,
+  256.0
+ ],
+ "gap_mm": 5.0,
+ "margin_mm": 5.0,
+ "rotate": true,
+ "keep_out_mm": [
+  [
+   0.0,
+   0.0,
+   18.0,
+   28.0
+  ]
+ ],
+ "packing": {
+  "sort": "area",
+  "fit": "short-side"
+ },
+ "copies": 45,
+ "plates": [
+  {
+   "plate": 1,
+   "name": "Bambu PA6-CF 1 of 14",
+   "parts": 5,
+   "covered": 0.432,
+   "turned": [
+    "shin 27°"
+   ]
+  },
+  {
+   "plate": 2,
+   "name": "Bambu PA6-CF 2 of 14",
+   "parts": 4,
+   "covered": 0.345,
+   "turned": [
+    "shin 27°"
+   ]
+  },
+  {
+   "plate": 3,
+   "name": "Bambu PA6-CF 3 of 14",
+   "parts": 1,
+   "covered": 0.254,
+   "turned": [
+    "thigh 26°"
+   ]
+  },
+  {
+   "plate": 4,
+   "name": "Bambu PA6-CF 4 of 14",
+   "parts": 1,
+   "covered": 0.254,
+   "turned": [
+    "thigh 26°"
+   ]
+  },
+  {
+   "plate": 5,
+   "name": "Bambu PA6-CF 5 of 14",
+   "parts": 1,
+   "covered": 0.569,
+   "turned": []
+  },
+  {
+   "plate": 6,
+   "name": "Bambu PA6-CF 6 of 14",
+   "parts": 3,
+   "covered": 0.744,
+   "turned": []
+  },
+  {
+   "plate": 7,
+   "name": "Bambu PA6-CF 7 of 14",
+   "parts": 3,
+   "covered": 0.505,
+   "turned": []
+  },
+  {
+   "plate": 8,
+   "name": "Bambu PA6-CF 8 of 14",
+   "parts": 1,
+   "covered": 0.33,
+   "turned": []
+  },
+  {
+   "plate": 9,
+   "name": "Bambu PA6-CF 9 of 14",
+   "parts": 1,
+   "covered": 0.33,
+   "turned": []
+  },
+  {
+   "plate": 10,
+   "name": "Bambu PA6-CF 10 of 14",
+   "parts": 1,
+   "covered": 0.33,
+   "turned": []
+  },
+  {
+   "plate": 11,
+   "name": "Bambu PA6-CF 11 of 14",
+   "parts": 3,
+   "covered": 0.472,
+   "turned": [
+    "pan_base 90°",
+    "pan_ring 90°"
+   ]
+  },
+  {
+   "plate": 12,
+   "name": "Bambu PA6-CF 12 of 14",
+   "parts": 2,
+   "covered": 0.584,
+   "turned": [
+    "cartridge_body 90°",
+    "cradle 90°"
+   ]
+  },
+  {
+   "plate": 13,
+   "name": "Bambu PA6-CF 13 of 14",
+   "parts": 2,
+   "covered": 0.402,
+   "turned": [
+    "pan_clamp 90°",
+    "yoke_bracket 90°"
+   ]
+  },
+  {
+   "plate": 14,
+   "name": "Bambu PA6-CF 14 of 14",
+   "parts": 1,
+   "covered": 0.318,
+   "turned": [
+    "yoke_bracket 90°"
+   ]
+  },
+  {
+   "plate": 15,
+   "name": "Bambu PETG HF 1 of 3",
+   "parts": 4,
+   "covered": 0.7,
+   "turned": [
+    "hopper 90°"
+   ]
+  },
+  {
+   "plate": 16,
+   "name": "Bambu PETG HF 2 of 3",
+   "parts": 7,
+   "covered": 0.615,
+   "turned": [
+    "battery_cradle 90°",
+    "camera_cradle 90°",
+    "hopper_flap 90°"
+   ]
+  },
+  {
+   "plate": 17,
+   "name": "Bambu PETG HF 3 of 3",
+   "parts": 1,
+   "covered": 0.162,
+   "turned": []
+  },
+  {
+   "plate": 18,
+   "name": "Bambu TPU 95A 1 of 2",
+   "parts": 3,
+   "covered": 0.391,
+   "turned": [
+    "bumper_ring 90°"
+   ]
+  },
+  {
+   "plate": 19,
+   "name": "Bambu TPU 95A 2 of 2",
+   "parts": 1,
+   "covered": 0.269,
+   "turned": []
+  }
+ ]
+}

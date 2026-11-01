@@ -260,3 +260,45 @@ def test_work_folder_guard_and_partial_reslice(tmp_path, monkeypatch):
     grams['box'] = 4.0
     part = slicer.slice_project(project, ['box'])
     assert set(part['parts']) == {'box', 'lid'} and part['total_grams'] == 11.0
+
+
+def test_project_settings_fit_the_filaments_and_the_printers_plate(profile_tree, tmp_path, monkeypatch):
+    """Bambu Studio's command line writes one colour, one map entry and a 4 x 4 purge matrix whatever the filament
+    count, and the Cool Plate whatever the printer; the project settings for build plates are sized and set right."""
+    import zipfile
+    from types import SimpleNamespace
+    write_profile(profile_tree, slicer.PRINTER, printer_model='Bambu Lab P1S')
+    write_profile(profile_tree, 'Bambu Lab P1S', type='machine_model', default_bed_type='Textured PEI Plate')
+    write_profile(profile_tree, slicer.PROCESS, kind='process', wall_loops='2')
+    for f in ('pla', 'petg'):
+        write_profile(profile_tree, slicer.FILAMENTS[f], kind='filament')
+    monkeypatch.setattr(slicer, 'executable', lambda: '/fake/BambuStudio')
+    written = {'version': '02.08.04.57', 'printer_model': 'Bambu Lab P1S', 'curr_bed_type': 'Cool Plate',
+               'filament_settings_id': [slicer.FILAMENTS['pla'], slicer.FILAMENTS['petg']],
+               'filament_colour': ['#F2754E'], 'filament_map': ['1'], 'flush_multiplier': ['1'],
+               'flush_volumes_matrix': ['0', '280', '280', '280'] * 4}
+    calls = []
+
+    def run(cmd, **kwargs):
+        calls.append(cmd)
+        out = Path(cmd[cmd.index('--outputdir') + 1])
+        with zipfile.ZipFile(out / 'project.3mf', 'w') as z:
+            z.writestr('Metadata/project_settings.config', json.dumps(written, indent=4, sort_keys=True))
+        return SimpleNamespace(returncode=0, stdout='', stderr='')
+
+    monkeypatch.setattr(slicer.subprocess, 'run', run)
+    work = tmp_path / 'settings'
+    got = json.loads(slicer.project_settings(work, filaments=('pla', 'petg'), overrides={'wall_loops': '3'},
+                                             colours=['#2f7f73']))
+    assert calls[0][calls[0].index('--load-filaments') + 1].count(';') == 1
+    assert json.loads((work / 'process.json').read_text())['wall_loops'] == '3'
+    assert got['curr_bed_type'] == 'Textured PEI Plate'
+    assert got['filament_colour'] == ['#2f7f73', '#00AE42'] and got['filament_map'] == ['1', '1']
+    assert got['flush_volumes_matrix'] == ['0', '280', '280', '0']
+    assert slicer.default_bed_type('Bambu Lab P1S') == 'Textured PEI Plate' and slicer.default_bed_type('X') is None
+    with pytest.raises(RuntimeError, match='not the 3 filaments'):
+        slicer.project_settings(work, filaments=('pla', 'petg', 'pla'))
+    (tmp_path / 'mine').mkdir()
+    (tmp_path / 'mine' / 'notes.txt').write_text('keep')
+    with pytest.raises(FileExistsError):
+        slicer.project_settings(tmp_path / 'mine')

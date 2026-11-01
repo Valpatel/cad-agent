@@ -103,6 +103,7 @@ class CadProject:
     slicer: Dict[str, Any] = field(default_factory=dict)
     explore: Dict[str, Any] = field(default_factory=dict)
     release: Dict[str, Any] = field(default_factory=dict)   # `cad-agent release` settings (cadagent.publish.release)
+    plates: Any = None        # `export-3mf`'s build plates (cadagent.manufacturing.plates.plates_config); false: none
     dossier: Optional[Path] = None     # dossier/project.yaml, loaded by cadagent.review.dossier.load_project_dossier
     gates: Optional[Dict[str, Any]] = None   # `cad-agent gates` settings (cadagent.review.gates.run); None when absent
     unknown_keys: List[str] = field(default_factory=list)
@@ -157,7 +158,7 @@ _TOP_KEYS = {
     "name", "title", "revision", "revision_from", "python", "exports_dir",
     "preview_dir", "docs_dir", "steps", "parts_file", "part_ids", "checks",
     "printer", "package", "serve", "html_pages", "site", "view", "holes", "slicer", "explore",
-    "dossier", "gates", "release",
+    "dossier", "gates", "release", "plates",
 }
 
 def _require_dict(value: Any, where: str) -> Dict[str, Any]:
@@ -285,6 +286,7 @@ def from_dict(root: Path, data: Dict[str, Any]) -> CadProject:
         slicer=_require_dict(data.get("slicer"), "cad.slicer"),
         explore=_require_dict(data.get("explore"), "cad.explore"),
         release=_require_dict(data.get("release"), "cad.release"),
+        plates=data.get("plates"),
         dossier=root / str(data["dossier"]) if data.get("dossier") else None,
         gates=_require_dict(data.get("gates"), "cad.gates") if "gates" in data else None,
         unknown_keys=sorted(set(data) - _TOP_KEYS),

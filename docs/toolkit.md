@@ -124,6 +124,70 @@ my-cad-project/
 | `exports/<part>.stl` | print orientation, lowest point on z=0 | degenerate faces removed; must be watertight |
 | `exports/<part>.3mf` | print orientation, centred on `printer.bed_mm` | written by `cad-agent export-3mf`, read back and verified; byte-reproducible (fixed zip dates), so a rebuild of unchanged geometry keeps the slice report current |
 | `exports/<part>.step` | assembly coordinates | for CAD review and re-use |
+| `exports/<name>-plates.3mf` | print orientation, turned about z and laid out on build plates | every printed part at its quantity in one Bambu Studio project, one plate per bed; written by `export-3mf`, read back and verified; byte-reproducible for the same Bambu Studio version, or with none installed ([build plates](#build-plates-cadagentmanufacturingplates)) |
+| `exports/<name>-plates.svg`, `-plates.json` | seen from above | the plates as a picture, and the layout as data: each copy's place and turn, each plate's filament and surface, the 3MF's sha256 |
+
+### Build plates (`cadagent.manufacturing.plates`)
+
+`export-3mf` also writes `exports/<name>-plates.3mf`: one Bambu Studio project that holds every printed part, at its
+quantity and in its print orientation, packed onto as many plates as the printer's bed needs. Open it, check each
+plate and slice. This is Gyropup's print set, from its committed STLs and print plan
+(`tools/plates_figure.py` makes it; `docs/img/plates/SOURCE.json` records the revision and settings):
+
+![Gyropup's 45 printed parts on 19 Bambu Studio plates of 256 mm, grouped by filament: 14 plates of PA6-CF, 3 of PETG and 2 of TPU. The long shins and thighs lie diagonally; small parts fill the space beside large ones; every plate keeps the printer's wiper corner clear.](img/plates/gyropup-plates.svg)
+
+- **Footprints.** Each copy reserves the rectangle around its outline seen from above (the convex hull of its mesh).
+  It keeps its print orientation and may turn about z: a quarter turn, or, for a part that fits neither way (a long
+  leg on a square bed), the whole degree that gives the smallest rectangle that fits.
+- **Packing.** MaxRects (Jylänki 2010): largest first, onto the first plate with room. Four sort orders times four
+  fit rules are tried, and the layout with the fewest plates wins. Parts with different filaments never share a
+  plate. Sizes are whole micrometres and every tie has a fixed order, so the same parts and settings give the same
+  plates everywhere. `check_plates` then checks the result again on its own terms: every copy placed once, inside
+  the bed less the margin, and at least the gap from every other copy and from the keep-out areas (never less than
+  0.5 mm from those: a part turned to a whole degree is written rounded to 1e-4 mm, and Bambu Studio refuses a
+  plate where a part touches its exclusion area).
+- **The file.** 3MF core-spec meshes, one build item per copy on Bambu Studio's grid of plates, and Bambu's
+  `Metadata/model_settings.config` with one `<plate>` per plate (named after its filament). Where Bambu Studio is
+  installed, its own project settings for `cad.slicer` go in too, with the printer's own plate surface and each
+  filament's colour and purge matrix sized to the filaments. Bambu Studio keeps the plates only with those settings:
+  without them it opens the parts on one plate. The file is read back and deleted unless every copy is where the
+  layout put it.
+- **Checked in Bambu Studio 02.08.04.57.** Its command line loads the plates without re-arranging them and slices
+  each plate with its own filament (`tests/test_plates.py` does this wherever Bambu Studio is installed). Its window
+  opens the file on its plates, with the printer, filaments and process set and no errors.
+
+`cad.plates` (all keys optional; `cad.plates: false` writes no plates file):
+
+| Key | Default | Meaning |
+|---|---|---|
+| `parts` | `cad.release.build`, else every part the release lists | a list of parts, or a mapping of part to `{quantity, filament}` |
+| quantity | `cad.release.quantities`, else 1 | copies of the part |
+| filament | `cad.slicer.filament` | `pla`, `petg` or a Bambu filament profile name; one filament per plate |
+| `gap_mm`, `margin_mm` | 5, 5 | least distance between two footprints, and from the bed's edge |
+| `rotate` | true | false keeps every part as modelled |
+| `keep_out` | the printer's exclusion area (a P1S: its wiper corner), read from Bambu Studio's printer profile, so only where it is installed | more `[x0, y0, x1, y1]` areas in bed mm that every footprint stays the gap clear of. Without Bambu Studio there is no exclusion area, and the same project packs differently: list the corner here for the same layout on every machine |
+| `bed_type` | the plate the printer ships with (a P1S: Textured PEI) | `Cool Plate`, `Engineering Plate`, `High Temp Plate`, `Textured PEI Plate` or `Supertack Plate`. A plate whose filament has no temperature for that surface gets the first one it has, with a warning (Bambu Studio will not slice PETG on the Cool Plate) |
+
+`export-3mf` exits 1 when a part fits no plate (too large or too tall at any turn) or the parts need more than the 36
+plates Bambu Studio holds.
+
+<details>
+<summary>Why it is built, not adopted, and its limits</summary>
+
+- **[rectpack](https://github.com/secnot/rectpack)** (Apache-2.0) implements the same MaxRects method. It has had no
+  release since 2021, and cad-agent's core install is PyYAML and NumPy only. The method is about a hundred lines
+  here, in integer micrometres, with its tests.
+- **PrusaSlicer** arranges with [libnest2d](https://github.com/tamasmeszaros/libnest2d) (no-fit polygons, C++).
+  **Bambu Studio's own arrange** (`--arrange 1`) re-places and re-turns parts on every run and ignores filaments.
+  Both are C++ programs, not libraries cad-agent can call.
+- **Format facts** came from Bambu Studio's source (`bbs_3mf.cpp`, `PartPlate.cpp`, `Plater.cpp` at v02.08.04.57;
+  AGPL-3.0, read for the format only, no code taken) and from project files Bambu Studio saved.
+- **Limits.** A footprint is a rectangle, so an L-shaped part reserves its whole rectangle, and parts never nest
+  inside one another: tighter nesting (hulls, no-fit polygons) would save plates. The layout says nothing about
+  whether a plate prints well (adhesion, warping, how much one failure costs): that is the slicer's and the
+  printer's evidence. Per-part supports, brims and process settings are not written; set them in Bambu Studio.
+
+</details>
 
 ### Reproducible outputs
 
@@ -155,7 +219,7 @@ from. `SOURCE_DATE_EPOCH` is the
 |---|---|
 | part STEP (`export_step`) | header date `2000-01-01T00:00:00` (or `SOURCE_DATE_EPOCH`), product named after the file, link ids |
 | assembly STEP (`export_step(assy)`) | the same, plus unnamed nodes named `<parent>.<k>` and the colour records in one order; names cadquery's reader would refuse or misread (a child with its parent's name or a sibling's) are refused |
-| `exports/<part>.3mf`, the release zip | sorted entries, fixed date (1980-01-01), mode and host |
+| `exports/<part>.3mf`, `exports/<name>-plates.3mf`, the release zip | sorted entries, fixed date (1980-01-01), mode and host |
 | review package (`cad-agent package`) | sorted entries; the source date, mode `rw-r--r--` and a Unix host on every entry |
 | results JSON (`header_meta.generated`), report page, `simreport` pages (`Generated`), the site's footer, the explore comparison (`generated`), the review bundle (`created`) | the source date, shown with where it came from: `2026-10-30 12:00 UTC (last commit)` |
 | the site's document cards | each page's last commit date, not its file time (which a fresh checkout resets) |
@@ -191,6 +255,7 @@ can be renamed: no other file name is read.
 | `printer` | none | `{name, bed_mm: [x, y, z]}`; parts must fit; 3MF files are centred on it |
 | `package` | none | `{name, include: [globs]}`; zip + `<name>-manifest.json` (sha256) in `exports_dir` |
 | `release` | every part, default source globs | the print release (`cad-agent release`): see [the print release](#the-print-release-cad-agent-release) |
+| `plates` | every released part, 5 mm gap and margin | the build plates file (`export-3mf`): see [build plates](#build-plates-cadagentmanufacturingplates) |
 | `serve` | `127.0.0.1`, port 0 (any free) | `{host, port}` |
 | `html_pages` | `[]` | HTML / Markdown pages whose local links must resolve |
 
@@ -259,7 +324,7 @@ Unquoted, the title is cut at the comma and the rest becomes a stray key.
 | Command | Does | Exit code |
 |---------|------|-----------|
 | `cad-agent build [--from STEP] [--only STEP ...]` | runs steps in order with the project python; per-step timing; stops at the first failure and prints the log tail | 1 on a failed step |
-| `cad-agent export-3mf` | `<part>.stl` -> verified, bed-centred `<part>.3mf` for every part in the parts file | 1 on a read-back mismatch |
+| `cad-agent export-3mf` | `<part>.stl` -> verified, bed-centred `<part>.3mf` for every part in the parts file, then every printed part on [build plates](#build-plates-cadagentmanufacturingplates) in `<name>-plates.3mf` | 1 on a read-back mismatch, or when the parts cannot be laid out |
 | `cad-agent holes [PART ...]` | checks every hole in every part is clear of material: finds the cylindrical holes and countersinks in `exports/<part>.step` (concave, at least 200° of wall, up to 30 mm across), probes each with a cylinder or cone just inside its wall, and writes `exports/hole-checks.json` bound to each STEP's sha256; `all` runs it and the report's "Holes clear" rows fail on material in a hole, a stale result or a check that did not run (config `cad: holes:`, [below](#holes-clear)) | 1 if a hole has material inside |
 | `cad-agent check [--json]` | collects results (no build), prints a table or the results JSON | 1 if any row fails |
 | `cad-agent report [--open]` | writes `exports/cad-agent-results.json` (results schema 1.0) and a standalone `docs/cad-agent-report.html` with inline styles (light and dark) that opens from `file://` | 1 if any row fails |

@@ -162,7 +162,7 @@ domains:
         maturity: tooling
         priority: [gyropup]
         cli: [export-3mf, slice]
-        api: [cadagent.manufacturing.slicer, cadagent.manufacturing.mesh3mf]
+        api: [cadagent.manufacturing.slicer, cadagent.manufacturing.mesh3mf, cadagent.manufacturing.plates]
         issues: [84, 99]
         projects: [gyropup, j501-enclosure]
         topics:

@@ -79,6 +79,9 @@ def export_tree(url, sha, dest: Path, exclude):
 
 def cmd_import(a):
     m = manifest(); e = entry(m, a.name)
+    notices = ROOT / 'THIRD_PARTY_NOTICES.md'
+    if notices.exists():                      # a notices file `notices` would refuse stops the import before it starts
+        notices_text(notices.read_text(), m['projects'])
     sha = a.sha or remote_head(e['url'])
     branch = run(['git', '-C', str(ROOT), 'rev-parse', '--abbrev-ref', 'HEAD'])
     if branch == 'main' and not a.initial:

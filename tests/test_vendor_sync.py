@@ -2,6 +2,7 @@
 
 It used to rewrite the whole file from vendor/manifest.json, and every `import` calls it, so the next vendor import
 would have deleted the hand-kept showcase, runtime-dependency and web kit sections (their licence records)."""
+import argparse
 import importlib.util
 import json
 import pathlib
@@ -81,6 +82,24 @@ def test_notices_refuse_a_file_without_exactly_one_vendored_table(repo, damage):
     with pytest.raises(SystemExit, match="expected one vendored table"):
         vendor_sync.cmd_notices(None)
     assert path.read_text() == text
+
+
+def test_import_refuses_a_damaged_notices_file_before_it_changes_anything(repo, monkeypatch):
+    """`import` checks the notices file first, so a file `notices` would refuse cannot stop an import half done."""
+    path = repo / "THIRD_PARTY_NOTICES.md"
+    path.write_text(path.read_text().replace(vendor_sync.TABLE_HEAD, "| Project | Licence |"))
+    manifest = (repo / "vendor" / "manifest.json").read_text()
+
+    def went_ahead(*args, **kwargs):
+        raise AssertionError("the import went ahead")
+    for step in ("run", "remote_head", "export_tree"):
+        monkeypatch.setattr(vendor_sync, step, went_ahead)
+    monkeypatch.setattr(vendor_sync, "V", repo / "vendor")
+    name = json.loads(manifest)["projects"][0]["name"]
+    with pytest.raises(SystemExit, match="expected one vendored table"):
+        vendor_sync.cmd_import(argparse.Namespace(name=name, sha="ab" * 20, initial=False))
+    assert (repo / "vendor" / "manifest.json").read_text() == manifest
+    assert sorted(p.name for p in (repo / "vendor").iterdir()) == ["manifest.json"]
 
 
 def test_notices_start_a_missing_file_with_the_header_and_table(repo):

@@ -4,9 +4,10 @@ The moulding guides (Covestro/Bayer, DuPont, BASF) give permissible strains for 
 is weaker across its layers than along them, and much more so in **strain to failure** than in strength: across the
 layers the datasheets below keep 40-89 % of the in-plane strength but only 10-61 % of the in-plane elongation at break
 (Allum et al., Addit. Manuf. 34 (2020) 101297: the inter-layer bond reaches bulk strength; the grooves between
-filaments act as notches). Those ranges are for PLA, PETG, ASA and CoPA; carbon-filled PA6 keeps 90-96 % of its
-elongation, because the fibre already limits it in-plane. Snap fits are limited by strain, so the direction matters
-more than strength data suggest.
+filaments act as notches). Those ranges are for PLA, PETG, ASA and CoPA (the current editions); Polymaker's
+carbon-filled PA6 keeps 90-96 % of its elongation, because the fibre already limits it in-plane (Bambu's PA6-CF, not
+an entry here, keeps 64 %). Snap fits are limited by strain, so the direction matters more than strength data
+suggest.
 
 **Rule** (derived; research/compliant-mechanisms.md section 6). For each direction, from one sheet's values:
 
@@ -204,7 +205,7 @@ POLYLITE_PETG_V54 = Sheet("Polymaker", "PolyLite PETG Technical Data Sheet", "V5
                           (2116.8, 1898.7), (50.8, 42.8), (8.4, 3.3))
 # Served at the V5.4 address, the sheet is now V6.0 for "Polymaker ASA" ("based on testing with Polymaker PolyLite ASA");
 # its mechanical values are V5.4's.
-POLYMAKER_ASA_V60 = Sheet("Polymaker", "ASA Technical Data Sheet (PolyLite ASA)", "V6.0", "2025-12-02",
+POLYMAKER_ASA_V60 = Sheet("Polymaker", "ASA Technical Data Sheet", "V6.0", "2025-12-02",
                           "p. 1, Mechanical Properties", _PM + "PolyLite_ASA_TDS_EN_V5.4.pdf",
                           (2379, 1965), (43.8, 32), (6.7, 1.65))
 _COPA = ("Polymaker", "PolyMide CoPA Technical Data Sheet", "V5.4", "2024-04-14")

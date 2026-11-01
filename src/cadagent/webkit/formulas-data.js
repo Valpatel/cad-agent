@@ -167,7 +167,7 @@ export const MATERIALS = [
   "key": "asa-polymaker",
   "name": "Polymaker PolyLite ASA",
   "condition": "",
-  "source": "Polymaker ASA Technical Data Sheet (PolyLite ASA) V6.0 (PDF of 2025-12-02), p. 1, Mechanical Properties: https://cdn.shopify.com/s/files/1/0548/7299/7945/files/PolyLite_ASA_TDS_EN_V5.4.pdf",
+  "source": "Polymaker ASA Technical Data Sheet V6.0 (PDF of 2025-12-02), p. 1, Mechanical Properties: https://cdn.shopify.com/s/files/1/0548/7299/7945/files/PolyLite_ASA_TDS_EN_V5.4.pdf",
   "modulus": {
    "along": 2379000000.0,
    "across": 1965000000.0

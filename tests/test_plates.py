@@ -77,8 +77,9 @@ def assert_rules(layout, copies, bed=BED, gap=5.0, margin=5.0, keep_out=()):
         assert group[q.part, q.copy] == p.group
         assert margin - 1e-9 <= q.x and q.x + q.width <= bed[0] - margin + 1e-9
         assert margin - 1e-9 <= q.y and q.y + q.depth <= bed[1] - margin + 1e-9
+        clear = max(gap, P.KEEP_OUT_MIN_MM)
         for x0, y0, x1, y1 in keep_out:
-            assert q.x >= x1 or q.x + q.width <= x0 or q.y >= y1 or q.y + q.depth <= y0, (q, (x0, y0, x1, y1))
+            assert max(x0 - (q.x + q.width), q.x - x1, y0 - (q.y + q.depth), q.y - y1) >= clear - 1e-9, (q, keep_out)
     for p in layout:
         for i, a in enumerate(p.placements):
             for b in p.placements[i + 1:]:
@@ -179,7 +180,7 @@ def test_check_plates_finds_each_broken_rule():
     text = "\n".join(problems)
     assert "a #1 is outside the bed" in text and "b #1 is outside the bed" in text
     assert "a #1 and a #2 are 2.000 mm apart" in text
-    assert "c #1 covers a keep-out area" in text
+    assert "c #1 is closer than 5 mm to a keep-out area" in text
     assert "b: 1 on the plates, 2 wanted" in text and "c: 1 on the plates, 0 wanted" in text
     overlap = P.Plate(1, "", [P.Placement("a", 1, 10, 10, 50, 50), P.Placement("a", 2, 30, 30, 50, 50)])
     assert "overlap" in P.check_plates([overlap], BED, 0, 0)[0]
@@ -228,6 +229,39 @@ def test_parts_that_cannot_be_laid_out_are_errors():
     with pytest.raises(P.PlatesError, match="leaves no room"):
         P.pack(copies_of("a", box(10, 10), 1), BED, margin=128)
     assert len(P.pack(copies_of("big", box(200, 200), 36), BED)) == 36
+
+
+@pytest.mark.parametrize("gap", [0, 5])
+def test_a_diagonal_part_keeps_clear_of_the_corner_in_the_written_file(tmp_path, gap):
+    """A part turned to a whole degree is written rounded to 1e-4 mm. Touching the keep-out area in the layout could
+    put a vertex nanometres inside it, which Bambu Studio refuses to slice; the layout keeps a clearance instead, and
+    the written vertices keep it too."""
+    keep_out = [(0, 0, 18, 28)]
+    rng = random.Random(9)
+    meshes = {"bar": box(287, 13.7, 5)}
+    copies = copies_of("bar", meshes["bar"], 1)
+    for k in range(4):
+        meshes[f"f{k}"] = box(rng.uniform(20, 60), rng.uniform(20, 60), 5)
+        copies += copies_of(f"f{k}", meshes[f"f{k}"], 2)
+    layout = P.pack(copies, BED, gap=gap, margin=5, keep_out=keep_out)
+    assert any(q.angle % 90 for p in layout for q in p.placements)
+    assert_rules(layout, copies, gap=gap, keep_out=keep_out)
+    out = tmp_path / "bar.3mf"
+    P.write_plates_3mf(out, meshes, layout, bed_xy=BED, gap=gap, margin=5, keep_out=keep_out)
+    with zipfile.ZipFile(out) as z:
+        model = ET.fromstring(z.read("3D/3dmodel.model"))
+    ns = {"m": CORE_NS}
+    verts = {o.get("id"): np.array([[float(v.get(k)) for k in "xy"] for v in o.iterfind("m:mesh/m:vertices/m:vertex", ns)])
+             for o in model.iterfind("m:resources/m:object", ns)}
+    origin = {p.index: P.plate_origin(p.index, len(layout), (256, 256)) for p in layout}
+    nearest = math.inf
+    for item in model.iterfind("m:build/m:item", ns):
+        t = [float(c) for c in item.get("transform").split()]
+        world = verts[item.get("objectid")] @ np.array(t[:9]).reshape(3, 3)[:2, :2] + np.array(t[9:11])
+        plate = next(i for i, (ox, oy) in origin.items() if ox <= world[:, 0].min() < ox + 256 and oy <= world[:, 1].min() < oy + 256)
+        x, y = world[:, 0] - origin[plate][0], world[:, 1] - origin[plate][1]
+        nearest = min(nearest, float(np.max([0 - x, x - 18, 0 - y, y - 28], axis=0).min()))   # each vertex's clearance
+    assert nearest >= max(gap, P.KEEP_OUT_MIN_MM) - 1e-3
 
 
 def test_keep_out_corner_stays_clear_on_a_full_plate():
@@ -382,6 +416,10 @@ def test_the_svg_shows_each_plate_and_outline():
     svg = P.plates_svg(layout, fps, BED, margin=5, keep_out=[(0, 0, 18, 28)], labels={1: "PLA 1", 2: "PETG 1"},
                        title="Demo")
     root = ET.fromstring(svg)
+    _, _, vw, vh = (float(v) for v in root.get("viewBox").split())
+    assert (float(root.get("width")), float(root.get("height"))) == pytest.approx((vw, vh), abs=0.5)
+    assert [P._num(v, d) for v, d in ((2650.0, 0), (1.5, 2), (-0.00001, 4), (300.0, 4), (12.34567, 4))] == [
+        "2650", "1.5", "0", "300", "12.3457"]
     assert svg.count("<polygon") == 8 and svg.count('fill="url(#ko)"') == 2
     assert "PLA 1" in svg and "PETG 1" in svg and root.get("viewBox")
     assert svg == P.plates_svg(layout, fps, BED, margin=5, keep_out=[(0, 0, 18, 28)],
@@ -422,6 +460,9 @@ def test_plates_config_defaults_and_forms(tmp_path):
     ("  plates: {gap_mm: -1}\n", "gap_mm must be a number"),
     ("  plates: {rotate: 'yes'}\n", "rotate must be true or false"),
     ("  plates: {keep_out: [[0, 0, 10]]}\n", r"keep_out\[0\]"),
+    ("  plates: {keep_out: [[0, 0, .inf, 10]]}\n", r"keep_out\[0\]"),
+    ("  plates: {gap_mm: .nan}\n", "gap_mm must be a number"),
+    ("  plates: {margin_mm: .inf}\n", "margin_mm must be a number"),
     ("  plates: {bed_type: Glass}\n", "bed_type must be one of"),
     ("  plates: {parts: [box, box]}\n", "listed twice: \\['box'\\]"),
     ("  plates: {parts: [gear]}\n", "not in the parts file: \\['gear'\\]"),
@@ -474,6 +515,42 @@ def test_export_plates_without_bambu_studio_says_what_it_left_out(tmp_path, monk
     assert P.export_plates(load_project(stl_project(tmp_path / "off", "  plates: false\n"))) is None
 
 
+def test_a_profile_bambu_studio_does_not_have_is_a_config_error(tmp_path, monkeypatch):
+    from cadagent.project import CadConfigError, load_project
+    monkeypatch.setattr(slicer, "executable", lambda: "/fake/BambuStudio")
+
+    def missing(*a, **kw):
+        raise KeyError("filament profile 'Bambu TPU 95A HF @BBL P1S 0.4 nozzle' not found")
+
+    monkeypatch.setattr(slicer, "project_settings", missing)
+    with pytest.raises(CadConfigError, match="profile Bambu Studio does not have: filament profile 'Bambu TPU"):
+        P.export_plates(load_project(stl_project(tmp_path)))
+
+
+def test_old_plates_files_go_when_a_run_fails_or_plates_are_off(tmp_path, monkeypatch):
+    from cadagent.project import load_project
+    monkeypatch.setattr(slicer, "executable", lambda: None)
+    root = stl_project(tmp_path)
+    exports = root / "exports"
+    P.export_plates(load_project(root))
+    names = {"demo-plates.3mf", "demo-plates.svg", "demo-plates.json"}
+    assert names <= {p.name for p in exports.iterdir()}
+    import trimesh
+    trimesh.creation.box(extents=(300, 300, 4)).export(str(exports / "lid.stl"))
+    with pytest.raises(P.PlatesError):
+        P.export_plates(load_project(root))
+    assert not names & {p.name for p in exports.iterdir()}
+    trimesh.creation.box(extents=(120, 80, 4)).export(str(exports / "lid.stl"))
+    P.export_plates(load_project(root))
+    (root / "cad-agent.yaml").write_text((root / "cad-agent.yaml").read_text() + "  plates: false\n")
+    assert P.export_plates(load_project(root)) is None
+    assert not names & {p.name for p in exports.iterdir()}
+    (exports / "demo-plates.json").write_text('{"format": "something else"}')     # not ours: left alone
+    (exports / "demo-plates.svg").write_text("<svg/>")
+    P.export_plates(load_project(root))
+    assert {"demo-plates.json", "demo-plates.svg"} <= {p.name for p in exports.iterdir()}
+
+
 def test_a_slicer_that_hangs_leaves_the_file_without_settings(tmp_path, monkeypatch):
     from cadagent.project import load_project
     monkeypatch.setattr(slicer, "executable", lambda: "/fake/BambuStudio")
@@ -508,11 +585,13 @@ def test_bambu_studio_slices_each_plate_as_laid_out():
     own filament. The snap cannot read /tmp, so the project sits in its own folder under the home directory."""
     from cadagent.project import load_project
     trimesh = pytest.importorskip("trimesh")
-    work = Path.home() / "snap" / "bambu-studio" / "common" / "cadagent-test-plates"
-    shutil.rmtree(work, ignore_errors=True)
+    import tempfile
+    common = Path.home() / "snap" / "bambu-studio" / "common"
+    common.mkdir(parents=True, exist_ok=True)
+    work = Path(tempfile.mkdtemp(dir=common, prefix="cadagent-test-plates-"))
     try:
-        root = stl_project(work, "  plates:\n    parts: {box: {quantity: 2}, lid: {quantity: 3, filament: petg}}\n",
-                           sizes={"box": (60, 40, 6), "lid": (40, 30, 3)})
+        root = stl_project(work, "  plates:\n    parts: {box: {quantity: 2}, bar: {}, lid: {quantity: 3, filament: petg}}\n",
+                           sizes={"box": (60, 40, 6), "bar": (287, 13.7, 4), "lid": (40, 30, 3)})
         rec = P.export_plates(load_project(root))
         assert rec["project_settings"]["embedded"], rec["warnings"]
         out = work / "sliced"
@@ -521,7 +600,8 @@ def test_bambu_studio_slices_each_plate_as_laid_out():
         result = json.loads((out / "result.json").read_text())
         assert p.returncode == 0, result.get("error_string")
         sliced = sorted(result["sliced_plates"], key=lambda s: s["id"])
-        assert [len(s["objects"]) for s in sliced] == [len(q["parts"]) for q in rec["plates"]] == [2, 3]
+        assert [len(s["objects"]) for s in sliced] == [len(q["parts"]) for q in rec["plates"]] == [3, 3]
+        assert [q["turn_deg"] % 90 != 0 for q in rec["plates"][0]["parts"] if q["part"] == "bar"] == [True]
         assert [[f["id"] for f in s["filaments"]] for s in sliced] == [[1], [2]]
         assert trimesh  # the STLs above were written with it
     finally:

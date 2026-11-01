@@ -15,8 +15,8 @@ added when none has room. Four sort orders times four fit rules are tried; the l
 the least on its last plate, wins. Parts with different filaments never share a plate. Sizes are whole
 micrometres and every tie is broken by a fixed key, so the same parts give the same layout on every machine. Each
 plate's layout is then centred on the bed, unless that would move a part onto a keep-out area. ``check_plates``
-re-checks the result independently: every copy placed once, inside the bed less the margin, clear of keep-out areas
-and at least ``gap`` from every other part.
+re-checks the result independently: every copy placed once, inside the bed less the margin, at least ``gap`` from
+every other part and from every keep-out area (``keep_out_clearance``).
 
 **The file** (``write_plates_3mf``) is a 3MF core-spec model (one mesh object per part, one build item per copy, at
 its place on Bambu Studio's grid of plates) plus Bambu Studio's ``Metadata/model_settings.config``: one ``<plate>``
@@ -66,6 +66,7 @@ MAX_PLATES = 36                    # Bambu Studio: MAX_PLATE_COUNT
 DEFAULT_GAP_MM = 5.0
 DEFAULT_MARGIN_MM = 5.0
 QUARTER_TURN_MIN_MM = 0.5         # a footprint this close to square is never turned a quarter
+KEEP_OUT_MIN_MM = 0.5             # least clearance from a keep-out area, whatever the gap (see keep_out_clearance)
 POSITION_TOL_MM = 2e-3             # read-back: vertices are written to 1e-4 mm, transforms to 1e-4 mm and 1e-9
 MODEL_SETTINGS = "Metadata/model_settings.config"
 PROJECT_SETTINGS = "Metadata/project_settings.config"
@@ -290,7 +291,8 @@ def pack(copies: Sequence[Copy], bed_xy: Sequence[float], gap: float = DEFAULT_G
     """Lay ``copies`` out over as few plates of a ``bed_xy`` bed as this method finds (see the module docstring).
 
     ``gap`` is the least distance between two footprints, ``margin`` the least distance from the bed's edge, and
-    ``keep_out`` lists bed areas no footprint may cover, ``[x0, y0, x1, y1]`` in mm. Groups keep the order in which
+    ``keep_out`` lists bed areas, ``[x0, y0, x1, y1]`` in mm, that every footprint stays ``keep_out_clearance(gap)``
+    from. Groups keep the order in which
     ``copies`` first names them, and each starts on a new plate. Raises ``PlatesError`` for a copy that fits no empty
     plate, or when more than ``max_plates`` plates would be needed."""
     if gap < 0 or margin < 0:
@@ -302,9 +304,13 @@ def pack(copies: Sequence[Copy], bed_xy: Sequence[float], gap: float = DEFAULT_G
         raise PlatesError(f"a margin of {margin} mm leaves no room on a {bed_xy[0]} x {bed_xy[1]} mm bed")
     bin_w, bin_h = Wb - 2 * m + g, Db - 2 * m + g
     blocked = []
-    for x0, y0, x1, y1 in keep_out:     # grown to whole micrometres, never shrunk
-        lo = [int(math.floor(round(float(v) * _UM, 6))) for v in (x0, y0)]
-        r = _clip((lo[0] - m, lo[1] - m, _um(float(x1)) - m, _um(float(y1)) - m), bin_w, bin_h)
+    c = _um(keep_out_clearance(gap))
+    for x0, y0, x1, y1 in keep_out:     # grown to whole micrometres, never shrunk, then by the clearance
+        # A copy's rectangle carries the gap on its right and top, so the area grows by the clearance less the gap on
+        # its left and bottom and by the clearance on its right and top: the footprint stays c clear on every side.
+        lo = [int(math.floor(round(float(v) * _UM, 6))) - c + g - m for v in (x0, y0)]
+        hi = [_um(float(v)) + c - m for v in (x1, y1)]
+        r = _clip((lo[0], lo[1], hi[0], hi[1]), bin_w, bin_h)
         if r:
             blocked.append(r)
     groups: List[str] = []
@@ -340,7 +346,8 @@ def pack(copies: Sequence[Copy], bed_xy: Sequence[float], gap: float = DEFAULT_G
     if best is None:
         raise PlatesError(f"the parts need more than {max_plates} plates (Bambu Studio holds at most "
                           f"{MAX_PLATES}); print them in more than one project")
-    return Layout([_centred(p, (Wb, Db), keep_out) for p in best[1]], {"sort": best[2][0], "fit": best[2][1]})
+    return Layout([_centred(p, (Wb, Db), keep_out, keep_out_clearance(gap)) for p in best[1]],
+                  {"sort": best[2][0], "fit": best[2][1]})
 
 
 SORT_ORDERS = ("area", "long-side", "short-side", "perimeter")      # largest first, by
@@ -386,9 +393,9 @@ def _pack_once(jobs, groups: List[str], order: str, rule: str, bin_wh: Tuple[int
     return plates
 
 
-def _centred(plate: Plate, bed_um: Tuple[int, int], keep_out: Sequence[Sequence[float]]) -> Plate:
-    """The plate with its layout moved to the middle of the bed, in whole micrometres, unless that puts a footprint
-    on a keep-out area."""
+def _centred(plate: Plate, bed_um: Tuple[int, int], keep_out: Sequence[Sequence[float]], clearance: float) -> Plate:
+    """The plate with its layout moved to the middle of the bed, in whole micrometres, unless that brings a footprint
+    closer than ``clearance`` to a keep-out area."""
     if not plate.placements:
         return plate
     lo_x = min(_um(q.x) for q in plate.placements)
@@ -399,14 +406,25 @@ def _centred(plate: Plate, bed_um: Tuple[int, int], keep_out: Sequence[Sequence[
     dy = (bed_um[1] - (hi_y - lo_y)) // 2 - lo_y
     moved = [Placement(q.part, q.copy, (_um(q.x) + dx) / _UM, (_um(q.y) + dy) / _UM, q.width, q.depth, q.angle)
              for q in plate.placements]
-    if any(_hits_keep_out(q, keep_out) for q in moved):
+    if any(_hits_keep_out(q, keep_out, clearance) for q in moved):
         return plate
     return Plate(plate.index, plate.group, moved)
 
 
-def _hits_keep_out(q: Placement, keep_out: Sequence[Sequence[float]], tol: float = 0.0) -> bool:
+def keep_out_clearance(gap: float) -> float:
+    """How far every footprint stays from a keep-out area: the gap between parts, and never less than
+    ``KEEP_OUT_MIN_MM``. A part turned to a whole degree is written with its vertices and move rounded to 1e-4 mm, so
+    a footprint that only touched a keep-out area could land a few nanometres inside it; Bambu Studio intersects each
+    part's outline with its exclusion area exactly and refuses to slice the plate ("too close to exclusion area")."""
+    return max(float(gap), KEEP_OUT_MIN_MM)
+
+
+def _hits_keep_out(q: Placement, keep_out: Sequence[Sequence[float]], clearance: float = 0.0,
+                   tol: float = 0.0) -> bool:
+    """Whether the footprint comes closer than ``clearance`` (less ``tol``) to a keep-out area."""
     for x0, y0, x1, y1 in keep_out:
-        if q.x < x1 - tol and x0 < q.x + q.width - tol and q.y < y1 - tol and y0 < q.y + q.depth - tol:
+        apart = max(x0 - (q.x + q.width), q.x - x1, y0 - (q.y + q.depth), q.y - y1)
+        if apart < clearance - tol:
             return True
     return False
 
@@ -415,7 +433,8 @@ def check_plates(plates: Sequence[Plate], bed_xy: Sequence[float], gap: float, m
                  keep_out: Sequence[Sequence[float]] = (), quantities: Optional[Dict[str, int]] = None,
                  groups: Optional[Dict[str, str]] = None, tol: float = 1e-6) -> List[str]:
     """Every way the layout breaks the rules, independently of how it was made (empty when it keeps them all):
-    each footprint inside the bed less ``margin``, off ``keep_out``, at least ``gap`` from every other footprint on
+    each footprint inside the bed less ``margin``, ``keep_out_clearance(gap)`` from ``keep_out``, at least ``gap``
+    from every other footprint on
     its plate; with ``quantities``, every part placed exactly that many times and nothing else; with ``groups``
     (part -> group), every part on a plate of its group. ``tol`` (mm) absorbs rounding in a read-back layout."""
     problems: List[str] = []
@@ -429,8 +448,8 @@ def check_plates(plates: Sequence[Plate], bed_xy: Sequence[float], gap: float, m
                     or q.y + q.depth > D - margin + tol:
                 problems.append(f"{name} is outside the bed less its {margin:g} mm margins "
                                 f"({q.x:.3f}..{q.x + q.width:.3f} x {q.y:.3f}..{q.y + q.depth:.3f} mm)")
-            if _hits_keep_out(q, keep_out, tol):
-                problems.append(f"{name} covers a keep-out area")
+            if _hits_keep_out(q, keep_out, keep_out_clearance(gap), tol):
+                problems.append(f"{name} is closer than {keep_out_clearance(gap):g} mm to a keep-out area")
             if groups is not None and groups.get(q.part, p.group) != p.group:
                 problems.append(f"{name} is on a {p.group!r} plate, its filament is {groups.get(q.part)!r}")
         qs = p.placements
@@ -498,7 +517,10 @@ def printable_area(settings: Optional[Dict[str, Any]], bed_xy: Sequence[float]
 # The project 3MF
 
 def _num(v: float, digits: int) -> str:
-    s = f"{v:.{digits}f}".rstrip("0").rstrip(".")
+    """``v`` to ``digits`` decimals, without trailing zeros after the point (2650.0 -> "2650", 1.50 -> "1.5")."""
+    s = f"{v:.{digits}f}"
+    if "." in s:
+        s = s.rstrip("0").rstrip(".")
     return "0" if s in ("-0", "") else s
 
 
@@ -748,32 +770,32 @@ def plates_svg(plates: Sequence[Plate], footprints: Dict[str, Footprint], bed_xy
     W, D = float(bed_xy[0]), float(bed_xy[1])
     cols = max(1, min(columns_max, len(plates)))
     rows = max(1, math.ceil(len(plates) / cols))
-    pad, head = 16.0, 22.0
+    f = max(W, D) / 256.0           # text scales with the bed, so a plate's labels read the same on any printer
+    pad, head, title_h = 16.0 * f, 34.0 * f, (24.0 * f if title else 0.0)
     cell_w, cell_h = W + pad, D + head + pad
-    width, height = cols * cell_w + pad, rows * cell_h + pad + (14.0 if title else 0.0)
+    width, height = cols * cell_w + pad, rows * cell_h + pad + title_h
     groups = []
     for p in plates:
         if p.group not in groups:
             groups.append(p.group)
     out = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {_num(width, 2)} {_num(height, 2)}" '
-           f'width="{_num(width * 2.4, 0)}" height="{_num(height * 2.4, 0)}" font-family="system-ui, sans-serif" '
-           'role="img">',
+           f'width="{_num(width, 0)}" height="{_num(height, 0)}" font-family="system-ui, sans-serif" role="img">',
            f"<title>{escape(title or 'Build plates')}</title>",
            '<defs><pattern id="ko" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">'
            '<line x1="0" y1="0" x2="0" y2="4" stroke="#8a8f87" stroke-width="1.2"/></pattern></defs>',
            f'<rect width="{_num(width, 2)}" height="{_num(height, 2)}" fill="#fffdf5"/>']
-    top = pad + (14.0 if title else 0.0)
+    top = pad + title_h
     if title:
-        out.append(f'<text x="{_num(pad, 2)}" y="{_num(pad + 6, 2)}" font-size="9" font-weight="600" '
+        out.append(f'<text x="{_num(pad, 2)}" y="{_num(pad + 12 * f, 2)}" font-size="{_num(17 * f, 2)}" font-weight="600" '
                    f'fill="#173d3c">{escape(title)}</text>')
     for k, p in enumerate(plates):
         cx, cy = pad + (k % cols) * cell_w, top + (k // cols) * cell_h
         bx, by = cx, cy + head
         label = (labels or {}).get(p.index) or f"Plate {p.index}"
         cover = sum(footprints[q.part].area() for q in p.placements) / (W * D) * 100
-        out.append(f'<g><text x="{_num(bx, 2)}" y="{_num(cy + 8, 2)}" font-size="7.5" font-weight="600" '
+        out.append(f'<g><text x="{_num(bx, 2)}" y="{_num(cy + 13 * f, 2)}" font-size="{_num(14 * f, 2)}" font-weight="600" '
                    f'fill="#173d3c">{escape(label)}</text>'
-                   f'<text x="{_num(bx, 2)}" y="{_num(cy + 17, 2)}" font-size="6" fill="#4d5f5a">'
+                   f'<text x="{_num(bx, 2)}" y="{_num(cy + 27 * f, 2)}" font-size="{_num(11 * f, 2)}" fill="#4d5f5a">'
                    f'{len(p.placements)} part{"s" if len(p.placements) != 1 else ""} · {cover:.0f} % of the bed covered'
                    '</text>')
         out.append(f'<rect x="{_num(bx, 2)}" y="{_num(by, 2)}" width="{_num(W, 2)}" height="{_num(D, 2)}" rx="3" '
@@ -795,8 +817,8 @@ def plates_svg(plates: Sequence[Plate], footprints: Dict[str, Footprint], bed_xy
             tip = f"{q.part} #{q.copy}" + (f", turned {q.angle}°" if q.angle else "")
             out.append(f'<polygon points="{pts}" fill="{colour}" fill-opacity="0.82" stroke="#173d3c" '
                        f'stroke-width="0.6"><title>{escape(tip)}</title></polygon>')
-            size = min(6.0, q.width / max(len(name), 1) * 1.7, q.depth * 0.5)
-            if size >= 2.6:
+            size = min(12.0 * f, q.width / max(len(name), 1) * 1.7, q.depth * 0.5)
+            if size >= 6.5 * f:          # smaller would not read at page width; the outline's tooltip names it
                 out.append(f'<text x="{_num(bx + q.x + q.width / 2, 2)}" y="{_num(by + D - q.y - q.depth / 2 + size * 0.35, 2)}" '
                            f'font-size="{_num(size, 2)}" text-anchor="middle" fill="#ffffff">{escape(name)}</text>')
         out.append("</g>")
@@ -827,7 +849,7 @@ class PlatesConfig:
 
 def _number(raw: Dict[str, Any], key: str, default: float) -> float:
     v = raw.get(key, default)
-    if isinstance(v, bool) or not isinstance(v, (int, float)) or v < 0:
+    if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) or v < 0:
         from cadagent.project import CadConfigError
         raise CadConfigError(f"cad.plates.{key} must be a number of mm, zero or more")
     return float(v)
@@ -857,7 +879,8 @@ def plates_config(project, known_parts: Sequence[str]) -> Optional[PlatesConfig]
     keep_out = []
     for i, k in enumerate(raw.get("keep_out") or []):
         if not (isinstance(k, list) and len(k) == 4 and all(isinstance(v, (int, float)) and not isinstance(v, bool)
-                                                            for v in k) and k[2] > k[0] and k[3] > k[1]):
+                                                            and math.isfinite(v) for v in k)
+                and k[2] > k[0] and k[3] > k[1]):
             raise CadConfigError(f"cad.plates.keep_out[{i}] must be [x0, y0, x1, y1] in mm with x1 > x0 and y1 > y0")
         keep_out.append(tuple(float(v) for v in k))
     bed = raw.get("bed_type", "")
@@ -950,12 +973,29 @@ def _exclude_box(settings: Optional[Dict[str, Any]], area) -> Optional[Tuple[flo
     return (x0, y0, x1, y1) if x1 > x0 and y1 > y0 else None
 
 
+def _remove_outputs(path: Path) -> None:
+    """Delete the plates file, picture and record a previous run wrote: only when the record is this module's
+    (``MARKER``), so a project file that merely shares the name is never touched."""
+    record = path.with_suffix(".json")
+    try:
+        ours = json.loads(record.read_text()).get("format") == MARKER
+    except (OSError, ValueError, AttributeError):
+        return
+    if ours:
+        for f in (path, path.with_suffix(".svg"), record):
+            f.unlink(missing_ok=True)
+
+
 def export_plates(project, known_parts: Optional[Sequence[str]] = None, settings_bytes: Optional[bytes] = None,
                   use_slicer: bool = True) -> Optional[Dict[str, Any]]:
     """Write ``<name>-plates.3mf`` (verified), ``<name>-plates.json`` (the layout) and ``<name>-plates.svg`` (the
     plates from above) into ``exports_dir``; None when ``cad.plates`` is false. The project settings are
     ``settings_bytes`` when given, else Bambu Studio's for ``cad.slicer`` when it is installed and ``use_slicer``,
-    else left out (the record and the warnings say so: Bambu Studio then opens the file on one plate)."""
+    else left out (the record and the warnings say so: Bambu Studio then opens the file on one plate). A printer,
+    process or filament that Bambu Studio has no profile for is a ``CadConfigError``.
+
+    The files a previous run wrote are deleted first, so a failed run or ``cad.plates: false`` never leaves a plates
+    file that no longer matches the parts."""
     import subprocess
 
     from cadagent.manufacturing import slicer
@@ -967,6 +1007,7 @@ def export_plates(project, known_parts: Optional[Sequence[str]] = None, settings
         if error:
             raise FileNotFoundError(error)
         known_parts = list(known)
+    _remove_outputs(plates_file(project))
     cfg = plates_config(project, known_parts)
     if cfg is None:
         return None
@@ -995,7 +1036,11 @@ def export_plates(project, known_parts: Optional[Sequence[str]] = None, settings
             settings_bytes = slicer.project_settings(project.root / "build" / "slicer" / "plates", sl["printer"],
                                                      sl["process"], groups, sl["overrides"],
                                                      colours=[PALETTE[i % len(PALETTE)] for i in range(len(groups))])
-        except (OSError, RuntimeError, KeyError, ValueError, subprocess.SubprocessError) as exc:
+        except KeyError as exc:
+            from cadagent.project import CadConfigError
+            raise CadConfigError(f"cad.slicer or cad.plates names a profile Bambu Studio does not have: "
+                                 f"{exc.args[0] if exc.args else exc}") from None
+        except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:
             warnings.append(f"no project settings ({exc}); Bambu Studio will open the file on one plate")
     elif settings_bytes is None:
         warnings.append("Bambu Studio is not installed, so the file carries no project settings: Bambu Studio "

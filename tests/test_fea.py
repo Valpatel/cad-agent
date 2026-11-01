@@ -274,8 +274,10 @@ def test_viewer_draws_the_torque_about_the_faces_not_the_given_point(tmp_path):
 
 def test_render_at_a_fixed_colour_scale(tmp_path, monkeypatch):
     """Two variants compare by eye only at one colour scale: render(vmax=...) sets the colour bar's top, whatever the
-    study's own design stress, and leaves the result alone."""
+    study's own design stress, and leaves the result alone; stress past it takes the top colour, with an arrow."""
+    import matplotlib.colors
     import matplotlib.figure
+    import numpy as np
 
     st = Study(cq.Workplane('XY').box(100, 10, 10).translate((50, 0, 0)), STEEL, mesh_mm=5.0, name='beam')
     st.fix(plane_at(0, 0.0)).force(plane_at(0, 100), (0, 0, -100))
@@ -291,8 +293,21 @@ def test_render_at_a_fixed_colour_scale(tmp_path, monkeypatch):
     monkeypatch.setattr(matplotlib.figure.Figure, 'colorbar', spy)
     assert st.render(tmp_path / 'own.png').stat().st_size > 0
     assert st.render(tmp_path / 'fixed.png', vmax=250.0, scale=40).stat().st_size > 0
+    low = r['von_mises_design_mpa'] / 2                       # below the beam's own peak: clipped to the top colour
+    faces = []
+    real_poly = matplotlib.colors.Colormap.__call__
+
+    def spy_colours(self, X, *a, **k):
+        faces.append(np.asarray(X, dtype=float).copy())
+        return real_poly(self, X, *a, **k)
+
+    monkeypatch.setattr(matplotlib.colors.Colormap, '__call__', spy_colours)
+    assert st.render(tmp_path / 'clipped.png', vmax=low, scale=40).stat().st_size > 0
     assert seen[0][1] == pytest.approx(r['von_mises_design_mpa']) and seen[0][3] == 'neither'
-    assert seen[1][:2] == (0, 250.0) and 'fixed scale 0-250' in seen[1][2] and seen[1][3] == 'max'
+    assert seen[1][:2] == (0, 250.0) and 'fixed scale 0-250' in seen[1][2] and seen[1][3] == 'neither'
+    assert seen[2][1] == pytest.approx(low) and seen[2][3] == 'max' and 'this design' in seen[2][2]
+    shares = [float((f >= 1.0).mean()) for f in faces if f.ndim == 1 and f.size > 10]
+    assert shares and 0.0 < shares[-1] < 1.0                  # part of the beam (past low) in the top colour, not all
     assert st.result == before
     for bad in (0, -1, float('nan')):
         with pytest.raises(ValueError):

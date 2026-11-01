@@ -17,11 +17,12 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   and a one-build total (#89).
 - Merge gates: `cad-gates/<base>/branch-flow`, `…/review` and `cad-gates/main/release` statuses, run from the default
   branch's (dev's) copy of the gates, on every push and every 15 minutes; tagged releases and the site deploy from `main` (#112).
+- `Study.render(..., vmax=)` draws at a fixed colour scale (MPa), so the renders of two variants compare by eye
+  (before, each render ran from 0 to its own design stress). The colour bar says the scale is fixed and names the
+  study's own design stress; stress above `vmax` takes the top colour, with an arrow when the study goes past it.
+  `scale` remains the deformation exaggeration (#191).
 
 **Fixed**
-- `Study.render(..., vmax=)` fixes the colour scale (MPa), so the renders of two variants compare by eye. Before, each
-  render ran from 0 to its own design stress. With `vmax` the colour bar says the scale is fixed, and stress above it
-  takes the top colour. `scale` remains the deformation exaggeration.
 - Bambu slicer templates that include other templates are resolved before profiles are flattened (#93).
 - Reproducible STEP files: `cadagent.geometry.export_step(shape, path)` writes the same bytes for the same model, with
   a fixed header date (`SOURCE_DATE_EPOCH` when set), the product named after the file and assembly links numbered

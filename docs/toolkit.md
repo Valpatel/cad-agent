@@ -394,7 +394,7 @@ whose peak is past the strength. It counts whole elements, so it is an upper bou
 
 Showing how it fails, for the report:
 
-- `render(png)`: the deformed part coloured by stress.
+- `render(png, scale=None, vmax=None)`: the deformed part coloured by stress. `scale` exaggerates the deformation; `vmax` (MPa) fixes the colour scale, so variants under the same load compare by eye.
 - `animate(mp4)`: the load ramped from zero through the design load to first failure (x safety factor) and past it;
   regions past the strength turn black, and every frame gives the overstressed volume share (an upper bound).
 - `export_viewer(json)`: data for the interactive viewer in the web kit (`fea-viewer.js`, `fea.html`). The boundary

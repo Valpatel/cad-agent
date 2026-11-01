@@ -33,7 +33,7 @@ flowchart TD
 | [`dossier/`](dossier/__init__.py) | The design dossier: requirements, sections, spec cards, interfaces, decisions, and its lint (`cad-agent dossier`) |
 | [`gates/`](gates/__init__.py) | Assembly integrity gates (access order, connectivity, containment, fasteners, motion, walls), each written as a verdict (`cad-agent gates`) |
 | `packet.py` | The section review packet: captioned renders with the measurements first (`cad-agent review-packet`) |
-| `evidence.py` | Shared integrity screen for source-bound CAD and PCB records: content hashes and whether a record is current |
+| `evidence.py` | Shared integrity screen for source-bound CAD and PCB records: content hashes and whether a record is current, the platform a hash was made on (`hash_platform`), and a platform-stable `geometry_identity` |
 
 Related: [package map](../README.md) · [publish](../publish/README.md) (the review pages) ·
 [design process](../../../docs/design-process-plan.md) · [gates](../../../docs/gates.md) ·

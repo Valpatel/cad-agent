@@ -393,6 +393,44 @@ def test_a_record_with_stale_hashes_does_not_sign_off(project):
     assert "stale-hashes" in codes(submit_record(project, "S1", rec2, reviewer="reviewer", write=False)[2])
 
 
+def test_a_record_says_where_its_hashes_were_made_and_a_platform_change_is_named(tmp_path):
+    """The template carries the geometry record's hash_platform into the record (#144). When the geometry is
+    rebuilt on another platform and its hashes change, the stale-review warning names both platforms."""
+    arm = {"machine": "aarch64", "system": "Linux", "ocp": "7.9.3.1", "ocp_package": "cadquery-ocp 7.9.3.1.1"}
+    geo = dict(geometry(), hash_platform=arm)
+    project = load_project(setup_project(tmp_path, geo=geo))
+    root = Path(project.root)
+    tpl = template(project)
+    assert tpl["hash_platform"] == arm
+    path, rec, problems = submit_record(project, "S1", fill(tpl), reviewer="reviewer")
+    assert problems == [], [str(p) for p in problems]
+    assert json.loads(path.read_text())["hash_platform"] == arm and validate_record(rec) == []
+    # rebuilt on x86-64: one hash moved
+    moved = copy.deepcopy(geo)
+    moved["hash_platform"] = dict(arm, machine="x86_64")
+    moved["parts"]["hopper"]["sha256"] = "0" * 64
+    (root / "exports" / "dossier-geometry.json").write_text(json.dumps(moved))
+    stale = [f for f in lint_project(project, min_section_status=None).findings if f.code == "review-stale"]
+    assert len(stale) == 1 and "hopper changed or not built since" in stale[0].message
+    assert "made on aarch64 Linux" in stale[0].message and "current ones on x86_64 Linux" in stale[0].message
+    # the bundle was written on aarch64 and the build is now x86-64: the refusal names both
+    _, _, problems = submit_record(project, "S1", fill(tpl), reviewer="reviewer", write=False)
+    why = next(str(p) for p in problems if p.code == "stale-hashes")
+    assert "need not be a change of geometry" in why and "aarch64" in why and "x86_64" in why
+    # the same platform: the old message only
+    moved["hash_platform"] = arm
+    (root / "exports" / "dossier-geometry.json").write_text(json.dumps(moved))
+    stale = [f for f in lint_project(project, min_section_status=None).findings if f.code == "review-stale"]
+    assert "made on" not in stale[0].message
+
+
+def test_a_record_without_hash_platform_stays_valid_and_a_bad_one_is_refused():
+    assert validate_record(valid_record()) == []                             # records written before #144
+    assert validate_record(valid_record(hash_platform={"machine": "x86_64"})) == []
+    for bad in ("x86_64", {"machine": 64}, ["x86_64"]):
+        assert "type" in codes(validate_record(valid_record(hash_platform=bad)))
+
+
 def test_a_same_actor_sign_off_is_refused_when_required(tmp_path):
     root = setup_project(tmp_path)
     project = load_project(root)

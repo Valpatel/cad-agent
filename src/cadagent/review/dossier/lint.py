@@ -25,6 +25,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple
 
+from cadagent.review.evidence import hash_platform_note
 from .model import PART_STATUS, Dossier, Issue, PartCard, Section, Where
 from .review import actor_check, check_record, part_actors
 
@@ -863,8 +864,11 @@ class _Linter:
                 changed = stale(latest)
                 info["invalidated"] = {"record": latest.file, "date": latest.date, "signed_off": latest.signed_off,
                                        "changed": changed}
+                note = hash_platform_note(latest.data.get("hash_platform"),
+                                          (self.ev.geometry or {}).get("hash_platform"))
                 self.add("review-stale", f"the review of section {sid!r} on {latest.date} ({latest.file}) no longer "
-                                         f"applies: {', '.join(changed)} changed or not built since", Where(latest.file),
+                                         f"applies: {', '.join(changed)} changed or not built since"
+                                         + (f" ({note})" if note else ""), Where(latest.file),
                          item=sid, parts=changed)
             rec = info["record"]
             self.current_records[sid] = rec

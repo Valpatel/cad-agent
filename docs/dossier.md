@@ -304,6 +304,8 @@ as for decorators (a free part needs a reason; grounded and free together are re
 {
  "schema": "cad-agent.dossier-geometry/1", "units": "mm",
  "hash": "cadagent.review.evidence.shape_content_hash: sha256 of the OCCT BREP text ...",
+ "hash_platform": {"machine": "x86_64", "system": "Linux", "ocp": "7.9.3.1",
+                   "ocp_package": "cadquery-ocp 7.9.3.1.1"},   # where the hashes were made
  "actor": "agent-session-12",              # who ran this build
  "parameters": {"file": "cad/parameters.json", "sha256": "..."},
  "out_dir": "exports", "shapes_dir": "exports/dossier-shapes",
@@ -338,6 +340,14 @@ as for decorators (a free part needs a reason; grounded and free together are re
     safe direction). Queries (`Volume`, `BoundingBox`, `isValid`, `fix`) and tessellation do not.
   - Two different constructions of the same geometry may hash differently: a cache miss, never a false match. An OCCT
     upgrade may change every hash, which only invalidates sign-offs.
+  - **The CPU architecture changes hashes too.** With the same cadquery-ocp 7.9.3.1.1 wheel, an x86-64 and an aarch64
+    host agreed on 4 of 43 solids of a vendor STEP, and on 4 of 12 public test solids (the filleted, lofted, swept
+    and Boolean ones differed; #144). So `hash_platform` (`evidence.hash_platform()`: machine, system, OCP version
+    and package) is recorded with the hashes, outside the gates' geometry digest. To tell a platform's mismatch from
+    a change, compare `evidence.geometry_identity(shape)` records with `evidence.identity_mismatches(a, b)`: volume,
+    centre of mass and inertia, rounded, matched within a stated tolerance (relative 1e-6 by default). All 43 and
+    all 12 matched across the two hosts. It is not a hash: different solids can share one, so it explains a
+    mismatch and never signs anything off.
   - A shape **read back** from its BREP file may hash differently, because the reader recomputes frame directions
     and location matrices (last-digit noise, signed zeros). Keep the recorded hash with the shape
     (`assembly_shapes(with_hashes=True)`, `content_hashes()`); never re-hash a loaded shape to identify it.

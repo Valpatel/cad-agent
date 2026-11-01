@@ -182,6 +182,18 @@ def test_plan_example_builds_and_writes_the_geometry_record(built):
                         "fasteners": ["screw_m4x12"] * 3, "declared_at": steps[0]["declared_at"]}
 
 
+def test_the_record_says_where_its_hashes_were_made(built):
+    """``hash_platform`` sits next to the hash recipe (#144) and is left out of the gates' geometry digest."""
+    from cadagent.review import evidence
+    from cadagent.review.gates.verdict import geometry_digest
+    root, result = built
+    geo = json.loads((root / "exports" / "dossier-geometry.json").read_text())
+    assert geo["hash_platform"] == evidence.hash_platform() == result.geometry["hash_platform"]
+    assert set(geo["hash_platform"]) == set(evidence.PLATFORM_KEYS) and geo["hash_platform"]["ocp"] != "unknown"
+    older = {k: v for k, v in geo.items() if k != "hash_platform"}       # as a toolkit before #144 wrote it
+    assert geometry_digest(older) == geometry_digest(geo)
+
+
 def test_shapes_are_content_addressed_and_gitignored(built):
     import hashlib
     import re

@@ -96,7 +96,7 @@ test('schema-1 fields keep their schema-1 values: summary, licence (null stays n
   }
 });
 
-test('every cover is used once, no dense figure is a cover, and compare draws its chart', async () => {
+test('every cover is used once and no dense figure is a cover', async () => {
   const by = new Map();
   for (const i of catalog.items) by.set(i.cover, [...(by.get(i.cover) || []), i.id]);
   for (const [cover, ids] of by) assert.equal(ids.length, 1, `${cover} is the cover of ${ids.join(', ')}`);
@@ -105,9 +105,35 @@ test('every cover is used once, no dense figure is a cover, and compare draws it
     const stem = path.basename(f).replace(/\.[a-z]+$/, '');
     for (const i of catalog.items) assert.ok(!i.cover.includes(stem) && !(i.cover_animated || '').includes(stem), `${i.id} uses the dense ${f}`);
   }
-  const compare = catalog.items.find(i => i.id === 'tool-compare');
-  const chart = await readFile(local(compare.cover), 'utf8');
-  for (const label of ['Light', 'Standard', 'Long range', 'Strong', 'PARETO FRONT']) assert.ok(chart.includes(label), `compare's chart has ${label}`);
+});
+
+test('compare and optimise draw what the tools printed: the front over every objective, lower bounds kept', async () => {
+  const data = JSON.parse(show('docs/img/explore/two-wheel-charts.json'));     // tools/explore_charts.py --check (pytest)
+  for (const cmd of ['compare', 'optimise']) {
+    const it = catalog.items.find(i => i.id === `tool-${cmd}`);
+    const svg = await readFile(local(it.cover), 'utf8');
+    const d = data[cmd];
+    assert.ok(svg.includes(`FRONT (${d.front_over.join(', ').toUpperCase()})`), `${cmd}: the legend says the front is over ${d.front_over}`);
+    assert.ok(!/<path d="M[^"]*L[^"]*" fill="none" stroke="#[0-9a-f]+" stroke-width="4"/.test(svg), `${cmd}: front points are not joined (it is not a front on these two axes)`);
+    const front = d.points.filter(p => p.front);
+    assert.equal((svg.match(/<circle [^>]*r="(?:10|8)" fill="#[0-9a-f]+" stroke="#fff"/g) || []).length >= front.length, true, `${cmd}: a filled mark per front point`);
+    for (const p of front) assert.ok(svg.includes(`>${p.lower_bound.length ? '≥ ' : ''}${p.label}<`), `${cmd}: ${p.label} is labelled`);
+  }
+  const compare = await readFile(local(catalog.items.find(i => i.id === 'tool-compare').cover), 'utf8');
+  for (const p of data.compare.points) {
+    assert.ok(compare.includes(`>${p.lower_bound.length ? '≥ ' : ''}${p.label}<`), `compare labels ${p.label}${p.lower_bound.length ? ' with ≥' : ''}`);
+  }
+  assert.ok(data.compare.points.some(p => p.lower_bound.includes('cost_usd')), 'the data still has a lower bound to keep');
+  assert.match(compare, /aria-label="[^"]*Long range: at least \$1,682/, 'the label reads the lower bound as "at least"');
+  // A chart of a tool's result is a picture: it ranks like one in the overview (#185).
+  // catalog.json lists each kind in featured order; a chart outranks a drawn call of the same maturity.
+  const tools = catalog.items.filter(i => i.kind === 'tool');
+  const charts = ['tool-compare', 'tool-optimise'];
+  for (const id of charts) {
+    const c = tools.find(i => i.id === id);
+    for (const t of tools.filter(t => /\/catalog\/covers\/tool-/.test(t.cover) && !charts.includes(t.id) && t.maturity === c.maturity && !t.demo && !c.demo))
+      assert.ok(tools.indexOf(c) < tools.indexOf(t), `${id} (a chart) is featured before ${t.id} (a drawn call)`);
+  }
 });
 
 test('every entry has an id, a kind, our own cover and a place: areas from docs/areas.yaml, or a bucket', async () => {

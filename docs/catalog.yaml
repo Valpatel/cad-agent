@@ -18,8 +18,9 @@
 #   its file name and described by the first sentence of its alt text.
 #
 # tools: `cad-agent <command>` → page (where it is documented; default docs/toolkit.md#commands) and figures (the
-#   pictures of the check it runs; the first one that exists and is not already a cover is its cover), or chart (a
-#   result of the tool, drawn at card size). A command without either gets a cover drawn from its call and real flags.
+#   pictures of the check it runs; the first one that exists and is not already a cover is its cover), or chart
+#   (file.json#key: the tool's own result, written by a generator with --check, drawn at card size). A command
+#   without either gets a cover drawn from its call and real flags.
 #
 # Every figure is a cover once: the demos take theirs first, then the tools, then our pages (the main guides first);
 # a page whose figures are all taken gets a cover drawn from its outline.
@@ -107,20 +108,10 @@ tools:
   snapfit: {page: docs/compliant.md, figures: [docs/img/compliant/example-1.svg]}
   holes: {page: docs/toolkit.md#holes-clear, figures: [docs/img/motion/rib-in-counterbore.svg]}
   gates: {page: docs/gates.md, figures: [docs/img/motion/hinge-sweep.svg, docs/img/motion/module-insertion.svg]}
-  optimise: {page: docs/explore.md, figures: [docs/img/motion/search-front.svg]}
-  compare:
-    page: docs/explore.md
-    # The trade-off cad-agent compare drew for examples/explore-two-wheel (docs/img/explore/two-wheel-compare.png):
-    # cost against mass for the four designs; Light and Standard are the Pareto front, Long range fails a requirement.
-    chart:
-      title: Two-wheel-legged robot, 4 designs
-      x: cost (USD)
-      y: mass (kg)
-      points:
-        - {label: Light, x: 849, y: 5.7, front: true}
-        - {label: Standard, x: 1612, y: 10.3, front: true}
-        - {label: Long range, x: 1682, y: 11.1, fail: true}
-        - {label: Strong, x: 2921, y: 16.0}
+  # compare and optimise: what the tools printed for examples/explore-two-wheel (tools/explore_charts.py writes the
+  # JSON from `cad-agent compare --json` and the seeded `cad-agent optimise`; tests run it with --check).
+  optimise: {page: docs/explore.md, chart: "docs/img/explore/two-wheel-charts.json#optimise"}
+  compare: {page: docs/explore.md, chart: "docs/img/explore/two-wheel-charts.json#compare"}
   catalogue: {page: docs/explore.md}
   view: {page: "docs/toolkit.md#3d-viewer-cad-agent-view--the-web-kit", figures: [docs/img/viewer.jpg]}
   slice: {page: docs/toolkit.md#real-grams-cadagentslicer-cad-agent-slice}

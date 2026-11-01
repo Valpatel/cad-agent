@@ -220,30 +220,50 @@ export function outsideCover({ kind, family, glyphSlug, tint, headline, license,
   return frame(tint, disc + tag(kind, 24, 32) + famLabel + big + licSvg + stSvg + bandSvg, label);
 }
 
-/** A chart from one of our tools' results (docs/catalog.yaml): points on two axes, the Pareto front joined. */
-export function chartCover({ title, x: xLabel, y: yLabel, points = [], tint, name }) {
-  const L = 62, R = 376, T = 58, B = 236;
+/** "$1,612", "10.3 kg": a value as a chart labels it. */
+const fmtValue = (v, unit) => unit === 'USD' ? `$${Math.round(v).toLocaleString('en-US')}` : `${(Math.round(v * 10) / 10).toLocaleString('en-US')} ${unit}`;
+
+/** A chart of one of our tools' results (docs/img/explore/two-wheel-charts.json, written from the tool's own output):
+ * each design or trial on two axes. Filled accent: on the Pareto front, which the tool computes over every objective
+ * (so a front point can look dominated on these two axes; the legend says over what). Grey: meets the constraints.
+ * Hollow: fails one. A total that is only a lower bound (a part without a price or mass) gets "≥" and an arrow
+ * pointing the way the real value lies. Points are labelled when there are few; with many, only the front is. */
+export function chartCover({ title, x, y, points = [], front_over: frontOver = [], tint, name, what }) {
+  const L = 66, R = 372, T = 70, B = 228;
   const xs = points.map(p => p.x), ys = points.map(p => p.y);
-  const pad = (lo, hi) => { const d = (hi - lo) || 1; return [lo - d * 0.12, hi + d * 0.12]; };
+  const pad = (lo, hi) => { const d = (hi - lo) || 1; return [lo - d * 0.1, hi + d * 0.1]; };
   const [x0, x1] = pad(Math.min(...xs), Math.max(...xs)), [y0, y1] = pad(Math.min(...ys), Math.max(...ys));
   const px = v => L + (v - x0) / (x1 - x0) * (R - L), py = v => B - (v - y0) / (y1 - y0) * (B - T);
   const grid = [0.25, 0.5, 0.75].map(f => `M${L} ${r1(T + f * (B - T))}H${R}M${r1(L + f * (R - L))} ${T}V${B}`).join('');
-  const front = points.filter(p => p.front).sort((a, b) => a.x - b.x);
-  const line = front.length > 1 ? `<path d="M${front.map(p => `${r1(px(p.x))} ${r1(py(p.y))}`).join('L')}" fill="none" stroke="${ACCENT}" stroke-width="4" stroke-linecap="round"/>` : '';
-  const dots = points.map(p => {
-    const cxp = r1(px(p.x)), cyp = r1(py(p.y)), right = px(p.x) < (L + R) / 2;
-    const mark = p.fail ? `<circle cx="${cxp}" cy="${cyp}" r="8" fill="#fff" stroke="${MUTED}" stroke-width="3"/>`
-      : `<circle cx="${cxp}" cy="${cyp}" r="${p.front ? 10 : 8}" fill="${p.front ? ACCENT : MUTED}" stroke="#fff" stroke-width="2.5"/>`;
-    return mark + `<text x="${r1(px(p.x) + (right ? 15 : -15))}" y="${r1(py(p.y) + 6)}" text-anchor="${right ? 'start' : 'end'}" font-family="${esc(SANS)}" font-size="17" font-weight="700" fill="${p.fail ? MUTED : INK}">${esc(p.label)}${p.fail ? ' ✕' : ''}</text>`;
+  const few = points.length <= 6, xb = p => (p.lower_bound || []).includes(x.metric), yb = p => (p.lower_bound || []).includes(y.metric);
+  // Draw the front last, so it sits on top.
+  const order = [...points].sort((a, b) => (a.front - b.front) || (a.feasible - b.feasible));
+  const marks = order.map(p => {
+    const cx = r1(px(p.x)), cy = r1(py(p.y)), r = few ? (p.front ? 10 : 8) : (p.front ? 8 : 5);
+    const arrow = (xb(p) ? `<path d="M${cx + r + 3} ${cy}h16m-6-6 6 6-6 6" fill="none" stroke="${MUTED}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` : '') +
+      (yb(p) ? `<path d="M${cx} ${cy - r - 3}v-16m-6 6 6-6 6 6" fill="none" stroke="${MUTED}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` : '');
+    const dot = !p.feasible ? `<circle cx="${cx}" cy="${cy}" r="${r - 1}" fill="#fff" stroke="${MUTED}" stroke-width="${few ? 3 : 2}"/>`
+      : `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${p.front ? ACCENT : MUTED}" stroke="#fff" stroke-width="${few ? 2.5 : 1.5}"/>`;
+    if (!few && !p.front) return arrow + dot;
+    const right = px(p.x) < (L + R) / 2, dx = right ? r + 6 + (xb(p) ? 22 : 0) : -(r + 6);
+    const tag = `${xb(p) ? '≥ ' : ''}${p.label}`;
+    return arrow + dot + `<text x="${r1(px(p.x) + dx)}" y="${r1(py(p.y) + 6)}" text-anchor="${right ? 'start' : 'end'}" font-family="${esc(SANS)}" font-size="${few ? 17 : 15}" font-weight="700" fill="${p.feasible ? INK : MUTED}">${esc(tag)}</text>`;
   }).join('');
-  const body = `<rect x="12" y="12" width="${W - 24}" height="${H - 24}" rx="14" fill="#ffffff" fill-opacity=".92" stroke="${INK}" stroke-opacity=".15"/>` +
-    `<text x="28" y="42" font-family="${esc(SANS)}" font-size="17" font-weight="800" fill="${INK}">${esc(title)}</text>` +
+  const axisName = a => `${a.label}${a.unit ? ` (${a.unit})` : ''}`;
+  const key = `<g font-family="${esc(MONO)}" font-size="11" font-weight="700" fill="${MUTED}">` +
+    `<circle cx="34" cy="54" r="5" fill="${ACCENT}"/><text x="43" y="58" fill="${ACCENT}">FRONT${frontOver.length ? ` (${esc(frontOver.join(', ').toUpperCase())})` : ''}</text>` +
+    `<circle cx="${frontOver.length > 2 ? 290 : 220}" cy="54" r="5" fill="#fff" stroke="${MUTED}" stroke-width="2"/><text x="${frontOver.length > 2 ? 299 : 229}" y="58">FAILS</text></g>`;
+  const body = `<rect x="12" y="12" width="${W - 24}" height="${H - 24}" rx="14" fill="#ffffff" fill-opacity=".93" stroke="${INK}" stroke-opacity=".15"/>` +
+    `<text x="28" y="38" font-family="${esc(SANS)}" font-size="17" font-weight="800" fill="${INK}">${esc(title)}</text>` + key +
     `<path d="${grid}" stroke="${INK}" stroke-opacity=".08" stroke-width="1.5"/><path d="M${L} ${T}V${B}H${R}" fill="none" stroke="${INK}" stroke-width="2"/>` +
-    line + dots +
-    `<text x="${R}" y="${B + 26}" text-anchor="end" font-family="${esc(SANS)}" font-size="14" font-weight="600" fill="${MUTED}">${esc(xLabel)} →</text>` +
-    `<text transform="translate(${L - 16} ${B}) rotate(-90)" font-family="${esc(SANS)}" font-size="14" font-weight="600" fill="${MUTED}">${esc(yLabel)} →</text>` +
-    (front.length ? `<text x="${L + 6}" y="${B + 26}" font-family="${esc(MONO)}" font-size="12" font-weight="700" fill="${ACCENT}">— PARETO FRONT</text>` : '');
-  const label = `${name}: ${title}. ${points.map(p => `${p.label} ${p.x} ${xLabel}, ${p.y} ${yLabel}${p.front ? ' (on the front)' : ''}${p.fail ? ' (fails a requirement)' : ''}`).join('; ')}`;
+    marks +
+    `<text x="${R}" y="${B + 24}" text-anchor="end" font-family="${esc(SANS)}" font-size="14" font-weight="600" fill="${MUTED}">${esc(axisName(x))} →</text>` +
+    `<text transform="translate(${L - 14} ${B}) rotate(-90)" font-family="${esc(SANS)}" font-size="14" font-weight="600" fill="${MUTED}">${esc(axisName(y))} →</text>` +
+    (what ? `<text x="${L}" y="${B + 24}" font-family="${esc(MONO)}" font-size="11" font-weight="700" fill="${MUTED}">${esc(what.toUpperCase())}</text>` : '');
+  const describe = p => `${xb(p) ? 'at least ' : ''}${fmtValue(p.x, x.unit)}, ${yb(p) ? 'at least ' : ''}${fmtValue(p.y, y.unit)}`;
+  const listed = few ? points : points.filter(p => p.front);
+  const label = `${name}: ${title}, ${axisName(x)} against ${axisName(y)}${what ? `, ${what}` : ''}. ` +
+    listed.map(p => `${p.label}: ${describe(p)}${p.front ? `, on the Pareto front over ${frontOver.join(', ')}` : ''}${p.feasible ? '' : ', fails a constraint'}`).join('; ') + '.';
   return frame(tint, body, label);
 }
 

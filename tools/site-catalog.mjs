@@ -194,7 +194,17 @@ export async function buildCatalog(ctx) {
     covers.set(key, c);
     return c;
   }
-  const generated = (id, svg) => ({ src: coverFile(`${id}.svg`, svg), anim: null, fit: 'cover', figure: false });
+  // `figure`: the cover is a picture of a result (a figure, or a chart of a tool's output), which ranks it up in the
+  // overview; covers drawn from an entry's call, outline or metadata are not.
+  const generated = (id, svg, figure = false) => ({ src: coverFile(`${id}.svg`, svg), anim: null, fit: 'cover', figure });
+  /** A tool's chart: `file#key` names a JSON file that a generator wrote from the tool's own output, and its entry. */
+  const chartData = async (ref, where) => {
+    const [file, key] = String(ref).split('#');
+    if (!has.has(file)) return null;                                   // not on this commit yet: the tool keeps its other cover
+    const data = JSON.parse((await ctx.read(file)).toString('utf8'))[key];
+    if (!data?.points?.length || !data.x?.metric || !data.y?.metric) throw new Error(`${where}: ${ref} has no chart (title, x, y, points)`);
+    return data;
+  };
   const tone = it => it.domains?.[0] || (it.areas?.[0] === 'cross-cutting' ? 'cross-cutting' : 'unplaced');
   // An outside entry not placed in an area yet still gets a picture of its subject, guessed from its own words. The
   // guess only picks the cover's glyph: the entry stays in "not yet placed" until upstreams/registry.yaml gives areas.
@@ -329,7 +339,8 @@ export async function buildCatalog(ctx) {
     const it = { type: 'tool', status: 'ours', name: `cad-agent ${c.name}`, summary: c.help, url: `${ORIGIN}/docs/toolkit`, how: `cad-agent ${c.name} --help`,
       id: `tool-${c.name}`, kind: 'tool', ...where, what: oneLine(c.help), notes: null, license: 'MIT', updated: cliChanged, command: c.name,
       href, doc: ORIGIN + href, markdown: pageItems.has(docFile) ? `${ORIGIN}/${docFile}` : undefined };
-    if (t.chart) it.cover = generated(it.id, chartCover({ ...t.chart, tint: TINT[tone(it)] || TINT.unplaced, name: it.name }));
+    const chart = t.chart && await chartData(t.chart, `docs/catalog.yaml tools.${c.name}.chart`);
+    if (chart) it.cover = generated(it.id, chartCover({ ...chart, tint: TINT[tone(it)] || TINT.unplaced, name: it.name }), true);
     else [it.cover, it.figure] = await takeFigure(t.figures || []);
     if (!it.cover) it.cover = generated(it.id, toolCover({ name: c.name, flags: flagsOf(c.name), glyphSlug: glyphOf(it), title: it.name }));
     const d = demos.find(d => d.tools.includes(c.name) || (it.figure && d.figure === it.figure));

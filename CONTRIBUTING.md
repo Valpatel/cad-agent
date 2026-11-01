@@ -19,7 +19,7 @@ pass and every review conversation must be resolved. Agents may merge into both,
 Required checks, all automated. Nobody, agent or person, merges around them.
 
 ```mermaid
-flowchart LR
+flowchart TD
     F["feat/ fix/ ci/ docs/ …<br/>from dev"] -->|"CI · branch-flow · review"| D["dev"]
     D -->|"CI · branch-flow · review<br/>· release"| M["main"]
     M -->|"release.yml"| R["tag vX.Y.Z · GitHub release<br/>site deploy"]
@@ -58,7 +58,10 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
    cd ../cad-agent-<topic> && git push -u origin feat/<topic>     # the branch tracks itself, not dev
    ```
 2. **Commit and push** small, focused changes with tests (`tests/`) as you go, not in one batch at the end. Keep the package generic: anything specific to one
-   product stays in that product's repository.
+   product stays in that product's repository. A new docs or research page, `cad-agent` command, skill or agent also
+   gets its line in [`docs/areas.yaml`](docs/areas.yaml), the topic tree ([docs/vision.md](docs/vision.md)):
+   `tests/test_areas.py` fails until it does. When two open PRs cross, the one that merges second adds the line, after
+   merging `dev` and re-running CI (`dev` does not require branches to be up to date).
 3. **Open a PR into `dev`** early, as a draft if it is unfinished (`gh pr create --draft --base dev`), with `Closes #<issue>`; fill in the template, including what projects using
    cad-agent must change.
 4. **CI** (`.github/workflows/ci.yml`) runs `core` on Python 3.10 and 3.12 (required dependencies only; optional

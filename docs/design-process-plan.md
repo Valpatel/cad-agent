@@ -37,7 +37,7 @@ decades: interface control documents, requirement traces, decision records, DFME
    checklist-driven, and is never the only evidence for a claim (DW §5).
 3. **A missing declaration fails.** A part without a spec card, a section without requirements, an interface with
    one side only: all are failures in `cad-agent check`, the same as a missing check file today.
-4. **Explained exclusions, never loosened thresholds** (lesson 07). Intended overlaps (inserts, press fits) and
+4. **Explained exclusions, never loosened thresholds** ([Verification and evidence](../lessons/review/verification-and-evidence.md)). Intended overlaps (inserts, press fits) and
    intended floating parts (loose balls, a lid shown exploded) are declared with a reason and reported in their own list.
 5. **Generic.** Sections, parts, interfaces, joints and cavities are the vocabulary of any mechanical assembly. Nothing
    in `cadagent` knows what a turret or an enclosure is.
@@ -116,7 +116,7 @@ Fields and where they are checked:
   exclusions, `physical_fit_verified: false`).
 
 YAML, not JSON, for the hand-written files: comments and quotes matter in a dossier (requirements are user quotes,
-lesson 02). `cad-agent.yaml` gains one key: `dossier: dossier/project.yaml`.
+[User intent and requirements](../lessons/process/user-intent-and-requirements.md)). `cad-agent.yaml` gains one key: `dossier: dossier/project.yaml`.
 
 ### 3.4 Declaration from build scripts with minimal boilerplate
 
@@ -149,7 +149,7 @@ lint finding.
 
 Fasteners come from the existing McMaster catalogue entries (`skills/mcmaster-parts`) or `cadagent.fasteners`
 envelopes; a `fastener` declaration names the catalogue key, the head seat face and the part it threads into, which
-is what the stack gate needs (lesson 04).
+is what the stack gate needs ([Fasteners and assembly access](../lessons/mechanical/fasteners-and-assembly-access.md)).
 
 ### 3.5 Rendering on the review site
 
@@ -255,14 +255,14 @@ Extends `cadagent.fasteners.blind_insert_stack` from numbers to geometry:
 - For each dossier fastener: locate the screw solid (catalogue STEP placed by the build, or envelope), the head seat
   face on the clamped part, the thread-start on the mating part (insert top or tapped hole start, from the declaration),
   and compute seat Z, grip, engagement, tip clearance in the fastener's own axis frame; compare with the stocked
-  length and the required engagement; flag uncommon lengths (lesson 04).
+  length and the required engagement; flag uncommon lengths ([Fasteners and assembly access](../lessons/mechanical/fasteners-and-assembly-access.md)).
 - The screw's shank must not overlap the clamped part (the clearance hole must be at least shank + declared clearance,
   checked as a hole diameter), and its only overlap with the mating part must lie inside that part's declared thread
   region (an insert or tapped hole); any overlap elsewhere is a finding.
 - **Tool access**: at the assembly step that installs the fastener, sweep the declared tool envelope (driver
   diameter × length, or hex key with swing) from the head along the axis; it must not overlap any part present at that
   step. Reuses the plug-sweep machinery of `cadagent.connectors.check_ports`.
-- Output `exports/gates/fasteners.json`: a table per fastener, as lesson 04 asks for; fails on engagement below the
+- Output `exports/gates/fasteners.json`: a table per fastener, as [Fasteners and assembly access](../lessons/mechanical/fasteners-and-assembly-access.md) asks for; fails on engagement below the
   declared minimum, tip collision, or no tool access.
 - Tests: the existing `test_fasteners` cases turned into geometry; a screw whose driver is blocked by a gusset.
 
@@ -293,7 +293,7 @@ Extends `cadagent.fasteners.blind_insert_stack` from numbers to geometry:
 
 - For each assembly step: the parts present are the union of earlier steps; the fitted part is swept along its declared
   direction from outside the present set's bounding box to its final position; any overlap with a present part is a
-  finding (the slide-in path check of lesson 07, generalised). Fastener tool sweeps (4.4) run at the step that installs
+  finding (the slide-in path check of [Verification and evidence](../lessons/review/verification-and-evidence.md), generalised). Fastener tool sweeps (4.4) run at the step that installs
   them, with only the parts present then.
 - Every part in the dossier must appear in exactly one step; every fastener in the step that installs it.
 - Output `exports/gates/assembly.json`: steps, swept clearances, blocked steps.
@@ -323,7 +323,7 @@ Tells an agent building or changing a design to work in this order, per section:
 
 1. **Frame the section**: write (or update) its YAML: purpose, requirements it serves (quote the user), interfaces to
    neighbouring sections with datums, the parts it needs. No geometry yet. Open questions become `open` decisions, and
-   the agent decides them itself where the model can answer (lesson 02), recording the alternatives rejected.
+   the agent decides them itself where the model can answer ([User intent and requirements](../lessons/process/user-intent-and-requirements.md)), recording the alternatives rejected.
 2. **Write the spec card with the geometry**: function, loads, material, fasteners, `contains`, decisions, in the same
    commit as the build code; declare cavities, joints, fasteners and assembly steps in code.
 3. **Build and gate**: `cad-agent build && cad-agent gates`. Fix every finding or declare the exclusion with a reason.

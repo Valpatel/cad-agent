@@ -106,14 +106,24 @@ const SECTIONS = [
   { id: 'docs', title: 'Docs', match: f => /^docs\/[^/]+\.md$/.test(f) || f === 'README.md' || f === 'CONTRIBUTING.md' || f === 'THIRD_PARTY_NOTICES.md' },
   { id: 'skills', title: 'Skills', match: f => /^skills\/[^/]+\/SKILL\.md$/.test(f) },
   { id: 'agents', title: 'Subagents', match: f => /^agents\/[^/]+\.md$/.test(f) },
-  { id: 'lessons', title: 'Lessons (pitfalls)', match: f => /^lessons\/[^/]+\.md$/.test(f) },
+  { id: 'lessons', title: 'Lessons (pitfalls)', match: f => /^lessons\/(?:[a-z0-9-]+\/)?[^/]+\.md$/.test(f) },   // lessons/<area>/
   { id: 'research', title: 'Research', match: f => /^research\/[^/]+\.md$/.test(f) },
 ];
 const pages = [];
+// A file that moved keeps a one-line stub at its old path (`<!-- moved-to: new/path.md -->`), so links into the repo
+// keep working on GitHub; the site serves a permanent redirect instead of a page.
+const moved = [];
 for (const file of tracked) {
   const section = SECTIONS.find(s => s.match(file));
   if (!section || /(?:^|\/)(?:AGENTS|CLAUDE)\.md$/.test(file)) continue;
   const src = await read(file);
+  const to = src.match(/^<!--\s*moved-to:\s*(\S+?\.md)\s*-->/)?.[1];
+  if (to) {
+    const target = path.posix.normalize(path.posix.join(path.posix.dirname(file), to));
+    if (!tracked.includes(target)) throw new Error(`${file} says it moved to ${target}, which does not exist`);
+    moved.push([file, target]);
+    continue;
+  }
   const { meta, body } = front(src);
   const title = meta.name || body.match(/^#\s+(.+)$/m)?.[1] || file;
   pages.push({ file, section: section.id, title: String(title).replace(/[`*]/g, ''), summary: meta.description || firstPara(body), body, src });
@@ -121,6 +131,29 @@ for (const file of tracked) {
 const pageURL = f => '/' + f.replace(/\.md$/, '');                  // Cloudflare Pages serves x.html at /x
 const pageFile = f => f.replace(/\.md$/, '.html');
 const pageFiles = new Set(pages.map(p => p.file));
+// Permanent redirects (tools/site-redirects.txt): they outlive the stubs, so deleting a stub never drops a 301.
+const redirects = (await read('tools/site-redirects.txt')).split('\n').map(l => l.replace(/#.*/, '').trim()).filter(Boolean)
+  .map(l => l.split(/\s+/));
+const stubFiles = new Set(moved.map(([from]) => from)), seenFrom = new Set();
+for (const [from, to] of redirects) {
+  const at = `tools/site-redirects.txt: ${from}`;
+  // Pages keeps the first rule for a path and the preview server the last, so a duplicate would make them disagree.
+  if (seenFrom.has(from)) throw new Error(`${at} is listed twice`);
+  seenFrom.add(from);
+  // Pages reads * as a splat and :name as a placeholder, so `lessons/*.md` would redirect every lesson page, the
+  // target included, into a loop; the preview server matches exact paths and would never show it. Plain paths only.
+  if (!/^[\w-][\w.\/-]*\.md$/.test(from) || path.posix.normalize(from) !== from)
+    throw new Error(`${at}: a source is a plain repo path to a .md file (letters, digits, - _ . /), without a leading slash, ` +
+      '`..`, `//`, `*` or `:`');
+  if (tracked.includes(from) && !stubFiles.has(from)) throw new Error(`${at} is still a file in the repo (only its stub may remain)`);
+  if (!to || !pageFiles.has(to)) throw new Error(`${at} -> ${to}, which is not a published page`);
+}
+for (const [from, to] of moved) {
+  if (!pageFiles.has(to)) throw new Error(`${from} says it moved to ${to}, which is not a published page`);
+  const listed = redirects.find(([f]) => f === from);
+  if (!listed) throw new Error(`${from} moved to ${to}: add "${from} ${to}" to tools/site-redirects.txt`);
+  if (listed[1] !== to) throw new Error(`${from} moved to ${to}: change its line in tools/site-redirects.txt (it says ${listed[1]})`);
+}
 
 // ----------------------------------------------------------------------------- catalogue
 const landscape = JSON.parse(await read('research/landscape.json'));
@@ -151,6 +184,9 @@ const catalog = {
   ],
 };
 const counts = catalog.items.reduce((a, i) => (a[i.type] = (a[i.type] || 0) + 1, a), {});
+// Each ### entry in a lesson file is one lesson (lessons/README.md#lesson-format); the area READMEs are maps, not lessons.
+const lessonCount = pages.filter(p => p.section === 'lessons' && !/(?:^|\/)README\.md$/.test(p.file))
+  .reduce((n, p) => n + (p.body.replace(/```[\s\S]*?```/g, '').match(/^### /gm) || []).length, 0);
 await writeFile(path.join(out, 'catalog.json'), JSON.stringify(catalog, null, 2) + '\n');
 
 // ----------------------------------------------------------------------------- HTML frame
@@ -165,12 +201,12 @@ function frame({ title, body, md, description = LEDE, current = '', page = 'doc'
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title === TAGLINE ? 'cad-agent · ' + TAGLINE : title + ' · cad-agent')}</title>
 <meta name="description" content="${esc(description)}">
-<link rel="icon" href="/web/icon.svg"><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}
+<link rel="icon" href="/web/icon.svg"><link rel="preload" href="/kit/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}
 ${md ? `<link rel="alternate" type="text/markdown" href="${esc(md)}" title="Markdown for agents">` : ''}
 <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt"></head>
-<body class="${page}-page" data-diagram-theme="light"><header class="site-header"><div class="wrap"><a class="wordmark" href="/"><img src="/web/icon.svg" alt="" width="34" height="34">cad-agent<b>.</b></a>
+<body class="${page}-page" data-diagram-theme="light"><a class="skip-link" href="#main:content">Skip to content</a><header class="site-header"><div class="wrap"><a class="wordmark" href="/"><img src="/web/icon.svg" alt="" width="34" height="34">cad-agent<b>.</b></a>
 <nav aria-label="Main">${NAV.map(([h, t, keep]) => `<a href="${h}"${keep ? ' data-keep' : ''}${h === current ? ' aria-current="page"' : ''}>${t}</a>`).join('')}<a class="pill-link" href="${REPO}">GitHub ↗</a></nav></div></header>
-<main class="${page === 'landing' ? '' : 'wrap'} ${page === 'doc' ? 'doc' : ''}">${body}</main>
+<main class="${page === 'landing' ? '' : 'wrap'} ${page === 'doc' ? 'doc' : ''}"${body.includes('id="main:content"') ? '' : ' id="main:content" tabindex="-1"'}>${body}</main>
 <footer class="site-footer"><div class="wrap"><p>Created by <a href="https://valpatel.com">Valpatel Software LLC</a>. Code under the <a href="${REPO}/blob/dev/LICENSE">MIT licence</a>; every third-party tool keeps its own licence and credit. ${updated ? `Last updated <time datetime="${isoDay(updated)}">${day(updated)}</time>.` : 'This page has uncommitted changes.'} Built from <a href="${REPO}/commit/${revision}">${esc(revisionLabel)}</a>.</p>
 <div class="links"><a href="${esc(feedbackURL(title === TAGLINE ? 'home page' : title, url))}">Help us improve ↗</a><a href="/llms.txt">llms.txt</a><a href="/llms-full.txt">llms-full.txt</a><a href="/catalog.json">catalog.json</a>${md ? `<a href="${esc(md)}">this page .md</a>` : ''}</div></div></footer>
 <script type="module" src="/web/site.js"></script></body></html>`;
@@ -184,6 +220,11 @@ const decode = s => s.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (m, e) => e[0] ===
 // and spaces, then each space becomes a hyphen (runs are not collapsed); repeats get -1, -2.
 export const slug = text => decode(text.replace(/<[^>]*>/g, '')).toLowerCase().replace(/[^\p{L}\p{M}\p{N}\p{Pc}\- ]/gu, '').replace(/ /g, '-');
 
+// A link to a folder whose README is a page goes to that page (lessons/process/ → lessons/process/README).
+const folderPage = resolved => {
+  const readme = resolved.replace(/\/?$/, '/README.md');
+  return !resolved.endsWith('.md') && pageFiles.has(readme) ? readme : null;
+};
 // Relative links in a Markdown copy: published pages and images stay relative (their .md twin or file is at the same
 // path); anything else (source files, tests) points at GitHub. absolute=true makes every link absolute (llms-full.txt).
 const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).map((chunk, i) => i % 2 ? chunk :
@@ -191,11 +232,19 @@ const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).m
     if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(url)) return all;
     const [pathname, ...hash] = url.split('#');
     const resolved = pathname.startsWith('/') ? pathname.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(file), pathname));
+    const folder = folderPage(resolved);
+    if (folder) return `${open}${absolute ? `${ORIGIN}/${folder}` : pathname.replace(/\/?$/, '/README.md')}${hash.length ? '#' + hash.join('#') : ''}${close}`;
     const published = pageFiles.has(resolved) || (/^docs\/img\//.test(resolved) && tracked.includes(resolved));
     const target = published ? (absolute ? `${ORIGIN}/${resolved}` : url.split('#')[0])
       : `${REPO}/${tracked.includes(resolved) ? 'blob' : 'tree'}/dev/${resolved}`;
     return `${open}${target}${hash.length ? '#' + hash.join('#') : ''}${close}`;
   })).join('');
+// Every page should show something: a picture, render, diagram, animation or demo. Pages without one are listed by
+// the build and kept from growing by tests/website-build.test.mjs.
+// What counts as something to look at in a doc page's sanitized HTML (the sanitizer drops inline <svg>, <video> and
+// custom elements, so pictures arrive as <img> and diagrams as Mermaid blocks; the browser test checks they render).
+const VISUAL = /<img\b|class="language-mermaid"|<pre class="mermaid"/g;
+const visuals = new Map();
 for (const p of pages) {
   const ids = new Map();
   const renderer = new marked.Renderer();
@@ -213,6 +262,7 @@ for (const p of pages) {
     const resolved = pathname.startsWith('/') ? pathname.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(p.file), pathname));
     let target;
     if (pageFiles.has(resolved)) target = pageURL(resolved);
+    else if (folderPage(resolved)) target = pageURL(folderPage(resolved));
     else if (attr === 'src' && tracked.includes(resolved) && /\.(svg|png|jpe?g|gif|webp)$/i.test(resolved)) target = '/' + resolved;
     else target = `${REPO}/${tracked.includes(resolved) ? 'blob' : 'tree'}/dev/${resolved}`;
     return target + (hash.length ? '#' + hash.join('#') : '');
@@ -228,7 +278,24 @@ for (const p of pages) {
   const crumbs = `<p class="crumbs"><a href="/catalog#${p.section}">${esc(SECTIONS.find(s => s.id === p.section).title)}</a> · <a href="${REPO}/blob/dev/${esc(p.file)}">${esc(p.file)}</a> · <a href="/${esc(p.file)}">Markdown</a></p>`;
   const dest = path.join(out, pageFile(p.file));
   await mkdir(path.dirname(dest), { recursive: true });
-  await writeFile(dest, frame({ title: p.title, body: crumbs + `<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file), md: '/' + p.file, description: p.summary, current: pageURL(p.file), updated: lastChange(p.file) }));
+  // Long pages: the kit's <cad-nav> on the left (every page, grouped, with this page's outline under it) and, on very
+  // wide screens, the outline again in a right-hand column. All written out here, so the first paint is final (the
+  // script only marks the section being read, filters and toggles) and it all works without script.
+  const heads = [...html.matchAll(/<h([23]) id="([^"]+)">([\s\S]*?)<\/h\1>/g)]
+    .map(([, level, id, inner]) => ({ level, id, text: inner.replace(/<[^>]+>/g, '').trim() })).filter(h => h.text);
+  // The skip link's target is "main:content": slug() drops ":", so no heading id can take it (a "## Content" is "content").
+  const outline = (cls, label) => heads.length < 2 ? '' : `<ol class="cad-nav-outline${cls}"${label ? ' aria-label="On this page"' : ''}>${heads.map(h =>
+    `<li class="h${h.level}"><a href="#${esc(encodeURIComponent(h.id))}">${h.text}</a></li>`).join('')}</ol>`;
+  const tree = SECTIONS.map(s => {
+    const list = pages.filter(q => q.section === s.id);
+    if (!list.length) return '';
+    return `<details class="cad-nav-group"${s.id === p.section ? ' open' : ''}><summary>${esc(s.title)}</summary><ul>${list.map(q =>
+      `<li><a href="${esc(pageURL(q.file))}"${q.file === p.file ? ` aria-current="page">${esc(q.title)}</a>${outline('', true)}` : `>${esc(q.title)}</a>`}</li>`).join('')}</ul></details>`;
+  }).join('');
+  const nav = `<cad-nav for=".prose" rail=".doc-rail" role="navigation" aria-label="Pages and contents"><button type="button" class="cad-nav-toggle" aria-expanded="false">Pages and contents</button><div class="cad-nav-panel"><input type="search" class="cad-nav-filter" placeholder="Filter pages" aria-label="Filter pages"><p class="cad-nav-empty" role="status"></p>${tree}</div></cad-nav>`;
+  const rail = heads.length < 2 ? '' : `<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline(' cad-nav-rail', false)}</nav>`;
+  await writeFile(dest, frame({ title: p.title, body: `<div class="doc-layout">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + p.file, description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/nav.css'] }));
+  visuals.set(p.file, (html.match(VISUAL) || []).length);
   await writeFile(path.join(out, p.file), rewriteMd(p.file, p.src));   // the Markdown twin, same path
 }
 // Images referenced by docs.
@@ -279,7 +346,7 @@ curl -s ${ORIGIN}/docs/toolkit.md  <b># any page, as .md</b></pre></cad-copy>
 <div class="missions">
 <a class="mission mission-blue" href="/research/landscape"><span class="mission-icon">🗺️</span><span class="mission-tag">Map</span><span class="mission-num">${(counts.upstream || 0) + (counts.library || 0) + (counts.benchmark || 0)}</span><p>Agentic-CAD projects, libraries and benchmarks, checked with dates, licences and what each is actually good for.</p><span class="go">See the landscape <span>→</span></span></a>
 <a class="mission mission-yellow" href="/docs/toolkit"><span class="mission-icon">🧪</span><span class="mission-tag">Demonstrate</span><span class="mission-num">${counts.tool || 0}</span><p>Commands that run on real projects: integrity gates, hole and fastener checks, FEA, CFD, topology optimisation, slicing, a 3D viewer and review reports.</p><span class="go">Open the toolkit <span>→</span></span></a>
-<a class="mission mission-orange" href="/docs/common-issues"><span class="mission-icon">🧩</span><span class="mission-tag">Fill the gaps</span><span class="mission-num">${counts.lesson || 0}</span><p>Lessons from real builds turned into deterministic checks: a rib in a countersink, a screw that bottoms out, a driver that cannot reach.</p><span class="go">Read the pitfalls <span>→</span></span></a>
+<a class="mission mission-orange" href="/docs/common-issues"><span class="mission-icon">🧩</span><span class="mission-tag">Fill the gaps</span><span class="mission-num">${lessonCount}</span><p>Lessons from real builds, each a rule with the incident behind it and how to check it: a rib that ran into a counterbore, a screw that bottoms out, a driver that cannot reach.</p><span class="go">Read the pitfalls <span>→</span></span></a>
 </div></section>
 <section class="section" style="padding-top:0"><div class="lead"><h2>Skills your agents <span>can load.</span></h2><p>Claude Code and Codex install them with <code>cad-agent agents install</code>. Work survives crashes, reviews are independent, heavy runs go to compute hosts.</p></div>
 <ul class="cards">${skillCards.map(p => card({ type: p.section, status: 'ours', name: p.title, summary: p.summary, url: pageURL(p.file), markdown: '/' + p.file })).join('')}</ul></section>
@@ -358,6 +425,9 @@ for (const f of await htmlFiles(out)) {
 export const CSP = `default-src 'self'; script-src 'self' ${[...inlineHashes].sort().join(' ')} 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; ` +
   "img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; " +
   "form-action 'self'; frame-ancestors 'self'";
+// Cloudflare Pages redirects: each moved page and its Markdown twin, to the new path.
+await writeFile(path.join(out, '_redirects'), redirects.flatMap(([from, to]) =>
+  [`/${from.replace(/\.md$/, '')} /${to.replace(/\.md$/, '')} 301`, `/${from} /${to} 301`]).join('\n') + (redirects.length ? '\n' : ''));
 await writeFile(path.join(out, '_headers'), [
   '/*', '  X-Content-Type-Options: nosniff', '  Referrer-Policy: strict-origin-when-cross-origin', `  Content-Security-Policy: ${CSP}`,
   '  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()', '  Cross-Origin-Opener-Policy: same-origin',
@@ -369,4 +439,7 @@ await writeFile(path.join(out, 'sitemap.xml'), '<?xml version="1.0" encoding="UT
   ['/', '/catalog', ...pages.map(p => pageURL(p.file))].map(u => `<url><loc>${ORIGIN}${u}</loc></url>`).join('') + '</urlset>\n');
 await writeFile(path.join(out, '404.html'), frame({ title: 'Not found', body: '<h1>Not here.</h1><p>Try the <a href="/catalog">catalogue</a> or <a href="/llms.txt">llms.txt</a>.</p>' }));
 await writeFile(path.join(out, 'version.json'), JSON.stringify({ revision, built: catalog.built, pages: pages.length, items: catalog.items.length }, null, 2) + '\n');
-console.log(`Built ${path.relative(root, out) || out}${WORKTREE ? ' (draft: working tree)' : ''}: ${pages.length} pages (+ Markdown twins), ${catalog.items.length} catalogue entries, ${commands.length} commands. Revision ${revision.slice(0, 12)}`);
+// For agents and the tests: which pages still have nothing to look at.
+const noVisual = [...visuals].filter(([, n]) => !n).map(([f]) => f).sort();
+await writeFile(path.join(out, 'visuals.json'), JSON.stringify({ pages: Object.fromEntries([...visuals].sort()), without: noVisual }, null, 2) + '\n');
+console.log(`Built ${path.relative(root, out) || out}${WORKTREE ? ' (draft: working tree)' : ''}: ${pages.length} pages (+ Markdown twins), ${catalog.items.length} catalogue entries, ${commands.length} commands. Revision ${revision.slice(0, 12)}. ${noVisual.length} pages have no picture, diagram or demo yet (visuals.json).`);

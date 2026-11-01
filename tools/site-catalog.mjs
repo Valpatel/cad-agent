@@ -107,7 +107,8 @@ const CATALOG_FIELDS = {
   schema_1: 'Kept from cad-agent-catalog/1 with the same values: type (upstream, tool, doc, lesson, research, skill, agent, library, ' +
     'benchmark; new: demo), status, name, url (tools: the toolkit page, as before), summary (outside entries: our notes first, as before), ' +
     'how (tools: the call), policy, license (null when not recorded), stars, last_push, markdown (the Markdown twin), source (the file on GitHub). ' +
-    'A field schema 1 left out is still left out (two additions: tools have markdown, benchmarks have stars where recorded); a null is still null.',
+    'A field schema 1 left out is still left out, with three additions: tools have markdown, benchmarks have stars where recorded, ' +
+    'and our own entries (tools, guides, lessons, research, skills and agents; demos too) have license "MIT". A null is still null.',
   id: 'stable slug, unique: tool-<command>, project-<owner-repo>, library-…, benchmark-…, guide-…, lesson-…, research-…, skill-…, agent-…, demo-…',
   kind: 'demo, tool, project, library, benchmark, guide, lesson, research, skill or agent (the page\'s tabs)',
   areas: 'slugs from docs/areas.yaml (areas or domains; cross-cutting for pages about the whole project; unplaced for an outside entry without areas yet)',

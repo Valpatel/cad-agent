@@ -74,6 +74,18 @@ test('schema-1 fields keep their schema-1 values: summary, licence (null stays n
     }
   }
   assert.ok(want.some(w => w.license === null), 'the data still has a null licence to keep');
+  // Our own entries: schema 1 wrote these fields and no others; the additions are the ones fields.schema_1 lists.
+  const OWN = { tool: ['summary', 'how'], doc: ['summary', 'markdown', 'source'] };
+  const OWN_ADDED = { tool: ['license', 'markdown'], doc: ['license'] };
+  for (const i of catalog.items.filter(i => !['upstream', 'library', 'benchmark', 'demo'].includes(i.type))) {
+    const kind = i.type === 'tool' ? 'tool' : 'doc';
+    for (const k of S1.slice(4)) {
+      if (OWN[kind].includes(k)) assert.ok(k in i, `${i.id}: ${k} (schema 1 had it)`);
+      else if (OWN_ADDED[kind].includes(k)) assert.ok(!(k in i) || (k === 'license' ? i.license === 'MIT' : true), `${i.id}: ${k}`);
+      else assert.ok(!(k in i), `${i.id}: ${k} was not in schema 1 for our own entries`);
+    }
+  }
+  for (const k of ['markdown', 'stars', 'license "MIT"']) assert.ok(catalog.fields.schema_1.includes(k), `fields.schema_1 names the addition: ${k}`);
   for (const t of catalog.items.filter(i => i.type === 'tool')) {
     const cmd = t.name.replace(/^cad-agent /, '');
     assert.equal(t.url, `${ORIGIN}/docs/toolkit`, t.id);

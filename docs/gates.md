@@ -35,6 +35,9 @@ the fastener gate (T6), the motion gate (T7), the assembly-access gate (T9), the
 
 ## The assembly and the relation table
 
+<details>
+<summary>The Assembly and relation-table API: adding parts and cavities, the table, one pair, a posed copy</summary>
+
 ```python
 from cadagent.review.gates import Assembly, Tolerances, PairCache, relation_table, relate_pair, relate
 
@@ -60,6 +63,8 @@ relate_pair(asm, "ball#3", "hopper_cavity", cache=cache)   # one named pair (par
 relate(shape_a, shape_b)            # two bare shapes, uncached
 asm.posed("arm", location)          # a copy with one body (and its cavities) moved; static parts untouched
 ```
+
+</details>
 
 A multi-solid part whose solids share volume is refused by `Assembly.add` (fuse it first): the boolean kernel
 reports the common of such a compound with anything as done and empty. `solid_interference(shape)` lists the
@@ -113,6 +118,31 @@ AABB broad phase (`BRepBndLib.AddOptimal`, numpy over all pairs). For each candi
 shared volume and `BRepAlgoAPI_Cut` for each item's volume outside the other, all non-destructive (OCCT otherwise
 raises the arguments' tolerances in place, changing the caller's shapes), then `BRepExtrema_DistShapeShape` for the
 gap when nothing is shared.
+
+```mermaid
+flowchart TD
+    P["a pair of parts"] --> N{"boxes within<br/>near_mm?"}
+    N -->|"no"| A1["apart, from the boxes"]
+    N -->|"yes"| C["Common and Cut,<br/>non-destructive"]
+    C --> X{"vol = common + cut,<br/>for each part?"}
+    X -->|"no, or a kernel error"| U["unknown"]
+    X -->|"yes"| V{"shared volume<br/>over overlap_mm3?"}
+    V -->|"no"| D["BRepExtrema gap"]
+    D --> T{"gap at most<br/>touch_mm?"}
+    T -->|"yes"| TO["touching"]
+    T -->|"no"| A2["apart"]
+    V -->|"yes"| I{"one has at most<br/>contain_mm3 outside?"}
+    I -->|"yes"| CO["contains"]
+    I -->|"no"| OV["overlapping"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class P,C,D near
+    class N,X,V,T,I here
+    class A1,A2,TO,CO,OV,U out
+```
+
+*How `relate` decides a pair's state, drawn from the rules on this page; the states are those in the table above.*
 
 On solids, `BRepExtrema_DistShapeShape` first runs an inner-solution test: does any vertex of one lie inside the
 other? OCCT 7.9 builds a new point classifier for each small chunk of vertices (about ten chunks per thread, at
@@ -175,6 +205,9 @@ bind_inputs(data, record, record_file="exports/dossier-geometry.json", declarati
 stale_reason(data, record, declarations=decl, options=opts)   # None, or why the verdict is stale
 ```
 
+<details>
+<summary>What the geometry digest covers, and when a verdict reads stale</summary>
+
 `geometry_digest(record)` is the sha256 of the geometry record's canonical JSON without the fields that say who
 built it or where: `actor`, `parameters`, `shapes_dir`, `out_dir` and `hash` at the top level, `declared_at` and
 `file` in each part, cavity, joint, fastener, instance and step (only those fields: a part named `file` is still
@@ -186,6 +219,8 @@ without `inputs` is stale. `cad-agent check` and the dossier lint (`verdict-stal
 gate's declarations and its options; `lint()` called without a project compares the geometry only. The gates'
 `out=` argument writes an unbound verdict: a gate run by hand, or a project's own gate writing into
 `exports/gates/`, binds it with `bind_inputs` first, or `check` reports it as stale.
+
+</details>
 
 ## Minimum wall (`cadagent.review.gates.wall`)
 
@@ -279,6 +314,10 @@ prefixed `<pose>/` when `poses` is given):
   along one direction, not a settling or stability simulation; other parts (a board in the hopper) do not count.
 - **Poses.** `poses={name: {body: location}}` applies `Assembly.posed` per body. A container that turns while its
   contents are modelled in fixed positions (the incident) fails in the pose where they part.
+
+<details>
+<summary>Mesh-only items, and what the gate costs</summary>
+
 - **Mesh-only items** (`meshes={key: trimesh | STL path | shape}`) are **sample-only**: points uniform in the mesh's
   box are kept when inside it (generalised winding number, no `rtree` needed; computed in chunks sized to keep about
   128 MB of temporaries whatever the triangle count, so time, not memory, grows with the mesh) and classified against the exact cavity
@@ -288,6 +327,8 @@ prefixed `<pose>/` when `poses` is given):
 - **Cost.** The 8-ball gate bench: about 2 s cold (the four balls on the floor are probed); 40 balls in a cone: about
   9 s cold on a loaded workstation. Every query goes through `cache` (`PairCache`), keyed on the content hashes and
   placements, so an unchanged rerun reads the cache.
+
+</details>
 
 ## Connectivity and floating parts (`cadagent.review.gates.connectivity`)
 
@@ -355,6 +396,9 @@ holds a grounded part, or a held moving instance whose `fixed` part is in a grou
 | `relation:<a>\|<b>` | the kernel could not decide the pair (`unknown`) |
 | `tolerances` | (warning) the declarations' `touch_mm` differs from the given table's, which is used |
 
+<details>
+<summary>What the gate could not check, the verdict's other keys, and the graph as DOT and SVG</summary>
+
 An island made only of allowed-free parts is an `exclusion` with their reasons. `not_checked` lists what the gate
 could not check: non-geometric interfaces (`electrical`, `thermal`, `fluid`, `other`), fasteners without a solid
 that could not be measured, `contains` whose cavity is not registered, interfaces whose pairs are all ignored, and
@@ -365,6 +409,8 @@ pairs the table skipped. The verdict's other extra keys: `graph` (`nodes` with `
 floating parts red, joints that do not hold and unrealised declarations red); `connectivity_gate(out=...)` writes it
 beside the verdict as `.dot`. The site's gates page draws it as SVG (`cadagent.publish.dotsvg.dot_to_svg`: Graphviz when
 installed, else a built-in layout); `dot -Tsvg` renders it by hand. The toolkit does not need Graphviz.
+
+</details>
 
 A relation table passed in (`table=`) is read, never changed: witness and joint queries go through `relate_pair`
 and the cache. `analyse(nodes, relations, declarations, contained=..., measure=..., lower_bounds=...,
@@ -460,6 +506,9 @@ failing that, the first to list its key at all. Present at that step: the parts 
 step fits, which are counted as present (conservative); and the solids of fasteners installed at it or before (or
 installed by no step). Without steps, everything counts as present.
 
+<details>
+<summary>The verdict's table, row by row; the kernel-free core and the tool sweep's API; cost</summary>
+
 **Output.** The verdict (`cadagent.gate/1`) carries `table`, one lesson-04 row per instance:
 - the fastener, its stack and receiver;
 - the seat and thread-start points;
@@ -477,6 +526,8 @@ show the whole point.
 gate need OCP. `tool_access(assembly, spec, i, tool, envelope, present, step)` runs the tool sweep alone and
 `tool_check(id, instance, spec, result)` turns it into the `tool` check; the assembly gate uses both. Cost: on the gate bench, about 0.6 s for four screws (28 checks).
 
+</details>
+
 Limits. Threads are envelopes: engagement is the axial overlap with the receiver's modelled thread region, not a
 pull-out rating. A receiver bored wider than d + 0.4 `hole_clearance_mm` has no thread, and a plain hole between d
 and that is taken for thread (for M3 at the default 0.1, Ø3.00 to under Ø3.04); between that and the smallest
@@ -486,6 +537,9 @@ minimum bearing width: a head that overlaps its hole by the outer ring's margin 
 declared envelope along the axis: there is no angled approach and no hand room beyond the envelope. Parts no step
 fits are assumed present.
 
+<details>
+<summary>Where this differs from the plan (§4.4)</summary>
+
 **Where this differs from the plan (§4.4).**
 - The stack is read from the model along the axis rather than computed from the declared numbers. The numbers are
   compared with the model (`length`), and any drift fails.
@@ -494,6 +548,8 @@ fits are assumed present.
 - The tool sweep is a fused solid checked with `relate`, not `connectors.check_ports`. Port windows are a 2D panel
   model and do not fit an axis sweep.
 - An uncommon length warns rather than fails.
+
+</details>
 
 ## Motion-range interference (`cadagent.review.gates.motion`)
 
@@ -706,6 +762,9 @@ the declarations file's `wall_mm`, or `cad.gates.wall.parts`). A gate with nothi
 applicable and its old verdict files are removed. The dossier lint runs last when the project has a dossier, in the
 same process, because it reads the other verdicts; it writes `exports/dossier-status.json` too.
 
+<details>
+<summary>Worker processes: one per gate, isolated, with a failing verdict when one dies</summary>
+
 **Worker processes.** Each geometric gate runs in a process of its own (`python -m cadagent.review.gates.run <root>
 <gate>`, with this interpreter): it loads the geometry with `load_geometry`, runs the gate's `*_from_build`
 function with the dossier and the declarations file, binds the verdict to its inputs and writes
@@ -719,6 +778,11 @@ verdict is removed, so `check` fails "not run" rather than passing on the previo
 them for that run. `--jobs N` (or `cad.gates.jobs`) runs N gates at once. That is safe because the gates
 share only the pair cache, whose writes are atomic renames, and each writes its own files. Each process holds the
 whole geometry, so memory grows with N.
+
+</details>
+
+<details>
+<summary>Configuration: every key under cad.gates in cad-agent.yaml</summary>
 
 **Configuration** (`cad-agent.yaml`, every key optional):
 
@@ -754,6 +818,8 @@ Unknown keys, and bad values of `tol` and of the assembly and fastener options, 
 runs; another bad value (a containment, motion or wall option) fails that gate's run, and its verdict says why. The assembly gate samples every
 `max_step_mm` wherever a part slides close along a face, so a long, tight slide costs many queries; a coarser
 `max_step_mm` (with the clearance it can then miss stated in the verdict's limits) is the knob for it.
+
+</details>
 
 **Declarations.** The dossier (`gates:`, the interfaces, cards' `contains` and `material.wall_mm`, `assembly`)
 and the declarations file are passed to the gates as in the sections above. The file holds what the YAML schema
@@ -812,6 +878,9 @@ strict-xfail cases, and its implementer writes the adapter and removes the mark.
 
 ## Where this differs from the plan
 
+<details>
+<summary>Ten differences from the plan: cache, tolerances, probes, derived cavities, mesh items, motion renders, access, the seed harness and the command</summary>
+
 - **Cache location and key**: `.cadagent-cache/gates/` (gitignored), not `exports/gates/cache/`; the shared content
   hash plus placement, the tolerances and the OCP version, not OCP's identity hash.
 - **Containment tolerance**: absolute (`contain_mm3`), not 1e-6 relative.
@@ -841,6 +910,8 @@ strict-xfail cases, and its implementer writes the adapter and removes the mark.
   plus a plain-data declarations file for what its schema cannot express; verdicts carry their inputs, and `check`
   fails a stale one. The plan had the slow gates as separate `cad-agent.yaml` steps (§4.9); `--only`/`--skip`,
   `cad.gates.skip` and the pair cache cover that.
+
+</details>
 
 ## Rendered simulation pivots
 

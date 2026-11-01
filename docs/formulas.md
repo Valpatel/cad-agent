@@ -9,7 +9,7 @@ function states its SI units and its validity limits, and cites its source by au
 ```mermaid
 flowchart TD
     S["Books, guides, standards<br/>Roark · Shigley · Covestro · Norton<br/>Incropera · White · ISO 68-1, 898-1"] --> P["cadagent.formulas<br/>(Python, SI, cited)"]
-    C["cadagent.compliant<br/>snapfit · allowables"] --> P
+    C["cadagent.mechanical.compliant<br/>snapfit · allowables"] --> P
     P --> A["agents<br/>catalogue() · snap_arm() …"]
     P --> V["tools/formula_vectors.py<br/>golden vectors · demo materials"]
     V --> J["kit/formulas.js<br/>(browser port)"]
@@ -43,9 +43,9 @@ for the work beyond them:
 - **[me-toolbox](https://pypi.org/project/me-toolbox/)** (MIT, by Omri Stein) for Shigley-style springs, fasteners
   and fatigue. It was read for scope. Its author describes it as a personal tool, and it pulls in SymPy.
 - **Reused from this repo, never forked:**
-  - The snap-arm functions call `cadagent.compliant.snapfit`, so they match `cad-agent snapfit` exactly.
-  - The demo's materials come from `cadagent.compliant.allowables`.
-  - The straight-line fan curve is the same model as `cadagent.heatsink.FanCurve`. A test checks that the two
+  - The snap-arm functions call `cadagent.mechanical.compliant.snapfit`, so they match `cad-agent snapfit` exactly.
+  - The demo's materials come from `cadagent.mechanical.compliant.allowables`.
+  - The straight-line fan curve is the same model as `cadagent.thermal.heatsink.FanCurve`. A test checks that the two
     solvers find the same operating point.
 
 ## What it computes
@@ -110,7 +110,7 @@ In the browser, `kit/formulas.js` exports the functions the demos use (`snapArm`
   part is weaker across its layers than any isotropic formula assumes, and creeps under a held load. Print the part
   and measure it.
 - **Small deflection and linear elasticity.** These hold for every beam, torsion and spring formula here. For large
-  deflections, contact or plastic strain, use FEA (`cadagent.fea`) and a test.
+  deflections, contact or plastic strain, use FEA (`cadagent.simulation.fea`) and a test.
 - **Screws.** Torque gives preload to about ±25 % even with a known nut factor; in plastic the factor is unknown
   until measured. Thread stripping assumes even load sharing, which real threads do not have.
 
@@ -144,7 +144,7 @@ in the test:
   - Norton's Example 4-1.
 - **Heat and air.**
   - The composite wall face by face.
-  - The fan point against the quadratic root and against `cadagent.heatsink.operating_point`.
+  - The fan point against the quadratic root and against `cadagent.thermal.heatsink.operating_point`.
   - A stall dip flagged unstable.
 
 `tools/formula_vectors.py --check` fails when the committed golden vectors or the demo's material table no longer

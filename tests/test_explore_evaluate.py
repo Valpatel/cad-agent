@@ -1,4 +1,5 @@
-"""cadagent.explore.evaluate: the generic part, the project's Python or command evaluator, goals and verdicts."""
+"""cadagent.simulation.explore.evaluate: the generic part, the project's Python or command evaluator, goals and
+verdicts."""
 
 from __future__ import annotations
 
@@ -13,11 +14,11 @@ from pathlib import Path
 
 import pytest
 
-from cadagent.explore.catalogue import check_catalogue
-from cadagent.explore.compare import compare_designs, write_comparison
-from cadagent.explore.config import EvaluatorSpec, explore_config
-from cadagent.explore.design import load_design
-from cadagent.explore.evaluate import evaluate_design, load_evaluator, normalise_result, safe_name
+from cadagent.simulation.explore.catalogue import check_catalogue
+from cadagent.simulation.explore.compare import compare_designs, write_comparison
+from cadagent.simulation.explore.config import EvaluatorSpec, explore_config
+from cadagent.simulation.explore.design import load_design
+from cadagent.simulation.explore.evaluate import evaluate_design, load_evaluator, normalise_result, safe_name
 from cadagent.project import CadConfigError
 
 from .explore_fixtures import CONFIG, enclosure_config, restore_sys_path, write_enclosure  # noqa: F401 (a fixture)
@@ -66,7 +67,7 @@ def test_constraints_and_missing_objectives_fail_the_design(tmp_path):
     assert loud["verdict"] == "fail" and loud["metrics"]["noise_dba"]["level"] == "fail"
     assert "noise_dba = 34: above the maximum 32." in [c["text"] for c in loud["checks"]]
     cfg, _ = enclosure_config(root)
-    from cadagent.explore.config import Objective
+    from cadagent.simulation.explore.config import Objective
     cfg.objectives.append(Objective("runtime_min", "max"))
     ev = _evaluate(root, "base", fn, cfg)
     assert ev["verdict"] == "fail" and "No numeric value for the objective runtime_min." in [c["text"] for c in ev["checks"]]

@@ -25,9 +25,9 @@ not "bad".
 
 | Project | Licence | Activity | What it does | Security | Rec. |
 |---|---|---|---|---|---|
-| **OrcaSlicer 2.5.0 built-in MCP server + Design tab** ([v2.5.0-beta](https://github.com/OrcaSlicer/OrcaSlicer/releases/tag/v2.5.0-beta), 2026-10-27; [`McpControl.cpp`](https://github.com/OrcaSlicer/OrcaSlicer/blob/main/src/slic3r/GUI/CAD/McpControl.cpp)) | AGPL-3.0 | Official project; OCCT 8.0.1; kernel tests in CI ([scripts/CAD/README.md](https://github.com/OrcaSlicer/OrcaSlicer/blob/main/scripts/CAD/README.md)) | Turned on under Preferences › General › AI features › MCP server. Loads, arranges and slices models, sets presets, supports and modifiers, runs calibration, and models parts in a parametric Design (CAD) tab | Server "accepts connections from that computer only" ([PRIVACY.md](https://github.com/OrcaSlicer/orcaslicer-mcp-skills/blob/main/PRIVACY.md)). Needs a running GUI; the GUI checks need OpenGL. Beta | **Watch** until 2.5.0 is stable, then **adopt as an external process** (AGPL: never link). It could replace our flattened-profile Bambu CLI for slice evidence |
-| [OrcaSlicer/orcaslicer-mcp-skills](https://github.com/OrcaSlicer/orcaslicer-mcp-skills) | AGPL-3.0 | Created 2026-10-29, 5 commits, official org | CC and Codex plugin: one SKILL.md and references (actions, settings, supports, calibration, cad, output) | No code, no network; plugin only ([PRIVACY.md](https://github.com/OrcaSlicer/orcaslicer-mcp-skills/blob/main/PRIVACY.md)) | **Adopt as a plugin** with Orca 2.5. Do not copy its text into our MIT repo (AGPL) |
-| [MaxEllis/orcaslicer-mcp](https://github.com/MaxEllis/orcaslicer-mcp) | AGPL-3.0 | 86★, v0.1.17 (10-12) | Third-party Orca MCP | — | Skip; the built-in server supersedes it |
+| **OrcaSlicer 2.5.0 beta: Design tab with an MCP control socket** ([v2.5.0-beta](https://github.com/OrcaSlicer/OrcaSlicer/releases/tag/v2.5.0-beta), 2026-10-27; [`McpControl.cpp`](https://github.com/OrcaSlicer/OrcaSlicer/blob/main/src/slic3r/GUI/CAD/McpControl.cpp)) | AGPL-3.0 | Official project; OCCT 8.0.1; kernel tests in CI ([scripts/CAD/README.md](https://github.com/OrcaSlicer/OrcaSlicer/blob/main/scripts/CAD/README.md)) | An experimental, parametric Design (CAD) tab, off by default (it came with the 2.5 alpha). `McpControl` is a JSON-RPC control socket for that tab only, driven by the external `tools/orca_cad_mcp_bridge.py`; it starts only with the CAD feature on and `ORCA_CAD_MCP` set, on Unix. *Corrected 2026-10-31:* this row first said 2.5.0 ships a general MCP server (Preferences › General › AI features › MCP server), as orcaslicer-mcp-skills describes; that setting is not in the beta tag or on main. *Found 2026-11-01:* it is on OrcaSlicer's [`feature/mcp`](https://github.com/OrcaSlicer/OrcaSlicer/tree/feature/mcp) branch, 65 commits ahead of main from 2026-10-27, by the project's maintainer, with no pull request yet: an HTTP MCP server, off by default, on `127.0.0.1:13619/mcp` (loopback only), that drives the GUI including slicing and G-code export ([docs/HLSD/mcp-server.md](https://github.com/OrcaSlicer/OrcaSlicer/blob/feature/mcp/docs/HLSD/mcp-server.md) on that branch). The open draft "Mcp server" pull request (#12667) is a different, outside contributor's, with a TCP-port setting under Preferences › Developer | The skills' [PRIVACY.md](https://github.com/OrcaSlicer/orcaslicer-mcp-skills/blob/main/PRIVACY.md) says the server "accepts connections from that computer only". Needs a running GUI; the GUI checks need OpenGL. Beta | **Watch** until a general MCP server ships in a stable release, then **adopt as an external process** (AGPL: never link). It could replace our flattened-profile Bambu CLI for slice evidence |
+| [OrcaSlicer/orcaslicer-mcp-skills](https://github.com/OrcaSlicer/orcaslicer-mcp-skills) | AGPL-3.0 | Created 2026-10-29, 5 commits, official org | CC and Codex plugin: one SKILL.md and references (actions, settings, supports, calibration, cad, output) | No code, no network; plugin only ([PRIVACY.md](https://github.com/OrcaSlicer/orcaslicer-mcp-skills/blob/main/PRIVACY.md)). It expects a general MCP server that no release ships yet | **Adopt as a plugin** once a release ships that server. Do not copy its text into our MIT repo (AGPL) |
+| [MaxEllis/orcaslicer-mcp](https://github.com/MaxEllis/orcaslicer-mcp) | AGPL-3.0 | 86★, v0.1.17 (10-12) | Third-party Orca MCP | — | Skip for now: third-party, and OrcaSlicer's own MCP server, slicing included, is in development on its `feature/mcp` branch (row above) |
 
 ### 2b. build123d / CadQuery agent toolkits (nearest to cad-agent)
 
@@ -54,7 +54,7 @@ not "bad".
 
 | Project | Licence | Activity | What it does | Security | Rec. |
 |---|---|---|---|---|---|
-| [novasolver/novasolver-studio](https://github.com/novasolver/novasolver-studio) | GPL-3.0 | Created 2026-10-25, at least 100 commits | Local CAE with an MCP server: CalculiX structural/thermal, OpenFOAM, and a built-in quadratic-tet solver. Every result passes **ran → converged → verified** gates (Roache GCI mesh convergence; closed-form templates). The README lists nonlinear (plasticity, large deformation), and contact (mortar, tied) plus fatigue "0.7" with a Hertz check ([README](https://github.com/novasolver/novasolver-studio)) | "No account, no upload, no telemetry"; Windows download; browser demo | **Watch**; run only as an external process (GPL). **Borrow the 3-gate idea** for `cadagent.fea` |
+| [novasolver/novasolver-studio](https://github.com/novasolver/novasolver-studio) | GPL-3.0 | Created 2026-10-25, at least 100 commits | Local CAE with an MCP server: CalculiX structural/thermal, OpenFOAM, and a built-in quadratic-tet solver. Every result passes **ran → converged → verified** gates (Roache GCI mesh convergence; closed-form templates). The README lists nonlinear (plasticity, large deformation), and contact (mortar, tied) plus fatigue "0.7" with a Hertz check ([README](https://github.com/novasolver/novasolver-studio)) | "No account, no upload, no telemetry"; Windows download; browser demo | **Watch**; run only as an external process (GPL). **Borrow the 3-gate idea** for `cadagent.simulation.fea` |
 | [WifiLast/freecad-mcp](https://github.com/WifiLast/freecad-mcp) | **none** | 2 commits (10-17) | FreeCAD FEM + gmsh + CalculiX statics; SIMP topology optimisation keeping mounting faces exact; dimension optimisation | **Binds `0.0.0.0:2022` by default** (streamable HTTP) | Skip |
 | [V0v1kkk/freecad-engineering](https://github.com/V0v1kkk/freecad-engineering) | MIT | 3★, 2026-08 | Skills: `fdm-structural-review` (cites ASTM F3489/F3529, ISO; a material-profile validator script), `mechanical-strength-review`, `freecad-fem-check`, `mechanical-constraint-analysis` | — | **Vendor ideas** for the compliant-mechanism agent's evidence checklist |
 | [n3r/AgentCAD](https://github.com/n3r/AgentCAD) `fem-workflow` skill | Apache-2.0 | 7★, 100 commits, macOS-first | gmsh + FEM workflow; says contact and nonlinearity are out of scope | — | Watch |
@@ -91,7 +91,8 @@ That is the gap cad-agent #94/#95 fills.
 ## 3. Security notes for anything we might run
 
 - **Network binding.** WifiLast/freecad-mcp listens on all interfaces. b123d-print can serve over HTTP/SSH (stdio by
-  default per its plugin config). Orca's server is local-only. text-to-cad's viewer has no auth on 127.0.0.1
+  default per its plugin config). Orca's Design-tab control socket is a local Unix socket, and the skills' privacy note
+  says the planned general server accepts local connections only. text-to-cad's viewer has no auth on 127.0.0.1
   (landscape.md).
 - **Arbitrary code.** Every code-CAD MCP (b123d-print, text-to-cad, agentcad, eitri) runs model scripts written by the
   agent. Run them in the project venv or a container, never with fleet credentials in the environment.
@@ -107,7 +108,7 @@ That is the gap cad-agent #94/#95 fills.
 
 ```mermaid
 flowchart TD
-    A["use: OrcaSlicer 2.5 MCP (when stable),<br/>text-to-cad (pinned)"] -->|"less sure"| T["try or borrow: step-diff,<br/>b123d-print checks, static74 skill"]
+    A["use: an OrcaSlicer MCP server (once released),<br/>text-to-cad (pinned)"] -->|"less sure"| T["try or borrow: step-diff,<br/>b123d-print checks, static74 skill"]
     T -->|"less sure"| W["watch or skip: NovaSolver,<br/>build123d sheet metal,<br/>closed MCPs, FEABench"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
@@ -118,7 +119,7 @@ flowchart TD
 
 | # | Item | Decision |
 |---|---|---|
-| 1 | OrcaSlicer 2.5 MCP + official skills | **Adopt when 2.5.0 is stable** (external process). Pilot now on a non-fleet workstation for slice evidence and supports |
+| 1 | OrcaSlicer MCP server + official skills | **Adopt once a stable release ships the general server** (external process). The 2.5 beta's control socket drives only the Design tab, with no slicing commands. The general server is on the `feature/mcp` branch (row 28): a pilot would mean building that branch, so wait for a release unless slice evidence becomes urgent |
 | 2 | text-to-cad 0.8 | **Keep pinned**; decide 0.7.26 vs 0.8.4 explicitly and record it in `docs/toolkit.md`. Keep telemetry env vars |
 | 3 | step-diff (specify-core) | **Trial** in one product repo's PRs (Apache-2.0) |
 | 4 | b123d-print checks | **Borrow** tip-over, round-top hole, bed-edge fillet, print-in-place gap as cad-agent checks with seeded-defect fixtures (#97) |

@@ -5,7 +5,7 @@ SI units: metres, newtons, pascals, radians; torque in N m, stiffness in N m / r
 
 Saint-Venant torsion of a straight prismatic bar: linear elastic, isotropic, small twist, ends free to warp, and
 the section remote from the ends and from any change of section. The torsion snap of the Covestro guide is
-:func:`cadagent.compliant.snapfit.torsion_snap`, which works in strain at the guide's limits; these are the general
+:func:`cadagent.mechanical.compliant.snapfit.torsion_snap`, which works in strain at the guide's limits; these are the general
 relations underneath it.
 """
 from __future__ import annotations

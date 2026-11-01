@@ -1,6 +1,6 @@
 # Snap fits and compliant features
 
-`cadagent.compliant` sizes and checks snap-fit joints so an agent does not re-derive the equations, guess a
+`cadagent.mechanical.compliant` sizes and checks snap-fit joints so an agent does not re-derive the equations, guess a
 permissible strain or forget layer lines. It is the calculator half of the compliant-mechanism work (#94); the method,
 sources and open questions are in [research/compliant-mechanisms.md](../research/compliant-mechanisms.md).
 
@@ -21,7 +21,7 @@ material value names its source.
   0.38 mm; R/h below 0.6 concentrates strain), mating force against a limit, retention force against a minimum.
 - **Allowable strain with its source**: moulded resins from the Covestro Table 2 and DuPont Table 10.06; 11 printed
   filaments (13 entries: two have dry and wet values) from their manufacturers' data sheets **by print direction**
-  ([`allowables.py`](../src/cadagent/compliant/allowables.py)).
+  ([`allowables.py`](../src/cadagent/mechanical/compliant/allowables.py)).
 - **Figures**: `tools/snapfit_figures.py` draws the cantilever with its dimensions (`docs/img/compliant/`).
 
 ![Example I from the Covestro guide, computed: a tapered polycarbonate cantilever hook with its length, thicknesses and deflection drawn to scale, root strain 2.00 percent](img/compliant/example-1.svg)

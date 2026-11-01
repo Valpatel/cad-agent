@@ -14,7 +14,7 @@ AREAS = ROOT / "docs" / "areas.yaml"
 LEVELS = ["idea", "surveyed", "tooling", "validated", "proven"]
 PRIORITIES = {"gyropup", "demo"}
 SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-LIST_KEYS = ("priority", "pages", "cli", "api", "skills", "agents", "issues", "projects")
+LIST_KEYS = ("priority", "pages", "cli", "api", "uses", "skills", "agents", "issues", "projects")
 NODE_KEYS = {"slug", "title", "scope", "maturity", "lessons", *LIST_KEYS}
 # What each depth may hold: a key at the wrong depth (a mis-indented node) is an error, not silently skipped.
 DEPTH_KEYS = {1: NODE_KEYS | {"areas"}, 2: NODE_KEYS | {"topics"}, 3: NODE_KEYS}
@@ -136,8 +136,34 @@ def test_every_named_command_and_module_exists(tree):
     from cadagent.cli import SUBCOMMANDS
     for cmd in placed(tree, "cli"):
         assert cmd in SUBCOMMANDS, f"`cad-agent {cmd}` is not a command"
-    for mod in placed(tree, "api"):
-        assert mod.startswith("cadagent.") and importlib.util.find_spec(mod), f"{mod} is not a cadagent module"
+    for key in ("api", "uses"):
+        for mod in placed(tree, key):
+            assert mod.startswith("cadagent.") and importlib.util.find_spec(mod), \
+                f"{key}: {mod} is not a cadagent module"
+
+
+def uses_repeats(tree):
+    """`uses` names modules a node relies on from elsewhere, so it never repeats the node's own `api` or itself."""
+    bad = []
+    for path, n in nodes(tree):
+        uses = n.get("uses", [])
+        bad += [f"{'/'.join(path)}: {m} is in both api and uses; keep it in api" for m in uses if m in n.get("api", [])]
+        bad += [f"{'/'.join(path)}: {m} is named twice in uses" for m in sorted({m for m in uses if uses.count(m) > 1})]
+    return bad
+
+
+def test_uses_does_not_repeat_the_nodes_api(tree):
+    bad = uses_repeats(tree)
+    assert not bad, "\n".join(bad)
+
+
+def test_uses_repeats_are_found():
+    planted = read_tree("{domains: [{slug: thermal, title: T, scope: s, maturity: idea, areas: [{slug: airflow, "
+                        "title: A, scope: s, maturity: idea, api: [cadagent.thermal.heatsink], "
+                        "uses: [cadagent.thermal.heatsink, cadagent.simulation.cfd, cadagent.simulation.cfd]}]}]}")
+    assert uses_repeats(planted) == [
+        "thermal/airflow: cadagent.thermal.heatsink is in both api and uses; keep it in api",
+        "thermal/airflow: cadagent.simulation.cfd is named twice in uses"]
 
 
 def test_modules_are_named_by_their_current_paths(tree):

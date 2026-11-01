@@ -28,14 +28,27 @@ flowchart TD
 | agentcad | Apache-2.0 | https://github.com/jdilla1277/agentcad | `52af472ddade` | 2026-10-24 |
 | bd_warehouse | Apache-2.0 | https://github.com/gumyr/bd_warehouse | `e6ae6e7bae74` | 2026-10-24 |
 
+## Showcase on the site (Gyropup)
+
+The home page shows [Gyropup](https://gyropup.com), a robot designed with cad-agent. Its model and pictures are
+copies of Gyropup's CAD exports and results, under its MIT licence ("Copyright (c) 2026 mvalancy and Gyropup
+contributors"), whose full text travels with them in `docs/img/gyropup/LICENSE.txt`.
+`tools/gyropup_showcase.py` regenerates them and records the revision in each file's source record.
+
+| Files | From | Revision |
+|---|---|---|
+| `web/models/gyropup.json`, `.bin`, `.webp` (the 3D model and its poster) | every part's STEP in [Valpatel/gyropup](https://github.com/Valpatel/gyropup), exported with `cad-agent view` | `77f6d00` |
+| `docs/img/gyropup/wheel-link-fea.webp`, `leg-render.webp` | Gyropup's `exports/leg/fea/wheel_link-E1.png` and `exports/leg/leg-stand-iso.png`, cropped | `77f6d00` |
+| `docs/img/gyropup.jpg` | a Gyropup render | earlier, not recorded |
+
 ## Runtime dependencies and external programs (not vendored)
 
 The simulation modules use these at run time. None of their code is copied into this repository.
 
 | Project | Licence | How cad-agent uses it |
 |---|---|---|
-| OpenFOAM v2512 (OpenCFD) | GPL-3.0 | External program (`cadagent.cfd` writes a case and runs it natively or in the `opencfd/openfoam-default` Docker image) |
-| Bambu Studio | AGPL-3.0 | External program (`cadagent.slicer` runs its command line; profiles are read, flattened and passed back as files) |
+| OpenFOAM v2512 (OpenCFD) | GPL-3.0 | External program (`cadagent.simulation.cfd` writes a case and runs it natively or in the `opencfd/openfoam-default` Docker image) |
+| Bambu Studio | AGPL-3.0 | External program (`cadagent.manufacturing.slicer` runs its command line; profiles are read, flattened and passed back as files) |
 | gmsh | GPL-2.0-or-later | Imported by the optional `fea` extra. Our source stays MIT; distributing a bundle that includes gmsh falls under the GPL |
 | scikit-fem | BSD-3-Clause | Imported (`fea`) |
 | pyMOTO | MIT | Imported (`sim`, topology optimisation) |

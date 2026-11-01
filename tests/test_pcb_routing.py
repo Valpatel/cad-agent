@@ -1,5 +1,5 @@
 import pytest
-from cadagent.pcb_routing import copper_graph,shortest_path,path_segments,pair_geometry
+from cadagent.electrical.pcb_routing import copper_graph,shortest_path,path_segments,pair_geometry
 
 def seg(a,b,layer='F.Cu',width=.25):return dict(a=a,b=b,layer=layer,width=width)
 

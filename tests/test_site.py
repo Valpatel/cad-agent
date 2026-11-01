@@ -9,7 +9,7 @@ import pytest
 pytest.importorskip("markdown")
 pytest.importorskip("yaml")
 
-from cadagent import site  # noqa: E402
+from cadagent.publish import site  # noqa: E402
 
 CFG = {"title": "Bot", "tagline": "A test robot", "notice": "Private", "milestones": "docs/milestones.yaml",
        "decisions": "docs/decisions.yaml", "designs": "exports/designs.json", "pages": ["README.md", "docs/*.md"],
@@ -102,7 +102,7 @@ def test_serve_redirects_root_to_the_site(tmp_path):
 def test_view_export_writes_meshes_and_manifest(tmp_path):
     cq = pytest.importorskip("cadquery")
     from cadagent.project import from_dict
-    from cadagent.view import export_view
+    from cadagent.publish.view import export_view
     (tmp_path / "exports").mkdir()
     for name, at in (("lid", (0, 0, 20)), ("base", (0, 0, 0))):
         cq.exporters.export(cq.Workplane().box(40, 30, 10).translate(at), str(tmp_path / "exports" / f"{name}.step"))
@@ -139,7 +139,7 @@ def test_site_serves_the_kit_and_links_the_model(tmp_path):
 
 def test_pcb_evidence_staleness_is_visible(tmp_path):
     import json
-    from cadagent.pcb import evidence_bundle
+    from cadagent.electrical.pcb import evidence_bundle
     (tmp_path/'board.kicad_pcb').write_text('board')
     full='"included_severities":["error","warning","exclusion"],'
     (tmp_path/'erc.json').write_text('{'+full+'"sheets":[{"violations":[]}]}')
@@ -160,8 +160,8 @@ def test_pcb_evidence_staleness_is_visible(tmp_path):
 
 def test_card_workbench_and_report_agree_on_outside_root_evidence(tmp_path):
     import json, hashlib
-    from cadagent.evidence import hashes_are_current
-    from cadagent.pcb import evidence_is_current
+    from cadagent.review.evidence import hashes_are_current
+    from cadagent.electrical.pcb import evidence_is_current
     from cadagent.review import review_html
     root = tmp_path / 'project'; root.mkdir()
     (tmp_path / 'outside.kicad_pcb').write_text('outside')

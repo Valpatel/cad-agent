@@ -14,8 +14,8 @@ import numpy as np
 import pytest
 
 from cadagent import formulas as fx
-from cadagent import heatsink
-from cadagent.compliant import snapfit
+from cadagent.thermal import heatsink
+from cadagent.mechanical.compliant import snapfit
 
 ROOT = Path(__file__).resolve().parents[1]
 MM = 1e-3
@@ -507,7 +507,7 @@ def test_fan_against_a_quadratic_system_is_the_quadratic_root():
 
 
 def test_fan_operating_point_matches_the_heatsink_solver():
-    # Reuse, not fork: cadagent.heatsink.operating_point (bisection on the same straight fan line) must find the same
+    # Reuse, not fork: cadagent.thermal.heatsink.operating_point (bisection on the same straight fan line) must find the same
     # point for a system that is purely quadratic.
     k = 3.0e6
 
@@ -560,7 +560,7 @@ def test_the_demo_on_docs_compliant_starts_from_what_the_python_computes():
     # The page's <cad-cantilever> attributes, run through cadagent.formulas, give the root strain its still's alt text
     # quotes (tools/cantilever-still.mjs checks the same from the browser side), and the page's claim that the arm
     # passes flat and fails upright holds.
-    from cadagent.compliant.allowables import PRINTED
+    from cadagent.mechanical.compliant.allowables import PRINTED
     page = (ROOT / "docs" / "compliant.md").read_text()
     tag = re.search(r"<cad-cantilever\b([^>]*)>([\s\S]*?)</cad-cantilever>", page)
     assert tag, "docs/compliant.md has no <cad-cantilever> demo"

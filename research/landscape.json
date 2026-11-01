@@ -390,7 +390,7 @@
    "url": "https://github.com/mixelpixx/KiCAD-MCP-Server",
    "license_spdx": "MIT",
    "stars": 2933,
-   "last_push": "2026-10-01",
+   "last_push": "2026-10-26",
    "clients": [
     "mcp"
    ],
@@ -404,14 +404,14 @@
    "drawings": "no",
    "vendor_integration": "JLCPCB, DigiKey, Freerouting",
    "evals": "none",
-   "notes": "244 tools registered; runtime dep pymupdf (AGPL); new work moved to Konnect"
+   "notes": "244 tools registered; runtime dep pymupdf (AGPL); still maintained under MIT after Konnect was archived"
   },
   {
    "name": "mixelpixx/Konnect",
    "url": "https://github.com/mixelpixx/Konnect",
    "license_spdx": "AGPL-3.0",
    "stars": 1399,
-   "last_push": "2026-10-25",
+   "last_push": "2026-10-26",
    "clients": [
     "kicad-plugin",
     "mcp",
@@ -427,7 +427,7 @@
    "drawings": "no",
    "vendor_integration": "Freerouting",
    "evals": "none",
-   "notes": "obhox/kicad-mcp is a fork (8 stars, AGPL-3.0); external use only"
+   "notes": "archived 2026-10-26; continues as Konnect-EDA (commercial, closed source, free during its beta), so no longer a candidate; obhox/kicad-mcp is a fork (8 stars, AGPL-3.0)"
   },
   {
    "name": "oaslananka/kicad-mcp-pro",
@@ -622,7 +622,7 @@
    "license_spdx": "AGPL-3.0",
    "stars": 16253,
    "last_push": "2026-10-31",
-   "notes": "2.5 MCP server + Design (CAD) tab; loopback only; needs the GUI running",
+   "notes": "2.5 beta: experimental Design (CAD) tab, off by default, with an MCP control socket for that tab (Unix, ORCA_CAD_MCP set, GUI running); a general MCP server, slicing included, is in development on the feature/mcp branch (no release yet)",
    "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
   },
   {
@@ -631,7 +631,7 @@
    "license_spdx": "AGPL-3.0",
    "stars": 2,
    "last_push": "2026-10-29",
-   "notes": "official Claude Code / Codex skills for the Orca MCP server; no code",
+   "notes": "official Claude Code / Codex skills for the MCP server on OrcaSlicer's feature/mcp branch (General > AI features > MCP server; off by default, loopback only); no release ships it yet; no code",
    "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
   },
   {
@@ -685,7 +685,7 @@
    "license_spdx": "Apache-2.0",
    "stars": 7,
    "last_push": "2026-10-31",
-   "notes": "named feature changes, before/after pictures, volume/area/bbox per PR",
+   "notes": "main job: writes AP242 semantic PMI (material, hole purposes, datums, fits, finish) into STEP parts from an interview; its step-diff action posts named feature changes, before/after pictures and volume/area/bbox per PR",
    "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
   },
   {
@@ -782,6 +782,10 @@
  "libraries": [
   {
    "name": "gumyr/build123d",
+   "what": "Python B-rep CAD library on Open Cascade with builder and algebra-style APIs for 2D and 3D parts",
+   "areas": [
+    "cad-modelling"
+   ],
    "license_spdx": "Apache-2.0",
    "stars": 3519,
    "last_push": "2026-10-23",
@@ -789,6 +793,10 @@
   },
   {
    "name": "CadQuery/cadquery",
+   "what": "Python library for parametric 3D CAD scripts on the OCCT kernel, usable without a GUI",
+   "areas": [
+    "cad-modelling"
+   ],
    "license_spdx": "Apache-2.0",
    "stars": 5990,
    "last_push": "2026-10-24",
@@ -798,13 +806,24 @@
   },
   {
    "name": "gumyr/bd_warehouse",
+   "what": "Parametric part collection for build123d: fasteners, threads, bearings, gears, sprockets, pipes, flanges",
+   "areas": [
+    "fasteners-and-hardware",
+    "gears",
+    "belt-and-chain-drives"
+   ],
    "license_spdx": "Apache-2.0",
    "stars": 112,
    "last_push": "2026-10-18",
-   "use": "ISO fasteners, threads"
+   "use": "ISO fasteners and threads, plus parametric bearings, gears, sprockets, pipes, flanges and O-rings"
   },
   {
    "name": "partcad/partcad",
+   "what": "Package format and manager for CAD parts and assemblies, with BOMs, sourcing and assembly instructions",
+   "areas": [
+    "fasteners-and-hardware",
+    "design-process"
+   ],
    "license_spdx": "Apache-2.0",
    "stars": 509,
    "last_push": "2026-10-24",
@@ -812,6 +831,10 @@
   },
   {
    "name": "sargo-devel/Cables",
+   "what": "FreeCAD workbench for drawing cables and wires, mainly for electrical installations in BIM models",
+   "areas": [
+    "wiring-harnesses"
+   ],
    "license_spdx": "LGPL-3.0",
    "stars": 103,
    "last_push": "2026-10-23",
@@ -819,6 +842,10 @@
   },
   {
    "name": "wireviz/WireViz",
+   "what": "Draws cable, harness and connector pinout diagrams (SVG, PNG) from plain YAML via GraphViz",
+   "areas": [
+    "wiring-harnesses"
+   ],
    "license_spdx": "GPL-3.0",
    "stars": 5310,
    "last_push": "2026-06-06",
@@ -826,6 +853,11 @@
   },
   {
    "name": "easyw/kicadStepUpMod",
+   "what": "FreeCAD workbench that moves KiCad boards and part models to and from FreeCAD and exports STEP",
+   "areas": [
+    "circuit-boards",
+    "housings-and-enclosures"
+   ],
    "license_spdx": "AGPL-3.0",
    "stars": 699,
    "last_push": "2026-09-04",
@@ -834,13 +866,21 @@
   },
   {
    "name": "rjwalters/kicad-tools",
+   "what": "Python tools and a CLI that let agents parse, check, place and route KiCad schematics and boards",
+   "areas": [
+    "circuit-boards"
+   ],
    "license_spdx": "MIT",
    "stars": 72,
    "last_push": "2026-10-24",
-   "use": "licence-annotated KiCad tool survey in README"
+   "use": "agent tools and the kct CLI that parse, check, place and route KiCad files; its README also keeps a licence-annotated survey of KiCad AI tools"
   },
   {
    "name": "kicad-python (PyPI)",
+   "what": "Official Python bindings for KiCad's IPC API, for scripts and add-ons that talk to a running KiCad",
+   "areas": [
+    "circuit-boards"
+   ],
    "license_spdx": "MIT",
    "version": "0.8.0",
    "released": "2026-08-30",
@@ -849,6 +889,10 @@
   },
   {
    "name": "CalculiX 2.23 (conda-forge)",
+   "what": "Free 3D finite-element program for linear and non-linear static, dynamic and thermal analysis",
+   "areas": [
+    "structural-fea"
+   ],
    "license_spdx": "GPL-2.0-or-later",
    "url": "https://www.calculix.de/",
    "notes": "planned external solver for large-deflection snap force-travel with contact; apt ships 2.21",
@@ -859,6 +903,10 @@
  "benchmarks": [
   {
    "name": "CADGenBench",
+   "what": "Benchmark that scores AI-made STEP parts from engineering drawings and STEP edits on a hosted leaderboard",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://github.com/huggingface/cadgenbench",
    "license_spdx": "Apache-2.0",
    "stars": 146,
@@ -867,12 +915,20 @@
   },
   {
    "name": "Text2CAD",
+   "what": "Beginner-to-expert text prompts for DeepCAD models, and a model that generates CAD construction sequences",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://github.com/SadilKhan/Text2CAD",
    "license": "CC-BY-NC-SA-4.0",
    "venue": "NeurIPS 2024"
   },
   {
    "name": "CADPrompt/CADCodeVerify",
+   "what": "200 text prompts with expert CAD code and STL targets, and a VLM loop that checks and fixes generated code",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://github.com/Kamel773/CAD_Code_Generation",
    "license": null,
    "venue": "ICLR 2025",
@@ -880,48 +936,85 @@
   },
   {
    "name": "CAD-Recode",
+   "what": "Model that reverse-engineers point clouds into CadQuery Python code, fine-tuned from Qwen2-1.5B",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://github.com/filaPro/cad-recode",
    "license": "CC-BY-NC-4.0",
    "venue": "ICCV 2025"
   },
   {
    "name": "cadrille",
+   "what": "Model that reconstructs CAD code from point clouds, images or text, trained with online RL",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://github.com/col14m/cadrille",
    "license_spdx": "Apache-2.0"
   },
   {
    "name": "Text2CAD-Bench",
+   "what": "600 curated text-to-CAD tasks in four levels, from basic features to freeform and non-mechanical parts",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://arxiv.org/abs/2605.18430",
    "size": "600 examples, 4 levels",
    "data_license": "unverified"
   },
   {
    "name": "P3D-Bench",
+   "what": "Text-to-3D, image-to-3D and assembly tasks for parametric 3D programs, scored on geometry and structure",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://arxiv.org/abs/2606.11152",
    "status": "unverified"
   },
   {
    "name": "CADBench",
+   "what": "18,000 samples testing CAD program generation from meshes and renders across six families and six metrics",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://arxiv.org/abs/2605.10873",
    "status": "unverified"
   },
   {
    "name": "BenchCAD",
+   "what": "17,900 checked CadQuery programs over 106 industrial part families, for CAD QA, image-to-code and editing",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://arxiv.org/abs/2605.10865",
    "status": "unverified"
   },
   {
    "name": "RealCADBench",
+   "what": "12,632 tasks from real factory-automation design intents; models write FreeCAD Python for parts and assemblies",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://arxiv.org/abs/2609.03773",
    "status": "unverified"
   },
   {
    "name": "CAD Arena",
+   "what": "Side-by-side comparison of text-to-CAD models on 20 prompts in four difficulty tiers, with 3D outputs",
+   "areas": [
+    "evaluation"
+   ],
    "url": "https://cadarena.dev/",
    "status": "unverified"
   },
   {
    "name": "PCBWorld",
+   "what": "KiCad push-and-shove router as a Gymnasium environment, with 679 real boards and DRC-checked metrics",
+   "areas": [
+    "evaluation",
+    "circuit-boards"
+   ],
    "url": "https://github.com/LGAI-Research/PCBWorld",
    "license_spdx": "BSD-3-Clause",
    "paper": "arXiv 2607.05915",
@@ -929,6 +1022,11 @@
   },
   {
    "name": "FEABench",
+   "what": "Benchmark of FEA problems that LLM agents solve by driving COMSOL Multiphysics through its API",
+   "areas": [
+    "evaluation",
+    "structural-fea"
+   ],
    "url": "https://github.com/google/feabench",
    "license_spdx": "Apache-2.0",
    "paper": "arXiv 2504.06260",

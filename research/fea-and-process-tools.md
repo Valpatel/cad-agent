@@ -5,9 +5,9 @@ For Valpatel/cad-agent #96 (items 3–5), #94 (FEA step), #97 (pitfall catalogue
 CLIs. Notation: **(s)** search snippet only · **(u)** unverified · **[derived]** my calculation · "read" = text read on
 this date.
 
-## 0. What `cadagent.fea` does today
+## 0. What `cadagent.simulation.fea` does today
 
-From the module docstring, read from `origin/dev:src/cadagent/fea.py`:
+From the module docstring, read from `origin/dev:src/cadagent/fea.py` (now `src/cadagent/simulation/fea.py`):
 - gmsh tetrahedra and scikit-fem P2 linear elasticity.
 - Solvers: PARDISO, SciPy direct, or CG with pyamg.
 - "linear and small-deflection; isotropic", with weak-direction strengths for printed materials.
@@ -82,7 +82,7 @@ flowchart TD
 | Tool / method | Licence | What it optimises | Anisotropy-aware | Use |
 |---|---|---|---|---|
 | [ChristophSchranz/Tweaker-3](https://github.com/ChristophSchranz/Tweaker-3) | GPL-3.0 | Overhang/support area, bottom area, contour; evolutionary-tuned weights; 110★, push 2026-03-24 | No | External comparator (subprocess) |
-| Slicer auto-orient: Bambu/Orca CLI `--orient` (simulation-tools.md §5); Orca 2.5 MCP (agent-toolkits note) | AGPL | Support/overhang | No | Cross-check |
+| Slicer auto-orient: Bambu/Orca CLI `--orient` (simulation-tools.md §5); an Orca MCP server once one ships (agent-toolkits note) | AGPL | Support/overhang | No | Cross-check |
 | [b123d-print `suggest_orientation`](https://github.com/KD5RYN/b123d-print/blob/main/src/b123d_print/orient.py) | MIT | Overhang plus the tip-over measure (Orca auto-brim formula) ([checks.md](https://github.com/KD5RYN/b123d-print/blob/main/docs/using/checks.md)) | No | Borrow ideas |
 | Umetani & Schmidt 2013, cross-sectional structural analysis ([Autodesk Research](https://www.research.autodesk.com/publications/cross-sectional-structural-analysis-for-3d-printing-optimization)) | paper / patents (US10239258) | Weakest cross-section under bending, then the orientation | Assumes isotropy (s) | Method idea |
 | Ulu et al., build orientation for maximum safety factor ([ITU record](https://research.itu.edu.tr/en/publications/enhancing-the-structural-performance-of-additively-manufactured-o/)) | paper | Orientation maximising the minimum FoS with anisotropic properties from coupons, using a surrogate | **Yes** (s) | The method to copy for loaded parts |

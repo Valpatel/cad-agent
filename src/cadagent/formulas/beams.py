@@ -4,7 +4,7 @@ SI units: metres, newtons, pascals, so strain is a fraction (0.02 = 2 %) and sti
 
 Euler-Bernoulli theory throughout: small deflection, linear elastic and isotropic, plane sections stay plane, and
 shear deflection is ignored, which is fine for slender beams (length over thickness above about 10). The snap-fit
-arm functions do not re-derive anything. They call :mod:`cadagent.compliant.snapfit`, the Covestro (Bayer) method
+arm functions do not re-derive anything. They call :mod:`cadagent.mechanical.compliant.snapfit`, the Covestro (Bayer) method
 with the factors exactly as the guide prints them, so they give the same numbers as ``cad-agent snapfit``. The exact
 taper integrals here (:func:`cantilever_taper_factor`) show where those factors come from: they round to the
 guide's 0.67, 1.09 and 0.86.
@@ -14,7 +14,7 @@ from __future__ import annotations
 import math
 from typing import Any, Dict
 
-from cadagent.compliant import snapfit
+from cadagent.mechanical.compliant import snapfit
 from cadagent.formulas._registry import cite, formula
 
 # Covestro Table 1 designs: 1 constant section, 2 thickness tapering linearly to h/2 at the hook, 3 width tapering
@@ -150,7 +150,7 @@ _GUIDE = ("Covestro/Bayer closed form: small deflection, one part rigid, strain 
                 "design": "1, 2 or 3 (Covestro Table 1)"},
          returns="root strain, fraction", limits=_GUIDE + ("rectangular section",),
          source=cite("covestro", "Table 1 (permissible deflection y = k eps l^2 / h); computed by "
-                     "cadagent.compliant.snapfit"))
+                     "cadagent.mechanical.compliant.snapfit"))
 def snap_root_strain(length: float, thickness: float, deflection: float, design: int = 1) -> float:
     """Root strain of a rectangular snap arm deflected by ``deflection`` at the hook: eps = y h / (k L^2)."""
     return snapfit.root_strain(snapfit.rect_section(1.0, thickness), length, deflection, _design(design))
@@ -159,7 +159,7 @@ def snap_root_strain(length: float, thickness: float, deflection: float, design:
 @formula(units={"length": "m", "width": "m", "thickness": "m (at the root)", "strain": "fraction (at the root)",
                 "modulus": "Pa (secant modulus at that strain)"},
          returns="deflection force at the hook, N", limits=_GUIDE + ("rectangular section",),
-         source=cite("covestro", "Table 1, bottom row (P = Z Es eps / l); computed by cadagent.compliant.snapfit"))
+         source=cite("covestro", "Table 1, bottom row (P = Z Es eps / l); computed by cadagent.mechanical.compliant.snapfit"))
 def snap_deflection_force(length: float, width: float, thickness: float, strain: float, modulus: float) -> float:
     """Force that deflects a rectangular snap arm to the given root strain: P = (b h^2 / 6) Es eps / L."""
     return snapfit.deflection_force(snapfit.rect_section(width, thickness), length, strain, modulus)
@@ -171,7 +171,7 @@ def snap_deflection_force(length: float, width: float, thickness: float, strain:
                  "zero deflection included), ratio, passes, small_deflection, permissible_deflection (m)",
          limits=_GUIDE + ("rectangular section; a pass has no extra margin (the guide designs to half the "
                           "permissible strain)", "not proof of strength: print a coupon and measure"),
-         source=cite("covestro", "Table 1; computed by cadagent.compliant.snapfit"))
+         source=cite("covestro", "Table 1; computed by cadagent.mechanical.compliant.snapfit"))
 def snap_arm(length: float, thickness: float, width: float, deflection: float, modulus: float,
              allowable_strain: float, design: int = 1) -> Dict[str, Any]:
     """One rectangular snap arm: root strain, deflection force and stiffness, strain over the allowable, pass or fail,

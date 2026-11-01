@@ -29,7 +29,7 @@ says which practices would have caught it.
 | 9 | **Decision records with alternatives rejected**, written with the design | professional standard (ADR/MADR, QOC); evidence on use is thin but the artefact is cheap | §3.4 |
 | 10 | **DFMEA rows and the DFA part-count questions** as the review checklist for each part | professional standard | AIAG-VDA, Boothroyd-Dewhurst (§3.5–§3.6) |
 | 11 | **Assembly-sequence and tool-access checks at the step that installs each part** | practice; already partly in cad-agent ([Fasteners and assembly access](../lessons/mechanical/fasteners-and-assembly-access.md)) | §3.9 |
-| 12 | **Sign-off invalidated by a geometry hash** (review bound to the bytes it reviewed) | practice; cad-agent already does it for PCB evidence | `cadagent.evidence`, text-to-cad `document_hash` (§2.2) |
+| 12 | **Sign-off invalidated by a geometry hash** (review bound to the bytes it reviewed) | practice; cad-agent already does it for PCB evidence | `cadagent.review.evidence`, text-to-cad `document_hash` (§2.2) |
 
 ## 2. Agentic and AI CAD systems: workflow and method
 

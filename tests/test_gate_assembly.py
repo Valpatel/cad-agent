@@ -16,11 +16,11 @@ from pathlib import Path
 
 import pytest
 
-from cadagent.gates.assembly import (AccessOptions, SequenceWorld, direction_vector, normalise_steps, run_sequence,
-                                     steps_markdown, sweep_pair)
-from cadagent.gates.fasteners import FastenerSpec
-from cadagent.gates.relations import Relation, Tolerances
-from cadagent.gates.verdict import verdict
+from cadagent.review.gates.assembly import (AccessOptions, SequenceWorld, direction_vector, normalise_steps,
+                                            run_sequence, steps_markdown, sweep_pair)
+from cadagent.review.gates.fasteners import FastenerSpec
+from cadagent.review.gates.relations import Relation, Tolerances
+from cadagent.review.gates.verdict import verdict
 
 # ----------------------------------------------------------------------------- no CAD kernel needed
 
@@ -345,7 +345,7 @@ def test_service_removal_names_the_parts_fitted_later_that_must_come_off_first()
 
 
 def test_tool_access_without_a_head_height_fails_rather_than_sweep_from_the_seat():
-    from cadagent.gates.fasteners import tool_access, tool_check
+    from cadagent.review.gates.fasteners import tool_access, tool_check
     sp = FastenerSpec(name="x", clamps="lid", into="nut", axes=[((0, 0, 10), (0, 0, -1))], tool="hex 2.5")
     res = tool_access({}, sp, 0, "hex 2.5", {"envelope_d": 6, "length": 60}, ["lid"], {"order": 3, "fit": "lid"})
     c = tool_check("step:3:tool:x", "x", sp, res)
@@ -372,7 +372,7 @@ def _bench():
 
 
 def _gate(bench, **kw):
-    from cadagent.gates.assembly import assembly_from_build
+    from cadagent.review.gates.assembly import assembly_from_build
     return assembly_from_build(bench.result, extra=bench.declarations, assembly=bench.assembly, **kw)
 
 
@@ -427,9 +427,9 @@ def test_bench_service_check_says_the_lid_comes_off_before_the_board():
 
 def test_registry_build_with_a_diagonal_entry_and_the_verdict_files(tmp_path):
     cq = _cq()
-    from cadagent import dossier
-    from cadagent.gates import Assembly, PairCache
-    from cadagent.gates.assembly import assembly_from_build
+    from cadagent.review import dossier
+    from cadagent.review.gates import Assembly, PairCache
+    from cadagent.review.gates.assembly import assembly_from_build
 
     def box(x0, y0, z0, x1, y1, z1):
         return cq.Solid.makeBox(x1 - x0, y1 - y0, z1 - z0, cq.Vector(x0, y0, z0))

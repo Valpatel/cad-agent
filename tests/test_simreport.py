@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from cadagent.simreport import metric, render, write_report
+from cadagent.simulation.simreport import metric, render, write_report
 
 
 def test_changes_are_judged_and_worded():

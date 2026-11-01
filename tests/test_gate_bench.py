@@ -20,13 +20,13 @@ import pytest
 cq = pytest.importorskip("cadquery")
 pytest.importorskip("trimesh")
 
-from cadagent.gates import relate_pair, relation_table  # noqa: E402
-from cadagent.gates.assembly import assembly_from_build  # noqa: E402
-from cadagent.gates.connectivity import Declarations, connectivity_gate  # noqa: E402
-from cadagent.gates.containment import containment_gate  # noqa: E402
-from cadagent.gates.fasteners import fastener_gate_from_build  # noqa: E402
-from cadagent.gates.motion import motion_gate  # noqa: E402
-from cadagent.gates.wall import wall_gate  # noqa: E402
+from cadagent.review.gates import relate_pair, relation_table  # noqa: E402
+from cadagent.review.gates.assembly import assembly_from_build  # noqa: E402
+from cadagent.review.gates.connectivity import Declarations, connectivity_gate  # noqa: E402
+from cadagent.review.gates.containment import containment_gate  # noqa: E402
+from cadagent.review.gates.fasteners import fastener_gate_from_build  # noqa: E402
+from cadagent.review.gates.motion import motion_gate  # noqa: E402
+from cadagent.review.gates.wall import wall_gate  # noqa: E402
 
 _PATH = Path(__file__).resolve().parent / "fixtures" / "gate_bench" / "build.py"
 _spec = importlib.util.spec_from_file_location("gate_bench_build", _PATH)
@@ -67,9 +67,9 @@ def gate_motion(bench):
 def gate_dossier_lint(bench):
     """The bench's declarations as a dossier (one card per registered part), linted against its geometry record.
     Statuses are informational here (no gate verdicts are passed); test_dossier_lint covers the status machine."""
-    from cadagent.dossier import (Alternative, Containment, Decision, Dossier, FastenerUse, Interface, PartCard,
-                                  Requirement, Section)
-    from cadagent.dossier.lint import Evidence, lint
+    from cadagent.review.dossier import (Alternative, Containment, Decision, Dossier, FastenerUse, Interface, PartCard,
+                                         Requirement, Section)
+    from cadagent.review.dossier.lint import Evidence, lint
 
     decl, geo = bench.declarations, bench.result.geometry
     parts, fasteners = geo["parts"], geo["fasteners"]
@@ -198,7 +198,7 @@ def test_bench_is_declared_through_the_dossier_registry(bench):
     assert f0["clamps"] == "lid" and f0["into"] == "insert_0" and f0["min_engagement_mm"] == 1.5
     assert bench.assembly["screw_0"].kind == "fastener" and bench.assembly["hopper"].group == "S-store"
     # the screws sit where they are placed: head on the lid (Z=47..50), tip at the insert bottom (Z=39)
-    from cadagent.gates.relations import bounding_box
+    from cadagent.review.gates.relations import bounding_box
     z0, z1 = bounding_box(bench.shape("screw_0"))[2::3]
     assert (z0, z1) == (pytest.approx(39.0), pytest.approx(50.0))
     steps = [s.fit for s in bench.result.steps]

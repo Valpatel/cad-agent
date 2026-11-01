@@ -3,7 +3,7 @@ against a system curve.
 
 SI units: metres, W/(m K), W/(m^2 K), kelvin or degrees C (differences), watts; flow in m^3/s, pressure in Pa.
 
-For plate-fin heatsinks, use :mod:`cadagent.heatsink` (developing laminar channel flow, fin efficiency, spreading);
+For plate-fin heatsinks, use :mod:`cadagent.thermal.heatsink` (developing laminar channel flow, fin efficiency, spreading);
 its fan curve is the same straight datasheet line as :func:`fan_curve_line`. For convection correlations, fittings
 and duct losses beyond these closed forms, Caleb Bell's ``ht`` and ``fluids`` (MIT) are the libraries to use.
 """
@@ -72,7 +72,7 @@ def wall_heat_flow(layers: Sequence[Tuple[float, float]], area: float, t_hot: fl
          limits=("a straight line between the datasheet end points: real axial fans sag in the middle and may "
                  "stall; use the datasheet's own points when it has them",),
          source=cite("white", "Section 11.5 (Matching Pumps to System Characteristics); the same line as "
-                     "cadagent.heatsink.FanCurve"))
+                     "cadagent.thermal.heatsink.FanCurve"))
 def fan_curve_line(dp_shutoff: float, q_free: float) -> List[Tuple[float, float]]:
     """The straight-line fan curve between shut-off pressure and free-air flow."""
     return [(0.0, dp_shutoff), (q_free, 0.0)]

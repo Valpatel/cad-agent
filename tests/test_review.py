@@ -20,7 +20,7 @@ def test_model_review_uses_existing_toolkit_viewer(tmp_path):
 
 
 def test_variant_manifests_do_not_mix_assemblies():
-    from cadagent.view import group_manifests
+    from cadagent.publish.view import group_manifests
     import pytest
     source={'parts':[{'name':'a_base','visible':False},{'name':'b_base','visible':True}]}
     groups=group_manifests(source,[{'id':'a','prefix':'a_'}])
@@ -96,7 +96,7 @@ def test_workbench_works_as_a_static_page(tmp_path):
 def test_view_group_cannot_clobber_the_main_manifest_or_fail_after_writing(tmp_path):
     from types import SimpleNamespace
     from cadagent.project import CadConfigError
-    from cadagent.view import export_view
+    from cadagent.publish.view import export_view
     import json, pytest
     exports = tmp_path / 'exports'; exports.mkdir()
     (exports / 'a_base.step').write_text('not read: validation runs first')

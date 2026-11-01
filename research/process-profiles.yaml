@@ -1,0 +1,5523 @@
+# Manufacturing-process profiles: design rules by process, each cited to the person, company or standard behind it
+# (Valpatel/cad-agent#99). The page that explains them is research/process-profiles.md.
+#
+# Who reads this: agents choosing limits for a part, and future checks and calculators (cadagent.process, #99) that
+# need a process's minimum wall, hole-to-bend distance or draft instead of hard-coding one printer's numbers.
+#
+# "We are highlighting experts, not taking credit for their tips." Every rule names its source; sources are
+# summarised and cited, never copied. Paid standards are cited by number and title only.
+#
+# Sources use the field names of the reference registry proposed in #119 (research/references.yaml there), so each
+# entry can move into that registry unchanged. Where #119 already has a source, the id here is the same.
+#
+# Rules
+#   id         unique, kebab-case: <process>-<feature>-<qualifier>-<source short name>
+#   process    a key of `processes`
+#   feature    what on the part the rule is about (wall, hole, bend-radius, draft, …)
+#   compare    optional: rules from different sources or processes that limit the same quantity, in the same units,
+#              share this key, so a page or a check can set them side by side (tools/process_profile_figures.py draws
+#              them)
+#   variant    optional: a short qualifier when one source gives the same quantity more than once (supported)
+#   quantity   what is limited, in words
+#   min / max / value
+#              at least one. A number, or an expression in `variables` (for example "2*T + R"), using + - * / ( ),
+#              numbers, min() / max() and one "a if T <= x else b" for a rule that steps with thickness. min is
+#              "at least", max is "at most", min and max together a range, value a typical or nominal figure.
+#   window     optional, with both min and max: true when they are the two ends of an allowed window for the feature
+#              itself (at least min and at most max), not one limit that varies between them by size, material or
+#              support. Charts draw a window as an open bar
+#   units      one of `units`; for an expression, the units of its result
+#   applies    when the rule applies (material, thickness, machine, orientation)
+#   datum      optional: where a distance is measured from, when the source says (or "not stated")
+#   source     a source id below, or dataset:<id> for numbers kept on another research page (see `datasets`)
+#   as_printed optional: the value in the source's own units when it was converted (1 in = 25.4 mm)
+#   status     read: seen in the source's own text (or its rendered figure, where `applies` says so) on the date in
+#              `verified`; u: not verified (never enforce)
+#   verified   ISO date the value was read
+#   note       optional: caveats, and where sources disagree
+#
+# Standards (at the end) are paid documents that govern the same ground. They are cited by number and title only and
+# no rule takes a value from them.
+schema: 1
+updated: 2026-10-31
+
+units:
+  mm: millimetres
+  deg: degrees
+  percent: per cent
+  ratio: a dimensionless ratio
+  degC: degrees Celsius
+  count: a whole number of things
+
+variables:
+  T: sheet thickness (mm)
+  R: inside bend radius (mm)
+  wall: nominal wall thickness of the part next to the feature (mm)
+  D: nominal diameter of the hole, pin, boss, thread or tool (mm)
+  L: the nominal dimension a tolerance applies to (mm)
+  depth: depth of the pocket, cavity or hole (mm)
+  width: width of the pocket, cavity or slot (mm)
+  H: height of a rib or boss (mm)
+  nozzle: FDM nozzle diameter (mm)
+  rib: base thickness of the rib (mm)
+  texture: depth of the mould texture (mm)
+  area: area of the mating feature (mm²)
+
+processes:
+  fdm: FDM / FFF material extrusion (desktop and industrial)
+  sla: vat photopolymerisation, laser SLA and masked / LCD (MSLA) printers
+  sls: selective laser sintering of polymer powder (mostly PA 12)
+  mjf: HP Multi Jet Fusion (PA 12, PA 11, PP)
+  injection-moulding: plastic injection moulding
+  sheet-metal: laser- or punch-cut sheet, press-brake bent
+  cnc: CNC milling and turning
+
+# Data that already lives on another research page. Rules here point at it instead of copying it.
+datasets:
+  - id: fdm-anisotropy-tds
+    what: >-
+      In-plane (XY) against across-the-layers (Z) modulus, strength and strain to failure for 13 filaments from the
+      makers' data sheets, with the derived allowable strain per direction
+    where: research/compliant-mechanisms.md
+    section: "§5 FDM anisotropy and §6 printed allowable strain"
+    cites: >-
+      Bambu Lab and Polymaker technical data sheets, each linked in that page's §10 (keys BBL-* and PM-*; the #119
+      registry ids are bambu-*-tds and polymaker-*-tds)
+  - id: sendcutsend-bend-table
+    what: >-
+      One shop's bend tooling, per stock SKU: inside radius, K-factor, minimum flange and relief depth. A check should
+      read the chosen shop's table before any generic rule (see `shop_tables` below)
+    where: research/process-profiles.yaml
+    section: shop_tables
+    cites: sendcutsend-specs
+
+sources:
+
+  # ------------------------------------------------------------------ 3D printing, general and FDM
+
+  - id: hubs-fdm-design
+    title: "How to design parts for FDM 3D printing"
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/how-design-parts-fdm-3d-printing/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page and read every section: bridging (under 5 mm), vertical holes printing undersize,
+      overhangs (45°), corners and elephant's foot (45° chamfer on bed edges), vertical pins (under 5 mm), build
+      direction.
+
+  - id: hubs-3dp-geometry-limits
+    title: "What can't 3D printers do? Understanding and overcoming 3D printing geometry limitations"
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/3d-printing-geometry-restrictions/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm, sla, sls, mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the table of recommended minimum wall thickness by process (FDM, SLA/DLP,
+      SLS, MJF, DMLS/SLM).
+
+  - id: hubs-3dp-dimensional-accuracy
+    title: "What is dimensional accuracy in 3D printing and how do you achieve it?"
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/dimensional-accuracy-3d-printed-parts/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm, sla, sls, mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the tolerance and shrinkage rows of the FDM, SLA and SLS/MJF tables.
+
+  - id: hubs-3dp-threaded-fasteners
+    title: "How do you assemble 3D-printed parts? Practical tips on threads & screws for 3D printing"
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/how-assemble-3d-printed-parts-threaded-fasteners/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm, fasteners]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the wall-around-a-thread rule, inserts, embedded nuts (0.2 mm offset),
+      self-tapping pilot holes (75–80 % engagement), tapping, and printed threads (avoid below M5 in FDM).
+
+  - id: hubs-snapfit-3dp
+    title: "How do you design snap-fit joints for 3D printing?"
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/how-design-snap-fit-joints-3d-printing/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [snap-fits, fdm, sla, sls, mjf]
+    used_for: [research/compliant-mechanisms.md, research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the nominal clearances (FDM 0.5 mm; SLA, SLS, MJF 0.3 mm), the MJF
+      cantilever base of at least 1 mm and the 5 mm minimum clip width.
+
+  - id: prusa-modeling-for-3dp
+    title: "Modeling with 3D printing in mind"
+    authors: []
+    org: Prusa Research (Prusa Knowledge Base)
+    year: null
+    url: https://help.prusa3d.com/article/modeling-with-3d-printing-in-mind_164135
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the article; read overhangs (45–60°, up to 75° on printers with 360° cooling), thin walls
+      as whole perimeters (0.45 mm per perimeter at a 0.4 mm nozzle), tolerances (at least 0.2 mm accuracy, 0.3 mm
+      for moving parts) and fillet against chamfer on bed-facing edges. Reader comments under the article were not
+      used.
+
+  - id: prusa-elephant-foot
+    title: "Elephant foot compensation"
+    authors: []
+    org: Prusa Research (Prusa Knowledge Base)
+    year: null
+    url: https://help.prusa3d.com/article/elephant-foot-compensation_114487
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the article; read the cause (first layer squished onto the bed) and the setting (about
+      0.2 mm for a 0.4 mm nozzle, on in Prusa's own profiles).
+
+  - id: xometry-eu-fdm-design-tips
+    title: "FDM 3D Printing Design Tips: Best Practices and Techniques for Stronger Prints"
+    authors: []
+    org: Xometry Europe
+    year: 2025
+    url: https://xometry.pro/en/articles/fdm-design-tips/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: the page answers scripts with HTTP 403 (bot protection), so the same article was read through the
+      site's public WordPress API (xometry.pro/en/wp-json/wp/v2/articles/22061; published 2025-03-11, modified
+      2025-05-15). Read all ten rules and the specification table. Nikolaus Mroncz (Head of Sales Engineering) is
+      quoted on the page; it does not say he wrote every rule.
+
+  - id: xometry-fdm-mini-guide
+    title: "Fused Deposition Modeling (FDM) Mini-Guide"
+    authors: [Joel Schadegg, Aaron Lichtig]
+    org: Xometry
+    year: null
+    url: https://www.xometry.com/resources/3d-printing/mini-guide-fdm-3d-printing/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: the live page answers scripts with HTTP 429, so read the Internet Archive copy of 2026-05-19
+      (web.archive.org/web/20260519071827/…). Byline "Written by Joel Schadegg, Updated by Aaron Lichtig". Read
+      wall thickness, holes, text and ribs, and the ±0.005 in tolerance claim.
+
+  - id: cnckitchen-heat-set-tips
+    title: "Tips & Tricks for Heat-Set Inserts used in 3D printing"
+    authors: [Stefan Hermann]
+    org: CNC Kitchen
+    year: 2021
+    url: https://cnckitchen.com/blog/tips-and-tricks-for-heat-set-inserts
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm, fasteners]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the article (published 2021-10-01, since updated); read the iron temperature (10–20 °C
+      above printing temperature), the 90 % melt-in, and the hole rules (blind hole about 1 mm deeper than the
+      insert, straight not tapered, no chamfer, glue into stepped holes in resin).
+
+  - id: cnckitchen-heat-set-hole-size
+    title: "Are Our Heat-Set Insert Datasheets Wrong?"
+    authors: [Stefan Hermann]
+    org: CNC Kitchen
+    year: 2026
+    url: https://cnckitchen.com/blog/are-our-heat-set-insert-datasheets-wrong
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm, fasteners]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the article (2026-03-28); read the pull-out test of about 50 M3 inserts in PLA over hole
+      diameters 3.6–4.6 mm: printed holes about 0.25 mm under CAD, 4.0 mm nominal, 4.2 mm in CAD as the sweet spot
+      at about 90 % of the highest pull-out force, and 0.2–0.3 mm added in CAD for small inserts.
+
+  - id: klahn-2016-am-snapfit
+    title: "Design Guidelines for Additive Manufactured Snap-Fit Joints"
+    authors: [Christoph Klahn, Daniel Singer, Mirko Meboldt]
+    org: Procedia CIRP 50 (KITopen repository)
+    year: 2016
+    url: https://publikationen.bibliothek.kit.edu/1000142464
+    access: free
+    terms: cited and summarised
+    areas: [snap-fits, fdm]
+    used_for: [research/compliant-mechanisms.md, research/process-profiles.md]
+    verified: >-
+      2026-10-31: read by research/compliant-mechanisms.md on this date (a cantilever built along Z is poor; keep
+      the bending in the layer plane).
+
+  # ------------------------------------------------------------------ resin and powder bed (the parts read directly)
+
+  - id: hubs-sla-design
+    title: "How to design parts for SLA 3D printing"
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/how-design-parts-sla-3d-printing/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read supported (0.4 mm) and unsupported (0.6 mm) walls, unsupported overhangs,
+      embossed and engraved detail, bridges, holes (the text says under 0.8 mm may close; the summary table says
+      0.5 mm minimum), clearances, hollow walls (2 mm) and drain holes (3.5 mm).
+
+  - id: hubs-sls-design
+    title: "How to design parts for SLS 3D printing"
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/how-design-parts-sls-3d-printing/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sls]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read wall (0.8 mm PA 12 to 2.0 mm carbon-filled), holes (over 1.5 mm), escape
+      holes (3.5 mm), engraving and embossing (1 mm), tolerances, clearances (0.3 mm; 0.2 mm ball joints), living
+      hinges (0.3–0.8 mm thick, 5 mm long), edge radius (0.4 mm) and pre-print scaling (3–3.5 %).
+
+  - id: hp-mjf-5200-properties
+    title: "HP 3D Printing materials for the HP Jet Fusion 5200 Series 3D Printing Solution - Mechanical Properties (white paper 4AA7-7084ENW)"
+    authors: []
+    org: HP Development Company, L.P.
+    year: 2020
+    url: https://info.sculpteo.com/hubfs/Material%20documentation/PA11%20HP/TDS%20HP%20pa12%20pa12gb%20pa11%20pp%20(1).pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf, materials]
+    used_for: [research/compliant-mechanisms.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the PDF (a reseller's copy; 4AA7-7084ENW, September 2020); read the XY and Z averages of
+      elongation at yield and at break for PA 12, PA 11, PA 12 GB and PP.
+
+  # ------------------------------------------------------------------ resin and powder bed, makers and bureaus
+
+  - id: formlabs-form4-design-guide
+    title: "Form 4 Design Guide"
+    authors: []
+    org: Formlabs
+    year: null
+    url: https://formlabs.com/white-papers/form-4-design-guide/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page (formlabs.com/blog/design-guide-form4/ redirects here); read the eleven feature
+      sections (Grey resin at 50 µm), the typical tolerances (Grey resin at 100 µm on three printers) and the table
+      comparing Form 4 with Form 3, which says the recommended values did not change between them.
+
+  - id: formlabs-form4-technology
+    title: "Explore the Next-Generation Technology Powering the Form 4"
+    authors: []
+    org: Formlabs
+    year: null
+    url: https://formlabs.com/blog/technology-behind-form-4/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the comparison table (Form 4 is masked stereolithography with an LCD and LED
+      backlight; the Form 3 family is laser SLA with galvanometers) and the 50 µm pixel size.
+
+  - id: formlabs-form3-design-specs
+    title: "Design specifications for 3D models (Form 3/Form 3B)"
+    authors: []
+    org: Formlabs
+    year: null
+    url: https://formlabs.com/support/Design-specifications-for-3D-models-form-3/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the support page; read every "Recommended" section (Clear resin at 100 µm on Form 3).
+
+  - id: formlabs-form2-design-specs
+    title: "Design specifications for 3D models (Form 2)"
+    authors: []
+    org: Formlabs
+    year: null
+    url: https://formlabs.com/support/Design-Specs/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the support page; read every "Recommended" section (Clear resin at 100 µm on the older
+      Form 2 laser printer).
+
+  - id: formlabs-hollowing-blog
+    title: "How to Hollow Out 3D Models With Meshmixer & PreForm to Save Material and Time"
+    authors: []
+    org: Formlabs
+    year: null
+    url: https://formlabs.com/blog/how-to-hollow-out-3d-models/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the drain-hole steps (one hole as close to the build platform as possible
+      and at least one more).
+
+  - id: formlabs-fuse-sls-design-guide
+    title: "Fuse Series SLS Design Guide"
+    authors: []
+    org: Formlabs
+    year: 2023
+    url: https://formlabs-media.formlabs.com/rs/060-UIG-504/images/WP-EN-fuse-series-sls-design-guide.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sls]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the 13-page PDF (March 2023); read the reference dimensions (Nylon 12), assembly
+      clearances, orientation and packing, and the material sections.
+
+  - id: hp-mjf-handbook-design-for-accuracy
+    title: "HP Multi Jet Fusion Handbook: Design for accuracy"
+    authors: []
+    org: HP
+    year: 2019
+    url: https://images.marketingcontent.ext.hp.com/Web/HPMartech/%7B4ad48959-344d-47d0-8bbc-066708df7dbd%7D_1_2.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the 2-page PDF (4AA7-4107ENW, April 2019); read the minimum-feature table, embossed and
+      engraved details and the accuracy notes. The handbook's other chapters sit behind a sign-up form and were not
+      read.
+
+  - id: hp-learning-design-3d-print-model
+    title: "How to design a 3D print model for HP Multi Jet Fusion"
+    authors: []
+    org: HP
+    year: null
+    url: https://www.hp.com/us-en/printers/3d-printers/learning-center/how-to-design-3d-print-model.html
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read wall thickness, cantilevers, moving and connecting parts, and hollow parts
+      (validated with HP PA 12, PA 12 GB and PA 11).
+
+  - id: hp-learning-joint-design
+    title: "Designing 3D printed joints"
+    authors: []
+    org: HP
+    year: null
+    url: https://www.hp.com/us-en/printers/3d-printers/learning-center/3d-printed-joint-design.html
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the threaded-union and machining paragraphs.
+
+  - id: hp-5200-dimensional-capability
+    title: "HP 3D HR PA 11, HP 3D HR PA 12 GB, and HP 3D HR PP enabled by BASF for the HP Jet Fusion 5200 Series: Dimensional Capability"
+    authors: []
+    org: HP
+    year: 2020
+    url: https://xometry-marketing.cdn.prismic.io/xometry-marketing/648ab46b-2162-4f28-9540-dab79a07e399_DimensionalAccuracy_PA11_PA12GB_PP_Sept2020.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the PDF (HP white paper 4AA7-7166ENW, September 2020, a copy on a bureau's file host);
+      read tables 1–6, XY and Z tolerances in three size bands at Cpk 1.33 and 1.00. It has no plain PA 12 data.
+
+  - id: protolabs-sla-guidelines
+    title: "Stereolithography (SLA) Design Guidelines and Capabilities"
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/services/3d-printing/stereolithography/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the tabbed tables (each tab matched to its panel) for feature, wall and hole
+      sizes by resolution, and the tolerance paragraph. Its high-resolution X-Y feature prints 0.005 in beside
+      0.1016 mm; 0.005 in is 0.127 mm.
+
+  - id: protolabs-sls-guidelines
+    title: "Design Guidelines for Selective Laser Sintering (SLS)"
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/services/3d-printing/selective-laser-sintering/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sls]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the wall, minimum feature, tolerance and warpage tables.
+
+  - id: protolabs-mjf-guidelines
+    title: "Design Guidelines for Multi Jet Fusion"
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/services/3d-printing/multi-jet-fusion/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the guideline table and the tolerance paragraph.
+
+  - id: protolabs-nylon-design-tip
+    title: "Nylon 3D Printing Tips for Quality Parts"
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/resources/design-tips/how-to-design-for-nylon-3d-printing/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sls, mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read minimum feature sizes and channel gaps for SLS and MJF, and the shell for
+      thick features.
+
+  - id: protolabs-mjf-design-tip
+    title: "How to Use Multi Jet Fusion for Functional 3D-Printed Parts"
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/resources/design-tips/how-to-use-multi-jet-fusion-for-functional-3d-printed-parts/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the resolution and wall-thickness paragraphs.
+
+  - id: xometry-sla-design-tips
+    title: "SLA 3D Printing Design Guidelines: 8 Essential Tips"
+    authors: [Niko Mroncz]
+    org: Xometry Asia
+    year: 2025
+    url: https://xometry.asia/en/sla-3d-printing-design-guidelines-8-essential-tips/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page (2025-09-02), written in the first person by Niko Mroncz, Head of Sales
+      Engineering at Xometry; read the eight rule-of-thumb lists and the specification table.
+
+  - id: xometry-sls-design-tips
+    title: "8 Essential Design Tips for SLS 3D Printing"
+    authors: [Niko Mroncz]
+    org: Xometry Asia
+    year: 2025
+    url: https://xometry.asia/en/8-essential-design-tips-for-sls-3d-printing/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sls]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page (2025-07-10, by the same author); read the rule-of-thumb lists.
+
+  - id: xometry-mjf-design-guidelines
+    title: "HP Multi Jet Fusion (MJF) 3D Printing Design Guidelines"
+    authors: []
+    org: Xometry Asia
+    year: 2020
+    url: https://xometry.asia/en/hp-mjf-3d-printing-design-guidelines/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page (2020-06-25); read the walls, clearances, hollowing and tolerance sections.
+
+  - id: xometry-mjf-service
+    title: "Multi Jet Fusion 3D Printing Service"
+    authors: []
+    org: Xometry
+    year: null
+    url: https://www.xometry.com/capabilities/3d-printing-service/hp-multi-jet-fusion/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the prototype and engineered tolerance tables (HP 5200, Balanced mode) and
+      the feature and build size table.
+
+  - id: xometry-sls-service
+    title: "Selective Laser Sintering (SLS) 3D Printing Service"
+    authors: []
+    org: Xometry
+    year: null
+    url: https://www.xometry.com/capabilities/3d-printing-service/selective-laser-sintering/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sls]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the general tolerance table.
+
+  - id: materialise-taurus-sla-guidelines
+    title: "Design Guidelines for Taurus | Stereolithography"
+    authors: []
+    org: Materialise
+    year: null
+    url: https://www.materialise.com/en/academy/industrial/design-am/taurus
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read wall thickness, hollowing, supports (the rule of 30°), text and the
+      specification table.
+
+  - id: materialise-pa12-sls-guidelines
+    title: "Design Guidelines for PA 12 (SLS) | Laser Sintering"
+    authors: []
+    org: Materialise
+    year: null
+    url: https://www.materialise.com/en/academy/industrial/design-am/pa12-sls
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sls]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read wall, hollowing, interlocking and assembled parts, holes and the
+      specification table.
+
+  - id: materialise-pa12-mjf-guidelines
+    title: "Design Guidelines for PA 12 (MJF) | Multi Jet Fusion"
+    authors: []
+    org: Materialise
+    year: null
+    url: https://www.materialise.com/en/academy/industrial/design-am/pa12-mjf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read every guideline section and the specification table.
+
+  - id: stratasys-direct-mjf-design-guide
+    title: "Multi Jet Fusion Design Guide"
+    authors: []
+    org: Stratasys Direct
+    year: 2019
+    url: https://www.stratasys.com/siteassets/sdm/content---website-storage/design-guides/dg_mjf_stratasys_direct_03062023.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the 9-page PDF (copyright 2019); read wall thickness, edges and fillets, hinges, joints,
+      bosses and the specification table. Two of its inch-to-mm conversions are wrong (0.010 in printed as 0.4 mm
+      and as 0.3 mm).
+
+  - id: eos-design-rules-overview-ls
+    title: "Design Rules Overview LS (Formiga P100)"
+    authors: [Franz-Josef Kerl]
+    org: EOS GmbH
+    year: 2011
+    url: https://www.3dimpuls.com/sites/default/files/download/design_rules_overview_ls_-_formiga_p100-v1_1.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sls]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the 15-slide deck (2011-03-22, by an EOS application engineer) on a reseller's site; no
+      copy was found on EOS's own site. Read walls, pins, hinges, loose connections and flat surfaces. The
+      gap-against-wall slide is a chart (its value is status u).
+
+  - id: jlc3dp-design-guideline
+    title: "3D Printing Design Guidelines: Size, Tolerance & Design Rules"
+    authors: []
+    org: JLC3DP (JLCPCB)
+    year: null
+    url: https://jlc3dp.com/help/article/3d-printing-design-guideline
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla, sls, mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the wall, embossed and engraved, clearance, escape hole and tolerance
+      tables. Its resin process is called SLA; the machine type is not stated.
+
+  - id: prusa-hollowing-kb
+    title: "Hollowing"
+    authors: []
+    org: Prusa Research
+    year: null
+    url: https://help.prusa3d.com/article/hollowing_117285
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the article (SL1, CW1 and SL1S SPEED); read the hollowing parameters and drainage holes.
+
+  - id: elegoo-satellite-hollowing
+    title: "Mastering Hollowing and Adding Holes in ELEGOO SatelLite"
+    authors: []
+    org: ELEGOO
+    year: 2026
+    url: https://www.elegoo.com/blogs/3d-printer-user-guide/mastering-hollowing-and-adding-holes-in-elegoo-satellite
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page (2026-09-18); read the hollowing and drainage-hole steps.
+
+  - id: lychee-voxels-hollowing
+    title: "Voxels Hollowing 3D: We Made Hollowing Way Better"
+    authors: []
+    org: Mango3D (Lychee Slicer)
+    year: 2026
+    url: https://lychee.co/whats-new/new-feature-voxels-hollowing-3-d-we-made-hollowing-way-better
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page (2026-01-29); read the thickness guidance.
+
+  # ------------------------------------------------------------------ sheet metal
+
+  - id: protolabs-sheet-metal
+    title: "Design Guidelines for Sheet Metal Fabrication"
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/services/sheet-metal-fabrication/design-guidelines/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal]
+    used_for: [research/compliant-mechanisms.md, research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the tolerance tables, the standard bend radii, the 4T minimum flange, the
+      4T feature-to-bend warning, hems (inside diameter T, return 6T), holes and slots (diameter T; edge distance
+      by thickness), notches and tabs, and countersinks.
+
+  - id: hubs-sheet-metal
+    title: "Sheet metal fabrication: The manufacturing & design guide"
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/guides/sheet-metal-fabrication/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the guide; read the design rules (kerf, holes, spacing, edge and bend distances, K-factor
+      range and table, bend relief width, bend height 2T + R, inside radius at least T) and the cutting-process
+      table.
+
+  - id: paulsen-2017-machine-design-sheet-metal
+    title: "Tips for Making Sheet-Metal Parts"
+    authors: [Greg Paulsen]
+    org: Machine Design (Paulsen was Director of Applications Engineering at Xometry)
+    year: 2017
+    url: https://www.machinedesign.com/mechanical-motion-systems/article/21835979/tips-for-making-sheet-metal-parts
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the article (2017-09-22, byline Greg Paulsen); read bends, curls, countersinks, hems, holes
+      and slots, notches and tabs, and relief cuts.
+
+  - id: davis-2001-fabricator-design-tips
+    title: "Design tips for sheet metal: Bend relief, small holes, hole distortion near bends, and minimum flange widths"
+    authors: [Gerald Davis]
+    org: The FABRICATOR (FMA Communications)
+    year: 2001
+    url: https://www.thefabricator.com/article/bending/design-tips-for-sheet-metal-bend-relief-small-holes-hole-distortion-near-bends-and-minimum-flange-widths
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: the live page is behind a bot check, so read the whole Internet Archive copy of 2017-12-01
+      (web.archive.org/web/20171201015017/…). Read punched hole size, inside radius by process and alloy, bend
+      relief, hole distance from the bend, and flange width.
+
+  - id: century-tywood-sheet-metal-reference
+    title: "Manufacturing Reference for Sheet Metal Products"
+    authors: []
+    org: Century Tywood (fabricator, Holliston, MA)
+    year: null
+    url: https://www.pblprojects.org/wp-content/uploads/2019/03/Manufacturing-Reference-Guide_for_Sheet_Metal_Products.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the 13-page PDF (a third-party copy); read grain direction, minimum flange 3.5 × (T + R),
+      bend relief T + R, punched hole to bend 1.5 × (T + R), hole size, hole to edge and hole spacing.
+
+  - id: dfma-dfm-checklist
+    title: "DFM Design Review Checklist"
+    authors: []
+    org: Boothroyd Dewhurst, Inc.
+    year: null
+    url: https://www.dfma.com/resources/pdf/dfm-design-review-checklist.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, injection-moulding, cnc]
+    used_for: [research/compliant-mechanisms.md, research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the PDF; read the sheet-metal (R ≥ T, hole to edge ≥ 2T, hole to bend ≥ 2T + R),
+      injection-moulding (ribs ≤ 60 % of the wall) and CNC (pocket depth to width under 4:1) items. The checklist
+      calls itself a screening tool, not absolute rules.
+
+  - id: sendcutsend-bend-relief
+    title: "How to Design Bend Reliefs & Corner Reliefs for Sheet Metal Parts"
+    authors: []
+    org: SendCutSend
+    year: 2024
+    url: https://sendcutsend.com/blog/guide-to-designing-bend-reliefs/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the article (published 2024-01-18, modified 2025-06-19); read relief width (T/2), relief
+      depth (T + R + 0.02 in from the bend line), corner gap (0.015 in) and that CAD tools measure depth from
+      different datums.
+
+  - id: sendcutsend-ordering-guide
+    title: "SendCutSend ordering guide (sendcutsend-ordering-guide.md)"
+    authors: []
+    org: SendCutSend
+    year: null
+    url: https://cdn.sendcutsend.com/specs/sendcutsend-ordering-guide.md
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the file; read the Bending section (radius set by tooling, K typically 0.33–0.50, bend
+      angle at most 120–130°, ±1° up to 24 in and ±2° above).
+
+  - id: sendcutsend-specs
+    title: "SendCutSend engineering specifications (sendcutsend-specs.json, schema 1.0)"
+    authors: []
+    org: SendCutSend
+    year: 2026
+    url: https://cdn.sendcutsend.com/specs/sendcutsend-specs.json
+    access: free
+    terms: >-
+      cited; published by SendCutSend for design validation and manufacturability checks; the values in shop_tables are
+      facts read from it, re-fetch before relying on them
+    areas: [sheet-metal]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: downloaded the JSON (_meta.generated_at 2026-04-29, 178 materials). Read bending_specs for the
+      5052 aluminium (ALU-) and cold-rolled mild steel (CRS-) SKUs: thickness, bend_radius, k_factor,
+      min_flange_length_after_bend, bend_relief_depth. On review, downloaded the same file again (same generated_at):
+      no ALU6061- or ALU7075- SKU has bending_specs, and ALU2024-025 (0.025 in) has bend_radius 0.07 in. shop_tables
+      holds four of its eight bendable 5052 SKUs and six of its seven mild-steel ones.
+
+  - id: solidworks-k-factor
+    title: "K-Factor - 2022 - SOLIDWORKS Help"
+    authors: []
+    org: Dassault Systemes SolidWorks Corporation
+    year: 2022
+    url: https://help.solidworks.com/2022/English/SolidWorks/sldworks/c_K_Factor.htm
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: the live page renders with script only, so read the Internet Archive copy of 2025-02-18
+      (web.archive.org/web/20250218204342/…): K is the neutral sheet's position as a ratio of the thickness, and
+      BA = π(R + K·T)·A/180.
+
+  # ------------------------------------------------------------------ injection moulding
+
+  - id: protolabs-injection-molding
+    title: "Design Guidelines: Plastic Injection Molding"
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/services/injection-molding/plastic-injection-molding/design-guidelines/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [injection-moulding]
+    used_for: [research/compliant-mechanisms.md, research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the draft table (0.5°, 2°, 3° shut-off, 3° PM-T1, 5°+ PM-T2), the
+      recommended wall thickness by resin (inches and mm; the page says it is adapted from manufacturingcenter.com),
+      the side-action size limits and the tolerance sentence.
+
+  - id: protolabs-im-ribs-gussets
+    title: "Design Stronger Molded Parts: Ribs, Gussets, and Materials"
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/resources/design-tips/design-stronger-molded-parts/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [injection-moulding]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the rib and gusset paragraph (at most 60 % of the nominal wall) and the wall
+      thickness paragraph (stable from 1.5 to 2.5 mm; 3.8 mm sections can sink on themselves).
+
+  - id: protolabs-im-bosses
+    title: "Plastic Boss Design on Molded Parts"
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/resources/design-tips/plastic-boss-design-on-molded-parts/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [injection-moulding]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the boss wall (40–60 % of the wall it rises from) and boss draft (0.5–3° by
+      height).
+
+  - id: dupont-design-module-1
+    title: "General Design Principles for DuPont Engineering Polymers (Design Guide - Module I)"
+    authors: []
+    org: E. I. du Pont de Nemours and Company
+    year: 2000
+    url: https://www.emcoplastics.com/assets/pdf/acetal/General%20Design%20Principles%20for%20Engineering%20Polymers.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [injection-moulding, snap-fits, materials]
+    used_for: [research/compliant-mechanisms.md, research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the 136-page PDF (a distributor's copy, copyright 2000); read the text of chapter 3 (fillets
+      and radii, Table 3.01 draft, bosses, blind holes, undercuts, moulded-in inserts) and the rib text in chapter 4.
+      Figures 3.10 (boss proportions) and 4.07 (rib proportions) have no text layer, so on review PDF pages 12 and 30
+      were rendered and their values read from the figures.
+
+  - id: covestro-part-mold-design
+    title: "Engineering Polymers: Part and Mold Design - Thermoplastics, A Design Guide"
+    authors: []
+    org: Covestro LLC
+    year: 2015
+    url: https://solutions.covestro.com/-/media/covestro/solution-center/brands/downloads/imported/1557214249.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [injection-moulding]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the 172-page PDF (COV-034, 10/2015). Its text layer uses a shifted font encoding, so it was
+      decoded and the rib table (Table 2-1) checked against a rendered page. Read chapter 2 (wall thickness, ribs,
+      bosses, gussets, corners, draft, holes and cores, undercuts) and chapter 7 (gates).
+
+  - id: fictiv-im-design-guide
+    title: "Injection Molding Design Guide: Best Practices for Molded Plastic Parts"
+    authors: []
+    org: Fictiv
+    year: 2025
+    url: https://www.fictiv.com/articles/injection-molding-design-guide
+    access: free
+    terms: cited and summarised, never copied
+    areas: [injection-moulding]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page (byline "Team Fictiv", 2025-08-15); read the wall table, corners, draft, ribs and
+      bosses. Its acrylic row repeats the inch values in the mm column (a misprint), so that row is not used.
+
+  # ------------------------------------------------------------------ CNC
+
+  - id: hubs-cnc-design
+    title: "How to design parts for CNC machining"
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/how-design-parts-cnc-machining/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [cnc]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the table of recommended and feasible values (cavities, internal edges, floor
+      radii, walls, holes, threads, small features, tolerances, text) and the undercut section.
+
+  - id: hubs-cnc-cost-tips
+    title: "14 proven design tips to reduce the cost of CNC machining"
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/reducing-cnc-machining-costs-design-tips/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [cnc]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the tips on cavity depth (2–3 times the tool diameter), the 4:1 aspect ratio
+      of slender features and the ±0.125 mm default tolerance.
+
+  - id: protolabs-cnc-milling
+    title: "Design Guidelines: CNC Milling"
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/services/cnc-machining/cnc-milling/design-guidelines/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [cnc]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read size limits (2 in milled depth per side), the tolerance (±0.005 in, and ISO
+      2768-1 medium or fine), feature and nominal thickness, threads (M2–M12) and text.
+
+  - id: protolabs-cnc-turning
+    title: "Design Guidelines: CNC Turning"
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/services/cnc-machining/cnc-turning/design-guidelines/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [cnc]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the smallest diameter (0.030 in), wall thickness (0.020 in) and hole sizes.
+
+  - id: fictiv-cnc-design-guide
+    title: "Fictiv CNC Machining Design Guide"
+    authors: []
+    org: Fictiv
+    year: 2021
+    url: https://www.fictiv.com/articles/fictiv-cnc-machining-design-guide
+    access: free
+    terms: cited and summarised, never copied
+    areas: [cnc]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page (byline "Team Fictiv", 2021-06-29); read drilling, tapping, milling (internal
+      corners, depth of cut, thin walls), turning and tolerances.
+
+  - id: xometry-cnc-10-tips
+    title: "Video: 10 Tips to Improve Your CAD Designs for CNC Machining"
+    authors: [Joel Schadegg, Greg Paulsen]
+    org: Xometry
+    year: 2022
+    url: https://www.xometry.com/resources/machining/10-tips-improve-cad-cnc-design/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [cnc]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: the live page answers scripts with HTTP 429, so read the Internet Archive copy of 2026-05-15
+      (web.archive.org/web/20260515023712/…). Byline "Written by Joel Schadegg, Updated by Greg Paulsen"; published
+      2022-11-15, updated 2026-02-27. Read the tips on walls, cavities, radii, holes and threads.
+
+  - id: xometry-cnc-corner-radii
+    title: "CNC Machining Design Tip: Optimizing Internal Corner Radii"
+    authors: [Dean McClements, Aaron Lichtig]
+    org: Xometry
+    year: 2020
+    url: https://www.xometry.com/resources/machining/cnc-machining-optimizing-internal-corner-radii/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [cnc]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: the live page answers scripts with HTTP 429, so read the Internet Archive copy of 2026-03-07
+      (web.archive.org/web/20260307153318/…). Byline "Written by Dean McClements, Updated by Aaron Lichtig";
+      published 2020-09-29, updated 2024-08-13. Read the 0.02–0.05 in added to the tool radius.
+
+  - id: harvey-tool-long-reach
+    title: "Miniature End Mills - Square - Long Reach, Standard Flute / Long Flute"
+    authors: []
+    org: Harvey Tool
+    year: null
+    url: https://www.harveytool.com/products/miniature-end-mills---square---long-reach-standard-flute
+    access: free
+    terms: cited and summarised, never copied
+    areas: [cnc]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the two product pages (standard flute here; long flute at
+      …/miniature-end-mills---square---long-reach-long-flute); read the description bullets (length of cut 3 × D,
+      and at least 5 × D for the long-flute tools). The size tables load with script and were not read.
+
+# Formulas the rules rely on (not limits).
+formulas:
+  - id: sm-bend-allowance
+    expr: "pi*(R + K*T)*A/180"
+    gives: bend allowance, the arc length of the neutral sheet (mm)
+    variables: {R: inside bend radius (mm), K: K-factor, T: thickness (mm), A: bend angle (deg)}
+    source: solidworks-k-factor
+    verified: 2026-10-31
+
+rules:
+
+  # ================================================================== FDM
+  # Orientation and anisotropy: the numbers are in research/compliant-mechanisms.md §5–6 (dataset fdm-anisotropy-tds)
+  # and are not repeated here. Across the layers, strength is 0.40–0.90 of in-plane and strain to failure 0.10–0.61.
+
+  - id: fdm-orientation-z-strength-ratio-tds
+    process: fdm
+    feature: orientation
+    quantity: strength across the layers (Z) as a fraction of in-plane (XY), PLA, PETG, ASA and CoPA data sheets
+    min: 0.40
+    max: 0.90
+    units: ratio
+    applies: 100 % infill tensile bars; the per-material rows are in compliant-mechanisms.md §5
+    source: dataset:fdm-anisotropy-tds
+    status: read
+    verified: 2026-10-31
+  - id: fdm-orientation-z-strain-ratio-tds
+    process: fdm
+    feature: orientation
+    quantity: strain to failure across the layers (Z) as a fraction of in-plane (XY), same data sheets
+    min: 0.10
+    max: 0.61
+    units: ratio
+    applies: 100 % infill tensile bars; strain falls much more than strength, so flexing features lie in XY
+    source: dataset:fdm-anisotropy-tds
+    status: read
+    verified: 2026-10-31
+
+  - id: fdm-overhang-max-hubs
+    process: fdm
+    feature: overhang
+    compare: overhang-max
+    quantity: steepest overhang printed without support, from vertical
+    max: 45
+    units: deg
+    applies: most materials; above it, add support and expect marks on the supported face
+    source: hubs-fdm-design
+    status: read
+    verified: 2026-10-31
+  - id: fdm-overhang-max-prusa
+    process: fdm
+    feature: overhang
+    compare: overhang-max
+    quantity: steepest overhang printed cleanly without support, from vertical
+    min: 45
+    max: 60
+    units: deg
+    applies: 0.4 mm nozzle, depending on settings; smaller nozzles (0.25 mm) may manage less than 45°
+    source: prusa-modeling-for-3dp
+    status: read
+    verified: 2026-10-31
+  - id: fdm-overhang-max-prusa-360-cooling
+    process: fdm
+    feature: overhang
+    compare: overhang-max
+    quantity: steepest overhang printed without support, from vertical
+    max: 75
+    units: deg
+    applies: Prusa printers with the Nextruder and 360° part cooling (MK4S, CORE One family), per Prusa
+    source: prusa-modeling-for-3dp
+    status: read
+    verified: 2026-10-31
+  - id: fdm-overhang-max-xometry-eu
+    process: fdm
+    feature: overhang
+    compare: overhang-max
+    quantity: steepest overhang without support, from vertical
+    max: 45
+    units: deg
+    applies: Xometry Europe's FDM service; chamfer or round the edge so it prints
+    source: xometry-eu-fdm-design-tips
+    status: read
+    verified: 2026-10-31
+
+  - id: fdm-bridge-max-hubs
+    process: fdm
+    feature: bridge
+    compare: bridge-max
+    quantity: longest bridge without visible sag or support marks
+    max: 5
+    units: mm
+    applies: horizontal bridges and roofs; longer ones sag or need support, or split the part
+    source: hubs-fdm-design
+    status: read
+    verified: 2026-10-31
+  - id: fdm-bridge-max-xometry-eu
+    process: fdm
+    feature: bridge
+    compare: bridge-max
+    quantity: bridge length above which support or a design change may be needed
+    max: 5
+    units: mm
+    applies: Xometry Europe's FDM service
+    source: xometry-eu-fdm-design-tips
+    status: read
+    verified: 2026-10-31
+
+  - id: fdm-wall-min-hubs
+    process: fdm
+    feature: wall
+    compare: min-wall
+    quantity: recommended minimum wall thickness
+    min: 0.8
+    units: mm
+    applies: any FDM printer in the Protolabs Network
+    source: hubs-3dp-geometry-limits
+    status: read
+    verified: 2026-10-31
+  - id: fdm-wall-min-prusa
+    process: fdm
+    feature: wall
+    compare: min-wall
+    variant: one perimeter
+    quantity: thinnest printable wall, one perimeter
+    min: 0.45
+    units: mm
+    applies: 0.4 mm nozzle in PrusaSlicer (0.45 mm extrusion width); walls come in whole perimeters (2 = 0.9 mm,
+      3 = 1.35 mm, 4 = 1.8 mm), and a wall thinner than one perimeter does not print
+    source: prusa-modeling-for-3dp
+    status: read
+    verified: 2026-10-31
+  - id: fdm-wall-min-xometry-eu
+    process: fdm
+    feature: wall
+    compare: min-wall
+    variant: supported–unsupported
+    quantity: minimum wall thickness
+    min: 0.75
+    max: 1.0
+    units: mm
+    applies: Xometry Europe; 0.75 mm where the wall is supported, 1.0 mm unsupported; or three nozzle diameters
+    source: xometry-eu-fdm-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: fdm-wall-min-nozzle-xometry-eu
+    process: fdm
+    feature: wall
+    quantity: minimum wall thickness as a multiple of the nozzle
+    min: "3*nozzle"
+    units: mm
+    applies: Xometry Europe's alternative to the absolute 0.75–1.0 mm
+    source: xometry-eu-fdm-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: fdm-wall-min-xometry-us
+    process: fdm
+    feature: wall
+    compare: min-wall
+    variant: supporting wall
+    quantity: minimum thickness of a supporting wall
+    min: 1.2
+    max: 1.5
+    units: mm
+    applies: Xometry (US) FDM service, industrial printers; the guide gives 0.047–0.06 in
+    as_printed: 0.047–0.06 in
+    source: xometry-fdm-mini-guide
+    status: read
+    verified: 2026-10-31
+
+  - id: fdm-hole-min-xometry-us
+    process: fdm
+    feature: hole
+    compare: min-hole
+    quantity: smallest hole diameter that stays round
+    min: 1.0
+    units: mm
+    applies: Xometry (US); holes print best with their axis vertical (in the XY plane); critical through holes may be
+      drilled after printing
+    as_printed: 0.04 in
+    source: xometry-fdm-mini-guide
+    status: read
+    verified: 2026-10-31
+  - id: fdm-hole-undersize-cnckitchen
+    process: fdm
+    feature: hole
+    quantity: how much smaller a printed hole came out than designed
+    value: 0.25
+    units: mm
+    applies: one measurement (Prusa CORE One L, PolySonic PLA, M3 insert holes); every printer and material differs,
+      so print a test coupon. Protolabs Network also says vertical holes print undersize and to drill critical ones
+    source: cnckitchen-heat-set-hole-size
+    status: read
+    verified: 2026-10-31
+
+  - id: fdm-elephant-foot-compensation-prusa
+    process: fdm
+    feature: elephant-foot
+    quantity: first-layer inset (elephant-foot compensation) in the slicer
+    value: 0.2
+    units: mm
+    applies: 0.4 mm nozzle in PrusaSlicer; on by default in Prusa's own profiles
+    source: prusa-elephant-foot
+    status: read
+    verified: 2026-10-31
+  - id: fdm-elephant-foot-chamfer-hubs
+    process: fdm
+    feature: elephant-foot
+    quantity: chamfer angle (or a radius) on edges touching the build plate, where fit or overall size matters
+    value: 45
+    units: deg
+    applies: any FDM part whose bottom edges must assemble; also eases removal from the plate. Prusa prefers a chamfer
+      to a fillet on edges facing the bed
+    source: hubs-fdm-design
+    status: read
+    verified: 2026-10-31
+
+  - id: fdm-corner-radius-hubs
+    process: fdm
+    feature: corner
+    quantity: smallest outside corner or edge radius the nozzle leaves
+    value: "nozzle"
+    units: mm
+    applies: corners in the layer plane are never sharp
+    source: hubs-fdm-design
+    status: read
+    verified: 2026-10-31
+
+  - id: fdm-pin-min-hubs
+    process: fdm
+    feature: pin
+    compare: min-pin
+    quantity: vertical pin diameter below which the pin is perimeters only and weakly joined
+    min: 5
+    units: mm
+    applies: smaller pins need a fillet at the base, or a hole and a bought pin
+    source: hubs-fdm-design
+    status: read
+    verified: 2026-10-31
+  - id: fdm-pin-min-xometry-eu
+    process: fdm
+    feature: pin
+    compare: min-pin
+    quantity: minimum pin diameter (keep it short)
+    min: 1.0
+    units: mm
+    applies: Xometry Europe; columns 2–3 mm minimum
+    source: xometry-eu-fdm-design-tips
+    status: read
+    verified: 2026-10-31
+
+  - id: fdm-clearance-snap-hubs
+    process: fdm
+    feature: clearance
+    compare: clearance-fit
+    quantity: nominal clearance between mating parts (snap fits)
+    value: 0.5
+    units: mm
+    applies: Protolabs Network FDM
+    source: hubs-snapfit-3dp
+    status: read
+    verified: 2026-10-31
+  - id: fdm-clearance-moving-prusa
+    process: fdm
+    feature: clearance
+    compare: clearance-fit
+    quantity: starting clearance for parts that move (hinges) or snap
+    min: 0.3
+    units: mm
+    applies: Original Prusa printers, which Prusa says are accurate to at least 0.2 mm; test-print and adjust
+    source: prusa-modeling-for-3dp
+    status: read
+    verified: 2026-10-31
+  - id: fdm-clearance-sliding-xometry-eu
+    process: fdm
+    feature: clearance
+    compare: clearance-fit
+    quantity: clearance for a sliding fit
+    min: 0.2
+    max: 0.3
+    units: mm
+    applies: Xometry Europe; print mating faces vertical. The same page gives 0.5 mm "for an interference fit", which
+      reads as a slip in the source (a clearance cannot make an interference fit), so it is not used here
+    source: xometry-eu-fdm-design-tips
+    status: read
+    verified: 2026-10-31
+
+  - id: fdm-tolerance-desktop-hubs
+    process: fdm
+    feature: tolerance
+    compare: tolerance
+    quantity: expected tolerance (±) on a dimension L
+    value: "max(0.005*L, 0.5)"
+    units: mm
+    applies: desktop (prototyping) FDM; ±0.5 % with a lower limit of ±0.5 mm
+    source: hubs-3dp-dimensional-accuracy
+    status: read
+    verified: 2026-10-31
+  - id: fdm-tolerance-industrial-hubs
+    process: fdm
+    feature: tolerance
+    compare: tolerance
+    quantity: expected tolerance (±) on a dimension L
+    value: "max(0.0015*L, 0.2)"
+    units: mm
+    applies: industrial FDM; ±0.15 % with a lower limit of ±0.2 mm
+    source: hubs-3dp-dimensional-accuracy
+    status: read
+    verified: 2026-10-31
+  - id: fdm-tolerance-xometry-eu
+    process: fdm
+    feature: tolerance
+    compare: tolerance
+    quantity: general tolerance (±) on a dimension L
+    value: "max(0.005*L, 0.5)"
+    units: mm
+    applies: >-
+      Xometry Europe's FDM service, standard and industrial machines (up to 900 × 600 × 900 mm); the specification
+      table prints ±0.5 % (±0.5 mm), read here as 0.5 % with a 0.5 mm floor. The page states no floor and no
+      "whichever is greater"; the floor is this file's reading
+    source: xometry-eu-fdm-design-tips
+    as_printed: ±0.5% (±0.5 mm)
+    status: read
+    verified: 2026-10-31
+  - id: fdm-tolerance-xometry-us
+    process: fdm
+    feature: tolerance
+    compare: tolerance
+    quantity: tolerance (±) Xometry says its FDM service holds
+    value: 0.127
+    units: mm
+    applies: Xometry (US) industrial FDM; ±0.005 in, with no size dependence stated
+    as_printed: ±0.005 in
+    source: xometry-fdm-mini-guide
+    status: read
+    verified: 2026-10-31
+  - id: fdm-shrinkage-hubs
+    process: fdm
+    feature: shrinkage
+    quantity: typical shrinkage
+    min: 0.2
+    max: 1.0
+    units: percent
+    applies: depends on the material; high-temperature materials warp more (add a bottom radius or a brim)
+    source: hubs-3dp-dimensional-accuracy
+    status: read
+    verified: 2026-10-31
+
+  - id: fdm-thread-printed-min-hubs
+    process: fdm
+    feature: thread
+    quantity: smallest thread worth printing
+    min: 5
+    units: mm
+    applies: printed threads in FDM; below M5 use an insert, a tapped hole or a self-tapping screw
+    as_printed: M5
+    source: hubs-3dp-threaded-fasteners
+    status: read
+    verified: 2026-10-31
+  - id: fdm-thread-wall-min-hubs
+    process: fdm
+    feature: thread
+    quantity: wall around a threaded hole or insert
+    min: "D"
+    units: mm
+    applies: rule of thumb, D is the fastener's nominal diameter (an M5 needs 5 mm of wall)
+    source: hubs-3dp-threaded-fasteners
+    status: read
+    verified: 2026-10-31
+  - id: fdm-nut-pocket-clearance-hubs
+    process: fdm
+    feature: thread
+    quantity: total offset around an embedded nut (0.1 mm per side) for a loose fit
+    value: 0.2
+    units: mm
+    applies: a starting point; more for nuts above M12; iterate for the printer
+    source: hubs-3dp-threaded-fasteners
+    status: read
+    verified: 2026-10-31
+  - id: fdm-self-tap-engagement-hubs
+    process: fdm
+    feature: thread
+    quantity: thread engagement to size a self-tapping screw's pilot hole for
+    min: 75
+    max: 80
+    units: percent
+    applies: when the screw maker gives no pilot size; not for parts taken apart often
+    source: hubs-3dp-threaded-fasteners
+    status: read
+    verified: 2026-10-31
+
+  - id: fdm-insert-hole-m3-nominal-cnckitchen
+    process: fdm
+    feature: insert
+    quantity: nominal (as-built) hole diameter for CNC Kitchen's M3 heat-set insert
+    value: 4.0
+    units: mm
+    applies: the hole as it comes out; drilled holes at 4.0 mm gave easy fitting and full strength, and pull-out
+      falls sharply above 4.1–4.2 mm
+    source: cnckitchen-heat-set-hole-size
+    status: read
+    verified: 2026-10-31
+  - id: fdm-insert-hole-cad-offset-cnckitchen
+    process: fdm
+    feature: insert
+    quantity: amount added to the nominal insert hole in CAD so it prints to size
+    min: 0.2
+    max: 0.3
+    units: mm
+    applies: small inserts; size so the insert pre-seats with slight resistance (M3 in PLA on one printer, 4.2 mm in
+      CAD kept about 90 % of the highest pull-out force)
+    source: cnckitchen-heat-set-hole-size
+    status: read
+    verified: 2026-10-31
+  - id: fdm-insert-blind-depth-cnckitchen
+    process: fdm
+    feature: insert
+    quantity: extra depth of a blind insert hole beyond the insert's length
+    value: 1.0
+    units: mm
+    applies: blind holes; through holes need be no longer than the insert. Holes straight, not tapered; normally no
+      chamfer
+    source: cnckitchen-heat-set-tips
+    status: read
+    verified: 2026-10-31
+  - id: fdm-insert-iron-temp-cnckitchen
+    process: fdm
+    feature: insert
+    quantity: soldering-iron temperature above the printing temperature
+    min: 10
+    max: 20
+    units: degC
+    applies: melt in about 90 % of the way, press the rest flush with a tool; resin parts glue the insert instead
+    source: cnckitchen-heat-set-tips
+    status: read
+    verified: 2026-10-31
+
+  - id: fdm-emboss-text-xometry-eu
+    process: fdm
+    feature: text
+    quantity: embossed text stroke width (height 0.5 mm)
+    min: 0.8
+    units: mm
+    applies: Xometry Europe; text on top faces reads best
+    source: xometry-eu-fdm-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: fdm-engrave-text-xometry-eu
+    process: fdm
+    feature: text
+    quantity: engraved text stroke width (depth 0.5 mm)
+    min: 1.0
+    units: mm
+    applies: Xometry Europe
+    source: xometry-eu-fdm-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: fdm-rib-min-xometry-us
+    process: fdm
+    feature: rib
+    quantity: minimum rib thickness
+    min: 1.5
+    units: mm
+    applies: Xometry (US); several extrusions inside each rib
+    as_printed: 0.06 in
+    source: xometry-fdm-mini-guide
+    status: read
+    verified: 2026-10-31
+
+  # ================================================================== SLA / MSLA
+
+  - id: sla-wall-supported-min-hubs
+    process: sla
+    feature: wall
+    compare: min-wall
+    variant: supported
+    quantity: minimum supported wall (joined to the part on at least two sides)
+    min: 0.4
+    units: mm
+    applies: Protolabs Network SLA
+    source: hubs-sla-design
+    status: read
+    verified: 2026-10-31
+  - id: sla-wall-unsupported-min-hubs
+    process: sla
+    feature: wall
+    compare: min-wall
+    variant: unsupported
+    quantity: minimum unsupported wall (joined on fewer than two sides), with a filleted base
+    min: 0.6
+    units: mm
+    applies: Protolabs Network SLA
+    source: hubs-sla-design
+    status: read
+    verified: 2026-10-31
+  - id: sla-wall-min-hubs-table
+    process: sla
+    feature: wall
+    compare: min-wall
+    variant: cross-process table
+    quantity: recommended minimum wall thickness
+    min: 0.5
+    units: mm
+    applies: SLA/DLP in the cross-process table
+    source: hubs-3dp-geometry-limits
+    status: read
+    verified: 2026-10-31
+  - id: sla-overhang-unsupported-hubs
+    process: sla
+    feature: overhang
+    quantity: unsupported overhang length (and at least 19° from level)
+    max: 1.0
+    units: mm
+    applies: only when printing without supports, which Protolabs Network advises against
+    source: hubs-sla-design
+    status: read
+    verified: 2026-10-31
+  - id: sla-hole-min-hubs
+    process: sla
+    feature: hole
+    compare: min-hole
+    quantity: minimum hole diameter
+    min: 0.5
+    max: 0.8
+    units: mm
+    applies: the page's summary table says 0.5 mm; its text says holes under 0.8 mm may close. Use 0.8 mm to be safe
+    source: hubs-sla-design
+    status: read
+    verified: 2026-10-31
+  - id: sla-hollow-wall-min-hubs
+    process: sla
+    feature: hollow
+    quantity: wall of a hollowed part
+    min: 2.0
+    units: mm
+    applies: non-functional hollowed models
+    source: hubs-sla-design
+    status: read
+    verified: 2026-10-31
+  - id: sla-drain-hole-min-hubs
+    process: sla
+    feature: escape-hole
+    compare: escape-hole
+    quantity: drain-hole diameter, at least one per hollow section
+    min: 3.5
+    units: mm
+    applies: hollow SLA parts; trapped resin causes cupping and cracks
+    source: hubs-sla-design
+    status: read
+    verified: 2026-10-31
+  - id: sla-clearance-moving-hubs
+    process: sla
+    feature: clearance
+    compare: clearance-fit
+    quantity: clearance between moving parts
+    min: 0.5
+    units: mm
+    applies: Protolabs Network SLA; 0.2 mm for assembly connections, 0.1 mm for a push or snug fit
+    source: hubs-sla-design
+    status: read
+    verified: 2026-10-31
+  - id: sla-clearance-snap-hubs
+    process: sla
+    feature: clearance
+    compare: clearance-fit
+    quantity: nominal clearance between mating parts (snap fits)
+    value: 0.3
+    units: mm
+    applies: Protolabs Network SLA
+    source: hubs-snapfit-3dp
+    status: read
+    verified: 2026-10-31
+  - id: sla-emboss-min-hubs
+    process: sla
+    feature: text
+    quantity: embossed detail height
+    min: 0.1
+    units: mm
+    applies: Protolabs Network SLA; engraved detail at least 0.4 mm wide and 0.4 mm deep
+    source: hubs-sla-design
+    status: read
+    verified: 2026-10-31
+  - id: sla-bridge-wide-max-hubs
+    process: sla
+    feature: bridge
+    quantity: longest wide horizontal bridge
+    max: 21
+    units: mm
+    applies: wide bridges peel harder than thin ones, so keep them shorter
+    source: hubs-sla-design
+    status: read
+    verified: 2026-10-31
+  - id: sla-tolerance-desktop-hubs
+    process: sla
+    feature: tolerance
+    compare: tolerance
+    quantity: expected tolerance (±) on a dimension L
+    value: "max(0.005*L, 0.10)"
+    units: mm
+    applies: desktop SLA; ±0.5 % with a lower limit of ±0.10 mm
+    source: hubs-3dp-dimensional-accuracy
+    status: read
+    verified: 2026-10-31
+  - id: sla-tolerance-industrial-hubs
+    process: sla
+    feature: tolerance
+    compare: tolerance
+    quantity: expected tolerance (±) on a dimension L
+    value: "max(0.0015*L, 0.01)"
+    units: mm
+    applies: industrial SLA; ±0.15 % with a lower limit of ±0.01 mm
+    source: hubs-3dp-dimensional-accuracy
+    status: read
+    verified: 2026-10-31
+  - id: sla-wall-min-formlabs-form2
+    process: sla
+    feature: wall
+    compare: min-wall
+    variant: Form 2 (laser)
+    quantity: minimum wall, supported or unsupported (both the same)
+    min: 0.4
+    units: mm
+    applies: Form 2 (laser), Clear resin at 100 µm
+    source: formlabs-form2-design-specs
+    status: read
+    verified: 2026-10-31
+  - id: sla-overhang-angle-formlabs-form2
+    process: sla
+    feature: overhang
+    compare: overhang-angle-min
+    variant: Form 2 (laser)
+    quantity: unsupported overhang angle from level
+    min: 19
+    units: deg
+    applies: Form 2 (laser), Clear resin at 100 µm; 35 × 10 × 3 mm test bar
+    source: formlabs-form2-design-specs
+    status: read
+    verified: 2026-10-31
+  - id: sla-overhang-length-formlabs-form2
+    process: sla
+    feature: overhang
+    compare: overhang-length-max
+    variant: Form 2 (laser)
+    quantity: horizontal unsupported overhang length
+    max: 3.0
+    units: mm
+    applies: Form 2 (laser), Clear resin at 100 µm
+    source: formlabs-form2-design-specs
+    status: read
+    verified: 2026-10-31
+  - id: sla-bridge-formlabs-form2
+    process: sla
+    feature: bridge
+    compare: bridge-max
+    variant: Form 2 (laser)
+    quantity: horizontal span between supports
+    max: 21
+    units: mm
+    applies: Form 2 (laser), Clear resin at 100 µm; beam 5 mm wide and 3 mm thick, wider beams shorter
+    source: formlabs-form2-design-specs
+    status: read
+    verified: 2026-10-31
+  - id: sla-emboss-formlabs-form2
+    process: sla
+    feature: detail
+    compare: emboss-min
+    variant: Form 2 (laser)
+    quantity: embossed detail height and width
+    min: 0.1
+    units: mm
+    applies: Form 2 (laser), Clear resin at 100 µm
+    source: formlabs-form2-design-specs
+    status: read
+    verified: 2026-10-31
+  - id: sla-engrave-formlabs-form2
+    process: sla
+    feature: detail
+    compare: engrave-min
+    variant: Form 2 (laser)
+    quantity: engraved detail depth and width
+    min: 0.4
+    units: mm
+    applies: Form 2 (laser), Clear resin at 100 µm
+    source: formlabs-form2-design-specs
+    status: read
+    verified: 2026-10-31
+  - id: sla-clearance-formlabs-form2
+    process: sla
+    feature: clearance
+    compare: clearance-fit
+    variant: Form 2 (laser)
+    quantity: clearance between parts of one print (for example a gear pair)
+    min: 0.5
+    units: mm
+    applies: Form 2 (laser), Clear resin at 100 µm
+    source: formlabs-form2-design-specs
+    status: read
+    verified: 2026-10-31
+  - id: sla-hole-min-formlabs-form2
+    process: sla
+    feature: hole
+    compare: min-hole
+    variant: Form 2 (laser)
+    quantity: hole diameter, X, Y and Z
+    min: 0.8
+    units: mm
+    applies: Form 2 (laser), Clear resin at 100 µm
+    source: formlabs-form2-design-specs
+    status: read
+    verified: 2026-10-31
+  - id: sla-drain-hole-formlabs-form2
+    process: sla
+    feature: drain-hole
+    compare: escape-hole
+    variant: Form 2 (laser)
+    quantity: drain hole for an enclosed cavity
+    min: 3.5
+    units: mm
+    applies: Form 2 (laser), Clear resin at 100 µm; without it the cavity can cup and blow out
+    source: formlabs-form2-design-specs
+    status: read
+    verified: 2026-10-31
+  - id: sla-wall-min-formlabs-form3
+    process: sla
+    feature: wall
+    compare: min-wall
+    variant: Form 3 / 3B (laser)
+    quantity: minimum wall, supported or unsupported (both the same)
+    min: 0.2
+    units: mm
+    applies: Form 3 / 3B (laser), Clear resin at 100 µm
+    source: formlabs-form3-design-specs
+    status: read
+    verified: 2026-10-31
+  - id: sla-overhang-angle-formlabs-form3
+    process: sla
+    feature: overhang
+    compare: overhang-angle-min
+    variant: Form 3 / 3B (laser)
+    quantity: unsupported overhang angle from level
+    min: 10
+    units: deg
+    applies: Form 3 / 3B (laser), Clear resin at 100 µm; 35 × 10 × 3 mm test bar
+    source: formlabs-form3-design-specs
+    status: read
+    verified: 2026-10-31
+  - id: sla-overhang-length-formlabs-form3
+    process: sla
+    feature: overhang
+    compare: overhang-length-max
+    variant: Form 3 / 3B (laser)
+    quantity: horizontal unsupported overhang length
+    max: 5.0
+    units: mm
+    applies: Form 3 / 3B (laser), Clear resin at 100 µm
+    source: formlabs-form3-design-specs
+    status: read
+    verified: 2026-10-31
+  - id: sla-bridge-formlabs-form3
+    process: sla
+    feature: bridge
+    compare: bridge-max
+    variant: Form 3 / 3B (laser)
+    quantity: horizontal span between supports
+    max: 29
+    units: mm
+    applies: Form 3 / 3B (laser), Clear resin at 100 µm; beam 5 mm wide and 3 mm thick, wider beams shorter
+    source: formlabs-form3-design-specs
+    status: read
+    verified: 2026-10-31
+  - id: sla-emboss-formlabs-form3
+    process: sla
+    feature: detail
+    compare: emboss-min
+    variant: Form 3 / 3B (laser)
+    quantity: embossed detail height and width
+    min: 0.1
+    units: mm
+    applies: Form 3 / 3B (laser), Clear resin at 100 µm
+    source: formlabs-form3-design-specs
+    status: read
+    verified: 2026-10-31
+  - id: sla-engrave-formlabs-form3
+    process: sla
+    feature: detail
+    compare: engrave-min
+    variant: Form 3 / 3B (laser)
+    quantity: engraved detail depth and width
+    min: 0.15
+    units: mm
+    applies: Form 3 / 3B (laser), Clear resin at 100 µm
+    source: formlabs-form3-design-specs
+    status: read
+    verified: 2026-10-31
+  - id: sla-clearance-formlabs-form3
+    process: sla
+    feature: clearance
+    compare: clearance-fit
+    variant: Form 3 / 3B (laser)
+    quantity: clearance between parts of one print (for example a gear pair)
+    min: 0.5
+    units: mm
+    applies: Form 3 / 3B (laser), Clear resin at 100 µm
+    source: formlabs-form3-design-specs
+    status: read
+    verified: 2026-10-31
+  - id: sla-hole-min-formlabs-form3
+    process: sla
+    feature: hole
+    compare: min-hole
+    variant: Form 3 / 3B (laser)
+    quantity: hole diameter, X, Y and Z
+    min: 0.5
+    units: mm
+    applies: Form 3 / 3B (laser), Clear resin at 100 µm
+    source: formlabs-form3-design-specs
+    status: read
+    verified: 2026-10-31
+  - id: sla-drain-hole-formlabs-form3
+    process: sla
+    feature: drain-hole
+    compare: escape-hole
+    variant: Form 3 / 3B (laser)
+    quantity: drain hole for an enclosed cavity
+    min: 2.5
+    units: mm
+    applies: Form 3 / 3B (laser), Clear resin at 100 µm; without it the cavity can cup and blow out
+    source: formlabs-form3-design-specs
+    status: read
+    verified: 2026-10-31
+  - id: sla-wall-min-formlabs-form4
+    process: sla
+    feature: wall
+    compare: min-wall
+    variant: Form 4 (MSLA)
+    quantity: minimum wall, supported or unsupported (both the same)
+    min: 0.2
+    units: mm
+    applies: Form 4 (MSLA), Grey resin at 50 µm
+    source: formlabs-form4-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sla-overhang-angle-formlabs-form4
+    process: sla
+    feature: overhang
+    compare: overhang-angle-min
+    variant: Form 4 (MSLA)
+    quantity: unsupported overhang angle from level
+    min: 10
+    units: deg
+    applies: Form 4 (MSLA), Grey resin at 50 µm; 35 × 10 × 3 mm test bar
+    source: formlabs-form4-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sla-overhang-length-formlabs-form4
+    process: sla
+    feature: overhang
+    compare: overhang-length-max
+    variant: Form 4 (MSLA)
+    quantity: horizontal unsupported overhang length
+    max: 5.0
+    units: mm
+    applies: Form 4 (MSLA), Grey resin at 50 µm
+    source: formlabs-form4-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sla-bridge-formlabs-form4
+    process: sla
+    feature: bridge
+    compare: bridge-max
+    variant: Form 4 (MSLA)
+    quantity: horizontal span between supports
+    max: 29
+    units: mm
+    applies: Form 4 (MSLA), Grey resin at 50 µm; beam 5 mm wide and 3 mm thick, wider beams shorter
+    source: formlabs-form4-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sla-emboss-formlabs-form4
+    process: sla
+    feature: detail
+    compare: emboss-min
+    variant: Form 4 (MSLA)
+    quantity: embossed detail height and width
+    min: 0.1
+    units: mm
+    applies: Form 4 (MSLA), Grey resin at 50 µm
+    source: formlabs-form4-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sla-engrave-formlabs-form4
+    process: sla
+    feature: detail
+    compare: engrave-min
+    variant: Form 4 (MSLA)
+    quantity: engraved detail depth and width
+    min: 0.15
+    units: mm
+    applies: Form 4 (MSLA), Grey resin at 50 µm
+    source: formlabs-form4-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sla-clearance-formlabs-form4
+    process: sla
+    feature: clearance
+    compare: clearance-fit
+    variant: Form 4 (MSLA)
+    quantity: clearance between parts of one print (for example a gear pair)
+    min: 0.4
+    units: mm
+    applies: Form 4 (MSLA), Grey resin at 50 µm
+    source: formlabs-form4-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sla-hole-min-formlabs-form4
+    process: sla
+    feature: hole
+    compare: min-hole
+    variant: Form 4 (MSLA)
+    quantity: hole diameter, X, Y and Z
+    min: 0.5
+    units: mm
+    applies: Form 4 (MSLA), Grey resin at 50 µm
+    source: formlabs-form4-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sla-drain-hole-formlabs-form4
+    process: sla
+    feature: drain-hole
+    compare: escape-hole
+    variant: Form 4 (MSLA)
+    quantity: drain hole for an enclosed cavity
+    min: 0.75
+    units: mm
+    applies: Form 4 (MSLA), Grey resin at 50 µm; without it the cavity can cup and blow out
+    source: formlabs-form4-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sla-tolerance-formlabs-form4-1-30
+    process: sla
+    feature: tolerance
+    compare: tolerance
+    variant: Form 4, 1–30 mm
+    quantity: tolerance (±) for features 1–30 mm
+    value: "max(0.0015*L, 0.02)"
+    units: mm
+    applies: Form 4 generation, Grey resin at 100 µm, measured on three printers
+    source: formlabs-form4-design-guide
+    as_printed: ±0.15 % (lower limit ±0.02 mm)
+    status: read
+    verified: 2026-10-31
+  - id: sla-tolerance-formlabs-form4-31-80
+    process: sla
+    feature: tolerance
+    compare: tolerance
+    variant: Form 4, 31–80 mm
+    quantity: tolerance (±) for features 31–80 mm
+    value: "max(0.002*L, 0.06)"
+    units: mm
+    applies: Form 4 generation, Grey resin at 100 µm, measured on three printers
+    source: formlabs-form4-design-guide
+    as_printed: ±0.2 % (lower limit ±0.06 mm)
+    status: read
+    verified: 2026-10-31
+  - id: sla-tolerance-formlabs-form4-81-150
+    process: sla
+    feature: tolerance
+    compare: tolerance
+    variant: Form 4, 81–150 mm
+    quantity: tolerance (±) for features 81–150 mm
+    value: "max(0.003*L, 0.15)"
+    units: mm
+    applies: Form 4 generation, Grey resin at 100 µm, measured on three printers
+    source: formlabs-form4-design-guide
+    as_printed: ±0.3 % (lower limit ±0.15 mm)
+    status: read
+    verified: 2026-10-31
+  - id: sla-xy-pixel-formlabs-form4
+    process: sla
+    feature: resolution
+    quantity: LCD pixel size, the XY resolution of the masked light engine
+    value: 0.05
+    units: mm
+    applies: Form 4 (MSLA); the Form 3 family is laser SLA
+    source: formlabs-form4-technology
+    as_printed: 50 µm
+    status: read
+    verified: 2026-10-31
+  - id: sla-drain-hole-count-formlabs
+    process: sla
+    feature: drain-hole
+    compare: drain-count
+    quantity: drain holes per hollow cavity, one as close to the build platform as possible
+    min: 2
+    units: count
+    applies: hollowing in PreForm or Meshmixer; more where the part cups
+    source: formlabs-hollowing-blog
+    status: read
+    verified: 2026-10-31
+  - id: sla-wall-min-protolabs
+    process: sla
+    feature: wall
+    compare: min-wall
+    variant: normal resolution
+    quantity: minimum wall
+    min: 0.254
+    units: mm
+    applies: Protolabs normal resolution; 0.1016 mm high, 0.0635 mm micro
+    source: protolabs-sla-guidelines
+    as_printed: 0.010 in
+    status: read
+    verified: 2026-10-31
+  - id: sla-hole-min-protolabs
+    process: sla
+    feature: hole
+    compare: min-hole
+    variant: normal resolution
+    quantity: minimum hole
+    min: 0.635
+    units: mm
+    applies: Protolabs normal resolution; 0.508 mm high, 0.381 mm micro
+    source: protolabs-sla-guidelines
+    as_printed: 0.025 in
+    status: read
+    verified: 2026-10-31
+  - id: sla-feature-min-protolabs
+    process: sla
+    feature: feature
+    quantity: minimum feature in X-Y (Z 0.406 mm)
+    min: 0.254
+    units: mm
+    applies: Protolabs normal resolution
+    source: protolabs-sla-guidelines
+    as_printed: 0.010 in
+    status: read
+    verified: 2026-10-31
+  - id: sla-tolerance-xy-protolabs
+    process: sla
+    feature: tolerance
+    compare: tolerance
+    quantity: X/Y tolerance (±) for well-designed parts
+    value: "0.05 + 0.001*L"
+    units: mm
+    applies: Protolabs; Z is ±0.127 mm plus 0.1 %
+    source: protolabs-sla-guidelines
+    as_printed: ±0.002 in for the first inch + 0.1 %
+    status: read
+    verified: 2026-10-31
+  - id: sla-wall-supported-xometry
+    process: sla
+    feature: wall
+    compare: min-wall
+    variant: supported
+    quantity: minimum supported wall
+    min: 0.4
+    units: mm
+    applies: Xometry
+    source: xometry-sla-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sla-wall-unsupported-xometry
+    process: sla
+    feature: wall
+    compare: min-wall
+    variant: unsupported
+    quantity: minimum unsupported wall
+    min: 0.6
+    units: mm
+    applies: Xometry
+    source: xometry-sla-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sla-pin-min-xometry
+    process: sla
+    feature: pin
+    compare: min-pin
+    quantity: pin diameter that prints reliably
+    min: 1.0
+    units: mm
+    applies: Xometry
+    source: xometry-sla-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sla-slot-min-xometry
+    process: sla
+    feature: slot
+    quantity: slot width
+    min: 0.5
+    units: mm
+    applies: Xometry; features down to 0.2 mm
+    source: xometry-sla-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sla-clearance-xometry
+    process: sla
+    feature: clearance
+    compare: clearance-fit
+    quantity: clearance between moving parts and in assemblies
+    min: 0.5
+    units: mm
+    applies: Xometry; a push or snug fit about 0.1 mm
+    source: xometry-sla-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sla-hollow-wall-xometry
+    process: sla
+    feature: wall
+    compare: hollow-wall
+    quantity: wall of a hollowed section
+    min: 2.0
+    units: mm
+    applies: Xometry
+    source: xometry-sla-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sla-drain-hole-xometry
+    process: sla
+    feature: drain-hole
+    compare: escape-hole
+    quantity: drain hole diameter
+    min: 3.5
+    units: mm
+    applies: Xometry; at least one per hollow section
+    source: xometry-sla-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sla-corner-radius-xometry
+    process: sla
+    feature: corner
+    quantity: corner radius
+    min: 0.5
+    units: mm
+    applies: Xometry; inner radius at least half the wall, outer 1.5 × the wall
+    source: xometry-sla-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sla-overhang-length-xometry
+    process: sla
+    feature: overhang
+    compare: overhang-length-max
+    quantity: unsupported overhang length
+    max: 2.0
+    units: mm
+    applies: Xometry; and at least 30° from horizontal
+    source: xometry-sla-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sla-overhang-angle-xometry
+    process: sla
+    feature: overhang
+    compare: overhang-angle-min
+    quantity: unsupported overhang angle
+    min: 30
+    units: deg
+    applies: Xometry
+    source: xometry-sla-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sla-emboss-xometry
+    process: sla
+    feature: detail
+    compare: emboss-min
+    quantity: embossed detail height (width 0.4 mm)
+    min: 0.5
+    units: mm
+    applies: Xometry; engraved 0.5 × 0.5 mm; text at least 1 mm tall, 2 mm better
+    source: xometry-sla-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sla-tolerance-xometry
+    process: sla
+    feature: tolerance
+    compare: tolerance
+    quantity: general tolerance (±), standard grade
+    value: "max(0.005*L, 0.2)"
+    units: mm
+    applies: Xometry; the table prints ±0.5 % (±0.2 mm), read here as 0.5 % with a 0.2 mm floor; industrial grade ±0.15 mm
+    source: xometry-sla-design-tips
+    as_printed: ±0.5% (±0.2 mm)
+    status: read
+    verified: 2026-10-31
+  - id: sla-wall-min-materialise-small
+    process: sla
+    feature: wall
+    compare: min-wall
+    variant: Taurus, small
+    quantity: minimum wall
+    min: 1
+    units: mm
+    applies: Materialise Taurus SLA, parts whose x + y + z is under 200 mm
+    source: materialise-taurus-sla-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: sla-wall-min-materialise-medium
+    process: sla
+    feature: wall
+    compare: min-wall
+    variant: Taurus, medium
+    quantity: minimum wall
+    min: 2
+    units: mm
+    applies: Materialise Taurus SLA, x + y + z from 200 to 400 mm
+    source: materialise-taurus-sla-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: sla-wall-min-materialise-large
+    process: sla
+    feature: wall
+    compare: min-wall
+    variant: Taurus, large
+    quantity: minimum wall
+    min: 3
+    units: mm
+    applies: Materialise Taurus SLA, larger parts
+    source: materialise-taurus-sla-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: sla-overhang-angle-materialise
+    process: sla
+    feature: overhang
+    compare: overhang-angle-min
+    quantity: surface angle that needs no support (the rule of 30°)
+    min: 30
+    units: deg
+    applies: Materialise Taurus, inside and outside surfaces
+    source: materialise-taurus-sla-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: sla-ledge-materialise
+    process: sla
+    feature: overhang
+    compare: overhang-length-max
+    quantity: horizontal ledge that needs no support
+    max: 2.0
+    units: mm
+    applies: Materialise Taurus
+    source: materialise-taurus-sla-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: sla-support-hole-materialise
+    process: sla
+    feature: drain-hole
+    compare: escape-hole
+    variant: support removal
+    quantity: hole for removing internal supports from a hollow part
+    min: 10
+    units: mm
+    applies: Materialise Taurus; several holes on large parts
+    source: materialise-taurus-sla-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: sla-text-materialise
+    process: sla
+    feature: detail
+    compare: emboss-min
+    quantity: embossed or engraved text line thickness and depth
+    min: 0.5
+    units: mm
+    applies: Materialise Taurus
+    source: materialise-taurus-sla-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: sla-tolerance-materialise
+    process: sla
+    feature: tolerance
+    compare: tolerance
+    quantity: standard accuracy (±)
+    value: "max(0.002*L, 0.2)"
+    units: mm
+    applies: Materialise Taurus
+    source: materialise-taurus-sla-guidelines
+    as_printed: ±0.2% (lower limit ±0.2 mm)
+    status: read
+    verified: 2026-10-31
+  - id: sla-wall-min-jlc3dp
+    process: sla
+    feature: wall
+    compare: min-wall
+    variant: by size
+    quantity: minimum wall, by footprint from 5 × 5 mm to 200 × 200 mm
+    min: 0.5
+    max: 2.0
+    units: mm
+    applies: JLC3DP resin; 0.5, 0.8, 1.0, 1.5 and 2.0 mm for 5, 10, 50, 100 and 200 mm squares
+    source: jlc3dp-design-guideline
+    status: read
+    verified: 2026-10-31
+  - id: sla-clearance-jlc3dp
+    process: sla
+    feature: clearance
+    compare: clearance-fit
+    quantity: clearance between moving or connecting parts
+    min: 0.5
+    units: mm
+    applies: JLC3DP resin; 0.2 mm for assembled parts
+    source: jlc3dp-design-guideline
+    status: read
+    verified: 2026-10-31
+  - id: sla-escape-hole-jlc3dp
+    process: sla
+    feature: drain-hole
+    compare: escape-hole
+    quantity: escape hole diameter
+    min: 2.5
+    units: mm
+    applies: JLC3DP, every process; two holes when under 3 mm
+    source: jlc3dp-design-guideline
+    status: read
+    verified: 2026-10-31
+  - id: sla-emboss-jlc3dp
+    process: sla
+    feature: detail
+    compare: emboss-min
+    quantity: embossed or engraved detail depth and width
+    min: 0.8
+    units: mm
+    applies: JLC3DP resin
+    source: jlc3dp-design-guideline
+    status: read
+    verified: 2026-10-31
+  - id: sla-tolerance-jlc3dp
+    process: sla
+    feature: tolerance
+    compare: tolerance
+    quantity: model tolerance (±)
+    value: "0.2 if L <= 100 else 0.003*L"
+    units: mm
+    applies: JLC3DP resin; dimensions drift a further 0.15–0.2 mm (or %) in the week after printing
+    source: jlc3dp-design-guideline
+    as_printed: ±0.2 mm within 100 mm, ±0.3% above
+    status: read
+    verified: 2026-10-31
+  - id: sla-hollow-wall-prusa
+    process: sla
+    feature: wall
+    compare: hollow-wall
+    quantity: shell thickness when hollowing
+    min: 1.0
+    units: mm
+    applies: PrusaSlicer for the SL1 and SL1S (MSLA); the tool's lower bound
+    source: prusa-hollowing-kb
+    status: read
+    verified: 2026-10-31
+  - id: sla-drain-count-prusa
+    process: sla
+    feature: drain-hole
+    compare: drain-count
+    quantity: drainage holes in a hollowed print
+    min: 2
+    units: count
+    applies: Prusa SL1 and SL1S
+    source: prusa-hollowing-kb
+    status: read
+    verified: 2026-10-31
+  - id: sla-hollow-wall-elegoo
+    process: sla
+    feature: wall
+    compare: hollow-wall
+    quantity: typical hollow wall
+    min: 1.0
+    max: 3.0
+    units: mm
+    applies: ELEGOO SatelLite slicer (MSLA)
+    source: elegoo-satellite-hollowing
+    status: read
+    verified: 2026-10-31
+  - id: sla-drain-hole-elegoo
+    process: sla
+    feature: drain-hole
+    compare: escape-hole
+    quantity: drain hole diameter (the page gives a 1–3 mm radius)
+    min: 2.0
+    max: 6.0
+    units: mm
+    applies: ELEGOO; at least two holes, at the lowest point of the hollow
+    source: elegoo-satellite-hollowing
+    as_printed: radius 1–3 mm
+    status: read
+    verified: 2026-10-31
+  - id: sla-hollow-wall-lychee
+    process: sla
+    feature: wall
+    compare: hollow-wall
+    quantity: default hollow wall
+    value: 2.5
+    units: mm
+    applies: Lychee Slicer; 1.5–2 mm for miniatures, 3–4 mm for strong parts
+    source: lychee-voxels-hollowing
+    status: read
+    verified: 2026-10-31
+
+  # ================================================================== SLS
+
+  - id: sls-wall-min-hubs
+    process: sls
+    feature: wall
+    compare: min-wall
+    variant: PA 12 to CF-PA
+    quantity: minimum wall thickness
+    min: 0.8
+    max: 2.0
+    units: mm
+    applies: 0.8 mm for PA 12, up to 2.0 mm for carbon-filled polyamide
+    source: hubs-sls-design
+    status: read
+    verified: 2026-10-31
+  - id: sls-wall-min-hubs-table
+    process: sls
+    feature: wall
+    compare: min-wall
+    variant: cross-process table
+    quantity: recommended minimum wall thickness
+    min: 0.7
+    units: mm
+    applies: SLS in the cross-process table (differs from the SLS guide's 0.8 mm for PA 12)
+    source: hubs-3dp-geometry-limits
+    status: read
+    verified: 2026-10-31
+  - id: sls-hole-min-hubs
+    process: sls
+    feature: hole
+    compare: min-hole
+    quantity: minimum hole diameter
+    min: 1.5
+    units: mm
+    applies: Protolabs Network SLS
+    source: hubs-sls-design
+    status: read
+    verified: 2026-10-31
+  - id: sls-escape-hole-min-hubs
+    process: sls
+    feature: escape-hole
+    compare: escape-hole
+    quantity: powder escape-hole diameter
+    min: 3.5
+    units: mm
+    applies: hollow SLS parts and enclosed running clearances
+    source: hubs-sls-design
+    status: read
+    verified: 2026-10-31
+  - id: sls-clearance-hubs
+    process: sls
+    feature: clearance
+    compare: clearance-fit
+    quantity: clearance between assembled or moving parts
+    value: 0.3
+    units: mm
+    applies: Protolabs Network SLS; 0.2 mm between a ball and its socket; 2 mm between a running axle and its
+      clearance hole so the powder can be cleared
+    source: hubs-sls-design
+    status: read
+    verified: 2026-10-31
+  - id: sls-feature-min-hubs
+    process: sls
+    feature: feature
+    quantity: minimum feature size
+    min: 0.8
+    units: mm
+    applies: Protolabs Network SLS
+    source: hubs-sls-design
+    status: read
+    verified: 2026-10-31
+  - id: sls-emboss-engrave-min-hubs
+    process: sls
+    feature: text
+    quantity: engraving depth and embossing height
+    min: 1.0
+    units: mm
+    applies: Protolabs Network SLS; text at least 2 mm high, sans serif
+    source: hubs-sls-design
+    status: read
+    verified: 2026-10-31
+  - id: sls-edge-radius-hubs
+    process: sls
+    feature: corner
+    quantity: radius every edge and corner prints with
+    value: 0.4
+    units: mm
+    applies: a smaller radius in CAD prints as 0.4 mm; use more than 2 mm where stress matters
+    source: hubs-sls-design
+    status: read
+    verified: 2026-10-31
+  - id: sls-living-hinge-hubs
+    process: sls
+    feature: living-hinge
+    quantity: living-hinge thickness (at least 5 mm long)
+    min: 0.3
+    max: 0.8
+    units: mm
+    applies: SLS nylon, annealed (boiling water) and flexed after printing
+    source: hubs-sls-design
+    status: read
+    verified: 2026-10-31
+  - id: sls-scale-hubs
+    process: sls
+    feature: shrinkage
+    quantity: scale-up applied before printing to allow for shrinkage
+    min: 3.0
+    max: 3.5
+    units: percent
+    applies: done by the service at pre-print; the design is not changed
+    source: hubs-sls-design
+    status: read
+    verified: 2026-10-31
+  - id: sls-tolerance-hubs
+    process: sls
+    feature: tolerance
+    compare: tolerance
+    quantity: expected tolerance (±) on a dimension L
+    value: "max(0.003*L, 0.3)"
+    units: mm
+    applies: SLS and MJF; ±0.3 % with a lower limit of ±0.3 mm. The SLS guide's own table gives ±0.3 mm plus
+      ±0.05 mm per 25 mm, which is 0.2 % rather than 0.3 %
+    source: hubs-3dp-dimensional-accuracy
+    status: read
+    verified: 2026-10-31
+  - id: sls-pin-min-formlabs
+    process: sls
+    feature: pin
+    compare: min-pin
+    quantity: pin diameter
+    min: 0.8
+    units: mm
+    applies: Formlabs Fuse, Nylon 12
+    source: formlabs-fuse-sls-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sls-hole-min-formlabs
+    process: sls
+    feature: hole
+    compare: min-hole
+    quantity: hole diameter
+    min: 1.0
+    units: mm
+    applies: Formlabs Fuse, Nylon 12; holes and pins most accurate with their axis along Z
+    source: formlabs-fuse-sls-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sls-wall-vertical-formlabs
+    process: sls
+    feature: wall
+    compare: min-wall
+    variant: vertical
+    quantity: minimum unsupported wall, vertical
+    min: 0.6
+    units: mm
+    applies: Formlabs Fuse, Nylon 12
+    source: formlabs-fuse-sls-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sls-wall-horizontal-formlabs
+    process: sls
+    feature: wall
+    compare: min-wall
+    variant: horizontal
+    quantity: minimum unsupported wall, horizontal
+    min: 0.3
+    units: mm
+    applies: Formlabs Fuse, Nylon 12
+    source: formlabs-fuse-sls-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sls-escape-hole-formlabs
+    process: sls
+    feature: escape-hole
+    compare: escape-hole
+    quantity: escape hole diameter, at least two per cavity
+    min: 3.5
+    units: mm
+    applies: Formlabs Fuse
+    source: formlabs-fuse-sls-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sls-emboss-formlabs
+    process: sls
+    feature: detail
+    compare: emboss-min
+    quantity: embossed detail depth on a horizontal face (width 0.35 mm)
+    min: 0.15
+    units: mm
+    applies: Formlabs Fuse; on vertical faces 0.35 × 0.4 mm
+    source: formlabs-fuse-sls-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sls-engrave-formlabs
+    process: sls
+    feature: detail
+    compare: engrave-min
+    quantity: engraved detail depth on a horizontal face (width 0.3 mm)
+    min: 0.1
+    units: mm
+    applies: Formlabs Fuse; on vertical faces 0.15 × 0.35 mm
+    source: formlabs-fuse-sls-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sls-clearance-assembly-formlabs
+    process: sls
+    feature: clearance
+    compare: clearance-fit
+    variant: assembled after
+    quantity: clearance between parts assembled after printing
+    value: "0.2 if area < 20 else 0.4"
+    units: mm
+    applies: Formlabs Fuse; 0.2 mm for features under 20 mm², 0.4 mm above
+    source: formlabs-fuse-sls-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sls-clearance-integrated-formlabs
+    process: sls
+    feature: clearance
+    compare: clearance-fit
+    variant: printed together
+    quantity: clearance in an assembly printed in one piece
+    value: "0.3 if area < 20 else 0.6"
+    units: mm
+    applies: Formlabs Fuse; 0.3 mm under 20 mm², 0.6 mm above; at least 1 mm for Nylon 11 and TPU 90A
+    source: formlabs-fuse-sls-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sls-lattice-gap-formlabs
+    process: sls
+    feature: lattice
+    quantity: gap in a lattice, for depowdering
+    min: 8
+    units: mm
+    applies: Formlabs Fuse with Fuse Sift; leave open faces
+    source: formlabs-fuse-sls-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sls-part-spacing-formlabs
+    process: sls
+    feature: packing
+    quantity: space between parts in the build chamber
+    min: 5
+    units: mm
+    applies: Formlabs Fuse; tilt flat parts about 20°
+    source: formlabs-fuse-sls-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: sls-wall-min-protolabs
+    process: sls
+    feature: wall
+    compare: min-wall
+    quantity: minimum wall
+    min: 0.762
+    units: mm
+    applies: Protolabs SLS
+    source: protolabs-sls-guidelines
+    as_printed: 0.030 in
+    status: read
+    verified: 2026-10-31
+  - id: sls-feature-min-protolabs
+    process: sls
+    feature: feature
+    quantity: minimum feature
+    min: 0.762
+    units: mm
+    applies: Protolabs, nylons; PP and TPU 1.01 mm
+    source: protolabs-sls-guidelines
+    as_printed: 0.03 in
+    status: read
+    verified: 2026-10-31
+  - id: sls-tolerance-protolabs
+    process: sls
+    feature: tolerance
+    compare: tolerance
+    quantity: tolerance (±) for well-designed parts
+    value: "0.25 + 0.001*L"
+    units: mm
+    applies: Protolabs SLS
+    source: protolabs-sls-guidelines
+    as_printed: ±0.010 in + 0.1%
+    status: read
+    verified: 2026-10-31
+  - id: sls-uniform-wall-protolabs
+    process: sls
+    feature: wall
+    quantity: uniform thickness that keeps large parts from warping
+    value: 3.175
+    units: mm
+    applies: Protolabs; parts over 177.8 mm (7 in) are most at risk
+    source: protolabs-sls-guidelines
+    as_printed: 0.125 in
+    status: read
+    verified: 2026-10-31
+  - id: sls-channel-gap-protolabs
+    process: sls
+    feature: clearance
+    compare: clearance-fit
+    variant: channel gap
+    quantity: channel gap between two features
+    min: 0.762
+    units: mm
+    applies: Protolabs SLS and MJF; hollow a thick feature to a 2.54–3.175 mm shell
+    source: protolabs-nylon-design-tip
+    as_printed: 0.030 in
+    status: read
+    verified: 2026-10-31
+  - id: sls-wall-min-xometry
+    process: sls
+    feature: wall
+    compare: min-wall
+    variant: by material
+    quantity: minimum wall
+    min: 0.5
+    max: 2.0
+    units: mm
+    applies: Xometry; 0.5 mm for PA 12 up to 2.0 mm by material; walls rarely need to exceed 5 mm
+    source: xometry-sls-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sls-wall-preferred-xometry
+    process: sls
+    feature: wall
+    compare: min-wall
+    variant: preferred
+    quantity: wall for reliable, repeatable results
+    min: 1.5
+    units: mm
+    applies: Xometry
+    source: xometry-sls-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sls-escape-hole-xometry
+    process: sls
+    feature: escape-hole
+    compare: escape-hole
+    quantity: escape hole diameter
+    min: 3.5
+    units: mm
+    applies: Xometry; several, near edges or on opposite sides
+    source: xometry-sls-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sls-hole-min-xometry
+    process: sls
+    feature: hole
+    compare: min-hole
+    quantity: hole diameter
+    min: 1.5
+    units: mm
+    applies: Xometry; orient holes vertically
+    source: xometry-sls-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sls-clearance-mating-xometry
+    process: sls
+    feature: clearance
+    compare: clearance-fit
+    variant: mating
+    quantity: clearance for mating parts
+    min: 0.7
+    units: mm
+    applies: Xometry; 0.5 mm for press fits, 0.6 mm for articulated or linked parts
+    source: xometry-sls-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sls-pin-min-xometry
+    process: sls
+    feature: pin
+    compare: min-pin
+    quantity: pin diameter
+    min: 0.8
+    units: mm
+    applies: Xometry; 1 mm or more preferred
+    source: xometry-sls-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sls-emboss-xometry
+    process: sls
+    feature: detail
+    compare: emboss-min
+    quantity: embossed text height or engraved depth
+    min: 1.0
+    units: mm
+    applies: Xometry; font at least 2 mm
+    source: xometry-sls-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sls-shrinkage-xometry
+    process: sls
+    feature: shrinkage
+    quantity: shrinkage to allow for in CAD
+    min: 3
+    max: 4
+    units: percent
+    applies: Xometry
+    source: xometry-sls-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sls-tolerance-xometry
+    process: sls
+    feature: tolerance
+    compare: tolerance
+    quantity: dimensional tolerance (±)
+    value: 0.3
+    units: mm
+    applies: Xometry Asia
+    source: xometry-sls-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sls-tolerance-xometry-us
+    process: sls
+    feature: tolerance
+    compare: tolerance
+    variant: US service
+    quantity: general tolerance (±), the greater of 0.381 mm and 0.2 %
+    value: "max(0.381, 0.002*L)"
+    units: mm
+    applies: Xometry US, Nylon 12; Nylon 11 ±0.508 mm or 0.3 %
+    source: xometry-sls-service
+    as_printed: ±0.015 in or ±0.002 in/in
+    status: read
+    verified: 2026-10-31
+  - id: sls-wall-min-materialise
+    process: sls
+    feature: wall
+    compare: min-wall
+    quantity: minimum wall
+    min: 1.0
+    units: mm
+    applies: Materialise PA 12 (SLS)
+    source: materialise-pa12-sls-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: sls-hinge-materialise
+    process: sls
+    feature: hinge
+    quantity: living hinge thickness
+    value: 0.3
+    units: mm
+    applies: Materialise PA 12 (SLS)
+    source: materialise-pa12-sls-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: sls-clearance-together-materialise
+    process: sls
+    feature: clearance
+    compare: clearance-fit
+    variant: printed together
+    quantity: clearance between parts printed together
+    min: 0.5
+    max: 0.6
+    units: mm
+    applies: Materialise PA 12 (SLS)
+    source: materialise-pa12-sls-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: sls-clearance-after-materialise
+    process: sls
+    feature: clearance
+    compare: clearance-fit
+    variant: assembled after
+    quantity: gap between parts assembled after printing
+    min: 0.6
+    units: mm
+    applies: Materialise; 0.5 mm play under a lid
+    source: materialise-pa12-sls-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: sls-hole-min-materialise
+    process: sls
+    feature: hole
+    compare: min-hole
+    quantity: hole diameter
+    min: 1.0
+    units: mm
+    applies: Materialise; internal channels at least 3 mm
+    source: materialise-pa12-sls-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: sls-hollow-threshold-materialise
+    process: sls
+    feature: wall
+    quantity: wall thickness above which production may hollow the part
+    value: 9
+    units: mm
+    applies: Materialise; hollowed by default above 20 mm
+    source: materialise-pa12-sls-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: sls-tolerance-materialise
+    process: sls
+    feature: tolerance
+    compare: tolerance
+    quantity: standard accuracy (±)
+    value: "max(0.003*L, 0.3)"
+    units: mm
+    applies: Materialise PA 12 (SLS)
+    source: materialise-pa12-sls-guidelines
+    as_printed: ±0.3% (lower limit ±0.3 mm)
+    status: read
+    verified: 2026-10-31
+  - id: sls-wall-reproducible-eos
+    process: sls
+    feature: wall
+    compare: min-wall
+    variant: reproducible
+    quantity: XY wall for reproducible measurements and mechanical properties
+    min: 1.5
+    units: mm
+    applies: EOS; the thinnest possible wall is 0.45 mm (Formiga P100) to 0.7 mm (P395, P760)
+    source: eos-design-rules-overview-ls
+    status: read
+    verified: 2026-10-31
+  - id: sls-pin-min-eos
+    process: sls
+    feature: pin
+    compare: min-pin
+    quantity: pin thickness
+    min: 0.8
+    units: mm
+    applies: EOS; 1.8 mm for reproducible properties
+    source: eos-design-rules-overview-ls
+    status: read
+    verified: 2026-10-31
+  - id: sls-hinge-gap-eos
+    process: sls
+    feature: clearance
+    compare: clearance-fit
+    variant: printed together
+    quantity: XY gap in a hinge built in place
+    min: 0.3
+    max: 0.5
+    units: mm
+    applies: EOS; in Z at least three layers
+    source: eos-design-rules-overview-ls
+    status: read
+    verified: 2026-10-31
+  - id: sls-loose-gap-eos
+    process: sls
+    feature: clearance
+    compare: clearance-fit
+    variant: assembled after
+    quantity: gap for a loose connection between parts not built together
+    value: 0.1
+    units: mm
+    applies: EOS; no gap gives a press fit
+    source: eos-design-rules-overview-ls
+    status: read
+    verified: 2026-10-31
+  - id: sls-flat-angle-eos
+    process: sls
+    feature: orientation
+    quantity: angle to the XY plane below which layer steps show
+    min: 20
+    units: deg
+    applies: EOS; smaller angles depend on the layer thickness
+    source: eos-design-rules-overview-ls
+    status: read
+    verified: 2026-10-31
+  - id: sls-gap-vs-wall-eos
+    process: sls
+    feature: clearance
+    quantity: smallest gap or hole, rising with the wall thickness
+    min: 0.5
+    max: 0.8
+    units: mm
+    applies: EOS; read from a chart for walls 0.3–6 mm, so not verified
+    source: eos-design-rules-overview-ls
+    status: u
+    verified: 2026-10-31
+  - id: sls-wall-min-jlc3dp
+    process: sls
+    feature: wall
+    compare: min-wall
+    variant: by size
+    quantity: minimum wall, by footprint from 5 × 5 mm to 200 × 200 mm
+    min: 1.0
+    max: 2.0
+    units: mm
+    applies: JLC3DP nylon SLS; 1.0, 1.2, 1.5, 2.0 and 2.0 mm for 5, 10, 50, 100 and 200 mm squares
+    source: jlc3dp-design-guideline
+    status: read
+    verified: 2026-10-31
+  - id: sls-clearance-jlc3dp
+    process: sls
+    feature: clearance
+    compare: clearance-fit
+    quantity: clearance between assembled parts
+    min: 0.2
+    max: 0.4
+    units: mm
+    applies: JLC3DP nylon SLS
+    source: jlc3dp-design-guideline
+    status: read
+    verified: 2026-10-31
+
+  # ================================================================== MJF
+
+  - id: mjf-wall-min-hubs-table
+    process: mjf
+    feature: wall
+    compare: min-wall
+    variant: cross-process table
+    quantity: recommended minimum wall thickness
+    min: 0.5
+    units: mm
+    applies: MJF in the cross-process table
+    source: hubs-3dp-geometry-limits
+    status: read
+    verified: 2026-10-31
+  - id: mjf-snap-root-min-hubs
+    process: mjf
+    feature: snap-fit
+    quantity: cantilever thickness at the base, and the hook overhang depth
+    min: 1.0
+    units: mm
+    applies: MJF snap fits; clip width at least 5 mm
+    source: hubs-snapfit-3dp
+    status: read
+    verified: 2026-10-31
+  - id: mjf-clearance-snap-hubs
+    process: mjf
+    feature: clearance
+    compare: clearance-fit
+    quantity: nominal clearance between mating parts (snap fits)
+    value: 0.3
+    units: mm
+    applies: Protolabs Network MJF
+    source: hubs-snapfit-3dp
+    status: read
+    verified: 2026-10-31
+  - id: mjf-tolerance-hubs
+    process: mjf
+    feature: tolerance
+    compare: tolerance
+    quantity: expected tolerance (±) on a dimension L
+    value: "max(0.003*L, 0.3)"
+    units: mm
+    applies: SLS and MJF share this row; ±0.3 % with a lower limit of ±0.3 mm
+    source: hubs-3dp-dimensional-accuracy
+    status: read
+    verified: 2026-10-31
+  - id: mjf-orientation-z-strain-hp
+    process: mjf
+    feature: orientation
+    quantity: elongation at break in Z as a fraction of XY (PA 12, PA 11, PP on the Jet Fusion 5200)
+    min: 0.53
+    max: 0.70
+    units: ratio
+    applies: strength is the same in XY and Z, strain is not (PA 12 9/17 %, PA 11 25/40 %, PP 14/20 %); also in
+      compliant-mechanisms.md §5
+    source: hp-mjf-5200-properties
+    status: read
+    verified: 2026-10-31
+  - id: mjf-hole-min-hp
+    process: mjf
+    feature: hole
+    compare: min-hole
+    quantity: hole diameter through a 1 mm wall
+    min: 0.5
+    units: mm
+    applies: HP, X, Y and Z; a 10 mm tall shaft also 0.5 mm
+    source: hp-mjf-handbook-design-for-accuracy
+    status: read
+    verified: 2026-10-31
+  - id: mjf-clearance-hp
+    process: mjf
+    feature: clearance
+    compare: clearance-fit
+    variant: accuracy guide
+    quantity: clearance at 1 mm thickness, and slits between walls
+    min: 0.5
+    units: mm
+    applies: HP
+    source: hp-mjf-handbook-design-for-accuracy
+    status: read
+    verified: 2026-10-31
+  - id: mjf-detail-min-hp
+    process: mjf
+    feature: detail
+    quantity: printable feature or detail width
+    min: 0.1
+    units: mm
+    applies: HP; letters at least 6 pt
+    source: hp-mjf-handbook-design-for-accuracy
+    status: read
+    verified: 2026-10-31
+  - id: mjf-emboss-hp
+    process: mjf
+    feature: detail
+    compare: emboss-min
+    quantity: embossed or engraved height or depth
+    min: 1.0
+    units: mm
+    applies: HP, for the best result
+    source: hp-mjf-handbook-design-for-accuracy
+    status: read
+    verified: 2026-10-31
+  - id: mjf-flat-aspect-hp
+    process: mjf
+    feature: warp
+    quantity: length-to-width of a long, thin, flat part
+    max: 10
+    units: ratio
+    applies: HP, to limit warpage
+    source: hp-mjf-handbook-design-for-accuracy
+    status: read
+    verified: 2026-10-31
+  - id: mjf-wall-xy-hp
+    process: mjf
+    feature: wall
+    compare: min-wall
+    variant: short, XY
+    quantity: short wall in the XY plane
+    min: 0.3
+    units: mm
+    applies: HP PA 12, PA 12 GB and PA 11
+    source: hp-learning-design-3d-print-model
+    status: read
+    verified: 2026-10-31
+  - id: mjf-wall-z-hp
+    process: mjf
+    feature: wall
+    compare: min-wall
+    variant: short, Z
+    quantity: short wall in Z
+    min: 0.5
+    units: mm
+    applies: HP PA 12, PA 12 GB and PA 11
+    source: hp-learning-design-3d-print-model
+    status: read
+    verified: 2026-10-31
+  - id: mjf-gap-mating-hp
+    process: mjf
+    feature: clearance
+    compare: clearance-fit
+    variant: assembled after
+    quantity: gap between parts assembled after printing
+    value: 0.4
+    units: mm
+    applies: HP's starting point, ±0.2 mm on each part
+    source: hp-learning-design-3d-print-model
+    status: read
+    verified: 2026-10-31
+  - id: mjf-gap-in-place-hp
+    process: mjf
+    feature: clearance
+    compare: clearance-fit
+    variant: printed together
+    quantity: clearance between faces printed as an assembly
+    min: 0.7
+    units: mm
+    applies: HP; walls under 3 mm can go to 0.3 mm, very thick walls need more
+    source: hp-learning-design-3d-print-model
+    status: read
+    verified: 2026-10-31
+  - id: mjf-hollow-wall-hp
+    process: mjf
+    feature: wall
+    compare: hollow-wall
+    quantity: wall of a hollow part
+    min: 2.0
+    units: mm
+    applies: HP; thicker walls are stronger
+    source: hp-learning-design-3d-print-model
+    status: read
+    verified: 2026-10-31
+  - id: mjf-thread-min-hp
+    process: mjf
+    feature: thread
+    quantity: printed thread size
+    min: 6
+    units: mm
+    applies: HP; below M6 use self-tapping screws or inserts
+    source: hp-learning-joint-design
+    as_printed: M6
+    status: read
+    verified: 2026-10-31
+  - id: mjf-machining-tolerance-hp
+    process: mjf
+    feature: tolerance
+    quantity: tolerance (±) machining can add after printing
+    value: 0.05
+    units: mm
+    applies: HP
+    source: hp-learning-joint-design
+    status: read
+    verified: 2026-10-31
+  - id: mjf-tolerance-xy-pa11-hp
+    process: mjf
+    feature: tolerance
+    compare: tolerance
+    variant: PA 11, XY
+    quantity: XY tolerance (±) at Cpk 1.33, 0–30 mm
+    value: 0.3
+    units: mm
+    applies: HP Jet Fusion 5200, PA 11, default settings; 0.36 mm to 50 mm, 0.44 mm to 80 mm
+    source: hp-5200-dimensional-capability
+    status: read
+    verified: 2026-10-31
+  - id: mjf-tolerance-z-pa11-hp
+    process: mjf
+    feature: tolerance
+    compare: tolerance
+    variant: PA 11, Z
+    quantity: Z tolerance (±) at Cpk 1.33, 0–30 mm
+    value: 0.42
+    units: mm
+    applies: HP Jet Fusion 5200, PA 11; 0.62 mm to 50 mm, 1.18 mm to 80 mm
+    source: hp-5200-dimensional-capability
+    status: read
+    verified: 2026-10-31
+  - id: mjf-wall-min-protolabs
+    process: mjf
+    feature: wall
+    compare: min-wall
+    quantity: wall thickness
+    min: 0.5
+    units: mm
+    applies: Protolabs MJF; minimum feature also 0.5 mm
+    source: protolabs-mjf-guidelines
+    as_printed: 0.020 in
+    status: read
+    verified: 2026-10-31
+  - id: mjf-tolerance-protolabs
+    process: mjf
+    feature: tolerance
+    compare: tolerance
+    quantity: tolerance (±) for well-designed parts
+    value: "0.30 + 0.001*L"
+    units: mm
+    applies: Protolabs MJF
+    source: protolabs-mjf-guidelines
+    as_printed: ±0.012 in + 0.1%
+    status: read
+    verified: 2026-10-31
+  - id: mjf-wall-ideal-protolabs
+    process: mjf
+    feature: wall
+    quantity: wall range that keeps tolerances and warp in check
+    min: 2.5
+    max: 12.7
+    units: mm
+    applies: Protolabs
+    source: protolabs-mjf-design-tip
+    as_printed: 0.1–0.5 in
+    status: read
+    verified: 2026-10-31
+  - id: mjf-edge-min-protolabs
+    process: mjf
+    feature: feature
+    quantity: thinnest distal feature (knife edge)
+    min: 0.508
+    units: mm
+    applies: Protolabs MJF; channel gaps 0.762 mm
+    source: protolabs-nylon-design-tip
+    as_printed: 0.020 in
+    status: read
+    verified: 2026-10-31
+  - id: mjf-wall-xy-xometry
+    process: mjf
+    feature: wall
+    compare: min-wall
+    variant: short, XY
+    quantity: short wall in the XY plane
+    min: 0.3
+    units: mm
+    applies: Xometry; 0.4 mm in Z
+    source: xometry-mjf-design-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: mjf-clearance-in-place-xometry
+    process: mjf
+    feature: clearance
+    compare: clearance-fit
+    variant: printed together
+    quantity: clearance between parts printed together
+    min: 0.7
+    units: mm
+    applies: Xometry; more when walls are over 50 mm thick
+    source: xometry-mjf-design-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: mjf-clearance-after-xometry
+    process: mjf
+    feature: clearance
+    compare: clearance-fit
+    variant: assembled after
+    quantity: clearance between parts assembled after printing
+    min: 0.4
+    units: mm
+    applies: Xometry; 0.2 mm on each part
+    source: xometry-mjf-design-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: mjf-drain-hole-xometry
+    process: mjf
+    feature: escape-hole
+    compare: escape-hole
+    quantity: drain hole diameter, at least two
+    value: 2.0
+    units: mm
+    applies: Xometry; lattice gaps at least 1 mm
+    source: xometry-mjf-design-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: mjf-tolerance-xometry
+    process: mjf
+    feature: tolerance
+    compare: tolerance
+    quantity: dimensional accuracy (±)
+    value: "0.2 if L <= 100 else 0.002*L"
+    units: mm
+    applies: Xometry, after sand-blasting
+    source: xometry-mjf-design-guidelines
+    as_printed: ±0.2 mm up to 100 mm, 0.2% above
+    status: read
+    verified: 2026-10-31
+  - id: mjf-feature-min-xometry-us
+    process: mjf
+    feature: feature
+    quantity: minimum feature
+    min: 0.508
+    units: mm
+    applies: Xometry US; 1.016 mm (0.040 in) recommended
+    source: xometry-mjf-service
+    as_printed: 0.020 in
+    status: read
+    verified: 2026-10-31
+  - id: mjf-tolerance-engineered-xometry-us
+    process: mjf
+    feature: tolerance
+    compare: tolerance
+    variant: engineered, XY
+    quantity: XY tolerance (±) under 30 mm after engineering review
+    value: 0.25
+    units: mm
+    applies: Xometry US, HP 5200 Balanced mode, rigid materials; Z ±0.42 mm; ±0.70 mm without review
+    source: xometry-mjf-service
+    status: read
+    verified: 2026-10-31
+  - id: mjf-wall-min-materialise
+    process: mjf
+    feature: wall
+    compare: min-wall
+    quantity: wall thickness
+    min: 1.0
+    units: mm
+    applies: Materialise PA 12 (MJF); large parts need more
+    source: materialise-pa12-mjf-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: mjf-hinge-materialise
+    process: mjf
+    feature: hinge
+    quantity: living hinge thickness
+    value: 0.5
+    units: mm
+    applies: Materialise; at most 10 mm long if held at one end, 25 mm if held at both
+    source: materialise-pa12-mjf-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: mjf-escape-hole-materialise
+    process: mjf
+    feature: escape-hole
+    compare: escape-hole
+    quantity: powder-removal hole diameter, at least two
+    min: 2.0
+    units: mm
+    applies: Materialise; hollow when walls pass 20 mm, to a 2–3 mm wall
+    source: materialise-pa12-mjf-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: mjf-hole-min-materialise
+    process: mjf
+    feature: hole
+    compare: min-hole
+    quantity: hole diameter
+    min: 1.0
+    units: mm
+    applies: Materialise; 2 mm recommended, internal channels at least 3 mm
+    source: materialise-pa12-mjf-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: mjf-clearance-together-materialise
+    process: mjf
+    feature: clearance
+    compare: clearance-fit
+    variant: printed together
+    quantity: clearance between parts printed together
+    min: 0.5
+    units: mm
+    applies: Materialise; lattice gaps at least 1 mm
+    source: materialise-pa12-mjf-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: mjf-clearance-after-materialise
+    process: mjf
+    feature: clearance
+    compare: clearance-fit
+    variant: assembled after
+    quantity: gap between parts assembled after printing
+    min: 0.6
+    units: mm
+    applies: Materialise; more for large surfaces
+    source: materialise-pa12-mjf-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: mjf-text-materialise
+    process: mjf
+    feature: detail
+    compare: emboss-min
+    quantity: text line thickness (depth 1 mm, height 2.5 mm)
+    min: 0.5
+    units: mm
+    applies: Materialise; surface texture at least 0.25 mm
+    source: materialise-pa12-mjf-guidelines
+    status: read
+    verified: 2026-10-31
+  - id: mjf-tolerance-materialise
+    process: mjf
+    feature: tolerance
+    compare: tolerance
+    quantity: standard accuracy (±)
+    value: "max(0.003*L, 0.3)"
+    units: mm
+    applies: Materialise PA 12 (MJF)
+    source: materialise-pa12-mjf-guidelines
+    as_printed: ±0.3% (lower limit ±0.3 mm)
+    status: read
+    verified: 2026-10-31
+  - id: mjf-wall-range-stratasys
+    process: mjf
+    feature: wall
+    compare: min-wall
+    quantity: wall thickness range
+    min: 0.5
+    max: 3.0
+    window: true
+    units: mm
+    applies: Stratasys Direct; at most 3.0 mm to limit sink and warp
+    source: stratasys-direct-mjf-design-guide
+    as_printed: 0.02–0.12 in
+    status: read
+    verified: 2026-10-31
+  - id: mjf-fillet-min-stratasys
+    process: mjf
+    feature: corner
+    quantity: fillet and corner radius on interior corners
+    min: 0.4
+    units: mm
+    applies: Stratasys Direct; the page prints 0.015 in (0.381 mm) as 0.4 mm
+    source: stratasys-direct-mjf-design-guide
+    as_printed: 0.015 in
+    status: read
+    verified: 2026-10-31
+  - id: mjf-edge-min-stratasys
+    process: mjf
+    feature: feature
+    quantity: knife edge taper end
+    min: 0.5
+    units: mm
+    applies: Stratasys Direct
+    source: stratasys-direct-mjf-design-guide
+    as_printed: 0.020 in
+    status: read
+    verified: 2026-10-31
+  - id: mjf-hinge-stratasys
+    process: mjf
+    feature: hinge
+    quantity: living hinge thickness
+    min: 0.5
+    units: mm
+    applies: Stratasys Direct; anneal for more than a few cycles
+    source: stratasys-direct-mjf-design-guide
+    as_printed: 0.020 in
+    status: read
+    verified: 2026-10-31
+  - id: mjf-lap-overlap-stratasys
+    process: mjf
+    feature: joint
+    quantity: overlap of a bonded lap joint
+    min: "3*wall"
+    max: "5*wall"
+    units: mm
+    applies: Stratasys Direct
+    source: stratasys-direct-mjf-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: mjf-boss-insert-stratasys
+    process: mjf
+    feature: boss
+    quantity: boss diameter around a threaded insert
+    min: "2*D"
+    max: "3*D"
+    units: mm
+    applies: Stratasys Direct; D is the insert diameter; heat staking preferred
+    source: stratasys-direct-mjf-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: mjf-tolerance-stratasys
+    process: mjf
+    feature: tolerance
+    compare: tolerance
+    quantity: typical tolerance (±), the greater of 0.25 mm and 0.1 %
+    value: "max(0.25, 0.001*L)"
+    units: mm
+    applies: Stratasys Direct
+    source: stratasys-direct-mjf-design-guide
+    as_printed: ±0.010 in or ±0.001 in/in
+    status: read
+    verified: 2026-10-31
+  - id: mjf-wall-min-jlc3dp
+    process: mjf
+    feature: wall
+    compare: min-wall
+    variant: by size
+    quantity: minimum wall, by footprint from 5 × 5 mm to 200 × 200 mm
+    min: 1.0
+    max: 2.0
+    units: mm
+    applies: JLC3DP nylon MJF; 1.0, 1.2, 1.5, 2.0 and 2.0 mm for 5, 10, 50, 100 and 200 mm squares
+    source: jlc3dp-design-guideline
+    status: read
+    verified: 2026-10-31
+  - id: mjf-tolerance-jlc3dp
+    process: mjf
+    feature: tolerance
+    compare: tolerance
+    quantity: model tolerance (±)
+    value: "0.3 if L <= 100 else 0.004*L"
+    units: mm
+    applies: JLC3DP nylon (MJF and SLS)
+    source: jlc3dp-design-guideline
+    as_printed: ±0.3 mm within 100 mm, ±0.4% above
+    status: read
+    verified: 2026-10-31
+
+  # ================================================================== sheet metal
+  # Symbols: T thickness, R inside bend radius. A shop's own table (shop_tables) beats every generic rule here.
+
+  - id: sm-bend-radius-min-hubs
+    process: sheet-metal
+    feature: bend-radius
+    compare: sm-bend-radius-min
+    quantity: minimum inside bend radius
+    min: "T"
+    units: mm
+    applies: generic default
+    source: hubs-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-bend-radius-min-paulsen
+    process: sheet-metal
+    feature: bend-radius
+    compare: sm-bend-radius-min
+    quantity: minimum inside bend radius, to stop fracture or distortion
+    min: "T"
+    units: mm
+    applies: generic; keep one radius for every bend
+    source: paulsen-2017-machine-design-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-bend-radius-min-dfma
+    process: sheet-metal
+    feature: bend-radius
+    compare: sm-bend-radius-min
+    quantity: minimum inside bend radius (a screening question)
+    min: "T"
+    units: mm
+    applies: generic
+    source: dfma-dfm-checklist
+    status: read
+    verified: 2026-10-31
+  - id: sm-bend-radius-min-davis-mild
+    process: sheet-metal
+    feature: bend-radius
+    compare: sm-bend-radius-min
+    quantity: minimum inside bend radius
+    min: "T"
+    units: mm
+    applies: mild steel 0.02–0.13 in thick; soft aluminium (3003, 5052) about the same. Coining can reach nearly
+      zero; air bending gives 1–2 T, set by the V-die
+    source: davis-2001-fabricator-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sm-bend-radius-min-davis-hard-al
+    process: sheet-metal
+    feature: bend-radius
+    compare: sm-bend-radius-min
+    quantity: minimum inside bend radius for stiff aluminium alloys
+    min: "4*T"
+    max: "8*T"
+    units: mm
+    applies: 6061 and 2024; aluminium cracks most when bent parallel to the grain
+    source: davis-2001-fabricator-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sm-bend-radius-air-davis
+    process: sheet-metal
+    feature: bend-radius
+    quantity: inside radius air bending produces (the "normal" range)
+    min: "T"
+    max: "2*T"
+    units: mm
+    applies: mild steel on a press brake; the V-die opening sets it, and it may change from batch to batch
+    source: davis-2001-fabricator-design-tips
+    status: read
+    verified: 2026-10-31
+
+  - id: sm-k-factor-range-hubs
+    process: sheet-metal
+    feature: k-factor
+    quantity: K-factor (neutral-axis position over thickness, from the inside face)
+    min: 0.3
+    max: 0.5
+    units: ratio
+    applies: generic; the guide calls 0.4468 the average. It prints the range "in mm", but K has no unit. Make 3–5
+      test bends for a real value
+    source: hubs-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-k-factor-range-sendcutsend
+    process: sheet-metal
+    feature: k-factor
+    quantity: K-factor across SendCutSend's materials and thicknesses
+    min: 0.33
+    max: 0.50
+    units: ratio
+    applies: SendCutSend air bending; the per-SKU value is in its specs JSON (shop_tables)
+    source: sendcutsend-ordering-guide
+    status: read
+    verified: 2026-10-31
+  - id: sm-k-air-soft-r-le-t-hubs
+    process: sheet-metal
+    feature: k-factor
+    quantity: K-factor, air bending, soft metal (aluminium), R from 0 to T
+    value: 0.33
+    units: ratio
+    applies: generic table
+    source: hubs-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-k-air-soft-r-t-3t-hubs
+    process: sheet-metal
+    feature: k-factor
+    quantity: K-factor, air bending, soft metal (aluminium), R from T to 3T
+    value: 0.40
+    units: ratio
+    applies: generic table
+    source: hubs-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-k-air-medium-r-le-t-hubs
+    process: sheet-metal
+    feature: k-factor
+    quantity: K-factor, air bending, medium metal (steel), R from 0 to T
+    value: 0.38
+    units: ratio
+    applies: generic table
+    source: hubs-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-k-air-medium-r-t-3t-hubs
+    process: sheet-metal
+    feature: k-factor
+    quantity: K-factor, air bending, medium metal (steel), R from T to 3T
+    value: 0.43
+    units: ratio
+    applies: generic table
+    source: hubs-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-k-air-hard-r-le-t-hubs
+    process: sheet-metal
+    feature: k-factor
+    quantity: K-factor, air bending, hard metal (stainless steel), R from 0 to T
+    value: 0.40
+    units: ratio
+    applies: generic table
+    source: hubs-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-k-air-hard-r-t-3t-hubs
+    process: sheet-metal
+    feature: k-factor
+    quantity: K-factor, air bending, hard metal (stainless steel), R from T to 3T
+    value: 0.45
+    units: ratio
+    applies: generic table
+    source: hubs-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-k-air-r-gt-3t-hubs
+    process: sheet-metal
+    feature: k-factor
+    quantity: K-factor, air bending, any hardness, R above 3T
+    value: 0.50
+    units: ratio
+    applies: generic table; bottoming and coining rows are in the guide
+    source: hubs-sheet-metal
+    status: read
+    verified: 2026-10-31
+
+  - id: sm-flange-min-protolabs
+    process: sheet-metal
+    feature: flange
+    compare: sm-flange-min
+    quantity: minimum flange length
+    min: "4*T"
+    units: mm
+    applies: Protolabs press brake
+    datum: not stated
+    source: protolabs-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-flange-min-davis
+    process: sheet-metal
+    feature: flange
+    compare: sm-flange-min
+    quantity: minimum flange width
+    min: "4*T"
+    units: mm
+    applies: shorter flanges get tool marks, need a backup strip, or must be milled after forming
+    datum: not stated
+    source: davis-2001-fabricator-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sm-flange-min-century
+    process: sheet-metal
+    feature: flange
+    compare: sm-flange-min
+    quantity: minimum flange dimension
+    min: "3.5*(T + R)"
+    units: mm
+    applies: Century Tywood's shop rule
+    datum: not stated
+    source: century-tywood-sheet-metal-reference
+    status: read
+    verified: 2026-10-31
+  - id: sm-flange-min-hubs
+    process: sheet-metal
+    feature: flange
+    compare: sm-flange-min
+    quantity: minimum bend height
+    min: "2*T + R"
+    units: mm
+    applies: generic; short bend heights are hard to position in the brake
+    datum: not stated
+    source: hubs-sheet-metal
+    status: read
+    verified: 2026-10-31
+
+  - id: sm-hole-to-bend-min-hubs
+    process: sheet-metal
+    feature: hole-to-bend
+    compare: sm-hole-to-bend
+    quantity: distance from a hole to the bend
+    min: "2*T"
+    units: mm
+    applies: generic
+    datum: from the start of the bend radius (tangent line)
+    source: hubs-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-hole-to-bend-min-davis
+    process: sheet-metal
+    feature: hole-to-bend
+    compare: sm-hole-to-bend
+    quantity: distance from a punched hole's edge to the bend
+    min: "2*T"
+    units: mm
+    applies: punched features near a bend can turn into an unintended relief
+    datum: hole edge to the start of the bend radius
+    source: davis-2001-fabricator-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sm-hole-to-bend-min-dfma
+    process: sheet-metal
+    feature: hole-to-bend
+    compare: sm-hole-to-bend
+    quantity: hole-to-bend spacing (a screening question)
+    min: "2*T + R"
+    units: mm
+    applies: generic
+    datum: not stated
+    source: dfma-dfm-checklist
+    status: read
+    verified: 2026-10-31
+  - id: sm-hole-to-bend-min-paulsen
+    process: sheet-metal
+    feature: hole-to-bend
+    compare: sm-hole-to-bend
+    quantity: distance of a hole from any bend
+    min: "2.5*T + R"
+    units: mm
+    applies: holes; slots need 4T + R
+    datum: "\"away from any bends\"; not defined further"
+    source: paulsen-2017-machine-design-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-slot-to-bend-min-paulsen
+    process: sheet-metal
+    feature: hole-to-bend
+    quantity: distance of a slot from a bend
+    min: "4*T + R"
+    units: mm
+    applies: slots
+    datum: not stated
+    source: paulsen-2017-machine-design-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-hole-to-bend-min-century
+    process: sheet-metal
+    feature: hole-to-bend
+    compare: sm-hole-to-bend
+    quantity: inside dimension from a bend to the edge of a punched hole
+    min: "1.5*(T + R)"
+    units: mm
+    applies: punched holes; closer ones distort and may crack some materials
+    datum: inside face of the bend to the hole edge
+    source: century-tywood-sheet-metal-reference
+    status: read
+    verified: 2026-10-31
+  - id: sm-feature-to-bend-protolabs
+    process: sheet-metal
+    feature: hole-to-bend
+    compare: sm-hole-to-bend
+    quantity: distance within which a feature is at risk of deforming
+    min: "4*T"
+    units: mm
+    applies: Protolabs; closer features need relief cuts, a different radius, or forming after cutting
+    datum: "\"of the bend\"; not defined further"
+    source: protolabs-sheet-metal
+    status: read
+    verified: 2026-10-31
+
+  - id: sm-relief-depth-min-davis
+    process: sheet-metal
+    feature: relief
+    compare: sm-relief-depth
+    quantity: minimum bend relief
+    min: "T + R"
+    units: mm
+    applies: generic; cut it with curves, not sharp corners, so cracks do not start there
+    datum: not stated
+    source: davis-2001-fabricator-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sm-relief-depth-min-century
+    process: sheet-metal
+    feature: relief
+    compare: sm-relief-depth
+    quantity: minimum bend relief
+    min: "T + R"
+    units: mm
+    applies: flanges that run along only part of an edge
+    datum: not stated
+    source: century-tywood-sheet-metal-reference
+    status: read
+    verified: 2026-10-31
+  - id: sm-relief-depth-min-sendcutsend
+    process: sheet-metal
+    feature: relief
+    compare: sm-relief-depth
+    quantity: minimum relief depth
+    min: "T + R + 0.5"
+    units: mm
+    applies: SendCutSend; the extra 0.02 in (0.5 mm) is clearance. Its specs JSON lists the depth per SKU
+    datum: from the bend line
+    as_printed: T + R + 0.02 in
+    source: sendcutsend-bend-relief
+    status: read
+    verified: 2026-10-31
+  - id: sm-relief-depth-min-paulsen
+    process: sheet-metal
+    feature: relief
+    compare: sm-relief-depth
+    quantity: relief cut length (longer than the bend radius)
+    min: "R"
+    units: mm
+    applies: generic
+    datum: not stated
+    source: paulsen-2017-machine-design-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-relief-width-min-sendcutsend
+    process: sheet-metal
+    feature: relief
+    compare: sm-relief-width
+    quantity: minimum relief width
+    min: "T/2"
+    units: mm
+    applies: SendCutSend
+    source: sendcutsend-bend-relief
+    status: read
+    verified: 2026-10-31
+  - id: sm-relief-width-min-hubs
+    process: sheet-metal
+    feature: relief
+    compare: sm-relief-width
+    quantity: minimum relief width
+    min: "T"
+    units: mm
+    applies: generic
+    source: hubs-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-relief-width-min-paulsen
+    process: sheet-metal
+    feature: relief
+    compare: sm-relief-width
+    quantity: minimum relief width
+    min: "T"
+    units: mm
+    applies: generic
+    source: paulsen-2017-machine-design-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-corner-relief-gap-sendcutsend
+    process: sheet-metal
+    feature: relief
+    quantity: gap between two flanges meeting at a corner
+    min: 0.4
+    units: mm
+    applies: SendCutSend corner reliefs; the article prints .015 in (0.4 mm), and 0.015 in is 0.381 mm. The printed 0.4 mm is kept
+    as_printed: 0.015 in
+    source: sendcutsend-bend-relief
+    status: read
+    verified: 2026-10-31
+
+  - id: sm-hole-min-protolabs
+    process: sheet-metal
+    feature: hole
+    compare: sm-hole-min
+    quantity: minimum hole or slot diameter
+    min: "T"
+    units: mm
+    applies: Protolabs
+    source: protolabs-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-hole-min-davis
+    process: sheet-metal
+    feature: hole
+    compare: sm-hole-min
+    quantity: smallest punched hole
+    min: "T"
+    units: mm
+    applies: punching (the punch tip bends or breaks below it); smaller holes are laser-cut
+    source: davis-2001-fabricator-design-tips
+    status: read
+    verified: 2026-10-31
+  - id: sm-hole-to-edge-protolabs
+    process: sheet-metal
+    feature: hole-to-edge
+    compare: sm-hole-to-edge
+    quantity: distance from a hole to the material edge
+    min: "1.574 if T <= 0.914 else 3.175"
+    units: mm
+    applies: Protolabs; inserts follow the hardware maker's spacing
+    as_printed: 0.062 in for T ≤ 0.036 in, else 0.125 in
+    source: protolabs-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-hole-to-edge-dfma
+    process: sheet-metal
+    feature: hole-to-edge
+    compare: sm-hole-to-edge
+    quantity: hole-to-edge spacing (a screening question)
+    min: "2*T"
+    units: mm
+    applies: generic
+    source: dfma-dfm-checklist
+    status: read
+    verified: 2026-10-31
+  - id: sm-hole-to-edge-hubs
+    process: sheet-metal
+    feature: hole-to-edge
+    compare: sm-hole-to-edge
+    quantity: distance from a hole to the edge
+    min: "T"
+    units: mm
+    applies: generic
+    source: hubs-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-hole-to-edge-century
+    process: sheet-metal
+    feature: hole-to-edge
+    compare: sm-hole-to-edge
+    quantity: distance from a punched hole to the edge of the blank
+    min: "1.5875 if T <= 0.79375 else max(2*T, 3.175)"
+    units: mm
+    applies: Century Tywood; 1/16 in for stock up to 1/32 in, else 2T but not under 1/8 in
+    as_printed: 1/16 in for T ≤ 1/32 in, else max(2T, 1/8 in)
+    source: century-tywood-sheet-metal-reference
+    status: read
+    verified: 2026-10-31
+  - id: sm-hole-spacing-hubs
+    process: sheet-metal
+    feature: hole-spacing
+    compare: sm-hole-spacing
+    quantity: distance between holes
+    min: "2*T"
+    units: mm
+    applies: generic (Century Tywood gives the same for punched holes)
+    source: hubs-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-hole-spacing-paulsen
+    process: sheet-metal
+    feature: hole-spacing
+    compare: sm-hole-spacing
+    quantity: distance between holes
+    min: "6*T"
+    units: mm
+    applies: generic
+    source: paulsen-2017-machine-design-sheet-metal
+    status: read
+    verified: 2026-10-31
+
+  - id: sm-hem-return-protolabs
+    process: sheet-metal
+    feature: hem
+    compare: sm-hem-return
+    quantity: hem return length (inside diameter at least T)
+    min: "6*T"
+    units: mm
+    applies: Protolabs, open and closed hems
+    source: protolabs-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-hem-return-paulsen
+    process: sheet-metal
+    feature: hem
+    compare: sm-hem-return
+    quantity: hem return length (inside diameter at least T)
+    min: "4*T"
+    units: mm
+    applies: open and tear-drop hems (tear-drop opening at least T/4); flat hems risk cracking
+    source: paulsen-2017-machine-design-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-tab-width-protolabs
+    process: sheet-metal
+    feature: tab
+    quantity: tab width (no longer than 5 times its width)
+    min: "max(2*T, 3.2)"
+    units: mm
+    applies: Protolabs; notches at least max(T, 1.016 mm) wide, also no longer than 5 times their width
+    as_printed: max(2T, 0.126 in)
+    source: protolabs-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-countersink-to-bend-paulsen
+    process: sheet-metal
+    feature: countersink
+    quantity: countersink distance from a bend (from an edge at least 4T, from each other at least 8T)
+    min: "3*T"
+    units: mm
+    applies: generic
+    source: paulsen-2017-machine-design-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-curl-radius-paulsen
+    process: sheet-metal
+    feature: curl
+    quantity: outside radius of a curl
+    min: "2*T"
+    units: mm
+    applies: holes at least the curl radius plus T away from the curl
+    source: paulsen-2017-machine-design-sheet-metal
+    status: read
+    verified: 2026-10-31
+
+  - id: sm-bend-angle-tolerance-protolabs
+    process: sheet-metal
+    feature: tolerance
+    compare: sm-bend-angle-tolerance
+    quantity: bend angle tolerance (±)
+    value: 1
+    units: deg
+    applies: Protolabs, all bends
+    source: protolabs-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-bend-angle-tolerance-sendcutsend
+    process: sheet-metal
+    feature: tolerance
+    compare: sm-bend-angle-tolerance
+    quantity: bend angle tolerance (±)
+    value: 1
+    units: deg
+    applies: parts up to 24 in (610 mm); ±2° above that. Bends at most 120–130°, so no 180° hems
+    source: sendcutsend-ordering-guide
+    status: read
+    verified: 2026-10-31
+  - id: sm-bend-to-hole-tolerance-protolabs
+    process: sheet-metal
+    feature: tolerance
+    quantity: bend-to-hole tolerance (±), one surface
+    value: "0.38 if T < 3.302 else 0.635"
+    units: mm
+    applies: Protolabs; across two bends the same values, across three or more 0.76 / 1.016 mm
+    as_printed: 0.015 in under 0.13 in stock, 0.025 in above
+    source: protolabs-sheet-metal
+    status: read
+    verified: 2026-10-31
+  - id: sm-kerf-laser-hubs
+    process: sheet-metal
+    feature: kerf
+    quantity: laser-cut kerf (waterjet 0.5–1 mm)
+    value: 0.3
+    units: mm
+    applies: average; for parts that fit together add half the kerf to the inner part and take half from the outer
+    source: hubs-sheet-metal
+    status: read
+    verified: 2026-10-31
+
+  # ================================================================== injection moulding
+  - id: im-draft-vertical-min-protolabs
+    process: injection-moulding
+    feature: draft
+    compare: im-draft
+    variant: vertical faces
+    quantity: draft on vertical faces
+    min: 0.5
+    units: deg
+    applies: Protolabs, smooth faces; 2° in most situations
+    source: protolabs-injection-molding
+    status: read
+    verified: 2026-10-31
+  - id: im-draft-typical-protolabs
+    process: injection-moulding
+    feature: draft
+    compare: im-draft
+    variant: most situations
+    quantity: draft in most situations
+    value: 2
+    units: deg
+    applies: Protolabs
+    source: protolabs-injection-molding
+    status: read
+    verified: 2026-10-31
+  - id: im-draft-shutoff-min-protolabs
+    process: injection-moulding
+    feature: draft
+    quantity: draft on shut-off faces
+    min: 3
+    units: deg
+    applies: Protolabs
+    source: protolabs-injection-molding
+    status: read
+    verified: 2026-10-31
+  - id: im-draft-texture-t1-min-protolabs
+    process: injection-moulding
+    feature: draft
+    quantity: draft with light texture (PM-T1)
+    min: 3
+    units: deg
+    applies: Protolabs
+    source: protolabs-injection-molding
+    status: read
+    verified: 2026-10-31
+  - id: im-draft-texture-t2-min-protolabs
+    process: injection-moulding
+    feature: draft
+    quantity: draft with PM-T2 texture
+    min: 5
+    units: deg
+    applies: Protolabs; the table prints 5°+
+    source: protolabs-injection-molding
+    status: read
+    verified: 2026-10-31
+  - id: im-draft-pc-min-covestro
+    process: injection-moulding
+    feature: draft
+    compare: im-draft
+    variant: PC
+    quantity: draft for most polycarbonate grades
+    min: 0.5
+    units: deg
+    applies: Covestro PC resins; 1° preferred
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-draft-high-heat-covestro
+    process: injection-moulding
+    feature: draft
+    compare: im-draft
+    variant: high-heat PC, TPU
+    quantity: draft for high-heat PC (Apec) and TPU (Texin, Desmopan)
+    min: 3
+    max: 5
+    units: deg
+    applies: Covestro
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-draft-smooth-fictiv
+    process: injection-moulding
+    feature: draft
+    compare: im-draft
+    variant: smooth
+    quantity: draft on smooth faces
+    min: 1
+    max: 2
+    units: deg
+    applies: Fictiv; light texture 3°, heavy texture 5° or more
+    source: fictiv-im-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: im-draft-delrin-shallow-dupont
+    process: injection-moulding
+    feature: draft
+    compare: im-draft
+    variant: Delrin, shallow
+    quantity: draft for Delrin acetal, draws under 25.4 mm deep
+    min: 0
+    max: 0.25
+    units: deg
+    applies: DuPont Table 3.01; 0.5° for deeper draws; reinforced nylons 0.25–0.5° shallow, 0.5–1° deep
+    source: dupont-design-module-1
+    status: read
+    verified: 2026-10-31
+  - id: im-draft-texture-dupont
+    process: injection-moulding
+    feature: draft
+    quantity: extra draft for a textured face, per texture depth (texture in mm)
+    value: "texture/0.0254"
+    units: deg
+    applies: "DuPont: 1° per 0.001 in of texture depth"
+    source: dupont-design-module-1
+    as_printed: 1° per 0.001 in
+    status: read
+    verified: 2026-10-31
+  - id: im-draft-texture-covestro
+    process: injection-moulding
+    feature: draft
+    quantity: draft for a textured face (texture depth in mm)
+    value: "1 + texture/0.0254"
+    units: deg
+    applies: "Covestro: the standard 1° plus 1° per 0.001 in of texture depth"
+    source: covestro-part-mold-design
+    as_printed: 1° + 1° per 0.001 in
+    status: read
+    verified: 2026-10-31
+  - id: im-draft-texture-fictiv
+    process: injection-moulding
+    feature: draft
+    quantity: extra draft for a textured face (texture depth in mm)
+    value: "1.5*texture/0.025"
+    units: deg
+    applies: "Fictiv: 1.5° per 0.001 in (0.025 mm) of texture depth"
+    source: fictiv-im-design-guide
+    as_printed: 1.5° per 0.001 in
+    status: read
+    verified: 2026-10-31
+  - id: im-wall-abs-protolabs
+    process: injection-moulding
+    feature: wall
+    compare: im-wall
+    variant: ABS
+    quantity: recommended wall thickness
+    min: 1.143
+    max: 3.556
+    units: mm
+    applies: ABS; Protolabs' table, adapted from manufacturingcenter.com
+    source: protolabs-injection-molding
+    as_printed: 0.045–0.140 in
+    status: read
+    verified: 2026-10-31
+  - id: im-wall-pc-protolabs
+    process: injection-moulding
+    feature: wall
+    compare: im-wall
+    variant: polycarbonate
+    quantity: recommended wall thickness
+    min: 1.016
+    max: 3.81
+    units: mm
+    applies: polycarbonate; Protolabs' table, adapted from manufacturingcenter.com
+    source: protolabs-injection-molding
+    as_printed: 0.040–0.150 in
+    status: read
+    verified: 2026-10-31
+  - id: im-wall-pp-protolabs
+    process: injection-moulding
+    feature: wall
+    compare: im-wall
+    variant: polypropylene
+    quantity: recommended wall thickness
+    min: 0.889
+    max: 3.81
+    units: mm
+    applies: polypropylene; Protolabs' table, adapted from manufacturingcenter.com
+    source: protolabs-injection-molding
+    as_printed: 0.035–0.150 in
+    status: read
+    verified: 2026-10-31
+  - id: im-wall-pa-protolabs
+    process: injection-moulding
+    feature: wall
+    compare: im-wall
+    variant: nylon
+    quantity: recommended wall thickness
+    min: 0.762
+    max: 2.921
+    units: mm
+    applies: nylon; Protolabs' table, adapted from manufacturingcenter.com
+    source: protolabs-injection-molding
+    as_printed: 0.030–0.115 in
+    status: read
+    verified: 2026-10-31
+  - id: im-wall-pom-protolabs
+    process: injection-moulding
+    feature: wall
+    compare: im-wall
+    variant: acetal
+    quantity: recommended wall thickness
+    min: 0.762
+    max: 3.048
+    units: mm
+    applies: acetal; Protolabs' table, adapted from manufacturingcenter.com
+    source: protolabs-injection-molding
+    as_printed: 0.030–0.120 in
+    status: read
+    verified: 2026-10-31
+  - id: im-wall-stable-protolabs
+    process: injection-moulding
+    feature: wall
+    compare: im-wall
+    variant: stable window
+    quantity: wall range where moulding is stable and repeatable
+    min: 1.5
+    max: 2.5
+    units: mm
+    applies: thermoplastics in general; small parts run at 1 mm, hand-sized parts about 2 mm
+    source: protolabs-im-ribs-gussets
+    status: read
+    verified: 2026-10-31
+  - id: im-wall-sink-protolabs
+    process: injection-moulding
+    feature: wall
+    quantity: wall at which the section starts to sink on itself
+    max: 3.8
+    units: mm
+    applies: above about 3 mm, watch for sink; at 3.8 mm consider another process or gas assist
+    source: protolabs-im-ribs-gussets
+    as_printed: 0.150 in
+    status: read
+    verified: 2026-10-31
+  - id: im-wall-thin-covestro
+    process: injection-moulding
+    feature: wall
+    quantity: main wall below which a part is thin-walled and may need high-performance moulding
+    value: 1.5
+    units: mm
+    applies: Covestro
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-wall-variation-covestro
+    process: injection-moulding
+    feature: wall
+    quantity: variation of the nominal wall that fills without warpage or appearance problems
+    max: "0.25*wall"
+    units: mm
+    applies: low-shrinkage resins (most amorphous and filled grades); unfilled crystalline resins shrink more and tolerate less (the text continues on a page not read)
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-wall-critical-pc-covestro
+    process: injection-moulding
+    feature: wall
+    quantity: critical thickness above which impact strength drops
+    value: 4.76
+    units: mm
+    applies: medium-viscosity polycarbonate at room temperature; lower when colder
+    source: covestro-part-mold-design
+    as_printed: 3/16 in
+    status: read
+    verified: 2026-10-31
+  - id: im-rib-thickness-protolabs
+    process: injection-moulding
+    feature: rib
+    compare: im-rib-thickness
+    quantity: rib or gusset thickness
+    max: "0.6*wall"
+    units: mm
+    applies: to avoid sink where the rib meets the wall
+    source: protolabs-im-ribs-gussets
+    status: read
+    verified: 2026-10-31
+  - id: im-rib-thickness-dfma
+    process: injection-moulding
+    feature: rib
+    compare: im-rib-thickness
+    quantity: rib thickness (a screening question)
+    max: "0.6*wall"
+    units: mm
+    applies: to prevent sink
+    source: dfma-dfm-checklist
+    status: read
+    verified: 2026-10-31
+  - id: im-rib-thickness-fictiv
+    process: injection-moulding
+    feature: rib
+    compare: im-rib-thickness
+    quantity: rib thickness
+    min: "0.5*wall"
+    max: "0.6*wall"
+    units: mm
+    applies: Fictiv
+    source: fictiv-im-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: im-rib-thickness-minimal-sink-covestro
+    process: injection-moulding
+    feature: rib
+    compare: im-rib-thickness
+    variant: minimal sink
+    quantity: rib base thickness for minimal sink
+    value: "0.5*wall"
+    units: mm
+    applies: unfilled PC, PC/ABS, PC/PET, TPU; 0.4 × wall on high-gloss faces; filled grades 0.55–0.6
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-rib-thickness-slight-sink-covestro
+    process: injection-moulding
+    feature: rib
+    compare: im-rib-thickness
+    variant: slight sink
+    quantity: rib base thickness where slight sink is acceptable
+    value: "0.66*wall"
+    units: mm
+    applies: unfilled grades; filled grades 0.70–0.75
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-rib-thickness-dupont
+    process: injection-moulding
+    feature: rib
+    compare: im-rib-thickness
+    variant: figure 4.07
+    quantity: rib thickness, for appearance to for structure
+    min: "0.4*wall"
+    max: "0.6*wall"
+    units: mm
+    applies: >-
+      read from the rendered Figure 4.07 (PDF page 30), whose labels have no text layer: rib T = 0.4W "design for
+      appearance" (¼–½° draft) and 0.6W "design for structure"; W, the wall, is this file's `wall`. The figure's third
+      case, T = W "for foam-molding", is not used
+    source: dupont-design-module-1
+    as_printed: T=0.4W (appearance), T=0.6W (structure)
+    status: read
+    verified: 2026-10-31
+  - id: im-rib-height-fictiv
+    process: injection-moulding
+    feature: rib
+    compare: im-rib-height
+    quantity: rib height
+    max: "2.5*wall"
+    units: mm
+    applies: use several shorter ribs if a rib must be taller
+    source: fictiv-im-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: im-rib-height-covestro
+    process: injection-moulding
+    feature: rib
+    compare: im-rib-height
+    quantity: rib height
+    max: "3*rib"
+    units: mm
+    applies: rule of thumb; rib is the rib's base thickness
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-rib-spacing-covestro
+    process: injection-moulding
+    feature: rib
+    quantity: spacing between short ribs
+    min: "2*wall"
+    units: mm
+    applies: for mould cooling
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-rib-draft-covestro
+    process: injection-moulding
+    feature: rib
+    quantity: draft on each side of a rib
+    min: 0.5
+    units: deg
+    applies: Covestro
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-rib-fillet-dupont
+    process: injection-moulding
+    feature: rib
+    compare: im-rib-fillet
+    quantity: fillet radius at the base of a rib
+    value: "0.5*rib"
+    units: mm
+    applies: rib is the rib thickness
+    source: dupont-design-module-1
+    status: read
+    verified: 2026-10-31
+  - id: im-rib-fillet-covestro
+    process: injection-moulding
+    feature: rib
+    compare: im-rib-fillet
+    quantity: fillet radius at the base of a rib
+    value: "0.125*wall"
+    units: mm
+    applies: Figure 2-10 (in the text layer)
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-rib-fillet-fictiv
+    process: injection-moulding
+    feature: rib
+    compare: im-rib-fillet
+    quantity: fillet radius at the base of a rib
+    min: "0.25*wall"
+    max: "0.5*wall"
+    units: mm
+    applies: Fictiv also says not to exceed 0.010 in (0.254 mm), which is below the range for any wall over 1 mm and below DuPont's 0.508 mm minimum corner radius
+    source: fictiv-im-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: im-gusset-thickness-covestro
+    process: injection-moulding
+    feature: gusset
+    compare: im-rib-thickness
+    variant: gusset
+    quantity: gusset thickness where sink matters
+    min: "0.5*wall"
+    max: "0.67*wall"
+    units: mm
+    applies: Covestro
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-boss-wall-protolabs
+    process: injection-moulding
+    feature: boss
+    compare: im-boss-wall
+    quantity: boss wall thickness
+    min: "0.4*wall"
+    max: "0.6*wall"
+    units: mm
+    applies: wall is the wall the boss rises from; add gussets rather than thicken
+    source: protolabs-im-bosses
+    status: read
+    verified: 2026-10-31
+  - id: im-boss-wall-fictiv
+    process: injection-moulding
+    feature: boss
+    compare: im-boss-wall
+    quantity: boss wall thickness
+    max: "0.6*wall"
+    units: mm
+    applies: to avoid sink
+    source: fictiv-im-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: im-boss-wall-dupont
+    process: injection-moulding
+    feature: boss
+    compare: im-boss-wall
+    quantity: boss wall thickness
+    value: "0.6*wall if wall < 3.175 else 0.4*wall"
+    units: mm
+    applies: >-
+      read from the rendered Figure 3.10 (PDF page 12), whose labels have no text layer; T, the wall, is this file's
+      `wall`. The same figure shows OD = 2D and H = 2.5D
+    source: dupont-design-module-1
+    as_printed: t = 0.6T for T < 1/8 in, t = 0.4T for T > 1/8 in
+    status: read
+    verified: 2026-10-31
+  - id: im-boss-od-dupont
+    process: injection-moulding
+    feature: boss
+    compare: im-boss-od
+    quantity: boss outside diameter
+    min: "2*D"
+    max: "2.5*D"
+    units: mm
+    applies: D is the hole diameter
+    source: dupont-design-module-1
+    status: read
+    verified: 2026-10-31
+  - id: im-boss-od-covestro
+    process: injection-moulding
+    feature: boss
+    compare: im-boss-od
+    quantity: boss outside diameter
+    min: "2*D"
+    max: "2.4*D"
+    units: mm
+    applies: D is the screw or insert outside diameter
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-boss-draft-protolabs
+    process: injection-moulding
+    feature: boss
+    quantity: draft on boss walls, inside and out
+    min: 0.5
+    max: 3
+    units: deg
+    applies: by boss height; or mould solid and drill
+    source: protolabs-im-bosses
+    status: read
+    verified: 2026-10-31
+  - id: im-boss-height-covestro
+    process: injection-moulding
+    feature: boss
+    quantity: boss height before it is 'tall' (fill and thick-base problems)
+    max: "5*D"
+    units: mm
+    applies: D is the boss outside diameter
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-boss-pilot-covestro
+    process: injection-moulding
+    feature: boss
+    quantity: pilot hole for a thread-cutting screw
+    value: "0.88*D"
+    units: mm
+    applies: polycarbonate; D is the screw's outside diameter
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-insert-floor-dupont
+    process: injection-moulding
+    feature: insert
+    quantity: material under a moulded-in insert
+    min: "D/6"
+    units: mm
+    applies: D is the insert diameter, to limit sink
+    source: dupont-design-module-1
+    status: read
+    verified: 2026-10-31
+  - id: im-corner-fillet-dupont
+    process: injection-moulding
+    feature: corner
+    compare: im-corner
+    quantity: inside fillet radius
+    value: "0.5*wall"
+    units: mm
+    applies: general rule
+    source: dupont-design-module-1
+    status: read
+    verified: 2026-10-31
+  - id: im-corner-min-dupont
+    process: injection-moulding
+    feature: corner
+    quantity: smallest corner radius
+    min: 0.508
+    units: mm
+    applies: all corners
+    source: dupont-design-module-1
+    as_printed: 0.020 in
+    status: read
+    verified: 2026-10-31
+  - id: im-corner-fillet-fictiv
+    process: injection-moulding
+    feature: corner
+    compare: im-corner
+    quantity: inside corner radius
+    min: "0.5*wall"
+    units: mm
+    applies: outside radius = inside radius + wall
+    source: fictiv-im-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: im-corner-fillet-covestro
+    process: injection-moulding
+    feature: corner
+    compare: im-corner
+    quantity: inside radius
+    value: "0.15*wall"
+    units: mm
+    applies: a compromise between strength and appearance for most parts; outside radius = inside radius + wall
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-hole-blind-depth-dupont
+    process: injection-moulding
+    feature: hole
+    compare: im-hole-depth
+    quantity: depth of a blind cored hole
+    max: "2*D"
+    units: mm
+    applies: D is the core pin diameter
+    source: dupont-design-module-1
+    status: read
+    verified: 2026-10-31
+  - id: im-hole-blind-depth-covestro
+    process: injection-moulding
+    feature: hole
+    compare: im-hole-depth
+    quantity: depth of a blind cored hole
+    max: "3*D"
+    units: mm
+    applies: up to 5 × D only with symmetric, slow filling
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-hole-core-both-ends-covestro
+    process: injection-moulding
+    feature: hole
+    quantity: length of a core supported at both ends
+    value: "6*D"
+    units: mm
+    applies: up to 10 × D with symmetric filling
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-hole-floor-dupont
+    process: injection-moulding
+    feature: hole
+    quantity: floor thickness under a blind hole
+    min: "D/6"
+    units: mm
+    applies: to stop bulging
+    source: dupont-design-module-1
+    status: read
+    verified: 2026-10-31
+  - id: im-gate-thickness-covestro
+    process: injection-moulding
+    feature: gate
+    quantity: gate thickness
+    min: "0.5*wall"
+    units: mm
+    applies: unfilled resins; 2/3 of the wall for highly cosmetic parts; glass- or mineral-filled polyamides down to 1/3
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-gate-thin-wall-covestro
+    process: injection-moulding
+    feature: gate
+    quantity: gate diameter for thin-walled parts
+    min: "0.8*wall"
+    units: mm
+    applies: main walls under 1.5 mm
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-gate-fan-land-covestro
+    process: injection-moulding
+    feature: gate
+    quantity: fan-gate land length
+    max: 1.524
+    units: mm
+    applies: at the narrowest point
+    source: covestro-part-mold-design
+    as_printed: 0.060 in
+    status: read
+    verified: 2026-10-31
+  - id: im-undercut-strip-delrin-dupont
+    process: injection-moulding
+    feature: undercut
+    compare: im-undercut
+    quantity: strippable undercut as a share of the diameter
+    max: 5
+    units: percent
+    applies: Delrin acetal, bevelled and circular; Zytel nylon 6–10 %; glass-reinforced 1 % (2 % from a hot mould)
+    source: dupont-design-module-1
+    status: read
+    verified: 2026-10-31
+  - id: im-undercut-strip-covestro
+    process: injection-moulding
+    feature: undercut
+    compare: im-undercut
+    quantity: strippable undercut as a share of the diameter
+    max: 2
+    units: percent
+    applies: Apec high-heat PC and filled grades; TPU about 5 % (up to 10 %); avoid in stiff PC and PC/ABS
+    source: covestro-part-mold-design
+    status: read
+    verified: 2026-10-31
+  - id: im-tolerance-protolabs
+    process: injection-moulding
+    feature: tolerance
+    compare: tolerance
+    quantity: machining tolerance of the mould, plus a resin tolerance of at least ±0.002 mm/mm
+    value: "0.08 + 0.002*L"
+    units: mm
+    applies: Protolabs aluminium tooling; ±0.003 in plus the resin's own
+    source: protolabs-injection-molding
+    as_printed: ±0.003 in + 0.002 in/in
+    status: read
+    verified: 2026-10-31
+  - id: im-depth-max-protolabs
+    process: injection-moulding
+    feature: size
+    quantity: part depth from the parting line
+    max: 101.6
+    units: mm
+    applies: Protolabs; up to 203.2 mm if the parting line runs through the middle
+    source: protolabs-injection-molding
+    as_printed: 4 in
+    status: read
+    verified: 2026-10-31
+
+  # ================================================================== CNC
+  - id: cnc-corner-radius-hubs
+    process: cnc
+    feature: corner
+    compare: cnc-corner-radius
+    quantity: inside vertical corner radius
+    min: "depth/3"
+    units: mm
+    applies: pockets; slightly larger than the tool (for example +1 mm) for a better finish; T-bone undercut if a sharp corner is needed
+    source: hubs-cnc-design
+    status: read
+    verified: 2026-10-31
+  - id: cnc-corner-radius-xometry
+    process: cnc
+    feature: corner
+    compare: cnc-corner-radius
+    quantity: inside corner radius, as a multiple of the tool radius
+    value: "1.3*D/2"
+    units: mm
+    applies: D is the end-mill diameter
+    source: xometry-cnc-10-tips
+    status: read
+    verified: 2026-10-31
+  - id: cnc-corner-radius-add-xometry
+    process: cnc
+    feature: corner
+    compare: cnc-corner-radius
+    quantity: "inside corner radius: tool radius plus 0.02–0.05 in"
+    min: "D/2 + 0.508"
+    max: "D/2 + 1.27"
+    units: mm
+    applies: to avoid the tool stopping and pivoting in the corner (chatter)
+    source: xometry-cnc-corner-radii
+    as_printed: tool radius + 0.02–0.05 in
+    status: read
+    verified: 2026-10-31
+  - id: cnc-corner-radius-min-fictiv
+    process: cnc
+    feature: corner
+    compare: cnc-corner-radius
+    quantity: inside radius
+    min: 0.8
+    units: mm
+    applies: whenever possible; make it slightly larger than the tool
+    source: fictiv-cnc-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: cnc-hole-micro-hubs
+    process: cnc
+    feature: feature
+    compare: cnc-small-tool
+    variant: micro-machining
+    quantity: smallest hole or cavity diameter with micro-machining tools
+    min: 0.05
+    units: mm
+    applies: >-
+      feasible; most shops work down to 2.5 mm. The same page says holes are feasible above 1 mm. The table prints
+      "0.05 mm (0.005 inches)", which disagree: 0.005 in is 0.127 mm, 2.5 times the mm value. The mm value is kept
+    source: hubs-cnc-design
+    as_printed: 0.005 in
+    status: read
+    verified: 2026-10-31
+  - id: cnc-floor-radius-hubs
+    process: cnc
+    feature: corner
+    quantity: floor radius
+    min: 0
+    max: 1
+    units: mm
+    applies: 0, 0.5 or 1 mm (flat or bull-nose end mills); others with ball end mills
+    source: hubs-cnc-design
+    status: read
+    verified: 2026-10-31
+  - id: cnc-cavity-depth-hubs
+    process: cnc
+    feature: pocket
+    compare: cnc-cavity-depth
+    quantity: cavity depth
+    max: "4*width"
+    units: mm
+    applies: beyond that, vary the depth
+    source: hubs-cnc-design
+    status: read
+    verified: 2026-10-31
+  - id: cnc-cavity-depth-xometry
+    process: cnc
+    feature: pocket
+    compare: cnc-cavity-depth
+    quantity: cavity depth
+    max: "3*width"
+    units: mm
+    applies: the guide says 3 to 5 times the width; 3 is the conservative end
+    source: xometry-cnc-10-tips
+    status: read
+    verified: 2026-10-31
+  - id: cnc-cavity-depth-dfma
+    process: cnc
+    feature: pocket
+    compare: cnc-cavity-depth
+    quantity: pocket depth to width (a screening question)
+    max: "4*width"
+    units: mm
+    applies: "under 4:1"
+    source: dfma-dfm-checklist
+    status: read
+    verified: 2026-10-31
+  - id: cnc-cavity-depth-tool-hubs
+    process: cnc
+    feature: pocket
+    quantity: cavity depth that machines best
+    min: "2*D"
+    max: "3*D"
+    units: mm
+    applies: D is the tool diameter; 4 × D and more costs extra
+    source: hubs-cnc-cost-tips
+    status: read
+    verified: 2026-10-31
+  - id: cnc-tool-reach-plastic-fictiv
+    process: cnc
+    feature: tool-reach
+    compare: cnc-tool-reach
+    variant: plastics
+    quantity: end-mill depth of cut
+    max: "15*D"
+    units: mm
+    applies: plastics; D is the end-mill diameter
+    source: fictiv-cnc-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: cnc-tool-reach-aluminium-fictiv
+    process: cnc
+    feature: tool-reach
+    compare: cnc-tool-reach
+    variant: aluminium
+    quantity: end-mill depth of cut
+    max: "10*D"
+    units: mm
+    applies: aluminium
+    source: fictiv-cnc-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: cnc-tool-reach-steel-fictiv
+    process: cnc
+    feature: tool-reach
+    compare: cnc-tool-reach
+    variant: steel
+    quantity: end-mill depth of cut
+    max: "5*D"
+    units: mm
+    applies: steel
+    source: fictiv-cnc-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: cnc-tool-reach-deep-hubs
+    process: cnc
+    feature: tool-reach
+    compare: cnc-tool-reach
+    variant: deep from
+    quantity: depth beyond which a cavity counts as deep
+    value: "6*D"
+    units: mm
+    applies: D is the tool diameter
+    source: hubs-cnc-design
+    status: read
+    verified: 2026-10-31
+  - id: cnc-tool-reach-max-hubs
+    process: cnc
+    feature: tool-reach
+    compare: cnc-tool-reach
+    variant: specialised
+    quantity: deepest cavity with specialised tooling
+    max: "30*D"
+    units: mm
+    applies: for example 350 mm with a 1 in end mill
+    source: hubs-cnc-design
+    status: read
+    verified: 2026-10-31
+  - id: cnc-cutting-length-hubs
+    process: cnc
+    feature: tool-reach
+    quantity: cutting length of a standard end mill
+    min: "3*D"
+    max: "4*D"
+    units: mm
+    applies: Protolabs Network
+    source: hubs-cnc-design
+    status: read
+    verified: 2026-10-31
+  - id: cnc-cutting-length-harvey
+    process: cnc
+    feature: tool-reach
+    quantity: length of cut of long-reach miniature end mills
+    value: "3*D"
+    units: mm
+    applies: standard flute; the long-flute line is at least 5 × D
+    source: harvey-tool-long-reach
+    status: read
+    verified: 2026-10-31
+  - id: cnc-depth-max-protolabs
+    process: cnc
+    feature: pocket
+    quantity: deepest milled feature from each side
+    max: 50.8
+    units: mm
+    applies: Protolabs
+    source: protolabs-cnc-milling
+    as_printed: 2 in
+    status: read
+    verified: 2026-10-31
+  - id: cnc-wall-metal-hubs
+    process: cnc
+    feature: wall
+    compare: min-wall
+    variant: metal
+    quantity: minimum wall
+    min: 0.8
+    units: mm
+    applies: metals; 0.5 mm feasible case by case
+    source: hubs-cnc-design
+    status: read
+    verified: 2026-10-31
+  - id: cnc-wall-plastic-hubs
+    process: cnc
+    feature: wall
+    compare: min-wall
+    variant: plastic
+    quantity: minimum wall
+    min: 1.5
+    units: mm
+    applies: plastics (warp and soften); 1.0 mm feasible
+    source: hubs-cnc-design
+    status: read
+    verified: 2026-10-31
+  - id: cnc-wall-metal-xometry
+    process: cnc
+    feature: wall
+    compare: min-wall
+    variant: metal
+    quantity: standard minimum wall
+    min: 0.794
+    units: mm
+    applies: metals
+    source: xometry-cnc-10-tips
+    status: read
+    verified: 2026-10-31
+  - id: cnc-wall-plastic-xometry
+    process: cnc
+    feature: wall
+    compare: min-wall
+    variant: plastic
+    quantity: standard minimum wall
+    min: 1.5
+    units: mm
+    applies: plastics
+    source: xometry-cnc-10-tips
+    status: read
+    verified: 2026-10-31
+  - id: cnc-wall-metal-fictiv
+    process: cnc
+    feature: wall
+    compare: min-wall
+    variant: metal
+    quantity: minimum wall
+    min: 0.25
+    units: mm
+    applies: milled metals
+    source: fictiv-cnc-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: cnc-wall-plastic-fictiv
+    process: cnc
+    feature: wall
+    compare: min-wall
+    variant: plastic
+    quantity: minimum wall
+    min: 0.5
+    units: mm
+    applies: milled plastics
+    source: fictiv-cnc-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: cnc-wall-nominal-protolabs
+    process: cnc
+    feature: wall
+    compare: min-wall
+    variant: nominal part
+    quantity: nominal part thickness
+    min: 1.02
+    units: mm
+    applies: Protolabs milling; features thicker than 0.51 mm
+    source: protolabs-cnc-milling
+    as_printed: 0.040 in
+    status: read
+    verified: 2026-10-31
+  - id: cnc-wall-turned-protolabs
+    process: cnc
+    feature: wall
+    quantity: wall of a turned part
+    min: 0.51
+    units: mm
+    applies: Protolabs turning
+    source: protolabs-cnc-turning
+    as_printed: 0.020 in
+    status: read
+    verified: 2026-10-31
+  - id: cnc-aspect-ratio-hubs
+    process: cnc
+    feature: feature
+    quantity: height of a slender feature
+    max: "4*width"
+    units: mm
+    applies: "width to height below 4:1"
+    source: hubs-cnc-cost-tips
+    status: read
+    verified: 2026-10-31
+  - id: cnc-tool-min-hubs
+    process: cnc
+    feature: feature
+    compare: cnc-small-tool
+    quantity: smallest tool or cavity diameter before micro-machining
+    min: 2.5
+    units: mm
+    applies: Protolabs Network
+    source: hubs-cnc-design
+    status: read
+    verified: 2026-10-31
+  - id: cnc-tool-min-xometry
+    process: cnc
+    feature: feature
+    compare: cnc-small-tool
+    quantity: smallest tool diameter on most machines
+    min: 2.5
+    units: mm
+    applies: Xometry
+    source: xometry-cnc-10-tips
+    status: read
+    verified: 2026-10-31
+  - id: cnc-diameter-min-turned-protolabs
+    process: cnc
+    feature: feature
+    quantity: smallest diameter anywhere on a turned part
+    min: 0.76
+    units: mm
+    applies: conical points steeper than 30°
+    source: protolabs-cnc-turning
+    as_printed: 0.030 in
+    status: read
+    verified: 2026-10-31
+  - id: cnc-hole-min-hubs
+    process: cnc
+    feature: hole
+    quantity: smallest drilled or milled hole
+    min: 1
+    units: mm
+    applies: feasible; standard drill sizes recommended
+    source: hubs-cnc-design
+    status: read
+    verified: 2026-10-31
+  - id: cnc-hole-depth-hubs
+    process: cnc
+    feature: hole
+    compare: cnc-hole-depth
+    quantity: hole depth
+    max: "4*D"
+    units: mm
+    applies: recommended; 10 × D typical, 40 × D feasible with special drills
+    source: hubs-cnc-design
+    status: read
+    verified: 2026-10-31
+  - id: cnc-hole-depth-xometry
+    process: cnc
+    feature: hole
+    compare: cnc-hole-depth
+    quantity: hole depth
+    max: "4*D"
+    units: mm
+    applies: up to 10 × D at extra cost
+    source: xometry-cnc-10-tips
+    status: read
+    verified: 2026-10-31
+  - id: cnc-hole-depth-fictiv
+    process: cnc
+    feature: hole
+    compare: cnc-hole-depth
+    quantity: drilling depth
+    max: "12*D"
+    units: mm
+    applies: D is the nearest drill diameter
+    source: fictiv-cnc-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: cnc-hole-blind-extra-fictiv
+    process: cnc
+    feature: hole
+    quantity: extra length of a blind hole for chips and the drill point
+    value: "0.25*depth"
+    units: mm
+    applies: Fictiv
+    source: fictiv-cnc-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: cnc-hole-min-turned-protolabs
+    process: cnc
+    feature: hole
+    quantity: smallest on-axis or axial hole on a turned part
+    min: 1.0
+    units: mm
+    applies: radial holes 2 mm (1 mm in aluminium and brass)
+    source: protolabs-cnc-turning
+    as_printed: 0.04 in
+    status: read
+    verified: 2026-10-31
+  - id: cnc-thread-length-hubs
+    process: cnc
+    feature: thread
+    compare: cnc-thread-length
+    quantity: thread length
+    min: "1.5*D"
+    max: "3*D"
+    units: mm
+    applies: 3 × D is recommended; more adds little
+    source: hubs-cnc-design
+    status: read
+    verified: 2026-10-31
+  - id: cnc-thread-length-xometry
+    process: cnc
+    feature: thread
+    compare: cnc-thread-length
+    quantity: thread length
+    max: "2*D"
+    units: mm
+    applies: Xometry
+    source: xometry-cnc-10-tips
+    status: read
+    verified: 2026-10-31
+  - id: cnc-thread-engagement-fictiv
+    process: cnc
+    feature: thread
+    compare: cnc-thread-length
+    quantity: thread engagement
+    min: "D"
+    max: "1.5*D"
+    units: mm
+    applies: a tap deeper than 3 × D counts as deep and should be avoided
+    source: fictiv-cnc-design-guide
+    status: read
+    verified: 2026-10-31
+  - id: cnc-thread-runout-hubs
+    process: cnc
+    feature: thread
+    compare: cnc-thread-runout
+    quantity: unthreaded length at the bottom of a tapped blind hole
+    value: "1.5*D"
+    units: mm
+    applies: threads cut with taps (below M6); larger threads cut with a threading tool need none
+    source: hubs-cnc-design
+    status: read
+    verified: 2026-10-31
+  - id: cnc-thread-runout-xometry
+    process: cnc
+    feature: thread
+    compare: cnc-thread-runout
+    quantity: unthreaded length at the bottom of a blind hole
+    min: "0.5*D"
+    units: mm
+    applies: Xometry
+    source: xometry-cnc-10-tips
+    status: read
+    verified: 2026-10-31
+  - id: cnc-thread-size-hubs
+    process: cnc
+    feature: thread
+    quantity: recommended smallest thread
+    min: 6
+    units: mm
+    applies: M6 or larger; M1 possible; taps reach M2
+    source: hubs-cnc-design
+    as_printed: M6
+    status: read
+    verified: 2026-10-31
+  - id: cnc-thread-range-protolabs
+    process: cnc
+    feature: thread
+    quantity: metric thread range
+    min: 2
+    max: 12
+    units: mm
+    applies: "Protolabs' automated factory; UNC and UNF #2 to 1/2 in; do not model internal threads"
+    source: protolabs-cnc-milling
+    as_printed: M2–M12
+    status: read
+    verified: 2026-10-31
+  - id: cnc-undercut-clearance-hubs
+    process: cnc
+    feature: undercut
+    quantity: clearance between an internal undercut and the next wall
+    min: "4*depth"
+    units: mm
+    applies: depth is the undercut's depth; T-slot undercuts 3–40 mm wide
+    source: hubs-cnc-design
+    status: read
+    verified: 2026-10-31
+  - id: cnc-tolerance-hubs
+    process: cnc
+    feature: tolerance
+    compare: tolerance
+    quantity: general tolerance (±)
+    value: 0.1
+    units: mm
+    applies: typical; ±0.02 mm feasible
+    source: hubs-cnc-design
+    status: read
+    verified: 2026-10-31
+  - id: cnc-tolerance-cost-hubs
+    process: cnc
+    feature: tolerance
+    compare: tolerance
+    quantity: default tolerance (±) when none is given
+    value: 0.125
+    units: mm
+    applies: or better
+    source: hubs-cnc-cost-tips
+    status: read
+    verified: 2026-10-31
+  - id: cnc-tolerance-protolabs
+    process: cnc
+    feature: tolerance
+    compare: tolerance
+    quantity: machining tolerance (±)
+    value: 0.13
+    units: mm
+    applies: Protolabs' automated milling, otherwise ISO 2768-1 medium or fine by material
+    source: protolabs-cnc-milling
+    as_printed: ±0.005 in
+    status: read
+    verified: 2026-10-31
+  - id: cnc-tolerance-tight-fictiv
+    process: cnc
+    feature: tolerance
+    quantity: tolerance below which the shop may loosen it
+    value: 0.05
+    units: mm
+    applies: Fictiv
+    source: fictiv-cnc-design-guide
+    as_printed: 0.002 in
+    status: read
+    verified: 2026-10-31
+  - id: cnc-text-protolabs
+    process: cnc
+    feature: text
+    quantity: engraved text stroke width (depth 0.3 mm)
+    min: 0.457
+    units: mm
+    applies: plastics and soft metals; hard metals wider
+    source: protolabs-cnc-milling
+    as_printed: 0.018 in
+    status: read
+    verified: 2026-10-31
+
+# One shop's tooling, read from its published specs. Lengths in mm (converted from the JSON's inches, 3 decimals);
+# the inch values are in `as_printed`. Re-fetch before relying on them: the file changes.
+shop_tables:
+  - id: sendcutsend-5052-and-mild-steel
+    source: sendcutsend-specs
+    verified: 2026-10-31
+    columns: [sku, material, T, R, K, min_flange_after_bend, relief_depth]
+    units: {T: mm, R: mm, K: ratio, min_flange_after_bend: mm, relief_depth: mm}
+    rows:
+      - [ALU-040, 5052 aluminium, 1.016, 0.610, 0.45, 7.264, 2.134]
+      - [ALU-063, 5052 aluminium, 1.600, 0.889, 0.42, 7.696, 2.997]
+      - [ALU-090, 5052 aluminium, 2.286, 0.813, 0.37, 8.280, 3.607]
+      - [ALU-125, 5052 aluminium, 3.175, 3.175, 0.44, 12.090, 6.858]
+      - [CRS-030, cold-rolled mild steel, 0.762, 1.143, 0.38, 7.264, 2.413]
+      - [CRS-048, cold-rolled mild steel, 1.219, 1.143, 0.38, 7.569, 2.870]
+      - [CRS-059, cold-rolled mild steel, 1.499, 1.600, 0.40, 7.849, 3.607]
+      - [CRS-074, cold-rolled mild steel, 1.880, 1.600, 0.40, 8.128, 3.988]
+      - [CRS-104, cold-rolled mild steel, 2.642, 1.600, 0.34, 11.659, 4.750]
+      - [CRS-119, cold-rolled mild steel, 3.023, 1.600, 0.38, 11.836, 5.131]
+    as_printed:
+      ALU-040: {T: 0.040, R: 0.024, min_flange_after_bend: 0.286, relief_depth: 0.084}
+      ALU-063: {T: 0.063, R: 0.035, min_flange_after_bend: 0.303, relief_depth: 0.118}
+      ALU-090: {T: 0.090, R: 0.032, min_flange_after_bend: 0.326, relief_depth: 0.142}
+      ALU-125: {T: 0.125, R: 0.125, min_flange_after_bend: 0.476, relief_depth: 0.270}
+      CRS-030: {T: 0.030, R: 0.045, min_flange_after_bend: 0.286, relief_depth: 0.095}
+      CRS-048: {T: 0.048, R: 0.045, min_flange_after_bend: 0.298, relief_depth: 0.113}
+      CRS-059: {T: 0.059, R: 0.063, min_flange_after_bend: 0.309, relief_depth: 0.142}
+      CRS-074: {T: 0.074, R: 0.063, min_flange_after_bend: 0.320, relief_depth: 0.157}
+      CRS-104: {T: 0.104, R: 0.063, min_flange_after_bend: 0.459, relief_depth: 0.187}
+      CRS-119: {T: 0.119, R: 0.063, min_flange_after_bend: 0.466, relief_depth: 0.202}
+
+# Standards that govern the same ground. Paid: cited by number and title only; their content was not read and no
+# rule above takes a value from them.
+standards:
+  - id: iso-2768-1
+    title: "ISO 2768-1:1989 General tolerances - Part 1: Tolerances for linear and angular dimensions without individual tolerance indications"
+    org: ISO
+    year: 1989
+    url: https://www.iso.org/standard/7748.html
+    access: paid
+    areas: [cnc, sheet-metal]
+    verified: >-
+      2026-10-31: iso.org blocks scripts, so the number, title and status ("last reviewed and confirmed in 2022")
+      were read from the Internet Archive copy of 2026-08-20. Protolabs names it as its default for machining.
+  - id: iso-20457
+    title: "ISO 20457 Plastics moulded parts - Tolerances and acceptance conditions"
+    org: ISO
+    year: 2026
+    url: https://www.evs.ee/en/iso-20457-2018
+    access: paid
+    areas: [injection-moulding]
+    verified: >-
+      2026-10-31: read the Estonian standards body's listing: the 2018 edition was withdrawn on 2026-08-06 and
+      replaced by ISO 20457:2026. Cite the 2026 edition.
+  - id: din-16742
+    title: "DIN 16742:2013-10 Plastics moulded parts - Tolerances and acceptance conditions"
+    org: DIN
+    year: 2013
+    url: https://www.dinmedia.de/en/standard/din-16742/192658755
+    access: paid
+    areas: [injection-moulding]
+    verified: >-
+      2026-10-31: read the DIN Media listing, which marks the document withdrawn (it followed DIN 16901).
+  - id: iso-astm-52910
+    title: "ISO/ASTM 52910:2018 Additive manufacturing - Design - Requirements, guidelines and recommendations"
+    org: ISO/ASTM
+    year: 2018
+    url: https://www.iso.org/standard/67289.html
+    access: paid
+    areas: [sla, sls, mjf]
+    verified: >-
+      2026-10-31: iso.org blocks scripts, so read the Internet Archive copy of the catalogue page (edition 1,
+      2018-07). Its abstract says it gives no process- or material-specific data.
+  - id: iso-astm-52911-2
+    title: "ISO/ASTM 52911-2 Additive manufacturing - Design - Part 2: Laser-based powder bed fusion of polymers"
+    org: ISO/ASTM
+    year: 2019
+    url: https://store.astm.org/f3281-19r25.html
+    access: paid
+    areas: [sls, mjf]
+    verified: >-
+      2026-10-31: read the ASTM store page (ISO/ASTM52911-2-19(2025), store number F3281-19R25, and its scope).

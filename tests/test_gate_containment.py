@@ -16,8 +16,8 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from cadagent.gates import Assembly, PairCache, Tolerances, relate_pair
-from cadagent.gates.containment import Contains, containment_gate, contains_declarations, instances
+from cadagent.review.gates import Assembly, PairCache, Tolerances, relate_pair
+from cadagent.review.gates.containment import Contains, containment_gate, contains_declarations, instances
 
 try:
     import cadquery as cq
@@ -84,7 +84,7 @@ def by_id(v):
     ((1.0, 1.0, 1.001), (0.0001, 0.0001, 0.0001)),  # already-outside straddles it
 ])
 def test_support_does_not_discard_uncertainty_or_override_it_with_a_probe(monkeypatch, values, errors):
-    from cadagent.gates import containment as con, relations as rel
+    from cadagent.review.gates import containment as con, relations as rel
     estimates = iter(rel._VolumeEstimate(v, e, e, 0) for v, e in zip(values, errors))
     monkeypatch.setattr(rel, "_measure_volume", lambda shape: next(estimates))
     monkeypatch.setattr(con, "_boolean", lambda *args: object())
@@ -101,7 +101,7 @@ def test_support_does_not_discard_uncertainty_or_override_it_with_a_probe(monkey
 
 
 def test_support_cache_is_bound_to_the_volume_measurement_policy(monkeypatch, tmp_path):
-    from cadagent.gates import containment as con, relations as rel
+    from cadagent.review.gates import containment as con, relations as rel
     cache = PairCache(tmp_path)
     args = ("rests-cavity", Tolerances(), "upper-hash", "cavity-hash", "support-options")
     current = rel.RELATIONS_VERSION
@@ -421,7 +421,7 @@ def test_a_cavity_closed_by_a_lid_may_reach_into_the_lid_when_declared():
 def test_the_probe_samples_the_middle_of_ruled_faces():
     """Review repro: a cylinder item pushed 0.2 mm into a cylindrical rib hanging from the cavity ceiling.
     Its tessellation has nodes only at its ends (x = +-30); the face grid samples the middle."""
-    from cadagent.gates.containment import _contact_probe, _points_of
+    from cadagent.review.gates.containment import _contact_probe, _points_of
     box = cq.Solid.makeBox(80, 40, 30, cq.Vector(-40, -20, 0))
     rib = cq.Solid.makeCylinder(3, 40, cq.Vector(0, -20, 30), cq.Vector(0, 1, 0))
     cavity = box.cut(rib).clean().wrapped
@@ -473,7 +473,7 @@ def test_seed_style_escapee_through_the_side_reads_unsupported_when_hovering():
 def test_winding_memory_is_bounded_by_the_triangle_count():
     """Review: a fixed 2048-point chunk needed about 0.36 MB per triangle (36 GB at 100k triangles)."""
     import tracemalloc
-    from cadagent.gates.containment import WINDING_BUDGET_BYTES, _winding
+    from cadagent.review.gates.containment import WINDING_BUDGET_BYTES, _winding
     # a closed octahedron refined into 32768 triangles (no trimesh needed)
     v = np.array([[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]], float)
     faces = [(0, 2, 4), (2, 1, 4), (1, 3, 4), (3, 0, 4), (2, 0, 5), (1, 2, 5), (3, 1, 5), (0, 3, 5)]

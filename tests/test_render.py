@@ -7,7 +7,7 @@ import pytest
 pytest.importorskip("vtk")
 Image = pytest.importorskip("PIL.Image")
 
-from cadagent.render import Renderer  # noqa: E402
+from cadagent.publish.render import Renderer  # noqa: E402
 
 CUBE_STL = """solid cube
 {facets}endsolid cube

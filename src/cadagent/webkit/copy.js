@@ -8,12 +8,19 @@
  * element), says "Copied" for a moment and announces it to screen readers. It uses the Clipboard API (HTTPS or
  * localhost) and falls back to selecting the text with a "press Ctrl+C" hint (on touch screens: "Text selected").
  * No dependencies and no shadow DOM. The kit's button rules have the specificity of one class (`:where(cad-copy) >
- * .cad-copy-btn`): a page's own rule on `cad-copy > .cad-copy-btn` (or the --cad-copy-* custom properties) wins, and
- * a plain `button {}` reset such as Tailwind's preflight does not. Focus rings stay at zero specificity, so a page's
- * own focus style wins. The button never covers text: the code keeps room on the right as wide as the button's widest
- * label (measured, and re-measured when fonts load or the button's own size changes), and code that scrolls sideways,
- * or any code on a narrow screen, gets a strip above it as tall as the button. One limit: the strip is the <pre>'s
- * own top padding, so code that also scrolls vertically (a max-height on <pre>) can scroll under the button.
+ * .cad-copy-btn`): a page's own rule on `cad-copy > .cad-copy-btn` (or the --cad-copy-* colour, font and focus custom
+ * properties) wins, and a plain `button {}` reset such as Tailwind's preflight does not. Focus rings stay at zero
+ * specificity, so a page's own focus style wins. The button keeps clear of the code: the code keeps room on the right,
+ * up to the left edge of the button's widest label, and a strip above as tall as the button. Both are measured from
+ * where the button sits, and again when fonts load or the <pre> or the button changes size. Code that scrolls
+ * sideways, and any code on a narrow screen, gets the strip. Three limits:
+ * - only a direct-child <pre> gets room: in the other form (`text` set, other content shown) the content must leave
+ *   room itself;
+ * - the strip is the <pre>'s own top padding, so code that also scrolls vertically (a max-height on <pre>) can scroll
+ *   under the button;
+ * - the room is only ever on the right and at the top, set inline as --cad-copy-room-x and -y (a page's own values
+ *   for those two are overwritten): a button moved to the left or the bottom needs the page's own padding rule on the
+ *   <pre>, and a move that resizes neither the <pre> nor the button is only picked up at the next re-measure.
  * On touch screens the button is 44 px tall.
  *
  * enhance(root, selector) wraps every matching <pre> that is not already inside a <cad-copy> (default: all <pre>

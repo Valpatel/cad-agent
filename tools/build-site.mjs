@@ -14,6 +14,7 @@ import path from 'node:path';
 import { marked } from 'marked';
 import YAML from 'yaml';
 import { snapDemo } from './snap-demo.mjs';
+import { buildCatalog } from './site-catalog.mjs';            // the catalogue page, catalog.json, catalog/*.json and covers
 import { sanitize, safeUrl, rewriteUrls, imageSize } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
@@ -40,7 +41,8 @@ const head = git('rev-parse', 'HEAD');
 const revision = head;
 // The content is always HEAD's (or the working tree's with --worktree), but the build tools run from disk (from this
 // checkout, even with --root): say so when they differ from the built commit's, and never release with them.
-const TOOLS = ['tools/build-site.mjs', 'tools/site-html.mjs', 'tools/snap-demo.mjs', 'package.json', 'package-lock.json'];
+const TOOLS = ['tools/build-site.mjs', 'tools/site-html.mjs', 'tools/snap-demo.mjs', 'tools/site-catalog.mjs', 'tools/catalog-art.mjs',
+  'package.json', 'package-lock.json'];
 const toolsHere = path.join(import.meta.dirname, '..');
 const toolsDirty = TOOLS.filter(t => {
   let committedCopy; try { committedCopy = gitRaw('show', `HEAD:${t}`); } catch { return true; }
@@ -163,34 +165,10 @@ const parserCount = (cli.match(/sub\.add_parser\(/g) || []).length;
 const commands = [...cli.matchAll(/sub\.add_parser\("([a-z0-9-]+)",[^)]*?help="((?:[^"\\]|\\.)*)"(?:\s*\n?\s*"((?:[^"\\]|\\.)*)")?/g)]
   .map(m => ({ name: m[1], help: (m[2] + (m[3] || '')).replace(/\\"/g, '"') }));
 if (commands.length !== parserCount) throw new Error(`read ${commands.length} of ${parserCount} cli.py subcommands: fix the pattern`);
-const projectNotes = new Map(landscape.projects.map(p => [p.name, p.notes || '']));
-const catalog = {
-  schema: 'cad-agent-catalog/1', origin: ORIGIN, repo: REPO, revision, built: committed,
-  tagline: TAGLINE, description: LEDE,
-  items: [
-    ...commands.map(c => ({ type: 'tool', status: 'ours', name: `cad-agent ${c.name}`, summary: c.help,
-      url: `${ORIGIN}/docs/toolkit`, how: `cad-agent ${c.name} --help` })),
-    ...upstreams.map(u => ({ type: 'upstream', status: u.status, name: u.name, url: u.url,
-      summary: projectNotes.get(u.name) || u.what || u.policy, policy: u.policy,
-      license: u.license, stars: u.stars, last_push: u.last_push })),
-    // A library is 'used' only when landscape.json says so (a real dependency); otherwise it is tracked for reference.
-    ...landscape.libraries.map(l => ({ type: 'library', status: l.status || 'reference', name: l.name, url: l.url || `https://github.com/${l.name}`,
-      license: l.license_spdx, stars: l.stars, last_push: l.last_push, summary: l.use || l.role || l.notes || '' })),
-    ...landscape.benchmarks.map(b => ({ type: 'benchmark', status: b.status === 'unverified' ? 'unverified' : 'reference', name: b.name, url: b.url,
-      license: b.license_spdx || b.license, summary: [b.tasks || b.notes, b.size, b.venue || b.paper].filter(Boolean).join(' · ')
-        || (b.status === 'unverified' ? 'Listed from its paper or site; tasks, data and licence not yet checked.' : '') })),
-    ...pages.map(p => ({ type: p.section === 'docs' ? 'doc' : p.section.replace(/s$/, ''), status: 'ours', name: p.title,
-      summary: p.summary, url: ORIGIN + pageURL(p.file), markdown: `${ORIGIN}/${p.file}`, source: `${REPO}/blob/dev/${p.file}` })),
-  ],
-};
-const counts = catalog.items.reduce((a, i) => (a[i.type] = (a[i.type] || 0) + 1, a), {});
-// Each ### entry in a lesson file is one lesson (lessons/README.md#lesson-format); the area READMEs are maps, not lessons.
-const lessonCount = pages.filter(p => p.section === 'lessons' && !/(?:^|\/)README\.md$/.test(p.file))
-  .reduce((n, p) => n + (p.body.replace(/```[\s\S]*?```/g, '').match(/^### /gm) || []).length, 0);
-await writeFile(path.join(out, 'catalog.json'), JSON.stringify(catalog, null, 2) + '\n');
+// The catalogue itself is built after the pages (it uses their figures): see `buildCatalog` below.
 
 // ----------------------------------------------------------------------------- HTML frame
-const NAV = [['/catalog', 'Catalogue', true], ['/docs/toolkit', 'Toolkit', true], ['/research/landscape', 'Landscape'],
+const NAV = [['/catalog', 'Catalogue', true], ['/docs/toolkit', 'Tools', true], ['/research/landscape', 'Landscape'],
   ['/docs/common-issues', 'Pitfalls'], ['/docs/agent-workflow', 'For agents']];
 // Feedback goes to GitHub: a short issue form with the page filled in, or an edit of the page's source.
 const feedbackURL = (title, url) => `${REPO}/issues/new?template=feedback.yml&title=${encodeURIComponent(`Feedback: ${title}`)}&page=${encodeURIComponent(ORIGIN + url)}`;
@@ -333,76 +311,157 @@ for (const p of pages) {
   const rail = heads.length < 2 ? '' : `<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline(' cad-nav-rail', false)}</nav>`;
   await writeFile(dest, frame({ title: p.title, body: `<div class="doc-layout">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + p.file, description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/nav.css'] }));
   visuals.set(p.file, (html.match(VISUAL) || []).length);
+  p.html = html;                                                      // the catalogue takes each page's first figure
+  p.updated = lastChange(p.file);
   await writeFile(path.join(out, p.file), rewriteMd(p.file, p.src));   // the Markdown twin, same path
 }
 // Images referenced by docs.
 for (const f of tracked.filter(f => /^docs\/img\/.*\.(svg|png|jpe?g|gif|webp)$/i.test(f))) await copyTracked(f, path.join(out, f));
 
-// Catalogue page: cards from catalog.json, filterable in the browser.
-const TYPE_LABEL = { tool: 'cad-agent tools', upstream: 'Agentic CAD projects we track', library: 'Libraries', benchmark: 'Benchmarks',
-  doc: 'Docs', skill: 'Skills', agent: 'Subagents', lesson: 'Lessons (pitfalls)', research: 'Research' };
+// Catalogue: catalog.json, catalog/index.json, catalog/<area>.json, the covers and the page (tools/site-catalog.mjs).
+const SNAP = snapDemo();                 // geometry-driven animation: tools/snap-demo.mjs
+const { catalog, files: catalogFiles, body: catalogBody, counts } = await buildCatalog({
+  ORIGIN, REPO, revision, built: committed, tagline: TAGLINE, description: LEDE, commands, cli, upstreams, landscape, pages, pageURL, safeUrl,
+  areas: YAML.parse(await read('docs/areas.yaml')), data: YAML.parse(await read('docs/catalog.yaml')) || {}, tracked, read: readBuf,
+  snap: SNAP, cliUpdated: lastChange('src/cadagent/cli.py'), draft: WORKTREE,
+});
+for (const [f, text] of catalogFiles) { await mkdir(path.dirname(path.join(out, f)), { recursive: true }); await writeFile(path.join(out, f), text); }
+// Each ### entry in a lesson file is one lesson (lessons/README.md#lesson-format); the area READMEs are maps, not lessons.
+const lessonCount = pages.filter(p => p.section === 'lessons' && !/(?:^|\/)README\.md$/.test(p.file))
+  .reduce((n, p) => n + (p.body.replace(/```[\s\S]*?```/g, '').match(/^### /gm) || []).length, 0);
+await writeFile(path.join(out, 'catalog.html'), frame({ title: 'Catalogue', body: catalogBody, current: '/catalog', page: 'catalog',
+  description: `${catalog.items.length} open-source projects, libraries, benchmarks, demos, tools, guides and lessons for agentic CAD, by area of hardware design.`,
+  css: ['/kit/gallery.css', '/web/catalog.css'] }));
+
+// Cards on the landing page.
 const STATUS_NOTE = { ours: 'built here', adopted: 'adopted', trial: 'in trial', candidate: 'candidate', rejected: 'rejected', used: 'used', reference: 'tracked', unverified: 'unverified' };
-// Living pages: one per topic. Sources, the condensed method, examples, and the tested tool agents call.
-const LIVING = [
-  { file: 'docs/compliant.md', name: 'Snap fits', summary: 'Covestro and DuPont guides plus 11 filament data sheets, condensed into cad-agent snapfit: tested against the guide\'s worked examples, with allowable strain by print direction.' },
-  { file: 'docs/common-issues.md', name: 'CAD pitfalls and their checks', summary: 'Recurring review findings from Gyropup and J501 (a rib that ran into a counterbore, blocked holes, bridges), each with the automated check that catches it.' },
-];
 const card = i => `<li class="card" data-type="${esc(i.type)}" data-text="${esc((i.name + ' ' + (i.summary || '') + ' ' + (i.license || '')).toLowerCase())}">
 <a href="${esc(safeUrl(i.url))}"><span class="card-name">${esc(i.name)}</span></a>
 <span class="pill pill-${esc(i.status)}">${esc(STATUS_NOTE[i.status] || i.status)}</span>${i.license ? `<span class="pill">${esc(i.license)}</span>` : ''}${i.stars ? `<span class="pill">★ ${Number(i.stars).toLocaleString('en-US')}</span>` : ''}
 <p>${esc(i.summary || '')}</p>${i.policy && i.policy !== i.summary ? `<p class="policy">${esc(i.policy)}</p>` : ''}${i.markdown ? `<a class="md" href="${esc(i.markdown.replace(ORIGIN, ''))}">.md</a>` : ''}</li>`;
-const groups = Object.keys(TYPE_LABEL).filter(t => counts[t]);
-const catalogBody = `<section class="section" style="padding-bottom:10px"><p class="eyebrow"><span class="status-dot"></span>Catalogue · ${catalog.items.length} entries</p><h1>Everything we map, <span>demonstrate</span> or build.</h1>
-<p class="hero-description">Other people's open-source projects and libraries come first; our own tools only where nothing free fills the gap. Agents read the same list as <a href="/catalog.json">catalog.json</a>.</p>
-<div class="filters"><input id="q" type="search" placeholder="Filter: snap fit, FEA, KiCad, MIT…" aria-label="Filter the catalogue"><p id="filter-status" class="filter-status" role="status" aria-live="polite"></p>
-<div class="chips">${groups.map(t => `<button class="chip" data-type="${t}" aria-pressed="false">${esc(TYPE_LABEL[t])} <small>${counts[t]}</small></button>`).join('')}</div></div></section>
-${groups.map(t => `<section class="group" id="${t === 'doc' ? 'docs' : t === 'skill' ? 'skills' : t === 'agent' ? 'agents' : t === 'lesson' ? 'lessons' : t}" data-group="${t}"><h2>${esc(TYPE_LABEL[t])}</h2><ul class="cards">${catalog.items.filter(i => i.type === t).map(card).join('')}</ul></section>`).join('')}`;
-await writeFile(path.join(out, 'catalog.html'), frame({ title: 'Catalogue', body: catalogBody, current: '/catalog', page: 'catalog' }));
-
-// Landing page.
-const pick = (f) => pages.find(p => p.file === f);
+// Landing page: the real model first, then real outputs, then where cad-agent fits (docs/home.yaml), then the map.
 const skillCards = pages.filter(p => p.section === 'skills' || p.section === 'agents');
-const SNAP = snapDemo();                 // geometry-driven animation: tools/snap-demo.mjs
 await writeFile(path.join(out, 'web', 'snap-demo.css'), SNAP.css);
-const SNAP_SVG = SNAP.svg;
-const landing = `<div class="wrap"><section class="hero"><div class="hero-copy">
-<p class="eyebrow"><span class="status-dot"></span>Open source · for AI agents and people</p>
+const home = YAML.parse(await read('docs/home.yaml'));
+const areasTree = YAML.parse(await read('docs/areas.yaml'));
+const LADDER = areasTree.maturity.map(m => m.level);
+const areaMaturity = new Map();
+for (const d of areasTree.domains) for (const a of d.areas || []) areaMaturity.set(a.slug, a.maturity);
+// A home link is a published page (repo path) or a full URL; a picture is a committed image, sized so nothing jumps.
+const homeHref = (h, at) => {
+  if (/^https:\/\//.test(h)) return h;
+  if (!pageFiles.has(h)) throw new Error(`docs/home.yaml ${at}: ${h} is not a published page`);
+  return pageURL(h);
+};
+const homeImg = async (src, at, attrs = '') => {
+  if (!tracked.includes(src) || !/^docs\/img\/.*\.(svg|png|jpe?g|webp)$/.test(src)) throw new Error(`docs/home.yaml ${at}: ${src} is not a committed picture under docs/img/`);
+  const size = imageSize(await readBuf(src), src);
+  if (!size) throw new Error(`docs/home.yaml ${at}: cannot read the size of ${src}`);
+  return `<img src="/${esc(src)}" width="${size.width}" height="${size.height}"${attrs}>`;
+};
+// What each output was computed on, said on its tile (#182 review: not every picture is a real part).
+const ON = {
+  gyropup: '<a href="https://gyropup.com">Gyropup</a> · MIT', enclosure: 'a printed enclosure', fixture: 'a test fixture in this repo',
+  'fixture-2d': 'a test fixture, drawn in 2D; tests hold its numbers to the real check', example: 'a worked example',
+  sources: 'published sources',
+};
+// A tool on a tile is a cad-agent command, a cadagent module or a script under tools/, and it must exist.
+const commandNames = new Set(commands.map(c => c.name));
+const realTool = (tool, at) => {
+  const cmd = tool.match(/^cad-agent ([a-z0-9-]+)$/)?.[1], mod = tool.match(/^cadagent(?:\.[a-z_]+)+$/)?.[0];
+  const ok = cmd ? commandNames.has(cmd) : mod ? [`src/${mod.replace(/\./g, '/')}.py`, `src/${mod.replace(/\./g, '/')}/__init__.py`].some(f => tracked.includes(f))
+    : /^tools\/[\w./-]+$/.test(tool) && tracked.includes(tool);
+  if (!ok) throw new Error(`docs/home.yaml ${at}: ${tool} is not a cad-agent command, a cadagent module or a script under tools/`);
+  return tool;
+};
+// Gyropup's FEA numbers come from its summary (docs/img/gyropup/SOURCE.json, written by tools/gyropup_showcase.py):
+// a caption that does not quote them fails the build, so a new export cannot leave an old number on the page.
+const gyropupSource = JSON.parse(await read('docs/img/gyropup/SOURCE.json'));
+const checkNumbers = (r, at) => {
+  const fea = gyropupSource.pictures[path.basename(r.img).replace(/\.\w+$/, '')];
+  if (!r.img.startsWith('docs/img/gyropup/') || !fea?.safety_factor) return;
+  // Whole numbers only: 3.1 does not pass inside 3.15, nor 52,134 inside 152,134.
+  const quotes = n => new RegExp(`(?<![\\d.,])${n.replace(/[.,]/g, '\\$&')}(?![\\d]|[.,]\\d)`).test(r.caption);
+  for (const n of [fea.tets.toLocaleString('en-US'), String(fea.safety_factor), Number(fea.target).toFixed(1)])
+    if (!quotes(n)) throw new Error(`docs/home.yaml ${at}: the caption does not quote ${n} from docs/img/gyropup/SOURCE.json`);
+};
+const reel = [], homeMd = { reel: [], ours: [] };
+for (const [i, r] of home.reel.entries()) {
+  const at = `reel[${i}]`;
+  for (const k of ['img', 'tool', 'title', 'caption', 'alt', 'href', 'on']) if (!r[k]) throw new Error(`docs/home.yaml ${at} has no ${k}`);
+  if (!ON[r.on]) throw new Error(`docs/home.yaml ${at}: on is one of ${Object.keys(ON).join(', ')}`);
+  checkNumbers(r, at);
+  homeMd.reel.push(`- [${r.title}](${/^https:/.test(r.href) ? r.href : ORIGIN + pageURL(r.href)}): ${r.caption} (\`${r.tool}\`, on ${ON[r.on].replace(/<[^>]+>/g, '')})`);
+  reel.push(`<li class="reel-tile${r.fit === 'cover' ? ' reel-cover' : ''}"><a class="reel-media" href="${esc(homeHref(r.href, at))}" tabindex="-1" aria-hidden="true">${await homeImg(r.img, at, ` alt="" loading="lazy" decoding="async"`)}</a>
+<p class="reel-tool"><code>${esc(realTool(r.tool, at))}</code></p><h3><a href="${esc(homeHref(r.href, at))}">${esc(r.title)}</a></h3><p>${esc(r.caption)}</p><p class="reel-credit">On ${ON[r.on]}</p>
+<span class="visually-hidden">${esc(r.alt)}</span></li>`);
+}
+// The snap-fit demo is drawn from its geometry in this build (tools/snap-demo.mjs), so it joins the reel inline.
+reel.splice(3, 0, `<li class="reel-tile reel-snap"><a class="reel-media" href="/docs/compliant" tabindex="-1" aria-hidden="true">${SNAP.svg}</a>
+<p class="reel-tool"><code>cad-agent snapfit</code></p><h3><a href="/docs/compliant">One part, no screws</a></h3><p>A cantilever snap fit animated from its own geometry: contact and root strain computed against the material and the print's layer direction.</p><p class="reel-credit">Drawn by this site's build from the snap-fit geometry</p></li>`);
+const fitsTile = async (t, i) => {
+  const at = `fits.ours[${i}]`;
+  const levels = t.maturity ? [t.maturity] : (t.areas || []).map(a => {
+    if (!areaMaturity.has(a)) throw new Error(`docs/home.yaml ${at}: no area ${a} in docs/areas.yaml`);
+    return areaMaturity.get(a);
+  });
+  if (!levels.length || levels.some(l => !LADDER.includes(l))) throw new Error(`docs/home.yaml ${at}: a maturity on the ladder (${LADDER.join(', ')}), from areas or stated with a why`);
+  if (t.maturity && !t.why) throw new Error(`docs/home.yaml ${at}: a stated maturity needs its why`);
+  const level = levels.reduce((lo, l) => LADDER.indexOf(l) < LADDER.indexOf(lo) ? l : lo);      // the least mature area decides
+  homeMd.ours.push(`- [${t.title}](${/^https:/.test(t.href) ? t.href : ORIGIN + pageURL(t.href)}) (${level}): ${t.does}`);
+  const step = LADDER.indexOf(level);
+  return `<li class="fit-tile"><a href="${esc(homeHref(t.href, at))}">${t.img ? `<span class="fit-media">${await homeImg(t.img, at, ' alt="" loading="lazy" decoding="async"')}</span>`
+  : t.cmd ? `<span class="fit-media fit-cmd"><code>$ ${esc(t.cmd)}</code></span>`
+  : step === 0 ? '<span class="fit-media fit-empty">not built yet</span>' : (() => { throw new Error(`docs/home.yaml ${at}: a built block needs an img or a cmd`); })()}
+<span class="fit-title">${esc(t.title)}</span></a><p>${esc(t.does)}</p>
+<p class="ladder" title="${esc(t.why || `the least mature of: ${t.areas.join(', ')}`)}"><span class="visually-hidden">Maturity: </span>${LADDER.map((l, k) => `<span class="rung${k <= step ? ' on' : ''}${k === step ? ' here' : ''}"${k === step ? '' : ' aria-hidden="true"'}>${k === step ? esc(l) : ''}</span>`).join('')}</p></li>`;
+};
+const upstreamByName = new Map(upstreams.map(u => [u.name, u]));
+const makeChip = (m, i) => {
+  const u = m.upstream && upstreamByName.get(m.upstream);
+  if (m.upstream && !u) throw new Error(`docs/home.yaml fits.make[${i}]: ${m.upstream} is not in upstreams/registry.yaml`);
+  return `<li><span class="make-name"><a href="${esc(homeHref(m.href, `fits.make[${i}]`))}"><b>${esc(m.name)}</b></a>${u ? ` <span class="pill pill-${esc(u.status)}">${esc(STATUS_NOTE[u.status] || u.status)}</span><span class="pill">${esc(u.license)}</span><span class="pill" title="GitHub stars when surveyed">★ ${Number(u.stars).toLocaleString('en-US')}</span>` : ''}</span><span>${esc(m.does)}</span>${m.note ? `<small>${esc(m.note)}</small>` : ''}</li>`;
+};
+const testCount = git('grep', '-c', '-E', '^\\s*def test_', 'HEAD', '--', 'tests/*.py').split('\n').filter(Boolean)
+  .reduce((n, l) => n + Number(l.split(':').pop()), 0);
+// The hero model (web/models/, from tools/gyropup_showcase.py) and its still poster (tools/site-model-poster.mjs).
+const heroModel = JSON.parse(await read('web/models/gyropup.json'));
+const poster = imageSize(await readBuf('web/models/gyropup.webp'), 'gyropup.webp');
+if (!poster) throw new Error('web/models/gyropup.webp: run node tools/site-model-poster.mjs');
+const kb = n => `${Math.round(n / 1024)} KB`;
+const landing = `<div class="wrap"><section class="hero hero-3d">
+<div class="hero-head"><p class="eyebrow"><span class="status-dot"></span>Open source · for AI agents and people</p>
 <h1>Your one stop shop for <span>agentic CAD.</span></h1>
-<p class="intro">Mapping the best free resources, demonstrating their capabilities, and filling the gaps.</p>
-<p class="hero-description">cad-agent is the toolkit and field guide our agents use to design real hardware: which open-source tools to reach for, what each one is good at, the checks that catch the mistakes, and our own tools where nothing free does the job yet.</p>
-<div class="actions"><a class="button primary" href="/catalog">Browse the catalogue <span>→</span></a><a class="button" href="/docs/toolkit">Read the toolkit</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div>
-<cad-copy class="agent-copy" label="Copy"><pre class="agent-box" aria-label="How an agent reads this site"><b># point any coding agent here</b>
+<p class="intro">Checks, simulation and cited engineering for the hardware agents design, in tested code.</p></div>
+<figure class="hero-model"><cad-model src="/web/models/gyropup.json" label="Gyropup" style="aspect-ratio:${poster.width}/${poster.height}"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="${poster.width}" height="${poster.height}" fetchpriority="high" alt="Gyropup, a wheel-legged robot with a foam-ball turret, assembled from its ${heroModel.parts.length} parts"></cad-model>
+<figcaption><span><b>Gyropup</b>, ${heroModel.parts.length} parts in place, exported from its STEP files by <code>cad-agent view</code>: ${heroModel.triangles.toLocaleString('en-US')} triangles in ${kb(heroModel.bytes)}.</span><span><a href="https://gyropup.com">gyropup.com</a> · MIT · drag to turn</span></figcaption></figure>
+<div class="hero-actions"><div class="actions"><a class="button primary" href="#outputs">See what it computes <span>↓</span></a><a class="button" href="/catalog">Browse the catalogue</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div>
+<cad-copy class="agent-copy" label="Copy"><pre class="agent-box" aria-label="How an agent reads this site"><b># agents: start here</b>
 curl -s ${ORIGIN}/llms.txt
 curl -s ${ORIGIN}/catalog.json
-curl -s ${ORIGIN}/docs/toolkit.md  <b># any page, as .md</b></pre></cad-copy>
-</div>
-<div class="hero-scene"><div class="scene-orbit"></div><p class="scene-label">DEMO 01 · CANTILEVER SNAP FIT</p>${SNAP_SVG}<span class="stamp">CONTACT<br>COMPUTED</span>
-<div class="scene-caption"><b>One part, no screws.</b><span><a href="/docs/compliant"><code>cad-agent snapfit</code></a> checks root strain against the material and the print's layer direction</span></div></div></section>
-</div><div class="ticker"><div class="wrap"><span>Map the field</span><i>✦</i><span>Adopt what works</span><i>✦</i><span>Prove it on real parts</span><i>✦</i><span>Fill the gaps</span><i>✦</i><span>Made for AI and people</span></div></div><div class="wrap">
-<section class="section"><div class="lead"><h2>Three jobs, <span>one place.</span></h2><p>We are not attached to our own code. If someone else's tool, skill or agent does a job better, it goes in the catalogue and we use it. What is left, we build and test.</p></div>
-<div class="missions">
-<a class="mission mission-blue" href="/research/landscape"><span class="mission-icon">🗺️</span><span class="mission-tag">Map</span><span class="mission-num">${(counts.upstream || 0) + (counts.library || 0) + (counts.benchmark || 0)}</span><p>Agentic-CAD projects, libraries and benchmarks, checked with dates, licences and what each is actually good for.</p><span class="go">See the landscape <span>→</span></span></a>
-<a class="mission mission-yellow" href="/docs/toolkit"><span class="mission-icon">🧪</span><span class="mission-tag">Demonstrate</span><span class="mission-num">${counts.tool || 0}</span><p>Commands that run on real projects: integrity gates, hole and fastener checks, FEA, CFD, topology optimisation, slicing, a 3D viewer and review reports.</p><span class="go">Open the toolkit <span>→</span></span></a>
-<a class="mission mission-orange" href="/docs/common-issues"><span class="mission-icon">🧩</span><span class="mission-tag">Fill the gaps</span><span class="mission-num">${lessonCount}</span><p>Lessons from real builds, each a rule with the incident behind it and how to check it: a rib that ran into a counterbore, a screw that bottoms out, a driver that cannot reach.</p><span class="go">Read the pitfalls <span>→</span></span></a>
+curl -s ${ORIGIN}/docs/toolkit.md  <b># any page, as .md</b></pre></cad-copy></div>
+</section></div>
+<section class="reel-band" id="outputs"><div class="wrap"><div class="lead"><h2>What the code <span>computes.</span></h2><p>Outputs of cad-agent's tools with the numbers they computed: on Gyropup, on a printed enclosure, on this repo's test fixtures and on worked examples. Each tile says which, and opens the page that explains it.</p></div>
+<ul class="reel">${reel.join('')}</ul></div></section>
+<div class="wrap"><section class="section fits" aria-labelledby="fits-title"><div class="lead"><h2 id="fits-title">Where cad-agent <span>fits.</span></h2><p>Other people's tools make the model. text-to-cad, which we are trialling, writes and exports models, but <a href="/research/landscape#2-deep-dive-earthtojaketext-to-cad-v0726-2026-10-20">its code computes no stress, fatigue or safety factor</a>. cad-agent's engineering is Python with ${testCount.toLocaleString('en-US')} test functions in CI. Each block shows how far it has got.</p></div>
+<div class="fits-make"><p class="fits-label">Make: other people's tools we build on or are trialling, credited</p><ul>${home.fits.make.map(makeChip).join('')}</ul></div>
+<p class="fits-arrow" aria-hidden="true"><span>STEP, 3MF, boards</span></p>
+<div class="fits-ours"><p class="fits-label">Check, simulate, explain, measure: cad-agent</p><ul>${(await Promise.all(home.fits.ours.map(fitsTile))).join('')}</ul>
+<p class="fits-key">Maturity: ${areasTree.maturity.map(m => `<b>${esc(m.level)}</b> ${esc(m.means)}`).join('; ')}. From <a href="${REPO}/blob/dev/docs/areas.yaml">docs/areas.yaml</a>.</p></div></section>
+<section class="section" style="padding-top:0"><div class="missions">
+<a class="mission mission-blue" href="/research/landscape"><span class="mission-tag">Map</span><span class="mission-num">${(counts.upstream || 0) + (counts.library || 0) + (counts.benchmark || 0)}</span><p>Agentic-CAD projects, libraries and benchmarks, checked with dates and licences.</p><span class="go">See the landscape <span>→</span></span></a>
+<a class="mission mission-yellow" href="/docs/toolkit"><span class="mission-tag">Demonstrate</span><span class="mission-num">${counts.tool || 0}</span><p>Commands that run on real projects: gates, holes, FEA, CFD, topology, slicing, the 3D viewer.</p><span class="go">Open the tools <span>→</span></span></a>
+<a class="mission mission-orange" href="/docs/common-issues"><span class="mission-tag">Fill the gaps</span><span class="mission-num">${lessonCount}</span><p>Lessons from real builds, each with the incident behind it and the check that catches it.</p><span class="go">Read the pitfalls <span>→</span></span></a>
 </div></section>
-<section class="section" style="padding-top:0"><div class="lead"><h2>Skills your agents <span>can load.</span></h2><p>Claude Code and Codex install them with <code>cad-agent agents install</code>. Work survives crashes, reviews are independent, heavy runs go to compute hosts.</p></div>
-<ul class="cards">${skillCards.map(p => card({ type: p.section, status: 'ours', name: p.title, summary: p.summary, url: pageURL(p.file), markdown: '/' + p.file })).join('')}</ul></section>
-<section class="section" style="padding-top:0"><div class="lead"><h2>Living pages, <span>not link lists.</span></h2><p>One page per topic, built on the best sources anyone has published (design guides, datasheets, papers, other people's agent skills and repos) and on our own project history. Each page gives the method condensed with citations, worked examples you can see, and the tool an agent calls to do the work itself, with tests that fail if the page and the tool drift apart. Fewer tool calls and tokens spent re-deriving what is already known.</p></div>
-<ul class="cards">${LIVING.filter(l => pages.some(p => p.file === l.file)).map(l => card({ type: 'living', status: 'living page', name: l.name, summary: l.summary, url: pageURL(l.file), markdown: '/' + l.file })).join('')}${card({ type: 'living', status: 'next', name: 'Flexures, living hinges, bistable latches', summary: 'Same pattern: guides and papers, equations with their test cases, process and print-direction limits.', url: REPO + '/issues/94' })}</ul></section>
-<section class="band-green"><div><p class="eyebrow">Growing next</p><h2>Demos for <span>every capability.</span></h2><p>Each tool and research area gets a live demo here: animated snap-fit and flexure libraries, FEA and topology results in the 3D viewer, rendered diagrams, geometry that refines itself to save material.</p></div>
-<ul><li><a href="${REPO}/issues/94">Compliant-mechanism engineer</a>: snap fits, living hinges and flexures sized for the process, layer lines included</li>
-<li><a href="${REPO}/issues/107">Self-refining geometry</a>: declare mounts, keep-outs and loads; iterate to lighter printable parts</li>
-<li><a href="${REPO}/issues/97">Pitfall catalogue</a> with every automated check and its coverage</li>
-<li><a href="${REPO}/issues/96">Landscape refresh</a>: agent skills, large-deflection FEA, process tooling</li>
-<li><a href="${REPO}/issues/104">Showcase</a> and <a href="${REPO}/issues/106">agent-first catalogue</a></li></ul></section>
-<section class="section"><div class="lead"><h2>Built with <span>cad-agent.</span></h2><p>Real projects are the test bench: every tool here was needed by one of them first.</p></div><ul class="cards">
-${card({ type: 'project', status: 'used', name: 'Gyropup', url: 'https://gyropup.com', summary: 'A wheel-legged foam-ball battle robot designed, simulated and documented by agents with this toolkit.' })}
-${card({ type: 'project', status: 'used', name: 'J501 AGX Orin enclosure', url: 'https://github.com/mvalancy/j501-agx-orin', summary: 'A printed enclosure and cooler for a Jetson AGX Orin carrier: where most of the lessons came from.' })}
-</ul></section>
-<section class="section help-band"><div class="lead"><h2>Help us <span>improve!</span></h2><p>Found a mistake, a better tool, or a page that wasted your time? Tell us: it takes a minute and goes straight to the people and agents who maintain this. Ideas we use are credited by name.</p></div>
-<div class="help-actions"><a class="button primary" href="${esc(feedbackURL('home page', '/'))}">Give feedback</a><a class="button" href="${REPO}/issues">See open issues</a><a class="button" href="/CONTRIBUTING">How to contribute</a></div></section>
-<section class="closing"><p class="eyebrow">For agents and people</p><h2>Point your agent at <span>llms.txt</span>.</h2><div class="actions"><a class="button primary" href="/llms.txt">Open llms.txt</a><a class="button" href="/catalog">Browse the catalogue</a></div></section></div>`;
-await writeFile(path.join(out, 'index.html'), frame({ title: TAGLINE, body: landing, md: '/index.md', current: '/', page: 'landing', css: ['/web/snap-demo.css'] }));
+<section class="section built-with" style="padding-top:0"><div class="lead"><h2>Built with <span>cad-agent.</span></h2><p>Real projects are the test bench: every tool here was needed by one of them first.</p></div>
+<ul class="projects"><li><a href="https://gyropup.com">${await homeImg('docs/img/gyropup.jpg', 'projects', ' alt="Gyropup, a wheel-legged robot with a turret, rendered" loading="lazy" decoding="async"')}<b>Gyropup</b></a><p>A wheel-legged foam-ball battle robot, designed, simulated and documented by agents with this toolkit. MIT.</p></li>
+<li><a href="https://github.com/mvalancy/j501-agx-orin">${await homeImg('docs/img/viewer.jpg', 'projects', ' alt="The J501 enclosure in the kit\'s 3D viewer, with its parts list" loading="lazy" decoding="async"')}<b>J501 AGX Orin enclosure</b></a><p>A printed enclosure and cooler for a Jetson AGX Orin carrier, where most of the lessons came from.</p></li></ul></section>
+
+<section class="section skills-row" style="padding-top:0"><div class="lead"><h2>Skills your agents <span>can load.</span></h2><p><code>cad-agent agents install</code> adds them to Claude Code and Codex. <a href="/docs/agent-workflow">How they work together →</a></p></div>
+<ul class="skill-chips">${skillCards.map(p => `<li><a href="${esc(pageURL(p.file))}"><b>${esc(p.title)}</b><span class="pill">${p.section === 'agents' ? 'subagent' : 'skill'}</span></a><a class="skill-md" href="/${esc(p.file)}" aria-label="${esc(p.title)} as Markdown">.md</a></li>`).join('')}</ul></section>
+<section class="section help-band"><div class="lead"><h2>Help us <span>improve!</span></h2><p>Found a mistake, a better tool, or a page that wasted your time? It takes a minute, and ideas we use are credited by name.</p></div>
+<div class="help-actions"><a class="button primary" href="${esc(feedbackURL('home page', '/'))}">Give feedback</a><a class="button" href="${REPO}/issues">See open issues</a><a class="button" href="/CONTRIBUTING">How to contribute</a></div></section></div>`;
+await writeFile(path.join(out, 'index.html'), frame({ title: TAGLINE, body: landing, md: '/index.md', current: '/', page: 'landing', css: ['/web/snap-demo.css', '/kit/model.css'] }));
 
 // ----------------------------------------------------------------------------- agent files
 const bySection = id => pages.filter(p => p.section === id);
@@ -415,14 +474,23 @@ simulation and print releases. It maps the best free tools, demonstrates them on
 tested tools of its own. Every page on this site has a Markdown twin at the same path with a .md extension.
 
 - Source: ${REPO} (MIT). Install: \`pip install -e .\` in a checkout; agent skills: \`cad-agent agents install\`.
-- Machine-readable catalogue: ${ORIGIN}/catalog.json (schema ${catalog.schema}; ${catalog.items.length} entries).
+- Machine-readable catalogue: ${ORIGIN}/catalog.json (schema ${catalog.schema}; ${catalog.items.length} entries, each with an id, kind,
+  areas, maturity, a one-line \`what\`, our \`notes\`, a cover picture, a demo link and related ids; tools also have \`doc\`,
+  the page that documents the command, and \`markdown\`, its twin). Every schema-1 field keeps its schema-1 value: \`summary\`
+  is still our notes first for outside projects, a tool's \`url\` is still ${ORIGIN}/docs/toolkit, and a field that was null
+  is still null. Each file says what its fields mean in \`fields\`.
+- Find your way in two small fetches: ${ORIGIN}/catalog/index.json lists the domains and areas of hardware design
+  (docs/areas.yaml) with counts, maturity and links; ${ORIGIN}/catalog/<area>.json (e.g. catalog/compliant-mechanisms.json)
+  lists every tool, page, lesson, skill, demo and outside project in that area. Outside entries not yet placed in an area:
+  ${ORIGIN}/catalog/unplaced.json. The page takes the same filters as URL parameters, e.g.
+  ${ORIGIN}/catalog?kind=tools&area=compliant-mechanisms&sort=stars.
 - Full text of every page in one file: ${ORIGIN}/llms-full.txt
 - Built from commit ${revision}.
 
 ## Start here
 
 - [README](${ORIGIN}/README.md): what cad-agent is and how it grows
-- [Toolkit](${ORIGIN}/docs/toolkit.md): every command, the project contract and the Python API
+- [Tools](${ORIGIN}/docs/toolkit.md): every command, the project contract and the Python API
 - [Agent workflow](${ORIGIN}/docs/agent-workflow.md): skills, subagents, work claims and crash-safe work
 - [Common issues](${ORIGIN}/docs/common-issues.md): recurring CAD mistakes and the checks that catch them
 - [Landscape](${ORIGIN}/research/landscape.md): the agentic-CAD tools we track, verified
@@ -434,7 +502,25 @@ ${SECTIONS.map(s => `## ${s.title}\n\n${bySection(s.id).map(p => `- [${p.title}]
 ${commands.map(c => `- \`cad-agent ${c.name}\`: ${c.help}`).join('\n')}
 `;
 await writeFile(path.join(out, 'llms.txt'), llms);
-await writeFile(path.join(out, 'index.md'), llms);
+// The home page's twin: llms.txt, then what the page shows beside it (the reel and where cad-agent fits), in words.
+const fitsMake = home.fits.make.map(m => { const u = m.upstream && upstreamByName.get(m.upstream); return `- ${m.name}${u ? ` (${u.license}, ${STATUS_NOTE[u.status] || u.status})` : ''}: ${m.does}`; });
+await writeFile(path.join(out, 'index.md'), `${llms.replace(/\n*$/, '\n')}
+## On the home page
+
+### What the code computes
+
+${homeMd.reel.join('\n')}
+
+### Where cad-agent fits
+
+Other people's tools make the model (we build on them or are trialling them):
+
+${fitsMake.join('\n')}
+
+cad-agent checks, simulates, explains and measures around it (maturity: ${LADDER.join(' → ')}, from docs/areas.yaml):
+
+${homeMd.ours.join('\n')}
+`);
 await writeFile(path.join(out, 'llms-full.txt'), `# cad-agent: full text\n\n> ${TAGLINE}. ${LEDE}\n\n` +
   pages.map(p => `\n\n---\n\nSource: ${ORIGIN}/${p.file}\n\n${rewriteMd(p.file, p.body, true).trim()}\n`).join(''));
 // Cloudflare Pages joins the values of a header set by more than one matching rule, so each header is set by one rule

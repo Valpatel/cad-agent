@@ -40,23 +40,27 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   flow, with a caption that says what it shows and what it was computed on; long reference tables fold into
   `<details>`. The wall backlog drops from 33 pages to 25 (#122).
 - Erratum for v0.10.0: `cadagent.simulation.cfd` `results()` changed in three ways v0.10.0's entry did not list (#47).
-  A case with fans gets one more `limits` entry. A fan face that catches no faces sets `error`, so the run is not
-  `converged`. The result has new `zone_faces` and `warnings` keys. Code that compares the whole result, or counts its
-  `limits`, must expect them.
+  A case with fans gets one more `limits` entry. A fan's inlet or outlet face zone that catches no mesh faces sets
+  `error`, so the run is not `converged`. Every result has a new `warnings` key, and fan cases written from v0.10.0 on
+  have `zone_faces`. Code that compares the whole result, or counts its `limits`, must expect them.
 
 **Fixed**
 - `cadagent.review.gates.relations.relate`: a shallow near-tangent crossing that OCCT's boolean misses is no longer
   read as `touching` or `contains`. Where the two boundaries meet, the curves found by `BRepAlgoAPI_Section` guide
   samples that are classified against the other solid. A crossing outside the kernel's own common or cut makes the
-  pair `unknown`, with the point and depth in `witness["crossing_probe"]`. A 4 mm ball 0.011–0.23 mm through a cone
-  wall had read `contains` or `touching` at 24 of 500 positions (#46).
-- Containment gate: an instance whose relation finds such a crossing fails as an escape, with the depth found.
+  pair `unknown`, with the point and depth in `witness["crossing_probe"]`. A ball of 4 mm radius 0.011–0.23 mm
+  through a cone wall had read `contains` or `touching` in 24 of 500 checks (250 positions, each against the cavity and
+  the wall's part) (#46).
+- Containment gate: an instance whose relation finds such a crossing fails as an escape, with the depth found (#46).
 
 **Projects must change**
 - `RELATIONS_VERSION` is now 5, so cached relations (`.cadagent-cache/gates/`) and the containment gate's cached
   checks recompute on the next run. A pair that crossed where the kernel saw no crossing now reads `unknown`, and
-  every gate fails on it; nudge the parts apart or into a clear overlap. No answer changed on the README hero's
-  clearance sweep (811 calls) or the gate bench.
+  every gate fails on it; nudge the parts apart or into a clear overlap. A pair whose crossing probe itself fails also
+  reads `unknown`, even with no crossing found. No answer changed on the README hero's clearance sweep (811 calls) or
+  the gate bench (#46).
+- `RelationTable.to_dict()["method"]` now names the crossing probe, so a stored relation table compared whole with a
+  new one differs even where every answer is the same (#46).
 
 ## v0.10.0 (2026-11-01)
 

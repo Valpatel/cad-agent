@@ -109,31 +109,29 @@ the goal (the containment gate); between parts it needs an intended-overlap decl
 
 ### Method, fail-safe rules and cost
 
-AABB broad phase (`BRepBndLib.AddOptimal`, numpy over all pairs). For each candidate, the distance comes first (#186):
-`BRepExtrema_DistShapeShape` between the two items' faces. A gap over `touch_mm` is `apart` at once
-(`witness.method = "distance-first"`) when it is proven and confirmed:
+AABB broad phase (`BRepBndLib.AddOptimal`, numpy over all pairs). For each candidate: `BRepAlgoAPI_Common` for the
+shared volume and `BRepAlgoAPI_Cut` for each item's volume outside the other, all non-destructive (OCCT otherwise
+raises the arguments' tolerances in place, changing the caller's shapes), then `BRepExtrema_DistShapeShape` for the
+gap when nothing is shared.
 
-- one vertex of each connected set of either item's faces lies outside the other's solids, which rules out one
-  inside the other;
-- `BRepAlgoAPI_Common` comes back empty.
-
-Every other pair takes the full path: `BRepAlgoAPI_Common` for the shared volume and `BRepAlgoAPI_Cut` for each
-item's volume outside the other, all non-destructive (OCCT otherwise raises the arguments' tolerances in place,
-changing the caller's shapes), then `BRepExtrema_DistShapeShape` on the solids for the gap when nothing is shared.
-The vertex test replaces BRepExtrema's own inner-solution test. That test classifies every vertex, which is most of a
-many-faced pair's time, and it is skipped for a compound of solids, where it would miss a part wholly inside.
+On solids, `BRepExtrema_DistShapeShape` first runs an inner-solution test: does any vertex of one lie inside the
+other? OCCT 7.9 builds a new point classifier for each small chunk of vertices (about ten chunks per thread, at
+least three vertices each), and that is most of a many-faced pair's time. So the gates run the same test once
+(`_inner_vertex`, one classifier per solid). When no vertex is inside and the faces are clear of each other, they
+take BRepExtrema's distance between the faces: the same gap and points (#186). Anything else (a vertex inside or
+near, free edges or vertices, a kernel error) goes to BRepExtrema on the whole shapes, as before.
 
 OCP 7.9 binds no error report on these operations (`HasErrors` is absent; `DSFiller()` reports warnings but crashes
-the interpreter at exit), and `IsDone()` stays true on invalid input. So every answer is cross-checked. A
-distance-first `apart` needs the vertex test and the empty common to agree. Every other answer needs
+the interpreter at exit), and `IsDone()` stays true on invalid input. So every answer is cross-checked:
 `vol(a) = common + cut(a, b)`, and the same for `b` when they overlap. A mismatch, an exception, a missing solid or a
 self-interfering compound gives `unknown`, never `touching`, `apart` or `contains`.
 
 Measured with `tools/gate_timing.py` on the synthetic 100-part assembly (4,950 pairs, 90 candidates), on a workstation
 at load average 11: broad phase 0.006 s, narrow phase 1.9 s cold, 0.03 s warm from the cache. The cross-check's
 extra `Cut` roughly doubled the cold narrow phase. Real parts with hundreds of faces cost 10–100× more per pair. On
-Gyropup's leg (the README hero's clearance sweep, 811 pairs, PR #198), distance first cut the time from 935 s to 608 s
-of calls with every answer unchanged. Most of what remains is BRepExtrema's own search between nearby edges and faces.
+Gyropup's leg (the README hero's clearance sweep, 811 pairs, PR #198), the single inner-solution test cut the time
+from 935 s to SWEEP_AFTER s of calls, every relation byte-identical. Most of what remains is BRepExtrema's own search between
+nearby edges and faces.
 
 ### Pairs the table did not examine
 

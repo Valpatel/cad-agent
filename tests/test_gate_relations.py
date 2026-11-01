@@ -100,11 +100,11 @@ def test_kernel_failure_is_unknown_not_apart(monkeypatch):
     assert rel.state == "unknown" and "Common failed" in rel.error
 
 
-# ----------------------------------------------------------------------------- distance first (#186)
+# ----------------------------------------------------------------------------- the distance on solids (#186)
 
 def waffle(n, z=0.0, up=False):
     """A 40 x 40 x 10 block with an n x n grid of 2 mm pockets 4 deep in one face (down, or up when ``up``):
-    a single SOLID with 5 n^2 + 6 faces, so OCCT's inner-solution test has every vertex to classify."""
+    a single SOLID with 5 n^2 + 6 faces, so BRepExtrema's inner-solution test has every vertex to classify."""
     wp = cq.Workplane().box(40, 40, 10, centered=(True, True, False))
     pts = [(-16 + 32 * i / (n - 1), -16 + 32 * j / (n - 1)) for i in range(n) for j in range(n)]
     s = wp.faces("<Z").workplane().pushPoints(pts).rect(2, 2).cutBlind(-4).val()
@@ -124,14 +124,20 @@ def hollow_block():
     return solid
 
 
+def with_loose(shape, loose):
+    """``shape`` plus a free edge or vertex in one compound: valid input that a distance between faces misses."""
+    return cq.Compound.makeCompound([shape, loose])
+
+
 def relation_fixtures():
-    """(label, a, b, tolerances): every pair the relation tests above use, plus the cases the distance-first
-    step must hand to the full path (a part inside a compound, a torus with one vertex inside a block) or may
-    decide itself (a ball in a closed void, many-faced solids)."""
+    """(label, a, b, tolerances): every pair the relation tests above use, plus cases where the distance must not be
+    taken between the faces (a part inside a compound, a torus with one vertex inside a block, free edges and
+    vertices) and cases where it may (a ball in a closed void, many-faced solids)."""
     t = Tolerances()
     block = box(10, 10, 10, (-5, -5, 0)).cut(cq.Solid.makeCylinder(2, 10))
     sphere = ball(3, cq.Vector(5, 5, 5))
     cavity = box(20, 20, 20, (-10, -10, -5))
+    far = box(10, 10, 10, (20, 0, 0))
     out = [("apart boxes", box(10, 10, 10), box(10, 10, 10, (12, 0, 0)), t),
            ("touching boxes", box(10, 10, 10), box(10, 10, 10, (10, 5, 0)), t),
            ("overlapping boxes", box(10, 10, 10), box(10, 10, 10, (5, 0, 0)), t),
@@ -141,6 +147,7 @@ def relation_fixtures():
            ("0.005 mm hover", box(10, 10, 10), box(10, 10, 10, (10.005, 0, 0)), t),
            ("0.02 mm hover", box(10, 10, 10), box(10, 10, 10, (10.02, 0, 0)), t),
            ("0.02 mm hover, loose", box(10, 10, 10), box(10, 10, 10, (10.02, 0, 0)), Tolerances(touch_mm=0.05)),
+           ("0.5 mm hover, touch 0", box(10, 10, 10), box(10, 10, 10, (10.5, 0, 0)), Tolerances(touch_mm=0.0)),
            ("pin in bore", cq.Solid.makeCylinder(2, 10), block, t),
            ("separate solids", cq.Compound.makeCompound([box(1, 1, 1), box(1, 1, 1, (3, 0, 0))]),
             box(1, 1, 1, (0.5, 0, 0)), t),
@@ -151,133 +158,114 @@ def relation_fixtures():
            ("torus in block", cq.Solid.makeTorus(5, 1), box(40, 40, 40, (-20, -20, -20)), t),
            ("ball in a closed void", ball(3, cq.Vector(10, 10, 10)), hollow_block(), t),
            ("ball in the wall of a hollow block", ball(1, cq.Vector(2, 2, 10)), hollow_block(), t),
+           ("free edge reaching the other part",
+            with_loose(box(10, 10, 10), cq.Edge.makeLine(cq.Vector(5, 5, 5), cq.Vector(20, 5, 5))), far, t),
+           ("free edge 0.5 mm short",
+            with_loose(box(10, 10, 10), cq.Edge.makeLine(cq.Vector(5, 5, 5), cq.Vector(19.5, 5, 5))), far, t),
+           ("free vertex 0.2 mm away", with_loose(box(10, 10, 10), cq.Vertex.makeVertex(19.8, 5, 5)), far, t),
            ("waffles 1 mm apart", waffle(4), waffle(4, 21, up=True), t)]
     return out + [(f"{label}, flipped", b, a, tol) for label, a, b, tol in out]
 
 
-def _verdict(rel):
-    """A relation without the parts the distance-first step leaves out by design: the volume-integration record
-    (it integrates nothing) and its method marker."""
-    d = rel.to_dict()
-    d["witness"] = {k: v for k, v in d.get("witness", {}).items() if k not in ("volume_integration", "method")}
-    return d
+def _faces_used(monkeypatch):
+    """Record whether each ``_solid_distance`` answered from the faces (True) or handed over to ``_distance``."""
+    used = []
+    real = relations_mod._distance
+
+    def solid_distance(a, b, tol):
+        calls = []
+        monkeypatch.setattr(relations_mod, "_distance", lambda x, y: (calls.append((x, y)), real(x, y))[1])
+        try:
+            out = real_solid(a, b, tol)
+        finally:
+            monkeypatch.setattr(relations_mod, "_distance", real)
+        used.append(not any(x is a for x, _ in calls))
+        return out
+    real_solid = relations_mod._solid_distance
+    monkeypatch.setattr(relations_mod, "_solid_distance", solid_distance)
+    return used
 
 
 @needs_cad
-def test_distance_first_gives_the_full_paths_relation_on_every_fixture():
-    """Every state, gap, witness point and volume is the full path's, and only proven-apart pairs skip it."""
+def test_every_fixture_relation_is_byte_identical_to_brepextrema_on_the_solids(monkeypatch):
+    """The whole Relation (state, gap, points, volumes, witness) is what the old call gave, and the faces answer
+    exactly for the apart pairs that have no loose sub-shape."""
     from cadagent.review.gates import relate
     seen = set()
     for label, a, b, tol in relation_fixtures():
-        fast = relate(a, b, tol)
-        full = relations_mod._relate_full(a.wrapped, b.wrapped, tol, names=("a", "b"), volumes=None,
-                                          contact_area=True)
-        assert _verdict(fast) == _verdict(full), label
-        assert (fast.witness.get("method") == relations_mod.DISTANCE_FIRST) == (full.state == "apart"), label
-        seen.add(full.state)
-    assert seen == {"apart", "touching", "overlapping", "contains"}
+        with monkeypatch.context() as m:
+            used = _faces_used(m)
+            new = relate(a, b, tol).to_dict()
+        with monkeypatch.context() as m:
+            m.setattr(relations_mod, "_solid_distance", lambda x, y, t: relations_mod._distance(x, y))
+            old = relate(a, b, tol).to_dict()
+        assert new == old, label
+        loose = "free" in label
+        assert used == ([] if old["state"] not in ("apart", "touching") else [old["state"] == "apart" and not loose]), label
+        seen.add(old["state"])
+    assert seen == {"apart", "touching", "overlapping", "contains", "unknown"}   # unknown: Cut fails on a free edge
 
 
 @needs_cad
-def test_a_part_inside_a_compound_is_contains_not_apart_by_distance():
-    """BRepExtrema's inner-solution test runs only on SOLID shapes: against a compound it reports the boundary
-    gap for a ball wholly inside, which is the trap a distance-only shortcut would fall into."""
-    from cadagent.review.gates import relate
-    inside, container = ball(3, cq.Vector(5, 5, 5)), cq.Compound.makeCompound([box(10, 10, 10)])
-    gap = relations_mod._distance(inside.wrapped, container.wrapped)[0]
-    assert gap == pytest.approx(2.0)                                     # the trap
-    assert relations_mod._proven_apart(inside.wrapped, container.wrapped, Tolerances(), ("a", "b")) is None
-    rel = relate(inside, container)
-    assert rel.state == "contains" and rel.contained == "a_in_b" and "method" not in rel.witness
+def test_the_inner_vertex_test_answers_as_brepextrema_does():
+    """``_inner_vertex`` against BRepExtrema's own InnerSolution: a ball in a box, a one-vertex torus in a block,
+    a ball in a closed void (outside), a compound container (BRepExtrema does not test it) and a far box."""
+    from OCP.BRepExtrema import BRepExtrema_DistShapeShape
+    block = box(40, 40, 40, (-20, -20, -20))
+    cases = [(ball(3, cq.Vector(5, 5, 5)), box(10, 10, 10)), (cq.Solid.makeTorus(5, 1), block),
+             (ball(3, cq.Vector(10, 10, 10)), hollow_block()), (ball(3, cq.Vector(5, 5, 5)),
+                                                                 cq.Compound.makeCompound([box(10, 10, 10)])),
+             (box(1, 1, 1, (30, 0, 0)), block)]
+    for inner, outer in cases:
+        d = BRepExtrema_DistShapeShape(inner.wrapped, outer.wrapped)
+        d.Perform()
+        ours = relations_mod._inner_vertex(inner.wrapped, outer.wrapped) or relations_mod._inner_vertex(outer.wrapped, inner.wrapped)
+        assert ours == d.InnerSolution(), (inner, outer)
+    assert [relations_mod._inner_vertex(o.wrapped, i.wrapped) for i, o in cases] == [True, True, False, False, False]
 
 
 @needs_cad
-def test_either_check_alone_keeps_shared_volume_out_of_distance_first(monkeypatch):
-    """The classifier catches a containment the boolean missed; the common catches a crossing the distance
-    missed (both faked here), so a distance-first apart needs two kernel answers to agree."""
-    real_boolean, tol = relations_mod._boolean, Tolerances()
-    monkeypatch.setattr(relations_mod, "_boolean",
-                        lambda kind, x, y: relations_mod._compound([]) if kind == "common" else real_boolean(kind, x, y))
-    inside, block = ball(3, cq.Vector(5, 5, 5)), box(10, 10, 10)
-    assert relations_mod._proven_apart(inside.wrapped, block.wrapped, tol, ("a", "b")) is None
-    monkeypatch.setattr(relations_mod, "_boolean", real_boolean)
-    a, b = box(10, 10, 10), box(10, 10, 10, (-9.9, 2, 2))      # 0.1 mm into a; each stand-in corner is outside
-    assert not relations_mod._any_point_not_outside(relations_mod._boundary_points(a.wrapped), b.wrapped)
-    assert not relations_mod._any_point_not_outside(relations_mod._boundary_points(b.wrapped), a.wrapped)
-    monkeypatch.setattr(relations_mod, "_distance", lambda x, y: (3.0, [0.0, 0.0, 0.0], [3.0, 0.0, 0.0]))
-    assert relations_mod._proven_apart(a.wrapped, b.wrapped, tol, ("a", "b")) is None
+def test_loose_sub_shapes_send_the_distance_to_brepextrema_on_the_whole_shape():
+    edge = with_loose(box(10, 10, 10), cq.Edge.makeLine(cq.Vector(5, 5, 5), cq.Vector(20, 5, 5)))
+    point = with_loose(box(10, 10, 10), cq.Vertex.makeVertex(19.8, 5, 5))
+    assert relations_mod._loose(edge.wrapped) and relations_mod._loose(point.wrapped)
+    assert not any(relations_mod._loose(s.wrapped) for s in (box(1, 1, 1), ball(2), cq.Solid.makeTorus(5, 1),
+                                                             cq.Solid.makeCone(2, 0, 3), hollow_block()))
+    far, tol = box(10, 10, 10, (20, 0, 0)), Tolerances()
+    assert relations_mod._solid_distance(point.wrapped, far.wrapped, tol)[0] == pytest.approx(0.2)
+    assert relations_mod._distance(relations_mod._faces(point.wrapped), far.wrapped)[0] == pytest.approx(10.0)  # the trap
 
 
 @needs_cad
-def test_one_point_per_connected_set_of_faces_and_none_without_a_vertex():
-    from OCP.BRep import BRep_Builder
-    from OCP.Geom import Geom_Plane
-    from OCP.TopoDS import TopoDS_Face
-    from OCP.gp import gp_Pln
-    assert len(relations_mod._boundary_points(box(1, 1, 1).wrapped)) == 1
-    assert len(relations_mod._boundary_points(hollow_block().wrapped)) == 2           # the outer shell and the void's
-    two = cq.Compound.makeCompound([box(1, 1, 1), box(1, 1, 1, (3, 0, 0))])
-    assert len(relations_mod._boundary_points(two.wrapped)) == 2
-    bare = TopoDS_Face()
-    BRep_Builder().MakeFace(bare, Geom_Plane(gp_Pln()), 1e-7)                        # natural bounds: no edge, no vertex
-    assert relations_mod._boundary_points(bare) is None
-
-
-@needs_cad
-def test_a_kernel_failure_in_the_distance_first_step_falls_back_to_the_full_path(monkeypatch):
+def test_a_kernel_failure_between_the_faces_falls_back_to_brepextrema_on_the_solids(monkeypatch):
     from cadagent.review.gates import relate
     a, b = box(10, 10, 10), box(10, 10, 10, (12, 0, 0))
-    expected = relate(a, b)
-    monkeypatch.setattr(relations_mod, "_boundary_points", lambda s: (_ for _ in ()).throw(RuntimeError("boom")))
-    rel = relate(a, b)
-    assert rel.state == "apart" and "method" not in rel.witness and "volume_integration" in rel.witness
-    assert _verdict(rel) == _verdict(expected)
+    expected = relate(a, b).to_dict()
+    monkeypatch.setattr(relations_mod, "_inner_vertex", lambda s, o: (_ for _ in ()).throw(RuntimeError("boom")))
+    assert relate(a, b).to_dict() == expected
 
 
 @needs_cad
-def test_distance_first_skips_the_volume_work_and_beats_the_full_path(monkeypatch):
-    """The budget (#186): an apart pair of many-faced solids integrates nothing and runs one boolean (the common,
-    which must come back empty), and takes under a quarter of the full path's time. On Gyropup's leg (PR #186's
-    body) the full path spent most of its time in BRepExtrema's inner-solution test, as here."""
+def test_the_distance_on_many_faced_solids_beats_brepextrema_on_the_solids(monkeypatch):
+    """The budget (#186): two pocketed blocks 1 mm apart. The same relation as BRepExtrema on the solids, from the
+    faces alone, in under a third of the time of the old relate() (about a fifth when measured). On Gyropup's leg
+    (PR #198) that inner-solution test was most of the time of an apart pair, as here."""
     from cadagent.review.gates import relate
     a, b = waffle(5), waffle(5, 21, up=True)
-    calls = {"volume": 0, "boolean": []}
-    real_volume, real_boolean = relations_mod._measure_volume, relations_mod._boolean
-
-    def volume(shape):
-        calls["volume"] += 1
-        return real_volume(shape)
-
-    def boolean(kind, x, y):
-        calls["boolean"].append(kind)
-        return real_boolean(kind, x, y)
-    monkeypatch.setattr(relations_mod, "_measure_volume", volume)
-    monkeypatch.setattr(relations_mod, "_boolean", boolean)
+    relate(a, b, validated=True)                                  # warm up imports and caches
+    with monkeypatch.context() as m:
+        used = _faces_used(m)
+        t0 = time.perf_counter()
+        new = relate(a, b, validated=True)
+        new_s = time.perf_counter() - t0
+    assert used == [True]                                         # BRepExtrema never ran on the solids
+    monkeypatch.setattr(relations_mod, "_solid_distance", lambda x, y, t: relations_mod._distance(x, y))
     t0 = time.perf_counter()
-    fast = relate(a, b, validated=True)
-    fast_s = time.perf_counter() - t0
-    assert fast.state == "apart" and fast.gap_mm == pytest.approx(1.0) and fast.witness["method"] == "distance-first"
-    assert calls == {"volume": 0, "boolean": ["common"]}
-    t0 = time.perf_counter()
-    full = relations_mod._relate_full(a.wrapped, b.wrapped, Tolerances(), names=("a", "b"), volumes=None,
-                                      contact_area=True)
-    full_s = time.perf_counter() - t0
-    assert _verdict(fast) == _verdict(full)
-    assert fast_s < full_s / 4, (fast_s, full_s)
+    old = relate(a, b, validated=True)
+    old_s = time.perf_counter() - t0
+    assert new.state == "apart" and new.gap_mm == pytest.approx(1.0) and new.to_dict() == old.to_dict()
+    assert new_s < old_s / 3, (new_s, old_s)
 
-
-@needs_cad
-def test_the_table_never_integrates_a_part_measured_only_against_far_parts(monkeypatch):
-    from cadagent.review.gates import Assembly
-    asm = Assembly({"a": box(10, 10, 10), "near": box(10, 10, 10, (10.5, 0, 0)), "over": box(10, 10, 10, (0, 5, 0))})
-    measured = []
-    real = relations_mod._measure_volume
-    monkeypatch.setattr(relations_mod, "_measure_volume", lambda s: (measured.append(s), real(s))[1])
-    table = relation_table(asm)
-    assert table.get("a", "near").state == "apart" and table.get("a", "near").witness["method"] == "distance-first"
-    assert table.get("a", "over").state == "overlapping"
-    assert not any(s.IsSame(asm.shape("near")) for s in measured)
-    assert any(s.IsSame(asm.shape("a")) for s in measured) and any(s.IsSame(asm.shape("over")) for s in measured)
 
 
 # ----------------------------------------------------------------------------- Assembly

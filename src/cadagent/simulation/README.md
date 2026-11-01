@@ -28,7 +28,7 @@ flowchart TD
 
 | Module | What it does |
 |---|---|
-| `fea.py` | Linear-elastic stiffness and strength studies for any CAD part; exports the interactive FEA viewer's data |
+| `fea.py` | Linear-elastic stiffness and strength studies for any CAD part; a printed part's stress against its layers (`layer_check`); the material data each result used; exports the interactive FEA viewer's data |
 | `cfd.py` | Steady conjugate heat transfer cases for OpenFOAM, written from CAD |
 | `topopt.py` | Topology optimisation with [pyMOTO](https://github.com/aatmdelissen/pyMOTO) (Arnoud Delissen, MIT) |
 | `robot.py` | Mass properties from CAD, links and joints, URDF writing and checking |

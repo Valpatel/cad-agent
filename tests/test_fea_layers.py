@@ -265,3 +265,15 @@ def test_material_changes_between_two_toolkits():
         material_changes({'material': now.name, 'material_source': now.source}, now)
     with pytest.raises(TypeError):
         material_changes('pa6_cf_z', now)
+
+
+def test_the_docs_table_gives_the_layer_allowables_in_the_code():
+    """docs/toolkit.md's printed-materials table lists each row's (X-Y, Z) layer-check allowables to 0.1 MPa."""
+    from pathlib import Path
+    text = (Path(__file__).resolve().parents[1] / 'docs' / 'toolkit.md').read_text(encoding='utf-8')
+    fmt = lambda v: f'{v:.1f}'.removesuffix('.0')
+    for key, m in MATERIALS.items():
+        if m.layer_strengths_mpa is None:
+            continue
+        row = next(line for line in text.splitlines() if line.startswith(f'| `{key}` |'))
+        assert f'| {fmt(m.layer_strengths_mpa[0])} / {fmt(m.layer_strengths_mpa[1])} |' in row, (key, row)

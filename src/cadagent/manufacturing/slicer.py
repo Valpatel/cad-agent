@@ -163,22 +163,42 @@ def _read_result(out: Path) -> dict:
     return r
 
 
-def slice_part(model, workdir=None, printer: str = PRINTER, process: str = PROCESS, filament: str = 'pla',
-               overrides: Optional[dict] = None, timeout: float = 900) -> dict:
-    """Slice one STL or 3MF (already in print orientation) and return grams, minutes and the settings used."""
-    exe = executable()
-    if not exe:
-        raise RuntimeError('Bambu Studio is not installed (snap install bambu-studio); cannot measure filament')
-    model = Path(model).resolve()
+def _prepare_workdir(model: Path, workdir) -> Path:
+    """A fresh work folder for one slice: only ever clears a folder a slice wrote (or an empty one)."""
     work = Path(workdir).resolve() if workdir else model.parent / 'slicer' / model.stem
     if work.exists():
-        # only ever clear a folder this function wrote (or an empty one)
         ours = (work / _MARK).exists() or (work / 'result-summary.json').exists()   # the older marker too
         if not ours and any(work.iterdir()):
             raise FileExistsError(f'{work} exists and is not a slicer work folder; choose an empty or new folder')
         shutil.rmtree(work)
     work.mkdir(parents=True)
     (work / _MARK).write_text('cadagent.manufacturing.slicer work folder: safe to delete\n')   # first, so a crashed slice can be redone
+    return work
+
+
+def slice_part(model, workdir=None, printer: Optional[str] = None, process: Optional[str] = None, filament: str = 'pla',
+               overrides: Optional[dict] = None, timeout: float = 900, engine: str = 'bambu') -> dict:
+    """Slice one STL or 3MF (already in print orientation) and return grams, minutes and the settings used.
+
+    ``engine`` is ``bambu`` (Bambu Studio) or ``prusa`` (PrusaSlicer); printer, process and filament default to that
+    engine's, and ``filament`` may be ``pla`` or ``petg``. Overrides use the engine's own setting names."""
+    if engine not in ENGINES:
+        raise ValueError(f'Unknown cad.slicer.engine {engine!r}; use one of {", ".join(ENGINES)}')
+    d_printer, d_process, filaments = _defaults(engine)
+    printer, process = printer or d_printer, process or d_process
+    if engine == 'prusa':
+        from cadagent.manufacturing import slicer_prusa
+        model = Path(model).resolve()
+        work = _prepare_workdir(model, workdir)
+        r = slicer_prusa.slice_part(model, work, printer, process, filaments.get(filament, filament), overrides,
+                                    timeout=timeout)
+        (work / 'result-summary.json').write_text(json.dumps(r, indent=2) + '\n')
+        return r
+    exe = executable()
+    if not exe:
+        raise RuntimeError('Bambu Studio is not installed (snap install bambu-studio); cannot measure filament')
+    model = Path(model).resolve()
+    work = _prepare_workdir(model, workdir)
     fil = FILAMENTS.get(filament, filament)
     profiles = {kind: resolve_profile(kind, name)
                 for kind, name in (('machine', printer), ('process', process), ('filament', fil))}
@@ -305,11 +325,58 @@ def project_settings(workdir, printer: str = PRINTER, process: str = PROCESS, fi
     return (json.dumps(data, indent=4, sort_keys=True) + '\n').encode()
 
 
+ENGINES = ('bambu', 'prusa')
+ENGINE_NAMES = {'bambu': 'Bambu Studio', 'prusa': 'PrusaSlicer'}
+_INSTALL = {'bambu': 'snap install bambu-studio',
+            'prusa': 'prusa-slicer on PATH or flatpak com.prusa3d.PrusaSlicer'}
+
+
+def _defaults(engine: str):
+    """(printer, process, filament aliases) used when ``cad.slicer`` names none."""
+    if engine == 'prusa':
+        from cadagent.manufacturing import slicer_prusa
+        return slicer_prusa.PRINTER, slicer_prusa.PROCESS, slicer_prusa.FILAMENTS
+    return PRINTER, PROCESS, FILAMENTS
+
+
+def engine_of(project) -> str:
+    """``cad.slicer.engine``: ``bambu`` (the default) or ``prusa``."""
+    engine = (getattr(project, 'slicer', None) or {}).get('engine', 'bambu')
+    if engine not in ENGINES:
+        raise ValueError(f'Unknown cad.slicer.engine {engine!r}; use one of {", ".join(ENGINES)}')
+    return engine
+
+
 def _settings(project) -> dict:
     cfg = dict(project.slicer or {})
+    engine = engine_of(project)
+    printer, process, filaments = _defaults(engine)
     fil = cfg.get('filament', 'pla')
-    return {'printer': cfg.get('printer', PRINTER), 'process': cfg.get('process', PROCESS), 'filament': FILAMENTS.get(fil, fil),
-            'overrides': cfg.get('overrides') or {}}
+    out = {'printer': cfg.get('printer', printer), 'process': cfg.get('process', process),
+           'filament': filaments.get(fil, fil), 'overrides': cfg.get('overrides') or {}}
+    if engine != 'bambu':                    # Bambu Studio reports and releases stay as they were before engines
+        out['engine'] = engine
+    return out
+
+
+def engine_executable(engine: str) -> Optional[str]:
+    """The command that runs the engine's slicer, as one string; None when it is not installed."""
+    if engine == 'prusa':
+        from cadagent.manufacturing import slicer_prusa
+        exe = slicer_prusa.executable()
+        return ' '.join(exe) if exe else None
+    return executable()
+
+
+def not_installed(engine: str) -> str:
+    return f'{ENGINE_NAMES[engine]} is not installed ({_INSTALL[engine]})'
+
+
+def settings_differ(report: dict, project) -> List[str]:
+    """The ``cad.slicer`` settings a slice report was not made with. A report with no ``engine`` key was made with
+    Bambu Studio."""
+    st = dict(_settings(project), engine=engine_of(project))
+    return [k for k, v in st.items() if (report.get(k, 'bambu') if k == 'engine' else report.get(k)) != v]
 
 
 def _expected_parts(project) -> List[str]:
@@ -333,13 +400,14 @@ def slice_project(project, parts=None) -> dict:
     if error:
         raise FileNotFoundError(error)
     names = list(parts or cfg.get('parts') or known)
+    st, engine = _settings(project), engine_of(project)
     work = project.root / 'build' / 'slicer'
     path = project.exports_dir / 'slice-report.json'
     rows = {}
     if parts and path.exists():   # slicing some parts updates them in a report made with the same settings
         try:
             old = json.loads(path.read_text())
-            if all(old.get(k) == v for k, v in _settings(project).items()):
+            if not settings_differ(old, project):
                 rows = dict(old.get('parts', {}))
         except json.JSONDecodeError:
             pass
@@ -348,14 +416,16 @@ def slice_project(project, parts=None) -> dict:
         if not model.exists():
             rows[name] = {'error': f'{model.name} not found'}
             continue
-        r = slice_part(model, workdir=work / name, printer=cfg.get('printer', PRINTER), process=cfg.get('process', PROCESS),
-                       filament=cfg.get('filament', 'pla'), overrides=cfg.get('overrides'))
+        r = slice_part(model, workdir=work / name, printer=st['printer'], process=st['process'],
+                       filament=st['filament'], overrides=st['overrides'] or None, engine=engine)
         r['sha256'] = _sha(model)
         rows[name] = {k: r.get(k) for k in ('grams', 'minutes', 'filament_m', 'error', 'sha256')}
     total_g = sum(v.get('grams') or 0.0 for v in rows.values())
     total_min = sum(v.get('minutes') or 0.0 for v in rows.values())
-    exe = executable()
-    out = {'slicer': 'Bambu Studio (command line)', **_settings(project), 'slicer_executable': str(Path(exe).resolve()) if exe else None,
+    exe = engine_executable(engine)
+    if exe and engine == 'bambu':
+        exe = str(Path(exe).resolve())
+    out = {'slicer': f"{ENGINE_NAMES[engine]} (command line)", **st, 'slicer_executable': exe,
            'parts': rows, 'total_grams': round(total_g, 1), 'total_hours': round(total_min / 60, 2),
            'pass': bool(rows) and all(v.get('grams') for v in rows.values()),
            'note': 'Slicer estimates for one copy of each part with the stated profile; supports off unless the profile turns them on.'}
@@ -376,7 +446,7 @@ def current_report(project) -> Optional[dict]:
         return None
     if not rep.get('parts') or set(rep['parts']) != set(_expected_parts(project)):
         return None
-    if any(rep.get(k) != v for k, v in _settings(project).items()):
+    if settings_differ(rep, project):
         return None
     for name, row in rep.get('parts', {}).items():
         f = project.exports_dir / f'{name}.3mf'

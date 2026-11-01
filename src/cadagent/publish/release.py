@@ -388,7 +388,7 @@ def _slice_rows(project: CadProject) -> Tuple[Dict[str, Any], Dict[str, Dict[str
 
     A row is current only while the report was made with the settings ``cad.slicer`` names now (the rule
     ``slicer.current_report`` uses) and the part's 3MF still has the sha256 recorded for it."""
-    from cadagent.manufacturing.slicer import _settings
+    from cadagent.manufacturing.slicer import settings_differ
 
     path = project.exports_dir / "slice-report.json"
     try:
@@ -397,7 +397,7 @@ def _slice_rows(project: CadProject) -> Tuple[Dict[str, Any], Dict[str, Dict[str
         return {}, {}, "no slice report (run cad-agent slice)"
     if not isinstance(rep, dict):
         return {}, {}, "the slice report is not a JSON object"
-    differ = [k for k, v in _settings(project).items() if rep.get(k) != v]
+    differ = settings_differ(rep, project)
     if differ:
         return rep, {}, f"the slice report used other settings ({', '.join(differ)}) than cad.slicer now"
     current = {}
@@ -626,8 +626,9 @@ def _page(project: CadProject, cfg: ReleaseConfig, revision: str, date: str, par
             ("Overrides", ", ".join(f"{k} = {v}" for k, v in (settings.get("overrides") or {}).items()))]
     rows = [(k, v) for k, v in rows if v]
     if settings and rows:
-        said = " (Bambu Studio presets; the mass and time on the cards were sliced with them)" if n_sliced else \
-            " (Bambu Studio presets)"
+        from cadagent.manufacturing.slicer import ENGINE_NAMES
+        presets = f"{ENGINE_NAMES.get(settings.get('engine') or 'bambu', 'slicer')} presets"
+        said = f" ({presets}; the mass and time on the cards were sliced with them)" if n_sliced else f" ({presets})"
         settings_html = (f'<div class="settings"><b>Recommended print settings</b>{said}<dl>'
                          + "".join(f"<dt>{_e(k)}</dt><dd>{_e(v)}</dd>" for k, v in rows) + "</dl></div>")
     else:
@@ -757,6 +758,8 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
         settings = _settings(project)
     elif report and not slice_note:
         settings = {k: report.get(k) for k in ("printer", "process", "filament", "overrides")}
+        if "engine" in report:
+            settings["engine"] = report["engine"]
     else:
         settings = {}
     material = cfg.material or str(settings.get("filament") or "").split(" @")[0]

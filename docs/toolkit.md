@@ -412,7 +412,7 @@ flowchart TD
 | New package (domain in `docs/areas.yaml`) | Modules and packages (old path `cadagent.<name>`) |
 |---|---|
 | `cadagent.mechanical` (mechanical) | `holes`, `fasteners`, `mcmaster`, `connectors`, `markings`, `compliant/`, `motion_trace` |
-| `cadagent.manufacturing` (manufacturing) | `slicer`, `mesh3mf` |
+| `cadagent.manufacturing` (manufacturing) | `slicer`, `slicer_prusa`, `mesh3mf` |
 | `cadagent.thermal` (thermal) | `heatsink` |
 | `cadagent.simulation` (simulation) | `fea`, `cfd`, `topopt`, `explore/`, `robot`, `simviz`, `simreport` |
 | `cadagent.electrical` (electrical) | `pcb`, `pcb_routing` |
@@ -1011,10 +1011,10 @@ Turns CAD parts into a simulator model with real mass properties:
 ## Simulation and optimisation (standard practice for anything that carries load or heat)
 
 Built on mature open-source tools, never reimplemented: OpenFOAM for airflow and heat, gmsh + scikit-fem for
-stiffness and strength, pyMOTO for topology optimisation, Bambu Studio for real filament grams, PyVista/VTK for
+stiffness and strength, pyMOTO for topology optimisation, Bambu Studio or PrusaSlicer for real filament grams, PyVista/VTK for
 pictures and animations. The survey that chose them, with licences and sources, is
 [`research/simulation-tools.md`](../research/simulation-tools.md). Install: `pip install -e ".[cad,fea,sim]"`, plus
-Docker (OpenFOAM runs in the official `opencfd/openfoam-default` image) and Bambu Studio for slicing.
+Docker (OpenFOAM runs in the official `opencfd/openfoam-default` image) and Bambu Studio or PrusaSlicer for slicing.
 
 **Standard practice.** For every design that holds a heat source, carries a load or will be printed in quantity:
 1. **Slice it** (`cad-agent slice`): grams and print time per part, with the profile named. This is the number a
@@ -1178,8 +1178,38 @@ record those dependency hashes and the settings JSON hashes. These identities de
 ongoing filesystem stability or validation of the resulting executable G-code. Inspect actual temperature waits
 and startup order before printing; a filament label or successful slice does not establish physical readiness.
 Configure under
-`cad.slicer`: `printer`, `process`, `filament` (`pla`, `petg` or a profile name), `overrides` (process settings) and
-`parts`. Writes `exports/slice-report.json`.
+`cad.slicer`: `engine` (`bambu`, the default, or `prusa`), `printer`, `process`, `filament` (`pla`, `petg` or a
+profile name), `overrides` (settings, named as that slicer names them) and `parts`. Writes
+`exports/slice-report.json`. A PrusaSlicer report records `engine: prusa`, and a report made with one slicer is
+not current for the other.
+
+**PrusaSlicer** (`engine: prusa`, `cadagent.manufacturing.slicer_prusa`). Runs `prusa-slicer` (on PATH, or the
+flatpak `com.prusa3d.PrusaSlicer`), also AGPL and only ever a separate process.
+- **Profiles:** PrusaSlicer's vendor bundles and your own saved presets, from `$CADAGENT_PRUSA_PROFILES` when set,
+  else the first of `~/.config/PrusaSlicer/vendor`, the flatpak's config folder, `/usr/share/PrusaSlicer/profiles`
+  and `/usr/share/prusa-slicer/profiles` that holds any.
+- **Resolution:** PrusaSlicer itself resolves the three presets (`--save`, on a private copy of the profile folder),
+  as its window does. A multi-tool printer such as the XL gets each filament setting once per tool, and a print or
+  filament preset that does not fit the printer is refused with PrusaSlicer's reason.
+- **Overrides:** PrusaSlicer names, one value each (one value applies to every tool). A key PrusaSlicer does not
+  have, such as Bambu's `wall_loops`, is an error.
+- **Defaults:** `Original Prusa MK4S 0.4 nozzle` and `0.20mm SPEED @MK4S 0.4`; `pla` and `petg` mean the MK4S
+  Prusament profiles, so for another printer name its filament profile, e.g. `Prusament PLA @XLIS`.
+- **Records:** G-code is written as text (`binary_gcode = 0`) because grams and time are read from its footer. The
+  slice records the SHA-256 of its `config.ini` and of every profile file read; bundles change when PrusaSlicer
+  updates them.
+- **Limits:** the flatpak cannot read `/tmp`, so keep the project under your home folder. `export-3mf` plates carry
+  no Bambu Studio project settings for a PrusaSlicer project.
+
+```yaml
+cad:
+  slicer:
+    engine: prusa                                        # default: bambu
+    printer: Original Prusa XL - 5T Input Shaper 0.4 nozzle
+    process: 0.20mm SPEED @XLIS 0.4
+    filament: Prusament PLA @XLIS                        # or pla / petg (the MK4S variants)
+    overrides: {perimeters: "3", fill_density: "20%"}    # PrusaSlicer names
+```
 
 ### The print release (`cad-agent release`)
 

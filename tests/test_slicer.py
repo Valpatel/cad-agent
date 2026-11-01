@@ -302,3 +302,43 @@ def test_project_settings_fit_the_filaments_and_the_printers_plate(profile_tree,
     (tmp_path / 'mine' / 'notes.txt').write_text('keep')
     with pytest.raises(FileExistsError):
         slicer.project_settings(tmp_path / 'mine')
+
+
+def test_engine_defaults_to_bambu_and_rejects_unknown():
+    from types import SimpleNamespace as NS
+    assert slicer.engine_of(NS(slicer={})) == 'bambu'
+    assert slicer.engine_of(NS(slicer={'engine': 'prusa'})) == 'prusa'
+    with pytest.raises(ValueError, match='Unknown cad.slicer.engine'):
+        slicer.engine_of(NS(slicer={'engine': 'cura'}))
+
+
+def test_engine_is_part_of_report_identity():
+    from types import SimpleNamespace as NS
+    bambu = NS(slicer={})
+    old = slicer._settings(bambu)          # Bambu Studio reports carry no engine key, as before engines existed
+    assert 'engine' not in old and slicer.settings_differ(old, bambu) == []
+    prusa = NS(slicer={'engine': 'prusa', 'printer': old['printer'], 'process': old['process'],
+                       'filament': old['filament']})
+    assert slicer.settings_differ(old, prusa) == ['engine']
+    assert slicer._settings(prusa)['engine'] == 'prusa'
+
+
+def test_slice_project_uses_prusa_engine(tmp_path, monkeypatch):
+    import pathlib
+    from tests.test_report import make_project
+    from cadagent.project import load_project
+    from cadagent.manufacturing import slicer_prusa
+    project = load_project(make_project(tmp_path / 'proj'))
+    project.slicer = {'engine': 'prusa', 'filament': 'petg'}
+    seen = []
+    monkeypatch.setattr(slicer, 'slice_part', lambda m, **kw: seen.append(kw) or {'grams': 5.0, 'minutes': 10.0})
+    monkeypatch.setattr(slicer_prusa, 'executable', lambda: ['flatpak', 'run', 'com.prusa3d.PrusaSlicer'])
+    rep = slicer.slice_project(project)
+    assert {kw['engine'] for kw in seen} == {'prusa'}
+    assert {kw['printer'] for kw in seen} == {slicer_prusa.PRINTER}
+    assert rep['engine'] == 'prusa' and rep['slicer'] == 'PrusaSlicer (command line)'
+    assert rep['filament'] == slicer_prusa.FILAMENTS['petg']
+    assert rep['slicer_executable'] == 'flatpak run com.prusa3d.PrusaSlicer'
+    assert slicer.current_report(project) is not None
+    project.slicer = {}                                  # back to Bambu: the Prusa report is no longer current
+    assert slicer.current_report(project) is None

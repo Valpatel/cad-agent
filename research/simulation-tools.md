@@ -72,6 +72,9 @@ flowchart TD
 
 ### OpenFOAM: ESI/OpenCFD vs Foundation
 
+<details>
+<summary>The two OpenFOAM lines compared: licence, release, CHT solver, closest tutorial, fan models, Docker</summary>
+
 | | ESI / OpenCFD (openfoam.com) | Foundation (openfoam.org) |
 |---|---|---|
 | Licence | GPL-3 ([v2606 news](https://www.openfoam.com/news/main-news/openfoam-v2606)) | GPL-3 ([COPYING](https://github.com/OpenFOAM/OpenFOAM-dev/blob/master/COPYING)) |
@@ -81,7 +84,12 @@ flowchart TD
 | Fan models | `fan` cyclic-baffle jump BC with modes velocity / uniformVelocity / **volumeFlowRate** / nonDimensional ([fanFvPatchField.H](https://gitlab.com/openfoam/core/openfoam/-/blob/master/src/finiteVolume/fields/fvPatchFields/derived/fan/fanFvPatchField.H)); `fanPressure`; `swirlFanVelocity`; **`fanMomentumSource`** fvOption: Δp(Q) fan curve applied in a cellZone ([header](https://gitlab.com/openfoam/core/openfoam/-/blob/master/src/fvOptions/sources/derived/fanMomentumSource/fanMomentumSource.H)); MRF; `actuationDiskSource`; `explicitPorositySource` | `fanPressureJump` and `fanPressure` BCs ([src](https://github.com/OpenFOAM/OpenFOAM-14/tree/master/src/finiteVolume/fields/fvPatchFields/derived)); fvModels `actuationDisk`, `radialActuationDisk`, `porosityForce`, `interRegionHeatTransfer`, `heatSource` ([src/fvModels](https://github.com/OpenFOAM/OpenFOAM-14/tree/master/src/fvModels)); MRF ([mixerVessel2DMRF](https://github.com/OpenFOAM/OpenFOAM-14/tree/master/tutorials/fluid/mixerVessel2DMRF)) |
 | Docker | `opencfd/openfoam-run:2606` (runtime only, 2026-06-23). `opencfd/openfoam-default:2512` / `latest` has tutorials and source; **no 2606 tag yet** ([run](https://hub.docker.com/r/opencfd/openfoam-run/tags), [default](https://hub.docker.com/r/opencfd/openfoam-default/tags)). The `openfoam-docker` starter script that dl.openfoam.com served moved to OpenCFD's [packaging/containers](https://gitlab.com/openfoam/packaging/containers) repository on GitLab (the old link answers 404, checked 2026-11-01; see the wiki's [Docker page](https://gitlab.com/openfoam/core/openfoam/-/wikis/precompiled/docker)). Read the script before running it, or run the image with `docker run` yourself. | **No official images after v11**: the newest on Docker Hub is `openfoam/openfoam11-paraview510`, last updated 2024-06 ([hub](https://hub.docker.com/u/openfoam)). v14 is shipped as Ubuntu apt packages (needs sudo) or source. |
 
+</details>
+
 ### Other solvers
+
+<details>
+<summary>Ten other solvers: licence, status and fit for CHT with fans</summary>
 
 | Candidate | Licence (verified) | Status | CHT / fan fit |
 |---|---|---|---|
@@ -95,6 +103,8 @@ flowchart TD
 | FluidX3D | Non-commercial licence | — | **Rejected** per the brief. |
 | DAFoam | GPL-3 ([LICENSE.md](https://github.com/mdolab/dafoam/blob/main/LICENSE.md)) | v5.1.1; docker `dafoam/opt-packages:v5.1.1` | Discrete adjoint of OpenFOAM + OpenMDAO. A future option for gradient-based vent shape optimisation. |
 | CfdOF (FreeCAD) | LGPL-3 ([repo](https://github.com/jaheyns/CfdOF)) | Active | A GUI case generator for snappy and cfMesh, porous regions, buoyant flow. The README shows no multi-region CHT. A useful reference for writing snappy dictionaries. |
+
+</details>
 
 ### Python case-generation helpers
 
@@ -131,7 +141,7 @@ flowchart TD
     F --> R["reconstructPar, foamToVTK;<br/>results() reads it back"]
 ```
 
-*The pipeline as `cadagent.simulation.cfd` runs it since (its `Allrun`, natively or in the Docker image): it decomposes
+*The pipeline as `cadagent.simulation.cfd` now runs it (its `Allrun`, natively or in the Docker image): it decomposes
 before meshing, so snappyHexMesh runs in parallel too, and it stops when splitMeshRegions makes a region the case
 does not define.*
 

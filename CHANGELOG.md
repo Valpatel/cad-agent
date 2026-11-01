@@ -34,7 +34,8 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   `['outlet_backflow_kg_s']`, `['inlet_area_m2']`, `['outlet_area_m2']` and `['heat_carried_w']`. Use them in energy
   balances (Q = ṁ c_p ΔT). `air_through_fan_c` stays the fan zone's volume average. `warnings` names a face whose
   backflow passes 10 % of its net flow, and ends whose areas or net flows are more than 10 % apart. A face with as much
-  backflow as net flow, or a reversed net flow, has no temperature (#47).
+  backflow as net flow, a reversed net flow, or a net flow under 1 % of the fan's free-air flow (`MIN_NET_FLOW`) has no
+  temperature (#47).
 - `cadagent.simulation.cfd.energy_check()` and `results()['energy_conserved']`: a result whose heat leaving is more than
   5 % off the heat put in (0.5 W when nothing is put in) says so in `warnings`. `stream_heat_w()` gives ṁ c_p (T −
   T_room) (#47).
@@ -88,8 +89,8 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   for a year (#154's automatic badges), Dependabot (owner, #153), and sites that refuse scripts or did not answer
   (info).
 - `cad-agent snapfit --output` and `check_spec_entry()`: each snap's `material` names the `friction` its forces used, or
-  `null` where the guide's table has none (PLA, PETG) and none was declared, and its `friction_basis`: `given`, `same
-  material` (the default: the plastic on itself) or `against steel` (#165).
+  `null` where the guide's table has none (PLA, PETG) and none was declared, and its `friction_basis`: `given`,
+  `same material` (the default: the plastic on itself) or `against steel` (#165).
 - `steady` now also holds each fan's inlet and outlet temperatures to 1 °C, like every other temperature, in cases
   written from this release on. The convergence chart draws them, and labels the volume-average line "mean over the fan
   zone (by volume)" (#47).
@@ -105,9 +106,10 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 - `catalog.json` and `catalog/<area>.json` no longer have a `gyropup` field on entries, and `priority` lists only `demo`
   (`docs/areas.yaml` too). `/catalog?gyropup=1` is ignored. An agent that filtered on it should read `projects` on the
   area instead: `catalog/index.json` and each area's file now list the projects that used it (#104).
-- A project environment holding pillow below 13.0, vtk below 9.5.2 or markdown below 3.8.1 must upgrade them (`pip
-  install -U pillow vtk markdown`) before installing this cad-agent with the `cad`, `sim` or `site` extra. A project
-  that pins cadquery 2.6 or 2.7 (cadquery-ocp 7.8, which pins vtk 9.3.1) must move to cadquery 2.8 (#151).
+- A project that pins pillow below 13.0, vtk below 9.5.2 or markdown below 3.8.1 must raise those pins before installing
+  this cad-agent with the `cad`, `sim` or `site` extra (pip stops with `ResolutionImpossible`); pip upgrades unpinned
+  ones as it installs. A project that pins cadquery 2.6 or 2.7 (cadquery-ocp 7.8, which pins vtk 9.3.1) must move to
+  cadquery 2.8 (#151).
 - A project that installs the `cad` or `sim` extra on Python 3.10 (for example a JetPack 6 system Python) must use a
   Python 3.11 or newer virtual environment; the core package and its required dependencies still install on 3.10 (#151).
 - To get the weighted temperatures, write the case again (`ThermalCase.write`) and run it. A case written before this

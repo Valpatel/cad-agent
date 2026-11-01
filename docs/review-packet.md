@@ -1,8 +1,9 @@
-# The section review packet (`cadagent.publish.render.review_packet`)
+# The section review packet
 
 A fixed set of captioned renders of one dossier section, with the measurements that come first: the gate verdicts
 and findings for the section, their witness points, the content hash of every part shown, and the render checklist
-the reviewer answers. The skill [`skills/design-process`](../skills/design-process/SKILL.md) tells an agent when to
+the reviewer answers. `cadagent.publish.render.review_packet` writes it. The skill
+[`skills/design-process`](../skills/design-process/SKILL.md) tells an agent when to
 make one; the plan behind it is [`design-process-plan.md`](design-process-plan.md) §5.1–§5.2 (task T10).
 
 **What a packet is for.** Renders are for *diagnosis*, not proof. The gates measure (containment, contact, gaps,

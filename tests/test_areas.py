@@ -22,9 +22,31 @@ TOP_KEYS = {"version", "maturity", "projects", "cross_cutting", "domains"}
 CROSS_KEYS = {"pages", "api", "issues"}
 
 
+class _Strict(yaml.SafeLoader):
+    """safe_load keeps the last of two equal keys and drops the first without a word: a second `pages:` added to a node
+    would lose the first one's pages. Refuse duplicates instead (review of #148)."""
+
+    def construct_mapping(self, node, deep=False):
+        keys = [self.construct_object(k, deep=deep) for k, _ in node.value]
+        dup = sorted({k for k in keys if keys.count(k) > 1})
+        if dup:
+            raise yaml.constructor.ConstructorError(None, None, f"duplicate keys {dup}: merge them into one", node.start_mark)
+        return super().construct_mapping(node, deep)
+
+
+def load_areas(text):
+    return yaml.load(text, Loader=_Strict)
+
+
 @pytest.fixture(scope="module")
 def tree():
-    return yaml.safe_load(AREAS.read_text(encoding="utf-8"))
+    return load_areas(AREAS.read_text(encoding="utf-8"))
+
+
+def test_a_duplicate_key_is_refused_not_silently_dropped():
+    with pytest.raises(yaml.constructor.ConstructorError, match=r"duplicate keys \['issues', 'maturity'\]"):
+        load_areas("{issues: [1, 2], maturity: tooling, issues: [3], maturity: idea}")
+    assert load_areas("{issues: [1], maturity: idea}") == {"issues": [1], "maturity": "idea"}
 
 
 def nodes(tree):
@@ -71,8 +93,9 @@ def test_maturity_follows_the_written_rules(tree):
     for d in tree["domains"]:
         for a in d.get("areas", []):
             top = max((rank(t["maturity"]) for t in a.get("topics", [])), default=0)
-            assert rank(a["maturity"]) >= top, f"{d['slug']}/{a['slug']}: below its most mature topic"
-        best = max(rank(a["maturity"]) for a in d.get("areas", []))
+            assert rank(a["maturity"]) >= top, \
+                f"{d['slug']}/{a['slug']}: below its most mature topic; set its maturity to at least {LEVELS[top]}"
+        best = max((rank(a["maturity"]) for a in d.get("areas", [])), default=0)
         assert rank(d["maturity"]) == best, f"{d['slug']}: a domain's maturity is the highest of its areas' ({LEVELS[best]})"
 
 
@@ -112,7 +135,7 @@ def test_every_named_command_and_module_exists(tree):
 def test_modules_are_named_by_their_current_paths(tree):
     """Once #121's package layout is on dev, old module paths only warn and go at v0.7.0: name the new ones."""
     moved = pytest.importorskip("cadagent._moved", reason="old paths are current until #121 lands").MOVED
-    old = sorted(m for m in placed(tree, "api") if m.split(".", 1)[1] in moved)
+    old = sorted({m for m in placed(tree, "api") if m.split(".", 1)[1] in moved})   # a module may sit in two areas
     assert not old, f"use the new paths in docs/areas.yaml: {[(m, moved[m.split('.', 1)[1]]) for m in old]}"
 
 

@@ -1,7 +1,7 @@
 # Engineering formulas
 
 `cadagent.formulas` holds the closed-form equations that 3D-printed mechanisms keep needing: beams and snap arms,
-torsion bars, springs, screws, four-bar linkages, wall conduction and fan operating points. Agents call it from Python
+torsion bars, springs, screws, four-bar and five-bar linkages, wall conduction and fan operating points. Agents call it from Python
 instead of re-deriving the equations. The website's demonstrations call a browser port of the same functions, and the
 two are tested against one set of golden vectors, so a demo never shows a number an agent would not get. Every
 function states its SI units and its validity limits, and cites its source by author, title, edition and section.
@@ -19,7 +19,7 @@ against the filament's allowable strain.
 
 ## Try it: the four-bar animator
 
-The animator (`<cad-fourbar>`, also on [Four-bar linkages](linkages.md#try-it-the-four-bar-animator)) runs the browser
+The animator (`<cad-fourbar>`, also on [Linkages](linkages.md#try-it-the-four-bar-animator)) runs the browser
 port of `grashof`, `fourbar_input_limits`, `fourbar_angles` and `transmission_angle`. Sliders set the four links. The
 crank turns, or rocks and stops where the linkage locks, on the assembly you pick, with the other assembly dashed. The
 chart plots the transmission angle over a turn of the input against the 40° guideline. Rigid links on ideal pins,
@@ -39,6 +39,11 @@ fans in parallel or in series. The dot marks the operating point; the shaded ban
 <cad-fan-curve fan="12" system="12" count="1" arrangement="parallel">
 <img src="img/thermal/fan-curve-explorer.svg" alt="Fan-curve explorer, before its controls load: the datasheet curve of one ebm-papst W2G115-AD15-13 fan at 12 V against a system that needs 12 Pa at 100 m³/h; they cross at 150 m³/h at 26.9 Pa, clear of the stall region below 132 m³/h, which is shaded" width="640" height="340">
 </cad-fan-curve>
+
+Two more explorers run the same port: the [torsion-snap explorer](compliant.md#try-it-the-torsion-snap-explorer)
+(`torsion_snap_bar`: a rectangular bar twisted by a lever) and the
+[screw-boss explorer](screw-bosses.md#try-it-the-screw-boss-explorer) (`screw_boss`: a thread-forming screw tightened
+in a printed boss).
 
 ## Limits
 
@@ -87,12 +92,12 @@ How the sources, the Python, the golden vectors and the browser port connect:
 
 ```mermaid
 flowchart TD
-    S["Books, guides, standards<br/>Roark · Shigley · Covestro · Norton<br/>Incropera · White · ISO 68-1, 898-1"] --> P["cadagent.formulas<br/>(Python, SI, cited)"]
+    S["Books, guides, standards<br/>Roark · Shigley · Covestro · Norton · Bulten<br/>Incropera · White · ISO 68-1, 898-1"] --> P["cadagent.formulas<br/>(Python, SI, cited)"]
     C["cadagent.mechanical.compliant<br/>snapfit · allowables"] --> P
     P --> A["agents<br/>catalogue() · snap_arm() …"]
     P --> V["tools/formula_vectors.py<br/>golden vectors · demo materials"]
     V --> J["kit/formulas.js<br/>(browser port)"]
-    J --> D["&lt;cad-cantilever&gt; · &lt;cad-fourbar&gt;<br/>&lt;cad-fan-curve&gt; on their pages"]
+    J --> D["&lt;cad-cantilever&gt; · &lt;cad-fourbar&gt; · &lt;cad-fan-curve&gt;<br/>&lt;cad-torsion-snap&gt; · &lt;cad-printed-boss&gt;"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -106,7 +111,7 @@ flowchart TD
 SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A strain is a fraction (0.02 = 2 %).
 
 <details>
-<summary>All 40 functions in <code>catalogue()</code>: what each computes, its source and where it is valid</summary>
+<summary>All 48 functions in <code>catalogue()</code>: what each computes, its source and where it is valid</summary>
 
 | Function | What | Source | Valid within |
 |---|---|---|---|
@@ -124,16 +129,24 @@ SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A 
 | `torsion_constant_round`, `torsion_constant_rect` | K for solid, hollow and rectangular bars | Roark 8th ed., Table 10.1 (solid and hollow concentric circular, solid rectangular sections) | Saint-Venant torsion; the rectangle within 0.5 % |
 | `torsion_shear_stress_round`, `torsion_shear_stress_rect` | peak shear stress | Roark 8th ed., Table 10.1 | away from ends and steps |
 | `torsion_bar_twist`, `torsion_bar_stiffness` | θ = T L / K G, T / θ = K G / L | Roark 8th ed., Section 10.1 | constant section |
+| `torsion_shear_strain_rect` | peak shear strain from the twist, γ = θ K (τ / T) / L: the section alone sets it | Roark 8th ed., Table 10.1 | within 0.8 % of the series |
+| `torsion_snap_bar` | a rectangular torsion snap: shear strain against the guide's (1 + ν) ε, torque, force at the lever, permissible twist | Covestro guide, Section C; Roark 8th ed., Table 10.1 | small twist (it flags the trapeze effect past a tenth of the torque); isotropic G, so the force is an upper bound |
 | `spring_index`, `spring_rate` | C = D / d, k = G d⁴ / 8 D³ Na | Shigley 10th ed., Sections 10-1, 10-3, Eqs. (10-1), (10-9) | 4 ≤ C ≤ 12; 15–85 % of travel |
 | `bergstrasser_factor`, `spring_shear_stress` | K_B = (4C + 2)/(4C − 3), τ = K_B 8 F D / π d³ | Shigley 10th ed., Sections 10-1, 10-2, Eqs. (10-5), (10-7) | static, round wire |
 | `preload_from_torque`, `torque_for_preload` | F = T / K d, with `NUT_FACTORS` | Shigley 10th ed., Section 8-8, Eq. (8-27), Table 8-15 | ±25 % at best |
-| `nut_factor` | K from thread and collar friction | Shigley 10th ed., Section 8-8, Eq. (8-26) | 60° thread |
+| `nut_factor` | K from thread and collar friction, at any flank angle (60° by default) | Shigley 10th ed., Section 8-8, Eq. (8-26) | collar at 1.25 d; ISO pitch diameter |
 | `tensile_stress_area` | As = π/4 (d − 0.9382 p)² | ISO 898-1:2013; Shigley Table 8-1 | ISO metric |
 | `thread_shear_areas`, `thread_strip_force` | 0.75 π D1 Le (screw), 0.875 π d Le (hole) | ISO 68-1:1998 basic profile | even load sharing, no tolerances |
+| `thread_radial_pressure` | the flanks' outward push, p = F tan(α / 2) / π d Le | Shigley 10th ed., Section 8-2 | frictionless flank, even load |
+| `boss_hoop_stress` | hoop stress at the bore, p (D² + d²) / (D² − d²) | Shigley 10th ed., Section 3-14 | Lamé cylinder, isotropic |
+| `screw_boss` | a thread-forming screw in a boss: clamp band, strip force and torque, the tightening window, hoop stress, boss proportions | Covestro, *Self-tapping screws for thermoplastics* (2016-04), Section A; Bulten, DELTA PT brochure (2025), p. 7 | the drive torque is measured, not computed, and makes no clamp: unmeasured, the clamp band allows for up to T / 1.2 of it |
 | `grashof` | Grashof class, whether the input crank turns fully, and the inversion (crank-rocker, double crank, rocker-crank, double rocker, triple rocker) | Norton 5th ed., Chapter 2 | rigid links |
 | `fourbar_angles` | coupler and output angles, open or crossed | Freudenstein (1955); Norton 5th ed., Chapter 4 | position only; a gap under 1e-12 of the longest link counts as closed |
 | `transmission_angle` | angle between coupler and rocker | Norton 5th ed., Chapter 4 | position only; the same closing test |
 | `fourbar_input_limits` | the input angles where coupler and rocker fold or stretch into line and the linkage locks | Norton 5th ed., Chapter 4 (toggle positions) | position only; the same closing test |
+| `fivebar_point` | a five-bar's tip from its two crank angles, on either assembly | Gonçalves, Carvalho and Santos (COBEM 2009), Section 2.2, after Liu, Wang and Zheng (2006) | position only; a crank of 0 makes it a four-bar |
+| `fivebar_inputs` | the two crank angles that put the tip at a point, on any of the four working modes | Gonçalves et al. (2009), Section 2.1 | position only; the tip inside both arms' reach |
+| `fivebar_jacobians` | how near the five-bar is to a lock (distal links in line) or an arm's edge (crank and distal link in line), and the transmission angle | Gosselin and Angeles (1990) | first order: where a singularity is, not a force |
 | `wall_resistance`, `film_resistance` | R = L / k A, R = 1 / h A | Incropera 7th ed., Section 3.1.2, Eqs. (3.6), (3.9) | steady, 1-D |
 | `wall_heat_flow` | layers and films in series: heat flow and every face temperature | Incropera 7th ed., Section 3.1.3 | no contact resistance |
 | `fan_curve_line`, `system_coefficient` | the datasheet fan line; k in Δp = k Q² | White 7th ed., Section 11.5 | same air density |
@@ -175,7 +188,9 @@ in the test.
 - **Torsion.**
   - Rectangular sections against the Saint-Venant series (within 0.5 %, the worst at aspect 1.145), and against the
     tabulated coefficients in Shigley, Section 3-12.
-  - The guide's torsion snap as the same mechanics.
+  - The peak shear strain against the series (within 0.8 %, the worst at aspect 1.136), and its thin-strip limit.
+  - The guide's torsion snap as the same mechanics; the rectangular snap's torque, force and permissible twist from
+    first principles (`tests/test_torsion_snap_boss.py`).
 - **Springs.**
   - The rate derived from the wire as a torsion bar.
   - Bergsträsser against Wahl.
@@ -183,6 +198,7 @@ in the test.
   - The ISO stress areas against their tabulated values.
   - K ≈ 0.2 from Eq. (8-26) at a friction of 0.15.
   - The 0.75 and 0.875 shear-area factors derived from the ISO 68-1 profile.
+  - The flank's radial push from its statics, and Lamé's hoop stress against the equilibrium of half the ring.
 - **Linkages.**
   - Loop closure, and an independent circle-intersection construction, at every input angle.
   - Kites (a = b, c = d) and near-kites, every 0.1 degree, where the textbook root divides 0 by 0.
@@ -193,6 +209,10 @@ in the test.
   - `fourbar_input_limits` on every four-bar with links 1 to 6: the input turns fully exactly when `grashof` says so,
     and `fourbar_angles` closes exactly inside the limits.
   - Norton's Example 4-1.
+  - The five-bar (`tests/test_linkages.py`) against Liu, Wang and Zheng's direct and inverse kinematics as Gonçalves
+    et al. print them, a line and a quadratic rather than two circles, on two symmetric 5Rs every 15 degrees; the
+    tip's reach against the two annuli; the Jacobians against finite differences; and a four-bar as a five-bar
+    without a second crank against `fourbar_angles`.
 - **Heat and air.**
   - The composite wall face by face.
   - The fan point against the quadratic root and against `cadagent.thermal.heatsink.operating_point`.

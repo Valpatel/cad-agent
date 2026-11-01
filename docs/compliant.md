@@ -159,6 +159,32 @@ does. The browser runs a port of it that is tested against the Python on shared 
   outside small deflection.
 - **Root radius.** The explorer does not check the root radius. `cad-agent snapfit` does.
 
+## Try it: the torsion-snap explorer
+
+A torsion snap is a lever on a bar that twists instead of bending, like the guide's rocker on two bars (its Fig. 21).
+The bar's peak shear strain is in the middle of its long sides. The default is a PLA rocker on two 15 mm bars:
+pressed 8°, it uses 86 % of its allowable, and it fails past 9.3°.
+
+<cad-torsion-snap material="pla-bambu-basic" bars="2" length="15" width="4" thickness="1.2" twist="8" lever="10">
+<img src="img/compliant/torsion-snap-explorer.svg" alt="Torsion-snap explorer, before its controls load: two bars of Bambu PLA Basic, each 15 mm long, 4 × 1.2 mm, twisted 8° by a 10 mm lever; peak shear strain 1.11 %, 86 % of the 1.28 % allowed across the layers, a pass; 3.45 N at the lever" width="640" height="280">
+</cad-torsion-snap>
+
+Try these: **one bar** halves the force (1.73 N) at the same strain; a **30 mm bar** halves both; **opened often**
+it fails at 144 %; **PETG (Polymaker)** passes at 52 %, and **CoPA** fails at 126 %, since its strain across the
+layers is low.
+
+The numbers come from `cadagent.formulas.torsion_snap_bar`: Saint-Venant torsion of a rectangle (Roark, Table 10.1)
+and the guide's allowable shear strain, (1 + ν) ε with ν = 0.35 (Section C).
+
+- **Across the layers, always.** However the bar lies, it shears its layer interfaces at 74 to 100 % of the peak
+  (lying flat, its short sides do), so the check uses the filament's allowable across the layers.
+- **Force.** From the highest datasheet modulus, so at small twist it is an upper bound. The lever is taken as rigid.
+- **Small twist.** Twisted far, a wide thin bar's edges stretch along it (the trapeze effect), which stiffens it and
+  strains its edges. The explorer warns when that would add more than a tenth to the torque: a 30 × 12 × 0.6 mm bar
+  at 30° gains 41 %, with 0.37 % strain along its edges, which the check leaves out.
+- **Short bars.** The ends are taken as free to warp. A short bar held at both ends is stiffer and more strained
+  near them than this says.
+
 ## Limits
 
 - **A pass has no extra margin.** It means the root strain is within the allowable; the guide's own examples design
@@ -180,4 +206,5 @@ does. The browser runs a port of it that is tested against the Python on shared 
 the derived table in the research note, that direction changes the verdict for the same geometry, that uncomputable
 limits, out-of-range inputs and unstated processes fail, the ring section against numerical integration (arcs up to
 360°), the torsion relations from first principles, and that this page's YAML example and printed table match the
-code. The stated elongation and strength ranges are checked against the datasheet rows too.
+code. `tests/test_torsion_snap_boss.py` checks the torsion bar against Saint-Venant's series solution and this page's
+explorer numbers against the Python. The stated elongation and strength ranges are checked against the datasheet rows too.

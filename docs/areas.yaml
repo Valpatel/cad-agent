@@ -24,7 +24,8 @@
 # core (`cadagent.geometry`, `.project`, `.links`, ...) at the top. A domain package's module is listed in `api` under
 # its own domain only, so each module has one home; a node that relies on another domain's module names it in `uses`
 # instead (thermal's airflow uses `cadagent.simulation.cfd`). tests/test_package_areas.py keeps code and tree in step.
-# The old flat paths still import with a warning until v0.7.0, but the tests reject them here.
+# The old flat paths still import with a warning, until a release that the CHANGELOG announces a minor release ahead
+# (cadagent._moved), but the tests reject them here.
 version: 1
 
 maturity:
@@ -69,7 +70,7 @@ domains:
         projects: [gyropup]
         topics:
           - {slug: motor-mounts, title: Motor mounts, scope: "Bolt circles, pilots and load paths for bought actuators and motors.", maturity: idea, priority: [gyropup], issues: [144]}
-          - {slug: linkages, title: Linkages, scope: "Four- and five-bar position, workspace and transmission angle.", maturity: tooling, priority: [gyropup, demo], pages: [docs/linkages.md], issues: [187]}
+          - {slug: linkages, title: Linkages, scope: "Four- and five-bar position, workspace and transmission angle.", maturity: tooling, priority: [gyropup, demo], pages: [docs/linkages.md], api: [cadagent.mechanical.linkages], issues: [187]}
           - {slug: joints-and-bearings, title: Joints and bearings, scope: "Pivots, bearing seats, shafts and their fits.", maturity: idea, priority: [gyropup]}
       - slug: housings-and-enclosures
         title: Housings and enclosures
@@ -92,7 +93,7 @@ domains:
         api: [cadagent.mechanical.compliant]
         issues: [94, 95, 137]
         topics:
-          - {slug: snap-fits, title: Snap fits, scope: "Cantilever, torsion and annular snaps sized by print direction.", maturity: tooling, priority: [demo], issues: [95]}
+          - {slug: snap-fits, title: Snap fits, scope: "Cantilever, torsion and annular snaps sized by print direction.", maturity: tooling, priority: [demo], issues: [95, 161]}
           - {slug: flexures, title: Flexures, scope: "Flexure hinges and stages: stiffness, stroke and fatigue.", maturity: surveyed, issues: [95]}
           - {slug: living-hinges, title: Living hinges, scope: "Thin hinges in printed and moulded plastics.", maturity: surveyed}
       - slug: gears
@@ -130,6 +131,7 @@ domains:
         issues: [46]
         topics:
           - {slug: fasteners, title: Fasteners, scope: "Screw stacks, engagement, bottoming and hole clearance.", maturity: tooling, priority: [gyropup]}
+          - {slug: screw-bosses, title: Screw bosses, scope: "Thread-forming screws in printed bosses: clamp, stripping, torque window, wall.", maturity: tooling, priority: [demo], pages: [docs/screw-bosses.md], api: [cadagent.mechanical.bosses], issues: [161]}
           - {slug: bought-parts, title: Bought parts, scope: "Real catalogue parts with their manufacturer models.", maturity: tooling}
           - {slug: assembly-access, title: Assembly access, scope: "Tool reach, insertion paths and subassembly order.", maturity: tooling}
       - slug: fixtures-and-jigs

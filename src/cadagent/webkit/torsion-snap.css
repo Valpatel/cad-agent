@@ -1,0 +1,55 @@
+/* <cad-torsion-snap> (kit/torsion-snap.js). Link this in <head>: it reserves the element's full size before the script
+   runs (the still image, then the panel's height), so the live figure and controls replace them without moving the
+   page. The panel has a fixed height per layout; tests/website-browser.mjs checks the size and that nothing
+   overflows. The script sets data-theme (light or dark) from the page's color-scheme; override the colours with the
+   --ts-* custom properties. color-scheme is set on the panel, not the element, so the element still reads the page's. */
+cad-torsion-snap{--ts-ink:#173d3c;--ts-muted:#526863;--ts-sage:#6f8a80;--ts-mist:#eef1e4;--ts-back:#fffdf5;--ts-peach:#ffe1cc;
+  --ts-rust:#bd3a12;--ts-line:#c9d8ca;--ts-panel:356px;display:block;box-sizing:border-box;margin:28px 0;
+  border:1px solid var(--ts-line);border-radius:16px;background:var(--ts-back);color:var(--ts-ink);overflow:hidden;
+  font-size:14px;line-height:1.35;overflow-wrap:normal}
+cad-torsion-snap[data-theme=dark]{--ts-ink:#e6efe9;--ts-muted:#a8bcb5;--ts-sage:#86a499;--ts-mist:#21393a;--ts-back:#11201f;
+  --ts-peach:#4b2b1d;--ts-rust:#ff9466;--ts-line:#355450}
+/* Measured in Chromium and WebKit (WebKit's controls are taller) for the wordiest results, with a few pixels spare. */
+@media(max-width:699.98px){cad-torsion-snap{--ts-panel:600px}}
+@media(max-width:359.98px){cad-torsion-snap{--ts-panel:608px}}
+cad-torsion-snap>img,cad-torsion-snap .ts-figure>svg{display:block;width:100%;height:auto;aspect-ratio:640/280;max-width:none;margin:0;border:0}
+/* Until the script defines the element (or if it never loads), the reserved panel says what belongs there. */
+cad-torsion-snap:not(:defined)::after{content:"The bar, twist and filament controls and the readouts load here with JavaScript. The figure above is the starting bar.";
+  display:flex;align-items:center;justify-content:center;box-sizing:border-box;height:var(--ts-panel);padding:16px 24px;
+  border-top:1px solid var(--ts-mist);color:var(--ts-muted);font-size:13px;text-align:center}
+@media(scripting:none){cad-torsion-snap:not(:defined)::after{display:none}}
+cad-torsion-snap .ts-figure{margin:0}
+cad-torsion-snap .ts-panel{box-sizing:border-box;height:var(--ts-panel);overflow:hidden;padding:14px 18px 12px;color-scheme:light;
+  border-top:1px solid var(--ts-mist);display:flex;flex-direction:column;gap:12px}
+cad-torsion-snap[data-theme=dark] .ts-panel{color-scheme:dark}
+cad-torsion-snap .ts-readout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+cad-torsion-snap .ts-tile{margin:0;padding:8px 10px;border-radius:12px;background:var(--ts-mist);display:flex;flex-direction:column;min-width:0}
+cad-torsion-snap .ts-tile b{font-size:20px;line-height:1.2;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+cad-torsion-snap .ts-tile span{font-size:12px;color:var(--ts-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+cad-torsion-snap .ts-tile .ts-k{font-weight:650;letter-spacing:.02em;color:var(--ts-ink)}
+cad-torsion-snap .ts-tile[data-verdict=fail]{background:var(--ts-peach)}
+cad-torsion-snap .ts-tile[data-verdict=fail] b{color:var(--ts-rust)}
+cad-torsion-snap .ts-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 24px}
+cad-torsion-snap .ts-col{display:flex;flex-direction:column;gap:6px;min-width:0}
+cad-torsion-snap .ts-field{display:flex;flex-direction:column;gap:1px}
+cad-torsion-snap .ts-field label{display:flex;justify-content:space-between;gap:8px;font-weight:600;font-size:13px}
+cad-torsion-snap .ts-value{font-weight:500;font-variant-numeric:tabular-nums;color:var(--ts-muted);white-space:nowrap}
+cad-torsion-snap input[type=range]{width:100%;margin:0;height:24px;accent-color:var(--ts-ink)}
+cad-torsion-snap select{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--ts-sage);border-radius:8px;background:var(--ts-back);color:var(--ts-ink);min-height:32px;max-width:100%}
+cad-torsion-snap fieldset{margin:0;padding:0;border:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 18px;font-size:13px;min-width:0}
+cad-torsion-snap legend{float:left;padding:0;margin:0 4px 0 0;font-weight:600}
+cad-torsion-snap fieldset label,cad-torsion-snap .ts-check{display:inline-flex;align-items:center;gap:6px;font-size:13px;white-space:nowrap}
+cad-torsion-snap input[type=radio],cad-torsion-snap input[type=checkbox]{margin:0;accent-color:var(--ts-ink);width:16px;height:16px}
+cad-torsion-snap .ts-note{margin:auto 0 0;font-size:12px;color:var(--ts-muted)}
+cad-torsion-snap .ts-note[data-warn]{color:var(--ts-ink);font-weight:600}
+cad-torsion-snap :is(input,select):focus-visible{outline:3px solid var(--ts-rust);outline-offset:2px}
+cad-torsion-snap .ts-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;margin:0}
+@media(max-width:699.98px){
+  cad-torsion-snap .ts-panel{padding:12px 12px 10px;gap:10px}
+  cad-torsion-snap .ts-readout{gap:6px}cad-torsion-snap .ts-tile{padding:6px 8px}
+  cad-torsion-snap .ts-tile b{font-size:15px;white-space:normal}cad-torsion-snap .ts-tile span{font-size:11px;white-space:normal}
+  cad-torsion-snap .ts-controls{grid-template-columns:minmax(0,1fr);gap:8px}
+  cad-torsion-snap .ts-check{white-space:normal}
+  cad-torsion-snap input[type=range]{height:32px}
+}
+@media(pointer:coarse){cad-torsion-snap input[type=radio],cad-torsion-snap input[type=checkbox]{width:20px;height:20px}}

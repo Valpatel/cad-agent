@@ -225,6 +225,17 @@ _CUBE_STL = (b"solid cube\n" + b"".join(
     + b"endsolid cube\n")
 
 
+def default_bed_type(printer_model: str) -> Optional[str]:
+    """The plate surface a printer model ships with (``default_bed_type`` in its machine model profile, e.g. the
+    Textured PEI Plate for the Bambu Lab P1S); None when the profiles do not say."""
+    try:
+        found = _index('machine', profile_root()).get(printer_model)
+    except (OSError, ValueError, RuntimeError):
+        return None
+    value = found[1].get('default_bed_type') if found else None
+    return str(value) if value else None
+
+
 def project_settings(workdir, printer: str = PRINTER, process: str = PROCESS, filaments=('pla',),
                      overrides: Optional[dict] = None, colours=(), timeout: float = 300) -> bytes:
     """Bambu Studio's own project configuration for these presets: the ``Metadata/project_settings.config`` it writes
@@ -239,7 +250,10 @@ def project_settings(workdir, printer: str = PRINTER, process: str = PROCESS, fi
     entry, and a 4 x 4 purge matrix (``flush_volumes_matrix``; slicing stops unless it holds filaments² values per
     nozzle). Those three are sized to the filaments: the colours from ``colours`` (else Bambu's green), the map to
     the one nozzle, and the matrix with no purge on its diagonal and the command line's own purge volume elsewhere.
-    Checked by slicing a two-filament project with the command line (each plate with its own filament)."""
+    Checked by slicing a two-filament project with the command line (each plate with its own filament).
+
+    The plate surface (``curr_bed_type``) is the printer's own default (``default_bed_type``), as Bambu Studio's
+    window sets it for a new project; its command line writes the Cool Plate whatever the printer."""
     exe = executable()
     if not exe:
         raise RuntimeError('Bambu Studio is not installed (snap install bambu-studio); no project settings')
@@ -273,19 +287,21 @@ def project_settings(workdir, printer: str = PRINTER, process: str = PROCESS, fi
         raise RuntimeError(f'Bambu Studio wrote no project settings (exit {p.returncode}): '
                            f'{(p.stdout + p.stderr)[-500:]}') from None
     n = len(filaments)
-    if n == 1:
-        return raw
     data = json.loads(raw)
     if len(data.get('filament_settings_id') or []) != n:
         raise RuntimeError(f"Bambu Studio's project settings list {data.get('filament_settings_id')}, not the "
                            f"{n} filaments asked for")
-    colours = [str(c) for c in colours][:n]
-    data['filament_colour'] = colours + ['#00AE42'] * (n - len(colours))
-    data['filament_map'] = [str((data.get('filament_map') or ['1'])[0])] * n
-    heads = max(1, len(data.get('flush_multiplier') or ['1']))
-    matrix = data.get('flush_volumes_matrix') or ['0', '280']
-    purge = str(matrix[1] if len(matrix) > 1 else '280')
-    data['flush_volumes_matrix'] = ['0' if i == j else purge for _ in range(heads) for i in range(n) for j in range(n)]
+    plate = default_bed_type(str(data.get('printer_model') or ''))
+    if plate:
+        data['curr_bed_type'] = plate
+    if n > 1:
+        colours = [str(c) for c in colours][:n]
+        data['filament_colour'] = colours + ['#00AE42'] * (n - len(colours))
+        data['filament_map'] = [str((data.get('filament_map') or ['1'])[0])] * n
+        heads = max(1, len(data.get('flush_multiplier') or ['1']))
+        matrix = data.get('flush_volumes_matrix') or ['0', '280']
+        purge = str(matrix[1] if len(matrix) > 1 else '280')
+        data['flush_volumes_matrix'] = ['0' if i == j else purge for _ in range(heads) for i in range(n) for j in range(n)]
     return (json.dumps(data, indent=4, sort_keys=True) + '\n').encode()
 
 

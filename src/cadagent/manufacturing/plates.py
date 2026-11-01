@@ -9,9 +9,10 @@ that Bambu Studio opens with the plates laid out. ``cad-agent export-3mf`` write
 **Packing** (``pack``) places each copy's footprint: the rectangle around its outline as it prints (the convex hull of
 the mesh seen from above). Parts keep their print orientation. With ``rotate`` they may turn about z, by a quarter
 turn, or for a part that fits neither way (a long leg on a square bed) by the whole degree that gives the smallest
-rectangle that fits. The method is MaxRects with best-short-side fit (J. Jylänki, *A Thousand Ways to Pack the Bin*,
-2010, the method ``rectpack`` also implements): copies go largest first onto the first plate of their group with
-room, and a plate is added when none has room. Parts with different filaments never share a plate. Sizes are whole
+rectangle that fits. The method is MaxRects (J. Jylänki, *A Thousand Ways to Pack the Bin*, 2010, the method
+``rectpack`` also implements): copies go largest first onto the first plate of their group with room, and a plate is
+added when none has room. Four sort orders times four fit rules are tried; the layout with the fewest plates, then
+the least on its last plate, wins. Parts with different filaments never share a plate. Sizes are whole
 micrometres and every tie is broken by a fixed key, so the same parts give the same layout on every machine. Each
 plate's layout is then centred on the bed, unless that would move a part onto a keep-out area. ``check_plates``
 re-checks the result independently: every copy placed once, inside the bed less the margin, clear of keep-out areas

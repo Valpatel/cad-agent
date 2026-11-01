@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 236" width="680" height="236" role="img" aria-label="FDM: the steepest overhang printed without support, from vertical" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif">
+<rect width="680" height="236" rx="14" fill="#fffdf5" stroke="#d8e0d3"/>
+<text x="18" y="30" font-size="15" font-weight="700" fill="#173d3c">FDM: the steepest overhang printed without support, from vertical</text>
+<text x="18" y="50" font-size="12" fill="#526863">4 rules (compare: overhang-max), in degrees from vertical. ≤: a ceiling; a bar: it varies.</text>
+<line x1="300.0" y1="70" x2="300.0" y2="190" stroke="#d8e0d3"/>
+<text x="300.0" y="205" font-size="11" fill="#526863" text-anchor="middle">0</text>
+<line x1="363.6" y1="70" x2="363.6" y2="190" stroke="#d8e0d3"/>
+<text x="363.6" y="205" font-size="11" fill="#526863" text-anchor="middle">15</text>
+<line x1="427.2" y1="70" x2="427.2" y2="190" stroke="#d8e0d3"/>
+<text x="427.2" y="205" font-size="11" fill="#526863" text-anchor="middle">30</text>
+<line x1="490.8" y1="70" x2="490.8" y2="190" stroke="#d8e0d3"/>
+<text x="490.8" y="205" font-size="11" fill="#526863" text-anchor="middle">45</text>
+<line x1="554.4" y1="70" x2="554.4" y2="190" stroke="#d8e0d3"/>
+<text x="554.4" y="205" font-size="11" fill="#526863" text-anchor="middle">60</text>
+<line x1="618.0" y1="70" x2="618.0" y2="190" stroke="#d8e0d3"/>
+<text x="618.0" y="205" font-size="11" fill="#526863" text-anchor="middle">75</text>
+<text x="618.0" y="220" font-size="11" fill="#526863" text-anchor="end">degrees</text>
+<text x="18" y="93" font-size="12.5" font-weight="700" fill="#173d3c">FDM / FFF</text>
+<text x="290" y="116.0" font-size="12" fill="#173d3c" text-anchor="end">Protolabs Network (Hubs)</text>
+<line x1="300" y1="112.0" x2="490.8" y2="112.0" stroke="#6f8a80" stroke-width="2" stroke-dasharray="3 3"/>
+<circle cx="490.8" cy="112.0" r="5" fill="#6f8a80"/>
+<text x="499.8" y="116.0" font-size="11" fill="#173d3c" text-anchor="start">≤ 45</text>
+<text x="290" y="136.0" font-size="12" fill="#173d3c" text-anchor="end">Prusa Research</text>
+<rect x="490.8" y="128.0" width="63.6" height="8" rx="4" fill="#6f8a80"/>
+<text x="561.4" y="136.0" font-size="11" fill="#173d3c" text-anchor="start">45–60</text>
+<text x="290" y="156.0" font-size="12" fill="#173d3c" text-anchor="end">Prusa Research</text>
+<line x1="300" y1="152.0" x2="618.0" y2="152.0" stroke="#6f8a80" stroke-width="2" stroke-dasharray="3 3"/>
+<circle cx="618.0" cy="152.0" r="5" fill="#6f8a80"/>
+<text x="627.0" y="156.0" font-size="11" fill="#173d3c" text-anchor="start">≤ 75</text>
+<text x="290" y="176.0" font-size="12" fill="#173d3c" text-anchor="end">Xometry Europe</text>
+<line x1="300" y1="172.0" x2="490.8" y2="172.0" stroke="#6f8a80" stroke-width="2" stroke-dasharray="3 3"/>
+<circle cx="490.8" cy="172.0" r="5" fill="#6f8a80"/>
+<text x="499.8" y="176.0" font-size="11" fill="#173d3c" text-anchor="start">≤ 45</text>
+<text x="18" y="224" font-size="11" fill="#526863">Each source's own wording and conditions are in the YAML file and on the page. Read 2026-10-31.</text>
+</svg>

@@ -33,6 +33,11 @@
 # `cad-agent site` from the bench's committed run (tests/fixtures/gate_bench/site_snapshot). The bench as built: six
 # gates, 144 checks (31 + 21 + 28 + 1 + 55 + 8), all pass; its arm sweeps 0 to 40 degrees in 12 poses with no
 # collision and 1.60 mm least clearance (the motion gate's verdict, site_snapshot/gates/motion.json).
+#
+# The review-packet renders (docs/img/packets/) come from tools/site-packet-pictures.py, which runs `cad-agent gates
+# --build` and `cad-agent review-packet` on a copy of the bench, as built and with one seeded defect at a time
+# (tests/fixtures/gate_bench/build.py, SEEDS). docs/img/packets/SOURCE.json records each run's gate verdicts, and
+# tests/test_packet_pictures.py holds the captions below to it: a seeded picture's caption names its seed.
 
 docs/gates.md:
   hero:
@@ -71,6 +76,176 @@ docs/gates.md:
       on: fixture
       caption: What touches what in the gate bench, drawn from the connectivity gate's verdict (connectivity.dot). Fasteners are ovals, the dashed boxes are balls allowed to sit free in the hopper, and the arm is its own body on a joint (blue dashed). 31 checks pass.
       alt: A graph of the gate bench's parts linked by contacts and fasteners, grouped into the static frame and the arm's body
+    - after: from-a-dossier-build
+      below: content hash recorded at build time
+      img: docs/img/packets/clean-store-xray-iso.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "What Assembly.from_build takes from a build, as the review packet draws the gate bench's store: the parts translucent, and inside them the loose balls (one part, eight instances), the four placed screws and the registered cavity."
+      alt: "An x-ray view of the gate bench's store: translucent hopper and lid with eight orange balls and four screws inside"
+    - after: states
+      below: between two parts is an interference
+      img: docs/img/packets/clean-store-cut-cavity-hopper_cavity-plan.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "Two states on the gate bench as built, in a plan cut through the hopper's cavity, with four balls clear of its side walls. Every ball's state against the cavity is contains. The four lower balls rest on its floor and are touching the hopper, which still counts as inside (0 mm³ outside); the four above them are 4.33 mm clear. The containment gate's 21 checks pass."
+      alt: A plan section through the gate bench's hopper, its walls a blue ring round four orange balls, all inside the cavity
+    - after: verdicts
+      img: docs/img/packets/ball_through_wall-store-findings.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A verdict's findings drawn where they are: the review packet numbers each finding at its witness point. A seeded failure (ball_through_wall) on the gate bench gives five, from the containment gate (ball 7 outside its cavity, in the hopper's wall, resting on nothing), the assembly gate and the dossier lint."
+      alt: An x-ray view of the gate bench's store with callouts F1 to F3 pointing at one ball in the hopper's wall
+    - after: minimum-wall-cadagentreviewgateswall
+      img: docs/img/packets/thin_wall-store-cut-cavity-hopper_cavity-plan.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A seeded failure (thin_wall) on the gate bench: the hopper's +X wall thinned from 2.4 to 0.8 mm, in a plan cut through its cavity. The wall gate's thin mesh samples, re-measured on the B-rep, read 0.800 mm against the part's 2.4 mm."
+      alt: A plan section through the gate bench's hopper with four balls inside; its right wall is much thinner than the other three
+    - after: containment-cadagentreviewgatescontainment
+      img: docs/img/packets/ball_through_wall-store-cut-cavity-hopper_cavity-plan.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A seeded failure (ball_through_wall), in a plan cut through the gate bench's hopper cavity: ball 7, pushed 5 mm into the wall, fails inside (261.8 mm³, 50 %, outside), wall (174 mm³ in the hopper) and support."
+      alt: A plan section through the gate bench's hopper, its walls a blue ring round four orange balls, and a fifth ball sitting in the top wall, half outside the cavity
+    - after: containment-cadagentreviewgatescontainment
+      below: Tangent contact is inside.
+      img: docs/img/packets/clean-store-cut-cavity-hopper_cavity.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "Tangent contact is inside: the gate bench as built in a vertical cut through the hopper's cavity, the balls resting on its floor and on each other, each with 0 mm³ outside. Support follows them down to the floor."
+      alt: A vertical section through the gate bench's hopper, four orange balls in two rows inside the blue walls, the lid on top
+    - after: connectivity-and-floating-parts-cadagentreviewgatesconnectivity
+      below: every joint instance pair
+      img: docs/img/packets/clean-arm-solid-iso.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A moving body and the static frame, on the gate bench as built: the arm section in place, the arm (purple) on its pin in the hinge block, the stop it rests on, and the frame and base it must clear (grey)."
+      alt: "The gate bench's arm section: a blue hinge block with a green pin, a purple arm resting on a yellow stop, the grey frame and base around them"
+    - after: connectivity-and-floating-parts-cadagentreviewgatesconnectivity
+      below: Joints hold when measured
+      img: docs/img/packets/clean-arm-cut-joint-I-pin-arm.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A joint that holds, on the gate bench as built: a cut in the plane of the axis of the revolute joint I-pin-arm, the arm on its pin and within the declared clearance of its fixed part."
+      alt: "A section through the gate bench's arm joint: the green pin passing through the blue arm block above the base"
+    - after: connectivity-and-floating-parts-cadagentreviewgatesconnectivity
+      below: differs from the given table
+      img: docs/img/packets/bracket_floats-bracket-findings.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A seeded failure (bracket_floats): the boss that carries the gate bench's bracket deleted. connect:static fails, one floating island (the bracket, 3.000 mm from the base, its nearest grounded part), and so does interface:I-bracket, declared but not realised. Callouts mark the witness points on each side of the gap."
+      alt: The gate bench's L-shaped bracket alone above the base, with callouts F1 and F2 pointing at two witness points under its foot
+    - after: fasteners-and-stacks-cadagentreviewgatesfasteners
+      img: docs/img/packets/clean-store-cut-fastener-screw_0.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "The gate bench as built, cut in the plane of screw_0's axis: the head seated on the lid and the thread in its heat-set insert, which is what the seat, stack, engagement and tip checks read along the axis. 28 checks pass."
+      alt: A section through the gate bench's hopper and lid along two screws, each head on the lid and its thread in an insert, with the balls below
+    - after: fasteners-and-stacks-cadagentreviewgatesfasteners
+      below: Tools come from
+      img: docs/img/packets/clean-store-access-from-top.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "The tool's view, on the gate bench as built: looking along the four lid screws' advance from the side their hex key comes from. The tool sweep checks the key's envelope along each axis against the parts present at the lid's step."
+      alt: The gate bench's lid seen from above, four screw heads at its corners
+    - after: fasteners-and-stacks-cadagentreviewgatesfasteners
+      below: The placed screw solid gives the length
+      img: docs/img/packets/screw_too_long-store-cut-fastener-screw_0.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A seeded failure (screw_too_long): screw_0 made 4 mm longer. Its tip runs 3.00 mm into the hopper and its 12 mm length is outside the 4.5 to 8.5 mm the stack takes, so tip and length fail."
+      alt: A section along two screws of the gate bench; the right screw is longer and its tip runs past its insert into the hopper
+    - after: fasteners-and-stacks-cadagentreviewgatesfasteners
+      below: Bodies and poses.
+      img: docs/img/packets/gusset_over_screw-store-access-from-top.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A seeded failure (gusset_over_screw): a gusset fitted on the lid before its screws are driven. From the tool's side it covers screw_0's head, and the hex key's envelope hits it 3.00 mm from the head (84.8 mm³), so the tool check fails at that step."
+      alt: The gate bench's lid seen from above, three screw heads at its corners and an orange gusset covering the fourth
+    - after: motion-range-interference-cadagentreviewgatesmotion
+      below: motion_from_build(result, dossier, extra)
+      img: docs/img/packets/clean-arm-pose-I-pin-arm-min.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "The gate bench as built at the low end of its declared range, 0 degrees: the arm, a body of its own, resting on its stop, a declared contact that may touch at any pose."
+      alt: The gate bench's arm lying level on its stop beside the hinge block, the frame's post and beam above it
+    - after: motion-range-interference-cadagentreviewgatesmotion
+      below: The verdict never claims a swept
+      img: docs/img/packets/clean-arm-pose-I-pin-arm-max.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: The gate bench as built at the top of its range, 40 degrees. The motion gate sampled 12 poses, found no collision and a least clearance of 1.60 mm; with the range raised to 60 degrees (the flap_hits_frame seed, above) the arm meets the frame near 45.
+      alt: The gate bench's arm raised to 40 degrees, its purple beam below the grey frame
+    - after: assembly-sequence-access-cadagentreviewgatesassembly
+      img: docs/img/packets/clean-store-exploded.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "The gate bench as built, each part backed out along its assembly step's direction, later steps further and screws along their axes: the paths the insertion sweep checks. 55 checks pass."
+      alt: "An exploded view of the gate bench's store: the hopper at the bottom, a board and the balls above it, then the lid and four screws on top"
+    - after: assembly-sequence-access-cadagentreviewgatesassembly
+      below: What an insertion is checked against.
+      img: docs/img/packets/clean-arm-exploded.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "The gate bench's arm section as built, exploded along its declared steps: the hinge block, the stop and the arm, then the pin, backed out along its axis. The insertion sweep slides each one in along its step's direction against the parts already present; the pin, sliding through its bores, is sampled every max_step_mm."
+      alt: "The gate bench's arm section exploded: the blue hinge block and yellow stop on the base, the purple arm lifted above them, the green pin drawn out sideways"
+    - after: assembly-sequence-access-cadagentreviewgatesassembly
+      below: Witnesses.
+      img: docs/img/packets/lid_before_board-store-findings.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A seeded failure (lid_before_board): the steps reordered so the lid goes on first. The assembly gate's findings at their witness points: each ball and the board meet the lid about 40.6 mm before their seats."
+      alt: An x-ray view of the gate bench's store with callouts F1.1 to F1.4 and F2 pointing at the underside of the lid, above the balls and the board
+    - after: running-the-gates-cad-agent-gates
+      below: What runs.
+      img: docs/img/gates/bench-part-card.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: "What a run leaves on each part, on the gate bench's review site: the arm's card, gated with all six of its gate checks passing, and not higher because no reviewer has recorded it."
+      alt: The review site's card for the gate bench's arm part, with its status steps, function, material, interfaces, six passing gate checks and the reason it is not higher
+    - after: running-the-gates-cad-agent-gates
+      below: the site.
+      img: docs/img/gates/bench-sections.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: "What the gates feed, on the gate bench's review site: each section's gates and review state, from the verdicts in exports/gates/ and the dossier lint. Four sections, all gated, none signed off."
+      alt: The review site's front page for the gate bench, with counts and a table of its four sections with their status, requirements, parts, gates and review state
+    - after: motion-range-interference-cadagentreviewgatesmotion
+      below: Pairs and cost.
+      img: docs/img/packets/flap_hits_frame-arm-pose-I-pin-arm-max.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A seeded failure (flap_hits_frame): the arm's stop raised from 40 to 60 degrees, shown at 60. Of 12 sampled poses 3 put the arm in the frame; the first contact lies between 44.89 and 44.91 degrees."
+      alt: The gate bench's arm raised to 60 degrees, its purple beam passing through the grey frame above it
+    - after: the-gate-bench-testsfixturesgate_benchbuildpy
+      img: docs/img/packets/clean-store-solid-iso.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "The gate bench as built: its store section, the hopper under a lid held by four screws, on the base, as the review packet renders it. The arm, its pin and stop and the frame are the arm section, pictured above."
+      alt: "The gate bench's store: a blue hopper with a green lid and four screw heads, standing on the grey base"
 
 docs/dossier.md:
   hero:
@@ -109,6 +284,60 @@ docs/dossier.md:
       on: fixture
       caption: One part card's status, computed by cad-agent dossier and shown on the review site. The arm is gated, with all six gate checks passing, and not higher because no reviewer has recorded it.
       alt: The review site's card for the gate bench's arm part, with its status steps, function, material, interfaces, six passing gate checks and the reason it is not higher
+    - after: declaring-geometry-in-the-build-script
+      below: Only the build code knows
+      img: docs/img/packets/clean-store-xray-iso.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "What a build script declares, drawn by the review packet for the gate bench's store: its registered parts translucent, and inside them the free balls (one part, eight instances, declared loose with a reason), the four placed screws and the cavity the containment gate tests against."
+      alt: "An x-ray view of the gate bench's store: translucent hopper and lid with eight orange balls and four screws inside"
+    - after: exportsdossier-geometryjson
+      below: cad-agent.dossier-geometry/1
+      img: docs/img/packets/clean-store-exploded.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: The parts and placed fasteners a geometry record lists for the gate bench's store, exploded along its assembly steps. The caption bar names the section hash, a sha256 over these parts' content hashes, and the record's digest, so a picture of older geometry shows itself.
+      alt: "An exploded view of the gate bench's store: the hopper at the bottom, a board and the balls above it, then the lid and four screws on top, under a caption bar with the section hash and geometry digest"
+    - after: hand-over-to-the-gates
+      below: What each gate reads
+      img: docs/img/gates/bench-review.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: "What the gates hand back, on the gate bench's review site: one verdict per gate, read by the lint and the status of every card. Six gates, 144 checks, all pass, and each says physical fit is not verified."
+      alt: The review site's gates table for the gate bench, each gate marked pass with its check counts and links to its verdict files
+    - after: the-reviewer-pass
+      img: docs/img/packets/clean-store-cut-cavity-hopper_cavity.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A view a reviewer answers from: the gate bench's cut through hopper_cavity, the view its containment question names. The question is answered with the containment gate's measurement beside it, never from the image alone."
+      alt: A vertical section through the gate bench's hopper, four orange balls in two rows inside the blue walls, the lid on top
+    - after: the-record-cad-agentreview1
+      below: contained-inside:hopper_cavity:ball
+      img: docs/img/packets/ball_through_wall-store-findings.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "The packet's findings view, on a seeded failure (ball_through_wall): each gate finding numbered at its witness point. The review site lists a reviewer's own findings beside the view each one names."
+      alt: An x-ray view of the gate bench's store with callouts F1 to F3 pointing at one ball in the hopper's wall
+    - after: on-the-review-site
+      img: docs/img/gates/bench-connectivity.svg
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: "The connectivity graph as the gates page draws it, for the gate bench as built: parts linked by contacts and fasteners (ovals), the balls declared free (dashed boxes), the arm its own body on a joint (blue dashed). 31 checks pass."
+      alt: A graph of the gate bench's parts linked by contacts and fasteners, grouped into the static frame and the arm's body
+    - after: the-bundle
+      below: blockers (and exit 1)
+      img: docs/img/packets/clean-arm-pose-I-pin-arm-max.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "One of the images a bundle carries in packet/: the gate bench's arm, as built, at the top of its declared range (40 degrees), rendered by the review packet with the section hash it was made from."
+      alt: The gate bench's arm raised to 40 degrees, its purple beam below the grey frame, under a caption bar with the section hash
 
 docs/design-process-plan.md:
   hero:
@@ -322,3 +551,379 @@ docs/common-issues.md:
       on: example
       caption: A result that never converges. Refining the mesh at a steel L-bracket's sharp inside corner from 2 mm to 0.125 mm raises its peak stress from 443 to 1448 MPa; with an R1.5 fillet it stays between 432 and 447 MPa. Model the fillet the part will have, then refine until the peak settles.
       alt: Peak stress at an L-bracket's inside corner against mesh size; the sharp corner's peak keeps rising as the mesh is refined, the filleted corner's stays flat
+
+research/design-workflows.md:
+  hero:
+    img: docs/img/packets/ball_through_wall-store-cut-cavity-hopper_cavity-plan.webp
+    shows: output
+    tool: cad-agent review-packet
+    on: fixture
+    caption: The incident in §6, reproduced on purpose on the gate bench, the repo's own test assembly. A seeded failure (ball_through_wall) pushes one ball 5 mm into the hopper's wall; a plan cut through the hopper's cavity shows it, and the containment gate fails it, 261.8 mm³ (50 %) outside the cavity.
+    alt: A plan section through the gate bench's hopper, its walls a blue ring round four orange balls, and a fifth ball sitting in the top wall, half outside the cavity
+  figures:
+    - after: 1-summary-the-practices-that-have-evidence
+      below: Kernel checks and a hard validity gate
+      img: docs/img/gates/bench-review.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: "Practice 1 as cad-agent runs it: every gate's verdict on the gate bench as built, with its check counts. Six gates, 144 checks, all pass, and each says physical fit is not verified."
+      alt: The review site's gates table for the gate bench, each gate marked pass with its check counts and links to its verdict files
+    - after: 1-summary-the-practices-that-have-evidence
+      below: Sign-off invalidated by a geometry hash
+      img: docs/img/packets/clean-store-exploded.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "Practice 11 on the gate bench as built: each part backed out along its assembly step's direction, later steps further, screws along their axes. The assembly gate checks each step's insertion and tool access; 55 checks pass."
+      alt: "An exploded view of the gate bench's store: the hopper at the bottom, a board and the balls above it, then the lid and four screws on top"
+    - after: 22-earthtojaketext-to-cad-cad-skill-build123d-mcp-and-agentcad-vendored-pinned
+      below: Snapshot policy
+      img: docs/img/packets/clean-store-cut-fastener-screw_0.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "One view chosen for one question, as text-to-cad's snapshot policy asks: a cut in the plane of screw_0's axis on the gate bench as built, its head on the lid and its thread in the insert. The fastener gate measures the stack (28 checks pass); the picture shows where."
+      alt: A section through the gate bench's hopper and lid along two screws, each head on the lid and its thread in an insert, with the balls below
+    - after: 22-earthtojaketext-to-cad-cad-skill-build123d-mcp-and-agentcad-vendored-pinned
+      below: lint_drawing
+      img: docs/img/packets/clean-store-cut-cavity-hopper_cavity.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "The containing relation in cad-agent's containment gate: a vertical cut through the gate bench's registered hopper cavity, the balls inside it, resting on its floor and on each other. 21 checks pass (each ball inside and clear of the wall, count, support and the cavity's fit)."
+      alt: A vertical section through the gate bench's hopper, four orange balls in two rows inside the blue walls, the lid on top
+    - after: 25-what-the-evidence-says
+      img: docs/img/packets/screw_too_long-store-cut-fastener-screw_0.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A hidden-interior fault, the kind renders miss: a seeded failure (screw_too_long) makes screw_0 4 mm longer. From outside the bench looks the same; a cut along the screw shows its tip past the insert, and the fastener gate measured it 3.00 mm into the hopper, at a length outside the 4.5 to 8.5 mm the stack takes."
+      alt: A section along two screws of the gate bench; the right screw is longer and its tip runs past its insert into the hopper
+    - after: 3-professional-mechanical-design-practice-an-agent-can-execute
+      img: docs/img/gates/bench-requirements.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: "Requirements traceability (3.2) as cad-agent does it: the gate bench's requirements, from its project.yaml, each traced to the sections that carry it and the gate check that verifies it. All three are verified by analysis."
+      alt: The review site's requirements table for the gate bench, three requirements marked verified, each with its traced sections, its verifying gate check and its source
+    - after: 41-contact-graphs-and-interference
+      img: docs/img/gates/bench-connectivity.svg
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: "The liaison graph the connectivity gate builds, on the gate bench as built: parts linked by contacts and fasteners (ovals), the balls declared free in the hopper (dashed boxes), the arm its own body on a joint (blue dashed). 31 checks pass."
+      alt: A graph of the gate bench's parts linked by contacts and fasteners, grouped into the static frame and the arm's body
+    - after: 42-containment
+      img: docs/img/packets/ball_through_wall-store-findings.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "The containment gate on a seeded failure (ball_through_wall): its findings drawn as numbered callouts at their witness points. Ball 7 is 261.8 mm³ (50 %) outside the cavity, its furthest point 5 mm out, 174 mm³ inside the hopper's material, and it rests on nothing; the assembly step that inserts it fails too."
+      alt: An x-ray view of the gate bench's store with callouts F1 to F3 pointing at one ball in the hopper's wall
+    - after: 43-mates-and-joints
+      img: docs/img/packets/clean-arm-cut-joint-I-pin-arm.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A revolute joint as built: a cut in the plane of the axis of the gate bench's joint I-pin-arm, the arm on its pin."
+      alt: "A section through the gate bench's arm joint: the green pin passing through the blue arm block above the base"
+    - after: 44-kinematic-interference
+      img: docs/img/packets/flap_hits_frame-arm-pose-I-pin-arm-max.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: Sampled poses on a seeded failure (flap_hits_frame), the arm's stop raised from 40 to 60 degrees and shown at 60. The motion gate sampled 12 poses, 5.45 degrees apart, found the arm in the frame in 3 of them and narrowed the first contact to between 44.89 and 44.91 degrees. Its report states the sample density.
+      alt: The gate bench's arm raised to 60 degrees, its purple beam passing through the grey frame above it
+    - after: 45-minimum-wall-and-feature-size
+      below: Ray casting along the inward normal
+      img: docs/img/packets/thin_wall-store-cut-cavity-hopper_cavity-plan.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "Ray thickness, re-measured on the B-rep, on a seeded failure (thin_wall): the gate bench's hopper with its +X wall thinned from 2.4 to 0.8 mm, in a plan cut through its cavity. The wall gate reads 0.800 mm, under the 2.4 mm the part's dossier asks for."
+      alt: A plan section through the gate bench's hopper with four balls inside; its right wall is much thinner than the other three
+    - after: 46-existing-open-source-assembly-validators-and-cad-lint
+      below: STEPcode
+      img: docs/img/gates/bench-sections.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: What the gaps below ask for, as cad-agent now does it. The gate bench's dossier on its review site ties each section to its gates and its review state. Four sections, all gated, none signed off; three requirements verified; no lint findings.
+      alt: The review site's front page for the gate bench, with counts and a table of its four sections with their status, requirements, parts, gates and review state
+    - after: 5-visual-review-of-renders-by-a-vision-model
+      below: Unmeasured (gap)
+      img: docs/img/packets/clean-store-xray-iso.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "A view for hidden interiors, one of the unmeasured mitigations the plan uses: the review packet's x-ray of the gate bench's store as built, its parts translucent and the loose balls, screws and declared cavity drawn inside. No paper has measured how much such a view helps a judge."
+      alt: "An x-ray view of the gate bench's store: translucent hopper and lid with eight orange balls and four screws visible inside"
+
+research/compliant-mechanisms.md:
+  hero:
+    img: docs/img/compliant/snap-engagement.svg
+    shows: diagram
+    drawn_by: tools/readme_anim.py
+    tool: cadagent.mechanical.compliant.snapfit
+    on: example
+    caption: "A printed snap arm, 15 mm long and 1.6 × 6 mm, rides a 30° lead over a 1.3 mm undercut; the snap-fit calculator gives its root strain along the travel. At the top it is 1.38 %: 68 % of the 2.02 % allowed for dry CoPA, a pass, and 139 % of PETG-CF's 1.00 %, a fail. The equations and allowables below are what it uses."
+    alt: "An animated snap arm bending as a mating edge rides up its hook's lead, with its root strain rising to 1.38 percent against two filaments' allowables: a pass for CoPA, a fail for PETG-CF"
+  figures:
+    - after: 2-snap-fit-equations-and-worked-examples-for-tests-bayer-guide-read
+      below: Undercut = deflection.
+      img: docs/img/compliant/example-1.svg
+      shows: diagram
+      drawn_by: tools/snapfit_figures.py
+      tool: cadagent.mechanical.compliant.snapfit
+      on: sources
+      caption: "Example I of the table below, computed by the toolkit's snap-fit calculator and drawn to scale: the guide's tapered polycarbonate hook, 19 mm long, deflected 2.4 mm. The 2.00 % root strain and the forces come out of the module, not typed in; a test holds them to the guide's answers."
+      alt: "Example I from the snap-fit design guide, computed: a tapered polycarbonate cantilever hook with its length, thicknesses and deflection drawn to scale, root strain 2.00 percent"
+    - after: 5-fdm-anisotropy-in-plane-x-y-vs-inter-layer-z-data-from-manufacturer-tds-read
+      below: Strain to failure across the layers falls far more than strength
+      img: docs/img/fea/layer-check.svg
+      shows: diagram
+      drawn_by: tools/fea_layer_figure.py
+      tool: cadagent.simulation.fea
+      on: example
+      caption: "The toolkit's layer check on a PETG-CF bar pulled at 10 MPa, solved at seven print tilts. Pulled straight across the layers its safety factor is 2.20 (the bond), lying in them 2.66 (the bulk), and at 30° only 2.07, where the layers also carry shear. Strength, not snap strain, but the same reason for the orientation rule below."
+      alt: "A PETG-CF bar's safety factor against print tilt: the bond check governs from 0 to 58 degrees, worst at 30 degrees (2.07), the bulk check past that (2.66); the solved bar's dots sit on the hand-computed lines"
+    - after: 7-how-the-process-changes-each-feature
+      img: docs/img/research/process-fits.svg
+      shows: diagram
+      drawn_by: tools/process_profile_figures.py
+      tool: tools/process_profile_figures.py
+      on: sources
+      caption: "The clearance between mating printed parts that each source recommends, by process, from the process profiles: 0.1 mm to 0.76 mm, and most for powder parts printed together. The table's 0.5 mm for FDM snaps and 0.3 mm for SLS and MJF are Protolabs Network's rows here."
+      alt: "Range chart of the clearance between mating printed parts each source recommends, by process: 0.1 to 0.76 mm, with powder parts printed together needing the most"
+    - after: 8-failure-modes-that-become-pitfall-catalogue-rows-97
+      img: docs/img/compliant/cantilever-explorer.svg
+      shows: diagram
+      drawn_by: tools/cantilever-still.mjs
+      tool: cadagent.formulas
+      on: example
+      caption: "The first row below as a working check: a dry CoPA arm 20 mm long, 1.6 mm at the root and 6 mm wide, bent 1.5 mm at the hook along its computed curve. Its root strain is 0.90 %, 44 % of the 2.02 % allowed along the layers, a pass; the push is 3.10 N. The live version is on the snap-fit page."
+      alt: "A CoPA snap arm 20 mm long bent 1.5 mm at the hook along its computed curve; root strain 0.90 percent, 44 percent of the 2.02 percent allowed along the layers, a pass; force 3.10 N"
+    - after: 9-open-source-calculators-and-libraries
+      below: No maintained Python or JS library
+      img: docs/img/compliant/torsion-snap-explorer.svg
+      shows: diagram
+      drawn_by: tools/torsion-snap-still.mjs
+      tool: cadagent.formulas
+      on: example
+      caption: "One of the calculators the toolkit has built since (cadagent.formulas.torsion_snap_bar, Bayer's torsion snap with Saint-Venant torsion): two Bambu PLA Basic bars, 15 mm long and 4 × 1.2 mm, twisted 8° by a 10 mm lever. Peak shear strain 1.11 %, 86 % of the 1.28 % allowed across the layers, a pass; 3.45 N at the lever. The live version is on the snap-fit page."
+      alt: "Two PLA torsion bars twisted 8 degrees by a 10 mm lever; peak shear strain 1.11 percent, 86 percent of the 1.28 percent allowed across the layers, a pass; 3.45 N at the lever"
+
+docs/explore.md:
+  figures:
+    - after: configuration
+      img: docs/img/explore/compare-header.webp
+      shows: output
+      tool: cad-agent compare
+      on: example
+      caption: "The worked example's comparison page, its header: the objectives and constraints from its explore section (minimise cost and mass, maximise runtime, require a top speed of at least 4 km/h and a catchable lean of at least 20°), and the page's own warning that nothing on it is measured."
+      alt: "The comparison page's header: Two-wheel-legged robot options, 4 designs, 3 feasible, 2 on the Pareto front; chips for minimise cost, minimise mass, maximise runtime, require top_speed_kmh at least 4 and catch_lean_deg at least 20; a note that nothing is measured"
+    - after: catalogue
+      img: docs/img/explore/light-bom.webp
+      shows: output
+      tool: cad-agent compare
+      on: example
+      caption: "The worked example's Light design, its bill of materials on the comparison page: a line per filled slot, each with its catalogue item's price, mass and basis (its confidence, the date its price was checked, its source), and the evaluator's own line for the printed parts. Every part in the example is made up and marked estimate."
+      alt: "A bill of materials table for the Light design: 24 V hub motors, 8 N·m leg actuators, a 6S battery, computer, wiring allowance and the evaluator's printed parts, each with quantity, price, mass and basis; total 848.56 USD and 5.688 kg, estimated"
+    - after: designs
+      below: A slot holds a catalogue id
+      img: docs/img/explore/long-range-bom.webp
+      shows: output
+      tool: cad-agent compare
+      on: example
+      caption: "The Long range design's bill of materials, as the diagram above resolves it: Standard's parts with the 13S pack and the depth camera. The camera has no public price, so its line shows a dash and the total, ≥ 1,682.08 USD, is a lower bound (see the bill of materials below)."
+      alt: "A bill of materials table: wheel motors, leg actuators, a 13S battery, computer, wiring allowance, a depth camera with no price and the evaluator's printed parts, each with quantity, price, mass and basis; total at least 1,682.08 USD and 11.079 kg, estimated"
+    - after: evaluator
+      below: Every key is optional; an unknown key is reported
+      img: docs/img/explore/long-range-checks.webp
+      shows: output
+      tool: cad-agent compare
+      on: example
+      caption: "The worked example's Long range design on the comparison page. Its three failed checks are its evaluator's voltage rules: the 13S pack runs to 54.6 V, more than the wheel motors, leg actuators and computer accept. cad-agent itself knows nothing about voltages; the last two checks are the configured constraints."
+      alt: "The comparison page's card for the Long range design: fail, not ranked; three failed checks, the battery's 39 to 54.6 V against what the wheel motors, leg actuators and computer accept; a warning that the depth camera has no price; top speed and lean met"
+    - after: comparison
+      below: A design is feasible when its verdict
+      img: docs/img/explore/long-range-swaps.webp
+      shows: output
+      tool: cad-agent compare
+      on: example
+      caption: "--swaps on the Long range design: one slot changed at a time and re-evaluated. Only the 10S pack clears the voltage failures, leaving the camera's missing price as a warning, at 90 minutes less runtime; every other swap still fails."
+      alt: "The one-part swaps table for the Long range design: the 10S battery is a warning at 70 USD less, 0.7 kg lighter and 90 minutes less runtime; six other swaps fail on battery voltage"
+    - after: search
+      below: builds each trial from the base
+      img: docs/img/explore/search-trade-off.webp
+      shows: output
+      tool: cad-agent optimise
+      on: example
+      caption: "The search leaderboard's trade-off chart for the worked example: 60 seeded random trials, 49 distinct (the 11 repeats are not evaluated again), by cost and mass. Four are feasible; trials 47 and 1 are the Pareto front over cost, mass and runtime."
+      alt: "A scatter chart of 49 trials by cost and mass: most are infeasible open circles; two feasible grey dots; trials 47 and 1 in blue on the Pareto front"
+
+docs/toolkit.md:
+  figures:
+    - after: the-project-contract
+      below: my-cad-project/
+      img: docs/img/gates/bench-sections.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: "The gate bench (tests/fixtures/gate_bench/) is a test project laid out by this contract. This is the front page of the review site cad-agent site built from what its build and gates wrote to exports/: four sections, all gated, none signed off; three requirements verified."
+      alt: The review site's front page for the gate bench, with counts and a table of its four sections with their status, requirements, parts, gates and review state
+    - after: the-project-contract
+      below: Renders go to
+      img: docs/img/packets/clean-store-solid-iso.webp
+      shows: output
+      tool: cadagent.publish.render
+      on: fixture
+      caption: "A render by cadagent.publish.render, as cad-agent review-packet draws one for the gate bench's store section: the caption bar holds the title and a subtitle (section hash, part and fastener counts, the build's geometry digest), the note bar what the picture is for."
+      alt: "A render of the gate bench's store section in place: a blue hopper with a green lid and four screws on the grey base, under a dark caption bar with the section hash and counts and a note bar below"
+    - after: honest-evidence
+      below: CAD checks never claim physical fit
+      img: docs/img/gates/bench-review.webp
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: The same review's gates page. Six gates, 144 checks, all pass, and each verdict says physical fit is not verified.
+      alt: The review site's gates table for the gate bench, with connectivity, containment, fasteners, motion, assembly, wall and dossier-lint, each marked pass with its check counts and links to its verdict files
+    - after: worked-example-j501-agx-jetson-agx-orin-enclosure
+      img: docs/img/viewer.jpg
+      shows: output
+      tool: cad-agent view
+      on: enclosure
+      caption: "This example's enclosure in its review site's 3D viewer: 6 of its 17 parts shown, with the parts list, explode, section cut and standard views."
+      alt: "The 3D viewer on the J501 AGX enclosure: a dark vented box with ports on its front, and a panel with explode, section and light sliders, view buttons and a list of 17 parts with 6 ticked"
+    - after: integrity-gates-cadagentreviewgates
+      img: docs/img/gates/bench-connectivity.svg
+      shows: output
+      tool: cad-agent site
+      on: fixture
+      caption: What touches what in the gate bench, drawn from the connectivity gate's verdict (connectivity.dot). Fasteners are ovals, the dashed boxes are balls allowed to sit free in the hopper, and the arm is its own body on a joint (blue dashed). 31 checks pass.
+      alt: A graph of the gate bench's parts linked by contacts and fasteners, grouped into the static frame and the arm's body
+    - after: explore-and-compare-designs-cadagentsimulationexplore
+      img: docs/img/explore/search-trade-off.webp
+      shows: output
+      tool: cad-agent optimise
+      on: example
+      caption: "The search leaderboard for the worked example (made-up parts): 60 seeded random trials, 49 distinct, by cost and mass. Four are feasible; trials 47 and 1 are the Pareto front over cost, mass and runtime."
+      alt: "A scatter chart of 49 trials by cost and mass: most are infeasible open circles; two feasible grey dots; trials 47 and 1 in blue on the Pareto front"
+    - after: mating-connectors-cadagentmechanicalconnectors-standard-practice-for-every-port
+      below: Identify the receptacle and its mate.
+      img: docs/img/motion/connector-window.svg
+      shows: diagram
+      drawn_by: tools/motion_figures.py
+      tool: cadagent.mechanical.connectors
+      on: fixture
+      caption: "An RJ45 plug pushed in along its mating axis, the port in tests/test_connectors.py in section. Through a window sized from the jack's bounding box its latch sweeps into the wall; through the window derived from the mated plug it clears by the 0.5 mm clearance. The swept volumes match the connector check's."
+      alt: "An RJ45 plug pushed in along its mating axis through two panel windows: through a window sized from the jack's bounding box the latch sweeps into the wall; through the window derived from the mated plug it clears by the 0.5 mm clearance"
+    - after: 3d-viewer-cad-agent-view--the-web-kit
+      below: Show everything the parts fit around
+      img: docs/img/kit/file-viewer-step.webp
+      shows: output
+      tool: kit/file-viewer.js
+      on: gyropup
+      caption: "The web kit's single-file viewer, a sibling of viewer.html: a motor plate opened from its STEP file, tessellated into 7,724 triangles, 164.02 × 24.1 × 178 mm, placed on the floor and fitted. A visual tessellation, not a manufacturing check."
+      alt: The file viewer showing a grey motor plate with a large bore and a ring of screw holes in an isometric view, with view buttons and the file's format, triangle count and size below
+    - after: stiffness-and-strength-cadagentsimulationfea
+      below: "The printed materials: modulus, direction"
+      img: docs/img/gyropup/wheel-link-fea.webp
+      shows: output
+      tool: cadagent.simulation.fea
+      on: gyropup
+      caption: "Gyropup's wheel link in a turn (case E1), 52,134 P2 tetrahedra, PA6-CF along the layers (humid), from a run made before #157 lowered the humid strength. Peak von Mises 15.55 MPa; safety factor 3.15 against a target of 2.0, scored against the in-plane strength that run used, about 49 MPa. Today's pa6_cf_xy row (40.8 MPa) would give 2.62. The layer check (18.1 MPa across the layers) was not run for this picture. A prediction from the CAD, not a test."
+      alt: Von Mises stress in Gyropup's wheel link, highest beside the axle bore, with a colour bar from 0 to 15 MPa
+    - after: stiffness-and-strength-cadagentsimulationfea
+      below: render(png, scale=None
+      img: docs/img/fea.jpg
+      shows: output
+      tool: cadagent.simulation.fea
+      on: enclosure
+      caption: "How a study shows margin for a report: a ribbed enclosure lid under a 300 N press, top and underside, coloured by stress as a fraction of the material's strength (at most about 0.39 here), so the colour reads as margin, not megapascals."
+      alt: "FEA of a ribbed enclosure lid under a 300 N press, top and underside, coloured by stress over strength on a scale from 0 to 0.39"
+    - after: robot-export-cadagentsimulationrobot-optional
+      below: solid_mass_properties
+      img: docs/img/linkages/fivebar.svg
+      shows: diagram
+      drawn_by: tools/linkage_figures.py
+      tool: cadagent.mechanical.linkages
+      on: example
+      caption: "A closed loop a tree cannot hold: a five-bar leg (cranks 100 mm, links 120 mm, ground 80 mm) moving its foot round a stride, its poses solved by cadagent.mechanical.linkages. Its lowest transmission angle is 53.4°; turning both cranks together from −90° locks at θ1 = −143.1°."
+      alt: "A five-bar leg hanging from its two hips moves its foot round an elliptical stride inside its reach; beside it, a map of the two crank angles shaded by transmission angle, with the stride's path"
+    - after: heatsinks-cadagentthermalheatsink
+      img: docs/img/thermal/fan-curve-explorer.svg
+      shows: diagram
+      drawn_by: tools/fan-curve-still.mjs
+      tool: kit/fan-curve.js
+      on: example
+      caption: "The balance operating_point() finds, as the fans page's explorer draws it: a fan's datasheet curve (one ebm-papst W2G115-AD15-13 at 12 V) against a system's resistance, here a system needing 12 Pa at 100 m³/h rather than a heatsink. They cross at 150 m³/h and 26.9 Pa, clear of the stall region below 132 m³/h."
+      alt: "A fan's datasheet pressure-flow curve against a system curve: they cross at 150 cubic metres per hour and 26.9 Pa, clear of the shaded stall region below 132"
+    - after: topology-optimisation-cadagentsimulationtopopt
+      img: docs/img/topology.jpg
+      shows: output
+      tool: cadagent.simulation.topopt
+      on: enclosure
+      caption: An enclosure floor with its mounting posts under load. Only the material that carries load is kept; it is a design guide, turned into ribs and pockets in the CAD and checked with FEA.
+      alt: Topology optimisation of an enclosure floor, with the remaining load paths between the mounting posts
+    - after: holes-clear
+      img: docs/img/motion/rib-in-counterbore.svg
+      shows: diagram
+      drawn_by: tools/motion_figures.py
+      tool: cad-agent holes
+      on: fixture-2d
+      caption: "Why every hole is cut last: a rib unioned after the holes runs into the counterbore and the clearance hole, and cad-agent holes finds it inside both. The counterbore plate in tests/test_holes.py, in section; the volumes match the hole check's."
+      alt: "Section through a screw hole in two build orders: a rib unioned after the clearance hole and counterbore were cut refills both, and the hole check finds rib inside each; with the holes cut last, both are clear"
+
+research/simulation-tools.md:
+  figures:
+    - after: 1-3d-topology-optimisation-from-python
+      below: Non-design regions
+      img: docs/img/topology.jpg
+      shows: output
+      tool: cadagent.simulation.topopt
+      on: enclosure
+      caption: "What this recommendation became: cadagent.simulation.topopt, pyMOTO on a voxel domain (its overhang filter optional), drawn with PyVista. An enclosure floor with loads (red) at its mounting posts; only the material that carries load is kept. A design guide, to be turned into ribs in the CAD and checked with FEA."
+      alt: Topology optimisation of an enclosure floor, with the remaining load paths between the mounting posts
+    - after: 2-parametric-shapesize-optimisation-drivers-expensive-multi-objective
+      below: "Objectives:"
+      img: docs/img/explore/search-trade-off.webp
+      shows: output
+      tool: cad-agent optimise
+      on: example
+      caption: "What the toolkit built since: cad-agent optimise, a search over parts and parameters with built-in random and grid sampling, and optuna's NSGA-II and TPE (not GPSampler). Here 60 seeded random trials (49 distinct) of a worked example with made-up parts, by cost and mass; trials 47 and 1 are the Pareto front."
+      alt: "A scatter chart of 49 trials by cost and mass: most are infeasible open circles; two feasible grey dots; trials 47 and 1 in blue on the Pareto front"
+    - after: fast-low-fidelity-path-for-optimisation-loops
+      below: Thermal resistance network + fan operating point
+      img: docs/img/thermal/fan-curve-explorer.svg
+      shows: diagram
+      drawn_by: tools/fan-curve-still.mjs
+      tool: kit/fan-curve.js
+      on: example
+      caption: "A fan operating point from a datasheet curve, as (a) needs it, drawn by the fans page's explorer: one ebm-papst W2G115-AD15-13 at 12 V against a system needing 12 Pa at 100 m³/h. They cross at 150 m³/h and 26.9 Pa, clear of the stall region below 132 m³/h."
+      alt: "A fan's datasheet pressure-flow curve against a system curve: they cross at 150 cubic metres per hour and 26.9 Pa, clear of the shaded stall region below 132"
+    - after: 3-cfd--conjugate-heat-transfer
+      img: docs/img/cfd/fan-faces.webp
+      shows: output
+      tool: cadagent.simulation.cfd
+      on: example
+      caption: "What the recommended path below became: cadagent.simulation.cfd writes the case and its Allrun for chtMultiRegionSimpleFoam (OpenFOAM v2512, here in Docker). Two recorded runs of a vented 20 W box with an exhaust fan, a section coloured by air temperature with streamlines. With the fan 3 mm under the opening the air loops back through it: 3.75 g/s carrying 32.26 W while 19.61 W leave. In a duct it passes once: 2.77 g/s, 17.60 W carried, 17.83 W leaving, though that run had not settled and its energy balance is 10.9 % off, as the toolkit reports."
+      alt: "Two sections through a vented 20 W box with an exhaust fan, coloured by air temperature with streamlines: with the fan under the opening air loops back through it; with the fan in a duct it passes once"
+    - after: 4-post-processing-visualisation-animation
+      below: for all scripted images and animations
+      img: docs/img/fea.jpg
+      shows: output
+      tool: cadagent.simulation.simviz
+      on: enclosure
+      caption: "PyVista as recommended here, off screen in cadagent.simulation.simviz: fea_view on a ribbed enclosure lid under a 300 N press, top and underside, coloured by stress over the material's strength (at most about 0.39 here). The CFD sections, flow and wall pictures and the topology renders are drawn the same way."
+      alt: "FEA of a ribbed enclosure lid under a 300 N press, top and underside, coloured by stress over strength on a scale from 0 to 0.39"
+    - after: bambu-studio-tested-here-headless-works
+      below: "Machine: Bambu Lab P1S"
+      img: docs/img/plates/gyropup-plates.svg
+      shows: diagram
+      drawn_by: tools/plates_figure.py
+      tool: cadagent.manufacturing.plates
+      on: gyropup
+      caption: "What the toolkit built beside this command line: cad-agent slice runs it for grams and print time, and cad-agent export-3mf packs every printed part onto plates in one Bambu Studio project, one filament a plate, to open, check and slice. Gyropup's 45 printed parts on 19 plates of 256 mm: 14 of PA6-CF, 3 of PETG and 2 of TPU."
+      alt: "Gyropup's 45 printed parts on 19 Bambu Studio plates of 256 mm, grouped by filament: 14 plates of PA6-CF, 3 of PETG and 2 of TPU, with every plate's wiper corner kept clear"

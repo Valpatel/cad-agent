@@ -466,11 +466,18 @@ Docker (OpenFOAM runs in the official `opencfd/openfoam-default` image) and Bamb
 - `refine(lo, hi, level)`.
 `write()` produces a complete OpenFOAM case (snappyHexMesh, splitMeshRegions, chtMultiRegionSimpleFoam, function
 objects); `run()` runs it natively or in Docker; `results()` returns temperatures, fan flow and pressure, the air
-temperature through each fan, residual and temperature histories, the heat leaving with the air against the heat put
-in (`energy_balance_pct`), the cells each fan and fin zone caught, and the limits. `converged` needs the temperatures,
-fan flow and heat leaving to have stopped changing *and* the energy balance within 5 %. Exchanger fin blocks are set
-to their power by `calibrate_fins()` (secant steps on the fin temperature, only once the heat leaving has settled;
-`calibrated` says whether it got there).
+temperature through each fan, the heat leaving with the air against the heat put in (`energy_balance_pct`), the cells
+each fan and fin zone caught, and the limits. Its histories cover the whole run, joined across continuations
+(`restarts`, one entry per continuation; a second solve from the same saved time writes `<kind>_<time>.dat` and is read
+too, and one that crashed at start and logged nothing is left out): residuals, each solid's hottest temperature and
+`monitors` (fin-block and fan air temperatures, fan flow, heat leaving), each with its unit. `converged` needs the
+temperatures, fan flow and heat leaving to have stopped changing *and* the energy balance within 5 %. The change is
+measured over `convergence_window`: the iterations from 80 % of the last one onward, cut to the newest solve (after a
+continuation shorter than a fifth of the run, that is the whole newest solve). `steady` holds each change to its entry
+in `convergence_limits`: under 1 °C for each solid's hottest temperature and the air through each fan, under 2 % for the
+fan flow and the heat leaving, and under 2 °C for a fin block's air (its key, `<block>_T_change_c`, does not end in
+`_c_change`, the suffix that gets 1 °C). Exchanger fin blocks are set to their power by `calibrate_fins()` (secant steps
+on the fin temperature, only once the heat leaving has settled; `calibrated` says whether it got there).
 
 Two choices matter for honest numbers, and both are covered by tests:
 - **The open boundary is hydrostatic** (`p_rgh` uniform): still room air stays still. A uniform *static* pressure
@@ -495,8 +502,11 @@ or vents in the CAD and check that with FEA.
 ### Pictures and animations (`cadagent.simviz`)
 `CFDResult(case)` loads a finished case in mm and °C. `section()`, `flow()` (streamlines), `walls()` (wall temperature
 with the region past a limit in the critical colour, named in the legend), `animate_flow()` (dashes moving at the
-air's speed while the camera turns), `animate_sweep()` (a section sweeping through) and `convergence_chart()`. Colour
-follows the job: one-hue ramps for temperature (orange) and speed (blue), never a rainbow.
+air's speed while the camera turns), `animate_sweep()` (a section sweeping through) and `convergence_chart()` (the
+whole run: the air's residuals, then one panel per monitored quantity with its unit, restarts marked, the window
+`convergence` measured shaded and its change stated, a run that stopped early said so; no solids panel without solid
+regions, and a panel with no data says why). Colour follows the job: one-hue ramps for temperature (orange) and speed
+(blue), never a rainbow.
 
 ### Real grams (`cadagent.slicer`, `cad-agent slice`)
 Slices each part's 3MF with Bambu Studio's command line (an external AGPL program, run as a subprocess). The system

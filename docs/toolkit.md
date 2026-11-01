@@ -87,8 +87,11 @@ my-cad-project/
    `export_step` writes the same geometry with a fixed header date (`SOURCE_DATE_EPOCH` when set, the
    [reproducible-builds](https://reproducible-builds.org/specs/source-date-epoch/) convention, else
    2000-01-01T00:00:00), the product named after the file (or `name=`), and links numbered from 1 within the file.
-   Another OCCT version can still write different bytes for the same geometry, and a cadquery `Assembly` is not
-   covered (it is refused; `Assembly.save` is not reproducible yet, #150).
+   Another OCCT version can still write different bytes for the same geometry. A cadquery `Assembly` goes through
+   `export_step` too (`export_step(assy, OUT / "assembly.step")`, #150): the file `Assembly.save` writes, with the
+   header and link ids fixed as for a part, each node added without a name called `<parent>.<k>` instead of a random
+   uuid, and the colour records in one order. Sub-shape names and colours (`Assembly.addSubshape`) are refused.
+   See [reproducible outputs](#reproducible-outputs) for the other files.
 3. **Each check is a script** in `tools/` that writes `exports/<name>.json` with
    a top-level boolean `"pass"`. A check that cannot compute its answer writes
    `"pass": false` with the reason; it never omits the file or the key.
@@ -121,6 +124,110 @@ my-cad-project/
 | `exports/<part>.stl` | print orientation, lowest point on z=0 | degenerate faces removed; must be watertight |
 | `exports/<part>.3mf` | print orientation, centred on `printer.bed_mm` | written by `cad-agent export-3mf`, read back and verified; byte-reproducible (fixed zip dates), so a rebuild of unchanged geometry keeps the slice report current |
 | `exports/<part>.step` | assembly coordinates | for CAD review and re-use |
+| `exports/<name>-plates.3mf` | print orientation, turned about z and laid out on build plates | every printed part at its quantity in one Bambu Studio project, one plate per bed; written by `export-3mf`, read back and verified; byte-reproducible for the same Bambu Studio version, or with none installed ([build plates](#build-plates-cadagentmanufacturingplates)) |
+| `exports/<name>-plates.svg`, `-plates.json` | seen from above | the plates as a picture, and the layout as data: each copy's place and turn, each plate's filament and surface, the 3MF's sha256 |
+
+### Build plates (`cadagent.manufacturing.plates`)
+
+`export-3mf` also writes `exports/<name>-plates.3mf`: one Bambu Studio project that holds every printed part, at its
+quantity and in its print orientation, packed onto as many plates as the printer's bed needs. Open it, check each
+plate and slice. This is Gyropup's print set, from its committed STLs and print plan
+(`tools/plates_figure.py` makes it; `docs/img/plates/SOURCE.json` records the revision and settings):
+
+![Gyropup's 45 printed parts on 19 Bambu Studio plates of 256 mm, grouped by filament: 14 plates of PA6-CF, 3 of PETG and 2 of TPU. The long shins and thighs lie diagonally; small parts fill the space beside large ones; every plate keeps the printer's wiper corner clear.](img/plates/gyropup-plates.svg)
+
+- **Footprints.** Each copy reserves the rectangle around its outline seen from above (the convex hull of its mesh).
+  It keeps its print orientation and may turn about z: a quarter turn, or, for a part that fits neither way (a long
+  leg on a square bed), the whole degree that gives the smallest rectangle that fits.
+- **Packing.** MaxRects (Jylänki 2010): largest first, onto the first plate with room. Four sort orders times four
+  fit rules are tried, and the layout with the fewest plates wins. Parts with different filaments never share a
+  plate. Sizes are whole micrometres and every tie has a fixed order, so the same parts and settings give the same
+  plates everywhere. `check_plates` then checks the result again on its own terms: every copy placed once, inside
+  the bed less the margin, and at least the gap from every other copy and from the keep-out areas (never less than
+  0.5 mm from those: a part turned to a whole degree is written rounded to 1e-4 mm, and Bambu Studio refuses a
+  plate where a part touches its exclusion area).
+- **The file.** 3MF core-spec meshes, one build item per copy on Bambu Studio's grid of plates, and Bambu's
+  `Metadata/model_settings.config` with one `<plate>` per plate (named after its filament). Where Bambu Studio is
+  installed, its own project settings for `cad.slicer` go in too, with the printer's own plate surface and each
+  filament's colour and purge matrix sized to the filaments. Bambu Studio keeps the plates only with those settings:
+  without them it opens the parts on one plate. The file is read back and deleted unless every copy is where the
+  layout put it.
+- **Checked in Bambu Studio 02.08.04.57.** Its command line loads the plates without re-arranging them and slices
+  each plate with its own filament (`tests/test_plates.py` does this wherever Bambu Studio is installed). Its window
+  opens the file on its plates, with the printer, filaments and process set and no errors.
+
+`cad.plates` (all keys optional; `cad.plates: false` writes no plates file):
+
+| Key | Default | Meaning |
+|---|---|---|
+| `parts` | `cad.release.build`, else every part the release lists | a list of parts, or a mapping of part to `{quantity, filament}` |
+| quantity | `cad.release.quantities`, else 1 | copies of the part |
+| filament | `cad.slicer.filament` | `pla`, `petg` or a Bambu filament profile name; one filament per plate |
+| `gap_mm`, `margin_mm` | 5, 5 | least distance between two footprints, and from the bed's edge |
+| `rotate` | true | false keeps every part as modelled |
+| `keep_out` | the printer's exclusion area (a P1S: its wiper corner), read from Bambu Studio's printer profile, so only where it is installed | more `[x0, y0, x1, y1]` areas in bed mm that every footprint stays the gap clear of. Without Bambu Studio there is no exclusion area, and the same project packs differently: list the corner here for the same layout on every machine |
+| `bed_type` | the plate the printer ships with (a P1S: Textured PEI) | `Cool Plate`, `Engineering Plate`, `High Temp Plate`, `Textured PEI Plate` or `Supertack Plate`. A plate whose filament has no temperature for that surface gets the first one it has, with a warning (Bambu Studio will not slice PETG on the Cool Plate) |
+
+`export-3mf` exits 1 when a part fits no plate (too large or too tall at any turn) or the parts need more than the 36
+plates Bambu Studio holds.
+
+<details>
+<summary>Why it is built, not adopted, and its limits</summary>
+
+- **[rectpack](https://github.com/secnot/rectpack)** (Apache-2.0) implements the same MaxRects method. It has had no
+  release since 2021, and cad-agent's core install is PyYAML and NumPy only. The method is about a hundred lines
+  here, in integer micrometres, with its tests.
+- **PrusaSlicer** arranges with [libnest2d](https://github.com/tamasmeszaros/libnest2d) (no-fit polygons, C++).
+  **Bambu Studio's own arrange** (`--arrange 1`) re-places and re-turns parts on every run and ignores filaments.
+  Both are C++ programs, not libraries cad-agent can call.
+- **Format facts** came from Bambu Studio's source (`bbs_3mf.cpp`, `PartPlate.cpp`, `Plater.cpp` at v02.08.04.57;
+  AGPL-3.0, read for the format only, no code taken) and from project files Bambu Studio saved.
+- **Limits.** A footprint is a rectangle, so an L-shaped part reserves its whole rectangle, and parts never nest
+  inside one another: tighter nesting (hulls, no-fit polygons) would save plates. The layout says nothing about
+  whether a plate prints well (adhesion, warping, how much one failure costs): that is the slicer's and the
+  printer's evidence. Per-part supports, brims and process settings are not written; set them in Bambu Studio.
+
+</details>
+
+### Reproducible outputs
+
+The same project at the same commit gives the same bytes on every rebuild and in every checkout, so `git diff`
+after a rebuild shows real changes only, and checks bound to a file's sha256 stay current (#91, #150). Where a file
+records a time, it is the source date, never the wall clock:
+
+```mermaid
+flowchart TD
+    E{"SOURCE_DATE_EPOCH<br/>set?"} -->|"yes"| S["that time<br/>(a malformed value<br/>is an error, exit 2)"]
+    E -->|"no"| G{"a commit changed<br/>the project outside<br/>its outputs?"}
+    G -->|"yes"| C["the last such<br/>commit's time"]
+    G -->|"no"| U["undated"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class E,G here
+    class S,C,U out
+```
+
+The outputs left out of that history are `exports_dir`, `preview_dir`, `site/`, `release/`, the report page and the
+file being written (`cadagent.project.source_time`), so a project that commits its report or site does not move
+their date by committing them. The site's "Recent changes" table leaves out the same commits. A `simreport` page is
+dated by the project that holds it (the nearest folder above it with `cad-agent.yaml`), wherever the script runs
+from. `SOURCE_DATE_EPOCH` is the
+[reproducible-builds](https://reproducible-builds.org/specs/source-date-epoch/) convention: seconds since
+1970-01-01 UTC, for example `SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)`.
+
+| Output | What is fixed |
+|---|---|
+| part STEP (`export_step`) | header date `2000-01-01T00:00:00` (or `SOURCE_DATE_EPOCH`), product named after the file, link ids |
+| assembly STEP (`export_step(assy)`) | the same, plus unnamed nodes named `<parent>.<k>` and the colour records in one order; names cadquery's reader would refuse or misread (a child with its parent's name or a sibling's) are refused |
+| `exports/<part>.3mf`, `exports/<name>-plates.3mf`, the release zip | sorted entries, fixed date (1980-01-01), mode and host |
+| review package (`cad-agent package`) | sorted entries; the source date, mode `rw-r--r--` and a Unix host on every entry |
+| results JSON (`header_meta.generated`), report page, `simreport` pages (`Generated`), the site's footer, the explore comparison (`generated`), the review bundle (`created`) | the source date, shown with where it came from: `2026-10-30 12:00 UTC (last commit)` |
+| the site's document cards | each page's last commit date, not its file time (which a fresh checkout resets) |
+
+Limits: another OCCT, cadquery or zlib build (stock zlib or zlib-ng) can write different bytes for the same model;
+a shallow clone sees a later commit than a full one (set `SOURCE_DATE_EPOCH` in CI that compares outputs); two pages
+a project writes outside those folders and commits count each other as sources (keep them in `exports_dir` or
+`preview_dir`). A review record's `timestamp` is the time it was submitted, and stays so.
 
 "Open in Bambu Studio" uses `bambustudio://open?file=<url-encoded http URL of the 3MF>&name=<part>`.
 The slicer fetches the file over http, so the link only works when the page is
@@ -148,6 +255,7 @@ can be renamed: no other file name is read.
 | `printer` | none | `{name, bed_mm: [x, y, z]}`; parts must fit; 3MF files are centred on it |
 | `package` | none | `{name, include: [globs]}`; zip + `<name>-manifest.json` (sha256) in `exports_dir` |
 | `release` | every part, default source globs | the print release (`cad-agent release`): see [the print release](#the-print-release-cad-agent-release) |
+| `plates` | every released part, 5 mm gap and margin | the build plates file (`export-3mf`): see [build plates](#build-plates-cadagentmanufacturingplates) |
 | `serve` | `127.0.0.1`, port 0 (any free) | `{host, port}` |
 | `html_pages` | `[]` | HTML / Markdown pages whose local links must resolve |
 
@@ -216,11 +324,11 @@ Unquoted, the title is cut at the comma and the rest becomes a stray key.
 | Command | Does | Exit code |
 |---------|------|-----------|
 | `cad-agent build [--from STEP] [--only STEP ...]` | runs steps in order with the project python; per-step timing; stops at the first failure and prints the log tail | 1 on a failed step |
-| `cad-agent export-3mf` | `<part>.stl` -> verified, bed-centred `<part>.3mf` for every part in the parts file | 1 on a read-back mismatch |
+| `cad-agent export-3mf` | `<part>.stl` -> verified, bed-centred `<part>.3mf` for every part in the parts file, then every printed part on [build plates](#build-plates-cadagentmanufacturingplates) in `<name>-plates.3mf` | 1 on a read-back mismatch, or when the parts cannot be laid out |
 | `cad-agent holes [PART ...]` | checks every hole in every part is clear of material: finds the cylindrical holes and countersinks in `exports/<part>.step` (concave, at least 200° of wall, up to 30 mm across), probes each with a cylinder or cone just inside its wall, and writes `exports/hole-checks.json` bound to each STEP's sha256; `all` runs it and the report's "Holes clear" rows fail on material in a hole, a stale result or a check that did not run (config `cad: holes:`, [below](#holes-clear)) | 1 if a hole has material inside |
 | `cad-agent check [--json]` | collects results (no build), prints a table or the results JSON | 1 if any row fails |
 | `cad-agent report [--open]` | writes `exports/cad-agent-results.json` (results schema 1.0) and a standalone `docs/cad-agent-report.html` with inline styles (light and dark) that opens from `file://` | 1 if any row fails |
-| `cad-agent package` | zip + sha256 manifest from `package.include` | |
+| `cad-agent package` | zip + sha256 manifest from `package.include`; the same files give the same zip ([reproducible outputs](#reproducible-outputs)) | 2 on a malformed `SOURCE_DATE_EPOCH` |
 | `cad-agent release [--out DIR] [--no-zip] [--revision TEXT] [--date D]` | the print release: `release/<name>-rev<revision>/index.html` (parts with thumbnails, print settings, slicer mass and time, STEP/STL/3MF links; assembly pages; hardware; source) and a reproducible zip next to it ([below](#the-print-release-cad-agent-release)) | 2 on a bad config (a path outside the project), a missing part file or a foreign `--out` folder |
 | `cad-agent serve [--port N] [--host H]` | serves the project root; writes the URL to `preview/server-url.txt` | |
 | `cad-agent site [--serve]` | builds `site/` from milestones, decisions, a designs summary, Markdown pages and git history (config `cad: site:`); `--serve` rebuilds on change and serves the web kit at `/_cadagent/kit/`. One top bar links every page: `site: nav:` (`[{id, title, href}]`, hrefs from the project root) or, when unset, the overview, docs, 3D model and each `html_pages` page plus the check and simulation reports, the design comparison and the search leaderboard. The server adds the bar to every HTML page it sends (files on disk unchanged; a bar the page mounts itself wins; `<meta name="cadagent-nav" content="off">` opts a page out). A project with a `dossier:` or `gates:` key also gets the review pages in `site/review/`: a page per dossier section, the requirements table and the gates page with the connectivity graph ([dossier.md](dossier.md#on-the-review-site)) | |
@@ -531,6 +639,90 @@ so), the mesh is coarse for that gradient. `overstressed_share(load_factor)` is 
 whose peak is past the strength. It counts whole elements, so it is an upper bound on the overstressed volume.
 `animate()` and the viewer both report it.
 
+**Meshing** (`refine`, `converge`, `result['mesh']`). `mesh_mm` is one size for the whole part. A sharp re-entrant
+corner has no finite peak, so a finer mesh only raises it; a fillet's peak settles. `refine=[(point_mm, radius_mm,
+size_mm)]` makes the mesh fine round one spot and leaves the rest as it was, so one corner converges without the whole
+part paying 8x the elements for each halving:
+
+```python
+st = Study(part, MATERIALS['petg_cf'], mesh_mm=4, refine=[((12, 0, 30), 3, 0.5)])   # 0.5 mm within 3 mm of a fillet
+res = st.solve()
+res['mesh']['peak']    # where the design peak sits, the wall round it and how many elements lie across that wall
+st.converge()          # the same loads on a mesh 0.75x as fine: the peak's change, and whether it moved
+```
+
+![Peak stress at an L-bracket's inside corner as refine= takes the mesh there from 2 mm to 0.125 mm: sharp, it rises from 443 to 1448 MPa, about 1.34 times per halving, close to the 1.37 of Williams' corner solution; with an R1.5 fillet it stays between 432 and 447 MPa](img/fea/corner-convergence.svg)
+
+The chart is a real study (`tools/fea_mesh_figure.py` regenerates it). Sharp, the corner's peak grows about 1.34x
+for each halving of the elements there (1.22x to 1.47x step to step), close to Williams' 2^0.455 = 1.37x, and never
+settles. With an R1.5 fillet it stays within 3.4 %. Model the fillet the part will have, then refine it in steps
+until the peak settles, with elements smaller than its radius. Every result's `mesh` says how far to trust it, but
+none of its checks is that study:
+
+- `mesher`: the gmsh and OpenCASCADE versions, the build's OS and date, a hash of the gmsh library and the platform.
+  Two builds of one gmsh version can mesh a part differently. Gyropup's hip frame got 151,459 and 151,136 tets, and
+  its sharp-corner peak came out 6 % apart. So a gate read at one mesh size names the build, and before and after
+  are compared on one build.
+- `peak`: the design peak's place (`where`, read off the CAD faces), the thinnest wall round it, the element size
+  there and `elements_across`, the wall over the element size. Under 3 it is flagged (`wall_resolved` false, a
+  `MeshWarning`): a peak in a wall one or two elements thick is not a result. At an inside fillet or a hole,
+  elements larger than its radius (`radius_mm`) are flagged too (`radius_resolved` false). A stepped bar's R0.5 fillet
+  had 5 elements across its wall at a 4 mm mesh and read 9 % low. A rounded outside edge does not count: bending
+  stress round it is linear, which the elements carry.
+- `refine` and `slivers`: the zones used, and the slivers found before meshing.
+
+The same bracket, step by step: what each result's `mesh` record and `converge()` said as each step halved the
+element size `refine=` asks for at the corner.
+
+![The L-bracket's front face meshed round its inside corner, sharp and with an R1.5 fillet, as refine= asks for elements from 2 mm down to 0.25 mm there: the sharp corner's peak rises from 443 to 1,094 MPa and converge() never passes it; the fillet's stays between 432 and 447 MPa and converge() passes it from the 1 mm step](img/fea/mesh-convergence.svg)
+
+*A recorded run of the toolkit, not a drawing: cad-agent 0.7.0's `Study` and `converge()` on gmsh 4.15.2 with
+OpenCASCADE 7.8.1 (Linux x86-64, 2026-11-01). `tools/readme_anim.py` redraws it from
+`tools/anim/fea-convergence.scene.json` and `--check` fails when it is stale; `--extract convergence` records it again
+(about a minute, about 3 GB). Each step shows the front face's mesh, the design peak (the dot), the result's flags and
+`converge()`'s verdict, which judges the 0.75x finer mesh's flags, not this mesh's. The chart's x axis is the size
+asked for; gmsh's curvature sizing already meshes the R1.5 arc at about 0.95 mm, so the fillet's first two steps are
+nearly one mesh. The open squares are the whole part meshed that fine, without `refine=`: 11,829 tets at
+0.5 mm for the sharp bracket, against 1,233 refined.
+Linear-elastic FEA: a converged peak does not prove that the part holds.*
+
+**Slivers and refusals.** Before meshing, `Study` lists faces under (mesh_mm/10)² in area, long faces under
+mesh_mm/10 in width (2 × area / perimeter), and edges under mesh_mm/10 (`Study.slivers`; a refine ball's size counts where it covers the
+whole face or edge). It warns by default. With `slivers='raise'` it stops with a
+`MeshRefusal` in seconds, before a long mesh, which suits an optimiser's evaluator. When gmsh refuses a part ("PLC
+Error: A segment and a facet intersect at point", or "Could not recover boundary mesh"), `Study` raises a
+`MeshRefusal` with the point and the nearest faces and their areas (`err.point`, `err.faces`, `err.edges`), when gmsh
+gives a point. `faces_near(point)` names the faces round any point.
+
+<details><summary>How the refinement, the wall count, the convergence check and the refusal work</summary>
+
+- **Refinement:** each entry is a gmsh Ball field: size_mm inside the radius, growing linearly back to mesh_mm over
+  2 × (mesh_mm − size_mm). A Min field joins them, under the global `Mesh.MeshSizeMax`. `Mesh.MeshSizeMin` must drop
+  to the smallest refine size. It is also the floor of gmsh's curvature sizing, so a size callback keeps the old floor
+  (mesh_mm / 4) outside the balls. Without `refine`, a study meshes exactly as it did before.
+- **Wall:** from each surface triangle within two element sizes of the peak corner, a ray goes into the material
+  along its CAD face's normal until it leaves, and the shortest is the wall. A ray that leaves at a grazing angle
+  (more than 60° off head-on) ran along a wall to an edge, so it does not count. Elements across is the wall over the mean edge length of the
+  tetrahedra at the peak corner: the layers a structured mesh would put there. A ray through a tet mesh crosses more
+  tets than that, so this is the cautious count.
+- **converge(factor=0.75, tolerance=0.05):** a new Study at factor × mesh_mm (and factor × each refine size), with
+  the same faces fixed and loaded. It is converged when the design peak changes by at most the tolerance and the
+  finer mesh resolves it (its wall and radius checks pass): two under-resolved meshes can agree. A peak at a sharp
+  inside corner (on either mesh) is never converged, whatever the change: two meshes of a singular corner can agree
+  by chance (the bracket's sharp corner at 0.25 mm moved +1.8 %, then rose 32 % at 0.125 mm). A peak that moves
+  more than two mesh sizes is noted: an artefact when its value changed too, else two places near the peak value. One
+  step is a check, not a convergence study.
+- **Radius:** the smallest radius of the cylindrical faces within one element of the peak. On a stepped bar's R0.5
+  and R1 fillets, elements 1.1 to 3 times the radius read the peak 6 to 17 % low, and elements under it within 2 %.
+- **Refusal:** gmsh's volume mesher (TetGen's boundary recovery) throws on the first line of its report, before it
+  prints the point, and stays locked until gmsh is finalized. So `Study` meshes once more in a new session with errors
+  logged, not thrown, and `parse_gmsh_refusal()` reads the point and the surfaces gmsh names. Distances are measured to
+  the surface mesh, so to its chords on a curved face. gmsh's failing runs are not always repeatable: the point is one
+  of several, "Could not recover boundary mesh" often comes with none, and a second try that meshes is used, with a
+  `MeshWarning`.
+
+</details>
+
 Showing how it fails, for the report:
 
 - `render(png, scale=None, vmax=None)`: the deformed part coloured by stress. `scale` exaggerates the deformation; `vmax` (MPa) fixes the colour scale, so variants under the same load compare by eye.
@@ -764,6 +956,7 @@ The geometry and render tests skip unless cadquery and vtk are importable.
 | `docs/cad-agent-report.html` | the standalone report page (in `docs_dir`), written by `cad-agent report` with the results |
 | `CAD_AGENT_PROJECT` | set to the project root for every build step and design evaluator |
 | `CAD_AGENT_RENDER_ONLY` | comma-separated picture names: a `Renderer` made without `only=` renders just those |
+| `SOURCE_DATE_EPOCH` | seconds since 1970-01-01 UTC: the date STEP headers, zips and report pages record ([reproducible outputs](#reproducible-outputs)); a value that is not a whole number stops the command |
 | `from cadagent.<package> import ...` | the Python API ([package layout](#package-layout-v050)) |
 
 ## Holes clear

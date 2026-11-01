@@ -54,6 +54,13 @@ demos:
     url: docs/linkages.md#sweeping-a-closed-loop-four-bars-and-five-bars
     still: 0.3
     areas: [linkages]
+  - id: fan-curve-explorer
+    title: Fan-curve explorer
+    what: A real fan's datasheet curve against your enclosure's system curve, one to four fans, and where it stalls.
+    mode: interactive
+    cover: docs/img/thermal/fan-curve-explorer.svg
+    url: docs/fans.md#try-it-the-fan-curve-explorer
+    areas: [airflow-and-fans]
   - id: fea-lid
     title: FEA of a ribbed lid
     what: A 300 N press on an enclosure lid, coloured by stress as a fraction of the material's strength.
@@ -82,6 +89,8 @@ demos:
     what: A gate arm swept through its range; the first pose that hits the frame is bisected to a hundredth of a degree.
     mode: animated
     cover: docs/img/motion/hinge-sweep.svg
+    # pinned: docs/pages.yaml shows this figure on other pages too (the plan, the band of docs/gates.md)
+    url: docs/gates.md#motion-range-interference-cadagentreviewgatesmotion
     still: 0.62
     areas: [mechanisms, design-process]
     tools: [gates]
@@ -112,6 +121,7 @@ demos:
     what: A preassembled module checked on its bench, then inserted into its parent as one body and withdrawn.
     mode: animated
     cover: docs/img/motion/module-insertion.svg
+    url: docs/subassembly-insertion.md#rigid-subassembly-insertion     # pinned, as hinge-sweep
     areas: [fasteners-and-hardware]
     tools: [gates]
   - id: connector-window

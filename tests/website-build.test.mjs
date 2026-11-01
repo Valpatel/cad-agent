@@ -1,5 +1,6 @@
 // Build cad-agent.valpatel.com into a temporary folder from HEAD and check what would be published.
 import test from 'node:test';
+import YAML from 'yaml';
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
@@ -12,7 +13,7 @@ const root = path.resolve(import.meta.dirname, '..');
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-website-'));
 const build = dir => execFileSync(process.execPath, ['tools/build-site.mjs', '--out', dir], { cwd: root }).toString();
 const out = path.join(tmp, 'a');
-build(out);
+const buildLog = build(out);
 test.after(() => rm(tmp, { recursive: true, force: true }));
 
 const files = (await readdir(out, { recursive: true, withFileTypes: true })).filter(e => e.isFile())
@@ -237,6 +238,21 @@ test('the four-bar animator is on its pages with its still, and only those pages
   assert.doesNotMatch(await readFile(path.join(out, 'docs/compliant.html'), 'utf8'), /fourbar\.(css|js)/);
 });
 
+test('the fan-curve explorer is on its pages with its still, and only those pages load its kit files', async () => {
+  for (const name of ['fans', 'formulas']) {
+    const page = await readFile(path.join(out, `docs/${name}.html`), 'utf8');
+    const demo = page.match(/<cad-fan-curve fan="12" system="12" count="1" arrangement="parallel">([\s\S]*?)<\/cad-fan-curve>/);
+    assert.ok(demo, `no <cad-fan-curve> on /docs/${name}`);
+    assert.match(demo[1], /<img src="\/docs\/img\/thermal\/fan-curve-explorer\.svg" alt="[^"]{40,}" width="640" height="340" ?\/?>/);
+    const head = page.slice(0, page.indexOf('</head>'));
+    assert.match(head, /<link rel="stylesheet" href="\/kit\/fan-curve\.css"><link rel="modulepreload" href="\/kit\/fan-curve\.js">/);
+  }
+  for (const f of ['kit/fan-curve.js', 'kit/fan-curve.css', 'kit/formulas.js', 'kit/formulas-data.js', 'docs/img/thermal/fan-curve-explorer.svg'])
+    assert.ok(files.includes(f), `${f} is not published`);
+  for (const other of ['compliant', 'linkages'])
+    assert.doesNotMatch(await readFile(path.join(out, `docs/${other}.html`), 'utf8'), /fan-curve\.(css|js)/);
+});
+
 test('an image keeps the size its author gave, and its tag survives any alt text', async () => {
   const wt = path.join(tmp, 'wt-img');
   execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });
@@ -269,11 +285,14 @@ test('doc pages carry the page tree, with this page marked', async () => {
   for (const doc of catalog.items.filter(i => i.markdown && i.status === 'ours' && ['doc', 'lesson', 'skill', 'agent', 'research'].includes(i.type)))
     assert.ok(nav.includes(`href="${doc.url.replace('https://cad-agent.valpatel.com', '')}"`), `${doc.name} is missing from the page tree`);
   assert.ok(files.includes('kit/nav.js') && files.includes('kit/nav.css'));
-  // Written out in full, so the first paint is final and it works without script: a landmark, the toggle, the
-  // filter, and this page's outline (every h2/h3 with an id) under it, again in the right-hand column.
+  // Written out in full, so the first paint is final and it works without script: a landmark, the fold (a native
+  // <details>, closed: phones open it with or without nav.js), the filter, and this page's outline (every h2/h3 with an
+  // id) under it, again in the right-hand column.
   assert.match(toolkit, /<cad-nav [^>]*role="navigation" aria-label="Pages and contents"/);
   assert.match(toolkit, /<link rel="stylesheet" href="\/kit\/nav\.css">/);
-  assert.match(nav, /^<button type="button" class="cad-nav-toggle" aria-expanded="false">/);
+  assert.match(nav, /^<details class="cad-nav-fold"><summary class="cad-nav-toggle">Pages and contents<\/summary><div class="cad-nav-panel">/);
+  assert.match(nav, /<\/div><\/details>$/, 'the fold holds the whole panel and nothing else');
+  assert.doesNotMatch(nav, /<button/, 'no toggle that needs the script');
   assert.match(nav, /<div class="cad-nav-panel"><input type="search" class="cad-nav-filter"/);
   const article = toolkit.match(/<article class="prose">([\s\S]*?)<\/article>/)[1];
   const heads = [...article.matchAll(/<h[23] id="([^"]+)">/g)].map(m => m[1]);
@@ -298,6 +317,46 @@ test('the pages without a picture, diagram or demo are exactly the known backlog
   const gained = PAGES_WITHOUT_VISUALS.filter(p => !without.includes(p)), lacking = without.filter(p => !PAGES_WITHOUT_VISUALS.includes(p));
   assert.deepEqual(lacking, [], `add a diagram, render or demo to: ${lacking.join(', ')}`);
   assert.deepEqual(gained, [], `these now have something to look at; remove them from PAGES_WITHOUT_VISUALS: ${gained.join(', ')}`);
+});
+
+test('docs/pages.yaml places real outputs on the site page only; the Markdown twin stays as written', async () => {
+  const spec = YAML.parse(git('show', 'HEAD:docs/pages.yaml'));
+  assert.ok(Object.keys(spec).length, 'docs/pages.yaml places something');
+  for (const [file, page] of Object.entries(spec)) {
+    const html = await readFile(path.join(out, file.replace(/\.md$/, '.html')), 'utf8');
+    const twin = await readFile(path.join(out, file), 'utf8');
+    for (const v of [...(page.hero ? [page.hero] : []), ...(page.band || []), ...(page.figures || [])]) {
+      assert.ok(html.includes(`<img src="/${v.img}" width=`), `${file}: ${v.img} on the page, sized`);
+      // the caption, after what the picture is: a real output of its tool, or a diagram and the script that drew it
+      const caption = v.caption.replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+      const what = v.shows === 'output' ? `<b class="shows-output">Real output</b> of <code>${v.tool}</code>, on `
+        : `<b class="shows-diagram">Diagram</b> of <code>${v.tool}</code>, drawn by <code>${v.drawn_by}</code>, on `;
+      assert.match(html, new RegExp(`${what.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}[^<]*(?:<a [^>]*>[^<]*</a>[^<]*)?\\.</span> ${caption.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}`), `${file}: ${v.img} says what it is, then its caption`);
+      assert.ok(!twin.includes(v.caption), `${file}: the twin does not gain the caption`);
+    }
+    assert.doesNotMatch(twin, /page-band|page-figure|section-cards/);
+  }
+});
+
+test('a catalogue demo opens at the section that shows it, not at a copy under the page title', async () => {
+  // Section cards and band tiles repeat a section's picture under the title; a demo that found its figure there
+  // opened the top of the page (#217 review: Connector window, on /docs/common-issues).
+  const ORIGIN = 'https://cad-agent.valpatel.com';
+  const catalog = JSON.parse(await readFile(path.join(out, 'catalog.json'), 'utf8'));
+  // A demo pinned with url: in docs/catalog.yaml links where it says; the others link where their figure is shown.
+  const pinned = new Set((YAML.parse(git('show', 'HEAD:docs/catalog.yaml')).demos || []).filter(d => d.url).map(d => d.title));
+  const demos = catalog.items.filter(i => i.type === 'demo' && !pinned.has(i.name) && i.url.startsWith(ORIGIN + '/') && i.url.includes('#'));
+  assert.ok(demos.length >= 3, 'demos found by their figure');
+  for (const d of demos) {
+    const [route, id] = d.url.slice(ORIGIN.length).split('#');
+    const page = (await readFile(path.join(out, resolve(route)), 'utf8'))
+      .replace(/<nav class="section-cards"[^>]*>[\s\S]*?<\/nav>|<ul class="band-tiles">[\s\S]*?<\/ul>/g, '');
+    const at = page.search(new RegExp(`<h[1-6] id="${id}"`));
+    assert.ok(at >= 0, `${d.name}: ${d.url} has no heading ${id}`);
+    const section = page.slice(at).split(/<h[1-6] id="/)[1];
+    assert.match(section, /<img\b|<cad-(?!copy|nav)[a-z]/, `${d.name}: the section at ${d.url} shows no picture or demo of its own`);
+  }
+  assert.match(catalog.items.find(i => i.name === 'Connector window').url, /\/docs\/common-issues#bought-parts-sources-and-assumptions$/);
 });
 
 test('a moved page leaves a stub on GitHub and a 301 on the site', async () => {
@@ -341,7 +400,7 @@ test('a link to a folder opens its README page', async () => {
 test('every lesson page has a diagram, and the home page counts lessons, not pages', async () => {
   const lessons = files.filter(f => /^lessons\/.+\.html$/.test(f));
   assert.ok(lessons.length >= 19, 'the index, six area READMEs and twelve lesson files');
-  for (const f of lessons) assert.match(await readFile(path.join(out, f), 'utf8'), /class="language-mermaid"|<img\b/, `${f} has no diagram or picture`);
+  for (const f of lessons) assert.match(await readFile(path.join(out, f), 'utf8'), /<figure class="cad-diagram"|class="language-mermaid"|<img\b/, `${f} has no diagram or picture`);
   const rules = git('grep', '-h', '-e', '^### ', 'HEAD', '--', 'lessons/*/*.md', ':!lessons/*/README.md').split('\n').filter(Boolean).length;
   assert.ok(rules > 50);
   assert.match(await readFile(path.join(out, 'index.html'), 'utf8'), new RegExp(`Fill the gaps</span><span class="mission-num">${rules}<`));
@@ -439,7 +498,7 @@ test('the palette goes into real diagrams only: not into a quoted example, and :
     const draft = path.join(tmp, 'draft-palette');
     execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, '--worktree', '--out', draft], { cwd: root });
     const page = await readFile(path.join(draft, 'docs/toolkit.html'), 'utf8');
-    const diagram = page.match(/<code class="language-mermaid">([\s\S]*?)<\/code>/)?.[1] || '';
+    const diagram = page.match(/<pre class="cad-diagram-source">([\s\S]*?)<\/pre>|<code class="language-mermaid">([\s\S]*?)<\/code>/)?.slice(1).join('') || '';
     assert.match(diagram, /classDef here fill:#fffdf5/, ':::here shorthand gets the palette');
     assert.doesNotMatch(diagram, /classDef (?:near|out)/, 'only the classes the diagram uses');
     const quoted = page.match(/<code class="language-markdown">([\s\S]*?)<\/code>/)?.[1] || '';
@@ -448,6 +507,57 @@ test('the palette goes into real diagrams only: not into a quoted example, and :
   } finally {
     execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
   }
+});
+
+// Diagrams are drawn by the build (#132, tools/site-diagrams.mjs): each Mermaid block arrives as a finished figure, so
+// nothing moves while the page loads and it shows without script. Its source stays in the figure and in the twin.
+test('every diagram arrives drawn, with its source, and the Markdown twins keep their fences', async () => {
+  assert.match(buildLog, /Diagrams: \d+ \(Mermaid 11\.\d+\.\d+\)/);
+  assert.doesNotMatch(buildLog, /left to the reader's browser/, 'the build drew no diagrams: install a browser (npx playwright install chromium)');
+  let figures = 0;
+  for (const f of html.filter(f => !f.startsWith('kit/'))) {
+    const page = await readFile(path.join(out, f), 'utf8');
+    assert.doesNotMatch(page, /class="language-mermaid"|<pre class="mermaid"/, `${f}: a Mermaid block was left for the reader's browser`);
+    const figs = [...page.matchAll(/<figure class="cad-diagram"[\s\S]*?<\/figure>/g)].map(m => m[0]);
+    for (const fig of figs) {
+      assert.match(fig, /^<figure class="cad-diagram" data-theme="light" aria-label="Engineering diagram" data-state="ready" aria-busy="false" style="--cad-diagram-w: [\d.]+px;">/, f);
+      assert.match(fig, /<div class="cad-diagram-view"[^>]*><svg id="cad-diagram-s[0-9a-f]{12}(?:-\d+)?" /, f);
+      assert.match(fig, /<details><summary>Diagram source<\/summary><pre class="cad-diagram-source">[^<]+<\/pre><\/details><\/figure>$/, f);
+      // Real tags only (the source is text): no script, handler or javascript: link in what Mermaid drew.
+      const tags = [...fig.replace(/<pre class="cad-diagram-source">[^<]*<\/pre>/, '').matchAll(/<([a-z][\w:-]*)\b([^>]*)>/gi)];
+      assert.deepEqual(tags.filter(([, t, a]) => /^script$/i.test(t) || /\son[a-z]+\s*=/i.test(a) || /javascript:/i.test(a)).map(m => m[0]), [], f);
+    }
+    const ids = [...page.matchAll(/<svg id="([^"]+)"/g)].map(m => m[1]);
+    assert.equal(new Set(ids).size, ids.length, `${f}: two diagrams share an SVG id`);
+    figures += figs.length;
+  }
+  assert.ok(figures >= 60, `${figures} diagrams`);
+  assert.match(await readFile(path.join(out, 'docs/style-guide.md'), 'utf8'), /^```mermaid$/m, 'the twin keeps the Mermaid source for agents');
+});
+
+test('two builds with empty diagram caches draw every page byte for byte the same', async () => {
+  const pages = async dir => new Map(await Promise.all((await readdir(dir, { recursive: true, withFileTypes: true }))
+    .filter(e => e.isFile() && e.name.endsWith('.html')).map(async e => [path.relative(dir, path.join(e.parentPath, e.name)), await readFile(path.join(e.parentPath, e.name))])));
+  const [a, b] = ['det-a', 'det-b'].map(n => path.join(tmp, n));
+  for (const d of [a, b]) {
+    const log = execFileSync(process.execPath, ['tools/build-site.mjs', '--out', d], { cwd: root, env: { ...process.env, CAD_AGENT_DIAGRAM_CACHE: `${d}-cache` } }).toString();
+    assert.match(log, /0 from the cache, \d+ drawn in /, log);
+  }
+  const [pa, pb] = [await pages(a), await pages(b)];
+  assert.deepEqual([...pa.keys()].sort(), [...pb.keys()].sort());
+  const differ = [...pa].filter(([f, buf]) => !buf.equals(pb.get(f))).map(([f]) => f);
+  assert.deepEqual(differ, []);
+  assert.ok([...pa.values()].some(buf => buf.includes('<figure class="cad-diagram"')));
+});
+
+test('with --client-diagrams (as on a machine with no browser) the blocks stay for the reader\'s browser, and the build passes', async () => {
+  const draft = path.join(tmp, 'client-diagrams');
+  const log = execFileSync(process.execPath, ['tools/build-site.mjs', '--client-diagrams', '--out', draft], { cwd: root }).toString();
+  assert.match(log, /left to the reader's browser/);
+  const page = await readFile(path.join(draft, 'docs/style-guide.html'), 'utf8');
+  assert.equal((page.match(/<pre><code class="language-mermaid">/g) || []).length, 3);
+  assert.doesNotMatch(page, /<figure class="cad-diagram"/);
+  assert.match(page, /<script type="module" src="\/web\/site\.js"><\/script>/, 'site.js still starts kit/diagrams.js');
 });
 
 test('no page refers to a lesson by its old number', () => {

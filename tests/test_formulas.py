@@ -625,10 +625,155 @@ def test_fan_curve_with_a_stall_dip_is_flagged_unstable():
     assert op["flow"] == max(q for q, _ in op["intersections"])
     for q, p in op["intersections"]:
         assert p == pytest.approx(np.interp(q, *zip(*curve)), rel=1e-9) and p == pytest.approx(2500.0 * q)
+    # a quadratic system through the dip: above the curve at its foot (0.004), below it at its top (0.005)
+    k = 5.3e5
+    assert k * 0.004 ** 2 > 8.0 and k * 0.005 ** 2 < 14.0
+    assert len(fx.fan_operating_point(curve, k)["intersections"]) == 3
     with pytest.raises(ValueError):
         fx.fan_operating_point([(0.0, 10.0)], 1e6)
     with pytest.raises(ValueError):
         fx.fan_operating_point([(0.0, 10.0), (0.01, 9.0)], 1.0)               # never crosses within the curve
+    for bad in ({"k": 0.0}, {"k": -1e5}, {"k": 1e5, "r": -1.0}, {"k": float("nan")}, {"k": float("inf")}):
+        with pytest.raises(ValueError, match="positive loss"):
+            fx.fan_operating_point(curve, **bad)
+    for pts in ([(0.0, 10.0), (0.0, 5.0)], [(0.01, 10.0), (0.0, 0.0)], [(0.0, float("nan")), (0.01, 0.0)]):
+        with pytest.raises(ValueError, match="increasing flow"):
+            fx.fan_operating_point(pts, 1e5)
+
+
+def test_fan_stall_flow_is_the_peak_after_the_last_rise():
+    # Derivation: left of the peak that ends the curve's last rise in pressure with flow, a system crossing can meet
+    # the curve where it rises (the dip), so that is the stall region; a curve that only falls has none.
+    assert fx.fan_stall_flow(fx.fan_curve_line(40.0, 0.02)) is None
+    assert fx.fan_stall_flow([(0.0, 20.0), (0.004, 8.0), (0.005, 14.0), (0.010, 6.0), (0.012, 0.0)]) == 0.005
+    flat_top = [(0.0, 9.0), (1.0, 7.0), (2.0, 8.0), (3.0, 8.0), (4.0, 8.0), (5.0, 0.0)]
+    assert fx.fan_stall_flow(flat_top) == 4.0                              # the end of the flat top after the rise
+    assert fx.fan_stall_flow([(0.0, 9.0), (1.0, 9.0), (2.0, 4.0)]) is None  # flat, never rising: no dip
+    assert fx.fan_stall_flow([(0.0, 5.0), (1.0, 6.0)]) == 1.0                 # it only rises: all of it
+    op = fx.fan_operating_point(flat_top, fx.system_coefficient(8.0, 3.0))   # on the flat top: in the stall region
+    assert op["flow"] == pytest.approx(3.0) and op["stall"] and op["stable"]
+    assert not fx.fan_operating_point(flat_top, fx.system_coefficient(4.0, 4.5))["stall"]
+
+
+def test_identical_fans_in_series_and_in_parallel_hand_solved():
+    # Derivation (White, Section 11.5): fans in series add their pressures at one flow, fans in parallel their flows at
+    # one pressure. A straight line p0 (1 - Q / qf) against k Q^2, with a = k qf^2 / p0 and x = Q / qf:
+    #   one fan          a x^2 + x - 1 = 0
+    #   two in series    a x^2 + 2 x - 2 = 0
+    #   two in parallel  a x^2 + x / 2 - 1 = 0
+    # The two combined lines cross at x = 2/3, p = 2/3 p0, so a system through that point (a = 3/2) gets the same air
+    # either way; a steeper one gets more in series, a flatter one more in parallel.
+    p0, qf = 40.0, 0.02
+    line = fx.fan_curve_line(p0, qf)
+
+    def x(a, curve):
+        return fx.fan_operating_point(curve, a * p0 / qf ** 2)["flow"] / qf
+
+    series, parallel = fx.fans_in_series(line, 2), fx.fans_in_parallel(line, 2)
+    assert x(4.0, line) == pytest.approx((math.sqrt(17) - 1) / 8, rel=1e-12)
+    assert x(4.0, series) == pytest.approx(0.5, rel=1e-12)
+    assert x(4.0, parallel) == pytest.approx((math.sqrt(65) - 1) / 16, rel=1e-12)
+    assert x(0.1, line) == pytest.approx((math.sqrt(1.4) - 1) / 0.2, rel=1e-12)
+    assert x(0.1, series) == pytest.approx((math.sqrt(4.8) - 2) / 0.2, rel=1e-12)
+    assert x(0.1, parallel) == pytest.approx((math.sqrt(0.65) - 0.5) / 0.2, rel=1e-12)
+    assert x(1.5, series) == pytest.approx(2 / 3, rel=1e-12) and x(1.5, parallel) == pytest.approx(2 / 3, rel=1e-12)
+    # the lesson: in a restrictive system series gives more air, in an open one parallel does
+    assert x(4.0, series) > x(4.0, parallel) and x(0.1, parallel) > x(0.1, series)
+    assert fx.fans_in_series(line, 3) == [(0.0, 120.0), (qf, 0.0)]
+    assert fx.fans_in_parallel(line, 3) == [(0.0, p0), (3 * qf, 0.0)]
+    assert fx.fans_in_series(line, 1) == fx.fans_in_parallel(line, 1) == line
+    assert fx.fans_in_series(line, 2.0) == fx.fans_in_series(line, 2)       # a whole number written as a float
+    assert fx.fans_in_parallel(line, np.int64(2)) == fx.fans_in_parallel(line, np.float64(2.0)) == parallel  # numpy's
+    for bad in (0, -1, 2.5, True, np.bool_(True), "2", None, float("nan"), np.float64(2.5)):
+        for combine in (fx.fans_in_series, fx.fans_in_parallel):
+            with pytest.raises(ValueError, match="whole number"):
+                combine(line, bad)
+    for dp, q in ((10.0, 0.0), (-1.0, 0.01), (1.0, float("inf"))):
+        with pytest.raises(ValueError):
+            fx.system_coefficient(dp, q)
+    for dp0, qf_ in ((0.0, 0.01), (10.0, -0.01)):
+        with pytest.raises(ValueError):
+            fx.fan_curve_line(dp0, qf_)
+
+
+# The datasheet's three system curves (installation characteristics), read from the same vector chart as the fan curves
+# (cadagent.thermal.fans): dp = k Q^2 with Q in m3/h, each a parabola through the origin to within 0.13 Pa.
+PUBLISHED_SYSTEMS = (0.00030214, 0.00075427, 0.0015352)
+
+
+def test_datasheet_fans_reproduce_the_operating_points_their_datasheet_publishes():
+    # A published worked example: ebm-papst's W2G115-AD15-13 datasheet tabulates where each voltage's curve meets
+    # three system curves (its "Measured values", rounded to 5 m3/h and 1 Pa). The solver, on the curves read from the
+    # chart, finds every one of them again within that rounding and the reading (1 m3/h, 1 Pa).
+    from cadagent.thermal.fans import FANS
+    assert {f.voltage for f in FANS.values()} == {8, 12, 16}
+    for fan in FANS.values():
+        curve = fan.curve()
+        assert curve[0][0] == 0.0 and curve[-1][1] == 0.0 and fan.table[0][1] == 0     # shut-off to free air
+        assert abs(curve[-1][0] * 3600 - fan.table[0][0]) <= 3.5                       # free air: the table's first
+        for k, (q_table, p_table) in zip(PUBLISHED_SYSTEMS, fan.table[1:]):
+            op = fx.fan_operating_point(curve, k * 3600 ** 2)
+            assert abs(op["flow"] * 3600 - q_table) <= 3.5 and abs(op["pressure"] - p_table) <= 1.0, (fan.key, op)
+            assert op["stable"] and not op["stall"]
+        # every point the maker tabulates lies right of the stall peak: the stall region is what it leaves out
+        assert fx.fan_stall_flow(curve) * 3600 <= min(q for q, _ in fan.table) + 1.0
+        assert fan.source.startswith("ebm-papst") and "item no. 50788-5-9980" in fan.source and "https://" in fan.source
+
+
+def test_no_system_through_the_origin_crosses_the_datasheet_fans_twice():
+    # docs/fans.md says the explorer never shows "Unstable", and why. On each straight segment, dp = a + b Q with a > 0,
+    # so dp / Q falls all the way; a system r Q + k Q^2 has dp / Q = r + k Q, which never falls, so they cross once.
+    # Series multiplies dp and parallel multiplies Q, which keeps a > 0. The synthetic DIP in tools/formula_vectors.py
+    # is where the check is tested with three crossings.
+    from cadagent.thermal.fans import FANS
+    for fan in FANS.values():
+        for n in (1, 2, 3, 4):
+            for curve in (fx.fans_in_series(fan.curve(), n), fx.fans_in_parallel(fan.curve(), n)):
+                for (q1, p1), (q2, p2) in zip(curve, curve[1:]):
+                    assert p1 - (p2 - p1) / (q2 - q1) * q1 > 0, (fan.key, n)
+                for k in np.geomspace(1e2, 1e7, 60):
+                    for r in (0.0, 100.0, 1000.0):
+                        op = fx.fan_operating_point(curve, float(k), r)
+                        assert op["stable"] and len(op["intersections"]) == 1, (fan.key, n, k, r)
+    page = (ROOT / "docs" / "fans.md").read_text()
+    assert 'never\nshows "Unstable"' in page and "Δp / Q = r + k Q" in page
+
+
+def test_the_fan_curve_explorer_and_its_pages_say_what_the_python_computes():
+    # docs/fans.md and docs/formulas.md show <cad-fan-curve>: its attributes, run through cadagent.formulas and the
+    # datasheet fan, give the operating point the still's alt text quotes (tools/fan-curve-still.mjs checks the same
+    # from the browser side), and the page's worked numbers are the Python's.
+    from cadagent.thermal.fans import FANS
+    ref = 100 / 3600
+
+    def point(volts, system, count=1, arrangement="parallel"):
+        curve = FANS[f"w2g115-ad15-13-{volts}v"].curve()
+        combine = fx.fans_in_series if arrangement == "series" else fx.fans_in_parallel
+        return fx.fan_operating_point(combine(curve, count), fx.system_coefficient(system, ref))
+
+    def m3h(op):
+        return f"{round(op['flow'] * 3600)} m³/h"
+
+    fans_page = (ROOT / "docs" / "fans.md").read_text()
+    for page in (fans_page, (ROOT / "docs" / "formulas.md").read_text()):
+        tag = re.search(r"^<cad-fan-curve\b([^>]*)>([\s\S]*?)</cad-fan-curve>", page, re.M)
+        assert tag, "no <cad-fan-curve> demo"
+        attrs = dict(re.findall(r'(\w+)="([^"]*)"', tag.group(1)))
+        assert attrs == {"fan": "12", "system": "12", "count": "1", "arrangement": "parallel"}
+        op = point(12, 12)
+        assert not op["stall"] and op["stable"]
+        alt = tag.group(2)
+        assert f"{m3h(op)} at {op['pressure']:.1f} Pa" in alt and "clear of the stall region" in alt
+        assert f"below {round(fx.fan_stall_flow(FANS['w2g115-ad15-13-12v'].curve()) * 3600)} m³/h" in alt
+        assert 'src="img/thermal/fan-curve-explorer.svg"' in alt
+    stalled = point(12, 25)
+    assert stalled["stall"] and f"{m3h(stalled)}" in fans_page
+    parallel, series = point(12, 25, 2, "parallel"), point(12, 25, 2, "series")
+    assert parallel["stall"] and not series["stall"] and series["flow"] > parallel["flow"]
+    assert f"{m3h(parallel)}" in fans_page and f"{m3h(series)}" in fans_page
+    open_par, open_ser = point(12, 4, 2, "parallel"), point(12, 4, 2, "series")
+    assert open_par["flow"] > open_ser["flow"]
+    assert f"{m3h(open_par)}" in fans_page and f"{m3h(open_ser)}" in fans_page
 
 
 # ----------------------------------------------------------------------------- the browser port and the docs

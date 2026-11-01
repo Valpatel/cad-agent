@@ -1,0 +1,53 @@
+/* <cad-fan-curve> (kit/fan-curve.js). Link this in <head>: it reserves the element's full size before the script runs
+   (the still image, then the panel's height), so the live chart and controls replace them without moving the page. The
+   panel has a fixed height per layout; tests/website-browser.mjs checks the size and that nothing overflows. The
+   script sets data-theme (light or dark) from the page's color-scheme; override the colours with the --fc-* custom
+   properties. color-scheme is set on the panel, not the element, so the element still reads the page's. */
+cad-fan-curve{--fc-ink:#173d3c;--fc-muted:#526863;--fc-sage:#6f8a80;--fc-mist:#eef1e4;--fc-back:#fffdf5;--fc-peach:#ffe1cc;
+  --fc-rust:#bd3a12;--fc-line:#c9d8ca;--fc-panel:248px;display:block;box-sizing:border-box;margin:28px 0;
+  border:1px solid var(--fc-line);border-radius:16px;background:var(--fc-back);color:var(--fc-ink);overflow:hidden;
+  font-size:14px;line-height:1.35;overflow-wrap:normal}
+cad-fan-curve[data-theme=dark]{--fc-ink:#e6efe9;--fc-muted:#a8bcb5;--fc-sage:#86a499;--fc-mist:#21393a;--fc-back:#11201f;
+  --fc-peach:#4b2b1d;--fc-rust:#ff9466;--fc-line:#355450}
+/* Measured in Chromium and WebKit (WebKit's controls are taller) for the wordiest results, with a few pixels spare. */
+@media(max-width:699.98px){cad-fan-curve{--fc-panel:364px}}
+@media(max-width:479.98px){cad-fan-curve{--fc-panel:382px}}      /* the tiles' words wrap more */
+@media(max-width:359.98px){cad-fan-curve{--fc-panel:428px}}
+cad-fan-curve>img,cad-fan-curve .fc-figure>svg{display:block;width:100%;height:auto;aspect-ratio:640/340;max-width:none;margin:0;border:0}
+/* Until the script defines the element (or if it never loads), the reserved panel says what belongs there. */
+cad-fan-curve:not(:defined)::after{content:"The voltage, system and fan controls and the readouts load here with JavaScript. The chart above is the starting fan.";
+  display:flex;align-items:center;justify-content:center;box-sizing:border-box;height:var(--fc-panel);padding:16px 24px;
+  border-top:1px solid var(--fc-mist);color:var(--fc-muted);font-size:13px;text-align:center}
+@media(scripting:none){cad-fan-curve:not(:defined)::after{display:none}}
+cad-fan-curve .fc-figure{margin:0;touch-action:pan-y}
+cad-fan-curve .fc-panel{box-sizing:border-box;height:var(--fc-panel);overflow:hidden;padding:14px 18px 12px;color-scheme:light;
+  border-top:1px solid var(--fc-mist);display:flex;flex-direction:column;gap:12px}
+cad-fan-curve[data-theme=dark] .fc-panel{color-scheme:dark}
+cad-fan-curve .fc-readout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+cad-fan-curve .fc-tile{margin:0;padding:8px 10px;border-radius:12px;background:var(--fc-mist);display:flex;flex-direction:column;min-width:0}
+cad-fan-curve .fc-tile b{font-size:20px;line-height:1.2;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+cad-fan-curve .fc-tile span{font-size:12px;color:var(--fc-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+cad-fan-curve .fc-tile .fc-k{font-weight:650;letter-spacing:.02em;color:var(--fc-ink)}
+cad-fan-curve .fc-tile[data-verdict=poor]{background:var(--fc-peach)}
+cad-fan-curve .fc-tile[data-verdict=poor] b{color:var(--fc-rust)}
+cad-fan-curve .fc-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 24px}
+cad-fan-curve .fc-col{display:flex;flex-direction:column;gap:6px;min-width:0}
+cad-fan-curve .fc-field{display:flex;flex-direction:column;gap:1px}
+cad-fan-curve .fc-field label{display:flex;justify-content:space-between;gap:8px;font-weight:600;font-size:13px}
+cad-fan-curve .fc-value{font-weight:500;font-variant-numeric:tabular-nums;color:var(--fc-muted);white-space:nowrap}
+cad-fan-curve input[type=range]{width:100%;margin:0;height:24px;accent-color:var(--fc-ink)}
+cad-fan-curve fieldset{margin:0;padding:0;border:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 18px;font-size:13px;min-width:0}
+cad-fan-curve legend{float:left;padding:0;margin:0 4px 0 0;font-weight:600}
+cad-fan-curve fieldset label{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+cad-fan-curve input[type=radio]{margin:0;accent-color:var(--fc-ink);width:16px;height:16px}
+cad-fan-curve .fc-note{margin:auto 0 0;font-size:12px;color:var(--fc-muted)}
+cad-fan-curve :is(input,button):focus-visible{outline:3px solid var(--fc-rust);outline-offset:2px}
+cad-fan-curve .fc-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;margin:0}
+@media(max-width:699.98px){
+  cad-fan-curve .fc-panel{padding:12px 12px 10px;gap:10px}
+  cad-fan-curve .fc-readout{gap:6px}cad-fan-curve .fc-tile{padding:6px 8px}
+  cad-fan-curve .fc-tile b{font-size:15px;white-space:normal}cad-fan-curve .fc-tile span{font-size:11px;white-space:normal}
+  cad-fan-curve .fc-controls{grid-template-columns:minmax(0,1fr);gap:8px}
+  cad-fan-curve input[type=range]{height:32px}
+}
+@media(pointer:coarse){cad-fan-curve input[type=radio]{width:20px;height:20px}}

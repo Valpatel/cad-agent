@@ -3,8 +3,10 @@
  * Fails on console errors, CSP violations, failed or third-party requests, sideways scrolling, a phone header without
  * the catalogue link, a hero animation that is not running (or still running under reduced motion), a catalogue
  * filter that hides results without saying so, and a diagram wider than the article column at 1100 px (the narrowest
- * width with the page tree), so no reader has to scroll a diagram sideways on a desktop, and a wall of text: a stretch
- * of a page with nothing to look at longer than one and a half screens (tests/site-walls.mjs, #179). */
+ * width with the page tree), so no reader has to scroll a diagram sideways on a desktop, a wall of text: a stretch
+ * of a page with nothing to look at longer than one and a half screens (tests/site-walls.mjs, #179), and diagrams that
+ * move the page while it loads or need script to show (#132: the build draws them). Also the page tree's fold on
+ * phones with nav.js loaded, late, blocked, failing or off, and outline jumps (foldProblems and jumpProblems, below). */
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
@@ -26,10 +28,16 @@ const browser = await engine.launch(engine === chromium ? { channel: process.env
 const ROUTES = ['/', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', '/research/landscape', '/agents/cad-resume',
   '/lessons/mechanical/design-rules', '/kit/file-viewer', '/missing-page'];
 // /kit/viewer is the kit's project viewer: it needs a project's exports/view/view.json, so it is not a site page.
+// The most a page with a diagram may move while it loads (#132; Google calls a page good under 0.1).
+const DIAGRAM_SHIFT = 0.05;
 const problems = [];
 try {
   problems.push(...await cantileverProblems());          // the snap-arm explorer on /docs/compliant (#137), below
+  problems.push(...await foldProblems());                // the page tree's fold on phones, with and without nav.js (#134)
+  problems.push(...await jumpProblems());                // outline jumps: released by the reader's wheel, not by a stall
   problems.push(...await fourbarProblems());             // the four-bar animator on /docs/linkages (#159), below
+  problems.push(...await fanCurveProblems());            // the fan-curve explorer on /docs/fans (#160), below
+  problems.push(...await drawnDiagramProblems());        // diagrams drawn by the build: no shift, no script (#132), below
   for (const width of [360, 1366]) for (const route of ROUTES) {
     const context = await browser.newContext({ viewport: { width, height: 800 } });
     if (engine === chromium) await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: base });
@@ -79,9 +87,9 @@ try {
       const box = await page.evaluate(() => { const r = document.querySelector('cad-model').getBoundingClientRect(); return { now: [r.width, r.height], first: window.__posterBox }; });
       if (!box.first || Math.abs(box.now[0] - box.first[0]) > 0.5 || Math.abs(box.now[1] - box.first[1]) > 0.5)
         seen.push(`the 3D model's box changed from ${box.first?.map(Math.round)} to ${box.now.map(Math.round)}`);
-      // Each shift with what moved, so a CI log says where any shift comes from.
-      const { shift, moved } = await page.evaluate(() => new Promise(done => {
-        if (!PerformanceObserver.supportedEntryTypes?.includes('layout-shift')) return done({ shift: 0, moved: [] });
+      // The shift at every width, each with what moved, so a CI log says what it was and where any shift comes from.
+      const { shift, moved, measured = true } = await page.evaluate(() => new Promise(done => {
+        if (!PerformanceObserver.supportedEntryTypes?.includes('layout-shift')) return done({ shift: 0, moved: [], measured: false });
         let sum = 0; const moved = [];
         const name = n => !n ? '?' : n.nodeType !== 1 ? `${n.parentElement?.localName || '?'} text` : n.localName + (n.id ? '#' + n.id : '') + (n.classList[0] ? '.' + n.classList[0] : '');
         const rect = r => [r.x, r.y, r.width, r.height].map(Math.round).join(',');
@@ -94,7 +102,7 @@ try {
         setTimeout(() => done({ shift: sum, moved }), 200);
       }));
       if (shift > 0.05) seen.push(`layout shifts on the home page: ${shift.toFixed(3)} (${moved.join(' | ')})`);
-      else if (shift > 0.01) console.log(`  note: ${width}px /: layout shift ${shift.toFixed(3)}, under the 0.05 limit: ${moved.join(' | ')}`);
+      else if (measured) console.log(`  ${width}px /: layout shift ${shift.toFixed(3)}${moved.length ? `, under the 0.05 limit: ${moved.join(' | ')}` : ''}`);
       // Scrolled away, it draws nothing, even when the tab is hidden and shown again (#182 review).
       if (ready === 'ready') {
         await page.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, document.body.scrollHeight); });
@@ -245,6 +253,18 @@ try {
         return r;
       });
       if (bare.hidden !== 1 || bare.empty) seen.push(`a bare tree does not filter: ${JSON.stringify(bare)}`);
+      // A flat tree (no groups): the script opens the current page's group, never the fold itself, so on a phone it
+      // stays closed (#209 review).
+      const flat = await page.evaluate(() => {
+        const el = document.createElement('cad-nav');
+        el.innerHTML = '<ul><li><a href="/a">Alpha</a></li><li><a href="/b" aria-current="page">Beta</a></li></ul>';
+        document.body.append(el);
+        const open = el.querySelector(':scope > details.cad-nav-fold')?.open;
+        el.remove();
+        return open;
+      });
+      if (flat === undefined) seen.push('a flat tree gets no fold');
+      else if (flat !== width >= 1100) seen.push(`a flat tree's fold is ${flat ? 'open' : 'closed'} at ${width}px`);
     }
     if (route === '/docs/compliant') {
       const href = await page.locator('.feedback a.button').getAttribute('href').catch(() => null);
@@ -356,7 +376,7 @@ try {
   for (const e of await readdir(dir, { withFileTypes: true, recursive: true })) {
     const rel = path.relative(dir, path.join(e.parentPath, e.name));
     if (!e.isFile() || !rel.endsWith('.html') || rel.startsWith('kit')) continue;
-    const sources = ((await readFile(path.join(dir, rel), 'utf8')).match(/class="language-mermaid"|<pre class="mermaid"/g) || []).length;
+    const sources = ((await readFile(path.join(dir, rel), 'utf8')).match(/class="language-mermaid"|<pre class="mermaid"|<figure class="cad-diagram"/g) || []).length;
     if (sources) diagramPages.push(['/' + rel.replace(/\.html$/, '').split(path.sep).join('/'), sources]);
   }
   // Pages whose diagrams are being redrawn in an open PR. One that fits again fails the test, so it leaves this list.
@@ -389,20 +409,20 @@ try {
     // #146 adds the snap-arm explorer.
     ['/docs/compliant', 146],
     // #179 slice 3: real outputs for the rest. /docs/toolkit splits into area pages once #121's layout lands.
-    ...['/CONTRIBUTING', '/README', '/THIRD_PARTY_NOTICES', '/docs/agent-workflow', '/docs/common-issues', '/docs/design-process-plan',
-      '/docs/dossier', '/docs/explore', '/docs/file-viewer', '/docs/gates', '/docs/pcb', '/docs/review-packet', '/docs/toolkit',
-      '/docs/vision', '/docs/volume-precision', '/docs/web-parts', '/lessons/electronics/pcb-evidence-and-review',
-      '/lessons/mechanical/design-rules', '/lessons/mechanical/enclosure-features', '/lessons/mechanical/fasteners-and-assembly-access',
-      '/lessons/process/agent-process', '/lessons/process/user-intent-and-requirements', '/lessons/process/verify-from-source',
-      '/lessons/review/review-site-ux', '/lessons/review/verification-and-evidence',
-      '/lessons/simulation/simulation-and-material', '/lessons/wiring/cables-connectors-and-routing', '/research/agent-toolkits-2026-10',
-      '/research/compliant-mechanisms', '/research/design-workflows', '/research/fea-and-process-tools', '/research/landscape',
-      '/research/process-profiles', '/research/simulation-tools', '/skills/cad-pr-review/SKILL',
-      '/skills/cad-work-tracking/SKILL', '/skills/design-process/SKILL', '/skills/mcmaster-parts/SKILL'].map(r => [r, 179]),
+    ...['/CONTRIBUTING', '/README', '/THIRD_PARTY_NOTICES', '/docs/agent-workflow', '/docs/design-process-plan',
+      '/docs/dossier', '/docs/explore', '/docs/gates', '/docs/pcb', '/docs/review-packet', '/docs/toolkit',
+      '/docs/vision', '/docs/volume-precision', '/lessons/electronics/pcb-evidence-and-review',
+      '/lessons/mechanical/design-rules', '/lessons/mechanical/enclosure-features', '/lessons/process/agent-process',
+      '/lessons/process/verify-from-source', '/lessons/review/verification-and-evidence',
+      '/lessons/simulation/simulation-and-material', '/lessons/wiring/cables-connectors-and-routing',
+      '/research/agent-toolkits-2026-10', '/research/compliant-mechanisms', '/research/design-workflows',
+      '/research/fea-and-process-tools', '/research/landscape', '/research/process-profiles',
+      '/research/simulation-tools', '/skills/cad-pr-review/SKILL', '/skills/cad-work-tracking/SKILL',
+      '/skills/design-process/SKILL', '/skills/mcmaster-parts/SKILL'].map(r => [r, 179]),
   ]);
   // The list only shrinks: its length is pinned here, so a page can join it only with a visible edit to this number,
   // and each page that leaves it brings the number down with it.
-  const WALLS_LEFT = 39;
+  const WALLS_LEFT = 33;
   if (WALLS.size !== WALLS_LEFT) problems.push(`walls: WALLS has ${WALLS.size} pages and WALLS_LEFT says ${WALLS_LEFT}: ${WALLS.size < WALLS_LEFT ? `lower WALLS_LEFT to ${WALLS.size}` : 'the backlog only shrinks; fix the page instead'}`);
   const sitePages = [];
   for (const e of await readdir(dir, { withFileTypes: true, recursive: true })) {
@@ -412,6 +432,14 @@ try {
   }
   for (const route of WALLS.keys()) if (!sitePages.includes(route)) problems.push(`walls: ${route} is not a page; remove it from WALLS`);
   const reader = await browser.newPage({ viewport: VIEWPORT });
+  // Layout shifts while each page loads, for the pages with a diagram (#132): Chrome reports them, WebKit does not.
+  await reader.addInitScript(() => {
+    window.__shift = 0;
+    if (PerformanceObserver.supportedEntryTypes?.includes('layout-shift'))
+      new PerformanceObserver(list => { for (const e of list.getEntries()) if (!e.hadRecentInput) window.__shift += e.value; })
+        .observe({ type: 'layout-shift', buffered: true });
+  });
+  const withDiagrams = new Set(diagramPages.map(([r]) => r));
   await reader.goto(base + '/docs/compliant', { waitUntil: 'load' });
   // The measure itself, on planted articles of known geometry, so a broken measure cannot pass every page.
   for (const [name, { got, want }] of Object.entries(await reader.evaluate(plantedScript())))
@@ -422,6 +450,10 @@ try {
       [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'), null, { timeout: 20000 })
       .catch(() => problems.push(`walls ${route}: diagrams did not finish rendering`));
     await reader.evaluate(() => document.fonts.ready);
+    if (withDiagrams.has(route)) {
+      const shift = await reader.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(() => done(window.__shift)))));
+      if (shift > DIAGRAM_SHIFT) problems.push(`1366px ${route}: the page moved by ${shift.toFixed(3)} while it loaded (limit ${DIAGRAM_SHIFT}; diagrams are drawn by the build)`);
+    }
     const wall = await reader.evaluate(longestStretch, VISUAL);
     const where = `${wall.worst}px with nothing to look at, ${wall.from}-${wall.to}px into the page, after "${wall.after}"`;
     if (WALLS.has(route)) { if (wall.worst < WALL_CLEARED) problems.push(`walls ${route}: ${where}, well under ${WALL_LIMIT}px: remove it from WALLS (#${WALLS.get(route)})`); }
@@ -523,6 +555,208 @@ try {
   await rm(dir, { recursive: true, force: true });
 }
 
+/** The fan-curve explorer (the kit's <cad-fan-curve>) on /docs/fans, at phone and desktop widths, under the site CSP:
+ * the fan vectors run again in this browser engine; the element replaces its still at exactly the reserved size (no
+ * layout shift), and on a desktop its live chart puts the operating point where the still has it; its panel never
+ * overflows, also after the controls change; every control has a label; the keyboard on the system slider moves the
+ * point into the stall region and the tiles say so; the voltage and arrangement radios, pressed and held the way a
+ * person presses them (#211), change the curve and the verdict; the hover line reads both curves; its tile text fits;
+ * its colours keep their contrast in light and dark; its status line speaks after an input but not on page load; no
+ * console or CSP errors. */
+async function fanCurveProblems() {
+  const out = [], route = '/docs/fans';
+  const frames = (page, count = 3) => page.evaluate(count => new Promise(done => {
+    let n = 0;
+    const next = () => (++n >= count ? done() : requestAnimationFrame(next));
+    requestAnimationFrame(next);
+  }), count);
+  // a press that lasts a few frames, as a person's does, on the label of a radio (#211: a quick click hides a redraw)
+  const hold = async (page, locator) => {
+    await locator.hover();
+    await page.mouse.down();
+    await frames(page, 3);
+    await page.mouse.up();
+  };
+  const contrast = (page, selector, attr = 'color') => page.evaluate(([sel, at]) => {
+    const rgb = c => (c.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+    const lum = c => { const [r, g, b] = rgb(c).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+    const el = document.querySelector(sel);
+    let bg = el, back = 'rgba(0, 0, 0, 0)';
+    while (bg && /rgba\(.*, 0\)|transparent/.test(back = getComputedStyle(bg).backgroundColor)) bg = bg.parentElement;
+    const fore = at === 'color' ? getComputedStyle(el).color : getComputedStyle(el).fill;
+    const [l1, l2] = [lum(fore), lum(back)].sort((x, y) => y - x);
+    return (l1 + 0.05) / (l2 + 0.05);
+  }, [selector, attr]);
+  const overflow = demo => demo.locator('.fc-panel').evaluate(p => {
+    const box = p.getBoundingClientRect();
+    return { over: p.scrollHeight - p.clientHeight, out: [...p.querySelectorAll('*')].filter(n => n.getClientRects().length &&
+      n.getBoundingClientRect().bottom > box.bottom + 0.5 && getComputedStyle(n).position !== 'absolute').length };
+  });
+  const vectors = JSON.parse(await readFile(path.join(root, 'tests/fixtures/formula-vectors.json'), 'utf8'));
+  const fans = vectors.cases.filter(c => /^fan|^systemCoefficient$/.test(c.js) && !c.raises);
+  const still = await readFile(path.join(root, 'docs/img/thermal/fan-curve-explorer.svg'), 'utf8');
+  const stillPoint = still.match(/data-part="point" cx="([\d.]+)" cy="([\d.]+)"/).slice(1).join();
+  for (const width of [360, 1366]) {
+    const height = {};
+    for (const script of [false, true]) {
+      const page = await browser.newPage({ viewport: { width, height: 900 } });
+      const seen = [], say = s => seen.push(s);
+      page.on('console', m => { if (m.type() === 'error' && script) say(`console: ${m.text()}`); });
+      page.on('pageerror', e => say(`page error: ${e.message}`));
+      await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
+      if (!script) await page.route('**/kit/fan-curve.js', r => r.abort());
+      await page.goto(base + route, { waitUntil: 'networkidle' });
+      const demo = page.locator('cad-fan-curve');
+      await demo.scrollIntoViewIfNeeded();
+      height[script] = (await demo.boundingBox())?.height;
+      if (!script) {
+        const img = await demo.locator(':scope > img').evaluate(i => i.complete && i.naturalWidth > 0).catch(() => false);
+        if (!img) say('no still image before the script loads');
+      } else if (!(await demo.locator('svg [data-part=point]').count())) say('the live chart did not render');
+      else {
+        if (width === 1366) {
+          // the port in this engine, on the fan golden vectors (the Node test runs them in V8 only): bit for bit
+          const wrong = await page.evaluate(async cases => {
+            const fx = await import('/kit/formulas.js');
+            return cases.filter(c => JSON.stringify(fx[c.js](...c.args)) !== JSON.stringify(c.expected)).map(c => c.js);
+          }, fans);
+          if (wrong.length) say(`the port differs from the Python in this engine on ${wrong.length} fan vectors: ${wrong.slice(0, 3).join('; ')}`);
+          const live = await demo.locator('[data-part=point]').evaluate(c => [c.getAttribute('cx'), c.getAttribute('cy')].join());
+          if (live !== stillPoint) say(`the live chart's operating point (${live}) is not the still's (${stillPoint})`);
+        }
+        const panel = await overflow(demo);
+        if (panel.over > 0 || panel.out) say(`the panel overflows (${panel.over}px, ${panel.out} elements)`);
+        const unlabelled = await demo.evaluate(d => [...d.querySelectorAll('input')].filter(i => !i.labels?.length).map(i => i.name));
+        if (unlabelled.length) say(`controls without a label: ${unlabelled.join(', ')}`);
+        const tile = k => demo.locator(`[data-out=${k}]`).textContent();
+        const status = () => demo.locator('.fc-status').textContent();
+        if (await status()) say('the status line spoke before anyone touched the demo');
+        if ((await tile('flow')) !== '150 m³/h' || (await tile('verdict')) !== 'Clear of stall') say(`the default reads ${await tile('flow')}, ${await tile('verdict')}`);
+        // the site is light, whatever the reader prefers; the element follows the page
+        await page.emulateMedia({ colorScheme: 'dark' });
+        if ((await demo.getAttribute('data-theme')) !== 'light') say('the demo turned dark on a light page');
+        for (const theme of ['light', 'dark']) {
+          await demo.evaluate((d, t) => d.setAttribute('theme', t), theme);
+          if ((await demo.getAttribute('data-theme')) !== theme) say(`theme="${theme}" is not applied`);
+          for (const [sel, at, min] of [['cad-fan-curve .fc-tile b', 'color', 4.5], ['cad-fan-curve .fc-note', 'color', 4.5],
+            ['cad-fan-curve .fc-tile span:not(.fc-k)', 'color', 4.5], ['cad-fan-curve [data-part=point-label]', 'fill', 4.5]]) {
+            const ratio = await contrast(page, sel, at);
+            if (!(ratio >= min)) say(`${theme}: ${sel} has a contrast of ${ratio.toFixed(2)}, under ${min}`);
+          }
+        }
+        await demo.evaluate(d => d.removeAttribute('theme'));
+        await page.emulateMedia({ colorScheme: 'light' });
+        // the tiles' words fit for every kind of result (one line each at desktop width, cut with an ellipsis if not)
+        for (const attrs of [['16', '2', '4', 'parallel'], ['8', '60', '4', 'series'], ['12', '25', '2', 'parallel'], ['12', '60', '1', 'parallel'], ['12', '12', '1', 'parallel']]) {
+          const cut = await demo.evaluate((d, a) => {
+            ['fan', 'system', 'count', 'arrangement'].forEach((k, i) => d.setAttribute(k, a[i]));
+            return [...d.querySelectorAll('.fc-tile b, .fc-tile span')].filter(n => n.scrollWidth > n.clientWidth + 1).map(n => n.textContent);
+          }, attrs);
+          if (cut.length) say(`${attrs}: tile text cut off: ${cut.join('; ')}`);
+          const after = await overflow(demo);
+          if (after.over > 0 || after.out) say(`${attrs}: the panel overflows (${after.over}px, ${after.out} elements)`);
+        }                                                                               // ends on the page's state
+        // the keyboard: the system slider from 12 to 25 Pa at 100 m³/h puts one fan in its stall region
+        const slider = page.getByRole('slider', { name: /^System: pressure drop/ });
+        await slider.focus();
+        for (let i = 0; i < 13; i++) await slider.press('ArrowRight');
+        if (!/pascals/.test(await slider.getAttribute('aria-valuetext') || '')) say('the system slider has no spoken value');
+        if ((await tile('flow')) !== '112 m³/h' || (await tile('verdict')) !== 'In stall') say(`25 Pa reads ${await tile('flow')}, ${await tile('verdict')}, not 112 m³/h in stall`);
+        if ((await demo.locator('[data-out=verdict-tile]').getAttribute('data-verdict')) !== 'poor') say('the stall verdict is not marked as a warning');
+        // two fans: in parallel each still stalls; in series the pair runs clear (radios pressed and held)
+        const fansSlider = page.getByRole('slider', { name: /^Fans/ });
+        await fansSlider.focus();
+        await fansSlider.press('ArrowRight');
+        await hold(page, demo.locator('label', { hasText: 'Series' }));
+        if (!(await page.getByRole('radio', { name: 'Series' }).isChecked()) || (await tile('flow')) !== '148 m³/h' || (await tile('verdict')) !== 'Clear of stall')
+          say(`two in series at 25 Pa read ${await tile('flow')}, ${await tile('verdict')}, not 148 m³/h clear of stall`);
+        await hold(page, demo.locator('label', { hasText: 'Parallel' }));
+        if ((await tile('flow')) !== '140 m³/h' || (await tile('verdict')) !== 'In stall') say(`two in parallel at 25 Pa read ${await tile('flow')}, ${await tile('verdict')}`);
+        if (!(await demo.locator('[data-part=single]').count())) say('with two fans, one fan\'s curve is not drawn');
+        const curve = await demo.locator('[data-part=fan]').getAttribute('points');
+        await hold(page, demo.locator('label', { hasText: '16 V' }));
+        if ((await demo.locator('[data-part=fan]').getAttribute('points')) === curve || !(await page.getByRole('radio', { name: '16 V' }).isChecked())) say('the 16 V curve did not replace the 12 V one');
+        const moved = await overflow(demo);
+        if (moved.over > 0 || moved.out) say(`after the controls changed, the panel overflows (${moved.over}px, ${moved.out} elements)`);
+        // the hover line reads the fan and the system at the flow under the pointer
+        const chart = await demo.locator('.fc-figure svg').boundingBox();
+        await page.mouse.move(chart.x + chart.width * 0.5, chart.y + chart.height * 0.5);
+        await frames(page, 2);
+        const hover = await demo.locator('[data-part=hover]').evaluate(g => ({ shown: g.getAttribute('visibility'), text: g.querySelector('text').textContent }));
+        if (hover.shown !== 'visible' || !/^\d+ m³\/h: fan (–|[\d.]+ Pa) · system [\d.]+ Pa$/.test(hover.text)) say(`the hover line reads "${hover.text}" (${hover.shown})`);
+        await page.waitForFunction(() => document.querySelector('cad-fan-curve .fc-status')?.textContent,
+          null, { timeout: 3000 }).catch(() => say('the status line does not announce the result after an input'));
+        const after = (await demo.boundingBox())?.height;
+        if (!(Math.abs(after - height[script]) < 0.5)) say(`the explorer changed height with its controls (${height[script]}px, then ${after}px)`);
+      }
+      for (const s of seen) out.push(`${width}px ${route} fan curve${script ? '' : ' (before its script)'}: ${s}`);
+      await page.close();
+    }
+    if (!(Math.abs(height.true - height.false) < 0.5)) out.push(`${width}px fan curve: ${height.false}px tall before its script, ${height.true}px after`);
+  }
+  // Over 700 ms (the announcement delay) with no input, the polite live region stays empty on page load.
+  const quiet = await browser.newPage();
+  await quiet.goto(base + route, { waitUntil: 'networkidle' });
+  await quiet.waitForTimeout(800);
+  if (await quiet.locator('cad-fan-curve .fc-status').textContent()) out.push('the fan-curve status line spoke on page load');
+  await quiet.close();
+  return out;
+}
+
+/** Diagrams drawn by the build (#132, tools/site-diagrams.mjs). Drawn in the reader's browser, a diagram near the top
+ * moved the page twice as it loaded (0.58 on /lessons/process/agent-process at 360 px, 0.10 on /docs/style-guide at
+ * 1366 px); Google calls a page good under 0.1. On the pages below, at phone and desktop widths: the layout shift while
+ * the page loads stays under DIAGRAM_SHIFT (Chrome; WebKit does not report shifts), the diagrams show with script off,
+ * each the same size as with script on (so the script changes no diagram, anywhere on the page, in either engine), the
+ * sideways-scroll hint shows exactly when its diagram overflows, without script too, and no page downloads Mermaid
+ * (DIAGRAM_SHIFT is set at the top, with the routes). */
+async function drawnDiagramProblems() {
+  const out = [];
+  const PAGES = ['/docs/toolkit', '/docs/style-guide', '/docs/vision', '/lessons/process/agent-process'];
+  const boxes = page => page.$$eval('.cad-diagram', figs => figs.map(f => {
+    const r = f.getBoundingClientRect(), svg = f.querySelector('.cad-diagram-view svg')?.getBoundingClientRect();
+    const view = f.querySelector('.cad-diagram-view'), hint = f.querySelector('.cad-diagram-hint');
+    return { state: f.dataset.state, box: [r.width, r.height].map(n => Math.round(n * 2) / 2), svg: svg && [svg.width, svg.height],
+      overflows: view.scrollWidth > view.clientWidth + 1, hint: hint.getBoundingClientRect().height > 0 && getComputedStyle(hint).display !== 'none',
+      clipped: hint.scrollHeight > hint.clientHeight + 1 };
+  }));
+  for (const width of [320, 360, 1366]) for (const route of PAGES) {
+    const where = `${width}px ${route}`;
+    const still = await browser.newContext({ viewport: { width, height: 800 }, javaScriptEnabled: false });
+    const off = await still.newPage();
+    await off.goto(base + route, { waitUntil: 'load' });
+    await off.evaluate(() => document.fonts.ready);
+    const before = await boxes(off);
+    await still.close();
+    const context = await browser.newContext({ viewport: { width, height: 800 } });
+    const page = await context.newPage();
+    const runtime = [];
+    page.on('request', r => { if (/mermaid\.min\.js/.test(r.url())) runtime.push(r.url()); });
+    await page.addInitScript(() => {
+      window.__shift = 0;
+      if (PerformanceObserver.supportedEntryTypes?.includes('layout-shift'))
+        new PerformanceObserver(list => { for (const e of list.getEntries()) if (!e.hadRecentInput) window.__shift += e.value; })
+          .observe({ type: 'layout-shift', buffered: true });
+    });
+    await page.goto(base + route, { waitUntil: 'networkidle' });
+    await page.evaluate(() => document.fonts.ready.then(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))));
+    const after = await boxes(page), shift = await page.evaluate(() => window.__shift);
+    await context.close();
+    if (!before.length) { out.push(`${where}: no diagram on the page`); continue; }
+    if (shift > DIAGRAM_SHIFT) out.push(`${where}: the page moved by ${shift.toFixed(3)} while it loaded (limit ${DIAGRAM_SHIFT})`);
+    if (runtime.length) out.push(`${where}: downloaded Mermaid (${runtime.length}x), though the build drew every diagram`);
+    before.forEach((b, i) => {
+      if (b.state !== 'ready' || !b.svg || b.svg[0] < 100 || b.svg[1] < 30) out.push(`${where}: diagram ${i + 1} does not show without script (${JSON.stringify(b)})`);
+      const a = after[i];
+      if (!a || a.box.join() !== b.box.join()) out.push(`${where}: diagram ${i + 1} is ${b.box.join(' x ')} px without script and ${a?.box.join(' x ')} px with it`);
+      for (const [label, m] of [['without script', b], ['with script', a]])
+        if (m && m.hint !== m.overflows) out.push(`${where}: diagram ${i + 1} ${m.overflows ? 'overflows' : 'fits'} but its scroll hint is ${m.hint ? 'shown' : 'hidden'} ${label}`);
+        else if (m?.hint && m.clipped) out.push(`${where}: diagram ${i + 1}'s scroll hint is cut off ${label}`);
+    });
+  }
+  return out;
+}
+
 /** The snap-arm explorer (the kit's <cad-cantilever>) on /docs/compliant, at phone and desktop widths, under the site
  * CSP: it replaces its still at exactly the reserved size (no layout shift) and its first live frame is the still,
  * however late the script arrives, its panel never overflows, every control has a label, the keyboard moves a slider
@@ -544,11 +778,11 @@ async function cantileverProblems() {
       first.still !== first.live ? 'the first live frame is not the still: the beam jumps when the script takes over' : null;
   };
   // A run of animation frames, not a wait: a throttled runner can sit 300 ms without one.
-  const frames = page => page.evaluate(() => new Promise(done => {
+  const frames = (page, count = 10) => page.evaluate(count => new Promise(done => {
     let n = 0;
-    const next = () => (++n >= 10 ? done() : requestAnimationFrame(next));
+    const next = () => (++n >= count ? done() : requestAnimationFrame(next));
     requestAnimationFrame(next);
-  }));
+  }), count);
   for (const width of [360, 1366]) {
     const height = {};
     for (const script of [false, true]) {
@@ -593,21 +827,28 @@ async function cantileverProblems() {
         if ((await demo.locator('[data-out=verdict]').textContent()) !== 'PASS') say('the default arm does not pass flat on the bed');
         await page.getByLabel('Upright (across the layers)').check();
         if ((await demo.locator('[data-out=verdict]').textContent()) !== 'FAIL') say('printing the arm upright does not fail it');
-        await demo.locator('.cc-play').click();
-        // Wait for the pause to take effect before reading the frame, then let frames run (the click can land
-        // between two of them on a slow runner).
+        // Pause the way a person does, with a press that lasts a few frames. WebKit drops the click of a press whose
+        // node the page replaces before the release. The demo used to rewrite the button's label on every frame, so in
+        // WebKit a held press never paused it, and a quick test click failed only when a frame fell inside it (#211).
+        await demo.locator('.cc-play').hover();
+        await page.mouse.down();
+        await frames(page, 3);
+        await page.mouse.up();
+        // The click handler pauses and draws the paused frame itself, so the label reads Play once the click lands.
         const stopped = await page.waitForFunction(() => document.querySelector('cad-cantilever .cc-play')?.textContent === 'Play',
           null, { timeout: 3000 }).then(() => true, () => false);
         const paused = await beam(page);
         await frames(page);
-        if (!stopped || (await beam(page)) !== paused) say('the pause button does not stop it');
+        if (!stopped) say('the pause button does not stop it: a press held for 3 frames was not a click');
+        else if ((await beam(page)) !== paused) say('the pause button does not stop it: the beam moves while paused');
         // Play carries on from the frame on screen (full deflection), not from wherever a page clock has got to.
-        const resumed = await page.evaluate(() => {
+        // Not paused, the click below would pause it instead: that failure is already reported once.
+        const resumed = stopped && await page.evaluate(() => {
           const d = document.querySelector('cad-cantilever');
           d.querySelector('.cc-play').click();                    // renders in the click handler, before any frame
           return d.querySelector('[data-part=beam]').getAttribute('points');
         });
-        if (resumed !== paused) say('Play does not carry on from the paused frame');
+        if (stopped && resumed !== paused) say('Play does not carry on from the paused frame');
         await page.waitForFunction(() => document.querySelector('cad-cantilever .cc-status')?.textContent,
           null, { timeout: 3000 }).catch(() => say('the status line does not announce the result after an input'));
       }
@@ -821,5 +1062,262 @@ async function fourbarProblems() {
     out.push('reduced motion: the four-bar is moving');
   if (await reduced.locator('cad-fourbar .fb-status').textContent()) out.push('the four-bar status line spoke on page load');
   await reduced.close();
+  return out;
+}
+
+/** The page tree's fold (#134) on /docs/toolkit, at phone and desktop widths, with nav.js as it is, slow (held back until
+ * the first paint is measured), blocked, failing (it throws) and with no script at all. Phones: a closed native
+ * <details> that a click, Enter or Space opens and closes, before or without the script. Wide screens: no toggle, and
+ * the tree on screen (hit-tested: Playwright's own WebKit visibility check calls anything inside a closed <details>
+ * hidden), staying in view as the page scrolls, so the <details> does not box the sticky panel in. Nothing moves when
+ * the script arrives, and the script never closes a fold the reader opened. */
+async function foldProblems() {
+  const out = [];
+  // Every box the fold could move, in page coordinates (inside the panel, relative to its content: on a wide screen the
+  // script may scroll the panel to show this page, which moves nothing).
+  const boxes = () => {
+    const panel = document.querySelector('cad-nav .cad-nav-panel'), p = panel.getBoundingClientRect();
+    // The nav and the article grow with the article's diagrams as they render: their place and width, not height.
+    const box = (sel, inPanel, sized = true) => {
+      const el = document.querySelector(sel);
+      if (!el || !el.getClientRects().length) return null;
+      const r = el.getBoundingClientRect(), y = inPanel ? r.top - p.top + panel.scrollTop : r.top + scrollY;
+      return [r.left, y, r.width, ...sized ? [r.height] : []].map(v => Math.round(v * 2) / 2).join(',');
+    };
+    return { nav: box('cad-nav', false, false), toggle: box('cad-nav .cad-nav-toggle'), panel: box('cad-nav .cad-nav-panel'),
+      filter: box('cad-nav .cad-nav-filter'), group: box('cad-nav .cad-nav-group > summary', true),
+      current: box('cad-nav a[aria-current=page]', true), title: box('.prose h1'), article: box('.doc-main', false, false) };
+  };
+  // On screen for a reader: it has a box and is what the point at its middle hits (after scrolling it into the panel's
+  // view, away from the filter at the top).
+  const shows = sel => {
+    const el = document.querySelector(sel);
+    if (!el?.getClientRects().length) return false;
+    el.scrollIntoView({ block: 'center', behavior: 'instant' });
+    const r = el.getBoundingClientRect(), hit = document.elementFromPoint(r.left + Math.min(r.width / 2, 24), r.top + r.height / 2);
+    return !!hit && (hit === el || el.contains(hit));
+  };
+  // Stylesheets and fonts in, then two frames. With JavaScript off, Playwright can still run code in the page, but not
+  // wait on a promise there. WebKit holds document.fonts.ready while any request is pending (nav.js, held back), so
+  // the fonts' status is what counts.
+  const painted = (page, js = true) => !js ? page.waitForTimeout(150) :
+    page.waitForFunction(() => [...document.querySelectorAll('link[rel=stylesheet]')].every(l => l.sheet) && document.fonts.status === 'loaded',
+      null, { timeout: 10000 }).then(() => page.evaluate(() => new Promise(ok => requestAnimationFrame(() => requestAnimationFrame(ok)))));
+  for (const width of [360, 1366]) for (const mode of ['script', 'slow', 'blocked', 'failing', 'none']) {
+    const context = await browser.newContext({ viewport: { width, height: 800 }, javaScriptEnabled: mode !== 'none' });
+    const page = await context.newPage();
+    const seen = [], say = s => seen.push(s);
+    let arrive;
+    const held = new Promise(ok => { arrive = ok; });
+    if (mode === 'slow') await page.route('**/kit/nav.js', async r => { await held; await r.continue(); });
+    if (mode === 'blocked') await page.route('**/kit/nav.js', r => r.abort());
+    if (mode === 'failing') await page.route('**/kit/nav.js', r => r.fulfill({ contentType: 'text/javascript', body: 'throw new Error("nav.js fails on purpose")' }));
+    await page.goto(base + '/docs/toolkit', { waitUntil: mode === 'slow' ? 'domcontentloaded' : 'networkidle' });
+    const js = mode !== 'none';
+    // The rest of the page settles first (its diagrams render while nav.js is held back; networkidle never comes then).
+    if (mode === 'slow') await page.waitForFunction(() => !document.querySelector('pre.mermaid, code.language-mermaid') &&
+      [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'), null, { timeout: 20000 })
+      .catch(() => say('diagrams did not finish rendering'));
+    await painted(page, js);
+    const nav = page.locator('cad-nav'), toggle = nav.locator('.cad-nav-toggle'), fold = nav.locator('details.cad-nav-fold');
+    const open = () => fold.evaluate(d => d.open);
+    if (!(await fold.count())) say('no <details class="cad-nav-fold"> around the tree');
+    else if (width < 1100) {
+      if (!(await toggle.isVisible())) say('no "Pages and contents" toggle');
+      else if (await open() || await page.evaluate(shows, 'cad-nav a[aria-current=page]')) say('the tree is open before the toggle is pressed');
+      else {
+        await toggle.click();
+        if (!(await open()) || !(await page.evaluate(shows, 'cad-nav a[aria-current=page]'))) say('a tap on the toggle does not open the tree');
+        await toggle.click();
+        if (await open()) say('a second tap does not close it');
+        await toggle.focus();
+        await page.keyboard.press('Enter');
+        if (!(await open()) || !(await page.evaluate(shows, 'cad-nav a[aria-current=page]'))) say('Enter on the toggle does not open the tree');
+        await page.keyboard.press('Space');
+        if (await open()) say('Space on the toggle does not close it');
+        await page.keyboard.press('Space');
+        if (!(await open())) say('Space on the toggle does not open it');
+      }
+    } else {
+      if ((await toggle.isVisible()) || (await toggle.evaluate(t => t.getClientRects().length))) say('a toggle shows on a wide screen');
+      if (!(await page.evaluate(shows, 'cad-nav .cad-nav-group > summary'))) say('the tree is not on screen');
+      if (!(await page.evaluate(shows, 'cad-nav a[aria-current=page]'))) say('this page is not on screen in the tree');
+      const filter = await page.evaluate(shows, 'cad-nav .cad-nav-filter');
+      if (filter !== (mode !== 'none')) say(filter ? 'a filter shows that cannot work without script' : 'the filter is not on screen');
+      await page.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, document.body.scrollHeight / 2); });
+      await painted(page, js);
+      const y = await nav.locator('.cad-nav-panel').evaluate(p => p.getBoundingClientRect().top);
+      if (!(y >= 0 && y <= 200)) say(`the tree scrolls away with the page (its top at ${Math.round(y)}px), so the fold boxes the sticky panel in`);
+      await page.evaluate(() => { scrollTo(0, 0); document.documentElement.style.scrollBehavior = ''; });
+    }
+    if (mode === 'slow' && await fold.count()) {
+      // The reader opens the tree on a phone before the script has arrived; when it does, the tree stays open and
+      // nothing on the page moves (the boxes from the first paint, with the fold as the reader left it).
+      if (width < 1100) {
+        if (!(await open())) await toggle.click();
+        if (!(await open())) say('the toggle does not open the tree before the script arrives');
+      }
+      await page.evaluate(() => scrollTo(0, 0));
+      const before = await page.evaluate(boxes);
+      arrive();
+      await page.waitForFunction(() => customElements.get('cad-nav'), null, { timeout: 10000 });
+      await painted(page);
+      await page.evaluate(() => scrollTo(0, 0));
+      const after = await page.evaluate(boxes);
+      for (const k of Object.keys(before)) if (before[k] !== after[k]) say(`the ${k} moved when the script arrived: ${before[k]} -> ${after[k]}`);
+      if (width < 1100 && !(await open())) say('the script closed the tree the reader had opened');
+      if (width >= 1100 && !(await open())) say('the script did not open the fold on a wide screen (browsers without ::details-content need it)');
+      // Chrome's own measure over the whole load, the reader's taps excluded (hadRecentInput).
+      const shift = await page.evaluate(() => new Promise(done => {
+        if (!PerformanceObserver.supportedEntryTypes?.includes('layout-shift')) return done(0);
+        let sum = 0;
+        new PerformanceObserver(list => { for (const e of list.getEntries()) if (!e.hadRecentInput) sum += e.value; }).observe({ type: 'layout-shift', buffered: true });
+        setTimeout(() => done(sum), 200);
+      }));
+      if (shift > 0.05) say(`layout shift ${shift.toFixed(3)} with the script late (the limit is 0.05)`);
+    }
+    for (const s of seen) out.push(`${width}px /docs/toolkit fold, nav.js ${{ script: 'loaded', slow: 'late', blocked: 'blocked', failing: 'failing', none: 'off (no script)' }[mode]}: ${s}`);
+    await context.close();
+  }
+  // The window crossing the breakpoint: the fold the script opened for a wide window closes again on a phone, and one
+  // the reader opened on a phone stays open through a wide window and back.
+  const turn = await browser.newPage({ viewport: { width: 1366, height: 800 } });
+  await turn.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
+  const isOpen = () => turn.locator('details.cad-nav-fold').evaluate(d => d.open, null, { timeout: 2000 }).catch(() => null);
+  await turn.setViewportSize({ width: 360, height: 800 });
+  await turn.waitForFunction(() => !document.querySelector('details.cad-nav-fold')?.open, null, { timeout: 2000 }).catch(() => {});
+  if ((await isOpen()) !== false) out.push('1366 -> 360px: the fold the script opened for the wide window stays open on the phone');
+  await turn.locator('.cad-nav-toggle').click();
+  await turn.setViewportSize({ width: 1366, height: 800 });
+  await turn.waitForTimeout(100);                               // a frame at each width, so the script sees both
+  await turn.setViewportSize({ width: 360, height: 800 });
+  await turn.waitForTimeout(100);
+  if ((await isOpen()) !== true) out.push('360 -> 1366 -> 360px: the fold the reader opened was closed');
+  // Printed from a wide window, where the script opened the fold: the tree does not print, and on paper wide enough for
+  // the site's grid (landscape A3, 1500 px) the article keeps the width, not the tree's empty column (#209 review).
+  for (const w of [1366, 1500]) {
+    await turn.setViewportSize({ width: w, height: 800 });
+    await turn.emulateMedia({ media: 'print' });
+    const paper = await turn.evaluate(() => ({ nav: getComputedStyle(document.querySelector('cad-nav')).display,
+      article: document.querySelector('.doc-main').getBoundingClientRect().width, rail: document.querySelector('.doc-rail')?.getClientRects().length || 0 }));
+    if (paper.nav !== 'none') out.push(`print at ${w}px: the page tree prints`);
+    if (paper.article < 600) out.push(`print at ${w}px: the article prints ${Math.round(paper.article)}px wide`);
+    if (paper.rail) out.push(`print at ${w}px: the "On this page" column prints`);
+    await turn.emulateMedia({ media: 'screen' });
+  }
+  await turn.close();
+  // No link text around the filter pill while the tree is scrolled (#134): with a link under the filter's top edge, the
+  // points just inside the pill's box at its rounded corners, and in the strips above and below it, hit the panel's cover.
+  const desk = await browser.newPage({ viewport: { width: 1366, height: 800 } });
+  await desk.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
+  const corners = await desk.locator('cad-nav .cad-nav-panel').evaluate(panel => {
+    for (const g of panel.querySelectorAll('details')) g.open = true;
+    const f = panel.querySelector('.cad-nav-filter');
+    const under = () => { const r = f.getBoundingClientRect(); return [...panel.querySelectorAll('a')].find(a => { const q = a.getBoundingClientRect(); return q.top < r.top + 2 && q.bottom > r.top + 2; }); };
+    for (panel.scrollTop = 40; !under() && panel.scrollTop < panel.scrollHeight - panel.clientHeight; panel.scrollTop += 7);
+    if (!under()) return 'no link ever scrolls under the filter, so this check tests nothing';
+    const r = f.getBoundingClientRect(), top = panel.getBoundingClientRect().top;
+    const hits = [[r.left + 1.5, r.top + 1.5], [r.right - 1.5, r.top + 1.5], [r.left + 1.5, r.bottom - 1.5], [r.right - 1.5, r.bottom - 1.5],
+      [r.left + r.width / 2, top + 1.5], [r.left + r.width / 2, r.bottom + 4]]          // and the strips above and below it
+      .map(([x, y]) => document.elementFromPoint(x, y)).filter(h => h?.closest('a'));
+    return hits.length ? `link text shows in ${hits.length} place(s) around the filter: ${hits.map(h => h.closest('a').textContent).join(', ')}` : '';
+  });
+  if (corners) out.push(`1366px /docs/toolkit, the tree scrolled: ${corners}`);
+  await desk.close();
+  return out;
+}
+
+/** Jumps through the outline on a big screen (2560 x 1440, /docs/explore, the site's smooth scrolling), with the input
+ * a desktop browser would give simulated, since headless browsers will not let a real wheel interrupt a smooth scroll
+ * (#123 review 4):
+ * - a wheel over the rail or the tree partway through the jump, and the page scroll it makes, releases it: the mark
+ *   follows the reading line, not the heading the reader turned away from;
+ * - a wheel that only scrolls the tree (it can still scroll that way) leaves the jump marked;
+ * - a jump whose scroll stalls for 300 ms partway (a frame slow to paint, #158) still marks its heading once it lands. */
+async function jumpProblems() {
+  const out = [];
+  const page = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
+  await page.goto(base + '/docs/explore', { waitUntil: 'networkidle' });
+  const settle = () => page.evaluate(() => new Promise(done => {
+    let last = -1, still = 0;
+    const tick = () => { if (scrollY === last) { if (++still > 15) return done(); } else { still = 0; last = scrollY; } requestAnimationFrame(tick); };
+    tick(); setTimeout(done, 10000);
+  }));
+  const partway = () => page.evaluate(() => new Promise(ok => { const go = () => scrollY > 2000 ? ok() : requestAnimationFrame(go); go(); setTimeout(ok, 3000); }));
+  const marked = async () => (await page.locator('.doc-rail a[aria-current=location]').allTextContents()).join();
+  // What the nav marks with no jump: the last outline heading above the reading line, or at the very bottom the last on screen.
+  const reading = () => page.evaluate(() => {
+    const line = Math.min(innerHeight / 3, 220), root = document.documentElement;
+    const heads = [...document.querySelectorAll('.doc-rail a')].map(a => document.getElementById(decodeURIComponent(a.hash.slice(1))));
+    let h = heads.filter(x => x.getBoundingClientRect().top <= line).at(-1);
+    if (root.scrollTop + innerHeight >= root.scrollHeight - 2) h = heads.filter(x => { const t = x.getBoundingClientRect().top; return t >= -2 && t < innerHeight - 8; }).at(-1) || h;
+    return h?.textContent.trim() ?? '';
+  });
+  // Where a jump to the heading ends: below the page's 90 px scroll padding, as far as the page scrolls.
+  const end = id => page.evaluate(i => { const r = document.documentElement; return Math.min(r.scrollHeight - r.clientHeight, scrollY + document.getElementById(i).getBoundingClientRect().top - 90); }, id);
+  const rail = page.locator('.doc-rail a'), n = await rail.count();
+  // A heading far enough down that "partway" (2000 px) is well before the jump ends.
+  const far = await page.evaluate(() => [...document.querySelectorAll('.doc-rail a')].findIndex(a =>
+    document.getElementById(decodeURIComponent(a.hash.slice(1))).getBoundingClientRect().top + scrollY > 5000));
+  if (far < 0) { await page.close(); return ['2560px /docs/explore: no heading 5000 px down, so the jump checks test nothing']; }
+  const target = rail.nth(far), id = decodeURIComponent((await target.getAttribute('href')).slice(1)), name = await target.textContent();
+  for (const [where, sel] of [['rail', '.doc-rail a[href="#' + encodeURIComponent(id) + '"]'], ['tree', 'cad-nav a[aria-current=page]']]) {
+    await page.evaluate(() => { scrollTo({ top: 0, behavior: 'instant' }); document.querySelector('cad-nav .cad-nav-panel').scrollTop = 0; });
+    await settle();
+    await target.click();
+    await partway();
+    await page.evaluate(s => {
+      document.querySelector(s).dispatchEvent(new WheelEvent('wheel', { deltaY: -800, bubbles: true, cancelable: true }));
+      scrollBy({ top: -800, behavior: 'instant' });            // the scroll the wheel makes, which stops the smooth one
+    }, sel);
+    await settle();
+    if (Math.abs((await page.evaluate(() => scrollY)) - (await end(id))) < 200) out.push(`2560px /docs/explore: the wheel over the ${where} did not stop the jump to "${name}", so this check tests nothing`);
+    else if ((await marked()) !== (await reading())) out.push(`2560px /docs/explore: a wheel over the ${where} during the jump to "${name}" leaves "${await marked()}" marked, not "${await reading()}"`);
+  }
+  // A wheel the tree takes: every group open so the tree scrolls, and scrolled halfway so it can scroll up.
+  await page.evaluate(() => {
+    scrollTo({ top: 0, behavior: 'instant' });
+    const p = document.querySelector('cad-nav .cad-nav-panel');
+    for (const g of p.querySelectorAll('details')) g.open = true;
+    p.scrollTop = (p.scrollHeight - p.clientHeight) / 2;
+  });
+  await settle();
+  if (!(await page.evaluate(() => { const p = document.querySelector('cad-nav .cad-nav-panel'); return p.scrollTop > 100; })))
+    out.push('2560px /docs/explore: the tree cannot scroll with every group open, so the wheel-over-the-tree check tests nothing');
+  await target.click();
+  await partway();
+  await page.evaluate(() => {
+    const p = document.querySelector('cad-nav .cad-nav-panel'), b = p.getBoundingClientRect();
+    const a = [...p.querySelectorAll('a')].find(x => { const r = x.getBoundingClientRect(); return r.top > b.top + 80 && r.bottom < b.bottom; });
+    a.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, bubbles: true, cancelable: true }));
+    p.scrollTop -= 100;                                         // it scrolls the tree; the page's jump goes on
+  });
+  await settle();
+  if ((await marked()) !== name) out.push(`2560px /docs/explore: a wheel that only scrolls the tree releases the jump to "${name}" ("${await marked()}" marked)`);
+  // A stalled jump, to a heading that cannot reach the reading line (released, the mark would fall to the last one on
+  // screen): partway, the scroll stops for 300 ms while timers run, then goes on a frame at a time to where it ends.
+  const unreachable = [];
+  for (let i = 0; i < n - 1; i++) {
+    const h = decodeURIComponent((await rail.nth(i).getAttribute('href')).slice(1));
+    if (await page.evaluate(x => { const r = document.documentElement; return scrollY + document.getElementById(x).getBoundingClientRect().top - Math.min(innerHeight / 3, 220) > r.scrollHeight - r.clientHeight; }, h)) unreachable.push(i);
+  }
+  if (!unreachable.length) out.push('2560px /docs/explore: every heading but the last reaches the reading line; pick a page where some cannot');
+  for (const i of unreachable) {
+    const link = rail.nth(i), h = decodeURIComponent((await link.getAttribute('href')).slice(1)), want = await link.textContent();
+    await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+    await settle();
+    await link.click();
+    await partway();
+    await page.evaluate(async x => {
+      scrollTo({ top: scrollY, behavior: 'instant' });          // the smooth scroll stops here
+      const from = scrollY;
+      await new Promise(r => setTimeout(r, 300));               // the stall
+      const r = document.documentElement, to = Math.min(r.scrollHeight - r.clientHeight, scrollY + document.getElementById(x).getBoundingClientRect().top - 90);
+      for (let k = 1; k <= 8; k++) { scrollTo({ top: from + (to - from) * k / 8, behavior: 'instant' }); await new Promise(f => requestAnimationFrame(f)); }
+    }, h);
+    await settle();
+    if ((await marked()) !== want) out.push(`2560px /docs/explore: the jump to "${want}", stalled 300 ms partway, marks "${await marked()}"`);
+  }
+  await page.close();
   return out;
 }

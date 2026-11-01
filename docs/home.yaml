@@ -43,8 +43,8 @@ reel:
     on: fixture-2d
     tool: cad-agent gates
     title: When a moving arm first hits the frame
-    caption: Swept from 0 to 60 degrees in 12 poses, then bisected. Contact starts between 44.89 and 44.91 degrees.
-    alt: An arm swept from 0 to 60 degrees; it first shares volume with the frame beam between 44.89 and 44.91 degrees
+    caption: A seeded fault, the test bench's arm range raised to 60 degrees. Swept in 12 poses, then bisected, contact starts between 44.89 and 44.91 degrees.
+    alt: A seeded fault, an arm swept from 0 to 60 degrees; it first shares volume with the frame beam between 44.89 and 44.91 degrees
     href: docs/gates.md
   - img: docs/img/gyropup/leg-render.webp
     on: gyropup

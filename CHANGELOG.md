@@ -10,6 +10,250 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.8.0 (2026-11-01)
+
+**New**
+- `cadagent.simulation.fea.Study(refine=[(point_mm, radius_mm, size_mm), ...])`: a finer mesh round a spot (a gmsh
+  Ball field each, under a Min field). The rest of the mesh stays as it was, so one fillet or hole converges without
+  refining the whole part (#144).
+- `Study.converge(factor=0.75)`: the same loads on a finer mesh; it gives the design peak's change and whether it
+  moved. Past 5 %, or when the finer mesh does not resolve the peak either, it is not converged (a `MeshWarning`)
+  (#144).
+- `result['mesh']` records the mesher (`mesher`: the gmsh and OpenCASCADE versions, the build's OS and date, a hash of
+  the gmsh library, the platform) and the design peak's resolution (`peak`: where it sits, the thinnest wall round it,
+  the element size there and `elements_across`). Under 3 elements across, it is flagged (`wall_resolved` false, a
+  `MeshWarning`): a peak in a wall one or two elements thick is not a result. At an inside fillet or a hole,
+  elements larger than its radius are flagged too (`radius_mm`, `radius_resolved`) (#144).
+- A check before meshing lists faces under (mesh_mm/10)² in area, long faces under mesh_mm/10 in width, and edges under
+  mesh_mm/10 (`Study.slivers`). It warns by default; `slivers='raise'` stops in seconds with a `MeshRefusal`, before a
+  long mesh (#144).
+- When gmsh refuses a part ("PLC Error: A segment and a facet intersect at point", or "Could not recover boundary
+  mesh"), `Study` raises a `MeshRefusal` with the point and the nearest faces with their areas when gmsh gives a
+  point, not gmsh's bare message (`parse_gmsh_refusal()` reads the log). A second try that meshes is used, with a
+  `MeshWarning`. `Study.faces_near(point)` names the faces round any point (#144).
+- `cadagent.formulas`: `fans_in_series` and `fans_in_parallel` (identical fans: pressures add at one flow, flows add
+  at one pressure) and `fan_stall_flow` (the peak that ends the curve's last rise; below it, the stall region), with
+  hand-solved tests (#160).
+- `cadagent.thermal.fans`: the ebm-papst W2G115-AD15-13's curves at 8, 12 and 16 V, read from the datasheet's vector
+  chart. Solved on the datasheet's own system curves, they give back every operating point it tabulates, within the
+  table's rounding and the chart reading (the test allows 3.5 m³/h and 1 Pa) (#160).
+- The fan-curve explorer, `<cad-fan-curve>`, on the new Airflow and fans page and on Engineering formulas. Pick the
+  voltage, the pressure your enclosure needs at 100 m³/h, and one to four fans in parallel or in series. It marks the
+  operating point and the stall region, and warns when the point lands in it (#160).
+- Site doc pages open with a picture band: a hero figure and, where a page has them, input → tool → output tiles, then
+  cards for the sections that have pictures. `docs/pages.yaml` places them and figures inside sections, on the site
+  only; the Markdown twins and `llms.txt` are unchanged (#179).
+- Every placed picture says what it is, above its caption: "Real output of `<tool>`" or "Diagram of `<tool>`, drawn by
+  `<script>`", and what it was computed on (Gyropup, a test fixture, a worked example, published sources). A figure
+  opens its full-size image; a tile links to the section that explains it (#179).
+- The build refuses a `docs/pages.yaml` entry with an unknown or misspelled key, an entry that places nothing, a picture
+  that is not committed under `docs/img/`, a tool that is not a `cad-agent` command, a `cadagent` module, a web kit file
+  or a script under `tools/`, a diagram without the `tools/` script that drew it, and a tile link or `below:` target
+  that is not there (#179).
+- `tools/site-bench-pictures.mjs` captures the review site that `cad-agent site` builds for the gate bench, cropped to
+  whole lines. `tools/site-kit-pictures.mjs` captures the web kit at work: the part table and tracker on the gate
+  bench's parts, and the file viewer on a Gyropup STEP file in its default, front, themed and broken-file states (#179).
+- `cad-agent export-3mf` also writes `exports/<name>-plates.3mf`: every printed part at its quantity, in print
+  orientation, packed onto as many build plates as the bed needs, in one Bambu Studio project. Where Bambu Studio is
+  installed at export time, the file carries its project settings, opens with the plates laid out and slices plate
+  by plate; without it, Bambu Studio opens the parts on one plate. Parts with different filaments never share a
+  plate. Next to it, `<name>-plates.svg` shows the plates from above and `<name>-plates.json` records the layout
+  (#84).
+- `cadagent.manufacturing.plates`: `pack` (MaxRects over footprints, with gap, margin, keep-out areas, quarter turns
+  and the diagonal turn a long part needs), `check_plates`, `write_plates_3mf` and `read_plates_3mf` (read back and
+  verified; the same bytes for the same parts, settings and Bambu Studio version), `plates_svg` and `export_plates`
+  (#84).
+- `cadagent.manufacturing.slicer.project_settings`: Bambu Studio's own project settings for a printer, process and
+  filaments, and `default_bed_type`: the plate surface a printer ships with (#84).
+- `cad.plates` in `cad-agent.yaml`: `parts` (with each part's `quantity` and `filament`), `gap_mm`, `margin_mm`,
+  `rotate`, `keep_out` and `bed_type`. Parts and quantities default to `cad.release` (#84).
+
+**Changed**
+- Kit `<cad-nav>` (`webkit/nav.js`, `nav.css`): on narrow screens the "Pages and contents" toggle is a native `<details
+  class="cad-nav-fold"><summary class="cad-nav-toggle">` around the panel, so the tree opens with a tap, Enter or Space
+  even when `nav.js` is slow, blocked or fails, and without script. On wide screens the fold takes no box and its
+  summary hides, so the panel stays a sticky column; `nav.js` keeps the fold open there for browsers without
+  `::details-content`, and never closes a fold the reader opened (#134).
+- The site's doc pages write that fold; phones without script now get it too, in place of the tree moved below the
+  article (#134).
+- `fan_operating_point` also returns `stall`, true when the point is below `fan_stall_flow` (#160).
+- `fan_operating_point`, `fan_curve_line` and `system_coefficient` refuse what has no answer with `ValueError`: NaN or
+  infinite losses, a system point at zero or negative flow or with a negative pressure drop, and a shut-off pressure
+  or free-air flow of 0 or less (#160).
+- On the site, a table of more than 12 rows or a code block of more than 24 lines folds into a `<details>` that says
+  what is inside. Chrome's find-in-page opens a fold that has a match, and the Markdown twin keeps it all open (#179).
+- The pictures of the hinge sweep say they show the gate bench with a seeded fault (`flap_hits_frame`, its arm's range
+  raised to 60 degrees). As built, the arm sweeps 0 to 40 degrees with 1.60 mm clearance (#179, #184 review).
+- The "Hinge sweep" and "Module insertion" demos link to their sections in `docs/catalog.yaml` (#179).
+- The site preloads its mono font, so the home page no longer shifts at 360 px when the font arrives (#179).
+- The wall-of-text backlog is down from 39 pages to 33. The longest stretch without a picture is down from 20,202 px
+  (`/docs/dossier`) to 12,296 px (`/research/design-workflows`), in Chrome at 1366 × 800 (#179).
+
+**Fixed**
+- `<cad-nav>`: a wheel over the rail or the tree while an outline jump is still scrolling releases the jump again, so
+  the section being read is marked, not the heading the reader turned away from; a wheel that only scrolls the tree
+  still keeps it (#134, #123 review 4).
+- `<cad-nav>`: a jump ends when the page shows its heading, not after 150 ms without a scroll, so a frame slow to paint
+  no longer drops the mark to another section partway through (#134, #158).
+- `<cad-nav>`: no link text shows in the corners beside the filter pill while the tree is scrolled (#134).
+- The FEA hot-spot hint reads "sharp inside corner" where an inside corner meets a side face; it could read "outside
+  edge" there (#144).
+
+**Projects must change**
+- Pages that write `<cad-nav>` markup with the old `<button class="cad-nav-toggle">` should write the `<details
+  class="cad-nav-fold">` fold instead (the markup is in the `nav.js` header). The script wraps the old button into a
+  fold when it runs, but until then, or without it, the button does nothing and the tree shows open on narrow screens
+  (#134).
+- `Study()` now warns (`MeshWarning`) when the part has sliver faces or edges, and `Study.solve()` when the design
+  peak's wall is under 3 elements thick or its inside fillet or hole is smaller than the elements there. A study that
+  treats warnings as errors fails on them: mesh finer there (`refine=`), remove the sliver, or filter `MeshWarning`.
+  Without `refine=`, meshes and computed values are unchanged, bit for bit, apart from the hot-spot hint fix above.
+  Every result gains `result['mesh']` keys (`mesher`, `refine`, `slivers`, `peak`), so committed result and viewer
+  JSON changes, and differs between machines: `mesher` records the gmsh library hash and the Python version (#144).
+- Code that compares the whole result of `fan_operating_point` with a dict must add the `stall` key (#160).
+- Code that caught `ZeroDivisionError` from `system_coefficient` at zero flow must catch `ValueError`. A negative
+  flow or pressure drop, which used to return a coefficient, now raises it too (#160).
+- `export-3mf` (and `all`) now exits 1 when a part fits no build plate or the parts need more than 36 plates. Set
+  `cad.plates.parts` to the parts you print, or `cad.plates: false` to write no plates file. Where Bambu Studio is
+  installed, it also exits 1 when `cad.printer.bed_mm` is larger than the printable area of the `cad.slicer.printer`
+  profile (the P1S's 256 × 256 mm when `cad.slicer.printer` is not set): set `cad.slicer.printer` to your printer, or
+  `cad.plates: false` (#84).
+- `exports/` gains three files per project, deleted again by a run that fails or by `cad.plates: false`. A part
+  named `<name>-plates` must be renamed, or plates turned off (#84).
+- A `cad.slicer` printer, process or filament (or a `cad.plates` filament) that Bambu Studio has no profile for now
+  stops `export-3mf` with a config error (exit 2) where Bambu Studio is installed (#84).
+
+## v0.7.0 (2026-11-01)
+
+**New**
+- cad-agent's own website (not yet sites made with `cad-agent site`, which still draw diagrams in the reader's browser):
+  the build draws every Mermaid diagram itself, in headless Chromium through Playwright, and writes the finished
+  `<figure class="cad-diagram" data-state="ready">` into the page (`tools/site-diagrams.mjs`). Pages no longer move
+  while they load: the worst layout shift on a page with a diagram falls from 0.58 to 0.012, against Google's "good"
+  limit of 0.1. Diagrams show without script, and no page downloads Mermaid to draw them. On one machine and browser
+  build, output is the same bytes for the same source, theme, Mermaid and kit, and is cached in `.cache/site-diagrams/`;
+  the build log names label characters the site's font lacks, which another machine measures differently. A gantt chart
+  is drawn without its "today" line. With no browser, or with `--client-diagrams`, the build warns and leaves the
+  diagrams to the reader's browser; `npm run deploy:site` still deploys (#132).
+- Web kit: `drawDiagram(source, {theme, id, fontFamily, fontSize, mermaid})` in `diagrams.js` draws one diagram ahead
+  of time and returns the finished figure. `observeDiagrams` keeps such figures as they are, and draws one again only
+  when the page's theme is not the one it was drawn in (#132).
+- `cadagent.review.evidence.geometry_identity(shape)`: an optional identity of a solid that does not depend on the
+  platform. It holds the volume, the centre of mass and the inertia (tensor and principal moments), rounded, with the
+  tolerances it matches to (relative 1e-6 by default) in the record. Each principal moment has its own tolerance, never
+  below a thousandth of the largest moment's, so a slender part's small moment is compared to itself, not to its length.
+  Compare two identities with `identity_mismatches(a, b)`. An x86-64 and an aarch64 host gave matching identities for
+  all 43 solids of a vendor STEP and for 12 public test solids, while they shared 4 of 43 and 4 of 12 content hashes.
+  Those counts were made with the earlier, looser tolerance on the small moments, and were not re-run; the differences
+  seen were about 1e-13 relative. It is not a hash: different solids can share one, and a change below the tolerance is
+  not seen, so it explains a hash mismatch and never signs anything off (#144).
+- `cadagent.review.evidence.hash_platform()` names what a content hash depends on besides the shape: the CPU
+  architecture, the system, the C library, and the OCP version and package. `record_hash_platform(record)` reads it
+  from a geometry record. `hash_platform_note(recorded, current)` says when two records differ. Equal records do not
+  promise equal hashes, since not everything the kernel's arithmetic depends on is named (#144).
+- `cadagent.geometry.export_step` writes a cadquery `Assembly` too, with the same bytes on every export: the file
+  `Assembly.save` writes (colours, names, placements), with a fixed header date, link ids 1, 2, ... in file order,
+  each node added without a name called `<parent>.<k>` instead of a random uuid, and the colour records in one order
+  (OCCT writes them in heap-address order). Sub-shape names and colours (`Assembly.addSubshape`) are refused, and
+  so are written names cadquery's reader would refuse or misread: a child with its parent's name or a sibling's (an
+  unnamed root takes the file's name, so `frame.step` with a child `frame` needs `name=`) (#150).
+- `cadagent.project.source_date_epoch`, `source_time` and `source_stamp`: the date a build output records instead of the
+  wall clock, `SOURCE_DATE_EPOCH` ([reproducible-builds.org](https://reproducible-builds.org/specs/source-date-epoch/)),
+  else the last commit that changed the project outside its outputs (#150).
+- `cadagent.formulas.fourbar_input_limits(a, b, c, d)`: the input angles where a four-bar locks (coupler and rocker in
+  one line, Norton's toggle positions), whether the input turns fully, and whether the links close at all (#159).
+- `cadagent.formulas.grashof` also returns `inversion`: crank-rocker, double-crank, rocker-crank, double-rocker,
+  triple-rocker or change-point (#159).
+- `kit/formulas.js` ports `grashof`, `fourbarAngles`, `transmissionAngle` and `fourbarInputLimits`, tested against the
+  Python on golden vectors that cover both branches, change points and the input limits (#159).
+- `<cad-fourbar>` (`kit/fourbar.js`, `kit/fourbar.css`): a four-bar linkage animator with link-length sliders, both
+  assemblies, the coupler curve, the Grashof class, and the transmission angle charted against 40°. A linkage whose
+  input cannot turn fully stops at its limits. On the new Four-bar linkages page and on Engineering formulas (#159).
+
+**Changed**
+- Web kit: the sideways-scroll hint is shown or folded away by `diagrams.css`, from the drawing's width
+  (`--cad-diagram-w`) and the figure's, so it shows when it should without script and nothing moves when the script
+  runs. A hint that wraps keeps both lines. `.cad-diagram` is now a size container (`container-type: inline-size`), and
+  the source in the disclosure is `pre.cad-diagram-source` (#132).
+- `exports/dossier-geometry.json`: `hash` is now `{"recipe": ..., "platform": hash_platform()}`, where it was the
+  recipe string. Every release, this one and earlier ones, leaves `hash` out of the gates' geometry digest, so a
+  record rebuilt with this release has the same digest and no verdict or packet goes stale. Committed records show
+  the change once, and the platform differs between builders on different machines, like `actor` (#144).
+- Reviewer records (`dossier/reviews/*.json`) carry the platform of the bundle they were written against, in
+  `bundle.hash_platform`. Earlier releases accept and ignore it. When a review goes stale (`review-stale`,
+  `stale-hashes`) and the geometry was rebuilt on another platform, the message names both platforms: the hashes may
+  have changed with the platform, not the geometry. A geometry or reviewer record from before this release names no
+  platform, and the message stays as it was (#144).
+- `shape_content_hash`'s docstring says the hash is tied to the CPU architecture as well as to the OCCT version.
+  `tools/volume_probe.py` receipts record `hash_platform` (#144).
+- `cad-agent mcmaster`: after McMaster asks for a login, the run asks for no more product pages. Each part still to
+  download is reported as not fetched, and the command exits 1 (#144).
+- The FEA docs (`docs/toolkit.md`) and the `cad-remote-runs` skill explain how to run the FEA on aarch64 Linux.
+  PyPI has no aarch64 wheel for gmsh 4.15.2 (nor for pypardiso's MKL). Use conda-forge's gmsh, from micromamba,
+  linked into the venv, and preload that environment's OpenSSL if `import gmsh` asks for `OPENSSL_3.4.0` (#144).
+- `cad-agent package`: the same files give the same zip on every rebuild and in every checkout. Entries are sorted by
+  path and carry the source date, mode `rw-r--r--` and a Unix host, not each file's own time and mode (#150).
+- Report time stamps are the source date, never the build time, shown with where it came from
+  (`2026-10-30 12:00 UTC (last commit)`): `header_meta.generated` in the results JSON and the report page,
+  `simreport`'s `Generated`, the site's footer, the explore comparison's `generated` and the review bundle's
+  `created`. The site's document cards show each page's last commit date, not its file time. A `simreport` page is
+  dated by the project that holds it, wherever the script runs from. A project that commits these pages no longer
+  gets a diff on every rebuild, and committing them does not change them (#150).
+- The site's "Recent changes" table lists the commits that changed the project's sources: a commit of only its
+  outputs (exports, previews, the site, the release folder, the report page) is left out, and so are commits outside
+  the project's folder, so committing the site does not change the site again (#150).
+- `cad-agent release` and `step_timestamp` share one `SOURCE_DATE_EPOCH` parser: a malformed value stops the command
+  with exit 2 (`release` used to ignore it and take the commit's date) (#150).
+- `cadagent.review.gates.relations.relate` and the relation table measure the distance between two solids faster (#186).
+  On solids, `BRepExtrema_DistShapeShape` first checks whether any vertex of one lies inside the other. OCCT 7.9 builds
+  a new point classifier for each small chunk of vertices, which was most of the time of an apart pair of many-faced
+  parts. The gates now run that check once, with one classifier per solid. When no vertex is inside, neither part has a
+  free edge or vertex and the faces are clear of each other, they take BRepExtrema's distance between the faces, which
+  gives the same gap and points. Every relation, witness included, is byte-identical to before on the 811 pairs of the
+  README hero's clearance sweep on Gyropup's leg. On a 24-core workstation the sweep takes 685 s of calls instead of
+  951 s (183 s to 134 s on 6 workers). Pairs of many-faced links run up to 2.7× faster, and a synthetic pocketed
+  block 2–5×. Machines with fewer cores gain less, because OCCT builds about ten classifiers per thread. Pairs whose
+  time is BRepExtrema's own search gain little. Cached relations stay valid.
+
+**Fixed**
+- `cadagent.mechanical.mcmaster`: a product page that shows McMaster's login prompt ("Log in to view Product Detail")
+  raises `LoginRequired`, a `RuntimeError`. Its message says McMaster asked for a login and the part number may be
+  fine. It points to the public search page for the price and to the maker's datasheet for the ratings. It used to
+  say "not a product page (no specification table)", which read as a wrong part number. The prompt is read from the
+  text a reader sees: the browser's rendered text, or, from saved HTML, the text outside scripts, styles and hidden
+  elements. So neither the header's "Log in" link nor a hidden login dialog counts (#144).
+- `<cad-cantilever>` and `<cad-fourbar>` (`kit/cantilever.js`, `kit/fourbar.js`): Pause works in WebKit. The demos
+  rewrote the button's label on every animation frame, and WebKit drops the click of a press that started on the old
+  text, so a press of a few frames never paused them. In Playwright's WebKit it failed on every one of 20 presses.
+  Safari uses the same engine; it was not tried on a Mac. The label is now written only when it changes (#211).
+
+**Projects must change**
+- A `.cad-diagram` placed where its width depends on its content (a float, an inline-block, a shrink-to-fit cell) now
+  needs a width of its own, because a size container does not take its width from its children. Projects with a
+  copied kit can rerun `cad-agent webkit <dir>` to get `drawDiagram` (#132).
+- Code that reads `hash` in `exports/dossier-geometry.json` as the recipe string reads `hash["recipe"]` now (a
+  record from an earlier release still has the string). No shape content hash, geometry digest or verdict changes,
+  under this release or an earlier one; the committed geometry record shows the new `hash` object once (#144).
+- A receipt that pins `shape_content_hash` values (a vendor-solid probe, for example) can be checked only on the
+  platform that made it. Record `hash_platform()` with it, and match solids by `geometry_identity` where a check
+  must pass on any host (#144).
+- Hashes that change once, then stay the same for the same files at the same commit: the review package zip
+  (`exports/<name>.zip`; its `-manifest.json` is unchanged), `exports/cad-agent-results.json`,
+  `docs/cad-agent-report.html`, `site/index.html`, `simreport` pages, `comparison.json` / `leaderboard.json`,
+  `compare.html` / `leaderboard.html` and review `bundle.json`. Re-record any sha256 of these (an evidence record's
+  `artifact_sha256` or `report_sha256`, a release note), and commit the regenerated pages once (#150).
+- Code that reads `header_meta.generated`, `comparison.json`'s `generated` or a `Generated` meta entry as a date: it
+  now ends in `(last commit)` or `(SOURCE_DATE_EPOCH)`, is UTC (the comparison's was local time), and reads
+  `undated (...)` outside git; `bundle.json`'s `created` can be `null` (#150).
+- Write assembly STEP files with `export_step(assy, path)` instead of `assy.save(path)` or `assy.export(path)` (#150).
+- Set `SOURCE_DATE_EPOCH` to a whole number of seconds, or leave it unset. A malformed value now stops `report`,
+  `site`, `package`, `compare` and `release` with exit 2, and nothing is written; v0.6.0 ignored a malformed value
+  (#150).
+- Code that compares `grashof()`'s whole result with a dict: add the `inversion` key. Code that reads `kind` or
+  `crank_rotates` is unchanged (#159).
+- Projects with a copied kit: rerun `cad-agent webkit <dir>` (and rebuild sites made with `cad-agent site`) to ship the
+  fixed `cantilever.js` and `fourbar.js` (#211).
+
 ## v0.6.0 (2026-11-01)
 
 **New**

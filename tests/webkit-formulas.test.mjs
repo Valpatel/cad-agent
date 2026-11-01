@@ -1,13 +1,14 @@
 // The browser port of cadagent.formulas (src/cadagent/webkit/formulas.js) against the golden vectors the Python writes
 // (tools/formula_vectors.py, checked for staleness by tests/test_formulas.py), so the site's demos compute exactly what
-// agents get. Also: the demo's material table is the Python's, and the cantilever still is what the component draws.
+// agents get. Also: the demos' material and fan tables are the Python's, and the cantilever still is what the component
+// draws.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import * as fx from '../src/cadagent/webkit/formulas.js';
-import { MATERIALS } from '../src/cadagent/webkit/formulas-data.js';
+import { MATERIALS, FANS } from '../src/cadagent/webkit/formulas-data.js';
 
 const root = path.resolve(import.meta.dirname, '..');
 const vectors = JSON.parse(await readFile(path.join(root, 'tests/fixtures/formula-vectors.json'), 'utf8'));
@@ -61,6 +62,18 @@ test('the four-bar vectors cover both branches, change points and the input limi
   assert.ok(loose.length < positions.length / 4, 'the double-root tolerance is for the few vectors where the branches meet');
 });
 
+test('the fan vectors cover one fan and several, a stall dip with three crossings, the stall region and its edge', () => {
+  const ops = vectors.cases.filter(c => c.js === 'fanOperatingPoint' && !c.raises).map(c => c.expected);
+  assert.ok(ops.some(o => !o.stable && o.intersections.length === 3), 'a stall dip crossed three times');
+  assert.ok(ops.some(o => o.stall) && ops.some(o => !o.stall && o.stable), 'points in the stall region and clear of it');
+  const stall = vectors.cases.filter(c => c.js === 'fanStallFlow' && !c.raises).map(c => c.expected);
+  assert.ok(stall.includes(null) && stall.some(q => q !== null), 'curves with and without a stall region');
+  for (const name of ['fansInSeries', 'fansInParallel'])
+    for (const n of [1, 2, 3, 4]) assert.ok(vectors.cases.some(c => c.js === name && c.args[1] === n), `${name} of ${n}`);
+  // every datasheet fan, at every point of the explorer's system slider in the vectors, for one to four fans both ways
+  assert.ok(ops.length >= 300, 'too few operating-point vectors');
+});
+
 test('the port has exactly the functions the vectors cover, no untested extras', () => {
   const exported = Object.entries(fx).filter(([, v]) => typeof v === 'function').map(([k]) => k).sort();
   assert.deepEqual(exported, [...vectors.ported].sort());
@@ -78,6 +91,19 @@ test('the port refuses what the Python refuses', () => {
   const rest = vectors.cases.filter(c => c.js === 'snapArm' && !c.raises && c.args[3] === 0);
   assert.equal(rest.length, 3, 'an arm at rest for each design');
   for (const c of rest) assert.ok(c.expected.stiffness > 0 && c.expected.force === 0, 'at rest: no force, the same stiffness');
+});
+
+test('the demo fans are the datasheet curves of cadagent.thermal.fans, in SI, from shut-off to free air', () => {
+  assert.deepEqual(FANS.map(f => f.voltage), [8, 12, 16]);
+  for (const f of FANS) {
+    assert.match(f.source, /^ebm-papst .*item no\. 50788-5-9980, change 88913, approved 2016-05-09, p\. 5 .*https:\/\//, f.key);
+    assert.equal(f.density, 1.2);
+    assert.equal(f.curve[0][0], 0, `${f.key} starts at shut-off`);
+    assert.equal(f.curve.at(-1)[1], 0, `${f.key} ends at free air`);
+    assert.ok(f.curve.every(([q, p], i) => q >= 0 && p >= 0 && (!i || q > f.curve[i - 1][0])), `${f.key}: flow increasing`);
+    assert.ok(f.curve.at(-1)[0] > 100 / 3600 && f.curve.at(-1)[0] < 300 / 3600, `${f.key}: free air in m^3/s`);
+    assert.ok(fx.fanStallFlow(f.curve) > 0, `${f.key} has a stall region`);
+  }
 });
 
 test('the demo materials carry a source and a strain in range for both print directions', () => {

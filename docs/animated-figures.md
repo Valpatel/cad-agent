@@ -33,6 +33,30 @@ Extraction needs the `cad` extra (CadQuery). Use a clean checkout of the project
 
 The clearance sweep is slow, because each pair is an exact `relate()` call (#186). Its result is reused from the committed scene while the assembly, the parts, the linkage and the clearance spec are unchanged. Pass `--fresh` to run it again. `--workers N` measures poses in N processes; each one reads the STEP once and holds the assembly in memory, about 0.5 GB for Gyropup's leg. Gyropup's leg takes about 25 s without the sweep.
 
+## A recorded FEA study
+
+The second figure is not an assembly. It is a mesh-convergence study at an inside corner, run with this checkout's
+own `cadagent.simulation.fea` and drawn from what the results said.
+
+![An L-bracket's inside corner refined step by step: sharp, the peak stress keeps rising and converge() never passes it; with an R1.5 fillet it settles and converge() passes it](img/fea/mesh-convergence.svg)
+
+*A recorded run of the toolkit (cad-agent 0.7.0 on gmsh 4.15.2 with OpenCASCADE 7.8.1, 2026-11-01). Linear-elastic
+FEA: a converged peak does not prove that the part holds.*
+
+```bash
+PYTHONPATH=src python3 tools/readme_anim.py --extract convergence    # record it again: gmsh, scikit-fem, CadQuery
+```
+
+`tools/anim/fea-convergence.yaml` names the study: the bracket, the load, the element sizes at the corner and the
+words. Recording takes about a minute and about 3 GB. `tools/anim/fea-convergence.scene.json` keeps, for each step:
+- the tets, the design peak and where it sits;
+- the peak's flags (`result['mesh']['peak']`) and `converge()`'s verdict;
+- the front face's mesh round the corner.
+
+It also keeps the mesher (`result['mesh']['mesher']`), the toolkit's version and commit, and the sha256 of the files
+that made it. `tests/test_anim_convergence.py` checks that the figure states the record's numbers and that the record
+shows what the docs say. On the recorded gmsh build, it runs the 2 mm steps again and compares.
+
 ## Make one for another assembly
 
 Copy `tools/anim/gyropup-leg.yaml`, then add the figure to `FIGURES` in `tools/readme_anim.py`.
@@ -58,7 +82,7 @@ Copy `tools/anim/gyropup-leg.yaml`, then add the figure to `FIGURES` in `tools/r
 
 </details>
 
-A different kind of figure (a board into its enclosure, print layers, a convergence chart) gets its own scene module next to `cadagent.publish.anim.hero`. It reuses the shared parts:
+A different kind of figure (a board into its enclosure, print layers) gets its own scene module next to `cadagent.publish.anim.hero`, as the convergence study has (`cadagent.publish.anim.convergence`). It reuses the shared parts:
 - edge projection: `cad`;
 - the rasteriser and outlines: `raster`;
 - paths, timeline, theme and the embed rules: `svg`;

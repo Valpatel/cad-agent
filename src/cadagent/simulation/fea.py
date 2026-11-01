@@ -22,6 +22,14 @@ tangential traction that grows with the distance from the axis (like bolts shari
 Solvers: PARDISO (pip install pypardiso) when available, else SciPy's direct solver, or conjugate gradients with a
 smoothed-aggregation multigrid preconditioner (pyamg, with the six rigid-body modes) for big meshes.
 
+Meshing: ``mesh_mm`` is the global element size; ``refine=[(point, radius, size)]`` makes the mesh finer round a spot
+(a fillet, a hole) to converge its peak, and ``converge()`` solves again at 0.75 x the mesh to check one. A sharp
+re-entrant corner is singular: its peak rises with every refinement and never converges, so model the fillet. Every
+result's ``mesh`` records the mesher (gmsh and OCC versions, build, platform) and how many elements lie across the wall
+at the design peak (under MIN_ELEMENTS_ACROSS it is flagged: a MeshWarning), and at an inside fillet or a hole, the
+element size against its radius (larger than the radius is flagged too). Slivers are listed before meshing, and a mesher refusal
+raises a MeshRefusal that names the faces round its point.
+
 Limits, stated in every result: linear and small-deflection; isotropic material. Printed parts are not isotropic, so
 each printed material says which modulus and strength it uses and the print direction of the modulus
 (``Material.note`` and ``Material.direction``); the assumptions line of every result repeats them. The defaults take the
@@ -40,6 +48,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -520,6 +529,204 @@ def any_of(*sels: Selector) -> Selector:
     return lambda f: any(s(f) for s in sels)
 
 
+# --- meshing: refinement, the mesher's identity, slivers and refusals
+MIN_ELEMENTS_ACROSS = 3      # a design peak in a wall thinner than this many elements is flagged: not a result
+MAX_ELEMENT_OVER_RADIUS = 1.0   # at a fillet or a hole, elements larger than its radius are flagged: the peak reads low
+SLIVER_ELONGATION = 3.0   # a narrow sliver face is also elongated (perimeter^2 / (4 pi area)); compact faces are 1.1-1.7
+
+
+class MeshWarning(UserWarning):
+    """A Study's mesh may not carry its result: sliver faces or edges found before meshing, a design peak in a wall
+    under MIN_ELEMENTS_ACROSS elements thick or on a fillet or hole with elements larger than its radius, or a peak that
+    changed on a finer mesh (Study.converge)."""
+
+
+class MeshRefusal(RuntimeError):
+    """gmsh would not mesh the part, or the check before meshing found slivers and the caller asked to stop on them.
+
+    ``what`` names the problem ('segment-facet intersection', 'slivers', ...); ``point`` is where gmsh found it (mm, or
+    None); ``faces`` the faces of the part nearest that point, nearest first (for 'slivers', the sliver faces), and
+    ``edges`` the same for curves: dicts with the gmsh tag, kind, area or length, and distance; ``log`` gmsh's own lines
+    about it."""
+
+    def __init__(self, message: str, what: str, point=None, faces=(), edges=(), log=()):
+        super().__init__(message)
+        self.what, self.point = what, point
+        self.faces, self.edges, self.log = list(faces), list(edges), list(log)
+
+
+_XYZ = r'\(\s*([-+0-9.eE]+)\s*,\s*([-+0-9.eE]+)\s*,\s*([-+0-9.eE]+)\s*\)'
+
+
+# gmsh's boundary-recovery failures, as thrown: the PLC line (gmsh throws on it before printing the point), the summary,
+# and the message it often throws instead for the same failure
+_RECOVERY_ERRORS = ('PLC Error', 'Invalid boundary mesh', 'Could not recover boundary mesh')
+
+
+def parse_gmsh_refusal(log: Sequence[str]) -> Optional[dict]:
+    """The boundary-recovery refusal in a gmsh log (``gmsh.logger.get()`` lines), or None if it has none.
+
+    gmsh's volume mesher (TetGen's boundary recovery, inside gmsh) stops on a surface mesh that cuts through itself
+    with 'PLC Error:  A segment and a facet intersect at point', prints the point on the next line, and then sums it
+    up as 'Invalid boundary mesh (segment-facet intersection) on surface 6, intersection (x,y,z)'. With gmsh's default
+    (throw on the first error) only the first line reaches the caller, without the point, so after such a refusal
+    Study meshes the part once more, in a new gmsh session with errors logged rather than thrown, and reads them here.
+    gmsh often fails the same way with only 'Could not recover boundary mesh: error 2': that is a refusal with no point
+    ('boundary recovery failed'). Its failing runs are not always repeatable, so a point is one of several.
+
+    Returns {'what', 'point' (mm, or None), 'surfaces' and 'curves' (gmsh tags it names), 'message' (the PLC line),
+    'log' (gmsh's lines about it)}."""
+    lines = [str(m) for m in log]
+    bare = [re.sub(r'^(Error|Info|Warning|Progress)\s*:\s?', '', m) for m in lines]
+    plc = next((i for i, m in enumerate(bare) if 'PLC Error' in m), None)
+    summary = next((i for i, m in enumerate(bare) if 'Invalid boundary mesh' in m), None)
+    if plc is None and summary is None:
+        # gmsh's own boundary recovery often fails the same way with only this line, and no point
+        gave_up = next((i for i, m in enumerate(bare) if 'Could not recover boundary mesh' in m), None)
+        if gave_up is None:
+            return None
+        return {'what': 'boundary recovery failed', 'point': None, 'surfaces': [], 'curves': [],
+                'message': bare[gave_up].strip(), 'log': [lines[gave_up]]}
+    what, point, surfaces, curves, about = None, None, [], [], []
+    if plc is not None:
+        about.append(lines[plc])
+        found = re.search(_XYZ, bare[plc])
+        for k in range(plc + 1, min(plc + 4, len(bare))):     # the point, then the segment and the facet, if printed
+            if 'PLC Error' in bare[k] or 'Invalid boundary mesh' in bare[k]:
+                break
+            about.append(lines[k])
+            found = found or re.match(r'\s*' + _XYZ, bare[k])
+            tag = re.search(r'Facet\s*:\s*\[[^\]]*\]\s*#(\d+)', bare[k])
+            if tag and int(tag.group(1)) > 0:
+                surfaces.append(int(tag.group(1)))
+        if found:
+            point = [float(v) for v in found.groups()]
+        what = re.sub(r'\s+', ' ', bare[plc].split('PLC Error:', 1)[1]).strip().rstrip('.')
+        what = re.sub(r'\s*at( point)?\s*(\(.*\))?$', '', what)
+    if summary is not None:
+        about.append(lines[summary])
+        s = bare[summary]
+        head = re.search(r'Invalid boundary mesh \(([^)]*)\) on([^,]*)', s)
+        if head:
+            what = head.group(1)
+            surfaces += [int(v) for v in re.findall(r'surface (\d+)', head.group(2))]
+            curves += [int(v) for v in re.findall(r'curve (\d+)', head.group(2))]
+        found = re.search(r'intersection ' + _XYZ, s)
+        if found:
+            point = [float(v) for v in found.groups()]
+    return {'what': what or 'invalid boundary mesh', 'point': point, 'surfaces': sorted(set(surfaces)),
+            'curves': sorted(set(curves)), 'message': bare[plc if plc is not None else summary].strip(), 'log': about}
+
+
+_MESHER = None
+
+
+def _mesher_identity() -> dict:
+    """Which mesher made the mesh, read from the running gmsh (call inside a gmsh session; cached per process).
+
+    Two builds of one gmsh version can mesh one part differently (the PyPI wheel and conda-forge's 4.15.2 give a
+    Gyropup frame 151,459 and 151,136 tets, and its sharp-corner peak 6 % apart), so a gate read at one mesh size says
+    which build made it: the version, the OpenCASCADE version gmsh was built with, the build's OS and date, a hash of
+    the library file and the platform. Host and packager names stay out (a self-built gmsh would carry a private
+    host name into results that projects commit)."""
+    global _MESHER
+    if _MESHER is not None:
+        return _MESHER
+    import os
+    import platform
+
+    import gmsh
+    info = {}
+    try:
+        for part in gmsh.option.getString('General.BuildInfo').split(';'):
+            key, _, value = part.partition(':')
+            info[key.strip()] = value.strip()
+    except Exception:                                  # an old gmsh without the option: the version alone
+        pass
+    lib = getattr(gmsh, 'libpath', None)
+    digest = None
+    if lib and os.path.isfile(lib):
+        h = hashlib.sha256()
+        with open(lib, 'rb') as fh:
+            for chunk in iter(lambda: fh.read(1 << 20), b''):
+                h.update(chunk)
+        digest = h.hexdigest()[:16]
+    _MESHER = {
+        'gmsh': getattr(gmsh, '__version__', None) or info.get('Version'),
+        'occ': info.get('OCC version'),
+        'build': {'os': info.get('Build OS'), 'date': info.get('Build date')},
+        'library': {'file': os.path.basename(lib) if lib else None, 'sha256_16': digest},
+        'platform': {'system': platform.system(), 'machine': platform.machine(), 'python': platform.python_version()},
+    }
+    return _MESHER
+
+
+def _point_triangle_distance(p, A, B, C) -> np.ndarray:
+    """Distance from point p to each triangle (A[i], B[i], C[i]), (n, 3) arrays."""
+    p = np.asarray(p, float)
+    n = np.cross(B - A, C - A)
+    nn = np.maximum(np.einsum('ij,ij->i', n, n), 1e-300)
+    q = p - (np.einsum('ij,ij->i', p - A, n) / nn)[:, None] * n         # p projected on each triangle's plane
+    # barycentric coordinates of q: inside when all three sub-triangles turn the same way as the triangle
+    inside = np.ones(len(A), dtype=bool)
+    for U, V in ((A, B), (B, C), (C, A)):
+        inside &= np.einsum('ij,ij->i', np.cross(V - U, q - U), n) >= 0
+    def seg(U, V):
+        d = V - U
+        t = np.clip(np.einsum('ij,ij->i', p - U, d) / np.maximum(np.einsum('ij,ij->i', d, d), 1e-300), 0, 1)
+        return np.linalg.norm(p - (U + t[:, None] * d), axis=1)
+    edge = np.minimum(np.minimum(seg(A, B), seg(B, C)), seg(C, A))
+    return np.where(inside, np.linalg.norm(p - q, axis=1), edge)
+
+
+def _faces_near(point, faces, points, face_tris, k: int = 4) -> List[dict]:
+    """The k faces nearest a point, nearest first, measured to each face's surface triangles."""
+    p = np.asarray(point, float)
+    out = []
+    for f in faces:
+        tri = face_tris.get(f.tag)
+        if tri is None or not len(tri):
+            continue
+        d = float(_point_triangle_distance(p, points[tri[:, 0]], points[tri[:, 1]], points[tri[:, 2]]).min())
+        out.append({'tag': f.tag, 'kind': f.kind, 'area_mm2': round(float(f.area), 4), 'distance_mm': round(d, 4),
+                    'center_mm': [round(float(v), 3) for v in f.center],
+                    **({'radius_mm': round(float(f.radius), 3)} if f.radius else {})})
+    return sorted(out, key=lambda r: r['distance_mm'])[:k]
+
+
+def _ball_size(x, zones, mesh_mm: float) -> float:
+    """The target element size at a point: the refine balls' sizes (with their transitions), else mesh_mm. The same
+    formula as gmsh's Ball field (size inside the radius, then linear back to mesh_mm over 2 x (mesh_mm - size))."""
+    size = mesh_mm
+    for c, r, s in zones:
+        d = math.dist(x, c) - r
+        t = 2 * (mesh_mm - s)
+        size = min(size, s if d <= 0 else s + (d / t) * (mesh_mm - s) if d <= t else mesh_mm)
+    return size
+
+
+def _ray_exit(origin, direction, A, E1, E2, skip: float, unit=None, head_on: float = 0.5) -> Optional[float]:
+    """Distance along a ray to the nearest triangle it crosses beyond `skip` (Möller-Trumbore), or None. With the
+    triangles' unit normals `unit`, None also when that crossing is grazing (|cos| under `head_on`, more than 60° off
+    head-on): the ray ran along a wall to an edge and out, it did not cross the wall."""
+    pv = np.cross(direction, E2)
+    det = np.einsum('ij,ij->i', E1, pv)
+    ok = np.abs(det) > 1e-14
+    inv = np.where(ok, 1.0 / np.where(ok, det, 1.0), 0.0)
+    tv = origin - A
+    u = np.einsum('ij,ij->i', tv, pv) * inv
+    qv = np.cross(tv, E1)
+    v = (qv @ direction) * inv
+    t = np.einsum('ij,ij->i', E2, qv) * inv
+    hit = ok & (u >= -1e-9) & (v >= -1e-9) & (u + v <= 1 + 1e-9) & (t > skip)
+    if not hit.any():
+        return None
+    first = int(np.flatnonzero(hit)[np.argmin(t[hit])])
+    if unit is not None and abs(float(unit[first] @ direction)) < head_on:
+        return None
+    return float(t[first])
+
+
 @dataclass
 class _Load:
     faces: List[int]
@@ -528,8 +735,25 @@ class _Load:
 
 
 class Study:
-    def __init__(self, shape, material: Material, mesh_mm: float = 3.0, name: str = 'part'):
+    def __init__(self, shape, material: Material, mesh_mm: float = 3.0, name: str = 'part', refine=None,
+                 slivers: str = 'warn'):
+        """Mesh `shape` (a STEP path or a CadQuery shape) with tetrahedra of about `mesh_mm`.
+
+        refine: ``[(point_mm, radius_mm, size_mm), ...]``, finer elements of `size_mm` inside a ball round each point
+        (a gmsh Ball field each, joined by a Min field under the global size), growing back to `mesh_mm` over a
+        transition 2 x (mesh_mm - size_mm) thick. The rest of the mesh stays as it was. It converges a peak at a
+        fillet or a hole without refining the whole part. A sharp re-entrant corner has no finite peak: its stress
+        rises with every refinement, so refine converges a fillet, never a sharp corner.
+
+        slivers: 'warn' (MeshWarning), 'raise' (MeshRefusal) or 'ignore', for faces under (size/10)^2 and edges under
+        size/10 found before meshing, where size is mesh_mm (or the refine size inside a ball): slivers make the
+        mesher fail or crowd tiny, poor elements there."""
         self.material, self.mesh_mm, self.name = material, mesh_mm, name
+        if slivers not in ('warn', 'raise', 'ignore'):
+            raise ValueError(f"slivers must be 'warn', 'raise' or 'ignore', not {slivers!r}")
+        self.refine = self._refine_zones(refine, mesh_mm)
+        self._slivers_mode = slivers
+        self._shape = shape                            # kept for converge(), which meshes it again, finer
         self.fixed: List[int] = []
         self.loads: List[_Load] = []
         self.probe_faces: List[int] = []
@@ -549,38 +773,43 @@ class Study:
         cq.exporters.export(shape.val() if hasattr(shape, 'val') else shape, str(step))
         return step
 
+    @staticmethod
+    def _refine_zones(refine, mesh_mm: float) -> List[tuple]:
+        zones = []
+        for zone in refine or ():
+            try:
+                point, radius, size = zone
+                point, radius, size = np.asarray(point, float), float(radius), float(size)
+            except (TypeError, ValueError):
+                raise ValueError(f'refine takes (point_mm, radius_mm, size_mm) entries, not {zone!r}') from None
+            if point.shape != (3,) or not np.all(np.isfinite(point)) or not radius > 0 or not size > 0:
+                raise ValueError(f'refine entry {zone!r}: a 3D point, a radius > 0 and a size > 0')
+            if size >= mesh_mm:
+                raise ValueError(f'refine size {size:g} mm is not under mesh_mm {mesh_mm:g} mm: it would change nothing')
+            zones.append((tuple(float(v) for v in point), radius, size))
+        return zones
+
+    def _size_at(self, x) -> float:
+        """The target element size at a point (_ball_size with this study's refine zones)."""
+        return _ball_size(x, self.refine, self.mesh_mm)
+
+    def _size_over(self, box) -> float:
+        """The largest target size anywhere in a bounding box (xmin, ymin, zmin, xmax, ymax, zmax): a ball's size grows
+        with the distance from its centre, and the farthest point of a box from any centre is one of its corners."""
+        lo, hi = box[:3], box[3:]
+        return max(self._size_at((x, y, z)) for x in (lo[0], hi[0]) for y in (lo[1], hi[1]) for z in (lo[2], hi[2]))
+
     def _mesh(self):
-        import gmsh
-        gmsh.initialize()
         try:
-            gmsh.option.setNumber('General.Terminal', 0)
-            gmsh.model.add(self.name)
-            gmsh.model.occ.importShapes(str(self._step))
-            gmsh.model.occ.synchronize()
-            self.faces = []
-            for _, tag in gmsh.model.getEntities(2):
-                kind = gmsh.model.getType(2, tag)
-                self.faces.append(Face(tag, kind, tuple(gmsh.model.getBoundingBox(2, tag)),
-                                       np.array(gmsh.model.occ.getCenterOfMass(2, tag)), gmsh.model.occ.getMass(2, tag),
-                                       self._cylinder_radius(tag) if kind == 'Cylinder' else None))
-            gmsh.option.setNumber('Mesh.MeshSizeMax', self.mesh_mm)
-            gmsh.option.setNumber('Mesh.MeshSizeMin', self.mesh_mm / 4)
-            gmsh.option.setNumber('Mesh.MeshSizeFromCurvature', 10)
-            gmsh.option.setNumber('Mesh.Optimize', 1)
-            gmsh.model.mesh.generate(3)
-            tags, coords, _ = gmsh.model.mesh.getNodes()
-            index = {int(t): i for i, t in enumerate(tags)}
-            self.points = coords.reshape(-1, 3)
-            types, _, nodes = gmsh.model.mesh.getElements(3)
-            tets = np.concatenate([np.asarray(n, dtype=np.int64).reshape(-1, 4) for ty, n in zip(types, nodes) if ty == 4])
-            self.tets = np.vectorize(index.get)(tets)
-            self.face_tris = {}
-            for f in self.faces:
-                ftypes, _, fnodes = gmsh.model.mesh.getElements(2, f.tag)
-                tri = [np.asarray(n, dtype=np.int64).reshape(-1, 3) for ty, n in zip(ftypes, fnodes) if ty == 2]
-                self.face_tris[f.tag] = np.vectorize(index.get)(np.concatenate(tri)) if tri else np.zeros((0, 3), int)
-        finally:
-            gmsh.finalize()
+            self._mesh_once(logged=False)
+        except MeshRefusal:
+            raise
+        except Exception as exc:
+            if not any(k in str(exc) for k in _RECOVERY_ERRORS):
+                raise
+            # gmsh throws on the first line of a boundary-recovery error, before it prints the point, and stays locked
+            # until finalized: mesh once more in a new session with errors logged, not thrown, to say where and why
+            self._mesh_once(logged=True, first=str(exc))
         # drop nodes that only belong to lower-dimensional entities, and orient every tet positively
         used = np.unique(self.tets)
         remap = -np.ones(len(self.points), dtype=np.int64)
@@ -588,10 +817,69 @@ class Study:
         self.points = self.points[used]
         self.tets = remap[self.tets]
         self.face_tris = {k: remap[v] for k, v in self.face_tris.items()}
+        self.edge_segs = {k: remap[v] for k, v in self.edge_segs.items()}
         p = self.points
         a, b, c, d = (p[self.tets[:, i]] for i in range(4))
         neg = np.einsum('ij,ij->i', np.cross(b - a, c - a), d - a) < 0
         self.tets[neg, 2], self.tets[neg, 3] = self.tets[neg, 3], self.tets[neg, 2].copy()
+
+    def _mesh_once(self, logged: bool, first: str = ''):
+        """One gmsh session: read the faces, check for slivers, mesh. `logged`: mesh with errors logged rather than
+        thrown and raise a MeshRefusal from the log (the second run after a refusal; `first` is what gmsh threw)."""
+        import gmsh
+        gmsh.initialize()
+        try:
+            gmsh.option.setNumber('General.Terminal', 0)
+            gmsh.model.add(self.name)
+            gmsh.model.occ.importShapes(str(self._step))
+            gmsh.model.occ.synchronize()
+            self.mesher = _mesher_identity()
+            self.faces = []
+            for _, tag in gmsh.model.getEntities(2):
+                kind = gmsh.model.getType(2, tag)
+                self.faces.append(Face(tag, kind, tuple(gmsh.model.getBoundingBox(2, tag)),
+                                       np.array(gmsh.model.occ.getCenterOfMass(2, tag)), gmsh.model.occ.getMass(2, tag),
+                                       self._cylinder_radius(tag) if kind == 'Cylinder' else None))
+            if not logged:
+                self._check_slivers()
+            gmsh.option.setNumber('Mesh.MeshSizeMax', self.mesh_mm)
+            gmsh.option.setNumber('Mesh.MeshSizeMin', self.mesh_mm / 4)
+            gmsh.option.setNumber('Mesh.MeshSizeFromCurvature', 10)
+            gmsh.option.setNumber('Mesh.Optimize', 1)
+            if self.refine:
+                self._refine_fields()
+            if logged:
+                gmsh.option.setNumber('General.AbortOnError', 0)
+                gmsh.logger.start()
+                try:
+                    gmsh.model.mesh.generate(3)
+                    log = list(gmsh.logger.get())
+                finally:
+                    gmsh.logger.stop()
+                errors = [m for m in log if m.startswith('Error')]
+                types, _, nodes = gmsh.model.mesh.getElements(3)
+                if errors or not any(ty == 4 and len(n) for ty, n in zip(types, nodes)):
+                    self.points, _, self.face_tris, self.edge_segs = self._surface_mesh()
+                    self._refuse(errors or [f'Error: {first}'], log if errors else [f'Error: {first}'])
+                # gmsh meshed it this time: its boundary recovery is not always repeatable on a marginal part
+                import warnings
+                warnings.warn(f"{self.name}: gmsh refused the first mesh ('{first}') and made it on a second try. Its "
+                              'boundary recovery is not always repeatable on a marginal part, so the next run of this '
+                              'study may be refused: look for faces closer together than the mesh size.',
+                              MeshWarning, stacklevel=4)   # _mesh_once < _mesh < __init__ < caller
+            else:
+                gmsh.model.mesh.generate(3)
+            self.points, index, self.face_tris, self.edge_segs = self._surface_mesh()
+            types, _, nodes = gmsh.model.mesh.getElements(3)
+            tets = np.concatenate([np.asarray(n, dtype=np.int64).reshape(-1, 4) for ty, n in zip(types, nodes) if ty == 4])
+            self.tets = np.vectorize(index.get)(tets)
+        finally:
+            if self.refine:
+                try:
+                    gmsh.model.mesh.removeSizeCallback()
+                except Exception:                    # gmsh failed before the callback was set
+                    pass
+            gmsh.finalize()
 
     @staticmethod
     def _cylinder_radius(tag: int) -> Optional[float]:
@@ -603,6 +891,311 @@ class Study:
             return 1.0 / k if k > 1e-9 else None
         except Exception:                            # an odd parametrisation: no radius, the hint just says less
             return None
+
+    def _refine_fields(self):
+        """One gmsh Ball field per refine zone (VIn its size, VOut mesh_mm, a linear transition outside it), the
+        background size their Min; Mesh.MeshSizeMax keeps the global size everywhere else. Mesh.MeshSizeMin has to drop
+        to the smallest refine size, and it is also the floor of the curvature sizing, so a size callback puts the
+        global floor (mesh_mm / 4) back outside the balls: away from them the mesh is the one the study gets without
+        refine."""
+        import gmsh
+        balls = []
+        for (x, y, z), r, s in self.refine:
+            b = gmsh.model.mesh.field.add('Ball')
+            for key, v in (('XCenter', x), ('YCenter', y), ('ZCenter', z), ('Radius', r),
+                           ('Thickness', 2 * (self.mesh_mm - s)), ('VIn', s), ('VOut', self.mesh_mm)):
+                gmsh.model.mesh.field.setNumber(b, key, float(v))
+            balls.append(b)
+        both = gmsh.model.mesh.field.add('Min')
+        gmsh.model.mesh.field.setNumbers(both, 'FieldsList', balls)
+        gmsh.model.mesh.field.setAsBackgroundMesh(both)
+        floor, zones, mesh = self.mesh_mm / 4, tuple(self.refine), self.mesh_mm
+        gmsh.option.setNumber('Mesh.MeshSizeMin', min(floor, min(s for _, _, s in self.refine)))
+        # the callback closes over the zones only: gmsh's Python module keeps it in a global after finalize(), and a
+        # closure over the Study would keep the Study (its mesh, and after solve() its solution) alive with it
+        gmsh.model.mesh.setSizeCallback(lambda dim, tag, x, y, z, lc: max(lc, min(floor, _ball_size((x, y, z), zones, mesh))))
+
+    def _check_slivers(self):
+        """Small faces (area under (size/10)^2), narrow faces (width, 2 x area / perimeter, under size/10, and
+        elongated: perimeter^2 / (4 pi area) over SLIVER_ELONGATION) and short edges (under size/10), read off the CAD
+        before meshing: they make the mesher refuse, or crowd tiny, poor elements there. The size is the largest target
+        size the face or edge sees (mesh_mm unless a refine ball covers all of it), so a ball over part of a long sliver
+        does not excuse the rest. The width is a strip's width; it finds the long, thin faces that area alone misses.
+        The elongation is about L / (pi w) for a strip and 1.1 to 1.7 for a compact face (a square, a chamfer's corner
+        triangle, a blend's corner patch), which mesh normally and are not narrow, however small."""
+        import gmsh
+        faces, edges = [], []
+        self.edge_lengths = {tag: float(gmsh.model.occ.getMass(1, tag)) for _, tag in gmsh.model.getEntities(1)}
+        for f in self.faces:
+            size = self._size_over(f.bbox)
+            bound = {abs(t) for _, t in gmsh.model.getBoundary([(2, f.tag)], combined=False, oriented=False)}
+            perimeter = sum(self.edge_lengths.get(t, 0.0) for t in bound)
+            width = 2 * f.area / perimeter if perimeter > 1e-9 else None
+            elongation = perimeter ** 2 / (4 * math.pi * f.area) if f.area > 1e-12 else math.inf
+            small = f.area < (size / 10) ** 2
+            narrow = width is not None and width < size / 10 and elongation > SLIVER_ELONGATION
+            if small or narrow:
+                faces.append({'tag': f.tag, 'kind': f.kind, 'area_mm2': round(float(f.area), 6),
+                              'width_mm': round(width, 6) if width is not None else None,
+                              'under_mm2': round((size / 10) ** 2, 6), 'under_mm': round(size / 10, 6),
+                              'why': 'small' if small else 'narrow', 'center_mm': [round(float(v), 3) for v in f.center]})
+        for _, tag in gmsh.model.getEntities(1):
+            length = self.edge_lengths[tag]
+            box = np.asarray(gmsh.model.getBoundingBox(1, tag))
+            mid = (box[:3] + box[3:]) / 2
+            cut = self._size_over(box) / 10
+            if 1e-9 < length < cut:                    # zero: a degenerate edge (a cone's tip), which gmsh skips
+                edges.append({'tag': tag, 'length_mm': round(length, 6), 'under_mm': round(cut, 6),
+                              'center_mm': [round(float(v), 3) for v in mid]})
+        self.slivers = {'faces': faces, 'edges': edges}
+        if not (faces or edges) or self._slivers_mode == 'ignore':
+            return
+        listed = [f"face {f['tag']} ({f['kind']}, {f['area_mm2']:g} mm²"
+                  + (f", {f['width_mm']:g} mm wide" if f['why'] == 'narrow' else '') + f" at {tuple(f['center_mm'])})"
+                  for f in faces[:6]]
+        listed += [f"edge {e['tag']} ({e['length_mm']:g} mm at {tuple(e['center_mm'])})" for e in edges[:6]]
+        more = len(faces) + len(edges) - len(listed)
+        msg = (f"{self.name}: {len(faces)} sliver face(s) and {len(edges)} short edge(s) for a {self.mesh_mm:g} mm mesh: "
+               f"{'; '.join(listed)}{f'; and {more} more' if more > 0 else ''}. Slivers come from booleans and fillets "
+               "that meet almost tangentially; the mesher may refuse the part or crowd poor elements there. Remove "
+               "them in the CAD (merge the faces, change a dimension a little), or refine there.")
+        if self._slivers_mode == 'raise':
+            raise MeshRefusal(msg, 'slivers', faces=faces, edges=edges)
+        import warnings
+        warnings.warn(msg, MeshWarning, stacklevel=5)   # _check_slivers < _mesh_once < _mesh < __init__ < caller
+
+    def _surface_mesh(self):
+        """(points, gmsh node tag -> row, face tag -> triangles, edge tag -> segments) in the current gmsh session."""
+        import gmsh
+        tags, coords, _ = gmsh.model.mesh.getNodes()
+        index = {int(t): i for i, t in enumerate(tags)}
+        def rows(dim, tag, kind, n):
+            types, _, nodes = gmsh.model.mesh.getElements(dim, tag)
+            got = [np.asarray(v, dtype=np.int64).reshape(-1, n) for ty, v in zip(types, nodes) if ty == kind]
+            return np.vectorize(index.get)(np.concatenate(got)) if got else np.zeros((0, n), int)
+        face_tris = {f.tag: rows(2, f.tag, 2, 3) for f in self.faces}
+        edge_segs = {tag: rows(1, tag, 1, 2) for _, tag in gmsh.model.getEntities(1)}
+        return coords.reshape(-1, 3), index, face_tris, edge_segs
+
+    def _refuse(self, errors, log):
+        """Raise for a volume mesh gmsh would not make: a MeshRefusal naming the faces and edges round the point gmsh
+        gives, measured on the surface mesh it did make (self.points, self.face_tris, self.edge_segs)."""
+        why = parse_gmsh_refusal(log)
+        if why is None:
+            raise RuntimeError(f'{self.name}: gmsh could not mesh the volume: ' +
+                               '; '.join(re.sub(r'^Error\s*:\s*', '', e) for e in errors[:3]))
+        faces, edges = [], []
+        if why['point'] is not None:
+            p = np.asarray(why['point'], float)
+            faces = _faces_near(p, self.faces, self.points, self.face_tris, k=4)
+            for f in faces:
+                f['named_by_gmsh'] = f['tag'] in why['surfaces']
+            near = []
+            for tag, seg in self.edge_segs.items():
+                if not len(seg):
+                    continue
+                A, B = self.points[seg[:, 0]], self.points[seg[:, 1]]
+                d = B - A
+                t = np.clip(np.einsum('ij,ij->i', p - A, d) / np.maximum(np.einsum('ij,ij->i', d, d), 1e-300), 0, 1)
+                near.append((float(np.linalg.norm(p - (A + t[:, None] * d), axis=1).min()), tag))
+            for dist, tag in sorted(near)[:3]:
+                length = self.edge_lengths.get(tag)
+                edges.append({'tag': tag, 'length_mm': round(length, 4) if length is not None else None,
+                              'distance_mm': round(dist, 4), 'named_by_gmsh': tag in why['curves']})
+        at = f" at ({', '.join(f'{v:.3f}' for v in why['point'])}) mm" if why['point'] is not None else ''
+        listed = ', '.join(f"face {f['tag']} ({f['kind']}, {f['area_mm2']:g} mm², {f['distance_mm']:.3f} mm away"
+                           f"{', named by gmsh' if f['named_by_gmsh'] else ''})" for f in faces)
+        short = [f"edge {e['tag']} ({e['length_mm']:g} mm)" for e in edges
+                 if e['length_mm'] is not None and e['length_mm'] < self.mesh_mm]
+        sliv = len(self.slivers['faces']) + len(self.slivers['edges'])
+        msg = (f"{self.name}: gmsh would not mesh the volume: {why['what']}{at} (gmsh: '{why['message']}')."
+               + (f' Nearest faces: {listed}.' if listed else '')
+               + (f" Short edges near it: {', '.join(short)}." if short else '')
+               + ('' if why['point'] is not None else ' gmsh gave no point for it.')
+               + (f' The check before meshing found {sliv} sliver(s): see Study.slivers.' if sliv else '')
+               + f' Faces closer together than the mesh size ({self.mesh_mm:g} mm), or meeting almost tangentially, '
+               'get surface triangles that cut through each other. Thicken the gap or close it, remove the sliver in '
+               'the CAD, or mesh finer there: refine=[(point, radius, size)].')
+        raise MeshRefusal(msg, why['what'], point=why['point'], faces=faces, edges=edges, log=why['log'])
+
+    def faces_near(self, point: Sequence[float], k: int = 4) -> List[dict]:
+        """The k faces of the part nearest a point (mm), nearest first: {'tag', 'kind', 'area_mm2', 'distance_mm',
+        'center_mm', 'radius_mm' for cylinders}. Distances are to each face's surface triangles (so to the mesh's
+        chords on a curved face). Useful to name what sits at a hot spot or a mesher refusal's point."""
+        return _faces_near(point, self.faces, self.points, self.face_tris, k)
+
+    def _mesh_record(self) -> dict:
+        """The mesh's part of the result: the mesher, the refine zones, the slivers found before meshing, and how well
+        the mesh resolves the design peak (``peak``)."""
+        rec = {'mesher': self.mesher,
+               'refine': [{'at_mm': list(c), 'radius_mm': r, 'size_mm': s} for c, r, s in self.refine],
+               'slivers': self.slivers, 'peak': self._peak_resolution()}
+        if rec['peak']['wall_resolved'] is False or rec['peak']['radius_resolved'] is False:   # None: not measured
+            import warnings
+            warnings.warn(f"{self.name}: {rec['peak']['note']}", MeshWarning, stacklevel=3)
+        return rec
+
+    def _peak_resolution(self) -> dict:
+        """How many elements lie across the wall at the design peak (the peak the safety factor uses).
+
+        The wall is the thinnest one round the peak: from each surface triangle within two element sizes of the peak
+        corner, a ray goes into the material along its CAD face's normal (that face's facets round the triangle,
+        averaged) to where it leaves it again, and the shortest of those is the wall. A ray that leaves at a grazing
+        angle (more than 60° off head-on) ran along a wall to an edge, not across it, and does not count. Elements
+        across it = wall / the mean edge length of the tetrahedra at the peak corner, which is the number of element
+        layers a structured mesh would put there (a ray through an unstructured mesh crosses more tets than that, so
+        this is the cautious count). Under MIN_ELEMENTS_ACROSS the peak is flagged: a peak in a wall one or two
+        elements thick is not a result.
+
+        At an inside fillet or a hole the stress changes over the radius, not the wall: ``radius_mm`` is the smallest
+        radius of the concave cylindrical faces within one element of the peak, and elements larger than it
+        (MAX_ELEMENT_OVER_RADIUS) are flagged too. Convex ones (a rounded outside edge, a pin) do not count: bending
+        stress round them is linear in the distance from the neutral axis, which P2 elements carry. Measured on a stepped bar's R0.5 and R1 inside fillets: elements 1.1 to 3 times the radius read
+        the peak 6 to 17 % low (and on the R0.5 one at 4 mm, a 0.75 x finer mesh moved it only 2.3 %, so converge()
+        alone passed it); elements under the radius read within 2 % of the converged value."""
+        m = self._m
+        P, T = m.p.T, m.t.T
+        free = ~self._touches_bc
+        cand = np.where(free)[0] if free.any() else np.arange(len(T))
+        e = int(cand[np.argmax(self.vm_elem[cand])])
+        node = int(T[e, int(np.argmax(self.vm_corner[e]))])
+        x = P[node]
+        around = np.where((T == node).any(axis=1))[0]
+        h = float(np.mean([np.linalg.norm(P[T[around, i]] - P[T[around, j]], axis=1).mean()
+                           for i in range(4) for j in range(i + 1, 4)]))
+        # the boundary, wound outward (as export_viewer does)
+        bf = m.boundary_facets()
+        tri = m.facets[:, bf].T.copy()
+        opp = T[m.f2t[0, bf]].sum(axis=1) - tri.sum(axis=1)
+        nrm = np.cross(P[tri[:, 1]] - P[tri[:, 0]], P[tri[:, 2]] - P[tri[:, 0]])
+        flip = np.einsum('ij,ij->i', nrm, P[opp] - P[tri[:, 0]]) > 0
+        tri[flip, 1], tri[flip, 2] = tri[flip, 2], tri[flip, 1].copy()
+        nrm[flip] *= -1
+        unit = nrm / np.maximum(np.linalg.norm(nrm, axis=1, keepdims=True), 1e-30)
+        A = P[tri[:, 0]]
+        E1, E2 = P[tri[:, 1]] - A, P[tri[:, 2]] - A
+        cen = P[tri].mean(axis=1)
+        dist = np.linalg.norm(cen - x, axis=1)
+        reach = max(2 * h, float(dist.min()) + h)
+        near = np.where(dist <= reach)[0]
+        near = near[np.argsort(dist[near])][:24]
+        # each ray goes along the CAD face's own inward normal there: the facets of that face round the triangle,
+        # averaged (a facet of a curved face tilts, and a tilted ray near an edge runs out through the next face)
+        local = np.where(dist <= reach + 2 * h)[0]
+        face_of = {tuple(sorted(t)): tag for tag, tris in self.face_tris.items() for t in tris.tolist()}
+        ftag = np.array([face_of.get(tuple(sorted(t)), -1) for t in tri[local].tolist()])
+        walls = []
+        for i in near:
+            k = int(np.flatnonzero(local == i)[0])
+            same = np.isin(tri[local], tri[i]).any(axis=1) & ((ftag == ftag[k]) if ftag[k] >= 0 else (local == i))
+            d = -nrm[local[same]].sum(axis=0)
+            w = _ray_exit(cen[i], d / max(float(np.linalg.norm(d)), 1e-30), A, E1, E2, skip=1e-6 * h, unit=unit)
+            if w is not None:
+                walls.append(w)
+        wall = min(walls) if walls else None
+        vnorm = np.zeros_like(P)
+        for k in range(3):
+            np.add.at(vnorm, tri[:, k], nrm)
+        vnorm /= np.maximum(np.linalg.norm(vnorm, axis=1, keepdims=True), 1e-30)
+        verts = np.unique(tri)
+        sv = int(verts[np.argmin(np.linalg.norm(P[verts] - x, axis=1))])
+        on_surface = float(np.linalg.norm(P[sv] - x)) < 0.5 * h
+        where = (self._hint(sv, tri, nrm, vnorm, P) if on_surface
+                 else f'inside the material, {float(np.linalg.norm(P[sv] - x)):.1f} mm under the surface')
+        radius = None              # the tightest inside fillet or hole within one element of the peak (concave faces only:
+        if on_surface:             # round a convex edge or a pin, bending stress is linear and P2 elements carry it)
+            for f in self.faces:
+                fn = np.unique(self.face_tris.get(f.tag, np.zeros((0, 3), int))) if f.kind == 'Cylinder' and f.radius else []
+                if (len(fn) and float(np.linalg.norm(P[fn] - x, axis=1).min()) <= h and (radius is None or f.radius < radius)
+                        and self._cylinder_shape(f, vnorm, P)[0]):
+                    radius = float(f.radius)
+        rec = {'stress_mpa': round(float(self.vm_elem[e]), 2), 'at_mm': [round(float(v), 3) for v in x], 'where': where,
+               'element_mm': round(h, 3), 'wall_mm': round(wall, 3) if wall is not None else None,
+               'elements_across': round(wall / h, 1) if wall is not None else None,
+               'wall_resolved': bool(wall / h >= MIN_ELEMENTS_ACROSS) if wall is not None else None,
+               'radius_mm': round(radius, 3) if radius is not None else None,
+               'radius_resolved': bool(h <= MAX_ELEMENT_OVER_RADIUS * radius) if radius is not None else None}
+        notes = []
+        if wall is not None and wall / h < MIN_ELEMENTS_ACROSS:
+            notes.append(f'the design peak sits in a {wall:.1f} mm wall only {wall / h:.1f} elements thick: a peak in a '
+                         'wall one or two elements thick is not a result. Mesh finer there (refine=[(point, radius, '
+                         f'size)], a size under {wall / MIN_ELEMENTS_ACROSS:.2g} mm) and check it with converge()')
+        if radius is not None and h > MAX_ELEMENT_OVER_RADIUS * radius:
+            notes.append(f'the design peak sits by an R{radius:.3g} radius with elements of {h:.2g} mm, larger than the '
+                         'radius: the stress there changes over the radius, so this mesh does not resolve it (it '
+                         'usually reads low). Mesh finer there (refine=[(point, radius, size)], a size under '
+                         f'{0.7 * MAX_ELEMENT_OVER_RADIUS * radius:.2g} mm), then refine in steps until the peak settles')
+        if 'sharp inside corner' in where:
+            notes.append('the peak is at a sharp re-entrant corner, which is singular: its stress rises with every '
+                         'refinement and never converges. Model the fillet the part will have')
+        rec['note'] = '; '.join(notes)
+        return rec
+
+    def converge(self, factor: float = 0.75, tolerance: float = 0.05) -> dict:
+        """Solve the study again on a mesh `factor` times finer (mesh_mm and every refine size) and compare.
+
+        The finer study gets the same faces fixed and loaded (the same STEP gives gmsh the same face tags; checked).
+        Records and returns {'mesh_mm', 'tets', 'von_mises_design_mpa', 'max_displacement_mm' (each [this, finer]),
+        'change' (the design peak's relative change), 'peak_moved_mm', 'converged', 'tolerance', 'note'} in
+        ``result['mesh']['convergence']``, and keeps the finer study as ``self.finer``. Converged means the design peak
+        changed by at most `tolerance` and the finer mesh resolves it (``peak``'s wall and radius checks); a peak that
+        moved more than two mesh sizes is noted either way (an artefact when its value changed too, else two spots near
+        the peak value). A peak at a sharp re-entrant corner (on either mesh) never converges, even when the two
+        meshes happen to agree.
+        One step is a check, not a convergence study: for that, refine the peak in steps (refine=) and plot it."""
+        if not 0 < factor < 1:
+            raise ValueError('factor must be between 0 and 1 (0.75: a mesh a quarter finer)')
+        if not hasattr(self, 'result'):
+            self.solve()
+        fine = Study(self._shape, self.material, self.mesh_mm * factor, self.name,
+                     refine=[(c, r, s * factor) for c, r, s in self.refine], slivers='ignore')
+        same = len(fine.faces) == len(self.faces) and all(
+            a.tag == b.tag and a.kind == b.kind and math.isclose(a.area, b.area, rel_tol=1e-6, abs_tol=1e-9)
+            for a, b in zip(self.faces, fine.faces))
+        if not same:
+            raise RuntimeError(f'{self.name}: the finer mesh numbers the faces differently, so the loads cannot be '
+                               'carried over; build the finer Study and its loads by hand')
+        fine.fixed, fine.probe_faces = list(self.fixed), list(self.probe_faces)
+        fine.loads = [_Load(list(ld.faces), ld.force, ld.torque) for ld in self.loads]
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', MeshWarning)  # the finer peak's notes go into this check's own warning
+            r2 = fine.solve()
+        r1 = self.result
+        a, b = r1['von_mises_design_mpa'], r2['von_mises_design_mpa']
+        change = (b - a) / a if a else 0.0
+        moved = math.dist(r1['mesh']['peak']['at_mm'], r2['mesh']['peak']['at_mm'])
+        fine_peak = r2['mesh']['peak']
+        resolved = fine_peak['wall_resolved'] is not False and fine_peak['radius_resolved'] is not False
+        # a peak at a sharp re-entrant corner is singular: two meshes can still agree by chance (an L-bracket's corner
+        # refined to 0.25 mm moved only 1.8 % at 0.1875 mm, then rose 32 % at 0.125 mm), so it never passes
+        singular = any('sharp inside corner' in r['mesh']['peak']['where'] for r in (r1, r2))
+        ok = abs(change) <= tolerance and resolved and not singular
+        notes = []
+        if abs(change) > tolerance:
+            notes.append(f'the design peak changed {change:+.1%} on a mesh {factor:g} x as fine: it is not converged')
+        elif not resolved:
+            notes.append(f'the design peak changed only {change:+.1%} on a mesh {factor:g} x as fine, but that mesh '
+                         f"does not resolve it either, so it is not converged (two under-resolved meshes can agree): "
+                         f"{fine_peak['note']}")
+        elif singular:
+            notes.append(f'the design peak changed only {change:+.1%} on a mesh {factor:g} x as fine, but a peak at a '
+                         'sharp corner agrees between two meshes by chance, so it is not converged')
+        if moved > 2 * self.mesh_mm:                   # a peak that jumps elsewhere: an artefact, or two equal spots
+            notes.append(f'the design peak moved {moved:.1f} mm, to {r2["mesh"]["peak"]["where"]}'
+                         + (': the coarse peak was an artefact of the mesh there' if not ok else
+                            ', at about the same stress (two places near the peak value; check both)'))
+        if singular:
+            notes.append('the peak is at a sharp re-entrant corner, which never converges')
+        rec = {'factor': factor, 'mesh_mm': [self.mesh_mm, fine.mesh_mm], 'tets': [r1['mesh']['tets'], r2['mesh']['tets']],
+               'von_mises_design_mpa': [a, b], 'max_displacement_mm': [r1['max_displacement_mm'], r2['max_displacement_mm']],
+               'change': round(change, 4), 'peak_moved_mm': round(moved, 2), 'converged': bool(ok),
+               'tolerance': tolerance, 'note': '; '.join(notes)}
+        self.result['mesh']['convergence'] = rec
+        self.finer = fine
+        if not ok:
+            warnings.warn(f'{self.name}: ' + rec['note'], MeshWarning, stacklevel=2)
+        return rec
 
     def select(self, selector: Selector) -> List[int]:
         tags = [f.tag for f in self.faces if selector(f)]
@@ -759,6 +1352,7 @@ class Study:
                 ok = n2 > 1e-9
                 ang = float(np.mean(np.einsum('ij,ij->i', disp[:, nodes].T[ok], tang[ok]) / n2[ok]))   # radians
                 res['torsional_stiffness_nm_per_deg'] = round(t / 1000.0 / math.degrees(ang), 2) if ang > 1e-12 else None
+        res['mesh'].update(self._mesh_record())          # the mesher, refine zones, slivers, the peak's resolution
         self.result = res
         return res
 
@@ -1289,10 +1883,12 @@ class Study:
         if len(at) >= 2:
             n = nrm[at] / np.maximum(np.linalg.norm(nrm[at], axis=1, keepdims=True), 1e-30)
             cen = P[tri[at]].mean(axis=1)
-            dots = n @ n.T
-            i, j = np.unravel_index(int(np.argmin(dots)), dots.shape)
-            if dots[i, j] < math.cos(math.radians(40)):
-                if float(n[i] @ (cen[j] - cen[i])) > 0:
+            # any two triangles here at more than 40° to each other make an edge; if one such pair is concave (one
+            # triangle lies on the other's outer side), it is an inside corner, also where it meets an outside edge
+            # (the end of an inside corner on a side face, where three faces meet)
+            I, J = np.nonzero(n @ n.T < math.cos(math.radians(40)))
+            if len(I):
+                if np.any(np.einsum('ij,ij->i', n[I], cen[J] - cen[I]) > 1e-9):
                     return 'sharp inside corner (no fillet: the peak there rises as the mesh is refined)'
                 return 'outside edge'
         kinds = {f.kind for f in on}

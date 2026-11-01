@@ -21,8 +21,9 @@ from cadagent.formulas.linkages import (fivebar_inputs, fivebar_jacobians, fiveb
 from cadagent.formulas.screws import (NUT_FACTORS, nut_factor, preload_from_torque, tensile_stress_area,
                                       thread_shear_areas, thread_strip_force, torque_for_preload)
 from cadagent.formulas.springs import bergstrasser_factor, spring_index, spring_rate, spring_shear_stress
-from cadagent.formulas.thermal import (fan_curve_line, fan_operating_point, film_resistance, system_coefficient,
-                                       wall_heat_flow, wall_resistance)
+from cadagent.formulas.thermal import (fan_curve_line, fan_operating_point, fan_stall_flow, fans_in_parallel,
+                                       fans_in_series, film_resistance, system_coefficient, wall_heat_flow,
+                                       wall_resistance)
 from cadagent.formulas.torsion import (shear_modulus, torsion_bar_stiffness, torsion_bar_twist,
                                        torsion_constant_rect, torsion_constant_round, torsion_shear_stress_rect,
                                        torsion_shear_stress_round)

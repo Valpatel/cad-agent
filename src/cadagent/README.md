@@ -41,8 +41,8 @@ flowchart TD
 | [`publish/`](publish/README.md) | Results JSON, HTML reports, renders, 3D views, the project site, the local server, the print release (practice: publishing) |
 | [`webkit/`](webkit/README.md) | Browser pieces: 3D stage, file and FEA viewers, part tables, diagrams, copy buttons |
 | `cli.py` | `cad-agent <subcommand>`: the parser and the handlers |
-| `project.py` | The `cad:` section of a project's `cad-agent.yaml` |
-| `links.py`, `package.py` | Local link checks, the review zip |
+| `project.py` | The `cad:` section of a project's `cad-agent.yaml`; the date build outputs record (`source_time`: `SOURCE_DATE_EPOCH`, else the last commit) |
+| `links.py`, `package.py` | Local link checks, the review zip (reproducible: the same files give the same bytes) |
 | `agentkit.py` | `cad-agent agents install`: the skills and subagents for Claude Code and Codex |
 | `_deps.py`, `_moved.py` | Lazy optional dependencies; old module paths (`cadagent.fea` → `cadagent.simulation.fea`) until v0.7.0 |
 

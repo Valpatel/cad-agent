@@ -400,6 +400,10 @@ def test_layered_wall_with_films():
     assert fx.film_resistance(10.0, A) == pytest.approx(10.0)
     with pytest.raises(ValueError):
         fx.wall_heat_flow([], A, 60.0, 25.0)
+    # h = 0 is an insulated face, not a face held at its temperature: refused, as is a negative film coefficient
+    for films in ({"h_hot": 0.0}, {"h_cold": 0.0}, {"h_hot": -5.0}, {"h_cold": float("nan")}):
+        with pytest.raises(ValueError, match="insulated"):
+            fx.wall_heat_flow([(2 * MM, 0.2)], A, 60.0, 25.0, **films)
 
 
 def test_fan_against_a_quadratic_system_is_the_quadratic_root():

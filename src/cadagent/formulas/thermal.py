@@ -36,8 +36,9 @@ def film_resistance(coefficient: float, area: float) -> float:
 
 
 @formula(units={"layers": "[(thickness m, conductivity W/(m K)), ...] from the hot side", "area": "m^2",
-                "t_hot": "degC or K", "t_cold": "degC or K", "h_hot": "W/(m^2 K) or None (wall face at t_hot)",
-                "h_cold": "W/(m^2 K) or None (wall face at t_cold)"},
+                "t_hot": "degC or K", "t_cold": "degC or K",
+                "h_hot": "W/(m^2 K), above 0, or None (wall face held at t_hot)",
+                "h_cold": "W/(m^2 K), above 0, or None (wall face held at t_cold)"},
          returns="dict: heat_flow (W), flux (W/m^2), resistance (K/W), surfaces (temperatures at each face, hot to "
                  "cold)",
          limits=(_WALL,), source=cite("incropera", "Section 3.1.3 (The Composite Wall)"))
@@ -47,16 +48,21 @@ def wall_heat_flow(layers: Sequence[Tuple[float, float]], area: float, t_hot: fl
     temperature at every face (linear within each layer)."""
     if not layers:
         raise ValueError("give at least one (thickness, conductivity) layer")
-    rs: List[float] = ([film_resistance(h_hot, area)] if h_hot else []) + \
-        [wall_resistance(t, k, area) for t, k in layers] + ([film_resistance(h_cold, area)] if h_cold else [])
+    for name, h in (("h_hot", h_hot), ("h_cold", h_cold)):
+        if h is not None and not h > 0.0:
+            raise ValueError(f"{name} must be above 0: h = 0 is an insulated face (no heat flows through it), and None "
+                             "holds the face at its temperature")
+    rs: List[float] = ([film_resistance(h_hot, area)] if h_hot is not None else []) + \
+        [wall_resistance(t, k, area) for t, k in layers] + \
+        ([film_resistance(h_cold, area)] if h_cold is not None else [])
     total = sum(rs)
     q = (t_hot - t_cold) / total
     temps, t = [], t_hot
     for i, r in enumerate(rs):
-        if i or not h_hot:
+        if i or h_hot is None:
             temps.append(t)
         t -= q * r
-    if not h_cold:
+    if h_cold is None:
         temps.append(t)
     return {"heat_flow": q, "flux": q / area, "resistance": total, "surfaces": temps}
 

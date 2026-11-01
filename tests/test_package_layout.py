@@ -209,6 +209,10 @@ def test_an_old_package_brings_its_submodules_whatever_finder_comes_first():
     """Importing cadagent.gates puts every submodule into sys.modules under its old name too, so a finder another
     tool puts in front of ours (one that resolves cadagent.* through the path finder, as instrumenting hooks do)
     cannot load a second copy from the package's folder."""
+    leftovers = sorted(p.name for p in PKG.iterdir() if _leftover(p))
+    assert not leftovers, (f"{', '.join(leftovers)}/ left over from before the move: a finder in front then "
+                           "imports them as empty packages. Delete them first "
+                           "(test_no_folder_is_left_over_from_before_the_move)")
     code = """
 import importlib.abc, importlib.machinery, pkgutil, sys, warnings
 warnings.simplefilter("ignore", DeprecationWarning)

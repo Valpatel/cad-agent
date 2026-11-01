@@ -111,7 +111,8 @@ def misplaced(tree) -> list:
                 move = (f"or move it to cadagent.{there}" if there else
                         "or move it to the shared core" if domain == "cross_cutting" else "no package holds that area")
                 bad.append(f"{entry} lives in cadagent.{package} ({home_name(package)}) but is placed under "
-                           f"{domain}{'/' + area if area else ''}: list it under its own domain only, {move}")
+                           f"{domain}{'/' + area if area else ''}: list it under its own domain only "
+                           f"(an area elsewhere that relies on it names it in its uses: list), {move}")
     return bad
 
 
@@ -232,7 +233,9 @@ def test_rule_3_finds_a_module_placed_in_another_domain_too(tmp_path):
                                   "api: [cadagent.thermal.heatsink, cadagent.simulation.cfd]"))
     assert unlisted(planted(tmp_path), t) == [] and unimportable(t, loader(tmp_path)) == []
     assert misplaced(t) == ["cadagent.simulation.cfd lives in cadagent.simulation (simulation) but is placed under "
-                            "thermal/heat-sinks: list it under its own domain only, or move it to cadagent.thermal"]
+                            "thermal/heat-sinks: list it under its own domain only "
+                            "(an area elsewhere that relies on it names it in its uses: list), or move it to "
+                            "cadagent.thermal"]
 
 
 def test_uses_links_another_domains_module_without_a_second_home(tmp_path):
@@ -272,4 +275,5 @@ def test_rule_3_tells_the_practice_packages_apart():
                                   "api: [cadagent.publish.site, cadagent.review.evidence]"))
     assert misplaced(t) == ["cadagent.review.evidence lives in cadagent.review (practice/design-process or "
                             "practice/review-and-evidence) but is placed under practice/publishing: list it under its "
-                            "own domain only, or move it to cadagent.publish"]
+                            "own domain only (an area elsewhere that relies on it names it in its uses: list), "
+                            "or move it to cadagent.publish"]

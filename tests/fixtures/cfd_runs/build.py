@@ -23,9 +23,16 @@ solids-short-continuation
                     residuals (every iteration) but left header-only temperature and heat files (logged every 10).
 solids-one-step-continuation
                     the same, but the continuation from 100 crashed after its first iteration, at 101.
+solids-short-then-full-continuation
+                    solids-short-continuation continued again from the same saved time, 100: the stopped solve saved
+                    nothing, so this one starts from 100 too and finishes at 300. Its 100/ folders already hold
+                    <kind>.dat (residual rows, and header-only temperature and heat files), so it writes
+                    <kind>_100.dat beside them.
 fins-block-drifting air only, the fin-block case in one 100-iteration solve: the fan flow, the air through the fan and
                     the heat leaving have settled, the heat leaving within 1 % of the 40 W put in, but the block's
-                    mean air is still rising, by 1.5 °C over the convergence window (80-100).
+                    mean air is still rising, by 1.5 °C over the convergence window (80-100). Planted to test the
+                    drift check, not a realistic run: with the fins at 61.8 °C and hA 3.3 W/K, the block's heat falls
+                    from 38.9 W to 34.0 W over that window while the heat leaving stays at 39.7 W.
 fan-faces-known-profile
                     air only, a vented box whose only way out is an exhaust fan, 50 W put in, in one settled
                     100-iteration solve. The fan's annulus carries a known profile, the same at both ends of its
@@ -326,11 +333,17 @@ def solids_one_step_continuation(case: Path):
                                                       (100, 101, False, '--> FOAM FATAL ERROR: Floating point exception')])
 
 
+def solids_short_then_full_continuation(case: Path):
+    solids_run(case, 'solids-short-then-full-continuation', [(0, 150, False, DIVERGED), (100, 104, False, DIVERGED),
+                                                             (100, 300, True, '')])
+
+
 if __name__ == '__main__':
     for name, make in (('fins-no-solids', fins_no_solids), ('solids-ended-early', solids_ended_early),
                        ('solids-continued-again', solids_continued_again), ('solids-crashed-restart', solids_crashed_restart),
                        ('solids-short-continuation', solids_short_continuation),
                        ('solids-one-step-continuation', solids_one_step_continuation),
+                       ('solids-short-then-full-continuation', solids_short_then_full_continuation),
                        ('fins-block-drifting', fins_block_drifting), ('fan-faces-known-profile', fan_faces_known_profile)):
         shutil.rmtree(HERE / name, ignore_errors=True)
         (HERE / name).mkdir()

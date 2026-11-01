@@ -84,8 +84,9 @@ export const GLYPHS = {
   tool: '<rect x="8" y="16" width="84" height="68" rx="8"/><path class="a" d="M22 40l12 10-12 10"/><path d="M42 62h24"/>',
 };
 /** What an outside entry is built on: the main glyph of its cover, in the family's colour. `match` finds the family in
- * a field's words; `generic` families (parts, agents, benchmarks) say what a thing is for rather than what it is built
- * on, so they are only a last resort (see familyFor). */
+ * a field's words; `names`, where given, are the family's tool names only (its other words, such as "cable" or
+ * "stress", are a subject, not what a thing is built on); `generic` families (parts, agents, benchmarks) say what a
+ * thing is for rather than what it is built on, so they are only a last resort (see familyFor). */
 export const FAMILIES = [
   { key: 'kicad', label: 'KiCad', color: '#2f6f39', match: /\bkicad|kipy|pcbnew|\bpcb\b|gerber/, glyph: '<rect x="10" y="16" width="80" height="68" rx="6"/><path d="M26 34h20l10 10h18M26 66h14l8-8h26"/><circle class="a" cx="26" cy="34" r="5"/><circle class="a" cx="26" cy="66" r="5"/><circle cx="78" cy="44" r="5"/><circle cx="78" cy="58" r="5"/>' },
   { key: 'slicer', label: 'Slicer', color: '#c2410c', match: /slicer|slicing|bambu|prusa|orca/, glyph: '<path d="M36 8h28v16L50 40 36 24z"/><path class="a" d="M50 40v10"/><path d="M14 60h72M20 70h60M26 80h48M32 90h36"/>' },
@@ -96,9 +97,9 @@ export const FAMILIES = [
   { key: 'blender', label: 'Blender', color: '#6b4fa0', match: /blender/, glyph: '<circle cx="50" cy="50" r="36"/><path d="M14 50h72M50 14c-14 10-14 62 0 72M50 14c14 10 14 62 0 72M22 30c18 6 38 6 56 0M22 70c18-6 38-6 56 0"/><circle class="a" cx="72" cy="30" r="5"/>' },
   { key: 'cloud', label: 'Cloud CAD', color: '#475569', match: /onshape|fusion|zoo|\bkcl\b|solidworks|closed/, glyph: '<path d="M28 74h46a16 16 0 0 0 2-32 22 22 0 0 0-42-6 18 18 0 0 0-6 38z"/><path class="a" d="M40 52l10-6 10 6v12l-10 6-10-6z"/>' },
   { key: 'mesh', label: 'Mesh', color: '#6b4fa0', match: /mesh|trimesh|manifold|pyvista|meshio|\bstl\b/, glyph: '<path d="M12 70 34 22l34 8 20 44-36 14z"/><path d="M34 22 52 88M12 70l56-40M34 22l54 52M12 70h76"/><circle class="a" cx="68" cy="30" r="5"/>' },
-  { key: 'fea', label: 'FEA', color: '#0f766e', match: /calculix|\bfea\b|\bfem\b|fenics|elmer|scikit-fem|finite.element|stress/, glyph: '<path d="M10 84 28 18 54 46 84 14 90 84z"/><path d="M10 84 54 46 90 84M28 18 54 46 84 14"/><path class="a" d="M54 46 32 84M54 46 68 84"/>' },
-  { key: 'cfd', label: 'CFD', color: '#0f766e', match: /openfoam|\bcfd\b|airflow|fluid/, glyph: '<circle cx="50" cy="50" r="13"/><path class="a" d="M6 28c22 0 26 9 44 9s22-9 44-9"/><path d="M6 50h24M70 50h24M6 72c22 0 26-9 44-9s22 9 44 9"/>' },
-  { key: 'harness', label: 'Harness', color: '#b45309', match: /harness|wireviz|cable/, glyph: '<path d="M10 30h20c14 0 14 40 28 40h32M10 50h20c10 0 14 20 28 20M10 70h20c8 0 12-10 20-10"/><rect class="a" x="80" y="58" width="12" height="24" rx="2"/><path d="M6 24v52"/>' },
+  { key: 'fea', label: 'FEA', color: '#0f766e', match: /calculix|\bfea\b|\bfem\b|fenics|elmer|scikit-fem|finite.element|stress/, names: /calculix|fenics|elmer|scikit-fem|code.?aster/, glyph: '<path d="M10 84 28 18 54 46 84 14 90 84z"/><path d="M10 84 54 46 90 84M28 18 54 46 84 14"/><path class="a" d="M54 46 32 84M54 46 68 84"/>' },
+  { key: 'cfd', label: 'CFD', color: '#0f766e', match: /openfoam|\bcfd\b|airflow|fluid/, names: /openfoam|\bsu2\b/, glyph: '<circle cx="50" cy="50" r="13"/><path class="a" d="M6 28c22 0 26 9 44 9s22-9 44-9"/><path d="M6 50h24M70 50h24M6 72c22 0 26-9 44-9s22 9 44 9"/>' },
+  { key: 'harness', label: 'Harness', color: '#b45309', match: /harness|wireviz|cable/, names: /wireviz/, glyph: '<path d="M10 30h20c14 0 14 40 28 40h32M10 50h20c10 0 14 20 28 20M10 70h20c8 0 12-10 20-10"/><rect class="a" x="80" y="58" width="12" height="24" rx="2"/><path d="M6 24v52"/>' },
   { key: 'parts', label: 'Parts library', color: '#1f6f8b', generic: true, match: /fastener|warehouse|partcad|package manager|parts? (?:librar|catalog)/, glyph: '<path d="M28 12h44l8 14H20z"/><path d="M38 26v56l12 8 12-8V26"/><path class="a" d="M38 40l24 8M38 54l24 8M38 68l24 8"/>' },
   { key: 'benchmark', label: 'Benchmark', color: '#4338ca', generic: true, match: /benchmark|bench\b|eval|dataset|leaderboard|arena/, glyph: '<path d="M10 88h80"/><path d="M18 88V58h14v30M42 88V38h14v50M66 88V22h14v66"/><circle class="a" cx="73" cy="12" r="6"/>' },
   { key: 'agent', label: 'Agent tools', color: '#bd3a12', generic: true, match: /\bmcp\b|agent|plugin|skill|llm|claude|codex/, glyph: '<rect x="18" y="28" width="64" height="50" rx="12"/><circle class="a" cx="38" cy="52" r="6"/><circle class="a" cx="62" cy="52" r="6"/><path d="M50 28V14M42 14h16M40 66h20"/>' },
@@ -123,7 +124,7 @@ const AREA_FAMILY = { cfd: 'cfd', 'airflow-and-fans': 'cfd', 'structural-fea': '
  * built on (a FreeCAD cable workbench is FreeCAD, not a harness tool). Only then the generic families: agent tools,
  * parts libraries, benchmarks. Null when nothing fits: the cover then shows the area's glyph. */
 export function familyFor({ kernel, name, areas = [], text } = {}) {
-  const tools = FAMILIES.filter(f => !f.generic);
+  const tools = FAMILIES.filter(f => !f.generic).map(f => f.names ? { ...f, match: f.names } : f);
   const area = FAMILIES.find(f => f.key === areas.map(a => AREA_FAMILY[a]).find(Boolean)) || null;
   return familyOf(kernel) || familyOf(name, tools) || familyOf(text, tools) || area || familyOf(`${name} ${text}`) || null;
 }

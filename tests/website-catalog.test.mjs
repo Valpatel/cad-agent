@@ -292,13 +292,15 @@ test('outside data cannot inject markup: a hostile registry entry is text on the
 test('an outside cover names what the entry is built on: its structured fields first, its description last', async () => {
   // #185: the first free-text match used to win, so OpenFOAM was "Mesh", specify-core a "Parts library" and two
   // build123d projects that slice their output "Slicer".
+  // A domain word in a name is a subject, not a kernel: sargo-devel/Cables is a FreeCAD workbench, not a harness tool.
   const want = { 'project-openfoam-opencfd-v2512': 'CFD', 'project-kd5ryn-b123d-print': 'build123d',
-    'project-ballerabdude-agent-cad-works': 'build123d', 'project-pzfreo-specify-core': null };
+    'project-ballerabdude-agent-cad-works': 'build123d', 'project-pzfreo-specify-core': null, 'library-sargo-devel-cables': 'FreeCAD',
+    'library-wireviz-wireviz': 'Harness' };
   for (const [id, family] of Object.entries(want)) {
     const it = catalog.items.find(i => i.id === id);
     assert.ok(it, `${id} is in the catalogue`);
     const label = (await readFile(local(it.cover), 'utf8')).match(/aria-label="([^"]*)"/)[1];
-    if (family) assert.match(label, new RegExp(`: project on ${family},`), `${id}: ${label}`);
+    if (family) assert.match(label, new RegExp(`: ${it.kind} on ${family},`), `${id}: ${label}`);
     else assert.doesNotMatch(label, /Parts library/, `${id}: ${label}`);
   }
 });

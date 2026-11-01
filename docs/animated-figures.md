@@ -74,7 +74,8 @@ Copy `tools/anim/gyropup-leg.yaml`, then add the figure to `FIGURES` in `tools/r
   - Joints are measured from coaxial solids, and the link lengths are checked against the design's.
   - The solve order says which joints are found from which.
   - The driven joint follows a path.
-  - Four-bars driven by an output point, five-bars and chains of dyads all fit (`cadagent.publish.anim.linkage`).
+  - Four-bars driven by an output point, five-bars and chains of dyads all fit (`cadagent.mechanical.linkages`, which
+    also sweeps closed loops over their inputs: see [Linkages](linkages.md)).
 - **the view**: a direction and an up vector. Set the stage box in pixels.
 - **the FEA field**: optional, a `cadagent-fea-viewer` v1 file (what `cadagent.simulation.fea` writes for the viewer), with the stress bands as fractions of strength.
 - **the words**: the wordmark and tagline, drawn as outlines because an `<img>` loads no fonts. Labels, captions and the check rows' wording (`present.checks`, with `{placeholders}` filled from the scene) sit under `present`, so they can change without re-extracting.

@@ -18,7 +18,8 @@ from cadagent.formulas._registry import REGISTRY, SOURCES, Formula, catalogue
 from cadagent.formulas.beams import (DESIGNS, SUPPORTS, beam_stiffness, cantilever_shape, cantilever_strain_profile,
                                      cantilever_taper_factor, cantilever_thickness_profile, cantilever_tip_deflection,
                                      rect_second_moment, snap_arm, snap_deflection_force, snap_root_strain)
-from cadagent.formulas.linkages import fourbar_angles, fourbar_input_limits, grashof, transmission_angle
+from cadagent.formulas.linkages import (fivebar_inputs, fivebar_jacobians, fivebar_point, fourbar_angles,
+                                        fourbar_input_limits, grashof, transmission_angle)
 from cadagent.formulas.screws import (BOSS_ENGAGEMENT, BOSS_HOLE, BOSS_OUTSIDE, NUT_FACTORS, TIGHTEN_OVER_DRIVE,
                                       TIGHTEN_OVER_STRIP, boss_hoop_stress, nut_factor, preload_from_torque,
                                       screw_boss, tensile_stress_area, thread_radial_pressure, thread_shear_areas,

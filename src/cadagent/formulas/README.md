@@ -6,7 +6,7 @@ stops being valid, and its source by author, title, edition and section:
 - torsion bars;
 - coil springs;
 - screw preload and thread strip;
-- four-bar linkages;
+- four-bar and five-bar linkages;
 - conduction, film resistance, fans in series and parallel, fan operating points and the stall region.
 
 `from cadagent import formulas as fx`, then `fx.catalogue()` lists every formula. It sits in the shared core, beside
@@ -40,7 +40,7 @@ flowchart TD
 | `torsion.py` | Torsion constants and shear stress of round and rectangular bars, torsion-bar twist and stiffness, the peak shear strain of a twisted rectangle and a torsion-bar snap against the Covestro allowable |
 | `springs.py` | Coil-spring index, Bergsträsser factor, rate and shear stress |
 | `screws.py` | Tensile stress area, nut factor (any flank angle), preload from torque and back, thread shear areas and strip force, the thread's radial push and the boss's hoop stress, and a thread-forming screw in a plastic boss against Covestro's torque window |
-| `linkages.py` | Grashof class and inversion, four-bar angles from the input angle, transmission angle, the input's limits |
+| `linkages.py` | Grashof class and inversion, four-bar angles from the input angle, transmission angle, the input's limits; a five-bar's tip, crank angles and singularities |
 | `thermal.py` | Wall and film resistance, wall heat flow, straight-line fan curve, system coefficient, fans in series and parallel, fan operating point, stall flow |
 
 A closed form is not proof of fit or strength. Each result holds only within the limits it states, and a printed part

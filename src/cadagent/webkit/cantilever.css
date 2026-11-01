@@ -8,7 +8,10 @@ cad-cantilever{--cc-ink:#173d3c;--cc-muted:#526863;--cc-sage:#6f8a80;--cc-mist:#
   overflow-wrap:normal}
 @media(max-width:699.98px){cad-cantilever{--cc-panel:664px}}
 cad-cantilever>img,cad-cantilever .cc-figure>svg{display:block;width:100%;height:auto;aspect-ratio:640/250;max-width:none;margin:0;border:0}
-cad-cantilever:not(:defined)::after{content:"";display:block;box-sizing:border-box;height:var(--cc-panel);border-top:1px solid var(--cc-mist)}
+/* Until the script defines the element (or if it never loads), the reserved panel says what belongs there. */
+cad-cantilever:not(:defined)::after{content:"The sliders and readouts load here with JavaScript. The figure above is the starting arm.";
+  display:flex;align-items:center;justify-content:center;box-sizing:border-box;height:var(--cc-panel);padding:16px 24px;
+  border-top:1px solid var(--cc-mist);color:var(--cc-muted);font-size:13px;text-align:center}
 @media(scripting:none){cad-cantilever:not(:defined)::after{display:none}}
 cad-cantilever .cc-figure{margin:0}
 cad-cantilever .cc-panel{box-sizing:border-box;height:var(--cc-panel);overflow:hidden;padding:14px 18px 12px;

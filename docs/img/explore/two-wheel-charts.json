@@ -1,0 +1,30 @@
+{
+ "source": "examples/explore-two-wheel",
+ "generated_by": "tools/explore_charts.py (run it with --check to compare)",
+ "compare": {
+  "command": "cad-agent compare",
+  "title": "Two-wheel-legged robot options",
+  "what": "4 designs",
+  "x": {
+   "metric": "cost_usd",
+   "label": "cost",
+   "unit": "USD"
+  },
+  "y": {
+   "metric": "mass_kg",
+   "label": "mass",
+   "unit": "kg"
+  },
+  "front_over": [
+   "cost",
+   "mass",
+   "runtime"
+  ],
+  "points": [
+   {"label": "Light", "x": 848.56, "y": 5.688, "feasible": true, "front": true, "lower_bound": []},
+   {"label": "Standard", "x": 1612.08, "y": 10.304, "feasible": true, "front": true, "lower_bound": []},
+   {"label": "Strong", "x": 2920.6, "y": 16.03, "feasible": true, "front": false, "lower_bound": []},
+   {"label": "Long range", "x": 1682.08, "y": 11.079, "feasible": false, "front": false, "lower_bound": ["cost_usd"]}
+  ]
+ }
+}

@@ -27,22 +27,26 @@ const PHONE_BUDGET = 14000;
 const problems = [];
 const fail = (where, what) => problems.push(`${where}: ${what}`);
 
-async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null } = {}) {
+// `init`: a script to run before the page's own (to break something on purpose); `fails`: a page error it causes.
+async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null, init = null, fails = null } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, javaScriptEnabled: js, reducedMotion: motion });
   const page = await context.newPage();
   const seen = [];
   if (block) await page.route(`**${block}`, r => r.abort());
   page.on('console', m => { if (m.type() === 'error' && !/status of 404/.test(m.text()) && !(block && /gallery\.js|Failed to load|load failed|importing a module/i.test(m.text()))) seen.push(`console: ${m.text()}`); });
-  page.on('pageerror', e => seen.push(`page error: ${e.message}`));
+  page.on('pageerror', e => { if (!(fails && fails.test(e.message))) seen.push(`page error: ${e.message}`); });
   page.on('requestfailed', r => { if (!/ERR_ABORTED|cancelled/i.test(r.failure()?.errorText || '') && !(block && r.url().endsWith(block))) seen.push(`failed: ${r.url()}`); });
   page.on('response', r => { if (r.status() >= 400) seen.push(`HTTP ${r.status()}: ${r.url()}`); });
   page.on('request', r => { if (!r.url().startsWith(base) && !/^(data|blob):/.test(r.url())) seen.push(`third party: ${r.url()}`); });
   if (js) await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
+  if (init) await page.addInitScript(init);
   await page.goto(base + route, { waitUntil: 'networkidle' });
-  if (js && !block) await page.waitForSelector('cad-gallery[data-ready]', { timeout: 10000 }).catch(() => seen.push('the gallery did not start'));
+  if (js && !block && !fails) await page.waitForSelector('cad-gallery[data-ready]', { timeout: 10000 }).catch(() => seen.push('the gallery did not start'));
   const done = async () => { for (const s of seen) fail(`${route} @${width}${js ? '' : ' no-JS'}`, s); await context.close(); };
   return { page, done };
 }
+// Hidden from view but kept for screen readers (gallery.css: a 1 px clipped box), or not shown at all.
+const offScreen = loc => loc.evaluate(el => { const r = el.getBoundingClientRect(); return !el.checkVisibility() || (r.width <= 1 && r.height <= 1); });
 const visible = (page, sel = '[data-item]') => page.$$eval(sel, els => els.filter(e => e.checkVisibility()).map(e => e.id));
 const query = page => new URL(page.url()).search;
 
@@ -61,6 +65,36 @@ async function countsMatchIndex(page, where) {
     if (Number(n) !== want) fail(where, `tab ${tab || 'All'} says ${n}, index.json ${want}`);
   }
 }
+// A gallery whose start failed is the page as written: what the no-script page shows, and no control left working.
+async function failedLikeNoScript(page, route, where) {
+  await page.waitForSelector('cad-gallery[data-failed]', { timeout: 10000 }).catch(() => fail(where, 'the page did not mark data-failed'));
+  if (await page.locator('cad-gallery[data-ready]').count()) fail(where, 'the gallery still says it is ready');
+  const total = await page.locator('[data-item]').count();
+  const shown = await visible(page);
+  if (shown.length !== total) fail(where, `${shown.length} of ${total} entries visible`);
+  for (const sel of ['.cat-search', '#sort', '[data-gallery-more]']) if (await page.locator(sel).first().isVisible()) fail(where, `${sel} shows but cannot work`);
+  if (await page.locator('.cat-empty:visible').count()) fail(where, 'an empty-state box shows');
+  if (!(await page.locator('.play').isVisible())) fail(where, 'the "Play with it" strip is gone');
+  if (await page.locator('cad-gallery [role="tab"], cad-gallery [tabindex="-1"]').count()) fail(where, 'tabs keep their tab roles or a tabindex');
+  if (await page.locator('[data-gallery-chips] > *').count()) fail(where, 'a chip from the view is left');
+  const copies = await page.$$eval('cad-gallery cad-copy', els => els.map(e => e.querySelectorAll(':scope > .cad-copy-btn').length));
+  if (copies.some(n => n !== 1)) fail(where, `copy buttons per <cad-copy>: ${[...new Set(copies)]}`);
+  // The same panels, counts and status as the no-script page at this address.
+  const read = p => p.evaluate(() => ({
+    panels: [...document.querySelectorAll('[data-gallery-when]')].filter(e => e.checkVisibility()).length,
+    counts: [...document.querySelectorAll('cad-gallery [data-count]')].map(e => e.textContent.trim()).join(),
+    status: document.querySelector('[data-gallery-status]')?.textContent.trim(),
+  }));
+  const plain = await open(route, { js: false });
+  const [got, want] = [await read(page), await read(plain.page)];
+  for (const k of Object.keys(want)) if (got[k] !== want[k]) fail(where, `${k}: ${JSON.stringify(got[k]).slice(0, 80)}, no-script ${JSON.stringify(want[k]).slice(0, 80)}`);
+  await plain.done();
+  // A click on what was a chip or a tab does not bring the dead gallery back to life: links are plain links again.
+  await page.locator('[data-gallery-tabs] a').nth(1).click();
+  await page.waitForLoadState('domcontentloaded');
+  if ((await visible(page)).length !== total) fail(where, 'a click re-filtered the failed gallery');
+}
+
 // The first thing a shared view is about (the area's panel, else the first entry): its top, in px from the window's.
 const firstResultTop = page => page.evaluate(() => {
   const el = [...document.querySelectorAll('[data-gallery-when]:not([hidden]), [data-item]')].find(e => e.checkVisibility());
@@ -89,6 +123,39 @@ try {
     if (shown.length !== total) fail('gallery.js blocked', `${shown.length} of ${total} entries visible`);
     for (const sel of ['.cat-search', '#sort', '[data-gallery-more]']) if (await page.locator(sel).first().isVisible()) fail('gallery.js blocked', `${sel} shows but cannot work`);
     if (!(await page.locator('.play').isVisible())) fail('gallery.js blocked', 'the "Play with it" strip is gone');
+    await done();
+  }
+
+  // The first render throws (a data bug, a browser quirk): the gallery is not ready, marks itself failed, and the page
+  // is the no-script page, not 48 of 161 entries with a dead search box (#185).
+  {
+    const init = () => {
+      const toggle = Element.prototype.toggleAttribute;
+      let thrown = false;
+      Element.prototype.toggleAttribute = function (name, force) {
+        if (!thrown && this.localName === 'cad-gallery' && name === 'data-overview') { thrown = true; throw new Error('test: the first render throws'); }
+        return toggle.call(this, name, force);
+      };
+    };
+    const { page, done } = await open('/catalog', { init, fails: /the first render throws/ });
+    await failedLikeNoScript(page, '/catalog', 'first render throws');
+    await done();
+  }
+
+  // The start throws later, after the first render, on a shared view: the page still goes back to what it wrote, with
+  // no chip, open area panel or filtered status left from the view (#189 review).
+  {
+    const init = () => {
+      const media = window.matchMedia.bind(window);
+      let thrown = false;
+      window.matchMedia = q => {
+        if (!thrown && /reduced-motion/.test(q) && document.querySelector('cad-gallery')?.hasAttribute('data-ready')) { thrown = true; throw new Error('test: the start throws after the first render'); }
+        return media(q);
+      };
+    };
+    const route = '/catalog?kind=tools&area=gears';
+    const { page, done } = await open(route, { init, fails: /the start throws after the first render/ });
+    await failedLikeNoScript(page, route, 'start throws late');
     await done();
   }
 
@@ -193,6 +260,66 @@ try {
       if (!(await page.locator('[data-gallery-empty-scope]').isVisible())) fail('empty area', `${empty.slug}: no "nothing here yet" message`);
       else if (!(await page.textContent('[data-gallery-empty-scope]')).includes(empty.title)) fail('empty area', 'the message does not name the area');
       if (await page.locator('[data-gallery-empty]').isVisible()) fail('empty area', 'it also says no entries match the filters');
+      // The status line says the same for screen readers, so it is hidden from view while the box shows (#185).
+      const status = page.locator('[data-gallery-status]');
+      if (!(await status.textContent()).includes(empty.title)) fail('empty area', 'the status line does not say it for screen readers');
+      if (!(await offScreen(status))) fail('empty area', 'the status line repeats the box on screen');
+      await done();
+    }
+  }
+
+  // Links are the choice applied to the current view: after a tab change and a cleared search, an area link carries
+  // the new tab and no stale words (each render used to merge the href the last one wrote, #185).
+  {
+    const { page, done } = await open('/catalog?kind=tools');
+    await page.locator('[data-gallery-tabs] [data-tab="guides"]').click();
+    const search = page.locator('[data-gallery-search]');
+    await search.fill('gear');
+    await page.waitForTimeout(450);
+    await search.fill('');
+    await page.waitForTimeout(450);
+    const href = await page.getAttribute('.area-tree .area-link[data-value="gears"]', 'href');
+    const q = new URL(href, base).searchParams;
+    if (q.get('kind') !== 'guides' || q.get('area') !== 'gears' || q.has('q')) fail('stale links', `the Gears link after Guides and a cleared search: ${href}`);
+    await done();
+  }
+
+  // An area with entries, but none of the chosen kind, says so too instead of showing blank space (#185).
+  {
+    const catalog = JSON.parse(await readFile(path.join(dir, 'catalog.json'), 'utf8'));
+    const areas = index.domains.flatMap(d => d.areas).filter(a => a.count > 0);
+    let pick = null;
+    for (const a of areas) {
+      const kinds = new Set(catalog.items.filter(i => i.areas.includes(a.slug)).map(i => i.kind));
+      const tab = index.kinds.find(k => !k.kinds.some(x => kinds.has(x)));
+      if (tab) { pick = { area: a, tab }; break; }
+    }
+    if (!pick) fail('area without the kind', 'no area lacks a kind to test with');
+    else {
+      const where = `?area=${pick.area.slug}&kind=${pick.tab.tab}`;
+      const { page, done } = await open(`/catalog${where}`);
+      const box = page.locator('[data-gallery-empty-kind]');
+      if (!(await box.isVisible())) fail(where, 'no message box: blank space');
+      else {
+        const text = await box.textContent();
+        const tabName = await page.$eval(`[data-gallery-tabs] [data-tab="${pick.tab.tab}"]`, t => t.firstChild.textContent.trim().toLowerCase());
+        if (!text.includes(pick.area.title) || !text.includes(tabName)) fail(where, `the box does not name the area and the kind (${tabName}): ${text}`);
+        for (const sel of ['[data-gallery-empty]', '[data-gallery-empty-scope]']) if (await page.locator(sel).isVisible()) fail(where, `${sel} shows as well`);
+        if (!(await offScreen(page.locator('[data-gallery-status]')))) fail(where, 'the status line repeats the box on screen');
+        await box.locator('a').click();
+        await page.waitForFunction(() => document.querySelectorAll('[data-item]:not([hidden])').length > 0, null, { timeout: 5000 })
+          .catch(() => fail(where, '"show every kind" shows nothing'));
+        const q = new URLSearchParams(query(page));
+        if (q.get('area') !== pick.area.slug || q.get('kind')) fail(where, `"show every kind" went to ${query(page)}`);
+        if (await box.isVisible()) fail(where, 'the box stays after "show every kind"');
+        if (await offScreen(page.locator('[data-gallery-status]'))) fail(where, 'the status line stays hidden without a box');
+        // The same view as opening the area itself.
+        const shown = await visible(page);
+        const direct = await open(`/catalog?area=${pick.area.slug}`);
+        const want = await visible(direct.page);
+        if (shown.join() !== want.join()) fail(where, `after "show every kind": ${shown.length} entries, ?area=${pick.area.slug} shows ${want.length}`);
+        await direct.done();
+      }
       await done();
     }
   }

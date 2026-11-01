@@ -41,6 +41,7 @@
 cad-nav [hidden]{display:none!important}
 @media(max-width:1099.98px){
   :where(cad-nav .cad-nav-fold){display:block;margin:0}
+  :where(cad-nav .cad-nav-fold)::details-content{display:block}
   :where(cad-nav .cad-nav-panel){position:static;max-height:none;overflow:visible;padding:0}
   :where(cad-nav .cad-nav-panel)::before{display:none}
   :where(cad-nav .cad-nav-filter){position:static}

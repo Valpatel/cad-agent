@@ -82,10 +82,12 @@ try{
   await page.goto(site.url+'/ahead-light');await page.waitForFunction(()=>window.diagrams);await page.waitForLoadState('networkidle');
   const seen=await page.evaluate(()=>({id:document.querySelector('.cad-diagram svg').id,state:document.querySelector('.cad-diagram').dataset.state,
    first:window.firstBox,now:document.querySelector('#after').getBoundingClientRect().top,firstHint:window.firstHint,hint:!document.querySelector('.cad-diagram-hint').hidden,
-   hintHeight:document.querySelector('.cad-diagram-hint').getBoundingClientRect().height}));
+   hintHeight:document.querySelector('.cad-diagram-hint').getBoundingClientRect().height,
+   hintClipped:(h=>h.scrollHeight>h.clientHeight+1)(document.querySelector('.cad-diagram-hint'))}));
   assert.deepEqual([seen.id,seen.state],['cad-diagram-sahead','ready']);assert.deepEqual(fetched,[],'a drawn figure needs no Mermaid');
   assert.equal(seen.now,seen.first,'the text after the diagram did not move when the script ran');
   assert.equal(seen.hint,overflows,`hint at ${width}px`);assert.equal(seen.firstHint>0,overflows,`hint before the script at ${width}px`);assert.equal(seen.hintHeight>0,overflows);
+  assert.ok(!seen.hintClipped,`the hint shows all of its text (it wraps at ${width}px)`);
   await page.setViewportSize({width:width===320?1800:320,height:700});await page.waitForFunction(o=>document.querySelector('.cad-diagram-hint').hidden===o,overflows);
   await page.close();
  }

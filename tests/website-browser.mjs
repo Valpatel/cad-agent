@@ -553,9 +553,10 @@ async function drawnDiagramProblems() {
     const r = f.getBoundingClientRect(), svg = f.querySelector('.cad-diagram-view svg')?.getBoundingClientRect();
     const view = f.querySelector('.cad-diagram-view'), hint = f.querySelector('.cad-diagram-hint');
     return { state: f.dataset.state, box: [r.width, r.height].map(n => Math.round(n * 2) / 2), svg: svg && [svg.width, svg.height],
-      overflows: view.scrollWidth > view.clientWidth + 1, hint: hint.getBoundingClientRect().height > 0 && getComputedStyle(hint).display !== 'none' };
+      overflows: view.scrollWidth > view.clientWidth + 1, hint: hint.getBoundingClientRect().height > 0 && getComputedStyle(hint).display !== 'none',
+      clipped: hint.scrollHeight > hint.clientHeight + 1 };
   }));
-  for (const width of [360, 1366]) for (const route of PAGES) {
+  for (const width of [320, 360, 1366]) for (const route of PAGES) {
     const where = `${width}px ${route}`;
     const still = await browser.newContext({ viewport: { width, height: 800 }, javaScriptEnabled: false });
     const off = await still.newPage();
@@ -586,6 +587,7 @@ async function drawnDiagramProblems() {
       if (!a || a.box.join() !== b.box.join()) out.push(`${where}: diagram ${i + 1} is ${b.box.join(' x ')} px without script and ${a?.box.join(' x ')} px with it`);
       for (const [label, m] of [['without script', b], ['with script', a]])
         if (m && m.hint !== m.overflows) out.push(`${where}: diagram ${i + 1} ${m.overflows ? 'overflows' : 'fits'} but its scroll hint is ${m.hint ? 'shown' : 'hidden'} ${label}`);
+        else if (m?.hint && m.clipped) out.push(`${where}: diagram ${i + 1}'s scroll hint is cut off ${label}`);
     });
   }
   return out;

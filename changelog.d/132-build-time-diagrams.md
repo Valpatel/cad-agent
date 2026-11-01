@@ -2,8 +2,10 @@
 - Site: the build draws every Mermaid diagram itself, in headless Chromium through Playwright, and writes the finished
   `<figure class="cad-diagram" data-state="ready">` into the page (`tools/site-diagrams.mjs`). Pages no longer move
   while they load: the worst layout shift on a page with a diagram falls from 0.58 to 0.012, against Google's "good"
-  limit of 0.1. Diagrams show without script, and no page downloads Mermaid to draw them. Output is the same bytes for
-  the same source, theme, Mermaid and kit, and is cached in `.cache/site-diagrams/`. With no browser, or with
+  limit of 0.1. Diagrams show without script, and no page downloads Mermaid to draw them. On one machine and browser build,
+  output is the same bytes for the same source, theme, Mermaid and kit, and is cached in `.cache/site-diagrams/`; the
+  build log names label characters the site's font lacks, which another machine measures differently. A gantt chart
+  is drawn without its "today" line. With no browser, or with
   `--client-diagrams`, the build warns and leaves the diagrams to the reader's browser; `npm run deploy:site` still
   deploys (#132).
 - Web kit: `drawDiagram(source, {theme, id, fontFamily, fontSize, mermaid})` in `diagrams.js` draws one diagram ahead
@@ -11,8 +13,9 @@
   when the page's theme is not the one it was drawn in (#132).
 
 **Changed**
-- Web kit: the sideways-scroll hint is sized by `diagrams.css` from the drawing's width (`--cad-diagram-w`) and the
-  figure's, so it shows when it should without script and nothing moves when the script runs. `.cad-diagram` is now a
+- Web kit: the sideways-scroll hint is shown or folded away by `diagrams.css`, from the drawing's width
+  (`--cad-diagram-w`) and the figure's, so it shows when it should without script and nothing moves when the script
+  runs. A hint that wraps keeps both lines. `.cad-diagram` is now a
   size container (`container-type: inline-size`), and the source in the disclosure is `pre.cad-diagram-source` (#132).
 
 **Projects must change**

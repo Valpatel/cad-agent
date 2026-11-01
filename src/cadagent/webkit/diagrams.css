@@ -15,7 +15,8 @@ pre>code.language-mermaid{display:none}
 pre.mermaid::before,pre:has(>code.language-mermaid)::before{content:'Loading diagram…';display:block;font:14px/1.5 system-ui,sans-serif;color:var(--ink,#263e35)}
 pre.cad-diagram-boot-error::before{content:'Diagram renderer could not load.'}
 .cad-diagram-reload{min-height:44px;padding:10px 14px;cursor:pointer;font:inherit}
-/* The sideways-scroll hint takes its line only when the drawing (--cad-diagram-w, set where it is drawn) is wider than
-   the figure (100cqw), so a figure drawn at build time is laid out right without script and nothing moves when it runs. */
+/* The sideways-scroll hint takes room only when the drawing (--cad-diagram-w, set where it is drawn) is wider than the
+   figure (100cqw), so a figure drawn at build time is laid out right without script and nothing moves when it runs. Its
+   height is capped, not set, so a hint that wraps (a narrow phone, larger text) keeps every line. */
 .cad-diagram-hint{margin:0;font-size:13px;font-weight:600;line-height:1.5;overflow:hidden;
-  height:clamp(0px,(var(--cad-diagram-w,0px) - 100cqw - 1px)*1000,1.5em);margin-bottom:clamp(0px,(var(--cad-diagram-w,0px) - 100cqw - 1px)*1000,10px)}
+  max-height:clamp(0px,(var(--cad-diagram-w,0px) - 100cqw - 1px)*1000,10em);margin-bottom:clamp(0px,(var(--cad-diagram-w,0px) - 100cqw - 1px)*1000,10px)}

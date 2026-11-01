@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { drawDiagrams, unescapeHtml } from '../tools/site-diagrams.mjs';
+import { drawDiagrams, forDrawing, unescapeHtml } from '../tools/site-diagrams.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-site-diagrams-'));
@@ -109,6 +109,28 @@ test('hostile labels stay inert when drawn at build time', async () => {
   const html = draw(page);
   assert.match(html, /Alice/);
   assert.deepEqual(unsafe(html.replace(/<pre class="cad-diagram-source">[\s\S]*?<\/pre>|<pre><code[\s\S]*?<\/code><\/pre>/g, '')), []);
+});
+
+test('label characters the site\'s font lacks are named; ones it has are not', async () => {
+  const { said, log } = quiet(), page = block(FLOW) + block('flowchart LR\n    A[Load → Stress] --> B[Café]\n');
+  const { stats } = await drawDiagrams([page], { kit, site, cacheDir: cache(), log });
+  assert.equal(stats.drawn, 2, JSON.stringify(stats));
+  assert.equal(stats.uncovered, '→', 'Inter\'s latin subset has é but no arrow');
+  assert.match(said.join('\n'), /1 of the 2 drawn have label characters the site's font does not have \(→\)/);
+});
+
+test('a gantt chart is drawn without the build day\'s "today" line, and shows its source as written', async () => {
+  const gantt = 'gantt\n    dateFormat YYYY-MM-DD\n    todayMarker stroke:#f00\n    section Build\n    Frame :a1, 2026-01-05, 10d\n';
+  const { draw, stats } = await drawDiagrams([block(gantt)], { kit, site, cacheDir: cache(), log: quiet().log });
+  assert.equal(stats.drawn, 1, JSON.stringify(stats));
+  const html = draw(block(gantt));
+  assert.match(html, />Frame ?</);
+  assert.doesNotMatch(html, /class="today"/);
+  assert.ok(html.includes(`<pre class="cad-diagram-source">${esc(gantt)}</pre>`), 'the source, as written');
+  // Only a gantt chart's own keyword line is touched, after any front matter, and an earlier todayMarker goes.
+  assert.equal(forDrawing('---\nconfig:\n  gantt:\n    barHeight: 20\n---\n%% plan\ngantt\n    todayMarker on\n    A :a1, 2026-01-01, 1d\n'),
+    '---\nconfig:\n  gantt:\n    barHeight: 20\n---\n%% plan\ngantt\n    todayMarker off\n    A :a1, 2026-01-01, 1d\n');
+  for (const other of [FLOW, 'flowchart LR\n    gantt --> B\n']) assert.equal(forDrawing(other), other);
 });
 
 test('HTML text comes back as the browser reads it', () => {

@@ -6,13 +6,17 @@
  * Chromium through Playwright, which the browser tests already use. The figure it returns, `<figure class="cad-diagram"
  * data-state="ready">` with the SVG and the source, replaces the block; kit/diagrams.js leaves such figures alone.
  *
- * - Deterministic: the same source, theme, Mermaid, kit and font give the same bytes. The SVG id comes from a hash of
- *   those; each drawing gets a fresh Mermaid (its sequence and class diagrams number elements with counters that run
- *   on from one drawing to the next) and a seeded Math.random; every diagram is drawn twice and kept only if both
- *   drawings match; and the labels are measured in the site's own webfont (Inter, which every reader downloads), not in
- *   whatever Arial the build machine has (FONT_SIZE says why 15px).
+ * - Deterministic, on one machine and browser build: the same source, theme, Mermaid, kit, font and drawing code give
+ *   the same bytes. The SVG id comes from a hash of those; each drawing gets a fresh Mermaid (its sequence and class
+ *   diagrams number elements with counters that run on from one drawing to the next) and a seeded Math.random; every
+ *   diagram is drawn twice and kept only if both drawings match; a gantt chart is drawn without its "today" line, which
+ *   Mermaid places from the clock; and the labels are measured in the site's own webfont (Inter, which every reader
+ *   downloads), not in whatever Arial the build machine has (FONT_SIZE says why 15px). Inter here is its latin subset:
+ *   a label character it lacks (→, ≈, Greek, emoji) is measured in the machine's fallback font, so another machine can draw
+ *   that diagram a little differently. The build names those characters (stats.uncovered).
  * - Cached: each figure is kept under .cache/site-diagrams/ by a SHA-256 of all of the above, so a build only draws what
- *   changed and, once the cache is warm, needs no browser at all.
+ *   changed and, once the cache is warm, needs no browser at all. The browser build is not in the key, so that a warm
+ *   cache needs none: after a browser upgrade, empty the cache to draw everything again.
  * - Safe: Mermaid draws in strict mode (DOMPurify on every label); a drawing with a script, an event handler or a
  *   javascript: link is refused, and the site's CSP (no inline script) still applies to the page around it.
  * - Never fatal: with no browser, or for a diagram Mermaid cannot draw, the block is left as it is, the build says so,
@@ -29,8 +33,6 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-// Bump when the drawing code here changes what it writes, so old cache entries are not reused.
-const RENDERER = 'site-diagrams/1';
 export const BLOCK = /<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/g;
 // The site's text face, self-hosted under /kit/vendor/fonts (site.css loads it on every page), at 15px: Inter's x-height
 // is about 5 % taller than Arial's, so 15px Inter reads at the size of the 16px Arial a reader's browser draws with,
@@ -66,13 +68,16 @@ export async function drawDiagrams(htmls, { kit, site, theme = 'light', css = ['
   const files = new Map();
   for (const f of KIT_FILES) files.set(`/kit/${f}`, await kit(f));
   for (const c of css) if (c.startsWith('/web/')) files.set(c, await site(c.slice('/web/'.length)));
-  // What a drawing depends on, besides its source.
-  const basis = sha(JSON.stringify([RENDERER, theme, FONT, FONT_SIZE, css, ...[...files].map(([f, b]) => [f, sha(b)])]));
+  // What a drawing depends on, besides its source: this module's own code too, so a change to how it draws never
+  // reuses an old drawing.
+  const self = sha(await readFile(new URL(import.meta.url)));
+  const basis = sha(JSON.stringify([self, theme, FONT, FONT_SIZE, css, ...[...files].map(([f, b]) => [f, sha(b)])]));
   const mermaidVersion = JSON.parse(await kit('vendor/mermaid/SOURCE.json')).version;
   const keyOf = source => sha(`${basis}\n${source}`);
   const sources = new Map();                                       // key → source
   for (const html of htmls) for (const [, text] of html.matchAll(BLOCK)) { const s = unescapeHtml(text); sources.set(keyOf(s), s); }
-  const drawn = new Map(), stats = { diagrams: sources.size, cached: 0, drawn: 0, left: 0, browser: null, mermaid: mermaidVersion };
+  const drawn = new Map(), stats = { diagrams: sources.size, cached: 0, drawn: 0, left: 0, browser: null, mermaid: mermaidVersion,
+    uncovered: '' };
   const cachePath = key => path.join(cacheDir, `${key}.html`);
   if (!client) for (const key of sources.keys()) {
     try { drawn.set(key, await readFile(cachePath(key), 'utf8')); stats.cached++; } catch { /* not drawn yet */ }
@@ -101,12 +106,19 @@ export async function drawDiagrams(htmls, { kit, site, theme = 'light', css = ['
           stats.left = todo.length;
         }
         await mkdir(cacheDir, { recursive: true });
+        const uncovered = new Set();
+        let unsure = 0;
         for (const [key, result] of out) {
           if (result.error) { warn(`a diagram is left to the reader's browser: ${result.error} (it starts "${sources.get(key).split('\n')[0].slice(0, 60)}")`); stats.left++; continue; }
           drawn.set(key, result.html); stats.drawn++;
+          if (result.uncovered) { unsure++; for (const c of result.uncovered) uncovered.add(c); }
           const tmp = `${cachePath(key)}.${process.pid}.tmp`;        // other builds may share the cache: write, then rename
           await writeFile(tmp, result.html); await rename(tmp, cachePath(key));
         }
+        stats.uncovered = [...uncovered].sort().join('');
+        if (unsure) log.log(`diagrams: ${unsure} of the ${stats.drawn} drawn have label characters the site's font does not have ` +
+          `(${[...stats.uncovered].join(' ')}). They are measured in this machine's fallback font, so another machine can ` +
+          'draw those diagrams a little differently.');
       } finally { await browser.close(); }
     }
   }
@@ -123,6 +135,16 @@ export async function drawDiagrams(htmls, { kit, site, theme = 'light', css = ['
   return { draw, stats };
 }
 const idOf = key => `cad-diagram-s${key.slice(0, 12)}`;
+
+/** The source as it is drawn ahead of time. A page drawn once cannot know the reader's day, so a gantt chart gets
+ * `todayMarker off` (Mermaid otherwise draws a "today" line from the build machine's clock, and the cache would keep
+ * the first build's day). The reader still sees the source as written. */
+export function forDrawing(source) {
+  const [, front = '', body] = source.match(/^(\s*---\n[\s\S]*?\n---[ \t]*\n)?([\s\S]*)$/);
+  const type = body.split('\n').map(l => l.trim()).find(l => l && !l.startsWith('%%'))?.split(/\s/)[0];
+  if (type !== 'gantt') return source;
+  return front + body.replace(/^[ \t]*todayMarker\b.*\n?/gm, '').replace(/^([ \t]*gantt\b.*)$/m, '$1\n    todayMarker off');
+}
 
 /** Draw [key, source] pairs in a page that serves the kit from memory. Returns [key, { html } or { error }] pairs and
  * the page's own errors. A drawing that takes longer than `timeout` ms (Mermaid has had infinite loops) is given up
@@ -172,17 +194,26 @@ async function drawInBrowser(browser, todo, { files, theme, css, timeout = 20000
         }
         return null;
       };
+      // Label characters the font lacks: drawn in the same pixels as in no font at all (the browser's default).
+      const canvas = Object.assign(document.createElement('canvas'), { width: 48, height: 32 });
+      const ctx = canvas.getContext('2d', { willReadFrequently: true }), lacks = new Map();
+      const pixels = (c, family) => { ctx.clearRect(0, 0, 48, 32); ctx.font = `${fontSize} ${family}`; ctx.fillText(c, 4, 24); return ctx.getImageData(0, 0, 48, 32).data.join(); };
+      const missing = c => { if (!lacks.has(c)) lacks.set(c, pixels(c, font.split(',')[0]) === pixels(c, 'cad-no-such-font')); return lacks.get(c); };
+      const labels = svg => { let text = ''; const walk = document.createTreeWalker(svg, NodeFilter.SHOW_TEXT);
+        for (let n; (n = walk.nextNode());) if (!n.parentElement.closest('style')) text += n.data; return text; };
       // Drawn twice, each time with a fresh Mermaid and the same seed: kept only if both drawings are the same bytes.
-      window.__cadDraw = async ({ key, source, id }) => {
+      window.__cadDraw = async ({ key, source, shown, id }) => {
         const twice = [];
         for (let run = 0; run < 2; run++) {
           window.__cadSeed(parseInt(key.slice(0, 8), 16));
           const figure = await drawDiagram(source, { theme, id, fontFamily: font, fontSize, parent: document.querySelector('main'), mermaid: freshMermaid() });
-          twice.push(figure && { html: figure.outerHTML, unsafe: unsafe(figure) });
+          if (figure) figure.querySelector(':scope > details > pre.cad-diagram-source').textContent = shown;
+          twice.push(figure && { html: figure.outerHTML, unsafe: unsafe(figure),
+            uncovered: [...new Set(labels(figure.querySelector('svg')))].filter(c => c > '~' && !/[\s\p{M}\p{Cf}]/u.test(c) && missing(c)).join('') });
         }
         const [a, b] = twice;
         return !a ? { error: 'Mermaid could not draw it' } : a.unsafe ? { error: `the drawing has ${a.unsafe}` }
-          : a.html !== b?.html ? { error: 'two drawings of it differ' } : { html: a.html };
+          : a.html !== b?.html ? { error: 'two drawings of it differ' } : { html: a.html, uncovered: a.uncovered };
       };
     }, { theme, font: FONT, fontSize: FONT_SIZE });
   };
@@ -192,7 +223,7 @@ async function drawInBrowser(browser, todo, { files, theme, css, timeout = 20000
     for (const [key, source] of todo) {
       let timer;
       const late = new Promise(ok => { timer = setTimeout(() => ok({ error: `it took more than ${timeout / 1000} s` }), timeout); });
-      const drawing = page.evaluate(item => window.__cadDraw(item), { key, source, id: idOf(key) })
+      const drawing = page.evaluate(item => window.__cadDraw(item), { key, source: forDrawing(source), shown: source, id: idOf(key) })
         .catch(e => ({ error: `the drawing page failed (${e.message.split('\n')[0]})` }));
       const result = await Promise.race([drawing, late]);
       clearTimeout(timer);

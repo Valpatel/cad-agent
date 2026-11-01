@@ -10,7 +10,9 @@ The rules the printed rows follow:
 * the strength is at or below the lowest tensile strength in that direction;
 * the density is the sheet's;
 * the humid PA6-CF rows are Bambu's dry sheet values x the wet / dry ratio of Polymaker's PA6-CF20 sheet (the modulus
-  ratio on E, the strength ratio on the strength, per direction) x0.8 (print) (#157).
+  ratio on E, the strength ratio on the strength, per direction) x0.8 (print) (#157);
+* the layer-check allowables (X-Y, Z) are the row's strength across the layers, and that times the lowest X-Y / Z
+  tensile strength ratio of the editions read; the humid PA6-CF rows share one pair, their two strengths (#144).
 
 The metals are pinned to MIL-HDBK-5J's design minimums (#157), the carbon tube as a typical value.
 """
@@ -171,6 +173,27 @@ def test_printed_strength_is_at_or_below_the_sheets(key):
     m, row = MATERIALS[key], PRINTED[key]
     lowest = min(s.uts_mpa[_axis(row.direction)] for s in row.sheets) * row.strength_factor
     assert m.strength_mpa <= lowest + 1e-9
+
+
+@pytest.mark.parametrize("key", sorted(PRINTED))
+def test_layer_strengths_keep_the_rows_margin_in_both_directions(key):
+    # Study.layer_check() defaults to these: bond against Z, von Mises against X-Y
+    m, row = MATERIALS[key], PRINTED[key]
+    xy, z = m.layer_strengths_mpa
+    assert (xy, z)[_axis(row.direction)] == m.strength_mpa              # the row's own strength in its direction
+    if key.startswith("pa6_cf"):
+        assert (xy, z) == (MATERIALS["pa6_cf_xy"].strength_mpa, MATERIALS["pa6_cf_z"].strength_mpa)
+        assert xy == pytest.approx(102 * humid(0, "strength") * PRINT) and z == pytest.approx(48 * humid(1, "strength") * PRINT)
+    else:
+        assert z == m.strength_mpa
+        assert xy == pytest.approx(z * min(s.uts_mpa[0] / s.uts_mpa[1] for s in row.sheets), rel=1e-12)
+    in_plane = PRINTED["pa6_cf_xy"].strength_factor if key.startswith("pa6_cf") else row.strength_factor
+    assert z < xy <= min(s.uts_mpa[0] for s in row.sheets) * in_plane + 1e-9    # below the sheet in the layer plane
+
+
+def test_isotropic_materials_have_no_layer_strengths():
+    for key in OTHER:
+        assert MATERIALS[key].layer_strengths_mpa is None, key
 
 
 def test_the_default_printed_materials_are_for_the_weak_direction():

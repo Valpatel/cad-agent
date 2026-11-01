@@ -22,12 +22,28 @@ flowchart TD
     class A,D out
 ```
 
+## Try it: the snap-arm explorer
+
+The explorer (`<cad-cantilever>`, also on [Snap fits](compliant.md#try-it-the-snap-arm-explorer)) runs the browser port
+of `snap_arm`. Sliders set the length, root thickness, width and deflection, and you pick the material and print
+direction. The beam bends along its computed curve, coloured by strain, with the root strain, force and pass or fail
+against the filament's allowable strain.
+
+<cad-cantilever material="copa-polymaker-dry" direction="along" design="1" length="20" thickness="1.6" width="6" deflection="1.5">
+<img src="img/compliant/cantilever-explorer.svg" alt="Snap-arm explorer, before its controls load: a CoPA arm 20 mm long, 1.6 mm thick at the root and 6 mm wide, bent 1.5 mm at the hook along its computed curve; root strain 0.90 %, 44 % of the 2.02 % allowed along the layers, a pass; force 3.10 N" width="640" height="250">
+</cad-cantilever>
+
 ## Why it is built, not adopted
 
 We looked before writing anything. Each closed form here is a few lines long. The browser has to compute exactly
 what the Python does, and a Python dependency cannot be mirrored in a web page. CI's core job installs only PyYAML
-and NumPy. So the equations are written out here and tested against their sources. These are the projects to use
-for the work beyond them:
+and NumPy. So the equations are written out here and tested against their sources. Beyond them, use fluids and ht
+for duct losses and convection, pint for unit-checked quantities, SymPy to derive new closed forms, and pylinkage
+for linkage synthesis.
+
+<details>
+<summary>The projects we surveyed, and what is reused from this repo</summary>
+
 
 - **[fluids](https://github.com/CalebBell/fluids) and [ht](https://github.com/CalebBell/ht)** by Caleb Bell (MIT):
   pipe and duct losses, fittings, and hundreds of convection correlations. When a design needs a Nusselt number or a
@@ -48,9 +64,14 @@ for the work beyond them:
   - The straight-line fan curve is the same model as `cadagent.thermal.heatsink.FanCurve`. A test checks that the two
     solvers find the same operating point.
 
+</details>
+
 ## What it computes
 
 SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A strain is a fraction (0.02 = 2 %).
+
+<details>
+<summary>All 36 functions in `catalogue()`: what each computes, its source and where it is valid</summary>
 
 | Function | What | Source | Valid within |
 |---|---|---|---|
@@ -82,6 +103,8 @@ SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A 
 | `fan_curve_line`, `system_coefficient` | the datasheet fan line; k in Δp = k Q² | White 7th ed., Section 11.5 | same air density |
 | `fan_operating_point` | fan curve against Δp = r Q + k Q², solved exactly per segment; flags a stall dip | White 7th ed., Section 11.5 | steady flow |
 
+</details>
+
 `fx.catalogue()` returns the same list as data, with each function's units, limits and full citation, so an agent
 can find the formula it needs without reading the source.
 
@@ -97,13 +120,6 @@ fx.fan_operating_point(fx.fan_curve_line(15.2, 0.0108), k=2e6)   # flow, pressur
 In the browser, `kit/formulas.js` exports the functions the demos use (`snapArm`, `cantileverShape`,
 `cantileverStrainProfile` and the others in the golden vectors) in the same SI units.
 
-## Demonstrations
-
-- **Snap-arm explorer** (`<cad-cantilever>`, on [Snap fits](compliant.md#try-it-the-snap-arm-explorer)). Sliders
-  set the length, root thickness, width and deflection, and you pick the material and print direction. The beam
-  bends along its computed curve, coloured by strain, with the root strain, force and pass or fail against the
-  filament's allowable strain.
-
 ## Limits
 
 - **A closed form is not proof of fit or strength.** Each result holds only inside the limits it states. A printed
@@ -117,7 +133,10 @@ In the browser, `kit/formulas.js` exports the functions the demos use (`snapArm`
 ## Tests that keep it honest
 
 `tests/test_formulas.py` checks each function against a published value or an independent derivation written out
-in the test:
+in the test.
+
+<details>
+<summary>What each family is tested against: beams, torsion, springs, screws, linkages, heat and air</summary>
 
 - **Beams.**
   - Beam stiffness by the direct stiffness method.
@@ -146,6 +165,8 @@ in the test:
   - The composite wall face by face.
   - The fan point against the quadratic root and against `cadagent.thermal.heatsink.operating_point`.
   - A stall dip flagged unstable.
+
+</details>
 
 `tools/formula_vectors.py --check` fails when the committed golden vectors or the demo's material table no longer
 match the Python. `tests/webkit-formulas.test.mjs` runs the browser port on those vectors to 1e-12.

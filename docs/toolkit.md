@@ -1,15 +1,16 @@
-# cad-agent toolkit: tools for mechanical and electrical design
+# Tools: the cad-agent command and Python package
 
-`cad-agent` is a toolkit for designing hardware with agents, in mechanical and electrical design: parts and
-assemblies, manufacturing (3D printing, CNC, sheet metal, laser cutting, moulds), thermal design, simulation and
-validation, wiring, panels and circuit boards. Each area of the [topic tree](vision.md) has its own sub-toolkit: the
-commands and Python APIs that [`docs/areas.yaml`](areas.yaml) lists for it, at the maturity that area has reached
-(several are still ideas, with no tool yet).
+cad-agent is a toolkit for agents doing mechanical and electrical design: [subagents and skills](agent-workflow.md),
+the references behind every rule (cited on each page), code, calculators such as the
+[snap-fit calculator](compliant.md), [lessons learned](../lessons/README.md) and a catalogue of outside tools. This page
+is the reference for its code: the `cad-agent` command and the Python package `cadagent`.
 
-This page covers the shared core every area uses. `cad-agent` runs a project's build and checks, verifies its
-manufacturing files, and turns the results into a standalone HTML report and a review package. The geometry and the
-design-specific checks stay in the project; the toolkit (Python package `cadagent`) provides the runner, the 3MF
-writer, shared geometry screens, the renderer, link validation, the report, packaging and a local server.
+The code follows the areas of the [topic tree](vision.md): [`docs/areas.yaml`](areas.yaml) lists each area's commands
+and APIs, at the maturity that area has reached (several are still ideas, with no tool yet). Under them is a shared
+core every area uses: `cad-agent` runs a project's build and checks, verifies its manufacturing files, and turns the
+results into a standalone HTML report and a review package. The geometry and the design-specific checks stay in the
+project; the package provides the runner, the 3MF writer, shared geometry screens, the renderer, link validation, the
+report, packaging and a local server.
 
 <table><tr>
 <td width="33%"><img src="img/viewer.jpg" alt="The 3D viewer and review site: every part of an assembly in place"><br><b>Site.</b> Every part in place, with explode and section, and one top bar linking every report.</td>

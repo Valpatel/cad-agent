@@ -54,7 +54,7 @@ A boss or rib built upright and loaded from the side bends at its root, and its 
 layers: the bond peels open on the tension side. `root_peel` checks the tension side, the compression side and the
 neutral axis (shear: 4V/3A for a solid round, up to 2V/A for a thin tube, 3V/2A for a rectangle) against the layers.
 
-The owner's fix for high-stress joints is **a threaded rod and nuts through the boss**: its preload squeezes the
+In a highly stressed joint, a common fix is **a threaded rod and nuts through the boss**: its preload squeezes the
 layers together, so a side load must first undo that squeeze before the seam opens. `root_peel` with
 `bolt=through_bolt(...)` puts a number on it:
 
@@ -75,12 +75,12 @@ layers together, so a side load must first undo that squeeze before the seam ope
 
 ```mermaid
 flowchart TD
-    J["screw in a joint<br/>that vibrates"] --> S{"side load under<br/>friction × kept preload?"}
-    S -->|"no"| SL["it slips and loosens<br/>(Junker): put the side load<br/>on a pin or bushing"]
+    J["a screw in a joint<br/>that vibrates"] --> S{"side load under<br/>friction × kept<br/>preload?"}
+    S -->|"no"| SL["it slips and loosens:<br/>carry the side load<br/>on a pin or bushing"]
     S -->|"yes"| L{"what locks it,<br/>in what thread?"}
-    L -->|"threadlocker on plastic"| F["fail: stress cracking"]
-    L -->|"spring washer, nothing"| W["warn: preload alone"]
-    L -->|"locknut, jam nut, wire"| P["pass: the nut stays on"]
+    L --> F["threadlocker<br/>on plastic:<br/>fail, it cracks"]
+    L --> W["spring washer<br/>or nothing:<br/>warn"]
+    L --> P["locknut, jam nut<br/>or wire: pass"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -104,10 +104,6 @@ thread it is in:
 
 ## Fit coupons: let the first print calibrate the fits
 
-![A fit coupon for a 5 mm pin in a sliding fit: a 25 mm square plate with nine holes from 5.30 to 5.70 mm in 0.05 mm steps, hole 1 by the notched corner](img/joints/coupon.svg)
-
-*Drawn by `tools/printed_joint_figures.py` from `fit_coupons.layout` for a 5 mm pin in a sliding fit.*
-
 A printed hole comes out smaller than drawn, by an amount that depends on the printer, the filament and whether the
 hole stands up or lies down. `fit_coupons` makes a plate per fit with holes swept round the expected CAD size,
 nominal + allowance + undersize, from [research/process-profiles.yaml](../research/process-profiles.yaml):
@@ -118,6 +114,10 @@ nominal + allowance + undersize, from [research/process-profiles.yaml](../resear
   for a press fit in a printed hole is published, so the sweep finds it.
 - **Orientation.** A fit with `axis="horizontal"` is exported standing on its edge, its holes in the bed plane, as
   the part's will be.
+
+![A fit coupon for a 5 mm pin in a sliding fit: a 25 mm square plate with nine holes from 5.30 to 5.70 mm in 0.05 mm steps, hole 1 by the notched corner](img/joints/coupon.svg)
+
+*Drawn by `tools/printed_joint_figures.py` from `fit_coupons.layout` for a 5 mm pin in a sliding fit.*
 
 `write` exports a STEP and a print-oriented STL per coupon, a measurement sheet (`fit-coupons.csv`, a row per hole
 with blanks for the measured size and the fit) and the plan. Print the coupons in the part's filament, try the real
@@ -145,6 +145,9 @@ from 1 and fails below 1. Materials are the keys of `cadagent.mechanical.complia
 
 ## Limits
 
+<details>
+<summary>What the checks assume: nominal stresses, datasheet strengths, an assumed preload kept, a static slip margin</summary>
+
 - **Nominal stresses, not peaks.** A printed part is notch sensitive: model the fillet and run the FEA layer check for
   the peak at a hole's edge or a sharp root.
 - **Datasheet strengths** are short-term, for 100 % infill bars. Fewer walls or sparse infill round a joint are
@@ -156,6 +159,8 @@ from 1 and fails below 1. Materials are the keys of `cadagent.mechanical.complia
 - **Junker's criterion** is a static margin against slip. It does not count cycles: shake the joint (a transverse
   vibration test) when it matters.
 - **Coupons** calibrate the printer, filament and settings they were printed with, nothing more.
+
+</details>
 
 ## Sources and survey
 

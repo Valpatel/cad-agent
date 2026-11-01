@@ -942,11 +942,13 @@ swing, and the numbers are the last iteration's. The ducted run ends on a low sw
 <details>
 <summary>How the faces are built, and their limits</summary>
 
-- **Built in the case, computed by the solver.** topoSet takes every face whose two cells lie either side of a plane
-  0.1 µm inside each end of the fan zone (`planeToFaceZone`, oriented from the cell behind the plane to the cell ahead,
-  along the axis). It then removes every face that is not on the zone's boundary (`cellToFace` with `option outside`,
-  synchronised across processors). What is left is the zone's own end faces, chosen by their cells, not by where they
-  lie. A test on where a face lies (`searchableDisk`) checks the radius at the owning cell's centre, so where coarser
+- **Built in the case, computed by the solver.** topoSet takes every face whose two cells lie either side of one of
+  two planes, 0.1 µm inside and 0.1 µm outside each end of the fan zone (`planeToFaceZone`, oriented from the cell
+  behind the plane to the cell ahead, along the axis). It then removes every face that is not on the zone's boundary
+  (`cellToFace` with `option outside`, synchronised across processors). What is left is the zone's own end faces,
+  chosen by their cells, not by where they lie. Two planes are needed because a cell centred on an end plane joins the
+  zone or not by rounding, and one plane would miss its column either way: on a mesh whose cell centres sit on the end
+  planes, one plane caught 23–98 of 100 columns, and two catch all 100. A test on where a face lies (`searchableDisk`) checks the radius at the owning cell's centre, so where coarser
   cells meet the zone it took faces over the hub and missed the rim. Keywords are from OpenFOAM v2512's own headers in
   the `opencfd/openfoam-default:2512` image: `surfaceFieldValue.H`, `planeToFaceZone.H`, `setToFaceZone.H` and
   `cellToFace.H`. `empty-surface warn` makes a face that caught nothing write NaN, not stop the run.

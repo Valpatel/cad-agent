@@ -52,9 +52,9 @@ P_ROOM = 1e5                     # Pa: the open boundary's pressure
 # nothing is put in. read_results' `converged` and run_until_balanced's default use the same 5 %.
 ENERGY_TOLERANCE_PCT = 5.0
 ENERGY_TOLERANCE_W = 0.5
-# Each fan's measuring planes sit this far inside the fan zone's end planes. The zone takes the cells whose centres lie
-# strictly between the planes, so a cell centre exactly on an end plane is outside it; the inset puts that cell on the
-# outer side of the measuring plane, with the cells further out.
+# Each end of a fan's zone is measured across two planes, this far either side of the end plane. A cell whose centre
+# lies on the end plane joins the zone or not by rounding, so one plane alone would miss its column whichever way it
+# went; between them the two planes catch each column's end face once.
 FACE_INSET_M = 1e-7
 # Below this fraction of the fan's free-air mass flow, the net flow through a face is too small to weight a temperature
 # by: OpenFOAM's weightedAverage divides by it.
@@ -132,12 +132,14 @@ class Fan:
         h = self.thickness / 2000
         return np.round(c - a * h, 6), np.round(c + a * h, 6), a
 
-    def faces(self) -> Dict[str, np.ndarray]:
-        """Where the fan's inlet and outlet temperatures are measured: a point (m) on the plane across each end of the
-        fan zone, FACE_INSET_M inside it, on the axis. Each face is the set of the zone's boundary faces whose two cells
-        lie either side of that plane, oriented along the axis, so a positive mass flow is air the fan pushes forward."""
+    def faces(self) -> Dict[str, Tuple[np.ndarray, np.ndarray]]:
+        """Where the fan's inlet and outlet temperatures are measured: for each end of the fan zone, a point (m) on the
+        axis on each of two planes across it, FACE_INSET_M inside and outside the end plane. Each face is the set of the
+        zone's boundary faces whose two cells lie either side of either plane, oriented along the axis, so a positive
+        mass flow is air the fan pushes forward."""
         up, down, a = self.ends()
-        return {'inlet': up + a * FACE_INSET_M, 'outlet': down - a * FACE_INSET_M}
+        return {'inlet': (up + a * FACE_INSET_M, up - a * FACE_INSET_M),
+                'outlet': (down - a * FACE_INSET_M, down + a * FACE_INSET_M)}
 
 
 @dataclass
@@ -512,18 +514,21 @@ mergeTolerance 1e-6;
       outerRadius {f.d_outer/2000:.6f}; innerRadius {f.d_hub/2000:.6f}; }}
     {{ name {f.name}; type cellZoneSet; action new; source setToCellZone; set {f.name}Set; }}''')
             # the inlet and outlet faces (OpenFOAM v2512 topoSet): the faces between a zone cell and a cell beyond each
-            # end plane. planeToFaceZone takes every face whose two cell centres lie either side of the plane, oriented
-            # from the cell behind it to the cell ahead along the axis; subtracting every face that is not on the zone's
-            # boundary (cellToFace 'outside' of the zone, synchronised across processors, then inverted) leaves the
-            # zone's own end faces. Selecting by the cells, not by where a face lies, keeps the faces right where the
-            # zone's end meets coarser cells, which own the faces and would put their centres over the hub or past the
-            # rim (searchableDisk tests the radius at the owner's centre).
+            # end plane. planeToFaceZone takes every face whose two cell centres lie either side of a plane, oriented
+            # from the cell behind it to the cell ahead along the axis, once just inside the end plane and once just
+            # outside it (a cell centred on the end plane joins the zone or not by rounding: its column's end face
+            # crosses one plane or the other); subtracting every face that is not on the zone's boundary (cellToFace
+            # 'outside' of the zone, synchronised across processors, then inverted) leaves the zone's own end faces.
+            # Selecting by the cells, not by where a face lies, keeps the faces right where the zone's end meets coarser
+            # cells, which own the faces and would put their centres over the hub or past the rim (searchableDisk tests
+            # the radius at the owner's centre).
             acts.append(f'''    {{ name {f.name}OffZoneFaces; type faceSet; action new; source cellToFace; set {f.name}Set; option outside; }}
     {{ name {f.name}OffZoneFaces; type faceSet; action invert; }}''')
-            for side, o in f.faces().items():
-                acts.append(f'''    {{ name {f.name}{side.capitalize()}; type faceZoneSet; action new; source planeToFaceZone;
-      point ({o[0]:.9f} {o[1]:.9f} {o[2]:.9f}); normal ({a[0]:.9f} {a[1]:.9f} {a[2]:.9f}); option all; }}
-    {{ name {f.name}{side.capitalize()}; type faceZoneSet; action subtract; source setToFaceZone; faceSet {f.name}OffZoneFaces; }}''')
+            for side, planes in f.faces().items():
+                for act, o in zip(('new', 'add'), planes):
+                    acts.append(f'''    {{ name {f.name}{side.capitalize()}; type faceZoneSet; action {act}; source planeToFaceZone;
+      point ({o[0]:.9f} {o[1]:.9f} {o[2]:.9f}); normal ({a[0]:.9f} {a[1]:.9f} {a[2]:.9f}); option all; }}''')
+                acts.append(f'''    {{ name {f.name}{side.capitalize()}; type faceZoneSet; action subtract; source setToFaceZone; faceSet {f.name}OffZoneFaces; }}''')
         return 'actions\n(\n' + '\n'.join(acts) + '\n);\n'
 
     # --- per-region files

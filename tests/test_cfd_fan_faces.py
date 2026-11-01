@@ -233,17 +233,18 @@ def test_the_recorded_runs_that_were_not_converged_now_say_so(tmp_path):
             f'energy not conserved: {r["heat_out_w"]:g} W leave with the air for {r["heat_input_w"]:g} W put in']
 
 
-def test_the_faces_sit_just_inside_the_zone_whatever_the_axis():
+def test_each_end_is_measured_across_two_planes_either_side_of_it_whatever_the_axis():
     f = Fan('f', centre=(10, -20, 30), axis=(1, 2, -2), d_outer=60, d_hub=20, thickness=9, dp0_pa=20, q_free_m3h=30)
     up, down, a = f.ends()
     assert np.allclose(a, np.array([1, 2, -2]) / 3)
     assert np.allclose(up, np.round((np.array([10, -20, 30]) - a * 4.5) / 1000, 6), atol=0)
     assert np.allclose(down, np.round((np.array([10, -20, 30]) + a * 4.5) / 1000, 6), atol=0)
     faces = f.faces()
-    assert np.allclose(faces['inlet'] - up, a * cfd.FACE_INSET_M, rtol=0, atol=1e-15)
-    assert np.allclose(faces['outlet'] - down, -a * cfd.FACE_INSET_M, rtol=0, atol=1e-15)
-    # inside the zone, and far closer to its plane than any cell is thin
-    assert 0 < float((faces['inlet'] - up) @ a) < 1e-6 and 0 < float((down - faces['outlet']) @ a) < 1e-6
+    for (inside, outside), end, inward in ((faces['inlet'], up, a), (faces['outlet'], down, -a)):
+        assert np.allclose(inside - end, inward * cfd.FACE_INSET_M, rtol=0, atol=1e-15)
+        assert np.allclose(outside - end, -inward * cfd.FACE_INSET_M, rtol=0, atol=1e-15)
+        # one each side of the end plane, both far closer to it than any cell is thin
+        assert 0 < float((inside - end) @ inward) < 1e-6 and 0 < float((end - outside) @ inward) < 1e-6
 
 
 def test_the_case_builds_and_logs_both_faces_of_every_fan(tmp_path):
@@ -257,18 +258,22 @@ def test_the_case_builds_and_logs_both_faces_of_every_fan(tmp_path):
            '    { name fanOffZoneFaces; type faceSet; action invert; }')
     assert off in ts and ts.index('name fanSet;') < ts.index(off)
     for side in ('inlet', 'outlet'):
-        o = f.faces()[side]
+        inside, outside = f.faces()[side]
         name = f'fan{side.capitalize()}'
-        # ... is taken away from the faces that cross the plane just inside each end, oriented along the axis (-z)
-        new = re.search(rf'\{{ name {name}; type faceZoneSet; action new; source planeToFaceZone;(.*?)\}}', ts, re.S)
-        assert new, name
-        assert new.group(1).split() == f'point ({o[0]:.9f} {o[1]:.9f} {o[2]:.9f}); normal (0.000000000 0.000000000 -1.000000000); option all;'.split()
+        # ... is taken away from the faces that cross a plane just inside each end or one just outside it, oriented
+        # along the axis (-z)
+        blocks = []
+        for act, o in (('new', inside), ('add', outside)):
+            m = re.search(rf'\{{ name {name}; type faceZoneSet; action {act}; source planeToFaceZone;(.*?)\}}', ts, re.S)
+            assert m, (name, act)
+            assert m.group(1).split() == f'point ({o[0]:.9f} {o[1]:.9f} {o[2]:.9f}); normal (0.000000000 0.000000000 -1.000000000); option all;'.split()
+            blocks.append(m.start())
         sub = f'{{ name {name}; type faceZoneSet; action subtract; source setToFaceZone; faceSet fanOffZoneFaces; }}'
-        assert ts.index(off) < new.start() < ts.index(sub)
+        assert ts.index(off) < blocks[0] < blocks[1] < ts.index(sub)
         assert 'searchableSurfaceToFaceZone' not in ts                     # never by where a face lies (#224 review)
-    # the zone is z from 38 to 42 mm, pushed down (-z): the inlet just under its top, the outlet just over its bottom
-    assert f.faces()['inlet'][2] == pytest.approx(0.042 - 1e-7, abs=1e-12)
-    assert f.faces()['outlet'][2] == pytest.approx(0.038 + 1e-7, abs=1e-12)
+    # the zone is z from 38 to 42 mm, pushed down (-z): the inlet across its top, the outlet across its bottom
+    assert [o[2] for o in f.faces()['inlet']] == pytest.approx([0.042 - 1e-7, 0.042 + 1e-7], abs=1e-12)
+    assert [o[2] for o in f.faces()['outlet']] == pytest.approx([0.038 + 1e-7, 0.038 - 1e-7], abs=1e-12)
     cd = (d / 'system/controlDict').read_text()
     for side, zone in (('inlet', 'fanInlet'), ('outlet', 'fanOutlet')):
         t = re.search(rf'T_{side}_fan\s*\{{(.*?)\}}', cd, re.S).group(1)

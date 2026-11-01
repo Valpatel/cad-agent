@@ -68,8 +68,11 @@ def test_old_path_leaves_the_real_modules_spec_and_reload_alone():
     """The real module keeps its own spec, so find_spec has its file and reload re-runs it under its own name. In a
     fresh interpreter: reloading here would swap classes under the other tests."""
     code = """
-import importlib, importlib.util, warnings
+import importlib, importlib.util, sys, warnings
 warnings.simplefilter("ignore", DeprecationWarning)
+import cadagent
+assert importlib.util.find_spec("cadagent.dotsvg").origin.endswith("dotsvg.py"), "no file before the first import"
+assert "cadagent.publish.dotsvg" not in sys.modules, "find_spec imported the module itself"
 import cadagent.dotsvg
 import cadagent.publish.dotsvg as real
 assert real.__spec__.name == "cadagent.publish.dotsvg", real.__spec__.name
@@ -81,6 +84,56 @@ assert again is real and real.__name__ == "cadagent.publish.dotsvg" and real.__p
 assert callable(real.parse_dot), "reload did not run the module again"
 """
     out = subprocess.run([sys.executable, "-W", "error::ImportWarning", "-c", code], capture_output=True, text=True,
+                         env={"PYTHONPATH": str(PKG.parent), "PATH": ""})
+    assert out.returncode == 0, out.stderr
+
+
+def test_the_warning_survives_a_call_without_a_python_caller():
+    """exec_module called from C (an atexit callback) has no frame two levels up; the stacklevel falls back."""
+    code = """
+import atexit, types, warnings, cadagent
+from cadagent import _moved
+warnings.simplefilter("ignore")
+atexit.register(_moved._MovedFinder().exec_module, types.ModuleType("cadagent.dotsvg"))
+"""
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                         env={"PYTHONPATH": str(PKG.parent), "PATH": ""})
+    assert out.returncode == 0 and "Error" not in out.stderr, out.stderr
+
+
+def test_importing_by_hand_needs_the_new_path():
+    """The documented limit (cadagent._moved): the finder swaps the real module into sys.modules, so the
+    module_from_spec recipe leaves the caller an empty module and LazyLoader refuses the swap. Both work at the new
+    path."""
+    code = """
+import importlib.util, sys, warnings
+warnings.simplefilter("ignore", DeprecationWarning)
+import cadagent
+
+def by_hand(name, lazy=False):
+    spec = importlib.util.find_spec(name)
+    if lazy:
+        spec.loader = importlib.util.LazyLoader(spec.loader)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+old = by_hand("cadagent.dotsvg")
+assert not hasattr(old, "parse_dot") and sys.modules["cadagent.dotsvg"].parse_dot
+del sys.modules["cadagent.dotsvg"], sys.modules["cadagent.publish.dotsvg"]
+try:
+    by_hand("cadagent.dotsvg", lazy=True).parse_dot
+    raise SystemExit("LazyLoader accepted the swap: update the docstring in cadagent._moved")
+except ValueError:
+    pass
+for key in ("cadagent.dotsvg", "cadagent.publish.dotsvg"):
+    sys.modules.pop(key, None)
+assert callable(by_hand("cadagent.publish.dotsvg").parse_dot)
+del sys.modules["cadagent.publish.dotsvg"]
+assert callable(by_hand("cadagent.publish.dotsvg", lazy=True).parse_dot)
+"""
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
                          env={"PYTHONPATH": str(PKG.parent), "PATH": ""})
     assert out.returncode == 0, out.stderr
 

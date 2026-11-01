@@ -12,6 +12,11 @@ after ``monkeypatch.setitem(sys.modules, "cadagent.report", fake)`` or ``monkeyp
 fake)``, ``cadagent.geometry.holes`` still uses the real ``cadagent.publish.report``. To replace a whole module (to fake
 an optional one in a test, say), replace it at its new path: ``sys.modules["cadagent.publish.report"]``.
 
+Importing by hand also needs the new path. The finder puts the real module into ``sys.modules`` in place of the one
+the import machinery made, so the ``find_spec`` → ``module_from_spec`` → ``exec_module`` recipe leaves the caller
+holding an empty module, and ``importlib.util.LazyLoader`` refuses the swap (``ValueError``). Every import statement,
+``importlib.import_module`` and ``__import__`` get the real module.
+
 One finder instead of a shim file per module, so the package's top level stays as tidy as the move made it.
 """
 from __future__ import annotations
@@ -68,7 +73,11 @@ def _importer_stacklevel() -> int:
     ``__getattr__``). Counts as ``warnings`` does: it skips importlib's ``_bootstrap`` frames itself, so those add no
     level. Plain ``stacklevel=2`` named ``importlib/__init__.py`` for three of the import forms, and Python's default
     filters show a DeprecationWarning only when it names ``__main__``, so a script never saw it."""
-    level, frame = 2, sys._getframe(2)            # 1 is the warn() caller (exec_module), 2 the frame it was called from
+    try:
+        frame = sys._getframe(2)                  # 1 is the warn() caller (exec_module), 2 the frame it was called from
+    except ValueError:                            # no Python caller (exec_module called from C, at exit say)
+        return 2
+    level = 2
     while frame is not None:
         name = frame.f_code.co_filename
         internal = "importlib" in name and "_bootstrap" in name
@@ -85,7 +94,10 @@ class _MovedFinder(importlib.abc.MetaPathFinder, importlib.abc.Loader):
 
     def find_spec(self, fullname, path=None, target=None):
         if fullname.startswith("cadagent.") and fullname[len("cadagent."):] in MOVED:
-            return importlib.util.spec_from_loader(fullname, self)
+            # The real file as the origin, so find_spec(old).origin names it before the first import too. Finding the
+            # new module's spec imports only its parent package, not the module.
+            real = importlib.util.find_spec(MOVED[fullname[len("cadagent."):]])
+            return importlib.util.spec_from_loader(fullname, self, origin=real.origin if real else None)
         return None
 
     def create_module(self, spec):

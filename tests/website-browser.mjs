@@ -535,6 +535,16 @@ try {
     if (after.join() !== kept) problems.push(`2560px /docs/explore: typing in the filter moved the mark from "${kept}" to "${after}"`);
     await big.locator('.cad-nav-filter').press('Escape');
   }
+  // At the very end of the page the column <cad-nav> sits in has ended above the window's bottom: the panel shrinks to
+  // the room left rather than sliding up, so its filter stays where it sticks, below the header (#230: one more page
+  // in the tree pushed it under the header, and typing in it scrolled the page).
+  const atEnd = await big.evaluate(async () => {
+    scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const panel = document.querySelector('cad-nav .cad-nav-panel');
+    return { top: panel.getBoundingClientRect().top, stick: parseFloat(getComputedStyle(panel).top) };
+  });
+  if (atEnd.top < atEnd.stick - 1) problems.push(`2560px /docs/explore: at the page's end the page tree's panel slid up to ${Math.round(atEnd.top)}px, above where it sticks (${atEnd.stick}px)`);
   await big.close();
   // The same jumps through the tree's own outline, in a window tall enough that several sections cannot reach the
   // reading line (review 3: at 1366x900 only the last one cannot, and the bottom rule marks it anyway).

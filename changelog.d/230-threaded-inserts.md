@@ -17,6 +17,9 @@
 - `docs/inserts.md` with five figures drawn from the module, and `tools/insert_coupons.py`, which writes the test
   coupons as STEP and STL in their print orientation (#230).
 
+**Fixed**
+- Kit `<cad-nav>`: on a wide screen, at the end of a long page, the sticky page tree no longer slides up under the header. It shrinks to the room its column leaves, so its filter stays in view and typing in it no longer scrolls the page. Adding a page to the site's tree had pushed it under (#230).
+
 **Changed**
 - `cadagent.formulas.nut_factor` refuses a flank angle outside 0 to π/2 radians. 60 passed as degrees used to give
   about three times the nut factor without complaint (#230).

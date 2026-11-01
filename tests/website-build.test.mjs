@@ -261,41 +261,9 @@ test('doc pages carry the page tree, with this page marked', async () => {
 });
 
 // Owner (2026-10-31): "make sure every page has some interesting diagrams, animations, renders etc, don't make them
-// boring." The pages that still have no picture, render, diagram or demo, exactly (the backlog in #122). A page that
-// gains one must leave this list, and a new page without one fails, so the list only shrinks.
-const PAGES_WITHOUT_VISUALS = [
-  'THIRD_PARTY_NOTICES.md',
-  'agents/cad-pr-reviewer.md',
-  'agents/cad-resume.md',
-  'docs/agent-workflow.md',
-  'docs/common-issues.md',
-  'docs/compliant.md',
-  'docs/design-process-plan.md',
-  'docs/dossier.md',
-  'docs/explore.md',
-  'docs/file-viewer.md',
-  'docs/gates.md',
-  'docs/pcb.md',
-  'docs/rendered-motion.md',
-  'docs/review-packet.md',
-  'docs/subassembly-insertion.md',
-  'docs/toolkit.md',
-  'docs/volume-precision.md',
-  'docs/web-diagrams.md',
-  'docs/web-parts.md',
-  'research/agent-toolkits-2026-10.md',
-  'research/compliant-mechanisms.md',
-  'research/design-workflows.md',
-  'research/fea-and-process-tools.md',
-  'research/landscape.md',
-  'research/simulation-tools.md',
-  'skills/cad-motion-validation/SKILL.md',
-  'skills/cad-pr-review/SKILL.md',
-  'skills/cad-remote-runs/SKILL.md',
-  'skills/cad-work-tracking/SKILL.md',
-  'skills/design-process/SKILL.md',
-  'skills/mcmaster-parts/SKILL.md',
-];
+// boring." The pages that still have no picture, render, diagram or demo, exactly (the backlog in #122, now empty). A
+// new page without one fails; if one must ship without, list it here with the issue that adds its visual.
+const PAGES_WITHOUT_VISUALS = [];   // #124 gave every page one; keep it empty
 test('the pages without a picture, diagram or demo are exactly the known backlog', async () => {
   const { without } = JSON.parse(await readFile(path.join(out, 'visuals.json'), 'utf8'));
   const gained = PAGES_WITHOUT_VISUALS.filter(p => !without.includes(p)), lacking = without.filter(p => !PAGES_WITHOUT_VISUALS.includes(p));

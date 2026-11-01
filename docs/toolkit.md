@@ -124,7 +124,7 @@ my-cad-project/
 | `exports/<part>.stl` | print orientation, lowest point on z=0 | degenerate faces removed; must be watertight |
 | `exports/<part>.3mf` | print orientation, centred on `printer.bed_mm` | written by `cad-agent export-3mf`, read back and verified; byte-reproducible (fixed zip dates), so a rebuild of unchanged geometry keeps the slice report current |
 | `exports/<part>.step` | assembly coordinates | for CAD review and re-use |
-| `exports/<name>-plates.3mf` | print orientation, turned about z and laid out on build plates | every printed part at its quantity in one Bambu Studio project, one plate per bed; written by `export-3mf`, read back and verified; byte-reproducible ([build plates](#build-plates-cadagentmanufacturingplates)) |
+| `exports/<name>-plates.3mf` | print orientation, turned about z and laid out on build plates | every printed part at its quantity in one Bambu Studio project, one plate per bed; written by `export-3mf`, read back and verified; byte-reproducible for the same Bambu Studio version, or with none installed ([build plates](#build-plates-cadagentmanufacturingplates)) |
 | `exports/<name>-plates.svg`, `-plates.json` | seen from above | the plates as a picture, and the layout as data: each copy's place and turn, each plate's filament and surface, the 3MF's sha256 |
 
 ### Build plates (`cadagent.manufacturing.plates`)
@@ -139,11 +139,13 @@ plate and slice. This is Gyropup's print set, from its committed STLs and print 
 - **Footprints.** Each copy reserves the rectangle around its outline seen from above (the convex hull of its mesh).
   It keeps its print orientation and may turn about z: a quarter turn, or, for a part that fits neither way (a long
   leg on a square bed), the whole degree that gives the smallest rectangle that fits.
-- **Packing.** MaxRects (Jylänki 2010): largest first, onto the first plate with room. Sixteen sort orders and fit
-  rules are tried, and the layout with the fewest plates wins. Parts with different filaments never share a plate.
-  Sizes are whole micrometres and every tie has a fixed order, so the same parts give the same plates everywhere.
-  `check_plates` then checks the result again on its own terms: every copy placed once, inside the bed less the
-  margin, off the keep-out areas, at least the gap from every other copy.
+- **Packing.** MaxRects (Jylänki 2010): largest first, onto the first plate with room. Four sort orders times four
+  fit rules are tried, and the layout with the fewest plates wins. Parts with different filaments never share a
+  plate. Sizes are whole micrometres and every tie has a fixed order, so the same parts and settings give the same
+  plates everywhere. `check_plates` then checks the result again on its own terms: every copy placed once, inside
+  the bed less the margin, and at least the gap from every other copy and from the keep-out areas (never less than
+  0.5 mm from those: a part turned to a whole degree is written rounded to 1e-4 mm, and Bambu Studio refuses a
+  plate where a part touches its exclusion area).
 - **The file.** 3MF core-spec meshes, one build item per copy on Bambu Studio's grid of plates, and Bambu's
   `Metadata/model_settings.config` with one `<plate>` per plate (named after its filament). Where Bambu Studio is
   installed, its own project settings for `cad.slicer` go in too, with the printer's own plate surface and each
@@ -163,7 +165,7 @@ plate and slice. This is Gyropup's print set, from its committed STLs and print 
 | filament | `cad.slicer.filament` | `pla`, `petg` or a Bambu filament profile name; one filament per plate |
 | `gap_mm`, `margin_mm` | 5, 5 | least distance between two footprints, and from the bed's edge |
 | `rotate` | true | false keeps every part as modelled |
-| `keep_out` | the printer's exclusion area (a P1S: its wiper corner) | more `[x0, y0, x1, y1]` areas in bed mm that no footprint may cover |
+| `keep_out` | the printer's exclusion area (a P1S: its wiper corner), read from Bambu Studio's printer profile, so only where it is installed | more `[x0, y0, x1, y1]` areas in bed mm that every footprint stays the gap clear of. Without Bambu Studio there is no exclusion area, and the same project packs differently: list the corner here for the same layout on every machine |
 | `bed_type` | the plate the printer ships with (a P1S: Textured PEI) | `Cool Plate`, `Engineering Plate`, `High Temp Plate`, `Textured PEI Plate` or `Supertack Plate`. A plate whose filament has no temperature for that surface gets the first one it has, with a warning (Bambu Studio will not slice PETG on the Cool Plate) |
 
 `export-3mf` exits 1 when a part fits no plate (too large or too tall at any turn) or the parts need more than the 36

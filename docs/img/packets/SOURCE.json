@@ -571,77 +571,6 @@
     }
    }
   },
-  "clean": {
-   "commit": "88433065d7632e5ec95eca48f2d5b722d8fb26f3",
-   "seed": null,
-   "what": null,
-   "seeded_gate": null,
-   "gates": {
-    "assembly": {
-     "status": "pass",
-     "counts": {
-      "pass": 55,
-      "warn": 0,
-      "fail": 0
-     },
-     "findings": []
-    },
-    "connectivity": {
-     "status": "pass",
-     "counts": {
-      "pass": 31,
-      "warn": 0,
-      "fail": 0
-     },
-     "findings": []
-    },
-    "containment": {
-     "status": "pass",
-     "counts": {
-      "pass": 21,
-      "warn": 0,
-      "fail": 0
-     },
-     "findings": []
-    },
-    "dossier-lint": {
-     "status": "pass",
-     "counts": {
-      "pass": 34,
-      "warn": 0,
-      "fail": 0
-     },
-     "findings": []
-    },
-    "fasteners": {
-     "status": "pass",
-     "counts": {
-      "pass": 28,
-      "warn": 0,
-      "fail": 0
-     },
-     "findings": []
-    },
-    "motion": {
-     "status": "pass",
-     "counts": {
-      "pass": 1,
-      "warn": 0,
-      "fail": 0
-     },
-     "findings": []
-    },
-    "wall": {
-     "status": "pass",
-     "counts": {
-      "pass": 8,
-      "warn": 0,
-      "fail": 0
-     },
-     "findings": []
-    }
-   }
-  },
   "lid_before_board": {
    "commit": "88433065d7632e5ec95eca48f2d5b722d8fb26f3",
    "seed": "lid_before_board",
@@ -700,6 +629,77 @@
        "message": "section 'S-store' is built, below gated: lid: gate:assembly fail (failing: step:8:insert, step:9:insert); ball: gate:assembly fail (failing: step:8:insert); board: gate:assembly fail (failing: step:9:insert)"
       }
      ]
+    },
+    "fasteners": {
+     "status": "pass",
+     "counts": {
+      "pass": 28,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "motion": {
+     "status": "pass",
+     "counts": {
+      "pass": 1,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "wall": {
+     "status": "pass",
+     "counts": {
+      "pass": 8,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    }
+   }
+  },
+  "clean": {
+   "commit": "456230f4ab103128422c7446007ea0d2216ba209",
+   "seed": null,
+   "what": null,
+   "seeded_gate": null,
+   "gates": {
+    "assembly": {
+     "status": "pass",
+     "counts": {
+      "pass": 55,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "connectivity": {
+     "status": "pass",
+     "counts": {
+      "pass": 31,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "containment": {
+     "status": "pass",
+     "counts": {
+      "pass": 21,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
+    },
+    "dossier-lint": {
+     "status": "pass",
+     "counts": {
+      "pass": 34,
+      "warn": 0,
+      "fail": 0
+     },
+     "findings": []
     },
     "fasteners": {
      "status": "pass",
@@ -845,6 +845,34 @@
    "section_hash": "a71359519bef",
    "findings": []
   },
+  "lid_before_board-store-findings.webp": {
+   "scenario": "lid_before_board",
+   "section": "S-store",
+   "view": "findings",
+   "caption": "S-store Store: gate findings at their witness points",
+   "note": "3 finding(s); numbered callouts at the witness points (see findings in the manifest).",
+   "section_hash": "19e7fb6613ec",
+   "findings": [
+    {
+     "id": "F1",
+     "gate": "assembly",
+     "check": "step:8:insert",
+     "status": "fail"
+    },
+    {
+     "id": "F2",
+     "gate": "assembly",
+     "check": "step:9:insert",
+     "status": "fail"
+    },
+    {
+     "id": "F3",
+     "gate": "dossier-lint",
+     "check": "section-below-gated@dossier/sections/store.yaml:2",
+     "status": "fail"
+    }
+   ]
+  },
   "clean-store-solid-iso.webp": {
    "scenario": "clean",
    "section": "S-store",
@@ -944,33 +972,14 @@
    "section_hash": "4dab98bda33f",
    "findings": []
   },
-  "lid_before_board-store-findings.webp": {
-   "scenario": "lid_before_board",
-   "section": "S-store",
-   "view": "findings",
-   "caption": "S-store Store: gate findings at their witness points",
-   "note": "3 finding(s); numbered callouts at the witness points (see findings in the manifest).",
-   "section_hash": "19e7fb6613ec",
-   "findings": [
-    {
-     "id": "F1",
-     "gate": "assembly",
-     "check": "step:8:insert",
-     "status": "fail"
-    },
-    {
-     "id": "F2",
-     "gate": "assembly",
-     "check": "step:9:insert",
-     "status": "fail"
-    },
-    {
-     "id": "F3",
-     "gate": "dossier-lint",
-     "check": "section-below-gated@dossier/sections/store.yaml:2",
-     "status": "fail"
-    }
-   ]
+  "clean-arm-exploded.webp": {
+   "scenario": "clean",
+   "section": "S-arm",
+   "view": "exploded",
+   "caption": "S-arm Arm: exploded along the assembly steps",
+   "note": "Each part backed out along its step's direction, later steps further; screws along their axis.",
+   "section_hash": "4dab98bda33f",
+   "findings": []
   }
  }
 }

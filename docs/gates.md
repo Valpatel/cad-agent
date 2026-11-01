@@ -248,6 +248,9 @@ the B-rep, or set `tol_mm` to cover it. The threshold is the part's own (the dos
 
 ## Containment (`cadagent.review.gates.containment`)
 
+<details>
+<summary>The containment gate's calls: declarations, poses, support, mesh items, exclusions, closed_by</summary>
+
 ```python
 from cadagent.review.gates.containment import containment_gate, check_contains, Contains, contains_declarations
 
@@ -261,6 +264,8 @@ containment_gate(asm, decls, exclusions=[{"parts": ["ball#0", "hopper"], "reason
 containment_gate(asm, [{..., "closed_by": ["lid"]}])           # the cavity may reach into the lid's box
 check_contains(asm, decl, pose="turned")                       # -> [Check] for one declaration, one pose
 ```
+
+</details>
 
 The cavity must be a registered `@cavity` solid (`Assembly.add_cavity`); there are no derived cavities. Instances of
 `what` are the parts named `what` or `what#0`, `what#1`, ... Checks per declaration (ids `contains:<cavity>:...`,
@@ -281,6 +286,9 @@ prefixed `<pose>/` when `poses` is given):
   itself. It does not catch a cavity that stays within the container's box and outside its material (beside an
   L-shaped container): contents in that extra volume read inside.
 - **Tangent contact is inside.** A ball resting on a cavity wall has 0 mm³ outside and is `touching` the container.
+
+<!-- the site places a figure here (docs/pages.yaml) -->
+
 - **Contact probe.** OCCT's surface intersection can miss a shallow near-tangent crossing: a 4 mm sphere pushed
   0.03–0.1 mm through a cone wall read 0 mm³ outside at 5 of 50 positions tried, a consistent common = volume, cut = 0
   that the `vol = common + cut` cross-check cannot see. So every instance whose exact gap to the cavity boundary is

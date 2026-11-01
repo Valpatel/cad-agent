@@ -114,7 +114,7 @@ docs/gates.md:
       caption: "A seeded failure (ball_through_wall), in a plan cut through the gate bench's hopper cavity: ball 7, pushed 5 mm into the wall, fails inside (261.8 mm³, 50 %, outside), wall (174 mm³ in the hopper) and support."
       alt: A plan section through the gate bench's hopper, its walls a blue ring round four orange balls, and a fifth ball sitting in the top wall, half outside the cavity
     - after: containment-cadagentreviewgatescontainment
-      below: the cavity shares volume with the container
+      below: Tangent contact is inside.
       img: docs/img/packets/clean-store-cut-cavity-hopper_cavity.webp
       shows: output
       tool: cad-agent review-packet
@@ -200,6 +200,14 @@ docs/gates.md:
       caption: "The gate bench as built, each part backed out along its assembly step's direction, later steps further and screws along their axes: the paths the insertion sweep checks. 55 checks pass."
       alt: "An exploded view of the gate bench's store: the hopper at the bottom, a board and the balls above it, then the lid and four screws on top"
     - after: assembly-sequence-access-cadagentreviewgatesassembly
+      below: What an insertion is checked against.
+      img: docs/img/packets/clean-arm-exploded.webp
+      shows: output
+      tool: cad-agent review-packet
+      on: fixture
+      caption: "The gate bench's arm section as built, exploded along its declared steps: the hinge block, the stop and the arm, then the pin, backed out along its axis. The insertion sweep slides each one in along its step's direction against the parts already present; the pin, sliding through its bores, is sampled every max_step_mm."
+      alt: "The gate bench's arm section exploded: the blue hinge block and yellow stop on the base, the purple arm lifted above them, the green pin drawn out sideways"
+    - after: assembly-sequence-access-cadagentreviewgatesassembly
       below: Witnesses.
       img: docs/img/packets/lid_before_board-store-findings.webp
       shows: output
@@ -224,7 +232,7 @@ docs/gates.md:
       caption: "What the gates feed, on the gate bench's review site: each section's gates and review state, from the verdicts in exports/gates/ and the dossier lint. Four sections, all gated, none signed off."
       alt: The review site's front page for the gate bench, with counts and a table of its four sections with their status, requirements, parts, gates and review state
     - after: motion-range-interference-cadagentreviewgatesmotion
-      below: Chains and combinations.
+      below: Pairs and cost.
       img: docs/img/packets/flap_hits_frame-arm-pose-I-pin-arm-max.webp
       shows: output
       tool: cad-agent review-packet

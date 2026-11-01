@@ -45,6 +45,8 @@ async function open(route, { width = 1366, height = 900, js = true, motion = 'no
   const done = async () => { for (const s of seen) fail(`${route} @${width}${js ? '' : ' no-JS'}`, s); await context.close(); };
   return { page, done };
 }
+// Hidden from view but kept for screen readers (gallery.css: a 1 px clipped box), or not shown at all.
+const offScreen = loc => loc.evaluate(el => { const r = el.getBoundingClientRect(); return !el.checkVisibility() || (r.width <= 1 && r.height <= 1); });
 const visible = (page, sel = '[data-item]') => page.$$eval(sel, els => els.filter(e => e.checkVisibility()).map(e => e.id));
 const query = page => new URL(page.url()).search;
 
@@ -220,7 +222,7 @@ try {
       // The status line says the same for screen readers, so it is hidden from view while the box shows (#185).
       const status = page.locator('[data-gallery-status]');
       if (!(await status.textContent()).includes(empty.title)) fail('empty area', 'the status line does not say it for screen readers');
-      if (await status.isVisible()) fail('empty area', 'the status line repeats the box on screen');
+      if (!(await offScreen(status))) fail('empty area', 'the status line repeats the box on screen');
       await done();
     }
   }
@@ -246,12 +248,20 @@ try {
         const tabName = await page.$eval(`[data-gallery-tabs] [data-tab="${pick.tab.tab}"]`, t => t.firstChild.textContent.trim().toLowerCase());
         if (!text.includes(pick.area.title) || !text.includes(tabName)) fail(where, `the box does not name the area and the kind (${tabName}): ${text}`);
         for (const sel of ['[data-gallery-empty]', '[data-gallery-empty-scope]']) if (await page.locator(sel).isVisible()) fail(where, `${sel} shows as well`);
-        if (await page.locator('[data-gallery-status]').isVisible()) fail(where, 'the status line repeats the box on screen');
+        if (!(await offScreen(page.locator('[data-gallery-status]')))) fail(where, 'the status line repeats the box on screen');
         await box.locator('a').click();
-        await page.waitForFunction(() => document.querySelectorAll('[data-item]:not([hidden])').length > 0);
+        await page.waitForFunction(() => document.querySelectorAll('[data-item]:not([hidden])').length > 0, null, { timeout: 5000 })
+          .catch(() => fail(where, '"show every kind" shows nothing'));
         const q = new URLSearchParams(query(page));
         if (q.get('area') !== pick.area.slug || q.get('kind')) fail(where, `"show every kind" went to ${query(page)}`);
-        if ((await visible(page)).length !== pick.area.count) fail(where, `after "show every kind": ${(await visible(page)).length} entries, the area has ${pick.area.count}`);
+        if (await box.isVisible()) fail(where, 'the box stays after "show every kind"');
+        if (await offScreen(page.locator('[data-gallery-status]'))) fail(where, 'the status line stays hidden without a box');
+        // The same view as opening the area itself.
+        const shown = await visible(page);
+        const direct = await open(`/catalog?area=${pick.area.slug}`);
+        const want = await visible(direct.page);
+        if (shown.join() !== want.join()) fail(where, `after "show every kind": ${shown.length} entries, ?area=${pick.area.slug} shows ${want.length}`);
+        await direct.done();
       }
       await done();
     }

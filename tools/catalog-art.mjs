@@ -217,7 +217,10 @@ export function outsideCover({ kind, family, glyphSlug, tint, headline, license,
     `<text x="24" y="289" font-family="${esc(SANS)}" font-size="17" font-weight="700" fill="${INK}">${esc(fitList(band.items, 36))}</text>` : '';
   const label = `${name}: ${kind}${family ? ` on ${family.label}` : ''}, ${headline?.number != null ? `${headline.number} ${headline.unit}` : headline?.text || ''}, ${license || 'no licence'}, ${st[2]}` +
     (band?.items?.length ? `; ${band.label}: ${band.items.join(', ')}` : '');
-  return frame(tint, disc + tag(kind, 24, 32) + famLabel + big + licSvg + stSvg + bandSvg, label);
+  // On a phone the cover is about 170 px wide and these tags would be 6 px type; the card repeats them in full below,
+  // so the cover drops them when it is drawn narrower than 240 px (the media query sees the image's own width).
+  const tags = `<style>@media (max-width:240px){.tags{display:none}}</style><g class="tags">${licSvg}${stSvg}</g>`;
+  return frame(tint, disc + tag(kind, 24, 32) + famLabel + big + tags + bandSvg, label);
 }
 
 /** "$1,612", "10.3 kg": a value as a chart labels it. */

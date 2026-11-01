@@ -287,3 +287,11 @@ test('an outside cover names what the entry is built on: its structured fields f
     else assert.doesNotMatch(label, /Parts library/, `${id}: ${label}`);
   }
 });
+
+test('outside covers drop their licence and status tags when drawn phone-size (the card repeats them)', async () => {
+  for (const it of catalog.items.filter(i => OUTSIDE.includes(i.kind))) {
+    const svg = await readFile(local(it.cover), 'utf8');
+    assert.match(svg, /@media \(max-width:240px\)\{\.tags\{display:none\}\}/, `${it.id}: no narrow rule`);
+    assert.ok(svg.includes('<g class="tags">'), `${it.id}: tags not grouped`);
+  }
+});

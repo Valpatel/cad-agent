@@ -300,7 +300,8 @@ def _circle_solution(a, b, c, d, t2):
     return out
 
 
-@pytest.mark.parametrize("links", [(40, 120, 80, 100), (30, 70, 60, 80), (60, 90, 80, 30), (60, 90, 40, 100)])
+@pytest.mark.parametrize("links", [(40, 120, 80, 100), (30, 70, 60, 80), (60, 90, 80, 30), (60, 90, 40, 100),
+                                   (3, 3, 4, 4), (10, 10, 25, 25), (3, 3 * (1 + 1e-9), 4, 4)])   # two kites, a near-kite
 def test_fourbar_positions_close_the_loop_and_match_the_circle_construction(links):
     a, b, c, d = links
     solved = 0
@@ -325,6 +326,36 @@ def test_fourbar_positions_close_the_loop_and_match_the_circle_construction(link
         between = ang(both[0][0], both[0][1])
         assert mu == pytest.approx(min(between, math.pi - between), abs=1e-9)
     assert solved
+
+
+def _loop_error(a, b, c, d, t2, t3, t4):
+    return abs(a * complex(math.cos(t2), math.sin(t2)) + b * complex(math.cos(t3), math.sin(t3))
+               - c * complex(math.cos(t4), math.sin(t4)) - d)
+
+
+@pytest.mark.parametrize("links", [(3, 3, 4, 4), (10, 10, 25, 25), (7, 7, 2, 2), (3 * MM, 3 * MM, 4 * MM, 4 * MM),
+                                   (3, 3 * (1 + 1e-9), 4, 4), (3 * (1 - 1e-9), 3, 4, 4), (5, 5, 5, 5)])
+def test_fourbar_kites_close_at_every_input_angle(links):
+    # A kite (a = b, c = d) has A = 0 in the quadratic at every input angle: the root must not come from 0 / 0, and
+    # round-off must not hide a position that closes. Every 0.1 degree, both branches, including 0 and 180 degrees (where
+    # the coupler pin sits on the input pivot) and the near-kites that lost digits before.
+    a, b, c, d = links
+    assert fx.grashof(*links)["crank_rotates"]                             # the crank turns fully, so every angle closes
+    for tenth in range(3600):
+        t2 = math.radians(tenth / 10)
+        for crossed in (False, True):
+            got = fx.fourbar_angles(a, b, c, d, t2, crossed=crossed)
+            assert got is not None, (tenth / 10, crossed)
+            assert _loop_error(a, b, c, d, t2, *got) < 1e-12 * d, (tenth / 10, crossed)
+    t3, t4 = fx.fourbar_angles(3, 3, 4, 4, 0.0)
+    assert abs(math.cos(t4) + 1) < 1e-15                                  # the rocker folds back onto the ground link
+
+
+def test_fourbar_norton_example_4_1():
+    # Norton, Design of Machinery, Example 4-1: a = 40, b = 120, c = 80, d = 100 at theta2 = 40 degrees.
+    open_, crossed = (fx.fourbar_angles(40, 120, 80, 100, math.radians(40), crossed=x) for x in (False, True))
+    assert [math.degrees(v) for v in open_] == pytest.approx([20.298, 57.325], abs=5e-4)
+    assert [math.degrees(v) for v in crossed] == pytest.approx([-60.978, -98.005], abs=5e-4)
 
 
 def test_grashof_classes():

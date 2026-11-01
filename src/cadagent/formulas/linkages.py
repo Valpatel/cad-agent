@@ -52,14 +52,23 @@ def fourbar_angles(a: float, b: float, c: float, d: float, theta2: float,
     K1 cos theta4 - K2 cos theta2 + K3 = cos(theta2 - theta4); theta3 then follows from the loop closure."""
     k1, k2, k3 = d / a, d / c, (a * a - b * b + c * c + d * d) / (2.0 * a * c)
     cos2, sin2 = math.cos(theta2), math.sin(theta2)
-    A = cos2 - k1 - k2 * cos2 + k3
+    # A = (1 - K2) cos theta2 + K3 - K1, written so it cancels exactly: a kite (a = b, c = d) has A = 0 at every input
+    # angle, and the round-off of the textbook form there turns the discriminant negative near theta2 = pi.
+    A = (c - d) / c * cos2 + ((a - b) * (a + b) + (c - d) ** 2) / (2.0 * a * c)
     B = -2.0 * sin2
     C = k1 - (k2 + 1.0) * cos2 + k3
     disc = B * B - 4.0 * A * C
     if disc < 0.0:
         return None
     root = math.sqrt(disc)
-    theta4 = 2.0 * math.atan2(-B + root if crossed else -B - root, 2.0 * A)
+    # tan(theta4 / 2) = num / 2A = 2C / conj, since num * conj = 4AC. Take the larger of num and conj, so that A = 0
+    # (a kite) does not leave 0 / 0; when both are 0 (B = 0, a double root), A = 0 puts the root at infinity, theta4 = pi.
+    num = -B + root if crossed else -B - root
+    conj = -B - root if crossed else -B + root
+    if abs(num) > abs(conj) or (abs(num) == abs(conj) and abs(A) >= abs(C)):
+        theta4 = 2.0 * math.atan2(num, 2.0 * A)
+    else:
+        theta4 = 2.0 * math.atan2(2.0 * C, conj)
     theta4 = math.atan2(math.sin(theta4), math.cos(theta4))
     # b e^{i theta3} = d + c e^{i theta4} - a e^{i theta2}
     theta3 = math.atan2(c * math.sin(theta4) - a * sin2, d + c * math.cos(theta4) - a * cos2)

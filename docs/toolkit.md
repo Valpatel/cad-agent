@@ -420,6 +420,9 @@ flowchart TD
 | `cadagent.publish` (practice: publishing) | `report`, `htmlreport`, `site`, `site_review`, `view`, `serve`, `release`, `render`, `dotsvg` |
 | shared core, unchanged | `project`, `cli`, `geometry`, `links`, `package`, `agentkit` |
 
+<details>
+<summary>When the old paths go, which modules became packages, and patching through an old path</summary>
+
 **When the old paths go:** not yet. Up to v0.8.0 the docs and the warning said v0.7.0, which shipped with every old
 path. They stay until a release whose CHANGELOG announces their removal at least one minor release ahead, under
 **Projects must change** (announced in vX.Y.0, removed no earlier than vX.(Y+1).0). The warning then names that
@@ -434,6 +437,8 @@ Patching a name through an old path still reaches the code (`monkeypatch.setattr
 ...)`), because both paths are the same module. Replacing a *whole module* does not: cad-agent's own code imports the
 new paths, so `sys.modules["cadagent.report"] = fake` or `cadagent.report = fake` is not seen. Replace the module at
 its new path instead (`monkeypatch.setitem(sys.modules, "cadagent.publish.report", fake)`).
+
+</details>
 
 ```python
 from cadagent.project import load_project    # CadProject, Step, Check, CadConfigError
@@ -938,6 +943,19 @@ Docker (OpenFOAM runs in the official `opencfd/openfoam-default` image) and Bamb
 5. **State the limits** in every result (each module writes them): steady RANS, no radiation, compact models,
    linear elastic, isotropic. Simulation does not prove fit, strength or temperature; a test does.
 
+```mermaid
+flowchart TD
+    C["the parametric CAD"] --> S["1. slice it<br/>grams and print time"]
+    C --> L["2. load it<br/>safety factor, deflection"]
+    C --> K["3. cool it<br/>hottest part, fan point, walls"]
+    S & L & K --> O["4. optimise with evidence<br/>where material carries load"]
+    O -->|"the change is made in the CAD"| C
+    S & L & K --> R["5. the limits, stated<br/>in every result"]
+```
+
+*The standard practice above as a loop: a change found by optimising is made in the parametric CAD, and steps 1-3 run
+again on it.*
+
 ### Airflow and heat (`cadagent.simulation.cfd`)
 `ThermalCase(name, domain, cell_mm, ambient_c)` takes CAD (CadQuery shapes, trimesh meshes or STL), in mm:
 - `wall(name, shape, level)`: no-slip adiabatic obstacles (enclosure, boards);
@@ -979,15 +997,6 @@ cells beyond each end, oriented along its axis. The solver logs three values on 
 mass-flow-weighted temperature, Σφ T / Σφ (`surfaceFieldValue`, `operation weightedAverage; weightField phi;`), the
 net mass flow, Σφ, and the gross flow, Σ|φ|.
 
-| In `fans[<fan>]` | What it is | Use it for |
-|---|---|---|
-| `inlet_c`, `outlet_c` | Mass-flow-weighted (bulk) temperature on each face: the one whose ṁ c_p ΔT is the heat the air carries through it | Energy balances, Q = ṁ c_p ΔT |
-| `inlet_kg_s`, `outlet_kg_s` | Net mass flow through each face, along the axis | The ṁ in that balance |
-| `inlet_backflow_kg_s`, `outlet_backflow_kg_s` | Mass flow back through each face, against the axis | Whether the temperature is of the air or only of its net heat flow |
-| `inlet_area_m2`, `outlet_area_m2` | Each face's area, as the solver summed it | A check that both ends caught the same cells |
-| `heat_carried_w` | ṁ c_p (`outlet_c` − room), from `stream_heat_w()`: the net heat carried along the axis, exact whatever flows back | A check against the heat leaving (`heat_out_w`): more means the fan moves its own air again |
-| `air_through_fan_c` | Volume average over the fan zone (also `zones[<fan>]['T_c']`) | How warm the fan sits, not heat: it counts still and returning air like air that flows |
-
 ![Two sections through a vented 20 W box with an exhaust fan, coloured by air temperature with streamlines. With the fan 3 mm under the opening, air loops back through the fan's hub and round its rim: the fan moves 3.75 g/s and carries 32.26 W above the room while 19.61 W leave it. With the fan in a duct and its hub plugged, the air passes once: 2.77 g/s, carrying 17.60 W while 17.83 W leave. In both runs the inlet, outlet and volume-average temperatures agree within 0.1 K.](img/cfd/fan-faces.webp)
 
 *Two recorded runs (`tools/cfd_fan_figure.py`; `docs/img/cfd/SOURCE.json` holds the revision and the numbers). Here
@@ -997,6 +1006,15 @@ counts that air each time it passes, so `heat_carried_w` is more than the heat l
 through the parts upstream, and T<sub>fan</sub> − Q / (ṁ c<sub>p</sub>) does not give the air there. Both plumes
 swing, and the numbers are the last iteration's. The ducted run ends on a low swing (−10.9 %), which
 `energy_conserved` flags.*
+
+| In `fans[<fan>]` | What it is | Use it for |
+|---|---|---|
+| `inlet_c`, `outlet_c` | Mass-flow-weighted (bulk) temperature on each face: the one whose ṁ c_p ΔT is the heat the air carries through it | Energy balances, Q = ṁ c_p ΔT |
+| `inlet_kg_s`, `outlet_kg_s` | Net mass flow through each face, along the axis | The ṁ in that balance |
+| `inlet_backflow_kg_s`, `outlet_backflow_kg_s` | Mass flow back through each face, against the axis | Whether the temperature is of the air or only of its net heat flow |
+| `inlet_area_m2`, `outlet_area_m2` | Each face's area, as the solver summed it | A check that both ends caught the same cells |
+| `heat_carried_w` | ṁ c_p (`outlet_c` − room), from `stream_heat_w()`: the net heat carried along the axis, exact whatever flows back | A check against the heat leaving (`heat_out_w`): more means the fan moves its own air again |
+| `air_through_fan_c` | Volume average over the fan zone (also `zones[<fan>]['T_c']`) | How warm the fan sits, not heat: it counts still and returning air like air that flows |
 
 <details>
 <summary>How the faces are built, and their limits</summary>
@@ -1137,6 +1155,9 @@ slice is never shown as a weight.*
 
 </details>
 
+<details>
+<summary>A full <code>cad.release</code> section</summary>
+
 ```yaml
 cad:
   release:
@@ -1159,6 +1180,8 @@ cad:
     exclude: ["**/__pycache__/**", "**/*.pyc"]                                                  # the default
     max_file_mb: 20
     date: 2026-10-29
+
+</details>
 ```
 
 **Publishing.** The default `release/` folder is inside the project: add `release/` to `.gitignore`. Attach the

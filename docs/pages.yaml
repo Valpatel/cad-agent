@@ -811,6 +811,7 @@ docs/toolkit.md:
       caption: "The search leaderboard for the worked example (made-up parts): 60 seeded random trials, 49 distinct, by cost and mass. Four are feasible; trials 47 and 1 are the Pareto front over cost, mass and runtime."
       alt: "A scatter chart of 49 trials by cost and mass: most are infeasible open circles; two feasible grey dots; trials 47 and 1 in blue on the Pareto front"
     - after: mating-connectors-cadagentmechanicalconnectors-standard-practice-for-every-port
+      below: Identify the receptacle and its mate.
       img: docs/img/motion/connector-window.svg
       shows: diagram
       drawn_by: tools/motion_figures.py
@@ -819,6 +820,7 @@ docs/toolkit.md:
       caption: "An RJ45 plug pushed in along its mating axis, the port in tests/test_connectors.py in section. Through a window sized from the jack's bounding box its latch sweeps into the wall; through the window derived from the mated plug it clears by the 0.5 mm clearance. The swept volumes match the connector check's."
       alt: "An RJ45 plug pushed in along its mating axis through two panel windows: through a window sized from the jack's bounding box the latch sweeps into the wall; through the window derived from the mated plug it clears by the 0.5 mm clearance"
     - after: 3d-viewer-cad-agent-view--the-web-kit
+      below: Show everything the parts fit around
       img: docs/img/kit/file-viewer-step.webp
       shows: output
       tool: kit/file-viewer.js
@@ -833,6 +835,14 @@ docs/toolkit.md:
       on: gyropup
       caption: "A study with the pa6_cf_xy row above: Gyropup's wheel link in a turn (case E1), 52,134 P2 tetrahedra, PA6-CF along the layers (humid). Safety factor 3.15 against a target of 2.0."
       alt: Von Mises stress in Gyropup's wheel link, highest beside the axle bore, with a colour bar from 0 to 15 MPa
+    - after: stiffness-and-strength-cadagentsimulationfea
+      below: render(png, scale=None
+      img: docs/img/fea.jpg
+      shows: output
+      tool: cadagent.simulation.fea
+      on: enclosure
+      caption: "How a study shows margin for a report: a ribbed enclosure lid under a 300 N press, top and underside, coloured by stress as a fraction of the material's strength (at most about 0.39 here), so the colour reads as margin, not megapascals."
+      alt: "FEA of a ribbed enclosure lid under a 300 N press, top and underside, coloured by stress over strength on a scale from 0 to 0.39"
     - after: robot-export-cadagentsimulationrobot-optional
       below: solid_mass_properties
       img: docs/img/linkages/fivebar.svg

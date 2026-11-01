@@ -1,6 +1,7 @@
 """The package layout (#114): modules live in packages by domain (docs/areas.yaml; tests/test_package_areas.py keeps the
 two in step), old paths keep importing, the top level stays tidy."""
 import importlib
+import importlib.util
 import pkgutil
 import subprocess
 import sys
@@ -49,7 +50,14 @@ def _submodules(package):
     return sorted(m.name for m in pkgutil.walk_packages(package.__path__, package.__name__ + "."))
 
 
-MOVED_PACKAGES = sorted(old for old, new in MOVED.items() if hasattr(importlib.import_module(new), "__path__"))
+def _is_package(name):
+    """Whether ``name`` is a package, without importing it: a missing target gives False here and fails
+    test_old_paths_are_the_same_module, instead of stopping collection."""
+    spec = importlib.util.find_spec(name)
+    return spec is not None and spec.submodule_search_locations is not None
+
+
+MOVED_PACKAGES = sorted(old for old, new in MOVED.items() if _is_package(new))
 
 
 def test_the_moved_packages_are_the_published_ones():

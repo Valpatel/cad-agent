@@ -180,7 +180,7 @@ function frame({ title, body, md, description = LEDE, current = '', page = 'doc'
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title === TAGLINE ? 'cad-agent · ' + TAGLINE : title + ' · cad-agent')}</title>
 <meta name="description" content="${esc(description)}">
-<link rel="icon" href="/web/icon.svg"><link rel="preload" href="/kit/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}
+<link rel="icon" href="/web/icon.svg"><link rel="preload" href="/kit/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/kit/vendor/fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}
 ${md ? `<link rel="alternate" type="text/markdown" href="${esc(md)}" title="Markdown for agents">` : ''}
 <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt"></head>
 <body class="${page}-page" data-diagram-theme="light"><a class="skip-link" href="#main:content">Skip to content</a><header class="site-header"><div class="wrap"><a class="wordmark" href="/"><img src="/web/icon.svg" alt="" width="34" height="34">cad-agent<b>.</b></a>
@@ -430,7 +430,7 @@ const poster = imageSize(await readBuf('web/models/gyropup.webp'), 'gyropup.webp
 if (!poster) throw new Error('web/models/gyropup.webp: run node tools/site-model-poster.mjs');
 const kb = n => `${Math.round(n / 1024)} KB`;
 const landing = `<div class="wrap"><section class="hero hero-3d">
-<div class="hero-head"><p class="eyebrow"><span class="status-dot"></span>Open source · for AI agents and people</p>
+<div class="hero-head"><p class="eyebrow"><span class="status-dot"></span>Open source · for agents and people</p>
 <h1>Your one stop shop for <span>agentic CAD.</span></h1>
 <p class="intro">Checks, simulation and cited engineering for the hardware agents design, in tested code.</p></div>
 <figure class="hero-model"><cad-model src="/web/models/gyropup.json" label="Gyropup" style="aspect-ratio:${poster.width}/${poster.height}"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="${poster.width}" height="${poster.height}" fetchpriority="high" alt="Gyropup, a wheel-legged robot with a foam-ball turret, assembled from its ${heroModel.parts.length} parts"></cad-model>

@@ -11,8 +11,8 @@ from pathlib import Path
 
 import pytest
 
-from cadagent.gates import Check, PairCache, Tolerances, aabb_distances, relation_table, verdict, write_verdict
-from cadagent.gates import relations as relations_mod  # the module
+from cadagent.review.gates import Check, PairCache, Tolerances, aabb_distances, relation_table, verdict, write_verdict
+from cadagent.review.gates import relations as relations_mod  # the module
 
 try:
     import cadquery as cq
@@ -43,7 +43,7 @@ def timing_module():
 
 @needs_cad
 def test_four_textbook_pairs_give_build123d_mcp_states():
-    from cadagent.gates import relate
+    from cadagent.review.gates import relate
     apart = relate(box(10, 10, 10), box(10, 10, 10, (12, 0, 0)))
     assert apart.state == "apart" and apart.gap_mm == pytest.approx(2.0)
     assert apart.witness["point_a"][0] == pytest.approx(10) and apart.witness["point_b"][0] == pytest.approx(12)
@@ -66,7 +66,7 @@ def test_four_textbook_pairs_give_build123d_mcp_states():
 
 @needs_cad
 def test_ball_resting_on_a_cavity_wall_is_contained_and_one_poking_through_is_not():
-    from cadagent.gates import relate
+    from cadagent.review.gates import relate
     cavity = box(20, 20, 20, (-10, -10, -5))
     resting = relate(ball(5), cavity)                 # tangent to the cavity floor, from inside
     assert resting.state == "contains" and resting.wall_mm == pytest.approx(0.0, abs=1e-6)
@@ -78,7 +78,7 @@ def test_ball_resting_on_a_cavity_wall_is_contained_and_one_poking_through_is_no
 
 @needs_cad
 def test_touch_tolerance_and_contact_area_of_a_pin_in_its_bore():
-    from cadagent.gates import relate
+    from cadagent.review.gates import relate
     near = relate(box(10, 10, 10), box(10, 10, 10, (10.005, 0, 0)))
     assert near.state == "touching" and near.gap_mm == pytest.approx(0.005) and near.contact_area_mm2 == 0.0
     assert relate(box(10, 10, 10), box(10, 10, 10, (10.02, 0, 0))).state == "apart"
@@ -104,7 +104,7 @@ def test_kernel_failure_is_unknown_not_apart(monkeypatch):
 
 @needs_cad
 def test_assembly_locations_bodies_groups_and_validation():
-    from cadagent.gates import Assembly, bounding_box
+    from cadagent.review.gates import Assembly, bounding_box
     asm = Assembly()
     asm.add("t", box(1, 1, 1), (10, 0, 0))
     asm.add("loc", box(1, 1, 1), cq.Location(cq.Vector(10, 0, 0)))
@@ -133,7 +133,7 @@ def test_assembly_locations_bodies_groups_and_validation():
 
 @needs_cad
 def test_assembly_from_cadquery_composes_locations_and_labels_bodies():
-    from cadagent.gates import Assembly, bounding_box
+    from cadagent.review.gates import Assembly, bounding_box
     root = cq.Assembly(name="root")
     root.add(box(5, 5, 5), name="frame", loc=cq.Location(cq.Vector(1, 2, 3)))
     arm = cq.Assembly(name="arm")
@@ -157,7 +157,7 @@ def test_aabb_distances_are_box_gaps():
 
 @needs_cad
 def test_table_get_bounds_skipped_pairs_and_computes_them_on_request():
-    from cadagent.gates import Assembly, relation_table
+    from cadagent.review.gates import Assembly, relation_table
     asm = Assembly({"a": box(10, 10, 10), "b": box(10, 10, 10, (10, 0, 0)), "far": box(1, 1, 1, (50, 0, 0)),
                     "alt": box(10, 10, 10, (5, 0, 0))})
     table = relation_table(asm, skip_pairs=[("a", "alt")])
@@ -180,7 +180,7 @@ def test_table_get_bounds_skipped_pairs_and_computes_them_on_request():
 @needs_cad
 def test_synthetic_100_parts_under_5_seconds():
     """The plan's acceptance figure; tools/gate_timing.py prints the same run."""
-    from cadagent.gates import relation_table
+    from cadagent.review.gates import relation_table
     asm, expected = timing_module().synthetic_assembly(100)
     t0 = time.perf_counter()
     table = relation_table(asm)
@@ -195,8 +195,8 @@ def test_synthetic_100_parts_under_5_seconds():
 
 @needs_cad
 def test_content_hash_is_the_shared_evidence_function_and_bound_to_content():
-    from cadagent.evidence import shape_content_hash
-    from cadagent.gates import Assembly
+    from cadagent.review.evidence import shape_content_hash
+    from cadagent.review.gates import Assembly
     a, b = box(1, 2, 3), box(1, 2, 3)
     assert shape_content_hash(a) == shape_content_hash(b)
     assert shape_content_hash(box(1, 2, 3.001)) != shape_content_hash(a)
@@ -212,8 +212,8 @@ def test_content_hash_is_the_shared_evidence_function_and_bound_to_content():
 def test_read_back_shapes_keep_the_cache_warm_through_recorded_hashes(tmp_path):
     """A shape read back from BREP re-hashes differently; the hash recorded at build time does not."""
     import io
-    from cadagent.evidence import shape_content_hash
-    from cadagent.gates import Assembly
+    from cadagent.review.evidence import shape_content_hash
+    from cadagent.review.gates import Assembly
     built = {"a": box(5, 5, 5).rotate(cq.Vector(), cq.Vector(0, 0, 1), 30).moved(cq.Location(cq.Vector(1.1, 2.2, 0))),
              "b": box(5, 5, 5, (5, -3, 0))}
     recorded = {n: shape_content_hash(s) for n, s in built.items()}
@@ -235,10 +235,10 @@ def test_read_back_shapes_keep_the_cache_warm_through_recorded_hashes(tmp_path):
 
 @needs_cad
 def test_cache_hit_skips_the_kernel_and_a_moved_part_requeries_only_its_pairs(tmp_path, monkeypatch):
-    from cadagent.gates import Assembly, relation_table
+    from cadagent.review.gates import Assembly, relation_table
     shapes = {"base": box(30, 30, 2), "a": box(5, 5, 5, (0, 0, 2)), "b": box(5, 5, 5, (5, 0, 2)),
               "c": box(5, 5, 5, (20, 20, 2))}
-    from cadagent.gates import shape_content_hash
+    from cadagent.review.gates import shape_content_hash
     before = {n: shape_content_hash(v) for n, v in shapes.items()}
     cache = PairCache(tmp_path / "cache")
     cold = relation_table(Assembly(shapes), cache=cache)
@@ -276,7 +276,7 @@ def test_cache_hits_across_processes(tmp_path):
     first = json.loads(subprocess.run(cmd, check=True, capture_output=True, text=True,
                                       env={"PYTHONPATH": env_path, "PATH": ""}).stdout)
     assert first["kernel_queries"] == first["candidates"] > 0
-    from cadagent.gates import relation_table
+    from cadagent.review.gates import relation_table
     asm, _ = timing_module().synthetic_assembly(20)
     table = relation_table(asm, cache=PairCache(cache))
     assert table.stats["kernel_queries"] == 0 and table.stats["cache_hits"] == first["candidates"]
@@ -349,7 +349,7 @@ def overlapping_compound():
 
 @needs_cad
 def test_a_compound_of_interfering_solids_is_refused_or_unknown_never_touching():
-    from cadagent.gates import Assembly, relate, solid_interference
+    from cadagent.review.gates import Assembly, relate, solid_interference
     bad = overlapping_compound()
     assert solid_interference(bad) and solid_interference(box(1, 1, 1)) == []
     rel = relate(box(2, 2, 3), bad)
@@ -385,7 +385,7 @@ def test_volume_cross_check_turns_a_silent_kernel_error_into_unknown(monkeypatch
 
 @needs_cad
 def test_unexamined_pairs_read_unchecked_unless_their_boxes_prove_a_gap():
-    from cadagent.gates import Assembly
+    from cadagent.review.gates import Assembly
     asm = Assembly({"a": box(10, 10, 10), "alt": box(10, 10, 10, (5, 0, 0)), "m": box(1, 1, 1, (40, 0, 0)),
                     "far": box(1, 1, 1, (80, 0, 0))})
     skipped = relation_table(asm, skip_pairs=[("a", "alt")]).get("a", "alt")
@@ -398,7 +398,7 @@ def test_unexamined_pairs_read_unchecked_unless_their_boxes_prove_a_gap():
 
 @needs_cad
 def test_a_buried_part_is_contains_and_counts_as_interference():
-    from cadagent.gates import Assembly
+    from cadagent.review.gates import Assembly
     asm = Assembly({"block": box(20, 20, 20), "pin": cq.Solid.makeCylinder(2, 10, cq.Vector(10, 10, 5))})
     table = relation_table(asm)
     rel = table.get("pin", "block")
@@ -409,7 +409,7 @@ def test_a_buried_part_is_contains_and_counts_as_interference():
 
 @needs_cad
 def test_cavities_are_cached_items_outside_the_pair_table_and_move_with_their_part(tmp_path, monkeypatch):
-    from cadagent.gates import Assembly, relate_pair
+    from cadagent.review.gates import Assembly, relate_pair
     shell = box(20, 20, 20).cut(box(16, 16, 18, (2, 2, 2)))
     asm = Assembly()
     asm.add("hopper", shell, body="hopper")
@@ -431,7 +431,7 @@ def test_cavities_are_cached_items_outside_the_pair_table_and_move_with_their_pa
 
 @needs_cad
 def test_the_kernel_version_is_part_of_the_cache_key(tmp_path, monkeypatch):
-    from cadagent.gates import Assembly
+    from cadagent.review.gates import Assembly
     shapes = {"a": box(1, 1, 1), "b": box(1, 1, 1, (1, 0, 0))}
     relation_table(Assembly(shapes), cache=PairCache(tmp_path))
     assert relation_table(Assembly(shapes), cache=PairCache(tmp_path)).stats["cache_hits"] == 1
@@ -442,9 +442,9 @@ def test_the_kernel_version_is_part_of_the_cache_key(tmp_path, monkeypatch):
 @needs_cad
 def test_from_build_takes_placed_shapes_recorded_hashes_cavities_joints_and_fasteners(tmp_path, monkeypatch):
     """The dossier hand-over: live result and a read-back from BREP give the same keys, places and cache keys."""
-    from cadagent import dossier
-    from cadagent.geometry.fasteners import socket_head_envelope
-    from cadagent.gates import Assembly
+    from cadagent.review import dossier
+    from cadagent.mechanical.fasteners import socket_head_envelope
+    from cadagent.review.gates import Assembly
     with dossier.use_registry() as reg:
         reg.add_part("base", lambda p: box(40, 40, 4), grounded=True, section="S1")
         reg.add_part("tub", lambda p: box(20, 20, 10).cut(box(16, 16, 8, (2, 2, 2))), section="S2",

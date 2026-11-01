@@ -1,6 +1,6 @@
 import pytest
-from cadagent.geometry.fasteners import blind_insert_stack
-from cadagent.geometry.fasteners import filleted_wall_rib
+from cadagent.mechanical.fasteners import blind_insert_stack
+from cadagent.mechanical.fasteners import filleted_wall_rib
 
 
 def test_blind_stack_recessed_lid():

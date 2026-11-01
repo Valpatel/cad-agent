@@ -12,7 +12,7 @@ matplotlib = pytest.importorskip('matplotlib')
 from matplotlib.axes import Axes  # noqa: E402
 from matplotlib.text import Text  # noqa: E402
 
-from cadagent.sim import cfd, simviz  # noqa: E402
+from cadagent.simulation import cfd, simviz  # noqa: E402
 
 from .cfd_fixtures import recorded  # noqa: E402
 

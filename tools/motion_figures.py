@@ -8,7 +8,7 @@ Nothing is keyframed by eye. Each figure draws one fixture or worked example fro
 
 * where the real code runs without CadQuery, the figure runs it:
   - the assembly-sequence core (``run_sequence``) on the subassembly fixture;
-  - the connector windows and margins (``cadagent.geometry.connectors``);
+  - the connector windows and margins (``cadagent.mechanical.connectors``);
   - the worked example's seeded search (``run_search``);
 * where the real check needs the kernel, a 2D model of the same fixture stands in:
   - the motion gate's sampled poses, collision and bisected onset;
@@ -216,10 +216,10 @@ def arm_at(deg: float, b=BENCH):
 
 
 def hinge_numbers(b=BENCH) -> dict:
-    """The motion gate's rules (cadagent.gates.motion) on the 2D model: the samples, the colliding poses, the
+    """The motion gate's rules (cadagent.review.gates.motion) on the 2D model: the samples, the colliding poses, the
     last clear one and the onset bisected between them."""
-    from cadagent.gates.motion import DEFAULT_SAMPLES, motion_gate
-    from cadagent.gates.relations import Tolerances
+    from cadagent.review.gates.motion import DEFAULT_SAMPLES, motion_gate
+    from cadagent.review.gates.relations import Tolerances
     refine = inspect.signature(motion_gate).parameters["refine_steps"].default
     limit = Tolerances().overlap_mm3
     lo, hi = b["range_deg"]
@@ -365,7 +365,7 @@ CBORE = {"plate": (-20.0, 0.0, 20.0, 10.0), "hole_r": 1.7, "cbore_r": 3.2, "cbor
 
 def _inside(rib, r, z0, z1, tol):
     """Volume of the box ``rib`` inside a probe cylinder of radius ``r - tol`` about Z, over ``z0 + tol .. z1 - tol``
-    (cadagent.geometry.holes.probe for a bore), by Simpson's rule across Y; the X extent is exact."""
+    (cadagent.mechanical.holes.probe for a bore), by Simpson's rule across Y; the X extent is exact."""
     x0, y0, zr0, x1, y1, zr1 = rib
     rp, a, b = r - tol, z0 + tol, z1 - tol
     height = max(0.0, min(b, zr1) - max(a, zr0))
@@ -382,7 +382,7 @@ def _inside(rib, r, z0, z1, tol):
 
 
 def counterbore_numbers(c=CBORE) -> dict:
-    from cadagent.geometry.holes import MIN_VOLUME_MM3, TOL_MM
+    from cadagent.mechanical.holes import MIN_VOLUME_MM3, TOL_MM
     top = c["plate"][3]
     floor = top - c["cbore_depth"]
     rib_top = c["rib"][5]
@@ -556,9 +556,9 @@ def _box_volume(a, b) -> float:
 
 def connector_numbers() -> dict:
     """The window, margins and insertion-sweep interference with the wall. The window and margins come from
-    cadagent.geometry.connectors. The sweep extends each plug segment to the plug's far end (connectors.envelope), and
+    cadagent.mechanical.connectors. The sweep extends each plug segment to the plug's far end (connectors.envelope), and
     its shared volume with the box segments is exact."""
-    from cadagent.geometry import connectors as cn
+    from cadagent.mechanical import connectors as cn
     segs = cn.mate_segments(RJ45)
     far = max(s["w"][1] for s in segs)
     good = cn.window(RJ45, WALL)
@@ -677,9 +677,9 @@ SUB_SERVICE = {"electronics": ["bumper", "retainer"]}
 
 
 def subassembly_numbers() -> dict:
-    from cadagent.gates.assembly import AccessOptions, SequenceWorld, run_sequence
-    from cadagent.gates.fasteners import FastenerSpec
-    from cadagent.gates.relations import Relation, Tolerances
+    from cadagent.review.gates.assembly import AccessOptions, SequenceWorld, run_sequence
+    from cadagent.review.gates.fasteners import FastenerSpec
+    from cadagent.review.gates.relations import Relation, Tolerances
 
     class Boxes(SequenceWorld):
         """Exact relations of boxes (as tests/test_gate_assembly.py's BoxWorld), recording the exact queries."""
@@ -836,11 +836,11 @@ EXAMPLE = ROOT / "examples" / "explore-two-wheel"
 def search_numbers() -> dict:
     """Runs the worked example's configured search (``cad-agent optimise``: seeded random trials) in a scratch copy,
     and ranks the trials seen so far after each one, as the leaderboard does."""
-    from cadagent.explore.catalogue import load_configured
-    from cadagent.explore.compare import rank
-    from cadagent.explore.config import explore_config
-    from cadagent.explore.evaluate import load_evaluator
-    from cadagent.explore.optimise import run_search, search_config
+    from cadagent.simulation.explore.catalogue import load_configured
+    from cadagent.simulation.explore.compare import rank
+    from cadagent.simulation.explore.config import explore_config
+    from cadagent.simulation.explore.evaluate import load_evaluator
+    from cadagent.simulation.explore.optimise import run_search, search_config
     from cadagent.project import load_project
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp) / EXAMPLE.name

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from cadagent.geometry import connectors as cn
+from cadagent.mechanical import connectors as cn
 
 # A front wall 3 mm thick whose inner face is 1.5 mm in front of a receptacle face at w = 2.
 WALL = (3.5, 6.5)

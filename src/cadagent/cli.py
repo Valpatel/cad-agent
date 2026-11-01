@@ -109,7 +109,7 @@ def cmd_build(project: CadProject, args: argparse.Namespace) -> int:
     return 0
 
 def cmd_export_3mf(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.make.mesh3mf import export_parts_3mf
+    from cadagent.manufacturing.mesh3mf import export_parts_3mf
     from cadagent.publish.report import load_parts
 
     parts, error = load_parts(project)
@@ -124,7 +124,7 @@ def cmd_export_3mf(project: CadProject, args: argparse.Namespace) -> int:
     return 0
 
 def cmd_slice(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.make.slicer import executable, slice_project
+    from cadagent.manufacturing.slicer import executable, slice_project
 
     if not executable():
         raise _Unusable("Bambu Studio is not installed (snap install bambu-studio); nothing was sliced")
@@ -191,7 +191,7 @@ def cmd_package(project: CadProject, args: argparse.Namespace) -> int:
     return 0
 
 def cmd_release(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.make.release import build_release
+    from cadagent.publish.release import build_release
 
     out = Path(args.out).expanduser() if getattr(args, "out", None) else None
     try:
@@ -216,7 +216,7 @@ def cmd_site(project: CadProject, args: argparse.Namespace) -> int:
     from cadagent.publish.site_review import nav_entries
 
     site = project.site
-    from cadagent.gates.run import enabled
+    from cadagent.review.gates.run import enabled
     review = project if enabled(project) else None     # a dossier or gates project gets the review pages
     # without a configured `nav`, every page still gets a top bar: the overview, docs, 3D model, the review pages
     # and the HTML pages
@@ -264,7 +264,7 @@ def cmd_webkit(project: CadProject, args: argparse.Namespace) -> int:
     return 0
 
 def cmd_pcb_check(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.make.pcb import evidence_bundle, manifest_problems
+    from cadagent.electrical.pcb import evidence_bundle, manifest_problems
     config_path = project.root / args.manifest
     try:
         manifest = json.loads(config_path.read_text())
@@ -293,7 +293,7 @@ def cmd_pcb_check(project: CadProject, args: argparse.Namespace) -> int:
 def cmd_dossier(project: CadProject, args: argparse.Namespace) -> int:
     """Lint the design dossier, compute every item's status and write exports/dossier-status.json and
     exports/gates/dossier-lint.json (docs/dossier.md "Lint and status")."""
-    from cadagent.dossier.lint import STATUSES, lint_project, write_outputs
+    from cadagent.review.dossier.lint import STATUSES, lint_project, write_outputs
 
     minimum = None if getattr(args, "min_status", "gated") == "none" else getattr(args, "min_status", "gated")
     result = lint_project(project, min_section_status=minimum)
@@ -323,7 +323,7 @@ def cmd_dossier(project: CadProject, args: argparse.Namespace) -> int:
 def cmd_review_packet(project: CadProject, args: argparse.Namespace) -> int:
     """Render each section's review packet: exports/review/<section>/*.png and manifest.json
     (docs/review-packet.md)."""
-    from cadagent.publish.packet import PacketError, plan_project_packet, project_sections, review_packet
+    from cadagent.review.packet import PacketError, plan_project_packet, project_sections, review_packet
 
     try:
         size = tuple(int(v) for v in args.size.lower().split("x"))
@@ -349,7 +349,7 @@ def cmd_review_packet(project: CadProject, args: argparse.Namespace) -> int:
 def cmd_review_section(project: CadProject, args: argparse.Namespace) -> int:
     """The reviewer pass (plan §5.3, T11): write the reviewer's prompt bundle for a section, or check and submit a
     filled-in reviewer record (docs/dossier.md "The reviewer pass")."""
-    from cadagent.dossier.review import ReviewError, submit_record, write_bundle
+    from cadagent.review.dossier.review import ReviewError, submit_record, write_bundle
 
     record = args.submit or args.check
     try:
@@ -370,7 +370,7 @@ def cmd_review_section(project: CadProject, args: argparse.Namespace) -> int:
             except ValueError:
                 shown = str(path)
             _say(f"review-section {args.section}: {rec['verdict']} by {rec['actor']} -> {shown}")
-            from cadagent.dossier.lint import lint_project
+            from cadagent.review.dossier.lint import lint_project
             res = lint_project(project, min_section_status=None)
             row = (res.sections.get(args.section) if res is not None else None) or {}
             _say(f"  section status now: {row.get('status', '?')}"
@@ -414,7 +414,7 @@ def _packet_summary(manifest: Dict[str, Any], listed: bool) -> None:
 def cmd_gates(project: CadProject, args: argparse.Namespace) -> int:
     """Run every integrity gate that applies, each in a process of its own, then the dossier lint; write
     exports/gates/<gate>.json and .md (docs/gates.md "Running the gates")."""
-    from cadagent.gates.run import GatesConfigError, enabled, run_gates
+    from cadagent.review.gates.run import GatesConfigError, enabled, run_gates
 
     if not enabled(project):
         raise _Unusable("no dossier: or gates: key in the cad: section; the gates read the dossier geometry "
@@ -446,8 +446,8 @@ def cmd_gates(project: CadProject, args: argparse.Namespace) -> int:
 
 
 def cmd_holes(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.geometry import holes
-    from cadagent.geometry.holes import check_project
+    from cadagent.mechanical import holes
+    from cadagent.mechanical.holes import check_project
     from cadagent.project import CadConfigError
 
     out = getattr(args, "out", None)
@@ -482,7 +482,7 @@ def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
         cmd_holes(project, args)
     except _Unusable as exc:
         _say(f"holes FAILED to run: {exc} (the report's Holes clear rows fail)")
-    from cadagent.gates.run import GatesConfigError, enabled, gates_config
+    from cadagent.review.gates.run import GatesConfigError, enabled, gates_config
     if enabled(project):
         try:                    # rebuild the record unless a build step already runs the gates' build script
             gb = gates_config(project).build
@@ -507,7 +507,7 @@ def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
 def _mcmaster_choices(pns: List[str], choose: Optional[List[str]]) -> Dict[str, List[str]]:
     """--choose values -> option texts per part number. 'PN:OPTION' is for that part; a bare 'OPTION' is allowed only
     when one part number is given."""
-    from cadagent.make.mcmaster import PN_RE
+    from cadagent.mechanical.mcmaster import PN_RE
 
     per: Dict[str, List[str]] = {pn: [] for pn in pns}
     for c in choose or []:
@@ -530,7 +530,7 @@ def cmd_mcmaster(args: argparse.Namespace) -> int:
     actually needs its page (no STEP or page data here yet, or --force), so re-normalising works offline."""
     import contextlib
 
-    from cadagent.make import mcmaster as mc
+    from cadagent.mechanical import mcmaster as mc
 
     try:
         pns = [mc.validate_pn(p) for p in args.pns]
@@ -594,8 +594,8 @@ def _warn(msg: str) -> None:
 
 def _explore(project: CadProject):
     """The project's explore config and catalogue, with the catalogue's load problems."""
-    from cadagent.explore.catalogue import load_configured
-    from cadagent.explore.config import explore_config
+    from cadagent.simulation.explore.catalogue import load_configured
+    from cadagent.simulation.explore.config import explore_config
 
     if not project.explore:
         raise _Unusable("no explore: section under cad: in cad-agent.yaml (docs/explore.md)")
@@ -628,8 +628,8 @@ def _design_paths(cfg, given: Optional[List[str]]) -> List[Path]:
 
 
 def cmd_catalogue(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.explore.catalogue import check_catalogue, counts
-    from cadagent.explore.design import DesignError, check_slots, load_design, resolve
+    from cadagent.simulation.explore.catalogue import check_catalogue, counts
+    from cadagent.simulation.explore.design import DesignError, check_slots, load_design, resolve
 
     cfg, catalogue, issues = _explore(project)
     issues += check_catalogue(catalogue, cfg.categories or None, cfg.max_price_age_days)
@@ -664,7 +664,7 @@ def cmd_catalogue(project: CadProject, args: argparse.Namespace) -> int:
 
 
 def _print_leaderboard(comp: Dict[str, Any], limit: int = 25) -> None:
-    from cadagent.explore import metrics as M
+    from cadagent.simulation.explore import metrics as M
 
     cols = comp["metrics"]
     objectives = [o["metric"] for o in comp["objectives"]]
@@ -692,9 +692,9 @@ def _print_leaderboard(comp: Dict[str, Any], limit: int = 25) -> None:
 
 
 def cmd_compare(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.explore.catalogue import check_catalogue, counts
-    from cadagent.explore.compare import compare_designs, to_json, write_comparison
-    from cadagent.explore.evaluate import load_evaluator
+    from cadagent.simulation.explore.catalogue import check_catalogue, counts
+    from cadagent.simulation.explore.compare import compare_designs, to_json, write_comparison
+    from cadagent.simulation.explore.evaluate import load_evaluator
 
     cfg, catalogue, issues = _explore(project)
     paths = _design_paths(cfg, getattr(args, "designs", None))
@@ -721,8 +721,8 @@ def cmd_compare(project: CadProject, args: argparse.Namespace) -> int:
 
 
 def cmd_optimise(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.explore.evaluate import load_evaluator
-    from cadagent.explore.optimise import run_search
+    from cadagent.simulation.explore.evaluate import load_evaluator
+    from cadagent.simulation.explore.optimise import run_search
 
     cfg, catalogue, issues = _explore(project)
     for issue in issues:
@@ -789,8 +789,8 @@ def cmd_agents(args: argparse.Namespace) -> int:
     return 1 if result["conflicts"] else 0
 
 def cmd_snapfit(args: argparse.Namespace) -> int:
-    """Size and check declared snap fits (cadagent.compliant.snapfit); exit 1 if any check fails."""
-    from cadagent.compliant import snapfit
+    """Size and check declared snap fits (cadagent.mechanical.compliant.snapfit); exit 1 if any check fails."""
+    from cadagent.mechanical.compliant import snapfit
     text = Path(args.spec).read_text()
     if str(args.spec).endswith((".yaml", ".yml")):
         import yaml
@@ -820,7 +820,7 @@ def cmd_snapfit(args: argparse.Namespace) -> int:
 
 def cmd_motion_trace(args: argparse.Namespace) -> int:
     """Check captured rendered landmarks, or print the required capture poses; no project config needed."""
-    from cadagent.sim.motion_trace import required_poses, validate_motion_trace
+    from cadagent.mechanical.motion_trace import required_poses, validate_motion_trace
     import json
     contract = json.loads(args.contract.read_text())
     if args.poses_only:
@@ -887,7 +887,7 @@ def dispatch(args: argparse.Namespace) -> int:
         return 1
     except KeyboardInterrupt:
         if sub in ("compare", "optimise"):
-            from cadagent.explore.evaluate import kill_running_evaluators
+            from cadagent.simulation.explore.evaluate import kill_running_evaluators
             kill_running_evaluators()
         _err(f"{sub}: interrupted")
         return 130
@@ -966,9 +966,9 @@ def build_parser() -> argparse.ArgumentParser:
     mc_p = sub.add_parser("mcmaster", help="Download McMaster-Carr STEP + product data per part number and normalise "
                                            "it (one page at a time; skills/mcmaster-parts/SKILL.md)")
     mc_p.add_argument("pns", nargs="+", metavar="PN", help="McMaster-Carr part numbers, e.g. 91290A242")
-    from cadagent.make.mcmaster import KINDS as MC_KINDS
+    from cadagent.mechanical.mcmaster import KINDS as MC_KINDS
     mc_p.add_argument("--kind", choices=MC_KINDS,
-                      help="Normalise into the frame for this kind of part (cadagent.make.mcmaster.FRAMES)")
+                      help="Normalise into the frame for this kind of part (cadagent.mechanical.mcmaster.FRAMES)")
     mc_p.add_argument("--out", default="references/vendor/mcmaster", help="Folder; each part goes in OUT/<PN>/ "
                                                                           "(keep it out of git except SOURCE.txt)")
     mc_p.add_argument("--catalog", help="Catalogue JSON to record the part in: {source, items: {key: entry}}, or a list "
@@ -1009,7 +1009,7 @@ def build_parser() -> argparse.ArgumentParser:
     dos_p.add_argument("--min-status", choices=("draft", "built", "gated", "reviewed", "signed_off", "none"),
                        default="gated", help="Status every section must reach (default gated, plan §5.4); "
                                              "none: report statuses without failing on them")
-    from cadagent.gates.run import NAMES as GATE_NAMES
+    from cadagent.review.gates.run import NAMES as GATE_NAMES
     gates_p = sub.add_parser("gates", parents=[common],
                              help="Run the integrity gates on the dossier geometry: exports/gates/<gate>.json + .md")
     gates_p.add_argument("--only", dest="gate_only", nargs="+", choices=GATE_NAMES, metavar="GATE",

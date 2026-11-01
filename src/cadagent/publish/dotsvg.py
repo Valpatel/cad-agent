@@ -1,8 +1,9 @@
 """Graphviz DOT to SVG without Graphviz: a small parser for the DOT the toolkit writes and a layered layout.
 
-The connectivity gate writes its graph as DOT (``exports/gates/connectivity.dot``, ``cadagent.gates.connectivity
-.to_dot``). The review site draws it as SVG. When Graphviz's ``dot`` is installed it is used (``engine="auto"``);
-otherwise, or with ``engine="python"``, this module lays the graph out itself:
+The connectivity gate writes its graph as DOT (``exports/gates/connectivity.dot``,
+``cadagent.review.gates.connectivity.to_dot``). The review site draws it as SVG. When Graphviz's ``dot`` is
+installed it is used (``engine="auto"``); otherwise, or with ``engine="python"``, this module lays the graph out
+itself:
 
 - **Parser.** The DOT subset ``to_dot`` and simple hand-written graphs use: ``graph``/``digraph``, ``subgraph``
   (``cluster_*`` subgraphs become boxes with their ``label``), node statements with attributes, edge chains

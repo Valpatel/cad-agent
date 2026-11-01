@@ -1,4 +1,5 @@
-"""cadagent.explore.optimise: the search space, the built-in samplers, resuming, and optuna's NSGA-II when installed."""
+"""cadagent.simulation.explore.optimise: the search space, the built-in samplers, resuming, and optuna's NSGA-II when
+installed."""
 
 from __future__ import annotations
 
@@ -7,10 +8,10 @@ import random
 
 import pytest
 
-from cadagent.explore.config import Constraint
-from cadagent.explore.evaluate import load_evaluator
-from cadagent.explore.optimise import (Dimension, base_choice, constraint_values, read_records, run_search,
-                                       search_config, trial_design)
+from cadagent.simulation.explore.config import Constraint
+from cadagent.simulation.explore.evaluate import load_evaluator
+from cadagent.simulation.explore.optimise import (Dimension, base_choice, constraint_values, read_records, run_search,
+                                                  search_config, trial_design)
 from cadagent.project import CadConfigError
 
 from .explore_fixtures import enclosure_config, restore_sys_path, write_enclosure  # noqa: F401 (a fixture)
@@ -154,7 +155,7 @@ def test_nsga2_with_optuna(tmp_path):
 
 def test_a_continued_optuna_search_gets_a_new_seed(tmp_path, monkeypatch):
     pytest.importorskip("optuna")
-    from cadagent.explore import optimise
+    from cadagent.simulation.explore import optimise
 
     seeds = []
     real = optimise.OptunaSampler
@@ -182,7 +183,7 @@ def test_a_repeat_proposed_while_its_original_runs_waits_for_it(tmp_path, monkey
     """Two workers, and a sampler that proposes the same combination twice in a row: evaluated once."""
     import threading
 
-    from cadagent.explore import optimise
+    from cadagent.simulation.explore import optimise
 
     root, cfg, cat, fn = _setup(tmp_path, sampler="random")
     gate = threading.Event()

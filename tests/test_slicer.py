@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from cadagent.make import slicer
+from cadagent.manufacturing import slicer
 
 
 @pytest.fixture

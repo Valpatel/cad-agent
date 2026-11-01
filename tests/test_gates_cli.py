@@ -22,7 +22,7 @@ import pytest
 
 from cadagent import cli
 from cadagent.cli import main
-from cadagent.gates import run as gr
+from cadagent.review.gates import run as gr
 from cadagent.project import load_project
 
 from .test_dossier_lint import make_project
@@ -45,10 +45,11 @@ def bind_verdicts(root: Path, gates: Optional[Iterable[str]] = None, failing: It
 
 
 FAKE_WORKER = textwrap.dedent('''
-    """A stand-in for `python -m cadagent.gates.run <root> <gate>`: writes the verdict run_one would, no kernel."""
+    """A stand-in for `python -m cadagent.review.gates.run <root> <gate>`: writes the verdict run_one would, no
+    kernel."""
     import os, sys, time
     from pathlib import Path
-    from cadagent.gates import run as gr
+    from cadagent.review.gates import run as gr
     from cadagent.project import load_project
     root, gate = sys.argv[1], sys.argv[2]
     mode = os.environ.get("FAKE_GATE_MODE", "pass")
@@ -311,7 +312,7 @@ def test_check_after_a_dossier_declaration_changes(project, capsys):
 def test_check_and_report_need_no_cad_kernel(project):
     bind_verdicts(project)
     code = ("import sys; from cadagent.project import load_project; from cadagent.publish.report import collect; "
-            "from cadagent.gates.run import gates_config, plan; "
+            "from cadagent.review.gates.run import gates_config, plan; "
             f"r = collect(load_project({str(project)!r})); "
             "assert any(f['feature_id'] == 'cad-gates' for f in r['features']); "
             "print(any(m in sys.modules for m in ('cadquery', 'OCP', 'trimesh')))")
@@ -366,7 +367,7 @@ def test_site_overview_counts_current_passing_gates(project):
 # ----------------------------------------------------------------------------------------------- review fixes
 
 def test_a_part_named_like_a_volatile_field_is_still_digested():
-    from cadagent.gates.verdict import geometry_digest
+    from cadagent.review.gates.verdict import geometry_digest
     rec = {"actor": "a", "parts": {"file": {"sha256": "1" * 64, "declared_at": "x:1"}},
            "joints": {"hash": {"kind": "revolute", "range": [0, 10]}}}
     moved = {**rec, "actor": "b", "parts": {"file": {"sha256": "1" * 64, "declared_at": "x:9"}}}
@@ -408,7 +409,7 @@ def test_a_configured_skip_removes_the_verdict_the_lint_would_read(project, caps
 
 
 def test_the_lint_compares_declarations_and_options_for_a_project(project):
-    from cadagent.dossier.lint import lint_project
+    from cadagent.review.dossier.lint import lint_project
     bind_verdicts(project)
     assert "verdict-stale" not in lint_project(load_project(project)).codes()
     _config(project, "gates:\n  assembly: {max_step_mm: 2}\n")

@@ -1,4 +1,4 @@
-from cadagent.publish.review import review_html
+from cadagent.review import review_html
 
 def test_embedded_review_assets_are_local_and_missing_is_visible(tmp_path):
     (tmp_path/'schematic.pdf').write_bytes(b'%PDF-1.4')

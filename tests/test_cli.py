@@ -162,7 +162,7 @@ def test_module_runs_as_a_script(tmp_path):
 
 def test_slice_reports_a_part_without_a_print_time(tmp_path, monkeypatch, capsys):
     from cadagent import cli
-    from cadagent.make import slicer
+    from cadagent.manufacturing import slicer
     monkeypatch.setattr(slicer, "executable", lambda: "/bin/true")
     monkeypatch.setattr(slicer, "slice_project", lambda project, parts=None: {
         "parts": {"box": {"grams": 5.0, "minutes": None}}, "total_grams": 5.0, "total_hours": 0.0,

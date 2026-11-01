@@ -139,7 +139,7 @@ def test_site_serves_the_kit_and_links_the_model(tmp_path):
 
 def test_pcb_evidence_staleness_is_visible(tmp_path):
     import json
-    from cadagent.make.pcb import evidence_bundle
+    from cadagent.electrical.pcb import evidence_bundle
     (tmp_path/'board.kicad_pcb').write_text('board')
     full='"included_severities":["error","warning","exclusion"],'
     (tmp_path/'erc.json').write_text('{'+full+'"sheets":[{"violations":[]}]}')
@@ -160,9 +160,9 @@ def test_pcb_evidence_staleness_is_visible(tmp_path):
 
 def test_card_workbench_and_report_agree_on_outside_root_evidence(tmp_path):
     import json, hashlib
-    from cadagent.evidence import hashes_are_current
-    from cadagent.make.pcb import evidence_is_current
-    from cadagent.publish.review import review_html
+    from cadagent.review.evidence import hashes_are_current
+    from cadagent.electrical.pcb import evidence_is_current
+    from cadagent.review import review_html
     root = tmp_path / 'project'; root.mkdir()
     (tmp_path / 'outside.kicad_pcb').write_text('outside')
     (root / 'drc.json').write_text('{}')

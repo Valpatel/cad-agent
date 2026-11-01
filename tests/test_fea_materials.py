@@ -1,7 +1,7 @@
 """The FEA material table pinned to the data sheets it cites (#125).
 
 Each sheet below is written out as read on 2026-10-31, with its edition and where it was read, independently of
-``cadagent.sim.fea``. A change to a value in ``MATERIALS`` fails here until the sheet is read again and this file
+``cadagent.simulation.fea``. A change to a value in ``MATERIALS`` fails here until the sheet is read again and this file
 updated with it. Only the inputs are pinned: CAD and simulation do not prove that a part fits or holds.
 
 The rules the printed rows follow:
@@ -18,7 +18,7 @@ from typing import Dict, Optional, Tuple
 
 import pytest
 
-from cadagent.sim.fea import MATERIALS, Material, _isotropic_basis
+from cadagent.simulation.fea import MATERIALS, Material, _isotropic_basis
 
 ROOT = Path(__file__).resolve().parents[1]
 BBL = "https://store.bblcdn.com/"
@@ -227,5 +227,5 @@ def test_isotropic_materials_add_nothing_to_the_assumptions():
 
 
 def test_topopt_default_modulus_is_pla_across_the_layers():
-    from cadagent.sim.topopt import TopOpt
+    from cadagent.simulation.topopt import TopOpt
     assert inspect.signature(TopOpt.__init__).parameters["E_mpa"].default == MATERIALS["pla"].E_mpa

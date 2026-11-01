@@ -5,7 +5,7 @@ import pytest
 
 cq = pytest.importorskip("cadquery")
 
-from cadagent.geometry import holes
+from cadagent.mechanical import holes
 from cadagent.cli import main
 from cadagent.project import CadConfigError
 

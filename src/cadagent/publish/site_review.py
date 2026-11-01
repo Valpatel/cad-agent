@@ -17,8 +17,8 @@ Built by ``cad-agent site`` for a project that uses the dossier or the gates (a 
 
 **What is read.** Every status comes from the files the pipeline computes, never from the YAML:
 ``exports/dossier-status.json`` (``cad-agent dossier``/``cad-agent gates``), the verdicts in ``exports/gates/`` (with
-their stale and missing state from ``cadagent.gates.run.gate_rows``) and the reviewer records the status file names.
-The YAML dossier is loaded (``strict=False``) only for the words: functions, purposes, decisions and their
+their stale and missing state from ``cadagent.review.gates.run.gate_rows``) and the reviewer records the status file
+names. The YAML dossier is loaded (``strict=False``) only for the words: functions, purposes, decisions and their
 alternatives, interfaces, requirement sources and waiver rationales. When the YAML is newer than the status file the
 pages say so. Everything is optional: a missing file shows as a gap with the command that makes it.
 """
@@ -78,11 +78,11 @@ class ReviewData:
     has_dossier: bool
     status: Optional[Dict[str, Any]] = None        # exports/dossier-status.json
     status_error: str = ""
-    dossier: Any = None                            # the YAML, for the words only (cadagent.dossier.Dossier)
+    dossier: Any = None                            # the YAML, for the words only (cadagent.review.dossier.Dossier)
     dossier_error: str = ""
     geometry: Optional[Dict[str, Any]] = None
     verdicts: Dict[str, Dict[str, Any]] = field(default_factory=dict)   # gate -> verdict (dossier-lint included)
-    rows: List[Dict[str, Any]] = field(default_factory=list)            # cadagent.gates.run.gate_rows
+    rows: List[Dict[str, Any]] = field(default_factory=list)            # cadagent.review.gates.run.gate_rows
     yaml_newer: List[str] = field(default_factory=list)                 # dossier files newer than the status file
 
     # ---- lookups
@@ -125,13 +125,13 @@ def _read_json(path: Path) -> Tuple[Optional[Dict[str, Any]], str]:
 
 def enabled(project: Any) -> bool:
     """A project gets the review pages when it has a ``dossier:`` or a ``gates:`` key."""
-    from cadagent.gates.run import enabled as gates_enabled
+    from cadagent.review.gates.run import enabled as gates_enabled
     return gates_enabled(project)
 
 
 def collect(project: Any) -> ReviewData:
     """Read the status file, the verdicts, the gate rows and the YAML dossier (for its words)."""
-    from cadagent.gates.run import gate_rows
+    from cadagent.review.gates.run import gate_rows
     root = Path(project.root).resolve()
     exports = Path(project.exports_dir)
     data = ReviewData(root=root, exports=exports, has_dossier=bool(getattr(project, "dossier", None)))
@@ -139,7 +139,7 @@ def collect(project: Any) -> ReviewData:
         status_path = exports / STATUS_FILE
         data.status, data.status_error = _read_json(status_path)
         try:
-            from cadagent.dossier import load_project_dossier
+            from cadagent.review.dossier import load_project_dossier
             data.dossier = load_project_dossier(project, strict=False)
         except Exception as exc:         # noqa: BLE001 (a broken dossier is shown, never fatal to the site)
             data.dossier_error = str(exc)
@@ -172,7 +172,7 @@ def _dossier_files(project: Any, dossier: Any = None) -> List[Path]:
     main = Path(path).resolve()
     if dossier is None:
         try:
-            from cadagent.dossier import load_project_dossier
+            from cadagent.review.dossier import load_project_dossier
             dossier = load_project_dossier(project, strict=False)
         except Exception:                # noqa: BLE001 (then only project.yaml and the records are watched)
             dossier = None
@@ -194,7 +194,7 @@ def _gate_files(project: Any) -> List[Path]:
     """The gates' declarations file and geometry record as ``cad: gates:`` names them (verdicts go stale when either
     changes); nothing when the configuration is unreadable (the gates page says why)."""
     try:
-        from cadagent.gates.run import gates_config
+        from cadagent.review.gates.run import gates_config
         cfg = gates_config(project)
     except Exception:                    # noqa: BLE001
         return [Path(project.exports_dir) / "dossier-geometry.json"]
@@ -683,9 +683,9 @@ def _packet(data: ReviewData, sid: str) -> Optional[Dict[str, Any]]:
 
 
 def _packet_images(data: ReviewData, manifest: Mapping[str, Any]) -> List[Dict[str, Any]]:
-    """The packet's views. ``cad-agent.review-packet/1`` (T10, ``cadagent.publish.render.review_packet``) lists them under
-    ``views`` as ``{id, kind, file, caption, note, sha256}``, ``file`` relative to the manifest's folder and null for
-    a view not rendered. Until that schema is merged the reader is tolerant: ``images``, ``renders`` or ``items``,
+    """The packet's views. ``cad-agent.review-packet/1`` (T10, ``cadagent.publish.render.review_packet``) lists them
+    under ``views`` as ``{id, kind, file, caption, note, sha256}``, ``file`` relative to the manifest's folder and null
+    for a view not rendered. Until that schema is merged the reader is tolerant: ``images``, ``renders`` or ``items``,
     each a path or ``{file|path|image, caption|title, id|view|name, hash|sha256}``, resolved against the manifest's
     folder, then the project root."""
     items: List[Any] = []
@@ -724,7 +724,7 @@ def _packet_hashes(manifest: Mapping[str, Any]) -> Dict[str, str]:
 
 
 def _reviewer_record(data: ReviewData, row: Mapping[str, Any]) -> Tuple[Dict[str, Any], str]:
-    """The current reviewer record the status row names (``cad-agent.review/1``, ``cadagent.dossier.review``)."""
+    """The current reviewer record the status row names (``cad-agent.review/1``, ``cadagent.review.dossier.review``)."""
     rev = row.get("review") or {}
     rel = rev.get("record")
     if not rel:

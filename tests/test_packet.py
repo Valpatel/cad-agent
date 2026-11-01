@@ -18,10 +18,10 @@ from typing import Any, Dict
 import pytest
 import yaml
 
-from cadagent.publish import packet as pk
+from cadagent.review import packet as pk
 from cadagent.cli import main
-from cadagent.dossier import load_dossier
-from cadagent.gates.verdict import bind_inputs
+from cadagent.review.dossier import load_dossier
+from cadagent.review.gates.verdict import bind_inputs
 
 
 def _inst(key, lo, hi, sha, **kw):
@@ -307,7 +307,7 @@ def test_packet_staleness(tmp_path):
 def test_project_packet_staleness_follows_the_dossier(tmp_path):
     root = make_project(tmp_path)
     vfile = root / "exports" / "gates" / "fasteners.json"
-    from cadagent.gates import run as gr
+    from cadagent.review.gates import run as gr
     from cadagent.project import load_project
     cfg = gr.gates_config(load_project(root))
     v = json.loads(vfile.read_text())
@@ -367,7 +367,7 @@ def test_witness_points_and_geometry_helpers():
 def make_project(root: Path) -> Path:
     """A project with the record and the verdicts written as `cad-agent gates` writes them (bound to the gates'
     declarations and options too), except the fastener verdict, which stays unbound."""
-    from cadagent.gates import run as gr
+    from cadagent.review.gates import run as gr
     from cadagent.project import load_project
 
     write_dossier(root)

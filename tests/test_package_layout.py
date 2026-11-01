@@ -1,4 +1,5 @@
-"""The package layout (#114): modules live in packages by job, old paths keep importing, the top level stays tidy."""
+"""The package layout (#114): modules live in packages by domain (docs/areas.yaml; tests/test_package_areas.py keeps the
+two in step), old paths keep importing, the top level stays tidy."""
 import importlib
 import pkgutil
 import subprocess
@@ -10,19 +11,25 @@ from pathlib import Path
 import pytest
 
 import cadagent
+from cadagent import _moved
 from cadagent._moved import MOVED
 
 PKG = Path(cadagent.__file__).parent
-TOP_MODULES = {"__init__", "_deps", "_moved", "agentkit", "cli", "evidence", "links", "package", "project"}
-PACKAGES = {"compliant", "dossier", "explore", "gates", "geometry", "make", "publish", "sim", "webkit"}
+TOP_MODULES = {"__init__", "_deps", "_moved", "agentkit", "cli", "links", "package", "project"}
+DOMAINS = {"mechanical", "manufacturing", "thermal", "simulation", "electrical", "review", "publish"}
+PACKAGES = DOMAINS | {"geometry", "webkit"}                  # geometry: the shared CAD helpers; webkit: browser files
+# Paths of the job layout (#121 before the owner chose domains): never on dev, so nothing keeps them importing.
+NEVER_SHIPPED = ["cadagent.sim", "cadagent.make", "cadagent.geometry.holes", "cadagent.geometry.fasteners",
+                 "cadagent.geometry.connectors", "cadagent.geometry.markings", "cadagent.publish.packet",
+                 "cadagent.publish.review"]
 
 
 def test_top_level_stays_tidy():
     modules = {p.stem for p in PKG.glob("*.py")}
     packages = {p.name for p in PKG.iterdir() if p.is_dir() and not p.name.startswith(("_", "."))}
     assert modules == TOP_MODULES, (
-        f"new top-level modules {sorted(modules - TOP_MODULES)}: put them in the package for their job "
-        f"(geometry, sim, make, publish, ...), or agree a new top-level module and add it here")
+        f"new top-level modules {sorted(modules - TOP_MODULES)}: put them in the package for their domain "
+        f"({', '.join(sorted(DOMAINS))}; see docs/areas.yaml), or agree a new shared module and add it here")
     assert packages == PACKAGES, f"packages changed: {sorted(packages ^ PACKAGES)} (update the README map too)"
 
 
@@ -35,6 +42,59 @@ def test_old_paths_are_the_same_module(old, new):
     assert getattr(cadagent, old) is module
     assert module.__name__ == new and module.__spec__.name == new, "the old path replaced the real module's spec"
     assert not (PKG / f"{old}.py").exists(), f"cadagent/{old}.py is back next to its new home {new}"
+    assert not (PKG / old).is_dir(), f"cadagent/{old}/ is back next to its new home {new} (a stale folder imports)"
+
+
+def _submodules(package):
+    return sorted(m.name for m in pkgutil.walk_packages(package.__path__, package.__name__ + "."))
+
+
+MOVED_PACKAGES = sorted(old for old, new in MOVED.items() if hasattr(importlib.import_module(new), "__path__"))
+
+
+def test_the_moved_packages_are_the_published_ones():
+    assert MOVED_PACKAGES == ["compliant", "dossier", "explore", "gates"]
+
+
+@pytest.mark.parametrize("old", MOVED_PACKAGES)
+def test_an_old_package_path_takes_its_submodules_with_it(old):
+    """cadagent.gates.motion is cadagent.review.gates.motion: the same object, through every submodule."""
+    new = MOVED[old]
+    subs = _submodules(importlib.import_module(new))
+    assert subs, f"{new} has no submodules"
+    for real in subs:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            module = importlib.import_module(f"cadagent.{old}" + real[len(new):])
+        assert module is importlib.import_module(real) and module.__name__ == real
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module(f"cadagent.{old}.no_such_module")
+
+
+def test_modules_that_became_packages_keep_their_paths_without_a_warning():
+    """cadagent.geometry and cadagent.review were published as modules; each is now its package's __init__, the
+    same module as before at the same path, so it does not warn."""
+    code = """
+import warnings
+warnings.simplefilter("error")
+from cadagent.geometry import export_step, solid_report
+from cadagent.review import review_html, REVIEW_CSS
+import cadagent.geometry, cadagent.review
+assert cadagent.geometry.__name__ == "cadagent.geometry" and cadagent.review.__name__ == "cadagent.review"
+assert cadagent.geometry.__path__ and cadagent.review.__path__
+"""
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                         env={"PYTHONPATH": str(PKG.parent), "PATH": ""})
+    assert out.returncode == 0, out.stderr
+    assert "geometry" not in MOVED and "review" not in MOVED
+
+
+@pytest.mark.parametrize("name", NEVER_SHIPPED)
+def test_the_job_layout_paths_are_gone(name):
+    assert importlib.util.find_spec(name.rsplit(".", 1)[0]) is not None
+    assert importlib.util.find_spec(name) is None, (
+        f"{name} still resolves: a stale folder under src/cadagent (delete it), or a shim for a path that never "
+        f"shipped")
 
 
 # Each form that reaches a moved module, as the last line of a script. dotsvg needs only the standard library.
@@ -47,6 +107,17 @@ IMPORT_FORMS = {
     "import_module": "import importlib\nimportlib.import_module('cadagent.dotsvg')",
     "__import__": "__import__('cadagent.dotsvg')",
     "new path loaded first": "import cadagent.publish.dotsvg\nfrom cadagent import dotsvg",
+}
+# The same through a moved package (cadagent.gates is now cadagent.review.gates): each line, the warnings it raises.
+PACKAGE_FORMS = {
+    "import": ("import cadagent.gates.verdict", ["cadagent.gates", "cadagent.gates.verdict"]),
+    "from module import name": ("from cadagent.gates.verdict import SCHEMA",
+                                ["cadagent.gates", "cadagent.gates.verdict"]),
+    "from package import module": ("from cadagent.gates import verdict", ["cadagent.gates"]),
+    "import_module": ("import importlib\nimportlib.import_module('cadagent.gates.verdict')",
+                      ["cadagent.gates", "cadagent.gates.verdict"]),
+    "new path loaded first": ("import cadagent.review.gates.verdict\nimport cadagent.gates.verdict",
+                              ["cadagent.gates", "cadagent.gates.verdict"]),
 }
 
 
@@ -62,6 +133,21 @@ def test_old_path_warns_at_the_importing_line(form, tmp_path):
     assert out.returncode == 0, out.stderr
     expected = f"{script}:{line}: DeprecationWarning: cadagent.dotsvg moved to cadagent.publish.dotsvg"
     assert out.stderr.count(expected) == 1, out.stderr
+
+
+@pytest.mark.parametrize("form", PACKAGE_FORMS)
+def test_an_old_package_path_warns_at_the_importing_line(form, tmp_path):
+    code, warned = PACKAGE_FORMS[form]
+    script = tmp_path / "uses_old_package_path.py"
+    script.write_text("# a project script\n" + code + "\n")
+    line = code.count("\n") + 2
+    out = subprocess.run([sys.executable, str(script)], capture_output=True, text=True, cwd=tmp_path,
+                         env={"PYTHONPATH": str(PKG.parent), "PATH": ""})
+    assert out.returncode == 0, out.stderr
+    for old in warned:
+        expected = f"{script}:{line}: DeprecationWarning: {old} moved to {_moved.new_name(old)}"
+        assert out.stderr.count(expected) == 1, out.stderr
+    assert out.stderr.count("DeprecationWarning") == len(warned), out.stderr
 
 
 def test_old_path_leaves_the_real_modules_spec_and_reload_alone():
@@ -161,7 +247,7 @@ def test_replacing_a_whole_module_reaches_internal_code_only_at_its_new_path(how
     own code imports the new paths, so a whole module replaced at its old path is not seen. holes.current() imports
     load_parts from cadagent.publish.report when it runs; the stand-in project has no parts file, so the real one
     fails on that and the fake one raises _Reached."""
-    from cadagent.geometry import holes
+    from cadagent.mechanical import holes
     fake = _fake_report()
     if how == "sys.modules, old path":
         monkeypatch.setitem(sys.modules, "cadagent.report", fake)
@@ -217,3 +303,27 @@ def test_no_internal_import_uses_an_old_path():
                 if len(parts) >= 2 and parts[0] == "cadagent" and parts[1] in MOVED:
                     bad.append(f"{path.relative_to(PKG.parent)}:{node.lineno}: {t}")
     assert not bad, "imports through old paths:\n" + "\n".join(sorted(set(bad)))
+
+
+def test_every_internal_import_resolves():
+    """Every module an internal import names (absolute or relative, at module level or lazy) exists: a relative import
+    that climbs out of a package (``from ..project import``) silently changes meaning when the package moves."""
+    import ast
+    missing = []
+    for path in PKG.rglob("*.py"):
+        if "webkit" in path.parts:
+            continue
+        rel = path.relative_to(PKG.parent).with_suffix("")
+        package = list(rel.parts[:-1])
+        for node in ast.walk(ast.parse(path.read_text(), str(path))):
+            if isinstance(node, ast.Import):
+                mods = [a.name for a in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                base = package[: len(package) - node.level + 1] if node.level else []
+                mods = [".".join(base + ([node.module] if node.module else [])) if node.level else node.module]
+            else:
+                continue
+            for mod in mods:
+                if mod.split(".")[0] == "cadagent" and importlib.util.find_spec(mod) is None:
+                    missing.append(f"{path.relative_to(PKG.parent)}:{node.lineno}: {mod}")
+    assert not missing, "imports of modules that do not exist:\n" + "\n".join(sorted(missing))

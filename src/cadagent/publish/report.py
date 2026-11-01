@@ -9,10 +9,10 @@ runs nothing. Features:
 * ``cad-checks``: one row per configured check, from its ``pass_key``.
 * ``cad-links``: local links in ``html_pages`` resolve.
 * ``cad-dossier`` (only with ``cad: dossier:``): the dossier lint, one row per error and one per section with its
-  status; a section below ``gated`` fails (``cadagent.dossier.lint``, plan §5.4). The lint reads files only.
+  status; a section below ``gated`` fails (``cadagent.review.dossier.lint``, plan §5.4). The lint reads files only.
 * ``cad-gates`` (only with ``cad: dossier:`` or ``cad: gates:``): one row per integrity gate from
   ``exports/gates/<gate>.json``; a missing, stale (inputs differ from the current geometry record, declarations or
-  options) or failing verdict fails, a gate with nothing to check is a skip (``cadagent.gates.run.gate_rows``).
+  options) or failing verdict fails, a gate with nothing to check is a skip (``cadagent.review.gates.run.gate_rows``).
 
 A missing file, missing key or non-boolean verdict is a failure, never a pass.
 Evidence paths are relative to ``docs_dir``, where the HTML report is written.
@@ -112,8 +112,8 @@ def _part_row(project: CadProject, part: str, info: Dict[str, Any], report_dir: 
 
 def holes_feature(project: CadProject) -> Dict[str, Any]:
     """One row per part: every hole clear of material (``exports/hole-checks.json``, bound to each part's STEP)."""
-    from cadagent.geometry import holes
-    from cadagent.geometry.holes import current
+    from cadagent.mechanical import holes
+    from cadagent.mechanical.holes import current
 
     parts, error = load_parts(project)
     if error:
@@ -182,7 +182,7 @@ def _check_row(project: CadProject, check: Check, report_dir: Path) -> Dict[str,
             unknown.append(f"{key}: {value!r} is not a boolean")
         elif value is False:
             failed.append(key)
-    from cadagent.evidence import hashes_are_current
+    from cadagent.review.evidence import hashes_are_current
     if isinstance(data, dict) and not hashes_are_current(project.root, data):
         unknown.append("source or artifact evidence is stale")
     ok = not failed and not unknown
@@ -225,7 +225,7 @@ def links_feature(project: CadProject) -> Dict[str, Any]:
 def dossier_feature(project: CadProject) -> Optional[Dict[str, Any]]:
     """The dossier lint as report rows: one per error (except section status, which has its own row), one per
     section with its computed status. None when the project has no dossier."""
-    from cadagent.dossier.lint import RANK, lint_project
+    from cadagent.review.dossier.lint import RANK, lint_project
 
     result = lint_project(project)
     if result is None:
@@ -248,7 +248,7 @@ def dossier_feature(project: CadProject) -> Optional[Dict[str, Any]]:
 def gates_feature(project: CadProject, report_dir: Path) -> Optional[Dict[str, Any]]:
     """The integrity gates as report rows (kernel-free: it reads the verdicts and the geometry record). None when the
     project has neither a dossier nor a ``gates:`` key."""
-    from cadagent.gates.run import enabled, gate_rows
+    from cadagent.review.gates.run import enabled, gate_rows
 
     if not enabled(project):
         return None
@@ -283,7 +283,7 @@ def collect(project: CadProject) -> Dict[str, Any]:
         features.append(dossier)
     counts = summarize({"features": features})
     revision = project.resolve_revision()
-    from cadagent.make.slicer import current_report
+    from cadagent.manufacturing.slicer import current_report
     sliced = current_report(project)
     slicer_text = (f"sliced ({sliced['slicer']}): {sliced['total_grams']} g, {sliced['total_hours']} h for "
                    f"{len(sliced['parts'])} part(s), {sliced['process']}, {sliced['filament']}") if sliced else "slicer not run"

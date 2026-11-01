@@ -1,4 +1,4 @@
-"""cadagent.explore.design: design files, extends, resolving slots and the bill of materials."""
+"""cadagent.simulation.explore.design: design files, extends, resolving slots and the bill of materials."""
 
 from __future__ import annotations
 
@@ -6,9 +6,10 @@ import json
 
 import pytest
 
-from cadagent.explore.catalogue import Catalogue
-from cadagent.explore.config import SlotSpec
-from cadagent.explore.design import DesignError, bom, bom_checks, bom_metrics, deep_merge, load_design, resolve
+from cadagent.simulation.explore.catalogue import Catalogue
+from cadagent.simulation.explore.config import SlotSpec
+from cadagent.simulation.explore.design import (DesignError, bom, bom_checks, bom_metrics, deep_merge, load_design,
+                                                resolve)
 
 from .explore_fixtures import CATALOGUE
 
@@ -139,7 +140,7 @@ def test_out_of_stock_parts_are_flagged():
 
 
 def test_slot_choices_and_where_narrow_what_fits():
-    from cadagent.explore.design import candidates, check_slots, fits
+    from cadagent.simulation.explore.design import candidates, check_slots, fits
 
     quiet = SlotSpec("fan", "fan", where={"specs.noise_dba": [25, 30]})
     picked = SlotSpec("fan", "fan", choices=["fan-80", "fan-40"])
@@ -170,7 +171,7 @@ def test_extends_changes_a_quantity_whatever_form_the_parent_used(tmp_path):
 
 
 def test_unquoted_yaml_dates_stay_json(tmp_path):
-    from cadagent.explore.catalogue import load_catalogue
+    from cadagent.simulation.explore.catalogue import load_catalogue
     (tmp_path / "parts.yaml").write_text("- {id: f, category: fan, price_usd: 5, price_checked: 2026-10-20, mass_g: 3}\n")
     (tmp_path / "d.yaml").write_text("parts: {fan: f}\nparams: {built: 2026-10-21}\n")
     cat, issues = load_catalogue([tmp_path / "parts.yaml"])

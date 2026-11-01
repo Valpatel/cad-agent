@@ -7,7 +7,7 @@ cq = pytest.importorskip('cadquery')
 pytest.importorskip('gmsh')
 pytest.importorskip('skfem')
 
-from cadagent.sim.fea import Material, Study, plane_at  # noqa: E402
+from cadagent.simulation.fea import Material, Study, plane_at  # noqa: E402
 
 STEEL = Material('steel', 200000, 0.3, 250, 7.85)
 
@@ -29,7 +29,7 @@ def test_printed_material_deflects_at_its_data_sheet_modulus(tmp_path):
     the table used before; the result and the viewer data name the sheet and the print direction."""
     import json
 
-    from cadagent.sim.fea import MATERIALS
+    from cadagent.simulation.fea import MATERIALS
 
     petg = MATERIALS['petg']
     L, b, h, F = 100.0, 10.0, 10.0, 5.0
@@ -239,7 +239,7 @@ def test_torque_is_exactly_the_requested_moment_on_unbalanced_faces(monkeypatch)
     """The assembled load has no net force and a moment of exactly the torque along the axis, with no bending part,
     also for faces not balanced about the axis: an inclined end face, and an end face plus a side face."""
     import numpy as np
-    from cadagent.sim.fea import any_of
+    from cadagent.simulation.fea import any_of
     cap = {}
     orig = Study._solve
 

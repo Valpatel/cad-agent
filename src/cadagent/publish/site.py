@@ -282,7 +282,7 @@ def _e(v: Any) -> str:
 
 
 def _page(title: str, body: str, accent: str, depth: int = 0, theme: str = "light", extra_css: str = "") -> str:
-    from cadagent.publish.review import REVIEW_CSS
+    from cadagent.review import REVIEW_CSS
     css = REVIEW_CSS + _CSS.replace("ACCENT", accent) + extra_css + _NAV_CSS + (_HUD if theme == "hud" else "")
     fonts = f'<link rel="stylesheet" href="{"../" * (depth + 1)}_cadagent/kit/vendor/fonts/fonts.css">' if theme == "hud" else ""
     diagram_theme = "dark" if theme == "hud" else "light"
@@ -304,7 +304,7 @@ def _gates_stat(exports_dir: Optional[Path], href: str = "") -> str:
     the gates page when it is built. Only for a project that uses the gates (``gates_exports`` given)."""
     if exports_dir is None:
         return ""
-    from cadagent.gates.run import site_counts
+    from cadagent.review.gates.run import site_counts
     c = site_counts(exports_dir)
     if c is None:
         return ""
@@ -407,7 +407,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
     def design_card(d: Dict[str, Any]) -> str:
         pcb_html = ""
         if d.get("pcb_evidence"):
-            from cadagent.make.pcb import evidence_is_current
+            from cadagent.electrical.pcb import evidence_is_current
             bundle = _load(root, d["pcb_evidence"]) or {}
             current = evidence_is_current(root, bundle)
             clean = current and bundle.get("pass") is True
@@ -451,7 +451,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
     log_rows = "".join(f'<tr><td>{_e(c["hash"])}</td><td>{_e(c["date"])}</td><td>{_e(c["subject"])}</td></tr>' for c in log)
 
     section = lambda t, body, empty: f'<h2 id="{slug(t)}">{t}</h2>' + (body or f'<p class="tag">{empty}</p>')
-    from cadagent.publish.review import review_html
+    from cadagent.review import review_html
     review = review_html(root, _load(root, cfg.review) or {})
     main = (f'<main class="wrap">{stats}{review}{review_block}'
             + section("Progress", f'<ul class="milestones">{ms}</ul>' if ms else "", "No milestones file yet.")
@@ -481,8 +481,8 @@ def default_nav(root: Path, html_pages: Optional[List[str]] = None, site_pages: 
     """The top bar when the project configures none: the overview, the rendered documents, the 3D model, then each
     project HTML page (``cad: html_pages``, plus the cad-agent report, the simulation report, the design comparison
     and the search leaderboard when present), titled by its ``<title>``. Every page the local server sends gets this
-    bar, so the pages link to each other. ``extra`` tabs (the review pages, :func:`cadagent.publish.site_review.nav_entries`)
-    come before the HTML pages."""
+    bar, so the pages link to each other. ``extra`` tabs (the review pages,
+    :func:`cadagent.publish.site_review.nav_entries`) come before the HTML pages."""
     root = Path(root)
     nav = [{"id": "overview", "title": "Overview", "href": "site/"}]
     if page_files(root, list(site_pages or [])):

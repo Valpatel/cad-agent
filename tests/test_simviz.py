@@ -7,7 +7,7 @@ import pytest
 PIL = pytest.importorskip("PIL")
 from PIL import Image  # noqa: E402
 
-from cadagent.sim import simviz  # noqa: E402
+from cadagent.simulation import simviz  # noqa: E402
 
 
 def test_frame_adds_header_and_note(tmp_path):

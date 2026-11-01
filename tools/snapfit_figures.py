@@ -2,7 +2,7 @@
 """Regenerate docs/img/compliant/*.svg from the snap-fit calculator (the design guide's worked examples)."""
 from pathlib import Path
 
-from cadagent.compliant import figures, snapfit as sf
+from cadagent.mechanical.compliant import figures, snapfit as sf
 
 OUT = Path(__file__).resolve().parents[1] / "docs" / "img" / "compliant"
 

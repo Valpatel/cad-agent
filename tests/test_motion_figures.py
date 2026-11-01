@@ -140,7 +140,7 @@ def test_hinge_numbers_are_the_motion_gates():
         gb = importlib.util.module_from_spec(spec)
         sys.modules["gate_bench_build"] = gb          # dataclasses need the module registered
         spec.loader.exec_module(gb)
-    from cadagent.gates.motion import motion_gate
+    from cadagent.review.gates.motion import motion_gate
     bench = gb.build(mf.BENCH["seed"])
     assert gb.PIVOT == mf.BENCH["pivot"]
     arm = cq.Shape.cast(bench.shape("arm")).BoundingBox()
@@ -170,7 +170,7 @@ def test_hinge_numbers_are_the_motion_gates():
 
 def test_counterbore_numbers_are_the_hole_checks():
     pytest.importorskip("cadquery")
-    from cadagent.geometry import holes
+    from cadagent.mechanical import holes
     from tests.test_holes import plate_with_counterbore
     h = mf.counterbore_numbers()
     after = holes.check_shape(plate_with_counterbore(rib_after_holes=True))
@@ -182,7 +182,7 @@ def test_counterbore_numbers_are_the_hole_checks():
 
 def test_connector_sweep_is_check_ports():
     pytest.importorskip("cadquery")
-    from cadagent.geometry import connectors as cn
+    from cadagent.mechanical import connectors as cn
     from tests.test_connectors import wall_with
     h = mf.connector_numbers()
     frame = cn.PanelFrame((0, 0, 0), (1, 0, 0), (0, 0, 1), (0, -1, 0))

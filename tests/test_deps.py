@@ -34,7 +34,8 @@ def test_importing_the_package_pulls_in_no_heavy_dependency():
 
     code = (
         "import sys, cadagent, cadagent.cli, cadagent.publish.report, cadagent.geometry, "
-        "cadagent.publish.render, cadagent.make.mesh3mf, cadagent.publish.htmlreport, cadagent.package, cadagent.publish.serve\n"
+        "cadagent.publish.render, cadagent.manufacturing.mesh3mf, cadagent.publish.htmlreport, cadagent.package, "
+        "cadagent.publish.serve\n"
         "heavy = {'cadquery', 'OCP', 'trimesh', 'vtk', 'matplotlib', 'PIL'} & set(sys.modules)\n"
         "assert not heavy, heavy\n"
     )

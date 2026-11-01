@@ -15,6 +15,10 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 **New**
 - `cad-agent snapfit`: cantilever, torsion and annular snap-fit sizing by the Covestro method, with allowable strain
   for moulded resins and, by print direction, for 11 filaments (13 entries: two have dry and wet values) (#105, [docs/compliant.md](docs/compliant.md)).
+- `cadagent.formulas`: closed-form engineering equations (beams and snap arms, torsion bars, coil springs, screw preload
+  and thread strip, four-bar linkages, conduction and fan operating points), each with its SI units, validity limits
+  and source; `catalogue()` lists them. A browser port drives the site's snap-arm explorer, tested against golden
+  vectors from the Python (#146, [docs/formulas.md](docs/formulas.md)).
 - `cad-agent holes`: the standard hole-clearance check, and [docs/common-issues.md](docs/common-issues.md), the index
   of recurring CAD mistakes and the checks that catch them (#88). Countersinks, chamfers and drill points are probed as
   cones and counted apart from cylindrical holes (#101).

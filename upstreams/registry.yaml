@@ -271,7 +271,7 @@
   status: adopted
   policy: may incorporate with attribution (imported as a dependency); cad-agent renders stress and flow pictures and animations with it
 - name: bambulab/BambuStudio
-  what: "Open-source slicer for Bambu Lab and other printers, with a command line for slicing without the app"
+  what: "Open-source slicer for Bambu Lab and other printers, with a command-line mode for slicing without the GUI"
   areas: [3d-printing]
   url: https://github.com/bambulab/BambuStudio
   license: AGPL-3.0

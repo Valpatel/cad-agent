@@ -622,7 +622,7 @@
    "license_spdx": "AGPL-3.0",
    "stars": 16253,
    "last_push": "2026-10-31",
-   "notes": "2.5 MCP server + Design (CAD) tab; loopback only; needs the GUI running",
+   "notes": "2.5 beta: experimental Design (CAD) tab, off by default, with an MCP control socket for that tab (Unix, ORCA_CAD_MCP set, GUI running); a general MCP server is a draft PR",
    "source": "research/agent-toolkits-2026-10.md (verified 2026-10-31 with gh api)"
   },
   {

@@ -34,6 +34,7 @@ class Sheet:
     uts_mpa: Tuple[float, float]          # tensile strength, ISO 527
     density_g_cm3: float                  # ISO 1183
     bending_mpa: Optional[Tuple[float, float]] = None   # bending modulus, ISO 178
+    annealed: bool = True                 # the sheet says its bars were annealed (and dried) before testing
 
 
 @dataclass(frozen=True)
@@ -55,9 +56,11 @@ PLA_V3 = Sheet("Bambu PLA Basic TDS V3.0",
 PLA_V2 = Sheet("Bambu PLA Basic TDS V2.0", AX.format(494, 2236), (2680, 2160), (39, 35), 1.24, bending_mpa=(2750, 2370))
 PETG_V2 = Sheet("Bambu PETG Basic TDS V2.0", AX.format(580, 2330), (1460, 1120), (48, 39), 1.25,
                 bending_mpa=(1790, 1580))
+# V3.0 is a reformulated filament under the same name ("The all-new Bambu Lab PETG Basic ... The refined formula"),
+# and its bars are not said to be annealed (it advises against annealing PETG Basic); V2.0's were, at 65 degC for 8 h
 PETG_V3 = Sheet("Bambu PETG Basic TDS V3.0",
                 BBL + "s1/default/cb94589bf7994fdcbfa833badefae9cd/Bambu_PETG_Basic_Technical_Data_Sheet.pdf",
-                (2780, 2550), (51, 35), 1.25, bending_mpa=(1950, 1740))
+                (2780, 2550), (51, 35), 1.25, bending_mpa=(1950, 1740), annealed=False)
 PETGCF_V3 = Sheet("Bambu PETG-CF TDS V3.0", BBL + "626e4f424bf345ae965ad0ddfcaf2459.pdf", (2460, 1340), (35, 29), 1.25,
                   bending_mpa=(2910, 1560))
 PETGCF_V2 = Sheet("Bambu PETG-CF TDS V2.0", AX.format(596, 2346), (2460, 1340), (59, 38), 1.25, bending_mpa=(2890, 1680))
@@ -70,7 +73,8 @@ HUMID_PRINT = 0.6 * 0.8
 
 PRINTED: Dict[str, Row] = {
     "pla": Row("bambu-pla-basic-tds", "V3.0", "Z", (PLA_V3, PLA_V2), 0.35, 2060, 25),
-    # V3.0's tensile moduli are almost twice V2.0's and above its own bending moduli: the lower V2.0 value is used
+    # Two formulations sold as one product, tested two ways (V2.0 annealed, V3.0 not said to be). A spool does not say
+    # which it is, so the lower modulus of the two (V2.0's) is used; the #94 coupon should record its formulation.
     "petg": Row("bambu-petg-basic-tds", "V2.0", "Z", (PETG_V2, PETG_V3), 0.38, 1120, 20),
     "petg_cf": Row("bambu-petg-cf-tds", "V3.0", "Z", (PETGCF_V3, PETGCF_V2), 0.36, 1340, 22),
     # the Z bending modulus (1820) is below the Z tensile (2180) on this sheet only
@@ -185,9 +189,37 @@ def test_sources_are_in_the_reference_registry():
     assert not missing, f"sources missing from research/references.yaml: {missing}"
 
 
-def test_assumptions_name_the_print_direction():
+@pytest.mark.parametrize("key", sorted(PRINTED))
+def test_assumptions_say_which_modulus_and_strength(key):
+    m = MATERIALS[key]
+    line = _isotropic_basis(m)
+    assert f"E {m.E_mpa:g} MPa" in line and f"strength {m.strength_mpa:g} MPa" in line
+    assert m.note in line and "not isotropic" in line
+
+
+def test_assumptions_name_the_print_direction_and_factors():
     assert "across the layers (Z)" in _isotropic_basis(MATERIALS["petg"])
-    assert "in the layer plane (X-Y)" in _isotropic_basis(MATERIALS["pa6_cf_xy"])
+    xy = _isotropic_basis(MATERIALS["pa6_cf_xy"])
+    assert "in the layer plane (X-Y)" in xy and "x0.48" in xy and "E 2126.4 MPa" in xy and "strength 48.96 MPa" in xy
+    assert "twice too stiff" in xy                    # the humid E rests on a strength ratio, and says so
+    assert "x0.48" in _isotropic_basis(MATERIALS["pa6_cf_z"])
+
+
+def test_the_in_plane_recipe_keeps_the_assumptions_true():
+    # the recipe in docs/toolkit.md and fea.py for a part whose bending stays in the layer plane
+    import dataclasses
+    m = dataclasses.replace(MATERIALS["petg_cf"], E_mpa=2460, direction="X-Y",
+                            note="Bambu PETG-CF TDS V3.0: E is the X-Y tensile modulus; strength the Z allowable")
+    line = _isotropic_basis(m)
+    assert "E 2460 MPa, a modulus in the layer plane (X-Y)" in line
+    assert "strength 22 MPa" in line and "strength the Z allowable" in line
+    assert "Z tensile modulus" not in line
+    recipe = "note='Bambu PETG-CF TDS V3.0: E is the X-Y tensile modulus; strength the Z allowable'"
+    assert recipe in (ROOT / "docs" / "toolkit.md").read_text()
+    assert recipe in Path(inspect.getsourcefile(Material)).read_text()          # fea.py, wherever it lives
+
+
+def test_isotropic_materials_add_nothing_to_the_assumptions():
     assert _isotropic_basis(MATERIALS["steel"]) == ""
     assert _isotropic_basis(Material("steel", 200000, 0.3, 250, 7.85)) == ""   # the positional form still works
 

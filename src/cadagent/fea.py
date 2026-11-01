@@ -21,11 +21,14 @@ Solvers: PARDISO (pip install pypardiso) when available, else SciPy's direct sol
 smoothed-aggregation multigrid preconditioner (pyamg, with the six rigid-body modes) for big meshes.
 
 Limits, stated in every result: linear and small-deflection; isotropic material. Printed parts are not isotropic, so
-each printed material names the print direction its numbers are for (``Material.direction``). The defaults use the
-lowest modulus the data sheet gives across the layers (Z), so deflections err high, and a strength below the Z tensile
-strength, so the safety factor uses the weak direction. Contact, bolt preload and buckling are not
-modelled. The data sheet values come from 100 % infill test bars; a real print is softer and weaker, and no simulation
-proves that a part will fit or hold: check it against a printed coupon or the part itself.
+each printed material says which modulus and strength it uses and the print direction of the modulus
+(``Material.note`` and ``Material.direction``); the assumptions line of every result repeats them. The defaults take the
+lowest modulus the data sheet gives across the layers (Z), so deflections come out higher than with the sheet's
+in-plane values, and a strength below the Z tensile strength, so the safety factor uses the weak direction. The mesh is
+the solid CAD and the data sheet values come from 100 % infill test bars: a print with sparse infill or thin walls can
+be softer still, and a force taken from the computed stiffness at a given travel (a clip's retention, a flexure's
+preload) then reads low. Contact, bolt preload and buckling are not modelled. No simulation proves that a part will
+fit or hold: check it against a printed coupon or the part itself.
 """
 from __future__ import annotations
 
@@ -41,38 +44,46 @@ import numpy as np
 @dataclass(frozen=True)
 class Material:
     name: str
-    E_mpa: float                 # Young's modulus; printed parts: the data sheet's lowest modulus in `direction`
+    E_mpa: float                 # Young's modulus; printed parts: see `note` for which sheet value (and factors)
     nu: float
     strength_mpa: float          # the strength the safety factor uses (yield for metals; weak-direction for prints)
     density_g_cm3: float
-    note: str = ''
+    note: str = ''               # printed parts: the sheet and edition, and what E and the strength are taken from
     source: str = ''             # the data sheet the numbers come from: its id in research/references.yaml (#118)
-    direction: str = ''          # printed parts: the print direction E and the strength are for ('Z': across the
-                                 # layers; 'X-Y': in the layer plane); '' for an isotropic material
+    direction: str = ''          # printed parts: the print direction of E ('Z': across the layers; 'X-Y': in the
+                                 # layer plane); '' for an isotropic material. Change `note` with it.
 
 
 _DIRECTION = {'Z': 'across the layers (Z)', 'X-Y': 'in the layer plane (X-Y)'}
 
 
 def _isotropic_basis(mat: Material) -> str:
-    """For the assumptions line: which print direction a printed material's modulus and strength are for."""
+    """For the assumptions line: the modulus and strength a printed material uses everywhere, and their basis."""
     if not mat.direction:
         return ''
-    return (f', with the data sheet modulus and strength {_DIRECTION.get(mat.direction, mat.direction)} everywhere '
-            '(a printed part is not isotropic)')
+    return (f': E {mat.E_mpa:g} MPa, a modulus {_DIRECTION.get(mat.direction, mat.direction)}, and strength '
+            f'{mat.strength_mpa:g} MPa everywhere ({mat.note}), though a printed part is not isotropic')
 
 
 # Printed materials (#125). Every number is from the manufacturer's technical data sheet (TDS), read on 2026-10-31.
-# The sheets test bars printed at 100 % infill, annealed and dried (ISO 527 tension, ISO 178 bending). Each row's
-# comment names the sheet's edition and both directions; where two editions disagree, the row says which it uses.
+# The sheets test bars printed at 100 % infill, dried and (except PETG Basic V3.0, not used) annealed: ISO 527 tension,
+# ISO 178 bending. Each row's comment names the sheet's edition and both directions; where two editions disagree, the
+# row says which it uses and why. Each row's note says what E and the strength are, and the assumptions line of a
+# result repeats it.
 #
 # - E is the lowest modulus the sheets give in the row's direction, across the layers (Z) unless the row says X-Y:
 #   the tensile modulus, except for PAHT-CF, whose Z bending modulus is lower. The in-plane (X-Y) moduli are higher.
 #   The solver is isotropic and does not know how the part was printed, so it takes the weak direction: deflections
-#   err high, not low. These studies apply forces and torques only, so the stresses do not depend on E; the
-#   deflections and stiffnesses do (they scale with 1/E).
-# - A part whose bending stays in the layer plane is stiffer. Give it the X-Y modulus from the comment, and keep the
-#   weak-direction strength: dataclasses.replace(MATERIALS['petg_cf'], E_mpa=2460, direction='X-Y').
+#   come out higher than with the sheet's in-plane values. They are not an upper bound on a print: the mesh is the
+#   solid CAD, a print with sparse infill or thin walls is softer still, and the isotropic shear modulus does not bound
+#   a print's shear stiffness between layers (short, thick parts). The humid PA6-CF rows are an exception (below).
+# - These studies apply forces and torques only, so the stresses do not depend on E; the deflections and stiffnesses
+#   do (they scale with 1/E). A low E makes the stiffness low, so a force taken from it at a given travel (a clip's
+#   retention, a flexure's preload, a spring rate) reads low too.
+# - A part whose bending stays in the layer plane is stiffer. Give it the X-Y modulus from the comment and say so in
+#   the note, keeping the weak-direction strength:
+#   dataclasses.replace(MATERIALS['petg_cf'], E_mpa=2460, direction='X-Y',
+#                       note='Bambu PETG-CF TDS V3.0: E is the X-Y tensile modulus; strength the Z allowable')
 # - The strength is a design allowable below the TDS tensile strength across the layers.
 # - Poisson's ratio is not on these sheets; it is a typical value for the polymer. Across 0.35-0.40 it changes a
 #   plate's bending stiffness by about 5 % (1 - nu^2) and a beam's hardly at all.
@@ -80,55 +91,70 @@ def _isotropic_basis(mat: Material) -> str:
 #
 # Before #125 the moduli were 2700 (PLA), 1800 (PETG) and 2900 (PETG-CF): close to the V2.0 sheets' X-Y *bending*
 # moduli (2750, 1790, 2890), not a tensile value. They were 31-116 % above the moduli used now (PAHT-CF 147 %, the
-# humid PA6-CF rows 41 % and 130 %, TPU 4x), so deflections read 24-54 % low (PAHT-CF 60 %, TPU 75 %).
+# humid PA6-CF rows 41 % and 130 %, TPU 305 %), so deflections read 24-54 % low (PAHT-CF 60 %, TPU 75 %).
 _HUMID, _PRINT = 0.6, 0.8   # PA6-CF in use: x0.6 for moisture taken up from the air, x0.8 for a print's voids and seams
 MATERIALS = {
     # Bambu PLA Basic TDS V3.0 (Bambu's copy, PDF created 2025-04): E 2580 X-Y / 2060 Z MPa, UTS 35 / 31 MPa,
     # 1.24 g/cm3.
     # https://store.bblcdn.com/s1/default/58b85d0f3db94878854a28fdb8a0006e/Bambu_PLA_Basic_Technical_Data_Sheet.pdf
-    # V2.0 (a reseller's copy, PDF created 2023-06) has 2680 / 2160 and 39 / 35: the lower V3.0 values are used.
+    # V2.0 (a reseller's copy, PDF created 2023-03) has 2680 / 2160 and 39 / 35: the lower V3.0 values are used.
     'pla': Material('PLA', 2060, 0.35, 25, 1.24,
-                    'Bambu PLA Basic TDS V3.0: Z tensile modulus (X-Y 2580 MPa); strength below the Z tensile 31 MPa',
-                    source='bambu-pla-basic-tds', direction='Z'),
-    # Bambu PETG Basic TDS V2.0 (a reseller's copy, PDF created 2023-07): E 1460 / 1120 MPa, UTS 48 / 39 MPa,
-    # 1.25 g/cm3.
+                    'Bambu PLA Basic TDS V3.0: E is the Z tensile modulus (X-Y 2580 MPa); the strength is an allowable '
+                    'below the Z tensile strength of 31 MPa', source='bambu-pla-basic-tds', direction='Z'),
+    # Bambu PETG Basic TDS V2.0 (a reseller's copy, PDF created 2023-06): E 1460 / 1120 MPa, UTS 48 / 39 MPa,
+    # 1.25 g/cm3; bars annealed and dried at 65 degC for 8 h.
     # https://www.additive-x.com/shop/mpattachments/file/viewonline/id/580/product_id/2330
-    # V3.0 (Bambu's copy, PDF created 2026-01) has E 2780 / 2550 and UTS 51 / 35. Those tensile moduli are almost twice
-    # V2.0's and above V3.0's own bending moduli (1950 / 1740), so V2.0's lower value stays until a coupon settles it.
+    # V3.0 (Bambu's copy, PDF created 2026-01) describes a reformulated filament sold under the same name ("The
+    # all-new Bambu Lab PETG Basic ... The refined formula ..."), with bars not said to be annealed (it advises against
+    # annealing PETG Basic): E 2780 / 2550, bending 1950 / 1740, UTS 51 / 35 MPa.
     # https://store.bblcdn.com/s1/default/cb94589bf7994fdcbfa833badefae9cd/Bambu_PETG_Basic_Technical_Data_Sheet.pdf
+    # A spool's label does not say which formulation it is, so the lower V2.0 modulus is used for both; a printed
+    # coupon (#94) should record its formulation. V3.0's tensile moduli above its own bending moduli are a further
+    # reason to wait for one.
     'petg': Material('PETG', 1120, 0.38, 20, 1.25,
-                     'Bambu PETG Basic TDS V2.0: Z tensile modulus (X-Y 1460 MPa; V3.0 lists 2550, not used); '
-                     'strength below the Z tensile 35 MPa (V3.0)', source='bambu-petg-basic-tds', direction='Z'),
+                     'Bambu PETG Basic TDS V2.0: E is the Z tensile modulus (X-Y 1460 MPa; the reformulated V3.0 lists '
+                     '2550, not used); the strength is an allowable below the Z tensile strength (39 MPa; 35 in V3.0)',
+                     source='bambu-petg-basic-tds', direction='Z'),
     # Bambu PETG-CF TDS V3.0 (Bambu's copy, PDF created 2023-08): E 2460 / 1340 MPa (as V2.0), UTS 35 / 29 MPa (V2.0:
     # 59 / 38), 1.25 g/cm3. https://store.bblcdn.com/626e4f424bf345ae965ad0ddfcaf2459.pdf
     'petg_cf': Material('PETG-CF', 1340, 0.36, 22, 1.25,
-                        'Bambu PETG-CF TDS V3.0: Z tensile modulus (X-Y 2460 MPa); strength below the Z tensile 29 MPa',
-                        source='bambu-petg-cf-tds', direction='Z'),
-    # Bambu PAHT-CF TDS V3.0 (Bambu's copy, PDF created 2023-08), dry: E 3860 / 2180 MPa, bending modulus 4230 / 1820 MPa,
-    # UTS 92 / 47 MPa, 1.06 g/cm3. https://store.bblcdn.com/7166b20bc68f4c87b32c972b856eeb4b.pdf
+                        'Bambu PETG-CF TDS V3.0: E is the Z tensile modulus (X-Y 2460 MPa); the strength is an '
+                        'allowable below the Z tensile strength of 29 MPa', source='bambu-petg-cf-tds', direction='Z'),
+    # Bambu PAHT-CF TDS V3.0 (Bambu's copy, PDF created 2023-08), dry: E 3860 / 2180 MPa, bending modulus 4230 / 1820
+    # MPa, UTS 92 / 47 MPa, 1.06 g/cm3. https://store.bblcdn.com/7166b20bc68f4c87b32c972b856eeb4b.pdf
     # The Z bending modulus is the sheet's lowest, so it is used. Named 'PA6-CF' before #125, though its note and
     # values were PAHT-CF's; Bambu's PA6-CF is the two rows below.
     'pa_cf': Material('PAHT-CF (dry)', 1820, 0.35, 40, 1.06,
-                      'Bambu PAHT-CF TDS V3.0, dry: Z bending modulus, the sheet\'s lowest (Z tensile 2180, X-Y 3860 '
-                      'MPa); strength below the Z tensile 47 MPa', source='bambu-paht-cf-tds', direction='Z'),
+                      'Bambu PAHT-CF TDS V3.0, dry: E is the Z bending modulus, the sheet\'s lowest (Z tensile 2180, '
+                      'X-Y 3860 MPa); the strength is an allowable below the Z tensile strength of 47 MPa',
+                      source='bambu-paht-cf-tds', direction='Z'),
     # Bambu PA6-CF TDS V3.0 (Bambu's copy, PDF created 2023-08), dry: E 4430 / 2170 MPa, UTS 102 / 48 MPa, 1.09 g/cm3.
     # https://store.bblcdn.com/b2abc59ac250492b979a52f1ce3e61b3.pdf
-    # As it is in use: x0.6 humid on strength and stiffness and x0.8 for the print, in both directions. These are
-    # design allowables, to confirm with coupons. Moisture can cost more stiffness than that: Polymaker's PA6-CF20
-    # sheet (V1.1) puts the water-saturated modulus at about 0.3 x dry.
+    # Unlike the rows above (dry test-bar values), these two describe the material as it is in use: humid and as
+    # printed. Their factors are judgement, not data sheet values:
+    # - x0.6 humid is a *strength* ratio: moisture roughly halves CF-nylon strength (Polymaker PA6-CF20 TDS V1.1,
+    #   water-saturated / dry: 0.50 X-Y, 0.47 Z). It is applied to E as well, but that sheet's *modulus* ratios are
+    #   0.29 X-Y and 0.28 Z, so for a part that has taken up water these moduli may be about twice too stiff and its
+    #   deflections about half what they will be. Room humidity is milder than saturation; no sheet read gives E at
+    #   it. Choosing a cited humid stiffness factor is #157.
+    # - x0.8 print, for voids and seams, is a knock-down the original table applied to these rows only. The other
+    #   rows carry none on E, so pa6_cf_z (1042) against petg_cf (1340) sets a derated value against a sheet value.
     'pa6_cf_xy': Material('PA6-CF along the layers (humid)', 4430 * _HUMID * _PRINT, 0.35, 102 * _HUMID * _PRINT, 1.09,
-                          'Bambu PA6-CF TDS V3.0, dry X-Y values (4430 MPa, 102 MPa) x0.6 humid x0.8 print: for parts '
-                          'printed so their main stress runs in the layers', source='bambu-pa6-cf-tds', direction='X-Y'),
+                          'Bambu PA6-CF TDS V3.0: dry X-Y tensile modulus 4430 MPa and strength 102 MPa, each x0.6 '
+                          'humid x0.8 print (x0.48); E may be about twice too stiff for a part that has taken up water. '
+                          'For parts printed so their main stress runs in the layers',
+                          source='bambu-pa6-cf-tds', direction='X-Y'),
     'pa6_cf_z': Material('PA6-CF across the layers (humid)', 2170 * _HUMID * _PRINT, 0.35, 48 * _HUMID * _PRINT, 1.09,
-                         'Bambu PA6-CF TDS V3.0, dry Z values (2170 MPa, 48 MPa) x0.6 humid x0.8 print: the safe value '
-                         'when the stress crosses the layers', source='bambu-pa6-cf-tds', direction='Z'),
+                         'Bambu PA6-CF TDS V3.0: dry Z tensile modulus 2170 MPa and strength 48 MPa, each x0.6 humid '
+                         'x0.8 print (x0.48); E may be about twice too stiff for a part that has taken up water. The '
+                         'safe strength when the stress crosses the layers', source='bambu-pa6-cf-tds', direction='Z'),
     # Bambu TPU 95A HF TDS V1.0 (Bambu's copy, PDF created 2023-11): E 9.8 / 7.4 MPa, UTS 27.3 / 22.3 MPa, 1.22 g/cm3.
     # https://store.bblcdn.com/58df32731eab4c90a7dac9b12e13ba88.pdf
     # Polymaker's PolyFlex TPU95 (TDS V5.4) lists 33.6 MPa in X-Y (ISO 37). The sheets differ about 4x, and TPU is far
     # from linear, so a linear study of it is indicative only.
     'tpu95': Material('TPU 95A', 7.4, 0.45, 8, 1.22,
-                      'Bambu TPU 95A HF TDS V1.0: Z tensile modulus (X-Y 9.8 MPa); flexible, stiffness only indicative',
-                      source='bambu-tpu-95a-hf-tds', direction='Z'),
+                      'Bambu TPU 95A HF TDS V1.0: E is the Z tensile modulus (X-Y 9.8 MPa); flexible, stiffness only '
+                      'indicative', source='bambu-tpu-95a-hf-tds', direction='Z'),
     # Metals and the carbon tube: typical handbook values, not tied to a sheet in research/references.yaml. Checked
     # for #125: Protolabs' CNC data sheet for 6061-T651/T6 (2026) gives yield 276 MPa, E 10.0 Msi (68.9 GPa) and
     # 2.70 g/cm3. Its 7075-T651/T6 sheet gives only specification ranges: yield 434-476 MPa (T6 sheet) and 372-462 MPa

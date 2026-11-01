@@ -11,6 +11,18 @@ or `/tmp` directory, on one machine's disk or in an agent's private memory is lo
 the record.** A fresh agent on another computer must be able to continue from the issue, the branch and the PR
 alone.
 
+```mermaid
+flowchart TD
+    I["find or open the issue,<br/>claim it"] --> B["branch + draft PR<br/>pushed at once"]
+    B --> C["commit + push<br/>clean chunks"]
+    C <--> K["checkpoint<br/>every ~30 min"]
+    C --> D["close out<br/>as PRs merge"]
+    X["session ends"] -.-> Z["resume from GitHub"] -.-> C
+    class B,C,K here
+    class I,X,Z near
+    class D out
+```
+
 ## The loop
 
 1. **Find or open the issue first.** Search before opening:

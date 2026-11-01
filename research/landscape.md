@@ -13,6 +13,11 @@ Machine-readable copy: [`landscape.json`](landscape.json).
 
 ## 1. Capability matrix
 
+![Bar chart of GitHub stars for the twelve most-starred projects in the capability matrix, led by ahujasid/mcp-for-blender and earthtojake/text-to-cad](../docs/img/research/landscape-stars.svg)
+
+*Drawn from the matrix below by `tools/research_figures.py`. Stars measure attention, not fitness: the matrix decides.*
+
+
 Clients: **CC** = Claude Code plugin/skill, **MCP** = MCP server, **Cx** = Codex, **Cu** = Cursor, **Ge** = Gemini, **App** = standalone app.
 
 | Project | Licence | Stars | Push | Clients | Kernel / tool | Processes | DFM rules cited | Materials / cost | Render loop | Drawings | Vendor / slicer | Evals |

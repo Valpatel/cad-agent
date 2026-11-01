@@ -10,6 +10,19 @@ A private manufacturer screw/insert fixture from Gyropup produced a default meas
 | Adaptive, requested relative error 1e-6 | 0.00023872 | 0.00007781 |
 | Adaptive, requested relative error 1e-8 | 0.00027073 | 0.00006440 |
 
+```mermaid
+%%{init: {"xyChart": {"width": 640, "height": 400, "xAxis": {"labelPadding": 12}}, "themeVariables": {"xyChart": {"plotColorPalette": "#bd3a12"}}}}%%
+xychart-beta
+    title "Size of |A − Common − Cut(A,B)|, mm³ (should be ≈ 0)"
+    x-axis ["Default overload", "Adaptive, 1e-6", "Adaptive, 1e-8"]
+    y-axis "mm³" 0 --> 15
+    bar [14.11652803, 0.00023872, 0.00027073]
+```
+
+*Same BREP results; only the integration changed. The default overload measures the pieces 14 mm³ larger than the
+solid they were cut from; both adaptive integrations agree with zero to better than 0.001 mm³. The bars show the size
+of the error (the default one is negative).*
+
 The diagnostic ran against cad-agent `28abd34` / OCP7.9.3.1.1 and took151s. This identifies a measurement problem in that fixture; it does not establish that every previously unknown Boolean relation was correct. Manufacturer geometry stays private. Numerical receipts, input hashes and a generic reproducer will accompany the implementation.
 
 ## Error estimates must match the actual algorithm

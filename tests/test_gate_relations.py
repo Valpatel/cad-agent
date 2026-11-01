@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import math
 import subprocess
 import sys
 import time
@@ -274,6 +275,197 @@ def test_the_distance_on_many_faced_solids_beats_brepextrema_on_the_solids(monke
     new_s = best_of_two(lambda: relations_mod._solid_distance(sa, sb, tol))
     old_s = best_of_two(lambda: relations_mod._distance(sa, sb))
     assert new_s < old_s / 2, (new_s, old_s)
+
+
+# ----------------------------------------------------------------------------- near-tangent crossings (#46)
+
+CONE_SIN = (2 / 3) / math.sqrt(1 + 4 / 9)     # a move down by h puts the ball h * CONE_SIN into the wall
+
+
+def cone_cavity():
+    """The issue's cavity: a cone, radius 20 + 2/3 z for z in 0..30."""
+    return cq.Solid.makeCone(20, 40, 30, cq.Vector(0, 0, 0), cq.Vector(0, 0, 1))
+
+
+def cone_wall():
+    """The part around that cavity: a block with the cone taken out."""
+    return box(100, 100, 35, (-50, -50, -5)).cut(cone_cavity())
+
+
+def ball_in_cone(h, phi, r=4.0):
+    """A ball tangent to the cone wall from inside at z = 15 and azimuth ``phi``, then moved down ``h``."""
+    k = 1 / math.sqrt(1 + 4 / 9)
+    rho, z = 30 - r * k, 15 + r * CONE_SIN
+    return ball(r, cq.Vector(rho * math.cos(phi), rho * math.sin(phi), z - h))
+
+
+def cap(d, r=4.0):
+    """The volume of a ball's cap ``d`` deep (a flat wall)."""
+    return math.pi * d * d * (3 * r - d) / 3
+
+
+def plate():
+    return box(60, 60, 5, (-30, -30, -5))           # its top face at z = 0
+
+
+def tilted_cylinder(d, alpha=0.5, r=3.0, length=20.0):
+    """A cylinder lying on the plate at ``alpha`` degrees to it, its lowest point (the low end's rim) ``d`` below
+    z = 0: a crossing at a grazing angle."""
+    c = cq.Solid.makeCylinder(r, length, cq.Vector(0, 0, 0), cq.Vector(1, 0, 0)).rotate(
+        cq.Vector(0, 0, 0), cq.Vector(0, 1, 0), alpha)
+    a = math.radians(alpha)
+    return c.translate(cq.Vector(-length / 2, 0, length * math.sin(a) + r * math.cos(a) - d))
+
+
+def tilted_box(d, ax=0.3, ay=0.2):
+    """A 10 x 10 x 5 box tilted 0.3 and 0.2 degrees, its lowest corner ``d`` below z = 0."""
+    b = box(10, 10, 5, (-5, -5, 0)).rotate(cq.Vector(0, 0, 0), cq.Vector(1, 0, 0), ax).rotate(
+        cq.Vector(0, 0, 0), cq.Vector(0, 1, 0), ay)
+    return b.translate(cq.Vector(0, 0, -b.BoundingBox().zmin - d))
+
+
+def without_probe(monkeypatch):
+    monkeypatch.setattr(relations_mod, "_crossing_probe", lambda *args: None)
+
+
+@needs_cad
+@pytest.mark.parametrize("phi", [0.3, 0.7, 1.0])
+def test_a_ball_through_a_cone_wall_is_never_read_touching_or_inside(phi, monkeypatch):
+    """The issue's case. On OCP 7.9.3 (x86_64) the boolean reads no crossing at all at some of these depths:
+    at phi = 0.3 at 0.033 mm, at 0.7 at 0.022 and 0.033 mm, at 1.0 at 0.011 mm (as ``contains`` against the
+    cavity and ``touching`` against the wall's part). Whatever the kernel does, a crossing that shares more than
+    ``overlap_mm3`` reads ``overlapping`` with about the cap's volume, or ``unknown`` with the depth found;
+    a tangent ball and the 0.0055 mm crossing (0.0004 mm3, inside the tolerances) keep their answers."""
+    from cadagent.review.gates import relate
+    cavity, wall = cone_cavity(), cone_wall()
+    for h in (0.0, 0.01, 0.02, 0.04, 0.06, 0.12):
+        d = h * CONE_SIN
+        b = ball_in_cone(h, phi)
+        for other, inside in ((cavity, True), (wall, False)):
+            rel = relate(b, other, contact_area=False)
+            with monkeypatch.context() as m:
+                without_probe(m)
+                old = relate(b, other, contact_area=False)
+            if cap(d) < 0.001:
+                assert rel.to_dict() == old.to_dict(), (h, inside)
+                # unknown only as before: OCP 7.9.3 makes an invalid cut of some tangent balls (see containment)
+                assert rel.state in ("contains" if inside else "touching", "unknown"), (h, inside, rel)
+                continue
+            assert rel.state in ("overlapping", "unknown"), (h, inside, rel)
+            if rel.state == "overlapping":
+                shared = rel.a_outside_b_mm3 if inside else rel.overlap_mm3
+                assert shared == pytest.approx(cap(d), rel=0.1), (h, inside)   # the cone's wall curves: about +6 %
+                assert rel.to_dict() == old.to_dict()
+            else:
+                assert old.state in ("contains", "touching", "unknown"), (h, inside, old)
+                if old.state != "unknown":                  # the boolean alone misread it: the probe caught it
+                    hit = rel.witness["crossing_probe"]
+                    assert hit["depth_mm"] == pytest.approx(d, abs=0.002), (h, inside, hit)
+                    assert "crossing probe" in rel.error and "#46" in rel.error
+
+
+def _kernel_misses(monkeypatch, kind):
+    """Make the boolean miss every crossing the way it does in #46, so the cross-check still holds:
+    ``"touching"``: the common empty, each cut the whole part; ``"contains"``: the common all of ``a``, a's cut
+    empty (``b``'s cut is the real one)."""
+    real = relations_mod._boolean
+
+    def boolean(op, x, y):
+        if kind == "touching":
+            return relations_mod._compound([]) if op == "common" else x
+        if op == "common":
+            return x
+        return relations_mod._compound([]) if x is first[0] else real(op, x, y)
+    first = []
+
+    def relate(a, b, *args, **kw):
+        first[:] = [getattr(a, "wrapped", a)]
+        return real_relate(a, b, *args, **kw)
+    real_relate = relations_mod.relate
+    monkeypatch.setattr(relations_mod, "_boolean", boolean)
+    return relate
+
+
+@needs_cad
+@pytest.mark.parametrize("family", ["sphere through a face", "cylinder at a grazing angle", "boxes at a tilt"])
+@pytest.mark.parametrize("kind", ["touching", "contains"])
+def test_a_crossing_the_boolean_misses_is_unknown_with_its_depth(family, kind, monkeypatch):
+    """The three fixture families, with the boolean made to miss the crossing as it does in #46 (the real
+    kernel measures these planar crossings correctly; the cone above is where it misses). Below the probe's
+    floor (a tenth of ``touch_mm``) the kernel's answer stands; from there on the answer is ``unknown`` with the
+    depth, never ``touching`` or ``contains``."""
+    floor = relations_mod._probe_floor(Tolerances())
+    assert floor == pytest.approx(0.001)
+    cavity = box(60, 60, 30, (-30, -30, 0))        # its floor at z = 0: the part crosses it from inside
+    for d in (0.0005, 0.002, 0.005, 0.02):          # the simulated cut of b stays within the volume check
+        part = {"sphere through a face": ball(4, cq.Vector(0, 0, 4 - d)),
+                "cylinder at a grazing angle": tilted_cylinder(d),
+                "boxes at a tilt": tilted_box(d)}[family]
+        other = plate() if kind == "touching" else cavity
+        with monkeypatch.context() as m:
+            relate = _kernel_misses(m, kind)
+            rel = relate(part, other, contact_area=False)
+        if d < floor:
+            assert rel.state == kind, (d, rel)
+            continue
+        assert rel.state == "unknown", (d, rel)
+        hit = rel.witness["crossing_probe"]
+        assert hit["depth_mm"] == pytest.approx(d, rel=0.1), (d, hit)
+        assert hit["floor_mm"] == floor and hit["section_patches"] >= 1
+        assert (hit["surface"], hit["other"]) in (("a", "b"), ("b", "a"))
+        assert hit["lies"] == ("outside" if kind == "contains" and hit["surface"] == "a" else "inside")
+
+
+@needs_cad
+def test_tangent_contacts_and_crossings_the_kernel_measured_keep_their_answers(monkeypatch):
+    """The probe runs wherever the boundaries meet, and changes nothing where the boolean was right: tangent
+    contacts (a point, a line, a face) and small crossings the kernel measured (a sharp corner 0.02 mm in shares
+    about 1e-5 mm3: ``touching`` by the tolerances)."""
+    from cadagent.review.gates import relate
+    corner = box(2, 2, 2, (-1, -1, -1)).rotate(cq.Vector(0, 0, 0), cq.Vector(1, -1, 0), 54.7356103)
+    corner = corner.translate(cq.Vector(0, 0, -corner.BoundingBox().zmin - 0.02))
+    bore_block = box(20, 20, 10, (-10, -10, 0)).cut(cq.Solid.makeCylinder(4, 10))
+    cases = [("ball tangent in the cone", ball_in_cone(0.0, 0.3), cone_cavity(), "contains"),
+             ("ball tangent to the cone's part", ball_in_cone(0.0, 0.3), cone_wall(), "touching"),
+             ("ball on a plate", ball(4, cq.Vector(0, 0, 4)), plate(), "touching"),
+             ("cylinder on a plate", tilted_cylinder(0.0, alpha=0.0), plate(), "touching"),
+             ("ball tangent in a bore", ball(4), cq.Solid.makeCylinder(4, 10, cq.Vector(0, 0, -5)), "contains"),
+             ("pin in its bore", cq.Solid.makeCylinder(4, 10), bore_block, "touching"),
+             ("touching boxes", box(10, 10, 10), box(10, 10, 10, (10, 5, 0)), "touching"),
+             ("ball 0.005 mm into a plate", ball(4, cq.Vector(0, 0, 3.995)), plate(), "touching"),
+             ("corner 0.02 mm into a plate", corner, plate(), "touching")]
+    calls = []
+    real = relations_mod._crossing_probe
+    for label, a, b, state in cases:
+        with monkeypatch.context() as m:
+            m.setattr(relations_mod, "_crossing_probe", lambda *args: calls.append(label) or real(*args))
+            rel = relate(a, b, contact_area=False)
+        with monkeypatch.context() as m:
+            without_probe(m)
+            old = relate(a, b, contact_area=False)
+        assert rel.state == state and rel.to_dict() == old.to_dict(), (label, rel)
+        assert calls[-1:] == [label], label                       # the probe ran and found nothing to add
+    assert 0 < relate(cases[-1][2], cases[-1][1]).overlap_mm3 < 1e-3   # the corner's crossing, measured
+
+
+@needs_cad
+def test_the_probe_runs_only_where_the_boundaries_meet_and_its_failure_is_unknown(monkeypatch):
+    from cadagent.review.gates import relate
+    calls = []
+    monkeypatch.setattr(relations_mod, "_crossing_probe", lambda *args: calls.append(1))
+    assert relate(box(10, 10, 10), box(10, 10, 10, (10.005, 0, 0))).state == "touching"    # a 0.005 mm gap
+    assert relate(box(10, 10, 10), box(10, 10, 10, (12, 0, 0))).state == "apart"
+    assert relate(ball(3, cq.Vector(5, 5, 5)), box(10, 10, 10)).state == "contains"         # a 2 mm wall
+    assert relate(box(10, 10, 10), box(10, 10, 10, (5, 0, 0))).state == "overlapping"
+    assert calls == []
+    monkeypatch.undo()
+
+    def boom(a, b):
+        raise RuntimeError("section broke")
+    monkeypatch.setattr(relations_mod, "_section_patches", boom)
+    rel = relate(box(10, 10, 10), box(10, 10, 10, (10, 5, 0)))
+    assert rel.state == "unknown" and "crossing probe failed on a touching pair" in rel.error
+    assert "section broke" in rel.error
 
 
 # ----------------------------------------------------------------------------- Assembly

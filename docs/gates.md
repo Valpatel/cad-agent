@@ -134,6 +134,65 @@ inner-solution test cut the time from 951 s to 685 s of calls, every relation by
 cores, since OCCT's own test builds about ten classifiers per thread. Most of what remains is BRepExtrema's own
 search between nearby edges and faces.
 
+### Near-tangent crossings (#46)
+
+OCCT's boolean can miss a shallow crossing between two curved faces that are nearly tangent. Common and Cut then
+agree with each other, so the `vol = common + cut` cross-check holds, and they read no crossing at all. A ball
+pushed 0.011–0.23 mm through a cone wall read `contains` against the cavity and `touching` against the wall's part,
+with up to 0.64 mm³ really outside. So wherever a `touching` or `contains` answer has the two boundaries meeting
+(gap or wall within a tenth of `touch_mm`), `relate` checks it with tools that do no boolean:
+
+```mermaid
+flowchart TD
+    A["touching, or contains<br/>with the boundaries meeting"] --> C["BRepAlgoAPI_Section:<br/>the curves where<br/>the faces meet"]
+    C --> D["samples on each face<br/>around each curve,<br/>its edges and corners"]
+    D --> E["each classified against<br/>the other solid<br/>(BRepClass3d)"]
+    E -->|"none on the wrong side,<br/>or all in the kernel's<br/>own common or cut"| K["the answer stands"]
+    E -->|"one deeper than<br/>touch_mm / 10, outside<br/>the kernel's piece"| U["unknown, with<br/>the point and depth"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class C,D,E here
+    class A,K near
+    class U out
+```
+
+- **Why the section.** It finds the intersection curve where the boolean misses it: a closed curve around every
+  missed crossing in the tests. The samples are a grid over each curve's box on each face (so a 1 mm cap gets
+  0.1 mm spacing), the face's edges in that box and its vertices. A sample on the wrong side by more than the floor
+  (`touch_mm / 10`, 0.001 mm by default) is confirmed by its exact distance to the other part's faces.
+- **Why the kernel's piece.** A sample inside the kernel's own common (for `touching`) or cut (for `contains`) is a
+  crossing the kernel saw and measured: a box corner 0.02 mm into a plate shares 1e-5 mm³ and stays `touching`.
+- **The answer.** A crossing outside that piece is `unknown`: its volume is not measured, so neither `touching`
+  nor `overlapping` can be stated. `witness["crossing_probe"]` names the surface, the point, its depth (a lower
+  bound) and the other part's nearest point; the containment gate turns it into an escape. If the probe itself
+  fails, the pair is `unknown` too.
+- **What it costs.** Only pairs whose boundaries meet pay: 0.03–0.06 s per ball pair here. The README hero's
+  811-call sweep and the gate bench: see PR #46's body for the measurements.
+- **Limits.** A safety net, not a proof. A crossing the section also misses, one whose samples all lie within the
+  floor, or one between samples is not seen. The depth is that of the deepest sample, so at most the true depth.
+  `apart` rests on `BRepExtrema_DistShapeShape`, which read 0 at every crossing tried. A fuzzy boolean does not
+  help: OCCT's fuzzy value makes entities within it coincide, which hides shallow crossings rather than finding
+  them, and `SetFuzzyValue` from 1e-5 to 1e-3 fixed only 3 of 12 missed crossings.
+
+<details><summary>Which crossings the boolean missed (OCP 7.9.3, x86_64)</summary>
+
+Every pair below swept its depth around the tolerances (0.001–0.2 mm), at several positions and angles. Only the
+sphere against a cone wall was ever misread; the planar cases and the other curved pairs were measured right.
+
+| Fixture | Depths | Misread before | After |
+|---|---|---|---|
+| ball (r 4) through a cone wall, 5 angles, 50 depths, against the cavity and the wall's part | 0.0055–0.28 mm | 24 of 500: `contains` or `touching`, from 0.011 mm (0.0016 mm³ outside) to 0.23 mm (0.64 mm³) | all 24 `unknown`, depth within 0.001 mm |
+| ball through a plate's face, 4 orientations | 0.001–0.08 mm | none | unchanged |
+| cylinder (r 3) on a plate at 0°, 0.5° and 2°, two seam positions | 0.002–0.1 mm | none | unchanged |
+| two boxes, one tilted 0.05–1°, a corner through the other's face | 0.001–0.08 mm | none | unchanged |
+| ball in a bore, in a spherical cavity, against a torus; crossing rods; a cylinder on a cone | 0.002–0.2 mm | none | unchanged |
+
+The tests (`tests/test_gate_relations.py`) run the cone at three angles and the three planar families with the
+boolean made to miss the crossing as it does on the cone.
+
+</details>
+
 ### Pairs the table did not examine
 
 `get(a, b)` answers `apart` (with `exact=False` and `gap_lower_bound_mm`) only when the boxes prove a gap over
@@ -266,8 +325,9 @@ prefixed `<pose>/` when `poses` is given):
   depth (`kernel_missed_crossing`; the volume is not measured). Blind spots: a crossing whose footprint falls between
   samples (the grid is at most 64 × 64 per face, so coarser than the spacing on faces over 32 mm across), or no deeper
   than `touch_mm`. On a 4 mm ball against a cone wall, every crossing of 0.015 mm or more was caught at 16 angles; at 0.01 mm (= `touch_mm`) the boolean and the probe both missed 5 of 16. It
-  costs about 0.3–0.5 s per touching ball; `probe=False` turns it off. **This limit applies to the relation table too** (a
-  near-tangent `touching` between two parts can be a shallow overlap); only the containment gate probes for it.
+  costs about 0.3–0.5 s per touching ball; `probe=False` turns it off. The relation itself now checks the same
+  blind spot with the section ([near-tangent crossings](#near-tangent-crossings-46)): an instance it reads as
+  crossing fails here with the depth it found (`kernel_missed_crossing`).
 - **Furthest point outside.** The furthest of the vertices of a tessellation of the escaped piece (`cut(instance,
   cavity)`), then climbed to the piece's extreme point along the outward direction: exact for a ball through a flat
   or cylindrical wall, a lower bound in general.
@@ -587,7 +647,8 @@ the queries to the pairs that come near: real parts cost more per query (see the
 
 Limits. Sampled poses, not a swept volume. Rigid bodies on ideal axes: no backlash, play, deflection or tolerance
 stack, so a clear pose in the model does not prove printed parts clear. Contacts are classified by the relation
-table's tolerances (`touch_mm`; the near-tangent blind spot of the boolean kernel applies, see containment). Joint
+table's tolerances (`touch_mm`; a near-tangent crossing the boolean misses reads `unknown`, see
+[near-tangent crossings](#near-tangent-crossings-46)). Joint
 limits are the declared ranges; nothing checks that a stop actually ends the motion there.
 
 ## Assembly-sequence access (`cadagent.review.gates.assembly`)
@@ -679,7 +740,8 @@ Limits. Straight-line insertion along one declared direction: no rotation, tilt 
 fixtures. Rigid parts at their modelled size: no tolerance stack, flex or print shrink, so a clear path in the
 model does not prove the parts go together. Where the part is within `max_step_mm` of an obstacle the line is
 sampled: a feature thinner than the step, crossing another between two samples, can be missed (set `max_step_mm`
-smaller where clearances are tight). The near-tangent blind spot of the boolean kernel applies (see containment).
+smaller where clearances are tight). A near-tangent crossing the boolean misses reads `unknown`
+([near-tangent crossings](#near-tangent-crossings-46)).
 The tool sweep has the fastener gate's limits.
 
 ## Running the gates (`cad-agent gates`)

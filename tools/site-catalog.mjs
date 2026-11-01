@@ -1,5 +1,6 @@
 /** The catalogue: cad-agent.valpatel.com/catalog, /catalog.json (schema cad-agent-catalog/2), /catalog/index.json and
- * one /catalog/<area>.json per domain, area and bucket, and the covers under /catalog/covers/. Built by
+ * one /catalog/<area>.json per domain, area and bucket, and the covers under /catalog/covers/. Schema 2 has lost a
+ * field without a new schema value (CATALOG_FIELDS.removed says which), so a reader that checks for /2 still runs. Built by
  * tools/build-site.mjs from committed files only:
  * - our commands (cli.py), pages (docs, lessons, research, skills, agents) and demos and tool pictures (docs/catalog.yaml);
  * - outside projects (upstreams/registry.yaml), libraries and benchmarks (research/landscape.json);
@@ -124,6 +125,8 @@ const CATALOG_FIELDS = {
   related: 'ids of up to six entries that share an area (another kind first), else the domain',
   licence_family: 'permissive, copyleft or other (other: none recorded, non-commercial, source-available or custom)',
   updated: 'the last change: last push (outside entries) or last commit (ours), as YYYY-MM-DD, or null',
+  removed: 'not a field: the fields taken out of entries within schema 2, which kept its schema value (cad-agent-catalog/2) so readers that check it still run. ' +
+    'gyropup: removed in v0.10.0. Do not rely on it; the real projects that used an area are its projects list (catalog/index.json and the area files).',
 };
 const INDEX_FIELDS = {
   count: 'entries in catalog.json', kinds: 'the page\'s tabs: tab, the kinds it holds, label, count, page',

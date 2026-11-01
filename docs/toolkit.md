@@ -358,7 +358,7 @@ Modules are grouped by domain, as the [topic tree](areas.yaml) groups the work: 
 practice domain's review and publishing areas as `cadagent.review` and `cadagent.publish`, and the shared core at the
 top ([`src/cadagent/README.md`](../src/cadagent/README.md)). `tests/test_package_areas.py` keeps each package and its
 domain's `api:` lists in step. The old flat paths (`cadagent.fea`, `from cadagent import report`, ...) still import the
-same module, with a `DeprecationWarning`, until v0.7.0; so do the old package paths and everything under them
+same module, with a `DeprecationWarning`; so do the old package paths and everything under them
 (`cadagent.gates.motion` is `cadagent.review.gates.motion`), and `python -m` through an old path runs the module at its
 new path. Type checkers and IDEs do not see the old paths. Move imports to the new paths:
 
@@ -372,6 +372,12 @@ new path. Type checkers and IDEs do not see the old paths. Move imports to the n
 | `cadagent.review` (practice: design process, review and evidence) | `gates/`, `dossier/`, `packet`, `evidence` |
 | `cadagent.publish` (practice: publishing) | `report`, `htmlreport`, `site`, `site_review`, `view`, `serve`, `release`, `render`, `dotsvg` |
 | shared core, unchanged | `project`, `cli`, `geometry`, `links`, `package`, `agentkit` |
+
+**When the old paths go:** not yet. Up to v0.8.0 the docs and the warning said v0.7.0, which shipped with every old
+path. They stay until a release whose CHANGELOG announces their removal at least one minor release ahead, under
+**Projects must change** (announced in vX.Y.0, removed no earlier than vX.(Y+1).0). The warning then names that
+release. A project that hashes its source folders in evidence receipts can move its imports when it next regenerates
+them. `tests/test_package_layout.py` pins the old paths, so none can go unannounced.
 
 Two published modules became packages and keep their paths: `cadagent.geometry` is still the shared CAD helpers
 (`export_step` and the rest), and `cadagent.review` is still the review workbench (`review_html`), now also the review

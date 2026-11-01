@@ -4,7 +4,8 @@ the design dossier (dossier), review packets (packet) and evidence hashes (evide
 This module itself is the reusable in-page review workbench for PCBs, housings and multi-part assemblies
 (``review_html``): it was the flat ``cadagent.review`` module, which became this package, so that path keeps working
 as it was, like ``cadagent.geometry``. Old flat paths of the modules now inside (``cadagent.gates`` and so on) still
-import until v0.7.0, see ``cadagent._moved``."""
+import, with a DeprecationWarning, until a release that the CHANGELOG announces a minor release ahead; see
+``cadagent._moved``."""
 from __future__ import annotations
 from pathlib import Path
 import html,json

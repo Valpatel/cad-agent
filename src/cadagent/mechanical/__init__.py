@@ -3,4 +3,5 @@ hardware (mcmaster), connector windows (connectors), engraved markings (markings
 (compliant), and motion traces (motion_trace).
 
 Each package holds one domain of the topic tree (docs/areas.yaml), and tests/test_package_areas.py keeps the two in
-step. Old flat paths (``cadagent.fea`` and so on) still import until v0.7.0, see ``cadagent._moved``."""
+step. Old flat paths (``cadagent.fea`` and so on) still import, with a DeprecationWarning, until a release that the
+CHANGELOG announces a minor release ahead; see ``cadagent._moved``."""

@@ -363,7 +363,7 @@ export async function mountFeaViewer(element, url, opts = {}) {
   // --- panel
   const info = readouts(section(panel, 'Result', { note: String(data.name ?? '') }));
   const vol = F.overstressed_volume || {};
-  const rows = [['material', String(mat.name ?? '')], ['strength', `${fmt(S, 1)} MPa`], ['modulus E', `${fmt(num(mat.E_mpa), 0)} MPa`],
+  const rows = [['material', String(mat.name ?? '')], ['strength', `${fmt(S, 1)} MPa`], ['modulus E', `${fmt(num(mat.E_mpa), 0)} MPa${mat.direction ? ` (${String(mat.direction)})` : ''}`],
     ['design stress', `${fmt(vmDesign, 1)} MPa`], ['safety factor', fmt(res.safety_factor), res.safety_factor < 1 ? 'fail' : res.safety_factor < 1.5 ? 'warn' : 'ok'],
     ['max displacement', `${fmt(dmax, 3)} mm`]];
   if (res.stiffness_n_per_mm) rows.push(['stiffness', `${fmt(res.stiffness_n_per_mm, 1)} N/mm`]);

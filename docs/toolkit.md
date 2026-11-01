@@ -132,7 +132,7 @@ after a rebuild shows real changes only, and checks bound to a file's sha256 sta
 records a time, it is the source date, never the wall clock:
 
 ```mermaid
-flowchart LR
+flowchart TD
     E{"SOURCE_DATE_EPOCH<br/>set?"} -->|"yes"| S["that time<br/>(a malformed value<br/>is an error, exit 2)"]
     E -->|"no"| G{"a commit changed<br/>the project outside<br/>its outputs?"}
     G -->|"yes"| C["the last such<br/>commit's time"]

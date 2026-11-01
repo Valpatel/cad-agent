@@ -91,9 +91,10 @@ any PR; nobody has to ask for one. Use a patch release (`--patch`) for fixes, do
 such as a new command or check, even one that asks nothing of projects.
 1. On a `release/vX.Y.Z` branch from `dev`:
    - bring in `main`'s release merges (`git merge origin/main`), so the release PR is up to date with `main`;
-   - run `python3 tools/cut_release.py --patch` (or `--minor`). It bumps `version` in `pyproject.toml`, dates the
-     CHANGELOG's `## Unreleased` entry as `## vX.Y.Z (YYYY-MM-DD)`, opens a new empty `## Unreleased`, and checks the
-     result against CI's release gate;
+   - run `python3 tools/cut_release.py --patch` (or `--minor`). It bumps `version` in `pyproject.toml`, folds the
+     fragments in [`changelog.d/`](changelog.d/README.md) into the CHANGELOG's `## Unreleased` entry and deletes
+     them, dates the entry as `## vX.Y.Z (YYYY-MM-DD)`, opens a new empty `## Unreleased`, and checks the result
+     against CI's release gate;
    - check that the entry covers every PR merged since the last release, with what projects must change.
 
    PR it into `dev` and merge.

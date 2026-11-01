@@ -9,8 +9,11 @@ gate CI runs (`release_gate` in tools/ci_gates.py). It prints the git and gh ste
     python3 tools/cut_release.py --patch                 # 0.5.0 -> 0.5.1: fixes, docs and the site only
     python3 tools/cut_release.py --version 1.0.0 --date 2026-11-01 --dry-run
 
-New work goes in the CHANGELOG under `## Unreleased` (an older `## vX.Y.Z (unreleased)` heading is accepted too).
-The script renames that heading to `## vX.Y.Z (YYYY-MM-DD)` and opens a new, empty `## Unreleased` above it.
+Each PR adds its CHANGELOG lines as a fragment, `changelog.d/<issue>-<slug>.md`: bullets under `**New**`, `**Changed**`,
+`**Fixed**` or `**Projects must change**`. Fragments never conflict, where PRs editing CHANGELOG.md side by side do.
+The script folds every fragment into the `## Unreleased` entry (an older `## vX.Y.Z (unreleased)` heading is accepted
+too), each bullet under its section, deletes the fragments, renames the heading to `## vX.Y.Z (YYYY-MM-DD)` and opens
+a new, empty `## Unreleased` above it. Lines written straight under `## Unreleased` are kept as they are.
 """
 from __future__ import annotations
 
@@ -21,7 +24,7 @@ import pathlib
 import re
 import subprocess
 import sys
-from typing import Optional, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 UNRELEASED = re.compile(r"^## (?:Unreleased|v(?P<named>[0-9]+(?:\.[0-9]+)*) \(unreleased\))[ \t]*$", re.M)
@@ -29,6 +32,79 @@ VERSION = re.compile(r"^[0-9]+(?:\.[0-9]+)*$")
 # Lines that are not a change: sub-headings such as "**New**" or "### Fixed", and HTML comments.
 _NOT_A_CHANGE = re.compile(r"<!--.*?-->|^[ \t]*(?:#{3,6}[^\n]*|\*\*[^*\n]+\*\*:?)[ \t]*$", re.M | re.S)
 PROJECT_VERSION = re.compile(r'^(version\s*=\s*")([0-9]+(?:\.[0-9]+)*)("\s*)$', re.M)
+
+
+FRAGMENTS = "changelog.d"
+SECTIONS = ("New", "Changed", "Fixed", "Projects must change")
+_SECTION = re.compile(r"^\*\*(?P<name>[^*\n]+?):?\*\*:?[ \t]*$", re.M)
+
+
+def read_fragment(name: str, text: str) -> Dict[str, List[str]]:
+    """{section: its lines} of one fragment; every line sits under a known section heading, and each section has a
+    bullet."""
+    found: Dict[str, List[str]] = {}
+    section = None
+    for line in text.replace("\r\n", "\n").split("\n"):
+        head = _SECTION.match(line)
+        if head:
+            section = head.group("name").strip()
+            if section not in SECTIONS:
+                raise ValueError(f"{name}: unknown section **{section}** (use {', '.join(SECTIONS)})")
+            found.setdefault(section, [])
+        elif line.strip():
+            if section is None:
+                raise ValueError(f"{name}: text before the first section heading (**New**, **Fixed**, ...)")
+            found[section].append(line.rstrip())
+    if not found:
+        raise ValueError(f"{name}: no section heading and no bullets")
+    for section, lines in found.items():
+        if not any(line.lstrip().startswith("- ") for line in lines):
+            raise ValueError(f"{name}: **{section}** has no '- ' bullet")
+    return found
+
+
+def fold_fragments(changelog: str, fragments: Sequence[Tuple[str, str]]) -> str:
+    """The CHANGELOG with each fragment's bullets added to its section of the one Unreleased entry, in the fragments'
+    order. A section the entry lacks is added in the order of SECTIONS."""
+    if not fragments:
+        return changelog
+    found = list(UNRELEASED.finditer(changelog))
+    if len(found) != 1:
+        raise ValueError(f"CHANGELOG.md needs exactly one '## Unreleased' heading, found {len(found)}")
+    head = found[0]
+    following = re.compile(r"^## ", re.M).search(changelog, head.end())
+    end = following.start() if following else len(changelog)
+    body = changelog[head.end():end].strip("\n")
+    adds: Dict[str, List[str]] = {}
+    for name, text in fragments:
+        for section, lines in read_fragment(name, text).items():
+            adds.setdefault(section, []).extend(lines)
+    lines = body.split("\n") if body else []
+    for section in SECTIONS:
+        if section not in adds:
+            continue
+        heads = [i for i, line in enumerate(lines)
+                 if (m := _SECTION.match(line)) and m.group("name").strip() == section]
+        if heads:
+            start = heads[0] + 1
+            stop = next((i for i in range(start, len(lines)) if _SECTION.match(lines[i])), len(lines))
+            while stop > start and not lines[stop - 1].strip():
+                stop -= 1
+            lines[stop:stop] = adds[section]
+        else:
+            later = [i for i, line in enumerate(lines) if (m := _SECTION.match(line))
+                     and m.group("name").strip() in SECTIONS[SECTIONS.index(section) + 1:]]
+            at = later[0] if later else len(lines)
+            block = [f"**{section}**"] + adds[section]
+            block = ([""] if at and lines[at - 1].strip() else []) + block + ([""] if at < len(lines) else [])
+            lines[at:at] = block
+    return changelog[:head.end()] + "\n\n" + "\n".join(lines).strip("\n") + "\n\n" + changelog[end:].lstrip("\n")
+
+
+def fragment_files(root: pathlib.Path) -> List[pathlib.Path]:
+    """The fragments in root/changelog.d, sorted by name; its README is not one."""
+    folder = root / FRAGMENTS
+    return sorted(p for p in folder.glob("*.md") if p.name.lower() != "readme.md") if folder.is_dir() else []
 
 
 def _gates():
@@ -85,8 +161,9 @@ def date_changelog(changelog: str, version: str, date: str) -> str:
 
 
 def cut(pyproject: str, changelog: str, *, bump: Optional[str] = None, version: Optional[str] = None,
-        date: Optional[str] = None) -> Tuple[str, str, str]:
-    """(new pyproject, new changelog, version), checked against CI's release gate; raises ValueError otherwise."""
+        date: Optional[str] = None, fragments: Sequence[Tuple[str, str]] = ()) -> Tuple[str, str, str]:
+    """(new pyproject, new changelog, version), with `fragments` ((name, text) pairs) folded into the Unreleased entry
+    first, checked against CI's release gate; raises ValueError otherwise."""
     gates = _gates()
     current = gates.parse_version(pyproject)
     if (bump is None) == (version is None):
@@ -97,7 +174,7 @@ def cut(pyproject: str, changelog: str, *, bump: Optional[str] = None, version: 
     date = date or utc_today()
     dt.date.fromisoformat(date)  # an impossible date fails here, before the gate
     new_pyproject = bump_pyproject(pyproject, version)
-    new_changelog = date_changelog(changelog, version, date)
+    new_changelog = date_changelog(fold_fragments(changelog, fragments), version, date)
     ok, why = gates.release_gate(new_pyproject, pyproject, new_changelog)
     if not ok:
         raise ValueError(f"the release gate would fail: {why}")
@@ -116,20 +193,27 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
     py_path, cl_path = args.root / "pyproject.toml", args.root / "CHANGELOG.md"
     try:
+        frags = fragment_files(args.root)
         new_py, new_cl, version = cut(py_path.read_text(encoding="utf-8"), cl_path.read_text(encoding="utf-8"),
-                                      bump=args.bump, version=args.version, date=args.date)
+                                      bump=args.bump, version=args.version, date=args.date,
+                                      fragments=[(f"{FRAGMENTS}/{p.name}", p.read_text(encoding="utf-8"))
+                                                 for p in frags])
     except (OSError, ValueError) as exc:
         print(f"cut_release: {exc}", file=sys.stderr)
         return 1
     if args.dry_run:
-        print(f"v{version}: pyproject.toml and CHANGELOG.md would change (dry run, nothing written)")
+        print(f"v{version}: pyproject.toml and CHANGELOG.md would change, folding {len(frags)} fragment(s) "
+              "(dry run, nothing written)")
         return 0
     py_path.write_text(new_py, encoding="utf-8")
     cl_path.write_text(new_cl, encoding="utf-8")
+    for p in frags:
+        p.unlink()
     branch = subprocess.run(["git", "-C", str(args.root), "branch", "--show-current"],
                             capture_output=True, text=True).stdout.strip()
-    print(f"v{version}: pyproject.toml and CHANGELOG.md updated on {branch or 'a detached HEAD'}. Next:\n"
-          f"  git commit -am 'Release v{version}' && git push -u origin HEAD\n"
+    print(f"v{version}: pyproject.toml and CHANGELOG.md updated on {branch or 'a detached HEAD'}, "
+          f"{len(frags)} fragment(s) folded in and deleted. Next:\n"
+          f"  git add -A && git commit -m 'Release v{version}' && git push -u origin HEAD\n"
           f"  gh pr create --base dev --title 'Release v{version}: version and CHANGELOG'   # review, merge\n"
           f"  gh pr create --base main --head dev --title 'Release v{version}'              # review, merge (merge commit)\n"
           f"release.yml then tags v{version} and publishes the GitHub release. It deploys the site only if the owner\n"

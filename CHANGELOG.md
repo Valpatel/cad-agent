@@ -1,11 +1,11 @@
 # Changelog
 
-Every release of cad-agent: what projects using it gain and what they must change. New work goes under
-`## Unreleased`. Releasing is part of the development loop ([CONTRIBUTING.md](CONTRIBUTING.md#releases)):
-`tools/cut_release.py` dates that entry as `## vX.Y.Z (YYYY-MM-DD)`, which the `cad-gates/main/release` check
-requires, and merging the release PR (`dev` → `main`) tags the release and deploys the site (when the owner has set
-the `production` environment's deploy secret; until then the site job warns and skips, and the site is deployed by
-hand from `main`). Releases up to v0.4.2
+Every release of cad-agent: what projects using it gain and what they must change. Each PR adds its lines as a
+fragment in [`changelog.d/`](changelog.d/README.md). Releasing is part of the development loop
+([CONTRIBUTING.md](CONTRIBUTING.md#releases)): `tools/cut_release.py` folds the fragments into `## Unreleased` and
+dates that entry as `## vX.Y.Z (YYYY-MM-DD)`, which the `cad-gates/main/release` check requires. Merging the release PR
+(`dev` → `main`) tags the release and deploys the site, when the owner has set the `production` environment's deploy
+secret; until then the site job warns and skips, and the site is deployed by hand from `main`. Releases up to v0.4.2
 are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased

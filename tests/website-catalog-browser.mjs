@@ -411,13 +411,18 @@ try {
     const look = () => page.$eval(row, a => { const s = getComputedStyle(a); return `${s.backgroundColor} | ${s.backgroundImage} | ${s.backgroundSize}`; });
     await page.mouse.move(1300, 880);
     const rest = await look();
+    // Read the hovered row once its sweep has run: the transition can start a frame or two after :hover applies
+    // (WebKit, under load), and a read before it ends gets a value between rest and hovered.
     await page.hover(row);
-    await page.waitForTimeout(350);
+    await page.waitForFunction(([s, before]) => {
+      const a = document.querySelector(s), st = getComputedStyle(a);
+      return !a.getAnimations().length && `${st.backgroundColor} | ${st.backgroundImage} | ${st.backgroundSize}` !== before;
+    }, [row, rest], { timeout: 3000 }).catch(() => {});
     const hovered = await look();
     await page.click(row);
     await page.waitForFunction(s => document.querySelector(s).getAttribute('aria-current') === 'true', row, { timeout: 5000 }).catch(() => fail(where, 'Gears is not chosen after a click'));
     await page.mouse.move(1300, 880);
-    await page.waitForTimeout(350);
+    await page.waitForFunction(s => !document.querySelector(s).getAnimations().length, row, { timeout: 3000 }).catch(() => {});
     const chosen = await look();
     if (hovered === rest) fail(where, `hovering a row does not change it (${rest})`);
     if (chosen === rest || chosen === hovered) fail(where, `the chosen row looks like one at rest or hovered (${chosen})`);
@@ -425,7 +430,11 @@ try {
       const c = await contrastOf(part, bg);
       if (c < 4.5) fail(where, `chosen row: ${part.slice(row.length + 1)} contrast ${c.toFixed(2)}`);
     }
-    // The key: a word per level, in order; focusing one shows what it means.
+    // The key: a word per level, in order, inside the rail (.cat-side clips anything past its edges); focusing one
+    // shows what it means.
+    const [lo, hi] = await page.$eval('.key-scale', k => { const box = k.getBoundingClientRect(), lis = [...k.children].map(l => l.getBoundingClientRect());
+      return [lis[0].left - box.left, box.right - lis.at(-1).right]; });
+    if (lo < -0.5 || hi < -0.5) fail(where, `the key's words reach past the rail: ${(-lo).toFixed(1)}px left, ${(-hi).toFixed(1)}px right`);
     const words = await page.$$eval('.key-scale .key-word', ws => ws.map(w => w.textContent));
     if (words.join() !== index.maturity.map(m => m.level).join()) fail(where, `the key says ${words}`);
     const means = page.locator('.key-scale li').nth(2).locator('.key-means');
@@ -439,13 +448,32 @@ try {
 
   // A chip names what it filters: a domain's "All" row by its domain, a maturity box by its word (not its bar's
   // screen-reader words), and the retired ?gyropup=1 filters nothing.
-  for (const [route, want] of [['/catalog?area=mechanical', 'All in mechanical design'], ['/catalog?maturity=tooling', 'Tooling'], ['/catalog?gyropup=1', '']]) {
+  for (const [route, want] of [['/catalog?area=mechanical', 'Mechanical design'], ['/catalog?maturity=tooling', 'Tooling'], ['/catalog?gyropup=1', '']]) {
     const { page, done } = await open(route);
     const chips = await page.$$eval('[data-gallery-chips] > *', cs => cs.map(c => c.textContent).join());
     if (chips !== want) fail(route, `chips say "${chips}", want "${want}"`);
     const status = (await page.textContent('[data-gallery-status]')).trim();
     if (!want && status !== `${index.count} entries`) fail(route, `status "${status}": it filters`);
     await done();
+  }
+
+  // A domain with entries but none of the chosen kind says so by the domain's name, not its row's "All in …" (#233).
+  {
+    const catalog = JSON.parse(await readFile(path.join(dir, 'catalog.json'), 'utf8'));
+    const pick = index.domains.filter(d => d.count > 0).flatMap(d => {
+      const slugs = new Set([d.slug, ...d.areas.map(a => a.slug)]);
+      const kinds = new Set(catalog.items.filter(i => i.areas.some(a => slugs.has(a))).map(i => i.kind));
+      const tab = index.kinds.find(k => !k.kinds.some(x => kinds.has(x)));
+      return tab ? [{ d, tab }] : [];
+    })[0];
+    if (!pick) fail('domain without the kind', 'no domain lacks a kind to test with');
+    else {
+      const route = `/catalog?area=${pick.d.slug}&kind=${pick.tab.tab}`;
+      const { page, done } = await open(route);
+      const text = (await page.textContent('[data-gallery-empty-kind]')).replace(/\s+/g, ' ');
+      if (!text.includes(` in ${pick.d.title} yet`) || /All in/.test(text)) fail(route, `the message says "${text.slice(0, 90)}"`);
+      await done();
+    }
   }
 
   // The phone sheet: every row in the area tree, the domain's "All" included, is a 44 px tap target.

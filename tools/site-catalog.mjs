@@ -609,7 +609,7 @@ ${it.what ? `<p class="card-what">${esc(it.what)}</p>` : ''}${facts}${meta}${cal
 ${key}<ul class="area-tree">
 <li data-tone="cross-cutting">${areaLink('', `${glyphUse('cross-cutting')}<span class="area-name">All areas</span>`, items.length, ' aria-current="true"')}</li>
 ${areas.domains.map(d => `<li><details class="dom" data-domain="${esc(d.slug)}" data-tone="${esc(d.slug)}"${count(d.slug) ? ' open' : ''}><summary>${glyphUse(d.slug)}<span class="area-name">${esc(d.title)}</span><span class="count" data-count-of="area:${esc(d.slug)}">${count(d.slug)}</span></summary><ul>
-<li>${areaLink(d.slug, `<span class="area-name">All<span class="sr"> in ${esc(d.title.replace(/^./, c => c.toLowerCase()))}</span></span>`, count(d.slug), '', 'dom-all')}</li>
+<li>${areaLink(d.slug, `<span class="area-name">All<span class="sr"> in ${esc(d.title.replace(/^./, c => c.toLowerCase()))}</span></span>`, count(d.slug), ` data-label="${esc(d.title)}"`, 'dom-all')}</li>
 ${(d.areas || []).map(a => `<li>${areaLink(a.slug, `${glyphUse(a.slug)}<span class="area-name">${esc(a.title)}</span>${bar(a.maturity)}`, count(a.slug), ` data-maturity="${esc(a.maturity)}"`)}</li>`).join('')}</ul></details></li>`).join('')}
 ${Object.entries(BUCKETS).filter(([slug]) => count(slug)).map(([slug, b]) => `<li class="bucket" data-tone="${esc(slug)}">${areaLink(slug, `${glyphUse(slug)}<span class="area-name">${esc(b.title)}</span>`, count(slug))}</li>`).join('')}
 </ul></nav>`;

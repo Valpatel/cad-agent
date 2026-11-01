@@ -340,17 +340,20 @@ test('every domain and bucket has a tone: the covers\' tints, and an ink that sh
 
 test('the area rail: hover effects only where a pointer hovers, and each domain\'s first row reads "All" with its name for screen readers', () => {
   const css = show('web/catalog.css');
-  // A :hover rule outside @media(hover:hover) sticks on a touch screen after a tap.
-  const hoverBlock = css.match(/@media\(hover:hover\)\{([\s\S]*?)\n\}/)?.[1] || '';
-  const outside = css.replace(/@media\(hover:hover\)\{[\s\S]*?\n\}/, '');
-  assert.match(hoverBlock, /\.area-link:hover/, 'the rail\'s hover rules are not in @media(hover:hover)');
-  assert.doesNotMatch(outside, /(\.area-link|\.area-tree summary)[^{,]*:hover/, 'a rail :hover rule outside @media(hover:hover)');
+  // A :hover rule outside @media(hover:hover) sticks on a touch screen after a tap. Each block is matched whole (one
+  // level of nested braces), so a one-line block cannot swallow the rules after it.
+  const hoverBlocks = [...css.matchAll(/@media\(hover:hover\)\{(?:[^{}]|\{[^{}]*\})*\}/g)].map(m => m[0]);
+  const outside = hoverBlocks.reduce((rest, block) => rest.replace(block, ''), css);
+  for (const sel of ['.area-link:hover', '.area-tree summary:hover', '.key-scale>li:hover']) assert.ok(hoverBlocks.some(b => b.includes(sel)), `${sel} is not in @media(hover:hover)`);
+  const stray = outside.match(/[^{}]*(\.area-link|\.area-tree summary|\.key-scale)[^{}]*:hover[^{}]*\{/)?.[0];
+  assert.equal(stray, undefined, `a rail :hover rule outside @media(hover:hover): ${stray}`);
   // Its muted names stay readable on the white panels.
   const idea = css.match(/\.area-link\[data-maturity=idea\] \.area-name[^{]*\{color:(#[0-9a-f]{6})/)?.[1];
   assert.ok(idea && contrast(idea, '#ffffff') >= 4.5, `idea names: ${idea} on white`);
   for (const d of areas.domains) {
     const name = d.title.replace(/^./, c => c.toLowerCase());
-    assert.ok(page.includes(`data-value="${d.slug}"><span class="area-name">All<span class="sr"> in ${name}</span></span>`), `${d.slug}: its first row is not "All" with "in ${name}" for screen readers`);
+    // data-label: the chip and the "nothing here" messages name the domain itself, not "All in …"
+    assert.ok(page.includes(`data-value="${d.slug}" data-label="${d.title}"><span class="area-name">All<span class="sr"> in ${name}</span></span>`), `${d.slug}: its first row is not "All" with "in ${name}" for screen readers and its title as its label`);
   }
   assert.doesNotMatch(page, /Everything in /);
 });

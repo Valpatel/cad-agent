@@ -121,15 +121,16 @@ gap when nothing is shared.
 
 ```mermaid
 flowchart TD
-    P{"a pair: boxes<br/>within near_mm?"} -->|"no"| A1["apart,<br/>from the boxes"]
-    P -->|"yes"| C{"Common and Cut:<br/>vol = common + cut?"}
-    C -->|"no, or an error"| U["unknown"]
-    C -->|"yes, shared volume<br/>up to overlap_mm3"| D["BRepExtrema gap:<br/>touching up to touch_mm,<br/>else apart"]
-    C -->|"yes, more shared"| I["contains if one has at most<br/>contain_mm3 outside,<br/>else overlapping"]
+    P{"boxes within<br/>near_mm?"} -->|"no"| A1["apart"]
+    P -->|"yes"| C{"Common, Cut:<br/>vol = common<br/>+ cut?"}
+    C -->|"no, or<br/>error"| U["unknown"]
+    C -->|"yes"| V{"shared over<br/>overlap_mm3?"}
+    V -->|"no"| D["BRepExtrema gap<br/>up to touch_mm:<br/>touching, else apart"]
+    V -->|"yes"| I["contains if at most<br/>contain_mm3 outside,<br/>else overlapping"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class P,C here
+    class P,C,V here
     class A1,U,D,I out
 ```
 

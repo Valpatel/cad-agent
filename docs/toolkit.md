@@ -958,12 +958,12 @@ Docker (OpenFOAM runs in the official `opencfd/openfoam-default` image) and Bamb
 
 ```mermaid
 flowchart TD
-    C["the parametric CAD"] --> S["1. slice it<br/>grams and print time"]
-    C --> L["2. load it<br/>safety factor, deflection"]
-    C --> K["3. cool it<br/>hottest part, fan point, walls"]
-    S & L & K --> O["4. optimise with evidence<br/>where material carries load"]
-    O -->|"the change is made in the CAD"| C
-    S & L & K --> R["5. the limits, stated<br/>in every result"]
+    C["the parametric CAD"] --> S["1. slice<br/>grams, time"]
+    C --> L["2. load<br/>safety factor"]
+    C --> K["3. cool<br/>hottest part"]
+    S & L & K --> O["4. optimise<br/>with evidence"]
+    O --> C
+    S & L & K --> R["5. limits<br/>stated"]
 ```
 
 *The standard practice above as a loop: a change found by optimising is made in the parametric CAD, and steps 1-3 run

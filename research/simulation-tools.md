@@ -261,15 +261,17 @@ There is no single mature FOSS project that does CadQuery → topology optimisat
 
 ```mermaid
 flowchart TD
-    C["CadQuery solids"] --> S["slice: Bambu Studio CLI<br/>cad-agent slice"]
-    C --> L["load: scikit-fem P2 tets<br/>simulation.fea"]
-    C --> K["cool: OpenFOAM CHT<br/>simulation.cfd"]
-    S & L & K --> O["optimise: pyMOTO, Optuna<br/>topopt, cad-agent optimise"]
-    O -->|"the change is made in the CAD"| C
+    C["CadQuery solids"] --> S["slice<br/>Bambu Studio"]
+    C --> L["load<br/>scikit-fem"]
+    C --> K["cool<br/>OpenFOAM"]
+    S & L & K --> O["optimise<br/>pyMOTO, Optuna"]
+    O --> C
 ```
 
-*What cad-agent did instead: the blocks this survey chose, each run from its own module, joined by the standard
-practice in [the toolkit page](../docs/toolkit.md). The slicer (AGPL) and OpenFOAM (GPL) run as separate processes;
+*What cad-agent did instead: the blocks this survey chose, each run from its own module (`cad-agent slice`,
+`cadagent.simulation.fea` on P2 tetrahedra, `cadagent.simulation.cfd`, `cadagent.simulation.topopt` and
+`cad-agent optimise`), in the loop the [toolkit page](../docs/toolkit.md) sets as standard practice: a change found by
+optimising is made in the CAD and checked again. The slicer (AGPL) and OpenFOAM (GPL) run as separate processes;
 gmsh (GPL), which meshes for the FEA, is imported, as the note at the top says. Each result states its limits; none
 proves fit, strength or temperature.*
 

@@ -784,7 +784,7 @@
    "name": "gumyr/build123d",
    "what": "Python B-rep CAD library on Open Cascade with builder and algebra-style APIs for 2D and 3D parts",
    "areas": [
-    "mechanical"
+    "cad-modelling"
    ],
    "license_spdx": "Apache-2.0",
    "stars": 3519,
@@ -795,7 +795,7 @@
    "name": "CadQuery/cadquery",
    "what": "Python library for parametric 3D CAD scripts on the OCCT kernel, usable without a GUI",
    "areas": [
-    "mechanical"
+    "cad-modelling"
    ],
    "license_spdx": "Apache-2.0",
    "stars": 5990,

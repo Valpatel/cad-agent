@@ -418,6 +418,37 @@ def test_fourbar_closes_at_the_limits_of_the_input(links):
     assert fx.fourbar_angles(a, b, c, d, limits[0] + 1e-3) is None or fx.fourbar_angles(a, b, c, d, limits[0] - 1e-3) is None
 
 
+@pytest.mark.parametrize("links", [(100, 80, 70, 60), (80, 40, 120, 100), (60, 30, 50, 70), (0.05, 0.02, 0.06, 0.04)])
+def test_fourbar_tolerance_is_tight_on_both_sides(links):
+    # The other side of the closing test above: set the input so the diagonal e is just past b + c or |b - c|.
+    # Open by 1e-9 of the longest link, ten thousand times the tolerance, the links cannot close: None. Inside by the
+    # same amount, or open by a tenth of the tolerance, they close. A looser _CLOSE, or a tolerance on e squared that
+    # grows with the links, lets the open loop through.
+    a, b, c, d = links
+    longest = max(links)
+    checked = 0
+    for span, outward in ((b + c, 1), (abs(b - c), -1)):
+        for gap, closes in ((1e-9, False), (-1e-9, True), (1e-13, True)):
+            e = span + outward * gap * longest
+            cos = (a * a + d * d - e * e) / (2 * a * d)
+            if abs(cos) > 1:
+                continue
+            t2 = math.acos(cos)
+            for crossed in (False, True):
+                got = fx.fourbar_angles(a, b, c, d, t2, crossed=crossed)
+                assert (got is not None) == closes, (span, gap, crossed, got)
+            assert (fx.transmission_angle(a, b, c, d, t2) is not None) == closes, (span, gap)
+            checked += 1
+    assert checked >= 3
+
+
+def test_fourbar_an_open_loop_stays_open_across_a_short_diagonal():
+    # At theta2 = 0 the diagonal is d - a = 2e-6 and |b - c| = 2.2e-6: open by 2e-7 of the longest link. A tolerance on
+    # e squared lets this through, since it is a large tolerance on e when e is short (from the review of #146).
+    for crossed in (False, True):
+        assert fx.fourbar_angles(1, 1, 1 - 2.2e-6, 1 + 2e-6, 0.0, crossed=crossed) is None
+    assert fx.transmission_angle(1, 1, 1 - 2.2e-6, 1 + 2e-6, 0.0) is None
+
 def test_fourbar_norton_example_4_1():
     # Norton, Design of Machinery, Example 4-1: a = 40, b = 120, c = 80, d = 100 at theta2 = 40 degrees.
     open_, crossed = (fx.fourbar_angles(40, 120, 80, 100, math.radians(40), crossed=x) for x in (False, True))

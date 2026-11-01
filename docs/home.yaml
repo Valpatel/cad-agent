@@ -1,0 +1,127 @@
+# The home page's pictures and its "where cad-agent fits" diagram (tools/build-site.mjs reads this; the build fails on a
+# missing picture, a link to a page that is not published or a maturity that is not on the ladder in docs/areas.yaml).
+#
+# Rules (the owner, 2026-10-31): every picture is a real output of our tools or a drawing of something real, with the
+# number it computed in the caption; no stock or outside images. A picture from a project credits it (`credit`).
+# `href` is a repo page (published on the site) or a full URL; a fits tile without a picture shows its `cmd` (a
+# block that is built) or, for an idea, that it is not built yet. `fit: cover` fills the tile from the top (tall charts);
+# the default shows the whole picture. Room is left for Gyropup's hip-frame before/after FEA and its sweep chart
+# (Valpatel/gyropup#29): add them here when they land.
+
+reel:
+  - img: docs/img/gyropup/wheel-link-fea.webp
+    tool: cadagent.fea
+    title: Stress in a printed leg link
+    caption: Gyropup's wheel link in a turn, 52,134 quadratic tetrahedra, PA6-CF along the layers (humid). Safety factor 3.15 against a target of 2.0.
+    alt: Von Mises stress in Gyropup's wheel link, highest beside the axle bore, with a colour bar from 0 to 15 MPa
+    href: docs/toolkit.md
+    credit: gyropup
+  - img: docs/img/motion/rib-in-counterbore.svg
+    tool: cad-agent holes
+    title: A rib that refills a counterbore
+    caption: Two build orders of the same part. A rib added after the holes were cut fills both; the hole check finds it.
+    alt: Section through a screw hole in two build orders; a rib unioned after the hole and counterbore were cut refills both
+    href: docs/common-issues.md
+  - img: docs/img/motion/connector-window.svg
+    tool: cadagent.connectors
+    title: A port window sized from the mating plug
+    caption: An RJ45 plug pushed in. Through a window sized from the jack's box its latch hits the wall; through one derived from the plug it clears by 0.5 mm.
+    alt: An RJ45 plug pushed along its mating axis through two panel windows; only the window derived from the plug clears the latch
+    href: docs/common-issues.md
+  - img: docs/img/topology.jpg
+    tool: cadagent.topopt
+    title: Topology optimisation
+    caption: An enclosure floor with its mounting posts under load. Only the material that carries load is kept.
+    alt: Topology optimisation of an enclosure floor, with the remaining load paths between the mounting posts
+    href: docs/toolkit.md
+  - img: docs/img/motion/hinge-sweep.svg
+    tool: cad-agent gates
+    title: When a moving arm first hits the frame
+    caption: Swept from 0 to 60 degrees in 12 poses, then bisected. Contact starts between 44.89 and 44.91 degrees.
+    alt: An arm swept from 0 to 60 degrees; it first shares volume with the frame beam between 44.89 and 44.91 degrees
+    href: docs/gates.md
+  - img: docs/img/gyropup/leg-render.webp
+    tool: cadagent.render
+    title: A render straight from the CAD
+    caption: Gyropup's five-bar leg standing, 300 mm from hip to axle, on two RS-04 actuators.
+    alt: Render of Gyropup's five-bar leg with two actuators and the wheel, standing
+    href: https://gyropup.com
+    credit: gyropup
+  - img: docs/img/fea.jpg
+    tool: cadagent.fea
+    title: A ribbed lid under a 300 N press
+    caption: Stress as a fraction of the material's strength, so the colour reads as margin, not megapascals.
+    alt: FEA of a ribbed enclosure lid under a 300 N press, coloured by stress over strength
+    href: docs/toolkit.md
+  - img: docs/img/motion/module-insertion.svg
+    tool: cad-agent gates
+    title: A module that slides in as one piece
+    caption: A carrier and its board checked on their own bench, then inserted into the parent as one rigid body and withdrawn again.
+    alt: A preassembled module inserted into its parent as one rigid body, then withdrawn
+    href: docs/subassembly-insertion.md
+  - img: docs/img/motion/search-front.svg
+    tool: cad-agent optimise
+    title: Searching designs by cost and mass
+    caption: Sixty seeded trials as they arrive. Four are feasible, and trials 1 and 47 form the Pareto front.
+    alt: Sixty seeded random design trials plotted by cost and mass as they arrive, with the Pareto front marked
+    href: docs/explore.md
+  - img: docs/img/compliant/example-1.svg
+    tool: cad-agent snapfit
+    title: A snap fit computed from the guide
+    caption: The Covestro guide's Example I, recomputed and drawn to scale. Root strain 2.00 percent, as the guide gives.
+    alt: A tapered polycarbonate cantilever hook drawn to scale with its deflection, root strain 2.00 percent
+    href: docs/compliant.md
+  - img: docs/img/research/process-sheet-metal.svg
+    tool: process profiles
+    title: One rule, many sources
+    caption: The same sheet-metal rule from different sources, evaluated at 1.5 mm, beside one shop's real tooling.
+    alt: The same sheet-metal rule from several sources evaluated at 1.5 mm thickness and radius
+    href: research/process-profiles.md
+    fit: cover
+
+# Where cad-agent fits. The make layer is other people's work, credited; cad-agent's tiles show the maturity of the
+# areas they draw on (docs/areas.yaml), or a stated one with the reason.
+fits:
+  make:
+    - name: text-to-cad
+      upstream: earthtojake/text-to-cad
+      does: build123d models, STEP and 3MF, drawings, DfAM checks, print handoff
+      note: vendored in vendor/, pinned, telemetry and update check removed by patch
+      href: https://github.com/Valpatel/cad-agent/tree/dev/vendor/text-to-cad
+    - name: build123d and CadQuery
+      does: The code-CAD kernels (both on OCP); our own tools and projects are CadQuery
+      href: research/landscape.md
+    - name: KiCad MCP servers
+      does: Schematics and boards; kicad-mcp-pro and kicad-happy are vendored and pinned
+      href: research/landscape.md
+  ours:
+    - title: Assembly gates and evidence
+      does: Every pair of parts checked for interference, then walls, fastener stacks, motion ranges and assembly order; connector windows from the board's STEP; a review site and package
+      areas: [design-process, review-and-evidence, housings-and-enclosures, publishing]
+      href: docs/gates.md
+      img: docs/img/motion/hinge-sweep.svg
+    - title: Simulation
+      does: FEA, CFD, topology optimisation and motion, each with its assumptions stated
+      areas: [structural-fea, cfd, topology-optimisation, motion-and-dynamics]
+      href: research/fea-and-process-tools.md
+      img: docs/img/gyropup/wheel-link-fea.webp
+    - title: Electrical review around real boards
+      does: KiCad ERC and DRC evidence bound to the sources it checked
+      areas: [circuit-boards]
+      href: docs/pcb.md
+      cmd: cad-agent pcb-check evidence.json
+    - title: Cited rules and calculators
+      does: Snap fits from the Covestro and DuPont guides, tested against their worked examples, and lessons from real builds
+      areas: [compliant-mechanisms]
+      href: docs/compliant.md
+      img: docs/img/compliant/example-1.svg
+    - title: A verified catalogue
+      does: Which outside tool to use for a job, text-to-cad included, with licences and dates checked
+      maturity: surveyed
+      why: a survey with dates and licences; nothing here is a tool
+      href: research/landscape.md
+      img: docs/img/research/landscape-stars.svg
+    - title: Standard evals
+      does: The same jobs run by models and harnesses with and without the toolkit
+      areas: [evaluation]
+      href: https://github.com/Valpatel/cad-agent/issues/142

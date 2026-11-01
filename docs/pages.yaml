@@ -90,7 +90,7 @@ docs/gates.md:
       shows: output
       tool: cad-agent review-packet
       on: fixture
-      caption: "Two states on the gate bench as built, in a plan cut through the hopper's cavity, with four balls clear of its side walls. Every ball contains against the cavity. The four lower balls rest on its floor and are touching the hopper, which still counts as inside (0 mm³ outside); the four above them are 4.33 mm clear. The containment gate's 21 checks pass."
+      caption: "Two states on the gate bench as built, in a plan cut through the hopper's cavity, with four balls clear of its side walls. Every ball's state against the cavity is contains. The four lower balls rest on its floor and are touching the hopper, which still counts as inside (0 mm³ outside); the four above them are 4.33 mm clear. The containment gate's 21 checks pass."
       alt: A plan section through the gate bench's hopper, its walls a blue ring round four orange balls, all inside the cavity
     - after: verdicts
       img: docs/img/packets/ball_through_wall-store-findings.webp
@@ -833,7 +833,7 @@ docs/toolkit.md:
       shows: output
       tool: cadagent.simulation.fea
       on: gyropup
-      caption: "A study with the table's pa6_cf_xy row: Gyropup's wheel link in a turn (case E1), 52,134 P2 tetrahedra, PA6-CF along the layers (humid). Safety factor 3.15 against a target of 2.0, scored against the in-plane strength, 40.8 MPa. The layer check, against 18.1 MPa across the layers, was not run for this picture. A prediction from the CAD, not a test."
+      caption: "Gyropup's wheel link in a turn (case E1), 52,134 P2 tetrahedra, PA6-CF along the layers (humid), from a run made before #157 lowered the humid strength. Peak von Mises 15.55 MPa; safety factor 3.15 against a target of 2.0, scored against the in-plane strength that run used, about 49 MPa. Today's pa6_cf_xy row (40.8 MPa) would give 2.62. The layer check (18.1 MPa across the layers) was not run for this picture. A prediction from the CAD, not a test."
       alt: Von Mises stress in Gyropup's wheel link, highest beside the axle bore, with a colour bar from 0 to 15 MPa
     - after: stiffness-and-strength-cadagentsimulationfea
       below: render(png, scale=None

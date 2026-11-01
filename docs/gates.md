@@ -490,7 +490,7 @@ holds a grounded part, or a held moving instance whose `fixed` part is in a grou
 | `relation:<a>\|<b>` | the kernel could not decide the pair (`unknown`) |
 | `tolerances` | (warning) the declarations' `touch_mm` differs from the given table's, which is used |
 
-**Limits.** The verdict's `not_checked` lists what the gate could not check: non-geometric interfaces (`electrical`,
+**What it could not check.** The verdict's `not_checked` lists non-geometric interfaces (`electrical`,
 `thermal`, `fluid`, `other`), fasteners that could not be measured, `contains` whose cavity is not registered,
 interfaces whose pairs are all ignored, and pairs the table skipped.
 

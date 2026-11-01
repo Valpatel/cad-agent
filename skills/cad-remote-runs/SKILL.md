@@ -43,8 +43,9 @@ flowchart TD
 
   If `import gmsh` then fails because version `OPENSSL_3.4.0` is not found (the venv's Python loaded the system
   OpenSSL first), start the run with `LD_PRELOAD=<gmsh-env>/lib/libcrypto.so.3:<gmsh-env>/lib/libssl.so.3`. Record
-  which gmsh build the run used: two builds of one version can mesh a part differently. The FEA section of
-  `docs/toolkit.md` in cad-agent has the details.
+  which gmsh build the run used (`micromamba list -p <gmsh-env> gmsh`): two builds of one version can mesh a part
+  differently, and the newest 4.15.2 build links a newer OCCT (8.0.1) than cadquery-ocp's (7.9.3). The FEA section
+  of `docs/toolkit.md` in cad-agent has the details.
   </details>
 
 ## Starting it

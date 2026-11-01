@@ -387,15 +387,17 @@ ln -s <gmsh-env>/lib/python3.*/site-packages/gmsh.py \
 python -c "import hashlib, gmsh; gmsh.initialize(); print(gmsh.__version__)"   # the check
 ```
 
-`gmsh.py` loads the `libgmsh` found next to its real path, so the link is enough. If the check fails with an
-`OSError` saying version `OPENSSL_3.4.0` was not found, the venv's Python has already loaded the system OpenSSL
-(anything that imports `hashlib` or `ssl` first does), and a library in the gmsh environment needs a newer one.
-Preload the environment's own OpenSSL in the run's launcher:
+`gmsh.py` looks for `libgmsh` relative to its own real path (in the environment's `lib/`), so the link is enough. If the
+check fails with an `OSError` saying version `OPENSSL_3.4.0` was not found, the venv's Python has already loaded the
+system OpenSSL (anything that imports `hashlib` or `ssl` first does), and a library in the gmsh environment needs a
+newer one. Preload the environment's own OpenSSL in the run's launcher:
 `LD_PRELOAD=<gmsh-env>/lib/libcrypto.so.3:<gmsh-env>/lib/libssl.so.3`.
 
 Without pypardiso the solver falls back to SciPy, and to pyamg for big meshes, which is slower. pyamg has no aarch64
 wheel, so pip builds it from source; that needs a C++ compiler. A conda-forge gmsh is a different build from the PyPI
-wheel and can mesh a part slightly differently, so compare before and after on one build.
+wheel and can mesh a part slightly differently, so compare before and after on one build. gmsh reads the STEP with
+its own OCCT: the newest conda-forge build of 4.15.2 (build 11) links OCCT 8.0.1, while cadquery-ocp 7.9.3.1.1 and
+the earlier 4.15.2 builds use OCCT 7.9.3.
 </details>
 
 **Printed materials** (`pla`, `petg`, `petg_cf`, `pa_cf`, `pa6_cf_xy`, `pa6_cf_z`, `tpu95`) take their numbers from the

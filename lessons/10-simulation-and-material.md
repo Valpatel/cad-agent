@@ -34,6 +34,11 @@
 - **Rule:** report deflection, a percentile stress (99.9th) and the peak with its location. One element at a notch is a
   mesh-dependent spike; a stiffness loss is real. Compare against the previous revision computed the same way, with
   the acceptance criteria fixed before the sweep.
+- **Later correction (#125):** these deflections used `MATERIALS['pla']` at 2700 MPa. That was close to the data sheet's
+  in-plane *bending* modulus; the tensile modulus across the layers is 2060 MPa, now the default. With it each
+  deflection reads about 31 % higher (2.4 mm becomes about 3.1 mm, 0.87 mm about 1.14 mm). The stresses do not change,
+  and the ranking between revisions holds, because every run used the same modulus. A deflection limit fixed in
+  millimetres must be re-checked against the new numbers.
 
 ### Thermal models of printed enclosures
 - Check the plastic, not just the chip. PLA's heat-deflection temperature is 57 °C and PETG's is 69 °C (Bambu TDS); air

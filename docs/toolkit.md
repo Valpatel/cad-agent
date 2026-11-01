@@ -292,10 +292,31 @@ numbers, and a `categories` entry that is not a list, names a part that does not
 
 `pip install -e ".[cad,fea]"`. `Study(shape_or_step, material, mesh_mm)` meshes any part with gmsh (P2 tetrahedra),
 `fix()`/`force()`/`torque()` pick faces with selectors (`plane_at`, `cylinder_at`, `in_box`, `near`, `any_of`). A `torque()` is a pure couple about the loaded faces' own centroid (no net force, exactly the torque along the axis); its `point` does not move the axis, so a force at a distance needs its own `force()`. Then
-`solve()` returns deflection, stiffness, the design von Mises stress and the safety factor against `MATERIALS` (printed
-materials carry their weak, layer-direction strength). Stress spikes in the elements touching a clamp or a load patch
+`solve()` returns deflection, stiffness, the design von Mises stress and the safety factor against `MATERIALS`. Stress spikes in the elements touching a clamp or a load patch
 are artefacts of the idealised support, so the design stress and every failure view leave them out ("support
 patches": capped at the design stress, never shown as failed, their share of the surface reported).
+
+**Printed materials** (`pla`, `petg`, `petg_cf`, `pa_cf`, `pa6_cf_xy`, `pa6_cf_z`, `tpu95`) take their numbers from the
+filament maker's data sheet (100 % infill test bars). Each names its sheet (`source`, an id in the reference registry,
+and the edition in `note`) and the print direction it is for (`direction`, also in the result and the viewer):
+
+| Key | E (MPa) | Direction | Strength (MPa) | Data sheet |
+|---|---:|---|---:|---|
+| `pla` | 2060 | Z | 25 | Bambu PLA Basic V3.0 (X-Y 2580; Z tensile strength 31) |
+| `petg` | 1120 | Z | 20 | Bambu PETG Basic V2.0 (X-Y 1460; V3.0 lists 2780 / 2550, not used) |
+| `petg_cf` | 1340 | Z | 22 | Bambu PETG-CF V3.0 (X-Y 2460; Z tensile strength 29) |
+| `pa_cf` | 1820 | Z | 40 | Bambu PAHT-CF V3.0, dry (Z bending, the sheet's lowest; Z tensile 2180, X-Y 3860) |
+| `pa6_cf_xy` | 2126 | X-Y | 49 | Bambu PA6-CF V3.0, dry X-Y x0.6 humid x0.8 print |
+| `pa6_cf_z` | 1042 | Z | 23 | Bambu PA6-CF V3.0, dry Z x0.6 humid x0.8 print |
+| `tpu95` | 7.4 | Z | 8 | Bambu TPU 95A HF V1.0 (X-Y 9.8; Polymaker lists 33.6): indicative only |
+
+The modulus is the sheet's lowest, across the layers, because the solver is isotropic and does not know how the part
+was printed: deflections err high rather than low. Under forces and torques the stress does not depend on E, so only
+deflection and stiffness change with it. A part whose bending stays in the layer plane is stiffer; give it the X-Y
+modulus and keep the weak-direction strength: `dataclasses.replace(MATERIALS['petg_cf'], E_mpa=2460, direction='X-Y')`.
+Before v0.5.0 the printed moduli were 31-147 % higher (PLA 2700, PETG 1800, PETG-CF 2900, PAHT-CF 4500), so
+deflections computed with them read 24-60 % low (#125). A real print, with walls, seams and sparse infill, is softer
+and weaker than a test bar, and no simulation proves that a part fits or holds: check it against a printed coupon.
 
 Stresses are element corner peaks, never averaged. The P2 strain is linear in a tetrahedron, so its extremes sit at the
 corners; the safety factor, the hot spots and the per-vertex colours all use the highest corner stress there. The

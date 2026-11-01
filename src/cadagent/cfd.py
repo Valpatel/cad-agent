@@ -34,6 +34,7 @@ import re
 import shutil
 import subprocess
 import warnings
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -863,10 +864,27 @@ def _series(path: Path):
     return [[float(x.strip('()')) for x in r] for r in rows]
 
 
+def _has_rows(path: Path) -> bool:
+    with open(path, errors='replace') as fh:
+        return any(l.strip() and not l.startswith('#') for l in fh)
+
+
 def _outputs(pp: Path, name: str, kind: str = 'volFieldValue') -> list:
-    """Every file one function object wrote, oldest solve first. Each solve (the first, then each continuation from
-    the latest saved time) writes its own postProcessing/<region>/<name>/<start time>/ folder."""
-    return sorted(pp.glob(f'**/{name}/*/{kind}.dat'), key=lambda p: float(p.parent.name))
+    """Every file one function object logged rows to, oldest solve first. Each solve (the first, then each
+    continuation from the latest saved time) writes postProcessing/<region>/<name>/<start time>/<kind>.dat. A solve
+    that starts from a time an earlier one already started from (a run that stopped before its next save, continued)
+    finds that file there and writes <kind>_<start time>.dat beside it. A solve that crashed at start leaves a file
+    with only its header: it logged nothing, so it is left out, as if it had not run (it replaces no rows and is not a
+    restart)."""
+    pat = re.compile(rf'{re.escape(kind)}(?:_(.+))?\.dat')
+
+    def order(p):                                 # by start time; within a folder, <kind>.dat before <kind>_<t>.dat
+        sfx = pat.fullmatch(p.name).group(1)
+        try:
+            return float(p.parent.name), sfx is not None, float(sfx) if sfx else 0.0
+        except ValueError:
+            return float(p.parent.name), True, math.inf
+    return sorted((p for p in pp.glob(f'**/{name}/*/{kind}*.dat') if pat.fullmatch(p.name) and _has_rows(p)), key=order)
 
 
 def _whole_run(files, rows_of=_series) -> list:
@@ -927,8 +945,8 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
     pp = cd / 'postProcessing'
     out = {'case': meta['name'], 'ambient_c': meta['ambient_c'], 'solids': {}, 'fans': {}, 'limits': meta['limits']}
 
-    def fo(name, kind='volFieldValue'):
-        hits = [h for h in _outputs(pp, name, kind) if _last_row(h)]       # a restart that crashed leaves an empty file
+    def fo(name, kind='volFieldValue'):           # the newest solve's file (one that crashed at start is left out)
+        hits = _outputs(pp, name, kind)
         return hits[-1] if hits else None
 
     for s in meta['solids']:
@@ -995,8 +1013,12 @@ def read_results(case_dir, case: Optional[ThermalCase] = None) -> dict:
         out['residuals'] = {'iteration': its, **cols}
         out['residuals_every'] = every            # each point is the largest residual over this many iterations
         out['iterations'] = int(rows[-1][0]) if rows else 0
-    starts = {float(f.parent.name) for f in res + _outputs(pp, 'flux_T', 'surfaceFieldValue')}
-    out['restarts'] = [int(s) for s in sorted(starts) if s > 0]          # where each continuation began
+    # where each continuation began, one entry per solve after the first (two can start from the same saved time);
+    # from whichever of the residual and heat-flux outputs holds more solves at that time
+    starts = Counter()
+    for files in (res, _outputs(pp, 'flux_T', 'surfaceFieldValue')):
+        starts |= Counter(float(f.parent.name) for f in files)
+    out['restarts'] = [int(s) for s in sorted(starts.elements())[1:]]
     out['planned_iterations'] = meta.get('iterations')
     logs = sorted(cd.glob('log.solve*'), key=lambda p: p.stat().st_mtime)
     if logs:                                  # the newest solve (a calibration restart writes its own log)

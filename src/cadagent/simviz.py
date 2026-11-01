@@ -588,7 +588,11 @@ def _convergence_figure(results: dict, title: str):
     if whole:
         span = f'Iterations 1–{last}' if last else 'No iterations'
         if restarts:
-            shown = ', '.join(str(r) for r in restarts[:8]) + (', …' if len(restarts) > 8 else '')
+            n = {}                                # two continuations can start from the same saved time
+            for r in restarts:
+                n[r] = n.get(r, 0) + 1
+            at = [f'{r} ({k}×)' if k > 1 else str(r) for r, k in n.items()]
+            shown = ', '.join(at[:8]) + (', …' if len(at) > 8 else '')
             span += f' in {len(restarts) + 1} solves (thin lines: continuations from {shown})'
         if window:
             span += f'. Shaded: the window the convergence check measured, iterations {window[0]}–{window[1]}'

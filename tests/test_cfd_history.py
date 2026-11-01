@@ -73,6 +73,42 @@ def test_multi_region_run_that_ended_early(tmp_path):
     assert r['steady'] is False and r['converged'] is False
 
 
+def test_a_continuation_from_the_same_saved_time_is_read(tmp_path):
+    # solids-ended-early continued again: the stopped solve saved nothing after 200, so the next one starts from 200
+    # too, and OpenFOAM writes its rows to <kind>_200.dat beside the stopped solve's <kind>.dat
+    d = recorded('solids-continued-again', tmp_path)
+    r = cfd.read_results(d)
+    assert r['solver_finished'] is True and r['solver_log'] == 'log.solve.1793000003'
+    assert r['iterations'] == 300 and r['restarts'] == [100, 200, 200]      # one entry per continuation
+    assert r['residuals']['iteration'] == [float(i) for i in range(1, 301)]
+    for name, h in r['T_max_history'].items():
+        its = [p[0] for p in h]
+        assert its[-1] == 300 and its == sorted(set(its))      # the stopped solve's rows after 200 replaced, not repeated
+        assert h[-1][1] == pytest.approx(r['solids'][name]['max_c'], abs=0.01)
+    assert r['monitors']['heat_out_w']['points'][-1] == [300, pytest.approx(r['heat_out_w'], abs=0.01)]
+    # judged on the newest solve's rows (210-300), not the stopped one's (210-230)
+    newest = np.array(cfd._series(d / 'postProcessing/chip/T_max_chip/200/volFieldValue_200.dat'))
+    tail = newest[newest[:, 0] >= newest[-1, 0] * 0.8]
+    assert r['convergence']['chip_max_c_change'] == round(float(tail[-1, 1] - tail[0, 1]), 2)
+    assert r['convergence_window'] == [240, 300]
+
+
+def test_a_continuation_that_crashed_at_start_replaces_nothing(tmp_path):
+    # the first solve saved 100, diverged and logged to 150; the continuation from 100 crashed at start and left
+    # header-only files. It logged nothing, so the histories, the headline values and the convergence window all
+    # describe the same rows: the first solve's, divergence included
+    r = cfd.read_results(recorded('solids-crashed-restart', tmp_path))
+    assert r['solver_finished'] is False and r['solver_log'] == 'log.solve.1793000001'
+    assert r['iterations'] == 150 and r['restarts'] == []
+    assert r['residuals']['iteration'] == [float(i) for i in range(1, 151)]
+    for name, h in r['T_max_history'].items():
+        assert h[-1][0] == 150 and h[-1][1] == pytest.approx(r['solids'][name]['max_c'], abs=0.01)
+        assert h[-1][1] > 500                                   # the divergence is shown, not cut off at the save
+    assert r['monitors']['heat_out_w']['points'][-1] == [150, pytest.approx(r['heat_out_w'], abs=0.01)]
+    assert r['convergence_window'] == [120, 150]
+    assert r['steady'] is False and r['converged'] is False
+
+
 def test_a_long_residual_history_keeps_the_largest_value_of_each_run(tmp_path, monkeypatch):
     d = recorded('fins-no-solids', tmp_path)
     monkeypatch.setattr(cfd, 'RESIDUAL_POINTS', 50)

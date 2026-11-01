@@ -88,6 +88,49 @@ def test_a_multi_region_run_that_stopped_early(tmp_path):
     matplotlib.pyplot.close(fig)
 
 
+def _shaded(ax):
+    """The x range of the shaded convergence window."""
+    for pt in ax.patches:
+        if matplotlib.colors.to_hex(pt.get_facecolor()) == simviz.WINDOW:
+            xs = pt.get_path().transformed(pt.get_patch_transform()).vertices[:, 0] if hasattr(pt, 'get_width') \
+                else pt.get_xy()[:, 0]
+            return [float(xs.min()), float(xs.max())]
+    return None
+
+
+def test_a_continuation_from_the_same_saved_time_is_drawn(tmp_path):
+    # the stopped solve's run continued again from 200 and finished: the chart shows it, and no stop
+    r = cfd.read_results(recorded('solids-continued-again', tmp_path))
+    fig = _figure(r)
+    p = _panels(fig)
+    head = _words(fig)
+    assert 'Iterations 1–300 in 4 solves (thin lines: continuations from 100, 200 (2×))' in head
+    assert 'Stopped early' not in head
+    solids = p['Hottest temperature in each solid region']
+    for ln in solids.get_lines():
+        if ln.get_label() in ('chip', 'plate'):
+            assert ln.get_xdata()[-1] == 300
+    for ax in p.values():
+        assert _vlines(ax, simviz.ACCENT) == [] and _shaded(ax) == [240, 300]
+    matplotlib.pyplot.close(fig)
+
+
+def test_a_crashed_continuation_shades_rows_the_lines_show(tmp_path):
+    # the continuation from 100 crashed at start; the window and the headline values are the first solve's last rows,
+    # and so are the lines' ends
+    r = cfd.read_results(recorded('solids-crashed-restart', tmp_path))
+    fig = _figure(r)
+    p = _panels(fig)
+    assert 'Iterations 1–150. Shaded: the window the convergence check measured, iterations 120–150.' in _words(fig)
+    assert 'Stopped early at iteration 150 of 300 planned' in _words(fig)
+    for ax in p.values():
+        assert _vlines(ax, simviz.ACCENT) == [150] and _vlines(ax, simviz.MUTED) == []
+        assert _shaded(ax) == [120, 150]
+        ends = [ln.get_xdata()[-1] for ln in ax.get_lines() if len(ln.get_xdata()) > 2]
+        assert ends and max(ends) == 150
+    matplotlib.pyplot.close(fig)
+
+
 def test_panels_without_data_say_why():
     fig = _figure({'solids': {'chip': {}}, 'T_max_history': {}, 'residuals': {}, 'monitors': {}, 'restarts': [],
                    'convergence': {}})

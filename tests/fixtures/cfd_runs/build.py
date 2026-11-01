@@ -10,6 +10,13 @@ fins-no-solids      air only: a fan blowing into an exchanger fin block (a porou
 solids-ended-early  air and two solid regions (a 5 W chip on an aluminium plate). The first solve, to 300, saved
                     time 100 and then diverged and stopped at 150; a continuation from 100 reached 200; the next
                     one, planned to 300, stopped at 236.
+solids-continued-again
+                    solids-ended-early continued once more: the stopped solve saved nothing after 200, so the next
+                    one starts from 200 again and finishes at 300. Its 200/ folders already hold <kind>.dat, so it
+                    writes <kind>_200.dat beside them, as OpenFOAM does.
+solids-crashed-restart
+                    the same first solve (saved 100, diverged, stopped at 150); the continuation from 100 crashed at
+                    start and left header-only files in every 100/ folder.
 """
 from __future__ import annotations
 
@@ -27,6 +34,14 @@ SOLVER = {'U': 'DILUPBiCGStab', 'h': 'DILUPBiCGStab', 'k': 'DILUPBiCGStab', 'ome
 LIMITS = ['steady RANS (k-omega SST): natural-convection plumes really fluctuate',
           'converged means the temperatures, fan flow and heat leaving stopped changing and the heat leaving matches the '
           'heat put in (energy balance), not that the residuals reached a tolerance']
+
+
+def dat(folder: Path, kind: str, start: int) -> Path:
+    """The file a solve starting at ``start`` writes one function object's rows to: <kind>.dat in its start-time folder,
+    or <kind>_<start>.dat when an earlier solve from the same time already wrote <kind>.dat there (OpenFOAM's naming;
+    it happens when a run that stopped before its next save is continued)."""
+    p = folder / f'{kind}.dat'
+    return folder / f'{kind}_{start}.dat' if p.exists() else p
 
 
 def _num(v):
@@ -153,43 +168,64 @@ def fins_no_solids(case: Path):
     (case / 'cadagent-case.json').write_text(json.dumps(meta, indent=2) + '\n')
 
 
-def solids_ended_early(case: Path):
+DIVERGED = '--> FOAM FATAL ERROR: Maximum number of iterations exceeded'
+
+
+def solids_run(case: Path, name: str, solves):
+    """Air and two solids (a 5 W chip on an aluminium plate). solves: (start, last logged, finished, how it stopped), in
+    the order they ran; a solve that crashed at start (last == start) leaves header-only files. The first solve
+    diverges after its save at 100."""
     rng = np.random.default_rng(51)
-    # (start, last logged, finished): the first solve diverged after its last save (100) and stopped at 150
-    solves = [(0, 150, False), (100, 200, True), (200, 236, False)]
-    meta = {'name': 'solids-ended-early', 'solver': 'chtMultiRegionSimpleFoam (OpenFOAM v2512)', 'ambient_c': 25.0,
+    restarts = sorted({s for s, *_ in solves[1:]})
+    meta = {'name': name, 'solver': 'chtMultiRegionSimpleFoam (OpenFOAM v2512)', 'ambient_c': 25.0,
             'domain_mm': [[-40, -40, 0], [80, 80, 100]], 'base_cell_mm': 10.0, 'iterations': 300, 'ground': 'open',
             'solids': [{'name': 'chip', 'material': 'Silicon', 'k_w_mk': 120, 'power_w': 5.0, 'note': '', 'cell_mm': 1.25},
                        {'name': 'plate', 'material': 'Aluminium 6061', 'k_w_mk': 167, 'power_w': 0.0, 'note': '', 'cell_mm': 1.25}],
             'walls': [{'name': 'stand', 'cell_mm': 5.0}], 'contacts': [{'between': ['chip', 'plate'], 'thickness_mm': 0.1, 'k_w_mk': 4.0}],
             'fans': [], 'porous': [], 'heat_input_w': 5.0, 'limits': LIMITS}
     pp = case / 'postProcessing'
-    for start, last, _ in solves:
+    for start, last, _, _ in solves:
         diverge = 115 if start == 0 else None
-        solver_info(pp / 'domain0' / 'residuals' / str(start) / 'solverInfo.dat',
-                    [(t, residuals(rng, t, [100, 200], 60, diverge)) for t in range(start + 1, last + 1)])
+        solver_info(dat(pp / 'domain0' / 'residuals' / str(start), 'solverInfo', start),
+                    [(t, residuals(rng, t, restarts, 60, diverge)) for t in range(start + 1, last + 1)])
         ts = list(range(start + 10, last + 1, 10))
         blow = [(25 * math.exp((t - 115) / 10) if diverge and t > 115 else 0.0) for t in ts]
-        for name, rise, tau, cells in (('chip', 60.0, 90, 1056), ('plate', 54.0, 100, 4200)):
-            vol_field(pp / name / f'T_max_{name}' / str(start) / 'volFieldValue.dat', f'all {name}', 'max(T)',
+        for solid, rise, tau, cells in (('chip', 60.0, 90, 1056), ('plate', 54.0, 100, 4200)):
+            vol_field(dat(pp / solid / f'T_max_{solid}' / str(start), 'volFieldValue', start), f'all {solid}', 'max(T)',
                       [(t, T0 + 25 + rise * (1 - math.exp(-t / tau)) + b) for t, b in zip(ts, blow)], cells, 2.5e-7)
-            vol_field(pp / name / f'T_volAverage_{name}' / str(start) / 'volFieldValue.dat', f'all {name}', 'volAverage(T)',
-                      [(t, T0 + 25 + 0.9 * rise * (1 - math.exp(-t / tau)) + b) for t, b in zip(ts, blow)], cells, 2.5e-7)
-        vol_field(pp / 'domain0' / 'T_max_domain0' / str(start) / 'volFieldValue.dat', 'all domain0', 'max(T)',
+            vol_field(dat(pp / solid / f'T_volAverage_{solid}' / str(start), 'volFieldValue', start), f'all {solid}',
+                      'volAverage(T)', [(t, T0 + 25 + 0.9 * rise * (1 - math.exp(-t / tau)) + b) for t, b in zip(ts, blow)],
+                      cells, 2.5e-7)
+        vol_field(dat(pp / 'domain0' / 'T_max_domain0' / str(start), 'volFieldValue', start), 'all domain0', 'max(T)',
                   [(t, T0 + 25 + 40 * (1 - math.exp(-t / 60))) for t in ts], 98000, 1.4e-3)
         phi = [rng.normal(0, 2e-8) for _ in ts]
         q = [5 * (1 - math.exp(-t / 140)) + rng.normal(0, 0.05) for t in ts]
-        surface_field(pp / 'domain0' / 'flux_mass' / str(start) / 'surfaceFieldValue.dat', 'sum(phi)', list(zip(ts, phi)), weight=False)
-        surface_field(pp / 'domain0' / 'flux_T' / str(start) / 'surfaceFieldValue.dat', 'weightedSum(T)',
+        surface_field(dat(pp / 'domain0' / 'flux_mass' / str(start), 'surfaceFieldValue', start), 'sum(phi)',
+                      list(zip(ts, phi)), weight=False)
+        surface_field(dat(pp / 'domain0' / 'flux_T' / str(start), 'surfaceFieldValue', start), 'weightedSum(T)',
                       [(t, qq / CP + (25 + T0) * p) for t, qq, p in zip(ts, q, phi)], weight=True)
-    for i, (start, last, finished) in enumerate(solves):
-        log(case / ('log.solve' if i == 0 else f'log.solve.{1793000000 + i}'), start + 1, last, finished,
-            crash='--> FOAM FATAL ERROR: Maximum number of iterations exceeded' if i == 0 else '')
+    for i, (start, last, finished, crash) in enumerate(solves):
+        log(case / ('log.solve' if i == 0 else f'log.solve.{1793000000 + i}'), start + 1, last, finished, crash=crash)
     (case / 'cadagent-case.json').write_text(json.dumps(meta, indent=2) + '\n')
 
 
+def solids_ended_early(case: Path):
+    solids_run(case, 'solids-ended-early', [(0, 150, False, DIVERGED), (100, 200, True, ''), (200, 236, False, '')])
+
+
+def solids_continued_again(case: Path):
+    solids_run(case, 'solids-continued-again', [(0, 150, False, DIVERGED), (100, 200, True, ''), (200, 236, False, ''),
+                                                (200, 300, True, '')])
+
+
+def solids_crashed_restart(case: Path):
+    solids_run(case, 'solids-crashed-restart', [(0, 150, False, DIVERGED),
+                                                (100, 100, False, '--> FOAM FATAL ERROR: Floating point exception')])
+
+
 if __name__ == '__main__':
-    for name, make in (('fins-no-solids', fins_no_solids), ('solids-ended-early', solids_ended_early)):
+    for name, make in (('fins-no-solids', fins_no_solids), ('solids-ended-early', solids_ended_early),
+                       ('solids-continued-again', solids_continued_again), ('solids-crashed-restart', solids_crashed_restart)):
         shutil.rmtree(HERE / name, ignore_errors=True)
         (HERE / name).mkdir()
         make(HERE / name)

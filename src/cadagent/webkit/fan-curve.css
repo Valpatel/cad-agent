@@ -4,13 +4,15 @@
    script sets data-theme (light or dark) from the page's color-scheme; override the colours with the --fc-* custom
    properties. color-scheme is set on the panel, not the element, so the element still reads the page's. */
 cad-fan-curve{--fc-ink:#173d3c;--fc-muted:#526863;--fc-sage:#6f8a80;--fc-mist:#eef1e4;--fc-back:#fffdf5;--fc-peach:#ffe1cc;
-  --fc-rust:#bd3a12;--fc-line:#c9d8ca;--fc-panel:276px;display:block;box-sizing:border-box;margin:28px 0;
+  --fc-rust:#bd3a12;--fc-line:#c9d8ca;--fc-panel:248px;display:block;box-sizing:border-box;margin:28px 0;
   border:1px solid var(--fc-line);border-radius:16px;background:var(--fc-back);color:var(--fc-ink);overflow:hidden;
   font-size:14px;line-height:1.35;overflow-wrap:normal}
 cad-fan-curve[data-theme=dark]{--fc-ink:#e6efe9;--fc-muted:#a8bcb5;--fc-sage:#86a499;--fc-mist:#21393a;--fc-back:#11201f;
   --fc-peach:#4b2b1d;--fc-rust:#ff9466;--fc-line:#355450}
-@media(max-width:699.98px){cad-fan-curve{--fc-panel:452px}}
-@media(max-width:479.98px){cad-fan-curve{--fc-panel:484px}}      /* the tiles' words wrap more */
+/* Measured in Chromium and WebKit (WebKit's controls are taller) for the wordiest results, with a few pixels spare. */
+@media(max-width:699.98px){cad-fan-curve{--fc-panel:364px}}
+@media(max-width:479.98px){cad-fan-curve{--fc-panel:382px}}      /* the tiles' words wrap more */
+@media(max-width:359.98px){cad-fan-curve{--fc-panel:428px}}
 cad-fan-curve>img,cad-fan-curve .fc-figure>svg{display:block;width:100%;height:auto;aspect-ratio:640/340;max-width:none;margin:0;border:0}
 /* Until the script defines the element (or if it never loads), the reserved panel says what belongs there. */
 cad-fan-curve:not(:defined)::after{content:"The voltage, system and fan controls and the readouts load here with JavaScript. The chart above is the starting fan.";

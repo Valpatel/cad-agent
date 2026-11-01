@@ -33,6 +33,7 @@ const problems = [];
 try {
   problems.push(...await cantileverProblems());          // the snap-arm explorer on /docs/compliant (#137), below
   problems.push(...await fourbarProblems());             // the four-bar animator on /docs/linkages (#159), below
+  problems.push(...await fanCurveProblems());            // the fan-curve explorer on /docs/fans (#160), below
   problems.push(...await drawnDiagramProblems());        // diagrams drawn by the build: no shift, no script (#132), below
   for (const width of [360, 1366]) for (const route of ROUTES) {
     const context = await browser.newContext({ viewport: { width, height: 800 } });
@@ -537,6 +538,154 @@ try {
   await browser.close();
   server.kill();
   await rm(dir, { recursive: true, force: true });
+}
+
+/** The fan-curve explorer (the kit's <cad-fan-curve>) on /docs/fans, at phone and desktop widths, under the site CSP:
+ * the fan vectors run again in this browser engine; the element replaces its still at exactly the reserved size (no
+ * layout shift), and on a desktop its live chart puts the operating point where the still has it; its panel never
+ * overflows, also after the controls change; every control has a label; the keyboard on the system slider moves the
+ * point into the stall region and the tiles say so; the voltage and arrangement radios, pressed and held the way a
+ * person presses them (#211), change the curve and the verdict; the hover line reads both curves; its tile text fits;
+ * its colours keep their contrast in light and dark; its status line speaks after an input but not on page load; no
+ * console or CSP errors. */
+async function fanCurveProblems() {
+  const out = [], route = '/docs/fans';
+  const frames = (page, count = 3) => page.evaluate(count => new Promise(done => {
+    let n = 0;
+    const next = () => (++n >= count ? done() : requestAnimationFrame(next));
+    requestAnimationFrame(next);
+  }), count);
+  // a press that lasts a few frames, as a person's does, on the label of a radio (#211: a quick click hides a redraw)
+  const hold = async (page, locator) => {
+    await locator.hover();
+    await page.mouse.down();
+    await frames(page, 3);
+    await page.mouse.up();
+  };
+  const contrast = (page, selector, attr = 'color') => page.evaluate(([sel, at]) => {
+    const rgb = c => (c.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+    const lum = c => { const [r, g, b] = rgb(c).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+    const el = document.querySelector(sel);
+    let bg = el, back = 'rgba(0, 0, 0, 0)';
+    while (bg && /rgba\(.*, 0\)|transparent/.test(back = getComputedStyle(bg).backgroundColor)) bg = bg.parentElement;
+    const fore = at === 'color' ? getComputedStyle(el).color : getComputedStyle(el).fill;
+    const [l1, l2] = [lum(fore), lum(back)].sort((x, y) => y - x);
+    return (l1 + 0.05) / (l2 + 0.05);
+  }, [selector, attr]);
+  const overflow = demo => demo.locator('.fc-panel').evaluate(p => {
+    const box = p.getBoundingClientRect();
+    return { over: p.scrollHeight - p.clientHeight, out: [...p.querySelectorAll('*')].filter(n => n.getClientRects().length &&
+      n.getBoundingClientRect().bottom > box.bottom + 0.5 && getComputedStyle(n).position !== 'absolute').length };
+  });
+  const vectors = JSON.parse(await readFile(path.join(root, 'tests/fixtures/formula-vectors.json'), 'utf8'));
+  const fans = vectors.cases.filter(c => /^fan|^systemCoefficient$/.test(c.js) && !c.raises);
+  const still = await readFile(path.join(root, 'docs/img/thermal/fan-curve-explorer.svg'), 'utf8');
+  const stillPoint = still.match(/data-part="point" cx="([\d.]+)" cy="([\d.]+)"/).slice(1).join();
+  for (const width of [360, 1366]) {
+    const height = {};
+    for (const script of [false, true]) {
+      const page = await browser.newPage({ viewport: { width, height: 900 } });
+      const seen = [], say = s => seen.push(s);
+      page.on('console', m => { if (m.type() === 'error' && script) say(`console: ${m.text()}`); });
+      page.on('pageerror', e => say(`page error: ${e.message}`));
+      await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
+      if (!script) await page.route('**/kit/fan-curve.js', r => r.abort());
+      await page.goto(base + route, { waitUntil: 'networkidle' });
+      const demo = page.locator('cad-fan-curve');
+      await demo.scrollIntoViewIfNeeded();
+      height[script] = (await demo.boundingBox())?.height;
+      if (!script) {
+        const img = await demo.locator(':scope > img').evaluate(i => i.complete && i.naturalWidth > 0).catch(() => false);
+        if (!img) say('no still image before the script loads');
+      } else if (!(await demo.locator('svg [data-part=point]').count())) say('the live chart did not render');
+      else {
+        if (width === 1366) {
+          // the port in this engine, on the fan golden vectors (the Node test runs them in V8 only): bit for bit
+          const wrong = await page.evaluate(async cases => {
+            const fx = await import('/kit/formulas.js');
+            return cases.filter(c => JSON.stringify(fx[c.js](...c.args)) !== JSON.stringify(c.expected)).map(c => c.js);
+          }, fans);
+          if (wrong.length) say(`the port differs from the Python in this engine on ${wrong.length} fan vectors: ${wrong.slice(0, 3).join('; ')}`);
+          const live = await demo.locator('[data-part=point]').evaluate(c => [c.getAttribute('cx'), c.getAttribute('cy')].join());
+          if (live !== stillPoint) say(`the live chart's operating point (${live}) is not the still's (${stillPoint})`);
+        }
+        const panel = await overflow(demo);
+        if (panel.over > 0 || panel.out) say(`the panel overflows (${panel.over}px, ${panel.out} elements)`);
+        const unlabelled = await demo.evaluate(d => [...d.querySelectorAll('input')].filter(i => !i.labels?.length).map(i => i.name));
+        if (unlabelled.length) say(`controls without a label: ${unlabelled.join(', ')}`);
+        const tile = k => demo.locator(`[data-out=${k}]`).textContent();
+        const status = () => demo.locator('.fc-status').textContent();
+        if (await status()) say('the status line spoke before anyone touched the demo');
+        if ((await tile('flow')) !== '150 m³/h' || (await tile('verdict')) !== 'Clear of stall') say(`the default reads ${await tile('flow')}, ${await tile('verdict')}`);
+        // the site is light, whatever the reader prefers; the element follows the page
+        await page.emulateMedia({ colorScheme: 'dark' });
+        if ((await demo.getAttribute('data-theme')) !== 'light') say('the demo turned dark on a light page');
+        for (const theme of ['light', 'dark']) {
+          await demo.evaluate((d, t) => d.setAttribute('theme', t), theme);
+          if ((await demo.getAttribute('data-theme')) !== theme) say(`theme="${theme}" is not applied`);
+          for (const [sel, at, min] of [['cad-fan-curve .fc-tile b', 'color', 4.5], ['cad-fan-curve .fc-note', 'color', 4.5],
+            ['cad-fan-curve .fc-tile span:not(.fc-k)', 'color', 4.5], ['cad-fan-curve [data-part=point-label]', 'fill', 4.5]]) {
+            const ratio = await contrast(page, sel, at);
+            if (!(ratio >= min)) say(`${theme}: ${sel} has a contrast of ${ratio.toFixed(2)}, under ${min}`);
+          }
+        }
+        await demo.evaluate(d => d.removeAttribute('theme'));
+        await page.emulateMedia({ colorScheme: 'light' });
+        // the tiles' words fit for every kind of result (one line each at desktop width, cut with an ellipsis if not)
+        for (const attrs of [['16', '2', '4', 'parallel'], ['8', '60', '4', 'series'], ['12', '25', '2', 'parallel'], ['12', '60', '1', 'parallel'], ['12', '12', '1', 'parallel']]) {
+          const cut = await demo.evaluate((d, a) => {
+            ['fan', 'system', 'count', 'arrangement'].forEach((k, i) => d.setAttribute(k, a[i]));
+            return [...d.querySelectorAll('.fc-tile b, .fc-tile span')].filter(n => n.scrollWidth > n.clientWidth + 1).map(n => n.textContent);
+          }, attrs);
+          if (cut.length) say(`${attrs}: tile text cut off: ${cut.join('; ')}`);
+          const after = await overflow(demo);
+          if (after.over > 0 || after.out) say(`${attrs}: the panel overflows (${after.over}px, ${after.out} elements)`);
+        }                                                                               // ends on the page's state
+        // the keyboard: the system slider from 12 to 25 Pa at 100 m³/h puts one fan in its stall region
+        const slider = page.getByRole('slider', { name: /^System: pressure drop/ });
+        await slider.focus();
+        for (let i = 0; i < 13; i++) await slider.press('ArrowRight');
+        if (!/pascals/.test(await slider.getAttribute('aria-valuetext') || '')) say('the system slider has no spoken value');
+        if ((await tile('flow')) !== '112 m³/h' || (await tile('verdict')) !== 'In stall') say(`25 Pa reads ${await tile('flow')}, ${await tile('verdict')}, not 112 m³/h in stall`);
+        if ((await demo.locator('[data-out=verdict-tile]').getAttribute('data-verdict')) !== 'poor') say('the stall verdict is not marked as a warning');
+        // two fans: in parallel each still stalls; in series the pair runs clear (radios pressed and held)
+        const fansSlider = page.getByRole('slider', { name: /^Fans/ });
+        await fansSlider.focus();
+        await fansSlider.press('ArrowRight');
+        await hold(page, demo.locator('label', { hasText: 'Series' }));
+        if (!(await page.getByRole('radio', { name: 'Series' }).isChecked()) || (await tile('flow')) !== '148 m³/h' || (await tile('verdict')) !== 'Clear of stall')
+          say(`two in series at 25 Pa read ${await tile('flow')}, ${await tile('verdict')}, not 148 m³/h clear of stall`);
+        await hold(page, demo.locator('label', { hasText: 'Parallel' }));
+        if ((await tile('flow')) !== '140 m³/h' || (await tile('verdict')) !== 'In stall') say(`two in parallel at 25 Pa read ${await tile('flow')}, ${await tile('verdict')}`);
+        if (!(await demo.locator('[data-part=single]').count())) say('with two fans, one fan\'s curve is not drawn');
+        const curve = await demo.locator('[data-part=fan]').getAttribute('points');
+        await hold(page, demo.locator('label', { hasText: '16 V' }));
+        if ((await demo.locator('[data-part=fan]').getAttribute('points')) === curve || !(await page.getByRole('radio', { name: '16 V' }).isChecked())) say('the 16 V curve did not replace the 12 V one');
+        const moved = await overflow(demo);
+        if (moved.over > 0 || moved.out) say(`after the controls changed, the panel overflows (${moved.over}px, ${moved.out} elements)`);
+        // the hover line reads the fan and the system at the flow under the pointer
+        const chart = await demo.locator('.fc-figure svg').boundingBox();
+        await page.mouse.move(chart.x + chart.width * 0.5, chart.y + chart.height * 0.5);
+        await frames(page, 2);
+        const hover = await demo.locator('[data-part=hover]').evaluate(g => ({ shown: g.getAttribute('visibility'), text: g.querySelector('text').textContent }));
+        if (hover.shown !== 'visible' || !/^\d+ m³\/h: fan (–|[\d.]+ Pa) · system [\d.]+ Pa$/.test(hover.text)) say(`the hover line reads "${hover.text}" (${hover.shown})`);
+        await page.waitForFunction(() => document.querySelector('cad-fan-curve .fc-status')?.textContent,
+          null, { timeout: 3000 }).catch(() => say('the status line does not announce the result after an input'));
+        const after = (await demo.boundingBox())?.height;
+        if (!(Math.abs(after - height[script]) < 0.5)) say(`the explorer changed height with its controls (${height[script]}px, then ${after}px)`);
+      }
+      for (const s of seen) out.push(`${width}px ${route} fan curve${script ? '' : ' (before its script)'}: ${s}`);
+      await page.close();
+    }
+    if (!(Math.abs(height.true - height.false) < 0.5)) out.push(`${width}px fan curve: ${height.false}px tall before its script, ${height.true}px after`);
+  }
+  // Over 700 ms (the announcement delay) with no input, the polite live region stays empty on page load.
+  const quiet = await browser.newPage();
+  await quiet.goto(base + route, { waitUntil: 'networkidle' });
+  await quiet.waitForTimeout(800);
+  if (await quiet.locator('cad-fan-curve .fc-status').textContent()) out.push('the fan-curve status line spoke on page load');
+  await quiet.close();
+  return out;
 }
 
 /** Diagrams drawn by the build (#132, tools/site-diagrams.mjs). Drawn in the reader's browser, a diagram near the top

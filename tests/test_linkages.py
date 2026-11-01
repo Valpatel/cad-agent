@@ -6,17 +6,21 @@ cadagent.mechanical.linkages, against published closed forms written out here an
   tangent of the half angle), not two circles.
 * The four-bar against Norton's Example 4-1, the toggle positions by the law of cosines, and Freudenstein's equation.
 * The Jacobians against finite differences of the solved positions, so a determinant means what it says.
+* The docs figure (tools/linkage_figures.py) against its generator and the closed-form lock it quotes.
 """
 from __future__ import annotations
 
 import itertools
 import json
 import math
+from pathlib import Path
 
 import pytest
 
 from cadagent import formulas as fx
 from cadagent.mechanical import linkages as L
+
+ROOT = Path(__file__).resolve().parents[1]
 
 DEG = math.radians
 
@@ -434,3 +438,35 @@ def test_the_cad_dyad_solver_never_flips_a_branch_along_a_smooth_path():
 def test_the_old_import_path_still_works():
     from cadagent.publish.anim import linkage
     assert linkage.Linkage is L.Linkage and linkage.circles is L.circles
+
+
+# ----------------------------------------------------------------------------- the docs figure
+
+def _figures():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("linkage_figures", ROOT / "tools" / "linkage_figures.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_the_committed_figure_matches_its_generator_and_is_safe_to_embed():
+    from cadagent.publish.anim import svg as S
+    lf = _figures()
+    assert lf.main(["--check"]) == 0, "run PYTHONPATH=src python3 tools/linkage_figures.py"
+    content = (ROOT / "docs" / "img" / "linkages" / "fivebar.svg").read_text(encoding="utf-8")
+    assert S.problems(content) == []
+
+
+def test_the_figure_quotes_the_closed_form_lock_and_a_passing_stride():
+    lf = _figures()
+    stride, sym, grid, lock = lf.solve()
+    want = math.degrees(math.acos((lf.D - 2 * lf.B1) / (2 * lf.A1)))       # symmetric: the knees 2b apart
+    assert lock["at_deg"]["theta1"] == pytest.approx(want, abs=1e-9)
+    assert stride["status"] == "pass" and stride["summary"]["flips"] == 0
+    # knees out all the way round, on one assembly, which the figure's dash-dot links are the other of
+    assert {tuple(s["working"]) for s in stride["steps"]} == {(-1, 1)}
+    assert {s["assembly"] for s in stride["steps"]} == {1}
+    content = (ROOT / "docs" / "img" / "linkages" / "fivebar.svg").read_text(encoding="utf-8")
+    assert f"θ1 = {want:.1f}°" in content and f"{stride['summary']['min_transmission_deg']:.1f}°" in content
+    assert f"{grid['reachable']} of {grid['cells_total']}" in content

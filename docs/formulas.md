@@ -19,7 +19,7 @@ against the filament's allowable strain.
 
 ## Try it: the four-bar animator
 
-The animator (`<cad-fourbar>`, also on [Four-bar linkages](linkages.md#try-it-the-four-bar-animator)) runs the browser
+The animator (`<cad-fourbar>`, also on [Linkages](linkages.md#try-it-the-four-bar-animator)) runs the browser
 port of `grashof`, `fourbar_input_limits`, `fourbar_angles` and `transmission_angle`. Sliders set the four links. The
 crank turns, or rocks and stops where the linkage locks, on the assembly you pick, with the other assembly dashed. The
 chart plots the transmission angle over a turn of the input against the 40° guideline. Rigid links on ideal pins,
@@ -81,7 +81,7 @@ flowchart TD
     P --> A["agents<br/>catalogue() · snap_arm() …"]
     P --> V["tools/formula_vectors.py<br/>golden vectors · demo materials"]
     V --> J["kit/formulas.js<br/>(browser port)"]
-    J --> D["&lt;cad-cantilever&gt; on Snap fits<br/>&lt;cad-fourbar&gt; on Four-bar linkages"]
+    J --> D["&lt;cad-cantilever&gt; on Snap fits<br/>&lt;cad-fourbar&gt; on Linkages"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

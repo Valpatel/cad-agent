@@ -14,7 +14,7 @@ import path from 'node:path';
 import { marked } from 'marked';
 import YAML from 'yaml';
 import { snapDemo } from './snap-demo.mjs';
-import { sanitize, safeUrl, rewriteUrls } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
+import { sanitize, safeUrl, rewriteUrls, imageSize } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
 const rootArg = process.argv.indexOf('--root');
@@ -220,6 +220,17 @@ const decode = s => s.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (m, e) => e[0] ===
 // and spaces, then each space becomes a hyphen (runs are not collapsed); repeats get -1, -2.
 export const slug = text => decode(text.replace(/<[^>]*>/g, '')).toLowerCase().replace(/[^\p{L}\p{M}\p{N}\p{Pc}\- ]/gu, '').replace(/ /g, '-');
 
+// The shared diagram palette (the style guide, #121). Files agents load (skills, subagents) keep only their
+// `class … here` lines (or `:::here`), to save context; GitHub draws those diagrams in its default colours, and the site
+// adds the classDefs a diagram uses but does not define. Applied to the parsed code block, so a Mermaid example quoted
+// inside another fence is left as written.
+const PALETTE = { here: 'fill:#fffdf5,stroke:#173d3c,color:#173d3c', near: 'fill:#eef1e4,stroke:#6f8a80,color:#173d3c',
+  out: 'fill:#ffe1cc,stroke:#bd3a12,color:#173d3c' };
+const withPalette = src => {
+  const used = new Set([...src.matchAll(/^\s*class\s+\S+\s+(here|near|out)\s*;?\s*$/gm), ...src.matchAll(/:::(here|near|out)\b/g)].map(m => m[1]));
+  const missing = [...used].filter(c => !new RegExp(`^\\s*classDef\\s+${c}\\b`, 'm').test(src));
+  return missing.length ? src.replace(/\n?$/, '\n') + missing.map(c => `    classDef ${c} ${PALETTE[c]}`).join('\n') : src;
+};
 // A link to a folder whose README is a page goes to that page (lessons/process/ → lessons/process/README).
 const folderPage = resolved => {
   const readme = resolved.replace(/\/?$/, '/README.md');
@@ -248,6 +259,8 @@ const visuals = new Map();
 for (const p of pages) {
   const ids = new Map();
   const renderer = new marked.Renderer();
+  const code = renderer.code.bind(renderer);
+  renderer.code = token => code(token.lang === 'mermaid' ? { ...token, text: withPalette(token.text) } : token);
   renderer.heading = function ({ tokens, depth }) {
     const text = this.parser.parseInline(tokens);
     const base = slug(text);
@@ -267,6 +280,25 @@ for (const p of pages) {
     else target = `${REPO}/${tracked.includes(resolved) ? 'blob' : 'tree'}/dev/${resolved}`;
     return target + (hash.length ? '#' + hash.join('#') : '');
   });
+  // Every local image gets a width and height, so its space is kept while it loads (no layout shift). The author's
+  // size wins, as on GitHub: a pixel width (or height) keeps its value and the other side follows the image's
+  // proportions; a percentage width becomes a style (the attributes then only carry the proportions); otherwise the
+  // image's own size. CSS (max-width:100%; height:auto) fits all of them to the column.
+  const sized = [];
+  for (const [tag] of html.matchAll(/<img\b[^>]*>/gi)) {
+    const src = tag.match(/\ssrc="\/([^"#?]+)"/)?.[1]?.replace(/&amp;/g, '&');
+    if (src && !(/\swidth="\d+"/.test(tag) && /\sheight="\d+"/.test(tag)) && tracked.includes(src)) sized.push([tag, imageSize(await readBuf(src), src)]);
+  }
+  for (const [tag, size] of sized) if (size) {
+    const given = a => tag.match(new RegExp(`\\s${a}="\\s*([^"]*?)\\s*"`, 'i'))?.[1] || '';
+    const [w, h] = [given('width'), given('height')];
+    let { width, height } = size, style = '';
+    if (/^\d+(?:px)?$/.test(w)) [width, height] = [parseInt(w), Math.round(parseInt(w) * size.height / size.width)];
+    else if (/^\d+(?:px)?$/.test(h)) [width, height] = [Math.round(parseInt(h) * size.width / size.height), parseInt(h)];
+    else if (/^\d+(?:\.\d+)?%$/.test(w) && !/\sstyle=/i.test(tag)) style = ` style="width:${w}"`;
+    const fixed = tag.replace(/\s(?:width|height)="[^"]*"/gi, '').replace(/^<img/i, `<img width="${width}" height="${height}"${style}`);
+    html = html.replace(tag, () => fixed);                       // a function: "$&" or "$'" in an alt text stays literal
+  }
   // No third-party requests from the site: remote images (README badges) become their alt text.
   html = html.replace(/<img\b[^>]*\bsrc="(?:https?:)?\/\/[^"]*"[^>]*>/gi, m => {
     const alt = m.match(/\balt="([^"]*)"/)?.[1];
@@ -308,7 +340,7 @@ const STATUS_NOTE = { ours: 'built here', adopted: 'adopted', trial: 'in trial',
 // Living pages: one per topic. Sources, the condensed method, examples, and the tested tool agents call.
 const LIVING = [
   { file: 'docs/compliant.md', name: 'Snap fits', summary: 'Covestro and DuPont guides plus 11 filament data sheets, condensed into cad-agent snapfit: tested against the guide\'s worked examples, with allowable strain by print direction.' },
-  { file: 'docs/common-issues.md', name: 'CAD pitfalls and their checks', summary: 'Recurring review findings from Gyropup and J501 (a rib inside a countersink, blocked holes, bridges), each with the automated check that catches it.' },
+  { file: 'docs/common-issues.md', name: 'CAD pitfalls and their checks', summary: 'Recurring review findings from Gyropup and J501 (a rib that ran into a counterbore, blocked holes, bridges), each with the automated check that catches it.' },
 ];
 const card = i => `<li class="card" data-type="${esc(i.type)}" data-text="${esc((i.name + ' ' + (i.summary || '') + ' ' + (i.license || '')).toLowerCase())}">
 <a href="${esc(safeUrl(i.url))}"><span class="card-name">${esc(i.name)}</span></a>

@@ -121,8 +121,15 @@ All specimens were 100 % infill, ISO 527 / GB/T 1040. Z means pulled across the 
 | Fiberon PA6-CF20, dry (annealed 100 °C/16 h; V1.1) | 8637 / 3760 | 109.3 / 54.0 | 2.1 / 1.9 | 0.49 | 0.90 | [PM-PA6CF] |
 | Fiberon PA6-CF20, wet | 2508 / 1056 | 54.7 / 25.5 | 7.0 / 6.7 | 0.47 | 0.96 | [PM-PA6CF] |
 | PA6-CF, Bambu | — | — | 5.8 / 3.7 | — | 0.64 | [BBL-PA6CF] (s; the PDF now returns 404) |
-| TPU 95A HF, Bambu (V1.0) | 9.8 / 7.4 | 27.3 / 22.3 | >650 / >480 | 0.82 | ≥0.74 | [BBL-TPU] |
+| TPU 95A HF, Bambu (V1.0) | 9.8 / 7.4 | 27.3 / 22.3 | >650 / >480 | 0.82 | — (both lower bounds) | [BBL-TPU] |
 | PolyFlex TPU95, Polymaker (V5.4) | 33.6 XY (ISO 37) | — | 551 XY | — | no Z data | [PM-TPU] |
+
+![Bar chart: for each filament, the strength and the strain to failure pulled across the layers, as a fraction of the in-plane value. Strength keeps 0.40 to 0.90; strain to failure keeps 0.10 to 0.61 for PLA, PETG, ASA and CoPA, and 0.90 to 0.96 for carbon-filled PA6; TPU's is not known](../docs/img/research/fdm-anisotropy.svg)
+
+*Drawn from the table above by `tools/research_figures.py` (a test keeps the two in step). Pulled across the layers,
+most filaments keep 60–90 % of their strength but much less of their stretch; carbon-filled PA6 is the exception. TPU's
+strain ratio is not drawn: both its samples outlasted the test (>650 / >480 %), and a ratio of two lower bounds says
+nothing.*
 
 Reading the table:
 - **Strain to failure across the layers falls far more than strength.** For PLA, PETG, ASA and CoPA the Z/XY strength

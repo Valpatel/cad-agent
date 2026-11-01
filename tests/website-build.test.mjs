@@ -211,6 +211,28 @@ test('code samples keep their links as written (no rewriting inside code)', asyn
     assert.ok(!(await readFile(path.join(out, f), 'utf8')).includes('&amp;amp;'), `${f}: an entity encoded twice`);
 });
 
+test('an image keeps the size its author gave, and its tag survives any alt text', async () => {
+  const wt = path.join(tmp, 'wt-img');
+  execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });
+  try {
+    const fig = 'img/research/fdm-anisotropy.svg';
+    const [W, H] = (await readFile(path.join(root, 'docs', fig), 'utf8')).match(/width="(\d+)" height="(\d+)"/).slice(1).map(Number);
+    await writeFile(path.join(wt, 'docs/toolkit.md'), `# Toolkit\n\n<img src="${fig}" alt="costs US$'s and $& and $$" width="300">\n\n` +
+      `<img src="${fig}" alt="half" width="50%">\n\n<img src="${fig}" alt="short" height="100">\n\nAfter the images.\n`);
+    const draft = path.join(tmp, 'draft-img');
+    execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, '--worktree', '--out', draft], { cwd: root });
+    const page = await readFile(path.join(draft, 'docs/toolkit.html'), 'utf8');
+    const tag = alt => page.match(new RegExp(`<img\\b[^>]*alt="${alt}"[^>]*>`))?.[0] || '';
+    assert.match(tag("costs US\\$'s and \\$&amp;? and \\$\\$"), new RegExp(`width="300" height="${Math.round(300 * H / W)}"`), 'a pixel width stays; the height follows');
+    assert.equal((page.match(/After the images\./g) || []).length, 1, '"$\'" in an alt text must not copy the rest of the page');
+    assert.equal((page.match(/<\/html>/g) || []).length, 1);
+    assert.match(tag('half'), new RegExp(`width="${W}" height="${H}" style="width:50%"`), 'a percentage is honoured, with the proportions kept');
+    assert.match(tag('short'), new RegExp(`width="${Math.round(100 * W / H)}" height="100"`), 'a pixel height stays; the width follows');
+  } finally {
+    execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
+  }
+});
+
 test('doc pages carry the page tree, with this page marked', async () => {
   const toolkit = await readFile(path.join(out, 'docs/toolkit.html'), 'utf8');
   const nav = toolkit.match(/<cad-nav [^>]*>([\s\S]*?)<\/cad-nav>/)?.[1];
@@ -242,41 +264,9 @@ test('doc pages carry the page tree, with this page marked', async () => {
 });
 
 // Owner (2026-10-31): "make sure every page has some interesting diagrams, animations, renders etc, don't make them
-// boring." The pages that still have no picture, render, diagram or demo, exactly (the backlog in #122). A page that
-// gains one must leave this list, and a new page without one fails, so the list only shrinks.
-const PAGES_WITHOUT_VISUALS = [
-  'THIRD_PARTY_NOTICES.md',
-  'agents/cad-pr-reviewer.md',
-  'agents/cad-resume.md',
-  'docs/agent-workflow.md',
-  'docs/common-issues.md',
-  'docs/compliant.md',
-  'docs/design-process-plan.md',
-  'docs/dossier.md',
-  'docs/explore.md',
-  'docs/file-viewer.md',
-  'docs/gates.md',
-  'docs/pcb.md',
-  'docs/rendered-motion.md',
-  'docs/review-packet.md',
-  'docs/subassembly-insertion.md',
-  'docs/toolkit.md',
-  'docs/volume-precision.md',
-  'docs/web-diagrams.md',
-  'docs/web-parts.md',
-  'research/agent-toolkits-2026-10.md',
-  'research/compliant-mechanisms.md',
-  'research/design-workflows.md',
-  'research/fea-and-process-tools.md',
-  'research/landscape.md',
-  'research/simulation-tools.md',
-  'skills/cad-motion-validation/SKILL.md',
-  'skills/cad-pr-review/SKILL.md',
-  'skills/cad-remote-runs/SKILL.md',
-  'skills/cad-work-tracking/SKILL.md',
-  'skills/design-process/SKILL.md',
-  'skills/mcmaster-parts/SKILL.md',
-];
+// boring." The pages that still have no picture, render, diagram or demo, exactly (the backlog in #122, now empty). A
+// new page without one fails; if one must ship without, list it here with the issue that adds its visual.
+const PAGES_WITHOUT_VISUALS = [];   // #124 gave every page one; keep it empty
 test('the pages without a picture, diagram or demo are exactly the known backlog', async () => {
   const { without } = JSON.parse(await readFile(path.join(out, 'visuals.json'), 'utf8'));
   const gained = PAGES_WITHOUT_VISUALS.filter(p => !without.includes(p)), lacking = without.filter(p => !PAGES_WITHOUT_VISUALS.includes(p));
@@ -383,6 +373,52 @@ test('redirects outlive the stubs, and a stub must point at a published page tha
     await writeFile(list, original.split('\n').filter(l => !l.startsWith(stub)).join('\n'));
     commit('unlisted stub');
     assert.throws(() => buildWt(path.join(tmp, 'bad2')), e => String(e.stderr).includes('add "' + stub));
+  } finally {
+    execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
+  }
+});
+
+test('every local image has its width and height, so nothing jumps while it loads', async () => {
+  const bare = [];
+  for (const f of html.filter(f => !f.startsWith('kit/'))) {
+    for (const [tag] of (await readFile(path.join(out, f), 'utf8')).matchAll(/<img\b[^>]*\ssrc="\/[^"]*"[^>]*>/gi))
+      if (!/\swidth="\d+"/.test(tag) || !/\sheight="\d+"/.test(tag)) bare.push(`${f}: ${tag.slice(0, 100)}`);
+  }
+  assert.deepEqual(bare, []);
+});
+
+test('diagrams in files agents load leave the palette to the site', async () => {
+  const sources = git('ls-tree', '-r', '--name-only', 'HEAD', 'skills', 'agents').split('\n').filter(f => /^(skills\/[^/]+\/SKILL|agents\/[^/]+)\.md$/.test(f));
+  let drawn = 0;
+  for (const f of sources) {
+    const md = git('show', `HEAD:${f}`);
+    if (!/```mermaid/.test(md)) continue;
+    drawn++;
+    assert.doesNotMatch(md, /^\s*classDef (?:here|near|out)\b/m, `${f}: the site adds the palette; keep agent context short`);
+    const page = await readFile(path.join(out, f.replace(/\.md$/, '.html')), 'utf8');
+    const used = [...md.matchAll(/^\s*class\s+\S+\s+(here|near|out)\s*$/gm)].map(m => m[1]);
+    for (const c of new Set(used)) assert.match(page, new RegExp(`classDef ${c} fill:#`), `${f}: ${c} is drawn in the palette`);
+    assert.doesNotMatch(await readFile(path.join(out, f), 'utf8'), /classDef/, `${f}: the Markdown twin stays as written`);
+  }
+  assert.ok(drawn >= 8, `${drawn} skill and subagent diagrams`);
+});
+
+test('the palette goes into real diagrams only: not into a quoted example, and :::here counts', async () => {
+  const wt = path.join(tmp, 'wt-palette');
+  execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });
+  try {
+    await writeFile(path.join(wt, 'docs/toolkit.md'), '# Toolkit\n\n' +
+      '```mermaid\nflowchart TD\n    A[a]:::here --> B[b]\n```\n\n' +
+      '````markdown\n```mermaid\nflowchart TD\n    Q[quoted]\n    class Q out\n```\n````\n');
+    const draft = path.join(tmp, 'draft-palette');
+    execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, '--worktree', '--out', draft], { cwd: root });
+    const page = await readFile(path.join(draft, 'docs/toolkit.html'), 'utf8');
+    const diagram = page.match(/<code class="language-mermaid">([\s\S]*?)<\/code>/)?.[1] || '';
+    assert.match(diagram, /classDef here fill:#fffdf5/, ':::here shorthand gets the palette');
+    assert.doesNotMatch(diagram, /classDef (?:near|out)/, 'only the classes the diagram uses');
+    const quoted = page.match(/<code class="language-markdown">([\s\S]*?)<\/code>/)?.[1] || '';
+    assert.match(quoted, /class Q out/);
+    assert.doesNotMatch(quoted, /classDef/, 'a Mermaid example inside another fence stays as written');
   } finally {
     execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
   }

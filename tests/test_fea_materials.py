@@ -122,6 +122,11 @@ HANDBOOK = {
 }
 # The A-basis Fty (LT) of 7075-T651 plate by thickness band past 2.000 in: the row's note warns of these
 THICK_7075 = {"2.001-2.500": 64, "2.501-3.000": 61, "3.001-3.500": 58, "3.501-4.000": 54}
+# Common machining stock with lower minimums in the same handbook, which the notes name (A-basis Fty LT, ksi, by
+# thickness band in inches): extruded 6061-T6/T6510/T6511 rod, bar and shapes, Table 3.6.2.0(g), p. 3-272; rolled or
+# cold-finished 7075-T6/T651 bar and rod, Table 3.7.6.0(d), p. 3-380
+EXTRUDED_6061 = ("3.6.2.0(g)", {"to 1.000": 33, "1.001-6.500": 28})
+BAR_7075 = ("3.7.6.0(d)", {"to 2.000": 66, "2.001-3.000": 63, "3.001-4.000": 60})
 # Protolabs' CNC material data sheets (2026, read 2026-10-31): 6061-T651/T6 typical yield 276 MPa (40 ksi),
 # E 10.0 Msi, 2.70 Mg/m3; 7075 yield 434-476 MPa (T6 sheet) and 372-462 MPa (T651 plate to 101.6 mm) over thickness.
 PROTOLABS = {"6061_typical_yield": 276, "6061_density": 2.70, "7075_sheet": (434, 476), "7075_plate": (372, 462)}
@@ -216,6 +221,17 @@ def test_metal_strengths_are_not_above_any_cited_minimum():
     assert MATERIALS["al7075"].strength_mpa == pytest.approx(PROTOLABS["7075_plate"][1], abs=0.5)
     assert all(v < HANDBOOK["al7075"][4] for v in THICK_7075.values())
     assert f"{min(THICK_7075.values())} ksi" in MATERIALS["al7075"].note and "thicker plate is lower" in MATERIALS["al7075"].note
+
+
+def test_metal_notes_name_the_weaker_stock_forms():
+    # the solver knows neither the product form nor the grain direction, so the note says which stock is weaker
+    for key, (table, bands) in (("al6061", EXTRUDED_6061), ("al7075", BAR_7075)):
+        note = MATERIALS[key].note
+        assert table in note, key
+        assert all(v <= HANDBOOK[key][4] for v in bands.values()), key
+        assert f"{max(bands.values())} ksi" in note and f"{min(bands.values())} ksi" in note, key
+    assert "extruded rod, bar and shapes" in MATERIALS["al6061"].note
+    assert "bar and rod" in MATERIALS["al7075"].note
 
 
 def test_carbon_tube_is_labelled_typical():

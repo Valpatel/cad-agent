@@ -156,14 +156,16 @@ Reading the table:
   fits even though they are strong. Bambu's PA6-CF keeps 64 % of its elongation across the layers, against 90–96 % for
   Polymaker's PA6-CF20, so the fibre's levelling effect is not general.
 - **Moisture.** Water-saturated PA6-CF20 bars (5.30 % moisture) keep 0.50 / 0.47 of the dry strength but only
-  0.29 / 0.28 of the dry modulus (XY / Z) [PM-PA6CF]. Room humidity costs nearly as much modulus. BASF's moulded PA6
+  0.29 / 0.28 of the dry modulus (XY / Z) [PM-PA6CF]. No sheet read gives a printed CF-PA6 in room air. BASF's moulded PA6
   datasheets give dry / conditioned values ("cond."; equilibrium moisture at 23 °C / 50 % r.h. is 2.7–3.2 % unfilled,
   1.9–2.3 % with 30 % glass): unfilled PA6 keeps 0.31 of its tensile modulus (Ultramid B3S HP R01, 1000 / 3200 MPa, a
   preliminary sheet) and 0.50 of its yield stress; 30 % glass-filled PA6 keeps 0.58 of its modulus and 0.57 of its
-  strength (Ultramid B3EG6 SI, 5650 / 9700 MPa, 105 / 185 MPa at break) [BASF-B3S][BASF-B3EG6]. Bambu's PA6-CF takes up 2.35 % at 25 °C / 55 % RH [BBL-PA6CF]. So
-  `cadagent.simulation.fea`'s humid PA6-CF rows take Polymaker's saturated ratios for both modulus and strength: a
-  printed part's matrix-dominated stiffness sits near the unfilled ratio, and the saturated bars are the cautious
-  end (#157).
+  strength (Ultramid B3EG6 SI, 5650 / 9700 MPa, 105 / 185 MPa at break) [BASF-B3S][BASF-B3EG6]. Bambu's PA6-CF takes
+  up 2.35 % at 25 °C / 55 % RH [BBL-PA6CF]. So `cadagent.simulation.fea`'s humid PA6-CF rows take Polymaker's
+  saturated ratios for both modulus and strength. That is a judgement for the cautious end, not a measured room-air
+  value: a filled print plausibly sits between the unfilled and glass-filled moulded ratios (0.31–0.58), so in room
+  air these rows may be up to about 2x too soft. That is cautious for deflection, but a force or stress worked out at
+  a given travel reads low (#157).
 - **Orientation rule.** Lay the flexing member in XY and keep the joining direction independent of the bending
   direction. A cantilever built along Z is "poor", and the stair-step notches add stress concentration [KLA]. Hubs:
   avoid Z-built cantilevers; MJF root at least 1 mm thick; fillet ≥ 0.5×root thickness; width ≥ 5 mm [HUBS-SF].
@@ -195,7 +197,8 @@ Rule:
 4. In Z, use min(Z, XY).
 5. Bayer's own example designs at ½ε_pm, which is a factor of 2.
 6. Where a filament has more than one edition of its sheet, apply rules 1–4 to each edition's own values and take the
-   lowest allowable; take forces from the highest modulus (an upper bound on the secant modulus) (#156).
+   lowest allowable; take the mating force from the highest modulus and the retention force from the lowest (each
+   the cautious side; both above the secant modulus at the design strain, so retention stays optimistic) (#156).
 
 | Material (TDS) | XY single / repeat | Z single / repeat | static74 skill, in-plane single / repeat / across layers [S74] | AgentCAD table, design value before its printing derate [AGCAD] |
 |---|---|---|---|---|

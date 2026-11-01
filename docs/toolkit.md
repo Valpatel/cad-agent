@@ -389,8 +389,10 @@ The modulus is the sheet's lowest, across the layers, because the solver is isot
 was printed, so deflections come out higher than with the sheet's in-plane values. They are not an upper bound on a
 print. The mesh is the solid CAD, and a print with sparse infill or thin walls can be softer still. The isotropic shear
 modulus does not bound a print's shear stiffness between layers either, which matters for short, thick parts. The
-two humid PA6-CF rows take the modulus ratio of a water-saturated print (0.28–0.29 of dry), the cautious end: room air
-takes a nylon's modulus most of the way there ([research](../research/compliant-mechanisms.md), section 5). Under
+two humid PA6-CF rows take the modulus ratio of a water-saturated print (0.28–0.29 of dry). That is a judgement for
+the cautious end: no sheet gives a print conditioned in room air, where moulded PA6 keeps 0.31–0.58 of its dry
+modulus (unfilled to 30 % glass), so in room air these rows may be up to about 2x too soft, and a force at a given
+travel reads low ([research](../research/compliant-mechanisms.md), section 5). Under
 forces and torques the stress does not depend on E, so only deflection and stiffness change with it. The metals
 (`al6061`, `al7075`, `steel`) use design minimums from MIL-HDBK-5J, not typical values (#157); `cf_tube` is typical.
 

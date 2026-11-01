@@ -24,9 +24,10 @@ every edition read is kept, each as a complete set of values (the rule never mix
 another), and the cautious edition is taken per quantity:
 
 * the allowable strain is the **lowest** any edition gives (a lower allowable is the cautious choice);
-* the modulus for forces is the **highest** any edition gives. It stands in for the secant modulus at the design
-  strain, which is lower, so forces from it are upper bounds: cautious for mating force, optimistic for retention.
-  (The root strain at a given deflection is geometry only and does not depend on E.)
+* the mating force takes the **highest** modulus any edition gives, and the retention (separation) force the
+  **lowest**: a stiffer arm is harder to push on and holds harder. Both stand in for the secant modulus at the design
+  strain, which is lower than either, so the mating force stays an upper bound and the retention force is still
+  optimistic, by less. (The root strain at a given deflection is geometry only and does not depend on E.)
 
 :meth:`PrintedMaterial.derivation` names the edition that governs each.
 
@@ -36,7 +37,7 @@ is weaker still. Datasheets are for one printer and profile; a different machine
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
 
 REPEATED_USE_FACTOR = 0.6
@@ -124,15 +125,22 @@ class PrintedMaterial:
     def allowable(self, direction: str, repeated: bool = False) -> float:
         return self.single(direction) * (REPEATED_USE_FACTOR if repeated else 1.0)
 
-    def modulus_sheet(self, direction: str) -> Sheet:
-        """The edition with the highest tensile modulus for the direction: the one forces are taken from."""
+    def modulus_sheet(self, direction: str, lowest: bool = False) -> Sheet:
+        """The edition with the highest tensile modulus for the direction, which the mating force is taken from; with
+        ``lowest``, the edition with the lowest, which the retention force is taken from. On a tie, the current one."""
         d = self._direction(direction)
-        return max(self.sheets, key=lambda s: s.e_mpa[d])
+        return (min if lowest else max)(self.sheets, key=lambda s: s.e_mpa[d])
 
     def secant_upper_bound(self, direction: str) -> float:
-        """The highest datasheet tensile modulus any edition gives for the direction. The secant modulus at the design
-        strain is lower, so forces from it are upper bounds: conservative for mating force, optimistic for retention."""
+        """The highest datasheet tensile modulus any edition gives for the direction, for the mating force. The secant
+        modulus at the design strain is lower, so a mating force from it is an upper bound (the cautious side)."""
         return self.modulus_sheet(direction).e_mpa[self._direction(direction)]
+
+    def retention_modulus(self, direction: str) -> float:
+        """The lowest datasheet tensile modulus any edition gives for the direction, for the retention force: the
+        cautious edition there. It is still above the secant modulus at the design strain, so the retention force
+        from it is still optimistic, by less than from the highest."""
+        return self.modulus_sheet(direction, lowest=True).e_mpa[self._direction(direction)]
 
     def mu(self, same_material: bool = True) -> Optional[float]:
         if self.friction is None:
@@ -142,13 +150,14 @@ class PrintedMaterial:
     def derivation(self, direction: str, repeated: bool = False) -> Dict[str, Any]:
         xy, xy_by, xy_sheet = self.rule(0)
         z, z_by, z_sheet = self.rule(1)
-        mod = self.modulus_sheet(direction)
+        hi, lo = self.modulus_sheet(direction), self.modulus_sheet(direction, lowest=True)
         return {"material": self.name, "source": self.source, "condition": self.condition,
                 "orientation": direction, "repeated": repeated,
                 "editions": [s.label for s in self.sheets], "note": self.note or None,
                 "xy": {"strain": xy, "governed_by": xy_by, "sheet": xy_sheet.label},
                 "z": {"strain": z, "governed_by": z_by, "sheet": z_sheet.label},
-                "modulus": {"mpa": self.secant_upper_bound(direction), "sheet": mod.label},
+                "modulus": {"mating": {"mpa": self.secant_upper_bound(direction), "sheet": hi.label},
+                            "retention": {"mpa": self.retention_modulus(direction), "sheet": lo.label}},
                 "moulded_cap": self.moulded_cap, "cap_source": self.cap_source or None,
                 "allowable": self.allowable(direction, repeated), "status": STATUS}
 

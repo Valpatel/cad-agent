@@ -2,9 +2,9 @@
 
 Each sheet below is written out as read on 2026-10-31, with its maker, edition, PDF date, page and link, independently
 of ``cadagent.mechanical.compliant.allowables``. A change to a value there fails here until the sheet is read again and
-this file updated with it. The rule (lowest allowable, highest modulus across the editions read) is checked on these
-transcriptions, so a wrong edition choice fails too. Only the inputs are pinned: a printed coupon (#94) is what proves
-an allowable, not a data sheet.
+this file updated with it. The rule (lowest allowable; mating force from the highest modulus and retention from the
+lowest, across the editions read) is checked on these transcriptions, so a wrong edition choice fails too. Only the
+inputs are pinned: a printed coupon (#94) is what proves an allowable, not a data sheet.
 """
 import re
 from pathlib import Path
@@ -94,15 +94,18 @@ def test_each_sheet_is_the_one_read(key):
 
 
 @pytest.mark.parametrize("key", sorted(SHEETS))
-def test_allowable_is_the_lowest_and_modulus_the_highest_edition(key):
+def test_allowable_is_the_lowest_and_the_force_moduli_the_cautious_edition(key):
     m, read = al.PRINTED[key], SHEETS[key]
     cap = CAP.get(key, 1.0)
     along = min(min(_rule(e, uts, brk, 0) for *_, e, uts, brk in read), cap)
     across = min(min(min(_rule(e, uts, brk, 0), _rule(e, uts, brk, 1)) for *_, e, uts, brk in read), cap)
     assert m.allowable("along") == pytest.approx(along, rel=1e-12)
     assert m.allowable("across") == pytest.approx(across, rel=1e-12)
+    # mating force from the highest modulus, retention force from the lowest: each the cautious side
     assert m.secant_upper_bound("along") == max(e[0] for *_, e, _u, _b in read)
     assert m.secant_upper_bound("across") == max(e[1] for *_, e, _u, _b in read)
+    assert m.retention_modulus("along") == min(e[0] for *_, e, _u, _b in read)
+    assert m.retention_modulus("across") == min(e[1] for *_, e, _u, _b in read)
 
 
 def test_the_current_maker_sheet_comes_first():
@@ -132,13 +135,44 @@ def test_the_sizes_worked_out_in_the_issue():
 def test_derivation_names_the_edition_behind_each_number():
     d = al.PRINTED["pla-bambu-basic"].derivation("across")
     assert d["xy"]["sheet"].endswith("V3.0") and d["z"]["sheet"].endswith("V3.0")
-    assert d["modulus"]["sheet"].endswith("V2.0") and d["modulus"]["mpa"] == 2160    # V2.0's is higher: the force bound
+    # V2.0's modulus is higher: the mating-force bound; V3.0's is lower: the retention force
+    assert d["modulus"]["mating"] == {"mpa": 2160, "sheet": "Bambu Lab PLA Basic Technical Data Sheet V2.0"}
+    assert d["modulus"]["retention"] == {"mpa": 2060, "sheet": "Bambu Lab PLA Basic Technical Data Sheet V3.0"}
     assert d["editions"] == ["Bambu Lab PLA Basic Technical Data Sheet V3.0",
                              "Bambu Lab PLA Basic Technical Data Sheet V2.0"]
     petg = al.PRINTED["petg-bambu-basic"].derivation("along")
-    assert petg["modulus"] == {"mpa": 2780, "sheet": "Bambu Lab PETG Basic Technical Data Sheet V3.0"}
+    assert petg["modulus"] == {"mating": {"mpa": 2780, "sheet": "Bambu Lab PETG Basic Technical Data Sheet V3.0"},
+                               "retention": {"mpa": 1460, "sheet": "Bambu Lab PETG Basic Technical Data Sheet V2.0"}}
     assert "reformulated" in petg["note"] and "#94" in petg["note"]
     assert al.PRINTED["petg-bambu-basic"].sheets[0].formulation.startswith("the reformulated filament")
+
+
+def test_mating_force_takes_the_stiffest_edition_and_retention_the_softest():
+    # PR #197 review: a PETG Basic clip whose retention fails with the V2.0 filament must not pass on V3.0's modulus.
+    # 14 mm arm, 6 x 1.2 mm, 0.5 mm undercut, along the layers: P = b h^2 E eps / (6 l) at the root strain.
+    from cadagent.mechanical.compliant import snapfit as sf
+    spec = {"name": "clip", "material": "petg-bambu-basic", "orientation": "along", "length_mm": 14,
+            "undercut_mm": 0.5, "section": {"rect": {"width_mm": 6, "thickness_mm": 1.2}}, "friction": 0.4,
+            "lead_deg": 30, "return_deg": 45, "root_radius_mm": 0.8, "min_retention_n": 2.5, "max_mating_n": 10}
+    r = sf.check_spec_entry(spec)
+    eps = 1.2 * 0.5 / (0.67 * 14 ** 2)                       # Bayer Table 1, design 1, as printed: y = 0.67 eps l^2 / h
+    force = lambda e: 6 * 1.2 ** 2 * e * eps / (6 * 14)
+    assert r["deflection_force_n"] == pytest.approx(force(2780), rel=1e-9)            # V3.0: mating
+    assert r["retention_deflection_force_n"] == pytest.approx(force(1460), rel=1e-9)  # V2.0: retention
+    assert r["separation_force_n"] == pytest.approx(sf.mating_force(force(1460), 0.4, 45), rel=1e-9)
+    assert r["mating_force_n"] == pytest.approx(sf.mating_force(force(2780), 0.4, 30), rel=1e-9)
+    row = {x["check"]: x for x in r["rows"]}
+    assert r["separation_force_n"] == pytest.approx(1.6, abs=0.05) and not row["retention force"]["pass"]
+    assert "lowest edition" in row["retention force"]["detail"]
+    assert "highest edition" in row["mating force"]["detail"]
+    assert r["material"]["secant_mpa"] == 2780 and r["material"]["retention_secant_mpa"] == 1460
+    # a modulus the caller gives is used for both
+    given = sf.check_spec_entry(dict(spec, secant_mpa=2000))
+    assert given["material"]["retention_secant_mpa"] == 2000 and "retention_deflection_force_n" not in given
+    # one edition: one modulus, as before
+    one = sf.check_spec_entry(dict(spec, material="petg-polymaker"))
+    assert one["material"]["secant_mpa"] == one["material"]["retention_secant_mpa"]
+    assert "retention_deflection_force_n" not in one
 
 
 def test_a_material_needs_a_sheet():
@@ -160,22 +194,34 @@ def _pair(cell):
 
 @pytest.mark.parametrize("key", sorted(SHEETS))
 def test_research_table_has_each_current_sheet(key):
-    # research/compliant-mechanisms.md section 5 lists every current edition; the PETG Basic V2.0 filament too
+    # research/compliant-mechanisms.md section 5 has a row for every current edition and for every sheet that is a
+    # formulation of its own (both PETG Basic filaments); the other earlier editions are in its "Earlier editions"
+    # paragraph, each value that differs from the current sheet under that filament's name
+    md = (ROOT / "research" / "compliant-mechanisms.md").read_text()
     rows = _research_rows("## 5. FDM anisotropy")
-    s = al.PRINTED[key].sheets[0]
+    earlier = md[md.index("**Earlier editions.**"):].split("\n\n")[0].replace("\n", " ").split(";")
+    current, *older = al.PRINTED[key].sheets
 
-    def same(row):
+    def same(row, s):
         try:
             e, uts, brk = _pair(row[1]), _pair(row[2]), _pair(row[3])
         except ValueError:
             return False
         return (all(abs(a - b) <= 0.5 for a, b in zip(e, s.e_mpa)) and uts == s.uts_mpa and brk == s.break_pct)
-    match = [r for r in rows if same(r)]
-    assert len(match) == 1, f"{key}: no single §5 row with {s.e_mpa}, {s.uts_mpa}, {s.break_pct}"
-    name, cite = match[0][0], match[0][6]
-    assert cite.startswith("[BBL-" if s.maker == "Bambu Lab" else "[PM-"), key
-    if s.maker == "Bambu Lab":
-        assert s.edition in name, key                         # the table says which edition each Bambu row is
+    for s in [current] + [s for s in older if s.formulation]:
+        match = [r for r in rows if same(r, s)]
+        assert len(match) == 1, f"{key} {s.edition}: no single §5 row with {s.e_mpa}, {s.uts_mpa}, {s.break_pct}"
+        name, cite = match[0][0], match[0][6]
+        assert cite.startswith("[BBL-" if s.maker == "Bambu Lab" else "[PM-"), key
+        if s.maker == "Bambu Lab":
+            assert s.edition in name, key                     # the table says which edition each Bambu row is
+    for s in (s for s in older if not s.formulation):
+        filament = s.title.replace(" Technical Data Sheet", "")
+        segment = next((x for x in earlier if f"{filament} " in x), "")
+        assert segment, f"{key} {s.edition}: no {filament} in the Earlier editions paragraph"
+        for new, old in ((current.e_mpa, s.e_mpa), (current.uts_mpa, s.uts_mpa), (current.break_pct, s.break_pct)):
+            if new != old:
+                assert f"{old[0]:g} / {old[1]:g}" in segment, f"{key} {s.edition}: {old} not under {filament}"
 
 
 def test_research_allowable_table_follows_the_code():

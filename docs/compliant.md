@@ -119,12 +119,15 @@ which it is. So every edition read is kept, each as a complete set of values, an
 quantity:
 
 - **allowable strain**: the lowest any edition gives;
-- **modulus for forces**: the highest any edition gives, so mating forces stay upper bounds. The root strain at a
-  given deflection does not depend on E.
+- **mating force**: from the highest modulus any edition gives, so it stays an upper bound;
+- **retention force**: from the lowest, since a softer arm holds less. It is still optimistic: the secant modulus at
+  the design strain is below every sheet's tensile modulus.
 
-`petg-bambu-basic` takes both from V3.0 (1.28 / 0.96 % and 2780 / 2550 MPa; V2.0 would allow 2.3 %).
-`pla-bambu-basic` takes its allowable from V3.0 and its modulus from V2.0 (2680 / 2160 MPa, 4–5 % above V3.0's). The
-`--output` JSON names the edition behind each number (`xy.sheet`, `z.sheet`, `modulus.sheet`), and
+The root strain at a given deflection does not depend on E. `petg-bambu-basic` takes its allowable and its mating
+modulus from V3.0 (1.28 / 0.96 % and 2780 / 2550 MPa; V2.0 would allow 2.3 %) and its retention modulus from V2.0
+(1460 / 1120 MPa). `pla-bambu-basic` takes its allowable and retention modulus from V3.0 and its mating modulus from
+V2.0 (2680 / 2160 MPa, 4–5 % above V3.0's). The `--output` JSON names the edition behind each number (`xy.sheet`,
+`z.sheet`, `modulus.mating.sheet`, `modulus.retention.sheet`), and
 [research/compliant-mechanisms.md](../research/compliant-mechanisms.md) §5 and §10 list every sheet with its date and
 link.
 
@@ -166,7 +169,7 @@ does. The browser runs a port of it that is tested against the Python on shared 
 - Printed allowables are **hypotheses until a coupon is measured**: the datasheets are for 100 % infill on one
   printer and profile. Forces for printed snaps use the datasheet tensile modulus, which is higher than the secant
   modulus at the design strain, so mating forces are conservative and retention forces optimistic; the force rows
-  say so.
+  say so. Where a filament has several editions, mating takes the highest modulus and retention the lowest.
 - Hook-face geometry and mould release are not checked. CAD and calculation do not prove a joint: print it and
   measure.
 

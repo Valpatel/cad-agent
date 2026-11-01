@@ -103,17 +103,21 @@ def _isotropic_basis(mat: Material) -> str:
 # - Density is the sheet's (ISO 1183), for mass estimates.
 #
 # Before #125 the moduli were 2700 (PLA), 1800 (PETG) and 2900 (PETG-CF): close to the V2.0 sheets' X-Y *bending*
-# moduli (2750, 1790, 2890), not a tensile value. They were 31-116 % above the moduli used now (PAHT-CF 147 %, the
-# humid PA6-CF rows 41 % and 130 %, TPU 305 %), so deflections read 24-54 % low (PAHT-CF 60 %, TPU 75 %).
+# moduli (2750, 1790, 2890), not a tensile value. They were 31-116 % above the moduli used now (PAHT-CF 147 %, TPU
+# 305 %), so deflections read 24-54 % low (PAHT-CF 60 %, TPU 75 %). The humid PA6-CF rows, 3000 and 2400 MPa then,
+# are 191 % and 392 % above the moduli used since #157 (41 % and 130 % above #125's), so deflections read 66 % and 80 %
+# low.
 #
 # PA6-CF in use (#157): moisture taken up from the air, as Polymaker's Fiberon PA6-CF20 TDS V1.1 (PDF of 2024-12-08,
 # p. 1) gives it, water-saturated / dry: tensile modulus 2508.1 / 8636.5 MPa X-Y and 1056.1 / 3759.5 Z, tensile
 # strength 54.7 / 109.3 and 25.5 / 54.0. https://cdn.shopify.com/s/files/1/0548/7299/7945/files/TDS_FIBERON_PA6-CF20_V1.1_EN.pdf
 # Its wet bars were soaked at 60 degC for 48 h (5.30 % moisture); a part in room air takes up less (Bambu's PA6-CF:
-# 2.35 % at 25 degC / 55 % RH). But a nylon's modulus falls most of the way by then: BASF's moulded PA6 keeps 0.31 of
-# its dry tensile modulus conditioned (Ultramid B3S HP R01, 1000 / 3200 MPa, a preliminary sheet of 2026-08) and 30 %
-# glass-filled PA6 keeps 0.58 (Ultramid B3EG6 SI, 5650 / 9700 MPa). The saturated printed ratios are the cautious end
-# and are used for modulus and strength alike; research/compliant-mechanisms.md section 5 has the links.
+# 2.35 % at 25 degC / 55 % RH). No sheet read gives a printed CF-PA6 conditioned in room air. Moulded PA6 conditioned
+# at 23 degC / 50 % RH keeps 0.31 of its dry tensile modulus unfilled (BASF Ultramid B3S HP R01, 1000 / 3200 MPa, a
+# preliminary sheet of 2026-08) and 0.58 with 30 % glass (Ultramid B3EG6 SI, 5650 / 9700 MPa); a filled print
+# plausibly sits between. Taking the saturated printed ratios for modulus and strength alike is a judgement for the
+# cautious end: in room air these rows may be up to about 2x too soft, which is cautious for deflection, but a force or
+# stress worked out at a given travel reads low. research/compliant-mechanisms.md section 5 has the links.
 _HUMID_E = {'X-Y': 2508.1 / 8636.5, 'Z': 1056.1 / 3759.5}       # 0.290, 0.281
 _HUMID_S = {'X-Y': 54.7 / 109.3, 'Z': 25.5 / 54.0}              # 0.500, 0.472
 _PRINT = 0.8   # x0.8 for a print's voids and seams: a knock-down the original table applied to these rows only
@@ -187,19 +191,27 @@ MATERIALS = {
     # 276 MPa, 2.70 g/cm3; 7075 ranges 434-476 MPa (T6 sheet) and 372-462 MPa (T651 plate to 101.6 mm), over thickness.
     # - 6061-T6 sheet and T651 plate, 0.010-6.000 in thick, Tables 3.6.2.0(b1) and (b2), pp. 3-264, 3-265: Fty 35 ksi
     #   (LT; 36 L), E 9.9e3 ksi, mu 0.33. Density from Protolabs (2.70 Mg/m3; the handbook's 0.098 lb/in3 is 2.71).
+#   Extruded 6061-T6/T6510/T6511 rod, bar and shapes, common CNC stock, are lower across the grain: A-basis Fty LT
+#   33 ksi to 1.000 in and 28 ksi (193 MPa) from 1.001 to 6.500 in (35 L), Table 3.6.2.0(g), p. 3-272. The solver
+#   knows neither the stock form nor the grain direction: replace the row for such stock loaded across its length.
     # - 7075-T6 sheet and T651 plate, 0.012-2.000 in (0.3-50.8 mm) thick, Table 3.7.6.0(b1), p. 3-371: Fty 67 ksi
     #   (LT, the lowest in that range), E 10.3e3 ksi, mu 0.33, 0.101 lb/in3. Thicker plate is weaker: 64 ksi to
-    #   2.5 in, 54 ksi (372 MPa) at 3.5-4 in, and less again short-transverse; replace the row for such stock.
+    #   2.5 in, 54 ksi (372 MPa) at 3.5-4 in, and less again short-transverse; replace the row for such stock. So is
+#   7075-T6/T651 rolled or cold-finished bar and rod: A-basis Fty 66 ksi to 2.000 in, then 63 and 60 ksi LT to 3 and
+#   4 in, Table 3.7.6.0(d), p. 3-380.
     # - Mild steel: AISI 1025 sheet, strip, plate, tubing and bar, Table 2.2.1.0(b), p. 2-8: Fty 36 ksi (S-basis, the
     #   same 36 ksi minimum as ASTM A36 structural steel), E 29.0e3 ksi, mu 0.32, 0.284 lb/in3.
     # The carbon tube has no cited sheet: typical values, labelled as such; use the supplier's.
     'al6061': Material('Aluminium 6061-T6', _ksi(9.9e3), 0.33, _ksi(35), 2.70,
                        'yield strength 35 ksi, the A- or S-basis minimum (LT) of 6061-T6/T651 sheet and plate to '
-                       '6 in (MIL-HDBK-5J Tables 3.6.2.0(b1), (b2)); typical yield is 276 MPa', source='mil-hdbk-5j'),
+                       '6 in (MIL-HDBK-5J Tables 3.6.2.0(b1), (b2)); extruded rod, bar and shapes are lower across '
+                       'the grain (33 ksi to 1 in, 28 ksi to 6.5 in, Table 3.6.2.0(g)); typical yield is 276 MPa',
+                       source='mil-hdbk-5j'),
     'al7075': Material('Aluminium 7075-T6', _ksi(10.3e3), 0.33, _ksi(67), _lb_in3(0.101),
                        'yield strength 67 ksi, the A-basis minimum (LT) of 7075-T6/T651 sheet and plate 0.012-2.000 in '
-                       'thick (MIL-HDBK-5J Table 3.7.6.0(b1)); thicker plate is lower (54 ksi at 3.5-4 in); typical '
-                       'yield is 503 MPa', source='mil-hdbk-5j'),
+                       'thick (MIL-HDBK-5J Table 3.7.6.0(b1)); thicker plate is lower (54 ksi at 3.5-4 in), and so '
+                       'is bar and rod (66 ksi to 2 in, 60 ksi at 3-4 in, Table 3.7.6.0(d)); typical yield is 503 MPa',
+                       source='mil-hdbk-5j'),
     'steel': Material('Steel (mild)', _ksi(29.0e3), 0.32, _ksi(36), _lb_in3(0.284),
                       'yield strength 36 ksi, the S-basis minimum of AISI 1025 (MIL-HDBK-5J Table 2.2.1.0(b)), as '
                       'ASTM A36\'s minimum', source='mil-hdbk-5j'),

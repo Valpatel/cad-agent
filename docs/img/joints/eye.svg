@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 352" width="760" height="352" role="img" aria-label="Safety factors of a pin eye's bearing, shear-out and net section, printed flat or on its side, bare or with a bushing">
+<style>text{font:13px system-ui,sans-serif;fill:#1d1d1b}.muted{fill:#5c5b56;font-size:11px}.axis{stroke:#9b9a93;stroke-width:1;fill:none}.grid{stroke:#e2e1dc;stroke-width:1}.s1{fill:#2a78d6;stroke:#2a78d6}.s2{fill:#eb6834;stroke:#eb6834}.s3{fill:#1baf7a;stroke:#1baf7a}.part{fill:#eef1e4;stroke:#173d3c;stroke-width:1.5}.hole{fill:#fcfcfb;stroke:#173d3c;stroke-width:1.5}.bg{fill:#fcfcfb}@media (prefers-color-scheme:dark){text{fill:#f0efec}.muted{fill:#c3c2b7}.axis{stroke:#8a897f}.grid{stroke:#383835}.s1{fill:#3987e5;stroke:#3987e5}.s2{fill:#d95926;stroke:#d95926}.s3{fill:#199e70;stroke:#199e70}.part{fill:#2a3330;stroke:#c3c2b7}.hole{fill:#1a1a19;stroke:#c3c2b7}.bg{fill:#1a1a19}}</style>
+<rect class="bg" width="760" height="352"/>
+<path class="part" d="M-30.8,86.0 H126.0 A64.0,64.0 0 0 1 126.0,214.0 H-30.8 Z"/>
+<circle class="hole" cx="110.0" cy="150.0" r="32.0" stroke-dasharray="4 3"/>
+<circle class="hole" cx="110.0" cy="150.0" r="20.0"/>
+<path class="s1" style="fill:none" stroke-width="4" d="M110.0,130.0 A20.0,20.0 0 0 1 110.0,170.0"><title>bearing on the hole</title></path>
+<line class="s2" stroke-width="3" stroke-dasharray="6 3" x1="110.0" y1="130.0" x2="186.8" y2="130.0"><title>shear-out plane</title></line>
+<line class="s3" stroke-width="4" x1="110.0" y1="130.0" x2="110.0" y2="86.0"><title>net section</title></line>
+<line class="s2" stroke-width="3" stroke-dasharray="6 3" x1="110.0" y1="170.0" x2="186.8" y2="170.0"><title>shear-out plane</title></line>
+<line class="s3" stroke-width="4" x1="110.0" y1="170.0" x2="110.0" y2="214.0"><title>net section</title></line>
+<line class="axis" x1="110.0" y1="150.0" x2="150.0" y2="150.0" marker-end="url(#a)"/>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#9b9a93"/></marker></defs>
+<text x="20" y="76" class="muted">the pin pulls 900 N towards the end (arrow)</text>
+<text x="20" y="240" class="muted">pin 5 mm · dashed: 8 mm bushing</text>
+<text x="20" y="256" class="muted">e 10 mm · w 16 mm · t 6 mm · PETG</text>
+<text x="20" y="30">The eye, along its pin</text>
+<text x="290" y="30">Safety factor of each section (strength over stress)</text>
+<text x="420.0" y="316" class="muted">dashed: fails below 1, passes from 2</text>
+<line class="grid" x1="482.2" y1="44" x2="482.2" y2="300" style="stroke:#9b9a93;stroke-dasharray:3 3"/>
+<text x="482.2" y="41" text-anchor="middle" class="muted">1</text>
+<line class="grid" x1="544.4" y1="44" x2="544.4" y2="300" style="stroke:#9b9a93;stroke-dasharray:3 3"/>
+<text x="544.4" y="41" text-anchor="middle" class="muted">2</text>
+<text x="412" y="62" text-anchor="end">printed flat, bare</text>
+<rect class="s1" x="420.0" y="50" width="99.6" height="11" rx="2"><title>printed flat, bare: bearing factor 1.60 (warn)</title></rect>
+<text x="523.6" y="60" class="muted">1.60 warn ▲</text>
+<rect class="s2" x="420.0" y="65" width="172.4" height="11" rx="2"><title>printed flat, bare: shear-out factor 2.77 (pass)</title></rect>
+<text x="596.4" y="75" class="muted">2.77 pass</text>
+<rect class="s3" x="420.0" y="80" width="219.0" height="11" rx="2"><title>printed flat, bare: net tension factor 3.52 (pass)</title></rect>
+<text x="643.0" y="90" class="muted">3.52 pass</text>
+<text x="412" y="126" text-anchor="end">printed flat, bushed</text>
+<rect class="s1" x="420.0" y="114" width="159.3" height="11" rx="2"><title>printed flat, bushed: bearing factor 2.56 (pass)</title></rect>
+<text x="583.3" y="124" class="muted">2.56 pass</text>
+<rect class="s2" x="420.0" y="129" width="137.9" height="11" rx="2"><title>printed flat, bushed: shear-out factor 2.22 (pass)</title></rect>
+<text x="561.9" y="139" class="muted">2.22 pass</text>
+<rect class="s3" x="420.0" y="144" width="159.3" height="11" rx="2"><title>printed flat, bushed: net tension factor 2.56 (pass)</title></rect>
+<text x="583.3" y="154" class="muted">2.56 pass</text>
+<text x="412" y="190" text-anchor="end">on its side, bare</text>
+<rect class="s1" x="420.0" y="178" width="99.6" height="11" rx="2"><title>on its side, bare: bearing factor 1.60 (warn)</title></rect>
+<text x="523.6" y="188" class="muted">1.60 warn ▲</text>
+<rect class="s2" x="420.0" y="193" width="125.8" height="11" rx="2"><title>on its side, bare: shear-out factor 2.02 (pass)</title></rect>
+<text x="549.8" y="203" class="muted">2.02 pass</text>
+<rect class="s3" x="420.0" y="208" width="219.0" height="11" rx="2"><title>on its side, bare: net tension factor 3.52 (pass)</title></rect>
+<text x="643.0" y="218" class="muted">3.52 pass</text>
+<text x="412" y="254" text-anchor="end">on its side, bushed</text>
+<rect class="s1" x="420.0" y="242" width="159.3" height="11" rx="2"><title>on its side, bushed: bearing factor 2.56 (pass)</title></rect>
+<text x="583.3" y="252" class="muted">2.56 pass</text>
+<rect class="s2" x="420.0" y="257" width="100.6" height="11" rx="2"><title>on its side, bushed: shear-out factor 1.62 (warn)</title></rect>
+<text x="524.6" y="267" class="muted">1.62 warn ▲</text>
+<rect class="s3" x="420.0" y="272" width="159.3" height="11" rx="2"><title>on its side, bushed: net tension factor 2.56 (pass)</title></rect>
+<text x="583.3" y="282" class="muted">2.56 pass</text>
+<rect class="s1" x="20" y="330" width="12" height="12" rx="2"/><text x="37" y="340">bearing</text>
+<rect class="s2" x="140" y="330" width="12" height="12" rx="2"/><text x="157" y="340">shear-out</text>
+<rect class="s3" x="260" y="330" width="12" height="12" rx="2"/><text x="277" y="340">net tension</text>
+</svg>

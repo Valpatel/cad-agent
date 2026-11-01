@@ -71,7 +71,7 @@ domains:
         topics:
           - {slug: motor-mounts, title: Motor mounts, scope: "Bolt circles, pilots and load paths for bought actuators and motors.", maturity: idea, issues: [144]}
           - {slug: linkages, title: Linkages, scope: "Four- and five-bar position, workspace and transmission angle.", maturity: tooling, priority: [demo], pages: [docs/linkages.md], api: [cadagent.mechanical.linkages], issues: [187]}
-          - {slug: joints-and-bearings, title: Joints and bearings, scope: "Pivots, bearing seats, shafts and their fits.", maturity: idea}
+          - {slug: joints-and-bearings, title: Joints and bearings, scope: "Pivots, bearing seats, shafts and their fits.", maturity: tooling, pages: [docs/printed-joints.md], api: [cadagent.mechanical.printed_joints], uses: [cadagent.simulation.fea], issues: [97]}
       - slug: housings-and-enclosures
         title: Housings and enclosures
         scope: Shells, lids, bosses, ribs, port windows and markings around electronics and mechanisms.
@@ -161,7 +161,8 @@ domains:
         scope: FDM, SLA, SLS and MJF parts, from orientation to slicing.
         maturity: tooling
         cli: [export-3mf, slice]
-        api: [cadagent.manufacturing.slicer, cadagent.manufacturing.mesh3mf, cadagent.manufacturing.plates]
+        api: [cadagent.manufacturing.slicer, cadagent.manufacturing.mesh3mf, cadagent.manufacturing.plates,
+              cadagent.manufacturing.fit_coupons]
         issues: [84, 99]
         projects: [gyropup, j501-enclosure]
         topics:

@@ -3,8 +3,8 @@
   `Assembly.save` writes (colours, names, placements), with a fixed header date, link ids 1, 2, ... in file order,
   each node added without a name called `<parent>.<k>` instead of a random uuid, and the colour records in one order
   (OCCT writes them in heap-address order). Sub-shape names and colours (`Assembly.addSubshape`) are refused, and
-  so are written names cadquery's reader would refuse or misread: two children of one node with one name, or a node
-  with the root's name (an unnamed root takes the file's name; pass `name=`) (#150).
+  so are written names cadquery's reader would refuse or misread: a child with its parent's name or a sibling's (an
+  unnamed root takes the file's name, so `frame.step` with a child `frame` needs `name=`) (#150).
 - `cadagent.project.source_date_epoch`, `source_time` and `source_stamp`: the date a build output records instead of
   the wall clock, `SOURCE_DATE_EPOCH` ([reproducible-builds.org](https://reproducible-builds.org/specs/source-date-epoch/)),
   else the last commit that changed the project outside its outputs (#150).

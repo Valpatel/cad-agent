@@ -154,7 +154,7 @@ from. `SOURCE_DATE_EPOCH` is the
 | Output | What is fixed |
 |---|---|
 | part STEP (`export_step`) | header date `2000-01-01T00:00:00` (or `SOURCE_DATE_EPOCH`), product named after the file, link ids |
-| assembly STEP (`export_step(assy)`) | the same, plus unnamed nodes named `<parent>.<k>` and the colour records in one order; names cadquery's reader would refuse or misread (two children of one node with one name, a node with the root's name) are refused |
+| assembly STEP (`export_step(assy)`) | the same, plus unnamed nodes named `<parent>.<k>` and the colour records in one order; names cadquery's reader would refuse or misread (a child with its parent's name or a sibling's) are refused |
 | `exports/<part>.3mf`, the release zip | sorted entries, fixed date (1980-01-01), mode and host |
 | review package (`cad-agent package`) | sorted entries; the source date, mode `rw-r--r--` and a Unix host on every entry |
 | results JSON (`header_meta.generated`), report page, `simreport` pages (`Generated`), the site's footer, the explore comparison (`generated`), the review bundle (`created`) | the source date, shown with where it came from: `2026-10-30 12:00 UTC (last commit)` |

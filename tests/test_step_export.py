@@ -459,35 +459,46 @@ def test_what_an_assembly_file_cannot_carry_the_same_way_is_refused(tmp_path, cq
         geometry.export_step(named, tmp_path / "asm.step")
     with pytest.raises(ValueError, match="empty"):
         geometry.export_step(cq.Assembly(name="nothing"), tmp_path / "nothing.step")
-    # Names cadquery's reader would refuse or misread (it rebuilds the tree with Assembly.add, and finds the top by
-    # the root's name): the default name of an unnamed root, name=, and a user name like the <parent>.<k> given.
+    # Names cadquery's reader would refuse or misread (it rebuilds the tree with Assembly.add, and takes a child with
+    # the root's name for the top): the default name of an unnamed root, name=, and a user name like the
+    # <parent>.<k> given to an unnamed sibling.
     frame = cq.Assembly()
     frame.add(cq.Workplane().box(1, 1, 1), name="frame")
     frame.add(cq.Workplane().box(2, 1, 1), name="lid")
-    with pytest.raises(ValueError, match="written as 'frame', the name of one of its nodes"):
+    with pytest.raises(ValueError, match="written as 'frame', the name of one of its children"):
         geometry.export_step(frame, tmp_path / "frame.step")
-    with pytest.raises(ValueError, match="written as 'lid'"):
+    with pytest.raises(ValueError, match="written as 'lid', the name of one of its children"):
         geometry.export_step(frame, tmp_path / "f.step", name="lid")
-    deep = cq.Assembly(name="robot")
-    inner = cq.Assembly(name="inner")
-    inner.add(cq.Workplane().box(1, 1, 1), name="robot")              # a grandchild with the root's name
-    deep.add(inner)
-    with pytest.raises(ValueError, match="written as 'robot'"):
-        geometry.export_step(deep, tmp_path / "deep.step")
     twins = cq.Assembly(name="robot")
     twins.add(cq.Workplane().box(1, 1, 1))                            # written robot.1
     twins.add(cq.Workplane().box(2, 1, 1), name="robot.1")
-    with pytest.raises(ValueError, match=r"two nodes of the assembly node 'robot' would be written as 'robot\.1'"):
+    with pytest.raises(ValueError, match=r"child of the assembly node 'robot' would be written as 'robot\.1', a sib"):
         geometry.export_step(twins, tmp_path / "twins.step")
     holder = cq.Assembly(cq.Workplane().box(1, 1, 1), name="arm")    # a shape and children: its shape is arm_part
     holder.add(cq.Workplane().box(1, 2, 1), name="arm_part")
-    with pytest.raises(ValueError, match="written as 'arm_part'"):
+    with pytest.raises(ValueError, match="written as 'arm_part', the label of its parent's own shape"):
         geometry.export_step(holder, tmp_path / "arm.step")
     with pytest.raises(ValueError, match="rename the file"):
         geometry.export_step(_robot(legs=1), tmp_path / "Gehäuse.step")
     assert not list(tmp_path.iterdir())
+
+    # The reader keys deeper nodes by path (leg0/bolt), so a name may come back at another level, in either order.
     (tmp_path / "ok").mkdir()
-    # Renamed, the grandchild no longer clashes, and the file reads back whole.
-    back = cq.Assembly.importStep(str(geometry.export_step(deep, tmp_path / "ok" / "deep.step", name="dog")))
-    assert back.name == "dog" and "robot" in {name for name, _node in back.traverse()}
+    deep = cq.Assembly(name="robot")
+    inner = cq.Assembly(name="inner")
+    inner.add(cq.Workplane().box(1, 1, 1), name="robot")              # a grandchild with the root's name
+    deep.add(inner)
+    back = cq.Assembly.importStep(str(geometry.export_step(deep, tmp_path / "ok" / "deep.step")))
+    assert sorted(name for name, _node in back.traverse()) == ["inner", "robot", "robot"]
     assert round(back.toCompound().Volume(), 6) == 1.0
+    for bolt_first in (True, False):
+        top, leg = cq.Assembly(name="robot"), cq.Assembly(name="leg0")
+        leg.add(cq.Workplane().box(1, 1, 1), name="bolt")
+        if bolt_first:
+            top.add(cq.Workplane().box(2, 2, 3), name="bolt")
+        top.add(leg)
+        if not bolt_first:
+            top.add(cq.Workplane().box(2, 2, 3), name="bolt")
+        back = cq.Assembly.importStep(str(geometry.export_step(top, tmp_path / "ok" / f"bolt{bolt_first}.step")))
+        assert sorted(name for name, _node in back.traverse()) == ["bolt", "bolt", "leg0", "robot"]
+        assert round(back.toCompound().Volume(), 6) == 13.0

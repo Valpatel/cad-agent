@@ -25,9 +25,9 @@ written text, and an order this cannot settle is an error rather than a file lef
 Limits: a style record type this does not know (OCCT changed its writer), or a tail the graphs do not cover, stops
 the export with ``GeometryError`` instead of writing a file that is not reproducible. Sub-shape names, colours and
 layers (``Assembly.addSubshape``) are refused: cadquery adds them in the order of a set of shapes hashed on their
-addresses. So are written names that cadquery's reader (``Assembly.importStep``) would refuse or misread: two
-children of one node with one name, or a node with the root's name (an unnamed root is written with the file's
-name). Another OCCT or cadquery version can write different bytes for the same assembly.
+addresses. So are written names that cadquery's reader (``Assembly.importStep``) would refuse or misread: a child
+with its parent's name or a sibling's (an unnamed root is written with the file's name). Another OCCT or cadquery
+version can write different bytes for the same assembly.
 """
 
 from __future__ import annotations
@@ -94,37 +94,31 @@ def _check(assy: Any, names: Dict[int, Tuple[str, str]], step_string: Any) -> No
 def _check_clashes(assy: Any, names: Dict[int, Tuple[str, str]]) -> None:
     """Refuse written names that cadquery's reader (``Assembly.importStep``) would refuse or misread. It rebuilds the
     tree with ``Assembly.add``, which wants each child's name new to its parent: not the parent's own name (nor its
-    ``<name>_part``, the label of a node that holds a shape and children), not a name already among the parent's
-    other children and their nodes. It also finds the top of the tree by the root's name, so no other node may carry
-    it: the file would read back as that node alone."""
+    ``<name>_part``, the label of a node that holds a shape and children) and not a sibling's. Deeper nodes are keyed
+    by path (``leg0/bolt``), so a name may come back at another level. A child with the root's name would also make
+    the reader take that child for the top of the tree."""
     def told(node: Any) -> str:
         old, new = names[id(node)]
         return f"{new!r}" if old == new else f"{new!r} (a node added without a name)"
 
-    def walk(node: Any) -> set:
+    def walk(node: Any) -> None:
         mine = names[id(node)][1]
-        taken, part = {mine}, ({f"{mine}_part"} if node.obj is not None and node.children else set())
+        taken = {mine: "its parent's name"}
+        if node.obj is not None and node.children:
+            taken[f"{mine}_part"] = "the label of its parent's own shape"
         for child in node.children:
             theirs = names[id(child)][1]
-            if theirs in taken or theirs in part:
-                raise ValueError(f"two nodes of the assembly node {mine!r} would be written as {told(child)}; "
-                                 "cadquery's reader would refuse or lose one. Name the node, or rename the one "
-                                 f"it clashes with (an unnamed node is written as <parent>.<k>)")
-            taken |= walk(child)
-        return taken
+            if theirs in taken:
+                if node is assy and theirs == mine:
+                    raise ValueError(f"the assembly would be written as {mine!r}, the name of one of its children; "
+                                     "cadquery's reader would read the file as that child alone. Pass export_step "
+                                     "another name= (or rename the child)")
+                raise ValueError(f"a child of the assembly node {mine!r} would be written as {told(child)}, "
+                                 f"{taken[theirs]}; cadquery's reader would refuse or lose it. Name the node, or "
+                                 "rename the one it clashes with (an unnamed node is written as <parent>.<k>)")
+            taken[theirs] = "a sibling's name"
+            walk(child)
 
-    root = names[id(assy)][1]
-
-    def under(node: Any):
-        for child in node.children:
-            yield child
-            yield from under(child)
-
-    for node in under(assy):
-        if names[id(node)][1] == root:
-            raise ValueError(f"the assembly would be written as {root!r}, the name of one of its nodes; cadquery's "
-                             "reader would read the file as that node alone. Pass export_step another name= "
-                             "(or rename the node)")
     walk(assy)
 
 

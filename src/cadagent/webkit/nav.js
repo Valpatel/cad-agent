@@ -4,28 +4,32 @@
  *   <script type="module" src="/kit/nav.js"></script>
  *   <div class="layout">                                  <!-- your grid: nav column + content column -->
  *     <cad-nav for="article" role="navigation" aria-label="Pages and contents">
- *       <button type="button" class="cad-nav-toggle" aria-expanded="false">Pages and contents</button>
- *       <div class="cad-nav-panel">
- *         <input type="search" class="cad-nav-filter" placeholder="Filter pages" aria-label="Filter pages">
- *         <details class="cad-nav-group" open><summary>Docs</summary>
- *           <ul><li><a href="/docs/a">A</a></li><li><a href="/docs/b" aria-current="page">B</a>
- *             <ol class="cad-nav-outline" aria-label="On this page"><li class="h2"><a href="#x">X</a></li></ol></li></ul>
- *         </details>
- *       </div>
+ *       <details class="cad-nav-fold"><summary class="cad-nav-toggle">Pages and contents</summary>
+ *         <div class="cad-nav-panel">
+ *           <input type="search" class="cad-nav-filter" placeholder="Filter pages" aria-label="Filter pages">
+ *           <details class="cad-nav-group" open><summary>Docs</summary>
+ *             <ul><li><a href="/docs/a">A</a></li><li><a href="/docs/b" aria-current="page">B</a>
+ *               <ol class="cad-nav-outline" aria-label="On this page"><li class="h2"><a href="#x">X</a></li></ol></li></ul>
+ *           </details>
+ *         </div>
+ *       </details>
  *     </cad-nav>
  *     <article>…<h2 id="x">…</h2>…</article>
  *   </div>
  *
  * Give <cad-nav> the full height of its column (align-self: stretch in a grid), so its panel can stay in view.
- * Everything above is plain HTML: without script the groups open and close natively and the outline links work. Write
- * it out like this (a build step can) and nothing moves when the script arrives. A bare tree of groups also works:
- * the script then adds the toggle, the filter and the outline (of the `for` element's h2/h3 headings with ids) itself,
- * and sets the landmark role and label (`label`, default "Contents").
+ * Everything above is plain HTML: without script, or while the script is slow or if it fails, the fold opens and closes
+ * natively on narrow screens (Enter, Space or a tap on its summary), wide screens show the tree with no toggle
+ * (nav.css), the groups open and close and the outline links work. Write it out like this (a build step can) and
+ * nothing moves when the script arrives. A bare tree of groups also works: the script then adds the fold, the filter and
+ * the outline (of the `for` element's h2/h3 headings with ids) itself, and sets the landmark role and label (`label`,
+ * default "Contents"); it also wraps the <button class="cad-nav-toggle"> of earlier kit versions into the fold.
  * The script:
  * - marks the section being read in every outline (in the tree, and in any element matched by `rail`, e.g. a right-hand
  *   "On this page" column) with aria-current="location", as you scroll and when you follow an outline link;
  * - narrows the tree as you type in the filter (Esc clears; says so when nothing matches);
- * - opens and closes the tree with the toggle on narrow screens (nav.css decides when the toggle shows).
+ * - keeps the fold open on wide screens (for browsers without ::details-content), and never opens or closes it on
+ *   narrow ones, except to close again a fold it opened for a wide window.
  * No dependencies.
  */
 
@@ -63,29 +67,28 @@ export class CadNav extends HTMLElement {
     if (!this.hasAttribute('role')) this.setAttribute('role', 'navigation');
     if (!this.hasAttribute('aria-label')) this.setAttribute('aria-label', label);
 
-    let panel = this.querySelector(':scope > .cad-nav-panel');
+    // The fold around the panel: written out by the page, or built here for a bare tree (or an old <button> toggle).
+    let fold = this.querySelector(':scope > details.cad-nav-fold');
+    const old = fold ? null : this.querySelector(':scope > .cad-nav-toggle'), host = fold || this;
+    let panel = host.querySelector(':scope > .cad-nav-panel');
     if (!panel) {
       panel = document.createElement('div');
       panel.className = 'cad-nav-panel';
-      panel.append(...[...this.childNodes].filter(n => !n.classList?.contains('cad-nav-toggle')));
-      this.append(panel);
+      panel.append(...[...host.childNodes].filter(n => n !== old && n.localName !== 'summary'));
+      host.append(panel);
     }
-    panel.id ||= `cad-nav-${Math.random().toString(36).slice(2, 8)}`;
-    let toggle = this.querySelector(':scope > .cad-nav-toggle');
-    if (!toggle) {
-      toggle = document.createElement('button');
-      toggle.type = 'button';
-      toggle.className = 'cad-nav-toggle';
-      toggle.textContent = label;                            // the label is page text, never markup
-      this.prepend(toggle);
+    if (!fold) {
+      fold = document.createElement('details');
+      fold.className = 'cad-nav-fold';
+      fold.open = this.hasAttribute('data-open');
+      const summary = document.createElement('summary');
+      summary.className = 'cad-nav-toggle';
+      summary.textContent = old?.textContent.trim() || label;   // the label is page text, never markup
+      fold.append(summary, panel);
+      old?.remove();
+      this.append(fold);
     }
-    toggle.setAttribute('aria-controls', panel.id);
-    toggle.setAttribute('aria-expanded', String(this.hasAttribute('data-open')));
-    toggle.addEventListener('click', () => {
-      const open = !this.hasAttribute('data-open');
-      this.toggleAttribute('data-open', open);
-      toggle.setAttribute('aria-expanded', String(open));
-    }, { signal });
+    this.#fold(fold, signal);
     let filter = panel.querySelector(':scope > .cad-nav-filter');
     if (!filter) {
       filter = document.createElement('input');
@@ -103,6 +106,22 @@ export class CadNav extends HTMLElement {
   disconnectedCallback() {
     this.#stop?.abort();
     this.#stop = undefined;
+  }
+
+  /** Wide screens show the panel with the fold's summary hidden (nav.css) whether or not the <details> is open; the
+   * fold is opened there anyway, so a browser without ::details-content shows the panel too and the open state says
+   * what is on screen. The native toggle is the reader's on narrow screens: the only fold closed here is one opened
+   * here, when the window narrows again. */
+  #fold(fold, signal) {
+    const summary = fold.querySelector(':scope > summary');
+    let opened = false;
+    const fit = () => {
+      const wide = !!summary && getComputedStyle(summary).display === 'none';
+      if (wide && !fold.open) { fold.open = true; opened = true; }
+      else if (!wide && opened) { fold.open = false; opened = false; }
+    };
+    fit();
+    addEventListener('resize', fit, { passive: true, signal });
   }
 
   /** On a scrolling panel, bring the current page into view without hiding the filter (it is sticky) or, when it
@@ -141,7 +160,13 @@ export class CadNav extends HTMLElement {
     // while scrolling. Two exceptions: a heading just jumped to (an outline link or its #hash) stays marked, through a
     // smooth scroll, until the reader scrolls on; and at the very bottom of a page that scrolls, where the last
     // sections can never reach the line, the last heading on screen is marked.
-    let pinned = null, settled = true, settle = 0, queued = false, shown = null;
+    // A jump ends where its heading shows below the page's scroll padding (or as far as the page scrolls), not after a
+    // quiet spell: a frame slow to paint can stall a smooth scroll for longer than that (#158). From there any scroll
+    // releases it. Before that only the reader's input does: a wheel, touch or scroll key that will move the page, aimed
+    // anywhere (over the tree or a rail too, unless that list scrolls instead; never typing in a field), makes the next
+    // page scroll theirs (#123 review 4). A jump that stops short with no such input (the page moved under it, a
+    // scrollbar drag) counts as ended after 600 ms without a scroll.
+    let pinned = null, settled = true, settle = 0, steered = false, queued = false, shown = null;
     const root = document.scrollingElement || document.documentElement;
     const onScreen = h => { const t = h.getBoundingClientRect().top; return t >= -2 && t < innerHeight - 8; };
     const mark = () => {
@@ -158,20 +183,59 @@ export class CadNav extends HTMLElement {
       if (active !== shown) { shown = active; for (const a of byId.get(active?.id) || []) this.#keepVisible(a, panel); }
     };
     const schedule = () => { if (!queued) { queued = true; requestAnimationFrame(mark); } };
-    const quiet = () => { clearTimeout(settle); settle = setTimeout(() => { settled = true; }, 150); };
-    const pin = id => {
-      if (!byId.has(id)) return;                              // only outline headings: not the skip link's target
-      pinned = document.getElementById(id); settled = false; quiet(); schedule();
+    const px = (v, of) => v.endsWith('%') ? parseFloat(v) * of / 100 : parseFloat(v) || 0;
+    const arrived = () => {
+      const pad = px(getComputedStyle(root).scrollPaddingTop, root.clientHeight) + px(getComputedStyle(pinned).scrollMarginTop, 0);
+      const end = Math.max(0, Math.min(root.scrollHeight - root.clientHeight, root.scrollTop + pinned.getBoundingClientRect().top - pad));
+      return Math.abs(root.scrollTop - end) <= 2;
     };
-    const release = () => { if (pinned) { pinned = null; schedule(); } };
-    addEventListener('scroll', () => { if (pinned && settled) release(); else if (pinned) quiet(); schedule(); }, { passive: true, signal });
+    const quiet = () => { clearTimeout(settle); settle = setTimeout(() => { settled = true; }, 600); };
+    const pin = id => {
+      const h = byId.has(id) && document.getElementById(id);   // only outline headings: not the skip link's target
+      if (!h || h === pinned) return;                           // the hashchange after a link's click: the same jump
+      pinned = h; steered = false; settled = arrived();
+      if (settled) clearTimeout(settle); else quiet();
+      schedule();
+    };
+    const release = () => { pinned = null; clearTimeout(settle); schedule(); };
+    addEventListener('scroll', () => {
+      if (pinned) {
+        const there = arrived();
+        if (steered || (settled && !there)) release();
+        else if (there) { settled = true; clearTimeout(settle); }
+        else if (!settled) quiet();
+      }
+      schedule();
+    }, { passive: true, signal });
     addEventListener('resize', schedule, { passive: true, signal });
-    // Input that scrolls the page releases a jump; input aimed at the tree, a rail or a form field (typing in the
-    // filter, a wheel over the tree) does not. A page scroll it causes still releases it, through the scroll listener.
-    const elsewhere = e => this.contains(e.target) || rails.some(r => r.contains(e.target)) ||
-      !!e.target?.closest?.('input, textarea, select, [contenteditable]:not([contenteditable=false])');
-    for (const type of ['wheel', 'touchmove']) addEventListener(type, e => { if (!elsewhere(e)) release(); }, { passive: true, signal });
-    addEventListener('keydown', e => { if (!elsewhere(e) && /^(?:Arrow(?:Up|Down)|Page(?:Up|Down)|Home|End| )$/.test(e.key)) release(); }, { signal });
+    // Whether input aimed at `el` that moves `dy` (down when positive) scrolls the page: no box on the way up takes it
+    // (one that can still scroll that way, or keeps its scrolling to itself), and the page can move that way.
+    const movesPage = (el, dy) => {
+      if (!dy) return false;
+      for (let box = el instanceof Element ? el : el?.parentElement; box && box !== root && box !== document.body; box = box.parentElement) {
+        if (box.scrollHeight <= box.clientHeight + 1) continue;
+        const cs = getComputedStyle(box);
+        if (!/auto|scroll|overlay/.test(cs.overflowY)) continue;
+        if (/contain|none/.test(cs.overscrollBehaviorY) || (dy < 0 ? box.scrollTop > 0 : box.scrollTop + box.clientHeight < box.scrollHeight - 1)) return false;
+      }
+      return dy < 0 ? root.scrollTop > 0 : root.scrollTop + root.clientHeight < root.scrollHeight - 1;
+    };
+    addEventListener('wheel', e => { if (pinned && !e.ctrlKey && !e.defaultPrevented && movesPage(e.target, e.deltaY)) steered = true; }, { passive: true, signal });
+    let touchY = null;
+    addEventListener('touchstart', e => { touchY = e.touches[0]?.clientY ?? null; }, { passive: true, signal });
+    addEventListener('touchmove', e => {
+      const y = e.touches[0]?.clientY ?? null;
+      if (pinned && touchY !== null && y !== null && movesPage(e.target, touchY - y)) steered = true;
+      touchY = y;
+    }, { passive: true, signal });
+    // Keys that scroll, by direction; never while typing in a field, nor Space on a control it presses.
+    const KEYS = new Map([['ArrowUp', -1], ['ArrowDown', 1], ['PageUp', -1], ['PageDown', 1], ['Home', -1], ['End', 1], [' ', 1]]);
+    addEventListener('keydown', e => {
+      const t = e.target, dy = e.key === ' ' && e.shiftKey ? -1 : KEYS.get(e.key);
+      if (!pinned || !dy || e.defaultPrevented || t?.closest?.('input, textarea, select, [contenteditable]:not([contenteditable=false])')) return;
+      if (e.key === ' ' && t?.closest?.('button, summary, [role=button]')) return;
+      if (movesPage(t, dy)) steered = true;
+    }, { signal });
     addEventListener('hashchange', () => pin(decodeURIComponent(location.hash.slice(1))), { signal });
     for (const a of links) a.addEventListener('click', () => pin(decodeURIComponent(a.hash.slice(1))), { signal });
     if (location.hash) pin(decodeURIComponent(location.hash.slice(1)));

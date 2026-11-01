@@ -255,11 +255,14 @@ test('doc pages carry the page tree, with this page marked', async () => {
   for (const doc of catalog.items.filter(i => i.markdown && i.status === 'ours' && ['doc', 'lesson', 'skill', 'agent', 'research'].includes(i.type)))
     assert.ok(nav.includes(`href="${doc.url.replace('https://cad-agent.valpatel.com', '')}"`), `${doc.name} is missing from the page tree`);
   assert.ok(files.includes('kit/nav.js') && files.includes('kit/nav.css'));
-  // Written out in full, so the first paint is final and it works without script: a landmark, the toggle, the
-  // filter, and this page's outline (every h2/h3 with an id) under it, again in the right-hand column.
+  // Written out in full, so the first paint is final and it works without script: a landmark, the fold (a native
+  // <details>, closed: phones open it with or without nav.js), the filter, and this page's outline (every h2/h3 with an
+  // id) under it, again in the right-hand column.
   assert.match(toolkit, /<cad-nav [^>]*role="navigation" aria-label="Pages and contents"/);
   assert.match(toolkit, /<link rel="stylesheet" href="\/kit\/nav\.css">/);
-  assert.match(nav, /^<button type="button" class="cad-nav-toggle" aria-expanded="false">/);
+  assert.match(nav, /^<details class="cad-nav-fold"><summary class="cad-nav-toggle">Pages and contents<\/summary><div class="cad-nav-panel">/);
+  assert.match(nav, /<\/div><\/details>$/, 'the fold holds the whole panel and nothing else');
+  assert.doesNotMatch(nav, /<button/, 'no toggle that needs the script');
   assert.match(nav, /<div class="cad-nav-panel"><input type="search" class="cad-nav-filter"/);
   const article = toolkit.match(/<article class="prose">([\s\S]*?)<\/article>/)[1];
   const heads = [...article.matchAll(/<h[23] id="([^"]+)">/g)].map(m => m[1]);

@@ -1638,10 +1638,12 @@ sources:
     aliases: [rothbart]
     used_for: [src/cadagent/mechanical/inserts.py]
     verified: >-
-      2026-11-01: the edition and ISBN checked against the Open Library record. cadagent.mechanical.inserts (key
-      rothbart) takes its screw-in-brass-nut friction from this edition's table after H. A. Rothbart, Mechanical
-      Design and Systems Handbook, 2nd ed., McGraw-Hill, 1985 (ISBN 978-0-07-054020-0), as reproduced at
-      https://amesweb.info/Screws/screw-nut-collar-friction-table.aspx (that page resolved on 2026-11-01).
+      2026-11-01: only the edition and ISBN were checked (Open Library); the book was not opened.
+      cadagent.mechanical.inserts (key rothbart) takes its screw-in-brass-nut friction from this edition's table
+      after H. A. Rothbart, Mechanical Design and Systems Handbook, 2nd ed., McGraw-Hill, 1985 (ISBN
+      978-0-07-054020-0). The values were read from AmesWeb's copy of that table,
+      https://amesweb.info/Screws/screw-nut-collar-friction-table.aspx (it resolved on 2026-11-01), not from the
+      book.
 
   - id: gere
     title: Mechanics of Materials, 8th edition
@@ -1815,13 +1817,15 @@ sources:
     title: "Engineering Polymers: Joining Techniques - A Design Guide"
     authors: []
     org: Covestro LLC
-    year: 2015
+    year: null
     url: https://solutions.covestro.com/-/media/covestro/solution-center/brands/downloads/imported/1557214197.pdf
     access: free
     terms: cited and summarised, never copied
     areas: [fasteners, screw-bosses, moulding]
     used_for: [src/cadagent/formulas/_registry.py]
-    verified: "2026-11-01: the 38-page PDF opened (created 2015-10-30), the edition cadagent.formulas cites."
+    verified: >-
+      2026-11-01: the 38-page PDF opened. It prints no date; its file metadata says 2015-10-30, the date
+      cadagent.formulas cites it by.
 
   - id: bulten
     title: "DELTA PT: a superior thread-former for plastics (brochure version 250422)"
@@ -1841,15 +1845,15 @@ sources:
     title: Compression Limiters & Captive Bolt Assemblies
     authors: []
     org: Bulten AB
-    year: 2024
+    year: null
     url: https://www.bulten.com/media/luvfra41/compression-limiters-bulten.pdf
     access: free
     terms: cited and summarised, never copied
     areas: [compression-limiters]
     used_for: [src/cadagent/mechanical/inserts.py]
     verified: >-
-      2026-11-01: the 4-page PDF (of 2024-08-01) opened. cadagent.mechanical.inserts takes the boss wall of at
-      least half the bolt diameter.
+      2026-11-01: the 4-page PDF opened. It prints no date; its file metadata says 2024-08-01, the date
+      cadagent.mechanical.inserts cites it by. That module takes the boss wall of at least half the bolt diameter.
 
   - id: spirol-inserts
     title: Inserts for Plastics Design Guide
@@ -1925,15 +1929,16 @@ sources:
     title: Heat-Set Insert Dimensions and Design Guidelines (poster)
     authors: []
     org: CNC Kitchen (TwoChefs GmbH)
-    year: 2025
+    year: null
     url: https://www.cnckitchen.com/s/CNCKitchen_Heat-Set-Insert-Dimensions-and-Design-Guidelines.pdf
     access: free
     terms: cited and summarised, never copied
     areas: [inserts, fdm]
     used_for: [src/cadagent/mechanical/inserts.py]
     verified: >-
-      2026-11-01: the 2-page PDF opened (of 2025-06). Read for cadagent.mechanical.inserts (#230): p. 2, the
-      metric table (hole, minimum wall, blind-hole depth).
+      2026-11-01: the 2-page PDF opened. It prints no date; its file metadata says 2025-06, and
+      cadagent.mechanical.inserts cites it as the PDF of 2025-06-30. Read for that module (#230): p. 2, the metric
+      table (hole, minimum wall, blind-hole depth).
 
   - id: cnck-2019
     title: Threaded Inserts for 3D Prints - Cheap VS Expensive
@@ -2204,18 +2209,19 @@ sources:
       2026-10-31: opened the PDF (Rev 1.9, 2018-01-19); read the fastener penetration limits (2.39 and 3.56 mm).
 
   - id: iso-20457
-    title: ISO 20457 Plastics moulded parts - Tolerances and acceptance conditions
+    title: ISO 20457:2026 Plastics moulded parts - Tolerances and acceptance conditions
     authors: []
     org: ISO
     year: 2026
-    url: https://www.evs.ee/en/iso-20457-2018
+    url: https://www.evs.ee/en/iso-20457-2026
     access: paid
     terms: cited by number and title only; never copied
     areas: [injection-moulding]
     used_for: [research/process-profiles.md]
     verified: >-
       2026-10-31: read the Estonian standards body's listing: the 2018 edition was withdrawn on 2026-08-06 and
-      replaced by ISO 20457:2026. Cite the 2026 edition.
+      replaced by ISO 20457:2026. Cite the 2026 edition. 2026-11-01: the url now links the 2026 edition's
+      listing, which resolved.
 
   - id: din-16742
     title: DIN 16742:2013-10 Plastics moulded parts - Tolerances and acceptance conditions

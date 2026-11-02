@@ -849,7 +849,7 @@ YAML under `standards`)
 [sendcutsend-specs]: https://cdn.sendcutsend.com/specs/sendcutsend-specs.json
 [solidworks-k-factor]: https://help.solidworks.com/2022/English/SolidWorks/sldworks/c_K_Factor.htm
 [iso-2768-1]: https://www.iso.org/standard/7748.html
-[iso-20457]: https://www.evs.ee/en/iso-20457-2018
+[iso-20457]: https://www.evs.ee/en/iso-20457-2026
 [din-16742]: https://www.dinmedia.de/en/standard/din-16742/192658755
 [iso-astm-52910]: https://www.iso.org/standard/67289.html
 [iso-astm-52911-2]: https://store.astm.org/f3281-19r25.html

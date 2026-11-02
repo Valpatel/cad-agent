@@ -101,6 +101,10 @@ def test_the_command_line(capsys):
     out = capsys.readouterr().out
     assert out.startswith("roark: Warren C. Young") and "iso898: ISO, ISO 898-1:2013" in out
     assert refs.main(["no-such-source"]) == 2
+    assert refs.main([]) == 2                                   # nothing asked: usage, not a silent success
+    capsys.readouterr()
+    assert refs.main(["judgement"]) == 0
+    assert capsys.readouterr().out.startswith("judgement: not an outside source (judgement): ")
     assert refs.main(["--check"]) == 0
     assert "0 problems" in capsys.readouterr().out
 
@@ -129,6 +133,7 @@ def _planted(tmp_path: Path, sources, unverified=(), uncited=()) -> Path:
     '''))
     (tmp_path / "docs" / "page.md").write_text("A rule [ref:good-guide] and one [ref:elsewhere]; the syntax is "
                                                "[ref:<id>].\n")
+    (tmp_path / "README.md").write_text("Top level: [ref:good-guide].\n")
     (tmp_path / "research" / "process-profiles.yaml").write_text(yaml.safe_dump({
         "rules": [{"id": "fdm-wall-maker", "source": "good-guide"}, {"id": "fdm-x", "source": "dataset:tds"}],
         "datasets": [{"id": "tds", "cites": "prose, not an id"}]}))
@@ -143,6 +148,7 @@ def test_the_scan_reads_each_way_of_citing(tmp_path):
     assert found == {("good-guide", "src/cadagent/mod.py", "table"), ("gone", "src/cadagent/mod.py", "table"),
                      ("good-guide", "src/cadagent/mod.py", "cite"), ("good-guide", "src/cadagent/mod.py", "material"),
                      ("good-guide", "docs/page.md", "tag"), ("elsewhere", "docs/page.md", "tag"),
+                     ("good-guide", "README.md", "tag"),
                      ("good-guide", "research/process-profiles.yaml", "process-profile")}
 
 
@@ -151,12 +157,13 @@ def test_check_reports_unknown_keys_and_missing_used_for(tmp_path):
     problems, warnings = check(root)
     assert any("cites 'gone'" in p for p in problems) and any("cites 'elsewhere'" in p for p in problems)
     assert any("add docs/page.md to used_for of good-guide" in p for p in problems)
+    assert any("add README.md to used_for of good-guide" in p for p in problems)
     assert any("add research/process-profiles.yaml to used_for" in p for p in problems)
     assert not any("src/cadagent/mod.py to used_for" in p for p in problems) and not warnings
 
 
 def test_check_warns_on_code_citing_an_unverified_entry(tmp_path):
-    root = _planted(tmp_path, [{**GOOD, "used_for": ["src/cadagent/mod.py", "docs/page.md",
+    root = _planted(tmp_path, [{**GOOD, "used_for": ["src/cadagent/mod.py", "docs/page.md", "README.md#top",
                                                      "research/process-profiles.yaml"]}],
                     unverified=[{"id": "gone", "title": "Lost", "org": "Maker", "why": "no URL recorded",
                                  "used_for": ["src/cadagent/mod.py"]}],
@@ -201,3 +208,32 @@ def test_uncited_and_unverified_entries_are_checked_too(tmp_path):
     assert "mine: kind 'hunch'" in problems and "mine: no note" in problems
     assert "inner: cites 'lost', which is not a read source" in problems
     assert "inner: an internal key needs `where`" in problems
+
+
+def test_used_for_may_name_a_folder_or_an_anchor(tmp_path):
+    root = _planted(tmp_path, [{**GOOD, "used_for": ["src/cadagent", "docs/page.md#rules", "README.md",
+                                                     "research/process-profiles.yaml"]}],
+                    unverified=[{"id": "gone", "title": "Lost", "org": "Maker", "why": "no URL", "used_for": ["src/"]}],
+                    uncited=[{"id": "elsewhere", "kind": "general", "note": "common knowledge"}])
+    problems, _ = check(root)
+    assert not problems, problems
+    assert refs.lists(["src/cadagent"], "src/cadagent/mod.py") and not refs.lists(["src/cad"], "src/cadagent/mod.py")
+    assert not refs.lists(["proposed: src/cadagent/mod.py"], "src/cadagent/mod.py")
+
+
+def test_a_malformed_tag_is_reported_not_skipped(tmp_path):
+    root = _planted(tmp_path, [{**GOOD, "used_for": ["src", "docs", "README.md", "research"]}],
+                    unverified=[{"id": "gone", "title": "Lost", "org": "Maker", "why": "no URL", "used_for": ["src"]}],
+                    uncited=[{"id": "elsewhere", "kind": "general", "note": "common knowledge"}])
+    (root / "docs" / "bad.md").write_text("[ref:Covestro] [ref: good-guide] [ref:a, b] [ref:a_b] [ref:<key>]\n")
+    problems, _ = check(root)
+    bad = sorted(p.split("[ref:", 1)[1].split("]", 1)[0] for p in problems if "is not a tag" in p)
+    assert bad == [" good-guide", "Covestro", "a, b", "a_b"], problems
+
+
+def test_an_alias_that_names_another_entry_is_caught_in_either_order(tmp_path):
+    other = {**GOOD, "id": "other-guide"}
+    for sources in ([{**GOOD, "aliases": ["other-guide"]}, other], [other, {**GOOD, "aliases": ["other-guide"]}]):
+        reg = Registry({"schema": 1, "sources": sources})
+        assert reg.resolve("other-guide").id == "other-guide"
+        assert any("other-guide: the id or alias is used twice" in p for p in reg.problems(tmp_path))

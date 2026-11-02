@@ -10,7 +10,7 @@ Where code cites by id (``citations()`` finds them all):
   ``cadagent.mechanical.printed_joints``), and ``cite("<id>", ...)`` calls;
 * ``Material(..., source="<id>")`` (``cadagent.simulation.fea``);
 * ``research/process-profiles.yaml``: each rule's, formula's and shop table's ``source``, and each dataset's ``cites``;
-* ``[ref:<id>]`` tags in Markdown, YAML and Python text.
+* ``[ref:<id>]`` tags in Markdown, YAML and Python text (a malformed tag is reported, not skipped).
 
 A key resolves to one of three kinds of entry:
 
@@ -58,9 +58,10 @@ KINDS = ("source", "unverified", "uncited")
 NOT_COPIED = ("never copied", "not copied", "not redistributed", "by number and title only")
 OPEN_LICENCE = "with attribution"
 KEY = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
-TAG = re.compile(r"\[ref:([a-z0-9][a-z0-9-]*)\]")   # a real key, so "[ref:<id>]" in prose is not a citation
+TAG = re.compile(r"\[ref:([^\]\n]*)\]")
+PLACEHOLDER = re.compile(r"<[^>]*>")   # "[ref:<id>]" in prose explains the syntax; it cites nothing
 TABLES = ("SRC", "SOURCES")         # module-level dicts whose keys are ids
-TAG_FOLDERS = ("docs", "lessons", "research", "skills", "src", "agents")
+TAG_FOLDERS = ("docs", "lessons", "research", "skills", "src", "agents", "tools", "examples", "web")
 TAG_SUFFIXES = (".md", ".py", ".yaml", ".yml")
 
 
@@ -99,7 +100,7 @@ class Reference:
     def citation(self) -> str:
         """One line: who, title, year, link. An uncited key says what it is instead."""
         if self.kind == "uncited":
-            return f"{self.id}: not an outside source ({self.data.get('kind')}): {self.data.get('note', '')}".strip()
+            return f"not an outside source ({self.data.get('kind')}): {' '.join(str(self.data.get('note', '')).split())}"
         year = self.data.get("year")
         parts = [self.credit, self.title, str(year) if year else "n.d."]
         if self.data.get("org") and self.data.get("authors"):
@@ -141,10 +142,13 @@ class Registry:
                 if rid in self.entries:
                     self._duplicates.append(rid)
                 self.entries[rid] = Reference(rid, kind, item)
-                for alias in item.get("aliases") or []:
-                    if alias in self.aliases or alias in self.entries:
-                        self._duplicates.append(alias)
-                    self.aliases[alias] = rid
+        # aliases after every id, so an alias that names an entry is caught wherever either is written
+        for ref in self.entries.values():
+            for alias in ref.data.get("aliases") or []:
+                if alias in self.aliases or alias in self.entries:
+                    self._duplicates.append(alias)
+                    continue
+                self.aliases[alias] = ref.id
 
     def __contains__(self, key: str) -> bool:
         return key in self.entries or key in self.aliases
@@ -157,7 +161,7 @@ class Registry:
 
     def resolve(self, key: str) -> Reference:
         """The entry a key names, by id or alias. Unknown keys raise KeyError with the nearest ids."""
-        rid = self.aliases.get(key, key)
+        rid = key if key in self.entries else self.aliases.get(key, key)
         if rid in self.entries:
             return self.entries[rid]
         near = difflib.get_close_matches(key, list(self.entries) + list(self.aliases), n=3)
@@ -338,7 +342,13 @@ def _tag_citations(path: Path, rel: str) -> List[Citation]:
         lines = path.read_text(encoding="utf-8").splitlines()
     except UnicodeDecodeError:
         return []
-    return [Citation(m.group(1), rel, i + 1, "tag") for i, line in enumerate(lines) for m in TAG.finditer(line)]
+    out = []
+    for i, line in enumerate(lines):
+        for m in TAG.finditer(line):
+            key = m.group(1)
+            if not PLACEHOLDER.fullmatch(key):
+                out.append(Citation(key, rel, i + 1, "tag" if KEY.fullmatch(key) else "bad-tag"))
+    return out
 
 
 def citations(root: Path = ROOT) -> List[Citation]:
@@ -352,11 +362,24 @@ def citations(root: Path = ROOT) -> List[Citation]:
     pp = root / "research" / "process-profiles.yaml"
     if pp.is_file():
         out += _process_profile_citations(pp, pp.relative_to(root).as_posix())
+    for path in sorted(root.glob("*.md")):
+        out += _tag_citations(path, path.relative_to(root).as_posix())
     for folder in TAG_FOLDERS:
         for path in sorted((root / folder).rglob("*")):
             if path.suffix in TAG_SUFFIXES and path.is_file() and "vendor" not in path.parts and path.resolve() != me:
                 out += _tag_citations(path, path.relative_to(root).as_posix())
     return out
+
+
+def lists(used_for: Iterable[str], path: str) -> bool:
+    """True when ``used_for`` names ``path``: the file itself, ``path#anchor``, or a folder that holds it."""
+    for entry in used_for:
+        if not isinstance(entry, str) or entry.startswith("proposed:"):
+            continue
+        entry = entry.split("#", 1)[0].rstrip("/")
+        if path == entry or path.startswith(entry + "/"):
+            return True
+    return False
 
 
 def check(root: Path = ROOT, registry: Optional[Registry] = None,
@@ -369,13 +392,16 @@ def check(root: Path = ROOT, registry: Optional[Registry] = None,
     reg = registry or load(root / "research" / "references.yaml")
     problems, warnings = reg.problems(root), []
     for c in (citations(root) if found is None else found):
+        if c.how == "bad-tag":
+            problems.append(f"{c.where}: [ref:{c.key}] is not a tag: write [ref:<id>] with one kebab-case id")
+            continue
         if c.key not in reg:
             problems.append(f"{c.where}: cites {c.key!r}, which research/references.yaml does not have")
             continue
         ref = reg.resolve(c.key)
         if ref.kind == "unverified":
             warnings.append(f"{c.where}: cites {c.key!r}, an unverified entry ({ref.get('why')})")
-        if ref.kind != "uncited" and c.path not in (ref.get("used_for") or []):
+        if ref.kind != "uncited" and not lists(ref.get("used_for") or [], c.path):
             problems.append(f"{c.where}: cites {c.key!r}; add {c.path} to used_for of {ref.id}")
     return problems, sorted(set(warnings))
 
@@ -387,6 +413,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--check", action="store_true", help="check the registry and every citation in the checkout")
     ap.add_argument("--json", action="store_true", help="print the entries as JSON")
     args = ap.parse_args(argv)
+    if not (args.check or args.keys):
+        ap.print_usage(sys.stderr)
+        return 2
     if args.check:
         problems, warnings = check()
         for w in warnings:

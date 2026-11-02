@@ -3,8 +3,8 @@
   https link or ISBN, access, terms, the design areas it supports, the repo files that rely on it, and what was read
   and when. It merges the first sweep of #119 with the sources of `research/process-profiles.yaml`, and adds every
   source that `cadagent.formulas`, `cadagent.mechanical.inserts`, `cadagent.mechanical.printed_joints` and
-  `cadagent.simulation.fea` cite by key. Sources are cited, never copied: paid standards and papers by number and
-  title only, and no PDF of a source is kept in the repo (#118).
+  `cadagent.simulation.fea` cite by key. Sources are cited, never copied: paid standards by number and title only,
+  paid papers by author, title and equation, and no PDF of a source is kept in the repo (#118).
 - `cadagent.review.references`: `lookup("covestro")` and `citation("roark")` resolve an id or a module's own key (an
   alias such as `shigley-torque`) to its entry. `check()` finds every place the code cites by id and reports a key
   that resolves to nothing, a malformed entry, or a citing file missing from the entry's `used_for`. From a shell:

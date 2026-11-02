@@ -102,7 +102,9 @@ main() {
         command -v uv >/dev/null 2>&1 || die "uv did not install: see https://docs.astral.sh/uv/getting-started/installation/"
     fi
 
-    if [ -d "$dir/.git" ] && command -v cad-agent >/dev/null 2>&1 && cad-agent update --help 2>/dev/null | grep -q -- --dir; then
+    # Update when this installer's own cad-agent (uv's, in $bin) is there; one from a venv on PATH is not ours to update.
+    if [ -d "$dir/.git" ] && [ "$(command -v cad-agent || true)" = "$bin/cad-agent" ] &&
+        cad-agent update --help 2>/dev/null | grep -q -- --dir; then
         say "updating $dir"
         set -- update --dir "$dir"
         [ -n "$ref" ] && set -- "$@" --ref "$ref"

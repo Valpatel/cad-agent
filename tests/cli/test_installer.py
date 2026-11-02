@@ -183,3 +183,18 @@ def test_install_ps1_parses(tmp_path):
                      "if ($e) { $e | ForEach-Object { $_.ToString() }; exit 1 }\n")
     r = subprocess.run(["pwsh", "-NoProfile", "-File", str(check), str(PS1)], capture_output=True, text=True)
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_a_cad_agent_from_somewhere_else_on_path_is_left_alone(world):
+    """Only the installer's own cad-agent (uv's, in ~/.local/bin) takes the update path; another one on PATH (a venv
+    the person has active) is never asked to update, and the command is installed from the checkout instead."""
+    remote, home, env = world
+    assert _install(env).returncode == 0
+    decoy = Path(env["PATH"].split(":")[0]) / "cad-agent"
+    decoy.write_text(f'#!/bin/sh\ntouch "{home}/decoy-ran"\nexit 1\n')
+    decoy.chmod(0o755)
+    (home / ".local" / "bin" / "cad-agent").unlink()
+    again = _install(env)
+    assert again.returncode == 0, again.stdout + again.stderr
+    assert not (home / "decoy-ran").exists() and "found " in again.stdout
+    assert len((home / "uv-calls.log").read_text().splitlines()) == 2, "installed again from the checkout"

@@ -80,7 +80,9 @@ function Install-CadAgent {
     $extraArgs = @(); if ($extras) { $extraArgs = @('--extras', $extras) }
     $refArgs = @(); if ($ref) { $refArgs = @('--ref', $ref) }
     $canUpdate = $false
-    if ((Test-Path (Join-Path $dir '.git')) -and (Get-Command cad-agent -ErrorAction SilentlyContinue)) {
+    # Update when this installer's own cad-agent (uv's, in $bin) is there; one from a venv on PATH is not ours to update.
+    $found = Get-Command cad-agent -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ((Test-Path (Join-Path $dir '.git')) -and $found -and ((Split-Path $found.Source) -eq $bin)) {
         $help = & { $ErrorActionPreference = 'Continue'; & cad-agent update --help 2>$null }
         $canUpdate = ($LASTEXITCODE -eq 0) -and [bool]($help -match '--dir')
     }

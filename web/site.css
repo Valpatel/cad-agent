@@ -45,7 +45,8 @@ text-decoration:none;min-height:48px;transition:transform .2s,box-shadow .2s;bor
 .works-with{font:600 11.5px/1.7 var(--mono)!important;color:var(--ink)!important}.works-with span{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#386248}
 .use-card .agent-copy{margin:0;max-width:none}.use-card .agent-box{max-width:none;white-space:pre;overflow-x:auto;font-size:12px;line-height:1.65;background:#173d3c;border-color:#173d3c;color:#e4efe6;padding:52px 20px 18px}
 .use-card .agent-box b{color:#ffb38a}
-@media(max-width:1050px){.use-card{grid-template-columns:1fr;padding:22px}}
+@media(max-width:1050px){.use-card{grid-template-columns:minmax(0,1fr);padding:22px}}
+.use-card>*{min-width:0}
 @media(max-width:600px){.use-card{padding:18px 14px;border-radius:20px}.use-card .agent-box{font-size:11px;padding:52px 14px 14px}}
 .hero-scene{position:relative;min-height:470px;border-radius:48% 48% 14% 14%;background:radial-gradient(ellipse at 28% 12%,#f4fcff9c,transparent 62%),linear-gradient(145deg,#d9edf3,#a9cfde);
 box-shadow:inset 0 1px 1px #ffffffc7,inset 0 0 0 1px #749dab55,0 24px 48px #204a581a,0 4px 10px #204a5810;display:grid;place-items:center;overflow:hidden}

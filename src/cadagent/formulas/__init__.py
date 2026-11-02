@@ -32,6 +32,7 @@ from cadagent.formulas.limiters import (PRELOAD_SHARE, annulus_stress, frustum_s
                                         press_fit_pressure, proof_load)
 from cadagent.formulas.linkages import (fivebar_inputs, fivebar_jacobians, fivebar_point, fourbar_angles,
                                         fourbar_input_limits, grashof, transmission_angle)
+from cadagent.formulas.rivets import bearing_force, lap_joint, rivet_shear_force, solid_sheet_force, tearing_force
 from cadagent.formulas.screws import (BOSS_ENGAGEMENT, BOSS_HOLE, BOSS_OUTSIDE, NUT_FACTORS, TIGHTEN_OVER_DRIVE,
                                       TIGHTEN_OVER_STRIP, boss_hoop_stress, nut_factor, preload_from_torque,
                                       screw_boss, tensile_stress_area, thread_radial_pressure, thread_shear_areas,

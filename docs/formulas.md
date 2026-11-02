@@ -151,6 +151,8 @@ SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A 
 | `insert_shear_force`, `insert_shear_torque` | an insert's pull-out (push-out) and torque-out: c τ π D L and c τ π D² L / 2 on the knurl's cylinder | Shigley 10th ed., Section 3-9; c fitted to published tests (`cadagent.mechanical.inserts.calibration`) | near the tests c came from: M3 x 5.7 and M6 x 12.7 in printed PLA and PETG |
 | `insert_clamp_path` | where the screw's tension goes: into a shoulder (seat), through a flush insert, or into the knurl (jack-out) | Shigley 10th ed., Section 8-7; the makers' flush rule (PEM bulletin SI, SPIROL) | any recess jacks out; proud by 0.13 mm still counts as flush |
 | `insert_limited_torque` | the most to tighten into an insert: the screw's proof, the insert's torque-out through the thread's share, and jack-out with any separating load | Shigley 10th ed., Sections 8-8 and 8-9 | thread torque turns the insert; jack-out combined linearly |
+| `rivet_shear_force`, `bearing_force` | a riveted joint's rivets in shear, n m τ π d² / 4, and its holes in bearing, n d t σbr | MIL-HDBK-5J, 8.1.2 and 8.1.2.1 (Tables 8.1.2(b) and 8.1.2.1(a)) | static; a blind rivet's shear is its maker's rating, not its alloy's |
+| `tearing_force`, `solid_sheet_force`, `lap_joint` | the sheet torn between holes, (p − d) t σt, the solid sheet p t σt, and a lap joint's strength (the least mode) and efficiency, per pitch | Abbud, *Riveted Joints* lecture notes (Al-Mustaqbal University College), checked on its Problem 2 | rivets in shear only; the single lap's bending is not modelled; tearing at the first row |
 | `grashof` | Grashof class, whether the input crank turns fully, and the inversion (crank-rocker, double crank, rocker-crank, double rocker, triple rocker) | Norton 5th ed., Chapter 2 | rigid links |
 | `fourbar_angles` | coupler and output angles, open or crossed | Freudenstein (1955); Norton 5th ed., Chapter 4 | position only; a gap under 1e-12 of the longest link counts as closed |
 | `transmission_angle` | angle between coupler and rocker | Norton 5th ed., Chapter 4 | position only; the same closing test |
@@ -198,7 +200,7 @@ units. `kit/formulas-data.js` carries the demos' data: the printed filaments, an
 in the test.
 
 <details>
-<summary>What each family is tested against: beams, torsion, springs, screws, linkages, heat and air</summary>
+<summary>What each family is tested against: beams, torsion, springs, screws, riveted joints, linkages, heat and air</summary>
 
 - **Beams.**
   - Beam stiffness by the direct stiffness method.
@@ -218,6 +220,9 @@ in the test.
   - K ≈ 0.2 from Eq. (8-26) at a friction of 0.15.
   - The 0.75 and 0.875 shear-area factors derived from the ISO 68-1 profile.
   - The flank's radial push from its statics, and Lamé's hoop stress against the equilibrium of half the ring.
+- **Riveted joints** (`tests/formulas/test_rivet_formulas.py`).
+  - MIL-HDBK-5J's tabulated single shear of a 1/8 in 5056 rivet (363 lb) and unit bearing at 100 ksi, t 0.040 in (514 lb).
+  - Both joints of Abbud's Problem 2, mode by mode, with their efficiencies, 60 % and 69.2 %.
 - **Linkages.**
   - Loop closure, and an independent circle-intersection construction, at every input angle.
   - Kites (a = b, c = d) and near-kites, every 0.1 degree, where the textbook root divides 0 by 0.

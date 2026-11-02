@@ -17,14 +17,14 @@ How to read it:
 ## The answer: which guide leads each topic
 
 Each arrow below means "its rules are written down in". Each source box names its kind (shops, maker, makers and
-government), so the colours only repeat what the words say.
+government), so the colours only repeat what the words say. SendCutSend's own hardware limits
+go into its shop profile, not the generic clinch rules.
 
 ```mermaid
 flowchart TD
     S["shops:<br/>SendCutSend,<br/>Protolabs,<br/>OSH Cut"] --> P["process-<br/>profiles.yaml:<br/>shop and<br/>generic rules"]
     H["maker: PEM<br/>handbook and<br/>bulletins"] --> C["clinch rules<br/>and check"]
     V["makers: POP,<br/>Marson, GESIPA;<br/>government:<br/>FAA, NASA,<br/>MIL-HDBK-5J"] --> K["rivet rules<br/>and check"]
-    S --> C
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

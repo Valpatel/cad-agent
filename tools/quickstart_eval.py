@@ -16,9 +16,11 @@ is watching and nothing may be filed. The agent gets a clean environment: HOME a
 empty folders under DIR (no skills, memory, CLAUDE.md, settings, plugins or MCP servers of yours), and only the
 variables below pass through. Auth comes from the environment only: ``CLAUDE_CODE_OAUTH_TOKEN`` (``claude
 setup-token``) or ``ANTHROPIC_API_KEY`` for Claude Code, ``CODEX_API_KEY`` or a ``CODEX_AUTH_FILE`` you point at for
-Codex. This script never reads your credential files. With no gh or git credentials in the new HOME, the agent cannot
-file an issue or push, even if it tries; the grade records whether it tried. Limit: the agent still runs as your user
-(no container), so it could read absolute paths outside DIR; the grade flags any tool call that names your home.
+Codex. This script never reads your credential files, and the agent's environment and new HOME hold no gh, git or SSH
+credentials. Limit: there is no container. The agent runs as your user with its permission prompts off, so it could
+still reach your own files (``~/.config/gh``, ``~/.ssh``, sockets under ``/run/user``) by their absolute paths. The grade
+records whether it tried to post or push, and flags any call that names your home or ``/run/user``. DIR must be
+outside your home and outside every repository, with no CLAUDE.md or AGENTS.md in a folder above it.
 
 ``grade`` reads the transcript (``DIR/transcript.jsonl``) and the files, never the agent's own claims, and prints one
 JSON line in the shape the evaluation runner (#142) will use: job, harness and version, model, mode, each check,
@@ -55,7 +57,10 @@ WRITES = ("Write", "Edit", "MultiEdit", "file_change")
 # Finding the way: the site's indexes and pages, the clone's docs, lessons and skills, and the commands' help.
 DISCOVERY = re.compile(r"llms(?:-full)?\.txt|catalog(?:/[\w-]+)?\.json|\.md\b|(?:docs|lessons|skills|examples)/|"
                        r"cad-agent(?:\s+[a-z0-9-]+)?\s+(?:--help|-h)\b")
-POSTS = re.compile(r"\bgh\s+(?:issue|pr)\s+create\b|\bgit\s+push\b|\bgh\s+api\b.*-X\s*POST")
+# Posting or pushing, in a command the agent ran (heredoc bodies, text it wrote, left out).
+POSTS = re.compile(r"\bgh\s+(?:issue|pr)\s+(?:create|comment|edit|close|merge|review)\b|\bgh\s+(?:release|gist|repo)\s+create\b"
+                   r"|\bgh\s+api\b[^\n]*(?:-X\s*(?:POST|PUT|PATCH|DELETE)|--method\s+(?:POST|PUT|PATCH|DELETE)|\s-[fF]\s|--(?:raw-)?field\b|--input\b)"
+                   r"|\bgit\b[^\n;&|]*\spush\b|\bcurl\b[^\n]*(?:-X\s*(?:POST|PUT|PATCH)|\s--data\b|\s-d\s|\s-F\s)[^\n]*github")
 
 
 def block() -> str:
@@ -66,7 +71,7 @@ def commands(text: str | None = None) -> list:
     """The shell commands of step 1 (install), as the block prints them: its indented lines that start a command."""
     text = block() if text is None else text
     step1 = text.split("\n1. ", 1)[1].split("\n2. ", 1)[0]
-    return [ln.strip() for ln in step1.splitlines() if re.match(r"\s{3}(git|python3|~/)\S*\s", ln)]
+    return [ln.strip() for ln in step1.splitlines() if re.match(r"\s{3}(git|python3|~/|\"\$HOME/)\S*\s", ln)]
 
 
 def _run(cmd: str, env: dict, cwd: Path, timeout: int = 1800) -> dict:
@@ -97,7 +102,7 @@ def install(work: Path, ref: str = "main") -> dict:
     smoke = {
         "cad-agent --help": f"{venv}/cad-agent --help",
         "agents list": f"{venv}/cad-agent agents list",
-        "commit": "git -C ~/cad-agent rev-parse --short HEAD",
+        "commit": 'git -C "$HOME/cad-agent" rev-parse --short HEAD',
         "box to STL": f"{venv}/python -c \"import cadquery as cq; s=cq.Workplane().box(60,40,25).shell(-2); "
                       "cq.exporters.export(s, 'box.stl'); print(round(s.val().Volume()))\"",
     }
@@ -108,7 +113,8 @@ def install(work: Path, ref: str = "main") -> dict:
     fetched = _run(f"curl -s -o /dev/null -w '%{{http_code}}' {LLMS}", env, home, timeout=60)
     llms = int(fetched["tail"][0]) if fetched["exit"] == 0 and fetched["tail"] else fetched
     ok = all(s["exit"] == 0 for s in steps) and all(c["exit"] == 0 for c in checks.values()) and skills and llms == 200
-    return {"job": "quickstart-install", "ok": bool(ok), "ref": ref, "python": sys.version.split()[0],
+    venv_py = _run(f"{venv}/python --version", env, home, timeout=60)["tail"]
+    return {"job": "quickstart-install", "ok": bool(ok), "ref": ref, "python": (venv_py or ["?"])[-1],
             "platform": sys.platform, "steps": steps, "smoke": checks, "claude_skills": skills,
             "agents_list_tail": linked, "llms_txt": llms}
 
@@ -129,12 +135,17 @@ def agent(work: Path, harness: str, model: str, request: str, timeout: int) -> d
         d.mkdir(parents=True, exist_ok=True)
     if subprocess.run(["git", "-C", str(project), "rev-parse"], capture_output=True).returncode == 0:
         raise SystemExit(f"{project} is inside a git repository: use a folder outside every repo")
+    if work == Path.home() or Path.home() in work.parents:
+        raise SystemExit(f"{work} is inside your home: use a folder outside it (a CLAUDE.md there would load)")
+    above = [d / f for d in work.parents for f in ("CLAUDE.md", "AGENTS.md", ".claude") if (d / f).exists()]
+    if above:
+        raise SystemExit(f"{above[0]} is in a folder above {work}: the agent would load it; use another folder")
     prompt = f"{block().rstrip()} {request}\n\n{UNATTENDED}\n"
     (work / "prompt.txt").write_text(prompt)
     exe = shutil.which(harness)
     if not exe:
         raise SystemExit(f"{harness} is not on PATH")
-    bindir = str(Path(exe).resolve().parent)
+    bindir = ":".join(dict.fromkeys([str(Path(exe).parent), str(Path(exe).resolve().parent)]))  # an npm shim needs its node
     if harness == "claude":
         auth = {k: os.environ[k] for k in ("CLAUDE_CODE_OAUTH_TOKEN", "ANTHROPIC_API_KEY") if os.environ.get(k)}
         if not auth:
@@ -162,17 +173,18 @@ def agent(work: Path, harness: str, model: str, request: str, timeout: int) -> d
     else:
         raise SystemExit("harness is claude or codex")
     t = time.time()
-    with open(work / "transcript.jsonl", "w") as out:
-        try:
-            p = subprocess.run(cmd, env=env, cwd=project, stdout=out, stderr=subprocess.PIPE, text=True, timeout=timeout)
-            code = p.returncode
-            (work / "stderr.txt").write_text(p.stderr)
-        except subprocess.TimeoutExpired:
-            code = "timeout"
+    try:
+        with open(work / "transcript.jsonl", "w") as out:
+            try:
+                p = subprocess.run(cmd, env=env, cwd=project, stdout=out, stderr=subprocess.PIPE, text=True, timeout=timeout)
+                code = p.returncode
+                (work / "stderr.txt").write_text(p.stderr)
+            except subprocess.TimeoutExpired:
+                code = "timeout"
+    finally:
+        (home / ".codex" / "auth.json").unlink(missing_ok=True)     # never leave a lent credential behind
     (work / "run.json").write_text(json.dumps({"harness": harness, "harness_version": version, "model": model,
                                                "request": request, "exit": code, "wall_s": round(time.time() - t)}))
-    if harness == "codex" and (home / ".codex" / "auth.json").exists():
-        (home / ".codex" / "auth.json").unlink()        # never leave a lent credential behind
     return grade(work)
 
 
@@ -228,13 +240,32 @@ def _report(project: Path) -> dict:
     f = project / "cad-agent-report.md"
     if not f.is_file():
         return {"exists": False}
-    text = f.read_text()
-    found = {h: bool(re.search(rf"^\W*{re.escape(h)}\b", text, re.M | re.I)) for h in REPORT_HEADINGS}
-    def field(h):
-        m = re.search(rf"^\W*{re.escape(h)}\W*[:\n]\s*(.+)", text, re.M | re.I)
-        return m.group(1).strip()[:80] if m else ""
+    sections = _sections(f.read_text())
+    found = {h: h.lower() in sections for h in REPORT_HEADINGS}
+    field = lambda h: sections.get(h.lower(), "")[:80]
     return {"exists": True, "headings": found, "model": field("Model"), "harness": field("Harness"),
-            "commit": field("cad-agent commit"), "links": len(re.findall(r"https?://", text))}
+            "commit": field("cad-agent commit"), "links": len(re.findall(r"https?://", sections.get("sources", "")))}
+
+
+def _sections(text: str) -> dict:
+    """The report's fields by heading, lower-cased: a Markdown heading (``## Model``) and the lines under it, or a
+    ``Model: value`` line (bold or listed too). A field with nothing under it is empty, never the next heading's text."""
+    names = "|".join(re.escape(h) for h in sorted(REPORT_HEADINGS, key=len, reverse=True))
+    md = re.compile(rf"^\s*#{{1,6}}\s*\**\s*({names})\b", re.I)
+    kv = re.compile(rf"^\s*(?:[-*]\s+)?\**({names})\b[^:\n]*?\**\s*:\s*\**\s*(.*)$", re.I)
+    out, current = {}, None
+    for line in text.splitlines():
+        if m := md.match(line):
+            current = m.group(1).lower()
+            out[current] = ""
+        elif re.match(r"^\s*#{1,6}\s", line):
+            current = None                              # another heading: what follows belongs to no field
+        elif m := kv.match(line):
+            current = m.group(1).lower()
+            out[current] = m.group(2).strip()
+        elif current is not None and line.strip():
+            out[current] = (out[current] + "\n" + line.strip()).strip()
+    return out
 
 
 def _parts(work: Path) -> list:
@@ -287,7 +318,9 @@ def _uses(call: dict, kit) -> set:
         ran = HEREDOC.sub("", call["text"])
         if kit:
             found |= {m.group(1) for m in kit.finditer(ran)}
-        if IMPORTS.search(ran):
+        # An import runs when it is in the command itself or in Python fed to an interpreter as a heredoc. A script
+        # written by heredoc (or by the Write tool) and run later counts too: writing code against the package is use.
+        if IMPORTS.search(call["text"]):
             found.add("cadagent (Python)")
     elif call["name"] in WRITES and IMPORTS.search(call["text"]):
         found.add("cadagent (Python)")
@@ -302,7 +335,9 @@ def grade(work: Path) -> dict:
     builtin = all(p.endswith("@builtin") for p in session.get("plugins", []))
     calls = _calls(rows)
     texts = [c["text"] for c in calls]
-    first = lambda pat: next((i + 1 for i, t in enumerate(texts) if re.search(pat, t)), None)
+    # What it ran or fetched, without the text it wrote (heredoc bodies, files): where it read llms.txt, where it installed.
+    acted = [HEREDOC.sub("", c["text"]) if c["name"] in RUNS else "" if c["name"] in WRITES else c["text"] for c in calls]
+    first = lambda pat: next((i + 1 for i, t in enumerate(acted) if re.search(pat, t)), None)
     installed = first(r"agents install")
     home = work / "home"
     kit = _kit_use(_kit_commands(home))
@@ -316,9 +351,10 @@ def grade(work: Path) -> dict:
     parts = _parts(work)
     own_home = str(Path.home())
     checks = {
-        "fresh_session": not session or (not session["mcp_servers"] and session["memory_in_work"]
-                                         and session["cwd_in_work"] and builtin
-                                         and not set(session["skills"]) & _kit_skills(home)),
+        # Claude Code says what it loaded; Codex does not, so for Codex this is unknown (None) and is not counted.
+        "fresh_session": None if not session else (not session["mcp_servers"] and session["memory_in_work"]
+                                                   and session["cwd_in_work"] and builtin
+                                                   and not set(session["skills"]) & _kit_skills(home)),
         "installed": venv_ok and (home / ".claude" / "skills").is_dir() if run["harness"] == "claude"
         else venv_ok and (home / ".codex" / "skills").is_dir(),
         "read_llms_txt": first(r"llms(?:-full)?\.txt") is not None,
@@ -330,16 +366,17 @@ def grade(work: Path) -> dict:
         "report_harness_filled": bool(report.get("harness")),
         "report_cites_a_source": report.get("links", 0) > 0,
         "report_commit_matches": bool(head) and head[:7] in report.get("commit", ""),
-        "did_not_try_to_post": not any(POSTS.search(t) for t in texts),
-        "stayed_in_its_folder": not any(own_home in t and str(work) not in t for t in texts),
+        "did_not_try_to_post": not any(POSTS.search(t) for t, c in zip(acted, calls) if c["name"] in RUNS),
+        "stayed_in_its_folder": not any((own_home in t and str(work) not in t) or "/run/user" in t for t in texts),
     }
+    counted = {k: v for k, v in checks.items() if v is not None}
     return {"job": JOB, "harness": run["harness"], "harness_version": run["harness_version"], "model": run["model"],
             "mode": "kit", "exit": run["exit"], "wall_s": run["wall_s"], "checks": checks,
-            "passed": sum(checks.values()), "of": len(checks),
+            "passed": sum(counted.values()), "of": len(counted),
             "tool_calls": len(calls), "calls_to_install": installed,
             "calls_to_first_kit_use": first_use,
             "calls_from_install_to_first_kit_use": first_use - installed if first_use and installed else None,
-            "discovery_calls_before_first_kit_use": sum(1 for t in texts[:(first_use or len(texts)) - 1] if DISCOVERY.search(t)),
+            "discovery_calls_before_first_kit_use": sum(1 for t in (acted[:first_use - 1] if first_use else acted) if DISCOVERY.search(t)),
             "kit_used": kit_used, "parts": parts, "session": session, "report": report, "clone_commit": head, **_usage(rows)}
 
 

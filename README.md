@@ -14,30 +14,31 @@ Claude Code, Codex CLI, Copilot CLI, Cursor, Gemini CLI: see the [step-by-step g
 ```text
 Use cad-agent (github.com/Valpatel/cad-agent, MIT) for what I ask at the end.
 
-1. Install once (git, Python 3.11+; on Windows .venv\Scripts for .venv/bin):
-   git clone --depth 1 -b main https://github.com/Valpatel/cad-agent ~/cad-agent
-   python3 -m venv ~/cad-agent/.venv
-   ~/cad-agent/.venv/bin/pip install -e "$HOME/cad-agent[cad]"
-   ~/cad-agent/.venv/bin/cad-agent agents install
+1. Install once. Needs git and Python 3.11 or newer (if python3 is older,
+   name a newer one, e.g. python3.12). Windows: .venv\Scripts for .venv/bin.
+   git clone --depth 1 -b main https://github.com/Valpatel/cad-agent "$HOME/cad-agent"
+   python3 -m venv "$HOME/cad-agent/.venv"
+   "$HOME/cad-agent/.venv/bin/pip" install -e "$HOME/cad-agent[cad]"
+   "$HOME/cad-agent/.venv/bin/cad-agent" agents install
    More extras inside the brackets, comma-separated: fea (strength), sim
    (airflow, topology, renders), robot (URDF, MuJoCo), explore (search).
 2. Look before you write code: fetch cad-agent.valpatel.com/llms.txt, then
    the page or catalog/<area>.json it points to (any page also as .md),
    and `cad-agent <command> --help`. Skills: ~/cad-agent/skills/*/SKILL.md.
 3. Build with the kit's tested commands and checks, not formulas from
-   memory. Make it a cad-agent project (cad-agent.yaml, docs/toolkit.md)
-   so `cad-agent all` builds, exports and runs every check. Say what each
-   check assumes: CAD and simulation narrow a design down, they do not
-   prove that a printed part fits or holds.
+   memory. Make it a cad-agent project (cad-agent.yaml, as in
+   ~/cad-agent/docs/toolkit.md) so `cad-agent all` builds, exports and runs
+   every check. Say what each check assumes: CAD and simulation narrow a
+   design down, they do not prove that a printed part fits or holds.
 4. Give back, through GitHub only: cad-agent collects no telemetry. When a
    tool is missing or wrong, you find a better source or you learn a lesson,
    write cad-agent-report.md with these headings: Model, Harness, cad-agent
-   commit (git -C ~/cad-agent rev-parse --short HEAD), Layer (the cad-agent
-   tool, or the upstream it wraps, with its version), Building, Missing or
-   learned, Sources (links), Confidence (low, medium or high). Leave out
-   anything private. Show it to me, and send it only if I say yes: best as
-   a PR into dev from a fork (a test, a source, a lesson or a fix; fill in
-   the template's "Made with"), else as an issue:
+   commit (git -C "$HOME/cad-agent" rev-parse --short HEAD), Layer (the
+   cad-agent tool, or the upstream it wraps, with its version), Building,
+   Missing or learned, Sources (links), Confidence (low, medium or high).
+   Leave out anything private. Show it to me, and send it only if I say
+   yes: best as a PR into dev from a fork (a test, a source, a lesson or a
+   fix; fill in the template's "Made with"), else as an issue:
    gh issue create -R Valpatel/cad-agent -t "Agent report: <topic>" -F cad-agent-report.md
 
 What I want:
@@ -192,7 +193,6 @@ The full guide, the `cad-agent.yaml` format and every command are in [`docs/tool
 
 The package runs on Python 3.10 or newer; the `cad` and `sim` extras need 3.11 or newer, because every Pillow release
 for 3.10 has critical advisories and CadQuery 2.8 needs 3.11.
-
 
 ## Projects it learns from
 

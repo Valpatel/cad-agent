@@ -455,9 +455,9 @@ const agentPrompt = await read('docs/agent-prompt.txt');
 const USE_STEPS = [['Install', 'the kit and its skills'], ['Find', 'the tool in llms.txt'], ['Build', 'with tested checks'], ['Give back', 'a PR or an issue']];
 const useLoop = `<svg class="use-loop" viewBox="0 0 400 132" role="img" aria-label="The loop the block sets up: install, find the tool, build with tested checks, give back what was learned, so the next agent finds more">
 <defs><marker id="use-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z" fill="#bd3a12"/></marker></defs>
-${USE_STEPS.map(([t, d], i) => `<g transform="translate(${8 + i * 98} 10)"><rect width="86" height="74" rx="14" fill="${i === 3 ? '#ffe1cc' : '#fffdf5'}" stroke="${i === 3 ? '#bd3a12' : '#173d3c'}"/><text x="43" y="26" text-anchor="middle" font-size="22" font-weight="750" fill="#bd3a12">${i + 1}</text><text x="43" y="47" text-anchor="middle" font-size="12" font-weight="700" fill="#173d3c">${esc(t)}</text><text x="43" y="62" text-anchor="middle" font-size="8.5" fill="#526863">${esc(d)}</text></g>${i < 3 ? `<path d="M${96 + i * 98} 47h8" stroke="#bd3a12" stroke-width="2" marker-end="url(#use-arrow)"/>` : ''}`).join('')}
+${USE_STEPS.map(([t, d], i) => `<g transform="translate(${8 + i * 98} 10)"><rect width="86" height="74" rx="14" fill="${i === 3 ? '#ffe1cc' : '#fffdf5'}" stroke="${i === 3 ? '#bd3a12' : '#173d3c'}"/><text x="43" y="26" text-anchor="middle" font-size="22" font-weight="750" fill="#bd3a12">${i + 1}</text><text x="43" y="47" text-anchor="middle" font-size="12" font-weight="700" fill="#173d3c">${esc(t)}</text><text class="sub" x="43" y="62" text-anchor="middle" font-size="8.5" fill="#526863">${esc(d)}</text></g>${i < 3 ? `<path d="M${96 + i * 98} 47h8" stroke="#bd3a12" stroke-width="2" marker-end="url(#use-arrow)"/>` : ''}`).join('')}
 <path d="M345 86v18a8 8 0 0 1-8 8H59a8 8 0 0 1-8-8v-14" fill="none" stroke="#bd3a12" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#use-arrow)"/>
-<text x="200" y="128" text-anchor="middle" font-size="10" fill="#526863">the next agent finds what this one learned</text></svg>`;
+<text class="sub" x="200" y="128" text-anchor="middle" font-size="10" fill="#526863">the next agent finds what this one learned</text></svg>`;
 const promptHtml = esc(agentPrompt.replace(/\n$/, '')).replace(/^(\d\.) /gm, '<b>$1</b> ');
 // The card's heading and lead-in are the README's too (tests/website-build.test.mjs checks both).
 const USE_HEADING = 'Build with your favorite AI agent';
@@ -484,7 +484,7 @@ const AGENTS = [
     'The skills stay in <code>~/cad-agent/skills/</code>, and the prompt tells it to read them there.']],
   ['any', 'Any agent', '>_', [
     'It needs a shell, git, Python 3.11 or newer and web access.',
-    'Paste the prompt. Without web access, point it at <code>~/cad-agent/docs/toolkit.md</code> instead of llms.txt.']],
+    'Paste the prompt. If it can run git but cannot fetch web pages, it reads <code>~/cad-agent/docs/toolkit.md</code> in place of llms.txt.']],
 ];
 const agentBadge = ([id, name, mark]) => `<label class="agent-badge" for="ag-${id}"><span class="agent-mark" aria-hidden="true">${esc(mark)}</span>${esc(name)}</label>`;
 const useCard = `<section class="use-band" id="use-it" aria-labelledby="use-title"><div class="wrap"><div class="use-card">

@@ -15,7 +15,7 @@ rule):
    different ``radius_mm`` drops to step 3 for K, flange and relief);
 3. the generic rules: the inside radius is the largest verified ``sm-bend-radius-min`` (T for 5052 and mild steel);
    K is the Protolabs Network air-bending table, by the material's hardness class and R / T (``sm-k-air-*-hubs``:
-   0 to T, T to 3T, above 3T); the minimum flange and relief depth are the strictest verified rule, every one listed.
+   0 to T, T to 3T, above 3T; on a boundary the lower band, so R = T takes "0 to T"); the minimum flange and relief depth are the strictest verified rule, every one listed.
 
 **The equations.** Bend allowance, the neutral line's arc: ``BA = pi (R + K T) A / 180`` (the profile's formula
 ``sm-bend-allowance``, from SolidWorks' K-factor page), A the bend angle in degrees (how far the flange turns from flat,
@@ -52,7 +52,9 @@ def _value(value: float, rule: str, source: str, verified: bool, how: str) -> Di
 
 
 def k_rule_id(hardness: str, radius_mm: float, thickness_mm: float) -> str:
-    """The generic K-table row for a hardness class (soft, medium, hard) and R / T: R up to T, T to 3T, above 3T."""
+    """The generic K-table row for a hardness class (soft, medium, hard) and R / T: R up to T, T to 3T, above 3T.
+    The table's bands meet at R = T and R = 3T; a radius on a boundary takes the lower band (R = T: "0 to T"), which is
+    where every generic bend with the minimum radius T lands."""
     ratio = radius_mm / thickness_mm
     if ratio > 3.0:
         return "sm-k-air-r-gt-3t-hubs"
@@ -102,7 +104,7 @@ def bend(material: str, thickness_mm: float, angle_deg: float = 90.0, *, radius_
         kv = _value(stock.K, stock.cite(), stock.source, stock.verified, "the shop's K for this stock and radius")
     else:
         rid = k_rule_id(mat.hardness, r, t)
-        rule = prof.rule(rid)
+        rule = prof.verified_rule(rid)          # a (u) K row never sets a flat length
         lim = rule.limit()
         kv = _value(lim.value, rid, rule.source, rule.verified,
                     f"the generic {BENDING} table, {mat.hardness} metal ({mat.why.split(';')[0]}), R/T {r / t:.3g}")

@@ -16,8 +16,12 @@ and the spread is reported:
 * each rule gives a lower limit (a wall, a hole, a flange) or an upper one (a bridge, an overhang). A rule with a range
   (``0.75-1.0 mm``, supported to unsupported) passes above its strict end, warns inside it and fails beyond its lenient
   end; a rule with ``window`` must hold both ends;
-* the feature **passes** when every verified rule passes, **fails** when no verified rule passes (it is beyond what any
-  source asks), and **warns** in between, naming the sources it meets and the ones it does not;
+* the feature **passes** when every verified rule passes; it **fails** when it is beyond the lenient end of every
+  verified rule (no source would accept it); and it **warns** in between (some sources accept it, or it is inside a
+  source's range), naming the rules it does not fully meet;
+* a ``gap`` is checked as a minimum only: a fit's band (a sliding fit's 0.2-0.3 mm) is held at its lower end, because
+  the fit types differ (snap, hinge, sliding, assembled after printing) and a gap looser than one source's band is not
+  a manufacturing limit. Whether a fit is too loose is for the fit coupons (``fit_coupons``) to find;
 * rules marked ``u`` (not verified in their source) are listed as advisory, with ``(u)``, and never decide;
 * a rule whose expression needs a number the call did not give (``T``, ``R``, ``nozzle``) is listed under ``skipped``;
 * sheet metal: with a shop's tooling row for the material and thickness (``shop_tables``, read first, as the profile
@@ -62,6 +66,7 @@ class Kind:
     units: str
     pick: Callable[[pp.Rule], bool]
     says: str
+    floor_only: bool = False      # hold a rule with a band at its lower end only (a fit's clearance band)
 
 
 def _compare(*keys: str) -> Callable[[pp.Rule], bool]:
@@ -78,7 +83,7 @@ KINDS: Dict[str, Kind] = {
     "hole": Kind("min", "mm", _compare("min-hole", "sm-hole-min"), "hole diameter"),
     "pin": Kind("min", "mm", _compare("min-pin"), "pin diameter"),
     "gap": Kind("min", "mm", lambda r: r.compare == "clearance-fit" or (r.feature == "clearance" and not r.compare),
-                "clearance between parts or faces"),
+                "clearance between parts or faces", floor_only=True),
     "rib": Kind("min", "mm", lambda r: r.feature == "rib" and not r.compare, "rib thickness"),
     "slot": Kind("min", "mm", lambda r: r.feature == "slot", "slot width"),
     "text": Kind("min", "mm", lambda r: r.feature == "text" and r.process == "fdm", "embossed or engraved text size"),
@@ -129,10 +134,14 @@ def _ends(lim: pp.Limit, sense: str) -> Tuple[Optional[float], Optional[float]]:
     return (lo, hi) if sense == "min" else (hi, lo)
 
 
-def _judge(size: float, lim: pp.Limit, sense: str) -> Tuple[str, str]:
+def _judge(size: float, lim: pp.Limit, sense: str, floor_only: bool = False) -> Tuple[str, str]:
     """(verdict, why) of one rule; ``info`` for a typical value that sets no limit."""
     if lim.value is not None:
         return "info", f"typical {lim.text}: a nominal figure, not a limit"
+    if floor_only and lim.min is not None:
+        ok = size >= lim.min
+        return ("pass" if ok else "fail"), f"{'at least' if ok else 'below'} the band's lower end, {lim.min:.4g} " \
+                                          f"{lim.units} ({lim.text})"
     if lim.window:
         ok = lim.min <= size <= lim.max
         return ("pass" if ok else "fail"), f"{'inside' if ok else 'outside'} the window {lim.text}"
@@ -199,7 +208,7 @@ def _feature(f: Feature, prof: pp.Profile, env: Dict[str, float], excludes: Iter
             skipped.append({"rule": r.id, "source": r.source, "needs": missing})
             continue
         lim = r.limit(**env)
-        verdict, why = _judge(f.size, lim, kind.sense)
+        verdict, why = _judge(f.size, lim, kind.sense, kind.floor_only)
         row = {**lim.as_dict(), "verdict": verdict, "why": why, "cite": lim.cite()}
         (rows if r.verified else advisory).append(row)
     shop = None
@@ -226,13 +235,16 @@ def _feature(f: Feature, prof: pp.Profile, env: Dict[str, float], excludes: Iter
     else:
         passed = [r["rule"] for r in limits if r["verdict"] == "pass"]
         short = [r["rule"] for r in limits if r["verdict"] != "pass"]
+        inside = [r["rule"] for r in limits if r["verdict"] == "warn"]
         if not short:
             verdict, detail = "pass", f"meets all {len(limits)} verified rules"
-        elif not any(r["verdict"] in ("pass", "warn") for r in limits):
-            verdict, detail = "fail", f"meets none of the {len(limits)} verified rules"
+        elif not passed and not inside:
+            verdict, detail = "fail", f"beyond all {len(limits)} verified rules"
         else:
             verdict = "warn"
-            detail = f"meets {len(passed)} of {len(limits)} verified rules; not {', '.join(short)}"
+            detail = f"meets {len(passed)} of {len(limits)} verified rules" + \
+                (f", inside the range of {', '.join(inside)}" if inside else "") + \
+                (f"; beyond {', '.join(r for r in short if r not in inside)}" if len(short) > len(inside) else "")
     strict = None
     if limits:
         ends = [_ends(pp.Limit(r["rule"], "", "", "", True, min=r.get("min"), max=r.get("max")), kind.sense)[1]
@@ -254,6 +266,10 @@ def check(process: str, features: Iterable[Feature], *, material: Optional[str] 
     ``exclude``: rule ids the caller judges do not apply (say which, and why, in the design's record)."""
     prof = pp.profile(process, path)
     features = list(features)
+    if not features:
+        raise ValueError("give at least one Feature to check")
+    if material is not None and process not in ("fdm", "sheet-metal"):
+        raise ValueError(f"material is read for fdm (layer factors) and sheet-metal (rules, shop table), not {process}")
     env: Dict[str, float] = {}
     excludes = list(exclude)
     stock = None

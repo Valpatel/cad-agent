@@ -22,7 +22,8 @@ it. **A rule from a design guide says a part is likely to be made well. It does 
 
 Sources disagree. Prusa prints a 0.45 mm wall from a single 0.4 mm extrusion, while Xometry's industrial machines ask
 for 1.2 mm. So `dfm.check` keeps every source rather than choosing one. A feature **passes** when it meets every verified rule. It
-**fails** when it meets none. Anything between is a **warn** that names the sources it does not meet. A rule with a
+**fails** when it is beyond every verified rule, so no source would accept it. Anything between is a **warn** that
+names the rules it does not fully meet. A rule with a
 range ("0.75 mm supported, 1.0 mm unsupported") passes above its strict end and warns inside it, because the source's
 own conditions decide. Each rule's `applies` text (machine, material, part size) comes with it.
 
@@ -62,7 +63,7 @@ cites its sheet's own link.
 
 ## The calculator: sheet-metal bends
 
-![For each stock in SendCutSend's table (four 5052 sheets, six mild steel), the shop's shortest flange sits inside or near the span of the generic rules 2T + R, 4T and 3.5 (T + R) at the shop's radius; K and the 90-degree bend deduction are listed per stock](img/process/sheet-flange.svg)
+![For each stock in SendCutSend's table (four 5052 sheets, six mild steel), the shop's shortest flange against the span of the generic rules 2T + R, 4T and 3.5 (T + R) at the shop's radius; K and the 90-degree bend deduction are listed per stock](img/process/sheet-flange.svg)
 
 *Drawn by `tools/process_figures.py` from `cadagent.manufacturing.sheet_metal.bend` for every stock in the shop's
 table (`sendcutsend-specs`, read 2026-10-31). The generic rules are evaluated at the shop's own radius.*
@@ -96,7 +97,7 @@ a bend takes off the sum of the legs measured to the outside. The tests check th
 | Kind | Limit | Rules it reads |
 |---|---|---|
 | `wall`, `hole`, `pin` | at least | `compare: min-wall`, `min-hole` (`sm-hole-min` for sheet), `min-pin`; for FDM also `fdm-wall-min-nozzle-xometry-eu` (three nozzle widths) |
-| `gap` | at least | `compare: clearance-fit`, and clearance rules with no compare key |
+| `gap` | at least (a fit's band at its lower end) | `compare: clearance-fit`, and clearance rules with no compare key |
 | `rib`, `slot`, `text` | at least | the FDM rib and text rules, the SLA slot rule |
 | `bridge`, `overhang` | at most | `bridge-max`; `overhang-max` (FDM, degrees from vertical) |
 | `flange`, `bend-radius`, `relief-depth` | at least (the shop's row decides) | `sm-flange-min`, `sm-bend-radius-min`, `sm-relief-depth` |

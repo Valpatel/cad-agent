@@ -44,7 +44,9 @@ from cadagent._deps import require
 from cadagent.manufacturing.process import profile
 
 # The numbers come from the FDM process profile, by rule id, so a corrected row in research/process-profiles.yaml moves
-# them; a rule marked (u) is refused (cadagent.manufacturing.process.Profile.verified_rule).
+# them; a rule marked (u) is refused (cadagent.manufacturing.process.Profile.verified_rule). The profile is read when
+# this module is imported, so it needs the cad-agent checkout's data (an editable install, as CONTRIBUTING.md asks) or
+# CADAGENT_PROCESS_PROFILES naming the file; without either the import raises ProfileDataError, saying so.
 _FDM = profile("fdm")
 _UNDER = _FDM.verified_rule("fdm-hole-undersize-cnckitchen").limit()
 _SLIDE = _FDM.verified_rule("fdm-clearance-sliding-xometry-eu").limit()

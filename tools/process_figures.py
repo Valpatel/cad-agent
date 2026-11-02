@@ -6,7 +6,7 @@
 
 Each figure is computed by the module it shows, on worked examples, never typed in:
 
-* dfm-wall.svg: ``cadagent.manufacturing.dfm.check`` on a 1.0 mm FDM wall with a 0.4 mm nozzle, a row per source;
+* dfm-wall.svg: ``cadagent.manufacturing.dfm.check`` on a 0.9 mm FDM wall with a 0.4 mm nozzle, a row per source;
 * layer-factors.svg: ``cadagent.manufacturing.process`` FDM materials, across-the-layers factors from the data sheets;
 * sheet-flange.svg: ``cadagent.manufacturing.sheet_metal.bend`` per stock in the shop's table, the shop's shortest
   flange against the generic rules at the shop's own radius.
@@ -74,7 +74,7 @@ def dfm_wall() -> str:
     plot_w = W - LABEL_W - PAD - 30
     x = lambda v: LABEL_W + plot_w * min(v, vmax) / vmax
     out = _frame(f"A {fmt(WALL)} mm FDM wall, checked against every source: {r['verdict']}",
-                 f"cadagent.manufacturing.dfm.check, nozzle {fmt(NOZZLE)} mm: {r['detail'].split(';')[0]}", h)
+                 f"cadagent.manufacturing.dfm.check, nozzle {fmt(NOZZLE)} mm: {r['detail'].split(',')[0].split(';')[0]}", h)
     bottom = top + row_h * len(rows)
     _axis(out, x, [0, 0.5, 1.0, 1.5, 2.0], top - 8, bottom, "minimum wall, mm")
     out.append(f'<line x1="{x(WALL):.1f}" y1="{top - 14}" x2="{x(WALL):.1f}" y2="{bottom}" stroke="{INK}" '

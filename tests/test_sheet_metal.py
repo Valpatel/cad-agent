@@ -92,3 +92,14 @@ def test_bend_refuses(args, kw):
 def test_flat_length_refuses_mismatched_angles():
     with pytest.raises(ValueError, match="angles"):
         sm.flat_length([10, 10, 10], "5052", 1.6, angles=[90])
+
+
+def test_an_unverified_k_row_never_sets_a_flat_length(tmp_path):
+    from cadagent.manufacturing import process as pp
+    head, tail = pp.DATA.read_text(encoding="utf-8").split("  - id: sm-k-air-soft-r-le-t-hubs\n", 1)
+    tail = tail.replace("    status: read\n", "    status: u\n", 1)
+    data = tmp_path / "process-profiles.yaml"
+    data.write_text(head + "  - id: sm-k-air-soft-r-le-t-hubs\n" + tail, encoding="utf-8")
+    assert not pp.load(data)["sheet-metal"].rule("sm-k-air-soft-r-le-t-hubs").verified
+    with pytest.raises(pp.ProfileDataError, match=r"\(u\)"):
+        sm.bend("5052", 2.0, radius_mm=2.0, path=data)

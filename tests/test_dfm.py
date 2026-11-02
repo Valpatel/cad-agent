@@ -105,3 +105,29 @@ def test_feature_refuses(bad):
 def test_sheet_metal_needs_a_thickness():
     with pytest.raises(ValueError, match="thickness_mm"):
         dfm.check("sheet-metal", [dfm.Feature("f", "flange", 5.0)])
+
+
+def test_a_gap_is_held_at_the_lower_end_of_each_fit_band():
+    """The sliding fit's 0.2-0.3 mm band is a target, not a floor that rises to 0.3: the 0.25 mm fit_coupons takes from
+    it meets it, and a gap is never failed for being looser than one source's band."""
+    g = _one("fdm", dfm.Feature("slide", "gap", 0.25))
+    rows = {r["rule"]: r["verdict"] for r in g["rules"]}
+    assert rows["fdm-clearance-sliding-xometry-eu"] == "pass"
+    assert rows["fdm-clearance-moving-prusa"] == "fail"                 # at least 0.3 mm for parts that move
+    assert g["verdict"] == "warn"
+    assert _one("fdm", dfm.Feature("loose", "gap", 1.5))["verdict"] == "pass"
+    tight = _one("fdm", dfm.Feature("tight", "gap", 0.1))
+    assert tight["verdict"] == "fail" and tight["detail"].startswith("beyond all")
+
+
+def test_warn_names_the_rules_a_feature_is_inside_and_beyond():
+    mid = _one("fdm", dfm.Feature("w", "wall", 0.9), nozzle_mm=0.4)
+    assert mid["detail"] == ("meets 2 of 5 verified rules, inside the range of fdm-wall-min-xometry-eu; beyond "
+                             "fdm-wall-min-nozzle-xometry-eu, fdm-wall-min-xometry-us")
+
+
+def test_nothing_to_check_or_a_material_it_cannot_use_is_refused():
+    with pytest.raises(ValueError, match="at least one"):
+        dfm.check("fdm", [])
+    with pytest.raises(ValueError, match="material"):
+        dfm.check("sla", [dfm.Feature("w", "wall", 1.0)], material="petg-bambu-basic")

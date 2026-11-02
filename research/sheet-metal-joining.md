@@ -428,8 +428,9 @@ flowchart TD
     class E out
 ```
 
-- MIL-HDBK-5J tabulates the bearing strength Fbru by edge distance (e/D 1.5 and 2.0), so the bearing check also
-  covers the sheet tearing out to the edge [ref:mil-hdbk-5j].
+- MIL-HDBK-5J tabulates the bearing strength Fbru by edge distance (e/D 1.5 and 2.0, linear between, 1.4.7.1), so the
+  bearing check also covers the sheet tearing out to the edge. Its D is the hole, not the rivet's nominal size
+  (1.4.7), so a rivet at 2D of its nominal size sits a little under e/D 2.0 [ref:mil-hdbk-5j].
 - Two of its values serve as test vectors [ref:mil-hdbk-5j]:
   - single shear of a 1/8 in 5056 **solid** rivet: 28 ksi × π/4 × 0.1285² = **363 lbf** (Table 8.1.2(b)). It tests
     the equation; a blind rivet's shear is its maker's rating;
@@ -437,13 +438,14 @@ flowchart TD
 
 **Worked example** [derived]: two 1.6 mm (0.063 in) 5052-H32 sheets in a single lap. One row of 1/8 in aluminium
 POP rivets at 2D from the edge (6.35 mm) and 3D pitch (9.53 mm, 0.375 in). Hole 0.1285 in. MIL-HDBK-5J's 5052-H32
-values: Ftu 31 ksi, Fbru 65 ksi at e/D 2.0.
+values: Ftu 31 ksi; Fbru 50 ksi at e/D 1.5 and 65 ksi at 2.0. On the hole, e/D = 0.25 / 0.1285 = 1.95, so Fbru is
+63.4 ksi.
 
 | Check | Per pitch |
 |---|---|
-| t/D = 0.063 / 0.125 | 0.50, above 0.18 and 0.25 |
+| t/D = 0.063 / 0.1285 | 0.49, above 0.18 and 0.25 |
 | Rivet shear, POP typical | 155 lbf (690 N) |
-| Bearing, 65 ksi × 0.1285 × 0.063 | 526 lbf |
+| Bearing, 63.4 ksi × 0.1285 × 0.063 | 513 lbf |
 | Tear between holes, 31 ksi × (0.375 − 0.1285) × 0.063 | 481 lbf |
 | Solid sheet, 31 ksi × 0.375 × 0.063 | 732 lbf |
 | Efficiency, 155 / 732 | 0.21: the rivet shears first |

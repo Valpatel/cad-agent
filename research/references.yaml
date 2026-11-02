@@ -2206,6 +2206,11 @@ sources:
       2026-10-31: read for #157 (the 31 January 2003 edition): Tables 3.6.2.0(b1), (b2) and (g) (6061),
       3.7.6.0(b1) and (d) (7075) and 2.2.1.0(b) (AISI 1025), as cadagent.simulation.fea's metal rows and
       tests/simulation/test_fea_materials.py record them. The everyspec page resolved again on 2026-11-01.
+      2026-11-01, for #283: read 1.4.7 and 1.4.7.1 (D is the pin; Fbru between e/D 1.5 and 2.0 by linear
+      interpolation; bearing values apply to t/D 0.25-0.50), Tables 3.5.1.0(b1) (5052-H32, H34: Ftu, Fty, Fsu, Fbru at e/D 1.5 and 2.0) and 2.7.1.0(b)
+      (304 annealed), 8.1.2 and Table 8.1.2(b) (solid-rivet single shear), 8.1.2.1 and Table 8.1.2.1(a) (unit
+      bearing; t/D at least 0.18), 8.1.3 (blind fasteners: care below t/D 0.25) and Table 9.7.1.1(a) (blind rivets
+      whose shanks deform use the nominal hole).
 
   - id: brass
     title: Brass Alloy C36000 data sheet
@@ -3168,7 +3173,11 @@ sources:
       2026-11-01: opened the aluminium, 18-8 stainless and zinc-plated steel domed-head pages in a browser,
       without logging in. Read part numbers, grip, pack size, pack price and the listed shear and tensile
       ratings; for example 97447A015 (1/8 in aluminium/aluminium, 0.063-0.125 in grip, 120/150 lbf) at $10.78
-      for 250, and 97525A415 (1/8 in 18-8/18-8, 420/530 lbf) at $11.54 for 100.
+      for 250, and 97525A415 (1/8 in 18-8/18-8, 420/530 lbf) at $11.54 for 100. The rows
+      cadagent.mechanical.rivets uses (diameter, grip in, shear/tensile lbf): 97447A015 1/8 .063-.125 120/150;
+      97447A020 1/8 .126-.187 120/150; 97447A025 1/8 .188-.250 120/150; 97447A050 3/16 .126-.250 260/320;
+      97517A015 1/8 .063-.125 170/220; 97517A050 3/16 .188-.250 380/500; 97525A415 1/8 .063-.125 420/530;
+      97525A490 3/16 .126-.250 950/1200.
 
   - id: abbud-riveted-joints
     title: Riveted Joints (Mechanical Engineering Design, 3rd class, lecture notes)
@@ -3189,6 +3198,8 @@ sources:
       plate p t sigma_t, and the efficiency; and Problem 2: a single-riveted lap joint of 6 mm plates, 20 mm rivets,
       50 mm pitch, 120 / 90 / 180 MPa, gives Pt 21 600 N, Ps 28 278 N, Pc 21 600 N, P 36 000 N and efficiency 60 %;
       the double-riveted joint at 65 mm pitch gives Pt 32 400 N, Ps 56 556 N, Pc 43 200 N, P 46 800 N and 69.2 %.
+      The notes follow the standard textbook treatment (their Problem 2 resembles a worked example in Khurmi and
+      Gupta, A Textbook of Machine Design, which was not opened here, so it is not cited).
 
   # ---------------------------------------------------------------- tolerance and joint references (#283)
 

@@ -32,7 +32,8 @@ Each principle says what holds today and what is still being built, with its iss
 - **Tested knowledge, not trained knowledge.** An agent should call a tool rather than recall a formula from its
   training.
   - Today: many formulas and checks carry golden vectors from cited sources (for example `cadagent.formulas`, the
-    bearing and screw checks), and pages credit the expert or standard behind each rule.
+    bearing and screw checks), and many pages credit the expert or standard behind each rule (#118 covers the
+    rest).
   - Next: a golden vector for every tool (#180) and a confidence level on every rule (#143). Area hubs (#141) will
     say where no tool exists yet, so an agent knows when it is guessing.
 - **The fewest tool calls and the least context.**

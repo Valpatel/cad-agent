@@ -474,12 +474,12 @@ const useCard = `<section class="use-band" id="use-it" aria-labelledby="use-titl
 <div class="os-tabs">${INSTALL.map(([id], i) => `<input type="radio" name="install-os" id="os-${id}" class="visually-hidden"${i === 0 ? ' checked' : ''}>`).join('')}
 <div class="os-tab-row" aria-hidden="true">${INSTALL.map(([id, name]) => `<label for="os-${id}" class="os-tab tab-${id}">${esc(name)}</label>`).join('')}</div>
 ${INSTALL.map(([id, name, cmd]) => `<div class="os-panel panel-${id}"><p class="visually-hidden">${esc(name)}</p><cad-copy class="install-copy" label="Copy"><pre class="install-box" aria-label="${esc(name)} install command">${esc(cmd)}</pre></cad-copy></div>`).join('')}</div>
-<p class="use-lead">Then ask your agent for a part, a check or a simulation.</p>
+<p class="use-lead">Then ask your agent for a part, check or simulation.</p>
 <ul class="agent-badges" aria-label="Agents it works with">${AGENTS.map(([name, mark]) => `<li><span class="agent-badge"><span class="agent-mark" aria-hidden="true">${esc(mark)}</span>${esc(name)}</span></li>`).join('')}</ul></div>
 <div class="use-paste"><p class="paste-title">Or paste this into your agent:</p>
 <cad-copy class="agent-copy" label="Copy prompt"><pre class="agent-box" aria-label="The line to paste into your agent">${esc(pasteLine)}</pre></cad-copy>
 ${useLoop}
-<p class="use-note">No telemetry. Your agent sends back what it learns as a pull request or an issue, only when you say yes. <a href="/docs/agent-workflow#install">Install by hand</a> · Product names belong to their owners; no endorsement implied.</p></div>
+<p class="use-note">No telemetry. Your agent sends what it learns as a pull request or issue, only when you say yes. <a href="/docs/agent-workflow#install">Install by hand</a> · Names belong to their owners; no endorsement implied.</p></div>
 </div></div></section>`;
 const landing = `<div class="wrap"><section class="hero hero-3d">
 <div class="hero-head"><p class="eyebrow"><span class="status-dot"></span>Open source · for agents and people</p>

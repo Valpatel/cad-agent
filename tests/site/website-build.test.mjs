@@ -96,8 +96,9 @@ test('the home page, llms.txt and the README give one install command and one li
   assert.equal(paste.split(' ').length, 8, 'the paste-in line is eight words');
   assert.ok(index.indexOf('id="use-it"') < index.indexOf('id="outputs"'), 'the card comes before the first band');
   assert.match(index, /href="#use-it"/, 'the hero links to it');
-  const words = unesc(card.replace(/<svg[\s\S]*?<\/svg>/g, '').replace(/<[^>]+>/g, ' ')).split(/\s+/).filter(Boolean).length;
-  assert.ok(words <= 100, `the card has ${words} words; keep it near 90`);
+  const seen = card.replace(/<svg[\s\S]*?<\/svg>/g, '').replace(/<p class="visually-hidden">[^<]*<\/p>/g, '').replace(/<[^>]+>/g, ' ');
+  const words = unesc(seen).split(/\s+/).filter(Boolean).length;
+  assert.ok(words <= 95, `the card shows ${words} words; keep it near 90`);
   assert.match(card, /No telemetry\./); assert.match(card, /only when you say yes/);
   assert.match(card, /href="\/docs\/agent-workflow#install"/, 'the long form is one link away');
   const tabs = [...card.matchAll(/<input type="radio" name="install-os" id="(os-[a-z]+)"/g)].map(m => m[1]);

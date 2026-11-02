@@ -450,7 +450,7 @@ const poster = imageSize(await readBuf('web/models/gyropup.webp'), 'gyropup.webp
 if (!poster) throw new Error('web/models/gyropup.webp: run node tools/site-model-poster.mjs');
 const kb = n => `${Math.round(n / 1024)} KB`;
 // "Copy this to your agent" (#278): one block, from docs/agent-prompt.txt, that the README shows too
-// (tests/test_agent_prompt.py keeps the two the same). The card shows it verbatim, its step leads in bold.
+// (tests/repo/test_agent_prompt.py keeps the two the same). The card shows it verbatim, its step numbers in bold.
 const agentPrompt = await read('docs/agent-prompt.txt');
 const USE_STEPS = [['Install', 'the kit and its skills'], ['Find', 'the tool in llms.txt'], ['Build', 'with tested checks'], ['Give back', 'a PR or an issue']];
 const useLoop = `<svg class="use-loop" viewBox="0 0 400 132" role="img" aria-label="The loop the block sets up: install, find the tool, build with tested checks, give back what was learned, so the next agent finds more">
@@ -459,7 +459,7 @@ ${USE_STEPS.map(([t, d], i) => `<g transform="translate(${8 + i * 98} 10)"><rect
 <path d="M345 86v18a8 8 0 0 1-8 8H59a8 8 0 0 1-8-8v-14" fill="none" stroke="#bd3a12" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#use-arrow)"/>
 <text class="sub" x="200" y="128" text-anchor="middle" font-size="10" fill="#526863">the next agent finds what this one learned</text></svg>`;
 const promptHtml = esc(agentPrompt.replace(/\n$/, '')).replace(/^(\d\.) /gm, '<b>$1</b> ');
-// The card's heading and lead-in are the README's too (tests/website-build.test.mjs checks both).
+// The card's heading and lead-in are the README's too (tests/site/website-build.test.mjs checks both).
 const USE_HEADING = 'Build with your favorite AI agent';
 const USE_LEAD = 'Paste this into any AI coding agent to install cad-agent and its skills, then add what you want made at the end.';
 // Step by step, per agent. Names only, in plain text badges: no product marks, and no endorsement implied. `agents

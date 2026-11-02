@@ -20,6 +20,7 @@ flowchart TD
 | File | What it tests |
 |---|---|
 | `__init__.py` | Empty: makes the folder a package, so a test here may share a file name with one in another folder |
+| `test_agent_prompt.py` | The "copy this to your agent" prompt (`docs/agent-prompt.txt`): the README carries it first, its commands and report fields hold, and `tools/quickstart_eval.py` grades runs honestly |
 | `test_areas.py` | `docs/areas.yaml`, the topic tree: it parses, and everything it names exists and is placed |
 | `test_ci_gates.py` | The merge gates in `tools/ci_gates.py`: branch flow, review verdicts, release versions |
 | `test_cut_release.py` | `tools/cut_release.py`: the release-branch edits, checked against CI's release gate |

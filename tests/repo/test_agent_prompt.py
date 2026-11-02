@@ -1,6 +1,6 @@
 """The "copy this to your agent" block (#278): docs/agent-prompt.txt, shown verbatim in the README and on the site.
 
-The site side (the home page card, llms.txt and index.md) is checked in tests/website-build.test.mjs. Here: the
+The site side (the home page card, llms.txt and index.md) is checked in tests/site/website-build.test.mjs. Here: the
 README carries the block where people look first; its commands are the public ones and name real `cad-agent`
 commands; its report headings match the issue form, the PR template and the grader in tools/quickstart_eval.py; it
 asks nothing risky of an outside agent; and the grader reads a planted run the way it reads a real one.
@@ -14,10 +14,10 @@ from pathlib import Path
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 BLOCK = (ROOT / "docs" / "agent-prompt.txt").read_text()
 README = (ROOT / "README.md").read_text()
-USE_HEADING = "Build with your favorite AI agent"     # the site's card says the same (tests/website-build.test.mjs)
+USE_HEADING = "Build with your favorite AI agent"     # the site's card says the same (tests/site/website-build.test.mjs)
 
 
 def _eval():

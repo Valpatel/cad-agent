@@ -10,7 +10,7 @@
 Paste this into any AI coding agent to install cad-agent and its skills, then add what you want made at the end.
 Claude Code, Codex CLI, Copilot CLI, Cursor, Gemini CLI: see the [step-by-step guide for your agent](https://cad-agent.valpatel.com/#agent-guide).
 
-<!-- The block is docs/agent-prompt.txt, verbatim (tests/test_agent_prompt.py); the site's home page shows it too. -->
+<!-- The block is docs/agent-prompt.txt, verbatim (tests/repo/test_agent_prompt.py); the site's home page shows it too. -->
 ```text
 Use cad-agent (github.com/Valpatel/cad-agent, MIT) for what I ask at the end.
 

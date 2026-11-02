@@ -5,6 +5,7 @@ shown to catch its mistake without CadQuery. ``test_bodies.py`` runs the same ch
 """
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import pytest
@@ -79,6 +80,20 @@ def test_kiprjmod_of_a_library_is_the_folder_holding_the_pretty(tmp_path):
     assert audit.model_audit(next((lib / 'cad-agent.pretty').iterdir()), use_os_env=False)['pass']
 
 
+def test_a_relative_model_path_is_looked_up_from_the_board_folder_not_the_cwd(tmp_path, monkeypatch):
+    proj, elsewhere = tmp_path / 'proj', tmp_path / 'elsewhere'
+    proj.mkdir()
+    (elsewhere / 'models').mkdir(parents=True)
+    (elsewhere / 'models' / 'x.step').write_text('ISO-10303-21;')
+    p = proj / 'x.kicad_mod'
+    p.write_text('(footprint "X" (pad "1" smd rect (at 0 0) (size 1 1) (layers "F.Cu")) (model "models/x.step"))')
+    monkeypatch.chdir(elsewhere)                       # the file is next to the working folder, not the board
+    assert {f['check'] for f in audit.model_audit(p, use_os_env=False)['findings']} == {'missing_model'}
+    (proj / 'models').mkdir()
+    (proj / 'models' / 'x.step').write_text('ISO-10303-21;')
+    assert audit.model_audit(p, use_os_env=False)['pass']
+
+
 # ----------------------------------------------------------------------------------------------- registration
 
 def holder_pads():
@@ -136,3 +151,11 @@ def test_parts_build_footprints_only_needs_no_cadquery(tmp_path):
     assert parts.fp_lib_table_entry().startswith('  (lib (name "cad-agent")')
     with pytest.raises(KeyError):
         parts.build(tmp_path, keys=['nope'], models=False)
+
+
+def test_an_oval_hole_turned_45_degrees_takes_a_pin_on_its_axis_only():
+    # a 1 x 3 slot turned +45 (KiCad: counter-clockwise from above), so its long axis runs along model x = y
+    pad = {'number': '1', 'kind': 'thru_hole', 'at': (0.0, 0.0), 'rot': 45.0, 'drill': (3.0, 1.0)}
+    on_axis = (0.9 * math.cos(math.radians(45)), 0.9 * math.sin(math.radians(45)))
+    across = (0.9 * math.cos(math.radians(-45)), 0.9 * math.sin(math.radians(-45)))
+    assert audit._in_hole(on_axis, pad) and not audit._in_hole(across, pad)

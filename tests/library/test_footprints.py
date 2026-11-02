@@ -71,7 +71,7 @@ def test_css2h_3920_pads_are_bourns_recommended_layout():
 
 
 @pytest.mark.parametrize('size,pad,drill', [('M4', 7.0, 4.3), ('M6', 12.0, 6.4)])
-def test_lug_stud_hole_is_iso_273_medium_and_vias_ring_the_hole(size, pad, drill):
+def test_lug_stud_hole_is_iso_273_fine_and_vias_ring_the_hole(size, pad, drill):
     fp = F.lug_stud(size)
     ps = pads(fp, '1')
     main = [p for p in ps if p['size'][0] == pad]
@@ -91,6 +91,17 @@ def test_bond_hole_and_slot():
     (slot,) = pads(F.npth_slot(), kind='np_thru_hole')
     assert slot['drill'] == (4.0, 10.0) and slot['shape'] == 'oval'
     assert F.npth_slot().model is None and parts.PARTS['slot_4x10'].no_body
+    with pytest.raises(ValueError):
+        F.bonded_mounting_hole('M3')                   # no M5 hole under an M3's name
+    (m3,) = [p for p in pads(F.bonded_mounting_hole('M3', pad=6.0, drill=3.2)) if p['size'][0] == 6.0]
+    assert m3['drill'] == (3.2, 3.2)
+
+
+def test_reference_is_on_the_silkscreen_above_the_courtyard():
+    tree, _ = written(F.lug_stud('M4'))
+    (ref,) = [p for p in S.find(tree, 'property') if p[1] == 'Reference']
+    assert S.first(ref, 'layer')[1] == 'F.SilkS'
+    assert float(S.first(ref, 'at')[2]) == pytest.approx(-(7.0 / 2 + 0.25) - 1.0)
 
 
 def test_written_file_is_kicad_9_format_with_stable_uuids_and_the_model_path():
@@ -133,6 +144,8 @@ def test_sexp_round_trip_and_errors():
     tree = S.parse(text)
     assert tree == ['a', 'b "c"', ['d', '1', '2.5'], ['e']]
     assert S.parse(S.dump(tree)) == tree
+    mixed = ['a', ['b', '1'], 'c', ['d']]              # an atom after a list keeps its place
+    assert S.parse(S.dump(mixed)) == mixed
     with pytest.raises(ValueError):
         S.parse('(a (b)')
     with pytest.raises(ValueError):

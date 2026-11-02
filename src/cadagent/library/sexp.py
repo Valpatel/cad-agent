@@ -60,12 +60,13 @@ def fmt(x: Any) -> str:
 
 
 def dump(node: Any, indent: int = 0) -> str:
-    """KiCad's layout: a list that holds lists opens a block, one child per line; any other list stays on one line."""
+    """KiCad's layout: a list that holds lists opens a block, one child per line; any other list stays on one line.
+    Order is kept: an atom after a list gets its own line in the block."""
     pad = '\t' * indent
     if not isinstance(node, list):
         return pad + fmt(node)
-    head = [x for x in node if not isinstance(x, list)]
-    kids = [x for x in node if isinstance(x, list)]
+    n = next((i for i, x in enumerate(node) if isinstance(x, list)), len(node))
+    head, kids = node[:n], node[n:]              # the atoms before the first list, then the rest in order
     first_line = ' '.join(fmt(x) for x in head)
     if not kids:
         return f'{pad}({first_line})'

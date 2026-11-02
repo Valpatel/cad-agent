@@ -103,7 +103,9 @@ def _hex_prism(cq, s, z0, z1, bore):
 
 def _screw(cq, size, head, length, seat):
     """A screw with its head's underside at z = ``seat`` and the shank down to ``seat - length``, as (head, shank):
-    two children, so the head is what seats and the shank is what passes through the hole."""
+    two children, so the head is what seats and the shank is what passes through the hole. It is
+    ``cadagent.mechanical.fasteners.socket_head_envelope`` with the head on top, the socket cut and the button head's
+    dome, split into the two children the registration check needs."""
     d = float(size[1:])
     h = hardware.row(head, size)
     dk, k, s = h['dk'], h['k'], h['s']

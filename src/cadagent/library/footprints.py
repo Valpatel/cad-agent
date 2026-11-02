@@ -110,10 +110,18 @@ def _xy(key, v):
     return [Sym(key), float(v[0]), float(v[1])]
 
 
+def _courtyard_top(fp: Footprint) -> float:
+    """The courtyard's top edge (least y; KiCad's footprint y is down), 0 without a courtyard."""
+    ys = [min(g.start[1], g.end[1]) if isinstance(g, Line) else g.center[1] - g.radius
+          for g in fp.graphics if g.layer == 'F.CrtYd']
+    return min(ys) if ys else 0.0
+
+
 def to_kicad_mod(fp: Footprint, model_dir: Optional[str] = None) -> str:
     """The footprint as ``.kicad_mod`` text. ``model_dir`` is the folder its model path starts with, written as KiCad
     expects it (``${KIPRJMOD}/lib/cad-agent.3dshapes``, an environment variable such as
-    ``${CADAGENT_3DMODEL_DIR}``, never an absolute home path); without it the footprint carries no model."""
+    ``${CADAGENT_3DMODEL_DIR}``, never an absolute home path); without it the footprint carries no model. As KiCad's library convention has it,
+    the reference is on the silkscreen 1 mm above the courtyard and the other fields are hidden on F.Fab."""
     n = fp.name
     S = Sym
     out: list = [S('footprint'), n, [S('version'), FORMAT_VERSION], [S('generator'), 'cad-agent'],
@@ -121,14 +129,16 @@ def to_kicad_mod(fp: Footprint, model_dir: Optional[str] = None) -> str:
     if fp.tags:
         out.append([S('tags'), fp.tags])
 
-    def prop(name, value, hide):
-        p = [S('property'), name, value, [S('at'), 0.0, 0.0, 0], [S('layer'), 'F.Fab']]
+    ref_y = round(_courtyard_top(fp) - 1.0, 3)
+
+    def prop(name, value, hide, at=(0.0, 0.0), layer='F.Fab'):
+        p = [S('property'), name, value, [S('at'), at[0], at[1], 0], [S('layer'), layer]]
         if hide:
             p.append([S('hide'), S('yes')])
         p += [[S('uuid'), _uid(n, 'property', name)], [S('effects'), [S('font'), [S('size'), 1.0, 1.0],
                                                                     [S('thickness'), 0.15]]]]
         return p
-    out += [prop('Reference', 'REF**', False), prop('Value', n, True), prop('Datasheet', fp.datasheet, True),
+    out += [prop('Reference', 'REF**', False, (0.0, ref_y), 'F.SilkS'), prop('Value', n, True), prop('Datasheet', fp.datasheet, True),
             prop('Description', fp.descr, True)]
     if fp.attr:
         out.append([S('attr'), S(fp.attr)])
@@ -174,7 +184,7 @@ def fuseholder_mini_fl1(pitch: float = 8.0, terminal_drill: float = 1.5, termina
     0.85 mm of annular ring for the leaf-spring terminals' current."""
     w, h = body
     fp = Footprint('Fuseholder_Blade_Mini_Littelfuse_FL1_178.6764.0001',
-                   'Littelfuse MINI FL1 PCB holder 178.6764.0001 for MINI (FK1) blade fuses, 30 A max, 22 A continuous',
+                   'Littelfuse MINI FL1 PCB holder 178.6764.0001 for MINI (FK1) blade fuses, 30 A max',
                    tags='fuse holder blade mini FL1 Littelfuse', attr='through_hole', model='Fuseholder_Mini_FL1.step',
                    datasheet='https://www.littelfuse.com/products/fuses-overcurrent-protection/fuse-holders-fuse-blocks'
                              '-accessories/fuse-holders/in-line-fuse-holders/mini-fl1/178-6764-0001')
@@ -227,7 +237,7 @@ def lug_stud(size: str = 'M4', pad: Optional[float] = None, drill: Optional[floa
              via_ring: Optional[float] = None) -> Footprint:
     """A power stud for a ring lug: a plated clearance hole in a round pad on both layers, ringed with 8 stitching
     vias (0.4 drill, 0.95 pad) that share the current between the layers. The screw goes through from above with the
-    lug on the top pad; the nut is under the board. Defaults per size: M4 pad 7.0, hole 4.3 (ISO 273 medium); M6 pad
+    lug on the top pad; the nut is under the board. Defaults per size: M4 pad 7.0, hole 4.3 (ISO 273 fine series); M6 pad
     12.0, hole 6.4. The via ring sits midway between the hole and the pad edge, plus 0.15."""
     d = {'M4': (7.0, 4.3), 'M5': (10.0, 5.3), 'M6': (12.0, 6.4)}
     if size not in d and (pad is None or drill is None):
@@ -247,12 +257,22 @@ def lug_stud(size: str = 'M4', pad: Optional[float] = None, drill: Optional[floa
     return fp
 
 
-def bonded_mounting_hole(size: str = 'M5', pad: float = 10.0, drill: float = 5.3, via_ring: float = 4.0,
-                         standoff_d: Optional[float] = 12.0, head: str = 'socket') -> Footprint:
+def bonded_mounting_hole(size: str = 'M5', pad: Optional[float] = None, drill: Optional[float] = None,
+                         via_ring: Optional[float] = None, standoff_d: Optional[float] = 12.0,
+                         head: str = 'socket') -> Footprint:
     """A plated mounting hole that bonds the board's net to the metal it is screwed to: a pad on both layers ringed
     with 8 vias. ``standoff_d`` draws the standoff under the board on B.Fab. ``head`` names the screw the 3D model
     shows (``socket`` or ``button``; ``parts.PARTS['bond_hole_m5']`` builds the M5 x 14 socket head). Defaults: M5,
-    10 mm pad, 5.3 hole, vias on a 4.0 radius."""
+    10 mm pad, 5.3 hole (ISO 273 fine series), vias on a 4.0 radius. Another size needs its ``pad`` and ``drill``
+    (the vias then sit as on a lug stud), so an M3 never gets an M5's hole."""
+    if size == 'M5':
+        pad, drill = (pad if pad is not None else 10.0), (drill if drill is not None else 5.3)
+        via_ring = via_ring if via_ring is not None else 4.0
+    elif pad is None or drill is None:
+        raise ValueError(f'no default pad and hole for a {size} mounting hole: give pad= and drill=')
+    if drill >= pad:
+        raise ValueError('the hole must be smaller than the pad')
+    via_ring = via_ring if via_ring is not None else (drill / 2 + pad / 2) / 2 + 0.15
     fp = Footprint(f'MountingHole_{size}_Pad{pad:.1f}mm_Drill{drill:.1f}mm_Via8_Bond',
                    f'{size} mounting hole, plated, {pad:g} mm pad both sides with 8 vias: bonds the net to the plate',
                    tags=f'mounting hole bond {size}', model=f'MountingScrew_{size}_{head}.step')

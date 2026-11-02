@@ -140,7 +140,8 @@ def model_audit(path, env: Optional[Dict[str, str]] = None, waivers: Optional[Di
         raise ValueError(f'a waiver needs a reason: {bad}')
     var = dict(os.environ) if use_os_env else {}
     var.update(env or {})
-    var.setdefault('KIPRJMOD', str(project_dir(path)))
+    base = project_dir(path)                     # KiCad looks up a relative model path from the project's folder
+    var.setdefault('KIPRJMOD', str(base))
     fps = read(path)
     findings, waived, used = [], [], set()
     for fp in fps:
@@ -162,7 +163,7 @@ def model_audit(path, env: Optional[Dict[str, str]] = None, waivers: Optional[Di
             if full is None:
                 findings.append({'check': 'unresolved_var', 'footprint': who,
                                  'detail': f"{m['path']}: set {', '.join(missing)}"})
-            elif not _resolves(Path(full)):
+            elif not _resolves(Path(full) if Path(full).is_absolute() else base / full):
                 findings.append({'check': 'missing_model', 'footprint': who, 'detail': m['path']})
     findings.sort(key=lambda f: (f['footprint'], f['check'], f['detail']))
     waived.sort(key=lambda w: w['footprint'])
@@ -180,7 +181,9 @@ def _in_hole(pt: Tuple[float, float], pad: dict) -> bool:
     if pad['rot']:
         a = math.radians(pad['rot'])
         dx, dy = pt[0] - cx, pt[1] - cy
-        pt = (cx + dx * math.cos(a) - dy * math.sin(a), cy + dx * math.sin(a) + dy * math.cos(a))
+        # into the hole's own frame: KiCad turns a pad counter-clockwise as seen from above (the model's y is up),
+        # so undo it by turning the point clockwise
+        pt = (cx + dx * math.cos(a) + dy * math.sin(a), cy - dx * math.sin(a) + dy * math.cos(a))
     dx, dy = abs(pt[0] - cx), abs(pt[1] - cy)
     r = min(w, h) / 2
     half = max(w, h) / 2 - r                                # half the straight part of a stadium

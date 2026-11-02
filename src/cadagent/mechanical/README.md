@@ -37,6 +37,7 @@ flowchart TD
 | `mcmaster.py` | McMaster-Carr parts: the manufacturer's STEP and product data for a part number, normalised into a known frame |
 | `connectors.py` | Mating-connector envelopes: panel windows from the plug, then proof that the plug fits and that its cable can bend behind it at the data sheet's radius |
 | `markings.py` | One XY drawing for engraved markings and a matching SVG proof |
+| `printed_joints.py` | Load-bearing joints in printed parts, checked before printing ([printed joints](../../../docs/printed-joints.md)): a pin through an eye (bearing, shear-out, net tension against the layers, with or without a bushing), the root of a boss or rib under a side load and the through-bolt preload that keeps its layers closed, and a screw that backs out under vibration |
 | [`compliant/`](compliant/README.md) | Compliant features that replace parts: snap fits now, hinges and flexures next |
 | `linkages.py` | Four-bars and five-bars swept over their inputs: joint angles, locks, edges of reach, branch flips; the dyad solver for linkages measured from CAD |
 | `motion_trace.py` | Compares rendered landmarks with CAD joint intent, without a CAD kernel |

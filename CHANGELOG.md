@@ -10,6 +10,81 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.13.0 (2026-11-02)
+
+**New**
+- `cadagent.mechanical.bearings.check_bearing` and `cad-agent bearings bearings.yaml`: check a rolling bearing's ISO 281 basic rating life (turning or oscillating, under one load or a duty cycle, at any reliability from 90 to 99.95 %), its ISO 76 static safety at running and peak loads against SKF's guideline s0, its axial load, load range, minimum load and speed. A swinging joint, such as a robot's knee, also gets its critical amplitude and a false-brinelling warning. It returns pass, warn or fail rows; the CLI exits 1 on a fail and 2 on a bad file (#180).
+- `cadagent.mechanical.bearings.BEARINGS`: SKF's 6201 (open, 2Z, 2RSH), 6301, 6301-2RSH, 61800 to 61806, 61812, 6207-2RSH, NU 202 ECP and NU 311 ECP, and Koyo's 6201, each with C, C0, Pu, speeds, f0 and its source. Give `check_bearing` a mapping for any other bearing (#180).
+- 21 bearing formulas in `cadagent.formulas`: `rating_life`, `reliability_factor`, `deep_groove_load` (SKF's X, Y and e by clearance), `static_safety`, `duty_cycle_load` and `miner_life`, the oscillation factors `harris_factor` and `rumbarger_factor`, and an exact Hertz contact (`hertz_point_contact`, `ball_raceway_contact`). They are tested against SKF's and NSK's worked examples in `tests/fixtures/bearing-vectors.json` (#180).
+- [Rolling bearings](docs/bearings.md): the check, a robot knee worked through, and four figures drawn from the code (#180).
+- `cadagent.geometry.robust_union` and `robust_cut`: booleans that check every result (not null, valid by the relation gate's strict checks, at least one solid, a volume within the inputs' bounds by its adaptive integration) and fall back to one shape at a time, then, for a cut, to tools nudged by 0.01 mm. Each fallback and nudge is reported (`report=[]`) and logged; when nothing passes they raise `GeometryError` instead of returning a bad shape. Contributed by Jeff Patrick, from failures he met on a real build (#249).
+- `cadagent.geometry.cache.PartCache`: caches built parts as BREP under a hash of the listed source files, parameters
+  (`key_extra`) and each part's own `deps`, so a build rebuilds only the parts whose sources changed.
+  `get_or_build(name, fn, deps=None)`, `get_all(builders)`, `clear()` and an optional `max_bytes` cap. Each part's
+  sha256, validity, solid count and volume are checked on load, and a damaged or changed file is rebuilt; writes are
+  atomic, so parallel runs never read half a file. It lives in `.cadagent-cache/parts` by default and writes its own
+  `.gitignore`, so it is never committed. Contributed by Jeff Patrick (#250).
+- `cad-agent package` skips folders tagged with `CACHEDIR.TAG`, such as the part cache, even when an include glob
+  reaches into them (#250).
+- `cadagent.manufacturing.process`: the cited process profiles (research/process-profiles.yaml) as typed values. A
+  project can ask for a process's rules, minimums, tolerances, FDM layer factors by filament, or a shop's bend table, and
+  every value carries its rule id and source id. Rules not verified in their source are marked `(u)` and refused for
+  enforcement (#99).
+- `cadagent.manufacturing.dfm.check`: minimum walls, holes, pins, gaps, bridges, overhangs, flanges and hole-to-bend
+  distances held against every verified source, with the spread reported (pass, warn when sources disagree, fail when
+  none is met), and whether a printed feature's stress crosses the layers, with the filament's data-sheet factors (#99).
+- `cadagent.manufacturing.sheet_metal`: bend allowance, deduction, flat length, K-factor, shortest flange and relief for
+  5052 and mild steel, from the shop's table first and the generic rules after (#99).
+- Docs: [Process profiles in code](docs/process-checks.md), with three figures drawn from these modules (#99).
+
+**Changed**
+- `CONTRIBUTING.md`: a new workflow step 1, "Look before building". Before writing a new command, check, calculator,
+  generator or skill, search the catalogue, `research/landscape.md`, `upstreams/registry.yaml`, `skills/` and the
+  open-source libraries and agent skills outside them, and record in the PR what was adopted, wrapped, borrowed from or
+  passed on, and why. The later steps move down one (#106).
+- The PR template has a "Considered existing tools" section for that record. "None: no new capability" is an
+  answer (#106).
+- Merge gates: a review verdict counts only from a maintainer (`MAINTAINERS` in `tools/ci_gates.py`) who still has
+  write access. Write access alone no longer lets a collaborator pass the review gate on their own PR. Collaborators
+  push branches and run CI, and a maintainer reviews before anything merges (#111).
+- The site is built and published by Cloudflare Pages from Git: every push to `main` runs `npm ci && npm run build`,
+  the same settings as every other Valpatel Pages site.
+  The new `npm run build` (`tools/pages-build.mjs`) fetches the full history, `origin/main` and `origin/dev`, which
+  Cloudflare's clone lacks, then runs the release build.
+- `release.yml` only tags and publishes the GitHub release. Its token-gated deploy job is gone, so a green release run
+  can no longer hide a skipped deploy. `npm run deploy:site` stays as the by-hand fallback (#112).
+- `docs/vision.md` now opens with the long-term loop (#139). Agents using cad-agent on real projects send evidence.
+  Maintainer agents review it, fit it to the structure and credit the author. Releases rebuild the site and indexes
+  by themselves. Two measures, the fewest tool calls and tested knowledge rather than trained knowledge, show whether
+  the loop is working.
+- CONTRIBUTING.md: the `main` "gate" legend now says that `ci_gates.py all` checks only the three `cad-gates` rows, so
+  confirm the browser runs with `gh pr checks` (#112).
+- `cadagent.formulas.nut_factor` now checks every argument, not only the flank angle. A NumPy array, which used to
+  give an array of K, is refused, and so are a bool and a NaN (#230).
+- `cadagent.manufacturing.fit_coupons` reads its hole undersize and fit allowances from the FDM profile by rule id;
+  the numbers are unchanged (0.25 mm undersize, 0.25 mm slide, 0.3 mm free). It now needs the cad-agent checkout's
+  `research/process-profiles.yaml` when imported (an editable install, as CONTRIBUTING.md asks, has it), or
+  `CADAGENT_PROCESS_PROFILES` naming the file (#99).
+
+**Fixed**
+- `cadagent.mechanical.inserts.check_joint`, the `clamped on insert` row: the advice now names the washer that helps,
+  a metal one between the printed part and the insert (not under the head), or a limiter. It also says that the
+  whole clamp is taken on the insert's ring (the cautious bound), and that once the plastic yields the boss face
+  takes some, which the check does not size. The page and the limits say the same (#230).
+- `check_joint` with `installed_from="far side"`: `r["hole"]["overflow_mm3"]` is 0, since the hole is the insert's
+  length; it used to report a joint-face blind hole's pocket (#230).
+- `cadagent.formulas.nut_factor`, `thread_radial_pressure`, `boss_hoop_stress` and `screw_boss` take any real number.
+  `np.float32`, NumPy integers such as `np.int64`, and `Decimal` used to be refused even in range wherever they
+  were checked (`nut_factor`'s flank angle, and every argument of the other three), with a message that wrongly said
+  they were out of range; `nut_factor`'s other arguments were not checked, and a `Decimal` there raised a
+  `TypeError`. They are now used as their float values. (`np.float64` subclasses
+  `float` and was always accepted.) A bool, a string or `None` is refused with a message saying it is not a real
+  number. The range checks are unchanged (#230).
+- `cadagent.geometry.export_print_stl`: open-edge vertices within 1 µm are welded before the watertight check, so a valid solid whose tessellation split a vertex no longer fails as non-watertight. The report adds `vertices_welded`, `mesh_volume_before_weld_mm3` and `mesh_volume_mm3`; a real hole still fails (#249).
+
+**Projects must change**
+- To sweep `nut_factor` over several diameters, pitches or frictions, call it once per value (#230).
+
 ## v0.12.0 (2026-11-02)
 
 **New**

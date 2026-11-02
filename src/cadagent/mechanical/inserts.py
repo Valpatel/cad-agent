@@ -742,6 +742,8 @@ LIMITS = (
     "pull-out about 2.5 x)",
     "the insert's end takes the whole clamp where the clamped part or a limiter bears on it, brass being far "
     "stiffer than the boss round it, so its face is held to the softest temper's yield (124 MPa)",
+    "a printed clamped part on a flush insert is taken to carry the whole clamp on the insert's ring, the cautious "
+    "side: once it yields the boss face takes some, which nothing here sizes",
     "a far-side insert is taken as pressed onto the shoulder in front of it",
     "a size outside the fitted ones (M3 x 5.7, M6 x 12.7) takes the fit as it is: larger ones are flagged, as the "
     "published results fall with size",
@@ -1071,6 +1073,8 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
                   why=hd["why"][:2] + [f"from the far face, {ins.length_mm:g} mm deep, the insert's length, to the "
                                        "shoulder in front of it: pressed flush with the far face, the insert lands on "
                                        "the shoulder; its melt goes back to the far face"] + hd["why"][3:])
+        if "overflow_mm3" in hd:
+            hd["overflow_mm3"] = 0.0                     # no pocket past the insert: the hole is its length
         install = dict(install, how=INSTALL_FAR_SIDE)
         gap = depth - ins.length_mm
         v = "pass" if gap <= 1e-9 else "warn"
@@ -1271,8 +1275,10 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
                              f"the printed clamped part sits on the same {face['area_mm2']:.2f} mm^2 ring, so its "
                              f"plastic carries the preload there (MPa), against its compressive strength / {margin:g} "
                              f"({BEARING_BASIS.get(family(cmat), 'its datasheet strength along the layers')}): over "
-                             "it the plastic crushes into the ring and the preload falls. A washer or a limiter "
-                             "spreads it"))
+                             "it the plastic crushes into the ring and the preload falls. A metal washer between the "
+                             "printed part and the insert (not under the head), or a limiter, spreads it. The whole "
+                             "clamp is taken on the ring, the cautious side: once the plastic yields the boss face "
+                             "takes some, which nothing here sizes"))
     # service loads on the knurl
     knurl_pull = pull_n + (preload["high"] if path["path"] == "jack-out" else 0.0)
     if path["path"] != "seat" and knurl_pull > 0:

@@ -659,22 +659,23 @@ What reads the YAML today (solid) and what is planned to (dashed):
 
 ```mermaid
 flowchart TD
-    Y["process-profiles.yaml<br/>rules, sources, a shop table"] --> E["evaluate()<br/>tools/process_profile_figures.py"]
-    E --> C["the charts on this page<br/>redrawn by the tests"]
-    Y -.->|"planned, #99"| P["cadagent.process<br/>a profile per process"]
-    P -.->|"planned"| K["checks that cite a rule id<br/>sheet metal S1–S8, pitfalls #97"]
+    Y["process-profiles.yaml<br/>rules, sources, a shop table"] --> P["cadagent.manufacturing.process<br/>typed profiles, evaluate()"]
+    P --> E["tools/process_profile_figures.py<br/>the charts on this page"]
+    P --> K["dfm.check · sheet_metal.bend<br/>fit_coupons' allowances"]
+    K -.->|"planned"| S["sheet metal S1–S8<br/>pitfall checks #97"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class Y,E here
-    class C out
-    class P,K near
+    class Y,P here
+    class E,K out
+    class S near
 ```
 
-- **`cadagent.process` (#99)** can load `process-profiles.yaml` as it stands: rules by process and feature, the
-  evaluator in `tools/process_profile_figures.py`, and the SendCutSend shop table. The acceptance in #99 (FDM PETG,
-  PLA, ASA, PA-CF and sheet-metal 5052 and mild-steel profiles) needs the material rows from compliant-mechanisms §5
-  joined to the FDM rules here, and the shop table for sheet metal.
+- **`cadagent.manufacturing.process` (#99)** loads this file as typed profiles: rules by process and feature, the
+  evaluator, the SendCutSend shop table, and the FDM layer factors of PETG, PLA, ASA, CoPA and PA-CF from the data
+  sheets in compliant-mechanisms §5 (`cadagent.mechanical.compliant.allowables`). `cadagent.manufacturing.dfm` checks
+  minimum features against every source and `cadagent.manufacturing.sheet_metal` computes bends from it; see
+  [Process profiles in code](../docs/process-checks.md).
 - **Planned sheet-metal checks S1–S8** (`research/fea-and-process-tools.md` §5): every check should name its datum and
   its source, and read a shop table first. See #118's comment on S1 and S5.
 - **Pitfall checks (#97)** can cite a rule id from the YAML in their report rows, which gives the credit by name.
@@ -775,8 +776,8 @@ YAML under `standards`)
 - EOS's gap-against-wall chart is an image; its row is marked **(u)**. DuPont's rib and boss proportions (Figures
   4.07 and 3.10) have no text layer either, so they were read from the rendered figures and are marked read.
 - VDI 3405 Blatt 3 (design rules for laser sintering and melting) could not be opened; it is not cited.
-- Next, filed as issues: a `cadagent.process` loader with one check that reads this file, and re-reading the **(u)**
-  row from EOS's chart.
+- Next: re-reading the **(u)** row from EOS's chart (#163). The loader and the first check and calculator that read
+  this file are `cadagent.manufacturing.process`, `.dfm` and `.sheet_metal` (#99).
 
 [hubs-fdm-design]: https://www.hubs.com/knowledge-base/how-design-parts-fdm-3d-printing/
 [hubs-3dp-geometry-limits]: https://www.hubs.com/knowledge-base/3d-printing-geometry-restrictions/

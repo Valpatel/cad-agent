@@ -154,7 +154,9 @@ domains:
     title: Manufacturing
     scope: Turning a design into a part, process by process.
     maturity: tooling
-    pages: [research/process-profiles.md]
+    pages: [docs/process-checks.md, research/process-profiles.md]
+    api: [cadagent.manufacturing.process, cadagent.manufacturing.dfm]
+    uses: [cadagent.mechanical.compliant.allowables]
     issues: [99]
     areas:
       - slug: 3d-printing
@@ -184,8 +186,9 @@ domains:
       - slug: sheet-metal
         title: Sheet metal
         scope: Bent metal parts.
-        maturity: surveyed
-        pages: [research/fea-and-process-tools.md]
+        maturity: tooling
+        pages: [docs/process-checks.md, research/fea-and-process-tools.md]
+        api: [cadagent.manufacturing.sheet_metal]
         issues: [99, 118, 119]
       - slug: mould-making
         title: Mould making

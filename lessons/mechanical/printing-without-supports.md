@@ -98,7 +98,7 @@ slice` with `cad.slicer.engine: prusa`, and #247 is `cad-agent overhangs` and `c
 flowchart TD
     F["a face pointing down<br/>in the print orientation"] --> S{"flatter than 45°?"}
     S -->|"yes"| R["reshape it: teardrop roof,<br/>45° cone, column boss"]
-    S -->|"no"| P["prints without support"]
+    S -->|"no"| P["no overhang flagged"]
     R --> T["overhang regions:<br/>none left there"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

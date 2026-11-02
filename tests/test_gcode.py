@@ -126,6 +126,16 @@ def test_custom_features_inches_and_no_labels(tmp_path):
         bridge_report(unlabelled, n=-1)
 
 
+def test_arcs_in_inches_and_binary_gcode(tmp_path):
+    path = tmp_path / "arc.gcode"
+    path.write_text("G20\nM83\n;TYPE:Overhang perimeter\nG1 X0 Y0\nG3 X2 Y0 I1 J0 E0.1\n")
+    assert bridge_report(path)["longest"][0]["length_mm"] == pytest.approx(math.pi * 25.4, abs=1e-3)
+    binary = tmp_path / "part.bgcode"
+    binary.write_bytes(b"GCDE\x01\x00\x00\x00")
+    with pytest.raises(ValueError, match="binary G-code"):
+        bridge_report(binary)
+
+
 def test_sliced_bambu_project_3mf(tmp_path):
     path = tmp_path / "part.gcode.3mf"
     with zipfile.ZipFile(path, "w") as z:

@@ -806,11 +806,13 @@ def cmd_overhangs(project: CadProject, args: argparse.Namespace) -> int:
     settings = {"limit_deg": limit, "min_area_mm2": min_area}
     path = project.exports_dir / "overhang-screen.json"
     rows: Dict[str, Any] = {}
-    if parts and path.is_file():          # a partial run keeps the other parts' rows from a run with the same settings
+    if parts and path.is_file():          # a partial run keeps the other parts' current rows from a run with the same settings
         try:
             old = json.loads(path.read_text())
             if old.get("version") == OVERHANG_SCREEN_VERSION and all(old.get(k) == v for k, v in settings.items()):
-                rows = {k: v for k, v in (old.get("parts") or {}).items() if k in known}
+                rows = {k: v for k, v in (old.get("parts") or {}).items()     # only rows whose STL is unchanged
+                        if k in known and isinstance(v, dict) and (project.exports_dir / f"{k}.stl").is_file()
+                        and hashlib.sha256((project.exports_dir / f"{k}.stl").read_bytes()).hexdigest() == v.get("sha256")}
         except (OSError, ValueError, AttributeError):
             rows = {}
     failed = 0

@@ -330,8 +330,9 @@ def overhang_regions(
     ``max_angle_deg`` is the other way round (the normal's angle below horizontal, 90° minus this slope); at 45° the
     two agree.
 
-    Faces whose centre is within ``bed_z`` of the mesh's lowest point sit on the bed and are left out. Flagged faces
-    that share an edge are one region (vertices within 1e-6 mm are merged first, so an STL's unshared vertices still
+    Faces whose centre is within ``bed_z`` of the mesh's lowest point sit on the bed and are left out (``downward_area``
+    measures from z = 0 instead, so for a part that does not sit on z = 0 the two differ). Flagged faces
+    that share an edge are one region (vertices are rounded to 1e-6 mm and merged first, so an STL's unshared vertices still
     join). Regions under ``min_area`` mm² (chamfer slivers, tessellation) are counted but not listed. Each region:
     ``area_mm2``, ``faces``, ``bounds_mm`` (xmin, ymin, zmin, xmax, ymax, zmax), ``centre_mm`` (area-weighted),
     ``flattest_deg`` (its flattest face: 0 is a flat ceiling) and ``mean_slope_deg`` (area-weighted), largest first.

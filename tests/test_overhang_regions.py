@@ -125,6 +125,12 @@ def test_overhangs_command_writes_the_screen(tmp_path, capsys):
     assert main(["overhangs", "--project", str(root), "box", "--limit", "30", "--min-area", "1"]) == 0
     data = json.loads((root / "exports" / "overhang-screen.json").read_text())
     assert set(data["parts"]) == {"box"} and data["limit_deg"] == 30.0
+    # a row whose STL changed since is not kept by a run of another part
+    assert main(["overhangs", "--project", str(root), "--limit", "30", "--min-area", "1"]) == 0
+    trimesh = pytest.importorskip("trimesh")
+    trimesh.creation.box(extents=(12, 12, 12)).export(root / "exports" / "lid.stl")
+    assert main(["overhangs", "--project", str(root), "box", "--limit", "30", "--min-area", "1"]) == 0
+    assert set(json.loads((root / "exports" / "overhang-screen.json").read_text())["parts"]) == {"box"}
 
 
 def test_overhangs_command_fails_on_missing_or_unreadable_stls(tmp_path, capsys):

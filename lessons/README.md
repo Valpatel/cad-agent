@@ -77,6 +77,9 @@ until v0.6.0, and the site redirects their pages.
 - **Source:** transcript timestamp(s) such as 2026-10-24T16:35, and/or a project file.
 ```
 
+A long page may keep each lesson's Rule and Check in view and fold its Incident and Source into a
+`<details>` (summary "Incident and source"), so the page stays inside the site's wall-of-text limit.
+
 Timestamps are UTC as they appear in the transcript, truncated to the minute. Part numbers (P1, P9, P15 and so on)
 are the project's printed-part IDs.
 

@@ -47,6 +47,9 @@ _EPS = 1e-9
 def _lines(path: Union[str, Path]) -> Iterator[str]:
     """The G-code lines of a ``.gcode`` file, or of every plate in a sliced Bambu Studio ``.gcode.3mf``/``.3mf``."""
     path = Path(path)
+    with open(path, "rb") as f:
+        if f.read(4) == b"GCDE":
+            raise ValueError(f"{path}: binary G-code (.bgcode); slice with binary_gcode = 0 to get text G-code")
     if zipfile.is_zipfile(path):
         with zipfile.ZipFile(path) as z:
             names = sorted(n for n in z.namelist() if n.lower().endswith(".gcode"))
@@ -180,7 +183,8 @@ def extrusions(lines: Iterable[str], features: Optional[Mapping[str, str]] = Non
                         yield done
                 continue
             arc = cmd in ("G2", "G3")
-            length = _arc_length(x0, y0, x1, y1, words, cmd == "G2") if arc else math.hypot(x1 - x0, y1 - y0)
+            arc_words = {k: v * unit for k, v in words.items() if k in "IJR"}     # G20: the centre and radius in inches too
+            length = _arc_length(x0, y0, x1, y1, arc_words, cmd == "G2") if arc else math.hypot(x1 - x0, y1 - y0)
             d = None if arc else ((x1 - x0) / length, (y1 - y0) / length)
             if (run is not None and d is not None and run["_dir"] is not None and run["feature"] == feature
                     and abs(run["z_mm"] - round(pos["Z"], 3)) < 1e-6

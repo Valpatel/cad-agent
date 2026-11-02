@@ -42,8 +42,8 @@ projects:
 
 cross_cutting:
   pages: [docs/vision.md, docs/toolkit.md, docs/formulas.md, research/landscape.md]
-  api: [cadagent.geometry, cadagent.project, cadagent.links, cadagent.formulas]
-  issues: [106, 113, 139]
+  api: [cadagent.geometry, cadagent.project, cadagent.links, cadagent.formulas, cadagent.library]
+  issues: [106, 113, 139, 287]
 
 domains:
   - slug: mechanical
@@ -305,11 +305,12 @@ domains:
         scope: PCBs by job, with their evidence (ERC, DRC, routing, assembly).
         maturity: tooling
         pages: [docs/pcb.md]
-        cli: [pcb-check]
+        cli: [pcb-check, library]
         api: [cadagent.electrical.pcb, cadagent.electrical.pcb_routing]
         lessons: electronics
         projects: [thor-can-breakout, gyropup]
         topics:
+          - {slug: parts-library, title: Parts library, scope: "Footprints and 3D bodies for real parts from their datasheets, and the audit that every placed part shows.", maturity: tooling, cli: [library], issues: [287]}
           - {slug: breakout-boards, title: Breakout boards, scope: "A connector or part broken out to headers or spring terminals.", maturity: idea}
           - {slug: adapter-boards, title: Adapter boards, scope: "Adapting one connector or part to another.", maturity: idea}
           - {slug: pass-through-tap-boards, title: Pass-through tap boards, scope: "1:1 pass-through that exposes signals for probing.", maturity: idea}

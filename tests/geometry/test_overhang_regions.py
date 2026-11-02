@@ -94,7 +94,7 @@ def test_an_stl_path_and_the_bed_is_the_lowest_point(tmp_path):
 
 def _project(tmp_path):
     trimesh = pytest.importorskip("trimesh")
-    from .test_report import make_project
+    from tests.publish.test_report import make_project
 
     root = make_project(tmp_path)
     t = trimesh.util.concatenate([trimesh.creation.box(extents=(4, 4, 10)).apply_translation((0, 0, 5)),

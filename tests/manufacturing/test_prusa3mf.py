@@ -199,7 +199,7 @@ def slicer_dir():
     cmd = prusa_slicer()
     if cmd is None:
         pytest.skip("PrusaSlicer is not installed")
-    # the Flathub sandbox cannot read /tmp: work under the home folder, as tests/test_slicer_prusa.py does
+    # the Flathub sandbox cannot read /tmp: work under the home folder, as tests/manufacturing/test_slicer_prusa.py does
     parent = Path.home() / ".cache" / "cadagent-test"
     parent.mkdir(parents=True, exist_ok=True)
     d = Path(tempfile.mkdtemp(prefix="prusa3mf-", dir=parent))

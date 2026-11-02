@@ -266,7 +266,7 @@ def test_slice_without_prusaslicer_is_unusable(tmp_path, monkeypatch, capsys):
 def test_slice_config_errors_exit_2_with_the_reason(tmp_path, monkeypatch, capsys, slicer_cfg, said):
     import shutil
     from cadagent.manufacturing import slicer_prusa
-    from tests.test_slicer_prusa import FIXTURE, fake_run
+    from tests.manufacturing.test_slicer_prusa import FIXTURE, fake_run
     shutil.copytree(FIXTURE, tmp_path / "PrusaSlicer")
     monkeypatch.setenv("CADAGENT_PRUSA_PROFILES", str(tmp_path / "PrusaSlicer" / "vendor"))
     root = make_project(tmp_path / "p")

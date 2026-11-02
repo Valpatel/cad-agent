@@ -12,7 +12,7 @@ import pytest
 
 from cadagent.manufacturing.gcode import bridge_report, extrusions
 
-FIXTURES = Path(__file__).parent / "fixtures" / "gcode"
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "gcode"
 
 
 def test_prusaslicer_bridge_infill_lines_are_ranked_by_length():

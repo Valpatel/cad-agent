@@ -22,6 +22,7 @@ flowchart TD
 | File | What it tests |
 |---|---|
 | `__init__.py` | Empty: makes the folder a package, so a test here may share a file name with one in another folder |
+| `test_clearance.py` | `cadagent.mechanical.clearance`: range-of-motion collisions and swept-volume cutters |
 | `test_connectors.py` | Mating-connector envelopes, windows and the 3D plug-fit check |
 | `test_fasteners.py` | `cadagent.mechanical.fasteners`: screw stacks, bottomed and short screws, wall ribs |
 | `test_holes.py` | `cadagent.mechanical.holes` and `cad-agent holes`: clearance, counterbores, ledges |

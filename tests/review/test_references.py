@@ -13,7 +13,7 @@ import yaml
 from cadagent.review import references as refs
 from cadagent.review.references import Registry, check, citations, isbn_ok, load
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 # Code that cites an `unverified` entry: each is a source the code's author read but whose URL was not recorded or
 # could not be found. The list only shrinks: record the URL, move the entry up to `sources`, and drop it here.

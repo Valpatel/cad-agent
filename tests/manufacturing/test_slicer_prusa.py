@@ -11,7 +11,7 @@ import pytest
 
 from cadagent.manufacturing import slicer_prusa
 
-FIXTURE = Path(__file__).parent / 'fixtures' / 'prusa_config'
+FIXTURE = Path(__file__).resolve().parents[1] / 'fixtures' / 'prusa_config'
 
 
 @pytest.fixture
@@ -327,7 +327,7 @@ def test_gcode_without_a_weight_says_so(bundle_root, tmp_path, monkeypatch):
 
 # --- what PrusaSlicer's log says ---
 
-LOGS = Path(__file__).parent / 'fixtures' / 'prusa_logs'
+LOGS = Path(__file__).resolve().parents[1] / 'fixtures' / 'prusa_logs'
 WIPE_TOWER = ('[2026-11-01 16:10:02.114210] [0x00007956cf711ec0] [error] gcode path conflicts found between WipeTower '
               'and boom_foot.stl\n')
 

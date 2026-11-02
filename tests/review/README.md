@@ -39,6 +39,7 @@ flowchart TD
 | `test_hash_platform.py` | Content hashes are bound to the platform that made them |
 | `test_packet.py` | The section review packet |
 | `test_packet_pictures.py` | The review-packet pictures on the site stay tied to the run that drew them |
+| `test_references.py` | The reference registry (`research/references.yaml`): entries well formed, every cited id resolves |
 | `test_review.py` | `review_html` and the review page: local assets, no pass without a current check |
 | `test_volume_precision.py` | Analytic controls for volume cancellation, topology and uncertain decisions |
 

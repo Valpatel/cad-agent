@@ -2,7 +2,7 @@
 is credited with an https link, and the page and charts stay in step with the data (#99, #118).
 
 The sources themselves are entries of the reference registry, research/references.yaml (#163 moved them there);
-tests/test_references.py checks the registry's fields. Here: the entries this file and its page use."""
+tests/review/test_references.py checks the registry's fields. Here: the entries this file and its page use."""
 import datetime as dt
 import importlib.util
 import re

@@ -308,7 +308,7 @@ command line. Whether the tower clears the parts is the slicer's check, and noth
   volume (within 0.1 %), is watertight and is on its tool, every object is where it was placed, and the tower is
   where it was asked. Entries are sorted with a fixed date, so the same objects give the same bytes.
 - **Checked in PrusaSlicer 2.9.4.** Its command line loads the volumes on their tools, puts the wipe tower where the
-  file says and slices (`tests/test_prusa3mf.py` does this wherever PrusaSlicer is installed, natively or from
+  file says and slices (`tests/manufacturing/test_prusa3mf.py` does this wherever PrusaSlicer is installed, natively or from
   Flathub, with a two-tool printer from PrusaSlicer's defaults).
 
 </details>

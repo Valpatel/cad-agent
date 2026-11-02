@@ -325,7 +325,7 @@ def test_engine_is_part_of_report_identity():
 
 def test_slice_project_uses_prusa_engine(tmp_path, monkeypatch):
     import pathlib
-    from tests.test_report import make_project
+    from tests.publish.test_report import make_project
     from cadagent.project import load_project
     from cadagent.manufacturing import slicer_prusa
     project = load_project(make_project(tmp_path / 'proj'))
@@ -347,7 +347,7 @@ def test_slice_project_uses_prusa_engine(tmp_path, monkeypatch):
 def test_part_overrides_go_on_top_and_are_part_of_a_rows_identity(tmp_path, monkeypatch):
     """cad.slicer.parts.<part>.overrides: tall parts want a brim, thin shells fewer perimeters."""
     import pathlib
-    from tests.test_report import make_project
+    from tests.publish.test_report import make_project
     from cadagent.project import load_project
     project = load_project(make_project(tmp_path / 'proj'))
     project.slicer = {'overrides': {'wall_loops': '3', 'brim_width': '0'},
@@ -371,7 +371,7 @@ def test_part_overrides_go_on_top_and_are_part_of_a_rows_identity(tmp_path, monk
 
 def test_a_prusa_part_that_is_not_ok_fails_the_report(tmp_path, monkeypatch):
     import pathlib
-    from tests.test_report import make_project
+    from tests.publish.test_report import make_project
     from cadagent.project import load_project
     from cadagent.manufacturing import slicer_prusa
     project = load_project(make_project(tmp_path / 'proj'))

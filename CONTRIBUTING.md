@@ -40,6 +40,15 @@ flowchart TD
 
 - **The verdict.** It is the last line of the reviewer's summary review: `<!-- cad-review verdict=pass sha=<40-character head sha> -->` (or `verdict=block`). It is written by the `cad-pr-reviewer` subagent, or by a reviewer following the `cad-pr-review` skill, who then re-runs the gates: `gh workflow run gates.yml -R Valpatel/cad-agent -f pr=<n>`.
 - **Who can review.** Only verdicts from a maintainer (`MAINTAINERS` in `tools/ci_gates.py`) who still has write access count, and dismissed reviews never count. A collaborator with write access can push branches and run CI, but their PRs merge only after a maintainer's review. All our agents work through one account, so GitHub cannot tell author from reviewer: an author never writes a verdict on its own PR.
+- **Collaborators.** A collaborator with write access works like any agent here:
+  - branch from `dev` in this repository, and open a PR into `dev`;
+  - push as often as they like, and CI runs without approval;
+  - **never merges their own PR.** A maintainer reviews it (the verdict marker), then approves it. The repository
+    ruleset "Collaborator PRs need a maintainer's approval" requires that approval on `dev` and `main`, dismisses it
+    on a new push, and lets only the admin role bypass it.
+  - The maintainer account merges its own PRs with `gh pr merge --admin`, which skips only that approval: the
+    required checks still apply to admins.
+  - Outside contributors without write access open PRs from forks (#111).
 - **How the gates run.** `gates.yml` runs on `pull_request_target`: the default branch's (`dev`'s) copy of the workflow and of [`tools/ci_gates.py`](tools/ci_gates.py) decides, so a PR cannot pass the gates by editing them, and PRs into `main` (which come from `dev`) are judged by the same copy. The PR is only read as data, never checked out or run. Results are commit statuses named after the base, so a PR into `dev` cannot supply `main`'s checks. A fork's own workflows run with a read-only token, so they cannot post statuses; anyone with write access can, which is why write access is the trust boundary. Fork workflows wait for approval; the intake skill (#120) reads a fork's workflow changes before approving them.
 - **When they run.** On every push to the PR, when the reviewer re-runs them after a verdict, and every 15 minutes for all open PRs (a review cannot trigger them). A run for one PR posts `pending` first, so a crash leaves the PR blocked rather than green. The sweep posts only statuses that change: GitHub keeps at most 1000 statuses per commit and name, and refuses new ones after that.
 - **Just before merging**, run `python3 tools/ci_gates.py all --repo Valpatel/cad-agent --pr <n>` from an up-to-date `dev` checkout. It reads the reviews live and must exit 0, so a block posted since the last run stops the merge.

@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 458" width="720" height="458" role="img" aria-label="The docs example checked: each row's margin to its limit for the rope sheave and the knee; the knee's power-cut s0 is past its limit and the critical amplitude warns">
+<style>text{font:13px system-ui,sans-serif;fill:#1d1d1b}.muted{fill:#5c5b56;font-size:11px}.axis{stroke:#9b9a93;stroke-width:1;fill:none}.grid{stroke:#e2e1dc;stroke-width:1}.s1{fill:#2a78d6;stroke:#2a78d6}.s2{fill:#eb6834;stroke:#eb6834}.s3{fill:#1baf7a;stroke:#1baf7a}.s4{fill:#eda100;stroke:#eda100}.bad{fill:#d1242f;stroke:#d1242f}.band{fill:#efeee9;stroke:none}.bg{fill:#fcfcfb}.ring{stroke:#fcfcfb}@media (prefers-color-scheme:dark){text{fill:#f0efec}.muted{fill:#c3c2b7}.axis{stroke:#8a897f}.grid{stroke:#383835}.s1{fill:#3987e5;stroke:#3987e5}.s2{fill:#d95926;stroke:#d95926}.s3{fill:#199e70;stroke:#199e70}.s4{fill:#c98500;stroke:#c98500}.band{fill:#262624}.bg{fill:#1a1a19}.ring{stroke:#1a1a19}.bad{fill:#e5484d;stroke:#e5484d}}</style>
+<rect class="bg" width="720" height="458"/>
+<text x="20" y="24">The example above, checked: how far each row is from its limit</text>
+<text x="20" y="62" style="font-weight:700">rope sheave: 6207-2RSH, pass</text>
+<rect class="band" x="230.0" y="62" width="75.6" height="116"/>
+<line class="grid" x1="305.6" y1="62" x2="305.6" y2="178"/>
+<line class="grid" x1="413.7" y1="62" x2="413.7" y2="178"/>
+<line class="grid" x1="521.9" y1="62" x2="521.9" y2="178"/>
+<line class="grid" x1="630.0" y1="62" x2="630.0" y2="178"/>
+<line class="axis" x1="305.6" y1="62" x2="305.6" y2="178" stroke-width="2"/>
+<text x="220.0" y="78" text-anchor="end">rating life</text>
+<line class="grid" x1="230.0" y1="74" x2="630.0" y2="74" stroke-dasharray="2 4"/>
+<circle class="s3 ring" cx="442.3" cy="74" r="6" stroke-width="2"><title>L10 = 1.18e+05 million revolutions = 804,796 h; C / P = 49.09; P is below the fatigue load limit Pu 660 N, so with clean full-film lubrication the maker expects a much longer life than this basic one; reaches the 43800 h asked</title></circle>
+<text x="453.3" y="78">18×</text>
+<text x="220.0" y="100" text-anchor="end">load range</text>
+<line class="grid" x1="230.0" y1="96" x2="630.0" y2="96" stroke-dasharray="2 4"/>
+<circle class="s3 ring" cx="456.8" cy="96" r="6" stroke-width="2"><title>the heaviest block's P = 0.02 C, within the 0.5 C in which the makers' life is robust</title></circle>
+<text x="467.8" y="100">25×</text>
+<text x="220.0" y="122" text-anchor="end">minimum load</text>
+<line class="grid" x1="230.0" y1="118" x2="630.0" y2="118" stroke-dasharray="2 4"/>
+<circle class="s3 ring" cx="339.0" cy="118" r="6" stroke-width="2"><title>the lightest block's P = 550 N against 0.01 C = 270 N</title></circle>
+<text x="350.0" y="122">2×</text>
+<text x="220.0" y="144" text-anchor="end">speed</text>
+<line class="grid" x1="230.0" y1="140" x2="630.0" y2="140" stroke-dasharray="2 4"/>
+<circle class="s3 ring" cx="349.9" cy="140" r="6" stroke-width="2"><title>the speed 2,450.0 r/min: below half the limiting speed 6,300 r/min with C / P above 10: no thermal analysis needed; contact seals: no reference speed, the seals' friction sets it</title></circle>
+<text x="360.9" y="144">2.6×</text>
+<text x="220.0" y="166" text-anchor="end">s0, running</text>
+<line class="grid" x1="230.0" y1="162" x2="630.0" y2="162" stroke-dasharray="2 4"/>
+<circle class="s3 ring" cx="442.7" cy="162" r="6" stroke-width="2"><title>s0 = C0 / P0 = 15300 / 550 N = 27.82 against 1.5 (continuous motion, low certainty, permanent deformation accepted: some)</title></circle>
+<text x="453.7" y="166">19×</text>
+<text x="20" y="206" style="font-weight:700">knee: 6201-2RSH, fail ✕</text>
+<rect class="band" x="230.0" y="206" width="75.6" height="182"/>
+<line class="grid" x1="305.6" y1="206" x2="305.6" y2="388"/>
+<line class="grid" x1="413.7" y1="206" x2="413.7" y2="388"/>
+<line class="grid" x1="521.9" y1="206" x2="521.9" y2="388"/>
+<line class="grid" x1="630.0" y1="206" x2="630.0" y2="388"/>
+<line class="axis" x1="305.6" y1="206" x2="305.6" y2="388" stroke-width="2"/>
+<text x="220.0" y="222" text-anchor="end">amplitude</text>
+<line class="grid" x1="230.0" y1="218" x2="630.0" y2="218" stroke-dasharray="2 4"/>
+<circle class="s3 ring" cx="357.2" cy="218" r="6" stroke-width="2"><title>a swing of +/-30 degrees: 2.75 million oscillations per million revolutions</title></circle>
+<text x="368.2" y="222">3×</text>
+<text x="220.0" y="244" text-anchor="end">critical amplitude</text>
+<line class="grid" x1="230.0" y1="240" x2="630.0" y2="240" stroke-dasharray="2 4"/>
+<circle class="s4 ring" cx="265.5" cy="240" r="6" stroke-width="2"><title>below the outer raceway's critical amplitude 70.5 degrees (inner 40.5): parts of the raceway are never rolled over and the rest more often, so the Rumbarger factor is used, 92% of Harris's</title></circle>
+<text x="276.5" y="244">0.43× warn ▲</text>
+<text x="220.0" y="266" text-anchor="end">contact travel</text>
+<line class="grid" x1="230.0" y1="262" x2="630.0" y2="262" stroke-dasharray="2 4"/>
+<circle class="s3 ring" cx="424.8" cy="262" r="6" stroke-width="2"><title>x / 2b = 2.67 mm rolled from the swing's centre to one end against a contact 0.211 mm wide at 900 N (Hertz contact of a 5.953 mm ball (one of 7) at osculation 0.52, Qmax = 5 Fr / Z)</title></circle>
+<text x="435.8" y="266">13×</text>
+<text x="220.0" y="288" text-anchor="end">rating life</text>
+<line class="grid" x1="230.0" y1="284" x2="630.0" y2="284" stroke-dasharray="2 4"/>
+<circle class="s3 ring" cx="578.8" cy="284" r="6" stroke-width="2"><title>L10 = 2.42e+03 million oscillations = 672,798 h; C / P = 9.58; reaches the 2000 h asked</title></circle>
+<text x="589.8" y="288">336×</text>
+<text x="220.0" y="310" text-anchor="end">load range</text>
+<line class="grid" x1="230.0" y1="306" x2="630.0" y2="306" stroke-dasharray="2 4"/>
+<circle class="s3 ring" cx="371.1" cy="306" r="6" stroke-width="2"><title>the heaviest block's P = 0.12 C, within the 0.5 C in which the makers' life is robust</title></circle>
+<text x="382.1" y="310">4×</text>
+<text x="220.0" y="332" text-anchor="end">speed</text>
+<line class="grid" x1="230.0" y1="328" x2="630.0" y2="328" stroke-dasharray="2 4"/>
+<circle class="s3 ring" cx="595.3" cy="328" r="6" stroke-width="2"><title>the swing's peak (sinusoidal) 31.4 r/min: far below the limiting speed 15,000 r/min; contact seals: no reference speed, the seals' friction sets it</title></circle>
+<text x="606.3" y="332">478×</text>
+<text x="220.0" y="354" text-anchor="end">s0, running</text>
+<line class="grid" x1="230.0" y1="350" x2="630.0" y2="350" stroke-dasharray="2 4"/>
+<circle class="s3 ring" cx="344.6" cy="350" r="6" stroke-width="2"><title>s0 = C0 / P0 = 3100 / 900 N = 3.44 against 1.5 (continuous motion, low certainty, permanent deformation accepted: some)</title></circle>
+<text x="355.6" y="354">2.3×</text>
+<text x="220.0" y="376" text-anchor="end">s0, power cut</text>
+<line class="grid" x1="230.0" y1="372" x2="630.0" y2="372" stroke-dasharray="2 4"/>
+<circle class="bad ring" cx="300.1" cy="372" r="6" stroke-width="2"><title>s0 = C0 / P0 = 3100 / 3485 N = 0.89 against 1 (infrequent motion, low certainty, permanent deformation accepted: yes); below 1 the raceways dent (brinell): a turning bearing then runs rough</title></circle>
+<text x="311.1" y="376">0.89× fail ✕</text>
+<text x="230.0" y="410" text-anchor="middle" class="muted">0.2</text>
+<text x="305.6" y="410" text-anchor="middle" class="muted">1</text>
+<text x="413.7" y="410" text-anchor="middle" class="muted">10</text>
+<text x="521.9" y="410" text-anchor="middle" class="muted">100</text>
+<text x="630.0" y="410" text-anchor="middle" class="muted">1000</text>
+<text x="230.0" y="428" class="muted">margin: value / limit, or limit / value for the load range and speed (log scale)</text>
+<text x="230.0" y="444" class="muted">shaded: past the limit</text>
+</svg>

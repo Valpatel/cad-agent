@@ -10,7 +10,8 @@ const DRAWN = 'figure.cad-diagram[data-state=ready]';
 const FONT = 'Arial, sans-serif';
 const runtimeURL = new URL('./vendor/mermaid/mermaid.min.js', import.meta.url);
 let runtimePromise, queue = Promise.resolve(), sequence = 0;
-const records = new WeakMap(), figures = new WeakSet();
+const records = new WeakMap(), figures = new WeakSet(), live = new Set();   // live: every drawn record, for refreshDiagramThemes
+const track = record => { for (const r of live) if (!r.figure.isConnected) live.delete(r); live.add(record); };
 // The stylesheet keeps the hint's line when the drawing (--cad-diagram-w) is wider than the figure, so a figure drawn
 // ahead of time is laid out right before any script runs. `hidden` follows the stylesheet, for screen readers; a figure
 // that is not laid out (in a closed <details>) is left to the stylesheet.
@@ -60,11 +61,12 @@ function prepare(node, options = {}) {
   figure.append(status, hint, view, retry, details); original.replaceWith(figure); figures.add(figure);
   const record = {figure, status, view, retry, source, running: null, id: options.id, font: options.fontFamily, fontSize: options.fontSize,
     mermaid: options.mermaid};
-  records.set(node, record);
+  records.set(node, record); track(record);
   retry.addEventListener('click', () => render(record));
   return record;
 }
-// A figure drawn ahead of time: kept, unless the page's theme is not the one it was drawn in.
+// A figure drawn ahead of time: kept, unless the page's theme is not the one it was drawn in. One drawn for one theme
+// only (data-theme-only, next to its twin in the other theme; the page's CSS shows the one that matches) is always kept.
 function adopt(figure) {
   figures.add(figure);
   const q = selector => figure.querySelector(selector);
@@ -73,6 +75,8 @@ function adopt(figure) {
   updateOverflowHint(figure);
   if (!record.status || !record.view || !record.retry || !record.source) return;
   record.retry.addEventListener('click', () => render(record));
+  if (figure.dataset.themeOnly) return;
+  track(record);
   const theme = themeFor(figure.parentElement);
   if (theme === figure.dataset.theme) return;
   figure.dataset.theme = theme;
@@ -114,6 +118,19 @@ function render(record) {
 export function renderDiagrams(root = document) {
   const all = selector => [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
   return Promise.all([...all(SELECTOR).map(node => render(prepare(node))), ...all(DRAWN).filter(f => !figures.has(f)).map(adopt)]);
+}
+/** Redraw each diagram on the page whose theme is no longer the page's (after the page switched theme without a media
+ * change, as a theme button does). Figures drawn for one theme only are left to the page's CSS. */
+export function refreshDiagramThemes() {
+  const redraw = [];
+  for (const record of live) {
+    const {figure} = record;
+    if (!figure.isConnected) { live.delete(record); continue; }
+    const theme = themeFor(figure.parentElement);
+    if (theme === figure.dataset.theme) continue;
+    figure.dataset.theme = theme; redraw.push(render(record));
+  }
+  return Promise.all(redraw);
 }
 export function observeDiagrams(root = document.body) {
   renderDiagrams(root);

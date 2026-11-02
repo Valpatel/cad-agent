@@ -718,5 +718,5 @@ Not opened, so not cited (see `unverified` in [`references.yaml`](references.yam
 
 Next (#283):
 - The clinch and rivet checks with golden vectors (PR B).
-- A parts catalogue and a skill for the bent plate + PEM + rivet pattern (PR C).
+- The parts catalogue and the skill for the bent plate + PEM + rivet pattern: [the page](../docs/sheet-metal-hardware.md).
 - Re-fetch the SendCutSend feeds before relying on any value here; they change.

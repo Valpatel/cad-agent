@@ -135,6 +135,7 @@ domains:
           - {slug: threaded-inserts, title: Threaded inserts and limiters, scope: "Heat-set inserts and compression limiters in printed parts: hole, boss, load path, pull-out, torque, preload.", maturity: tooling, pages: [docs/inserts.md], cli: [inserts], api: [cadagent.mechanical.inserts], issues: [230]}
           - {slug: clinch-fasteners, title: Clinch fasteners, scope: "PEM-type nuts, studs and standoffs pressed into sheet: the cited parts, hardness, thickness, hole, edge, bend, spacing and load.", maturity: tooling, pages: [research/sheet-metal-joining.md], api: [cadagent.mechanical.clinch], issues: [283]}
           - {slug: riveted-joints, title: Riveted joints, scope: "Blind rivets joining sheet parts: the listed rivets, grip, hole, edge, pitch, metals and strength per pitch.", maturity: tooling, pages: [research/sheet-metal-joining.md], api: [cadagent.mechanical.rivets], issues: [283]}
+          - {slug: sheet-hardware, title: Sheet hardware catalogue, scope: "Dated prices and sellers for the clinch parts and rivets the checks know, and the cheapest that fits.", maturity: tooling, pages: [docs/sheet-metal-hardware.md], api: [cadagent.mechanical.sheet_hardware], uses: [cadagent.simulation.explore.catalogue, cadagent.manufacturing.sheet_metal], skills: [sheet-metal-hardware], issues: [283]}
           - {slug: bought-parts, title: Bought parts, scope: "Real catalogue parts with their manufacturer models.", maturity: tooling}
           - {slug: assembly-access, title: Assembly access, scope: "Tool reach, insertion paths and subassembly order.", maturity: tooling}
       - slug: fixtures-and-jigs
@@ -198,6 +199,7 @@ domains:
           - research/sheet-metal-guides.md
           - research/sheet-metal.md
           - research/sheet-metal-joining.md
+          - docs/sheet-metal-hardware.md
         api: [cadagent.manufacturing.sheet_metal]
         issues: [99, 118, 119, 283]
         topics:

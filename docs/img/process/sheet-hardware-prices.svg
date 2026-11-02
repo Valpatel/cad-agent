@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 738" width="720" height="738" role="img" aria-label="Clinch parts and rivets: price of one piece" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif">
+<rect width="720" height="738" rx="14" fill="#fffdf5" stroke="#d8e0d3"/>
+<text x="18" y="30" font-size="15" font-weight="700" fill="#173d3c">Clinch parts and rivets: price of one piece</text>
+<text x="18" y="50" font-size="12" fill="#526863">cadagent.mechanical.sheet_hardware on research/sheet-hardware.yaml; log scale, US dollars</text>
+<line x1="200.0" y1="78" x2="200.0" y2="666" stroke="#d8e0d3"/>
+<text x="200.0" y="681" font-size="11" fill="#526863" text-anchor="middle">0.03</text>
+<line x1="326.0" y1="78" x2="326.0" y2="666" stroke="#d8e0d3"/>
+<text x="326.0" y="681" font-size="11" fill="#526863" text-anchor="middle">0.1</text>
+<line x1="441.0" y1="78" x2="441.0" y2="666" stroke="#d8e0d3"/>
+<text x="441.0" y="681" font-size="11" fill="#526863" text-anchor="middle">0.3</text>
+<line x1="567.0" y1="78" x2="567.0" y2="666" stroke="#d8e0d3"/>
+<text x="567.0" y="681" font-size="11" fill="#526863" text-anchor="middle">1</text>
+<line x1="682.0" y1="78" x2="682.0" y2="666" stroke="#d8e0d3"/>
+<text x="682.0" y="681" font-size="11" fill="#526863" text-anchor="middle">3</text>
+<text x="676" y="696" font-size="11" fill="#526863" text-anchor="end">USD each</text>
+<text x="190" y="100.0" font-size="11" fill="#173d3c" text-anchor="end">S-440-1ZI</text>
+<circle cx="284.4" cy="96.0" r="4" fill="#6f8a80"/>
+<circle cx="308.4" cy="96.0" r="5" fill="#173d3c"/>
+<line x1="308.4" y1="96.0" x2="539.7" y2="96.0" stroke="#d8e0d3"/>
+<circle cx="539.7" cy="96.0" r="5" fill="#bd3a12"/>
+<text x="190" y="120.0" font-size="11" fill="#173d3c" text-anchor="end">S-M3-1ZI</text>
+<circle cx="284.4" cy="116.0" r="4" fill="#6f8a80"/>
+<circle cx="308.4" cy="116.0" r="5" fill="#173d3c"/>
+<text x="190" y="140.0" font-size="11" fill="#173d3c" text-anchor="end">S-632-1ZI</text>
+<circle cx="284.7" cy="136.0" r="4" fill="#6f8a80"/>
+<circle cx="308.6" cy="136.0" r="5" fill="#173d3c"/>
+<line x1="308.6" y1="136.0" x2="539.7" y2="136.0" stroke="#d8e0d3"/>
+<circle cx="539.7" cy="136.0" r="5" fill="#bd3a12"/>
+<text x="190" y="160.0" font-size="11" fill="#173d3c" text-anchor="end">S-M4-1ZI</text>
+<circle cx="292.8" cy="156.0" r="4" fill="#6f8a80"/>
+<circle cx="316.7" cy="156.0" r="5" fill="#173d3c"/>
+<text x="190" y="180.0" font-size="11" fill="#173d3c" text-anchor="end">S-832-1ZI</text>
+<circle cx="293.8" cy="176.0" r="4" fill="#6f8a80"/>
+<circle cx="317.7" cy="176.0" r="5" fill="#173d3c"/>
+<line x1="317.7" y1="176.0" x2="539.7" y2="176.0" stroke="#d8e0d3"/>
+<circle cx="539.7" cy="176.0" r="5" fill="#bd3a12"/>
+<text x="190" y="200.0" font-size="11" fill="#173d3c" text-anchor="end">SS-032-1ZI</text>
+<circle cx="307.8" cy="196.0" r="4" fill="#6f8a80"/>
+<circle cx="331.7" cy="196.0" r="5" fill="#173d3c"/>
+<line x1="331.7" y1="196.0" x2="539.7" y2="196.0" stroke="#d8e0d3"/>
+<circle cx="539.7" cy="196.0" r="5" fill="#bd3a12"/>
+<text x="190" y="220.0" font-size="11" fill="#173d3c" text-anchor="end">SS-M5-1ZI</text>
+<circle cx="322.4" cy="216.0" r="4" fill="#6f8a80"/>
+<circle cx="346.3" cy="216.0" r="5" fill="#173d3c"/>
+<text x="190" y="240.0" font-size="11" fill="#173d3c" text-anchor="end">CLS-M3-1</text>
+<circle cx="346.4" cy="236.0" r="4" fill="#6f8a80"/>
+<circle cx="370.3" cy="236.0" r="5" fill="#173d3c"/>
+<text x="190" y="260.0" font-size="11" fill="#173d3c" text-anchor="end">CLS-440-1</text>
+<circle cx="347.0" cy="256.0" r="4" fill="#6f8a80"/>
+<circle cx="370.9" cy="256.0" r="5" fill="#173d3c"/>
+<text x="190" y="280.0" font-size="11" fill="#173d3c" text-anchor="end">CLS-M4-1</text>
+<circle cx="371.0" cy="276.0" r="4" fill="#6f8a80"/>
+<circle cx="394.9" cy="276.0" r="5" fill="#173d3c"/>
+<text x="190" y="300.0" font-size="11" fill="#173d3c" text-anchor="end">S-0420-1ZI</text>
+<circle cx="379.9" cy="296.0" r="4" fill="#6f8a80"/>
+<circle cx="403.8" cy="296.0" r="5" fill="#173d3c"/>
+<line x1="403.8" y1="296.0" x2="579.8" y2="296.0" stroke="#d8e0d3"/>
+<circle cx="579.8" cy="296.0" r="5" fill="#bd3a12"/>
+<text x="190" y="320.0" font-size="11" fill="#173d3c" text-anchor="end">S-M6-1ZI</text>
+<circle cx="379.9" cy="316.0" r="4" fill="#6f8a80"/>
+<circle cx="403.8" cy="316.0" r="5" fill="#173d3c"/>
+<text x="190" y="340.0" font-size="11" fill="#173d3c" text-anchor="end">CLS-832-1</text>
+<circle cx="387.5" cy="336.0" r="4" fill="#6f8a80"/>
+<circle cx="411.4" cy="336.0" r="5" fill="#173d3c"/>
+<text x="190" y="360.0" font-size="11" fill="#173d3c" text-anchor="end">CLSS-M5-1</text>
+<circle cx="423.8" cy="356.0" r="4" fill="#6f8a80"/>
+<circle cx="447.8" cy="356.0" r="5" fill="#173d3c"/>
+<text x="190" y="380.0" font-size="11" fill="#173d3c" text-anchor="end">CLSS-032-1</text>
+<circle cx="432.0" cy="376.0" r="4" fill="#6f8a80"/>
+<circle cx="456.0" cy="376.0" r="5" fill="#173d3c"/>
+<text x="190" y="400.0" font-size="11" fill="#173d3c" text-anchor="end">CLS-M6-1</text>
+<circle cx="502.7" cy="396.0" r="4" fill="#6f8a80"/>
+<circle cx="526.7" cy="396.0" r="5" fill="#173d3c"/>
+<text x="190" y="420.0" font-size="11" fill="#173d3c" text-anchor="end">CLS-0420-1</text>
+<circle cx="503.1" cy="416.0" r="4" fill="#6f8a80"/>
+<circle cx="527.1" cy="416.0" r="5" fill="#173d3c"/>
+<text x="190" y="440.0" font-size="11" fill="#173d3c" text-anchor="end">FH-M3-10ZI</text>
+<circle cx="270.4" cy="436.0" r="4" fill="#6f8a80"/>
+<circle cx="294.4" cy="436.0" r="5" fill="#173d3c"/>
+<line x1="294.4" y1="436.0" x2="539.7" y2="436.0" stroke="#d8e0d3"/>
+<circle cx="539.7" cy="436.0" r="5" fill="#bd3a12"/>
+<text x="190" y="460.0" font-size="11" fill="#173d3c" text-anchor="end">FH-M4-10ZI</text>
+<circle cx="281.4" cy="456.0" r="4" fill="#6f8a80"/>
+<circle cx="305.4" cy="456.0" r="5" fill="#173d3c"/>
+<line x1="305.4" y1="456.0" x2="539.7" y2="456.0" stroke="#d8e0d3"/>
+<circle cx="539.7" cy="456.0" r="5" fill="#bd3a12"/>
+<text x="190" y="480.0" font-size="11" fill="#173d3c" text-anchor="end">FH-M5-10ZI</text>
+<circle cx="316.6" cy="476.0" r="4" fill="#6f8a80"/>
+<circle cx="340.5" cy="476.0" r="5" fill="#173d3c"/>
+<line x1="340.5" y1="476.0" x2="588.7" y2="476.0" stroke="#d8e0d3"/>
+<circle cx="588.7" cy="476.0" r="5" fill="#bd3a12"/>
+<text x="190" y="500.0" font-size="11" fill="#173d3c" text-anchor="end">FH-M6-12ZI</text>
+<circle cx="363.3" cy="496.0" r="4" fill="#6f8a80"/>
+<circle cx="387.2" cy="496.0" r="5" fill="#173d3c"/>
+<line x1="387.2" y1="496.0" x2="557.1" y2="496.0" stroke="#d8e0d3"/>
+<circle cx="557.1" cy="496.0" r="5" fill="#bd3a12"/>
+<text x="190" y="520.0" font-size="11" fill="#173d3c" text-anchor="end">SO-M3-6ZI</text>
+<circle cx="381.4" cy="516.0" r="4" fill="#6f8a80"/>
+<circle cx="405.3" cy="516.0" r="5" fill="#173d3c"/>
+<line x1="405.3" y1="516.0" x2="588.7" y2="516.0" stroke="#d8e0d3"/>
+<circle cx="588.7" cy="516.0" r="5" fill="#bd3a12"/>
+<text x="190" y="540.0" font-size="11" fill="#173d3c" text-anchor="end">SO-M4-6ZI</text>
+<circle cx="439.6" cy="536.0" r="4" fill="#6f8a80"/>
+<circle cx="463.6" cy="536.0" r="5" fill="#173d3c"/>
+<line x1="463.6" y1="536.0" x2="596.9" y2="536.0" stroke="#d8e0d3"/>
+<circle cx="596.9" cy="536.0" r="5" fill="#bd3a12"/>
+<text x="190" y="560.0" font-size="11" fill="#173d3c" text-anchor="end">BSO-M3-6ZI</text>
+<circle cx="471.8" cy="556.0" r="4" fill="#6f8a80"/>
+<circle cx="495.7" cy="556.0" r="5" fill="#173d3c"/>
+<text x="190" y="580.0" font-size="11" fill="#173d3c" text-anchor="end">BSO-M4-6ZI</text>
+<circle cx="502.9" cy="576.0" r="4" fill="#6f8a80"/>
+<circle cx="526.8" cy="576.0" r="5" fill="#173d3c"/>
+<text x="190" y="600.0" font-size="11" fill="#173d3c" text-anchor="end">97447A020</text>
+<circle cx="235.9" cy="596.0" r="5" fill="#173d3c"/>
+<text x="190" y="620.0" font-size="11" fill="#173d3c" text-anchor="end">97447A015</text>
+<circle cx="238.0" cy="616.0" r="5" fill="#173d3c"/>
+<text x="190" y="640.0" font-size="11" fill="#173d3c" text-anchor="end">97517A015</text>
+<circle cx="241.3" cy="636.0" r="5" fill="#173d3c"/>
+<text x="190" y="660.0" font-size="11" fill="#173d3c" text-anchor="end">97525A415</text>
+<circle cx="341.0" cy="656.0" r="5" fill="#173d3c"/>
+<rect x="18" y="695" width="12" height="12" rx="3" fill="#173d3c"/>
+<text x="35" y="705" font-size="11" fill="#173d3c">loose, smallest break</text>
+<rect x="176.4" y="695" width="12" height="12" rx="3" fill="#6f8a80"/>
+<text x="193.4" y="705" font-size="11" fill="#173d3c">loose, 1000-4999</text>
+<rect x="302.8" y="695" width="12" height="12" rx="3" fill="#bd3a12"/>
+<text x="319.8" y="705" font-size="11" fill="#173d3c">pressed in by SendCutSend, per part</text>
+<text x="18" y="726" font-size="10.5" fill="#526863">Bossard read 2026-11-02, McMaster-Carr packs read 2026-11-01 (per rivet), SendCutSend feed generated 2026-04-29. Prices change: re-read.</text>
+</svg>

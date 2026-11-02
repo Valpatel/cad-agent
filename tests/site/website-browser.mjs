@@ -63,6 +63,7 @@ try {
   problems.push(...await fanCurveProblems());            // the fan-curve explorer on /docs/fans (#160), below
   for (const spec of EXPLORERS) problems.push(...await explorerProblems(spec));   // torsion snap and screw boss (#161), below
   problems.push(...await drawnDiagramProblems());        // diagrams drawn by the build: no shift, no script (#132), below
+  problems.push(...await themeProblems());               // light and dark themes, the system's and the button's (#305), below
   for (const width of [360, 1366]) for (const route of ROUTES) {
     const context = await browser.newContext({ viewport: { width, height: 800 } });
     if (engine === chromium) await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: base });
@@ -417,7 +418,9 @@ try {
   const KNOWN_WIDE = new Map();
   // Headless Chrome hides scrollbars; a desktop browser with classic ones has up to 17px less, so keep that much spare.
   const SCROLLBAR = 17;
-  const wide = await browser.newPage({ viewport: { width: 1100, height: 900 } });
+  // In both themes: each block is drawn twice (#305), and the page shows the drawing for its theme.
+  for (const colorScheme of ['light', 'dark']) {
+  const wide = await browser.newPage({ viewport: { width: 1100, height: 900 }, colorScheme });
   for (const [route, sources] of diagramPages.sort()) {
     await wide.goto(base + route);
     await settled(wide);
@@ -429,14 +432,15 @@ try {
     // The drawing's own width against the room inside its view (scrollWidth is never below clientWidth, so it cannot
     // show how much spare there is).
     // A view without a drawing failed to render; the count above reports it.
-    const over = (await wide.$$eval('.cad-diagram .cad-diagram-view', views => views.filter(v => v.querySelector('svg')).map(v => {
+    const over = (await wide.$$eval('.cad-diagram .cad-diagram-view', views => views.filter(v => v.querySelector('svg') && v.getClientRects().length).map(v => {
       const cs = getComputedStyle(v), room = v.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
       return { w: Math.ceil(v.querySelector('svg').getBoundingClientRect().width), room };
     }))).filter(d => d.w > d.room - SCROLLBAR + 1);
     if (KNOWN_WIDE.has(route)) { if (!over.length) problems.push(`${route} now fits: remove it from KNOWN_WIDE`); continue; }
-    for (const d of over) problems.push(`1100px ${route}: a diagram is ${d.w}px wide; the column has ${d.room}px, less ${SCROLLBAR}px for a scrollbar (top-down, at most three boxes per row)`);
+    for (const d of over) problems.push(`1100px ${colorScheme} ${route}: a diagram is ${d.w}px wide; the column has ${d.room}px, less ${SCROLLBAR}px for a scrollbar (top-down, at most three boxes per row)`);
   }
   await wide.close();
+  }
   // Walls of text (#179): on every page at 1366 x 800, the longest stretch of content with no picture, diagram, demo
   // or render stays under WALL_LIMIT (1.5 screens). WALLS is the backlog, each page with the issue that breaks it up;
   // it only shrinks: a page not on it must pass, and one on it that measures under WALL_CLEARED must leave it.
@@ -702,9 +706,16 @@ async function fanCurveProblems() {
         const status = () => demo.locator('.fc-status').textContent();
         if (await status()) say('the status line spoke before anyone touched the demo');
         if ((await tile('flow')) !== '150 m³/h' || (await tile('verdict')) !== 'Clear of stall') say(`the default reads ${await tile('flow')}, ${await tile('verdict')}`);
-        // the site is light, whatever the reader prefers; the element follows the page
+        // the page follows the reader's system and the theme button (#305); the element follows the page
+        // (the button is pressed from script, so the keyboard focus the steps below use stays where it is; the theme pass
+        // presses it for real)
+        const themed = async t => page.waitForFunction(([el, want]) => el.dataset.theme === want, [await demo.elementHandle(), t], { timeout: 3000 }).then(() => true, () => false);
         await page.emulateMedia({ colorScheme: 'dark' });
-        if ((await demo.getAttribute('data-theme')) !== 'light') say('the demo turned dark on a light page');
+        if (!(await themed('dark'))) say('the demo stayed light on a dark page');
+        await page.evaluate(() => document.querySelector('.theme-toggle').click());   // the reader picks light
+        if (!(await themed('light'))) say('the demo did not follow the theme button to light');
+        await page.evaluate(() => document.querySelector('.theme-toggle').click());   // and back to dark, the system's
+        if (!(await themed('dark'))) say('the demo did not follow the theme button back to dark');
         for (const theme of ['light', 'dark']) {
           await demo.evaluate((d, t) => d.setAttribute('theme', t), theme);
           if ((await demo.getAttribute('data-theme')) !== theme) say(`theme="${theme}" is not applied`);
@@ -716,6 +727,7 @@ async function fanCurveProblems() {
         }
         await demo.evaluate(d => d.removeAttribute('theme'));
         await page.emulateMedia({ colorScheme: 'light' });
+        if (!(await themed('light'))) say('the demo stayed dark after the system went light');
         // the tiles' words fit for every kind of result (one line each at desktop width, cut with an ellipsis if not)
         for (const attrs of [['16', '2', '4', 'parallel'], ['8', '60', '4', 'series'], ['12', '25', '2', 'parallel'], ['12', '60', '1', 'parallel'], ['12', '12', '1', 'parallel']]) {
           const cut = await demo.evaluate((d, a) => {
@@ -850,9 +862,16 @@ async function explorerProblems(x) {
         const status = () => demo.locator(`.${px}-status`).textContent();
         if (await status()) say('the status line spoke before anyone touched the demo');
         for (const [k, want] of Object.entries(x.start)) if ((await tile(k)) !== want) say(`the default reads ${k} ${await tile(k)}, not ${want}`);
-        // the site is light, whatever the reader prefers; the element follows the page
+        // the page follows the reader's system and the theme button (#305); the element follows the page
+        // (the button is pressed from script, so the keyboard focus the steps below use stays where it is; the theme pass
+        // presses it for real)
+        const themed = async t => page.waitForFunction(([el, want]) => el.dataset.theme === want, [await demo.elementHandle(), t], { timeout: 3000 }).then(() => true, () => false);
         await page.emulateMedia({ colorScheme: 'dark' });
-        if ((await demo.getAttribute('data-theme')) !== 'light') say('the demo turned dark on a light page');
+        if (!(await themed('dark'))) say('the demo stayed light on a dark page');
+        await page.evaluate(() => document.querySelector('.theme-toggle').click());   // the reader picks light
+        if (!(await themed('light'))) say('the demo did not follow the theme button to light');
+        await page.evaluate(() => document.querySelector('.theme-toggle').click());   // and back to dark, the system's
+        if (!(await themed('dark'))) say('the demo did not follow the theme button back to dark');
         for (const theme of ['light', 'dark']) {
           await demo.evaluate((d, t) => d.setAttribute('theme', t), theme);
           if ((await demo.getAttribute('data-theme')) !== theme) say(`theme="${theme}" is not applied`);
@@ -864,6 +883,7 @@ async function explorerProblems(x) {
         }
         await demo.evaluate(d => d.removeAttribute('theme'));
         await page.emulateMedia({ colorScheme: 'light' });
+        if (!(await themed('light'))) say('the demo stayed dark after the system went light');
         // the panel holds and the tiles' words fit for extreme settings (the last is the page's own)
         const original = await demo.evaluate(d => Object.fromEntries([...d.attributes].map(a => [a.name, a.value])));
         for (const [i, shape] of x.shapes.entries()) {
@@ -924,22 +944,25 @@ async function explorerProblems(x) {
 async function drawnDiagramProblems() {
   const out = [];
   const PAGES = ['/docs/toolkit', '/docs/style-guide', '/docs/vision', '/lessons/process/agent-process'];
-  const boxes = page => page.$$eval('.cad-diagram', figs => figs.map(f => {
+  // the figures the page shows: each block is drawn in both themes and the page's CSS hides the other one (#305)
+  const boxes = page => page.$$eval('.cad-diagram', figs => figs.filter(f => getComputedStyle(f).display !== 'none').map(f => {
     const r = f.getBoundingClientRect(), svg = f.querySelector('.cad-diagram-view svg')?.getBoundingClientRect();
     const view = f.querySelector('.cad-diagram-view'), hint = f.querySelector('.cad-diagram-hint');
     return { state: f.dataset.state, box: [r.width, r.height].map(n => Math.round(n * 2) / 2), svg: svg && [svg.width, svg.height],
       overflows: view.scrollWidth > view.clientWidth + 1, hint: hint.getBoundingClientRect().height > 0 && getComputedStyle(hint).display !== 'none',
       clipped: hint.scrollHeight > hint.clientHeight + 1 };
   }));
-  for (const width of [320, 360, 1366]) for (const route of PAGES) {
-    const where = `${width}px ${route}`;
-    const still = await browser.newContext({ viewport: { width, height: 800 }, javaScriptEnabled: false });
+  for (const [width, colorScheme] of [[320, 'light'], [360, 'light'], [1366, 'light'], [360, 'dark'], [1366, 'dark']]) for (const route of PAGES) {
+    const where = `${width}px ${colorScheme} ${route}`;
+    const still = await browser.newContext({ viewport: { width, height: 800 }, javaScriptEnabled: false, colorScheme });
     const off = await still.newPage();
     await off.goto(base + route, { waitUntil: 'load' });
     await off.evaluate(() => document.fonts.ready);
     const before = await boxes(off);
+    const stillThemes = await off.$$eval('.cad-diagram', figs => figs.filter(f => getComputedStyle(f).display !== 'none').map(f => f.dataset.theme));
+    if (stillThemes.some(t => t !== colorScheme)) out.push(`${where}: without script, it shows diagrams drawn for ${[...new Set(stillThemes)].join(' and ')}`);
     await still.close();
-    const context = await browser.newContext({ viewport: { width, height: 800 } });
+    const context = await browser.newContext({ viewport: { width, height: 800 }, colorScheme });
     const page = await context.newPage();
     const runtime = [];
     page.on('request', r => { if (/mermaid\.min\.js/.test(r.url())) runtime.push(r.url()); });
@@ -969,6 +992,122 @@ async function drawnDiagramProblems() {
         if (m && m.hint !== m.overflows) out.push(`${where}: diagram ${i + 1} ${m.overflows ? 'overflows' : 'fits'} but its scroll hint is ${m.hint ? 'shown' : 'hidden'} ${label}`);
         else if (m?.hint && m.clipped) out.push(`${where}: diagram ${i + 1}'s scroll hint is cut off ${label}`);
     });
+  }
+  return out;
+}
+
+/** The light and dark themes (#305) on the site's main pages, at phone and desktop widths: the page follows the
+ * system's preference, and the header's button overrides it, is remembered on the next page and forgets the choice
+ * when it matches the system again; in each theme every visible piece of text keeps its contrast against what is
+ * behind it (4.5:1, 3:1 for large text), the page shows only the diagrams drawn for its theme, and nothing scrolls
+ * sideways. Text on pictures or gradients, inside the kit's own demos and 3D viewers and in the drawings is skipped
+ * here: the demos and diagrams have their own checks above. */
+async function themeProblems() {
+  const out = [];
+  const ROUTES = ['/', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', '/research/landscape', '/lessons/mechanical/design-rules', '/missing-page'];
+  // Every visible text run's contrast against the colour behind it: the first opaque background up its ancestors,
+  // with the translucent ones (and each stop of a gradient) on the way composited over it; skipped where a picture is
+  // behind. Colours are resolved by the browser itself (a 1 px canvas), so oklab() and color-mix() read right. Inputs'
+  // placeholders are checked against the input, and `extra` (a selector) adds elements whose own text to check.
+  const lowContrast = (page, only = null) => page.evaluate(only => {
+    const ctx = Object.assign(document.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true });
+    const rgba = c => { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = '#000'; ctx.fillStyle = c; ctx.fillRect(0, 0, 1, 1); const d = ctx.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3] / 255]; };
+    const lum = ([r, g, b]) => [r, g, b].map(v => v / 255).map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
+    const ratio = (a, b) => { const [h, l] = [lum(a), lum(b)].sort((x, y) => y - x); return (h + 0.05) / (l + 0.05); };
+    // What can be behind: a colour, or each stop of a CSS gradient (text must read on all of them); null for a picture.
+    const over = ([r, g, b, a], under) => [r, g, b].map((v, i) => v * a + under[i] * (1 - a));
+    const behind = el => {
+      const layers = [];
+      for (let e = el; e; e = e.parentElement) {
+        const cs = getComputedStyle(e), c = rgba(cs.backgroundColor);
+        if (/url\(/.test(cs.backgroundImage)) return null;
+        // a gradient sized to nothing (the catalogue rows' hover sweep, until hovered) is not behind anything yet
+        const stops = cs.backgroundImage === 'none' || /^0(?:%|px)/.test(cs.backgroundSize) ? []
+          : (cs.backgroundImage.match(/(?:rgba?|oklab|oklch|lab|lch|color)\((?:[^()]|\([^()]*\))*\)/g) || []).map(rgba);
+        if (stops.length) layers.push(stops);
+        if (c[3] > 0) layers.push([c]);
+        if (c[3] >= 1 || (stops.length && stops.every(x => x[3] >= 1))) break;
+      }
+      let under = [[255, 255, 255]];
+      for (const layer of layers.reverse()) under = layer.flatMap(c => under.map(u => over(c, u)));
+      return under;
+    };
+    const SKIP = 'svg, img, video, canvas, cad-model, cad-cantilever, cad-fourbar, cad-fan-curve, cad-torsion-snap, cad-printed-boss, .cad-diagram-view, .visually-hidden, .sr, .glyph-sprite, [hidden]';
+    const low = [], walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const name = el => `${el.localName}${el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : ''}`;
+    for (const input of only ? [] : document.querySelectorAll('input[placeholder]')) {
+      if (!input.getClientRects().length || input.closest(SKIP)) continue;
+      const bgs = behind(input), fg = rgba(getComputedStyle(input, '::placeholder').color);
+      const c = bgs && Math.min(...bgs.map(bg => ratio(over(fg, bg), bg)));
+      if (c && c < 4.5) low.push(`${name(input)} placeholder "${input.placeholder.slice(0, 30)}" ${c.toFixed(2)}:1`);
+    }
+    for (let n; (n = walk.nextNode());) {
+      const el = n.parentElement;
+      if (!n.data.trim() || el.closest(SKIP) || (only && !el.closest(only))) continue;
+      const cs = getComputedStyle(el), r = el.getBoundingClientRect();
+      if (!r.width || !r.height || cs.visibility === 'hidden' || +cs.opacity === 0 || !el.checkVisibility?.({ opacityProperty: true, visibilityProperty: true })) continue;
+      const bgs = behind(el);
+      if (!bgs) continue;
+      const fg = rgba(cs.color), c = Math.min(...bgs.map(bg => ratio(over(fg, bg), bg)));
+      const size = parseFloat(cs.fontSize), large = size >= 24 || (size >= 18.66 && +cs.fontWeight >= 700), need = large ? 3 : 4.5;
+      if (c < need) low.push(`${name(el)} "${n.data.trim().slice(0, 30)}" ${c.toFixed(2)}:1`);
+    }
+    return [...new Set(low)];
+  }, only);
+  const state = page => page.evaluate(() => ({
+    scheme: getComputedStyle(document.documentElement).colorScheme, chosen: document.documentElement.dataset.theme ?? null,
+    pressed: document.querySelector('.theme-toggle')?.getAttribute('aria-pressed') ?? null,
+    shown: document.querySelector('.theme-toggle') && !document.querySelector('.theme-toggle').hidden,
+    background: getComputedStyle(document.body).backgroundColor,
+    diagrams: [...new Set([...document.querySelectorAll('.cad-diagram')].filter(f => getComputedStyle(f).display !== 'none').map(f => f.dataset.theme))],
+    sideways: document.documentElement.scrollWidth - innerWidth,
+  }));
+  for (const width of [320, 1366]) {
+    for (const system of ['light', 'dark']) {
+      const context = await browser.newContext({ viewport: { width, height: 800 }, colorScheme: system });
+      const page = await context.newPage();
+      const errors = [];
+      page.on('pageerror', e => errors.push(e.message));
+      for (const route of ROUTES) for (const how of ['system', 'button']) {
+        const theme = how === 'system' ? system : system === 'dark' ? 'light' : 'dark', where = `${width}px ${route}, ${theme} (${how}, system ${system})`;
+        await page.goto(base + route, { waitUntil: 'load' });
+        await settled(page);
+        if (how === 'button') {
+          await page.click('.theme-toggle');
+          await page.waitForTimeout(400);                 // past the copy buttons' 0.15 s colour transition
+        }
+        const st = await state(page);
+        if (!st.shown) out.push(`${where}: no theme button`);
+        if (st.scheme !== theme) out.push(`${where}: the page's color-scheme is ${st.scheme}`);
+        if (st.pressed !== String(theme === 'dark')) out.push(`${where}: the button's aria-pressed is ${st.pressed}`);
+        const bg = st.background.match(/\d+/g).slice(0, 3).map(Number), dark = bg.every(v => v < 60);
+        if (dark !== (theme === 'dark')) out.push(`${where}: the page background is ${st.background}`);
+        if (st.diagrams.some(t => t !== theme)) out.push(`${where}: shows diagrams drawn for ${st.diagrams.join(' and ')}`);
+        if (st.sideways > 0) out.push(`${where}: scrolls sideways by ${st.sideways}px`);
+        for (const l of await lowContrast(page)) out.push(`${where}: low contrast: ${l}`);
+        // the copy buttons' other states (kit/copy.js): "Copied", and "manual", the fallback ("Press Ctrl+C") when the
+        // clipboard refuses; measured with the buttons' colour transition off, so the state's own colours are read
+        for (const s of ['copied', 'manual']) {
+          if (!(await page.evaluate(st => { const b = [...document.querySelectorAll('.cad-copy-btn')];
+            b.forEach(x => { x.dataset.was = x.dataset.state ?? ''; x.style.transition = 'none'; x.dataset.state = st; }); return b.length; }, s))) break;
+          for (const l of await lowContrast(page, '.cad-copy-btn')) out.push(`${where}: low contrast, copy button ${s}: ${l}`);
+          await page.evaluate(() => document.querySelectorAll('.cad-copy-btn').forEach(x => { if (x.dataset.was) x.dataset.state = x.dataset.was; else delete x.dataset.state; delete x.dataset.was; x.style.transition = ''; }));
+        }
+        if (how === 'button') {
+          // remembered on the next page (web/theme.js runs ahead of the stylesheets: tests/site/website-theme.test.mjs)
+          await page.goto(base + '/docs/toolkit', { waitUntil: 'load' });
+          const next = await state(page);
+          if (next.chosen !== theme || next.scheme !== theme) out.push(`${where}: the choice is not kept on the next page (${next.chosen}, ${next.scheme})`);
+          // pressed again, the page is back on the system's theme and the choice is forgotten
+          await page.click('.theme-toggle');
+          await page.waitForTimeout(400);                 // past the copy buttons' 0.15 s colour transition
+          const back = await state(page), kept = await page.evaluate(() => { try { return localStorage.getItem('cad-theme'); } catch { return 'unreadable'; } });
+          if (back.scheme !== system || back.chosen !== null || kept !== null) out.push(`${where}: pressed again, the page is ${back.scheme} with ${back.chosen} chosen and ${kept} kept`);
+        }
+      }
+      if (errors.length) out.push(`${width}px system ${system}: page errors: ${errors.join('; ')}`);
+      await context.close();
+    }
   }
   return out;
 }
@@ -1198,9 +1337,16 @@ async function fourbarProblems() {
         const status = () => demo.locator('.fb-status').textContent();
         if (await status()) say('the status line spoke before anyone touched the demo');
         if ((await demo.locator('[data-out=class]').textContent()) !== 'Crank-rocker') say('the default linkage is not a crank-rocker');
-        // the site is light, whatever the reader prefers; the element follows the page
+        // the page follows the reader's system and the theme button (#305); the element follows the page
+        // (the button is pressed from script, so the keyboard focus the steps below use stays where it is; the theme pass
+        // presses it for real)
+        const themed = async t => page.waitForFunction(([el, want]) => el.dataset.theme === want, [await demo.elementHandle(), t], { timeout: 3000 }).then(() => true, () => false);
         await page.emulateMedia({ colorScheme: 'dark' });
-        if ((await demo.getAttribute('data-theme')) !== 'light') say('the demo turned dark on a light page');
+        if (!(await themed('dark'))) say('the demo stayed light on a dark page');
+        await page.evaluate(() => document.querySelector('.theme-toggle').click());   // the reader picks light
+        if (!(await themed('light'))) say('the demo did not follow the theme button to light');
+        await page.evaluate(() => document.querySelector('.theme-toggle').click());   // and back to dark, the system's
+        if (!(await themed('dark'))) say('the demo did not follow the theme button back to dark');
         for (const theme of ['light', 'dark']) {
           await demo.evaluate((d, t) => d.setAttribute('theme', t), theme);
           if ((await demo.getAttribute('data-theme')) !== theme) say(`theme="${theme}" is not applied`);
@@ -1212,6 +1358,7 @@ async function fourbarProblems() {
         }
         await demo.evaluate(d => d.removeAttribute('theme'));
         await page.emulateMedia({ colorScheme: 'light' });
+        if (!(await themed('light'))) say('the demo stayed dark after the system went light');
         // the tiles' words fit for every kind of linkage (one line each at desktop width, cut with an ellipsis if not)
         for (const links of [[80, 40, 120, 100], [80, 100, 40, 120], [150, 70, 70, 10], [100, 80, 70, 60], [150, 10, 10, 20], [40, 120, 80, 100]]) {
           const cut = await demo.evaluate((d, lengths) => {

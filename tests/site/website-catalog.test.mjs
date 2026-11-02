@@ -352,12 +352,13 @@ const contrast = (a, b) => { const [hi, lo] = [luminance(a), luminance(b)].sort(
 test('every domain and bucket has a tone: the covers\' tints, and an ink that shows on white and on both tints', () => {
   const css = show('web/catalog.css');
   const tones = Object.fromEntries([...css.matchAll(/\[data-tone=([\w-]+)\]\{([^}]*)\}/g)].map(([, slug, body]) =>
-    [slug, Object.fromEntries([...body.matchAll(/--([\w-]+):(#[0-9a-f]{6})/g)].map(([, k, v]) => [k, v]))]));
+    [slug, Object.fromEntries([...body.matchAll(/--([\w-]+):(#[0-9a-f]{6})/g)].map(([, k, v]) => [k === 'tone-ink' ? 'tone' : k, v]))]));
   for (const slug of [...domainSlugs, ...BUCKETS]) {
     const t = tones[slug];
-    assert.ok(t?.tone && t['tint-a'] && t['tint-b'], `web/catalog.css: [data-tone=${slug}] needs --tint-a, --tint-b and --tone (a new domain in docs/areas.yaml needs a tone)`);
+    assert.ok(t?.tone && t['tint-a'] && t['tint-b'], `web/catalog.css: [data-tone=${slug}] needs --tint-a, --tint-b and --tone-ink (a new domain in docs/areas.yaml needs a tone)`);
     assert.deepEqual([t['tint-a'], t['tint-b']], TINT[slug], `${slug}: the rail's tints and the covers' (TINT in tools/catalog-art.mjs) differ`);
-    // The ink is a UI graphic (the hover bar, the glyph, the arrow): 3:1 against everything it sits on.
+    // The ink is a UI graphic (the hover bar, the glyph, the arrow): 3:1 against everything it sits on. In the dark theme
+    // the tone and tints are mixed from it (checked in the browser: tests/site/website-catalog-browser.mjs).
     for (const bg of ['#ffffff', t['tint-a'], t['tint-b']]) assert.ok(contrast(t.tone, bg) >= 3, `${slug}: --tone ${t.tone} on ${bg} is ${contrast(t.tone, bg).toFixed(2)}:1 (3 needed)`);
   }
   // Each domain's panel and the standalone rows carry their tone in the markup.
@@ -375,9 +376,14 @@ test('the area rail: hover effects only where a pointer hovers, and each domain\
   for (const sel of ['.area-link:hover', '.area-tree summary:hover', '.key-scale>li:hover']) assert.ok(hoverBlocks.some(b => b.includes(sel)), `${sel} is not in @media(hover:hover)`);
   const stray = outside.match(/[^{}]*(\.area-link|\.area-tree summary|\.key-scale)[^{}]*:hover[^{}]*\{/)?.[0];
   assert.equal(stray, undefined, `a rail :hover rule outside @media(hover:hover): ${stray}`);
-  // Its muted names stay readable on the white panels.
-  const idea = css.match(/\.area-link\[data-maturity=idea\] \.area-name[^{]*\{color:(#[0-9a-f]{6})/)?.[1];
-  assert.ok(idea && contrast(idea, '#ffffff') >= 4.5, `idea names: ${idea} on white`);
+  // Its muted names stay readable on the panels, in both themes (the colour is a token of web/site.css).
+  const token = css.match(/\.area-link\[data-maturity=idea\] \.area-name[^{]*\{color:var\(--([\w-]+)\)/)?.[1];
+  const site = show('web/site.css'), set = block => Object.fromEntries([...block.matchAll(/--([\w-]+):(#[0-9a-f]{3,8})/g)].map(m => [m[1], m[2]]));
+  const [light, dark] = [site.match(/:root\{(--cream[^}]*)\}/)[1], site.match(/:root\[data-theme=dark\]\{([^}]*)\}/)[1]].map(set);
+  for (const [name, t] of [['light', light], ['dark', dark]]) {
+    const hex6 = c => c.length === 4 ? '#' + [...c.slice(1)].map(x => x + x).join('') : c;
+    assert.ok(t[token] && contrast(t[token], hex6(t.card)) >= 4.5, `idea names (--${token}) on the ${name} panel: ${t[token]} on ${t.card}`);
+  }
   for (const d of areas.domains) {
     const name = d.title.replace(/^./, c => c.toLowerCase());
     // data-label: the chip and the "nothing here" messages name the domain itself, not "All in …"

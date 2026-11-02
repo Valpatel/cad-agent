@@ -12,6 +12,11 @@
 - A PrusaSlicer slice report gives each part an `ok`: true only with exit code 0, G-code written and no error or print
   stability issue. The report's `pass` needs every part ok, and `cad-agent slice` exits 1 otherwise, so a part that
   slices but PrusaSlicer says will print badly no longer reports as fine. Bambu Studio reports are unchanged (#246, by Jeff Patrick).
+- A part PrusaSlicer flagged keeps its grams and time, and says so: its print-release card carries a `slicer: …` pill,
+  the release warnings (and `manifest.json`) name it, and the results report's slicer line adds `NOT OK, flagged by
+  the slicer` (#270).
+- Slicing some parts (`cad-agent slice PART ...`) keeps only the old rows that are still current; `pass` is about the
+  rows in the report, so a part left out is reported as not sliced (#270).
 
 **Projects must change**
 - PrusaSlicer projects: re-run `cad-agent slice`. A part with a stability issue or slicer error now fails it; fix the

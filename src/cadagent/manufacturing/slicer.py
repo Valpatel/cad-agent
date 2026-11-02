@@ -419,7 +419,9 @@ def slice_project(project, parts=None) -> dict:
 
     A PrusaSlicer row also carries what PrusaSlicer's log said (``warnings``, ``errors``, ``stability_issues``,
     ``benign_log_lines``, ``log``) and ``ok``: exit code 0, G-code written and no error or stability issue. The
-    report passes only when every row is ok; a Bambu Studio row is ok when it has grams."""
+    report passes only when every row is ok; a Bambu Studio row is ok when it has grams. Slicing some parts keeps only
+    the old rows that are still current (``_row_current``), so ``pass`` is about the rows in the report: a part left
+    out of it is not sliced, and ``current_report`` is None until every expected part is in."""
     from cadagent.publish.report import load_parts
 
     cfg = dict(project.slicer or {})

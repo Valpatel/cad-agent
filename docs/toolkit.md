@@ -1209,7 +1209,17 @@ regions, and a panel with no data says why). Colour follows the job: one-hue ram
 (blue), never a rainbow.
 
 ### Real grams (`cadagent.manufacturing.slicer`, `cad-agent slice`)
-Slices each part's 3MF with Bambu Studio's command line (an external AGPL program, run as a subprocess). The system
+Slices each part's 3MF with Bambu Studio's command line, or PrusaSlicer's with `cad.slicer.engine: prusa`
+(`cadagent.manufacturing.slicer_prusa`). Both are external AGPL programs, only ever run as a separate process.
+It writes `exports/slice-report.json`: grams and time per part, the settings used and each 3MF's SHA-256, so a stale
+row is told from a current one. A PrusaSlicer row also keeps what PrusaSlicer's log said, and its `ok` is false when
+PrusaSlicer reports an error or a print stability issue. That is PrusaSlicer's own heuristic: an ok part can still
+print badly, and a slice does not prove a part prints or fits.
+
+<details>
+<summary>Bambu Studio profiles, and the <code>cad.slicer</code> keys</summary>
+
+Bambu Studio's system
 profiles resolve `inherits`, then ordered `include` templates, then explicit child settings (unresolved profiles
 can report 0 g or retain generic startup G-code). Missing, cyclic, duplicate, malformed or escaping profile
 dependencies fail explicitly. `flatten(kind, name)` returns the resolved settings; `resolve_profile(kind, name)`
@@ -1217,6 +1227,7 @@ also returns `files`, the relative paths and SHA-256 hashes of the exact consume
 record those dependency hashes and the settings JSON hashes. These identities describe the captured inputs, not
 ongoing filesystem stability or validation of the resulting executable G-code. Inspect actual temperature waits
 and startup order before printing; a filament label or successful slice does not establish physical readiness.
+
 Configure under
 `cad.slicer`: `engine` (`bambu`, the default, or `prusa`), `printer`, `process`, `filament` (`pla`, `petg` or a
 profile name), `overrides` (settings, named as that slicer names them) and `parts`: a list of the parts to slice
@@ -1226,8 +1237,12 @@ none: `name: {}`). Writes `exports/slice-report.json`; a row records its `part_o
 it stale. A PrusaSlicer report records `engine: prusa`, and a report made with one slicer is not current for the
 other.
 
-**PrusaSlicer** (`engine: prusa`, `cadagent.manufacturing.slicer_prusa`). Runs `prusa-slicer` (on PATH, or the
-flatpak `com.prusa3d.PrusaSlicer`), also AGPL and only ever a separate process.
+</details>
+
+<details>
+<summary>PrusaSlicer: profiles, overrides, what its log says, and an example</summary>
+
+Runs `prusa-slicer` (on PATH, or the flatpak `com.prusa3d.PrusaSlicer`).
 - **Profiles:** PrusaSlicer's vendor bundles and your own saved presets, from `$CADAGENT_PRUSA_PROFILES` when set,
   else the first of `~/.config/PrusaSlicer/vendor`, the flatpak's config folder, `/usr/share/PrusaSlicer/profiles`
   and `/usr/share/prusa-slicer/profiles` that holds any.
@@ -1268,6 +1283,8 @@ cad:
       link: {overrides: {perimeters: "4", fill_density: "40%"}}
       lid: {}
 ```
+
+</details>
 
 ### The print release (`cad-agent release`)
 

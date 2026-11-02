@@ -107,6 +107,7 @@ class CadProject:
     dossier: Optional[Path] = None     # dossier/project.yaml, loaded by cadagent.review.dossier.load_project_dossier
     gates: Optional[Dict[str, Any]] = None   # `cad-agent gates` settings (cadagent.review.gates.run); None when absent
     unknown_keys: List[str] = field(default_factory=list)
+    min_cad_agent: str = ""   # ``cad-agent: 0.14.0``: the oldest cad-agent this project builds with (`all` checks it)
 
     def resolve_revision(self) -> Optional[str]:
         """The literal ``revision``, else the value ``revision_from`` points at.
@@ -158,7 +159,7 @@ _TOP_KEYS = {
     "name", "title", "revision", "revision_from", "python", "exports_dir",
     "preview_dir", "docs_dir", "steps", "parts_file", "part_ids", "checks",
     "printer", "package", "serve", "html_pages", "site", "view", "holes", "slicer", "explore",
-    "dossier", "gates", "release", "plates",
+    "dossier", "gates", "release", "plates", "cad-agent",
 }
 
 def _require_dict(value: Any, where: str) -> Dict[str, Any]:
@@ -310,7 +311,18 @@ def from_dict(root: Path, data: Dict[str, Any]) -> CadProject:
         dossier=root / str(data["dossier"]) if data.get("dossier") else None,
         gates=_require_dict(data.get("gates"), "cad.gates") if "gates" in data else None,
         unknown_keys=sorted(set(data) - _TOP_KEYS),
+        min_cad_agent=_min_version(data.get("cad-agent")),
     )
+
+def _min_version(value: Any) -> str:
+    """``cad: cad-agent:``, the oldest cad-agent a project builds with: a release number such as 0.14 or 0.14.0."""
+    if value in (None, ""):
+        return ""
+    text = str(value).strip().lstrip("v")
+    if not re.fullmatch(r"\d+\.\d+(\.\d+)?", text):
+        raise CadConfigError(f"cad.cad-agent is the oldest cad-agent release this project builds with, such as "
+                             f"0.14.0, not {value!r}")
+    return text
 
 def find_config(root: Path) -> Optional[Path]:
     """``<root>/cad-agent.yaml`` if it is a file, else None."""

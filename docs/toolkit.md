@@ -454,6 +454,7 @@ can be renamed: no other file name is read.
 | `plates` | every released part, 5 mm gap and margin | the build plates file (`export-3mf`): see [build plates](#build-plates-cadagentmanufacturingplates) |
 | `serve` | `127.0.0.1`, port 0 (any free) | `{host, port}` |
 | `html_pages` | `[]` | HTML / Markdown pages whose local links must resolve |
+| `cad-agent` | none | the oldest cad-agent this project builds with, e.g. `"0.14"` or `"0.14.2"`; `cad-agent all` refuses an older one and says to run `cad-agent update`. The results file records the version that built it (`cad_agent`), so `update` can say what to re-run |
 
 Unknown keys are reported as a warning, not an error.
 

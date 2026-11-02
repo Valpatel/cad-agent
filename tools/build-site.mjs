@@ -73,6 +73,8 @@ await mkdir(out, { recursive: true });
 for (const f of tracked.filter(f => f.startsWith('web/'))) await copyTracked(f, path.join(out, f));
 // Browsers ask for /favicon.ico on pages without an icon link (llms.txt, the .md twins).
 if (tracked.includes('web/favicon.ico')) await copyTracked('web/favicon.ico', path.join(out, 'favicon.ico'));
+// The one-line installers (#282), at the short URLs the README and the home page give.
+for (const f of ['install.sh', 'install.ps1']) await copyTracked(`web/${f}`, path.join(out, f));
 // The shared web kit (3D viewer, part tables, diagrams) is published as /kit/, the same files projects copy.
 for (const f of tracked.filter(f => f.startsWith('src/cadagent/webkit/'))) {
   await copyTracked(f, path.join(out, 'kit', f.slice('src/cadagent/webkit/'.length)));
@@ -449,56 +451,35 @@ const heroModel = JSON.parse(await read('web/models/gyropup.json'));
 const poster = imageSize(await readBuf('web/models/gyropup.webp'), 'gyropup.webp');
 if (!poster) throw new Error('web/models/gyropup.webp: run node tools/site-model-poster.mjs');
 const kb = n => `${Math.round(n / 1024)} KB`;
-// "Copy this to your agent" (#278): one block, from docs/agent-prompt.txt, that the README shows too
-// (tests/repo/test_agent_prompt.py keeps the two the same). The card shows it verbatim, its step numbers in bold.
+// "Copy this to your agent" (#278, #282): one command per platform (web/install.sh, web/install.ps1, served at /install.sh
+// and /install.ps1), or one line to paste into an agent. docs/agent-prompt.txt holds that line first, then what an
+// agent needs to install and work with the kit, which llms.txt carries (tests/repo/test_agent_prompt.py,
+// tests/site/website-build.test.mjs). The README shows the same commands and line.
 const agentPrompt = await read('docs/agent-prompt.txt');
-const USE_STEPS = [['Install', 'the kit and its skills'], ['Find', 'the tool in llms.txt'], ['Build', 'with tested checks'], ['Give back', 'a PR or an issue']];
-const useLoop = `<svg class="use-loop" viewBox="0 0 400 132" role="img" aria-label="The loop the block sets up: install, find the tool, build with tested checks, give back what was learned, so the next agent finds more">
+const [pasteLine, agentGuide] = (([first, ...rest]) => [first, rest.join('\n').trim()])(agentPrompt.split('\n'));
+const INSTALL = [['unix', 'macOS / Linux', `curl -fsSL ${ORIGIN}/install.sh | sh`], ['win', 'Windows', `irm ${ORIGIN}/install.ps1 | iex`]];
+const USE_STEPS = [['Install', 'one line'], ['Find', 'the tool in llms.txt'], ['Build', 'with tested checks'], ['Give back', 'a PR or an issue']];
+const useLoop = `<svg class="use-loop" viewBox="0 0 400 132" role="img" aria-label="The loop it sets up: install, find the tool, build with tested checks, give back what was learned, so the next agent finds more">
 <defs><marker id="use-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z" fill="#bd3a12"/></marker></defs>
 ${USE_STEPS.map(([t, d], i) => `<g transform="translate(${8 + i * 98} 10)"><rect width="86" height="74" rx="14" fill="${i === 3 ? '#ffe1cc' : '#fffdf5'}" stroke="${i === 3 ? '#bd3a12' : '#173d3c'}"/><text x="43" y="26" text-anchor="middle" font-size="22" font-weight="750" fill="#bd3a12">${i + 1}</text><text x="43" y="47" text-anchor="middle" font-size="12" font-weight="700" fill="#173d3c">${esc(t)}</text><text class="sub" x="43" y="62" text-anchor="middle" font-size="8.5" fill="#526863">${esc(d)}</text></g>${i < 3 ? `<path d="M${96 + i * 98} 47h8" stroke="#bd3a12" stroke-width="2" marker-end="url(#use-arrow)"/>` : ''}`).join('')}
 <path d="M345 86v18a8 8 0 0 1-8 8H59a8 8 0 0 1-8-8v-14" fill="none" stroke="#bd3a12" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#use-arrow)"/>
 <text class="sub" x="200" y="128" text-anchor="middle" font-size="10" fill="#526863">the next agent finds what this one learned</text></svg>`;
-const promptHtml = esc(agentPrompt.replace(/\n$/, '')).replace(/^(\d\.) /gm, '<b>$1</b> ');
-// The card's heading and lead-in are the README's too (tests/site/website-build.test.mjs checks both).
+// The card's heading is the README's too (tests/site/website-build.test.mjs).
 const USE_HEADING = 'Build with your favorite AI agent';
-const USE_LEAD = 'Paste this into any AI coding agent to install cad-agent and its skills, then add what you want made at the end.';
-// Step by step, per agent. Names only, in plain text badges: no product marks, and no endorsement implied. `agents
-// install` sets up Claude Code and Codex (cadagent/agentkit.py); other agents read the skills where the prompt points.
-const AGENTS = [
-  ['claude', 'Claude Code', 'CC', [
-    'In your project folder, run <code>claude</code> and paste the prompt.',
-    'The install links the skills into <code>~/.claude/skills/</code> and the review and resume subagents into <code>~/.claude/agents/</code>.',
-    'Start a new <code>claude</code> session to load them.']],
-  ['codex', 'Codex CLI', 'Cx', [
-    'In your project folder, run <code>codex</code> and paste the prompt.',
-    'The install links the skills into <code>~/.codex/skills/</code> (<code>$CODEX_HOME/skills</code>); the subagents come as skills too.',
-    'Start a new <code>codex</code> session to load them.']],
-  ['copilot', 'Copilot CLI', 'Co', [
-    'In your project folder, run <code>copilot</code> and paste the prompt; let it run the install commands.',
-    'The skills stay in <code>~/cad-agent/skills/</code>, and the prompt tells it to read them there.']],
-  ['cursor', 'Cursor', 'Cu', [
-    'Open your project, start an Agent chat and paste the prompt; let it run the install in the terminal.',
-    'The skills stay in <code>~/cad-agent/skills/</code>, and the prompt tells it to read them there.']],
-  ['gemini', 'Gemini CLI', 'Ge', [
-    'In your project folder, run <code>gemini</code> and paste the prompt.',
-    'The skills stay in <code>~/cad-agent/skills/</code>, and the prompt tells it to read them there.']],
-  ['any', 'Any agent', '>_', [
-    'It needs a shell, git, Python 3.11 or newer and web access.',
-    'Paste the prompt. If it can run git but cannot fetch web pages, it reads <code>~/cad-agent/docs/toolkit.md</code> in place of llms.txt.']],
-];
-const agentBadge = ([id, name, mark]) => `<label class="agent-badge" for="ag-${id}"><span class="agent-mark" aria-hidden="true">${esc(mark)}</span>${esc(name)}</label>`;
+// Where the skills work. Names only, in plain text badges: no product marks, and no endorsement implied. They read
+// ~/.claude/skills or ~/.agents/skills, where the installer puts them (cadagent/agentkit.py, docs/agent-workflow.md).
+const AGENTS = [['Claude Code', 'CC'], ['Codex CLI', 'Cx'], ['Copilot CLI', 'Co'], ['Cursor', 'Cu'], ['Gemini CLI', 'Ge'], ['opencode', 'oc']];
 const useCard = `<section class="use-band" id="use-it" aria-labelledby="use-title"><div class="wrap"><div class="use-card">
-<div class="use-head"><p class="eyebrow">Copy this to your agent</p><h2 id="use-title">${esc(USE_HEADING).replace(/AI agent$/, '<span>AI agent.</span>')}</h2>
-<p class="use-lead">${esc(USE_LEAD)}</p>
-<ul class="agent-badges" aria-label="Agents it works with">${AGENTS.map(a => `<li>${agentBadge(a)}</li>`).join('')}</ul>
+<div class="use-head"><p class="eyebrow">One line to install</p><h2 id="use-title">${esc(USE_HEADING).replace(/AI agent$/, '<span>AI agent.</span>')}</h2>
+<div class="os-tabs">${INSTALL.map(([id], i) => `<input type="radio" name="install-os" id="os-${id}" class="visually-hidden"${i === 0 ? ' checked' : ''}>`).join('')}
+<div class="os-tab-row" aria-hidden="true">${INSTALL.map(([id, name]) => `<label for="os-${id}" class="os-tab tab-${id}">${esc(name)}</label>`).join('')}</div>
+${INSTALL.map(([id, name, cmd]) => `<div class="os-panel panel-${id}"><p class="visually-hidden">${esc(name)}</p><cad-copy class="install-copy" label="Copy"><pre class="install-box" aria-label="${esc(name)} install command">${esc(cmd)}</pre></cad-copy></div>`).join('')}</div>
+<p class="use-lead">Then ask your agent for a part, a check or a simulation.</p>
+<ul class="agent-badges" aria-label="Agents it works with">${AGENTS.map(([name, mark]) => `<li><span class="agent-badge"><span class="agent-mark" aria-hidden="true">${esc(mark)}</span>${esc(name)}</span></li>`).join('')}</ul></div>
+<div class="use-paste"><p class="paste-title">Or paste this into your agent:</p>
+<cad-copy class="agent-copy" label="Copy prompt"><pre class="agent-box" aria-label="The line to paste into your agent">${esc(pasteLine)}</pre></cad-copy>
 ${useLoop}
-<p class="use-note">It finds the right tool in a few calls, builds with tested checks, and sends back what it learns as a pull request or an issue you approve. cad-agent collects no telemetry.</p></div>
-<cad-copy class="agent-copy" label="Copy prompt"><pre class="agent-box" aria-label="The prompt to paste into your agent">${promptHtml}</pre></cad-copy>
-<div class="agent-guide" id="agent-guide"><p class="guide-title">Or follow a step-by-step guide for your agent</p>
-${AGENTS.map(([id], i) => `<input type="radio" name="agent-guide" id="ag-${id}" class="visually-hidden"${i === 0 ? ' checked' : ''}>`).join('')}
-<div class="guide-tabs" aria-hidden="true">${AGENTS.map(([id, name]) => `<label for="ag-${id}" class="guide-tab tab-${id}">${esc(name)}</label>`).join('')}</div>
-${AGENTS.map(([id, name, , steps]) => `<div class="guide-panel panel-${id}"><p class="visually-hidden">${esc(name)}</p><ol>${steps.map(t => `<li>${t}</li>`).join('')}</ol></div>`).join('')}
-<p class="guide-fine">Product names belong to their owners and are listed only to say where the prompt works; no endorsement is implied.</p></div>
+<p class="use-note">No telemetry. Your agent sends back what it learns as a pull request or an issue, only when you say yes. <a href="/docs/agent-workflow#install">Install by hand</a> · Product names belong to their owners; no endorsement implied.</p></div>
 </div></div></section>`;
 const landing = `<div class="wrap"><section class="hero hero-3d">
 <div class="hero-head"><p class="eyebrow"><span class="status-dot"></span>Open source · for agents and people</p>
@@ -526,7 +507,7 @@ ${useCard}
 <ul class="projects"><li><a href="https://gyropup.com">${await homeImg('docs/img/gyropup.jpg', 'projects', ' alt="Gyropup, a wheel-legged robot with a turret, rendered" loading="lazy" decoding="async"')}<b>Gyropup</b></a><p>A wheel-legged foam-ball battle robot, designed, simulated and documented by agents with this toolkit. MIT.</p></li>
 <li><a href="https://github.com/mvalancy/j501-agx-orin">${await homeImg('docs/img/viewer.jpg', 'projects', ' alt="The J501 enclosure in the kit\'s 3D viewer, with its parts list" loading="lazy" decoding="async"')}<b>J501 AGX Orin enclosure</b></a><p>A printed enclosure and cooler for a Jetson AGX Orin carrier, where most of the lessons came from.</p></li></ul></section>
 
-<section class="section skills-row" style="padding-top:0"><div class="lead"><h2>Skills your agents <span>can load.</span></h2><p><code>cad-agent agents install</code> adds them to Claude Code and Codex. <a href="/docs/agent-workflow">How they work together →</a></p></div>
+<section class="section skills-row" style="padding-top:0"><div class="lead"><h2>Skills your agents <span>can load.</span></h2><p>The installer puts them where Claude Code, Codex and the other agents look (<code>~/.claude/skills</code>, <code>~/.agents/skills</code>). <a href="/docs/agent-workflow">How they work together →</a></p></div>
 <ul class="skill-chips">${skillCards.map(p => `<li><a href="${esc(pageURL(p.file))}"><b>${esc(p.title)}</b><span class="pill">${p.section === 'agents' ? 'subagent' : 'skill'}</span></a><a class="skill-md" href="/${esc(p.file)}" aria-label="${esc(p.title)} as Markdown">.md</a></li>`).join('')}</ul></section>
 <section class="section help-band"><div class="lead"><h2>Help us <span>improve!</span></h2><p>Found a mistake, a better tool, or a page that wasted your time? It takes a minute, and ideas we use are credited by name.</p></div>
 <div class="help-actions"><a class="button primary" href="${esc(feedbackURL('home page', '/'))}">Give feedback</a><a class="button" href="${REPO}/issues">See open issues</a><a class="button" href="/CONTRIBUTING">How to contribute</a></div></section></div>`;
@@ -542,8 +523,8 @@ cad-agent is an open-source toolkit and knowledge base for AI agents that design
 simulation and print releases. It maps the best free tools, demonstrates them on real projects and fills the gaps with
 tested tools of its own. Every page on this site has a Markdown twin at the same path with a .md extension.
 
-- Source: ${REPO} (MIT). Install and use: the block under "Copy this to your agent" below (a checkout of \`main\`, a venv,
-  \`pip install -e\`, then \`cad-agent agents install\` for the skills). cad-agent collects no telemetry.
+- Source: ${REPO} (MIT). Install and use: the section below (one command; then \`cad-agent update\` to update).
+  cad-agent collects no telemetry.
 - Machine-readable catalogue: ${ORIGIN}/catalog.json (schema ${catalog.schema}; ${catalog.items.length} entries, each with an id, kind,
   areas, maturity, a one-line \`what\`, our \`notes\`, a cover picture, a demo link and related ids; tools also have \`doc\`,
   the page that documents the command, and \`markdown\`, its twin). Every schema-1 field keeps its schema-1 value: \`summary\`
@@ -558,12 +539,19 @@ tested tools of its own. Every page on this site has a Markdown twin at the same
 - Full text of every page in one file: ${ORIGIN}/llms-full.txt
 - Built from commit ${revision}.
 
-## Copy this to your agent
+## Install and work with it
 
-A person pastes this into their agent and adds what they want made at the end:
+People install with one command (\`curl -fsSL ${ORIGIN}/install.sh | sh\`, or on Windows \`irm ${ORIGIN}/install.ps1 | iex\`),
+or paste this line into their agent, followed by what they want made:
 
 \`\`\`text
-${agentPrompt.replace(/\n$/, '')}
+${pasteLine}
+\`\`\`
+
+An agent that read that line, or found this file, does this:
+
+\`\`\`text
+${agentGuide}
 \`\`\`
 
 ## Start here
@@ -638,7 +626,8 @@ await writeFile(path.join(out, '_headers'), [
   '  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()', '  Cross-Origin-Opener-Policy: same-origin',
   '  Strict-Transport-Security: max-age=31536000',
   '/*.md', '  Content-Type: text/markdown; charset=utf-8', '/llms.txt', '  Content-Type: text/plain; charset=utf-8',
-  '/llms-full.txt', '  Content-Type: text/plain; charset=utf-8', '/kit/vendor/*', '  Cache-Control: public, max-age=86400',
+  '/llms-full.txt', '  Content-Type: text/plain; charset=utf-8', '/install.sh', '  Content-Type: text/plain; charset=utf-8',
+  '/install.ps1', '  Content-Type: text/plain; charset=utf-8', '/kit/vendor/*', '  Cache-Control: public, max-age=86400',
   ...kitPages.flatMap(u => [u, `  Link: <${ORIGIN}${u}>; rel="canonical"`]), ''].join('\n'));
 await writeFile(path.join(out, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${ORIGIN}/sitemap.xml\n`);
 await writeFile(path.join(out, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +

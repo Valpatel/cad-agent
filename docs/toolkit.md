@@ -210,6 +210,27 @@ write_plates("exports/plates", {"lid": [(body, "body", 1), (inlay, "inlay", 3)],
              bed=(360, 360, 360), quantities={"pin": 4})
 ```
 
+```mermaid
+flowchart TD
+    V["parts as volumes<br/>mesh, name, tool"] --> WP["write_project<br/>volumes on their tools"]
+    V --> PL["write_plates<br/>packed by tools"]
+    PL --> WP
+    WP --> F["project 3MF<br/>volumes · wipe tower"]
+    F --> RB["read back<br/>every volume checked"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class WP,PL here
+    class V near
+    class F,RB out
+```
+
+**Limits.** No printer, print or filament settings are written: load them in PrusaSlicer or pass them to its
+command line. Whether the tower clears the parts is the slicer's check, and nothing here says a part prints well.
+
+<details>
+<summary>Objects and volumes, the wipe tower, plates, the read-back and the PrusaSlicer check</summary>
+
 - **Objects and volumes.** An object is `(name, [(mesh, volume name, tool)], (dx, dy[, angle]))`: the meshes (a
   trimesh, or `(vertices, faces)`) in print orientation and the object's own coordinates, so the volumes keep their
   places relative to one another. The object's outline is centred on the bed centre plus `(dx, dy)`, its lowest point
@@ -232,8 +253,8 @@ write_plates("exports/plates", {"lid": [(body, "body", 1), (inlay, "inlay", 3)],
 - **Checked in PrusaSlicer 2.9.4.** Its command line loads the volumes on their tools, puts the wipe tower where the
   file says and slices (`tests/test_prusa3mf.py` does this wherever PrusaSlicer is installed, natively or from
   Flathub, with a two-tool printer from PrusaSlicer's defaults).
-- **Limits.** No printer, print or filament settings are written: load them in PrusaSlicer or pass them to its
-  command line. Whether the tower clears the parts is the slicer's check, and nothing here says a part prints well.
+
+</details>
 
 ### Reproducible outputs
 

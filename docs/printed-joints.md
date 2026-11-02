@@ -116,7 +116,8 @@ nominal + allowance + undersize, from [research/process-profiles.yaml](../resear
 - **Allowance** by fit: `slide` 0.25 (Xometry's 0.2 to 0.3), `free` 0.3 (Prusa's minimum for moving parts), `insert`
   -0.05 over the insert maker's hole, so the sweep centres on the hole
   [`inserts.hole_design`](inserts.md) draws: the maker's hole plus 0.2 mm, the low end of CNC Kitchen's 0.2 to 0.3 mm
-  (its M3 insert held best at 4.2 mm in CAD for a 4.0 mm hole, on the printer that measured the 0.25 mm undersize).
+  (4.2 mm in CAD was its sweet spot for its M3's 4.0 mm hole: about 90 % of the highest pull-out, with the insert
+  pre-seating with slight resistance, on the printer that measured the 0.25 mm undersize).
   `press` 0: no interference for a press fit in a printed hole is published, so the sweep finds it.
 - **Orientation.** A fit with `axis="horizontal"` is exported standing on its edge, its holes in the bed plane, as
   the part's will be.

@@ -301,7 +301,8 @@ PROUD_OK_MM = 0.13                   # proud by up to this still counts as flush
 CAD_ALLOWANCE_MM = (0.2, 0.3)        # added to the maker's hole in CAD for a printed hole (cnck-2026); the same row
 #                                      as fit_coupons' insert sweep, research/process-profiles.yaml
 #                                      fdm-insert-hole-cad-offset-cnckitchen: hole_design takes the low end, 4.2 mm for
-#                                      CNC Kitchen's 4.0 mm M3 hole, its best measured, and the coupon centres there
+#                                      CNC Kitchen's 4.0 mm M3 hole, its sweet spot (about 90 % of the highest
+#                                      pull-out, pre-seating with slight resistance); the coupon centres there
 STRAIGHT_TAPER_DEG = 1.0             # a straight hole's most included taper (spirol-inserts p. 5)
 CLEARANCE_MM = {"M2": 2.4, "M2.5": 2.9, "M3": 3.4, "M4": 4.5, "M5": 5.5, "M6": 6.6, "M8": 9.0}   # iso273
 HEAD_BEARING_MM = {"M4": 6.53, "M5": 8.03, "M6": 9.38, "M8": 12.33}                            # bossard-head
@@ -1462,7 +1463,7 @@ def check_spec(spec: Dict[str, Any]) -> Dict[str, Any]:
         args = {**{k: v for k, v in defaults.items() if k in keys}, **j}
         out.append(check(**args))
     verdict = _worst([{"verdict": r["verdict"]} for r in out])
-    # pass: a boolean a cad: checks row reads (its pass_key needs true or false; "fail" is truthy), #292
+    # pass: the boolean a cad: checks row's pass_key needs (it rejects the verdict string), #292
     return {"verdict": verdict, "pass": verdict != "fail", "joints": out}
 
 

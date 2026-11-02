@@ -21,9 +21,10 @@ by rule id when the module loads:
 * ``slide``, ``fdm-clearance-sliding-xometry-eu``: 0.2-0.3 mm clearance for a sliding fit (0.25 taken);
 * ``free``, ``fdm-clearance-moving-prusa``: at least 0.3 mm for parts that move;
 * ``insert``: centred on the hole :func:`cadagent.mechanical.inserts.hole_design` draws, the maker's hole plus
-  the low end of CNC Kitchen's 0.2-0.3 mm CAD offset (``fdm-insert-hole-cad-offset-cnckitchen``): its M3 insert held
-  best at 4.2 mm in CAD for a 4.0 mm hole. The offset already covers the printed hole's undersize, measured on the same
-  printer, so the allowance is the offset less the undersize (-0.05 mm), and nominal + allowance + undersize lands on it;
+  the low end of CNC Kitchen's 0.2-0.3 mm CAD offset (``fdm-insert-hole-cad-offset-cnckitchen``): for its M3 insert's
+  4.0 mm hole, 4.2 mm in CAD was the sweet spot (about 90 % of the highest pull-out, pre-seating with slight
+  resistance). The offset already covers the printed hole's undersize, measured on the same printer, so the allowance
+  is the offset less the undersize (-0.05 mm), and nominal + allowance + undersize lands on it;
 * ``press``: no allowance (line to line once the undersize is added); no published interference for a press fit in a
   printed hole was found, so the sweep is how you find it.
 
@@ -66,7 +67,7 @@ ALLOWANCE_SOURCE = {
              f"{ALLOWANCE_MM['slide']:g}, taken)",
     "free": f"research/process-profiles.yaml {_FREE.cite()} ({_FREE.text})",
     "insert": f"the insert maker's hole plus {_INSERT.min:g} mm in CAD, the low end of CNC Kitchen's {_INSERT.text} "
-              f"(research/process-profiles.yaml {_INSERT.cite()}; its M3 held best at 4.2 mm for a 4.0 mm hole), as "
+              f"(research/process-profiles.yaml {_INSERT.cite()}; its sweet spot for its M3's 4.0 mm hole was 4.2 mm, about 90 % of the highest pull-out), as "
               f"cadagent.mechanical.inserts.hole_design draws it; that offset includes the {_UNDER.value:g} mm "
               f"undersize, so the allowance is {round(_INSERT.min - _UNDER.value, 4):g}",
 }

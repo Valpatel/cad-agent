@@ -82,6 +82,11 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   rules (#283).
 - In `check_bends`, a flange at exactly the shop's shortest flange now warns on most stocks, because the shop's rows
   are shorter than Century Tywood's 3.5 (T + R). Keep the flange or name the shop's tooling as the reason (#283).
+- The five rules above are now shop rules everywhere: `Profile.rules_for()` and `limits()` leave them out unless the
+  caller names the shop. Code that reads the K range, relief, corner-relief or bend-angle tolerance directly passes
+  `shop="sendcutsend"` to keep them (#283).
+- `cad-agent-results.json` gains a `cad_agent` key holding the version that built it, so a project that commits its
+  results file or compares the whole dict in a test sees it change with each release (#282).
 
 ## v0.14.0 (2026-11-02)
 

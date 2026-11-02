@@ -16,21 +16,19 @@ How to read it:
 
 ## The answer: which guide leads each topic
 
-Each arrow below means "its rules are written down in". Each box names its kind (shop, maker, government), so the
-colours only repeat what the words say.
+Each arrow below means "its rules are written down in". Each source box names its kind (shops, maker, makers and
+government), so the colours only repeat what the words say.
 
 ```mermaid
 flowchart TD
-    S["SendCutSend feed and<br/>guidelines (shop)"] --> P["process-profiles.yaml<br/>shop profile + generic<br/>sheet rules"]
-    G["Protolabs · OSH Cut<br/>(shops, generic)"] --> P
-    H["PEM handbook and<br/>bulletins (maker)"] --> C["clinch rules and<br/>the clinch check"]
-    S ~~~ V["POP · Marson · GESIPA<br/>(makers) · FAA · NASA ·<br/>MIL-HDBK-5J (government)"]
-    V --> K["rivet rules and<br/>the rivet check"]
+    S["shops:<br/>SendCutSend,<br/>Protolabs,<br/>OSH Cut"] --> P["process-<br/>profiles.yaml:<br/>shop and<br/>generic rules"]
+    H["maker: PEM<br/>handbook and<br/>bulletins"] --> C["clinch rules<br/>and check"]
+    V["makers: POP,<br/>Marson, GESIPA;<br/>government:<br/>FAA, NASA,<br/>MIL-HDBK-5J"] --> K["rivet rules<br/>and check"]
     S --> C
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class S,G,H,V near
+    class S,H,V near
     class P,C,K out
 ```
 
@@ -66,9 +64,9 @@ what that shop's machines can do.
 
 ```mermaid
 flowchart TD
-    M["maker: the part's own<br/>physics (PEM, POP)"] --> R["a rule in cad-agent,<br/>with its source"]
-    G["government: free to<br/>quote (FAA, NASA, DoD)"] --> R
-    S["shop: what its own<br/>machines can do"] --> R
+    M["maker: the<br/>part's physics<br/>(PEM, POP)"] --> R["a rule in cad-agent,<br/>with its source"]
+    G["government:<br/>free to quote<br/>(FAA, NASA)"] --> R
+    S["shop: what its<br/>own machines<br/>can do"] --> R
     R --> C["a check names the rule;<br/>a paid standard is<br/>cited by number only"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
@@ -260,9 +258,10 @@ The recommendation key follows CONTRIBUTING step 1:
 flowchart TD
     N["what cad-agent needs:<br/>bent parts · clinch<br/>hardware · blind rivets"] --> A["adopt<br/>bd_warehouse"]
     N --> W["wrap<br/>FreeCAD SheetMetal ·<br/>open-mrp/dfm"]
-    N --> B["borrow<br/>Blueprints · AISIS100.jl<br/>· ranf_thread_fast"]
-    A ~~~ U["build<br/>PEM table · rivet part ·<br/>clinch and rivet checks"]
-    N --> U
+    A ~~~ B["borrow<br/>Blueprints · AISIS100.jl ·<br/>ranf_thread_fast"]
+    W ~~~ U["build<br/>PEM table · rivet part ·<br/>clinch and rivet checks"]
+    N ---> B
+    N ---> U
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

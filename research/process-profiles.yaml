@@ -57,6 +57,7 @@ units:
   degC: degrees Celsius
   count: a whole number of things
   hrb: Rockwell B hardness
+  hb: Brinell hardness
 
 variables:
   T: sheet thickness (mm)
@@ -3486,11 +3487,11 @@ rules:
     process: sheet-metal
     feature: clinch-hardware
     compare: sm-clinch-to-bend
-    quantity: distance from a clinch fastener's hole centre to the outside of the bend radius
-    min: "E"
+    quantity: distance from a clinch fastener's hole centre to the bend centre line
+    min: "BA/2 + E"
     units: mm
-    applies: PEM; E is the part's minimum hole centreline-to-edge distance. The sheet must be flat under the fastener, the hole made after bending, and the tooling must reach. Edge distances hold for one edge only
-    datum: from where the bend radius ends on the flat (tangent line) to the hole centre
+    applies: PEM; E is the part's minimum hole centreline-to-edge distance, which PEM measures from the outside of the bend radius (where the flat starts). On the flat pattern that point lies BA/2 from the bend centre line, so the rule is written on the same datum as SendCutSend's. The sheet must be flat under the fastener, the hole made after bending, and the tooling must reach. Edge distances hold for one edge only
+    datum: bend centre line to hole centre (PEM's own datum, the outside of the bend radius, plus BA/2)
     source: pem-handbook
     status: read
     verified: 2026-11-01
@@ -3643,7 +3644,7 @@ rules:
     quantity: thinnest sheet for which the bearing allowables hold
     min: "0.18*D"
     units: mm
-    applies: MIL-HDBK-5J 8.1.2.1 (t/D at least 0.18); its blind-rivet tables also warn below t/D 0.25
+    applies: MIL-HDBK-5J 8.1.2.1, written for solid rivets (t/D at least 0.18); its blind-rivet tables (8.1.3) also warn below t/D 0.25
     source: mil-hdbk-5j
     status: read
     verified: 2026-11-01

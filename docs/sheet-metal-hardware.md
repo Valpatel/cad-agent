@@ -66,17 +66,18 @@ parts cost 1.8 to 3.3 times the steel ones, and none of the listed parts goes in
 
 ```mermaid
 flowchart TD
-    P["PEM parts<br/>Bossard"] --> Y["you press<br/>or rivet"]
-    S["SendCutSend<br/>sheet, pressed"] --> Y
+    P["PEM parts<br/>Bossard"] --> X["you press<br/>them in"]
+    S["SendCutSend<br/>sheet, pressed"] --> Y["you rivet<br/>the seams"]
+    X --> Y
     R["rivets<br/>McMaster"] --> Y
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
     class P,S,R here
-    class Y out
+    class X,Y out
 ```
 
-*Where each part comes from. The sheet part comes from the shop, with or without its clinch parts pressed in; the
-loose parts and rivets come from a distributor.*
+*Where each part comes from. A sheet part the shop has pressed its clinch parts into needs only riveting; loose
+clinch parts from a distributor are pressed in first. Rivets come from a distributor.*
 
 
 - **PEM parts:** Bossard Americas sells them loose without an account, with stock counts on each part page. PEM sells

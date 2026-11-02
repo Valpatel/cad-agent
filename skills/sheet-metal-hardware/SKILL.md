@@ -26,8 +26,9 @@ flowchart TD
 1. **Pick the sheet.** Use 5052-H32 aluminium or mild (cold-rolled) steel, 1.0 to 3.2 mm. Both take the cheap
    zinc-plated steel clinch parts. Stainless sheet takes none of the listed parts; it needs PEM's SP, FH4 or SO4 types.
 2. **Check the bends** with `cadagent.manufacturing.sheet_metal.check_bends`. Give the flanges to the outside, the
-   angles and the reliefs. Name the shop (`shop="sendcutsend"`) when you know it, so its angle, box and channel limits
-   apply, and pass `hardware=True` when the part gets clinch parts: shops limit bends and box flanges on such parts. `cadagent.manufacturing.sheet_metal.bend` gives the bend allowance the next steps need, and `flat_length`
+   angles and the reliefs. Name the shop (`shop="sendcutsend"`) when you know it, so its angle, box and channel
+   limits apply, and pass `hardware=True` when the part gets clinch parts: shops limit bends and box flanges on such
+   parts. `cadagent.manufacturing.sheet_metal.bend` gives the bend allowance the next steps need, and `flat_length`
    gives the blank.
 3. **Check each hole near a bend** with `cadagent.manufacturing.sheet_metal.feature_to_bend`. Measure from the hole's
    edge to the bend's tangent line. A warning means it meets only the rules with a stated datum; move the hole if you
@@ -47,17 +48,29 @@ flowchart TD
    price to press the parts in, each from a dated public price. Re-read the seller's page before buying.
 
 <details>
-<summary>The six steps as calls, on a 1.6 mm 5052 U channel</summary>
+<summary>The six steps as calls, on a 1.6 mm 5052 U channel riveted to a 1.6 mm plate</summary>
 
 ```python
 from cadagent.manufacturing import sheet_metal as sm
 from cadagent.mechanical import clinch, rivets, sheet_hardware as sh
-sm.check_bends("5052", 1.6, [20, 20], relief_width_mm=1.6, hardware=True, shop="sendcutsend")["verdict"]
-sh.choose_clinch("632", "5052-h32", 1.6)[0]["part"]["key"]               # "S-632-1", $0.0847 loose
-clinch.check_placement("S-632-1", "5052-h32", 1.6, edge_mm=6.5, to_bend_mm=8.0,
-                       bend_allowance_mm=sm.bend("5052", 1.6)["allowance_mm"])["verdict"]
-rivets.check_joint("mcmaster-97447A015", [("5052-h32", 1.5), ("5052-h32", 1.5)], edge_mm=6.4, pitch_mm=25)
-sh.cost({"S-632-1": 8, "mcmaster-97447A015": 24})
+# 1-2. 5052, 1.6 mm: two 20 mm legs on a 40 mm base, with hardware, at SendCutSend
+sm.check_bends("5052", 1.6, [20, 20], relief_width_mm=1.6, channel_base_mm=40, hardware=True,
+               shop="sendcutsend")["verdict"]                                     # "pass"
+ba = sm.bend("5052", 1.6)["allowance_mm"]                                         # 2.452 mm
+sm.flat_length([20, 40, 20], "5052", 1.6)["flat_mm"]                              # 74.948 mm, the blank
+# 3. the nut's hole, centred 10.5 mm from the bend centre line: its edge is 10.5 - BA/2 - hole/2 from the tangent
+hole = clinch.PARTS["S-632-1"].hole_mm                                           # 4.7625 mm
+sm.feature_to_bend("5052", 1.6, 10.5 - ba / 2 - hole / 2)["verdict"]              # "pass" (6.89 mm; at 8.0, "warn")
+# 4. the cheapest #6-32 nut that fits, then its placement
+sh.choose_clinch("632", "5052-h32", 1.6)[0]["part"]["key"]                        # "S-632-1", $0.0847 loose
+clinch.check_placement("S-632-1", "5052-h32", 1.6, edge_mm=6.5, to_bend_mm=10.5,
+                       bend_allowance_mm=ba)["verdict"]                           # "pass"
+# 5. a 1/8 in rivet for 1.6 + 1.6 mm, each sheet +/- 0.1 mm: only a multi-grip covers 3.0-3.4 mm
+rivet = sh.choose_rivet(3.2, 3.0, 3.4)[0]["part"]["key"]                          # "pop-AD41-43-mg" (no price yet)
+rivets.check_joint(rivet, [("5052-h32", 1.6), ("5052-h32", 1.6)], edge_mm=6.4, pitch_mm=25,
+                   thickness_tol_mm=0.1)["verdict"]                               # "pass"
+# 6. the price: the nuts loose and pressed in; the rivet is listed as unpriced
+sh.cost({"S-632-1": 8, rivet: 24})
 ```
 
 </details>

@@ -13,11 +13,15 @@
 #   2. clones cad-agent into ~/cad-agent (main, the released channel), or updates it if it is already there;
 #   3. `uv tool install --editable` of that checkout: the `cad-agent` command lands in ~/.local/bin, with its own
 #      Python 3.12 that uv manages;
-#   4. links the agent skills into ~/.claude/skills and ~/.agents/skills (`cad-agent agents install`) and says
-#      which ones this computer can't use yet.
+#   4. links the agent skills into ~/.claude/skills and ~/.agents/skills and the subagents into ~/.claude/agents
+#      (`cad-agent agents install`), removes the kit's own old links from ~/.codex/skills ($CODEX_HOME/skills when that
+#      is set: where earlier versions put them; nothing else there is touched), and says which skills this computer
+#      can't use yet.
 # Running it again updates, with `cad-agent update`, which does the same steps. No sudo. cad-agent collects no
 # telemetry, and this script turns usage reporting off for what it starts. Nothing is written outside ~/cad-agent,
-# uv's own folders (~/.local/bin, ~/.local/share/uv, ~/.cache/uv) and the agents' skill folders.
+# uv's own folders (~/.local/bin, ~/.local/share/uv, ~/.cache/uv), the skill folders (~/.claude/skills,
+# ~/.agents/skills) and the subagent folder (~/.claude/agents); outside them, it only removes the kit's own old links
+# from the Codex skills folder above.
 #
 # Everything is inside main(), called on the last line, so a download cut short runs nothing.
 

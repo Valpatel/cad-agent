@@ -1,5 +1,10 @@
 // Rendered diagrams (Mermaid through the shared kit) on any page that has them.
-import('/kit/diagrams.js').then(m => m.observeDiagrams()).catch(() => {});
+import('/kit/diagrams.js').then(m => {
+  m.observeDiagrams();
+  // Diagrams drawn at build time come in both themes (site.css shows one); any drawn here are redrawn after the theme
+  // button (web/theme.js) switches the page.
+  document.addEventListener('cad-themechange', () => m.refreshDiagramThemes());
+}).catch(() => {});
 // One-click copy buttons on code blocks (the build wraps them in <cad-copy>).
 import('/kit/copy.js').catch(() => {});
 // Page tree and outline beside long pages (the build writes the tree into <cad-nav>).

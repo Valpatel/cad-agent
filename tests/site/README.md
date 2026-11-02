@@ -35,6 +35,7 @@ flowchart TD
 | `website-html.test.mjs` | `tools/site-html.mjs`: the sanitizer keeps our markup and drops unsafe HTML |
 | `website-pages.test.mjs` | `tools/site-pages.mjs`: outputs placed on pages, section cards, folded reference |
 | `website-snap-demo.test.mjs` | The landing page's snap-fit animation shows a real engagement |
+| `website-theme.test.mjs` | The light and dark colour tokens: the same tokens in both, contrast in both, no stray light-only colour, and the theme script and button on every page |
 
 Run: `node --test tests/site/website-*.test.mjs`, then `npm run test:site`; `pytest tests/site` for the Python files.
 

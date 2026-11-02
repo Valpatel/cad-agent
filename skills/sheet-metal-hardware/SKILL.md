@@ -17,8 +17,6 @@ flowchart TD
     H --> C["clinch parts<br/>choose, then place"]
     C --> R["rivet seams<br/>choose, then check"]
     R --> P["price and order<br/>cost"]
-    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
-    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
     class B,H,C,R here
     class P out
 ```

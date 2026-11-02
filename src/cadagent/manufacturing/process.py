@@ -480,7 +480,7 @@ def data_path(path: Any = None) -> Path:
 
 
 @lru_cache(maxsize=8)
-def _load(path: Path, mtime: float) -> Profiles:
+def _load(path: Path, mtime: float, registry_mtime: Optional[float]) -> Profiles:
     import yaml
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     sources: Dict[str, Source] = {s["id"]: _source(s) for s in data["sources"]}
@@ -488,7 +488,9 @@ def _load(path: Path, mtime: float) -> Profiles:
     registry = path.parent / REGISTRY.name
     if registry.is_file():
         reg = yaml.safe_load(registry.read_text(encoding="utf-8")) or {}
-        for s in reg.get("sources", reg.get("references", [])) or []:
+        entries = reg if isinstance(reg, list) else (reg.get("sources") or reg.get("references") or []) \
+            if isinstance(reg, dict) else []
+        for s in entries:
             if isinstance(s, dict) and "id" in s:
                 sources.setdefault(s["id"], _source(s))
     datasets = {f"dataset:{d['id']}": Source(f"dataset:{d['id']}", d["what"], d.get("cites", ""), (), None,
@@ -514,9 +516,10 @@ def _load(path: Path, mtime: float) -> Profiles:
 
 
 def load(path: Any = None) -> Profiles:
-    """Every process profile from the data file (cached until the file changes)."""
+    """Every process profile from the data file (cached until it or the registry beside it changes)."""
     p = data_path(path).resolve()
-    return _load(p, p.stat().st_mtime)
+    reg = p.parent / REGISTRY.name
+    return _load(p, p.stat().st_mtime, reg.stat().st_mtime if reg.is_file() else None)
 
 
 def profile(process: str, path: Any = None) -> Profile:

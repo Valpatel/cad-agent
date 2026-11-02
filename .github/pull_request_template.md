@@ -3,8 +3,8 @@
 ## Considered existing tools
 <!-- A new capability (command, check, calculator, generator or skill): what you looked for first, in the catalogue,
      research/landscape.md, upstreams/registry.yaml, skills/ and the open-source libraries and agent skills outside
-     them. For each candidate: adopted, wrapped, borrowed from or passed on, and why (CONTRIBUTING.md, workflow step 1).
-     "None: no new capability" is an answer. -->
+     them. For each candidate: adopted, wrapped, borrowed from or passed on, and why (CONTRIBUTING.md, "Look before
+     building"). "None: no new capability" is an answer. -->
 
 ## How it was checked
 - [ ] `python -m pytest -q` passes locally (with the extras this change touches)

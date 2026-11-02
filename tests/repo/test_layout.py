@@ -38,6 +38,7 @@ AREAS = {
     "fixtures": "shared test data, used by tests in any folder",
 }
 TEST_ROOT_FILES = {"__init__.py", "README.md", "conftest.py"}            # all that may sit directly in tests/
+# .claude/ and .codex/ (wiring for the agent kit: links and generated files only) join this list in the PR that adds them.
 TOP_DIRS = {".agents", ".github", "agents", "changelog.d", "docs", "examples", "lessons", "mining", "research",
             "skills", "src", "tests", "tools", "upstreams", "vendor", "web"}
 SRC_FILES = {"cadagent"}                                                  # src/ holds the package and nothing else

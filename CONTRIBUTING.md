@@ -112,7 +112,8 @@ folder comes when one gets cluttered (the growth rule in [AGENTS.md](AGENTS.md#r
 | An example project | `examples/<name>/`, with a README |
 | A CHANGELOG entry | `changelog.d/<issue>-<slug>.md` |
 | Vendored upstream code | `vendor/<name>/`, through `tools/vendor_sync.py` |
-| A skill or a subagent | `skills/<name>/SKILL.md`, `agents/<name>.md` (the agent tooling layout is under review) |
+| A skill or a subagent | `skills/<name>/SKILL.md`, `agents/<name>.md`: the only copies to edit. `.claude/`, `.agents/` and `.codex/` hold only links or generated files |
+| A finding or note from agent work | `lessons/<area>/`, not `.agents/` |
 
 ## Using cad-agent from a project
 - **Released:** a checkout of `main` (or a tag), installed editable: `pip install -e "<checkout>[cad,fea]"`.

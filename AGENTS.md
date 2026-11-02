@@ -53,7 +53,9 @@ its failures says where the file goes.
 | `changelog.d/` | One CHANGELOG fragment per PR ([how](changelog.d/README.md)). |
 | `vendor/`, `upstreams/` | Vendored upstream code in its own layout; the registry of upstreams we track. |
 | `mining/` | The script that condenses session transcripts for lesson mining. |
-| `agents/`, `skills/`, `.agents/`, `.github/` | *Under review (agent tooling layout).* Today: `agents/` holds the subagent files and `skills/` the skills that `cad-agent agents install` ships; `.agents/` holds operational notes (a symptom index, inbox, playbooks); `.github/` the workflows and templates. There is no `.claude/` in this repo: the kit installs into the user's `~/.claude/` and `~/.codex/`. |
+| `skills/<name>/`, `agents/<name>.md` | The only real copies of the kit's skills and subagents, and the only place to edit them (what `cad-agent agents install` ships). The repo root is the plugin root (#111), so these are its `skills/` and `agents/`. |
+| `.claude/`, `.agents/`, `.codex/` | Wiring only: symlinks or generated files. Never edit through them, and put no new notes in `.agents/`: findings go in `lessons/`. The links, and the move of today's `.agents/` notes into `lessons/`, come in a follow-up PR. |
+| `.github/` | Workflows, the PR and issue templates, Dependabot ([CONTRIBUTING](CONTRIBUTING.md#gates)). |
 
 ✓ **Never add a top-level folder.** A new kind of folder is the owner's call, in a PR of its own.
 

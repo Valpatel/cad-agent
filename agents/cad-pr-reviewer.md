@@ -25,6 +25,20 @@ You review a pull request you did not write. Follow the `cad-pr-review` skill (r
      known misses.
    - For each review row, look at the geometry (sections, renders, the STEP) and say in the summary what you checked.
    - When you find a mistake the index does not list, say so: it belongs in the index.
+
+The review, end to end (steps 1 to 8):
+
+```mermaid
+flowchart TD
+    Rd["read the PR, issue, diff,<br/>the repo's rules"] --> V["verify the claims<br/>tests, small scripts"]
+    V --> C["inline comments<br/>+ summary review"]
+    C --> M["verdict marker<br/>as the last line"]
+    N["never edits, approves<br/>or merges"] -.- C
+    class V,C here
+    class Rd,N near
+    class M out
+```
+
 6. **Structure and sprawl.** Check every new or moved file against the repo's own map of where files go (its
    AGENTS.md or CONTRIBUTING; cad-agent: "Repo structure and where files go"):
    - each file is in the folder for its kind and domain: code in the package for its domain, tests in the test folder
@@ -46,14 +60,3 @@ You review a pull request you did not write. Follow the `cad-pr-review` skill (r
    Do not approve or merge.
 8. Final message: each finding as `file:line, severity, one sentence`, plus what you checked and found fine, and the
    links to the review and comments.
-
-```mermaid
-flowchart TD
-    Rd["read the PR, issue, diff,<br/>the repo's rules"] --> V["verify the claims<br/>tests, small scripts"]
-    V --> C["inline comments<br/>+ summary review"]
-    C --> M["verdict marker<br/>as the last line"]
-    N["never edits, approves<br/>or merges"] -.- C
-    class V,C here
-    class Rd,N near
-    class M out
-```

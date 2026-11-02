@@ -8,6 +8,7 @@
     fdm.material("petg-bambu-basic").factors         # across-the-layers / in-plane: modulus, strength, strain
     sheet = process.profile("sheet-metal")
     sheet.material("5052").stock(1.6)                # one shop's R, K, minimum flange and relief for 1.6 mm 5052
+    sheet.limits(compare="sm-clinch-to-bend", shop="sendcutsend", E=7.0, BA=2.5)   # generic and that shop's rules
 
 Checks and calculators read their numbers here instead of hard-coding one printer's or one shop's: the minimum-feature
 check (:mod:`cadagent.manufacturing.dfm`), the sheet-metal bend calculator (:mod:`cadagent.manufacturing.sheet_metal`)
@@ -29,7 +30,11 @@ never passes or fails a part on it. :meth:`Profile.verified_rule` refuses one, f
   :attr:`Source.resolved` is False and each factor keeps the sheet's own link as its citation.
 * Sheet metal: the shop's table (``shop_tables``) for 5052 aluminium and cold-rolled mild steel, and the generic rules.
   :data:`SHEET_MATERIALS` says which generic K-factor row (soft, medium) a material takes and which rules are for other
-  alloys; that grouping is this module's reading of the source's words, stated in each entry.
+  alloys; that grouping is this module's reading of the source's words, stated in each entry. A shop's other tables
+  (stainless and galvanised bend rows, cutting and hardware limits) load as :attr:`Profiles.shops` tables.
+* Shops: a rule with ``shop: <id>`` is that shop's own (``shops`` in the data file names each one, #283). The queries
+  leave shop rules out unless asked for one (``shop="sendcutsend"``, or ``"*"`` for every shop), so the generic rules
+  stay supplier-neutral; a project's chosen suppliers (#284) pick the shop.
 
 **Limits.** The rules are published guidance from bureaus, makers and textbooks, not measurements of your printer or
 shop. Sources disagree; a profile keeps every one and a check reports the spread. A rule's ``applies`` text (material,
@@ -215,6 +220,7 @@ class Rule:
     variant: str = ""
     datum: str = ""
     note: str = ""
+    shop: str = ""           # a shop id of ``shops`` for that shop's own rule; "" for a generic one
 
     @property
     def verified(self) -> bool:
@@ -378,17 +384,19 @@ class Profile:
         return tuple(sorted({r.feature for r in self.rules}))
 
     def rules_for(self, feature: Optional[str] = None, compare: Optional[str] = None,
-                  units: Optional[str] = None) -> Tuple[Rule, ...]:
+                  units: Optional[str] = None, shop: Optional[str] = None) -> Tuple[Rule, ...]:
+        """The matching rules: the generic ones, plus one shop's own with ``shop="<id>"`` (``"*"``: every shop's)."""
         return tuple(r for r in self.rules if (feature is None or r.feature == feature)
-                     and (compare is None or r.compare == compare) and (units is None or r.units == units))
+                     and (compare is None or r.compare == compare) and (units is None or r.units == units)
+                     and (not r.shop or shop == "*" or r.shop == shop))
 
     def limits(self, feature: Optional[str] = None, compare: Optional[str] = None, units: Optional[str] = None,
-               exclude: Iterable[str] = (), **env: float) -> List[Limit]:
+               exclude: Iterable[str] = (), shop: Optional[str] = None, **env: float) -> List[Limit]:
         """Every matching rule evaluated at ``env``; a rule that needs a variable ``env`` lacks is left out (see
-        :meth:`Rule.limit` to ask for one)."""
+        :meth:`Rule.limit` to ask for one). Shop rules are left out unless ``shop`` names one (see :meth:`rules_for`)."""
         skip = set(exclude)
         out = []
-        for r in self.rules_for(feature, compare, units):
+        for r in self.rules_for(feature, compare, units, shop):
             if r.id in skip or any(v not in env for v in r.variables):
                 continue
             out.append(r.limit(**env))
@@ -421,6 +429,12 @@ class Profiles:
     updated: str
     profiles: Mapping[str, Profile]
     sources: Mapping[str, Source]
+    shops: Mapping[str, "Shop"] = field(default_factory=dict)
+
+    def shop(self, shop_id: str) -> "Shop":
+        if shop_id not in self.shops:
+            raise ProfileDataError(f"no shop {shop_id!r}; there are {sorted(self.shops)}")
+        return self.shops[shop_id]
 
     def __getitem__(self, process: str) -> Profile:
         if process not in self.profiles:
@@ -434,6 +448,41 @@ class Profiles:
         return [r for p in self for r in p.rules]
 
 
+@dataclass(frozen=True)
+class ShopTable:
+    """One of a shop's published tables, by stock SKU: ``row("ALU-063")`` gives its values by column (lengths in mm)."""
+    id: str
+    shop: str
+    source: str
+    verified_on: str
+    columns: Tuple[str, ...]
+    rows: Tuple[Tuple[Any, ...], ...]
+    units: Mapping[str, str] = field(default_factory=dict)
+
+    def row(self, sku: str) -> Dict[str, Any]:
+        for r in self.rows:
+            if r[0] == sku:
+                return dict(zip(self.columns, r))
+        raise ProfileDataError(f"{self.id} has no row {sku!r}")
+
+
+@dataclass(frozen=True)
+class Shop:
+    """A named supplier (``shops`` in the data file): its own rules (``Rule.shop``) and tables."""
+    id: str
+    name: str
+    url: str
+    sources: Tuple[str, ...]
+    tables: Mapping[str, ShopTable]
+    rules: Tuple[Rule, ...]
+    note: str = ""
+
+    def table(self, table_id: str) -> ShopTable:
+        if table_id not in self.tables:
+            raise ProfileDataError(f"{self.id} has no table {table_id!r}; there are {sorted(self.tables)}")
+        return self.tables[table_id]
+
+
 def _source(s: Mapping[str, Any]) -> Source:
     return Source(s["id"], s.get("title", ""), s.get("org", ""), tuple(s.get("authors") or ()), s.get("year"),
                   s.get("url", ""), s.get("access", ""))
@@ -442,7 +491,22 @@ def _source(s: Mapping[str, Any]) -> Source:
 def _rule(r: Mapping[str, Any]) -> Rule:
     return Rule(r["id"], r["process"], r["feature"], r["quantity"], r["units"], r["applies"], r["source"], r["status"],
                 str(r["verified"]), r.get("min"), r.get("max"), r.get("value"), bool(r.get("window", False)),
-                r.get("compare", ""), r.get("variant", ""), r.get("datum", ""), r.get("note", ""))
+                r.get("compare", ""), r.get("variant", ""), r.get("datum", ""), r.get("note", ""), r.get("shop", ""))
+
+
+def _shops(data: Mapping[str, Any], rules: List[Rule]) -> Dict[str, Shop]:
+    tables: Dict[str, Dict[str, ShopTable]] = {}
+    for t in data.get("shop_tables", []):
+        tables.setdefault(t.get("shop", ""), {})[t["id"]] = ShopTable(
+            t["id"], t.get("shop", ""), t["source"], str(t["verified"]), tuple(t["columns"]),
+            tuple(tuple(r) for r in t["rows"]), dict(t.get("units") or {}))
+    known = {s["id"] for s in data.get("shops", [])}
+    stray = sorted({r.shop for r in rules if r.shop and r.shop not in known} | (set(tables) - known - {""}))
+    if stray:
+        raise ProfileDataError(f"rules or tables name shops that `shops` does not list: {stray}")
+    return {s["id"]: Shop(s["id"], s["name"], s.get("url", ""), tuple(s.get("sources", ())), tables.get(s["id"], {}),
+                          tuple(r for r in rules if r.shop == s["id"]), s.get("note", ""))
+            for s in data.get("shops", [])}
 
 
 def _fdm_materials(sources: Mapping[str, Source]) -> Dict[str, FdmMaterial]:
@@ -459,10 +523,15 @@ def _fdm_materials(sources: Mapping[str, Source]) -> Dict[str, FdmMaterial]:
     return out
 
 
+BEND_COLUMNS = ("sku", "material", "T", "R", "K", "min_flange_after_bend", "relief_depth")   # a bend-tooling table
+
+
 def _sheet_materials(data: Mapping[str, Any]) -> Dict[str, SheetMaterial]:
     stocks: Dict[str, List[Stock]] = {}
     for table in data.get("shop_tables", []):
         cols = table["columns"]
+        if not set(BEND_COLUMNS) <= set(cols):
+            continue                    # a shop's other tables (cutting and hardware limits) are not bend tooling
         for row in table["rows"]:
             v = dict(zip(cols, row))
             stocks.setdefault(v["material"], []).append(Stock(
@@ -515,7 +584,7 @@ def _load(path: Path, mtime: float, registry_mtime: Optional[float]) -> Profiles
         cited |= {f["source"] for f in mine_formulas.values()}
         profiles[process] = Profile(process, title, mine, {k: sources[k] for k in cited if k in sources},
                                     materials.get(process, {}), mine_formulas)
-    return Profiles(path, str(data.get("updated", "")), profiles, sources)
+    return Profiles(path, str(data.get("updated", "")), profiles, sources, _shops(data, rules))
 
 
 def load(path: Any = None) -> Profiles:

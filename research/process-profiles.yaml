@@ -33,15 +33,21 @@
 #   source     a source id in research/references.yaml, or dataset:<id> for numbers kept on another research page
 #              (see `datasets`)
 #   as_printed optional: the value in the source's own units when it was converted (1 in = 25.4 mm)
+#   shop       optional: the id of a shop in `shops` when the rule is that shop's own process limit, not a generic
+#              design rule. cadagent.manufacturing.process leaves shop rules out unless a caller names the shop, so the
+#              generic rules stay supplier-neutral and a project's chosen suppliers (#284) select a shop's
 #   status     read: seen in the source's own text (or its rendered figure, where `applies` says so) on the date in
 #              `verified`; u: not verified (never enforce)
 #   verified   ISO date the value was read
 #   note       optional: caveats, and where sources disagree
 #
+# Shops (`shops`): a named supplier whose own rules (`shop:` on a rule) and tables (`shop:` on a shop table) form a
+# profile a project can select. Its tables are by stock SKU, lengths converted from its inches at 25.4 mm.
+#
 # Standards that govern the same ground (ISO 2768-1, ISO 20457, DIN 16742, ISO/ASTM 52910 and 52911-2) are in the
 # registry too, as paid documents cited by number and title only; no rule here takes a value from them.
 schema: 1
-updated: 2026-10-31
+updated: 2026-11-01
 
 units:
   mm: millimetres
@@ -50,6 +56,7 @@ units:
   ratio: a dimensionless ratio
   degC: degrees Celsius
   count: a whole number of things
+  hrb: Rockwell B hardness
 
 variables:
   T: sheet thickness (mm)
@@ -64,6 +71,11 @@ variables:
   rib: base thickness of the rib (mm)
   texture: depth of the mould texture (mm)
   area: area of the mating feature (mm²)
+  die: the V-die opening a shop bends the stock on (mm)
+  BA: bend allowance, the length of the neutral sheet through the bend (mm)
+  E: a clinch fastener's minimum hole centreline-to-edge distance, from its maker's or shop's catalogue (mm)
+  hole: the mounting hole of the second of two clinch fasteners (mm)
+  grip: the total thickness a rivet clamps (mm)
 
 processes:
   fdm: FDM / FFF material extrusion (desktop and industrial)
@@ -73,6 +85,16 @@ processes:
   injection-moulding: plastic injection moulding
   sheet-metal: laser- or punch-cut sheet, press-brake bent
   cnc: CNC milling and turning
+
+shops:
+  - id: sendcutsend
+    name: SendCutSend
+    url: https://sendcutsend.com/
+    note: >-
+      Online laser, waterjet and router cutting with bending, PEM hardware, tapping, countersinks, dimples and
+      finishes. Air bending on fixed tooling: one radius and K per stock, no custom
+      radii, no hems. Its per-stock limits change: re-fetch sendcutsend-specs.json before relying on a number.
+      Research: research/sheet-metal.md (the deep dive) and research/sheet-metal-joining.md (its hardware).
 
 # Data that already lives on another research page. Rules here point at it instead of copying it.
 datasets:
@@ -3203,6 +3225,460 @@ rules:
     status: read
     verified: 2026-10-31
 
+
+  # ------------------------------------------------------------------ sheet metal: one shop's own rules (SendCutSend)
+  # `shop: sendcutsend` marks a rule as that shop's (see `shops`); a project that picks another shop ignores them.
+  # Its per-stock numbers (radius, K, flange, hardware distances) are in shop_tables; these are its shop-wide rules.
+
+  - id: sm-hole-min-laser-sendcutsend
+    process: sheet-metal
+    feature: hole
+    compare: sm-hole-min
+    shop: sendcutsend
+    quantity: smallest laser-cut hole or cutout
+    min: "0.5*T"
+    units: mm
+    applies: SendCutSend fibre laser (metals); waterjet 1.778 mm (0.070 in), CNC routing 3.175 mm (0.125 in). The specs JSON gives a smaller min_hole_size per stock (shop_tables)
+    source: sendcutsend-sheet-cutting
+    status: read
+    verified: 2026-11-01
+  - id: sm-cut-tolerance-sendcutsend
+    process: sheet-metal
+    feature: tolerance
+    shop: sendcutsend
+    quantity: laser cut tolerance (±), in X or Y
+    value: 0.127
+    units: mm
+    applies: SendCutSend fibre laser; waterjet ±0.229 mm (0.009 in). Cut taper adds 0.025–0.051 mm under 6.35 mm stock
+    as_printed: ±0.005 in
+    source: sendcutsend-sheet-cutting
+    status: read
+    verified: 2026-11-01
+  - id: sm-bend-to-edge-tolerance-sendcutsend
+    process: sheet-metal
+    feature: tolerance
+    shop: sendcutsend
+    quantity: bend-to-edge tolerance (±)
+    value: 0.381
+    units: mm
+    applies: SendCutSend; each further bend between the two features adds at least 0.381 mm (0.015 in)
+    as_printed: ±0.015 in
+    source: sendcutsend-bending-service
+    status: read
+    verified: 2026-11-01
+  - id: sm-bend-angle-max-sendcutsend
+    process: sheet-metal
+    feature: bend-angle
+    shop: sendcutsend
+    quantity: largest bend angle (from flat)
+    max: 130
+    units: deg
+    applies: SendCutSend air bending; no hems, curls, coining or bends under 5°. No hardware on parts with acute bends
+    source: sendcutsend-bending-service
+    status: read
+    verified: 2026-11-01
+  - id: sm-feature-to-bend-die-sendcutsend
+    process: sheet-metal
+    feature: feature-to-bend
+    compare: sm-feature-to-bend-die
+    shop: sendcutsend
+    quantity: distance from a cut feature (or a tapped hole, or a countersink's major diameter) to the bend line
+    min: "die/2"
+    units: mm
+    applies: SendCutSend; die is the V-die opening for the stock (die_width in its specs JSON, 12–40 mm). Closer features distort as the die pulls the sheet
+    datum: bend centre line to the feature's nearest edge
+    source: sendcutsend-bend-deformation
+    status: read
+    verified: 2026-11-01
+  - id: sm-clinch-to-bend-sendcutsend
+    process: sheet-metal
+    feature: clinch-hardware
+    compare: sm-clinch-to-bend
+    shop: sendcutsend
+    quantity: distance from a clinch fastener's hole centre to the bend centre line
+    min: "BA/2 + E"
+    units: mm
+    applies: SendCutSend; E is the part's catalogue N (minimum hole centreline to the edge of the bend-allowance area), BA the bend allowance. Its specs JSON also lists a min_hole_cl_to_bend_line per stock (shop_tables)
+    datum: bend centre line to hole centre
+    source: sendcutsend-hardware-service
+    status: read
+    verified: 2026-11-01
+  - id: sm-box-flange-max-hardware-sendcutsend
+    process: sheet-metal
+    feature: flange
+    compare: sm-box-flange-max
+    shop: sendcutsend
+    variant: four-sided box with hardware
+    quantity: longest flange on a four-sided box that has hardware installed
+    max: 76.2
+    units: mm
+    applies: SendCutSend boxes (all bends 90° the same way); hardware is pressed after bending, so the flanges must clear the press
+    as_printed: 3.00 in
+    source: sendcutsend-bending-service
+    status: read
+    verified: 2026-11-01
+  - id: sm-box-flange-max-sendcutsend
+    process: sheet-metal
+    feature: flange
+    compare: sm-box-flange-max
+    shop: sendcutsend
+    variant: three- or four-sided box without hardware
+    quantity: longest flange on a three- or four-sided box without hardware
+    max: 127
+    units: mm
+    applies: SendCutSend; flanges 88.9–127 mm (3.5–5 in) long must be at least 27.94 mm (1.1 in) wide. Boxes that close in on themselves cannot be formed
+    as_printed: 5 in
+    source: sendcutsend-bending-service
+    status: read
+    verified: 2026-11-01
+  - id: sm-channel-base-sendcutsend
+    process: sheet-metal
+    feature: flange
+    shop: sendcutsend
+    quantity: U or C channel base length as a multiple of its flange length
+    min: 2
+    units: ratio
+    applies: SendCutSend sheet metal (3 for polycarbonate)
+    source: sendcutsend-bending-service
+    status: read
+    verified: 2026-11-01
+  - id: sm-tap-thickness-min-sendcutsend
+    process: sheet-metal
+    feature: tapped-hole
+    shop: sendcutsend
+    quantity: thinnest sheet it taps
+    min: 1.499
+    units: mm
+    applies: SendCutSend; a tapped hole's centre at least half its tap hole plus the stock's min tap hole-to-edge from any other cut; tapped holes half the die width from a bend
+    as_printed: 0.059 in
+    source: sendcutsend-tapping
+    status: read
+    verified: 2026-11-01
+  - id: sm-countersink-depth-max-sendcutsend
+    process: sheet-metal
+    feature: countersink
+    shop: sendcutsend
+    quantity: countersink depth as a share of the sheet thickness
+    max: 60
+    units: percent
+    applies: SendCutSend, aluminium and plastics 3.175 mm (0.125 in) and thicker only; no countersinks in steel or stainless. 82° inch, 90° metric
+    source: sendcutsend-countersinking-service
+    status: read
+    verified: 2026-11-01
+  - id: sm-powder-buildup-sendcutsend
+    process: sheet-metal
+    feature: finish
+    compare: sm-finish-buildup
+    shop: sendcutsend
+    variant: powder coat
+    quantity: coating build-up per side
+    min: 0.051
+    max: 0.127
+    units: mm
+    applies: SendCutSend powder coat; holes under 1.016 mm (0.040 in) may fill; installed hardware is capped, tapped holes are not
+    as_printed: 0.002–0.005 in per side
+    source: sendcutsend-finish-thickness
+    status: read
+    verified: 2026-11-01
+  - id: sm-anodise-buildup-sendcutsend
+    process: sheet-metal
+    feature: finish
+    compare: sm-finish-buildup
+    shop: sendcutsend
+    variant: Type II anodise
+    quantity: coating build-up per side
+    min: 0.005
+    max: 0.023
+    units: mm
+    applies: SendCutSend Type II anodise (5052, 6061, 7075); zinc plate about 0.008 mm and nickel 0.005 mm per side
+    as_printed: 0.0002–0.0009 in per side
+    source: sendcutsend-finish-thickness
+    status: read
+    verified: 2026-11-01
+
+  # ------------------------------------------------------------------ sheet metal: self-clinching fasteners (any shop)
+  # PennEngineering's own rules for its PEM fasteners; the same physics holds for other makers' clinch hardware, but
+  # their numbers are PEM's. Per-size data (hole, minimum sheet, edge distance, push-out, torque-out) is for the check
+  # (#283, PR B), not here.
+
+  - id: sm-clinch-hardness-margin-pem
+    process: sheet-metal
+    feature: clinch-hardware
+    quantity: how much harder the fastener must be than the sheet
+    min: 20
+    units: hrb
+    applies: any self-clinching fastener; the sheet must be ductile and softer than the fastener
+    source: pem-handbook
+    status: read
+    verified: 2026-11-01
+  - id: sm-clinch-sheet-hardness-aluminium-pem
+    process: sheet-metal
+    feature: clinch-hardware
+    compare: sm-clinch-sheet-hardness
+    variant: "aluminium: CLA, FHA, SOA"
+    quantity: hardest sheet the fastener material clinches into
+    max: 50
+    units: hrb
+    applies: PEM aluminium fasteners; printed as HB 89 in the handbook and HB 82 in the bulletins (5052 is HRB 15–30, 6061-T6 HRB 50–55)
+    source: pem-handbook
+    status: read
+    verified: 2026-11-01
+  - id: sm-clinch-sheet-hardness-300ss-pem
+    process: sheet-metal
+    feature: clinch-hardware
+    compare: sm-clinch-sheet-hardness
+    variant: "300 stainless: CLS, FHS, SOS, F"
+    quantity: hardest sheet the fastener material clinches into
+    max: 70
+    units: hrb
+    applies: PEM 300-series stainless fasteners (HB 125); never into stainless sheet
+    source: pem-handbook
+    status: read
+    verified: 2026-11-01
+  - id: sm-clinch-sheet-hardness-steel-pem
+    process: sheet-metal
+    feature: clinch-hardware
+    compare: sm-clinch-sheet-hardness
+    variant: "hardened steel: S, SS, FH, SO, BSO"
+    quantity: hardest sheet the fastener material clinches into
+    max: 80
+    units: hrb
+    applies: PEM hardened steel fasteners (HB 150), for steel or aluminium sheet; cold-rolled steel is HRB 40–75
+    source: pem-handbook
+    status: read
+    verified: 2026-11-01
+  - id: sm-clinch-sheet-hardness-hardened-ss-pem
+    process: sheet-metal
+    feature: clinch-hardware
+    compare: sm-clinch-sheet-hardness
+    variant: "hardened stainless: SO4, F4, SP, FH4"
+    quantity: hardest sheet the fastener material clinches into
+    min: 88
+    max: 92
+    units: hrb
+    applies: PEM's stainless-sheet fasteners (SO4 and F4 HRB 88, SP HRB 90, FH4 and FHP HRB 92); 304 annealed is HRB 80 and up, and ASTM A240 allows 304 to HRB 92, so read the sheet's certified hardness
+    source: pem-tech-sheet-stainless
+    status: read
+    verified: 2026-11-01
+  - id: sm-clinch-hole-tolerance-pem
+    process: sheet-metal
+    feature: clinch-hardware
+    quantity: mounting hole tolerance over the catalogue size (+, and −0)
+    max: 0.08
+    units: mm
+    applies: PEM self-clinching fasteners; punched or drilled, not chamfered, broken edges at most 0.127 mm (0.005 in), not deburred. SP nuts in stainless sheet hold +0.025 mm
+    as_printed: +0.003 in
+    source: pem-handbook
+    status: read
+    verified: 2026-11-01
+  - id: sm-clinch-punch-side-pem
+    process: sheet-metal
+    feature: clinch-hardware
+    quantity: sheet thickness from which the fastener must go in from the punch side of a punched hole
+    min: 2.29
+    units: mm
+    applies: PEM; the die side of a punched hole is oversized and burred. Prefer the punch side at any thickness. A laser-cut hole has no punch side but may harden locally
+    as_printed: 0.09 in
+    source: pem-handbook
+    status: read
+    verified: 2026-11-01
+  - id: sm-clinch-to-bend-pem
+    process: sheet-metal
+    feature: clinch-hardware
+    compare: sm-clinch-to-bend
+    quantity: distance from a clinch fastener's hole centre to the outside of the bend radius
+    min: "E"
+    units: mm
+    applies: PEM; E is the part's minimum hole centreline-to-edge distance. The sheet must be flat under the fastener, the hole made after bending, and the tooling must reach. Edge distances hold for one edge only
+    datum: from where the bend radius ends on the flat (tangent line) to the hole centre
+    source: pem-handbook
+    status: read
+    verified: 2026-11-01
+  - id: sm-clinch-spacing-pem
+    process: sheet-metal
+    feature: clinch-hardware
+    quantity: centre-to-centre distance between two clinch fasteners
+    min: "E + hole/2"
+    units: mm
+    applies: PEM; E is the first part's minimum centreline-to-edge distance, hole the second part's mounting hole. SendCutSend's catalogue gives its own minimum (M) per part
+    datum: hole centre to hole centre
+    source: pem-handbook
+    status: read
+    verified: 2026-11-01
+  - id: sm-clinch-sheet-min-pem
+    process: sheet-metal
+    feature: clinch-hardware
+    quantity: the usual thinnest sheet for self-clinching fasteners
+    min: 0.76
+    max: 1.0
+    units: mm
+    applies: PEM; some types reach 0.2 mm (0.008 in), and each part's shank code sets its own minimum
+    as_printed: 0.030 in or 0.040 in
+    source: pem-handbook
+    status: read
+    verified: 2026-11-01
+  - id: sm-clinch-pushout-share-pem
+    process: sheet-metal
+    feature: clinch-hardware
+    quantity: push-out force as a share of the installation force
+    min: 5
+    max: 10
+    units: percent
+    applies: PEM self-clinching nuts; a rough cross-check of a quoted push-out, not a rating
+    source: pem-handbook
+    status: read
+    verified: 2026-11-01
+
+  # ------------------------------------------------------------------ sheet metal: blind rivets (any shop)
+  # D is the rivet body diameter, T the thinner sheet. Per-rivet hole, grip and strength are for the rivet check
+  # (#283, PR B). Makers' values are typical; MIL-HDBK-5J gives minimum allowables and when they hold.
+
+  - id: sm-rivet-edge-pop
+    process: sheet-metal
+    feature: rivet
+    compare: sm-rivet-edge
+    quantity: rivet hole centre to the sheet edge, for full strength
+    min: "2*D"
+    units: mm
+    applies: POP blind rivets; may be less where the joint's strength does not matter
+    datum: hole centre to edge
+    source: pop-rivet-catalog
+    status: read
+    verified: 2026-11-01
+    note: p. 11
+  - id: sm-rivet-edge-faa
+    process: sheet-metal
+    feature: rivet
+    compare: sm-rivet-edge
+    variant: single row
+    quantity: rivet hole centre to the sheet edge
+    min: "2*D"
+    units: mm
+    applies: a single row of rivets (FAA AC 43.13-1B 4-57c, written for aircraft sheet; double and triple rows in Fig. 4-5)
+    datum: hole centre to edge
+    source: faa-ac-43-13-1b
+    status: read
+    verified: 2026-11-01
+  - id: sm-rivet-edge-nasa
+    process: sheet-metal
+    feature: rivet
+    compare: sm-rivet-edge
+    variant: nominal
+    quantity: rivet or bolt hole centre to the sheet edge
+    value: "2*D"
+    units: mm
+    applies: NASA RP-1228 p. 21, rivets and bolts
+    datum: hole centre to edge
+    source: nasa-1228
+    status: read
+    verified: 2026-11-01
+  - id: sm-rivet-edge-min-nasa
+    process: sheet-metal
+    feature: rivet
+    compare: sm-rivet-edge
+    variant: minimum
+    quantity: rivet or bolt hole centre to the sheet edge
+    min: "1.5*D"
+    units: mm
+    applies: NASA RP-1228 p. 21; the joint is weaker here than at 2D
+    datum: hole centre to edge
+    source: nasa-1228
+    status: read
+    verified: 2026-11-01
+  - id: sm-rivet-edge-allowables-mil5j
+    process: sheet-metal
+    feature: rivet
+    compare: sm-rivet-edge
+    variant: allowables valid
+    quantity: edge distance for which the blind-rivet joint allowables hold
+    min: "2*D"
+    units: mm
+    applies: MIL-HDBK-5J 8.1.3, blind fasteners within the maker's grip and hole tolerances
+    datum: hole centre to edge (e/D at least 2.0)
+    source: mil-hdbk-5j
+    status: read
+    verified: 2026-11-01
+  - id: sm-rivet-pitch-faa
+    process: sheet-metal
+    feature: rivet
+    compare: sm-rivet-pitch
+    variant: single row
+    quantity: rivet centre to centre along a row
+    min: "3*D"
+    units: mm
+    applies: a single row (FAA AC 43.13-1B 4-57c)
+    datum: hole centre to hole centre
+    source: faa-ac-43-13-1b
+    status: read
+    verified: 2026-11-01
+  - id: sm-rivet-pitch-double-faa
+    process: sheet-metal
+    feature: rivet
+    compare: sm-rivet-pitch
+    variant: double row
+    quantity: rivet centre to centre along a row
+    value: "4*D"
+    units: mm
+    applies: two rows (FAA AC 43.13-1B Fig. 4-5); the rows 4D apart too
+    datum: hole centre to hole centre
+    source: faa-ac-43-13-1b
+    status: read
+    verified: 2026-11-01
+  - id: sm-rivet-pitch-nasa
+    process: sheet-metal
+    feature: rivet
+    compare: sm-rivet-pitch
+    variant: nominal
+    quantity: rivet centre to centre
+    value: "4*D"
+    units: mm
+    applies: NASA RP-1228 pp. 21 and 34; thin sheet can buckle between fasteners, so wider spacing suits thicker sheet
+    datum: hole centre to hole centre
+    source: nasa-1228
+    status: read
+    verified: 2026-11-01
+  - id: sm-rivet-sheet-ratio-mil5j
+    process: sheet-metal
+    feature: rivet
+    quantity: thinnest sheet for which the bearing allowables hold
+    min: "0.18*D"
+    units: mm
+    applies: MIL-HDBK-5J 8.1.2.1 (t/D at least 0.18); its blind-rivet tables also warn below t/D 0.25
+    source: mil-hdbk-5j
+    status: read
+    verified: 2026-11-01
+  - id: sm-rivet-sheet-min-pop
+    process: sheet-metal
+    feature: rivet
+    quantity: thinnest aluminium sheet an open-end rivet is set against
+    min: 0.508
+    units: mm
+    applies: POP open-end aluminium rivets (p. 11); set the formed head against the thicker sheet where there is a choice
+    as_printed: 0.020 in
+    source: pop-rivet-catalog
+    status: read
+    verified: 2026-11-01
+  - id: sm-rivet-size-faa
+    process: sheet-metal
+    feature: rivet
+    quantity: rivet diameter for a given sheet
+    value: "3*T"
+    units: mm
+    applies: FAA AC 43.13-1B 4-57c rule of thumb for solid rivets, T the thicker sheet; a starting size, not a check
+    source: faa-ac-43-13-1b
+    status: read
+    verified: 2026-11-01
+  - id: sm-rivet-length-gesipa
+    process: sheet-metal
+    feature: rivet
+    quantity: blind rivet body length for a grip
+    value: "grip + D"
+    units: mm
+    applies: GESIPA's rule for its blind rivets (a 4 x 10 rivet for a 6 mm grip); the maker's grip range for the part governs
+    source: gesipa-rivet-length
+    status: read
+    verified: 2026-11-01
+
   # ================================================================== injection moulding
   - id: im-draft-vertical-min-protolabs
     process: injection-moulding
@@ -4459,6 +4935,7 @@ rules:
 # the inch values are in `as_printed`. Re-fetch before relying on them: the file changes.
 shop_tables:
   - id: sendcutsend-5052-and-mild-steel
+    shop: sendcutsend
     source: sendcutsend-specs
     verified: 2026-10-31
     columns: [sku, material, T, R, K, min_flange_after_bend, relief_depth]
@@ -4485,4 +4962,104 @@ shop_tables:
       CRS-074: {T: 0.074, R: 0.063, min_flange_after_bend: 0.320, relief_depth: 0.157}
       CRS-104: {T: 0.104, R: 0.063, min_flange_after_bend: 0.459, relief_depth: 0.187}
       CRS-119: {T: 0.119, R: 0.063, min_flange_after_bend: 0.466, relief_depth: 0.202}
-
+  - id: sendcutsend-stainless-and-galvanised
+    shop: sendcutsend
+    source: sendcutsend-specs
+    verified: 2026-11-01
+    columns: [sku, material, T, R, K, min_flange_after_bend, relief_depth]
+    units: {T: mm, R: mm, K: ratio, min_flange_after_bend: mm, relief_depth: mm}
+    rows:
+      - [SST-030, 304 stainless steel, 0.762, 2.032, 0.36, 7.468, 3.302]
+      - [SST-048, 304 stainless steel, 1.219, 2.032, 0.36, 7.798, 3.759]
+      - [SST-060, 304 stainless steel, 1.524, 1.778, 0.34, 7.976, 3.81]
+      - [SST-074, 304 stainless steel, 1.88, 1.905, 0.36, 8.23, 4.293]
+      - [SST-100, 304 stainless steel, 2.54, 4.75, 0.36, 18.593, 7.798]
+      - [SST-125, 304 stainless steel, 3.175, 3.81, 0.38, 18.796, 7.493]
+      - [SST316-060, 316 stainless steel, 1.524, 1.778, 0.34, 7.976, 2.997]
+      - [SST316-125, 316 stainless steel, 3.175, 3.81, 0.38, 18.796, 7.493]
+      - [G90-030, G90 galvanised steel, 0.762, 1.143, 0.38, 7.264, 2.413]
+      - [G90-036, G90 galvanised steel, 0.914, 1.143, 0.38, 7.569, 2.565]
+      - [G90-048, G90 galvanised steel, 1.219, 1.143, 0.38, 7.569, 2.87]
+      - [G90-059, G90 galvanised steel, 1.499, 1.6, 0.36, 7.899, 3.607]
+      - [G90-074, G90 galvanised steel, 1.88, 1.6, 0.4, 8.128, 3.988]
+    as_printed:
+      SST-030: {T: 0.030, R: 0.080, min_flange_after_bend: 0.294, relief_depth: 0.130}
+      SST-048: {T: 0.048, R: 0.080, min_flange_after_bend: 0.307, relief_depth: 0.148}
+      SST-060: {T: 0.060, R: 0.070, min_flange_after_bend: 0.314, relief_depth: 0.150}
+      SST-074: {T: 0.074, R: 0.075, min_flange_after_bend: 0.324, relief_depth: 0.169}
+      SST-100: {T: 0.100, R: 0.187, min_flange_after_bend: 0.732, relief_depth: 0.307}
+      SST-125: {T: 0.125, R: 0.150, min_flange_after_bend: 0.740, relief_depth: 0.295}
+      SST316-060: {T: 0.060, R: 0.070, min_flange_after_bend: 0.314, relief_depth: 0.118}
+      SST316-125: {T: 0.125, R: 0.150, min_flange_after_bend: 0.740, relief_depth: 0.295}
+      G90-030: {T: 0.030, R: 0.045, min_flange_after_bend: 0.286, relief_depth: 0.095}
+      G90-036: {T: 0.036, R: 0.045, min_flange_after_bend: 0.298, relief_depth: 0.101}
+      G90-048: {T: 0.048, R: 0.045, min_flange_after_bend: 0.298, relief_depth: 0.113}
+      G90-059: {T: 0.059, R: 0.063, min_flange_after_bend: 0.311, relief_depth: 0.142}
+      G90-074: {T: 0.074, R: 0.063, min_flange_after_bend: 0.320, relief_depth: 0.157}
+  # Cutting and hardware limits per stock, for the stocks up to 3.43 mm it fits hardware into. T_tol: the thickness
+  # tolerance either way; hw_cl_edge / hw_cl_bend / hw_cl_same: the shop's least hardware hole centreline to a cut edge,
+  # to a bend line and to the same part (its hardware_insertion_specs; each part's catalogue K/N/M may be larger, and
+  # the larger one holds); hb: Brinell hardness as the shop prints it; smallest/largest_pem: the thread range it
+  # installs in that stock.
+  - id: sendcutsend-cut-and-hardware-limits
+    shop: sendcutsend
+    source: sendcutsend-specs
+    verified: 2026-11-01
+    columns: [sku, material, T, T_tol_plus, T_tol_minus, min_hole, min_bridge, min_hole_to_edge, hw_cl_edge, hw_cl_bend, hw_cl_same, hb_min, hb_max, smallest_pem, largest_pem, services]
+    units: {T: mm, T_tol_plus: mm, T_tol_minus: mm, min_hole: mm, min_bridge: mm, min_hole_to_edge: mm, hw_cl_edge: mm, hw_cl_bend: mm, hw_cl_same: mm, hb_min: hb, hb_max: hb}
+    rows:
+      - [ALU-040, 5052 aluminium, 1.016, 0.102, 0.102, 0.381, 0.508, 0.508, 7.188, 10.363, 10.338, 60, 60, M3, 10-32, [anodizing, bending, hardware, powder]]
+      - [ALU-063, 5052 aluminium, 1.6, 0.102, 0.102, 0.559, 0.61, 0.508, 9.703, 10.795, 14.961, 60, 60, M2.5, 10-32, [anodizing, bending, hardware, powder, tapping]]
+      - [ALU-080, 5052 aluminium, 2.032, 0.127, 0.127, 0.711, 0.762, 0.61, 9.703, 11.049, 14.961, 60, 60, M2.5, 10-32, [anodizing, bending, hardware, powder, tapping]]
+      - [ALU-090, 5052 aluminium, 2.286, 0.127, 0.127, 0.813, 0.864, 0.686, 11.176, 10.82, 17.526, 60, 60, M2.5, 10-32, [anodizing, bending, hardware, powder, tapping]]
+      - [ALU-100, 5052 aluminium, 2.54, 0.152, 0.152, 0.889, 0.965, 0.762, 11.176, 12.827, 17.526, 60, 60, M2.5, 10-32, [anodizing, bending, hardware, powder, tapping]]
+      - [ALU-125, 5052 aluminium, 3.175, 0.152, 0.152, 1.118, 1.219, 0.965, 11.176, 13.132, 17.526, 60, 60, M2.5, 10-32, [anodizing, bending, countersinking, hardware, powder, tapping]]
+      - [CRS-048, cold-rolled mild steel, 1.219, 0.127, 0.102, 0.457, 0.61, 0.508, 8.611, 10.795, 13.03, 100, 100, M3, 10-32, [bending, hardware, plating, powder]]
+      - [CRS-059, cold-rolled mild steel, 1.499, 0.152, 0.102, 0.559, 0.762, 0.508, 9.703, 11.252, 14.961, 100, 100, M2.5, 10-32, [bending, hardware, plating, powder, tapping]]
+      - [CRS-074, cold-rolled mild steel, 1.88, 0.152, 0.127, 0.711, 0.813, 0.559, 9.703, 11.379, 14.961, 100, 100, M2.5, 10-32, [bending, hardware, plating, powder, tapping]]
+      - [CRS-104, cold-rolled mild steel, 2.642, 0.178, 0.152, 1.016, 0.889, 0.787, 11.176, 11.455, 17.526, 100, 100, M2.5, 10-32, [bending, hardware, plating, powder, tapping]]
+      - [CRS-119, cold-rolled mild steel, 3.023, 0.178, 0.152, 1.016, 0.889, 0.914, 11.176, 11.659, 17.526, 100, 100, M2.5, 10-32, [bending, countersinking, hardware, plating, powder, tapping]]
+      - [CRS-135, cold-rolled mild steel, 3.429, 0.152, 0.152, 1.295, 1.397, 1.041, 11.176, 12.395, 17.526, 100, 100, M2.5, 10-32, [bending, hardware, plating, powder, tapping]]
+      - [SST-048, 304 stainless steel, 1.219, 0.076, 0.076, 0.483, 0.483, 0.508, 8.382, 11.455, 11.481, 123, 123, M3, 10-32, [bending, hardware, powder]]
+      - [SST-060, 304 stainless steel, 1.524, 0.076, 0.076, 0.61, 0.61, 0.508, 9.652, 11.328, 14.91, 123, 123, M3, 10-32, [bending, hardware, powder, tapping]]
+      - [SST-074, 304 stainless steel, 1.88, 0.152, 0.051, 0.762, 0.762, 0.559, 9.652, 11.582, 14.91, 123, 123, M3, 10-32, [bending, hardware, powder, tapping]]
+      - [SST-100, 304 stainless steel, 2.54, 0.127, 0.102, 1.016, 1.016, 0.762, 9.703, 13.995, 14.961, 123, 123, M3, 10-32, [bending, hardware, powder, tapping]]
+      - [SST-125, 304 stainless steel, 3.175, 0.025, 0.254, 1.27, 1.27, 0.965, 9.703, 13.462, 14.961, 123, 123, M3, 10-32, [bending, hardware, powder, tapping]]
+      - [SST316-060, 316 stainless steel, 1.524, 0.152, 0.152, 0.61, 0.61, 0.457, 9.652, 11.328, 14.91, 149, 149, M3, 10-32, [bending, hardware, powder, tapping]]
+      - [SST316-125, 316 stainless steel, 3.175, 0.025, 0.254, 1.27, 1.27, 0.965, 9.703, 13.462, 14.961, 149, 149, M3, 10-32, [bending, hardware, powder, tapping]]
+      - [G90-048, G90 galvanised steel, 1.219, 0.127, 0.102, 0.508, 0.61, 0.508, 8.611, 10.795, 13.03, 120, 180, M3, 10-32, [bending, hardware, powder]]
+      - [G90-059, G90 galvanised steel, 1.499, 0.152, 0.102, 0.559, 0.762, 0.508, 9.703, 11.201, 14.961, 120, 180, M2.5, 10-32, [bending, hardware, powder, tapping]]
+      - [G90-074, G90 galvanised steel, 1.88, 0.152, 0.102, 0.711, 0.813, 0.559, 9.703, 11.379, 14.961, 120, 180, M2.5, 10-32, [bending, hardware, powder, tapping]]
+      - [ALU6061-040, 6061-T6 aluminium, 1.016, 0.102, 0.102, 0.406, 0.356, 0.508, 7.188, null, 10.338, 93, 93, M3, 10-32, [hardware, powder]]
+      - [ALU6061-063, 6061-T6 aluminium, 1.6, 0.102, 0.102, 0.635, 0.559, 0.508, 9.703, null, 14.961, 93, 93, M2.5, 10-32, [anodizing, hardware, powder, tapping]]
+      - [ALU6061-080, 6061-T6 aluminium, 2.032, 0.127, 0.127, 0.813, 0.711, 0.61, 9.703, null, 14.961, 93, 93, M2.5, 10-32, [anodizing, hardware, powder, tapping]]
+      - [ALU6061-100, 6061-T6 aluminium, 2.54, 0.152, 0.152, 1.016, 0.889, 0.762, 11.176, null, 17.526, 93, 93, M2.5, 10-32, [anodizing, hardware, powder, tapping]]
+      - [ALU6061-125, 6061-T6 aluminium, 3.175, 0.152, 0.127, 1.27, 1.118, 0.965, 11.176, null, 17.526, 93, 93, M2.5, 10-32, [anodizing, countersinking, hardware, powder, tapping]]
+    as_printed:
+      ALU-040: {T: 0.04, T_tol_plus: 0.004, T_tol_minus: 0.004, min_hole: 0.015, min_bridge: 0.02, min_hole_to_edge: 0.02, hw_cl_edge: 0.283, hw_cl_bend: 0.408, hw_cl_same: 0.407}
+      ALU-063: {T: 0.063, T_tol_plus: 0.004, T_tol_minus: 0.004, min_hole: 0.022, min_bridge: 0.024, min_hole_to_edge: 0.02, hw_cl_edge: 0.382, hw_cl_bend: 0.425, hw_cl_same: 0.589}
+      ALU-080: {T: 0.08, T_tol_plus: 0.005, T_tol_minus: 0.005, min_hole: 0.028, min_bridge: 0.03, min_hole_to_edge: 0.024, hw_cl_edge: 0.382, hw_cl_bend: 0.435, hw_cl_same: 0.589}
+      ALU-090: {T: 0.09, T_tol_plus: 0.005, T_tol_minus: 0.005, min_hole: 0.032, min_bridge: 0.034, min_hole_to_edge: 0.027, hw_cl_edge: 0.44, hw_cl_bend: 0.426, hw_cl_same: 0.69}
+      ALU-100: {T: 0.1, T_tol_plus: 0.006, T_tol_minus: 0.006, min_hole: 0.035, min_bridge: 0.038, min_hole_to_edge: 0.03, hw_cl_edge: 0.44, hw_cl_bend: 0.505, hw_cl_same: 0.69}
+      ALU-125: {T: 0.125, T_tol_plus: 0.006, T_tol_minus: 0.006, min_hole: 0.044, min_bridge: 0.048, min_hole_to_edge: 0.038, hw_cl_edge: 0.44, hw_cl_bend: 0.517, hw_cl_same: 0.69}
+      CRS-048: {T: 0.048, T_tol_plus: 0.005, T_tol_minus: 0.004, min_hole: 0.018, min_bridge: 0.024, min_hole_to_edge: 0.02, hw_cl_edge: 0.339, hw_cl_bend: 0.425, hw_cl_same: 0.513}
+      CRS-059: {T: 0.059, T_tol_plus: 0.006, T_tol_minus: 0.004, min_hole: 0.022, min_bridge: 0.03, min_hole_to_edge: 0.02, hw_cl_edge: 0.382, hw_cl_bend: 0.443, hw_cl_same: 0.589}
+      CRS-074: {T: 0.074, T_tol_plus: 0.006, T_tol_minus: 0.005, min_hole: 0.028, min_bridge: 0.032, min_hole_to_edge: 0.022, hw_cl_edge: 0.382, hw_cl_bend: 0.448, hw_cl_same: 0.589}
+      CRS-104: {T: 0.104, T_tol_plus: 0.007, T_tol_minus: 0.006, min_hole: 0.04, min_bridge: 0.035, min_hole_to_edge: 0.031, hw_cl_edge: 0.44, hw_cl_bend: 0.451, hw_cl_same: 0.69}
+      CRS-119: {T: 0.119, T_tol_plus: 0.007, T_tol_minus: 0.006, min_hole: 0.04, min_bridge: 0.035, min_hole_to_edge: 0.036, hw_cl_edge: 0.44, hw_cl_bend: 0.459, hw_cl_same: 0.69}
+      CRS-135: {T: 0.135, T_tol_plus: 0.006, T_tol_minus: 0.006, min_hole: 0.051, min_bridge: 0.055, min_hole_to_edge: 0.041, hw_cl_edge: 0.44, hw_cl_bend: 0.488, hw_cl_same: 0.69}
+      SST-048: {T: 0.048, T_tol_plus: 0.003, T_tol_minus: 0.003, min_hole: 0.019, min_bridge: 0.019, min_hole_to_edge: 0.02, hw_cl_edge: 0.33, hw_cl_bend: 0.451, hw_cl_same: 0.452}
+      SST-060: {T: 0.06, T_tol_plus: 0.003, T_tol_minus: 0.003, min_hole: 0.024, min_bridge: 0.024, min_hole_to_edge: 0.02, hw_cl_edge: 0.38, hw_cl_bend: 0.446, hw_cl_same: 0.587}
+      SST-074: {T: 0.074, T_tol_plus: 0.006, T_tol_minus: 0.002, min_hole: 0.03, min_bridge: 0.03, min_hole_to_edge: 0.022, hw_cl_edge: 0.38, hw_cl_bend: 0.456, hw_cl_same: 0.587}
+      SST-100: {T: 0.1, T_tol_plus: 0.005, T_tol_minus: 0.004, min_hole: 0.04, min_bridge: 0.04, min_hole_to_edge: 0.03, hw_cl_edge: 0.382, hw_cl_bend: 0.551, hw_cl_same: 0.589}
+      SST-125: {T: 0.125, T_tol_plus: 0.001, T_tol_minus: 0.01, min_hole: 0.05, min_bridge: 0.05, min_hole_to_edge: 0.038, hw_cl_edge: 0.382, hw_cl_bend: 0.53, hw_cl_same: 0.589}
+      SST316-060: {T: 0.06, T_tol_plus: 0.006, T_tol_minus: 0.006, min_hole: 0.024, min_bridge: 0.024, min_hole_to_edge: 0.018, hw_cl_edge: 0.38, hw_cl_bend: 0.446, hw_cl_same: 0.587}
+      SST316-125: {T: 0.125, T_tol_plus: 0.001, T_tol_minus: 0.01, min_hole: 0.05, min_bridge: 0.05, min_hole_to_edge: 0.038, hw_cl_edge: 0.382, hw_cl_bend: 0.53, hw_cl_same: 0.589}
+      G90-048: {T: 0.048, T_tol_plus: 0.005, T_tol_minus: 0.004, min_hole: 0.02, min_bridge: 0.024, min_hole_to_edge: 0.02, hw_cl_edge: 0.339, hw_cl_bend: 0.425, hw_cl_same: 0.513}
+      G90-059: {T: 0.059, T_tol_plus: 0.006, T_tol_minus: 0.004, min_hole: 0.022, min_bridge: 0.03, min_hole_to_edge: 0.02, hw_cl_edge: 0.382, hw_cl_bend: 0.441, hw_cl_same: 0.589}
+      G90-074: {T: 0.074, T_tol_plus: 0.006, T_tol_minus: 0.004, min_hole: 0.028, min_bridge: 0.032, min_hole_to_edge: 0.022, hw_cl_edge: 0.382, hw_cl_bend: 0.448, hw_cl_same: 0.589}
+      ALU6061-040: {T: 0.04, T_tol_plus: 0.004, T_tol_minus: 0.004, min_hole: 0.016, min_bridge: 0.014, min_hole_to_edge: 0.02, hw_cl_edge: 0.283, hw_cl_same: 0.407}
+      ALU6061-063: {T: 0.063, T_tol_plus: 0.004, T_tol_minus: 0.004, min_hole: 0.025, min_bridge: 0.022, min_hole_to_edge: 0.02, hw_cl_edge: 0.382, hw_cl_same: 0.589}
+      ALU6061-080: {T: 0.08, T_tol_plus: 0.005, T_tol_minus: 0.005, min_hole: 0.032, min_bridge: 0.028, min_hole_to_edge: 0.024, hw_cl_edge: 0.382, hw_cl_same: 0.589}
+      ALU6061-100: {T: 0.1, T_tol_plus: 0.006, T_tol_minus: 0.006, min_hole: 0.04, min_bridge: 0.035, min_hole_to_edge: 0.03, hw_cl_edge: 0.44, hw_cl_same: 0.69}
+      ALU6061-125: {T: 0.125, T_tol_plus: 0.006, T_tol_minus: 0.005, min_hole: 0.05, min_bridge: 0.044, min_hole_to_edge: 0.038, hw_cl_edge: 0.44, hw_cl_same: 0.69}

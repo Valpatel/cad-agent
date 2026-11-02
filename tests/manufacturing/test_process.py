@@ -49,7 +49,7 @@ def test_every_value_has_a_source_that_resolves(profiles):
 
 def test_every_rule_evaluates_with_its_variables(profiles):
     env = dict(T=1.5, R=1.5, wall=2.5, D=4.0, L=50.0, depth=12.0, width=6.0, H=8.0, nozzle=0.4, rib=1.5,
-               texture=0.05, area=36.0)
+               texture=0.05, area=36.0, die=16.0, BA=2.5, E=6.9, hole=5.4, grip=3.2)
     for r in profiles.rules():
         lim = r.limit(**{k: env[k] for k in r.variables})
         assert lim.rule == r.id and lim.source == r.source and lim.verified == r.verified
@@ -187,3 +187,47 @@ def test_registry_ids_resolve_once_the_registry_is_beside_the_data(tmp_path):
     fdm = pp.load(data)["fdm"]
     assert fdm.source("bambu-petg-basic-tds").resolved and fdm.source("bambu-petg-basic-tds").org == "Bambu Lab"
     assert not fdm.source("bambu-asa-tds").resolved
+
+
+def test_shop_rules_load_only_when_the_shop_is_asked_for():
+    """SendCutSend's own limits (#283) stay out of the generic answers, so the rules remain supplier-neutral."""
+    sheet = pp.profile("sheet-metal")
+    generic = sheet.limits(compare="sm-clinch-to-bend", E=6.35, BA=2.45)
+    assert [l.rule for l in generic] == ["sm-clinch-to-bend-pem"]
+    shop = sheet.limits(compare="sm-clinch-to-bend", shop="sendcutsend", E=6.35, BA=2.45)
+    got = {l.rule: l.min for l in shop}
+    # SendCutSend: bend centre to hole centre >= BA/2 + N; PEM: hole centre >= C/L-to-edge from the bend's outside
+    assert got == {"sm-clinch-to-bend-pem": pytest.approx(6.35), "sm-clinch-to-bend-sendcutsend": pytest.approx(7.575)}
+    assert {r.id for r in sheet.rules_for(compare="sm-hole-min")} == {"sm-hole-min-protolabs", "sm-hole-min-davis"}
+    assert "sm-hole-min-laser-sendcutsend" in {r.id for r in sheet.rules_for(compare="sm-hole-min", shop="*")}
+
+
+def test_a_shop_carries_its_rules_and_tables():
+    shop = pp.load().shop("sendcutsend")
+    assert shop.name == "SendCutSend" and all(r.shop == "sendcutsend" for r in shop.rules) and len(shop.rules) >= 10
+    assert set(shop.tables) == {"sendcutsend-5052-and-mild-steel", "sendcutsend-stainless-and-galvanised",
+                                "sendcutsend-cut-and-hardware-limits"}
+    # ALU-063 in its specs: hardware C/L to edge 0.382 in, to a bend line 0.425 in, between the same part 0.589 in
+    row = shop.table("sendcutsend-cut-and-hardware-limits").row("ALU-063")
+    assert (row["hw_cl_edge"], row["hw_cl_bend"], row["hw_cl_same"]) == (9.703, 10.795, 14.961)
+    assert row["hb_min"] == 60 and "hardware" in row["services"]
+    with pytest.raises(pp.ProfileDataError):
+        pp.load().shop("protocase")
+    with pytest.raises(pp.ProfileDataError):
+        shop.table("sendcutsend-5052-and-mild-steel").row("ALU-999")
+
+
+def test_only_bend_tables_become_stock(tmp_path):
+    """The cutting and hardware table has no R or K, so it is not read as bend tooling; the stainless and galvanised
+    rows are (their materials wait for SHEET_MATERIALS entries)."""
+    sheet = pp.profile("sheet-metal")
+    assert {s.sku for s in sheet.material("5052").stocks} == {"ALU-040", "ALU-063", "ALU-090", "ALU-125"}
+
+
+def test_a_rule_naming_an_unlisted_shop_is_refused(tmp_path):
+    raw = dict(RAW)
+    raw["rules"] = RAW["rules"] + [dict(RAW["rules"][0], id="fdm-x-nowhere", shop="nowhere")]
+    path = tmp_path / "process-profiles.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(pp.ProfileDataError, match="nowhere"):
+        pp.load(path)

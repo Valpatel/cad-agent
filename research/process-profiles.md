@@ -474,11 +474,14 @@ online bureaus (Fictiv, and the Boothroyd Dewhurst checklist for screening). T b
 
 ## 7. Sheet metal
 
-Symbols: T thickness, R inside bend radius, K K-factor. The deep sheet-metal sweep, with more sources (OSH Cut, Fictiv,
-PEM, the CAD tools), was drafted in #119 and is still to land; its sources are in the registry already, and the rows
-here are the profile values, with the same source ids. A shop's own table
-beats all of them: SendCutSend publishes its tooling per stock size, and ten 5052 and mild-steel rows are in the YAML
-(`shop_tables`).
+Symbols: T thickness, R inside bend radius, K K-factor. Three research pages cover sheet metal in depth (#283):
+- [`sheet-metal-guides.md`](sheet-metal-guides.md) ranks the design guides and picks a primary source for each topic.
+- [`sheet-metal.md`](sheet-metal.md) covers bending and cutting, and is the SendCutSend deep dive.
+- [`sheet-metal-joining.md`](sheet-metal-joining.md) covers self-clinching hardware and blind rivets.
+
+The rows here are the profile values, with the same source ids. A shop's own table beats all of them. SendCutSend
+publishes its tooling per stock size, and the YAML holds 23 of its bend rows (`shop_tables`): 5052, mild steel, 304 and
+316 stainless, and G90. Its own process limits are rules marked `shop: sendcutsend` (below).
 
 <img src="../docs/img/research/process-sheet-shop.svg" alt="Chart of SendCutSend's inside bend radius for each 5052 aluminium and mild-steel sheet it stocks, with the K-factor in each label: 0.61 to 3.17 mm, not simply the thickness" width="680">
 
@@ -557,6 +560,47 @@ At T = R = 1.5 mm (the chart above) [derived]:
   0.36–1.0T), and mild steel at 0.53–0.85T from 1.9 mm. Davis asks 4–8T for 6061 and 2024, and SendCutSend's file
   backs him: it publishes bend specs for no 6061 or 7075 stock, and bends its one 2024 sheet (0.64 mm) at R = 2.8T
   [all derived from `bending_specs`]. #118 already records this for the planned check S5.
+
+### One shop's own limits: SendCutSend
+
+These are SendCutSend's process limits, not design advice. Each is a rule with `shop: sendcutsend`, listed under
+`shops` in the YAML. `cadagent.manufacturing.process` leaves them out unless a caller names that shop
+(`shop="sendcutsend"`), so the generic rules stay supplier-neutral. A project's chosen suppliers (#284) will pick the
+shop.
+
+| Limit | Value | Source |
+|---|---|---|
+| Smallest laser-cut hole | ≥ 0.5T (waterjet 1.78 mm, router 3.18 mm); its specs file gives smaller per stock | [cutting guidelines][sendcutsend-sheet-cutting] |
+| Cut tolerance | ±0.127 mm laser (±0.229 mm waterjet) | [cutting guidelines][sendcutsend-sheet-cutting] |
+| Bend to edge | ±0.381 mm, plus at least 0.381 mm for each further bend | [bending guidelines][sendcutsend-bending-service] |
+| Largest bend angle | 130°, with no hems, curls or coining | [bending guidelines][sendcutsend-bending-service] |
+| Cut feature to a bend line | ≥ half the die width (12–40 mm dies) | [bend deformation][sendcutsend-bend-deformation] |
+| Hardware hole centre to the bend centre | ≥ BA/2 + N (the part's catalogue N) | [hardware guidelines][sendcutsend-hardware-service] |
+| Box flanges | ≤ 76.2 mm on a four-sided box with hardware; ≤ 127 mm without | [bending guidelines][sendcutsend-bending-service] |
+| Channel base | ≥ 2 × the flange | [bending guidelines][sendcutsend-bending-service] |
+| Thinnest tapped sheet | 1.499 mm | [tapping guidelines][sendcutsend-tapping] |
+| Countersink depth | ≤ 60 % of T; aluminium and plastics from 3.18 mm only | [countersinking guidelines][sendcutsend-countersinking-service] |
+| Finish build-up per side | powder 0.051–0.127 mm; Type II anodise 0.005–0.023 mm | [finish thickness FAQ][sendcutsend-finish-thickness] |
+
+A further table in the YAML gives, per stock, the thickness tolerance, the smallest hole, the narrowest bridge, the
+hole-to-edge distance and the least hardware distances (`sendcutsend-cut-and-hardware-limits`).
+
+### Clinch hardware and blind rivets
+
+These rules apply to any shop. The research and the per-size data are on
+[`sheet-metal-joining.md`](sheet-metal-joining.md).
+
+| Rule | Value | Source |
+|---|---|---|
+| Fastener harder than the sheet | by about 20 HRB | PennEngineering, [Self-Clinching Fastener Handbook][pem-handbook] |
+| Hardest sheet, by fastener material | aluminium HRB 50; 300 stainless 70; hardened steel 80; hardened stainless 88–92 | [Handbook][pem-handbook]; [stainless tech sheet][pem-tech-sheet-stainless] |
+| Mounting hole | +0.08 mm / −0; no chamfer or deburring; from the punch side at 2.29 mm and up | [Handbook][pem-handbook] |
+| Hole centre to a bend | ≥ the part's C/L-to-edge, measured from the outside of the bend radius | [Handbook][pem-handbook] |
+| Spacing | ≥ C/L-to-edge + half the second part's hole | [Handbook][pem-handbook] |
+| Rivet edge distance | ≥ 2D (POP, FAA); 2D nominal and 1.5D minimum (NASA); 2D for the allowables to hold (MIL-HDBK-5J) | [POP catalogue][pop-rivet-catalog]; [FAA AC 43.13-1B][faa-ac-43-13-1b]; Richard T. Barrett, [NASA RP-1228][nasa-1228]; [MIL-HDBK-5J][mil-hdbk-5j] |
+| Rivet pitch | ≥ 3D single row (FAA); 4D nominal (NASA; FAA double row) | [FAA AC 43.13-1B][faa-ac-43-13-1b]; [NASA RP-1228][nasa-1228] |
+| Sheet for the bearing allowables | t ≥ 0.18D | [MIL-HDBK-5J][mil-hdbk-5j] |
+| Rivet length | grip + D | [GESIPA][gesipa-rivet-length] |
 
 ## 8. CNC machining
 
@@ -754,6 +798,17 @@ People and organisations whose published rules this page uses. Each one's entry 
 - SendCutSend: [Bend reliefs and corner reliefs][sendcutsend-bend-relief] (2024); [ordering guide][sendcutsend-ordering-guide];
   [engineering specs JSON][sendcutsend-specs].
 - Dassault Systèmes: [SOLIDWORKS help, K-Factor][solidworks-k-factor].
+- SendCutSend guidelines (2025–2026): [sheet cutting][sendcutsend-sheet-cutting]; [bending][sendcutsend-bending-service];
+  [bend deformation][sendcutsend-bend-deformation]; [hardware][sendcutsend-hardware-service];
+  [tapping][sendcutsend-tapping]; [countersinking][sendcutsend-countersinking-service];
+  [finish thickness][sendcutsend-finish-thickness].
+- PennEngineering (PEM): [The Self-Clinching Fastener Handbook][pem-handbook] (2025);
+  [fasteners for stainless steel sheets][pem-tech-sheet-stainless] (2019).
+- Emhart Teknologies (Stanley Engineered Fastening): [POP Blind Riveting Systems][pop-rivet-catalog] (2012).
+- GESIPA: [Calculate the length of blind rivets][gesipa-rivet-length].
+- US Federal Aviation Administration: [AC 43.13-1B][faa-ac-43-13-1b] (1998, Change 1 2001).
+- **Richard T. Barrett**, NASA Lewis Research Center: [Fastener Design Manual, RP-1228][nasa-1228] (1990).
+- US Department of Defense: [MIL-HDBK-5J][mil-hdbk-5j] (2003).
 
 **Standards** (paid; cited by number and title only, not read, and no rule takes a value from them; listed in the
 YAML under `standards`)
@@ -854,3 +909,17 @@ YAML under `standards`)
 [din-16742]: https://www.dinmedia.de/en/standard/din-16742/192658755
 [iso-astm-52910]: https://www.iso.org/standard/67289.html
 [iso-astm-52911-2]: https://store.astm.org/f3281-19r25.html
+[sendcutsend-sheet-cutting]: https://sendcutsend.com/guidelines/sheet-cutting/
+[sendcutsend-bending-service]: https://sendcutsend.com/services/cnc-bending/
+[sendcutsend-bend-deformation]: https://sendcutsend.com/guidelines/bend-deformation/
+[sendcutsend-hardware-service]: https://sendcutsend.com/services/hardware/
+[sendcutsend-tapping]: https://sendcutsend.com/services/tapping/
+[sendcutsend-countersinking-service]: https://sendcutsend.com/services/countersinking/
+[sendcutsend-finish-thickness]: https://sendcutsend.com/faq/what-are-the-thicknesses-for-your-finishes/
+[pem-handbook]: https://www.pemnet.com/wp-content/uploads/sites/2/2022/06/self-clinching-fastener-handbook.pdf
+[pem-tech-sheet-stainless]: https://www.pemnet.com/wp-content/uploads/sites/2/2022/06/Stainless_Steel_Sheets.pdf
+[pop-rivet-catalog]: https://www.stanleyengineeredfastening.com/-/media/Web/SEF/Resources/Docs/POP/POP-Rivet-Catalog.pdf
+[gesipa-rivet-length]: https://www.gesipa.com/service/gesipa-makes-it-clear/calculate-the-length-of-blind-rivets/
+[faa-ac-43-13-1b]: https://www.faa.gov/documentLibrary/media/Advisory_Circular/AC_43.13-1B_w-chg1.pdf
+[nasa-1228]: https://ntrs.nasa.gov/citations/19900009424
+[mil-hdbk-5j]: https://everyspec.com/MIL-HDBK/MIL-HDBK-0001-0099/MIL_HDBK_5J_139/

@@ -1822,7 +1822,11 @@ sources:
     access: free
     terms: cited and summarised, never copied (a US government work)
     areas: [fasteners]
-    used_for: [src/cadagent/mechanical/printed_joints.py, research/sheet-metal-guides.md]
+    used_for:
+      - src/cadagent/mechanical/printed_joints.py
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
     verified: >-
       2026-11-01: the NTRS record opened. cadagent.mechanical.printed_joints cites pp. 6-8 (locking methods:
       locknuts, jam nuts, nylon patches, spring lock washers).
@@ -2202,6 +2206,8 @@ sources:
       - tests/simulation/test_fea_materials.py
       - src/cadagent/simulation/fea.py
       - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
     verified: >-
       2026-10-31: read for #157 (the 31 January 2003 edition): Tables 3.6.2.0(b1), (b2) and (g) (6061),
       3.7.6.0(b1) and (d) (7075) and 2.2.1.0(b) (AISI 1025), as cadagent.simulation.fea's metal rows and
@@ -2601,7 +2607,10 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [sheet-metal, laser-cutting]
-    used_for: [research/sheet-metal-guides.md]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
     verified: >-
       2026-11-01: opened the page (published 2026-06-16, modified 2026-09-29) and the sheet-cutting service page
       (modified 2026-09-29). Read file rules, the smallest hole by process (laser 50 % of T, waterjet 0.070 in,
@@ -2617,7 +2626,10 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [sheet-metal]
-    used_for: [research/sheet-metal-guides.md]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
     verified: >-
       2026-11-01: opened the page (published 2021-06-22, modified 2026-10-20), its guidelines section. Read the
       materials and ranges (10 materials, 0.030–0.250 in), part size (0.375 x 1.5 in to 30 x 44 in), bend length
@@ -2634,7 +2646,10 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [sheet-metal]
-    used_for: [research/sheet-metal-guides.md]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
     verified: >-
       2026-11-01: opened the page (published 2023-04-25, modified 2026-09-29). Read tapered flanges, the
       unsupported-bend relief example (0.187 in 5052: R 0.250 + 0.020 in), the half-length rule for 0.250 in
@@ -2650,7 +2665,10 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [sheet-metal, pem-hardware]
-    used_for: [research/sheet-metal-guides.md]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
     verified: >-
       2026-11-01: opened the page (published 2022-10-15, modified 2026-07-02), its guidelines section. Read the
       materials and ranges (5052, 6061, 7075, G90, mild steel, 304, 316), part size (1 x 1.5 in to 36 x 46 in),
@@ -2683,7 +2701,10 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [sheet-metal, threads]
-    used_for: [research/sheet-metal-guides.md]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
     verified: >-
       2026-11-01: opened the page (published 2021-07-08, modified 2026-09-28). Read thinnest tapped sheet 0.059
       in, the materials, the spacing rule (tap hole / 2 + the stock's min tap hole-to-edge), half the die width
@@ -2698,7 +2719,10 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [sheet-metal, countersinks]
-    used_for: [research/sheet-metal-guides.md]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
     verified: >-
       2026-11-01: opened the page (published 2022-09-01, modified 2026-09-28). Read the materials (aluminium and
       plastics, 0.125 in and up; no steel or stainless), depth at most 60 % of T, 82° inch and 90° metric, the
@@ -2745,7 +2769,10 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [sheet-metal, finishing]
-    used_for: [research/sheet-metal-guides.md]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
     verified: >-
       2026-11-01: opened the FAQ (published 2023-04-26, modified 2025-12-04). Read the build-up per side: Type II
       anodise 0.0002–0.0009 in, zinc 0.0003 in, nickel 0.0002 in, powder 0.002–0.005 in.
@@ -2827,7 +2854,10 @@ sources:
     access: free
     terms: cited by page with the values as facts; the PDF, its tables and figures are never copied (PEM's terms of use allow personal, non-commercial use only)
     areas: [sheet-metal, pem-hardware, fasteners]
-    used_for: [research/sheet-metal-guides.md]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
     verified: >-
       2026-11-01: opened the 20-page PDF (© 2025, created 2025-11-14) through pdftotext. Read HB-4 (the sheet
       softer than the fastener, about 20 points of Rockwell B), HB-5 (general push-out and torque-out for -1
@@ -2926,7 +2956,10 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [sheet-metal, pem-hardware]
-    used_for: [research/sheet-metal-guides.md]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
     verified: >-
       2026-11-01: opened the 7-page sheet (July 2019). Read Table 1 (stainless sheet by UNS number in three
       groups, HRB 88, 90 and 92 maximum per ASTM A240, and the PEM parts rated for each; 304 is in the HRB 92
@@ -2973,7 +3006,10 @@ sources:
     access: free
     terms: cited by part number and page with the values as facts; the catalogue is never copied
     areas: [rivets, fasteners, corrosion]
-    used_for: [research/sheet-metal-guides.md]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
     verified: >-
       2026-11-01: opened the 68-page PDF (© 2012, Rev. D 6/12; the URL redirects to Stanley's CDN). Read the
       design guidelines pp. 10–12 (edge distance at least twice the diameter for full strength, open end down to
@@ -3039,7 +3075,10 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [rivets]
-    used_for: [research/sheet-metal-guides.md]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
     verified: "2026-11-01: opened the page. Read the rule rivet length = grip + diameter (a 4 x 10 rivet for a 6 mm grip)."
 
   - id: faa-ac-43-13-1b
@@ -3051,7 +3090,10 @@ sources:
     access: free
     terms: cited by paragraph, never copied (a US government work)
     areas: [rivets, sheet-metal]
-    used_for: [research/sheet-metal-guides.md]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
     verified: >-
       2026-11-01: opened the 646-page PDF (issued 1998-09-08, Change 1 2001-09-27; the status page says active).
       Read 4-57c (single row: edge distance at least 2D, pitch at least 3D; D about three times the thicker

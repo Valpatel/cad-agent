@@ -3,8 +3,8 @@
 # One entry per outside source that a cad-agent rule, check, number or note relies on. "We are highlighting experts,
 # not taking credit for their tips": code cites an entry by its id, and pages name the people or organisation in the
 # text, so the experts keep the credit. Sources are summarised and cited, never copied or redistributed: no PDF of a
-# source is kept in this repo (tests/test_references.py fails on any tracked PDF). Paid standards and papers are
-# cited by number and title only.
+# source is kept in this repo (tests/test_references.py fails on any tracked PDF). Paid standards are cited by
+# number and title only, paid papers by author, title and equation.
 #
 # Read it with cadagent.review.references (lookup, citation, check), or from a shell:
 #   python -m cadagent.review.references covestro        # one citation

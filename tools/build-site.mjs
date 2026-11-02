@@ -459,12 +459,47 @@ ${USE_STEPS.map(([t, d], i) => `<g transform="translate(${8 + i * 98} 10)"><rect
 <path d="M345 86v18a8 8 0 0 1-8 8H59a8 8 0 0 1-8-8v-14" fill="none" stroke="#bd3a12" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#use-arrow)"/>
 <text x="200" y="128" text-anchor="middle" font-size="10" fill="#526863">the next agent finds what this one learned</text></svg>`;
 const promptHtml = esc(agentPrompt.replace(/\n$/, '')).replace(/^(\d\.) /gm, '<b>$1</b> ');
+// The card's heading and lead-in are the README's too (tests/website-build.test.mjs checks both).
+const USE_HEADING = 'Build with your favorite AI agent';
+const USE_LEAD = 'Paste this into any AI coding agent to install cad-agent and its skills, then add what you want made at the end.';
+// Step by step, per agent. Names only, in plain text badges: no product marks, and no endorsement implied. `agents
+// install` sets up Claude Code and Codex (cadagent/agentkit.py); other agents read the skills where the prompt points.
+const AGENTS = [
+  ['claude', 'Claude Code', 'CC', [
+    'In your project folder, run <code>claude</code> and paste the prompt.',
+    'The install links the skills into <code>~/.claude/skills/</code> and the review and resume subagents into <code>~/.claude/agents/</code>.',
+    'Start a new <code>claude</code> session to load them.']],
+  ['codex', 'Codex CLI', 'Cx', [
+    'In your project folder, run <code>codex</code> and paste the prompt.',
+    'The install links the skills into <code>~/.codex/skills/</code> (<code>$CODEX_HOME/skills</code>); the subagents come as skills too.',
+    'Start a new <code>codex</code> session to load them.']],
+  ['copilot', 'Copilot CLI', 'Co', [
+    'In your project folder, run <code>copilot</code> and paste the prompt; let it run the install commands.',
+    'The skills stay in <code>~/cad-agent/skills/</code>, and the prompt tells it to read them there.']],
+  ['cursor', 'Cursor', 'Cu', [
+    'Open your project, start an Agent chat and paste the prompt; let it run the install in the terminal.',
+    'The skills stay in <code>~/cad-agent/skills/</code>, and the prompt tells it to read them there.']],
+  ['gemini', 'Gemini CLI', 'Ge', [
+    'In your project folder, run <code>gemini</code> and paste the prompt.',
+    'The skills stay in <code>~/cad-agent/skills/</code>, and the prompt tells it to read them there.']],
+  ['any', 'Any agent', '>_', [
+    'It needs a shell, git, Python 3.11 or newer and web access.',
+    'Paste the prompt. Without web access, point it at <code>~/cad-agent/docs/toolkit.md</code> instead of llms.txt.']],
+];
+const agentBadge = ([id, name, mark]) => `<label class="agent-badge" for="ag-${id}"><span class="agent-mark" aria-hidden="true">${esc(mark)}</span>${esc(name)}</label>`;
 const useCard = `<section class="use-band" id="use-it" aria-labelledby="use-title"><div class="wrap"><div class="use-card">
-<div class="use-head"><p class="eyebrow">Copy this to your agent</p><h2 id="use-title">One paste. <span>Any agent.</span></h2>
-<p>Paste it into Claude Code, Codex, Copilot CLI or any agent with a shell, then add what you want made. It installs cad-agent and its skills, finds the right tool in a few calls, builds with tested checks, and sends back what it learns as a pull request or an issue you approve. cad-agent collects no telemetry.</p>
+<div class="use-head"><p class="eyebrow">Copy this to your agent</p><h2 id="use-title">${esc(USE_HEADING)}</h2>
+<p class="use-lead">${esc(USE_LEAD)}</p>
+<ul class="agent-badges" aria-label="Agents it works with">${AGENTS.map(a => `<li>${agentBadge(a)}</li>`).join('')}</ul>
 ${useLoop}
-<p class="works-with"><span>Works with</span> Claude Code · Codex · Copilot CLI · any agent with a shell</p></div>
-<cad-copy class="agent-copy" label="Copy"><pre class="agent-box" aria-label="The prompt to paste into your agent">${promptHtml}</pre></cad-copy></div></div></section>`;
+<p class="use-note">It finds the right tool in a few calls, builds with tested checks, and sends back what it learns as a pull request or an issue you approve. cad-agent collects no telemetry.</p></div>
+<cad-copy class="agent-copy" label="Copy prompt"><pre class="agent-box" aria-label="The prompt to paste into your agent">${promptHtml}</pre></cad-copy>
+<div class="agent-guide" id="agent-guide"><p class="guide-title">Or follow a step-by-step guide for your agent</p>
+${AGENTS.map(([id], i) => `<input type="radio" name="agent-guide" id="ag-${id}" class="visually-hidden"${i === 0 ? ' checked' : ''}>`).join('')}
+<div class="guide-tabs" aria-hidden="true">${AGENTS.map(([id, name]) => `<label for="ag-${id}" class="guide-tab tab-${id}">${esc(name)}</label>`).join('')}</div>
+${AGENTS.map(([id, name, , steps]) => `<div class="guide-panel panel-${id}"><p class="visually-hidden">${esc(name)}</p><ol>${steps.map(t => `<li>${t}</li>`).join('')}</ol></div>`).join('')}
+<p class="guide-fine">Product names belong to their owners and are listed only to say where the prompt works; no endorsement is implied.</p></div>
+</div></div></section>`;
 const landing = `<div class="wrap"><section class="hero hero-3d">
 <div class="hero-head"><p class="eyebrow"><span class="status-dot"></span>Open source · for agents and people</p>
 <h1>Your one stop shop for <span>agentic CAD.</span></h1>

@@ -17,6 +17,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 BLOCK = (ROOT / "docs" / "agent-prompt.txt").read_text()
 README = (ROOT / "README.md").read_text()
+USE_HEADING = "Build with your favorite AI agent"     # the site's card says the same (tests/website-build.test.mjs)
 
 
 def _eval():
@@ -30,12 +31,13 @@ def test_readme_opens_with_the_block_verbatim():
     fenced = "```text\n" + BLOCK + "```\n"
     assert fenced in README, "README.md must carry docs/agent-prompt.txt verbatim in a ```text fence: paste it again"
     headings = re.findall(r"^## (.+)$", README, re.M)
-    assert headings[0] == "Use it", f"'## Use it' is the README's first section, not {headings[0]!r}"
-    use_it = README.split("## Use it\n", 1)[1].split("\n## ", 1)[0]
-    assert fenced in use_it, "the block sits in the Use it section"
+    assert headings[0] == USE_HEADING, f"'## {USE_HEADING}' is the README's first section, not {headings[0]!r}"
+    use_it = README.split(f"## {USE_HEADING}\n", 1)[1].split("\n## ", 1)[0]
+    assert fenced in use_it, "the block sits in that first section"
+    assert "https://cad-agent.valpatel.com/#agent-guide" in use_it, "it links the site's step-by-step guide"
     prose = [ln for ln in use_it.replace(fenced, "").splitlines() if ln.strip() and not ln.startswith("<!--")]
     assert len(prose) <= 6, "keep the words around the block to a few lines"
-    assert "## Quick start" not in README, "one quick start: the Use it section replaced it"
+    assert "## Quick start" not in README, "one quick start: the first section replaced it"
 
 
 def test_commands_are_public_and_name_real_commands():

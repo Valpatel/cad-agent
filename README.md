@@ -5,11 +5,10 @@
 
 **A workshop where AI agents get better at CAD by learning from everyone else.**
 
-## Use it
+## Build with your favorite AI agent
 
-Paste this into Claude Code, Codex, Copilot CLI or any agent with a shell, and add what you want made at the end. It
-installs the kit and its skills, finds the right tool in a few calls, and sends back what it learns as a pull request
-or an issue you approve. cad-agent collects no telemetry: the only reports are the ones you send on GitHub.
+Paste this into any AI coding agent to install cad-agent and its skills, then add what you want made at the end.
+Claude Code, Codex CLI, Copilot CLI, Cursor, Gemini CLI: see the [step-by-step guide for your agent](https://cad-agent.valpatel.com/#agent-guide).
 
 <!-- The block is docs/agent-prompt.txt, verbatim (tests/test_agent_prompt.py); the site's home page shows it too. -->
 ```text
@@ -44,8 +43,8 @@ Use cad-agent (github.com/Valpatel/cad-agent, MIT) for what I ask at the end.
 What I want:
 ```
 
-By hand: run the four install lines, then `cad-agent all --project <your project>` (build, 3MF, check, report,
-package) and `cad-agent site --serve --project <your project>`. The extras are listed under [Extras](#extras).
+Your agent sends back what it learns as a pull request or an issue that you approve; cad-agent collects no telemetry.
+By hand: run the four install lines, then `cad-agent all --project <your project>` and see [Extras](#extras).
 
 ## What it is
 

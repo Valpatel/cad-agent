@@ -94,6 +94,18 @@ test('the home page, llms.txt and the README carry the one "copy this to your ag
   assert.match(index, /href="#use-it"/, 'the hero links to it');
   for (const f of ['llms.txt', 'index.md']) assert.ok((await readFile(path.join(out, f), 'utf8')).includes('```text\n' + block + '\n```'), `${f} carries the block`);
   assert.ok(git('show', 'HEAD:README.md').includes('```text\n' + block + '\n```'), 'the README carries the block');
+  const card = index.match(/<section class="use-band"[\s\S]*?<\/section>/)[0];
+  const heading = card.match(/<h2 id="use-title">([^<]+)<\/h2>/)[1], lead = card.match(/<p class="use-lead">([^<]+)<\/p>/)[1];
+  const readme = git('show', 'HEAD:README.md');
+  assert.ok(readme.includes(`## ${heading}\n\n${lead.replace(/&#39;/g, "'")}\n`), 'the README has the card\'s heading and lead-in');
+  assert.match(card, /<cad-copy class="agent-copy" label="Copy prompt">/, 'one clear Copy prompt button');
+  const tabs = [...card.matchAll(/<input type="radio" name="agent-guide" id="(ag-[a-z]+)"/g)].map(m => m[1]);
+  assert.ok(tabs.length >= 5, 'a step-by-step guide per agent');
+  for (const id of tabs) {
+    assert.match(card, new RegExp(`<label class="agent-badge" for="${id}">`), `${id} has a badge that opens its guide`);
+    assert.match(card, new RegExp(`class="guide-panel panel-${id.slice(3)}"><p class="visually-hidden">[^<]+</p><ol><li>`), `${id} has its steps`);
+  }
+  assert.doesNotMatch(card, /<img|<use /, 'the badges are text, not product marks');
 });
 
 test('pages say when they were last updated and how to give feedback', async () => {

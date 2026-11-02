@@ -442,7 +442,7 @@ can be renamed: no other file name is read.
 |-----|---------|---------|
 | `name`, `title` | folder name | identity in reports and package names |
 | `revision` / `revision_from` | none | literal, or `"path/file.json:dotted.key"` read at report time |
-| `python` | `<root>/.venv/bin/python`, else cad-agent's python | interpreter for the steps |
+| `python` | `<root>/.venv/bin/python`, else cad-agent's python | interpreter for the steps: an absolute path, a path from the project root, a name on `PATH`, or a path starting `~` or `$HOME` |
 | `exports_dir`, `preview_dir`, `docs_dir` | `exports`, `preview`, `docs` | |
 | `steps` | `[]` | `{name, run, log?, timeout_s=1800, needs?}`; `run` is a script relative to the root, run with cwd = root and `CAD_AGENT_PROJECT` set to the root; `log` is a file in `exports_dir`; `needs` names earlier steps |
 | `parts_file` | `exports/geometry-checks.json` | part -> `{cad_valid, solid_count, watertight, print_bounds_mm}` |

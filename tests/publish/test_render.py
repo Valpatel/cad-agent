@@ -54,3 +54,35 @@ def test_only_filter_reads_only_the_named_variable(tmp_path, monkeypatch):
     assert Renderer(tmp_path, size=(200, 150)).only is None
     assert Renderer(tmp_path, size=(200, 150), only_env="MY_RENDER_ONLY").only == {"b.png", "c.png"}
     assert Renderer(tmp_path, size=(200, 150), only=[], only_env="MY_RENDER_ONLY").only == set()
+
+def test_name_without_extension_gets_png(tmp_path, monkeypatch):
+    """A bare name gets ``.png``; it used to render, then fail in Pillow on the empty suffix (#289)."""
+    stl = cube_stl(tmp_path / "cube.stl")
+    monkeypatch.delenv("CAD_AGENT_RENDER_ONLY", raising=False)
+    out = Renderer(tmp_path / "out", size=(200, 150)).render("part-base", meshes=[(stl, (1, 0, 0))])
+    assert out == tmp_path / "out" / "part-base.png"
+    assert Image.open(out).format == "PNG"
+    assert not (tmp_path / "out" / "part-base").exists()
+
+def test_only_filter_matches_a_bare_name_either_way(tmp_path, monkeypatch):
+    stl = cube_stl(tmp_path / "cube.stl")
+    monkeypatch.delenv("CAD_AGENT_RENDER_ONLY", raising=False)
+    assert Renderer(tmp_path, size=(200, 150), only=["a.png"]).render("a", meshes=[(stl, (1, 0, 0))]) is not None
+    assert Renderer(tmp_path, size=(200, 150), only=["b"]).render("b", meshes=[(stl, (1, 0, 0))]) is not None
+    assert Renderer(tmp_path, size=(200, 150), only=["b"]).render("c", meshes=[(stl, (1, 0, 0))]) is None
+
+@pytest.mark.parametrize("name", ["part.v2", "part.xbm", "part.wmf"])
+def test_unwritable_extensions_are_refused_before_rendering(tmp_path, monkeypatch, name):
+    """Unknown to Pillow (.v2), unable to hold RGB (.xbm) or with no save handler (.wmf): refused up front."""
+    monkeypatch.delenv("CAD_AGENT_RENDER_ONLY", raising=False)
+    r = Renderer(tmp_path, size=(200, 150))
+    suffix = name.split(".")[1]
+    with pytest.raises(ValueError, match=rf"cannot write a '\.{suffix}' image; name it part\.{suffix}\.png"):
+        r.render(name, meshes=[("never-read.stl", (1, 0, 0))])
+    assert not (tmp_path / name).exists()
+
+def test_other_image_extensions_still_save_in_their_format(tmp_path, monkeypatch):
+    stl = cube_stl(tmp_path / "cube.stl")
+    monkeypatch.delenv("CAD_AGENT_RENDER_ONLY", raising=False)
+    out = Renderer(tmp_path, size=(200, 150)).render("part.JPG", meshes=[(stl, (1, 0, 0))])
+    assert out == tmp_path / "part.JPG" and Image.open(out).format == "JPEG"

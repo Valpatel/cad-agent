@@ -35,12 +35,17 @@ requests a person chooses to send on GitHub. Every `cad-agent` command turns usa
 runs (`OPT_OUTS` in `cadagent/cli.py`), unless the variable is already set. Set the same variables yourself when you run
 these tools directly.
 
+<details>
+<summary><strong>Which tools report usage.</strong> The survey, and the switch that turns each off</summary>
+
 | Tool (how it reaches you) | Reports usage? | Turned off by |
 |---|---|---|
 | text-to-cad's cadgen (vendored, on trial) | yes, on by default | `CADGEN_TELEMETRY=0`, `DO_NOT_TRACK=1` |
 | kicad-mcp-pro (vendored) | OpenTelemetry, opt-in, local collector only | `KICAD_MCP_TELEMETRY_ENABLED=false` |
 | Cloudflare wrangler (`npm run deploy:site`) | yes, on by default | `WRANGLER_SEND_METRICS=false`, set in the script too |
 | Python extras, npm dev packages, the other vendored projects | none found (survey of 2026-11-01) | |
+
+</details>
 
 `tests/cli/test_privacy.py` fails when a vendored tool names a telemetry switch that `OPT_OUTS` does not cover.
 

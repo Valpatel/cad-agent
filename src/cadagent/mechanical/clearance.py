@@ -15,6 +15,20 @@ in are checked: pins, bolts or bought parts left out of the model are not. Parts
 with near-zero volume and pass the tolerance; parts meant to overlap (a rod in its gland) need ``skip``. CAD
 clearance does not prove physical fit: tolerances, deflection under load and wear are not modelled.
 
+How a pair is decided. A broad phase on axis-aligned boxes (``cadagent.review.gates.motion.box_distance``), then,
+for real solids, the relation gate's exact narrow phase (``cadagent.review.gates.relations.relate``): its input
+validation, ``vol = common + cut`` cross-check and near-tangent crossing probe (#46) turn a boolean OCCT gets wrong
+without raising into an error, never a clear pair. Objects that are not kernel shapes (stand-ins with
+``BoundingBox()`` and ``intersect(other).Volume()``) are intersected directly.
+
+Between poses (``travel_mm``): when the caller states how far any point of one part can move relative to another
+between two consecutive poses, the gap there is at least ``(g1 + g2 - travel) / 2`` (the bound the assembly gate's
+``sweep_pair`` uses for an insertion path), so a pair is proven clear between two poses or reported as unproven.
+
+Which to use: an assembly that declares its joints (``Assembly`` and ``joints:``) gets the motion gate
+(``cadagent.review.gates.motion.motion_gate``), which samples the joints itself, chains them and bisects the onset
+of a collision. ``sweep`` is for kinematics that live in the build script, as a function from pose to placed solids.
+
 cadquery is needed only to build or intersect real solids; it is imported where it is used.
 """
 from __future__ import annotations
@@ -27,8 +41,12 @@ from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Seque
 
 import numpy as np
 
+from cadagent.review.gates.motion import box_distance
+from cadagent.review.gates.relations import Tolerances, relate
+
 LIMITS = ("Poses are samples, not a continuous sweep: parts can pass through each other between two poses unseen. "
           "Only the solids passed in are checked. Overlaps up to the tolerance pass (parts touching on a face). "
+          "Without travel_mm nothing is proven between poses. "
           "CAD clearance does not prove physical fit: tolerances, deflection and wear are not modelled.")
 
 Pair = Tuple[str, Any]                       # (instance name, part)
@@ -40,13 +58,26 @@ def _bbox(shape) -> Tuple[float, ...]:
     return (b.xmin, b.ymin, b.zmin, b.xmax, b.ymax, b.zmax)
 
 
-def _boxes_overlap(a, b, pad: float = 1e-6) -> bool:
-    return all(a[i] <= b[i + 3] + pad and b[i] <= a[i + 3] + pad for i in range(3))
-
-
 def _overlap_volume(a, b) -> float:
-    """Volume (mm^3) of the boolean intersection of two solids (one OCC boolean; may raise)."""
+    """Volume (mm^3) of the intersection of two stand-in shapes (not kernel shapes; those go through ``relate``)."""
     return float(a.intersect(b).Volume())
+
+
+def _measure(sa, sb, names: Tuple[str, str], tolerance_mm3: float) -> Tuple[Optional[float], float, Optional[str]]:
+    """``(shared mm^3 when over the tolerance else None, a lower bound on the gap in mm, error or None)``."""
+    if hasattr(sa, "wrapped") and hasattr(sb, "wrapped"):
+        rel = relate(sa, sb, Tolerances(overlap_mm3=tolerance_mm3), names=names, contact_area=False)
+        if rel.state == "unknown":
+            return None, 0.0, f"the relation gate could not decide the pair: {rel.error}"
+        if rel.interferes:
+            return float(rel.overlap_mm3 or 0.0), 0.0, None
+        return None, float(rel.gap_mm or 0.0), None
+    v = _overlap_volume(sa, sb)
+    if not math.isfinite(v) or v < -tolerance_mm3:
+        return None, 0.0, f"boolean intersection gave volume {v!r}"
+    if v > tolerance_mm3:
+        return v, 0.0, None
+    return None, box_distance(_bbox(sa), _bbox(sb)), None
 
 
 def _skipper(skip: Skip) -> Callable[[Pair, Pair], bool]:
@@ -59,7 +90,10 @@ def _skipper(skip: Skip) -> Callable[[Pair, Pair], bool]:
     return lambda a, b: frozenset((a[0], b[0])) in pairs or frozenset((str(a[1]), str(b[1]))) in pairs
 
 
-def _check(instances: Mapping[str, Any], tolerance_mm3: float, skip: Skip, only: Optional[Callable[[str], bool]]):
+def _check(instances: Mapping[str, Any], tolerance_mm3: float, skip: Skip, only: Optional[Callable[[str], bool]],
+           margin_mm: float = 0.0):
+    """``(hits, pairs intersected, {(a, b): a lower bound on the gap in mm, or None where it hit or failed})`` at one
+    pose. A pair whose boxes are more than ``margin_mm`` apart is clear by the box distance alone."""
     is_skipped = _skipper(skip)
     items = []
     for name, value in instances.items():
@@ -74,25 +108,33 @@ def _check(instances: Mapping[str, Any], tolerance_mm3: float, skip: Skip, only:
             hits.append({"a": name, "b": None, "part_a": str(part), "part_b": None,
                          "error": f"bounding box failed: {type(e).__name__}: {e}"})
     intersected = 0
+    gaps: Dict[Tuple[str, str], Optional[float]] = {}
     for (ka, pa, sa), (kb, pb, sb) in itertools.combinations(items, 2):
         if ka not in boxes or kb not in boxes:
             continue
         if only is not None and not (only(ka) or only(kb)):
             continue
-        if not _boxes_overlap(boxes[ka], boxes[kb]) or is_skipped((ka, pa), (kb, pb)):
+        if is_skipped((ka, pa), (kb, pb)):
+            continue
+        apart = box_distance(boxes[ka], boxes[kb])
+        if apart > margin_mm + 1e-6:
+            gaps[(ka, kb)] = apart
             continue
         intersected += 1
         row = {"a": ka, "b": kb, "part_a": str(pa), "part_b": str(pb)}
         try:
-            v = _overlap_volume(sa, sb)
+            shared, gap, error = _measure(sa, sb, (ka, kb), tolerance_mm3)
         except Exception as e:                                       # noqa: BLE001 - reported, never a pass
-            hits.append({**row, "error": f"boolean intersection failed: {type(e).__name__}: {e}"})
-            continue
-        if not math.isfinite(v) or v < -tolerance_mm3:
-            hits.append({**row, "error": f"boolean intersection gave volume {v!r}"})
-        elif v > tolerance_mm3:
-            hits.append({**row, "volume_mm3": round(v, 3)})
-    return hits, intersected
+            shared, gap, error = None, 0.0, f"boolean intersection failed: {type(e).__name__}: {e}"
+        if error is not None:
+            hits.append({**row, "error": error})
+            gaps[(ka, kb)] = None
+        elif shared is not None:
+            hits.append({**row, "volume_mm3": round(shared, 3)})
+            gaps[(ka, kb)] = None
+        else:
+            gaps[(ka, kb)] = gap
+    return hits, intersected, gaps
 
 
 def collisions(instances: Mapping[str, Any], tolerance_mm3: float = 2.0, skip: Skip = None,
@@ -101,7 +143,8 @@ def collisions(instances: Mapping[str, Any], tolerance_mm3: float = 2.0, skip: S
 
     ``instances`` maps an instance name to ``(part, shape)`` (``part`` names what the instance is, so several
     instances of one part can share a ``skip`` rule) or to a bare shape (``part`` is then the name). Shapes are
-    cadquery shapes, or anything with ``BoundingBox()`` and ``intersect(other).Volume()``, already placed at the pose.
+    cadquery shapes (decided by ``relations.relate``: an ``unknown`` pair is an error), or stand-ins with
+    ``BoundingBox()`` and ``intersect(other).Volume()``, already placed at the pose.
 
     ``skip``: pairs meant to overlap. Either a callable ``skip((name_a, part_a), (name_b, part_b)) -> bool``, or pairs
     of names, each matching two instance names or two part names, in either order.
@@ -126,18 +169,29 @@ def _jsonable(value):
 
 def sweep(poses: Mapping[str, Any], place_fn: Callable[[Any], Mapping[str, Any]],
           out_path: Union[str, Path, None] = None, tolerance_mm3: float = 2.0, skip: Skip = None,
-          only: Optional[Callable[[str], bool]] = None) -> Dict[str, Any]:
+          only: Optional[Callable[[str], bool]] = None, travel_mm: Optional[float] = None) -> Dict[str, Any]:
     """Run ``collisions`` at every pose of a range of motion.
 
     ``poses`` maps a pose name to its parameters (joint angles, cylinder extensions, anything); ``place_fn(params)``
     returns the ``instances`` placed at that pose. A ``place_fn`` that raises (an unreachable pose, say) is recorded as
     that pose's error. ``tolerance_mm3``, ``skip`` and ``only`` go to ``collisions``.
 
+    ``travel_mm``: the most any point of one part moves relative to any other between two consecutive poses (in the
+    order given; for a rotation step, the step in radians times the largest radius it carries). With it, every pair
+    clear at both ends of a step must also be proven clear between them by the gap bound ``(g1 + g2 - travel) / 2``
+    (``sweep_pair``'s, for an insertion path); a pair it cannot prove is a row in ``between_poses`` and fails the
+    check: sample more densely there, or ``skip`` a pair meant to touch. Without it, nothing between poses is checked.
+
     Returns the check, and writes it as JSON to ``out_path`` if given: ``pass`` is true only when at least one pose was
-    checked and no pose has a collision or an error. ``physical_fit_verified`` is always false (see ``LIMITS``).
+    checked and no pose has a collision or an error (and, with ``travel_mm``, no step is unproven).
+    ``physical_fit_verified`` is always false (see ``LIMITS``).
     """
+    if travel_mm is not None and not (math.isfinite(travel_mm) and travel_mm >= 0):
+        raise ValueError(f"travel_mm must be a finite number of at least 0, not {travel_mm!r}")
+    margin = 0.0 if travel_mm is None else travel_mm / 2       # a box this far apart proves its half of a step
     report: Dict[str, Any] = {"check": "clearance-sweep", "tolerance_mm3": tolerance_mm3, "poses": {}}
     n_hits = n_errors = 0
+    steps: List[Tuple[str, Optional[Dict[Tuple[str, str], Optional[float]]]]] = []
     for name, params in poses.items():
         row: Dict[str, Any] = {"params": _jsonable(params)}
         try:
@@ -146,15 +200,34 @@ def sweep(poses: Mapping[str, Any], place_fn: Callable[[Any], Mapping[str, Any]]
             row["error"] = f"placing the pose failed: {type(e).__name__}: {e}"
             n_errors += 1
             report["poses"][str(name)] = row
+            steps.append((str(name), None))
             continue
-        hits, intersected = _check(instances, tolerance_mm3, skip, only)
+        hits, intersected, gaps = _check(instances, tolerance_mm3, skip, only, margin)
         row.update({"instances": len(instances), "pairs_intersected": intersected, "collisions": hits,
                     "pass": not hits})
         n_hits += sum(1 for h in hits if "error" not in h)
         n_errors += sum(1 for h in hits if "error" in h)
         report["poses"][str(name)] = row
+        steps.append((str(name), gaps))
+    between: List[Dict[str, Any]] = []
+    if travel_mm is not None:
+        report["travel_mm"] = travel_mm
+        bound = math.inf
+        for (p1, g1), (p2, g2) in zip(steps, steps[1:]):
+            if g1 is None or g2 is None:                             # a pose that failed: its error already fails
+                continue
+            for pair in g1.keys() & g2.keys():
+                if g1[pair] is None or g2[pair] is None:             # a hit or an error at an end: already counted
+                    continue
+                lb = max(0.0, (g1[pair] + g2[pair] - travel_mm) / 2)
+                bound = min(bound, lb)
+                if lb <= 0.0:
+                    between.append({"from": p1, "to": p2, "a": pair[0], "b": pair[1],
+                                    "gaps_mm": [round(g1[pair], 4), round(g2[pair], 4)]})
+        report["between_poses"] = between
+        report["gap_lower_bound_mm"] = None if bound == math.inf else round(bound, 4)
     report.update({"poses_checked": len(report["poses"]), "collisions": n_hits, "errors": n_errors,
-                   "pass": bool(report["poses"]) and n_hits == 0 and n_errors == 0,
+                   "pass": bool(report["poses"]) and n_hits == 0 and n_errors == 0 and not between,
                    "physical_fit_verified": False, "limits": LIMITS})
     if not report["poses"]:
         report["note"] = "no poses given: nothing was checked"

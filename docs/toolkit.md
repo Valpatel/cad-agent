@@ -478,8 +478,27 @@ content-hash pair cache), the verdict file every gate writes, and the minimum-wa
 ### Range-of-motion clearance (`cadagent.mechanical.clearance`)
 
 `cad-agent motion-trace` checks that rendered pivots sit where the CAD says; this checks that the moving parts do not
-*hit* each other anywhere over their range. Give it the solids placed at each pose, and it intersects every pair whose
-bounding boxes overlap.
+*hit* each other anywhere over their range. Give it the solids placed at each pose, and it relates every pair whose
+bounding boxes meet with the relation gate's exact narrow phase (`relations.relate`, [gates](gates.md)). An
+assembly that declares its joints gets the [motion gate](gates.md) instead, which samples them itself;
+this is for kinematics that live in the build script as a function from pose to placed solids.
+
+```mermaid
+flowchart TD
+    P["each pose: place_fn(params)<br/>→ placed solids"] --> B{"boxes meet<br/>(within travel / 2)?"}
+    B -->|"no"| G["clear: the box distance<br/>bounds the gap"]
+    B -->|"yes"| R["relations.relate:<br/>overlap, gap or unknown"]
+    R -->|"overlap > tolerance"| H["collision"]
+    R -->|"unknown"| E["error: never a pass"]
+    R -->|"apart or touching"| G
+    G --> T{"with travel_mm: gap bound<br/>(g1 + g2 − travel) / 2 > 0?"}
+    T -->|"no"| U["unproven between poses"]
+    T -->|"yes"| OK["clear"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class P,B,R,G,T here
+    class H,E,U,OK out
+```
 
 ```python
 from cadagent.mechanical.clearance import collisions, sweep, swept_envelope
@@ -498,16 +517,26 @@ assert report["pass"], [(p, r.get("collisions") or r.get("error"))
                         for p, r in report["poses"].items() if not r.get("pass")]
 ```
 
+<details>
+<summary>The arguments, the between-poses bound, the swept-volume cutter and the limits</summary>
+
 - **`collisions(instances, tolerance_mm3=2.0, skip=None, only=None)`** returns one row per pair that overlaps by more
   than the tolerance: `{"a", "b", "part_a", "part_b", "volume_mm3"}`. `instances` maps a name to `(part, shape)` or to
   a bare shape. `skip` is pairs of instance or part names that are meant to overlap, or a callable
   `skip((name_a, part_a), (name_b, part_b))`. `only(name)` limits the check to pairs with at least one selected
-  instance (the arm against everything, not the track against itself). A boolean that raises, or returns a volume
-  that is not a number, is a row with `"error"`: an error is never a pass.
-- **`sweep(poses, place_fn, out_path=None, **collisions_args)`** runs `collisions` at every pose. A `place_fn` that
-  raises (an unreachable pose) is that pose's error. The check has a row per pose (its parameters, the pairs it
-  intersected, its collisions), and a top-level `pass` that is true only when at least one pose was checked and none
-  has a collision or an error. `physical_fit_verified` is always `false`.
+  instance (the arm against everything, not the track against itself). A pair the relation gate cannot decide
+  (`unknown`: a kernel error, a volume that does not add up, a crossing the boolean missed) is a row with `"error"`:
+  an error is never a pass.
+- **`sweep(poses, place_fn, out_path=None, travel_mm=None, **collisions_args)`** runs `collisions` at every pose. A
+  `place_fn` that raises (an unreachable pose) is that pose's error. The check has a row per pose (its parameters,
+  the pairs it related, its collisions), and a top-level `pass` that is true only when at least one pose was checked
+  and none has a collision or an error. `physical_fit_verified` is always `false`.
+- **Between poses.** Pass `travel_mm`, the most any point of one part moves relative to another between two
+  consecutive poses (for a rotation step, the step in radians times the largest radius it carries), and each pair
+  clear at both ends of a step must be proven clear between them: the gap there is at least `(g1 + g2 - travel) / 2`,
+  the bound the assembly gate's `sweep_pair` uses on an insertion path. A step it cannot prove is a row in
+  `between_poses` and fails the check; `gap_lower_bound_mm` is the smallest bound over the sweep. Pairs meant to
+  touch cannot be proven clear: `skip` them.
 - **`swept_envelope(pieces, step=0.5, max_slope_deg=45.0, taper_ends=False)`** makes the cutter that clears a
   neighbour. Describe the moving part's radius along its own axis as pieces `(x0, x1, r0, r1)` (a barrel, then a rod,
   then an eye), and get a cadquery `Solid` of revolution about +x. Its radius is the largest piece at each x, raised so
@@ -515,14 +544,15 @@ assert report["pass"], [(p, r.get("collisions") or r.get("error"))
   prints as a ceiling. `taper_ends=True` closes the ends with cones too. The profile is one polygon revolved once:
   place one envelope per pose and cut them from the neighbour, rather than fusing many small tools, which is where OCC
   booleans fail. `envelope_profile` gives the same `(xs, rs)` profile without a CAD kernel.
+- **Limits.** Without `travel_mm` the poses are samples, not a continuous sweep: two parts can pass through each
+  other between two poses and no pose sees it. With it, the bound holds only if the stated travel does. Only the
+  solids passed in are checked: a pin, bolt or hose left out of the model is not. Parts meant to touch on a face
+  pass the tolerance; a part sunk into another by more than the tolerance is a hit unless `skip` names it. CAD
+  clearance does not prove physical fit: tolerances, deflection under load and wear are not modelled.
+  `swept_envelope` samples the profile every `step` mm (and at every piece's ends), so a cone's foot between
+  samples is placed to within a fraction of a step.
 
-**Limits.** The poses are samples, not a continuous sweep: two parts can pass through each other between two poses
-and no pose sees it, so sample densely where parts come close (the ends of each stroke, and where the arm folds).
-Only the solids passed in are checked: a pin, bolt or hose left out of the model is not. Parts meant to touch on a
-face intersect with near-zero volume and pass the tolerance; a part sunk into another by more than the tolerance is
-a hit unless `skip` names it. CAD clearance does not prove physical fit: tolerances, deflection under load and wear
-are not modelled. `swept_envelope` samples the profile every `step` mm (and at every piece's ends), so a cone's foot
-between samples is placed to within a fraction of a step.
+</details>
 
 ### Explore and compare designs (`cadagent.simulation.explore`)
 

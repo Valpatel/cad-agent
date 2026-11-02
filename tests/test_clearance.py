@@ -208,3 +208,36 @@ def test_a_swept_envelope_cuts_a_neighbour_in_one_piece():
     assert cut.isValid()
     assert cut.Volume() == pytest.approx(block.Volume() - cutter.Volume(), rel=1e-6)
     assert C.collisions({"block": cut, "cutter": cutter}) == []
+
+
+# ----------------------------------------------------------------------------- between poses (travel_mm), kernel-free
+
+def test_without_travel_a_block_that_jumps_the_wall_between_poses_passes_unseen():
+    """The block at x = 30 and x = 70 is clear of the wall (x 50..60) at both poses, and went through it between."""
+    assert C.sweep({"before": 30.0, "after": 70.0}, slider)["pass"] is True
+    report = C.sweep({"before": 30.0, "after": 70.0}, slider, travel_mm=40.0)
+    assert report["pass"] is False and report["collisions"] == 0 and report["gap_lower_bound_mm"] == 0.0
+    assert report["between_poses"] == [{"from": "before", "to": "after", "a": "block", "b": "wall",
+                                        "gaps_mm": [10.0, 10.0]}]
+
+
+def test_with_travel_dense_enough_poses_prove_the_steps_clear():
+    poses = {f"x={x}": float(x) for x in range(0, 31, 10)}         # gaps to the wall 40, 30, 20, 10
+    report = C.sweep(poses, slider, travel_mm=10.0)
+    assert report["pass"] is True and report["between_poses"] == []
+    assert report["gap_lower_bound_mm"] == pytest.approx(10.0)      # (20 + 10 - 10) / 2 on the last step
+    assert C.sweep(poses, slider, travel_mm=50.0)["pass"] is False  # too coarse for that much travel
+    with pytest.raises(ValueError, match="travel_mm"):
+        C.sweep(poses, slider, travel_mm=-1.0)
+
+
+# ----------------------------------------------------------------------------- the relation gate's narrow phase
+
+def test_a_pair_the_relation_gate_cannot_decide_is_an_error():
+    """A compound of two solids that share volume is not a valid boolean argument (OCCT can read its common as
+    empty); the relation gate says so, and the pair is an error, not a measured overlap or a clear pair."""
+    cq = pytest.importorskip("cadquery")
+    a, b = cq.Solid.makeBox(10, 10, 10), cq.Solid.makeBox(10, 10, 10, pnt=cq.Vector(5, 0, 0))
+    other = cq.Solid.makeBox(4, 4, 4, pnt=cq.Vector(6, 3, 3))
+    (row,) = C.collisions({"pair": cq.Compound.makeCompound([a, b]), "other": other})
+    assert "volume_mm3" not in row and "share volume" in row["error"]

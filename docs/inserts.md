@@ -61,8 +61,9 @@ check works out, and it changes every limit after it.
   the brass, and the knurl carries only what pulls the parts apart. M3 in PLA Basic, clamping metal: tighten to at
   most **0.40 N·m**, set by the insert's end face: the ring round the clamped part's hole takes nearly all the clamp,
   held to brass's 124 MPa. A printed clamped part sits on that same ring, so its plastic sets a lower limit (the lid
-  above: 0.20 N·m), taking the whole clamp on the ring, the cautious side. A metal washer between the printed part
-  and the insert (not under the head), or a limiter, spreads it.
+  above: 0.20 N·m). That limit puts the whole clamp on the ring, the cautious bound: once the plastic yields, the
+  boss face takes some, which the check does not size. A metal washer between the printed part and the insert (not
+  under the head), or a limiter, spreads it.
 - **Recessed, even by 0.05 mm.** The screw pulls the insert towards the head until the gap closes. The knurl
   carries the whole preload, so the same joint 0.2 mm recessed may take only **0.13 N·m**.
 - **A clamped part whose hole is as wide as the insert** bears on the plastic round it. That jacks the insert out

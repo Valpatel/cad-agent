@@ -140,7 +140,8 @@ def _real(name: str, v: Any) -> float:
     """v as a float: any real number (a Python or NumPy int or float, a Fraction or a Decimal), not a bool, and
     finite; otherwise ValueError, saying it is not a number rather than out of range."""
     if isinstance(v, bool) or not isinstance(v, (numbers.Real, Decimal)):
-        raise ValueError(f"{name} must be a real number, not {type(v).__name__} {v!r}")
+        kind = "" if v is None or isinstance(v, bool) else f"{type(v).__name__} "
+        raise ValueError(f"{name} must be a real number, not {kind}{v!r}")
     x = float(v)
     if not math.isfinite(x):
         raise ValueError(f"{name} must be finite, not {v!r}")
@@ -201,7 +202,7 @@ def boss_hoop_stress(pressure: float, inner_diameter: float, outer_diameter: flo
                 "drive_torque": "N m (measured on a test boss), or None when not measured"},
          returns="dict: nut_factor, preload and strip_torque as {low, high}; strip_force (N), margin {low, high} "
                  "(strip torque over the tightening torque), torque_ceiling (N m), drive_torque_limit (N m), "
-                 "drive_torque (as given), radial_pressure and hoop_stress (Pa), hoop_ratio, outside_ratio, "
+                 "drive_torque (as a float, or None), radial_pressure and hoop_stress (Pa), hoop_ratio, outside_ratio, "
                  "engagement_ratio, and the checks torque_ok, outside_ok, engagement_ok, hoop_ok and passes",
          limits=(_TORQUE, _STRIP, _FLANK, _LAME,
                  "the drive (forming) torque is not computed: measure it, and tighten to at least 1.2 x it. It makes "

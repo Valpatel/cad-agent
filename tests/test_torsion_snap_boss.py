@@ -207,11 +207,20 @@ def test_the_screw_formulas_take_numpy_scalars_and_decimals_as_their_float_value
     assert fx.thread_radial_pressure(np.int64(1000), Decimal("0.003"), np.float32(6 * MM)) == pytest.approx(p_r, rel=1e-6)
     hoop = fx.boss_hoop_stress(10e6, d, 2 * d)
     assert fx.boss_hoop_stress(Decimal("1E+7"), np.float64(d), np.float32(2 * d)) == pytest.approx(hoop, rel=1e-6)
-    r = fx.screw_boss(d, 1.12 * MM, 6 * MM, 6 * MM, 0.3, 15.5e6, 35e6)
-    q = fx.screw_boss(Decimal("0.003"), np.float64(1.12 * MM), 6 * MM, np.float32(6 * MM), Decimal("0.3"),
-                      np.int64(15_500_000), 35e6, friction_high=Decimal("0.5"), drive_torque=None)
-    assert q["nut_factor"]["low"] == pytest.approx(r["nut_factor"]["low"], rel=1e-6)
-    assert q["preload"]["high"] == pytest.approx(r["preload"]["high"], rel=1e-6)
+    for drive in (None, 0.1):
+        r = fx.screw_boss(d, 1.12 * MM, 6 * MM, 6 * MM, 0.3, 15.5e6, 35e6, friction_high=0.5, drive_torque=drive)
+        q = fx.screw_boss(Decimal("0.003"), np.float64(1.12 * MM), 6 * MM, np.float32(6 * MM), Decimal("0.3"),
+                          np.int64(15_500_000), 35e6, friction_high=Decimal("0.5"),
+                          drive_torque=None if drive is None else Decimal("0.1"))
+        # every number in the result, banded or not, is the float call's, and a Python float or a bool
+        for key, v in r.items():
+            pairs = v.items() if isinstance(v, dict) else [(None, v)]
+            for sub, x in pairs:
+                y = q[key] if sub is None else q[key][sub]
+                if isinstance(x, bool) or x is None:
+                    assert y == x, (key, sub)
+                else:
+                    assert type(y) is float and y == pytest.approx(x, rel=1e-6), (key, sub)
 
 
 def test_screw_boss_is_its_parts_and_covestros_window():

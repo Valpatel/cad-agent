@@ -133,6 +133,7 @@ domains:
           - {slug: fasteners, title: Fasteners, scope: "Screw stacks, engagement, bottoming and hole clearance.", maturity: tooling}
           - {slug: screw-bosses, title: Screw bosses, scope: "Thread-forming screws in printed bosses: clamp, stripping, torque window, wall.", maturity: tooling, priority: [demo], pages: [docs/screw-bosses.md], api: [cadagent.mechanical.bosses], issues: [161]}
           - {slug: threaded-inserts, title: Threaded inserts and limiters, scope: "Heat-set inserts and compression limiters in printed parts: hole, boss, load path, pull-out, torque, preload.", maturity: tooling, pages: [docs/inserts.md], cli: [inserts], api: [cadagent.mechanical.inserts], issues: [230]}
+          - {slug: clinch-fasteners, title: Clinch fasteners, scope: "PEM-type nuts, studs and standoffs pressed into sheet: the cited parts, hardness, thickness, hole, edge, bend, spacing and load.", maturity: tooling, pages: [research/sheet-metal-joining.md], api: [cadagent.mechanical.clinch], issues: [283]}
           - {slug: riveted-joints, title: Riveted joints, scope: "Blind rivets joining sheet parts: the listed rivets, grip, hole, edge, pitch, metals and strength per pitch.", maturity: tooling, pages: [research/sheet-metal-joining.md], api: [cadagent.mechanical.rivets], issues: [283]}
           - {slug: bought-parts, title: Bought parts, scope: "Real catalogue parts with their manufacturer models.", maturity: tooling}
           - {slug: assembly-access, title: Assembly access, scope: "Tool reach, insertion paths and subassembly order.", maturity: tooling}
@@ -200,7 +201,7 @@ domains:
         api: [cadagent.manufacturing.sheet_metal]
         issues: [99, 118, 119, 283]
         topics:
-          - {slug: clinch-hardware, title: Clinch hardware, scope: "PEM-type nuts, studs and standoffs pressed into sheet.", maturity: surveyed, pages: [research/sheet-metal-joining.md], issues: [283]}
+          - {slug: clinch-hardware, title: Clinch hardware, scope: "PEM-type nuts, studs and standoffs pressed into sheet.", maturity: surveyed, pages: [research/sheet-metal-joining.md], uses: [cadagent.mechanical.clinch], issues: [283]}
           - {slug: blind-rivets, title: Blind rivets, scope: "Joining bent parts from one side: grip, edge, pitch, strength.", maturity: surveyed, pages: [research/sheet-metal-joining.md], uses: [cadagent.mechanical.rivets], issues: [283]}
       - slug: mould-making
         title: Mould making

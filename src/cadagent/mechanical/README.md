@@ -14,7 +14,7 @@ at each pose and decides each pair with the relation gate (`review/gates/relatio
 ```mermaid
 flowchart TD
     G["cadagent.geometry<br/>export_step"] --> MC["mcmaster.py<br/>bought parts"]
-    G ~~~ FK["fasteners.py · bosses.py<br/>inserts.py · rivets.py<br/>bearings.py · markings.py"]
+    G ~~~ FK["fasteners.py · bosses.py<br/>inserts.py · rivets.py<br/>clinch.py · bearings.py<br/>markings.py"]
     G ~~~ CC["connectors.py<br/>compliant/"]
     MC & FK & CC --> B["build script<br/>the project's CadQuery"]
     B -->|"STEP, parts file"| X["exports/<br/>STEP · parts file"]
@@ -37,6 +37,7 @@ flowchart TD
 | `holes.py` | Every hole in a part is empty of material (`cad-agent holes`); countersinks and drill points are probed as cones |
 | `fasteners.py` | Dimension-driven fastener envelopes and axial stack checks |
 | `bosses.py` | A thread-forming screw (DELTA PT sizes) in a printed boss: clamp, stripping force and torque, Covestro's torque window and the wall, from datasheet strengths ([screw bosses](../../../docs/screw-bosses.md)); a starting point to test, not a rating |
+| `clinch.py` | Self-clinching (PEM-type) nuts, studs and standoffs: a cited subset of PEM's S, SS, CLS, CLSS, FH, SO and BSO parts with hole, minimum sheet, edge distance and rated strengths, `parts_for` a sheet, and a placement check (hardness, thickness, hole, edge, bend BA/2 + E, spacing, loads) against the `sm-clinch-*` rules ([joining sheet metal](../../../research/sheet-metal-joining.md)) |
 | `rivets.py` | Blind rivets joining sheet parts: POP and McMaster-Carr rivets with hole, grip and rated strength, `rivets_for` a stack, and a lap-joint check (grip with tolerance, hole, edge 2D / 1.5D, pitch 3D / 4D, t/D, metals, strength per pitch from MIL-HDBK-5J sheet values) against the `sm-rivet-*` rules ([joining sheet metal](../../../research/sheet-metal-joining.md)); typical values, not allowables |
 | `inserts.py` | Heat-set inserts and compression limiters in printed parts: the makers' hole and boss, where the screw's clamp goes, pull-out, torque-out and the insert's thread calibrated to published tests, the plastic under the head, limiters (catalogue or your own) and the preload kept; `cad-agent inserts` checks a file of joints, and the coupon plan says what to print and measure ([threaded inserts](../../../docs/inserts.md)); a starting point to test, not a rating |
 | `bearings.py` | Rolling bearings: SKF and Koyo catalogue bearings with their sources, and one check of a bearing's ISO 281 life (turning or oscillating, under a load or a duty cycle), ISO 76 static safety against SKF's guideline s0, axial load, load range, minimum load and speed; for a swinging joint, the critical amplitude and the false-brinelling risk; `cad-agent bearings` checks a file of bearings ([rolling bearings](../../../docs/bearings.md)); a basic rating life, not a promise |

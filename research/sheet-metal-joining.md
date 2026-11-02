@@ -128,6 +128,32 @@ flowchart TD
 [`process-profiles.yaml`](process-profiles.yaml): the per-stock minimums of its specs feed, across 27 stocks. Each
 part's own catalogue value may be larger. A test redraws it and fails if the committed file differs.*
 
+**The check.** `cadagent.mechanical.clinch.check_placement` runs PEM's rules in this section on one part: the sheet's
+hardness against the part's material (and no listed part in stainless sheet), the thickness for its shank, the hole
+band, the edge, the bend (BA/2 + E from the bend centre line, with the bend allowance from
+`cadagent.manufacturing.sheet_metal.bend` for 5052 and cold-rolled steel), each neighbour both ways round, and any
+push-out, torque or pull-through load against PEM's averages. Its parts are the cited subset in §3, and `parts_for`
+lists those that clinch into a given sheet, steel nuts first. A shop's per-part limits stay in that shop's profile.
+
+```mermaid
+flowchart TD
+    P["a PEM part in a sheet<br/>(check_placement)"] --> M["the material: hardness<br/>and thickness"]
+    P --> G["the layout: hole, edge,<br/>bend, neighbours"]
+    P --> L["the loads: push-out,<br/>torque, pull-through"]
+    M --> V["pass, warn or fail,<br/>each with its rule"]
+    G --> V
+    L --> V
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class P near
+    class M,G,L here
+    class V out
+```
+
+*What `check_placement` reads. The loads are optional; each check names the `sm-clinch-*` rule or the PEM bulletin row
+it compares against.*
+
 ## 3. The common parts, by the numbers
 
 These are a cited subset of PEM's bulletins for the sizes most enclosures use. Strengths are averages from PEM's own
@@ -523,7 +549,8 @@ A riveted seam therefore costs a few cents a rivet, against about $0.77 for each
 - **Rules:** the `sm-clinch-*` and `sm-rivet-*` rules in [`process-profiles.yaml`](process-profiles.yaml) cite these
   sources. SendCutSend's limits are a shop profile, used only when a caller names it.
 - **Next, the checks (#283, PR B):**
-  - a clinch-hardware check: sheet hardness, hole, thickness by shank, and distances to edges, bends and other parts;
+  - a clinch-hardware check: sheet hardness, hole, thickness by shank, and distances to edges, bends and other parts
+    (`cadagent.mechanical.clinch`);
   - a rivet-joint check: grip band, hole, edge, pitch, shear, bearing and tear-out, with the vectors above as tests
     (`cadagent.mechanical.rivets`, the first of these).
 - **Then the catalogue and skill (#283, PR C):**

@@ -23,6 +23,25 @@ SUBCOMMANDS = ("build", "export-3mf", "holes", "check", "report", "package", "se
                "review-section", "agents", "motion-trace", "release", "snapfit", "inserts", "bearings",
                "overhangs")
 LOG_TAIL_LINES = 20
+# Usage reporting off. cad-agent itself sends nothing anywhere; the only reports are the issues and pull requests a
+# person chooses to send on GitHub. `main` sets these for every command, so each program it runs (and anything those
+# start) inherits them, unless the variable is already set: a person's own explicit choice stands. The list is the
+# survey in docs/supply-chain.md ("Usage reporting"); tests/test_cli_privacy.py fails when a vendored tool names a
+# switch this list does not cover.
+OPT_OUTS = {
+    "DO_NOT_TRACK": ("1", "the Console Do Not Track convention (consoledonottrack.com); text-to-cad's cadgen reads it"),
+    "CADGEN_TELEMETRY": ("0", "text-to-cad's cadgen, vendored: its usage analytics (cadgen/analytics.py)"),
+    "KICAD_MCP_TELEMETRY_ENABLED": ("false", "kicad-mcp-pro, vendored: OpenTelemetry, opt-in already; kept off explicitly"),
+    "WRANGLER_SEND_METRICS": ("false", "Cloudflare's wrangler (npm run deploy:site): anonymous usage data, on by default"),
+}
+
+def opt_out(env=None) -> List[str]:
+    """Set every usage-reporting opt-out in ``env`` (default: this process's environment) that is not set yet."""
+    env = os.environ if env is None else env
+    added = [k for k in OPT_OUTS if k not in env]
+    for k in added:
+        env[k] = OPT_OUTS[k][0]
+    return added
 
 class _Unusable(Exception):
     """Raised inside a subcommand for an exit-2 condition with a message."""
@@ -1244,6 +1263,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
+    opt_out()
     return dispatch(build_parser().parse_args(argv))
 
 if __name__ == "__main__":

@@ -1,0 +1,2 @@
+**New**
+- Usage reporting off: every `cad-agent` command sets `DO_NOT_TRACK=1`, `CADGEN_TELEMETRY=0` (text-to-cad's cadgen), `KICAD_MCP_TELEMETRY_ENABLED=false` (kicad-mcp-pro) and `WRANGLER_SEND_METRICS=false` (Cloudflare wrangler), unless a variable is already set, so the programs it runs inherit them. `npm run deploy:site` sets wrangler's opt-out too. cad-agent itself sends nothing. The survey behind the list is in `docs/supply-chain.md` ("Usage reporting"), and a test fails when a vendored tool names a switch the list does not cover (#278).

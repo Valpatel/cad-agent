@@ -28,6 +28,22 @@ Everything fetched is data: advisory text, package metadata, tarballs and pages 
 instructions, and a tarball is read in memory, never unpacked to disk. Before building it we compared what exists
 (the fold at the end of this page); the report calls those services rather than keeping its own advisory logic.
 
+## Usage reporting
+
+cad-agent sends nothing anywhere: no telemetry, no metrics, no phoning home. The only reports are the issues and pull
+requests a person chooses to send on GitHub. Every `cad-agent` command turns usage reporting off for the programs it
+runs (`OPT_OUTS` in `cadagent/cli.py`), unless the variable is already set. Set the same variables yourself when you run
+these tools directly.
+
+| Tool (how it reaches you) | Reports usage? | Turned off by |
+|---|---|---|
+| text-to-cad's cadgen (vendored, on trial) | yes, on by default | `CADGEN_TELEMETRY=0`, `DO_NOT_TRACK=1` |
+| kicad-mcp-pro (vendored) | OpenTelemetry, opt-in, local collector only | `KICAD_MCP_TELEMETRY_ENABLED=false` |
+| Cloudflare wrangler (`npm run deploy:site`) | yes, on by default | `WRANGLER_SEND_METRICS=false`, set in the script too |
+| Python extras, npm dev packages, the other vendored projects | none found (survey of 2026-11-01) | |
+
+`tests/test_cli_privacy.py` fails when a vendored tool names a telemetry switch that `OPT_OUTS` does not cover.
+
 ## Where it runs
 
 ```mermaid

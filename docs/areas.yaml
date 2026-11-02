@@ -72,6 +72,7 @@ domains:
           - {slug: motor-mounts, title: Motor mounts, scope: "Bolt circles, pilots and load paths for bought actuators and motors.", maturity: idea, issues: [144]}
           - {slug: linkages, title: Linkages, scope: "Four- and five-bar position, workspace and transmission angle.", maturity: tooling, priority: [demo], pages: [docs/linkages.md], api: [cadagent.mechanical.linkages], issues: [187]}
           - {slug: joints-and-bearings, title: Joints and bearings, scope: "Pivots, bearing seats, shafts and their fits.", maturity: tooling, pages: [docs/printed-joints.md], api: [cadagent.mechanical.printed_joints], uses: [cadagent.simulation.fea], issues: [97]}
+          - {slug: rolling-bearings, title: Rolling bearings, scope: "Ball and roller bearings: ISO 281 life turning or oscillating, duty cycles, ISO 76 static safety, axial load and speed limits.", maturity: tooling, pages: [docs/bearings.md], cli: [bearings], api: [cadagent.mechanical.bearings], issues: [180]}
       - slug: housings-and-enclosures
         title: Housings and enclosures
         scope: Shells, lids, bosses, ribs, port windows and markings around electronics and mechanisms.
@@ -163,10 +164,11 @@ domains:
         title: 3D printing
         scope: FDM, SLA, SLS and MJF parts, from orientation to slicing.
         maturity: tooling
-        cli: [export-3mf, slice]
+        cli: [export-3mf, slice, overhangs]
         api: [cadagent.manufacturing.slicer, cadagent.manufacturing.slicer_prusa, cadagent.manufacturing.mesh3mf,
-              cadagent.manufacturing.plates, cadagent.manufacturing.prusa3mf, cadagent.manufacturing.fit_coupons]
-        issues: [84, 99, 242, 246, 248]
+              cadagent.manufacturing.plates, cadagent.manufacturing.prusa3mf, cadagent.manufacturing.fit_coupons,
+              cadagent.manufacturing.gcode]
+        issues: [84, 99, 242, 246, 247, 248, 253]
         projects: [gyropup, j501-enclosure]
         topics:
           - {slug: fdm, title: FDM, scope: "Orientation, layer anisotropy, overhangs and slicer evidence.", maturity: tooling}

@@ -13,7 +13,7 @@ _spec.loader.exec_module(gates)
 HEAD = "a188011" + "0" * 33
 OLD = "1234567" + "0" * 33
 WRITERS = {"mvalancy", "reviewer-bot"}
-can_write = WRITERS.__contains__
+can_review = WRITERS.__contains__
 _ids = iter(range(1000, 10**6))
 
 
@@ -23,7 +23,7 @@ def review(verdict, sha=HEAD, who="mvalancy", state="COMMENTED", before="Summary
 
 
 def gate(reviews, head=HEAD):
-    return gates.review_gate(reviews, head, can_write)
+    return gates.review_gate(reviews, head, can_review)
 
 
 @pytest.mark.parametrize("base,head,same,ok", [
@@ -53,6 +53,18 @@ def test_latest_verdict_wins_by_review_order():
     first, later = review("pass"), review("block")
     assert not gate([later, first])[0]                          # order of creation, not of the list
     assert gate([review("block"), review("pass")])[0]
+
+
+@pytest.mark.parametrize("login,permission,ok", [
+    ("mvalancy", "admin", True),
+    ("MValancy", "write", True),            # GitHub logins are case-insensitive
+    ("mvalancy", "read", False),            # a maintainer who lost write access
+    ("a-collaborator", "write", False),     # write access alone: can push and run CI, cannot pass its own review
+    ("a-collaborator", "admin", False),
+    ("outsider", "read", False),
+])
+def test_only_maintainers_verdicts_count(login, permission, ok):
+    assert gates.may_review(login, permission) is ok
 
 
 def test_only_reviewers_with_write_access_count():

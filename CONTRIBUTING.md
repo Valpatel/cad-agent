@@ -33,15 +33,28 @@ flowchart TD
 | Required check | `dev` | `main` | What it asks |
 |---|---|---|---|
 | `core (3.10)`, `core (3.12)`, `full` | ✓ | ✓ | The test suite with required dependencies only, and with every extra |
-| `browser (chromium)`, `browser (webkit)` | ✓ | ✓ | Web kit and website suites in two browser engines |
-| `cad-gates/<base>/branch-flow` | ✓ | ✓ | `dev` takes `feat/ fix/ ci/ docs/ research/ test/ refactor/ release/ vendor-update/ dependabot/` branches (forks: the outside-contribution checks); `main` takes `dev` only |
-| `cad-gates/<base>/review` | ✓ | ✓ | The latest verdict from a reviewer with write access is pass, on the PR's head commit |
-| `cad-gates/main/release` | | ✓ | `pyproject.toml` version above `main`'s, and a dated `## vX.Y.Z (YYYY-MM-DD)` entry in [CHANGELOG.md](CHANGELOG.md) |
+| `browser (chromium)`, `browser (webkit)` | ✓ | gate | Web kit and website suites in two browser engines |
+| `cad-gates/<base>/branch-flow` | ✓ | gate | `dev` takes `feat/ fix/ ci/ docs/ research/ test/ refactor/ release/ vendor-update/ dependabot/` branches (forks: the outside-contribution checks); `main` takes `dev` only |
+| `cad-gates/<base>/review` | ✓ | gate | The latest verdict from a maintainer is pass, on the PR's head commit |
+| `cad-gates/main/release` | | gate | `pyproject.toml` version above `main`'s, and a dated `## vX.Y.Z (YYYY-MM-DD)` entry in [CHANGELOG.md](CHANGELOG.md) |
 | Conversations resolved | ✓ | ✓ | Every review thread answered and resolved |
 
+✓ means branch protection requires it. **gate** means `main`'s protection does not require it yet (#112), but it must
+still pass before a merge into `main`. `python3 tools/ci_gates.py all` checks the three `cad-gates` rows. It does not
+read the browser runs, so confirm those with `gh pr checks <n>`.
+
 - **The verdict.** It is the last line of the reviewer's summary review: `<!-- cad-review verdict=pass sha=<40-character head sha> -->` (or `verdict=block`). It is written by the `cad-pr-reviewer` subagent, or by a reviewer following the `cad-pr-review` skill, who then re-runs the gates: `gh workflow run gates.yml -R Valpatel/cad-agent -f pr=<n>`.
-- **Who can review.** Only reviewers with write access count, and dismissed reviews never count. All our agents work through one account, so GitHub cannot tell author from reviewer: an author never writes a verdict on its own PR.
-- **How the gates run.** `gates.yml` runs on `pull_request_target`: the default branch's (`dev`'s) copy of the workflow and of [`tools/ci_gates.py`](tools/ci_gates.py) decides, so a PR cannot pass the gates by editing them, and PRs into `main` (which come from `dev`) are judged by the same copy. The PR is only read as data, never checked out or run. Results are commit statuses named after the base, so a PR into `dev` cannot supply `main`'s checks. A fork's own workflows run with a read-only token, so they cannot post statuses; anyone with write access can, which is why write access is the trust boundary. Fork workflows wait for approval; the intake skill (#120) reads a fork's workflow changes before approving them.
+- **Who can review.** Only verdicts from a maintainer (`MAINTAINERS` in `tools/ci_gates.py`) who still has write access count, and dismissed reviews never count. A collaborator with write access can push branches and run CI, but their PRs merge only after a maintainer's review. All our agents work through one account, so GitHub cannot tell author from reviewer: an author never writes a verdict on its own PR.
+- **Collaborators.** A collaborator with write access works like any agent here, and is still gated:
+  - they branch from `dev` in this repository and open a PR into `dev`;
+  - they can push as often as they like, and CI runs without approval;
+  - **they cannot merge.** The repository ruleset "Only maintainers merge into dev and main" lets only the admin role
+    update those branches. A maintainer reviews the PR (the verdict marker; only a maintainer's verdict counts) and
+    merges it with `gh pr merge --admin`, the ruleset's bypass. On `dev`, the required checks still apply to admins
+    (enforce admins is on). `main` requires fewer checks today (#112), so run `tools/ci_gates.py all` before every
+    merge.
+  - Outside contributors without write access open PRs from forks (#111).
+- **How the gates run.** `gates.yml` runs on `pull_request_target`: the default branch's (`dev`'s) copy of the workflow and of [`tools/ci_gates.py`](tools/ci_gates.py) decides, so a PR cannot pass the gates by editing them, and PRs into `main` (which come from `dev`) are judged by the same copy. The PR is only read as data, never checked out or run. Results are commit statuses named after the base, so a PR into `dev` cannot supply `main`'s checks. A fork's own workflows run with a read-only token, so they cannot post statuses. Anyone with write access can, even through a workflow of their own, so the trust boundary is the maintainer list in `tools/ci_gates.py` and the merge ruleset, not write access. Fork workflows wait for approval: a maintainer approves a run only after reading every changed workflow and script, and agents never approve one on their own (the intake skill, #120, will make that read systematic).
 - **When they run.** On every push to the PR, when the reviewer re-runs them after a verdict, and every 15 minutes for all open PRs (a review cannot trigger them). A run for one PR posts `pending` first, so a crash leaves the PR blocked rather than green. The sweep posts only statuses that change: GitHub keeps at most 1000 statuses per commit and name, and refuses new ones after that.
 - **Just before merging**, run `python3 tools/ci_gates.py all --repo Valpatel/cad-agent --pr <n>` from an up-to-date `dev` checkout. It reads the reviews live and must exit 0, so a block posted since the last run stops the merge.
 - **GitHub settings the gates need** (owner): the `cad-gates/…` checks required on `dev` and `main` with GitHub Actions as their source; an Actions event policy for `.github/workflows/gates.yml` that allows all three of its events, `pull_request_target`, `schedule` and `workflow_dispatch` (GitHub disables `pull_request_target` by default in public repos from 2026-12-02, and a policy lists allowed events, so one left out stops the sweep or the re-run).

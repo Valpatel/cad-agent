@@ -41,11 +41,15 @@ flowchart TD
 | `slicer.py` | Real filament grams and print time from Bambu Studio's command line, run as a separate program (`cad-agent slice`) |
 | `slicer_prusa.py` | The same from PrusaSlicer's command line (`cad.slicer.engine: prusa`): vendor-bundle and user presets, grams and time from the G-code, and the warnings, errors and print stability issues from its log |
 | `fit_coupons.py` | A printable coupon per fit (pin, bushing, bearing, insert), holes swept round nominal + allowance + the process profile's undersize, with a measurement sheet: the first print calibrates the fits ([printed joints](../../../docs/printed-joints.md#fit-coupons-let-the-first-print-calibrate-the-fits)) |
+| `gcode.py` | The longest bridge and overhang-perimeter extrusions in sliced G-code (PrusaSlicer, Bambu Studio, OrcaSlicer), with height and position: where a "long bridging extrusions" warning points. Pure Python, imports nothing from cad-agent |
 | `process.py` | The process profiles as typed values: rules, limits, tolerances, FDM layer factors by filament, a shop's bend table; each value with its rule id and source id, unverified rows marked `(u)` ([process checks](../../../docs/process-checks.md)) |
 | `dfm.py` | Minimum features (walls, holes, pins, gaps, bridges, overhangs, flanges, hole-to-bend) against every cited source, and which way a printed feature's stress crosses the layers |
 | `sheet_metal.py` | Bend allowance, deduction, flat length, K-factor, shortest flange and relief, from the shop's table first, then the generic rules |
 | `plates.py` | Every printed part at its quantity packed onto build plates (MaxRects), in one Bambu Studio project 3MF with a read-back check and a top-down picture (`cad-agent export-3mf`) |
 | `prusa3mf.py` | PrusaSlicer project 3MFs: objects of several volumes, each on its own tool, the wipe tower's place, and build plates one 3MF per plate, with a read-back check |
+
+`cad-agent overhangs` (in `cli.py`) screens the part STLs with `cadagent.geometry.overhang_regions`, the
+geometry-side companion of `gcode.py` ([toolkit: overhangs and bridges](../../../docs/toolkit.md#overhangs-and-bridges-cad-agent-overhangs)).
 
 Related: [package map](../README.md) · [publish](../publish/README.md) (the print release) ·
 [toolkit: print files](../../../docs/toolkit.md#print-files) ·

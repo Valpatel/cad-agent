@@ -92,6 +92,9 @@ my-cad-project/
    header and link ids fixed as for a part, each node added without a name called `<parent>.<k>` instead of a random
    uuid, and the colour records in one order. Sub-shape names and colours (`Assembly.addSubshape`) are refused.
    See [reproducible outputs](#reproducible-outputs) for the other files.
+
+   Build the parts with `robust_union` and `robust_cut` where booleans meet nearly coincident faces: they check
+   every boolean and fall back instead of returning a bad shape ([checked booleans](#checked-booleans-cadagentgeometry), #249).
 3. **Each check is a script** in `tools/` that writes `exports/<name>.json` with
    a top-level boolean `"pass"`. A check that cannot compute its answer writes
    `"pass": false` with the reason; it never omits the file or the key.
@@ -116,7 +119,8 @@ my-cad-project/
   missing file, missing key, `"yes"`, `1` or a list all count as failures.
 - In the results and the report, a row status other than the known pass, fail
   and skip spellings counts as a failure, never as a pass.
-- The overhang screen (`geometry.downward_area`) is a screen, not a slicer.
+- The overhang screens (`geometry.downward_area`, `geometry.overhang_regions`, `cad-agent overhangs`) and the
+  G-code bridge report (`manufacturing.gcode.bridge_report`) are screens, not a slicer ([below](#overhangs-and-bridges-cad-agent-overhangs)).
 - `export-3mf` re-reads every 3MF it writes and deletes it unless triangle count,
   edge-manifold watertightness and volume (within 0.1 %) match the STL.
 
@@ -124,12 +128,65 @@ my-cad-project/
 
 | File | Orientation | Notes |
 |------|-------------|-------|
-| `exports/<part>.stl` | print orientation, lowest point on z=0 | degenerate faces removed; must be watertight |
+| `exports/<part>.stl` | print orientation, lowest point on z=0 | open-edge vertices within 1 µm welded, degenerate faces removed; must be watertight |
 | `exports/<part>.3mf` | print orientation, centred on `printer.bed_mm` | written by `cad-agent export-3mf`, read back and verified; byte-reproducible (fixed zip dates), so a rebuild of unchanged geometry keeps the slice report current |
 | `exports/<part>.step` | assembly coordinates | for CAD review and re-use |
 | `exports/<name>-plates.3mf` | print orientation, turned about z and laid out on build plates | every printed part at its quantity in one Bambu Studio project, one plate per bed; written by `export-3mf`, read back and verified; byte-reproducible for the same Bambu Studio version, or with none installed ([build plates](#build-plates-cadagentmanufacturingplates)) |
 | `exports/<name>-plates.svg`, `-plates.json` | seen from above | the plates as a picture, and the layout as data: each copy's place and turn, each plate's filament and surface, the 3MF's sha256 |
 | `<name>.3mf`, `<stem>-NN-<group>.3mf` (PrusaSlicer) | print orientation, placed on the bed | PrusaSlicer projects from `cadagent.manufacturing.prusa3mf`: objects of several volumes, each on its own tool, and the wipe tower's place; one 3MF per plate; read back and verified; byte-reproducible ([PrusaSlicer projects](#prusaslicer-projects-cadagentmanufacturingprusa3mf)) |
+
+### Checked booleans (`cadagent.geometry`)
+
+OpenCASCADE can fail a boolean without raising where faces nearly coincide: a multi-argument fuse of nearly
+coincident solids can return an empty compound that `isValid()` passes, and a cut can raise
+`Null TopoDS_Shape object`. `robust_union` and `robust_cut` check every boolean they run and fall back step by step;
+they raise `GeometryError` rather than return a shape that fails the check.
+
+```mermaid
+flowchart TD
+    A["one multi-argument fuse or cut"] --> C1{"check"}
+    C1 -->|"pass"| OK["checked shape"]
+    C1 -->|"fail: report a fallback"| B["one shape or tool at a time"]
+    B --> C2{"check each step"}
+    C2 -->|"pass"| OK
+    C2 -->|"a cut fails"| N["that tool moved 0.01 mm<br/>along ±x, ±y, ±z, then the diagonal"]
+    N --> C3{"check"}
+    C3 -->|"pass: report the nudge"| OK
+    C3 -->|"every nudge fails"| E["GeometryError"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class A,B,N,C1,C2,C3 here
+    class OK,E out
+```
+
+```python
+from cadagent.geometry import robust_union, robust_cut
+notes = []
+boom = robust_cut(robust_union(*plates), *pin_holes, report=notes)
+# notes, after a fallback: [{"op": "cut", "fallback": "one_at_a_time", ...},
+#                           {"op": "cut", "tool": 2, "nudge_mm": [0.01, 0.0, 0.0], "reason": ...}]
+```
+
+<details>
+<summary>The check, the report, the STL weld and the limits</summary>
+
+- **The check**, after every boolean and on every input first: not null, valid, at least one solid, and a volume
+  within the bounds the inputs set (a union between its largest input and their sum; a cut between the base less
+  the tools and the base). Validity and volume are the relation gate's: `isValid()` and its stricter checks (open,
+  inverted or free-faced shapes fail), and its adaptive integration, since the default volume can be off by several
+  mm³ on curved, trimmed faces ([volume precision](volume-precision.md)). An invalid input is refused, not fused.
+- **The report:** pass `report=[]` to get one dict per fallback and per nudge; each is also logged as a warning on
+  `cadagent.geometry`. The nudges are `CUT_NUDGES_MM`, or pass `nudges=`. A nudge moves that cut by its length (0.01 mm on an
+  axis, 0.017 mm on the default diagonal), so check it does not touch a fit that matters.
+- **The STL weld:** `export_print_stl` welds the tessellation's open-edge vertices that lie within 1 µm of each other
+  (`weld_mm=`, default `WELD_MM`, 0 turns it off; `weld_open_vertices` on a trimesh) before its watertight check:
+  OCCT can split a vertex by less than that where faces meet tangentially, so a valid solid's STL came out open. Its
+  report adds `vertices_welded`, `mesh_volume_before_weld_mm3` and `mesh_volume_mm3`. A gap wider than the weld
+  still fails the check.
+- **Limits:** the checks bound shape and volume; they do not prove the boolean is the one you meant, and a cut a
+  tool does not reach is still a valid result.
+
+</details>
 
 ### Build plates (`cadagent.manufacturing.plates`)
 
@@ -255,6 +312,73 @@ command line. Whether the tower clears the parts is the slicer's check, and noth
   Flathub, with a two-tool printer from PrusaSlicer's defaults).
 
 </details>
+
+### Part cache (`cadagent.geometry.cache`)
+
+A build that makes every part on every run spends most of its time on parts nothing touched: a 46-part machine took
+about 13 minutes per run when most edits changed one or two parts. `PartCache` stores each built part as a BREP file
+under a hash of the files and values it was built from, and loads it back while that hash is unchanged, so a run
+rebuilds only the parts whose sources changed, and the clearance, render and slice steps can share one build.
+
+```mermaid
+flowchart TD
+    K["key: sha256 of format, cadquery version,<br/>sources, key_extra, the part's deps"] --> F{"&lt;key&gt;/&lt;name&gt;.json<br/>and .brep there?"}
+    F -->|"no"| B["build, write BREP then JSON<br/>(temp file, renamed into place)"]
+    F -->|"yes"| V{"sha256, validity, solid count,<br/>volume match the record?"}
+    V -->|"yes"| L["loaded part"]
+    V -->|"no: damaged or changed"| B
+    B --> L
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class K,F,V here
+    class B,L out
+```
+
+```python
+from cadagent.geometry.cache import PartCache
+
+cache = PartCache(".cadagent-cache/parts",                        # the default; any folder of its own
+                  sources=["cad/parameters.json", "cad/common.py"],   # files or folders every part reads
+                  key_extra={"variant": "long-reach"},                # other values the build depends on
+                  max_bytes=2_000_000_000)                            # optional size cap
+boom = cache.get_or_build("boom", build_boom, deps=["cad/boom.py"])  # builder: () -> cadquery Shape or Workplane
+parts = cache.get_all({"boom": (build_boom, ["cad/boom.py"]),        # name -> builder, or (builder, deps)
+                       "pin": build_pin})
+cache.clear()                                                        # forget every stored part
+```
+
+- **Where it lives.** `root` defaults to `.cadagent-cache/parts`, beside the gates' pair cache
+  (`.cadagent-cache/gates`), and out of `exports/`, which projects commit. Give it a folder of its own (a root that
+  holds other files is refused). The root holds a
+  `.gitignore` that ignores everything in it, so the cache is never committed, and a `CACHEDIR.TAG`, so
+  `cad-agent package` never zips it, even from a glob that reaches into it. Deleting it is always safe.
+
+<details>
+<summary>Layout, checks on load, parallel runs and the size cap</summary>
+
+- **Layout.** `<root>/<key>/<name>.brep` and `<name>.json`, where `<key>` is 16 hex digits. Parts without `deps`
+  share one folder; a part's `deps` (files or folders) go into its own key, so editing `cad/boom.py` rebuilds the
+  boom only, and editing a `sources` file rebuilds everything. A missing source or dependency is an error, not
+  skipped. Folders count every file under them except `__pycache__`, `.git` and `*.pyc`.
+- **Checks on load.** The JSON records the BREP's sha256, `isValid()`, the solid count and the volume. A missing
+  or unreadable record, a different sha256, a BREP that does not import, or a validity, solid count or volume that
+  differs from the record (beyond 1e-7 relative) means the part is built again and stored again; `cache.rebuilt`
+  names those parts and why. `hits` and `misses` count lookups.
+- **Parallel runs.** Each file is written next to its name and renamed into place, BREP first and then the JSON that
+  vouches for it, so a run never reads half a file; two runs that build the same part both store it, and the last
+  rename wins.
+- **Size cap.** With `max_bytes`, after each part is stored the least recently used key folders (by the time a run
+  last loaded or wrote one) are removed until the cache fits; folders the current run used are kept. `prune()` and
+  `size()` do the same by hand.
+
+</details>
+
+Limits: the key covers only what it is given. A builder that reads a file or setting not in `sources`, `deps` or
+`key_extra` is not rebuilt when that changes: list it, or `clear()`. The checks catch a damaged file, not a stale one, and not a planted one: the record is not signed, so anyone who
+can write the folder can change a part (as they could change the build script); never load someone else's cache.
+A hit loads the stored B-rep; the builder's warnings and side effects do not happen. Another cadquery version starts
+a fresh key (its OCCT can build the same source differently); other library versions are not in the key, so pass
+them in `key_extra` if they matter.
 
 ### Reproducible outputs
 
@@ -414,6 +538,7 @@ after that every step runs, and the exit code says whether anything failed.*
 | `cad-agent build [--from STEP] [--only STEP ...]` | runs steps in order with the project python; per-step timing; stops at the first failure and prints the log tail | 1 on a failed step |
 | `cad-agent export-3mf` | `<part>.stl` -> verified, bed-centred `<part>.3mf` for every part in the parts file, then every printed part on [build plates](#build-plates-cadagentmanufacturingplates) in `<name>-plates.3mf` | 1 on a read-back mismatch, or when the parts cannot be laid out |
 | `cad-agent holes [PART ...]` | checks every hole in every part is clear of material: finds the cylindrical holes and countersinks in `exports/<part>.step` (concave, at least 200° of wall, up to 30 mm across), probes each with a cylinder or cone just inside its wall, and writes `exports/hole-checks.json` bound to each STEP's sha256; `all` runs it and the report's "Holes clear" rows fail on material in a hole, a stale result or a check that did not run (config `cad: holes:`, [below](#holes-clear)) | 1 if a hole has material inside |
+| `cad-agent overhangs [PART ...] [--limit DEG] [--min-area MM2]` | groups each part's (`exports/<part>.stl`, every part in the parts file) downward faces flatter than `--limit` (slope from horizontal, 0° a flat ceiling; default 45°) into connected regions, each with area, bounds, centre and flattest angle, and writes `exports/overhang-screen.json`; a screen, not a slicer: bridges anchored on both sides are listed too ([below](#overhangs-and-bridges-cad-agent-overhangs)) | 1 if a part's STL is missing or unreadable |
 | `cad-agent check [--json]` | collects results (no build), prints a table or the results JSON | 1 if any row fails |
 | `cad-agent report [--open]` | writes `exports/cad-agent-results.json` (results schema 1.0) and a standalone `docs/cad-agent-report.html` with inline styles (light and dark) that opens from `file://` | 1 if any row fails |
 | `cad-agent package` | zip + sha256 manifest from `package.include`; the same files give the same zip ([reproducible outputs](#reproducible-outputs)) | 2 on a malformed `SOURCE_DATE_EPOCH` |
@@ -504,8 +629,11 @@ its new path instead (`monkeypatch.setitem(sys.modules, "cadagent.publish.report
 ```python
 from cadagent.project import load_project    # CadProject, Step, Check, CadConfigError
 from cadagent.geometry import (solid_report, export_print_stl, export_step, step_timestamp, pairwise_intersections,
-                               min_gap, downward_area, within_bed)
+                               min_gap, downward_area, overhang_regions, within_bed, robust_union, robust_cut,
+                               weld_open_vertices)
+from cadagent.geometry.cache import PartCache
 from cadagent.manufacturing.mesh3mf import write_3mf, read_3mf, verify_3mf, export_parts_3mf, is_edge_manifold
+from cadagent.manufacturing.gcode import bridge_report, extrusions, FEATURES
 from cadagent.publish.render import Renderer
 from cadagent.publish.report import collect, write_report, downloads_snippet, bambu_studio_url
 from cadagent.publish.htmlreport import render_page, canonical_status, SCHEMA_VERSION
@@ -1304,6 +1432,65 @@ cad:
       link: {overrides: {perimeters: "4", fill_density: "40%"}}
       lid: {}
 ```
+
+</details>
+
+### Overhangs and bridges (`cad-agent overhangs`)
+
+A slicer names a stability problem ("Long bridging extrusions", "Floating bridge anchors") but not where it is. Two
+screens point at the feature: `cadagent.geometry.overhang_regions` (and `cad-agent overhangs`, which writes
+`exports/overhang-screen.json`) on the part's STL, and `cadagent.manufacturing.gcode.bridge_report` on the sliced
+G-code.
+
+```mermaid
+flowchart TD
+    STL["part STL<br/>in print orientation"] --> OR["overhang_regions<br/>cad-agent overhangs"]
+    GC["sliced G-code<br/>or .gcode.3mf"] --> BR["bridge_report"]
+    OR --> W["where it is: area, height,<br/>centre, flattest slope"]
+    BR --> W2["the longest bridge moves:<br/>length, z, start and end"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class OR,BR here
+    class STL,GC near
+    class W,W2 out
+```
+
+Limits: both are screens, not a slicer or a print. A bridge anchored on both sides prints fine and shows up in both;
+a listed region may print well with the slicer's overhang settings and cooling, and an unlisted one can still sag.
+The G-code report sees only what the slicer labelled, and a file with no labels lists nothing (`"labelled": false`).
+Check the slicer preview, and a test print, before changing geometry.
+
+<details>
+<summary>Overhang regions: the angle, the regions and the JSON</summary>
+
+**Overhang regions** (`cadagent.geometry.overhang_regions(mesh_or_path, limit_deg=45, min_area=4)`, `cad-agent
+overhangs`). The angle is a face's slope from horizontal, as PrusaSlicer's support threshold and Bambu Studio's
+threshold angle measure it: 0° is a flat ceiling, 90° a vertical wall, and a downward face flatter than the limit is
+flagged (a face at the limit, such as a 45° chamfer, is not). Faces within 0.3 mm of the part's lowest point sit on
+the bed. Flagged faces that share an edge are one region, listed largest first with `area_mm2`, `faces`, `bounds_mm`,
+`centre_mm`, `flattest_deg` and `mean_slope_deg`; regions under `min_area` mm² are only counted. The regions point
+at what to change: a flat ring left by a cutter's end, a cavity roof, a wall that starts above the bed.
+`downward_area` gives one total, and its `max_angle_deg` is the normal's angle below horizontal (90° minus this
+slope). `cad-agent overhangs` writes `exports/overhang-screen.json` (`version`, `limit_deg`, `min_area_mm2`,
+`parts: {part: {stl, sha256, downward_area_mm2, regions, small_regions, small_area_mm2}}`, or `{error}` for a missing
+or unreadable STL); `cad-agent overhangs PART` redoes one part and keeps the other rows when the settings match.
+Needs trimesh and scipy (`sim` extra).
+
+</details>
+
+<details>
+<summary>Bridges in the G-code: the labels, merging and arcs</summary>
+
+**Bridges in the G-code** (`cadagent.manufacturing.gcode.bridge_report(path, n=10)`). Lists the `n` longest bridge
+and overhang-perimeter extrusions the slicer labelled (PrusaSlicer `;TYPE:Bridge infill`, `;TYPE:Overhang
+perimeter`; Bambu Studio and OrcaSlicer `; FEATURE: Bridge`, `Internal Bridge`, `Overhang wall`; `features=` takes
+other labels), each with `length_mm`, `z_mm`, `height_mm`, XY `start_mm` and `end_mm` and the G-code `line`, and a
+summary per feature. Collinear moves of one feature (split where the speed changes) are one extrusion; G2/G3 arcs
+count with their arc length; M82/M83, G92, G90/G91 and G20 are followed. `path` is a `.gcode` file or a sliced
+Bambu Studio `.gcode.3mf`. Pure Python. Many long bridges are internal (the first solid layer over sparse infill,
+which can run the part's full width): slicer settings fix those (PrusaSlicer `solid_infill_below_area`, for one),
+not geometry. A long overhang perimeter or a bridge under a feature's underside is the geometry's.
 
 </details>
 

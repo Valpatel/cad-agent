@@ -20,7 +20,8 @@ from cadagent.project import CadConfigError, CadProject, SourceDateEpochError, S
 
 SUBCOMMANDS = ("build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
                "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet",
-               "review-section", "agents", "motion-trace", "release", "snapfit", "inserts", "overhangs")
+               "review-section", "agents", "motion-trace", "release", "snapfit", "inserts", "bearings",
+               "overhangs")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -953,6 +954,37 @@ def cmd_inserts(args: argparse.Namespace) -> int:
     return 0 if result["verdict"] != "fail" else 1
 
 
+def _read_spec(path: str) -> Any:
+    text = Path(path).read_text()
+    if str(path).endswith((".yaml", ".yml")):
+        import yaml
+        try:
+            return yaml.safe_load(text)
+        except yaml.YAMLError as exc:
+            raise ValueError(f"{path} is not valid YAML: {exc}") from None
+    return json.loads(text)
+
+
+def cmd_bearings(args: argparse.Namespace) -> int:
+    """Check rolling bearings declared in a file (cadagent.mechanical.bearings): life, static safety, axial load and
+    speed, turning or oscillating; exit 1 if any bearing fails (a warning does not fail it)."""
+    from cadagent.mechanical import bearings
+    result = bearings.check_spec(_read_spec(args.spec))
+    for b in result["bearings"]:
+        life = b["life"]
+        what = (f"{life['life_million']:.3g} million {life['unit']}" + (f" ({life['hours']:,.0f} h)" if life.get("hours")
+                                                                     else "") if life else "static only")
+        s0 = min((s["s0"] for s in b["static"]), default=None)
+        _say(f"{b['verdict'].upper():4}  {b['name']}: {b['motion']}, {what}" +
+             (f", least s0 {s0:.2f}" if s0 is not None else ""))
+        for row in b["checks"]:
+            if row["verdict"] != "pass":
+                _say(f"      {row['verdict']}: {row['check']}: {row['detail']}")
+    if args.output:
+        Path(args.output).write_text(json.dumps(result, indent=2, default=str, allow_nan=False) + "\n")
+    return 0 if result["verdict"] != "fail" else 1
+
+
 def cmd_motion_trace(args: argparse.Namespace) -> int:
     """Check captured rendered landmarks, or print the required capture poses; no project config needed."""
     from cadagent.mechanical.motion_trace import required_poses, validate_motion_trace
@@ -1001,6 +1033,12 @@ def dispatch(args: argparse.Namespace) -> int:
             return cmd_inserts(args)
         except (OSError, ValueError, KeyError) as exc:
             _err(f"inserts: {exc}")
+            return 2
+    if sub == "bearings":                                  # works on a declaration file only: no project needed
+        try:
+            return cmd_bearings(args)
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            _err(f"bearings: {exc}")
             return 2
     if sub == "mcmaster":                                  # works on files only: no project needed
         try:
@@ -1108,6 +1146,10 @@ def build_parser() -> argparse.ArgumentParser:
                                           "YAML/JSON file (docs/inserts.md)")
     in_p.add_argument("spec", help="file with a 'joints' list")
     in_p.add_argument("--output", help="write the full result as JSON")
+    be_p = sub.add_parser("bearings", help="Check rolling bearings declared in a YAML/JSON file: life, static safety, "
+                                           "axial load and speed, turning or oscillating (docs/bearings.md)")
+    be_p.add_argument("spec", help="file with a 'bearings' list")
+    be_p.add_argument("--output", help="write the full result as JSON")
     ag_p = sub.add_parser("agents", help="Install the agent workflow kit (skills and subagents) for Claude Code and Codex, "
                                          "or list what is installed (docs/agent-workflow.md)")
     ag_p.add_argument("action", choices=("install", "list"))

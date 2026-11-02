@@ -7,7 +7,7 @@ metadata:
 
 # Pull request review
 
-> **Needs:** `gh` logged in and write access to the repository it works in. `cad-agent agents install` says which of these this computer lacks; without them, do not use this skill.
+> **Needs:** `gh` logged in and write access to the repository it works in. `cad-agent agents install` says which of these this computer lacks; without them, do not use it.
 
 An author cannot review their own change: they read what they meant, not what they wrote. Every PR gets a review
 by an agent or person that did not write it, and the review lives on the PR, where anyone can see it later.

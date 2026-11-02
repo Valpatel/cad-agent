@@ -1,13 +1,9 @@
 ---
 name: cad-supply-chain
 description: Use before adding or updating a dependency, a vendored file or project, or a catalogue entry or link, before recommending a tool, skill or plugin to someone, and when the weekly supply-chain issue changes. Run tools/resource_audit.py, read its findings, put the report rows in the PR, and know which findings block a merge or an adoption and what to do about each.
-metadata:
-  requires: "npm"
 ---
 
 # Supply-chain and resource safety
-
-> **Needs:** `npm`. `cad-agent agents install` says which of these this computer lacks; without them, do not use this skill.
 
 cad-agent depends on, vendors and links to many projects we do not control. A compromised package, a vendored file
 that quietly changed, or a catalogue link whose repository was deleted and re-registered by someone else can hurt

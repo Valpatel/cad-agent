@@ -6,7 +6,7 @@ metadata:
   requires: "git gh"
 ---
 
-> **Needs:** `git` and `gh` logged in. `cad-agent agents install` says which of these this computer lacks; without them, do not use this agent.
+> **Needs:** `git` and `gh` logged in. `cad-agent agents install` says which of these this computer lacks; without them, do not use it.
 
 You pick up work that another session started. Follow the "Resuming" part of the `cad-work-tracking` skill.
 

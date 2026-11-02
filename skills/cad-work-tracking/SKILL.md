@@ -7,7 +7,7 @@ metadata:
 
 # Work tracking: assume the session ends in 30 minutes
 
-> **Needs:** `git`, `gh` logged in and write access to the repository it works in. `cad-agent agents install` says which of these this computer lacks; without them, do not use this skill.
+> **Needs:** `git`, `gh` logged in and write access to the repository it works in. `cad-agent agents install` says which of these this computer lacks; without them, do not use it.
 
 Plan as if this session can stop at any moment. Token budgets run out about every 30 minutes, workstations crash,
 and disks get reformatted. Anything that exists only in this session's context, in an uncommitted file, in a scratch

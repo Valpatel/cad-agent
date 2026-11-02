@@ -15,9 +15,9 @@ what this module made is ever replaced (links into a cad-agent checkout, generat
 at a destination, including the user's own links, is reported as a conflict and left alone.
 
 Everything is installed for everyone (#282). A skill or agent that needs something a person may lack (``gh`` logged
-in, write access to the repository, a toolchain) names it in its frontmatter as ``metadata: {requires: "gh git"}``
-(the Agent Skills format keeps extra fields under ``metadata``) and says the same in a ``> **Needs:**`` line at the top
-of its text. ``readiness`` checks what this computer can tell without any network call, and the CLI says which skills
+in, write access to the repository, a toolchain) names it in its frontmatter as ``metadata: {requires: "gh git"}``,
+and what only some of its steps use as ``optional: "rsync"`` (the Agent Skills format keeps extra fields under
+``metadata``). It says the same in a ``> **Needs:**`` line at the top of its text. ``readiness`` checks what this computer can tell without any network call, and the CLI says which skills
 cannot be used yet and why, and what it cannot check from here.
 """
 from __future__ import annotations
@@ -43,6 +43,7 @@ class Item:
     path: Path          # skill folder or agent file
     description: str
     requires: Tuple[str, ...] = field(default=())   # REQUIREMENTS keys, from frontmatter metadata.requires
+    optional: Tuple[str, ...] = field(default=())   # ...that only some of its steps use (metadata.optional)
 
 
 def _on_path(*names: str) -> bool:
@@ -60,16 +61,19 @@ def _gh_logged_in() -> Optional[str]:
     return None if ok else "`gh` is not logged in: run `gh auth login`"
 
 
-CHROME = ("google-chrome", "google-chrome-stable", "chrome", "chromium", "chromium-browser")
-CHROME_APPS = ("/Applications/Google Chrome.app", r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-               r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe")
+# Google Chrome itself: cadagent.mechanical.mcmaster launches Playwright's "chrome" channel, so Chromium does not count.
+CHROME = ("google-chrome", "google-chrome-stable", "chrome")
+CHROME_APPS = ("/Applications/Google Chrome.app", "~/Applications/Google Chrome.app",
+               r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+               r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+               r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe")
 
 
 def _playwright() -> Optional[str]:
     missing = []
     if importlib.util.find_spec("playwright") is None:
         missing.append(f"Playwright is not installed in this Python (`\"{sys.executable}\" -m pip install playwright`)")
-    if not (_on_path(*CHROME) or any(Path(p).exists() for p in CHROME_APPS)):
+    if not (_on_path(*CHROME) or any(Path(os.path.expandvars(p)).expanduser().exists() for p in CHROME_APPS)):
         missing.append("Google Chrome was not found")
     return "; ".join(missing) or None
 
@@ -84,7 +88,7 @@ REQUIREMENTS: Dict[str, Requirement] = {
     "git": Requirement("`git`", lambda: None if _on_path("git") else "`git` is not on PATH"),
     "gh": Requirement("`gh` logged in", _gh_logged_in),
     "ssh": Requirement("`ssh`", lambda: None if _on_path("ssh") else "`ssh` is not on PATH"),
-    "npm": Requirement("`npm`", lambda: None if _on_path("npm") else "`npm` is not on PATH: install Node.js"),
+    "rsync": Requirement("`rsync`", lambda: None if _on_path("rsync") else "`rsync` is not on PATH"),
     "playwright": Requirement("Playwright and Google Chrome", _playwright),
     "write-access": Requirement("write access to the repository it works in", None),
     "compute-host": Requirement("a compute host you can reach over `ssh`", None),
@@ -122,18 +126,25 @@ def _frontmatter(text: str, where: Path) -> Dict[str, str]:
     return fields
 
 
-def _requires(fields: Dict, where: Path) -> Tuple[str, ...]:
+def _requires(fields: Dict, where: Path) -> Tuple[Tuple[str, ...], Tuple[str, ...]]:
+    """(requires, optional) from the frontmatter's metadata: each one string of REQUIREMENTS names."""
     meta = fields.get("metadata") or {}
     if not isinstance(meta, dict):
         raise ValueError(f"{where}: frontmatter metadata must be a mapping")
-    raw = meta.get("requires", "")
-    if not isinstance(raw, str):
-        raise ValueError(f"{where}: metadata.requires is one string of names, e.g. \"gh git\"")
-    names = tuple(raw.split())
-    unknown = sorted(set(names) - set(REQUIREMENTS))
-    if unknown:
-        raise ValueError(f"{where}: metadata.requires names {unknown}; known: {sorted(REQUIREMENTS)}")
-    return names
+    out = []
+    for key in ("requires", "optional"):
+        raw = meta.get(key, "")
+        if not isinstance(raw, str):
+            raise ValueError(f"{where}: metadata.{key} is one string of names, e.g. \"gh git\"")
+        names = tuple(raw.split())
+        unknown = sorted(set(names) - set(REQUIREMENTS))
+        if unknown:
+            raise ValueError(f"{where}: metadata.{key} names {unknown}; known: {sorted(REQUIREMENTS)}")
+        out.append(names)
+    every = out[0] + out[1]
+    if len(set(every)) != len(every):
+        raise ValueError(f"{where}: metadata names a need twice: {sorted(n for n in set(every) if every.count(n) > 1)}")
+    return out[0], out[1]
 
 
 def items(root: Path) -> List[Item]:
@@ -143,12 +154,12 @@ def items(root: Path) -> List[Item]:
         fm = _frontmatter((folder / "SKILL.md").read_text(), folder / "SKILL.md")
         if fm["name"] != folder.name:
             raise ValueError(f"{folder}/SKILL.md: name {fm['name']!r} does not match its folder")
-        found.append(Item("skill", folder.name, folder, fm["description"], _requires(fm, folder / "SKILL.md")))
+        found.append(Item("skill", folder.name, folder, fm["description"], *_requires(fm, folder / "SKILL.md")))
     for path in sorted((root / "agents").glob("*.md")):
         fm = _frontmatter(path.read_text(), path)
         if fm["name"] != path.stem:
             raise ValueError(f"{path}: name {fm['name']!r} does not match its file name")
-        found.append(Item("agent", path.stem, path, fm["description"], _requires(fm, path)))
+        found.append(Item("agent", path.stem, path, fm["description"], *_requires(fm, path)))
     names = [i.name for i in found]
     clashes = sorted({n for n in names if names.count(n) > 1})
     if clashes:
@@ -156,48 +167,67 @@ def items(root: Path) -> List[Item]:
     return found
 
 
+def _listed(names: Tuple[str, ...]) -> str:
+    labels = [REQUIREMENTS[r].label for r in names]
+    return labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " and " + labels[-1]
+
+
 def needs_line(item: Item) -> str:
-    """The ``> **Needs:**`` line an item with requirements opens with (after its title, if it has one)."""
-    labels = [REQUIREMENTS[r].label for r in item.requires]
-    listed = labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " and " + labels[-1]
-    return (f"> **Needs:** {listed}. `cad-agent agents install` says which of these this computer lacks; without "
-            "them, do not use this " + ("skill" if item.kind == "skill" else "agent") + ".")
+    """The ``> **Needs:**`` line an item with needs opens with (after its title, if it has one); "" without needs."""
+    if not item.requires and not item.optional:
+        return ""
+    if item.requires and item.optional:
+        what = f"{_listed(item.requires)}; some steps also need {_listed(item.optional)}"
+    elif item.requires:
+        what = _listed(item.requires)
+    else:
+        what = f"nothing more, but some steps need {_listed(item.optional)}"
+    then = ("without the first, do not use it; without the rest, skip the steps that need them" if item.requires
+            and item.optional else "without them, do not use it" if item.requires else
+            "without them, skip those steps")
+    return f"> **Needs:** {what}. `cad-agent agents install` says which of these this computer lacks; {then}."
 
 
 def readiness(root: Path, checks: Optional[Dict[str, Optional[str]]] = None) -> List[dict]:
-    """For each item with requirements: what is missing here (with why) and what cannot be checked here. ``checks``
-    maps a requirement to its reason (None: met), for tests; otherwise each is checked once, locally."""
+    """For each item with needs: what is missing here and why (``missing``: it can't be used; ``partial``: some steps
+    can't run), and what cannot be checked here. ``checks`` maps a need to its reason (None: met), for tests;
+    otherwise each is checked once, locally, with no network call."""
     found: Dict[str, Optional[str]] = dict(checks or {})
+
+    def reason(r: str) -> Optional[str]:
+        if r not in found:
+            found[r] = REQUIREMENTS[r].check()
+        return found[r]
     rows = []
     for item in items(root):
-        missing, unchecked = [], []
-        for r in item.requires:
-            req = REQUIREMENTS[r]
-            if req.check is None:
-                unchecked.append(req.label)
-                continue
-            if r not in found:
-                found[r] = req.check()
-            if found[r]:
-                missing.append(found[r])
-        if missing or unchecked:
-            rows.append({"kind": item.kind, "name": item.name, "missing": missing, "unchecked": unchecked})
+        row = {"kind": item.kind, "name": item.name, "missing": [], "partial": [], "unchecked": []}
+        for r in item.requires + item.optional:
+            if REQUIREMENTS[r].check is None:
+                row["unchecked"].append(REQUIREMENTS[r].label)
+            elif reason(r):
+                row["missing" if r in item.requires else "partial"].append(found[r])
+        if row["missing"] or row["partial"] or row["unchecked"]:
+            rows.append(row)
     return rows
 
 
 def notice(rows: List[dict]) -> List[str]:
-    """The lines the CLI prints after install and list: what cannot be used yet and why, then what cannot be checked."""
+    """The lines the CLI prints after install and list: what can't be used yet and why, what can be used with some
+    steps left out, then what cannot be checked here. Nothing when there is nothing to say."""
     lines = []
-    blocked = [r for r in rows if r["missing"]]
-    if blocked:
-        lines.append("agents: you can't use these yet:")
-        lines += [f"  {r['kind']} {r['name']}: " + "; ".join(r["missing"]) for r in blocked]
+    for key, head in (("missing", "agents: you can't use these yet:"),
+                      ("partial", "agents: you can use these, but some of their steps can't run yet:")):
+        rows_ = [r for r in rows if r[key]]
+        if rows_:
+            lines.append(head)
+            lines += [f"  {r['kind']} {r['name']}: " + "; ".join(r[key]) for r in rows_]
     unchecked: Dict[str, List[str]] = {}
     for r in rows:
         for label in r["unchecked"]:
             unchecked.setdefault(label, []).append(r["name"])
     if unchecked:
-        lines.append("agents: these also need what cad-agent can't check from here:")
+        lines.append(("agents: these" if lines else "agents: nothing is missing here. These") +
+                     " also need what cad-agent can't check from here:")
         lines += [f"  {label}: {', '.join(names)}" for label, names in unchecked.items()]
     return lines
 

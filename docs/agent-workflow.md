@@ -29,12 +29,15 @@ otherwise shadow Claude's subagents. Run a generated agent skill only in a separ
 that session wrote.
 
 Everything is installed for everyone. A skill or agent that needs something you may not have names it in its
-frontmatter (`metadata: {requires: "gh git"}`) and opens with a `> **Needs:**` line saying the same. `install` and
-`list` then say which ones you can't use yet and why, checked on this computer without any network call, and what
-they cannot check from here:
+frontmatter (`metadata: {requires: "gh git"}`, and `optional:` for what only some of its steps use) and opens with a
+`> **Needs:**` line saying the same. `install` and `list` then say which ones you can't use yet and why, checked on
+this computer without any network call, and what they cannot check from here.
+
+<details>
+<summary><strong>What the notice looks like.</strong> Each need, how it is checked, and who needs it</summary>
 
 ```text
-agents: you can't use these yet:
+agents: you can use these, but some of their steps can't run yet:
   skill mcmaster-parts: Playwright is not installed in this Python (`"…/python" -m pip install playwright`)
 agents: these also need what cad-agent can't check from here:
   write access to the repository it works in: cad-pr-review, cad-work-tracking
@@ -43,13 +46,15 @@ agents: these also need what cad-agent can't check from here:
 
 | Needs | Checked how | Who needs it |
 |---|---|---|
-| `git` | on `PATH` | `cad-work-tracking`, `cad-resume` |
-| `gh` logged in | on `PATH`, and `gh auth token` succeeds (gh's own stored login; nothing is sent) | `cad-work-tracking`, `cad-pr-review`, `cad-pr-reviewer`, `cad-resume` |
-| `ssh` | on `PATH` | `cad-remote-runs` |
-| `npm` | on `PATH` (for the online checks) | `cad-supply-chain` |
-| Playwright and Google Chrome | the module in cad-agent's Python, and Chrome on `PATH` or in its usual place (only to download a new part) | `mcmaster-parts` |
-| write access to the repository it works in | not checkable here: you know whether you can push, open and merge PRs there | `cad-work-tracking`, `cad-pr-review` |
+| `git` | on PATH | `cad-remote-runs`, `cad-work-tracking`, `cad-resume` |
+| `gh` logged in | on PATH, and gh's own stored login answers (`gh auth token`, its output discarded; nothing is sent) | `cad-pr-review`, `cad-remote-runs`, `cad-work-tracking`, `cad-pr-reviewer`, `cad-resume` |
+| `ssh` | on PATH | `cad-remote-runs` |
+| `rsync` | on PATH; only to copy files that are not in git | `cad-remote-runs` |
+| Playwright and Google Chrome | the module in cad-agent's Python, and Chrome itself (not Chromium) on PATH or in its usual place; only to download a new part | `mcmaster-parts` |
+| write access to the repository it works in | not checkable here: you know whether you can push, open and merge PRs there | `cad-pr-review`, `cad-work-tracking` |
 | a compute host you can reach over `ssh` | not checkable here | `cad-remote-runs` |
+
+</details>
 
 The workflow skills open issues, push branches and open pull requests in the repository they work in. Use them in
 your own repositories, or where you have been given write access; an agent should not use them elsewhere unasked.

@@ -6,7 +6,7 @@ metadata:
   requires: "gh"
 ---
 
-> **Needs:** `gh` logged in. `cad-agent agents install` says which of these this computer lacks; without them, do not use this agent.
+> **Needs:** `gh` logged in. `cad-agent agents install` says which of these this computer lacks; without them, do not use it.
 
 You review a pull request you did not write. Follow the `cad-pr-review` skill (reviewer part). In short:
 

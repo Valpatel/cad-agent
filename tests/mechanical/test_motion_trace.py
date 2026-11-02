@@ -204,9 +204,9 @@ def test_installed_copy_retains_the_capture_protocol(tmp_path):
     from pathlib import Path
     from cadagent.agentkit import install
     root = Path(__file__).resolve().parents[2]
-    result = install(tmp_path, root, ("codex",), copy=True)
+    result = install(tmp_path, root, ("agents",), copy=True)
     assert not result["conflicts"]
-    skill = tmp_path / ".codex/skills/cad-motion-validation"
+    skill = tmp_path / ".agents/skills/cad-motion-validation"
     assert (skill / "references/trace-protocol.md").read_text() == (root / "skills/cad-motion-validation/references/trace-protocol.md").read_text()
 
 

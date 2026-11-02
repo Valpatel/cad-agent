@@ -68,7 +68,7 @@ function Install-CadAgent {
         }
     }
 
-    $spec = if ($extras) { "$dir[cad,$extras]" } else { "$dir[cad]" }
+    $spec = if ($extras) { "${dir}[cad,$extras]" } else { "${dir}[cad]" }
     $extraArgs = @(); if ($extras) { $extraArgs = @('--extras', $extras) }
     $refArgs = @(); if ($ref) { $refArgs = @('--ref', $ref) }
     $canUpdate = $false

@@ -19,12 +19,12 @@ tables.
 ```mermaid
 flowchart TD
     Q["join two sheet parts"] --> R{"take it apart<br/>again later?"}
-    R -->|yes| P["PEM nut, stud or<br/>standoff + a screw"]
+    R -->|yes| P["PEM nut, stud or<br/>standoff + screw"]
     R -->|no| B{"reach both<br/>sides?"}
-    B -->|yes| P2["PEM still works;<br/>rivets are cheaper"]
-    B -->|no| V["blind rivet,<br/>set from one side"]
-    P --> S["the shop presses it in<br/>before you get the part"]
-    V --> H["you drill or cut the hole<br/>and rivet at the bench"]
+    B -->|yes| P2["PEM still works;<br/>rivets cheaper"]
+    B -->|no| V["blind rivet, set<br/>from one side"]
+    P --> S["the shop presses<br/>it in for you"]
+    V --> H["drill the hole,<br/>rivet at the bench"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -79,9 +79,9 @@ Four distances place a part. PEM gives three of them; a shop adds its own.
 
 ```mermaid
 flowchart TD
-    H["hole for the part<br/>(+0.08 mm / -0)"] --> E["centre to a cut edge<br/>at least its C/L-to-edge"]
-    H --> B["centre to a bend:<br/>C/L-to-edge from the<br/>outside of the radius"]
-    H --> N["centre to the next part<br/>at least C/L-to-edge<br/>+ half its hole"]
+    H["hole for the part<br/>(+0.08 mm / -0)"] --> E["centre to a cut<br/>edge: at least<br/>C/L-to-edge"]
+    H --> B["centre to a bend:<br/>C/L-to-edge from<br/>outside the radius"]
+    H --> N["centre to the<br/>next part: C/L-<br/>to-edge + half<br/>its hole"]
     E ~~~ S["a shop's own limits<br/>may be larger"]
     B --> S
     N --> S
@@ -184,9 +184,9 @@ test sheet's thickness.
 
 ```mermaid
 flowchart TD
-    N["nut S / CLS<br/>threads in the sheet"] --> U["screw from the far side;<br/>load pulls it in"]
-    F["stud FH / FHS<br/>flush head, thread out"] --> W["nut on the stud;<br/>pull-through rated"]
-    O["standoff SO / BSO<br/>spaces a board off"] --> X["screw into the top;<br/>pull-through rated"]
+    N["nut S / CLS<br/>threads in<br/>the sheet"] --> U["screw from the<br/>far side; load<br/>pulls it in"]
+    F["stud FH / FHS<br/>flush head,<br/>thread out"] --> W["nut on the<br/>stud; pull-<br/>through rated"]
+    O["standoff SO,<br/>BSO: spaces<br/>a board off"] --> X["screw into the<br/>top; pull-<br/>through rated"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -281,7 +281,7 @@ were compared part by part [derived]:
 
 ```mermaid
 flowchart TD
-    P["PEM bulletin:<br/>nominal hole,<br/>+0.003 in / -0"] --> C["catalogue page H:<br/>PEM's value, or up<br/>to 0.002 in over"]
+    P["PEM bulletin:<br/>nominal hole,<br/>+0.003 in / -0"] --> C["catalogue page H:<br/>-0.001 to +0.003 in<br/>from PEM's"]
     C --> D["feed hole_diameter:<br/>0-0.005 in over H"]
     D --> R["feed resize: the same<br/>for steel parts; the<br/>steel part's hole for<br/>75 stainless parts"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
@@ -296,14 +296,17 @@ flowchart TD
   does not say which one SendCutSend cuts to.
   - Against the catalogue page's H, `hole_diameter` is equal for 24 parts, 0.001 in larger for 67, 0.003 in for 51
     and 0.005 in for 3.
-  - For the 68 steel parts (S, SS, FH, SO) the two fields agree. For 75 of the 80 stainless parts (F, FH4, SO4, SP)
+  - For the 68 steel parts (S, SS, FH, SO) the two fields agree. The feed has 83 stainless parts (F, FH4, SO4, SP), 80
+    with a `resize`; for 75 of those
     `resize` differs, and seems to repeat the steel part of the same thread. F-M4-1 lists `resize` 0.213 in, the S-M4
     nut's hole, though the flush nut needs 0.290 in (its `hole_diameter` and the page's H).
   - For 13 of 21 common steel nuts, studs and standoffs, the feed's hole is above PEM's band (nominal +0.003 in), by
     up to 0.006 in. Examples: S-M3-0 0.171 in against PEM's 4.22 mm (0.166 in), and FH-M3-10 0.124 in against 3.0 mm
     (0.118 in). The 21 parts are listed below.
-  - Until SendCutSend says which field it cuts to, draw the catalogue page's H, which matches PEM's hole, and check
-    the hole SendCutSend's quote shows. Do not rely on `resize` for stainless or flush parts.
+  - The catalogue page's H sits within −0.001 / +0.003 in of PEM's hole: S-M4-0 is 0.001 in under PEM's band, and
+    FH-M3-10 0.0029 in over its nominal. Until SendCutSend says which field it cuts to, draw PEM's own hole (the
+    bulletin's nominal) and check the hole SendCutSend's quote shows. Do not rely on `resize` for stainless or flush
+    parts.
 
 <details>
 <summary>The 21 common parts compared: PEM's hole, the catalogue page's H and the feed's hole_diameter</summary>
@@ -356,11 +359,11 @@ it is set from one side [ref:pop-rivet-catalog].
 
 ```mermaid
 flowchart TD
-    R["blind rivet"] --> O["open end: the common one;<br/>Al sheet from 0.5 mm"]
-    R --> C["closed end: seals,<br/>to 100 psi"]
-    R --> M["multi-grip: one part<br/>for a wider grip"]
-    M ~~~ S["structural (Monobolt,<br/>Interlock): locked stem,<br/>about 2x the shear"]
-    R --> S
+    R["blind rivet"] --> O["open end: the<br/>common one; Al<br/>from 0.5 mm"]
+    R --> C["closed end:<br/>seals, to<br/>100 psi"]
+    R --> M["multi-grip:<br/>one part, a<br/>wider grip"]
+    C ~~~ S
+    R ---> S["structural (Monobolt, Interlock):<br/>locked stem, about 2x the shear"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -484,11 +487,10 @@ sheet. With McMaster-Carr's 120 lbf rating the efficiency falls to 0.16.
 
 ```mermaid
 flowchart TD
-    A["5052 / 6061 sheet"] --> AR["aluminium body<br/>(Al or steel mandrel)"]
-    S["mild steel sheet"] --> SR["steel body"]
-    X["304 / 316 sheet"] --> XR["stainless body"]
-    AR ~~~ W["stainless in aluminium:<br/>sealed, and not in<br/>marine or industrial air"]
-    XR --> W
+    A["5052 / 6061<br/>sheet"] --> AR["aluminium body<br/>(Al or steel<br/>mandrel)"]
+    S["mild steel<br/>sheet"] --> SR["steel body"]
+    X["304 / 316<br/>sheet"] --> XR["stainless body"]
+    XR --> W["stainless in aluminium: sealed,<br/>and not in marine or industrial air"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -540,7 +542,7 @@ A riveted seam therefore costs a few cents a rivet, against about $0.77 for each
 | HB for PEM's aluminium limit HRB 50 | HB 82 (bulletins CL, FH, SO) or HB 89 (handbook, CL table) | HRB 50 governs |
 | HB for PEM's hardened-stainless limit HRB 92 | HB 195 (FH bulletin) or HB 202 (handbook) | HRB governs |
 | Stainless clinch parts in aluminium | PEM tests them in 5052; a SendCutSend post says no | PEM for the rule; the shop's limit in its profile |
-| Hole for a clinch part | PEM nominal +0.08 mm; SendCutSend's feed up to 0.15 mm over | PEM's hole, which the catalogue page's H matches; confirm the feed's with the shop |
+| Hole for a clinch part | PEM nominal +0.08 mm; SendCutSend's feed up to 0.15 mm over | PEM's hole (the catalogue page's H is within −0.001 / +0.003 in of it); confirm the feed's with the shop |
 
 </details>
 

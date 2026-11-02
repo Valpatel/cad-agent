@@ -5,7 +5,7 @@ Shipping to `main` is part of the development loop (CONTRIBUTING.md#releases): w
 work, cut a release. This script makes the file edits of the release branch and checks them against the same release
 gate CI runs (`release_gate` in tools/ci_gates.py). It prints the git and gh steps instead of running them.
 
-    python3 tools/cut_release.py --minor                 # 0.5.0 -> 0.6.0: projects must change something
+    python3 tools/cut_release.py --minor                 # 0.5.0 -> 0.6.0: a new feature, or projects must change something
     python3 tools/cut_release.py --patch                 # 0.5.0 -> 0.5.1: fixes, docs and the site only
     python3 tools/cut_release.py --version 1.0.0 --date 2026-11-01 --dry-run
 

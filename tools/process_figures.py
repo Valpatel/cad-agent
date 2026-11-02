@@ -2,7 +2,7 @@
 """Draw docs/process-checks.md's figures (docs/img/process/*.svg) from the code that makes the numbers.
 
     python3 tools/process_figures.py            # write the SVGs
-    python3 tools/process_figures.py --check    # exit 1 if a committed SVG differs (tests/test_process_figures.py)
+    python3 tools/process_figures.py --check    # exit 1 if a committed SVG differs (tests/manufacturing/test_process_figures.py)
 
 Each figure is computed by the module it shows, on worked examples, never typed in:
 

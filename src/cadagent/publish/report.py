@@ -16,7 +16,7 @@ runs nothing. Features:
 
 A missing file, missing key or non-boolean verdict is a failure, never a pass.
 Evidence paths are relative to ``docs_dir``, where the HTML report is written.
-The JSON is results schema 1.0 (``cadagent.publish.htmlreport.SCHEMA_VERSION``), the shape ``tests/test_report.py``
+The JSON is results schema 1.0 (``cadagent.publish.htmlreport.SCHEMA_VERSION``), the shape ``tests/publish/test_report.py``
 pins, so a tool that reads the file can rely on it.
 """
 

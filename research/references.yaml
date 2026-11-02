@@ -3,7 +3,7 @@
 # One entry per outside source that a cad-agent rule, check, number or note relies on. "We are highlighting experts,
 # not taking credit for their tips": code cites an entry by its id, and pages name the people or organisation in the
 # text, so the experts keep the credit. Sources are summarised and cited, never copied or redistributed: no PDF of a
-# source is kept in this repo (tests/test_references.py fails on any tracked PDF). Paid standards are cited by
+# source is kept in this repo (tests/review/test_references.py fails on any tracked PDF). Paid standards are cited by
 # number and title only, paid papers by author, title and equation.
 #
 # Read it with cadagent.review.references (lookup, citation, check), or from a shell:
@@ -55,7 +55,7 @@ sources:
     aliases: [covestro, covestro-friction]
     used_for:
       - src/cadagent/mechanical/compliant/snapfit.py
-      - tests/test_snapfit.py
+      - tests/mechanical/test_snapfit.py
       - docs/compliant.md
       - research/compliant-mechanisms.md
       - src/cadagent/formulas/_registry.py
@@ -235,7 +235,7 @@ sources:
       - src/cadagent/simulation/fea.py
       - lessons/simulation/simulation-and-material.md
       - docs/compliant.md
-      - tests/test_fea_materials.py
+      - tests/simulation/test_fea_materials.py
     verified: >-
       2026-10-31: opened the PDF (a reseller's copy of the official sheet). Read HDT 57 C at 0.45 MPa and 54 C
       at 1.8 MPa (ISO 75); E 2680 / 2160 MPa, UTS 39 / 35 MPa, elongation 12.2 / 7.5 % (X-Y / Z, ISO 527). #125
@@ -274,7 +274,7 @@ sources:
       - src/cadagent/simulation/fea.py
       - lessons/simulation/simulation-and-material.md
       - docs/compliant.md
-      - tests/test_fea_materials.py
+      - tests/simulation/test_fea_materials.py
     verified: >-
       2026-10-31: opened the PDF; read HDT 69 C at 0.45 MPa and 65 C at 1.8 MPa; E 1460 / 1120 MPa, UTS 48 / 39
       MPa, elongation 11.2 / 5.7 % (X-Y / Z). #125 (2026-10-31) also read V3.0, a reformulated filament
@@ -310,7 +310,7 @@ sources:
       - src/cadagent/mechanical/compliant/allowables.py
       - src/cadagent/simulation/fea.py
       - docs/compliant.md
-      - tests/test_fea_materials.py
+      - tests/simulation/test_fea_materials.py
     verified: >-
       2026-10-31: opened the PDF; read E 2460 / 1340 MPa, UTS 59 / 38 MPa, elongation 10.4 / 4.7 % (X-Y / Z).
       #125 (2026-10-31) also read V3.0 (https://store.bblcdn.com/626e4f424bf345ae965ad0ddfcaf2459.pdf), which
@@ -340,7 +340,7 @@ sources:
     access: free
     terms: cited; the PDF is not redistributed
     areas: [materials, fdm]
-    used_for: [research/compliant-mechanisms.md, src/cadagent/simulation/fea.py, tests/test_fea_materials.py]
+    used_for: [research/compliant-mechanisms.md, src/cadagent/simulation/fea.py, tests/simulation/test_fea_materials.py]
     verified: >-
       2026-10-31: opened the PDF; read E 9.8 / 7.4 MPa, UTS 27.3 / 22.3 MPa, elongation >650 / >480 % (X-Y / Z).
       #125 (2026-10-31) read the same edition at https://store.bblcdn.com/58df32731eab4c90a7dac9b12e13ba88.pdf
@@ -358,7 +358,7 @@ sources:
     used_for:
       - src/cadagent/mechanical/compliant/allowables.py
       - docs/compliant.md
-      - tests/test_snapfit.py
+      - tests/mechanical/test_snapfit.py
       - src/cadagent/manufacturing/process.py
     verified: >-
       2026-10-31: read the wiki page (Markdown view); E 3426.9 / 3064.9 MPa, UTS 52.3 / 40.5 MPa, elongation 6.3
@@ -376,7 +376,7 @@ sources:
     used_for:
       - src/cadagent/mechanical/compliant/allowables.py
       - docs/compliant.md
-      - tests/test_snapfit.py
+      - tests/mechanical/test_snapfit.py
       - src/cadagent/manufacturing/process.py
     verified: >-
       2026-10-31: read the wiki page; E 2116.8 / 1898.7 MPa, UTS 50.8 / 42.8 MPa, elongation 8.4 / 3.3 % (X-Y /
@@ -394,7 +394,7 @@ sources:
     used_for:
       - src/cadagent/mechanical/compliant/allowables.py
       - docs/compliant.md
-      - tests/test_snapfit.py
+      - tests/mechanical/test_snapfit.py
       - src/cadagent/manufacturing/process.py
     verified: >-
       2026-10-31: read the wiki page; E 2379 / 1965 MPa, UTS 43.8 / 32 MPa, elongation 6.7 / 1.65 % (X-Y / Z).
@@ -411,7 +411,7 @@ sources:
     used_for:
       - src/cadagent/mechanical/compliant/allowables.py
       - docs/compliant.md
-      - tests/test_snapfit.py
+      - tests/mechanical/test_snapfit.py
       - src/cadagent/manufacturing/process.py
     verified: >-
       2026-10-31: read the wiki page; dry E 2703 / 2209 MPa, UTS 78.0 / 45.8 MPa, elongation 12.7 / 1.3 % (X-Y /
@@ -441,7 +441,7 @@ sources:
     used_for:
       - src/cadagent/mechanical/compliant/allowables.py
       - docs/compliant.md
-      - tests/test_snapfit.py
+      - tests/mechanical/test_snapfit.py
       - src/cadagent/manufacturing/process.py
     verified: >-
       2026-10-31: opened the PDF; dry E 8636.5 / 3759.5 MPa, UTS 109.3 / 54.0 MPa, elongation 2.1 / 1.9 %; wet E
@@ -472,10 +472,10 @@ sources:
     access: free
     terms: cited; values quoted with the TDS version; the PDF is not redistributed
     areas: [materials, fdm]
-    used_for: [src/cadagent/simulation/fea.py, tests/test_fea_materials.py]
+    used_for: [src/cadagent/simulation/fea.py, tests/simulation/test_fea_materials.py]
     verified: >-
       2026-10-31: read for #125 (the V3.0 sheet, dry): tensile modulus 4430 / 2170 MPa, bending modulus 5460 /
-      2240 MPa, UTS 102 / 48 MPa (X-Y / Z), density 1.09 g/cm3, as tests/test_fea_materials.py records them. The
+      2240 MPa, UTS 102 / 48 MPa (X-Y / Z), density 1.09 g/cm3, as tests/simulation/test_fea_materials.py records them. The
       humid rows scale them by Polymaker's PA6-CF20 wet / dry ratios (polymaker-fiberon-pa6-cf20-tds).
 
   - id: bambu-paht-cf-tds
@@ -487,10 +487,10 @@ sources:
     access: free
     terms: cited; values quoted with the TDS version; the PDF is not redistributed
     areas: [materials, fdm]
-    used_for: [src/cadagent/simulation/fea.py, tests/test_fea_materials.py]
+    used_for: [src/cadagent/simulation/fea.py, tests/simulation/test_fea_materials.py]
     verified: >-
       2026-10-31: read for #125 (the V3.0 sheet, dry): tensile modulus 3860 / 2180 MPa, bending modulus 4230 /
-      1820 MPa, UTS 92 / 47 MPa (X-Y / Z), density 1.06 g/cm3, as tests/test_fea_materials.py records them.
+      1820 MPa, UTS 92 / 47 MPa (X-Y / Z), density 1.06 g/cm3, as tests/simulation/test_fea_materials.py records them.
 
   # ---------------------------------------------------------------- 3D printing: design rules by process
 
@@ -1633,7 +1633,7 @@ sources:
     verified: >-
       2026-11-01: the edition, authors and ISBN checked against the Open Library record. The registry records
       the edition only: cadagent.formulas names the section and case of each formula it takes, and
-      tests/test_formulas.py checks them against worked examples or derivations written out there.
+      tests/formulas/test_formulas.py checks them against worked examples or derivations written out there.
 
   - id: shigley
     title: Shigley's Mechanical Engineering Design, 10th edition
@@ -2175,11 +2175,11 @@ sources:
     access: free
     terms: cited by table and page; never copied (a public, superseded handbook; its successor MMPDS is paid and not used)
     areas: [materials, metals, fea]
-    used_for: [tests/test_fea_materials.py, src/cadagent/simulation/fea.py]
+    used_for: [tests/simulation/test_fea_materials.py, src/cadagent/simulation/fea.py]
     verified: >-
       2026-10-31: read for #157 (the 31 January 2003 edition): Tables 3.6.2.0(b1), (b2) and (g) (6061),
       3.7.6.0(b1) and (d) (7075) and 2.2.1.0(b) (AISI 1025), as cadagent.simulation.fea's metal rows and
-      tests/test_fea_materials.py record them. The everyspec page resolved again on 2026-11-01.
+      tests/simulation/test_fea_materials.py record them. The everyspec page resolved again on 2026-11-01.
 
   - id: brass
     title: Brass Alloy C36000 data sheet
@@ -2544,7 +2544,7 @@ sources:
 
 # -------------------------------------------------------------------------------------------------------------------
 # Named but not yet read, or read but not yet found online. Not citable until someone reads it and moves it up;
-# code that cites one is a known gap (check() warns, tests/test_references.py pins how many).
+# code that cites one is a known gap (check() warns, tests/review/test_references.py pins how many).
 unverified:
 
   - id: covestro-snapfit-covestro-edition

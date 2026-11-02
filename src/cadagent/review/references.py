@@ -20,7 +20,7 @@ A key resolves to one of three kinds of entry:
   the same document (``covestro`` and ``covestro-friction`` both cite ``covestro-snapfit``); the module's own text keeps
   the page or table;
 * ``unverified``: named, but not yet read or not yet found online, with the reason. Code that cites one is a known
-  gap: ``check()`` warns about it, and ``tests/test_references.py`` pins how many there are, a number that only falls;
+  gap: ``check()`` warns about it, and ``tests/review/test_references.py`` pins how many there are, a number that only falls;
 * ``uncited``: a key that is not an outside source, said openly: ``general`` (common engineering knowledge),
   ``judgement`` (a stated judgement of the module) or ``internal`` (another cad-agent module, with what it cites).
 

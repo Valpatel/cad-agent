@@ -89,7 +89,7 @@ sm.flat_length([20, 30, 20], "mild-steel", 1.499)   # a U channel: 70 mm less tw
 The equations: bend allowance `BA = π (R + K T) A / 180` (the profile's formula `sm-bend-allowance`, from
 SolidWorks' K-factor page). Outside setback `OSSB = (R + T) tan(A / 2)`. Bend deduction `BD = 2 OSSB − BA`, the length
 a bend takes off the sum of the legs measured to the outside. The tests check them against vectors worked by hand
-(`tests/test_sheet_metal.py`).
+(`tests/manufacturing/test_sheet_metal.py`).
 
 This calculator gives a bend's numbers; it does not unfold a model. Unfolding a 3D part into its flat pattern is the
 job of build123d's `BuildSheet` and `unfold` (to adopt once released) or FreeCAD's SheetMetal workbench, which take

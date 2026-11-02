@@ -125,7 +125,7 @@ The explorer runs the browser port of `screw_boss`, which is tested against the 
 
 ## Tests that keep it honest
 
-`tests/test_torsion_snap_boss.py` checks the radial push against the flank's statics, the hoop stress against the
+`tests/formulas/test_torsion_snap_boss.py` checks the radial push against the flank's statics, the hoop stress against the
 equilibrium of half the ring, `screw_boss` against its parts and the window, the strengths against the cautious
 datasheet edition, the DELTA PT table, and this page's explorer numbers against the Python. The browser's port
-matches the Python on the shared vectors (`tests/webkit-formulas.test.mjs`).
+matches the Python on the shared vectors (`tests/webkit/webkit-formulas.test.mjs`).

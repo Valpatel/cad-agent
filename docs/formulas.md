@@ -194,7 +194,7 @@ units. `kit/formulas-data.js` carries the demos' data: the printed filaments, an
 
 ## Tests that keep it honest
 
-`tests/test_formulas.py` checks each function against a published value or an independent derivation written out
+`tests/formulas/test_formulas.py` checks each function against a published value or an independent derivation written out
 in the test.
 
 <details>
@@ -209,7 +209,7 @@ in the test.
     tabulated coefficients in Shigley, Section 3-12.
   - The peak shear strain against the series (within 0.8 %, the worst at aspect 1.136), and its thin-strip limit.
   - The guide's torsion snap as the same mechanics; the rectangular snap's torque, force and permissible twist from
-    first principles (`tests/test_torsion_snap_boss.py`).
+    first principles (`tests/formulas/test_torsion_snap_boss.py`).
 - **Springs.**
   - The rate derived from the wire as a torsion bar.
   - Bergsträsser against Wahl.
@@ -228,7 +228,7 @@ in the test.
   - `fourbar_input_limits` on every four-bar with links 1 to 6: the input turns fully exactly when `grashof` says so,
     and `fourbar_angles` closes exactly inside the limits.
   - Norton's Example 4-1.
-  - The five-bar (`tests/test_linkages.py`) against Liu, Wang and Zheng's direct and inverse kinematics as Gonçalves
+  - The five-bar (`tests/mechanical/test_linkages.py`) against Liu, Wang and Zheng's direct and inverse kinematics as Gonçalves
     et al. print them, a line and a quadratic rather than two circles, on two symmetric 5Rs every 15 degrees; the
     tip's reach against the two annuli; the Jacobians against finite differences; and a four-bar as a five-bar
     without a second crank against `fourbar_angles`.
@@ -242,4 +242,4 @@ in the test.
 </details>
 
 `tools/formula_vectors.py --check` fails when the committed golden vectors or the demo's material table no longer
-match the Python. `tests/webkit-formulas.test.mjs` runs the browser port on those vectors to 1e-12.
+match the Python. `tests/webkit/webkit-formulas.test.mjs` runs the browser port on those vectors to 1e-12.

@@ -19,7 +19,7 @@ PYTHONPATH=src python3 tools/readme_anim.py            # write every SVG from it
 PYTHONPATH=src python3 tools/readme_anim.py --check    # exit 1 if a committed SVG differs or breaks a rule
 ```
 
-`tests/test_readme_anim.py` runs `--check`, so a renderer change that alters a figure fails CI until the SVG is regenerated and committed.
+`tests/publish/test_readme_anim.py` runs `--check`, so a renderer change that alters a figure fails CI until the SVG is regenerated and committed.
 
 Rendering needs only cad-agent's core dependencies.
 
@@ -54,7 +54,7 @@ words. Recording takes about a minute and about 3 GB. `tools/anim/fea-convergenc
 - the front face's mesh round the corner.
 
 It also keeps the mesher (`result['mesh']['mesher']`), the toolkit's version and commit, and the sha256 of the files
-that made it. `tests/test_anim_convergence.py` checks that the figure states the record's numbers and that the record
+that made it. `tests/publish/test_anim_convergence.py` checks that the figure states the record's numbers and that the record
 shows what the docs say. On the recorded gmsh build, it runs the 2 mm steps again and compares.
 
 ## A snap fit engaging
@@ -81,7 +81,7 @@ PYTHONPATH=src python3 tools/readme_anim.py --extract snapfit    # run the calcu
 It also keeps the arm's bent shape at the drawn slices, the toolkit's version and commit, and the sha256 of the files
 that made it. The arm is drawn in slices, each moved and turned by the shape at its middle. Both are linear in the
 deflection, so every keyframe is exact and the arm bends smoothly. The still is the top of the lead, where the strain
-peaks. `tests/test_anim_snapfit.py` runs the calculator again and compares every number, works the closed form by
+peaks. `tests/publish/test_anim_snapfit.py` runs the calculator again and compares every number, works the closed form by
 hand, and checks the still and the pages that show the figure.
 
 ## Make one for another assembly

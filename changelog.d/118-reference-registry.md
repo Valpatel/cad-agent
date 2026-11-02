@@ -20,11 +20,11 @@
   A data file with no registry beside it still loads, with those ids unresolved (#118, #99).
 - `cadagent.mechanical.bearings.SRC` (#180) is now `WHERE`: its keys are the checks (`life`, `load`, ...), not source
   ids, and a module-level `SRC` or `SOURCES` table is where the registry's check looks for ids (#118).
-- `tests/test_fea_materials.py` now checks that every material's `source` is a read entry of the registry. It was
+- `tests/simulation/test_fea_materials.py` now checks that every material's `source` is a read entry of the registry. It was
   skipped while the registry was missing (#118).
 - A PR into cad-agent that adds a `[ref:<id>]` tag, a `source=` on an FEA material, a key to a module's `SRC` or
   `SOURCES` table, or a sheet to `FDM_MATERIALS` must add that source to `research/references.yaml`, or
-  `tests/test_references.py` fails (#118).
+  `tests/review/test_references.py` fails (#118).
 - The registry records two out-of-date citations, for follow-up. ISO 68-1:1998, which `cadagent.formulas` cites for
   the metric thread profile, was withdrawn on 2023-10-05 and replaced by ISO 68-1:2023. Freudenstein's 1955 paper is
   pp. 853-859; the discussion after it runs to p. 861, which the formulas' citation includes (#118).

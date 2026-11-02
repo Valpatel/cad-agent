@@ -331,3 +331,25 @@ def test_check_spec_and_the_cli(tmp_path):
     assert run(str(f)).returncode == 0
     f.write_text("bearings: 3")
     assert run(str(f)).returncode == 2
+
+
+def test_the_docs_example_says_what_the_check_computes():
+    import re
+    import yaml
+    page = (ROOT / "docs" / "bearings.md").read_text()
+    spec = yaml.safe_load(re.search(r"```yaml\n# bearings.yaml\n(.*?)```", page, re.S).group(1))
+    out = mb.check_spec(spec)
+    for b in out["bearings"]:
+        life = b["life"]
+        line = (f"{b['verdict'].upper():4}  {b['name']}: {b['motion']}, {life['life_million']:.3g} million "
+                f"{life['unit']} ({life['hours']:,.0f} h), least s0 {min(s['s0'] for s in b['static']):.2f}")
+        assert line in page, line
+    knee = out["bearings"][1]
+    assert f"s0 {rows(knee)['static safety: power cut']['value']:.2f}" in page
+    assert f"{knee['life']['contact']['x_over_2b']:.1f} times its width" in page
+
+
+def test_figures_are_current():
+    r = subprocess.run([sys.executable, str(ROOT / "tools" / "bearing_figures.py"), "--check"], capture_output=True,
+                       text=True)
+    assert r.returncode == 0, r.stdout + r.stderr

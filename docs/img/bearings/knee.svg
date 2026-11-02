@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 330" width="820" height="330" role="img" aria-label="A knee bearing's oscillation factor against amplitude, and the knee's check rows for a 6201 and a 6301">
+<style>text{font:13px system-ui,sans-serif;fill:#1d1d1b}.muted{fill:#5c5b56;font-size:11px}.axis{stroke:#9b9a93;stroke-width:1;fill:none}.grid{stroke:#e2e1dc;stroke-width:1}.s1{fill:#2a78d6;stroke:#2a78d6}.s2{fill:#eb6834;stroke:#eb6834}.s3{fill:#1baf7a;stroke:#1baf7a}.s4{fill:#eda100;stroke:#eda100}.band{fill:#efeee9;stroke:none}.bg{fill:#fcfcfb}.ring{stroke:#fcfcfb}@media (prefers-color-scheme:dark){text{fill:#f0efec}.muted{fill:#c3c2b7}.axis{stroke:#8a897f}.grid{stroke:#383835}.s1{fill:#3987e5;stroke:#3987e5}.s2{fill:#d95926;stroke:#d95926}.s3{fill:#199e70;stroke:#199e70}.s4{fill:#c98500;stroke:#c98500}.band{fill:#262624}.bg{fill:#1a1a19}.ring{stroke:#1a1a19}}</style>
+<rect class="bg" width="820" height="330"/>
+<text x="20" y="24">Oscillations per revolution of equal fatigue</text>
+<rect class="band" x="60.0" y="50.0" width="133.0" height="230.0"/>
+<text x="64.0" y="244.0" class="muted">below 10°: SKF</text>
+<text x="64.0" y="258.0" class="muted">calls it invalid;</text>
+<text x="64.0" y="272.0" class="muted">wear governs</text>
+<line class="grid" x1="60.0" y1="270.7" x2="360.0" y2="270.7"/><text x="54.0" y="274.7" text-anchor="end" class="muted">0.5</text>
+<line class="grid" x1="60.0" y1="241.8" x2="360.0" y2="241.8"/><text x="54.0" y="245.8" text-anchor="end" class="muted">1</text>
+<line class="grid" x1="60.0" y1="213.0" x2="360.0" y2="213.0"/><text x="54.0" y="217.0" text-anchor="end" class="muted">2</text>
+<line class="grid" x1="60.0" y1="174.8" x2="360.0" y2="174.8"/><text x="54.0" y="178.8" text-anchor="end" class="muted">5</text>
+<line class="grid" x1="60.0" y1="145.9" x2="360.0" y2="145.9"/><text x="54.0" y="149.9" text-anchor="end" class="muted">10</text>
+<line class="grid" x1="60.0" y1="117.0" x2="360.0" y2="117.0"/><text x="54.0" y="121.0" text-anchor="end" class="muted">20</text>
+<line class="grid" x1="60.0" y1="78.9" x2="360.0" y2="78.9"/><text x="54.0" y="82.9" text-anchor="end" class="muted">50</text>
+<line class="grid" x1="60.0" y1="50.0" x2="360.0" y2="50.0"/><text x="54.0" y="54.0" text-anchor="end" class="muted">100</text>
+<text x="60.0" y="296" text-anchor="middle" class="muted">1°</text>
+<text x="100.0" y="296" text-anchor="middle" class="muted">2°</text>
+<text x="153.0" y="296" text-anchor="middle" class="muted">5°</text>
+<text x="193.0" y="296" text-anchor="middle" class="muted">10°</text>
+<text x="233.1" y="296" text-anchor="middle" class="muted">20°</text>
+<text x="256.5" y="296" text-anchor="middle" class="muted">30°</text>
+<text x="286.0" y="296" text-anchor="middle" class="muted">50°</text>
+<text x="320.0" y="296" text-anchor="middle" class="muted">90°</text>
+<text x="360.0" y="296" text-anchor="middle" class="muted">180°</text>
+<text x="210" y="314" text-anchor="middle" class="muted">amplitude θ, centre to one end (log scale)</text>
+<polyline class="s1" style="fill:none" stroke-width="2" points="60.0,54.4 63.3,56.8 66.7,59.2 70.0,61.6 73.3,64.0 76.7,66.4 80.0,68.8 83.3,71.2 86.7,73.6 90.0,76.0 93.3,78.4 96.7,80.8 100.0,83.2 103.3,85.6 106.7,88.0 110.0,90.4 113.3,92.8 116.7,95.2 120.0,97.7 123.3,100.1 126.7,102.5 130.0,104.9 133.3,107.3 136.7,109.7 140.0,112.1 143.3,114.5 146.7,116.9 150.0,119.3 153.3,121.7 156.7,124.1 160.0,126.5 163.3,128.9 166.7,131.3 170.0,133.7 173.3,136.1 176.7,138.5 180.0,140.9 183.3,143.3 186.7,145.7 190.0,148.1 193.3,150.5 196.7,152.9 200.0,155.3 203.3,157.7 206.7,160.1 210.0,162.5 213.3,165.0 216.7,167.4 220.0,169.8 223.3,172.2 226.7,174.6 230.0,177.0 233.3,179.4 236.7,181.8 240.0,184.2 243.3,186.6 246.7,189.0 250.0,191.4 253.3,193.8 256.7,196.2 260.0,198.6 263.3,201.0 266.7,203.4 270.0,205.8 273.3,208.2 276.7,210.6 280.0,213.0 283.3,215.4 286.7,217.8 290.0,220.2 293.3,222.6 296.7,225.0 300.0,227.4 303.3,229.8 306.7,232.2 310.0,234.7 313.3,237.1 316.7,239.5 320.0,241.9 323.3,244.3 326.7,246.7 330.0,249.1 333.3,251.5 336.7,253.9 340.0,256.3 343.3,258.7 346.7,261.1 350.0,263.5 353.3,265.9 356.7,268.3 360.0,270.7"><title>Harris, 90 / θ</title></polyline>
+<polyline class="s2" style="fill:none" stroke-width="2" points="60.0,72.1 63.3,74.3 66.7,76.4 70.0,78.6 73.3,80.8 76.7,82.9 80.0,85.1 83.3,87.3 86.7,89.4 90.0,91.6 93.3,93.7 96.7,95.9 100.0,98.1 103.3,100.2 106.7,102.4 110.0,104.6 113.3,106.7 116.7,108.9 120.0,111.1 123.3,113.2 126.7,115.4 130.0,117.5 133.3,119.7 136.7,121.9 140.0,124.0 143.3,126.2 146.7,128.4 150.0,130.5 153.3,132.7 156.7,134.8 160.0,137.0 163.3,139.2 166.7,141.3 170.0,143.5 173.3,145.7 176.7,147.8 180.0,150.0 183.3,152.2 186.7,154.3 190.0,156.5 193.3,158.6 196.7,160.8 200.0,163.0 203.3,165.1 206.7,167.3 210.0,169.5 213.3,171.6 216.7,173.8 220.0,175.9 223.3,178.1 226.7,180.3 230.0,182.4 233.3,184.6 236.7,186.8 240.0,188.9 243.3,191.1 246.7,193.3 250.0,195.4 253.3,197.6 256.7,199.7 260.0,201.9 263.3,204.1 266.7,206.2 270.0,208.4 273.3,210.6 276.7,212.7 280.0,214.9 283.3,217.0 286.7,219.2 290.0,221.4 293.3,223.5 296.7,225.7 300.0,227.9 303.3,230.0 306.7,232.2 310.0,234.7 313.3,237.1 316.7,239.5 320.0,241.9 323.3,244.3 326.7,246.7 330.0,249.1 333.3,251.5 336.7,253.9 340.0,256.3 343.3,258.7 346.7,261.1 350.0,263.5 353.3,265.9 356.7,268.3 360.0,270.7"><title>Rumbarger, 7 balls (θcrit 71°)</title></polyline>
+<text x="123.5" y="90.2">Harris, 90 / θ</text>
+<text x="105.5" y="123.7">Rumbarger: 7 balls, θcrit 71° (dotted line)</text>
+<line class="axis" x1="305.9" y1="50.0" x2="305.9" y2="280.0" stroke-dasharray="3 3"/>
+<circle class="s2 ring" cx="256.5" cy="199.6" r="5" stroke-width="2"><title>the knee: ±30°, 2.75 oscillations per revolution</title></circle><text x="264.5" y="219.6">knee ±30°: 2.75</text>
+<text x="420.0" y="24">The knee, checked (verdict per row; s0 and x / 2b)</text>
+<text x="610.0" y="54.0" class="muted">6201-2RSH</text><text x="710.0" y="54.0" class="muted">6301-2RSH</text>
+<text x="420.0" y="76">equivalent load</text>
+<text x="610.0" y="76">pass<title>P = 760 N, the cubic mean of 2 blocks (Palmgren-Miner)</title></text>
+<text x="710.0" y="76">pass<title>P = 760 N, the cubic mean of 2 blocks (Palmgren-Miner)</title></text>
+<text x="420.0" y="98">amplitude</text>
+<text x="610.0" y="98">pass<title>a swing of +/-30 degrees: 2.75 million oscillations per million revolutions</title></text>
+<text x="710.0" y="98">pass<title>a swing of +/-30 degrees: 3 million oscillations per million revolutions</title></text>
+<text x="420.0" y="120">critical amplitude</text>
+<text x="610.0" y="120">warn ▲<title>below the outer raceway's critical amplitude 70.5 degrees (inner 40.5): parts of the raceway are never rolled over and the rest more often, so the Rumbarger factor is used, 92% of Harris's</title></text>
+<text x="710.0" y="120">warn ▲<title>no internal geometry (balls, ball_mm): the critical amplitude is not checked and Harris's factor is used; below it the life is shorter (for balls by (theta / theta_crit)^0.1)</title></text>
+<text x="420.0" y="142">contact travel</text>
+<text x="610.0" y="142">pass 12.66<title>x / 2b = 2.67 mm rolled against a contact 0.211 mm wide at 900 N (Hertz contact of a 5.953 mm ball (one of 7) at osculation 0.52, Qmax = 5 Fr / Z)</title></text>
+<text x="710.0" y="142">pass 15.84<title>x / 2b = 2.91 mm rolled against a contact 0.183 mm wide at 900 N (NSK's constants for its 6301 (K3 0.019: 2b = K3 Fr^(1/3)); NSK Ltd., Technical Report CAT. No. E728h, Section 5.4, Table 1 (constants K1, K2, K3), p. 117; another maker's internal geometry differs); the ball is taken as 0.3 (D - d)</title></text>
+<text x="420.0" y="164">rating life</text>
+<text x="610.0" y="164">pass<title>L10 = 2.42e+03 million oscillations = 672,798 h; C / P = 9.58; reaches the 2000 h asked</title></text>
+<text x="710.0" y="164">pass<title>L10 = 7.04e+03 million oscillations = 1,956,887 h; C / P = 13.29; reaches the 2000 h asked</title></text>
+<text x="420.0" y="186">load range</text>
+<text x="610.0" y="186">pass<title>the heaviest block's P = 0.12 C, within the 0.5 C in which the makers' life is robust</title></text>
+<text x="710.0" y="186">pass<title>the heaviest block's P = 0.09 C, within the 0.5 C in which the makers' life is robust</title></text>
+<text x="420.0" y="208">speed</text>
+<text x="610.0" y="208">pass<title>the swing's peak (sinusoidal) 31.4 r/min: far below the limiting speed 15,000 r/min; contact seals: no reference speed, the seals' friction sets it</title></text>
+<text x="710.0" y="208">pass<title>the swing's peak (sinusoidal) 31.4 r/min: far below the limiting speed 14,000 r/min; contact seals: no reference speed, the seals' friction sets it</title></text>
+<text x="420.0" y="230">s0, running (heaviest block)</text>
+<text x="610.0" y="230">pass 3.44<title>s0 = C0 / P0 = 3100 / 900 N = 3.44 against 1.5 (continuous motion, low certainty, permanent deformation accepted: some)</title></text>
+<text x="710.0" y="230">pass 4.61<title>s0 = C0 / P0 = 4150 / 900 N = 4.61 against 1.5 (continuous motion, low certainty, permanent deformation accepted: some)</title></text>
+<text x="420.0" y="252">s0, power cut</text>
+<text x="610.0" y="252" style="font-weight:700">fail ✕ 0.89<title>s0 = C0 / P0 = 3100 / 3485 N = 0.89 against 1 (infrequent motion, low certainty, permanent deformation accepted: yes); below 1 the raceways dent (brinell): a turning bearing then runs rough</title></text>
+<text x="710.0" y="252">pass 1.19<title>s0 = C0 / P0 = 4150 / 3485 N = 1.19 against 1 (infrequent motion, low certainty, permanent deformation accepted: yes)</title></text>
+<text x="420.0" y="284" class="muted">6201: L10 2422 million oscillations, 673 thousand hours</text>
+<text x="420.0" y="300" class="muted">at ±30°, 1 Hz, 900 N / 150 N; s0 in a 3 485 N power cut</text>
+<text x="420.0" y="316" class="muted">6301 has no geometry given: its θcrit row warns</text>
+</svg>

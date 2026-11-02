@@ -511,12 +511,14 @@ FORK_HINT = ("To change cad-agent itself, fork Valpatel/cad-agent and work in a 
 
 def pull(root: Path, ref: Optional[str] = None) -> dict:
     """Move the checkout to the newest main (fast-forward only), or to ``ref`` (a tag or branch, checked out
-    detached). Refuses a checkout with changed tracked files, or one on another branch or an untagged commit."""
+    detached). Refuses a checkout with changed tracked files, or one on another branch (than main or ``ref``) or an
+    untagged commit."""
     st = checkout_state(root)
     if st["dirty"]:
         raise UpdateRefused(f"{root} has changes to tracked files: commit or stash them first. "
                             + FORK_HINT.format(root=root))
-    if st["branch"] and st["branch"] != "main":
+    # On main, or on the branch --ref names (what `install.sh --ref <branch>` cloned), or pinned at a tag.
+    if st["branch"] and st["branch"] not in ("main", ref):
         raise UpdateRefused(f"{root} is on branch {st['branch']!r}, and updates follow main, the released channel "
                             f"(git -C {root} switch main). " + FORK_HINT.format(root=root))
     if not st["branch"] and not st["tag"]:
@@ -529,18 +531,24 @@ def pull(root: Path, ref: Optional[str] = None) -> dict:
         depth = ["--depth", "1"] if shallow else []
         if subprocess.run(["git", "-C", str(root), "fetch", "--quiet", *depth, "origin",
                            f"+refs/tags/{ref}:refs/tags/{ref}"], capture_output=True).returncode == 0:
-            target = f"refs/tags/{ref}"
-        else:
-            _git(root, "fetch", "--quiet", *depth, "origin", ref)
-            target = "FETCH_HEAD"
-        _git(root, "checkout", "--quiet", "--detach", target)
+            _git(root, "checkout", "--quiet", "--detach", f"refs/tags/{ref}")     # a release: pinned, detached
+        else:                                                                   # a branch: follow it, fast-forward only
+            _git(root, "fetch", "--quiet", "origin", f"+refs/heads/{ref}:refs/remotes/origin/{ref}")
+            if _git(root, "rev-parse", "--verify", "-q", f"refs/heads/{ref}", check=False):
+                _git(root, "switch", "--quiet", ref)
+                if subprocess.run(["git", "-C", str(root), "merge", "--quiet", "--ff-only", f"origin/{ref}"],
+                                  capture_output=True).returncode:
+                    raise UpdateRefused(f"{root}'s {ref} has commits that are not on cad-agent's {ref}, so it cannot "
+                                        "fast-forward. " + FORK_HINT.format(root=root))
+            else:
+                _git(root, "switch", "--quiet", "-c", ref, f"origin/{ref}")
     else:
         _git(root, "fetch", "--quiet", "origin", "+refs/heads/main:refs/remotes/origin/main")
         if st["branch"] != "main":                       # pinned at a tag: back to main
             if _git(root, "rev-parse", "--verify", "-q", "refs/heads/main", check=False):
                 _git(root, "switch", "--quiet", "main")
             else:
-                _git(root, "switch", "--quiet", "-c", "main", "--track", "origin/main")
+                _git(root, "switch", "--quiet", "-c", "main", "origin/main")
         ff = lambda: subprocess.run(["git", "-C", str(root), "merge", "--quiet", "--ff-only", "origin/main"],
                                     capture_output=True).returncode == 0
         # A shallow clone that was pinned to a tag (fetched at depth 1) cannot see that main descends from where it

@@ -115,6 +115,29 @@ def test_ref_pins_a_tag_and_a_later_update_returns_to_main(kit):
         agentkit.pull(clone, "--upload-pack=x")
 
 
+
+def test_a_clone_of_a_branch_updates_with_that_ref(kit, tmp_path):
+    """`install.sh --ref <branch>` clones the branch; running it again (update --ref <branch>) follows that branch."""
+    remote, _, _ = kit
+    git(remote, "switch", "-q", "-c", "try-this")
+    commit(remote, "a", {"a.txt": "a"})
+    clone = tmp_path / "branch-clone"
+    subprocess.run(["git", "clone", "-q", "--depth", "1", "--branch", "try-this", f"file://{remote}", str(clone)],
+                   check=True, env=ENV)
+    newer = commit(remote, "b", {"b.txt": "b"})
+    assert agentkit.pull(clone, "try-this")["new"] == newer
+    newest = commit(remote, "c", {"c.txt": "c"})
+    assert agentkit.pull(clone, "try-this")["new"] == newest, "and again: it stays on the branch"
+    assert agentkit.checkout_state(clone)["branch"] == "try-this"
+    with pytest.raises(agentkit.UpdateRefused, match="is on branch 'try-this'"):
+        agentkit.pull(clone)
+    git(remote, "switch", "-q", "main")
+    main_clone = tmp_path / "main-clone"
+    subprocess.run(["git", "clone", "-q", "--depth", "1", f"file://{remote}", str(main_clone)], check=True, env=ENV)
+    assert agentkit.pull(main_clone, "try-this")["new"] == newest, "from main, --ref <branch> moves onto the branch"
+    assert agentkit.checkout_state(main_clone)["branch"] == "try-this"
+
+
 def test_versions_staleness_and_project_advice(kit, tmp_path):
     _, clone, _ = kit
     assert agentkit.version_ok("0.14.2", "0.14") and agentkit.version_ok("v1.0", "0.99.9")

@@ -3,8 +3,10 @@ functions under them, and cadagent.mechanical.bosses, against derivations writte
 thread statics, the equilibrium of half a ring) and the published guides' rules."""
 import math
 import re
+from decimal import Decimal
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from cadagent import formulas as fx
@@ -178,13 +180,38 @@ def test_nut_factor_flank_angle_defaults_to_the_iso_thread():
         assert fx.nut_factor(*args, math.radians(30)) < fx.nut_factor(*args)
 
 
-@pytest.mark.parametrize("bad", [60.0, 30.0, 0.0, -0.5, math.pi / 2, 2.0, math.nan, math.inf, True, "1.047"])
+@pytest.mark.parametrize("bad", [60.0, 30.0, 0.0, -0.5, math.pi / 2, 2.0, np.float32(60.0), Decimal("60")])
 def test_nut_factor_refuses_a_flank_angle_outside_0_to_90_degrees(bad):
     # 60 passed as degrees used to give K = 0.59 instead of 0.20 (about 3 x) without complaint
     with pytest.raises(ValueError, match="radians"):
         fx.nut_factor(3 * MM, 0.5 * MM, 0.15, 0.15, bad)
     # just inside the range still computes
     assert fx.nut_factor(3 * MM, 0.5 * MM, 0.15, 0.15, math.pi / 2 - 1e-9) > 0
+
+
+@pytest.mark.parametrize("bad, says", [(math.nan, "finite"), (math.inf, "finite"), (True, "real number"),
+                                       ("1.047", "real number"), (None, "real number")])
+def test_nut_factor_says_a_flank_angle_that_is_not_a_number_is_not_one(bad, says):
+    with pytest.raises(ValueError, match=says) as err:
+        fx.nut_factor(3 * MM, 0.5 * MM, 0.15, 0.15, bad)
+    assert "between 0 and pi/2" not in str(err.value)          # not reported as out of range
+
+
+def test_the_screw_formulas_take_numpy_scalars_and_decimals_as_their_float_values():
+    d, P, f = 3 * MM, 0.5 * MM, 0.15
+    k = fx.nut_factor(d, P, f, f, math.radians(60))
+    for angle in (np.float32(math.radians(60)), np.float64(math.radians(60)), Decimal(repr(math.radians(60)))):
+        assert fx.nut_factor(d, P, f, f, angle) == pytest.approx(k, rel=1e-6)
+    assert fx.nut_factor(Decimal("0.003"), np.float64(P), np.float32(f), Decimal("0.15")) == pytest.approx(k, rel=1e-6)
+    p_r = fx.thread_radial_pressure(1000.0, d, 6 * MM)
+    assert fx.thread_radial_pressure(np.int64(1000), Decimal("0.003"), np.float32(6 * MM)) == pytest.approx(p_r, rel=1e-6)
+    hoop = fx.boss_hoop_stress(10e6, d, 2 * d)
+    assert fx.boss_hoop_stress(Decimal("1E+7"), np.float64(d), np.float32(2 * d)) == pytest.approx(hoop, rel=1e-6)
+    r = fx.screw_boss(d, 1.12 * MM, 6 * MM, 6 * MM, 0.3, 15.5e6, 35e6)
+    q = fx.screw_boss(Decimal("0.003"), np.float64(1.12 * MM), 6 * MM, np.float32(6 * MM), Decimal("0.3"),
+                      np.int64(15_500_000), 35e6, friction_high=Decimal("0.5"), drive_torque=None)
+    assert q["nut_factor"]["low"] == pytest.approx(r["nut_factor"]["low"], rel=1e-6)
+    assert q["preload"]["high"] == pytest.approx(r["preload"]["high"], rel=1e-6)
 
 
 def test_screw_boss_is_its_parts_and_covestros_window():

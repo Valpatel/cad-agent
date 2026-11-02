@@ -28,6 +28,32 @@ conflict and left alone. Codex's folder follows `$CODEX_HOME` when set. If `~/.c
 otherwise shadow Claude's subagents. Run a generated agent skill only in a separate Codex session, never on work
 that session wrote.
 
+Everything is installed for everyone. A skill or agent that needs something you may not have names it in its
+frontmatter (`metadata: {requires: "gh git"}`) and opens with a `> **Needs:**` line saying the same. `install` and
+`list` then say which ones you can't use yet and why, checked on this computer without any network call, and what
+they cannot check from here:
+
+```text
+agents: you can't use these yet:
+  skill mcmaster-parts: Playwright is not installed in this Python (`"…/python" -m pip install playwright`)
+agents: these also need what cad-agent can't check from here:
+  write access to the repository it works in: cad-pr-review, cad-work-tracking
+  a compute host you can reach over `ssh`: cad-remote-runs
+```
+
+| Needs | Checked how | Who needs it |
+|---|---|---|
+| `git` | on `PATH` | `cad-work-tracking`, `cad-resume` |
+| `gh` logged in | on `PATH`, and `gh auth token` succeeds (gh's own stored login; nothing is sent) | `cad-work-tracking`, `cad-pr-review`, `cad-pr-reviewer`, `cad-resume` |
+| `ssh` | on `PATH` | `cad-remote-runs` |
+| `npm` | on `PATH` (for the online checks) | `cad-supply-chain` |
+| Playwright and Google Chrome | the module in cad-agent's Python, and Chrome on `PATH` or in its usual place (only to download a new part) | `mcmaster-parts` |
+| write access to the repository it works in | not checkable here: you know whether you can push, open and merge PRs there | `cad-work-tracking`, `cad-pr-review` |
+| a compute host you can reach over `ssh` | not checkable here | `cad-remote-runs` |
+
+The workflow skills open issues, push branches and open pull requests in the repository they work in. Use them in
+your own repositories, or where you have been given write access; an agent should not use them elsewhere unasked.
+
 ## What is in the kit
 
 | | Name | Use it |

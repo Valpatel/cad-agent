@@ -1,9 +1,13 @@
 ---
 name: cad-pr-review
 description: Use when a pull request in a cad-agent or product repo is ready for review, or when asked to review one. The author gets an independent review from a separate agent (the cad-pr-reviewer subagent, or a fresh Codex session) that did not write the change, answers every comment on the PR, fixes or explains, resolves the threads, and merges only under the repo's rules. Covers code, CAD geometry and simulation evidence.
+metadata:
+  requires: "gh write-access"
 ---
 
 # Pull request review
+
+> **Needs:** `gh` logged in and write access to the repository it works in. `cad-agent agents install` says which of these this computer lacks; without them, do not use this skill.
 
 An author cannot review their own change: they read what they meant, not what they wrote. Every PR gets a review
 by an agent or person that did not write it, and the review lives on the PR, where anyone can see it later.

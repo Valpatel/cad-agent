@@ -919,6 +919,8 @@ def cmd_agents(args: argparse.Namespace) -> int:
     if args.action == "list":
         for row in agentkit.status(home, root, targets):
             _say(f"{row['kind']:5}  {row['name']:24} {row['state']:12} {row['dest']}")
+        for line in agentkit.notice(agentkit.readiness(root)):
+            _say(line)
         return 0
     warning = None if args.copy else agentkit.worktree_warning(root)
     if warning:
@@ -930,6 +932,8 @@ def cmd_agents(args: argparse.Namespace) -> int:
         _err(f"agents: {dest} exists and was not installed by cad-agent; left untouched (move it away and rerun)")
     _say(f"agents: {len(result['done'])} {'planned' if args.dry_run else 'installed'} from {root}"
          + (f", {len(result['conflicts'])} conflicts" if result["conflicts"] else ""))
+    for line in agentkit.notice(agentkit.readiness(root)):
+        _say(line)
     return 1 if result["conflicts"] else 0
 
 def cmd_snapfit(args: argparse.Namespace) -> int:

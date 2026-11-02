@@ -21,7 +21,7 @@ flowchart TD
 | File | What it tests |
 |---|---|
 | `__init__.py` | Empty: makes the folder a package, so a test here may share a file name with one in another folder |
-| `test_agentkit.py` | `cad-agent agents install`: which skills and subagents land where, for Claude Code and Codex |
+| `test_agentkit.py` | `cad-agent agents install`: which skills and subagents land where, for Claude Code and Codex; what each needs, its Needs line, and the notice of what can't be used yet |
 | `test_cli.py` | `cad-agent ...` end to end through `cadagent.cli.main`, on throwaway projects |
 | `test_deps.py` | A missing heavy dependency raises `MissingDependency` naming the module, never a quiet skip |
 | `test_links.py` | `cadagent.links`: local link checks for HTML and Markdown pages |

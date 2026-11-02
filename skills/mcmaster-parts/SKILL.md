@@ -1,9 +1,13 @@
 ---
 name: mcmaster-parts
 description: Use for any bought hardware in a CAD design (bearings, screws, nuts, washers, heat-set inserts, dowel and shoulder pins, standoffs and spacers, rod ends, threaded rod, grommets). Always choose a real McMaster-Carr part with a part number and place its manufacturer STEP model, normalised into a known frame, instead of drawing an envelope; record the part, its full specification table, price and mass in the project's hardware catalogue.
+metadata:
+  requires: "playwright"
 ---
 
 # McMaster-Carr parts
+
+> **Needs:** Playwright and Google Chrome. `cad-agent agents install` says which of these this computer lacks; without them, do not use this skill.
 
 Bought hardware is a real part: a part number, its manufacturer's model, its specification. McMaster-Carr publishes
 a STEP model and a full specification table (material, finish, strength class, thread, dimensions and tolerances,

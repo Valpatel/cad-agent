@@ -1,0 +1,2 @@
+**New**
+- `cad-agent agents install` and `agents list` say which skills and agents you can't use yet and why (`gh` not logged in, `git`, `ssh` or `npm` not on `PATH`, Playwright or Chrome missing), checked on this computer without any network call, and what they cannot check from here (write access to the repository, a compute host). Each skill or agent declares its needs as `metadata: {requires: ...}` in its frontmatter and opens with a `> **Needs:**` line saying the same. Everything is still installed for everyone (#282).

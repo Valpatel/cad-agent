@@ -2,8 +2,8 @@
 
 These lessons come from one Claude Code session on 2026-11-01 (session `47707e1e-b3c1-4114-b10e-9fc722a426bd`): a
 1/8 Cat 323 excavator, 46 printed parts (178 pieces) for a Prusa XL 5T, designed in CadQuery with cad-agent and taken
-to PrusaSlicer 2.9.4 slicing every part with no supports and no stability warning. The project is in the user's
-private repository. Its file paths below are relative to that project. Nothing was printed or test-fitted in the
+to PrusaSlicer 2.9.4 slicing every part with no supports and no stability warning. Jeff Patrick contributed them
+(#260); the project is in his private repository. Its file paths below are relative to that project. Nothing was printed or test-fitted in the
 session, so these are rules for files that slice cleanly, not proof that a print succeeds.
 
 ```mermaid
@@ -25,8 +25,9 @@ flowchart TD
 
 Timestamps are UTC from the session transcript. The Check lines name the cad-agent work these lessons asked for:
 #246 (keep PrusaSlicer's warnings), #247 (G-code bridge report and overhang regions), #249 (robust booleans and the
-1 µm weld) and #251 (range-of-motion clearance sweep). None of it is merged yet. Until it is, the project's own
-`tools/slice_all.py`, `tools/bridges.py`, `tools/overhangs.py` and `tools/clearance.py` do the same jobs.
+1 µm weld) and #251 (range-of-motion clearance sweep). In the session the project's own `tools/slice_all.py`,
+`tools/bridges.py`, `tools/overhangs.py` and `tools/clearance.py` did those jobs. In cad-agent, #246 is `cad-agent
+slice` with `cad.slicer.engine: prusa`, and #247 is `cad-agent overhangs` and `cadagent.manufacturing.gcode.bridge_report`.
 
 ## Geometry
 

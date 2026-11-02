@@ -164,7 +164,7 @@ domains:
         cli: [export-3mf, slice, overhangs]
         api: [cadagent.manufacturing.slicer, cadagent.manufacturing.mesh3mf, cadagent.manufacturing.plates,
               cadagent.manufacturing.fit_coupons, cadagent.manufacturing.gcode]
-        issues: [84, 99]
+        issues: [84, 99, 247, 253]
         projects: [gyropup, j501-enclosure]
         topics:
           - {slug: fdm, title: FDM, scope: "Orientation, layer anisotropy, overhangs and slicer evidence.", maturity: tooling}

@@ -33,7 +33,8 @@ front-link FEA studies (October 2026, Valpatel/gyropup#29), as written up for th
 The mechanical area's [printing-without-supports](mechanical/printing-without-supports.md) lessons, and the last two
 [agent-process](process/agent-process.md) lessons, come from a Claude Code session on 2026-11-01 that designed a 1/8
 Cat 323 excavator (46 parts for a Prusa XL 5T) and sliced every part with no supports and no stability warning
-(#253). That project is in the user's private repository; its Source lines name its files. It was not printed in the
+(#253), contributed by Jeff Patrick (#260). That project is in his private repository; its Source lines name its
+files. It was not printed in the
 session either.
 
 ## Areas

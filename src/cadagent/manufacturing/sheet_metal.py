@@ -76,8 +76,9 @@ def _strictest(prof: pp.Profile, compare: str, env: Dict[str, float], excludes: 
 def bend(material: str, thickness_mm: float, angle_deg: float = 90.0, *, radius_mm: Optional[float] = None,
          k: Optional[float] = None, shop: bool = True, path: Any = None) -> Dict[str, Any]:
     """One bend in ``material`` (a key of ``process.SHEET_MATERIALS``: ``5052``, ``mild-steel``, ``g90``, ``304`` or
-    ``316``) of ``thickness_mm``, turned ``angle_deg`` from flat (0 < A < 180). Returns the radius, K, bend allowance, outside setback, bend deduction, the shortest flange and the
-    relief depth, each with where it came from."""
+    ``316``) of ``thickness_mm``, turned ``angle_deg`` from flat (0 < A < 180). Returns the radius, K, bend
+    allowance, outside setback, bend deduction, the shortest flange and the relief depth, each with where it came
+    from."""
     t = _num("thickness_mm", thickness_mm)
     a = _num("angle_deg", angle_deg)
     if a >= 180.0:
@@ -168,13 +169,13 @@ def _check(name: str, verdict: str, value: Any, limit: str, rule: str, source: s
 
 def feature_to_bend(material: str, thickness_mm: float, edge_to_tangent_mm: float, angle_deg: float = 90.0, *,
                     radius_mm: Optional[float] = None, shop: bool = True, path: Any = None) -> Dict[str, Any]:
-    """A hole or cut-out near a bend, against every generic hole-to-bend rule (``compare: sm-hole-to-bend``), each on
-    its own datum. ``edge_to_tangent_mm`` is measured on the flat from the feature's nearest edge to the bend's tangent
-    line (where the bend radius starts), the datum Hubs and Davis use. Century Tywood measures to the inside face of the
-    other leg; this takes that as the inside mould line, the inside setback R tan(A/2) further on (R at 90 degrees,
-    where the two are the same), and never more than R, so a bend sharper than 90 degrees earns no extra distance. Where a rule does not state its datum, the tangent
-    is assumed and the result says so: a feature that clears every rule with a stated datum but not one of those gets
-    a warning, not a fail."""
+    """A hole or cut-out near a bend, against every generic hole-to-bend rule (``compare: sm-hole-to-bend``), each on its
+    own datum. ``edge_to_tangent_mm`` is measured on the flat from the feature's nearest edge to the bend's tangent
+    line (where the bend radius starts), the datum Hubs and Davis use. Century Tywood measures to the inside face of
+    the other leg; this takes that as the inside mould line, the inside setback R tan(A/2) further on (R at 90
+    degrees, where the two are the same), and never more than R, so a bend sharper than 90 degrees earns no extra
+    distance. Where a rule does not state its datum, the tangent is assumed and the result says so: a feature that
+    clears every rule with a stated datum but not one of those gets a warning, not a fail."""
     d = _num("edge_to_tangent_mm", edge_to_tangent_mm, positive=False)
     b = bend(material, thickness_mm, angle_deg, radius_mm=radius_mm, shop=shop, path=path)
     t, r, a = b["thickness_mm"], b["radius_mm"]["value"], b["angle_deg"]

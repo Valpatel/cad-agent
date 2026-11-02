@@ -10,15 +10,15 @@
  * under 44 px, or whose bars and chosen row lose their difference under forced colours; and a status line whose noun
  * does not agree with its number. */
 import assert from 'node:assert/strict';
-import { execFileSync, spawn } from 'node:child_process';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
-import os from 'node:os';
+import { spawn } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium, webkit } from '@playwright/test';
+import { builtSite } from './built-site.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
-const dir = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-catalog-browser-'));
-execFileSync(process.execPath, ['tools/build-site.mjs', '--out', dir], { cwd: root, stdio: 'inherit' });
+const site = await builtSite('cad-agent-catalog-browser-', { stdio: 'inherit' });   // CAD_AGENT_SITE, or a fresh build of HEAD
+const dir = site.dir;
 const server = spawn(process.execPath, ['tools/preview-site.mjs', '--dir', dir, '--port', '0'], { cwd: root });
 const base = await new Promise((ok, fail) => {
   server.stdout.on('data', d => { const m = String(d).match(/http:\/\/[\d.]+:\d+/); if (m) ok(m[0]); });
@@ -675,7 +675,7 @@ try {
 } finally {
   await browser.close();
   server.kill();
-  await rm(dir, { recursive: true, force: true });
+  await site.done();
 }
 assert.deepEqual(problems, [], problems.join('\n'));
 console.log(`catalogue OK in ${engine.name()}`);

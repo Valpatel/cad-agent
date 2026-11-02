@@ -10,12 +10,13 @@ import os from 'node:os';
 import path from 'node:path';
 import YAML from 'yaml';
 import { TINT } from '../../tools/catalog-art.mjs';
+import { builtSite } from './built-site.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-catalog-'));
-const out = path.join(tmp, 'site');
-execFileSync(process.execPath, ['tools/build-site.mjs', '--out', out], { cwd: root });
-test.after(() => rm(tmp, { recursive: true, force: true }));
+const site = await builtSite('cad-agent-catalog-site-');         // CAD_AGENT_SITE, or a fresh build of HEAD
+const out = site.dir;
+test.after(() => Promise.all([rm(tmp, { recursive: true, force: true }), site.done()]));
 
 const ORIGIN = 'https://cad-agent.valpatel.com';
 const json = async f => JSON.parse(await readFile(path.join(out, f), 'utf8'));

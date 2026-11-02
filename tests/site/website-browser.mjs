@@ -8,16 +8,16 @@
  * move the page while it loads or need script to show (#132: the build draws them). Also the page tree's fold on
  * phones with nav.js loaded, late, blocked, failing or off, and outline jumps (foldProblems and jumpProblems, below). */
 import assert from 'node:assert/strict';
-import { execFileSync, spawn } from 'node:child_process';
-import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
-import os from 'node:os';
+import { spawn } from 'node:child_process';
+import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium, webkit } from '@playwright/test';
+import { builtSite } from './built-site.mjs';
 import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript } from './site-walls.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
-const dir = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-website-browser-'));
-execFileSync(process.execPath, ['tools/build-site.mjs', '--out', dir], { cwd: root, stdio: 'inherit' });
+const site = await builtSite('cad-agent-website-browser-', { stdio: 'inherit' });   // CAD_AGENT_SITE, or a fresh build of HEAD
+const dir = site.dir;
 const server = spawn(process.execPath, ['tools/preview-site.mjs', '--dir', dir, '--port', '0'], { cwd: root });
 const base = await new Promise((ok, fail) => {
   server.stdout.on('data', d => { const m = String(d).match(/http:\/\/[\d.]+:\d+/); if (m) ok(m[0]); });
@@ -55,15 +55,26 @@ const EXPLORERS = [
 ];
 
 const problems = [];
+const laps = [];
+let lapAt = Date.now();
+const mark = name => { const now = Date.now(); laps.push(`${name} ${Math.round((now - lapAt) / 1000)}s`); lapAt = now; };
 try {
   problems.push(...await cantileverProblems());          // the snap-arm explorer on /docs/compliant (#137), below
+  mark('cantileverProblems');
   problems.push(...await foldProblems());                // the page tree's fold on phones, with and without nav.js (#134)
+  mark('foldProblems');
   problems.push(...await jumpProblems());                // outline jumps: released by the reader's wheel, not by a stall
+  mark('jumpProblems');
   problems.push(...await fourbarProblems());             // the four-bar animator on /docs/linkages (#159), below
+  mark('fourbarProblems');
   problems.push(...await fanCurveProblems());            // the fan-curve explorer on /docs/fans (#160), below
+  mark('fanCurveProblems');
   for (const spec of EXPLORERS) problems.push(...await explorerProblems(spec));   // torsion snap and screw boss (#161), below
+  mark('explorers');
   problems.push(...await drawnDiagramProblems());        // diagrams drawn by the build: no shift, no script (#132), below
+  mark('drawnDiagramProblems');
   problems.push(...await themeProblems());               // light and dark themes, the system's and the button's (#305), below
+  mark('themeProblems');
   for (const width of [360, 1366]) for (const route of ROUTES) {
     const context = await browser.newContext({ viewport: { width, height: 800 } });
     if (engine === chromium) await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: base });
@@ -309,6 +320,7 @@ try {
     for (const s of seen) problems.push(`${width}px ${route}: ${s}`);
     await context.close();
   }
+  mark('routes');
   // No text under a copy button (#126): every page with code, at mouse and touch widths around the kit's breakpoints,
   // idle and right after a copy on the page with the most code (the "Copied" label is wider than "Copy").
   const codePages = [];
@@ -395,6 +407,7 @@ try {
     }
     await context.close();
   }
+  mark('copy buttons');
   const reduced = await browser.newPage({ reducedMotion: 'reduce' });
   await reduced.goto(base + '/');
   await settled(reduced);
@@ -406,6 +419,7 @@ try {
   const turning = await reduced.evaluate(() => [...document.querySelectorAll('cad-model .cad-model-ui button')].filter(b => !b.hidden && b.textContent === 'Pause').length);
   if (turning) problems.push('reduced motion: the 3D model turns by itself');
   await reduced.close();
+  mark('reduced motion');
   // Every page with a diagram, at the narrowest desktop width: each rendered diagram fits its column (#122).
   const diagramPages = [];
   for (const e of await readdir(dir, { withFileTypes: true, recursive: true })) {
@@ -441,6 +455,7 @@ try {
   }
   await wide.close();
   }
+  mark('diagram widths');
   // Walls of text (#179): on every page at 1366 x 800, the longest stretch of content with no picture, diagram, demo
   // or render stays under WALL_LIMIT (1.5 screens). WALLS is the backlog, each page with the issue that breaks it up;
   // it only shrinks: a page not on it must pass, and one on it that measures under WALL_CLEARED must leave it.
@@ -497,6 +512,7 @@ try {
     else if (wall.worst > WALL_LIMIT) problems.push(`walls ${route}: ${where}; the limit is ${WALL_LIMIT}px. Add a real output, diagram or demo there, or fold the long reference parts into <details>`);
   }
   await reader.close();
+  mark('walls');
   // Very wide screens: the outline moves to its own column on the right and keeps marking the section being read.
   const wider = await browser.newPage({ viewport: { width: 1600, height: 900 } });
   await wider.goto(base + '/docs/toolkit');
@@ -598,12 +614,14 @@ try {
   await desk.waitForTimeout(400);
   if ((await desk.evaluate(() => scrollY)) < 100) problems.push('1920px /docs/toolkit: a wheel over the page tree does not scroll the page');
   await desk.close();
+  mark('wide screens');
+  console.log(`${engine.name()} timings: ${laps.join(', ')}`);
   assert.deepEqual(problems, []);
   console.log(`${engine.name()}: ${ROUTES.length} routes at 360 and 1366 px under the site CSP PASS`);
 } finally {
   await browser.close();
   server.kill();
-  await rm(dir, { recursive: true, force: true });
+  await site.done();
 }
 
 /** Wait for the page as its reader sees it, the state the checks read: loaded, the site's kit scripts and `modules` (a

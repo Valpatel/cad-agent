@@ -64,14 +64,32 @@ parts cost 1.8 to 3.3 times the steel ones, and none of the listed parts goes in
 
 ## Where to buy
 
+```mermaid
+flowchart TD
+    P["PEM parts<br/>Bossard, loose"] --> Y["you press<br/>or rivet"]
+    S["SendCutSend<br/>cuts, bends, presses"] --> Y
+    R["rivets<br/>McMaster-Carr packs"] --> Y
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class P,S,R here
+    class Y out
+```
+
+*Where each part comes from. The sheet part comes from the shop, with or without its clinch parts pressed in; the
+loose parts and rivets come from a distributor.*
+
+
 - **PEM parts:** Bossard Americas sells them loose without an account, with stock counts on each part page. PEM sells
   through distributors, so other sellers have them too.
-- **Rivets:** McMaster-Carr sells them in packs of 100 or 250. POP and GESIPA rivets, whose ratings the rivet check
-  also uses, are sold through distributors. No POP or GESIPA prices are recorded yet.
+- **Rivets:** McMaster-Carr sells them in packs of 100 or 250. POP rivets, whose ratings the rivet check
+  also uses, are sold through distributors. No POP prices are recorded yet.
 - **Pressed in:** SendCutSend presses in 151 hardware parts from its feed, when you order the sheet part with
   hardware. Check its own limits with the `shop="sendcutsend"` checks.
 
 ## Keeping it current
+
+<details>
+<summary>The data, the test that guards it, and how to refresh it</summary>
 
 - **The data:** one item per orderable part number in `research/sheet-hardware.yaml`. Each item carries its price,
   the day it was read, its seller's page, its source in `research/references.yaml` and the part the checks know it as.
@@ -79,6 +97,8 @@ parts cost 1.8 to 3.3 times the steel ones, and none of the listed parts goes in
   know, a price with no date, or a source that is not cited.
 - **To refresh:** re-read the part pages one at a time and update `price_usd`, `price_checked` and `specs` for each
   item. Then redraw the chart with `python3 tools/process_figures.py`.
+
+</details>
 
 **Limits.** These are dated public prices before shipping and tax. Minimum orders and tooling (a press or a rivet gun)
 are not counted. They are not quotes. A part the checks list without a price comes last, with `offer` empty. The

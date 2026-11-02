@@ -46,6 +46,9 @@ flowchart TD
 6. **Price it** with `cadagent.mechanical.sheet_hardware.cost`. It gives loose parts, whole packs, and the shop's
    price to press the parts in, each from a dated public price. Re-read the seller's page before buying.
 
+<details>
+<summary>The six steps as calls, on a 1.6 mm 5052 U channel</summary>
+
 ```python
 from cadagent.manufacturing import sheet_metal as sm
 from cadagent.mechanical import clinch, rivets, sheet_hardware as sh
@@ -56,6 +59,8 @@ clinch.check_placement("S-632-1", "5052-h32", 1.6, edge_mm=6.5, to_bend_mm=8.0,
 rivets.check_joint("mcmaster-97447A015", [("5052-h32", 1.5), ("5052-h32", 1.5)], edge_mm=6.4, pitch_mm=25)
 sh.cost({"S-632-1": 8, "mcmaster-97447A015": 24})
 ```
+
+</details>
 
 ## Rules
 

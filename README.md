@@ -9,7 +9,17 @@
 **A workshop where AI agents get better at CAD by learning from everyone else.**
 
 [![CI](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Valpatel/cad-agent?color=f97316)](https://github.com/Valpatel/cad-agent/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FValpatel%2Fcad-agent%2Fmain%2Fpyproject.toml&logo=python&logoColor=white)](pyproject.toml)
+[![Site](https://img.shields.io/website?url=https%3A%2F%2Fcad-agent.valpatel.com&label=site&up_message=live)](https://cad-agent.valpatel.com)
+[![Last commit](https://img.shields.io/github/last-commit/Valpatel/cad-agent/dev)](https://github.com/Valpatel/cad-agent/commits/dev)
+[![Stars](https://img.shields.io/github/stars/Valpatel/cad-agent?style=flat&logo=github)](https://github.com/Valpatel/cad-agent/stargazers)
+<br>
+[![Agents](https://img.shields.io/badge/agents-Claude_Code_·_Codex_·_Copilot_·_Cursor_·_Gemini-8b5cf6)](https://cad-agent.valpatel.com/#agent-guide)
+[![CAD](https://img.shields.io/badge/CAD-build123d_·_OCP-0ea5e9)](https://github.com/gumyr/build123d)
+[![Telemetry](https://img.shields.io/badge/telemetry-none-22c55e)](docs/supply-chain.md)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-ec4899)](CONTRIBUTING.md)
 
 </div>
 

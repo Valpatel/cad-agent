@@ -379,3 +379,7 @@ def test_the_hero_is_the_first_thing_in_the_readme():
     hero = readme.find('<img src="docs/img/hero/gyropup-leg.svg"')
     assert 0 <= hero < readme.find("# cad-agent") < readme.find("## ")
     assert not readme[:hero].strip("\n").replace('<div align="center">', "").strip()
+    # GitHub only renders Markdown inside the centring div when blank lines surround it; without them the title
+    # shows as a literal "# cad-agent" and the badges as raw links.
+    assert "\n\n# cad-agent\n\n" in readme
+    assert re.search(r"\n\n\[!\[CI\]", readme)

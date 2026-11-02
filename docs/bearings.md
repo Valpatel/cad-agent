@@ -67,13 +67,15 @@ through 4θ, so a million revolutions of fatigue last 90 / θ million oscillatio
 where its neighbour started: parts of the raceway are never loaded and the rest are loaded more often, which
 shortens the life (the Rumbarger factor, as Menck and Stammler, 2024, correct it). At small amplitudes the contact
 hardly moves off its own footprint, and **wear and false brinelling, not fatigue, end the bearing**: the check
-compares the arc x each contact rolls with the contact's width 2b, and warns below 1.
+compares the arc x each contact rolls from the swing's centre to one end (half the stroke) with the contact's
+width 2b, and warns below 1. A wear study that measures x over the full stroke quotes twice this ratio.
 
 ![Left: oscillations per revolution of equal fatigue against amplitude on log axes; Harris's 90/θ and the Rumbarger factor for 7 balls, which falls below Harris under the critical amplitude of 71 degrees; below 10 degrees is shaded; the knee at ±30 degrees reads 2.75. Right: the knee's check rows: the 6201-2RSH passes life, speed and running s0 3.44 but fails s0 0.89 in a 3485 N power cut; the 6301-2RSH passes with 1.19](img/bearings/knee.svg)
 
 *Drawn by `tools/bearing_figures.py` from `check_bearing` on the worked example: a walking robot's knee, an SKF
 6201-2RSH swinging ±30° once a second, 900 N for 60 % of each stride and 150 N for the rest (assumed loads), and a
-fall with the power cut that puts 3 485 N on one bearing (the peak Gyropup's leg rig records at its rear knee).*
+fall with the power cut that puts 3 485 N on the more loaded of the knee's two bearings (a simulated load, not a
+measured one: Gyropup's undamped power cut, with the knee's moment taken over the 6201 pair's 38 mm span).*
 
 What the example shows:
 
@@ -81,7 +83,8 @@ What the example shows:
   oscillations: far beyond any walking robot's life.
 - **The peak is.** A power cut that folds the leg puts 3 485 N on a bearing whose C0 is 3 100 N: s0 0.89, below
   SKF's 1.0 for an infrequent, uncertain peak. The raceways dent and the knee runs rough afterwards. An SKF
-  6301-2RSH in the same 12 mm bore (C0 4 150 N) brings it to 1.19. SKF also says a bearing that oscillates slowly
+  6301-2RSH in the same 12 mm bore (C0 4 150 N) brings it to 1.19 under the same load (a wider bearing changes the
+  span, and so the load: check the layout you build). SKF also says a bearing that oscillates slowly
   under load is sized on its static load (p. 104), so the running load is checked too.
 - **±30° is below the critical amplitude** (40.5° inner, 70.5° outer for 7 balls), so the life is 92 % of
   Harris's. The internal geometry, 7 balls of 5.953 mm (15/64 in), is **assumed**: SKF does not publish it. It agrees

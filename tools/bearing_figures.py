@@ -25,7 +25,8 @@ from cadagent.mechanical import bearings as mb          # noqa: E402
 
 OUT = ROOT / "docs" / "img" / "bearings"
 # The worked example the page quotes: a walking robot's knee, a sealed 6201 swinging +/-30 degrees once a second,
-# 900 N for 60 % of each stride and 150 N for the rest, 2 000 h asked; a fall with the power cut puts 3 485 N on it.
+# 900 N for 60 % of each stride and 150 N for the rest, 2 000 h asked; a fall with the power cut puts 3 485 N on
+# the more loaded of the knee's two bearings (simulated, not measured: see the page's caption).
 KNEE = dict(oscillation={"amplitude_deg": 30, "cycles_per_min": 60},
             duty=[{"name": "stance", "radial_n": 900, "share": 0.6}, {"name": "swing", "radial_n": 150, "share": 0.4}],
             required_hours=2000, static=[{"name": "power cut", "radial_n": 3485}])

@@ -46,7 +46,7 @@
 <text x="276.5" y="244">0.43× warn ▲</text>
 <text x="220.0" y="266" text-anchor="end">contact travel</text>
 <line class="grid" x1="230.0" y1="262" x2="630.0" y2="262" stroke-dasharray="2 4"/>
-<circle class="s3 ring" cx="424.8" cy="262" r="6" stroke-width="2"><title>x / 2b = 2.67 mm rolled against a contact 0.211 mm wide at 900 N (Hertz contact of a 5.953 mm ball (one of 7) at osculation 0.52, Qmax = 5 Fr / Z)</title></circle>
+<circle class="s3 ring" cx="424.8" cy="262" r="6" stroke-width="2"><title>x / 2b = 2.67 mm rolled from the swing's centre to one end against a contact 0.211 mm wide at 900 N (Hertz contact of a 5.953 mm ball (one of 7) at osculation 0.52, Qmax = 5 Fr / Z)</title></circle>
 <text x="435.8" y="266">13×</text>
 <text x="220.0" y="288" text-anchor="end">rating life</text>
 <line class="grid" x1="230.0" y1="284" x2="630.0" y2="284" stroke-dasharray="2 4"/>

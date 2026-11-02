@@ -12,7 +12,7 @@ seal failure, grease life, a seat that lets the ring creep, or false brinelling.
 a bearing survives. Test the joint. :mod:`cadagent.mechanical.bearings` holds catalogue bearings and checks a whole
 bearing with these functions.
 
-Sources: ISO 281:2007 and ISO 76:2006 as SKF's catalogue applies them (SKF, Rolling bearings, 17000/1 EN, 2018-12),
+Sources: ISO 281:2007 and ISO 76:2006 as SKF's catalogue applies them (SKF, Rolling bearings, 17000/1 EN, 2018-10),
 the oscillation factors as Menck and Stammler (2024) review them, and the exact Hertz point contact (Johnson,
 Contact Mechanics; Hamrock and Brewe for the approximations it is tested against).
 """
@@ -363,7 +363,9 @@ def rumbarger_factor(amplitude: float, critical: float, roller: bool = False) ->
 def rolling_travel(amplitude: float, pitch_diameter: float, ball_diameter: float, raceway: str = "inner") -> float:
     """How far a contact rolls over the raceway while the moving ring swings theta: on the moving (inner) ring
     0.5 theta (1 + gamma) of its raceway radius dm (1 - gamma) / 2, on the stationary (outer) ring 0.5 theta (1 - gamma)
-    of dm (1 + gamma) / 2; both come to theta dm (1 - gamma^2) / 4."""
+    of dm (1 + gamma) / 2; both come to theta dm (1 - gamma^2) / 4. Theta is the amplitude, centre to one end, so
+    this is the roll from the swing's centre to one end: over a full stroke the contact travels 2 x. Wear studies
+    that quote x / 2b over the full stroke give twice this ratio."""
     th = math.radians(_positive("amplitude", amplitude))
     dm, dw = _positive("pitch_diameter", pitch_diameter), _positive("ball_diameter", ball_diameter)
     g = dw / dm

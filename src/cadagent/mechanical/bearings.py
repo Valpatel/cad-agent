@@ -277,6 +277,9 @@ def _blocks(b: Bearing, radial_n: float, axial_n: float, duty: Optional[List[Dic
     if any(s is not None for s in speeds):
         if not rotating or any(s is None for s in speeds):
             raise ValueError("give speed_rpm in every block of a turning bearing's duty cycle, or in none")
+        if abs(sum(blk["share"] for blk in out) - 1.0) > 1e-6:
+            raise ValueError("the duty blocks' shares of the time must sum to 1, not "
+                             f"{sum(blk['share'] for blk in out):g}")
         shares = fx.revolution_fractions([blk["share"] for blk in out], speeds)
         mean = sum(blk["share"] * s for blk, s in zip(out, speeds)) / sum(blk["share"] for blk in out)
         for blk, u in zip(out, shares):
@@ -346,7 +349,16 @@ def check_bearing(bearing_key: Any, radial_n: float = 0.0, axial_n: float = 0.0,
         raise ValueError(f"clearance must be one of {fx.CLEARANCES}, not {clearance!r}")
     if speed_rpm is not None and rotating and duty is not None and any("speed_rpm" in d for d in duty):
         raise ValueError("give speed_rpm for the whole duty cycle or a speed_rpm in each block, not both")
+    if oscillation is not None and rotating:
+        raise ValueError("a bearing turns (speed_rpm, here in the duty blocks) or swings (oscillation), not both")
     moving = speed_rpm is not None or oscillation is not None or rotating
+    if not moving:
+        given = [k for k, v in (("radial_n", radial_n), ("axial_n", axial_n), ("duty", duty),
+                                ("required_hours", required_hours), ("required_millions", required_millions))
+                 if v not in (None, 0, 0.0)]
+        if given:
+            raise ValueError(f"{', '.join(given)} need a motion: give speed_rpm or an oscillation (or put a load that "
+                             "only stands still in static)")
     rows: List[Dict[str, Any]] = []
     p = fx.life_exponent(b.roller)
     blocks: List[Dict[str, Any]] = []
@@ -442,7 +454,8 @@ def check_bearing(bearing_key: Any, radial_n: float = 0.0, axial_n: float = 0.0,
                 ratio = x / width["width"]
                 life["contact"] = {"travel_m": x, "width_m": width["width"], "x_over_2b": ratio, "basis": width["basis"]}
                 rows.append(_row("contact travel", round(ratio, 2), 1.0, "warn" if ratio < 1 else "pass",
-                                 f"x / 2b = {x * 1e3:.2f} mm rolled against a contact {width['width'] * 1e3:.3f} mm wide at "
+                                 f"x / 2b = {x * 1e3:.2f} mm rolled from the swing's centre to one end against a "
+                                 f"contact {width['width'] * 1e3:.3f} mm wide at "
                                  f"{fr_max:.0f} N ({width['basis']})" +
                                  (("" if (internal or {}).get("ball_mm") else "; the ball is taken as 0.3 (D - d)")) +
                                  ("; below 1 the contact never leaves its footprint: false brinelling and wear, not "

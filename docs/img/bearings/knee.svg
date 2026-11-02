@@ -42,8 +42,8 @@
 <text x="610.0" y="120">warn ▲<title>below the outer raceway's critical amplitude 70.5 degrees (inner 40.5): parts of the raceway are never rolled over and the rest more often, so the Rumbarger factor is used, 92% of Harris's</title></text>
 <text x="710.0" y="120">warn ▲<title>no internal geometry (balls, ball_mm): the critical amplitude is not checked and Harris's factor is used; below it the life is shorter (for balls by (theta / theta_crit)^0.1)</title></text>
 <text x="420.0" y="142">contact travel</text>
-<text x="610.0" y="142">pass 12.66<title>x / 2b = 2.67 mm rolled against a contact 0.211 mm wide at 900 N (Hertz contact of a 5.953 mm ball (one of 7) at osculation 0.52, Qmax = 5 Fr / Z)</title></text>
-<text x="710.0" y="142">pass 15.84<title>x / 2b = 2.91 mm rolled against a contact 0.183 mm wide at 900 N (NSK's constants for its 6301 (K3 0.019: 2b = K3 Fr^(1/3)); NSK Ltd., Technical Report CAT. No. E728h, Section 5.4, Table 1 (constants K1, K2, K3), p. 117; another maker's internal geometry differs); the ball is taken as 0.3 (D - d)</title></text>
+<text x="610.0" y="142">pass 12.66<title>x / 2b = 2.67 mm rolled from the swing's centre to one end against a contact 0.211 mm wide at 900 N (Hertz contact of a 5.953 mm ball (one of 7) at osculation 0.52, Qmax = 5 Fr / Z)</title></text>
+<text x="710.0" y="142">pass 15.84<title>x / 2b = 2.91 mm rolled from the swing's centre to one end against a contact 0.183 mm wide at 900 N (NSK's constants for its 6301 (K3 0.019: 2b = K3 Fr^(1/3)); NSK Ltd., Technical Report CAT. No. E728h, Section 5.4, Table 1 (constants K1, K2, K3), p. 117; another maker's internal geometry differs); the ball is taken as 0.3 (D - d)</title></text>
 <text x="420.0" y="164">rating life</text>
 <text x="610.0" y="164">pass<title>L10 = 2.42e+03 million oscillations = 672,798 h; C / P = 9.58; reaches the 2000 h asked</title></text>
 <text x="710.0" y="164">pass<title>L10 = 7.04e+03 million oscillations = 1,956,887 h; C / P = 13.29; reaches the 2000 h asked</title></text>

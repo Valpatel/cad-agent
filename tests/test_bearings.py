@@ -308,6 +308,23 @@ def test_a_duty_cycle_by_time_at_two_speeds():
         mb.check_bearing("skf-6201")
 
 
+def test_refuses_what_it_would_otherwise_drop_or_misread():
+    """Review of #267: per-block speeds on a swinging joint would weight the blocks by speed and check their r/min;
+    a load or a life without a motion would be dropped and a static-only check pass; time shares are not weights."""
+    with pytest.raises(ValueError, match="not both"):
+        mb.check_bearing("skf-6201", oscillation={"amplitude_deg": 30, "cycles_per_min": 60}, required_hours=100,
+                         duty=[{"radial_n": 900, "share": 0.5, "speed_rpm": 10},
+                               {"radial_n": 150, "share": 0.5, "speed_rpm": 1000}])
+    for extra in ({"radial_n": 5000}, {"axial_n": 100}, {"required_hours": 1e9}, {"required_millions": 5},
+                  {"duty": [{"radial_n": 900, "share": 1.0}]}):
+        with pytest.raises(ValueError, match="need a motion"):
+            mb.check_bearing("skf-6201", static=[{"radial_n": 500}], **extra)
+    assert mb.check_bearing("skf-6201", static=[{"radial_n": 500}])["verdict"] == "pass"
+    with pytest.raises(ValueError, match="time must sum to 1"):
+        mb.check_bearing("skf-6201", duty=[{"radial_n": 400, "share": 3, "speed_rpm": 500},
+                                           {"radial_n": 800, "share": 7, "speed_rpm": 1500}])
+
+
 def test_check_spec_and_the_cli(tmp_path):
     spec = {"defaults": {"bearing": "skf-6201-2rsh", "oscillation": KNEE["oscillation"]},
             "bearings": [{"name": "knee", "duty": KNEE["duty"], "required_hours": 2000, "static": KNEE["static"]},

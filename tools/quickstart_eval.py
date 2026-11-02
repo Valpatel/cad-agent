@@ -46,9 +46,14 @@ UNATTENDED = ("Nobody is watching this session: do not ask me questions, make se
               "Do not file anything on GitHub or push anywhere; leave any report as cad-agent-report.md here.")
 REPORT_HEADINGS = ("Model", "Harness", "cad-agent commit", "Layer", "Building", "Missing or learned", "Sources", "Confidence")
 # A kit command that does design work (not install, help or listing), or the Python package itself.
-KIT_USE = re.compile(r"cad-agent\s+(?!agents\b|--help\b|-h\b)[a-z][a-z0-9-]*(?![a-z0-9-])(?!\s+(?:--help|-h)\b)|\b(?:from|import)\s+cadagent\b")
-DISCOVERY = re.compile(r"llms(?:-full)?\.txt|catalog(?:/[\w-]+)?\.json|cad-agent\.valpatel\.com/[\w/.-]+\.md|SKILL\.md|"
-                       r"cad-agent(?:\s+[a-z0-9-]+)?\s+(?:--help|-h)\b|/docs/[\w-]+\.md")
+# Run as a command (at the start, after a space, a shell operator or a quote, or as .venv/bin/cad-agent; not a path such as
+# ~/cad-agent), only in commands the agent ran, not in files it wrote. `agents`, `--help` and `-h` are install and help.
+KIT_USE = re.compile(r"(?:^|(?<=[\s;&|(`'\"])|(?<=bin/))cad-agent\s+(?!agents\b|--help\b|-h\b)[a-z][a-z0-9-]*(?![a-z0-9-])"
+                     r"(?!\s+(?:--help|-h)\b)|\b(?:from|import)\s+cadagent\b", re.M)
+RUNS = ("Bash", "command_execution")
+# Finding the way: the site's indexes and pages, the clone's docs, lessons and skills, and the commands' help.
+DISCOVERY = re.compile(r"llms(?:-full)?\.txt|catalog(?:/[\w-]+)?\.json|\.md\b|(?:docs|lessons|skills|examples)/|"
+                       r"cad-agent(?:\s+[a-z0-9-]+)?\s+(?:--help|-h)\b")
 POSTS = re.compile(r"\bgh\s+(?:issue|pr)\s+create\b|\bgit\s+push\b|\bgh\s+api\b.*-X\s*POST")
 
 
@@ -184,10 +189,12 @@ def _calls(rows: list) -> list:
         if r.get("type") == "assistant":
             for c in (r.get("message") or {}).get("content") or []:
                 if c.get("type") == "tool_use" and not r.get("parent_tool_use_id"):
-                    calls.append({"name": c.get("name"), "text": json.dumps(c.get("input"))})
+                    given = c.get("input") or {}
+                    text = given.get("command") if isinstance(given.get("command"), str) else json.dumps(given)
+                    calls.append({"name": c.get("name"), "text": text})
         item = r.get("item") or {}
         if r.get("type") == "item.completed" and item.get("type") in ("command_execution", "web_search", "file_change", "mcp_tool_call"):
-            calls.append({"name": item["type"], "text": json.dumps(item)})
+            calls.append({"name": item["type"], "text": item.get("command") if isinstance(item.get("command"), str) else json.dumps(item)})
     return calls
 
 
@@ -265,9 +272,10 @@ def grade(work: Path) -> dict:
     texts = [c["text"] for c in calls]
     first = lambda pat: next((i + 1 for i, t in enumerate(texts) if re.search(pat, t)), None)
     installed = first(r"agents install")
-    first_use = next((i + 1 for i, t in enumerate(texts) if KIT_USE.search(t)), None)
+    ran = [c["text"] if c["name"] in RUNS else "" for c in calls]
+    first_use = next((i + 1 for i, t in enumerate(ran) if KIT_USE.search(t)), None)
     kit_used = sorted({m.group(0).split()[1] if m.group(0).startswith("cad-agent") else "cadagent (Python)"
-                       for t in texts for m in KIT_USE.finditer(t)})
+                       for t in ran for m in KIT_USE.finditer(t)})
     home = work / "home"
     venv_ok = (home / "cad-agent" / ".venv" / "bin" / "cad-agent").exists()
     head = subprocess.run(["git", "-C", str(home / "cad-agent"), "rev-parse", "--short", "HEAD"],
@@ -297,6 +305,7 @@ def grade(work: Path) -> dict:
             "passed": sum(checks.values()), "of": len(checks),
             "tool_calls": len(calls), "calls_to_install": installed,
             "calls_to_first_kit_use": first_use,
+            "calls_from_install_to_first_kit_use": first_use - installed if first_use and installed else None,
             "discovery_calls_before_first_kit_use": sum(1 for t in texts[:(first_use or len(texts)) - 1] if DISCOVERY.search(t)),
             "kit_used": kit_used, "parts": parts, "session": session, "report": report, "clone_commit": head, **_usage(rows)}
 

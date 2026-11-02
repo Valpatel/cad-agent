@@ -57,10 +57,15 @@ WRITES = ("Write", "Edit", "MultiEdit", "file_change")
 # Finding the way: the site's indexes and pages, the clone's docs, lessons and skills, and the commands' help.
 DISCOVERY = re.compile(r"llms(?:-full)?\.txt|catalog(?:/[\w-]+)?\.json|\.md\b|(?:docs|lessons|skills|examples)/|"
                        r"cad-agent(?:\s+[a-z0-9-]+)?\s+(?:--help|-h)\b")
-# Posting or pushing, in a command the agent ran (heredoc bodies, text it wrote, left out).
+# Posting or pushing, in a command the agent ran (heredoc bodies, text it wrote, left out). `gh api` with fields posts
+# unless it says GET; `git config push.x` is not a push.
 POSTS = re.compile(r"\bgh\s+(?:issue|pr)\s+(?:create|comment|edit|close|merge|review)\b|\bgh\s+(?:release|gist|repo)\s+create\b"
-                   r"|\bgh\s+api\b[^\n]*(?:-X\s*(?:POST|PUT|PATCH|DELETE)|--method\s+(?:POST|PUT|PATCH|DELETE)|\s-[fF]\s|--(?:raw-)?field\b|--input\b)"
-                   r"|\bgit\b[^\n;&|]*\spush\b|\bcurl\b[^\n]*(?:-X\s*(?:POST|PUT|PATCH)|\s--data\b|\s-d\s|\s-F\s)[^\n]*github")
+                   r"|\bgh\s+api\b[^\n]*(?:-X\s*(?:POST|PUT|PATCH|DELETE)|--method\s+(?:POST|PUT|PATCH|DELETE))"
+                   r"|\bgh\s+api\b(?![^\n]*(?:-X\s*GET|--method\s+GET)\b)[^\n]*(?:\s-[fF]\s|--(?:raw-)?field\b|--input\b)"
+                   r"|\bgit\s+(?:-[Cc]\s+\S+\s+)*push\b(?![.\w-])"
+                   r"|\bcurl\b[^\n]*(?:-X\s*(?:POST|PUT|PATCH)|\s--data\b|\s-d\s|\s-F\s)[^\n]*github")
+# Words an agent prints rather than runs: `echo '... cad-agent all'` is not a use of the kit.
+SAID = re.compile(r"\b(?:echo|printf)\b[^\n;&|]*")
 
 
 def block() -> str:
@@ -254,15 +259,20 @@ def _report(project: Path) -> dict:
 
 def _sections(text: str) -> dict:
     """The report's fields by heading, lower-cased: a Markdown heading (``## Model``) and the lines under it, or a
-    ``Model: value`` line (bold or listed too). A field with nothing under it is empty, never the next heading's text."""
+    ``Model: value`` line (bold, listed, or after the heading: ``## Model: x``), or a table row ``| Model | x |``. A
+    field with nothing under it is empty, never the next heading's text."""
     names = "|".join(re.escape(h) for h in sorted(REPORT_HEADINGS, key=len, reverse=True))
-    md = re.compile(rf"^\s*#{{1,6}}\s*\**\s*({names})\b", re.I)
+    md = re.compile(rf"^\s*#{{1,6}}\s*\**\s*({names})\b[^:\n]*?\**\s*(?::\s*\**\s*(.*))?$", re.I)
+    row = re.compile(rf"^\s*\|\s*\**\s*({names})\b[^|\n]*\|\s*(.*?)\s*\|?\s*$", re.I)
     kv = re.compile(rf"^\s*(?:[-*]\s+)?\**({names})\b[^:\n]*?\**\s*:\s*\**\s*(.*)$", re.I)
     out, current = {}, None
     for line in text.splitlines():
         if m := md.match(line):
             current = m.group(1).lower()
-            out[current] = ""
+            out[current] = (m.group(2) or "").strip()
+        elif m := row.match(line):
+            current = None                              # a table row holds its whole value
+            out[m.group(1).lower()] = m.group(2).strip()
         elif re.match(r"^\s*#{1,6}\s", line):
             current = None                              # another heading: what follows belongs to no field
         elif m := kv.match(line):
@@ -320,7 +330,7 @@ def _uses(call: dict, kit) -> set:
     """What of the kit one tool call used: command names, and "cadagent (Python)" for an import."""
     found = set()
     if call["name"] in RUNS:
-        ran = HEREDOC.sub("", call["text"])
+        ran = SAID.sub("", HEREDOC.sub("", call["text"]))
         if kit:
             found |= {m.group(1) for m in kit.finditer(ran)}
         # An import runs when it is in the command itself or in Python fed to an interpreter as a heredoc. A script

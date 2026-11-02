@@ -22,7 +22,8 @@ Required checks, all automated. Nobody, agent or person, merges around them.
 flowchart TD
     F["feat/ fix/ ci/ docs/ …<br/>from dev"] -->|"CI · branch-flow · review"| D["dev"]
     D -->|"CI · branch-flow · review<br/>· release"| M["main"]
-    M -->|"release.yml"| R["tag vX.Y.Z · GitHub release<br/>site deploy"]
+    M -->|"release.yml"| R["tag vX.Y.Z · GitHub release"]
+    M -->|"Cloudflare Pages (Git)"| W["site build + deploy"]
     classDef b fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef r fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
     class F,D,M b
@@ -43,7 +44,7 @@ flowchart TD
 - **How the gates run.** `gates.yml` runs on `pull_request_target`: the default branch's (`dev`'s) copy of the workflow and of [`tools/ci_gates.py`](tools/ci_gates.py) decides, so a PR cannot pass the gates by editing them, and PRs into `main` (which come from `dev`) are judged by the same copy. The PR is only read as data, never checked out or run. Results are commit statuses named after the base, so a PR into `dev` cannot supply `main`'s checks. A fork's own workflows run with a read-only token, so they cannot post statuses; anyone with write access can, which is why write access is the trust boundary. Fork workflows wait for approval; the intake skill (#120) reads a fork's workflow changes before approving them.
 - **When they run.** On every push to the PR, when the reviewer re-runs them after a verdict, and every 15 minutes for all open PRs (a review cannot trigger them). A run for one PR posts `pending` first, so a crash leaves the PR blocked rather than green. The sweep posts only statuses that change: GitHub keeps at most 1000 statuses per commit and name, and refuses new ones after that.
 - **Just before merging**, run `python3 tools/ci_gates.py all --repo Valpatel/cad-agent --pr <n>` from an up-to-date `dev` checkout. It reads the reviews live and must exit 0, so a block posted since the last run stops the merge.
-- **GitHub settings the gates need** (owner): the `cad-gates/…` checks required on `dev` and `main` with GitHub Actions as their source; an Actions event policy for `.github/workflows/gates.yml` that allows all three of its events, `pull_request_target`, `schedule` and `workflow_dispatch` (GitHub disables `pull_request_target` by default in public repos from 2026-12-02, and a policy lists allowed events, so one left out stops the sweep or the re-run); and the deploy token as a `production` environment secret.
+- **GitHub settings the gates need** (owner): the `cad-gates/…` checks required on `dev` and `main` with GitHub Actions as their source; an Actions event policy for `.github/workflows/gates.yml` that allows all three of its events, `pull_request_target`, `schedule` and `workflow_dispatch` (GitHub disables `pull_request_target` by default in public repos from 2026-12-02, and a policy lists allowed events, so one left out stops the sweep or the re-run).
 - **Pins.** Workflow actions are pinned by commit SHA, and Dependabot proposes updates weekly.
 
 ## Workflow
@@ -112,9 +113,20 @@ such as a new command or check, even one that asks nothing of projects.
 3. `release.yml` then:
    - tags `vX.Y.Z` on the merge commit;
    - publishes the GitHub release from the CHANGELOG entry;
-   - deploys cad-agent.valpatel.com from that commit, if the owner has set the `production` secret below. Until then
-     the site job warns "site not deployed" and exits 0: that is a skipped deploy, not a working one. Deploy by hand
-     from `main` and check `https://cad-agent.valpatel.com/version.json`.
 
-   The deploy uses the `production` environment, which only `main` may deploy to. It needs that environment's `CLOUDFLARE_API_TOKEN` secret, set by the owner with `gh secret set CLOUDFLARE_API_TOKEN --env production`, and its `CLOUDFLARE_ACCOUNT_ID` variable.
+   Cloudflare Pages deploys the site; `release.yml` does not. The Pages project `cad-agent` (the name in
+   `wrangler.toml` and `npm run deploy:site`) is connected to this repository like every Valpatel Pages site:
+   build command `npm ci && npm run build`, output `dist`, root directory blank. Two settings differ from
+   Cloudflare's defaults and matter here:
+   - **Production branch `main`.** This repository's default branch is `dev`, and the release build accepts HEAD on
+     `origin/dev` too, so a production branch of `dev` would publish every merge into `dev`.
+   - **Preview deployments: None.** A branch build fails the release build's reviewed-commits check, and would put
+     a red Cloudflare check on every PR.
+   - On each push to `main` it runs `npm ci && npm run build` and publishes `dist` to cad-agent.valpatel.com and
+     cad-agent.gyropup.com. `tools/pages-build.mjs` fetches the full history and `origin/main` and `origin/dev`,
+     which Cloudflare's clone lacks, then runs `tools/build-site.mjs --release`.
+   - With previews off, only `main` publishes.
+   - Check that `https://cad-agent.valpatel.com/version.json` shows the release.
+   - `npm run deploy:site` uploads a build by hand. Use it only when Cloudflare's build is down.
+
 4. Move the projects' pins (`requirements*.txt`) to the tag, each in its own PR.

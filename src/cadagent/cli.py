@@ -20,7 +20,7 @@ from cadagent.project import CadConfigError, CadProject, SourceDateEpochError, S
 
 SUBCOMMANDS = ("build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
                "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet",
-               "review-section", "agents", "motion-trace", "release", "snapfit")
+               "review-section", "agents", "motion-trace", "release", "snapfit", "inserts")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -858,6 +858,36 @@ def cmd_snapfit(args: argparse.Namespace) -> int:
     return 0 if result["pass"] else 1
 
 
+def cmd_inserts(args: argparse.Namespace) -> int:
+    """Check heat-set insert and compression-limiter joints declared in a file (cadagent.mechanical.inserts); exit 1
+    if any joint fails (a warning does not fail it)."""
+    from cadagent.mechanical import inserts
+    text = Path(args.spec).read_text()
+    if str(args.spec).endswith((".yaml", ".yml")):
+        import yaml
+        try:
+            data = yaml.safe_load(text)
+        except yaml.YAMLError as exc:
+            raise ValueError(f"{args.spec} is not valid YAML: {exc}") from None
+    else:
+        data = json.loads(text)
+    result = inserts.check_spec(data)
+    for joint in result["joints"]:
+        torque = joint["torque"]
+        what = (f"{joint['insert']['thread']} {joint['insert']['part']} in {joint['material']['name']}, "
+                f"{joint['clamp']['path']}" if "insert" in joint else
+                f"{joint['thread']} clamping {joint['material']['name']}" +
+                (" through a limiter" if joint["limiter"] else ""))
+        _say(f"{joint['verdict'].upper():4}  {joint['name']}: {what}; tighten to at most "
+             f"{torque['allowed_nm']:.2f} N m ({torque['governed_by'].replace('_', ' ')})")
+        for row in joint["checks"]:
+            if row["verdict"] != "pass":
+                _say(f"      {row['verdict']}: {row['check']}: {row['detail']}")
+    if args.output:
+        Path(args.output).write_text(json.dumps(result, indent=2, default=str, allow_nan=False) + "\n")
+    return 0 if result["verdict"] != "fail" else 1
+
+
 def cmd_motion_trace(args: argparse.Namespace) -> int:
     """Check captured rendered landmarks, or print the required capture poses; no project config needed."""
     from cadagent.mechanical.motion_trace import required_poses, validate_motion_trace
@@ -900,6 +930,12 @@ def dispatch(args: argparse.Namespace) -> int:
             return cmd_snapfit(args)
         except (OSError, ValueError, KeyError) as exc:
             _err(f"snapfit: {exc}")
+            return 2
+    if sub == "inserts":                                   # works on a declaration file only: no project needed
+        try:
+            return cmd_inserts(args)
+        except (OSError, ValueError, KeyError) as exc:
+            _err(f"inserts: {exc}")
             return 2
     if sub == "mcmaster":                                  # works on files only: no project needed
         try:
@@ -994,6 +1030,10 @@ def build_parser() -> argparse.ArgumentParser:
     sf_p = sub.add_parser("snapfit", help="Size and check snap fits declared in a YAML/JSON file (docs/compliant.md)")
     sf_p.add_argument("spec", help="file with a 'snaps' list")
     sf_p.add_argument("--output", help="write the full result as JSON")
+    in_p = sub.add_parser("inserts", help="Check heat-set insert and compression-limiter joints declared in a "
+                                          "YAML/JSON file (docs/inserts.md)")
+    in_p.add_argument("spec", help="file with a 'joints' list")
+    in_p.add_argument("--output", help="write the full result as JSON")
     ag_p = sub.add_parser("agents", help="Install the agent workflow kit (skills and subagents) for Claude Code and Codex, "
                                          "or list what is installed (docs/agent-workflow.md)")
     ag_p.add_argument("action", choices=("install", "list"))

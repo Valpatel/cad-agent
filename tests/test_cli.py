@@ -45,7 +45,8 @@ def test_parser_exposes_every_subcommand():
     sub = next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction))
     assert set(sub.choices) == {"build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "webkit",
                                 "pcb-check", "all", "mcmaster", "catalogue", "compare", "optimise", "dossier",
-                                "gates", "review-packet", "review-section", "agents", "motion-trace", "release", "snapfit"}
+                                "gates", "review-packet", "review-section", "agents", "motion-trace", "release", "snapfit",
+                                "inserts"}
     assert set(sub.choices) == set(SUBCOMMANDS)
     args = parser.parse_args(["build", "--project", "/p", "--from", "two", "--only", "two", "three"])
     assert (args.cad_command, args.project, args.from_step, args.only) == ("build", "/p", "two", ["two", "three"])

@@ -301,6 +301,8 @@ def boss_cases(add, refuse):
     refuse("boss_hoop_stress", 1e6, 3 * mm, 3 * mm)
     refuse("boss_hoop_stress", -1.0, 3 * mm, 6 * mm)
     refuse("thread_strip_force", 3 * mm, 0.5 * mm, 6 * mm, 1e7, "both")
+    for bad in (60.0, 0.0, -0.5, math.pi / 2, "1"):     # degrees by mistake, none, negative, 90 degrees, a string
+        refuse("nut_factor", 3 * mm, 0.5 * mm, 0.15, 0.15, bad)
 
 
 # The screw-boss explorer's screw sizes (DELTA PT 20 to 50: 2 to 5 mm).

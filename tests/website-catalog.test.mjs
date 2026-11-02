@@ -50,6 +50,20 @@ test('schema 2 keeps every schema-1 field, with the same meaning', () => {
   assert.equal(commands, catalog.items.filter(i => i.kind === 'tool').length);
 });
 
+test('schema 2 lost gyropup in v0.10.0 but kept its schema value: fields.removed says so, and no entry has it', async () => {
+  // Bumping to /3 would break every reader that checks for /2, so the removal is recorded in the file instead.
+  assert.match(catalog.fields.removed, /gyropup: removed in v0\.10\.0\. Do not rely on it/);
+  assert.match(catalog.fields.removed, /cad-agent-catalog\/2/);
+  assert.ok(catalog.items.every(i => !('gyropup' in i)), 'a catalog.json entry has gyropup');
+  const files = (await readdir(path.join(out, 'catalog'))).filter(f => f.endsWith('.json') && f !== 'index.json');
+  assert.ok(files.length > 20, `only ${files.length} area files`);
+  for (const f of files) {
+    const area = await json(`catalog/${f}`);
+    assert.ok(area.items.every(i => !('gyropup' in i)), `catalog/${f}: an entry has gyropup`);
+    assert.doesNotMatch(JSON.stringify(area.fields), /gyropup/i, `catalog/${f}: its fields describe gyropup`);
+  }
+});
+
 test('schema-1 fields keep their schema-1 values: summary, licence (null stays null), tool urls', () => {
   // Schema 1's builder, as it was (tools/build-site.mjs before catalogue v2), run over today's data.
   const landscape = JSON.parse(show('research/landscape.json'));
@@ -395,7 +409,8 @@ test('maturity: the key lists every level in docs/areas.yaml, in order, and each
 
 test('no project is singled out: no Gyropup flag, badge, filter, boost or field (cad-agent is a general toolkit)', () => {
   assert.ok(catalog.items.every(i => !('gyropup' in i)), 'catalog.json entries have a gyropup field');
-  assert.doesNotMatch(JSON.stringify(catalog.fields), /gyropup/i);
+  // Only the note that it was removed names it (schema test above).
+  assert.doesNotMatch(JSON.stringify({ ...catalog.fields, removed: undefined }), /gyropup/i);
   assert.doesNotMatch(`${index.how} ${JSON.stringify(index.fields)}`, /gyropup/i, 'index.json still describes a gyropup filter or priority');
   // Areas list the real projects that used them (Gyropup among them, like the others), and priority is only `demo`.
   for (const d of index.domains) for (const a of d.areas) {

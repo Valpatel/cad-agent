@@ -152,7 +152,30 @@ svg.glyph{flex:none;width:20px;height:20px;fill:none;stroke:currentColor;stroke-
 .area-link[aria-current=true]>.mat-dots{--on:#9fe0d4;--off:#ffffff40}
 .area-link.dom-all[aria-current=true]::after{color:#ffb595}
 .area-tree>li>.area-link[aria-current=true]{border-color:var(--ink);background-color:var(--ink)}
-.area-link[aria-current=true]:focus-visible{outline-color:#fffdf5}
+/* the chosen row's ring sits inside its band, with band showing outside it: at the tree's -3px it covered the band's
+   outer edge and merged with the white panel, so focus read as the band shrinking (#239 review) */
+.area-link[aria-current=true]:focus-visible{outline-color:#fffdf5;outline-offset:-6px}
+/* Forced colours (Windows High Contrast and the like) swap the palette above for a few system colours and drop the
+   gradients, which left every bar step and the chosen row the same Canvas. In system colours instead: a filled step is
+   CanvasText, an empty one an outlined Canvas; the hover and focus bar is CanvasText; the chosen row is the system's
+   selection (Highlight, HighlightText), with its bar, count and focus ring in the same pair (a forced ring would be
+   Highlight, the band's own colour); the key's meaning, which loses its fill and shadow, gets an outline. The chosen
+   row's text (its name, a domain row's arrow) opts out of the adjustment only to drop the Canvas backplate Chrome
+   paints behind text, which hid HighlightText; its colour stays a system one. */
+@media(forced-colors:active){
+  .mat-dots{height:8px;--on:CanvasText;--off:Canvas}
+  .mat-dots>i{border:1px solid CanvasText}
+  .area-link::before{background:CanvasText}
+  .area-link[aria-current=true],.area-tree>li>.area-link[aria-current=true]{background:Highlight;border-color:Highlight;color:HighlightText}
+  .area-link[aria-current=true]>.area-name,.area-link.dom-all[aria-current=true]::after{forced-color-adjust:none;color:HighlightText}
+  .area-link[aria-current=true]:focus-visible{outline-color:HighlightText}
+  .area-link[aria-current=true]::before{background:HighlightText}
+  .area-link[aria-current=true]>svg.glyph{color:HighlightText}
+  .area-link[aria-current=true]>.mat-dots{--on:HighlightText;--off:Highlight}
+  .area-link[aria-current=true]>.mat-dots>i{border-color:HighlightText}
+  .area-link[aria-current=true]>.count{background:HighlightText;color:Highlight}
+  .key-means{border:1px solid CanvasText}
+}
 .cat-filters{margin-top:22px;border-top:1px solid var(--line);padding-top:16px}
 .cat-filters fieldset{border:0;margin:0 0 14px;padding:0;min-width:0}
 .cat-filters legend{font:700 12px var(--font);color:var(--ink);margin:0 0 4px;padding:0}

@@ -43,8 +43,9 @@ It bends by air bending on fixed tooling. That gives one radius and one K per st
 In cad-agent, SendCutSend is a **named shop profile** (`shops: sendcutsend` in the YAML):
 - its per-stock tooling and limits are `shop_tables`;
 - its shop-wide limits are rules marked `shop: sendcutsend`;
-- `cadagent.manufacturing.process` leaves them out unless a caller names the shop, so the generic rules stay
-  supplier-neutral;
+- `cadagent.manufacturing.process` leaves those rules out unless a caller names the shop, so the generic rules stay
+  supplier-neutral; the bend calculator and the sheet DFM check read the `shop_tables` rows by default (`shop=False`
+  drops them);
 - a project's chosen suppliers (#284) will select the profile.
 
 ```mermaid
@@ -606,7 +607,7 @@ powder on every coated face.*
 | Cut, by process | laser 0.05 mm, waterjet 0.2 mm, plasma 0.5 mm | Hubs |
 | Cut, laser | ±0.1 mm | David Willson (Fictiv) |
 | Bend to edge, bend to hole | ±0.010–0.025 in by thickness (Protolabs); ±0.015 in (Xometry) | Protolabs; Xometry |
-| Across bends | ±0.015–0.025 in for 2 bends; ±0.030–0.040 in for 3 or more (Protolabs); ±0.030 in (Xometry) | Protolabs; Xometry |
+| Across bends | ±0.015–0.025 in for 2 bends and ±0.030–0.040 in for 3 or more, by thickness (Protolabs); ±0.030 in (Xometry) | Protolabs; Xometry |
 | Bend angle | ±1° (Protolabs, Xometry, SendCutSend up to 24 in); ±2° over 24 in; ±5° polycarbonate (SendCutSend) | as listed |
 | Flatness | grows with length; e.g. 0.005 in up to 1 in | Century Tywood |
 | General tolerances | ISO 2768-1 applies to parts formed from sheet metal (scope only; content not read) | [ref:iso-2768-1] |

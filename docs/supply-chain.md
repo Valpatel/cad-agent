@@ -80,6 +80,30 @@ Run the refresh from a checkout with nothing uncommitted: the report records the
 the tree had changes. Repository settings (secret scanning, Dependabot alerts) need admin rights, so only the owner's
 run with `--repo Valpatel/cad-agent` sees them.
 
+## Usage reporting
+
+cad-agent sends nothing anywhere: no telemetry, no metrics, no phoning home. The only reports are the issues and pull
+requests a person chooses to send on GitHub. Every project step `cad-agent` runs gets usage reporting turned off
+(`OPT_OUTS` in `cadagent/cli.py`), unless the variable is already set; your own shell is left as it was. Set the same
+variables yourself for tools you or your agent start directly, such as an MCP server.
+
+<details>
+<summary><strong>Which tools report usage.</strong> The survey, and the switch that turns each off</summary>
+
+| Tool (how it reaches you) | Reports usage? | Turned off by |
+|---|---|---|
+| text-to-cad's cadgen, installed from upstream | yes, analytics and an update check, on by default | `CADGEN_TELEMETRY=0`, `CADGEN_UPDATE_CHECK=0`, `DO_NOT_TRACK=1` |
+| text-to-cad's cadgen, our vendored copy | no: patched off (`vendor/patches/text-to-cad/0001-…`) | |
+| kicad-mcp-pro (your agent starts it) | only to an OpenTelemetry endpoint you set; off by default | `KICAD_MCP_TELEMETRY_ENABLED=false`, and leave `KICAD_MCP_OTEL_ENDPOINT` and `OTEL_EXPORTER_OTLP_ENDPOINT` unset: an endpoint turns export on |
+| Cloudflare wrangler (`npm run deploy:site`) | usage data on by default; asks about each error report | `WRANGLER_SEND_METRICS=false`, `WRANGLER_SEND_ERROR_REPORTS=false`, both set in the script |
+| Python extras, npm dev packages, the other vendored projects | none found (survey of 2026-11-01) | |
+| Desktop programs a project step may drive: KiCad, slicers, OpenFOAM, Graphviz | not surveyed; any reporting is in each program's own settings | |
+
+</details>
+
+`tests/cli/test_privacy.py` fails when a vendored tool names a telemetry, update-check or export switch that
+`OPT_OUTS` does not cover.
+
 ## Making it required (owner)
 
 The `supply-chain` job is not a required check: a failure warns and does not block. To make it one, the owner adds the

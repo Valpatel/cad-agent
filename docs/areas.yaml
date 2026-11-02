@@ -73,6 +73,7 @@ domains:
           - {slug: linkages, title: Linkages, scope: "Four- and five-bar position, workspace and transmission angle.", maturity: tooling, priority: [demo], pages: [docs/linkages.md], api: [cadagent.mechanical.linkages], issues: [187]}
           - {slug: range-of-motion, title: Range-of-motion clearance, scope: "Moving parts that do not hit each other at any sampled pose, and swept-volume cutters that clear them.", maturity: tooling, pages: [docs/toolkit.md], api: [cadagent.mechanical.clearance], issues: [251]}
           - {slug: joints-and-bearings, title: Joints and bearings, scope: "Pivots, bearing seats, shafts and their fits.", maturity: tooling, pages: [docs/printed-joints.md], api: [cadagent.mechanical.printed_joints], uses: [cadagent.simulation.fea], issues: [97]}
+          - {slug: rolling-bearings, title: Rolling bearings, scope: "Ball and roller bearings: ISO 281 life turning or oscillating, duty cycles, ISO 76 static safety, axial load and speed limits.", maturity: tooling, pages: [docs/bearings.md], cli: [bearings], api: [cadagent.mechanical.bearings], issues: [180]}
       - slug: housings-and-enclosures
         title: Housings and enclosures
         scope: Shells, lids, bosses, ribs, port windows and markings around electronics and mechanisms.
@@ -155,7 +156,9 @@ domains:
     title: Manufacturing
     scope: Turning a design into a part, process by process.
     maturity: tooling
-    pages: [research/process-profiles.md]
+    pages: [docs/process-checks.md, research/process-profiles.md]
+    api: [cadagent.manufacturing.process, cadagent.manufacturing.dfm]
+    uses: [cadagent.mechanical.compliant.allowables]
     issues: [99]
     areas:
       - slug: 3d-printing
@@ -185,8 +188,9 @@ domains:
       - slug: sheet-metal
         title: Sheet metal
         scope: Bent metal parts.
-        maturity: surveyed
-        pages: [research/fea-and-process-tools.md]
+        maturity: tooling
+        pages: [docs/process-checks.md, research/fea-and-process-tools.md]
+        api: [cadagent.manufacturing.sheet_metal]
         issues: [99, 118, 119]
       - slug: mould-making
         title: Mould making

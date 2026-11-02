@@ -18,6 +18,8 @@ preload. It ranks designs and finds the weaker side; it is not a rating. Test th
 from __future__ import annotations
 
 import math
+import numbers
+from decimal import Decimal
 from typing import Any, Dict, Optional
 
 from cadagent.formulas._registry import cite, formula
@@ -65,9 +67,14 @@ def nut_factor(diameter: float, pitch: float, thread_friction: float, collar_fri
 
     ``flank_angle`` is in radians and must lie between 0 and pi/2 (no screw thread has an included angle of 90 degrees
     or more): 60 passed as degrees would otherwise give about three times K without complaint."""
-    if not (_number(flank_angle) and 0.0 < flank_angle < math.pi / 2):
+    diameter, pitch = _real("diameter", diameter), _real("pitch", pitch)
+    thread_friction = _real("thread_friction", thread_friction)
+    collar_friction = _real("collar_friction", collar_friction)
+    angle = _real("flank_angle", flank_angle)
+    if not 0.0 < angle < math.pi / 2:
         raise ValueError(f"flank_angle is the included angle in radians, between 0 and pi/2 (60 degrees is "
                          f"{math.radians(60.0):.4f}), not {flank_angle!r}")
+    flank_angle = angle
     dm = diameter - PITCH_DIAMETER * pitch
     tan_lead = pitch / (math.pi * dm)
     sec = 1.0 / math.cos(flank_angle / 2.0)
@@ -129,14 +136,23 @@ _LAME = ("Lame thick-walled cylinder: linear elastic, isotropic, uniform interna
          "wall is not isotropic and its layers are weaker across than along")
 
 
-def _number(v: float) -> bool:
-    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+def _real(name: str, v: Any) -> float:
+    """v as a float: any real number (a Python or NumPy int or float, a Fraction or a Decimal), not a bool, and
+    finite; otherwise ValueError, saying it is not a number rather than out of range."""
+    if isinstance(v, bool) or not isinstance(v, (numbers.Real, Decimal)):
+        kind = "" if v is None or isinstance(v, bool) else f"{type(v).__name__} "
+        raise ValueError(f"{name} must be a real number, not {kind}{v!r}")
+    x = float(v)
+    if not math.isfinite(x):
+        raise ValueError(f"{name} must be finite, not {v!r}")
+    return x
 
 
-def _finite(name: str, v: float, low: float = 0.0, strict: bool = True) -> float:
-    if not (_number(v) and (v > low if strict else v >= low)):
-        raise ValueError(f"{name} must be a finite number {'above' if strict else 'of at least'} {low:g}, not {v!r}")
-    return v
+def _finite(name: str, v: Any, low: float = 0.0, strict: bool = True) -> float:
+    x = _real(name, v)
+    if not (x > low if strict else x >= low):
+        raise ValueError(f"{name} must be {'above' if strict else 'at least'} {low:g}, not {v!r}")
+    return x
 
 
 @formula(units={"load": "N (axial, carried by the thread)", "diameter": "m (nominal: the screw's crests)",
@@ -148,11 +164,13 @@ def thread_radial_pressure(load: float, diameter: float, engagement: float,
                            flank_angle: float = math.radians(60.0)) -> float:
     """Radial pressure an axially loaded thread puts on the boss around it: the flanks' radial push F tan(alpha),
     alpha half the flank angle, spread over the crest cylinder, p = F tan(alpha) / (pi d Le)."""
-    _finite("load", load, strict=False)
-    _finite("diameter", diameter)
-    _finite("engagement", engagement)
-    if not (_number(flank_angle) and 0.0 < flank_angle < math.pi):
+    load = _finite("load", load, strict=False)
+    diameter = _finite("diameter", diameter)
+    engagement = _finite("engagement", engagement)
+    angle = _real("flank_angle", flank_angle)
+    if not 0.0 < angle < math.pi:
         raise ValueError(f"flank_angle must be between 0 and pi radians, not {flank_angle!r}")
+    flank_angle = angle
     return load * math.tan(flank_angle / 2.0) / (math.pi * diameter * engagement)
 
 
@@ -164,10 +182,12 @@ def boss_hoop_stress(pressure: float, inner_diameter: float, outer_diameter: flo
     """Hoop stress at the bore of a thick-walled cylinder under internal pressure: sigma_t = p (D^2 + d^2) /
     (D^2 - d^2). It grows without bound as the wall thins: (D^2 + d^2) / (D^2 - d^2) is 1.67 at D = 2 d and 4.6
     at D = 1.25 d."""
-    _finite("pressure", pressure, strict=False)
-    _finite("inner_diameter", inner_diameter)
-    if not (_number(outer_diameter) and outer_diameter > inner_diameter):
-        raise ValueError(f"outer_diameter must be finite and above the inner diameter, not {outer_diameter!r}")
+    pressure = _finite("pressure", pressure, strict=False)
+    inner_diameter = _finite("inner_diameter", inner_diameter)
+    outer = _real("outer_diameter", outer_diameter)
+    if not outer > inner_diameter:
+        raise ValueError(f"outer_diameter must be above the inner diameter, not {outer_diameter!r}")
+    outer_diameter = outer
     d2, o2 = inner_diameter * inner_diameter, outer_diameter * outer_diameter
     return pressure * (o2 + d2) / (o2 - d2)
 
@@ -182,7 +202,7 @@ def boss_hoop_stress(pressure: float, inner_diameter: float, outer_diameter: flo
                 "drive_torque": "N m (measured on a test boss), or None when not measured"},
          returns="dict: nut_factor, preload and strip_torque as {low, high}; strip_force (N), margin {low, high} "
                  "(strip torque over the tightening torque), torque_ceiling (N m), drive_torque_limit (N m), "
-                 "drive_torque (as given), radial_pressure and hoop_stress (Pa), hoop_ratio, outside_ratio, "
+                 "drive_torque (as a float, or None), radial_pressure and hoop_stress (Pa), hoop_ratio, outside_ratio, "
                  "engagement_ratio, and the checks torque_ok, outside_ok, engagement_ok, hoop_ok and passes",
          limits=(_TORQUE, _STRIP, _FLANK, _LAME,
                  "the drive (forming) torque is not computed: measure it, and tighten to at least 1.2 x it. It makes "
@@ -202,16 +222,21 @@ def screw_boss(diameter: float, pitch: float, engagement: float, outside_diamete
     from the friction band, and from the drive torque's range when it was not measured), the force and torque that
     strip the boss's thread, Covestro's tightening window against them, the hoop stress the most clamp raises at the
     wall's inside, and the boss proportions against the maker's."""
-    for name, v in (("diameter", diameter), ("pitch", pitch), ("engagement", engagement), ("torque", torque),
-                    ("shear_strength", shear_strength), ("hoop_strength", hoop_strength)):
-        _finite(name, v)
-    _finite("friction_low", friction_low, strict=False)
-    if not (_number(friction_high) and friction_high >= friction_low):
-        raise ValueError(f"friction_high must be finite and at least friction_low, not {friction_high!r}")
-    if not (_number(outside_diameter) and outside_diameter > diameter):
-        raise ValueError(f"outside_diameter must be finite and above the screw's diameter, not {outside_diameter!r}")
+    diameter, pitch, engagement, torque, shear_strength, hoop_strength = (
+        _finite(name, v) for name, v in (("diameter", diameter), ("pitch", pitch), ("engagement", engagement),
+                                         ("torque", torque), ("shear_strength", shear_strength),
+                                         ("hoop_strength", hoop_strength)))
+    friction_low = _finite("friction_low", friction_low, strict=False)
+    high = _real("friction_high", friction_high)
+    if not high >= friction_low:
+        raise ValueError(f"friction_high must be at least friction_low, not {friction_high!r}")
+    friction_high = high
+    outside = _real("outside_diameter", outside_diameter)
+    if not outside > diameter:
+        raise ValueError(f"outside_diameter must be above the screw's diameter, not {outside_diameter!r}")
+    outside_diameter = outside
     if drive_torque is not None:
-        _finite("drive_torque", drive_torque, strict=False)
+        drive_torque = _finite("drive_torque", drive_torque, strict=False)
     k_low = nut_factor(diameter, pitch, friction_low, friction_low, flank_angle)
     k_high = nut_factor(diameter, pitch, friction_high, friction_high, flank_angle)
     strip = thread_strip_force(diameter, pitch, engagement, shear_strength, "internal")

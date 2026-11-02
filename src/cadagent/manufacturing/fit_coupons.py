@@ -14,7 +14,8 @@ fit with a sweep of holes round the expected CAD size: nominal, plus the fit's a
 profile's undersize, plus or minus ``step_mm``. Print it in the part's filament and orientation, try the real pin,
 bushing, bearing or insert in each hole, write down which one fits, and draw the part's hole at that size.
 
-The numbers are research/process-profiles.yaml's (tests/test_fit_coupons.py keeps them in step):
+The numbers are read from the FDM process profile (:mod:`cadagent.manufacturing.process`, research/process-profiles.yaml)
+by rule id when the module loads:
 
 * undersize, ``fdm-hole-undersize-cnckitchen``: printed holes came out about 0.25 mm under CAD (one printer, PLA);
 * ``slide``, ``fdm-clearance-sliding-xometry-eu``: 0.2-0.3 mm clearance for a sliding fit (0.25 taken);
@@ -40,17 +41,28 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 from cadagent._deps import require
+from cadagent.manufacturing.process import profile
 
-UNDERSIZE_MM = 0.25            # fdm-hole-undersize-cnckitchen
-ALLOWANCE_MM = {"press": 0.0, "slide": 0.25, "free": 0.3, "insert": 0.0}
+# The numbers come from the FDM process profile, by rule id, so a corrected row in research/process-profiles.yaml moves
+# them; a rule marked (u) is refused (cadagent.manufacturing.process.Profile.verified_rule). The profile is read when
+# this module is imported, so it needs the cad-agent checkout's data (an editable install, as CONTRIBUTING.md asks) or
+# CADAGENT_PROCESS_PROFILES naming the file; without either the import raises ProfileDataError, saying so.
+_FDM = profile("fdm")
+_UNDER = _FDM.verified_rule("fdm-hole-undersize-cnckitchen").limit()
+_SLIDE = _FDM.verified_rule("fdm-clearance-sliding-xometry-eu").limit()
+_FREE = _FDM.verified_rule("fdm-clearance-moving-prusa").limit()
+_INSERT = _FDM.verified_rule("fdm-insert-hole-cad-offset-cnckitchen").limit()
+UNDERSIZE_MM = _UNDER.value
+ALLOWANCE_MM = {"press": 0.0, "slide": round((_SLIDE.min + _SLIDE.max) / 2, 4), "free": _FREE.min, "insert": 0.0}
 ALLOWANCE_SOURCE = {
     "press": "none published for a printed hole: the sweep finds it",
-    "slide": "research/process-profiles.yaml fdm-clearance-sliding-xometry-eu (0.2-0.3 mm; 0.25 taken)",
-    "free": "research/process-profiles.yaml fdm-clearance-moving-prusa (at least 0.3 mm)",
-    "insert": "the insert maker's hole; the undersize is CNC Kitchen's 0.2-0.3 mm CAD allowance "
-              "(research/process-profiles.yaml fdm-insert-hole-cad-offset-cnckitchen)",
+    "slide": f"research/process-profiles.yaml {_SLIDE.cite()} ({_SLIDE.text}; the middle, "
+             f"{ALLOWANCE_MM['slide']:g}, taken)",
+    "free": f"research/process-profiles.yaml {_FREE.cite()} ({_FREE.text})",
+    "insert": f"the insert maker's hole; the undersize is CNC Kitchen's {_INSERT.text} CAD allowance "
+              f"(research/process-profiles.yaml {_INSERT.cite()})",
 }
-UNDERSIZE_SOURCE = ("research/process-profiles.yaml fdm-hole-undersize-cnckitchen: printed holes about 0.25 mm under "
+UNDERSIZE_SOURCE = (f"research/process-profiles.yaml {_UNDER.cite()}: printed holes about {UNDERSIZE_MM:g} mm under "
                     "CAD (one printer, PLA); every printer and filament differs, which is why the coupon is printed")
 AXES = ("vertical", "horizontal")       # the hole's axis along the build direction, or lying in the bed plane
 MIN_WALL_MM = 2.0

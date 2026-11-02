@@ -7,6 +7,7 @@
     fx.preload_from_torque(torque=0.6, diameter=3e-3)       # N, with the nut factor 0.2
     fx.torsion_snap_bar(length=0.015, width=0.004, thickness=0.0012, twist=0.14, modulus=2.68e9,
                         allowable_strain=0.0095, lever=0.010, bars=2)   # shear strain, torque, force at the lever
+    fx.rating_life(dynamic_rating=7280, load=600)           # a 6201's L10 at 600 N, millions of revolutions
     fx.catalogue()                                          # every formula: units, limits, source
 
 Agents call these instead of re-deriving them; the website's demonstrations call the browser port of the same
@@ -15,6 +16,12 @@ not proof of fit or strength: each result holds only within the limits it states
 across its layers than any isotropic formula assumes. Test the part. See docs/formulas.md.
 """
 from cadagent.formulas._registry import REGISTRY, SOURCES, Formula, catalogue
+from cadagent.formulas.bearings import (CLEARANCES, DEEP_GROOVE_TABLE, RELIABILITY_TABLE, ball_raceway_contact,
+                                        critical_amplitude, deep_groove_factors, deep_groove_load, duty_cycle_load,
+                                        equivalent_load, harris_factor, hertz_point_contact, life_exponent, life_hours,
+                                        miner_life, rating_life, reliability_factor, required_dynamic_rating,
+                                        revolution_fractions, rolling_travel, rumbarger_factor, static_equivalent_load,
+                                        static_rating_iso76, static_safety, stribeck_ball_load, varying_load_mean)
 from cadagent.formulas.beams import (DESIGNS, SUPPORTS, beam_stiffness, cantilever_shape, cantilever_strain_profile,
                                      cantilever_taper_factor, cantilever_thickness_profile, cantilever_tip_deflection,
                                      rect_second_moment, snap_arm, snap_deflection_force, snap_root_strain)
@@ -37,6 +44,6 @@ from cadagent.formulas.torsion import (SMALL_TWIST_TRAPEZE, shear_modulus, torsi
                                        torsion_bar_twist, torsion_constant_rect, torsion_constant_round, torsion_shear_strain_rect,
                                        torsion_shear_stress_rect, torsion_shear_stress_round, torsion_snap_bar)
 
-__all__ = sorted(REGISTRY) + ["BOSS_ENGAGEMENT", "BOSS_HOLE", "BOSS_OUTSIDE", "DESIGNS", "NUT_FACTORS", "PRELOAD_SHARE", "REGISTRY",
+__all__ = sorted(REGISTRY) + ["CLEARANCES", "DEEP_GROOVE_TABLE", "RELIABILITY_TABLE", "life_exponent", "BOSS_ENGAGEMENT", "BOSS_HOLE", "BOSS_OUTSIDE", "DESIGNS", "NUT_FACTORS", "PRELOAD_SHARE", "REGISTRY",
                               "SMALL_TWIST_TRAPEZE", "SOURCES", "SUPPORTS", "TIGHTEN_OVER_DRIVE", "TIGHTEN_OVER_STRIP",
                               "Formula", "catalogue"]

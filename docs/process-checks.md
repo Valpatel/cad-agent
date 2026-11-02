@@ -57,8 +57,9 @@ it to the across-layer allowables (`cadagent.mechanical.compliant.allowables`).
 
 The FDM materials come from the data sheets that `allowables` already holds, so the numbers live in one place:
 PETG, PLA, ASA, CoPA, PETG-CF and PA6-CF, in 13 entries. Their source ids, such as `bambu-petg-basic-tds`, are the
-reference registry's (#118). Until `research/references.yaml` is on `dev`, those ids do not resolve, and each factor
-cites its sheet's own link.
+reference registry's (#118): `python -m cadagent.review.references bambu-petg-basic-tds` prints the sheet's
+citation. A copy of the data file with no `research/references.yaml` beside it still loads, and each factor then cites
+its sheet's own link.
 
 ## The calculator: sheet-metal bends
 

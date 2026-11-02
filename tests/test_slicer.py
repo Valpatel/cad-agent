@@ -302,3 +302,95 @@ def test_project_settings_fit_the_filaments_and_the_printers_plate(profile_tree,
     (tmp_path / 'mine' / 'notes.txt').write_text('keep')
     with pytest.raises(FileExistsError):
         slicer.project_settings(tmp_path / 'mine')
+
+
+def test_engine_defaults_to_bambu_and_rejects_unknown():
+    from types import SimpleNamespace as NS
+    assert slicer.engine_of(NS(slicer={})) == 'bambu'
+    assert slicer.engine_of(NS(slicer={'engine': 'prusa'})) == 'prusa'
+    with pytest.raises(ValueError, match='Unknown cad.slicer.engine'):
+        slicer.engine_of(NS(slicer={'engine': 'cura'}))
+
+
+def test_engine_is_part_of_report_identity():
+    from types import SimpleNamespace as NS
+    bambu = NS(slicer={})
+    old = slicer._settings(bambu)          # Bambu Studio reports carry no engine key, as before engines existed
+    assert 'engine' not in old and slicer.settings_differ(old, bambu) == []
+    prusa = NS(slicer={'engine': 'prusa', 'printer': old['printer'], 'process': old['process'],
+                       'filament': old['filament']})
+    assert slicer.settings_differ(old, prusa) == ['engine']
+    assert slicer._settings(prusa)['engine'] == 'prusa'
+
+
+def test_slice_project_uses_prusa_engine(tmp_path, monkeypatch):
+    import pathlib
+    from tests.test_report import make_project
+    from cadagent.project import load_project
+    from cadagent.manufacturing import slicer_prusa
+    project = load_project(make_project(tmp_path / 'proj'))
+    project.slicer = {'engine': 'prusa', 'filament': 'petg'}
+    seen = []
+    monkeypatch.setattr(slicer, 'slice_part', lambda m, **kw: seen.append(kw) or {'grams': 5.0, 'minutes': 10.0})
+    monkeypatch.setattr(slicer_prusa, 'executable', lambda: ['flatpak', 'run', 'com.prusa3d.PrusaSlicer'])
+    rep = slicer.slice_project(project)
+    assert {kw['engine'] for kw in seen} == {'prusa'}
+    assert {kw['printer'] for kw in seen} == {slicer_prusa.PRINTER}
+    assert rep['engine'] == 'prusa' and rep['slicer'] == 'PrusaSlicer (command line)'
+    assert rep['filament'] == slicer_prusa.FILAMENTS['petg']
+    assert rep['slicer_executable'] == 'flatpak run com.prusa3d.PrusaSlicer'
+    assert slicer.current_report(project) is not None
+    project.slicer = {}                                  # back to Bambu: the Prusa report is no longer current
+    assert slicer.current_report(project) is None
+
+
+def test_part_overrides_go_on_top_and_are_part_of_a_rows_identity(tmp_path, monkeypatch):
+    """cad.slicer.parts.<part>.overrides: tall parts want a brim, thin shells fewer perimeters."""
+    import pathlib
+    from tests.test_report import make_project
+    from cadagent.project import load_project
+    project = load_project(make_project(tmp_path / 'proj'))
+    project.slicer = {'overrides': {'wall_loops': '3', 'brim_width': '0'},
+                      'parts': {'box': {'overrides': {'brim_width': '8'}}, 'lid': None}}
+    seen = {}
+    monkeypatch.setattr(slicer, 'executable', lambda: '/bin/true')
+    monkeypatch.setattr(slicer, 'slice_part', lambda m, **kw: seen.update({pathlib.Path(m).stem: kw['overrides']})
+                        or {'grams': 5.0, 'minutes': 10.0})
+    rep = slicer.slice_project(project)
+    assert seen == {'box': {'wall_loops': '3', 'brim_width': '8'}, 'lid': {'wall_loops': '3', 'brim_width': '0'}}
+    assert rep['parts']['box']['part_overrides'] == {'brim_width': '8'}
+    assert 'part_overrides' not in rep['parts']['lid'] and 'ok' not in rep['parts']['lid']   # Bambu rows as before
+    assert rep['pass'] and slicer.current_report(project) is not None
+    project.slicer['parts']['box']['overrides']['brim_width'] = '10'      # the box's row is stale now
+    assert slicer.current_report(project) is None
+    rep = slicer.slice_project(project, ['lid'])          # re-slicing another part drops the box's stale row
+    assert set(rep['parts']) == {'lid'}
+    project.slicer['parts'] = ['box', 'lid']                               # a list still names the parts
+    assert slicer.part_overrides(project, 'box') == {} and slicer.current_report(project) is None
+
+
+def test_a_prusa_part_that_is_not_ok_fails_the_report(tmp_path, monkeypatch):
+    import pathlib
+    from tests.test_report import make_project
+    from cadagent.project import load_project
+    from cadagent.manufacturing import slicer_prusa
+    project = load_project(make_project(tmp_path / 'proj'))
+    project.slicer = {'engine': 'prusa'}
+    said = {'box': {'ok': True, 'warnings': [], 'errors': [], 'stability_issues': [], 'benign_log_lines': 2},
+            'lid': {'ok': False, 'warnings': ['Detected print stability issues:'], 'errors': [],
+                    'stability_issues': ['Long bridging extrusions'], 'benign_log_lines': 0}}
+
+    def fake(m, **kw):
+        name = pathlib.Path(m).stem
+        return dict(said[name], grams=5.0, minutes=10.0, log=str(kw['workdir'] / 'out' / 'slicer.log'))
+    monkeypatch.setattr(slicer, 'slice_part', fake)
+    monkeypatch.setattr(slicer_prusa, 'executable', lambda: ['/fake/prusa-slicer'])
+    rep = slicer.slice_project(project)
+    lid = rep['parts']['lid']
+    assert lid['ok'] is False and lid['stability_issues'] == ['Long bridging extrusions'] and not rep['pass']
+    assert rep['parts']['box']['ok'] is True and rep['parts']['box']['benign_log_lines'] == 2
+    assert lid['log'] == 'build/slicer/lid/out/slicer.log'                # relative to the project
+    from cadagent.publish.report import collect
+    assert 'NOT OK, flagged by the slicer: lid' in collect(project)['footer_meta']['slicer']
+    said['lid'] = said['box']
+    assert slicer.slice_project(project, ['lid'])['pass']                  # re-slicing the part alone clears it

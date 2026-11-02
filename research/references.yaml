@@ -1,0 +1,2744 @@
+# cad-agent reference registry (Valpatel/cad-agent#118).
+#
+# One entry per outside source that a cad-agent rule, check, number or note relies on. "We are highlighting experts,
+# not taking credit for their tips": code cites an entry by its id, and pages name the people or organisation in the
+# text, so the experts keep the credit. Sources are summarised and cited, never copied or redistributed: no PDF of a
+# source is kept in this repo (tests/test_references.py fails on any tracked PDF). Paid standards are cited by
+# number and title only, paid papers by author, title and equation.
+#
+# Read it with cadagent.review.references (lookup, citation, check), or from a shell:
+#   python -m cadagent.review.references covestro        # one citation
+#   python -m cadagent.review.references --check         # the registry and every place the code cites it
+#
+# Fields of a source
+#   id        stable kebab-case key
+#   title     as the source prints it
+#   authors   named people, only where the source names them (byline, licence holder, credits); else []
+#   org       publisher, company or journal (volume, issue, article); a source needs authors or an org
+#   year      as printed on the source; null only for an undated web page (its `verified` date is then the access
+#             date). File metadata dates are not used
+#   url       https link to where it was read (a DOI link for a paper), and/or
+#   isbn      for a book (access: print needs one); every source has a url or an isbn
+#   access    free | free-registration | paid | print
+#   terms     how cad-agent may use it: always "cited", and "never copied", "not redistributed" or "by number and
+#             title only"
+#   areas     design areas it supports
+#   aliases   optional: shorter keys a module uses for the same document (the module's text keeps the page or table)
+#   used_for  repo paths that rely on it, or "proposed: ..." (with the rule it would support). check() requires
+#             every file that cites the entry to be listed here
+#   verified  ISO date, and what was actually opened and read (or, for a book, what was checked)
+#
+# `unverified:` lists sources named but not yet read or not yet found online, with `why`. Nothing may be cited from
+# there in new work; code that already cites one is a known gap to close. `uncited:` lists keys code uses that are
+# not outside sources (general knowledge, a module's own judgement, another cad-agent module), so a missing citation
+# is a visible choice, not an accident.
+#
+# Merged on 2026-11-01 from the first sweep (#119, 2026-10-31), the `sources` and `standards` blocks of
+# research/process-profiles.yaml (#162, #163) and the sources cadagent.formulas, .mechanical.inserts,
+# .mechanical.printed_joints and .simulation.fea cite by key.
+schema: 1
+updated: 2026-11-01
+
+sources:
+
+  # ---------------------------------------------------------------- snap fits and moulded plastics
+
+  - id: covestro-snapfit
+    title: Snap-Fit Joints for Plastics - A Design Guide
+    authors: []
+    org: Covestro LLC (formerly Bayer MaterialScience LLC)
+    year: null
+    url: https://cdn.sparkfun.com/assets/home_page_posts/1/4/1/0/Plastic_Snap_fit_design.pdf
+    access: free
+    terms: cited and summarised, never copied; the PDF is not redistributed
+    areas: [snap-fits, moulding, materials]
+    aliases: [covestro, covestro-friction]
+    used_for:
+      - src/cadagent/mechanical/compliant/snapfit.py
+      - tests/test_snapfit.py
+      - docs/compliant.md
+      - research/compliant-mechanisms.md
+      - src/cadagent/formulas/_registry.py
+      - src/cadagent/formulas/beams.py
+      - src/cadagent/formulas/torsion.py
+      - src/cadagent/mechanical/printed_joints.py
+    verified: >-
+      2026-10-31: opened the Bayer-branded 26-page copy at this URL (pdftotext). Read the contents page, the
+      root-radius rule (not less than 0.015 in), Table 2 heading and the 60 % frequent-use note, the 70 % of
+      yield strain rule for amorphous resins, and Examples I and II. No year or authors are printed. The
+      Covestro-branded edition cited in snapfit.py was not opened in this pass.
+
+  - id: dupont-design-module-1
+    title: General Design Principles for DuPont Engineering Polymers (Design Guide - Module I)
+    authors: []
+    org: E. I. du Pont de Nemours and Company
+    year: 2000
+    url: https://www.emcoplastics.com/assets/pdf/acetal/General%20Design%20Principles%20for%20Engineering%20Polymers.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [snap-fits, moulding, materials, ribs-and-bosses, injection-moulding]
+    used_for:
+      - src/cadagent/mechanical/compliant/snapfit.py
+      - src/cadagent/mechanical/compliant/allowables.py
+      - docs/compliant.md
+      - research/compliant-mechanisms.md
+      - research/fea-and-process-tools.md
+      - research/process-profiles.md
+      - research/process-profiles.yaml
+    verified: >-
+      2026-10-31: opened the 136-page PDF (a distributor's copy). Read the title page, the copyright line (2000)
+      and Table 10.06, "Suggested Allowable Strains (%) for Lug Type Snap-fits". For
+      research/process-profiles.yaml: opened the 136-page PDF (a distributor's copy, copyright 2000); read the
+      text of chapter 3 (fillets and radii, Table 3.01 draft, bosses, blind holes, undercuts, moulded-in
+      inserts) and the rib text in chapter 4. Figures 3.10 (boss proportions) and 4.07 (rib proportions) have no
+      text layer, so on review PDF pages 12 and 30 were rendered and their values read from the figures.
+
+  - id: basf-snapfit-prospector
+    title: Improving Snapfit Design (Part 3)
+    authors: [Chul Lee]
+    org: BASF, published on UL Prospector Knowledge Center
+    year: null
+    url: https://ulprospector.ul.com/1248/snapfit-3/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [snap-fits, moulding]
+    used_for: [research/compliant-mechanisms.md]
+    verified: >-
+      2026-10-31: opened the page. Read the byline (Chul Lee, Applications Technology Leader, BASF) and the
+      pointer to Figures IV-4 and IV-5 (worked examples for an Ultradur PBT and an Ultraform POM grade). The
+      BASF Snap-Fit Design Manual tables themselves were not read.
+
+  - id: klahn-2016-am-snapfit
+    title: Design Guidelines for Additive Manufactured Snap-Fit Joints
+    authors: [Christoph Klahn, Daniel Singer, Mirko Meboldt]
+    org: Procedia CIRP 50 (KITopen repository)
+    year: 2016
+    url: https://publikationen.bibliothek.kit.edu/1000142464
+    access: free
+    terms: cited and summarised; never copied
+    areas: [snap-fits, fdm]
+    used_for:
+      - docs/compliant.md
+      - research/compliant-mechanisms.md
+      - research/fea-and-process-tools.md
+      - research/process-profiles.md
+    verified: >-
+      2026-10-31: opened the repository record. Read the title, authors and abstract. The volume and year are as
+      recorded in research/compliant-mechanisms.md, which read the paper on the same day. For
+      research/process-profiles.yaml: read by research/compliant-mechanisms.md on this date (a cantilever built
+      along Z is poor; keep the bending in the layer plane).
+
+  - id: qiu-2003-bistable-thesis
+    title: An Electrothermally-Actuated Bistable MEMS Relay for Power Applications
+    authors: [Jin Qiu]
+    org: Massachusetts Institute of Technology (PhD thesis; supervisor Alexander H. Slocum)
+    year: 2003
+    url: https://pergatory.mit.edu/research/jqiu/thesisscreen.pdf
+    access: free
+    terms: cited and summarised; never copied
+    areas: [compliant-mechanisms]
+    used_for: [research/compliant-mechanisms.md]
+    verified: >-
+      2026-10-31: opened the PDF; read the title page (author, degree, June 2003, supervisor). The equations
+      were read by research/compliant-mechanisms.md on the same day.
+
+  - id: protolabs-living-hinge
+    title: Living Hinge Basics for Injection Molding
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/resources/blog/living-hinge-basics-for-injection-molding/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [compliant-mechanisms, moulding]
+    used_for: [research/compliant-mechanisms.md]
+    verified: >-
+      2026-10-31: opened the page. Read the hinge guideline (0.012 in thick, about 0.060 in spacing, 0.008 in
+      reduction on the folding side, 0.030 in radius on the tension side). Byline is "Protolabs".
+
+  - id: protolabs-injection-molding
+    title: Plastic Injection Molding Design Guidelines
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/services/injection-molding/plastic-injection-molding/design-guidelines/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [moulding, injection-moulding]
+    used_for:
+      - research/compliant-mechanisms.md
+      - research/fea-and-process-tools.md
+      - research/process-profiles.md
+      - research/process-profiles.yaml
+    verified: >-
+      2026-10-31: opened the page. Read the draft table (0.5 deg vertical faces, 2 deg most situations, 3 deg
+      minimum for shut-offs and light texture, 5 deg or more for heavier texture). For
+      research/process-profiles.yaml: opened the page; read the draft table (0.5°, 2°, 3° shut-off, 3° PM-T1,
+      5°+ PM-T2), the recommended wall thickness by resin (inches and mm; the page says it is adapted from
+      manufacturingcenter.com), the side-action size limits and the tolerance sentence.
+
+  - id: hubs-snapfit-3dp
+    title: How do you design snap-fit joints for 3D printing?
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/how-design-snap-fit-joints-3d-printing/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [snap-fits, fdm, sls, mjf, sla]
+    used_for:
+      - research/compliant-mechanisms.md
+      - research/fea-and-process-tools.md
+      - research/process-profiles.md
+      - research/process-profiles.yaml
+    verified: >-
+      2026-10-31: opened the page. Read the clearances (0.5 mm FDM; 0.3 mm SLS, SLA, MJF, material jetting) and
+      the 1 mm minimum cantilever base and overhang depth. No byline. For research/process-profiles.yaml: opened
+      the page; read the nominal clearances (FDM 0.5 mm; SLA, SLS, MJF 0.3 mm), the MJF cantilever base of at
+      least 1 mm and the 5 mm minimum clip width.
+
+  - id: hubs-fdm-design
+    title: How to design parts for FDM 3D printing
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/how-design-parts-fdm-3d-printing/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm]
+    used_for:
+      - research/compliant-mechanisms.md
+      - research/fea-and-process-tools.md
+      - "proposed: lessons/mechanical/design-rules.md (45 degree self-supporting lead-ins); docs/common-issues.md (overhangs)"
+      - research/process-profiles.md
+      - research/process-profiles.yaml
+    verified: >-
+      2026-10-31: opened the page. Read the overhang rule (usually printable up to 45 deg; at 45 deg each layer
+      is half supported) and the bridging section. No byline. For research/process-profiles.yaml: opened the
+      page and read every section: bridging (under 5 mm), vertical holes printing undersize, overhangs (45°),
+      corners and elephant's foot (45° chamfer on bed edges), vertical pins (under 5 mm), build direction.
+
+  # ---------------------------------------------------------------- printed and moulded material data
+
+  - id: bambu-pla-basic-tds
+    title: "Bambu Filament Technical Data Sheet V2.0: PLA Basic"
+    authors: []
+    org: Bambu Lab
+    year: null
+    url: https://www.additive-x.com/shop/mpattachments/file/viewonline/id/494/product_id/2236
+    access: free
+    terms: cited; values quoted with the TDS version; the PDF is not redistributed
+    areas: [materials, fdm]
+    used_for:
+      - src/cadagent/manufacturing/process.py
+      - src/cadagent/mechanical/compliant/allowables.py
+      - src/cadagent/simulation/fea.py
+      - lessons/simulation/simulation-and-material.md
+      - docs/compliant.md
+      - tests/test_fea_materials.py
+    verified: >-
+      2026-10-31: opened the PDF (a reseller's copy of the official sheet). Read HDT 57 C at 0.45 MPa and 54 C
+      at 1.8 MPa (ISO 75); E 2680 / 2160 MPa, UTS 39 / 35 MPa, elongation 12.2 / 7.5 % (X-Y / Z, ISO 527). #125
+      (2026-10-31) also read V3.0
+      (https://store.bblcdn.com/s1/default/58b85d0f3db94878854a28fdb8a0006e/Bambu_PLA_Basic_Technical_Data_Sheet.pdf),
+      which cadagent.simulation.fea's row uses.
+
+  - id: bambu-pla-matte-tds
+    title: "Bambu Filament Technical Data Sheet V2.0: PLA Matte"
+    authors: []
+    org: Bambu Lab
+    year: null
+    url: https://www.additive-x.com/shop/mpattachments/file/viewonline/id/513/product_id/2261
+    access: free
+    terms: cited; the PDF is not redistributed
+    areas: [materials, fdm]
+    used_for:
+      - src/cadagent/mechanical/compliant/allowables.py
+      - docs/compliant.md
+      - src/cadagent/manufacturing/process.py
+    verified: >-
+      2026-10-31: opened the PDF; read E 1960 / 1670 MPa, UTS 32 / 25 MPa, elongation 32.8 / 4.8 % (X-Y / Z).
+
+  - id: bambu-petg-basic-tds
+    title: "Bambu Filament Technical Data Sheet V2.0: PETG Basic"
+    authors: []
+    org: Bambu Lab
+    year: null
+    url: https://www.additive-x.com/shop/mpattachments/file/viewonline/id/580/product_id/2330
+    access: free
+    terms: cited; the PDF is not redistributed
+    areas: [materials, fdm]
+    used_for:
+      - src/cadagent/manufacturing/process.py
+      - src/cadagent/mechanical/compliant/allowables.py
+      - src/cadagent/simulation/fea.py
+      - lessons/simulation/simulation-and-material.md
+      - docs/compliant.md
+      - tests/test_fea_materials.py
+    verified: >-
+      2026-10-31: opened the PDF; read HDT 69 C at 0.45 MPa and 65 C at 1.8 MPa; E 1460 / 1120 MPa, UTS 48 / 39
+      MPa, elongation 11.2 / 5.7 % (X-Y / Z). #125 (2026-10-31) also read V3.0, a reformulated filament
+      (https://store.bblcdn.com/s1/default/cb94589bf7994fdcbfa833badefae9cd/Bambu_PETG_Basic_Technical_Data_Sheet.pdf);
+      cadagent.simulation.fea's row uses V2.0's lower modulus.
+
+  - id: bambu-petg-hf-tds
+    title: "Bambu Filament Technical Data Sheet V1.0: PETG HF"
+    authors: []
+    org: Bambu Lab
+    year: null
+    url: https://botland.com.pl/img/art/inne/25540_karta_produktu.pdf
+    access: free
+    terms: cited; the PDF is not redistributed
+    areas: [materials, fdm]
+    used_for:
+      - src/cadagent/mechanical/compliant/allowables.py
+      - docs/compliant.md
+      - src/cadagent/manufacturing/process.py
+    verified: "2026-10-31: opened the PDF; read E 1810 / 1540 MPa, UTS 34 / 23 MPa, elongation 8.6 / 5.1 % (X-Y / Z)."
+
+  - id: bambu-petg-cf-tds
+    title: "Bambu Filament Technical Data Sheet V2.0: PETG-CF"
+    authors: []
+    org: Bambu Lab
+    year: null
+    url: https://www.additive-x.com/shop/mpattachments/file/viewonline/id/596/product_id/2346
+    access: free
+    terms: cited; the PDF is not redistributed
+    areas: [materials, fdm]
+    used_for:
+      - src/cadagent/manufacturing/process.py
+      - src/cadagent/mechanical/compliant/allowables.py
+      - src/cadagent/simulation/fea.py
+      - docs/compliant.md
+      - tests/test_fea_materials.py
+    verified: >-
+      2026-10-31: opened the PDF; read E 2460 / 1340 MPa, UTS 59 / 38 MPa, elongation 10.4 / 4.7 % (X-Y / Z).
+      #125 (2026-10-31) also read V3.0 (https://store.bblcdn.com/626e4f424bf345ae965ad0ddfcaf2459.pdf), which
+      cadagent.simulation.fea's row uses.
+
+  - id: bambu-asa-tds
+    title: "Bambu Filament Technical Data Sheet V2.0: ASA"
+    authors: []
+    org: Bambu Lab
+    year: null
+    url: https://www.additive-x.com/shop/mpattachments/file/viewonline/id/612/product_id/2399
+    access: free
+    terms: cited; the PDF is not redistributed
+    areas: [materials, fdm]
+    used_for:
+      - src/cadagent/mechanical/compliant/allowables.py
+      - docs/compliant.md
+      - src/cadagent/manufacturing/process.py
+    verified: "2026-10-31: opened the PDF; read E 2450 / 2120 MPa, UTS 52 / 35 MPa, elongation 9.2 / 4.6 % (X-Y / Z)."
+
+  - id: bambu-tpu-95a-hf-tds
+    title: "Bambu Filament Technical Data Sheet V1.0: TPU 95A HF"
+    authors: []
+    org: Bambu Lab
+    year: null
+    url: https://www.additive-x.com/shop/mpattachments/file/viewonline/id/823/product_id/2584
+    access: free
+    terms: cited; the PDF is not redistributed
+    areas: [materials, fdm]
+    used_for: [research/compliant-mechanisms.md, src/cadagent/simulation/fea.py, tests/test_fea_materials.py]
+    verified: >-
+      2026-10-31: opened the PDF; read E 9.8 / 7.4 MPa, UTS 27.3 / 22.3 MPa, elongation >650 / >480 % (X-Y / Z).
+      #125 (2026-10-31) read the same edition at https://store.bblcdn.com/58df32731eab4c90a7dac9b12e13ba88.pdf
+      for cadagent.simulation.fea's row.
+
+  - id: polymaker-polylite-pla-tds
+    title: PolyLite PLA Technical Data Sheet V5.4
+    authors: []
+    org: Polymaker
+    year: null
+    url: https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/pla/polylite-tm-pla
+    access: free
+    terms: cited; values quoted with the TDS version; never copied
+    areas: [materials, fdm]
+    used_for:
+      - src/cadagent/mechanical/compliant/allowables.py
+      - docs/compliant.md
+      - tests/test_snapfit.py
+      - src/cadagent/manufacturing/process.py
+    verified: >-
+      2026-10-31: read the wiki page (Markdown view); E 3426.9 / 3064.9 MPa, UTS 52.3 / 40.5 MPa, elongation 6.3
+      / 1.8 % (X-Y / Z).
+
+  - id: polymaker-polylite-petg-tds
+    title: PolyLite PETG Technical Data Sheet V5.4
+    authors: []
+    org: Polymaker
+    year: null
+    url: https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/petg-pet/polylite-tm-petg
+    access: free
+    terms: cited; never copied
+    areas: [materials, fdm]
+    used_for:
+      - src/cadagent/mechanical/compliant/allowables.py
+      - docs/compliant.md
+      - tests/test_snapfit.py
+      - src/cadagent/manufacturing/process.py
+    verified: >-
+      2026-10-31: read the wiki page; E 2116.8 / 1898.7 MPa, UTS 50.8 / 42.8 MPa, elongation 8.4 / 3.3 % (X-Y /
+      Z).
+
+  - id: polymaker-polylite-asa-tds
+    title: PolyLite ASA Technical Data Sheet V5.4
+    authors: []
+    org: Polymaker
+    year: null
+    url: https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/abs-asa/polylite-tm-asa
+    access: free
+    terms: cited; never copied
+    areas: [materials, fdm]
+    used_for:
+      - src/cadagent/mechanical/compliant/allowables.py
+      - docs/compliant.md
+      - tests/test_snapfit.py
+      - src/cadagent/manufacturing/process.py
+    verified: >-
+      2026-10-31: read the wiki page; E 2379 / 1965 MPa, UTS 43.8 / 32 MPa, elongation 6.7 / 1.65 % (X-Y / Z).
+
+  - id: polymaker-polymide-copa-tds
+    title: PolyMide CoPA Technical Data Sheet V5.4
+    authors: []
+    org: Polymaker
+    year: null
+    url: https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/nylon/polymide-tm-copa
+    access: free
+    terms: cited; never copied
+    areas: [materials, fdm]
+    used_for:
+      - src/cadagent/mechanical/compliant/allowables.py
+      - docs/compliant.md
+      - tests/test_snapfit.py
+      - src/cadagent/manufacturing/process.py
+    verified: >-
+      2026-10-31: read the wiki page; dry E 2703 / 2209 MPa, UTS 78.0 / 45.8 MPa, elongation 12.7 / 1.3 % (X-Y /
+      Z).
+
+  - id: polymaker-polyflex-tpu95-tds
+    title: PolyFlex TPU95 Technical Data Sheet V5.4
+    authors: []
+    org: Polymaker
+    year: null
+    url: https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/tpu/polyflex-tm-tpu95
+    access: free
+    terms: cited; never copied
+    areas: [materials, fdm]
+    used_for: [research/compliant-mechanisms.md]
+    verified: "2026-10-31: read the wiki page; 33.6 MPa (ISO 37) and 551.2 % elongation, X-Y only."
+
+  - id: polymaker-fiberon-pa6-cf20-tds
+    title: Fiberon PA6-CF20 Technical Data Sheet V1.1
+    authors: []
+    org: Polymaker
+    year: null
+    url: https://cdn.shopify.com/s/files/1/0548/7299/7945/files/TDS_FIBERON_PA6-CF20_V1.1_EN.pdf
+    access: free
+    terms: cited; the PDF is not redistributed
+    areas: [materials, fdm]
+    used_for:
+      - src/cadagent/mechanical/compliant/allowables.py
+      - docs/compliant.md
+      - tests/test_snapfit.py
+      - src/cadagent/manufacturing/process.py
+    verified: >-
+      2026-10-31: opened the PDF; dry E 8636.5 / 3759.5 MPa, UTS 109.3 / 54.0 MPa, elongation 2.1 / 1.9 %; wet E
+      2508.1 / 1056.1 MPa, UTS 54.7 / 25.5 MPa, elongation 7.0 / 6.7 % (X-Y / Z).
+
+  - id: hp-mjf-5200-properties
+    title: HP 3D Printing materials for the HP Jet Fusion 5200 Series 3D Printing Solution - Mechanical Properties (white paper 4AA7-7084ENW)
+    authors: []
+    org: HP Development Company, L.P.
+    year: 2020
+    url: https://info.sculpteo.com/hubfs/Material%20documentation/PA11%20HP/TDS%20HP%20pa12%20pa12gb%20pa11%20pp%20(1).pdf
+    access: free
+    terms: cited; the PDF is not redistributed
+    areas: [materials, mjf]
+    used_for: [research/compliant-mechanisms.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the 8-page PDF (a service bureau's copy); read the title, the document number and the
+      September 2020 date. For research/process-profiles.yaml: opened the PDF (a reseller's copy; 4AA7-7084ENW,
+      September 2020); read the XY and Z averages of elongation at yield and at break for PA 12, PA 11, PA 12 GB
+      and PP.
+
+  - id: bambu-pa6-cf-tds
+    title: Bambu Lab PA6-CF Technical Data Sheet V3.0
+    authors: []
+    org: Bambu Lab
+    year: null
+    url: https://store.bblcdn.com/b2abc59ac250492b979a52f1ce3e61b3.pdf
+    access: free
+    terms: cited; values quoted with the TDS version; the PDF is not redistributed
+    areas: [materials, fdm]
+    used_for: [src/cadagent/simulation/fea.py, tests/test_fea_materials.py]
+    verified: >-
+      2026-10-31: read for #125 (the V3.0 sheet, dry): tensile modulus 4430 / 2170 MPa, bending modulus 5460 /
+      2240 MPa, UTS 102 / 48 MPa (X-Y / Z), density 1.09 g/cm3, as tests/test_fea_materials.py records them. The
+      humid rows scale them by Polymaker's PA6-CF20 wet / dry ratios (polymaker-fiberon-pa6-cf20-tds).
+
+  - id: bambu-paht-cf-tds
+    title: Bambu Lab PAHT-CF Technical Data Sheet V3.0
+    authors: []
+    org: Bambu Lab
+    year: null
+    url: https://store.bblcdn.com/7166b20bc68f4c87b32c972b856eeb4b.pdf
+    access: free
+    terms: cited; values quoted with the TDS version; the PDF is not redistributed
+    areas: [materials, fdm]
+    used_for: [src/cadagent/simulation/fea.py, tests/test_fea_materials.py]
+    verified: >-
+      2026-10-31: read for #125 (the V3.0 sheet, dry): tensile modulus 3860 / 2180 MPa, bending modulus 4230 /
+      1820 MPa, UTS 92 / 47 MPa (X-Y / Z), density 1.06 g/cm3, as tests/test_fea_materials.py records them.
+
+  # ---------------------------------------------------------------- 3D printing: design rules by process
+
+  - id: hubs-3dp-geometry-limits
+    title: What can't 3D printers do? Understanding and overcoming 3D printing geometry limitations
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/3d-printing-geometry-restrictions/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm, sla, sls, mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the table of recommended minimum wall thickness by process (FDM,
+      SLA/DLP, SLS, MJF, DMLS/SLM).
+
+  - id: hubs-3dp-dimensional-accuracy
+    title: What is dimensional accuracy in 3D printing and how do you achieve it?
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/dimensional-accuracy-3d-printed-parts/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm, sla, sls, mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: "2026-10-31: opened the page; read the tolerance and shrinkage rows of the FDM, SLA and SLS/MJF tables."
+
+  - id: hubs-3dp-threaded-fasteners
+    title: How do you assemble 3D-printed parts? Practical tips on threads & screws for 3D printing
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/how-assemble-3d-printed-parts-threaded-fasteners/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm, fasteners]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the wall-around-a-thread rule, inserts, embedded nuts (0.2 mm offset),
+      self-tapping pilot holes (75–80 % engagement), tapping, and printed threads (avoid below M5 in FDM).
+
+  - id: prusa-modeling-for-3dp
+    title: Modeling with 3D printing in mind
+    authors: []
+    org: Prusa Research (Prusa Knowledge Base)
+    year: null
+    url: https://help.prusa3d.com/article/modeling-with-3d-printing-in-mind_164135
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the article; read overhangs (45–60°, up to 75° on printers with 360° cooling), thin
+      walls as whole perimeters (0.45 mm per perimeter at a 0.4 mm nozzle), tolerances (at least 0.2 mm
+      accuracy, 0.3 mm for moving parts) and fillet against chamfer on bed-facing edges. Reader comments under
+      the article were not used.
+
+  - id: prusa-elephant-foot
+    title: Elephant foot compensation
+    authors: []
+    org: Prusa Research (Prusa Knowledge Base)
+    year: null
+    url: https://help.prusa3d.com/article/elephant-foot-compensation_114487
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the article; read the cause (first layer squished onto the bed) and the setting (about
+      0.2 mm for a 0.4 mm nozzle, on in Prusa's own profiles).
+
+  - id: xometry-eu-fdm-design-tips
+    title: "FDM 3D Printing Design Tips: Best Practices and Techniques for Stronger Prints"
+    authors: []
+    org: Xometry Europe
+    year: 2025
+    url: https://xometry.pro/en/articles/fdm-design-tips/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: the page answers scripts with HTTP 403 (bot protection), so the same article was read through
+      the site's public WordPress API (xometry.pro/en/wp-json/wp/v2/articles/22061; published 2025-03-11,
+      modified 2025-05-15). Read all ten rules and the specification table. Nikolaus Mroncz (Head of Sales
+      Engineering) is quoted on the page; it does not say he wrote every rule.
+
+  - id: xometry-fdm-mini-guide
+    title: Fused Deposition Modeling (FDM) Mini-Guide
+    authors: [Joel Schadegg, Aaron Lichtig]
+    org: Xometry
+    year: null
+    url: https://www.xometry.com/resources/3d-printing/mini-guide-fdm-3d-printing/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: the live page answers scripts with HTTP 429, so read the Internet Archive copy of 2026-05-19
+      (web.archive.org/web/20260519071827/…). Byline "Written by Joel Schadegg, Updated by Aaron Lichtig". Read
+      wall thickness, holes, text and ribs, and the ±0.005 in tolerance claim.
+
+  - id: cnckitchen-heat-set-tips
+    title: Tips & Tricks for Heat-Set Inserts used in 3D printing
+    authors: [Stefan Hermann]
+    org: CNC Kitchen
+    year: 2021
+    url: https://cnckitchen.com/blog/tips-and-tricks-for-heat-set-inserts
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm, fasteners]
+    aliases: [cnck-tips]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml, src/cadagent/mechanical/inserts.py]
+    verified: >-
+      2026-10-31: opened the article (published 2021-10-01, since updated); read the iron temperature (10–20 °C
+      above printing temperature), the 90 % melt-in, and the hole rules (blind hole about 1 mm deeper than the
+      insert, straight not tapered, no chamfer, glue into stepped holes in resin).
+
+  - id: cnckitchen-heat-set-hole-size
+    title: Are Our Heat-Set Insert Datasheets Wrong?
+    authors: [Stefan Hermann]
+    org: CNC Kitchen
+    year: 2026
+    url: https://cnckitchen.com/blog/are-our-heat-set-insert-datasheets-wrong
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fdm, fasteners]
+    aliases: [cnck-2026]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml, src/cadagent/mechanical/inserts.py]
+    verified: >-
+      2026-10-31: opened the article (2026-03-28); read the pull-out test of about 50 M3 inserts in PLA over
+      hole diameters 3.6–4.6 mm: printed holes about 0.25 mm under CAD, 4.0 mm nominal, 4.2 mm in CAD as the
+      sweet spot at about 90 % of the highest pull-out force, and 0.2–0.3 mm added in CAD for small inserts.
+
+  - id: hubs-sla-design
+    title: How to design parts for SLA 3D printing
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/how-design-parts-sla-3d-printing/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read supported (0.4 mm) and unsupported (0.6 mm) walls, unsupported
+      overhangs, embossed and engraved detail, bridges, holes (the text says under 0.8 mm may close; the summary
+      table says 0.5 mm minimum), clearances, hollow walls (2 mm) and drain holes (3.5 mm).
+
+  - id: hubs-sls-design
+    title: How to design parts for SLS 3D printing
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/how-design-parts-sls-3d-printing/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sls]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read wall (0.8 mm PA 12 to 2.0 mm carbon-filled), holes (over 1.5 mm), escape
+      holes (3.5 mm), engraving and embossing (1 mm), tolerances, clearances (0.3 mm; 0.2 mm ball joints),
+      living hinges (0.3–0.8 mm thick, 5 mm long), edge radius (0.4 mm) and pre-print scaling (3–3.5 %).
+
+  - id: formlabs-form4-design-guide
+    title: Form 4 Design Guide
+    authors: []
+    org: Formlabs
+    year: null
+    url: https://formlabs.com/white-papers/form-4-design-guide/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page (formlabs.com/blog/design-guide-form4/ redirects here); read the eleven
+      feature sections (Grey resin at 50 µm), the typical tolerances (Grey resin at 100 µm on three printers)
+      and the table comparing Form 4 with Form 3, which says the recommended values did not change between them.
+
+  - id: formlabs-form4-technology
+    title: Explore the Next-Generation Technology Powering the Form 4
+    authors: []
+    org: Formlabs
+    year: null
+    url: https://formlabs.com/blog/technology-behind-form-4/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the comparison table (Form 4 is masked stereolithography with an LCD and
+      LED backlight; the Form 3 family is laser SLA with galvanometers) and the 50 µm pixel size.
+
+  - id: formlabs-form3-design-specs
+    title: Design specifications for 3D models (Form 3/Form 3B)
+    authors: []
+    org: Formlabs
+    year: null
+    url: https://formlabs.com/support/Design-specifications-for-3D-models-form-3/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the support page; read every "Recommended" section (Clear resin at 100 µm on Form 3).
+
+  - id: formlabs-form2-design-specs
+    title: Design specifications for 3D models (Form 2)
+    authors: []
+    org: Formlabs
+    year: null
+    url: https://formlabs.com/support/Design-Specs/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the support page; read every "Recommended" section (Clear resin at 100 µm on the older
+      Form 2 laser printer).
+
+  - id: formlabs-hollowing-blog
+    title: How to Hollow Out 3D Models With Meshmixer & PreForm to Save Material and Time
+    authors: []
+    org: Formlabs
+    year: null
+    url: https://formlabs.com/blog/how-to-hollow-out-3d-models/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the drain-hole steps (one hole as close to the build platform as
+      possible and at least one more).
+
+  - id: formlabs-fuse-sls-design-guide
+    title: Fuse Series SLS Design Guide
+    authors: []
+    org: Formlabs
+    year: 2023
+    url: https://formlabs-media.formlabs.com/rs/060-UIG-504/images/WP-EN-fuse-series-sls-design-guide.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sls]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the 13-page PDF (March 2023); read the reference dimensions (Nylon 12), assembly
+      clearances, orientation and packing, and the material sections.
+
+  - id: hp-mjf-handbook-design-for-accuracy
+    title: "HP Multi Jet Fusion Handbook: Design for accuracy"
+    authors: []
+    org: HP
+    year: 2019
+    url: https://images.marketingcontent.ext.hp.com/Web/HPMartech/%7B4ad48959-344d-47d0-8bbc-066708df7dbd%7D_1_2.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the 2-page PDF (4AA7-4107ENW, April 2019); read the minimum-feature table, embossed and
+      engraved details and the accuracy notes. The handbook's other chapters sit behind a sign-up form and were
+      not read.
+
+  - id: hp-learning-design-3d-print-model
+    title: How to design a 3D print model for HP Multi Jet Fusion
+    authors: []
+    org: HP
+    year: null
+    url: https://www.hp.com/us-en/printers/3d-printers/learning-center/how-to-design-3d-print-model.html
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read wall thickness, cantilevers, moving and connecting parts, and hollow
+      parts (validated with HP PA 12, PA 12 GB and PA 11).
+
+  - id: hp-learning-joint-design
+    title: Designing 3D printed joints
+    authors: []
+    org: HP
+    year: null
+    url: https://www.hp.com/us-en/printers/3d-printers/learning-center/3d-printed-joint-design.html
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: "2026-10-31: opened the page; read the threaded-union and machining paragraphs."
+
+  - id: hp-5200-dimensional-capability
+    title: "HP 3D HR PA 11, HP 3D HR PA 12 GB, and HP 3D HR PP enabled by BASF for the HP Jet Fusion 5200 Series: Dimensional Capability"
+    authors: []
+    org: HP
+    year: 2020
+    url: https://xometry-marketing.cdn.prismic.io/xometry-marketing/648ab46b-2162-4f28-9540-dab79a07e399_DimensionalAccuracy_PA11_PA12GB_PP_Sept2020.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the PDF (HP white paper 4AA7-7166ENW, September 2020, a copy on a bureau's file host);
+      read tables 1–6, XY and Z tolerances in three size bands at Cpk 1.33 and 1.00. It has no plain PA 12 data.
+
+  - id: protolabs-sla-guidelines
+    title: Stereolithography (SLA) Design Guidelines and Capabilities
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/services/3d-printing/stereolithography/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the tabbed tables (each tab matched to its panel) for feature, wall and
+      hole sizes by resolution, and the tolerance paragraph. Its high-resolution X-Y feature prints 0.005 in
+      beside 0.1016 mm; 0.005 in is 0.127 mm.
+
+  - id: protolabs-sls-guidelines
+    title: Design Guidelines for Selective Laser Sintering (SLS)
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/services/3d-printing/selective-laser-sintering/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sls]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: "2026-10-31: opened the page; read the wall, minimum feature, tolerance and warpage tables."
+
+  - id: protolabs-mjf-guidelines
+    title: Design Guidelines for Multi Jet Fusion
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/services/3d-printing/multi-jet-fusion/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: "2026-10-31: opened the page; read the guideline table and the tolerance paragraph."
+
+  - id: protolabs-nylon-design-tip
+    title: Nylon 3D Printing Tips for Quality Parts
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/resources/design-tips/how-to-design-for-nylon-3d-printing/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sls, mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read minimum feature sizes and channel gaps for SLS and MJF, and the shell
+      for thick features.
+
+  - id: protolabs-mjf-design-tip
+    title: How to Use Multi Jet Fusion for Functional 3D-Printed Parts
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/resources/design-tips/how-to-use-multi-jet-fusion-for-functional-3d-printed-parts/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: "2026-10-31: opened the page; read the resolution and wall-thickness paragraphs."
+
+  - id: xometry-sla-design-tips
+    title: "SLA 3D Printing Design Guidelines: 8 Essential Tips"
+    authors: [Niko Mroncz]
+    org: Xometry Asia
+    year: 2025
+    url: https://xometry.asia/en/sla-3d-printing-design-guidelines-8-essential-tips/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page (2025-09-02), written in the first person by Niko Mroncz, Head of Sales
+      Engineering at Xometry; read the eight rule-of-thumb lists and the specification table.
+
+  - id: xometry-sls-design-tips
+    title: 8 Essential Design Tips for SLS 3D Printing
+    authors: [Niko Mroncz]
+    org: Xometry Asia
+    year: 2025
+    url: https://xometry.asia/en/8-essential-design-tips-for-sls-3d-printing/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sls]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: "2026-10-31: opened the page (2025-07-10, by the same author); read the rule-of-thumb lists."
+
+  - id: xometry-mjf-design-guidelines
+    title: HP Multi Jet Fusion (MJF) 3D Printing Design Guidelines
+    authors: []
+    org: Xometry Asia
+    year: 2020
+    url: https://xometry.asia/en/hp-mjf-3d-printing-design-guidelines/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page (2020-06-25); read the walls, clearances, hollowing and tolerance sections.
+
+  - id: xometry-mjf-service
+    title: Multi Jet Fusion 3D Printing Service
+    authors: []
+    org: Xometry
+    year: null
+    url: https://www.xometry.com/capabilities/3d-printing-service/hp-multi-jet-fusion/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the prototype and engineered tolerance tables (HP 5200, Balanced mode)
+      and the feature and build size table.
+
+  - id: xometry-sls-service
+    title: Selective Laser Sintering (SLS) 3D Printing Service
+    authors: []
+    org: Xometry
+    year: null
+    url: https://www.xometry.com/capabilities/3d-printing-service/selective-laser-sintering/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sls]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: "2026-10-31: opened the page; read the general tolerance table."
+
+  - id: materialise-taurus-sla-guidelines
+    title: Design Guidelines for Taurus | Stereolithography
+    authors: []
+    org: Materialise
+    year: null
+    url: https://www.materialise.com/en/academy/industrial/design-am/taurus
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read wall thickness, hollowing, supports (the rule of 30°), text and the
+      specification table.
+
+  - id: materialise-pa12-sls-guidelines
+    title: Design Guidelines for PA 12 (SLS) | Laser Sintering
+    authors: []
+    org: Materialise
+    year: null
+    url: https://www.materialise.com/en/academy/industrial/design-am/pa12-sls
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sls]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read wall, hollowing, interlocking and assembled parts, holes and the
+      specification table.
+
+  - id: materialise-pa12-mjf-guidelines
+    title: Design Guidelines for PA 12 (MJF) | Multi Jet Fusion
+    authors: []
+    org: Materialise
+    year: null
+    url: https://www.materialise.com/en/academy/industrial/design-am/pa12-mjf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: "2026-10-31: opened the page; read every guideline section and the specification table."
+
+  - id: stratasys-direct-mjf-design-guide
+    title: Multi Jet Fusion Design Guide
+    authors: []
+    org: Stratasys Direct
+    year: 2019
+    url: https://www.stratasys.com/siteassets/sdm/content---website-storage/design-guides/dg_mjf_stratasys_direct_03062023.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the 9-page PDF (copyright 2019); read wall thickness, edges and fillets, hinges,
+      joints, bosses and the specification table. Two of its inch-to-mm conversions are wrong (0.010 in printed
+      as 0.4 mm and as 0.3 mm).
+
+  - id: eos-design-rules-overview-ls
+    title: Design Rules Overview LS (Formiga P100)
+    authors: [Franz-Josef Kerl]
+    org: EOS GmbH
+    year: 2011
+    url: https://www.3dimpuls.com/sites/default/files/download/design_rules_overview_ls_-_formiga_p100-v1_1.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sls]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the 15-slide deck (2011-03-22, by an EOS application engineer) on a reseller's site; no
+      copy was found on EOS's own site. Read walls, pins, hinges, loose connections and flat surfaces. The
+      gap-against-wall slide is a chart (its value is status u).
+
+  - id: jlc3dp-design-guideline
+    title: "3D Printing Design Guidelines: Size, Tolerance & Design Rules"
+    authors: []
+    org: JLC3DP (JLCPCB)
+    year: null
+    url: https://jlc3dp.com/help/article/3d-printing-design-guideline
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla, sls, mjf]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the wall, embossed and engraved, clearance, escape hole and tolerance
+      tables. Its resin process is called SLA; the machine type is not stated.
+
+  - id: prusa-hollowing-kb
+    title: Hollowing
+    authors: []
+    org: Prusa Research
+    year: null
+    url: https://help.prusa3d.com/article/hollowing_117285
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the article (SL1, CW1 and SL1S SPEED); read the hollowing parameters and drainage
+      holes.
+
+  - id: elegoo-satellite-hollowing
+    title: Mastering Hollowing and Adding Holes in ELEGOO SatelLite
+    authors: []
+    org: ELEGOO
+    year: 2026
+    url: https://www.elegoo.com/blogs/3d-printer-user-guide/mastering-hollowing-and-adding-holes-in-elegoo-satellite
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: "2026-10-31: opened the page (2026-09-18); read the hollowing and drainage-hole steps."
+
+  - id: lychee-voxels-hollowing
+    title: "Voxels Hollowing 3D: We Made Hollowing Way Better"
+    authors: []
+    org: Mango3D (Lychee Slicer)
+    year: 2026
+    url: https://lychee.co/whats-new/new-feature-voxels-hollowing-3-d-we-made-hollowing-way-better
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sla]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: "2026-10-31: opened the page (2026-01-29); read the thickness guidance."
+
+  # ---------------------------------------------------------------- injection moulding
+
+  - id: protolabs-im-ribs-gussets
+    title: "Design Stronger Molded Parts: Ribs, Gussets, and Materials"
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/resources/design-tips/design-stronger-molded-parts/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [injection-moulding]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the rib and gusset paragraph (at most 60 % of the nominal wall) and the
+      wall thickness paragraph (stable from 1.5 to 2.5 mm; 3.8 mm sections can sink on themselves).
+
+  - id: protolabs-im-bosses
+    title: Plastic Boss Design on Molded Parts
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/resources/design-tips/plastic-boss-design-on-molded-parts/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [injection-moulding]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the boss wall (40–60 % of the wall it rises from) and boss draft (0.5–3°
+      by height).
+
+  - id: covestro-part-mold-design
+    title: "Engineering Polymers: Part and Mold Design - Thermoplastics, A Design Guide"
+    authors: []
+    org: Covestro LLC
+    year: 2015
+    url: https://solutions.covestro.com/-/media/covestro/solution-center/brands/downloads/imported/1557214249.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [injection-moulding]
+    aliases: [covestro-relaxation, covestro-pmd]
+    used_for:
+      - research/process-profiles.md
+      - research/process-profiles.yaml
+      - src/cadagent/mechanical/inserts.py
+      - src/cadagent/mechanical/printed_joints.py
+    verified: >-
+      2026-10-31: opened the 172-page PDF (COV-034, 10/2015). Its text layer uses a shifted font encoding, so it
+      was decoded and the rib table (Table 2-1) checked against a rendered page. Read chapter 2 (wall thickness,
+      ribs, bosses, gussets, corners, draft, holes and cores, undercuts) and chapter 7 (gates).
+
+  - id: fictiv-im-design-guide
+    title: "Injection Molding Design Guide: Best Practices for Molded Plastic Parts"
+    authors: []
+    org: Fictiv
+    year: 2025
+    url: https://www.fictiv.com/articles/injection-molding-design-guide
+    access: free
+    terms: cited and summarised, never copied
+    areas: [injection-moulding]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page (byline "Team Fictiv", 2025-08-15); read the wall table, corners, draft, ribs
+      and bosses. Its acrylic row repeats the inch values in the mm column (a misprint), so that row is not
+      used.
+
+  # ---------------------------------------------------------------- CNC machining
+
+  - id: hubs-cnc-design
+    title: How to design parts for CNC machining
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/how-design-parts-cnc-machining/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [cnc]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the table of recommended and feasible values (cavities, internal edges,
+      floor radii, walls, holes, threads, small features, tolerances, text) and the undercut section.
+
+  - id: hubs-cnc-cost-tips
+    title: 14 proven design tips to reduce the cost of CNC machining
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/knowledge-base/reducing-cnc-machining-costs-design-tips/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [cnc]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the tips on cavity depth (2–3 times the tool diameter), the 4:1 aspect
+      ratio of slender features and the ±0.125 mm default tolerance.
+
+  - id: protolabs-cnc-milling
+    title: "Design Guidelines: CNC Milling"
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/services/cnc-machining/cnc-milling/design-guidelines/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [cnc]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read size limits (2 in milled depth per side), the tolerance (±0.005 in, and
+      ISO 2768-1 medium or fine), feature and nominal thickness, threads (M2–M12) and text.
+
+  - id: protolabs-cnc-turning
+    title: "Design Guidelines: CNC Turning"
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/services/cnc-machining/cnc-turning/design-guidelines/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [cnc]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page; read the smallest diameter (0.030 in), wall thickness (0.020 in) and hole
+      sizes.
+
+  - id: fictiv-cnc-design-guide
+    title: Fictiv CNC Machining Design Guide
+    authors: []
+    org: Fictiv
+    year: 2021
+    url: https://www.fictiv.com/articles/fictiv-cnc-machining-design-guide
+    access: free
+    terms: cited and summarised, never copied
+    areas: [cnc]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the page (byline "Team Fictiv", 2021-06-29); read drilling, tapping, milling (internal
+      corners, depth of cut, thin walls), turning and tolerances.
+
+  - id: xometry-cnc-10-tips
+    title: "Video: 10 Tips to Improve Your CAD Designs for CNC Machining"
+    authors: [Joel Schadegg, Greg Paulsen]
+    org: Xometry
+    year: 2022
+    url: https://www.xometry.com/resources/machining/10-tips-improve-cad-cnc-design/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [cnc]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: the live page answers scripts with HTTP 429, so read the Internet Archive copy of 2026-05-15
+      (web.archive.org/web/20260515023712/…). Byline "Written by Joel Schadegg, Updated by Greg Paulsen";
+      published 2022-11-15, updated 2026-02-27. Read the tips on walls, cavities, radii, holes and threads.
+
+  - id: xometry-cnc-corner-radii
+    title: "CNC Machining Design Tip: Optimizing Internal Corner Radii"
+    authors: [Dean McClements, Aaron Lichtig]
+    org: Xometry
+    year: 2020
+    url: https://www.xometry.com/resources/machining/cnc-machining-optimizing-internal-corner-radii/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [cnc]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: the live page answers scripts with HTTP 429, so read the Internet Archive copy of 2026-03-07
+      (web.archive.org/web/20260307153318/…). Byline "Written by Dean McClements, Updated by Aaron Lichtig";
+      published 2020-09-29, updated 2024-08-13. Read the 0.02–0.05 in added to the tool radius.
+
+  - id: harvey-tool-long-reach
+    title: Miniature End Mills - Square - Long Reach, Standard Flute / Long Flute
+    authors: []
+    org: Harvey Tool
+    year: null
+    url: https://www.harveytool.com/products/miniature-end-mills---square---long-reach-standard-flute
+    access: free
+    terms: cited and summarised, never copied
+    areas: [cnc]
+    used_for: [research/process-profiles.md, research/process-profiles.yaml]
+    verified: >-
+      2026-10-31: opened the two product pages (standard flute here; long flute at
+      …/miniature-end-mills---square---long-reach-long-flute); read the description bullets (length of cut 3 ×
+      D, and at least 5 × D for the long-flute tools). The size tables load with script and were not read.
+
+  # ---------------------------------------------------------------- DFM checklists
+
+  - id: dfma-dfm-checklist
+    title: Design for Manufacturing design review checklist
+    authors: []
+    org: Boothroyd Dewhurst, Inc.
+    year: null
+    url: https://www.dfma.com/resources/pdf/dfm-design-review-checklist.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, moulding, die-casting, dfm, injection-moulding, cnc]
+    used_for:
+      - research/compliant-mechanisms.md
+      - research/fea-and-process-tools.md
+      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
+      - research/process-profiles.md
+      - research/process-profiles.yaml
+    verified: >-
+      2026-10-31: opened the 2-page PDF. Read the sheet-metal items: bend radii at least the thickness; hole to
+      edge at least 2x thickness; hole to bend at least 2x thickness plus the bend radius; minimum flange length
+      met; bend sequence feasible. The checklist gives no number for the minimum flange. For
+      research/process-profiles.yaml: opened the PDF; read the sheet-metal (R ≥ T, hole to edge ≥ 2T, hole to
+      bend ≥ 2T + R), injection-moulding (ribs ≤ 60 % of the wall) and CNC (pocket depth to width under 4:1)
+      items. The checklist calls itself a screening tool, not absolute rules.
+
+  # ---------------------------------------------------------------- sheet metal
+
+  - id: protolabs-sheet-metal
+    title: Design Guidelines for Sheet Metal Fabrication
+    authors: []
+    org: Protolabs
+    year: null
+    url: https://www.protolabs.com/services/sheet-metal-fabrication/design-guidelines/
+    access: free
+    terms: cited and summarised, never copied; its tables are not reproduced
+    areas: [sheet-metal]
+    used_for:
+      - research/compliant-mechanisms.md
+      - research/fea-and-process-tools.md
+      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
+      - vendor/text-to-cad/skills/dfm/references/sheet-metal.md
+      - research/process-profiles.md
+      - research/process-profiles.yaml
+    verified: >-
+      2026-10-31: opened the page. Read the thickness range, the tolerance tables (one surface and across
+      bends), bend angle tolerance (+/-1 deg), standard bend radii, minimum flange 4T, features within 4T of a
+      bend at risk, hems (inside diameter >= T, return 6T), offsets, holes and slots (diameter >= T, edge
+      distance 0.062 in or 0.125 in by thickness), notches and tabs, countersinks, and the pointer to the PEM
+      catalogue for hardware. No byline or date. It gives no K-factor, kerf, grain or relief numbers. For
+      research/process-profiles.yaml: opened the page; read the tolerance tables, the standard bend radii, the
+      4T minimum flange, the 4T feature-to-bend warning, hems (inside diameter T, return 6T), holes and slots
+      (diameter T; edge distance by thickness), notches and tabs, and countersinks.
+
+  - id: hubs-sheet-metal
+    title: "Sheet metal fabrication: The manufacturing & design guide"
+    authors: []
+    org: Protolabs Network (formerly Hubs)
+    year: null
+    url: https://www.hubs.com/guides/sheet-metal-fabrication/
+    access: free
+    terms: cited and summarised, never copied; its K-factor chart is not reproduced
+    areas: [sheet-metal, laser-cutting, waterjet]
+    used_for:
+      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
+      - vendor/text-to-cad/skills/dfm/references/sheet-metal.md
+      - research/process-profiles.md
+      - research/process-profiles.yaml
+    verified: >-
+      2026-10-31: opened the page and its raw HTML. Read the K-factor definition and chart (air bending,
+      bottoming and coining; soft, medium and hard materials; three R/T bands), the laser corner fillet (T/2),
+      kerf (laser about 0.3 mm, waterjet 0.5-1 mm), hole size and spacing, hole-to-bend distance, bend radius >=
+      T, relief width >= T, and the cutting-tolerance table. No byline or date. For
+      research/process-profiles.yaml: opened the guide; read the design rules (kerf, holes, spacing, edge and
+      bend distances, K-factor range and table, bend relief width, bend height 2T + R, inside radius at least T)
+      and the cutting-process table.
+
+  - id: sendcutsend-specs
+    title: SendCutSend engineering specifications (sendcutsend-specs.json, schema 1.0)
+    authors: []
+    org: SendCutSend
+    year: 2026
+    url: https://cdn.sendcutsend.com/specs/sendcutsend-specs.json
+    access: free
+    terms: fetched and cited by SKU and field path with the access date; the file is not redistributed. Treat as live data, not a stable API (it changes).
+    areas: [sheet-metal, laser-cutting, waterjet, pem-hardware, tolerances]
+    used_for:
+      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
+      - vendor/text-to-cad/skills/sendcutsend/references/official-sources.md
+      - research/process-profiles.md
+      - research/process-profiles.yaml
+    verified: >-
+      2026-10-31: downloaded the JSON (_meta.generated_at 2026-04-29, 178 materials; 57 with bending_specs).
+      Read per SKU: thickness, bend_radius, k_factor, bend_deduction, die_width, min flange before and after
+      bend, bend_relief_depth, corner relief distance, joggle limits, bend angle tolerance, min hole and hole to
+      edge, cut tolerance, tab_slot_tolerance, hardware and countersink distances, Brinell hardness. For
+      research/process-profiles.yaml: downloaded the JSON (_meta.generated_at 2026-04-29, 178 materials). Read
+      bending_specs for the 5052 aluminium (ALU-) and cold-rolled mild steel (CRS-) SKUs: thickness,
+      bend_radius, k_factor, min_flange_length_after_bend, bend_relief_depth. On review, downloaded the same
+      file again (same generated_at): no ALU6061- or ALU7075- SKU has bending_specs, and ALU2024-025 (0.025 in)
+      has bend_radius 0.07 in. shop_tables holds four of its eight bendable 5052 SKUs and six of its seven
+      mild-steel ones.
+
+  - id: sendcutsend-ordering-guide
+    title: SendCutSend ordering guide (sendcutsend-ordering-guide.md)
+    authors: []
+    org: SendCutSend
+    year: null
+    url: https://cdn.sendcutsend.com/specs/sendcutsend-ordering-guide.md
+    access: free
+    terms: cited and summarised; never copied
+    areas: [sheet-metal]
+    used_for:
+      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
+      - research/process-profiles.md
+      - research/process-profiles.yaml
+    verified: >-
+      2026-10-31: read the file. Bend radius is set by the tooling and is not adjustable; maximum bend angle
+      typically 120-130 deg (no full 180 deg hem); bend angle tolerance +/-1 deg up to 24 in, +/-2 deg over;
+      tab-slot tolerance about 0.010 in; cut tolerance +/-0.005 in typical for laser. For
+      research/process-profiles.yaml: opened the file; read the Bending section (radius set by tooling, K
+      typically 0.33–0.50, bend angle at most 120–130°, ±1° up to 24 in and ±2° above).
+
+  - id: sendcutsend-tab-slot
+    title: Designing Sheet Metal Parts With Tab and Slots
+    authors: []
+    org: SendCutSend
+    year: 2023
+    url: https://sendcutsend.com/blog/designing-sheet-metal-parts-with-tab-and-slots/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, tabs-and-slots]
+    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    verified: >-
+      2026-10-31: opened the page (published 2023-01-16, no byline). Read the slot width and height formulas,
+      the powder-coat allowance and the tab-length rule.
+
+  - id: sendcutsend-bend-relief
+    title: How to Design Bend Reliefs & Corner Reliefs for Sheet Metal Parts
+    authors: []
+    org: SendCutSend
+    year: 2024
+    url: https://sendcutsend.com/blog/guide-to-designing-bend-reliefs/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal]
+    used_for:
+      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
+      - research/process-profiles.md
+      - research/process-profiles.yaml
+    verified: >-
+      2026-10-31: opened the page (2024-01-18, no byline). Read relief width (>= T/2), relief depth (>= T + R +
+      0.02 in, from the bend line), and the 0.015 in minimum corner gap. For research/process-profiles.yaml:
+      opened the article (published 2024-01-18, modified 2025-06-19); read relief width (T/2), relief depth (T +
+      R + 0.02 in from the bend line), corner gap (0.015 in) and that CAD tools measure depth from different
+      datums.
+
+  - id: sendcutsend-countersink
+    title: Countersink Design Best Practices
+    authors: []
+    org: SendCutSend
+    year: 2022
+    url: https://sendcutsend.com/blog/countersink-design-best-practices
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, fasteners]
+    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    verified: >-
+      2026-10-31: opened the page (2022-12-05, no byline). Read the example edge distance (0.781 in on 5052) and
+      the bend rule (half the die width from the bend centre).
+
+  - id: oshcut-bending-rules
+    title: Metal Bending Design Rules
+    authors: []
+    org: OSH Cut
+    year: null
+    url: https://www.oshcut.com/design-guide/metal-bending-design-rules
+    access: free
+    terms: cited and summarised; never copied
+    areas: [sheet-metal]
+    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    verified: "2026-10-31: opened the page. Its only number is a gauging edge at least 0.25 in long for small parts."
+
+  - id: oshcut-material-304
+    title: "Stainless Steel 304 #1 Finish (material details)"
+    authors: []
+    org: OSH Cut
+    year: null
+    url: https://www.oshcut.com/materialdetails/stainless-steel-304-1-finish
+    access: free
+    terms: cited and summarised; never copied
+    areas: [sheet-metal, laser-cutting]
+    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    verified: >-
+      2026-10-31: opened the page. Read kerf 0.006 in at every thickness, minimum and recommended hole sizes,
+      channel and wall minimums, and the K-factor note (about 0.4 for soft metals such as aluminium, about 0.45
+      for steel and stainless).
+
+  - id: xometry-manufacturing-standards
+    title: Manufacturing Standards
+    authors: []
+    org: Xometry, Inc.
+    year: null
+    url: https://www.xometry.com/manufacturing-standards/
+    access: free
+    terms: cited and summarised; never copied
+    areas: [sheet-metal, tolerances]
+    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    verified: >-
+      2026-10-31: opened the page. Read the sheet-metal default tolerances (edge to bend, across bend, bend to
+      hole, overall, bend angle +/-1 deg, multiple formed surfaces, cut features) and that hems, curls and
+      welded assemblies need a manual quote.
+
+  - id: fictiv-tabs-slots
+    title: Tabs and Slots for Sheet Metal Part Design
+    authors: [David Willson]
+    org: Fictiv
+    year: 2025
+    url: https://www.fictiv.com/articles/sheet-metal-tabs-and-slots-assembly
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, tabs-and-slots, laser-cutting]
+    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    verified: >-
+      2026-10-31: opened the page (byline David Willson, 2025-11-20). Read tab width and length, slot clearance
+      by process, corner radii, edge distance, tab spacing, distance from the bend tangent and kerf width.
+
+  - id: century-tywood-sheet-metal-reference
+    title: Manufacturing Reference for Sheet Metal Products
+    authors: []
+    org: Century Tywood (fabricator, Holliston, MA)
+    year: null
+    url: https://www.pblprojects.org/wp-content/uploads/2019/03/Manufacturing-Reference-Guide_for_Sheet_Metal_Products.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, tolerances]
+    used_for:
+      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
+      - research/process-profiles.md
+      - research/process-profiles.yaml
+    verified: >-
+      2026-10-31: opened the 13-page PDF (a third-party copy). Read grain direction, minimum flange 3.5 x (T +
+      R), bend relief T + R, punched hole to bend 1.5 x (T + R), minimum hole = T, and hole-to-edge and hole
+      spacing rules. For research/process-profiles.yaml: opened the 13-page PDF (a third-party copy); read grain
+      direction, minimum flange 3.5 × (T + R), bend relief T + R, punched hole to bend 1.5 × (T + R), hole size,
+      hole to edge and hole spacing.
+
+  - id: davis-2001-fabricator-design-tips
+    title: "Design tips for sheet metal: Bend relief, small holes, hole distortion near bends, and minimum flange widths"
+    authors: [Gerald Davis]
+    org: The FABRICATOR (FMA Communications)
+    year: 2001
+    url: https://www.thefabricator.com/article/bending/design-tips-for-sheet-metal-bend-relief-small-holes-hole-distortion-near-bends-and-minimum-flange-widths
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, grain-direction]
+    used_for:
+      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
+      - research/process-profiles.md
+      - research/process-profiles.yaml
+    verified: >-
+      2026-10-31: the live page is behind a bot check, so read the Internet Archive copy of 2017-12-01
+      (https://web.archive.org/web/20171201015017/http://www.thefabricator.com:80/article/bending/design-tips-for-sheet-metal-bend-relief-small-holes-hole-distortion-near-bends-and-minimum-flange-widths).
+      Byline Gerald Davis, 2001-10-25. Read the whole article. For research/process-profiles.yaml: the live page
+      is behind a bot check, so read the whole Internet Archive copy of 2017-12-01
+      (web.archive.org/web/20171201015017/…). Read punched hole size, inside radius by process and alloy, bend
+      relief, hole distance from the bend, and flange width.
+
+  - id: benson-2015-fabricator-inside-radius
+    title: Predicting the inside radius when bending with the press brake
+    authors: [Steve Benson]
+    org: The FABRICATOR (FMA Communications)
+    year: 2015
+    url: https://www.thefabricator.com/thefabricator/article/bending/predicting-the-inside-radius-when-bending-with-the-press-brake
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, bend-radius, k-factor]
+    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    verified: >-
+      2026-10-31: the live page is behind a bot check, so read the Internet Archive copy of 2025-08-25. Byline
+      Steve Benson, 2015-08-12. Read the "20 percent rule" (air-formed inside radius as a share of the die
+      opening: 20-22 % stainless, about 16 % for 60-KSI cold-rolled steel), the worked comparison, and the
+      closed-hem bend deduction note.
+
+  - id: paulsen-2017-machine-design-sheet-metal
+    title: Tips for Making Sheet-Metal Parts
+    authors: [Greg Paulsen]
+    org: Machine Design (Paulsen was Director of Applications Engineering at Xometry)
+    year: 2017
+    url: https://www.machinedesign.com/mechanical-motion-systems/article/21835979/tips-for-making-sheet-metal-parts
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, hems, countersinks, tabs-and-slots]
+    used_for:
+      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
+      - research/process-profiles.md
+      - research/process-profiles.yaml
+    verified: >-
+      2026-10-31: opened the page (byline Greg Paulsen, 2017-09-22). Read the rules for bends, curls,
+      countersinks, hems, holes and slots, notches and tabs, corner fillets and relief cuts. For
+      research/process-profiles.yaml: opened the article (2017-09-22, byline Greg Paulsen); read bends, curls,
+      countersinks, hems, holes and slots, notches and tabs, and relief cuts.
+
+  - id: pem-catalog-self-clinching-nuts
+    title: "PEM self-clinching nuts types S, SS, CLS, CLSS, SP: catalogue pages CLS-M3-1 and SP-M3-1"
+    authors: []
+    org: PennEngineering (PEM)
+    year: null
+    url: https://catalog.pemnet.com/item/nuts-types-s-ss-cls-clss-cla-sp/self-clinching-nuts-types-s-ss-cls-clss-sp-metric/cls-m3-1
+    access: free
+    terms: cited by part number; values not tabulated wholesale; never copied
+    areas: [sheet-metal, pem-hardware, fasteners]
+    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    verified: >-
+      2026-10-31: opened the CLS-M3-1 and SP-M3-1 pages. Read minimum sheet thickness 1.00 mm, hole in sheet
+      4.22 +0.08 mm, minimum hole centreline to edge 4.8 mm, and the sheet hardness limits (CLS, 300-series
+      stainless: HRB 70 / HB 125 or less; SP, A286: HRB 90 / HB 185 or less), plus the footnotes. pemnet.com
+      itself returned empty bot-check pages; the catalogue subdomain worked.
+
+  - id: solidworks-k-factor
+    title: K-Factor - 2022 - SOLIDWORKS Design Help
+    authors: []
+    org: Dassault Systemes SolidWorks Corporation
+    year: 2022
+    url: https://help.solidworks.com/2022/English/SolidWorks/sldworks/c_K_Factor.htm
+    access: free
+    terms: cited; never copied
+    areas: [sheet-metal, k-factor]
+    used_for:
+      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
+      - research/process-profiles.md
+      - research/process-profiles.yaml
+    verified: >-
+      2026-10-31: opened the page; read BA = pi(R + KT) A/180 with K = t/T, t measured from the inside face to
+      the neutral sheet. For research/process-profiles.yaml: the live page renders with script only, so read the
+      Internet Archive copy of 2025-02-18 (web.archive.org/web/20250218204342/…): K is the neutral sheet's
+      position as a ratio of the thickness, and BA = π(R + K·T)·A/180.
+
+  - id: onshape-sheet-metal
+    title: Sheet Metal (Onshape Help)
+    authors: []
+    org: PTC Onshape
+    year: null
+    url: https://cad.onshape.com/help/Content/sheetmetal.htm
+    access: free
+    terms: cited; never copied
+    areas: [sheet-metal, k-factor]
+    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    verified: >-
+      2026-10-31: opened the page; read the bend calculation options and the defaults (bend K Factor 0.45,
+      rolled K Factor 0.5).
+
+  - id: freecad-sheetmetal
+    title: FreeCAD SheetMetal Workbench
+    authors: [Shai Seger, Cerem Cem Aslan, Ulrich Brammer]
+    org: FreeCAD community (github.com/shaise)
+    year: null
+    url: https://github.com/shaise/FreeCAD_SheetMetal
+    access: free
+    terms: LGPL-2.1; cited and used as a reference or an external program, its code is not copied into cad-agent
+    areas: [sheet-metal, k-factor, unfolding]
+    used_for:
+      - research/fea-and-process-tools.md
+      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
+    verified: >-
+      2026-10-31: gh api (LGPL-2.1, pushed 2026-10-17, 350 stars, not archived). Read the README developer
+      credits, test case and material-definition table (R/T 1 -> 0.38, 3 -> 0.43, 99 -> 0.5, ANSI), the
+      changelog (relicensed GPL-3 to LGPL-2 on 2024-01-27), and SheetMetalNewUnfolder.py, which halves a DIN
+      K-factor to the ANSI one. The FreeCAD wiki was bot-blocked.
+
+  - id: build123d-sheet-metal
+    title: build123d sheet metal (BuildSheet, unfold; dev branch)
+    authors: [Roger Maitland]
+    org: build123d project (github.com/gumyr)
+    year: null
+    url: https://github.com/gumyr/build123d/tree/dev/docs/sheet_metal
+    access: free
+    terms: Apache-2.0; may be adopted with attribution
+    areas: [sheet-metal, unfolding, k-factor]
+    used_for:
+      - research/agent-toolkits-2026-10.md
+      - research/fea-and-process-tools.md
+      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
+    verified: >-
+      2026-10-31: gh api (Apache-2.0, default branch dev, pushed 2026-10-30, latest release v0.13.0 of
+      2026-09-21). Listed the dev tree (build_sheet.py, operations_sheet.py, sheet_utils.py, docs/sheet_metal/*)
+      and read build_sheet.py: BuildSheet takes one k_factor, default 0.5. The author is the repository owner's
+      GitHub profile name.
+
+  # ---------------------------------------------------------------- textbooks and papers: mechanics, mechanisms, heat and flow
+
+  - id: roark
+    title: Roark's Formulas for Stress and Strain, 8th edition
+    authors: [Warren C. Young, Richard G. Budynas, Ali M. Sadegh]
+    org: McGraw-Hill
+    year: 2012
+    isbn: 978-0-07-174247-4
+    access: print
+    terms: cited by author, title, edition and section; never copied
+    areas: [beams, torsion, plates]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/beams.py, src/cadagent/formulas/torsion.py]
+    verified: >-
+      2026-11-01: the edition, authors and ISBN checked against the Open Library record. The registry records
+      the edition only: cadagent.formulas names the section and case of each formula it takes, and
+      tests/test_formulas.py checks them against worked examples or derivations written out there.
+
+  - id: shigley
+    title: Shigley's Mechanical Engineering Design, 10th edition
+    authors: [Richard G. Budynas, J. Keith Nisbett]
+    org: McGraw-Hill Education
+    year: 2015
+    isbn: 978-0-07-339820-4
+    access: print
+    terms: cited by author, title, edition and section; never copied
+    areas: [fasteners, beams, springs, bolted-joints]
+    aliases: [shigley-shear, shigley-beam, shigley-torque]
+    used_for:
+      - src/cadagent/formulas/_registry.py
+      - src/cadagent/formulas/inserts.py
+      - src/cadagent/formulas/limiters.py
+      - src/cadagent/formulas/screws.py
+      - src/cadagent/formulas/springs.py
+      - src/cadagent/mechanical/printed_joints.py
+    verified: >-
+      2026-11-01: the title and ISBN checked against the Open Library record (it gives the printing year 2014;
+      the book's copyright year is 2015, as cadagent.formulas cites it). The sections are cited where they are
+      used: cadagent.formulas, and cadagent.mechanical.printed_joints under its keys shigley-shear (Section
+      8-12), shigley-beam (Sections 3-9 to 3-11) and shigley-torque (Section 8-8, Eq. 8-27, Table 8-15).
+
+  - id: shigley-8e
+    title: Shigley's Mechanical Engineering Design, 8th edition
+    authors: [Richard G. Budynas, J. Keith Nisbett]
+    org: McGraw-Hill
+    year: 2008
+    isbn: 978-0-07-312193-2
+    access: print
+    terms: cited by author, title, edition and table; never copied
+    areas: [fasteners, friction]
+    aliases: [rothbart]
+    used_for: [src/cadagent/mechanical/inserts.py]
+    verified: >-
+      2026-11-01: only the edition and ISBN were checked (Open Library); the book was not opened.
+      cadagent.mechanical.inserts (key rothbart) takes its screw-in-brass-nut friction from this edition's table
+      after H. A. Rothbart, Mechanical Design and Systems Handbook, 2nd ed., McGraw-Hill, 1985 (ISBN
+      978-0-07-054020-0). The values were read from AmesWeb's copy of that table,
+      https://amesweb.info/Screws/screw-nut-collar-friction-table.aspx (it resolved on 2026-11-01), not from the
+      book.
+
+  - id: gere
+    title: Mechanics of Materials, 8th edition
+    authors: [James M. Gere, Barry J. Goodno]
+    org: Cengage Learning
+    year: 2013
+    isbn: 978-1-111-57773-5
+    access: print
+    terms: cited by author, title, edition and section; never copied
+    areas: [beams]
+    used_for: [src/cadagent/mechanical/printed_joints.py]
+    verified: >-
+      2026-11-01: the edition and ISBN checked against the Open Library record.
+      cadagent.mechanical.printed_joints cites Section 5.9 (the largest shear stress in a hollow circular beam).
+
+  - id: norton
+    title: "Design of Machinery: An Introduction to the Synthesis and Analysis of Mechanisms and Machines, 5th edition"
+    authors: [Robert L. Norton]
+    org: McGraw-Hill
+    year: 2012
+    isbn: 978-0-07-352935-6
+    access: print
+    terms: cited by author, title, edition and section; never copied
+    areas: [linkages, mechanisms]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/linkages.py]
+    verified: >-
+      2026-11-01: the 5th edition's hardcover ISBN checked against library records (McGraw-Hill, copyright 2012;
+      the edition with the student DVD is ISBN 978-0-07-742171-7). cadagent.formulas.linkages cites the
+      sections.
+
+  - id: incropera
+    title: Fundamentals of Heat and Mass Transfer, 7th edition
+    authors: [Theodore L. Bergman, Adrienne S. Lavine, Frank P. Incropera, David P. DeWitt]
+    org: Wiley
+    year: 2011
+    isbn: 978-0-470-50197-9
+    access: print
+    terms: cited by author, title, edition and section; never copied
+    areas: [heat-transfer]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/thermal.py]
+    verified: >-
+      2026-11-01: the edition and ISBN checked against the Open Library record. cadagent.formulas.thermal cites
+      the sections.
+
+  - id: white
+    title: Fluid Mechanics, 7th edition
+    authors: [Frank M. White]
+    org: McGraw-Hill
+    year: 2011
+    isbn: 978-0-07-352934-9
+    access: print
+    terms: cited by author, title, edition and section; never copied
+    areas: [fluids, fans]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/thermal.py]
+    verified: >-
+      2026-11-01: the 7th edition's ISBN checked against library records (McGraw-Hill, 2011; Open Library labels
+      this ISBN 6th edition, which library catalogues and the book's front matter do not).
+      cadagent.formulas.thermal cites the sections.
+
+  - id: freudenstein
+    title: Approximate Synthesis of Four-Bar Linkages
+    authors: [Ferdinand Freudenstein]
+    org: Transactions of the ASME 77 (6)
+    year: 1955
+    url: https://doi.org/10.1115/1.4014513
+    access: paid
+    terms: cited by author, title and equation; never copied
+    areas: [linkages, mechanisms]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/linkages.py]
+    verified: >-
+      2026-11-01: the DOI, title, author, volume and pages checked against Crossref: the paper is pp. 853-859,
+      and the published discussion and closure that follow it run to p. 861 (cadagent.formulas cites 853-861).
+
+  - id: gosselin
+    title: Singularity analysis of closed-loop kinematic chains
+    authors: [C. Gosselin, J. Angeles]
+    org: IEEE Transactions on Robotics and Automation 6 (3)
+    year: 1990
+    url: https://doi.org/10.1109/70.56660
+    access: paid
+    terms: cited by author, title and equation; never copied
+    areas: [linkages, mechanisms]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/linkages.py]
+    verified: "2026-11-01: the DOI, title, authors and year checked against Crossref."
+
+  - id: brewer-lagace-1988
+    title: Quadratic Stress Criterion for Initiation of Delamination
+    authors: [John C. Brewer, Paul A. Lagace]
+    org: Journal of Composite Materials 22 (12)
+    year: 1988
+    url: https://doi.org/10.1177/002199838802201205
+    access: paid
+    terms: cited by author, title and equation; never copied
+    areas: [composites, fdm, fea]
+    used_for: [src/cadagent/simulation/fea.py]
+    verified: >-
+      2026-11-01: the DOI, title, authors and year checked against Crossref. cadagent.simulation.fea's layer
+      check takes the form of its quadratic criterion (cited there, and by cadagent.mechanical.printed_joints
+      under its key fea-layer).
+
+  # ---------------------------------------------------------------- fasteners, threaded inserts and compression limiters
+
+  - id: junker-1969
+    title: New Criteria for Self-Loosening of Fasteners Under Vibration
+    authors: [Gerhard H. Junker]
+    org: SAE Transactions 78, SAE technical paper 690055
+    year: 1969
+    url: https://doi.org/10.4271/690055
+    access: paid
+    terms: cited by author, title and paper number; never copied
+    areas: [fasteners, vibration]
+    used_for: [src/cadagent/mechanical/printed_joints.py]
+    verified: "2026-11-01: the DOI, title, author and year checked against Crossref."
+
+  - id: nasa-1228
+    title: Fastener Design Manual (NASA Reference Publication 1228)
+    authors: [Richard T. Barrett]
+    org: NASA Lewis Research Center
+    year: 1990
+    url: https://ntrs.nasa.gov/citations/19900009424
+    access: free
+    terms: cited and summarised, never copied (a US government work)
+    areas: [fasteners]
+    used_for: [src/cadagent/mechanical/printed_joints.py]
+    verified: >-
+      2026-11-01: the NTRS record opened. cadagent.mechanical.printed_joints cites pp. 6-8 (locking methods:
+      locknuts, jam nuts, nylon patches, spring lock washers).
+
+  - id: henkel-243
+    title: LOCTITE 243 Technical Data Sheet
+    authors: []
+    org: Henkel
+    year: 2025
+    url: https://datasheets.tdx.henkel.com/LOCTITE-243-en_GL.pdf
+    access: free
+    terms: cited and summarised; the PDF is not redistributed
+    areas: [fasteners, threadlockers]
+    used_for: [src/cadagent/mechanical/printed_joints.py]
+    verified: >-
+      2026-11-01: the PDF opened (5 pages). cadagent.mechanical.printed_joints cites its April 2025 edition's
+      General Information: not normally recommended on plastics, particularly thermoplastics, for stress
+      cracking.
+
+  - id: khosravani-2023
+    title: On the Pin-Bearing Strength of Additively Manufactured Polymer Parts
+    authors: [Mohammad Reza Khosravani, Hadi Sadeghian, Majid R. Ayatollahi, Tamara Reinicke]
+    org: Polymers 15 (7), 1660
+    year: 2023
+    url: https://doi.org/10.3390/polym15071660
+    access: free
+    terms: cited and summarised, never copied (CC BY 4.0)
+    areas: [fdm, bolted-joints]
+    used_for: [src/cadagent/mechanical/printed_joints.py]
+    verified: >-
+      2026-11-01: the DOI, title, authors and year checked against Crossref. cadagent.mechanical.printed_joints
+      takes Tables 2 and 3 (PLA and ABS double-shear coupons and their failure modes).
+
+  - id: covestro-screws
+    title: Self-tapping screws for thermoplastics (COV00073610)
+    authors: []
+    org: Covestro Deutschland AG
+    year: 2016
+    url: https://solutions.covestro.com/-/media/covestro/solution-center/whitepapers/self-tapping-screws-for-thermoplastics.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fasteners, screw-bosses, moulding]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/screws.py]
+    verified: "2026-11-01: the 4-page PDF opened; it is COV00073610, edition 2016-04, as cadagent.formulas cites it."
+
+  - id: covestro-joining
+    title: "Engineering Polymers: Joining Techniques - A Design Guide"
+    authors: []
+    org: Covestro LLC
+    year: null
+    url: https://solutions.covestro.com/-/media/covestro/solution-center/brands/downloads/imported/1557214197.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fasteners, screw-bosses, moulding]
+    used_for: [src/cadagent/formulas/_registry.py]
+    verified: >-
+      2026-11-01: the 38-page PDF opened. It prints no date; its file metadata says 2015-10-30, the date
+      cadagent.formulas cites it by.
+
+  - id: bulten
+    title: "DELTA PT: a superior thread-former for plastics (brochure version 250422)"
+    authors: []
+    org: Bulten AB (made under licence from EJOT)
+    year: 2025
+    url: https://www.bulten.com/media/b5eby1nc/deltapt-version-250422.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [fasteners, screw-bosses]
+    used_for: [src/cadagent/mechanical/bosses.py, src/cadagent/formulas/_registry.py]
+    verified: >-
+      2026-11-01: the 8-page PDF opened (version 250422). cadagent.mechanical.bosses takes the DELTA PT
+      dimensions (p. 4) and boss recommendations (p. 7).
+
+  - id: bulten-cl
+    title: Compression Limiters & Captive Bolt Assemblies
+    authors: []
+    org: Bulten AB
+    year: null
+    url: https://www.bulten.com/media/luvfra41/compression-limiters-bulten.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [compression-limiters]
+    used_for: [src/cadagent/mechanical/inserts.py]
+    verified: >-
+      2026-11-01: the 4-page PDF opened. It prints no date; its file metadata says 2024-08-01, the date
+      cadagent.mechanical.inserts cites it by. That module takes the boss wall of at least half the bolt diameter.
+
+  - id: spirol-inserts
+    title: Inserts for Plastics Design Guide
+    authors: []
+    org: SPIROL International Corporation
+    year: 2026
+    url: https://www.spirol.com/assets/files/ins-threaded-inserts-design-guide-us.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [inserts, fdm, moulding]
+    used_for:
+      - src/cadagent/formulas/_registry.py
+      - src/cadagent/formulas/inserts.py
+      - src/cadagent/mechanical/inserts.py
+    verified: >-
+      2026-11-01: the 24-page PDF opened (edition 05/26). Read for cadagent.mechanical.inserts (#230): printed
+      pp. 5, 8-9, 18 and 20-21, as its SRC entry lists them.
+
+  - id: spirol-3dp
+    title: How to Select a Threaded Insert for Your 3D Printed Assembly
+    authors: [K. Ionkin]
+    org: SPIROL International Corporation
+    year: 2026
+    url: https://www.spirol.com/assets/files/inserts-for-3d-printed-assemblies-us.pdf
+    access: free
+    terms: cited and summarised, never copied; values read off its charts are cited as such
+    areas: [inserts, fdm]
+    used_for: [src/cadagent/mechanical/inserts.py]
+    verified: >-
+      2026-11-01: the 5-page PDF opened (edition 04/26). Read for cadagent.mechanical.inserts (#230): pp. 2-5
+      and Figures 8-12, whose bar values were read off the charts at 300 dpi.
+
+  - id: spirol-cl-2021
+    title: Compression Limiters Design Guide (edition 04/21)
+    authors: []
+    org: SPIROL International Corporation
+    year: 2021
+    url: https://www.spirol.com/library/main_catalogs/cmpl_us.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [compression-limiters]
+    used_for: [src/cadagent/mechanical/inserts.py]
+    verified: >-
+      2026-11-01: the 20-page PDF opened. Read for cadagent.mechanical.inserts (#230): pp. 3, 4, 6, 7 and 14.
+
+  - id: spirol-cl-2026
+    title: Compression Limiters Design Guide (edition 05/26, Canada)
+    authors: []
+    org: SPIROL International Corporation
+    year: 2026
+    url: https://ca.spirol.com/assets/files/cmpl-compression-limiter-design-guide-ca.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [compression-limiters]
+    used_for: [src/cadagent/mechanical/inserts.py]
+    verified: "2026-11-01: the 20-page PDF opened. Read for cadagent.mechanical.inserts (#230): pp. 6, 15 and 16."
+
+  - id: spirol-wp-2022
+    title: How To Properly Mate Compression Limiters and Threaded Inserts in Plastic Assemblies
+    authors: [Christie L. Jones]
+    org: SPIROL International Corporation
+    year: 2022
+    url: https://www.spirol.com/resources/white-papers/how-to-properly-mate-compression-limiters-and-threaded-inserts-in-plastic-assemblies/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [compression-limiters, inserts]
+    used_for: [src/cadagent/mechanical/inserts.py]
+    verified: >-
+      2026-11-01: the white paper's page and its 2-page PDF opened (by Christie L. Jones, © 2022): the limiter
+      abuts the insert, so the insert, not the plastic, carries the load.
+
+  - id: cnck-poster
+    title: Heat-Set Insert Dimensions and Design Guidelines (poster)
+    authors: []
+    org: CNC Kitchen (TwoChefs GmbH)
+    year: null
+    url: https://www.cnckitchen.com/s/CNCKitchen_Heat-Set-Insert-Dimensions-and-Design-Guidelines.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [inserts, fdm]
+    used_for: [src/cadagent/mechanical/inserts.py]
+    verified: >-
+      2026-11-01: the 2-page PDF opened. It prints no date; its file metadata says 2025-06, and
+      cadagent.mechanical.inserts cites it as the PDF of 2025-06-30. Read for that module (#230): p. 2, the metric
+      table (hole, minimum wall, blind-hole depth).
+
+  - id: cnck-2019
+    title: Threaded Inserts for 3D Prints - Cheap VS Expensive
+    authors: [Stefan Hermann]
+    org: CNC Kitchen
+    year: 2019
+    url: https://www.cnckitchen.com/blog/threaded-inserts-for-3d-prints-cheap-vs-expensive
+    access: free
+    terms: cited and summarised, never copied
+    areas: [inserts, fdm]
+    used_for: [src/cadagent/mechanical/inserts.py]
+    verified: >-
+      2026-11-01: the article (2019-12-07) opened; read for cadagent.mechanical.inserts (#230), its pull-out
+      tests.
+
+  - id: cnck-2020
+    title: Helicoils, Threaded Insets and Embedded Nuts in 3D Prints - Strength & Strength Assessment
+    authors: [Stefan Hermann]
+    org: CNC Kitchen
+    year: 2020
+    url: https://www.cnckitchen.com/blog/helicoils-threaded-insets-and-embedded-nuts-in-3d-prints-strength-amp-strength-assessment
+    access: free
+    terms: cited and summarised, never copied
+    areas: [inserts, fdm]
+    used_for: [src/cadagent/mechanical/inserts.py]
+    verified: >-
+      2026-11-01: the article (2020-05-30) opened; read for cadagent.mechanical.inserts (#230), its pull-out
+      tests.
+
+  - id: ruthex
+    title: "ruthex Gewindeeinsatz M3 (RX-M3x5.7): size table"
+    authors: []
+    org: ruthex
+    year: null
+    url: https://www.ruthex.de/products/ruthex-gewindeeinsatz-m3-100-stuck-rx-m3x5-7-messing-gewindebuchsen
+    access: free
+    terms: cited and summarised, never copied
+    areas: [inserts, fdm]
+    used_for: [src/cadagent/mechanical/inserts.py]
+    verified: "2026-11-01: the product page opened; read for cadagent.mechanical.inserts (#230), its size table."
+
+  - id: laszlo-2026
+    title: Mechanical Performance of Heat-Set Threaded Inserts in FDM-Printed PLA Components
+    authors: [Kornél László, Brigitta Fruzsina Szívós, Vivien Nemes]
+    org: Engineering Proceedings 157, 40 (The Sustainable Mobility and Transportation Symposium 2026)
+    year: 2026
+    url: https://doi.org/10.3390/engproc2026157040
+    access: free
+    terms: cited and summarised, never copied (CC BY 4.0)
+    areas: [inserts, fdm]
+    used_for: [src/cadagent/mechanical/inserts.py]
+    verified: >-
+      2026-11-01: the DOI, title, authors and year checked against Crossref; read for
+      cadagent.mechanical.inserts (#230).
+
+  - id: kastner-2023
+    title: Investigation of the Pull-Out Behaviour of Metal Threaded Inserts in Thermoplastic Fused-Layer Modelling (FLM) Components
+    authors: [Tobias Kastner, Juliane Troschitz, Christian Vogel, Thomas Behnisch, Maik Gude, Niels Modler]
+    org: Journal of Manufacturing and Materials Processing 7 (1), 42
+    year: 2023
+    url: https://doi.org/10.3390/jmmp7010042
+    access: free
+    terms: cited and summarised, never copied (CC BY 4.0)
+    areas: [inserts, fdm]
+    used_for: [src/cadagent/mechanical/inserts.py]
+    verified: >-
+      2026-11-01: the DOI, authors and year checked against Crossref; read for cadagent.mechanical.inserts
+      (#230), infill and perimeters.
+
+  - id: materials-2025
+    title: Assessment of the Drone Arm's Plastic-Metal Joint Mechanical Resistance Following Natural and Artificial Aging of the 3D-Printed Plastic Component
+    authors:
+      - Miloš R. Vasić
+      - Snežana Vučetić
+      - Vesna Miljić
+      - Miloš Vorkapić
+      - Anja Terzić
+      - Mladen Ćosić
+      - Danica M. Bajić
+    org: Materials 18 (11), 2591
+    year: 2025
+    url: https://doi.org/10.3390/ma18112591
+    access: free
+    terms: cited and summarised, never copied (CC BY 4.0)
+    areas: [inserts, fdm, ageing]
+    used_for: [src/cadagent/mechanical/inserts.py]
+    verified: >-
+      2026-11-01: the DOI, title, authors and year checked against Crossref (cadagent.mechanical.inserts cites
+      it by journal and title). Read for that module (#230), on ageing.
+
+  - id: amza-2021
+    title: Accelerated Aging Effect on Mechanical Properties of Common 3D-Printing Polymers
+    authors: [Catalin Gheorghe Amza, Aurelian Zapciu, Florin Baciu, Mihai Ion Vasile, Adrian Ionut Nicoara]
+    org: Polymers 13 (23), 4132
+    year: 2021
+    url: https://doi.org/10.3390/polym13234132
+    access: free
+    terms: cited and summarised, never copied (CC BY 4.0)
+    areas: [fdm, materials, ageing]
+    used_for: [src/cadagent/mechanical/inserts.py]
+    verified: >-
+      2026-11-01: the DOI, title, authors and year checked against Crossref; cadagent.mechanical.inserts takes
+      Table 4.
+
+  - id: liber-knec-2025
+    title: Effect of Mass Reduction of 3D-Printed PLA on Load Transfer Capacity - A Circular Economy Perspective
+    authors: [Aneta Liber-Kneć, Sylwia Łagan]
+    org: Materials 18 (14), 3262
+    year: 2025
+    url: https://doi.org/10.3390/ma18143262
+    access: free
+    terms: cited and summarised, never copied (CC BY 4.0)
+    areas: [fdm, materials, relaxation]
+    used_for: [src/cadagent/mechanical/inserts.py]
+    verified: >-
+      2026-11-01: the DOI, title, authors and year checked against Crossref; read for
+      cadagent.mechanical.inserts (#230), PLA relaxation.
+
+  # ---------------------------------------------------------------- rolling bearings
+
+  - id: skf-2018
+    title: Rolling bearings (PUB BU/P1 17000/1 EN)
+    authors: []
+    org: SKF Group
+    year: 2018
+    url: https://www.skf.com/binaries/pub12/Images/0901d196802809de-Rolling-bearings---17000_1-EN_tcm_12-121486.pdf
+    access: free
+    terms: cited by section, table and page; the catalogue is SKF's copyright and is never copied
+    areas: [bearings]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/bearings.py, src/cadagent/mechanical/bearings.py, docs/bearings.md]
+    verified: >-
+      2026-11-01: opened the PDF (1152 pages): "PUB BU/P1 17000/1 EN · October 2018", © SKF Group 2018. The
+      page and table numbers are cadagent.formulas.bearings' and cadagent.mechanical.bearings' (#180).
+
+  - id: nsk-e728
+    title: Technical Report (CAT. No. E728h)
+    authors: []
+    org: NSK Ltd.
+    year: 2024
+    url: https://www.nsk.com/content/dam/nsk/common/catalogs/ctrgPdf/bearings/e728.pdf
+    access: free
+    terms: cited by page; the report is NSK's copyright and is never copied
+    areas: [bearings]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/bearings.py, docs/bearings.md]
+    verified: >-
+      2026-11-01: opened the PDF linked from NSK's Technical Report page (154 pages, made 2024-11-26): it is CAT.
+      No. E728h, the edition cadagent.formulas cites.
+
+  - id: menck-2024
+    title: >-
+      Review of rolling contact fatigue life calculation for oscillating bearings and application-dependent
+      recommendations for use
+    authors: [Oliver Menck, Matthias Stammler]
+    org: Wind Energy Science 9 (4)
+    year: 2024
+    url: https://doi.org/10.5194/wes-9-777-2024
+    access: free
+    terms: cited and summarised by equation, never copied; the paper is open access under CC BY 4.0
+    areas: [bearings]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/bearings.py, src/cadagent/mechanical/bearings.py, docs/bearings.md]
+    verified: >-
+      2026-11-01: the DOI, title, authors, volume, issue, pages 777-798 and licence (CC BY 4.0) checked against
+      Crossref.
+
+  - id: johnson-contact-mechanics
+    title: Contact Mechanics
+    authors: [K. L. Johnson]
+    org: Cambridge University Press
+    year: 1985
+    isbn: 978-0-521-25576-9
+    url: https://doi.org/10.1017/CBO9781139171731
+    access: paid
+    terms: cited by chapter and equation; never copied
+    areas: [bearings, contact]
+    aliases: [johnson]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/bearings.py]
+    verified: >-
+      2026-11-01: title, author, year and ISBN (the 1985 hardback; the 1987 paperback is 978-0-521-34796-9)
+      checked against Open Library; the DOI is the Cambridge Core edition. Content not re-read.
+
+  - id: hamrock-brewe-1983
+    title: Simplified Solution for Stresses and Deformations
+    authors: [B. J. Hamrock, D. Brewe]
+    org: Journal of Lubrication Technology 105 (2)
+    year: 1983
+    url: https://doi.org/10.1115/1.3254558
+    access: paid
+    terms: cited by author, title and equation; never copied
+    areas: [bearings, contact]
+    aliases: [hamrock-brewe]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/bearings.py]
+    verified: "2026-11-01: the DOI, title, authors, volume, issue and pages 171-177 checked against Crossref."
+
+  # ---------------------------------------------------------------- metals
+
+  - id: mil-hdbk-5j
+    title: "MIL-HDBK-5J: Metallic Materials and Elements for Aerospace Vehicle Structures"
+    authors: []
+    org: US Department of Defense
+    year: 2003
+    url: https://everyspec.com/MIL-HDBK/MIL-HDBK-0001-0099/MIL_HDBK_5J_139/
+    access: free
+    terms: cited by table and page; never copied (a public, superseded handbook; its successor MMPDS is paid and not used)
+    areas: [materials, metals, fea]
+    used_for: [tests/test_fea_materials.py, src/cadagent/simulation/fea.py]
+    verified: >-
+      2026-10-31: read for #157 (the 31 January 2003 edition): Tables 3.6.2.0(b1), (b2) and (g) (6061),
+      3.7.6.0(b1) and (d) (7075) and 2.2.1.0(b) (AISI 1025), as cadagent.simulation.fea's metal rows and
+      tests/test_fea_materials.py record them. The everyspec page resolved again on 2026-11-01.
+
+  - id: brass
+    title: Brass Alloy C36000 data sheet
+    authors: []
+    org: Smiths Metal Centres Ltd
+    year: 2023
+    url: https://www.smithmetal.com/pdf/brass/c36000.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [materials, metals, inserts]
+    used_for: [src/cadagent/mechanical/inserts.py]
+    verified: >-
+      2026-11-01: the 1-page PDF opened (© Smiths Metal Centres 2023): yield strength depends on temper, the
+      range cadagent.mechanical.inserts takes as typical values.
+
+  # ---------------------------------------------------------------- standards (paid: cited by number and title only)
+
+  - id: din-6935
+    title: DIN 6935:2011-10 Kaltbiegen von Flacherzeugnissen aus Stahl (Cold bending of flat rolled steel)
+    authors: []
+    org: DIN (sold by DIN Media)
+    year: 2011
+    url: https://dinmedia.de/en/standard/din-6935/144419944
+    access: paid
+    terms: cited by number and title only
+    areas: [sheet-metal, k-factor]
+    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    verified: >-
+      2026-10-31: opened the DIN Media store page; read the number, edition 2011-10, both titles, status
+      current, 13 pages. Content not read.
+
+  - id: iso-2768-1
+    title: "ISO 2768-1:1989 General tolerances - Part 1: Tolerances for linear and angular dimensions without individual tolerance indications"
+    authors: []
+    org: ISO
+    year: 1989
+    url: https://www.iso.org/standard/7748.html
+    access: paid
+    terms: cited by number and title only
+    areas: [tolerances, sheet-metal, machining, cnc]
+    used_for:
+      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
+      - research/process-profiles.md
+    verified: >-
+      2026-10-31: iso.org was bot-blocked; opened the Estonian Centre for Standardisation store page. Read the
+      title and the scope, which covers parts made by metal removal or formed from sheet metal. Content not
+      read. 2026-10-31: iso.org blocks scripts, so the number, title and status ("last reviewed and confirmed in
+      2022") were read from the Internet Archive copy of 2026-08-20. Protolabs names it as its default for
+      machining.
+
+  - id: iso-10642
+    title: ISO 10642 Fasteners - Hexagon socket countersunk head screws with reduced loadability
+    authors: []
+    org: ISO
+    year: 2026
+    url: https://evs.ee/en/iso-10642-2026
+    access: paid
+    terms: cited by number and title only
+    areas: [fasteners]
+    used_for: [lessons/mechanical/fasteners-and-assembly-access.md]
+    verified: >-
+      2026-10-31: opened the store pages. The current edition is ISO 10642:2026 (valid from 2026-03-04); the
+      2019 edition is withdrawn and the 2004 edition before it. Content not read.
+
+  - id: iso-273
+    title: ISO 273:1979 Fasteners - Clearance holes for bolts and screws
+    authors: []
+    org: ISO
+    year: 1979
+    url: https://evs.ee/en/iso-273-1979
+    access: paid
+    terms: cited by number and title only
+    areas: [fasteners]
+    aliases: [iso273]
+    used_for:
+      - "proposed: lessons/process/verify-from-source.md (infer the thread from clearance-hole sizes)"
+      - src/cadagent/mechanical/inserts.py
+    verified: >-
+      2026-10-31: opened the store page; read the title and scope (fine, medium and coarse series for 1-150 mm
+      threads). Content not read.
+
+  - id: iec-61032
+    title: IEC 61032:1997 Protection of persons and equipment by enclosures - Probes for verification
+    authors: []
+    org: IEC
+    year: 1997
+    url: https://evs.ee/en/iec-61032-1997
+    access: paid
+    terms: cited by number and title only
+    areas: [enclosures, safety]
+    used_for: ["proposed: lessons/mechanical/design-rules.md (finger-safe grilles), once the probe dimension is read"]
+    verified: >-
+      2026-10-31: opened the store page; read the title and scope (test probes for access to hazardous parts).
+      The probe dimensions were not read.
+
+  - id: iec-60529
+    title: IEC 60529:1989 Degrees of protection provided by enclosures (IP Code)
+    authors: []
+    org: IEC
+    year: 1989
+    url: https://evs.ee/en/iec-60529-1989
+    access: paid
+    terms: cited by number and title only
+    areas: [enclosures, safety]
+    used_for: ["proposed: lessons/mechanical/design-rules.md (finger-safe grilles)"]
+    verified: "2026-10-31: opened the store page; read the title and scope. Content not read."
+
+  - id: sff-8201
+    title: SFF-8201 2.5" Form Factor Drive Dimensions, Rev 3.4
+    authors: []
+    org: SNIA SFF Technology Affiliate
+    year: 2018
+    url: https://members.snia.org/document/dl/25851
+    access: free
+    terms: cited; never copied
+    areas: [storage, fasteners]
+    used_for: [lessons/mechanical/fasteners-and-assembly-access.md, lessons/mechanical/enclosure-features.md]
+    verified: >-
+      2026-10-31: opened the PDF (Rev 3.4, 2018-01-19). Read the change history (side holes mandatory and bottom
+      holes optional for 7 mm drives), the M3 thread, the side-hole positions (A50 14.00, A51 90.60 mm) and the
+      maximum fastener penetration (A38 2.00 mm for drives up to 7 mm, 3.00 mm above; A41 2.50 mm).
+
+  - id: sff-8301
+    title: SFF-8301 3.5" Form Factor Drive Dimensions, Rev 1.9
+    authors: []
+    org: SNIA SFF Technology Affiliate
+    year: 2018
+    url: https://members.snia.org/document/dl/25862
+    access: free
+    terms: cited; never copied
+    areas: [storage, fasteners]
+    used_for: [lessons/mechanical/fasteners-and-assembly-access.md, lessons/mechanical/enclosure-features.md]
+    verified: >-
+      2026-10-31: opened the PDF (Rev 1.9, 2018-01-19); read the fastener penetration limits (2.39 and 3.56 mm).
+
+  - id: iso-20457
+    title: ISO 20457:2026 Plastics moulded parts - Tolerances and acceptance conditions
+    authors: []
+    org: ISO
+    year: 2026
+    url: https://www.evs.ee/en/iso-20457-2026
+    access: paid
+    terms: cited by number and title only; never copied
+    areas: [injection-moulding]
+    used_for: [research/process-profiles.md]
+    verified: >-
+      2026-10-31: read the Estonian standards body's listing: the 2018 edition was withdrawn on 2026-08-06 and
+      replaced by ISO 20457:2026. Cite the 2026 edition. 2026-11-01: the url now links the 2026 edition's
+      listing, which resolved.
+
+  - id: din-16742
+    title: DIN 16742:2013-10 Plastics moulded parts - Tolerances and acceptance conditions
+    authors: []
+    org: DIN
+    year: 2013
+    url: https://www.dinmedia.de/en/standard/din-16742/192658755
+    access: paid
+    terms: cited by number and title only; never copied
+    areas: [injection-moulding]
+    used_for: [research/process-profiles.md]
+    verified: "2026-10-31: read the DIN Media listing, which marks the document withdrawn (it followed DIN 16901)."
+
+  - id: iso-astm-52910
+    title: ISO/ASTM 52910:2018 Additive manufacturing - Design - Requirements, guidelines and recommendations
+    authors: []
+    org: ISO/ASTM
+    year: 2018
+    url: https://www.iso.org/standard/67289.html
+    access: paid
+    terms: cited by number and title only; never copied
+    areas: [sla, sls, mjf]
+    used_for: [research/process-profiles.md]
+    verified: >-
+      2026-10-31: iso.org blocks scripts, so read the Internet Archive copy of the catalogue page (edition 1,
+      2018-07). Its abstract says it gives no process- or material-specific data.
+
+  - id: iso-astm-52911-2
+    title: "ISO/ASTM 52911-2 Additive manufacturing - Design - Part 2: Laser-based powder bed fusion of polymers"
+    authors: []
+    org: ISO/ASTM
+    year: 2019
+    url: https://store.astm.org/f3281-19r25.html
+    access: paid
+    terms: cited by number and title only; never copied
+    areas: [sls, mjf]
+    used_for: [research/process-profiles.md]
+    verified: >-
+      2026-10-31: read the ASTM store page (ISO/ASTM52911-2-19(2025), store number F3281-19R25, and its scope).
+
+  - id: iso-68-1
+    title: "ISO 68-1:1998 ISO general purpose screw threads - Basic profile - Part 1: Metric screw threads"
+    authors: []
+    org: ISO
+    year: 1998
+    url: https://evs.ee/en/iso-68-1-1998
+    access: paid
+    terms: cited by number and title only; never copied
+    areas: [fasteners, threads]
+    aliases: [iso68]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/screws.py]
+    verified: >-
+      2026-11-01: read the Estonian standards body's listing: this edition was withdrawn on 2023-10-05 and
+      replaced by ISO 68-1:2023 (Basic and design profiles). cadagent.formulas still cites 1998; content not
+      read.
+
+  - id: iso-898-1
+    title: "ISO 898-1:2013 Mechanical properties of fasteners made of carbon steel and alloy steel - Part 1: Bolts, screws and studs with specified property classes"
+    authors: []
+    org: ISO
+    year: 2013
+    url: https://evs.ee/en/iso-898-1-2013
+    access: paid
+    terms: cited by number and title only; never copied
+    areas: [fasteners]
+    aliases: [iso898]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/screws.py]
+    verified: "2026-11-01: read the Estonian standards body's listing: valid since 2013-01-14. Content not read."
+
+  - id: iso-76
+    title: "ISO 76:2006 Rolling bearings - Static load ratings"
+    authors: []
+    org: ISO
+    year: 2006
+    url: https://www.evs.ee/en/iso-76-2006
+    access: paid
+    terms: cited by number and title only; never copied
+    areas: [bearings]
+    aliases: [iso76]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/bearings.py, src/cadagent/mechanical/bearings.py, docs/bearings.md]
+    verified: >-
+      2026-11-01: read the Estonian standards body's listing: valid since 2006-05-05, amended by ISO 76:2006/Amd
+      1:2017. Content not read.
+
+  - id: astm-d5961
+    title: ASTM D5961/D5961M Standard Test Method for Bearing Response of Polymer Matrix Composite Laminates
+    authors: []
+    org: ASTM International
+    year: 2017
+    url: https://store.astm.org/d5961_d5961m-17.html
+    access: paid
+    terms: cited by number and title only; never copied
+    areas: [bolted-joints, composites, testing]
+    used_for: [src/cadagent/mechanical/printed_joints.py]
+    verified: >-
+      2026-11-01: read the ASTM store page's title (the -17 edition). Not read:
+      cadagent.mechanical.printed_joints takes its coupon proportions as Khosravani et al. (2023) quote them.
+
+  # ---------------------------------------------------------------- software documentation
+
+  - id: kicad-cli-docs
+    title: KiCad Command-Line Interface (9.0)
+    authors: []
+    org: KiCad project
+    year: null
+    url: https://docs.kicad.org/9.0/en/cli/cli.html
+    access: free
+    terms: cited; never copied
+    areas: [pcb]
+    used_for: [lessons/electronics/pcb-evidence-and-review.md, docs/pcb.md]
+    verified: >-
+      2026-10-31: opened the page; read the pcb drc usage line with --severity-all, --severity-error,
+      --severity-exclusions and --schematic-parity.
+
+  - id: github-docs-about-readmes
+    title: About the repository README file
+    authors: []
+    org: GitHub
+    year: null
+    url: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes
+    access: free
+    terms: cited; never copied
+    areas: [repository]
+    used_for: [lessons/electronics/pcb-evidence-and-review.md]
+    verified: >-
+      2026-10-31: opened the page; read that a README in .github, the root or docs is shown, chosen in that
+      order.
+
+  # ---------------------------------------------------------------- vendored projects (code; see THIRD_PARTY_NOTICES.md)
+
+  - id: text-to-cad
+    title: text-to-cad
+    authors: []
+    org: Thompson Labs LLC (github.com/earthtojake)
+    year: 2026
+    url: https://github.com/earthtojake/text-to-cad
+    access: free
+    terms: MIT; vendored with attribution
+    areas: [cad, dfm, sheet-metal, fdm]
+    used_for:
+      - vendor/text-to-cad
+      - research/landscape.md
+      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
+    verified: >-
+      2026-10-31: gh api (MIT, pushed 2026-10-31); LICENSE copyright "2026 Thompson Labs LLC"; read the vendored
+      skills/dfm/references/sheet-metal.md and skills/sendcutsend/references/official-sources.md.
+
+  - id: kicad-happy
+    title: kicad-happy
+    authors: [Andrew Klofas]
+    org: github.com/aklofas
+    year: 2025
+    url: https://github.com/aklofas/kicad-happy
+    access: free
+    terms: MIT; vendored with attribution
+    areas: [pcb]
+    used_for: [vendor/kicad-happy]
+    verified: "2026-10-31: gh api (MIT, pushed 2026-10-31); LICENSE copyright 2025 Andrew Klofas."
+
+  - id: kicad-mcp-pro
+    title: kicad-mcp-pro
+    authors: [Osman Aslan]
+    org: github.com/oaslananka
+    year: 2026
+    url: https://github.com/oaslananka/kicad-mcp-pro
+    access: free
+    terms: MIT; vendored with attribution
+    areas: [pcb]
+    used_for: [vendor/kicad-mcp-pro]
+    verified: "2026-10-31: gh api (MIT, pushed 2026-10-31); LICENSE copyright 2026 Osman Aslan."
+
+  - id: build123d-mcp
+    title: build123d-mcp
+    authors: [Paul Fremantle]
+    org: github.com/pzfreo
+    year: null
+    url: https://github.com/pzfreo/build123d-mcp
+    access: free
+    terms: Apache-2.0; vendored with attribution
+    areas: [cad]
+    used_for: [vendor/build123d-mcp]
+    verified: >-
+      2026-10-31: gh api (Apache-2.0, pushed 2026-10-15). The LICENSE has no copyright line; the author is the
+      owner's GitHub profile name.
+
+  - id: agentcad
+    title: agentcad
+    authors: [James Edward Dillard]
+    org: github.com/jdilla1277
+    year: null
+    url: https://github.com/jdilla1277/agentcad
+    access: free
+    terms: Apache-2.0; vendored with attribution
+    areas: [cad]
+    used_for: [vendor/agentcad]
+    verified: >-
+      2026-10-31: gh api (Apache-2.0, pushed 2026-10-31). The LICENSE has no copyright line; the author is the
+      owner's GitHub profile name.
+
+  - id: bd-warehouse
+    title: bd_warehouse
+    authors: [Roger Maitland]
+    org: github.com/gumyr
+    year: null
+    url: https://github.com/gumyr/bd_warehouse
+    access: free
+    terms: Apache-2.0; vendored with attribution
+    areas: [cad, fasteners]
+    used_for: [vendor/bd_warehouse]
+    verified: >-
+      2026-10-31: gh api (Apache-2.0, pushed 2026-10-31). The LICENSE has no copyright line; the author is the
+      owner's GitHub profile name.
+
+# -------------------------------------------------------------------------------------------------------------------
+# Named but not yet read, or read but not yet found online. Not citable until someone reads it and moves it up;
+# code that cites one is a known gap (check() warns, tests/test_references.py pins how many).
+unverified:
+
+  - id: covestro-snapfit-covestro-edition
+    title: Snap-Fit Joints for Plastics - A Design Guide (Covestro-branded edition)
+    org: Covestro LLC
+    why: A copy was supplied by the project owner (research/compliant-mechanisms.md [COV]); no public URL was found.
+
+  - id: basf-snapfit-manual
+    title: BASF Snap-Fit Design Manual
+    org: BASF
+    why: Only unofficial copies exist; the strain tables are images (research/compliant-mechanisms.md).
+
+  - id: celanese-snapfit
+    title: Snap Fits (Celanese/Ticona design guide)
+    org: Celanese / Ticona
+    why: Read from a garbled patent-docket exhibit by research/compliant-mechanisms.md; not reopened.
+
+  - id: allum-2020-interlayer-bonding
+    title: "Interlayer bonding has bulk-material strength in extrusion additive manufacturing: New understanding of anisotropy"
+    authors: [James Allum, Amirpasha Moetazedian, Andrew Gleadall, Vadim V. Silberschmidt]
+    org: Additive Manufacturing 34, 101297
+    year: 2020
+    url: https://doi.org/10.1016/j.addma.2020.101297
+    used_for: [research/compliant-mechanisms.md, docs/compliant.md]
+    why: >-
+      2026-10-31: only the Crossref metadata (title, authors, journal, volume, article number) was read; the
+      repository page was bot-blocked.
+
+  - id: formlabs-tough-resins
+    title: Formlabs Tough 1500 / Tough 2000 pages
+    org: Formlabs
+    why: Search snippets only (s) in research/compliant-mechanisms.md; not reopened.
+
+  - id: howell-compliant-mechanisms
+    title: Compliant Mechanisms (2001); Handbook of Compliant Mechanisms (2013)
+    authors: [Howell, Magleby, Olsen]
+    org: Wiley
+    access: print
+    why: Books not opened (research/compliant-mechanisms.md marks them u).
+
+  - id: smith-flexures
+    title: "Flexures: Elements of Elastic Mechanisms"
+    authors: [Smith]
+    org: CRC Press
+    year: 2000
+    access: print
+    why: Not opened.
+
+  - id: lobontiu-flexure-hinges
+    title: "Compliant Mechanisms: Design of Flexure Hinges"
+    authors: [Lobontiu]
+    org: CRC Press
+    year: 2002
+    access: print
+    why: Not opened.
+
+  - id: boothroyd-dewhurst-knight-pdfma
+    title: Product Design for Manufacture and Assembly
+    authors: [Boothroyd, Dewhurst, Knight]
+    org: CRC Press
+    access: print
+    why: >-
+      Print book; its sheet-metal chapter was not opened. The free Boothroyd Dewhurst checklist
+      (dfma-dfm-checklist) is used instead.
+
+  - id: machinerys-handbook
+    title: Machinery's Handbook
+    org: Industrial Press
+    access: print
+    why: Print book; its bend-allowance and minimum-bend-radius tables were not opened.
+
+  - id: xometry-sheet-metal-design-guide
+    title: "Design Guide: Sheet Metal Fabrication (eBook)"
+    org: Xometry, Inc.
+    url: https://www.xometry.com/resources/design-guides/design-guide-sheet-metal-fabrication/
+    access: free-registration
+    why: >-
+      2026-10-31: the landing page lists the topics but the numbers are in a download behind a form; only
+      unofficial copies were found.
+
+  - id: benson-fabricator-other-columns
+    title: Steve Benson's other Bending Basics columns (die width selection, minimum flange, 6061 and the 20 % rule)
+    authors: [Steve Benson]
+    org: The FABRICATOR
+    why: "2026-10-31: live pages are bot-blocked and the Internet Archive had no copy of the ones tried."
+
+  - id: phoenix-1777989
+    title: Phoenix Contact MSTB 2,5/2-STF-5,08 (1777989) datasheet
+    org: Phoenix Contact
+    used_for: [lessons/wiring/cables-connectors-and-routing.md, src/cadagent/mechanical/connectors.py]
+    why: "2026-10-31: phoenixcontact.com returned 403. Named as a Source in lessons/05."
+
+  - id: usb-type-c-spec
+    title: USB Type-C Cable and Connector Specification
+    org: USB Implementers Forum
+    why: Candidate for plug overmould envelopes (lessons/03, lessons/05); not opened in this pass.
+
+  - id: compliant-note-other-sources
+    title: Other sources cited in research/compliant-mechanisms.md section 10
+    org: "various: the authors and publishers listed in research/compliant-mechanisms.md section 10"
+    why: >-
+      Prusa forum posts, PlasticsToday, RapidDirect, Ulbrich, PRBM lecture notes, Haringx 1949, the BYU LET and
+      CAFP papers, Paros and Weisbord 1965, and the GitHub projects listed there were read or snippeted by that
+      note on 2026-10-31 and were not reopened in this pass. Move each up when it is reopened.
+
+  - id: goncalves
+    title: A multi-objective optimization design for parallel structures (Proceedings of COBEM 2009)
+    authors: [R. S. Goncalves, J. C. M. Carvalho, R. R. Santos]
+    org: ABCM (20th International Congress of Mechanical Engineering, COBEM 2009)
+    year: 2009
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/linkages.py]
+    why: >-
+      2026-11-01: no copy, DOI or proceedings page was found (searched by title and authors).
+      cadagent.formulas.linkages cites it; find the ABCM proceedings record and add its URL.
+
+  - id: pem-si
+    title: SI Threaded Inserts for Plastics (bulletin SI)
+    authors: []
+    org: PennEngineering (PEM)
+    year: 2026
+    used_for: [src/cadagent/mechanical/inserts.py]
+    why: >-
+      2026-11-01: cadagent.mechanical.inserts read the bulletin of 2026-07-16 but recorded no URL. pemnet.com
+      answers a script with a bot check, and the copies found online are older editions. Record the edition's
+      URL.
+
+  - id: ruthex-tip
+    title: ruthex soldering-tip set LOE-SET-012 (product page)
+    authors: []
+    org: ruthex
+    used_for: [src/cadagent/mechanical/inserts.py]
+    why: >-
+      2026-11-01: cadagent.mechanical.inserts read the product page but recorded no URL, and no ruthex.de page
+      for the set was found (only resellers' listings). Record the page's URL.
+
+  - id: bossard-proof
+    title: Screws property class 4.6 to 12.9 (Bossard technical information, 01-2025)
+    authors: []
+    org: Bossard
+    used_for: [src/cadagent/mechanical/inserts.py]
+    why: >-
+      2026-11-01: cadagent.mechanical.inserts cites Bossard's technical information of 01-2025 by page but
+      recorded no URL; the sheet URLs found by search (F.004, F.040, F.044, 2023.05) did not resolve from a
+      script. Record the document's URL.
+
+  - id: bossard-head
+    title: Surface pressure when mounted (Bossard technical information, 01-2025)
+    authors: []
+    org: Bossard
+    used_for: [src/cadagent/mechanical/inserts.py]
+    why: >-
+      2026-11-01: cadagent.mechanical.inserts cites Bossard's technical information of 01-2025 by page but
+      recorded no URL; the sheet URLs found by search (F.004, F.040, F.044, 2023.05) did not resolve from a
+      script. Record the document's URL.
+
+  - id: vdi2230-friction
+    title: Friction and friction coefficients (Bossard technical information, 01-2025, after VDI 2230:2015)
+    authors: []
+    org: Bossard
+    used_for: [src/cadagent/mechanical/inserts.py]
+    why: >-
+      2026-11-01: cadagent.mechanical.inserts cites Bossard's technical information of 01-2025 by page but
+      recorded no URL; the sheet URLs found by search (F.004, F.040, F.044, 2023.05) did not resolve from a
+      script. Record the document's URL.
+
+# -------------------------------------------------------------------------------------------------------------------
+# Keys code uses that are not outside sources, said openly: general knowledge, a module's own judgement, or
+# another cad-agent module (with what it cites).
+uncited:
+
+  - id: lug-shear-out
+    kind: general
+    note: >-
+      The usual lug shear-out convention (two planes from the hole's sides to the end). Shigley 10th ed.,
+      Section 8-12, names the mode but gives only a 1.5 d edge rule for metal.
+    cites: [shigley]
+
+  - id: judgement
+    kind: judgement
+    note: A stated judgement of cadagent.mechanical.printed_joints (2026-11-01), to be replaced by a test.
+
+  - id: fea-layer
+    kind: internal
+    where: src/cadagent/simulation/fea.py
+    note: The layer-bond criterion of cadagent.simulation.fea's Study.layer_check.
+    cites: [brewer-lagace-1988]
+
+  - id: printed
+    kind: internal
+    where: src/cadagent/mechanical/compliant/allowables.py
+    note: The printed-material allowables of cadagent.mechanical.compliant.allowables, from the makers' data sheets.
+    cites:
+      - bambu-pla-basic-tds
+      - bambu-petg-basic-tds
+      - bambu-petg-cf-tds
+      - polymaker-polylite-pla-tds
+      - polymaker-polylite-petg-tds

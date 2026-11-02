@@ -141,17 +141,34 @@ def _export_plates(project: CadProject, parts: List[str]) -> int:
     return 0
 
 def cmd_slice(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.manufacturing.slicer import executable, slice_project
+    from cadagent.manufacturing.slicer import engine_executable, engine_of, not_installed, slice_project
 
-    if not executable():
-        raise _Unusable("Bambu Studio is not installed (snap install bambu-studio); nothing was sliced")
-    rep = slice_project(project, getattr(args, "parts", None) or None)
+    engine = engine_of(project)
+    if not engine_executable(engine):
+        raise _Unusable(f"{not_installed(engine)}; nothing was sliced")
+    try:
+        rep = slice_project(project, getattr(args, "parts", None) or None)
+    except (ValueError, KeyError, FileNotFoundError) as exc:   # PrusaSlicer: a profile name or override key it lacks
+        if engine == "bambu":
+            raise
+        raise _Unusable(f"cannot slice: {exc.args[0] if exc.args else exc}") from None
     for name, row in rep["parts"].items():
         if row.get("grams"):
             minutes = f"{row['minutes']:7.1f} min" if row.get("minutes") is not None else "   time not reported"
-            _say(f"  {name:<24} {row['grams']:8.1f} g  {minutes}")
+            flag = "  NOT OK" if row.get("ok") is False else ""
+            _say(f"  {name:<24} {row['grams']:8.1f} g  {minutes}{flag}")
         else:
             _say(f"  {name:<24} FAILED: {row.get('error')}")
+        # what PrusaSlicer's log said (Bambu Studio rows carry none of these)
+        if row.get("stability_issues"):
+            _say(f"      stability: {', '.join(row['stability_issues'])}")
+        for level in ("errors", "warnings"):
+            for line in row.get(level) or []:
+                if "print stability issues" not in line:      # listed above, by category
+                    _say(f"      {level[:-1]}: {line}")
+    not_ok = [n for n, row in rep["parts"].items() if row.get("ok") is False and row.get("grams")]
+    if not_ok:
+        _say(f"{len(not_ok)} part(s) sliced but not ok (a slicer error or print stability issue): {', '.join(not_ok)}")
     _say(f"{rep['total_grams']} g, {rep['total_hours']} h ({rep['process']}, {rep['filament']}) -> {rep['path']}")
     return 0 if rep["pass"] else 1
 
@@ -1124,7 +1141,7 @@ def build_parser() -> argparse.ArgumentParser:
     site_p.add_argument("--port", type=int, default=None, help="Port (default: cad.serve.port, 0 = any free port)")
     site_p.add_argument("--host", default=None, help="Bind address (default: cad.serve.host, 127.0.0.1)")
     sub.add_parser("view", parents=[common], help="Export every part in assembly position for the 3D viewer")
-    slice_p = sub.add_parser("slice", parents=[common], help="Slice each part's 3MF (Bambu Studio CLI): grams and print time")
+    slice_p = sub.add_parser("slice", parents=[common], help="Slice each part's 3MF (Bambu Studio or PrusaSlicer CLI): grams and print time")
     slice_p.add_argument("parts", nargs="*", help="Parts to slice (default: cad.slicer.parts, else all)")
     webkit_p = sub.add_parser("webkit", parents=[common], help="Copy the web kit (3D stage, viewer, HUD) into the project")
     webkit_p.add_argument("dest", nargs="?", default="web/kit", help="Destination folder (default: web/kit)")

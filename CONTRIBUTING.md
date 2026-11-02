@@ -52,29 +52,36 @@ Agents: install the workflow kit (`cad-agent agents install`, [docs/agent-workfl
 follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes #<issue>`, and pushes as you go.
 
 0. **Issue.** Find or open the GitHub issue the change belongs to, with a checklist of done / next / how to resume.
-1. **Worktree from `dev`.** Never edit a checkout another session may be using:
+1. **Look before building.** Before writing a new capability (a command, check, calculator, generator or skill),
+   find what already does the job: the [catalogue](https://cad-agent.valpatel.com/catalog)
+   ([`catalog.json`](https://cad-agent.valpatel.com/catalog.json), which `tools/site-catalog.mjs` builds from the
+   repo), the [landscape survey](research/landscape.md), [`upstreams/registry.yaml`](upstreams/registry.yaml), the
+   skills in [`skills/`](skills/), and the open-source libraries and agent skills outside them. Under "Considered
+   existing tools" in the PR, name each candidate and whether you adopted it, wrapped it, borrowed from it or passed
+   on it, and why. Write our own only for the gap, and credit what you use.
+2. **Worktree from `dev`.** Never edit a checkout another session may be using:
    ```bash
    git fetch origin
    git worktree add --no-track ../cad-agent-<topic> -b feat/<topic> origin/dev
    cd ../cad-agent-<topic> && git push -u origin feat/<topic>     # the branch tracks itself, not dev
    ```
-2. **Commit and push** small, focused changes with tests (`tests/`) as you go, not in one batch at the end. Keep the package generic: anything specific to one
+3. **Commit and push** small, focused changes with tests (`tests/`) as you go, not in one batch at the end. Keep the package generic: anything specific to one
    product stays in that product's repository. A new docs or research page, `cad-agent` command, skill, agent or
    `lessons/` folder also gets its line in [`docs/areas.yaml`](docs/areas.yaml), the topic tree ([docs/vision.md](docs/vision.md)):
    `tests/test_areas.py` fails until it does. When two open PRs cross, the one that merges second adds the line, after
    merging `dev` and re-running CI (`dev` does not require branches to be up to date).
-3. **Open a PR into `dev`** early, as a draft if it is unfinished (`gh pr create --draft --base dev`), with `Closes #<issue>`; fill in the template, including what projects using
+4. **Open a PR into `dev`** early, as a draft if it is unfinished (`gh pr create --draft --base dev`), with `Closes #<issue>`; fill in the template, including what projects using
    cad-agent must change.
-4. **CI** (`.github/workflows/ci.yml`) runs `core` on Python 3.10 and 3.12 (required dependencies only; optional
+5. **CI** (`.github/workflows/ci.yml`) runs `core` on Python 3.10 and 3.12 (required dependencies only; optional
    features must skip cleanly) and `full` on 3.12 (CAD, FEA, robot and site extras, imported loudly before the tests;
    the `cad` and `sim` extras need 3.11 or newer);
    `webkit.yml` runs the browser suites and `gates.yml` the [gates](#gates). CI's `supply-chain` job runs the offline
    [supply-chain report](skills/cad-supply-chain/SKILL.md): a PR that adds a dependency, vendored file or catalogue
    entry pastes its rows (`python3 tools/resource_audit.py rows --base origin/dev --online`) under "Supply chain".
-5. **Review.** Every PR gets a review from a person or from a separate review agent that did not write the change,
+6. **Review.** Every PR gets a review from a person or from a separate review agent that did not write the change,
    posted as PR comments (the `cad-pr-reviewer` subagent, or a separate Codex session with that skill), ending with
    the verdict marker that the `review` gate reads. The author answers or fixes each comment and resolves it.
-6. **Merge** into `dev` (squash or merge commit). Then, before removing the worktree, repoint anything installed
+7. **Merge** into `dev` (squash or merge commit). Then, before removing the worktree, repoint anything installed
    from it: `pip show -f cad-agent` (or the `direct_url.json` it lists) in each project venv tells you where
    `cadagent` comes from. Reinstall those from the `dev` checkout below, then `git worktree remove ../cad-agent-<topic>`.
 

@@ -12,4 +12,6 @@
 
 **Changed**
 - `cadagent.manufacturing.fit_coupons` reads its hole undersize and fit allowances from the FDM profile by rule id;
-  the numbers are unchanged (0.25 mm undersize, 0.25 mm slide, 0.3 mm free) (#99).
+  the numbers are unchanged (0.25 mm undersize, 0.25 mm slide, 0.3 mm free). It now needs the cad-agent checkout's
+  `research/process-profiles.yaml` when imported (an editable install, as CONTRIBUTING.md asks, has it), or
+  `CADAGENT_PROCESS_PROFILES` naming the file (#99).

@@ -135,3 +135,122 @@ def test_codex_home(tmp_path, monkeypatch):
     monkeypatch.setattr(agentkit.Path, 'home', classmethod(lambda cls: tmp_path / 'home'))
     assert agentkit.target_dirs(tmp_path / 'home')['codex_skills'] == tmp_path / 'cx/skills'
     assert agentkit.target_dirs(tmp_path / 'other')['codex_skills'] == tmp_path / 'other/.codex/skills'
+
+
+# What each item needs that a person may lack (#282): everything is installed, and install says what can't be used yet.
+# name: (needs, needed only by some steps)
+NEEDS = {'cad-pr-review': (('gh', 'write-access'), ()), 'cad-work-tracking': (('git', 'gh', 'write-access'), ()),
+         'cad-remote-runs': (('git', 'gh', 'ssh', 'compute-host'), ('rsync',)), 'mcmaster-parts': ((), ('playwright',)),
+         'cad-pr-reviewer': (('gh',), ()), 'cad-resume': (('git', 'gh'), ())}
+
+
+def _top(item):
+    """The first line of an item's text after its title (skills) or its frontmatter (agents)."""
+    text = (item.path / 'SKILL.md' if item.kind == 'skill' else item.path).read_text()
+    body = re.sub(r'\A---\n.*?\n---\n', '', text, count=1, flags=re.S)
+    lines = [ln for ln in body.splitlines() if ln.strip()]
+    return lines[1] if item.kind == 'skill' and lines and lines[0].startswith('# ') else lines[0]
+
+
+def test_every_item_names_its_needs_and_says_them_at_the_top():
+    root = agentkit.kit_root()
+    found = {i.name: i for i in agentkit.items(root)}
+    assert {n: (i.requires, i.optional) for n, i in found.items() if i.requires or i.optional} == NEEDS
+    for item in found.values():
+        top = _top(item)
+        if item.requires or item.optional:
+            assert top == agentkit.needs_line(item), f'{item.name} opens with its Needs line'
+        else:
+            assert '**Needs:**' not in top, item.name
+
+
+def kit_with_needs(tmp_path, requires='gh write-access'):
+    root = kit(tmp_path)
+    (root / 'skills/alpha/SKILL.md').write_text(
+        f'---\nname: alpha\ndescription: Alpha\nmetadata:\n  requires: "{requires}"\n---\n\n# Alpha\n\nBody A\n')
+    return root
+
+
+def test_readiness_says_what_is_missing_and_what_cannot_be_checked(tmp_path):
+    root = kit_with_needs(tmp_path)
+    rows = agentkit.readiness(root, checks={'gh': '`gh` is not logged in: run `gh auth login`'})
+    assert rows == [{'kind': 'skill', 'name': 'alpha', 'missing': ['`gh` is not logged in: run `gh auth login`'],
+                     'partial': [], 'unchecked': ['write access to the repository it works in']}]
+    assert agentkit.notice(rows) == [
+        "agents: you can't use these yet:",
+        '  skill alpha: `gh` is not logged in: run `gh auth login`',
+        "agents: these also need what cad-agent can't check from here:",
+        '  write access to the repository it works in: alpha']
+    ready = agentkit.readiness(root, checks={'gh': None})
+    assert ready[0]['missing'] == [] and agentkit.notice(ready)[0] == (
+        "agents: nothing is missing here. These also need what cad-agent can't check from here:")
+    assert agentkit.notice(agentkit.readiness(kit(tmp_path / 'plain'))) == []
+    some = kit(tmp_path / 'some')                      # a need only some steps use: usable, with those steps left out
+    (some / 'skills/alpha/SKILL.md').write_text('---\nname: alpha\ndescription: A\nmetadata:\n  requires: "git"\n'
+                                                '  optional: "rsync"\n---\n\n# A\n')
+    rows = agentkit.readiness(some, checks={'git': None, 'rsync': '`rsync` is not on PATH'})
+    assert agentkit.notice(rows) == ["agents: you can use these, but some of their steps can't run yet:",
+                                     '  skill alpha: `rsync` is not on PATH']
+    item = agentkit.items(some)[0]
+    assert agentkit.needs_line(item).startswith('> **Needs:** `git`; `rsync` for some steps.')
+    (some / 'skills/alpha/SKILL.md').write_text('---\nname: alpha\ndescription: A\nmetadata:\n  optional-for: "x"\n---\n')
+    with pytest.raises(ValueError, match='only with metadata.optional'):
+        agentkit.items(some)
+    assert agentkit.needs_line(agentkit.items(kit(tmp_path / 'none'))[0]) == ''
+
+
+def test_bad_requirements_rejected(tmp_path):
+    for meta, why in (('metadata:\n  requires: "gh telepathy"', 'telepathy'), ('metadata:\n  requires: [gh]', 'one string'),
+                      ('metadata: gh', 'mapping'), ('metadata:\n  requires: "gh"\n  optional: "gh"', 'twice')):
+        root = kit(tmp_path / str(len(why)))
+        (root / 'skills/alpha/SKILL.md').write_text(f'---\nname: alpha\ndescription: Alpha\n{meta}\n---\n\nB\n')
+        with pytest.raises(ValueError, match=why):
+            agentkit.items(root)
+
+
+def test_cli_installs_everything_and_prints_the_notice(tmp_path, capsys, monkeypatch):
+    root, home = kit_with_needs(tmp_path), tmp_path / 'home'
+    monkeypatch.setitem(agentkit.REQUIREMENTS, 'gh', agentkit.Requirement('`gh` logged in', lambda: 'gh is missing'))
+    assert main(['agents', 'install', '--source', str(root), '--home', str(home)]) == 0
+    out = capsys.readouterr().out
+    assert (home / '.claude/skills/alpha').is_symlink() and "you can't use these yet" in out
+    assert 'skill alpha: gh is missing' in out and 'write access to the repository it works in: alpha' in out
+    assert main(['agents', 'list', '--source', str(root), '--home', str(home)]) == 0
+    assert 'skill alpha: gh is missing' in capsys.readouterr().out
+
+
+def test_checks_are_local(monkeypatch):
+    calls = []
+    monkeypatch.setattr(agentkit.shutil, 'which', lambda name: None)
+    assert 'not on PATH' in agentkit._gh_logged_in() and 'not on PATH' in agentkit.REQUIREMENTS['git'].check()
+    monkeypatch.setattr(agentkit.shutil, 'which', lambda name: f'/usr/bin/{name}')
+
+    class Done:
+        def __init__(self, code):
+            self.returncode = code
+
+    def run(cmd, **kw):
+        calls.append(cmd)
+        assert kw.get('stdout') is agentkit.subprocess.DEVNULL       # the token is never read into this process
+        return Done(1)
+    monkeypatch.setattr(agentkit.subprocess, 'run', run)
+    assert agentkit._gh_logged_in() == '`gh` is not logged in: run `gh auth login`'
+    assert calls == [['gh', 'auth', 'token']]                          # reads gh's own config: no network call
+    monkeypatch.setattr(agentkit.importlib.util, 'find_spec', lambda name: None)
+    assert 'Playwright is not installed' in agentkit._playwright()
+
+
+def test_the_workflow_page_lists_who_needs_what():
+    """docs/agent-workflow.md's table of needs names, for each need, exactly the items whose frontmatter has it."""
+    root = agentkit.kit_root()
+    page = (root / 'docs/agent-workflow.md').read_text()
+    rows = {}
+    for line in page.splitlines():
+        cells = [c.strip() for c in line.strip().strip('|').split('|')]
+        if len(cells) == 3 and cells[0] in {r.label for r in agentkit.REQUIREMENTS.values()}:
+            rows[cells[0]] = set(re.findall(r'`([a-z0-9-]+)`', cells[2]))
+    used = {}
+    for item in agentkit.items(root):
+        for r in item.requires + item.optional:
+            used.setdefault(agentkit.REQUIREMENTS[r].label, set()).add(item.name)
+    assert rows == used

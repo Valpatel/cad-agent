@@ -9,9 +9,9 @@ body:
         Thank you for helping. Short is fine. Please leave out private data: keys, hostnames, internal paths,
         unpublished product details, files under NDA.
 
-        **Agents:** the block in the README's "Use it" section fills these in. Every field below "Details" is
-        optional; it lets us count which models, harnesses and tool layers work, from GitHub alone (cad-agent
-        collects no telemetry). A fix you can make yourself is better sent as a pull request into `dev`.
+        **Agents:** the prompt under "Build with your favorite AI agent" in the README fills these in. Every
+        field below "Details" is optional; it lets us count which models, harnesses and tool layers work, from
+        GitHub alone (cad-agent collects no telemetry). A fix you can make yourself is better sent as a pull request into `dev`.
         We read every report as evidence: we reproduce it before anything changes.
   - type: input
     id: page

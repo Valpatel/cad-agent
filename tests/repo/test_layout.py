@@ -77,10 +77,11 @@ def files():
     return got
 
 
-def domain_for(name: str, text: str) -> str:
-    """The tests/ folder a test file belongs in, from its name and its imports: a webkit or site suite by its name
-    prefix, a Python test by the cadagent package it imports most (the main subject), and the repo's own rules when it
-    imports no package."""
+def domain_for(name: str, text: str, files: list[str] = ()) -> str:
+    """The tests/ folder a test file belongs in: a webkit or site suite by its name prefix; a Python test by the
+    cadagent package it imports most (its main subject), else by the folder of a test that shares its first word
+    (``test_process_figures.py`` beside ``test_process_profiles.py``), else ``cli/`` when it imports a top-level module,
+    else ``repo/`` for the repo's own rules."""
     if name.startswith("webkit-"):
         return "webkit"
     if name.startswith(("website-", "site-")):
@@ -89,8 +90,13 @@ def domain_for(name: str, text: str) -> str:
     for mod, _ in counts.most_common():
         if mod in PACKAGES:
             return mod
-        if f"{mod}.py" in PKG_FILES:
-            return "cli"
+    word = re.match(r"test_([a-z0-9]+)", name)
+    kin = sorted({p.split("/")[1] for p in files if word and p.count("/") >= 2 and p.startswith("tests/")
+                  and not p.startswith("tests/fixtures/") and Path(p).name.startswith(f"test_{word.group(1)}")})
+    if len(kin) == 1:
+        return kin[0]
+    if any(f"{mod}.py" in PKG_FILES for mod in counts):
+        return "cli"
     return "repo"
 
 
@@ -101,7 +107,7 @@ def flat_test_problems(files: list[str], read=lambda p: (ROOT / p).read_text(enc
         parts = p.split("/")
         if len(parts) != 2 or parts[0] != "tests" or parts[1] in TEST_ROOT_FILES:
             continue
-        dom = domain_for(parts[1], read(p))
+        dom = domain_for(parts[1], read(p), files)
         out.append(f"{p}: test files go in tests/<domain>/, not in tests/. This one belongs in tests/{dom}/: "
                    f"git mv {p} tests/{dom}/ (and fix paths relative to __file__: one more parent). "
                    f"If its main subject is another package, use that folder instead ({README_GUIDE}).")
@@ -253,6 +259,13 @@ def test_the_main_subject_wins_over_a_helper_import():
     assert domain_for("test_x.py", text) == "review"
     assert domain_for("test_x.py", "from cadagent.project import load_project\n") == "cli"
     assert domain_for("site-walls.mjs", "") == "site"
+    # a package beats the CLI it is driven through; with no package import, a test of the same first word decides
+    assert domain_for("test_x.py", "from cadagent.cli import main\nfrom cadagent.cli import x\n"
+                                   "from cadagent.geometry import overhang_regions\n") == "geometry"
+    assert domain_for("test_process_figures.py", "import subprocess\n",
+                      ["tests/manufacturing/test_process_profiles.py"]) == "manufacturing"
+    assert domain_for("test_process_figures.py", "import subprocess\n",
+                      ["tests/manufacturing/test_process_a.py", "tests/review/test_process_b.py"]) == "repo"
 
 
 def test_an_unknown_or_undocumented_tests_folder_is_refused(files):

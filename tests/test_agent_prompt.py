@@ -130,6 +130,8 @@ def test_the_grader_reads_the_transcript_and_the_files(tmp_path):
                "echo '## cad-agent commit'"]
     g2 = qe.grade(_planted(tmp_path / "c", report, written))
     assert g2["kit_used"] == [] and g2["calls_to_first_kit_use"] is None
+    quoted = qe.grade(_planted(tmp_path / "q", report, ['"$HOME/cad-agent/.venv/bin/cad-agent" all']))
+    assert quoted["kit_used"] == ["all"], "the block's own quoted form is a run"
     work = _planted(tmp_path / "d", report, ["$P/cad-agent all"])
     rows = (work / "transcript.jsonl").read_text().splitlines()
     wrote = {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Write",

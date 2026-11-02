@@ -313,7 +313,7 @@ def _kit_use(commands: list):
     if not commands:
         return None
     alt = "|".join(sorted(map(re.escape, commands), key=len, reverse=True))
-    return re.compile(rf"\bcad-agent\s+({alt})(?![\w-])(?!\s+(?:--help|-h)\b)")
+    return re.compile(rf"\bcad-agent[\"']?\s+({alt})(?![\w-])(?!\s+(?:--help|-h)\b)")   # also "$HOME/…/cad-agent" all
 
 
 def _uses(call: dict, kit) -> set:

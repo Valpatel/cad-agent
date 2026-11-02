@@ -9,6 +9,24 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.17.0 (2026-11-02)
+
+**New**
+- `cad-agent init [DIR]` starts a project from the starter box: it copies `examples/starter-box` (a 60 x 40 x 25 mm box and lid on four M3 heat-set inserts) into `DIR` and prints the next commands; `cad-agent all` passes on it as copied. It refuses a folder that is not empty unless `--force` is given. A wheel install carries the starter under `<prefix>/share/cad-agent/` (#291).
+- `examples/starter-box`: the smallest cad-agent project, to change. Its holes and bosses come from `inserts.hole_design` and `inserts.boss_design` (the 4.20 mm M3 hole), and its `checks:` read `cad-agent inserts --output` and the overhang screen; CI runs `cad-agent all` on a fresh copy (#291).
+- `cad-agent inserts --output` and `inserts.check_spec` give a top-level boolean `pass`, true unless a joint fails, so a `cad: checks` row reads the file without a wrapper script (#292).
+
+**Changed**
+- The paste-in guide (`docs/agent-prompt.txt`, llms.txt) and the README's quick start now start a project with `cad-agent init` instead of writing `cad-agent.yaml` by hand. A project command run where there is no `cad-agent.yaml` now points at `cad-agent init` (#291).
+
+**Fixed**
+- `cad: python` in `cad-agent.yaml` expands `~` and `$HOME` (also `${HOME}`). `~/cad-agent/.venv/bin/python` used to be joined to the project root, so every step failed with "could not start" (#288).
+- `cadagent.publish.render.Renderer.render` adds `.png` to a name with no extension, and refuses an extension Pillow cannot write before rendering. A bare name used to render the whole scene, then fail in Pillow (#289).
+- `cadagent.manufacturing.fit_coupons`: an `insert` fit's sweep centres on the hole `inserts.hole_design` draws: the maker's hole plus 0.2 mm, 4.2 mm for a 4.0 mm M3 hole. It used to centre on 4.25 mm. CNC Kitchen's sweet spot for its M3 was 4.2 mm in CAD (about 90 % of the highest pull-out), and the 0.2-0.3 mm offset already includes the printed hole's undersize, so the `insert` allowance is now -0.05 mm (#290).
+
+**Projects must change**
+- An insert coupon printed before this has its holes 0.05 mm larger than a new one. Pick the hole that fitted by its CAD size, not by its place in the row (#290).
+
 ## v0.16.0 (2026-11-02)
 
 **New**

@@ -78,6 +78,9 @@ def test_thickness_and_hole():
     assert _check(ok, "hole")["verdict"] == "pass" and _check(ok, "hole")["limit"] == "4.220-4.300 mm"
     assert _check(cl.check_placement("S-M3-1", "5052-h32", 1.6, hole_mm=4.31), "hole")["verdict"] == "fail"
     assert _check(cl.check_placement("S-M3-1", "5052-h32", 1.6, hole_mm=4.20), "hole")["verdict"] == "fail"
+    # inch parts hold PEM's +.003 in (0.0762 mm), not the metric +0.08 mm: 0.344 in = 8.7376 mm, so 8.8138 is the top
+    quarter = lambda h: _check(cl.check_placement("S-0420-1", "5052-h32", 2.0, hole_mm=h), "hole")["verdict"]
+    assert quarter(8.8138) == "pass" and quarter(8.8176) == "fail"
 
 
 def test_loads_use_the_matching_test_sheet():
@@ -86,7 +89,11 @@ def test_loads_use_the_matching_test_sheet():
     steel = cl.check_placement("S-M3-1", "cold-rolled-steel", 1.6, pushout_n=300, factor=1.5)        # 450 <= 550
     assert _check(steel, "push-out")["verdict"] == "pass"
     so = cl.check_placement("SO-M3", "5052-h32", 1.6, torque_nm=0.6)                # the screw torque limit, 0.55
-    assert _check(so, "torque")["verdict"] == "fail"
+    assert _check(so, "torque")["verdict"] == "fail" and "maximum tightening torque" in _check(so, "torque")["detail"]
+    # FH-29 prints the studs' torque-out: M3 1.7 / 1.7 N m, M6 7.3 / 11.3 N m (aluminium / steel)
+    assert cl.PARTS["FH-M3"].torque_out_nm == (1.7, 1.7) and cl.PARTS["FH-M6"].torque_out_nm == (7.3, 11.3)
+    assert _check(cl.check_placement("FH-M3", "5052-h32", 1.6, torque_nm=0.5), "torque")["verdict"] == "pass"
+    assert _check(cl.check_placement("FH-M6", "cold-rolled-steel", 2.4, torque_nm=11.0), "torque")["verdict"] == "pass"
     nut = cl.check_placement("S-M3-1", "5052-h32", 1.6, pull_n=100)                 # a nut has no pull-through rating
     assert _check(nut, "pull-through")["verdict"] == "fail" and "no pull-through" in _check(nut, "pull-through")["detail"]
 

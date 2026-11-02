@@ -13,7 +13,7 @@ and the part's own row from PEM's bulletins):
   the alloy's typical range straddles that limit (read the mill certificate); and no part listed here goes into
   stainless sheet, which takes only PEM's hardened-stainless types (SP, SMPP, FH4, SO4; bulletin CL-18);
 - the sheet's thickness: at least the part's minimum for its shank (bulletins CL, FH, SO);
-- the hole, when given: the catalogue hole +0.08 mm / -0 (HB-9);
+- the hole, when given: the catalogue hole +0.08 mm / -0 for metric parts, +0.003 in / -0 for inch parts (HB-9);
 - the edge distance, when given: at least the part's centre-to-edge distance (one edge only, HB-12);
 - the bend, when given: hole centre to the bend centre line at least BA/2 + E, PEM's rule measured from the outside of
   the bend radius moved onto the bend centre line (HB-12; the same datum as SendCutSend's rule);
@@ -112,11 +112,11 @@ _PARTS: List[ClinchPart] = [
     *_nut(("SS", "CLSS"), "032", 0.250, 0.040, 0.28, (110, 180), (32, 40), True),
     *_nut(("S", "CLS"), "0420", 0.344, 0.056, 0.34, (360, 400), (90, 150), True),
 ]
-for _t, _h, _s, _e, _p, _q in (("M3", 3.0, 1.0, 5.6, (600, 820), (3150, 3840)),
-                                ("M4", 4.0, 1.0, 7.2, (975, 1780), (4448, 5650)),
-                                ("M5", 5.0, 1.0, 7.2, (1070, 2000), (5170, 6270)),
-                                ("M6", 6.0, 1.6, 7.9, (1660, 2560), (10200, 11300))):
-    _PARTS.append(ClinchPart(f"FH-{_t}", "stud", "hardened steel", _t, _h, _s, _e, _p, None, _q, None,
+for _t, _h, _s, _e, _p, _tq, _q in (("M3", 3.0, 1.0, 5.6, (600, 820), (1.7, 1.7), (3150, 3840)),
+                                     ("M4", 4.0, 1.0, 7.2, (975, 1780), (2.9, 4.2), (4448, 5650)),
+                                     ("M5", 5.0, 1.0, 7.2, (1070, 2000), (3.5, 6.5), (5170, 6270)),
+                                     ("M6", 6.0, 1.6, 7.9, (1660, 2560), (7.3, 11.3), (10200, 11300))):
+    _PARTS.append(ClinchPart(f"FH-{_t}", "stud", "hardened steel", _t, _h, _s, _e, _p, _tq, _q, None,
                              "pem-bulletin-fh", "FH-5 (dimensions) and FH-29 (strengths)",
                              "1.6 mm aluminium (HRB 29) / 1.5 mm steel (HRB 59); M6 in 2.4 / 2.2 mm"))
 for _kind in ("SO", "BSO"):
@@ -246,7 +246,8 @@ def check_placement(part: str, sheet: str, thickness_mm: float, *, sheet_hrb: Op
 
     # Hole.
     tol = prof.verified_rule("sm-clinch-hole-tolerance-pem")
-    hi_hole = p.hole_mm + tol.limit().max
+    # HB-9 prints +.003 in for inch parts and +0.08 mm for metric ones; each part takes its own system's band
+    hi_hole = p.hole_mm + (tol.limit().max if p.thread.startswith("M") else 0.003 * IN)
     if hole_mm is not None:
         h = _num("hole_mm", hole_mm)
         v = "pass" if p.hole_mm - 1e-9 <= h <= hi_hole + 1e-9 else "fail"
@@ -299,15 +300,17 @@ def check_placement(part: str, sheet: str, thickness_mm: float, *, sheet_hrb: Op
         if load is None:
             continue
         x = _num(f"{name} load", load)
+        basis = f"PEM's average in {p.test_sheet}"
         if name == "torque" and p.screw_torque_nm is not None:
             rating = (p.screw_torque_nm, p.screw_torque_nm)
+            basis = "PEM's maximum tightening torque for the mating screw (SO-12), not a test average"
         if rating is None or col is None:
             checks.append(_check(name, "fail", x, "no rating", p.key, p.source,
                                  f"PEM gives no {name} rating for {p.key} in {s.family} sheet"))
             continue
         v = "pass" if rating[col] >= x * f else "fail"
         checks.append(_check(name, v, x, f"at most {rating[col] / f:.3f} {unit} ({rating[col]:g} / factor {f:g})",
-                             p.key, p.source, f"PEM's average in {p.test_sheet}"))
+                             p.key, p.source, basis))
 
     if t + 1e-9 >= prof.verified_rule("sm-clinch-punch-side-pem").limit().min:
         notes.append("press in from the punch side of a punched hole (PEM requires it from 2.29 mm)")

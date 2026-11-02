@@ -14,7 +14,8 @@ strength, and one check of a riveted lap joint against the published rules (#283
 - the edge distance: at least 2D (POP, the FAA, NASA nominal; MIL-HDBK-5J's allowables need it), at least 1.5D
   (NASA's minimum), a warning between;
 - the pitch and the rows (FAA AC 43.13-1B 4-57c, Fig. 4-5): at least 3D; 4D nominal for one row (NASA), 4D with the
-  rows 4D apart for two, and 6D with staggered rows 3D apart for three or more, else a warning;
+  rows 4D apart for two, and for three or more the outer rows at 6D (inner rows 3D) with rows 3D apart, else a
+  warning;
 - each sheet: t/D on the hole at least 0.18 (MIL-HDBK-5J 8.1.2.1), with a warning up to 0.25 for blind rivets
   (1.4.7.1, 8.1.3); and the sheet under the formed head (the last in the stack), if aluminium, at least 0.020 in
   for an open-end rivet (POP);
@@ -245,8 +246,9 @@ def check_joint(rivet: str, sheets: Sequence[Tuple[str, float]], edge_mm: float,
                 factor: float = 1.0, path: Any = None) -> Dict[str, Any]:
     """Check a riveted lap joint: ``rivet`` a key of :data:`RIVETS`; ``sheets`` the stack as (key of :data:`SHEETS`,
     thickness in mm), at least two; ``edge_mm`` from the hole centre to the sheet edge; ``pitch_mm`` centre to centre
-    along a row; ``rows`` of rivets (one rivet per row in each pitch) and, with two or more, ``row_spacing_mm`` between
-    them; ``hole_mm`` as drilled or cut, or None for the
+    along a row (with three or more rows, along the outer rows); ``rows`` of rivets (one rivet per row in each pitch,
+    which undercounts, on the safe side, the FAA's inner rows at half the pitch) and, with two or more,
+    ``row_spacing_mm`` between them; ``hole_mm`` as drilled or cut, or None for the
     middle of the maker's range; ``thickness_tol_mm`` each sheet's +/- tolerance; and, optionally, the load one pitch
     of the joint carries, to compare with its strength divided by ``factor``. The stack runs from the factory head to
     the formed (blind) head, so the last sheet is the one the formed head sits on."""
@@ -303,15 +305,16 @@ def check_joint(rivet: str, sheets: Sequence[Tuple[str, float]], edge_mm: float,
                          {"pass": "full strength", "warn": "weaker than at 2D; MIL-HDBK-5J's allowables need 2D",
                           "fail": "below NASA's minimum"}[v]))
 
-    # Pitch, and the rows' spacing: one row (3D, 4D nominal), two rows (4D, rows 4D apart) or three or more staggered
-    # rows (6D, rows 3D apart), as FAA AC 43.13-1B 4-57c and Fig. 4-5 lay them out.
+    # Pitch, and the rows' spacing: one row (3D, 4D nominal), two rows (4D, rows 4D apart) or three or more rows (the
+    # outer rows at 6D, the inner rows at 3D with a rivet halfway between the outer ones, rows 3D apart and in line), as
+    # FAA AC 43.13-1B 4-57c and Fig. 4-5 lay them out. With three or more rows, pitch_mm is the outer rows' pitch.
     least = _limit(prof, "sm-rivet-pitch-faa", D=D)
     if rows == 1:
         second, layout = _limit(prof, "sm-rivet-pitch-nasa", D=D), "one row"
     elif rows == 2:
         second, layout = _limit(prof, "sm-rivet-pitch-double-faa", D=D), "two rows"
     else:
-        second, layout = _limit(prof, "sm-rivet-pitch-multiple-faa", D=D), "three or more staggered rows"
+        second, layout = _limit(prof, "sm-rivet-pitch-multiple-faa", D=D), "the outer rows of three or more"
     k = round(second.value / D)
     if p + 1e-9 < least.min:
         v, why = "fail", "below the FAA's 3D"
@@ -323,16 +326,17 @@ def check_joint(rivet: str, sheets: Sequence[Tuple[str, float]], edge_mm: float,
                          f"{layout}", f"{least.rule}, {second.rule}", f"{least.source}, {second.source}", why))
     if rows > 1:
         gap = _limit(prof, "sm-rivet-row-spacing-faa" if rows == 2 else "sm-rivet-row-spacing-multiple-faa", D=D)
+        spaced = "two rows" if rows == 2 else "three or more rows"
         m = round(gap.min / D)
         if row_spacing_mm is None:
             checks.append(_check("row spacing", "warn", None, f"at least {gap.min:.3f} mm ({m}D)", gap.rule, gap.source,
-                                 f"not given: the FAA spaces {layout} {m}D apart"))
+                                 f"not given: the FAA spaces {spaced} {m}D apart"))
         else:
             g = _num("row_spacing_mm", row_spacing_mm)
             v = "pass" if g + 1e-9 >= gap.min else "warn"
             checks.append(_check("row spacing", v, round(g, 4), f"at least {gap.min:.3f} mm ({m}D)", gap.rule,
                                  gap.source, f"the rows are at least {m}D apart" if v == "pass" else
-                                 f"closer than the FAA's {m}D between {layout}"))
+                                 f"closer than the FAA's {m}D between {spaced}"))
 
     # Each sheet: t/D, the thinnest aluminium, and the metals.
     thin_al = _limit(prof, "sm-rivet-sheet-min-pop")

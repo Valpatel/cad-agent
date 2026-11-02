@@ -71,9 +71,15 @@ def test_only_filter_matches_a_bare_name_either_way(tmp_path, monkeypatch):
     assert Renderer(tmp_path, size=(200, 150), only=["b"]).render("b", meshes=[(stl, (1, 0, 0))]) is not None
     assert Renderer(tmp_path, size=(200, 150), only=["b"]).render("c", meshes=[(stl, (1, 0, 0))]) is None
 
-def test_other_extensions_are_refused_before_rendering(tmp_path, monkeypatch):
+def test_unknown_extensions_are_refused_before_rendering(tmp_path, monkeypatch):
     monkeypatch.delenv("CAD_AGENT_RENDER_ONLY", raising=False)
     r = Renderer(tmp_path, size=(200, 150))
-    with pytest.raises(ValueError, match="writes PNG"):
-        r.render("part.jpg", meshes=[("never-read.stl", (1, 0, 0))])
-    assert not (tmp_path / "part.jpg").exists()
+    with pytest.raises(ValueError, match=r"cannot write a '\.v2' image; name it part\.v2\.png"):
+        r.render("part.v2", meshes=[("never-read.stl", (1, 0, 0))])
+    assert not (tmp_path / "part.v2").exists()
+
+def test_other_image_extensions_still_save_in_their_format(tmp_path, monkeypatch):
+    stl = cube_stl(tmp_path / "cube.stl")
+    monkeypatch.delenv("CAD_AGENT_RENDER_ONLY", raising=False)
+    out = Renderer(tmp_path, size=(200, 150)).render("part.JPG", meshes=[(stl, (1, 0, 0))])
+    assert out == tmp_path / "part.JPG" and Image.open(out).format == "JPEG"

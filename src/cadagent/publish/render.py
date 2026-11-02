@@ -176,8 +176,9 @@ class Renderer:
     ) -> Optional[Path]:
         """Render one PNG into ``out_dir``; returns its path, or None when filtered out.
 
-        ``name``: the file name. A name with no extension gets ``.png``; any other extension than ``.png`` is
-        refused before rendering. ``only`` matches the name as written or with ``.png``.
+        ``name``: the file name. A name with no extension gets ``.png``. Another image extension Pillow can write
+        (``.jpg``, ``.webp``) saves in that format; any other extension is refused before rendering. ``only`` matches
+        the name as written or with ``.png`` added.
         ``shapes``: ``(shape, color[, offset])``; ``meshes``: ``(stl_path, color[, offset])``.
         ``labels``: ``(code, text, world_point, (text_x, text_y))`` leader callouts.
         ``clip``: one ``(origin, normal)`` plane or a list of them; geometry on the
@@ -185,7 +186,7 @@ class Renderer:
         ``fit``: a ``(min, max)`` box to frame instead of everything drawn (parts outside it are cropped).
         """
         written = name
-        name = _png_name(name)
+        name = _image_name(name, self.pil)
         if not (self.wanted(name) or self.wanted(written)):
             return None
         vtk = self.vtk
@@ -304,13 +305,19 @@ def review_packet(section: str, **kwargs: Any) -> Dict[str, Any]:
     return _review_packet(section, **kwargs)
 
 
-def _png_name(name: str) -> str:
-    """``name`` with ``.png`` added when it has no extension (#289); a ValueError for any other extension."""
+def _image_name(name: str, pil: Any) -> str:
+    """``name`` with ``.png`` added when it has no extension (#289).
+
+    A ValueError, before anything renders, for an extension Pillow cannot write (``part.v2``): the render used to
+    finish and then fail in ``Image.save``.
+    """
     suffix = Path(name).suffix
     if not suffix:
         return name + ".png"
-    if suffix.lower() != ".png":
-        raise ValueError(f"{name}: Renderer writes PNG; name it {Path(name).stem}.png, or leave the extension off")
+    pil.init()
+    if pil.registered_extensions().get(suffix.lower()) not in pil.SAVE:
+        raise ValueError(f"{name}: Pillow cannot write a {suffix!r} image; name it {name}.png, "
+                         f"or leave the extension off and Renderer adds .png")
     return name
 
 def _is_plane(clip: Any) -> bool:

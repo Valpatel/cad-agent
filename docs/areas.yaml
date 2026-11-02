@@ -190,9 +190,9 @@ domains:
         title: Sheet metal
         scope: Bent metal parts.
         maturity: tooling
-        pages: [docs/process-checks.md, research/fea-and-process-tools.md]
+        pages: [docs/process-checks.md, research/fea-and-process-tools.md, research/sheet-metal-guides.md]
         api: [cadagent.manufacturing.sheet_metal]
-        issues: [99, 118, 119]
+        issues: [99, 118, 119, 283]
       - slug: mould-making
         title: Mould making
         scope: Short-run moulds made in the shop.

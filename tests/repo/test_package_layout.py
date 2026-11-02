@@ -19,7 +19,7 @@ from cadagent._moved import MOVED
 PKG = Path(cadagent.__file__).parent
 TOP_MODULES = {"__init__", "_deps", "_moved", "agentkit", "cli", "links", "package", "project"}
 DOMAINS = {"mechanical", "manufacturing", "thermal", "simulation", "electrical", "review", "publish"}
-PACKAGES = DOMAINS | {"geometry", "formulas", "webkit"}  # shared core: CAD helpers, equations; webkit: browser files
+PACKAGES = DOMAINS | {"geometry", "formulas", "library", "webkit"}  # shared core: CAD helpers, equations, parts; webkit: browser files
 # Paths of the job layout (#121 before the owner chose domains): never on dev, so nothing keeps them importing.
 NEVER_SHIPPED = ["cadagent.sim", "cadagent.make", "cadagent.geometry.holes", "cadagent.geometry.fasteners",
                  "cadagent.geometry.connectors", "cadagent.geometry.markings", "cadagent.publish.packet",

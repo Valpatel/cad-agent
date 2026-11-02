@@ -12,7 +12,7 @@ renderer from `webkit/`.
 ```mermaid
 flowchart TD
     Y["cad-agent.yaml<br/>read by project.py"] --> CLI["cli.py<br/>a handler per command"]
-    Y ~~~ G["geometry/ · formulas/<br/>shared helpers, equations"]
+    Y ~~~ G["geometry/ · formulas/ · library/<br/>shared helpers, equations, parts"]
     CLI & G --> DOM["mechanical/ · thermal/<br/>manufacturing/<br/>simulation/<br/>electrical/"]
     CLI --> RV["review/<br/>dossier, gates, packets"]
     DOM & RV -->|"results"| P["publish/<br/>report, site, release"]
@@ -32,6 +32,7 @@ flowchart TD
 |---|---|
 | [`geometry/`](geometry/README.md) | Shared CAD helpers: solids, print STLs, reproducible STEP, gaps, downward area, bed fit |
 | [`formulas/`](formulas/README.md) | Closed-form engineering equations with units, limits and sources: beams, snap arms, torsion, springs, screws, four-bars, heat flow and fans (shared core) |
+| [`library/`](library/README.md) | The parts library: KiCad footprints and 3D bodies for real parts, hardware tables, and the audit that every placed part shows (shared core; electrical/circuit-boards/parts-library) |
 | [`mechanical/`](mechanical/README.md) | Holes, fasteners, McMaster-Carr parts, connector windows, markings, compliant features, motion traces (mechanical) |
 | [`manufacturing/`](manufacturing/README.md) | 3MF print files and slicer numbers (manufacturing) |
 | [`thermal/`](thermal/README.md) | Plate-fin heat sinks and fan operating points (thermal) |

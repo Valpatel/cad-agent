@@ -449,18 +449,32 @@ const heroModel = JSON.parse(await read('web/models/gyropup.json'));
 const poster = imageSize(await readBuf('web/models/gyropup.webp'), 'gyropup.webp');
 if (!poster) throw new Error('web/models/gyropup.webp: run node tools/site-model-poster.mjs');
 const kb = n => `${Math.round(n / 1024)} KB`;
+// "Copy this to your agent" (#278): one block, from docs/agent-prompt.txt, that the README shows too
+// (tests/test_agent_prompt.py keeps the two the same). The card shows it verbatim, its step leads in bold.
+const agentPrompt = await read('docs/agent-prompt.txt');
+const USE_STEPS = [['Install', 'the kit and its skills'], ['Find', 'the tool in llms.txt'], ['Build', 'with tested checks'], ['Give back', 'a PR or an issue']];
+const useLoop = `<svg class="use-loop" viewBox="0 0 400 132" role="img" aria-label="The loop the block sets up: install, find the tool, build with tested checks, give back what was learned, so the next agent finds more">
+<defs><marker id="use-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z" fill="#bd3a12"/></marker></defs>
+${USE_STEPS.map(([t, d], i) => `<g transform="translate(${8 + i * 98} 10)"><rect width="86" height="74" rx="14" fill="${i === 3 ? '#ffe1cc' : '#fffdf5'}" stroke="${i === 3 ? '#bd3a12' : '#173d3c'}"/><text x="43" y="26" text-anchor="middle" font-size="22" font-weight="750" fill="#bd3a12">${i + 1}</text><text x="43" y="47" text-anchor="middle" font-size="12" font-weight="700" fill="#173d3c">${esc(t)}</text><text x="43" y="62" text-anchor="middle" font-size="8.5" fill="#526863">${esc(d)}</text></g>${i < 3 ? `<path d="M${96 + i * 98} 47h8" stroke="#bd3a12" stroke-width="2" marker-end="url(#use-arrow)"/>` : ''}`).join('')}
+<path d="M345 86v18a8 8 0 0 1-8 8H59a8 8 0 0 1-8-8v-14" fill="none" stroke="#bd3a12" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#use-arrow)"/>
+<text x="200" y="128" text-anchor="middle" font-size="10" fill="#526863">the next agent finds what this one learned</text></svg>`;
+const promptHtml = esc(agentPrompt.replace(/\n$/, '')).replace(/^(\d\. [A-Z][a-z]+(?: [a-z]+)?)/gm, '<b>$1</b>');
+const useCard = `<section class="use-band" id="use-it" aria-labelledby="use-title"><div class="wrap"><div class="use-card">
+<div class="use-head"><p class="eyebrow">Copy this to your agent</p><h2 id="use-title">One paste. <span>Any agent.</span></h2>
+<p>Paste it into Claude Code, Codex, Copilot CLI or any agent with a shell, then add what you want made. It installs cad-agent and its skills, finds the right tool in a few calls, builds with tested checks, and sends back what it learns as a pull request or an issue you approve. cad-agent collects no telemetry.</p>
+${useLoop}
+<p class="works-with"><span>Works with</span> Claude Code · Codex · Copilot CLI · any agent with a shell</p></div>
+<cad-copy class="agent-copy" label="Copy"><pre class="agent-box" aria-label="The prompt to paste into your agent">${promptHtml}</pre></cad-copy></div></div></section>`;
 const landing = `<div class="wrap"><section class="hero hero-3d">
 <div class="hero-head"><p class="eyebrow"><span class="status-dot"></span>Open source · for agents and people</p>
 <h1>Your one stop shop for <span>agentic CAD.</span></h1>
 <p class="intro">Checks, simulation and cited engineering for the hardware agents design, in tested code.</p></div>
 <figure class="hero-model"><cad-model src="/web/models/gyropup.json" label="Gyropup" style="aspect-ratio:${poster.width}/${poster.height}"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="${poster.width}" height="${poster.height}" fetchpriority="high" alt="Gyropup, a wheel-legged robot with a foam-ball turret, assembled from its ${heroModel.parts.length} parts"></cad-model>
 <figcaption><span><b>Gyropup</b>, ${heroModel.parts.length} parts in place, exported from its STEP files by <code>cad-agent view</code>: ${heroModel.triangles.toLocaleString('en-US')} triangles in ${kb(heroModel.bytes)}.</span><span><a href="https://gyropup.com">gyropup.com</a> · MIT · drag to turn</span></figcaption></figure>
-<div class="hero-actions"><div class="actions"><a class="button primary" href="#outputs">See what it computes <span>↓</span></a><a class="button" href="/catalog">Browse the catalogue</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div>
-<cad-copy class="agent-copy" label="Copy"><pre class="agent-box" aria-label="How an agent reads this site"><b># agents: start here</b>
-curl -s ${ORIGIN}/llms.txt
-curl -s ${ORIGIN}/catalog.json
-curl -s ${ORIGIN}/docs/toolkit.md  <b># any page, as .md</b></pre></cad-copy></div>
+<div class="hero-actions"><div class="actions"><a class="button primary" href="#use-it">Copy this to your agent <span>↓</span></a><a class="button" href="#outputs">See what it computes</a><a class="button" href="/catalog">Browse the catalogue</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div>
+</div>
 </section></div>
+${useCard}
 <section class="reel-band" id="outputs"><div class="wrap"><div class="lead"><h2>What the code <span>computes.</span></h2><p>Outputs of cad-agent's tools with the numbers they computed: on Gyropup, on a printed enclosure, on this repo's test fixtures and on worked examples. Each tile says which, and opens the page that explains it.</p></div>
 <ul class="reel">${reel.join('')}</ul></div></section>
 <div class="wrap"><section class="section fits" aria-labelledby="fits-title"><div class="lead"><h2 id="fits-title">Where cad-agent <span>fits.</span></h2><p>Other people's tools make the model. text-to-cad, which we are trialling, writes and exports models, but <a href="/research/landscape#2-deep-dive-earthtojaketext-to-cad-v0726-2026-10-20">its code computes no stress, fatigue or safety factor</a>. cad-agent's engineering is Python with ${testCount.toLocaleString('en-US')} test functions in CI. Each block shows how far it has got.</p></div>
@@ -493,7 +507,8 @@ cad-agent is an open-source toolkit and knowledge base for AI agents that design
 simulation and print releases. It maps the best free tools, demonstrates them on real projects and fills the gaps with
 tested tools of its own. Every page on this site has a Markdown twin at the same path with a .md extension.
 
-- Source: ${REPO} (MIT). Install: \`pip install -e .\` in a checkout; agent skills: \`cad-agent agents install\`.
+- Source: ${REPO} (MIT). Install and use: the block under "Copy this to your agent" below (a checkout of \`main\`, a venv,
+  \`pip install -e\`, then \`cad-agent agents install\` for the skills). cad-agent collects no telemetry.
 - Machine-readable catalogue: ${ORIGIN}/catalog.json (schema ${catalog.schema}; ${catalog.items.length} entries, each with an id, kind,
   areas, maturity, a one-line \`what\`, our \`notes\`, a cover picture, a demo link and related ids; tools also have \`doc\`,
   the page that documents the command, and \`markdown\`, its twin). Every schema-1 field keeps its schema-1 value: \`summary\`
@@ -507,6 +522,14 @@ tested tools of its own. Every page on this site has a Markdown twin at the same
   ${ORIGIN}/catalog?kind=tools&area=compliant-mechanisms&sort=stars.
 - Full text of every page in one file: ${ORIGIN}/llms-full.txt
 - Built from commit ${revision}.
+
+## Copy this to your agent
+
+A person pastes this into their agent and adds what they want made at the end:
+
+\`\`\`text
+${agentPrompt.replace(/\n$/, '')}
+\`\`\`
 
 ## Start here
 

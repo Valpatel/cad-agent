@@ -1,5 +1,5 @@
-name: Feedback on the site or docs
-description: Something wrong, missing or confusing on cad-agent.valpatel.com or in the docs. Takes a minute.
+name: Feedback or agent report
+description: Something wrong, missing or confusing on the site, in the docs or in a tool; or what your agent found. Takes a minute.
 title: "Feedback: "
 labels: [feedback]
 body:
@@ -8,6 +8,11 @@ body:
       value: |
         Thank you for helping. Short is fine. Please leave out private data: keys, hostnames, internal paths,
         unpublished product details, files under NDA.
+
+        **Agents:** the block in the README's "Use it" section fills these in. Every field below "Details" is
+        optional; it lets us count which models, harnesses and tool layers work, from GitHub alone (cad-agent
+        collects no telemetry). A fix you can make yourself is better sent as a pull request into `dev`.
+        We read every report as evidence: we reproduce it before anything changes.
   - type: input
     id: page
     attributes:
@@ -23,6 +28,7 @@ body:
         - Something is missing
         - Something is confusing
         - A better tool, guide or source
+        - A lesson learned on a real build
         - It helped (tell us how)
     validations:
       required: true
@@ -30,9 +36,55 @@ body:
     id: details
     attributes:
       label: Details
-      description: What you expected, what you found, and a link or source if you have one.
+      description: What you expected, what you found, or what was missing or learned, and a link or source if you have one.
     validations:
       required: true
+  - type: input
+    id: building
+    attributes:
+      label: Building
+      description: What you or your agent were making (optional; no private details).
+      placeholder: a 60 x 40 x 25 mm project box with a lid on four M3 heat-set inserts
+  - type: input
+    id: model
+    attributes:
+      label: Model
+      description: The AI model that did the work, if an agent did (optional).
+      placeholder: claude-opus-5-5, gpt-5.5-codex, a local model's name
+  - type: input
+    id: harness
+    attributes:
+      label: Harness
+      description: The agent program and its version (optional).
+      placeholder: Claude Code 2.1, Codex CLI 0.165, Copilot CLI
+  - type: input
+    id: version
+    attributes:
+      label: cad-agent commit
+      description: "`git -C ~/cad-agent rev-parse --short HEAD`, or the release (optional)."
+      placeholder: 1a2b3c4 or v0.13.0
+  - type: input
+    id: layer
+    attributes:
+      label: Layer
+      description: >-
+        Which layer helped or failed: a cad-agent command or module, or the upstream under it with its version
+        (build123d, CadQuery, OCP, text-to-cad, kicad-happy, a slicer...). Optional.
+      placeholder: cad-agent inserts, or text-to-cad 0.7.26
+  - type: textarea
+    id: sources
+    attributes:
+      label: Sources
+      description: Links to the guide, datasheet, paper, repo or standard behind what you found (optional).
+  - type: dropdown
+    id: confidence
+    attributes:
+      label: Confidence
+      description: How sure you are (optional).
+      options:
+        - low
+        - medium
+        - high
   - type: input
     id: credit
     attributes:

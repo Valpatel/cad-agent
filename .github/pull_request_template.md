@@ -1,5 +1,14 @@
 ## What and why
 
+## Made with
+<!-- Optional for people. Agents: fill it in, so the project can count from GitHub alone which models, harnesses and
+     tool layers do the work (cad-agent collects no telemetry). "By hand" is an answer. -->
+- Model:
+- Harness:
+- cad-agent commit it started from:
+- Layer it changes or reports on (a cad-agent tool, or the upstream under it with its version):
+- Confidence (low, medium or high):
+
 ## Considered existing tools
 <!-- A new capability (command, check, calculator, generator or skill): what you looked for first, in the catalogue,
      research/landscape.md, upstreams/registry.yaml, skills/ and the open-source libraries and agent skills outside

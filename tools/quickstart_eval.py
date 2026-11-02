@@ -34,7 +34,6 @@ import shutil
 import subprocess
 import sys
 import time
-import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -47,7 +46,7 @@ UNATTENDED = ("Nobody is watching this session: do not ask me questions, make se
               "Do not file anything on GitHub or push anywhere; leave any report as cad-agent-report.md here.")
 REPORT_HEADINGS = ("Model", "Harness", "cad-agent commit", "Layer", "Building", "Missing or learned", "Sources", "Confidence")
 # A kit command that does design work (not install, help or listing), or the Python package itself.
-KIT_USE = re.compile(r"cad-agent\s+(?!agents\b|--help\b|-h\b)[a-z][a-z0-9-]*(?!\s+(?:--help|-h)\b)|\b(?:from|import)\s+cadagent\b")
+KIT_USE = re.compile(r"cad-agent\s+(?!agents\b|--help\b|-h\b)[a-z][a-z0-9-]*(?![a-z0-9-])(?!\s+(?:--help|-h)\b)|\b(?:from|import)\s+cadagent\b")
 DISCOVERY = re.compile(r"llms(?:-full)?\.txt|catalog(?:/[\w-]+)?\.json|cad-agent\.valpatel\.com/[\w/.-]+\.md|SKILL\.md|"
                        r"cad-agent(?:\s+[a-z0-9-]+)?\s+(?:--help|-h)\b|/docs/[\w-]+\.md")
 POSTS = re.compile(r"\bgh\s+(?:issue|pr)\s+create\b|\bgit\s+push\b|\bgh\s+api\b.*-X\s*POST")
@@ -99,11 +98,9 @@ def install(work: Path, ref: str = "main") -> dict:
     checks = {name: _run(cmd, env, home, timeout=600) for name, cmd in smoke.items()}
     linked = [ln for ln in "\n".join(checks["agents list"]["tail"]).splitlines()]
     skills = sorted(p.name for p in (home / ".claude" / "skills").iterdir()) if (home / ".claude" / "skills").is_dir() else []
-    try:
-        with urllib.request.urlopen(LLMS, timeout=30) as r:
-            llms = r.status
-    except OSError as exc:
-        llms = str(exc)
+    # With curl, as agents fetch it. (Python's urllib, with its default User-Agent, gets a 403 from the site's CDN.)
+    fetched = _run(f"curl -s -o /dev/null -w '%{{http_code}}' {LLMS}", env, home, timeout=60)
+    llms = int(fetched["tail"][0]) if fetched["exit"] == 0 and fetched["tail"] else fetched
     ok = all(s["exit"] == 0 for s in steps) and all(c["exit"] == 0 for c in checks.values()) and skills and llms == 200
     return {"job": "quickstart-install", "ok": bool(ok), "ref": ref, "python": sys.version.split()[0],
             "platform": sys.platform, "steps": steps, "smoke": checks, "claude_skills": skills,

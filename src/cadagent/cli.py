@@ -24,20 +24,21 @@ SUBCOMMANDS = ("build", "export-3mf", "holes", "check", "report", "package", "se
                "overhangs")
 LOG_TAIL_LINES = 20
 # Usage reporting off. cad-agent itself sends nothing anywhere; the only reports are the issues and pull requests a
-# person chooses to send on GitHub. `main` sets these for every command, so each program it runs (and anything those
-# start) inherits them, unless the variable is already set: a person's own explicit choice stands. The list is the
-# survey in docs/supply-chain.md ("Usage reporting"); tests/cli/test_privacy.py fails when a vendored tool names a
-# switch this list does not cover.
+# person chooses to send on GitHub. `run_step` sets these in the environment of every project step it runs (and so of
+# anything a step starts), unless the variable is already set: a person's own explicit choice stands. They never change
+# the calling process's environment. The list is the survey in docs/supply-chain.md ("Usage reporting");
+# tests/cli/test_privacy.py fails when a vendored tool names a switch this list does not cover.
 OPT_OUTS = {
     "DO_NOT_TRACK": ("1", "the Console Do Not Track convention (consoledonottrack.com); text-to-cad's cadgen reads it"),
-    "CADGEN_TELEMETRY": ("0", "text-to-cad's cadgen, vendored: its usage analytics (cadgen/analytics.py)"),
-    "KICAD_MCP_TELEMETRY_ENABLED": ("false", "kicad-mcp-pro, vendored: OpenTelemetry, opt-in already; kept off explicitly"),
-    "WRANGLER_SEND_METRICS": ("false", "Cloudflare's wrangler (npm run deploy:site): anonymous usage data, on by default"),
+    "CADGEN_TELEMETRY": ("0", "text-to-cad's cadgen: its usage analytics, on by default upstream (cadgen/analytics.py)"),
+    "CADGEN_UPDATE_CHECK": ("0", "text-to-cad's cadgen: its check for a newer release, on by default upstream (cadgen/updates.py)"),
+    "KICAD_MCP_TELEMETRY_ENABLED": ("false", "kicad-mcp-pro: OpenTelemetry, off by default; kept off explicitly"),
+    "WRANGLER_SEND_METRICS": ("false", "Cloudflare's wrangler: anonymous usage data, on by default"),
+    "WRANGLER_SEND_ERROR_REPORTS": ("false", "Cloudflare's wrangler: asks to send each error report when unset"),
 }
 
-def opt_out(env=None) -> List[str]:
-    """Set every usage-reporting opt-out in ``env`` (default: this process's environment) that is not set yet."""
-    env = os.environ if env is None else env
+def opt_out(env: Dict[str, str]) -> List[str]:
+    """Set every usage-reporting opt-out in ``env`` (a child's environment) that is not set yet; return what was set."""
     added = [k for k in OPT_OUTS if k not in env]
     for k in added:
         env[k] = OPT_OUTS[k][0]
@@ -79,6 +80,7 @@ def run_step(project: CadProject, step: Step) -> Dict[str, Any]:
         result["reason"] = f"script not found: {script}"
         return result
     env = dict(os.environ, PYTHONUNBUFFERED="1", CAD_AGENT_PROJECT=str(project.root))
+    opt_out(env)
     cmd = [project.python, str(script)]
     log_path = project.exports_dir / step.log if step.log else None
     started = time.monotonic()
@@ -1280,7 +1282,6 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    opt_out()
     return dispatch(build_parser().parse_args(argv))
 
 if __name__ == "__main__":

@@ -69,6 +69,7 @@ your own repositories, or where you have been given write access; an agent shoul
 | Skill | [`design-process`](../skills/design-process/SKILL.md) | Building or changing a design: section by section, with requirements, gates and a reviewer sign-off ([design-process-plan.md](design-process-plan.md)) |
 | Skill | [`cad-motion-validation`](../skills/cad-motion-validation/SKILL.md) | Rendered mechanisms: independent joint frames, actual mesh captures, pivot/ownership regression checks |
 | Skill | [`mcmaster-parts`](../skills/mcmaster-parts/SKILL.md) | Bought hardware: real part numbers and manufacturer models |
+| Skill | [`sheet-metal-hardware`](../skills/sheet-metal-hardware/SKILL.md) | Bent sheet parts with clinch nuts, studs or rivets: bends, placement, seams and price, checked in order ([page](sheet-metal-hardware.md)) |
 | Skill | [`cad-supply-chain`](../skills/cad-supply-chain/SKILL.md) | Before adding a dependency, vendored file, catalogue entry or link, or recommending a tool: the supply-chain report, its rows in the PR, what blocks a merge or an adoption |
 | Subagent | [`cad-pr-reviewer`](../agents/cad-pr-reviewer.md) | Reviews a PR it did not write: verifies, posts inline comments and a summary, never merges |
 | Subagent | [`cad-resume`](../agents/cad-resume.md) | After a session ended: rebuilds the state from GitHub, checkouts and run logs; reports next steps |

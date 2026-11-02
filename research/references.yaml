@@ -2592,6 +2592,7 @@ sources:
       - research/sheet-metal-joining.md
       - src/cadagent/mechanical/sheet_hardware.py
       - research/sheet-hardware.yaml
+      - docs/sheet-metal-hardware.md
     verified: >-
       2026-11-01: downloaded the JSON (_meta.generated_at 2026-04-29T20:52:33Z, 178 materials, 151 hardware
       items, 25 finishes). Read per material SKU: name, thickness, cutting process, part-size limits and
@@ -3036,6 +3037,7 @@ sources:
       - research/sheet-metal-joining.md
       - src/cadagent/mechanical/sheet_hardware.py
       - research/sheet-hardware.yaml
+      - docs/sheet-metal-hardware.md
     verified: >-
       2026-11-01: opened the listing and 40 product pages (https://americas.bossard.com/products/<part
       number>-by-penn-engineering.html), without logging in. Read the price per part for 1-249, 1000-4999 and
@@ -3187,6 +3189,7 @@ sources:
       - src/cadagent/mechanical/rivets.py
       - src/cadagent/mechanical/sheet_hardware.py
       - research/sheet-hardware.yaml
+      - docs/sheet-metal-hardware.md
     verified: >-
       2026-11-01: opened the aluminium, 18-8 stainless and zinc-plated steel domed-head pages in a browser,
       without logging in. Read part numbers, grip, pack size, pack price and the listed shear and tensile

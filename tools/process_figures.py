@@ -9,7 +9,9 @@ Each figure is computed by the module it shows, on worked examples, never typed 
 * dfm-wall.svg: ``cadagent.manufacturing.dfm.check`` on a 0.9 mm FDM wall with a 0.4 mm nozzle, a row per source;
 * layer-factors.svg: ``cadagent.manufacturing.process`` FDM materials, across-the-layers factors from the data sheets;
 * sheet-flange.svg: ``cadagent.manufacturing.sheet_metal.bend`` per stock in the shop's table, the shop's shortest
-  flange against the generic rules at the shop's own radius.
+  flange against the generic rules at the shop's own radius;
+* sheet-hardware-prices.svg: ``cadagent.mechanical.sheet_hardware`` per priced part in research/sheet-hardware.yaml,
+  the price of one piece loose, at 1000 and pressed in by a shop (for docs/sheet-metal-hardware.md).
 
 Stdlib only besides cad-agent; the SVGs carry their own light background so they read the same on the site and on
 GitHub in dark mode.
@@ -24,6 +26,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from cadagent.manufacturing import dfm, process, sheet_metal  # noqa: E402
+from cadagent.mechanical import sheet_hardware  # noqa: E402
+import math  # noqa: E402
 
 OUT = ROOT / "docs" / "img" / "process"
 INK, MUTED, LINE, BG = "#173d3c", "#526863", "#d8e0d3", "#fffdf5"
@@ -173,7 +177,43 @@ def sheet_flange() -> str:
     return "\n".join(out) + "\n"
 
 
-FIGURES = {"dfm-wall.svg": dfm_wall, "layer-factors.svg": layer_factors, "sheet-flange.svg": sheet_flange}
+def sheet_hardware_prices() -> str:
+    cat = sheet_hardware.load()
+    group = {"clinch_nut": 0, "clinch_stud": 1, "clinch_standoff": 2, "blind_rivet": 3}
+    items = sorted((i for i in cat if sheet_hardware.each_usd(i) is not None),
+                   key=lambda i: (group[i["category"]], sheet_hardware.each_usd(i), i["id"]))
+    row_h, top = 20, 86
+    h = top + row_h * len(items) + 72
+    lo, hi = 0.03, 3.0
+    plot_w = W - 200 - PAD - 20
+    x = lambda v: 200 + plot_w * (math.log10(min(max(v, lo), hi)) - math.log10(lo)) / (math.log10(hi) - math.log10(lo))
+    out = _frame("Clinch parts and rivets: price of one piece",
+                 "cadagent.mechanical.sheet_hardware on research/sheet-hardware.yaml; log scale, US dollars", h)
+    bottom = top + row_h * len(items)
+    _axis(out, x, [0.03, 0.1, 0.3, 1, 3], top - 8, bottom, "USD each")
+    for n, it in enumerate(items):
+        cy = top + row_h * n + row_h / 2
+        each = sheet_hardware.each_usd(it)
+        bulk = (it.get("specs") or {}).get("price_usd_1000")
+        inst = (it.get("installed") or {}).get("price_usd")
+        out.append(f'<text x="190" y="{cy + 4:.1f}" font-size="11" fill="{INK}" text-anchor="end">'
+                   f'{escape(it["model"])}</text>')
+        if bulk is not None:
+            out.append(f'<circle cx="{x(bulk):.1f}" cy="{cy:.1f}" r="4" fill="{COLOUR["pass"]}"/>')
+        out.append(f'<circle cx="{x(each):.1f}" cy="{cy:.1f}" r="5" fill="{INK}"/>')
+        if inst is not None:
+            out.append(f'<line x1="{x(each):.1f}" y1="{cy:.1f}" x2="{x(inst):.1f}" y2="{cy:.1f}" stroke="{LINE}"/>')
+            out.append(f'<circle cx="{x(inst):.1f}" cy="{cy:.1f}" r="5" fill="{COLOUR["fail"]}"/>')
+    _legend(out, h - 34, [(INK, "loose, smallest break"), (COLOUR["pass"], "loose, 1000-4999"),
+                          (COLOUR["fail"], "pressed in by SendCutSend, per part")])
+    out.append(f'<text x="{PAD}" y="{h - 12}" font-size="10.5" fill="{MUTED}">Bossard read 2026-11-02, McMaster-Carr '
+               'packs read 2026-11-01 (per rivet), SendCutSend feed generated 2026-04-29. Prices change: re-read.</text>')
+    out.append("</svg>")
+    return "\n".join(out) + "\n"
+
+
+FIGURES = {"dfm-wall.svg": dfm_wall, "layer-factors.svg": layer_factors, "sheet-flange.svg": sheet_flange,
+           "sheet-hardware-prices.svg": sheet_hardware_prices}
 
 
 def main(argv: list[str]) -> int:

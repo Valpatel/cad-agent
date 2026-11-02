@@ -87,6 +87,8 @@ def _place(place: Place) -> Tuple[float, float, int]:
     if len(place) == 2:
         return float(place[0]), float(place[1]), 0
     if len(place) == 3:
+        if float(place[2]) != int(place[2]):     # plates.py turns parts in whole degrees, and so does the transform
+            raise Prusa3mfError(f"a place's angle is in whole degrees, not {place[2]!r}")
         return float(place[0]), float(place[1]), int(place[2])
     raise Prusa3mfError(f"a place is (dx, dy) or (dx, dy, angle_deg), not {place!r}")
 

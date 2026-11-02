@@ -3,16 +3,16 @@
   the log next to the G-code (`build/slicer/<part>/out/slicer.log`) and records each part's `warnings`, `errors`,
   `stability_issues` (the categories after "Detected print stability issues", such as `Long bridging extrusions`) and
   `benign_log_lines` (a count of PrusaSlicer's notes that say nothing about the print).
-  `cadagent.manufacturing.slicer_prusa.parse_log` reads a log (#246).
+  `cadagent.manufacturing.slicer_prusa.parse_log` reads a log (#246, by Jeff Patrick).
 - Per-part slicer settings: `cad.slicer.parts` may be a mapping of part name to `{overrides: {...}}`, applied on top
   of `cad.slicer.overrides` (a brim for a tall part, more perimeters for a pin-loaded link). A report row records its
-  `part_overrides` and is stale once they change (#246).
+  `part_overrides` and is stale once they change (#246, by Jeff Patrick).
 
 **Changed**
 - A PrusaSlicer slice report gives each part an `ok`: true only with exit code 0, G-code written and no error or print
   stability issue. The report's `pass` needs every part ok, and `cad-agent slice` exits 1 otherwise, so a part that
-  slices but PrusaSlicer says will print badly no longer reports as fine. Bambu Studio reports are unchanged (#246).
+  slices but PrusaSlicer says will print badly no longer reports as fine. Bambu Studio reports are unchanged (#246, by Jeff Patrick).
 
 **Projects must change**
 - PrusaSlicer projects: re-run `cad-agent slice`. A part with a stability issue or slicer error now fails it; fix the
-  geometry, or set that part's own overrides under `cad.slicer.parts` (#246).
+  geometry, or set that part's own overrides under `cad.slicer.parts` (#246, by Jeff Patrick).

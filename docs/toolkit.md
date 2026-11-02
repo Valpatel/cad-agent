@@ -452,7 +452,7 @@ flowchart TD
 | New package (domain in `docs/areas.yaml`) | Modules and packages (old path `cadagent.<name>`) |
 |---|---|
 | `cadagent.mechanical` (mechanical) | `holes`, `fasteners`, `mcmaster`, `connectors`, `markings`, `compliant/`, `motion_trace` |
-| `cadagent.manufacturing` (manufacturing) | `slicer`, `slicer_prusa`, `mesh3mf` |
+| `cadagent.manufacturing` (manufacturing) | `slicer`, `mesh3mf` |
 | `cadagent.thermal` (thermal) | `heatsink` |
 | `cadagent.simulation` (simulation) | `fea`, `cfd`, `topopt`, `explore/`, `robot`, `simviz`, `simreport` |
 | `cadagent.electrical` (electrical) | `pcb`, `pcb_routing` |

@@ -109,6 +109,7 @@ def test_open_mesh_is_refused_and_removed(tmp_path):
     ([("x", [(box(0, 0, 0, 40, 40, 1), "a", 1)], (110, 0))], "outside"),
     ([("x", [(box(0, 0, 0, 10, 10, 250), "a", 1)], (0, 0))], "tall"),
     ([("x", [(box(0, 0, 0, 1, 1, 1), "a", 1)], (0,))], "place"),
+    ([("x", [(box(0, 0, 0, 1, 1, 1), "a", 1)], (0, 0, 22.5))], "whole degrees"),
 ])
 def test_bad_input(tmp_path, objects, match):
     with pytest.raises(M.Prusa3mfError, match=match):
@@ -198,8 +199,10 @@ def slicer_dir():
     cmd = prusa_slicer()
     if cmd is None:
         pytest.skip("PrusaSlicer is not installed")
-    # the Flathub sandbox cannot read /tmp: work beside the tests
-    d = Path(tempfile.mkdtemp(prefix=".prusa3mf-", dir=Path(__file__).resolve().parent))
+    # the Flathub sandbox cannot read /tmp: work under the home folder, as tests/test_slicer_prusa.py does
+    parent = Path.home() / ".cache" / "cadagent-test"
+    parent.mkdir(parents=True, exist_ok=True)
+    d = Path(tempfile.mkdtemp(prefix="prusa3mf-", dir=parent))
     try:
         yield cmd, d
     finally:
@@ -212,9 +215,6 @@ def slice_gcode(cmd, path: Path) -> str:
                          capture_output=True, text=True, timeout=300)
     assert run.returncode == 0, run.stdout + run.stderr
     return out.read_text()
-
-
-MOVE = re.compile(r"^G1 (?=.*X(-?[\d.]+))(?=.*Y(-?[\d.]+)).*E", re.M)
 
 
 def walk(gcode: str):

@@ -4,4 +4,4 @@
   PrusaSlicer 2.9 reads from the project and not from the print config; `write_plates` packs every part at its
   quantity with the build-plates layout, grouped by tools or filament, one 3MF per plate, keeping parts clear of the
   tower. Each file is read back (triangles, watertightness, volume, tool and place of every volume) and is
-  byte-reproducible; checked by slicing with PrusaSlicer 2.9.4 (#248).
+  byte-reproducible; checked by slicing with PrusaSlicer 2.9.4 (#248, by Jeff Patrick).

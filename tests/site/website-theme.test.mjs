@@ -46,7 +46,7 @@ const PAIRS = [
   ['text-2', 'green-2', 4.5], ['text-2', 'peach', 4.5], ['faint', 'card', 4.5], ['faint', 'cream', 4.5], ['eyebrow', 'cream', 4.5],
   ['link', 'cream', 4.5], ['link', 'card', 4.5], ['teal', 'card', 4.5], ['teal', 'cream', 4.5], ['orange', 'cream', 4.5],
   ['ink', 'peach', 4.5], ['ink', 'peach-2', 4.5], ['ink', 'green', 4.5], ['ink', 'green-2', 4.5], ['ink', 'yellow', 4.5], ['ink', 'blue', 4.5],
-  ['ink', 'grey', 4.5], ['brown', 'peach', 4.5], ['brown', 'peach-2', 4.5], ['brown-2', 'peach', 3], ['sky-ink', 'sky-a', 4.5], ['sky-ink', 'sky-b', 4.5],
+  ['ink', 'grey', 4.5], ['brown', 'peach', 4.5], ['brown', 'peach-2', 4.5], ['brown', 'cream', 4.5], ['sky-ink', 'sky-a', 4.5], ['sky-ink', 'sky-b', 4.5],
   ['ink', 'sky-a', 4.5], ['cream', 'ink', 4.5], ['focus', 'cream', 3], ['focus', 'card', 3], ['line-3', 'card', 3], ['line-3', 'cream', 3],
 ];
 for (const theme of ['light', 'dark']) {

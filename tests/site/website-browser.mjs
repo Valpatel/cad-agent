@@ -418,7 +418,9 @@ try {
   const KNOWN_WIDE = new Map();
   // Headless Chrome hides scrollbars; a desktop browser with classic ones has up to 17px less, so keep that much spare.
   const SCROLLBAR = 17;
-  const wide = await browser.newPage({ viewport: { width: 1100, height: 900 } });
+  // In both themes: each block is drawn twice (#305), and the page shows the drawing for its theme.
+  for (const colorScheme of ['light', 'dark']) {
+  const wide = await browser.newPage({ viewport: { width: 1100, height: 900 }, colorScheme });
   for (const [route, sources] of diagramPages.sort()) {
     await wide.goto(base + route);
     await settled(wide);
@@ -430,14 +432,15 @@ try {
     // The drawing's own width against the room inside its view (scrollWidth is never below clientWidth, so it cannot
     // show how much spare there is).
     // A view without a drawing failed to render; the count above reports it.
-    const over = (await wide.$$eval('.cad-diagram .cad-diagram-view', views => views.filter(v => v.querySelector('svg')).map(v => {
+    const over = (await wide.$$eval('.cad-diagram .cad-diagram-view', views => views.filter(v => v.querySelector('svg') && v.getClientRects().length).map(v => {
       const cs = getComputedStyle(v), room = v.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
       return { w: Math.ceil(v.querySelector('svg').getBoundingClientRect().width), room };
     }))).filter(d => d.w > d.room - SCROLLBAR + 1);
     if (KNOWN_WIDE.has(route)) { if (!over.length) problems.push(`${route} now fits: remove it from KNOWN_WIDE`); continue; }
-    for (const d of over) problems.push(`1100px ${route}: a diagram is ${d.w}px wide; the column has ${d.room}px, less ${SCROLLBAR}px for a scrollbar (top-down, at most three boxes per row)`);
+    for (const d of over) problems.push(`1100px ${colorScheme} ${route}: a diagram is ${d.w}px wide; the column has ${d.room}px, less ${SCROLLBAR}px for a scrollbar (top-down, at most three boxes per row)`);
   }
   await wide.close();
+  }
   // Walls of text (#179): on every page at 1366 x 800, the longest stretch of content with no picture, diagram, demo
   // or render stays under WALL_LIMIT (1.5 screens). WALLS is the backlog, each page with the issue that breaks it up;
   // it only shrinks: a page not on it must pass, and one on it that measures under WALL_CLEARED must leave it.
@@ -991,26 +994,31 @@ async function drawnDiagramProblems() {
  * behind it (4.5:1, 3:1 for large text), the page shows only the diagrams drawn for its theme, and nothing scrolls
  * sideways. Text on pictures or gradients, inside the kit's own demos and 3D viewers and in the drawings is skipped
  * here: the demos and diagrams have their own checks above. */
-const THEME_ROUTES = ['/', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', '/research/landscape', '/lessons/mechanical/design-rules', '/missing-page'];
 async function themeProblems() {
   const out = [];
+  const ROUTES = ['/', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', '/research/landscape', '/lessons/mechanical/design-rules', '/missing-page'];
   // Every visible text run's contrast against the colour behind it: the first opaque background up its ancestors,
   // with the translucent ones on the way composited over it. null where a picture or gradient is behind.
   const lowContrast = page => page.evaluate(() => {
     const rgba = c => { const m = c.match(/[\d.]+/g)?.map(Number) ?? [0, 0, 0, 0]; return [m[0], m[1], m[2], m[3] ?? 1]; };
     const lum = ([r, g, b]) => [r, g, b].map(v => v / 255).map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
     const ratio = (a, b) => { const [h, l] = [lum(a), lum(b)].sort((x, y) => y - x); return (h + 0.05) / (l + 0.05); };
+    // What can be behind: a colour, or each stop of a CSS gradient (text must read on all of them); null for a picture.
+    const over = ([r, g, b, a], under) => [r, g, b].map((v, i) => v * a + under[i] * (1 - a));
     const behind = el => {
       const layers = [];
       for (let e = el; e; e = e.parentElement) {
-        const cs = getComputedStyle(e);
-        if (cs.backgroundImage !== 'none') return null;
-        const c = rgba(cs.backgroundColor);
-        if (c[3] > 0) { layers.push(c); if (c[3] >= 1) break; }
+        const cs = getComputedStyle(e), c = rgba(cs.backgroundColor);
+        if (/url\(/.test(cs.backgroundImage)) return null;
+        // a gradient sized to nothing (the catalogue rows' hover sweep, until hovered) is not behind anything yet
+        const stops = cs.backgroundImage === 'none' || /^0(?:%|px)/.test(cs.backgroundSize) ? [] : (cs.backgroundImage.match(/rgba?\([^)]*\)/g) || []).map(rgba);
+        if (stops.length) layers.push(stops);
+        if (c[3] > 0) layers.push([c]);
+        if (c[3] >= 1 || (stops.length && stops.every(x => x[3] >= 1))) break;
       }
-      let out = [255, 255, 255];
-      for (const [r, g, b, a] of layers.reverse()) out = [r, g, b].map((v, i) => v * a + out[i] * (1 - a));
-      return out;
+      let under = [[255, 255, 255]];
+      for (const layer of layers.reverse()) under = layer.flatMap(c => under.map(u => over(c, u)));
+      return under;
     };
     const SKIP = 'svg, img, video, canvas, cad-model, cad-cantilever, cad-fourbar, cad-fan-curve, cad-torsion-snap, cad-printed-boss, .cad-diagram-view, .visually-hidden, .sr, .glyph-sprite, [hidden]';
     const low = [], walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -1019,11 +1027,10 @@ async function themeProblems() {
       if (!n.data.trim() || el.closest(SKIP)) continue;
       const cs = getComputedStyle(el), r = el.getBoundingClientRect();
       if (!r.width || !r.height || cs.visibility === 'hidden' || +cs.opacity === 0 || !el.checkVisibility?.({ opacityProperty: true, visibilityProperty: true })) continue;
-      const bg = behind(el);
-      if (!bg) continue;
-      const fg = rgba(cs.color), color = [0, 1, 2].map(i => fg[i] * fg[3] + bg[i] * (1 - fg[3]));
-      const size = parseFloat(cs.fontSize), large = size >= 24 || (size >= 18.66 && +cs.fontWeight >= 700);
-      const c = ratio(color, bg), need = large ? 3 : 4.5;
+      const bgs = behind(el);
+      if (!bgs) continue;
+      const fg = rgba(cs.color), c = Math.min(...bgs.map(bg => ratio(over(fg, bg), bg)));
+      const size = parseFloat(cs.fontSize), large = size >= 24 || (size >= 18.66 && +cs.fontWeight >= 700), need = large ? 3 : 4.5;
       if (c < need) low.push(`${el.localName}${el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : ''} "${n.data.trim().slice(0, 30)}" ${c.toFixed(2)}:1`);
     }
     return [...new Set(low)];
@@ -1042,7 +1049,7 @@ async function themeProblems() {
       const page = await context.newPage();
       const errors = [];
       page.on('pageerror', e => errors.push(e.message));
-      for (const route of THEME_ROUTES) for (const how of ['system', 'button']) {
+      for (const route of ROUTES) for (const how of ['system', 'button']) {
         const theme = how === 'system' ? system : system === 'dark' ? 'light' : 'dark', where = `${width}px ${route}, ${theme} (${how}, system ${system})`;
         await page.goto(base + route, { waitUntil: 'load' });
         await settled(page);

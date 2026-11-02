@@ -200,20 +200,7 @@ plates Bambu Studio holds.
 A build that makes every part on every run spends most of its time on parts nothing touched: a 46-part machine took
 about 13 minutes per run when most edits changed one or two parts. `PartCache` stores each built part as a BREP file
 under a hash of the files and values it was built from, and loads it back while that hash is unchanged, so a run
-rebuilds only the parts whose sources changed, and the clearance, render and slice steps can share one build:
-
-```python
-from cadagent.geometry.cache import PartCache
-
-cache = PartCache(".cadagent-cache/parts",                        # the default; any folder works
-                  sources=["cad/parameters.json", "cad/common.py"],   # files or folders every part reads
-                  key_extra={"variant": "long-reach"},                # other values the build depends on
-                  max_bytes=2_000_000_000)                            # optional size cap
-boom = cache.get_or_build("boom", build_boom, deps=["cad/boom.py"])  # builder: () -> cadquery Shape or Workplane
-parts = cache.get_all({"boom": (build_boom, ["cad/boom.py"]),        # name -> builder, or (builder, deps)
-                       "pin": build_pin})
-cache.clear()                                                        # forget every stored part
-```
+rebuilds only the parts whose sources changed, and the clearance, render and slice steps can share one build.
 
 ```mermaid
 flowchart TD
@@ -229,6 +216,27 @@ flowchart TD
     class B,L out
 ```
 
+```python
+from cadagent.geometry.cache import PartCache
+
+cache = PartCache(".cadagent-cache/parts",                        # the default; any folder works
+                  sources=["cad/parameters.json", "cad/common.py"],   # files or folders every part reads
+                  key_extra={"variant": "long-reach"},                # other values the build depends on
+                  max_bytes=2_000_000_000)                            # optional size cap
+boom = cache.get_or_build("boom", build_boom, deps=["cad/boom.py"])  # builder: () -> cadquery Shape or Workplane
+parts = cache.get_all({"boom": (build_boom, ["cad/boom.py"]),        # name -> builder, or (builder, deps)
+                       "pin": build_pin})
+cache.clear()                                                        # forget every stored part
+```
+
+- **Where it lives.** `root` defaults to `.cadagent-cache/parts`, beside the gates' pair cache
+  (`.cadagent-cache/gates`), and out of `exports/`, which projects commit. Wherever it is, the root holds a
+  `.gitignore` that ignores everything in it, so the cache is never committed, and a `CACHEDIR.TAG`, so
+  `cad-agent package` never zips it, even from a glob that reaches into it. Deleting it is always safe.
+
+<details>
+<summary>Layout, checks on load, parallel runs and the size cap</summary>
+
 - **Layout.** `<root>/<key>/<name>.brep` and `<name>.json`, where `<key>` is 16 hex digits. Parts without `deps`
   share one folder; a part's `deps` (files or folders) go into its own key, so editing `cad/boom.py` rebuilds the
   boom only, and editing a `sources` file rebuilds everything. A missing source or dependency is an error, not
@@ -243,10 +251,8 @@ flowchart TD
 - **Size cap.** With `max_bytes`, after each part is stored the least recently used key folders (by the time a run
   last loaded or wrote one) are removed until the cache fits; folders the current run used are kept. `prune()` and
   `size()` do the same by hand.
-- **Where it lives.** `root` defaults to `.cadagent-cache/parts`, beside the gates' pair cache
-  (`.cadagent-cache/gates`), and out of `exports/`, which projects commit. Wherever it is, the root holds a
-  `.gitignore` that ignores everything in it, so the cache is never committed, and a `CACHEDIR.TAG`, so
-  `cad-agent package` never zips it, even from a glob that reaches into it. Deleting it is always safe.
+
+</details>
 
 Limits: the key covers only what it is given. A builder that reads a file or setting not in `sources`, `deps` or
 `key_extra` is not rebuilt when that changes: list it, or `clear()`. The checks catch a damaged file, not a stale one, and not a planted one: the record is not signed, so anyone who

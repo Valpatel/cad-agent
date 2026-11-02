@@ -1187,7 +1187,31 @@ Configure under
 ### Overhangs and bridges (`cad-agent overhangs`)
 
 A slicer names a stability problem ("Long bridging extrusions", "Floating bridge anchors") but not where it is. Two
-screens point at the feature.
+screens point at the feature: `cadagent.geometry.overhang_regions` (and `cad-agent overhangs`, which writes
+`exports/overhang-screen.json`) on the part's STL, and `cadagent.manufacturing.gcode.bridge_report` on the sliced
+G-code.
+
+```mermaid
+flowchart TD
+    STL["part STL<br/>in print orientation"] --> OR["overhang_regions<br/>cad-agent overhangs"]
+    GC["sliced G-code<br/>or .gcode.3mf"] --> BR["bridge_report"]
+    OR --> W["where it is: area, height,<br/>centre, flattest slope"]
+    BR --> W2["the longest bridge moves:<br/>length, z, start and end"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class OR,BR here
+    class STL,GC near
+    class W,W2 out
+```
+
+Limits: both are screens, not a slicer or a print. A bridge anchored on both sides prints fine and shows up in both;
+a listed region may print well with the slicer's overhang settings and cooling, and an unlisted one can still sag.
+The G-code report sees only what the slicer labelled, and a file with no labels lists nothing (`"labelled": false`).
+Check the slicer preview, and a test print, before changing geometry.
+
+<details>
+<summary>Overhang regions: the angle, the regions and the JSON</summary>
 
 **Overhang regions** (`cadagent.geometry.overhang_regions(mesh_or_path, limit_deg=45, min_area=4)`, `cad-agent
 overhangs`). The angle is a face's slope from horizontal, as PrusaSlicer's support threshold and Bambu Studio's
@@ -1202,6 +1226,11 @@ slope). `cad-agent overhangs` writes `exports/overhang-screen.json` (`version`, 
 or unreadable STL); `cad-agent overhangs PART` redoes one part and keeps the other rows when the settings match.
 Needs trimesh and scipy (`sim` extra).
 
+</details>
+
+<details>
+<summary>Bridges in the G-code: the labels, merging and arcs</summary>
+
 **Bridges in the G-code** (`cadagent.manufacturing.gcode.bridge_report(path, n=10)`). Lists the `n` longest bridge
 and overhang-perimeter extrusions the slicer labelled (PrusaSlicer `;TYPE:Bridge infill`, `;TYPE:Overhang
 perimeter`; Bambu Studio and OrcaSlicer `; FEATURE: Bridge`, `Internal Bridge`, `Overhang wall`; `features=` takes
@@ -1212,10 +1241,7 @@ Bambu Studio `.gcode.3mf`. Pure Python. Many long bridges are internal (the firs
 which can run the part's full width): slicer settings fix those (PrusaSlicer `solid_infill_below_area`, for one),
 not geometry. A long overhang perimeter or a bridge under a feature's underside is the geometry's.
 
-Limits: both are screens, not a slicer or a print. A bridge anchored on both sides prints fine and shows up in both;
-a listed region may print well with the slicer's overhang settings and cooling, and an unlisted one can still sag.
-The G-code report sees only what the slicer labelled, and a file with no labels lists nothing (`"labelled": false`).
-Check the slicer preview, and a test print, before changing geometry.
+</details>
 
 ### The print release (`cad-agent release`)
 

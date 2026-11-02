@@ -7,6 +7,7 @@ flowchart TD
     D["design-rules.md<br/>the shape of each part"] --> F["fasteners-and-assembly-access.md<br/>how the parts go together"]
     D --> E["enclosure-features.md<br/>what the enclosure carries"]
     D --> P["printing-without-supports.md<br/>no supports, slicer warnings"]
+    F ~~~ P
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

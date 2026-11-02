@@ -92,6 +92,29 @@ my-cad-project/
    header and link ids fixed as for a part, each node added without a name called `<parent>.<k>` instead of a random
    uuid, and the colour records in one order. Sub-shape names and colours (`Assembly.addSubshape`) are refused.
    See [reproducible outputs](#reproducible-outputs) for the other files.
+
+   Build the parts with `robust_union` and `robust_cut` where booleans meet nearly coincident faces (#249).
+   OpenCASCADE can fail there without raising: a multi-argument fuse of nearly coincident solids can return an
+   empty compound that `isValid()` passes, and a cut can raise `Null TopoDS_Shape object`. Both helpers check
+   every boolean they run: not null, valid, at least one solid, and a volume within the bounds the inputs set.
+   `robust_union(*shapes)` tries one multi-argument fuse, then fuses the shapes one at a time.
+   `robust_cut(base, *tools)` tries one multi-tool cut, then cuts the tools one at a time, retrying a failing
+   tool moved by 0.01 mm along each axis and the diagonal (`CUT_NUDGES_MM`, or `nudges=`). If nothing passes
+   the check, they raise `GeometryError`; they never return a bad shape. Pass `report=[]` to get one dict per
+   fallback and per nudge (each is also logged as a warning on `cadagent.geometry`); a nudge moves that cut by
+   up to 0.01 mm, so check it does not touch a fit that matters. An invalid input is refused, not fused.
+   ```python
+   from cadagent.geometry import robust_union, robust_cut
+   notes = []
+   boom = robust_cut(robust_union(*plates), *pin_holes, report=notes)
+   # notes, after a fallback: [{"op": "cut", "fallback": "one_at_a_time", ...},
+   #                           {"op": "cut", "tool": 2, "nudge_mm": [0.01, 0.0, 0.0], "reason": ...}]
+   ```
+   `export_print_stl` welds the tessellation's open-edge vertices that lie within 1 µm of each other
+   (`weld_mm=`, default `WELD_MM`; `weld_open_vertices` on a trimesh) before its watertight check: OCCT can
+   split a vertex by less than that where faces meet tangentially, so a valid solid's STL came out open. Its
+   report adds `vertices_welded`, `mesh_volume_before_weld_mm3` and `mesh_volume_mm3`. A gap wider than 1 µm
+   still fails the check. The checks bound shape and volume; they do not prove the boolean is the one you meant.
 3. **Each check is a script** in `tools/` that writes `exports/<name>.json` with
    a top-level boolean `"pass"`. A check that cannot compute its answer writes
    `"pass": false` with the reason; it never omits the file or the key.
@@ -443,7 +466,7 @@ its new path instead (`monkeypatch.setitem(sys.modules, "cadagent.publish.report
 ```python
 from cadagent.project import load_project    # CadProject, Step, Check, CadConfigError
 from cadagent.geometry import (solid_report, export_print_stl, export_step, step_timestamp, pairwise_intersections,
-                               min_gap, downward_area, within_bed)
+                               min_gap, downward_area, within_bed, robust_union, robust_cut, weld_open_vertices)
 from cadagent.manufacturing.mesh3mf import write_3mf, read_3mf, verify_3mf, export_parts_3mf, is_edge_manifold
 from cadagent.publish.render import Renderer
 from cadagent.publish.report import collect, write_report, downloads_snippet, bambu_studio_url

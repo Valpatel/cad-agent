@@ -7,6 +7,7 @@ printed part fits, prints without support, or survives load.
 from __future__ import annotations
 
 import datetime
+import logging
 import os
 import re
 from pathlib import Path
@@ -44,10 +45,226 @@ def solid_report(shape: Any) -> Dict[str, Any]:
         "size_mm": [round(v, 3) for v in (bb.xlen, bb.ylen, bb.zlen)],
     }
 
+# The tool offsets robust_cut tries, in order, when a tool's cut fails or gives a bad shape: 0.01 mm along each axis,
+# both ways, then along the diagonal. 10 µm is well under any printer's resolution, but it does move the cut: each
+# nudge used is reported.
+CUT_NUDGES_MM: Tuple[Tuple[float, float, float], ...] = (
+    (0.01, 0.0, 0.0), (-0.01, 0.0, 0.0), (0.0, 0.01, 0.0), (0.0, -0.01, 0.0), (0.0, 0.0, 0.01), (0.0, 0.0, -0.01),
+    (0.01, 0.01, 0.01))
+# Relative slack on robust_union / robust_cut's volume bounds: OCCT's volumes of the same swept solid differ by ~1e-5.
+_VOLUME_SLACK = 1e-4
+_log = logging.getLogger(__name__)
+
+def _shape(shape: Any, what: str) -> Any:
+    """A cadquery Shape from a Shape or a one-object Workplane."""
+    vals = getattr(shape, "vals", None)
+    if callable(vals):
+        objs = list(vals())
+        if len(objs) != 1:
+            raise GeometryError(f"{what}: a Workplane with {len(objs)} objects; pass one shape")
+        shape = objs[0]
+    return shape
+
+def _volume(shape: Any) -> float:
+    return float(shape.Volume())
+
+def _boolean_problem(result: Any, low: float, high: float) -> Optional[str]:
+    """Why ``result`` of a boolean is not usable, or None: null, invalid, no solids, or a volume outside
+    ``[low, high]`` (mm^3, with ``_VOLUME_SLACK``). The volume bound catches what ``isValid`` does not: OCCT can
+    return an empty, valid compound for a multi-argument fuse of nearly coincident solids."""
+    try:
+        if result is None or _wrapped(result).IsNull():
+            return "null shape"
+        if not result.isValid():
+            return "invalid shape"
+        if low > 0 and not result.Solids():
+            return "no solids"
+        volume = _volume(result)
+    except Exception as exc:                              # noqa: BLE001  (OCCT raises several types)
+        return f"check raised {type(exc).__name__}: {exc}"
+    slack = _VOLUME_SLACK * max(abs(high), 1.0)
+    if not low - slack <= volume <= high + slack:
+        return f"volume {volume:.6g} mm^3 outside the expected [{low:.6g}, {high:.6g}]"
+    return None
+
+def _attempt(op: Any, low: float, high: float, clean: bool) -> Tuple[Any, Optional[str]]:
+    """Run the boolean ``op()``, clean the result if asked (keeping the uncleaned one when cleaning breaks it) and
+    check it. Returns (result, None) or (None, why it failed)."""
+    try:
+        raw = op()
+    except Exception as exc:                              # noqa: BLE001
+        return None, f"raised {type(exc).__name__}: {exc}"
+    candidates = []
+    if clean:
+        try:
+            candidates.append(raw.clean())
+        except Exception:                                 # noqa: BLE001
+            pass
+    candidates.append(raw)
+    why = None
+    for candidate in candidates:
+        why = _boolean_problem(candidate, low, high)
+        if why is None:
+            return candidate, None
+    return None, why
+
+def _check_inputs(shapes: Sequence[Any], names: Sequence[str]) -> None:
+    for shape, name in zip(shapes, names):
+        why = _boolean_problem(shape, 0.0, float("inf"))
+        if why is not None:
+            raise GeometryError(f"{name} is not a usable shape ({why}); fix it before the boolean")
+
+def _note(report: Optional[List[Dict[str, Any]]], entry: Dict[str, Any]) -> None:
+    _log.warning("%s", entry)
+    if report is not None:
+        report.append(entry)
+
+def robust_union(*shapes: Any, clean: bool = True, report: Optional[List[Dict[str, Any]]] = None) -> Any:
+    """Fuse cadquery ``shapes`` into one shape that is checked, or raise ``GeometryError``.
+
+    First one multi-argument fuse (fast). If it raises or its result fails the check, the shapes are fused one at a
+    time, each step checked. The check, after every boolean: not null, ``isValid()``, at least one solid, and a
+    volume between the largest input's and the sum of the inputs' (OCCT can return an empty but *valid* compound for
+    a multi-argument fuse of nearly coincident solids, which ``isValid`` alone passes). ``None`` arguments are
+    skipped, and a one-object Workplane counts as its shape. Every input must pass the same check first, since an
+    invalid input fuses or cuts silently wrong.
+
+    ``report``: a list that gets one dict per fallback taken (``{"op": "union", "fallback": "sequential",
+    "reason": ...}``); each is also logged as a warning on the ``cadagent.geometry`` logger. ``clean``: run
+    ``Shape.clean()`` on each result (a result that cleaning breaks is kept uncleaned).
+
+    Limits: the check proves the result is a valid solid of plausible volume, not that it is the union you meant.
+    """
+    require("cadquery", "robust_union")
+    parts = [_shape(s, f"union argument {i}") for i, s in enumerate(shapes) if s is not None]
+    if not parts:
+        raise GeometryError("robust_union: no shapes")
+    _check_inputs(parts, [f"union argument {i}" for i in range(len(parts))])
+    if len(parts) == 1:
+        return parts[0]
+    volumes = [_volume(p) for p in parts]
+    first, rest = parts[0], parts[1:]
+    result, why = _attempt(lambda: first.fuse(*rest), max(volumes), sum(volumes), clean)
+    if result is not None:
+        return result
+    _note(report, {"op": "union", "fallback": "sequential", "shapes": len(parts), "reason": why})
+    out, out_low, out_high = first, volumes[0], volumes[0]
+    for i, (part, volume) in enumerate(zip(rest, volumes[1:]), 1):
+        out_low, out_high = max(out_low, volume), out_high + volume
+        out, why = _attempt(lambda: out.fuse(part), out_low, out_high, clean)  # noqa: B023  (called at once)
+        if out is None:
+            raise GeometryError(f"robust_union: fusing shape {i} of {len(parts)} one at a time failed ({why})")
+    return out
+
+def robust_cut(base: Any, *tools: Any, clean: bool = True, nudges: Sequence[Sequence[float]] = CUT_NUDGES_MM,
+               report: Optional[List[Dict[str, Any]]] = None) -> Any:
+    """Cut cadquery ``tools`` from ``base`` and return a checked shape, or raise ``GeometryError``.
+
+    First one multi-tool cut. If it raises or its result fails the check, the tools are cut one at a time; a tool
+    whose cut still fails is retried moved by each offset in ``nudges`` (mm, default ``CUT_NUDGES_MM``: 0.01 mm
+    along each axis, then the diagonal) until one passes. If none does, ``GeometryError``. The check, after every
+    boolean: not null, ``isValid()``, at least one solid, and a volume between ``base``'s minus the tools' and
+    ``base``'s own. ``None`` tools are skipped, and inputs are checked first as in ``robust_union``.
+
+    ``report``: a list that gets one dict per fallback (``{"op": "cut", "fallback": "one_at_a_time", ...}``) and
+    per nudge used (``{"op": "cut", "tool": i, "nudge_mm": [dx, dy, dz], "reason": ...}``), each also logged as a
+    warning on the ``cadagent.geometry`` logger. A nudge moves that tool's cut by up to 0.01 mm: check it matters
+    nowhere (a press fit, a sealing face) before shipping the part.
+
+    Limits: a valid result can still miss a cut a tool does not reach; the check bounds volume, not intent.
+    """
+    require("cadquery", "robust_cut")
+    base = _shape(base, "cut base")
+    cutters = [_shape(t, f"cut tool {i}") for i, t in enumerate(tools) if t is not None]
+    _check_inputs([base] + cutters, ["cut base"] + [f"cut tool {i}" for i in range(len(cutters))])
+    if not cutters:
+        return base
+    base_volume = _volume(base)
+    volumes = [_volume(t) for t in cutters]
+    result, why = _attempt(lambda: base.cut(*cutters), base_volume - sum(volumes), base_volume, clean)
+    if result is not None:
+        return result
+    _note(report, {"op": "cut", "fallback": "one_at_a_time", "tools": len(cutters), "reason": why})
+    out = base
+    for i, (tool, volume) in enumerate(zip(cutters, volumes)):
+        high = _volume(out)
+        attempts = [(0.0, 0.0, 0.0)] + [tuple(float(c) for c in d) for d in nudges]
+        reasons = []
+        for offset in attempts:
+            moved = tool.translate(_vector(offset)) if any(offset) else tool
+            cut, why = _attempt(lambda: out.cut(moved), high - volume, high, clean)  # noqa: B023
+            if cut is not None:
+                if any(offset):
+                    _note(report, {"op": "cut", "tool": i, "nudge_mm": list(offset), "reason": reasons[0]})
+                out = cut
+                break
+            reasons.append(why)
+        else:
+            raise GeometryError(f"robust_cut: tool {i} of {len(cutters)} failed unmoved and with every nudge "
+                                f"({len(attempts) - 1}); first failure: {reasons[0]}")
+    return out
+
+def _vector(offset: Sequence[float]) -> Any:
+    return require("cadquery", "boolean nudges").Vector(*offset)
+
 def flatten_to_bed(shape: Any) -> Any:
     """Translate so the bounding box minimum sits at the origin (z=0 is the bed)."""
     bb = shape.BoundingBox()
     return shape.translate((-bb.xmin, -bb.ymin, -bb.zmin))
+
+# The distance under which export_print_stl welds open-edge vertices of the tessellation: 1 µm. OCCT can split a
+# vertex by less than that where one face meets another tangentially, which leaves a valid solid's STL open.
+WELD_MM = 0.001
+
+def weld_open_vertices(mesh: Any, tolerance_mm: float = WELD_MM) -> int:
+    """Merge the vertices of ``mesh``'s open edges (edges of one face) that lie within ``tolerance_mm`` of each
+    other, in place, and return how many vertices were merged away.
+
+    Only open-edge vertices are candidates, so a closed part of the mesh is never touched, and two vertices merge
+    when they are within the tolerance (chains merge transitively), not when they round to the same grid cell.
+    Each group keeps its lowest-index vertex's position. Faces that collapse are left for the caller's
+    degenerate-face pass. A gap wider than the tolerance stays open: welding does not fill holes.
+    """
+    np = require("numpy", "vertex weld")
+    trimesh = require("trimesh", "vertex weld")
+    if tolerance_mm <= 0 or len(mesh.faces) == 0:
+        return 0
+    edges = mesh.edges_sorted
+    open_edges = edges[trimesh.grouping.group_rows(edges, require_count=1)]
+    candidates = np.unique(open_edges)
+    if len(candidates) < 2:
+        return 0
+    points = np.asarray(mesh.vertices)[candidates]
+    parent = {int(v): int(v) for v in candidates}
+
+    def root(v: int) -> int:
+        while parent[v] != v:
+            parent[v] = parent[parent[v]]
+            v = parent[v]
+        return v
+
+    cells: Dict[Tuple[int, int, int], List[int]] = {}
+    for k, cell in enumerate(map(tuple, np.floor(points / tolerance_mm).astype(np.int64))):
+        cells.setdefault(cell, []).append(k)
+    near = [(dx, dy, dz) for dx in (-1, 0, 1) for dy in (-1, 0, 1) for dz in (-1, 0, 1)]
+    for (cx, cy, cz), members in cells.items():
+        for dx, dy, dz in near:
+            for j in cells.get((cx + dx, cy + dy, cz + dz), ()):
+                for i in members:
+                    if i < j and float(np.linalg.norm(points[i] - points[j])) <= tolerance_mm:
+                        a, b = root(int(candidates[i])), root(int(candidates[j]))
+                        if a != b:
+                            parent[max(a, b)] = min(a, b)
+    remap = np.arange(len(mesh.vertices))
+    merged = 0
+    for v in parent:
+        r = root(v)
+        if r != v:
+            remap[v] = r
+            merged += 1
+    if merged:
+        mesh.faces = remap[np.asarray(mesh.faces)]
+    return merged
 
 def export_print_stl(
     shape: Any,
@@ -55,12 +272,20 @@ def export_print_stl(
     rotation: Optional[Rotation] = None,
     tolerance: float = 0.05,
     angular: float = 0.12,
+    weld_mm: float = WELD_MM,
 ) -> Dict[str, Any]:
     """Export ``shape`` as an STL in print orientation and report on the mesh.
 
     ``rotation`` is ``(axis, degrees)`` about the origin, applied before the part
-    is flattened onto z=0. Degenerate tessellation faces are removed and the STL
-    rewritten. Raises ``GeometryError`` if the resulting mesh is not watertight.
+    is flattened onto z=0. Open-edge vertices within ``weld_mm`` (default 1 µm,
+    ``WELD_MM``; 0 turns it off) are welded (``weld_open_vertices``), degenerate
+    faces (from the tessellation or the weld) are removed, and the STL is
+    rewritten if either changed it. Raises ``GeometryError`` if the resulting
+    mesh is not watertight: a real hole, wider than ``weld_mm``, still fails.
+
+    The report adds ``vertices_welded`` and the mesh volume before and after the
+    weld (``mesh_volume_before_weld_mm3``, ``mesh_volume_mm3``), so a weld that
+    changed more than a sliver shows.
     """
     cq = require("cadquery", "STL export")
     trimesh = require("trimesh", "STL watertight check")
@@ -72,22 +297,31 @@ def export_print_stl(
     print_shape = flatten_to_bed(print_shape)
     cq.exporters.export(print_shape, str(path), tolerance=tolerance, angularTolerance=angular)
     mesh = trimesh.load_mesh(path)
+    volume_before = float(mesh.volume)
+    welded = weld_open_vertices(mesh, weld_mm)
     keep = mesh.nondegenerate_faces()
     removed = int((~keep).sum())
     if removed:
         mesh.update_faces(keep)
+    if removed or welded:
         mesh.remove_unreferenced_vertices()
         mesh.export(path)
     report = {
         "degenerate_tessellation_faces_removed": removed,
+        "vertices_welded": welded,
         "cad_valid": bool(shape.isValid()),
         "solid_count": len(shape.Solids()),
         "watertight": bool(mesh.is_watertight),
         "print_bounds_mm": [round(float(v), 3) for v in mesh.extents],
         "volume_cm3": round(shape.Volume() / 1000.0, 3),
+        "mesh_volume_before_weld_mm3": round(volume_before, 3),
+        "mesh_volume_mm3": round(float(mesh.volume), 3),
     }
     if not report["watertight"]:
-        raise GeometryError(f"non-watertight STL: {path}")
+        edges = mesh.edges_sorted
+        open_edges = len(trimesh.grouping.group_rows(edges, require_count=1))
+        raise GeometryError(f"non-watertight STL: {path} ({open_edges} open edges after welding "
+                            f"{welded} vertices within {weld_mm} mm)")
     return report
 
 def step_timestamp() -> str:

@@ -14,6 +14,10 @@ def test_geometry_without_cadquery(monkeypatch, tmp_path):
     monkeypatch.setitem(sys.modules, "cadquery", None)
     with pytest.raises(MissingDependency, match="cadquery"):
         geometry.export_print_stl(object(), tmp_path / "x.stl")
+    with pytest.raises(MissingDependency, match="cadquery"):
+        geometry.robust_union(object(), object())
+    with pytest.raises(MissingDependency, match="cadquery"):
+        geometry.robust_cut(object(), object())
 
 def test_min_gap_without_ocp(monkeypatch):
     from cadagent import geometry

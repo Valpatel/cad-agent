@@ -46,7 +46,7 @@ from __future__ import annotations
 import ast
 import math
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
@@ -365,6 +365,7 @@ class Profile:
     sources: Mapping[str, Source]
     materials: Mapping[str, Any] = field(default_factory=dict)
     formulas: Mapping[str, Mapping[str, Any]] = field(default_factory=dict)
+    shops: Tuple[str, ...] = ()          # the ids of the data file's ``shops``, so a misspelt shop is refused
 
     def rule(self, rule_id: str) -> Rule:
         for r in self.rules:
@@ -385,7 +386,10 @@ class Profile:
 
     def rules_for(self, feature: Optional[str] = None, compare: Optional[str] = None,
                   units: Optional[str] = None, shop: Optional[str] = None) -> Tuple[Rule, ...]:
-        """The matching rules: the generic ones, plus one shop's own with ``shop="<id>"`` (``"*"``: every shop's)."""
+        """The matching rules: the generic ones, plus one shop's own with ``shop="<id>"`` (``"*"``: every shop's).
+        A shop the data file does not list raises ProfileDataError, so a misspelt id is not read as "no shop rules"."""
+        if shop is not None and shop != "*" and shop not in self.shops:
+            raise ProfileDataError(f"no shop {shop!r}; the data file lists {', '.join(self.shops) or 'none'}")
         return tuple(r for r in self.rules if (feature is None or r.feature == feature)
                      and (compare is None or r.compare == compare) and (units is None or r.units == units)
                      and (not r.shop or shop == "*" or r.shop == shop))
@@ -584,7 +588,9 @@ def _load(path: Path, mtime: float, registry_mtime: Optional[float]) -> Profiles
         cited |= {f["source"] for f in mine_formulas.values()}
         profiles[process] = Profile(process, title, mine, {k: sources[k] for k in cited if k in sources},
                                     materials.get(process, {}), mine_formulas)
-    return Profiles(path, str(data.get("updated", "")), profiles, sources, _shops(data, rules))
+    shops = _shops(data, rules)
+    profiles = {k: replace(v, shops=tuple(shops)) for k, v in profiles.items()}
+    return Profiles(path, str(data.get("updated", "")), profiles, sources, shops)
 
 
 def load(path: Any = None) -> Profiles:

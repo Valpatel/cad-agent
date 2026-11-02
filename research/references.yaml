@@ -2865,6 +2865,7 @@ sources:
       - research/process-profiles.yaml
       - research/process-profiles.md
       - research/sheet-metal-joining.md
+      - research/sheet-metal.md
     verified: >-
       2026-11-01: opened the 20-page PDF (© 2025, created 2025-11-14) through pdftotext. Read HB-4 (the sheet
       softer than the fastener, about 20 points of Rockwell B), HB-5 (general push-out and torque-out for -1
@@ -2883,7 +2884,10 @@ sources:
     access: free
     terms: cited by part number and page; values not tabulated wholesale; never copied
     areas: [sheet-metal, pem-hardware, fasteners]
-    used_for: [research/sheet-metal-guides.md, research/sheet-metal-joining.md]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/sheet-metal-joining.md
+      - research/sheet-metal.md
     verified: >-
       2026-11-01: opened the PDF (© 2026, back page dated 10/13/26), text and the table pages rendered. Read
       CL-4 and CL-5 (S, SS, CLS, CLSS, SP dimensions by shank code: minimum sheet, hole +0.08 mm / +0.003 in,
@@ -3197,7 +3201,7 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [sheet-metal, tolerances]
-    used_for: [research/sheet-metal-guides.md]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal.md]
     verified: >-
       2026-11-01: opened the PDF (© 2023). Read the hole (±0.005 in) and hardware hole (+0.003/-0 in)
       tolerances, the one-surface table (feature to feature ±0.005 in, to hardware ±0.010 in, hardware to

@@ -370,3 +370,16 @@ def test_the_hero_paints_almost_every_overlapping_cell_in_order(tool):
     p = scene["painter"]
     # beyond what interlocking parts force, at most 1 % of the overlapping cells are painted in the wrong order
     assert p["overlap_cells"] > 0 and p["misordered_cells"] - p["unavoidable_cells"] <= 0.01 * p["overlap_cells"], p
+
+
+def test_the_hero_is_the_first_thing_in_the_readme():
+    # The animation opens the README, above the title and the copy-to-your-agent prompt, so a later
+    # section can't push it down the page again.
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    hero = readme.find('<img src="docs/img/hero/gyropup-leg.svg"')
+    assert 0 <= hero < readme.find("# cad-agent") < readme.find("## ")
+    assert not readme[:hero].strip("\n").replace('<div align="center">', "").strip()
+    # GitHub only renders Markdown inside the centring div when blank lines surround it; without them the title
+    # shows as a literal "# cad-agent" and the badges as raw links.
+    assert "\n\n# cad-agent\n\n" in readme
+    assert re.search(r"\n\n\[!\[CI\]", readme)

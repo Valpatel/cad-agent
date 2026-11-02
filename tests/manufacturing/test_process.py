@@ -196,8 +196,12 @@ def test_shop_rules_load_only_when_the_shop_is_asked_for():
     assert [l.rule for l in generic] == ["sm-clinch-to-bend-pem"]
     shop = sheet.limits(compare="sm-clinch-to-bend", shop="sendcutsend", E=6.35, BA=2.45)
     got = {l.rule: l.min for l in shop}
-    # SendCutSend: bend centre to hole centre >= BA/2 + N; PEM: hole centre >= C/L-to-edge from the bend's outside
-    assert got == {"sm-clinch-to-bend-pem": pytest.approx(6.35), "sm-clinch-to-bend-sendcutsend": pytest.approx(7.575)}
+    # Both on the bend centre line: SendCutSend's BA/2 + N, and PEM's C/L-to-edge from the bend's outside (+ BA/2)
+    assert got == {"sm-clinch-to-bend-pem": pytest.approx(7.575), "sm-clinch-to-bend-sendcutsend": pytest.approx(7.575)}
+    with pytest.raises(pp.ProfileDataError, match="no shop 'sendcutsnd'"):
+        sheet.limits(compare="sm-clinch-to-bend", shop="sendcutsnd", E=6.35, BA=2.45)
+    with pytest.raises(pp.ProfileDataError, match="no shop"):
+        sheet.rules_for(shop="sendcutsnd")
     assert {r.id for r in sheet.rules_for(compare="sm-hole-min")} == {"sm-hole-min-protolabs", "sm-hole-min-davis"}
     assert "sm-hole-min-laser-sendcutsend" in {r.id for r in sheet.rules_for(compare="sm-hole-min", shop="*")}
 

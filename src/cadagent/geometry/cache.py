@@ -57,31 +57,47 @@ KEY_LENGTH = 16
 CACHE_TAG = "CACHEDIR.TAG"
 DEFAULT_ROOT = Path(".cadagent-cache") / "parts"
 GITIGNORE_TEXT = "# cad-agent part cache (cadagent.geometry.cache): regenerated, never committed\n*\n"
+CACHE_SIGNATURE = b"Signature: 8a477f597d28d172789f06886806bc55"
 CACHE_TAG_TEXT = ("Signature: 8a477f597d28d172789f06886806bc55\n"
                   "# This folder is a cad-agent part cache (cadagent.geometry.cache); it can be deleted.\n")
 # Relative and absolute volume tolerance on load. A BREP round trip keeps the geometry exactly, so these only absorb
 # the floating-point noise of recomputing the volume.
 VOLUME_RTOL = 1e-7
 VOLUME_ATOL_MM3 = 1e-6
-_NAME = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9._-]*$")
-_KEY = re.compile(rf"^[0-9a-f]{{{KEY_LENGTH}}}$")
+_NAME = re.compile(r"[A-Za-z0-9_][A-Za-z0-9._-]*")          # used with fullmatch: no trailing newline
+_KEY = re.compile(rf"[0-9a-f]{{{KEY_LENGTH}}}")
 _SKIP_DIRS = {"__pycache__", ".git"}
 
 
+def _is_cache_dir(folder: Path) -> bool:
+    """True for a folder tagged as a cache (https://bford.info/cachedir/: the file starts with the signature line)."""
+    try:
+        with open(folder / CACHE_TAG, "rb") as fh:
+            return fh.read(len(CACHE_SIGNATURE)) == CACHE_SIGNATURE
+    except OSError:
+        return False
+
+
 def _files(paths: Iterable[PathLike], what: str) -> List[Tuple[str, Path]]:
-    """``(label, file)`` for each path: a file as itself, a folder as every file under it (``__pycache__``, ``.git``
-    and ``*.pyc`` left out) labelled by its path inside the folder. A missing path raises ``FileNotFoundError``: a
-    source that is silently left out would keep a stale part."""
+    """``(label, file)`` for each path: a file as itself, a folder as every file under it (``__pycache__``, ``.git``,
+    ``*.pyc`` and any folder tagged as a cache, this one included, left out: a cache inside a source folder would
+    change the key with every part it stores) labelled by its path inside the folder. A missing path raises
+    ``FileNotFoundError``: a source that is silently left out would keep a stale part."""
     out: List[Tuple[str, Path]] = []
     for raw in paths:
         p = Path(raw)
         if p.is_file():
             out.append((p.name, p))
         elif p.is_dir():
+            tagged: Dict[Path, bool] = {}
             for f in sorted(p.rglob("*")):
                 rel = f.relative_to(p)
-                if f.is_file() and f.suffix != ".pyc" and not _SKIP_DIRS.intersection(rel.parts):
-                    out.append((f"{p.name}/{rel.as_posix()}", f))
+                if not f.is_file() or f.suffix == ".pyc" or _SKIP_DIRS.intersection(rel.parts):
+                    continue
+                folders = [p.joinpath(*rel.parts[:k]) for k in range(len(rel.parts))]
+                if any(tagged.setdefault(d, _is_cache_dir(d)) for d in folders):
+                    continue
+                out.append((f"{p.name}/{rel.as_posix()}", f))
         else:
             raise FileNotFoundError(f"part cache {what} {str(raw)!r} does not exist")
     return out
@@ -105,11 +121,15 @@ def _sha256(path: Path) -> str:
 
 
 def _replace_atomically(path: Path, write: Callable[[str], None]) -> None:
-    """Call ``write(tmp)`` for a temporary file next to ``path``, then rename it to ``path``."""
+    """Call ``write(tmp)`` for a temporary file next to ``path``, then rename it to ``path``, readable as a normal
+    file is (``mkstemp`` makes it 0600, which a cache shared between users could not read)."""
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
     os.close(fd)
     try:
         write(tmp)
+        umask = os.umask(0)
+        os.umask(umask)
+        os.chmod(tmp, 0o666 & ~umask)
         os.replace(tmp, path)
     finally:
         Path(tmp).unlink(missing_ok=True)
@@ -135,7 +155,7 @@ class PartCache:
         self.misses = 0
         self.rebuilt: Dict[str, str] = {}
         try:
-            extra = json.dumps(key_extra, sort_keys=True, default=repr)
+            extra = json.dumps(key_extra, sort_keys=True)  # no default=repr: a repr can hide a change (#273)
         except (TypeError, ValueError) as exc:
             raise TypeError(f"key_extra must be JSON-like (dicts, lists, numbers, text): {exc}") from None
         self._base = hashlib.sha256("\0".join(
@@ -153,7 +173,7 @@ class PartCache:
 
     def path(self, name: str, deps: Optional[Iterable[PathLike]] = None) -> Path:
         """Where part ``name`` with these ``deps`` is stored (``<root>/<key>/<name>.brep``)."""
-        if not isinstance(name, str) or not _NAME.match(name):
+        if not isinstance(name, str) or not _NAME.fullmatch(name):
             raise ValueError(f"part name {name!r} is not usable as a file name (letters, digits, '_', '-', '.')")
         return self.root / self.key(deps) / f"{name}.brep"
 
@@ -203,7 +223,7 @@ class PartCache:
         if not self.root.is_dir():
             return
         for child in self.root.iterdir():
-            if child.is_dir() and _KEY.match(child.name):
+            if child.is_dir() and not child.is_symlink() and _KEY.fullmatch(child.name):
                 shutil.rmtree(child, ignore_errors=True)
         for marker, text in ((CACHE_TAG, CACHE_TAG_TEXT), (".gitignore", GITIGNORE_TEXT)):
             path = self.root / marker                     # only the markers this cache wrote, not a project's own
@@ -249,7 +269,7 @@ class PartCache:
         if not self.root.is_dir():
             return out
         for child in self.root.iterdir():
-            if not (child.is_dir() and _KEY.match(child.name)):
+            if not (child.is_dir() and not child.is_symlink() and _KEY.fullmatch(child.name)):
                 continue
             try:
                 size = sum(f.stat().st_size for f in child.iterdir() if f.is_file())
@@ -288,7 +308,26 @@ class PartCache:
             return None, "volume differs"
         return shape, ""
 
+    def _own_root(self) -> None:
+        """Raise unless ``root`` is the cache's own folder: its markers hide everything beside them from git and from
+        ``cad-agent package``, so they never go into a folder that holds anything else."""
+        if not self.root.is_dir():
+            return
+        for child in self.root.iterdir():
+            name = child.name
+            if child.is_dir() and not child.is_symlink() and _KEY.fullmatch(name):
+                continue
+            if name == CACHE_TAG and _is_cache_dir(self.root):
+                continue
+            if name == ".gitignore" and child.is_file() and child.read_text(errors="replace") == GITIGNORE_TEXT:
+                continue
+            if name.startswith(".") and name.endswith(".tmp"):
+                continue                                  # a parallel run's file on its way into place
+            raise ValueError(f"part cache root {str(self.root)!r} holds {name!r}: give the cache a folder of its own "
+                             f"(the default is {str(DEFAULT_ROOT)!r})")
+
     def _store(self, shape: Any, brep: Path) -> None:
+        self._own_root()
         self.root.mkdir(parents=True, exist_ok=True)
         tag = self.root / CACHE_TAG
         if not tag.exists():
@@ -297,14 +336,18 @@ class PartCache:
         if not ignore.exists():                           # never committed, wherever the root is
             _replace_atomically(ignore, lambda tmp: Path(tmp).write_text(GITIGNORE_TEXT))
         brep.parent.mkdir(parents=True, exist_ok=True)
+        if brep.parent.is_symlink():
+            raise ValueError(f"part cache key folder {str(brep.parent)!r} is a symlink; remove it")
+        written: Dict[str, str] = {}
 
         def write_brep(tmp: str) -> None:
             if shape.exportBrep(tmp) is False:
                 raise OSError(f"OCCT could not write {brep}")
+            written["sha256"] = _sha256(Path(tmp))        # this run's file, before a parallel run can replace it
 
         _replace_atomically(brep, write_brep)
         valid, solids, volume = _measure(shape)
-        record = {"format": FORMAT, "name": brep.stem, "key": brep.parent.name, "brep_sha256": _sha256(brep),
+        record = {"format": FORMAT, "name": brep.stem, "key": brep.parent.name, "brep_sha256": written["sha256"],
                   "valid": valid, "solids": solids, "volume_mm3": volume}
         _replace_atomically(brep.with_suffix(".json"),
                             lambda tmp: Path(tmp).write_text(json.dumps(record, indent=2, sort_keys=True) + "\n"))

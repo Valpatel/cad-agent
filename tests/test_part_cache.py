@@ -72,8 +72,9 @@ def test_a_missing_source_or_a_bad_name_is_an_error(project):
             cache.path(bad)
 
 
-def test_the_cache_folder_does_not_date_outputs(project, monkeypatch):
-    """Under exports/ it is an output, so committing it does not move source_time (the reproducibility date)."""
+def test_a_cache_a_project_puts_under_exports_does_not_date_outputs(project, monkeypatch):
+    """A project may place the cache under exports/ instead of the default; there it is an output, so even a
+    committed one does not move source_time (the reproducibility date)."""
     from cadagent import project as P
 
     monkeypatch.delenv("SOURCE_DATE_EPOCH", raising=False)
@@ -227,6 +228,7 @@ def test_clear_and_the_size_cap(project):
     capped.clear()
     assert not capped.path("arm").exists() and (capped.root / "notes.txt").is_file()
     assert not (capped.root / C.CACHE_TAG).exists()
+    (capped.root / "notes.txt").unlink()                                          # a cache needs a folder of its own
     capped.get_or_build("arm", make("arm", 2))
     assert len(calls) == 3                                                        # cleared: built again
 
@@ -252,13 +254,73 @@ def test_the_cache_lives_out_of_exports_and_is_never_committed(project, monkeypa
     assert (cache.root / ".gitignore").read_text() == C.GITIGNORE_TEXT
 
 
-def test_clear_keeps_markers_it_did_not_write(project):
+def test_a_root_shared_with_other_files_is_refused(project):
+    """The markers hide everything beside them from git and from cad-agent package, so they go only into a folder
+    of the cache's own; a project's own files there are never touched."""
+    cq = pytest.importorskip("cadquery")
+    shared = project / "exports"
+    shared.mkdir()
+    (shared / "arm.step").write_text("x")
+    cache = PartCache(shared, sources=[project / "cad" / "common.py"])
+    with pytest.raises(ValueError, match="folder of its own"):
+        cache.get_or_build("arm", lambda: cq.Workplane().box(1, 1, 1))
+    assert sorted(p.name for p in shared.iterdir()) == ["arm.step"]
+    own = _cache(project)
+    own.get_or_build("arm", lambda: cq.Workplane().box(1, 1, 1))
+    _cache(project).get_or_build("bucket", lambda: cq.Workplane().box(2, 2, 2))  # its own markers are fine
+    (own.root / "notes.txt").write_text("mine")
+    own.clear()
+    assert (own.root / "notes.txt").read_text() == "mine" and not (own.root / C.CACHE_TAG).exists()
+
+
+def test_key_extra_must_be_plain_json(project):
+    """A repr can hide a change (numpy shortens long arrays with ...) or change every run (a set, an object)."""
+    with pytest.raises(TypeError, match="JSON-like"):
+        _cache(project, key_extra={"a": object()})
+    with pytest.raises(TypeError, match="JSON-like"):
+        _cache(project, key_extra={"tags": {"a", "b"}})
+    assert _cache(project, key_extra={"profile": [0.0] * 3}).key() != _cache(project, key_extra={"profile": [0.0, 5.0, 0.0]}).key()
+
+
+def test_a_source_folder_holding_the_cache_keeps_its_key(project):
+    cq = pytest.importorskip("cadquery")
+    cache = PartCache(project / "cad" / ".parts", sources=[project / "cad"])
+    key = cache.key()
+    cache.get_or_build("arm", lambda: cq.Workplane().box(1, 1, 1))
+    assert PartCache(project / "cad" / ".parts", sources=[project / "cad"]).key() == key
+
+
+def test_names_and_key_folders_match_exactly_and_symlinks_are_left_alone(project, tmp_path):
+    cache = _cache(project)
+    with pytest.raises(ValueError):
+        cache.path("arm\n")
+    cache.root.mkdir(parents=True)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "keep.brep").write_text("x")
+    (cache.root / "0123456789abcdef").symlink_to(outside, target_is_directory=True)
+    (cache.root / "0123456789abcdef\n").mkdir()
+    assert cache.size() == 0 and cache.prune(0) == []
+    cache.clear()
+    assert (outside / "keep.brep").is_file() and (cache.root / "0123456789abcdef\n").is_dir()
+
+
+def test_the_package_skips_only_a_real_cache_tag(project):
+    from cadagent.package import in_cache_dir
+
+    folder = project / "exports" / "notes"
+    folder.mkdir(parents=True)
+    (folder / "CACHEDIR.TAG").write_text("not the signature\n")
+    assert not in_cache_dir(folder / "a.txt", project)
+    (folder / "CACHEDIR.TAG").write_text(C.CACHE_TAG_TEXT)
+    assert in_cache_dir(folder / "a.txt", project)
+
+
+def test_stored_files_are_readable_like_normal_files(project):
     cq = pytest.importorskip("cadquery")
     cache = _cache(project)
-    cache.root.mkdir(parents=True)
-    (cache.root / ".gitignore").write_text("*.brep\n")                           # the project's own
     cache.get_or_build("arm", lambda: cq.Workplane().box(1, 1, 1))
-    assert (cache.root / ".gitignore").read_text() == "*.brep\n"                  # never overwritten
-    cache.clear()
-    assert (cache.root / ".gitignore").read_text() == "*.brep\n"
-    assert not (cache.root / C.CACHE_TAG).exists() and not cache.path("arm").exists()
+    umask = os.umask(0)
+    os.umask(umask)
+    for f in (cache.path("arm"), cache.path("arm").with_suffix(".json")):
+        assert f.stat().st_mode & 0o777 == 0o666 & ~umask

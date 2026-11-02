@@ -275,7 +275,7 @@ flowchart TD
 ```python
 from cadagent.geometry.cache import PartCache
 
-cache = PartCache(".cadagent-cache/parts",                        # the default; any folder works
+cache = PartCache(".cadagent-cache/parts",                        # the default; any folder of its own
                   sources=["cad/parameters.json", "cad/common.py"],   # files or folders every part reads
                   key_extra={"variant": "long-reach"},                # other values the build depends on
                   max_bytes=2_000_000_000)                            # optional size cap
@@ -286,7 +286,8 @@ cache.clear()                                                        # forget ev
 ```
 
 - **Where it lives.** `root` defaults to `.cadagent-cache/parts`, beside the gates' pair cache
-  (`.cadagent-cache/gates`), and out of `exports/`, which projects commit. Wherever it is, the root holds a
+  (`.cadagent-cache/gates`), and out of `exports/`, which projects commit. Give it a folder of its own (a root that
+  holds other files is refused). The root holds a
   `.gitignore` that ignores everything in it, so the cache is never committed, and a `CACHEDIR.TAG`, so
   `cad-agent package` never zips it, even from a glob that reaches into it. Deleting it is always safe.
 

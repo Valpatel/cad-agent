@@ -83,6 +83,14 @@ def build_package(project: CadProject) -> PackageResult:
                 shutil.copyfileobj(src, dst, 1 << 20)
     return PackageResult(zip_path, manifest_path, manifest, unmatched)
 
+def _tagged(folder: Path) -> bool:
+    """``folder/CACHEDIR.TAG`` starts with the spec's signature line (what tar's ``--exclude-caches`` checks)."""
+    try:
+        with open(folder / "CACHEDIR.TAG", "rb") as fh:
+            return fh.read(43) == b"Signature: 8a477f597d28d172789f06886806bc55"
+    except OSError:
+        return False
+
 def in_cache_dir(path: Path, root: Path, seen: Optional[Dict[Path, bool]] = None) -> bool:
     """True when a folder between ``root`` and ``path`` holds a ``CACHEDIR.TAG`` (https://bford.info/cachedir/), such
     as a part cache (``cadagent.geometry.cache``): caches are never packaged, even when a glob reaches into them."""
@@ -91,7 +99,7 @@ def in_cache_dir(path: Path, root: Path, seen: Optional[Dict[Path, bool]] = None
         if folder == root or root not in folder.parents:
             return False
         if folder not in seen:
-            seen[folder] = (folder / "CACHEDIR.TAG").is_file()
+            seen[folder] = _tagged(folder)
         if seen[folder]:
             return True
     return False

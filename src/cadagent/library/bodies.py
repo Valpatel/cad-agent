@@ -68,9 +68,11 @@ def fuseholder_mini_fl1(body=(14.2, 6.0), height=15.6, pitch=8.0, peg_tip=4.4, p
     return a
 
 
-def mini_fuse(amps: float, holder_height=15.6, head=(10.9, 3.8), above=5.0):
-    """A MINI blade fuse seated in the FL1 holder: the housing in its rating's colour, ``above`` mm proud of the
-    holder's top (an assumption: the holder's drawing does not give it). Blades are inside the holder and not drawn."""
+def mini_fuse(amps: float, holder_height=15.6, head=(10.9, 3.8), above=8.8):
+    """A MINI blade fuse seated in the FL1 holder: the housing (``head``, 10.9 x 3.8) in its rating's colour, from
+    the bottom of the holder's 3 mm socket to ``above`` mm proud of the holder's top. ``head`` and ``above`` (8.8) are
+    assumptions: the holder's drawing gives neither, so measure a fitted fuse before relying on the height. The
+    blades are inside the holder and not drawn."""
     cq = _cq()
     if amps not in FUSE_COLOURS:
         raise ValueError(f'no MINI fuse colour for {amps} A; ratings: {sorted(FUSE_COLOURS)}')

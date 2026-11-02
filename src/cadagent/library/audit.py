@@ -164,6 +164,8 @@ def model_audit(path, env: Optional[Dict[str, str]] = None, waivers: Optional[Di
                                  'detail': f"{m['path']}: set {', '.join(missing)}"})
             elif not _resolves(Path(full)):
                 findings.append({'check': 'missing_model', 'footprint': who, 'detail': m['path']})
+    findings.sort(key=lambda f: (f['footprint'], f['check'], f['detail']))
+    waived.sort(key=lambda w: w['footprint'])
     return {'pass': not findings, 'footprints': len(fps), 'with_model': sum(1 for f in fps if any(
         not m['hidden'] for m in f['models'])), 'findings': findings, 'waived': waived,
         'unused_waivers': sorted(set(waivers) - used)}

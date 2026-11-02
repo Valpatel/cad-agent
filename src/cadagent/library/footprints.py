@@ -248,10 +248,11 @@ def lug_stud(size: str = 'M4', pad: Optional[float] = None, drill: Optional[floa
 
 
 def bonded_mounting_hole(size: str = 'M5', pad: float = 10.0, drill: float = 5.3, via_ring: float = 4.0,
-                         standoff_d: Optional[float] = 12.0, head: str = 'button') -> Footprint:
+                         standoff_d: Optional[float] = 12.0, head: str = 'socket') -> Footprint:
     """A plated mounting hole that bonds the board's net to the metal it is screwed to: a pad on both layers ringed
     with 8 vias. ``standoff_d`` draws the standoff under the board on B.Fab. ``head`` names the screw the 3D model
-    shows (``button`` or ``socket``). Defaults: M5, 10 mm pad, 5.3 hole, vias on a 4.0 radius."""
+    shows (``socket`` or ``button``; ``parts.PARTS['bond_hole_m5']`` builds the M5 x 14 socket head). Defaults: M5,
+    10 mm pad, 5.3 hole, vias on a 4.0 radius."""
     fp = Footprint(f'MountingHole_{size}_Pad{pad:.1f}mm_Drill{drill:.1f}mm_Via8_Bond',
                    f'{size} mounting hole, plated, {pad:g} mm pad both sides with 8 vias: bonds the net to the plate',
                    tags=f'mounting hole bond {size}', model=f'MountingScrew_{size}_{head}.step')

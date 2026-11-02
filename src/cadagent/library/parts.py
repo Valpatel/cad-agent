@@ -65,7 +65,7 @@ PARTS: Dict[str, Part] = {p.key: p for p in [
     Part('lug_stud_m6', lambda: F.lug_stud('M6'), body=lambda: _bodies().lug_stud('M6', 12.0),
          datasheet={'hole': (6.4, None, 'ISO 273 medium clearance for M6')},
          source='ISO 273 (clearance holes); hardware from cadagent.library.hardware', licence='MIT (ours)'),
-    Part('bond_hole_m5', F.bonded_mounting_hole, body=lambda: _bodies().mounting_screw('M5', 'button_head', 12.0),
+    Part('bond_hole_m5', F.bonded_mounting_hole, body=lambda: _bodies().mounting_screw('M5', 'socket_head', 14.0),
          datasheet={'hole': (5.3, None, 'ISO 273 medium clearance for M5')},
          source='ISO 273 (clearance holes); hardware from cadagent.library.hardware', licence='MIT (ours)'),
     Part('slot_4x10', F.npth_slot, no_body='a non-plated slot: a hole, not a part',

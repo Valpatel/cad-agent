@@ -137,9 +137,9 @@ lists those that clinch into a given sheet, steel nuts first. A shop's per-part 
 
 ```mermaid
 flowchart TD
-    P["a PEM part in a sheet<br/>(check_placement)"] --> M["the material: hardness<br/>and thickness"]
-    P --> G["the layout: hole, edge,<br/>bend, neighbours"]
-    P --> L["the loads: push-out,<br/>torque, pull-through"]
+    P["a PEM part in a sheet<br/>(check_placement)"] --> M["material:<br/>hardness,<br/>thickness"]
+    P --> G["layout: hole,<br/>edge, bend,<br/>neighbours"]
+    P --> L["loads:<br/>push-out, torque,<br/>pull-through"]
     M --> V["pass, warn or fail,<br/>each with its rule"]
     G --> V
     L --> V

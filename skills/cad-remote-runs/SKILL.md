@@ -1,9 +1,15 @@
 ---
 name: cad-remote-runs
 description: Use before starting any CAD/FEA/CFD/topology run or full pipeline that takes more than a few minutes or several GB of memory. Run it on a compute host instead of the workstation the agents share, detached so it survives the session, recorded in the GitHub issue (host, command, log, done marker, how to collect results) so any machine can pick it up, and its results pulled back and committed.
+metadata:
+  requires: "git gh ssh compute-host"
+  optional: "rsync"
+  optional-for: "copying files that are not in git"
 ---
 
 # Long runs on a compute host
+
+> **Needs:** `git`, `gh` logged in, `ssh` and a compute host you can reach over `ssh`; `rsync` for copying files that are not in git. `cad-agent agents install` says which of these this computer lacks. Without `rsync`, skip that step; without the rest, do not use it.
 
 Heavy runs (OpenFOAM CFD, FEA sweeps, topology optimisation, `cad-agent all`) on the workstation the agents share
 can exhaust its memory and crash every session on it. Run them on a compute host, detached, and write them down

@@ -2,7 +2,11 @@
 name: cad-resume
 description: Rebuilds the state of interrupted work from GitHub and the local and remote checkouts after a session ended (tokens ran out, crash, new computer) and reports what is done, what is in flight and the next steps. Give it the repo(s) and, if known, the tracking issue. It reads issues, PRs, branches, unpushed commits and run logs; it changes nothing except pushing local commits that exist only on this machine, if told to.
 tools: Bash, Read, Grep, Glob
+metadata:
+  requires: "git gh"
 ---
+
+> **Needs:** `git` and `gh` logged in. `cad-agent agents install` says which of these this computer lacks; without them, do not use it.
 
 You pick up work that another session started. Follow the "Resuming" part of the `cad-work-tracking` skill.
 

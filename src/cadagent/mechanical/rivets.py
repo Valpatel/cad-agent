@@ -199,6 +199,10 @@ def rivets_for(diameter_mm: float, grip_min_mm: float, grip_max_mm: Optional[flo
             and r.grip_in[0] * IN <= lo + 1e-9 and hi <= r.grip_in[1] * IN + 1e-9]
 
 
+# Least to most noble, for which way round a pair corrodes (MIL-STD-889C, Table I).
+_NOBLE = {"aluminium": 0, "steel": 1, "stainless": 2}
+
+
 def _galvanic(body: str, sheet: Sheet) -> Tuple[str, str]:
     s = sheet.family
     a = "an" if body[0] in "aeiou" else "a"
@@ -210,18 +214,38 @@ def _galvanic(body: str, sheet: Sheet) -> Tuple[str, str]:
     if body == "stainless" and s == "steel":
         return "warn", ("a stainless rivet in carbon steel: acceptable to NASA RP-1228 (p. 5), but MIL-STD-889C Table I "
                         "marks the pair incompatible in marine and industrial air")
+    if _NOBLE[body] > _NOBLE[s]:
+        return "warn", (f"{a} {body} rivet in {sheet.name}: the sheet is the less noble metal and corrodes around the "
+                        "rivet; MIL-STD-889C Table I marks aluminium with carbon steel incompatible in marine and "
+                        "industrial air, so seal or coat the joint")
     return "warn", (f"{a} {body} rivet in {sheet.name}: the rivet is the less noble metal, so it corrodes (MIL-STD-889C "
                     "5.1.3 asks for the same or a more noble fastener)")
 
 
+def _fbru(sheet: Sheet, eod: float) -> Optional[float]:
+    """The sheet's Fbru (ksi) at ``eod``: MIL-HDBK-5J's value at e/D 2.0 from there up, linear between its 1.5 and 2.0
+    values (1.4.7.1), and None below the lowest e/D it gives (or below 2.0 where it gives only that one)."""
+    keys = sorted(sheet.fbru_ksi)
+    if eod + 1e-9 < keys[0]:
+        return None
+    if eod + 1e-9 >= keys[-1]:
+        return sheet.fbru_ksi[keys[-1]]
+    lo = max(k for k in keys if k <= eod + 1e-9)
+    hi = min(k for k in keys if k > eod + 1e-9)
+    a, b = sheet.fbru_ksi[lo], sheet.fbru_ksi[hi]
+    return a + (b - a) * (eod - lo) / (hi - lo)
+
+
 def check_joint(rivet: str, sheets: Sequence[Tuple[str, float]], edge_mm: float, pitch_mm: float, *, rows: int = 1,
-                hole_mm: Optional[float] = None, thickness_tol_mm: float = 0.0, load_per_pitch_n: Optional[float] = None,
+                row_spacing_mm: Optional[float] = None, hole_mm: Optional[float] = None, thickness_tol_mm: float = 0.0, load_per_pitch_n: Optional[float] = None,
                 factor: float = 1.0, path: Any = None) -> Dict[str, Any]:
     """Check a riveted lap joint: ``rivet`` a key of :data:`RIVETS`; ``sheets`` the stack as (key of :data:`SHEETS`,
     thickness in mm), at least two; ``edge_mm`` from the hole centre to the sheet edge; ``pitch_mm`` centre to centre
-    along a row; ``rows`` of rivets (one rivet per row in each pitch); ``hole_mm`` as drilled or cut, or None for the
+    along a row; ``rows`` of rivets (one rivet per row in each pitch) and, with two or more, ``row_spacing_mm`` between
+    them; ``hole_mm`` as drilled or cut, or None for the
     middle of the maker's range; ``thickness_tol_mm`` each sheet's +/- tolerance; and, optionally, the load one pitch
-    of the joint carries, to compare with its strength divided by ``factor``."""
+    of the joint carries, to compare with its strength divided by ``factor``. The stack runs from the factory head to
+    the formed (blind) head, so the last sheet is the one the formed head sits on."""
     if rivet not in RIVETS:
         raise ValueError(f"unknown rivet {rivet!r}; see cadagent.mechanical.rivets.RIVETS or rivets_for()")
     r = RIVETS[rivet]
@@ -254,7 +278,7 @@ def check_joint(rivet: str, sheets: Sequence[Tuple[str, float]], edge_mm: float,
     else:
         v, why = "fail", "the stack is outside the rivet's grip band"
     if v != "pass":
-        fits = [x["key"] for x in rivets_for(D, g_lo, g_hi, r.body)]
+        fits = [x["key"] for x in rivets_for(D, max(g_lo, 1e-6), g_hi, r.body)]
         why += f"; rivets that cover {g_lo:.3f}-{g_hi:.3f} mm: {', '.join(fits) or 'none listed'}"
     checks.append(_check("grip", v, round(grip, 4), f"{b_lo:.3f}-{b_hi:.3f} mm", r.part, r.source, why))
 
@@ -278,43 +302,63 @@ def check_joint(rivet: str, sheets: Sequence[Tuple[str, float]], edge_mm: float,
     # Pitch.
     least = _limit(prof, "sm-rivet-pitch-faa", D=D)
     nominal = _limit(prof, "sm-rivet-pitch-nasa", D=D)
+    double = _limit(prof, "sm-rivet-pitch-double-faa", D=D)
+    second = double if rows > 1 else nominal
     if p + 1e-9 < least.min:
         v, why = "fail", "below the FAA's 3D"
-    elif rows > 1 and p + 1e-9 < nominal.value:
+    elif rows > 1 and p + 1e-9 < double.value:
         v, why = "warn", "the FAA spaces two or more rows at 4D"
     else:
         v, why = "pass", ("at least 4D, the nominal" if p + 1e-9 >= nominal.value else "between 3D and 4D (one row)")
-    checks.append(_check("pitch", v, round(p, 4), f"at least {least.min:.3f} mm (3D); {nominal.value:.3f} mm (4D) "
-                         "nominal", f"{least.rule}, {nominal.rule}", f"{least.source}, {nominal.source}", why))
+    checks.append(_check("pitch", v, round(p, 4), f"at least {least.min:.3f} mm (3D); {second.value:.3f} mm (4D) "
+                         "nominal", f"{least.rule}, {second.rule}", f"{least.source}, {second.source}", why))
+    if rows > 1:
+        if row_spacing_mm is None:
+            checks.append(_check("row spacing", "warn", None, f"at least {double.value:.3f} mm (4D)", double.rule,
+                                 double.source, "not given: the FAA spaces the rows 4D apart too"))
+        else:
+            g = _num("row_spacing_mm", row_spacing_mm)
+            v = "pass" if g + 1e-9 >= double.value else "warn"
+            checks.append(_check("row spacing", v, round(g, 4), f"at least {double.value:.3f} mm (4D)", double.rule,
+                                 double.source, "the rows are 4D apart" if v == "pass" else
+                                 "closer than the FAA's 4D between rows"))
 
     # Each sheet: t/D, the thinnest aluminium, and the metals.
-    ratio = _limit(prof, "sm-rivet-sheet-ratio-mil5j", D=D)
     thin_al = _limit(prof, "sm-rivet-sheet-min-pop")
+    ratio = _limit(prof, "sm-rivet-sheet-ratio-mil5j", D=hole)      # MIL-HDBK-5J's D is the hole (1.4.7)
     for i, (s, t) in enumerate(stack):
-        v = "pass" if t + 1e-9 >= ratio.min else "warn"
-        checks.append(_check(f"sheet {i + 1} t/D", v, round(t / D, 4), "at least 0.18", ratio.rule, ratio.source,
-                             "the bearing values hold" if v == "pass" else
-                             "below MIL-HDBK-5J's 0.18: its bearing values do not hold, and thin sheet buckles"))
-        if s.family == "aluminium" and r.kind.startswith("open end"):
+        tod = t / hole
+        if t + 1e-9 < ratio.min:
+            v, why = "warn", "below MIL-HDBK-5J's 0.18: its bearing values do not hold, and thin sheet buckles"
+        elif tod + 1e-9 < 0.25:
+            v, why = "warn", ("between 0.18 and 0.25: MIL-HDBK-5J's bearing values apply from 0.25 (1.4.7.1), and 8.1.3 "
+                              "asks for care with blind rivets in sheet this thin")
+        else:
+            v, why = "pass", "the bearing values hold"
+        checks.append(_check(f"sheet {i + 1} t/D", v, round(tod, 4), "at least 0.18 (0.25 for blind rivets)",
+                             ratio.rule, ratio.source, why))
+        if s.family == "aluminium" and r.kind.startswith("open end") and i == len(stack) - 1:
             v = "pass" if t + 1e-9 >= thin_al.min else "fail"
             checks.append(_check(f"sheet {i + 1} thickness", v, round(t, 4), f"at least {thin_al.min:.3f} mm",
-                                 thin_al.rule, thin_al.source, "POP sets open-end rivets in aluminium from 0.020 in"))
+                                 thin_al.rule, thin_al.source, "POP sets the formed head of an open-end rivet against aluminium from 0.020 in"))
         v, why = _galvanic(r.body, s)
+        if r.mandrel != r.body:
+            why += (f"; its {r.mandrel} mandrel head stays in the set rivet, a second metal against the sheet that "
+                    "MIL-STD-889C 5.1.3 applies to as well")
         checks.append(_check(f"sheet {i + 1} metals", v, f"{r.body} in {s.family}", "the same metal, or a more "
                              "noble fastener", "", "mil-std-889c" if "889C" in why else "nasa-1228", why))
 
     # Strength per pitch, sheet by sheet; the weakest sheet sets the joint.
-    eod = e / D
+    eod = e / hole                     # MIL-HDBK-5J takes e/D with D the hole (1.4.7; Table 9.7.1.1(a))
     per_sheet = []
     for s, t in stack:
-        keys = [k for k in s.fbru_ksi if eod + 1e-9 >= k]
-        if not keys:
+        fbru = _fbru(s, eod)
+        if fbru is None:
             per_sheet.append({"sheet": s.key, "thickness_mm": t, "bearing_note": f"no Fbru for e/D {eod:.2f}"})
             continue
-        fbru = s.fbru_ksi[max(keys)]
         j = fx.lap_joint(hole * 1e-3, t * 1e-3, p * 1e-3, s.ftu_ksi * KSI * 1e6, None, fbru * KSI * 1e6, rivets=rows,
                          rivet_shear=r.shear_lbf * LBF)
-        per_sheet.append({"sheet": s.key, "thickness_mm": t, "fbru_ksi": fbru, "fbru_at_e_over_d": max(keys),
+        per_sheet.append({"sheet": s.key, "thickness_mm": t, "fbru_ksi": round(fbru, 3), "e_over_d": round(eod, 4),
                           **{k: (round(v, 4 if k == "efficiency" else 2) if isinstance(v, float) else v) for k, v in j.items()}})
     strong = [x for x in per_sheet if "strength_n" in x]
     strength = min(strong, key=lambda x: x["strength_n"]) if len(strong) == len(per_sheet) else None
@@ -336,5 +380,6 @@ def check_joint(rivet: str, sheets: Sequence[Tuple[str, float]], edge_mm: float,
             "limits": [f"the rivet's strength is {'its maker' if r.rating == 'typical' else 'the seller'}'s "
                        f"{r.rating} value, not a design allowable; blind rivets are kept out of critical structure",
                        "rivets in shear only; a single lap's bending and any rivet tension are not modelled",
-                       "sheet strengths are MIL-HDBK-5J's for the named tempers; mild steel as annealed AISI 1025",
+                       "sheet strengths are MIL-HDBK-5J's for the named tempers; mild steel as annealed AISI 1025; its bearing "
+                       "values apply for t/D 0.25-0.50 (1.4.7.1) and are used as printed outside that band",
                        "a check of the published rules, not proof: test a joint"]}

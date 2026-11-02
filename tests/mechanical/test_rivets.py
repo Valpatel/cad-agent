@@ -29,11 +29,14 @@ def test_the_rivets_are_the_catalogues_numbers():
 
 def test_worked_example_two_1_6_mm_5052_sheets():
     # research/sheet-metal-joining.md section 8: hole 0.1285 in, 2D edge, 3D pitch, MIL-HDBK-5J 5052-H32 (Ftu 31 ksi,
-    # Fbru 65 ksi at e/D 2.0): rivet 155 lbf, bearing 526 lbf, tearing 481 lbf, solid 732 lbf, efficiency 0.21.
+    # Fbru 50 / 65 ksi at e/D 1.5 / 2.0): rivet 155 lbf, tearing 481 lbf, solid 732 lbf, efficiency 0.21. e/D is on the
+    # hole: 0.25 / 0.130 = 1.923, so Fbru = 50 + 15 x 0.423 / 0.5 = 62.69 ksi (MIL-HDBK-5J 1.4.7.1: linear between).
     s = R.check_joint("pop-AD43", [("5052-h32", T063), ("5052-h32", T063)], edge_mm=6.35, pitch_mm=9.525,
                       hole_mm=0.130 * IN)
     one = s["per_sheet"][0]
-    assert one["fbru_at_e_over_d"] == 2.0 and s["mode"] == "shear"
+    assert one["e_over_d"] == pytest.approx(0.25 / 0.130, abs=1e-4) and s["mode"] == "shear"
+    assert one["fbru_ksi"] == pytest.approx(50 + 15 * (0.25 / 0.130 - 1.5) / 0.5, abs=1e-3)
+    assert one["bearing_n"] / LBF == pytest.approx(one["fbru_ksi"] * 1000 * 0.130 * 0.063, rel=1e-4)
     assert one["shear_n"] / LBF == pytest.approx(155, abs=0.01)
     import cadagent.formulas as fx
     ksi = R.KSI * 1e6
@@ -62,8 +65,30 @@ def test_edge_distance_2d_full_1_5d_floor(edge_d, verdict):
 def test_below_e_over_d_1_5_the_joint_has_no_bearing_value():
     s = joint(edge=1.4 * 3.175, load_per_pitch_n=100)
     assert s["strength_n"] is None and by(s, "strength")["verdict"] == "fail"
-    s = joint(edge=1.7 * 3.175)                        # between 1.5 and 2.0: Fbru at e/D 1.5 (50 ksi), not 2.0
-    assert s["per_sheet"][0]["fbru_ksi"] == 50
+    s = joint(edge=1.7 * 3.175)                        # e/D on the hole (0.131 in): 1.622, linear between 50 and 65 ksi
+    eod = 1.7 * 3.175 / (0.131 * IN)
+    assert s["e_over_d"] == pytest.approx(eod, abs=1e-4)
+    assert s["per_sheet"][0]["fbru_ksi"] == pytest.approx(50 + 15 * (eod - 1.5) / 0.5, abs=1e-3)
+    assert joint(edge=1.5 * 3.175)["strength_n"] is None    # 2D-style multiples are of the rivet; e/D on the hole is 1.45
+
+
+def test_rows_are_spaced_4d_too():
+    assert by(joint(pitch=4 * 3.175, rows=2), "pitch")["rule"] == "sm-rivet-pitch-faa, sm-rivet-pitch-double-faa"
+    assert by(joint(pitch=4 * 3.175, rows=2), "row spacing")["verdict"] == "warn"         # not given
+    assert by(joint(pitch=4 * 3.175, rows=2, row_spacing_mm=4 * 3.175), "row spacing")["verdict"] == "pass"
+    assert by(joint(pitch=4 * 3.175, rows=2, row_spacing_mm=3 * 3.175), "row spacing")["verdict"] == "warn"
+    assert not [c for c in joint()["checks"] if c["check"] == "row spacing"]
+
+
+def test_t_over_d_between_0_18_and_0_25_warns_for_blind_rivets():
+    t = 0.22 * 0.131 * IN                                    # t/D 0.22 on the hole
+    s = R.check_joint("pop-AD41-43-mg", [("5052-h32", t), ("5052-h32", 1.6)], edge_mm=6.35, pitch_mm=9.525)
+    c = by(s, "sheet 1 t/D")
+    assert c["verdict"] == "warn" and "8.1.3" in c["detail"]
+
+
+def test_a_large_tolerance_gives_a_verdict_not_an_error():
+    assert by(joint(thickness_tol_mm=1.0), "grip")["verdict"] in ("warn", "fail")
 
 
 @pytest.mark.parametrize("pitch_d,rows,verdict", [(3, 1, "pass"), (2.8, 1, "fail"), (3, 2, "warn"), (4, 2, "pass")])
@@ -81,7 +106,8 @@ def test_hole_inside_the_makers_range():
 def test_thin_sheet():
     s = R.check_joint("pop-AD41", [("5052-h32", 0.5), ("5052-h32", 0.5)], edge_mm=6.35, pitch_mm=9.525)
     assert by(s, "sheet 1 t/D")["verdict"] == "warn"               # 0.5 / 3.175 = 0.157 < 0.18
-    assert by(s, "sheet 1 thickness")["verdict"] == "fail"         # under POP's 0.020 in
+    assert by(s, "sheet 2 thickness")["verdict"] == "fail"         # the formed head's sheet, under POP's 0.020 in
+    assert not [c for c in s["checks"] if c["check"] == "sheet 1 thickness"]   # the factory head's side: no floor
     assert s["verdict"] == "fail"
 
 
@@ -93,6 +119,14 @@ def test_metals():
     s = R.check_joint("mcmaster-97525A415", [("304-annealed", T063), ("304-annealed", T063)], edge_mm=6.35,
                       pitch_mm=9.525)
     assert by(s, "sheet 1 metals")["verdict"] == "pass"
+    s = R.check_joint("pop-AD41-43-mg", [("5052-h32", T063), ("5052-h32", T063)], edge_mm=6.35, pitch_mm=9.525)
+    assert "steel mandrel head" in by(s, "sheet 1 metals")["detail"]
+
+
+def test_a_more_noble_rivet_corrodes_the_sheet():
+    sheet = R.SHEETS["5052-h32"]
+    v, why = R._galvanic("steel", sheet)
+    assert v == "warn" and "the sheet is the less noble" in why
 
 
 def test_load_against_strength():

@@ -65,12 +65,23 @@ def _shape(shape: Any, what: str) -> Any:
         shape = objs[0]
     return shape
 
+def _measured(shape: Any) -> Tuple[float, float]:
+    """``(volume mm^3, estimated error mm^3)`` of a solid, by the relation gate's adaptive integration
+    (``cadagent.review.gates.relations``, docs/volume-precision.md), which also runs that gate's strict validation:
+    an open, inverted or free-faced shape raises ``ValueError``. ``Shape.Volume()``'s default overload can mismeasure
+    curved, trimmed faces (by 14 mm^3 on one screw), enough to fail a good boolean's volume bound or pass a bad one."""
+    from cadagent.review.gates.relations import _measure_volume   # lazy: the gate imports nothing from here
+
+    m = _measure_volume(_wrapped(shape))
+    return m.value, m.error
+
 def _volume(shape: Any) -> float:
-    return float(shape.Volume())
+    return _measured(shape)[0]
 
 def _boolean_problem(result: Any, low: float, high: float) -> Optional[str]:
-    """Why ``result`` of a boolean is not usable, or None: null, invalid, no solids, or a volume outside
-    ``[low, high]`` (mm^3, with ``_VOLUME_SLACK``). The volume bound catches what ``isValid`` does not: OCCT can
+    """Why ``result`` of a boolean is not usable, or None: null, invalid (``isValid``, then the relation gate's strict
+    checks), no solids, or a volume outside ``[low, high]`` (mm^3, with ``_VOLUME_SLACK`` and the integration's
+    estimated error). The volume bound catches what ``isValid`` does not: OCCT can
     return an empty, valid compound for a multi-argument fuse of nearly coincident solids."""
     try:
         if result is None or _wrapped(result).IsNull():
@@ -79,10 +90,10 @@ def _boolean_problem(result: Any, low: float, high: float) -> Optional[str]:
             return "invalid shape"
         if low > 0 and not result.Solids():
             return "no solids"
-        volume = _volume(result)
+        volume, error = _measured(result)
     except Exception as exc:                              # noqa: BLE001  (OCCT raises several types)
         return f"check raised {type(exc).__name__}: {exc}"
-    slack = _VOLUME_SLACK * max(abs(high), 1.0)
+    slack = _VOLUME_SLACK * max(abs(high), 1.0) + error
     if not low - slack <= volume <= high + slack:
         return f"volume {volume:.6g} mm^3 outside the expected [{low:.6g}, {high:.6g}]"
     return None

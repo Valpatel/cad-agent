@@ -97,6 +97,9 @@ my-cad-project/
    OpenCASCADE can fail there without raising: a multi-argument fuse of nearly coincident solids can return an
    empty compound that `isValid()` passes, and a cut can raise `Null TopoDS_Shape object`. Both helpers check
    every boolean they run: not null, valid, at least one solid, and a volume within the bounds the inputs set.
+   Validity and volume are the relation gate's: `isValid()` and its stricter checks (open, inverted or free-faced
+   shapes fail), and its adaptive integration, since the default volume can be off by several mm³ on curved,
+   trimmed faces ([volume precision](volume-precision.md)).
    `robust_union(*shapes)` tries one multi-argument fuse, then fuses the shapes one at a time.
    `robust_cut(base, *tools)` tries one multi-tool cut, then cuts the tools one at a time, retrying a failing
    tool moved by 0.01 mm along each axis and the diagonal (`CUT_NUDGES_MM`, or `nudges=`). If nothing passes

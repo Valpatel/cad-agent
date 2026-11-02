@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 import pytest
 
 cq = pytest.importorskip("cadquery")
@@ -191,3 +193,16 @@ def test_export_print_stl_still_rejects_a_real_hole(monkeypatch, tmp_path):
 def test_export_print_stl_of_a_clean_part_welds_nothing(tmp_path):
     r = geometry.export_print_stl(box(10, 20, 30), tmp_path / "plain.stl")
     assert r["vertices_welded"] == 0 and r["mesh_volume_mm3"] == pytest.approx(6000.0, rel=1e-6)
+
+def test_robust_booleans_use_the_relation_gates_validity_and_volume():
+    """An inverted box passes ``isValid()`` (its interior is everything outside it), and ``Shape.Volume()`` reads it
+    as -8 mm^3; the relation gate's strict check refuses it, so it is never fused or cut with."""
+    inverted = cq.Shape.cast(cq.Solid.makeBox(2, 2, 2).wrapped.Reversed())
+    assert inverted.isValid()
+    with pytest.raises(geometry.GeometryError, match="union argument 1.*inverted"):
+        geometry.robust_union(box(1, 1, 1), inverted)
+    with pytest.raises(geometry.GeometryError, match="cut tool 0.*inverted"):
+        geometry.robust_cut(box(10, 10, 10), inverted)
+    sphere = cq.Workplane().sphere(5).val()
+    out = geometry.robust_cut(box(20, 20, 20, at=(-10, -10, -10)), sphere)
+    assert out.Volume() == pytest.approx(8000 - 4 / 3 * math.pi * 125, rel=1e-6)

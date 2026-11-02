@@ -26,7 +26,7 @@ You review a pull request you did not write. Follow the `cad-pr-review` skill (r
    - For each review row, look at the geometry (sections, renders, the STEP) and say in the summary what you checked.
    - When you find a mistake the index does not list, say so: it belongs in the index.
 
-The review, end to end (steps 1 to 8):
+How a review runs, in four boxes (the steps above and below fill them in):
 
 ```mermaid
 flowchart TD

@@ -16,6 +16,7 @@ and each is shown here to fail on a planted case as well as to pass on the repo.
 """
 from __future__ import annotations
 
+import functools
 import re
 import subprocess
 import warnings
@@ -38,7 +39,8 @@ AREAS = {
     "fixtures": "shared test data, used by tests in any folder",
 }
 TEST_ROOT_FILES = {"__init__.py", "README.md", "conftest.py"}            # all that may sit directly in tests/
-# .claude/ and .codex/ (wiring for the agent kit: links and generated files only) join this list in the PR that adds them.
+# .claude/ and .codex/ (wiring for the agent kit: links and generated files only) join this list in the PR that
+# adds them.
 TOP_DIRS = {".agents", ".github", "agents", "changelog.d", "docs", "examples", "lessons", "mining", "research",
             "skills", "src", "tests", "tools", "upstreams", "vendor", "web"}
 SRC_FILES = {"cadagent"}                                                  # src/ holds the package and nothing else
@@ -58,45 +60,109 @@ OVER_LIMIT = {
                            "their URLs",
 }
 
-IMPORT = re.compile(r"^\s*(?:from|import)\s+cadagent\.([a-z_]+)", re.M)
+IMPORT = re.compile(r"^\s*(?:from|import)\s+cadagent\.([a-z_.]+)", re.M)     # cadagent.<pkg>[.<sub>...]
+FROM_TOP = re.compile(r"^\s*from\s+cadagent\s+import\s+\(?([^)\n]+)", re.M)  # from cadagent import a, b as c
 README_GUIDE = "the table in tests/README.md"
 
 
-def repo_files() -> list[str]:
-    """Tracked and new (not ignored) files, so a file an agent just made is checked before it is committed."""
-    out = subprocess.run(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"], cwd=ROOT,
-                         capture_output=True, text=True, check=True).stdout
+def repo_files(untracked: bool = True) -> list[str]:
+    """Tracked files, and with ``untracked`` the new (not ignored) ones too, so a file an agent just made is checked
+    before it is committed."""
+    cmd = ["git", "ls-files", "-z", "--cached"] + (["--others", "--exclude-standard"] if untracked else [])
+    out = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, check=True).stdout
     return sorted(p for p in out.split("\0") if p and (ROOT / p).exists())
+
+
+def _git_files(untracked: bool):
+    try:
+        return repo_files(untracked)
+    except (OSError, subprocess.CalledProcessError):
+        pytest.skip("not a git checkout (an sdist): the layout is checked in the repo")
 
 
 @pytest.fixture(scope="module")
 def files():
-    try:
-        got = repo_files()
-    except (OSError, subprocess.CalledProcessError):
-        pytest.skip("not a git checkout (an sdist): the layout is checked in the repo")
-    return got
+    return _git_files(untracked=True)
+
+
+@pytest.fixture(scope="module")
+def tracked():
+    """Tracked files only: an editor's or a harness's untracked folder (.vscode/, .idea/, .claude/settings.local.json)
+    is not a new top-level folder anyone means to commit."""
+    return _git_files(untracked=False)
+
+
+def imported_modules(text: str) -> list[str]:
+    """Every ``cadagent.<pkg>[.<sub>]`` a file imports, in both forms: ``from cadagent.review.gates import x`` and
+    ``from cadagent import geometry, formulas as fx``."""
+    mods = IMPORT.findall(text)
+    for names in FROM_TOP.findall(text):
+        mods += [n.split(" as ")[0].strip() for n in names.split(",") if n.strip() and not n.strip().startswith("#")]
+    return [m.rstrip(".") for m in mods]
+
+
+@functools.lru_cache(maxsize=1)
+def _module_index() -> dict[str, frozenset[str]]:
+    """Each module or subpackage name inside the domain packages, mapped to its dotted path(s) under cadagent."""
+    index: dict[str, set[str]] = {}
+    pkg = ROOT / "src" / "cadagent"
+    for top in PACKAGES:
+        for f in (pkg / top).rglob("*"):
+            if "vendor" in f.parts or "__pycache__" in f.parts or f.name.startswith("_"):
+                continue
+            if f.suffix == ".py" or (f.is_dir() and (f / "__init__.py").exists()):
+                rel = f.relative_to(pkg).with_suffix("") if f.suffix == ".py" else f.relative_to(pkg)
+                index.setdefault(f.stem, set()).add(".".join(rel.parts))
+    return {k: frozenset(v) for k, v in index.items()}
+
+
+def _mirror(mod: str, dirs: set[str]) -> str:
+    """The deepest tests/ folder that mirrors ``mod``'s package path (``simulation.explore.design`` →
+    ``simulation/explore`` when that folder exists), else its top package."""
+    parts = mod.split(".")
+    for n in range(len(parts), 1, -1):
+        if "/".join(parts[:n]) in dirs:
+            return "/".join(parts[:n])
+    return parts[0]
 
 
 def domain_for(name: str, text: str, files: list[str] = ()) -> str:
-    """The tests/ folder a test file belongs in: a webkit or site suite by its name prefix; a Python test by the
-    cadagent package it imports most (its main subject), else by the folder of a test that shares its first word
-    (``test_process_figures.py`` beside ``test_process_profiles.py``), else ``cli/`` when it imports a top-level module,
-    else ``repo/`` for the repo's own rules."""
+    """The tests/ folder a test file belongs in (relative to tests/): a webkit or site suite by its name prefix; a test
+    named after a package, a top-level module or a module inside a package (``test_geometry.py``, ``test_cli.py``,
+    ``test_holes.py`` for ``mechanical/holes.py``; or its first word, ``test_anim_*`` for ``publish/anim/``) by that
+    name; otherwise by the cadagent package it imports most (its main subject), in the deepest folder that mirrors the
+    subpackage it imports most; else the folder of the tests that share its first word (``test_process_figures.py``
+    beside ``test_process_profiles.py``); else ``cli`` when it imports a top-level module; else ``repo`` for the
+    repo's own rules."""
     if name.startswith("webkit-"):
         return "webkit"
     if name.startswith(("website-", "site-")):
         return "site"
-    counts = Counter(m for m in IMPORT.findall(text))
-    for mod, _ in counts.most_common():
-        if mod in PACKAGES:
-            return mod
+    stem = re.match(r"test_(.+)\.py$", name)
+    if stem and stem.group(1) in PACKAGES:                    # test_geometry.py: named after its package
+        return stem.group(1)
+    if stem and ({f"{stem.group(1)}.py", f"_{stem.group(1)}.py"} & PKG_FILES):   # test_cli.py, test_deps.py
+        return "cli"
+    dirs = {str(Path(p).parent)[len("tests/"):] for p in files if p.startswith("tests/") and p.count("/") >= 2}
+    if stem:                                                  # test_holes.py: named after mechanical/holes.py
+        index = _module_index()
+        for key in (stem.group(1), stem.group(1).split("_")[0]):
+            if len(index.get(key, ())) == 1:
+                return _mirror(next(iter(index[key])), dirs)
+    mods = imported_modules(text)
+    tops = Counter(m.split(".")[0] for m in mods if m.split(".")[0] in PACKAGES)
+    if tops:
+        top = max(tops, key=lambda k: (tops[k], -mods.index(next(m for m in mods if m.split(".")[0] == k))))
+        deep = Counter(_mirror(m, dirs) for m in mods if m.split(".")[0] == top)
+        best, n = deep.most_common(1)[0]
+        return best if n * 2 > sum(deep.values()) else top
     word = re.match(r"test_([a-z0-9]+)", name)
-    kin = sorted({p.split("/")[1] for p in files if word and p.count("/") >= 2 and p.startswith("tests/")
-                  and not p.startswith("tests/fixtures/") and Path(p).name.startswith(f"test_{word.group(1)}")})
+    kin = sorted({str(Path(p).parent)[len("tests/"):] for p in files if word and p.count("/") >= 2
+                  and p.startswith("tests/") and not p.startswith("tests/fixtures/")
+                  and Path(p).name.startswith(f"test_{word.group(1)}")})
     if len(kin) == 1:
         return kin[0]
-    if any(f"{mod}.py" in PKG_FILES for mod in counts):
+    if any(f"{m.split('.')[0]}.py" in PKG_FILES for m in mods):
         return "cli"
     return "repo"
 
@@ -197,8 +263,8 @@ def test_each_tests_folder_is_a_package_or_a_listed_area(files):
     assert not problems, "\n".join(problems)
 
 
-def test_no_new_top_level_folder(files):
-    problems = top_dir_problems(files)
+def test_no_new_top_level_folder(tracked):
+    problems = top_dir_problems(tracked)
     assert not problems, "\n".join(problems)
 
 
@@ -216,9 +282,10 @@ def test_folders_grow_into_subfolders_not_mountains(files):
                       f"({OVER_LIMIT[d]})", UserWarning, stacklevel=1)
 
 
-def test_every_listed_area_and_package_folder_is_documented_in_the_tests_readme():
+def test_every_listed_area_and_package_folder_is_documented_in_the_tests_readme(files):
+    """Folders read from the file list, not the disk: a folder a move emptied keeps its __pycache__ on disk."""
     text = (ROOT / "tests" / "README.md").read_text(encoding="utf-8")
-    present = sorted(d.name for d in (ROOT / "tests").iterdir() if d.is_dir() and d.name != "__pycache__")
+    present = sorted({p.split("/")[1] for p in files if p.startswith("tests/") and p.count("/") >= 2})
     missing = [d for d in present if f"[`{d}/`]({d}/" not in text]
     assert not missing, f"tests/README.md has no row linking {missing}"
     assert set(present) <= PACKAGES | AREAS.keys()
@@ -263,10 +330,26 @@ def test_the_main_subject_wins_over_a_helper_import():
     # a package beats the CLI it is driven through; with no package import, a test of the same first word decides
     assert domain_for("test_x.py", "from cadagent.cli import main\nfrom cadagent.cli import x\n"
                                    "from cadagent.geometry import overhang_regions\n") == "geometry"
-    assert domain_for("test_process_figures.py", "import subprocess\n",
-                      ["tests/manufacturing/test_process_profiles.py"]) == "manufacturing"
-    assert domain_for("test_process_figures.py", "import subprocess\n",
-                      ["tests/manufacturing/test_process_a.py", "tests/review/test_process_b.py"]) == "repo"
+    assert domain_for("test_zebra_figures.py", "import subprocess\n",
+                      ["tests/manufacturing/test_zebra_profiles.py"]) == "manufacturing"
+    assert domain_for("test_zebra_figures.py", "import subprocess\n",
+                      ["tests/manufacturing/test_zebra_a.py", "tests/review/test_zebra_b.py"]) == "repo"
+    # `from cadagent import <pkg>` counts (review of #276): it is how test_geometry.py and test_formulas.py import
+    assert domain_for("test_new.py", "from cadagent import geometry\n") == "geometry"
+    assert domain_for("test_new.py", "from cadagent import formulas as fx\nfrom cadagent.thermal import fans\n"
+                                     "from cadagent import formulas\n") == "formulas"
+    assert domain_for("test_new.py", "from cadagent import MissingDependency\n") == "repo"
+    # named after what it tests: a package, a top-level module, a module inside a package
+    assert domain_for("test_formulas.py", "from cadagent.thermal import fans\n") == "formulas"
+    assert domain_for("test_cli.py", "from cadagent.publish import serve\n") == "cli"
+    assert domain_for("test_holes.py", "from cadagent.publish import report\nfrom cadagent.publish import x\n") == \
+        "mechanical"
+    # a subpackage with its own test folder gets the nested folder, by import or by a test of the same first word
+    nested = ["tests/simulation/explore/test_explore_design.py", "tests/simulation/test_fea.py"]
+    assert domain_for("test_new.py", "from cadagent.simulation.explore import design\n", nested) == \
+        "simulation/explore"
+    assert domain_for("test_new.py", "from cadagent.simulation import fea\n", nested) == "simulation"
+    assert domain_for("test_explore_new.py", "import json\n", nested) == "simulation/explore"
 
 
 def test_an_unknown_or_undocumented_tests_folder_is_refused(files):

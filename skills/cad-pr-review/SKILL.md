@@ -72,7 +72,7 @@ flowchart TD
   of an existing one is blocking. A function or two joins the existing module for its topic rather than a new file. A
   folder the change takes past the repo's clutter limit is split by its growth rule (subfolders named after the
   domains, each with a README and map, `git mv`, every reference updated), and not before. A misplaced file is a minor
-  finding that names the path it belongs at.
+  finding that names the path it belongs at; a new top-level folder is blocking.
 - Post inline comments on the exact lines (`gh api repos/<o>/<r>/pulls/<n>/comments` with `commit_id`, `path`,
   `line`, `side=RIGHT`), then one summary review (`gh pr review <n> --comment --body ...`) that says plainly whether
   anything is blocking. Its last line is the verdict marker for the head commit you reviewed:

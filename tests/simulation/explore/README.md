@@ -1,6 +1,6 @@
 # tests/simulation/explore
 
-Tests for [`src/cadagent/simulation/explore/`](../../../src/cadagent/simulation/README.md): design exploration, from a
+Tests for [`src/cadagent/simulation/explore/`](../../../src/cadagent/simulation/explore/): design exploration, from a
 catalogue of parts to ranked designs. `explore_fixtures.py` holds the small projects they share; the `cad-agent
 catalogue`, `compare` and `optimise` commands run end to end in `test_explore_cli.py`.
 

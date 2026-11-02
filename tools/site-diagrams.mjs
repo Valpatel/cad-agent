@@ -148,21 +148,23 @@ export function forDrawing(source, theme = 'light') {
 }
 
 /** The site's diagram palette (the style guide's classDefs: tools/build-site.mjs PALETTE and the pages' own) on a dark
- * page: each of its colours in a `classDef` or `style` line becomes its dark counterpart, the tokens of web/site.css's
- * dark theme. Other colours are left as written. Only the drawing changes; the reader sees the source as written. */
+ * page: each of its colours in a `classDef` or `style` line, or in a `%%{init}` directive (a chart's plot colours),
+ * becomes its dark counterpart, the tokens of web/site.css's dark theme. Other colours are left as written. Only the
+ * drawing changes; the reader sees the source as written. */
 export const DARK_COLOURS = { '#fffdf5': '#16211f', '#173d3c': '#e2eee8', '#eef1e4': '#1f2e2b', '#6f8a80': '#8fb0a6', '#ffe1cc': '#3d281c',
   '#bd3a12': '#ff9466', '#d8efbb': '#22361d', '#386248': '#93cf9e' };
-export const darkPalette = source => source.replace(/^([ \t]*(?:classDef|style)\b.*)$/gm,
+export const darkPalette = source => source.replace(/^([ \t]*(?:classDef\b|style\b|%%\{\s*init\b).*)$/gm,
   line => line.replace(/#[0-9a-fA-F]{6}\b/g, c => DARK_COLOURS[c.toLowerCase()] ?? c));
 
 /** One page's HTML with each Mermaid block replaced by its two drawings, from `light` and `dark` (two drawDiagrams
  * results), each marked data-theme-only for the page's CSS to show the one for its theme. A block either drawing lacks
- * is left whole, for kit/diagrams.js to draw in the reader's browser. A diagram drawn twice on one page gets numbered ids. */
-export function drawBoth(html, light, dark) {
+ * is left whole, for kit/diagrams.js to draw in the reader's browser, and added to `left`. A diagram drawn twice on one
+ * page gets numbered ids. */
+export function drawBoth(html, light, dark, left = new Set()) {
   const seen = new Map();
   return html.replace(BLOCK, block => {
     const pair = [[light.draw(block), 'light'], [dark.draw(block), 'dark']];
-    if (pair.some(([figure]) => figure === block)) return block;
+    if (pair.some(([figure]) => figure === block)) { left.add(block); return block; }
     const n = seen.get(block) || 0; seen.set(block, n + 1);
     return pair.map(([figure, theme]) => {
       const marked = figure.replace(/^<figure class="cad-diagram"/, `<figure class="cad-diagram" data-theme-only="${theme}"`);

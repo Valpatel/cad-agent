@@ -47,7 +47,8 @@ const PAIRS = [
   ['link', 'cream', 4.5], ['link', 'card', 4.5], ['teal', 'card', 4.5], ['teal', 'cream', 4.5], ['orange', 'cream', 4.5],
   ['ink', 'peach', 4.5], ['ink', 'peach-2', 4.5], ['ink', 'green', 4.5], ['ink', 'green-2', 4.5], ['ink', 'yellow', 4.5], ['ink', 'blue', 4.5],
   ['ink', 'grey', 4.5], ['brown', 'peach', 4.5], ['brown', 'peach-2', 4.5], ['brown', 'cream', 4.5], ['sky-ink', 'sky-a', 4.5], ['sky-ink', 'sky-b', 4.5],
-  ['ink', 'sky-a', 4.5], ['cream', 'ink', 4.5], ['focus', 'cream', 3], ['focus', 'card', 3], ['line-3', 'card', 3], ['line-3', 'cream', 3],
+  ['ink', 'sky-a', 4.5], ['cream', 'ink', 4.5], ['text-1', 'cream', 4.5], ['text-1', 'soft-2', 4.5], ['ink', 'mission-o', 4.5],
+  ['ink', 'mission-b-a', 4.5], ['ink', 'mission-b-b', 4.5], ['ink', 'mission-y-a', 4.5], ['ink', 'mission-y-b', 4.5], ['line-dash', 'cream', 1.5], ['focus', 'cream', 3], ['focus', 'card', 3], ['line-3', 'card', 3], ['line-3', 'cream', 3],
 ];
 for (const theme of ['light', 'dark']) {
   test(`${theme} theme: text and controls keep their contrast`, () => {

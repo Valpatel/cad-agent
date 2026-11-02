@@ -97,5 +97,20 @@ try{
  const redrawn=await darker.evaluate(()=>({id:document.querySelector('.cad-diagram svg').id,bg:getComputedStyle(document.querySelector('.cad-diagram')).backgroundColor,source:document.querySelector('.cad-diagram-source').textContent}));
  assert.notEqual(redrawn.id,'cad-diagram-sahead');assert.equal(redrawn.bg,'rgb(23, 29, 39)');assert.equal(redrawn.source,diagram);
  await darker.close();cases.push({drawnAhead:{light:'kept',dark:'redrawn'}});
- assert.deepEqual(errors,[]);await writeFile(`${out}/${engine.name()}-report.json`,JSON.stringify({cases,errors},null,2));console.log(`${engine.name()}: static, dynamic, phone, themes, loading, retry, invalid-source, hostile-label and drawn-ahead cases PASS`);
+ // A figure drawn for one theme only (data-theme-only, next to its twin: the cad-agent site, #305) is never redrawn,
+ // even on a page of the other theme; the page's CSS chooses which twin shows.
+ const only=await browser.newPage(),onlyFetched=[];only.on('pageerror',e=>errors.push(e.message));only.on('request',q=>{if(/mermaid\.min\.js/.test(q.url()))onlyFetched.push(q.url());});
+ await only.route('**/ahead-only',route=>route.fulfill({contentType:'text/html',body:aheadHtml('dark').replace('<figure class="cad-diagram"','<figure class="cad-diagram" data-theme-only="light"')}));
+ await only.goto(site.url+'/ahead-only');await only.waitForFunction(()=>window.diagrams);await only.waitForLoadState('networkidle');
+ const kept=await only.evaluate(async()=>{const {refreshDiagramThemes}=await import('/kit/diagrams.js');await refreshDiagramThemes();const f=document.querySelector('.cad-diagram');return {theme:f.dataset.theme,id:f.querySelector('svg').id};});
+ assert.deepEqual(kept,{theme:'light',id:'cad-diagram-sahead'},'a data-theme-only figure was redrawn');assert.deepEqual(onlyFetched,[],'a data-theme-only figure needs no Mermaid');
+ await only.close();
+ // After the page switches theme with no media change (a theme button), refreshDiagramThemes redraws the others.
+ const switcher=await browser.newPage();switcher.on('pageerror',e=>errors.push(e.message));await switcher.goto(site.url+'/ahead-light');
+ await switcher.waitForFunction(()=>window.diagrams);await switcher.waitForLoadState('networkidle');
+ const switched=await switcher.evaluate(async()=>{const {refreshDiagramThemes}=await import('/kit/diagrams.js');document.body.dataset.diagramTheme='dark';
+  await refreshDiagramThemes();const f=document.querySelector('.cad-diagram');return {theme:f.dataset.theme,state:f.dataset.state,id:f.querySelector('svg')?.id};});
+ assert.deepEqual([switched.theme,switched.state],['dark','ready'],'refreshDiagramThemes did not redraw the figure dark');assert.notEqual(switched.id,'cad-diagram-sahead');
+ await switcher.close();cases.push({themeOnly:'kept',refresh:'redrawn'});
+ assert.deepEqual(errors,[]);await writeFile(`${out}/${engine.name()}-report.json`,JSON.stringify({cases,errors},null,2));console.log(`${engine.name()}: static, dynamic, phone, themes, loading, retry, invalid-source, hostile-label, drawn-ahead, theme-only and refresh cases PASS`);
 }finally{await browser.close();await site.close();}

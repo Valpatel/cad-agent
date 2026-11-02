@@ -727,6 +727,7 @@ async function fanCurveProblems() {
         }
         await demo.evaluate(d => d.removeAttribute('theme'));
         await page.emulateMedia({ colorScheme: 'light' });
+        if (!(await themed('light'))) say('the demo stayed dark after the system went light');
         // the tiles' words fit for every kind of result (one line each at desktop width, cut with an ellipsis if not)
         for (const attrs of [['16', '2', '4', 'parallel'], ['8', '60', '4', 'series'], ['12', '25', '2', 'parallel'], ['12', '60', '1', 'parallel'], ['12', '12', '1', 'parallel']]) {
           const cut = await demo.evaluate((d, a) => {
@@ -882,6 +883,7 @@ async function explorerProblems(x) {
         }
         await demo.evaluate(d => d.removeAttribute('theme'));
         await page.emulateMedia({ colorScheme: 'light' });
+        if (!(await themed('light'))) say('the demo stayed dark after the system went light');
         // the panel holds and the tiles' words fit for extreme settings (the last is the page's own)
         const original = await demo.evaluate(d => Object.fromEntries([...d.attributes].map(a => [a.name, a.value])));
         for (const [i, shape] of x.shapes.entries()) {
@@ -1004,9 +1006,12 @@ async function themeProblems() {
   const out = [];
   const ROUTES = ['/', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', '/research/landscape', '/lessons/mechanical/design-rules', '/missing-page'];
   // Every visible text run's contrast against the colour behind it: the first opaque background up its ancestors,
-  // with the translucent ones on the way composited over it. null where a picture or gradient is behind.
-  const lowContrast = page => page.evaluate(() => {
-    const rgba = c => { const m = c.match(/[\d.]+/g)?.map(Number) ?? [0, 0, 0, 0]; return [m[0], m[1], m[2], m[3] ?? 1]; };
+  // with the translucent ones (and each stop of a gradient) on the way composited over it; skipped where a picture is
+  // behind. Colours are resolved by the browser itself (a 1 px canvas), so oklab() and color-mix() read right. Inputs'
+  // placeholders are checked against the input, and `extra` (a selector) adds elements whose own text to check.
+  const lowContrast = (page, only = null) => page.evaluate(only => {
+    const ctx = Object.assign(document.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true });
+    const rgba = c => { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = '#000'; ctx.fillStyle = c; ctx.fillRect(0, 0, 1, 1); const d = ctx.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3] / 255]; };
     const lum = ([r, g, b]) => [r, g, b].map(v => v / 255).map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
     const ratio = (a, b) => { const [h, l] = [lum(a), lum(b)].sort((x, y) => y - x); return (h + 0.05) / (l + 0.05); };
     // What can be behind: a colour, or each stop of a CSS gradient (text must read on all of them); null for a picture.
@@ -1017,7 +1022,8 @@ async function themeProblems() {
         const cs = getComputedStyle(e), c = rgba(cs.backgroundColor);
         if (/url\(/.test(cs.backgroundImage)) return null;
         // a gradient sized to nothing (the catalogue rows' hover sweep, until hovered) is not behind anything yet
-        const stops = cs.backgroundImage === 'none' || /^0(?:%|px)/.test(cs.backgroundSize) ? [] : (cs.backgroundImage.match(/rgba?\([^)]*\)/g) || []).map(rgba);
+        const stops = cs.backgroundImage === 'none' || /^0(?:%|px)/.test(cs.backgroundSize) ? []
+          : (cs.backgroundImage.match(/(?:rgba?|oklab|oklch|lab|lch|color)\((?:[^()]|\([^()]*\))*\)/g) || []).map(rgba);
         if (stops.length) layers.push(stops);
         if (c[3] > 0) layers.push([c]);
         if (c[3] >= 1 || (stops.length && stops.every(x => x[3] >= 1))) break;
@@ -1028,19 +1034,26 @@ async function themeProblems() {
     };
     const SKIP = 'svg, img, video, canvas, cad-model, cad-cantilever, cad-fourbar, cad-fan-curve, cad-torsion-snap, cad-printed-boss, .cad-diagram-view, .visually-hidden, .sr, .glyph-sprite, [hidden]';
     const low = [], walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const name = el => `${el.localName}${el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : ''}`;
+    for (const input of only ? [] : document.querySelectorAll('input[placeholder]')) {
+      if (!input.getClientRects().length || input.closest(SKIP)) continue;
+      const bgs = behind(input), fg = rgba(getComputedStyle(input, '::placeholder').color);
+      const c = bgs && Math.min(...bgs.map(bg => ratio(over(fg, bg), bg)));
+      if (c && c < 4.5) low.push(`${name(input)} placeholder "${input.placeholder.slice(0, 30)}" ${c.toFixed(2)}:1`);
+    }
     for (let n; (n = walk.nextNode());) {
       const el = n.parentElement;
-      if (!n.data.trim() || el.closest(SKIP)) continue;
+      if (!n.data.trim() || el.closest(SKIP) || (only && !el.closest(only))) continue;
       const cs = getComputedStyle(el), r = el.getBoundingClientRect();
       if (!r.width || !r.height || cs.visibility === 'hidden' || +cs.opacity === 0 || !el.checkVisibility?.({ opacityProperty: true, visibilityProperty: true })) continue;
       const bgs = behind(el);
       if (!bgs) continue;
       const fg = rgba(cs.color), c = Math.min(...bgs.map(bg => ratio(over(fg, bg), bg)));
       const size = parseFloat(cs.fontSize), large = size >= 24 || (size >= 18.66 && +cs.fontWeight >= 700), need = large ? 3 : 4.5;
-      if (c < need) low.push(`${el.localName}${el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : ''} "${n.data.trim().slice(0, 30)}" ${c.toFixed(2)}:1`);
+      if (c < need) low.push(`${name(el)} "${n.data.trim().slice(0, 30)}" ${c.toFixed(2)}:1`);
     }
     return [...new Set(low)];
-  });
+  }, only);
   const state = page => page.evaluate(() => ({
     scheme: getComputedStyle(document.documentElement).colorScheme, chosen: document.documentElement.dataset.theme ?? null,
     pressed: document.querySelector('.theme-toggle')?.getAttribute('aria-pressed') ?? null,
@@ -1049,7 +1062,7 @@ async function themeProblems() {
     diagrams: [...new Set([...document.querySelectorAll('.cad-diagram')].filter(f => getComputedStyle(f).display !== 'none').map(f => f.dataset.theme))],
     sideways: document.documentElement.scrollWidth - innerWidth,
   }));
-  for (const width of [360, 1366]) {
+  for (const width of [320, 1366]) {
     for (const system of ['light', 'dark']) {
       const context = await browser.newContext({ viewport: { width, height: 800 }, colorScheme: system });
       const page = await context.newPage();
@@ -1072,6 +1085,12 @@ async function themeProblems() {
         if (st.diagrams.some(t => t !== theme)) out.push(`${where}: shows diagrams drawn for ${st.diagrams.join(' and ')}`);
         if (st.sideways > 0) out.push(`${where}: scrolls sideways by ${st.sideways}px`);
         for (const l of await lowContrast(page)) out.push(`${where}: low contrast: ${l}`);
+        // the copy buttons' other states: "Copied" and the fallback ("Press Ctrl+C") when the clipboard refuses
+        for (const s of ['copied', 'failed']) {
+          if (!(await page.evaluate(st => { const b = [...document.querySelectorAll('.cad-copy-btn')]; b.forEach(x => { x.dataset.was = x.dataset.state ?? ''; x.dataset.state = st; }); return b.length; }, s))) break;
+          for (const l of await lowContrast(page, '.cad-copy-btn')) out.push(`${where}: low contrast, copy button ${s}: ${l}`);
+          await page.evaluate(() => document.querySelectorAll('.cad-copy-btn').forEach(x => { if (x.dataset.was) x.dataset.state = x.dataset.was; else delete x.dataset.state; delete x.dataset.was; }));
+        }
         if (how === 'button') {
           // remembered on the next page (web/theme.js runs ahead of the stylesheets: tests/site/website-theme.test.mjs)
           await page.goto(base + '/docs/toolkit', { waitUntil: 'load' });
@@ -1337,6 +1356,7 @@ async function fourbarProblems() {
         }
         await demo.evaluate(d => d.removeAttribute('theme'));
         await page.emulateMedia({ colorScheme: 'light' });
+        if (!(await themed('light'))) say('the demo stayed dark after the system went light');
         // the tiles' words fit for every kind of linkage (one line each at desktop width, cut with an ellipsis if not)
         for (const links of [[80, 40, 120, 100], [80, 100, 40, 120], [150, 70, 70, 10], [100, 80, 70, 60], [150, 10, 10, 20], [40, 120, 80, 100]]) {
           const cut = await demo.evaluate((d, lengths) => {

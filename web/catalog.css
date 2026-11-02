@@ -207,7 +207,7 @@ svg.glyph{flex:none;width:20px;height:20px;fill:none;stroke:currentColor;stroke-
 .area-panel p{margin:6px 0 0;font-size:14px;line-height:1.65;color:var(--text-2);max-width:640px}
 .area-panel a{color:var(--teal);font-weight:600}
 .area-panel .area-json{font:12px var(--mono)}
-.cat-empty{margin:28px 0;padding:28px;border:1px dashed var(--line-3);border-radius:18px;text-align:center;color:var(--muted)}
+.cat-empty{margin:28px 0;padding:28px;border:1px dashed var(--line-dash);border-radius:18px;text-align:center;color:var(--muted)}
 
 /* sections and cards */
 .cat-section{margin:28px 0 8px;scroll-margin-top:calc(var(--bar-top) + 64px)}

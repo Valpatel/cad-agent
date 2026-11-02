@@ -11,6 +11,7 @@ const FONT = 'Arial, sans-serif';
 const runtimeURL = new URL('./vendor/mermaid/mermaid.min.js', import.meta.url);
 let runtimePromise, queue = Promise.resolve(), sequence = 0;
 const records = new WeakMap(), figures = new WeakSet(), live = new Set();   // live: every drawn record, for refreshDiagramThemes
+const track = record => { for (const r of live) if (!r.figure.isConnected) live.delete(r); live.add(record); };
 // The stylesheet keeps the hint's line when the drawing (--cad-diagram-w) is wider than the figure, so a figure drawn
 // ahead of time is laid out right before any script runs. `hidden` follows the stylesheet, for screen readers; a figure
 // that is not laid out (in a closed <details>) is left to the stylesheet.
@@ -60,7 +61,7 @@ function prepare(node, options = {}) {
   figure.append(status, hint, view, retry, details); original.replaceWith(figure); figures.add(figure);
   const record = {figure, status, view, retry, source, running: null, id: options.id, font: options.fontFamily, fontSize: options.fontSize,
     mermaid: options.mermaid};
-  records.set(node, record); live.add(record);
+  records.set(node, record); track(record);
   retry.addEventListener('click', () => render(record));
   return record;
 }
@@ -75,7 +76,7 @@ function adopt(figure) {
   if (!record.status || !record.view || !record.retry || !record.source) return;
   record.retry.addEventListener('click', () => render(record));
   if (figure.dataset.themeOnly) return;
-  live.add(record);
+  track(record);
   const theme = themeFor(figure.parentElement);
   if (theme === figure.dataset.theme) return;
   figure.dataset.theme = theme;

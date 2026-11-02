@@ -344,10 +344,10 @@ const drawIn = theme => drawDiagrams(docPages.map(([, html]) => html), {
   kit: f => readBuf(`src/cadagent/webkit/${f}`), site: f => readBuf(`web/${f}`), theme, client: CLIENT_DIAGRAMS,
   cacheDir: process.env.CAD_AGENT_DIAGRAM_CACHE || path.join(toolsHere, '.cache', 'site-diagrams'),
 });
-const drawnLight = await drawIn('light'), drawnDark = await drawIn('dark');
-for (const [dest, html] of docPages) await writeFile(dest, drawBoth(html, drawnLight, drawnDark));
+const drawnLight = await drawIn('light'), drawnDark = await drawIn('dark'), leftBlocks = new Set();
+for (const [dest, html] of docPages) await writeFile(dest, drawBoth(html, drawnLight, drawnDark, leftBlocks));
 const diagrams = { stats: { ...drawnLight.stats, cached: drawnLight.stats.cached + drawnDark.stats.cached, drawn: drawnLight.stats.drawn + drawnDark.stats.drawn,
-  left: Math.max(drawnLight.stats.left, drawnDark.stats.left) } };
+  left: leftBlocks.size } };
 // Images referenced by docs.
 for (const f of tracked.filter(f => /^docs\/img\/.*\.(svg|png|jpe?g|gif|webp)$/i.test(f))) await copyTracked(f, path.join(out, f));
 
